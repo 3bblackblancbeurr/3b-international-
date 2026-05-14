@@ -1,124 +1,260 @@
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : null;
 
 export default function App() {
   const [started, setStarted] = useState(false);
   const [page, setPage] = useState("menu");
 
-  const [messages, setMessages] = useState([
-    { author: "3B", text: "Bienvenue dans le salon privé 3B." },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const chatBottomRef = useRef(null);
 
   const arenaRef = useRef(null);
   const logoRef = useRef(null);
-
-  const posRef = useRef({ x: 120, y: 120 });
+  const posRef = useRef({ x: 140, y: 120 });
   const velRef = useRef({ x: 3.2, y: 2.4 });
-
   const dragRef = useRef({
     active: false,
+    offsetX: 0,
+    offsetY: 0,
     lastX: 0,
     lastY: 0,
     lastTime: 0,
   });
 
-  const [logoPos, setLogoPos] = useState({ x: 120, y: 120 });
+  useEffect(() => {
+    if (page === "communaute") {
+      loadMessages();
+    }
+  }, [page]);
 
   useEffect(() => {
-    let animationId;
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-    function animate() {
+  useEffect(() => {
+    if (!supabase || page !== "communaute") return;
+
+    const channel = supabase
+      .channel("messages-realtime-3b")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        (payload) => {
+          setMessages((currentMessages) => {
+            const exists = currentMessages.some(
+              (message) => message.id === payload.new.id
+            );
+
+            if (exists) return currentMessages;
+
+            return [...currentMessages, payload.new];
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [page]);
+
+  useEffect(() => {
+    if (page !== "secret") return;
+
+    let animationFrame;
+
+    function animateLogo() {
       const arena = arenaRef.current;
       const logo = logoRef.current;
 
-      if (arena && logo && !dragRef.current.active) {
-        const arenaRect = arena.getBoundingClientRect();
-        const logoRect = logo.getBoundingClientRect();
-
-        let nextX = posRef.current.x + velRef.current.x;
-        let nextY = posRef.current.y + velRef.current.y;
-
-        const maxX = arenaRect.width - logoRect.width;
-        const maxY = arenaRect.height - logoRect.height;
-
-        if (nextX <= 0) {
-          nextX = 0;
-          velRef.current.x *= -0.95;
-        }
-
-        if (nextX >= maxX) {
-          nextX = maxX;
-          velRef.current.x *= -0.95;
-        }
-
-        if (nextY <= 0) {
-          nextY = 0;
-          velRef.current.y *= -0.95;
-        }
-
-        if (nextY >= maxY) {
-          nextY = maxY;
-          velRef.current.y *= -0.95;
-        }
-
-        velRef.current.x *= 0.998;
-        velRef.current.y *= 0.998;
-
-        posRef.current = { x: nextX, y: nextY };
-        setLogoPos({ x: nextX, y: nextY });
+      if (!arena || !logo) {
+        animationFrame = requestAnimationFrame(animateLogo);
+        return;
       }
 
-      animationId = requestAnimationFrame(animate);
+      const arenaRect = arena.getBoundingClientRect();
+      const logoRect = logo.getBoundingClientRect();
+
+      if (!dragRef.current.active) {
+        posRef.current.x += velRef.current.x;
+        posRef.current.y += velRef.current.y;
+
+        if (posRef.current.x <= 0) {
+          posRef.current.x = 0;
+          velRef.current.x *= -1;
+        }
+
+        if (posRef.current.y <= 0) {
+          posRef.current.y = 0;
+          velRef.current.y *= -1;
+        }
+
+        if (posRef.current.x + logoRect.width >= arenaRect.width) {
+          posRef.current.x = arenaRect.width - logoRect.width;
+          velRef.current.x *= -1;
+        }
+
+        if (posRef.current.y + logoRect.height >= arenaRect.height) {
+          posRef.current.y = arenaRect.height - logoRect.height;
+          velRef.current.y *= -1;
+        }
+      }
+
+      logo.style.transform = `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0) rotateX(18deg) rotateY(${Date.now() / 25}deg)`;
+
+      animationFrame = requestAnimationFrame(animateLogo);
     }
 
-    animationId = requestAnimationFrame(animate);
+    animateLogo();
 
-    return () => cancelAnimationFrame(animationId);
-  }, []);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [page]);
+
+  async function loadMessages() {
+    const welcomeMessage = {
+      id: "welcome",
+      author: "3B",
+      text: "Bienvenue dans Discussion privée 3B.",
+      created_at: new Date().toISOString(),
+    };
+
+    if (!supabase) {
+      setMessages([welcomeMessage]);
+      return;
+    }
+
+    setLoadingMessages(true);
+
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    setLoadingMessages(false);
+
+    if (error) {
+      console.warn("Supabase lecture bloquée :", error);
+      setMessages([welcomeMessage]);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setMessages([welcomeMessage]);
+      return;
+    }
+
+    setMessages(data);
+  }
+
+  async function sendMessage() {
+    const text = newMessage.trim();
+
+    if (!text) return;
+
+    const localMessage = {
+      id: `local-${Date.now()}`,
+      author: "Moi",
+      text,
+      created_at: new Date().toISOString(),
+    };
+
+    setMessages((currentMessages) => [...currentMessages, localMessage]);
+    setNewMessage("");
+
+    if (!supabase) return;
+
+    const { error } = await supabase.from("messages").insert([
+      {
+        author: "Moi",
+        text,
+      },
+    ]);
+
+    if (error) {
+      console.warn("Supabase envoi bloqué :", error);
+    }
+  }
+
+  function handleMessageKeyDown(event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendMessage();
+    }
+  }
 
   function playStartSound() {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const audio = new AudioContext();
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const audioContext = new AudioContext();
 
-    const osc = audio.createOscillator();
-    const gain = audio.createGain();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
 
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(120, audio.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(950, audio.currentTime + 0.2);
-    osc.frequency.exponentialRampToValueAtTime(90, audio.currentTime + 0.65);
+      oscillator.type = "sawtooth";
+      oscillator.frequency.setValueAtTime(120, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(
+        980,
+        audioContext.currentTime + 0.22
+      );
 
-    gain.gain.setValueAtTime(0.001, audio.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, audio.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.7);
+      gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.22, audioContext.currentTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.32);
 
-    osc.connect(gain);
-    gain.connect(audio.destination);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
 
-    osc.start();
-    osc.stop(audio.currentTime + 0.75);
-  }
-
-  function enterApp() {
-    playStartSound();
-    setStarted(true);
-    setPage("menu");
-  }
-
-  function startDrag(e) {
-    e.preventDefault();
-
-    dragRef.current.active = true;
-    dragRef.current.lastX = e.clientX;
-    dragRef.current.lastY = e.clientY;
-    dragRef.current.lastTime = Date.now();
-
-    if (e.currentTarget.setPointerCapture) {
-      e.currentTarget.setPointerCapture(e.pointerId);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.34);
+    } catch (error) {
+      console.warn("Son non disponible :", error);
     }
   }
 
-  function moveDrag(e) {
+  function startApp() {
+    playStartSound();
+    setStarted(true);
+  }
+
+  function BackToMenu() {
+    return (
+      <button style={styles.backButton} onClick={() => setPage("menu")}>
+        ← Retour au menu général
+      </button>
+    );
+  }
+
+  function onLogoPointerDown(event) {
+    const logo = logoRef.current;
+    if (!logo) return;
+
+    const rect = logo.getBoundingClientRect();
+
+    dragRef.current.active = true;
+    dragRef.current.offsetX = event.clientX - rect.left;
+    dragRef.current.offsetY = event.clientY - rect.top;
+    dragRef.current.lastX = event.clientX;
+    dragRef.current.lastY = event.clientY;
+    dragRef.current.lastTime = Date.now();
+
+    logo.setPointerCapture(event.pointerId);
+  }
+
+  function onLogoPointerMove(event) {
     if (!dragRef.current.active) return;
 
     const arena = arenaRef.current;
@@ -132,322 +268,353 @@ export default function App() {
     const now = Date.now();
     const deltaTime = Math.max(now - dragRef.current.lastTime, 16);
 
-    const deltaX = e.clientX - dragRef.current.lastX;
-    const deltaY = e.clientY - dragRef.current.lastY;
+    const newX = event.clientX - arenaRect.left - dragRef.current.offsetX;
+    const newY = event.clientY - arenaRect.top - dragRef.current.offsetY;
 
-    let nextX = posRef.current.x + deltaX;
-    let nextY = posRef.current.y + deltaY;
+    velRef.current.x =
+      ((event.clientX - dragRef.current.lastX) / deltaTime) * 16;
+    velRef.current.y =
+      ((event.clientY - dragRef.current.lastY) / deltaTime) * 16;
 
-    const maxX = arenaRect.width - logoRect.width;
-    const maxY = arenaRect.height - logoRect.height;
+    posRef.current.x = Math.max(
+      0,
+      Math.min(newX, arenaRect.width - logoRect.width)
+    );
 
-    nextX = Math.max(0, Math.min(maxX, nextX));
-    nextY = Math.max(0, Math.min(maxY, nextY));
+    posRef.current.y = Math.max(
+      0,
+      Math.min(newY, arenaRect.height - logoRect.height)
+    );
 
-    velRef.current = {
-      x: (deltaX / deltaTime) * 22,
-      y: (deltaY / deltaTime) * 22,
-    };
-
-    posRef.current = { x: nextX, y: nextY };
-    setLogoPos({ x: nextX, y: nextY });
-
-    dragRef.current.lastX = e.clientX;
-    dragRef.current.lastY = e.clientY;
+    dragRef.current.lastX = event.clientX;
+    dragRef.current.lastY = event.clientY;
     dragRef.current.lastTime = now;
   }
 
-  function endDrag(e) {
+  function onLogoPointerUp(event) {
+    const logo = logoRef.current;
+
     dragRef.current.active = false;
 
-    if (e.currentTarget.releasePointerCapture) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
+    if (logo) {
+      logo.releasePointerCapture(event.pointerId);
     }
+
+    if (Math.abs(velRef.current.x) < 1) velRef.current.x = 2.5;
+    if (Math.abs(velRef.current.y) < 1) velRef.current.y = 2.2;
   }
 
-  function sendMessage() {
-    if (!newMessage.trim()) return;
+  function StartPage() {
+    return (
+      <main style={styles.startPage}>
+        <div style={styles.startGlow}></div>
 
-    setMessages([
-      ...messages,
-      {
-        author: "Moi",
-        text: newMessage,
-      },
-    ]);
+        <section style={styles.startPanel}>
+          <p style={styles.kicker}>3B INTERNATIONAL</p>
+          <h1 style={styles.startTitle}>De zéro à l’international</h1>
+          <p style={styles.subtitle}>
+            Studio créatif, communauté, musique, logos, secret et futur écosystème 3B.
+          </p>
 
-    setNewMessage("");
+          <button style={styles.startButton} onClick={startApp}>
+            Commencer
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  function MenuPage() {
+    return (
+      <main style={styles.page}>
+        <section style={styles.hero}>
+          <p style={styles.kicker}>3B INTERNATIONAL</p>
+          <h1 style={styles.title}>De zéro à l’international</h1>
+          <p style={styles.subtitle}>
+            Studio créatif, communauté, musique, univers 3B et futurs projets.
+          </p>
+
+          <div style={styles.grid}>
+            <button style={styles.card} onClick={() => setPage("creation")}>
+              <span style={styles.cardTitle}>Création</span>
+              <span style={styles.cardText}>
+                Créer, préparer et imaginer les futurs vêtements 3B.
+              </span>
+            </button>
+
+            <button style={styles.card} onClick={() => setPage("communaute")}>
+              <span style={styles.cardTitle}>Communauté</span>
+              <span style={styles.cardText}>
+                Salon privé pour discuter autour de 3B International.
+              </span>
+            </button>
+
+            <button style={styles.card} onClick={() => setPage("musique")}>
+              <span style={styles.cardTitle}>3B Musique</span>
+              <span style={styles.cardText}>
+                Sons officiels, ambiance de défilé, hymne et TikTok.
+              </span>
+            </button>
+
+            <button style={styles.card} onClick={() => setPage("secret")}>
+              <span style={styles.cardTitle}>Secret 3B</span>
+              <span style={styles.cardText}>
+                Indices, dates, mystère et histoire cachée de la marque.
+              </span>
+            </button>
+
+            <button style={styles.card} onClick={() => setPage("logos")}>
+              <span style={styles.cardTitle}>Logos 3B</span>
+              <span style={styles.cardText}>
+                France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne.
+              </span>
+            </button>
+
+            <button style={styles.emptyCard}>
+              <span style={styles.cardTitle}>Projet futur</span>
+              <span style={styles.cardText}>Case vide à compléter.</span>
+            </button>
+
+            <button style={styles.emptyCard}>
+              <span style={styles.cardTitle}>Pilier futur</span>
+              <span style={styles.cardText}>Case vide à compléter.</span>
+            </button>
+
+            <button style={styles.emptyCard}>
+              <span style={styles.cardTitle}>Module futur</span>
+              <span style={styles.cardText}>Case vide à compléter.</span>
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function CreationPage() {
+    return (
+      <main style={styles.page}>
+        <BackToMenu />
+
+        <section style={styles.panel}>
+          <p style={styles.kicker}>CRÉATION</p>
+          <h1 style={styles.pageTitle}>Création</h1>
+
+          <div style={styles.creationGrid}>
+            <div style={styles.creationBox}>
+              <h2 style={styles.boxTitle}>Studio vêtements</h2>
+              <p style={styles.text}>
+                Zone prévue pour les maillots, prototypes, matières, couleurs,
+                placement des logos et fiches techniques.
+              </p>
+            </div>
+
+            <div style={styles.creationBox}>
+              <h2 style={styles.boxTitle}>Sauvegarde projets</h2>
+              <p style={styles.text}>
+                Ici viendra plus tard la sauvegarde des créations 3B et des versions.
+              </p>
+            </div>
+
+            <div style={styles.creationBox}>
+              <h2 style={styles.boxTitle}>Exports</h2>
+              <p style={styles.text}>
+                Zone prévue pour les exports image, PDF, fiche usine et présentation.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function CommunityPage() {
+    return (
+      <main style={styles.page}>
+        <BackToMenu />
+
+        <section style={styles.chatSection}>
+          <p style={styles.kicker}>COMMUNAUTÉ</p>
+          <h1 style={styles.pageTitle}>Discussion privée 3B</h1>
+          <p style={styles.text}>
+            Salon de discussion connecté à Supabase pour la communauté 3B.
+          </p>
+
+          <div style={styles.chatBox}>
+            <div style={styles.chatHeader}>Discussion privée 3B</div>
+
+            <div style={styles.messagesArea}>
+              {loadingMessages && (
+                <p style={styles.systemText}>Chargement des messages...</p>
+              )}
+
+              {!loadingMessages &&
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    style={
+                      message.author === "Moi"
+                        ? styles.myMessage
+                        : styles.otherMessage
+                    }
+                  >
+                    <div style={styles.messageAuthor}>{message.author}</div>
+                    <div style={styles.messageText}>{message.text}</div>
+                  </div>
+                ))}
+
+              <div ref={chatBottomRef} />
+            </div>
+
+            <div style={styles.inputRow}>
+              <input
+                style={styles.chatInput}
+                value={newMessage}
+                onChange={(event) => setNewMessage(event.target.value)}
+                onKeyDown={handleMessageKeyDown}
+                placeholder="Écris ton message..."
+              />
+
+              <button style={styles.sendButton} onClick={sendMessage}>
+                Envoyer
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function MusicPage() {
+    return (
+      <main style={styles.page}>
+        <BackToMenu />
+
+        <section style={styles.panel}>
+          <p style={styles.kicker}>3B MUSIQUE</p>
+          <h1 style={styles.pageTitle}>3B Musique</h1>
+          <p style={styles.text}>
+            Sons officiels, ambiance de défilé, hymne 3B, sons TikTok, playlists
+            et futures collaborations.
+          </p>
+
+          <div style={styles.musicGrid}>
+            <div style={styles.musicCard}>
+              <h2 style={styles.boxTitle}>Sons officiels</h2>
+              <p style={styles.text}>
+                Zone pour les musiques de campagne et les sons de lancement.
+              </p>
+            </div>
+
+            <div style={styles.musicCard}>
+              <h2 style={styles.boxTitle}>Ambiance défilé</h2>
+              <p style={styles.text}>
+                Sons premium pour présentation luxe, vidéo, podium et teasing.
+              </p>
+            </div>
+
+            <div style={styles.musicCard}>
+              <h2 style={styles.boxTitle}>TikTok 3B</h2>
+              <p style={styles.text}>
+                Sons courts, viraux, mystérieux et puissants pour les annonces.
+              </p>
+            </div>
+
+            <div style={styles.musicCard}>
+              <h2 style={styles.boxTitle}>Hymne 3B</h2>
+              <p style={styles.text}>
+                Futur hymne officiel : héritage, international, famille et vision.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function SecretPage() {
+    return (
+      <main style={styles.page}>
+        <BackToMenu />
+
+        <section style={styles.secretPanel}>
+          <div style={styles.secretTextBlock}>
+            <p style={styles.kicker}>SECRET 3B</p>
+            <h1 style={styles.pageTitle}>Le secret continue</h1>
+            <p style={styles.secretText}>Italie s’y comprennent.</p>
+            <p style={styles.text}>
+              À Milan, le textile cache plus qu’un tissu. Le luxe cache plus
+              qu’un nom. La création cache plus qu’une idée.
+            </p>
+
+            <div style={styles.secretDate}>08.07 — 20H</div>
+          </div>
+
+          <div ref={arenaRef} style={styles.secretArena}>
+            <div
+              ref={logoRef}
+              style={styles.movingLogo}
+              onPointerDown={onLogoPointerDown}
+              onPointerMove={onLogoPointerMove}
+              onPointerUp={onLogoPointerUp}
+            >
+              3B
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  function LogosPage() {
+    const logos = [
+      "France",
+      "Italie",
+      "Estonie",
+      "Turquie",
+      "Algérie",
+      "Tunisie",
+      "Maroc",
+      "Espagne",
+    ];
+
+    return (
+      <main style={styles.page}>
+        <BackToMenu />
+
+        <section style={styles.panel}>
+          <p style={styles.kicker}>LOGOS 3B</p>
+          <h1 style={styles.pageTitle}>Logos officiels 3B</h1>
+          <p style={styles.text}>
+            Espace prévu pour intégrer les huit logos principaux de la collection
+            internationale 3B.
+          </p>
+
+          <div style={styles.logoGrid}>
+            {logos.map((logoName) => (
+              <div key={logoName} style={styles.logoCard}>
+                <div style={styles.logoCircle}>3B</div>
+                <h2 style={styles.boxTitle}>{logoName}</h2>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!started) {
+    return <StartPage />;
   }
 
   return (
     <div style={styles.app}>
-      <style>
-        {`
-          @keyframes pulseGold {
-            0% { box-shadow: 0 0 16px rgba(212,175,55,0.35); }
-            50% { box-shadow: 0 0 50px rgba(212,175,55,0.9); }
-            100% { box-shadow: 0 0 16px rgba(212,175,55,0.35); }
-          }
-
-          @keyframes rotate3D {
-            0% { transform: rotateY(0deg) rotateX(13deg); }
-            100% { transform: rotateY(360deg) rotateX(13deg); }
-          }
-
-          @keyframes backgroundMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-
-          @keyframes glowSecret {
-            0% { opacity: 0.35; transform: scale(1); }
-            50% { opacity: 0.9; transform: scale(1.18); }
-            100% { opacity: 0.35; transform: scale(1); }
-          }
-        `}
-      </style>
-
-      {!started ? (
-        <div style={styles.intro}>
-          <div style={styles.introTextBlock}>
-            <h1 style={styles.bigTitle}>3B INTERNATIONAL</h1>
-            <p style={styles.subtitle}>Studio IA — De Z à I</p>
-          </div>
-
-          <button style={styles.startButton} onClick={enterApp}>
-            Commencer
-          </button>
-        </div>
-      ) : (
-        <div style={styles.screen}>
-          <header style={styles.header}>
-            <button style={styles.homeButton} onClick={() => setPage("menu")}>
-              3B
-            </button>
-
-            <div>
-              <h1 style={styles.headerTitle}>3B INTERNATIONAL</h1>
-              <p style={styles.headerSubtitle}>Studio IA — De Z à I</p>
-            </div>
-          </header>
-
-          {page === "menu" && (
-            <main style={styles.menuGrid}>
-              <MenuButton
-                title="Logos internationaux"
-                active
-                onClick={() => setPage("logos")}
-              />
-
-              <MenuButton
-                title="Musique"
-                active
-                onClick={() => setPage("musique")}
-              />
-
-              <MenuButton title="Manga" disabled />
-
-              <MenuButton title="Cartes de fidélité" disabled />
-
-              <MenuButton
-                title="Secret 3B"
-                active
-                onClick={() => setPage("secret")}
-              />
-
-              <MenuButton
-                title="Communauté +"
-                active
-                onClick={() => setPage("communaute")}
-              />
-
-              <MenuButton title="Case future 1" empty />
-              <MenuButton title="Case future 2" empty />
-              <MenuButton title="Case future 3" empty />
-              <MenuButton title="Case future 4" empty />
-              <MenuButton title="Case future 5" empty />
-            </main>
-          )}
-
-          {page === "logos" && (
-            <main style={styles.page}>
-              <BackToMenu onClick={() => setPage("menu")} />
-
-              <h2 style={styles.pageTitle}>Logos internationaux</h2>
-
-              <p style={styles.pageText}>
-                Ici, on intégrera les 8 logos officiels 3B que tu vas me donner.
-              </p>
-
-              <div style={styles.logoGrid}>
-                {[
-                  "France",
-                  "Maroc",
-                  "Algérie",
-                  "Tunisie",
-                  "Italie",
-                  "Espagne",
-                  "Turquie",
-                  "Estonie",
-                ].map((country) => (
-                  <div key={country} style={styles.logoCard}>
-                    <div style={styles.logoPlaceholder}>3B</div>
-                    <h3>{country}</h3>
-                    <p>Logo officiel à intégrer</p>
-                  </div>
-                ))}
-              </div>
-            </main>
-          )}
-
-          {page === "musique" && (
-            <main style={styles.page}>
-              <BackToMenu onClick={() => setPage("menu")} />
-
-              <h2 style={styles.pageTitle}>3B Music</h2>
-
-              <p style={styles.pageText}>
-                Ici, on ajoutera les musiques officielles que tu vas me donner.
-              </p>
-
-              <div style={styles.musicList}>
-                <div style={styles.musicCard}>
-                  <span>Son officiel 3B</span>
-                  <button style={styles.smallGold}>Bientôt</button>
-                </div>
-
-                <div style={styles.musicCard}>
-                  <span>Hymne 3B</span>
-                  <button style={styles.smallGold}>Bientôt</button>
-                </div>
-
-                <div style={styles.musicCard}>
-                  <span>Ambiance défilé</span>
-                  <button style={styles.smallGold}>Bientôt</button>
-                </div>
-
-                <div style={styles.musicCard}>
-                  <span>Son TikTok secret</span>
-                  <button style={styles.smallGold}>Bientôt</button>
-                </div>
-              </div>
-            </main>
-          )}
-
-          {page === "secret" && (
-            <main style={styles.secretPage}>
-              <BackToMenu onClick={() => setPage("menu")} />
-
-              <h2 style={styles.pageTitle}>Secret 3B</h2>
-
-              <p style={styles.pageText}>
-                Touche le logo avec ton pouce, tire-le puis relâche : il part et
-                rebondit sur les côtés.
-              </p>
-
-              <div ref={arenaRef} style={styles.secretArena}>
-                <div style={styles.secretLight}></div>
-
-                <div
-                  ref={logoRef}
-                  onPointerDown={startDrag}
-                  onPointerMove={moveDrag}
-                  onPointerUp={endDrag}
-                  onPointerCancel={endDrag}
-                  style={{
-                    ...styles.secretMovingLogo,
-                    left: `${logoPos.x}px`,
-                    top: `${logoPos.y}px`,
-                  }}
-                >
-                  <div style={styles.secret3D}>
-                    {Array.from({ length: 22 }).map((_, index) => (
-                      <span
-                        key={index}
-                        style={{
-                          ...styles.secretLayer,
-                          transform: `translateZ(${-index * 3}px)`,
-                          color: index === 0 ? "#ffe28a" : "#6d4708",
-                          textShadow:
-                            index === 0
-                              ? "0 0 35px rgba(255,220,120,0.95), 0 0 95px rgba(212,175,55,0.75)"
-                              : "none",
-                        }}
-                      >
-                        3B
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </main>
-          )}
-
-          {page === "communaute" && (
-            <main style={styles.page}>
-              <BackToMenu onClick={() => setPage("menu")} />
-
-              <h2 style={styles.pageTitle}>Communauté 3B</h2>
-
-              <p style={styles.pageText}>
-                Salon de discussion local pour commencer.
-              </p>
-
-              <div style={styles.chatBox}>
-                <div style={styles.messages}>
-                  {messages.map((msg, index) => (
-                    <div key={index} style={styles.message}>
-                      <strong>{msg.author} :</strong> {msg.text}
-                    </div>
-                  ))}
-                </div>
-
-                <div style={styles.chatInputRow}>
-                  <input
-                    style={styles.chatInput}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Écris un message..."
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") sendMessage();
-                    }}
-                  />
-
-                  <button style={styles.sendButton} onClick={sendMessage}>
-                    Envoyer
-                  </button>
-                </div>
-              </div>
-            </main>
-          )}
-        </div>
-      )}
+      {page === "menu" && <MenuPage />}
+      {page === "creation" && <CreationPage />}
+      {page === "communaute" && <CommunityPage />}
+      {page === "musique" && <MusicPage />}
+      {page === "secret" && <SecretPage />}
+      {page === "logos" && <LogosPage />}
     </div>
-  );
-}
-
-function MenuButton({ title, active, disabled, empty, onClick }) {
-  return (
-    <button
-      onClick={disabled || empty ? undefined : onClick}
-      style={{
-        ...styles.menuButton,
-        ...(active ? styles.menuActive : {}),
-        ...(disabled ? styles.menuDisabled : {}),
-        ...(empty ? styles.menuEmpty : {}),
-      }}
-    >
-      {title}
-    </button>
-  );
-}
-
-function BackToMenu({ onClick }) {
-  return (
-    <button style={styles.backButton} onClick={onClick}>
-      ← Retour au menu général
-    </button>
   );
 }
 
@@ -455,325 +622,421 @@ const styles = {
   app: {
     minHeight: "100vh",
     width: "100vw",
-    background: "#030303",
+    background:
+      "radial-gradient(circle at top, #1d1d1d 0%, #080808 45%, #000 100%)",
     color: "white",
     fontFamily: "Arial, sans-serif",
     overflowX: "hidden",
   },
 
-  intro: {
+  startPage: {
     minHeight: "100vh",
-    width: "100%",
+    width: "100vw",
     background:
-      "linear-gradient(135deg, #000000, #080808, #1a1405, #000000)",
-    backgroundSize: "300% 300%",
-    animation: "backgroundMove 9s ease infinite",
+      "radial-gradient(circle at center, rgba(212,175,55,0.20) 0%, #090909 45%, #000 100%)",
+    color: "white",
+    fontFamily: "Arial, sans-serif",
     display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    overflow: "hidden",
+  },
+
+  startGlow: {
+    position: "absolute",
+    width: "520px",
+    height: "520px",
+    borderRadius: "50%",
+    background: "rgba(212,175,55,0.18)",
+    filter: "blur(80px)",
+  },
+
+  startPanel: {
+    position: "relative",
+    zIndex: 2,
+    maxWidth: "900px",
+    padding: "50px",
+    border: "1px solid rgba(212,175,55,0.65)",
+    borderRadius: "34px",
+    background: "rgba(0,0,0,0.55)",
     textAlign: "center",
-    padding: "24px",
-    boxSizing: "border-box",
+    boxShadow: "0 0 60px rgba(212,175,55,0.16)",
   },
 
-  introTextBlock: {
-    marginBottom: "58px",
-  },
-
-  bigTitle: {
-    fontSize: "clamp(36px, 9vw, 78px)",
+  startTitle: {
+    fontSize: "72px",
+    lineHeight: "0.95",
     color: "#d4af37",
     margin: "0 0 22px 0",
-    lineHeight: 1,
-    letterSpacing: "2px",
-    textShadow: "0 0 35px rgba(212,175,55,0.55)",
-  },
-
-  subtitle: {
-    fontSize: "clamp(18px, 4vw, 26px)",
-    color: "white",
-    opacity: 0.85,
-    margin: 0,
+    fontWeight: "900",
+    textTransform: "uppercase",
   },
 
   startButton: {
-    padding: "22px 72px",
-    borderRadius: "24px",
-    border: "1px solid rgba(255,230,150,0.8)",
-    background: "linear-gradient(135deg, #d4af37, #ffe28a, #b88918)",
+    marginTop: "30px",
+    padding: "18px 34px",
+    borderRadius: "18px",
+    border: "none",
+    background: "#d4af37",
     color: "black",
-    fontSize: "24px",
+    fontSize: "18px",
     fontWeight: "900",
     cursor: "pointer",
-    animation: "pulseGold 2.4s infinite",
-  },
-
-  screen: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(circle at top, #1b1504 0%, #060606 45%, #000000 100%)",
-  },
-
-  header: {
-    minHeight: "95px",
-    borderBottom: "1px solid rgba(212,175,55,0.25)",
-    display: "flex",
-    alignItems: "center",
-    gap: "18px",
-    padding: "18px 24px",
-    boxSizing: "border-box",
-  },
-
-  homeButton: {
-    width: "58px",
-    height: "58px",
-    borderRadius: "50%",
-    border: "1px solid #d4af37",
-    background: "#0b0b0b",
-    color: "#d4af37",
-    fontWeight: "900",
-    fontSize: "20px",
-    cursor: "pointer",
-  },
-
-  headerTitle: {
-    margin: 0,
-    color: "#d4af37",
-    fontSize: "clamp(24px, 5vw, 38px)",
-    lineHeight: 1.05,
-    letterSpacing: "1px",
-  },
-
-  headerSubtitle: {
-    margin: "8px 0 0 0",
-    opacity: 0.78,
-    fontSize: "clamp(14px, 3vw, 18px)",
-  },
-
-  menuGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-    gap: "20px",
-    padding: "32px",
-  },
-
-  menuButton: {
-    minHeight: "125px",
-    borderRadius: "24px",
-    fontSize: "20px",
-    fontWeight: "900",
-    cursor: "pointer",
-    transition: "0.2s",
-  },
-
-  menuActive: {
-    background: "linear-gradient(135deg, #d4af37, #ffe28a, #b88918)",
-    color: "black",
-    border: "1px solid #fff0b0",
-    boxShadow: "0 0 30px rgba(212,175,55,0.35)",
-  },
-
-  menuDisabled: {
-    background: "#050505",
-    color: "white",
-    border: "1px solid rgba(255,255,255,0.15)",
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
-
-  menuEmpty: {
-    background: "rgba(255,255,255,0.03)",
-    color: "rgba(255,255,255,0.35)",
-    border: "1px dashed rgba(212,175,55,0.25)",
-    cursor: "default",
+    boxShadow: "0 0 35px rgba(212,175,55,0.45)",
   },
 
   page: {
-    padding: "32px",
+    minHeight: "100vh",
+    padding: "40px",
+    boxSizing: "border-box",
   },
 
-  secretPage: {
-    padding: "32px",
+  hero: {
+    maxWidth: "1200px",
+    margin: "0 auto",
+    paddingTop: "60px",
   },
 
-  backButton: {
-    marginBottom: "24px",
-    padding: "13px 22px",
-    borderRadius: "14px",
-    border: "1px solid rgba(212,175,55,0.55)",
-    background: "#080808",
+  kicker: {
     color: "#d4af37",
+    fontSize: "14px",
     fontWeight: "900",
-    fontSize: "15px",
-    cursor: "pointer",
-    boxShadow: "0 0 18px rgba(212,175,55,0.18)",
+    letterSpacing: "5px",
+    textTransform: "uppercase",
+    marginBottom: "12px",
+  },
+
+  title: {
+    fontSize: "72px",
+    lineHeight: "0.95",
+    color: "#d4af37",
+    margin: "0 0 20px 0",
+    fontWeight: "900",
+  },
+
+  subtitle: {
+    fontSize: "20px",
+    color: "#e8e8e8",
+    maxWidth: "820px",
+    marginBottom: "42px",
+    lineHeight: "1.5",
   },
 
   pageTitle: {
+    fontSize: "54px",
+    lineHeight: "1",
     color: "#d4af37",
-    fontSize: "clamp(32px, 7vw, 52px)",
-    margin: "0 0 12px 0",
-  },
-
-  pageText: {
-    opacity: 0.75,
-    fontSize: "18px",
-    marginBottom: "28px",
-  },
-
-  logoGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
-    gap: "18px",
-  },
-
-  logoCard: {
-    background: "#080808",
-    border: "1px solid rgba(212,175,55,0.35)",
-    borderRadius: "22px",
-    padding: "22px",
-    textAlign: "center",
-  },
-
-  logoPlaceholder: {
-    width: "86px",
-    height: "86px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #d4af37, #ffe28a)",
-    color: "black",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    margin: "0 auto 14px auto",
+    margin: "0 0 16px 0",
     fontWeight: "900",
-    fontSize: "26px",
   },
 
-  musicList: {
+  text: {
+    fontSize: "17px",
+    lineHeight: "1.6",
+    color: "#e5e5e5",
+    maxWidth: "900px",
+  },
+
+  grid: {
     display: "grid",
-    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "22px",
+    marginTop: "40px",
+  },
+
+  card: {
+    border: "1px solid rgba(212, 175, 55, 0.7)",
+    background: "rgba(255, 255, 255, 0.035)",
+    color: "white",
+    padding: "28px",
+    borderRadius: "24px",
+    minHeight: "175px",
+    textAlign: "left",
+    cursor: "pointer",
+    boxShadow: "0 0 30px rgba(0,0,0,0.35)",
+  },
+
+  emptyCard: {
+    border: "1px dashed rgba(212, 175, 55, 0.45)",
+    background: "rgba(255, 255, 255, 0.02)",
+    color: "white",
+    padding: "28px",
+    borderRadius: "24px",
+    minHeight: "175px",
+    textAlign: "left",
+    cursor: "default",
+    opacity: 0.72,
+  },
+
+  cardTitle: {
+    display: "block",
+    color: "#d4af37",
+    fontSize: "25px",
+    fontWeight: "900",
+    marginBottom: "14px",
+  },
+
+  cardText: {
+    display: "block",
+    color: "#eeeeee",
+    fontSize: "16px",
+    lineHeight: "1.5",
+  },
+
+  panel: {
+    maxWidth: "1100px",
+    margin: "35px auto 0 auto",
+    padding: "42px",
+    border: "1px solid rgba(212, 175, 55, 0.68)",
+    borderRadius: "30px",
+    background: "rgba(255, 255, 255, 0.035)",
+    boxShadow: "0 0 45px rgba(0,0,0,0.45)",
+  },
+
+  backButton: {
+    border: "1px solid rgba(212, 175, 55, 0.75)",
+    background: "transparent",
+    color: "#d4af37",
+    padding: "13px 20px",
+    borderRadius: "16px",
+    cursor: "pointer",
+    fontWeight: "900",
+    marginBottom: "30px",
+  },
+
+  creationGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "20px",
+    marginTop: "30px",
+  },
+
+  creationBox: {
+    border: "1px solid rgba(212,175,55,0.55)",
+    borderRadius: "24px",
+    padding: "24px",
+    background: "rgba(0,0,0,0.35)",
+  },
+
+  musicGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+    gap: "20px",
+    marginTop: "34px",
   },
 
   musicCard: {
-    background: "#080808",
-    border: "1px solid rgba(212,175,55,0.35)",
-    borderRadius: "18px",
-    padding: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  smallGold: {
-    border: "none",
-    borderRadius: "12px",
-    padding: "10px 18px",
-    background: "#d4af37",
-    color: "black",
-    fontWeight: "bold",
-  },
-
-  secretArena: {
-    height: "65vh",
-    minHeight: "430px",
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: "28px",
-    border: "1px solid rgba(212,175,55,0.35)",
+    border: "1px solid rgba(212,175,55,0.65)",
+    borderRadius: "24px",
+    padding: "24px",
     background:
-      "radial-gradient(circle at center, #1a1405 0%, #030303 60%, #000 100%)",
-    perspective: "1200px",
+      "linear-gradient(135deg, rgba(212,175,55,0.12), rgba(255,255,255,0.03))",
   },
 
-  secretLight: {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
-    width: "420px",
-    height: "420px",
-    transform: "translate(-50%, -50%)",
-    borderRadius: "50%",
-    background:
-      "radial-gradient(circle, rgba(212,175,55,0.32), transparent 70%)",
-    animation: "glowSecret 3s ease-in-out infinite",
-    pointerEvents: "none",
-  },
-
-  secretMovingLogo: {
-    position: "absolute",
-    width: "230px",
-    height: "160px",
-    cursor: "grab",
-    transformStyle: "preserve-3d",
-    touchAction: "none",
-    userSelect: "none",
-  },
-
-  secret3D: {
-    position: "relative",
-    width: "230px",
-    height: "160px",
-    transformStyle: "preserve-3d",
-    animation: "rotate3D 4.5s linear infinite",
-  },
-
-  secretLayer: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    fontSize: "150px",
+  boxTitle: {
+    color: "#d4af37",
+    fontSize: "24px",
     fontWeight: "900",
-    letterSpacing: "-10px",
-    WebkitTextStroke: "2px #fff0b0",
-    lineHeight: "150px",
+    margin: "0 0 12px 0",
+  },
+
+  chatSection: {
+    maxWidth: "1150px",
+    margin: "20px auto 0 auto",
   },
 
   chatBox: {
-    background: "#070707",
-    border: "1px solid rgba(212,175,55,0.35)",
-    borderRadius: "24px",
-    padding: "20px",
-    maxWidth: "850px",
+    marginTop: "25px",
+    border: "1px solid rgba(212, 175, 55, 0.75)",
+    borderRadius: "28px",
+    padding: "24px",
+    background: "rgba(0, 0, 0, 0.45)",
+    boxShadow: "0 0 45px rgba(0,0,0,0.45)",
   },
 
-  messages: {
-    minHeight: "280px",
-    maxHeight: "360px",
+  chatHeader: {
+    color: "#d4af37",
+    fontSize: "23px",
+    fontWeight: "900",
+    paddingBottom: "18px",
+    borderBottom: "1px solid rgba(212, 175, 55, 0.28)",
+    marginBottom: "20px",
+  },
+
+  messagesArea: {
+    height: "360px",
     overflowY: "auto",
-    background: "#020202",
-    borderRadius: "18px",
-    padding: "16px",
-    marginBottom: "16px",
-  },
-
-  message: {
-    padding: "10px 0",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
-  },
-
-  chatInputRow: {
+    padding: "10px",
     display: "flex",
+    flexDirection: "column",
     gap: "12px",
+  },
+
+  myMessage: {
+    alignSelf: "flex-end",
+    maxWidth: "75%",
+    background: "#d4af37",
+    color: "black",
+    padding: "12px 16px",
+    borderRadius: "18px 18px 4px 18px",
+    fontWeight: "700",
+  },
+
+  otherMessage: {
+    alignSelf: "flex-start",
+    maxWidth: "75%",
+    background: "rgba(255,255,255,0.08)",
+    color: "white",
+    padding: "12px 16px",
+    borderRadius: "18px 18px 18px 4px",
+    border: "1px solid rgba(255,255,255,0.12)",
+  },
+
+  messageAuthor: {
+    fontSize: "12px",
+    opacity: "0.75",
+    marginBottom: "4px",
+    fontWeight: "900",
+  },
+
+  messageText: {
+    fontSize: "16px",
+    lineHeight: "1.4",
+    wordBreak: "break-word",
+  },
+
+  systemText: {
+    textAlign: "center",
+    color: "#cccccc",
+  },
+
+  inputRow: {
+    display: "flex",
+    gap: "14px",
+    marginTop: "20px",
   },
 
   chatInput: {
     flex: 1,
     padding: "16px",
-    borderRadius: "14px",
-    border: "1px solid rgba(212,175,55,0.35)",
-    background: "#111",
+    borderRadius: "16px",
+    border: "1px solid rgba(212, 175, 55, 0.75)",
+    background: "rgba(255,255,255,0.08)",
     color: "white",
     fontSize: "16px",
+    outline: "none",
   },
 
   sendButton: {
-    padding: "16px 24px",
-    borderRadius: "14px",
+    padding: "16px 26px",
+    borderRadius: "16px",
     border: "none",
     background: "#d4af37",
     color: "black",
     fontWeight: "900",
     cursor: "pointer",
+  },
+
+  secretPanel: {
+    maxWidth: "1180px",
+    margin: "35px auto 0 auto",
+    padding: "42px",
+    border: "1px solid rgba(212, 175, 55, 0.72)",
+    borderRadius: "30px",
+    background:
+      "linear-gradient(135deg, rgba(212,175,55,0.08), rgba(255,255,255,0.025))",
+    boxShadow: "0 0 45px rgba(0,0,0,0.5)",
+  },
+
+  secretTextBlock: {
+    position: "relative",
+    zIndex: 2,
+  },
+
+  secretText: {
+    fontSize: "32px",
+    color: "#d4af37",
+    fontWeight: "900",
+    margin: "16px 0",
+  },
+
+  secretDate: {
+    marginTop: "28px",
+    padding: "20px",
+    borderRadius: "18px",
+    border: "1px solid rgba(212,175,55,0.65)",
+    background: "rgba(212,175,55,0.12)",
+    color: "#fff2b3",
+    fontSize: "22px",
+    fontWeight: "900",
+    textAlign: "center",
+  },
+
+  secretArena: {
+    position: "relative",
+    height: "320px",
+    marginTop: "35px",
+    border: "1px solid rgba(212,175,55,0.65)",
+    borderRadius: "26px",
+    overflow: "hidden",
+    background:
+      "radial-gradient(circle at center, rgba(212,175,55,0.08), rgba(0,0,0,0.50))",
+    perspective: "900px",
+  },
+
+  movingLogo: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "150px",
+    height: "95px",
+    borderRadius: "24px",
+    background:
+      "linear-gradient(135deg, #fff4a8 0%, #d4af37 38%, #6c530d 100%)",
+    color: "black",
+    fontSize: "44px",
+    fontWeight: "900",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "grab",
+    userSelect: "none",
+    touchAction: "none",
+    boxShadow:
+      "0 18px 35px rgba(0,0,0,0.55), inset 0 3px 0 rgba(255,255,255,0.55), inset 0 -8px 15px rgba(0,0,0,0.35)",
+    textShadow: "0 2px 0 rgba(255,255,255,0.25)",
+    border: "1px solid rgba(255,255,255,0.35)",
+  },
+
+  logoGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+    gap: "20px",
+    marginTop: "35px",
+  },
+
+  logoCard: {
+    border: "1px solid rgba(212,175,55,0.62)",
+    borderRadius: "24px",
+    padding: "24px",
+    textAlign: "center",
+    background: "rgba(0,0,0,0.38)",
+  },
+
+  logoCircle: {
+    width: "86px",
+    height: "86px",
+    margin: "0 auto 18px auto",
+    borderRadius: "50%",
+    background:
+      "linear-gradient(135deg, #fff2a0 0%, #d4af37 48%, #70570f 100%)",
+    color: "black",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "900",
+    fontSize: "28px",
+    boxShadow: "0 0 28px rgba(212,175,55,0.35)",
   },
 };
