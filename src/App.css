@@ -146,11 +146,15 @@ h2 {
   margin-top: 24px;
 }
 
+/* GRAND ÉCRAN : menu général en 1 colonne */
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 18px;
   align-items: stretch;
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .menu-card {
@@ -535,7 +539,8 @@ h2 {
 }
 
 .worldmap-card {
-  max-width: 860px;
+  max-width: 1000px;
+  width: 100%;
   margin: 20px auto 0;
   border: 1px solid var(--gold-strong);
   border-radius: 28px;
@@ -612,6 +617,39 @@ h2 {
   font-size: 18px;
 }
 
+/* PASSEPORT : carte seule en haut, reste en dessous gauche/droite */
+.page:has(.worldmap-card) {
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+  align-items: start;
+}
+
+.page:has(.worldmap-card) > .back-btn,
+.page:has(.worldmap-card) > .logo-header,
+.page:has(.worldmap-card) > h1,
+.page:has(.worldmap-card) > h2,
+.page:has(.worldmap-card) > .gold-line,
+.page:has(.worldmap-card) > .intro,
+.page:has(.worldmap-card) > .worldmap-card,
+.page:has(.worldmap-card) > .menu-list,
+.page:has(.worldmap-card) > .diamond {
+  grid-column: 1 / -1;
+}
+
+.page:has(.worldmap-card) > .info-card {
+  width: 100%;
+  max-width: none;
+}
+
+.page:has(.worldmap-card) > .input-row {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 760px;
+}
+
+/* Tablette */
 @media (max-width: 900px) {
   .page {
     max-width: 100%;
@@ -622,12 +660,48 @@ h2 {
   }
 }
 
+/* MOBILE : menu général en 2 colonnes */
 @media (max-width: 760px) {
-  .home-grid,
+  .home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: none;
+    gap: 12px;
+  }
+
+  .home-grid .menu-card {
+    min-height: 112px;
+    padding: 12px;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .home-grid .menu-card span {
+    font-size: 15px;
+    line-height: 1.15;
+  }
+
+  .home-grid .menu-card b {
+    display: none;
+  }
+
+  .home-grid .icon-circle {
+    min-width: 42px;
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
+
   .shop-grid,
   .music-grid,
   .map-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .page:has(.worldmap-card) {
+    display: block;
+    max-width: 100%;
   }
 
   .stats-card {
@@ -660,6 +734,7 @@ h2 {
   }
 }
 
+/* Petit téléphone */
 @media (max-width: 520px) {
   .page {
     padding: 18px 12px 34px;
@@ -681,6 +756,14 @@ h2 {
 
   .menu-card span {
     font-size: 18px;
+  }
+
+  .home-grid .menu-card {
+    min-height: 104px;
+  }
+
+  .home-grid .menu-card span {
+    font-size: 14px;
   }
 
   .music-grid,
