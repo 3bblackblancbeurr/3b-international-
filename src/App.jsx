@@ -21,6 +21,31 @@ const countries = [
   "Autre pays",
 ];
 
+const active3BCountries = [
+  { name: "France", x: 49, y: 39 },
+  { name: "Italie", x: 53, y: 43 },
+  { name: "Estonie", x: 55, y: 30 },
+  { name: "Turquie", x: 61, y: 45 },
+  { name: "Algérie", x: 49, y: 51 },
+  { name: "Tunisie", x: 52, y: 49 },
+  { name: "Maroc", x: 46, y: 51 },
+  { name: "Espagne", x: 47, y: 43 },
+];
+
+function normalizeCountry(country) {
+  return country
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getUnlockedCountry(originCountry) {
+  const cleanOrigin = normalizeCountry(originCountry || "");
+  return active3BCountries.find(
+    (country) => normalizeCountry(country.name) === cleanOrigin
+  );
+}
+
 function BackButton({ onClick }) {
   return (
     <button className="back-btn" onClick={onClick}>
@@ -63,6 +88,194 @@ function Field({ icon, children }) {
     <div className="secret-input">
       <span>{icon}</span>
       {children}
+    </div>
+  );
+}
+
+function WorldMap3B({ originCountry }) {
+  const unlocked = getUnlockedCountry(originCountry);
+
+  return (
+    <div
+      style={{
+        border: "1px solid rgba(215,168,79,0.85)",
+        borderRadius: "22px",
+        padding: "14px",
+        marginTop: "18px",
+        background:
+          "radial-gradient(circle at center, rgba(215,168,79,0.10), rgba(0,0,0,0.86) 65%)",
+        boxShadow:
+          "0 0 22px rgba(215,168,79,0.18), inset 0 0 30px rgba(255,255,255,0.04)",
+      }}
+    >
+      <h3
+        style={{
+          color: "#f2c979",
+          textAlign: "center",
+          fontFamily: "Cinzel, serif",
+          margin: "0 0 8px",
+          fontSize: "22px",
+        }}
+      >
+        Carte du monde 3B
+      </h3>
+
+      <p
+        style={{
+          color: "#d8d8d8",
+          textAlign: "center",
+          fontSize: "13px",
+          lineHeight: "1.4",
+          margin: "0 0 12px",
+        }}
+      >
+        Les pays du monde sont visibles sans nom. Seuls les 8 pays officiels 3B
+        sont affichés. Votre pays d’origine déverrouille son accès.
+      </p>
+
+      <div
+        style={{
+          width: "100%",
+          height: "270px",
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: "18px",
+          border: "1px solid rgba(215,168,79,0.35)",
+          background:
+            "linear-gradient(180deg, rgba(3,12,18,0.95), rgba(0,0,0,0.98))",
+        }}
+      >
+        <svg viewBox="0 0 100 60" width="100%" height="100%">
+          <defs>
+            <filter id="goldGlow">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <rect x="0" y="0" width="100" height="60" fill="#020506" />
+
+          <path
+            d="M8 19 C14 12, 25 12, 29 20 C33 27, 24 32, 17 31 C9 30, 4 25, 8 19 Z"
+            fill="rgba(80,80,80,0.38)"
+          />
+          <path
+            d="M21 35 C28 35, 35 40, 34 50 C31 58, 22 57, 19 48 C17 43, 16 38, 21 35 Z"
+            fill="rgba(80,80,80,0.34)"
+          />
+          <path
+            d="M41 18 C50 10, 65 12, 72 20 C80 29, 70 38, 57 35 C47 33, 35 28, 41 18 Z"
+            fill="rgba(80,80,80,0.42)"
+          />
+          <path
+            d="M47 33 C55 31, 62 36, 61 46 C60 56, 50 58, 45 49 C41 42, 41 36, 47 33 Z"
+            fill="rgba(80,80,80,0.36)"
+          />
+          <path
+            d="M72 32 C80 28, 91 34, 93 42 C94 49, 86 52, 78 48 C70 44, 66 36, 72 32 Z"
+            fill="rgba(80,80,80,0.40)"
+          />
+          <path
+            d="M76 15 C84 11, 95 14, 97 23 C90 24, 82 24, 76 20 Z"
+            fill="rgba(80,80,80,0.28)"
+          />
+
+          <path
+            d="M41 36 C47 34, 58 34, 64 39"
+            stroke="rgba(215,168,79,0.16)"
+            strokeWidth="0.4"
+            fill="none"
+          />
+          <path
+            d="M10 32 C25 28, 44 30, 59 35"
+            stroke="rgba(215,168,79,0.12)"
+            strokeWidth="0.35"
+            fill="none"
+          />
+
+          {active3BCountries.map((country) => {
+            const isUnlocked =
+              unlocked && normalizeCountry(unlocked.name) === normalizeCountry(country.name);
+
+            return (
+              <g key={country.name}>
+                <circle
+                  cx={country.x}
+                  cy={country.y}
+                  r={isUnlocked ? "2.1" : "1.7"}
+                  fill={isUnlocked ? "#f7d47f" : "#171717"}
+                  stroke={isUnlocked ? "#f7d47f" : "#7a5a22"}
+                  strokeWidth="0.7"
+                  filter={isUnlocked ? "url(#goldGlow)" : "none"}
+                />
+
+                <text
+                  x={country.x + 2.3}
+                  y={country.y + 0.6}
+                  fill={isUnlocked ? "#f7d47f" : "#b38b3d"}
+                  fontSize="2.4"
+                  fontFamily="serif"
+                  fontWeight="700"
+                >
+                  {country.name}
+                </text>
+
+                <text
+                  x={country.x - 1}
+                  y={country.y + 0.8}
+                  fill={isUnlocked ? "#111" : "#b38b3d"}
+                  fontSize="2.1"
+                  fontWeight="700"
+                >
+                  {isUnlocked ? "✓" : "🔒"}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "10px",
+          marginTop: "12px",
+        }}
+      >
+        <div
+          style={{
+            border: "1px solid rgba(215,168,79,0.45)",
+            borderRadius: "12px",
+            padding: "10px",
+            textAlign: "center",
+            color: "#f2c979",
+            fontSize: "13px",
+          }}
+        >
+          Pays débloqué
+          <br />
+          <strong>{unlocked ? unlocked.name : "Aucun pour l’instant"}</strong>
+        </div>
+
+        <div
+          style={{
+            border: "1px solid rgba(215,168,79,0.45)",
+            borderRadius: "12px",
+            padding: "10px",
+            textAlign: "center",
+            color: "#f2c979",
+            fontSize: "13px",
+          }}
+        >
+          Pays 3B actifs
+          <br />
+          <strong>8 pays</strong>
+        </div>
+      </div>
     </div>
   );
 }
@@ -308,6 +521,8 @@ function PasseportAccess({ go }) {
         vos points, vos cartes, vos certificats et votre position dans le monde 3B.
       </p>
 
+      <WorldMap3B originCountry="" />
+
       <InfoCard title="Ce que contient le Passeport 3B">
         <p>Identité membre</p>
         <p>Pays d’origine et pays de résidence</p>
@@ -363,12 +578,14 @@ function PasseportInscription({ go, setMember }) {
     const originCountry = form.originCountry || "Non renseigné";
     const residenceCountry = form.residenceCountry || "Non renseigné";
     const city = form.city.trim() || "Non renseignée";
+    const unlockedCountry = getUnlockedCountry(originCountry);
 
     const points =
       100 +
       (form.originCountry ? 50 : 0) +
       (form.residenceCountry ? 25 : 0) +
-      (form.city.trim() ? 25 : 0);
+      (form.city.trim() ? 25 : 0) +
+      (unlockedCountry ? 75 : 0);
 
     setMember({
       pseudo,
@@ -376,8 +593,9 @@ function PasseportInscription({ go, setMember }) {
       originCountry,
       residenceCountry,
       city,
+      unlockedCountry: unlockedCountry ? unlockedCountry.name : "Aucun pays 3B officiel",
       points,
-      level: points >= 200 ? "Héritier" : "Découverte",
+      level: points >= 250 ? "Héritier" : "Découverte",
       card: "Carte Découverte 3B",
       serial: "3B-PASS-0001",
       createdAt: new Date().toLocaleDateString("fr-FR"),
@@ -396,7 +614,7 @@ function PasseportInscription({ go, setMember }) {
 
       <p className="intro">
         Créez votre compte pour débloquer votre Passeport 3B, vos points et votre
-        place sur la carte 3B World.
+        pays d’origine sur la carte 3B World.
       </p>
 
       <Field icon="👤">
@@ -470,6 +688,8 @@ function PasseportInscription({ go, setMember }) {
         />
       </Field>
 
+      <WorldMap3B originCountry={form.originCountry} />
+
       <br />
 
       <button className="menu-card" onClick={createAccount}>
@@ -483,6 +703,7 @@ function PasseportInscription({ go, setMember }) {
         <p>Pays d’origine renseigné : +50 points</p>
         <p>Pays de résidence renseigné : +25 points</p>
         <p>Ville renseignée : +25 points</p>
+        <p>Pays 3B officiel déverrouillé : +75 points</p>
       </InfoCard>
 
       <p className="intro small-text">
@@ -537,6 +758,7 @@ function Passeport({ go, member }) {
     originCountry: "Non renseigné",
     residenceCountry: "Non renseigné",
     city: "Non renseignée",
+    unlockedCountry: "Aucun pays 3B officiel",
     points: 0,
     level: "Découverte",
     card: "Carte Découverte 3B",
@@ -559,6 +781,8 @@ function Passeport({ go, member }) {
         Bienvenue dans votre espace membre 3B International.
       </p>
 
+      <WorldMap3B originCountry={profile.originCountry} />
+
       <InfoCard title="Carte membre digitale">
         <p>Nom : {profile.pseudo}</p>
         <p>E-mail : {profile.email}</p>
@@ -570,7 +794,7 @@ function Passeport({ go, member }) {
         <p>Pays d’origine : {profile.originCountry}</p>
         <p>Pays de résidence : {profile.residenceCountry}</p>
         <p>Ville : {profile.city}</p>
-        <p>Placement futur : carte mondiale 3B International</p>
+        <p>Pays 3B déverrouillé : {profile.unlockedCountry}</p>
       </InfoCard>
 
       <InfoCard title="Points et niveau">
@@ -578,6 +802,13 @@ function Passeport({ go, member }) {
         <p>Niveau actuel : {profile.level}</p>
         <p>Carte : {profile.card}</p>
         <p>Progression vers Gardien : {progressPercent}%</p>
+      </InfoCard>
+
+      <InfoCard title="Pays verrouillés">
+        <p>Les 8 pays 3B sont visibles sur la carte.</p>
+        <p>Votre pays d’origine est déverrouillé s’il fait partie des 8 pays officiels.</p>
+        <p>Les autres pays 3B restent verrouillés.</p>
+        <p>Le reste du monde reste visible sans nom, en couleur sombre.</p>
       </InfoCard>
 
       <InfoCard title="Avantages débloqués">
