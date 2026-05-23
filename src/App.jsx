@@ -14,7 +14,7 @@ function LogoHeader({ small = false }) {
     <div className={small ? "logo-header small" : "logo-header"}>
       <div className="big-logo">3B</div>
       <div className="brand-text">INTERNATIONAL</div>
-      {!small && <div className="sub-text">PREMIUM CLOTHING</div>}
+      {!small && <div className="sub-text">VÊTEMENTS HAUT DE GAMME</div>}
     </div>
   );
 }
@@ -255,6 +255,46 @@ function Secret({ go }) {
   );
 }
 
+function Passeport({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+
+      <h1>Passeport 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Le Passeport 3B est l’espace premium qui regroupera l’identité du membre,
+        son niveau, ses accès, ses avantages et son parcours dans l’univers 3B International.
+      </p>
+
+      <div className="indice">
+        <h3>Identité membre</h3>
+        <p>Nom : Membre 3B</p>
+        <p>Statut : Fondateur / Ambassadeur / Client premium</p>
+        <p>Niveau : 3B Élite</p>
+      </div>
+
+      <div className="indice">
+        <h3>Accès 3B</h3>
+        <p>Boutique privée</p>
+        <p>Collections limitées</p>
+        <p>Événements exclusifs</p>
+        <p>Codes secrets et indices</p>
+      </div>
+
+      <div className="indice">
+        <h3>QR Code futur</h3>
+        <p>
+          Ici viendra le futur QR Code personnel du membre, relié au certificat,
+          aux achats et aux avantages 3B.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function PlusEncore({ go }) {
   return (
     <div className="page">
@@ -273,7 +313,7 @@ function PlusEncore({ go }) {
         <MenuCard
           icon="🛂"
           title="Passeport 3B"
-          onClick={() => alert("Bientôt disponible")}
+          onClick={() => go("passeport")}
         />
 
         <MenuCard
@@ -323,6 +363,7 @@ export default function App() {
       {page === "communaute" && <Communaute go={setPage} />}
       {page === "secret" && <Secret go={setPage} />}
       {page === "plus" && <PlusEncore go={setPage} />}
+      {page === "passeport" && <Passeport go={setPage} />}
     </main>
   );
 }
