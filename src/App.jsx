@@ -1,6 +1,26 @@
 import { useState } from "react";
 import "./App.css";
 
+const countries = [
+  "France",
+  "Maroc",
+  "Algérie",
+  "Tunisie",
+  "Italie",
+  "Espagne",
+  "Turquie",
+  "Estonie",
+  "Portugal",
+  "Belgique",
+  "Suisse",
+  "Allemagne",
+  "Sénégal",
+  "Mali",
+  "Côte d’Ivoire",
+  "Comores",
+  "Autre pays",
+];
+
 function BackButton({ onClick }) {
   return (
     <button className="back-btn" onClick={onClick}>
@@ -34,6 +54,15 @@ function InfoCard({ title, children }) {
     <div className="indice">
       <h3>{title}</h3>
       <div>{children}</div>
+    </div>
+  );
+}
+
+function Field({ icon, children }) {
+  return (
+    <div className="secret-input">
+      <span>{icon}</span>
+      {children}
     </div>
   );
 }
@@ -275,16 +304,24 @@ function PasseportAccess({ go }) {
       <div className="gold-line">◆</div>
 
       <p className="intro">
-        Pour accéder à votre Passeport 3B, créez un compte ou connectez-vous.
-        Le passeport regroupera votre identité, vos accès, vos avantages, vos cartes
-        et vos certificats 3B International.
+        Votre Passeport 3B regroupera votre identité, vos origines, votre pays,
+        vos points, vos cartes, vos certificats et votre position dans le monde 3B.
       </p>
 
-      <InfoCard title="Accès membre 3B">
-        <p>Compte membre</p>
-        <p>Passeport personnel</p>
-        <p>Cartes de fidélité</p>
-        <p>Codes secrets et avantages</p>
+      <InfoCard title="Ce que contient le Passeport 3B">
+        <p>Identité membre</p>
+        <p>Pays d’origine et pays de résidence</p>
+        <p>Points fidélité 3B</p>
+        <p>Niveau membre : Découverte, Héritier, Gardien, Légende</p>
+        <p>Carte membre digitale</p>
+        <p>Certificats produits et QR Code</p>
+        <p>Position sur la carte 3B World</p>
+      </InfoCard>
+
+      <InfoCard title="Récompense d’entrée">
+        <p>Création du compte : +100 points 3B</p>
+        <p>Choix du pays d’origine : +50 points 3B</p>
+        <p>Premier accès au Passeport : +25 points 3B</p>
       </InfoCard>
 
       <div className="menu-list">
@@ -304,7 +341,51 @@ function PasseportAccess({ go }) {
   );
 }
 
-function PasseportInscription({ go }) {
+function PasseportInscription({ go, setMember }) {
+  const [form, setForm] = useState({
+    pseudo: "",
+    email: "",
+    password: "",
+    originCountry: "",
+    residenceCountry: "",
+    city: "",
+  });
+
+  function updateField(field, value) {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function createAccount() {
+    const pseudo = form.pseudo.trim() || "Membre 3B";
+    const originCountry = form.originCountry || "Non renseigné";
+    const residenceCountry = form.residenceCountry || "Non renseigné";
+    const city = form.city.trim() || "Non renseignée";
+
+    const points =
+      100 +
+      (form.originCountry ? 50 : 0) +
+      (form.residenceCountry ? 25 : 0) +
+      (form.city.trim() ? 25 : 0);
+
+    setMember({
+      pseudo,
+      email: form.email.trim() || "email non renseigné",
+      originCountry,
+      residenceCountry,
+      city,
+      points,
+      level: points >= 200 ? "Héritier" : "Découverte",
+      card: "Carte Découverte 3B",
+      serial: "3B-PASS-0001",
+      createdAt: new Date().toLocaleDateString("fr-FR"),
+    });
+
+    go("passeport");
+  }
+
   return (
     <div className="page">
       <BackButton onClick={() => go("passeport-access")} />
@@ -314,35 +395,95 @@ function PasseportInscription({ go }) {
       <div className="gold-line">◆</div>
 
       <p className="intro">
-        Créez votre compte pour débloquer votre Passeport 3B.
+        Créez votre compte pour débloquer votre Passeport 3B, vos points et votre
+        place sur la carte 3B World.
       </p>
 
-      <div className="secret-input">
-        <span>👤</span>
-        <input placeholder="Nom ou pseudo" />
-      </div>
+      <Field icon="👤">
+        <input
+          value={form.pseudo}
+          onChange={(e) => updateField("pseudo", e.target.value)}
+          placeholder="Nom ou pseudo"
+        />
+      </Field>
 
       <br />
 
-      <div className="secret-input">
-        <span>✉️</span>
-        <input placeholder="Adresse e-mail" />
-      </div>
+      <Field icon="✉️">
+        <input
+          value={form.email}
+          onChange={(e) => updateField("email", e.target.value)}
+          placeholder="Adresse e-mail"
+        />
+      </Field>
 
       <br />
 
-      <div className="secret-input">
-        <span>🔒</span>
-        <input type="password" placeholder="Mot de passe" />
-      </div>
+      <Field icon="🔒">
+        <input
+          value={form.password}
+          onChange={(e) => updateField("password", e.target.value)}
+          type="password"
+          placeholder="Mot de passe"
+        />
+      </Field>
 
       <br />
 
-      <button className="menu-card" onClick={() => go("passeport")}>
+      <Field icon="🌍">
+        <select
+          value={form.originCountry}
+          onChange={(e) => updateField("originCountry", e.target.value)}
+        >
+          <option value="">Pays d’origine / provenance</option>
+          {countries.map((country) => (
+            <option key={country} value={country}>
+              {country}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <br />
+
+      <Field icon="📍">
+        <select
+          value={form.residenceCountry}
+          onChange={(e) => updateField("residenceCountry", e.target.value)}
+        >
+          <option value="">Pays de résidence</option>
+          {countries.map((country) => (
+            <option key={country} value={country}>
+              {country}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <br />
+
+      <Field icon="🏙️">
+        <input
+          value={form.city}
+          onChange={(e) => updateField("city", e.target.value)}
+          placeholder="Ville"
+        />
+      </Field>
+
+      <br />
+
+      <button className="menu-card" onClick={createAccount}>
         <div className="icon-circle">◆</div>
         <span>Créer mon compte</span>
         <b>›</b>
       </button>
+
+      <InfoCard title="Points débloqués à l’inscription">
+        <p>Compte créé : +100 points</p>
+        <p>Pays d’origine renseigné : +50 points</p>
+        <p>Pays de résidence renseigné : +25 points</p>
+        <p>Ville renseignée : +25 points</p>
+      </InfoCard>
 
       <p className="intro small-text">
         Pour l’instant, c’est une maquette. Après, cette inscription sera connectée à Supabase.
@@ -364,17 +505,15 @@ function PasseportConnexion({ go }) {
         Connectez-vous pour accéder à votre Passeport 3B.
       </p>
 
-      <div className="secret-input">
-        <span>✉️</span>
+      <Field icon="✉️">
         <input placeholder="Adresse e-mail" />
-      </div>
+      </Field>
 
       <br />
 
-      <div className="secret-input">
-        <span>🔒</span>
+      <Field icon="🔒">
         <input type="password" placeholder="Mot de passe" />
-      </div>
+      </Field>
 
       <br />
 
@@ -391,7 +530,23 @@ function PasseportConnexion({ go }) {
   );
 }
 
-function Passeport({ go }) {
+function Passeport({ go, member }) {
+  const profile = member || {
+    pseudo: "Membre 3B",
+    email: "email non renseigné",
+    originCountry: "Non renseigné",
+    residenceCountry: "Non renseigné",
+    city: "Non renseignée",
+    points: 0,
+    level: "Découverte",
+    card: "Carte Découverte 3B",
+    serial: "3B-PASS-0001",
+    createdAt: new Date().toLocaleDateString("fr-FR"),
+  };
+
+  const progress = Math.min(profile.points, 300);
+  const progressPercent = Math.round((progress / 300) * 100);
+
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
@@ -404,23 +559,45 @@ function Passeport({ go }) {
         Bienvenue dans votre espace membre 3B International.
       </p>
 
-      <InfoCard title="Identité membre">
-        <p>Nom : Membre 3B</p>
-        <p>Statut : Fondateur / Ambassadeur / Client premium</p>
-        <p>Niveau : 3B Élite</p>
+      <InfoCard title="Carte membre digitale">
+        <p>Nom : {profile.pseudo}</p>
+        <p>E-mail : {profile.email}</p>
+        <p>Numéro passeport : {profile.serial}</p>
+        <p>Date de création : {profile.createdAt}</p>
       </InfoCard>
 
-      <InfoCard title="Accès 3B">
-        <p>Boutique privée</p>
-        <p>Collections limitées</p>
-        <p>Événements exclusifs</p>
-        <p>Codes secrets et indices</p>
+      <InfoCard title="Origine et position 3B World">
+        <p>Pays d’origine : {profile.originCountry}</p>
+        <p>Pays de résidence : {profile.residenceCountry}</p>
+        <p>Ville : {profile.city}</p>
+        <p>Placement futur : carte mondiale 3B International</p>
       </InfoCard>
 
-      <InfoCard title="L’avenir des codes QR">
+      <InfoCard title="Points et niveau">
+        <p>Points 3B : {profile.points}</p>
+        <p>Niveau actuel : {profile.level}</p>
+        <p>Carte : {profile.card}</p>
+        <p>Progression vers Gardien : {progressPercent}%</p>
+      </InfoCard>
+
+      <InfoCard title="Avantages débloqués">
+        <p>Accès au Passeport 3B</p>
+        <p>Accès aux indices secrets</p>
+        <p>Suivi des cartes de fidélité</p>
+        <p>Accès futur aux drops privés</p>
+      </InfoCard>
+
+      <InfoCard title="Missions 3B">
+        <p>Compléter son profil : +50 points</p>
+        <p>Partager une création 3B : +100 points</p>
+        <p>Inviter un membre : +150 points</p>
+        <p>Participer à un drop : +200 points</p>
+      </InfoCard>
+
+      <InfoCard title="QR Code et certificat futur">
         <p>
-          Ici viendra le futur QR Code personnel du membre, relié au certificat,
-          aux achats et aux avantages 3B.
+          Ici viendra le QR Code personnel du membre, relié à son compte, à ses
+          produits, à ses achats, à ses cartes et à ses certificats 3B.
         </p>
       </InfoCard>
     </div>
@@ -642,6 +819,7 @@ function PlusEncore({ go }) {
 
 export default function App() {
   const [page, setPage] = useState("home");
+  const [member, setMember] = useState(null);
 
   return (
     <main className="app">
@@ -651,9 +829,11 @@ export default function App() {
       {page === "communaute" && <Communaute go={setPage} />}
       {page === "secret" && <Secret go={setPage} />}
       {page === "passeport-access" && <PasseportAccess go={setPage} />}
-      {page === "passeport-inscription" && <PasseportInscription go={setPage} />}
+      {page === "passeport-inscription" && (
+        <PasseportInscription go={setPage} setMember={setMember} />
+      )}
       {page === "passeport-connexion" && <PasseportConnexion go={setPage} />}
-      {page === "passeport" && <Passeport go={setPage} />}
+      {page === "passeport" && <Passeport go={setPage} member={member} />}
       {page === "plus" && <PlusEncore go={setPage} />}
       {page === "fidelite" && <CartesFidelite go={setPage} />}
       {page === "manga" && <Manga go={setPage} />}
