@@ -1,8 +1,6 @@
 import { useState } from "react";
 import "./App.css";
 
-const GOLD = "#d7a84f";
-
 function BackButton({ onClick }) {
   return (
     <button className="back-btn" onClick={onClick}>
@@ -87,6 +85,7 @@ function Musique({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <h1>Musique</h1>
       <div className="gold-line">◆</div>
 
@@ -166,7 +165,10 @@ function Communaute({ go }) {
       <div className="posts">
         {posts.map((post, i) => (
           <div className="post-card" key={i}>
-            <div className="avatar">{post.name === "3B International" ? "3B" : "👤"}</div>
+            <div className="avatar">
+              {post.name === "3B International" ? "3B" : "👤"}
+            </div>
+
             <div className="post-content">
               <div className="post-top">
                 <div>
@@ -175,7 +177,9 @@ function Communaute({ go }) {
                 </div>
                 <em>{post.time}</em>
               </div>
+
               <p>{post.text}</p>
+
               <button className="like">💛 {post.likes}</button>
             </div>
           </div>
@@ -209,7 +213,10 @@ function Secret({ go }) {
       <LogoHeader small />
 
       <h1>Secret</h1>
-      <p className="intro">Entrez le code secret pour débloquer l’indice.</p>
+
+      <p className="intro">
+        Entrez le code secret pour débloquer l’indice.
+      </p>
 
       <h2>Code secret</h2>
 
@@ -223,16 +230,22 @@ function Secret({ go }) {
         <button onClick={checkSecret}>Ouvrir le secret</button>
       </div>
 
+      <p className="intro small-text">
+        Tapez le code exact. Le code actuel est prévu dans votre univers 3B.
+      </p>
+
       {unlocked && (
         <div className="indice">
           <h3>Indice débloqué</h3>
-          <p>Italie — le 7 — les 8 logos — 20h — tout va commencer.</p>
+          <p>Italie s’y comprennent — 8 juillet — 20h.</p>
         </div>
       )}
 
       <h2>Cadre 3B relief 3D tactile</h2>
+
       <p className="intro small-text">
-        Touchez le 3B, gardez le doigt dessus, déplacez-le, puis lancez-le contre les bords du cadre.
+        Touchez le 3B, gardez le doigt dessus, déplacez-le, puis lancez-le
+        contre les bords du cadre.
       </p>
 
       <div className="relief-box">
@@ -251,12 +264,47 @@ function PlusEncore({ go }) {
       <div className="gold-line">◆</div>
 
       <div className="menu-list">
-        <MenuCard icon="💳" title="Cartes de fidélité 3B" onClick={() => alert("Bientôt disponible")} />
-        <MenuCard icon="📖" title="Manga 3B International" onClick={() => alert("Bientôt disponible")} />
-        <MenuCard icon="🌍" title="8 logos internationaux" onClick={() => alert("Bientôt disponible")} />
-        <MenuCard icon="♪" title="Album musique 20 titres" onClick={() => go("musique")} />
-        <MenuCard icon="💻" title="Créateurs de programmes / commandes" onClick={() => alert("Bientôt disponible")} />
-        <MenuCard icon="▣" title="Certificat de produit avec code QR" onClick={() => alert("Bientôt disponible")} />
+        <MenuCard
+          icon="💳"
+          title="Cartes de fidélité 3B"
+          onClick={() => alert("Bientôt disponible")}
+        />
+
+        <MenuCard
+          icon="🛂"
+          title="Passeport 3B"
+          onClick={() => alert("Bientôt disponible")}
+        />
+
+        <MenuCard
+          icon="📖"
+          title="Manga 3B International"
+          onClick={() => alert("Bientôt disponible")}
+        />
+
+        <MenuCard
+          icon="🌍"
+          title="8 logos internationaux"
+          onClick={() => alert("Bientôt disponible")}
+        />
+
+        <MenuCard
+          icon="♪"
+          title="Album musique 20 titres"
+          onClick={() => go("musique")}
+        />
+
+        <MenuCard
+          icon="💻"
+          title="Créateurs de programmes / commandes"
+          onClick={() => alert("Bientôt disponible")}
+        />
+
+        <MenuCard
+          icon="▣"
+          title="Certificat de produit avec code QR"
+          onClick={() => alert("Bientôt disponible")}
+        />
       </div>
 
       <div className="diamond">◆</div>
