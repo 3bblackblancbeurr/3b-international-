@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import "./App.css";
 
 const countries = [
@@ -21,27 +21,91 @@ const countries = [
   "Autre pays",
 ];
 
-const active3BCountries = [
-  { name: "France", x: 49, y: 39 },
-  { name: "Italie", x: 53, y: 43 },
-  { name: "Estonie", x: 55, y: 30 },
-  { name: "Turquie", x: 61, y: 45 },
-  { name: "Algérie", x: 49, y: 51 },
-  { name: "Tunisie", x: 52, y: 49 },
-  { name: "Maroc", x: 46, y: 51 },
-  { name: "Espagne", x: 47, y: 43 },
+const official3BCountries = [
+  {
+    name: "France",
+    worldX: 505,
+    worldY: 150,
+    zoomX: 328,
+    zoomY: 170,
+    labelX: 366,
+    labelY: 145,
+  },
+  {
+    name: "Italie",
+    worldX: 536,
+    worldY: 165,
+    zoomX: 430,
+    zoomY: 236,
+    labelX: 470,
+    labelY: 214,
+  },
+  {
+    name: "Estonie",
+    worldX: 556,
+    worldY: 115,
+    zoomX: 520,
+    zoomY: 106,
+    labelX: 560,
+    labelY: 84,
+  },
+  {
+    name: "Turquie",
+    worldX: 605,
+    worldY: 183,
+    zoomX: 650,
+    zoomY: 260,
+    labelX: 690,
+    labelY: 238,
+  },
+  {
+    name: "Algérie",
+    worldX: 493,
+    worldY: 214,
+    zoomX: 312,
+    zoomY: 362,
+    labelX: 350,
+    labelY: 386,
+  },
+  {
+    name: "Tunisie",
+    worldX: 518,
+    worldY: 203,
+    zoomX: 372,
+    zoomY: 337,
+    labelX: 414,
+    labelY: 338,
+  },
+  {
+    name: "Maroc",
+    worldX: 468,
+    worldY: 205,
+    zoomX: 205,
+    zoomY: 340,
+    labelX: 128,
+    labelY: 328,
+  },
+  {
+    name: "Espagne",
+    worldX: 479,
+    worldY: 168,
+    zoomX: 233,
+    zoomY: 250,
+    labelX: 110,
+    labelY: 236,
+  },
 ];
 
 function normalizeCountry(country) {
-  return country
+  return (country || "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
 
 function getUnlockedCountry(originCountry) {
-  const cleanOrigin = normalizeCountry(originCountry || "");
-  return active3BCountries.find(
+  const cleanOrigin = normalizeCountry(originCountry);
+  return official3BCountries.find(
     (country) => normalizeCountry(country.name) === cleanOrigin
   );
 }
@@ -76,7 +140,7 @@ function MenuCard({ icon, title, onClick }) {
 
 function InfoCard({ title, children }) {
   return (
-    <div className="indice">
+    <div className="info-card">
       <h3>{title}</h3>
       <div>{children}</div>
     </div>
@@ -85,70 +149,55 @@ function InfoCard({ title, children }) {
 
 function Field({ icon, children }) {
   return (
-    <div className="secret-input">
-      <span>{icon}</span>
+    <div className="input-row">
+      <span className="input-icon">{icon}</span>
       {children}
     </div>
   );
 }
 
+function MatrixDigits({ count = 40 }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <text
+          key={i}
+          x={20 + ((i * 47) % 860)}
+          y={20 + ((i * 29) % 480)}
+          fill="rgba(73, 192, 255, 0.12)"
+          fontSize="10"
+          fontFamily="monospace"
+        >
+          0101101010110010
+        </text>
+      ))}
+    </>
+  );
+}
+
 function WorldMap3B({ originCountry }) {
-  const unlocked = getUnlockedCountry(originCountry);
+  const unlocked = useMemo(
+    () => getUnlockedCountry(originCountry),
+    [originCountry]
+  );
 
   return (
-    <div
-      style={{
-        border: "1px solid rgba(215,168,79,0.85)",
-        borderRadius: "22px",
-        padding: "14px",
-        marginTop: "18px",
-        background:
-          "radial-gradient(circle at center, rgba(215,168,79,0.10), rgba(0,0,0,0.86) 65%)",
-        boxShadow:
-          "0 0 22px rgba(215,168,79,0.18), inset 0 0 30px rgba(255,255,255,0.04)",
-      }}
-    >
-      <h3
-        style={{
-          color: "#f2c979",
-          textAlign: "center",
-          fontFamily: "Cinzel, serif",
-          margin: "0 0 8px",
-          fontSize: "22px",
-        }}
-      >
-        Carte du monde 3B
-      </h3>
-
-      <p
-        style={{
-          color: "#d8d8d8",
-          textAlign: "center",
-          fontSize: "13px",
-          lineHeight: "1.4",
-          margin: "0 0 12px",
-        }}
-      >
-        Les pays du monde sont visibles sans nom. Seuls les 8 pays officiels 3B
-        sont affichés. Votre pays d’origine déverrouille son accès.
+    <div className="worldmap-card">
+      <h3>Carte du monde 3B</h3>
+      <p className="map-intro">
+        Vue monde + zoom sur les 8 pays 3B. Effet digital bleu Matrix.
+        Seuls les 8 pays officiels sont nommés. Votre pays d’origine se déverrouille.
       </p>
 
-      <div
-        style={{
-          width: "100%",
-          height: "270px",
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "18px",
-          border: "1px solid rgba(215,168,79,0.35)",
-          background:
-            "linear-gradient(180deg, rgba(3,12,18,0.95), rgba(0,0,0,0.98))",
-        }}
-      >
-        <svg viewBox="0 0 100 60" width="100%" height="100%">
+      <div className="world-strip">
+        <svg viewBox="0 0 1000 260" width="100%" height="100%">
           <defs>
-            <filter id="goldGlow">
-              <feGaussianBlur stdDeviation="0.8" result="blur" />
+            <linearGradient id="worldBlueFill" x1="0" x2="1">
+              <stop offset="0%" stopColor="#0f2942" />
+              <stop offset="100%" stopColor="#173b59" />
+            </linearGradient>
+            <filter id="worldGlow">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
@@ -156,81 +205,307 @@ function WorldMap3B({ originCountry }) {
             </filter>
           </defs>
 
-          <rect x="0" y="0" width="100" height="60" fill="#020506" />
+          <rect width="1000" height="260" fill="#071018" />
+          <MatrixDigits count={48} />
 
           <path
-            d="M8 19 C14 12, 25 12, 29 20 C33 27, 24 32, 17 31 C9 30, 4 25, 8 19 Z"
-            fill="rgba(80,80,80,0.38)"
+            d="M70 105 C85 80, 125 65, 175 75 C210 82, 245 100, 250 125 C255 150, 220 170, 175 173 C120 177, 80 155, 70 105 Z"
+            fill="url(#worldBlueFill)"
+            stroke="#1e5d88"
+            strokeWidth="2"
           />
           <path
-            d="M21 35 C28 35, 35 40, 34 50 C31 58, 22 57, 19 48 C17 43, 16 38, 21 35 Z"
-            fill="rgba(80,80,80,0.34)"
+            d="M210 175 C250 175, 298 205, 286 246 C250 255, 218 242, 204 212 C195 194, 194 182, 210 175 Z"
+            fill="url(#worldBlueFill)"
+            stroke="#1e5d88"
+            strokeWidth="2"
           />
           <path
-            d="M41 18 C50 10, 65 12, 72 20 C80 29, 70 38, 57 35 C47 33, 35 28, 41 18 Z"
-            fill="rgba(80,80,80,0.42)"
+            d="M398 88 C445 53, 508 48, 565 64 C614 77, 646 108, 645 136 C642 168, 602 184, 546 175 C500 167, 466 154, 442 143 C414 129, 388 115, 398 88 Z"
+            fill="url(#worldBlueFill)"
+            stroke="#1e5d88"
+            strokeWidth="2"
           />
           <path
-            d="M47 33 C55 31, 62 36, 61 46 C60 56, 50 58, 45 49 C41 42, 41 36, 47 33 Z"
-            fill="rgba(80,80,80,0.36)"
+            d="M480 170 C530 166, 580 182, 603 222 C585 251, 540 255, 503 240 C472 226, 450 202, 480 170 Z"
+            fill="url(#worldBlueFill)"
+            stroke="#1e5d88"
+            strokeWidth="2"
           />
           <path
-            d="M72 32 C80 28, 91 34, 93 42 C94 49, 86 52, 78 48 C70 44, 66 36, 72 32 Z"
-            fill="rgba(80,80,80,0.40)"
+            d="M660 115 C715 95, 818 107, 882 137 C922 156, 932 184, 898 201 C836 221, 774 211, 725 194 C687 180, 650 146, 660 115 Z"
+            fill="url(#worldBlueFill)"
+            stroke="#1e5d88"
+            strokeWidth="2"
           />
           <path
-            d="M76 15 C84 11, 95 14, 97 23 C90 24, 82 24, 76 20 Z"
-            fill="rgba(80,80,80,0.28)"
+            d="M814 58 C859 44, 916 56, 952 76 C974 89, 956 103, 916 105 C870 107, 836 96, 814 58 Z"
+            fill="url(#worldBlueFill)"
+            stroke="#1e5d88"
+            strokeWidth="2"
           />
 
-          <path
-            d="M41 36 C47 34, 58 34, 64 39"
-            stroke="rgba(215,168,79,0.16)"
-            strokeWidth="0.4"
-            fill="none"
-          />
-          <path
-            d="M10 32 C25 28, 44 30, 59 35"
-            stroke="rgba(215,168,79,0.12)"
-            strokeWidth="0.35"
-            fill="none"
-          />
-
-          {active3BCountries.map((country) => {
+          {official3BCountries.map((country) => {
             const isUnlocked =
-              unlocked && normalizeCountry(unlocked.name) === normalizeCountry(country.name);
+              unlocked &&
+              normalizeCountry(unlocked.name) === normalizeCountry(country.name);
 
             return (
               <g key={country.name}>
                 <circle
-                  cx={country.x}
-                  cy={country.y}
-                  r={isUnlocked ? "2.1" : "1.7"}
-                  fill={isUnlocked ? "#f7d47f" : "#171717"}
-                  stroke={isUnlocked ? "#f7d47f" : "#7a5a22"}
-                  strokeWidth="0.7"
-                  filter={isUnlocked ? "url(#goldGlow)" : "none"}
+                  cx={country.worldX}
+                  cy={country.worldY}
+                  r={isUnlocked ? 8 : 6}
+                  fill={isUnlocked ? "#73e6ff" : "#163a58"}
+                  stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"}
+                  strokeWidth="2"
+                  filter={isUnlocked ? "url(#worldGlow)" : "none"}
                 />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
+      <div className="world-zoom">
+        <svg viewBox="0 0 900 520" width="100%" height="100%">
+          <defs>
+            <linearGradient id="zoomSea" x1="0" x2="1">
+              <stop offset="0%" stopColor="#06111a" />
+              <stop offset="100%" stopColor="#081722" />
+            </linearGradient>
+            <linearGradient id="zoomLand" x1="0" x2="1">
+              <stop offset="0%" stopColor="#112638" />
+              <stop offset="100%" stopColor="#173146" />
+            </linearGradient>
+            <filter id="zoomGlow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <rect width="900" height="520" fill="url(#zoomSea)" />
+          <MatrixDigits count={95} />
+
+          <g opacity="0.22">
+            {Array.from({ length: 28 }).map((_, i) => (
+              <line
+                key={i}
+                x1="0"
+                y1={i * 20}
+                x2="900"
+                y2={i * 20}
+                stroke="#114765"
+                strokeWidth="1"
+              />
+            ))}
+            {Array.from({ length: 38 }).map((_, i) => (
+              <line
+                key={`v-${i}`}
+                x1={i * 24}
+                y1="0"
+                x2={i * 24}
+                y2="520"
+                stroke="#114765"
+                strokeWidth="1"
+              />
+            ))}
+          </g>
+
+          {/* Europe / Méditerranée / Maghreb true-style approximation */}
+          <path
+            d="M92 240
+               C135 210, 180 190, 230 188
+               C278 186, 318 166, 355 145
+               C388 126, 418 112, 460 110
+               C507 108, 550 114, 594 132
+               C631 147, 662 162, 700 181
+               C730 198, 740 220, 734 246
+               C726 274, 702 280, 672 278
+               C638 276, 616 268, 592 261
+               C560 251, 528 250, 494 260
+               C461 270, 444 287, 436 312
+               C424 348, 393 366, 344 372
+               C286 379, 234 377, 189 365
+               C155 356, 128 337, 110 310
+               C94 285, 84 261, 92 240 Z"
+            fill="url(#zoomLand)"
+            stroke="#2a89ba"
+            strokeWidth="2.2"
+          />
+
+          {/* Espagne */}
+          <path
+            d="M152 223
+               C183 210, 220 206, 255 213
+               C283 219, 302 232, 298 253
+               C293 275, 268 286, 231 286
+               C194 286, 160 274, 145 252
+               C136 239, 138 229, 152 223 Z"
+            fill="#16344b"
+            stroke="#58b5ea"
+            strokeWidth="2"
+          />
+
+          {/* France */}
+          <path
+            d="M286 160
+               C314 142, 351 138, 382 147
+               C407 154, 423 169, 421 192
+               C418 220, 393 236, 360 236
+               C330 236, 301 226, 286 205
+               C274 188, 272 172, 286 160 Z"
+            fill="#17384f"
+            stroke="#69c9ff"
+            strokeWidth="2.2"
+          />
+
+          {/* Italie */}
+          <path
+            d="M413 199
+               C431 199, 444 205, 451 219
+               C454 229, 449 239, 439 245
+               C450 255, 458 268, 460 282
+               C455 295, 442 300, 430 297
+               C424 283, 420 270, 412 260
+               C402 248, 395 233, 399 220
+               C401 208, 406 200, 413 199 Z"
+            fill="#16344b"
+            stroke="#58b5ea"
+            strokeWidth="2"
+          />
+
+          {/* Estonie / baltique */}
+          <path
+            d="M493 88
+               C510 80, 534 80, 551 89
+               C559 96, 557 107, 545 113
+               C528 120, 506 118, 492 108
+               C487 101, 487 93, 493 88 Z"
+            fill="#16344b"
+            stroke="#58b5ea"
+            strokeWidth="2"
+          />
+
+          {/* Turquie */}
+          <path
+            d="M581 240
+               C614 225, 652 223, 694 232
+               C719 237, 737 247, 738 261
+               C735 275, 718 285, 691 288
+               C656 292, 620 291, 592 285
+               C568 280, 551 270, 552 258
+               C554 249, 564 244, 581 240 Z"
+            fill="#16344b"
+            stroke="#58b5ea"
+            strokeWidth="2"
+          />
+
+          {/* Maroc */}
+          <path
+            d="M152 307
+               C173 297, 196 296, 210 305
+               C219 312, 222 326, 213 338
+               C200 350, 179 353, 161 345
+               C148 337, 143 319, 152 307 Z"
+            fill="#16344b"
+            stroke="#58b5ea"
+            strokeWidth="2"
+          />
+
+          {/* Algérie */}
+          <path
+            d="M226 321
+               C267 311, 318 312, 350 324
+               C370 332, 374 346, 365 357
+               C354 370, 327 375, 286 373
+               C250 371, 217 362, 202 347
+               C196 336, 204 327, 226 321 Z"
+            fill="#17384f"
+            stroke="#69c9ff"
+            strokeWidth="2.2"
+          />
+
+          {/* Tunisie */}
+          <path
+            d="M363 312
+               C375 308, 387 311, 393 319
+               C396 327, 391 338, 380 343
+               C370 345, 362 339, 360 329
+               C359 321, 360 315, 363 312 Z"
+            fill="#16344b"
+            stroke="#58b5ea"
+            strokeWidth="2"
+          />
+
+          {/* côtes / lignes */}
+          <path
+            d="M136 215 C248 170, 386 124, 542 133"
+            fill="none"
+            stroke="rgba(115,230,255,0.22)"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M174 296 C240 285, 320 286, 436 300"
+            fill="none"
+            stroke="rgba(115,230,255,0.18)"
+            strokeWidth="1.2"
+          />
+
+          {official3BCountries.map((country) => {
+            const isUnlocked =
+              unlocked &&
+              normalizeCountry(unlocked.name) === normalizeCountry(country.name);
+
+            return (
+              <g key={country.name}>
+                <line
+                  x1={country.zoomX}
+                  y1={country.zoomY}
+                  x2={country.labelX}
+                  y2={country.labelY}
+                  stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"}
+                  strokeWidth="1.5"
+                  opacity="0.9"
+                />
+                <circle
+                  cx={country.zoomX}
+                  cy={country.zoomY}
+                  r={isUnlocked ? 8 : 6}
+                  fill={isUnlocked ? "#73e6ff" : "#17384f"}
+                  stroke={isUnlocked ? "#baf6ff" : "#58b5ea"}
+                  strokeWidth="2"
+                  filter={isUnlocked ? "url(#zoomGlow)" : "none"}
+                />
+                <rect
+                  x={country.labelX - 6}
+                  y={country.labelY - 16}
+                  rx="8"
+                  ry="8"
+                  width={country.name.length * 9 + 46}
+                  height="24"
+                  fill={isUnlocked ? "rgba(8, 48, 70, 0.92)" : "rgba(7, 24, 36, 0.90)"}
+                  stroke={isUnlocked ? "#8deeff" : "#2e7ba5"}
+                  strokeWidth="1.4"
+                />
+                <circle
+                  cx={country.labelX + 8}
+                  cy={country.labelY - 4}
+                  r="4"
+                  fill={isUnlocked ? "#73e6ff" : "#1b4f70"}
+                />
                 <text
-                  x={country.x + 2.3}
-                  y={country.y + 0.6}
-                  fill={isUnlocked ? "#f7d47f" : "#b38b3d"}
-                  fontSize="2.4"
-                  fontFamily="serif"
+                  x={country.labelX + 18}
+                  y={country.labelY}
+                  fill={isUnlocked ? "#baf6ff" : "#7dd7ff"}
+                  fontSize="13"
+                  fontFamily="monospace"
                   fontWeight="700"
                 >
                   {country.name}
-                </text>
-
-                <text
-                  x={country.x - 1}
-                  y={country.y + 0.8}
-                  fill={isUnlocked ? "#111" : "#b38b3d"}
-                  fontSize="2.1"
-                  fontWeight="700"
-                >
-                  {isUnlocked ? "✓" : "🔒"}
                 </text>
               </g>
             );
@@ -238,42 +513,18 @@ function WorldMap3B({ originCountry }) {
         </svg>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "10px",
-          marginTop: "12px",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid rgba(215,168,79,0.45)",
-            borderRadius: "12px",
-            padding: "10px",
-            textAlign: "center",
-            color: "#f2c979",
-            fontSize: "13px",
-          }}
-        >
-          Pays débloqué
-          <br />
-          <strong>{unlocked ? unlocked.name : "Aucun pour l’instant"}</strong>
+      <div className="map-summary-grid">
+        <div className="map-summary-box">
+          <span>Pays débloqué</span>
+          <strong>{unlocked ? unlocked.name : "Aucun"}</strong>
         </div>
-
-        <div
-          style={{
-            border: "1px solid rgba(215,168,79,0.45)",
-            borderRadius: "12px",
-            padding: "10px",
-            textAlign: "center",
-            color: "#f2c979",
-            fontSize: "13px",
-          }}
-        >
-          Pays 3B actifs
-          <br />
+        <div className="map-summary-box">
+          <span>Pays 3B actifs</span>
           <strong>8 pays</strong>
+        </div>
+        <div className="map-summary-box">
+          <span>Mode carte</span>
+          <strong>Digital bleu Matrix</strong>
         </div>
       </div>
     </div>
@@ -285,7 +536,7 @@ function Home({ go }) {
     <div className="page">
       <LogoHeader />
 
-      <div className="menu-list">
+      <div className="menu-list home-grid">
         <MenuCard icon="🛍️" title="Boutique" onClick={() => go("boutique")} />
         <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
         <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
@@ -472,8 +723,8 @@ function Secret({ go }) {
 
       <h2>Code secret</h2>
 
-      <div className="secret-input">
-        <span>🔒</span>
+      <div className="input-row">
+        <span className="input-icon">🔒</span>
         <input
           value={code}
           onChange={(e) => setCode(e.target.value)}
@@ -487,7 +738,7 @@ function Secret({ go }) {
       </p>
 
       {unlocked && (
-        <div className="indice">
+        <div className="info-card">
           <h3>Indice débloqué</h3>
           <p>Italie s’y comprennent — 8 juillet — 20h.</p>
         </div>
@@ -536,7 +787,7 @@ function PasseportAccess({ go }) {
       <InfoCard title="Récompense d’entrée">
         <p>Création du compte : +100 points 3B</p>
         <p>Choix du pays d’origine : +50 points 3B</p>
-        <p>Premier accès au Passeport : +25 points 3B</p>
+        <p>Pays 3B officiel déverrouillé : +75 points 3B</p>
       </InfoCard>
 
       <div className="menu-list">
@@ -625,8 +876,6 @@ function PasseportInscription({ go, setMember }) {
         />
       </Field>
 
-      <br />
-
       <Field icon="✉️">
         <input
           value={form.email}
@@ -634,8 +883,6 @@ function PasseportInscription({ go, setMember }) {
           placeholder="Adresse e-mail"
         />
       </Field>
-
-      <br />
 
       <Field icon="🔒">
         <input
@@ -645,8 +892,6 @@ function PasseportInscription({ go, setMember }) {
           placeholder="Mot de passe"
         />
       </Field>
-
-      <br />
 
       <Field icon="🌍">
         <select
@@ -662,8 +907,6 @@ function PasseportInscription({ go, setMember }) {
         </select>
       </Field>
 
-      <br />
-
       <Field icon="📍">
         <select
           value={form.residenceCountry}
@@ -678,8 +921,6 @@ function PasseportInscription({ go, setMember }) {
         </select>
       </Field>
 
-      <br />
-
       <Field icon="🏙️">
         <input
           value={form.city}
@@ -689,8 +930,6 @@ function PasseportInscription({ go, setMember }) {
       </Field>
 
       <WorldMap3B originCountry={form.originCountry} />
-
-      <br />
 
       <button className="menu-card" onClick={createAccount}>
         <div className="icon-circle">◆</div>
@@ -730,13 +969,9 @@ function PasseportConnexion({ go }) {
         <input placeholder="Adresse e-mail" />
       </Field>
 
-      <br />
-
       <Field icon="🔒">
         <input type="password" placeholder="Mot de passe" />
       </Field>
-
-      <br />
 
       <button className="menu-card" onClick={() => go("passeport")}>
         <div className="icon-circle">◆</div>
@@ -808,7 +1043,7 @@ function Passeport({ go, member }) {
         <p>Les 8 pays 3B sont visibles sur la carte.</p>
         <p>Votre pays d’origine est déverrouillé s’il fait partie des 8 pays officiels.</p>
         <p>Les autres pays 3B restent verrouillés.</p>
-        <p>Le reste du monde reste visible sans nom, en couleur sombre.</p>
+        <p>Le reste du monde reste visible en mode digital sans noms.</p>
       </InfoCard>
 
       <InfoCard title="Avantages débloqués">
