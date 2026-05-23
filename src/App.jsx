@@ -47,8 +47,8 @@ function Home({ go }) {
         <MenuCard icon="🛍️" title="Boutique" onClick={() => go("boutique")} />
         <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
         <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
-        <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport")} />
-        <MenuCard icon="🔒" title="Secret" onClick={() => go("secret")} />
+        <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport-access")} />
+        <MenuCard icon="🔒" title="Coffre secret 3B" onClick={() => go("secret")} />
         <MenuCard icon="☆" title="Plus encore" onClick={() => go("plus")} />
       </div>
 
@@ -222,10 +222,10 @@ function Secret({ go }) {
       <BackButton onClick={() => go("home")} />
       <LogoHeader small />
 
-      <h1>Secret</h1>
+      <h1>Coffre secret 3B</h1>
 
       <p className="intro">
-        Entrez le code secret pour débloquer l’indice.
+        Entrez le code secret pour débloquer l’indice caché dans l’univers 3B.
       </p>
 
       <h2>Code secret</h2>
@@ -237,7 +237,7 @@ function Secret({ go }) {
           onChange={(e) => setCode(e.target.value)}
           placeholder="Entrez le code secret"
         />
-        <button onClick={checkSecret}>Ouvrir le secret</button>
+        <button onClick={checkSecret}>Ouvrir</button>
       </div>
 
       <p className="intro small-text">
@@ -265,7 +265,7 @@ function Secret({ go }) {
   );
 }
 
-function Passeport({ go }) {
+function PasseportAccess({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
@@ -275,8 +275,133 @@ function Passeport({ go }) {
       <div className="gold-line">◆</div>
 
       <p className="intro">
-        Le Passeport 3B est l’espace premium qui regroupera l’identité du membre,
-        son niveau, ses accès, ses avantages et son parcours dans l’univers 3B International.
+        Pour accéder à votre Passeport 3B, créez un compte ou connectez-vous.
+        Le passeport regroupera votre identité, vos accès, vos avantages, vos cartes
+        et vos certificats 3B International.
+      </p>
+
+      <InfoCard title="Accès membre 3B">
+        <p>Compte membre</p>
+        <p>Passeport personnel</p>
+        <p>Cartes de fidélité</p>
+        <p>Codes secrets et avantages</p>
+      </InfoCard>
+
+      <div className="menu-list">
+        <MenuCard
+          icon="👤"
+          title="Créer mon compte 3B"
+          onClick={() => go("passeport-inscription")}
+        />
+
+        <MenuCard
+          icon="🔐"
+          title="Me connecter"
+          onClick={() => go("passeport-connexion")}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PasseportInscription({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("passeport-access")} />
+      <LogoHeader small />
+
+      <h1>Inscription 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Créez votre compte pour débloquer votre Passeport 3B.
+      </p>
+
+      <div className="secret-input">
+        <span>👤</span>
+        <input placeholder="Nom ou pseudo" />
+      </div>
+
+      <br />
+
+      <div className="secret-input">
+        <span>✉️</span>
+        <input placeholder="Adresse e-mail" />
+      </div>
+
+      <br />
+
+      <div className="secret-input">
+        <span>🔒</span>
+        <input type="password" placeholder="Mot de passe" />
+      </div>
+
+      <br />
+
+      <button className="menu-card" onClick={() => go("passeport")}>
+        <div className="icon-circle">◆</div>
+        <span>Créer mon compte</span>
+        <b>›</b>
+      </button>
+
+      <p className="intro small-text">
+        Pour l’instant, c’est une maquette. Après, cette inscription sera connectée à Supabase.
+      </p>
+    </div>
+  );
+}
+
+function PasseportConnexion({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("passeport-access")} />
+      <LogoHeader small />
+
+      <h1>Connexion 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Connectez-vous pour accéder à votre Passeport 3B.
+      </p>
+
+      <div className="secret-input">
+        <span>✉️</span>
+        <input placeholder="Adresse e-mail" />
+      </div>
+
+      <br />
+
+      <div className="secret-input">
+        <span>🔒</span>
+        <input type="password" placeholder="Mot de passe" />
+      </div>
+
+      <br />
+
+      <button className="menu-card" onClick={() => go("passeport")}>
+        <div className="icon-circle">◆</div>
+        <span>Entrer dans mon Passeport</span>
+        <b>›</b>
+      </button>
+
+      <p className="intro small-text">
+        Pour l’instant, c’est une maquette. Après, cette connexion sera connectée à Supabase.
+      </p>
+    </div>
+  );
+}
+
+function Passeport({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("home")} />
+      <LogoHeader small />
+
+      <h1>Mon Passeport 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Bienvenue dans votre espace membre 3B International.
       </p>
 
       <InfoCard title="Identité membre">
@@ -363,7 +488,16 @@ function Manga({ go }) {
 }
 
 function LogosInternationaux({ go }) {
-  const logos = ["France", "Italie", "Estonie", "Turquie", "Algérie", "Tunisie", "Maroc", "Espagne"];
+  const logos = [
+    "France",
+    "Italie",
+    "Estonie",
+    "Turquie",
+    "Algérie",
+    "Tunisie",
+    "Maroc",
+    "Espagne",
+  ];
 
   return (
     <div className="page">
@@ -467,7 +601,7 @@ function PlusEncore({ go }) {
         <MenuCard
           icon="🛂"
           title="Passeport 3B"
-          onClick={() => go("passeport")}
+          onClick={() => go("passeport-access")}
         />
 
         <MenuCard
@@ -515,8 +649,11 @@ export default function App() {
       {page === "boutique" && <Boutique go={setPage} />}
       {page === "musique" && <Musique go={setPage} />}
       {page === "communaute" && <Communaute go={setPage} />}
-      {page === "passeport" && <Passeport go={setPage} />}
       {page === "secret" && <Secret go={setPage} />}
+      {page === "passeport-access" && <PasseportAccess go={setPage} />}
+      {page === "passeport-inscription" && <PasseportInscription go={setPage} />}
+      {page === "passeport-connexion" && <PasseportConnexion go={setPage} />}
+      {page === "passeport" && <Passeport go={setPage} />}
       {page === "plus" && <PlusEncore go={setPage} />}
       {page === "fidelite" && <CartesFidelite go={setPage} />}
       {page === "manga" && <Manga go={setPage} />}
