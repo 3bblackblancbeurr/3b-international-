@@ -1076,7 +1076,7 @@ function Passeport({ go, member }) {
 
       <InfoCard title="Origine et résidence">
         <p>Pays d’origine 3B activé : {profile.originCountry}</p>
-        <p>Pays de résidence actuel : {profile.residenceCountry}</p>
+        <p>Pays de résidence actuelle : {profile.residenceCountry}</p>
         <p>Ville : {profile.city}</p>
         <p>Pays 3B déverrouillé : {profile.unlockedCountry}</p>
       </InfoCard>
@@ -1086,13 +1086,25 @@ function Passeport({ go, member }) {
         <p>Niveau actuel : {profile.level}</p>
         <p>Carte : {profile.card}</p>
         <p>Progression vers Gardien : {progressPercent}%</p>
+
+        <MenuCard
+          icon="📊"
+          title="Voir mes points et niveaux"
+          onClick={() => go("points-niveaux")}
+        />
       </InfoCard>
 
-      <InfoCard title="Pays verrouillés">
+      <InfoCard title="Pays verrouillé">
         <p>Les 8 pays 3B sont visibles sur la carte.</p>
         <p>Le pays d’origine 3B choisi pendant l’inscription est déverrouillé.</p>
         <p>Les autres pays 3B restent verrouillés.</p>
-        <p>Le reste du monde reste visible en mode digital sans noms.</p>
+        <p>Le reste du monde reste visible en mode numérique sans noms.</p>
+
+        <MenuCard
+          icon="🌍"
+          title="Voir les pays verrouillés"
+          onClick={() => go("pays-verrouilles")}
+        />
       </InfoCard>
 
       <InfoCard title="Avantages débloqués">
@@ -1100,13 +1112,25 @@ function Passeport({ go, member }) {
         <p>Accès aux indices secrets</p>
         <p>Suivi des cartes de fidélité</p>
         <p>Accès futur aux drops privés</p>
+
+        <MenuCard
+          icon="💎"
+          title="Ouvrir mes avantages 3B"
+          onClick={() => go("avantages-passeport")}
+        />
       </InfoCard>
 
       <InfoCard title="Missions 3B">
-        <p>Compléter son profil : +50 points</p>
-        <p>Partager une création 3B : +100 points</p>
-        <p>Inviter un membre : +150 points</p>
-        <p>Participer à un drop : +200 points</p>
+        <p>Continuez à gagner des points et à les accumuler dans votre Passeport 3B.</p>
+        <p>Partager une création 3B : +100 points — bientôt disponible.</p>
+        <p>Inviter un membre avec votre lien : +150 points.</p>
+        <p>Participer à un drop : +200 points — prévu plus tard.</p>
+
+        <MenuCard
+          icon="🤝"
+          title="Inviter un membre"
+          onClick={() => go("invitation")}
+        />
       </InfoCard>
 
       <InfoCard title="QR Code et certificat futur">
@@ -1114,6 +1138,198 @@ function Passeport({ go, member }) {
           Ici viendra le QR Code personnel du membre, relié à son compte, à ses
           produits, à ses achats, à ses cartes et à ses certificats 3B.
         </p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function PointsNiveaux({ go, member }) {
+  const profile = member || {
+    points: 100,
+    level: "Découverte",
+    card: "Carte Découverte 3B",
+  };
+
+  const progressGardien = Math.min(Math.round((profile.points / 300) * 100), 100);
+  const progressLegende = Math.min(Math.round((profile.points / 1000) * 100), 100);
+
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("passeport")} />
+      <LogoHeader small />
+
+      <h1>Points & Niveaux</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Suivez votre progression, vos points accumulés et les niveaux à débloquer
+        dans l’univers 3B International.
+      </p>
+
+      <InfoCard title="Résumé actuel">
+        <p>Points actuels : {profile.points}</p>
+        <p>Niveau actuel : {profile.level}</p>
+        <p>Carte actuelle : {profile.card}</p>
+      </InfoCard>
+
+      <InfoCard title="Progression vers Gardien">
+        <p>{progressGardien}% complété</p>
+        <p>Objectif : 300 points</p>
+        <p>Récompense future : accès renforcé aux missions, indices et cartes.</p>
+      </InfoCard>
+
+      <InfoCard title="Progression vers Légende">
+        <p>{progressLegende}% complété</p>
+        <p>Objectif : 1000 points</p>
+        <p>Récompense future : accès VIP, drops privés, cartes rares et événements 3B.</p>
+      </InfoCard>
+
+      <InfoCard title="Comment gagner des points">
+        <p>Créer son compte : +100 points</p>
+        <p>Choisir son pays d’origine 3B : +50 points</p>
+        <p>Renseigner son pays de résidence : +25 points</p>
+        <p>Renseigner sa ville : +25 points</p>
+        <p>Inviter un membre : +150 points</p>
+        <p>Partager une création 3B : +100 points — bientôt disponible</p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function AvantagesPasseport({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("passeport")} />
+      <LogoHeader small />
+
+      <h1>Avantages 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Vue premium de votre Passeport 3B : avantages, indices supplémentaires
+        et cartes possédées dans l’univers 3B International.
+      </p>
+
+      <InfoCard title="Passeport digital futuriste">
+        <p>Identité membre 3B</p>
+        <p>Points et progression</p>
+        <p>Carte digitale</p>
+        <p>Accès aux pays débloqués</p>
+      </InfoCard>
+
+      <InfoCard title="Indices supplémentaires">
+        <p>Certains indices seront visibles uniquement quand le membre aura le bon niveau.</p>
+        <p>Les indices ne remplacent pas le Coffre secret 3B : ici ce sont des bonus membres.</p>
+        <p>Statut actuel : verrouillé pour le futur.</p>
+      </InfoCard>
+
+      <InfoCard title="Mes cartes possédées">
+        <p>Carte Découverte 3B — active</p>
+        <p>Carte Héritier 3B — verrouillée</p>
+        <p>Carte Gardien 3B — verrouillée</p>
+        <p>Carte Légende 3B — verrouillée</p>
+      </InfoCard>
+
+      <InfoCard title="Cartes physiques futures">
+        <p>
+          Ici seront affichées en miniature les cartes physiques et digitales que le membre possède.
+        </p>
+        <p>
+          Exemple : carte bleue 3B, carte noire 3B, carte or 3B, carte légende 3B.
+        </p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function PaysVerrouilles({ go, member }) {
+  const profile = member || {
+    originCountry: "Non renseigné",
+    unlockedCountry: "Aucun pays 3B officiel",
+  };
+
+  const unlocked = getUnlockedCountry(profile.originCountry);
+
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("passeport")} />
+      <LogoHeader small />
+
+      <h1>Pays verrouillés</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Cette page sert à suivre les pays 3B verrouillés, le pays déjà débloqué
+        et les futures conditions pour ouvrir les autres accès internationaux.
+      </p>
+
+      <WorldMap3B originCountry={profile.originCountry} />
+
+      <InfoCard title="Pays actuellement débloqué">
+        <p>{unlocked ? unlocked.name : "Aucun pays 3B officiel débloqué"}</p>
+      </InfoCard>
+
+      <InfoCard title="Pays encore verrouillés">
+        {official3BCountries.map((country) => {
+          const isUnlocked =
+            unlocked &&
+            normalizeCountry(unlocked.name) === normalizeCountry(country.name);
+
+          return (
+            <p key={country.name}>
+              {isUnlocked ? "Déverrouillé" : "Verrouillé"} : {country.name}
+            </p>
+          );
+        })}
+      </InfoCard>
+
+      <InfoCard title="Idée stratégique">
+        <p>
+          Chaque pays pourra devenir un chapitre 3B : logo, histoire, musique,
+          carte, mission et indice spécial.
+        </p>
+        <p>
+          Plus tard, un membre pourra débloquer d’autres pays avec des points,
+          des missions ou des drops.
+        </p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function Invitation({ go }) {
+  const referralLink = "https://3b-international.vercel.app";
+
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("passeport")} />
+      <LogoHeader small />
+
+      <h1>Inviter un membre</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Partagez le lien 3B International à vos proches ou sur vos réseaux.
+        Quand un membre rejoint l’univers 3B grâce à vous, vous pourrez gagner
+        +150 points.
+      </p>
+
+      <InfoCard title="Lien à partager">
+        <p>{referralLink}</p>
+      </InfoCard>
+
+      <InfoCard title="Réseaux possibles">
+        <p>WhatsApp</p>
+        <p>Instagram</p>
+        <p>TikTok</p>
+        <p>Snapchat</p>
+        <p>Facebook</p>
+        <p>SMS</p>
+      </InfoCard>
+
+      <InfoCard title="Récompense future">
+        <p>Invitation validée : +150 points</p>
+        <p>Statut actuel : maquette, connexion future à Supabase.</p>
       </InfoCard>
     </div>
   );
@@ -1349,6 +1565,14 @@ export default function App() {
       )}
       {page === "passeport-connexion" && <PasseportConnexion go={setPage} />}
       {page === "passeport" && <Passeport go={setPage} member={member} />}
+      {page === "points-niveaux" && (
+        <PointsNiveaux go={setPage} member={member} />
+      )}
+      {page === "avantages-passeport" && <AvantagesPasseport go={setPage} />}
+      {page === "pays-verrouilles" && (
+        <PaysVerrouilles go={setPage} member={member} />
+      )}
+      {page === "invitation" && <Invitation go={setPage} />}
       {page === "plus" && <PlusEncore go={setPage} />}
       {page === "fidelite" && <CartesFidelite go={setPage} />}
       {page === "manga" && <Manga go={setPage} />}
