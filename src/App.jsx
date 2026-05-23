@@ -1,7 +1,18 @@
 import { useMemo, useState } from "react";
 import "./App.css";
 
-const countries = [
+const origin3BCountries = [
+  "France",
+  "Italie",
+  "Estonie",
+  "Turquie",
+  "Algérie",
+  "Tunisie",
+  "Maroc",
+  "Espagne",
+];
+
+const residenceCountries = [
   "France",
   "Maroc",
   "Algérie",
@@ -14,10 +25,98 @@ const countries = [
   "Belgique",
   "Suisse",
   "Allemagne",
+  "Royaume-Uni",
+  "Irlande",
+  "Pays-Bas",
+  "Luxembourg",
+  "Autriche",
+  "Pologne",
+  "République tchèque",
+  "Slovaquie",
+  "Hongrie",
+  "Roumanie",
+  "Bulgarie",
+  "Grèce",
+  "Croatie",
+  "Slovénie",
+  "Serbie",
+  "Bosnie-Herzégovine",
+  "Albanie",
+  "Monténégro",
+  "Macédoine du Nord",
+  "Kosovo",
+  "Danemark",
+  "Suède",
+  "Norvège",
+  "Finlande",
+  "Islande",
+  "Lettonie",
+  "Lituanie",
+  "Ukraine",
+  "Moldavie",
+  "Malte",
+  "Chypre",
+  "États-Unis",
+  "Canada",
+  "Mexique",
+  "Brésil",
+  "Argentine",
+  "Colombie",
+  "Chili",
+  "Pérou",
+  "Uruguay",
+  "Paraguay",
+  "Bolivie",
+  "Équateur",
+  "Venezuela",
   "Sénégal",
   "Mali",
   "Côte d’Ivoire",
   "Comores",
+  "Cameroun",
+  "Gabon",
+  "Congo",
+  "République démocratique du Congo",
+  "Guinée",
+  "Guinée-Bissau",
+  "Burkina Faso",
+  "Niger",
+  "Tchad",
+  "Mauritanie",
+  "Égypte",
+  "Libye",
+  "Soudan",
+  "Éthiopie",
+  "Kenya",
+  "Tanzanie",
+  "Afrique du Sud",
+  "Madagascar",
+  "Maurice",
+  "Arabie saoudite",
+  "Émirats arabes unis",
+  "Qatar",
+  "Koweït",
+  "Bahreïn",
+  "Oman",
+  "Jordanie",
+  "Liban",
+  "Israël",
+  "Palestine",
+  "Irak",
+  "Iran",
+  "Inde",
+  "Pakistan",
+  "Bangladesh",
+  "Chine",
+  "Japon",
+  "Corée du Sud",
+  "Indonésie",
+  "Malaisie",
+  "Thaïlande",
+  "Vietnam",
+  "Philippines",
+  "Australie",
+  "Nouvelle-Zélande",
   "Autre pays",
 ];
 
@@ -185,8 +284,8 @@ function WorldMap3B({ originCountry }) {
     <div className="worldmap-card">
       <h3>Carte du monde 3B</h3>
       <p className="map-intro">
-        Vue monde + zoom sur les 8 pays 3B. Effet digital bleu Matrix.
-        Seuls les 8 pays officiels sont nommés. Votre pays d’origine se déverrouille.
+        Vue monde + zoom sur les 8 pays 3B. Seul le pays d’origine 3B choisi
+        pendant l’inscription se déverrouille.
       </p>
 
       <div className="world-strip">
@@ -251,17 +350,16 @@ function WorldMap3B({ originCountry }) {
               normalizeCountry(unlocked.name) === normalizeCountry(country.name);
 
             return (
-              <g key={country.name}>
-                <circle
-                  cx={country.worldX}
-                  cy={country.worldY}
-                  r={isUnlocked ? 8 : 6}
-                  fill={isUnlocked ? "#73e6ff" : "#163a58"}
-                  stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"}
-                  strokeWidth="2"
-                  filter={isUnlocked ? "url(#worldGlow)" : "none"}
-                />
-              </g>
+              <circle
+                key={country.name}
+                cx={country.worldX}
+                cy={country.worldY}
+                r={isUnlocked ? 8 : 6}
+                fill={isUnlocked ? "#73e6ff" : "#163a58"}
+                stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"}
+                strokeWidth="2"
+                filter={isUnlocked ? "url(#worldGlow)" : "none"}
+              />
             );
           })}
         </svg>
@@ -315,133 +413,62 @@ function WorldMap3B({ originCountry }) {
             ))}
           </g>
 
-          {/* Europe / Méditerranée / Maghreb true-style approximation */}
           <path
-            d="M92 240
-               C135 210, 180 190, 230 188
-               C278 186, 318 166, 355 145
-               C388 126, 418 112, 460 110
-               C507 108, 550 114, 594 132
-               C631 147, 662 162, 700 181
-               C730 198, 740 220, 734 246
-               C726 274, 702 280, 672 278
-               C638 276, 616 268, 592 261
-               C560 251, 528 250, 494 260
-               C461 270, 444 287, 436 312
-               C424 348, 393 366, 344 372
-               C286 379, 234 377, 189 365
-               C155 356, 128 337, 110 310
-               C94 285, 84 261, 92 240 Z"
+            d="M92 240 C135 210, 180 190, 230 188 C278 186, 318 166, 355 145 C388 126, 418 112, 460 110 C507 108, 550 114, 594 132 C631 147, 662 162, 700 181 C730 198, 740 220, 734 246 C726 274, 702 280, 672 278 C638 276, 616 268, 592 261 C560 251, 528 250, 494 260 C461 270, 444 287, 436 312 C424 348, 393 366, 344 372 C286 379, 234 377, 189 365 C155 356, 128 337, 110 310 C94 285, 84 261, 92 240 Z"
             fill="url(#zoomLand)"
             stroke="#2a89ba"
             strokeWidth="2.2"
           />
 
-          {/* Espagne */}
           <path
-            d="M152 223
-               C183 210, 220 206, 255 213
-               C283 219, 302 232, 298 253
-               C293 275, 268 286, 231 286
-               C194 286, 160 274, 145 252
-               C136 239, 138 229, 152 223 Z"
+            d="M152 223 C183 210, 220 206, 255 213 C283 219, 302 232, 298 253 C293 275, 268 286, 231 286 C194 286, 160 274, 145 252 C136 239, 138 229, 152 223 Z"
             fill="#16344b"
             stroke="#58b5ea"
             strokeWidth="2"
           />
-
-          {/* France */}
           <path
-            d="M286 160
-               C314 142, 351 138, 382 147
-               C407 154, 423 169, 421 192
-               C418 220, 393 236, 360 236
-               C330 236, 301 226, 286 205
-               C274 188, 272 172, 286 160 Z"
+            d="M286 160 C314 142, 351 138, 382 147 C407 154, 423 169, 421 192 C418 220, 393 236, 360 236 C330 236, 301 226, 286 205 C274 188, 272 172, 286 160 Z"
             fill="#17384f"
             stroke="#69c9ff"
             strokeWidth="2.2"
           />
-
-          {/* Italie */}
           <path
-            d="M413 199
-               C431 199, 444 205, 451 219
-               C454 229, 449 239, 439 245
-               C450 255, 458 268, 460 282
-               C455 295, 442 300, 430 297
-               C424 283, 420 270, 412 260
-               C402 248, 395 233, 399 220
-               C401 208, 406 200, 413 199 Z"
+            d="M413 199 C431 199, 444 205, 451 219 C454 229, 449 239, 439 245 C450 255, 458 268, 460 282 C455 295, 442 300, 430 297 C424 283, 420 270, 412 260 C402 248, 395 233, 399 220 C401 208, 406 200, 413 199 Z"
             fill="#16344b"
             stroke="#58b5ea"
             strokeWidth="2"
           />
-
-          {/* Estonie / baltique */}
           <path
-            d="M493 88
-               C510 80, 534 80, 551 89
-               C559 96, 557 107, 545 113
-               C528 120, 506 118, 492 108
-               C487 101, 487 93, 493 88 Z"
+            d="M493 88 C510 80, 534 80, 551 89 C559 96, 557 107, 545 113 C528 120, 506 118, 492 108 C487 101, 487 93, 493 88 Z"
             fill="#16344b"
             stroke="#58b5ea"
             strokeWidth="2"
           />
-
-          {/* Turquie */}
           <path
-            d="M581 240
-               C614 225, 652 223, 694 232
-               C719 237, 737 247, 738 261
-               C735 275, 718 285, 691 288
-               C656 292, 620 291, 592 285
-               C568 280, 551 270, 552 258
-               C554 249, 564 244, 581 240 Z"
+            d="M581 240 C614 225, 652 223, 694 232 C719 237, 737 247, 738 261 C735 275, 718 285, 691 288 C656 292, 620 291, 592 285 C568 280, 551 270, 552 258 C554 249, 564 244, 581 240 Z"
             fill="#16344b"
             stroke="#58b5ea"
             strokeWidth="2"
           />
-
-          {/* Maroc */}
           <path
-            d="M152 307
-               C173 297, 196 296, 210 305
-               C219 312, 222 326, 213 338
-               C200 350, 179 353, 161 345
-               C148 337, 143 319, 152 307 Z"
+            d="M152 307 C173 297, 196 296, 210 305 C219 312, 222 326, 213 338 C200 350, 179 353, 161 345 C148 337, 143 319, 152 307 Z"
             fill="#16344b"
             stroke="#58b5ea"
             strokeWidth="2"
           />
-
-          {/* Algérie */}
           <path
-            d="M226 321
-               C267 311, 318 312, 350 324
-               C370 332, 374 346, 365 357
-               C354 370, 327 375, 286 373
-               C250 371, 217 362, 202 347
-               C196 336, 204 327, 226 321 Z"
+            d="M226 321 C267 311, 318 312, 350 324 C370 332, 374 346, 365 357 C354 370, 327 375, 286 373 C250 371, 217 362, 202 347 C196 336, 204 327, 226 321 Z"
             fill="#17384f"
             stroke="#69c9ff"
             strokeWidth="2.2"
           />
-
-          {/* Tunisie */}
           <path
-            d="M363 312
-               C375 308, 387 311, 393 319
-               C396 327, 391 338, 380 343
-               C370 345, 362 339, 360 329
-               C359 321, 360 315, 363 312 Z"
+            d="M363 312 C375 308, 387 311, 393 319 C396 327, 391 338, 380 343 C370 345, 362 339, 360 329 C359 321, 360 315, 363 312 Z"
             fill="#16344b"
             stroke="#58b5ea"
             strokeWidth="2"
           />
 
-          {/* côtes / lignes */}
           <path
             d="M136 215 C248 170, 386 124, 542 133"
             fill="none"
@@ -487,7 +514,11 @@ function WorldMap3B({ originCountry }) {
                   ry="8"
                   width={country.name.length * 9 + 46}
                   height="24"
-                  fill={isUnlocked ? "rgba(8, 48, 70, 0.92)" : "rgba(7, 24, 36, 0.90)"}
+                  fill={
+                    isUnlocked
+                      ? "rgba(8, 48, 70, 0.92)"
+                      : "rgba(7, 24, 36, 0.90)"
+                  }
                   stroke={isUnlocked ? "#8deeff" : "#2e7ba5"}
                   strokeWidth="1.4"
                 />
@@ -515,11 +546,11 @@ function WorldMap3B({ originCountry }) {
 
       <div className="map-summary-grid">
         <div className="map-summary-box">
-          <span>Pays débloqué</span>
+          <span>Pays 3B activé</span>
           <strong>{unlocked ? unlocked.name : "Aucun"}</strong>
         </div>
         <div className="map-summary-box">
-          <span>Pays 3B actifs</span>
+          <span>Pays 3B disponibles</span>
           <strong>8 pays</strong>
         </div>
         <div className="map-summary-box">
@@ -774,19 +805,18 @@ function PasseportAccess({ go }) {
 
       <WorldMap3B originCountry="" />
 
-      <InfoCard title="Ce que contient le Passeport 3B">
-        <p>Identité membre</p>
-        <p>Pays d’origine et pays de résidence</p>
-        <p>Points fidélité 3B</p>
-        <p>Niveau membre : Découverte, Héritier, Gardien, Légende</p>
-        <p>Carte membre digitale</p>
-        <p>Certificats produits et QR Code</p>
-        <p>Position sur la carte 3B World</p>
+      <InfoCard title="Comprendre les deux pays">
+        <p>
+          Le pays d’origine 3B sert à activer un des 8 pays officiels 3B sur la carte.
+        </p>
+        <p>
+          Le pays de résidence sert seulement à indiquer où vous vivez aujourd’hui.
+        </p>
       </InfoCard>
 
       <InfoCard title="Récompense d’entrée">
         <p>Création du compte : +100 points 3B</p>
-        <p>Choix du pays d’origine : +50 points 3B</p>
+        <p>Pays d’origine 3B sélectionné : +50 points 3B</p>
         <p>Pays 3B officiel déverrouillé : +75 points 3B</p>
       </InfoCard>
 
@@ -864,8 +894,9 @@ function PasseportInscription({ go, setMember }) {
       <div className="gold-line">◆</div>
 
       <p className="intro">
-        Créez votre compte pour débloquer votre Passeport 3B, vos points et votre
-        pays d’origine sur la carte 3B World.
+        Créez votre compte pour débloquer votre Passeport 3B. Choisissez d’abord
+        votre pays d’origine 3B parmi les 8 pays officiels, puis indiquez le pays
+        où vous vivez aujourd’hui.
       </p>
 
       <Field icon="👤">
@@ -893,13 +924,24 @@ function PasseportInscription({ go, setMember }) {
         />
       </Field>
 
+      <InfoCard title="1. Pays d’origine 3B à activer">
+        <p>
+          Choisissez le pays que vous voulez représenter dans l’univers 3B.
+          Cette sélection déverrouille un seul pays sur la carte.
+        </p>
+        <p>
+          Disponible uniquement : France, Italie, Estonie, Turquie, Algérie,
+          Tunisie, Maroc, Espagne.
+        </p>
+      </InfoCard>
+
       <Field icon="🌍">
         <select
           value={form.originCountry}
           onChange={(e) => updateField("originCountry", e.target.value)}
         >
-          <option value="">Pays d’origine / provenance</option>
-          {countries.map((country) => (
+          <option value="">Choisir mon pays d’origine 3B</option>
+          {origin3BCountries.map((country) => (
             <option key={country} value={country}>
               {country}
             </option>
@@ -907,13 +949,20 @@ function PasseportInscription({ go, setMember }) {
         </select>
       </Field>
 
+      <InfoCard title="2. Pays de résidence actuel">
+        <p>
+          Indiquez ici le pays où vous vivez actuellement. Cette information ne
+          déverrouille pas la carte 3B, elle sert seulement à compléter votre profil.
+        </p>
+      </InfoCard>
+
       <Field icon="📍">
         <select
           value={form.residenceCountry}
           onChange={(e) => updateField("residenceCountry", e.target.value)}
         >
-          <option value="">Pays de résidence</option>
-          {countries.map((country) => (
+          <option value="">Choisir mon pays de résidence</option>
+          {residenceCountries.map((country) => (
             <option key={country} value={country}>
               {country}
             </option>
@@ -925,7 +974,7 @@ function PasseportInscription({ go, setMember }) {
         <input
           value={form.city}
           onChange={(e) => updateField("city", e.target.value)}
-          placeholder="Ville"
+          placeholder="Ville de résidence"
         />
       </Field>
 
@@ -939,7 +988,7 @@ function PasseportInscription({ go, setMember }) {
 
       <InfoCard title="Points débloqués à l’inscription">
         <p>Compte créé : +100 points</p>
-        <p>Pays d’origine renseigné : +50 points</p>
+        <p>Pays d’origine 3B sélectionné : +50 points</p>
         <p>Pays de résidence renseigné : +25 points</p>
         <p>Ville renseignée : +25 points</p>
         <p>Pays 3B officiel déverrouillé : +75 points</p>
@@ -1025,9 +1074,9 @@ function Passeport({ go, member }) {
         <p>Date de création : {profile.createdAt}</p>
       </InfoCard>
 
-      <InfoCard title="Origine et position 3B World">
-        <p>Pays d’origine : {profile.originCountry}</p>
-        <p>Pays de résidence : {profile.residenceCountry}</p>
+      <InfoCard title="Origine et résidence">
+        <p>Pays d’origine 3B activé : {profile.originCountry}</p>
+        <p>Pays de résidence actuel : {profile.residenceCountry}</p>
         <p>Ville : {profile.city}</p>
         <p>Pays 3B déverrouillé : {profile.unlockedCountry}</p>
       </InfoCard>
@@ -1041,7 +1090,7 @@ function Passeport({ go, member }) {
 
       <InfoCard title="Pays verrouillés">
         <p>Les 8 pays 3B sont visibles sur la carte.</p>
-        <p>Votre pays d’origine est déverrouillé s’il fait partie des 8 pays officiels.</p>
+        <p>Le pays d’origine 3B choisi pendant l’inscription est déverrouillé.</p>
         <p>Les autres pays 3B restent verrouillés.</p>
         <p>Le reste du monde reste visible en mode digital sans noms.</p>
       </InfoCard>
