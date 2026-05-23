@@ -29,6 +29,15 @@ function MenuCard({ icon, title, onClick }) {
   );
 }
 
+function InfoCard({ title, children }) {
+  return (
+    <div className="indice">
+      <h3>{title}</h3>
+      <div>{children}</div>
+    </div>
+  );
+}
+
 function Home({ go }) {
   return (
     <div className="page">
@@ -38,6 +47,7 @@ function Home({ go }) {
         <MenuCard icon="🛍️" title="Boutique" onClick={() => go("boutique")} />
         <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
         <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
+        <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport")} />
         <MenuCard icon="🔒" title="Secret" onClick={() => go("secret")} />
         <MenuCard icon="☆" title="Plus encore" onClick={() => go("plus")} />
       </div>
@@ -258,7 +268,7 @@ function Secret({ go }) {
 function Passeport({ go }) {
   return (
     <div className="page">
-      <BackButton onClick={() => go("plus")} />
+      <BackButton onClick={() => go("home")} />
       <LogoHeader small />
 
       <h1>Passeport 3B</h1>
@@ -269,28 +279,172 @@ function Passeport({ go }) {
         son niveau, ses accès, ses avantages et son parcours dans l’univers 3B International.
       </p>
 
-      <div className="indice">
-        <h3>Identité membre</h3>
+      <InfoCard title="Identité membre">
         <p>Nom : Membre 3B</p>
         <p>Statut : Fondateur / Ambassadeur / Client premium</p>
         <p>Niveau : 3B Élite</p>
-      </div>
+      </InfoCard>
 
-      <div className="indice">
-        <h3>Accès 3B</h3>
+      <InfoCard title="Accès 3B">
         <p>Boutique privée</p>
         <p>Collections limitées</p>
         <p>Événements exclusifs</p>
         <p>Codes secrets et indices</p>
-      </div>
+      </InfoCard>
 
-      <div className="indice">
-        <h3>QR Code futur</h3>
+      <InfoCard title="L’avenir des codes QR">
         <p>
           Ici viendra le futur QR Code personnel du membre, relié au certificat,
           aux achats et aux avantages 3B.
         </p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function CartesFidelite({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+
+      <h1>Cartes de fidélité 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Les cartes de fidélité 3B serviront à récompenser les membres, débloquer
+        des avantages et créer un lien premium avec la communauté.
+      </p>
+
+      <InfoCard title="Carte Découverte">
+        <p>Accès aux premiers avantages 3B.</p>
+        <p>Suivi des achats et premières récompenses.</p>
+      </InfoCard>
+
+      <InfoCard title="Carte Héritier">
+        <p>Accès prioritaire à certaines collections.</p>
+        <p>Récompenses renforcées et codes privés.</p>
+      </InfoCard>
+
+      <InfoCard title="Carte Légende">
+        <p>Accès VIP, drops limités et événements exclusifs.</p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function Manga({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+
+      <h1>Manga 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Le Manga 3B International racontera l’univers, les personnages, les pays,
+        les secrets et la montée de zéro à l’international.
+      </p>
+
+      <InfoCard title="Univers">
+        <p>Une histoire entre identité, héritage, ambition et mystère.</p>
+      </InfoCard>
+
+      <InfoCard title="Personnages">
+        <p>Chaque personnage pourra représenter une force, un pays ou une mission 3B.</p>
+      </InfoCard>
+
+      <InfoCard title="Secret 3B">
+        <p>Le manga pourra aussi cacher des indices reliés à l’application.</p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function LogosInternationaux({ go }) {
+  const logos = ["France", "Italie", "Estonie", "Turquie", "Algérie", "Tunisie", "Maroc", "Espagne"];
+
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+
+      <h1>8 Logos Internationaux</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Espace officiel des 8 logos premium 3B International.
+      </p>
+
+      <div className="shop-grid">
+        {logos.map((logo) => (
+          <button className="product-slot" key={logo}>
+            <div className="plus">◆</div>
+            <p>{logo}</p>
+            <span>3B</span>
+          </button>
+        ))}
       </div>
+    </div>
+  );
+}
+
+function CreateursCommandes({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+
+      <h1>Créateurs</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Ici viendra l’espace pour les créateurs, développeurs, designers et partenaires
+        qui veulent participer à l’écosystème 3B.
+      </p>
+
+      <InfoCard title="Créateurs de contenu">
+        <p>Inscription, missions, vidéos UGC et commissions futures.</p>
+      </InfoCard>
+
+      <InfoCard title="Commandes spéciales">
+        <p>Demandes de visuels, maillots, concepts, logos et créations premium.</p>
+      </InfoCard>
+
+      <InfoCard title="Programme ambassadeur">
+        <p>Classement, récompenses et sélection des meilleurs contenus.</p>
+      </InfoCard>
+    </div>
+  );
+}
+
+function CertificatProduit({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+
+      <h1>Certificat Produit</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Chaque produit 3B pourra avoir un certificat digital avec numéro de série,
+        QR Code, preuve d’authenticité et rareté.
+      </p>
+
+      <InfoCard title="Authenticité">
+        <p>Produit officiel 3B International.</p>
+        <p>Numéro de série unique.</p>
+      </InfoCard>
+
+      <InfoCard title="QR Code">
+        <p>Scan du produit pour afficher son certificat digital.</p>
+      </InfoCard>
+
+      <InfoCard title="Édition limitée">
+        <p>Preuve de rareté, collection et historique du produit.</p>
+      </InfoCard>
     </div>
   );
 }
@@ -307,7 +461,7 @@ function PlusEncore({ go }) {
         <MenuCard
           icon="💳"
           title="Cartes de fidélité 3B"
-          onClick={() => alert("Bientôt disponible")}
+          onClick={() => go("fidelite")}
         />
 
         <MenuCard
@@ -319,13 +473,13 @@ function PlusEncore({ go }) {
         <MenuCard
           icon="📖"
           title="Manga 3B International"
-          onClick={() => alert("Bientôt disponible")}
+          onClick={() => go("manga")}
         />
 
         <MenuCard
           icon="🌍"
           title="8 logos internationaux"
-          onClick={() => alert("Bientôt disponible")}
+          onClick={() => go("logos")}
         />
 
         <MenuCard
@@ -337,13 +491,13 @@ function PlusEncore({ go }) {
         <MenuCard
           icon="💻"
           title="Créateurs de programmes / commandes"
-          onClick={() => alert("Bientôt disponible")}
+          onClick={() => go("createurs")}
         />
 
         <MenuCard
           icon="▣"
           title="Certificat de produit avec code QR"
-          onClick={() => alert("Bientôt disponible")}
+          onClick={() => go("certificat")}
         />
       </div>
 
@@ -361,9 +515,14 @@ export default function App() {
       {page === "boutique" && <Boutique go={setPage} />}
       {page === "musique" && <Musique go={setPage} />}
       {page === "communaute" && <Communaute go={setPage} />}
+      {page === "passeport" && <Passeport go={setPage} />}
       {page === "secret" && <Secret go={setPage} />}
       {page === "plus" && <PlusEncore go={setPage} />}
-      {page === "passeport" && <Passeport go={setPage} />}
+      {page === "fidelite" && <CartesFidelite go={setPage} />}
+      {page === "manga" && <Manga go={setPage} />}
+      {page === "logos" && <LogosInternationaux go={setPage} />}
+      {page === "createurs" && <CreateursCommandes go={setPage} />}
+      {page === "certificat" && <CertificatProduit go={setPage} />}
     </main>
   );
 }
