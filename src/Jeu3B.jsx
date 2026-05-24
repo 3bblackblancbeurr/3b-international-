@@ -12,6 +12,17 @@ const COUNTRIES = [
   { name: "Espagne", code: "ES", flag: "🇪🇸", capital: "Madrid" },
 ];
 
+const COUNTRY_XP_BONUS = {
+  France: { xp: 2, label: "Héritage France 3B" },
+  Italie: { xp: 2, label: "Salon Invité Italie" },
+  Estonie: { xp: 2, label: "Digital Tech 3B" },
+  Turquie: { xp: 2, label: "Force & Détermination" },
+  Algérie: { xp: 2, label: "Fennec Focus" },
+  Tunisie: { xp: 2, label: "Précision Carthage" },
+  Maroc: { xp: 2, label: "Lion Atlas 3B" },
+  Espagne: { xp: 2, label: "Arène Créative" },
+};
+
 const BRAND_WORDS = [
   "black",
   "blanc",
@@ -96,7 +107,6 @@ function scramble(word, seed) {
   const letters = Array.from(cleanWord.toUpperCase());
   const mixedLetters = shuffle(letters, seed);
   const mixed = mixedLetters.join("");
-
   return normalize(mixed) === cleanWord ? letters.reverse().join("") : mixed;
 }
 
@@ -121,7 +131,6 @@ function formatTime(seconds = 0) {
   const h = String(Math.floor(total / 3600)).padStart(2, "0");
   const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
   const s = String(total % 60).padStart(2, "0");
-
   return `${h}:${m}:${s}`;
 }
 
@@ -166,7 +175,6 @@ function countryHint(country) {
 
 function buildCrosswordLetters(answer) {
   const word = normalize(answer).toUpperCase();
-
   return Array.from(word).map((letter, index) => ({
     id: `${letter}-${index}`,
     letter,
@@ -282,7 +290,6 @@ function buildConnectPairs(step) {
 function buildRound(game) {
   const step = game.correctAnswers + 1;
   const mode = MODE_ORDER[(step - 1) % MODE_ORDER.length];
-
   const country = COUNTRIES[seededIndex(step + game.level + game.door, COUNTRIES.length)];
   const country2 = COUNTRIES[seededIndex(step + 17, COUNTRIES.length)];
   const word = BRAND_WORDS[seededIndex(step + 23, BRAND_WORDS.length)];
@@ -304,7 +311,6 @@ function buildRound(game) {
   if (mode === "Compléter") {
     const answer = country.name;
     const prefix = answer.slice(0, Math.min(3, answer.length - 1));
-
     return {
       mode,
       visual: "complete",
@@ -319,7 +325,6 @@ function buildRound(game) {
   if (mode === "Mot mélangé") {
     const mixedWord = scramble(word, step + 22);
     const letters = Array.from(mixedWord);
-
     return {
       mode,
       visual: "scramble",
@@ -347,19 +352,17 @@ function buildRound(game) {
 
   if (mode === "Relier gauche droite") {
     const connectData = buildConnectPairs(step);
-
     return {
       mode,
       visual: "connect",
       title: "Relier gauche / droite",
-      instruction:
-        "Relie les 2 pays aux 2 bonnes capitales. La validation se fait seulement quand les 2 liens sont faits.",
+      instruction: "Relie les 2 pays aux 2 bonnes capitales. La validation se fait seulement quand les 2 liens sont faits.",
       question: "Relie chaque pays à sa capitale.",
       answer: connectData.answer,
       pairs: connectData.pairs,
       leftItems: connectData.leftItems,
       rightItems: connectData.rightItems,
-      hint: `Indice utile : fais exactement ${connectData.pairs.length} liens. Exemple de logique : pays à gauche, capitale à droite.`,
+      hint: `Indice utile : fais exactement ${connectData.pairs.length} liens. Pays à gauche, capitale à droite.`,
     };
   }
 
@@ -417,13 +420,11 @@ function buildRound(game) {
 
   if (mode === "Mot fléché") {
     const answer = word;
-
     return {
       mode,
       visual: "arrow",
       title: "Mot fléché",
-      instruction:
-        "Observe la vraie grille : plusieurs mots se croisent. Trouve le mot principal horizontal.",
+      instruction: "Observe la vraie grille : plusieurs mots se croisent. Trouve le mot principal horizontal.",
       question: "Mot principal horizontal",
       answer,
       arrowGrid: buildArrowGrid(answer, step + 90),
@@ -434,7 +435,6 @@ function buildRound(game) {
   if (mode === "Intrus") {
     const intruders = ["Portugal", "Japon", "Brésil", "Canada", "Suisse", "Belgique"];
     const intruder = intruders[seededIndex(step + 50, intruders.length)];
-
     return {
       mode,
       visual: "intruder",
@@ -443,8 +443,7 @@ function buildRound(game) {
       question: "Clique sur l’intrus.",
       answer: intruder,
       options: shuffle([country.name, country2.name, "France", intruder], step + 51),
-      hint:
-        "Indice utile : les 8 pays officiels sont France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne. L’intrus n’est pas dans cette liste.",
+      hint: "Indice utile : les 8 pays officiels sont France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne.",
     };
   }
 
@@ -467,9 +466,7 @@ function buildRound(game) {
       { q: "Passeport → Membre → XP → ?", a: "Classement" },
       { q: "Logo → Maillot → Drop → ?", a: "Héritage" },
     ];
-
     const item = sequences[seededIndex(step + 80, sequences.length)];
-
     return {
       mode,
       visual: "sequence",
@@ -489,7 +486,7 @@ function buildRound(game) {
       instruction: "Trouve le mot secret de l’univers 3B.",
       question: "Ce n’est pas une marque, c’est un...",
       answer: "heritage",
-      hint: "Indice utile : c’est le dernier mot du slogan “ce n’est pas une marque, c’est un ...”.",
+      hint: "Indice utile : c’est le dernier mot du slogan.",
     };
   }
 
@@ -509,13 +506,11 @@ function ConnectGame({ round, validate }) {
   const [links, setLinks] = useState([]);
 
   const cleanLeftName = (item) => item.replace(/^[^\wÀ-ÿ]+/u, "").trim();
-
   const isLeftUsed = (left) => links.some((link) => link.left === left);
   const isRightUsed = (right) => links.some((link) => link.right === right);
 
   const handleLeft = (left) => {
-    if (isLeftUsed(left)) return;
-    setSelectedLeft(left);
+    if (!isLeftUsed(left)) setSelectedLeft(left);
   };
 
   const handleRight = (right) => {
@@ -531,17 +526,10 @@ function ConnectGame({ round, validate }) {
         .sort()
         .join("|");
 
-      if (builtAnswer === round.answer) {
-        setTimeout(() => validate(round.answer), 300);
-      } else {
-        setTimeout(() => validate("__mauvais_lien__"), 300);
-      }
+      setTimeout(() => {
+        validate(builtAnswer === round.answer ? round.answer : "__mauvais_lien__");
+      }, 300);
     }
-  };
-
-  const resetLinks = () => {
-    setSelectedLeft(null);
-    setLinks([]);
   };
 
   return (
@@ -549,17 +537,10 @@ function ConnectGame({ round, validate }) {
       <div className="connect-columns">
         <div className="connect-column">
           <div className="connect-title-mini">Pays</div>
-
           {round.leftItems.map((item) => (
             <button
               key={item}
-              className={[
-                "connect-node",
-                selectedLeft === item ? "selected" : "",
-                isLeftUsed(item) ? "used" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              className={["connect-node", selectedLeft === item ? "selected" : "", isLeftUsed(item) ? "used" : ""].filter(Boolean).join(" ")}
               onClick={() => handleLeft(item)}
             >
               {item}
@@ -584,26 +565,16 @@ function ConnectGame({ round, validate }) {
 
         <div className="connect-column">
           <div className="connect-title-mini">Capitales</div>
-
           {round.rightItems.map((item) => (
-            <button
-              key={item}
-              className={["connect-node", isRightUsed(item) ? "used" : ""]
-                .filter(Boolean)
-                .join(" ")}
-              onClick={() => handleRight(item)}
-            >
+            <button key={item} className={["connect-node", isRightUsed(item) ? "used" : ""].filter(Boolean).join(" ")} onClick={() => handleRight(item)}>
               {item}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="connect-progress">
-        Liens faits : {links.length} / {round.pairs.length}
-      </div>
-
-      <button className="small-outline-btn" onClick={resetLinks}>
+      <div className="connect-progress">Liens faits : {links.length} / {round.pairs.length}</div>
+      <button className="small-outline-btn" onClick={() => { setSelectedLeft(null); setLinks([]); }}>
         Recommencer les liens
       </button>
     </div>
@@ -614,36 +585,17 @@ function ArrowGridGame({ round }) {
   return (
     <div className="arrow-grid-game">
       <div className="arrow-grid-title">Grille mots fléchés 3B</div>
-
       <div className="arrow-grid">
         {round.arrowGrid.flatMap((row, rowIndex) =>
           row.map((cell, colIndex) => {
             const key = `${rowIndex}-${colIndex}`;
-
-            if (cell.type === "empty") {
-              return <div className="arrow-cell empty" key={key} />;
-            }
-
-            if (cell.type === "clue") {
-              return (
-                <div className="arrow-cell clue" key={key}>
-                  {cell.clue}
-                </div>
-              );
-            }
-
-            return (
-              <div className="arrow-cell letter" key={key}>
-                {cell.hidden ? "" : cell.letter}
-              </div>
-            );
+            if (cell.type === "empty") return <div className="arrow-cell empty" key={key} />;
+            if (cell.type === "clue") return <div className="arrow-cell clue" key={key}>{cell.clue}</div>;
+            return <div className="arrow-cell letter" key={key}>{cell.hidden ? "" : cell.letter}</div>;
           })
         )}
       </div>
-
-      <div className="arrow-grid-note">
-        Le mot principal est horizontal. Les mots verticaux le croisent.
-      </div>
+      <div className="arrow-grid-note">Le mot principal est horizontal. Les mots verticaux le croisent.</div>
     </div>
   );
 }
@@ -652,11 +604,7 @@ function GameVisual({ round, validate }) {
   if (round.visual === "qcm" || round.visual === "flag" || round.visual === "intruder") {
     return (
       <div className="choice-grid">
-        {round.options.map((option) => (
-          <button key={option} className="choice-button" onClick={() => validate(option)}>
-            {option}
-          </button>
-        ))}
+        {round.options.map((option) => <button key={option} className="choice-button" onClick={() => validate(option)}>{option}</button>)}
       </div>
     );
   }
@@ -664,12 +612,7 @@ function GameVisual({ round, validate }) {
   if (round.visual === "memory") {
     return (
       <div className="memory-card-grid">
-        {round.options.map((option) => (
-          <button key={option} className="memory-card" onClick={() => validate(option)}>
-            <span>3B</span>
-            <strong>{option}</strong>
-          </button>
-        ))}
+        {round.options.map((option) => <button key={option} className="memory-card" onClick={() => validate(option)}><span>3B</span><strong>{option}</strong></button>)}
       </div>
     );
   }
@@ -677,44 +620,27 @@ function GameVisual({ round, validate }) {
   if (round.visual === "association") {
     return (
       <div className="association-card-grid">
-        {round.options.map((option) => (
-          <button key={option} className="association-card" onClick={() => validate(option)}>
-            <span>Carte</span>
-            <strong>{option}</strong>
-          </button>
-        ))}
+        {round.options.map((option) => <button key={option} className="association-card" onClick={() => validate(option)}><span>Carte</span><strong>{option}</strong></button>)}
       </div>
     );
   }
 
-  if (round.visual === "connect") {
-    return <ConnectGame round={round} validate={validate} />;
-  }
+  if (round.visual === "connect") return <ConnectGame round={round} validate={validate} />;
 
   if (round.visual === "crossword") {
     return (
       <div className="crossword-board">
-        {round.crossword.map((cell) => (
-          <div className="crossword-cell" key={cell.id}>
-            {cell.visible ? cell.letter : ""}
-          </div>
-        ))}
+        {round.crossword.map((cell) => <div className="crossword-cell" key={cell.id}>{cell.visible ? cell.letter : ""}</div>)}
       </div>
     );
   }
 
-  if (round.visual === "arrow") {
-    return <ArrowGridGame round={round} />;
-  }
+  if (round.visual === "arrow") return <ArrowGridGame round={round} />;
 
   if (round.visual === "code" || round.visual === "secret-code") {
     return (
       <div className="code-box-board">
-        {Array.from(normalize(round.answer).toUpperCase()).map((_, index) => (
-          <div className="code-mini-box" key={index}>
-            ?
-          </div>
-        ))}
+        {Array.from(normalize(round.answer).toUpperCase()).map((_, index) => <div className="code-mini-box" key={index}>?</div>)}
       </div>
     );
   }
@@ -722,33 +648,20 @@ function GameVisual({ round, validate }) {
   if (round.visual === "scramble") {
     return (
       <div className="scramble-letters">
-        {round.letters.map((letter, index) => (
-          <span className="scramble-letter" key={`${letter}-${index}`}>
-            {letter}
-          </span>
-        ))}
+        {round.letters.map((letter, index) => <span className="scramble-letter" key={`${letter}-${index}`}>{letter}</span>)}
       </div>
     );
   }
 
-  if (round.visual === "sequence") {
-    return <div className="sequence-board">{round.question}</div>;
-  }
-
-  if (round.visual === "complete") {
-    return <div className="complete-board">{round.question}</div>;
-  }
+  if (round.visual === "sequence") return <div className="sequence-board">{round.question}</div>;
+  if (round.visual === "complete") return <div className="complete-board">{round.question}</div>;
 
   return null;
 }
 
 export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
   const game = safeGame(gameProfile);
-
-  const round = useMemo(
-    () => buildRound(game),
-    [game.level, game.door, game.correctAnswers]
-  );
+  const round = useMemo(() => buildRound(game), [game.level, game.door, game.correctAnswers]);
 
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -766,11 +679,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     const timer = setInterval(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
-
-        return {
-          ...current,
-          elapsedSeconds: current.elapsedSeconds + 1,
-        };
+        return { ...current, elapsedSeconds: current.elapsedSeconds + 1 };
       });
     }, 1000);
 
@@ -782,14 +691,9 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
     if (!hintUsedThisRound) {
       setHintUsedThisRound(true);
-
       setGameProfile((prev) => {
         const current = safeGame(prev);
-
-        return {
-          ...current,
-          hintsUsed: current.hintsUsed + 1,
-        };
+        return { ...current, hintsUsed: current.hintsUsed + 1 };
       });
     }
   }
@@ -803,44 +707,38 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     if (round.visual === "connect") {
       if (value !== round.answer) {
         setFeedback("Mauvais liens. Réessaie, la porte ne change pas.");
-
         setGameProfile((prev) => {
           const current = safeGame(prev);
-
-          return {
-            ...current,
-            wrongAnswers: current.wrongAnswers + 1,
-            streak: 0,
-          };
+          return { ...current, wrongAnswers: current.wrongAnswers + 1, streak: 0 };
         });
-
         return;
       }
     } else if (userValue !== correctValue) {
       setFeedback("Mauvaise réponse. Réessaie, la porte ne change pas.");
-
       setGameProfile((prev) => {
         const current = safeGame(prev);
-
-        return {
-          ...current,
-          wrongAnswers: current.wrongAnswers + 1,
-          streak: 0,
-        };
+        return { ...current, wrongAnswers: current.wrongAnswers + 1, streak: 0 };
       });
-
       return;
     }
 
     const baseXp = 10 + Math.floor(game.level / 10);
-    const gain = hintUsedThisRound ? Math.max(4, baseXp - 4) : baseXp;
+    const countryBonus = member?.originCountry ? COUNTRY_XP_BONUS[member.originCountry] : null;
+    const countryXp = countryBonus?.xp || 0;
+    const gainBeforeHint = baseXp + countryXp;
+    const gain = hintUsedThisRound ? Math.max(4, gainBeforeHint - 4) : gainBeforeHint;
 
-    setFeedback(`Bonne réponse. +${gain} XP. Porte suivante.`);
+    setFeedback(
+      countryBonus
+        ? `Bonne réponse. +${gain} XP avec bonus ${countryBonus.label}. Porte suivante.`
+        : `Bonne réponse. +${gain} XP. Porte suivante.`
+    );
 
     setTimeout(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
         const newCorrectAnswers = current.correctAnswers + 1;
+
         const nextLevel = Math.min(1000, Math.floor(newCorrectAnswers / 10) + 1);
         const nextDoor = newCorrectAnswers % 10 === 0 ? 1 : (newCorrectAnswers % 10) + 1;
         const totalPercent = Number(((newCorrectAnswers / 10000) * 100).toFixed(2));
@@ -877,48 +775,31 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     });
   }
 
-  const doorPercent = Math.round(((game.door - 1) / 10) * 100);
+  const completedDoorsThisLevel = game.correctAnswers % 10;
+  const doorPercent = completedDoorsThisLevel * 10;
+  const countryBonus = member?.originCountry ? COUNTRY_XP_BONUS[member.originCountry] : null;
 
-  const needsTextInput = ![
-    "qcm",
-    "flag",
-    "intruder",
-    "memory",
-    "association",
-    "connect",
-  ].includes(round.visual);
+  const needsTextInput = !["qcm", "flag", "intruder", "memory", "association", "connect"].includes(round.visual);
 
   return (
     <div className="page">
-      <button className="back-button" onClick={onBack}>
-        ← Retour
-      </button>
+      <button className="back-button" onClick={onBack}>← Retour</button>
 
       <div className="play-header-row">
         <div>
           <div className="page-eyebrow">3B INTERNATIONAL</div>
-
-          <h1 className="page-title">
-            Porte {game.door} — {round.mode}
-          </h1>
-
-          <p className="page-subtitle">
-            Chaque bonne réponse ouvre la porte suivante. À 10 portes, tu passes
-            au niveau suivant.
-          </p>
+          <h1 className="page-title">Porte {game.door} — {round.mode}</h1>
+          <p className="page-subtitle">1 bonne réponse = 1 porte ouverte. 10 portes ouvertes = niveau suivant.</p>
         </div>
 
         <div className="play-header-actions">
-          <button className="blue-button" onClick={resetGame}>
-            Réinitialiser le jeu
-          </button>
+          <button className="blue-button" onClick={resetGame}>Réinitialiser le jeu</button>
         </div>
       </div>
 
       <div className="game-top-grid">
         <section className="section-card">
           <h2 className="section-title">Progression porte</h2>
-
           <div className="progress-ring-shell">
             <div className="progress-ring" style={{ "--progress": `${doorPercent}%` }}>
               <div className="progress-ring-inner">{doorPercent}%</div>
@@ -928,7 +809,6 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
         <section className="section-card">
           <h2 className="section-title">Niveau / porte</h2>
-
           <div className="stats-compact">
             <div>Niveau {game.level} / 1000</div>
             <div>Porte {game.door} / 10</div>
@@ -938,11 +818,11 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
         <section className="section-card">
           <h2 className="section-title">XP et temps</h2>
-
           <div className="stats-compact">
             <div>XP jeu : {game.xp}</div>
             <div>Série : {game.streak}</div>
             <div>Temps : {formatTime(game.elapsedSeconds)}</div>
+            {countryBonus ? <div>Bonus : {countryBonus.label} (+{countryBonus.xp} XP)</div> : null}
           </div>
         </section>
       </div>
@@ -950,18 +830,12 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
       <div className="game-main-grid">
         <section className="section-card mission-card">
           <div className="game-mode-pill">{round.mode}</div>
-
           <h2 className="section-title">Mission de la porte</h2>
-
           <div className="mission-main-text">{round.title}</div>
           <div className="mission-sub-text">{round.instruction}</div>
-
           <div className="mission-emphasis">
-            {["qcm", "flag", "intruder", "memory", "association", "connect"].includes(round.visual)
-              ? round.question
-              : null}
+            {["qcm", "flag", "intruder", "memory", "association", "connect"].includes(round.visual) ? round.question : null}
           </div>
-
           <GameVisual round={round} validate={validate} />
         </section>
 
@@ -975,79 +849,48 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
                 value={answer}
                 onChange={(e) => setAnswer(e.target.value)}
                 placeholder="Écris ta réponse"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") validate(answer);
-                }}
+                onKeyDown={(e) => e.key === "Enter" && validate(answer)}
               />
 
               <div className="button-row">
-                <button className="gold-button" onClick={() => validate(answer)}>
-                  Valider
-                </button>
-
-                <button className="blue-button" onClick={useHint}>
-                  Indice
-                </button>
+                <button className="gold-button" onClick={() => validate(answer)}>Valider</button>
+                <button className="blue-button" onClick={useHint}>Indice</button>
               </div>
             </>
           ) : (
             <>
               <p className="soft-text">Clique directement dans la mission pour jouer.</p>
-
               <div className="button-row">
-                <button className="blue-button" onClick={useHint}>
-                  Indice
-                </button>
+                <button className="blue-button" onClick={useHint}>Indice</button>
               </div>
             </>
           )}
 
           {hintOpen ? <div className="hint-box">{round.hint}</div> : null}
-
-          {feedback ? (
-            <div className={`feedback-box ${feedback.startsWith("Bonne") ? "success" : "error"}`}>
-              {feedback}
-            </div>
-          ) : null}
+          {feedback ? <div className={`feedback-box ${feedback.startsWith("Bonne") ? "success" : "error"}`}>{feedback}</div> : null}
         </section>
       </div>
 
       <div className="game-bottom-grid">
         <section className="section-card">
           <h2 className="section-title">Règle XP</h2>
-
           <ul className="bullet-list">
             <li>1 bonne réponse = 1 porte ouverte.</li>
             <li>10 portes ouvertes = niveau suivant.</li>
             <li>Indice utilisé : XP réduit pour cette porte.</li>
             <li>Erreur : la porte ne change pas.</li>
+            <li>Bonus pays d’origine : +2 XP si ton passeport est actif.</li>
             <li>Les jeux changent à chaque porte pour éviter la répétition.</li>
           </ul>
         </section>
 
         <section className="section-card">
           <h2 className="section-title">Statut joueur</h2>
-
           <div className="info-list">
-            <div>
-              <span>Mode</span>
-              <strong>{member ? "Membre 3B" : "Invité"}</strong>
-            </div>
-
-            <div>
-              <span>Nom</span>
-              <strong>{member?.name || "Invité"}</strong>
-            </div>
-
-            <div>
-              <span>Meilleure série</span>
-              <strong>{game.bestStreak}</strong>
-            </div>
-
-            <div>
-              <span>Réponses validées</span>
-              <strong>{game.correctAnswers}</strong>
-            </div>
+            <div><span>Mode</span><strong>{member ? "Membre 3B" : "Invité"}</strong></div>
+            <div><span>Nom</span><strong>{member?.name || "Invité"}</strong></div>
+            <div><span>Meilleure série</span><strong>{game.bestStreak}</strong></div>
+            <div><span>Réponses validées</span><strong>{game.correctAnswers}</strong></div>
           </div>
         </section>
       </div>
