@@ -201,7 +201,9 @@ function PageHeader({ eyebrow = "3B INTERNATIONAL", title, subtitle, badge }) {
         <div className="page-eyebrow">{eyebrow}</div>
         {badge ? <div className="mini-badge">{badge}</div> : null}
       </div>
+
       <h1 className="page-title">{title}</h1>
+
       {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
     </div>
   );
@@ -224,9 +226,11 @@ function SectionCard({
             {title ? <h2 className="section-title">{title}</h2> : null}
             {subtitle ? <p className="section-subtitle">{subtitle}</p> : null}
           </div>
+
           {actions ? <div className="section-actions">{actions}</div> : null}
         </div>
       )}
+
       <div className="section-body">{children}</div>
     </section>
   );
@@ -236,10 +240,12 @@ function MenuCard({ icon, title, subtitle, onClick, accent = "" }) {
   return (
     <button className={`menu-card ${accent}`.trim()} onClick={onClick}>
       <div className="menu-card-icon">{icon}</div>
+
       <div className="menu-card-text">
         <div className="menu-card-title">{title}</div>
         <div className="menu-card-subtitle">{subtitle}</div>
       </div>
+
       <div className="menu-card-arrow">›</div>
     </button>
   );
@@ -247,6 +253,7 @@ function MenuCard({ icon, title, subtitle, onClick, accent = "" }) {
 
 function WorldMapVisual({ selectedCountry }) {
   const selected = findCountry(selectedCountry);
+
   const points = {
     France: { x: 375, y: 180 },
     Italie: { x: 415, y: 205 },
@@ -273,10 +280,12 @@ function WorldMapVisual({ selectedCountry }) {
             <stop offset="0%" stopColor="#051322" />
             <stop offset="100%" stopColor="#0a2842" />
           </linearGradient>
+
           <linearGradient id="landGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#144f8d" />
             <stop offset="100%" stopColor="#0b3d6f" />
           </linearGradient>
+
           <filter id="glowBlue">
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
@@ -299,6 +308,7 @@ function WorldMapVisual({ selectedCountry }) {
             strokeWidth="1"
           />
         ))}
+
         {Array.from({ length: 7 }).map((_, i) => (
           <line
             key={`h-${i}`}
@@ -339,6 +349,7 @@ function WorldMapVisual({ selectedCountry }) {
 
         {Object.entries(points).map(([country, point]) => {
           const activeDot = country === selected.name;
+
           return (
             <g key={country}>
               <circle
@@ -348,6 +359,7 @@ function WorldMapVisual({ selectedCountry }) {
                 fill={activeDot ? selected.color : "#dff7ff"}
                 filter={activeDot ? "url(#glowBlue)" : undefined}
               />
+
               <text
                 x={point.x + 12}
                 y={point.y - 10}
@@ -391,6 +403,7 @@ function ZoomEightCountries({ selectedCountry }) {
         </defs>
 
         <rect width="640" height="330" rx="24" fill="url(#zoomBg)" />
+
         <rect
           x="28"
           y="28"
@@ -411,6 +424,7 @@ function ZoomEightCountries({ selectedCountry }) {
             stroke="rgba(76,190,255,0.09)"
           />
         ))}
+
         {Array.from({ length: 5 }).map((_, i) => (
           <line
             key={`zy-${i}`}
@@ -435,6 +449,7 @@ function ZoomEightCountries({ selectedCountry }) {
             ? "rgba(31,184,255,0.28)"
             : "rgba(13,57,101,0.25)";
           const stroke = active ? "#7ff0ff" : "rgba(113,214,255,0.4)";
+
           return (
             <g key={country.name}>
               <rect
@@ -447,6 +462,7 @@ function ZoomEightCountries({ selectedCountry }) {
                 stroke={stroke}
                 strokeWidth={active ? 3 : 2}
               />
+
               <text
                 x={country.x + country.w / 2}
                 y={country.y + country.h / 2 + 5}
@@ -468,6 +484,7 @@ function DigitalPassportCard({ member }) {
     <div className="digital-passport-card">
       <div className="digital-passport-noise" />
       <div className="passport-chip" />
+
       <div className="passport-topline">
         <span>3B ACCÈS NUMÉRIQUE</span>
         <span>{member.originCountry}</span>
@@ -485,14 +502,17 @@ function DigitalPassportCard({ member }) {
               <span>N°</span>
               <strong>{member.number}</strong>
             </div>
+
             <div>
               <span>Statut</span>
               <strong>{member.status}</strong>
             </div>
+
             <div>
               <span>Pays 3B</span>
               <strong>{member.originCountry}</strong>
             </div>
+
             <div>
               <span>Résidence</span>
               <strong>{member.residenceCountry}</strong>
@@ -581,7 +601,9 @@ function HomePage({ go, member }) {
       <div className="home-hero-grid">
         <div className="home-hero-copy">
           <div className="home-main-brand">3B INTERNATIONAL</div>
+
           <h1 className="home-main-title">VÊTEMENTS HAUT DE GAMME</h1>
+
           <div className="home-main-tagline">
             BLACK • BLANC • BEUR — ce n’est pas une marque, c’est un héritage.
           </div>
@@ -621,6 +643,7 @@ function BoutiquePage({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <PageHeader
         title="Boutique 3B"
         subtitle="Produits premium, prototypes, drops et collections à venir."
@@ -650,6 +673,7 @@ function MusicPage({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <PageHeader
         title="Musique 3B"
         subtitle="20 cases prêtes pour tes musiques, liens et téléchargements."
@@ -666,6 +690,7 @@ function MusicPage({ go }) {
           >
             <div className="music-slot-content">
               <div className="music-slot-title">{slot.title}</div>
+
               <div className="music-slot-actions">
                 <button className="small-gold-btn">Téléverser</button>
                 <button className="small-outline-btn">Télécharger</button>
@@ -682,6 +707,7 @@ function CommunityPage({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <PageHeader
         title="Communauté 3B"
         subtitle="Échange, réseau, entraide et futur chat temps réel."
@@ -775,6 +801,7 @@ function SecretPage({ go }) {
             <div className="secret-invite-panel">
               <div className="salon-invite-badge">
                 <div className="salon-italy-mark">IT</div>
+
                 <div>
                   <strong>SALON INVITÉ</strong>
                   <span>Invitation italienne 3B</span>
@@ -785,11 +812,13 @@ function SecretPage({ go }) {
                 <div className="salon-arch">
                   <span>3B</span>
                 </div>
+
                 <div className="salon-floor-line" />
               </div>
 
               <div className="secret-result">
                 <strong>Indice débloqué :</strong>
+
                 <p>
                   Italie, s’y comprennent, 8 logos, 20h, tout va commencer,
                   un live, quand je vais arriver dans votre monde.
@@ -807,51 +836,6 @@ function SecretPage({ go }) {
     </div>
   );
 }
-
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("home")} />
-      <PageHeader
-        title="Coffre secret 3B"
-        subtitle="Entre le code secret pour débloquer l’indice."
-      />
-
-      <div className="content-grid">
-        <SectionCard title="Zone secrète" subtitle="Le code n’est jamais affiché à l’écran.">
-          <div className="secret-entry-row">
-            <input
-              className="text-input"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="Code secret"
-            />
-            <button className="gold-button" onClick={handleUnlock}>
-              Débloquer
-            </button>
-          </div>
-
-          {message ? (
-            <div className={`feedback-box ${unlocked ? "success" : "error"}`}>
-              {message}
-            </div>
-          ) : null}
-        </SectionCard>
-
-        <SectionCard title="Verrouillage d’accès" subtitle="Le contenu reste masqué tant que le bon code n’est pas validé.">
-          {unlocked ? (
-            <div className="secret-result">
-              <strong>Indice :</strong>
-              <p>Italie s’y comprennent — 8 logos — 20h — tout va commencer.</p>
-            </div>
-          ) : (
-            <p className="soft-text">
-              Le contenu secret apparaîtra ici après validation du bon code.
-            </p>
-          )}
-        </SectionCard>
-      </div>
-    </div>
-  );
 
 function PassportPage({ go, member, setMember }) {
   const [form, setForm] = useState(() => ({
@@ -886,6 +870,7 @@ function PassportPage({ go, member, setMember }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <PageHeader
         title="Passeport 3B"
         subtitle="Accès membre et identité numérique 3B."
@@ -901,12 +886,14 @@ function PassportPage({ go, member, setMember }) {
                 onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Nom ou pseudo"
               />
+
               <input
                 className="text-input"
                 value={form.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 placeholder="Adresse e-mail"
               />
+
               <select
                 className="text-input"
                 value={form.originCountry}
@@ -918,6 +905,7 @@ function PassportPage({ go, member, setMember }) {
                   </option>
                 ))}
               </select>
+
               <select
                 className="text-input"
                 value={form.residenceCountry}
@@ -929,6 +917,7 @@ function PassportPage({ go, member, setMember }) {
                   </option>
                 ))}
               </select>
+
               <input
                 className="text-input full-span"
                 value={form.city}
@@ -964,25 +953,58 @@ function PassportPage({ go, member, setMember }) {
             <ZoomEightCountries selectedCountry={member.originCountry} />
           </SectionCard>
 
-          <SectionCard title="Carte membre digitale" subtitle="Version luxe, futuriste, bleu digital effet matrix.">
+          <SectionCard
+            title="Carte membre digitale"
+            subtitle="Version luxe, futuriste, bleu digital effet matrix."
+          >
             <DigitalPassportCard member={member} />
           </SectionCard>
 
           <SectionCard title="Informations membre" subtitle="Identité et statut.">
             <div className="info-list">
-              <div><span>Nom</span><strong>{member.name}</strong></div>
-              <div><span>E-mail</span><strong>{member.email}</strong></div>
-              <div><span>Statut</span><strong>{member.status}</strong></div>
-              <div><span>Date</span><strong>{member.createdAt}</strong></div>
+              <div>
+                <span>Nom</span>
+                <strong>{member.name}</strong>
+              </div>
+
+              <div>
+                <span>E-mail</span>
+                <strong>{member.email}</strong>
+              </div>
+
+              <div>
+                <span>Statut</span>
+                <strong>{member.status}</strong>
+              </div>
+
+              <div>
+                <span>Date</span>
+                <strong>{member.createdAt}</strong>
+              </div>
             </div>
           </SectionCard>
 
           <SectionCard title="Résidence et origine" subtitle="Repères du membre 3B.">
             <div className="info-list">
-              <div><span>Pays 3B</span><strong>{member.originCountry}</strong></div>
-              <div><span>Résidence</span><strong>{member.residenceCountry}</strong></div>
-              <div><span>Ville</span><strong>{member.city}</strong></div>
-              <div><span>Numéro</span><strong>{member.number}</strong></div>
+              <div>
+                <span>Pays 3B</span>
+                <strong>{member.originCountry}</strong>
+              </div>
+
+              <div>
+                <span>Résidence</span>
+                <strong>{member.residenceCountry}</strong>
+              </div>
+
+              <div>
+                <span>Ville</span>
+                <strong>{member.city}</strong>
+              </div>
+
+              <div>
+                <span>Numéro</span>
+                <strong>{member.number}</strong>
+              </div>
             </div>
           </SectionCard>
         </div>
@@ -1000,16 +1022,18 @@ function GamesHubPage({ go, member, gameProfile, leaderboard }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
-      <PageHeader
-        title="Jeu 3B"
-        subtitle="Centre de lancement du jeu actuel."
-      />
+
+      <PageHeader title="Jeu 3B" subtitle="Centre de lancement du jeu actuel." />
 
       <div className="content-grid">
-        <SectionCard title="Jeu actuel" subtitle="Portes 3B — progression, variété et évolution.">
+        <SectionCard
+          title="Jeu actuel"
+          subtitle="Portes 3B — progression, variété et évolution."
+        >
           <p className="soft-text">
             1000 niveaux • 10 portes par niveau • plusieurs mécaniques • difficulté progressive.
           </p>
+
           <div className="button-row">
             <button className="gold-button" onClick={() => go("jeux-play")}>
               Ouvrir le jeu
@@ -1021,7 +1045,10 @@ function GamesHubPage({ go, member, gameProfile, leaderboard }) {
           <p className="soft-text">{saveText}</p>
         </SectionCard>
 
-        <SectionCard title="Classement" subtitle="Le classement général du jeu reste dans cette case uniquement.">
+        <SectionCard
+          title="Classement"
+          subtitle="Le classement général du jeu reste dans cette case uniquement."
+        >
           <div className="leaderboard-list">
             {leaderboard.slice(0, 5).map((entry) => (
               <div className="leaderboard-row" key={`${entry.name}-${entry.rank}`}>
@@ -1036,10 +1063,25 @@ function GamesHubPage({ go, member, gameProfile, leaderboard }) {
 
         <SectionCard title="Mode actuel" subtitle={modeText}>
           <div className="info-list">
-            <div><span>Niveau</span><strong>{gameProfile.level} / 1000</strong></div>
-            <div><span>Porte</span><strong>{gameProfile.door} / 10</strong></div>
-            <div><span>XP jeu</span><strong>{gameProfile.xp}</strong></div>
-            <div><span>Temps</span><strong>{formatDuration(gameProfile.elapsedSeconds)}</strong></div>
+            <div>
+              <span>Niveau</span>
+              <strong>{gameProfile.level} / 1000</strong>
+            </div>
+
+            <div>
+              <span>Porte</span>
+              <strong>{gameProfile.door} / 10</strong>
+            </div>
+
+            <div>
+              <span>XP jeu</span>
+              <strong>{gameProfile.xp}</strong>
+            </div>
+
+            <div>
+              <span>Temps</span>
+              <strong>{formatDuration(gameProfile.elapsedSeconds)}</strong>
+            </div>
           </div>
         </SectionCard>
       </div>
@@ -1052,6 +1094,7 @@ function MemberPage({ go, member, gameProfile, leaderboard }) {
     return (
       <div className="page">
         <BackButton onClick={() => go("home")} />
+
         <PageHeader
           title="Espace membre 3B"
           subtitle="Tu dois d’abord créer ton passeport 3B pour débloquer cet espace."
@@ -1062,6 +1105,7 @@ function MemberPage({ go, member, gameProfile, leaderboard }) {
             <p className="soft-text">
               Crée ton passeport depuis le menu principal pour activer ton espace membre.
             </p>
+
             <div className="button-row">
               <button className="gold-button" onClick={() => go("passeport")}>
                 Aller au passeport
@@ -1076,6 +1120,7 @@ function MemberPage({ go, member, gameProfile, leaderboard }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <PageHeader
         title="Espace membre 3B"
         subtitle="Suivi, profil, progression, fidélité et état du compte."
@@ -1084,28 +1129,73 @@ function MemberPage({ go, member, gameProfile, leaderboard }) {
       <div className="content-grid">
         <SectionCard title="Résumé membre" subtitle="Identité générale.">
           <div className="info-list">
-            <div><span>Nom</span><strong>{member.name}</strong></div>
-            <div><span>Numéro</span><strong>{member.number}</strong></div>
-            <div><span>Statut</span><strong>{member.status}</strong></div>
-            <div><span>Créé le</span><strong>{member.createdAt}</strong></div>
+            <div>
+              <span>Nom</span>
+              <strong>{member.name}</strong>
+            </div>
+
+            <div>
+              <span>Numéro</span>
+              <strong>{member.number}</strong>
+            </div>
+
+            <div>
+              <span>Statut</span>
+              <strong>{member.status}</strong>
+            </div>
+
+            <div>
+              <span>Créé le</span>
+              <strong>{member.createdAt}</strong>
+            </div>
           </div>
         </SectionCard>
 
         <SectionCard title="Jeux de progression" subtitle="Avancement global joueur.">
           <div className="info-list">
-            <div><span>Niveau</span><strong>{gameProfile.level} / 1000</strong></div>
-            <div><span>Porte</span><strong>{gameProfile.door} / 10</strong></div>
-            <div><span>XP</span><strong>{gameProfile.xp}</strong></div>
-            <div><span>Progression totale</span><strong>{gameProfile.totalPercent}%</strong></div>
+            <div>
+              <span>Niveau</span>
+              <strong>{gameProfile.level} / 1000</strong>
+            </div>
+
+            <div>
+              <span>Porte</span>
+              <strong>{gameProfile.door} / 10</strong>
+            </div>
+
+            <div>
+              <span>XP</span>
+              <strong>{gameProfile.xp}</strong>
+            </div>
+
+            <div>
+              <span>Progression totale</span>
+              <strong>{gameProfile.totalPercent}%</strong>
+            </div>
           </div>
         </SectionCard>
 
         <SectionCard title="Activité" subtitle="Temps réel et historique simple.">
           <div className="info-list">
-            <div><span>Réponses validées</span><strong>{gameProfile.correctAnswers}</strong></div>
-            <div><span>Erreurs</span><strong>{gameProfile.wrongAnswers}</strong></div>
-            <div><span>Indices utilisés</span><strong>{gameProfile.hintsUsed}</strong></div>
-            <div><span>Temps de jeu</span><strong>{formatDuration(gameProfile.elapsedSeconds)}</strong></div>
+            <div>
+              <span>Réponses validées</span>
+              <strong>{gameProfile.correctAnswers}</strong>
+            </div>
+
+            <div>
+              <span>Erreurs</span>
+              <strong>{gameProfile.wrongAnswers}</strong>
+            </div>
+
+            <div>
+              <span>Indices utilisés</span>
+              <strong>{gameProfile.hintsUsed}</strong>
+            </div>
+
+            <div>
+              <span>Temps de jeu</span>
+              <strong>{formatDuration(gameProfile.elapsedSeconds)}</strong>
+            </div>
           </div>
         </SectionCard>
 
@@ -1164,9 +1254,17 @@ function MemberPage({ go, member, gameProfile, leaderboard }) {
 
         <SectionCard title="Accès rapide" subtitle="Navigation utile.">
           <div className="quick-action-grid">
-            <button className="blue-button" onClick={() => go("jeux")}>Aller au jeu</button>
-            <button className="blue-button" onClick={() => go("passeport")}>Voir le passeport</button>
-            <button className="blue-button" onClick={() => go("secret")}>Ouvrir le coffre</button>
+            <button className="blue-button" onClick={() => go("jeux")}>
+              Aller au jeu
+            </button>
+
+            <button className="blue-button" onClick={() => go("passeport")}>
+              Voir le passeport
+            </button>
+
+            <button className="blue-button" onClick={() => go("secret")}>
+              Ouvrir le coffre
+            </button>
           </div>
         </SectionCard>
       </div>
@@ -1178,6 +1276,7 @@ function EncorePage({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+
       <PageHeader
         title="Encore"
         subtitle="Créateurs, certificats, extensions et futures branches 3B."
@@ -1243,10 +1342,13 @@ export default function App() {
         {page === "boutique" && <BoutiquePage go={go} />}
         {page === "musique" && <MusicPage go={go} />}
         {page === "communaute" && <CommunityPage go={go} />}
+
         {page === "passeport" && (
           <PassportPage go={go} member={member} setMember={setMember} />
         )}
+
         {page === "secret" && <SecretPage go={go} />}
+
         {page === "jeux" && (
           <GamesHubPage
             go={go}
@@ -1255,6 +1357,7 @@ export default function App() {
             leaderboard={leaderboard}
           />
         )}
+
         {page === "jeux-play" && (
           <Jeu3B
             member={member}
@@ -1263,6 +1366,7 @@ export default function App() {
             onBack={() => go("jeux")}
           />
         )}
+
         {page === "espace-membre" && (
           <MemberPage
             go={go}
@@ -1271,6 +1375,7 @@ export default function App() {
             leaderboard={leaderboard}
           />
         )}
+
         {page === "encore" && <EncorePage go={go} />}
       </main>
     </div>
