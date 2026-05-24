@@ -128,6 +128,7 @@ function createDefaultGameProfile() {
 
 function loadGame() {
   if (typeof window === "undefined") return createDefaultGameProfile();
+
   return (
     safeParse(localStorage.getItem(STORAGE_GAME_KEY), null) ||
     createDefaultGameProfile()
@@ -139,6 +140,7 @@ function formatDuration(totalSeconds = 0) {
   const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
   const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
   const s = String(seconds % 60).padStart(2, "0");
+
   return `${h}:${m}:${s}`;
 }
 
@@ -149,6 +151,7 @@ function generatePassportNumber() {
 function calcGlobalProgress(level, door) {
   const completedDoors =
     (Math.max(1, level) - 1) * 10 + (Math.max(1, door) - 1);
+
   return Number(((completedDoors / 10000) * 100).toFixed(2));
 }
 
@@ -413,28 +416,6 @@ function ZoomEightCountries({ selectedCountry }) {
           fill="rgba(11,34,57,0.58)"
           stroke="rgba(88,207,255,0.28)"
         />
-
-        {Array.from({ length: 10 }).map((_, i) => (
-          <line
-            key={`zx-${i}`}
-            x1={40 + i * 55}
-            y1="28"
-            x2={40 + i * 55}
-            y2="302"
-            stroke="rgba(76,190,255,0.09)"
-          />
-        ))}
-
-        {Array.from({ length: 5 }).map((_, i) => (
-          <line
-            key={`zy-${i}`}
-            x1="28"
-            y1={60 + i * 50}
-            x2="612"
-            y2={60 + i * 50}
-            stroke="rgba(76,190,255,0.09)"
-          />
-        ))}
 
         <path
           d="M137 150l40-46 37-13 21-25 33-8 23 13 23 2 29-27 35-1 24 18 6 29 36 13 44 0 53 23 15 28-14 24-51 1-68 23-71 18-18 38-38 6-13-27-26-9-23-1-18-26-35-6-20-29-46-11-11-29 13-23z"
@@ -746,7 +727,7 @@ function SecretPage({ go }) {
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]/g, "");
 
-    if (clean === "blackblanbeurr") {
+    if (clean === "blackblancbeurr") {
       setUnlocked(true);
       setMessage("Code validé. Accès au salon invité débloqué.");
     } else {
