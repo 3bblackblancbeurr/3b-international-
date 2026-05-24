@@ -1802,4 +1802,156 @@ button {
     font-size: 13px !important;
     line-height: 1.25 !important;
   }
+}/* =========================================================
+   3B — AMÉLIORATION CIBLÉE MENU GÉNÉRAL
+   Objectif : rendre 3B INTERNATIONAL plus imposant,
+   brillant, vivant, sans toucher à la page d'entrée.
+========================================================= */
+
+/* Le petit texte 3B International dans le menu devient un vrai titre premium */
+.home-left-panel > .eyebrow {
+  position: relative !important;
+  display: inline-flex !important;
+  width: fit-content !important;
+  margin-bottom: 22px !important;
+  padding: 10px 18px !important;
+  border: 1px solid rgba(255, 248, 115, 0.72) !important;
+  border-radius: 999px !important;
+  color: #fff873 !important;
+  background:
+    linear-gradient(135deg, rgba(255, 248, 115, 0.16), rgba(0, 234, 255, 0.08)),
+    rgba(0, 0, 0, 0.48) !important;
+  font-size: clamp(1.45rem, 3vw, 2.65rem) !important;
+  line-height: 1 !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  text-shadow:
+    0 0 8px rgba(255, 248, 115, 0.85),
+    0 0 18px rgba(245, 196, 74, 0.58),
+    0 0 32px rgba(0, 234, 255, 0.34) !important;
+  box-shadow:
+    0 0 22px rgba(245, 196, 74, 0.2),
+    inset 0 0 18px rgba(255, 248, 115, 0.08) !important;
+  overflow: hidden !important;
+}
+
+/* Reflet vivant sur le titre 3B International */
+.home-left-panel > .eyebrow::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -40% !important;
+  left: -35% !important;
+  width: 34% !important;
+  height: 180% !important;
+  background: linear-gradient(
+    110deg,
+    transparent,
+    rgba(255, 255, 255, 0.72),
+    transparent
+  ) !important;
+  transform: rotate(18deg) !important;
+  animation: shine3BTitle 4.6s ease-in-out infinite !important;
+}
+
+/* Petit halo vivant derrière */
+.home-left-panel > .eyebrow::after {
+  content: "3B" !important;
+  position: absolute !important;
+  right: -22px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: rgba(0, 234, 255, 0.18) !important;
+  font-size: 3.6rem !important;
+  font-weight: 1000 !important;
+  letter-spacing: -0.08em !important;
+  filter: blur(0.4px) !important;
+  pointer-events: none !important;
+}
+
+@keyframes shine3BTitle {
+  0% {
+    left: -40%;
+    opacity: 0;
+  }
+
+  22% {
+    opacity: 1;
+  }
+
+  48% {
+    left: 120%;
+    opacity: 0;
+  }
+
+  100% {
+    left: 120%;
+    opacity: 0;
+  }
+}
+
+/* “Vêtements haut de gamme” reste visible mais devient secondaire */
+.home-left-panel > h1 {
+  margin-top: 8px !important;
+  max-width: 920px !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-size: clamp(2.65rem, 5.4vw, 6.2rem) !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.035em !important;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.18),
+    0 0 26px rgba(0, 0, 0, 0.88) !important;
+}
+
+/* Ajout d'une phrase visuelle pour montrer que 3B dépasse les vêtements */
+.home-left-panel .brand-sentence {
+  position: relative !important;
+  padding: 18px 20px !important;
+  border-left: 3px solid rgba(255, 248, 115, 0.8) !important;
+  border-radius: 0 18px 18px 0 !important;
+  background:
+    linear-gradient(90deg, rgba(255, 248, 115, 0.1), transparent),
+    rgba(0, 0, 0, 0.26) !important;
+  box-shadow: inset 0 0 18px rgba(255, 248, 115, 0.05) !important;
+}
+
+/* Le bloc gauche gagne en dimension écosystème */
+.home-left-panel {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255, 248, 115, 0.16), transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(0, 234, 255, 0.14), transparent 30%),
+    linear-gradient(180deg, rgba(5, 8, 10, 0.82), rgba(0, 0, 0, 0.72)) !important;
+}
+
+/* Petite ligne digitale en bas du panneau gauche */
+.home-left-panel::after {
+  content: "PASSEPORT • CARTES • JEUX • MUSIQUE • COMMUNAUTÉ • SECRET • IA • MONDE 3B" !important;
+  display: block !important;
+  margin-top: 20px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid rgba(0, 234, 255, 0.28) !important;
+  color: rgba(210, 250, 255, 0.82) !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.12em !important;
+  line-height: 1.5 !important;
+  text-transform: uppercase !important;
+}
+
+/* Mobile : titre 3B imposant mais pas coupé */
+@media (max-width: 700px) {
+  .home-left-panel > .eyebrow {
+    font-size: clamp(1.25rem, 7vw, 2rem) !important;
+    letter-spacing: 0.08em !important;
+    padding: 9px 14px !important;
+  }
+
+  .home-left-panel > h1 {
+    font-size: clamp(2.3rem, 12vw, 4.2rem) !important;
+  }
+
+  .home-left-panel::after {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+  }
 }
