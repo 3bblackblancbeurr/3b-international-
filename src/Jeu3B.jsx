@@ -1,655 +1,734 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import "./App.css";
 
-const GAME_KEY = "3b_game_final_v4";
-
-const families = [
-  {
-    name: "Mode 3B",
-    words: ["black", "blanc", "beur", "luxe", "couture", "premium", "maillot", "héritage"],
-    wrong: ["banal", "faible", "copie", "oubli", "hasard", "vide"],
-  },
-  {
-    name: "ADN 3B",
-    words: ["identité", "ambition", "international", "création", "patrimoine", "héritage"],
-    wrong: ["abandon", "désordre", "retard", "fragile", "secret faux"],
-  },
-  {
-    name: "Pays 3B",
-    words: ["france", "italie", "estonie", "turquie", "algérie", "tunisie", "maroc", "espagne"],
-    wrong: ["canada", "japon", "brésil", "norvège", "mexique"],
-  },
-  {
-    name: "Musique 3B",
-    words: ["album", "studio", "refrain", "rythme", "clip", "tiktok", "son", "hymne"],
-    wrong: ["silence", "bruit", "vide", "cassé"],
-  },
-  {
-    name: "Gaming 3B",
-    words: ["niveau", "porte", "xp", "mission", "classement", "série", "victoire", "indice"],
-    wrong: ["pause", "défaite", "erreur", "retour"],
-  },
+const OFFICIAL_COUNTRIES = [
+  { name: "France", code: "FR", flag: "🇫🇷", capital: "Paris" },
+  { name: "Italie", code: "IT", flag: "🇮🇹", capital: "Rome" },
+  { name: "Estonie", code: "EE", flag: "🇪🇪", capital: "Tallinn" },
+  { name: "Turquie", code: "TR", flag: "🇹🇷", capital: "Ankara" },
+  { name: "Algérie", code: "DZ", flag: "🇩🇿", capital: "Alger" },
+  { name: "Tunisie", code: "TN", flag: "🇹🇳", capital: "Tunis" },
+  { name: "Maroc", code: "MA", flag: "🇲🇦", capital: "Rabat" },
+  { name: "Espagne", code: "ES", flag: "🇪🇸", capital: "Madrid" },
 ];
 
-const mechanics = [
-  "Écriture",
-  "QCM",
-  "Mot mélangé",
-  "Association",
-  "Mémoire",
-  "Code secret",
-  "Mot croisé",
-  "Mot fléché",
-  "Relier gauche droite",
-  "Suite logique",
-  "Intrus",
-  "Compléter",
-  "Ordre des lettres",
-  "Famille de mots",
-  "Pays verrouillé",
-  "Choix rapide",
-  "Définition",
-  "Synonyme",
-  "Antonyme",
-  "Mot caché",
-  "Puzzle lettres",
-  "Quiz drapeau",
-  "Matrice 3B",
-  "Sélection tactile",
-  "Double choix",
-  "Vrai ou faux",
-  "Portes mémoire",
-  "Chaîne de mots",
-  "Code pays",
-  "Mission salon",
-  "ADN secret",
-  "Carte monde",
-  "Musique indice",
-  "Rang prestige",
-  "Chrono mot",
-  "Indice réduit",
-  "Mots miroir",
-  "Paire correcte",
-  "Mot manquant",
-  "Tri premium",
-  "Lettres piégées",
-  "Mot long",
-  "Mot court",
-  "Déblocage",
-  "Énigme simple",
-  "Énigme avancée",
-  "Combinaison",
-  "Coffre 3B",
-  "Passeport",
-  "Final porte",
+const NON_OFFICIAL_COUNTRIES = [
+  "Portugal",
+  "Japon",
+  "Brésil",
+  "Canada",
+  "Belgique",
+  "Croatie",
+  "Argentine",
+  "Suisse",
 ];
 
-function normalize(text) {
-  return String(text || "")
-    .toLowerCase()
+const BRAND_WORDS = [
+  "heritage",
+  "luxe",
+  "identite",
+  "premium",
+  "digital",
+  "legacy",
+  "creation",
+  "international",
+  "ambition",
+  "passeport",
+];
+
+const BRAND_CLUES = [
+  { answer: "heritage", clue: "Mot-clé de la phrase : « ce n’est pas une marque, c’est un ... »" },
+  { answer: "luxe", clue: "Mot 3B lié au premium et au haut de gamme." },
+  { answer: "digital", clue: "Le passeport 3B est un passeport ..." },
+  { answer: "international", clue: "Le nom de la marque se termine par ce mot." },
+  { answer: "identite", clue: "Le passeport 3B sert d’accès membre et d’... numérique." },
+];
+
+function normalizeValue(value = "") {
+  return value
+    .toString()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .trim();
 }
 
-function shuffle(array) {
-  return [...array].sort(() => Math.random() - 0.5);
+function shuffleWithSeed(items, seed) {
+  const array = [...items];
+  let localSeed = seed || 1;
+
+  function random() {
+    localSeed = (localSeed * 9301 + 49297) % 233280;
+    return localSeed / 233280;
+  }
+
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
 }
 
-function scramble(word) {
+function pickSeeded(list, seed) {
+  return list[seed % list.length];
+}
+
+function getDifficultyLabel(level) {
+  if (level <= 10) return "Très facile";
+  if (level <= 25) return "Facile";
+  if (level <= 60) return "Moyen";
+  if (level <= 120) return "Intermédiaire";
+  if (level <= 250) return "Soutenu";
+  return "Avancé";
+}
+
+function getStep(profile) {
+  return (profile.level - 1) * 10 + profile.door;
+}
+
+function getUniquePrefix(answer, pool) {
+  const normalizedPool = pool.map((item) => normalizeValue(item));
+  const normalizedAnswer = normalizeValue(answer);
+
+  for (let len = 2; len < normalizedAnswer.length; len += 1) {
+    const prefix = normalizedAnswer.slice(0, len);
+    const matches = normalizedPool.filter((value) => value.startsWith(prefix));
+    if (matches.length === 1) {
+      return answer.slice(0, len);
+    }
+  }
+
+  return answer.slice(0, Math.max(3, answer.length - 2));
+}
+
+function scrambleWord(word, seed) {
   const letters = word.split("");
-  const mixed = shuffle(letters).join("");
-  return mixed === word ? letters.reverse().join("") : mixed;
+  const shuffled = shuffleWithSeed(letters, seed).join("");
+  return shuffled === word ? letters.reverse().join("") : shuffled;
 }
 
-function formatTime(seconds) {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
-}
+function buildCompleteQuestion(step) {
+  const easyAnswers = [
+    ...OFFICIAL_COUNTRIES.map((country) => country.name),
+    ...BRAND_WORDS.slice(0, 5),
+  ];
+  const answer = pickSeeded(easyAnswers, step);
+  const prefix = getUniquePrefix(answer, easyAnswers);
+  const masked = `${prefix}${"_".repeat(Math.max(1, answer.length - prefix.length))}`;
 
-function getDifficulty(level, door) {
-  const raw = Math.min(100, Math.max(1, Math.round(level * 0.35 + door)));
-  if (raw < 10) return { percent: raw, label: "Très facile" };
-  if (raw < 25) return { percent: raw, label: "Facile" };
-  if (raw < 45) return { percent: raw, label: "Moyen" };
-  if (raw < 70) return { percent: raw, label: "Difficile" };
-  return { percent: raw, label: "Expert" };
-}
-
-function defaultGame() {
   return {
-    level: 1,
-    door: 1,
-    xp: 0,
-    streak: 0,
-    bestStreak: 0,
-    hintsUsed: 0,
-    validatedAnswers: 0,
-    playSeconds: 0,
-    startedAt: Date.now(),
-    lastMessage: "",
-    lastCorrect: false,
+    type: "complete",
+    label: "Compléter",
+    prompt: "Complète le mot manquant.",
+    clueText: masked,
+    answer,
+    hint:
+      OFFICIAL_COUNTRIES.find((country) => country.name === answer)?.capital
+        ? `Indice : capitale liée = ${
+            OFFICIAL_COUNTRIES.find((country) => country.name === answer)?.capital
+          }.`
+        : `Indice : le mot contient ${answer.length} caractères.`,
   };
 }
 
-function loadGame(member) {
-  if (!member) return defaultGame();
+function buildWriteQuestion(step) {
+  const cluePool = [
+    ...OFFICIAL_COUNTRIES.map((country) => ({
+      answer: country.name,
+      clue: `Écris le pays officiel 3B dont la capitale est ${country.capital}.`,
+    })),
+    ...BRAND_CLUES,
+    {
+      answer: "Tunisie",
+      clue: "Écris le pays officiel 3B situé entre l’Algérie et la Libye.",
+    },
+    {
+      answer: "Maroc",
+      clue: "Écris le pays officiel 3B situé à l’ouest de l’Algérie.",
+    },
+  ];
 
-  try {
-    const saved = localStorage.getItem(GAME_KEY);
-    if (!saved) return defaultGame();
-    return { ...defaultGame(), ...JSON.parse(saved) };
-  } catch {
-    return defaultGame();
+  const item = pickSeeded(cluePool, step + 11);
+
+  return {
+    type: "write",
+    label: "Écriture",
+    prompt: item.clue,
+    answer: item.answer,
+    hint: `Indice : la réponse commence par « ${item.answer.slice(0, 2)} ».`,
+  };
+}
+
+function buildQcmQuestion(step) {
+  const country = pickSeeded(OFFICIAL_COUNTRIES, step + 21);
+  const otherOptions = shuffleWithSeed(
+    OFFICIAL_COUNTRIES.filter((item) => item.name !== country.name).map((item) => item.name),
+    step + 22
+  ).slice(0, 3);
+
+  const options = shuffleWithSeed([country.name, ...otherOptions], step + 23);
+
+  return {
+    type: "qcm",
+    label: "QCM",
+    prompt: `Quel pays officiel 3B possède le code « ${country.code} » ?`,
+    options,
+    answer: country.name,
+    hint: `Indice : sa capitale est ${country.capital}.`,
+  };
+}
+
+function buildFlagQuestion(step) {
+  const country = pickSeeded(OFFICIAL_COUNTRIES, step + 31);
+  const otherOptions = shuffleWithSeed(
+    OFFICIAL_COUNTRIES.filter((item) => item.name !== country.name).map((item) => item.name),
+    step + 32
+  ).slice(0, 3);
+
+  const options = shuffleWithSeed([country.name, ...otherOptions], step + 33);
+
+  return {
+    type: "flag",
+    label: "Choix",
+    prompt: `Quel pays 3B correspond à ce drapeau : ${country.flag} ?`,
+    options,
+    answer: country.name,
+    hint: `Indice : son code pays est ${country.code}.`,
+  };
+}
+
+function buildAnagramQuestion(step) {
+  const answer = pickSeeded(
+    [...OFFICIAL_COUNTRIES.map((item) => item.name), ...BRAND_WORDS],
+    step + 41
+  );
+  const mixed = scrambleWord(answer, step + 42);
+
+  return {
+    type: "anagram",
+    label: "Mot mélangé",
+    prompt: "Retrouve le bon mot à partir du mot mélangé.",
+    clueText: mixed,
+    answer,
+    hint: `Indice : la réponse commence par « ${answer.slice(0, 2)} ».`,
+  };
+}
+
+function buildIntruderQuestion(step) {
+  const official = shuffleWithSeed(OFFICIAL_COUNTRIES.map((c) => c.name), step + 51).slice(0, 3);
+  const intruder = pickSeeded(NON_OFFICIAL_COUNTRIES, step + 52);
+  const options = shuffleWithSeed([...official, intruder], step + 53);
+
+  return {
+    type: "intruder",
+    label: "Intrus",
+    prompt: "Trouve l’intrus : quel mot ne fait pas partie des pays officiels 3B ?",
+    options,
+    answer: intruder,
+    hint: "Indice : les autres mots sont tous des pays officiels 3B.",
+  };
+}
+
+function buildAssociationQuestion(step) {
+  const pairs = shuffleWithSeed(
+    OFFICIAL_COUNTRIES.map((country) => ({ left: country.name, right: country.code })),
+    step + 61
+  ).slice(0, 4);
+
+  return {
+    type: "association",
+    label: "Relier",
+    prompt: "Relie chaque pays à son code.",
+    pairs,
+    hint: "Indice : FR = France, IT = Italie, etc.",
+  };
+}
+
+function buildSequenceQuestion(step) {
+  const patterns = [
+    { prompt: "Trouve la suite : 1, 2, 3, ?", answer: "4", options: ["4", "5", "6", "8"] },
+    { prompt: "Trouve la suite : 10, 20, 30, ?", answer: "40", options: ["25", "40", "50", "60"] },
+    { prompt: "Trouve la suite : A, B, C, ?", answer: "D", options: ["D", "E", "F", "G"] },
+    { prompt: "Trouve la suite : FR, IT, EE, ?", answer: "TR", options: ["TN", "TR", "DZ", "MA"] },
+  ];
+
+  const item = pickSeeded(patterns, step + 71);
+
+  return {
+    type: "sequence",
+    label: "Suite logique",
+    prompt: item.prompt,
+    options: item.options,
+    answer: item.answer,
+    hint: "Indice : observe la logique de progression.",
+  };
+}
+
+function buildCodeQuestion(step) {
+  const item = pickSeeded(OFFICIAL_COUNTRIES, step + 81);
+
+  return {
+    type: "code",
+    label: "Code secret",
+    prompt: `Quel est le code pays officiel 3B de ${item.name} ?`,
+    answer: item.code,
+    hint: `Indice : la réponse contient ${item.code.length} lettres.`,
+  };
+}
+
+function buildCrossQuestion(step) {
+  const item = pickSeeded(
+    [
+      { answer: "Madrid", clue: "Mot croisé : capitale de l’Espagne." },
+      { answer: "Rabat", clue: "Mot croisé : capitale du Maroc." },
+      { answer: "Alger", clue: "Mot croisé : capitale de l’Algérie." },
+      { answer: "Paris", clue: "Mot croisé : capitale de la France." },
+      { answer: "Rome", clue: "Mot croisé : capitale de l’Italie." },
+    ],
+    step + 91
+  );
+
+  return {
+    type: "cross",
+    label: "Mot croisé",
+    prompt: item.clue,
+    answer: item.answer,
+    hint: `Indice : la réponse commence par « ${item.answer.slice(0, 1)} ».`,
+  };
+}
+
+function buildArrowQuestion(step) {
+  const item = pickSeeded(
+    [
+      { answer: "Tunisie", clue: "Mot fléché : pays officiel 3B dont la capitale est Tunis." },
+      { answer: "Turquie", clue: "Mot fléché : pays officiel 3B dont la capitale est Ankara." },
+      { answer: "Estonie", clue: "Mot fléché : pays officiel 3B dont la capitale est Tallinn." },
+      { answer: "France", clue: "Mot fléché : pays officiel 3B dont la capitale est Paris." },
+    ],
+    step + 101
+  );
+
+  return {
+    type: "arrow",
+    label: "Mot fléché",
+    prompt: item.clue,
+    answer: item.answer,
+    hint: `Indice : le mot contient ${item.answer.length} caractères.`,
+  };
+}
+
+function availableGameBuilders(step) {
+  if (step <= 12) {
+    return [buildCompleteQuestion, buildWriteQuestion, buildQcmQuestion, buildFlagQuestion];
   }
+  if (step <= 30) {
+    return [
+      buildCompleteQuestion,
+      buildWriteQuestion,
+      buildQcmQuestion,
+      buildFlagQuestion,
+      buildAnagramQuestion,
+      buildIntruderQuestion,
+      buildCodeQuestion,
+    ];
+  }
+  return [
+    buildCompleteQuestion,
+    buildWriteQuestion,
+    buildQcmQuestion,
+    buildFlagQuestion,
+    buildAnagramQuestion,
+    buildIntruderQuestion,
+    buildAssociationQuestion,
+    buildSequenceQuestion,
+    buildCodeQuestion,
+    buildCrossQuestion,
+    buildArrowQuestion,
+  ];
 }
 
-function saveGame(game, member) {
-  if (!member) return;
-  localStorage.setItem(GAME_KEY, JSON.stringify(game));
-}
+function createRound(profile) {
+  const step = getStep(profile);
+  const builders = availableGameBuilders(step);
+  const builder = builders[step % builders.length];
+  const round = builder(step);
 
-function buildMission(level, door) {
-  const index = (level * 10 + door) % 50;
-  const mechanic = mechanics[index];
-  const family = families[(level + door) % families.length];
-  const word = family.words[(level + door * 2) % family.words.length];
-  const wrongPool = shuffle([...family.wrong, ...families.flatMap((f) => f.words).filter((w) => w !== word)]).slice(0, 5);
-  const difficulty = getDifficulty(level, door);
-
-  const qcmChoices = shuffle([word, ...wrongPool.slice(0, 3)]);
-  const pairLeft = shuffle(family.words.slice(0, 4));
-  const pairRight = shuffle(pairLeft.map((w) => `${w} 3B`));
-
-  const missions = {
-    "Écriture": {
-      type: "input",
-      title: "Écriture",
-      instruction: `Écris le mot exact lié à cette famille 3B.`,
-      prompt: `Famille : ${family.name}. Écris le bon mot.`,
-      answer: word,
-      hint: `Indice : commence par « ${word.slice(0, 2)} » et contient ${word.length} caractères.`,
-    },
-    "QCM": {
-      type: "choice",
-      title: "QCM premium",
-      instruction: "Choisis le bon mot dans la liste.",
-      prompt: `Quel mot appartient à la famille ${family.name} ?`,
-      answer: word,
-      choices: qcmChoices,
-      hint: `Indice : le bon mot commence par « ${word[0]} ».`,
-    },
-    "Mot mélangé": {
-      type: "input",
-      title: "Mot mélangé",
-      instruction: "Remets les lettres dans le bon ordre.",
-      prompt: `Mot mélangé : ${scramble(word)}`,
-      answer: word,
-      hint: `Indice : ${word.length} lettres, première lettre ${word[0].toUpperCase()}.`,
-    },
-    "Association": {
-      type: "choice",
-      title: "Association",
-      instruction: "Associe le mot au bon univers.",
-      prompt: `Quel mot représente le mieux : ${family.name} ?`,
-      answer: word,
-      choices: qcmChoices,
-      hint: "Indice : élimine les mots hors univers 3B.",
-    },
-    "Mémoire": {
-      type: "choice",
-      title: "Mémoire",
-      instruction: "Retrouve le mot qui était dans la famille.",
-      prompt: `Famille affichée : ${family.name}. Mot à retrouver.`,
-      answer: word,
-      choices: qcmChoices,
-      hint: `Indice : mot officiel dans la liste ${family.name}.`,
-    },
-    "Code secret": {
-      type: "input",
-      title: "Code secret",
-      instruction: "Trouve le mot lié au coffre secret 3B.",
-      prompt: `Code lié à la porte ${door}.`,
-      answer: word,
-      hint: `Indice : le code contient ${word.length} caractères.`,
-    },
-    "Mot croisé": {
-      type: "input",
-      title: "Mot croisé",
-      instruction: "Complète la ligne centrale du mini mot croisé.",
-      prompt: `_${word.slice(1, -1)}_`,
-      answer: word,
-      hint: `Indice : première lettre ${word[0]}, dernière lettre ${word.at(-1)}.`,
-    },
-    "Mot fléché": {
-      type: "choice",
-      title: "Mot fléché",
-      instruction: "Suis l’indice et sélectionne la bonne case.",
-      prompt: `Indice fléché : univers ${family.name}`,
-      answer: word,
-      choices: qcmChoices,
-      hint: "Indice : le bon choix est cohérent avec l’univers affiché.",
-    },
-    "Relier gauche droite": {
-      type: "match",
-      title: "Relier",
-      instruction: "Relie chaque mot avec sa version 3B.",
-      prompt: "Sélectionne la bonne association pour valider la porte.",
-      answer: pairLeft[0],
-      pairs: pairLeft.map((w) => ({ left: w, right: `${w} 3B` })),
-      choices: pairRight,
-      hint: "Indice : chaque ligne garde exactement le même mot.",
-    },
-    "Suite logique": {
-      type: "choice",
-      title: "Suite logique",
-      instruction: "Trouve le mot qui continue la suite.",
-      prompt: `${family.words[0]} → ${family.words[1]} → ?`,
-      answer: family.words[2] || word,
-      choices: shuffle([family.words[2] || word, ...wrongPool.slice(0, 3)]),
-      hint: `Indice : reste dans ${family.name}.`,
-    },
-    "Intrus": {
-      type: "choice",
-      title: "Intrus",
-      instruction: "Trouve l’intrus qui ne correspond pas à la famille.",
-      prompt: `Famille : ${family.name}. Trouve l’intrus.`,
-      answer: wrongPool[0],
-      choices: shuffle([wrongPool[0], ...family.words.slice(0, 3)]),
-      hint: "Indice : l’intrus ne fait pas partie de l’univers affiché.",
-    },
-    "Compléter": {
-      type: "input",
-      title: "Compléter",
-      instruction: "Complète le mot manquant.",
-      prompt: `${word.slice(0, 2)}____`,
-      answer: word,
-      hint: `Indice : le mot complet contient ${word.length} caractères.`,
-    },
+  return {
+    id: `round-${profile.level}-${profile.door}-${round.type}-${step}`,
+    ...round,
   };
-
-  return missions[mechanic] || missions["Écriture"];
 }
 
-function ProgressRing({ percent, label }) {
-  return (
-    <div className="progress-ring" style={{ "--progress": `${percent * 3.6}deg` }}>
-      <span>{percent}%</span>
-      {label && <small>{label}</small>}
-    </div>
-  );
+function formatDuration(totalSeconds = 0) {
+  const seconds = Math.max(0, Number(totalSeconds) || 0);
+  const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
+  const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
+  const s = String(seconds % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
 }
 
-function BackButton({ onClick }) {
-  return (
-    <button className="back-btn" onClick={onClick}>
-      ← Retour
-    </button>
-  );
+function Feedback({ feedback }) {
+  if (!feedback) return null;
+  return <div className={`feedback-box ${feedback.type}`}>{feedback.text}</div>;
 }
 
-function GameCard({ title, children, className = "" }) {
-  return (
-    <section className={`lux-card game-card ${className}`}>
-      <h2>{title}</h2>
-      <div className="card-content">{children}</div>
-    </section>
-  );
-}
-
-export default function Jeu3B({ go, member, setMember, saveMember }) {
-  const [mode, setMode] = useState("hub");
-  const [game, setGame] = useState(() => loadGame(member));
-  const [answer, setAnswer] = useState("");
+export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
+  const [round, setRound] = useState(() => createRound(gameProfile));
+  const [textAnswer, setTextAnswer] = useState("");
+  const [feedback, setFeedback] = useState(null);
   const [hintVisible, setHintVisible] = useState(false);
-  const [hintUsedThisDoor, setHintUsedThisDoor] = useState(false);
+  const [hintAlreadyCounted, setHintAlreadyCounted] = useState(false);
+  const [leftChoice, setLeftChoice] = useState(null);
+  const [rightChoice, setRightChoice] = useState(null);
+  const [matchedPairs, setMatchedPairs] = useState([]);
 
-  const difficulty = getDifficulty(game.level, game.door);
-  const mission = useMemo(
-    () => buildMission(game.level, game.door),
-    [game.level, game.door]
-  );
-
-  const totalDoorNumber = (game.level - 1) * 10 + game.door;
-  const totalPercent = Math.min(100, Math.round((totalDoorNumber / 10000) * 100));
-  const doorPercent = Math.round(((game.door - 1) / 10) * 100);
+  const difficulty = useMemo(() => getDifficultyLabel(gameProfile.level), [gameProfile.level]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setGame((old) => {
-        const next = { ...old, playSeconds: old.playSeconds + 1 };
-        saveGame(next, member);
-        return next;
-      });
+    setRound(createRound(gameProfile));
+    setTextAnswer("");
+    setFeedback(null);
+    setHintVisible(false);
+    setHintAlreadyCounted(false);
+    setLeftChoice(null);
+    setRightChoice(null);
+    setMatchedPairs([]);
+  }, [gameProfile.level, gameProfile.door]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setGameProfile((prev) => ({ ...prev, elapsedSeconds: prev.elapsedSeconds + 1 }));
     }, 1000);
-    return () => clearInterval(timer);
-  }, [member]);
 
-  useEffect(() => {
-    saveGame(game, member);
-  }, [game, member]);
+    return () => clearInterval(interval);
+  }, [setGameProfile]);
 
-  function syncMember(nextGame) {
-    if (!member) return;
+  const progressInsideDoor = Number((((gameProfile.door - 1) / 10) * 100).toFixed(0));
 
-    const updated = {
-      ...member,
-      gamePoints: nextGame.xp,
-      gameLevel: nextGame.level,
-      gameDoor: nextGame.door,
-      bestStreak: Math.max(member.bestStreak || 0, nextGame.bestStreak || 0),
-      hintsUsed: nextGame.hintsUsed,
-      validatedAnswers: nextGame.validatedAnswers,
-      playSeconds: nextGame.playSeconds,
-      lastActivity: `Jeu 3B — niveau ${nextGame.level}, porte ${nextGame.door}`,
-    };
+  const markHint = () => {
+    setHintVisible(true);
+    if (!hintAlreadyCounted) {
+      setHintAlreadyCounted(true);
+      setGameProfile((prev) => ({ ...prev, hintsUsed: prev.hintsUsed + 1 }));
+    }
+  };
 
-    setMember(updated);
-    saveMember(updated);
-  }
-
-  function nextDoor() {
-    setGame((old) => {
-      const baseXp = Math.max(1, Math.round(1 + old.level * 0.15 + old.door * 0.2));
-      const earned = hintUsedThisDoor ? Math.max(1, baseXp - 1) : baseXp;
-
-      let nextDoorValue = old.door + 1;
-      let nextLevelValue = old.level;
-
-      if (nextDoorValue > 10) {
-        nextDoorValue = 1;
-        nextLevelValue = Math.min(1000, old.level + 1);
-      }
-
-      const next = {
-        ...old,
-        level: nextLevelValue,
-        door: nextDoorValue,
-        xp: old.xp + earned,
-        streak: old.streak + 1,
-        bestStreak: Math.max(old.bestStreak || 0, old.streak + 1),
-        validatedAnswers: old.validatedAnswers + 1,
-        hintsUsed: old.hintsUsed + (hintUsedThisDoor ? 1 : 0),
-        lastCorrect: true,
-        lastMessage: `Bonne réponse +${earned} XP. Porte suivante.`,
-      };
-
-      syncMember(next);
-      return next;
+  const failRound = () => {
+    setFeedback({
+      type: "error",
+      text: "Mauvaise réponse. Réessaie, la porte ne change pas.",
     });
 
-    setAnswer("");
-    setHintVisible(false);
-    setHintUsedThisDoor(false);
-  }
-
-  function wrongAnswer() {
-    setGame((old) => ({
-      ...old,
+    setGameProfile((prev) => ({
+      ...prev,
+      wrongAnswers: prev.wrongAnswers + 1,
       streak: 0,
-      lastCorrect: false,
-      lastMessage: "Mauvaise réponse. Réessaie, la porte ne change pas.",
     }));
-    setAnswer("");
-  }
+  };
 
-  function validate() {
-    if (mission.type === "match") {
-      if (normalize(answer) === normalize(mission.answer)) nextDoor();
-      else wrongAnswer();
+  const validateSuccess = () => {
+    const xpBase = 12 + Math.floor((gameProfile.level - 1) / 15) * 2;
+    const xpGain = Math.max(6, xpBase - (hintAlreadyCounted ? 4 : 0));
+
+    setFeedback({
+      type: "success",
+      text: `Bonne réponse ! +${xpGain} XP — porte suivante déverrouillée.`,
+    });
+
+    setTimeout(() => {
+      setGameProfile((prev) => {
+        const isDoorComplete = prev.door >= 10;
+        const nextLevel = isDoorComplete ? Math.min(1000, prev.level + 1) : prev.level;
+        const nextDoor = isDoorComplete ? 1 : prev.door + 1;
+        const completedDoors = (nextLevel - 1) * 10 + (nextDoor - 1);
+        const totalPercent = Number(((completedDoors / 10000) * 100).toFixed(2));
+
+        return {
+          ...prev,
+          level: nextLevel,
+          door: nextDoor,
+          xp: prev.xp + xpGain,
+          correctAnswers: prev.correctAnswers + 1,
+          streak: prev.streak + 1,
+          bestStreak: Math.max(prev.bestStreak, prev.streak + 1),
+          totalPercent,
+        };
+      });
+    }, 650);
+  };
+
+  const submitText = () => {
+    const expected = normalizeValue(round.answer);
+    const received = normalizeValue(textAnswer);
+
+    if (!received) return;
+
+    if (received === expected) {
+      validateSuccess();
+    } else {
+      failRound();
+    }
+  };
+
+  const clickChoice = (option) => {
+    const expected = normalizeValue(round.answer);
+    const received = normalizeValue(option);
+
+    if (received === expected) {
+      validateSuccess();
+    } else {
+      failRound();
+    }
+  };
+
+  const handlePair = () => {
+    if (!leftChoice || !rightChoice) return;
+
+    const pairIsCorrect = round.pairs.some(
+      (pair) => pair.left === leftChoice && pair.right === rightChoice
+    );
+
+    if (!pairIsCorrect) {
+      failRound();
       return;
     }
 
-    if (normalize(answer) === normalize(mission.answer)) nextDoor();
-    else wrongAnswer();
-  }
-
-  function useHint() {
-    setHintVisible(true);
-    setHintUsedThisDoor(true);
-  }
-
-  function resetGame() {
-    const fresh = defaultGame();
-    setGame(fresh);
-    localStorage.removeItem(GAME_KEY);
-
-    if (member) {
-      const updated = {
-        ...member,
-        gamePoints: 0,
-        gameLevel: 1,
-        gameDoor: 1,
-        bestStreak: 0,
-        hintsUsed: 0,
-        validatedAnswers: 0,
-        playSeconds: 0,
-        lastActivity: "Jeu réinitialisé",
-      };
-      setMember(updated);
-      saveMember(updated);
-    }
-  }
-
-  const leaderboard = [
-    member
-      ? { name: member.name, level: game.level, door: game.door, xp: game.xp, time: formatTime(game.playSeconds) }
-      : null,
-    { name: "Alya", level: 11, door: 7, xp: 985, time: "02:18:42" },
-    { name: "Noé", level: 9, door: 4, xp: 820, time: "01:58:10" },
-    { name: "Yanis", level: 8, door: 9, xp: 730, time: "01:44:22" },
-  ]
-    .filter(Boolean)
-    .sort((a, b) => b.xp - a.xp);
-
-  if (mode === "play") {
-    return (
-      <main className="page gameplay-page">
-        <BackButton onClick={() => setMode("hub")} />
-
-        <header className="gameplay-header">
-          <div>
-            <p className="mini-brand">3B INTERNATIONAL</p>
-            <h1>Porte {game.door} — {mission.title}</h1>
-            <p>
-              Chaque bonne réponse ouvre la porte suivante. À 10 portes, tu
-              passes au niveau suivant.
-            </p>
-          </div>
-          <div className="gameplay-rings">
-            <ProgressRing percent={totalPercent} label="Total" />
-            <ProgressRing percent={doorPercent} label="Porte" />
-          </div>
-        </header>
-
-        <section className="gameplay-layout">
-          <GameCard title="Mission de la porte" className="mission-panel">
-            <h3>{mission.instruction}</h3>
-            <p>{mission.prompt}</p>
-            <p className="muted">
-              Les mécaniques tournent entre choix, écriture, mémoire, pays,
-              mots croisés, mots fléchés, code, quiz et association.
-            </p>
-
-            <div className="mechanic-strip">
-              {mechanics.slice(0, 12).map((m) => (
-                <span key={m}>{m}</span>
-              ))}
-            </div>
-          </GameCard>
-
-          <GameCard title="Réponse" className="answer-panel">
-            {mission.type === "choice" && (
-              <div className="choice-grid">
-                {mission.choices.map((choice) => (
-                  <button
-                    key={choice}
-                    className={answer === choice ? "selected-choice" : ""}
-                    onClick={() => setAnswer(choice)}
-                  >
-                    {choice}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {mission.type === "match" && (
-              <div className="match-grid">
-                {mission.pairs.map((pair) => (
-                  <button
-                    key={pair.left}
-                    className={answer === pair.left ? "selected-choice" : ""}
-                    onClick={() => setAnswer(pair.left)}
-                  >
-                    {pair.left} → {pair.right}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {mission.type === "input" && (
-              <input
-                className="answer-input"
-                value={answer}
-                placeholder="Écris ta réponse"
-                onChange={(e) => setAnswer(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") validate();
-                }}
-              />
-            )}
-
-            <div className="game-actions">
-              <button onClick={validate}>Valider</button>
-              <button className="secondary-btn" onClick={useHint}>
-                Indice
-              </button>
-            </div>
-
-            {hintVisible && <div className="hint-box">{mission.hint}</div>}
-            {game.lastMessage && (
-              <div className={game.lastCorrect ? "success-box" : "error-box"}>
-                {game.lastMessage}
-              </div>
-            )}
-          </GameCard>
-
-          <aside className="game-side">
-            <GameCard title="Niveau / porte">
-              <p>Niveau {game.level} / 1000</p>
-              <p>Porte {game.door} / 10</p>
-              <p>Difficulté : {difficulty.label} ({difficulty.percent}%)</p>
-            </GameCard>
-
-            <GameCard title="XP et temps">
-              <p>XP jeu : {game.xp}</p>
-              <p>Série : {game.streak}</p>
-              <p>Temps : {formatTime(game.playSeconds)}</p>
-            </GameCard>
-
-            <GameCard title="Règle XP">
-              <ul>
-                <li>Bonne réponse : XP gagné + porte suivante.</li>
-                <li>Indice utilisé : XP réduit pour cette porte.</li>
-                <li>Erreur : la porte ne change pas.</li>
-                <li>La difficulté augmente progressivement.</li>
-              </ul>
-            </GameCard>
-
-            <GameCard title="Statut joueur">
-              <p>Mode : {member ? "Membre 3B" : "Invité"}</p>
-              <p>Nom : {member?.name || "Invité"}</p>
-              <p>XP : {game.xp}</p>
-              <p>Niveau : {game.level}</p>
-              <p>Porte : {game.door}</p>
-            </GameCard>
-          </aside>
-        </section>
-      </main>
+    const exists = matchedPairs.some(
+      (pair) => pair.left === leftChoice && pair.right === rightChoice
     );
-  }
+
+    if (!exists) {
+      const nextPairs = [...matchedPairs, { left: leftChoice, right: rightChoice }];
+      setMatchedPairs(nextPairs);
+
+      if (nextPairs.length === round.pairs.length) {
+        validateSuccess();
+      } else {
+        setFeedback({
+          type: "success",
+          text: "Association validée. Continue pour terminer la porte.",
+        });
+      }
+    }
+
+    setLeftChoice(null);
+    setRightChoice(null);
+  };
+
+  const resetGame = () => {
+    setGameProfile({
+      level: 1,
+      door: 1,
+      xp: 0,
+      streak: 0,
+      bestStreak: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      hintsUsed: 0,
+      elapsedSeconds: 0,
+      totalPercent: 0,
+      lastMode: member ? "membre" : "invité",
+    });
+  };
+
+  const matchedLeft = matchedPairs.map((pair) => pair.left);
+  const matchedRight = matchedPairs.map((pair) => pair.right);
+
+  const renderActionContent = () => {
+    if (["complete", "write", "anagram", "code", "cross", "arrow"].includes(round.type)) {
+      return (
+        <div className="answer-block">
+          <input
+            className="text-input game-answer-input"
+            value={textAnswer}
+            onChange={(e) => setTextAnswer(e.target.value)}
+            placeholder="Écris ta réponse"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitText();
+            }}
+          />
+
+          <div className="button-row">
+            <button className="gold-button" onClick={submitText}>
+              Valider
+            </button>
+            <button className="blue-button" onClick={markHint}>
+              Indice
+            </button>
+          </div>
+
+          {hintVisible ? <div className="hint-box">{round.hint}</div> : null}
+          <Feedback feedback={feedback} />
+        </div>
+      );
+    }
+
+    if (["qcm", "flag", "intruder", "sequence"].includes(round.type)) {
+      return (
+        <div className="answer-block">
+          <div className="choice-grid">
+            {round.options.map((option) => (
+              <button
+                key={option}
+                className="choice-button"
+                onClick={() => clickChoice(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="button-row">
+            <button className="blue-button" onClick={markHint}>
+              Indice
+            </button>
+          </div>
+
+          {hintVisible ? <div className="hint-box">{round.hint}</div> : null}
+          <Feedback feedback={feedback} />
+        </div>
+      );
+    }
+
+    if (round.type === "association") {
+      const leftItems = round.pairs.map((pair) => pair.left);
+      const rightItems = shuffleWithSeed(round.pairs.map((pair) => pair.right), getStep(gameProfile) + 99);
+
+      return (
+        <div className="answer-block">
+          <div className="association-grid">
+            <div>
+              <div className="association-title">Colonne gauche</div>
+              <div className="association-list">
+                {leftItems.map((item) => (
+                  <button
+                    key={item}
+                    className={`choice-button small ${leftChoice === item ? "selected" : ""}`}
+                    onClick={() => setLeftChoice(item)}
+                    disabled={matchedLeft.includes(item)}
+                  >
+                    {matchedLeft.includes(item) ? `✓ ${item}` : item}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="association-title">Colonne droite</div>
+              <div className="association-list">
+                {rightItems.map((item) => (
+                  <button
+                    key={item}
+                    className={`choice-button small ${rightChoice === item ? "selected" : ""}`}
+                    onClick={() => setRightChoice(item)}
+                    disabled={matchedRight.includes(item)}
+                  >
+                    {matchedRight.includes(item) ? `✓ ${item}` : item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="button-row">
+            <button className="gold-button" onClick={handlePair}>
+              Associer
+            </button>
+            <button className="blue-button" onClick={markHint}>
+              Indice
+            </button>
+          </div>
+
+          {hintVisible ? <div className="hint-box">{round.hint}</div> : null}
+          <Feedback feedback={feedback} />
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
-    <main className="page">
-      <BackButton onClick={() => go("home")} />
-      <header className="page-title">
-        <p className="mini-brand">3B INTERNATIONAL</p>
-        <h1>Jeux 3B</h1>
-        <p>50 mécaniques de jeu, progression, XP et classement.</p>
-      </header>
+    <div className="page">
+      <button className="back-button" onClick={onBack}>
+        ← Retour
+      </button>
 
-      <section className="page-grid">
-        <GameCard title="Progression porte">
-          <ProgressRing percent={doorPercent} label="Porte" />
-        </GameCard>
+      <div className="play-header-row">
+        <div>
+          <div className="page-eyebrow">3B INTERNATIONAL</div>
+          <h1 className="page-title">Porte {gameProfile.door} — {round.label}</h1>
+          <p className="page-subtitle">
+            Chaque bonne réponse ouvre la porte suivante. À 10 portes, tu passes au niveau suivant.
+          </p>
+        </div>
 
-        <GameCard title="Niveau / porte">
-          <p>Niveau {game.level} / 1000</p>
-          <p>Porte {game.door} / 10</p>
-          <p>Difficulté : {difficulty.label}</p>
-        </GameCard>
+        <div className="play-header-actions">
+          <button className="blue-button" onClick={resetGame}>
+            Réinitialiser le jeu
+          </button>
+        </div>
+      </div>
 
-        <GameCard title="XP et temps">
-          <p>XP jeu : {game.xp}</p>
-          <p>Série : {game.streak}</p>
-          <p>Temps : {formatTime(game.playSeconds)}</p>
-        </GameCard>
+      <div className="game-top-grid">
+        <SectionCard title="Progression porte">
+          <div className="progress-ring-shell">
+            <div className="progress-ring" style={{ "--progress": `${progressInsideDoor}%` }}>
+              <div className="progress-ring-inner">{progressInsideDoor}%</div>
+            </div>
+          </div>
+        </SectionCard>
 
-        <GameCard title="Règle XP">
-          <ul>
+        <SectionCard title="Niveau / porte">
+          <div className="stats-compact">
+            <div>Niveau {gameProfile.level} / 1000</div>
+            <div>Porte {gameProfile.door} / 10</div>
+            <div>Difficulté : {difficulty}</div>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="XP et temps">
+          <div className="stats-compact">
+            <div>XP jeu : {gameProfile.xp}</div>
+            <div>Série : {gameProfile.streak}</div>
+            <div>Temps : {formatDuration(gameProfile.elapsedSeconds)}</div>
+          </div>
+        </SectionCard>
+      </div>
+
+      <div className="game-main-grid">
+        <SectionCard title="Mission de la porte" className="mission-card">
+          <div className="game-mode-pill">{round.label}</div>
+          <div className="mission-main-text">{round.prompt}</div>
+          {round.clueText ? <div className="mission-emphasis">{round.clueText}</div> : null}
+        </SectionCard>
+
+        <SectionCard title="Réponse" className="answer-card">
+          {renderActionContent()}
+        </SectionCard>
+      </div>
+
+      <div className="game-bottom-grid">
+        <SectionCard title="Règle XP">
+          <ul className="bullet-list">
             <li>Bonne réponse : XP gagné + porte suivante.</li>
             <li>Indice utilisé : XP réduit pour cette porte.</li>
             <li>Erreur : la porte ne change pas.</li>
             <li>Après 10 portes validées, tu passes au niveau suivant.</li>
             <li>La difficulté augmente progressivement avec l’avancement.</li>
           </ul>
-        </GameCard>
+        </SectionCard>
 
-        <GameCard title="Statut joueur">
-          <p>Mode : {member ? "Membre 3B" : "Invité"}</p>
-          <p>Nom : {member?.name || "Invité"}</p>
-          <p>Progression sauvegardée : {member ? "Oui" : "Non"}</p>
-          <p>
-            Sans passeport, tu peux tester le jeu, mais la progression n’est pas
-            enregistrée automatiquement.
-          </p>
-        </GameCard>
-
-        <GameCard title="Classement général">
-          <div className="leaderboard-list">
-            {leaderboard.map((p, i) => (
-              <div key={p.name} className="leader-row">
-                <span>#{i + 1}</span>
-                <strong>{p.name}</strong>
-                <span>Niv. {p.level}</span>
-                <span>Porte {p.door}</span>
-                <span>XP {p.xp}</span>
-                <span>{p.time}</span>
-              </div>
-            ))}
+        <SectionCard title="Statut joueur">
+          <div className="info-list">
+            <div><span>Mode</span><strong>{member ? "Membre 3B" : "Invité"}</strong></div>
+            <div><span>Nom</span><strong>{member?.name || "Invité"}</strong></div>
+            <div><span>Meilleure série</span><strong>{gameProfile.bestStreak}</strong></div>
+            <div><span>Réponses validées</span><strong>{gameProfile.correctAnswers}</strong></div>
           </div>
-        </GameCard>
-
-        <GameCard title="Jeu actuel">
-          <p>Portes 3B — mots, pays, secret, musique et ADN 3B.</p>
-          <p>1000 niveaux • 10 portes par niveau • XP lente et progressive.</p>
-          <div className="button-stack">
-            <button onClick={() => setMode("play")}>Ouvrir le jeu</button>
-            <button className="secondary-btn" onClick={resetGame}>
-              Réinitialiser le jeu
-            </button>
-          </div>
-        </GameCard>
-
-        <GameCard title="Mécaniques disponibles">
-          <div className="mechanic-grid">
-            {mechanics.map((m) => (
-              <span key={m}>{m}</span>
-            ))}
-          </div>
-        </GameCard>
-      </section>
-    </main>
+        </SectionCard>
+      </div>
+    </div>
   );
 }

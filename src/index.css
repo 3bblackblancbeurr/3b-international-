@@ -1,21 +1,85 @@
-html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
+/* src/index.css */
+
+/* RESET PROPRE GLOBAL */
+* {
+  box-sizing: border-box;
+}
+
+html {
   min-height: 100%;
-  width: 100%;
+  background: #000;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #050505;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #000;
   color: #ffffff;
   font-family: Georgia, "Times New Roman", serif;
+  overflow-x: hidden;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+#root {
+  min-height: 100vh;
+}
+
+/* Évite les bugs de zoom mobile */
 button,
 input,
 select,
 textarea {
-  font: inherit;
+  font-family: inherit;
+  font-size: 16px;
+}
+
+/* Boutons propres */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Images et médias propres */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  display: block;
+}
+
+/* Sélection premium */
+::selection {
+  background: rgba(240, 223, 89, 0.35);
+  color: #ffffff;
+}
+
+/* Scrollbar luxe sur PC */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020304;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #f0df59, #7a6418);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #fff08a, #b99723);
+}
+
+/* Accessibilité propre */
+:focus-visible {
+  outline: 2px solid #43d8ff;
+  outline-offset: 3px;
 }
