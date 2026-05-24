@@ -1,224 +1,338 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 const STORAGE_GAME = "3b_game_v3_final";
 
 const MISSIONS = [
-  { type: "qcm", title: "QCM premium", question: "Que signifie 3B ?", options: ["Black Blanc Beur", "Blue Black Brand", "Boutique Bleu Bronze"], answer: "Black Blanc Beur" },
-  { type: "scramble", title: "Mot mélangé", question: "Remets le mot dans l’ordre", letters: ["R", "I", "T", "É", "H", "A", "G", "E"], answer: "HÉRITAGE" },
-  { type: "memory", title: "Mémoire", question: "Mémorise : France • Italie • Estonie. Quel pays était en troisième ?", options: ["France", "Italie", "Estonie"], answer: "Estonie" },
-  { type: "code", title: "Code secret", question: "Code indice officiel 3B", answer: "ITALIE" },
-  { type: "intrus", title: "Trouve l’intrus", question: "Lequel n’est pas un pays officiel 3B actuel ?", options: ["France", "Maroc", "Canada", "Turquie"], answer: "Canada" },
-  { type: "suite", title: "Suite logique", question: "Complète : Découverte → Héritier → Gardien → ?", answer: "LÉGENDE" },
-  { type: "complete", title: "Compléter", question: "Ce n’est pas une marque, c’est un _____.", answer: "HÉRITAGE" },
-  { type: "crossword", title: "Mot croisé", question: "Trouve le mot vertical : 3B est un...", answer: "LEGACY" },
-  { type: "arrow", title: "Mot fléché", question: "Grille fléchée : complète les 4 mots courts", answer: "LUXE" },
+  {
+    type: "qcm",
+    title: "QCM premium",
+    description: "Question rapide sur l’univers 3B.",
+    question: "Quel pays est actuellement débloqué dans le passeport 3B ?",
+    answers: ["Italie", "France", "Maroc", "Espagne"],
+    correct: "France",
+    reward: 20,
+  },
+  {
+    type: "scramble",
+    title: "Mot mélangé",
+    description: "Remets le mot dans le bon ordre.",
+    question: "Trouve le mot caché : E G A H E R I T",
+    correct: "HERITAGE",
+    reward: 25,
+  },
+  {
+    type: "memory",
+    title: "Mémoire 3B",
+    description: "Retrouve la bonne paire.",
+    question: "Quelle paire correspond au slogan 3B ?",
+    answers: [
+      "Mode / hasard",
+      "Héritage / communauté",
+      "Sport / oubli",
+      "Secret / silence",
+    ],
+    correct: "Héritage / communauté",
+    reward: 20,
+  },
+  {
+    type: "code",
+    title: "Code secret",
+    description: "Déverrouille l’indice.",
+    question: "Entre le code secret lié au premier indice.",
+    correct: "ITALIE",
+    reward: 40,
+  },
+  {
+    type: "intrus",
+    title: "Trouve l’intrus",
+    description: "Repère l’élément qui n’est pas un pays officiel 3B.",
+    question: "France, Italie, Estonie, Japon",
+    answers: ["France", "Italie", "Estonie", "Japon"],
+    correct: "Japon",
+    reward: 20,
+  },
+  {
+    type: "suite",
+    title: "Suite logique",
+    description: "Continue la logique.",
+    question: "Découverte → Héritier → Gardien → ?",
+    answers: ["Légende", "Débutant", "Silence", "Archive"],
+    correct: "Légende",
+    reward: 25,
+  },
+  {
+    type: "complete",
+    title: "Compléter",
+    description: "Complète la phrase officielle.",
+    question: "Ce n’est pas une marque, c’est un...",
+    correct: "HERITAGE",
+    reward: 25,
+  },
+  {
+    type: "crossword",
+    title: "Mot croisé",
+    description: "Uniquement des lettres.",
+    question: "Mot à écrire : identité forte du projet 3B.",
+    correct: "HERITAGE",
+    reward: 30,
+  },
+  {
+    type: "arrow",
+    title: "Mot fléché",
+    description: "Relie les idées principales.",
+    question: "Associe 3B au bon mot-clé.",
+    answers: ["Héritage", "Hasard", "Copie", "Oubli"],
+    correct: "Héritage",
+    reward: 30,
+  },
 ];
 
-function loadGame() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_GAME)) || {
-      xp: 0,
-      level: 1,
-      streak: 0,
-      played: 0,
-    };
-  } catch {
-    return {
-      xp: 0,
-      level: 1,
-      streak: 0,
-      played: 0,
-    };
-  }
+function normalize(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
-function saveGame(g) {
-  localStorage.setItem(STORAGE_GAME, JSON.stringify(g));
-  return g;
+function onlyLetters(value) {
+  return String(value || "").replace(/[^a-zA-ZÀ-ÿ]/g, "");
+}
+
+function createInitialGame() {
+  return {
+    xp: 120,
+    level: 3,
+    streak: 0,
+    bestStreak: 2,
+    completed: [],
+    rank: "Héritier",
+  };
 }
 
 export default function Jeu3B() {
-  const [game, setGame] = useState(loadGame);
-  const [index, setIndex] = useState(0);
-  const [answer, setAnswer] = useState("");
-  const [feedback, setFeedback] = useState("");
+  const [game, setGame] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_GAME);
 
-  const mission = MISSIONS[index % MISSIONS.length];
-  const progress = Math.min(100, game.xp % 100);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return createInitialGame();
+      }
+    }
 
-  function check(value = answer) {
-    const normalized = String(value).trim().toUpperCase();
-    const correct = normalized === mission.answer.toUpperCase();
+    const initial = createInitialGame();
+    localStorage.setItem(STORAGE_GAME, JSON.stringify(initial));
+    return initial;
+  });
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [input, setInput] = useState("");
+  const [feedback, setFeedback] = useState("Choisis une mission et gagne de l’XP 3B.");
+  const mission = MISSIONS[activeIndex];
+
+  const progress = useMemo(() => {
+    return Math.min(100, Math.round((game.completed.length / MISSIONS.length) * 100));
+  }, [game.completed.length]);
+
+  function saveGame(next) {
+    setGame(next);
+    localStorage.setItem(STORAGE_GAME, JSON.stringify(next));
+  }
+
+  function validate(answer) {
+    const cleanAnswer = normalize(answer);
+    const cleanCorrect = normalize(mission.correct);
+
+    if (cleanAnswer !== cleanCorrect) {
+      setFeedback("Pas encore. Réessaie, lis bien l’indice.");
+      return;
+    }
+
+    const alreadyDone = game.completed.includes(mission.type);
 
     const next = {
       ...game,
-      played: game.played + 1,
-      streak: correct ? game.streak + 1 : 0,
-      xp: correct ? game.xp + 15 + game.streak * 2 : game.xp,
-      level: Math.max(1, Math.floor((correct ? game.xp + 15 : game.xp) / 100) + 1),
+      xp: alreadyDone ? game.xp : game.xp + mission.reward,
+      streak: game.streak + 1,
+      bestStreak: Math.max(game.bestStreak, game.streak + 1),
+      completed: alreadyDone ? game.completed : [...game.completed, mission.type],
     };
 
-    setGame(saveGame(next));
-    setFeedback(correct ? "✅ Correct + XP 3B" : "❌ Presque. Réessaie ou passe à la mission suivante.");
+    next.level = Math.max(1, Math.floor(next.xp / 100) + 1);
+    next.rank = next.xp >= 500 ? "Gardien" : next.xp >= 250 ? "Héritier" : "Découverte";
 
-    if (correct) {
-      setTimeout(() => {
-        setAnswer("");
-        setFeedback("");
-        setIndex((i) => i + 1);
-      }, 650);
+    saveGame(next);
+    setFeedback(`Validé. +${alreadyDone ? 0 : mission.reward} XP. Mission comprise.`);
+    setInput("");
+  }
+
+  function nextMission() {
+    setActiveIndex((current) => (current + 1) % MISSIONS.length);
+    setInput("");
+    setFeedback("Nouvelle mission chargée.");
+  }
+
+  function renderMissionBody() {
+    if (mission.answers) {
+      return (
+        <div className="answer-grid">
+          {mission.answers.map((answer) => (
+            <button
+              key={answer}
+              className="answer-button"
+              onClick={() => validate(answer)}
+            >
+              {answer}
+            </button>
+          ))}
+        </div>
+      );
     }
+
+    if (mission.type === "crossword") {
+      const letters = onlyLetters(input).toUpperCase().slice(0, 7);
+
+      return (
+        <>
+          <input
+            className="game-input"
+            value={letters}
+            onChange={(event) => setInput(onlyLetters(event.target.value).toUpperCase())}
+            placeholder="Écris uniquement des lettres"
+          />
+
+          <div className="crossword-grid">
+            {"HERITAGE".split("").map((letter, index) => (
+              <span key={`${letter}-${index}`} className="crossword-cell">
+                {letters[index] || ""}
+              </span>
+            ))}
+          </div>
+
+          <button className="game-action-button" onClick={() => validate(letters)}>
+            Valider le mot croisé
+          </button>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <input
+          className="game-input"
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="Ta réponse"
+        />
+
+        <button className="game-action-button" onClick={() => validate(input)}>
+          Valider
+        </button>
+      </>
+    );
   }
 
   return (
     <div className="jeu3b-shell">
-      <header className="jeu3b-head">
-        <div>
-          <span>3B INTERNATIONAL</span>
-          <h1>Jeux 3B</h1>
-          <p>Jeux variés : QCM, mémoire, code, intrus, suite logique, mots croisés et mots fléchés.</p>
-        </div>
-        <div className="game-hud">
-          <b>Niveau {game.level}</b>
-          <b>{game.xp} XP</b>
-          <b>Série {game.streak}</b>
-        </div>
-      </header>
-
-      <div className="game-panels">
-        <section className="game-card-main">
-          <div className="game-mode">{mission.title}</div>
-          <h2>{mission.question}</h2>
-          <GameRenderer
-            mission={mission}
-            answer={answer}
-            setAnswer={setAnswer}
-            check={check}
-          />
-
-          {feedback && <div className="game-feedback">{feedback}</div>}
-
-          <div className="game-actions">
-            <button onClick={() => check()}>Valider</button>
-            <button
-              onClick={() => {
-                setAnswer("");
-                setFeedback("");
-                setIndex((i) => i + 1);
-              }}
-            >
-              Mission suivante
-            </button>
+      <section className="game-dashboard">
+        <div className="game-card-panel">
+          <h3>Progression du jour</h3>
+          <div className="progress-ring small">
+            <span>{progress}%</span>
           </div>
-        </section>
+        </div>
 
-        <aside className="game-side">
-          <h3>Progression</h3>
-          <div className="game-ring" style={{ "--p": `${progress}%` }}>
-            {progress}%
+        <div className="game-card-panel">
+          <h3>Niveau / rang</h3>
+          <div className="game-stats">
+            <div className="game-stat-line">
+              <span>Niveau</span>
+              <strong>{game.level}</strong>
+            </div>
+            <div className="game-stat-line">
+              <span>Rang</span>
+              <strong>{game.rank}</strong>
+            </div>
+            <div className="game-stat-line">
+              <span>Meilleure série</span>
+              <strong>{game.bestStreak}</strong>
+            </div>
           </div>
-          <p>Objectif : enchaîner les missions sans répétition.</p>
-          <h3>Types actifs</h3>
-          {MISSIONS.map((m) => (
-            <span className="mode-chip" key={m.type}>
-              {m.title}
+        </div>
+
+        <div className="game-card-panel">
+          <h3>XP et temps</h3>
+          <div className="game-stats">
+            <div className="game-stat-line">
+              <span>XP</span>
+              <strong>{game.xp}</strong>
+            </div>
+            <div className="game-stat-line">
+              <span>Bonus</span>
+              <strong>+3B</strong>
+            </div>
+            <div className="game-stat-line">
+              <span>Mode</span>
+              <strong>Actif</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="missions-grid-3b">
+        {MISSIONS.map((item, index) => (
+          <button
+            key={item.type}
+            className={`mission-card ${index === activeIndex ? "active" : ""}`}
+            onClick={() => {
+              setActiveIndex(index);
+              setInput("");
+              setFeedback("Mission sélectionnée.");
+            }}
+          >
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+            <span>
+              {game.completed.includes(item.type) ? "✓ Terminée" : `+${item.reward} XP`}
             </span>
-          ))}
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-function GameRenderer({ mission, answer, setAnswer, check }) {
-  if (["qcm", "memory", "intrus"].includes(mission.type)) {
-    return (
-      <div className="choice-grid">
-        {mission.options.map((o) => (
-          <button key={o} onClick={() => check(o)}>
-            {o}
           </button>
         ))}
-      </div>
-    );
-  }
+      </section>
 
-  if (mission.type === "scramble") {
-    return (
-      <>
-        <div className="letter-bank">
-          {mission.letters.map((l, i) => (
-            <button key={i} onClick={() => setAnswer((a) => a + l)}>
-              {l}
-            </button>
-          ))}
+      <section className="game-play-zone">
+        <p className="eyebrow">Mission active</p>
+        <h2>{mission.title}</h2>
+        <p>{mission.question}</p>
+
+        {renderMissionBody()}
+
+        <div className="game-feedback">{feedback}</div>
+
+        <button className="premium-action-button" onClick={nextMission}>
+          Mission suivante
+        </button>
+      </section>
+
+      <section className="game-card-panel">
+        <h3>Classement général</h3>
+
+        <div className="game-stats">
+          <div className="game-stat-line">
+            <span>Zakaria</span>
+            <strong>{game.xp} XP</strong>
+          </div>
+          <div className="game-stat-line">
+            <span>Communauté 3B</span>
+            <strong>À venir</strong>
+          </div>
+          <div className="game-stat-line">
+            <span>Objectif prochain</span>
+            <strong>300 XP</strong>
+          </div>
         </div>
-        <input
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value.toUpperCase().replace(/[^A-ZÉÈÀÙÇ]/g, ""))}
-          placeholder="Réponse"
-        />
-      </>
-    );
-  }
-
-  if (mission.type === "crossword") {
-    return (
-      <>
-        <CrosswordGrid />
-        <input
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value.toUpperCase().replace(/[^A-Z]/g, ""))}
-          placeholder="Mot trouvé"
-        />
-      </>
-    );
-  }
-
-  if (mission.type === "arrow") {
-    return (
-      <>
-        <ArrowGrid />
-        <input
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value.toUpperCase().replace(/[^A-Z]/g, ""))}
-          placeholder="Mot clé final"
-        />
-      </>
-    );
-  }
-
-  return (
-    <input
-      value={answer}
-      onChange={(e) => setAnswer(e.target.value.toUpperCase())}
-      placeholder="Ta réponse"
-    />
-  );
-}
-
-function CrosswordGrid() {
-  const cells = ["3", "B", "", "L", "E", "G", "A", "C", "Y", "", "", ""];
-  return (
-    <div className="cross-grid">
-      {cells.map((c, i) => (
-        <span className={c ? "filled" : "empty"} key={i}>
-          {c}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function ArrowGrid() {
-  const cells = ["L", "U", "X", "E", "→", "3", "B", "→", "★", "", "", ""];
-  return (
-    <div className="arrow-grid">
-      {cells.map((c, i) => (
-        <span className={c ? "filled" : "empty"} key={i}>
-          {c}
-        </span>
-      ))}
+      </section>
     </div>
   );
 }
