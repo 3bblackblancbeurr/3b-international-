@@ -123,6 +123,8 @@ const residenceCountries = [
 const official3BCountries = [
   {
     name: "France",
+    flag: "🇫🇷",
+    colors: ["#0055a4", "#ffffff", "#ef4135"],
     worldX: 505,
     worldY: 150,
     zoomX: 328,
@@ -132,6 +134,8 @@ const official3BCountries = [
   },
   {
     name: "Italie",
+    flag: "🇮🇹",
+    colors: ["#008c45", "#ffffff", "#cd212a"],
     worldX: 536,
     worldY: 165,
     zoomX: 430,
@@ -141,6 +145,8 @@ const official3BCountries = [
   },
   {
     name: "Estonie",
+    flag: "🇪🇪",
+    colors: ["#0072ce", "#000000", "#ffffff"],
     worldX: 556,
     worldY: 115,
     zoomX: 520,
@@ -150,6 +156,8 @@ const official3BCountries = [
   },
   {
     name: "Turquie",
+    flag: "🇹🇷",
+    colors: ["#e30a17", "#ffffff", "#e30a17"],
     worldX: 605,
     worldY: 183,
     zoomX: 650,
@@ -159,6 +167,8 @@ const official3BCountries = [
   },
   {
     name: "Algérie",
+    flag: "🇩🇿",
+    colors: ["#006233", "#ffffff", "#d21034"],
     worldX: 493,
     worldY: 214,
     zoomX: 312,
@@ -168,6 +178,8 @@ const official3BCountries = [
   },
   {
     name: "Tunisie",
+    flag: "🇹🇳",
+    colors: ["#e70013", "#ffffff", "#e70013"],
     worldX: 518,
     worldY: 203,
     zoomX: 372,
@@ -177,6 +189,8 @@ const official3BCountries = [
   },
   {
     name: "Maroc",
+    flag: "🇲🇦",
+    colors: ["#c1272d", "#006233", "#c1272d"],
     worldX: 468,
     worldY: 205,
     zoomX: 205,
@@ -186,6 +200,8 @@ const official3BCountries = [
   },
   {
     name: "Espagne",
+    flag: "🇪🇸",
+    colors: ["#aa151b", "#f1bf00", "#aa151b"],
     worldX: 479,
     worldY: 168,
     zoomX: 233,
@@ -193,6 +209,21 @@ const official3BCountries = [
     labelX: 110,
     labelY: 236,
   },
+];
+
+const cardCollection = [
+  { name: "Découverte", color: "Bleue", status: "active", icon: "💠" },
+  { name: "Héritier", color: "Noire", status: "verrouillée", icon: "♛" },
+  { name: "Gardien", color: "Or", status: "verrouillée", icon: "🛡️" },
+  { name: "Légende", color: "Platine", status: "verrouillée", icon: "★" },
+  { name: "Secret", color: "Violette", status: "verrouillée", icon: "🔐" },
+  { name: "Musique", color: "Bleu nuit", status: "verrouillée", icon: "♪" },
+  { name: "Créateur", color: "Argent", status: "verrouillée", icon: "✦" },
+  { name: "Jeux", color: "Cyan", status: "verrouillée", icon: "🎮" },
+  { name: "International", color: "Monde", status: "verrouillée", icon: "🌍" },
+  { name: "Drop", color: "Rouge", status: "verrouillée", icon: "🔥" },
+  { name: "Prototype", color: "Chrome", status: "verrouillée", icon: "🎁" },
+  { name: "Legacy", color: "Diamond", status: "verrouillée", icon: "◆" },
 ];
 
 function normalizeCountry(country) {
@@ -274,6 +305,295 @@ function MatrixDigits({ count = 40 }) {
   );
 }
 
+function ProgressCircle({ percent, label, icon = "◆" }) {
+  const radius = 46;
+  const circumference = 2 * Math.PI * radius;
+  const dash = (percent / 100) * circumference;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        placeItems: "center",
+        minHeight: 180,
+      }}
+    >
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle
+          cx="75"
+          cy="75"
+          r={radius}
+          fill="rgba(0,0,0,0.38)"
+          stroke="rgba(226,190,100,0.24)"
+          strokeWidth="10"
+        />
+        <circle
+          cx="75"
+          cy="75"
+          r={radius}
+          fill="none"
+          stroke="#e2be64"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${circumference - dash}`}
+          transform="rotate(-90 75 75)"
+          style={{ filter: "drop-shadow(0 0 8px rgba(226,190,100,.55))" }}
+        />
+        <text
+          x="75"
+          y="68"
+          textAnchor="middle"
+          fill="#e2be64"
+          fontSize="30"
+          fontWeight="700"
+        >
+          {icon}
+        </text>
+        <text
+          x="75"
+          y="96"
+          textAnchor="middle"
+          fill="#ffffff"
+          fontSize="18"
+          fontWeight="700"
+        >
+          {percent}%
+        </text>
+      </svg>
+      <p style={{ marginTop: 0 }}>{label}</p>
+    </div>
+  );
+}
+
+function VisualCard({ title, children, visual }) {
+  return (
+    <div
+      className="info-card"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1.1fr .9fr",
+        gap: 18,
+        alignItems: "center",
+      }}
+    >
+      <div>
+        <h3>{title}</h3>
+        {children}
+      </div>
+      <div>{visual}</div>
+    </div>
+  );
+}
+
+function Mini3BCard({ card }) {
+  const active = card.status === "active";
+
+  return (
+    <div
+      style={{
+        minHeight: 86,
+        borderRadius: 16,
+        padding: 12,
+        border: active
+          ? "1px solid rgba(226,190,100,.95)"
+          : "1px solid rgba(226,190,100,.32)",
+        background: active
+          ? "linear-gradient(135deg, rgba(4,40,70,.95), rgba(0,0,0,.96) 55%, rgba(226,190,100,.20))"
+          : "linear-gradient(135deg, rgba(20,20,20,.96), rgba(0,0,0,.96))",
+        boxShadow: active
+          ? "0 0 18px rgba(226,190,100,.22)"
+          : "inset 0 0 18px rgba(255,255,255,.02)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          right: 10,
+          top: 8,
+          color: "#e2be64",
+          fontWeight: 800,
+          opacity: 0.7,
+        }}
+      >
+        3B
+      </div>
+      <div style={{ fontSize: 20 }}>{card.icon}</div>
+      <p
+        style={{
+          textAlign: "left",
+          margin: "4px 0 0",
+          color: "#fff",
+          fontSize: 14,
+          lineHeight: 1.15,
+        }}
+      >
+        {card.name}
+      </p>
+      <p
+        style={{
+          textAlign: "left",
+          margin: "4px 0 0",
+          color: active ? "#e2be64" : "#b8b8b8",
+          fontSize: 12,
+          lineHeight: 1.15,
+        }}
+      >
+        {card.status}
+      </p>
+    </div>
+  );
+}
+
+function DigitalPassportVisual() {
+  return (
+    <div
+      style={{
+        minHeight: 210,
+        borderRadius: 26,
+        border: "1px solid rgba(88,181,234,.55)",
+        background:
+          "radial-gradient(circle at top, rgba(115,230,255,.22), transparent 42%), linear-gradient(135deg, #06111a, #020508)",
+        padding: 18,
+        boxShadow: "0 0 24px rgba(88,181,234,.15)",
+      }}
+    >
+      <div
+        style={{
+          border: "1px solid rgba(226,190,100,.65)",
+          borderRadius: 20,
+          minHeight: 170,
+          padding: 18,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: 0.18,
+            background:
+              "repeating-linear-gradient(90deg, transparent 0 14px, rgba(115,230,255,.35) 15px 16px)",
+          }}
+        />
+        <div
+          style={{
+            fontSize: 46,
+            color: "#e2be64",
+            fontWeight: 800,
+            position: "relative",
+          }}
+        >
+          3B
+        </div>
+        <p
+          style={{
+            textAlign: "left",
+            margin: "8px 0",
+            color: "#baf6ff",
+            position: "relative",
+          }}
+        >
+          PASSEPORT DIGITAL
+        </p>
+        <div
+          style={{
+            width: 74,
+            height: 74,
+            borderRadius: 14,
+            border: "1px solid rgba(186,246,255,.75)",
+            display: "grid",
+            placeItems: "center",
+            color: "#fff",
+            position: "relative",
+          }}
+        >
+          QR
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShieldVisual({ text = "3B" }) {
+  return (
+    <div
+      style={{
+        minHeight: 160,
+        display: "grid",
+        placeItems: "center",
+      }}
+    >
+      <div
+        style={{
+          width: 135,
+          height: 150,
+          clipPath:
+            "polygon(50% 0%, 92% 18%, 82% 78%, 50% 100%, 18% 78%, 8% 18%)",
+          background:
+            "linear-gradient(135deg, rgba(226,190,100,.95), rgba(20,20,20,.96) 54%, rgba(115,230,255,.35))",
+          display: "grid",
+          placeItems: "center",
+          color: "#050505",
+          fontSize: 36,
+          fontWeight: 900,
+          boxShadow: "0 0 24px rgba(226,190,100,.28)",
+        }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
+
+function UnlockedFlagVisual({ country }) {
+  const current = country || official3BCountries[0];
+
+  return (
+    <div
+      style={{
+        minHeight: 230,
+        borderRadius: 26,
+        border: "1px solid rgba(226,190,100,.65)",
+        overflow: "hidden",
+        background: "#050505",
+        boxShadow: "0 0 20px rgba(226,190,100,.16)",
+      }}
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", height: 130 }}>
+        {current.colors.map((color, index) => (
+          <div key={index} style={{ background: color }} />
+        ))}
+      </div>
+      <div
+        style={{
+          minHeight: 100,
+          display: "grid",
+          placeItems: "center",
+          background:
+            "radial-gradient(circle at center, rgba(226,190,100,.24), rgba(0,0,0,.94))",
+        }}
+      >
+        <div
+          style={{
+            color: "#e2be64",
+            fontSize: 48,
+            fontWeight: 900,
+            textShadow: "0 0 14px rgba(226,190,100,.45)",
+          }}
+        >
+          3B
+        </div>
+        <p style={{ margin: 0, color: "#fff" }}>
+          {current.flag} {current.name} activé
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function WorldMap3B({ originCountry }) {
   const unlocked = useMemo(
     () => getUnlockedCountry(originCountry),
@@ -307,42 +627,12 @@ function WorldMap3B({ originCountry }) {
           <rect width="1000" height="260" fill="#071018" />
           <MatrixDigits count={48} />
 
-          <path
-            d="M70 105 C85 80, 125 65, 175 75 C210 82, 245 100, 250 125 C255 150, 220 170, 175 173 C120 177, 80 155, 70 105 Z"
-            fill="url(#worldBlueFill)"
-            stroke="#1e5d88"
-            strokeWidth="2"
-          />
-          <path
-            d="M210 175 C250 175, 298 205, 286 246 C250 255, 218 242, 204 212 C195 194, 194 182, 210 175 Z"
-            fill="url(#worldBlueFill)"
-            stroke="#1e5d88"
-            strokeWidth="2"
-          />
-          <path
-            d="M398 88 C445 53, 508 48, 565 64 C614 77, 646 108, 645 136 C642 168, 602 184, 546 175 C500 167, 466 154, 442 143 C414 129, 388 115, 398 88 Z"
-            fill="url(#worldBlueFill)"
-            stroke="#1e5d88"
-            strokeWidth="2"
-          />
-          <path
-            d="M480 170 C530 166, 580 182, 603 222 C585 251, 540 255, 503 240 C472 226, 450 202, 480 170 Z"
-            fill="url(#worldBlueFill)"
-            stroke="#1e5d88"
-            strokeWidth="2"
-          />
-          <path
-            d="M660 115 C715 95, 818 107, 882 137 C922 156, 932 184, 898 201 C836 221, 774 211, 725 194 C687 180, 650 146, 660 115 Z"
-            fill="url(#worldBlueFill)"
-            stroke="#1e5d88"
-            strokeWidth="2"
-          />
-          <path
-            d="M814 58 C859 44, 916 56, 952 76 C974 89, 956 103, 916 105 C870 107, 836 96, 814 58 Z"
-            fill="url(#worldBlueFill)"
-            stroke="#1e5d88"
-            strokeWidth="2"
-          />
+          <path d="M70 105 C85 80, 125 65, 175 75 C210 82, 245 100, 250 125 C255 150, 220 170, 175 173 C120 177, 80 155, 70 105 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
+          <path d="M210 175 C250 175, 298 205, 286 246 C250 255, 218 242, 204 212 C195 194, 194 182, 210 175 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
+          <path d="M398 88 C445 53, 508 48, 565 64 C614 77, 646 108, 645 136 C642 168, 602 184, 546 175 C500 167, 466 154, 442 143 C414 129, 388 115, 398 88 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
+          <path d="M480 170 C530 166, 580 182, 603 222 C585 251, 540 255, 503 240 C472 226, 450 202, 480 170 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
+          <path d="M660 115 C715 95, 818 107, 882 137 C922 156, 932 184, 898 201 C836 221, 774 211, 725 194 C687 180, 650 146, 660 115 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
+          <path d="M814 58 C859 44, 916 56, 952 76 C974 89, 956 103, 916 105 C870 107, 836 96, 814 58 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
 
           {official3BCountries.map((country) => {
             const isUnlocked =
@@ -390,97 +680,25 @@ function WorldMap3B({ originCountry }) {
 
           <g opacity="0.22">
             {Array.from({ length: 28 }).map((_, i) => (
-              <line
-                key={i}
-                x1="0"
-                y1={i * 20}
-                x2="900"
-                y2={i * 20}
-                stroke="#114765"
-                strokeWidth="1"
-              />
+              <line key={i} x1="0" y1={i * 20} x2="900" y2={i * 20} stroke="#114765" strokeWidth="1" />
             ))}
             {Array.from({ length: 38 }).map((_, i) => (
-              <line
-                key={`v-${i}`}
-                x1={i * 24}
-                y1="0"
-                x2={i * 24}
-                y2="520"
-                stroke="#114765"
-                strokeWidth="1"
-              />
+              <line key={`v-${i}`} x1={i * 24} y1="0" x2={i * 24} y2="520" stroke="#114765" strokeWidth="1" />
             ))}
           </g>
 
-          <path
-            d="M92 240 C135 210, 180 190, 230 188 C278 186, 318 166, 355 145 C388 126, 418 112, 460 110 C507 108, 550 114, 594 132 C631 147, 662 162, 700 181 C730 198, 740 220, 734 246 C726 274, 702 280, 672 278 C638 276, 616 268, 592 261 C560 251, 528 250, 494 260 C461 270, 444 287, 436 312 C424 348, 393 366, 344 372 C286 379, 234 377, 189 365 C155 356, 128 337, 110 310 C94 285, 84 261, 92 240 Z"
-            fill="url(#zoomLand)"
-            stroke="#2a89ba"
-            strokeWidth="2.2"
-          />
+          <path d="M92 240 C135 210, 180 190, 230 188 C278 186, 318 166, 355 145 C388 126, 418 112, 460 110 C507 108, 550 114, 594 132 C631 147, 662 162, 700 181 C730 198, 740 220, 734 246 C726 274, 702 280, 672 278 C638 276, 616 268, 592 261 C560 251, 528 250, 494 260 C461 270, 444 287, 436 312 C424 348, 393 366, 344 372 C286 379, 234 377, 189 365 C155 356, 128 337, 110 310 C94 285, 84 261, 92 240 Z" fill="url(#zoomLand)" stroke="#2a89ba" strokeWidth="2.2" />
+          <path d="M152 223 C183 210, 220 206, 255 213 C283 219, 302 232, 298 253 C293 275, 268 286, 231 286 C194 286, 160 274, 145 252 C136 239, 138 229, 152 223 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
+          <path d="M286 160 C314 142, 351 138, 382 147 C407 154, 423 169, 421 192 C418 220, 393 236, 360 236 C330 236, 301 226, 286 205 C274 188, 272 172, 286 160 Z" fill="#17384f" stroke="#69c9ff" strokeWidth="2.2" />
+          <path d="M413 199 C431 199, 444 205, 451 219 C454 229, 449 239, 439 245 C450 255, 458 268, 460 282 C455 295, 442 300, 430 297 C424 283, 420 270, 412 260 C402 248, 395 233, 399 220 C401 208, 406 200, 413 199 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
+          <path d="M493 88 C510 80, 534 80, 551 89 C559 96, 557 107, 545 113 C528 120, 506 118, 492 108 C487 101, 487 93, 493 88 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
+          <path d="M581 240 C614 225, 652 223, 694 232 C719 237, 737 247, 738 261 C735 275, 718 285, 691 288 C656 292, 620 291, 592 285 C568 280, 551 270, 552 258 C554 249, 564 244, 581 240 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
+          <path d="M152 307 C173 297, 196 296, 210 305 C219 312, 222 326, 213 338 C200 350, 179 353, 161 345 C148 337, 143 319, 152 307 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
+          <path d="M226 321 C267 311, 318 312, 350 324 C370 332, 374 346, 365 357 C354 370, 327 375, 286 373 C250 371, 217 362, 202 347 C196 336, 204 327, 226 321 Z" fill="#17384f" stroke="#69c9ff" strokeWidth="2.2" />
+          <path d="M363 312 C375 308, 387 311, 393 319 C396 327, 391 338, 380 343 C370 345, 362 339, 360 329 C359 321, 360 315, 363 312 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
 
-          <path
-            d="M152 223 C183 210, 220 206, 255 213 C283 219, 302 232, 298 253 C293 275, 268 286, 231 286 C194 286, 160 274, 145 252 C136 239, 138 229, 152 223 Z"
-            fill="#16344b"
-            stroke="#58b5ea"
-            strokeWidth="2"
-          />
-          <path
-            d="M286 160 C314 142, 351 138, 382 147 C407 154, 423 169, 421 192 C418 220, 393 236, 360 236 C330 236, 301 226, 286 205 C274 188, 272 172, 286 160 Z"
-            fill="#17384f"
-            stroke="#69c9ff"
-            strokeWidth="2.2"
-          />
-          <path
-            d="M413 199 C431 199, 444 205, 451 219 C454 229, 449 239, 439 245 C450 255, 458 268, 460 282 C455 295, 442 300, 430 297 C424 283, 420 270, 412 260 C402 248, 395 233, 399 220 C401 208, 406 200, 413 199 Z"
-            fill="#16344b"
-            stroke="#58b5ea"
-            strokeWidth="2"
-          />
-          <path
-            d="M493 88 C510 80, 534 80, 551 89 C559 96, 557 107, 545 113 C528 120, 506 118, 492 108 C487 101, 487 93, 493 88 Z"
-            fill="#16344b"
-            stroke="#58b5ea"
-            strokeWidth="2"
-          />
-          <path
-            d="M581 240 C614 225, 652 223, 694 232 C719 237, 737 247, 738 261 C735 275, 718 285, 691 288 C656 292, 620 291, 592 285 C568 280, 551 270, 552 258 C554 249, 564 244, 581 240 Z"
-            fill="#16344b"
-            stroke="#58b5ea"
-            strokeWidth="2"
-          />
-          <path
-            d="M152 307 C173 297, 196 296, 210 305 C219 312, 222 326, 213 338 C200 350, 179 353, 161 345 C148 337, 143 319, 152 307 Z"
-            fill="#16344b"
-            stroke="#58b5ea"
-            strokeWidth="2"
-          />
-          <path
-            d="M226 321 C267 311, 318 312, 350 324 C370 332, 374 346, 365 357 C354 370, 327 375, 286 373 C250 371, 217 362, 202 347 C196 336, 204 327, 226 321 Z"
-            fill="#17384f"
-            stroke="#69c9ff"
-            strokeWidth="2.2"
-          />
-          <path
-            d="M363 312 C375 308, 387 311, 393 319 C396 327, 391 338, 380 343 C370 345, 362 339, 360 329 C359 321, 360 315, 363 312 Z"
-            fill="#16344b"
-            stroke="#58b5ea"
-            strokeWidth="2"
-          />
-
-          <path
-            d="M136 215 C248 170, 386 124, 542 133"
-            fill="none"
-            stroke="rgba(115,230,255,0.22)"
-            strokeWidth="1.5"
-          />
-          <path
-            d="M174 296 C240 285, 320 286, 436 300"
-            fill="none"
-            stroke="rgba(115,230,255,0.18)"
-            strokeWidth="1.2"
-          />
+          <path d="M136 215 C248 170, 386 124, 542 133" fill="none" stroke="rgba(115,230,255,0.22)" strokeWidth="1.5" />
+          <path d="M174 296 C240 285, 320 286, 436 300" fill="none" stroke="rgba(115,230,255,0.18)" strokeWidth="1.2" />
 
           {official3BCountries.map((country) => {
             const isUnlocked =
@@ -489,53 +707,10 @@ function WorldMap3B({ originCountry }) {
 
             return (
               <g key={country.name}>
-                <line
-                  x1={country.zoomX}
-                  y1={country.zoomY}
-                  x2={country.labelX}
-                  y2={country.labelY}
-                  stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"}
-                  strokeWidth="1.5"
-                  opacity="0.9"
-                />
-                <circle
-                  cx={country.zoomX}
-                  cy={country.zoomY}
-                  r={isUnlocked ? 8 : 6}
-                  fill={isUnlocked ? "#73e6ff" : "#17384f"}
-                  stroke={isUnlocked ? "#baf6ff" : "#58b5ea"}
-                  strokeWidth="2"
-                  filter={isUnlocked ? "url(#zoomGlow)" : "none"}
-                />
-                <rect
-                  x={country.labelX - 6}
-                  y={country.labelY - 16}
-                  rx="8"
-                  ry="8"
-                  width={country.name.length * 9 + 46}
-                  height="24"
-                  fill={
-                    isUnlocked
-                      ? "rgba(8, 48, 70, 0.92)"
-                      : "rgba(7, 24, 36, 0.90)"
-                  }
-                  stroke={isUnlocked ? "#8deeff" : "#2e7ba5"}
-                  strokeWidth="1.4"
-                />
-                <circle
-                  cx={country.labelX + 8}
-                  cy={country.labelY - 4}
-                  r="4"
-                  fill={isUnlocked ? "#73e6ff" : "#1b4f70"}
-                />
-                <text
-                  x={country.labelX + 18}
-                  y={country.labelY}
-                  fill={isUnlocked ? "#baf6ff" : "#7dd7ff"}
-                  fontSize="13"
-                  fontFamily="monospace"
-                  fontWeight="700"
-                >
+                <line x1={country.zoomX} y1={country.zoomY} x2={country.labelX} y2={country.labelY} stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"} strokeWidth="1.5" opacity="0.9" />
+                <circle cx={country.zoomX} cy={country.zoomY} r={isUnlocked ? 8 : 6} fill={isUnlocked ? "#73e6ff" : "#17384f"} stroke={isUnlocked ? "#baf6ff" : "#58b5ea"} strokeWidth="2" filter={isUnlocked ? "url(#zoomGlow)" : "none"} />
+                <rect x={country.labelX - 6} y={country.labelY - 16} rx="8" ry="8" width={country.name.length * 9 + 46} height="24" fill={isUnlocked ? "rgba(8, 48, 70, 0.92)" : "rgba(7, 24, 36, 0.90)"} stroke={isUnlocked ? "#8deeff" : "#2e7ba5"} strokeWidth="1.4" />
+                <text x={country.labelX + 18} y={country.labelY} fill={isUnlocked ? "#baf6ff" : "#7dd7ff"} fontSize="13" fontFamily="monospace" fontWeight="700">
                   {country.name}
                 </text>
               </g>
@@ -572,6 +747,7 @@ function Home({ go }) {
         <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
         <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
         <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport-access")} />
+        <MenuCard icon="🎮" title="Jeux" onClick={() => go("jeux")} />
         <MenuCard icon="🔒" title="Coffre secret 3B" onClick={() => go("secret")} />
         <MenuCard icon="☆" title="Plus encore" onClick={() => go("plus")} />
       </div>
@@ -772,6 +948,7 @@ function Secret({ go }) {
         <div className="info-card">
           <h3>Indice débloqué</h3>
           <p>Italie s’y comprennent — 8 juillet — 20h.</p>
+          <p>Récompense future : indice du prochain secret + prototype gratuit lors de sa sortie.</p>
         </div>
       )}
 
@@ -785,6 +962,44 @@ function Secret({ go }) {
       <div className="relief-box">
         <div className="relief-logo">3B</div>
       </div>
+    </div>
+  );
+}
+
+function Jeux({ go }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("home")} />
+      <LogoHeader small />
+
+      <h1>Jeux 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <p className="intro">
+        Espace futur des jeux 3B International. Les points gagnés dans les jeux
+        seront ajoutés au Passeport 3B.
+      </p>
+
+      <VisualCard
+        title="Jeux à venir"
+        visual={<ShieldVisual text="🎮" />}
+      >
+        <p>Mini-jeux 3B</p>
+        <p>Défis communautaires</p>
+        <p>Classements entre membres</p>
+        <p>Points gagnés en jouant</p>
+        <p>Points bonus quand un niveau est passé</p>
+      </VisualCard>
+
+      <VisualCard
+        title="Points des jeux"
+        visual={<ProgressCircle percent={0} label="À venir" icon="🎮" />}
+      >
+        <p>Victoire dans un jeu : points bonus</p>
+        <p>Passage de niveau : points bonus</p>
+        <p>Classement hebdomadaire : récompense future</p>
+        <p>Statut : espace en préparation</p>
+      </VisualCard>
     </div>
   );
 }
@@ -875,6 +1090,7 @@ function PasseportInscription({ go, setMember }) {
       residenceCountry,
       city,
       unlockedCountry: unlockedCountry ? unlockedCountry.name : "Aucun pays 3B officiel",
+      gamePoints: 0,
       points,
       level: points >= 250 ? "Héritier" : "Découverte",
       card: "Carte Découverte 3B",
@@ -992,6 +1208,7 @@ function PasseportInscription({ go, setMember }) {
         <p>Pays de résidence renseigné : +25 points</p>
         <p>Ville renseignée : +25 points</p>
         <p>Pays 3B officiel déverrouillé : +75 points</p>
+        <p>Jeux 3B : les points gagnés plus tard seront ajoutés ici.</p>
       </InfoCard>
 
       <p className="intro small-text">
@@ -1043,6 +1260,7 @@ function Passeport({ go, member }) {
     residenceCountry: "Non renseigné",
     city: "Non renseignée",
     unlockedCountry: "Aucun pays 3B officiel",
+    gamePoints: 0,
     points: 0,
     level: "Découverte",
     card: "Carte Découverte 3B",
@@ -1081,8 +1299,12 @@ function Passeport({ go, member }) {
         <p>Pays 3B déverrouillé : {profile.unlockedCountry}</p>
       </InfoCard>
 
-      <InfoCard title="Points et niveau">
+      <VisualCard
+        title="Points et niveau"
+        visual={<ProgressCircle percent={progressPercent} label="Progression Gardien" icon="◆" />}
+      >
         <p>Points 3B : {profile.points}</p>
+        <p>Points jeux : {profile.gamePoints || 0}</p>
         <p>Niveau actuel : {profile.level}</p>
         <p>Carte : {profile.card}</p>
         <p>Progression vers Gardien : {progressPercent}%</p>
@@ -1092,9 +1314,12 @@ function Passeport({ go, member }) {
           title="Voir mes points et niveaux"
           onClick={() => go("points-niveaux")}
         />
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Pays verrouillé">
+      <VisualCard
+        title="Pays verrouillé"
+        visual={<UnlockedFlagVisual country={getUnlockedCountry(profile.originCountry)} />}
+      >
         <p>Les 8 pays 3B sont visibles sur la carte.</p>
         <p>Le pays d’origine 3B choisi pendant l’inscription est déverrouillé.</p>
         <p>Les autres pays 3B restent verrouillés.</p>
@@ -1105,9 +1330,12 @@ function Passeport({ go, member }) {
           title="Voir les pays verrouillés"
           onClick={() => go("pays-verrouilles")}
         />
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Avantages débloqués">
+      <VisualCard
+        title="Avantages débloqués"
+        visual={<DigitalPassportVisual />}
+      >
         <p>Accès au Passeport 3B</p>
         <p>Accès aux indices secrets</p>
         <p>Suivi des cartes de fidélité</p>
@@ -1118,20 +1346,27 @@ function Passeport({ go, member }) {
           title="Ouvrir mes avantages 3B"
           onClick={() => go("avantages-passeport")}
         />
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Missions 3B">
+      <VisualCard
+        title="Missions 3B"
+        visual={<ShieldVisual text="XP" />}
+      >
         <p>Continuez à gagner des points et à les accumuler dans votre Passeport 3B.</p>
         <p>Partager une création 3B : +100 points — bientôt disponible.</p>
         <p>Inviter un membre avec votre lien : +150 points.</p>
         <p>Participer à un drop : +200 points — prévu plus tard.</p>
+        <p>Découvrir le secret 3B du moment : +250 points + indice du prochain secret.</p>
+        <p>Prototype gratuit lors de sa sortie : récompense spéciale.</p>
+        <p>Clip TikTok avec une musique du compte 3D BlackBlanBeur + identification : points supplémentaires.</p>
+        <p>Jeux 3B : points gagnés en jouant, en gagnant et en passant des niveaux.</p>
 
         <MenuCard
           icon="🤝"
           title="Inviter un membre"
           onClick={() => go("invitation")}
         />
-      </InfoCard>
+      </VisualCard>
 
       <InfoCard title="QR Code et certificat futur">
         <p>
@@ -1146,12 +1381,14 @@ function Passeport({ go, member }) {
 function PointsNiveaux({ go, member }) {
   const profile = member || {
     points: 100,
+    gamePoints: 0,
     level: "Découverte",
     card: "Carte Découverte 3B",
   };
 
   const progressGardien = Math.min(Math.round((profile.points / 300) * 100), 100);
   const progressLegende = Math.min(Math.round((profile.points / 1000) * 100), 100);
+  const progressJeux = Math.min(Math.round(((profile.gamePoints || 0) / 500) * 100), 100);
 
   return (
     <div className="page">
@@ -1162,36 +1399,61 @@ function PointsNiveaux({ go, member }) {
       <div className="gold-line">◆</div>
 
       <p className="intro">
-        Suivez votre progression, vos points accumulés et les niveaux à débloquer
+        Suivez votre progression, vos points accumulés, les points des jeux et les niveaux à débloquer
         dans l’univers 3B International.
       </p>
 
-      <InfoCard title="Résumé actuel">
+      <VisualCard
+        title="Résumé actuel"
+        visual={<ShieldVisual text="3B" />}
+      >
         <p>Points actuels : {profile.points}</p>
+        <p>Points gagnés par les jeux : {profile.gamePoints || 0}</p>
         <p>Niveau actuel : {profile.level}</p>
         <p>Carte actuelle : {profile.card}</p>
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Progression vers Gardien">
-        <p>{progressGardien}% complété</p>
+      <VisualCard
+        title="Progression vers Gardien"
+        visual={<ProgressCircle percent={progressGardien} label="Objectif 300 points" icon="🛡️" />}
+      >
+        <p>{progressGardien}% rempli</p>
         <p>Objectif : 300 points</p>
         <p>Récompense future : accès renforcé aux missions, indices et cartes.</p>
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Progression vers Légende">
-        <p>{progressLegende}% complété</p>
+      <VisualCard
+        title="Progression vers Légende"
+        visual={<ProgressCircle percent={progressLegende} label="Objectif 1000 points" icon="★" />}
+      >
+        <p>{progressLegende}% rempli</p>
         <p>Objectif : 1000 points</p>
         <p>Récompense future : accès VIP, drops privés, cartes rares et événements 3B.</p>
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Comment gagner des points">
+      <VisualCard
+        title="Progression Jeux 3B"
+        visual={<ProgressCircle percent={progressJeux} label="XP Jeux" icon="🎮" />}
+      >
+        <p>Objectif futur : 500 points gagnés dans les jeux.</p>
+        <p>Gagner un jeu : points bonus.</p>
+        <p>Passer un niveau : points bonus.</p>
+        <p>Être classé dans le top membres : récompense future.</p>
+      </VisualCard>
+
+      <VisualCard
+        title="Comment gagner des points"
+        visual={<ShieldVisual text="XP" />}
+      >
         <p>Créer son compte : +100 points</p>
         <p>Choisir son pays d’origine 3B : +50 points</p>
         <p>Renseigner son pays de résidence : +25 points</p>
         <p>Renseigner sa ville : +25 points</p>
         <p>Inviter un membre : +150 points</p>
-        <p>Partager une création 3B : +100 points — bientôt disponible</p>
-      </InfoCard>
+        <p>Découvrir le secret 3B : +250 points + indice futur</p>
+        <p>Clip TikTok avec une musique 3B + identification : points supplémentaires</p>
+        <p>Jeux 3B : points gagnés en jouant, en gagnant et en passant des niveaux</p>
+      </VisualCard>
     </div>
   );
 }
@@ -1210,33 +1472,56 @@ function AvantagesPasseport({ go }) {
         et cartes possédées dans l’univers 3B International.
       </p>
 
-      <InfoCard title="Passeport digital futuriste">
+      <VisualCard
+        title="Passeport numérique futuriste"
+        visual={<DigitalPassportVisual />}
+      >
         <p>Identité membre 3B</p>
         <p>Points et progression</p>
-        <p>Carte digitale</p>
+        <p>Carte numérique</p>
         <p>Accès aux pays débloqués</p>
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Indices supplémentaires">
-        <p>Certains indices seront visibles uniquement quand le membre aura le bon niveau.</p>
+      <VisualCard
+        title="Indices supplémentaires"
+        visual={<ShieldVisual text="🔐" />}
+      >
+        <p>Certains indices seront visibles uniquement lorsque le membre aura le bon niveau.</p>
         <p>Les indices ne remplacent pas le Coffre secret 3B : ici ce sont des bonus membres.</p>
         <p>Statut actuel : verrouillé pour le futur.</p>
-      </InfoCard>
+      </VisualCard>
 
-      <InfoCard title="Mes cartes possédées">
-        <p>Carte Découverte 3B — active</p>
-        <p>Carte Héritier 3B — verrouillée</p>
-        <p>Carte Gardien 3B — verrouillée</p>
-        <p>Carte Légende 3B — verrouillée</p>
+      <InfoCard title="Mes 12 cartes possédées">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 12,
+            marginTop: 12,
+          }}
+        >
+          {cardCollection.map((card) => (
+            <Mini3BCard key={card.name} card={card} />
+          ))}
+        </div>
       </InfoCard>
 
       <InfoCard title="Cartes physiques futures">
         <p>
-          Ici seront affichées en miniature les cartes physiques et digitales que le membre possède.
+          Les cartes physiques et numériques seront visibles ici en miniature.
         </p>
-        <p>
-          Exemple : carte bleue 3B, carte noire 3B, carte or 3B, carte légende 3B.
-        </p>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: 12,
+            marginTop: 12,
+          }}
+        >
+          {cardCollection.slice(0, 4).map((card) => (
+            <Mini3BCard key={card.name} card={card} />
+          ))}
+        </div>
       </InfoCard>
     </div>
   );
@@ -1248,7 +1533,7 @@ function PaysVerrouilles({ go, member }) {
     unlockedCountry: "Aucun pays 3B officiel",
   };
 
-  const unlocked = getUnlockedCountry(profile.originCountry);
+  const unlocked = getUnlockedCountry(profile.originCountry) || official3BCountries[0];
 
   return (
     <div className="page">
@@ -1265,9 +1550,14 @@ function PaysVerrouilles({ go, member }) {
 
       <WorldMap3B originCountry={profile.originCountry} />
 
-      <InfoCard title="Pays actuellement débloqué">
-        <p>{unlocked ? unlocked.name : "Aucun pays 3B officiel débloqué"}</p>
-      </InfoCard>
+      <VisualCard
+        title="Pays actuellement débloqué"
+        visual={<UnlockedFlagVisual country={unlocked} />}
+      >
+        <p>{unlocked ? `${unlocked.flag} ${unlocked.name}` : "Aucun pays 3B officiel débloqué"}</p>
+        <p>Un seul pays est activé au départ.</p>
+        <p>Les autres pays pourront se débloquer plus tard avec points, missions ou drops.</p>
+      </VisualCard>
 
       <InfoCard title="Pays encore verrouillés">
         {official3BCountries.map((country) => {
@@ -1277,22 +1567,25 @@ function PaysVerrouilles({ go, member }) {
 
           return (
             <p key={country.name}>
-              {isUnlocked ? "Déverrouillé" : "Verrouillé"} : {country.name}
+              {country.flag} {isUnlocked ? "✅ Déverrouillé" : "🔒 Verrouillé"} : {country.name}
             </p>
           );
         })}
       </InfoCard>
 
-      <InfoCard title="Idée stratégique">
+      <VisualCard
+        title="Idée stratégique"
+        visual={<ShieldVisual text="🌍" />}
+      >
         <p>
           Chaque pays pourra devenir un chapitre 3B : logo, histoire, musique,
           carte, mission et indice spécial.
         </p>
         <p>
           Plus tard, un membre pourra débloquer d’autres pays avec des points,
-          des missions ou des drops.
+          des missions, des jeux ou des drops.
         </p>
-      </InfoCard>
+      </VisualCard>
     </div>
   );
 }
@@ -1314,9 +1607,12 @@ function Invitation({ go }) {
         +150 points.
       </p>
 
-      <InfoCard title="Lien à partager">
+      <VisualCard
+        title="Lien à partager"
+        visual={<ShieldVisual text="🤝" />}
+      >
         <p>{referralLink}</p>
-      </InfoCard>
+      </VisualCard>
 
       <InfoCard title="Réseaux possibles">
         <p>WhatsApp</p>
@@ -1513,6 +1809,12 @@ function PlusEncore({ go }) {
         />
 
         <MenuCard
+          icon="🎮"
+          title="Jeux 3B"
+          onClick={() => go("jeux")}
+        />
+
+        <MenuCard
           icon="📖"
           title="Manga 3B International"
           onClick={() => go("manga")}
@@ -1552,33 +1854,45 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [member, setMember] = useState(null);
 
+  function go(nextPage) {
+    setPage(nextPage);
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "instant",
+      });
+    }, 0);
+  }
+
   return (
     <main className="app">
-      {page === "home" && <Home go={setPage} />}
-      {page === "boutique" && <Boutique go={setPage} />}
-      {page === "musique" && <Musique go={setPage} />}
-      {page === "communaute" && <Communaute go={setPage} />}
-      {page === "secret" && <Secret go={setPage} />}
-      {page === "passeport-access" && <PasseportAccess go={setPage} />}
+      {page === "home" && <Home go={go} />}
+      {page === "boutique" && <Boutique go={go} />}
+      {page === "musique" && <Musique go={go} />}
+      {page === "communaute" && <Communaute go={go} />}
+      {page === "secret" && <Secret go={go} />}
+      {page === "jeux" && <Jeux go={go} />}
+      {page === "passeport-access" && <PasseportAccess go={go} />}
       {page === "passeport-inscription" && (
-        <PasseportInscription go={setPage} setMember={setMember} />
+        <PasseportInscription go={go} setMember={setMember} />
       )}
-      {page === "passeport-connexion" && <PasseportConnexion go={setPage} />}
-      {page === "passeport" && <Passeport go={setPage} member={member} />}
+      {page === "passeport-connexion" && <PasseportConnexion go={go} />}
+      {page === "passeport" && <Passeport go={go} member={member} />}
       {page === "points-niveaux" && (
-        <PointsNiveaux go={setPage} member={member} />
+        <PointsNiveaux go={go} member={member} />
       )}
-      {page === "avantages-passeport" && <AvantagesPasseport go={setPage} />}
+      {page === "avantages-passeport" && <AvantagesPasseport go={go} />}
       {page === "pays-verrouilles" && (
-        <PaysVerrouilles go={setPage} member={member} />
+        <PaysVerrouilles go={go} member={member} />
       )}
-      {page === "invitation" && <Invitation go={setPage} />}
-      {page === "plus" && <PlusEncore go={setPage} />}
-      {page === "fidelite" && <CartesFidelite go={setPage} />}
-      {page === "manga" && <Manga go={setPage} />}
-      {page === "logos" && <LogosInternationaux go={setPage} />}
-      {page === "createurs" && <CreateursCommandes go={setPage} />}
-      {page === "certificat" && <CertificatProduit go={setPage} />}
+      {page === "invitation" && <Invitation go={go} />}
+      {page === "plus" && <PlusEncore go={go} />}
+      {page === "fidelite" && <CartesFidelite go={go} />}
+      {page === "manga" && <Manga go={go} />}
+      {page === "logos" && <LogosInternationaux go={go} />}
+      {page === "createurs" && <CreateursCommandes go={go} />}
+      {page === "certificat" && <CertificatProduit go={go} />}
     </main>
   );
 }
