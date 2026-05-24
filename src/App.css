@@ -1054,4 +1054,212 @@ h2 {
   .mini-card-grid {
     grid-template-columns: 1fr;
   }
+}/* =========================================================
+   CORRECTION MENU GÉNÉRAL 3B — RETOUR 50/50
+   À COLLER TOUT EN BAS DE App.css
+   ========================================================= */
+
+.home-page {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 34px 18px 70px;
+  background-position: center center;
+  background-size: cover;
+}
+
+.home-page .logo-header {
+  width: 100%;
+  max-width: 720px;
+  text-align: center;
+  margin: 0 auto 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.home-page .logo-3b {
+  font-size: clamp(54px, 12vw, 92px);
+  line-height: 0.9;
+}
+
+.home-page .logo-word {
+  font-size: clamp(24px, 5vw, 40px);
+  letter-spacing: 0.32em;
+}
+
+.home-page .logo-sub {
+  font-size: clamp(13px, 3vw, 21px);
+  letter-spacing: 0.28em;
+}
+
+.home-menu {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+  align-items: stretch;
+  justify-items: stretch;
+  position: relative;
+  z-index: 2;
+}
+
+.home-menu .menu-card {
+  width: 100% !important;
+  min-height: 150px !important;
+  height: auto !important;
+  padding: 22px 18px !important;
+  border-radius: 28px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  text-align: center !important;
+  background: rgba(5, 5, 5, 0.78) !important;
+  border: 1.5px solid rgba(230, 190, 95, 0.72) !important;
+  box-shadow:
+    0 0 18px rgba(230, 190, 95, 0.12),
+    inset 0 0 30px rgba(255, 215, 120, 0.03) !important;
+  backdrop-filter: blur(5px);
+}
+
+.home-menu .menu-icon {
+  width: 54px !important;
+  height: 54px !important;
+  min-width: 54px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 27px !important;
+  background: rgba(0, 0, 0, 0.52) !important;
+  border: 1px solid rgba(230, 190, 95, 0.35) !important;
+  margin: 0 !important;
+}
+
+.home-menu .menu-title {
+  width: 100% !important;
+  display: block !important;
+  font-size: clamp(24px, 5.2vw, 38px) !important;
+  line-height: 1.08 !important;
+  color: #f3cf73 !important;
+  text-shadow: 0 0 10px rgba(255, 220, 90, 0.35) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.home-menu .menu-arrow {
+  display: block !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+  color: #f3cf73 !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+/* La dernière case seule reste à gauche, comme sur ton téléphone */
+.home-menu .menu-card:last-child:nth-child(odd) {
+  grid-column: 1 / 2;
+}
+
+/* Téléphone : on garde 50/50 aussi, mais plus compact */
+@media (max-width: 600px) {
+  .home-page {
+    padding: 24px 14px 80px;
+    align-items: center;
+  }
+
+  .home-page .logo-header {
+    margin-bottom: 22px;
+  }
+
+  .home-menu {
+    max-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .home-menu .menu-card {
+    min-height: 145px !important;
+    padding: 18px 10px !important;
+    border-radius: 25px !important;
+  }
+
+  .home-menu .menu-icon {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    font-size: 24px !important;
+  }
+
+  .home-menu .menu-title {
+    font-size: clamp(22px, 7vw, 31px) !important;
+    line-height: 1.08 !important;
+  }
+
+  .home-menu .menu-arrow {
+    font-size: 30px !important;
+  }
+}
+
+/* Très petit téléphone : toujours 50/50, mais encore plus serré */
+@media (max-width: 380px) {
+  .home-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .home-menu {
+    gap: 10px !important;
+  }
+
+  .home-menu .menu-card {
+    min-height: 130px !important;
+    padding: 14px 8px !important;
+    border-radius: 22px !important;
+  }
+
+  .home-menu .menu-title {
+    font-size: 22px !important;
+  }
+}
+
+/* Ordinateur : 50/50 propre, centré, pas en colonne verticale */
+@media (min-width: 900px) {
+  .home-page {
+    justify-content: center;
+    padding-top: 40px;
+  }
+
+  .home-menu {
+    max-width: 720px;
+    gap: 18px !important;
+  }
+
+  .home-menu .menu-card {
+    min-height: 118px !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    text-align: left !important;
+    padding: 24px 30px !important;
+  }
+
+  .home-menu .menu-icon {
+    margin-right: 10px !important;
+  }
+
+  .home-menu .menu-title {
+    text-align: left !important;
+    font-size: 34px !important;
+  }
+
+  .home-menu .menu-arrow {
+    margin-left: auto !important;
+  }
 }
