@@ -1,243 +1,67 @@
 import { useMemo, useState } from "react";
 import "./App.css";
 
-const origin3BCountries = [
-  "France",
-  "Italie",
-  "Estonie",
-  "Turquie",
-  "Algérie",
-  "Tunisie",
-  "Maroc",
-  "Espagne",
+const official3BCountries = [
+  { name: "France", flag: "🇫🇷", colors: ["#0055a4", "#fff", "#ef4135"], x: 333, y: 260 },
+  { name: "Italie", flag: "🇮🇹", colors: ["#008c45", "#fff", "#cd212a"], x: 455, y: 300 },
+  { name: "Estonie", flag: "🇪🇪", colors: ["#0072ce", "#000", "#fff"], x: 535, y: 170 },
+  { name: "Turquie", flag: "🇹🇷", colors: ["#e30a17", "#fff", "#e30a17"], x: 675, y: 330 },
+  { name: "Algérie", flag: "🇩🇿", colors: ["#006233", "#fff", "#d21034"], x: 345, y: 415 },
+  { name: "Tunisie", flag: "🇹🇳", colors: ["#e70013", "#fff", "#e70013"], x: 415, y: 385 },
+  { name: "Maroc", flag: "🇲🇦", colors: ["#c1272d", "#006233", "#c1272d"], x: 240, y: 390 },
+  { name: "Espagne", flag: "🇪🇸", colors: ["#aa151b", "#f1bf00", "#aa151b"], x: 250, y: 315 },
 ];
+
+const origin3BCountries = official3BCountries.map((c) => c.name);
 
 const residenceCountries = [
-  "France",
-  "Maroc",
-  "Algérie",
-  "Tunisie",
-  "Italie",
-  "Espagne",
-  "Turquie",
-  "Estonie",
-  "Portugal",
-  "Belgique",
-  "Suisse",
-  "Allemagne",
-  "Royaume-Uni",
-  "Irlande",
-  "Pays-Bas",
-  "Luxembourg",
-  "Autriche",
-  "Pologne",
-  "République tchèque",
-  "Slovaquie",
-  "Hongrie",
-  "Roumanie",
-  "Bulgarie",
-  "Grèce",
-  "Croatie",
-  "Slovénie",
-  "Serbie",
-  "Bosnie-Herzégovine",
-  "Albanie",
-  "Monténégro",
-  "Macédoine du Nord",
-  "Kosovo",
-  "Danemark",
-  "Suède",
-  "Norvège",
-  "Finlande",
-  "Islande",
-  "Lettonie",
-  "Lituanie",
-  "Ukraine",
-  "Moldavie",
-  "Malte",
-  "Chypre",
-  "États-Unis",
-  "Canada",
-  "Mexique",
-  "Brésil",
-  "Argentine",
-  "Colombie",
-  "Chili",
-  "Pérou",
-  "Uruguay",
-  "Paraguay",
-  "Bolivie",
-  "Équateur",
-  "Venezuela",
-  "Sénégal",
-  "Mali",
-  "Côte d’Ivoire",
-  "Comores",
-  "Cameroun",
-  "Gabon",
-  "Congo",
-  "République démocratique du Congo",
-  "Guinée",
-  "Guinée-Bissau",
-  "Burkina Faso",
-  "Niger",
-  "Tchad",
-  "Mauritanie",
-  "Égypte",
-  "Libye",
-  "Soudan",
-  "Éthiopie",
-  "Kenya",
-  "Tanzanie",
-  "Afrique du Sud",
-  "Madagascar",
-  "Maurice",
-  "Arabie saoudite",
-  "Émirats arabes unis",
-  "Qatar",
-  "Koweït",
-  "Bahreïn",
-  "Oman",
-  "Jordanie",
-  "Liban",
-  "Israël",
-  "Palestine",
-  "Irak",
-  "Iran",
-  "Inde",
-  "Pakistan",
-  "Bangladesh",
-  "Chine",
-  "Japon",
-  "Corée du Sud",
-  "Indonésie",
-  "Malaisie",
-  "Thaïlande",
-  "Vietnam",
-  "Philippines",
-  "Australie",
-  "Nouvelle-Zélande",
-  "Autre pays",
+  "France", "Maroc", "Algérie", "Tunisie", "Italie", "Espagne", "Turquie", "Estonie",
+  "Portugal", "Belgique", "Suisse", "Allemagne", "Royaume-Uni", "Irlande", "Pays-Bas",
+  "Luxembourg", "Autriche", "Pologne", "République tchèque", "Slovaquie", "Hongrie",
+  "Roumanie", "Bulgarie", "Grèce", "Croatie", "Slovénie", "Serbie", "Bosnie-Herzégovine",
+  "Albanie", "Monténégro", "Macédoine du Nord", "Kosovo", "Danemark", "Suède", "Norvège",
+  "Finlande", "Islande", "Lettonie", "Lituanie", "Ukraine", "Moldavie", "Malte", "Chypre",
+  "États-Unis", "Canada", "Mexique", "Brésil", "Argentine", "Colombie", "Chili", "Pérou",
+  "Sénégal", "Mali", "Côte d’Ivoire", "Comores", "Cameroun", "Gabon", "Congo",
+  "République démocratique du Congo", "Guinée", "Guinée-Bissau", "Burkina Faso", "Niger",
+  "Tchad", "Mauritanie", "Égypte", "Libye", "Afrique du Sud", "Madagascar", "Arabie saoudite",
+  "Émirats arabes unis", "Qatar", "Koweït", "Jordanie", "Liban", "Palestine", "Inde",
+  "Pakistan", "Chine", "Japon", "Corée du Sud", "Australie", "Autre pays",
 ];
 
-const official3BCountries = [
-  {
-    name: "France",
-    flag: "🇫🇷",
-    colors: ["#0055a4", "#ffffff", "#ef4135"],
-    worldX: 505,
-    worldY: 150,
-    zoomX: 328,
-    zoomY: 170,
-    labelX: 366,
-    labelY: 145,
-  },
-  {
-    name: "Italie",
-    flag: "🇮🇹",
-    colors: ["#008c45", "#ffffff", "#cd212a"],
-    worldX: 536,
-    worldY: 165,
-    zoomX: 430,
-    zoomY: 236,
-    labelX: 470,
-    labelY: 214,
-  },
-  {
-    name: "Estonie",
-    flag: "🇪🇪",
-    colors: ["#0072ce", "#000000", "#ffffff"],
-    worldX: 556,
-    worldY: 115,
-    zoomX: 520,
-    zoomY: 106,
-    labelX: 560,
-    labelY: 84,
-  },
-  {
-    name: "Turquie",
-    flag: "🇹🇷",
-    colors: ["#e30a17", "#ffffff", "#e30a17"],
-    worldX: 605,
-    worldY: 183,
-    zoomX: 650,
-    zoomY: 260,
-    labelX: 690,
-    labelY: 238,
-  },
-  {
-    name: "Algérie",
-    flag: "🇩🇿",
-    colors: ["#006233", "#ffffff", "#d21034"],
-    worldX: 493,
-    worldY: 214,
-    zoomX: 312,
-    zoomY: 362,
-    labelX: 350,
-    labelY: 386,
-  },
-  {
-    name: "Tunisie",
-    flag: "🇹🇳",
-    colors: ["#e70013", "#ffffff", "#e70013"],
-    worldX: 518,
-    worldY: 203,
-    zoomX: 372,
-    zoomY: 337,
-    labelX: 414,
-    labelY: 338,
-  },
-  {
-    name: "Maroc",
-    flag: "🇲🇦",
-    colors: ["#c1272d", "#006233", "#c1272d"],
-    worldX: 468,
-    worldY: 205,
-    zoomX: 205,
-    zoomY: 340,
-    labelX: 128,
-    labelY: 328,
-  },
-  {
-    name: "Espagne",
-    flag: "🇪🇸",
-    colors: ["#aa151b", "#f1bf00", "#aa151b"],
-    worldX: 479,
-    worldY: 168,
-    zoomX: 233,
-    zoomY: 250,
-    labelX: 110,
-    labelY: 236,
-  },
+const memberCards = [
+  { name: "Découverte 3B", status: "automatique", type: "inscription", icon: "💠" },
+  { name: "Héritier 3B", status: "bloquée", type: "points futurs", icon: "♛" },
+  { name: "Gardien 3B", status: "bloquée", type: "points futurs", icon: "🛡️" },
+  { name: "Élite 3B", status: "bloquée", type: "mission future", icon: "✦" },
+  { name: "Légende 3B", status: "sur demande", type: "commande premium", icon: "★" },
+  { name: "Secret 3B", status: "sur demande", type: "accès spécial", icon: "🔐" },
+  { name: "Musique 3B", status: "sur demande", type: "univers musical", icon: "♪" },
+  { name: "Jeux 3B", status: "sur demande", type: "XP jeux", icon: "🎮" },
+  { name: "International 3B", status: "sur demande", type: "monde 3B", icon: "🌍" },
+  { name: "Drop 3B", status: "sur demande", type: "drop privé", icon: "🔥" },
+  { name: "Prototype 3B", status: "sur demande", type: "prototype", icon: "🎁" },
+  { name: "Legacy 3B", status: "sur demande", type: "héritage", icon: "◆" },
 ];
 
-const cardCollection = [
-  { name: "Découverte", color: "Bleue", status: "active", icon: "💠" },
-  { name: "Héritier", color: "Noire", status: "verrouillée", icon: "♛" },
-  { name: "Gardien", color: "Or", status: "verrouillée", icon: "🛡️" },
-  { name: "Légende", color: "Platine", status: "verrouillée", icon: "★" },
-  { name: "Secret", color: "Violette", status: "verrouillée", icon: "🔐" },
-  { name: "Musique", color: "Bleu nuit", status: "verrouillée", icon: "♪" },
-  { name: "Créateur", color: "Argent", status: "verrouillée", icon: "✦" },
-  { name: "Jeux", color: "Cyan", status: "verrouillée", icon: "🎮" },
-  { name: "International", color: "Monde", status: "verrouillée", icon: "🌍" },
-  { name: "Drop", color: "Rouge", status: "verrouillée", icon: "🔥" },
-  { name: "Prototype", color: "Chrome", status: "verrouillée", icon: "🎁" },
-  { name: "Legacy", color: "Diamond", status: "verrouillée", icon: "◆" },
-];
-
-function normalizeCountry(country) {
-  return (country || "")
+function normalize(text) {
+  return String(text || "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function getUnlockedCountry(originCountry) {
-  const cleanOrigin = normalizeCountry(originCountry);
-  return official3BCountries.find(
-    (country) => normalizeCountry(country.name) === cleanOrigin
-  );
+function getCountry(name) {
+  return official3BCountries.find((c) => normalize(c.name) === normalize(name));
+}
+
+function getLevel(points) {
+  if (points >= 10000) return { name: "Légende", next: 10000, icon: "◆", percent: 100 };
+  if (points >= 6000) return { name: "Élite", next: 10000, icon: "✦", percent: Math.round((points / 10000) * 100) };
+  if (points >= 3000) return { name: "Gardien", next: 6000, icon: "🛡️", percent: Math.round((points / 6000) * 100) };
+  if (points >= 1500) return { name: "Héritier", next: 3000, icon: "♛", percent: Math.round((points / 3000) * 100) };
+  if (points >= 500) return { name: "Membre 3B", next: 1500, icon: "3B", percent: Math.round((points / 1500) * 100) };
+  return { name: "Découverte", next: 500, icon: "3B", percent: Math.round((points / 500) * 100) };
 }
 
 function BackButton({ onClick }) {
@@ -268,387 +92,143 @@ function MenuCard({ icon, title, onClick }) {
   );
 }
 
-function InfoCard({ title, children }) {
+function InfoCard({ title, children, visual }) {
   return (
-    <div className="info-card">
-      <h3>{title}</h3>
-      <div>{children}</div>
-    </div>
+    <section className={visual ? "info-card visual-card" : "info-card"}>
+      <div className="card-text">
+        <h3>{title}</h3>
+        {children}
+      </div>
+      {visual && <div className="card-visual">{visual}</div>}
+    </section>
   );
 }
 
 function Field({ icon, children }) {
   return (
     <div className="input-row">
-      <span className="input-icon">{icon}</span>
+      <span>{icon}</span>
       {children}
     </div>
   );
 }
 
-function MatrixDigits({ count = 40 }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <text
-          key={i}
-          x={20 + ((i * 47) % 860)}
-          y={20 + ((i * 29) % 480)}
-          fill="rgba(73, 192, 255, 0.12)"
-          fontSize="10"
-          fontFamily="monospace"
-        >
-          0101101010110010
-        </text>
-      ))}
-    </>
-  );
-}
-
-function ProgressCircle({ percent, label, icon = "◆" }) {
-  const radius = 46;
-  const circumference = 2 * Math.PI * radius;
-  const dash = (percent / 100) * circumference;
+function ProgressCircle({ percent, label, icon }) {
+  const r = 47;
+  const c = 2 * Math.PI * r;
+  const dash = (Math.min(percent, 100) / 100) * c;
 
   return (
-    <div
-      style={{
-        display: "grid",
-        placeItems: "center",
-        minHeight: 180,
-      }}
-    >
+    <div className="progress-visual">
       <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r={r} className="progress-bg" />
         <circle
           cx="75"
           cy="75"
-          r={radius}
-          fill="rgba(0,0,0,0.38)"
-          stroke="rgba(226,190,100,0.24)"
-          strokeWidth="10"
-        />
-        <circle
-          cx="75"
-          cy="75"
-          r={radius}
-          fill="none"
-          stroke="#e2be64"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circumference - dash}`}
+          r={r}
+          className="progress-bar"
+          strokeDasharray={`${dash} ${c - dash}`}
           transform="rotate(-90 75 75)"
-          style={{ filter: "drop-shadow(0 0 8px rgba(226,190,100,.55))" }}
         />
-        <text
-          x="75"
-          y="68"
-          textAnchor="middle"
-          fill="#e2be64"
-          fontSize="30"
-          fontWeight="700"
-        >
+        <text x="75" y="68" textAnchor="middle" className="progress-icon">
           {icon}
         </text>
-        <text
-          x="75"
-          y="96"
-          textAnchor="middle"
-          fill="#ffffff"
-          fontSize="18"
-          fontWeight="700"
-        >
+        <text x="75" y="98" textAnchor="middle" className="progress-number">
           {percent}%
         </text>
       </svg>
-      <p style={{ marginTop: 0 }}>{label}</p>
+      <p>{label}</p>
     </div>
   );
 }
 
-function VisualCard({ title, children, visual }) {
+function LevelLogo({ level }) {
   return (
-    <div
-      className="info-card"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1.1fr .9fr",
-        gap: 18,
-        alignItems: "center",
-      }}
-    >
-      <div>
-        <h3>{title}</h3>
-        {children}
-      </div>
-      <div>{visual}</div>
+    <div className={`level-logo level-${normalize(level.name)}`}>
+      <div>{level.icon}</div>
+      <span>{level.name}</span>
     </div>
   );
 }
 
-function Mini3BCard({ card }) {
-  const active = card.status === "active";
-
+function PassportCardVisual({ member }) {
   return (
-    <div
-      style={{
-        minHeight: 86,
-        borderRadius: 16,
-        padding: 12,
-        border: active
-          ? "1px solid rgba(226,190,100,.95)"
-          : "1px solid rgba(226,190,100,.32)",
-        background: active
-          ? "linear-gradient(135deg, rgba(4,40,70,.95), rgba(0,0,0,.96) 55%, rgba(226,190,100,.20))"
-          : "linear-gradient(135deg, rgba(20,20,20,.96), rgba(0,0,0,.96))",
-        boxShadow: active
-          ? "0 0 18px rgba(226,190,100,.22)"
-          : "inset 0 0 18px rgba(255,255,255,.02)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          right: 10,
-          top: 8,
-          color: "#e2be64",
-          fontWeight: 800,
-          opacity: 0.7,
-        }}
-      >
-        3B
-      </div>
-      <div style={{ fontSize: 20 }}>{card.icon}</div>
-      <p
-        style={{
-          textAlign: "left",
-          margin: "4px 0 0",
-          color: "#fff",
-          fontSize: 14,
-          lineHeight: 1.15,
-        }}
-      >
-        {card.name}
-      </p>
-      <p
-        style={{
-          textAlign: "left",
-          margin: "4px 0 0",
-          color: active ? "#e2be64" : "#b8b8b8",
-          fontSize: 12,
-          lineHeight: 1.15,
-        }}
-      >
-        {card.status}
-      </p>
-    </div>
-  );
-}
-
-function DigitalPassportVisual() {
-  return (
-    <div
-      style={{
-        minHeight: 210,
-        borderRadius: 26,
-        border: "1px solid rgba(88,181,234,.55)",
-        background:
-          "radial-gradient(circle at top, rgba(115,230,255,.22), transparent 42%), linear-gradient(135deg, #06111a, #020508)",
-        padding: 18,
-        boxShadow: "0 0 24px rgba(88,181,234,.15)",
-      }}
-    >
-      <div
-        style={{
-          border: "1px solid rgba(226,190,100,.65)",
-          borderRadius: 20,
-          minHeight: 170,
-          padding: 18,
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            opacity: 0.18,
-            background:
-              "repeating-linear-gradient(90deg, transparent 0 14px, rgba(115,230,255,.35) 15px 16px)",
-          }}
-        />
-        <div
-          style={{
-            fontSize: 46,
-            color: "#e2be64",
-            fontWeight: 800,
-            position: "relative",
-          }}
-        >
-          3B
-        </div>
-        <p
-          style={{
-            textAlign: "left",
-            margin: "8px 0",
-            color: "#baf6ff",
-            position: "relative",
-          }}
-        >
-          PASSEPORT DIGITAL
-        </p>
-        <div
-          style={{
-            width: 74,
-            height: 74,
-            borderRadius: 14,
-            border: "1px solid rgba(186,246,255,.75)",
-            display: "grid",
-            placeItems: "center",
-            color: "#fff",
-            position: "relative",
-          }}
-        >
-          QR
-        </div>
+    <div className="passport-visual">
+      <div className="passport-inner">
+        <strong>3B</strong>
+        <span>PASSEPORT DIGITAL</span>
+        <em>{member?.pseudo || "Membre 3B"}</em>
+        <div className="qr-box">QR</div>
       </div>
     </div>
   );
 }
 
-function ShieldVisual({ text = "3B" }) {
-  return (
-    <div
-      style={{
-        minHeight: 160,
-        display: "grid",
-        placeItems: "center",
-      }}
-    >
-      <div
-        style={{
-          width: 135,
-          height: 150,
-          clipPath:
-            "polygon(50% 0%, 92% 18%, 82% 78%, 50% 100%, 18% 78%, 8% 18%)",
-          background:
-            "linear-gradient(135deg, rgba(226,190,100,.95), rgba(20,20,20,.96) 54%, rgba(115,230,255,.35))",
-          display: "grid",
-          placeItems: "center",
-          color: "#050505",
-          fontSize: 36,
-          fontWeight: 900,
-          boxShadow: "0 0 24px rgba(226,190,100,.28)",
-        }}
-      >
-        {text}
-      </div>
-    </div>
-  );
-}
-
-function UnlockedFlagVisual({ country }) {
-  const current = country || official3BCountries[0];
+function FlagVisual({ country }) {
+  const selected = country || official3BCountries[0];
 
   return (
-    <div
-      style={{
-        minHeight: 230,
-        borderRadius: 26,
-        border: "1px solid rgba(226,190,100,.65)",
-        overflow: "hidden",
-        background: "#050505",
-        boxShadow: "0 0 20px rgba(226,190,100,.16)",
-      }}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", height: 130 }}>
-        {current.colors.map((color, index) => (
+    <div className="flag-visual">
+      <div className="flag-stripes">
+        {selected.colors.map((color, index) => (
           <div key={index} style={{ background: color }} />
         ))}
       </div>
-      <div
-        style={{
-          minHeight: 100,
-          display: "grid",
-          placeItems: "center",
-          background:
-            "radial-gradient(circle at center, rgba(226,190,100,.24), rgba(0,0,0,.94))",
-        }}
-      >
-        <div
-          style={{
-            color: "#e2be64",
-            fontSize: 48,
-            fontWeight: 900,
-            textShadow: "0 0 14px rgba(226,190,100,.45)",
-          }}
-        >
-          3B
-        </div>
-        <p style={{ margin: 0, color: "#fff" }}>
-          {current.flag} {current.name} activé
-        </p>
+      <div className="flag-bottom">
+        <strong>3B</strong>
+        <span>{selected.flag} {selected.name} activé</span>
       </div>
+    </div>
+  );
+}
+
+function MiniCard({ card }) {
+  return (
+    <div className={`mini-card ${card.status === "automatique" ? "active" : ""}`}>
+      <strong>3B</strong>
+      <span>{card.icon}</span>
+      <p>{card.name}</p>
+      <em>{card.status}</em>
+      <small>{card.type}</small>
     </div>
   );
 }
 
 function WorldMap3B({ originCountry }) {
-  const unlocked = useMemo(
-    () => getUnlockedCountry(originCountry),
-    [originCountry]
-  );
+  const unlocked = useMemo(() => getCountry(originCountry), [originCountry]);
 
   return (
-    <div className="worldmap-card">
+    <section className="worldmap-card">
       <h3>Carte du monde 3B</h3>
-      <p className="map-intro">
-        Vue monde + zoom sur les 8 pays 3B. Seul le pays d’origine 3B choisi
-        pendant l’inscription se déverrouille.
+      <p>
+        Vue monde + zoom sur les 8 pays 3B. Seul le pays d’origine 3B choisi pendant
+        l’inscription se déverrouille.
       </p>
 
       <div className="world-strip">
-        <svg viewBox="0 0 1000 260" width="100%" height="100%">
-          <defs>
-            <linearGradient id="worldBlueFill" x1="0" x2="1">
-              <stop offset="0%" stopColor="#0f2942" />
-              <stop offset="100%" stopColor="#173b59" />
-            </linearGradient>
-            <filter id="worldGlow">
-              <feGaussianBlur stdDeviation="2.2" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <rect width="1000" height="260" fill="#071018" />
-          <MatrixDigits count={48} />
-
-          <path d="M70 105 C85 80, 125 65, 175 75 C210 82, 245 100, 250 125 C255 150, 220 170, 175 173 C120 177, 80 155, 70 105 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
-          <path d="M210 175 C250 175, 298 205, 286 246 C250 255, 218 242, 204 212 C195 194, 194 182, 210 175 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
-          <path d="M398 88 C445 53, 508 48, 565 64 C614 77, 646 108, 645 136 C642 168, 602 184, 546 175 C500 167, 466 154, 442 143 C414 129, 388 115, 398 88 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
-          <path d="M480 170 C530 166, 580 182, 603 222 C585 251, 540 255, 503 240 C472 226, 450 202, 480 170 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
-          <path d="M660 115 C715 95, 818 107, 882 137 C922 156, 932 184, 898 201 C836 221, 774 211, 725 194 C687 180, 650 146, 660 115 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
-          <path d="M814 58 C859 44, 916 56, 952 76 C974 89, 956 103, 916 105 C870 107, 836 96, 814 58 Z" fill="url(#worldBlueFill)" stroke="#1e5d88" strokeWidth="2" />
-
+        <svg viewBox="0 0 900 260" width="100%" height="100%">
+          <rect width="900" height="260" fill="#061018" />
+          <g opacity="0.28">
+            {Array.from({ length: 50 }).map((_, i) => (
+              <text key={i} x={(i * 41) % 870} y={20 + ((i * 23) % 220)} fill="#58b5ea" fontSize="9">
+                010110101001
+              </text>
+            ))}
+          </g>
+          <path d="M70 110 C100 65 190 65 230 115 C245 150 200 178 135 166 C92 158 55 140 70 110Z" className="land" />
+          <path d="M210 178 C260 175 300 210 278 250 C238 252 205 226 210 178Z" className="land" />
+          <path d="M360 90 C430 42 565 55 610 120 C640 170 555 196 460 170 C395 152 330 125 360 90Z" className="land" />
+          <path d="M450 178 C515 168 570 205 560 250 C500 260 445 226 450 178Z" className="land" />
+          <path d="M640 115 C720 80 845 120 850 170 C825 220 675 205 640 115Z" className="land" />
           {official3BCountries.map((country) => {
-            const isUnlocked =
-              unlocked &&
-              normalizeCountry(unlocked.name) === normalizeCountry(country.name);
-
+            const isUnlocked = unlocked?.name === country.name;
             return (
               <circle
                 key={country.name}
-                cx={country.worldX}
-                cy={country.worldY}
-                r={isUnlocked ? 8 : 6}
-                fill={isUnlocked ? "#73e6ff" : "#163a58"}
-                stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"}
-                strokeWidth="2"
-                filter={isUnlocked ? "url(#worldGlow)" : "none"}
+                cx={country.x}
+                cy={country.y / 2}
+                r={isUnlocked ? 8 : 5}
+                className={isUnlocked ? "map-dot unlocked" : "map-dot"}
               />
             );
           })}
@@ -657,89 +237,52 @@ function WorldMap3B({ originCountry }) {
 
       <div className="world-zoom">
         <svg viewBox="0 0 900 520" width="100%" height="100%">
-          <defs>
-            <linearGradient id="zoomSea" x1="0" x2="1">
-              <stop offset="0%" stopColor="#06111a" />
-              <stop offset="100%" stopColor="#081722" />
-            </linearGradient>
-            <linearGradient id="zoomLand" x1="0" x2="1">
-              <stop offset="0%" stopColor="#112638" />
-              <stop offset="100%" stopColor="#173146" />
-            </linearGradient>
-            <filter id="zoomGlow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <rect width="900" height="520" fill="url(#zoomSea)" />
-          <MatrixDigits count={95} />
-
-          <g opacity="0.22">
-            {Array.from({ length: 28 }).map((_, i) => (
-              <line key={i} x1="0" y1={i * 20} x2="900" y2={i * 20} stroke="#114765" strokeWidth="1" />
+          <rect width="900" height="520" fill="#061018" />
+          <g opacity="0.3">
+            {Array.from({ length: 26 }).map((_, i) => (
+              <line key={`h-${i}`} x1="0" x2="900" y1={i * 20} y2={i * 20} stroke="#174660" />
             ))}
-            {Array.from({ length: 38 }).map((_, i) => (
-              <line key={`v-${i}`} x1={i * 24} y1="0" x2={i * 24} y2="520" stroke="#114765" strokeWidth="1" />
+            {Array.from({ length: 36 }).map((_, i) => (
+              <line key={`v-${i}`} y1="0" y2="520" x1={i * 25} x2={i * 25} stroke="#174660" />
             ))}
           </g>
 
-          <path d="M92 240 C135 210, 180 190, 230 188 C278 186, 318 166, 355 145 C388 126, 418 112, 460 110 C507 108, 550 114, 594 132 C631 147, 662 162, 700 181 C730 198, 740 220, 734 246 C726 274, 702 280, 672 278 C638 276, 616 268, 592 261 C560 251, 528 250, 494 260 C461 270, 444 287, 436 312 C424 348, 393 366, 344 372 C286 379, 234 377, 189 365 C155 356, 128 337, 110 310 C94 285, 84 261, 92 240 Z" fill="url(#zoomLand)" stroke="#2a89ba" strokeWidth="2.2" />
-          <path d="M152 223 C183 210, 220 206, 255 213 C283 219, 302 232, 298 253 C293 275, 268 286, 231 286 C194 286, 160 274, 145 252 C136 239, 138 229, 152 223 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
-          <path d="M286 160 C314 142, 351 138, 382 147 C407 154, 423 169, 421 192 C418 220, 393 236, 360 236 C330 236, 301 226, 286 205 C274 188, 272 172, 286 160 Z" fill="#17384f" stroke="#69c9ff" strokeWidth="2.2" />
-          <path d="M413 199 C431 199, 444 205, 451 219 C454 229, 449 239, 439 245 C450 255, 458 268, 460 282 C455 295, 442 300, 430 297 C424 283, 420 270, 412 260 C402 248, 395 233, 399 220 C401 208, 406 200, 413 199 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
-          <path d="M493 88 C510 80, 534 80, 551 89 C559 96, 557 107, 545 113 C528 120, 506 118, 492 108 C487 101, 487 93, 493 88 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
-          <path d="M581 240 C614 225, 652 223, 694 232 C719 237, 737 247, 738 261 C735 275, 718 285, 691 288 C656 292, 620 291, 592 285 C568 280, 551 270, 552 258 C554 249, 564 244, 581 240 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
-          <path d="M152 307 C173 297, 196 296, 210 305 C219 312, 222 326, 213 338 C200 350, 179 353, 161 345 C148 337, 143 319, 152 307 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
-          <path d="M226 321 C267 311, 318 312, 350 324 C370 332, 374 346, 365 357 C354 370, 327 375, 286 373 C250 371, 217 362, 202 347 C196 336, 204 327, 226 321 Z" fill="#17384f" stroke="#69c9ff" strokeWidth="2.2" />
-          <path d="M363 312 C375 308, 387 311, 393 319 C396 327, 391 338, 380 343 C370 345, 362 339, 360 329 C359 321, 360 315, 363 312 Z" fill="#16344b" stroke="#58b5ea" strokeWidth="2" />
-
-          <path d="M136 215 C248 170, 386 124, 542 133" fill="none" stroke="rgba(115,230,255,0.22)" strokeWidth="1.5" />
-          <path d="M174 296 C240 285, 320 286, 436 300" fill="none" stroke="rgba(115,230,255,0.18)" strokeWidth="1.2" />
+          <path d="M95 270 C155 210 235 205 310 225 C355 195 420 150 520 155 C610 160 685 230 725 300 C660 280 590 265 520 285 C455 300 410 365 300 370 C185 374 95 335 95 270Z" className="continent" />
+          <path d="M205 310 C250 300 310 320 330 355 C300 390 220 385 175 350 C160 328 175 315 205 310Z" className="continent" />
+          <path d="M400 270 C430 260 465 275 470 305 C460 335 420 345 395 318 C382 300 385 280 400 270Z" className="continent" />
+          <path d="M625 300 C680 270 755 292 760 330 C725 370 640 360 608 330 C598 318 605 308 625 300Z" className="continent" />
 
           {official3BCountries.map((country) => {
-            const isUnlocked =
-              unlocked &&
-              normalizeCountry(unlocked.name) === normalizeCountry(country.name);
-
+            const isUnlocked = unlocked?.name === country.name;
             return (
               <g key={country.name}>
-                <line x1={country.zoomX} y1={country.zoomY} x2={country.labelX} y2={country.labelY} stroke={isUnlocked ? "#9cf0ff" : "#58b5ea"} strokeWidth="1.5" opacity="0.9" />
-                <circle cx={country.zoomX} cy={country.zoomY} r={isUnlocked ? 8 : 6} fill={isUnlocked ? "#73e6ff" : "#17384f"} stroke={isUnlocked ? "#baf6ff" : "#58b5ea"} strokeWidth="2" filter={isUnlocked ? "url(#zoomGlow)" : "none"} />
-                <rect x={country.labelX - 6} y={country.labelY - 16} rx="8" ry="8" width={country.name.length * 9 + 46} height="24" fill={isUnlocked ? "rgba(8, 48, 70, 0.92)" : "rgba(7, 24, 36, 0.90)"} stroke={isUnlocked ? "#8deeff" : "#2e7ba5"} strokeWidth="1.4" />
-                <text x={country.labelX + 18} y={country.labelY} fill={isUnlocked ? "#baf6ff" : "#7dd7ff"} fontSize="13" fontFamily="monospace" fontWeight="700">
-                  {country.name}
-                </text>
+                <line x1={country.x} y1={country.y} x2={country.x + 22} y2={country.y - 22} className="map-line" />
+                <circle cx={country.x} cy={country.y} r={isUnlocked ? 8 : 6} className={isUnlocked ? "map-dot unlocked" : "map-dot"} />
+                <rect x={country.x + 18} y={country.y - 38} width={country.name.length * 8 + 34} height="24" rx="8" className={isUnlocked ? "label unlocked" : "label"} />
+                <text x={country.x + 34} y={country.y - 22} className="country-label">{country.name}</text>
               </g>
             );
           })}
         </svg>
       </div>
 
-      <div className="map-summary-grid">
-        <div className="map-summary-box">
+      <div className="map-summary-grid clean">
+        <div>
           <span>Pays 3B activé</span>
           <strong>{unlocked ? unlocked.name : "Aucun"}</strong>
         </div>
-        <div className="map-summary-box">
+        <div>
           <span>Pays 3B disponibles</span>
           <strong>8 pays</strong>
         </div>
-        <div className="map-summary-box">
-          <span>Mode carte</span>
-          <strong>Digital bleu Matrix</strong>
-        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-function Home({ go }) {
+function Home({ go, member }) {
   return (
-    <div className="page">
+    <div className="page home-page">
       <LogoHeader />
 
       <div className="menu-list home-grid">
@@ -747,6 +290,9 @@ function Home({ go }) {
         <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
         <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
         <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport-access")} />
+        {member && (
+          <MenuCard icon="💎" title="Espace Membre 3B" onClick={() => go("espace-membre")} />
+        )}
         <MenuCard icon="🎮" title="Jeux" onClick={() => go("jeux")} />
         <MenuCard icon="🔒" title="Coffre secret 3B" onClick={() => go("secret")} />
         <MenuCard icon="☆" title="Plus encore" onClick={() => go("plus")} />
@@ -758,23 +304,16 @@ function Home({ go }) {
 }
 
 function Boutique({ go }) {
-  const slots = Array.from({ length: 6 });
-
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
       <LogoHeader small />
-
       <h1>Boutique</h1>
       <div className="gold-line">◆</div>
+      <p className="intro">Ajoutez vos créations. Chaque maillot apparaîtra ici, prêt à être porté.</p>
 
-      <p className="intro">
-        Ajoutez vos créations. Chaque maillot que vous créez apparaîtra ici,
-        prêt à être porté.
-      </p>
-
-      <div className="shop-grid">
-        {slots.map((_, i) => (
+      <div className="page-grid">
+        {Array.from({ length: 6 }).map((_, i) => (
           <button className="product-slot" key={i}>
             <div className="shirt">⌁</div>
             <div className="plus">+</div>
@@ -783,26 +322,21 @@ function Boutique({ go }) {
           </button>
         ))}
       </div>
-
-      <p className="secure">🛍️ Paiement sécurisé via Stripe</p>
     </div>
   );
 }
 
 function Musique({ go }) {
-  const tracks = Array.from({ length: 20 });
-
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
-
       <h1>Musique</h1>
       <div className="gold-line">◆</div>
 
-      <div className="music-grid">
-        {tracks.map((_, i) => (
+      <div className="page-grid">
+        {Array.from({ length: 20 }).map((_, i) => (
           <button className="track-card" key={i}>
-            <span className="play">▶</span>
+            <span>▶</span>
             <div>
               <strong>{String(i + 1).padStart(2, "0")}</strong>
               <p>Piste {String(i + 1).padStart(2, "0")}</p>
@@ -816,83 +350,30 @@ function Musique({ go }) {
 
 function Communaute({ go }) {
   const posts = [
-    {
-      name: "Alexandre M.",
-      role: "3B Élite",
-      text: "Très belle journée à tous ! Restez focus et continuez d’avancer, le meilleur est à venir. ✨",
-      likes: 24,
-      time: "09:32",
-    },
-    {
-      name: "Sarah B.",
-      role: "Ambassadrice 3B",
-      text: "Merci Alexandre ! 🙏 Qui participe à l’atelier de ce soir ?",
-      likes: 18,
-      time: "09:45",
-    },
-    {
-      name: "Julien T.",
-      role: "3B Leader",
-      text: "Je partagerai ma stratégie sur les réseaux à 18h. Ne manquez pas ça ! 🔥",
-      likes: 31,
-      time: "10:02",
-    },
-    {
-      name: "3B International",
-      role: "Officiel",
-      text: "Rappel : Webinaire exclusif ce jeudi à 20h. Préparez vos questions ! 🚀",
-      likes: 42,
-      time: "10:15",
-    },
+    ["Alexandre M.", "3B Élite", "Très belle journée à tous ! Restez focus et continuez d’avancer. ✨"],
+    ["Sarah B.", "Ambassadrice 3B", "Qui participe à l’atelier de ce soir ? 🙏"],
+    ["Julien T.", "3B Leader", "Je partagerai ma stratégie sur les réseaux à 18h. 🔥"],
+    ["3B International", "Officiel", "Rappel : webinaire exclusif ce jeudi à 20h. 🚀"],
   ];
 
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
-
       <h1>Communauté</h1>
       <div className="gold-line">◆</div>
 
-      <p className="intro">
-        Échangez, partagez et grandissez au sein de la communauté 3B International.
-      </p>
-
       <div className="stats-card">
-        <div>
-          <strong>1 256</strong>
-          <span>Membres</span>
-        </div>
-        <div>
-          <strong className="online">● 24</strong>
-          <span>En ligne</span>
-        </div>
-        <div>
-          <strong>387</strong>
-          <span>Messages aujourd’hui</span>
-        </div>
+        <div><strong>1 256</strong><span>Membres</span></div>
+        <div><strong>24</strong><span>En ligne</span></div>
+        <div><strong>387</strong><span>Messages aujourd’hui</span></div>
       </div>
 
-      <div className="posts">
-        {posts.map((post, i) => (
-          <div className="post-card" key={i}>
-            <div className="avatar">
-              {post.name === "3B International" ? "3B" : "👤"}
-            </div>
-
-            <div className="post-content">
-              <div className="post-top">
-                <div>
-                  <strong>{post.name}</strong>
-                  <span>{post.role}</span>
-                </div>
-                <em>{post.time}</em>
-              </div>
-
-              <p>{post.text}</p>
-
-              <button className="like">💛 {post.likes}</button>
-            </div>
-          </div>
+      <div className="page-grid">
+        {posts.map(([name, role, text]) => (
+          <InfoCard key={name} title={name} visual={<div className="avatar-big">{name === "3B International" ? "3B" : "👤"}</div>}>
+            <p>{role}</p>
+            <p>{text}</p>
+          </InfoCard>
         ))}
       </div>
 
@@ -910,54 +391,29 @@ function Secret({ go }) {
   const [unlocked, setUnlocked] = useState(false);
 
   function checkSecret() {
-    if (code.trim().toLowerCase() === "italie") {
-      setUnlocked(true);
-    } else {
-      alert("Code incorrect");
-    }
+    if (code.trim().toLowerCase() === "italie") setUnlocked(true);
+    else alert("Code incorrect");
   }
 
   return (
-    <div className="page secret-page">
+    <div className="page">
       <BackButton onClick={() => go("home")} />
       <LogoHeader small />
-
       <h1>Coffre secret 3B</h1>
-
-      <p className="intro">
-        Entrez le code secret pour débloquer l’indice caché dans l’univers 3B.
-      </p>
-
-      <h2>Code secret</h2>
+      <p className="intro">Entrez le code secret pour débloquer l’indice caché.</p>
 
       <div className="input-row">
-        <span className="input-icon">🔒</span>
-        <input
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder="Entrez le code secret"
-        />
+        <span>🔒</span>
+        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Entrez le code secret" />
         <button onClick={checkSecret}>Ouvrir</button>
       </div>
 
-      <p className="intro small-text">
-        Tapez le code exact. Le code actuel est prévu dans votre univers 3B.
-      </p>
-
       {unlocked && (
-        <div className="info-card">
-          <h3>Indice débloqué</h3>
+        <InfoCard title="Indice débloqué" visual={<LevelLogo level={{ name: "Secret", icon: "🔐" }} />}>
           <p>Italie s’y comprennent — 8 juillet — 20h.</p>
           <p>Récompense future : indice du prochain secret + prototype gratuit lors de sa sortie.</p>
-        </div>
+        </InfoCard>
       )}
-
-      <h2>Cadre 3B relief 3D tactile</h2>
-
-      <p className="intro small-text">
-        Touchez le 3B, gardez le doigt dessus, déplacez-le, puis lancez-le
-        contre les bords du cadre.
-      </p>
 
       <div className="relief-box">
         <div className="relief-logo">3B</div>
@@ -966,40 +422,31 @@ function Secret({ go }) {
   );
 }
 
-function Jeux({ go }) {
+function Jeux({ go, member }) {
+  const gamePercent = member ? Math.min(Math.round(((member.gamePoints || 0) / 500) * 100), 100) : 0;
+
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
       <LogoHeader small />
-
       <h1>Jeux 3B</h1>
       <div className="gold-line">◆</div>
 
-      <p className="intro">
-        Espace futur des jeux 3B International. Les points gagnés dans les jeux
-        seront ajoutés au Passeport 3B.
-      </p>
+      <div className="page-grid">
+        <InfoCard title="Jeux à venir" visual={<LevelLogo level={{ name: "Jeux", icon: "🎮" }} />}>
+          <p>Mini-jeux 3B</p>
+          <p>Défis communautaires</p>
+          <p>Classements entre membres</p>
+          <p>Points gagnés en jouant</p>
+        </InfoCard>
 
-      <VisualCard
-        title="Jeux à venir"
-        visual={<ShieldVisual text="🎮" />}
-      >
-        <p>Mini-jeux 3B</p>
-        <p>Défis communautaires</p>
-        <p>Classements entre membres</p>
-        <p>Points gagnés en jouant</p>
-        <p>Points bonus quand un niveau est passé</p>
-      </VisualCard>
-
-      <VisualCard
-        title="Points des jeux"
-        visual={<ProgressCircle percent={0} label="À venir" icon="🎮" />}
-      >
-        <p>Victoire dans un jeu : points bonus</p>
-        <p>Passage de niveau : points bonus</p>
-        <p>Classement hebdomadaire : récompense future</p>
-        <p>Statut : espace en préparation</p>
-      </VisualCard>
+        <InfoCard title="XP Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
+          <p>Points jeux : {member?.gamePoints || 0}</p>
+          <p>Victoire : points bonus</p>
+          <p>Passage de niveau : points bonus</p>
+          <p>Le logo Jeux deviendra évolutif plus tard.</p>
+        </InfoCard>
+      </div>
     </div>
   );
 }
@@ -1009,44 +456,24 @@ function PasseportAccess({ go }) {
     <div className="page">
       <BackButton onClick={() => go("home")} />
       <LogoHeader small />
-
       <h1>Passeport 3B</h1>
       <div className="gold-line">◆</div>
 
-      <p className="intro">
-        Votre Passeport 3B regroupera votre identité, vos origines, votre pays,
-        vos points, vos cartes, vos certificats et votre position dans le monde 3B.
-      </p>
+      <p className="intro">Créez votre Passeport 3B pour activer votre pays d’origine et entrer dans le monde 3B.</p>
 
       <WorldMap3B originCountry="" />
 
-      <InfoCard title="Comprendre les deux pays">
-        <p>
-          Le pays d’origine 3B sert à activer un des 8 pays officiels 3B sur la carte.
-        </p>
-        <p>
-          Le pays de résidence sert seulement à indiquer où vous vivez aujourd’hui.
-        </p>
-      </InfoCard>
+      <div className="page-grid">
+        <InfoCard title="Pays d’origine 3B">
+          <p>Sert à activer un des 8 pays officiels 3B sur la carte.</p>
+        </InfoCard>
 
-      <InfoCard title="Récompense d’entrée">
-        <p>Création du compte : +100 points 3B</p>
-        <p>Pays d’origine 3B sélectionné : +50 points 3B</p>
-        <p>Pays 3B officiel déverrouillé : +75 points 3B</p>
-      </InfoCard>
+        <InfoCard title="Pays de résidence">
+          <p>Sert seulement à indiquer où vous vivez aujourd’hui.</p>
+        </InfoCard>
 
-      <div className="menu-list">
-        <MenuCard
-          icon="👤"
-          title="Créer mon compte 3B"
-          onClick={() => go("passeport-inscription")}
-        />
-
-        <MenuCard
-          icon="🔐"
-          title="Me connecter"
-          onClick={() => go("passeport-connexion")}
-        />
+        <MenuCard icon="👤" title="Créer mon compte 3B" onClick={() => go("passeport-inscription")} />
+        <MenuCard icon="🔐" title="Me connecter" onClick={() => go("passeport-connexion")} />
       </div>
     </div>
   );
@@ -1062,38 +489,25 @@ function PasseportInscription({ go, setMember }) {
     city: "",
   });
 
-  function updateField(field, value) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+  function update(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
   }
 
   function createAccount() {
-    const pseudo = form.pseudo.trim() || "Membre 3B";
-    const originCountry = form.originCountry || "Non renseigné";
-    const residenceCountry = form.residenceCountry || "Non renseigné";
-    const city = form.city.trim() || "Non renseignée";
-    const unlockedCountry = getUnlockedCountry(originCountry);
-
-    const points =
-      100 +
-      (form.originCountry ? 50 : 0) +
-      (form.residenceCountry ? 25 : 0) +
-      (form.city.trim() ? 25 : 0) +
-      (unlockedCountry ? 75 : 0);
+    const country = getCountry(form.originCountry);
+    const points = 100 + (form.originCountry ? 25 : 0) + (form.residenceCountry ? 10 : 0) + (form.city ? 10 : 0) + (country ? 25 : 0);
+    const level = getLevel(points);
 
     setMember({
-      pseudo,
+      pseudo: form.pseudo.trim() || "Membre 3B",
       email: form.email.trim() || "email non renseigné",
-      originCountry,
-      residenceCountry,
-      city,
-      unlockedCountry: unlockedCountry ? unlockedCountry.name : "Aucun pays 3B officiel",
-      gamePoints: 0,
+      originCountry: form.originCountry || "Non renseigné",
+      residenceCountry: form.residenceCountry || "Non renseigné",
+      city: form.city.trim() || "Non renseignée",
+      unlockedCountry: country ? country.name : "Aucun pays 3B officiel",
       points,
-      level: points >= 250 ? "Héritier" : "Découverte",
-      card: "Carte Découverte 3B",
+      gamePoints: 0,
+      level: level.name,
       serial: "3B-PASS-0001",
       createdAt: new Date().toLocaleDateString("fr-FR"),
     });
@@ -1105,115 +519,48 @@ function PasseportInscription({ go, setMember }) {
     <div className="page">
       <BackButton onClick={() => go("passeport-access")} />
       <LogoHeader small />
-
       <h1>Inscription 3B</h1>
       <div className="gold-line">◆</div>
 
-      <p className="intro">
-        Créez votre compte pour débloquer votre Passeport 3B. Choisissez d’abord
-        votre pays d’origine 3B parmi les 8 pays officiels, puis indiquez le pays
-        où vous vivez aujourd’hui.
-      </p>
+      <div className="page-grid">
+        <Field icon="👤">
+          <input value={form.pseudo} onChange={(e) => update("pseudo", e.target.value)} placeholder="Nom ou pseudo" />
+        </Field>
 
-      <Field icon="👤">
-        <input
-          value={form.pseudo}
-          onChange={(e) => updateField("pseudo", e.target.value)}
-          placeholder="Nom ou pseudo"
-        />
-      </Field>
+        <Field icon="✉️">
+          <input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="Adresse e-mail" />
+        </Field>
 
-      <Field icon="✉️">
-        <input
-          value={form.email}
-          onChange={(e) => updateField("email", e.target.value)}
-          placeholder="Adresse e-mail"
-        />
-      </Field>
+        <Field icon="🔒">
+          <input value={form.password} onChange={(e) => update("password", e.target.value)} type="password" placeholder="Mot de passe" />
+        </Field>
 
-      <Field icon="🔒">
-        <input
-          value={form.password}
-          onChange={(e) => updateField("password", e.target.value)}
-          type="password"
-          placeholder="Mot de passe"
-        />
-      </Field>
+        <Field icon="🌍">
+          <select value={form.originCountry} onChange={(e) => update("originCountry", e.target.value)}>
+            <option value="">Pays d’origine 3B à activer</option>
+            {origin3BCountries.map((country) => <option key={country} value={country}>{country}</option>)}
+          </select>
+        </Field>
 
-      <InfoCard title="1. Pays d’origine 3B à activer">
-        <p>
-          Choisissez le pays que vous voulez représenter dans l’univers 3B.
-          Cette sélection déverrouille un seul pays sur la carte.
-        </p>
-        <p>
-          Disponible uniquement : France, Italie, Estonie, Turquie, Algérie,
-          Tunisie, Maroc, Espagne.
-        </p>
-      </InfoCard>
+        <Field icon="📍">
+          <select value={form.residenceCountry} onChange={(e) => update("residenceCountry", e.target.value)}>
+            <option value="">Pays de résidence actuel</option>
+            {residenceCountries.map((country) => <option key={country} value={country}>{country}</option>)}
+          </select>
+        </Field>
 
-      <Field icon="🌍">
-        <select
-          value={form.originCountry}
-          onChange={(e) => updateField("originCountry", e.target.value)}
-        >
-          <option value="">Choisir mon pays d’origine 3B</option>
-          {origin3BCountries.map((country) => (
-            <option key={country} value={country}>
-              {country}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <InfoCard title="2. Pays de résidence actuel">
-        <p>
-          Indiquez ici le pays où vous vivez actuellement. Cette information ne
-          déverrouille pas la carte 3B, elle sert seulement à compléter votre profil.
-        </p>
-      </InfoCard>
-
-      <Field icon="📍">
-        <select
-          value={form.residenceCountry}
-          onChange={(e) => updateField("residenceCountry", e.target.value)}
-        >
-          <option value="">Choisir mon pays de résidence</option>
-          {residenceCountries.map((country) => (
-            <option key={country} value={country}>
-              {country}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <Field icon="🏙️">
-        <input
-          value={form.city}
-          onChange={(e) => updateField("city", e.target.value)}
-          placeholder="Ville de résidence"
-        />
-      </Field>
+        <Field icon="🏙️">
+          <input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Ville de résidence" />
+        </Field>
+      </div>
 
       <WorldMap3B originCountry={form.originCountry} />
 
-      <button className="menu-card" onClick={createAccount}>
+      <button className="menu-card main-action" onClick={createAccount}>
         <div className="icon-circle">◆</div>
-        <span>Créer mon compte</span>
+        <span>Créer mon Passeport 3B</span>
         <b>›</b>
       </button>
-
-      <InfoCard title="Points débloqués à l’inscription">
-        <p>Compte créé : +100 points</p>
-        <p>Pays d’origine 3B sélectionné : +50 points</p>
-        <p>Pays de résidence renseigné : +25 points</p>
-        <p>Ville renseignée : +25 points</p>
-        <p>Pays 3B officiel déverrouillé : +75 points</p>
-        <p>Jeux 3B : les points gagnés plus tard seront ajoutés ici.</p>
-      </InfoCard>
-
-      <p className="intro small-text">
-        Pour l’instant, c’est une maquette. Après, cette inscription sera connectée à Supabase.
-      </p>
     </div>
   );
 }
@@ -1223,31 +570,12 @@ function PasseportConnexion({ go }) {
     <div className="page">
       <BackButton onClick={() => go("passeport-access")} />
       <LogoHeader small />
-
       <h1>Connexion 3B</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Connectez-vous pour accéder à votre Passeport 3B.
-      </p>
-
-      <Field icon="✉️">
-        <input placeholder="Adresse e-mail" />
-      </Field>
-
-      <Field icon="🔒">
-        <input type="password" placeholder="Mot de passe" />
-      </Field>
-
-      <button className="menu-card" onClick={() => go("passeport")}>
-        <div className="icon-circle">◆</div>
-        <span>Entrer dans mon Passeport</span>
-        <b>›</b>
-      </button>
-
-      <p className="intro small-text">
-        Pour l’instant, c’est une maquette. Après, cette connexion sera connectée à Supabase.
-      </p>
+      <div className="page-grid">
+        <Field icon="✉️"><input placeholder="Adresse e-mail" /></Field>
+        <Field icon="🔒"><input type="password" placeholder="Mot de passe" /></Field>
+        <MenuCard icon="◆" title="Entrer dans mon Passeport" onClick={() => go("passeport")} />
+      </div>
     </div>
   );
 }
@@ -1260,529 +588,112 @@ function Passeport({ go, member }) {
     residenceCountry: "Non renseigné",
     city: "Non renseignée",
     unlockedCountry: "Aucun pays 3B officiel",
-    gamePoints: 0,
-    points: 0,
-    level: "Découverte",
-    card: "Carte Découverte 3B",
     serial: "3B-PASS-0001",
-    createdAt: new Date().toLocaleDateString("fr-FR"),
+    createdAt: "24/05/2026",
   };
-
-  const progress = Math.min(profile.points, 300);
-  const progressPercent = Math.round((progress / 300) * 100);
 
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
       <LogoHeader small />
-
-      <h1>Mon Passeport 3B</h1>
+      <h1>Passeport numérique</h1>
       <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Bienvenue dans votre espace membre 3B International.
-      </p>
 
       <WorldMap3B originCountry={profile.originCountry} />
 
-      <InfoCard title="Carte membre digitale">
-        <p>Nom : {profile.pseudo}</p>
-        <p>E-mail : {profile.email}</p>
-        <p>Numéro passeport : {profile.serial}</p>
-        <p>Date de création : {profile.createdAt}</p>
-      </InfoCard>
+      <div className="page-grid">
+        <InfoCard title="Carte membre digitale" visual={<PassportCardVisual member={profile} />}>
+          <p>Nom : {profile.pseudo}</p>
+          <p>E-mail : {profile.email}</p>
+          <p>Numéro passeport : {profile.serial}</p>
+          <p>Date de création : {profile.createdAt}</p>
+        </InfoCard>
 
-      <InfoCard title="Origine et résidence">
-        <p>Pays d’origine 3B activé : {profile.originCountry}</p>
-        <p>Pays de résidence actuelle : {profile.residenceCountry}</p>
-        <p>Ville : {profile.city}</p>
-        <p>Pays 3B déverrouillé : {profile.unlockedCountry}</p>
-      </InfoCard>
-
-      <VisualCard
-        title="Points et niveau"
-        visual={<ProgressCircle percent={progressPercent} label="Progression Gardien" icon="◆" />}
-      >
-        <p>Points 3B : {profile.points}</p>
-        <p>Points jeux : {profile.gamePoints || 0}</p>
-        <p>Niveau actuel : {profile.level}</p>
-        <p>Carte : {profile.card}</p>
-        <p>Progression vers Gardien : {progressPercent}%</p>
-
-        <MenuCard
-          icon="📊"
-          title="Voir mes points et niveaux"
-          onClick={() => go("points-niveaux")}
-        />
-      </VisualCard>
-
-      <VisualCard
-        title="Pays verrouillé"
-        visual={<UnlockedFlagVisual country={getUnlockedCountry(profile.originCountry)} />}
-      >
-        <p>Les 8 pays 3B sont visibles sur la carte.</p>
-        <p>Le pays d’origine 3B choisi pendant l’inscription est déverrouillé.</p>
-        <p>Les autres pays 3B restent verrouillés.</p>
-        <p>Le reste du monde reste visible en mode numérique sans noms.</p>
-
-        <MenuCard
-          icon="🌍"
-          title="Voir les pays verrouillés"
-          onClick={() => go("pays-verrouilles")}
-        />
-      </VisualCard>
-
-      <VisualCard
-        title="Avantages débloqués"
-        visual={<DigitalPassportVisual />}
-      >
-        <p>Accès au Passeport 3B</p>
-        <p>Accès aux indices secrets</p>
-        <p>Suivi des cartes de fidélité</p>
-        <p>Accès futur aux drops privés</p>
-
-        <MenuCard
-          icon="💎"
-          title="Ouvrir mes avantages 3B"
-          onClick={() => go("avantages-passeport")}
-        />
-      </VisualCard>
-
-      <VisualCard
-        title="Missions 3B"
-        visual={<ShieldVisual text="XP" />}
-      >
-        <p>Continuez à gagner des points et à les accumuler dans votre Passeport 3B.</p>
-        <p>Partager une création 3B : +100 points — bientôt disponible.</p>
-        <p>Inviter un membre avec votre lien : +150 points.</p>
-        <p>Participer à un drop : +200 points — prévu plus tard.</p>
-        <p>Découvrir le secret 3B du moment : +250 points + indice du prochain secret.</p>
-        <p>Prototype gratuit lors de sa sortie : récompense spéciale.</p>
-        <p>Clip TikTok avec une musique du compte 3D BlackBlanBeur + identification : points supplémentaires.</p>
-        <p>Jeux 3B : points gagnés en jouant, en gagnant et en passant des niveaux.</p>
-
-        <MenuCard
-          icon="🤝"
-          title="Inviter un membre"
-          onClick={() => go("invitation")}
-        />
-      </VisualCard>
-
-      <InfoCard title="QR Code et certificat futur">
-        <p>
-          Ici viendra le QR Code personnel du membre, relié à son compte, à ses
-          produits, à ses achats, à ses cartes et à ses certificats 3B.
-        </p>
-      </InfoCard>
-    </div>
-  );
-}
-
-function PointsNiveaux({ go, member }) {
-  const profile = member || {
-    points: 100,
-    gamePoints: 0,
-    level: "Découverte",
-    card: "Carte Découverte 3B",
-  };
-
-  const progressGardien = Math.min(Math.round((profile.points / 300) * 100), 100);
-  const progressLegende = Math.min(Math.round((profile.points / 1000) * 100), 100);
-  const progressJeux = Math.min(Math.round(((profile.gamePoints || 0) / 500) * 100), 100);
-
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("passeport")} />
-      <LogoHeader small />
-
-      <h1>Points & Niveaux</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Suivez votre progression, vos points accumulés, les points des jeux et les niveaux à débloquer
-        dans l’univers 3B International.
-      </p>
-
-      <VisualCard
-        title="Résumé actuel"
-        visual={<ShieldVisual text="3B" />}
-      >
-        <p>Points actuels : {profile.points}</p>
-        <p>Points gagnés par les jeux : {profile.gamePoints || 0}</p>
-        <p>Niveau actuel : {profile.level}</p>
-        <p>Carte actuelle : {profile.card}</p>
-      </VisualCard>
-
-      <VisualCard
-        title="Progression vers Gardien"
-        visual={<ProgressCircle percent={progressGardien} label="Objectif 300 points" icon="🛡️" />}
-      >
-        <p>{progressGardien}% rempli</p>
-        <p>Objectif : 300 points</p>
-        <p>Récompense future : accès renforcé aux missions, indices et cartes.</p>
-      </VisualCard>
-
-      <VisualCard
-        title="Progression vers Légende"
-        visual={<ProgressCircle percent={progressLegende} label="Objectif 1000 points" icon="★" />}
-      >
-        <p>{progressLegende}% rempli</p>
-        <p>Objectif : 1000 points</p>
-        <p>Récompense future : accès VIP, drops privés, cartes rares et événements 3B.</p>
-      </VisualCard>
-
-      <VisualCard
-        title="Progression Jeux 3B"
-        visual={<ProgressCircle percent={progressJeux} label="XP Jeux" icon="🎮" />}
-      >
-        <p>Objectif futur : 500 points gagnés dans les jeux.</p>
-        <p>Gagner un jeu : points bonus.</p>
-        <p>Passer un niveau : points bonus.</p>
-        <p>Être classé dans le top membres : récompense future.</p>
-      </VisualCard>
-
-      <VisualCard
-        title="Comment gagner des points"
-        visual={<ShieldVisual text="XP" />}
-      >
-        <p>Créer son compte : +100 points</p>
-        <p>Choisir son pays d’origine 3B : +50 points</p>
-        <p>Renseigner son pays de résidence : +25 points</p>
-        <p>Renseigner sa ville : +25 points</p>
-        <p>Inviter un membre : +150 points</p>
-        <p>Découvrir le secret 3B : +250 points + indice futur</p>
-        <p>Clip TikTok avec une musique 3B + identification : points supplémentaires</p>
-        <p>Jeux 3B : points gagnés en jouant, en gagnant et en passant des niveaux</p>
-      </VisualCard>
-    </div>
-  );
-}
-
-function AvantagesPasseport({ go }) {
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("passeport")} />
-      <LogoHeader small />
-
-      <h1>Avantages 3B</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Vue premium de votre Passeport 3B : avantages, indices supplémentaires
-        et cartes possédées dans l’univers 3B International.
-      </p>
-
-      <VisualCard
-        title="Passeport numérique futuriste"
-        visual={<DigitalPassportVisual />}
-      >
-        <p>Identité membre 3B</p>
-        <p>Points et progression</p>
-        <p>Carte numérique</p>
-        <p>Accès aux pays débloqués</p>
-      </VisualCard>
-
-      <VisualCard
-        title="Indices supplémentaires"
-        visual={<ShieldVisual text="🔐" />}
-      >
-        <p>Certains indices seront visibles uniquement lorsque le membre aura le bon niveau.</p>
-        <p>Les indices ne remplacent pas le Coffre secret 3B : ici ce sont des bonus membres.</p>
-        <p>Statut actuel : verrouillé pour le futur.</p>
-      </VisualCard>
-
-      <InfoCard title="Mes 12 cartes possédées">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 12,
-            marginTop: 12,
-          }}
-        >
-          {cardCollection.map((card) => (
-            <Mini3BCard key={card.name} card={card} />
-          ))}
-        </div>
-      </InfoCard>
-
-      <InfoCard title="Cartes physiques futures">
-        <p>
-          Les cartes physiques et numériques seront visibles ici en miniature.
-        </p>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 12,
-            marginTop: 12,
-          }}
-        >
-          {cardCollection.slice(0, 4).map((card) => (
-            <Mini3BCard key={card.name} card={card} />
-          ))}
-        </div>
-      </InfoCard>
-    </div>
-  );
-}
-
-function PaysVerrouilles({ go, member }) {
-  const profile = member || {
-    originCountry: "Non renseigné",
-    unlockedCountry: "Aucun pays 3B officiel",
-  };
-
-  const unlocked = getUnlockedCountry(profile.originCountry) || official3BCountries[0];
-
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("passeport")} />
-      <LogoHeader small />
-
-      <h1>Pays verrouillés</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Cette page sert à suivre les pays 3B verrouillés, le pays déjà débloqué
-        et les futures conditions pour ouvrir les autres accès internationaux.
-      </p>
-
-      <WorldMap3B originCountry={profile.originCountry} />
-
-      <VisualCard
-        title="Pays actuellement débloqué"
-        visual={<UnlockedFlagVisual country={unlocked} />}
-      >
-        <p>{unlocked ? `${unlocked.flag} ${unlocked.name}` : "Aucun pays 3B officiel débloqué"}</p>
-        <p>Un seul pays est activé au départ.</p>
-        <p>Les autres pays pourront se débloquer plus tard avec points, missions ou drops.</p>
-      </VisualCard>
-
-      <InfoCard title="Pays encore verrouillés">
-        {official3BCountries.map((country) => {
-          const isUnlocked =
-            unlocked &&
-            normalizeCountry(unlocked.name) === normalizeCountry(country.name);
-
-          return (
-            <p key={country.name}>
-              {country.flag} {isUnlocked ? "✅ Déverrouillé" : "🔒 Verrouillé"} : {country.name}
-            </p>
-          );
-        })}
-      </InfoCard>
-
-      <VisualCard
-        title="Idée stratégique"
-        visual={<ShieldVisual text="🌍" />}
-      >
-        <p>
-          Chaque pays pourra devenir un chapitre 3B : logo, histoire, musique,
-          carte, mission et indice spécial.
-        </p>
-        <p>
-          Plus tard, un membre pourra débloquer d’autres pays avec des points,
-          des missions, des jeux ou des drops.
-        </p>
-      </VisualCard>
-    </div>
-  );
-}
-
-function Invitation({ go }) {
-  const referralLink = "https://3b-international.vercel.app";
-
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("passeport")} />
-      <LogoHeader small />
-
-      <h1>Inviter un membre</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Partagez le lien 3B International à vos proches ou sur vos réseaux.
-        Quand un membre rejoint l’univers 3B grâce à vous, vous pourrez gagner
-        +150 points.
-      </p>
-
-      <VisualCard
-        title="Lien à partager"
-        visual={<ShieldVisual text="🤝" />}
-      >
-        <p>{referralLink}</p>
-      </VisualCard>
-
-      <InfoCard title="Réseaux possibles">
-        <p>WhatsApp</p>
-        <p>Instagram</p>
-        <p>TikTok</p>
-        <p>Snapchat</p>
-        <p>Facebook</p>
-        <p>SMS</p>
-      </InfoCard>
-
-      <InfoCard title="Récompense future">
-        <p>Invitation validée : +150 points</p>
-        <p>Statut actuel : maquette, connexion future à Supabase.</p>
-      </InfoCard>
-    </div>
-  );
-}
-
-function CartesFidelite({ go }) {
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("plus")} />
-      <LogoHeader small />
-
-      <h1>Cartes de fidélité 3B</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Les cartes de fidélité 3B serviront à récompenser les membres, débloquer
-        des avantages et créer un lien premium avec la communauté.
-      </p>
-
-      <InfoCard title="Carte Découverte">
-        <p>Accès aux premiers avantages 3B.</p>
-        <p>Suivi des achats et premières récompenses.</p>
-      </InfoCard>
-
-      <InfoCard title="Carte Héritier">
-        <p>Accès prioritaire à certaines collections.</p>
-        <p>Récompenses renforcées et codes privés.</p>
-      </InfoCard>
-
-      <InfoCard title="Carte Légende">
-        <p>Accès VIP, drops limités et événements exclusifs.</p>
-      </InfoCard>
-    </div>
-  );
-}
-
-function Manga({ go }) {
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("plus")} />
-      <LogoHeader small />
-
-      <h1>Manga 3B</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Le Manga 3B International racontera l’univers, les personnages, les pays,
-        les secrets et la montée de zéro à l’international.
-      </p>
-
-      <InfoCard title="Univers">
-        <p>Une histoire entre identité, héritage, ambition et mystère.</p>
-      </InfoCard>
-
-      <InfoCard title="Personnages">
-        <p>Chaque personnage pourra représenter une force, un pays ou une mission 3B.</p>
-      </InfoCard>
-
-      <InfoCard title="Secret 3B">
-        <p>Le manga pourra aussi cacher des indices reliés à l’application.</p>
-      </InfoCard>
-    </div>
-  );
-}
-
-function LogosInternationaux({ go }) {
-  const logos = [
-    "France",
-    "Italie",
-    "Estonie",
-    "Turquie",
-    "Algérie",
-    "Tunisie",
-    "Maroc",
-    "Espagne",
-  ];
-
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("plus")} />
-      <LogoHeader small />
-
-      <h1>8 Logos Internationaux</h1>
-      <div className="gold-line">◆</div>
-
-      <p className="intro">
-        Espace officiel des 8 logos premium 3B International.
-      </p>
-
-      <div className="shop-grid">
-        {logos.map((logo) => (
-          <button className="product-slot" key={logo}>
-            <div className="plus">◆</div>
-            <p>{logo}</p>
-            <span>3B</span>
-          </button>
-        ))}
+        <InfoCard title="Origine et résidence" visual={<FlagVisual country={getCountry(profile.originCountry)} />}>
+          <p>Pays d’origine 3B activé : {profile.originCountry}</p>
+          <p>Pays de résidence actuelle : {profile.residenceCountry}</p>
+          <p>Ville : {profile.city}</p>
+          <p>Pays 3B déverrouillé : {profile.unlockedCountry}</p>
+        </InfoCard>
       </div>
     </div>
   );
 }
 
-function CreateursCommandes({ go }) {
+function EspaceMembre({ go, member }) {
+  const profile = member || {
+    points: 0,
+    gamePoints: 0,
+    level: "Découverte",
+    originCountry: "Non renseigné",
+    unlockedCountry: "Aucun pays 3B officiel",
+  };
+
+  const level = getLevel(profile.points);
+  const gamePercent = Math.min(Math.round(((profile.gamePoints || 0) / 500) * 100), 100);
+  const unlocked = getCountry(profile.originCountry);
+
   return (
     <div className="page">
-      <BackButton onClick={() => go("plus")} />
+      <BackButton onClick={() => go("home")} />
       <LogoHeader small />
-
-      <h1>Créateurs</h1>
+      <h1>Espace Membre 3B</h1>
       <div className="gold-line">◆</div>
 
-      <p className="intro">
-        Ici viendra l’espace pour les créateurs, développeurs, designers et partenaires
-        qui veulent participer à l’écosystème 3B.
-      </p>
+      <div className="page-grid">
+        <InfoCard title="Résumé actuel" visual={<LevelLogo level={level} />}>
+          <p>Points 3B : {profile.points}</p>
+          <p>Points jeux : {profile.gamePoints || 0}</p>
+          <p>Niveau actuel : {level.name}</p>
+          <p>Prochain palier : {level.next} points</p>
+        </InfoCard>
 
-      <InfoCard title="Créateurs de contenu">
-        <p>Inscription, missions, vidéos UGC et commissions futures.</p>
-      </InfoCard>
+        <InfoCard title="Progression niveau" visual={<ProgressCircle percent={level.percent} label={`Vers ${level.next} points`} icon={level.icon} />}>
+          <p>La progression est volontairement plus lente.</p>
+          <p>Les niveaux font évoluer le statut et le logo.</p>
+          <p>Les cartes restent séparées des niveaux.</p>
+        </InfoCard>
 
-      <InfoCard title="Commandes spéciales">
-        <p>Demandes de visuels, maillots, concepts, logos et créations premium.</p>
-      </InfoCard>
+        <InfoCard title="Progression Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
+          <p>Points jeux : {profile.gamePoints || 0}</p>
+          <p>Gagner un jeu : points bonus.</p>
+          <p>Passer un niveau : points bonus.</p>
+          <p>Le logo Jeux deviendra évolutif.</p>
+        </InfoCard>
 
-      <InfoCard title="Programme ambassadeur">
-        <p>Classement, récompenses et sélection des meilleurs contenus.</p>
-      </InfoCard>
-    </div>
-  );
-}
+        <InfoCard title="Pays verrouillés" visual={<FlagVisual country={unlocked} />}>
+          {official3BCountries.map((country) => {
+            const active = unlocked?.name === country.name;
+            return <p key={country.name}>{country.flag} {active ? "✅ Déverrouillé" : "🔒 Verrouillé"} : {country.name}</p>;
+          })}
+        </InfoCard>
 
-function CertificatProduit({ go }) {
-  return (
-    <div className="page">
-      <BackButton onClick={() => go("plus")} />
-      <LogoHeader small />
+        <InfoCard title="Avantages à débloquer" visual={<PassportCardVisual member={member} />}>
+          <p>Accès au Passeport 3B</p>
+          <p>Indices supplémentaires selon niveau</p>
+          <p>Suivi des cartes possédées</p>
+          <p>Drops privés plus tard</p>
+        </InfoCard>
 
-      <h1>Certificat Produit</h1>
-      <div className="gold-line">◆</div>
+        <InfoCard title="Missions 3B" visual={<LevelLogo level={{ name: "XP", icon: "XP" }} />}>
+          <p>Inviter un membre : +150 points</p>
+          <p>Découvrir le secret 3B : +250 points + indice futur</p>
+          <p>Prototype gratuit lors de sa sortie : récompense spéciale</p>
+          <p>Clip TikTok avec une musique 3B + identification 3D BlackBlanBeur : points bonus</p>
+          <p>Jeux 3B : points gagnés en jouant, gagnant et passant des niveaux</p>
+        </InfoCard>
 
-      <p className="intro">
-        Chaque produit 3B pourra avoir un certificat digital avec numéro de série,
-        QR Code, preuve d’authenticité et rareté.
-      </p>
+        <InfoCard title="Mes 12 cartes 3B">
+          <div className="mini-card-grid">
+            {memberCards.map((card) => <MiniCard key={card.name} card={card} />)}
+          </div>
+        </InfoCard>
 
-      <InfoCard title="Authenticité">
-        <p>Produit officiel 3B International.</p>
-        <p>Numéro de série unique.</p>
-      </InfoCard>
-
-      <InfoCard title="QR Code">
-        <p>Scan du produit pour afficher son certificat digital.</p>
-      </InfoCard>
-
-      <InfoCard title="Édition limitée">
-        <p>Preuve de rareté, collection et historique du produit.</p>
-      </InfoCard>
+        <InfoCard title="QR Code et certificat futur" visual={<div className="qr-large">QR</div>}>
+          <p>QR Code personnel du membre</p>
+          <p>Relié au compte, aux produits, aux achats, aux cartes et aux certificats 3B.</p>
+        </InfoCard>
+      </div>
     </div>
   );
 }
@@ -1791,61 +702,34 @@ function PlusEncore({ go }) {
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
-
       <h1>Plus encore</h1>
-      <div className="gold-line">◆</div>
-
-      <div className="menu-list">
-        <MenuCard
-          icon="💳"
-          title="Cartes de fidélité 3B"
-          onClick={() => go("fidelite")}
-        />
-
-        <MenuCard
-          icon="🛂"
-          title="Passeport 3B"
-          onClick={() => go("passeport-access")}
-        />
-
-        <MenuCard
-          icon="🎮"
-          title="Jeux 3B"
-          onClick={() => go("jeux")}
-        />
-
-        <MenuCard
-          icon="📖"
-          title="Manga 3B International"
-          onClick={() => go("manga")}
-        />
-
-        <MenuCard
-          icon="🌍"
-          title="8 logos internationaux"
-          onClick={() => go("logos")}
-        />
-
-        <MenuCard
-          icon="♪"
-          title="Album musique 20 titres"
-          onClick={() => go("musique")}
-        />
-
-        <MenuCard
-          icon="💻"
-          title="Créateurs de programmes / commandes"
-          onClick={() => go("createurs")}
-        />
-
-        <MenuCard
-          icon="▣"
-          title="Certificat de produit avec code QR"
-          onClick={() => go("certificat")}
-        />
+      <div className="page-grid">
+        <MenuCard icon="💳" title="Cartes de fidélité 3B" onClick={() => go("fidelite")} />
+        <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport-access")} />
+        <MenuCard icon="🎮" title="Jeux 3B" onClick={() => go("jeux")} />
+        <MenuCard icon="📖" title="Manga 3B International" onClick={() => go("manga")} />
+        <MenuCard icon="🌍" title="8 logos internationaux" onClick={() => go("logos")} />
+        <MenuCard icon="♪" title="Album musique 20 titres" onClick={() => go("musique")} />
+        <MenuCard icon="💻" title="Créateurs / commandes" onClick={() => go("createurs")} />
+        <MenuCard icon="▣" title="Certificat produit avec QR" onClick={() => go("certificat")} />
       </div>
+    </div>
+  );
+}
 
-      <div className="diamond">◆</div>
+function SimplePage({ go, title, lines }) {
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("plus")} />
+      <LogoHeader small />
+      <h1>{title}</h1>
+      <div className="page-grid">
+        {lines.map((line) => (
+          <InfoCard key={line.title} title={line.title} visual={<LevelLogo level={{ name: line.title, icon: line.icon }} />}>
+            <p>{line.text}</p>
+          </InfoCard>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1856,43 +740,44 @@ export default function App() {
 
   function go(nextPage) {
     setPage(nextPage);
-    setTimeout(() => {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "instant",
-      });
-    }, 0);
+    setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }), 0);
   }
 
   return (
     <main className="app">
-      {page === "home" && <Home go={go} />}
+      {page === "home" && <Home go={go} member={member} />}
       {page === "boutique" && <Boutique go={go} />}
       {page === "musique" && <Musique go={go} />}
       {page === "communaute" && <Communaute go={go} />}
       {page === "secret" && <Secret go={go} />}
-      {page === "jeux" && <Jeux go={go} />}
+      {page === "jeux" && <Jeux go={go} member={member} />}
       {page === "passeport-access" && <PasseportAccess go={go} />}
-      {page === "passeport-inscription" && (
-        <PasseportInscription go={go} setMember={setMember} />
-      )}
+      {page === "passeport-inscription" && <PasseportInscription go={go} setMember={setMember} />}
       {page === "passeport-connexion" && <PasseportConnexion go={go} />}
       {page === "passeport" && <Passeport go={go} member={member} />}
-      {page === "points-niveaux" && (
-        <PointsNiveaux go={go} member={member} />
-      )}
-      {page === "avantages-passeport" && <AvantagesPasseport go={go} />}
-      {page === "pays-verrouilles" && (
-        <PaysVerrouilles go={go} member={member} />
-      )}
-      {page === "invitation" && <Invitation go={go} />}
+      {page === "espace-membre" && <EspaceMembre go={go} member={member} />}
       {page === "plus" && <PlusEncore go={go} />}
-      {page === "fidelite" && <CartesFidelite go={go} />}
-      {page === "manga" && <Manga go={go} />}
-      {page === "logos" && <LogosInternationaux go={go} />}
-      {page === "createurs" && <CreateursCommandes go={go} />}
-      {page === "certificat" && <CertificatProduit go={go} />}
+      {page === "fidelite" && <SimplePage go={go} title="Cartes de fidélité 3B" lines={[
+        { title: "Carte Découverte", icon: "💠", text: "Automatique à l’inscription." },
+        { title: "Cartes sur demande", icon: "💳", text: "La majorité des cartes seront demandées ou commandées." },
+      ]} />}
+      {page === "manga" && <SimplePage go={go} title="Manga 3B" lines={[
+        { title: "Univers", icon: "📖", text: "Histoire, pays, personnages et secret 3B." },
+        { title: "Chapitres", icon: "✦", text: "Chaque pays pourra devenir un chapitre 3B." },
+      ]} />}
+      {page === "logos" && <SimplePage go={go} title="8 logos internationaux" lines={official3BCountries.map((c) => ({
+        title: c.name,
+        icon: c.flag,
+        text: `Logo officiel 3B ${c.name}.`,
+      }))} />}
+      {page === "createurs" && <SimplePage go={go} title="Créateurs / commandes" lines={[
+        { title: "Créateurs", icon: "🎥", text: "Programme UGC, vidéos et contenus 3B." },
+        { title: "Commandes", icon: "💻", text: "Demandes spéciales, visuels et créations." },
+      ]} />}
+      {page === "certificat" && <SimplePage go={go} title="Certificat produit" lines={[
+        { title: "Authenticité", icon: "▣", text: "Produit officiel 3B avec numéro de série." },
+        { title: "QR Code", icon: "QR", text: "Scan futur du produit et certificat digital." },
+      ]} />}
     </main>
   );
 }
