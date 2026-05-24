@@ -1,6 +1,3 @@
-/* src/index.css */
-
-/* RESET PROPRE GLOBAL */
 * {
   box-sizing: border-box;
 }
@@ -29,7 +26,6 @@ body {
   min-height: 100vh;
 }
 
-/* Évite les bugs de zoom mobile */
 button,
 input,
 select,
@@ -38,14 +34,12 @@ textarea {
   font-size: 16px;
 }
 
-/* Boutons propres */
 button {
   border: none;
   background: none;
   cursor: pointer;
 }
 
-/* Images et médias propres */
 img,
 svg,
 video,
@@ -54,13 +48,11 @@ canvas {
   display: block;
 }
 
-/* Sélection premium */
 ::selection {
   background: rgba(240, 223, 89, 0.35);
   color: #ffffff;
 }
 
-/* Scrollbar luxe sur PC */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -78,7 +70,6 @@ canvas {
   background: linear-gradient(180deg, #fff08a, #b99723);
 }
 
-/* Accessibilité propre */
 :focus-visible {
   outline: 2px solid #43d8ff;
   outline-offset: 3px;

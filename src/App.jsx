@@ -22,6 +22,81 @@ const MUSIC_SLOTS = Array.from({ length: 20 }, (_, index) => ({
   state: "Prêt",
 }));
 
+const loyaltyCards3B = [
+  {
+    icon: "💎",
+    name: "Découverte 3B",
+    status: "automatique",
+    detail: "Débloquée à l’inscription.",
+  },
+  {
+    icon: "🛡️",
+    name: "Gardien 3B",
+    status: "à débloquer",
+    detail: "Carte liée à la progression et à la fidélité.",
+  },
+  {
+    icon: "⭐",
+    name: "Légende 3B",
+    status: "sur demande",
+    detail: "Carte réservée aux membres premium.",
+  },
+  {
+    icon: "🔐",
+    name: "Secret 3B",
+    status: "sur demande",
+    detail: "Accès spécial aux secrets et indices 3B.",
+  },
+  {
+    icon: "🎵",
+    name: "Musique 3B",
+    status: "sur demande",
+    detail: "Carte liée à l’univers musical 3B.",
+  },
+  {
+    icon: "🎮",
+    name: "Jeux 3B",
+    status: "progression XP",
+    detail: "Récompenses liées au jeu, aux portes et aux niveaux.",
+  },
+  {
+    icon: "🌍",
+    name: "International 3B",
+    status: "sur demande",
+    detail: "Carte liée au monde 3B et aux 8 pays officiels.",
+  },
+  {
+    icon: "🔥",
+    name: "Drop 3B",
+    status: "sur demande",
+    detail: "Accès aux drops privés et éditions limitées.",
+  },
+  {
+    icon: "🎁",
+    name: "Prototype 3B",
+    status: "sur demande",
+    detail: "Carte liée aux prototypes et créations futures.",
+  },
+  {
+    icon: "🔷",
+    name: "Legacy 3B",
+    status: "sur demande",
+    detail: "Carte patrimoine, héritage et identité 3B.",
+  },
+  {
+    icon: "🎟️",
+    name: "Salon 3B",
+    status: "futur",
+    detail: "Carte pour événements, salons et rendez-vous 3B.",
+  },
+  {
+    icon: "👑",
+    name: "Héritier 3B",
+    status: "futur",
+    detail: "Carte supérieure pour les membres les plus engagés.",
+  },
+];
+
 function safeParse(value, fallback = null) {
   try {
     return value ? JSON.parse(value) : fallback;
@@ -33,14 +108,6 @@ function safeParse(value, fallback = null) {
 function loadMember() {
   if (typeof window === "undefined") return null;
   return safeParse(localStorage.getItem(STORAGE_MEMBER_KEY), null);
-}
-
-function loadGame() {
-  if (typeof window === "undefined") return createDefaultGameProfile();
-  return (
-    safeParse(localStorage.getItem(STORAGE_GAME_KEY), null) ||
-    createDefaultGameProfile()
-  );
 }
 
 function createDefaultGameProfile() {
@@ -59,6 +126,14 @@ function createDefaultGameProfile() {
   };
 }
 
+function loadGame() {
+  if (typeof window === "undefined") return createDefaultGameProfile();
+  return (
+    safeParse(localStorage.getItem(STORAGE_GAME_KEY), null) ||
+    createDefaultGameProfile()
+  );
+}
+
 function formatDuration(totalSeconds = 0) {
   const seconds = Math.max(0, Number(totalSeconds) || 0);
   const h = String(Math.floor(seconds / 3600)).padStart(2, "0");
@@ -72,7 +147,8 @@ function generatePassportNumber() {
 }
 
 function calcGlobalProgress(level, door) {
-  const completedDoors = (Math.max(1, level) - 1) * 10 + (Math.max(1, door) - 1);
+  const completedDoors =
+    (Math.max(1, level) - 1) * 10 + (Math.max(1, door) - 1);
   return Number(((completedDoors / 10000) * 100).toFixed(2));
 }
 
@@ -85,7 +161,9 @@ function buildLeaderboard(member, gameProfile) {
     { name: "Imran", level: 6, xp: 470 },
   ];
 
-  if (!member) return base;
+  if (!member) {
+    return base.map((item, index) => ({ ...item, rank: index + 1 }));
+  }
 
   const playerRow = {
     name: member.name || "Zakaria",
@@ -102,7 +180,10 @@ function buildLeaderboard(member, gameProfile) {
 }
 
 function findCountry(name) {
-  return OFFICIAL_COUNTRIES.find((country) => country.name === name) || OFFICIAL_COUNTRIES[0];
+  return (
+    OFFICIAL_COUNTRIES.find((country) => country.name === name) ||
+    OFFICIAL_COUNTRIES[0]
+  );
 }
 
 function BackButton({ onClick, label = "Retour" }) {
@@ -126,7 +207,14 @@ function PageHeader({ eyebrow = "3B INTERNATIONAL", title, subtitle, badge }) {
   );
 }
 
-function SectionCard({ title, subtitle, children, className = "", actions = null, badge = null }) {
+function SectionCard({
+  title,
+  subtitle,
+  children,
+  className = "",
+  actions = null,
+  badge = null,
+}) {
   return (
     <section className={`section-card ${className}`.trim()}>
       {(title || subtitle || actions || badge) && (
@@ -174,7 +262,12 @@ function WorldMapVisual({ selectedCountry }) {
 
   return (
     <div className="map-visual">
-      <svg viewBox="0 0 760 430" className="world-map-svg" role="img" aria-label="Carte du monde 3B">
+      <svg
+        viewBox="0 0 760 430"
+        className="world-map-svg"
+        role="img"
+        aria-label="Carte du monde 3B"
+      >
         <defs>
           <linearGradient id="oceanGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#051322" />
@@ -235,7 +328,11 @@ function WorldMapVisual({ selectedCountry }) {
               y1={active.y}
               x2={point.x}
               y2={point.y}
-              stroke={country === selected.name ? selected.color : "rgba(81,225,255,0.35)"}
+              stroke={
+                country === selected.name
+                  ? selected.color
+                  : "rgba(81,225,255,0.35)"
+              }
             />
           ))}
         </g>
@@ -280,7 +377,12 @@ function ZoomEightCountries({ selectedCountry }) {
 
   return (
     <div className="map-visual zoom-map-shell">
-      <svg viewBox="0 0 640 330" className="zoom-map-svg" role="img" aria-label="Zoom des 8 pays 3B">
+      <svg
+        viewBox="0 0 640 330"
+        className="zoom-map-svg"
+        role="img"
+        aria-label="Zoom des 8 pays 3B"
+      >
         <defs>
           <linearGradient id="zoomBg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#07192a" />
@@ -289,7 +391,15 @@ function ZoomEightCountries({ selectedCountry }) {
         </defs>
 
         <rect width="640" height="330" rx="24" fill="url(#zoomBg)" />
-        <rect x="28" y="28" width="584" height="274" rx="18" fill="rgba(11,34,57,0.58)" stroke="rgba(88,207,255,0.28)" />
+        <rect
+          x="28"
+          y="28"
+          width="584"
+          height="274"
+          rx="18"
+          fill="rgba(11,34,57,0.58)"
+          stroke="rgba(88,207,255,0.28)"
+        />
 
         {Array.from({ length: 10 }).map((_, i) => (
           <line
@@ -312,11 +422,18 @@ function ZoomEightCountries({ selectedCountry }) {
           />
         ))}
 
-        <path d="M137 150l40-46 37-13 21-25 33-8 23 13 23 2 29-27 35-1 24 18 6 29 36 13 44 0 53 23 15 28-14 24-51 1-68 23-71 18-18 38-38 6-13-27-26-9-23-1-18-26-35-6-20-29-46-11-11-29 13-23z" fill="rgba(27,80,136,0.56)" stroke="rgba(113,214,255,0.55)" strokeWidth="3" />
+        <path
+          d="M137 150l40-46 37-13 21-25 33-8 23 13 23 2 29-27 35-1 24 18 6 29 36 13 44 0 53 23 15 28-14 24-51 1-68 23-71 18-18 38-38 6-13-27-26-9-23-1-18-26-35-6-20-29-46-11-11-29 13-23z"
+          fill="rgba(27,80,136,0.56)"
+          stroke="rgba(113,214,255,0.55)"
+          strokeWidth="3"
+        />
 
         {countries.map((country) => {
           const active = country.name === selectedCountry;
-          const fill = active ? "rgba(31,184,255,0.28)" : "rgba(13,57,101,0.25)";
+          const fill = active
+            ? "rgba(31,184,255,0.28)"
+            : "rgba(13,57,101,0.25)";
           const stroke = active ? "#7ff0ff" : "rgba(113,214,255,0.4)";
           return (
             <g key={country.name}>
@@ -426,7 +543,9 @@ function HomePage({ go, member }) {
     {
       icon: "🪪",
       title: "Passeport 3B",
-      subtitle: member ? "Ton passeport numérique premium." : "Crée ton passeport numérique premium.",
+      subtitle: member
+        ? "Ton passeport numérique premium."
+        : "Crée ton passeport numérique premium.",
       page: "passeport",
     },
     {
@@ -444,7 +563,9 @@ function HomePage({ go, member }) {
     {
       icon: "💎",
       title: "Espace membre 3B",
-      subtitle: member ? "Profil, suivi, progression et avantages." : "Se débloque après création du passeport.",
+      subtitle: member
+        ? "Profil, suivi, progression et avantages."
+        : "Se débloque après création du passeport.",
       page: "espace-membre",
     },
     {
@@ -625,7 +746,9 @@ function SecretPage({ go }) {
           </div>
 
           {message ? (
-            <div className={`feedback-box ${unlocked ? "success" : "error"}`}>{message}</div>
+            <div className={`feedback-box ${unlocked ? "success" : "error"}`}>
+              {message}
+            </div>
           ) : null}
         </SectionCard>
 
@@ -911,6 +1034,37 @@ function MemberPage({ go, member, gameProfile, leaderboard }) {
           </ul>
         </SectionCard>
 
+        <section className="section-card member-loyalty-card">
+          <h2 className="section-title">Cartes fidélité 3B</h2>
+
+          <p className="section-text">
+            12 cartes membre sont prévues pour suivre la fidélité, les récompenses,
+            les accès spéciaux, les drops, les prototypes, la musique, les jeux,
+            les événements et les futurs avantages 3B.
+          </p>
+
+          <div className="loyalty-grid">
+            {loyaltyCards3B.map((card) => (
+              <div className="loyalty-mini-card" key={card.name}>
+                <div className="loyalty-mini-top">
+                  <span className="loyalty-icon">{card.icon}</span>
+                  <span className="loyalty-mark">3B</span>
+                </div>
+
+                <strong>{card.name}</strong>
+                <span className="loyalty-status">{card.status}</span>
+                <small>{card.detail}</small>
+              </div>
+            ))}
+          </div>
+
+          <div className="future-card-note">
+            D’autres cartes 3B arriveront plus tard : cartes VIP, cartes édition limitée,
+            cartes pays, cartes créateurs, cartes drops, cartes salons, cartes partenaires
+            et cartes héritage.
+          </div>
+        </section>
+
         <SectionCard title="Top classement actuel" subtitle="Repère rapide.">
           <div className="leaderboard-list">
             {leaderboard.slice(0, 5).map((entry) => (
@@ -1002,19 +1156,13 @@ export default function App() {
 
       <main className="app-content">
         {page === "home" && <HomePage go={go} member={member} />}
-
         {page === "boutique" && <BoutiquePage go={go} />}
-
         {page === "musique" && <MusicPage go={go} />}
-
         {page === "communaute" && <CommunityPage go={go} />}
-
         {page === "passeport" && (
           <PassportPage go={go} member={member} setMember={setMember} />
         )}
-
         {page === "secret" && <SecretPage go={go} />}
-
         {page === "jeux" && (
           <GamesHubPage
             go={go}
@@ -1023,7 +1171,6 @@ export default function App() {
             leaderboard={leaderboard}
           />
         )}
-
         {page === "jeux-play" && (
           <Jeu3B
             member={member}
@@ -1032,7 +1179,6 @@ export default function App() {
             onBack={() => go("jeux")}
           />
         )}
-
         {page === "espace-membre" && (
           <MemberPage
             go={go}
@@ -1041,7 +1187,6 @@ export default function App() {
             leaderboard={leaderboard}
           />
         )}
-
         {page === "encore" && <EncorePage go={go} />}
       </main>
     </div>

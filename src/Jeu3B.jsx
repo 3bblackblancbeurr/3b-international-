@@ -31,8 +31,14 @@ const BRAND_WORDS = [
   "maillot",
   "prototype",
   "communaute",
-  "fidélité",
+  "fidelite",
   "membre",
+  "salon",
+  "drop",
+  "monde",
+  "logo",
+  "carte",
+  "victoire",
 ];
 
 const MODES = [
@@ -100,7 +106,7 @@ function safeGame(gameProfile) {
 }
 
 function getStep(game) {
-  return (game.level - 1) * 10 + game.door;
+  return game.correctAnswers + 1;
 }
 
 function difficultyLabel(level) {
@@ -126,9 +132,7 @@ function buildRound(game) {
     const options = shuffle(
       [
         country.name,
-        ...COUNTRIES.filter((c) => c.name !== country.name)
-          .slice(0, 6)
-          .map((c) => c.name),
+        ...COUNTRIES.filter((c) => c.name !== country.name).map((c) => c.name),
       ],
       step + 4
     ).slice(0, 4);
@@ -148,6 +152,7 @@ function buildRound(game) {
   if (mode === "Compléter") {
     const answer = country.name;
     const prefix = answer.slice(0, Math.min(3, answer.length - 1));
+
     return {
       mode,
       title: "Complète le mot manquant.",
@@ -226,10 +231,7 @@ function buildRound(game) {
       title: "Associe mentalement le pays à sa capitale.",
       question: `${country.name} → ?`,
       answer: country.capital,
-      options: shuffle(
-        [country.capital, country2.capital, "Lisbonne", "Tokyo"],
-        step + 60
-      ),
+      options: shuffle([country.capital, country2.capital, "Lisbonne", "Tokyo"], step + 60),
       hint: `Indice : capitale du pays ${country.flag}.`,
     };
   }
@@ -252,6 +254,7 @@ function buildRound(game) {
       { q: "1 → 2 → 3 → ?", a: "4" },
       { q: "Passeport → Membre → XP → ?", a: "Classement" },
     ];
+
     const item = sequences[seededIndex(step + 80, sequences.length)];
 
     return {
@@ -269,7 +272,7 @@ function buildRound(game) {
       mode,
       title: "Trouve le mot secret de l’univers 3B.",
       question: "Ce n’est pas une marque, c’est un...",
-      answer: "héritage",
+      answer: "heritage",
       options: null,
       hint: "Indice : mot très important dans ton slogan.",
     };
@@ -295,7 +298,8 @@ function formatTime(seconds = 0) {
 
 export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
   const game = safeGame(gameProfile);
-  const round = useMemo(() => buildRound(game), [game.level, game.door]);
+  const round = useMemo(() => buildRound(game), [game.level, game.door, game.correctAnswers]);
+
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [hintOpen, setHintOpen] = useState(false);
@@ -306,12 +310,13 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     setFeedback("");
     setHintOpen(false);
     setHintUsedThisRound(false);
-  }, [game.level, game.door]);
+  }, [game.level, game.door, game.correctAnswers]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
+
         return {
           ...current,
           elapsedSeconds: current.elapsedSeconds + 1,
@@ -327,8 +332,10 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
     if (!hintUsedThisRound) {
       setHintUsedThisRound(true);
+
       setGameProfile((prev) => {
         const current = safeGame(prev);
+
         return {
           ...current,
           hintsUsed: current.hintsUsed + 1,
@@ -348,6 +355,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
       setGameProfile((prev) => {
         const current = safeGame(prev);
+
         return {
           ...current,
           wrongAnswers: current.wrongAnswers + 1,
@@ -366,9 +374,13 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     setTimeout(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
-        const nextDoor = current.door >= 10 ? 1 : current.door + 1;
-        const nextLevel = current.door >= 10 ? Math.min(1000, current.level + 1) : current.level;
-        const completedDoors = (nextLevel - 1) * 10 + (nextDoor - 1);
+
+        const newCorrectAnswers = current.correctAnswers + 1;
+
+        const completedDoors = newCorrectAnswers;
+        const nextLevel = Math.min(1000, Math.floor(completedDoors / 10) + 1);
+        const nextDoor = completedDoors % 10 === 0 ? 1 : (completedDoors % 10) + 1;
+
         const totalPercent = Number(((completedDoors / 10000) * 100).toFixed(2));
         const nextStreak = current.streak + 1;
 
@@ -379,7 +391,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
           xp: current.xp + gain,
           streak: nextStreak,
           bestStreak: Math.max(current.bestStreak, nextStreak),
-          correctAnswers: current.correctAnswers + 1,
+          correctAnswers: newCorrectAnswers,
           totalPercent,
           lastMode: member ? "membre" : "invité",
         };
