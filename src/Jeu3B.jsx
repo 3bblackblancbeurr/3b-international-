@@ -41,19 +41,22 @@ const BRAND_WORDS = [
   "victoire",
 ];
 
-const MODES = [
-  "Écriture",
+const MODE_ORDER = [
   "QCM",
   "Compléter",
   "Mot mélangé",
   "Drapeau",
-  "Code pays",
-  "Capitale",
-  "Intrus",
-  "Association",
+  "Relier gauche droite",
   "Mémoire",
+  "Mot croisé",
+  "Association",
+  "Code pays",
+  "Mot fléché",
+  "Intrus",
+  "Capitale",
   "Suite logique",
   "Mot secret",
+  "Écriture",
 ];
 
 function normalize(text = "") {
@@ -105,46 +108,61 @@ function safeGame(gameProfile) {
   };
 }
 
-function getStep(game) {
-  return game.correctAnswers + 1;
+function formatTime(seconds = 0) {
+  const total = Number(seconds) || 0;
+  const h = String(Math.floor(total / 3600)).padStart(2, "0");
+  const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
+  const s = String(total % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
 }
 
-function difficultyLabel(level) {
-  if (level <= 3) return "Très facile";
-  if (level <= 10) return "Facile";
-  if (level <= 25) return "Progressif";
-  if (level <= 60) return "Moyen";
-  if (level <= 120) return "Sérieux";
-  if (level <= 250) return "Difficile";
-  if (level <= 500) return "Expert";
+function difficultyLabel(level, door) {
+  if (level <= 2 && door <= 3) return "Très facile";
+  if (level <= 5 && door <= 6) return "Facile";
+  if (level <= 10) return "Progressif";
+  if (level <= 25) return "Moyen";
+  if (level <= 60) return "Sérieux";
+  if (level <= 120) return "Difficile";
+  if (level <= 300) return "Expert";
   return "Légende";
 }
 
-function buildRound(game) {
-  const step = getStep(game);
-  const mode = MODES[seededIndex(step + game.level + game.door, MODES.length)];
+function makeOptions(correct, allOptions, seed, count = 4) {
+  const clean = allOptions.filter((item) => normalize(item) !== normalize(correct));
+  const mixed = shuffle([correct, ...clean], seed).slice(0, count);
+  if (!mixed.some((item) => normalize(item) === normalize(correct))) {
+    mixed[0] = correct;
+  }
+  return shuffle(mixed, seed + 9);
+}
 
-  const country = COUNTRIES[seededIndex(step + 7, COUNTRIES.length)];
-  const country2 = COUNTRIES[seededIndex(step + 13, COUNTRIES.length)];
-  const word = BRAND_WORDS[seededIndex(step + 19, BRAND_WORDS.length)];
+function buildCrosswordLetters(answer) {
+  const word = String(answer).toUpperCase();
+  return word.split("").map((letter, index) => ({
+    id: `${letter}-${index}`,
+    letter,
+    visible: index === 0 || index === word.length - 1,
+  }));
+}
+
+function buildRound(game) {
+  const step = game.correctAnswers + 1;
+  const mode = MODE_ORDER[(step - 1) % MODE_ORDER.length];
+
+  const country = COUNTRIES[seededIndex(step + game.level + game.door, COUNTRIES.length)];
+  const country2 = COUNTRIES[seededIndex(step + 17, COUNTRIES.length)];
+  const word = BRAND_WORDS[seededIndex(step + 23, BRAND_WORDS.length)];
+  const brandWord2 = BRAND_WORDS[seededIndex(step + 37, BRAND_WORDS.length)];
 
   if (mode === "QCM") {
-    const options = shuffle(
-      [
-        country.name,
-        ...COUNTRIES.filter((c) => c.name !== country.name).map((c) => c.name),
-      ],
-      step + 4
-    ).slice(0, 4);
-
-    if (!options.includes(country.name)) options[0] = country.name;
-
     return {
       mode,
-      title: "Choisis la bonne réponse.",
+      visual: "qcm",
+      title: "QCM ultra rapide",
+      instruction: "Choisis la bonne réponse.",
       question: `Quel pays 3B a pour capitale ${country.capital} ?`,
       answer: country.name,
-      options: shuffle(options, step + 9),
+      options: makeOptions(country.name, COUNTRIES.map((c) => c.name), step + 4),
       hint: `Indice : ${country.flag} / code ${country.code}.`,
     };
   }
@@ -155,95 +173,144 @@ function buildRound(game) {
 
     return {
       mode,
-      title: "Complète le mot manquant.",
+      visual: "complete",
+      title: "Compléter le mot",
+      instruction: "Complète le pays officiel 3B.",
       question: `${prefix}${"_".repeat(Math.max(2, answer.length - prefix.length))}`,
       answer,
-      options: null,
-      hint: `Indice : pays officiel 3B, capitale ${country.capital}.`,
+      hint: `Indice : capitale ${country.capital}.`,
     };
   }
 
   if (mode === "Mot mélangé") {
     return {
       mode,
-      title: "Remets les lettres dans le bon ordre.",
+      visual: "scramble",
+      title: "Mot mélangé",
+      instruction: "Remets les lettres dans le bon ordre.",
       question: scramble(word, step + 22),
       answer: word,
-      options: null,
+      letters: scramble(word, step + 22).toUpperCase().split(""),
       hint: `Indice : mot lié à l’univers 3B, ${word.length} lettres.`,
     };
   }
 
   if (mode === "Drapeau") {
-    const options = shuffle(COUNTRIES.map((c) => c.name), step + 31).slice(0, 4);
-    if (!options.includes(country.name)) options[0] = country.name;
-
     return {
       mode,
-      title: "Trouve le pays correspondant au drapeau.",
+      visual: "flag",
+      title: "Drapeau 3B",
+      instruction: "Trouve le pays correspondant au drapeau.",
       question: country.flag,
       answer: country.name,
-      options: shuffle(options, step + 32),
+      options: makeOptions(country.name, COUNTRIES.map((c) => c.name), step + 31),
       hint: `Indice : capitale ${country.capital}.`,
     };
   }
 
-  if (mode === "Code pays") {
+  if (mode === "Relier gauche droite") {
     return {
       mode,
-      title: "Trouve le code pays officiel.",
-      question: `Code officiel de ${country.name}`,
-      answer: country.code,
-      options: null,
-      hint: `Indice : ${country.code.length} lettres.`,
-    };
-  }
-
-  if (mode === "Capitale") {
-    return {
-      mode,
-      title: "Écris la capitale.",
-      question: `Capitale de ${country.name}`,
+      visual: "connect",
+      title: "Relier gauche / droite",
+      instruction: "Relie mentalement le pays à sa capitale, puis clique sur la bonne capitale.",
+      question: country.name,
       answer: country.capital,
-      options: null,
-      hint: `Indice : commence par ${country.capital.slice(0, 2)}.`,
-    };
-  }
-
-  if (mode === "Intrus") {
-    const intruders = ["Portugal", "Japon", "Brésil", "Canada", "Suisse", "Belgique"];
-    const intruder = intruders[seededIndex(step + 50, intruders.length)];
-    const options = shuffle([country.name, country2.name, "France", intruder], step + 51);
-
-    return {
-      mode,
-      title: "Trouve l’intrus.",
-      question: "Un seul pays n’est pas dans les 8 pays officiels 3B.",
-      answer: intruder,
-      options,
-      hint: "Indice : les pays officiels sont France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne.",
-    };
-  }
-
-  if (mode === "Association") {
-    return {
-      mode,
-      title: "Associe mentalement le pays à sa capitale.",
-      question: `${country.name} → ?`,
-      answer: country.capital,
-      options: shuffle([country.capital, country2.capital, "Lisbonne", "Tokyo"], step + 60),
-      hint: `Indice : capitale du pays ${country.flag}.`,
+      leftItems: [country.name, country2.name],
+      rightItems: makeOptions(country.capital, COUNTRIES.map((c) => c.capital), step + 44),
+      hint: `Indice : ${country.flag}.`,
     };
   }
 
   if (mode === "Mémoire") {
     return {
       mode,
-      title: "Question mémoire 3B.",
-      question: "Quel mot complète : Black • Blanc • ?",
-      answer: "Beur",
-      options: shuffle(["Beur", "Noir", "Bleu", "Or"], step + 70),
-      hint: "Indice : c’est le troisième mot du nom 3B.",
+      visual: "memory",
+      title: "Mémoire 3B",
+      instruction: "Souviens-toi de la formule 3B.",
+      question: "BLACK • BLANC • ?",
+      answer: "beur",
+      options: ["beur", "or", "noir", "bleu"],
+      hint: "Indice : c’est le troisième mot de Black Blanc Beur.",
+    };
+  }
+
+  if (mode === "Mot croisé") {
+    return {
+      mode,
+      visual: "crossword",
+      title: "Mot croisé",
+      instruction: "Lis les cases et trouve le mot caché.",
+      question: `Définition : pays 3B, capitale ${country.capital}.`,
+      answer: country.name,
+      crossword: buildCrosswordLetters(country.name),
+      hint: `Indice : commence par ${country.name.slice(0, 1)}.`,
+    };
+  }
+
+  if (mode === "Association") {
+    return {
+      mode,
+      visual: "association",
+      title: "Association par cartes",
+      instruction: "Clique sur la carte qui correspond.",
+      question: `${country.name} est associé à quelle capitale ?`,
+      answer: country.capital,
+      options: makeOptions(country.capital, COUNTRIES.map((c) => c.capital), step + 60),
+      hint: `Indice : pays ${country.flag}.`,
+    };
+  }
+
+  if (mode === "Code pays") {
+    return {
+      mode,
+      visual: "code",
+      title: "Code secret pays",
+      instruction: "Écris le code pays officiel.",
+      question: `Code officiel de ${country.name}`,
+      answer: country.code,
+      codeBoxes: country.code.split(""),
+      hint: `Indice : ${country.code.length} lettres.`,
+    };
+  }
+
+  if (mode === "Mot fléché") {
+    return {
+      mode,
+      visual: "arrow",
+      title: "Mot fléché",
+      instruction: "Suis la flèche et trouve le mot.",
+      question: `→ Mot lié à 3B : ${word.slice(0, 2).toUpperCase()}${"_".repeat(Math.max(2, word.length - 2))}`,
+      answer: word,
+      hint: `Indice : mot de l’univers 3B.`,
+    };
+  }
+
+  if (mode === "Intrus") {
+    const intruders = ["Portugal", "Japon", "Brésil", "Canada", "Suisse", "Belgique"];
+    const intruder = intruders[seededIndex(step + 50, intruders.length)];
+
+    return {
+      mode,
+      visual: "intruder",
+      title: "Trouve l’intrus",
+      instruction: "Un seul pays n’est pas dans les 8 pays officiels 3B.",
+      question: "Clique sur l’intrus.",
+      answer: intruder,
+      options: shuffle([country.name, country2.name, "France", intruder], step + 51),
+      hint: "Indice : les pays officiels sont France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne.",
+    };
+  }
+
+  if (mode === "Capitale") {
+    return {
+      mode,
+      visual: "write",
+      title: "Capitale",
+      instruction: "Écris la capitale.",
+      question: `Capitale de ${country.name}`,
+      answer: country.capital,
+      hint: `Indice : commence par ${country.capital.slice(0, 2)}.`,
     };
   }
 
@@ -251,18 +318,19 @@ function buildRound(game) {
     const sequences = [
       { q: "France → Italie → Estonie → ?", a: "Turquie" },
       { q: "Black → Blanc → ?", a: "Beur" },
-      { q: "1 → 2 → 3 → ?", a: "4" },
       { q: "Passeport → Membre → XP → ?", a: "Classement" },
+      { q: "Logo → Maillot → Drop → ?", a: "Héritage" },
     ];
 
     const item = sequences[seededIndex(step + 80, sequences.length)];
 
     return {
       mode,
-      title: "Trouve la suite logique.",
+      visual: "sequence",
+      title: "Suite logique",
+      instruction: "Trouve la suite.",
       question: item.q,
       answer: item.a,
-      options: null,
       hint: `Indice : la réponse commence par ${item.a.slice(0, 1)}.`,
     };
   }
@@ -270,35 +338,172 @@ function buildRound(game) {
   if (mode === "Mot secret") {
     return {
       mode,
-      title: "Trouve le mot secret de l’univers 3B.",
+      visual: "secret-code",
+      title: "Mot secret",
+      instruction: "Trouve le mot secret de l’univers 3B.",
       question: "Ce n’est pas une marque, c’est un...",
       answer: "heritage",
-      options: null,
       hint: "Indice : mot très important dans ton slogan.",
     };
   }
 
   return {
     mode: "Écriture",
-    title: "Écris le bon mot.",
-    question: `Écris le pays officiel 3B dont la capitale est ${country.capital}.`,
-    answer: country.name,
-    options: null,
-    hint: `Indice : commence par ${country.name.slice(0, 2)}.`,
+    visual: "write",
+    title: "Écriture",
+    instruction: "Écris le bon mot.",
+    question: `Écris le mot lié à 3B : ${brandWord2.slice(0, 2)}...`,
+    answer: brandWord2,
+    hint: `Indice : ${brandWord2.length} lettres.`,
   };
 }
 
-function formatTime(seconds = 0) {
-  const total = Number(seconds) || 0;
-  const h = String(Math.floor(total / 3600)).padStart(2, "0");
-  const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
-  const s = String(total % 60).padStart(2, "0");
-  return `${h}:${m}:${s}`;
+function GameVisual({ round, validate }) {
+  if (round.visual === "qcm" || round.visual === "flag" || round.visual === "intruder") {
+    return (
+      <div className="choice-grid">
+        {round.options.map((option) => (
+          <button
+            key={option}
+            className="choice-button"
+            onClick={() => validate(option)}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (round.visual === "memory") {
+    return (
+      <div className="memory-card-grid">
+        {round.options.map((option) => (
+          <button
+            key={option}
+            className="memory-card"
+            onClick={() => validate(option)}
+          >
+            <span>3B</span>
+            <strong>{option}</strong>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (round.visual === "association") {
+    return (
+      <div className="association-card-grid">
+        {round.options.map((option) => (
+          <button
+            key={option}
+            className="association-card"
+            onClick={() => validate(option)}
+          >
+            <span>Carte</span>
+            <strong>{option}</strong>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (round.visual === "connect") {
+    return (
+      <div className="connect-board">
+        <div className="connect-left">
+          {round.leftItems.map((item) => (
+            <div className="connect-item left" key={item}>
+              {item}
+            </div>
+          ))}
+        </div>
+
+        <div className="connect-lines">
+          <span />
+          <span />
+          <span />
+        </div>
+
+        <div className="connect-right">
+          {round.rightItems.map((item) => (
+            <button
+              key={item}
+              className="connect-item right"
+              onClick={() => validate(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (round.visual === "crossword") {
+    return (
+      <div className="crossword-board">
+        {round.crossword.map((cell) => (
+          <div className="crossword-cell" key={cell.id}>
+            {cell.visible ? cell.letter : ""}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (round.visual === "arrow") {
+    return (
+      <div className="arrow-word-board">
+        <div className="arrow-clue">INDICE</div>
+        <div className="arrow-line">→</div>
+        <div className="arrow-target">{round.question}</div>
+      </div>
+    );
+  }
+
+  if (round.visual === "code" || round.visual === "secret-code") {
+    return (
+      <div className="code-box-board">
+        {String(round.answer)
+          .split("")
+          .map((_, index) => (
+            <div className="code-mini-box" key={index}>
+              ?
+            </div>
+          ))}
+      </div>
+    );
+  }
+
+  if (round.visual === "scramble") {
+    return (
+      <div className="scramble-letters">
+        {round.letters.map((letter, index) => (
+          <span key={`${letter}-${index}`}>{letter}</span>
+        ))}
+      </div>
+    );
+  }
+
+  if (round.visual === "sequence") {
+    return <div className="sequence-board">{round.question}</div>;
+  }
+
+  if (round.visual === "complete") {
+    return <div className="complete-board">{round.question}</div>;
+  }
+
+  return null;
 }
 
 export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
   const game = safeGame(gameProfile);
-  const round = useMemo(() => buildRound(game), [game.level, game.door, game.correctAnswers]);
+  const round = useMemo(
+    () => buildRound(game),
+    [game.level, game.door, game.correctAnswers]
+  );
 
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -316,7 +521,6 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     const timer = setInterval(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
-
         return {
           ...current,
           elapsedSeconds: current.elapsedSeconds + 1,
@@ -335,7 +539,6 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
       setGameProfile((prev) => {
         const current = safeGame(prev);
-
         return {
           ...current,
           hintsUsed: current.hintsUsed + 1,
@@ -374,14 +577,10 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     setTimeout(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
-
         const newCorrectAnswers = current.correctAnswers + 1;
-
-        const completedDoors = newCorrectAnswers;
-        const nextLevel = Math.min(1000, Math.floor(completedDoors / 10) + 1);
-        const nextDoor = completedDoors % 10 === 0 ? 1 : (completedDoors % 10) + 1;
-
-        const totalPercent = Number(((completedDoors / 10000) * 100).toFixed(2));
+        const nextLevel = Math.min(1000, Math.floor(newCorrectAnswers / 10) + 1);
+        const nextDoor = newCorrectAnswers % 10 === 0 ? 1 : (newCorrectAnswers % 10) + 1;
+        const totalPercent = Number(((newCorrectAnswers / 10000) * 100).toFixed(2));
         const nextStreak = current.streak + 1;
 
         return {
@@ -417,6 +616,15 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
   const doorPercent = Math.round(((game.door - 1) / 10) * 100);
 
+  const needsTextInput = ![
+    "qcm",
+    "flag",
+    "intruder",
+    "memory",
+    "association",
+    "connect",
+  ].includes(round.visual);
+
   return (
     <div className="page">
       <button className="back-button" onClick={onBack}>
@@ -430,7 +638,8 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
             Porte {game.door} — {round.mode}
           </h1>
           <p className="page-subtitle">
-            Chaque bonne réponse ouvre la porte suivante. À 10 portes, tu passes au niveau suivant.
+            Chaque bonne réponse ouvre la porte suivante. À 10 portes, tu passes
+            au niveau suivant.
           </p>
         </div>
 
@@ -456,7 +665,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
           <div className="stats-compact">
             <div>Niveau {game.level} / 1000</div>
             <div>Porte {game.door} / 10</div>
-            <div>Difficulté : {difficultyLabel(game.level)}</div>
+            <div>Difficulté : {difficultyLabel(game.level, game.door)}</div>
           </div>
         </section>
 
@@ -475,56 +684,60 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
           <div className="game-mode-pill">{round.mode}</div>
           <h2 className="section-title">Mission de la porte</h2>
           <div className="mission-main-text">{round.title}</div>
-          <div className="mission-emphasis">{round.question}</div>
+          <div className="mission-sub-text">{round.instruction}</div>
+
+          <div className="mission-emphasis">
+            {["qcm", "flag", "intruder", "memory", "association", "connect"].includes(round.visual)
+              ? round.question
+              : null}
+          </div>
+
+          <GameVisual round={round} validate={validate} />
         </section>
 
         <section className="section-card answer-card">
           <h2 className="section-title">Réponse</h2>
 
-          {round.options ? (
-            <div className="choice-grid">
-              {round.options.map((option) => (
-                <button
-                  key={option}
-                  className="choice-button"
-                  onClick={() => validate(option)}
-                >
-                  {option}
+          {needsTextInput ? (
+            <>
+              <input
+                className="text-input game-answer-input"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="Écris ta réponse"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") validate(answer);
+                }}
+              />
+
+              <div className="button-row">
+                <button className="gold-button" onClick={() => validate(answer)}>
+                  Valider
                 </button>
-              ))}
-            </div>
+
+                <button className="blue-button" onClick={useHint}>
+                  Indice
+                </button>
+              </div>
+            </>
           ) : (
-            <input
-              className="text-input game-answer-input"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="Écris ta réponse"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") validate(answer);
-              }}
-            />
+            <>
+              <p className="soft-text">
+                Clique directement sur la bonne carte dans la mission.
+              </p>
+
+              <div className="button-row">
+                <button className="blue-button" onClick={useHint}>
+                  Indice
+                </button>
+              </div>
+            </>
           )}
-
-          <div className="button-row">
-            {!round.options ? (
-              <button className="gold-button" onClick={() => validate(answer)}>
-                Valider
-              </button>
-            ) : null}
-
-            <button className="blue-button" onClick={useHint}>
-              Indice
-            </button>
-          </div>
 
           {hintOpen ? <div className="hint-box">{round.hint}</div> : null}
 
           {feedback ? (
-            <div
-              className={`feedback-box ${
-                feedback.startsWith("Bonne") ? "success" : "error"
-              }`}
-            >
+            <div className={`feedback-box ${feedback.startsWith("Bonne") ? "success" : "error"}`}>
               {feedback}
             </div>
           ) : null}
@@ -535,11 +748,11 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
         <section className="section-card">
           <h2 className="section-title">Règle XP</h2>
           <ul className="bullet-list">
-            <li>Bonne réponse : XP gagné + porte suivante.</li>
+            <li>1 bonne réponse = 1 porte ouverte.</li>
+            <li>10 portes ouvertes = niveau suivant.</li>
             <li>Indice utilisé : XP réduit pour cette porte.</li>
             <li>Erreur : la porte ne change pas.</li>
-            <li>Après 10 portes validées, tu passes au niveau suivant.</li>
-            <li>La difficulté augmente progressivement avec l’avancement.</li>
+            <li>Les jeux changent à chaque porte pour éviter la répétition.</li>
           </ul>
         </section>
 

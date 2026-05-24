@@ -713,15 +713,100 @@ function SecretPage({ go }) {
   const [message, setMessage] = useState("");
 
   const handleUnlock = () => {
-    const clean = value.trim().toLowerCase();
-    if (clean === "italie") {
+    const clean = value
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+
+    if (clean === "blackblanbeurr") {
       setUnlocked(true);
-      setMessage("Indice débloqué.");
+      setMessage("Code validé. Accès au salon invité débloqué.");
     } else {
       setUnlocked(false);
       setMessage("Code incorrect.");
     }
   };
+
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("home")} />
+
+      <PageHeader
+        title="Coffre secret 3B"
+        subtitle="Entre le code secret pour débloquer l’indice."
+      />
+
+      <div className="content-grid">
+        <SectionCard
+          title="Zone secrète"
+          subtitle="Le code reste masqué. Seule la bonne réponse ouvre l’indice."
+        >
+          <div className="secret-entry-row">
+            <input
+              className="text-input"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="Code secret"
+              type="password"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleUnlock();
+              }}
+            />
+
+            <button className="gold-button" onClick={handleUnlock}>
+              Débloquer
+            </button>
+          </div>
+
+          {message ? (
+            <div className={`feedback-box ${unlocked ? "success" : "error"}`}>
+              {message}
+            </div>
+          ) : null}
+        </SectionCard>
+
+        <SectionCard
+          title="Salon invité"
+          subtitle="Le contenu secret apparaît uniquement après validation du bon code."
+        >
+          {unlocked ? (
+            <div className="secret-invite-panel">
+              <div className="salon-invite-badge">
+                <div className="salon-italy-mark">IT</div>
+                <div>
+                  <strong>SALON INVITÉ</strong>
+                  <span>Invitation italienne 3B</span>
+                </div>
+              </div>
+
+              <div className="salon-door-visual">
+                <div className="salon-arch">
+                  <span>3B</span>
+                </div>
+                <div className="salon-floor-line" />
+              </div>
+
+              <div className="secret-result">
+                <strong>Indice débloqué :</strong>
+                <p>
+                  Italie, s’y comprennent, 8 logos, 20h, tout va commencer,
+                  un live, quand je vais arriver dans votre monde.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p className="soft-text">
+              Un badge “Salon invité” et l’indice secret apparaîtront ici après
+              validation du bon code.
+            </p>
+          )}
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
 
   return (
     <div className="page">
@@ -767,7 +852,6 @@ function SecretPage({ go }) {
       </div>
     </div>
   );
-}
 
 function PassportPage({ go, member, setMember }) {
   const [form, setForm] = useState(() => ({
