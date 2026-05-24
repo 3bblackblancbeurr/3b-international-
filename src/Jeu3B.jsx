@@ -39,6 +39,11 @@ const BRAND_WORDS = [
   "logo",
   "carte",
   "victoire",
+  "classement",
+  "niveau",
+  "porte",
+  "origine",
+  "famille",
 ];
 
 const MODE_ORDER = [
@@ -142,6 +147,23 @@ function makeOptions(correct, allOptions, seed, count = 4) {
   return shuffle(mixed, seed + 9);
 }
 
+function betterWordHint(word, label = "mot") {
+  const clean = normalize(word);
+  const upper = clean.toUpperCase();
+
+  if (upper.length <= 3) {
+    return `Indice : ce ${label} fait ${upper.length} lettres et commence par ${upper[0]}.`;
+  }
+
+  return `Indice utile : ${label} de ${upper.length} lettres, commence par ${upper[0]}, finit par ${
+    upper[upper.length - 1]
+  }, et contient la lettre ${upper[Math.floor(upper.length / 2)]}.`;
+}
+
+function countryHint(country) {
+  return `Indice utile : ${country.flag} pays officiel 3B, capitale ${country.capital}, code ${country.code}.`;
+}
+
 function buildCrosswordLetters(answer) {
   const word = normalize(answer).toUpperCase();
 
@@ -150,6 +172,111 @@ function buildCrosswordLetters(answer) {
     letter,
     visible: index === 0 || index === word.length - 1,
   }));
+}
+
+function buildArrowGrid(answer, seed) {
+  const main = normalize(answer).toUpperCase();
+  const helperWords = shuffle(
+    ["BLACK", "BLANC", "BEUR", "LOGO", "DROP", "LUXE", "CARTE", "MONDE", "MEMBRE", "SALON"],
+    seed
+  )
+    .filter((word) => word !== main)
+    .slice(0, 4);
+
+  const rows = 9;
+  const cols = 12;
+
+  const grid = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({
+      type: "empty",
+      letter: "",
+      clue: "",
+      hidden: false,
+    }))
+  );
+
+  const startCol = Math.max(1, Math.floor((cols - main.length) / 2));
+  const mainRow = 4;
+
+  grid[mainRow][startCol - 1] = {
+    type: "clue",
+    letter: "",
+    clue: "Mot →",
+    hidden: false,
+  };
+
+  Array.from(main).forEach((letter, index) => {
+    grid[mainRow][startCol + index] = {
+      type: "letter",
+      letter,
+      clue: "",
+      hidden: index !== 0 && index !== main.length - 1,
+    };
+  });
+
+  helperWords.forEach((word, wordIndex) => {
+    const crossIndex = Math.min(main.length - 2, Math.max(1, wordIndex + 1));
+    const crossCol = startCol + crossIndex;
+    const crossLetter = main[crossIndex];
+    const wordLetters = Array.from(word);
+    let matchingIndex = wordLetters.findIndex((letter) => letter === crossLetter);
+
+    if (matchingIndex < 0) matchingIndex = Math.floor(word.length / 2);
+
+    const startRow = Math.max(0, mainRow - matchingIndex);
+    const safeStartRow = Math.min(startRow, rows - word.length);
+
+    if (safeStartRow < 0) return;
+
+    const clueRow = Math.max(0, safeStartRow - 1);
+
+    grid[clueRow][crossCol] = {
+      type: "clue",
+      letter: "",
+      clue: "↓",
+      hidden: false,
+    };
+
+    wordLetters.forEach((letter, index) => {
+      const row = safeStartRow + index;
+      if (row < 0 || row >= rows) return;
+
+      const alreadyMain = grid[row][crossCol].type === "letter";
+
+      grid[row][crossCol] = {
+        type: "letter",
+        letter: alreadyMain ? grid[row][crossCol].letter : letter,
+        clue: "",
+        hidden: alreadyMain ? false : index !== 0 && index !== word.length - 1,
+      };
+    });
+  });
+
+  return grid;
+}
+
+function buildConnectPairs(step) {
+  const first = COUNTRIES[seededIndex(step + 7, COUNTRIES.length)];
+  let second = COUNTRIES[seededIndex(step + 19, COUNTRIES.length)];
+
+  if (normalize(first.name) === normalize(second.name)) {
+    second = COUNTRIES[(COUNTRIES.indexOf(first) + 1) % COUNTRIES.length];
+  }
+
+  const pairs = [
+    { country: first.name, capital: first.capital, flag: first.flag },
+    { country: second.name, capital: second.capital, flag: second.flag },
+  ];
+
+  return {
+    pairs,
+    leftItems: pairs.map((pair) => `${pair.flag} ${pair.country}`),
+    rightItems: shuffle(pairs.map((pair) => pair.capital), step + 77),
+    answer: pairs
+      .map((pair) => `${normalize(pair.country)}:${normalize(pair.capital)}`)
+      .sort()
+      .join("|"),
+  };
 }
 
 function buildRound(game) {
@@ -170,7 +297,7 @@ function buildRound(game) {
       question: `Quel pays 3B a pour capitale ${country.capital} ?`,
       answer: country.name,
       options: makeOptions(country.name, COUNTRIES.map((c) => c.name), step + 4),
-      hint: `Indice : ${country.flag} / code ${country.code}.`,
+      hint: countryHint(country),
     };
   }
 
@@ -185,7 +312,7 @@ function buildRound(game) {
       instruction: "Complète le pays officiel 3B.",
       question: `${prefix}${"_".repeat(Math.max(2, answer.length - prefix.length))}`,
       answer,
-      hint: `Indice : capitale ${country.capital}.`,
+      hint: `Indice utile : ${country.flag} capitale ${country.capital}. Le pays complet fait ${normalize(answer).length} lettres.`,
     };
   }
 
@@ -201,7 +328,7 @@ function buildRound(game) {
       question: mixedWord,
       answer: word,
       letters,
-      hint: `Indice : mot lié à l’univers 3B, ${normalize(word).length} lettres.`,
+      hint: betterWordHint(word, "mot mélangé"),
     };
   }
 
@@ -214,21 +341,25 @@ function buildRound(game) {
       question: country.flag,
       answer: country.name,
       options: makeOptions(country.name, COUNTRIES.map((c) => c.name), step + 31),
-      hint: `Indice : capitale ${country.capital}.`,
+      hint: countryHint(country),
     };
   }
 
   if (mode === "Relier gauche droite") {
+    const connectData = buildConnectPairs(step);
+
     return {
       mode,
       visual: "connect",
       title: "Relier gauche / droite",
-      instruction: "Relie mentalement le pays à sa capitale, puis clique sur la bonne capitale.",
-      question: country.name,
-      answer: country.capital,
-      leftItems: [country.name, country2.name],
-      rightItems: makeOptions(country.capital, COUNTRIES.map((c) => c.capital), step + 44),
-      hint: `Indice : ${country.flag}.`,
+      instruction:
+        "Relie les 2 pays aux 2 bonnes capitales. La validation se fait seulement quand les 2 liens sont faits.",
+      question: "Relie chaque pays à sa capitale.",
+      answer: connectData.answer,
+      pairs: connectData.pairs,
+      leftItems: connectData.leftItems,
+      rightItems: connectData.rightItems,
+      hint: `Indice utile : fais exactement ${connectData.pairs.length} liens. Exemple de logique : pays à gauche, capitale à droite.`,
     };
   }
 
@@ -241,7 +372,7 @@ function buildRound(game) {
       question: "BLACK • BLANC • ?",
       answer: "beur",
       options: ["beur", "or", "noir", "bleu"],
-      hint: "Indice : c’est le troisième mot de Black Blanc Beur.",
+      hint: "Indice utile : c’est le troisième mot de BLACK • BLANC • BEUR.",
     };
   }
 
@@ -254,7 +385,7 @@ function buildRound(game) {
       question: `Définition : pays 3B, capitale ${country.capital}.`,
       answer: country.name,
       crossword: buildCrosswordLetters(country.name),
-      hint: `Indice : commence par ${country.name.slice(0, 1)}.`,
+      hint: `Indice utile : capitale ${country.capital}, code pays ${country.code}, ${normalize(country.name).length} lettres.`,
     };
   }
 
@@ -267,7 +398,7 @@ function buildRound(game) {
       question: `${country.name} est associé à quelle capitale ?`,
       answer: country.capital,
       options: makeOptions(country.capital, COUNTRIES.map((c) => c.capital), step + 60),
-      hint: `Indice : pays ${country.flag}.`,
+      hint: countryHint(country),
     };
   }
 
@@ -280,21 +411,23 @@ function buildRound(game) {
       question: `Code officiel de ${country.name}`,
       answer: country.code,
       codeBoxes: country.code.split(""),
-      hint: `Indice : ${country.code.length} lettres.`,
+      hint: `Indice utile : ${country.name} = ${country.flag}. Le code contient ${country.code.length} lettres.`,
     };
   }
 
   if (mode === "Mot fléché") {
-    const cleanWord = normalize(word).toUpperCase();
+    const answer = word;
 
     return {
       mode,
       visual: "arrow",
       title: "Mot fléché",
-      instruction: "Suis la flèche et trouve le mot.",
-      question: `→ ${cleanWord.slice(0, 2)}${"_".repeat(Math.max(2, cleanWord.length - 2))}`,
-      answer: word,
-      hint: "Indice : mot de l’univers 3B.",
+      instruction:
+        "Observe la vraie grille : plusieurs mots se croisent. Trouve le mot principal horizontal.",
+      question: "Mot principal horizontal",
+      answer,
+      arrowGrid: buildArrowGrid(answer, step + 90),
+      hint: betterWordHint(answer, "mot principal horizontal"),
     };
   }
 
@@ -310,7 +443,8 @@ function buildRound(game) {
       question: "Clique sur l’intrus.",
       answer: intruder,
       options: shuffle([country.name, country2.name, "France", intruder], step + 51),
-      hint: "Indice : les pays officiels sont France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne.",
+      hint:
+        "Indice utile : les 8 pays officiels sont France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne. L’intrus n’est pas dans cette liste.",
     };
   }
 
@@ -322,7 +456,7 @@ function buildRound(game) {
       instruction: "Écris la capitale.",
       question: `Capitale de ${country.name}`,
       answer: country.capital,
-      hint: `Indice : commence par ${country.capital.slice(0, 2)}.`,
+      hint: `Indice utile : ${country.flag} ${country.name}. La capitale fait ${normalize(country.capital).length} lettres et commence par ${country.capital.slice(0, 1)}.`,
     };
   }
 
@@ -343,7 +477,7 @@ function buildRound(game) {
       instruction: "Trouve la suite.",
       question: item.q,
       answer: item.a,
-      hint: `Indice : la réponse commence par ${item.a.slice(0, 1)}.`,
+      hint: `Indice utile : la réponse fait ${normalize(item.a).length} lettres et commence par ${item.a.slice(0, 1)}.`,
     };
   }
 
@@ -355,7 +489,7 @@ function buildRound(game) {
       instruction: "Trouve le mot secret de l’univers 3B.",
       question: "Ce n’est pas une marque, c’est un...",
       answer: "heritage",
-      hint: "Indice : mot très important dans ton slogan.",
+      hint: "Indice utile : c’est le dernier mot du slogan “ce n’est pas une marque, c’est un ...”.",
     };
   }
 
@@ -366,8 +500,152 @@ function buildRound(game) {
     instruction: "Écris le bon mot.",
     question: `Écris le mot lié à 3B : ${brandWord2.slice(0, 2)}...`,
     answer: brandWord2,
-    hint: `Indice : ${normalize(brandWord2).length} lettres.`,
+    hint: betterWordHint(brandWord2, "mot"),
   };
+}
+
+function ConnectGame({ round, validate }) {
+  const [selectedLeft, setSelectedLeft] = useState(null);
+  const [links, setLinks] = useState([]);
+
+  const cleanLeftName = (item) => item.replace(/^[^\wÀ-ÿ]+/u, "").trim();
+
+  const isLeftUsed = (left) => links.some((link) => link.left === left);
+  const isRightUsed = (right) => links.some((link) => link.right === right);
+
+  const handleLeft = (left) => {
+    if (isLeftUsed(left)) return;
+    setSelectedLeft(left);
+  };
+
+  const handleRight = (right) => {
+    if (!selectedLeft || isRightUsed(right)) return;
+
+    const nextLinks = [...links, { left: selectedLeft, right }];
+    setLinks(nextLinks);
+    setSelectedLeft(null);
+
+    if (nextLinks.length === round.pairs.length) {
+      const builtAnswer = nextLinks
+        .map((link) => `${normalize(cleanLeftName(link.left))}:${normalize(link.right)}`)
+        .sort()
+        .join("|");
+
+      if (builtAnswer === round.answer) {
+        setTimeout(() => validate(round.answer), 300);
+      } else {
+        setTimeout(() => validate("__mauvais_lien__"), 300);
+      }
+    }
+  };
+
+  const resetLinks = () => {
+    setSelectedLeft(null);
+    setLinks([]);
+  };
+
+  return (
+    <div className="connect-real-game">
+      <div className="connect-columns">
+        <div className="connect-column">
+          <div className="connect-title-mini">Pays</div>
+
+          {round.leftItems.map((item) => (
+            <button
+              key={item}
+              className={[
+                "connect-node",
+                selectedLeft === item ? "selected" : "",
+                isLeftUsed(item) ? "used" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => handleLeft(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+
+        <div className="connect-link-preview">
+          {links.length === 0 ? (
+            <span>Choisis un pays puis une capitale</span>
+          ) : (
+            links.map((link, index) => (
+              <div className="connect-made-line" key={`${link.left}-${link.right}`}>
+                <span>{index + 1}</span>
+                <strong>{link.left}</strong>
+                <em>→</em>
+                <strong>{link.right}</strong>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="connect-column">
+          <div className="connect-title-mini">Capitales</div>
+
+          {round.rightItems.map((item) => (
+            <button
+              key={item}
+              className={["connect-node", isRightUsed(item) ? "used" : ""]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => handleRight(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="connect-progress">
+        Liens faits : {links.length} / {round.pairs.length}
+      </div>
+
+      <button className="small-outline-btn" onClick={resetLinks}>
+        Recommencer les liens
+      </button>
+    </div>
+  );
+}
+
+function ArrowGridGame({ round }) {
+  return (
+    <div className="arrow-grid-game">
+      <div className="arrow-grid-title">Grille mots fléchés 3B</div>
+
+      <div className="arrow-grid">
+        {round.arrowGrid.flatMap((row, rowIndex) =>
+          row.map((cell, colIndex) => {
+            const key = `${rowIndex}-${colIndex}`;
+
+            if (cell.type === "empty") {
+              return <div className="arrow-cell empty" key={key} />;
+            }
+
+            if (cell.type === "clue") {
+              return (
+                <div className="arrow-cell clue" key={key}>
+                  {cell.clue}
+                </div>
+              );
+            }
+
+            return (
+              <div className="arrow-cell letter" key={key}>
+                {cell.hidden ? "" : cell.letter}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="arrow-grid-note">
+        Le mot principal est horizontal. Les mots verticaux le croisent.
+      </div>
+    </div>
+  );
 }
 
 function GameVisual({ round, validate }) {
@@ -375,11 +653,7 @@ function GameVisual({ round, validate }) {
     return (
       <div className="choice-grid">
         {round.options.map((option) => (
-          <button
-            key={option}
-            className="choice-button"
-            onClick={() => validate(option)}
-          >
+          <button key={option} className="choice-button" onClick={() => validate(option)}>
             {option}
           </button>
         ))}
@@ -391,11 +665,7 @@ function GameVisual({ round, validate }) {
     return (
       <div className="memory-card-grid">
         {round.options.map((option) => (
-          <button
-            key={option}
-            className="memory-card"
-            onClick={() => validate(option)}
-          >
+          <button key={option} className="memory-card" onClick={() => validate(option)}>
             <span>3B</span>
             <strong>{option}</strong>
           </button>
@@ -408,11 +678,7 @@ function GameVisual({ round, validate }) {
     return (
       <div className="association-card-grid">
         {round.options.map((option) => (
-          <button
-            key={option}
-            className="association-card"
-            onClick={() => validate(option)}
-          >
+          <button key={option} className="association-card" onClick={() => validate(option)}>
             <span>Carte</span>
             <strong>{option}</strong>
           </button>
@@ -422,35 +688,7 @@ function GameVisual({ round, validate }) {
   }
 
   if (round.visual === "connect") {
-    return (
-      <div className="connect-board">
-        <div className="connect-left">
-          {round.leftItems.map((item) => (
-            <div className="connect-item left" key={item}>
-              {item}
-            </div>
-          ))}
-        </div>
-
-        <div className="connect-lines">
-          <span />
-          <span />
-          <span />
-        </div>
-
-        <div className="connect-right">
-          {round.rightItems.map((item) => (
-            <button
-              key={item}
-              className="connect-item right"
-              onClick={() => validate(item)}
-            >
-              {item}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
+    return <ConnectGame round={round} validate={validate} />;
   }
 
   if (round.visual === "crossword") {
@@ -466,13 +704,7 @@ function GameVisual({ round, validate }) {
   }
 
   if (round.visual === "arrow") {
-    return (
-      <div className="arrow-word-board">
-        <div className="arrow-clue">INDICE</div>
-        <div className="arrow-line">→</div>
-        <div className="arrow-target">{round.question}</div>
-      </div>
-    );
+    return <ArrowGridGame round={round} />;
   }
 
   if (round.visual === "code" || round.visual === "secret-code") {
@@ -568,7 +800,23 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
     if (!userValue) return;
 
-    if (userValue !== correctValue) {
+    if (round.visual === "connect") {
+      if (value !== round.answer) {
+        setFeedback("Mauvais liens. Réessaie, la porte ne change pas.");
+
+        setGameProfile((prev) => {
+          const current = safeGame(prev);
+
+          return {
+            ...current,
+            wrongAnswers: current.wrongAnswers + 1,
+            streak: 0,
+          };
+        });
+
+        return;
+      }
+    } else if (userValue !== correctValue) {
       setFeedback("Mauvaise réponse. Réessaie, la porte ne change pas.");
 
       setGameProfile((prev) => {
@@ -744,9 +992,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
             </>
           ) : (
             <>
-              <p className="soft-text">
-                Clique directement sur la bonne carte dans la mission.
-              </p>
+              <p className="soft-text">Clique directement dans la mission pour jouer.</p>
 
               <div className="button-row">
                 <button className="blue-button" onClick={useHint}>
