@@ -37,11 +37,11 @@ const memberCards = [
   { name: "Légende 3B", status: "sur demande", type: "commande premium", icon: "★" },
   { name: "Secret 3B", status: "sur demande", type: "accès spécial", icon: "🔐" },
   { name: "Musique 3B", status: "sur demande", type: "univers musical", icon: "♪" },
-  { name: "Jeux 3B", status: "sur demande", type: "XP jeux", icon: "🎮" },
+  { name: "Jeux 3B", status: "sur demande", type: "Jeux XP", icon: "🎮" },
   { name: "International 3B", status: "sur demande", type: "monde 3B", icon: "🌍" },
   { name: "Drop 3B", status: "sur demande", type: "drop privé", icon: "🔥" },
   { name: "Prototype 3B", status: "sur demande", type: "prototype", icon: "🎁" },
-  { name: "Legacy 3B", status: "sur demande", type: "héritage", icon: "◆" },
+  { name: "Legacy 3B", status: "sur demande", type: "patrimoine", icon: "◆" },
 ];
 
 function normalize(text) {
@@ -391,7 +391,7 @@ function Secret({ go }) {
   const [unlocked, setUnlocked] = useState(false);
 
   function checkSecret() {
-    if (code.trim().toLowerCase() === "italie") setUnlocked(true);
+    if (code.trim().toLowerCase() === "blackblancbeurr") setUnlocked(true);
     else alert("Code incorrect");
   }
 
@@ -410,7 +410,24 @@ function Secret({ go }) {
 
       {unlocked && (
         <InfoCard title="Indice débloqué" visual={<LevelLogo level={{ name: "Secret", icon: "🔐" }} />}>
-          <p>Italie s’y comprennent — 8 juillet — 20h.</p>
+          <p>L’Italie s’y comprend — 8 juillet — 20h.</p>
+          <p>Live TikTok 3B International.</p>
+          <p
+            style={{
+              color: "#e2be64",
+              letterSpacing: "3px",
+              textTransform: "uppercase",
+              fontStyle: "italic",
+              fontWeight: "800",
+            }}
+          >
+            Salon Italie — Haute Couture 3B
+          </p>
+          <p>
+            Quand vous arriverez dans mon monde, vous comprendrez que 3B International
+            entre dans une étape sérieuse : salon, Italie, présentation premium,
+            univers luxe et ambition internationale.
+          </p>
           <p>Récompense future : indice du prochain secret + prototype gratuit lors de sa sortie.</p>
         </InfoCard>
       )}
