@@ -1643,4 +1643,163 @@ button {
     width: 32px;
     height: 32px;
   }
+}/* =========================================================
+   3B — CORRECTION CIBLÉE 50/50
+   Ne supprime rien. Ajout uniquement.
+   Objectif : menu et pages en vraie logique gauche/droite.
+   Exception : jeux + sections avec grosse image stratégique.
+========================================================= */
+
+/* MENU GÉNÉRAL — vraie structure 50/50 */
+.home-5050-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+}
+
+/* Colonne gauche : présentation marque */
+.home-left-panel {
+  min-height: calc(100vh - 140px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+
+/* Colonne droite : menu */
+.home-right-panel {
+  min-height: calc(100vh - 140px) !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
+  align-content: stretch !important;
+}
+
+/* Les boutons du menu doivent rester premium, lisibles, équilibrés */
+.menu-card-3b {
+  min-height: 104px !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: 72px minmax(0, 1fr) 34px !important;
+  align-items: center !important;
+}
+
+/* Empêche le texte de casser le layout */
+.menu-card-content {
+  min-width: 0 !important;
+}
+
+.menu-card-content strong,
+.menu-card-content small {
+  overflow-wrap: break-word !important;
+}
+
+/* Pages normales : logique 50/50 quand le contenu s’y prête */
+.content-5050,
+.secret-5050-layout,
+.member-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+/* Les panels en 50/50 doivent avoir la même présence visuelle */
+.content-5050 > *,
+.secret-5050-layout > *,
+.member-grid > * {
+  min-width: 0 !important;
+}
+
+/* Passeport : conserve une structure spéciale premium, pas forcée bêtement */
+.passport-grid-legendary {
+  display: grid !important;
+  grid-template-columns: 330px minmax(0, 1fr) 280px !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+/* Sections avec grosse image ou visuel stratégique :
+   elles gardent une grande zone en haut, puis 50/50 dessous */
+.world-map-card,
+.digital-world-zoom,
+.passport-main-card {
+  width: 100% !important;
+}
+
+/* Jeu : exception officielle.
+   On ne force pas le 50/50 pour ne pas casser les grilles et missions. */
+.game-page,
+.jeu3b-shell,
+.game-dashboard,
+.missions-grid-3b,
+.game-play-zone {
+  width: 100% !important;
+}
+
+/* Le jeu garde sa stratégie propre */
+.game-dashboard {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.missions-grid-3b {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+/* Mobile : le 50/50 devient 1 colonne propre */
+@media (max-width: 1050px) {
+  .home-5050-layout,
+  .content-5050,
+  .secret-5050-layout,
+  .member-grid,
+  .passport-grid-legendary {
+    grid-template-columns: 1fr !important;
+  }
+
+  .home-left-panel,
+  .home-right-panel {
+    min-height: auto !important;
+  }
+
+  .home-right-panel {
+    gap: 12px !important;
+  }
+
+  .game-dashboard,
+  .missions-grid-3b {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* Petit téléphone : tout devient lisible en colonne */
+@media (max-width: 700px) {
+  .home-5050-layout,
+  .content-5050,
+  .secret-5050-layout,
+  .member-grid,
+  .passport-grid-legendary,
+  .game-dashboard,
+  .missions-grid-3b {
+    grid-template-columns: 1fr !important;
+  }
+
+  .menu-card-3b {
+    grid-template-columns: 52px minmax(0, 1fr) 24px !important;
+    min-height: 92px !important;
+    padding: 14px !important;
+  }
+
+  .menu-card-content strong {
+    font-size: 26px !important;
+    line-height: 1 !important;
+  }
+
+  .menu-card-content small {
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+  }
 }
