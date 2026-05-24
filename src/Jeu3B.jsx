@@ -87,9 +87,12 @@ function shuffle(array, seed) {
 }
 
 function scramble(word, seed) {
-  const letters = String(word).split("");
-  const mixed = shuffle(letters, seed).join("");
-  return normalize(mixed) === normalize(word) ? letters.reverse().join("") : mixed;
+  const cleanWord = normalize(word);
+  const letters = Array.from(cleanWord.toUpperCase());
+  const mixedLetters = shuffle(letters, seed);
+  const mixed = mixedLetters.join("");
+
+  return normalize(mixed) === cleanWord ? letters.reverse().join("") : mixed;
 }
 
 function safeGame(gameProfile) {
@@ -113,6 +116,7 @@ function formatTime(seconds = 0) {
   const h = String(Math.floor(total / 3600)).padStart(2, "0");
   const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
   const s = String(total % 60).padStart(2, "0");
+
   return `${h}:${m}:${s}`;
 }
 
@@ -130,15 +134,18 @@ function difficultyLabel(level, door) {
 function makeOptions(correct, allOptions, seed, count = 4) {
   const clean = allOptions.filter((item) => normalize(item) !== normalize(correct));
   const mixed = shuffle([correct, ...clean], seed).slice(0, count);
+
   if (!mixed.some((item) => normalize(item) === normalize(correct))) {
     mixed[0] = correct;
   }
+
   return shuffle(mixed, seed + 9);
 }
 
 function buildCrosswordLetters(answer) {
-  const word = String(answer).toUpperCase();
-  return word.split("").map((letter, index) => ({
+  const word = normalize(answer).toUpperCase();
+
+  return Array.from(word).map((letter, index) => ({
     id: `${letter}-${index}`,
     letter,
     visible: index === 0 || index === word.length - 1,
@@ -183,15 +190,18 @@ function buildRound(game) {
   }
 
   if (mode === "Mot mélangé") {
+    const mixedWord = scramble(word, step + 22);
+    const letters = Array.from(mixedWord);
+
     return {
       mode,
       visual: "scramble",
       title: "Mot mélangé",
       instruction: "Remets les lettres dans le bon ordre.",
-      question: scramble(word, step + 22),
+      question: mixedWord,
       answer: word,
-      letters: scramble(word, step + 22).toUpperCase().split(""),
-      hint: `Indice : mot lié à l’univers 3B, ${word.length} lettres.`,
+      letters,
+      hint: `Indice : mot lié à l’univers 3B, ${normalize(word).length} lettres.`,
     };
   }
 
@@ -275,14 +285,16 @@ function buildRound(game) {
   }
 
   if (mode === "Mot fléché") {
+    const cleanWord = normalize(word).toUpperCase();
+
     return {
       mode,
       visual: "arrow",
       title: "Mot fléché",
       instruction: "Suis la flèche et trouve le mot.",
-      question: `→ Mot lié à 3B : ${word.slice(0, 2).toUpperCase()}${"_".repeat(Math.max(2, word.length - 2))}`,
+      question: `→ ${cleanWord.slice(0, 2)}${"_".repeat(Math.max(2, cleanWord.length - 2))}`,
       answer: word,
-      hint: `Indice : mot de l’univers 3B.`,
+      hint: "Indice : mot de l’univers 3B.",
     };
   }
 
@@ -354,7 +366,7 @@ function buildRound(game) {
     instruction: "Écris le bon mot.",
     question: `Écris le mot lié à 3B : ${brandWord2.slice(0, 2)}...`,
     answer: brandWord2,
-    hint: `Indice : ${brandWord2.length} lettres.`,
+    hint: `Indice : ${normalize(brandWord2).length} lettres.`,
   };
 }
 
@@ -466,13 +478,11 @@ function GameVisual({ round, validate }) {
   if (round.visual === "code" || round.visual === "secret-code") {
     return (
       <div className="code-box-board">
-        {String(round.answer)
-          .split("")
-          .map((_, index) => (
-            <div className="code-mini-box" key={index}>
-              ?
-            </div>
-          ))}
+        {Array.from(normalize(round.answer).toUpperCase()).map((_, index) => (
+          <div className="code-mini-box" key={index}>
+            ?
+          </div>
+        ))}
       </div>
     );
   }
@@ -481,7 +491,9 @@ function GameVisual({ round, validate }) {
     return (
       <div className="scramble-letters">
         {round.letters.map((letter, index) => (
-          <span key={`${letter}-${index}`}>{letter}</span>
+          <span className="scramble-letter" key={`${letter}-${index}`}>
+            {letter}
+          </span>
         ))}
       </div>
     );
@@ -500,6 +512,7 @@ function GameVisual({ round, validate }) {
 
 export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
   const game = safeGame(gameProfile);
+
   const round = useMemo(
     () => buildRound(game),
     [game.level, game.door, game.correctAnswers]
@@ -521,6 +534,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
     const timer = setInterval(() => {
       setGameProfile((prev) => {
         const current = safeGame(prev);
+
         return {
           ...current,
           elapsedSeconds: current.elapsedSeconds + 1,
@@ -539,6 +553,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
       setGameProfile((prev) => {
         const current = safeGame(prev);
+
         return {
           ...current,
           hintsUsed: current.hintsUsed + 1,
@@ -634,9 +649,11 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
       <div className="play-header-row">
         <div>
           <div className="page-eyebrow">3B INTERNATIONAL</div>
+
           <h1 className="page-title">
             Porte {game.door} — {round.mode}
           </h1>
+
           <p className="page-subtitle">
             Chaque bonne réponse ouvre la porte suivante. À 10 portes, tu passes
             au niveau suivant.
@@ -653,6 +670,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
       <div className="game-top-grid">
         <section className="section-card">
           <h2 className="section-title">Progression porte</h2>
+
           <div className="progress-ring-shell">
             <div className="progress-ring" style={{ "--progress": `${doorPercent}%` }}>
               <div className="progress-ring-inner">{doorPercent}%</div>
@@ -662,6 +680,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
         <section className="section-card">
           <h2 className="section-title">Niveau / porte</h2>
+
           <div className="stats-compact">
             <div>Niveau {game.level} / 1000</div>
             <div>Porte {game.door} / 10</div>
@@ -671,6 +690,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
         <section className="section-card">
           <h2 className="section-title">XP et temps</h2>
+
           <div className="stats-compact">
             <div>XP jeu : {game.xp}</div>
             <div>Série : {game.streak}</div>
@@ -682,7 +702,9 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
       <div className="game-main-grid">
         <section className="section-card mission-card">
           <div className="game-mode-pill">{round.mode}</div>
+
           <h2 className="section-title">Mission de la porte</h2>
+
           <div className="mission-main-text">{round.title}</div>
           <div className="mission-sub-text">{round.instruction}</div>
 
@@ -747,6 +769,7 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
       <div className="game-bottom-grid">
         <section className="section-card">
           <h2 className="section-title">Règle XP</h2>
+
           <ul className="bullet-list">
             <li>1 bonne réponse = 1 porte ouverte.</li>
             <li>10 portes ouvertes = niveau suivant.</li>
@@ -758,19 +781,23 @@ export default function Jeu3B({ member, gameProfile, setGameProfile, onBack }) {
 
         <section className="section-card">
           <h2 className="section-title">Statut joueur</h2>
+
           <div className="info-list">
             <div>
               <span>Mode</span>
               <strong>{member ? "Membre 3B" : "Invité"}</strong>
             </div>
+
             <div>
               <span>Nom</span>
               <strong>{member?.name || "Invité"}</strong>
             </div>
+
             <div>
               <span>Meilleure série</span>
               <strong>{game.bestStreak}</strong>
             </div>
+
             <div>
               <span>Réponses validées</span>
               <strong>{game.correctAnswers}</strong>
