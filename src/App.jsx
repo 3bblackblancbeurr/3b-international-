@@ -39,45 +39,83 @@ const memberCards = [
 const gameFamilies = [
   {
     name: "ADN 3B",
-    theme: "Trouver les mots qui appartiennent à l’univers 3B.",
-    words: ["héritage", "luxe", "identité", "international", "ambition", "création"],
-    wrong: ["hasard", "oubli", "copie", "faible", "vide", "retard"],
+    theme: "héritage, luxe, identité, ambition, international",
+    words: ["héritage", "luxe", "identité", "ambition", "international", "création", "patrimoine", "vision", "premium", "legacy"],
+    wrong: ["abandon", "copie", "oubli", "faible", "hasard", "vide", "désordre", "retard", "banal", "limite"],
   },
   {
     name: "Mode & couture",
-    theme: "Construire le vocabulaire mode premium.",
-    words: ["couture", "atelier", "patronage", "piqué", "jacquard", "broderie"],
-    wrong: ["plastique", "brouillon", "défaut", "cassé", "sale", "jetable"],
+    theme: "maillot, atelier, textile, logo, couture",
+    words: ["couture", "atelier", "maillot", "jacquard", "broderie", "patronage", "logo", "textile", "matière", "collection"],
+    wrong: ["cassé", "sale", "jetable", "brouillon", "plastique", "défaut", "copie", "basique", "panne", "chaos"],
   },
   {
     name: "Musique 3B",
-    theme: "Retrouver les mots liés aux sons et aux clips 3B.",
-    words: ["album", "refrain", "studio", "clip", "hymne", "mélodie"],
-    wrong: ["silence", "bruit", "oubli", "copie", "panne", "pause"],
+    theme: "sons, album, clip, TikTok, hymne",
+    words: ["album", "clip", "studio", "hymne", "refrain", "mélodie", "rythme", "son", "playlist", "tiktok"],
+    wrong: ["silence", "oubli", "brouhaha", "panne", "copie", "pause", "muet", "bruit", "vide", "fade"],
   },
   {
-    name: "Warzone & gaming",
-    theme: "Mots gaming, stratégie, mission et progression.",
-    words: ["mission", "niveau", "escouade", "stratégie", "victoire", "classement"],
-    wrong: ["abandon", "défaite", "bug", "blocage", "hasard", "retour"],
+    name: "Gaming 3B",
+    theme: "niveau, mission, XP, stratégie, victoire",
+    words: ["niveau", "mission", "stratégie", "victoire", "classement", "escouade", "xp", "porte", "boss", "progression"],
+    wrong: ["défaite", "abandon", "blocage", "hasard", "retour", "bug", "perdu", "triche", "pause", "échec"],
   },
   {
     name: "Pays 3B",
-    theme: "Relier les pays officiels à l’univers international.",
+    theme: "les huit pays officiels 3B",
     words: ["france", "italie", "maroc", "algérie", "tunisie", "espagne", "turquie", "estonie"],
-    wrong: ["inconnu", "aucun", "vide", "oublié", "fermé", "perdu"],
+    wrong: ["inconnu", "aucun", "vide", "fermé", "oublié", "perdu", "flou", "faux"],
   },
+  {
+    name: "Secret 3B",
+    theme: "indice, coffre, code, salon, Italie",
+    words: ["secret", "indice", "coffre", "italie", "salon", "code", "mystère", "prototype", "révélation", "accès"],
+    wrong: ["oubli", "public", "hasard", "bruit", "faible", "retard", "fermé", "vide", "fuite", "banal"],
+  },
+];
+
+const gameModes = [
+  "bubbleChoice",
+  "writeWord",
+  "findIntruder",
+  "trueFalse",
+  "mixedLetters",
+  "duelWords",
+  "completeSentence",
+  "familyMatch",
+  "countryFlag",
+  "memoryPair",
+  "fastChoice",
+  "conceptOrder",
+  "secretCode",
+  "wordLength",
+  "firstLetter",
+  "lastLetter",
+  "twoGoodWords",
+  "avoidTrap",
+  "themeQuiz",
+  "finalDoor",
 ];
 
 function normalize(text) {
   return String(text || "")
     .toLowerCase()
+    .trim()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
 
 function getCountry(name) {
   return official3BCountries.find((c) => normalize(c.name) === normalize(name));
+}
+
+function shuffleArray(array) {
+  return [...array].sort(() => Math.random() - 0.5);
+}
+
+function pick(list, index) {
+  return list[Math.abs(index) % list.length];
 }
 
 function getLevel(points) {
@@ -89,28 +127,243 @@ function getLevel(points) {
   return { name: "Découverte", next: 500, icon: "3B", percent: Math.round((points / 500) * 100) };
 }
 
-function getGameData(level, door) {
-  const family = gameFamilies[Math.floor((level - 1) / 200) % gameFamilies.length];
-  const correct = family.words[(level + door) % family.words.length];
-  const mode = (level + door) % 3 === 0 ? "write" : "bubble";
-  const choices = [correct, family.wrong[door % family.wrong.length], family.wrong[(door + 2) % family.wrong.length], family.words[(door + 3) % family.words.length]]
-    .filter((v, i, arr) => arr.indexOf(v) === i)
-    .sort(() => 0.5 - Math.random());
-
-  return {
-    family,
-    correct,
-    mode,
-    choices,
-    difficulty: Math.min(100, Math.floor(level / 10) + door),
-  };
+function getDifficulty(level, door) {
+  const raw = Math.round(1 + level * 0.065 + door * 0.35);
+  return Math.min(100, Math.max(1, raw));
 }
 
-function xpForDoor(level, door) {
-  if (door < 10) return 1;
-  if (level % 50 === 0) return 12;
-  if (level % 10 === 0) return 7;
-  return 4;
+function xpForDoor(level, door, hintUsed = false, mistakes = 0) {
+  let base = 1;
+
+  if (level >= 25) base = 2;
+  if (level >= 75) base = 3;
+  if (level >= 150) base = 4;
+  if (level >= 300) base = 5;
+  if (level >= 500) base = 7;
+  if (level >= 750) base = 9;
+
+  if (door === 10) base += 3;
+  if (level % 25 === 0 && door === 10) base += 5;
+  if (level % 100 === 0 && door === 10) base += 12;
+
+  if (hintUsed) base = Math.max(1, Math.floor(base * 0.5));
+  if (mistakes > 0) base = Math.max(1, base - mistakes);
+
+  return base;
+}
+
+function generateGameDoor(level, door, roundSeed = 0) {
+  const globalIndex = (level - 1) * 10 + door + roundSeed;
+  const mode = gameModes[(globalIndex - 1) % gameModes.length];
+  const family = gameFamilies[Math.floor((level - 1) / 167) % gameFamilies.length];
+
+  const wordA = pick(family.words, globalIndex);
+  const wordB = pick(family.words, globalIndex + 2);
+  const wordC = pick(family.words, globalIndex + 4);
+  const trapA = pick(family.wrong, globalIndex + 1);
+  const trapB = pick(family.wrong, globalIndex + 3);
+  const trapC = pick(family.wrong, globalIndex + 5);
+
+  const country = pick(official3BCountries, globalIndex);
+  const wrongCountry = pick(official3BCountries, globalIndex + 3);
+
+  const mixed = shuffleArray(wordA.split("")).join("");
+  const trueAnswer = globalIndex % 2 === 0;
+
+  const choices = shuffleArray([wordA, wordB, trapA, trapB]);
+  const intruderChoices = shuffleArray([wordA, wordB, wordC, trapA]);
+  const duelChoices = shuffleArray([wordA, trapA]);
+  const twoGoodChoices = shuffleArray([wordA, wordB, trapA, trapB]);
+
+  const modeConfig = {
+    bubbleChoice: {
+      title: "Sélection tactile",
+      mission: "Choisis le mot qui appartient vraiment à l’univers affiché.",
+      instruction: "Appuie sur la bonne bulle.",
+      correct: wordA,
+      choices,
+      type: "choice",
+      hint: `Indice : le mot est lié à ${family.theme}.`,
+    },
+    writeWord: {
+      title: "Écriture du mot",
+      mission: "Écris le bon mot 3B demandé par la porte.",
+      instruction: `Famille : ${family.name}.`,
+      correct: wordA,
+      type: "write",
+      hint: `Indice : ${wordA.length} lettres, commence par “${wordA[0]}”.`,
+    },
+    findIntruder: {
+      title: "Trouver l’intrus",
+      mission: "Trois mots sont dans la bonne famille. Un seul est faux.",
+      instruction: "Sélectionne l’intrus.",
+      correct: trapA,
+      choices: intruderChoices,
+      type: "choice",
+      hint: "Indice : cherche le mot qui casse la logique 3B.",
+    },
+    trueFalse: {
+      title: "Vrai ou faux",
+      mission: `Le mot “${trueAnswer ? wordA : trapA}” appartient-il à la famille ${family.name} ?`,
+      instruction: "Choisis vrai ou faux.",
+      correct: trueAnswer ? "vrai" : "faux",
+      choices: ["vrai", "faux"],
+      type: "choice",
+      hint: `Indice : thème de la famille = ${family.theme}.`,
+    },
+    mixedLetters: {
+      title: "Mot mélangé",
+      mission: `Remets les lettres dans l’ordre : ${mixed}`,
+      instruction: "Écris le vrai mot.",
+      correct: wordA,
+      type: "write",
+      hint: `Indice : première lettre “${wordA[0]}”, dernière lettre “${wordA[wordA.length - 1]}”.`,
+    },
+    duelWords: {
+      title: "Duel de mots",
+      mission: "Deux mots s’affrontent. Un seul représente vraiment l’esprit 3B.",
+      instruction: "Choisis le meilleur mot.",
+      correct: wordA,
+      choices: duelChoices,
+      type: "choice",
+      hint: `Indice : le bon mot appartient à ${family.name}.`,
+    },
+    completeSentence: {
+      title: "Phrase à compléter",
+      mission: `3B International représente le mot : ____`,
+      instruction: "Complète avec le bon mot.",
+      correct: wordA,
+      choices,
+      type: "choice",
+      hint: `Indice : regarde la famille ${family.name}.`,
+    },
+    familyMatch: {
+      title: "Famille du mot",
+      mission: `Quel mot correspond le mieux à la famille “${family.name}” ?`,
+      instruction: "Sélectionne la réponse logique.",
+      correct: wordB,
+      choices: shuffleArray([wordB, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : ${family.theme}.`,
+    },
+    countryFlag: {
+      title: "Pays 3B",
+      mission: `Quel pays correspond au drapeau ${country.flag} ?`,
+      instruction: "Choisis le bon pays 3B.",
+      correct: country.name,
+      choices: shuffleArray([country.name, wrongCountry.name, pick(official3BCountries, globalIndex + 4).name, pick(official3BCountries, globalIndex + 5).name]),
+      type: "choice",
+      hint: `Indice : c’est un des 8 pays officiels 3B.`,
+    },
+    memoryPair: {
+      title: "Mémoire 3B",
+      mission: `Retrouve le mot associé à “${wordA}”.`,
+      instruction: "Choisis un mot de la même famille.",
+      correct: wordB,
+      choices: shuffleArray([wordB, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : les deux mots viennent de ${family.name}.`,
+    },
+    fastChoice: {
+      title: "Choix rapide",
+      mission: "Sélectionne vite le mot le plus premium.",
+      instruction: "Réponds sans te tromper.",
+      correct: wordC,
+      choices: shuffleArray([wordC, trapA, trapB, trapC]),
+      type: "choice",
+      hint: "Indice : le mot positif est le bon.",
+    },
+    conceptOrder: {
+      title: "Ordre logique",
+      mission: `Quel mot vient le mieux après “3B → projet →” ?`,
+      instruction: "Choisis la suite stratégique.",
+      correct: wordA,
+      choices: shuffleArray([wordA, trapA, trapB, trapC]),
+      type: "choice",
+      hint: "Indice : pense construction, ambition, univers.",
+    },
+    secretCode: {
+      title: "Code secret",
+      mission: "Trouve le mot lié au coffre secret 3B.",
+      instruction: "Écris le bon mot.",
+      correct: family.name === "Secret 3B" ? wordA : "secret",
+      type: "write",
+      hint: "Indice : c’est lié au coffre, à l’indice ou au mystère.",
+    },
+    wordLength: {
+      title: "Longueur du mot",
+      mission: `Quel mot contient ${wordA.length} lettres ?`,
+      instruction: "Choisis le bon mot.",
+      correct: wordA,
+      choices: shuffleArray([wordA, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : compte les lettres du mot.`,
+    },
+    firstLetter: {
+      title: "Première lettre",
+      mission: `Quel mot commence par “${wordA[0].toUpperCase()}” ?`,
+      instruction: "Choisis le bon mot.",
+      correct: wordA,
+      choices: shuffleArray([wordA, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : le mot est dans ${family.name}.`,
+    },
+    lastLetter: {
+      title: "Dernière lettre",
+      mission: `Quel mot finit par “${wordA[wordA.length - 1].toUpperCase()}” ?`,
+      instruction: "Choisis le bon mot.",
+      correct: wordA,
+      choices: shuffleArray([wordA, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : la dernière lettre est importante.`,
+    },
+    twoGoodWords: {
+      title: "Deux bons mots",
+      mission: "Deux mots sont bons. Sélectionne le premier bon mot visible.",
+      instruction: "Un piège est mélangé avec les bons mots.",
+      correct: wordA,
+      choices: twoGoodChoices,
+      type: "choice",
+      hint: `Indice : ${wordA} et ${wordB} sont dans la bonne famille.`,
+    },
+    avoidTrap: {
+      title: "Évite le piège",
+      mission: "Ne choisis pas le mot négatif. Choisis le mot 3B.",
+      instruction: "La mauvaise réponse fait perdre de la récompense.",
+      correct: wordB,
+      choices: shuffleArray([wordB, trapA, trapB, trapC]),
+      type: "choice",
+      hint: "Indice : choisis un mot qui construit, pas qui détruit.",
+    },
+    themeQuiz: {
+      title: "Quiz univers 3B",
+      mission: `Quel mot représente le mieux : ${family.theme} ?`,
+      instruction: "Choisis le mot le plus proche du thème.",
+      correct: wordC,
+      choices: shuffleArray([wordC, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : famille = ${family.name}.`,
+    },
+    finalDoor: {
+      title: "Porte finale",
+      mission: `Dernière porte du niveau ${level}. Trouve le mot-clé 3B.`,
+      instruction: "Cette porte donne un bonus si tu réussis.",
+      correct: wordA,
+      choices: shuffleArray([wordA, trapA, trapB, trapC]),
+      type: "choice",
+      hint: `Indice : le mot final appartient à ${family.name}.`,
+    },
+  };
+
+  return {
+    level,
+    door,
+    globalIndex,
+    mode,
+    family,
+    difficulty: getDifficulty(level, door),
+    ...modeConfig[mode],
+  };
 }
 
 function BackButton({ onClick }) {
@@ -260,21 +513,7 @@ function WorldMap3B({ originCountry }) {
 
       <div className="world-strip">
         <svg viewBox="0 0 900 260" width="100%" height="100%">
-          <defs>
-            <radialGradient id="globeGlow" cx="50%" cy="50%" r="70%">
-              <stop offset="0%" stopColor="#174d74" stopOpacity="0.85" />
-              <stop offset="100%" stopColor="#031019" stopOpacity="1" />
-            </radialGradient>
-            <filter id="cyanGlow">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <rect width="900" height="260" fill="url(#globeGlow)" />
+          <rect width="900" height="260" fill="#031019" />
           <g opacity="0.32">
             {Array.from({ length: 60 }).map((_, i) => (
               <text key={i} x={(i * 47) % 880} y={18 + ((i * 19) % 230)} fill="#58b5ea" fontSize="8">
@@ -282,45 +521,17 @@ function WorldMap3B({ originCountry }) {
               </text>
             ))}
           </g>
-          <g opacity="0.22">
-            {Array.from({ length: 18 }).map((_, i) => (
-              <ellipse key={i} cx="450" cy="130" rx={80 + i * 22} ry={20 + i * 5} fill="none" stroke="#5cc9ff" />
-            ))}
-          </g>
-
           <path d="M58 96 C112 42 206 56 246 102 C286 146 230 183 140 171 C75 162 25 132 58 96Z" className="land" />
           <path d="M202 178 C260 170 310 212 286 252 C235 252 196 225 202 178Z" className="land" />
           <path d="M345 88 C424 34 580 50 625 118 C655 172 560 204 454 174 C380 153 306 124 345 88Z" className="land" />
           <path d="M438 180 C512 162 584 202 565 254 C500 263 435 228 438 180Z" className="land" />
           <path d="M635 105 C720 72 862 118 868 172 C830 224 680 205 635 105Z" className="land" />
-
-          {official3BCountries.map((country) => {
-            const isUnlocked = unlocked?.name === country.name;
-            return (
-              <circle
-                key={country.name}
-                cx={country.x}
-                cy={country.y / 2}
-                r={isUnlocked ? 8 : 5}
-                className={isUnlocked ? "map-dot unlocked" : "map-dot"}
-                filter="url(#cyanGlow)"
-              />
-            );
-          })}
         </svg>
       </div>
 
       <div className="world-zoom">
         <svg viewBox="0 0 900 520" width="100%" height="100%">
-          <defs>
-            <linearGradient id="zoomBg" x1="0" x2="1">
-              <stop offset="0%" stopColor="#04111b" />
-              <stop offset="50%" stopColor="#092236" />
-              <stop offset="100%" stopColor="#031018" />
-            </linearGradient>
-          </defs>
-
-          <rect width="900" height="520" fill="url(#zoomBg)" />
+          <rect width="900" height="520" fill="#04111b" />
           <g opacity="0.26">
             {Array.from({ length: 26 }).map((_, i) => (
               <line key={`h-${i}`} x1="0" x2="900" y1={i * 20} y2={i * 20} stroke="#174660" />
@@ -330,19 +541,10 @@ function WorldMap3B({ originCountry }) {
             ))}
           </g>
 
-          <g opacity="0.24">
-            {Array.from({ length: 34 }).map((_, i) => (
-              <text key={i} x={(i * 83) % 860} y={30 + ((i * 37) % 460)} fill="#58b5ea" fontSize="10">
-                001101 3B 0101
-              </text>
-            ))}
-          </g>
-
           <path d="M90 270 C160 204 245 204 315 224 C360 190 430 146 535 152 C635 158 708 236 730 306 C655 286 590 268 518 286 C448 304 410 365 300 370 C184 378 88 340 90 270Z" className="continent" />
           <path d="M204 312 C252 298 315 318 338 356 C300 396 220 390 172 350 C154 326 172 312 204 312Z" className="continent" />
           <path d="M394 268 C430 254 470 272 476 304 C462 338 420 346 392 318 C376 298 380 278 394 268Z" className="continent" />
           <path d="M620 300 C680 266 765 292 770 332 C730 376 638 364 604 330 C594 316 602 306 620 300Z" className="continent" />
-          <path d="M255 250 C300 225 355 235 374 278 C360 314 300 330 256 300 C232 282 232 260 255 250Z" className="continent secondary" />
 
           {official3BCountries.map((country) => {
             const isUnlocked = unlocked?.name === country.name;
@@ -417,21 +619,31 @@ function Boutique({ go }) {
 }
 
 function Musique({ go }) {
+  const tracks = Array.from({ length: 20 }).map((_, i) => {
+    const number = String(i + 1).padStart(2, "0");
+    return { number, title: `Piste ${number}`, file: `/musique/piste-${number}.mp3` };
+  });
+
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
+      <LogoHeader small />
       <h1>Musique</h1>
       <div className="gold-line">◆</div>
+      <p className="intro">Album 3B International — 20 titres officiels.</p>
 
-      <div className="page-grid">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <button className="track-card" key={i}>
+      <div className="page-grid compact-grid">
+        {tracks.map((track) => (
+          <div className="track-card music-player-card" key={track.number}>
             <span>▶</span>
-            <div>
-              <strong>{String(i + 1).padStart(2, "0")}</strong>
-              <p>Piste {String(i + 1).padStart(2, "0")}</p>
+            <div className="music-info">
+              <strong>{track.number}</strong>
+              <p>{track.title}</p>
+              <audio controls preload="metadata">
+                <source src={track.file} type="audio/mpeg" />
+              </audio>
             </div>
-          </button>
+          </div>
         ))}
       </div>
     </div>
@@ -439,34 +651,16 @@ function Musique({ go }) {
 }
 
 function Communaute({ go }) {
-  const posts = [
-    ["Alexandre M.", "3B Élite", "Très belle journée à tous ! Restez focus et continuez d’avancer. ✨"],
-    ["Sarah B.", "Ambassadrice 3B", "Qui participe à l’atelier de ce soir ? 🙏"],
-    ["Julien T.", "3B Leader", "Je partagerai ma stratégie sur les réseaux à 18h. 🔥"],
-    ["3B International", "Officiel", "Rappel : webinaire exclusif ce jeudi à 20h. 🚀"],
-  ];
-
   return (
     <div className="page">
       <BackButton onClick={() => go("home")} />
       <h1>Communauté</h1>
       <div className="gold-line">◆</div>
-
       <div className="stats-card">
         <div><strong>1 256</strong><span>Membres</span></div>
         <div><strong>24</strong><span>En ligne</span></div>
         <div><strong>387</strong><span>Messages aujourd’hui</span></div>
       </div>
-
-      <div className="page-grid">
-        {posts.map(([name, role, text]) => (
-          <InfoCard key={name} title={name} visual={<div className="avatar-big">{name === "3B International" ? "3B" : "👤"}</div>}>
-            <p>{role}</p>
-            <p>{text}</p>
-          </InfoCard>
-        ))}
-      </div>
-
       <div className="chat-box">
         <span>💬</span>
         <input placeholder="Écrivez votre message..." />
@@ -519,8 +713,10 @@ function Secret({ go }) {
   );
 }
 
-function Jeux({ go, member, game }) {
-  const gamePercent = Math.min(Math.round(((game?.xp || 0) / 500) * 100), 100);
+function Jeux({ go, game }) {
+  const totalDoors = 1000 * 10;
+  const completedDoors = Math.min(game.completedDoors, totalDoors);
+  const gamePercent = Math.min(Math.round((completedDoors / totalDoors) * 100), 100);
 
   return (
     <div className="page">
@@ -531,14 +727,15 @@ function Jeux({ go, member, game }) {
 
       <div className="page-grid compact-grid">
         <InfoCard title="Jeux à venir" visual={<LevelLogo level={{ name: "Jeux", icon: "🎮" }} />}>
-          <p>1er jeu actif maintenant.</p>
-          <p>Autres jeux plus tard : musique, pays, Warzone, mode, communauté.</p>
+          <p>Premier jeu actif maintenant.</p>
+          <p>Le moteur tourne avec 1000 niveaux, 10 portes par niveau et 20 mécaniques différentes.</p>
         </InfoCard>
 
-        <InfoCard title="Jeu 3B — 1000 niveaux" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
-          <p>Niveau actuel : {game.level}</p>
-          <p>Porte actuelle : {game.door}/10</p>
+        <InfoCard title="Jeu 3B — 1000 niveaux" visual={<ProgressCircle percent={gamePercent} label="Progression globale" icon="🎮" />}>
+          <p>Niveau actuel : {game.level} / 1000</p>
+          <p>Porte actuelle : {game.door} / 10</p>
           <p>XP jeux : {game.xp}</p>
+          <p>Mini-jeux générés : 10 000 portes.</p>
           <button className="inside-action" onClick={() => go("jeu-1000")}>Entrer dans le jeu</button>
         </InfoCard>
       </div>
@@ -549,81 +746,156 @@ function Jeux({ go, member, game }) {
 function Jeu1000({ go, game, setGame, setMember }) {
   const [answer, setAnswer] = useState("");
   const [message, setMessage] = useState("");
-  const data = useMemo(() => getGameData(game.level, game.door), [game.level, game.door]);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [mistakes, setMistakes] = useState(0);
+  const [roundSeed, setRoundSeed] = useState(0);
+
+  const data = useMemo(
+    () => generateGameDoor(game.level, game.door, roundSeed),
+    [game.level, game.door, roundSeed]
+  );
+
+  const doorPercent = Math.round((game.door / 10) * 100);
+
+  function resetQuestion(messageText) {
+    setAnswer("");
+    setMessage(messageText);
+
+    setTimeout(() => {
+      setMessage("");
+    }, 1500);
+  }
+
+  function wrongAnswer() {
+    setMistakes((old) => old + 1);
+    resetQuestion("Mauvaise réponse. Choisis une autre réponse.");
+  }
 
   function reward() {
-    const xp = xpForDoor(game.level, game.door);
-    const nextDoor = game.door === 10 ? 1 : game.door + 1;
-    const nextLevel = game.door === 10 ? Math.min(1000, game.level + 1) : game.level;
+    const currentLevel = game.level;
+    const currentDoor = game.door;
+    const xpWon = xpForDoor(currentLevel, currentDoor, hintUsed, mistakes);
+
+    const finishedLevel = currentDoor >= 10;
+    const nextDoor = finishedLevel ? 1 : currentDoor + 1;
+    const nextLevel = finishedLevel ? Math.min(1000, currentLevel + 1) : currentLevel;
 
     setGame((current) => ({
       ...current,
       level: nextLevel,
       door: nextDoor,
-      xp: current.xp + xp,
-      completedDoors: current.completedDoors + 1,
+      xp: current.xp + xpWon,
+      completedDoors: Math.min(10000, current.completedDoors + 1),
     }));
 
     setMember((current) => {
       if (!current) return current;
+
+      const newPoints = (current.points || 0) + xpWon;
+      const newGamePoints = (current.gamePoints || 0) + xpWon;
+      const newLevel = getLevel(newPoints);
+
       return {
         ...current,
-        gamePoints: (current.gamePoints || 0) + xp,
-        points: (current.points || 0) + xp,
+        points: newPoints,
+        gamePoints: newGamePoints,
+        level: newLevel.name,
       };
     });
 
     setAnswer("");
-    setMessage(`Bonne réponse. +${xp} XP. Progression lente validée.`);
+    setHintUsed(false);
+    setMistakes(0);
+    setRoundSeed((old) => old + 1);
+
+    if (finishedLevel) {
+      resetQuestion(`Niveau terminé. +${xpWon} XP. Niveau ${nextLevel} débloqué.`);
+    } else {
+      resetQuestion(`Bonne réponse. +${xpWon} XP. Porte ${nextDoor} débloquée.`);
+    }
   }
 
   function validate(value = answer) {
-    if (normalize(value) === normalize(data.correct)) reward();
-    else setMessage("Mauvaise porte. Réessaie, l’XP doit se mériter.");
+    const userAnswer = normalize(value);
+    const correctAnswer = normalize(data.correct);
+
+    if (userAnswer === correctAnswer) {
+      reward();
+    } else {
+      wrongAnswer();
+    }
+  }
+
+  function showHint() {
+    setHintUsed(true);
+    setMessage(data.hint || "Indice : observe bien la famille et le thème du niveau.");
+
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
   }
 
   return (
     <div className="page">
       <BackButton onClick={() => go("jeux")} />
       <LogoHeader small />
+
       <h1>Jeu 3B</h1>
       <div className="gold-line">◆</div>
 
-      <div className="game-hero">
+      <div className="game-hero premium-game-hero">
         <div>
           <h3>Niveau {game.level} / 1000</h3>
           <p>Porte {game.door} / 10</p>
+          <p>Type de jeu : {data.title}</p>
           <p>Famille : {data.family.name}</p>
           <p>Difficulté : {data.difficulty}%</p>
+          <p>XP total jeux : {game.xp}</p>
         </div>
-        <ProgressCircle percent={Math.round((game.door / 10) * 100)} label="Portes du niveau" icon="🚪" />
+
+        <ProgressCircle percent={doorPercent} label="Portes du niveau" icon="🚪" />
       </div>
 
       <div className="page-grid compact-grid">
         <InfoCard title="Mission de la porte">
-          <p>{data.family.theme}</p>
-          <p>Le jeu change de concept tous les niveaux, mais les 10 portes gardent la même idée pendant le niveau.</p>
-          <p>Objectif : trouver le bon mot 3B.</p>
+          <p>{data.mission}</p>
+          <p>{data.instruction}</p>
+          <p>Chaque porte change de mécanique : choix, écriture, piège, mémoire, pays, code ou quiz.</p>
         </InfoCard>
 
         <InfoCard title="Règle XP">
-          <p>XP volontairement lente.</p>
-          <p>Portes simples : +1 XP.</p>
-          <p>Fin de niveau : +4 XP minimum.</p>
-          <p>Niveaux spéciaux : bonus rare.</p>
+          <p>Bonne réponse : XP gagné.</p>
+          <p>Indice utilisé : XP réduit.</p>
+          <p>Erreur : récompense diminuée.</p>
+          <p>Plus le niveau monte, plus la difficulté augmente.</p>
         </InfoCard>
       </div>
 
-      {data.mode === "bubble" ? (
+      <div className="hint-zone">
+        <button onClick={showHint}>Indice</button>
+      </div>
+
+      {data.type === "choice" && (
         <div className="bubble-zone">
           {data.choices.map((choice) => (
-            <button key={choice} onClick={() => validate(choice)}>{choice}</button>
+            <button key={choice} onClick={() => validate(choice)}>
+              {choice}
+            </button>
           ))}
         </div>
-      ) : (
+      )}
+
+      {data.type === "write" && (
         <div className="input-row game-input">
           <span>✍️</span>
-          <input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Écris le bon mot" />
+          <input
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Écris le bon mot"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") validate();
+            }}
+          />
           <button onClick={() => validate()}>Valider</button>
         </div>
       )}
@@ -640,20 +912,11 @@ function PasseportAccess({ go }) {
       <LogoHeader small />
       <h1>Passeport 3B</h1>
       <div className="gold-line">◆</div>
-
       <p className="intro">Créez votre Passeport 3B pour activer votre pays d’origine et entrer dans le monde 3B.</p>
-
       <WorldMap3B originCountry="" />
-
       <div className="page-grid compact-grid">
-        <InfoCard title="Pays d’origine 3B">
-          <p>Sert à activer un des 8 pays officiels 3B sur la carte.</p>
-        </InfoCard>
-
-        <InfoCard title="Pays de résidence">
-          <p>Sert seulement à indiquer où vous vivez aujourd’hui.</p>
-        </InfoCard>
-
+        <InfoCard title="Pays d’origine 3B"><p>Sert à activer un des 8 pays officiels 3B sur la carte.</p></InfoCard>
+        <InfoCard title="Pays de résidence"><p>Sert seulement à indiquer où vous vivez aujourd’hui.</p></InfoCard>
         <MenuCard icon="👤" title="Créer mon compte 3B" onClick={() => go("passeport-inscription")} />
         <MenuCard icon="🔐" title="Me connecter" onClick={() => go("passeport-connexion")} />
       </div>
@@ -705,17 +968,9 @@ function PasseportInscription({ go, setMember }) {
       <div className="gold-line">◆</div>
 
       <div className="page-grid compact-grid">
-        <Field icon="👤">
-          <input value={form.pseudo} onChange={(e) => update("pseudo", e.target.value)} placeholder="Nom ou pseudo" />
-        </Field>
-
-        <Field icon="✉️">
-          <input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="Adresse e-mail" />
-        </Field>
-
-        <Field icon="🔒">
-          <input value={form.password} onChange={(e) => update("password", e.target.value)} type="password" placeholder="Mot de passe" />
-        </Field>
+        <Field icon="👤"><input value={form.pseudo} onChange={(e) => update("pseudo", e.target.value)} placeholder="Nom ou pseudo" /></Field>
+        <Field icon="✉️"><input value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="Adresse e-mail" /></Field>
+        <Field icon="🔒"><input value={form.password} onChange={(e) => update("password", e.target.value)} type="password" placeholder="Mot de passe" /></Field>
 
         <Field icon="🌍">
           <select value={form.originCountry} onChange={(e) => update("originCountry", e.target.value)}>
@@ -731,9 +986,7 @@ function PasseportInscription({ go, setMember }) {
           </select>
         </Field>
 
-        <Field icon="🏙️">
-          <input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Ville de résidence" />
-        </Field>
+        <Field icon="🏙️"><input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Ville de résidence" /></Field>
       </div>
 
       <WorldMap3B originCountry={form.originCountry} />
@@ -812,7 +1065,7 @@ function EspaceMembre({ go, member, game }) {
   };
 
   const level = getLevel(profile.points);
-  const gamePercent = Math.min(Math.round(((game?.xp || 0) / 500) * 100), 100);
+  const gamePercent = Math.min(Math.round((game.completedDoors / 10000) * 100), 100);
   const unlocked = getCountry(profile.originCountry);
 
   return (
@@ -830,16 +1083,10 @@ function EspaceMembre({ go, member, game }) {
           <p>Prochain palier : {level.next} points</p>
         </InfoCard>
 
-        <InfoCard title="Niveau de progression" visual={<ProgressCircle percent={level.percent} label={`Vers ${level.next} points`} icon={level.icon} />}>
-          <p>La progression est volontairement plus lente.</p>
-          <p>Les niveaux font évoluer le statut et le logo.</p>
-          <p>Les cartes restent séparées des niveaux.</p>
-        </InfoCard>
-
-        <InfoCard title="Progression Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
-          <p>Points jeux : {profile.gamePoints || 0}</p>
-          <p>Gagner un jeu : points bonus.</p>
-          <p>Passer un niveau : bonus de points.</p>
+        <InfoCard title="Progression Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="10 000 portes" icon="🎮" />}>
+          <p>Niveau jeu : {game.level} / 1000</p>
+          <p>Porte : {game.door} / 10</p>
+          <p>XP jeux : {game.xp}</p>
           <p>Le logo Jeux deviendra évolutif.</p>
         </InfoCard>
 
@@ -848,13 +1095,6 @@ function EspaceMembre({ go, member, game }) {
             const active = unlocked?.name === country.name;
             return <p key={country.name}>{country.flag} {active ? "✅ Déverrouillé" : "🔒 Verrouillé"} : {country.name}</p>;
           })}
-        </InfoCard>
-
-        <InfoCard title="Avantages à débloquer" visual={<PassportCardVisual member={member} />}>
-          <p>Accès au Passeport 3B</p>
-          <p>Indices supplémentaires selon niveau</p>
-          <p>Suivi des cartes possédées</p>
-          <p>Drops privés plus tard</p>
         </InfoCard>
 
         <InfoCard title="Missions 3B" visual={<LevelLogo level={{ name: "XP", icon: "XP" }} />}>

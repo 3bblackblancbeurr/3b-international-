@@ -22,7 +22,7 @@ body,
 body {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(0, 0, 0, 0.32), rgba(0, 0, 0, 0.66)),
+    linear-gradient(rgba(0, 0, 0, 0.28), rgba(0, 0, 0, 0.58)),
     url("/background.png");
   background-size: min(980px, 92vw) auto;
   background-position: center top;
@@ -153,7 +153,7 @@ h2 {
   border: 1px solid var(--gold-strong);
   border-radius: 26px;
   background:
-    linear-gradient(180deg, rgba(18, 18, 18, 0.9), rgba(4, 4, 4, 0.96));
+    linear-gradient(180deg, rgba(18, 18, 18, 0.88), rgba(4, 4, 4, 0.94));
   box-shadow:
     0 0 14px rgba(226, 190, 100, 0.09),
     inset 0 0 18px rgba(255, 255, 255, 0.02);
@@ -299,6 +299,20 @@ h2 {
 .track-card p {
   margin: 4px 0 0;
   font-size: 20px;
+}
+
+.music-player-card {
+  align-items: flex-start;
+}
+
+.music-info {
+  width: 100%;
+}
+
+.music-info audio {
+  width: 100%;
+  margin-top: 10px;
+  filter: sepia(25%) saturate(120%) brightness(92%);
 }
 
 .stats-card {
@@ -785,6 +799,51 @@ h2 {
   margin: 8px 0;
 }
 
+.hint-zone {
+  margin: 18px auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  max-width: 760px;
+}
+
+.hint-zone button {
+  min-height: 58px;
+  border-radius: 18px;
+  border: 1px solid rgba(125, 215, 255, 0.55);
+  background:
+    radial-gradient(circle at top, rgba(125, 215, 255, 0.22), transparent 55%),
+    rgba(4, 14, 22, 0.95);
+  color: #d8f8ff;
+  font-weight: 900;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(125, 215, 255, 0.12);
+}
+
+.hint-zone button:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.premium-game-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-game-hero::before {
+  content: "010101 3B XP 001101 3B INTERNATIONAL";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 10px;
+  color: rgba(125, 215, 255, 0.16);
+  font-size: 12px;
+  letter-spacing: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .bubble-zone {
   margin: 22px auto 0;
   padding: 20px;
@@ -804,6 +863,13 @@ h2 {
   font-weight: 900;
   font-size: 22px;
   cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.bubble-zone button:hover {
+  transform: translateY(-3px);
+  border-color: var(--gold);
+  box-shadow: 0 0 22px rgba(125, 215, 255, 0.18);
 }
 
 .game-input {
@@ -817,6 +883,18 @@ h2 {
   color: var(--gold);
   font-size: 22px;
   font-weight: 900;
+  animation: messagePop 0.35s ease;
+}
+
+@keyframes messagePop {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes floatLogo {
@@ -929,6 +1007,22 @@ h2 {
 
   .bubble-zone {
     grid-template-columns: 1fr;
+  }
+
+  .hint-zone {
+    grid-template-columns: 1fr;
+  }
+
+  .hint-zone button {
+    font-size: 18px;
+  }
+
+  .music-player-card {
+    min-height: 150px;
+  }
+
+  .music-info audio {
+    height: 34px;
   }
 }
 
