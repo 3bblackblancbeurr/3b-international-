@@ -90,7 +90,7 @@ function Home({ go, member }) {
         <section className="hero-presentation">
           <p>3B INTERNATIONAL</p>
           <h1>VÊTEMENTS HAUT DE GAMME</h1>
-          <span>Noir • Blanc • Beur — ce n’est pas une marque, c’est un héritage.</span>
+          <span>Black • Blanc • Beurr — ce n’est pas une marque, c’est un héritage.</span>
         </section>
 
         <section className="lux-card welcome-card">
@@ -111,7 +111,7 @@ function Home({ go, member }) {
         <MenuCard
           icon="♪"
           title="Musique"
-          text="20 cases prêtes pour tes fils et téléchargements."
+          text="20 cases prêtes pour tes fichiers et téléchargements."
           onClick={() => go("musique")}
         />
         <MenuCard
