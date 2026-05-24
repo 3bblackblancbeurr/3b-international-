@@ -1,94 +1,21 @@
-* {
-  box-sizing: border-box;
-}
-
-html {
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
-  min-width: 320px;
   min-height: 100%;
-  scroll-behavior: smooth;
-  background: #050505;
+  width: 100%;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  overflow-x: hidden;
   background: #050505;
-  color: #f5f5f5;
-  font-family: Georgia, "Times New Roman", serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-}
-
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
-}
-
-button {
-  border: none;
-  outline: none;
-}
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-
-img,
-svg,
-video,
-canvas {
-  max-width: 100%;
-}
-
-input,
-select,
-textarea {
-  color: inherit;
-}
-
-::selection {
-  background: rgba(226, 190, 100, 0.35);
   color: #ffffff;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: #050505;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(226, 190, 100, 0.45);
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(226, 190, 100, 0.72);
-}
-
-@media (max-width: 760px) {
-  html,
-  body {
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  ::-webkit-scrollbar {
-    width: 0;
-  }
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }

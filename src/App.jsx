@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import Jeu3B from "./Jeu3B";
 
-const STORAGE_MEMBER_KEY = "3b_member_progress_v1";
+const MEMBER_STORAGE_KEY = "3b_member_profile_v3";
+const SECRET_CODE = "blackblancbeurr";
 
-const countries3B = [
+const OFFICIAL_COUNTRIES = [
   "France",
   "Italie",
   "Estonie",
@@ -15,75 +16,37 @@ const countries3B = [
   "Espagne",
 ];
 
-const allCountries = [
-  "France",
-  "Italie",
-  "Estonie",
-  "Turquie",
-  "Algérie",
-  "Tunisie",
-  "Maroc",
-  "Espagne",
-  "Allemagne",
-  "Belgique",
-  "Suisse",
-  "Portugal",
-  "Pays-Bas",
-  "Royaume-Uni",
-  "États-Unis",
-  "Canada",
-  "Brésil",
-  "Argentine",
-  "Sénégal",
-  "Côte d’Ivoire",
-  "Mali",
-  "Égypte",
-  "Qatar",
-  "Arabie Saoudite",
-  "Émirats Arabes Unis",
-  "Japon",
-  "Chine",
-  "Corée du Sud",
-  "Australie",
+const HOME_MENU = [
+  { key: "boutique", title: "Boutique", icon: "🛍️" },
+  { key: "musique", title: "Musique", icon: "♪" },
+  { key: "communaute", title: "Communauté", icon: "👥" },
+  { key: "passport", title: "Passeport 3B", icon: "🪪" },
+  { key: "jeux", title: "Jeux", icon: "🎮" },
+  { key: "secret", title: "Coffre secret 3B", icon: "🔐" },
+  { key: "plus", title: "Plus encore", icon: "⭐" },
 ];
 
-const memberCards = [
-  { name: "Découverte 3B", status: "automatique", type: "inscription", icon: "💠" },
-  { name: "Héritier 3B", status: "bloqué", type: "points futurs", icon: "♛" },
-  { name: "Gardien 3B", status: "bloqué", type: "points futurs", icon: "🛡️" },
-  { name: "Élite 3B", status: "bloqué", type: "mission future", icon: "✦" },
-  { name: "Légende 3B", status: "sur demande", type: "commande premium", icon: "★" },
-  { name: "Secret 3B", status: "sur demande", type: "accès spécial", icon: "🔐" },
-  { name: "Musique 3B", status: "sur demande", type: "univers musical", icon: "♪" },
-  { name: "Jeux 3B", status: "sur demande", type: "XP jeux", icon: "🎮" },
-  { name: "International 3B", status: "sur demande", type: "monde 3B", icon: "🌍" },
-  { name: "Drop 3B", status: "sur demande", type: "drop privé", icon: "🔥" },
-  { name: "Prototype 3B", status: "sur demande", type: "prototype", icon: "🎁" },
-  { name: "Legacy 3B", status: "sur demande", type: "patrimoine", icon: "◆" },
-];
-
-function getSavedMember() {
+function readStoredMember() {
   try {
-    const saved = localStorage.getItem(STORAGE_MEMBER_KEY);
-    return saved ? JSON.parse(saved) : null;
+    const raw = localStorage.getItem(MEMBER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
-function saveMember(member) {
-  localStorage.setItem(STORAGE_MEMBER_KEY, JSON.stringify(member));
-  localStorage.setItem("3b_passport_profile", JSON.stringify(member));
-  localStorage.setItem("3b_member_profile", JSON.stringify(member));
+function makePassportId() {
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `3B-PASS-${random}`;
 }
 
-function getLevel(points = 0) {
-  if (points >= 5000) return { name: "Legacy", next: 10000 };
-  if (points >= 2500) return { name: "Légende", next: 5000 };
-  if (points >= 1200) return { name: "Élite", next: 2500 };
-  if (points >= 500) return { name: "Gardien", next: 1200 };
-  if (points >= 150) return { name: "Héritier", next: 500 };
-  return { name: "Découverte", next: 150 };
+function BrandBlock({ compact = false }) {
+  return (
+    <div className={`brand-block ${compact ? "compact" : ""}`}>
+      <div className="brand-main">3B INTERNATIONAL</div>
+      <div className="brand-sub">VÊTEMENTS HAUT DE GAMME</div>
+    </div>
+  );
 }
 
 function BackButton({ onClick }) {
@@ -94,557 +57,617 @@ function BackButton({ onClick }) {
   );
 }
 
-function LogoHeader({ small = false }) {
-  return (
-    <header className={small ? "logo-header small" : "logo-header"}>
-      <div className="logo-3b">3B</div>
-      <div className="logo-word">INTERNATIONAL</div>
-      <div className="logo-sub">VÊTEMENTS HAUT DE GAMME</div>
-    </header>
-  );
-}
-
 function MenuCard({ icon, title, onClick }) {
   return (
     <button className="menu-card" onClick={onClick}>
-      <span className="menu-icon">{icon}</span>
-      <span className="menu-title">{title}</span>
-      <span className="menu-arrow">›</span>
+      <div className="menu-card-left">
+        <div className="icon-circle">{icon}</div>
+        <div className="menu-card-title">{title}</div>
+      </div>
+      <div className="menu-card-arrow">›</div>
     </button>
   );
 }
 
-function InfoCard({ title, children, visual }) {
+function FeatureCard({ title, children, className = "" }) {
   return (
-    <article className="info-card">
-      <div className="info-text">
-        <h2>{title}</h2>
-        <div>{children}</div>
-      </div>
-      {visual && <div className="info-visual">{visual}</div>}
-    </article>
-  );
-}
-
-function LevelLogo({ level }) {
-  return (
-    <div className="level-logo">
-      <div className="level-logo-inner">3B</div>
-      <span>{level?.name || "Découverte"}</span>
+    <div className={`feature-card lux-card ${className}`}>
+      {title ? <h3 className="card-title">{title}</h3> : null}
+      <div className="card-body">{children}</div>
     </div>
   );
 }
 
-function ProgressCircle({ percent = 0, label = "3B" }) {
-  const safePercent = Math.max(0, Math.min(100, percent));
+function PageFrame({ title, subtitle, onBack, children }) {
   return (
-    <div
-      className="progress-circle"
-      style={{
-        background: `conic-gradient(#f2c85b ${safePercent}%, rgba(242,200,91,.15) ${safePercent}%)`,
-      }}
-    >
-      <div>
-        <strong>{label}</strong>
-        <span>{safePercent}%</span>
-      </div>
-    </div>
-  );
-}
-
-function DigitalPassportVisual({ member }) {
-  return (
-    <div className="digital-passport-visual">
-      <div className="passport-big">3B</div>
-      <div className="passport-name">PASSEPORT NUMÉRIQUE</div>
-      <div className="passport-user">{member?.name || "Membre 3B"}</div>
-      <div className="passport-qr">QR</div>
-      <div className="matrix-lines">
-        010101 3B INTERNATIONAL 001101 PASSPORT 010101 LEGACY
-      </div>
-    </div>
-  );
-}
-
-function FlagVisual({ country }) {
-  const c = country || "France";
-
-  return (
-    <div className="flag-card">
-      <div className={`flag flag-${c.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")}`}>
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div className="flag-3b">3B</div>
-      <p>{c === "Aucun" ? "Aucun pays activé" : `🇫🇷 ${c} activée`}</p>
-    </div>
-  );
-}
-
-function WorldMapVisual({ unlocked }) {
-  return (
-    <div className="world-map-card">
-      <div className="map-world">
-        <span className="continent c1"></span>
-        <span className="continent c2"></span>
-        <span className="continent c3"></span>
-        <span className="continent c4"></span>
-        <span className="continent c5"></span>
-        <span className="continent c6"></span>
-        <span className="matrix-bg">010101 3B WORLD MAP 001101 INTERNATIONAL 010101</span>
-      </div>
-
-      <div className="map-zoom">
-        {countries3B.map((country, index) => (
-          <span
-            key={country}
-            className={`country-dot dot-${index + 1} ${
-              unlocked === country ? "unlocked" : "locked"
-            }`}
-          >
-            {country}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Home({ go, member }) {
-  return (
-    <main className="app home-page">
-      <LogoHeader />
-
-      <section className="home-menu">
-        <MenuCard icon="🛍️" title="Boutique" onClick={() => go("boutique")} />
-        <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
-        <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
-        <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go(member ? "passport" : "passport-access")} />
-        <MenuCard icon="🎮" title="Jeux" onClick={() => go("jeux")} />
-        <MenuCard icon="🔐" title="Coffre secret 3B" onClick={() => go("secret")} />
-        {member && <MenuCard icon="💎" title="Espace membre 3B" onClick={() => go("membre")} />}
-        <MenuCard icon="☆" title="Plus encore" onClick={() => go("plus")} />
-      </section>
-
-      <div className="gold-diamond">◆</div>
-    </main>
-  );
-}
-
-function PassportAccess({ go, setMember }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [origin, setOrigin] = useState("");
-  const [residence, setResidence] = useState("");
-  const [city, setCity] = useState("");
-
-  function createPassport() {
-    const safeOrigin = countries3B.includes(origin) ? origin : "Aucun";
-
-    const newMember = {
-      name: name || "Membre 3B",
-      email: email || "courriel non renseigné",
-      courriel: email || "courriel non renseigné",
-      originCountry: safeOrigin,
-      paysOrigine: safeOrigin,
-      residenceCountry: residence || "Non renseigné",
-      paysResidence: residence || "Non renseigné",
-      city: city || "Non renseignée",
-      ville: city || "Non renseignée",
-      unlockedCountry: safeOrigin,
-      pays3B: safeOrigin,
-      points: safeOrigin !== "Aucun" ? 170 : 100,
-      points3B: safeOrigin !== "Aucun" ? 170 : 100,
-      globalXp: safeOrigin !== "Aucun" ? 170 : 100,
-      gamePoints: 0,
-      gameXp: 0,
-      xpJeu: 0,
-      passportNumber: "3B-PASS-0001",
-      numeroPasseport: "3B-PASS-0001",
-      createdAt: "24/05/2026",
-    };
-
-    saveMember(newMember);
-    setMember(newMember);
-    go("passport");
-  }
-
-  return (
-    <main className="app page">
-      <BackButton onClick={() => go("home")} />
-      <LogoHeader small />
-
-      <section className="auth-box">
-        <h1>Inscription 3B</h1>
-        <div className="gold-line">◆</div>
-        <p>Créez votre Passeport digital 3B pour débloquer votre accès membre.</p>
-
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom ou pseudo" />
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Adresse e-mail" />
-
-        <label className="select-label">
-          Pays d’origine 3B
-          <small>Choisis seulement parmi les 8 pays officiels 3B. Ce choix déverrouille ton pays 3B.</small>
-          <select value={origin} onChange={(e) => setOrigin(e.target.value)}>
-            <option value="">Choisir un pays 3B</option>
-            {countries3B.map((country) => (
-              <option key={country} value={country}>
-                {country}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="select-label">
-          Pays de résidence actuelle
-          <small>Ici, c’est le pays où tu vis actuellement. Tu peux choisir n’importe quel pays.</small>
-          <select value={residence} onChange={(e) => setResidence(e.target.value)}>
-            <option value="">Choisir un pays de résidence</option>
-            {allCountries.map((country) => (
-              <option key={country} value={country}>
-                {country}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ville actuelle" />
-
-        <button className="gold-button" onClick={createPassport}>
-          Créer mon Passeport 3B ›
-        </button>
-
-        <p className="mini-note">
-          Maquette locale : plus tard, cette inscription sera connectée à Supabase.
-        </p>
-      </section>
-    </main>
-  );
-}
-
-function Passport({ go, member }) {
-  const profile = member || getSavedMember();
-  const unlocked = profile?.unlockedCountry || profile?.originCountry || profile?.paysOrigine || "Aucun";
-
-  return (
-    <main className="app page">
-      <BackButton onClick={() => go("home")} />
-      <LogoHeader small />
-
-      <section className="passport-main">
-        <h1>Passeport 3B</h1>
-        <p>
-          Vue monde + zoom sur les 8 pays 3B. Seul le pays d’origine 3B choisi
-          pendant l’inscription se déverrouille.
-        </p>
-
-        <WorldMapVisual unlocked={unlocked} />
-
-        <div className="passport-grid">
-          <InfoCard title="Carte membre digitale" visual={<DigitalPassportVisual member={profile} />}>
-            <p>Nom : {profile?.name || "Membre 3B"}</p>
-            <p>Courriel : {profile?.email || profile?.courriel || "courriel non renseigné"}</p>
-            <p>Numéro passeport : {profile?.passportNumber || "3B-PASS-0001"}</p>
-            <p>Date de création : {profile?.createdAt || "24/05/2026"}</p>
-          </InfoCard>
-
-          <InfoCard title="Origine et résidence" visual={<FlagVisual country={unlocked === "Aucun" ? "France" : unlocked} />}>
-            <p>Pays d’origine 3B activé : {profile?.originCountry || profile?.paysOrigine || "Non renseigné"}</p>
-            <p>Pays de résidence actuelle : {profile?.residenceCountry || profile?.paysResidence || "Non renseigné"}</p>
-            <p>Ville : {profile?.city || profile?.ville || "Non renseignée"}</p>
-            <p>Pays 3B déverrouillé : {unlocked}</p>
-          </InfoCard>
+    <div className="app-screen page">
+      <div className="page-shell">
+        <div className="page-topbar">
+          <BackButton onClick={onBack} />
         </div>
 
-        <button className="gold-button" onClick={() => go("membre")}>
-          Voir mon espace membre 3B ›
-        </button>
-      </section>
-    </main>
-  );
-}
+        <BrandBlock compact />
 
-function EspaceMembre({ go, member, game }) {
-  const profile = member || getSavedMember() || {};
-  const points = Number(profile.points3B || profile.globalXp || profile.points || 0);
-  const gamePoints = Number(profile.gameXp || profile.xpJeu || profile.gamePoints || game?.xp || 0);
-  const level = getLevel(points);
-  const percent = Math.min(100, Math.round((points / level.next) * 100));
-  const gamePercent = Math.min(100, Math.round(((game?.door || 1) - 1) * 10));
-
-  const unlocked = profile.unlockedCountry || profile.originCountry || profile.paysOrigine || "Aucun";
-
-  return (
-    <main className="app page">
-      <BackButton onClick={() => go("home")} />
-      <LogoHeader small />
-
-      <section className="member-space">
-        <h1>Espace membre 3B</h1>
-        <p>Résumé global du Passeport, des points, des cartes, des pays et du jeu.</p>
-
-        <div className="page-grid compact-grid">
-          <InfoCard title="Résumé actuel" visual={<LevelLogo level={level} />}>
-            <p>Points 3B : {points}</p>
-            <p>Points jeux : {gamePoints}</p>
-            <p>Niveau actuel : {level.name}</p>
-            <p>Prochain palier : {level.next} points</p>
-          </InfoCard>
-
-          <InfoCard title="Progression Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="🎮" />}>
-            <p>Niveau jeu : {game?.level || profile.gameLevel || 1} / 1000</p>
-            <p>Porte : {game?.door || profile.gameDoor || 1} / 10</p>
-            <p>XP jeux : {gamePoints}</p>
-            <p>Le logo Jeux deviendra évolutif.</p>
-          </InfoCard>
-
-          <InfoCard title="Pays verrouillé" visual={<FlagVisual country={unlocked === "Aucun" ? "France" : unlocked} />}>
-            {countries3B.map((country) => (
-              <p key={country}>
-                {country === unlocked ? "✅ Déverrouillé" : "🔒 Verrouillé"} : {country}
-              </p>
-            ))}
-          </InfoCard>
-
-          <InfoCard title="Avantages à débloquer" visual={<ProgressCircle percent={percent} label="3B" />}>
-            <p>Accès au Passeport 3B</p>
-            <p>Indices supplémentaires selon niveau</p>
-            <p>Suivi des cartes de fidélité</p>
-            <p>Accès futur aux gouttes privées</p>
-          </InfoCard>
-
-          <InfoCard title="Missions 3B" visual={<div className="xp-cube">XP</div>}>
-            <p>Inviter un membre : +150 points</p>
-            <p>Découvrir le secret 3B : +250 points + indice futur</p>
-            <p>Prototype gratuit lors de sa sortie : récompense spéciale</p>
-            <p>Clip TikTok avec une musique du compte 3D BlackBlanBeur + identification : points supplémentaires</p>
-            <p>Jeux 3B : points gagnés en jouant, gagnant et passant des niveaux</p>
-          </InfoCard>
-
-          <InfoCard title="Mes 12 cartes 3B" visual={<div className="cards-mini">12</div>}>
-            <div className="cards-grid">
-              {memberCards.map((card) => (
-                <div className="mini-card-3b" key={card.name}>
-                  <span>{card.icon}</span>
-                  <strong>{card.name}</strong>
-                  <small>{card.status}</small>
-                  <small>{card.type}</small>
-                  <b>3B</b>
-                </div>
-              ))}
-            </div>
-          </InfoCard>
-
-          <InfoCard title="Code QR et certificat futur" visual={<div className="qr-visual">QR</div>}>
-            <p>Code QR personnel du membre.</p>
-            <p>Relié au compte, aux produits, aux achats, aux cartes et aux certificats 3B.</p>
-          </InfoCard>
+        <div className="page-heading">
+          <h1 className="page-title">{title}</h1>
+          {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
         </div>
-      </section>
-    </main>
-  );
-}
 
-function Secret({ go }) {
-  const [code, setCode] = useState("");
-  const unlocked = code.trim().toLowerCase() === "blackblancbeurr";
+        <div className="gold-line" />
 
-  return (
-    <main className="app page secret-page">
-      <BackButton onClick={() => go("home")} />
-      <LogoHeader small />
-
-      <section className="secret-box">
-        <h1>Coffre secret 3B</h1>
-        <p>Entrez le code secret pour débloquer l’indice.</p>
-
-        <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="🔐 Code secret" />
-
-        {unlocked && (
-          <div className="secret-unlocked">
-            <h2>Indice débloqué</h2>
-            <p>L’Italie s’y comprend — 8 juillet — 20h.</p>
-            <p>TikTok en direct 3B International.</p>
-            <h3>SALON ITALIE — HAUTE COUTURE 3B</h3>
-            <p>
-              Quand j’arriverai dans votre monde, vous comprendrez que 3B
-              International entre dans une étape sérieuse : salon, Italie,
-              présentation premium, univers luxe et ambition internationale.
-            </p>
-            <p>
-              Récompense future : indice du prochain secret + prototype gratuit
-              lors de sa sortie.
-            </p>
-            <div className="secret-icon">🔐🗝️</div>
-          </div>
-        )}
-      </section>
-    </main>
-  );
-}
-
-function PlusEncore({ go }) {
-  return (
-    <main className="app page">
-      <BackButton onClick={() => go("home")} />
-      <h1>Plus encore</h1>
-      <div className="gold-line">◆</div>
-
-      <section className="home-menu">
-        <MenuCard icon="💳" title="Cartes de fidélité 3B" onClick={() => go("cartes")} />
-        <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passport-access")} />
-        <MenuCard icon="🎮" title="Jeux 3B" onClick={() => go("jeux")} />
-        <MenuCard icon="📖" title="Manga 3B International" onClick={() => go("manga")} />
-        <MenuCard icon="🌍" title="8 logos internationaux" onClick={() => go("logos")} />
-        <MenuCard icon="♪" title="Album musique 20 titres" onClick={() => go("musique")} />
-        <MenuCard icon="💻" title="Créateurs / commandes" onClick={() => go("createurs")} />
-        <MenuCard icon="▣" title="Certificat produit avec QR" onClick={() => go("certificat")} />
-      </section>
-    </main>
-  );
-}
-
-function SimplePage({ go, title, lines }) {
-  return (
-    <main className="app page">
-      <BackButton onClick={() => go("home")} />
-      <LogoHeader small />
-      <section className="simple-box">
-        <h1>{title}</h1>
-        <div className="gold-line">◆</div>
-        {lines.map((line, index) => (
-          <p key={index}>{line}</p>
-        ))}
-      </section>
-    </main>
+        {children}
+      </div>
+    </div>
   );
 }
 
 export default function App() {
-  const [page, setPage] = useState("home");
-  const [member, setMember] = useState(() => getSavedMember());
-  const [game, setGame] = useState(() => {
-    try {
-      const saved = localStorage.getItem("3b_game_progression_v4_premium_visual_games_reset");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
+  const [screen, setScreen] = useState("home");
+  const [member, setMember] = useState(() => readStoredMember());
+  const [secretInput, setSecretInput] = useState("");
+  const [secretUnlocked, setSecretUnlocked] = useState(false);
+  const [secretError, setSecretError] = useState("");
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    originCountry: "France",
+    residenceCountry: "",
+    city: "",
   });
 
   useEffect(() => {
-    const refreshGame = () => {
-      try {
-        const saved = localStorage.getItem("3b_game_progression_v4_premium_visual_games_reset");
-        setGame(saved ? JSON.parse(saved) : null);
-      } catch {
-        setGame(null);
-      }
+    if (member) {
+      localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(member));
+      setForm({
+        name: member.name || "",
+        email: member.email || "",
+        originCountry: member.originCountry || "France",
+        residenceCountry: member.residenceCountry || "",
+        city: member.city || "",
+      });
+    } else {
+      localStorage.removeItem(MEMBER_STORAGE_KEY);
+      setForm({
+        name: "",
+        email: "",
+        originCountry: "France",
+        residenceCountry: "",
+        city: "",
+      });
+    }
+  }, [member]);
+
+  const musicSlots = useMemo(() => {
+    return Array.from({ length: 20 }, (_, index) => ({
+      id: index + 1,
+      title: `Musique ${String(index + 1).padStart(2, "0")}`,
+      subtitle: "Case prête pour ajouter ton morceau 3B.",
+    }));
+  }, []);
+
+  const go = (next) => setScreen(next);
+
+  const handleCreatePassport = () => {
+    if (!form.name.trim()) {
+      alert("Remplis au minimum le nom ou pseudo.");
+      return;
+    }
+
+    const profile = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      originCountry: form.originCountry,
+      residenceCountry: form.residenceCountry.trim(),
+      city: form.city.trim(),
+      passportId: member?.passportId || makePassportId(),
+      createdAt: member?.createdAt || new Date().toISOString(),
+      status: "Membre 3B",
     };
 
-    refreshGame();
-    window.addEventListener("storage", refreshGame);
-    return () => window.removeEventListener("storage", refreshGame);
-  }, [page]);
+    setMember(profile);
+    go("passport");
+  };
+
+  const handleDeletePassport = () => {
+    const ok = window.confirm(
+      "Tu veux vraiment supprimer le passeport local 3B sur cet appareil ?"
+    );
+    if (!ok) return;
+
+    setMember(null);
+    go("passport");
+  };
+
+  const handleUnlockSecret = () => {
+    if (secretInput.trim().toLowerCase() === SECRET_CODE) {
+      setSecretUnlocked(true);
+      setSecretError("");
+      return;
+    }
+
+    setSecretUnlocked(false);
+    setSecretError("Code incorrect.");
+  };
+
+  if (screen === "jeu3b") {
+    return <Jeu3B go={go} member={member} />;
+  }
+
+  if (screen === "home") {
+    return (
+      <div className="app-screen home-page">
+        <div className="page-shell home-shell">
+          <BrandBlock />
+
+          <div className="home-menu card-grid page-grid compact-grid">
+            {HOME_MENU.map((item) => (
+              <MenuCard
+                key={item.key}
+                icon={item.icon}
+                title={item.title}
+                onClick={() => go(item.key)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (screen === "boutique") {
+    return (
+      <PageFrame
+        title="Boutique 3B"
+        subtitle="Sélection premium 3B International."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="Maillots premium">
+            <p>Collection luxe sportive 3B.</p>
+            <p className="meta-text">Design noir / or • identité premium.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Polos & t-shirts">
+            <p>Essentiels 3B pour la vitrine de marque.</p>
+            <p className="meta-text">Pièces simples, fortes, internationales.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Hoodies & vestes">
+            <p>Univers street-luxe et haute gamme.</p>
+            <p className="meta-text">Future boutique connectée aux drops.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Badges & accessoires">
+            <p>Logos 3B, cartes, certificats et produits premium.</p>
+            <p className="meta-text">À enrichir plus tard.</p>
+          </FeatureCard>
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "musique") {
+    return (
+      <PageFrame
+        title="Musique 3B"
+        subtitle="20 cases prêtes pour tes 20 musiques."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="Album 3B International" className="full-span">
+            <p>Voici la zone musique 3B avec 20 emplacements dédiés.</p>
+            <p className="meta-text">
+              Tu pourras y mettre tes sons, titres, clips et contenus futurs.
+            </p>
+          </FeatureCard>
+
+          {musicSlots.map((track) => (
+            <FeatureCard key={track.id} title={track.title}>
+              <div className="music-slot">
+                <div className="track-number">
+                  #{String(track.id).padStart(2, "0")}
+                </div>
+                <p>{track.subtitle}</p>
+                <div className="status-chip">Emplacement musique</div>
+              </div>
+            </FeatureCard>
+          ))}
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "communaute") {
+    return (
+      <PageFrame
+        title="Communauté 3B"
+        subtitle="Espace social et futur chat temps réel."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="Chat communauté">
+            <p>Le chat temps réel sera branché ici.</p>
+            <p className="meta-text">
+              Membres 3B • entraide • avis • progression.
+            </p>
+          </FeatureCard>
+
+          <FeatureCard title="Espace créateurs">
+            <p>Les membres pourront partager idées, projets et contenus.</p>
+            <p className="meta-text">Base parfaite pour la suite.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Missions & échanges">
+            <p>Défis, réseau, feedback et interaction entre membres.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Statut actuel">
+            <p>Page visuelle prête.</p>
+            <p className="meta-text">Connexion réelle à développer plus tard.</p>
+          </FeatureCard>
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "passport") {
+    return (
+      <PageFrame
+        title="Passeport 3B"
+        subtitle="Accès membre et identité digitale 3B."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          {!member ? (
+            <>
+              <FeatureCard title="Aucun passeport créé" className="full-span">
+                <p>Tu n’as pas encore créé ton Passeport digital 3B.</p>
+                <p className="meta-text">
+                  Crée-le pour enregistrer l’accès membre, l’identité et la base
+                  de progression.
+                </p>
+              </FeatureCard>
+
+              <FeatureCard title="Créer un passeport">
+                <p>Accès à l’inscription 3B.</p>
+                <button
+                  className="primary-button"
+                  onClick={() => go("inscription")}
+                >
+                  Ouvrir l’inscription
+                </button>
+              </FeatureCard>
+
+              <FeatureCard title="Pourquoi le créer ?">
+                <p>Le passeport servira à lier le compte, les cartes et la suite.</p>
+              </FeatureCard>
+            </>
+          ) : (
+            <>
+              <FeatureCard title="Carte membre digitale" className="full-span">
+                <div className="passport-badge">
+                  <div className="passport-badge-top">3B</div>
+                  <div className="passport-badge-middle">PASSEPORT DIGITAL</div>
+                  <div className="passport-badge-name">{member.name}</div>
+                  <div className="passport-badge-id">{member.passportId}</div>
+                </div>
+              </FeatureCard>
+
+              <FeatureCard title="Informations membre">
+                <p>
+                  <span className="value-strong">Nom :</span> {member.name || "-"}
+                </p>
+                <p>
+                  <span className="value-strong">E-mail :</span>{" "}
+                  {member.email || "non renseigné"}
+                </p>
+                <p>
+                  <span className="value-strong">Statut :</span>{" "}
+                  {member.status || "Membre 3B"}
+                </p>
+              </FeatureCard>
+
+              <FeatureCard title="Résidence & origine">
+                <p>
+                  <span className="value-strong">Pays 3B :</span>{" "}
+                  {member.originCountry || "-"}
+                </p>
+                <p>
+                  <span className="value-strong">Résidence :</span>{" "}
+                  {member.residenceCountry || "-"}
+                </p>
+                <p>
+                  <span className="value-strong">Ville :</span> {member.city || "-"}
+                </p>
+              </FeatureCard>
+
+              <FeatureCard title="Création du passeport">
+                <p>
+                  <span className="value-strong">Numéro :</span>{" "}
+                  {member.passportId}
+                </p>
+                <p>
+                  <span className="value-strong">Date :</span>{" "}
+                  {member.createdAt
+                    ? new Date(member.createdAt).toLocaleDateString("fr-FR")
+                    : "-"}
+                </p>
+              </FeatureCard>
+
+              <FeatureCard title="Gestion locale">
+                <p>Le passeport est enregistré localement sur cet appareil.</p>
+                <button className="secondary-button" onClick={handleDeletePassport}>
+                  Supprimer le passeport local
+                </button>
+              </FeatureCard>
+            </>
+          )}
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "inscription") {
+    return (
+      <PageFrame
+        title="Inscription 3B"
+        subtitle="Crée ton Passeport digital 3B."
+        onBack={() => go("passport")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="Créer mon Passeport 3B" className="full-span">
+            <div className="form-grid">
+              <div className="field-group">
+                <label>Nom ou pseudo</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, name: e.target.value }))
+                  }
+                  placeholder="Nom ou pseudo"
+                />
+              </div>
+
+              <div className="field-group">
+                <label>Adresse e-mail</label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  placeholder="Adresse e-mail"
+                />
+              </div>
+
+              <div className="field-group">
+                <label>Pays d’origine 3B</label>
+                <select
+                  value={form.originCountry}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      originCountry: e.target.value,
+                    }))
+                  }
+                >
+                  {OFFICIAL_COUNTRIES.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="field-group">
+                <label>Pays de résidence actuelle</label>
+                <input
+                  type="text"
+                  value={form.residenceCountry}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      residenceCountry: e.target.value,
+                    }))
+                  }
+                  placeholder="Pays de résidence"
+                />
+              </div>
+
+              <div className="field-group full-form-line">
+                <label>Ville actuelle</label>
+                <input
+                  type="text"
+                  value={form.city}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, city: e.target.value }))
+                  }
+                  placeholder="Ville actuelle"
+                />
+              </div>
+            </div>
+
+            <div className="button-row">
+              <button className="primary-button" onClick={handleCreatePassport}>
+                Créer mon Passeport 3B
+              </button>
+            </div>
+          </FeatureCard>
+
+          <FeatureCard title="Note">
+            <p>
+              Cette version crée une inscription locale simple et propre.
+            </p>
+            <p className="meta-text">
+              Le branchement complet backend viendra plus tard.
+            </p>
+          </FeatureCard>
+
+          <FeatureCard title="Objectif">
+            <p>
+              Avoir une base claire pour l’identité membre, les cartes et la suite.
+            </p>
+          </FeatureCard>
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "secret") {
+    return (
+      <PageFrame
+        title="Coffre secret 3B"
+        subtitle="Entre le code secret pour débloquer l’indice."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="Code secret" className="full-span">
+            <div className="secret-box">
+              <input
+                type="text"
+                value={secretInput}
+                onChange={(e) => {
+                  setSecretInput(e.target.value);
+                  setSecretError("");
+                }}
+                placeholder="Code secret"
+              />
+              <button className="primary-button" onClick={handleUnlockSecret}>
+                Débloquer
+              </button>
+            </div>
+            {secretError ? <p className="error-text">{secretError}</p> : null}
+          </FeatureCard>
+
+          {!secretUnlocked ? (
+            <>
+              <FeatureCard title="Accès verrouillé">
+                <p>Le contenu secret apparaîtra ici après validation du bon code.</p>
+              </FeatureCard>
+
+              <FeatureCard title="Mot de passe">
+                <p className="meta-text">
+                  Code actuel configuré : <strong>blackblancbeurr</strong>
+                </p>
+              </FeatureCard>
+            </>
+          ) : (
+            <>
+              <FeatureCard title="Indice débloqué" className="full-span">
+                <p>L’Italie s’y comprend — 8 juillet — 20h.</p>
+                <p>Live TikTok 3B International.</p>
+                <p className="secret-highlight">
+                  SALON ITALIE — HAUTE COUTURE 3B
+                </p>
+                <p>
+                  Quand j’arrive dans votre monde, vous comprendrez que 3B
+                  International entre dans une étape sérieuse : salon, Italie,
+                  présentation premium, univers luxe et ambition internationale.
+                </p>
+              </FeatureCard>
+
+              <FeatureCard title="Récompense future">
+                <p>Indice du prochain secret + prototype gratuit lors de sa sortie.</p>
+              </FeatureCard>
+
+              <FeatureCard title="Statut">
+                <p>Secret actuellement déverrouillé sur cet appareil.</p>
+              </FeatureCard>
+            </>
+          )}
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "jeux") {
+    return (
+      <PageFrame
+        title="Jeu 3B"
+        subtitle="Centre de lancement du jeu actuel."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="Jeu actuel">
+            <p>Portes 3B — mots, pays, secret, musique et ADN 3B.</p>
+            <p className="meta-text">
+              1000 niveaux • 10 portes par niveau • progression actuelle dans
+              Jeu3B.
+            </p>
+            <button className="primary-button" onClick={() => go("jeu3b")}>
+              Ouvrir le jeu
+            </button>
+          </FeatureCard>
+
+          <FeatureCard title="Sauvegarde">
+            <p>
+              La page de jeu détaillée est gérée dans ton fichier <strong>Jeu3B.jsx</strong>.
+            </p>
+            <p className="meta-text">
+              Ici on garde une entrée propre dans le même style.
+            </p>
+          </FeatureCard>
+
+          <FeatureCard title="Classement">
+            <p>Le classement général du jeu sera visible depuis l’espace jeu.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Mode actuel">
+            <p>{member ? "Mode membre détecté." : "Mode invité détecté."}</p>
+            <p className="meta-text">
+              {member
+                ? "Passeport 3B créé sur cet appareil."
+                : "Crée ton passeport pour relier plus tard la progression."}
+            </p>
+          </FeatureCard>
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (screen === "plus") {
+    return (
+      <PageFrame
+        title="Plus encore"
+        subtitle="Autres zones de l’univers 3B."
+        onBack={() => go("home")}
+      >
+        <div className="card-grid page-grid compact-grid">
+          <FeatureCard title="8 logos internationaux">
+            <p>Zone future dédiée aux pays et aux emblèmes 3B.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Manga 3B">
+            <p>Univers visuel et narration à venir.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Créateurs / commandes">
+            <p>Espace futur pour demandes, commandes et créateurs.</p>
+          </FeatureCard>
+
+          <FeatureCard title="Certificats avec QR">
+            <p>Bloc prévu pour la partie traçabilité et authenticité.</p>
+          </FeatureCard>
+        </div>
+      </PageFrame>
+    );
+  }
 
   return (
-    <>
-      {page === "home" && <Home go={setPage} member={member} />}
-      {page === "passport-access" && <PassportAccess go={setPage} setMember={setMember} />}
-      {page === "passport" && <Passport go={setPage} member={member} />}
-      {page === "membre" && <EspaceMembre go={setPage} member={member} game={game} />}
-      {page === "secret" && <Secret go={setPage} />}
-      {page === "plus" && <PlusEncore go={setPage} />}
-      {page === "jeux" && <Jeu3B go={setPage} />}
-
-      {page === "boutique" && (
-        <SimplePage
-          go={setPage}
-          title="Boutique 3B"
-          lines={[
-            "Espace boutique premium à connecter plus tard.",
-            "Produits futurs : maillots, polos, hoodies, cartes, drops et prototypes.",
-          ]}
-        />
-      )}
-
-      {page === "musique" && (
-        <SimplePage
-          go={setPage}
-          title="Musique 3B"
-          lines={[
-            "Album 3B International — 20 titres.",
-            "Ici viendront les musiques, clips, sons TikTok et campagnes officielles.",
-          ]}
-        />
-      )}
-
-      {page === "communaute" && (
-        <SimplePage
-          go={setPage}
-          title="Communauté 3B"
-          lines={[
-            "Espace communauté et tchat temps réel à connecter avec Supabase.",
-            "Les membres pourront discuter, partager et suivre les annonces 3B.",
-          ]}
-        />
-      )}
-
-      {page === "cartes" && (
-        <SimplePage
-          go={setPage}
-          title="Cartes de fidélité 3B"
-          lines={[
-            "Les cartes de fidélité seront principalement sur demande.",
-            "Certaines cartes pourront être débloquées par points ou missions dans le futur.",
-          ]}
-        />
-      )}
-
-      {page === "manga" && (
-        <SimplePage
-          go={setPage}
-          title="Manga 3B International"
-          lines={[
-            "Univers manga 3B à développer plus tard.",
-            "Personnages, histoire, rivalités, héritage et monde international.",
-          ]}
-        />
-      )}
-
-      {page === "logos" && (
-        <SimplePage
-          go={setPage}
-          title="8 logos internationaux"
-          lines={[
-            "France, Italie, Estonie, Turquie, Algérie, Tunisie, Maroc, Espagne.",
-            "Chaque pays aura son logo, son histoire, sa carte, sa mission et son indice.",
-          ]}
-        />
-      )}
-
-      {page === "createurs" && (
-        <SimplePage
-          go={setPage}
-          title="Créateurs / commandes"
-          lines={[
-            "Programme créateurs 3B à développer.",
-            "UGC, commissions, contenu, codes créateurs et campagnes ADS.",
-          ]}
-        />
-      )}
-
-      {page === "certificat" && (
-        <SimplePage
-          go={setPage}
-          title="Certificat produit avec QR"
-          lines={[
-            "Chaque produit pourra avoir un QR code et un certificat digital.",
-            "Authenticité, rareté, numéro de série et historique produit.",
-          ]}
-        />
-      )}
-    </>
+    <PageFrame
+      title="3B International"
+      subtitle="Page non trouvée."
+      onBack={() => go("home")}
+    >
+      <div className="card-grid page-grid compact-grid">
+        <FeatureCard title="Retour">
+          <button className="primary-button" onClick={() => go("home")}>
+            Revenir à l’accueil
+          </button>
+        </FeatureCard>
+      </div>
+    </PageFrame>
   );
 }
