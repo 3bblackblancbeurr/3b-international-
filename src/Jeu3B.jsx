@@ -1,79 +1,192 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
-const STORAGE_KEY = "3b_jeu_progression_v1";
-const RANKING_KEY = "3b_jeu_classement_v1";
+const GAME_VERSION = "v4_premium_visual_games_reset";
+const STORAGE_GAME_KEY = `3b_game_progression_${GAME_VERSION}`;
+const STORAGE_RANKING_KEY = `3b_game_ranking_${GAME_VERSION}`;
+const STORAGE_SESSION_KEY = `3b_game_session_${GAME_VERSION}`;
 
-const WORDS_3B = [
-  "heritage", "identite", "ambition", "creation", "premium", "international",
-  "secret", "passeport", "musique", "maillot", "prototype", "communaute",
-  "atelier", "salon", "couture", "luxury", "origine", "residence",
-  "france", "italie", "estonie", "turquie", "algerie", "tunisie", "maroc", "espagne",
-  "black", "blanc", "beur", "legacy", "elite", "gardien", "legende", "drop",
-  "certificat", "authenticite", "membre", "niveau", "porte", "victoire"
+const OLD_KEYS_TO_REMOVE = [
+  "3b_jeu_progression_v1",
+  "3b_game_progression_v1",
+  "3b_game_progression_v2",
+  "3b_game_progression_v3",
+  "3b_jeu_classement_v1",
+  "3b_game_ranking_v1",
+  "3b_game_ranking_v2",
+  "3b_game_ranking_v3",
 ];
 
-const THEMES = [
-  "ADN 3B",
-  "Pays 3B",
-  "Musique 3B",
-  "Mode luxe",
-  "Coffre secret",
-  "Passeport 3B",
-  "Jeux 3B",
-  "International",
-  "Cartes 3B",
-  "Prototype 3B",
+const PASSPORT_KEYS = [
+  "3b_passport_profile",
+  "3b_member_profile",
+  "3b_global_profile",
+  "3b_passport_global",
+  "3b_user_profile",
+  "3b_passeport",
+  "passport3B",
+  "passeport3B",
 ];
 
-const COUNTRIES = [
-  { name: "France", flag: "🇫🇷", key: "france" },
-  { name: "Italie", flag: "🇮🇹", key: "italie" },
-  { name: "Estonie", flag: "🇪🇪", key: "estonie" },
-  { name: "Turquie", flag: "🇹🇷", key: "turquie" },
-  { name: "Algérie", flag: "🇩🇿", key: "algerie" },
-  { name: "Tunisie", flag: "🇹🇳", key: "tunisie" },
-  { name: "Maroc", flag: "🇲🇦", key: "maroc" },
-  { name: "Espagne", flag: "🇪🇸", key: "espagne" },
+const official3BCountries = [
+  { name: "France", key: "france", flag: "🇫🇷", code: "FR", color: "#0055A4" },
+  { name: "Italie", key: "italie", flag: "🇮🇹", code: "IT", color: "#008C45" },
+  { name: "Estonie", key: "estonie", flag: "🇪🇪", code: "EE", color: "#0072CE" },
+  { name: "Turquie", key: "turquie", flag: "🇹🇷", code: "TR", color: "#E30A17" },
+  { name: "Algérie", key: "algerie", flag: "🇩🇿", code: "DZ", color: "#006233" },
+  { name: "Tunisie", key: "tunisie", flag: "🇹🇳", code: "TN", color: "#E70013" },
+  { name: "Maroc", key: "maroc", flag: "🇲🇦", code: "MA", color: "#C1272D" },
+  { name: "Espagne", key: "espagne", flag: "🇪🇸", code: "ES", color: "#AA151B" },
 ];
 
-const GAME_TYPES = [
-  "write",
+const wordBanks = {
+  adn: [
+    "heritage",
+    "identite",
+    "ambition",
+    "creation",
+    "premium",
+    "international",
+    "legacy",
+    "origine",
+    "famille",
+    "transmission",
+    "vision",
+    "destin",
+    "force",
+    "respect",
+    "authenticite",
+  ],
+  mode: [
+    "maillot",
+    "couture",
+    "atelier",
+    "textile",
+    "badge",
+    "metal",
+    "luxe",
+    "prototype",
+    "collection",
+    "broderie",
+    "silhouette",
+    "matiere",
+    "noir",
+    "or",
+    "relief",
+  ],
+  musique: [
+    "album",
+    "clip",
+    "refrain",
+    "couplet",
+    "studio",
+    "scene",
+    "hymne",
+    "rythme",
+    "voix",
+    "piste",
+    "son",
+    "melodie",
+    "live",
+    "tiktok",
+    "campagne",
+  ],
+  secret: [
+    "secret",
+    "coffre",
+    "indice",
+    "italie",
+    "salon",
+    "code",
+    "cle",
+    "porte",
+    "mystere",
+    "juillet",
+    "vingt",
+    "minuit",
+    "deblocage",
+    "enigme",
+    "prototype",
+  ],
+  pays: [
+    "france",
+    "italie",
+    "estonie",
+    "turquie",
+    "algerie",
+    "tunisie",
+    "maroc",
+    "espagne",
+    "drapeau",
+    "monde",
+    "origine",
+    "residence",
+    "carte",
+    "voyage",
+    "frontiere",
+  ],
+  gaming: [
+    "niveau",
+    "porte",
+    "xp",
+    "mission",
+    "victoire",
+    "defi",
+    "joueur",
+    "boss",
+    "score",
+    "classement",
+    "rapidite",
+    "bonus",
+    "piege",
+    "memoire",
+    "progression",
+  ],
+};
+
+const allWords = Object.values(wordBanks).flat();
+
+const miniGameTypes = [
+  "bubbleChoice",
+  "writeWord",
   "anagram",
-  "choice",
   "intruder",
-  "missing",
-  "firstLetter",
-  "lastLetter",
-  "synonym",
+  "missingLetter",
+  "letterGrid",
+  "crossword",
+  "arrowWords",
+  "connectPairs",
+  "memory",
   "flagToCountry",
   "countryToFlag",
   "completePhrase",
   "multiSelect",
-  "memory",
-  "order",
-  "pairing",
-  "grid",
-  "secretCode",
+  "orderWords",
   "avoidTrap",
+  "secretCode",
+  "synonym",
   "quickChoice",
-  "boss",
+  "bossGate",
 ];
 
-const SYNONYMS = [
-  { word: "luxe", answer: "premium", wrong: ["faible", "copie", "banal"] },
-  { word: "heritage", answer: "legacy", wrong: ["hasard", "oubli", "pause"] },
-  { word: "identite", answer: "origine", wrong: ["vide", "retard", "erreur"] },
-  { word: "creation", answer: "prototype", wrong: ["destruction", "silence", "retour"] },
-  { word: "international", answer: "monde", wrong: ["local", "ferme", "petit"] },
-];
-
-const PHRASES = [
-  { text: "Ce n'est pas une marque, c'est un ____.", answer: "heritage" },
+const phrases = [
+  { text: "Ce n’est pas une marque, c’est un ____.", answer: "heritage" },
   { text: "3B International avance de zéro à ____.", answer: "international" },
-  { text: "Le coffre secret débloque un ____.", answer: "indice" },
-  { text: "Le passeport 3B garde l'identité du ____.", answer: "membre" },
+  { text: "Le coffre secret donne un ____.", answer: "indice" },
+  { text: "Le Passeport 3B garde l’identité du ____.", answer: "membre" },
   { text: "Le QR code servira au ____ produit.", answer: "certificat" },
+  { text: "Le jeu 3B fait monter les ____ lentement.", answer: "xp" },
+  { text: "Le salon Italie représente la haute ____ 3B.", answer: "couture" },
+  { text: "Chaque porte terminée ajoute de la ____.", answer: "progression" },
+];
+
+const synonyms = [
+  { word: "luxe", answer: "premium", wrong: ["faible", "copie", "banal"] },
+  { word: "heritage", answer: "legacy", wrong: ["hasard", "oubli", "vide"] },
+  { word: "identite", answer: "origine", wrong: ["perte", "retard", "erreur"] },
+  { word: "creation", answer: "prototype", wrong: ["destruction", "pause", "silence"] },
+  { word: "international", answer: "monde", wrong: ["local", "ferme", "petit"] },
+  { word: "coffre", answer: "secret", wrong: ["public", "simple", "perdu"] },
 ];
 
 function normalize(value) {
@@ -84,18 +197,25 @@ function normalize(value) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+function safeJsonParse(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 function seededNumber(level, door, offset = 0) {
-  const x = Math.sin(level * 999 + door * 111 + offset * 77) * 10000;
+  const x = Math.sin(level * 99991 + door * 31337 + offset * 777) * 100000;
   return Math.abs(Math.floor(x));
 }
 
-function pick(arr, level, door, offset = 0) {
-  return arr[seededNumber(level, door, offset) % arr.length];
+function pick(list, level, door, offset = 0) {
+  return list[seededNumber(level, door, offset) % list.length];
 }
 
-function shuffleDeterministic(arr, level, door) {
-  const copy = [...arr];
-  return copy
+function shuffle(list, level, door) {
+  return [...list]
     .map((item, index) => ({
       item,
       sort: seededNumber(level, door, index + 1),
@@ -104,35 +224,133 @@ function shuffleDeterministic(arr, level, door) {
     .map((x) => x.item);
 }
 
+function getFamily(level, door) {
+  const families = Object.keys(wordBanks);
+  return families[(level + door) % families.length];
+}
+
+function getWord(level, door, offset = 0) {
+  const family = getFamily(level, door + offset);
+  return pick(wordBanks[family], level, door, offset);
+}
+
 function scramble(word, level, door) {
-  const letters = word.split("");
-  return shuffleDeterministic(letters, level, door).join("");
+  const mixed = shuffle(word.split(""), level, door).join("");
+  if (mixed === word) return word.split("").reverse().join("");
+  return mixed;
 }
 
 function getDifficulty(level, door) {
-  const base = Math.min(100, Math.floor(level / 10) + door);
-  return Math.max(1, base);
+  const slow = Math.floor((level - 1) / 10);
+  return Math.min(100, Math.max(1, slow + door));
 }
 
-function getXpReward(level, door, usedHint, wrongCount) {
-  const base = 1 + Math.floor(level / 80);
-  const bossBonus = door === 10 ? 3 : 0;
-  const difficultyBonus = Math.floor(getDifficulty(level, door) / 25);
-  let reward = base + bossBonus + difficultyBonus;
-
-  if (usedHint) reward = Math.max(1, reward - 1);
-  if (wrongCount > 0) reward = Math.max(1, reward - wrongCount);
-
-  return reward;
-}
-
-function getLevelTitle(level) {
+function getLevelName(level) {
   if (level < 50) return "Découverte";
   if (level < 150) return "Héritier";
   if (level < 300) return "Gardien";
   if (level < 600) return "Élite";
   if (level < 850) return "Légende";
-  return "Legacy 3B";
+  return "Legacy";
+}
+
+function getXpReward({ level, door, usedHint, wrongCount }) {
+  let reward = 1;
+
+  if (door === 10) reward += 2;
+  if (level >= 100) reward += 1;
+  if (level >= 250) reward += 1;
+  if (level >= 500) reward += 1;
+  if (level >= 800) reward += 1;
+
+  if (usedHint) reward -= 1;
+  if (wrongCount > 0) reward -= Math.min(2, wrongCount);
+
+  return Math.max(1, reward);
+}
+
+function formatTime(ms) {
+  const sec = Math.max(0, Math.floor(ms / 1000));
+  const h = String(Math.floor(sec / 3600)).padStart(2, "0");
+  const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
+function getSpeedLabel(durationMs, doorsDone) {
+  if (!doorsDone) return "Départ";
+  const average = durationMs / 1000 / doorsDone;
+  if (average < 12) return "Très rapide";
+  if (average < 25) return "Rapide";
+  if (average < 50) return "Normal";
+  return "Réfléchi";
+}
+
+function findPassportProfile() {
+  for (const key of PASSPORT_KEYS) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    const parsed = safeJsonParse(raw);
+    if (!parsed) continue;
+
+    const hasIdentity =
+      parsed.name ||
+      parsed.nom ||
+      parsed.email ||
+      parsed.courriel ||
+      parsed.passportNumber ||
+      parsed.numeroPasseport ||
+      parsed.originCountry ||
+      parsed.paysOrigine ||
+      parsed.pays3B;
+
+    if (hasIdentity) {
+      return {
+        key,
+        raw: parsed,
+        name: parsed.name || parsed.nom || parsed.pseudo || "Membre 3B",
+        email: parsed.email || parsed.courriel || "email non renseigné",
+        passportNumber:
+          parsed.passportNumber ||
+          parsed.numeroPasseport ||
+          parsed.passport ||
+          "3B-PASS-0001",
+        country:
+          parsed.originCountry ||
+          parsed.paysOrigine ||
+          parsed.pays3B ||
+          parsed.unlockedCountry ||
+          "Aucun",
+        globalXp: Number(parsed.globalXp || parsed.xpGlobal || parsed.points3B || 0),
+        gameXp: Number(parsed.gameXp || parsed.xpJeu || 0),
+      };
+    }
+  }
+
+  return null;
+}
+
+function updatePassportXp(addXp, gameProgress) {
+  const profile = findPassportProfile();
+  if (!profile) return null;
+
+  const updated = {
+    ...profile.raw,
+    globalXp: Number(profile.raw.globalXp || profile.raw.xpGlobal || profile.raw.points3B || 0) + addXp,
+    xpGlobal: Number(profile.raw.xpGlobal || profile.raw.globalXp || profile.raw.points3B || 0) + addXp,
+    points3B: Number(profile.raw.points3B || profile.raw.globalXp || profile.raw.xpGlobal || 0) + addXp,
+    gameXp: Number(profile.raw.gameXp || profile.raw.xpJeu || 0) + addXp,
+    xpJeu: Number(profile.raw.xpJeu || profile.raw.gameXp || 0) + addXp,
+    gameLevel: gameProgress.level,
+    gameDoor: gameProgress.door,
+    gameCompletedDoors: gameProgress.completedDoors,
+    gameUpdatedAt: new Date().toISOString(),
+  };
+
+  localStorage.setItem(profile.key, JSON.stringify(updated));
+  localStorage.setItem("3b_global_game_sync", JSON.stringify(updated));
+
+  return updated;
 }
 
 function getDefaultProgress() {
@@ -140,100 +358,90 @@ function getDefaultProgress() {
     level: 1,
     door: 1,
     totalXp: 0,
-    usedHint: false,
-    wrongCount: 0,
-    startedAt: Date.now(),
-    lastUpdate: Date.now(),
+    globalXpFromGame: 0,
     completedDoors: 0,
     completedLevels: 0,
+    correctAnswers: 0,
+    wrongAnswers: 0,
+    hintsUsed: 0,
+    usedHint: false,
+    wrongCountForDoor: 0,
+    startedAt: Date.now(),
+    lastUpdate: Date.now(),
   };
 }
 
-function loadProgress() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return getDefaultProgress();
-    return { ...getDefaultProgress(), ...JSON.parse(saved) };
-  } catch {
+function removeOldGameSaves() {
+  OLD_KEYS_TO_REMOVE.forEach((key) => localStorage.removeItem(key));
+}
+
+function loadProgress(canSave) {
+  removeOldGameSaves();
+
+  if (!canSave) {
     return getDefaultProgress();
   }
+
+  const raw = localStorage.getItem(STORAGE_GAME_KEY);
+  const parsed = safeJsonParse(raw);
+
+  if (!parsed) return getDefaultProgress();
+
+  return {
+    ...getDefaultProgress(),
+    ...parsed,
+  };
 }
 
-function saveProgress(progress) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+function saveProgress(canSave, progress) {
+  if (!canSave) return;
+  localStorage.setItem(STORAGE_GAME_KEY, JSON.stringify(progress));
 }
 
-function loadRanking() {
-  try {
-    const saved = localStorage.getItem(RANKING_KEY);
-    if (saved) return JSON.parse(saved);
-  } catch {}
-
-  return [
-    {
-      name: "Zakaria",
-      level: 1,
-      door: 7,
-      xp: 6,
-      speed: "Rapide",
-      duration: "00:06:20",
-    },
-    {
-      name: "Membre 3B",
-      level: 1,
-      door: 3,
-      xp: 2,
-      speed: "Normal",
-      duration: "00:03:10",
-    },
-    {
-      name: "3B Elite",
-      level: 1,
-      door: 1,
-      xp: 0,
-      speed: "Départ",
-      duration: "00:00:00",
-    },
-  ];
-}
-
-function formatDuration(ms) {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const h = String(Math.floor(total / 3600)).padStart(2, "0");
-  const m = String(Math.floor((total % 3600) / 60)).padStart(2, "0");
-  const s = String(total % 60).padStart(2, "0");
-  return `${h}:${m}:${s}`;
-}
-
-function getSpeed(durationMs, completedDoors) {
-  if (completedDoors <= 0) return "Départ";
-  const secondsPerDoor = durationMs / 1000 / completedDoors;
-  if (secondsPerDoor < 20) return "Très rapide";
-  if (secondsPerDoor < 45) return "Rapide";
-  if (secondsPerDoor < 90) return "Normal";
-  return "Réfléchi";
+function resetAllGameData() {
+  localStorage.removeItem(STORAGE_GAME_KEY);
+  localStorage.removeItem(STORAGE_RANKING_KEY);
+  localStorage.removeItem(STORAGE_SESSION_KEY);
+  removeOldGameSaves();
 }
 
 function generateQuestion(level, door) {
-  const type = GAME_TYPES[(level * 10 + door + level) % GAME_TYPES.length];
-  const word = pick(WORDS_3B, level, door, 1);
-  const word2 = pick(WORDS_3B, level, door, 2);
-  const word3 = pick(WORDS_3B, level, door, 3);
-  const country = pick(COUNTRIES, level, door, 4);
-  const country2 = pick(COUNTRIES, level, door, 5);
-  const theme = pick(THEMES, level, door, 6);
+  const type = miniGameTypes[(level * 7 + door * 3) % miniGameTypes.length];
+  const family = getFamily(level, door);
+  const word = getWord(level, door, 1);
+  const word2 = getWord(level, door, 2);
+  const word3 = getWord(level, door, 3);
+  const country = pick(official3BCountries, level, door, 4);
+  const otherCountry = pick(official3BCountries, level, door, 5);
+  const phrase = pick(phrases, level, door, 6);
+  const synonym = pick(synonyms, level, door, 7);
 
-  const common = {
+  const base = {
+    id: `${level}-${door}-${type}`,
     type,
-    family: theme,
-    hint: `Indice 3B : pense à ${theme.toLowerCase()}.`,
+    family,
+    word,
+    answer: word,
+    title: "Porte 3B",
+    instruction: "Trouve la bonne réponse.",
+    hint: `Indice : famille ${family.toUpperCase()}, univers 3B.`,
   };
 
-  if (type === "write") {
+  if (type === "bubbleChoice") {
     return {
-      ...common,
+      ...base,
+      title: "Bulles tactiles",
+      instruction: "Touche la bulle qui appartient le mieux à l’univers 3B.",
+      answer: word,
+      options: shuffle([word, word2, "copie", "faible", word3, "vide"], level, door),
+    };
+  }
+
+  if (type === "writeWord") {
+    return {
+      ...base,
       title: "Mot à écrire",
-      instruction: `Écris le mot lié à l’univers 3B : ${word.toUpperCase()}.`,
+      instruction: `Écris le mot central de cette porte : ${word.toUpperCase()}.`,
       answer: word,
       input: true,
     };
@@ -241,7 +449,7 @@ function generateQuestion(level, door) {
 
   if (type === "anagram") {
     return {
-      ...common,
+      ...base,
       title: "Mot mélangé",
       instruction: `Remets les lettres dans l’ordre : ${scramble(word, level, door)}.`,
       answer: word,
@@ -249,104 +457,125 @@ function generateQuestion(level, door) {
     };
   }
 
-  if (type === "choice") {
-    const options = shuffleDeterministic([word, word2, word3, "faible"], level, door);
-    return {
-      ...common,
-      title: "Choix tactile",
-      instruction: "Choisis le mot qui appartient le mieux à l’univers 3B.",
-      answer: word,
-      options,
-    };
-  }
-
   if (type === "intruder") {
-    const options = shuffleDeterministic([word, word2, word3, "poubelle"], level, door);
     return {
-      ...common,
-      title: "Intrus",
-      instruction: "Trouve le mot qui ne correspond pas à 3B.",
+      ...base,
+      title: "Trouver l’intrus",
+      instruction: "Un mot ne correspond pas à 3B. Trouve l’intrus.",
       answer: "poubelle",
-      options,
+      options: shuffle([word, word2, word3, "poubelle"], level, door),
     };
   }
 
-  if (type === "missing") {
-    const pos = Math.min(word.length - 1, Math.max(1, seededNumber(level, door, 2) % word.length));
+  if (type === "missingLetter") {
+    const pos = Math.max(1, seededNumber(level, door, 9) % word.length);
     const missing = word[pos];
-    const hidden = word.slice(0, pos) + "_" + word.slice(pos + 1);
+    const hidden = `${word.slice(0, pos)}_${word.slice(pos + 1)}`;
     return {
-      ...common,
+      ...base,
       title: "Lettre manquante",
-      instruction: `Trouve la lettre manquante : ${hidden}.`,
+      instruction: `Complète le mot : ${hidden}`,
       answer: missing,
       input: true,
     };
   }
 
-  if (type === "firstLetter") {
+  if (type === "letterGrid") {
     return {
-      ...common,
-      title: "Première lettre",
-      instruction: `Quelle est la première lettre du mot : ${word.toUpperCase()} ?`,
-      answer: word[0],
+      ...base,
+      title: "Grille de lettres",
+      instruction: `Retrouve le mot caché dans la grille : ${word.toUpperCase()}.`,
+      answer: word,
       input: true,
+      gridLetters: shuffle(
+        [...word.toUpperCase().split(""), "3", "B", "X", "P", "Q", "R", "L", "O"],
+        level,
+        door
+      ).slice(0, 16),
     };
   }
 
-  if (type === "lastLetter") {
+  if (type === "crossword") {
     return {
-      ...common,
-      title: "Dernière lettre",
-      instruction: `Quelle est la dernière lettre du mot : ${word.toUpperCase()} ?`,
-      answer: word[word.length - 1],
+      ...base,
+      title: "Mini mots croisés",
+      instruction: "Complète le mot horizontal principal de la grille.",
+      answer: word,
       input: true,
+      crossword: {
+        main: word,
+        vertical: word2,
+      },
     };
   }
 
-  if (type === "synonym") {
-    const syn = pick(SYNONYMS, level, door, 7);
+  if (type === "arrowWords") {
     return {
-      ...common,
-      title: "Synonyme 3B",
-      instruction: `Choisis le mot le plus proche de : ${syn.word}.`,
-      answer: syn.answer,
-      options: shuffleDeterministic([syn.answer, ...syn.wrong], level, door),
+      ...base,
+      title: "Mini mots fléchés",
+      instruction: "Lis l’indice fléché et trouve le mot.",
+      answer: word,
+      input: true,
+      arrow: `Indice → ${family.toUpperCase()} → ${word.length} lettres`,
+    };
+  }
+
+  if (type === "connectPairs") {
+    const pairs = [
+      ["Passeport", "Identité"],
+      ["Secret", "Indice"],
+      ["Musique", "Album"],
+      ["Jeu", "XP"],
+    ];
+    const pair = pick(pairs, level, door, 10);
+    return {
+      ...base,
+      title: "Relier gauche / droite",
+      instruction: "Choisis la bonne liaison 3B.",
+      answer: `${pair[0]}-${pair[1]}`,
+      pairs,
+      options: shuffle(
+        pairs.map((p) => `${p[0]}-${p[1]}`),
+        level,
+        door
+      ),
+    };
+  }
+
+  if (type === "memory") {
+    return {
+      ...base,
+      title: "Mémoire rapide",
+      instruction: `Mémorise ce mot 3B puis écris-le : ${word.toUpperCase()}.`,
+      answer: word,
+      input: true,
+      memory: true,
     };
   }
 
   if (type === "flagToCountry") {
     return {
-      ...common,
-      title: "Drapeau vers pays",
+      ...base,
+      title: "Drapeau → pays",
       instruction: `Quel pays correspond à ce drapeau : ${country.flag} ?`,
       answer: country.name,
-      options: shuffleDeterministic(
-        [country.name, country2.name, "Portugal", "Allemagne"],
-        level,
-        door
-      ),
+      options: shuffle([country.name, otherCountry.name, "Portugal", "Brésil"], level, door),
     };
   }
 
   if (type === "countryToFlag") {
     return {
-      ...common,
-      title: "Pays vers drapeau",
+      ...base,
+      title: "Pays → drapeau",
       instruction: `Quel drapeau correspond à : ${country.name} ?`,
       answer: country.flag,
-      options: shuffleDeterministic(
-        [country.flag, country2.flag, "🇧🇷", "🇯🇵"],
-        level,
-        door
-      ),
+      options: shuffle([country.flag, otherCountry.flag, "🇧🇷", "🇯🇵"], level, door),
     };
   }
 
   if (type === "completePhrase") {
-    const phrase = pick(PHRASES, level, door, 8);
     return {
-      ...common,
+      ...base,
       title: "Phrase à compléter",
       instruction: phrase.text,
       answer: phrase.answer,
@@ -355,72 +584,41 @@ function generateQuestion(level, door) {
   }
 
   if (type === "multiSelect") {
-    const correct = [word, word2];
     return {
-      ...common,
+      ...base,
       title: "Sélection multiple",
-      instruction: "Sélectionne les 2 mots qui appartiennent à l’univers 3B.",
-      answer: correct,
+      instruction: "Sélectionne les 2 bons mots 3B.",
+      answer: [word, word2],
       multi: true,
-      options: shuffleDeterministic([...correct, "faible", "copie"], level, door),
+      options: shuffle([word, word2, "faible", "copie", "vide", "poubelle"], level, door),
     };
   }
 
-  if (type === "memory") {
+  if (type === "orderWords") {
     return {
-      ...common,
-      title: "Mémoire 3B",
-      instruction: `Mémorise ce mot puis écris-le : ${word.toUpperCase()}.`,
-      answer: word,
-      input: true,
-      memory: true,
-    };
-  }
-
-  if (type === "order") {
-    return {
-      ...common,
+      ...base,
       title: "Ordre logique",
       instruction: "Remets l’ordre logique du projet 3B.",
-      answer: "ideeprototypeventeinternational",
-      options: ["idée", "prototype", "vente", "international"],
+      answer: ["idee", "prototype", "vente", "international"],
       order: true,
+      options: ["idée", "prototype", "vente", "international"],
     };
   }
 
-  if (type === "pairing") {
+  if (type === "avoidTrap") {
     return {
-      ...common,
-      title: "Relier les idées",
-      instruction: "Choisis la bonne association.",
-      answer: "passeport-identite",
-      options: shuffleDeterministic(
-        [
-          "passeport-identite",
-          "musique-cadenas",
-          "secret-boutique",
-          "jeu-maillot",
-        ],
-        level,
-        door
-      ),
-    };
-  }
-
-  if (type === "grid") {
-    return {
-      ...common,
-      title: "Grille de lettres",
-      instruction: `Trouve le mot caché dans la grille : ${word.toUpperCase()}.`,
+      ...base,
+      title: "Évite le piège",
+      instruction: "Choisis un mot 3B, mais ne touche pas le piège.",
       answer: word,
-      input: true,
-      grid: true,
+      trap: "piège",
+      options: shuffle([word, word2, "piège", word3, "héritage"], level, door),
     };
   }
 
   if (type === "secretCode") {
     return {
-      ...common,
+      ...base,
       title: "Code secret",
       instruction: "Trouve le mot lié au coffre secret 3B.",
       answer: "secret",
@@ -428,30 +626,28 @@ function generateQuestion(level, door) {
     };
   }
 
-  if (type === "avoidTrap") {
-    const options = shuffleDeterministic([word, word2, "piege", word3], level, door);
+  if (type === "synonym") {
     return {
-      ...common,
-      title: "Évite le piège",
-      instruction: "Choisis un mot 3B, mais évite le mot piège.",
-      answer: word,
-      trap: "piege",
-      options,
+      ...base,
+      title: "Synonyme premium",
+      instruction: `Choisis le mot le plus proche de : ${synonym.word}.`,
+      answer: synonym.answer,
+      options: shuffle([synonym.answer, ...synonym.wrong], level, door),
     };
   }
 
   if (type === "quickChoice") {
     return {
-      ...common,
-      title: "Choix rapide",
-      instruction: "Choisis rapidement le mot le plus premium.",
+      ...base,
+      title: "Choix rapide premium",
+      instruction: "Choisis le mot le plus premium.",
       answer: "premium",
-      options: shuffleDeterministic(["premium", "faible", "copie", "vide"], level, door),
+      options: shuffle(["premium", "faible", "copie", "vide"], level, door),
     };
   }
 
   return {
-    ...common,
+    ...base,
     title: "Boss de niveau",
     instruction: "Porte 10 : trouve le mot final qui résume 3B.",
     answer: "heritage",
@@ -460,13 +656,104 @@ function generateQuestion(level, door) {
   };
 }
 
+function renderMiniVisual(question, selected, setSelected) {
+  if (question.gridLetters) {
+    return (
+      <div className="game-visual-grid">
+        {question.gridLetters.map((letter, index) => (
+          <span key={index}>{letter}</span>
+        ))}
+      </div>
+    );
+  }
+
+  if (question.crossword) {
+    const main = question.crossword.main.toUpperCase().split("");
+    const vertical = question.crossword.vertical.toUpperCase().split("").slice(0, 5);
+
+    return (
+      <div className="crossword-visual">
+        <div className="cross-row">
+          {main.map((letter, index) => (
+            <span key={index}>{index === 0 ? letter : ""}</span>
+          ))}
+        </div>
+        <div className="cross-column">
+          {vertical.map((letter, index) => (
+            <span key={index}>{index === 0 ? main[0] : ""}</span>
+          ))}
+        </div>
+        <small>Grille prototype — réponse principale à écrire</small>
+      </div>
+    );
+  }
+
+  if (question.arrow) {
+    return (
+      <div className="arrow-visual">
+        <div className="arrow-box">DÉPART</div>
+        <div className="arrow-line">➜</div>
+        <div className="arrow-box">{question.arrow}</div>
+      </div>
+    );
+  }
+
+  if (question.pairs) {
+    return (
+      <div className="pair-visual">
+        <div>
+          {question.pairs.map((pair) => (
+            <span key={pair[0]}>{pair[0]}</span>
+          ))}
+        </div>
+        <div className="pair-lines">⇄</div>
+        <div>
+          {question.pairs.map((pair) => (
+            <span key={pair[1]}>{pair[1]}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (question.memory) {
+    return (
+      <div className="memory-visual">
+        <span>3B</span>
+        <p>Mémoire active</p>
+      </div>
+    );
+  }
+
+  if (question.boss) {
+    return (
+      <div className="boss-visual">
+        <span>👑</span>
+        <p>BOSS PORTE 10</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="premium-symbol">
+      <span>3B</span>
+      <small>{question.title}</small>
+    </div>
+  );
+}
+
 export default function Jeu3B({ go }) {
-  const [progress, setProgress] = useState(loadProgress);
+  const [passport, setPassport] = useState(() => findPassportProfile());
+  const [canSave, setCanSave] = useState(() => Boolean(findPassportProfile()));
+  const [progress, setProgress] = useState(() => loadProgress(Boolean(findPassportProfile())));
+  const [view, setView] = useState("hub");
   const [answer, setAnswer] = useState("");
   const [selected, setSelected] = useState([]);
   const [message, setMessage] = useState("");
-  const [tab, setTab] = useState("jeu");
-  const [ranking, setRanking] = useState(loadRanking);
+  const [ranking, setRanking] = useState(() => {
+    const saved = safeJsonParse(localStorage.getItem(STORAGE_RANKING_KEY));
+    return saved || [];
+  });
 
   const question = useMemo(
     () => generateQuestion(progress.level, progress.door),
@@ -474,110 +761,150 @@ export default function Jeu3B({ go }) {
   );
 
   useEffect(() => {
-    saveProgress(progress);
+    const currentPassport = findPassportProfile();
+    setPassport(currentPassport);
+    setCanSave(Boolean(currentPassport));
+  }, []);
 
-    const duration = Date.now() - progress.startedAt;
-    const player = {
-      name: "Vous",
-      level: progress.level,
-      door: progress.door,
-      xp: progress.totalXp,
-      speed: getSpeed(duration, progress.completedDoors),
-      duration: formatDuration(duration),
-    };
+  useEffect(() => {
+    saveProgress(canSave, progress);
 
-    const base = loadRanking().filter((p) => p.name !== "Vous");
-    const next = [player, ...base]
-      .sort((a, b) => b.xp - a.xp || b.level - a.level || b.door - a.door)
-      .slice(0, 20);
+    if (canSave) {
+      const duration = Date.now() - progress.startedAt;
+      const name = passport?.name || "Membre 3B";
+      const row = {
+        name,
+        passport: passport?.passportNumber || "3B-PASS-0001",
+        country: passport?.country || "Aucun",
+        level: progress.level,
+        door: progress.door,
+        xp: progress.totalXp,
+        globalXp: progress.globalXpFromGame,
+        duration: formatTime(duration),
+        speed: getSpeedLabel(duration, progress.completedDoors),
+        completedDoors: progress.completedDoors,
+        updatedAt: new Date().toISOString(),
+      };
 
-    localStorage.setItem(RANKING_KEY, JSON.stringify(next));
-    setRanking(next);
-  }, [progress]);
+      const previous = safeJsonParse(localStorage.getItem(STORAGE_RANKING_KEY)) || [];
+      const filtered = previous.filter((p) => p.passport !== row.passport && p.name !== row.name);
+      const nextRanking = [row, ...filtered]
+        .sort((a, b) => b.xp - a.xp || b.level - a.level || b.door - a.door)
+        .slice(0, 50);
 
-  function resetAnswerOnly() {
+      localStorage.setItem(STORAGE_RANKING_KEY, JSON.stringify(nextRanking));
+      setRanking(nextRanking);
+    }
+  }, [progress, canSave, passport]);
+
+  function resetInputs() {
     setAnswer("");
     setSelected([]);
   }
 
-  function goNextDoor(xpWon) {
+  function resetGame() {
+    resetAllGameData();
+    const fresh = getDefaultProgress();
+    setProgress(fresh);
+    setRanking([]);
+    resetInputs();
+    setMessage("Jeu remis à zéro. Si un Passeport existe, la nouvelle progression sera sauvegardée.");
+  }
+
+  function nextDoor(xpWon) {
     setProgress((old) => {
-      let nextDoor = old.door + 1;
-      let nextLevel = old.level;
+      let newDoor = old.door + 1;
+      let newLevel = old.level;
       let completedLevels = old.completedLevels;
 
-      if (nextDoor > 10) {
-        nextDoor = 1;
-        nextLevel = Math.min(1000, old.level + 1);
+      if (newDoor > 10) {
+        newDoor = 1;
+        newLevel = Math.min(1000, old.level + 1);
         completedLevels += 1;
       }
 
-      return {
+      const updated = {
         ...old,
-        level: nextLevel,
-        door: nextDoor,
+        level: newLevel,
+        door: newDoor,
         totalXp: old.totalXp + xpWon,
-        usedHint: false,
-        wrongCount: 0,
-        lastUpdate: Date.now(),
+        globalXpFromGame: old.globalXpFromGame + xpWon,
         completedDoors: old.completedDoors + 1,
         completedLevels,
+        correctAnswers: old.correctAnswers + 1,
+        usedHint: false,
+        wrongCountForDoor: 0,
+        lastUpdate: Date.now(),
       };
+
+      if (canSave) {
+        updatePassportXp(xpWon, updated);
+      }
+
+      return updated;
     });
 
-    resetAnswerOnly();
-  }
-
-  function checkAnswer(value) {
-    const userValue = value ?? answer;
-    let isCorrect = false;
-
-    if (question.multi) {
-      const selectedClean = selected.map(normalize).sort().join("-");
-      const correctClean = question.answer.map(normalize).sort().join("-");
-      isCorrect = selectedClean === correctClean;
-    } else if (question.order) {
-      const cleanOrder = selected.map(normalize).join("");
-      isCorrect = cleanOrder === normalize(question.answer);
-    } else {
-      isCorrect = normalize(userValue) === normalize(question.answer);
-    }
-
-    if (question.trap && normalize(userValue) === normalize(question.trap)) {
-      isCorrect = false;
-    }
-
-    if (!isCorrect) {
-      setProgress((old) => ({
-        ...old,
-        wrongCount: old.wrongCount + 1,
-      }));
-      setMessage("Mauvaise réponse. Réessaie directement, la question reste ici.");
-      resetAnswerOnly();
-      return;
-    }
-
-    const xpWon = getXpReward(
-      progress.level,
-      progress.door,
-      progress.usedHint,
-      progress.wrongCount
-    );
-
-    setMessage(`Bonne réponse. +${xpWon} XP enregistrés automatiquement.`);
-    goNextDoor(xpWon);
+    resetInputs();
   }
 
   function useHint() {
     setProgress((old) => ({
       ...old,
       usedHint: true,
+      hintsUsed: old.hintsUsed + 1,
     }));
 
-    setMessage(`${question.hint} Récompense réduite si tu valides avec indice.`);
+    setMessage(`${question.hint} Attention : l’indice réduit les XP gagnés sur cette porte.`);
   }
 
-  function toggleSelect(option) {
+  function wrongAnswer() {
+    setProgress((old) => ({
+      ...old,
+      wrongAnswers: old.wrongAnswers + 1,
+      wrongCountForDoor: old.wrongCountForDoor + 1,
+    }));
+
+    setMessage("Mauvaise réponse. Réessaie directement, la question reste active.");
+    resetInputs();
+  }
+
+  function validate(value = null) {
+    let correct = false;
+
+    if (question.multi) {
+      const selectedClean = selected.map(normalize).sort().join("-");
+      const answerClean = question.answer.map(normalize).sort().join("-");
+      correct = selectedClean === answerClean;
+    } else if (question.order) {
+      const selectedClean = selected.map(normalize);
+      const answerClean = question.answer.map(normalize);
+      correct = selectedClean.join("-") === answerClean.join("-");
+    } else {
+      const finalValue = value ?? answer;
+      correct = normalize(finalValue) === normalize(question.answer);
+    }
+
+    if (question.trap && normalize(value ?? answer) === normalize(question.trap)) {
+      correct = false;
+    }
+
+    if (!correct) {
+      wrongAnswer();
+      return;
+    }
+
+    const xpWon = getXpReward({
+      level: progress.level,
+      door: progress.door,
+      usedHint: progress.usedHint,
+      wrongCount: progress.wrongCountForDoor,
+    });
+
+    setMessage(`Bonne réponse. +${xpWon} XP. Porte suivante chargée automatiquement.`);
+    nextDoor(xpWon);
+  }
+
+  function toggleSelection(option) {
     if (question.order) {
       if (selected.includes(option)) return;
       setSelected((old) => [...old, option]);
@@ -586,14 +913,14 @@ export default function Jeu3B({ go }) {
 
     if (question.multi) {
       setSelected((old) =>
-        old.includes(option) ? old.filter((x) => x !== option) : [...old, option]
+        old.includes(option) ? old.filter((item) => item !== option) : [...old, option]
       );
     }
   }
 
-  const doorPercent = Math.round(((progress.door - 1) / 10) * 100);
+  const doorProgress = Math.round(((progress.door - 1) / 10) * 100);
   const difficulty = getDifficulty(progress.level, progress.door);
-  const levelTitle = getLevelTitle(progress.level);
+  const levelName = getLevelName(progress.level);
 
   return (
     <main className="app page game-page">
@@ -601,81 +928,124 @@ export default function Jeu3B({ go }) {
         ← Retour
       </button>
 
-      <section className="hero">
+      <section className="game-hero">
         <div className="brand-small">3B INTERNATIONAL</div>
         <h1>Jeu 3B</h1>
-        <p>
-          1000 niveaux, 10 portes par niveau, XP lent, sauvegarde automatique et
-          classement des participants.
-        </p>
+        <p>1000 niveaux • 10 portes par niveau • XP lent • classement général.</p>
       </section>
 
-      <section className="tab-row">
-        <button className={tab === "jeu" ? "tab active" : "tab"} onClick={() => setTab("jeu")}>
-          Jeu actuel
+      <section className="game-tabs">
+        <button className={view === "hub" ? "active" : ""} onClick={() => setView("hub")}>
+          Accueil jeu
         </button>
-        <button
-          className={tab === "classement" ? "tab active" : "tab"}
-          onClick={() => setTab("classement")}
-        >
+        <button className={view === "play" ? "active" : ""} onClick={() => setView("play")}>
+          Jouer
+        </button>
+        <button className={view === "ranking" ? "active" : ""} onClick={() => setView("ranking")}>
           Classement
         </button>
-        <button
-          className={tab === "regles" ? "tab active" : "tab"}
-          onClick={() => setTab("regles")}
-        >
-          Règles XP
+        <button className={view === "rules" ? "active" : ""} onClick={() => setView("rules")}>
+          Règles
         </button>
       </section>
 
-      {tab === "jeu" && (
+      {!canSave && (
+        <section className="lux-card warning-card">
+          <h2>Mode invité</h2>
+          <p>
+            Aucun Passeport digital 3B détecté. Tu peux tester le jeu, mais la progression
+            ne sera pas sauvegardée automatiquement.
+          </p>
+          <p>
+            Pour enregistrer les XP, le classement et la progression, il faut créer le
+            Passeport 3B avant de jouer.
+          </p>
+        </section>
+      )}
+
+      {view === "hub" && (
         <section className="game-grid">
           <div className="lux-card">
+            <h2>Jeu actuel</h2>
+            <p>Nom : Portes 3B — Mots, pays, secret, musique et ADN 3B.</p>
+            <p>Niveau : {progress.level} / 1000</p>
+            <p>Porte : {progress.door} / 10</p>
+            <p>XP jeu : {progress.totalXp}</p>
+            <p>Statut : {levelName}</p>
+            <button className="gold-button" onClick={() => setView("play")}>
+              Lancer le jeu
+            </button>
+          </div>
+
+          <div className="lux-card">
+            <h2>Classement général</h2>
+            {ranking.length === 0 ? (
+              <p>Aucun classement enregistré pour l’instant.</p>
+            ) : (
+              ranking.slice(0, 5).map((player, index) => (
+                <div className="ranking-mini" key={`${player.name}-${index}`}>
+                  <strong>#{index + 1} — {player.name}</strong>
+                  <span>Niveau {player.level} • Porte {player.door}/10</span>
+                  <span>{player.xp} XP • {player.speed}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="lux-card">
+            <h2>Sauvegarde</h2>
+            <p>{canSave ? "Passeport détecté : sauvegarde automatique activée." : "Mode invité : pas de sauvegarde."}</p>
+            <p>{passport ? `Membre : ${passport.name}` : "Membre : invité"}</p>
+            <p>{passport ? `Passeport : ${passport.passportNumber}` : "Passeport : non créé"}</p>
+          </div>
+
+          <div className="lux-card">
+            <h2>Remise à zéro</h2>
+            <p>Ce bouton remet à zéro la progression locale du jeu.</p>
+            <button className="danger-button" onClick={resetGame}>
+              Réinitialiser le jeu
+            </button>
+          </div>
+        </section>
+      )}
+
+      {view === "play" && (
+        <section className="game-grid">
+          <div className="lux-card status-card">
             <h2>Niveau {progress.level} / 1000</h2>
             <p>Porte {progress.door} / 10</p>
-            <p>Type de jeu : {question.title}</p>
-            <p>Famille : {question.family}</p>
+            <p>Type : {question.title}</p>
+            <p>Famille : {question.family.toUpperCase()}</p>
             <p>Difficulté : {difficulty}%</p>
             <p>XP total jeu : {progress.totalXp}</p>
-            <p>Sauvegarde : automatique</p>
-            <small>010101 3B XP 001101 3B INTERNATIONAL</small>
+            <p>XP global ajouté : {progress.globalXpFromGame}</p>
+            <p>{canSave ? "Sauvegarde : automatique" : "Sauvegarde : désactivée invité"}</p>
+            <small>010101 3B XP 001101 INTERNATIONAL</small>
           </div>
 
           <div className="lux-card progress-card">
-            <div className="circle-progress">
-              <span>{doorPercent}%</span>
+            <div
+              className="circle-progress"
+              style={{
+                background: `conic-gradient(#f1bf00 ${doorProgress}%, rgba(241,191,0,.16) ${doorProgress}%)`,
+              }}
+            >
+              <span>{doorProgress}%</span>
             </div>
             <h3>Portes du niveau</h3>
-            <p>
-              Chaque bonne réponse avance automatiquement à la porte suivante.
-              Après la porte 10, tu passes au niveau suivant.
-            </p>
+            <p>Après 10 portes, tu passes automatiquement au niveau suivant.</p>
           </div>
 
           <div className="lux-card mission-card">
             <h2>Mission de la porte</h2>
             <p>{question.instruction}</p>
-            <p>
-              Chaque porte change de mécanique : choix, écriture, piège, mémoire,
-              pays, code, grille ou boss.
-            </p>
 
-            {question.grid && (
-              <div className="letter-grid">
-                {shuffleDeterministic(
-                  [...question.answer.toUpperCase().split(""), "X", "B", "Q", "R"],
-                  progress.level,
-                  progress.door
-                ).map((letter, index) => (
-                  <span key={index}>{letter}</span>
-                ))}
-              </div>
-            )}
+            {renderMiniVisual(question, selected, setSelected)}
 
             {question.options && !question.multi && !question.order && (
               <div className="choice-grid">
                 {question.options.map((option) => (
-                  <button key={option} onClick={() => checkAnswer(option)}>
+                  <button key={option} onClick={() => validate(option)}>
                     {option}
                   </button>
                 ))}
@@ -689,14 +1059,14 @@ export default function Jeu3B({ go }) {
                     <button
                       key={option}
                       className={selected.includes(option) ? "selected" : ""}
-                      onClick={() => toggleSelect(option)}
+                      onClick={() => toggleSelection(option)}
                     >
                       {option}
                     </button>
                   ))}
                 </div>
-                <button className="gold-button" onClick={() => checkAnswer()}>
-                  Valider ma sélection
+                <button className="gold-button" onClick={() => validate()}>
+                  Valider la sélection
                 </button>
               </>
             )}
@@ -708,14 +1078,14 @@ export default function Jeu3B({ go }) {
                     <button
                       key={option}
                       className={selected.includes(option) ? "selected" : ""}
-                      onClick={() => toggleSelect(option)}
+                      onClick={() => toggleSelection(option)}
                     >
                       {option}
                     </button>
                   ))}
                 </div>
                 <p>Ordre choisi : {selected.join(" → ") || "aucun"}</p>
-                <button className="gold-button" onClick={() => checkAnswer()}>
+                <button className="gold-button" onClick={() => validate()}>
                   Valider l’ordre
                 </button>
               </>
@@ -723,16 +1093,18 @@ export default function Jeu3B({ go }) {
 
             {question.input && (
               <div className="answer-zone">
+                <button className="hint-button" onClick={useHint}>
+                  Indice
+                </button>
                 <input
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") checkAnswer();
+                    if (e.key === "Enter") validate();
                   }}
                   placeholder="✍️ Écris le bon mot"
                 />
-                <button onClick={useHint}>Indice</button>
-                <button className="gold-button" onClick={() => checkAnswer()}>
+                <button className="gold-button" onClick={() => validate()}>
                   Valider
                 </button>
               </div>
@@ -741,85 +1113,66 @@ export default function Jeu3B({ go }) {
             {message && <div className="game-message">{message}</div>}
           </div>
 
-          <div className="lux-card">
+          <div className="lux-card rule-card">
             <h2>Règle XP</h2>
             <p>Bonne réponse : XP gagné.</p>
             <p>Indice utilisé : XP réduit.</p>
             <p>Erreur : récompense diminuée.</p>
             <p>Plus le niveau monte, plus la difficulté augmente.</p>
-            <p>La progression est sauvegardée automatiquement.</p>
-          </div>
-
-          <div className="lux-card">
-            <h2>Statut actuel</h2>
-            <div className="badge-evolution">
-              <span>3B</span>
-              <small>{levelTitle}</small>
-            </div>
-            <p>Niveau joueur : {levelTitle}</p>
-            <p>Portes terminées : {progress.completedDoors}</p>
-            <p>Niveaux terminés : {progress.completedLevels}</p>
           </div>
         </section>
       )}
 
-      {tab === "classement" && (
+      {view === "ranking" && (
         <section className="lux-card ranking-card">
-          <h2>Classement du jeu actuel</h2>
+          <h2>Classement général du jeu</h2>
           <p>
-            Pour l’instant, il n’y a qu’un jeu actif. Plus tard, chaque jeu aura son
-            propre classement.
+            Le classement s’active vraiment quand un Passeport 3B existe. En mode invité,
+            la progression n’est pas enregistrée.
           </p>
 
-          <div className="ranking-list">
-            {ranking.map((player, index) => (
-              <div className="ranking-row" key={`${player.name}-${index}`}>
-                <strong>
-                  #{index + 1} — {player.name}
-                </strong>
-                <span>Niveau {player.level}</span>
-                <span>Porte {player.door}/10</span>
-                <span>{player.xp} XP</span>
-                <span>Vitesse : {player.speed}</span>
-                <span>Durée : {player.duration}</span>
-              </div>
-            ))}
-          </div>
+          {ranking.length === 0 ? (
+            <p>Aucun joueur classé pour l’instant.</p>
+          ) : (
+            <div className="ranking-list">
+              {ranking.map((player, index) => (
+                <div className="ranking-row" key={`${player.name}-${index}`}>
+                  <strong>#{index + 1} — {player.name}</strong>
+                  <span>Passeport : {player.passport}</span>
+                  <span>Pays : {player.country}</span>
+                  <span>Niveau {player.level}</span>
+                  <span>Porte {player.door}/10</span>
+                  <span>XP jeu : {player.xp}</span>
+                  <span>XP global : {player.globalXp}</span>
+                  <span>Rapidité : {player.speed}</span>
+                  <span>Durée : {player.duration}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      {tab === "regles" && (
+      {view === "rules" && (
         <section className="game-grid">
           <div className="lux-card">
-            <h2>Progression lente</h2>
-            <p>
-              Le joueur gagne des XP à chaque porte, mais pas trop vite. Le but est
-              de garder le jeu long, difficile et motivant.
-            </p>
-          </div>
-
-          <div className="lux-card">
             <h2>1000 niveaux</h2>
-            <p>
-              Chaque niveau possède 10 portes. Le moteur alterne plusieurs concepts :
-              écriture, choix, mémoire, pays, grille, piège, code et boss.
-            </p>
+            <p>Chaque niveau contient 10 portes. Les mécaniques tournent entre mots, grilles, pays, mémoire, secret et boss.</p>
           </div>
 
           <div className="lux-card">
-            <h2>Indice</h2>
-            <p>
-              Le bouton indice aide le joueur, mais il réduit la récompense XP. Le
-              joueur peut continuer sans revenir au menu.
-            </p>
+            <h2>XP global</h2>
+            <p>Si un Passeport existe, chaque XP gagné dans le jeu est ajouté à l’XP global de l’application.</p>
           </div>
 
           <div className="lux-card">
             <h2>Classement</h2>
-            <p>
-              Le classement affiche les participants, leur rapidité, leur durée,
-              leur niveau, leur porte actuelle et leur XP total.
-            </p>
+            <p>Le classement affiche nom, passeport, pays, niveau, porte, XP, rapidité et durée.</p>
+          </div>
+
+          <div className="lux-card">
+            <h2>Mode invité</h2>
+            <p>Sans Passeport, on peut tester le jeu, mais rien n’est sauvegardé automatiquement.</p>
           </div>
         </section>
       )}
