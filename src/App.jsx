@@ -12,36 +12,61 @@ const official3BCountries = [
   { name: "Espagne", flag: "🇪🇸", colors: ["#aa151b", "#f1bf00", "#aa151b"], x: 250, y: 315 },
 ];
 
-const origin3BCountries = official3BCountries.map((c) => c.name);
-
 const residenceCountries = [
   "France", "Maroc", "Algérie", "Tunisie", "Italie", "Espagne", "Turquie", "Estonie",
   "Portugal", "Belgique", "Suisse", "Allemagne", "Royaume-Uni", "Irlande", "Pays-Bas",
-  "Luxembourg", "Autriche", "Pologne", "République tchèque", "Slovaquie", "Hongrie",
-  "Roumanie", "Bulgarie", "Grèce", "Croatie", "Slovénie", "Serbie", "Bosnie-Herzégovine",
-  "Albanie", "Monténégro", "Macédoine du Nord", "Kosovo", "Danemark", "Suède", "Norvège",
-  "Finlande", "Islande", "Lettonie", "Lituanie", "Ukraine", "Moldavie", "Malte", "Chypre",
-  "États-Unis", "Canada", "Mexique", "Brésil", "Argentine", "Colombie", "Chili", "Pérou",
-  "Sénégal", "Mali", "Côte d’Ivoire", "Comores", "Cameroun", "Gabon", "Congo",
-  "République démocratique du Congo", "Guinée", "Guinée-Bissau", "Burkina Faso", "Niger",
-  "Tchad", "Mauritanie", "Égypte", "Libye", "Afrique du Sud", "Madagascar", "Arabie saoudite",
-  "Émirats arabes unis", "Qatar", "Koweït", "Jordanie", "Liban", "Palestine", "Inde",
-  "Pakistan", "Chine", "Japon", "Corée du Sud", "Australie", "Autre pays",
+  "Luxembourg", "Autriche", "Pologne", "Roumanie", "Grèce", "Croatie", "Sénégal",
+  "Mali", "Côte d’Ivoire", "Comores", "Cameroun", "États-Unis", "Canada", "Brésil",
+  "Arabie saoudite", "Émirats arabes unis", "Qatar", "Japon", "Chine", "Australie",
+  "Autre pays",
 ];
 
 const memberCards = [
   { name: "Découverte 3B", status: "automatique", type: "inscription", icon: "💠" },
-  { name: "Héritier 3B", status: "bloquée", type: "points futurs", icon: "♛" },
-  { name: "Gardien 3B", status: "bloquée", type: "points futurs", icon: "🛡️" },
-  { name: "Élite 3B", status: "bloquée", type: "mission future", icon: "✦" },
+  { name: "Héritier 3B", status: "bloqué", type: "points futurs", icon: "♛" },
+  { name: "Gardien 3B", status: "bloqué", type: "points futurs", icon: "🛡️" },
+  { name: "Élite 3B", status: "bloqué", type: "mission future", icon: "✦" },
   { name: "Légende 3B", status: "sur demande", type: "commande premium", icon: "★" },
   { name: "Secret 3B", status: "sur demande", type: "accès spécial", icon: "🔐" },
   { name: "Musique 3B", status: "sur demande", type: "univers musical", icon: "♪" },
-  { name: "Jeux 3B", status: "sur demande", type: "Jeux XP", icon: "🎮" },
+  { name: "Jeux 3B", status: "sur demande", type: "XP jeux", icon: "🎮" },
   { name: "International 3B", status: "sur demande", type: "monde 3B", icon: "🌍" },
   { name: "Drop 3B", status: "sur demande", type: "drop privé", icon: "🔥" },
   { name: "Prototype 3B", status: "sur demande", type: "prototype", icon: "🎁" },
   { name: "Legacy 3B", status: "sur demande", type: "patrimoine", icon: "◆" },
+];
+
+const gameFamilies = [
+  {
+    name: "ADN 3B",
+    theme: "Trouver les mots qui appartiennent à l’univers 3B.",
+    words: ["héritage", "luxe", "identité", "international", "ambition", "création"],
+    wrong: ["hasard", "oubli", "copie", "faible", "vide", "retard"],
+  },
+  {
+    name: "Mode & couture",
+    theme: "Construire le vocabulaire mode premium.",
+    words: ["couture", "atelier", "patronage", "piqué", "jacquard", "broderie"],
+    wrong: ["plastique", "brouillon", "défaut", "cassé", "sale", "jetable"],
+  },
+  {
+    name: "Musique 3B",
+    theme: "Retrouver les mots liés aux sons et aux clips 3B.",
+    words: ["album", "refrain", "studio", "clip", "hymne", "mélodie"],
+    wrong: ["silence", "bruit", "oubli", "copie", "panne", "pause"],
+  },
+  {
+    name: "Warzone & gaming",
+    theme: "Mots gaming, stratégie, mission et progression.",
+    words: ["mission", "niveau", "escouade", "stratégie", "victoire", "classement"],
+    wrong: ["abandon", "défaite", "bug", "blocage", "hasard", "retour"],
+  },
+  {
+    name: "Pays 3B",
+    theme: "Relier les pays officiels à l’univers international.",
+    words: ["france", "italie", "maroc", "algérie", "tunisie", "espagne", "turquie", "estonie"],
+    wrong: ["inconnu", "aucun", "vide", "oublié", "fermé", "perdu"],
+  },
 ];
 
 function normalize(text) {
@@ -64,12 +89,32 @@ function getLevel(points) {
   return { name: "Découverte", next: 500, icon: "3B", percent: Math.round((points / 500) * 100) };
 }
 
+function getGameData(level, door) {
+  const family = gameFamilies[Math.floor((level - 1) / 200) % gameFamilies.length];
+  const correct = family.words[(level + door) % family.words.length];
+  const mode = (level + door) % 3 === 0 ? "write" : "bubble";
+  const choices = [correct, family.wrong[door % family.wrong.length], family.wrong[(door + 2) % family.wrong.length], family.words[(door + 3) % family.words.length]]
+    .filter((v, i, arr) => arr.indexOf(v) === i)
+    .sort(() => 0.5 - Math.random());
+
+  return {
+    family,
+    correct,
+    mode,
+    choices,
+    difficulty: Math.min(100, Math.floor(level / 10) + door),
+  };
+}
+
+function xpForDoor(level, door) {
+  if (door < 10) return 1;
+  if (level % 50 === 0) return 12;
+  if (level % 10 === 0) return 7;
+  return 4;
+}
+
 function BackButton({ onClick }) {
-  return (
-    <button className="back-btn" onClick={onClick}>
-      ← Retour
-    </button>
-  );
+  return <button className="back-btn" onClick={onClick}>← Retour</button>;
 }
 
 function LogoHeader({ small = false }) {
@@ -130,12 +175,8 @@ function ProgressCircle({ percent, label, icon }) {
           strokeDasharray={`${dash} ${c - dash}`}
           transform="rotate(-90 75 75)"
         />
-        <text x="75" y="68" textAnchor="middle" className="progress-icon">
-          {icon}
-        </text>
-        <text x="75" y="98" textAnchor="middle" className="progress-number">
-          {percent}%
-        </text>
+        <text x="75" y="68" textAnchor="middle" className="progress-icon">{icon}</text>
+        <text x="75" y="98" textAnchor="middle" className="progress-number">{percent}%</text>
       </svg>
       <p>{label}</p>
     </div>
@@ -153,12 +194,24 @@ function LevelLogo({ level }) {
 
 function PassportCardVisual({ member }) {
   return (
-    <div className="passport-visual">
+    <div className="passport-visual premium-passport">
+      <div className="passport-holo-lines" />
+      <div className="passport-chip" />
+      <div className="passport-orbit orbit-one" />
+      <div className="passport-orbit orbit-two" />
       <div className="passport-inner">
         <strong>3B</strong>
-        <span>PASSEPORT DIGITAL</span>
+        <span>PASSEPORT NUMÉRIQUE</span>
         <em>{member?.pseudo || "Membre 3B"}</em>
-        <div className="qr-box">QR</div>
+        <div className="qr-box">
+          <i />
+          <i />
+          <i />
+          QR
+        </div>
+      </div>
+      <div className="matrix-digits">
+        010011 110010 3B 001011 101010 0110 3B INTERNATIONAL
       </div>
     </div>
   );
@@ -176,7 +229,7 @@ function FlagVisual({ country }) {
       </div>
       <div className="flag-bottom">
         <strong>3B</strong>
-        <span>{selected.flag} {selected.name} activé</span>
+        <span>{selected.flag} {selected.name} activée</span>
       </div>
     </div>
   );
@@ -198,7 +251,7 @@ function WorldMap3B({ originCountry }) {
   const unlocked = useMemo(() => getCountry(originCountry), [originCountry]);
 
   return (
-    <section className="worldmap-card">
+    <section className="worldmap-card premium-map">
       <h3>Carte du monde 3B</h3>
       <p>
         Vue monde + zoom sur les 8 pays 3B. Seul le pays d’origine 3B choisi pendant
@@ -207,19 +260,40 @@ function WorldMap3B({ originCountry }) {
 
       <div className="world-strip">
         <svg viewBox="0 0 900 260" width="100%" height="100%">
-          <rect width="900" height="260" fill="#061018" />
-          <g opacity="0.28">
-            {Array.from({ length: 50 }).map((_, i) => (
-              <text key={i} x={(i * 41) % 870} y={20 + ((i * 23) % 220)} fill="#58b5ea" fontSize="9">
+          <defs>
+            <radialGradient id="globeGlow" cx="50%" cy="50%" r="70%">
+              <stop offset="0%" stopColor="#174d74" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#031019" stopOpacity="1" />
+            </radialGradient>
+            <filter id="cyanGlow">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <rect width="900" height="260" fill="url(#globeGlow)" />
+          <g opacity="0.32">
+            {Array.from({ length: 60 }).map((_, i) => (
+              <text key={i} x={(i * 47) % 880} y={18 + ((i * 19) % 230)} fill="#58b5ea" fontSize="8">
                 010110101001
               </text>
             ))}
           </g>
-          <path d="M70 110 C100 65 190 65 230 115 C245 150 200 178 135 166 C92 158 55 140 70 110Z" className="land" />
-          <path d="M210 178 C260 175 300 210 278 250 C238 252 205 226 210 178Z" className="land" />
-          <path d="M360 90 C430 42 565 55 610 120 C640 170 555 196 460 170 C395 152 330 125 360 90Z" className="land" />
-          <path d="M450 178 C515 168 570 205 560 250 C500 260 445 226 450 178Z" className="land" />
-          <path d="M640 115 C720 80 845 120 850 170 C825 220 675 205 640 115Z" className="land" />
+          <g opacity="0.22">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <ellipse key={i} cx="450" cy="130" rx={80 + i * 22} ry={20 + i * 5} fill="none" stroke="#5cc9ff" />
+            ))}
+          </g>
+
+          <path d="M58 96 C112 42 206 56 246 102 C286 146 230 183 140 171 C75 162 25 132 58 96Z" className="land" />
+          <path d="M202 178 C260 170 310 212 286 252 C235 252 196 225 202 178Z" className="land" />
+          <path d="M345 88 C424 34 580 50 625 118 C655 172 560 204 454 174 C380 153 306 124 345 88Z" className="land" />
+          <path d="M438 180 C512 162 584 202 565 254 C500 263 435 228 438 180Z" className="land" />
+          <path d="M635 105 C720 72 862 118 868 172 C830 224 680 205 635 105Z" className="land" />
+
           {official3BCountries.map((country) => {
             const isUnlocked = unlocked?.name === country.name;
             return (
@@ -229,6 +303,7 @@ function WorldMap3B({ originCountry }) {
                 cy={country.y / 2}
                 r={isUnlocked ? 8 : 5}
                 className={isUnlocked ? "map-dot unlocked" : "map-dot"}
+                filter="url(#cyanGlow)"
               />
             );
           })}
@@ -237,8 +312,16 @@ function WorldMap3B({ originCountry }) {
 
       <div className="world-zoom">
         <svg viewBox="0 0 900 520" width="100%" height="100%">
-          <rect width="900" height="520" fill="#061018" />
-          <g opacity="0.3">
+          <defs>
+            <linearGradient id="zoomBg" x1="0" x2="1">
+              <stop offset="0%" stopColor="#04111b" />
+              <stop offset="50%" stopColor="#092236" />
+              <stop offset="100%" stopColor="#031018" />
+            </linearGradient>
+          </defs>
+
+          <rect width="900" height="520" fill="url(#zoomBg)" />
+          <g opacity="0.26">
             {Array.from({ length: 26 }).map((_, i) => (
               <line key={`h-${i}`} x1="0" x2="900" y1={i * 20} y2={i * 20} stroke="#174660" />
             ))}
@@ -247,10 +330,19 @@ function WorldMap3B({ originCountry }) {
             ))}
           </g>
 
-          <path d="M95 270 C155 210 235 205 310 225 C355 195 420 150 520 155 C610 160 685 230 725 300 C660 280 590 265 520 285 C455 300 410 365 300 370 C185 374 95 335 95 270Z" className="continent" />
-          <path d="M205 310 C250 300 310 320 330 355 C300 390 220 385 175 350 C160 328 175 315 205 310Z" className="continent" />
-          <path d="M400 270 C430 260 465 275 470 305 C460 335 420 345 395 318 C382 300 385 280 400 270Z" className="continent" />
-          <path d="M625 300 C680 270 755 292 760 330 C725 370 640 360 608 330 C598 318 605 308 625 300Z" className="continent" />
+          <g opacity="0.24">
+            {Array.from({ length: 34 }).map((_, i) => (
+              <text key={i} x={(i * 83) % 860} y={30 + ((i * 37) % 460)} fill="#58b5ea" fontSize="10">
+                001101 3B 0101
+              </text>
+            ))}
+          </g>
+
+          <path d="M90 270 C160 204 245 204 315 224 C360 190 430 146 535 152 C635 158 708 236 730 306 C655 286 590 268 518 286 C448 304 410 365 300 370 C184 378 88 340 90 270Z" className="continent" />
+          <path d="M204 312 C252 298 315 318 338 356 C300 396 220 390 172 350 C154 326 172 312 204 312Z" className="continent" />
+          <path d="M394 268 C430 254 470 272 476 304 C462 338 420 346 392 318 C376 298 380 278 394 268Z" className="continent" />
+          <path d="M620 300 C680 266 765 292 770 332 C730 376 638 364 604 330 C594 316 602 306 620 300Z" className="continent" />
+          <path d="M255 250 C300 225 355 235 374 278 C360 314 300 330 256 300 C232 282 232 260 255 250Z" className="continent secondary" />
 
           {official3BCountries.map((country) => {
             const isUnlocked = unlocked?.name === country.name;
@@ -290,9 +382,7 @@ function Home({ go, member }) {
         <MenuCard icon="♪" title="Musique" onClick={() => go("musique")} />
         <MenuCard icon="👥" title="Communauté" onClick={() => go("communaute")} />
         <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport-access")} />
-        {member && (
-          <MenuCard icon="💎" title="Espace Membre 3B" onClick={() => go("espace-membre")} />
-        )}
+        {member && <MenuCard icon="💎" title="Espace Membre 3B" onClick={() => go("espace-membre")} />}
         <MenuCard icon="🎮" title="Jeux" onClick={() => go("jeux")} />
         <MenuCard icon="🔒" title="Coffre secret 3B" onClick={() => go("secret")} />
         <MenuCard icon="☆" title="Plus encore" onClick={() => go("plus")} />
@@ -411,20 +501,10 @@ function Secret({ go }) {
       {unlocked && (
         <InfoCard title="Indice débloqué" visual={<LevelLogo level={{ name: "Secret", icon: "🔐" }} />}>
           <p>L’Italie s’y comprend — 8 juillet — 20h.</p>
-          <p>Live TikTok 3B International.</p>
-          <p
-            style={{
-              color: "#e2be64",
-              letterSpacing: "3px",
-              textTransform: "uppercase",
-              fontStyle: "italic",
-              fontWeight: "800",
-            }}
-          >
-            Salon Italie — Haute Couture 3B
-          </p>
+          <p>TikTok en direct 3B International.</p>
+          <p className="salon-text">Salon Italie — Haute Couture 3B</p>
           <p>
-            Quand vous arriverez dans mon monde, vous comprendrez que 3B International
+            Quand j’arriverai dans votre monde, vous comprendrez que 3B International
             entre dans une étape sérieuse : salon, Italie, présentation premium,
             univers luxe et ambition internationale.
           </p>
@@ -439,8 +519,8 @@ function Secret({ go }) {
   );
 }
 
-function Jeux({ go, member }) {
-  const gamePercent = member ? Math.min(Math.round(((member.gamePoints || 0) / 500) * 100), 100) : 0;
+function Jeux({ go, member, game }) {
+  const gamePercent = Math.min(Math.round(((game?.xp || 0) / 500) * 100), 100);
 
   return (
     <div className="page">
@@ -449,21 +529,106 @@ function Jeux({ go, member }) {
       <h1>Jeux 3B</h1>
       <div className="gold-line">◆</div>
 
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <InfoCard title="Jeux à venir" visual={<LevelLogo level={{ name: "Jeux", icon: "🎮" }} />}>
-          <p>Mini-jeux 3B</p>
-          <p>Défis communautaires</p>
-          <p>Classements entre membres</p>
-          <p>Points gagnés en jouant</p>
+          <p>1er jeu actif maintenant.</p>
+          <p>Autres jeux plus tard : musique, pays, Warzone, mode, communauté.</p>
         </InfoCard>
 
-        <InfoCard title="XP Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
-          <p>Points jeux : {member?.gamePoints || 0}</p>
-          <p>Victoire : points bonus</p>
-          <p>Passage de niveau : points bonus</p>
-          <p>Le logo Jeux deviendra évolutif plus tard.</p>
+        <InfoCard title="Jeu 3B — 1000 niveaux" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
+          <p>Niveau actuel : {game.level}</p>
+          <p>Porte actuelle : {game.door}/10</p>
+          <p>XP jeux : {game.xp}</p>
+          <button className="inside-action" onClick={() => go("jeu-1000")}>Entrer dans le jeu</button>
         </InfoCard>
       </div>
+    </div>
+  );
+}
+
+function Jeu1000({ go, game, setGame, setMember }) {
+  const [answer, setAnswer] = useState("");
+  const [message, setMessage] = useState("");
+  const data = useMemo(() => getGameData(game.level, game.door), [game.level, game.door]);
+
+  function reward() {
+    const xp = xpForDoor(game.level, game.door);
+    const nextDoor = game.door === 10 ? 1 : game.door + 1;
+    const nextLevel = game.door === 10 ? Math.min(1000, game.level + 1) : game.level;
+
+    setGame((current) => ({
+      ...current,
+      level: nextLevel,
+      door: nextDoor,
+      xp: current.xp + xp,
+      completedDoors: current.completedDoors + 1,
+    }));
+
+    setMember((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        gamePoints: (current.gamePoints || 0) + xp,
+        points: (current.points || 0) + xp,
+      };
+    });
+
+    setAnswer("");
+    setMessage(`Bonne réponse. +${xp} XP. Progression lente validée.`);
+  }
+
+  function validate(value = answer) {
+    if (normalize(value) === normalize(data.correct)) reward();
+    else setMessage("Mauvaise porte. Réessaie, l’XP doit se mériter.");
+  }
+
+  return (
+    <div className="page">
+      <BackButton onClick={() => go("jeux")} />
+      <LogoHeader small />
+      <h1>Jeu 3B</h1>
+      <div className="gold-line">◆</div>
+
+      <div className="game-hero">
+        <div>
+          <h3>Niveau {game.level} / 1000</h3>
+          <p>Porte {game.door} / 10</p>
+          <p>Famille : {data.family.name}</p>
+          <p>Difficulté : {data.difficulty}%</p>
+        </div>
+        <ProgressCircle percent={Math.round((game.door / 10) * 100)} label="Portes du niveau" icon="🚪" />
+      </div>
+
+      <div className="page-grid compact-grid">
+        <InfoCard title="Mission de la porte">
+          <p>{data.family.theme}</p>
+          <p>Le jeu change de concept tous les niveaux, mais les 10 portes gardent la même idée pendant le niveau.</p>
+          <p>Objectif : trouver le bon mot 3B.</p>
+        </InfoCard>
+
+        <InfoCard title="Règle XP">
+          <p>XP volontairement lente.</p>
+          <p>Portes simples : +1 XP.</p>
+          <p>Fin de niveau : +4 XP minimum.</p>
+          <p>Niveaux spéciaux : bonus rare.</p>
+        </InfoCard>
+      </div>
+
+      {data.mode === "bubble" ? (
+        <div className="bubble-zone">
+          {data.choices.map((choice) => (
+            <button key={choice} onClick={() => validate(choice)}>{choice}</button>
+          ))}
+        </div>
+      ) : (
+        <div className="input-row game-input">
+          <span>✍️</span>
+          <input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Écris le bon mot" />
+          <button onClick={() => validate()}>Valider</button>
+        </div>
+      )}
+
+      {message && <div className="game-message">{message}</div>}
     </div>
   );
 }
@@ -480,7 +645,7 @@ function PasseportAccess({ go }) {
 
       <WorldMap3B originCountry="" />
 
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <InfoCard title="Pays d’origine 3B">
           <p>Sert à activer un des 8 pays officiels 3B sur la carte.</p>
         </InfoCard>
@@ -517,7 +682,7 @@ function PasseportInscription({ go, setMember }) {
 
     setMember({
       pseudo: form.pseudo.trim() || "Membre 3B",
-      email: form.email.trim() || "email non renseigné",
+      email: form.email.trim() || "courriel non renseigné",
       originCountry: form.originCountry || "Non renseigné",
       residenceCountry: form.residenceCountry || "Non renseigné",
       city: form.city.trim() || "Non renseignée",
@@ -539,7 +704,7 @@ function PasseportInscription({ go, setMember }) {
       <h1>Inscription 3B</h1>
       <div className="gold-line">◆</div>
 
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <Field icon="👤">
           <input value={form.pseudo} onChange={(e) => update("pseudo", e.target.value)} placeholder="Nom ou pseudo" />
         </Field>
@@ -555,7 +720,7 @@ function PasseportInscription({ go, setMember }) {
         <Field icon="🌍">
           <select value={form.originCountry} onChange={(e) => update("originCountry", e.target.value)}>
             <option value="">Pays d’origine 3B à activer</option>
-            {origin3BCountries.map((country) => <option key={country} value={country}>{country}</option>)}
+            {official3BCountries.map((country) => <option key={country.name} value={country.name}>{country.name}</option>)}
           </select>
         </Field>
 
@@ -588,7 +753,7 @@ function PasseportConnexion({ go }) {
       <BackButton onClick={() => go("passeport-access")} />
       <LogoHeader small />
       <h1>Connexion 3B</h1>
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <Field icon="✉️"><input placeholder="Adresse e-mail" /></Field>
         <Field icon="🔒"><input type="password" placeholder="Mot de passe" /></Field>
         <MenuCard icon="◆" title="Entrer dans mon Passeport" onClick={() => go("passeport")} />
@@ -600,7 +765,7 @@ function PasseportConnexion({ go }) {
 function Passeport({ go, member }) {
   const profile = member || {
     pseudo: "Membre 3B",
-    email: "email non renseigné",
+    email: "courriel non renseigné",
     originCountry: "Non renseigné",
     residenceCountry: "Non renseigné",
     city: "Non renseignée",
@@ -618,10 +783,10 @@ function Passeport({ go, member }) {
 
       <WorldMap3B originCountry={profile.originCountry} />
 
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <InfoCard title="Carte membre digitale" visual={<PassportCardVisual member={profile} />}>
           <p>Nom : {profile.pseudo}</p>
-          <p>E-mail : {profile.email}</p>
+          <p>Courriel : {profile.email}</p>
           <p>Numéro passeport : {profile.serial}</p>
           <p>Date de création : {profile.createdAt}</p>
         </InfoCard>
@@ -637,7 +802,7 @@ function Passeport({ go, member }) {
   );
 }
 
-function EspaceMembre({ go, member }) {
+function EspaceMembre({ go, member, game }) {
   const profile = member || {
     points: 0,
     gamePoints: 0,
@@ -647,7 +812,7 @@ function EspaceMembre({ go, member }) {
   };
 
   const level = getLevel(profile.points);
-  const gamePercent = Math.min(Math.round(((profile.gamePoints || 0) / 500) * 100), 100);
+  const gamePercent = Math.min(Math.round(((game?.xp || 0) / 500) * 100), 100);
   const unlocked = getCountry(profile.originCountry);
 
   return (
@@ -657,7 +822,7 @@ function EspaceMembre({ go, member }) {
       <h1>Espace Membre 3B</h1>
       <div className="gold-line">◆</div>
 
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <InfoCard title="Résumé actuel" visual={<LevelLogo level={level} />}>
           <p>Points 3B : {profile.points}</p>
           <p>Points jeux : {profile.gamePoints || 0}</p>
@@ -665,7 +830,7 @@ function EspaceMembre({ go, member }) {
           <p>Prochain palier : {level.next} points</p>
         </InfoCard>
 
-        <InfoCard title="Progression niveau" visual={<ProgressCircle percent={level.percent} label={`Vers ${level.next} points`} icon={level.icon} />}>
+        <InfoCard title="Niveau de progression" visual={<ProgressCircle percent={level.percent} label={`Vers ${level.next} points`} icon={level.icon} />}>
           <p>La progression est volontairement plus lente.</p>
           <p>Les niveaux font évoluer le statut et le logo.</p>
           <p>Les cartes restent séparées des niveaux.</p>
@@ -674,11 +839,11 @@ function EspaceMembre({ go, member }) {
         <InfoCard title="Progression Jeux 3B" visual={<ProgressCircle percent={gamePercent} label="XP Jeux" icon="🎮" />}>
           <p>Points jeux : {profile.gamePoints || 0}</p>
           <p>Gagner un jeu : points bonus.</p>
-          <p>Passer un niveau : points bonus.</p>
+          <p>Passer un niveau : bonus de points.</p>
           <p>Le logo Jeux deviendra évolutif.</p>
         </InfoCard>
 
-        <InfoCard title="Pays verrouillés" visual={<FlagVisual country={unlocked} />}>
+        <InfoCard title="Pays verrouillé" visual={<FlagVisual country={unlocked} />}>
           {official3BCountries.map((country) => {
             const active = unlocked?.name === country.name;
             return <p key={country.name}>{country.flag} {active ? "✅ Déverrouillé" : "🔒 Verrouillé"} : {country.name}</p>;
@@ -706,8 +871,8 @@ function EspaceMembre({ go, member }) {
           </div>
         </InfoCard>
 
-        <InfoCard title="QR Code et certificat futur" visual={<div className="qr-large">QR</div>}>
-          <p>QR Code personnel du membre</p>
+        <InfoCard title="Code QR et certificat futur" visual={<div className="qr-large">QR</div>}>
+          <p>Code QR personnel du membre</p>
           <p>Relié au compte, aux produits, aux achats, aux cartes et aux certificats 3B.</p>
         </InfoCard>
       </div>
@@ -720,7 +885,7 @@ function PlusEncore({ go }) {
     <div className="page">
       <BackButton onClick={() => go("home")} />
       <h1>Plus encore</h1>
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         <MenuCard icon="💳" title="Cartes de fidélité 3B" onClick={() => go("fidelite")} />
         <MenuCard icon="🛂" title="Passeport 3B" onClick={() => go("passeport-access")} />
         <MenuCard icon="🎮" title="Jeux 3B" onClick={() => go("jeux")} />
@@ -740,7 +905,7 @@ function SimplePage({ go, title, lines }) {
       <BackButton onClick={() => go("plus")} />
       <LogoHeader small />
       <h1>{title}</h1>
-      <div className="page-grid">
+      <div className="page-grid compact-grid">
         {lines.map((line) => (
           <InfoCard key={line.title} title={line.title} visual={<LevelLogo level={{ name: line.title, icon: line.icon }} />}>
             <p>{line.text}</p>
@@ -754,6 +919,12 @@ function SimplePage({ go, title, lines }) {
 export default function App() {
   const [page, setPage] = useState("home");
   const [member, setMember] = useState(null);
+  const [game, setGame] = useState({
+    level: 1,
+    door: 1,
+    xp: 0,
+    completedDoors: 0,
+  });
 
   function go(nextPage) {
     setPage(nextPage);
@@ -767,12 +938,13 @@ export default function App() {
       {page === "musique" && <Musique go={go} />}
       {page === "communaute" && <Communaute go={go} />}
       {page === "secret" && <Secret go={go} />}
-      {page === "jeux" && <Jeux go={go} member={member} />}
+      {page === "jeux" && <Jeux go={go} member={member} game={game} />}
+      {page === "jeu-1000" && <Jeu1000 go={go} game={game} setGame={setGame} setMember={setMember} />}
       {page === "passeport-access" && <PasseportAccess go={go} />}
       {page === "passeport-inscription" && <PasseportInscription go={go} setMember={setMember} />}
       {page === "passeport-connexion" && <PasseportConnexion go={go} />}
       {page === "passeport" && <Passeport go={go} member={member} />}
-      {page === "espace-membre" && <EspaceMembre go={go} member={member} />}
+      {page === "espace-membre" && <EspaceMembre go={go} member={member} game={game} />}
       {page === "plus" && <PlusEncore go={go} />}
       {page === "fidelite" && <SimplePage go={go} title="Cartes de fidélité 3B" lines={[
         { title: "Carte Découverte", icon: "💠", text: "Automatique à l’inscription." },
