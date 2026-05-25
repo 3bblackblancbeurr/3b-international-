@@ -1,69 +1,73 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
-const AVATAR_STYLES = [
+const AVATARS = [
   {
-    id: "heritier",
+    name: "Découverte",
+    aura: "Bleu digital",
+    level: "Débutant",
+  },
+  {
     name: "Héritier",
-    color: "Or",
-    mask: "Couronne 3B",
+    aura: "Or premium",
+    level: "Intermédiaire",
   },
   {
-    id: "gardien",
     name: "Gardien",
-    color: "Noir / Or",
-    mask: "Masque protecteur",
+    aura: "Cyan protecteur",
+    level: "Avancé",
   },
   {
-    id: "visionnaire",
-    name: "Visionnaire",
-    color: "Bleu digital",
-    mask: "Visière matrix",
+    name: "Légende",
+    aura: "Or céleste",
+    level: "Rare",
   },
 ];
 
 export default function ExplorerAvatar3B() {
-  const [selected, setSelected] = useState("heritier");
-
-  const avatar = useMemo(() => {
-    return AVATAR_STYLES.find((item) => item.id === selected) || AVATAR_STYLES[0];
-  }, [selected]);
+  const [selected, setSelected] = useState(AVATARS[0]);
 
   return (
-    <section className="avatar-3b-panel">
-      <div className="section-heading-row">
-        <div>
-          <p className="eyebrow">Avatar explorateur</p>
-          <h2>Guide explorateur 3B</h2>
-        </div>
-        <span className="status-pill active">Interactif</span>
+    <section className="premium-panel">
+      <p className="eyebrow">Avatar explorateur</p>
+      <h2>{selected.name}</h2>
+
+      <div
+        style={{
+          width: "160px",
+          height: "160px",
+          borderRadius: "32px",
+          display: "grid",
+          placeItems: "center",
+          margin: "18px 0",
+          border: "1px solid rgba(230, 189, 100, 0.5)",
+          background:
+            "radial-gradient(circle, rgba(0, 213, 255, 0.25), rgba(0, 0, 0, 0.72))",
+          boxShadow: "0 0 28px rgba(0, 213, 255, 0.16)",
+          color: "#fff0a5",
+          fontSize: "48px",
+          fontWeight: "1000",
+        }}
+      >
+        3B
       </div>
 
-      <div className="avatar-stage">
-        <div className={`avatar-orb avatar-${avatar.id}`}>
-          <div className="avatar-helmet">3B</div>
-          <div className="avatar-body" />
-          <div className="avatar-glow" />
-        </div>
+      <p>
+        <strong>Aura :</strong> {selected.aura}
+      </p>
 
-        <div className="avatar-info">
-          <h3>{avatar.name}</h3>
-          <p>Couleur : {avatar.color}</p>
-          <p>Style : {avatar.mask}</p>
-          <p>
-            Ton avatar accompagne le passeport, les missions, les cartes et la
-            progression membre.
-          </p>
-        </div>
-      </div>
+      <p>
+        <strong>Niveau :</strong> {selected.level}
+      </p>
 
-      <div className="avatar-options">
-        {AVATAR_STYLES.map((item) => (
+      <div className="content-grid">
+        {AVATARS.map((avatar) => (
           <button
-            key={item.id}
-            className={`small-premium-button ${selected === item.id ? "active" : ""}`}
-            onClick={() => setSelected(item.id)}
+            key={avatar.name}
+            type="button"
+            className="secondary-button"
+            onClick={() => setSelected(avatar)}
           >
-            {item.name}
+            {avatar.name}
           </button>
         ))}
       </div>

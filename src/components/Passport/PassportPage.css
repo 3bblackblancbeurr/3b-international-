@@ -1,0 +1,197 @@
+.passport-component-page {
+  width: min(1500px, calc(100vw - 24px));
+  margin: 0 auto;
+  padding: 18px 0 50px;
+  color: #fff8e8;
+}
+
+.passport-component-header {
+  display: grid;
+  grid-template-columns: 120px 1fr 120px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.passport-component-header button {
+  min-height: 42px;
+  border: 1px solid rgba(230, 189, 100, 0.5);
+  border-radius: 999px;
+  color: #fff0a5;
+  background: rgba(0, 0, 0, 0.45);
+  font-weight: 900;
+}
+
+.passport-component-header p {
+  margin: 0;
+  color: #fff0a5;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.passport-component-header h1 {
+  margin: 4px 0 0;
+  font-size: clamp(24px, 4vw, 52px);
+  line-height: 0.95;
+}
+
+.passport-component-frame {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(255, 234, 0, 0.9);
+  border-radius: 26px;
+  background: #02040a;
+  box-shadow:
+    0 0 28px rgba(255, 230, 0, 0.35),
+    0 0 58px rgba(0, 220, 255, 0.22),
+    inset 0 0 30px rgba(0, 255, 255, 0.12);
+}
+
+.passport-component-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  filter:
+    brightness(1.07)
+    contrast(1.08)
+    saturate(1.18)
+    drop-shadow(0 0 14px rgba(0, 238, 255, 0.28));
+}
+
+.passport-component-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 46% 35%, rgba(0, 247, 255, 0.08), transparent 26%),
+    radial-gradient(circle at 74% 23%, rgba(255, 238, 0, 0.06), transparent 18%),
+    radial-gradient(circle at 21% 37%, rgba(0, 255, 255, 0.06), transparent 20%);
+  mix-blend-mode: screen;
+  animation: passportComponentGlow 4.2s ease-in-out infinite alternate;
+}
+
+.passport-component-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -120px;
+  width: 84px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.2),
+    rgba(0, 255, 255, 0.08),
+    transparent
+  );
+  filter: blur(2px);
+  mix-blend-mode: screen;
+  animation: passportComponentScan 5.8s ease-in-out infinite;
+}
+
+.passport-component-hotspot {
+  position: absolute;
+  z-index: 10;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.passport-component-home {
+  top: 2.7%;
+  left: 1.2%;
+  width: 8.2%;
+  height: 5.7%;
+}
+
+.passport-component-entry {
+  top: 2.7%;
+  right: 1.2%;
+  width: 8.2%;
+  height: 5.7%;
+}
+
+.passport-component-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.passport-component-grid article {
+  border: 1px solid rgba(230, 189, 100, 0.3);
+  border-radius: 22px;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.passport-component-grid p {
+  margin: 0 0 8px;
+  color: #fff0a5;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.passport-component-grid h2 {
+  margin: 0;
+  color: white;
+  font-size: clamp(22px, 4vw, 42px);
+}
+
+@keyframes passportComponentGlow {
+  from {
+    opacity: 0.28;
+  }
+
+  to {
+    opacity: 0.68;
+  }
+}
+
+@keyframes passportComponentScan {
+  0% {
+    left: -130px;
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.55;
+  }
+
+  100% {
+    left: calc(100% + 130px);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .passport-component-page {
+    width: calc(100vw - 12px);
+  }
+
+  .passport-component-header {
+    grid-template-columns: 82px 1fr 82px;
+  }
+
+  .passport-component-header button {
+    min-height: 36px;
+    font-size: 11px;
+  }
+
+  .passport-component-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .passport-component-frame {
+    border-radius: 16px;
+  }
+}

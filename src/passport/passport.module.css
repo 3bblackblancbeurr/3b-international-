@@ -1,258 +1,83 @@
-.passportPage {
-  min-height: 100vh;
-  width: 100%;
-  position: relative;
-  overflow-x: hidden;
+.passportUi {
+  border: 1px solid rgba(230, 189, 100, 0.35);
+  border-radius: 28px;
+  padding: 22px;
+  color: #fff8e8;
   background:
-    radial-gradient(circle at top center, rgba(0, 220, 255, 0.18), transparent 34%),
-    radial-gradient(circle at bottom right, rgba(255, 210, 0, 0.14), transparent 28%),
-    linear-gradient(135deg, #02040c 0%, #050816 45%, #02030a 100%);
-  color: #f6e96b;
-  font-family: Georgia, "Times New Roman", serif;
+    radial-gradient(circle at 20% 10%, rgba(0, 213, 255, 0.12), transparent 30%),
+    rgba(0, 0, 0, 0.72);
 }
 
-.backgroundGlow {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(0, 234, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 234, 255, 0.05) 1px, transparent 1px);
-  background-size: 46px 46px;
-  mask-image: radial-gradient(circle at center, black 0%, transparent 78%);
-  opacity: 0.65;
-  animation: gridMove 12s linear infinite;
-}
-
-@keyframes gridMove {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 46px 46px;
-  }
-}
-
-.topBar {
-  width: min(1500px, calc(100% - 32px));
-  margin: 10px auto 0;
-  height: 74px;
-  position: relative;
-  z-index: 5;
-  display: grid;
-  grid-template-columns: 140px 1fr 140px;
-  align-items: center;
-  gap: 16px;
-}
-
-.headerTitle {
-  text-align: center;
+.header p {
+  margin: 0 0 6px;
+  color: #fff0a5;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  letter-spacing: 3px;
-  line-height: 1.1;
-  color: #ffffff;
-  text-shadow:
-    0 0 10px rgba(0, 225, 255, 0.9),
-    0 0 18px rgba(255, 220, 0, 0.45);
 }
 
-.headerTitle span {
-  display: block;
-  font-size: 13px;
-  color: #e7ff00;
-  font-weight: 900;
+.header h2 {
+  margin: 0 0 18px;
+  font-size: clamp(28px, 4vw, 52px);
+  line-height: 0.95;
 }
 
-.headerTitle strong {
-  display: block;
-  font-size: 22px;
-  color: #ffffff;
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
 }
 
-.navButton {
-  height: 46px;
+.countryCard {
+  display: grid;
+  gap: 6px;
+  min-height: 110px;
+  border: 1px solid rgba(230, 189, 100, 0.25);
+  border-radius: 18px;
+  padding: 14px;
+  color: #fff8e8;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.countryCard span {
+  font-size: 26px;
+}
+
+.countryCard strong {
+  color: #fff0a5;
+}
+
+.countryCard small {
+  color: rgba(255, 248, 232, 0.62);
+}
+
+.countryCard.active {
+  border-color: rgba(0, 213, 255, 0.65);
+  background: rgba(0, 213, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 213, 255, 0.12);
+}
+
+.resetButton {
+  min-height: 44px;
+  margin-top: 16px;
+  border: 1px solid rgba(255, 52, 52, 0.42);
   border-radius: 999px;
-  border: 2px solid rgba(255, 240, 0, 0.9);
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff45c;
+  padding: 0 18px;
+  color: #ffd6d6;
   font-weight: 900;
-  font-size: 15px;
-  cursor: pointer;
-  box-shadow:
-    0 0 14px rgba(255, 230, 0, 0.55),
-    inset 0 0 18px rgba(255, 230, 0, 0.12);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: rgba(255, 52, 52, 0.09);
 }
 
-.navButton:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 0 24px rgba(255, 230, 0, 0.85),
-    inset 0 0 22px rgba(255, 230, 0, 0.18);
-}
-
-.passportFrame {
-  width: min(1500px, calc(100% - 28px));
-  margin: 6px auto 28px;
-  position: relative;
-  z-index: 2;
-  border-radius: 26px;
-  overflow: hidden;
-  border: 2px solid rgba(255, 221, 0, 0.8);
-  background: rgba(0, 0, 0, 0.55);
-  box-shadow:
-    0 0 24px rgba(255, 220, 0, 0.45),
-    0 0 55px rgba(0, 210, 255, 0.25),
-    inset 0 0 32px rgba(0, 230, 255, 0.16);
-}
-
-.passportImage {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  filter:
-    contrast(1.08)
-    saturate(1.18)
-    brightness(1.05)
-    drop-shadow(0 0 18px rgba(0, 238, 255, 0.45));
-  transform: translateZ(0);
-}
-
-.scanLine {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 90px;
-  left: -120px;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 255, 255, 0.04),
-    rgba(0, 255, 255, 0.25),
-    rgba(255, 255, 255, 0.25),
-    rgba(0, 255, 255, 0.04),
-    transparent
-  );
-  filter: blur(2px);
-  animation: scanMove 4.8s ease-in-out infinite;
-}
-
-@keyframes scanMove {
-  0% {
-    left: -140px;
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  55% {
-    opacity: 1;
-  }
-  100% {
-    left: calc(100% + 140px);
-    opacity: 0;
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-.lightPulse {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(0, 247, 255, 0.18), transparent 28%),
-    radial-gradient(circle at 81% 22%, rgba(255, 230, 0, 0.14), transparent 18%);
-  mix-blend-mode: screen;
-  animation: pulseGlow 3.2s ease-in-out infinite alternate;
-}
-
-@keyframes pulseGlow {
-  from {
-    opacity: 0.35;
-  }
-  to {
-    opacity: 0.85;
-  }
-}
-
-/* TABLETTE */
-@media (max-width: 1050px) {
-  .topBar {
-    width: calc(100% - 20px);
-    grid-template-columns: 110px 1fr 110px;
-    height: 64px;
-    gap: 10px;
-  }
-
-  .headerTitle span {
-    font-size: 10px;
-    letter-spacing: 2px;
-  }
-
-  .headerTitle strong {
-    font-size: 17px;
-  }
-
-  .navButton {
-    height: 40px;
-    font-size: 13px;
-  }
-
-  .passportFrame {
-    width: calc(100% - 16px);
-    border-radius: 20px;
-  }
-}
-
-/* TÉLÉPHONE */
-@media (max-width: 760px) {
-  .passportPage {
-    min-height: 100svh;
-    overflow-x: hidden;
-  }
-
-  .topBar {
-    width: calc(100% - 14px);
-    height: auto;
-    min-height: 58px;
-    grid-template-columns: 82px 1fr 82px;
-    gap: 6px;
-    margin-top: 8px;
-  }
-
-  .navButton {
-    height: 34px;
-    font-size: 11px;
-    padding: 0 8px;
-    border-width: 1.5px;
-  }
-
-  .headerTitle {
-    letter-spacing: 1.5px;
-  }
-
-  .headerTitle span {
-    font-size: 8px;
-  }
-
-  .headerTitle strong {
-    font-size: 13px;
-  }
-
-  .passportFrame {
-    width: calc(100% - 10px);
-    margin-top: 4px;
-    border-radius: 16px;
-    border-width: 1.5px;
-  }
-
-  .passportImage {
-    width: 100%;
-    height: auto;
-  }
-
-  .scanLine {
-    width: 60px;
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
