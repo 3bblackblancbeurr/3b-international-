@@ -1,0 +1,427 @@
+.passport-final-page {
+  width: 100%;
+}
+
+.passport-live-stage {
+  position: relative;
+  width: min(1380px, 100%);
+  margin: 0 auto 28px;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px rgba(255, 207, 76, 0.22),
+    0 14px 40px rgba(0, 0, 0, 0.45);
+}
+
+.passport-live-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.passport-live-crop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/passport-digital-3bv2.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  will-change: transform, filter, opacity;
+}
+
+.passport-hotspot {
+  position: absolute;
+  z-index: 20;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.passport-hotspot-home {
+  left: 0.25%;
+  top: 8.9%;
+  width: 9.4%;
+  height: 8.4%;
+  border-radius: 999px;
+}
+
+.passport-hotspot-entry {
+  right: 0.3%;
+  top: 8.9%;
+  width: 9.4%;
+  height: 8.4%;
+  border-radius: 999px;
+}
+
+.passport-card-live {
+  clip-path: inset(15.6% 28.9% 31% 31.1% round 1.8%);
+  mix-blend-mode: screen;
+  opacity: 0.98;
+  animation: passport-card-breathe 6.2s ease-in-out infinite;
+}
+
+.passport-top-map-live {
+  clip-path: inset(18.9% 70.6% 61.2% 3.3% round 1.4%);
+  mix-blend-mode: screen;
+  opacity: 0.92;
+  animation: passport-map-breathe 5.8s ease-in-out infinite;
+}
+
+.passport-zoom-map-live {
+  clip-path: inset(48.7% 70.7% 37.1% 3.1% round 1.4%);
+  mix-blend-mode: screen;
+  opacity: 0.92;
+  animation: passport-map-breathe 6.4s ease-in-out infinite reverse;
+}
+
+.passport-chip-live {
+  clip-path: inset(19.5% 61.8% 67.7% 32.5% round 1%);
+  mix-blend-mode: screen;
+  opacity: 0.96;
+  animation: passport-chip-pulse 3.4s ease-in-out infinite;
+}
+
+.passport-nfc-live {
+  clip-path: inset(45.6% 31.8% 38.4% 61.3% round 50%);
+  mix-blend-mode: screen;
+  opacity: 0.96;
+  animation: passport-nfc-pulse 2.8s ease-in-out infinite;
+}
+
+.passport-face-live {
+  clip-path: inset(21.4% 31.7% 54.7% 60.1% round 1.3%);
+  mix-blend-mode: screen;
+  opacity: 0.99;
+  animation: passport-face-drift 4.9s ease-in-out infinite;
+}
+
+.passport-face-scan-line {
+  position: absolute;
+  z-index: 7;
+  left: 60.4%;
+  top: 21.6%;
+  width: 8.2%;
+  height: 23.5%;
+  border-radius: 1.2%;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(116, 245, 255, 0) 0%,
+    rgba(116, 245, 255, 0) 34%,
+    rgba(116, 245, 255, 0.28) 47%,
+    rgba(116, 245, 255, 0.55) 50%,
+    rgba(116, 245, 255, 0.28) 53%,
+    rgba(116, 245, 255, 0) 66%,
+    rgba(116, 245, 255, 0) 100%
+  );
+  mix-blend-mode: screen;
+  animation: passport-face-scan 3.8s linear infinite;
+}
+
+.passport-medal-live {
+  clip-path: inset(35.4% 8.7% 35.6% 76.5% round 50%);
+  mix-blend-mode: screen;
+  opacity: 0.98;
+  transform-origin: 83.7% 49.4%;
+  animation: passport-medal-spin 12s linear infinite;
+}
+
+.passport-digit-strip {
+  z-index: 8;
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  clip-path: inset(
+    var(--clip-top)
+    calc(100% - var(--strip-left) - var(--strip-width))
+    var(--clip-bottom)
+    var(--strip-left)
+    round 0.4%
+  );
+  animation: passport-digit-flow var(--strip-duration) linear infinite;
+  animation-delay: var(--strip-delay);
+}
+
+.passport-map-pins {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.passport-map-pins-top {
+  left: 3.3%;
+  top: 18.9%;
+  width: 26.1%;
+  height: 19.9%;
+}
+
+.passport-map-pins-zoom {
+  left: 3.1%;
+  top: 48.7%;
+  width: 26.2%;
+  height: 14.2%;
+}
+
+.passport-map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+}
+
+.passport-map-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.72vw;
+  height: 0.72vw;
+  min-width: 8px;
+  min-height: 8px;
+  max-width: 12px;
+  max-height: 12px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(circle, rgba(255, 239, 120, 0.98) 0%, rgba(255, 226, 66, 0.9) 45%, rgba(255, 198, 0, 0.25) 72%, rgba(255, 198, 0, 0) 100%);
+  box-shadow:
+    0 0 8px rgba(255, 233, 92, 0.95),
+    0 0 16px rgba(255, 214, 64, 0.7);
+  animation: passport-pin-core 2.2s ease-in-out infinite;
+}
+
+.passport-map-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.1vw;
+  height: 1.1vw;
+  min-width: 14px;
+  min-height: 14px;
+  max-width: 18px;
+  max-height: 18px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 231, 115, 0.65);
+  box-shadow: 0 0 10px rgba(255, 226, 92, 0.42);
+  animation: passport-pin-ring 2.2s ease-out infinite;
+}
+
+.passport-map-pin:nth-child(2)::before,
+.passport-map-pin:nth-child(2)::after {
+  animation-delay: -0.25s;
+}
+
+.passport-map-pin:nth-child(3)::before,
+.passport-map-pin:nth-child(3)::after {
+  animation-delay: -0.5s;
+}
+
+.passport-map-pin:nth-child(4)::before,
+.passport-map-pin:nth-child(4)::after {
+  animation-delay: -0.75s;
+}
+
+.passport-map-pin:nth-child(5)::before,
+.passport-map-pin:nth-child(5)::after {
+  animation-delay: -1s;
+}
+
+.passport-map-pin:nth-child(6)::before,
+.passport-map-pin:nth-child(6)::after {
+  animation-delay: -1.25s;
+}
+
+.passport-map-pin:nth-child(7)::before,
+.passport-map-pin:nth-child(7)::after {
+  animation-delay: -1.5s;
+}
+
+.passport-map-pin:nth-child(8)::before,
+.passport-map-pin:nth-child(8)::after {
+  animation-delay: -1.75s;
+}
+
+@keyframes passport-card-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    transform: scale(1.0045);
+    filter: brightness(1.08) saturate(1.12);
+  }
+}
+
+@keyframes passport-map-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    transform: scale(1.008);
+    filter: brightness(1.12) saturate(1.16);
+  }
+}
+
+@keyframes passport-chip-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    transform: scale(1.025);
+    filter: brightness(1.16) saturate(1.18);
+  }
+}
+
+@keyframes passport-nfc-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    transform: scale(1.035);
+    filter: brightness(1.18) saturate(1.2);
+  }
+}
+
+@keyframes passport-face-drift {
+  0%,
+  100% {
+    transform: translate(0%, 0%);
+    filter: brightness(1) saturate(1);
+  }
+  25% {
+    transform: translate(0.12%, -0.08%);
+    filter: brightness(1.04) saturate(1.04);
+  }
+  50% {
+    transform: translate(0.28%, -0.16%);
+    filter: brightness(1.08) saturate(1.06);
+  }
+  75% {
+    transform: translate(0.08%, 0.08%);
+    filter: brightness(1.03) saturate(1.02);
+  }
+}
+
+@keyframes passport-face-scan {
+  0% {
+    transform: translateY(-52%);
+    opacity: 0.18;
+  }
+  15% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(54%);
+    opacity: 0.1;
+  }
+}
+
+@keyframes passport-medal-spin {
+  0% {
+    transform: rotate(0deg);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    filter: brightness(1.08) saturate(1.06);
+  }
+  100% {
+    transform: rotate(360deg);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes passport-digit-flow {
+  0% {
+    transform: translateY(-0.6%);
+    opacity: 0.82;
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    transform: translateY(1.4%);
+    opacity: 1;
+    filter: brightness(1.18) saturate(1.14);
+  }
+  100% {
+    transform: translateY(-0.6%);
+    opacity: 0.82;
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes passport-pin-core {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.88;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes passport-pin-ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.78;
+  }
+  70% {
+    opacity: 0.18;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .passport-live-stage {
+    border-radius: 18px;
+    box-shadow:
+      0 0 0 1px rgba(255, 207, 76, 0.18),
+      0 10px 24px rgba(0, 0, 0, 0.38);
+  }
+
+  .passport-map-pin::before {
+    min-width: 7px;
+    min-height: 7px;
+  }
+
+  .passport-map-pin::after {
+    min-width: 12px;
+    min-height: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .passport-card-live,
+  .passport-top-map-live,
+  .passport-zoom-map-live,
+  .passport-chip-live,
+  .passport-nfc-live,
+  .passport-face-live,
+  .passport-face-scan-line,
+  .passport-medal-live,
+  .passport-digit-strip,
+  .passport-map-pin::before,
+  .passport-map-pin::after {
+    animation: none !important;
+  }
+}
