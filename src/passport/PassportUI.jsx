@@ -1,371 +1,588 @@
-import { useMemo, useState } from "react";
-import { usePassportState } from "./usePassportState";
+import React, { useEffect, useMemo, useState } from "react";
 import styles from "./passport.module.css";
+import passportData from "./passportData";
 
-const TABS = [
-  { id: "home", label: "Accueil Passeport" },
-  { id: "world", label: "Carte du monde" },
-  { id: "cards", label: "Mes cartes" },
-  { id: "logos", label: "Logos digitaux" },
-  { id: "missions", label: "Missions & Quiz" },
-  { id: "bonuses", label: "Bonus pays" },
+const QR_PATTERN = [
+  "1111111110011",
+  "1000000011010",
+  "1011101010011",
+  "1011101011100",
+  "1011101010011",
+  "1000000010110",
+  "1111111110101",
+  "0001010001100",
+  "1110011110011",
+  "0010110011010",
+  "1101011100101",
+  "1010010111010",
+  "1111101101111",
 ];
 
-function statusLabel(status) {
-  const labels = {
-    locked: "Verrouillé",
-    origin: "Pays d'origine",
-    hint_active: "Indice actif",
-    mission: "Mission en cours",
-    unlocked: "Débloqué",
-  };
-  return labels[status] || status;
+function randomBlock() {
+  return Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, "0");
 }
 
-function getProgressPercent(points) {
-  return Math.min(100, Math.round((points / 3000) * 100));
+function buildTickerLine() {
+  return Array.from({ length: 8 }, () => randomBlock()).join("   ");
 }
 
-function PassportHeader({ user, resetPassport }) {
+function buildStreamLine(length = 28) {
+  return Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
+}
+
+function DigitalQRCode() {
+  const cells = useMemo(
+    () =>
+      QR_PATTERN.join("")
+        .split("")
+        .map((value, index) => ({
+          id: index,
+          active: value === "1",
+        })),
+    []
+  );
+
   return (
-    <header className={styles.header}>
-      <div className={styles.kicker}>3B International</div>
-      <h1 className={styles.title}>Passeport 3B</h1>
-      <p className={styles.subtitle}>
-        Un espace vivant où l’utilisateur crée son identité, voyage sur la carte du monde,
-        débloque les pays, gagne des cartes, des tampons, des logos digitaux et des bonus uniques.
-      </p>
-      {user.passportActivated && (
-        <button className={styles.dangerButton} onClick={resetPassport}>
-          Réinitialiser la V1 locale
-        </button>
-      )}
-    </header>
+    <div className={styles.qrCode} aria-hidden="true">
+      {cells.map((cell) => (
+        <span
+          key={cell.id}
+          className={`${styles.qrCell} ${cell.active ? styles.qrCellOn : ""}`}
+        />
+      ))}
+    </div>
   );
 }
 
-function CreatePassport({ createPassport }) {
-  const [pseudo, setPseudo] = useState("Zakaria");
-  const [countryOrigin, setCountryOrigin] = useState("Maroc");
-  const [avatar, setAvatar] = useState("explorateur");
+function AnimatedStream({ delay = 0 }) {
+  const [value, setValue] = useState(buildStreamLine());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setValue(buildStreamLine());
+    }, 180 + delay);
+
+    return () => clearInterval(interval);
+  }, [delay]);
+
+  return <span>{value}</span>;
+}
+
+export default function PassportUI({
+  memberName = "Zakaria",
+  memberEmail = "3bblackblancbeurre@gmail.com",
+  onBack,
+  onHome,
+  onEntry,
+}) {
+  const [tickerLines, setTickerLines] = useState([
+    buildTickerLine(),
+    buildTickerLine(),
+    buildTickerLine(),
+  ]);
+
+  const [liveTime, setLiveTime] = useState("");
+  const [scanPercent, setScanPercent] = useState(82);
+  const [securityPulse, setSecurityPulse] = useState(0);
+
+  useEffect(() => {
+    const tickerInterval = setInterval(() => {
+      setTickerLines([buildTickerLine(), buildTickerLine(), buildTickerLine()]);
+    }, 220);
+
+    return () => clearInterval(tickerInterval);
+  }, []);
+
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      const now = new Date();
+      setLiveTime(
+        now.toLocaleTimeString("fr-FR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
+    }, 1000);
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  useEffect(() => {
+    const scanInterval = setInterval(() => {
+      setScanPercent((prev) => {
+        const next = prev + (Math.random() > 0.5 ? 1 : -1);
+        if (next < 78) return 79;
+        if (next > 99) return 98;
+        return next;
+      });
+    }, 900);
+
+    return () => clearInterval(scanInterval);
+  }, []);
+
+  useEffect(() => {
+    const pulseInterval = setInterval(() => {
+      setSecurityPulse((prev) => (prev + 1) % 4);
+    }, 700);
+
+    return () => clearInterval(pulseInterval);
+  }, []);
+
+  const data = {
+    ...passportData,
+    member: {
+      ...passportData.member,
+      name: memberName,
+      email: memberEmail,
+    },
+  };
 
   return (
-    <div className={styles.grid}>
-      <section className={styles.card}>
-        <h2 className={styles.cardTitle}>Crée ton identité 3B</h2>
-        <p className={styles.muted}>
-          Choisis ton pays d’origine. Ton Explorateur 3B apparaîtra directement sur ce pays.
-        </p>
+    <div className={styles.page}>
+      <div className={styles.backgroundGlow} />
+      <div className={styles.backgroundGlowTwo} />
 
-        <div className={styles.form}>
-          <label>
-            Pseudo
-            <input className={styles.input} value={pseudo} onChange={(e) => setPseudo(e.target.value)} />
-          </label>
-
-          <label>
-            Avatar
-            <select className={styles.select} value={avatar} onChange={(e) => setAvatar(e.target.value)}>
-              <option value="explorateur">Explorateur 3B</option>
-              <option value="voyageur">Voyageur 3B</option>
-              <option value="guide">Guide 3B</option>
-            </select>
-          </label>
-
-          <label>
-            Pays d’origine
-            <select className={styles.select} value={countryOrigin} onChange={(e) => setCountryOrigin(e.target.value)}>
-              <option>France</option>
-              <option>Maroc</option>
-              <option>Italie</option>
-              <option>Algérie</option>
-              <option>Tunisie</option>
-              <option>Espagne</option>
-              <option>Turquie</option>
-              <option>Estonie</option>
-            </select>
-          </label>
-
-          <button className={styles.button} onClick={() => createPassport({ pseudo, countryOrigin, avatar })}>
-            Créer mon Passeport 3B
+      <header className={styles.topBar}>
+        <div className={styles.topBarSide}>
+          <button
+            className={styles.topButton}
+            onClick={onHome}
+            type="button"
+          >
+            Accueil
           </button>
         </div>
-      </section>
-    </div>
-  );
-}
 
-function RewardModal({ reward, onClose }) {
-  if (!reward) return null;
-
-  return (
-    <div className={styles.reward}>
-      <div className={styles.rewardBox}>
-        <div className={styles.kicker}>Récompense 3B</div>
-        <h2 className={styles.cardTitle}>{reward.title}</h2>
-        {reward.details?.map((detail) => <p key={detail}>✨ {detail}</p>)}
-        <button className={styles.button} onClick={onClose}>Continuer</button>
-      </div>
-    </div>
-  );
-}
-
-function ProgressCard({ user }) {
-  const percent = getProgressPercent(user.points);
-
-  return (
-    <section className={`${styles.card} ${styles.cardHalf}`}>
-      <h2 className={styles.cardTitle}>{user.pseudo} — Niveau {user.level}</h2>
-      <p className={styles.muted}>Pays d’origine : {user.countryOrigin}</p>
-      <p>Points : <strong>{user.points}</strong></p>
-      <div className={styles.progressOuter}>
-        <div className={styles.progressInner} style={{ width: `${percent}%` }} />
-      </div>
-      <p className={styles.muted}>Progression globale : {percent}%</p>
-      <span className={styles.badge}>Pays débloqués : {user.unlockedCountries.length}/8</span>
-      <span className={styles.badge}>Cartes : {user.cardsOwned.length}</span>
-      <span className={styles.badge}>Bonus actifs : {user.activeBonuses.length}</span>
-    </section>
-  );
-}
-
-function ExplorerCard({ user }) {
-  return (
-    <section className={`${styles.card} ${styles.cardHalf}`}>
-      <h2 className={styles.cardTitle}>Explorateur 3B</h2>
-      <div className={styles.explorer}>🧭</div>
-      <p>Position actuelle : <strong>{user.currentCountry || user.countryOrigin}</strong></p>
-      <p className={styles.muted}>L’explorateur représente l’utilisateur et se déplace quand un pays est débloqué.</p>
-    </section>
-  );
-}
-
-function HomeView({ user, setTab }) {
-  return (
-    <div className={styles.grid}>
-      <ProgressCard user={user} />
-      <ExplorerCard user={user} />
-      <section className={styles.card}>
-        <h2 className={styles.cardTitle}>Accès rapide</h2>
-        <div className={styles.nav}>
-          {TABS.filter((tab) => tab.id !== "home").map((tab) => (
-            <button key={tab.id} className={styles.button} onClick={() => setTab(tab.id)}>
-              {tab.label}
-            </button>
-          ))}
+        <div className={styles.topBarCenter}>
+          <div className={styles.miniBrand}>3B INTERNATIONAL</div>
+          <div className={styles.miniTitle}>Passeport 3B</div>
         </div>
-      </section>
-    </div>
-  );
-}
 
-function WorldView({ countries, user, setSelectedCountryId, setTab }) {
-  return (
-    <div className={styles.grid}>
-      <section className={styles.card}>
-        <h2 className={styles.cardTitle}>Carte du monde 3B</h2>
-        <div className={styles.mapBox}>
-          <div>
-            <div className={styles.explorer}>🧭</div>
-            <h3>Explorateur placé sur : {user.currentCountry || user.countryOrigin}</h3>
-            <p className={styles.muted}>Version V1 simplifiée. La vraie carte interactive viendra après validation.</p>
+        <div className={styles.topBarSideRight}>
+          <button
+            className={styles.topButton}
+            onClick={onEntry}
+            type="button"
+          >
+            Entrée
+          </button>
+        </div>
+      </header>
+
+      <main className={styles.mainCard}>
+        <div className={styles.headerZone}>
+          <div className={styles.headerLeft}>
+            <button
+              className={styles.backButton}
+              onClick={onBack}
+              type="button"
+            >
+              ← Retour
+            </button>
+
+            <div className={styles.titleBlock}>
+              <div className={styles.kicker}>3B INTERNATIONAL</div>
+              <h1 className={styles.title}>Passeport Digital 3B</h1>
+              <p className={styles.subtitle}>
+                Identité numérique, accès mondial, avantages exclusifs et carte
+                membre vivante.
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
 
-      <section className={styles.card}>
-        <h2 className={styles.cardTitle}>Les 8 pays</h2>
-        <div className={styles.countryList}>
-          {countries.map((country) => (
-            <article key={country.id} className={styles.countryCard}>
-              <div className={styles.countryEmoji}>{country.emoji}</div>
-              <h3>{country.name}</h3>
-              <span className={styles.badge}>{statusLabel(country.status)}</span>
-              <p className={styles.muted}>{country.bonusName}</p>
-              <p>Fragments : {country.fragments}/{country.fragmentsRequired}</p>
-              <button className={styles.secondaryButton} onClick={() => { setSelectedCountryId(country.id); setTab("country"); }}>
-                Voir le pays
+          <button className={styles.verifyButton} type="button">
+            Vérifier l’authenticité
+          </button>
+        </div>
+
+        <section className={styles.layout}>
+          {/* COLONNE GAUCHE */}
+          <aside className={styles.leftColumn}>
+            <div className={styles.panel}>
+              <div className={styles.panelLabel}>ACCÈS MONDIAL 3B</div>
+              <h2 className={styles.panelTitle}>Carte du monde 3B</h2>
+
+              <div className={styles.worldMap}>
+                <div className={styles.mapGlow} />
+                <div className={styles.mapNode} style={{ top: "34%", left: "30%" }}>
+                  France
+                </div>
+                <div className={styles.mapNode} style={{ top: "25%", left: "43%" }}>
+                  Estonie
+                </div>
+                <div className={styles.mapNode} style={{ top: "54%", left: "25%" }}>
+                  Maroc
+                </div>
+                <div className={styles.mapNode} style={{ top: "48%", left: "36%" }}>
+                  Espagne
+                </div>
+                <div className={styles.mapNode} style={{ top: "61%", left: "45%" }}>
+                  Tunisie
+                </div>
+                <div className={styles.mapNode} style={{ top: "45%", left: "54%" }}>
+                  Turquie
+                </div>
+                <div className={styles.mapNode} style={{ top: "57%", left: "52%" }}>
+                  Algérie
+                </div>
+                <div className={styles.orbitLine} />
+              </div>
+
+              <div className={styles.statRow}>
+                <div className={styles.statBox}>
+                  <strong>{data.stats.connectedCountries}</strong>
+                  <span>Pays connectés</span>
+                </div>
+
+                <div className={styles.statBox}>
+                  <strong>{data.stats.globalAccess}</strong>
+                  <span>Accès global</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.panel}>
+              <div className={styles.panelHeaderInline}>
+                <div>
+                  <div className={styles.panelLabel}>FOCUS RÉGIONAL</div>
+                  <h3 className={styles.panelTitleSmall}>Zoom 8 pays</h3>
+                </div>
+
+                <span className={styles.badgeTag}>Europe / Méditerranée</span>
+              </div>
+
+              <div className={styles.regionMap}>
+                {data.countries.map((country) => (
+                  <div
+                    key={country.name}
+                    className={styles.regionNode}
+                    style={country.position}
+                  >
+                    {country.name}
+                  </div>
+                ))}
+                <div className={styles.regionZoom}>ZOOM</div>
+              </div>
+            </div>
+
+            <div className={styles.panel}>
+              <div className={styles.panelHeaderInline}>
+                <div>
+                  <div className={styles.panelLabel}>INFORMATIONS MEMBRE</div>
+                  <h3 className={styles.panelTitleSmall}>Identité et statut</h3>
+                </div>
+              </div>
+
+              <div className={styles.infoGrid}>
+                <div className={styles.infoRow}>
+                  <span>Nom</span>
+                  <strong>{data.member.name}</strong>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>E-mail</span>
+                  <strong>{data.member.email}</strong>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>Statut</span>
+                  <strong>{data.member.status}</strong>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>Date d’adhésion</span>
+                  <strong>{data.member.joinDate}</strong>
+                </div>
+                <div className={styles.infoRow}>
+                  <span>ID Membre</span>
+                  <strong>{data.member.memberId}</strong>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          {/* CENTRE */}
+          <section className={styles.centerColumn}>
+            <div className={styles.passportCard}>
+              <div className={styles.cardNoise} />
+              <div className={styles.cardScanLine} />
+
+              <div className={styles.tickerTop}>
+                {tickerLines.map((line, index) => (
+                  <div key={index}>{line}</div>
+                ))}
+              </div>
+
+              <div className={styles.watermark}>3B</div>
+
+              <div className={styles.cardTopRow}>
+                <div className={styles.chipBlock}>
+                  <div className={styles.cardChip} />
+                  <div className={styles.contactless}>
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+
+                <div className={styles.cardHeaderText}>
+                  <div className={styles.cardMiniLabel}>3B ACCÈS NUMÉRIQUE</div>
+                  <h2 className={styles.cardMainTitle}>3B Passport Numérique</h2>
+                </div>
+
+                <div className={styles.flagBox}>
+                  <span>FRANCE</span>
+                  <div className={styles.frFlag}>
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.cardBody}>
+                <div className={styles.cardIdentity}>
+                  <div className={styles.identityRow}>
+                    <span>Titulaire</span>
+                    <strong>{data.member.name}</strong>
+                  </div>
+
+                  <div className={styles.identityRow}>
+                    <span>Statut</span>
+                    <strong>
+                      {data.member.status}
+                      <em className={styles.activeBadge}>ACTIF</em>
+                    </strong>
+                  </div>
+
+                  <div className={styles.identityRow}>
+                    <span>N°</span>
+                    <strong>{data.member.passNumber}</strong>
+                  </div>
+
+                  <div className={styles.identityRow}>
+                    <span>Pays 3B</span>
+                    <strong>{data.member.originCountry}</strong>
+                  </div>
+
+                  <div className={styles.identityRow}>
+                    <span>Résidence</span>
+                    <strong>{data.member.residenceCountry}</strong>
+                  </div>
+
+                  <div className={styles.identityFooter}>
+                    IDENTITÉ NUMÉRIQUE MEMBRE 3B
+                  </div>
+                </div>
+
+                <div className={styles.cardVisualZone}>
+                  <div className={styles.avatarFrame}>
+                    <div className={styles.avatarGrid} />
+                    <div className={styles.avatarHead} />
+                    <div className={styles.avatarShoulders} />
+                  </div>
+
+                  <div className={styles.visualBottomRow}>
+                    <DigitalQRCode />
+
+                    <div className={styles.nfcBadge}>NFC</div>
+                  </div>
+
+                  <div className={styles.emissionDate}>
+                    ÉMISSION <strong>{data.member.issueDate}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.digitalStreams}>
+                <div className={styles.streamColumn}>
+                  <AnimatedStream delay={0} />
+                  <AnimatedStream delay={50} />
+                  <AnimatedStream delay={100} />
+                </div>
+                <div className={styles.streamColumn}>
+                  <AnimatedStream delay={20} />
+                  <AnimatedStream delay={70} />
+                  <AnimatedStream delay={120} />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.bottomGrid}>
+              <div className={styles.panel}>
+                <div className={styles.panelHeaderInline}>
+                  <div>
+                    <div className={styles.panelLabel}>RÉSIDENCE ET ORIGINE</div>
+                    <h3 className={styles.panelTitleSmall}>
+                      Repères du membre 3B
+                    </h3>
+                  </div>
+                </div>
+
+                <div className={styles.infoGrid}>
+                  <div className={styles.infoRow}>
+                    <span>Pays 3B</span>
+                    <strong>{data.member.originCountry}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Résidence</span>
+                    <strong>{data.member.residenceCountry}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Ville</span>
+                    <strong>{data.member.city}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Numéro</span>
+                    <strong>{data.member.passNumber}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Origine sélectionnée</span>
+                    <strong>{data.member.originCountry}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.panel}>
+                <div className={styles.panelHeaderInline}>
+                  <div>
+                    <div className={styles.panelLabel}>BONUS PAYS D’ORIGINE</div>
+                    <h3 className={styles.panelTitleSmall}>
+                      Avantages exclusifs déverrouillés
+                    </h3>
+                  </div>
+                </div>
+
+                <div className={styles.infoGrid}>
+                  <div className={styles.infoRow}>
+                    <span>Pays choisi</span>
+                    <strong>{data.member.originCountry}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Bonus spécial</span>
+                    <strong>{data.bonus.title}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Effet</span>
+                    <strong>{data.bonus.effect}</strong>
+                  </div>
+                  <div className={styles.infoRow}>
+                    <span>Détail</span>
+                    <strong>{data.bonus.detail}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.footerStrip}>
+              <div className={styles.footerBrand}>
+                <strong>3B</strong>
+                <span>INTERNATIONAL</span>
+                <small>LUXE • FUTURISME • HÉRITAGE</small>
+              </div>
+
+              <div className={styles.footerCenter}>
+                <div className={styles.footerItem}>
+                  <strong>RÉSEAU MONDIAL SÉCURISÉ</strong>
+                  <span>Connexion chiffrée & protégée</span>
+                </div>
+                <div className={styles.footerItem}>
+                  <strong>SUPPORT 3B</strong>
+                  <span>Assistance prioritaire membre 3B</span>
+                </div>
+              </div>
+
+              <button className={styles.helpButton} type="button">
+                Besoin d’aide ?
               </button>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
-}
+            </div>
+          </section>
 
-function CountryDetailView({ country, gainFragment, unlockCountry }) {
-  if (!country) return <section className={styles.card}><h2 className={styles.cardTitle}>Pays introuvable</h2></section>;
+          {/* COLONNE DROITE */}
+          <aside className={styles.rightColumn}>
+            <div className={styles.panel}>
+              <div className={styles.panelHeaderInline}>
+                <div>
+                  <div className={styles.panelLabel}>SÉCURITÉ & AUTHENTIFICATION</div>
+                  <h3 className={styles.panelTitleSmall}>Système actif</h3>
+                </div>
+              </div>
 
-  return (
-    <div className={styles.grid}>
-      <section className={`${styles.card} ${styles.cardHalf}`}>
-        <div className={styles.countryEmoji}>{country.emoji}</div>
-        <h2 className={styles.cardTitle}>{country.name}</h2>
-        <span className={styles.badge}>{statusLabel(country.status)}</span>
-        <p>{country.theme}</p>
-        <p className={styles.muted}>Couleurs : {country.colors}</p>
-        {country.secretHint && (
-          <p>Indice : <strong>“{country.secretHint}”</strong><br />Ouverture : {country.unlockDate}</p>
-        )}
-      </section>
+              <div className={styles.securityList}>
+                {data.security.map((item, index) => (
+                  <div className={styles.securityRow} key={index}>
+                    <span>{item.label}</span>
+                    <strong>{item.value}</strong>
+                  </div>
+                ))}
+              </div>
 
-      <section className={`${styles.card} ${styles.cardHalf}`}>
-        <h2 className={styles.cardTitle}>Logo digital</h2>
-        <p>Fragments : {country.fragments}/{country.fragmentsRequired}</p>
-        <div className={styles.progressOuter}>
-          <div className={styles.progressInner} style={{ width: `${(country.fragments / country.fragmentsRequired) * 100}%` }} />
-        </div>
-        <span className={styles.badge}>Bonus : {country.bonusName}</span>
-        <p className={styles.muted}>{country.bonusEffect}</p>
-        <p className={styles.muted}>Effet personnage : {country.characterEffect}</p>
-        <div className={styles.nav}>
-          <button className={styles.button} onClick={() => gainFragment(country.id)}>Gagner 1 fragment</button>
-          <button className={styles.secondaryButton} onClick={() => unlockCountry(country.id)}>Débloquer le pays V1</button>
-        </div>
-      </section>
-    </div>
-  );
-}
+              <div
+                className={`${styles.sealBlock} ${
+                  securityPulse === 1
+                    ? styles.sealPulseOne
+                    : securityPulse === 2
+                    ? styles.sealPulseTwo
+                    : securityPulse === 3
+                    ? styles.sealPulseThree
+                    : ""
+                }`}
+              >
+                <div className={styles.sealOuter}>
+                  <div className={styles.sealMiddle}>
+                    <div className={styles.sealInner}>3B</div>
+                  </div>
+                </div>
+              </div>
 
-function CardsView({ cards }) {
-  return (
-    <section className={styles.card}>
-      <h2 className={styles.cardTitle}>Mes cartes</h2>
-      <div className={styles.countryList}>
-        {cards.map((card) => (
-          <article key={card.id} className={styles.countryCard}>
-            <h3>{card.name}</h3>
-            <span className={styles.badge}>{card.rarity}</span>
-            <span className={styles.badge}>{card.unlocked ? "Obtenue" : "Verrouillée"}</span>
-            <p className={styles.muted}>{card.description}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
+              <div className={styles.sealMeta}>
+                <div className={styles.metaCode}>{data.securityId}</div>
+                <div className={styles.metaLine}>
+                  Dernière vérification <strong>{liveTime || "11:42:00"}</strong>
+                </div>
+                <div className={styles.systemOk}>● SYSTÈME SÉCURISÉ</div>
+              </div>
+            </div>
 
-function LogosView({ countries }) {
-  function stage(country) {
-    if (country.fragments <= 0) return "Logo caché";
-    if (country.fragments === 1) return "Ombre";
-    if (country.fragments === 2) return "Contour";
-    if (country.fragments === 3) return "Logo simple";
-    if (country.fragments === 4) return "Logo premium";
-    return "Logo prestige";
-  }
+            <div className={styles.panel}>
+              <div className={styles.panelHeaderInline}>
+                <div>
+                  <div className={styles.panelLabel}>ACTIVITÉ NUMÉRIQUE</div>
+                  <h3 className={styles.panelTitleSmall}>Carte vivante</h3>
+                </div>
+              </div>
 
-  return (
-    <section className={styles.card}>
-      <h2 className={styles.cardTitle}>Logos digitaux évolutifs</h2>
-      <div className={styles.countryList}>
-        {countries.map((country) => (
-          <article key={country.id} className={styles.countryCard}>
-            <div className={styles.countryEmoji}>{country.emoji}</div>
-            <h3>{country.name}</h3>
-            <span className={styles.badge}>{stage(country)}</span>
-            <p>{country.fragments}/{country.fragmentsRequired} fragments</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
+              <div className={styles.activityBlock}>
+                <div className={styles.activityRow}>
+                  <span>Analyse biométrique</span>
+                  <strong>{scanPercent}%</strong>
+                </div>
+                <div className={styles.progressBar}>
+                  <div
+                    className={styles.progressBarFill}
+                    style={{ width: `${scanPercent}%` }}
+                  />
+                </div>
 
-function MissionsView({ missions, completeMission, user }) {
-  return (
-    <section className={styles.card}>
-      <h2 className={styles.cardTitle}>Missions & Quiz</h2>
-      <div className={styles.countryList}>
-        {missions.map((mission) => {
-          const completed = user.completedMissions.includes(mission.id);
-          return (
-            <article key={mission.id} className={styles.countryCard}>
-              <h3>{mission.title}</h3>
-              <p className={styles.muted}>{mission.description}</p>
-              <span className={styles.badge}>+{mission.rewardPoints} points</span>
-              {mission.rewardFragmentCountry && <span className={styles.badge}>+1 fragment</span>}
-              <button className={completed ? styles.secondaryButton : styles.button} onClick={() => completeMission(mission.id)} disabled={completed}>
-                {completed ? "Terminée" : "Réclamer V1"}
-              </button>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-function BonusesView({ countries, user }) {
-  return (
-    <section className={styles.card}>
-      <h2 className={styles.cardTitle}>Bonus pays 3B</h2>
-      <div className={styles.countryList}>
-        {countries.map((country) => {
-          const active = user.activeBonuses.some((bonus) => bonus.countryId === country.id);
-          return (
-            <article key={country.id} className={styles.countryCard}>
-              <div className={styles.countryEmoji}>{country.emoji}</div>
-              <h3>{country.bonusName}</h3>
-              <p>{country.name}</p>
-              <span className={styles.badge}>{active ? "Actif niveau 1" : "Verrouillé"}</span>
-              <p className={styles.muted}>{country.bonusEffect}</p>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-export default function PassportUI() {
-  const passport = usePassportState();
-  const [tab, setTab] = useState("home");
-  const [selectedCountryId, setSelectedCountryId] = useState("italie");
-
-  const selectedCountry = useMemo(
-    () => passport.countries.find((country) => country.id === selectedCountryId),
-    [passport.countries, selectedCountryId]
-  );
-
-  if (!passport.user.passportActivated) {
-    return (
-      <main className={styles.shell}>
-        <div className={styles.container}>
-          <PassportHeader user={passport.user} resetPassport={passport.resetPassport} />
-          <CreatePassport createPassport={passport.createPassport} />
-          <RewardModal reward={passport.lastReward} onClose={() => passport.setLastReward(null)} />
-        </div>
+                <div className={styles.activitySmallList}>
+                  <div>
+                    <AnimatedStream delay={10} />
+                  </div>
+                  <div>
+                    <AnimatedStream delay={40} />
+                  </div>
+                  <div>
+                    <AnimatedStream delay={80} />
+                  </div>
+                  <div>
+                    <AnimatedStream delay={110} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
       </main>
-    );
-  }
-
-  return (
-    <main className={styles.shell}>
-      <div className={styles.container}>
-        <PassportHeader user={passport.user} resetPassport={passport.resetPassport} />
-
-        <nav className={styles.nav}>
-          {TABS.map((item) => (
-            <button key={item.id} className={tab === item.id ? styles.button : styles.secondaryButton} onClick={() => setTab(item.id)}>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        {tab === "home" && <HomeView user={passport.user} setTab={setTab} />}
-        {tab === "world" && (
-          <WorldView countries={passport.countries} user={passport.user} setSelectedCountryId={setSelectedCountryId} setTab={setTab} />
-        )}
-        {tab === "country" && <CountryDetailView country={selectedCountry} gainFragment={passport.gainFragment} unlockCountry={passport.unlockCountry} />}
-        {tab === "cards" && <CardsView cards={passport.cards} />}
-        {tab === "logos" && <LogosView countries={passport.countries} />}
-        {tab === "missions" && <MissionsView missions={passport.missions} completeMission={passport.completeMission} user={passport.user} />}
-        {tab === "bonuses" && <BonusesView countries={passport.countries} user={passport.user} />}
-
-        <RewardModal reward={passport.lastReward} onClose={() => passport.setLastReward(null)} />
-      </div>
-    </main>
+    </div>
   );
 }
