@@ -1,8 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import ShopPage from "./shop/ShopPage.jsx";
+import AiPage from "./ai/AiPage.jsx";
+import { readLocation, navigateTo } from "./lib/navigation.js";
+import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS, OPTION_LABELS,
+  createTestMember, normalizeMember, normalizeOptions, validateMember, createRegisteredMember,
+  loadJsonStorage, saveJsonStorage } from "./lib/member.js";
 import "./App.css";
-
-const STORAGE_MEMBER_KEY = "3b_member_master_clean_v2";
-const STORAGE_OPTIONS_KEY = "3b_options_master_clean_v1";
 
 const BASE_MENU_ITEMS = [
   {
@@ -169,8 +172,8 @@ const MANGA_BOOKS = [
     status: "Préparation",
   },
   {
-    title: "Tome 0",
-    subtitle: "Avant l’ouverture des portes",
+    title: "Tome 0 — Le Cercle Brisé",
+    subtitle: "Kaïs, huit portes et les fragments du Cercle Brisé.",
     status: "En cours",
   },
   {
@@ -321,91 +324,22 @@ const SAFE_PAGES = {
   },
 };
 
-function createTestMember() {
-  return {
-    name: "",
-    email: "",
-    isRegistered: false,
-    status: "Non inscrit",
-    level: "Découverte",
-    points: 0,
-    memberId: "",
-    passportId: "",
-    country: "France",
-    originCountry: "France",
-    city: "",
-    createdAt: "",
-  };
-}
-
-function createRegisteredMember(currentMember) {
-  const cleanName = currentMember.name?.trim() || "Membre 3B";
-  const cleanEmail = currentMember.email?.trim() || "";
-  const cleanCountry = currentMember.originCountry || "France";
-  const now = new Date();
-
-  return {
-    ...currentMember,
-    name: cleanName,
-    email: cleanEmail,
-    isRegistered: true,
-    status: "Membre 3B",
-    level: "Découverte",
-    points: currentMember.points || 0,
-    memberId: `3B-MEM-${Math.floor(10000 + Math.random() * 89999)}`,
-    passportId: `3B-PASS-${Math.floor(1000 + Math.random() * 8999)}`,
-    country: cleanCountry,
-    originCountry: cleanCountry,
-    city: currentMember.city || "Non renseignée",
-    createdAt: now.toLocaleDateString("fr-FR"),
-  };
-}
-
-function loadJsonStorage(key, fallback) {
-  try {
-    const saved = localStorage.getItem(key);
-
-    if (!saved) {
-      localStorage.setItem(key, JSON.stringify(fallback));
-      return fallback;
-    }
-
-    return {
-      ...fallback,
-      ...JSON.parse(saved),
-    };
-  } catch {
-    return fallback;
-  }
-}
-
-function saveJsonStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    return null;
-  }
-
-  return value;
-}
-
 export default function App() {
-  const [hasStarted, setHasStarted] = useState(false);
-  const [page, setPage] = useState("home");
+  const [route, setRoute] = useState(readLocation);
+  const { page } = route;
+  const hasStarted = page !== "intro";
+  const [registrationError, setRegistrationError] = useState("");
+  const [storageNotice, setStorageNotice] = useState("");
+  const [secretError, setSecretError] = useState("");
   const [secretCode, setSecretCode] = useState("");
   const [secretOpen, setSecretOpen] = useState(false);
 
   const [member, setMember] = useState(() =>
-    loadJsonStorage(STORAGE_MEMBER_KEY, createTestMember())
+    normalizeMember(loadJsonStorage(STORAGE_MEMBER_KEY, createTestMember()))
   );
 
   const [options, setOptions] = useState(() =>
-    loadJsonStorage(STORAGE_OPTIONS_KEY, {
-      matrix: true,
-      animations: true,
-      premiumGlow: true,
-      reducedMotion: false,
-    })
+    normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
 
   const menuItems = useMemo(() => {
@@ -425,30 +359,48 @@ export default function App() {
       return member.isRegistered ? "Espace membre 3B" : "Connexion / Inscription";
     }
 
+    if (page === "ia-textile") return "IA textile";
+    if (page === "ia-trio") return "Mode 3 IA";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, menuItems, member.isRegistered]);
 
-  function goTo(nextPage) {
-    setPage(nextPage);
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+  useEffect(() => {
+    const syncLocation = () => setRoute(readLocation());
+    window.addEventListener("popstate", syncLocation);
+    window.addEventListener("hashchange", syncLocation);
+    return () => {
+      window.removeEventListener("popstate", syncLocation);
+      window.removeEventListener("hashchange", syncLocation);
+    };
+  }, []);
+
+  useEffect(() => {
+    document.title = page === "intro" ? "3B International — De zéro à l’international" : `${currentPageTitle} — 3B`;
+    const heading = document.querySelector("main h1");
+    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [page, currentPageTitle]);
+
+  useEffect(() => {
+    document.documentElement.dataset.motion = options.reducedMotion || !options.animations ? "reduced" : "full";
+    return () => { delete document.documentElement.dataset.motion; };
+  }, [options.reducedMotion, options.animations]);
+
+  function persist(key, value) {
+    setStorageNotice(saveJsonStorage(key, value) ? "" : "La sauvegarde sur cet appareil est indisponible. Tes changements risquent d’être perdus à la fermeture.");
   }
 
-  function goToIntro() {
-    setHasStarted(false);
-    setPage("home");
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+  function goTo(nextPage) {
+    navigateTo(nextPage);
+    setRoute(readLocation());
   }
+
+  function goToIntro() { goTo("intro"); }
 
   function resetMember() {
     const cleanMember = createTestMember();
     setMember(cleanMember);
-    saveJsonStorage(STORAGE_MEMBER_KEY, cleanMember);
+    persist(STORAGE_MEMBER_KEY, cleanMember);
     goTo("home");
   }
 
@@ -459,13 +411,16 @@ export default function App() {
     };
 
     setMember(nextMember);
-    saveJsonStorage(STORAGE_MEMBER_KEY, nextMember);
+    setRegistrationError("");
   }
 
   function registerMember() {
+    const error = validateMember(member);
+    setRegistrationError(error);
+    if (error) return;
     const registeredMember = createRegisteredMember(member);
     setMember(registeredMember);
-    saveJsonStorage(STORAGE_MEMBER_KEY, registeredMember);
+    persist(STORAGE_MEMBER_KEY, registeredMember);
     goTo("member");
   }
 
@@ -476,20 +431,20 @@ export default function App() {
     };
 
     setOptions(nextOptions);
-    saveJsonStorage(STORAGE_OPTIONS_KEY, nextOptions);
+    persist(STORAGE_OPTIONS_KEY, nextOptions);
   }
 
   function openSecret() {
     const normalized = secretCode.trim().toLowerCase();
 
-    if (normalized === "italie" || normalized === "italia") {
-      setSecretOpen(true);
-    }
+    const valid = normalized === "italie" || normalized === "italia";
+    setSecretOpen(valid);
+    setSecretError(valid ? "" : "Ce code ne correspond pas. Réessaie avec un pays 3B.");
   }
 
   if (!hasStarted) {
     return (
-      <main className="intro3b">
+      <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="intro3b-background" />
         <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} />
 
@@ -504,7 +459,7 @@ export default function App() {
           <button
             type="button"
             className="primary-button"
-            onClick={() => setHasStarted(true)}
+            onClick={() => goTo("home")}
           >
             COMMENCER
           </button>
@@ -514,7 +469,7 @@ export default function App() {
   }
 
   return (
-    <main className="app3b">
+    <main className="app3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="app3b-background" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} />
 
@@ -533,6 +488,8 @@ export default function App() {
         </button>
       </header>
 
+      {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
+
       {page === "home" && (
         <HomePage goTo={goTo} menuItems={menuItems} member={member} />
       )}
@@ -542,11 +499,10 @@ export default function App() {
           member={member}
           goTo={goTo}
           goToIntro={goToIntro}
-          registerMember={registerMember}
         />
       )}
 
-      {page === "loyalty" && <LoyaltyPage goTo={goTo} />}
+      {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
       {page === "games" && <SafePage type="games" goTo={goTo} />}
       {page === "music" && <SafePage type="music" goTo={goTo} />}
       {page === "manga" && <MangaPage goTo={goTo} />}
@@ -557,6 +513,7 @@ export default function App() {
           secretCode={secretCode}
           setSecretCode={setSecretCode}
           secretOpen={secretOpen}
+          secretError={secretError}
           openSecret={openSecret}
         />
       )}
@@ -571,12 +528,13 @@ export default function App() {
           toggleOption={toggleOption}
           updateMemberField={updateMemberField}
           registerMember={registerMember}
+          registrationError={registrationError}
         />
       )}
 
       {page === "sport" && <SafePage type="sport" goTo={goTo} />}
-      {page === "ia" && <SafePage type="ia" goTo={goTo} />}
-      {page === "shop" && <SafePage type="shop" goTo={goTo} />}
+      {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage page={page} goTo={goTo} />}
+      {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
     </main>
   );
 }
@@ -639,6 +597,7 @@ function HomePage({ goTo, menuItems, member }) {
               Connexion / Inscription
             </button>
           )}
+          <button type="button" className="secondary-button" onClick={() => goTo("shop")}>Découvrir la boutique</button>
         </div>
 
         <div className="home-signature">
@@ -669,14 +628,14 @@ function HomePage({ goTo, menuItems, member }) {
   );
 }
 
-function PassportPage({ member, goTo, goToIntro, registerMember }) {
+function PassportPage({ member, goTo, goToIntro }) {
   return (
     <section className="page-section">
       <PageHeader
         title="Passeport 3B"
         subtitle={
           member.isRegistered
-            ? "Passeport numérique officiel, propre et sécurisé."
+            ? "Ton identité digitale dans l’univers 3B."
             : "Crée ton passeport 3B pour débloquer ton espace membre."
         }
         goTo={goTo}
@@ -709,7 +668,7 @@ function PassportPage({ member, goTo, goToIntro, registerMember }) {
           <p className="eyebrow">Identité digitale</p>
           <h2>{member.isRegistered ? member.passportId : "Non activé"}</h2>
           <p>
-            Le passeport 3B devient actif après création de ton compte membre.
+            Le passeport 3B devient actif après la création de ton profil sur cet appareil.
           </p>
         </article>
 
@@ -722,7 +681,7 @@ function PassportPage({ member, goTo, goToIntro, registerMember }) {
           </p>
 
           {!member.isRegistered && (
-            <button type="button" className="primary-button" onClick={registerMember}>
+            <button type="button" className="primary-button" onClick={() => goTo("member")}>
               Activer mon passeport 3B
             </button>
           )}
@@ -732,7 +691,7 @@ function PassportPage({ member, goTo, goToIntro, registerMember }) {
   );
 }
 
-function LoyaltyPage({ goTo }) {
+function LoyaltyPage({ goTo, member }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -746,11 +705,11 @@ function LoyaltyPage({ goTo }) {
           <article key={card.name} className="loyalty-card">
             <span>3B</span>
             <strong>{card.name}</strong>
-            <small>{card.status}</small>
+            <small>{member.isRegistered ? card.status : "À découvrir"}</small>
             <em>{card.rarity}</em>
 
             <div className="progress-bar">
-              <i style={{ width: `${card.progress}%` }} />
+              <i style={{ width: `${member.isRegistered ? card.progress : 0}%` }} />
             </div>
           </article>
         ))}
@@ -764,10 +723,23 @@ function MangaPage({ goTo }) {
     <section className="page-section">
       <PageHeader
         title="Manga 3B"
-        subtitle="Bibliothèque officielle : Origine 3B, Tome 0, puis la saga Le Monde du 3B."
+        subtitle="3B ORIGINS — Le Cercle Brisé. Huit pays, un héritage à rassembler."
         goTo={goTo}
       />
 
+      <article className="manga-feature premium-panel">
+        <p className="eyebrow">Tome 0 · En cours de création</p>
+        <h2>Le Cercle Brisé</h2>
+        <p>Kaïs. Le loup. Huit portes, huit gardiens et les fragments d’un cercle à réunir face au Monstre de l’Oubli.</p>
+        <div className="manga-countries" aria-label="Les huit pays 3B">
+          {COUNTRY_LIST.map(country => <span key={country.code}>{country.flag} {country.name}</span>)}
+        </div>
+        <details className="manga-details">
+          <summary>Découvrir l’univers du Tome 0</summary>
+          <p>BLACK • BLANC • BEUR : l’unité au cœur de l’aventure. Kaïs porte huit clés ; chaque porte mène à l’un des huit pays et à son gardien.</p>
+          <p>Noir et blanc, bleu Matrix et or 3B accompagnent cette quête contre l’oubli. Les planches seront disponibles ici après leur publication.</p>
+        </details>
+      </article>
       <div className="content-grid">
         {MANGA_BOOKS.map((book) => (
           <article key={book.title} className="premium-panel">
@@ -816,7 +788,9 @@ function MemberPage({
   toggleOption,
   updateMemberField,
   registerMember,
+  registrationError,
 }) {
+  const [confirmReset, setConfirmReset] = useState(false);
   if (!member.isRegistered) {
     return (
       <section className="page-section">
@@ -829,11 +803,13 @@ function MemberPage({
         <div className="member-layout">
           <article className="premium-panel">
             <p className="eyebrow">Création passeport 3B</p>
-            <h2>Activer mon compte</h2>
-
+            <h2>Créer mon profil 3B</h2>
+            <p className="local-profile-note">Ton profil est enregistré sur cet appareil. La connexion à un compte en ligne sera proposée ultérieurement.</p>
+            <form onSubmit={event => { event.preventDefault(); registerMember(); }}>
             <label className="form-line">
               Nom affiché
               <input
+                name="displayName" autoComplete="nickname" required minLength={2} maxLength={80}
                 value={member.name}
                 onChange={(event) => updateMemberField("name", event.target.value)}
                 placeholder="Exemple : Zakaria"
@@ -843,6 +819,7 @@ function MemberPage({
             <label className="form-line">
               E-mail
               <input
+                type="email" name="email" autoComplete="email" required maxLength={254}
                 value={member.email}
                 onChange={(event) => updateMemberField("email", event.target.value)}
                 placeholder="tonadresse@email.com"
@@ -865,9 +842,9 @@ function MemberPage({
               </select>
             </label>
 
-            <button type="button" className="primary-button" onClick={registerMember}>
-              Créer mon passeport 3B
-            </button>
+            {registrationError && <p role="alert" className="form-error">{registrationError}</p>}
+            <button type="submit" className="primary-button">Créer mon passeport 3B</button>
+            </form>
           </article>
 
           <article className="premium-panel">
@@ -893,8 +870,9 @@ function MemberPage({
                 type="button"
                 className={value ? "option-button active" : "option-button"}
                 onClick={() => toggleOption(key)}
+                aria-pressed={value}
               >
-                {key} : {value ? "activé" : "désactivé"}
+                {OPTION_LABELS[key]} : {value ? "activé" : "désactivé"}
               </button>
             ))}
           </article>
@@ -915,6 +893,7 @@ function MemberPage({
         <article className="premium-panel">
           <p className="eyebrow">Profil membre</p>
           <h2>{member.name}</h2>
+          <p className="local-profile-note">Profil conservé sur cet appareil. La connexion à un compte en ligne sera proposée ultérieurement.</p>
 
           <p>
             <strong>Statut :</strong> {member.status}
@@ -938,9 +917,11 @@ function MemberPage({
             <strong>Date d’inscription :</strong> {member.createdAt}
           </p>
 
-          <button type="button" className="danger-button" onClick={resetMember}>
-            Supprimer / remettre le compte à zéro
-          </button>
+          {confirmReset ? <div className="reset-confirmation" role="group" aria-label="Confirmation de suppression">
+            <p>Effacer le profil et le passeport de cet appareil ?</p>
+            <button type="button" className="ghost-button" onClick={() => setConfirmReset(false)}>Annuler</button>
+            <button type="button" className="danger-button" onClick={resetMember}>Effacer le profil local</button>
+          </div> : <button type="button" className="danger-button" onClick={() => setConfirmReset(true)}>Réinitialiser mon profil local</button>}
         </article>
 
         <article className="premium-panel">
@@ -969,8 +950,9 @@ function MemberPage({
               type="button"
               className={value ? "option-button active" : "option-button"}
               onClick={() => toggleOption(key)}
+              aria-pressed={value}
             >
-              {key} : {value ? "activé" : "désactivé"}
+              {OPTION_LABELS[key]} : {value ? "activé" : "désactivé"}
             </button>
           ))}
         </article>
@@ -984,6 +966,7 @@ function SecretPage({
   secretCode,
   setSecretCode,
   secretOpen,
+  secretError,
   openSecret,
 }) {
   return (
@@ -1000,17 +983,19 @@ function SecretPage({
           <h2>Entrer dans l’univers caché</h2>
           <p>Le premier code est lié à un pays officiel 3B.</p>
 
-          <div className="secret-form">
-            <input
+          <label className="secret-label" htmlFor="secret-code">Code secret</label>
+          <form className="secret-form" onSubmit={event => { event.preventDefault(); openSecret(); }}>
+            <input id="secret-code" maxLength={80} required autoComplete="off"
               value={secretCode}
               onChange={(event) => setSecretCode(event.target.value)}
               placeholder="Entre le code secret"
             />
 
-            <button type="button" className="primary-button" onClick={openSecret}>
+            <button type="submit" className="primary-button">
               Déverrouiller
             </button>
-          </div>
+          </form>
+          {secretError && <p role="alert" className="form-error">{secretError}</p>}
 
           {secretOpen ? (
             <div className="secret-result open">
@@ -1048,7 +1033,7 @@ function SafePage({ type, goTo }) {
         {selected.blocks.map((block) => (
           <article key={block} className="premium-panel">
             <h2>{block}</h2>
-            <p>Bloc sécurisé prêt pour la prochaine étape de l’écosystème 3B.</p>
+            <p>Cet espace est en préparation. Son ouverture sera annoncée ici.</p>
           </article>
         ))}
       </div>
