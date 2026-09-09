@@ -1,0 +1,22 @@
+.ai-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.ai-card { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: clamp(24px, 4vw, 44px); border: 1px solid #846c3e; border-radius: 28px; background: radial-gradient(ellipse at top left, #c3a25720, transparent 70%), #080e15eb; }
+.ai-card-trio { border-color: #40778a; background: radial-gradient(ellipse at top right, #00d5ff19, transparent 70%), #080e15eb; }
+.ai-card-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 22px; color: #e6bd64; }
+.ai-status { color: #cfdae2; border: 1px solid #65727f; border-radius: 999px; padding: 7px 12px; font-size: .8rem; line-height: 1.5; text-align: center; }
+.ai-card h2 { font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.1; margin: 0; color: #fff0cc; }
+.ai-card p, .ai-trio-detail p { color: #ccd1d8; line-height: 1.75; }
+.ai-card .eyebrow { color: #e6bd64; }
+.ai-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 24px; }
+.ai-tags span { color: #b6e9f3; font-size: .9rem; border-bottom: 1px solid #3f6670; padding: 6px 0; margin-right: 12px; }
+.ai-card .secondary-button { margin-top: auto; gap: 10px; padding: 14px 20px; line-height: 1.4; }
+.ai3b .ghost-button { gap: 8px; }
+.ai-brief { max-width: 800px; }
+.ai-brief textarea { resize: vertical; min-height: 120px; }
+.ai-brief-result { margin-top: 28px; }
+.ai-brief-result textarea { min-height: 300px; line-height: 1.65; }
+.ai-notice { min-height: 24px; color: #b6e9f3; line-height: 1.6; }
+.ai-trio-detail > svg { color: #e6bd64; margin-bottom: 20px; }
+.ai-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding-left: 24px; margin: 32px 0; }
+.ai-steps li { padding: 8px; color: #ffe3a0; }
+.ai-coming-soon { padding: 18px; border: 1px solid #456575; border-radius: 14px; background: #081a23; }
+@media (max-width: 720px) { .ai-grid, .ai-steps { grid-template-columns: 1fr; } .ai-card { border-radius: 22px; } .ai-status { max-width: 170px; } }
