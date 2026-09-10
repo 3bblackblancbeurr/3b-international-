@@ -400,8 +400,6 @@ export default function App() {
     setRoute(readLocation());
   }
 
-  function goToIntro() { goTo("intro"); }
-
   function resetMember() {
     const cleanMember = createTestMember();
     setMember(cleanMember);
@@ -475,7 +473,7 @@ export default function App() {
   }
 
   return (
-    <div className="app3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
+    <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
@@ -492,7 +490,6 @@ export default function App() {
           member={member}
           options={options}
           goTo={goTo}
-          goToIntro={goToIntro}
         />
       )}
 
@@ -550,7 +547,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ member, goTo, goToIntro, options }) {
+function PassportPage({ member, goTo, options }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -563,7 +560,7 @@ function PassportPage({ member, goTo, goToIntro, options }) {
         goTo={goTo}
       />
 
-      <PassportVisual goTo={goTo} goToIntro={goToIntro} options={options} />
+      <PassportVisual options={options} />
 
       <div className="info-grid">
         <article className="premium-panel">
