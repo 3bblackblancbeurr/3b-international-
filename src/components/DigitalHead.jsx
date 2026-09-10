@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import {portraitMotion} from './portrait-motion.js';
 
 // A curved mesh gives the existing digital portrait real depth when it turns.
 // Texture coordinates always point into the original passport artwork.
@@ -18,7 +19,9 @@ const VERTEX_SHADER = `
     p = vec3(p.x, p.y * cp - p.z * sp, p.y * sp + p.z * cp);
     p.xy = vec2(p.x * cr - p.y * sr, p.x * sr + p.y * cr);
     p.xy *= 4.0 / (4.0 - p.z + position.z);
-    p.y += breath;
+    float mobility = smoothstep(-1.0, -.25, position.y);
+    p = mix(position, p, mobility);
+    p.y += breath * mobility;
     gl_Position = vec4(p.x * 200.0 / 197.0 - 3.0 / 197.0, p.y * 200.0 / 216.0 - 16.0 / 216.0, 0.0, 1.0);
     textureUv = uv;
     depth = position.z;
@@ -109,7 +112,7 @@ export default function DigitalHead({ animated }) {
     const blink = gl.getUniformLocation(program, "blink");
     const gaze = gl.getUniformLocation(program, "gaze");
     let elapsed = 0, previous = 0, lastDraw = 0;
-    let nextBlink = 3.2, blinkStart = -10, nextGaze = 1.8, gazeX = 0, gazeY = 0, targetX = 0, targetY = 0;
+    let nextBlink = 3.2, blinkStart = -10, doubleBlink = false, nextGaze = 1.8, gazeX = 0, gazeY = 0, targetX = 0, targetY = 0;
     function draw(now) {
       if (disposed || !loaded || !visible || document.hidden) { frame = 0; previous = 0; return; }
       frame = requestAnimationFrame(draw);
@@ -117,18 +120,17 @@ export default function DigitalHead({ animated }) {
       lastDraw = now;
       const dt = previous ? Math.min((now - previous) / 1000, .1) : 0;
       previous = now; elapsed += dt;
-      if (elapsed >= nextBlink) { blinkStart = elapsed; nextBlink = elapsed + 3.4 + Math.random() * 3.1; }
-      const blinkProgress = (elapsed - blinkStart) / .19;
+      if (elapsed >= nextBlink) { blinkStart = elapsed; doubleBlink = Math.random() < .22; nextBlink = elapsed + 3.4 + Math.random() * 3.1; }
+      const sinceBlink=elapsed-blinkStart;
+      const blinkProgress = (doubleBlink && sinceBlink>.27 ? sinceBlink-.27 : sinceBlink) / .19;
       const closing = blinkProgress > 0 && blinkProgress < 1 ? Math.sin(blinkProgress * Math.PI) : 0;
       if (elapsed >= nextGaze) { targetX = (Math.random() - .5) * .012; targetY = (Math.random() - .5) * .005; nextGaze = elapsed + 1.5 + Math.random() * 2.8; }
       const gazeEase = 1 - Math.exp(-dt * 22);
       gazeX += (targetX - gazeX) * gazeEase; gazeY += (targetY - gazeY) * gazeEase;
-      const yaw = .095 * Math.sin(elapsed * .43) + .026 * Math.sin(elapsed * .91);
-      const pitch = .032 * Math.sin(elapsed * .36) + .009 * Math.sin(elapsed * .83);
-      const roll = .013 * Math.sin(elapsed * .27);
+      const {yaw,pitch,roll,breath:breathing} = portraitMotion(elapsed);
       gl.clearColor(.001, .018, .062, 1); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(program);
-      gl.uniform3f(rotation, yaw, pitch, roll); gl.uniform1f(breath, .004 * Math.sin(elapsed * 1.45));
+      gl.uniform3f(rotation, yaw, pitch, roll); gl.uniform1f(breath, breathing);
       gl.uniform1f(blink, closing); gl.uniform2f(gaze, gazeX, gazeY);
       gl.drawElements(gl.TRIANGLES, mesh.indices.length, gl.UNSIGNED_SHORT, 0);
     }
@@ -170,3 +172,4 @@ export default function DigitalHead({ animated }) {
   }, [animated, contextVersion]);
   return <canvas ref={canvasRef} className="passport-head-canvas" data-ready={ready} aria-hidden="true" />;
 }
+

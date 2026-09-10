@@ -1,0 +1,211 @@
+/* Shared with the original "La course des clés" card: every navigation destination is a compact row. */
+.app3b .compact-card{box-sizing:border-box;display:flex;flex-direction:row;align-items:center;gap:16px;width:100%;min-height:80px;padding:15px 20px;border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;color:#ead8ac;text-align:left;text-decoration:none;font:inherit;cursor:pointer;box-shadow:none;transition:border-color .18s,background .18s}
+.app3b .compact-card:hover{transform:none;background:#14202c;border-color:#d9bc7380;box-shadow:none}
+.app3b .compact-card:focus-visible{outline:2px solid #94dcec;outline-offset:3px}
+.app3b .compact-card[aria-pressed=true],.app3b .compact-card[aria-current=page]{border-color:#d9bc73;background:#17212b}
+.app3b .compact-card:disabled{opacity:.55;cursor:default}
+.app3b article.compact-card{cursor:default}
+.compact-card-icon{display:grid;place-items:center;flex:0 0 32px;color:#d8bd82}
+.compact-card-copy{min-width:0;flex:1;display:grid;gap:4px}
+.app3b .compact-card-copy>strong{margin:0;color:#ead8ac;font:600 16px/1.35 system-ui;letter-spacing:0}
+.compact-card-copy>small{color:#8e9dad;font-size:10px;line-height:1.4;letter-spacing:.08em;text-transform:uppercase}
+.compact-card-copy>span{font-size:12px;line-height:1.45;color:#aebbc6}
+.compact-card-action{display:flex;gap:9px;align-items:center;flex-shrink:0;color:#e7cc91;font-size:12px}
+.compact-list,.app3b .universe-grid,.app3b .arcade-library{display:grid;grid-template-columns:1fr;gap:9px}
+.app3b .universe-card{min-height:80px;overflow:visible}
+.app3b .universe-group{margin-top:20px}
+.app3b .universe-group>h2{font-size:10px;margin-bottom:10px}
+.app3b .welcome-hero{padding:28px 0 30px;gap:35px}
+.app3b .welcome-copy h1{font-size:clamp(32px,4vw,58px);margin:20px 0 15px}
+.app3b .welcome-description{font-size:14px;line-height:1.6}
+.app3b .heritage-poster{height:260px;width:225px}
+.app3b .home-manifesto{display:none}
+.app3b .section-heading h2{font-size:19px}
+.app3b .section-heading>span{font-size:10px}
+.app3b .dialog-route.compact-card{margin:8px 0;padding:12px 15px;min-height:70px}
+.app3b .dialog-route.compact-card>.compact-card-icon{width:28px}
+.app3b .dialog-route.compact-card .compact-card-copy>strong{font-size:14px}
+.app3b .arcade-classic.compact-card{margin-top:9px}
+.app3b .arcade-library .compact-card,.app3b .arcade-classic.compact-card{min-height:88px}
+.app3b .arcade-feature{min-height:230px;margin-top:20px;margin-bottom:16px}
+.app3b .arcade-feature-copy{padding:26px}
+.app3b .arcade-feature h2{font-size:32px;margin:12px 0}
+.app3b .arcade-feature p{font-size:13px;line-height:1.6;margin:10px 0}
+.app3b .arcade-portrait{height:220px;width:220px;right:2%}
+.app3b .arcade-meta{font-size:11px;margin:14px 0;gap:12px}
+.app3b .arcade-tag{padding:5px 8px;font-size:9px}
+.app3b .arcade-primary{min-height:44px;font-size:13px;padding:10px 17px}
+.app3b .game-progress{border:1px solid #d9bc7333;border-radius:8px;padding:12px 16px;background:#0f1822;font-size:12px;margin:14px 0}
+.app3b .game-progress summary{cursor:pointer;color:#cfc3a1}
+.app3b .game-progress p{margin:12px 0}
+.app3b .editorial-heading{margin-bottom:22px}
+.app3b .editorial-heading h1{font-size:clamp(30px,4vw,47px);margin:12px 0 15px}
+.app3b .editorial-heading>p:last-child{font-size:14px;line-height:1.65}
+.app3b .surface-panel,.app3b .guide-distinction article,.app3b .guide-levels article,.app3b .guide-faq,.app3b .premium-panel,.app3b .loyalty-card-detail,.app3b .account-summary{border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;padding:20px;box-shadow:none}
+.app3b .surface-panel h2{font-size:22px}
+.app3b .guide-directory{border:0;background:none;padding:0;display:grid;gap:9px}
+.app3b .religion-grid,.app3b .sport-community{display:grid;grid-template-columns:1fr;gap:9px}
+.app3b .sport-news-grid{grid-template-columns:1fr;gap:9px}
+.app3b .sport-article{padding:16px 20px;min-height:0;border-radius:8px;background:#0f1822;border-color:#d9bc7333;display:grid;grid-template-columns:1fr auto;gap:7px 20px}
+.app3b .sport-article>div{grid-column:1/-1;margin:0}
+.app3b .sport-article h2,.app3b .sport-article-lead h2{font:600 16px/1.5 system-ui;margin:0;color:#ead8ac}
+.app3b .sport-article footer{margin:0;gap:14px;align-self:center;font-size:11px}
+.app3b .sport-article-lead{grid-column:auto;grid-row:auto}
+.app3b .loyalty-collection{grid-template-columns:1fr;gap:9px}
+.app3b .loyalty-choice.compact-card{padding:12px 16px}
+.app3b .compact-card .physical-member-card{width:112px;flex-shrink:0;min-height:0;outline:0}
+.app3b .loyalty-choice.compact-card .compact-card-icon{flex-basis:112px}
+.app3b .loyalty-choice.compact-card .compact-card-copy{padding:0}
+.app3b .loyalty-choice.compact-card .compact-card-action{padding:0}
+.app3b .loyalty-earn-grid{display:grid;grid-template-columns:1fr;gap:9px}
+.app3b .loyalty-earn-grid article{padding:17px 20px;border-radius:8px;background:#0f1822;border:1px solid #d9bc7333}
+.app3b .loyalty-earn-grid h3{font-size:17px;margin:6px 0}
+.app3b .loyalty-earn-grid p{font-size:12px}
+.app3b .loyalty-earn-grid article>svg{float:left;margin-right:13px;width:22px}
+.app3b .loyalty-perks{gap:9px}
+.app3b .loyalty-perks article{border-radius:8px;padding:18px}
+.app3b .loyalty-perks article>strong{font-size:35px}
+.app3b .account-options>div{display:grid;grid-template-columns:1fr;gap:9px}
+.app3b .account-options button{justify-content:space-between;border-radius:8px;background:#0f1822;padding:14px 18px}
+.app3b .account-summary>button{display:flex;width:100%;justify-content:space-between;margin:9px 0;padding:14px 18px;border-radius:8px}
+.app3b .shop-product,.app3b .shop-cart,.app3b .shop-empty{border-radius:8px;background:#0f1822;border-color:#d9bc7333}
+@media(max-width:720px){
+ .app3b .compact-card{min-height:72px;padding:12px 14px;gap:11px}
+ .app3b .universe-card{min-height:80px}
+ .app3b .compact-card-copy>strong{font-size:14px}
+ .compact-card-copy>small{font-size:9px}
+ .compact-card-copy>span{font-size:11px;line-height:1.4}
+ .compact-card-icon{flex-basis:25px}
+ .compact-card-icon svg{width:21px;height:21px}
+ .compact-card-action{font-size:10px;gap:4px}
+ .compact-card-action>span{display:none}
+ .app3b .welcome-hero{padding:14px 0 22px;display:block}
+ .app3b .welcome-copy h1{font-size:34px;margin:16px 0 10px;line-height:1.1}
+ .app3b .welcome-description{font-size:12px;margin:0}
+ .app3b .welcome-copy .brand-glow-badge{font-size:11px;padding:10px 13px;letter-spacing:.1em}
+ .app3b .heritage-poster{display:none}
+ .app3b .section-heading{gap:8px;margin-bottom:10px}
+ .app3b .section-heading h2{font-size:16px}
+ .app3b .section-heading>span{display:none}
+ .app3b .universe-group{margin-top:18px}
+ .app3b .editorial-page,.app3b .arcade{padding:14px 0 50px}
+ .app3b .arcade h1{font-size:29px}
+ .app3b .arcade-feature{min-height:0}
+ .app3b .arcade-feature-copy{padding:18px}
+ .app3b .arcade-feature h2{font-size:24px;max-width:80%}
+ .app3b .arcade-feature p{max-width:78%}
+ .app3b .arcade-portrait{width:160px;height:160px;right:-35px;opacity:.35}
+ .app3b .arcade-feature .arcade-meta{gap:8px;flex-wrap:wrap}
+ .app3b .arcade-back{font-size:11px}
+ .app3b .editorial-heading h1{font-size:31px;line-height:1.12}
+ .app3b .editorial-heading>p:last-child{font-size:13px}
+ .app3b .surface-panel{padding:17px}
+ .app3b .surface-panel p{font-size:12px;line-height:1.65}
+ .app3b .compact-card .physical-member-card{width:82px}
+ .app3b .loyalty-choice.compact-card .compact-card-icon{flex-basis:82px}
+ .app3b .sport-article{grid-template-columns:1fr;padding:14px}
+ .app3b .sport-article footer{justify-content:space-between}
+ .app3b .sport-article h2,.app3b .sport-article-lead h2{font-size:14px}
+ .app3b .loyalty-page h1{font-size:33px}
+ .app3b .loyalty-hero{margin-top:20px}
+ .app3b .loyalty-hero-card{margin:0}
+ .app3b .loyalty-section-heading h2{font-size:25px}
+ .app3b .loyalty-perks{grid-template-columns:1fr}
+ .app3b .loyalty-perks article{display:grid;grid-template-columns:80px 1fr;gap:5px 14px}
+ .app3b .loyalty-perks article>strong{grid-row:1/4;align-self:center}
+ .app3b .loyalty-perks article>span,.app3b .loyalty-perks article>h3,.app3b .loyalty-perks article>p{grid-column:2;margin:0}
+ .app3b .shop-products{grid-template-columns:1fr}
+ .app3b .shop-product{display:grid;grid-template-columns:88px 1fr;gap:12px;padding:12px}
+ .app3b .shop-product-image{aspect-ratio:1;height:88px}
+}
+@media(prefers-reduced-motion:reduce){.app3b .compact-card{transition:none}}
+.app3b .studio-steps{display:flex;gap:8px;margin:0 0 18px;padding:0}
+.app3b .studio-steps button{display:flex;align-items:center;justify-content:center;gap:9px;flex:1;min-height:45px;border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;color:#b8c4ce;font-size:12px;cursor:pointer}
+.app3b .studio-steps button[aria-current=step]{border-color:#d9bc73;color:#ead8ac;background:#19232c}
+.studio-steps button>span{display:grid;place-items:center;width:23px;height:23px;border:1px solid #d9bc7350;border-radius:50%;font-size:10px}
+.app3b .studio-simple{grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:18px}
+.app3b .studio-preview-panel{border-radius:8px;border-color:#d9bc7333;top:20px}
+.app3b .studio-preview-top{padding:15px;font-size:9px}
+.app3b .studio-preview-panel>.design-preview{height:390px}
+.app3b .studio-generated{height:390px;display:block}
+.app3b .studio-step-panel{gap:16px}
+.app3b .studio-step-panel h2{font-size:25px;margin:0;outline:0}
+.app3b .studio-step-panel p{margin:0;font-size:12px}
+.app3b .studio-presets,.app3b .technique-chips{display:flex;flex-wrap:wrap;gap:8px}
+.app3b .studio-colors{grid-template-columns:1fr 1fr}
+.app3b .studio-colors input{height:43px;min-height:43px;padding:4px}
+.app3b .studio-options{border:1px solid #d9bc7333;border-radius:8px;padding:13px 15px;background:#101c26;font-size:12px;line-height:1.7;color:#b9c8d1}
+.app3b .studio-options summary{color:#e3ce9f;cursor:pointer;min-height:22px}
+.studio-options summary>span{float:right;font-size:10px;color:#9eafbc}
+.app3b .studio-options[open]>.surface-form,.app3b .studio-options>p{margin-top:15px}
+.app3b .studio-step-actions{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #d9bc7333;padding-top:18px;margin-top:2px}
+.app3b .design-summary{margin:0;display:grid;gap:9px}
+.design-summary>div{display:grid;grid-template-columns:70px 1fr;gap:15px;font-size:12px;line-height:1.5}
+.design-summary dt{color:#97aab9}.design-summary dd{color:#e1d2af;margin:0}
+.app3b .studio-fabrication-note{margin-top:18px}
+.app3b .trio-simple{border-radius:8px;padding:22px;background:#0f1822}
+.app3b .trio-toolbar{margin-bottom:15px;gap:10px}
+.app3b .trio-toolbar p{margin:0;font-size:10px}
+.app3b .trio-empty{padding:20px 0;text-align:left}
+.app3b .trio-empty h2{font-size:27px;margin:12px 0}
+.app3b .trio-empty .compact-list{margin-top:20px}
+.app3b .trio-empty .compact-card{min-height:56px;background:#12212d}
+.app3b .trio-empty .compact-card strong{font-size:12px}
+.app3b .trio-answer{background:#172936;border:1px solid #d9bc7333;border-radius:8px;padding:18px}
+.app3b .trio-answer p{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 system-ui;color:#d0dce2;margin:0}
+.app3b .trio-answer small{display:block;color:#caba96;line-height:1.6;margin-top:12px}
+.app3b .trio-composer textarea{border-radius:8px;padding:14px}
+.app3b .trio-composer .trio-send-row{flex-direction:row;justify-content:flex-end;gap:10px}
+.app3b .trio-simple>.studio-options{margin-top:18px}
+.app3b .community-view-nav{display:flex;justify-content:space-between;gap:10px;margin:15px 0 20px}
+.app3b .community-invitation{margin:24px 0}
+.app3b .community-entry{margin-top:18px;max-width:none}
+.app3b .community-post{border-radius:8px;background:#0f1822;border-color:#d9bc7333}
+.app3b .community-feed,.app3b .community-members{grid-template-columns:1fr;gap:12px}
+.app3b .community-post>header{padding:15px 18px}
+.app3b .community-post-copy{padding:0 18px 16px}
+.app3b .community-post-copy h2{font:600 18px/1.4 system-ui}
+.app3b .community-post-copy p{font-size:13px}
+.app3b .community-post .design-preview{height:240px}
+.app3b .community-members article{display:grid;grid-template-columns:40px 1fr;gap:6px 14px}
+.app3b .community-members .member-avatar{grid-column:1;grid-row:1/3;width:38px;height:38px;font-size:19px}
+.app3b .community-members article>h2,.app3b .community-members article>p,.app3b .community-members article>div{grid-column:2;margin:0}
+.app3b .community-members article>h2{font:600 16px/1.5 system-ui}
+.app3b .community-members .member-actions{margin-top:7px}
+.app3b .community-consent{display:flex;align-items:flex-start;gap:12px;font-size:12px;line-height:1.6}
+.app3b .community-consent input{width:20px;min-width:20px;height:20px;min-height:20px;margin:3px 0;padding:0;accent-color:#d9bc73}
+.app3b .community-consent span{display:block}
+.app3b .chat-shell{display:block}
+.app3b .chat-room-select{display:flex;align-items:center;gap:15px;margin:0 0 12px;color:#cabc9b;font-size:12px}
+.chat-room-select select{background:#0f1822;color:#ead8ac;border:1px solid #d9bc7333;border-radius:8px;padding:10px 12px;min-height:44px;font-size:14px}
+.app3b .chat-room{border-radius:8px;border-color:#d9bc7333;background:#0f1822}
+.app3b .chat-room>header{padding:14px 18px;flex-direction:row;align-items:center}
+.app3b .chat-room h2{font-size:20px}
+.app3b .chat-messages{height:390px;padding:17px}
+.app3b .chat-messages article{border-radius:8px;padding:12px 15px}
+.app3b .chat-composer{padding:14px}
+.app3b .account-community-return{margin-bottom:18px}
+@media(max-width:720px){
+ .app3b .studio-simple{grid-template-columns:1fr;gap:12px}
+ .app3b .studio-preview-panel{position:relative;top:0;display:grid;grid-template-columns:118px 1fr;align-items:center;padding:8px 12px;gap:5px 12px}
+ .app3b .studio-preview-top{grid-column:2;grid-row:1;padding:7px 0;border:0;display:grid;gap:8px;align-self:end}
+ .app3b .studio-preview-top>span:first-child{font-size:16px;color:#ead8ac;letter-spacing:0;text-transform:none}
+ .app3b .studio-preview-panel>.design-preview,.app3b .studio-generated{grid-column:1;grid-row:1/3;height:136px;width:118px}
+ .app3b .studio-preview-panel .surface-tabs{grid-column:2;grid-row:2;margin:0;justify-content:flex-start;align-self:start}
+ .app3b .studio-preview-panel .surface-tabs button{padding:7px 14px;min-height:36px;font-size:11px}
+ .app3b .studio-step-panel h2{font-size:22px}
+ .app3b .studio-steps{gap:5px;margin-bottom:12px}
+ .app3b .studio-steps button{font-size:11px;gap:7px}
+ .app3b .studio-presets .quiet-button{flex:1;font-size:11px;padding:10px 8px}
+ .app3b .trio-simple{padding:16px}
+ .app3b .trio-toolbar{flex-direction:row;align-items:center}
+ .app3b .trio-toolbar .quiet-button{font-size:10px;padding:9px}
+ .app3b .trio-empty h2{font-size:24px}
+ .app3b .trio-empty{padding:12px 0}
+ .app3b .chat-messages{height:340px;max-height:46dvh}
+ .app3b .chat-room h2{font-size:17px}
+ .app3b .chat-room .status-pill{font-size:9px}
+ .app3b .community-controls .surface-tabs{flex-wrap:nowrap;overflow-x:auto;width:100%;padding-bottom:5px}
+ .app3b .community-controls .surface-tabs button{white-space:nowrap;flex-shrink:0}
+}
+

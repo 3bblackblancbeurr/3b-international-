@@ -24,7 +24,7 @@ function fixture(){
 }
 test('card and discount boundaries are independent and capped',()=>{
  assert.equal(tierFor(299).id,'discovery');assert.equal(tierFor(300).id,'explorer');assert.equal(tierFor(12000).id,'legend');
- assert.equal(themeFor('legend',300).id,'explorer');assert.equal(themeFor('discovery',12000).id,'discovery');assert.equal(nextTier(12000),null);
+ assert.equal(themeFor('legend',300).id,'explorer');assert.equal(themeFor('discovery',12000).id,'discovery');assert.equal(nextTier(12000).id,'builder');assert.equal(nextTier(100000),null);
  assert.deepEqual([999,1000,2999,3000,6999,7000,999999].map(discountFor),[0,5,5,8,8,10,10]);
  assert.deepEqual(purchaseRewards(1099),{xp:109,points:109});assert.throws(()=>purchaseRewards(1.5));assert.throws(()=>purchaseRewards(-1));
 });
@@ -32,6 +32,13 @@ test('accounts reject ambiguous handles, weak passwords and unknown countries',(
  const good={handle:' KaIs_3B ',password:'a-long-fixture-password',name:'Kaïs',country:'France'};
  assert.equal(validateAccount(good).handle,'kais_3b');
  for(const patch of [{handle:'a@b.fr'},{handle:'a'},{password:'123'},{country:'Unknown'},{name:'a'},{password:'x'.repeat(129)}])assert.throws(()=>validateAccount({...good,...patch}));
+});
+test('new illustrated cards unlock exactly at their XP threshold without changing discounts or equipped older cards',()=>{
+ for(const [xp,id,previous] of [[30000,'builder','legend'],[60000,'visionary','builder'],[100000,'eternal','visionary']]){
+  assert.equal(tierFor(xp-1).id,previous);assert.equal(tierFor(xp).id,id);
+  assert.equal(themeFor(id,xp-1).id,previous);assert.equal(themeFor(id,xp).id,id);
+  assert.equal(themeFor('legend',xp).id,'legend');assert.equal(discountFor(999999),10);
+ }
 });
 test('discount identity and balance come from a verified active account',async()=>{
  const f=fixture();assert.deepEqual(await f.helper.member(incoming()),{id:uid,discount:8});
@@ -74,3 +81,4 @@ test('discount coupons use fixed rates and idempotent creation',async()=>{
  stripe.coupons.retrieve=async()=>({id:'3b-loyalty-8-v1',valid:true,percent_off:100,duration:'once'});
  await assert.rejects(()=>loyaltyCoupon(stripe,8));
 });
+

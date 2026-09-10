@@ -1,16 +1,18 @@
 # Refonte 3B — état et activation
 Version du 11 septembre 2026. Application : https://3b-international.vercel.app
 
+La révision mobile décrite dans [MOBILE-PREMIUM-3B.md](MOBILE-PREMIUM-3B.md) complète cet état : cases compactes, guide XP en dernier, atelier de 69 pièces en trois étapes, conversation IA automatique et charte obligatoire pour le salon. Ce document décrit aussi les derniers contrôles et les activations encore nécessaires.
+
 ## Modifications
 - Accueil : une seule barre brillante, douze cartes uniformes en trois groupes ; Mon espace reste dans la navigation, sans case répétée dans le menu.
 - Fond original background.png rétabli et animé ; préférences de mouvement respectées.
 - Passeport : pluie Matrix plus dense, circuits lumineux et balayage, confinés à la carte ; pause disponible.
-- Fidélité : cinq illustrations originales, une par niveau, bordure métallisée, nom du membre et export SVG autonome qui embarque le dessin.
-- Guide & XP : gains, plafonds, cinq niveaux, points, réductions et annuaire des rubriques.
+- Fidélité : huit illustrations originales, une par niveau, bordure métallisée, nom du membre et export SVG autonome qui embarque le dessin.
+- Guide & XP : gains, plafonds, huit niveaux, points, réductions et annuaire des rubriques.
 - Secret : 3B en relief tournant et Bientôt intermittent. Manga : Bientôt. Religion remplace Musique.
 - Communauté : profils publics volontaires, membres et créateurs, publications, concepts de l’atelier, votes, suivi, blocage réciproque, signalements et file de modération ; trois salons avec Supabase Realtime et reprise par interrogation toutes les 15 secondes.
 - Sport : vrais titres des sept derniers jours, France 24 et BBC Sport, dates, liens et filtres. Cache de 10 minutes, interrogation de la page toutes les 5 minutes et actualisation quotidienne à 04:00 UTC. La couverture dépend des deux sources ; les scores en direct et une couverture exhaustive de chaque sport restent à intégrer.
-- IA : deux entrées. Atelier de 15 types de pièces et accessoires, matières, coupes, motifs, couleurs, face/dos, brief exportable et partage à relire. Trois adaptateurs de conversation OpenAI, Anthropic et Google ; génération textile OpenAI. Les services IA payants restent désactivés.
+- IA : deux entrées. Atelier de 69 types de pièces et accessoires en trois étapes, matières, coupes, motifs, couleurs, face/dos, brief exportable et partage à relire. Trois adaptateurs de conversation OpenAI, Anthropic et Google ; génération textile OpenAI. Les services IA payants restent désactivés.
 
 ## Ce qui reste à configurer
 Le propriétaire a confirmé que rien n’est configuré et qu’il n’a pas créé son compte.
@@ -31,14 +33,14 @@ Le propriétaire a confirmé que rien n’est configuré et qu’il n’a pas cr
 Les nouvelles tables ont RLS. Les écritures passent par la fonction, qui vérifie l’utilisateur ET une session encore active. La fonction a verify_jwt=false pour permettre les routes sport publiques et effectue sa propre authentification pour chaque action privée. Les secrets IA sont côté serveur et les images générées dans un bucket privé avec liens temporaires. Les quotas limitent le spam ; le statut modérateur provient exclusivement d’une table privée.
 L’ancien tchat anonyme inutilisé a perdu ses droits publics ; ses données ont été conservées.
 Tests SQL en transaction annulée : isolation des comptes, blocage dans les deux sens, session révoquée, refus des écritures directes, refus anonyme, rapports et rôles privés. Aucun compte de test conservé.
-Tests HTTP : capacités IA désactivées, actualités disponibles, écriture anonyme 401, origine étrangère 403, méthode non autorisée 405. Tests Node existants et nouveaux : 98 tests réussis au dernier passage. Les appels payants IA et un paiement Stripe réel n’ont pas été exécutés.
+Tests HTTP : capacités IA désactivées, actualités disponibles, écriture anonyme 401, origine étrangère 403, méthode non autorisée 405. Tests Node existants et nouveaux : 105 tests réussis au dernier passage. Les appels payants IA et un paiement Stripe réel n’ont pas été exécutés.
 Le code et ces vérifications réduisent les risques ; ils ne constituent pas une certification de sécurité ni une garantie de modération humaine immédiate.
 
 ## Déploiement du service
 Appliquer supabase/ecosystem.sql puis supabase/ecosystem-hardening.sql une fois via migrations. Ils ont déjà été appliqués au projet ttvhcezucsbbmnafrotq.
-Déployer supabase/functions/ecosystem/index.ts avec ses dépendances sports.js et studio.js. La version 3 est active.
+Déployer supabase/functions/ecosystem/index.ts avec ses dépendances sports.js, studio.js et ai-router.js. La version 4 est active. La migration additive supabase/community-enrollment.sql a également été appliquée ; supabase/community-enrollment-test.sql vérifie ses protections sans conserver les données de test.
 shared/studio.js réexporte le schéma de la fonction, utilisé aussi par le configurateur : une seule source de validation.
 
 ## Illustrations
-Créées avec l’outil image_gen intégré, puis encodées en WebP pour le site sans changer le dessin. Les cinq prompts sont conservés dans docs/loyalty-art-prompts.json. Aucun appel aux futures clés IA de l’application n’a été nécessaire.
+Créées avec l’outil image_gen intégré, puis encodées en WebP pour le site sans changer le dessin. Les huit prompts sont conservés dans docs/loyalty-art-prompts.json. Aucun appel aux futures clés IA de l’application n’a été nécessaire.
 

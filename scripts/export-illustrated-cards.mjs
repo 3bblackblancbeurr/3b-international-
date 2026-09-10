@@ -13,4 +13,5 @@ for(const tier of TIERS){
  await fs.copyFile(path.join(root,'public/loyalty-art',tier.id+'.webp'),path.join(dest,tier.id+'.webp'));
 }
 await fs.copyFile(path.join(root,'docs/loyalty-art-prompts.json'),path.join(dest,'prompts.json'));
-console.log('Cinq cartes illustrées autonomes exportées.');
+console.log(TIERS.length+' cartes illustrées autonomes exportées.');
+

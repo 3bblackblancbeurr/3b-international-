@@ -1,3 +1,4 @@
+import {availableProviders,normalizeConversation,automaticReply} from './ai-router.js';
 import {createClient} from 'npm:@supabase/supabase-js@2.116.0';
 import {fetchSports} from './sports.js';
 import {validateDesign,textilePrompt} from './studio.js';
@@ -7,6 +8,7 @@ const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
 const admin=createClient(BASE,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
 const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174']);
 const rooms=['general','atelier','sport'];
+const RULES_VERSION='2026-09-v1';
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const env=(key:string)=>Deno.env.get(key)||'';
 const capability=()=>{const enabled=env('AI_ENABLED')==='true';return{image:enabled&&!!env('OPENAI_API_KEY')&&!!env('OPENAI_IMAGE_MODEL'),gpt:enabled&&!!env('OPENAI_API_KEY')&&!!env('OPENAI_CHAT_MODEL'),claude:enabled&&!!env('ANTHROPIC_API_KEY')&&!!env('ANTHROPIC_CHAT_MODEL'),gemini:enabled&&!!env('GEMINI_API_KEY')&&!!env('GEMINI_CHAT_MODEL')};};
@@ -29,9 +31,9 @@ async function sports(){
  catch{if(cache)return{...cache.payload,stale:true};throw new Failure(503,'Les sources sportives sont momentanément indisponibles. Réessaie dans quelques minutes.');}
 }
 async function signAssets(posts:any[]){return await Promise.all(posts.map(async p=>{if(!p.asset_path)return p;const{data}=await admin.storage.from('studio-3b').createSignedUrl(p.asset_path,600);return{...p,imageUrl:data?.signedUrl||null};}));}
-async function participating(uid:string){const p=check(await admin.from('community_profiles').select('*').eq('user_id',uid).maybeSingle());if(!p?.listed)throw new Failure(403,'Active ton profil communautaire pour participer.');return p;}
+async function participating(uid:string){const p=check(await admin.from('community_profiles').select('*').eq('user_id',uid).maybeSingle());if(!p?.listed||p.rules_version!==RULES_VERSION||!p.rules_accepted_at)throw new Failure(403,'Active ton profil et accepte les règles du collectif pour participer.');return p;}
 async function visiblePost(client:any,id:string){const p=check(await client.from('community_posts').select('id,author_id').eq('id',id).maybeSingle());if(!p)throw new Failure(404,'Cette publication n’est plus disponible.');return p;}
-async function providerFetch(url:string,headers:Record<string,string>,body:unknown,timeout=60000){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});if(!r.ok)throw new Failure(503,'Le fournisseur IA est momentanément indisponible.');return await r.json();}
+async function providerFetch(url:string,headers:Record<string,string>,body:unknown,timeout=35000){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});if(!r.ok)throw new Failure(503,'Le fournisseur IA est momentanément indisponible.');return await r.json();}
 async function aiReply(provider:string,messages:any[]){
  const instruction='Tu es l’assistant créatif de 3B International. Réponds en français, de façon claire et utile. Ne prétends jamais avoir exécuté une action externe ni consulté des données en direct sans outil.';
  if(provider==='gpt'){const r=await providerFetch('https://api.openai.com/v1/responses',{Authorization:'Bearer '+env('OPENAI_API_KEY')},{model:env('OPENAI_CHAT_MODEL'),instructions:instruction,input:messages,max_output_tokens:1600,store:false});return r.output?.flatMap((o:any)=>o.content||[]).filter((c:any)=>c.type==='output_text').map((c:any)=>c.text).join('\n')||'Aucune réponse textuelle reçue.';}
@@ -49,7 +51,7 @@ Deno.serve(async req=>{
   if(req.method==='GET'){const section=new URL(req.url).searchParams.get('section');if(section==='sports')return reply(await sports());if(section==='capabilities')return reply(capability());throw new Failure(404,'Service introuvable.');}
   if(req.method!=='POST')throw new Failure(405,'Méthode non autorisée.');
   if(!req.headers.get('content-type')?.startsWith('application/json'))throw new Failure(415,'Format invalide.');
-  const reader=req.body?.getReader();let length=0,raw='';const decoder=new TextDecoder();if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;length+=chunk.value.length;if(length>24000){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}finally{reader.releaseLock();}
+  const reader=req.body?.getReader();let length=0,raw='';const decoder=new TextDecoder();if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;length+=chunk.value.length;if(length>100000){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}finally{reader.releaseLock();}
   let body;try{body=JSON.parse(raw);}catch{throw new Failure(400,'Demande invalide.');}if(!body||typeof body!=='object'||Array.isArray(body))throw new Failure(400,'Demande invalide.');
   const {uid,client}=await authenticate(req);const action=body.action;
   if(action==='snapshot'){
@@ -63,10 +65,14 @@ Deno.serve(async req=>{
   if(action==='profile'){
    await rate(uid,'profile',6);const member=check(await admin.from('member_profiles').select('handle,name').eq('user_id',uid).single());
    const kind=body.kind==='creator'?'creator':'member',bio=text(body.bio||'',0,500),listed=body.listed===true;
-   check(await admin.from('community_profiles').upsert({user_id:uid,handle:member.handle,name:member.name,bio,kind,listed}));return reply({ok:true});
+   const previous=check(await admin.from('community_profiles').select('rules_version,rules_accepted_at').eq('user_id',uid).maybeSingle());
+   const accepted=previous?.rules_version===RULES_VERSION&&!!previous?.rules_accepted_at;
+   if(listed&&!accepted&&body.acceptRules!==true)throw new Failure(400,'Accepte les règles du collectif pour activer ton profil.');
+   const consent=body.acceptRules===true&&!accepted?{rules_version:RULES_VERSION,rules_accepted_at:new Date().toISOString()}:{};
+   check(await admin.from('community_profiles').upsert({user_id:uid,handle:member.handle,name:member.name,bio,kind,listed,...consent}));return reply({ok:true});
   }
   if(action==='chat-list'){
-   await rate(uid,'read',120);if(!rooms.includes(body.room))throw new Failure(400,'Salon invalide.');
+   await participating(uid);await rate(uid,'read',120);if(!rooms.includes(body.room))throw new Failure(400,'Salon invalide.');
    let query=client.from('community_chat').select('*').eq('room',body.room).order('created_at',{ascending:false}).limit(80);
    if(body.before)query=query.lt('created_at',text(body.before,10,40));const messages=check(await query).reverse();const authors=[...new Set(messages.map((m:any)=>m.author_id))];
    const profiles=authors.length?check(await client.from('community_profiles').select('user_id,name,handle').in('user_id',authors)):[];return reply({messages,profiles});
@@ -100,11 +106,10 @@ Deno.serve(async req=>{
    const report=check(await admin.from('community_reports').select('*').eq('id',uuid(body.id)).single());if(body.hide===true)check(await admin.from(report.kind==='chat'?'community_chat':'community_posts').update({status:'hidden'}).eq('id',report.target_id));check(await admin.from('community_reports').update({status:'resolved'}).eq('id',report.id));return reply({ok:true});
   }
   if(action==='chat-ai'){
-   const providers=[...new Set(Array.isArray(body.providers)?body.providers:[])];const caps:any=capability();if(!providers.length||providers.length>3||providers.some(p=>!['gpt','claude','gemini'].includes(String(p))))throw new Failure(400,'Choisis un service IA.');if(providers.some(p=>!caps[String(p)]))throw new Failure(503,'Ces IA ne sont pas encore activées.');
-   if(!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>12)throw new Failure(400,'Conversation trop longue. Ouvre une nouvelle conversation.');
-   const messages=body.messages.map((m:any)=>{if(!['user','assistant'].includes(m.role))throw new Failure(400,'Message invalide.');return{role:m.role,content:text(m.content,1,4000)};});if(messages.at(-1).role!=='user')throw new Failure(400,'Question manquante.');
+   const caps=capability();if(!availableProviders(caps).length)throw new Failure(503,'Les services IA ne sont pas encore activés.');
+   let messages;try{messages=normalizeConversation(body.messages);}catch(e){throw new Failure(400,e.message);}
    await rate(uid,'ai-chat',20,86400);await rate('global','ai-chat',100,86400);
-   const results=await Promise.all(providers.map(async p=>{try{return{provider:p,text:await aiReply(String(p),messages)};}catch{return{provider:p,error:'Ce service n’a pas répondu. Réessaie plus tard.'};}}));return reply({results});
+   try{return reply(await automaticReply(caps,messages,aiReply));}catch(e){throw new Failure(503,e.message);}
   }
   if(action==='generate'){
    if(!capability().image)throw new Failure(503,'La génération IA n’est pas encore activée. Ton configurateur reste disponible.');
@@ -117,3 +122,4 @@ Deno.serve(async req=>{
   throw new Failure(404,'Action introuvable.');
  }catch(error){return reply({error:error instanceof Failure?error.message:error instanceof Error&&error.message==='Design invalide.'?error.message:'Le service est momentanément indisponible. Réessaie.'},error instanceof Failure?error.status:503);}
 });
+
