@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, KeyRound } from "lucide-react";
 import ShopPage from "./shop/ShopPage.jsx";
 import AiPage from "./ai/AiPage.jsx";
@@ -17,6 +17,7 @@ import "./App.css";
 import "./styles/mobile-navigation.css";
 import "./styles/passport-effects.css";
 import "./styles/games.css";
+const WorldExperience=lazy(()=>import('./world/WorldPage.jsx'));
 
 const BASE_MENU_ITEMS = [
   {
@@ -41,7 +42,7 @@ const BASE_MENU_ITEMS = [
     id: "world3b",
     label: "Le Monde du 3B",
     icon: "🌍",
-    description: "Personnages interactifs, pouvoirs et raretés.",
+    description: "Huit mondes à explorer, 368 cartes et des alliés à rencontrer.",
   },
   {
     id: "games",
@@ -191,57 +192,6 @@ const MANGA_BOOKS = [
     title: "Tome 4 — Le Monde du 3B",
     subtitle: "L’héritage se divise",
     status: "À venir",
-  },
-];
-
-const WORLD_CHARACTERS = [
-  {
-    name: "Gardien France",
-    country: "France",
-    rarity: "Rare",
-    power: "Mémoire bleue",
-  },
-  {
-    name: "Lion Atlas 3B",
-    country: "Maroc",
-    rarity: "Légendaire",
-    power: "Force solaire",
-  },
-  {
-    name: "Loup Nordique",
-    country: "Estonie",
-    rarity: "Épique",
-    power: "Vision froide",
-  },
-  {
-    name: "Taureau Ibérique",
-    country: "Espagne",
-    rarity: "Rare",
-    power: "Impact rouge",
-  },
-  {
-    name: "Croissant Anatolie",
-    country: "Turquie",
-    rarity: "Épique",
-    power: "Lune rubis",
-  },
-  {
-    name: "Sahara Vert",
-    country: "Algérie",
-    rarity: "Rare",
-    power: "Fragment désert",
-  },
-  {
-    name: "Carthage Rouge",
-    country: "Tunisie",
-    rarity: "Rare",
-    power: "Mémoire ancienne",
-  },
-  {
-    name: "Roma Verde",
-    country: "Italie",
-    rarity: "Épique",
-    power: "Architecture vivante",
   },
 ];
 
@@ -442,7 +392,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />
+      {page !== 'world3b' && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
       <ExplorationRewards page={page}/>
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
@@ -474,7 +424,7 @@ export default function App() {
           openSecret={openSecret}
         />
       )}
-      {page === "world3b" && <World3BPage goTo={goTo} />}
+      {page === "world3b" && <Suspense fallback={<div className="page-section">Ouverture du Monde 3B…</div>}><WorldExperience goTo={goTo}/></Suspense>}
 
       {page === "member" && (
         <AccountPage
@@ -580,33 +530,6 @@ function MangaPage({ goTo }) {
             <p className="eyebrow">{book.status}</p>
             <h2>{book.title}</h2>
             <p>{book.subtitle}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function World3BPage({ goTo }) {
-  return (
-    <section className="page-section">
-      <PageHeader
-        title="Le Monde du 3B"
-        subtitle="Espace dédié uniquement aux personnages interactifs."
-        goTo={goTo}
-      />
-
-      <div className="content-grid">
-        {WORLD_CHARACTERS.map((character) => (
-          <article key={character.name} className="premium-panel character-card">
-            <p className="eyebrow">{character.rarity}</p>
-            <h2>{character.name}</h2>
-            <p>
-              <strong>Pays :</strong> {character.country}
-            </p>
-            <p>
-              <strong>Pouvoir :</strong> {character.power}
-            </p>
           </article>
         ))}
       </div>
