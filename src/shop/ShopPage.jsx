@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2 } from "lucide-react";
 import { CART_KEY, PENDING_KEY, readStored, writeStored, sanitizeCart, subtractPurchased } from "./cart.js";
 import "./shop.css";
+import {useLoyalty} from "../loyalty/LoyaltyContext.jsx";
+import {checkoutAuth} from "../loyalty/client.js";
+import {discountFor} from "../../shared/loyalty.js";
 
 const money = (amount, currency = "eur") => new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount / 100);
 const variantLabel = item => [item.size, item.color].filter(Boolean).join(" · ");
@@ -48,6 +51,7 @@ function ProductCard({ variants, onAdd, disabled }) {
 }
 
 export default function ShopPage({ goTo, reducedMotion = false }) {
+  const account=useLoyalty();
   const [catalog, setCatalog] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [reload, setReload] = useState(0);
@@ -131,7 +135,7 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
     attempt.current ||= crypto.randomUUID();
     try {
       const data = await requestJson("/api/checkout", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...await checkoutAuth() },
         body: JSON.stringify({ items: snapshot, attemptId: attempt.current }),
       });
       const url = new URL(data.url);
@@ -165,6 +169,7 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
         }}><ShoppingBag aria-hidden="true" size={20} /> Panier <span>{count}</span></a>
       </div>
 
+      <div className="shop-loyalty-note">{account.profile?<>Compte @{account.profile.handle} · 10 XP et 10 points par euro d’articles payé.{discountFor(account.profile.points)>0&&<> Avantage actuel : −{discountFor(account.profile.points)} %, vérifié au paiement.</>}</>:<>Connecte-toi avant le paiement pour gagner des points et bénéficier de tes avantages. <button onClick={()=>goTo("member")}>Mon compte 3B</button></>}</div>
       {catalog?.testMode && <p className="shop-banner">Mode test : aucun paiement réel.</p>}
       {returnState.action === "cancel" && <div className="shop-banner" role="status">
         <p>Tu as quitté la page de paiement. Ton panier est conservé.</p>
