@@ -6,7 +6,7 @@ export default function HomePage({ goTo, menuItems, member }) {
   return <section className="home-dashboard">
     <div className="welcome-hero">
       <div className="welcome-copy">
-        <p className="eyebrow"><span className="gold-line" /> BLACK · BLANC · BEUR</p>
+        <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
         <h1>Un héritage.<br /><em>Ton univers.</em></h1>
         <p className="welcome-description">Une identité, des histoires et un monde à explorer. Entre dans l’univers 3B et écris la suite.</p>
         <RouteLink page={member.isRegistered ? "member" : "passport"} goTo={goTo} className="dashboard-cta">{member.isRegistered ? "Retrouver mon espace" : "Découvrir mon passeport"}<ArrowUpRight size={20} aria-hidden="true" /></RouteLink>

@@ -64,7 +64,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
     <header className="site-header">
       <RouteLink page="home" goTo={goTo} className="brand-link" aria-label="3B International — Accueil">
         <span className="brand-wordmark" aria-hidden="true">3B</span>
-        <span className="brand-name">INTERNATIONAL<small>BLACK · BLANC · BEUR</small></span>
+        <span className="brand-name">INTERNATIONAL<small className="brand-glow-badge brand-glow-badge--compact">BLACK • BLANC • BEUR</small></span>
       </RouteLink>
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}

@@ -7,8 +7,10 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS, OPTION_LABELS
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
+import PassportVisual from "./components/PassportVisual.jsx";
 import "./App.css";
 import "./styles/mobile-navigation.css";
+import "./styles/passport-effects.css";
 
 const BASE_MENU_ITEMS = [
   {
@@ -453,6 +455,7 @@ export default function App() {
 
         <section className="intro3b-card">
           <p className="eyebrow">3B International</p>
+          <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
           <h1>De zéro à l’international</h1>
           <p>
             Un écosystème premium pour ton passeport, tes cartes, tes jeux, ton
@@ -487,6 +490,7 @@ export default function App() {
       {page === "passport" && (
         <PassportPage
           member={member}
+          options={options}
           goTo={goTo}
           goToIntro={goToIntro}
         />
@@ -546,7 +550,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ member, goTo, goToIntro }) {
+function PassportPage({ member, goTo, goToIntro, options }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -559,27 +563,7 @@ function PassportPage({ member, goTo, goToIntro }) {
         goTo={goTo}
       />
 
-      <div className="passport-frame">
-        <img
-          src="/passport-digital-3bv2.png"
-          alt="Passeport Digital 3B"
-          className="passport-image"
-        />
-
-        <button
-          type="button"
-          className="passport-hotspot passport-hotspot-home"
-          onClick={() => goTo("home")}
-          aria-label="Retour accueil"
-        />
-
-        <button
-          type="button"
-          className="passport-hotspot passport-hotspot-entry"
-          onClick={() => (goToIntro ? goToIntro() : goTo("home"))}
-          aria-label="Retour entrée"
-        />
-      </div>
+      <PassportVisual goTo={goTo} goToIntro={goToIntro} options={options} />
 
       <div className="info-grid">
         <article className="premium-panel">
