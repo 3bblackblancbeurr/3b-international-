@@ -4,3 +4,12 @@
 
 
 .game-mobile-help{display:none}@media(max-width:600px){.game-footer{flex-wrap:wrap}.game-mobile-help{display:block;flex-basis:100%;font-size:12px;color:#b2c4d5;margin:0;line-height:1.4}.game-hud>div{min-width:0}.game-hud{gap:5px}.game-hud strong{font-size:14px}.game-hud span{font-size:12px}}
+.game-drag-area{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:grab}
+.game-drag-area canvas{cursor:inherit}
+.game-drag-area:active{cursor:grabbing}
+.game-drag-hint{position:absolute;bottom:12px;left:12px;right:12px;text-align:center;pointer-events:none;font-size:12px;line-height:1.5;color:#d8e6ee;text-shadow:0 1px 4px #000;background:#07111cbb;border:1px solid #b4c9dc22;border-radius:22px;padding:7px 12px;width:fit-content;max-width:calc(100% - 24px);margin:auto}
+.game-joystick{position:fixed;z-index:4;width:96px;height:96px;border:1px solid #f3d89a99;border-radius:50%;background:#0b1c3180;box-shadow:0 0 26px #accef81c;transform:translate(-50%,-50%);pointer-events:none}
+.game-joystick span{position:absolute;left:31px;top:31px;width:32px;height:32px;border:1px solid #ffe2a3;border-radius:50%;background:#ead19a85;box-shadow:0 0 12px #f3d59955}
+.game-touch-label{display:none!important}
+.game-shell button{touch-action:manipulation}
+@media(pointer:coarse),(max-width:600px){.game-dpad{display:none}.game-key-label{display:none!important}.game-touch-label{display:block!important}.game-footer{min-height:74px}.game-mobile-help{flex:1;flex-basis:auto;min-width:0}.game-action{flex-shrink:0;min-height:58px}.game-drag-hint{font-size:11px;bottom:16px}}
