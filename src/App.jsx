@@ -25,6 +25,7 @@ import ReligionPage from "./components/ReligionPage.jsx";
 const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldPage.jsx'));
+const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 
 const BASE_MENU_ITEMS = [
   { id: "guide", label: "Guide & XP", description: "Tous les menus, les gains et les niveaux expliqués." },
@@ -216,7 +217,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {page !== 'world3b' && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
+      {!['world3b','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
       <Suspense fallback={<div className="page-section" role="status">Ouverture de la rubrique…</div>}>
       <ExplorationRewards page={page}/>
@@ -242,6 +243,7 @@ export default function App() {
       {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
       {page === "secret" && <ComingSoon secret />}
       {page === "world3b" && <Suspense fallback={<div className="page-section">Ouverture du Monde 3B…</div>}><WorldExperience goTo={goTo}/></Suspense>}
+      {page === "arena" && <div className="arena-standalone"><Suspense fallback={<p>Ouverture de l’arène…</p>}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
       {page === "member" && (
         <AccountPage

@@ -1,4 +1,5 @@
 import {CARDS,COUNTRIES,cardById,countryById} from './catalog.js';
+import {normalizeAvatar} from './avatar-rules.js';
 import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMissions,makeEncounter,worldItems,guardianReady,clamp} from './rules.js';
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 
@@ -45,6 +46,7 @@ export function applyWorldAction(input,action){
  const inCountry=()=>requireThat(!!c&&s.visited.includes(region),'Traverse d’abord une porte.');
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
  switch(action.type){
+  case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
   case 'visit':{
    peaceful();requireThat(action.region==='hub'||countryById[action.region],'Pays inconnu.');
    requireThat(region==='hub'||action.region==='hub'||action.region===region,'Reviens au Nexus pour changer de pays.');

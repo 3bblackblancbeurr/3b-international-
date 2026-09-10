@@ -2,18 +2,20 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {createLivingLibrary,createLivingActor} from './living.js';
 
 export async function loadWorldModels(){
- const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+ const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary();
  const [hero,kit,atlas]=await Promise.all([
-  loader.loadAsync('/world/models/kais-3d.glb'),
+  living.load('/world/living/traveller-0.glb'),
   loader.loadAsync('/world/models/chapter-kit.glb'),
   new THREE.TextureLoader().loadAsync('/world/guardians-atlas.webp')
  ]);
- const assets=[hero.scene,kit.scene];
+ kit.living=living;const assets=[kit.scene];
  assets.forEach(root=>root.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);}));
  atlas.colorSpace=THREE.SRGBColorSpace;
- return {hero,kit,atlas,dispose(){
+ return {hero,kit,atlas,living,dispose(){
+  living.dispose();
   const geometries=new Set(),materials=new Set(),textures=new Set();
   assets.forEach(root=>root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}}));
   geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());atlas.dispose();
@@ -58,6 +60,7 @@ export function createCreature(asset,region,color,scale=2){
 }
 
 export function createResident(asset,kind,color){
+ if(asset.living)return createLivingActor(asset.living,{avatar:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,skin:2},scale:2});
  const source=asset.scene.getObjectByName('Resident_'+kind);if(!source)throw Error('Habitant manquant : '+kind);const object=source.clone(true),owned=[];object.scale.setScalar(2.4);
  object.traverse(o=>{if(o.isMesh&&o.material.name==='Resident cloth'){o.material=o.material.clone();o.material.color.set(color).multiplyScalar(.65);owned.push(o.material);}});
  let elapsed=0;return{object,update(dt){elapsed+=dt;object.position.y=Math.sin(elapsed*1.5)*.018;},dispose(){owned.forEach(m=>m.dispose());}};

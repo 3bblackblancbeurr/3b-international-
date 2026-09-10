@@ -1,0 +1,19 @@
+MONDE DU 3B — LOCAL 3D EDITION
+
+Card names, fictional setting and supplied illustrations: the 3B project owner.
+The 368 models are stylized local Blender adaptations. Characters share reusable
+base topology; these files are not photogrammetry or exact replicas of the illustrations.
+
+Human bases, hair, modular clothing and humanoid animation source:
+Quaternius, Standard free editions, Creative Commons CC0 1.0 Universal.
+https://quaternius.com/packs/universalbasecharacters.html
+https://quaternius.com/packs/modularcharacteroutfitsfantasy.html
+https://quaternius.itch.io/universal-animation-library
+https://creativecommons.org/publicdomain/zero/1.0/
+
+3B local adaptations: face morphs, wardrobe assembly, colour roles, ornaments,
+country-specific guardians, articulated animal spirits, objects and miniature
+architectural interpretations, glTF exports and gameplay integration.
+
+Architectural miniatures are stylized studies, not precise site reconstructions.
+No paid asset pack, Fal generation, MetaHuman or DLSS asset is included.
