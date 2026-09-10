@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ArrowUpRight, KeyRound } from "lucide-react";
 import ShopPage from "./shop/ShopPage.jsx";
 import AiPage from "./ai/AiPage.jsx";
 import { readLocation, navigateTo } from "./lib/navigation.js";
@@ -11,6 +12,7 @@ import PassportVisual from "./components/PassportVisual.jsx";
 import "./App.css";
 import "./styles/mobile-navigation.css";
 import "./styles/passport-effects.css";
+import "./styles/games.css";
 
 const BASE_MENU_ITEMS = [
   {
@@ -41,7 +43,7 @@ const BASE_MENU_ITEMS = [
     id: "games",
     label: "Jeux 3B",
     icon: "🎮",
-    description: "Missions, XP, défis et portes 3B.",
+    description: "La course des clés et les futurs défis 3B.",
   },
   {
     id: "music",
@@ -257,7 +259,7 @@ const WORLD_CHARACTERS = [
 const SAFE_PAGES = {
   games: {
     title: "Jeux 3B",
-    subtitle: "Missions, XP, portes, énigmes et progression.",
+    subtitle: "Découvre La course des clés et les prochains jeux de l’univers 3B.",
     blocks: [
       "QCM 3B",
       "Mots croisés",
@@ -927,6 +929,35 @@ function SafePage({ type, goTo }) {
         subtitle={selected.subtitle}
         goTo={goTo}
       />
+
+      {type === "games" && (
+        <>
+          <article className="games-feature" aria-labelledby="key-race-title">
+            <div className="games-feature-art" aria-hidden="true">
+              <span className="games-feature-monogram">3B</span>
+              <KeyRound size={100} strokeWidth={1.25} />
+              <span className="games-feature-art-label">LA COURSE DES CLÉS</span>
+            </div>
+            <div className="games-feature-copy">
+              <span className="games-feature-badge">Démo</span>
+              <h2 id="key-race-title">La course des clés</h2>
+              <p>Une nouvelle aventure 3B t’attend. Découvre le jeu et lance ta partie.</p>
+              <a
+                className="games-play-link"
+                href="https://troisb-course-des-cles-demo.stetienne86pp.chatgpt.site/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Jouer à La course des clés (nouvel onglet)"
+                aria-describedby="key-race-access"
+              >
+                Jouer <ArrowUpRight size={20} aria-hidden="true" />
+              </a>
+              <p id="key-race-access" className="games-access-note">S’ouvre dans un nouvel onglet. Connexion ChatGPT requise.</p>
+            </div>
+          </article>
+          <h2 className="games-upcoming-title">Prochainement dans Jeux 3B</h2>
+        </>
+      )}
 
       <div className="content-grid">
         {selected.blocks.map((block) => (

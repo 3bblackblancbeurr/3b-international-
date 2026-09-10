@@ -1,0 +1,50 @@
+.games-feature {
+  display: grid;
+  grid-template-columns: minmax(240px, .8fr) minmax(0, 1.2fr);
+  overflow: hidden;
+  border: 1px solid #c1a26966;
+  border-radius: 22px;
+  background: #111514;
+}
+
+.games-feature-art {
+  position: relative;
+  display: flex;
+  min-height: 310px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  overflow: hidden;
+  color: #edd09a;
+  background: radial-gradient(ellipse at center, #b4893833, transparent 68%), #0a100e;
+  border-right: 1px solid #c1a26933;
+}
+
+.games-feature-monogram {
+  position: absolute;
+  font-size: clamp(160px, 20vw, 270px);
+  font-weight: 900;
+  line-height: 1;
+  color: #ddbe790c;
+}
+
+.games-feature-art svg { position: relative; filter: drop-shadow(0 0 18px #deb66a44); }
+.games-feature-art-label { position: relative; font-size: 10px; letter-spacing: .24em; }
+.games-feature-copy { min-width: 0; align-self: center; padding: clamp(24px, 4vw, 48px); }
+.games-feature-badge { display: inline-block; padding: 5px 10px; border: 1px solid #dfbd7559; border-radius: 6px; color: #e8c789; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.games-feature-copy h2 { margin: 18px 0 12px; color: #f0dfbb; font-size: clamp(26px, 3vw, 38px); font-weight: 650; letter-spacing: -.025em; line-height: 1.15; }
+.games-feature-copy p { max-width: 470px; margin: 0; color: #b8b5ac; font-size: 15px; line-height: 1.7; }
+.games-play-link { display: inline-flex; min-height: 50px; min-width: 146px; align-items: center; justify-content: space-between; gap: 36px; margin-top: 26px; padding: 12px 22px; border: 1px solid #e4c081; border-radius: 10px; background: #e4c081; color: #14170f; font-size: 15px; font-weight: 700; text-decoration: none; }
+.games-play-link:hover { background: #f3d8a5; border-color: #f3d8a5; }
+.games-play-link:focus-visible { outline: 3px solid #f6dfb3; outline-offset: 5px; }
+.games-feature-copy .games-access-note { margin-top: 12px; font-size: 12px; color: #aaa99f; }
+.games-upcoming-title { margin: 34px 0 0; color: #d5c6a5; font-size: 19px; font-weight: 600; }
+
+@media (max-width: 720px) {
+  .games-feature { grid-template-columns: minmax(0, 1fr); border-radius: 16px; }
+  .games-feature-art { min-height: 190px; gap: 16px; border-right: 0; border-bottom: 1px solid #c1a26933; }
+  .games-feature-art svg { width: 76px; height: 76px; }
+  .games-feature-copy { padding: 24px; }
+  .games-play-link { width: 100%; }
+}
