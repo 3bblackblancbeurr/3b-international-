@@ -1,0 +1,20 @@
+import {BaseGame,shuffle,pick} from './core.js';
+export const ROOMS=[{type:'treasure',hint:'Un tintement derrière le bois',detail:'Des pièces roulent dans une salle tranquille.'},{type:'trap',hint:'Un courant d’air glacé',detail:'Des dalles piégées recouvrent le passage.'},{type:'combat',hint:'Des griffures sur la pierre',detail:'Une ombre garde l’escalier.'},{type:'secret',hint:'Un symbole presque effacé',detail:'Une salle secrète préserve un souvenir.'},{type:'rest',hint:'Une odeur de braises douces',detail:'Un sanctuaire offre un peu de repos.'}];
+const RELICS=['La carte sans frontières','La voix du premier veilleur','Le médaillon brisé','La lettre à Kaïs','Le soleil de verre','La clé des oubliés','Le chant de la tour','Le livre des huit pays'];
+export class Tower extends BaseGame {
+ constructor(seed){super(seed);this.floor=1;this.loot=0;this.weapon=0;this.room='doors';this.discovered=[];this.strike=0;this.block=0;this.blockCooldown=0;this.doors=shuffle(ROOMS,this.random).slice(0,3);}
+ door(i){if(this.status!=='playing'||this.room!=='doors'||!this.doors[i])return;const d=this.doors[i];this.lastRoom=d.type;this.room='resolved';this.message=d.detail;
+ if(d.type==='treasure'){const n=24+this.floor*8;this.loot+=n;this.message+=` +${n} fragments.`;}
+ if(d.type==='trap'){const damage=12+this.floor;this.player.hp=Math.max(0,this.player.hp-damage);this.loot+=15;this.message+=` −${damage} vie. +15 fragments récupérés.`;}
+ if(d.type==='rest'){this.player.hp=Math.min(100,this.player.hp+30);this.message+=' +30 vie.';}
+ if(d.type==='secret'){const remaining=RELICS.filter(r=>!this.discovered.includes(r));const relic=pick(remaining.length?remaining:RELICS,this.random);if(!this.discovered.includes(relic))this.discovered.push(relic);this.weapon++;this.loot+=40;this.message=`Souvenir retrouvé : « ${relic} ». Tes attaques gagnent 3 dégâts. +40 fragments.`;}
+ if(d.type==='combat'){this.room='combat';const hp=40+this.floor*9;this.enemy={hp,maxHp:hp,windup:2.8};this.strike=0;this.blockCooldown=0;this.message='Frappe puis protège-toi quand l’ombre prépare son attaque.';}if(this.player.hp<=0)this.fail();}
+ next(){if(this.room!=='resolved'||this.status!=='playing')return;if(this.floor>=15){this.bank(true);return;}this.floor++;this.room='doors';this.doors=shuffle(ROOMS,this.random).slice(0,3);this.message='Choisis une porte, ou sors avec tes trouvailles.';}
+ attack(){if(this.status!=='playing'||this.room!=='combat'||this.strike>0)return;this.enemy.hp-=12+this.weapon*3;this.strike=.65;this.effect(550,200,'#eac77b','−'+(12+this.weapon*3));if(this.enemy.hp<=0){this.room='resolved';const n=35+this.floor*9;this.loot+=n;this.message=`L’ombre est vaincue. +${n} fragments. L’escalier est libre.`;}}
+ guard(){if(this.room==='combat'&&this.blockCooldown<=0&&this.status==='playing'){this.block=.9;this.blockCooldown=1.6;this.message='Garde levée pendant un instant.';}}
+ action(){this.attack();}
+ bank(top=false){if(this.status!=='playing'||this.room==='combat')return;this.score=this.loot+this.floor*20;this.finish(true,top?'Tu as atteint le sommet. Tous tes fragments sont à l’abri.':`Tu quittes la tour à l’étage ${this.floor} avec ${this.loot} fragments.`);}
+ fail(){this.score=Math.floor(this.loot*.25);this.finish(false,`La tour garde tes trouvailles. Tu sauves ${this.score} fragments et les souvenirs découverts.`);}
+ update(dt){if(this.status!=='playing')return;this.tick(dt);this.strike=Math.max(0,this.strike-dt);this.block=Math.max(0,this.block-dt);this.blockCooldown=Math.max(0,this.blockCooldown-dt);if(this.room==='combat'){this.enemy.windup-=dt;if(this.enemy.windup<=0){if(this.block>0){this.message='Parade réussie !';this.effect(280,250,'#92dbc8','Parade');}else{const n=10+this.floor;this.player.hp=Math.max(0,this.player.hp-n);this.message=`L’ombre te touche : −${n} vie.`;}this.enemy.windup=2.5;if(this.player.hp<=0)this.fail();}}if(this.time>=480&&this.status==='playing'){if(this.room==='combat')this.fail();else this.bank();}}
+ hud(){return [['Vie',`${this.player.hp} / 100`],['Étage',`${this.floor} / 15`],['Butin',this.loot],['Souvenirs',`${this.discovered.length} / 8`]];}
+}
