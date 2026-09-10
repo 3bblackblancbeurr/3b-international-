@@ -11,7 +11,7 @@ export function StoryPanel({save,act,onNavigate,onClose}){
   <div className="adventure-banner"><span>{countryById[id].symbol}</span><div><small>CHAPITRE · {countryById[id].name.toUpperCase()}</small><h3>{c.title}</h3><p>{c.resident}</p></div><b>{s.restored}/3<small>RECONSTRUIT</small></b></div>
   <p className="adventure-dialogue">« {s.restored===3?c.ending:c.need} »</p>
   {!s.helped?<><p>Un premier geste suffit à faire revenir les liens. En aidant cet habitant, tu reçois un Allié et les cartes Terrain et Ambiance de ce chapitre.</p><button className="world-primary" onClick={()=>act({type:'help'})}>{c.help} · +80 XP</button></>:s.powers.length<3?<>
-   <h3>Trois cartes, un passage</h3><p>Ton Allié reconnaît la trace. L’Ambiance en révèle le sens. Le Terrain donne une forme au passage. Ces cartes restent dans ta collection.</p>
+   <h3>Réveiller le lieu</h3><p>Ton Allié reconnaît la trace. L’Ambiance en révèle le sens. Le Terrain fait renaître la lumière du lieu. Ces cartes restent dans ta collection.</p>
    <div className="adventure-powers">{['ally','ambiance','terrain'].map((power,i)=><button key={power} disabled={i!==s.powers.length} className={i<s.powers.length?'is-complete':''} onClick={()=>act({type:'power',power})}><span>{['◈','☾','▱'][i]}</span><small>{['1 · RÉVÉLER','2 · COMPRENDRE','3 · MATÉRIALISER'][i]}</small><strong>{cardById[cards[power]]?.name}</strong><em>{i<s.powers.length?'Lien activé':i===s.powers.length?'Utiliser cette carte':'Attend la carte précédente'}</em></button>)}</div>
   </>:!s.solved?<>
    <div className="adventure-puzzle-heading"><div><small>MONUMENT INTERACTIF</small><h3>{c.puzzle}</h3></div><button className="world-link" onClick={()=>act({type:'puzzleReset'})}>Recommencer</button></div><p>{c.instruction}</p>
