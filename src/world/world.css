@@ -3,7 +3,7 @@
 .world-shell{position:fixed;inset:0;z-index:1000;overflow:hidden;background:#102030;isolation:isolate}
 .world-canvas{display:block;width:100%;height:100%;touch-action:none;outline:none;cursor:grab}
 .world-canvas:active{cursor:grabbing}.world-canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
-.world-vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#081521d6,transparent 35%,transparent 66%,#06121bc9),radial-gradient(ellipse at 50% 45%,transparent 35%,#050d1a60)}
+.world-vignette{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#081521d6,transparent 25%,transparent 74%,#06121baf),radial-gradient(ellipse at 50% 45%,transparent 52%,#050d1a20)}
 .world-shell button,.world-dialog button,.world-import{font:inherit;color:var(--text);border:1px solid #d9e5dc29;border-radius:10px;background:#152b36ed;padding:11px 16px;cursor:pointer;transition:background .18s,transform .18s,border-color .18s;min-height:44px}
 .world-shell button:hover,.world-dialog button:hover{background:#29414b;border-color:#ddcca975}
 .world-shell button:focus-visible,.world-dialog button:focus-visible,.world-dialog input:focus-visible,.world-dialog select:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
@@ -11,7 +11,7 @@
 .world-shell .world-primary,.world-dialog .world-primary{background:linear-gradient(120deg,#f3deb0,#c4a46b);color:#15232c;border:1px solid #f7e4bc;font-weight:700;box-shadow:0 5px 24px #c7a76826}
 .world-shell .world-primary:hover,.world-dialog .world-primary:hover{background:#f0d9a5;transform:translateY(-1px)}
 .world-topbar{position:absolute;left:28px;right:28px;top:max(20px,env(safe-area-inset-top));display:flex;gap:18px;align-items:center}
-.world-shell .world-icon,.world-dialog .world-icon{width:44px;height:44px;min-width:44px;padding:10px;display:grid;place-items:center;border-radius:50%;background:#112330b0;backdrop-filter:blur(12px)}
+.world-shell .world-icon,.world-dialog .world-icon{width:44px;height:44px;min-width:44px;padding:10px;display:grid;place-items:center;border-radius:50%;background:#112330b0;}
 .world-brand{line-height:1.1}.world-brand b{font-size:24px;letter-spacing:-1px}.world-brand b span{font-size:14px;letter-spacing:4px;margin-left:10px;font-weight:400}.world-brand small{display:block;font-size:8px;letter-spacing:3px;color:var(--gold);margin-top:5px}
 .world-mode{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:9px;letter-spacing:2px;color:#c7d5d4}.world-mode i{width:5px;height:5px;background:#a3e7c4;border-radius:50%;box-shadow:0 0 10px #b2efd3}
 .world-location{position:absolute;top:104px;left:32px;max-width:490px;pointer-events:none;text-shadow:0 2px 12px #00101f}
@@ -31,7 +31,7 @@
 .world-player strong{font-size:13px}.world-player small{color:var(--muted);font-size:10px;font-weight:400;margin-left:10px}.world-player progress{display:block;width:176px;height:3px;margin:7px 0}.world-player span:not(.world-avatar span){font-size:9px;color:var(--muted)}
 .world-shell progress,.world-dialog progress{accent-color:var(--gold);border:none;border-radius:10px;background:#ffffff17;overflow:hidden}
 .world-shell progress::-webkit-progress-bar,.world-dialog progress::-webkit-progress-bar{background:#ffffff17}.world-shell progress::-webkit-progress-value,.world-dialog progress::-webkit-progress-value{background:linear-gradient(90deg,#8d875e,#edcf97)}
-.world-controls{position:absolute;right:30px;bottom:30px;display:flex;gap:7px;padding:5px;background:#091b26bf;backdrop-filter:blur(16px);border:1px solid #e2dab223;border-radius:17px}
+.world-controls{position:absolute;right:30px;bottom:30px;display:flex;gap:7px;padding:5px;background:#091b26bf;;border:1px solid #e2dab223;border-radius:17px}
 .world-controls button{width:84px;min-height:73px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:transparent;border-color:transparent;padding:8px 9px}
 .world-controls svg{color:var(--gold)}.world-controls span{font-size:10px}.world-controls small{font-size:8px;color:var(--muted)}
 .world-interact{position:absolute;left:50%;bottom:137px;transform:translateX(-50%);max-width:90%;text-align:center}.world-interact button{display:flex;align-items:center;gap:10px;white-space:nowrap;font-size:12px}.world-interact kbd{border:1px solid #10243138;padding:1px 4px;border-radius:4px;font:10px system-ui}.world-interact p{font-size:10px;color:#d4dedb;background:#0c1c2699;border-radius:30px;padding:8px 16px;white-space:nowrap;margin:0}
@@ -88,3 +88,7 @@
 }
 @media(max-height:540px) and (orientation:landscape){.world-location{top:70px;max-width:280px}.world-location h1{font-size:25px}.world-location p,.world-objective{display:none}.world-topbar{top:10px}.world-minimap{top:68px!important;width:100px!important;height:118px!important}.world-player{bottom:35px}.world-controls{left:auto;right:14px;bottom:15px}.world-controls button{width:64px}.world-interact{bottom:110px}.world-waypoint{top:75px!important;bottom:auto!important}.world-gps-pill{bottom:158px}.world-dialog{max-height:95svh}}
 @media(prefers-reduced-motion:reduce){.world-shell *,.world-dialog *{animation:none!important;transition:none!important}}
+
+.world-quality{margin:22px 0}.world-quality label{display:block;color:var(--gold);margin-bottom:8px}.world-quality select{width:100%;padding:13px;border:1px solid #afc1c055;border-radius:10px;background:#122935;color:var(--text);font:inherit}.world-quality p{font-size:11px}.world-loading{background:radial-gradient(ellipse at 50% 25%,#365e63,#102231 65%)}
+.world-location{padding:14px 18px;border-radius:0 16px 16px 0;background:linear-gradient(90deg,#112b3de8,#112b3d91);border-left:2px solid #ddc386;max-width:440px}.world-location h1{font-size:clamp(24px,2.4vw,35px)}.world-location p{color:#d6e2de}.world-objective{padding:12px 16px;background:#112b3de0;border-radius:12px;border:1px solid #e4cf9733}.world-player{padding:12px 15px;background:#112b3de8;border:1px solid #e4cf9733;border-radius:14px}.world-minimap span{color:#122b3c;font-weight:700;text-shadow:0 1px 3px #fff9}
+@media(max-width:640px){.world-location{padding:10px 12px;max-width:250px}.world-location h1{font-size:24px}.world-objective{padding:8px 10px;max-width:220px}.world-player{padding:8px 10px}}
