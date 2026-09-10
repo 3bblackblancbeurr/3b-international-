@@ -23,5 +23,4 @@ Les accès fournisseurs IA restent absents : aucune réponse réelle ni généra
 
 La boutique reste sans catalogue et les ventes sont fermées tant que produits, prix, stocks, livraison, coordonnées du vendeur et paiement ne sont pas configurés. Aucun paiement réel n’a été déclenché.
 
-Le propriétaire doit créer son compte 3B pour qu’il puisse être désigné comme modérateur. Aucun compte arbitraire n’a reçu ce rôle. Les signalements peuvent être enregistrés mais nécessitent ensuite une personne habilitée pour leur traitement. La protection Supabase contre les mots de passe compromis reste à activer dans le tableau de bord.
-
+Un compte dédié a été créé et désigné comme modérateur à la demande du propriétaire ; ses accès sont remis en privé. Voir FIDELITE-BOUTIQUE-3B.md pour la séparation des cartes commerciales et XP ainsi que les derniers contrôles. La protection Supabase contre les mots de passe compromis reste à activer dans le tableau de bord.

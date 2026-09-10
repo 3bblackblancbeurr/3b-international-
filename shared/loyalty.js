@@ -10,6 +10,10 @@ export const TIERS=[
  {id:'eternal',name:'Éternel',xp:100000,color:'#f5dfbc',motto:'La lumière se transmet.',benefit:'Le design Nacre et l’aura Éternel dans les Ombres et le Refuge.'},
 ];
 export const DISCOUNTS=[{points:1000,percent:5},{points:3000,percent:8},{points:7000,percent:10}];
+const SHOP_DESIGNS=[{id:'argent',name:'Argent',color:'#dce5ef',story:'Le vestiaire en mouvement'},{id:'or',name:'Or',color:'#e9c384',story:'Le goût des belles matières'},{id:'noire',name:'Noire',color:'#d8c7a3',story:'La signature du Cercle'}];
+export const SHOP_TIERS=[{id:'club',name:'Club',points:0,percent:0,color:'#c8d9e7',story:'Bienvenue dans le vestiaire 3B'},...DISCOUNTS.map((benefit,i)=>({...SHOP_DESIGNS[i],...benefit}))];
+export const shopTierFor=points=>SHOP_TIERS.filter(t=>t.points<=Math.max(0,Number(points)||0)).at(-1);
+export const nextShopTier=points=>SHOP_TIERS.find(t=>t.points>Math.max(0,Number(points)||0))||null;
 export const GAMES=['arena','tower','maze','refuge','cities','world'];
 export const EXPLORATIONS={passport:'Découvrir le passeport',manga:'Découvrir le manga',world3b:'Explorer les huit pays'};
 export const tierFor=xp=>TIERS.filter(t=>t.xp<=Math.max(0,Number(xp)||0)).at(-1);
@@ -29,4 +33,3 @@ export function purchaseRewards(cents){
  if(!Number.isSafeInteger(cents)||cents<0)throw Error('Montant invalide.');
  return{points:Math.floor(cents/10),xp:Math.floor(cents/10)};
 }
-

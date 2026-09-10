@@ -169,7 +169,7 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
         }}><ShoppingBag aria-hidden="true" size={20} /> Panier <span>{count}</span></a>
       </div>
 
-      <div className="shop-loyalty-note">{account.profile?<>Compte @{account.profile.handle} · 10 XP et 10 points par euro d’articles payé.{discountFor(account.profile.points)>0&&<> Avantage actuel : −{discountFor(account.profile.points)} %, vérifié au paiement.</>}</>:<>Connecte-toi avant le paiement pour gagner des points et bénéficier de tes avantages. <button onClick={()=>goTo("member")}>Mon compte 3B</button></>}</div>
+      <div className="shop-loyalty-note">{account.profile?<>Carte de fidélité de @{account.profile.handle} · 10 points par euro d’articles payé.{discountFor(account.profile.points)>0&&<> Avantage actuel : −{discountFor(account.profile.points)} %, vérifié au paiement.</>}</>:<>Connecte-toi avant le paiement pour gagner des points et retrouver ta carte de fidélité vêtements et accessoires. <button onClick={()=>goTo("member")}>Mon compte 3B</button></>}</div>
       {catalog?.testMode && <p className="shop-banner">Mode test : aucun paiement réel.</p>}
       {returnState.action === "cancel" && <div className="shop-banner" role="status">
         <p>Tu as quitté la page de paiement. Ton panier est conservé.</p>
