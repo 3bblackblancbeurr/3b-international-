@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { PAGE_HASHES } from "../lib/navigation.js";
+import CompactCard from './CompactCard.jsx';
 
 const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
@@ -9,9 +10,10 @@ export function SectionIcon({ page, ...props }) {
 }
 
 export const NAV_GROUPS = [
-  { title: "Identité & progression", ids: ["passport", "loyalty", "guide"] },
+  { title: "Identité & progression", ids: ["passport", "loyalty"] },
   { title: "Explorer 3B", ids: ["world3b", "games", "manga", "secret", "religion"] },
   { title: "Créer & partager", ids: ["ia", "community", "sport", "shop"] },
+  { title: "Comprendre & progresser", ids: ["guide"] },
 ];
 
 export function RouteLink({ page, goTo, children, ...props }) {
@@ -94,7 +96,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       <div className="dialog-scroll">
         {NAV_GROUPS.map(group => {
           const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
-          return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => <RouteLink key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined}><SectionIcon page={item.id} /><span><strong>{item.label}</strong><small>{item.description}</small></span><ArrowUpRight size={18} aria-hidden="true" /></RouteLink>)}</section>;
+          return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}</section>;
         })}
         {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « manga » ou « boutique ».</p>}
       </div>
@@ -102,3 +104,4 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
     </dialog>
   </>;
 }
+

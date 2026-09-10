@@ -18,6 +18,7 @@ import "./styles/mobile-navigation.css";
 import "./styles/passport-effects.css";
 import "./styles/games.css";
 import "./styles/refinement.css";
+import "./styles/compact.css";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
@@ -318,3 +319,4 @@ function PassportPage({ member, goTo, options }) {
     </section>
   );
 }
+

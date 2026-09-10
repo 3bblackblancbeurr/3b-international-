@@ -5,6 +5,9 @@ export const TIERS=[
  {id:'heir',name:'Héritier',xp:1500,color:'#ecc884',motto:'Porte ton histoire.',benefit:'Le design Or et l’aura Héritier dans les Ombres et le Refuge.'},
  {id:'ambassador',name:'Ambassadeur',xp:5000,color:'#b6a2f4',motto:'Huit pays. Une même lumière.',benefit:'Le design Améthyste et l’aura Ambassadeur dans les Ombres et le Refuge.'},
  {id:'legend',name:'Légende',xp:12000,color:'#f4db9c',motto:'Laisse ton empreinte.',benefit:'Le design Obsidienne et l’aura Légende dans les Ombres et le Refuge.'},
+ {id:'builder',name:'Bâtisseur',xp:30000,color:'#e9aa7e',motto:'Construis le monde de demain.',benefit:'Le design Cuivre et l’aura Bâtisseur dans les Ombres et le Refuge.'},
+ {id:'visionary',name:'Visionnaire',xp:60000,color:'#a9dff4',motto:'Vois plus loin, imagine ensemble.',benefit:'Le design Platine et l’aura Visionnaire dans les Ombres et le Refuge.'},
+ {id:'eternal',name:'Éternel',xp:100000,color:'#f5dfbc',motto:'La lumière se transmet.',benefit:'Le design Nacre et l’aura Éternel dans les Ombres et le Refuge.'},
 ];
 export const DISCOUNTS=[{points:1000,percent:5},{points:3000,percent:8},{points:7000,percent:10}];
 export const GAMES=['arena','tower','maze','refuge','cities','world'];
@@ -26,3 +29,4 @@ export function purchaseRewards(cents){
  if(!Number.isSafeInteger(cents)||cents<0)throw Error('Montant invalide.');
  return{points:Math.floor(cents/10),xp:Math.floor(cents/10)};
 }
+

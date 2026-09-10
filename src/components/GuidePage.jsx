@@ -1,3 +1,4 @@
+import CompactCard from './CompactCard.jsx';
 import {useState} from 'react';
 import {TIERS,DISCOUNTS} from '../../shared/loyalty.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
@@ -16,8 +17,9 @@ export default function GuidePage({goTo,menuItems}){
  <tr><td>Acheter en boutique</td><td><strong>10 XP + 10 points / 1 €</strong></td><td>Compte connecté avant le paiement réel ; articles payés après réduction, hors livraison. À l’ouverture des ventes.</td><td><RouteLink page="shop" goTo={goTo}>Boutique →</RouteLink></td></tr>
  </tbody></table></div>{notice&&<p className="surface-notice" role="status">{notice}</p>}
  <p className="muted-copy">Les likes, messages, publications et créations IA ne rapportent pas d’XP actuellement. Les scores invités ne sont pas convertis. Les gains sont validés par le serveur.</p>
- <h2>Les cinq niveaux</h2><div className="guide-levels">{TIERS.map(t=><article key={t.id} style={{'--card-accent':t.color}}><span>{t.name}</span><strong>{fmt(t.xp)} XP</strong><p>{t.benefit}</p></article>)}</div>
+ <h2>Les huit niveaux</h2><div className="guide-levels">{TIERS.map(t=><article key={t.id} style={{'--card-accent':t.color}}><span>{t.name}</span><strong>{fmt(t.xp)} XP</strong><p>{t.benefit}</p></article>)}</div>
  <h2>Les avantages fidélité</h2><div className="guide-levels">{DISCOUNTS.map(d=><article key={d.points}><strong>−{d.percent} %</strong><p>À partir de {fmt(d.points)} points. Le meilleur taux s’applique aux articles éligibles, sans cumul et hors livraison.</p></article>)}</div>
- <h2>À quoi sert chaque rubrique ?</h2><div className="guide-directory">{menuItems.filter(i=>i.id!=='guide').map(i=><article key={i.id}><SectionIcon page={i.id}/><div><h3>{i.label}</h3><p>{i.description}</p></div><RouteLink page={i.id} goTo={goTo} aria-label={'Ouvrir '+i.label}>Ouvrir →</RouteLink></article>)}</div>
+ <h2>À quoi sert chaque rubrique ?</h2><div className="guide-directory">{menuItems.filter(i=>i.id!=='guide').map(i=><CompactCard as={RouteLink} key={i.id} page={i.id} goTo={goTo} icon={<SectionIcon page={i.id}/>} title={i.label} description={i.description}/>)}</div>
  <details className="guide-faq"><summary>Où retrouver mes gains et mes réglages ?</summary><p>L’historique des gains se trouve dans Cartes de fidélité. Ton compte et les réglages d’animation se trouvent dans Mon espace, accessible par la navigation.</p></details></section>;
 }
+

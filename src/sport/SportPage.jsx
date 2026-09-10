@@ -1,3 +1,4 @@
+import CompactCard from '../components/CompactCard.jsx';
 import {useEffect,useState} from 'react';
 import {ArrowUpRight,RefreshCw,Trophy} from 'lucide-react';
 import {ECOSYSTEM_URL} from '../lib/ecosystem.js';
@@ -13,6 +14,6 @@ export default function SportPage({goTo}){
  <div className="sport-news-grid">{articles.map((a,i)=><a key={a.url} href={a.url} target="_blank" rel="noopener noreferrer" className={'sport-article '+(i===0?'sport-article-lead':'')}><div><span>{a.category}</span><span>{a.language==='fr'?'FR':'EN'}</span></div><h2>{a.title}</h2><footer><span>{a.source}<small>{new Date(a.publishedAt).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:'short'})}</small></span><ArrowUpRight size={22}/></footer></a>)}</div>
  {data&&!articles.length&&<div className="surface-panel"><h2>Aucun article dans ce filtre pour le moment.</h2><p>Change de discipline ou de langue pour lire les autres actualités.</p><button className="quiet-button" onClick={()=>{setSport('Tous');setLanguage('all');}}>Voir toutes les actualités</button></div>}
  <p className="muted-copy">Les titres des sept derniers jours sont actualisés automatiquement et s’ouvrent sur le site de leur éditeur. La couverture dépend des sujets publiés par les sources. Les scores minute par minute ne sont pas encore proposés.</p>
- <div className="sport-community"><article className="surface-panel"><span className="eyebrow">01 / BOUGER ENSEMBLE</span><h2>Propose un défi.</h2><p>Une sortie course, une rencontre de quartier, une séance adaptée à chacun. Présente le lieu, la date, le niveau et les conditions de participation.</p><button className="quiet-button" onClick={()=>goTo('community')}>Ouvrir la communauté <ArrowUpRight size={16}/></button></article><article className="surface-panel"><span className="eyebrow">02 / CRÉER UNE ÉQUIPE</span><h2>Imagine une collaboration.</h2><p>Club, créateur ou passionné : compose un maillot dans l’atelier et partage ton projet avec les membres.</p><button className="quiet-button" onClick={()=>goTo('ia-textile')}>Créer un concept de maillot <ArrowUpRight size={16}/></button></article></div></section>;
+ <div className="sport-community"><CompactCard title="Propose un défi" description="Lieu, date et niveau : prépare une rencontre dans le collectif." eyebrow="BOUGER ENSEMBLE" icon={<Trophy/>} onClick={()=>goTo('community')}/><CompactCard title="Imagine une collaboration" description="Crée un maillot et partage ton projet avec les membres." eyebrow="CRÉER UNE ÉQUIPE" icon={<Trophy/>} onClick={()=>goTo('ia-textile')}/></div></section>;
 }
 
