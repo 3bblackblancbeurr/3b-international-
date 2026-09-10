@@ -69,6 +69,46 @@ function webhookRequest(f, type = "checkout.session.completed", mutate = false) 
     headers: { "stripe-signature": signature, "content-type": "application/json" }, body: mutate ? `${payload} ` : payload });
 }
 
+test("member checkout ignores forged identity and applies only the server discount",async()=>{
+  const uid='7ed3fd82-e955-4e92-b944-98ea07be9f13',sid='76698715-bb21-4cf2-8fc3-15a0e6e99113';
+  const token='header.'+Buffer.from(JSON.stringify({session_id:sid})).toString('base64url')+'.signature';
+  let valid=true;
+  const f=fixture({fetcher:async(url)=>{
+    const path=new URL(url).pathname;
+    if(path==='/auth/v1/user')return Response.json({id:uid});
+    if(path.endsWith('loyalty_session_valid'))return Response.json(valid);
+    if(path.endsWith('member_profiles'))return Response.json([{user_id:uid,points:7000}]);
+    return Response.json([]);
+  }});
+  f.stripe.coupons={retrieve:async()=>({id:'3b-loyalty-10-v1',percent_off:10,duration:'once',valid:true})};
+  const request=()=>checkoutRequest(undefined,{loyalty_user_id:'attacker',loyalty_discount:100},{authorization:'Bearer '+token});
+  assert.equal((await f.shop.checkout(request())).status,200);
+  const params=f.calls.creates[0].params;
+  assert.equal(params.metadata.loyalty_user_id,uid);assert.equal(params.metadata.loyalty_discount,'10');
+  assert.deepEqual(params.discounts,[{coupon:'3b-loyalty-10-v1'}]);assert.equal(params.allow_promotion_codes,undefined);
+  valid=false;assert.equal((await f.shop.checkout(request())).status,401);assert.equal(f.calls.creates.length,1);
+});
+
+test("signed purchase and refund webhooks synchronize loyalty from authoritative Stripe state",async()=>{
+  const credits=[];
+  const f=fixture({fetcher:async(url,opts)=>{
+    const path=new URL(url).pathname;
+    if(path.endsWith('member_purchase_rewards'))return Response.json([{merchandise_cents:10000}]);
+    if(path.includes('/rpc/')){credits.push({path,body:JSON.parse(opts.body)});return Response.json(true);}
+    return new Response(null,{status:201});
+  }});
+  f.session.livemode=true;f.session.metadata.loyalty_user_id='7ed3fd82-e955-4e92-b944-98ea07be9f13';
+  const charge={id:'ch_fixture',payment_intent:'pi_fixture',amount:10500,amount_refunded:0,livemode:true,paid:true,currency:'eur'};
+  f.stripe.paymentIntents={retrieve:async()=>({status:'succeeded',latest_charge:charge})};
+  f.stripe.charges={retrieve:async()=>charge};
+  assert.equal((await f.shop.webhook(webhookRequest(f))).status,200);assert.equal(credits[0].body.p_cents,10000);
+  charge.amount_refunded=10500;
+  const payload=JSON.stringify({id:'evt_refund_fixture',type:'charge.refunded',data:{object:{id:'ch_fixture',amount_refunded:1}}});
+  const signature=f.signer.webhooks.generateTestHeaderString({payload,secret:env.STRIPE_WEBHOOK_SECRET});
+  const request=new Request(`${ORIGIN}/api/stripe-webhook`,{method:'POST',headers:{'stripe-signature':signature},body:payload});
+  assert.equal((await f.shop.webhook(request)).status,200);assert.equal(credits.at(-1).body.p_refunded,10000);
+});
+
 test("without credentials the store is closed and no prices are invented", async () => {
   const data = await (await createShop({ env: {} }).catalog(new Request(`${ORIGIN}/api/catalog`))).json();
   assert.equal(data.enabled, false); assert.deepEqual(data.items, []);

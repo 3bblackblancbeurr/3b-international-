@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import {createMemberCommerce,loyaltyCoupon} from "./member-commerce.js";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const INTEGRATION = "3b-shop-v1";
@@ -118,6 +119,7 @@ function validCookie(request, id, key) {
 
 export function createShop({ env = process.env, stripe: suppliedStripe, fetcher = fetch } = {}) {
   const config = configFrom(env);
+  const loyalty = createMemberCommerce({env,fetcher});
   let client = suppliedStripe;
   function stripe() {
     if (!client) {
@@ -194,6 +196,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
         size: item.price?.metadata?.size || item.price?.product?.metadata?.size || null,
         color: item.price?.metadata?.color || item.price?.product?.metadata?.color || null })),
     });
+    await loyalty.purchase(session,lines.data,stripe());
     return true;
   }
   function wrap(method, fn) {
@@ -227,18 +230,23 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       }
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body?.attemptId || ""))
         throw new ShopError(400, "Identifiant de demande invalide.");
+      let member;
+      try { member=await loyalty.member(request); } catch { throw new ShopError(401,"Reconnecte-toi au compte 3B pour vérifier tes avantages avant le paiement."); }
       const lines = normalizeCart(body, await catalog());
       await shipping();
       await ordersRequest("GET"); // Refuse checkout if durable order storage is unavailable.
-      const digest = createHash("sha256").update(JSON.stringify({ lines, origin: config.origin, shipping: config.shippingRateId })).digest("hex");
+      const digest = createHash("sha256").update(JSON.stringify({ lines, origin: config.origin, shipping: config.shippingRateId, member: member?.id || null, discount: member?.discount || 0 })).digest("hex");
+      const coupon = member?.discount ? await loyaltyCoupon(stripe(),member.discount) : null;
+      const loyaltyMetadata = member ? {loyalty_user_id:member.id,loyalty_discount:String(member.discount)} : {};
       const session = await stripe().checkout.sessions.create({
         mode: "payment", locale: "fr", submit_type: "pay", integration_identifier: CHECKOUT_INTEGRATION,
+        ...(coupon ? {discounts:[{coupon}]} : {}),
         line_items: lines, billing_address_collection: "required",
         shipping_address_collection: { allowed_countries: config.countries },
         shipping_options: [{ shipping_rate: config.shippingRateId }],
         automatic_tax: { enabled: config.automaticTax },
         consent_collection: { terms_of_service: "required" },
-        metadata: { integration: INTEGRATION }, payment_intent_data: { metadata: { integration: INTEGRATION } },
+        metadata: { integration: INTEGRATION, ...loyaltyMetadata }, payment_intent_data: { metadata: { integration: INTEGRATION, ...loyaltyMetadata } },
         success_url: `${config.origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}#boutique`,
         cancel_url: `${config.origin}/?checkout=cancel#boutique`,
       }, { idempotencyKey: `3b:${body.attemptId}:${digest}` });
@@ -273,6 +281,11 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
           const session = await stripe().checkout.sessions.retrieve(incoming.id);
           await savePaidOrder(session);
         }
+      }
+      if(event.type === "charge.refunded") {
+        const incoming=event.data.object;
+        const charge=await stripe().charges.retrieve(incoming.id);
+        await loyalty.refund(charge);
       }
       return json({ received: true });
     }),
