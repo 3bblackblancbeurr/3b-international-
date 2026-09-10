@@ -7,7 +7,7 @@ export function parseFeed(xml,feed,now=Date.now()){
  return [...xml.matchAll(/<item(?:\s[^>]*)?>([\s\S]*?)<\/item>/gi)].slice(0,100).flatMap(([,item])=>{
   const title=get(item,'title'),link=get(item,'link'),date=Date.parse(get(item,'pubDate'));let u;try{u=new URL(link);}catch{return[];}
   const hostAllowed=u.hostname===feed.host||u.hostname.endsWith('.'+feed.host)||(feed.name==='BBC Sport'&&(u.hostname==='bbc.com'||u.hostname.endsWith('.bbc.com')));
-  if(!title||u.protocol!=='https:'||!hostAllowed||u.username||u.password||!Number.isFinite(date)||date>now+300000)return[];
+  if(!title||u.protocol!=='https:'||!hostAllowed||u.username||u.password||!Number.isFinite(date)||date>now+300000||date<now-7*86400000)return[];
   const category=tags.find(([,regex])=>regex.test(title+' '+get(item,'category')+' '+u.pathname))?.[0]||'Autres';
   return[{title:title.slice(0,300),url:u.href,publishedAt:new Date(date).toISOString(),source:feed.name,language:feed.lang,category}];
  });
@@ -18,3 +18,4 @@ export async function fetchSports(fetcher=fetch){
  if(!articles.length)throw Error('Les sources sportives sont momentanément indisponibles.');
  return{articles,updatedAt:new Date().toISOString(),sources:FEEDS.map((f,i)=>({name:f.name,available:settled[i].status==='fulfilled'})),partial:settled.some(r=>r.status==='rejected')};
 }
+

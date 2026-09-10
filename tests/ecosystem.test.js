@@ -11,11 +11,12 @@ test('sport feeds preserve attribution, date and readable titles; URL helps clas
  assert.equal(a.length,1);assert.equal(a[0].source,'BBC Sport');assert.equal(a[0].category,'Football');assert.equal(a[0].title,'A & B');assert.equal(a[0].language,'en');assert.equal(a[0].publishedAt,'2026-09-10T12:00:00.000Z');
 });
 test('sport rejects hostile links, credentials, non-source domains, unknown dates and future entries',()=>{
+ assert.deepEqual(parseFeed(item('Archive','https://bbc.co.uk/sport/tennis/old','Mon, 01 Jan 2024 12:00:00 GMT'),FEEDS[1],Date.parse('2026-09-10T14:00:00Z')),[]);
  const xml=['javascript:alert(1)','https://evil.test/sport','https://bbc.co.uk.evil.test/sport','https://user:secret@bbc.co.uk/sport','http://bbc.co.uk/sport'].map(u=>item('Football',u)).join('')+item('Bad date','https://bbc.co.uk/sport','invalid')+item('Future','https://bbc.co.uk/sport','Thu, 10 Sep 2030 12:00:00 GMT');
  assert.deepEqual(parseFeed(xml,FEEDS[1],Date.parse('2026-09-10T14:00:00Z')),[]);assert.equal(decodeXML('&#99999999999; &lt;script&gt;'),'<script>');
 });
 test('sport survives one unavailable source but never fabricates news when both fail',async()=>{
- const d=await fetchSports(async url=>url===FEEDS[0].url?new Response(item('Football','https://www.france24.com/fr/sports/article','Mon, 01 Jan 2024 12:00:00 GMT')):new Response('',{status:503}));assert.equal(d.partial,true);assert.equal(d.articles.length,1);assert.equal(d.sources[1].available,false);
+ const d=await fetchSports(async url=>url===FEEDS[0].url?new Response(item('Football','https://www.france24.com/fr/sports/article',new Date().toUTCString())):new Response('',{status:503}));assert.equal(d.partial,true);assert.equal(d.articles.length,1);assert.equal(d.sources[1].available,false);
  await assert.rejects(fetchSports(async()=>new Response('',{status:503})),/momentanément indisponibles/);
 });
 test('studio validates all choices and prevents arbitrary markup in color attributes',()=>{
@@ -30,3 +31,4 @@ test('loyalty cards are exportable self-contained SVG with escaped member data a
 test('old music bookmarks redirect to religion and the XP guide has a stable direct URL',()=>{
  assert.equal(readLocation({hash:'#musique'}).page,'religion');assert.equal(readLocation({hash:'#religion'}).page,'religion');assert.equal(readLocation({hash:'#guide'}).page,'guide');
 });
+

@@ -1,5 +1,5 @@
 # Refonte 3B — état et activation
-Version du 10 septembre 2026. Application : https://3b-international.vercel.app
+Version du 11 septembre 2026. Application : https://3b-international.vercel.app
 
 ## Modifications
 - Accueil : une seule barre brillante, douze cartes uniformes en trois groupes ; Mon espace reste dans la navigation, sans case répétée dans le menu.
@@ -9,7 +9,7 @@ Version du 10 septembre 2026. Application : https://3b-international.vercel.app
 - Guide & XP : gains, plafonds, cinq niveaux, points, réductions et annuaire des rubriques.
 - Secret : 3B en relief tournant et Bientôt intermittent. Manga : Bientôt. Religion remplace Musique.
 - Communauté : profils publics volontaires, membres et créateurs, publications, concepts de l’atelier, votes, suivi, blocage réciproque, signalements et file de modération ; trois salons avec Supabase Realtime et reprise par interrogation toutes les 15 secondes.
-- Sport : vrais titres France 24 et BBC Sport, dates, liens et filtres. Cache de 10 minutes, interrogation de la page toutes les 5 minutes et actualisation quotidienne à 04:00 UTC. La couverture dépend des deux sources ; les scores en direct et une couverture exhaustive de chaque sport restent à intégrer.
+- Sport : vrais titres des sept derniers jours, France 24 et BBC Sport, dates, liens et filtres. Cache de 10 minutes, interrogation de la page toutes les 5 minutes et actualisation quotidienne à 04:00 UTC. La couverture dépend des deux sources ; les scores en direct et une couverture exhaustive de chaque sport restent à intégrer.
 - IA : deux entrées. Atelier de 15 types de pièces et accessoires, matières, coupes, motifs, couleurs, face/dos, brief exportable et partage à relire. Trois adaptateurs de conversation OpenAI, Anthropic et Google ; génération textile OpenAI. Les services IA payants restent désactivés.
 
 ## Ce qui reste à configurer
@@ -36,8 +36,9 @@ Le code et ces vérifications réduisent les risques ; ils ne constituent pas un
 
 ## Déploiement du service
 Appliquer supabase/ecosystem.sql puis supabase/ecosystem-hardening.sql une fois via migrations. Ils ont déjà été appliqués au projet ttvhcezucsbbmnafrotq.
-Déployer supabase/functions/ecosystem/index.ts avec ses dépendances sports.js et studio.js. La version 2 est active.
+Déployer supabase/functions/ecosystem/index.ts avec ses dépendances sports.js et studio.js. La version 3 est active.
 shared/studio.js réexporte le schéma de la fonction, utilisé aussi par le configurateur : une seule source de validation.
 
 ## Illustrations
 Créées avec l’outil image_gen intégré, puis encodées en WebP pour le site sans changer le dessin. Les cinq prompts sont conservés dans docs/loyalty-art-prompts.json. Aucun appel aux futures clés IA de l’application n’a été nécessaire.
+
