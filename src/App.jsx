@@ -9,6 +9,7 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS, OPTION_LABELS
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
 import PassportVisual from "./components/PassportVisual.jsx";
+import GamesHub from "./games/GamesHub.jsx";
 import "./App.css";
 import "./styles/mobile-navigation.css";
 import "./styles/passport-effects.css";
@@ -43,7 +44,7 @@ const BASE_MENU_ITEMS = [
     id: "games",
     label: "Jeux 3B",
     icon: "🎮",
-    description: "La course des clés et les futurs défis 3B.",
+    description: "Cinq aventures avec Kaïs et La course des clés. Accès libre.",
   },
   {
     id: "music",
@@ -496,7 +497,7 @@ export default function App() {
       )}
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
-      {page === "games" && <SafePage type="games" goTo={goTo} />}
+      {page === "games" && <GamesHub goTo={goTo} />}
       {page === "music" && <SafePage type="music" goTo={goTo} />}
       {page === "manga" && <MangaPage goTo={goTo} />}
       {page === "community" && <SafePage type="community" goTo={goTo} />}
