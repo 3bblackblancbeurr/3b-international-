@@ -1,9 +1,11 @@
 import {CARDS,COUNTRIES,cardById,countryById,cardSlot,craftPrice} from './catalog.js';
+import {blankAdventure,normalizeAdventure} from './adventure-state.js';
+import {CHAPTERS,chapterState,nexusLevel} from './chapters.js';
 export const SAVE_VERSION=1;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const number=(v,max=1e7)=>Number.isFinite(v)?clamp(Math.floor(v),0,max):0;
-export function blankSave(){return{version:SAVE_VERSION,xp:0,shards:25,collection:{C001:1,C357:1},leader:'C001',team:[],loadout:{energy:'C357',traps:[]},beacons:[],seals:[],visited:[],wins:0,walked:0,region:'hub',finalOpened:false,updatedAt:0};}
+export function blankSave(){return{version:SAVE_VERSION,xp:0,shards:25,collection:{C001:1,C357:1},leader:'C001',team:[],loadout:{energy:'C357',traps:[]},beacons:[],seals:[],visited:[],wins:0,walked:0,region:'hub',finalOpened:false,adventure:blankAdventure(),updatedAt:0};}
 export function normalizeSave(input){
  const s=blankSave();if(!input||input.version!==SAVE_VERSION)return s;
  for(const key of ['xp','shards','wins','walked'])s[key]=number(input[key]);
@@ -15,7 +17,7 @@ export function normalizeSave(input){
  s.loadout.traps=[...new Set(Array.isArray(input.loadout?.traps)?input.loadout.traps:[])].filter(id=>s.collection[id]&&cardSlot(cardById[id])==='trap').slice(0,3);
  s.beacons=[...new Set(Array.isArray(input.beacons)?input.beacons:[])].filter(id=>typeof id==='string'&&/^(france|italie|estonie|turquie|algerie|tunisie|maroc|espagne):[012]$/.test(id));
  for(const key of ['visited','seals'])s[key]=[...new Set(Array.isArray(input[key])?input[key]:[])].filter(id=>countryById[id]);
- s.region=countryById[input.region]?input.region:'hub';s.finalOpened=!!input.finalOpened&&s.seals.length>=5;s.updatedAt=number(input.updatedAt,1e15);return s;
+ s.region=countryById[input.region]?input.region:'hub';s.finalOpened=!!input.finalOpened&&s.seals.length>=5;s.adventure=normalizeAdventure(input.adventure);s.updatedAt=number(input.updatedAt,1e15);return s;
 }
 export const levelFor=xp=>Math.min(50,1+Math.floor(Math.sqrt(Math.max(0,xp)/90)));
 export const nextLevelXP=xp=>90*levelFor(xp)**2;
@@ -24,7 +26,7 @@ const granted=(save,ids)=>({...save.collection,...Object.fromEntries(ids.filter(
 export function discover(save,region){const cards=CARDS.filter(c=>c.country===region&&['Passeport','Énergie'].includes(c.category));return gain(save,{region,visited:[...save.visited,region],collection:granted(save,cards.map(c=>c.id))});}
 export function beacon(save,id){if(save.beacons.includes(id)||!/^(france|italie|estonie|turquie|algerie|tunisie|maroc|espagne):[012]$/.test(id))return save;const region=id.split(':')[0],index=Number(id.at(-1));const reward=CARDS.filter(c=>c.country===region&&c.category==='Fragment / Pierre')[index];return gain(save,{beacons:[...save.beacons,id],xp:save.xp+45,shards:save.shards+15,collection:granted(save,[reward?.id])});}
 export function recruit(save,id){
- if(!cardById[id])return save;
+ if(!cardById[id]?.character)return save;
  const fresh=!save.collection[id];
  return awardMissions(gain(save,{collection:{...save.collection,[id]:(save.collection[id]||0)+1},team:fresh&&id!==save.leader&&save.team.length<3?[...save.team,id]:save.team,xp:save.xp+(fresh?100:35),shards:save.shards+(fresh?25:12),wins:save.wins+1}));
 }
@@ -88,9 +90,9 @@ export function nearestInteraction(position,items){return items.filter(i=>distan
 export const countryCard=region=>CARDS.find(c=>c.country===region&&c.character);
 export function encounterCards(region,save){const available=CARDS.filter(c=>c.country===region&&c.category==='Personnage classique'&&(c.rarity==='Commun'||save.beacons.filter(id=>id.startsWith(region+':')).length>=2));return [...available.filter(c=>!save.collection[c.id]),...available.filter(c=>save.collection[c.id])];}
 export function worldItems(region,save){
- if(region==='hub')return [...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),{id:'final',type:'final',name:save.finalOpened?'Le Portail est éveillé':'Portail final · 5 sceaux',x:0,z:-3,color:'#e4cd94',range:5}];
+ if(region==='hub')return [...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),{id:'final',type:'final',name:save.adventure?.finished?'L’Union retrouvée':`L’Oubli · ${nexusLevel(save)}/8 pays`,x:0,z:-3,color:'#e4cd94',range:5}];
  const c=countryById[region],cards=encounterCards(region,save);
- return [{id:'hub',type:'portal',name:'Place des huit portes',x:0,z:20,color:'#e9d59e',range:6},
+ return [{id:'hub',type:'portal',name:'Place des huit portes',x:0,z:20,color:'#e9d59e',range:6},{id:region+':story',type:'story',name:CHAPTERS[region].resident.split(',')[0]+' · '+CHAPTERS[region].title,x:11,z:-4,color:c.color,range:6,done:chapterState(save,region).restored===3},
  ...[[-20,0],[18,-16],[-8,-39]].map(([x,z],i)=>({id:region+':'+i,type:'beacon',name:save.beacons.includes(region+':'+i)?'Souvenir retrouvé':'Éveiller le souvenir',x,z,color:c.color,done:save.beacons.includes(region+':'+i)})),
  ...[[-9,5],[27,7],[-32,-20],[9,-31]].map(([x,z],i)=>{const card=cards[i%cards.length];return{id:region+':echo:'+i,type:'echo',name:card.name,card:card.id,x,z,color:c.color};}),
  {id:region+':guardian',type:'guardian',name:save.seals.includes(region)?'Défier à nouveau le gardien':'Gardien du sceau',card:CARDS.find(c=>c.country===region&&c.category==='Carte unique').id,x:0,z:-57,color:c.color,range:7}];
