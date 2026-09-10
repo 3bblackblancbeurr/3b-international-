@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { ArrowUpRight, KeyRound } from "lucide-react";
-import ShopPage from "./shop/ShopPage.jsx";
-import AiPage from "./ai/AiPage.jsx";
+
+const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
+const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 import { readLocation, navigateTo } from "./lib/navigation.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
@@ -9,7 +9,7 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
 import PassportVisual from "./components/PassportVisual.jsx";
-import GamesHub from "./games/GamesHub.jsx";
+const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
 import AccountPage from "./loyalty/AccountPage.jsx";
 import {useLoyalty,remoteMember,ExplorationRewards} from "./loyalty/LoyaltyContext.jsx";
@@ -17,9 +17,16 @@ import "./App.css";
 import "./styles/mobile-navigation.css";
 import "./styles/passport-effects.css";
 import "./styles/games.css";
+import "./styles/refinement.css";
+import GuidePage from "./components/GuidePage.jsx";
+import ComingSoon from "./components/ComingSoon.jsx";
+import ReligionPage from "./components/ReligionPage.jsx";
+const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
+import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldPage.jsx'));
 
 const BASE_MENU_ITEMS = [
+  { id: "guide", label: "Guide & XP", description: "Tous les menus, les gains et les niveaux expliqués." },
   {
     id: "passport",
     label: "Passeport 3B",
@@ -36,7 +43,7 @@ const BASE_MENU_ITEMS = [
     id: "manga",
     label: "Manga 3B",
     icon: "📖",
-    description: "Origine 3B, Tome 0, saga Le Monde du 3B.",
+    description: "Le manga de l’univers 3B.",
   },
   {
     id: "world3b",
@@ -51,10 +58,10 @@ const BASE_MENU_ITEMS = [
     description: "Cinq aventures avec Kaïs et La course des clés. Accès libre.",
   },
   {
-    id: "music",
-    label: "Musique",
-    icon: "♪",
-    description: "Sons officiels, hymne et ambiance 3B.",
+    id: "religion",
+    label: "Religion",
+    icon: "✧",
+    description: "Croyances, cultures et traditions.",
   },
   {
     id: "community",
@@ -66,19 +73,19 @@ const BASE_MENU_ITEMS = [
     id: "secret",
     label: "Secret 3B",
     icon: "🔐",
-    description: "Indices, codes, coffre et révélations.",
+    description: "Le prochain chapitre se prépare.",
   },
   {
     id: "sport",
     label: "Espace sport 3B",
     icon: "🏆",
-    description: "Clubs, maillots, défis et collaborations.",
+    description: "Actualités multisports, défis et collaborations.",
   },
   {
     id: "ia",
     label: "Espace IA",
     icon: "⚙️",
-    description: "Studio futur, assistant IA et automatisations.",
+    description: "Atelier textile et maroquinerie, GPT, Claude et Gemini.",
   },
   {
     id: "shop",
@@ -95,189 +102,12 @@ const MEMBER_MENU_ITEM = {
   description: "Profil, passeport, progression et paramètres.",
 };
 
-const COUNTRY_LIST = [
-  {
-    name: "France",
-    flag: "🇫🇷",
-    code: "FR",
-    status: "Actif",
-    aura: "Bleu royal",
-    fragment: "Fragment Tricolore",
-  },
-  {
-    name: "Italie",
-    flag: "🇮🇹",
-    code: "IT",
-    status: "Verrouillé",
-    aura: "Vert blanc rouge",
-    fragment: "Fragment Roma",
-  },
-  {
-    name: "Estonie",
-    flag: "🇪🇪",
-    code: "EE",
-    status: "Verrouillé",
-    aura: "Bleu acier",
-    fragment: "Fragment Nordique",
-  },
-  {
-    name: "Turquie",
-    flag: "🇹🇷",
-    code: "TR",
-    status: "Verrouillé",
-    aura: "Rubis céleste",
-    fragment: "Fragment Anatolie",
-  },
-  {
-    name: "Algérie",
-    flag: "🇩🇿",
-    code: "DZ",
-    status: "Verrouillé",
-    aura: "Vert solaire",
-    fragment: "Fragment Sahara",
-  },
-  {
-    name: "Tunisie",
-    flag: "🇹🇳",
-    code: "TN",
-    status: "Verrouillé",
-    aura: "Rouge lunaire",
-    fragment: "Fragment Carthage",
-  },
-  {
-    name: "Maroc",
-    flag: "🇲🇦",
-    code: "MA",
-    status: "Verrouillé",
-    aura: "Or rouge",
-    fragment: "Fragment Atlas",
-  },
-  {
-    name: "Espagne",
-    flag: "🇪🇸",
-    code: "ES",
-    status: "Verrouillé",
-    aura: "Rouge or",
-    fragment: "Fragment Ibérique",
-  },
-];
-
-const MANGA_BOOKS = [
-  {
-    title: "Origine 3B",
-    subtitle: "La naissance du symbole",
-    status: "Préparation",
-  },
-  {
-    title: "Tome 0 — Le Cercle Brisé",
-    subtitle: "Kaïs, huit portes et les fragments du Cercle Brisé.",
-    status: "En cours",
-  },
-  {
-    title: "Tome 1 — Le Monde du 3B",
-    subtitle: "La première ouverture",
-    status: "À venir",
-  },
-  {
-    title: "Tome 2 — Le Monde du 3B",
-    subtitle: "Les gardiens se réveillent",
-    status: "À venir",
-  },
-  {
-    title: "Tome 3 — Le Monde du 3B",
-    subtitle: "Les fragments internationaux",
-    status: "À venir",
-  },
-  {
-    title: "Tome 4 — Le Monde du 3B",
-    subtitle: "L’héritage se divise",
-    status: "À venir",
-  },
-];
-
-const SAFE_PAGES = {
-  games: {
-    title: "Jeux 3B",
-    subtitle: "Découvre La course des clés et les prochains jeux de l’univers 3B.",
-    blocks: [
-      "QCM 3B",
-      "Mots croisés",
-      "Missions XP",
-      "Portes 3B",
-      "Mémoire 3B",
-      "Code secret",
-    ],
-  },
-  music: {
-    title: "Musique 3B",
-    subtitle: "Sons officiels, hymne, campagnes et playlist.",
-    blocks: [
-      "Hymne 3B",
-      "Sons TikTok",
-      "Playlist officielle",
-      "Ambiance défilé",
-      "Campagnes audio",
-      "Collaborations futures",
-    ],
-  },
-  community: {
-    title: "Communauté",
-    subtitle: "Espace membre, discussion, créateurs et réseau 3B.",
-    blocks: [
-      "Tchat communautaire",
-      "Créateurs",
-      "Classement",
-      "Parrainage",
-      "Défis communauté",
-      "Réseau international",
-    ],
-  },
-  sport: {
-    title: "Espace sport 3B",
-    subtitle: "Clubs, maillots, collaborations et défis.",
-    blocks: [
-      "Clubs partenaires",
-      "Maillots premium",
-      "Défis sportifs",
-      "Classements",
-      "Collaborations locales",
-      "Drops sport",
-    ],
-  },
-  ia: {
-    title: "Espace IA",
-    subtitle: "Studio futur, assistant créatif et automatisations.",
-    blocks: [
-      "Assistant créatif",
-      "Prompts 3B",
-      "Studio textile",
-      "Assistant marketing",
-      "Assistant usine",
-      "Automatisation future",
-    ],
-  },
-  shop: {
-    title: "Boutique",
-    subtitle: "Drops, produits premium, certificats et précommandes.",
-    blocks: [
-      "Drops futurs",
-      "Produits premium",
-      "Certificats digitaux",
-      "Précommandes",
-      "Packaging 3B",
-      "QR authenticité",
-    ],
-  },
-};
-
 export default function App() {
   const [route, setRoute] = useState(readLocation);
   const { page } = route;
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
-  const [secretError, setSecretError] = useState("");
-  const [secretCode, setSecretCode] = useState("");
-  const [secretOpen, setSecretOpen] = useState(false);
+
 
   const loyalty = useLoyalty();
   const [localMember] = useState(() =>
@@ -308,6 +138,7 @@ export default function App() {
 
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
+    if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, menuItems, member.isRegistered]);
 
@@ -352,14 +183,6 @@ export default function App() {
     persist(STORAGE_OPTIONS_KEY, nextOptions);
   }
 
-  function openSecret() {
-    const normalized = secretCode.trim().toLowerCase();
-
-    const valid = normalized === "italie" || normalized === "italia";
-    setSecretOpen(valid);
-    setSecretError(valid ? "" : "Ce code ne correspond pas. Réessaie avec un pays 3B.");
-  }
-
   if (!hasStarted) {
     return (
       <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
@@ -394,6 +217,7 @@ export default function App() {
 
       {page !== 'world3b' && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
+      <Suspense fallback={<div className="page-section" role="status">Ouverture de la rubrique…</div>}>
       <ExplorationRewards page={page}/>
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
@@ -411,19 +235,11 @@ export default function App() {
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} />}
-      {page === "music" && <SafePage type="music" goTo={goTo} />}
-      {page === "manga" && <MangaPage goTo={goTo} />}
-      {page === "community" && <SafePage type="community" goTo={goTo} />}
-      {page === "secret" && (
-        <SecretPage
-          goTo={goTo}
-          secretCode={secretCode}
-          setSecretCode={setSecretCode}
-          secretOpen={secretOpen}
-          secretError={secretError}
-          openSecret={openSecret}
-        />
-      )}
+      {page === "religion" && <ReligionPage />}
+      {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
+      {page === "manga" && <ComingSoon />}
+      {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
+      {page === "secret" && <ComingSoon secret />}
       {page === "world3b" && <Suspense fallback={<div className="page-section">Ouverture du Monde 3B…</div>}><WorldExperience goTo={goTo}/></Suspense>}
 
       {page === "member" && (
@@ -435,9 +251,10 @@ export default function App() {
         />
       )}
 
-      {page === "sport" && <SafePage type="sport" goTo={goTo} />}
-      {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage page={page} goTo={goTo} />}
+      {page === "sport" && <SportPage goTo={goTo} />}
+      {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage key={loyalty.user?.id || "guest"} page={page} goTo={goTo} />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
+      </Suspense>
       </main>
     </div>
   );
@@ -497,150 +314,6 @@ function PassportPage({ member, goTo, options }) {
             </button>
           )}
         </article>
-      </div>
-    </section>
-  );
-}
-
-function MangaPage({ goTo }) {
-  return (
-    <section className="page-section">
-      <PageHeader
-        title="Manga 3B"
-        subtitle="3B ORIGINS — Le Cercle Brisé. Huit pays, un héritage à rassembler."
-        goTo={goTo}
-      />
-
-      <article className="manga-feature premium-panel">
-        <p className="eyebrow">Tome 0 · En cours de création</p>
-        <h2>Le Cercle Brisé</h2>
-        <p>Kaïs. Le loup. Huit portes, huit gardiens et les fragments d’un cercle à réunir face au Monstre de l’Oubli.</p>
-        <div className="manga-countries" aria-label="Les huit pays 3B">
-          {COUNTRY_LIST.map(country => <span key={country.code}>{country.flag} {country.name}</span>)}
-        </div>
-        <details className="manga-details">
-          <summary>Découvrir l’univers du Tome 0</summary>
-          <p>BLACK • BLANC • BEUR : l’unité au cœur de l’aventure. Kaïs porte huit clés ; chaque porte mène à l’un des huit pays et à son gardien.</p>
-          <p>Noir et blanc, bleu Matrix et or 3B accompagnent cette quête contre l’oubli. Les planches seront disponibles ici après leur publication.</p>
-        </details>
-      </article>
-      <div className="content-grid">
-        {MANGA_BOOKS.map((book) => (
-          <article key={book.title} className="premium-panel">
-            <p className="eyebrow">{book.status}</p>
-            <h2>{book.title}</h2>
-            <p>{book.subtitle}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function SecretPage({
-  goTo,
-  secretCode,
-  setSecretCode,
-  secretOpen,
-  secretError,
-  openSecret,
-}) {
-  return (
-    <section className="page-section">
-      <PageHeader
-        title="Secret 3B"
-        subtitle="Indices, codes, révélations et coffre secret."
-        goTo={goTo}
-      />
-
-      <div className="secret-layout">
-        <article className="premium-panel">
-          <p className="eyebrow">Coffre secret 3B</p>
-          <h2>Entrer dans l’univers caché</h2>
-          <p>Le premier code est lié à un pays officiel 3B.</p>
-
-          <label className="secret-label" htmlFor="secret-code">Code secret</label>
-          <form className="secret-form" onSubmit={event => { event.preventDefault(); openSecret(); }}>
-            <input id="secret-code" maxLength={80} required autoComplete="off"
-              value={secretCode}
-              onChange={(event) => setSecretCode(event.target.value)}
-              placeholder="Entre le code secret"
-            />
-
-            <button type="submit" className="primary-button">
-              Déverrouiller
-            </button>
-          </form>
-          {secretError && <p role="alert" className="form-error">{secretError}</p>}
-
-          {secretOpen ? (
-            <div className="secret-result open">
-              <strong>Indice débloqué</strong>
-              <p>Italie — 8 logos — 20h — tout commence.</p>
-            </div>
-          ) : (
-            <div className="secret-result">
-              <strong>Coffre verrouillé</strong>
-              <p>Indice non déverrouillé.</p>
-            </div>
-          )}
-        </article>
-
-        <article className="secret-3b-card">
-          <span>3B</span>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-function SafePage({ type, goTo }) {
-  const selected = SAFE_PAGES[type] || SAFE_PAGES.games;
-
-  return (
-    <section className="page-section">
-      <PageHeader
-        title={selected.title}
-        subtitle={selected.subtitle}
-        goTo={goTo}
-      />
-
-      {type === "games" && (
-        <>
-          <article className="games-feature" aria-labelledby="key-race-title">
-            <div className="games-feature-art" aria-hidden="true">
-              <span className="games-feature-monogram">3B</span>
-              <KeyRound size={100} strokeWidth={1.25} />
-              <span className="games-feature-art-label">LA COURSE DES CLÉS</span>
-            </div>
-            <div className="games-feature-copy">
-              <span className="games-feature-badge">Démo</span>
-              <h2 id="key-race-title">La course des clés</h2>
-              <p>Une nouvelle aventure 3B t’attend. Découvre le jeu et lance ta partie.</p>
-              <a
-                className="games-play-link"
-                href="https://troisb-course-des-cles-demo.stetienne86pp.chatgpt.site/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Jouer à La course des clés (nouvel onglet)"
-                aria-describedby="key-race-access"
-              >
-                Jouer <ArrowUpRight size={20} aria-hidden="true" />
-              </a>
-              <p id="key-race-access" className="games-access-note">Accès libre, sans compte. S’ouvre dans un nouvel onglet.</p>
-            </div>
-          </article>
-          <h2 className="games-upcoming-title">Prochainement dans Jeux 3B</h2>
-        </>
-      )}
-
-      <div className="content-grid">
-        {selected.blocks.map((block) => (
-          <article key={block} className="premium-panel">
-            <h2>{block}</h2>
-            <p>Cet espace est en préparation. Son ouverture sera annoncée ici.</p>
-          </article>
-        ))}
       </div>
     </section>
   );
