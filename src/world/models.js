@@ -5,19 +5,15 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 
 export async function loadWorldModels(){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
- const [hero,nexus,kit,collisionResponse,atlas]=await Promise.all([
+ const [hero,kit,atlas]=await Promise.all([
   loader.loadAsync('/world/models/kais-3d.glb'),
-  loader.loadAsync('/world/models/nexus-garden.glb'),
   loader.loadAsync('/world/models/chapter-kit.glb'),
-  fetch('/world/models/nexus-collisions.json'),
   new THREE.TextureLoader().loadAsync('/world/guardians-atlas.webp')
  ]);
- if(!collisionResponse.ok)throw Error('Les chemins du Nexus n’ont pas pu être chargés.');
- const collisions=await collisionResponse.json();
- const assets=[hero.scene,nexus.scene,kit.scene];
+ const assets=[hero.scene,kit.scene];
  assets.forEach(root=>root.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);}));
  atlas.colorSpace=THREE.SRGBColorSpace;
- return {hero,nexus,kit,collisions,atlas,dispose(){
+ return {hero,kit,atlas,dispose(){
   const geometries=new Set(),materials=new Set(),textures=new Set();
   assets.forEach(root=>root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}}));
   geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());atlas.dispose();
