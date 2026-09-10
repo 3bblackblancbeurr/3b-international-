@@ -7,7 +7,7 @@ export const TIERS=[
  {id:'legend',name:'Légende',xp:12000,color:'#f4db9c',motto:'Laisse ton empreinte.',benefit:'Le design Obsidienne et l’aura Légende dans les Ombres et le Refuge.'},
 ];
 export const DISCOUNTS=[{points:1000,percent:5},{points:3000,percent:8},{points:7000,percent:10}];
-export const GAMES=['arena','tower','maze','refuge','cities'];
+export const GAMES=['arena','tower','maze','refuge','cities','world'];
 export const EXPLORATIONS={passport:'Découvrir le passeport',manga:'Découvrir le manga',world3b:'Explorer les huit pays'};
 export const tierFor=xp=>TIERS.filter(t=>t.xp<=Math.max(0,Number(xp)||0)).at(-1);
 export const discountFor=points=>DISCOUNTS.filter(t=>t.points<=Math.max(0,Number(points)||0)).at(-1)?.percent||0;
