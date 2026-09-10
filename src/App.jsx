@@ -952,7 +952,7 @@ function SafePage({ type, goTo }) {
               >
                 Jouer <ArrowUpRight size={20} aria-hidden="true" />
               </a>
-              <p id="key-race-access" className="games-access-note">S’ouvre dans un nouvel onglet. Connexion ChatGPT requise.</p>
+              <p id="key-race-access" className="games-access-note">Accès libre, sans compte. S’ouvre dans un nouvel onglet.</p>
             </div>
           </article>
           <h2 className="games-upcoming-title">Prochainement dans Jeux 3B</h2>
