@@ -2,12 +2,12 @@ import { useEffect, useId, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import DigitalHead from "./DigitalHead.jsx";
 
-const STREAMS = Array.from({ length: 42 }, (_, column) => ({
-  left: `${(column + 0.25) * 100 / 42}%`,
+const STREAMS = Array.from({ length: 58 }, (_, column) => ({
+  left: `${(column + 0.25) * 100 / 58}%`,
   delay: `${-(column * 1.73 % 12)}s`,
-  duration: `${8 + column * 7 % 9}s`,
-  opacity: 0.28 + (column % 5) * 0.12,
-  digits: Array.from({ length: 28 }, (_, row) => (column * 13 + row * 7 + row * row) % 3 === 0 ? "1" : "0").join(""),
+  duration: `${5.5 + column * 3.7 % 7}s`,
+  opacity: 0.42 + (column % 5) * 0.12,
+  digits: Array.from({ length: 38 }, (_, row) => (column * 13 + row * 7 + row * row) % 3 === 0 ? "1" : "0").join(""),
 }));
 
 // These coordinates follow the printed circuit tracks inside the central card.

@@ -1,81 +1,40 @@
-import { useState } from "react";
-import { ArrowLeft, ArrowUpRight, Layers3, Shirt, Sparkles } from "lucide-react";
-import "./ai.css";
-
-function TextileBrief() {
-  const [garment, setGarment] = useState("Hoodie");
-  const [direction, setDirection] = useState("");
-  const [brief, setBrief] = useState("");
-  const [notice, setNotice] = useState("");
-  function prepare(event) {
-    event.preventDefault();
-    if (!direction.trim()) return;
-    setBrief(`Brief textile 3B International\n\nPièce : ${garment}\nDirection créative : ${direction.trim()}\n\nIdentité : BLACK • BLANC • BEUR. Noir profond, or 3B et bleu digital Matrix.\nRespecter les logos officiels et leur placement. Prévoir une vue de face, une vue de dos et les détails de matière et de finition.\n\nCe n’est pas une marque, c’est un héritage.`);
-    setNotice("Ton brief est prêt. Tu peux le copier et le conserver.");
-  }
-  return <form className="premium-panel ai-brief" onSubmit={prepare}>
-    <p className="eyebrow">Commence par ton idée</p>
-    <h2>Prépare ton brief textile</h2>
-    <p>Décris ta pièce et rassemble tes instructions. La création d’images par IA sera proposée prochainement.</p>
-    <label className="form-line">Type de vêtement
-      <select value={garment} onChange={event => setGarment(event.target.value)}>
-        {["Hoodie", "T-shirt", "Veste", "Maillot", "Pantalon", "Accessoire"].map(item => <option key={item}>{item}</option>)}
-      </select>
-    </label>
-    <label className="form-line">Ton idée
-      <textarea required maxLength={2000} rows={4} value={direction} onChange={event => setDirection(event.target.value)}
-        placeholder="Coupe, matière, couleurs, détails et emplacement du logo…" />
-    </label>
-    <button type="submit" className="primary-button">Préparer mon brief</button>
-    {brief && <div className="ai-brief-result">
-      <label className="form-line">Ton brief textile<textarea readOnly rows={10} value={brief} /></label>
-      <button type="button" className="secondary-button" onClick={async () => {
-        try { await navigator.clipboard.writeText(brief); setNotice("Brief copié."); }
-        catch { setNotice("Sélectionne le texte du brief pour le copier sur ton appareil."); }
-      }}>Copier le brief</button>
-    </div>}
-    <p className="ai-notice" role="status">{notice}</p>
-  </form>;
+import {useEffect,useRef,useState} from 'react';
+import {ArrowLeft,ArrowUpRight,Layers3,Shirt,Sparkles,Send,Download} from 'lucide-react';
+import {GARMENTS,MATERIALS,CUTS,PATTERNS,DEFAULT_DESIGN,textilePrompt,validateDesign} from '../../shared/studio.js';
+import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
+import {ECOSYSTEM_URL,ecosystem} from '../lib/ecosystem.js';
+import DesignPreview from './DesignPreview.jsx';
+import './studio.css';
+function useCapabilities(){const[caps,setCaps]=useState(null);useEffect(()=>{const c=new AbortController();fetch(ECOSYSTEM_URL+'?section=capabilities',{signal:c.signal}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(setCaps).catch(()=>setCaps({}));return()=>c.abort();},[]);return caps;}
+function readDraft(){try{const saved=JSON.parse(localStorage.getItem('3b-studio-config')||'null');return saved?validateDesign(saved):DEFAULT_DESIGN;}catch{return DEFAULT_DESIGN;}}
+function TextileStudio({goTo,caps}){
+ const account=useLoyalty(),[design,setDesign]=useState(readDraft),[idea,setIdea]=useState(''),[generated,setGenerated]=useState(null),[busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[brief,setBrief]=useState('');const lock=useRef(false);
+ function change(key,value){setDesign(d=>({...d,[key]:value}));setGenerated(null);setBrief('');}
+ function save(){try{localStorage.setItem('3b-studio-config',JSON.stringify(design));setNotice('Ton concept est enregistré sur cet appareil.');}catch{setNotice('La sauvegarde sur cet appareil est indisponible. Exporte ton brief.');}}
+ function exportBrief(){const text=textilePrompt(design,idea),url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='3b-brief-'+design.garment.toLowerCase().replaceAll(' ','-')+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+ async function generate(){if(!account.user){goTo('member');return;}if(lock.current)return;lock.current=true;setBusy(true);setNotice('');try{setGenerated(await ecosystem('generate',{design,idea}));setNotice('Visuel généré. Tu peux le proposer à la communauté.');}catch(e){setNotice(e.message);}finally{lock.current=false;setBusy(false);}}
+ function share(){try{sessionStorage.setItem('3b-studio-share',JSON.stringify({design,assetPath:generated?.assetPath}));goTo('community');}catch{setNotice('Impossible de préparer le partage. Exporte le brief pour le conserver.');}}
+ return <><div className="studio-layout"><div className="studio-preview-panel"><div className="studio-preview-top"><span>ATELIER 3B / CONCEPT</span><span>{generated?'VISUEL IA':'APERÇU SCHÉMATIQUE'}</span></div>{generated?<img className="studio-generated" src={generated.imageUrl} alt={'Concept IA de '+design.garment}/>:<DesignPreview design={design}/>}<div className="surface-tabs" aria-label="Vue de la pièce">{['Face','Dos'].map(view=><button key={view} aria-pressed={design.view===view} onClick={()=>change('view',view)}>{view}</button>)}</div><p>Un concept pour exprimer ton idée. Les coupes et finitions seront validées avant toute fabrication.</p></div><form className="surface-panel surface-form" onSubmit={e=>{e.preventDefault();setBrief(textilePrompt(design,idea));setNotice('Ton brief détaillé est prêt.');}}><p className="eyebrow">DESSINE LA SUITE</p><h2>Ta pièce, tes choix.</h2><div className="form-columns">{[['garment','Pièce',GARMENTS],['material','Matière',MATERIALS],['cut','Coupe',CUTS],['pattern','Motif',PATTERNS],['placement','Marquage',['Poitrine','Centre','Dos']]].map(([key,label,list])=><label key={key}>{label}<select value={design[key]} disabled={busy} onChange={e=>change(key,e.target.value)}>{list.map(x=><option key={x}>{x}</option>)}</select></label>)}<div className="studio-colors"><label>Base<input type="color" value={design.color} disabled={busy} onChange={e=>change('color',e.target.value)}/></label><label>Accent<input type="color" value={design.accent} disabled={busy} onChange={e=>change('accent',e.target.value)}/></label></div><label className="form-full">Ton intention créative<textarea rows={3} maxLength={2000} value={idea} disabled={busy} onChange={e=>{setIdea(e.target.value);setGenerated(null);}} placeholder="Détails, inspirations, usages, finitions…"/></label></div><div className="studio-actions"><button className="quiet-button" type="button" onClick={save}>Sauvegarder le concept</button><button className="quiet-button" type="submit">Préparer le brief</button><button className="quiet-button" type="button" onClick={exportBrief}><Download size={16}/>Exporter le brief</button></div><div className="studio-ai-action"><button className="surface-button" type="button" disabled={busy||!caps?.image} onClick={generate}><Sparkles size={18}/>{busy?'Création du visuel…':caps?.image?'Générer avec l’IA':'Génération IA · à venir'}</button><p>{caps?.image?'Ton brief est envoyé à OpenAI pour produire le visuel. Maximum : 3 générations par jour et par membre.':'Le configurateur est disponible. La génération d’images sera ouverte après activation du service IA.'}</p></div></form></div>
+ {notice&&<p className="surface-notice" role="status">{notice}</p>}{brief&&<div className="surface-panel"><h2>Ton brief textile 3B</h2><p className="studio-brief">{brief}</p></div>}
+ <div className="studio-share"><div><p className="eyebrow">IMAGINÉ PAR TOI. CHOISI PAR LE COLLECTIF.</p><h2>De ton idée à la communauté.</h2><p>Propose ton concept, recueille les votes et fais évoluer ton projet. Les créations favorites pourront être étudiées par 3B en vue d’une production.</p></div><button className="surface-button" disabled={busy} onClick={share}>Préparer ma publication <ArrowUpRight size={17}/></button></div>
+ <div className="studio-process">{[['01','Imagine','Configure un vêtement, un ensemble ou une pièce de maroquinerie.'],['02','Partage','Relis ta publication et présente ton idée aux membres.'],['03','Rassemble','Les votes mettent en avant les concepts préférés.'],['04','Étudie','3B vérifie les droits, la fabrication et le coût avant de décider d’une production.']].map(([n,title,text])=><article key={n}><span>{n}</span><h3>{title}</h3><p>{text}</p></article>)}</div></>;
 }
-
-export default function AiPage({ page, goTo }) {
-  const textile = page === "ia-textile";
-  const trio = page === "ia-trio";
-  const detail = textile || trio;
-  const title = textile ? "IA textile" : trio ? "Mode 3 IA" : "Espace IA";
-  return <section className="page-section ai3b">
-    <section className="page-header">
-      <button type="button" className="ghost-button" onClick={() => goTo(detail ? "ia" : "home")}>
-        <ArrowLeft size={16} aria-hidden="true" /> {detail ? "Espace IA" : "Retour"}
-      </button>
-      <div><p className="eyebrow">3B International · Studio créatif</p><h1>{title}</h1>
-        <p>{textile ? "Imagine les prochaines pièces de ton héritage." : trio ? "Un même projet. Trois regards pour le faire avancer." : "Tes idées donnent le départ."}</p>
-      </div>
-    </section>
-    {!detail && <div className="ai-grid">
-      <article className="ai-card">
-        <div className="ai-card-top"><Shirt size={40} strokeWidth={1.3} aria-hidden="true" /><span className="ai-status">Images IA · Prochainement</span></div>
-        <p className="eyebrow">01 · Atelier 3B</p><h2>IA textile</h2>
-        <p>Prépare tes futurs vêtements : coupes, matières, couleurs et détails. Commence dès maintenant par ton brief créatif.</p>
-        <div className="ai-tags"><span>Vêtements</span><span>Matières</span><span>Identité 3B</span></div>
-        <button type="button" className="secondary-button" onClick={() => goTo("ia-textile")}>Découvrir l’atelier <ArrowUpRight size={18} aria-hidden="true" /></button>
-      </article>
-      <article className="ai-card ai-card-trio">
-        <div className="ai-card-top"><Layers3 size={40} strokeWidth={1.3} aria-hidden="true" /><span className="ai-status">Prochainement</span></div>
-        <p className="eyebrow">02 · Intelligence collective</p><h2>Mode 3 IA</h2>
-        <p>Un espace prévu pour interroger GPT, Claude et Gemini sur le même projet, comparer leurs réponses et préparer une synthèse.</p>
-        <div className="ai-tags"><span>GPT</span><span>Claude</span><span>Gemini</span></div>
-        <button type="button" className="secondary-button" onClick={() => goTo("ia-trio")}>Découvrir le Mode 3 IA <ArrowUpRight size={18} aria-hidden="true" /></button>
-      </article>
-    </div>}
-    {textile && <TextileBrief />}
-    {trio && <article className="premium-panel ai-trio-detail">
-      <Sparkles size={36} strokeWidth={1.4} aria-hidden="true" />
-      <p className="eyebrow">GPT · Claude · Gemini</p><h2>Trois IA autour de ton projet</h2>
-      <ol className="ai-steps"><li><strong>Un brief commun</strong><p>Présenter ton idée et tes objectifs aux trois IA.</p></li>
-        <li><strong>Trois réponses</strong><p>Lire et comparer leurs propositions dans le même espace.</p></li>
-        <li><strong>Une synthèse</strong><p>Rassembler les pistes utiles pour choisir la suite.</p></li></ol>
-      <p className="ai-coming-soon">Ce mode est en préparation. Les trois services IA ne sont pas encore connectés.</p>
-    </article>}
-  </section>;
+const PROVIDERS={gpt:'GPT · OpenAI',claude:'Claude · Anthropic',gemini:'Gemini · Google'};
+function TrioChat({goTo,caps}){
+ const account=useLoyalty(),[selected,setSelected]=useState(['gpt','claude','gemini']),[input,setInput]=useState(''),[turns,setTurns]=useState([]),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');const lock=useRef(false);
+ const ready=selected.length>0&&selected.every(p=>caps?.[p]);
+ async function send(e){e.preventDefault();if(!account.user){goTo('member');return;}if(lock.current||!input.trim())return;const prompt=input.trim();lock.current=true;setBusy(true);setNotice('');try{
+  const context=turns.slice(-5).flatMap(t=>[{role:'user',content:t.prompt},{role:'assistant',content:t.results.map(r=>(PROVIDERS[r.provider]+': '+(r.text||r.error))).join('\n\n').slice(0,4000)}]);
+  const result=await ecosystem('chat-ai',{providers:selected,messages:[...context,{role:'user',content:prompt}]});setTurns(t=>[...t,{prompt,results:result.results}]);setInput('');
+ }catch(e){setNotice(e.message);}finally{lock.current=false;setBusy(false);}}
+ return <div className="trio-workspace"><div className="trio-toolbar"><div><p className="eyebrow">UN BRIEF. PLUSIEURS REGARDS.</p><p>Choisis une IA ou compare les trois.</p></div><button className="quiet-button" disabled={busy||!turns.length} onClick={()=>{setTurns([]);setNotice('');}}>Nouvelle conversation</button></div><div className="trio-providers">{Object.entries(PROVIDERS).map(([id,label])=><button key={id} disabled={busy} aria-pressed={selected.includes(id)} onClick={()=>setSelected(a=>a.includes(id)?a.filter(p=>p!==id):[...a,id])}><Layers3 size={23}/><strong>{label}</strong><span>{caps?.[id]?'Disponible':'En attente d’activation'}</span><i>{selected.includes(id)?'Sélectionné':'Sélectionner'}</i></button>)}</div>
+ {!turns.length&&<div className="trio-empty"><Sparkles size={40} strokeWidth={1.2}/><h2>Quel projet fait-on avancer ?</h2><p>Un concept de collection, une idée de collaboration ou une question à explorer.</p><div className="surface-tabs">{['Imagine une collection 3B autour des huit pays.','Aide-moi à présenter mon projet à la communauté.','Compare trois pistes pour un sac 3B.'].map(p=><button key={p} onClick={()=>setInput(p)}>{p}</button>)}</div></div>}
+ <div className="trio-turns" aria-live="polite">{turns.map((t,i)=><section key={i}><h2>{t.prompt}</h2><div className="trio-responses">{t.results.map(r=><article key={r.provider}><h3>{PROVIDERS[r.provider]}</h3><p>{r.text||r.error}</p></article>)}</div></section>)}</div>
+ {notice&&<p className="surface-notice" role="alert">{notice}</p>}<form className="trio-composer" onSubmit={send}><label htmlFor="trio-question">Ton message</label><textarea id="trio-question" required maxLength={4000} rows={3} disabled={busy} value={input} onChange={e=>setInput(e.target.value)} placeholder="Décris ton projet ou pose ta question…"/><div><p>{ready?'Le texte est envoyé aux fournisseurs sélectionnés. Les réponses peuvent contenir des erreurs.':'Les services IA ne sont pas encore activés. Tu peux préparer ton message.'}</p><button className="surface-button" disabled={!ready||busy||!input.trim()}><Send size={17}/>{busy?'Réponses en cours…':selected.length>1?'Comparer les réponses':'Envoyer'}</button></div></form><p className="muted-copy">Cette conversation reste dans cet onglet et disparaît au rechargement. Les IA n’exécutent pas d’actions dans ta boutique. Maximum : 20 demandes par jour et par membre après activation.</p></div>;
+}
+export default function AiPage({page,goTo}){
+ const caps=useCapabilities(),textile=page==='ia-textile',trio=page==='ia-trio',detail=textile||trio;
+ return <section className="editorial-page studio-page">{detail&&<button className="quiet-button" onClick={()=>goTo('ia')}><ArrowLeft size={16}/>Espace IA</button>}<div className="editorial-heading"><p className="eyebrow">L’INTELLIGENCE AU SERVICE DES IDÉES</p><h1>{textile?'L’atelier 3B.':trio?'Mode 3 IA.':'Imagine la suite.'}</h1><p>{textile?'Textile, silhouettes complètes et maroquinerie. Donne forme à ton prochain concept.':trio?'GPT, Claude et Gemini autour d’un même projet.':'Deux espaces pour créer, comparer et faire avancer ton univers.'}</p></div>
+ {!detail&&<div className="studio-gateways"><button className="studio-gateway" onClick={()=>goTo('ia-textile')}><div className="studio-gateway-art"><DesignPreview/></div><div><span className="eyebrow">01 / ATELIER & CRÉATIONS</span><h2>IA textile</h2><p>Maillots, collections complètes, sacs et accessoires. Configure ta pièce et propose-la au collectif.</p><span className="gateway-link">Entrer dans l’atelier <ArrowUpRight size={20}/></span></div></button><button className="studio-gateway" onClick={()=>goTo('ia-trio')}><div className="studio-gateway-art trio-symbol"><Layers3 size={85} strokeWidth={.7}/><span>GPT · CLAUDE · GEMINI</span></div><div><span className="eyebrow">02 / ASSISTANTS & COMPARAISON</span><h2>Mode 3 IA</h2><p>Un espace de conversation pour croiser les réponses de trois modèles et préciser ton projet.</p><span className="gateway-link">Ouvrir les assistants <ArrowUpRight size={20}/></span></div></button></div>}
+ {textile&&<TextileStudio goTo={goTo} caps={caps}/>} {trio&&<TrioChat goTo={goTo} caps={caps}/>}</section>;
 }

@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Music2, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { PAGE_HASHES } from "../lib/navigation.js";
 
-const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, music: Music2, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
 }
 
 export const NAV_GROUPS = [
-  { title: "Mon espace", ids: ["passport", "loyalty", "member"] },
-  { title: "Explorer 3B", ids: ["manga", "world3b", "games", "music", "secret"] },
+  { title: "Identité & progression", ids: ["passport", "loyalty", "guide"] },
+  { title: "Explorer 3B", ids: ["world3b", "games", "manga", "secret", "religion"] },
   { title: "Créer & partager", ids: ["ia", "community", "sport", "shop"] },
 ];
 
@@ -34,8 +34,8 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const activePage = page.startsWith("ia-") ? "ia" : page;
-  const allItems = [...menuItems];
-  if (!allItems.some(item => item.id === "member")) allItems.push({ id: "member", label: "Mon espace 3B", description: "Profil, inscription et préférences." });
+  const allItems = menuItems.filter(item => item.id !== "member");
+
   const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr");
   const matching = allItems.filter(item => normalize(`${item.label} ${item.description}`).includes(normalize(query.trim())));
 
@@ -64,7 +64,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
     <header className="site-header">
       <RouteLink page="home" goTo={goTo} className="brand-link" aria-label="3B International — Accueil">
         <span className="brand-wordmark" aria-hidden="true">3B</span>
-        <span className="brand-name">INTERNATIONAL<small className="brand-glow-badge brand-glow-badge--compact">BLACK • BLANC • BEUR</small></span>
+        <span className="brand-name">INTERNATIONAL</span>
       </RouteLink>
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
