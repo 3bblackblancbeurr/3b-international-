@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {loadWorldModels,createKais,createCreature,createResident} from './models.js';
+import {loadWorldModels} from './models.js';
+import {createLivingActor} from './living.js';
+import {DEFAULT_ORBIT,rotateOrbit,zoomOrbit,cameraRelative} from './orbit.js';
 import {advanceMotion,pointerStick,createQualityController} from './motion.js';
 import {COUNTRIES,countryById,cardById} from './catalog.js';
 import {createLandscape} from './landscape.js';
@@ -23,6 +25,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null;
+ let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';const touchPoints=new Map();let pinchDistance=null;
  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const register=asset=>(resources.push(asset),asset);
  const material=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materialCache.has(key))materialCache.set(key,register(new THREE.MeshStandardMaterial({color,roughness:.8,metalness:.08,...extra})));return materialCache.get(key);};
@@ -40,9 +43,8 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   mesh(filmGeo,filmMat,item.x,y+4,item.z+.1,2.95,3.45,1);portalMaterials.push(filmMat);
  }
  function makeActor(item){
-  const card=cardById[item.card],animal=/loup|fennec|lion|coq|taureau|ours|aigle|cerf|lynx/i.test(card?.name||'');
-  const creature=item.type==='guardian'||animal;
-  const actor=creature?createCreature(models.kit,region,item.color,item.type==='guardian'?2.2:1.05):createResident(models.kit,['traveler','woman','artisan','elder'][(card?.number||0)%4],item.color);
+  const card=cardById[item.card],creature=item.type==='guardian';
+  const actor=createLivingActor(models.living,{card:card.id,scale:creature?2.5:2,onError});
   actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.rotation.y=(card?.number||0)*.7;root.add(actor.object);
   actors.push({controller:actor,itemId:item.id,creature,x:item.x,z:item.z});return actor.object;
  }
@@ -61,7 +63,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   for(const item of items){
    if(item.type==='portal'){portal(item);continue;}
    if(item.type==='story')continue;
-   if(item.type==='final'){const actor=createCreature(models.kit,'france','#8e77ab',3.1);actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
+   if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C165',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
    const first=root.children.length,y=groundY(item.x,item.z);
    if(item.type==='guardian'||item.type==='echo')makeActor(item);
    if(item.type==='beacon'){
@@ -72,7 +74,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    }
    itemVisuals.set(item.id,root.children.slice(first));
   }
-  hero=createKais(models.hero);hero.setColor(COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color||'#e4c778');avatar=hero.object;root.add(avatar);
+  hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatarKey=JSON.stringify(save.adventure.avatar);avatar=hero.object;root.add(avatar);hero.setColor(save.adventure.cosmetic!=='voyageur'?COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color:null);
   const shadow=mesh(register(new THREE.CircleGeometry(1,24)),register(new THREE.MeshBasicMaterial({color:'#12261c',transparent:true,opacity:.3,depthWrite:false})),0,.06,0,.85,.85,1);shadow.rotation.x=-Math.PI/2;animations.push({mesh:shadow,type:'shadow'});
   companion=mesh('sphere',gold,0,1,0,.25);
   const ringMat=register(new THREE.MeshBasicMaterial({color:'#fae3a2',transparent:true,opacity:.55,depthWrite:false}));
@@ -87,20 +89,34 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
  function startRoute(destination){route=findPath(position,destination,obstacles,WORLD_RADIUS);target=route.shift()||null;needsRender=true;}
- function clearInput(){keys.clear();stick={x:0,z:0};held=null;target=null;route=[];}
- function down(e){if(held||paused||!landscape||e.button>0)return;e.preventDefault();onActivity();held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,run:false};target=null;route=[];canvas.setPointerCapture(e.pointerId);canvas.focus({preventScroll:true});}
- function move(e){if(!held||held.id!==e.pointerId)return;const dx=e.clientX-held.x,dy=e.clientY-held.y,len=Math.hypot(dx,dy);if(len>7)held.drag=true;held.run=len>88;stick=pointerStick(dx,dy);onActivity();}
- function up(e){if(!held||held.id!==e.pointerId)return;
-  if(!held.drag&&!paused&&e.type==='pointerup'){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObject(landscape.ground,false)[0];if(hit){const p=hit.point,r=Math.hypot(p.x,p.z),scale=Math.min(1,(WORLD_RADIUS-2)/r);startRoute({x:p.x*scale,z:p.z*scale});}}
-  held=null;stick={x:0,z:0};
+ function clearInput(){keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];}
+ function down(e){
+  if(paused||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
+  const rect=canvas.getBoundingClientRect(),cameraTouch=e.pointerType==='touch'&&e.clientX-rect.left>rect.width*.55;
+  if(e.button===2||cameraTouch){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!orbitHeld)orbitHeld={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,drag:false};if(touchPoints.size===2){const p=[...touchPoints.values()];pinchDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}return;}
+  if(held)return;held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,run:false};target=null;route=[];
  }
- function toggleCamera(){cameraMode=1-cameraMode;needsRender=true;}
+ function move(e){
+  if(touchPoints.has(e.pointerId)){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});onActivity();needsRender=true;
+   if(touchPoints.size===2){const p=[...touchPoints.values()],distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchDistance!==null)orbit=zoomOrbit(orbit,(pinchDistance-distance)*5);pinchDistance=distance;if(orbitHeld){orbitHeld.drag=true;const q=touchPoints.get(orbitHeld.id);if(q){orbitHeld.x=q.x;orbitHeld.y=q.y;}}return;}
+   if(orbitHeld?.id===e.pointerId){const dx=e.clientX-orbitHeld.x,dy=e.clientY-orbitHeld.y;orbit=rotateOrbit(orbit,dx,dy);orbitHeld.x=e.clientX;orbitHeld.y=e.clientY;if(Math.hypot(e.clientX-orbitHeld.startX,e.clientY-orbitHeld.startY)>7)orbitHeld.drag=true;}return;
+  }
+  if(!held||held.id!==e.pointerId)return;const dx=e.clientX-held.x,dy=e.clientY-held.y,len=Math.hypot(dx,dy);if(len>7)held.drag=true;held.run=len>88;stick=pointerStick(dx,dy);onActivity();
+ }
+ function pointRoute(e){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObject(landscape.ground,false)[0];if(hit){const p=hit.point,r=Math.hypot(p.x,p.z),scale=Math.min(1,(WORLD_RADIUS-2)/r);startRoute({x:p.x*scale,z:p.z*scale});}}
+ function up(e){
+  if(touchPoints.has(e.pointerId)){if(orbitHeld?.id===e.pointerId&&!orbitHeld.drag&&e.type==='pointerup'&&e.pointerType==='touch')pointRoute(e);touchPoints.delete(e.pointerId);pinchDistance=null;if(orbitHeld?.id===e.pointerId){const next=[...touchPoints.entries()][0];orbitHeld=next?{id:next[0],x:next[1].x,y:next[1].y,startX:next[1].x,startY:next[1].y,drag:true}:null;}return;}
+  if(!held||held.id!==e.pointerId)return;if(!held.drag&&!paused&&e.type==='pointerup')pointRoute(e);held=null;stick={x:0,z:0};
+ }
+ function wheel(e){if(paused)return;e.preventDefault();orbit=zoomOrbit(orbit,e.deltaY);needsRender=true;onActivity();}
+ const context=e=>e.preventDefault();
+ function toggleCamera(){cameraMode=1-cameraMode;orbit={...orbit,distance:cameraMode?36:24,pitch:cameraMode?.76:.5};needsRender=true;}
  function keydown(e){if(paused||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','e','shift','c'].includes(key)){e.preventDefault();if(key==='c'){if(!e.repeat)toggleCamera();return;}keys.add(key);target=null;route=[];onActivity();if(key==='e'&&!e.repeat)interact();}}
  function keyup(e){keys.delete(e.key.toLowerCase());}
  function interact(){if(paused)return;const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())));if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
  const hidden=()=>{clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
  const lost=e=>{e.preventDefault();paused=true;onError('Le rendu 3D a été interrompu. Recharge le monde pour reprendre ta sauvegarde.');};
- canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('lostpointercapture',up);canvas.addEventListener('webglcontextlost',lost);
+ canvas.addEventListener('wheel',wheel,{passive:false});canvas.addEventListener('contextmenu',context);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('lostpointercapture',up);canvas.addEventListener('webglcontextlost',lost);
  window.addEventListener('keydown',keydown);window.addEventListener('keyup',keyup);window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',hidden);
  function tick(now){
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
@@ -110,6 +126,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    frames++;frameTime+=rawDt;if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
    dx=stick.x+((keys.has('d')||keys.has('arrowright'))?1:0)-((keys.has('a')||keys.has('q')||keys.has('arrowleft'))?1:0);
    dz=stick.z+((keys.has('s')||keys.has('arrowdown'))?1:0)-((keys.has('w')||keys.has('z')||keys.has('arrowup'))?1:0);
+   ({x:dx,z:dz}=cameraRelative(dx,dz,orbit.yaw));
    const previous=position,next=advanceMotion({position,target,route},{x:dx,z:dz},dt,10.5*stats.speed*(keys.has('shift')||held?.run?1.4:1),obstacles,WORLD_RADIUS);
    ({position,target,route,travelled,moving}=next);dx=position.x-previous.x;dz=position.z-previous.z;
    if(moving){onActivity();stepDistance+=travelled;if(stepDistance>2.1){stepDistance=0;onStep?.(region);}}
@@ -122,19 +139,19 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   companion.visible=save.team.length>0&&!cinematic;companion.position.set(position.x-1.6,y+1.3+Math.sin(elapsed*2)*.15,position.z+1.4);
   const wide=cameraMode===1,portrait=camera.aspect<.85;
   if(opponent){const mx=(avatar.position.x+opponent.x)/2,mz=(avatar.position.z+opponent.z)/2,my=(avatar.position.y+groundY(opponent.x,opponent.z))/2;desiredTarget.set(mx,my+1.8,mz);desiredCamera.set(mx+(portrait?12:15),my+(portrait?14:11),mz+(portrait?20:18));}
-  else{desiredTarget.set(position.x,y+.6,position.z-(wide?7:8));desiredCamera.set(position.x,y+(wide?31:portrait?22:14),position.z+(wide?35:portrait?29:25));}
+  else{const r=orbit.distance*(portrait?1.12:1),flat=Math.cos(orbit.pitch)*r;desiredTarget.set(position.x,y+1.8,position.z);desiredCamera.set(position.x+Math.sin(orbit.yaw)*flat,y+1.8+Math.sin(orbit.pitch)*r,position.z+Math.cos(orbit.yaw)*flat);}
   const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);camera.lookAt(cameraTarget);
   sun.position.set(position.x-24,y+65,position.z+24);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>mat.uniforms.time.value=elapsed);
   for(const a of animations){if(a.type==='float'){a.mesh.position.y=a.y+Math.sin(elapsed*1.5+a.mesh.position.x)*.15;a.mesh.rotation.y+=dt*.3;}if(a.type==='shadow')a.mesh.position.set(avatar.position.x,avatar.position.y+.07,avatar.position.z);if(a.type==='particles')a.mesh.rotation.y=Math.sin(elapsed*.04)*.03;}
   landscape.tick(elapsed,dt,position);
-  for(const a of actors){const object=a.controller.object,active=cinematic&&opponent?.id===a.itemId;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;a.controller.update(dt,...(a.creature?[camera]:[]));object.position.set(a.x,groundY(a.x,a.z),a.z);if(active){object.rotation.y=Math.atan2(position.x-a.x,position.z-a.z);object.rotation.z=impact*.06;}else object.rotation.z=0;}
+  for(const a of actors){const object=a.controller.object,active=cinematic&&opponent?.id===a.itemId;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;object.position.set(a.x+wander,groundY(a.x+wander,a.z),a.z);const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);if(active){object.rotation.y=Math.atan2(position.x-a.x,position.z-a.z);object.rotation.z=impact*.06;}else object.rotation.z=0;}
   const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())));
   focusRing.visible=!!closest&&!paused;if(closest)focusRing.position.set(closest.x,groundY(closest.x,closest.z)+.09,closest.z);
   waypointRing.visible=!!waypoint&&!paused&&distance(position,waypoint)>7;if(waypoint)waypointRing.position.set(waypoint.x,groundY(waypoint.x,waypoint.z)+.1,waypoint.z);
   effect.visible=age<.65;if(effect.visible){effect.position.set(avatar.position.x,avatar.position.y+.15,avatar.position.z);effect.scale.setScalar(1+age*6);effect.material.opacity=Math.max(0,1-age/.65)*.7;effect.material.color.set(feedbackAction==='guard'?'#a2dff0':'#ffe0a0');}
   if(renderer.shadowMap.enabled&&(needsRender||now-shadowAt>=50)){renderer.shadowMap.needsUpdate=true;shadowAt=now;}
   renderer.render(scene,camera);report-=dt;
-  if(report<=0||needsRender){report=(moving||held?.drag)?.1:.4;onSnapshot({region,position:{...position},near:closest,moving,fps,drawCalls:renderer.info.render.calls,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});}
+  if(report<=0||needsRender){report=(moving||held?.drag)?.1:.4;onSnapshot({region,position:{...position},camera:{...orbit},near:closest,moving,fps,drawCalls:renderer.info.render.calls,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});}
   needsRender=false;
  }
  onLoadState?.(true);
@@ -143,14 +160,14 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  return{
   setPaused(value){paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value)clearInput();},
   setPresentation(value){presentation=value;needsRender=true;},
-  feedback(type,action){if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;needsRender=true;}},
+  feedback(type,action){if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;if(type==='battle'){hero?.action(action==='guard'?'Idle':action==='power'?'Cast':'Attack');const rival=actors.find(a=>a.itemId===battleTarget?.id);rival?.controller.action(save.adventure.encounter?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
   toggleCamera,
   setQuality(mode){quality.setMode(mode);renderer.shadowMap.enabled=mode!=='fluid';resize();},
-  setSave(value){const previousItems=items;save=value;stats=teamStats(save);landscape?.update(save);hero?.setColor(COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color||'#e4c778');items=landscapeItems(region,save);if(models)for(const item of items){if(item.type!=='echo'||previousItems.find(i=>i.id===item.id)?.card===item.card)continue;const old=actors.find(a=>a.itemId===item.id);if(old){old.controller.object.removeFromParent();old.controller.dispose();actors=actors.filter(a=>a!==old);}itemVisuals.set(item.id,[makeActor(item)]);}needsRender=true;},
+  setSave(value){const previousItems=items;save=value;stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}hero?.setColor(save.adventure.cosmetic!=='voyageur'?COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color:null);items=landscapeItems(region,save);if(models)for(const item of items){if(item.type!=='echo'||previousItems.find(i=>i.id===item.id)?.card===item.card)continue;const old=actors.find(a=>a.itemId===item.id);if(old){old.controller.object.removeFromParent();old.controller.dispose();actors=actors.filter(a=>a!==old);}itemVisuals.set(item.id,[makeActor(item)]);}needsRender=true;},
   travel(id){if(models)rebuild(countryById[id]?id:'hub');},
   interact,
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk){const d=distance(position,item),gap=item.type==='guardian'?4:item.type==='echo'?2:0;startRoute(gap&&d>gap?{x:item.x+(position.x-item.x)*gap/d,z:item.z+(position.z-item.z)*gap/d}:item);}},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},
-  destroy(){disposed=true;hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
+  destroy(){disposed=true;hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };
 }

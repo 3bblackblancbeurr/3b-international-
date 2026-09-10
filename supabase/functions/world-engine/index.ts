@@ -3,7 +3,7 @@ import {blankSave,normalizeSave} from './rules.js';
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
-const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174']);
+const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174']);
 class Failure extends Error {constructor(public status:number,message:string){super(message);}}
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){
  const r=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)});

@@ -1,0 +1,268 @@
+[
+  {
+    "asset": "traveller-0",
+    "bytes": 1647160,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "traveller-1",
+    "bytes": 1761736,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "traveller-2",
+    "bytes": 1755252,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "traveller-3",
+    "bytes": 1701108,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "traveller-4",
+    "bytes": 1827956,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "traveller-5",
+    "bytes": 1821520,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-0",
+    "bytes": 767220,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-1",
+    "bytes": 764308,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-2",
+    "bytes": 767052,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-3",
+    "bytes": 767300,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-4",
+    "bytes": 764540,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-5",
+    "bytes": 763976,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-6",
+    "bytes": 764468,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  },
+  {
+    "asset": "creature-7",
+    "bytes": 767372,
+    "clips": [
+      "Idle",
+      "Walk",
+      "Jog",
+      "Run",
+      "Jump",
+      "Attack",
+      "Hit",
+      "Death",
+      "Cast",
+      "Interact",
+      "Work",
+      "Talk"
+    ],
+    "bones": 65
+  }
+]

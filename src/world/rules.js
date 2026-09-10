@@ -53,8 +53,8 @@ export function equip(save,id,asLeader=false){
  return gain(save,{loadout:{...save.loadout,[slot]:save.loadout[slot]===id?undefined:id}});
 }
 export function teamStats(save){
- const cards=[save.leader,...save.team].map(id=>cardById[id]).filter(Boolean),roles=cards.map(c=>c.role),load=save.loadout;
- return {health:100+roles.filter(r=>r==='protecteur').length*12+(load.terrain?10:0)+(load.pierre?10:0),attack:Math.round((cardById[save.leader]?.attack||15)+roles.filter(r=>r==='assaillant').length*4+Math.min(8,levelFor(save.xp)-1)+(load.ambiance?3:0)+(load.fragment?3:0)),heal:roles.filter(r=>r==='soigneur').length*4,speed:roles.includes('éclaireur')?1.08:1,window:roles.includes('mystique')?.19:.14,affinity:cards.reduce((n,c)=>n+Math.min(3,Math.floor((save.collection[c.id]-1)/3)),0),traps:load.traps.length,support:!!load.support,energy:!!load.energy};
+ const cards=[save.leader,...save.team].map(id=>cardById[id]).filter(Boolean),roles=cards.map(c=>c.role),load=save.loadout,path=save.adventure.avatar?.created?save.adventure.avatar.path:null;
+ return {health:100+(path==='nature'?14:path==='tempete'?-8:0)+roles.filter(r=>r==='protecteur').length*12+(load.terrain?10:0)+(load.pierre?10:0),attack:Math.round((path==='tempete'?3:path==='ombre'?1:0)+(cardById[save.leader]?.attack||15)+roles.filter(r=>r==='assaillant').length*4+Math.min(8,levelFor(save.xp)-1)+(load.ambiance?3:0)+(load.fragment?3:0)),heal:(path==='lumiere'?3:0)+roles.filter(r=>r==='soigneur').length*4,speed:(roles.includes('éclaireur')?1.08:1)+(path==='ombre'?.05:0),window:roles.includes('mystique')?.19:.14,affinity:cards.reduce((n,c)=>n+Math.min(3,Math.floor((save.collection[c.id]-1)/3)),0),traps:load.traps.length,support:!!load.support,energy:!!load.energy};
 }
 export function guardianReady(save,region){return save.beacons.filter(id=>id.startsWith(region+':')).length===3 && save.team.length>0;}
 export function makeEncounter(card,save,boss=false){
