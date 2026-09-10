@@ -5,7 +5,12 @@ import { readLocation, navigateTo } from "./lib/navigation.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS, OPTION_LABELS,
   createTestMember, normalizeMember, normalizeOptions, validateMember, createRegisteredMember,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
+import AppNavigation from "./components/AppNavigation.jsx";
+import HomePage from "./components/HomePage.jsx";
+import PassportVisual from "./components/PassportVisual.jsx";
 import "./App.css";
+import "./styles/mobile-navigation.css";
+import "./styles/passport-effects.css";
 
 const BASE_MENU_ITEMS = [
   {
@@ -395,8 +400,6 @@ export default function App() {
     setRoute(readLocation());
   }
 
-  function goToIntro() { goTo("intro"); }
-
   function resetMember() {
     const cleanMember = createTestMember();
     setMember(cleanMember);
@@ -445,11 +448,12 @@ export default function App() {
   if (!hasStarted) {
     return (
       <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
-        <div className="intro3b-background" />
-        <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} />
+        <div className="intro3b-background" aria-hidden="true" />
+        <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
 
         <section className="intro3b-card">
           <p className="eyebrow">3B International</p>
+          <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
           <h1>De zéro à l’international</h1>
           <p>
             Un écosystème premium pour ton passeport, tes cartes, tes jeux, ton
@@ -469,25 +473,12 @@ export default function App() {
   }
 
   return (
-    <main className="app3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
-      <div className="app3b-background" />
-      <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} />
+    <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
+      <div className="app3b-background" aria-hidden="true" />
+      <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      <header className="topbar3b">
-        <button type="button" className="ghost-button" onClick={() => goTo("home")}>
-          Accueil
-        </button>
-
-        <div className="topbar3b-title">
-          <span>3B International</span>
-          <strong>{currentPageTitle}</strong>
-        </div>
-
-        <button type="button" className="ghost-button" onClick={goToIntro}>
-          Entrée
-        </button>
-      </header>
-
+      <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />
+      <main id="main-content" tabIndex={-1}>
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
@@ -497,8 +488,8 @@ export default function App() {
       {page === "passport" && (
         <PassportPage
           member={member}
+          options={options}
           goTo={goTo}
-          goToIntro={goToIntro}
         />
       )}
 
@@ -535,7 +526,8 @@ export default function App() {
       {page === "sport" && <SafePage type="sport" goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage page={page} goTo={goTo} />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -555,80 +547,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function HomePage({ goTo, menuItems, member }) {
-  return (
-    <section className="home-layout">
-      <div className="home-hero">
-        <p className="eyebrow">BLACK • BLANC • BEUR</p>
-
-        <h1>Bienvenue dans l’écosystème 3B</h1>
-
-        <p>
-          Votre passeport digital, vos missions, vos jeux, votre collection,
-          votre musique, votre communauté et les secrets 3B sont réunis dans un
-          seul univers.
-        </p>
-
-        <div className="home-actions">
-          {member?.isRegistered ? (
-            <>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => goTo("member")}
-              >
-                Mon espace membre
-              </button>
-
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => goTo("passport")}
-              >
-                Mon passeport 3B
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="primary-button"
-              onClick={() => goTo("member")}
-            >
-              Connexion / Inscription
-            </button>
-          )}
-          <button type="button" className="secondary-button" onClick={() => goTo("shop")}>Découvrir la boutique</button>
-        </div>
-
-        <div className="home-signature">
-          PASSEPORT • CARTES • JEUX • MUSIQUE • COMMUNAUTÉ • SECRET • IA • MONDE 3B
-        </div>
-      </div>
-
-      <div className="menu-grid">
-        {menuItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className="menu-card"
-            onClick={() => goTo(item.id)}
-          >
-            <span className="menu-icon">{item.icon}</span>
-
-            <span>
-              <strong>{item.label}</strong>
-              <small>{item.description}</small>
-            </span>
-
-            <i>›</i>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function PassportPage({ member, goTo, goToIntro }) {
+function PassportPage({ member, goTo, options }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -641,27 +560,7 @@ function PassportPage({ member, goTo, goToIntro }) {
         goTo={goTo}
       />
 
-      <div className="passport-frame">
-        <img
-          src="/passport-digital-3bv2.png"
-          alt="Passeport Digital 3B"
-          className="passport-image"
-        />
-
-        <button
-          type="button"
-          className="passport-hotspot passport-hotspot-home"
-          onClick={() => goTo("home")}
-          aria-label="Retour accueil"
-        />
-
-        <button
-          type="button"
-          className="passport-hotspot passport-hotspot-entry"
-          onClick={() => (goToIntro ? goToIntro() : goTo("home"))}
-          aria-label="Retour entrée"
-        />
-      </div>
+      <PassportVisual options={options} />
 
       <div className="info-grid">
         <article className="premium-panel">

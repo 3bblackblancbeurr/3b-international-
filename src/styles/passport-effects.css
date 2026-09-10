@@ -1,0 +1,90 @@
+/* The original gold signature, shared by the entry, home and header. */
+.brand-glow-badge,
+.welcome-copy .brand-glow-badge {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: fit-content; max-width: 100%; isolation: isolate; overflow: hidden;
+  padding: 12px 20px; border: 1px solid #fff873c2; border-radius: 999px;
+  color: #fff873; font-weight: 900; font-size: clamp(14px, 2vw, 25px);
+  line-height: 1.3; letter-spacing: .1em; text-align: center;
+  background: linear-gradient(135deg, #fff87324, #00eaff12), #070b09d9;
+  text-shadow: 0 0 8px #fff873bb, 0 0 18px #f5c44a88, 0 0 30px #00eaff44;
+  box-shadow: 0 0 22px #f5c44a38, 0 0 42px #00d5ff0f, inset 0 0 18px #fff87316;
+}
+.brand-glow-badge::before {
+  content: ""; position: absolute; z-index: -1; inset: -60% auto -60% 0; width: 34%;
+  pointer-events: none; background: linear-gradient(110deg, transparent, #ffffffb8, transparent);
+  transform: translateX(-230%) skewX(-18deg); animation: brandGoldSweep 4.6s ease-in-out infinite;
+}
+.brand-name .brand-glow-badge--compact { padding: 4px 8px; font-size: 8px; line-height: 1.2; letter-spacing: .1em; box-shadow: 0 0 12px #f5c44a33, inset 0 0 8px #fff87318; }
+.intro3b-card > .brand-glow-badge { margin: 12px auto 30px; }
+.welcome-copy .brand-glow-badge { margin: 0 0 8px; }
+@keyframes brandGoldSweep { 0%, 12% { transform: translateX(-230%) skewX(-18deg); opacity: 0; } 24% { opacity: .8; } 56%, 100% { transform: translateX(530%) skewX(-18deg); opacity: 0; } }
+[data-glow="false"] .brand-glow-badge { text-shadow: none; box-shadow: none; }
+[data-glow="false"] .brand-glow-badge::before { display: none; }
+
+/* Only the 848 × 502 central card is visible. Every blue effect is a child of
+   this rounded, clipped surface; none can paint over the surrounding page. */
+.app3b[data-page="passport"] > :is(.app3b-background, .matrix-layer) { display: none; }
+.app3b[data-page="passport"] .page-section { max-width: 1080px; padding: 12px 0 0; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+.passport-visual { width: min(100%, 1040px); margin-inline: auto; }
+.passport-card-stage { position: relative; width: 100%; aspect-ratio: 848 / 502; container-type: inline-size; isolation: isolate; overflow: hidden; contain: paint; border-radius: 5.1887% / 8.7649%; background: #001020; }
+.passport-card-art { display: block; width: 100%; height: 100%; }
+.passport-matrix-rain, .passport-digital-grid, .passport-blue-sweep, .passport-live-portrait, .passport-circuits { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.passport-matrix-rain { z-index: 3; overflow: hidden; mix-blend-mode: screen; opacity: .72; }
+.passport-matrix-stream {
+  position: absolute; top: -100%; height: 95%; overflow: hidden; width: 1.2em;
+  writing-mode: vertical-rl; text-orientation: upright; white-space: nowrap;
+  color: #00b8ff; font: 600 clamp(6px, 1.22cqw, 15px)/1.15 "Courier New", monospace;
+  letter-spacing: .22em; text-shadow: 0 0 5px #009aff; opacity: var(--stream-opacity);
+  animation: passportMatrixFall var(--fall-duration) linear var(--fall-delay) infinite;
+  mask-image: linear-gradient(transparent, #000 30%, #000 90%, transparent);
+}
+.passport-matrix-stream b { color: #b5ffff; font-weight: 700; text-shadow: 0 0 7px #54e8ff; }
+.passport-digital-grid { z-index: 2; opacity: .22; mix-blend-mode: screen; background: repeating-linear-gradient(0deg, transparent 0 3px, #1bafff18 3px 4px), linear-gradient(90deg, transparent, #008cff1a, transparent); }
+.passport-blue-sweep { z-index: 6; top: -26%; height: 26%; background: linear-gradient(transparent, #0699ff08 70%, #20d8ff25 98%, #abffff65); mix-blend-mode: screen; animation: passportBlueSweep 8.5s linear infinite; }
+.passport-live-portrait { z-index: 4; }
+.passport-circuits { z-index: 3; overflow: hidden; }
+.passport-circuit-track { stroke: #087dff; stroke-width: 1; opacity: .32; }
+.passport-circuit-pulse { stroke: #a9ffff; stroke-width: 2.2; stroke-dasharray: 7 93; animation: passportCircuitFlow 6s linear infinite; }
+.passport-circuit-perimeter { stroke: #c7ffff; stroke-width: 2.5; stroke-dasharray: 4 22 2 72; animation: passportCircuitFlow 9s linear infinite; }
+.passport-chip-signal { stroke: #fff1a6; stroke-width: 1.4; opacity: .65; }
+.passport-circuit-nodes { opacity: .7; }
+@keyframes passportCircuitFlow { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+.passport-head-canvas { position: absolute; z-index: 5; left: 70.283019%; top: 18.12749%; width: 23.231132%; height: 43.027888%; border-radius: 5%; pointer-events: none; opacity: 0; }
+.passport-head-canvas[data-ready="true"] { opacity: 1; }
+.passport-portrait-scan { position: absolute; z-index: 6; left: 70.283019%; top: 18.12749%; width: 23.231132%; height: 43.027888%; overflow: hidden; pointer-events: none; border-radius: 5%; }
+.passport-portrait-scan::after { content: ""; position: absolute; inset: -18% 0 auto; height: 18%; background: linear-gradient(transparent, #06d2ff10 80%, #89ffff88); mix-blend-mode: screen; animation: portraitScanPass 5.2s linear infinite; }
+@keyframes portraitScanPass { from { transform: translateY(0); } to { transform: translateY(675%); } }
+.passport-eye-glow { animation: passportEyeLife 5.8s ease-in-out infinite; }
+.passport-eye-blink { opacity: 0; animation: passportBlink 6.7s ease-in-out infinite; }
+.passport-face-scan { animation: passportFaceScan 4.8s linear infinite; mix-blend-mode: screen; }
+.passport-face-signal { opacity: .5; animation: passportSignal 4s ease-in-out infinite; }
+@keyframes passportMatrixFall { from { transform: translateY(-5%); } to { transform: translateY(225%); } }
+@keyframes passportBlueSweep { from { transform: translateY(0); } to { transform: translateY(495%); } }
+@keyframes passportEyeLife { 0%, 100% { opacity: .3; } 50% { opacity: .88; } }
+@keyframes passportBlink { 0%, 43%, 48%, 100% { opacity: 0; } 45%, 46% { opacity: .98; } }
+@keyframes passportFaceScan { 0% { transform: translateY(0); opacity: 0; } 12%, 82% { opacity: .7; } 100% { transform: translateY(235px); opacity: 0; } }
+@keyframes passportSignal { 0%, 100% { opacity: .25; } 50% { opacity: .8; } }
+.passport-animation-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 18px; margin-top: 14px; }
+.passport-animation-toolbar > span { display: flex; align-items: center; gap: 9px; color: #abd2df; font-size: 12px; }
+.digital-status { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #768990; }
+.digital-status.is-live { background: #3cdfff; box-shadow: 0 0 10px #00cfffaa; }
+.passport-animation-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 14px; border: 1px solid #299abb66; border-radius: 10px; color: #bcefff; font-size: 12px; background: #00243b55; }
+.passport-animation-toggle:hover:not(:disabled) { border-color: #4ce5ff; background: #06324a88; }
+.passport-visual[data-animated="false"] *, .passport-visual[data-animated="false"] *::before, .passport-visual[data-animated="false"] *::after { animation-play-state: paused !important; }
+.passport-visual[data-animated="false"] :is(.passport-matrix-rain, .passport-blue-sweep, .passport-live-portrait, .passport-head-canvas, .passport-portrait-scan, .passport-circuits) { visibility: hidden; }
+.passport-visual[data-matrix="false"] :is(.passport-matrix-rain, .passport-digital-grid, .passport-blue-sweep) { visibility: hidden; }
+[data-glow="false"] .passport-circuit-pulse, [data-glow="false"] .passport-circuit-perimeter { filter: none; }
+[data-glow="false"] .passport-matrix-stream { text-shadow: none; }
+@media (max-width: 720px) {
+  .welcome-copy .brand-glow-badge { padding: 11px 15px; font-size: clamp(12px, 3.5vw, 18px); letter-spacing: .08em; }
+  .brand-name .brand-glow-badge--compact { padding: 4px 6px; font-size: 7px; letter-spacing: .06em; }
+  .intro3b-card > .brand-glow-badge { font-size: clamp(11px, 3vw, 16px); padding: 10px 13px; letter-spacing: .06em; margin-bottom: 24px; }
+  .passport-animation-toolbar { gap: 8px; }
+  .passport-animation-toolbar > span { font-size: 11px; }
+  .passport-matrix-rain { opacity: .6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-glow-badge::before, .passport-visual *, .passport-visual *::before { animation: none !important; }
+  .brand-glow-badge::before { display: none; }
+}
