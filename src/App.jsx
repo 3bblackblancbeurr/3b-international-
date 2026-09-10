@@ -39,7 +39,7 @@ const BASE_MENU_ITEMS = [
     id: "loyalty",
     label: "Cartes de fidélité",
     icon: "💳",
-    description: "Cartes digitales, niveaux et avantages.",
+    description: "Fidélité vêtements et accessoires, remises et collection XP.",
   },
   {
     id: "manga",

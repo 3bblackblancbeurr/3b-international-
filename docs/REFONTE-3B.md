@@ -1,6 +1,8 @@
 # Refonte 3B — état et activation
 Version du 11 septembre 2026. Application : https://3b-international.vercel.app
 
+La correction [FIDELITE-BOUTIQUE-3B.md](FIDELITE-BOUTIQUE-3B.md) ajoute quatre cartes commerciales pour les vêtements et accessoires et conserve les huit cartes XP séparément. Un compte de modération dédié est maintenant créé et ses accès ont été remis en privé.
+
 La révision mobile décrite dans [MOBILE-PREMIUM-3B.md](MOBILE-PREMIUM-3B.md) complète cet état : cases compactes, guide XP en dernier, atelier de 69 pièces en trois étapes, conversation IA automatique et charte obligatoire pour le salon. Ce document décrit aussi les derniers contrôles et les activations encore nécessaires.
 
 ## Modifications
@@ -15,9 +17,9 @@ La révision mobile décrite dans [MOBILE-PREMIUM-3B.md](MOBILE-PREMIUM-3B.md) c
 - IA : deux entrées. Atelier de 69 types de pièces et accessoires en trois étapes, matières, coupes, motifs, couleurs, face/dos, brief exportable et partage à relire. Trois adaptateurs de conversation OpenAI, Anthropic et Google ; génération textile OpenAI. Les services IA payants restent désactivés.
 
 ## Ce qui reste à configurer
-Le propriétaire a confirmé que rien n’est configuré et qu’il n’a pas créé son compte.
+Les services IA et commerciaux restent à configurer ; le compte de modération est maintenant créé.
 
-1. Créer son compte dans Mon espace. Fournir ensuite son identifiant 3B pour l’attribution du rôle de modération après vérification de propriété. Aucun compte n’a reçu ce rôle. La file existe, mais aucun opérateur n’est encore désigné.
+1. Se connecter au compte de modération avec les accès remis en privé. Le rôle est attribué et l’accès à la file est vérifié. Compléter le profil et accepter la charte pour participer au salon.
 2. Renseigner les clés et les modèles IA côté serveur dans les secrets de la fonction Supabase ecosystem :
    AI_ENABLED=false initialement ;
    OPENAI_API_KEY, OPENAI_CHAT_MODEL, OPENAI_IMAGE_MODEL ;
@@ -33,7 +35,7 @@ Le propriétaire a confirmé que rien n’est configuré et qu’il n’a pas cr
 Les nouvelles tables ont RLS. Les écritures passent par la fonction, qui vérifie l’utilisateur ET une session encore active. La fonction a verify_jwt=false pour permettre les routes sport publiques et effectue sa propre authentification pour chaque action privée. Les secrets IA sont côté serveur et les images générées dans un bucket privé avec liens temporaires. Les quotas limitent le spam ; le statut modérateur provient exclusivement d’une table privée.
 L’ancien tchat anonyme inutilisé a perdu ses droits publics ; ses données ont été conservées.
 Tests SQL en transaction annulée : isolation des comptes, blocage dans les deux sens, session révoquée, refus des écritures directes, refus anonyme, rapports et rôles privés. Aucun compte de test conservé.
-Tests HTTP : capacités IA désactivées, actualités disponibles, écriture anonyme 401, origine étrangère 403, méthode non autorisée 405. Tests Node existants et nouveaux : 105 tests réussis au dernier passage. Les appels payants IA et un paiement Stripe réel n’ont pas été exécutés.
+Tests HTTP : capacités IA désactivées, actualités disponibles, écriture anonyme 401, origine étrangère 403, méthode non autorisée 405. Tests Node existants et nouveaux : 109 tests réussis au dernier passage. Les appels payants IA et un paiement Stripe réel n’ont pas été exécutés.
 Le code et ces vérifications réduisent les risques ; ils ne constituent pas une certification de sécurité ni une garantie de modération humaine immédiate.
 
 ## Déploiement du service
@@ -43,4 +45,3 @@ shared/studio.js réexporte le schéma de la fonction, utilisé aussi par le con
 
 ## Illustrations
 Créées avec l’outil image_gen intégré, puis encodées en WebP pour le site sans changer le dessin. Les huit prompts sont conservés dans docs/loyalty-art-prompts.json. Aucun appel aux futures clés IA de l’application n’a été nécessaire.
-

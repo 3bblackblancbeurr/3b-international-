@@ -10,7 +10,7 @@ export async function downloadCard(profile,tier){
 }
 export default function MemberCard({tier=TIERS[0],profile,small=false}){
  const selected=TIERS.find(t=>t.id===tier.id)||TIERS[0];
- return <div className={'member-card physical-member-card member-card-'+selected.id+(small?' member-card-small':'')} style={{'--card-accent':selected.color}} role="img" aria-label={'Carte de fidélité 3B '+selected.name+' — '+CARD_STORIES[selected.id]+(profile?.name?', '+profile.name:'')}>
+ return <div className={'member-card physical-member-card member-card-'+selected.id+(small?' member-card-small':'')} style={{'--card-accent':selected.color}} role="img" aria-label={'Carte de collection XP 3B '+selected.name+' — '+CARD_STORIES[selected.id]+(profile?.name?', '+profile.name:'')}>
   <img className="member-card-illustration" src={cardArtPath(selected)} alt="" loading={small?'lazy':'eager'} decoding="async"/>
   <img className="member-card-lettering" src={'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(memberCardSvg(profile,selected,{transparent:true}))} alt=""/>
  </div>;
