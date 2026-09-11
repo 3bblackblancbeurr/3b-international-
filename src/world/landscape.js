@@ -27,6 +27,12 @@ export function bakeGeometry(source,matrix){
  }
  return geometry.applyMatrix4(matrix);
 }
+export function architecturalUV(geometry,scale){
+ if(!scale)return geometry;const p=geometry.attributes.position,n=geometry.attributes.normal,uv=geometry.attributes.uv;
+ if(!uv||!n)return geometry;
+ for(let i=0;i<p.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i)),nz=Math.abs(n.getZ(i));uv.setXY(i,(nx>nz?p.getZ(i):p.getX(i))/scale,(ny>Math.max(nx,nz)?p.getZ(i):p.getY(i))/scale);}
+ return geometry;
+}
 export function createLandscape(models,region,save){
  const root=new THREE.Group(),owned=[],materials=new Map(),collisions=[],residents=[],stages=[],decorations=[],frontierGroups=[],resourceGroups=[];
  const country=countryById[region],hub=!country,field=createTerrainField(region,save),{biome,lake,height}=field;
@@ -49,7 +55,7 @@ export function createLandscape(models,region,save){
  function batch(group){
   group.updateMatrixWorld(true);const byMaterial=new Map(),inverse=new THREE.Matrix4().copy(group.matrixWorld).invert();
   group.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.isSkinnedMesh||Array.isArray(o.material)||o.material.transparent||o.material.vertexColors)return;const key=o.material.uuid;if(!byMaterial.has(key))byMaterial.set(key,[]);byMaterial.get(key).push(o);});
-  for(const meshes of byMaterial.values())if(meshes.length>1){const geometries=meshes.map(o=>bakeGeometry(o.geometry,new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld))),merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;owned.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.receiveShadow=true;m.castShadow=true;meshes.forEach(o=>o.removeFromParent());group.add(m);}
+  for(const meshes of byMaterial.values())if(meshes.length>1){const geometries=meshes.map(o=>architecturalUV(bakeGeometry(o.geometry,new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld)),o.material.userData.worldTexScale)),merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;owned.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.receiveShadow=true;m.castShadow=true;meshes.forEach(o=>o.removeFromParent());group.add(m);}
  }
  function resident(x,z,color,parent=root,kind='traveler',route=null){if(route?.points){route.lengths=route.points.slice(1).map((p,i)=>Math.hypot(p.x-route.points[i].x,p.z-route.points[i].z));route.total=route.lengths.reduce((a,b)=>a+b,0);}const hero=createResident(models.kit,kind,color);hero.object.position.set(x,height(x,z),z);parent.add(hero.object);residents.push({hero,x,z,parent,route,phase:residents.length*1.7});return hero;}
  function house(id,x,z,rotation=0,variant=0,parent=root,urban=true){const h=architecture.building(id,variant,{urban}),y=height(x,z),{width,depth}=h.userData.dimensions;h.position.set(x,y,z);h.rotation.y=rotation;parent.add(h);const base=shape(box,mat(biome.rock),x,y-.4,z,width+.4,.8,depth+.4,parent);base.rotation.y=rotation;collisions.push({x,z,width:width+.4,depth:depth+.4,rotation});}
@@ -57,7 +63,7 @@ export function createLandscape(models,region,save){
   flora.plant(type,x,height(x,z),z,size,rng()*Math.PI*2,root);collisions.push({x,z,r:.65});
  }
  // One continuous surface, with no radial paths or raised navigation decks.
- const ground=geo(new THREE.PlaneGeometry(420,420,168,168));ground.rotateX(-Math.PI/2);
+ const ground=geo(new THREE.PlaneGeometry(1000,1000,220,220));ground.rotateX(-Math.PI/2);
  const positions=ground.getAttribute('position'),colors=new Float32Array(positions.count*3),low=new THREE.Color(biome.low),high=new THREE.Color(biome.high),rock=new THREE.Color(biome.rock),color=new THREE.Color();
  for(let i=0;i<positions.count;i++){const x=positions.getX(i),z=positions.getZ(i),y=height(x,z);positions.setY(i,y);const mottling=.48+.12*Math.sin(x*.17)*Math.cos(z*.19)+.06*Math.sin(x*1.37-z*.82),slope=Math.abs(height(x+.7,z)-y)+Math.abs(height(x,z+.7)-y);color.copy(low).lerp(high,Math.max(0,Math.min(1,mottling))).lerp(rock,Math.min(.8,slope*.55));colors.set(color.toArray(),i*3);}
  ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);if(soil.texture)owned.push(soil.texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
@@ -65,7 +71,7 @@ export function createLandscape(models,region,save){
  const waterMat=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{time:{value:0},color:{value:new THREE.Color(region==='estonie'?'#3b7d89':'#4d9697')}},vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 p;uniform float time;uniform vec3 color;void main(){float waves=sin(p.x*2.4+p.y*.8+time*.8)*sin(p.y*3.1-time*.55);float light=pow(max(0.,waves),12.);gl_FragColor=vec4(color+vec3(.12,.17,.14)*waves*.18+light*.13,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});owned.push(waterMat);
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,64)),waterMat,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
  for(let i=0;i<20;i++){const a=rng()*Math.PI*2,r=lake.r+3+rng()*2,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;shape(ball,mat(biome.rock),x,height(x,z)-.1,z,.7+rng(),.4+rng()*.6,.7+rng());}
- for(let i=0;i<110;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*104,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
+ for(let i=0;i<380;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
  for(let i=0;i<48;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
  const meadow=addMeadow(field,root,owned,region),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  addTownGardens(field,root,owned,region,flora);

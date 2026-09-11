@@ -13,7 +13,7 @@ export const GROUND_STYLE={
 // repeated grass photos, and the ground remains readable beyond the 3D meadow.
 export function createNaturalGround(region){
  const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass');
- if(texture)texture.repeat.set(110,110);
+ if(texture)texture.repeat.set(260,260);
  const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.055,roughness:1});
  material.onBeforeCompile=shader=>{
   shader.uniforms.soilTint={value:new THREE.Color(style.soil)};shader.uniforms.groundDryness={value:style.dry};

@@ -1,11 +1,11 @@
 import {civicSites,LANDMARK_SITE} from './heritage.js';
 import {worldItems} from './rules.js';
 import {COUNTRIES} from './catalog.js';
-import {settlementPlan,serviceItems} from './settlements.js';
+import {settlementPlan,serviceItems,districtDestinations} from './settlements.js';
 import {buildingDimensions} from './building-scale.js';
 import {obstacleDistance} from './collision.js';
 
-export const WORLD_RADIUS=132;
+export const WORLD_RADIUS=260;
 export const BIOMES={
  hub:{seed:83,angle:0,scale:1.8,low:'#376b3d',high:'#72974d',rock:'#838a78',sky:'#9dbec5',haze:'#b8c8b2',amplitude:5.8,tree:'Tree',water:{x:-37,z:6,r:12}},
  france:{seed:13,angle:-.24,scale:1.6,low:'#416b3b',high:'#839e58',rock:'#a0a590',sky:'#a3bec7',haze:'#d2d2ba',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
@@ -19,7 +19,7 @@ export const BIOMES={
 };
 export function randomFor(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 export function toLandscape(region,x,z){const b=BIOMES[region]||BIOMES.hub,c=Math.cos(b.angle),s=Math.sin(b.angle);return{x:(x*c-z*s)*b.scale,z:(x*s+z*c)*b.scale};}
-export function landscapeItems(region,save){return [...worldItems(region,save),...serviceItems(region,save)].map(item=>({...item,...toLandscape(region,item.x,item.z)}));}
+export function landscapeItems(region,save){return [...worldItems(region,save),...serviceItems(region,save),...districtDestinations(region)].map(item=>({...item,...toLandscape(region,item.x,item.z)}));}
 export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
 export function landscapeRoads(region){return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));}
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
@@ -28,7 +28,7 @@ export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+13,z:p.z-13,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
  const sightline=landmarkSightline(region),roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
  const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)}));
- return sites.filter(p=>segmentDistance(p.x,p.z,sightline.a,sightline.b)>Math.hypot(p.width,p.depth)/2+4&&Math.hypot(p.x,p.z)<121&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).reduce((accepted,p)=>{if(!accepted.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11))accepted.push(p);return accepted;},[]);
+ return sites.filter(p=>segmentDistance(p.x,p.z,sightline.a,sightline.b)>Math.hypot(p.width,p.depth)/2+4&&Math.hypot(p.x,p.z)<WORLD_RADIUS-18&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).reduce((accepted,p)=>{if(!accepted.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11))accepted.push(p);return accepted;},[]);
 }
 export function createTerrainField(region,save){
  const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
@@ -46,14 +46,15 @@ export function createTerrainField(region,save){
   let y=(Math.sin(x*.032+f)*Math.cos(z*.027-f)+.36*Math.sin(x*.079+z*.053+f))*biome.amplitude;
   // A continuous landscape extends into distant ridges, with gentle clearings
   // around interactions. There are no radial paths or raised navigation decks.
-  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-132)/65));y+=edge*edge*(3-2*edge)*(9+6*Math.sin(x*.034+z*.026));
+  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-WORLD_RADIUS)/140));y+=edge*edge*(3-2*edge)*(24+18*Math.sin(x*.011+z*.009)+7*Math.cos(z*.023-x*.007));
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
   const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
+  if(region!=='hub'){const corridor=landmarkSightline(region),t=Math.max(0,Math.min(1,(segmentDistance(x,z,corridor.a,corridor.b)-20)/12));flatten=Math.min(flatten,t*t*(3-2*t));}
   y*=flatten;
   const d=Math.hypot(x-lake.x,z-lake.z),blend=Math.max(0,Math.min(1,(lake.r+6-d)/7));
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
  const sightline=landmarkSightline(region);
  const protectedPoint=(x,z,pad=0)=>(region!=='hub'&&segmentDistance(x,z,sightline.a,sightline.b)<6+pad)||clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
- return {biome,anchors,buildings,civic,roads,squares,fields,lake,height,protectedPoint};
+ return {radius:WORLD_RADIUS,biome,anchors,buildings,civic,roads,squares,fields,lake,height,protectedPoint};
 }

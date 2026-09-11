@@ -15,9 +15,9 @@ export function plantingAllowed(field,x,z,pad=0){
 export function meadowPlacements(field,region){
  const rng=randomFor(field.biome.seed+703),style=GROUND_STYLE[region]||GROUND_STYLE.hub,points=[];
  for(let i=0;i<style.count*6&&points.length<style.count;i++){
-  const x=(rng()-.5)*250,z=(rng()-.5)*250;
+  const range=i%3===0?field.radius*2:250,x=(rng()-.5)*range,z=(rng()-.5)*range;
   const patch=Math.sin(x*.13+Math.sin(z*.08)*2)+Math.cos(z*.16+x*.035);
-  if(patch<-.35+style.dry*.8||Math.hypot(x,z)>132||!plantingAllowed(field,x,z,.2))continue;
+  if(patch<-.35+style.dry*.8||Math.hypot(x,z)>field.radius||!plantingAllowed(field,x,z,.2))continue;
   const y=field.height(x,z);if(y>13||y<-.4)continue;
   points.push({x,y,z,scale:.6+rng()*.65,rotation:rng()*Math.PI*2,tint:.86+rng()*.24});
  }
@@ -26,7 +26,7 @@ export function meadowPlacements(field,region){
 
 export function addMeadow(field,root,owned,region){
  const {material,time}=createMeadowMaterial((GROUND_STYLE[region]||GROUND_STYLE.hub).grass),geometry=createMeadowGeometry(),cells=new Map(),dummy=new THREE.Object3D(),tint=new THREE.Color();owned.push(material,geometry);
- for(const p of meadowPlacements(field,region)){const key=Math.floor((p.x+128)/64)+':'+Math.floor((p.z+128)/64);if(!cells.has(key))cells.set(key,[]);cells.get(key).push(p);}
+ for(const p of meadowPlacements(field,region)){const key=Math.floor((p.x+field.radius)/(field.radius/2))+':'+Math.floor((p.z+field.radius)/(field.radius/2));if(!cells.has(key))cells.set(key,[]);cells.get(key).push(p);}
  const meshes=[];
  for(const points of cells.values()){
   const m=new THREE.InstancedMesh(geometry,material,points.length);m.name='meadow-patch';

@@ -9,10 +9,10 @@ export const HERITAGE = {
  maroc:{name:'Mosquée Hassan II',city:'Casablanca',form:'Un minaret carré orné, des toits verts et de longues galeries à arcades.',source:'https://fmh2.ma/en/mosque/outbuildings/minaret'},
  espagne:{name:'Sagrada Família',city:'Barcelone',form:'Une forêt de tours effilées, des contreforts et des portails sculptés.',source:'https://sagradafamilia.org/en/history-of-the-temple'},
 };
-export const LANDMARK_SITE={x:35,z:-35,radius:23,clearing:29};
+export const LANDMARK_SITE={x:52,z:-56,radius:23,clearing:29};
 // Arrive at the forecourt, outside the physical footprint, rather than routing
 // through the monument. The same point is used by navigation and the atlas.
-export const LANDMARK_APPROACH={x:35,z:-16};
+export const LANDMARK_APPROACH={x:49,z:-36};
 
 export function heritageObstacles(region,center,angle){
  let local;
@@ -29,7 +29,7 @@ export function heritageObstacles(region,center,angle){
 }
 
 export function civicSites(anchors){
- const result=[];
+ const result=anchors.some(a=>a.id==='hub:atelier')?[{kind:'nexus',x:0,z:-120,width:25,depth:22,rotation:0},{kind:'nexus-wing',x:-26,z:-115,width:27,depth:18,rotation:0},{kind:'nexus-wing',x:26,z:-115,width:27,depth:18,rotation:0}]:[];
  for(const a of anchors){
   if(a.type==='atelier'&&!['hub:atelier','maroc:atelier'].includes(a.id))for(const side of [-1,1])result.push({kind:'atelier',x:a.x+side*8,z:a.z-4,width:4.6,depth:9,rotation:0,side,anchor:a});
   if(a.id.endsWith(':survey:city'))result.push({kind:'archives',x:a.x,z:a.z-11,width:14,depth:10,rotation:0,anchor:a});
