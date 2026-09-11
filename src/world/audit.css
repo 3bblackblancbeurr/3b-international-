@@ -30,3 +30,11 @@
  .world-shell .combat-focus{bottom:78px;left:auto;right:22px;transform:none;font-size:9px}
  .world-dialog-encounter .world-battle>p[role=status]{bottom:78px;width:55%;left:40%}
 }
+
+/* Extra tools share the same action lock and do not overlap the fight status. */
+.world-dialog-encounter .world-battle>.combat-direct.has-tools{grid-template-columns:repeat(6,minmax(0,1fr));width:min(920px,calc(100% - 40px))}
+.world-dialog-encounter .combat-direct.has-tools button{padding:12px 7px;gap:5px;white-space:normal}
+.world-dialog-encounter .combat-direct.has-tools small{line-height:1.35}
+.heritage-panel{display:grid;gap:12px}.heritage-panel h3{font:32px Georgia,serif;margin:0}.heritage-panel a{font-size:12px;color:#c7d9c4}.heritage-panel .world-actions{margin:6px 0}
+@media(max-width:700px){.world-dialog-encounter .world-battle>.combat-direct.has-tools{grid-template-columns:repeat(3,minmax(0,1fr));width:calc(100% - 32px)}.world-dialog-encounter .combat-direct.has-tools button{min-height:59px;flex-direction:column;gap:3px;padding:7px 3px}.world-dialog-encounter .combat-direct.has-tools small{font-size:8px}.world-dialog-encounter:has(.has-tools) .combat-focus{bottom:166px}.world-dialog-encounter:has(.has-tools) .world-battle>p[role=status]{bottom:193px}}
+@media(max-height:550px) and (orientation:landscape){.world-dialog-encounter .world-battle>.combat-direct.has-tools{grid-template-columns:repeat(6,minmax(0,1fr));width:94%}.world-dialog-encounter .combat-direct.has-tools button{min-height:48px}.world-dialog-encounter:has(.has-tools) .combat-focus{bottom:80px}.world-dialog-encounter:has(.has-tools) .world-battle>p[role=status]{bottom:80px}}

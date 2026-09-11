@@ -1,4 +1,5 @@
 import {FrontierPanel} from './FrontierPanel.jsx';
+import {HERITAGE} from './heritage.js';
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowLeft,ArrowUpRight,BookOpen,Compass,Footprints,Map,Maximize,Play,Sparkles,Users,X,Download,RotateCcw,Volume2,VolumeX} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
@@ -56,7 +57,7 @@ function WorldSession({uid,goTo}){
  saveRef.current=save;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
  const announce=useCallback(text=>{setNotice(text);clearTimeout(noticeTimer.current);noticeTimer.current=setTimeout(()=>setNotice(''),2400);},[]);
- const act=useCallback(command=>{try{const previous=saveRef.current,next=recordWorldAction(uid,previous,command);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();audio.current?.event(command.type);scene.current?.feedback(command.type,command.action);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde · +'+Math.max(0,next.shards-previous.shards)+' éclats');}return next;}catch(error){announce(error.message);return null;}},[uid,announce]);
+ const act=useCallback(command=>{try{const previous=saveRef.current,next=recordWorldAction(uid,previous,command);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();audio.current?.event(command.type);scene.current?.feedback(command.type,command.action,previous,next);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde · +'+Math.max(0,next.shards-previous.shards)+' éclats');}return next;}catch(error){announce(error.message);return null;}},[uid,announce]);
  function chime(){audio.current?.event('reward');}
  function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.enable(next,saveRef.current.region);setSound(next);}
  async function sync(){if(!loaded)return;dirty.current=false;const result=await saveWorld(uid,saveRef.current);if(result.pending)dirty.current=true;setSaveMessage(result.message);if(result.data){if(result.data.region!==saveRef.current.region)scene.current?.travel(result.data.region);saveRef.current=result.data;setSave(result.data);}}
@@ -74,6 +75,7 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
+  if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='camp'){setPanel('camp');return;}
   if(item.type==='resource'){const next=act({type:'gather',resource:item.resource});if(next){const labels={wood:'bois',stone:'pierre',food:'provisions'};announce('Récolte ajoutée · '+labels[item.resource]);}return;}
   if(item.type==='patrol'){if(act({type:'patrol'}))setPanel('encounter');return;}
@@ -116,8 +118,9 @@ function WorldSession({uid,goTo}){
   {notice&&<div className="world-notice" role="status">{notice}</div>}
   {(!loaded||assetsLoading)&&!error&&<div className="world-loading" role="status">Préparation de ton voyage…</div>}
   {error&&<div className="world-failure" role="alert"><h2>Reprendre l’exploration</h2><p>{error}</p><button className="world-primary" onClick={()=>location.reload()}>Recharger le monde</button><button onClick={()=>goTo('home')}>Retour à l’application</button></div>}
-  {panel&&<Modal kind={panel} title={({camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena'].includes(panel)}>
+  {panel&&<Modal kind={panel} title={({heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena'].includes(panel)}>
    {panel==='encounterPause'&&<div className="encounter-pause"><h3>Ton groupe t’attend.</h3><p>Tu peux reprendre cette rencontre, y compris après avoir rechargé la page.</p><button className="world-primary" onClick={()=>setPanel('encounter')}>Reprendre le combat</button><button onClick={finishEncounter}>Se replier dans le monde</button><small>{save.adventure.encounter?.patrol?'La provision de cette expédition reste consommée. Tes constructions et tes compagnons sont conservés.':'Un repli ne donne aucune récompense.'}</small></div>}
+   {panel==='heritage'&&country&&<div className="heritage-panel"><span className="world-kicker">{HERITAGE[country.id].city} · {country.name}</span><h3>{HERITAGE[country.id].name}</h3><p>{HERITAGE[country.id].form}</p><p>Une interprétation 3D à l’échelle du jeu. Ce pays réunit plusieurs lieux et paysages : il ne reproduit pas le plan d’une ville réelle.</p><p>Les travaux du pays rallument le parvis. Continue ensuite à développer ton refuge, entraîner tes compagnons et protéger les environs.</p><div className="world-actions"><button className="world-primary" onClick={()=>{setPanel(null);scene.current?.inspectLandmark();}}>Admirer le monument</button><button onClick={()=>setPanel('story')}>Les travaux du pays</button></div><a href={HERITAGE[country.id].source} target="_blank" rel="noreferrer">Découvrir le lieu réel ↗</a></div>}
    {panel==='camp'&&<FrontierPanel save={save} act={act} onNavigate={navigateTo}/>}
    {panel==='arena'&&<ArenaPage onExit={closePanel} onAccount={()=>goTo('member')}/>}
    {panel==='avatar'&&<AvatarPanel save={save} act={act} onDone={closePanel}/>}

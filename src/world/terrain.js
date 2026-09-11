@@ -1,3 +1,4 @@
+import {civicSites,LANDMARK_SITE} from './heritage.js';
 import {worldItems} from './rules.js';
 import {COUNTRIES} from './catalog.js';
 import {settlementPlan,serviceItems} from './settlements.js';
@@ -24,13 +25,14 @@ export function landscapeRoads(region){return settlementPlan(region).roads.map(r
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
 export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+13,z:p.z-13,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
- const roads=landscapeRoads(region),landmark=toLandscape(region,35,-35);
+ const roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
  const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)}));
- return sites.filter(p=>Math.hypot(p.x,p.z)<121&&obstacleDistance(landmark,p)>12&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).filter((p,i,all)=>!all.slice(0,i).some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11));
+ return sites.filter(p=>Math.hypot(p.x,p.z)<121&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).filter((p,i,all)=>!all.slice(0,i).some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11));
 }
 export function createTerrainField(region,save){
- const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=plan.squares.map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
- const clearings=[{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,35,-35),r:11}])];
+ const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
+ const civic=civicSites(anchors);
+ const clearings=[...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
  // Find a dry margin around every interaction and building before carving water.
  let lake={...biome.water},found=false;
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
@@ -43,7 +45,7 @@ export function createTerrainField(region,save){
   let y=(Math.sin(x*.032+f)*Math.cos(z*.027-f)+.36*Math.sin(x*.079+z*.053+f))*biome.amplitude;
   // A continuous landscape extends into distant ridges, with gentle clearings
   // around interactions. There are no radial paths or raised navigation decks.
-  const edge=Math.max(0,(Math.hypot(x,z)-104)/34);y+=edge*edge*(6+4*Math.sin(x*.034+z*.026));
+  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-132)/65));y+=edge*edge*(3-2*edge)*(9+6*Math.sin(x*.034+z*.026));
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
   const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
   y*=flatten;
@@ -51,5 +53,5 @@ export function createTerrainField(region,save){
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
  const protectedPoint=(x,z,pad=0)=>clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
- return {biome,anchors,buildings,roads,squares,fields,lake,height,protectedPoint};
+ return {biome,anchors,buildings,civic,roads,squares,fields,lake,height,protectedPoint};
 }
