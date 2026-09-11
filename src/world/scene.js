@@ -92,6 +92,10 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   const spriteTex=glowTexture(),coords=new Float32Array(90*3);for(let i=0;i<90;i++){coords[i*3]=(rng()-.5)*160;coords[i*3+1]=3+rng()*18;coords[i*3+2]=(rng()-.5)*160;}
   const particleGeo=register(new THREE.BufferGeometry());particleGeo.setAttribute('position',new THREE.BufferAttribute(coords,3));
   const points=new THREE.Points(particleGeo,register(new THREE.PointsMaterial({size:.18,color:accent,map:spriteTex,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending})));root.add(points);animations.push({mesh:points,type:'particles'});
+  // A resumed encounter starts next to its saved opponent, not at the country
+  // entrance. Keep the same safe approach used by actual walking.
+  const encounter=save.adventure.encounter;
+  if(encounter){const opponent=encounter.final?items.find(i=>i.type==='final'):encounter.patrol?items.find(i=>i.type==='patrol'):items.find(i=>i.card===encounter.card);if(opponent){const approach=findInteractionPath(position,opponent,obstacles,WORLD_RADIUS).at(-1);if(approach)position={...approach};battleTarget=opponent;}}
   const view=orbitView(orbit,position,groundY(position.x,position.z),camera.aspect<.85);camera.position.copy(view.position);cameraTarget.copy(view.target);camera.lookAt(cameraTarget);report=0;needsRender=true;batchStatic();
  }
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();}}

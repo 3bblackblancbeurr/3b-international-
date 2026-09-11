@@ -2,7 +2,7 @@ import {obstacleDistance} from './collision.js';
 // A bounded navigation grid is only searched on a tap/Atlas command. Manual
 // movement stays immediate. Segment checks prevent diagonal corner cutting.
 export function findInteractionPath(start,item,obstacles,radius=76){
- const d=Math.hypot(start.x-item.x,start.z-item.z),gap=item.type==='guardian'?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
+ const d=Math.hypot(start.x-item.x,start.z-item.z),gap=['guardian','patrol'].includes(item.type)?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
  const approach=gap&&d>gap?{x:item.x+(start.x-item.x)*gap/d,z:item.z+(start.z-item.z)*gap/d}:item;
  const path=findPath(start,approach,obstacles,radius);
  // A fountain or planter can isolate the preferred side of an interaction.
