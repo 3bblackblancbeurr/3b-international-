@@ -58,3 +58,23 @@ bases stylisées existantes, pas 172 personnages nouvellement sculptés à la ma
 L’exploration coopérative partagée dans le monde ouvert reste à développer.
 L’arène Internet existante est conservée. Cette livraison est une étape jouable
 de la refonte, elle ne constitue pas l’achèvement de toute la production des huit pays.
+
+## Passe graphique et navigation
+
+Le rendu web emploie AgX pour les hautes lumières, un ciel HDR préfiltré par pays
+pour les reflets des matériaux, et des ombres filtrées. Le mode détaillé porte leur
+résolution à 2048 ; les modes automatique et fluide conservent leur budget propre.
+Les sols ont une texture fine de terre, les enduits sont éclaircis et les touffes
+d’herbe comportent plusieurs brins courbés, colorés et animés par le vent sur le GPU.
+Cette végétation reste regroupée dans un seul appel de dessin ; la réduction des
+animations désactive le vent. Aucun ray tracing ni DLSS n’est annoncé dans le navigateur.
+
+Les matériaux suivent le workflow [MeshStandardMaterial de Three.js](https://threejs.org/docs/pages/MeshStandardMaterial.html).
+La vérification porte sur les neuf environnements, le format mobile simulé et le
+changement des modes de qualité. Ce contrôle sur le PC local n’est pas une mesure
+de performances sur un téléphone physique.
+
+Un accès préféré à l’atelier pouvait tomber entre une fontaine et un bac à plantes.
+La navigation cherche maintenant un autre accès praticable avant d’abandonner le
+trajet. Le test de navigation des huit pays utilise ces mêmes approches et inclut
+également les obstacles des bornes de découverte.

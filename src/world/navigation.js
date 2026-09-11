@@ -1,5 +1,13 @@
 // A bounded navigation grid is only searched on a tap/Atlas command. Manual
 // movement stays immediate. Segment checks prevent diagonal corner cutting.
+export function findInteractionPath(start,item,obstacles,radius=76){
+ const d=Math.hypot(start.x-item.x,start.z-item.z),gap=item.type==='guardian'?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
+ const approach=gap&&d>gap?{x:item.x+(start.x-item.x)*gap/d,z:item.z+(start.z-item.z)*gap/d}:item;
+ const path=findPath(start,approach,obstacles,radius);
+ // A fountain or planter can isolate the preferred side of an interaction.
+ // Search its other accessible sides before giving up on the destination.
+ return path.length?path:findPath(start,item,obstacles,radius);
+}
 export function findPath(start,destination,obstacles,radius=76){
  const gap=1.25,step=2,limit=Math.floor((radius-gap)/step),size=limit*2+1;
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
