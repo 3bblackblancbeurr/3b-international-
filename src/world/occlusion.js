@@ -8,11 +8,16 @@ export function createSceneryOcclusion(){
  function apply(material){
   if(!material?.isMeshStandardMaterial||marked.has(material))return;
   marked.add(material);
-  const previous=material.onBeforeCompile.bind(material);
+  const previous=material.onBeforeCompile.bind(material),previousKey=material.customProgramCacheKey();
   material.onBeforeCompile=shader=>{
    previous(shader);Object.assign(shader.uniforms,{cityTarget:target,cityCamera:camera,cityFade:enabled});
    shader.vertexShader='varying vec3 vCityPosition;\n'+shader.vertexShader;
-   shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>','#include <project_vertex>\nvCityPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+   shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+    vec4 cityWorld=vec4(transformed,1.);
+    #ifdef USE_INSTANCING
+     cityWorld=instanceMatrix*cityWorld;
+    #endif
+    vCityPosition=(modelMatrix*cityWorld).xyz;`);
    shader.fragmentShader='varying vec3 vCityPosition; uniform vec3 cityTarget; uniform vec3 cityCamera; uniform float cityFade;\n'+shader.fragmentShader;
    shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>',`#include <alphatest_fragment>
     vec3 sight = cityCamera - cityTarget;
@@ -24,7 +29,7 @@ export function createSceneryOcclusion(){
     if(pattern < cut) discard;
    `);
   };
-  material.customProgramCacheKey=()=> '3b-scenery-sightline-v1';material.needsUpdate=true;
+  material.customProgramCacheKey=()=>previousKey+'|3b-scenery-sightline-v2';material.needsUpdate=true;
  }
  return {apply,update(view,focus,active=true){camera.value.copy(view);target.value.copy(focus);enabled.value=active?1:0;}};
 }
