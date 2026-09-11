@@ -1,0 +1,159 @@
+{
+  "author": "3B original geometry",
+  "generator": "Blender 4.5",
+  "models": [
+    {
+      "name": "Eiffel",
+      "sourceFaces": 10530,
+      "sourceBytes": 1768856,
+      "detail": {
+        "file": "Eiffel.glb",
+        "bytes": 309436,
+        "sha256": "c5a6f16fc9f95cbbf635f4fef4888401600260262ba657266e3e8ea4ba2d2886"
+      },
+      "distance": {
+        "file": "Eiffel-lod.glb",
+        "bytes": 123816,
+        "sha256": "6b67185c3b1549714cd361c6a2e9d127d130595d91c77ab4e9dcf8ac74f8da05"
+      }
+    },
+    {
+      "name": "Cafe",
+      "sourceFaces": 26846,
+      "sourceBytes": 3893544,
+      "detail": {
+        "file": "Cafe.glb",
+        "bytes": 534940,
+        "sha256": "785b7b624aa4bf3edf5e5f371f534b8c9336ce3cc5c16bc43817078a1f5f5201"
+      },
+      "distance": {
+        "file": "Cafe-lod.glb",
+        "bytes": 214600,
+        "sha256": "58c5848b066c09f59389c0c27dab515fe711f407425270395978027f3cd4a852"
+      }
+    },
+    {
+      "name": "Maison",
+      "sourceFaces": 32832,
+      "sourceBytes": 4638796,
+      "detail": {
+        "file": "Maison.glb",
+        "bytes": 628620,
+        "sha256": "b05f3fd61f56ca2180de4e745a9663bbd4ab4fb877be06344453a7dc9a44edb3"
+      },
+      "distance": {
+        "file": "Maison-lod.glb",
+        "bytes": 235328,
+        "sha256": "d4398f93bd9cb9f6df3c8f0be9574c53ec81114d3aa89ee0adb76ae07f8555f3"
+      }
+    },
+    {
+      "name": "Galerie",
+      "sourceFaces": 21026,
+      "sourceBytes": 2748764,
+      "detail": {
+        "file": "Galerie.glb",
+        "bytes": 396904,
+        "sha256": "c2bb7a86bcb2582788043ea80da4b4d0165d2e81358afbe360ba77d51079a09c"
+      },
+      "distance": {
+        "file": "Galerie-lod.glb",
+        "bytes": 153128,
+        "sha256": "87cdfdb74165dddb7bfa2f809dd1c67b79a8f0741b28410e7e71f62853ba5b31"
+      }
+    },
+    {
+      "name": "Residence",
+      "sourceFaces": 27822,
+      "sourceBytes": 3826164,
+      "detail": {
+        "file": "Residence.glb",
+        "bytes": 525248,
+        "sha256": "7dcf9778e475ebe89219043f6bd214193fdbf1f2513df93155b140f5083a3e92"
+      },
+      "distance": {
+        "file": "Residence-lod.glb",
+        "bytes": 197260,
+        "sha256": "b0c099d66e9fa62c44047e53329c48395efdd2acc090d7f6f53c4726cb22c0d5"
+      }
+    },
+    {
+      "name": "Atelier",
+      "sourceFaces": 13195,
+      "sourceBytes": 1375132,
+      "detail": {
+        "file": "Atelier.glb",
+        "bytes": 201340,
+        "sha256": "54e709cad43304461b5f3c40a26bac9722a0437758c405c25590e28dfd9e7b5d"
+      },
+      "distance": {
+        "file": "Atelier-lod.glb",
+        "bytes": 121460,
+        "sha256": "c8b9e3a580d3d5285429dccf2c7f87b2ba4f6b48d9e78706ce6adc0ee47dc22d"
+      }
+    },
+    {
+      "name": "Refuge",
+      "sourceFaces": 13019,
+      "sourceBytes": 1284324,
+      "detail": {
+        "file": "Refuge.glb",
+        "bytes": 191776,
+        "sha256": "2ff0201f4691662b49a329d2e5a722b82af38fed29567c28deaf5bb285d10a6c"
+      },
+      "distance": {
+        "file": "Refuge-lod.glb",
+        "bytes": 113604,
+        "sha256": "3cd978484f5b85daf7b65fb97b99148d4918fe31631b65e6a4c7d46ee7f992be"
+      }
+    },
+    {
+      "name": "Fountain",
+      "sourceFaces": 476,
+      "sourceBytes": 98864,
+      "detail": {
+        "file": "Fountain.glb",
+        "bytes": 17256,
+        "sha256": "436990a018d7a9fa9c456e1234d7c6e00ea2134dc91d0c82f656760338a0dbdb"
+      },
+      "distance": {
+        "file": "Fountain-lod.glb",
+        "bytes": 8748,
+        "sha256": "b1ad6558721c2e945b4821ed6068c602bbc14fb98bee4e6427738a39c5104a97"
+      }
+    },
+    {
+      "name": "Kiosk",
+      "sourceFaces": 1312,
+      "sourceBytes": 118464,
+      "detail": {
+        "file": "Kiosk.glb",
+        "bytes": 23388,
+        "sha256": "b3f8ba3d744fd67aac4894d63ff7617d329ae2fddfea5edceeebb2d5a7c7f224"
+      },
+      "distance": {
+        "file": "Kiosk-lod.glb",
+        "bytes": 16896,
+        "sha256": "ee99a911ba9a2c202700e1170bc1bdae7652437a48d45a77d1db110b85c645da"
+      }
+    },
+    {
+      "name": "Pergola",
+      "sourceFaces": 124,
+      "sourceBytes": 20908,
+      "detail": {
+        "file": "Pergola.glb",
+        "bytes": 6028,
+        "sha256": "236aebd7d47645c92ee6c7e458be9c5552f5dcdcaf39d07defbfcc7dbada7ee5"
+      },
+      "distance": {
+        "file": "Pergola-lod.glb",
+        "bytes": 5484,
+        "sha256": "54a86f36784c00bc61d5f9f9b828de794bc430b6b55271db4558c96871ab1c52"
+      }
+    }
+  ],
+  "compression": "EXT_meshopt_compression",
+  "geometry": "Original procedural Blender meshes, inspired by Paris architecture; not photogrammetry or a measured city replica.",
+  "textures": "textures/sources.json"
+}

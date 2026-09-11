@@ -1,0 +1,50 @@
+[
+  {
+    "channel": "Diffuse",
+    "asset": "cobblestone_floor_08",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cobblestone_floor_08/cobblestone_floor_08_diff_1k.jpg",
+    "md5": "bb640125356d18e3ad8515b9d5bfccef",
+    "license": "CC0",
+    "page": "https://polyhaven.com/a/cobblestone_floor_08"
+  },
+  {
+    "channel": "nor_gl",
+    "asset": "cobblestone_floor_08",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cobblestone_floor_08/cobblestone_floor_08_nor_gl_1k.jpg",
+    "md5": "7a90780c7c49a1307e928d4d32c4773c",
+    "license": "CC0",
+    "page": "https://polyhaven.com/a/cobblestone_floor_08"
+  },
+  {
+    "channel": "Rough",
+    "asset": "cobblestone_floor_08",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/cobblestone_floor_08/cobblestone_floor_08_rough_1k.jpg",
+    "md5": "1471921512da4a43e94ec08c32c273f7",
+    "license": "CC0",
+    "page": "https://polyhaven.com/a/cobblestone_floor_08"
+  },
+  {
+    "channel": "Diffuse",
+    "asset": "plastered_wall_02",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_02/plastered_wall_02_diff_1k.jpg",
+    "md5": "3ca0d02e87ad5c6eb21efa4b05b7748e",
+    "license": "CC0",
+    "page": "https://polyhaven.com/a/plastered_wall_02"
+  },
+  {
+    "channel": "nor_gl",
+    "asset": "plastered_wall_02",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_02/plastered_wall_02_nor_gl_1k.jpg",
+    "md5": "5419137dd937f95a849b884258fb8bb5",
+    "license": "CC0",
+    "page": "https://polyhaven.com/a/plastered_wall_02"
+  },
+  {
+    "channel": "Rough",
+    "asset": "plastered_wall_02",
+    "source": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plastered_wall_02/plastered_wall_02_rough_1k.jpg",
+    "md5": "2d4a4a40491eb5a115c086bb65aba32c",
+    "license": "CC0",
+    "page": "https://polyhaven.com/a/plastered_wall_02"
+  }
+]

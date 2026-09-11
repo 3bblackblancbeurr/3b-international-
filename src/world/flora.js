@@ -4,7 +4,7 @@ import {randomFor} from './terrain.js';
 const UP=new THREE.Vector3(0,1,0);
 export const FLORA_TYPES=['Tree','Olive','Pine','Cypress','Palm','Shrub'];
 export const FLORA_PALETTES={
- hub:['#386941','#6e994e','#a3b968'],france:['#38643b','#648e48','#a2b45b'],
+ hub:['#386941','#6e994e','#a3b968'],france:['#396746','#507b4e','#6f925b'],
  italie:['#405f35','#728547','#a4ad6e'],estonie:['#294e42','#497258','#799471'],
  turquie:['#4f6642','#86955b','#b5b281'],algerie:['#466950','#839459','#b6ad72'],
  tunisie:['#496b52','#819770','#b7bd8a'],maroc:['#426953','#7b9060','#b9ac79'],espagne:['#536d4b','#8b9a70','#b9bd88'],
@@ -28,7 +28,7 @@ export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hu
  function leaf(center,length,width,yaw,tilt,roll,color,weight=1){
   const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(tilt,yaw,roll));
   const v=(x,y,z)=>point(x,y,z).applyQuaternion(q).add(center);
-  const a=v(0,-length/2,0),b=v(-width/2,0,0),c=v(0,0,width*.16),d=v(width/2,0,0),e=v(0,length/2,0);
+  const a=v(0,-length/2,0),b=v(-width/2,0,0),c=v(0,0,width*.035),d=v(width/2,0,0),e=v(0,length/2,0);
   for(const t of [[a,c,b],[a,d,c],[b,c,e],[c,d,e]])triangle(leaves,leafColors,...t,color,weight);
  }
  function crown(center,rx,ry,rz,count,leafLength=.5,narrow=false){
@@ -73,7 +73,7 @@ export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hu
  }else{
   for(let i=0;i<7;i++){const a=i*2.399,end=point(Math.cos(a)*.55,.55+rng()*.45,Math.sin(a)*.55);branch(point(0,0,0),end,.025,.007);crown(end,.45,.36,.4,12,.28,type==='Shrub'&&seed%2===0);}
  }
- function geometry(vertices,colors,weights){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));if(weights)g.setAttribute('plantFlex',new THREE.Float32BufferAttribute(weights,1));g.computeVertexNormals();g.computeBoundingBox();g.computeBoundingSphere();return g;}
+ function geometry(vertices,colors,weights){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));if(weights)g.setAttribute('plantFlex',new THREE.Float32BufferAttribute(weights,1));g.computeVertexNormals();if(weights){const n=g.attributes.normal,p=g.attributes.position;for(let i=0;i<n.count;i++){const smooth=new THREE.Vector3(n.getX(i)*.35+p.getX(i)*.035,n.getY(i)*.35+.7,n.getZ(i)*.35+p.getZ(i)*.035).normalize();n.setXYZ(i,smooth.x,smooth.y,smooth.z);}}g.computeBoundingBox();g.computeBoundingSphere();return g;}
  return {wood:geometry(wood,woodColors),leaves:geometry(leaves,leafColors,flex)};
 }
 

@@ -16,7 +16,7 @@ export const pactCue=e=>pactCues[pactPattern(e)[e.pactStep||0]];
 export const INTENTS={frappe:'Frappe · garde pour réduire les dégâts',rituel:'Rituel · dégâts de ton pouvoir amplifiés',percée:'Percée · ta garde reste partiellement traversée',rempart:'Rempart · tes frappes sont réduites',soin:'Régénération · le gardien va se soigner',gel:'Gel · garde pour préserver ta concentration',éclipse:'Éclipse · prépare ta défense',double:'Double frappe · garde ou piège conseillé',sable:'Souffle de sable · impact renforcé',vague:'Vague · la garde dissipe son impact'};
 export function advanceBattle(enc,action){
  requireThat(enc&&!enc.result,'Cette rencontre est terminée.');
- requireThat(['strike','guard','dodge','power','trap','support'].includes(action),'Action inconnue.');
+ requireThat(['strike','guard','dodge','power','trap','support','wait'].includes(action),'Action inconnue.');
  requireThat(action!=='power'||enc.focus>=2,'Il faut deux concentrations.');
  requireThat(action!=='trap'||enc.traps>0,'Aucun piège disponible.');
  requireThat(action!=='support'||enc.support,'Soutien déjà utilisé.');
@@ -27,7 +27,7 @@ export function advanceBattle(enc,action){
  if(e.intent==='rempart')damage=Math.round(damage*(action==='power'?.7:.35));
  if(e.opening&&action==='strike')damage=Math.round(damage*1.45);
  e.opening=action==='dodge';
- e.enemy=Math.max(0,e.enemy-damage);e.focus=action==='power'?0:action==='dodge'?e.focus-1:Math.min(3,e.focus+1);
+ e.enemy=Math.max(0,e.enemy-damage);e.focus=action==='wait'?e.focus:action==='power'?0:action==='dodge'?e.focus-1:Math.min(3,e.focus+1);
  if(action==='trap')e.traps--;if(action==='support'){e.support=false;e.hp=Math.min(e.maxHP,e.hp+32);}
  if(!e.enemy){e.result=e.boss?'victory':'calm';e.log=e.boss?'Le gardien reconnaît tes liens.':'L’écho s’apaise. Tu peux maintenant tisser un lien.';return e;}
  const base={frappe:18,rituel:6,percée:27,rempart:12,soin:8,gel:16,éclipse:23,double:30,sable:24,vague:29}[e.intent]||18;
@@ -58,6 +58,7 @@ export function applyWorldAction(input,action){
   case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden:0)),harvest:[...home.harvest,site.id]});}
   case 'build':{peaceful();inCountry();const cost=buildCost(home,action.building);requireThat(cost&&BUILDINGS[action.building],'Construction inconnue.');requireThat(home[action.building]<8,'Ce bâtiment est au rang maximal.');requireThat(home.wood>=cost.wood&&home.stone>=cost.stone,'Récolte le bois et la pierre nécessaires.');s=setHome({wood:home.wood-cost.wood,stone:home.stone-cost.stone,[action.building]:home[action.building]+1});return reward(s,40,0);}
   case 'recover':{peaceful();inCountry();requireThat(home.food===0,'Tu as déjà des provisions.');return setHome({food:1});}
+  case 'provisions':{peaceful();inCountry();requireThat(region==='france','Le café se trouve dans le quartier de Paris.');requireThat(s.shards>=6,'Il faut 6 éclats pour ce panier.');requireThat(home.food<=96,'Tes réserves sont pleines.');s=gain(s,{shards:s.shards-6});return setHome({food:home.food+3});}
   case 'patrol':{
    peaceful();inCountry();requireThat(home.food>0,'Retourne au refuge pour préparer une provision.');
    const person=patrolOpponent(region,home.expedition);
