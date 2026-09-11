@@ -1,3 +1,4 @@
+import {validOriginsRun} from './origins/level.js';
 export const DOOR_CHAPTERS=['Le premier seuil','Les salles du silence','Le pacte de bronze','Les archives nocturnes','Le cœur des engrenages','Les sentinelles oubliées','La galerie des serments','Les dernières braises','Le palais sans nom','La Porte interdite'];
 export const DOOR_RUNES=[{id:'sun',name:'Soleil'},{id:'moon',name:'Lune'},{id:'star',name:'Étoile'},{id:'flame',name:'Flamme'},{id:'leaf',name:'Feuille'}];
 export const DOOR_PERKS=[{at:10,title:'Souffle du voyageur',text:'+10 de vitalité maximale'},{at:25,title:'Lame de lumière',text:'+2 dégâts avec Frapper'},{at:50,title:'Esprit du veilleur',text:'+1 concentration maximale'},{at:75,title:'Dernière réserve',text:'Un deuxième élixir à chaque niveau'}];
@@ -22,6 +23,7 @@ export function readDoorCampaign(value){
   if(r.hp<1||r.elixirs+r.usedElixirs!==p.elixirs||!Number.isFinite(r.time)||r.time<0||r.time>86400||typeof r.rewardChosen!=='boolean'||(r.room==='doors'&&r.passed>=d.rooms)||(r.room==='gate'&&r.passed!==d.rooms)||(r.room==='resolved'&&r.passed<1))invalid();
   out.run=Object.fromEntries(['level','room','passed','hp','focus','elixirs','bonusAttack','score','mistakes','usedElixirs','time','rewardChosen'].map(k=>[k,r[k]]));
  }
+ if(Object.hasOwn(value,'originsRun')){out.originsRun=null;if(value.originsRun){const r=value.originsRun,p=doorPerks(out);if(!validOriginsRun(r,doorUnlocked(out))||r.level!==out.selected||r.hp>p.hp||r.energy>p.focus*20||r.elixirs+r.usedElixirs!==p.elixirs)invalid();out.originsRun=Object.fromEntries(['version','level','zone','hp','energy','fragments','score','hits','falls','elixirs','usedElixirs','time','defeated','activated','opened','picked','moved'].map(k=>[k,structuredClone(r[k])]));}}
  return out;
 }
 export function completeDoorLevel(campaign,level,{score,time,mistakes,usedElixirs}){

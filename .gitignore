@@ -14,6 +14,7 @@ dist-ssr
 .env*
 !.env.example
 .vercel
+/artifacts/origins/
 
 # Editor directories and files
 .vscode/*
