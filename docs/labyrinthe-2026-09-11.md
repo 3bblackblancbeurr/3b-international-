@@ -2,6 +2,8 @@
 
 Le catalogue présente quatre cartes illustrées au même format : Kaïs contre les Ombres, la Tour, le Labyrinthe et la Course des clés. Le Dernier Refuge et les Villes retrouvées ne sont plus accessibles dans l’application. Le lien original de la Course des clés reste identique ; son jeu externe ne change pas.
 
+La campagne, les paramètres progressifs et le nouveau personnage sont documentés dans [Labyrinthe — 100 niveaux](labyrinthe-campagne-100.md). Les valeurs ci-dessous décrivent la première version de la refonte.
+
 ## Conception du Labyrinthe
 
 Une partie commence dans un sanctuaire sûr. Il faut retrouver les sceaux de Mémoire, Courage et Lien dans trois salles éloignées, puis revenir au portail. Les labyrinthes de 29 × 21 cases sont générés avec des boucles, quatre salles et deux raccourcis facultatifs. Tous les objectifs et les ressources restent accessibles dès le départ.

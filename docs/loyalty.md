@@ -5,7 +5,7 @@ Programme gratuit relié à un compte Supabase Auth. Les jeux sont également ac
 - Jeux intégrés : 10 XP / 30 secondes actives, 1 point / minute ; plafonds journaliers de 600 XP et 20 points, heure de Paris. Horloge serveur, requêtes séquencées et un seul jeu actif par compte. Les longues interruptions ne sont pas créditées. Les scores et fichiers importés ne donnent aucun point de fidélité.
 - Visites du passeport, du manga et du monde : 20 XP / 2 points une fois par section. Bonus à réclamer : 10 XP / 2 points par jour.
 - Achats : 10 XP et 10 points par euro de marchandises payé après réduction, hors livraison (calcul en centimes, arrondi inférieur). Solde cumulatif, sans dépense de points. 1 000 / 3 000 / 7 000 points donnent 5 / 8 / 10 % sur les articles, meilleur taux uniquement, fixé à l'ouverture de Checkout.
-- Designs à 0 / 300 / 1 500 / 5 000 / 12 000 XP, carte SVG nominative et aura correspondante dans les Ombres et le Refuge. Aucun avantage de combat payant.
+- Designs à 0 / 300 / 1 500 / 5 000 / 12 000 XP, carte SVG nominative et aura correspondante dans les Ombres et le Labyrinthe. Aucun avantage de combat payant.
 
 ## Compte et protection des données
 
@@ -26,7 +26,7 @@ Migrations déjà appliquées au projet `ttvhcezucsbbmnafrotq`, dans cet ordre :
 3. `supabase/loyalty-session-security.sql`
 4. `supabase/loyalty-purchase-settlement.sql`
 
-La fonction Edge `member-hub` est déployée en copiant `supabase/functions/member-hub/index.ts` vers `index.ts` et `shared/loyalty.js` vers `loyalty.js` dans le même paquet. `verify_jwt=false` car l'authentification est explicitement effectuée dans la fonction ; ne pas supprimer ce contrôle interne. Les variables Supabase sont fournies par l'environnement Edge. Origines autorisées : production 3B et développement local sur le port 5174.
+La fonction Edge `member-hub` est déployée en copiant `supabase/functions/member-hub/index.ts` vers `index.ts` et `shared/loyalty.js` vers `loyalty.js` dans le même paquet. `verify_jwt=false` car l'authentification est explicitement effectuée dans la fonction ; ne pas supprimer ce contrôle interne. Les variables Supabase sont fournies par l'environnement Edge. Origines autorisées : production 3B et développement local sur les ports 5174, 5186 et 5187 (origines exactes définies dans la fonction).
 
 Le frontend Vite utilise `npm ci`, `npm test`, `npm run build`. Aucun mot de passe ni compte de test n'est livré dans le dépôt.
 

@@ -1,13 +1,13 @@
 export const COUNTRIES=['France','Italie','Estonie','Turquie','Algérie','Tunisie','Maroc','Espagne'];
 export const TIERS=[
  {id:'discovery',name:'Découverte',xp:0,color:'#80d7e7',motto:'Tout commence ici.',benefit:'Ta carte nominative et le suivi de tes récompenses.'},
- {id:'explorer',name:'Explorateur',xp:300,color:'#78d6ae',motto:'Le monde t’appartient.',benefit:'Le design Émeraude et l’aura Explorateur dans les Ombres et le Refuge.'},
- {id:'heir',name:'Héritier',xp:1500,color:'#ecc884',motto:'Porte ton histoire.',benefit:'Le design Or et l’aura Héritier dans les Ombres et le Refuge.'},
- {id:'ambassador',name:'Ambassadeur',xp:5000,color:'#b6a2f4',motto:'Huit pays. Une même lumière.',benefit:'Le design Améthyste et l’aura Ambassadeur dans les Ombres et le Refuge.'},
- {id:'legend',name:'Légende',xp:12000,color:'#f4db9c',motto:'Laisse ton empreinte.',benefit:'Le design Obsidienne et l’aura Légende dans les Ombres et le Refuge.'},
- {id:'builder',name:'Bâtisseur',xp:30000,color:'#e9aa7e',motto:'Construis le monde de demain.',benefit:'Le design Cuivre et l’aura Bâtisseur dans les Ombres et le Refuge.'},
- {id:'visionary',name:'Visionnaire',xp:60000,color:'#a9dff4',motto:'Vois plus loin, imagine ensemble.',benefit:'Le design Platine et l’aura Visionnaire dans les Ombres et le Refuge.'},
- {id:'eternal',name:'Éternel',xp:100000,color:'#f5dfbc',motto:'La lumière se transmet.',benefit:'Le design Nacre et l’aura Éternel dans les Ombres et le Refuge.'},
+ {id:'explorer',name:'Explorateur',xp:300,color:'#78d6ae',motto:'Le monde t’appartient.',benefit:'Le design Émeraude et l’aura Explorateur dans les Ombres et le Labyrinthe.'},
+ {id:'heir',name:'Héritier',xp:1500,color:'#ecc884',motto:'Porte ton histoire.',benefit:'Le design Or et l’aura Héritier dans les Ombres et le Labyrinthe.'},
+ {id:'ambassador',name:'Ambassadeur',xp:5000,color:'#b6a2f4',motto:'Huit pays. Une même lumière.',benefit:'Le design Améthyste et l’aura Ambassadeur dans les Ombres et le Labyrinthe.'},
+ {id:'legend',name:'Légende',xp:12000,color:'#f4db9c',motto:'Laisse ton empreinte.',benefit:'Le design Obsidienne et l’aura Légende dans les Ombres et le Labyrinthe.'},
+ {id:'builder',name:'Bâtisseur',xp:30000,color:'#e9aa7e',motto:'Construis le monde de demain.',benefit:'Le design Cuivre et l’aura Bâtisseur dans les Ombres et le Labyrinthe.'},
+ {id:'visionary',name:'Visionnaire',xp:60000,color:'#a9dff4',motto:'Vois plus loin, imagine ensemble.',benefit:'Le design Platine et l’aura Visionnaire dans les Ombres et le Labyrinthe.'},
+ {id:'eternal',name:'Éternel',xp:100000,color:'#f5dfbc',motto:'La lumière se transmet.',benefit:'Le design Nacre et l’aura Éternel dans les Ombres et le Labyrinthe.'},
 ];
 export const DISCOUNTS=[{points:1000,percent:5},{points:3000,percent:8},{points:7000,percent:10}];
 const SHOP_DESIGNS=[{id:'argent',name:'Argent',color:'#dce5ef',story:'Le vestiaire en mouvement'},{id:'or',name:'Or',color:'#e9c384',story:'Le goût des belles matières'},{id:'noire',name:'Noire',color:'#d8c7a3',story:'La signature du Cercle'}];

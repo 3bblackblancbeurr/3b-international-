@@ -1,0 +1,28 @@
+.maze-intro{align-items:flex-start;background:radial-gradient(ellipse at 50% 0,#223934e8,#071219f7);padding:28px 24px}
+.maze-intro>div{width:min(850px,100%);max-width:850px;margin:auto}
+.maze-intro h2{font-size:36px;margin:7px 0 22px}
+.maze-campaign-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#98b7ab;font-size:12px}.maze-campaign-heading strong{color:#ead9ad;font-size:14px}
+.maze-campaign-track{height:4px;background:#8aa4931f;border-radius:4px;overflow:hidden;margin:10px 0 20px}.maze-campaign-track i{height:100%;display:block;background:#dfc784}
+.maze-chapters{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.game-overlay.maze-intro .maze-chapters button{font-size:12px;padding:8px 4px;min-height:36px;background:#14262c;border:1px solid #73917e30;color:#95b2a8}
+.game-overlay.maze-intro .maze-chapters [aria-pressed=true]{color:#f1dab0;background:#78815535;border-color:#a6b18280}
+.game-overlay.maze-intro .maze-chapter-name{font-size:14px;color:#e2e4ca;margin:16px auto 12px}.maze-chapter-name span{color:#819d95;font-size:12px}
+.maze-levels{display:grid;grid-template-columns:repeat(10,1fr);gap:7px}
+.game-overlay.maze-intro .maze-levels button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;min-height:73px;padding:9px 5px;border:1px solid #7491814d;background:#11242b;border-radius:9px;color:#cddace}
+.maze-levels strong{font-size:20px;line-height:1}.maze-levels span{font-size:10px;letter-spacing:2px;color:#e5cb83}.game-overlay.maze-intro .maze-levels button:disabled{opacity:.37}.game-overlay.maze-intro .maze-levels [aria-pressed=true]{background:linear-gradient(145deg,#d4bd80,#8c814c);color:#172321;border-color:#f1dca0;box-shadow:0 5px 20px #9ca05d20}.game-overlay.maze-intro .maze-levels [data-complete=true]{border-color:#81b39980}
+.maze-campaign-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0 14px;text-align:left}
+.maze-campaign-cards>div{padding:15px 17px;background:#304d441f;border:1px solid #849c7635;border-radius:10px;display:flex;flex-direction:column;gap:7px}
+.maze-card-label{font-size:10px;color:#91aa9d;letter-spacing:.13em}.maze-campaign-cards strong{font-size:15px;color:#dedcba}.maze-campaign-cards small{font-size:11px;color:#d9c58f;line-height:1.5}
+.game-overlay.maze-intro .maze-campaign-cards p{font-size:12px;line-height:1.5;margin:0;color:#a4bcb3}
+.game-overlay.maze-intro button.maze-benefits-link{font-size:11px;padding:0;min-height:20px;border:0;background:none;color:#d4c48e;display:flex;align-items:center;gap:5px;text-align:left}
+.maze-rules{text-align:left;border-top:1px solid #93ac8333;padding:10px 0 0;font-size:12px;color:#9aafa5}.maze-rules summary{cursor:pointer}.game-overlay.maze-intro .maze-rules p{max-width:none;font-size:12px;line-height:1.6;margin:10px 0}
+.maze-start{margin-top:17px}.maze-level-tag{font-size:12px;color:#d8ca9c;white-space:nowrap;font-weight:500}.maze-result-stars{display:flex;justify-content:center;gap:9px;color:#e4c785;margin:10px 0}
+.maze-reward-line{grid-column:1/-1;display:flex;align-items:center;gap:10px;border-top:1px solid #82977324;padding-top:7px;font-size:11px;line-height:1.4;color:#9eb6a7}.maze-reward-line strong{color:#d9cca0;white-space:nowrap;font-size:11px}.maze-reward-line span{min-width:0}
+[data-game=maze] .game-reward-status{display:none}
+@media(max-width:600px){
+ .maze-intro{padding:18px 15px}.maze-intro h2{font-size:29px;margin:8px 0 18px}.maze-intro .arcade-eyebrow{font-size:10px}.maze-campaign-heading{font-size:10px;gap:5px}.maze-campaign-heading strong{font-size:11px}.maze-campaign-track{margin:9px 0 16px}.maze-chapters{gap:3px}.game-overlay.maze-intro .maze-chapters button{font-size:10px;min-height:33px;padding:7px 2px}.maze-levels{grid-template-columns:repeat(5,1fr);gap:6px}.game-overlay.maze-intro .maze-levels button{min-height:55px;gap:5px;padding:8px 5px}.maze-levels strong{font-size:17px}
+ .maze-campaign-cards{gap:8px;margin-top:14px}.maze-campaign-cards>div{padding:11px 10px;gap:6px}.maze-campaign-cards strong{font-size:12px}.game-overlay.maze-intro .maze-campaign-cards p{font-size:10px}.maze-campaign-cards small{font-size:10px}.maze-card-label{font-size:8px;letter-spacing:.04em}.maze-reward-line{font-size:10px;gap:7px}.maze-reward-line strong{font-size:10px}.maze-level-tag{display:block;font-size:10px;margin-top:3px}
+}
+@media(max-height:550px) and (orientation:landscape){.maze-intro{padding:14px 22px}.maze-intro h2{font-size:24px;margin:5px 0 12px}.maze-campaign-track{margin:6px 0 12px}.maze-campaign-cards{margin:10px 0}.maze-start{margin-top:10px}.maze-reward-line{padding-top:3px;font-size:10px}}
+
+[data-game=maze] .maze-result-reward{font-size:12px;line-height:1.5;color:#a8bdb0}
