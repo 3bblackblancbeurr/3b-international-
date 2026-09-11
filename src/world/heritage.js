@@ -31,8 +31,8 @@ export function heritageObstacles(region,center,angle){
 export function civicSites(anchors){
  const result=anchors.some(a=>a.id==='hub:atelier')?[{kind:'nexus',x:0,z:-120,width:25,depth:22,rotation:0},{kind:'nexus-wing',x:-26,z:-115,width:27,depth:18,rotation:0},{kind:'nexus-wing',x:26,z:-115,width:27,depth:18,rotation:0}]:[];
  for(const a of anchors){
-  if(a.type==='atelier'&&!['hub:atelier','maroc:atelier'].includes(a.id))for(const side of [-1,1])result.push({kind:'atelier',x:a.x+side*8,z:a.z-4,width:4.6,depth:9,rotation:0,side,anchor:a});
-  if(a.id.endsWith(':survey:city'))result.push({kind:'archives',x:a.x,z:a.z-11,width:14,depth:10,rotation:0,anchor:a});
+  if(a.type==='atelier'&&!['hub:atelier','maroc:atelier','france:atelier'].includes(a.id))for(const side of [-1,1])result.push({kind:'atelier',x:a.x+side*8,z:a.z-4,width:4.6,depth:9,rotation:0,side,anchor:a});
+  if(a.id.endsWith(':survey:city')&&!a.id.startsWith('france:'))result.push({kind:'archives',x:a.x,z:a.z-11,width:14,depth:10,rotation:0,anchor:a});
  }
  return result;
 }

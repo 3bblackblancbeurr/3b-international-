@@ -6,7 +6,7 @@ import {GROUND_STYLE} from './natural-ground.js';
 export function plantingAllowed(field,x,z,pad=0){
  if(Math.hypot(x-field.lake.x,z-field.lake.z)<field.lake.r+4+pad||roadDistance(x,z,field.roads)<1.1+pad)return false;
  if(field.squares.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad))return false;
- if(field.buildings.some(b=>obstacleDistance({x,z},b)<1.2+pad))return false;
+ if([...(field.paris||[]),...field.civic,...field.buildings].some(b=>obstacleDistance({x,z},b)<1.2+pad))return false;
  if(field.anchors.some(a=>Math.hypot(x-a.x,z-a.z)<(a.type==='camp'?24:a.type==='portal'?7:4.5)+pad))return false;
  if(field.fields.some(f=>!['forest','olive','orchard'].includes(f.kind)&&obstacleDistance({x,z},{...f,width:f.w,depth:f.h})<pad))return false;
  return true;

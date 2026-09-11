@@ -4,6 +4,7 @@ import {COUNTRIES} from './catalog.js';
 import {settlementPlan,serviceItems,districtDestinations} from './settlements.js';
 import {buildingDimensions} from './building-scale.js';
 import {obstacleDistance} from './collision.js';
+import {parisSites} from './paris-layout.js';
 
 export const WORLD_RADIUS=260;
 export const BIOMES={
@@ -27,13 +28,14 @@ export function landmarkSightline(region){return{a:{x:0,z:5},b:toLandscape(regio
 export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+13,z:p.z-13,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
  const sightline=landmarkSightline(region),roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
- const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)}));
+ const paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
+ const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)})).filter(p=>!paris.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<Math.hypot(b.width,b.depth)/2+Math.hypot(p.width,p.depth)/2+3));
  return sites.filter(p=>segmentDistance(p.x,p.z,sightline.a,sightline.b)>Math.hypot(p.width,p.depth)/2+4&&Math.hypot(p.x,p.z)<WORLD_RADIUS-18&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).reduce((accepted,p)=>{if(!accepted.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11))accepted.push(p);return accepted;},[]);
 }
 export function createTerrainField(region,save){
  const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
- const civic=civicSites(anchors);
- const clearings=[...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
+ const civic=civicSites(anchors),paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
+ const clearings=[...paris.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+3})),...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
  // Find a dry margin around every interaction and building before carving water.
  let lake={...biome.water},found=false;
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
@@ -56,5 +58,5 @@ export function createTerrainField(region,save){
  }
  const sightline=landmarkSightline(region);
  const protectedPoint=(x,z,pad=0)=>(region!=='hub'&&segmentDistance(x,z,sightline.a,sightline.b)<6+pad)||clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
- return {radius:WORLD_RADIUS,biome,anchors,buildings,civic,roads,squares,fields,lake,height,protectedPoint};
+ return {radius:WORLD_RADIUS,biome,anchors,buildings,civic,paris,roads,squares,fields,lake,height,protectedPoint};
 }

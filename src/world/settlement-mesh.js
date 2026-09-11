@@ -4,7 +4,8 @@ import {surfaceTexture} from './surfaces.js';
 
 export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned}){
  const c=REGIONS[region],{height,roads,squares,fields,biome}=field,texture=surfaceTexture('stone'),soil=surfaceTexture('earth');if(texture)owned.push(texture);if(soil)owned.push(soil);
- const paving=mat(c.paving,{map:texture,bumpMap:texture,bumpScale:.085,roughness:.96}),earth=mat(c.earth,{map:soil,bumpMap:soil,bumpScale:.07}),wood=mat('#72604b'),iron=mat('#3c5352',{metalness:.55});
+ let paving=mat(c.paving,{map:texture,bumpMap:texture,bumpScale:.085,roughness:.96}),earth=mat(c.earth,{map:soil,bumpMap:soil,bumpScale:.07}),wood=mat('#72604b'),iron=mat('#3c5352',{metalness:.55});
+ if(region==='france'&&typeof document!=='undefined'){const loader=new THREE.TextureLoader(),maps={};for(const [key,channel] of [['map','Diffuse'],['normalMap','nor_gl'],['roughnessMap','Rough']]){const t=loader.load('/world/paris/textures/cobblestone_floor_08_'+channel+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;if(key==='map')t.colorSpace=THREE.SRGBColorSpace;owned.push(t);maps[key]=t;}paving=mat('#e0dacd',{...maps,normalScale:new THREE.Vector2(.35,.35),roughness:.85});}
  function strip(points,width,material){
   const dense=[points[0]],verts=[],uv=[],indices=[],lift=material===paving?.08:.035;
   for(let n=1;n<points.length;n++){const a=points[n-1],b=points[n],steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/2));for(let i=1;i<=steps;i++)dense.push({x:a.x+(b.x-a.x)*i/steps,z:a.z+(b.z-a.z)*i/steps});}
@@ -22,7 +23,7 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
   const apron=shape(box,paving,plot.x,height(plot.x,plot.z)-.03,plot.z,plot.width+2.7,.16,plot.depth+3.8);apron.rotation.y=plot.rotation;apron.castShadow=false;
  }
  // An open artisan courtyard: usable entrance, market stalls, signs and seating.
- const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop&&region!=='maroc'){const {x,z}=workshop;
+ const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop&&!['maroc','france'].includes(region)){const {x,z}=workshop;
   for(const side of [-1,1])for(const i of [0,1,2])shape(box,mat(['#b5865f','#74918b','#b29868'][i]),x+side*8+(i-1)*.6,height(x,z)+1.2,z+1.1,.52,.32,.7);
   for(const dx of [-6,6]){asset('Bench',x+dx,z+4,1.45,0);asset('Lantern',x+dx,z+2,1.35,0);}
   resident(x+3,z+1,'#d2a96e',root,'artisan');
