@@ -6,8 +6,8 @@
 .premium-card-art:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#101c29,transparent 48%)}
 .premium-card-number{position:absolute;left:18px;top:16px;z-index:1;color:var(--accent);font:500 13px system-ui;letter-spacing:.15em}
 .premium-card-sprite{position:absolute;height:170px;width:110px;left:calc(50% - 55px);bottom:-20px;background:url('/games/kais-run.webp') 0 0/400% 200%;filter:drop-shadow(0 0 25px #a3ddec66)}
-[data-game=tower] .premium-card-art{background-color:#221536;background-blend-mode:luminosity}
-[data-game=tower] .premium-card-sprite{height:160px;width:160px;background:url('/games/objects.webp') 0 100%/300% 200%;bottom:-8px}
+[data-game=tower] .premium-card-art{background:url('/games/origins-cover.jpg') center 42%/cover;background-blend-mode:normal}
+[data-game=tower] .premium-card-sprite{display:none}.premium-game-card[data-game=tower]{--accent:#dfc79c}
 [data-game=maze] .premium-card-art{background-position:left bottom;filter:hue-rotate(18deg)}
 [data-game=maze] .premium-card-sprite{height:150px;width:150px;background:url('/games/objects.webp') 100% 0/300% 200%;bottom:-8px}
 [data-game=refuge] .premium-card-sprite{height:170px;width:170px;left:calc(50% - 85px);background:url('/games/city-sprites.webp') 100% 100%/200% 200%;bottom:-12px}
