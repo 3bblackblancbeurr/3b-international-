@@ -35,5 +35,5 @@ export function ArenaStage({state,side=0,cardId,avatar}){
   raf=requestAnimationFrame(tick);
   return()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect();actors.forEach(a=>a.dispose());library.dispose();geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);};
  },[]);
- return <><canvas ref={ref} className="arena-stage" aria-label={cardId?'Modèle 3D de '+cardById[cardId].name+'. Glisse pour tourner.':avatar?'Aperçu 3D de ton personnage. Glisse pour tourner.':'Duel 3D des cartes. Les commandes de combat sont sous la scène.'}/>{error&&<p className="arena-model-error" role="status">{error}</p>}</>;
+ return <><canvas ref={ref} className="arena-stage" aria-label={cardId?'Modèle 3D de '+cardById[cardId].name+'. Glisse pour tourner.':avatar?'Aperçu 3D de ton personnage. Glisse pour tourner.':'Duel 3D des personnages. Les commandes de combat sont sous la scène.'}/>{error&&<p className="arena-model-error" role="status">{error}</p>}</>;
 }

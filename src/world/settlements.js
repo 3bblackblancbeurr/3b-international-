@@ -24,6 +24,7 @@ export function settlementPlan(region){
  return {roads,plots,squares:[{x:-18,z:17,r:8},{x:9,z:-4,r:7},{x:49,z:26,r:7}],fields:[{x:46,z:40,w:19,h:12,kind:c.crop},{x:48,z:8,w:16,h:10,kind:c.crop}]};
 }
 export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5}];return[
+ {id:region+':sanctuary',type:'sanctuary',name:save.adventure?.chapters?.[region]?.restored>=2?(save.adventure.chapters[region].choice==='workshop'?'Préparer le groupe à l’atelier':'Se reposer au jardin'):'Quartier à reconstruire',x:29,z:15,color:'#9ec8ac',range:6},
  {id:region+':atelier',type:'atelier',name:'Atelier · '+c.craft,x:-18,z:17,color:'#efbd72',range:5},
  ...[{key:'city',x:-39,z:-22},{key:'rural',x:49,z:26}].map(p=>({id:region+':survey:'+p.key,type:'survey',name:c[p.key],x:p.x,z:p.z,color:'#a8d4ae',range:5,done:save.adventure?.discoveries?.includes(region+':'+p.key)})),
  ];}

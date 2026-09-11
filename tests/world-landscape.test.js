@@ -16,10 +16,10 @@ test('compressed normalized positions retain world-space height and location whe
  const baked=bakeGeometry(g,new Matrix4().makeTranslation(35,7,-28));baked.computeBoundingBox();assert.deepEqual(baked.boundingBox.min.toArray(),[35,7,-28]);assert.deepEqual(baked.boundingBox.max.toArray(),[36,8,-27]);baked.dispose();g.dispose();
 });
 test('all eight authored country layouts preserve routes to every objective and animated guardians',async()=>{
- const [kit,hero]=await Promise.all([load('chapter-kit'),load('kais-3d')]);assert.equal(kit.animations.length,16);
+ const [kit,hero,places]=await Promise.all([load('chapter-kit'),load('kais-3d'),load('../places/living-places')]);assert.equal(kit.animations.length,16);
  for(const country of [{id:"hub"},...COUNTRIES]){
   if(country.id!=='hub')assert.ok(kit.scene.getObjectByName('Creature_'+country.id));
-  const world=createLandscape({kit,hero},country.id,blankSave());world.root.updateMatrixWorld(true);const bounds=new Box3().setFromObject(world.root);assert.ok(bounds.max.y>8,'Architecture and tree canopies have height');
+  const world=createLandscape({kit,hero,places},country.id,blankSave());world.root.updateMatrixWorld(true);const bounds=new Box3().setFromObject(world.root);assert.ok(bounds.max.y>8,'Architecture and tree canopies have height');
   const objectives=landscapeItems(country.id,blankSave());
   const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.65,z:i.z,r:1.25})))];
   for(const item of objectives){

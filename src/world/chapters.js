@@ -20,17 +20,17 @@ export function chapterState(save,region){return save.adventure?.chapters?.[regi
 export const restoredCountries=save=>COUNTRIES.filter(c=>chapterState(save,c.id).restored===3);
 export const nexusLevel=save=>restoredCountries(save).length;
 export function chapterObjective(save,region=save.region){
- if(region==='hub'){const n=nexusLevel(save);return n===8?{title:save.adventure?.finished?'L’Union est vivante':'Affronter l’Oubli',detail:save.adventure?.finished?'Explore les défis des gardiens et complète ton Codex.':'Les huit pays sont reconstruits. Le dernier passage est ouvert.',target:'final',reward:'Épilogue · tenue Union'}:{title:`${n} / 8 pays reconstruits`,detail:'Traverse une porte, aide un habitant et rends vie à son pays.',target:COUNTRIES.find(c=>chapterState(save,c.id).restored<3)?.id,reward:'Un nouveau quartier au Nexus'};}
+ if(region==='hub'){const n=nexusLevel(save);return n===8?{title:save.adventure?.finished?'L’Union est vivante':'Affronter l’Oubli',detail:save.adventure?.finished?'Explore les défis des gardiens et rencontre les derniers compagnons.':'Les huit pays sont reconstruits. Le dernier passage est ouvert.',target:'final',reward:'Épilogue · tenue Union'}:{title:`${n} / 8 pays reconstruits`,detail:'Traverse une porte, aide un habitant et rends vie à son pays.',target:COUNTRIES.find(c=>chapterState(save,c.id).restored<3)?.id,reward:'Un nouveau quartier au Nexus'};}
  const c=CHAPTERS[region],s=chapterState(save,region);
- if(!s.helped)return{title:'Rencontrer '+c.resident.split(',')[0],detail:c.need,target:region+':story',reward:'Un Allié + Terrain + Ambiance · 80 XP'};
- if(s.powers.length<3)return{title:'Faire résonner tes cartes',detail:'Au monument : Allié → Ambiance → Terrain. Les cartes du chapitre sont prêtées pour ces actions.',target:region+':story',reward:'Un passage visible · 60 XP'};
+ if(!s.helped)return{title:'Rencontrer '+c.resident.split(',')[0],detail:c.need,target:region+':story',reward:'Un compagnon et ses pouvoirs · 80 XP'};
+ if(s.powers.length<3)return{title:'Éveiller les pouvoirs de ton compagnon',detail:'Au monument : suivre ton compagnon, comprendre les souvenirs et raviver le lieu.',target:region+':story',reward:'Un passage visible · 60 XP'};
  if(!s.solved)return{title:c.puzzle,detail:c.instruction,target:region+':story',reward:c.restores[0]+' · 120 XP'};
  const missing=[0,1,2].find(i=>!save.beacons.includes(region+':'+i));
  if(missing!==undefined)return{title:'Retrouver les souvenirs',detail:'Les fragments alimentent la reconstruction du quartier.',target:region+':'+missing,reward:'45 XP · 15 éclats · équipement'};
  if(s.restored<2)return{title:'Reconstruire '+c.restores[1],detail:'Les trois souvenirs ont retrouvé leur place. Choisis le futur du quartier.',target:region+':story',reward:'140 XP · 40 éclats'};
- if(!save.seals.includes(region))return{title:'Libérer le gardien',detail:c.guardian,target:region+':guardian',reward:'Sceau · carte unique · 250 XP'};
+ if(!save.seals.includes(region))return{title:'Libérer le gardien',detail:c.guardian,target:region+':guardian',reward:'Sceau · gardien allié · 250 XP'};
  if(s.restored<3)return{title:'Inaugurer '+c.restores[2],detail:'Le gardien reconnaît tes liens. Le pays peut maintenant rejoindre le Nexus.',target:region+':story',reward:'200 XP · 70 éclats · tenue régionale'};
- return{title:'Un pays retrouvé',detail:c.ending,target:region+':guardian',reward:s.challenge?'Défi maîtrisé · collection libre':'Défi expert optionnel · 180 XP'};
+ return{title:'Un pays retrouvé',detail:c.ending,target:region+':guardian',reward:s.challenge?'Défi maîtrisé · rencontres libres':'Défi expert optionnel · 180 XP'};
 }
 export function puzzleStart(region){const c=CHAPTERS[region];return [...(c.initial||[])];}
 export function puzzleStep(region,board,index){

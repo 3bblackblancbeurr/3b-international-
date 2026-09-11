@@ -1,6 +1,7 @@
 import React,{memo,useEffect,useState,useMemo} from 'react';
 import {Menu,BookOpen,Map,ArrowUp,MessageCircle,DoorOpen,Sparkles,Swords} from 'lucide-react';
-import {countryById} from './catalog.js';
+import {CompanionPortrait} from './Companions.jsx';
+import {countryById,cardById} from './catalog.js';
 import {Compass,MiniMap,DetailedMap} from './Cartography.jsx';
 import {landscapeItems} from './terrain.js';
 import {levelFor} from './rules.js';
@@ -23,6 +24,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   {arrival&&loaded&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Le Val des huit portes'}</h1><i/></div>}
   <button className="play-profile" aria-label={(save.adventure.avatar.name||'Voyageur')+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" onClick={()=>onPanel('team')}><span>{(save.adventure.avatar.name||'V').slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></button>
   <button className="play-button play-arena" aria-label="Arène en ligne" title="Arène en ligne" onClick={()=>onPanel('arena')}><Swords size={21}/></button>
+  {snapshot.companion&&<button className="play-companion" aria-label={cardById[snapshot.companion]?.name+' · ouvrir les compagnons'} onClick={()=>onPanel('collection')}><CompanionPortrait id={snapshot.companion}/><span><small>À tes côtés</small><strong>{cardById[snapshot.companion]?.name}</strong></span></button>}
   {snapshot.waypoint&&snapshot.remaining>7&&<button className="play-bearing" aria-label={'Repère : '+snapshot.waypoint.name+', '+snapshot.remaining+' mètres. Rejoindre automatiquement.'} title="Rejoindre le repère" onClick={onGuide}><ArrowUp size={18} style={{transform:`rotate(${bearing}deg)`}}/><small>{snapshot.remaining} m</small></button>}
   {near&&<button key={near.id} className="play-interaction" onClick={onInteract}><Icon size={20}/><span>{name}</span><kbd>E</kbd></button>}
   {hint&&!near&&!snapshot.moving&&!arrival&&<div className="play-first-hint">Glisse à gauche pour avancer · à droite pour regarder</div>}

@@ -1,0 +1,22 @@
+{
+  "generator": "Blender 4.5 local",
+  "style": "Original stylised architecture inspired by Moroccan courtyards, not a surveyed replica",
+  "assets": {
+    "Riad": {
+      "meshes": 10,
+      "triangles": 48040
+    },
+    "Aqueduct": {
+      "meshes": 3,
+      "triangles": 15176
+    },
+    "Terraces": {
+      "meshes": 4,
+      "triangles": 23076
+    },
+    "UnionWorkshop": {
+      "meshes": 8,
+      "triangles": 5116
+    }
+  }
+}

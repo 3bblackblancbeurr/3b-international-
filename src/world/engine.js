@@ -36,7 +36,7 @@ export function advanceBattle(enc,action){
  const pattern=CHAPTERS[e.region].pattern;e.phase=phase;
  e.intent=e.final?['frappe','double','rituel','percée','soin','rituel'][e.turn%6]:e.boss?pattern[(e.turn+(phase===3?1:0))%pattern.length]:['frappe','rituel','percée','frappe'][e.turn%4];
  e.log=`${damage} dégâts infligés · ${hit} reçus${action==='guard'?` · +${s.heal+9} vitalité`:''}.${e.boss?' Phase '+phase+' / 3.':''}${enrage?' Le gardien s’enrage : termine le combat !':''}`;
- if(!e.hp){e.result='defeat';e.log='Replie-toi et adapte tes cartes. Tu ne perds aucune carte.';}return e;
+ if(!e.hp){e.result='defeat';e.log='Replie-toi et prépare ton groupe. Tes compagnons restent à tes côtés.';}return e;
 }
 
 // Only commands are accepted by the server. XP, ownership and results never come from request totals.
@@ -46,6 +46,8 @@ export function applyWorldAction(input,action){
  const inCountry=()=>requireThat(!!c&&s.visited.includes(region),'Traverse d’abord une porte.');
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
  switch(action.type){
+  case 'companion':{peaceful();requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id});}
+  case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
   case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
   case 'visit':{
@@ -61,12 +63,12 @@ export function applyWorldAction(input,action){
   }
   case 'power':{
    peaceful();inCountry();requireThat(cs.helped,'Aide d’abord cet habitant.');
-   const order=['ally','ambiance','terrain'],next=order[cs.powers.length];requireThat(action.power===next,'Utilise les pouvoirs dans cet ordre : Allié, Ambiance, Terrain.');
-   const id=chapterCards(region)[next];requireThat(s.collection[id],'La carte nécessaire manque.');
+   const order=['ally','ambiance','terrain'],next=order[cs.powers.length];requireThat(action.power===next,'Suis ton compagnon, lis les souvenirs, puis ravive le lieu.');
+   const id=chapterCards(region)[next];requireThat(s.collection[id],'Ce pouvoir n’a pas encore été appris.');
    return reward(chapter(s,region,{powers:[...cs.powers,next]}),20,0);
   }
   case 'puzzleStep':case 'puzzleReset':case 'solve':{
-   peaceful();inCountry();requireThat(cs.powers.length===3,'Fais résonner les trois cartes au monument.');if(cs.solved)return s;
+   peaceful();inCountry();requireThat(cs.powers.length===3,'Éveille les trois pouvoirs au monument.');if(cs.solved)return s;
    if(action.type==='puzzleReset')return chapter(s,region,{board:puzzleStart(region)});
    if(action.type==='puzzleStep')return chapter(s,region,{board:puzzleStep(region,cs.board,action.index)});
    requireThat(puzzleSolved(region,cs.board),'L’énigme n’est pas encore résolue. Observe l’indice.');
@@ -86,6 +88,7 @@ export function applyWorldAction(input,action){
    const boss=item.type==='guardian';if(boss)requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');
    if(action.outdoor){requireThat(!boss&&s.adventure.outdoorCredits>0,'Marche pour révéler un écho du dehors.');s=adventure(s,{outdoorCredits:s.adventure.outdoorCredits-1});}
    const enc=makeEncounter(cardById[item.card],s,boss),expert=s.adventure.difficulty==='expert';
+   if(s.adventure.preparation){const prepared=chapterState(s,s.adventure.preparation);if(prepared.restored>=2){if(prepared.choice==='workshop')enc.stats.attack+=4;else{enc.hp+=16;enc.maxHP+=16;enc.stats.health+=16;}}s=adventure(s,{preparation:null});}
    if(expert){enc.enemy=Math.round(enc.enemy*1.4);enc.enemyMax=enc.enemy;}
    return adventure(s,{encounter:{...enc,region,expert,phase:1,pactSeed:cardById[item.card].number+s.wins,intent:boss?c.pattern[0]:'frappe'}});
   }
