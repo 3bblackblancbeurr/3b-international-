@@ -8,8 +8,9 @@ export const pick = (list,random)=>list[Math.floor(random()*list.length)];
 export function shuffle(list,random) {const a=[...list];for(let i=a.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 export function movePlayer(p,input,dt,speed=205) { let x=input.x||0,y=input.y||0;const n=Math.hypot(x,y);if(n>1){x/=n;y/=n;}p.x=clamp(p.x+x*speed*dt,25,W-25);p.y=clamp(p.y+y*speed*dt,35,H-25);p.moving=!!n;if(x)p.facing=x>0?1:-1; }
 export class BaseGame {
-  constructor(seed){this.random=rng(seed);this.time=0;this.status='playing';this.message='';this.effects=[];this.player={x:W/2,y:H/2,hp:100,maxHp:100,facing:1};this.score=0;}
-  effect(x,y,color='#eed175',text=''){this.effects.push({x,y,color,text,life:.65});}
+  constructor(seed){this.random=rng(seed);this.time=0;this.status='playing';this.message='';this.effects=[];this.player={x:W/2,y:H/2,hp:100,maxHp:100,facing:1};this.score=0;this.feedbackId=0;this.feedback='';}
+  cue(type){this.feedback=type;this.feedbackId++;}
+  effect(x,y,color='#eed175',text=''){this.effects.push({x,y,color,text,life:.65});if(this.effects.length>100)this.effects.shift();}
   tick(dt){this.time+=dt;this.effects=this.effects.filter(e=>(e.life-=dt)>0);}
   finish(won,message){if(this.status==='ended')return;this.status='ended';this.won=won;this.message=message;}
 }

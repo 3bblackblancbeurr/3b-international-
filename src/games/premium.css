@@ -1,0 +1,62 @@
+.premium-library{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin:24px 0}
+.premium-game-card{--accent:#a9d9eb;position:relative;overflow:hidden;display:flex;flex-direction:column;text-align:left;padding:0;border:1px solid #90bdd72b;border-radius:16px;background:#101c29;color:#edf4f8;box-shadow:0 16px 35px #0003;transition:transform .2s,border-color .2s}
+.premium-game-card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.premium-game-card[data-game=tower]{--accent:#c8adf1}.premium-game-card[data-game=maze]{--accent:#8de4d8}.premium-game-card[data-game=refuge]{--accent:#f2ce91}.premium-game-card[data-game=cities]{--accent:#bbe2a1}
+.premium-card-art{height:152px;position:relative;overflow:hidden;background:linear-gradient(180deg,#0c182544,#0c1825bb),url('/games/night-plaza.webp') center 58%/cover}
+.premium-card-art:after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,#101c29,transparent 48%)}
+.premium-card-number{position:absolute;left:18px;top:16px;z-index:1;color:var(--accent);font:500 13px system-ui;letter-spacing:.15em}
+.premium-card-sprite{position:absolute;height:170px;width:110px;left:calc(50% - 55px);bottom:-20px;background:url('/games/kais-run.webp') 0 0/400% 200%;filter:drop-shadow(0 0 25px #a3ddec66)}
+[data-game=tower] .premium-card-art{background-color:#221536;background-blend-mode:luminosity}
+[data-game=tower] .premium-card-sprite{height:160px;width:160px;background:url('/games/objects.webp') 0 100%/300% 200%;bottom:-8px}
+[data-game=maze] .premium-card-art{background-position:left bottom;filter:hue-rotate(18deg)}
+[data-game=maze] .premium-card-sprite{height:150px;width:150px;background:url('/games/objects.webp') 100% 0/300% 200%;bottom:-8px}
+[data-game=refuge] .premium-card-sprite{height:170px;width:170px;left:calc(50% - 85px);background:url('/games/city-sprites.webp') 100% 100%/200% 200%;bottom:-12px}
+[data-game=cities] .premium-card-sprite{height:175px;width:175px;left:calc(50% - 87px);background:url('/games/city-sprites.webp') 0 0/200% 200%;bottom:-10px}
+.premium-card-copy{display:flex;flex:1;flex-direction:column;padding:4px 21px 20px;gap:12px}
+.premium-card-genre{font-size:12px;letter-spacing:.075em;color:var(--accent);line-height:1.5}
+.premium-card-copy>strong{font-size:21px;line-height:1.22;letter-spacing:-.025em;min-height:51px}
+.premium-card-description{font-size:14px;line-height:1.6;color:#acbed0;flex:1}
+.premium-card-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:#b2c4d6}
+.premium-card-play{display:inline-flex;align-items:center;gap:8px;background:#d7e9f312;border:1px solid #d3e5f52b;padding:10px 13px;border-radius:7px;color:#e8f4fa;font-size:14px}
+.game-shell{--accent:#eacd92;background:#080f18;font-family:Inter,system-ui,sans-serif}
+.game-shell[data-game=maze]{--accent:#99e4d8}.game-shell[data-game=tower]{--accent:#c4b1e7}.game-shell[data-game=cities]{--accent:#c4e4ad}
+.game-header{border-bottom-color:#9dbed025;background:linear-gradient(100deg,#142132,#0c1422);min-height:64px}
+.game-header strong{font-family:inherit;font-weight:600;font-size:18px;letter-spacing:-.02em;color:#eaf1f7}
+.game-header button{border-color:#b5d0e326;border-radius:9px;background:#91b7d20b}
+.game-header button:hover{border-color:var(--accent);color:var(--accent)}
+.game-hud{gap:0;padding:12px;background:#0c1724;border-bottom:1px solid #9dc0da18}
+.game-hud>div{flex:1;max-width:190px;flex-direction:column;align-items:center;gap:4px;border-right:1px solid #9bc2d31a}
+.game-hud>div:last-child{border:0}.game-hud span{font-size:12px;letter-spacing:.07em}.game-hud strong{font-size:18px;color:var(--accent)}
+.game-stage{background:radial-gradient(ellipse at center,#1c3144,#080e17 75%)}
+.game-stage canvas{max-width:none;filter:saturate(1.07)}
+.game-overlay{background:#060f1ddc;backdrop-filter:blur(9px)}
+.game-overlay h2{font-family:inherit;font-weight:650;letter-spacing:-.04em;line-height:1.12;font-size:clamp(28px,4vw,48px)}
+.premium-intro>div{max-width:620px}.premium-intro .arcade-eyebrow{color:var(--accent)}
+.premium-controls{border:1px solid #bdd7eb29;background:#192c3f88;border-radius:12px;padding:18px 22px;margin:20px auto 24px;max-width:550px;font-size:15px;line-height:1.7;text-align:left;color:#cfdfeb}
+.premium-intro-tip{font-size:12px!important;color:#8da5b9!important;margin:15px 0 0!important}
+.game-overlay .arcade-primary{border-radius:10px;min-width:245px}
+.game-shell[data-state=intro] .game-footer{display:none}
+.game-footer{min-height:78px;padding:10px 20px;background:#0c1724;border-top:1px solid #9cbcd025;position:relative}
+.game-action{position:relative;isolation:isolate;overflow:hidden;min-width:154px;min-height:58px;border-color:#dac58e66;border-radius:10px;background:#bf9e4520;color:#f9e8bd;font-size:15px}
+.game-action:before{content:'';position:absolute;inset:0;right:auto;width:var(--cooldown,100%);background:#e0c4771f;z-index:-1;transition:width .1s linear}
+.game-drag-hint{bottom:26px;font-size:12px;background:#061321a8;border:0;padding:5px 10px}
+.game-subpanel{max-height:34svh;overflow:auto;overscroll-behavior:contain;background:#0d1927;border-top:1px solid #91b8d123}
+.game-log{font-size:14px;color:#c6d7e4;margin:10px 18px;line-height:1.5}
+.game-options{background:transparent;padding:8px 12px;gap:8px}
+.game-options button,.game-tiles button{font-size:14px;min-height:44px;border-radius:8px;border-color:#a7c7dd2b;background:#192c3e;color:#e1eaf0}
+.game-options button:hover,.game-tiles button:hover,.game-tiles button.selected{border-color:var(--accent);background:#39453e;color:#fff2cd}
+.game-tiles{padding:8px 12px}.game-tiles button.selected{box-shadow:inset 0 -3px var(--accent)}
+.premium-city-preview{color:#c5e5b4;font-size:13px;text-align:center;padding:4px 12px 8px}
+.premium-country-picker summary{text-align:center;font-size:13px;padding:10px;color:#becdd6;cursor:pointer}
+.game-door-choices{gap:10px;padding:8px 16px}.game-door-choices button{background:linear-gradient(135deg,#252b43,#142133);border-color:#afa0d64d;border-radius:10px;transition:border-color .15s;min-height:90px}
+.game-door-choices button:hover{border-color:#d3baff}.game-door-choices small{font-size:13px}.door-risk{font-size:12px;color:#d4bb8c;line-height:1.4}
+.game-reward-status:empty{display:none}.game-reward-status{font-size:12px;color:#a6baca;max-width:220px}.game-saving{font-size:12px}.game-hints p{font-size:13px}
+@media(min-width:1000px){.premium-game-card:nth-child(n+4){grid-column:auto}.premium-library{grid-template-columns:repeat(6,minmax(0,1fr))}.premium-game-card{grid-column:span 2}.premium-game-card:nth-child(n+4){grid-column:span 3}.premium-game-card:nth-child(n+4) .premium-card-art{height:170px}.game-shell[data-game=cities] .game-subpanel{max-height:27svh}}
+@media(max-width:800px){.premium-library{grid-template-columns:repeat(2,minmax(0,1fr))}.premium-card-copy{padding:0 16px 17px}.premium-card-copy>strong{font-size:19px}}
+@media(max-width:600px){
+ .premium-library{grid-template-columns:1fr;gap:13px;margin:18px 0}.premium-game-card{display:grid;grid-template-columns:110px 1fr;border-radius:12px;min-height:164px}.premium-card-art{height:100%;min-height:164px}.premium-card-art:after{background:linear-gradient(90deg,transparent,#101c2966)}.premium-card-sprite{transform:scale(.85);left:0;bottom:0}.premium-card-copy{padding:16px 14px;gap:7px}.premium-card-copy>strong{font-size:19px;min-height:0}.premium-card-description{font-size:13px;line-height:1.45}.premium-card-genre{font-size:10px;letter-spacing:.03em}.premium-card-bottom{margin:4px 0 0}.premium-card-play{padding:6px 9px}.premium-card-number{left:12px;top:12px}.premium-game-card[data-game] .premium-card-sprite{left:-25px}
+ .game-header{padding:7px 8px;min-height:54px;gap:8px}.game-header strong{font-size:15px}.game-header button{width:38px;height:40px}.game-hud{padding:9px 3px}.game-hud strong{font-size:14px}.game-hud span{font-size:11px;letter-spacing:0}.game-hud>div{gap:3px}
+ .game-footer{min-height:76px;padding:8px 10px;gap:9px}.game-mobile-help{font-size:12px;line-height:1.5}.game-action{min-width:130px;max-width:47%;font-size:13px;padding:9px;min-height:58px}.game-drag-hint{font-size:11px;bottom:25px}.game-reward-status{display:none}.game-subpanel{max-height:37svh}.game-log{font-size:13px;margin:7px 10px}.game-door-choices{gap:5px;padding:6px}.game-door-choices button{padding:8px;min-height:100px}.game-door-choices strong{font-size:13px}.game-door-choices small{font-size:12px}.door-risk{font-size:11px}.game-tiles{gap:5px;padding:5px}.game-tiles button,.game-options button{font-size:12px;padding:8px;min-height:44px}.premium-country-picker summary{padding:8px}.premium-city-preview{font-size:12px;padding:4px 8px}.game-shell[data-game=cities] .game-footer{display:none}.premium-controls{font-size:14px;padding:15px;margin:16px 0}.game-overlay h2{font-size:30px}.premium-intro .arcade-eyebrow{font-size:11px;line-height:1.5;letter-spacing:.1em}.game-overlay .arcade-primary{min-width:220px}.game-shell[data-game=tower] .game-mobile-help{font-size:11px}
+}
+@media(max-height:550px) and (orientation:landscape){.game-header{min-height:42px;padding:3px 10px}.game-header button{height:33px}.game-hud{padding:5px}.game-hud>div{flex-direction:row;gap:8px}.game-hud strong{font-size:14px}.game-footer{min-height:52px;padding:4px 14px}.game-action{min-height:44px}.game-mobile-help{font-size:12px}.game-dpad{display:none}.game-subpanel{max-height:32svh}.game-log{margin:3px}.game-door-choices button{min-height:65px}.game-overlay h2{font-size:24px;margin:5px}.premium-controls{padding:8px;margin:10px;font-size:13px}.game-overlay p{margin:6px}.game-overlay .arcade-primary{padding:9px;min-height:42px}.premium-intro-tip{display:none}}
+@media(prefers-reduced-motion:reduce){.premium-game-card,.game-action:before{transition:none}.premium-game-card:hover{transform:none}}
