@@ -11,7 +11,7 @@ function bar(c,x,y,w,value,color,h=6){c.fillStyle='#050c17';c.fillRect(x,y,w,h);
 export function atmosphere(c,g,kind,images){
   const bg=images['night-plaza.webp'];
   if(bg){const drift=g.reducedMotion?0:Math.sin(g.time*.09)*7;c.drawImage(bg,-12+drift,-10,W+24,H+20);}
-  const tint={arena:'#05131b35',tower:'#140e2be0'}[kind];
+  const tint='#05131b35';
   c.fillStyle=tint;c.fillRect(0,0,W,H);
   if(kind==='arena'){
     c.save();c.translate(W/2,H/2);c.scale(1,.72);c.strokeStyle='#e3c67822';c.lineWidth=2;
@@ -37,34 +37,5 @@ export function finishScene(c,g,kind){
   if(kind==='arena'){
     const camera=g.cameraX||0;for(const enemy of g.enemies){const x=enemy.x-camera;if(x>15&&x<width-15)continue;const px=clamp(x,16,width-16),py=clamp(enemy.y,115,H-100);disc(c,px,py,enemy.boss?8:4,enemy.boss?'#ffd491':'#ef8c81');}
     bar(c,width/2-46,H-16,92,g.player.hp/g.player.maxHp,g.player.hp<30?'#ff887d':'#b0e7bd',4);
-  }
-}
-
-export function towerScene(c,g,sprite){
-  const floor=c.createLinearGradient(0,220,0,H);floor.addColorStop(0,'#352945');floor.addColorStop(1,'#101927');c.fillStyle=floor;c.fillRect(0,220,W,H-220);
-  for(let i=0;i<11;i++)line(c,W/2,190,(i-1)*112,H,'#b5a3c510');
-  for(let i=0;i<7;i++){const y=230+i*i*9;line(c,0,y,W,y,'#b5a3c516');}
-  for(const x of [50,850]){glow(c,x,255,170,'#d8914135');sprite(c,'watchtower',x,470,300);}
-  panel(c,300,20,300,64);text(c,`ÉTAGE ${String(g.floor).padStart(2,'0')} / 15`,W/2,48,21);text(c,g.room==='combat'?'LE GARDIEN DU PASSAGE':g.room==='resolved'?'PASSAGE OUVERT':'CHOISIS TON DESTIN',W/2,69,12,'#c7b7d6');
-  if(g.room==='combat'){
-    const urgent=g.enemy.windup<=.55,attacking=g.strike>.38,impact=g.enemy.hit>0;
-    glow(c,560,340,190,urgent?'#d955493f':'#8571bd28');
-    c.save();if(impact)c.globalAlpha=.65;sprite(c,'monster',560+(impact?Math.sin(g.enemy.hit*90)*9:0),440,215);c.restore();
-    const px=270+(attacking?(g.strike-.38)*130:0);sprite(c,'kais',px,475,180,g.time);
-    if(attacking){c.strokeStyle='#fff1c8';c.lineWidth=5;c.beginPath();c.arc(px+42,380,75,-1.2,1.1);c.stroke();}
-    if(g.block>0){glow(c,px+15,395,105,g.counter>0?'#fceac466':'#86dcef44');c.strokeStyle='#a8edff';c.lineWidth=3;c.beginPath();c.ellipse(px+20,400,58,90,0,0,TAU);c.stroke();}
-    bar(c,440,139,240,g.enemy.hp/g.enemy.maxHp,'#e08b9f',10);text(c,'OMBRE · '+Math.ceil(g.enemy.hp)+' / '+g.enemy.maxHp,560,125,14,'#e5bed0');
-    panel(c,200,505,500,83);text(c,g.counter>0?'CONTRE-ATTAQUE ×2':urgent?'PARE MAINTENANT':'OBSERVE SON ATTAQUE',450,532,22,g.counter>0?'#ffdfa0':urgent?'#ffb2a0':'#d4d6e6');
-    const ratio=1-g.enemy.windup/(g.enemy.interval||2.8);bar(c,230,548,440,ratio,'#c7b2e5',10);c.fillStyle='#99e3d18a';c.fillRect(230+440*.86,548,440*.14,10);text(c,'Frapper : Espace  ·  Parer : F  ·  Zone verte : parade parfaite',450,578,14,'#afc5d4');
-  }else{
-    const colors={treasure:'#eaca83',trap:'#ef967d',combat:'#d594b0',secret:'#b9a3f2',rest:'#8bddbf'};
-    for(let i=0;i<3;i++){
-      const x=185+i*265,d=g.doors[i],color=colors[d.type];const selected=g.selectedDoor===i;
-      c.save();if(g.room==='resolved'&&!selected)c.globalAlpha=.3;
-      glow(c,x,310,145,color+'32');sprite(c,'portal',x,435,286+(selected?8:0));
-      panel(c,x-103,448,206,60);text(c,String(i+1).padStart(2,'0'),x,477,24,color);text(c,{treasure:'TRÉSOR',trap:'PIÈGE',combat:'COMBAT',secret:'SOUVENIR',rest:'SANCTUAIRE'}[d.type],x,496,12,color);
-      c.restore();
-    }
-    sprite(c,'kais',450,605,95,g.reducedMotion?0:g.time*.3);
   }
 }
