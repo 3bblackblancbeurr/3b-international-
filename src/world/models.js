@@ -60,7 +60,7 @@ export function createCreature(asset,region,color,scale=2){
 }
 
 export function createResident(asset,kind,color){
- if(asset.living)return createLivingActor(asset.living,{avatar:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,skin:2},scale:2});
+ if(asset.living)return createLivingActor(asset.living,{avatar:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,fabricColor:color,outer:kind==='artisan'?'apron':'none',bag:kind==='traveler',skin:2},scale:2});
  const source=asset.scene.getObjectByName('Resident_'+kind);if(!source)throw Error('Habitant manquant : '+kind);const object=source.clone(true),owned=[];object.scale.setScalar(2.4);
  object.traverse(o=>{if(o.isMesh&&o.material.name==='Resident cloth'){o.material=o.material.clone();o.material.color.set(color).multiplyScalar(.65);owned.push(o.material);}});
  let elapsed=0;return{object,update(dt){elapsed+=dt;object.position.y=Math.sin(elapsed*1.5)*.018;},dispose(){owned.forEach(m=>m.dispose());}};

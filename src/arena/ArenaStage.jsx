@@ -8,9 +8,9 @@ export function ArenaStage({state,side=0,cardId,avatar}){
  useEffect(()=>{
   const canvas=ref.current;let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les commandes restent accessibles.');return;}
   const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,90),geometry=[],materials=[];
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.32;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
   scene.background=new THREE.Color('#101c27');scene.fog=new THREE.Fog('#101c27',13,29);
-  scene.add(new THREE.HemisphereLight('#dcf1ff','#455346',2.5));
+  scene.add(new THREE.HemisphereLight('#ecf6ff','#a0aa92',3.2));
   const light=new THREE.DirectionalLight('#ffe7b5',4);light.position.set(-4,7,6);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-6,right:6,top:5,bottom:-5});light.shadow.normalBias=.035;scene.add(light);
   const rim=new THREE.DirectionalLight('#74c6e7',3);rim.position.set(4,3,-5);scene.add(rim);
   const material=(color,extra={})=>{const m=new THREE.MeshStandardMaterial({color,roughness:.67,metalness:.2,...extra});materials.push(m);return m;};

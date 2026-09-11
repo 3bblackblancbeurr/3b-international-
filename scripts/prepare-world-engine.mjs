@@ -5,7 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 if(!process.argv[2])throw Error('Provide an output JSON path outside the repository.');
-const files=['engine.js','rules.js','catalog.js','chapters.js','adventure-state.js','avatar-rules.js','cards-source.json'].map(name=>{
+const files=['engine.js','rules.js','catalog.js','chapters.js','adventure-state.js','avatar-rules.js','settlements.js','wardrobe.js','cards-source.json'].map(name=>{
  let content=fs.readFileSync(path.join(root,'src/world',name),'utf8').replace(/^\uFEFF/,'');
  if(name.endsWith('.json'))content=JSON.stringify(JSON.parse(content));
  return {name,content};
