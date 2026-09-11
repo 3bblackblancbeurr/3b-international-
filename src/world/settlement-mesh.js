@@ -16,8 +16,11 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
   const g=geo(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const mesh=new THREE.Mesh(g,material);mesh.receiveShadow=true;root.add(mesh);
  }
 
- for(const road of roads){if(road.kind==='street')strip(road.points,road.width+1.3,mat('#ddd0b4'));strip(road.points,road.width,road.kind==='street'?paving:earth);}
+ for(const road of roads){if(road.kind==='street')strip(road.points,road.width+.55,mat('#a79d87'));strip(road.points,road.width,road.kind==='street'?paving:earth);}
  for(const p of squares){const g=geo(new THREE.CircleGeometry(p.r,48));g.rotateX(-Math.PI/2);const a=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<a.count;i++){a.setY(i,height(a.getX(i)+p.x,a.getZ(i)+p.z)+.052);uv.setXY(i,(a.getX(i)+p.x)/5,(a.getZ(i)+p.z)/5);}g.computeVertexNormals();const square=shape(g,paving,p.x,0,p.z);square.castShadow=false;}
+ for(const plot of field.buildings.filter(p=>p.urban)){
+  const apron=shape(box,paving,plot.x,height(plot.x,plot.z)-.03,plot.z,plot.width+2.7,.16,plot.depth+3.8);apron.rotation.y=plot.rotation;apron.castShadow=false;
+ }
  // An open artisan courtyard: usable entrance, market stalls, signs and seating.
  const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop&&region!=='maroc'){const {x,z}=workshop;
   for(const side of [-1,1])for(const i of [0,1,2])shape(box,mat(['#b5865f','#74918b','#b29868'][i]),x+side*8+(i-1)*.6,height(x,z)+1.2,z+1.1,.52,.32,.7);
@@ -44,7 +47,7 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
  }
  const camp=field.anchors.find(a=>a.id.endsWith(':survey:rural'));if(camp){asset('Market',camp.x+7,camp.z-5,1.4,biome.angle);asset('Bench',camp.x-3,camp.z-3,1.4,0);resident(camp.x+2,camp.z+1,'#8f9f71',root,'elder');}
  // Walkers follow the actual curved lanes, with pauses at their ends.
- for(const [index,r] of roads.filter(r=>r.kind==='street').entries())for(let n=0;n<2;n++){
+ for(const [index,r] of roads.filter(r=>r.kind==='street').entries())for(let n=0;n<(index<5?2:1);n++){
   const a=r.points[0];resident(a.x,a.z,['#657783','#b3966c','#577c70','#8d6659'][(index+n)%4],root,(index+n)%3===0?'woman':n?'artisan':'traveler',{points:r.points,offset:index*11+n*31,speed:2.4+n*.3});
  }
  // Space lamps by travelled distance rather than by spline control points.

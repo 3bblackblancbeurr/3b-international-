@@ -9,10 +9,21 @@ export function addCivicBuildings({region,field,root,shape,box,cylinder,geo,mat,
  const b=(material,x,y,z,w,h,d)=>shape(box,material,x,y,z,w,h,d);
  function sign(label,x,y,z,width){
   if(typeof document==='undefined')return;
-  const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;const ctx=canvas.getContext('2d');ctx.fillStyle='#17333b';ctx.fillRect(0,0,512,128);ctx.strokeStyle='#cbb383';ctx.lineWidth=3;ctx.strokeRect(7,7,498,114);ctx.fillStyle='#f5e9d4';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 45px sans-serif';ctx.fillText(label,256,65,465);
-  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;owned.push(texture);const material=new THREE.MeshStandardMaterial({map:texture,roughness:.55});occlusion.apply(material);owned.push(material);shape(geo(new THREE.PlaneGeometry(width,width/4)),material,x,y,z);
+  const canvas=document.createElement('canvas');const logo=label==='3B';canvas.width=512;canvas.height=logo?512:128;const ctx=canvas.getContext('2d');ctx.fillStyle='#17333b';ctx.fillRect(0,0,512,canvas.height);ctx.strokeStyle='#cbb383';ctx.lineWidth=3;ctx.strokeRect(7,7,498,canvas.height-14);ctx.fillStyle='#f5e9d4';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=logo?'600 235px sans-serif':'600 45px sans-serif';ctx.fillText(label,256,canvas.height/2,465);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;owned.push(texture);const material=new THREE.MeshStandardMaterial({map:texture,roughness:.55});occlusion.apply(material);owned.push(material);shape(geo(new THREE.PlaneGeometry(width,logo?width:width/4)),material,x,y,z);
  }
- for(const s of field.civic){const {x,z,width:w,depth:d}=s,y=field.height(x,z),h=s.kind==='archives'?17:8.3;
+ for(const s of field.civic){const {x,z,width:w,depth:d}=s,y=field.height(x,z);
+  if(s.kind.startsWith('nexus')){
+   const center=s.kind==='nexus',h=center?42:20,concrete=mat('#c0c7bf'),facade=mat('#174151',{metalness:.6,roughness:.18}),dark=mat('#243b45');for(const m of [concrete,facade,dark])occlusion.apply(m);
+   b(dark,x,y+h/2,z,w,h,d);b(facade,x,y+h/2,z+d/2+.1,w-.8,h-.8,.16);
+   for(const side of [-1,1]){b(facade,x+side*(w/2+.1),y+h/2,z,.15,h-.8,d-.8);b(concrete,x+side*w/2,y+h/2,z+d/2+.42,.48,h,.65);}
+   for(let floor=0;floor<=h;floor+=5.5){b(concrete,x,y+floor,z,w+1.2,.35,d+1.2);for(const side of [-1,1])b(gold,x+side*w/2,y+floor+.22,z,.09,.08,d);}
+   for(let col=-w/2+2;col<w/2;col+=2.4)b(concrete,x+col,y+h/2,z+d/2+.32,.16,h,.25);
+   if(center){b(concrete,x+7,y+25,z+d/2+.6,10,26,1.5);sign('3B',x+7,y+32,z+d/2+1.38,8);b(concrete,x,y+8.2,z+d/2+3,w+3,.5,6);sign('LA MAISON DES MONDES',x,y+7.2,z+d/2+1,18);}
+   else{b(concrete,x,y+h+.8,z,w+1,1.25,d+1);for(let col=-3;col<=3;col++)b(gold,x+col*3.6,y+h+1.55,z+d/2,.08,.12,d);}
+   continue;
+  }
+  const h=s.kind==='archives'?17:8.3;
   b(stone,x,y+h/2,z,w,h,d);b(trim,x,y+.24,z,w+.25,.48,d+.25);
   const front=z+d/2;
   // Deep window reveals, continuous glazed strips and external fins create a

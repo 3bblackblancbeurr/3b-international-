@@ -77,6 +77,7 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
+  if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='camp'){setPanel('camp');return;}
   if(item.type==='resource'){const next=act({type:'gather',resource:item.resource});if(next){const labels={wood:'bois',stone:'pierre',food:'provisions'};announce('Récolte ajoutée · '+labels[item.resource]);}return;}
