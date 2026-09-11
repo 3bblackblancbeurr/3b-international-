@@ -3,8 +3,8 @@ import {REGIONS} from './settlements.js';
 import {surfaceTexture} from './surfaces.js';
 
 export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned}){
- const c=REGIONS[region],{height,roads,squares,fields,biome}=field,texture=surfaceTexture('stone');if(texture)owned.push(texture);
- const paving=mat(c.paving,{map:texture,bumpMap:texture,bumpScale:.085,roughness:.96}),earth=mat(c.earth),wood=mat('#72604b'),iron=mat('#3c5352',{metalness:.55});
+ const c=REGIONS[region],{height,roads,squares,fields,biome}=field,texture=surfaceTexture('stone'),soil=surfaceTexture('earth');if(texture)owned.push(texture);if(soil)owned.push(soil);
+ const paving=mat(c.paving,{map:texture,bumpMap:texture,bumpScale:.085,roughness:.96}),earth=mat(c.earth,{map:soil,bumpMap:soil,bumpScale:.07}),wood=mat('#72604b'),iron=mat('#3c5352',{metalness:.55});
  function strip(points,width,material){
   const dense=[points[0]],verts=[],uv=[],indices=[],lift=material===paving?.08:.035;
   for(let n=1;n<points.length;n++){const a=points[n-1],b=points[n],steps=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/2));for(let i=1;i<=steps;i++)dense.push({x:a.x+(b.x-a.x)*i/steps,z:a.z+(b.z-a.z)*i/steps});}
@@ -37,7 +37,7 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
     else if(f.kind==='vineyard'){shape(cylinder,wood,p.x,y+.8,p.z,.065,1.6,.065);shape(ball,mat('#667b44'),p.x,y+1.25,p.z,1,.45,.65);for(let i=0;i<2;i++)shape(ball,mat('#605073'),p.x+i*.25,y+.95,p.z+.4,.14,.25,.14);}
     else if(f.kind==='oasis'){shape(box,mat('#7f9560'),p.x,y+.2,p.z,1.5,.35,1);}
     else if(f.kind==='terrace'){shape(box,mat('#ac8c66'),p.x,y+.1,p.z,1.8,.25,1.4);shape(ball,mat('#7e914e'),p.x,y+.5,p.z,.9,.5,.6);}
-    else{shape(cylinder,wood,p.x,y+1,p.z,.17,2,.17);shape(ball,mat(f.kind==='olive'?'#748474':'#6d8752'),p.x,y+2.3,p.z,1.35,1.1,1.3);if(f.kind==='orchard')for(const dx of [-.6,.6])shape(ball,mat('#b97e51'),p.x+dx,y+2.15,p.z+.7,.14);}
+    else{asset(f.kind==='olive'?'Olive':'Tree',p.x,p.z,f.kind==='olive'?.75:.48,jitter(row,col,4)*3);if(f.kind==='orchard')for(const dx of [-.6,.6])shape(ball,mat('#b97e51'),p.x+dx,y+2.15,p.z+.7,.14);}
    }
   }
   if(!natural)for(const side of [-1,1])for(let i=0;i<6;i++){const p=point(-f.w/2+i*f.w/5,side*(f.h/2+1));shape(box,wood,p.x,height(p.x,p.z)+.6,p.z,.14,1.2,.14);}
