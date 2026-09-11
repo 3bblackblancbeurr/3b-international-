@@ -1,9 +1,11 @@
+import {frontierState} from './frontier.js';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {COUNTRIES,countryById} from './catalog.js';
 import {chapterState} from './chapters.js';
 import {createResident} from './models.js';
 import {createArchitecture} from './architecture.js';
+import {createSceneryOcclusion} from './occlusion.js';
 import {addLivingPlaces,livingPlaceCollisions} from './places.js';
 import {addSettlement} from './settlement-mesh.js';
 import {surfaceTexture} from './surfaces.js';
@@ -20,9 +22,9 @@ export function bakeGeometry(source,matrix){
  return geometry.applyMatrix4(matrix);
 }
 export function createLandscape(models,region,save){
- const root=new THREE.Group(),owned=[],materials=new Map(),collisions=[],residents=[],stages=[],decorations=[];
+ const root=new THREE.Group(),owned=[],materials=new Map(),collisions=[],residents=[],stages=[],decorations=[],frontierGroups=[],resourceGroups=[];
  const country=countryById[region],hub=!country,field=createTerrainField(region,save),{biome,lake,height}=field;
- const rng=randomFor(biome.seed),architecture=createArchitecture();
+ const rng=randomFor(biome.seed),occlusion=createSceneryOcclusion(),architecture=createArchitecture(occlusion);
  const mat=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materials.has(key)){const m=new THREE.MeshStandardMaterial({color,roughness:.92,...extra});materials.set(key,m);owned.push(m);}return materials.get(key);};
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),ball=geo(new THREE.IcosahedronGeometry(1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,24));
  const frond=geo(new THREE.BufferGeometry()),leafPositions=[],leafIndices=[];
@@ -35,8 +37,8 @@ export function createLandscape(models,region,save){
   group.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.isSkinnedMesh||Array.isArray(o.material)||o.material.transparent||o.material.vertexColors)return;const key=o.material.uuid;if(!byMaterial.has(key))byMaterial.set(key,[]);byMaterial.get(key).push(o);});
   for(const meshes of byMaterial.values())if(meshes.length>1){const geometries=meshes.map(o=>bakeGeometry(o.geometry,new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld))),merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;owned.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.receiveShadow=true;m.castShadow=true;meshes.forEach(o=>o.removeFromParent());group.add(m);}
  }
- function resident(x,z,color,parent=root,kind='traveler',route=null){const hero=createResident(models.kit,kind,color);hero.object.position.set(x,height(x,z),z);parent.add(hero.object);residents.push({hero,x,z,parent,route,phase:residents.length*1.7});return hero;}
- function house(id,x,z,rotation=0,variant=0,parent=root,urban=true){const h=architecture.building(id,variant,{urban}),y=height(x,z);h.position.set(x,y,z);h.rotation.y=rotation;parent.add(h);const base=shape(box,mat(biome.rock),x,y-.5,z,7.5,1,6,parent);base.rotation.y=rotation;collisions.push({x,z,r:4.7});}
+ function resident(x,z,color,parent=root,kind='traveler',route=null){if(route?.points){route.lengths=route.points.slice(1).map((p,i)=>Math.hypot(p.x-route.points[i].x,p.z-route.points[i].z));route.total=route.lengths.reduce((a,b)=>a+b,0);}const hero=createResident(models.kit,kind,color);hero.object.position.set(x,height(x,z),z);parent.add(hero.object);residents.push({hero,x,z,parent,route,phase:residents.length*1.7});return hero;}
+ function house(id,x,z,rotation=0,variant=0,parent=root,urban=true){const h=architecture.building(id,variant,{urban}),y=height(x,z),{width,depth}=h.userData.dimensions;h.position.set(x,y,z);h.rotation.y=rotation;parent.add(h);const base=shape(box,mat(biome.rock),x,y-.4,z,width+.4,.8,depth+.4,parent);base.rotation.y=rotation;collisions.push({x,z,width:width+.4,depth:depth+.4,rotation});}
  function tree(x,z,size=1,type=biome.tree){
   if(type==='Palm'){
    const y=height(x,z),h=6.2*size;shape(cylinder,mat('#806746'),x,y+h/2,z,.28*size,h,.28*size);
@@ -85,11 +87,29 @@ export function createLandscape(models,region,save){
   const choice=toLandscape(region,33,18),garden=new THREE.Group(),workshop=new THREE.Group();root.add(garden,workshop);asset('Planter',choice.x,choice.z,1.4,0,garden);asset('Tree',choice.x+4,choice.z,.8,0,garden);asset('Market',choice.x,choice.z,1,biome.angle,workshop);batch(garden);batch(workshop);decorations.push({garden,workshop});
   const grove=new THREE.Group();root.add(grove);for(let i=0;i<7;i++){const a=i/7*Math.PI*2,x=guide.x+Math.cos(a)*4,z=guide.z+Math.sin(a)*4;const flower=shape(ball,mat(country.color,{emissive:country.color,emissiveIntensity:.5}),x,height(x,z)+.35,z,.18,.65,.18,grove);flower.rotation.z=.2;}batch(grove);decorations.push({grove});
  }
+ if(!hub){
+  const camp=field.anchors.find(a=>a.type==='camp');
+  if(camp){
+   const building=new THREE.Group();root.add(building);house(region,camp.x-13,camp.z,biome.angle,3,building,false);batch(building);frontierGroups.push({kind:'camp',group:building,collision:collisions.at(-1)});
+   const forge=new THREE.Group();root.add(forge);asset('Market',camp.x,camp.z-12,1.6,0,forge);asset('Bench',camp.x-3,camp.z-10,1.35,0,forge);batch(forge);frontierGroups.push({kind:'forge',group:forge});
+   const garden=new THREE.Group();root.add(garden);for(const z of [-3,3])asset('Planter',camp.x+12,camp.z+z,2.1,0,garden);asset('Tree',camp.x+12,camp.z,.8,0,garden);batch(garden);frontierGroups.push({kind:'garden',group:garden});
+   const symbol=shape(geo(new THREE.TorusGeometry(1.8,.12,6,40,Math.PI*1.72)),mat('#cfb579',{metalness:.45}),camp.x,height(camp.x,camp.z)+3.6,camp.z);symbol.rotation.z=.3;shape(cylinder,mat('#c7bfa7'),camp.x,height(camp.x,camp.z)+.2,camp.z,2.6,.4,2.6);
+  }
+  for(const item of field.anchors.filter(a=>a.type==='resource')){
+   const group=new THREE.Group(),{x,z}=item,y=height(x,z);root.add(group);
+   if(item.resource==='wood')for(let i=0;i<4;i++){const log=shape(cylinder,mat('#886b4a'),x+(i%2)*.7-.35,y+.4+Math.floor(i/2)*.65,z,.36,2.8,.36,group);log.rotation.x=Math.PI/2;}
+   if(item.resource==='stone')for(let i=0;i<4;i++)shape(ball,mat(biome.rock),x+(i%2)*1.1-.55,y+.3+Math.floor(i/2)*.5,z,.8,.55,.75,group);
+   if(item.resource==='food'){asset('Planter',x,z,1.6,0,group);for(let i=0;i<5;i++)shape(ball,mat('#d0a266'),x-.8+i*.4,y+1.1,z,.19,.25,.19,group);}
+   batch(group);resourceGroups.push({group,id:item.resource});
+  }
+ }
  const authored=addLivingPlaces(models,region,root,height);collisions.push(...livingPlaceCollisions(region));
+ for(const group of authored.groups)group.traverse(o=>{if(o.isMesh)for(const m of [o.material].flat())occlusion.apply(m);});
  // Batch only static descendants. Keep visibility stages separate.
- const dynamic=[...authored.groups,...stages.map(s=>s.group),...decorations.flatMap(d=>[d.landmark,d.ruin,d.garden,d.workshop,d.grove].filter(Boolean)),...residents.filter(r=>r.parent===root).map(r=>r.hero.object)];
+ const dynamic=[...frontierGroups.map(p=>p.group),...resourceGroups.map(p=>p.group),...authored.groups,...stages.map(s=>s.group),...decorations.flatMap(d=>[d.landmark,d.ruin,d.garden,d.workshop,d.grove].filter(Boolean)),...residents.filter(r=>r.parent===root).map(r=>r.hero.object)];
  for(const g of dynamic)g.removeFromParent();batch(root);for(const g of dynamic)if(!g.parent)root.add(g);
- function update(next){save=next;authored.update(save);const s=chapterState(save,region);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
+ function update(next){save=next;const home=frontierState(save,region);for(const p of frontierGroups){p.group.visible=home[p.kind]>0;if(p.collision)p.collision.enabled=p.group.visible;}for(const p of resourceGroups)p.group.visible=!home.harvest.includes(p.id);authored.update(save);const s=chapterState(save,region);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
  update(save);
- return{root,ground:terrain,collisions,height,field,update,tick(time,dt,position){meadow.time.value=reduceWind?0:time;waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&Math.hypot(position.x-r.x,position.z-r.z)<46;if(r.hero.object.visible){if(r.route){const cycle=(time*.065+r.phase)%2,t=cycle<1?Math.min(1,cycle*1.3):Math.max(0,1-(cycle-1)*1.3),x=r.route.a.x+(r.route.b.x-r.route.a.x)*t,z=r.route.a.z+(r.route.b.z-r.route.a.z)*t,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));}else{r.hero.update(dt);r.hero.object.position.y=height(r.x,r.z)+Math.sin(time*1.4+r.phase)*.012;r.hero.object.rotation.y=Math.sin(time*.14+r.phase)*.17+r.phase;}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
+ return{root,ground:terrain,collisions,height,field,update,updateCamera:occlusion.update,tick(time,dt,position){meadow.time.value=reduceWind?0:time;waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&(r.route?Math.min(...r.route.points.map(p=>Math.hypot(position.x-p.x,position.z-p.z)))<38:Math.hypot(position.x-r.x,position.z-r.z)<46);if(r.hero.object.visible){if(r.route){const path=r.route,total=path.total,cycle=((time+path.offset)*path.speed)%(total*2+12);let along=Math.max(0,Math.min(total,cycle<=total+6?cycle:total*2+6-cycle)),index=0;
+while(along>path.lengths[index]&&index<path.lengths.length-1)along-=path.lengths[index++];const t=along/path.lengths[index],a=path.points[index],b=path.points[index+1],x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));}else{r.hero.update(dt);r.hero.object.position.y=height(r.x,r.z)+Math.sin(time*1.4+r.phase)*.012;r.hero.object.rotation.y=Math.sin(time*.14+r.phase)*.17+r.phase;}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
 }

@@ -1,7 +1,8 @@
+import {obstacleDistance} from './collision.js';
 // A bounded navigation grid is only searched on a tap/Atlas command. Manual
 // movement stays immediate. Segment checks prevent diagonal corner cutting.
 export function findInteractionPath(start,item,obstacles,radius=76){
- const d=Math.hypot(start.x-item.x,start.z-item.z),gap=item.type==='guardian'?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
+ const d=Math.hypot(start.x-item.x,start.z-item.z),gap=['guardian','patrol'].includes(item.type)?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
  const approach=gap&&d>gap?{x:item.x+(start.x-item.x)*gap/d,z:item.z+(start.z-item.z)*gap/d}:item;
  const path=findPath(start,approach,obstacles,radius);
  // A fountain or planter can isolate the preferred side of an interaction.
@@ -11,7 +12,7 @@ export function findInteractionPath(start,item,obstacles,radius=76){
 export function findPath(start,destination,obstacles,radius=76){
  const gap=1.25,step=2,limit=Math.floor((radius-gap)/step),size=limit*2+1;
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
- const clear=p=>Math.hypot(p.x,p.z)<=radius-gap&&!obstacles.some(o=>distance(p,o)<o.r+gap);
+ const clear=p=>Math.hypot(p.x,p.z)<=radius-gap&&!obstacles.some(o=>obstacleDistance(p,o)<gap);
  const segment=(a,b)=>{const count=Math.ceil(distance(a,b)/.5);for(let i=1;i<=count;i++)if(!clear({x:a.x+(b.x-a.x)*i/count,z:a.z+(b.z-a.z)*i/count}))return false;return true;};
  const point=id=>({x:(id%size-limit)*step,z:(Math.floor(id/size)-limit)*step});
  const idAt=p=>(Math.round(p.z/step)+limit)*size+Math.round(p.x/step)+limit;

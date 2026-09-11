@@ -13,7 +13,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
  const [arrival,setArrival]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
  useEffect(()=>{if(!loaded)return;const timer=setTimeout(()=>{setHint(false);try{localStorage.setItem('3b-world-intro-seen','1');}catch{}},6500);return()=>clearTimeout(timer);},[loaded]);
- const Icon=near?.type==='portal'?DoorOpen:near?.type==='story'||near?.type==='echo'?MessageCircle:near?.type==='guardian'?Swords:Sparkles;
+ const Icon=near?.type==='portal'?DoorOpen:near?.type==='story'||near?.type==='echo'?MessageCircle:near?.type==='guardian'||near?.type==='patrol'?Swords:Sparkles;
  const name=near?.type==='story'?near.name.split(' · ')[0]:near?.id==='hub'?'Nexus':near?.type==='beacon'?(near.done?'Souvenir retrouvé':'Recueillir'):near?.type==='guardian'?'Défier le gardien':near?.name;
  const bearing=snapshot.waypoint?Math.atan2(snapshot.waypoint.x-snapshot.position.x,snapshot.position.z-snapshot.waypoint.z)*180/Math.PI-compassHeading(snapshot.camera?.yaw):0;
  return <div className={'play-hud'+(snapshot.waypoint&&snapshot.remaining>7?' has-waypoint':'')+(panel?' is-hidden':'')} aria-hidden={panel?true:undefined}>

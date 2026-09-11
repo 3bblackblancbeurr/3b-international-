@@ -1,6 +1,8 @@
 import {worldItems} from './rules.js';
 import {COUNTRIES} from './catalog.js';
 import {settlementPlan,serviceItems} from './settlements.js';
+import {buildingDimensions} from './building-scale.js';
+import {obstacleDistance} from './collision.js';
 
 export const WORLD_RADIUS=132;
 export const BIOMES={
@@ -21,13 +23,14 @@ export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(
 export function landscapeRoads(region){return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));}
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
 export function buildingSites(region,anchors=[]){
- if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+10,z:p.z-10,rotation:-.18+i*.2,variant:i};});
+ if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+13,z:p.z-13,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
  const roads=landscapeRoads(region),landmark=toLandscape(region,35,-35);
- return settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation})).filter(p=>Math.hypot(p.x,p.z)<124&&Math.hypot(p.x-landmark.x,p.z-landmark.z)>15&&Math.hypot(p.x,p.z-5)>12&&roadDistance(p.x,p.z,roads)>4.8&&!anchors.some(a=>Math.hypot(a.x-p.x,a.z-p.z)<(a.type==='portal'?12:a.type==='guardian'?14:9)));
+ const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)}));
+ return sites.filter(p=>Math.hypot(p.x,p.z)<121&&obstacleDistance(landmark,p)>12&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).filter((p,i,all)=>!all.slice(0,i).some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11));
 }
 export function createTerrainField(region,save){
  const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=plan.squares.map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
- const clearings=[{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:6})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,35,-35),r:11}])];
+ const clearings=[{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,35,-35),r:11}])];
  // Find a dry margin around every interaction and building before carving water.
  let lake={...biome.water},found=false;
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
