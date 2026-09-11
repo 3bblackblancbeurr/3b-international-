@@ -6,6 +6,8 @@ import {createResident} from './models.js';
 import {createArchitecture} from './architecture.js';
 import {addLivingPlaces,livingPlaceCollisions} from './places.js';
 import {addSettlement} from './settlement-mesh.js';
+import {surfaceTexture} from './surfaces.js';
+import {createMeadowGeometry,createMeadowMaterial} from './vegetation.js';
 import {BIOMES,createTerrainField,randomFor,toLandscape} from './terrain.js';
 export const countryPalette=id=>{const b=BIOMES[id]||BIOMES.hub;return[b.sky,b.low,b.high];};
 export function bakeGeometry(source,matrix){
@@ -50,7 +52,7 @@ export function createLandscape(models,region,save){
  const ground=geo(new THREE.PlaneGeometry(420,420,168,168));ground.rotateX(-Math.PI/2);
  const positions=ground.getAttribute('position'),colors=new Float32Array(positions.count*3),low=new THREE.Color(biome.low),high=new THREE.Color(biome.high),rock=new THREE.Color(biome.rock),color=new THREE.Color();
  for(let i=0;i<positions.count;i++){const x=positions.getX(i),z=positions.getZ(i),y=height(x,z);positions.setY(i,y);const mottling=.48+.12*Math.sin(x*.17)*Math.cos(z*.19)+.06*Math.sin(x*1.37-z*.82),slope=Math.abs(height(x+.7,z)-y)+Math.abs(height(x,z+.7)-y);color.copy(low).lerp(high,Math.max(0,Math.min(1,mottling))).lerp(rock,Math.min(.8,slope*.55));colors.set(color.toArray(),i*3);}
- ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const terrain=shape(ground,mat('#ffffff',{vertexColors:true}),0,0,0);terrain.castShadow=false;
+ ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=surfaceTexture('earth');if(soil){soil.repeat.set(90,90);owned.push(soil);}const terrain=shape(ground,mat('#ffffff',{vertexColors:true,map:soil,bumpMap:soil,bumpScale:.085}),0,0,0);terrain.castShadow=false;
  collisions.push({x:lake.x,z:lake.z,r:lake.r-1});
  const waterMat=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{time:{value:0},color:{value:new THREE.Color(region==='estonie'?'#3b7d89':'#4d9697')}},vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 p;uniform float time;uniform vec3 color;void main(){float waves=sin(p.x*2.4+p.y*.8+time*.8)*sin(p.y*3.1-time*.55);float light=pow(max(0.,waves),12.);gl_FragColor=vec4(color+vec3(.12,.17,.14)*waves*.18+light*.13,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});owned.push(waterMat);
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,64)),waterMat,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
@@ -58,10 +60,10 @@ export function createLandscape(models,region,save){
  for(let i=0;i<110;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*104,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
  for(let i=0;i<48;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
  // Thousands of grass blades share a single draw call.
- const blade=geo(new THREE.ConeGeometry(.16,1,3));blade.translate(0,.5,0);
- const count=1600,grass=new THREE.InstancedMesh(blade,mat(region==='algerie'||region==='maroc'?'#999459':'#5f8050'),count),dummy=new THREE.Object3D();let filled=0;
+ const blade=geo(createMeadowGeometry()),meadow=createMeadowMaterial(region==='algerie'||region==='maroc'?'#afb278':'#87a56c');owned.push(meadow.material);const reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const count=2400,grass=new THREE.InstancedMesh(blade,meadow.material,count),dummy=new THREE.Object3D();let filled=0;
  for(let i=0;i<count*3&&filled<count;i++){const x=(rng()-.5)*245,z=(rng()-.5)*245;if(field.protectedPoint(x,z,2)||height(x,z)>13)continue;dummy.position.set(x,height(x,z),z);dummy.rotation.set(0,rng()*6,.12);const s=.35+rng()*.6;dummy.scale.set(s,s,s);dummy.updateMatrix();grass.setMatrixAt(filled++,dummy.matrix);}
- grass.count=filled;grass.instanceMatrix.needsUpdate=true;grass.computeBoundingSphere();grass.receiveShadow=true;root.add(grass);
+ grass.count=filled;grass.instanceMatrix.needsUpdate=true;grass.computeBoundingSphere();grass.boundingSphere.radius+=.5;grass.receiveShadow=true;root.add(grass);
  if(hub){
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
   const core=toLandscape(region,0,-3);shape(cylinder,mat('#d9ceb0'),core.x,.18,core.z,3,.36,3);const orb=shape(ball,mat('#76bac0',{emissive:'#5a979e',emissiveIntensity:.3,metalness:.4}),core.x,3.5,core.z,1.1);decorations.push({orb});
@@ -89,5 +91,5 @@ export function createLandscape(models,region,save){
  for(const g of dynamic)g.removeFromParent();batch(root);for(const g of dynamic)if(!g.parent)root.add(g);
  function update(next){save=next;authored.update(save);const s=chapterState(save,region);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
  update(save);
- return{root,ground:terrain,collisions,height,field,update,tick(time,dt,position){waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&Math.hypot(position.x-r.x,position.z-r.z)<46;if(r.hero.object.visible){if(r.route){const cycle=(time*.065+r.phase)%2,t=cycle<1?Math.min(1,cycle*1.3):Math.max(0,1-(cycle-1)*1.3),x=r.route.a.x+(r.route.b.x-r.route.a.x)*t,z=r.route.a.z+(r.route.b.z-r.route.a.z)*t,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));}else{r.hero.update(dt);r.hero.object.position.y=height(r.x,r.z)+Math.sin(time*1.4+r.phase)*.012;r.hero.object.rotation.y=Math.sin(time*.14+r.phase)*.17+r.phase;}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
+ return{root,ground:terrain,collisions,height,field,update,tick(time,dt,position){meadow.time.value=reduceWind?0:time;waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&Math.hypot(position.x-r.x,position.z-r.z)<46;if(r.hero.object.visible){if(r.route){const cycle=(time*.065+r.phase)%2,t=cycle<1?Math.min(1,cycle*1.3):Math.max(0,1-(cycle-1)*1.3),x=r.route.a.x+(r.route.b.x-r.route.a.x)*t,z=r.route.a.z+(r.route.b.z-r.route.a.z)*t,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));}else{r.hero.update(dt);r.hero.object.position.y=height(r.x,r.z)+Math.sin(time*1.4+r.phase)*.012;r.hero.object.rotation.y=Math.sin(time*.14+r.phase)*.17+r.phase;}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
 }

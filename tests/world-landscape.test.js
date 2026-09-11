@@ -7,7 +7,7 @@ import {BufferGeometry,BufferAttribute,Matrix4,Box3,Vector3} from 'three';
 import {createLandscape,bakeGeometry} from '../src/world/landscape.js';
 import {blankSave} from '../src/world/rules.js';
 import {COUNTRIES} from '../src/world/catalog.js';
-import {findPath} from '../src/world/navigation.js';
+import {findInteractionPath} from '../src/world/navigation.js';
 import {landscapeItems,WORLD_RADIUS} from '../src/world/terrain.js';
 import {advanceMotion} from '../src/world/motion.js';
 const load=async name=>{const b=fs.readFileSync(new URL('../public/world/models/'+name+'.glb',import.meta.url));return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');};
@@ -21,11 +21,11 @@ test('all eight authored country layouts preserve routes to every objective and 
   if(country.id!=='hub')assert.ok(kit.scene.getObjectByName('Creature_'+country.id));
   const world=createLandscape({kit,hero,places},country.id,blankSave());world.root.updateMatrixWorld(true);const bounds=new Box3().setFromObject(world.root);assert.ok(bounds.max.y>8,'Architecture and tree canopies have height');
   const objectives=landscapeItems(country.id,blankSave());
-  const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.65,z:i.z,r:1.25})))];
+  const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.65,z:i.z,r:1.25}))),...objectives.filter(i=>i.type==='survey').map(i=>({x:i.x,z:i.z,r:.65}))];
   for(const item of objectives){
    const label=country.id+' '+item.id;
    assert.ok(Math.abs(world.height(item.x,item.z))<.05,'Dry level interaction: '+label);
-   const path=findPath({x:0,z:5},item,obstacles,WORLD_RADIUS);assert.ok(path.length,label);
+   const path=findInteractionPath({x:0,z:5},item,obstacles,WORLD_RADIUS);assert.ok(path.length,label);
    let state={position:{x:0,z:5},target:path.shift(),route:path};
    for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,WORLD_RADIUS);
    assert.ok(Math.hypot(state.position.x-item.x,state.position.z-item.z)<(item.range||5.5),'Actual movement reaches '+label);
