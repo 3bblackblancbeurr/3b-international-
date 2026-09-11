@@ -25,7 +25,18 @@ export function addCivicBuildings({region,field,root,shape,box,cylinder,geo,mat,
   for(const side of [-1,1])b(trim,x+side*(w/2-.22),y+h/2,front+.3,.35,h,.7);
   b(trim,x,y+h,z,w+.75,.45,d+.8);b(gold,x,y+h+.27,front,w+.7,.12,.25);
   if(s.kind==='archives'){
-   const dome=geo(new THREE.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI/2));shape(dome,glass,x,y+h+.3,z,4.2,2.8,3.7);
+   if(['france','italie','estonie','turquie','espagne'].includes(region)){
+    const roofMaterial=mat(region==='france'?'#455b70':region==='turquie'?'#8d6757':'#a76149');occlusion.apply(roofMaterial);
+    const roof=geo(new THREE.CylinderGeometry(region==='estonie'?0:.55,1,1,4));roof.rotateY(Math.PI/4);
+    shape(roof,roofMaterial,x,y+h+2.3,z,(w+1)/Math.SQRT2,4.2,(d+1)/Math.SQRT2);
+    if(region==='france')for(const dx of [-4,0,4]){b(trim,x+dx,y+h+1.6,front-.4,1.8,2.2,1.6);b(glass,x+dx,y+h+1.6,front+.45,1.2,1.5,.12);}
+   }else{
+    for(const side of [-1,1])b(trim,x+side*(w/2-.1),y+h+.8,z,.3,1.4,d);
+    for(const dz of [-d/2,d/2])b(trim,x,y+h+.8,z+dz,w,1.4,.3);
+    const dome=geo(new THREE.SphereGeometry(1,20,10,0,Math.PI*2,0,Math.PI/2));shape(dome,region==='tunisie'?trim:glass,x,y+h+.3,z,3,2.4,3);
+    const screen=mat(region==='tunisie'?'#24769c':region==='maroc'?'#54776b':'#597974');occlusion.apply(screen);
+    for(const dx of [-4,0,4])for(let j=0;j<6;j++){const tile=b(screen,x+dx,y+2+j*.72,front+.38,.55,.55,.1);tile.rotation.z=Math.PI/4;}
+   }
    for(const xx of [-5.5,5.5])b(trim,x+xx,y+3.4,front+1.4,.55,6.8,.55);
    b(trim,x,y+6.95,front+1.1,w+.1,.35,3);sign('3B · MÉMOIRES',x,y+7.85,front+.39,10);
    for(const xx of [-4.7,4.7])b(light,x+xx,y+4.6,front+.4,.12,2.3,.08);

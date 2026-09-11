@@ -23,11 +23,12 @@ export function landscapeItems(region,save){return [...worldItems(region,save),.
 export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
 export function landscapeRoads(region){return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));}
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
+export function landmarkSightline(region){return{a:{x:0,z:5},b:toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z)};}
 export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+13,z:p.z-13,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
- const roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
+ const sightline=landmarkSightline(region),roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
  const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)}));
- return sites.filter(p=>Math.hypot(p.x,p.z)<121&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).filter((p,i,all)=>!all.slice(0,i).some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11));
+ return sites.filter(p=>segmentDistance(p.x,p.z,sightline.a,sightline.b)>Math.hypot(p.width,p.depth)/2+4&&Math.hypot(p.x,p.z)<121&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='camp'?22:a.type==='atelier'?13:6))).reduce((accepted,p)=>{if(!accepted.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11))accepted.push(p);return accepted;},[]);
 }
 export function createTerrainField(region,save){
  const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
@@ -52,6 +53,7 @@ export function createTerrainField(region,save){
   const d=Math.hypot(x-lake.x,z-lake.z),blend=Math.max(0,Math.min(1,(lake.r+6-d)/7));
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
- const protectedPoint=(x,z,pad=0)=>clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
+ const sightline=landmarkSightline(region);
+ const protectedPoint=(x,z,pad=0)=>(region!=='hub'&&segmentDistance(x,z,sightline.a,sightline.b)<6+pad)||clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
  return {biome,anchors,buildings,civic,roads,squares,fields,lake,height,protectedPoint};
 }

@@ -46,7 +46,7 @@ export function settlementPlan(region){
   }
  }
  roads.push({kind:'trail',width:3.3,points:roundLane([[0,5],[18,8],[32,19],[49,26],[62,31]])},
-  {kind:'trail',width:3.1,points:roundLane([[11,-4],[25,-16],[35,-16]])},
+  {kind:'street',width:4.8,points:roundLane([[0,5],[12,-2],[24,-13],[35,-16]])},
   {kind:'trail',width:3.2,points:roundLane([warp([-18,-53]),[0,-57]])});
  for(const [i,[x,z]] of [[34,34],[60,11],[60,40],[35,51],[23,40],[56,-9]].entries())plots.push({x,z,rotation:i*.8,variant:60+i,urban:false});
  return {roads,plots,squares:[{x:-18,z:17,r:8},{x:9,z:-4,r:7},{x:49,z:26,r:7}],fields:[{x:46,z:40,w:19,h:12,kind:c.crop},{x:48,z:8,w:16,h:10,kind:c.crop}]};
