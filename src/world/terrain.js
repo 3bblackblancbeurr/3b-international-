@@ -1,5 +1,6 @@
 import {worldItems} from './rules.js';
 import {COUNTRIES} from './catalog.js';
+import {settlementPlan,serviceItems} from './settlements.js';
 
 export const WORLD_RADIUS=132;
 export const BIOMES={
@@ -15,19 +16,23 @@ export const BIOMES={
 };
 export function randomFor(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 export function toLandscape(region,x,z){const b=BIOMES[region]||BIOMES.hub,c=Math.cos(b.angle),s=Math.sin(b.angle);return{x:(x*c-z*s)*b.scale,z:(x*s+z*c)*b.scale};}
-export function landscapeItems(region,save){return worldItems(region,save).map(item=>({...item,...toLandscape(region,item.x,item.z)}));}
-export function buildingSites(region){
+export function landscapeItems(region,save){return [...worldItems(region,save),...serviceItems(region,save)].map(item=>({...item,...toLandscape(region,item.x,item.z)}));}
+export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
+export function landscapeRoads(region){return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));}
+export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
+export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+10,z:p.z-10,rotation:-.18+i*.2,variant:i};});
- return [[-25,-12],[-28,17],[-40,27],[30,24],[49,-9],[-44,-41],[-34,-10],[-21,-21],[39,22],[-36,14]].map(([x,z],i)=>({id:region,...toLandscape(region,x,z),rotation:BIOMES[region].angle+(i%2?.16:-.25),variant:i}));
+ const roads=landscapeRoads(region),landmark=toLandscape(region,35,-35);
+ return settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation})).filter(p=>Math.hypot(p.x,p.z)<124&&Math.hypot(p.x-landmark.x,p.z-landmark.z)>15&&Math.hypot(p.x,p.z-5)>12&&roadDistance(p.x,p.z,roads)>4.8&&!anchors.some(a=>Math.hypot(a.x-p.x,a.z-p.z)<(a.type==='portal'?12:a.type==='guardian'?14:9)));
 }
 export function createTerrainField(region,save){
- const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region);
- const clearings=[{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='portal'?9:p.type==='guardian'?12:7})),...buildings.map(p=>({...p,r:6})),...(region==='hub'?[]:[{...toLandscape(region,35,-35),r:11}])];
+ const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=plan.squares.map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
+ const clearings=[{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:6})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,35,-35),r:11}])];
  // Find a dry margin around every interaction and building before carving water.
  let lake={...biome.water},found=false;
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
   const a=i/32*Math.PI*2,p={x:biome.water.x+Math.cos(a)*ring*5,z:biome.water.z+Math.sin(a)*ring*5,r:biome.water.r};
-  if(Math.hypot(p.x,p.z)+p.r>118||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
+  if(Math.hypot(p.x,p.z)+p.r>118||roadDistance(p.x,p.z,roads)<p.r+9||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
   lake=p;found=true;break;
  }
  function height(x,z){
@@ -37,10 +42,11 @@ export function createTerrainField(region,save){
   // around interactions. There are no radial paths or raised navigation decks.
   const edge=Math.max(0,(Math.hypot(x,z)-104)/34);y+=edge*edge*(6+4*Math.sin(x*.034+z*.026));
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
+  const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
   y*=flatten;
   const d=Math.hypot(x-lake.x,z-lake.z),blend=Math.max(0,Math.min(1,(lake.r+6-d)/7));
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
- const protectedPoint=(x,z,pad=0)=>clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad;
- return {biome,anchors,buildings,lake,height,protectedPoint};
+ const protectedPoint=(x,z,pad=0)=>clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
+ return {biome,anchors,buildings,roads,squares,fields,lake,height,protectedPoint};
 }

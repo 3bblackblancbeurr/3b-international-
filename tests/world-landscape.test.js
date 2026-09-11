@@ -21,7 +21,7 @@ test('all eight authored country layouts preserve routes to every objective and 
   if(country.id!=='hub')assert.ok(kit.scene.getObjectByName('Creature_'+country.id));
   const world=createLandscape({kit,hero},country.id,blankSave());world.root.updateMatrixWorld(true);const bounds=new Box3().setFromObject(world.root);assert.ok(bounds.max.y>8,'Architecture and tree canopies have height');
   const objectives=landscapeItems(country.id,blankSave());
-  const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.3,z:i.z,r:.7})))];
+  const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.65,z:i.z,r:1.25})))];
   for(const item of objectives){
    const label=country.id+' '+item.id;
    assert.ok(Math.abs(world.height(item.x,item.z))<.05,'Dry level interaction: '+label);

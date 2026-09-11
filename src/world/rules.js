@@ -1,5 +1,6 @@
 import {CARDS,COUNTRIES,cardById,countryById,cardSlot,craftPrice} from './catalog.js';
 import {blankAdventure,normalizeAdventure} from './adventure-state.js';
+import {TRAVEL_GEAR} from './wardrobe.js';
 import {CHAPTERS,chapterState,nexusLevel} from './chapters.js';
 export const SAVE_VERSION=1;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -54,7 +55,7 @@ export function equip(save,id,asLeader=false){
 }
 export function teamStats(save){
  const cards=[save.leader,...save.team].map(id=>cardById[id]).filter(Boolean),roles=cards.map(c=>c.role),load=save.loadout,path=save.adventure.avatar?.created?save.adventure.avatar.path:null;
- return {health:100+(path==='nature'?14:path==='tempete'?-8:0)+roles.filter(r=>r==='protecteur').length*12+(load.terrain?10:0)+(load.pierre?10:0),attack:Math.round((path==='tempete'?3:path==='ombre'?1:0)+(cardById[save.leader]?.attack||15)+roles.filter(r=>r==='assaillant').length*4+Math.min(8,levelFor(save.xp)-1)+(load.ambiance?3:0)+(load.fragment?3:0)),heal:(path==='lumiere'?3:0)+roles.filter(r=>r==='soigneur').length*4,speed:(roles.includes('éclaireur')?1.08:1)+(path==='ombre'?.05:0),window:roles.includes('mystique')?.19:.14,affinity:cards.reduce((n,c)=>n+Math.min(3,Math.floor((save.collection[c.id]-1)/3)),0),traps:load.traps.length,support:!!load.support,energy:!!load.energy};
+ return {health:100+(TRAVEL_GEAR[save.adventure.avatar?.travelGear]?.health||0)+(path==='nature'?14:path==='tempete'?-8:0)+roles.filter(r=>r==='protecteur').length*12+(load.terrain?10:0)+(load.pierre?10:0),attack:Math.round((path==='tempete'?3:path==='ombre'?1:0)+(cardById[save.leader]?.attack||15)+roles.filter(r=>r==='assaillant').length*4+Math.min(8,levelFor(save.xp)-1)+(load.ambiance?3:0)+(load.fragment?3:0)),heal:(path==='lumiere'?3:0)+roles.filter(r=>r==='soigneur').length*4,speed:(roles.includes('éclaireur')?1.08:1)+(path==='ombre'?.05:0)+(TRAVEL_GEAR[save.adventure.avatar?.travelGear]?.speed||0),window:roles.includes('mystique')?.19:.14,affinity:cards.reduce((n,c)=>n+Math.min(3,Math.floor((save.collection[c.id]-1)/3)),0),traps:load.traps.length,support:!!load.support,energy:!!load.energy};
 }
 export function guardianReady(save,region){return save.beacons.filter(id=>id.startsWith(region+':')).length===3 && save.team.length>0;}
 export function makeEncounter(card,save,boss=false){
