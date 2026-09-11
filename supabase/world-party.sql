@@ -13,6 +13,7 @@ create table public.world_party_members (
  joined_at timestamptz not null default now()
 );
 create index world_party_members_party_idx on public.world_party_members(party_id);
+create index world_parties_host_idx on public.world_parties(host);
 create table public.world_party_receipts (
  user_id uuid not null references auth.users(id) on delete cascade,
  request_id uuid not null,
@@ -21,6 +22,7 @@ create table public.world_party_receipts (
  primary key(user_id,request_id)
 );
 alter table public.world_parties enable row level security;
+create index world_party_receipts_party_idx on public.world_party_receipts(party_id);
 alter table public.world_party_members enable row level security;
 alter table public.world_party_receipts enable row level security;
 revoke all on public.world_parties,public.world_party_members,public.world_party_receipts from public,anon,authenticated;

@@ -41,6 +41,8 @@ Le passage de pays laisse d’abord apparaître le chargement. Les acteurs retir
 
 ## Service et limites
 
+L’audit de performance a conduit à ajouter les index des propriétaires de groupe et des contributions par groupe, via `world_party_foreign_key_indexes`.
+
 Moteur de compte `world-engine` version 10. Migration `world_private_cooperative_refuges` : tables privées, politiques Realtime propres à chaque émetteur et fonction `world_party_command`. Les écritures économiques passent par une transaction ; les positions diffusées ne donnent aucune récompense. La fonction vérifie l’identité, la session, l’appartenance au groupe, les ressources et les limites de fréquence.
 
 L’audit Supabase signale volontairement la fonction SECURITY DEFINER accessible aux comptes authentifiés et les tables sans accès direct : c’est le point d’entrée contrôlé, avec `search_path` vide et droits directs retirés. Voir le [contrôle des fonctions privilégiées](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable). L’avertissement préexistant sur la protection contre les mots de passe compromis reste indépendant de cette livraison.
