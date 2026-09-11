@@ -1,3 +1,4 @@
+import {foliageAtlas} from './foliage-atlas.js';
 import * as THREE from 'three';
 import {randomFor} from './terrain.js';
 
@@ -10,10 +11,9 @@ export const FLORA_PALETTES={
  tunisie:['#496b52','#819770','#b7bd8a'],maroc:['#426953','#7b9060','#b9ac79'],espagne:['#536d4b','#8b9a70','#b9bd88'],
 };
 
-// Real silhouettes made of tapered branches and folded leaves, without opaque
-// crown spheres or transparent billboards. Each species is shared by instances.
+// Tapered branches and masked botanical clusters shared between instances.
 export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hub){
- const rng=randomFor(seed),wood=[],leaves=[],woodColors=[],leafColors=[],flex=[];
+ const rng=randomFor(seed),wood=[],leaves=[],woodColors=[],leafColors=[],flex=[],leafUV=[];
  const greens=palette.map(c=>new THREE.Color(c)),bark=new THREE.Color(type==='Olive'?'#847766':'#796047');
  const point=(x,y,z)=>new THREE.Vector3(x,y,z),tint=new THREE.Color();
  function triangle(target,colors,a,b,c,color,weights){for(const p of [a,b,c]){target.push(p.x,p.y,p.z);colors.push(color.r,color.g,color.b);if(weights)flex.push(weights);}}
@@ -28,8 +28,9 @@ export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hu
  function leaf(center,length,width,yaw,tilt,roll,color,weight=1){
   const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(tilt,yaw,roll));
   const v=(x,y,z)=>point(x,y,z).applyQuaternion(q).add(center);
-  const a=v(0,-length/2,0),b=v(-width/2,0,0),c=v(0,0,width*.035),d=v(width/2,0,0),e=v(0,length/2,0);
-  for(const t of [[a,c,b],[a,d,c],[b,c,e],[c,d,e]])triangle(leaves,leafColors,...t,color,weight);
+  const a=v(-width*.9,-length*.78,0),b=v(width*.9,-length*.78,0),c=v(width*.9,length*.78,0),d=v(-width*.9,length*.78,0);
+  triangle(leaves,leafColors,a,b,d,color,weight);triangle(leaves,leafColors,b,c,d,color,weight);
+  leafUV.push(0,0,1,0,0,1,1,0,1,1,0,1);
  }
  function crown(center,rx,ry,rz,count,leafLength=.5,narrow=false){
   for(let i=0;i<count;i++){
@@ -73,7 +74,7 @@ export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hu
  }else{
   for(let i=0;i<7;i++){const a=i*2.399,end=point(Math.cos(a)*.55,.55+rng()*.45,Math.sin(a)*.55);branch(point(0,0,0),end,.025,.007);crown(end,.45,.36,.4,12,.28,type==='Shrub'&&seed%2===0);}
  }
- function geometry(vertices,colors,weights){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));if(weights)g.setAttribute('plantFlex',new THREE.Float32BufferAttribute(weights,1));g.computeVertexNormals();if(weights){const n=g.attributes.normal,p=g.attributes.position;for(let i=0;i<n.count;i++){const smooth=new THREE.Vector3(n.getX(i)*.35+p.getX(i)*.035,n.getY(i)*.35+.7,n.getZ(i)*.35+p.getZ(i)*.035).normalize();n.setXYZ(i,smooth.x,smooth.y,smooth.z);}}g.computeBoundingBox();g.computeBoundingSphere();return g;}
+ function geometry(vertices,colors,weights){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));if(weights)g.setAttribute('uv',new THREE.Float32BufferAttribute(leafUV,2));if(weights)g.setAttribute('plantFlex',new THREE.Float32BufferAttribute(weights,1));g.computeVertexNormals();if(weights){const n=g.attributes.normal,p=g.attributes.position;for(let i=0;i<n.count;i++){const smooth=new THREE.Vector3(n.getX(i)*.35+p.getX(i)*.035,n.getY(i)*.35+.7,n.getZ(i)*.35+p.getZ(i)*.035).normalize();n.setXYZ(i,smooth.x,smooth.y,smooth.z);}}g.computeBoundingBox();g.computeBoundingSphere();return g;}
  return {wood:geometry(wood,woodColors),leaves:geometry(leaves,leafColors,flex)};
 }
 
@@ -90,14 +91,15 @@ function windShader(material,time){
    transformed.x+=gust*plantFlex*.085;
    transformed.z+=sin(floraTime*1.2+plantWorld.z*.23)*plantFlex*.045;`);
  };
- material.customProgramCacheKey=()=> '3b-folded-foliage-1';
+ material.customProgramCacheKey=()=> '3b-botanical-clusters-2';
 }
 
 export function createFlora(region,seed=1,occlusion){
  const geometries=new Map(),batches=new Map(),instances=[],dummy=new THREE.Object3D(),time={value:0};
  const wood=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1});
- const leaves=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.86,side:THREE.DoubleSide});
- const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,side:THREE.DoubleSide});windShader(leaves,time);windShader(depth,time);
+ const atlas=foliageAtlas();
+ const leaves=new THREE.MeshStandardMaterial({map:atlas,alphaTest:.24,alphaToCoverage:true,vertexColors:true,roughness:.92,side:THREE.DoubleSide});
+ const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:atlas,alphaTest:.24,side:THREE.DoubleSide});windShader(leaves,time);windShader(depth,time);
  occlusion?.apply(wood);occlusion?.apply(leaves);
  function plant(type,x,y,z,scale=1,rotation=0,parent){
   if(!FLORA_TYPES.includes(type))return null;
@@ -110,5 +112,5 @@ export function createFlora(region,seed=1,occlusion){
   for(const mesh of group.get(type)){if(mesh.count>=1024)throw Error('Vegetation instance budget exceeded');mesh.setMatrixAt(mesh.count++,dummy.matrix);mesh.instanceMatrix.needsUpdate=true;}
   return group.get(type)[0];
  }
- return {plant,finish(){for(const m of instances){m.computeBoundingSphere();m.boundingSphere.radius+=.3;}},tick(t){time.value=t;},dispose(){for(const m of instances)m.dispose();for(const g of geometries.values()){g.wood.dispose();g.leaves.dispose();}wood.dispose();leaves.dispose();depth.dispose();},instances};
+ return {plant,finish(){for(const m of instances){m.computeBoundingSphere();m.boundingSphere.radius+=.3;}},tick(t){time.value=t;},dispose(){for(const m of instances)m.dispose();for(const g of geometries.values()){g.wood.dispose();g.leaves.dispose();}atlas?.dispose();wood.dispose();leaves.dispose();depth.dispose();},instances};
 }

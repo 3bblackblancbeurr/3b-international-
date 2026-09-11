@@ -1,4 +1,5 @@
 import {normalizeFrontier,normalizeMastery} from './frontier.js';
+import {normalizeField} from './field-combat.js';
 import {COUNTRIES,cardById} from './catalog.js';
 import {blankAvatar,normalizeAvatar} from './avatar-rules.js';
 import {DISCOVERY_IDS} from './settlements.js';
@@ -20,6 +21,7 @@ export function normalizeAdventure(input){
   const stats={};for(const k of ['health','attack','heal','speed','window','affinity','traps'])stats[k]=Number.isFinite(e.stats[k])?Math.max(0,Math.min(500,e.stats[k])):0;
   stats.support=!!e.stats.support;stats.energy=!!e.stats.energy;
   a.encounter={card:e.card,region:e.region,opening:!!e.opening,recoveries:e.recoveries===undefined?2:integer(e.recoveries,2),boss:!!e.boss,patrol:!!e.patrol,final:!!e.final,expert:!!e.expert,enemy:integer(e.enemy,10000),enemyMax:Math.max(1,integer(e.enemyMax,10000)),hp:integer(e.hp,500),maxHP:Math.max(1,integer(e.maxHP,500)),turn:integer(e.turn,1000),focus:integer(e.focus,3),stats,traps:integer(e.traps,3),support:!!e.support,result:['victory','calm','defeat','recruited','missed'].includes(e.result)?e.result:null,log:typeof e.log==='string'?e.log.slice(0,320):'',intent:['frappe','rituel','percée','rempart','soin','gel','éclipse','double','sable','vague'].includes(e.intent)?e.intent:'frappe',pact:!!e.pact,pactStep:integer(e.pactStep,3),mistakes:integer(e.mistakes,3),pactSeed:integer(e.pactSeed,10000),phase:Math.max(1,integer(e.phase,3)),rewarded:!!e.rewarded,approach:['offer','help','battle'].includes(e.approach)?e.approach:'battle'};
+  a.encounter.field=normalizeField(e.field);
  }
  return a;
 }

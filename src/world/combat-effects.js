@@ -5,8 +5,8 @@ export const ENEMY_EFFECTS={france:'#efc66e',italie:'#ec9970',estonie:'#8bdbed',
 // Presentation consumes the accepted transition, never grants damage or rewards.
 // In particular, a killing blow, pacification or trap cannot trigger a fake hit.
 export function combatCue(before,after,action,avatar={}){
- if(!before||!after||after.turn!==before.turn+1)return null;
- return{action,path:avatar.path||'lumiere',color:AVATAR_PATHS[avatar.path]?.color||AVATAR_PATHS.lumiere.color,enemyColor:ENEMY_EFFECTS[before.region]||'#dc9b9b',intent:before.intent,outgoing:Math.max(0,before.enemy-after.enemy),incoming:Math.max(0,before.hp-after.hp),healing:Math.max(0,after.hp-before.hp),counter:!after.result&&action!=='trap',defended:action==='guard'||action==='dodge',result:after.result};
+ if(!before||!after||(after.field?after.field.event===before.field?.event:after.turn!==before.turn+1))return null;
+ return{action,path:avatar.path||'lumiere',color:AVATAR_PATHS[avatar.path]?.color||AVATAR_PATHS.lumiere.color,enemyColor:ENEMY_EFFECTS[before.region]||'#dc9b9b',intent:before.intent,outgoing:Math.max(0,before.enemy-after.enemy),incoming:Math.max(0,before.hp-after.hp),healing:Math.max(0,after.hp-before.hp),counter:after.field?action==='enemy'||action==='miss':!after.result&&action!=='trap',defended:action==='guard'||action==='dodge',result:after.result};
 }
 
 export function createCombatEffects({reducedMotion=false}={}){

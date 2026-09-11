@@ -50,7 +50,13 @@ export function saveWorld(id,data){
  if(!id)return Promise.resolve({message:writeLocal(id,data,false)?'Sauvegardé sur cet appareil.':'Télécharge une copie : le stockage local est plein.'});
  const state=stateFor(id);
  const operation=async()=>{
-  try{const result=await request(id,state,state.pending.slice(0,100)),next=reconcile(id,state,result);return{data:next,pending:!!state.pending.length,message:result.rejected?.length?'Compte synchronisé · '+result.rejected[0].message:state.pending.length?'Synchronisation du journal en cours…':'Sauvegardé sur ton compte · gains et compagnons validés.'};}
+  try{
+   // A fight produces ten commands a second. Drain the journal that existed
+   // when this sync began, without chasing newly arriving commands forever.
+   const through=state.pending.at(-1)?.seq||0;let result,next,rejection;
+   do{result=await request(id,state,state.pending.filter(e=>e.seq<=through).slice(0,100));next=reconcile(id,state,result);rejection ||= result.rejected?.[0]?.message;}while(state.pending.some(e=>e.seq<=through));
+   return{data:next,pending:!!state.pending.length,message:rejection?'Compte synchronisé · '+rejection:state.pending.length?'Synchronisation du journal en cours…':'Sauvegardé sur ton compte · gains et compagnons validés.'};
+  }
   catch(error){return{pending:true,message:'Copie locale gardée · '+error.message};}
  };
  state.chain=state.chain.then(operation,operation);return state.chain;
