@@ -2,12 +2,16 @@ import React,{useState} from 'react';
 import {Lock,Play,Check,Star,ArrowUpRight} from 'lucide-react';
 import {MAZE_CHAPTERS,unlockedMazeLevel,mazePerk,nextMazePerk} from './maze-campaign.js';
 import {nextTier,tierFor} from '../../shared/loyalty.js';
+import {MAZE_HERO_ASSET,mazeHeroFrame} from './maze-hero.js';
+import {MAZE_HERO_FRAMES} from './maze-hero-frames.js';
+
+const portrait=mazeHeroFrame(4,0),portraitScale=.64,portraitStyle={width:portrait.rect[2]*portraitScale,height:portrait.rect[3]*portraitScale,backgroundImage:`url(/games/${MAZE_HERO_ASSET})`,backgroundSize:`${MAZE_HERO_FRAMES.width*portraitScale}px ${MAZE_HERO_FRAMES.height*portraitScale}px`,backgroundPosition:`${-portrait.rect[0]*portraitScale}px ${-portrait.rect[1]*portraitScale}px`};
 
 export function MazeCampaign({game,profile,onSelect,onStart,onBenefits}){
  const [chapter,setChapter]=useState(Math.floor((game.stageNumber-1)/10));
  const progress=game.campaign,unlocked=unlockedMazeLevel(progress),perk=mazePerk(progress),next=nextMazePerk(progress),tier=profile?tierFor(profile.xp):null,target=profile?nextTier(profile.xp):null;
  return <div className="game-overlay maze-intro"><div>
-  <span className="arcade-eyebrow">UNE CAMPAGNE · 100 NIVEAUX</span><h2>Traverse l’Oubli.</h2>
+  <div className="maze-hero-heading"><span className="maze-hero-portrait" style={portraitStyle} aria-hidden="true"/><div><span className="arcade-eyebrow">UNE CAMPAGNE · 100 NIVEAUX</span><h2>Traverse l’Oubli.</h2></div></div>
   <div className="maze-campaign-heading"><span>{progress.completed.length} / 100 réussis</span><strong>Niveau {game.stageNumber} · {game.difficulty.label}</strong><span>{Object.values(progress.best).reduce((sum,r)=>sum+r.stars,0)} / 300 ★</span></div>
   <div className="maze-campaign-track" role="progressbar" aria-label="Campagne terminée" aria-valuenow={progress.completed.length} aria-valuemin={0} aria-valuemax={100}><i style={{width:progress.completed.length+'%'}}/></div>
   <nav className="maze-chapters" aria-label="Chapitres du Labyrinthe">{MAZE_CHAPTERS.map((name,i)=><button key={name} aria-label={'Chapitre '+(i+1)+' : '+name} aria-pressed={chapter===i} onClick={()=>setChapter(i)}>{String(i+1).padStart(2,'0')}</button>)}</nav>

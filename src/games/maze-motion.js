@@ -1,3 +1,4 @@
+import {MAZE_WALK_FRAMES} from './maze-hero.js';
 const EPS=1e-7,SPEED=5.7;
 export function createMazeMotion(cell){return {position:{...cell},previous:{...cell},from:{...cell},to:{...cell},angle:Math.PI,previousAngle:Math.PI,wanted:Math.PI,phase:0,previousPhase:0,moving:false,axis:'y'};}
 const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
@@ -29,5 +30,5 @@ export function stepMazeMotion(motion,grid,input,dt){
 export function mazePose(motion,alpha=1){
  const a=Math.max(0,Math.min(1,alpha)),angle=motion.previousAngle+angleDelta(motion.previousAngle,motion.angle)*a;
  return {x:motion.previous.x+(motion.position.x-motion.previous.x)*a,y:motion.previous.y+(motion.position.y-motion.previous.y)*a,
-  direction:((Math.round(angle/(Math.PI/4))%8)+8)%8,frame:motion.moving?1+Math.floor(((motion.previousPhase+(motion.phase-motion.previousPhase)*a)%1)*12):0};
+  direction:((Math.round(angle/(Math.PI/4))%8)+8)%8,frame:motion.moving?1+Math.floor(((motion.previousPhase+(motion.phase-motion.previousPhase)*a)%1)*MAZE_WALK_FRAMES):0};
 }
