@@ -23,6 +23,7 @@ export function heritageObstacles(region,center,angle){
  else if(region==='maroc')local=[{x:0,z:-2,width:29,depth:19},{x:0,z:10,width:6.2,depth:6.2}];
  else if(region==='espagne')local=[{x:0,z:0,width:25,depth:25}];
  else local=[{x:0,z:0,width:39,depth:29.5}];
+ local.push(...[-20,20].flatMap(x=>[-20,20].map(z=>({x,z,width:3.6,depth:3.6}))));
  const c=Math.cos(angle),s=Math.sin(angle);
  return local.map(p=>({...p,x:center.x+p.x*c+p.z*s,z:center.z-p.x*s+p.z*c,rotation:angle}));
 }

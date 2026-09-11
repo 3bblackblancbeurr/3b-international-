@@ -6,7 +6,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "test:shop": "node --test tests/shop.test.js",
     "dev:api": "node --env-file-if-exists=.env.local scripts/shop-server.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "verify": "node scripts/verify-world.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",

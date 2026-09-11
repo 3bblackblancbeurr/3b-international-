@@ -16,5 +16,5 @@ export function createWorldSky(){
    #include <colorspace_fragment>
   }`});
  const geometry=new THREE.PlaneGeometry(2,2),root=new THREE.Mesh(geometry,material);root.renderOrder=-1000;root.frustumCulled=false;
- return{root,setRegion(biome){uniforms.horizon.value.set(biome.haze).lerp(new THREE.Color('#d1e1e2'),.45);uniforms.zenith.value.set(biome.sky).lerp(new THREE.Color('#548ac2'),.55);},update(camera,time){camera.updateMatrixWorld();uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);uniforms.cameraWorld.value.copy(camera.matrixWorld);uniforms.time.value=time;},dispose(){material.dispose();geometry.dispose();}};
+ return{root,setRegion(biome){uniforms.horizon.value.set(biome.haze).lerp(new THREE.Color('#adcfe9'),.78);uniforms.zenith.value.set(biome.sky).lerp(new THREE.Color('#3479c3'),.85);},update(camera,time){camera.updateMatrixWorld();uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);uniforms.cameraWorld.value.copy(camera.matrixWorld);uniforms.time.value=time;},dispose(){material.dispose();geometry.dispose();}};
 }

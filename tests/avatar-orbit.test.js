@@ -11,7 +11,7 @@ test('avatar identity is independent from gameplay power and rejects invalid dat
  assert.throws(()=>applyWorldAction(blankSave(),{type:'avatar',avatar:{name:'',created:true}}));
 });
 test('free camera controls remain bounded and movement follows camera without speed boost',()=>{
- const a=rotateOrbit(DEFAULT_ORBIT,100,-10000);assert.notEqual(a.yaw,DEFAULT_ORBIT.yaw);assert.equal(a.pitch,.16);
+ const a=rotateOrbit(DEFAULT_ORBIT,100,-10000);assert.notEqual(a.yaw,DEFAULT_ORBIT.yaw);assert.equal(a.pitch,-.34);
  assert.equal(rotateOrbit(a,0,10000).pitch,1.15);assert.equal(zoomOrbit(a,-10000).distance,10);assert.equal(zoomOrbit(a,10000).distance,52);
  for(const yaw of [0,Math.PI/2,Math.PI,20]){const p=cameraRelative(.4,-.8,yaw);assert.ok(Math.abs(Math.hypot(p.x,p.z)-Math.hypot(.4,.8))<1e-10);}
  const p=cameraRelative(0,-1,Math.PI/2);assert.ok(Math.abs(p.x+1)<1e-10);assert.ok(Math.abs(p.z)<1e-10);

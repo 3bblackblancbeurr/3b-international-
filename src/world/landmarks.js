@@ -9,7 +9,7 @@ export function createLandmark(region,occlusion){
  const root=new THREE.Group(),lights=new THREE.Group(),owned=[],materials=new Map();root.name=HERITAGE[region].name;root.add(lights);
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,20)),sphere=geo(new THREE.SphereGeometry(1,20,12)),cone=geo(new THREE.ConeGeometry(1,1,24));
  const texture=surfaceTexture('stone');if(texture)owned.push(texture);
- const palette={stone:region==='tunisie'?'#c9a574':'#ddd1b6',trim:'#f2e6cd',dark:'#3d4b50',gold:'#c5a66c',roof:'#54796e',glass:'#456774'};
+ const palette={stone:region==='tunisie'?'#c9a574':region==='estonie'?'#af7568':'#ddd1b6',trim:'#f2e6cd',dark:'#303d43',gold:'#c5a66c',roof:'#54796e',glass:'#456774'};
  const mat=key=>{if(!materials.has(key)){const m=new THREE.MeshStandardMaterial({color:palette[key]||key,map:['stone','trim'].includes(key)?texture:null,bumpMap:key==='stone'?texture:null,bumpScale:.065,roughness:key==='gold'?.38:.78,metalness:key==='gold'?.6:key==='dark'?.3:0});occlusion?.apply(m);materials.set(key,m);owned.push(m);}return materials.get(key);};
  const add=(geometry,key,x,y,z,sx=1,sy=sx,sz=sx,parent=root)=>{const m=new THREE.Mesh(geometry,mat(key));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
  const b=(key,x,y,z,w,h,d,parent=root)=>add(box,key,x,y,z,w,h,d,parent);
@@ -66,7 +66,10 @@ export function createLandmark(region,occlusion){
  else if(region==='estonie'){
   b('stone',0,5.4,0,19,10.8,14);b('trim',0,10.8,0,20,.6,15);b('stone',0,12.5,0,10,4,10);
   onion(0,19,0,4.2,7.2);for(const x of [-7,7])for(const z of [-5,5])onion(x,13.6,z,2.45,4.5);
-  for(const z of [-7.2,7.2]){const g=new THREE.Group();g.rotation.y=z<0?Math.PI:0;root.add(g);for(const x of [-6,-3,0,3,6]){b('dark',x,4.6,7.25,1.7,5,.12,g);arc('trim',x,1.9,7.4,2.4,6,.3,.45,g);}arc('trim',0,0,8.4,5.2,7.5,.6,1.8,g);}
+  for(const z of [-7.2,7.2]){const g=new THREE.Group();g.rotation.y=z<0?Math.PI:0;root.add(g);for(const x of [-6,-3,0,3,6]){b('dark',x,4.6,7.25,1.7,5,.12,g);arc('trim',x,1.9,7.4,2.4,6,.3,.45,g);arc('trim',x,7.9,7.35,3.2,2.5,.2,.35,g);for(const side of [-1,1])add(cylinder,'trim',x+side*1.15,4.5,7.6,.14,5.5,.14,g);}arc('trim',0,0,8.4,5.2,7.5,.6,1.8,g);}
+  for(const y of [.8,2,8.6,10.2])b('trim',0,y,0,19.4,.28,14.4);
+  for(const side of [-1,1]){b('stone',side*8.5,7,0,3,6,8);b('trim',side*8.5,10.2,0,3.3,.4,8.3);}
+  for(const x of [-3,0,3]){arc('trim',x,12,5.1,2.5,3.8,.26,.5);b('dark',x,13.2,5.04,1.5,2.1,.1);}
  }else if(region==='turquie'){
   add(cylinder,'stone',0,12,0,7.8,24,7.8);add(cylinder,'trim',0,24,0,8.7,.7,8.7);add(cylinder,'dark',0,27,0,6.9,5.7,6.9);add(cone,'dark',0,35,0,8.4,11,8.4);rod([0,40,0],[0,43,0],.1,'gold');
   for(const y of [7,14,21,24.5])ring('trim',y===24.5?8.7:7.85,y,.13);
@@ -97,9 +100,25 @@ export function createLandmark(region,occlusion){
   }
   for(const x of [-6,0,6]){b('dark',x,3.4,11.12,3.8,6.8,.1);arc('trim',x,0,11.35,5.2,9,.6,.6);add(cone,'stone',x,12,11.2,2.4,5,1);}
   cross(0,49,0,1.1);
+  // Layers of stone tracery and stained glass break up the flat nave.
+  for(const x of [-6,0,6]){
+   add(geo(new THREE.TorusGeometry(1.45,.18,6,28)),'trim',x,10.9,11.8);add(geo(new THREE.CircleGeometry(1.25,24)),'glass',x,10.9,11.75);
+   for(let i=0;i<8;i++){const a=i*Math.PI/4;rod([x,10.9,11.85],[x+Math.cos(a)*1.28,10.9+Math.sin(a)*1.28,11.85],.065,'gold');}
+  }
+  for(let side=-1;side<=1;side+=2)for(let i=-2;i<=2;i++)for(let j=0;j<3;j++){const z=i*4.4;rod([side*10.1,3+j*2.5,z-.7],[side*10.15,5+j*2.5,z],.1,'trim');rod([side*10.1,3+j*2.5,z+.7],[side*10.15,5+j*2.5,z],.1,'trim');}
+ }
+ // Compact landmarks still need to stand above their surrounding housing.
+ if(['estonie','italie','tunisie'].includes(region)){
+  const volume=new THREE.Group();for(const child of [...root.children])if(child!==lights)volume.add(child);volume.scale.y=1.3;root.add(volume);
  }
  // Only the 3B forecourt is restored. The real monument remains recognizable
  // before the quest; no invented destroyed religious building or giant logo.
+ // Four permanent garden courts furnish the forecourt while its central
+ // approach and the real monument's silhouette stay unobstructed.
+ for(const x of [-20,20])for(const z of [-20,20]){
+  b('stone',x,.32,z,3.6,.64,3.6);b('dark',x,.66,z,3.1,.06,3.1);
+  for(let i=0;i<5;i++){const a=i*2.39996;add(sphere,'roof',x+Math.cos(a)*.8,.85,z+Math.sin(a)*.8,.7,.45,.7);add(sphere,'gold',x+Math.cos(a)*.9,1.2,z+Math.sin(a)*.9,.11,.14,.11);}
+ }
  const lampMat=new THREE.MeshStandardMaterial({color:'#ffe3a3',emissive:'#ffd187',emissiveIntensity:.75,roughness:.35});owned.push(lampMat);
  for(let i=0;i<16;i++){const a=i/16*Math.PI*2;const lamp=add(box,'dark',Math.sin(a)*22,.65,Math.cos(a)*22,.35,1.3,.35,lights);const bulb=new THREE.Mesh(sphere,lampMat);bulb.position.copy(lamp.position);bulb.position.y=1.35;bulb.scale.setScalar(.21);lights.add(bulb);}
  function merge(parent){parent.updateMatrixWorld(true);const groups=new Map(),inverse=new THREE.Matrix4().copy(parent.matrixWorld).invert();parent.traverse(o=>{if(!o.isMesh)return;const key=o.material.uuid;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o);});for(const meshes of groups.values()){const parts=meshes.map(m=>{const p=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return p.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse,m.matrixWorld));});const merged=geo(mergeGeometries(parts));parts.forEach(g=>g.dispose());const m=new THREE.Mesh(merged,meshes[0].material);m.castShadow=m.receiveShadow=true;meshes.forEach(m=>m.removeFromParent());parent.add(m);}}

@@ -25,7 +25,7 @@ export function createArchitecture(occlusion){
  };
  function building(region,variant=0,{urban=true}={}){
   const [walls,top,wood,trim]=styles[region]||styles.france,wall=walls[variant%walls.length],d=buildingDimensions(region,variant,urban),{width:w,depth,height:h,storey,floors}=d;
-  const g=new THREE.Group();g.userData.dimensions=d;
+  const g=new THREE.Group();g.userData.dimensions=d;const type=variant%5;
   function m(geometry,color,x,y,z,sx=1,sy=sx,sz=sx,parent=g,metal=0){const o=new THREE.Mesh(geometry,material(color,metal));o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;parent.add(o);return o;}
   const b=(color,x,y,z,sx,sy,sz,parent=g,metal=0)=>m(box,color,x,y,z,sx,sy,sz,parent,metal);
   b(wall,0,h/2,0,w,h,depth);b(trim,0,.25,0,w+.3,.5,depth+.3);
@@ -84,6 +84,36 @@ export function createArchitecture(occlusion){
    if(region==='turquie'&&variant%4===0)m(dome,'#7b9694',0,h+1.9,0,3.6,3.5,3.6);
    b(wall,3.3,h+2.2,-1.8,.85,3.6,.9);b(trim,3.3,h+4.05,-1.8,1.1,.24,1.2);
    if(['italie','espagne','turquie'].includes(region))for(let i=0;i<18;i++)m(cylinder,'#b97951',-w/2+i*w/17,h+.2,depth/2+.2,.18,.65,.18).rotation.x=Math.PI/2;
+  }
+  // Country-specific rooflines change the massing, not just the wall colour.
+  if(region==='france'&&type===2){
+   const x=w/2-2.3,z=depth/2-2.3;
+   m(cylinder,wall,x,h-1.7,z,2.2,6,2.2);m(cylinder,trim,x,h+1.2,z,2.4,.3,2.4);
+   m(dome,top,x,h+1.35,z,2.4,3.4,2.4);m(cylinder,'#c2aa73',x,h+5,z,.08,1.8,.08,g,.5);
+   for(let i=0;i<8;i++){const a=i*Math.PI/4,o=b(wood,x+Math.sin(a)*2.22,h-.7,z+Math.cos(a)*2.22,.8,2.3,.1);o.rotation.y=a;}
+  }
+  if(region==='italie'){
+   for(let row=0;row<7;row++)for(let col=0;col<8;col++)b(row%2?trim:wall,-w/2+.8+col*(w-1.6)/7,.4+row*.71,depth/2+.13,.95,.58,.14);
+   if(type===1||type===3){b(trim,0,h+1,0,w+.5,1.5,depth+.5);for(const x of [-w*.3,0,w*.3]){m(arch,wood,x,h+.25,depth/2+.31,2.4,1.6,1);m(arch,'#172f38',x,h+.34,depth/2+.35,1.9,1.35,1);}b(top,0,h+2,0,w+.9,.38,depth+.9);}
+  }
+  if(region==='estonie'){
+   for(let step=0;step<4;step++){const width=w*(1-step*.22);b(wall,0,h+.65+step*1.2,depth/2-.2,width,1.4,.55);b(trim,0,h+1.36+step*1.2,depth/2-.15,width+.25,.15,.75);}
+   m(arch,wood,0,h+.5,depth/2+.12,1.6,2.1,1);
+  }
+  if(region==='turquie'&&floors>1){
+   const z=depth/2+.48;b(wall,0,storey+2.7,z,5.6,5.1,.95);b(wood,0,storey+.1,z,6,.24,1.3);
+   for(const x of [-2,0,2]){b(wood,x,storey+2.7,z+.51,1.6,3.5,.12);b('#204450',x,storey+2.85,z+.59,1.26,2.8,.1);b(trim,x,storey+2.85,z+.65,.08,2.8,.07);}
+   for(const x of [-2.5,2.5]){const bracket=b(wood,x,storey-.7,z,.2,1.7,.25);bracket.rotation.x=-.4;}
+  }
+  if(['algerie','tunisie','maroc'].includes(region)&&type%2===0){
+   const x=-w/2+2.2,z=-depth/2+2.2;b(wall,x,h+1.8,z,4.2,3.6,4.2);b(trim,x,h+3.7,z,4.5,.25,4.5);
+   m(region==='maroc'?ogee:arch,wood,x,h+.3,z+2.14,2,2.55,1);
+   if(region==='tunisie')m(dome,'#eee8d7',x,h+3.9,z,2.25,1.9,2.25);
+   if(region==='maroc')for(const sx of [-1.5,0,1.5])b(trim,x+sx,h+4.1,z+2.1,.6,.6,.55);
+  }
+  if(region==='espagne'&&type===1){
+   const x=w/2-2.15,z=-depth/2+2.15;m(cylinder,wall,x,h+1,z,2.1,5,2.1);m(hip,top,x,h+4,z,2.8,2,2.8);
+   for(let i=0;i<8;i++){const a=i*Math.PI/4;const o=b(wood,x+Math.sin(a)*2.12,h+1.7,z+Math.cos(a)*2.12,.8,1.8,.12);o.rotation.y=a;}
   }
   if(urban){
    const z=depth/2;

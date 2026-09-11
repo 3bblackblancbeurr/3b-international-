@@ -19,7 +19,7 @@ test('solo exploration persists without removing companions or weakening the gro
 });
 test('camera preferences tolerate missing and malformed local storage without invalid geometry',()=>{
  assert.deepEqual(normalizeOrbit(null),DEFAULT_ORBIT);assert.deepEqual(normalizeOrbit({yaw:NaN,pitch:Infinity,distance:'24'}),DEFAULT_ORBIT);
- const wide={yaw:1.2,pitch:.8,distance:36};assert.deepEqual(normalizeOrbit(wide),wide);assert.equal(normalizeOrbit({distance:1000}).distance,52);assert.equal(normalizeOrbit({pitch:-5}).pitch,.16);
+ const wide={yaw:1.2,pitch:.8,distance:36};assert.deepEqual(normalizeOrbit(wide),wide);assert.equal(normalizeOrbit({distance:1000}).distance,52);assert.equal(normalizeOrbit({pitch:-5}).pitch,-.34);
 });
 test('the authored rooster loads compressed geometry and all seven clips animate its articulated parts',async()=>{
  const bytes=fs.readFileSync(new URL('../public/world/card-models/C165-v2.glb',import.meta.url)),asset=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
