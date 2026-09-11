@@ -21,6 +21,8 @@ Le compte 3B conserve son économie existante : 20 XP et 1 point par minute acti
 
 ## Personnage et mouvement
 
+Mise à jour graphique : le personnage détaillé et son atlas sont décrits dans [Kaïs — nouvelle apparence](labyrinthe-kais-explorer.md). Le paragraphe suivant documente l'ancienne planche remplacée.
+
 `kais-maze.webp` est une planche de 2080 × 1536 pixels, de 176 348 octets, calculée à partir du modèle existant `public/world/models/kais-3d.glb`. Elle contient huit vues espacées de 45°, chacune avec une pose Idle et douze poses réparties régulièrement dans le clip Walk. Chaque cellule mesure 160 × 192 pixels. L'ordre des lignes est nord, nord-est, est, sud-est, sud, sud-ouest, ouest, nord-ouest. L'ancrage au sol est (0,5 ; 0,7970911628290045). Les vues de face et de dos proviennent du modèle animé ; aucune dépendance 3D n'est chargée par le jeu Canvas.
 
 Le déplacement parcourt les centres des couloirs à 5,7 cases par seconde et conserve le reliquat de distance en franchissant une case. Les virages perpendiculaires attendent le centre ; les demi-tours répondent immédiatement. Relâcher la commande arrête le mouvement. La phase de marche dépend de la distance parcourue. L'orientation suit le trajet et reste conservée à l'arrêt. L'interpolation entre deux pas de simulation rend le personnage et la caméra continus sur les écrans à fréquence élevée. La visibilité est recalculée seulement lorsque la position logique, la portée ou les passages changent.

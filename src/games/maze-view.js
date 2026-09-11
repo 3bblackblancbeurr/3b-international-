@@ -1,5 +1,6 @@
 import {H as DEFAULT_HEIGHT,clamp,distance} from './core.js';
 import {mazePose} from './maze-motion.js';
+import {drawMazeHero,MAZE_HERO_ASSET} from './maze-hero.js';
 
 const TAU=Math.PI*2;
 function text(c,value,x,y,size=15,color='#d4ddd8',align='left'){
@@ -108,8 +109,8 @@ export function mazeScene(c,g,sprite,images){
     c.save();c.globalAlpha=g.shadowStun>0?.55:.9;sprite(c,'monster',q.x,q.y+11,65);c.restore();
     if(g.shadowMode==='hunt')text(c,'!',q.x,q.y-62,24,'#f1997a','center');
   }
-  glow(c,p.x,p.y,70,'#dceab51c');circle(c,p.x,p.y+13,14,'#020709b0');ring(c,p.x,p.y+9,15,g.auraColor||'#dce9bb8c');
-  c.save();c.globalAlpha=g.invulnerable>0&&!g.reducedMotion?.55+.35*Math.sin(g.time*26):1;const figure=images['kais-maze.webp'];if(figure)c.drawImage(figure,pose.frame*160,pose.direction*192,160,192,p.x-37.5,p.y+9-90*.7970911628290045,75,90);c.restore();
+  glow(c,p.x,p.y,70,'#dceab51c');c.fillStyle='#02070999';c.beginPath();c.ellipse(p.x,p.y+9,17,6,0,0,TAU);c.fill();c.strokeStyle=g.auraColor||'#dce9bb65';c.lineWidth=1;c.beginPath();c.ellipse(p.x,p.y+9,21,8,0,0,TAU);c.stroke();
+  c.save();c.globalAlpha=g.invulnerable>0&&!g.reducedMotion?.55+.35*Math.sin(g.time*26):1;const figure=images[MAZE_HERO_ASSET];if(figure)drawMazeHero(c,figure,pose,p.x,p.y+9);c.restore();
   if(g.flash>0){const progress=1-g.flash/1.8;c.save();c.globalAlpha=1-progress;ring(c,p.x,p.y,25+progress*175,'#f3d997',2);ring(c,p.x,p.y,18+progress*135,'#c8eed88c');c.restore();}
   c.restore();
   // Camera frame: current place, discrete threat and a map of discoveries only.

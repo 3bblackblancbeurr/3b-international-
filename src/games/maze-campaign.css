@@ -1,6 +1,7 @@
 .maze-intro{align-items:flex-start;background:radial-gradient(ellipse at 50% 0,#223934e8,#071219f7);padding:28px 24px}
 .maze-intro>div{width:min(850px,100%);max-width:850px;margin:auto}
 .maze-intro h2{font-size:36px;margin:7px 0 22px}
+.maze-hero-heading{display:flex;align-items:center;justify-content:center;gap:22px;margin-bottom:22px;text-align:left}.maze-hero-portrait{flex:none;display:block;background-repeat:no-repeat;filter:drop-shadow(0 4px 5px #0005)}.maze-intro .maze-hero-heading h2{margin:8px 0 0}.maze-hero-heading .arcade-eyebrow{display:block}
 .maze-campaign-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#98b7ab;font-size:12px}.maze-campaign-heading strong{color:#ead9ad;font-size:14px}
 .maze-campaign-track{height:4px;background:#8aa4931f;border-radius:4px;overflow:hidden;margin:10px 0 20px}.maze-campaign-track i{height:100%;display:block;background:#dfc784}
 .maze-chapters{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
