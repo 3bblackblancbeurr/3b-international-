@@ -57,7 +57,7 @@ const BASE_MENU_ITEMS = [
     id: "games",
     label: "Jeux 3B",
     icon: "🎮",
-    description: "Cinq aventures avec Kaïs et La course des clés. Accès libre.",
+    description: "Kaïs, la Tour, le Labyrinthe et La course des clés. Accès libre.",
   },
   {
     id: "religion",

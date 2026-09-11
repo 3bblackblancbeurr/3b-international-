@@ -34,8 +34,8 @@ test('pause/cancellation clears a held direction and requires a new gesture',()=
 });
 test('dragging follows maze corridors without crossing walls',()=>{
   const game=new Maze(42),control=new DragControl();
-  const direction=game.grid[1][2]===0?{x:1,y:0}:{x:0,y:1};
+  const start={...game.cell},direction=game.grid[start.y][start.x+1]===0?{x:1,y:0}:{x:0,y:1};
   control.begin(1,200,400);control.move(1,200+direction.x*48,400+direction.y*48);
-  game.update(.14,control.input);assert.deepEqual(game.cell,{x:1+direction.x,y:1+direction.y});
+  game.update(.14,control.input);assert.deepEqual(game.cell,{x:start.x+direction.x,y:start.y+direction.y});
   control.end(1);const stopped={...game.cell};game.update(.14,control.input);assert.deepEqual(game.cell,stopped);
 });

@@ -1,0 +1,7 @@
+export const KEY_RACE_URL='https://troisb-course-des-cles-demo.stetienne86pp.chatgpt.site/';
+export const GAME_CATALOG=[
+  {id:'arena',number:'01',title:'Kaïs contre les Ombres',genre:'SURVIE · ACTION',time:'5–10 min',text:'Esquive les ombres. Assemble tes pouvoirs. Libère les huit gardiens.',control:'Glisse le doigt dans la zone de jeu pour bouger. Relâche pour arrêter. Bouton Esquive ou Espace ; flèches / ZQSD / WASD au clavier.',action:'Esquive'},
+  {id:'tower',number:'02',title:'La Tour des portes interdites',genre:'EXPLORATION · RISQUE',time:'3–8 min',text:'Trois portes. Un indice. Jusqu’où oseras-tu emporter tes trouvailles ?',control:'Choisis les portes grâce aux indices. Frappe (Espace) et pare (F) juste avant l’attaque. Une parade parfaite double ta prochaine frappe. Touches 1, 2, 3 : portes.',action:'Frapper'},
+  {id:'maze',number:'03',title:'Le Labyrinthe de l’Oubli',genre:'EXPLORATION · INFILTRATION',time:'3–5 min',text:'Trois sceaux dans des ruines vivantes. Observe l’ombre, retrouve les chemins et rallume le sanctuaire.',control:'Retrouve les trois sceaux, puis reviens au portail. Glisse pour marcher, ou utilise les flèches / ZQSD / WASD. L’éclat de lumière (E ou Espace) repousse l’ombre proche et dessine un chemin. La carte (M) met le jeu en pause. Les murs te cachent ; les lanternes rechargent ta lumière.',action:'Éclat de lumière'},
+  {id:'key-race',number:'04',title:'La course des clés',genre:'LA PREMIÈRE AVENTURE',time:'Accès libre',text:'Retrouve l’aventure originale de la course des clés.',href:KEY_RACE_URL},
+];
