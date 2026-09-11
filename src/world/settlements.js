@@ -1,3 +1,4 @@
+import {DISTRICT_JOBS} from './district-jobs.js';
 import {HERITAGE,LANDMARK_APPROACH} from './heritage.js';
 import {RESOURCE_SITES,frontierState,patrolOpponent} from './frontier.js';
 import {PARIS_LANES,PARIS_BOULEVARD} from './paris-layout.js';
@@ -65,8 +66,10 @@ export function districtDestinations(region){const c=REGIONS[region];if(!c)retur
 export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5}];return[
  ...(region==='france'?[{id:'france:cafe',type:'cafe',name:'Café des Liens',x:-6.84,z:-2.53,color:'#dfc18c',range:4}]:[]),
  {id:region+':landmark',type:'landmark',name:HERITAGE[region].name,...LANDMARK_APPROACH,color:'#d6bb7e',range:6},
+ {id:region+':cooperation',type:'cooperation',name:'Notre refuge commun',x:-65,z:42,color:'#9be0cd',range:7},
  {id:region+':camp',type:'camp',name:'Mon refuge',x:27,z:25,color:'#edc782',range:6},
  {id:region+':patrol',type:'patrol',name:'Protéger les environs',x:31,z:36,color:'#dc9a7c',range:6,card:save.adventure?.encounter?.patrol&&save.adventure.encounter.region===region?save.adventure.encounter.card:patrolOpponent(region,frontierState(save,region).expedition).id},
+ ...Object.entries(DISTRICT_JOBS).filter(([id])=>frontierState(save,region).activeJob===id).map(([id,job])=>({id:region+':job:'+id,type:'job',job:id,name:job.label,x:id==='atelier'?-18:49,z:id==='atelier'?17:26,color:'#8edeb2',range:5})),
  ...RESOURCE_SITES.map(p=>({id:region+':resource:'+p.id,type:'resource',resource:p.id,name:p.name,x:p.x,z:p.z,color:'#a8c88c',range:4,done:frontierState(save,region).harvest.includes(p.id)})),
  {id:region+':sanctuary',type:'sanctuary',name:save.adventure?.chapters?.[region]?.restored>=2?(save.adventure.chapters[region].choice==='workshop'?'Préparer le groupe à l’atelier':'Se reposer au jardin'):'Quartier à reconstruire',x:29,z:15,color:'#9ec8ac',range:6},
  {id:region+':atelier',type:'atelier',name:'Atelier · '+c.craft,x:-18,z:17,color:'#efbd72',range:5},

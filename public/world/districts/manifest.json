@@ -1,0 +1,470 @@
+{
+  "author": "3B original geometry",
+  "generator": "Blender 4.5",
+  "models": [
+    {
+      "name": "italie-1",
+      "sourceFaces": 8139,
+      "sourceBytes": 1015736,
+      "country": "italie",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "italie-1.glb",
+          "bytes": 160144,
+          "sha256": "ea254ca43ae369053ac829d140fa47d87f2f5183b67b15202f1ddbc08254c049"
+        },
+        {
+          "file": "italie-1-lod.glb",
+          "bytes": 65932,
+          "sha256": "2d1621f294d2d89d4e4997615d55e130735906eb581f9a9a5e09eb3007dd87e5"
+        }
+      ]
+    },
+    {
+      "name": "italie-2",
+      "sourceFaces": 14793,
+      "sourceBytes": 1967404,
+      "country": "italie",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "italie-2.glb",
+          "bytes": 298728,
+          "sha256": "b9e3f5cb6dcf23184a1f278db4c8cf61809cff65123af4570a61b6beb4e766d5"
+        },
+        {
+          "file": "italie-2-lod.glb",
+          "bytes": 115612,
+          "sha256": "54cd14469e28d12a71f09dd812862a8bfb2d56e885137862f6b3a3d4091391f5"
+        }
+      ]
+    },
+    {
+      "name": "italie-3",
+      "sourceFaces": 21447,
+      "sourceBytes": 2919012,
+      "country": "italie",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "italie-3.glb",
+          "bytes": 431316,
+          "sha256": "b8783caeb77b1e7a27d6ee843c63e50f6c4280e5c92ef8d7098d0b550840e613"
+        },
+        {
+          "file": "italie-3-lod.glb",
+          "bytes": 163352,
+          "sha256": "13eb520cd67feed04f3a0e689c309bbc6bceeda05f26929db14f3d3980ae7213"
+        }
+      ]
+    },
+    {
+      "name": "estonie-1",
+      "sourceFaces": 7329,
+      "sourceBytes": 902368,
+      "country": "estonie",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "estonie-1.glb",
+          "bytes": 143692,
+          "sha256": "10ae257b3d1be7bc2a79fd00d50ff386a59b572bea633d511891db1fec0bcc28"
+        },
+        {
+          "file": "estonie-1-lod.glb",
+          "bytes": 60228,
+          "sha256": "72529bddb9795d1ef306c679a959ea02669b68e152d99eb5eb585ce310b3a4c1"
+        }
+      ]
+    },
+    {
+      "name": "estonie-2",
+      "sourceFaces": 12687,
+      "sourceBytes": 1672564,
+      "country": "estonie",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "estonie-2.glb",
+          "bytes": 253936,
+          "sha256": "b37e492bd37f96918093bc8ae771e9f448959be314b7c9b4a6ae2684fc9decaa"
+        },
+        {
+          "file": "estonie-2-lod.glb",
+          "bytes": 100132,
+          "sha256": "dc8bef52b86776c25fbb784d28a631573b79f1927543982ea03ae61344248561"
+        }
+      ]
+    },
+    {
+      "name": "estonie-3",
+      "sourceFaces": 18045,
+      "sourceBytes": 2442732,
+      "country": "estonie",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "estonie-3.glb",
+          "bytes": 362784,
+          "sha256": "48e41c5392d939226f03a7dd18edf47b39dbfff4479e9f5d5535ab86bc4d1256"
+        },
+        {
+          "file": "estonie-3-lod.glb",
+          "bytes": 138500,
+          "sha256": "35134357dca403745f788a8c4f8136c115983c98019bcd6a09b83769a6e56dbc"
+        }
+      ]
+    },
+    {
+      "name": "turquie-1",
+      "sourceFaces": 7707,
+      "sourceBytes": 955324,
+      "country": "turquie",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "turquie-1.glb",
+          "bytes": 151092,
+          "sha256": "f4dde4cd90c37648b5deefe799d8d0d12e290df1666816e609d4976d6c84e13b"
+        },
+        {
+          "file": "turquie-1-lod.glb",
+          "bytes": 72284,
+          "sha256": "cfd8775f18eece33aabea5fe584485ffa1f2964f7b4b0cc0398521991b90cb7a"
+        }
+      ]
+    },
+    {
+      "name": "turquie-2",
+      "sourceFaces": 13841,
+      "sourceBytes": 1834780,
+      "country": "turquie",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "turquie-2.glb",
+          "bytes": 278880,
+          "sha256": "577f257348d301d1a4fd6b3333cbdf24271e2c8686808a146d4841342dcf640e"
+        },
+        {
+          "file": "turquie-2-lod.glb",
+          "bytes": 118888,
+          "sha256": "1dbc7cfc0560183c721d7969058e72bf39191adb5d955862193603560997fd47"
+        }
+      ]
+    },
+    {
+      "name": "turquie-3",
+      "sourceFaces": 19199,
+      "sourceBytes": 2604944,
+      "country": "turquie",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "turquie-3.glb",
+          "bytes": 386736,
+          "sha256": "d925f9ef9846090cdb63b24177c3401e0e1f8a60ce83a9eb828be25184286cff"
+        },
+        {
+          "file": "turquie-3-lod.glb",
+          "bytes": 157304,
+          "sha256": "00f107c1fa827959a2c4ac89f4dc1f4dbc0f82e593079f862c8465121b06ab47"
+        }
+      ]
+    },
+    {
+      "name": "algerie-1",
+      "sourceFaces": 10553,
+      "sourceBytes": 1380652,
+      "country": "algerie",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "algerie-1.glb",
+          "bytes": 216884,
+          "sha256": "320a82b99bede8874f87b61d1cfe0bb7290fcbd2685b47231d9ea59c2e69df46"
+        },
+        {
+          "file": "algerie-1-lod.glb",
+          "bytes": 92756,
+          "sha256": "07e28007345f83e77379a775a5bcf9d533c6bd6fb66342e91775e2496fe28e54"
+        }
+      ]
+    },
+    {
+      "name": "algerie-2",
+      "sourceFaces": 18143,
+      "sourceBytes": 2479740,
+      "country": "algerie",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "algerie-2.glb",
+          "bytes": 383904,
+          "sha256": "747b221f8f8f712825d4d9177eb6360b70996a4b877c4bc0bd8f8282d35ff455"
+        },
+        {
+          "file": "algerie-2-lod.glb",
+          "bytes": 146796,
+          "sha256": "6b5909cba38d7ddbb4b451a7d51c2bd1514b55ebc398db099e16c6eecd832299"
+        }
+      ]
+    },
+    {
+      "name": "algerie-3",
+      "sourceFaces": 25733,
+      "sourceBytes": 3859604,
+      "country": "algerie",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "algerie-3.glb",
+          "bytes": 546884,
+          "sha256": "c84dc3c42b0d33bb45563be61e5337596b56a0b0bc1ba9bc1d8d4caa9a09fcc3"
+        },
+        {
+          "file": "algerie-3-lod.glb",
+          "bytes": 199136,
+          "sha256": "f5e792d37ad7816ee707a65508d486e9f27bdeeb641504e405654df7343beba0"
+        }
+      ]
+    },
+    {
+      "name": "tunisie-1",
+      "sourceFaces": 11741,
+      "sourceBytes": 1546896,
+      "country": "tunisie",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "tunisie-1.glb",
+          "bytes": 241068,
+          "sha256": "20fff1fd229852174101c4ebec9f232d38aac012db77289f64d0267abd070402"
+        },
+        {
+          "file": "tunisie-1-lod.glb",
+          "bytes": 102320,
+          "sha256": "25534c63a6feb6779d16cc46e4491a1c16c0110c58af3f33eb51235d1b2b054f"
+        }
+      ]
+    },
+    {
+      "name": "tunisie-2",
+      "sourceFaces": 20627,
+      "sourceBytes": 2827436,
+      "country": "tunisie",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "tunisie-2.glb",
+          "bytes": 434424,
+          "sha256": "bf4c341268f116b041cf216ab23a2973e8ee05837f21e022b2f94cf47e244464"
+        },
+        {
+          "file": "tunisie-2-lod.glb",
+          "bytes": 171188,
+          "sha256": "c7c9ba8980f166d922c9fc76754fbf7f4f23ecd9308f520ccb5cbe68b813166e"
+        }
+      ]
+    },
+    {
+      "name": "tunisie-3",
+      "sourceFaces": 29513,
+      "sourceBytes": 4107936,
+      "country": "tunisie",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "tunisie-3.glb",
+          "bytes": 623400,
+          "sha256": "a7bbc26a3b5c9260cc7f4fe464ef607507cfce8bba715107758ba30ee480a4b3"
+        },
+        {
+          "file": "tunisie-3-lod.glb",
+          "bytes": 238044,
+          "sha256": "3d9e8bad11cc0a490f70d4ce3ac7e8fde4c6d1bd165ab62563ad288c3a0ce69c"
+        }
+      ]
+    },
+    {
+      "name": "maroc-1",
+      "sourceFaces": 12297,
+      "sourceBytes": 1641508,
+      "country": "maroc",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "maroc-1.glb",
+          "bytes": 253220,
+          "sha256": "1e1d508d24ae9f710c2287080dc1ac5667eb2ce82a99ccdb2e4a2d214e4eeab7"
+        },
+        {
+          "file": "maroc-1-lod.glb",
+          "bytes": 105048,
+          "sha256": "b4a4e5a9020692a2cfb6bce84c70f608a5b04d32eda5ab9e2781378b22bfdc91"
+        }
+      ]
+    },
+    {
+      "name": "maroc-2",
+      "sourceFaces": 20847,
+      "sourceBytes": 2893236,
+      "country": "maroc",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "maroc-2.glb",
+          "bytes": 441320,
+          "sha256": "df9ee26234b35989383f437fc50ea2693635db04e683beaf7778fc1067d07520"
+        },
+        {
+          "file": "maroc-2-lod.glb",
+          "bytes": 167448,
+          "sha256": "ce5d9a62402419d9c31b0878bee9901b6526cad0474c785753a186e4ec7f4f37"
+        }
+      ]
+    },
+    {
+      "name": "maroc-3",
+      "sourceFaces": 29397,
+      "sourceBytes": 4436112,
+      "country": "maroc",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "maroc-3.glb",
+          "bytes": 622492,
+          "sha256": "dcd34ffbce0e8db16cc7dad5c6d8231b2e750d2c549c7a0169ba04a75a448baa"
+        },
+        {
+          "file": "maroc-3-lod.glb",
+          "bytes": 227260,
+          "sha256": "cb4cfb2b48cad5da7ef8b1ff5b57a1acc9c507182f329fa4374945a2c6edaefb"
+        }
+      ]
+    },
+    {
+      "name": "espagne-1",
+      "sourceFaces": 11087,
+      "sourceBytes": 1461984,
+      "country": "espagne",
+      "floors": 1,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "espagne-1.glb",
+          "bytes": 231412,
+          "sha256": "73179940c4c755f93e3bf2c4f6db2fb0cce717b21a7936e51b6b1cb86f40f2d1"
+        },
+        {
+          "file": "espagne-1-lod.glb",
+          "bytes": 89624,
+          "sha256": "3f302337ede720f36ec2fa7c7129ff4499b227ff5cf0be39a5fc5d158d6068f8"
+        }
+      ]
+    },
+    {
+      "name": "espagne-2",
+      "sourceFaces": 20957,
+      "sourceBytes": 2900316,
+      "country": "espagne",
+      "floors": 2,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "espagne-2.glb",
+          "bytes": 446908,
+          "sha256": "762fd78742cd2ffa0e55f046e8bafdab3a3ab8f457877e4b49d500fef5e01399"
+        },
+        {
+          "file": "espagne-2-lod.glb",
+          "bytes": 160264,
+          "sha256": "eee9119855a285d946d24de2dd8b8d3323149f6c8d60689246470ead7e4c2e6f"
+        }
+      ]
+    },
+    {
+      "name": "espagne-3",
+      "sourceFaces": 30827,
+      "sourceBytes": 4626740,
+      "country": "espagne",
+      "floors": 3,
+      "width": 12,
+      "depth": 10,
+      "doorHeight": 4.8,
+      "files": [
+        {
+          "file": "espagne-3.glb",
+          "bytes": 655344,
+          "sha256": "041b5993bee4e3a2f242021d06de6046b80a18b4b79c6c219ea518028ad0f93b"
+        },
+        {
+          "file": "espagne-3-lod.glb",
+          "bytes": 229256,
+          "sha256": "79a44d57576f2615b1d65c85e067cb5ab977e0deca4897142685bc511932617a"
+        }
+      ]
+    }
+  ],
+  "compression": "EXT_meshopt_compression",
+  "materials": "Original palettes; plaster maps shared from the CC0 sources in ../paris/textures/sources.json"
+}

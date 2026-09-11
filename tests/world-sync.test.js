@@ -25,5 +25,7 @@ test('account journals recover offline actions across tabs and retain actions ma
  const final=await a.saveWorld(uid,result.data);assert.equal(final.pending,false);assert.equal(final.data.xp,xp+60);assert.equal(canonical.adventure.chapters.france.powers.length,3);
  // A further fresh tab replays no already acknowledged rewards.
  globalThis.sessionStorage=storage();const c=await import('../src/world/save.js?tab=c');const recovered=await c.loadWorld(uid);assert.equal(recovered.data.xp,xp+60);assert.equal(recovered.data.adventure.chapters.france.powers.length,3);
+ let long=recovered.data;for(let n=0;n<251;n++)long=c.recordWorldAction(uid,long,{type:'walk',metres:1});
+ const drained=await c.saveWorld(uid,long);assert.equal(drained.pending,false);assert.equal(drained.data.walked,long.walked,'One sync drains multiple batches without losing new commands');
  delete globalThis.localStorage;delete globalThis.sessionStorage;
 });

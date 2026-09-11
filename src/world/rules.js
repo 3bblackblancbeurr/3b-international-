@@ -90,7 +90,7 @@ export function moveWithCollision(position,dx,dz,obstacles,radius=76){
   if(!obstacles.some(o=>obstacleDistance(next,o)<0.7))p[axis]=next[axis];
  }return p;
 }
-export function nearestInteraction(position,items){return items.filter(i=>distance(position,i)<(i.range||5.5)).sort((a,b)=>distance(position,a)-distance(position,b))[0]||null;}
+export function nearestInteraction(position,items){return items.filter(i=>distance(position,i)<(i.range||5.5)).sort((a,b)=>(b.type==='job')-(a.type==='job')||distance(position,a)-distance(position,b))[0]||null;}
 export const countryCard=region=>CARDS.find(c=>c.country===region&&c.character);
 export function encounterCards(region,save){const available=CARDS.filter(c=>c.country===region&&c.category==='Personnage classique'&&(c.rarity==='Commun'||save.beacons.filter(id=>id.startsWith(region+':')).length>=2));return [...available.filter(c=>!save.collection[c.id]),...available.filter(c=>save.collection[c.id])];}
 export function worldItems(region,save){
