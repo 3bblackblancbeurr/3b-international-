@@ -1,0 +1,56 @@
+.premium-library{grid-template-columns:repeat(2,minmax(0,1fr))}
+.premium-library .premium-game-card,.premium-library .premium-game-card:nth-child(n+4){grid-column:auto;font-family:inherit;text-decoration:none}
+.premium-library .premium-card-art,.premium-library .premium-game-card:nth-child(n+4) .premium-card-art{height:185px}
+.premium-card-copy>strong{min-height:0}
+.premium-game-card[data-game=key-race]{--accent:#efd08b}
+[data-game=key-race] .premium-card-sprite{width:165px;height:165px;left:calc(50% - 82px);bottom:0;background:url('/games/objects.webp') 50% 100%/300% 200%;filter:drop-shadow(0 0 26px #e1b65744)}
+[data-game=maze] .premium-card-art{background:linear-gradient(0deg,#101c29 2%,#0e232a55 90%),url('/games/maze-ruins.webp') 100% 100%/200% 200%;filter:none}
+[data-game=maze] .premium-card-sprite{left:calc(50% - 75px);filter:drop-shadow(0 0 25px #9ee4cc55)}
+.game-shell[data-game=maze]{--accent:#d8d9ac;background:#080f14}
+[data-game=maze] .game-stage{background:radial-gradient(ellipse,#1b2e2c,#080f14 75%)}
+[data-game=maze] .game-stage canvas{filter:none}
+[data-game=maze] .game-hud{background:#101f25}
+[data-game=maze] .game-hud>div{max-width:220px}
+.maze-toolbar{display:grid;grid-template-columns:1fr auto;gap:12px 20px;align-items:center;padding:13px max(20px,calc((100vw - 920px)/2));background:#102025;max-height:none;overflow:visible}
+.maze-seals{display:flex;align-items:center;gap:22px}
+.maze-seals span{display:flex;gap:9px;align-items:center;font-size:13px;color:#97aaa7}
+.maze-seals b{display:grid;place-items:center;flex-shrink:0;width:30px;height:30px;border:1px solid #748c833d;border-radius:7px;font-size:12px;font-weight:500;color:var(--seal);background:#8aaba209}
+.maze-seals [data-found=true]{color:var(--seal)}
+.maze-seals [data-found=true] b{border-color:var(--seal);background:#a6c8a819;box-shadow:0 0 12px #9fbc9433}
+.maze-map-button{display:flex;align-items:center;justify-content:center;gap:14px;min-height:42px;padding:9px 15px;background:#9fb9a012;border:1px solid #a9c1aa44;border-radius:8px;color:#d7dfcc;white-space:nowrap}
+.maze-map-button[aria-pressed=true]{background:#d1be8530;border-color:#d1be85;color:#f3dfb5}
+.maze-map-button small{border:1px solid #c5cbb938;border-radius:3px;font-size:11px;padding:2px 5px;color:#9eb4a9}
+.maze-journal{grid-column:1/-1;margin:0;color:#a6bcb5;font-size:13px;line-height:1.5;min-height:20px}
+[data-game=maze] .game-footer{background:#0c171d}
+[data-game=maze] .game-hints p{display:none}
+[data-game=maze] .game-hints>span:first-of-type{display:none}
+[data-game=maze] .game-hints br{display:none}
+[data-game=maze] .game-dpad button{border-radius:8px;background:#203237;border-color:#8ca7984d;height:40px}
+[data-game=maze] .game-dpad button:active{background:#445e4e;border-color:#b4c7a1}
+.maze-result-detail{font-size:14px!important;color:#c5d0b5!important}
+[data-game=maze] .premium-intro{background:radial-gradient(ellipse at 50% 35%,#102724db,#060f15ed)}
+[data-game=maze] .premium-controls{border-color:#aebc8c33;background:#65876912}
+[data-game=maze][data-state=map] .game-dpad{visibility:hidden}
+@media(max-width:600px){
+ .premium-library{grid-template-columns:1fr}
+ .premium-library .premium-card-art,.premium-library .premium-game-card:nth-child(n+4) .premium-card-art{height:100%}
+ .premium-card-bottom{flex-wrap:wrap;row-gap:8px}.premium-card-bottom>span:first-child{font-size:11px}
+ [data-game=maze] .game-header strong{font-size:14px}
+ [data-game=maze] .game-hud strong{font-size:13px}
+ .maze-toolbar{padding:10px 12px;gap:9px}
+ .maze-seals{gap:10px}.maze-seals span{font-size:10px;flex-direction:column;gap:4px}.maze-seals b{height:25px;width:25px;font-size:10px}
+ .maze-map-button{font-size:12px!important;min-height:44px;padding:9px 11px;gap:7px}.maze-map-button small{display:none}
+ .maze-journal{font-size:11px;min-height:33px;line-height:1.5}
+ [data-game=maze] .game-footer{padding:8px 13px;min-height:100px;flex-wrap:nowrap;justify-content:space-between}
+ [data-game=maze] .game-dpad{display:grid;grid-template-columns:repeat(3,42px);gap:3px}
+ [data-game=maze] .game-dpad button{width:42px;height:39px}
+ [data-game=maze] .game-mobile-help{display:none}
+ [data-game=maze] .game-action{min-width:152px;min-height:66px;max-width:49%;font-size:12px}
+ [data-game=maze] .game-drag-hint{font-size:10px;bottom:8px}
+ [data-game=maze] .premium-controls{font-size:12px;line-height:1.7}
+}
+@media(max-height:550px) and (orientation:landscape){
+ .maze-toolbar{padding:5px 14px;gap:3px 16px}.maze-seals{gap:13px}.maze-seals span{font-size:11px}.maze-seals b{height:22px;width:22px}.maze-map-button{min-height:30px;padding:4px 10px;font-size:12px!important}.maze-journal{font-size:11px;min-height:0}
+ [data-game=maze] .game-footer{min-height:48px;padding:3px 14px}[data-game=maze] .game-dpad{display:none}[data-game=maze] .game-action{min-height:40px;font-size:12px}
+ [data-game=maze] .game-action small{display:none!important}[data-game=maze] .game-drag-hint{bottom:3px}
+}

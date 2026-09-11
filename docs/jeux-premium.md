@@ -1,5 +1,7 @@
 # Jeux 3B — amélioration du 11 septembre 2026
 
+Note historique : cette première livraison a été suivie par la [refonte du Labyrinthe et du catalogue](labyrinthe-2026-09-11.md), qui retire le Refuge et les Villes de l’application.
+
 Cette mise à jour concerne les cinq jeux de la rubrique Jeux 3B. Le lien, la carte et le jeu externe « La course des clés » sont conservés.
 
 ## Changements jouables

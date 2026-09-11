@@ -29,10 +29,10 @@ test('maze: 200 seeded maps preserve access to all objectives and opening walls 
  let previous='';for(let seed=1;seed<=200;seed++){const g=new Maze(seed);const now=JSON.stringify(g.grid);assert.notEqual(now,previous);previous=now;const objectives=[g.exit,...g.fragments,...g.switches,...g.lamps];let route=paths(g.grid,g.cell);for(const p of objectives)assert.ok(route.dist[p.y*g.cols+p.x]>=0);for(const sw of g.switches){g.cell={x:sw.x,y:sw.y};g.action();}route=paths(g.grid,{x:1,y:1});for(const p of objectives)assert.ok(route.dist[p.y*g.cols+p.x]>=0);assert.equal(g.switches.filter(s=>s.used).length,2);}
 });
 test('maze: walls block movement, a fragment cannot be counted twice, and all three unlock victory',()=>{
- const g=new Maze(8);g.update(.14,{x:-1,y:0});assert.equal(g.cell.x,1);g.shadow={x:23,y:15};g.flash=30;for(const f of g.fragments){g.cell={x:f.x,y:f.y};g.update(.02);g.update(.02);}assert.equal(g.collected,3);g.cell={...g.exit};g.update(.02);assert.equal(g.won,true);
+ const g=new Maze(8);g.cell={x:1,y:1};g.update(.14,{x:-1,y:0});assert.equal(g.cell.x,1);g.shadow={x:23,y:15};g.flash=30;for(const f of g.fragments){g.cell={x:f.x,y:f.y};g.update(.02);g.update(.02);}assert.equal(g.collected,3);g.cell={...g.exit};g.update(.02);assert.equal(g.won,true);
 });
-test('maze: depleted lamp and contact with the shadow end the run',()=>{
- const a=new Maze(2);a.lamp=.01;a.update(.02);assert.equal(a.won,false);const b=new Maze(2);b.shadow={...b.cell};b.update(.02);assert.equal(b.won,false);
+test('maze: depleted lamp and fatal damage outside the sanctuary end the run',()=>{
+ const a=new Maze(2);a.lamp=.001;a.update(.02);assert.equal(a.won,false);const b=new Maze(2);b.cell={x:25,y:15};b.shadow={...b.cell};b.player.hp=1;b.update(.02);assert.equal(b.won,false);
 });
 test('refuge: gathering, construction costs, repair, and rescue respect resources and proximity',()=>{
  const g=new Refuge(null,5);g.player={...g.player,x:140,y:130};g.action();assert.equal(g.wood,45);g.build('turret');assert.equal(g.turrets,1);assert.equal(g.wood,0);g.build('home');assert.equal(g.homes,1);g.wood=10;g.gate=50;g.player.x=450;g.player.y=360;g.interact=0;g.action();assert.equal(g.gate,70);assert.equal(g.wood,5);g.startNight();g.player.x=g.resident.x;g.player.y=g.resident.y;g.interact=0;g.action();assert.equal(g.people,3);assert.equal(g.resident,null);
