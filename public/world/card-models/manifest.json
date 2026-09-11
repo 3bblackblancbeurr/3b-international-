@@ -2,7 +2,7 @@
   "edition": "3b-local-1",
   "source": "Original 368 card catalogue; stylized local Blender adaptations, shared Quaternius CC0 character topology.",
   "total": 368,
-  "bytes": 132189568,
+  "bytes": 131865496,
   "cards": [
     {
       "id": "C001",
@@ -3290,9 +3290,9 @@
       "country": "france",
       "category": "Carte unique",
       "kind": "guardian",
-      "url": "/world/card-models/C165.glb",
-      "bytes": 453540,
-      "sha256": "28c6c5ff715f9986e3313532682af24282bc264076aacb1c8f0211445cd6b3b1",
+      "url": "/world/card-models/C165-v2.glb",
+      "bytes": 129468,
+      "sha256": "18c57dda24d0ee398cc494e936bd96bee250021578e58b9179b004708e3c39be",
       "animations": [
         "Idle",
         "Walk",
@@ -3302,7 +3302,7 @@
         "Death",
         "Cast"
       ],
-      "meshes": 1
+      "meshes": 22
     },
     {
       "id": "C166",

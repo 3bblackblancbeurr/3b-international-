@@ -1,0 +1,32 @@
+/* Keep frequently used touch actions in separate, reachable lanes. */
+.world-shell .play-arena{bottom:112px;right:24px}
+.world-shell .play-supplies{position:absolute;top:99px;left:24px;display:flex;gap:15px;align-items:center;min-height:44px;padding:9px 13px;border-radius:13px;background:#122c35e8;border:1px solid #d9be8155;color:#f4e2ba;box-shadow:0 4px 16px #14273222}
+.play-supplies span{display:flex;align-items:center;gap:6px;font:600 12px system-ui}.play-supplies svg{color:#c6b992}
+.world-shell .play-bearing{top:155px;left:24px;transform:none;min-height:44px}
+.world-shell .world-minimap button{min-height:36px;min-width:36px}
+.world-shell .world-minimap .minimap-open{min-height:0}
+.world-shell .play-interaction{max-width:calc(100% - 240px)}
+.world-shell .combat-focus{position:absolute;bottom:114px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;color:#f1d28e;font-size:10px}
+.combat-focus i{display:block;width:11px;height:11px;border:1px solid #d9c58988;transform:rotate(45deg);border-radius:2px;background:#112b32}
+.combat-focus i.is-full{background:#9ae3ed;box-shadow:0 0 9px #82d9ee66;border-color:#c6f1ff}.combat-focus span{margin-left:6px;white-space:nowrap}
+.world-dialog-encounter .world-battle>p[role=status]{bottom:153px}
+.encounter-pause{display:grid;gap:14px;text-align:center}.encounter-pause h3{font:28px Georgia,serif}.encounter-pause small{font-size:12px;line-height:1.6;color:#bdd2c9}
+.companion-follow{margin-bottom:8px}.world-dialog .companion-note{line-height:1.6}
+.world-shell button:focus-visible{outline:2px solid #b9efff;outline-offset:4px}
+@media(max-width:700px){
+ .world-shell .play-supplies{top:102px;left:14px;gap:10px;padding:10px}.play-supplies span{font-size:11px;gap:3px}
+ .world-shell .play-bearing{top:155px;left:14px;min-height:44px}
+ .world-shell .play-arena{right:17px;bottom:112px}
+ .world-shell .play-interaction{right:17px;max-width:calc(100% - 110px)}
+ .world-shell .combat-focus{bottom:159px;font-size:9px}
+ .world-dialog-encounter .world-battle>p[role=status]{bottom:185px}
+ .world-dialog-encounter .world-battle>.world-actions:not(.world-battle-actions){bottom:220px}
+ .world-dialog-encounter .world-battle>.adventure-hint{bottom:252px}
+ .world-shell .world-minimap{width:125px}.world-shell .world-minimap button{min-height:32px;min-width:36px}
+}
+@media(max-height:550px) and (orientation:landscape){
+ .world-shell .play-supplies{top:72px;left:18px;min-height:40px}
+ .world-shell .play-bearing{top:121px;left:18px;min-height:40px}
+ .world-shell .combat-focus{bottom:78px;left:auto;right:22px;transform:none;font-size:9px}
+ .world-dialog-encounter .world-battle>p[role=status]{bottom:78px;width:55%;left:40%}
+}

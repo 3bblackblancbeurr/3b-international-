@@ -14,7 +14,7 @@ export function createLivingLibrary(){
 }
 export function avatarRecipe(avatar){return {body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,skin:SKINS[avatar?.skin??2],cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0};}
 export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError}={}){
- const recipe=card?CARD_DESIGNS[card]:avatarRecipe(avatar),url=card?'/world/card-models/'+card+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
+ const recipe=card?CARD_DESIGNS[card]:avatarRecipe(avatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
  const object=new THREE.Group(),personal=new Set();let model,mixer,garments,pattern,actions={},current=null,dead=false,clock=0,actionEnd=0,heading=0,ready=false;
  object.scale.setScalar(scale);
  function transition(name,once=false){
