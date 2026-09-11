@@ -1,3 +1,4 @@
+import {HERITAGE,LANDMARK_APPROACH} from './heritage.js';
 import {RESOURCE_SITES,frontierState,patrolOpponent} from './frontier.js';
 // Authored districts inspired by real places, not geographic replicas.
 export const REGIONS={
@@ -45,12 +46,13 @@ export function settlementPlan(region){
   }
  }
  roads.push({kind:'trail',width:3.3,points:roundLane([[0,5],[18,8],[32,19],[49,26],[62,31]])},
-  {kind:'trail',width:3.1,points:roundLane([[11,-4],[25,-16],[35,-35]])},
+  {kind:'trail',width:3.1,points:roundLane([[11,-4],[25,-16],[35,-16]])},
   {kind:'trail',width:3.2,points:roundLane([warp([-18,-53]),[0,-57]])});
  for(const [i,[x,z]] of [[34,34],[60,11],[60,40],[35,51],[23,40],[56,-9]].entries())plots.push({x,z,rotation:i*.8,variant:60+i,urban:false});
  return {roads,plots,squares:[{x:-18,z:17,r:8},{x:9,z:-4,r:7},{x:49,z:26,r:7}],fields:[{x:46,z:40,w:19,h:12,kind:c.crop},{x:48,z:8,w:16,h:10,kind:c.crop}]};
 }
 export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5}];return[
+ {id:region+':landmark',type:'landmark',name:HERITAGE[region].name,...LANDMARK_APPROACH,color:'#d6bb7e',range:6},
  {id:region+':camp',type:'camp',name:'Mon refuge',x:27,z:25,color:'#edc782',range:6},
  {id:region+':patrol',type:'patrol',name:'Protéger les environs',x:31,z:36,color:'#dc9a7c',range:6,card:save.adventure?.encounter?.patrol&&save.adventure.encounter.region===region?save.adventure.encounter.card:patrolOpponent(region,frontierState(save,region).expedition).id},
  ...RESOURCE_SITES.map(p=>({id:region+':resource:'+p.id,type:'resource',resource:p.id,name:p.name,x:p.x,z:p.z,color:'#a8c88c',range:4,done:frontierState(save,region).harvest.includes(p.id)})),

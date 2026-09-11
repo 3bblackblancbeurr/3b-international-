@@ -20,7 +20,7 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
  for(const p of squares){const g=geo(new THREE.CircleGeometry(p.r,48));g.rotateX(-Math.PI/2);const a=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<a.count;i++){a.setY(i,height(a.getX(i)+p.x,a.getZ(i)+p.z)+.052);uv.setXY(i,(a.getX(i)+p.x)/5,(a.getZ(i)+p.z)/5);}g.computeVertexNormals();const square=shape(g,paving,p.x,0,p.z);square.castShadow=false;}
  // An open artisan courtyard: usable entrance, market stalls, signs and seating.
  const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop&&region!=='maroc'){const {x,z}=workshop;
-  for(const side of [-1,1]){const stall=asset('Market',x+side*8,z-4,1.45,side<0?.4:-.4);for(const i of [0,1,2])shape(box,mat(['#b5865f','#74918b','#b29868'][i]),x+side*8+(i-1)*.6,height(x,z)+1.2,z-3,.52,.32,.7);}
+  for(const side of [-1,1])for(const i of [0,1,2])shape(box,mat(['#b5865f','#74918b','#b29868'][i]),x+side*8+(i-1)*.6,height(x,z)+1.2,z+1.1,.52,.32,.7);
   for(const dx of [-6,6]){asset('Bench',x+dx,z+4,1.45,0);asset('Lantern',x+dx,z+2,1.35,0);}
   resident(x+3,z+1,'#d2a96e',root,'artisan');
   const sign=shape(box,wood,x,height(x,z)+1.4,z-3,.1,2.8,.1);shape(box,mat('#c4ad7f'),x,height(x,z)+2.5,z-3,2.8,.85,.16);
