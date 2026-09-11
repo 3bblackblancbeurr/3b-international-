@@ -31,15 +31,19 @@ export function advanceBattle(enc,action){
  if(action==='trap')e.traps--;if(action==='support'){e.support=false;e.hp=Math.min(e.maxHP,e.hp+32);}
  if(!e.enemy){e.result=e.boss?'victory':'calm';e.log=e.boss?'Le gardien reconnaît tes liens.':'L’écho s’apaise. Tu peux maintenant tisser un lien.';return e;}
  const base={frappe:18,rituel:6,percée:27,rempart:12,soin:8,gel:16,éclipse:23,double:30,sable:24,vague:29}[e.intent]||18;
- const enrage=e.expert?Math.max(0,e.turn-24)*2:0;
+ // A finite recovery reserve makes guard a tactical defence, not infinite healing.
+ e.recoveries=Number.isFinite(enc.recoveries)?enc.recoveries:2;
+ const recovery=action==='guard'&&e.recoveries>0&&e.hp<e.maxHP?s.heal+9:0;
+ if(recovery)e.recoveries--;
+ const enrage=Math.max(0,e.turn-24)*(e.expert?2:1);
  const incoming=Math.round(base*(e.expert?1.35:1)*(e.final?1.1:1)+(e.boss?phase-1:0)+enrage);
  const hit=action==='trap'||action==='dodge'?0:action==='guard'?Math.round(incoming*(e.intent==='percée'?.55:.15)):incoming;
  if(e.intent==='gel'&&action!=='guard'&&action!=='dodge'&&action!=='trap')e.focus=Math.max(0,e.focus-1);
  if(e.intent==='soin')e.enemy=Math.min(e.enemyMax,e.enemy+(e.expert?22:12));
- e.hp=clamp(e.hp-hit+(action==='guard'?s.heal+9:0),0,e.maxHP);
+ e.hp=clamp(e.hp-hit+recovery,0,e.maxHP);
  const pattern=CHAPTERS[e.region].pattern;e.phase=phase;
  e.intent=e.final?['frappe','double','rituel','percée','soin','rituel'][e.turn%6]:e.boss?pattern[(e.turn+(phase===3?1:0))%pattern.length]:['frappe','rituel','percée','frappe'][e.turn%4];
- e.log=`${damage} dégâts infligés · ${hit} reçus${action==='guard'?` · +${s.heal+9} vitalité`:''}.${e.boss?' Phase '+phase+' / 3.':''}${enrage?' Le gardien s’enrage : termine le combat !':''}`;
+ e.log=`${damage} dégâts infligés · ${hit} reçus${recovery?` · +${recovery} vitalité`:''}.${e.boss?' Phase '+phase+' / 3.':''}${enrage?' L’adversaire intensifie ses attaques.':''}`;
  if(!e.hp){e.result='defeat';e.log='Replie-toi et prépare ton groupe. Tes compagnons restent à tes côtés.';}return e;
 }
 
@@ -57,11 +61,11 @@ export function applyWorldAction(input,action){
   case 'patrol':{
    peaceful();inCountry();requireThat(home.food>0,'Retourne au refuge pour préparer une provision.');
    const person=patrolOpponent(region,home.expedition);
-   const enc=makeEncounter(person,s,true),expert=s.adventure.difficulty==='expert';
+   const enc={...makeEncounter(person,s,true),recoveries:2},expert=s.adventure.difficulty==='expert';
    enc.enemy=enc.enemyMax=100+Math.min(180,home.expedition*8)+(expert?55:0);s=setHome({food:home.food-1});
    return adventure(s,{encounter:{...enc,patrol:true,region,expert,phase:1,pactSeed:home.expedition,intent:c.pattern[home.expedition%c.pattern.length],log:'Protège les environs. Une victoire renouvelle les ressources et entraîne ton groupe.'}});
   }
-  case 'companion':{peaceful();requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id});}
+  case 'companion':{peaceful();if(action.id===null)return adventure(s,{companionHidden:true});requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id,companionHidden:false});}
   case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
   case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
@@ -102,7 +106,7 @@ export function applyWorldAction(input,action){
    requireThat(item,'Cette rencontre n’existe pas.');
    const boss=item.type==='guardian';if(boss)requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');
    if(action.outdoor){requireThat(!boss&&s.adventure.outdoorCredits>0,'Marche pour révéler un écho du dehors.');s=adventure(s,{outdoorCredits:s.adventure.outdoorCredits-1});}
-   const enc=makeEncounter(cardById[item.card],s,boss),expert=s.adventure.difficulty==='expert';
+   const enc={...makeEncounter(cardById[item.card],s,boss),recoveries:2},expert=s.adventure.difficulty==='expert';
    if(s.adventure.preparation){const prepared=chapterState(s,s.adventure.preparation);if(prepared.restored>=2){if(prepared.choice==='workshop')enc.stats.attack+=4;else{enc.hp+=16;enc.maxHP+=16;enc.stats.health+=16;}}s=adventure(s,{preparation:null});}
    if(expert){enc.enemy=Math.round(enc.enemy*1.4);enc.enemyMax=enc.enemy;}
    return adventure(s,{encounter:{...enc,region,expert,phase:1,pactSeed:cardById[item.card].number+s.wins,intent:boss?c.pattern[0]:'frappe'}});
@@ -144,7 +148,7 @@ export function applyWorldAction(input,action){
   case 'final':{
    peaceful();requireThat(region==='hub'&&nexusLevel(s)===8&&s.seals.length===8,'Reconstruis les huit pays et réunis les huit sceaux.');requireThat(!s.adventure.finished,'L’Union est déjà retrouvée.');
    const card=CARDS.find(c=>c.id==='C164'),enc=makeEncounter(card,s,true);enc.hp=enc.maxHP+=40;enc.enemy=enc.enemyMax=360;
-   return adventure(s,{encounter:{...enc,final:true,region:'france',expert:false,phase:1,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Protège ton équipe et attends ses ouvertures.'}});
+   return adventure(s,{encounter:{...enc,recoveries:2,final:true,region:'france',expert:false,phase:1,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Protège ton équipe et attends ses ouvertures.'}});
   }
   default:fail('Action de jeu non autorisée.');
  }

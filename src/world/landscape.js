@@ -8,6 +8,7 @@ import {createArchitecture} from './architecture.js';
 import {createSceneryOcclusion} from './occlusion.js';
 import {addLivingPlaces,livingPlaceCollisions} from './places.js';
 import {addSettlement} from './settlement-mesh.js';
+import {addTownGardens} from './town-gardens.js';
 import {surfaceTexture} from './surfaces.js';
 import {createMeadowGeometry,createMeadowMaterial} from './vegetation.js';
 import {BIOMES,createTerrainField,randomFor,toLandscape} from './terrain.js';
@@ -65,7 +66,8 @@ export function createLandscape(models,region,save){
  const blade=geo(createMeadowGeometry()),meadow=createMeadowMaterial(region==='algerie'||region==='maroc'?'#afb278':'#87a56c');owned.push(meadow.material);const reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const count=2400,grass=new THREE.InstancedMesh(blade,meadow.material,count),dummy=new THREE.Object3D();let filled=0;
  for(let i=0;i<count*3&&filled<count;i++){const x=(rng()-.5)*245,z=(rng()-.5)*245;if(field.protectedPoint(x,z,2)||height(x,z)>13)continue;dummy.position.set(x,height(x,z),z);dummy.rotation.set(0,rng()*6,.12);const s=.35+rng()*.6;dummy.scale.set(s,s,s);dummy.updateMatrix();grass.setMatrixAt(filled++,dummy.matrix);}
- grass.count=filled;grass.instanceMatrix.needsUpdate=true;grass.computeBoundingSphere();grass.boundingSphere.radius+=.5;grass.receiveShadow=true;root.add(grass);
+ grass.count=filled;grass.instanceMatrix.needsUpdate=true;grass.computeBoundingSphere();grass.boundingSphere.radius+=.5;grass.receiveShadow=true;root.add(grass);owned.push(grass);
+ addTownGardens(field,root,owned,region);
  if(hub){
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
   const core=toLandscape(region,0,-3);shape(cylinder,mat('#d9ceb0'),core.x,.18,core.z,3,.36,3);const orb=shape(ball,mat('#76bac0',{emissive:'#5a979e',emissiveIntensity:.3,metalness:.4}),core.x,3.5,core.z,1.1);decorations.push({orb});
@@ -93,6 +95,24 @@ export function createLandscape(models,region,save){
    const building=new THREE.Group();root.add(building);house(region,camp.x-13,camp.z,biome.angle,3,building,false);batch(building);frontierGroups.push({kind:'camp',group:building,collision:collisions.at(-1)});
    const forge=new THREE.Group();root.add(forge);asset('Market',camp.x,camp.z-12,1.6,0,forge);asset('Bench',camp.x-3,camp.z-10,1.35,0,forge);batch(forge);frontierGroups.push({kind:'forge',group:forge});
    const garden=new THREE.Group();root.add(garden);for(const z of [-3,3])asset('Planter',camp.x+12,camp.z+z,2.1,0,garden);asset('Tree',camp.x+12,camp.z,.8,0,garden);batch(garden);frontierGroups.push({kind:'garden',group:garden});
+   // Every purchased rank leaves something visible within the existing footprint.
+   for(let rank=2;rank<=8;rank++)for(const kind of ['camp','forge','garden']){
+    const group=new THREE.Group();root.add(group);const offset=(rank-5)*1.05;
+    if(kind==='camp'){
+     const x=camp.x-13+offset,z=camp.z+5.05,y=height(x,z);
+     shape(box,mat('#244753'),x,y+3.8,z,.72,1.15,.1,group);
+     shape(geo(new THREE.TorusGeometry(.22,.035,5,16,Math.PI*1.72)),mat('#d8b978',{metalness:.55}),x,y+3.8,z+.07,1,1,1,group);
+     shape(box,mat('#d6bd7b',{emissive:'#d6bd7b',emissiveIntensity:.22}),x,y+2.6,z+.1,.55,.13,.13,group);
+    }else if(kind==='forge'){
+     const x=camp.x+offset,z=camp.z-11.4,y=height(x,z);
+     shape(box,mat('#735740'),x,y+1.3,z,.7,2.4,.4,group);shape(box,mat('#8a9ca0',{metalness:.7,roughness:.35}),x,y+2.3,z+.3,.45,.55,.25,group);shape(cylinder,mat('#dcc58d'),x,y+1.7,z+.3,.055,.7,.055,group);
+    }else{
+     const x=camp.x+9.6+(rank%3)*1.8,z=camp.z-4.7+Math.floor((rank-2)/3)*4,y=height(x,z);
+     shape(box,mat('#957452'),x,y+.2,z,1.45,.35,2.7,group);
+     for(let i=0;i<4;i++){shape(ball,mat('#437652'),x,y+.6,z-1+i*.65,.5,.48,.45,group);shape(ball,mat(region==='tunisie'?'#dfa359':'#be6961'),x+.1,y+.9,z-1+i*.65,.13,.18,.13,group);}
+    }
+    batch(group);group.userData.frontierRank=rank;group.userData.frontierKind=kind;frontierGroups.push({kind,rank,group});
+   }
    const symbol=shape(geo(new THREE.TorusGeometry(1.8,.12,6,40,Math.PI*1.72)),mat('#cfb579',{metalness:.45}),camp.x,height(camp.x,camp.z)+3.6,camp.z);symbol.rotation.z=.3;shape(cylinder,mat('#c7bfa7'),camp.x,height(camp.x,camp.z)+.2,camp.z,2.6,.4,2.6);
   }
   for(const item of field.anchors.filter(a=>a.type==='resource')){
@@ -108,7 +128,7 @@ export function createLandscape(models,region,save){
  // Batch only static descendants. Keep visibility stages separate.
  const dynamic=[...frontierGroups.map(p=>p.group),...resourceGroups.map(p=>p.group),...authored.groups,...stages.map(s=>s.group),...decorations.flatMap(d=>[d.landmark,d.ruin,d.garden,d.workshop,d.grove].filter(Boolean)),...residents.filter(r=>r.parent===root).map(r=>r.hero.object)];
  for(const g of dynamic)g.removeFromParent();batch(root);for(const g of dynamic)if(!g.parent)root.add(g);
- function update(next){save=next;const home=frontierState(save,region);for(const p of frontierGroups){p.group.visible=home[p.kind]>0;if(p.collision)p.collision.enabled=p.group.visible;}for(const p of resourceGroups)p.group.visible=!home.harvest.includes(p.id);authored.update(save);const s=chapterState(save,region);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
+ function update(next){save=next;const home=frontierState(save,region);for(const p of frontierGroups){p.group.visible=home[p.kind]>=(p.rank||1);if(p.collision)p.collision.enabled=p.group.visible;}for(const p of resourceGroups)p.group.visible=!home.harvest.includes(p.id);authored.update(save);const s=chapterState(save,region);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
  update(save);
  return{root,ground:terrain,collisions,height,field,update,updateCamera:occlusion.update,tick(time,dt,position){meadow.time.value=reduceWind?0:time;waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&(r.route?Math.min(...r.route.points.map(p=>Math.hypot(position.x-p.x,position.z-p.z)))<38:Math.hypot(position.x-r.x,position.z-r.z)<46);if(r.hero.object.visible){if(r.route){const path=r.route,total=path.total,cycle=((time+path.offset)*path.speed)%(total*2+12);let along=Math.max(0,Math.min(total,cycle<=total+6?cycle:total*2+6-cycle)),index=0;
 while(along>path.lengths[index]&&index<path.lengths.length-1)along-=path.lengths[index++];const t=along/path.lengths[index],a=path.points[index],b=path.points[index+1],x=a.x+(b.x-a.x)*t,z=a.z+(b.z-a.z)*t,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));}else{r.hero.update(dt);r.hero.object.position.y=height(r.x,r.z)+Math.sin(time*1.4+r.phase)*.012;r.hero.object.rotation.y=Math.sin(time*.14+r.phase)*.17+r.phase;}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};

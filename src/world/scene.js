@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
-import {DEFAULT_ORBIT,rotateOrbit,zoomOrbit,cameraRelative,orbitView} from './orbit.js';
+import {DEFAULT_ORBIT,normalizeOrbit,rotateOrbit,zoomOrbit,cameraRelative,orbitView} from './orbit.js';
 import {advanceMotion,pointerStick,createQualityController} from './motion.js';
 import {COUNTRIES,countryById,cardById} from './catalog.js';
 import {createPortalFrame} from './portals.js';
@@ -18,10 +18,10 @@ import {distance,nearestInteraction,teamStats} from './rules.js';
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
  const quality=createQualityController();renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=1.15;
+ renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=1.04;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(48,1,.3,460);
- const hemi=new THREE.HemisphereLight(0xd1edff,0xa6af8e,.9);scene.add(hemi);const fill=new THREE.DirectionalLight('#d9edff',.65);fill.position.set(-30,25,-40);scene.add(fill);
+ const hemi=new THREE.HemisphereLight(0xdcefff,0x61736b,1.1);scene.add(hemi);const fill=new THREE.DirectionalLight('#d9edff',.65);fill.position.set(-30,25,-40);scene.add(fill);
  const sun=new THREE.DirectionalLight(0xffe5bd,2.4);scene.add(sun,sun.target);sun.castShadow=true;
  const portraitLight=new THREE.DirectionalLight('#fff1dc',.55);scene.add(portraitLight,portraitLight.target);
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-36,right:36,top:36,bottom:-36,near:1,far:130});sun.shadow.bias=-.0004;sun.shadow.normalBias=.025;sun.shadow.radius=3;sun.shadow.camera.updateProjectionMatrix();
@@ -30,8 +30,9 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null;
- let escort=null,escortId=null,trail=[],shot=null,daylight=null;
- let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';const touchPoints=new Map();let pinchDistance=null;
+ let escort=null,escortId=null,trail=[],shot=null,daylight=null,retaliationPlayed=true;
+ let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{orbit=normalizeOrbit(JSON.parse(localStorage.getItem('3b-world-camera')));}catch{}
+ const rememberCamera=()=>{try{localStorage.setItem('3b-world-camera',JSON.stringify(orbit));}catch{}};const touchPoints=new Map();let pinchDistance=null;
  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const register=asset=>(resources.push(asset),asset);
  const material=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materialCache.has(key))materialCache.set(key,register(new THREE.MeshStandardMaterial({color,roughness:.8,metalness:.08,...extra})));return materialCache.get(key);};
@@ -57,13 +58,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   for(const m of root.children){if(!m.isMesh||m.isInstancedMesh||dynamic.has(m)||m.material.transparent)continue;const key=m.material.uuid;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
   for(const meshes of groups.values())if(meshes.length>2){const geometries=meshes.map(m=>{m.updateMatrix();const g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return g.applyMatrix4(m.matrix);});const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;const batch=new THREE.Mesh(register(merged),meshes[0].material);batch.castShadow=true;batch.receiveShadow=true;root.add(batch);meshes.forEach(m=>root.remove(m));}
  }
- function syncEscort(){if(!models)return;const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
+ function syncEscort(){if(!models)return;if(save.adventure.companionHidden){escort?.object.removeFromParent();escort?.dispose();escort=null;escortId=null;trail=[];return;}const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
  function rebuild(nextRegion){
   escort?.dispose();escort=null;escortId=null;shot=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;items=landscapeItems(region,save);position={x:0,z:5};target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
-  scene.background=new THREE.Color(biome.sky);scene.fog=new THREE.Fog(biome.haze,110,300);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.9;sun.intensity=4.2;
+  scene.background=new THREE.Color(biome.sky);scene.fog=new THREE.Fog(biome.haze,110,300);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=1.1;sun.intensity=3.4;
   daylight?.dispose();daylight=createDaylight(renderer,biome);scene.environment=daylight.texture;scene.environmentIntensity=.4;
   landscape=createLandscape(models,region,save);root.add(landscape.root);obstacles.push(...landscape.collisions);
   const stone=material(c?.stone||'#cfc7ae'),gold=material(accent,{emissive:accent,emissiveIntensity:.22,metalness:.4});
@@ -71,7 +72,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    if(item.type==='portal'){portal(item);continue;}
    if(item.type==='story'||item.type==='atelier'||item.type==='sanctuary'||item.type==='camp'||item.type==='resource')continue;
    if(item.type==='survey'){const y=groundY(item.x,item.z);mesh('cylinder',stone,item.x,y+.5,item.z,.52,1,.52);const book=mesh('box',gold,item.x,y+1.15,item.z,.9,.1,.62);book.rotation.x=.25;obstacles.push({x:item.x,z:item.z,r:.65});continue;}
-   if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C165',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
+   if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C164',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
    const first=root.children.length,y=groundY(item.x,item.z);
    if(item.type==='guardian'||item.type==='echo'||item.type==='patrol')makeActor(item);
    if(item.type==='beacon'){
@@ -117,12 +118,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  }
  function pointRoute(e){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObject(landscape.ground,false)[0];if(hit){const p=hit.point,r=Math.hypot(p.x,p.z),scale=Math.min(1,(WORLD_RADIUS-2)/r);startRoute({x:p.x*scale,z:p.z*scale});}}
  function up(e){
+  rememberCamera();
   if(touchPoints.has(e.pointerId)){if(orbitHeld?.id===e.pointerId&&!orbitHeld.drag&&e.type==='pointerup'&&e.pointerType==='touch')pointRoute(e);touchPoints.delete(e.pointerId);pinchDistance=null;if(orbitHeld?.id===e.pointerId){const next=[...touchPoints.entries()][0];orbitHeld=next?{id:next[0],x:next[1].x,y:next[1].y,startX:next[1].x,startY:next[1].y,drag:true}:null;}return;}
   if(!held||held.id!==e.pointerId)return;if(!held.drag&&!paused&&e.type==='pointerup')pointRoute(e);held=null;stick={x:0,z:0};
  }
- function wheel(e){if(paused)return;e.preventDefault();orbit=zoomOrbit(orbit,e.deltaY);needsRender=true;onActivity();}
+ function wheel(e){if(paused)return;e.preventDefault();orbit=zoomOrbit(orbit,e.deltaY);rememberCamera();needsRender=true;onActivity();}
  const context=e=>e.preventDefault();
- function toggleCamera(){cameraMode=1-cameraMode;orbit={...orbit,distance:cameraMode?36:24,pitch:cameraMode?.76:.5};needsRender=true;}
+ function toggleCamera(){cameraMode=1-cameraMode;orbit={...orbit,distance:cameraMode?36:24,pitch:cameraMode?.76:.5};rememberCamera();needsRender=true;}
  function keydown(e){if(paused||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','e','shift','c'].includes(key)){e.preventDefault();if(key==='c'){if(!e.repeat)toggleCamera();return;}keys.add(key);target=null;route=[];onActivity();if(key==='e'&&!e.repeat)interact();}}
  function keyup(e){keys.delete(e.key.toLowerCase());}
  function interact(){if(paused)return;const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)));if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
@@ -143,10 +145,11 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    ({position,target,route,travelled,moving}=next);dx=position.x-previous.x;dz=position.z-previous.z;
    if(moving){onActivity();stepDistance+=travelled;if(stepDistance>2.1){stepDistance=0;onStep?.(region);}}
   }else moving=false;
-  const y=groundY(position.x,position.z),age=elapsed-feedbackAt,impact=age<.5&&!reducedMotion?Math.sin(age/.5*Math.PI):0;
+  const y=groundY(position.x,position.z),age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   avatar.position.set(position.x,y,position.z);hero.update(dt,dx,dz,travelled);
   const encounter=save.adventure.encounter;
   const opponent=cinematic?(encounter?.final?items.find(i=>i.type==='final'):encounter?.patrol?items.find(i=>i.type==='patrol'):battleTarget?.card===encounter?.card?battleTarget:items.find(i=>i.card===encounter?.card)):null;
+  if(opponent&&!retaliationPlayed&&age>=.3){retaliationPlayed=true;if(!encounter.result){actors.find(a=>a.itemId===opponent.id)?.controller.action('Attack');hero.action(feedbackAction==='dodge'||feedbackAction==='guard'?'Idle':'Hit');}}
   if(opponent){let ox=opponent.x-position.x,oz=opponent.z-position.z,d=Math.hypot(ox,oz);if(d<.01){ox=0;oz=-1;d=1;}const spacing=Math.max(0,4.5-d),approach=feedbackAction==='guard'||feedbackAction==='dodge'?0:impact*.75;avatar.position.x+=ox/d*(approach-spacing);avatar.position.z+=oz/d*(approach-spacing);if(feedbackAction==='dodge'){avatar.position.x+=oz/d*impact*2.4;avatar.position.z-=ox/d*impact*2.4;}avatar.position.y=groundY(avatar.position.x,avatar.position.z);avatar.rotation.y=Math.atan2(ox,oz);}
   if(escort){escort.object.visible=!cinematic;const p=escort.object.position;if(travelled>.05&&(!trail.length||Math.hypot(trail.at(-1).x-position.x,trail.at(-1).z-position.z)>1))trail.push({...position});while(trail.length>65)trail.shift();while(trail.length>3&&Math.hypot(trail[0].x-p.x,trail[0].z-p.z)<1.3)trail.shift();const goal=trail.length>3?trail[0]:null,old={x:p.x,z:p.z};if(goal&&!paused&&!shot){const result=advanceMotion({position:old,target:goal,route:[]},{x:0,z:0},dt,Math.max(11,10.5*stats.speed*1.6),obstacles,WORLD_RADIUS);p.set(result.position.x,groundY(result.position.x,result.position.z),result.position.z);}escort.update(dt,p.x-old.x,p.z-old.z,Math.hypot(p.x-old.x,p.z-old.z));if(Math.hypot(p.x-position.x,p.z-position.z)>40){p.set(position.x,y,position.z);trail=[];}}
   const wide=cameraMode===1,portrait=camera.aspect<.85;
@@ -159,7 +162,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   sun.position.set(position.x-24,y+65,position.z+24);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>mat.uniforms.time.value=elapsed);
   for(const a of animations){if(a.type==='float'){a.mesh.position.y=a.y+Math.sin(elapsed*1.5+a.mesh.position.x)*.15;a.mesh.rotation.y+=dt*.3;}if(a.type==='shadow')a.mesh.position.set(avatar.position.x,avatar.position.y+.07,avatar.position.z);if(a.type==='particles')a.mesh.rotation.y=Math.sin(elapsed*.04)*.03;}
   landscape.tick(elapsed,dt,position);
-  for(const a of actors){const object=a.controller.object,active=cinematic&&opponent?.id===a.itemId;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;object.position.set(a.x+wander,groundY(a.x+wander,a.z),a.z);const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);if(active){object.rotation.y=Math.atan2(position.x-a.x,position.z-a.z);object.rotation.z=impact*.06;}else object.rotation.z=0;}
+  for(const a of actors){const object=a.controller.object,active=cinematic&&opponent?.id===a.itemId;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;object.position.set(a.x+wander,groundY(a.x+wander,a.z),a.z);const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);if(active){const d=Math.hypot(position.x-a.x,position.z-a.z)||1;object.position.x+=(position.x-a.x)/d*retaliation*.9;object.position.z+=(position.z-a.z)/d*retaliation*.9;object.rotation.y=Math.atan2(position.x-a.x,position.z-a.z);object.rotation.z=impact*.06;}else object.rotation.z=0;}
   const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)));
   focusRing.visible=!!closest&&!paused;if(closest)focusRing.position.set(closest.x,groundY(closest.x,closest.z)+.09,closest.z);
   waypointRing.visible=!!waypoint&&!paused&&distance(position,waypoint)>7;if(waypoint)waypointRing.position.set(waypoint.x,groundY(waypoint.x,waypoint.z)+.1,waypoint.z);
@@ -175,7 +178,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  return{
   setPaused(value){paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value)clearInput();},
   setPresentation(value){presentation=value;needsRender=true;},
-  feedback(type,action){if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;if(type==='battle'){hero?.action(action==='guard'||action==='dodge'?'Idle':action==='power'?'Cast':'Attack');const rival=actors.find(a=>a.itemId===battleTarget?.id);rival?.controller.action(save.adventure.encounter?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
+  feedback(type,action){if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;if(type==='battle'){retaliationPlayed=false;hero?.action(action==='guard'||action==='dodge'?'Idle':action==='power'?'Cast':'Attack');const rival=actors.find(a=>a.itemId===battleTarget?.id);rival?.controller.action(save.adventure.encounter?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
   skipCinematic(){shot=null;needsRender=true;},
   toggleCamera,
   setQuality(mode){quality.setMode(mode);renderer.shadowMap.enabled=mode!=='fluid';const size=mode==='detail'?2048:1024;if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}resize();},

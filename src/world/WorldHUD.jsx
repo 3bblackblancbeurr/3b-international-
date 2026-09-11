@@ -1,14 +1,15 @@
 import React,{memo,useEffect,useState,useMemo} from 'react';
-import {Menu,BookOpen,Map,ArrowUp,MessageCircle,DoorOpen,Sparkles,Swords} from 'lucide-react';
+import {Menu,BookOpen,Map,ArrowUp,MessageCircle,DoorOpen,Sparkles,Swords,Trees,Mountain,Wheat} from 'lucide-react';
 import {CompanionPortrait} from './Companions.jsx';
 import {countryById,cardById} from './catalog.js';
 import {Compass,MiniMap,DetailedMap} from './Cartography.jsx';
 import {landscapeItems} from './terrain.js';
+import {frontierState} from './frontier.js';
 import {levelFor} from './rules.js';
 import {compassHeading} from './settlements.js';
 
 export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onGuide,loaded}){
- const country=countryById[snapshot.region],near=snapshot.near;
+ const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
  const mapItems=useMemo(()=>landscapeItems(snapshot.region,save),[snapshot.region,save]);
  const [arrival,setArrival]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
@@ -18,6 +19,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
  const bearing=snapshot.waypoint?Math.atan2(snapshot.waypoint.x-snapshot.position.x,snapshot.position.z-snapshot.waypoint.z)*180/Math.PI-compassHeading(snapshot.camera?.yaw):0;
  return <div className={'play-hud'+(snapshot.waypoint&&snapshot.remaining>7?' has-waypoint':'')+(panel?' is-hidden':'')} aria-hidden={panel?true:undefined}>
   <div className="play-top"><button className="play-button" aria-label="Journal et objectif" title="Journal et objectif" onClick={()=>onPanel('journal')}><BookOpen size={20}/></button><span className="play-region">{country?.name||'Le Nexus'}</span><div><button className="play-button" aria-label="Ouvrir la carte" title="Carte" onClick={()=>onPanel('atlas')}><Map size={20}/></button><button className="play-button" aria-label="Pause et options" title="Pause" onClick={()=>onPanel('pause')}><Menu size={23}/></button></div></div>
+  {country&&<button className="play-supplies" aria-label={home.wood+' bois, '+home.stone+' pierre, '+home.food+' provisions. Ouvrir mon refuge'} title="Provisions et refuge" onClick={()=>onPanel('camp')}><span><Trees size={15}/>{home.wood}</span><span><Mountain size={15}/>{home.stone}</span><span><Wheat size={15}/>{home.food}</span></button>}
   <Compass yaw={snapshot.camera?.yaw} waypoint={snapshot.waypoint} position={snapshot.position}/>
   <div className="world-district">{snapshot.district||country?.name||'Le Nexus'}</div>
   <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} camera={snapshot.camera} waypoint={snapshot.waypoint} onOpen={()=>onPanel('atlas')}/>
