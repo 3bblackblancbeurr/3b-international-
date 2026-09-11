@@ -25,7 +25,7 @@ export function AvatarPanel({save,act,onDone}){
   <label>Chaussures<select value={draft.boots} onChange={e=>set('boots',Number(e.target.value))}><option value="0">Chaussures de voyage</option><option value="1">Bottes d’exploration</option><option value="2">Bottes de garde</option></select></label>
   <label>Origines personnelles · tous les pays<input maxLength={50} placeholder="Pays ou origines de ton choix" value={draft.nationality} onChange={e=>set('nationality',e.target.value)}/></label>
   <label>Pays de cœur dans le Monde 3B<select value={draft.origin} onChange={e=>set('origin',e.target.value)}><option value="3b">L’Union des huit portes</option>{COUNTRIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-  <label>Voie de pouvoir<select value={draft.path} onChange={e=>set('path',e.target.value)}>{Object.entries(AVATAR_PATHS).map(([id,p])=><option key={id} value={id}>{p.name}</option>)}</select></label><p>{AVATAR_PATHS[draft.path].description}</p><small>Ton apparence et tes origines restent libres. La voie influence l’aventure ; les duels de l’arène utilisent les statistiques équilibrées des cartes.</small>
+  <label>Voie de pouvoir<select value={draft.path} onChange={e=>set('path',e.target.value)}>{Object.entries(AVATAR_PATHS).map(([id,p])=><option key={id} value={id}>{p.name}</option>)}</select></label><p>{AVATAR_PATHS[draft.path].description}</p><small>Ton apparence et tes origines restent libres. La voie influence l’aventure ; les duels de l’arène utilisent les statistiques équilibrées des personnages.</small>
   <button className="world-primary" type="submit">{save.adventure.avatar.created?'Enregistrer mon personnage':'Commencer mon voyage'}</button><p role="status">{message}</p>
  </form></div>;
 }

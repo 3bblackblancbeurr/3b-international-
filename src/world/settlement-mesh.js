@@ -13,7 +13,7 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
  for(const road of roads)strip(road.points,road.width,road.kind==='street'?paving:earth);
  for(const p of squares){const g=geo(new THREE.CircleGeometry(p.r,48));g.rotateX(-Math.PI/2);const a=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<a.count;i++){a.setY(i,height(a.getX(i)+p.x,a.getZ(i)+p.z)+.052);uv.setXY(i,(a.getX(i)+p.x)/5,(a.getZ(i)+p.z)/5);}g.computeVertexNormals();const square=shape(g,paving,p.x,0,p.z);square.castShadow=false;}
  // An open artisan courtyard: usable entrance, market stalls, signs and seating.
- const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop){const {x,z}=workshop;
+ const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop&&region!=='maroc'){const {x,z}=workshop;
   for(const side of [-1,1]){const stall=asset('Market',x+side*8,z-4,.92,side<0?.4:-.4);for(const i of [0,1,2])shape(box,mat(['#b5865f','#74918b','#b29868'][i]),x+side*8+(i-1)*.6,height(x,z)+1.2,z-3,.52,.32,.7);}
   for(const dx of [-6,6]){asset('Bench',x+dx,z+4,.8,0);asset('Lantern',x+dx,z+2,.9,0);}
   resident(x+3,z+1,'#d2a96e',root,'artisan');
@@ -21,7 +21,7 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
   for(let i=-1;i<=1;i++)shape(box,mat('#eee0b1'),x+i*.64,height(x,z)+2.5,z-2.89,.18,.45,.07);
  }
  const city=field.anchors.find(a=>a.id.endsWith(':survey:city'));if(city){const {x,z}=city,y=height(x,z);for(const dx of [-4,4])asset('Bench',x+dx,z+2,.8,0);shape(cylinder,mat('#c5c0ab'),x,y+.25,z-3,1.5,.5,1.5);shape(cylinder,mat('#698f8e'),x,y+.5,z-3,1.18,.08,1.18);shape(cylinder,mat('#d4cab0'),x,y+1,z-3,.25,1.3,.25);resident(x+2,z+1,'#af9981',root,'woman');}
- for(const f of fields){
+ for(const f of fields.filter(f=>region!=='maroc')){
   const natural=['rocks','forest'].includes(f.kind),jitter=(row,col,n)=>(Math.sin(row*97.3+col*41.7+n*13.9+biome.seed)*41721.31)%1;
   const forward={x:Math.cos(biome.angle),z:Math.sin(biome.angle)},side={x:-forward.z,z:forward.x},point=(x,z)=>({x:f.x+forward.x*x+side.x*z,z:f.z+forward.z*x+side.z*z});
   for(let row=-2;row<=2;row++){const a=point(-f.w/2,row*f.h/5),b=point(f.w/2,row*f.h/5);if(!natural)strip([a,b],.65,mat(f.kind==='oasis'?'#669a94':'#857653'));

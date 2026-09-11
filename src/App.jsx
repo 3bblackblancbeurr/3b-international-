@@ -51,7 +51,7 @@ const BASE_MENU_ITEMS = [
     id: "world3b",
     label: "Le Monde du 3B",
     icon: "🌍",
-    description: "Huit mondes à explorer, 368 cartes et des alliés à rencontrer.",
+    description: "Huit pays vivants, des personnages et créatures à rencontrer, des lieux à reconstruire.",
   },
   {
     id: "games",

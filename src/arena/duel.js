@@ -2,21 +2,21 @@ import {CARDS,COUNTRIES,cardById,cardSlot} from '../world/catalog.js';
 
 export const STARTERS=COUNTRIES.map(c=>CARDS.find(x=>x.country===c.id&&x.category==='Personnage classique'&&x.rarity==='Commun').id);
 export const LOAN_TOOLS=['terrain','ambiance','energy','support','trap','fragment','pierre'].map(slot=>CARDS.find(c=>cardSlot(c)===slot)?.id).filter(Boolean);
-export const ROLES={assaillant:{name:'Assaut',hp:102,hit:23,power:'Percée',description:'38 dégâts, ignore la moitié du bouclier.'},protecteur:{name:'Rempart',hp:124,hit:18,power:'Bastion',description:'26 dégâts et 20 points de bouclier.'},soigneur:{name:'Soin',hp:108,hit:18,power:'Renouveau',description:'24 dégâts et 25 points de soin.'},éclaireur:{name:'Éclaireur',hp:100,hit:21,power:'Embuscade',description:'32 dégâts et 10 de plus contre une carte affaiblie.'},mystique:{name:'Résonance',hp:104,hit:19,power:'Onde',description:'30 dégâts à la carte active et 9 aux réserves.'}};
+export const ROLES={assaillant:{name:'Assaut',hp:102,hit:23,power:'Percée',description:'38 dégâts, ignore la moitié du bouclier.'},protecteur:{name:'Rempart',hp:124,hit:18,power:'Bastion',description:'26 dégâts et 20 points de bouclier.'},soigneur:{name:'Soin',hp:108,hit:18,power:'Renouveau',description:'24 dégâts et 25 points de soin.'},éclaireur:{name:'Éclaireur',hp:100,hit:21,power:'Embuscade',description:'32 dégâts et 10 de plus contre un adversaire affaibli.'},mystique:{name:'Résonance',hp:104,hit:19,power:'Onde',description:'30 dégâts au combattant actif et 9 aux réserves.'}};
 const check=(ok,text)=>{if(!ok)throw Error(text);};
 export function optionsFor(save){return {cards:CARDS.filter(c=>c.character&&(STARTERS.includes(c.id)||save.collection?.[c.id])),tools:CARDS.filter(c=>cardSlot(c)&&(LOAN_TOOLS.includes(c.id)||save.collection?.[c.id]))};}
 export const defaultDeck=()=>({cards:STARTERS.slice(0,3),terrain:null,ambiance:null,relic:LOAN_TOOLS.find(id=>cardSlot(cardById[id])==='energy')});
 export function validateDeck(deck,save){
  check(deck&&Array.isArray(deck.cards)&&deck.cards.length===3&&new Set(deck.cards).size===3,'Choisis trois personnages différents.');
  const allowed=optionsFor(save),ids=new Set(allowed.cards.map(c=>c.id)),tools=new Set(allowed.tools.map(c=>c.id));
- check(deck.cards.every(id=>ids.has(id)),'Une carte de cette équipe n’est pas disponible sur ton compte.');
+ check(deck.cards.every(id=>ids.has(id)),'Un personnage de cette équipe n’est pas disponible sur ton compte.');
  check(deck.cards.filter(id=>cardById[id].country==='3b').length<=1,'Un seul personnage de l’Union par équipe.');
  const next={cards:[...deck.cards],terrain:null,ambiance:null,relic:null};
  for(const slot of ['terrain','ambiance','relic'])if(deck[slot]){const id=deck[slot],kind=cardSlot(cardById[id]);check(tools.has(id)&&(slot==='relic'?!['terrain','ambiance'].includes(kind):kind===slot),'Équipement incompatible.');next[slot]=id;}
  return next;
 }
 export function fighter(id,terrain){const c=cardById[id],r=ROLES[c.role],max=r.hp+(terrain?8:0);return{id,role:c.role,hp:max,max,shield:0,focus:1};}
-export function makeDuel(decks,first=0){return {version:1,turn:first===1?1:0,round:0,winner:null,reason:null,log:['Les cartes se matérialisent. Le duel commence.'],last:null,sides:decks.map(d=>({cards:d.cards.map(id=>fighter(id,d.terrain)),active:0,relic:d.relic,relicUsed:false,ambiance:!!d.ambiance,guarded:false}))};}
+export function makeDuel(decks,first=0){return {version:1,turn:first===1?1:0,round:0,winner:null,reason:null,log:['Les compagnons entrent dans l’arène. Le duel commence.'],last:null,sides:decks.map(d=>({cards:d.cards.map(id=>fighter(id,d.terrain)),active:0,relic:d.relic,relicUsed:false,ambiance:!!d.ambiance,guarded:false}))};}
 export function totalLife(side){return side.cards.reduce((sum,c)=>sum+c.hp/c.max,0);}
 export function duelStep(input,side,action){
  check(input&&input.winner===null,'Ce duel est terminé.');check(side===0||side===1,'Joueur inconnu.');
@@ -47,7 +47,7 @@ export function duelStep(input,side,action){
  if(damage){const blocked=Math.min(target.shield,pierce?Math.floor(damage/2):damage);target.shield-=blocked;target.hp=Math.max(0,target.hp-(damage-blocked));note+=`${damage-blocked} dégâts${blocked?' · '+blocked+' absorbés':''}.`;}
  me.guarded=action.type==='guard';s.round++;s.last={side,type:action.type,damage,card:card.id};
  for(const team of s.sides)if(team.cards[team.active].hp===0){const index=team.cards.findIndex(c=>c.hp>0);if(index>=0)team.active=index;}
- if(enemy.cards.every(c=>c.hp===0)){s.winner=side;s.reason='ko';note+=' Les trois cartes adverses sont épuisées.';}
+ if(enemy.cards.every(c=>c.hp===0)){s.winner=side;s.reason='ko';note+=' Les trois adversaires sont épuisées.';}
  else if(s.round>=100){const a=totalLife(s.sides[0]),b=totalLife(s.sides[1]);s.winner=Math.abs(a-b)<.0001?2:a>b?0:1;s.reason='limit';note+=' Limite de 100 actions : vitalité restante comparée.';}
  else s.turn=1-side;
  s.log=[...s.log,note].slice(-5);return s;

@@ -18,7 +18,7 @@ export function normalizeSave(input){
  s.loadout.traps=[...new Set(Array.isArray(input.loadout?.traps)?input.loadout.traps:[])].filter(id=>s.collection[id]&&cardSlot(cardById[id])==='trap').slice(0,3);
  s.beacons=[...new Set(Array.isArray(input.beacons)?input.beacons:[])].filter(id=>typeof id==='string'&&/^(france|italie|estonie|turquie|algerie|tunisie|maroc|espagne):[012]$/.test(id));
  for(const key of ['visited','seals'])s[key]=[...new Set(Array.isArray(input[key])?input[key]:[])].filter(id=>countryById[id]);
- s.region=countryById[input.region]?input.region:'hub';s.finalOpened=!!input.finalOpened&&s.seals.length>=5;s.adventure=normalizeAdventure(input.adventure);s.updatedAt=number(input.updatedAt,1e15);return s;
+ s.region=countryById[input.region]?input.region:'hub';s.finalOpened=!!input.finalOpened&&s.seals.length>=5;s.adventure=normalizeAdventure(input.adventure);if(!s.collection[s.adventure.companion])s.adventure.companion=null;if(s.adventure.preparation&&chapterState(s,s.adventure.preparation).restored<2)s.adventure.preparation=null;s.updatedAt=number(input.updatedAt,1e15);return s;
 }
 export const levelFor=xp=>Math.min(50,1+Math.floor(Math.sqrt(Math.max(0,xp)/90)));
 export const nextLevelXP=xp=>90*levelFor(xp)**2;
