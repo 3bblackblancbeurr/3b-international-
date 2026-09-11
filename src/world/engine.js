@@ -1,5 +1,6 @@
 import {CARDS,COUNTRIES,cardById,countryById} from './catalog.js';
 import {normalizeAvatar} from './avatar-rules.js';
+import {frontierState,RESOURCE_SITES,BUILDINGS,buildCost,patrolOpponent} from './frontier.js';
 import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMissions,makeEncounter,worldItems,guardianReady,clamp} from './rules.js';
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 
@@ -15,22 +16,25 @@ export const pactCue=e=>pactCues[pactPattern(e)[e.pactStep||0]];
 export const INTENTS={frappe:'Frappe · garde pour réduire les dégâts',rituel:'Rituel · dégâts de ton pouvoir amplifiés',percée:'Percée · ta garde reste partiellement traversée',rempart:'Rempart · tes frappes sont réduites',soin:'Régénération · le gardien va se soigner',gel:'Gel · garde pour préserver ta concentration',éclipse:'Éclipse · prépare ta défense',double:'Double frappe · garde ou piège conseillé',sable:'Souffle de sable · impact renforcé',vague:'Vague · la garde dissipe son impact'};
 export function advanceBattle(enc,action){
  requireThat(enc&&!enc.result,'Cette rencontre est terminée.');
- requireThat(['strike','guard','power','trap','support'].includes(action),'Action inconnue.');
+ requireThat(['strike','guard','dodge','power','trap','support'].includes(action),'Action inconnue.');
  requireThat(action!=='power'||enc.focus>=2,'Il faut deux concentrations.');
  requireThat(action!=='trap'||enc.traps>0,'Aucun piège disponible.');
  requireThat(action!=='support'||enc.support,'Soutien déjà utilisé.');
+ requireThat(action!=='dodge'||enc.focus>=1,'Une concentration permet l’esquive.');
  const e={...enc,turn:enc.turn+1},s=e.stats,phase=e.enemy/e.enemyMax<.35?3:e.enemy/e.enemyMax<.7?2:1;
  let damage=action==='strike'?s.attack+s.affinity:action==='power'?(s.attack+s.affinity)*2+6:0;
  if(e.intent==='rituel')damage=Math.round(damage*1.5);
  if(e.intent==='rempart')damage=Math.round(damage*(action==='power'?.7:.35));
- e.enemy=Math.max(0,e.enemy-damage);e.focus=action==='power'?0:Math.min(3,e.focus+1);
+ if(e.opening&&action==='strike')damage=Math.round(damage*1.45);
+ e.opening=action==='dodge';
+ e.enemy=Math.max(0,e.enemy-damage);e.focus=action==='power'?0:action==='dodge'?e.focus-1:Math.min(3,e.focus+1);
  if(action==='trap')e.traps--;if(action==='support'){e.support=false;e.hp=Math.min(e.maxHP,e.hp+32);}
  if(!e.enemy){e.result=e.boss?'victory':'calm';e.log=e.boss?'Le gardien reconnaît tes liens.':'L’écho s’apaise. Tu peux maintenant tisser un lien.';return e;}
  const base={frappe:18,rituel:6,percée:27,rempart:12,soin:8,gel:16,éclipse:23,double:30,sable:24,vague:29}[e.intent]||18;
  const enrage=e.expert?Math.max(0,e.turn-24)*2:0;
  const incoming=Math.round(base*(e.expert?1.35:1)*(e.final?1.1:1)+(e.boss?phase-1:0)+enrage);
- const hit=action==='trap'?0:action==='guard'?Math.round(incoming*(e.intent==='percée'?.55:.15)):incoming;
- if(e.intent==='gel'&&action!=='guard'&&action!=='trap')e.focus=Math.max(0,e.focus-1);
+ const hit=action==='trap'||action==='dodge'?0:action==='guard'?Math.round(incoming*(e.intent==='percée'?.55:.15)):incoming;
+ if(e.intent==='gel'&&action!=='guard'&&action!=='dodge'&&action!=='trap')e.focus=Math.max(0,e.focus-1);
  if(e.intent==='soin')e.enemy=Math.min(e.enemyMax,e.enemy+(e.expert?22:12));
  e.hp=clamp(e.hp-hit+(action==='guard'?s.heal+9:0),0,e.maxHP);
  const pattern=CHAPTERS[e.region].pattern;e.phase=phase;
@@ -45,7 +49,18 @@ export function applyWorldAction(input,action){
  const region=s.region,c=CHAPTERS[region],cs=chapterState(s,region),e=s.adventure.encounter;
  const inCountry=()=>requireThat(!!c&&s.visited.includes(region),'Traverse d’abord une porte.');
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
+ const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
  switch(action.type){
+  case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden:0)),harvest:[...home.harvest,site.id]});}
+  case 'build':{peaceful();inCountry();const cost=buildCost(home,action.building);requireThat(cost&&BUILDINGS[action.building],'Construction inconnue.');requireThat(home[action.building]<8,'Ce bâtiment est au rang maximal.');requireThat(home.wood>=cost.wood&&home.stone>=cost.stone,'Récolte le bois et la pierre nécessaires.');s=setHome({wood:home.wood-cost.wood,stone:home.stone-cost.stone,[action.building]:home[action.building]+1});return reward(s,40,0);}
+  case 'recover':{peaceful();inCountry();requireThat(home.food===0,'Tu as déjà des provisions.');return setHome({food:1});}
+  case 'patrol':{
+   peaceful();inCountry();requireThat(home.food>0,'Retourne au refuge pour préparer une provision.');
+   const person=patrolOpponent(region,home.expedition);
+   const enc=makeEncounter(person,s,true),expert=s.adventure.difficulty==='expert';
+   enc.enemy=enc.enemyMax=100+Math.min(180,home.expedition*8)+(expert?55:0);s=setHome({food:home.food-1});
+   return adventure(s,{encounter:{...enc,patrol:true,region,expert,phase:1,pactSeed:home.expedition,intent:c.pattern[home.expedition%c.pattern.length],log:'Protège les environs. Une victoire renouvelle les ressources et entraîne ton groupe.'}});
+  }
   case 'companion':{peaceful();requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id});}
   case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
@@ -95,7 +110,8 @@ export function applyWorldAction(input,action){
   case 'battle':{
    let next=advanceBattle(e,action.action);
    if(next.result==='victory'&&!e.rewarded){
-    if(e.final){if(!s.adventure.finished)s=reward(adventure(s,{finished:true,cosmetic:'union'}),1000,300);}
+    if(e.patrol){const h=frontierState(s,e.region),mastery={...s.adventure.mastery};for(const id of new Set([s.leader,...s.team]))mastery[id]=Math.min(999999,(mastery[id]||0)+30);s=reward(adventure(s,{frontier:{...s.adventure.frontier,[e.region]:{...h,expedition:h.expedition+1,harvest:[]}},mastery}),35,8);}
+    else if(e.final){if(!s.adventure.finished)s=reward(adventure(s,{finished:true,cosmetic:'union'}),1000,300);}
     else {s=seal(s,e.region);if(e.expert&&!chapterState(s,e.region).challenge)s=reward(chapter(s,e.region,{challenge:true}),180,60);}
     next.rewarded=true;
    }

@@ -30,6 +30,12 @@ test('all eight authored country layouts preserve routes to every objective and 
    for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,WORLD_RADIUS);
    assert.ok(Math.hypot(state.position.x-item.x,state.position.z-item.z)<(item.range||5.5),'Actual movement reaches '+label);
   }
+  if(country.id!=='hub'){
+   const built=blankSave();built.adventure.frontier[country.id]={camp:1,forge:1,garden:1,wood:0,stone:0,food:2,expedition:0,harvest:[]};world.update(built);
+   for(const item of objectives.filter(i=>['camp','patrol','resource','sanctuary'].includes(i.type))){
+    const path=findInteractionPath({x:0,z:5},item,obstacles,WORLD_RADIUS);assert.ok(path.length,'Built refuge route '+country.id+' '+item.id);let state={position:{x:0,z:5},target:path.shift(),route:path};for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,WORLD_RADIUS);assert.ok(Math.hypot(state.position.x-item.x,state.position.z-item.z)<(item.range||5.5),'Built refuge movement '+country.id+' '+item.id);
+   }
+  }
   for(const building of world.field.buildings)assert.ok(Math.hypot(building.x-world.field.lake.x,building.z-world.field.lake.z)>world.field.lake.r+6,'Dry architecture');
   world.dispose();
  }
