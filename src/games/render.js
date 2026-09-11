@@ -2,7 +2,7 @@ import {atmosphere,finishScene,towerScene} from './scenery.js';
 import {mazeScene} from './maze-view.js';
 import {W,H,COLORS} from './core.js';
 const images={},frames=[],loading={};
-export const loadAssets=()=>Promise.all(['kais-run.webp','objects.webp','night-plaza.webp','city-sprites.webp','maze-ruins.webp'].map(name=>{
+export const loadAssets=()=>Promise.all(['kais-run.webp','objects.webp','night-plaza.webp','city-sprites.webp','maze-ruins.webp','kais-maze.webp'].map(name=>{
  if(images[name])return Promise.resolve();if(loading[name])return loading[name];
  loading[name]=new Promise((resolve,reject)=>{const im=new Image(),timer=setTimeout(()=>{delete loading[name];reject(new Error('Le chargement prend trop de temps. Réessaie.'));},20000);
  im.onload=()=>{clearTimeout(timer);images[name]=im;if(name==='kais-run.webp'){frames.length=0;for(let i=0;i<8;i++)frames.push([(i%4)*im.width/4+im.width*.076,Math.floor(i/4)*im.height/2,im.width*.15,im.height/2]);}resolve();};im.onerror=()=>{clearTimeout(timer);delete loading[name];reject(new Error('Une image du jeu ne s’est pas chargée. Réessaie.'));};im.src='/games/'+name;});return loading[name];}));

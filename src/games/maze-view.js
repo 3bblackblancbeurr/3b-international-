@@ -1,4 +1,5 @@
 import {H as DEFAULT_HEIGHT,clamp,distance} from './core.js';
+import {mazePose} from './maze-motion.js';
 
 const TAU=Math.PI*2;
 function text(c,value,x,y,size=15,color='#d4ddd8',align='left'){
@@ -59,7 +60,7 @@ function explorationMap(c,g,width){
     text(c,'● Kaïs   ◇ Sceau',width-210,49,14);text(c,'○ Portail',width-210,76,14,'#efd193');
     text(c,'Carte / M : revenir au jeu',width-210,H-30,12,'#bcccaa');return;
   }
-  const margin=width<600?22:60,size=Math.min((width-margin*2)/g.cols,17),mx=(width-g.cols*size)/2,my=154;
+  const margin=width<600?22:60,size=Math.min((width-margin*2)/g.cols,(H-290)/g.rows,17),mx=(width-g.cols*size)/2,my=154;
   text(c,'CARNET D’EXPLORATION',width/2,57,12,'#c4b58e','center');text(c,'Carte des ruines',width/2,96,30,'#edf0e2','center');
   text(c,`${g.explored}% exploré · temps suspendu`,width/2,125,15,'#9cbbb3','center');
   panel(c,mx-9,my-9,g.cols*size+18,g.rows*size+18);mapGrid(c,g,mx,my,size,{overview:true});
@@ -73,7 +74,7 @@ function explorationMap(c,g,width){
 
 export function mazeScene(c,g,sprite,images){
   const width=g.viewWidth||900,H=g.viewHeight||DEFAULT_HEIGHT,TILE=H<360?42:52;if(g.mapOpen){explorationMap(c,g,width);return;}
-  const atlas=images['maze-ruins.webp'],hero=g.displayCell||g.cell,shade=g.displayShadow||g.shadow;
+  const pose=mazePose(g.motion,g.renderAlpha??1),atlas=images['maze-ruins.webp'],hero=pose,shade=g.displayShadow||g.shadow;
   const camX=clamp((hero.x+.5)*TILE-width/2,0,g.cols*TILE-width),camY=clamp((hero.y+.5)*TILE-H/2,0,g.rows*TILE-H);
   const point=p=>({x:(p.x+.5)*TILE,y:(p.y+.5)*TILE});
   c.fillStyle='#080f14';c.fillRect(0,0,width,H);c.save();c.translate(-camX,-camY);
@@ -108,7 +109,7 @@ export function mazeScene(c,g,sprite,images){
     if(g.shadowMode==='hunt')text(c,'!',q.x,q.y-62,24,'#f1997a','center');
   }
   glow(c,p.x,p.y,70,'#dceab51c');circle(c,p.x,p.y+13,14,'#020709b0');ring(c,p.x,p.y+9,15,g.auraColor||'#dce9bb8c');
-  c.save();c.globalAlpha=g.invulnerable>0&&!g.reducedMotion?.55+.35*Math.sin(g.time*26):1;sprite(c,'kais',p.x,p.y+8,59,g.moving&&!g.reducedMotion?g.time:0,g.player.facing);c.restore();
+  c.save();c.globalAlpha=g.invulnerable>0&&!g.reducedMotion?.55+.35*Math.sin(g.time*26):1;const figure=images['kais-maze.webp'];if(figure)c.drawImage(figure,pose.frame*160,pose.direction*192,160,192,p.x-37.5,p.y+9-90*.7970911628290045,75,90);c.restore();
   if(g.flash>0){const progress=1-g.flash/1.8;c.save();c.globalAlpha=1-progress;ring(c,p.x,p.y,25+progress*175,'#f3d997',2);ring(c,p.x,p.y,18+progress*135,'#c8eed88c');c.restore();}
   c.restore();
   // Camera frame: current place, discrete threat and a map of discoveries only.

@@ -1,4 +1,6 @@
 import {BaseGame,shuffle,clamp,distance} from './core.js';
+import {mazeDifficulty,readMazeCampaign,mazePerk,completeMazeLevel} from './maze-campaign.js';
+import {createMazeMotion,stepMazeMotion} from './maze-motion.js';
 
 export const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
 export const SEALS=[{name:'Mémoire',color:'#efca81',symbol:'I'},{name:'Courage',color:'#8bded6',symbol:'II'},{name:'Lien',color:'#c1aff0',symbol:'III'}];
@@ -47,19 +49,20 @@ function wallsToOpen(grid){
 }
 
 export class Maze extends BaseGame{
-  constructor(seed){
-    super(seed);this.cols=29;this.rows=21;this.grid=makeMaze(this.cols,this.rows,this.random);
-    this.rooms=[{x:3,y:3,name:'Le sanctuaire'},{x:25,y:3,name:'Le cloître'},{x:25,y:17,name:'Les archives'},{x:3,y:17,name:'Le jardin oublié'}];
+  constructor(seed,saved=null,level=saved?.selected||1){
+    const campaign=readMazeCampaign(saved),difficulty=mazeDifficulty(level);
+    super(seed??difficulty.seed);this.campaign=campaign;this.stageNumber=difficulty.level;this.campaign.selected=this.stageNumber;this.difficulty=difficulty;this.perk=mazePerk(campaign);this.pulseRecharge=difficulty.recharge-this.perk.recharge;this.maxLight=250+this.perk.light;this.cols=difficulty.cols;this.rows=difficulty.rows;this.grid=makeMaze(this.cols,this.rows,this.random);
+    this.rooms=[{x:3,y:3,name:'Le sanctuaire'},{x:this.cols-4,y:3,name:'Le cloître'},{x:this.cols-4,y:this.rows-4,name:'Les archives'},{x:3,y:this.rows-4,name:'Le jardin oublié'}];
     for(const room of this.rooms)for(let y=room.y-2;y<=room.y+2;y++)for(let x=room.x-2;x<=room.x+2;x++)this.grid[y][x]=0;
     // Loops offer escape routes. Optional shortcuts only add passages, never remove a route.
-    for(const gate of shuffle(wallsToOpen(this.grid),this.random).slice(0,12))this.grid[gate.y][gate.x]=0;
-    this.cell={x:3,y:3};this.displayCell={...this.cell};this.exit={...this.cell};
+    for(const gate of shuffle(wallsToOpen(this.grid),this.random).slice(0,difficulty.loops))this.grid[gate.y][gate.x]=0;
+    this.cell={x:3,y:3};this.motion=createMazeMotion(this.cell);this.displayCell=this.motion.position;this.exit={...this.cell};
     this.fragments=this.rooms.slice(1).map((p,i)=>({...SEALS[i],x:p.x,y:p.y,collected:false}));
-    this.shadow={x:25,y:15};this.displayShadow={...this.shadow};this.shadowMode='patrol';this.shadowStun=0;this.shadowMemory=0;this.lastKnown=null;this.patrolIndex=0;this.shadowClock=0;
-    this.collected=0;this.lamp=210;this.vision=6;this.moveClock=0;this.moving=false;this.invulnerable=0;this.hits=0;this.flash=0;this.flashCooldown=0;this.echo=[];this.echoTime=0;this.trail=[];this.seen=Array(this.cols*this.rows).fill(false);this.visible=new Set();this.explored=0;this.mapOpen=false;this.steps=0;this.messageTime=0;
+    this.shadow={x:this.cols-4,y:this.rows-6};this.displayShadow={...this.shadow};this.shadowMode='patrol';this.shadowStun=0;this.shadowMemory=0;this.lastKnown=null;this.patrolIndex=0;this.shadowClock=0;
+    this.collected=0;this.lamp=difficulty.light+this.perk.light;this.vision=difficulty.vision;this.moveClock=0;this.moving=false;this.invulnerable=0;this.hits=0;this.flash=0;this.flashCooldown=0;this.echo=[];this.echoTime=0;this.trail=[];this.seen=Array(this.cols*this.rows).fill(false);this.visible=new Set();this.explored=0;this.mapOpen=false;this.steps=0;this.messageTime=0;
     const occupied=new Set([this.exit,...this.fragments,this.shadow].map(p=>p.y*this.cols+p.x));
     const route=paths(this.grid,this.cell),remote=route.q.filter(i=>route.dist[i]>9);this.lamps=[];
-    for(const fraction of [.12,.28,.46,.65,.84]){
+    for(const fraction of [.12,.28,.46,.65,.84].slice(0,difficulty.lamps)){
       const start=Math.floor(remote.length*fraction),index=[...remote.slice(start),...remote.slice(0,start)].find(i=>!occupied.has(i));
       if(index!==undefined){occupied.add(index);this.lamps.push({x:index%this.cols,y:Math.floor(index/this.cols),collected:false});}
     }
@@ -73,8 +76,9 @@ export class Maze extends BaseGame{
     this.say('Retrouve les trois sceaux, puis reviens au portail du sanctuaire.');this.reveal();
   }
   say(message){this.message=message;this.messageTime=5;}
-  sanctuary(point=this.cell){return distance(point,this.exit)<=2.3;}
-  reveal(){
+  sanctuary(point=this.displayCell){return distance(point,this.exit)<=2.3;}
+  reveal(force=false){
+    const key=`${this.cell.x}:${this.cell.y}:${Math.floor(this.vision*4)}:${this.flash>0}:${this.walkable}`;if(!force&&key===this.visibilityKey)return;this.visibilityKey=key;
     this.visible=new Set();const radius=this.vision+(this.flash>0?2:0);
     for(let y=Math.max(0,this.cell.y-8);y<=Math.min(this.rows-1,this.cell.y+8);y++)for(let x=Math.max(0,this.cell.x-8);x<=Math.min(this.cols-1,this.cell.x+8);x++){
       if(distance({x,y},this.cell)<=radius&&lineOfSight(this.grid,this.cell,{x,y})){this.visible.add(y*this.cols+x);this.seen[y*this.cols+x]=true;}
@@ -100,44 +104,46 @@ export class Maze extends BaseGame{
     const sw=this.nearbySwitch();
     if(sw){sw.used=true;this.grid[sw.gate.y][sw.gate.x]=0;this.walkable++;this.score+=80;this.cue('secret');this.say('Le passage secret est ouvert. Ce raccourci restera accessible.');this.reveal();return;}
     if(this.flashCooldown>0||this.lamp<=12)return;
-    this.lamp-=12;this.flash=1.8;this.flashCooldown=9;this.guide();this.cue('pulse');
+    this.lamp-=12;this.flash=1.8;this.flashCooldown=this.pulseRecharge;this.guide();this.cue('pulse');
     const route=paths(this.grid,this.cell),steps=route.dist[this.shadow.y*this.cols+this.shadow.x],near=steps>=0&&steps<=8;if(near)this.repel();
-    this.say(near?'L’ombre recule ! Les traces dorées te guident vers le prochain sceau.':'Suis les traces dorées. Elles indiquent le début du chemin vers ton objectif.');this.reveal();
+    this.say(near?'L’ombre recule ! Les traces dorées te guident vers le prochain sceau.':'Suis les traces dorées. Elles indiquent le début du chemin vers ton objectif.');this.reveal(true);
   }
-  move(input){
-    const ix=input.x||0,iy=input.y||0;if(!ix&&!iy){this.moving=false;return;}
-    const options=Math.abs(ix)>=Math.abs(iy)?[[Math.sign(ix),0],[0,Math.sign(iy)]]:[[0,Math.sign(iy)],[Math.sign(ix),0]];this.moving=false;
-    for(const[dx,dy]of options){if(!dx&&!dy)continue;const x=this.cell.x+dx,y=this.cell.y+dy;if(this.grid[y]?.[x]!==0)continue;
-      this.trail.push({...this.cell});if(this.trail.length>30)this.trail.shift();this.cell={x,y};this.steps++;this.moving=true;if(dx)this.player.facing=dx>0?1:-1;this.reveal();break;
-    }
-    this.moveClock=this.moving?.17:.075;
+  move(dt,input){
+    const previous=this.cell,result=stepMazeMotion(this.motion,this.grid,input,dt);this.cell=result.cell;this.displayCell=this.motion.position;this.moving=this.motion.moving;
+    if(previous.x!==this.cell.x||previous.y!==this.cell.y){this.trail.push(previous);if(this.trail.length>30)this.trail.shift();this.steps++;}
+  }
+  snapshot(){return structuredClone(this.campaign);}
+  finish(won,message){
+    if(this.status==='ended')return;
+    if(won){const result=completeMazeLevel(this.campaign,this.stageNumber,{score:this.score,time:this.time,hits:this.hits});this.campaign=result.campaign;this.firstClear=result.first;this.stars=result.stars;}
+    this.moving=false;this.motion.moving=false;super.finish(won,message);
   }
   updateShadow(dt){
     this.shadowStun=Math.max(0,this.shadowStun-dt);this.shadowMemory=Math.max(0,this.shadowMemory-dt);this.shadowClock-=dt;
-    if(this.time<10||this.shadowStun>0){this.shadowMode=this.shadowStun>0?'stunned':'patrol';return;}if(this.shadowClock>0)return;
-    const route=paths(this.grid,this.cell),steps=route.dist[this.shadow.y*this.cols+this.shadow.x],sees=distance(this.shadow,this.cell)<7&&lineOfSight(this.grid,this.shadow,this.cell);
-    if(!this.sanctuary()&&(sees||(this.moving&&steps>=0&&steps<=4))){this.lastKnown={...this.cell};this.shadowMemory=5;this.shadowMode=sees?'hunt':'search';}
+    if(this.time<this.difficulty.grace||this.shadowStun>0){this.shadowMode=this.shadowStun>0?'stunned':'patrol';return;}if(this.shadowClock>0)return;
+    const route=paths(this.grid,this.cell),steps=route.dist[this.shadow.y*this.cols+this.shadow.x],sees=distance(this.shadow,this.cell)<this.difficulty.sight&&lineOfSight(this.grid,this.shadow,this.cell);
+    if(!this.sanctuary()&&(sees||(this.moving&&steps>=0&&steps<=this.difficulty.hearing))){this.lastKnown={...this.cell};this.shadowMemory=5;this.shadowMode=sees?'hunt':'search';}
     else if(this.shadowMemory>0&&this.lastKnown)this.shadowMode='search';else{this.lastKnown=null;this.shadowMode='patrol';}
     let target=this.lastKnown;
     if(!target){const patrol=this.rooms.slice(1);if(distance(this.shadow,patrol[this.patrolIndex])<1)this.patrolIndex=(this.patrolIndex+1)%patrol.length;target=patrol[this.patrolIndex];}
     const path=paths(this.grid,target),next=path.parent[this.shadow.y*this.cols+this.shadow.x];
     if(next>=0){const position={x:next%this.cols,y:Math.floor(next/this.cols)};if(!this.sanctuary(position))this.shadow=position;}
-    this.shadowClock=this.shadowMode==='hunt'?.32:this.shadowMode==='search'?.43:.62;
+    this.shadowClock=this.shadowMode==='hunt'?this.difficulty.hunt:this.shadowMode==='search'?this.difficulty.search:this.difficulty.patrol;
   }
   update(dt,input={}){
     if(this.status!=='playing')return;
     this.tick(dt);this.messageTime=Math.max(0,this.messageTime-dt);this.invulnerable=Math.max(0,this.invulnerable-dt);this.flash=Math.max(0,this.flash-dt);this.flashCooldown=Math.max(0,this.flashCooldown-dt);this.echoTime=Math.max(0,this.echoTime-dt);this.moveClock-=dt;
-    this.lamp=Math.max(0,this.lamp-dt*(this.sanctuary()?.25:.8));this.vision=clamp(3.8+this.lamp/100,3.8,6);
-    if(this.moveClock<=0)this.move(input);else if(!input.x&&!input.y)this.moving=false;
-    const ease=1-Math.exp(-dt*22);for(const key of ['x','y']){this.displayCell[key]+=(this.cell[key]-this.displayCell[key])*ease;this.displayShadow[key]+=(this.shadow[key]-this.displayShadow[key])*ease;}
-    for(const f of this.fragments)if(!f.collected&&distance(f,this.cell)<.1){f.collected=true;this.collected++;this.lamp=Math.min(250,this.lamp+30);this.player.hp=Math.min(100,this.player.hp+34);this.score+=200;this.cue('collect');this.say(`Sceau de ${f.name.toLowerCase()} retrouvé. ${this.collected===3?'Le portail est ouvert : retourne au sanctuaire.':`${this.collected} / 3. Ta lumière et ta vitalité sont restaurées.`}`);}
-    for(const l of this.lamps)if(!l.collected&&distance(l,this.cell)<.1){l.collected=true;this.lamp=Math.min(250,this.lamp+38);this.score+=25;this.cue('collect');this.say('Une lanterne préservée : +38 unités de lumière.');}
+    this.lamp=Math.max(0,this.lamp-dt*(this.sanctuary()?.25:this.difficulty.drain));this.vision=clamp(3.8+this.lamp/100,3.8,this.difficulty.vision);
+    this.move(dt,input);
+    const ease=1-Math.exp(-dt*22);for(const key of ['x','y']){this.displayShadow[key]+=(this.shadow[key]-this.displayShadow[key])*ease;}
+    for(const f of this.fragments)if(!f.collected&&distance(f,this.displayCell)<.15){f.collected=true;this.collected++;this.lamp=Math.min(this.maxLight,this.lamp+30);this.player.hp=Math.min(100,this.player.hp+34);this.score+=200;this.cue('collect');this.say(`Sceau de ${f.name.toLowerCase()} retrouvé. ${this.collected===3?'Le portail est ouvert : retourne au sanctuaire.':`${this.collected} / 3. Ta lumière et ta vitalité sont restaurées.`}`);}
+    for(const l of this.lamps)if(!l.collected&&distance(l,this.displayCell)<.15){l.collected=true;this.lamp=Math.min(this.maxLight,this.lamp+38);this.score+=25;this.cue('collect');this.say('Une lanterne préservée : +38 unités de lumière.');}
     this.updateShadow(dt);
-    if(this.flash<=0&&this.invulnerable<=0&&!this.sanctuary()&&distance(this.shadow,this.cell)<.1){
-      this.hits++;this.player.hp=Math.max(0,this.player.hp-34);this.lamp=Math.max(0,this.lamp-12);this.invulnerable=2.2;this.repel();this.cue('damage');this.say('L’ombre t’a touché. Profite de ce répit pour t’éloigner.');
+    if(this.flash<=0&&this.invulnerable<=0&&!this.sanctuary()&&distance(this.shadow,this.displayCell)<.38){
+      this.hits++;this.player.hp=Math.max(0,this.player.hp-this.difficulty.damage);this.lamp=Math.max(0,this.lamp-12);this.invulnerable=2.2;this.repel();this.cue('damage');this.say('L’ombre t’a touché. Profite de ce répit pour t’éloigner.');
       if(this.player.hp<=0){this.finish(false,'L’ombre a emporté tes dernières forces. Cache-toi derrière les murs et garde un éclat pour les rencontres.');return;}
     }
-    if(this.collected===3&&distance(this.cell,this.exit)<.1){this.score+=Math.round(this.lamp*3)+Math.max(0,3-this.hits)*100;this.finish(true,'Les trois sceaux ont rouvert le sanctuaire. Tu as traversé l’Oubli.');this.cue('victory');return;}
+    if(this.collected===3&&distance(this.displayCell,this.exit)<.15){this.score+=Math.round(this.lamp*3)+Math.max(0,3-this.hits)*100;this.finish(true,'Les trois sceaux ont rouvert le sanctuaire. Tu as traversé l’Oubli.');this.cue('victory');return;}
     if(this.lamp<=0){this.finish(false,'Ta lumière s’est éteinte. Les lanternes et chaque sceau la rechargent ; la carte permet de préparer ton trajet sans perdre de temps.');return;}
     this.reveal();
   }

@@ -1,3 +1,4 @@
+import {placeMazePlayer,solveMaze} from './maze-helpers.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createStepper,actionState} from '../src/games/runtime.js';
@@ -23,7 +24,7 @@ test('a perfect guard creates one counterattack, an early guard does not',()=>{
  const early=new Tower(9);early.doors=[ROOMS[2]];early.door(0);early.enemy.windup=.7;early.guard();early.update(.71);assert.equal(early.player.hp,100);assert.equal(early.perfects,0);assert.equal(early.counter,0);
 });
 test('maze switch remains usable during flash cooldown and the map tracks explored ground',()=>{
- const g=new Maze(7);g.flashCooldown=10;assert.ok(actionState(g,'maze').remaining>0);g.cell={...g.switches[0]};assert.equal(actionState(g,'maze').remaining,0);g.action();assert.equal(g.switches[0].used,true);assert.ok(g.explored>0&&g.explored<100);
+ const g=new Maze(7);g.flashCooldown=10;assert.ok(actionState(g,'maze').remaining>0);placeMazePlayer(g,{...g.switches[0]});assert.equal(actionState(g,'maze').remaining,0);g.action();assert.equal(g.switches[0].used,true);assert.ok(g.explored>0&&g.explored<100);
 });
 test('refuge ignores invalid builds and turrets prioritize threats to the gate within range',()=>{
  const g=new Refuge(null,1);const old=g.wood;g.build('anything');assert.equal(g.wood,old);assert.equal(g.homes,1);
