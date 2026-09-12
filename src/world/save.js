@@ -1,6 +1,7 @@
 import {authClient,SUPABASE_URL,PUBLIC_KEY} from '../loyalty/client.js';
 import {blankSave,normalizeSave} from './rules.js';
 import {applyWorldAction} from './engine.js';
+import {consumeNexusVisit} from '../components/nexus-handoff.js';
 const queues=new Map(),key=id=>'3b_world_v1_'+(id||'guest'),journalBase=id=>'3b_world_actions_v2_'+id,journalKey=(id,device)=>journalBase(id)+'_'+device,ackKey=(id,device)=>'3b_world_ack_v2_'+id+'_'+device;
 export function readLocal(id){try{const v=JSON.parse(localStorage.getItem(key(id)));return v?{...v,data:normalizeSave(v.data)}:null;}catch{return null;}}
 export function writeLocal(id,data,dirty=true){try{localStorage.setItem(key(id),JSON.stringify({data:normalizeSave(data),dirty}));return true;}catch{return false;}}
@@ -36,7 +37,7 @@ async function recoverOtherJournals(id,current){
   for(let i=0;i<pending.length;i+=100){const result=await request(id,j,pending.slice(i,i+100));acknowledged=Math.max(acknowledged,result.sequence);localStorage.setItem(ackKey(id,j.device),String(acknowledged));}
  }
 }
-export async function loadWorld(id){
+async function loadWorldState(id){
  const local=readLocal(id);if(!id)return{data:local?.data||blankSave(),message:local?'Partie invitée retrouvée sur cet appareil.':'Sauvegarde automatique sur cet appareil.'};
  const state=stateFor(id);
  try{
@@ -45,6 +46,17 @@ export async function loadWorld(id){
   const result=await request(id,state,state.pending.slice(0,100)),data=reconcile(id,state,result);
   return{data,needsSave:!!state.pending.length,message:result.rejected?.length?'Compte synchronisé · '+result.rejected[0].message:'Monde lié à ton compte · actions validées par le serveur.'};
  }catch(error){return{data:local?.data||blankSave(),needsSave:!!state.pending.length,message:'Copie locale · '+error.message};}
+}
+export async function loadWorld(id){
+ const result=await loadWorldState(id);
+ let intent=null;
+ try{if(typeof window!=='undefined')intent=consumeNexusVisit(window.sessionStorage);}catch{/* Storage can be unavailable in private mode. */}
+ if(!intent)return result;
+ try{
+  // Use the existing action journal and engine, not a direct region/XP override.
+  const data=recordWorldAction(id,result.data,intent);
+  return{...result,data,needsSave:!!id||result.needsSave,message:result.message+' · Destination du Nexus appliquée.'};
+ }catch(error){return{...result,message:result.message+' · Passage non effectué : '+error.message};}
 }
 export function saveWorld(id,data){
  if(!id)return Promise.resolve({message:writeLocal(id,data,false)?'Sauvegardé sur cet appareil.':'Télécharge une copie : le stockage local est plein.'});
