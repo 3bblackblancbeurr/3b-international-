@@ -61,6 +61,7 @@ function Session({uid,goTo,onPrevious}){
 
  useEffect(()=>{const key=e=>{if(panel==='character')return;if(e.key==='Escape'&&!e.repeat){e.preventDefault();setPanel(p=>p?null:'pause');}if(e.key.toLowerCase()==='m'&&!e.repeat&&!['INPUT','SELECT'].includes(e.target.tagName))setPanel(p=>p==='map'?null:'map');if(e.key.toLowerCase()==='i'&&!e.repeat&&!['INPUT','SELECT'].includes(e.target.tagName))setPanel(p=>p==='journal'?null:'journal');};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[panel]);
 
+ const immediate=kind=>({onPointerDown:e=>{if(e.button!==0)return;e.preventDefault();action(kind);},onClick:e=>{if(e.detail===0)action(kind);}});
  const s=snapshot?.state||initial,task=snapshot?.objective||objective(s),c=snapshot?.combat||{hp:100,energy:60,stamina:100},settings=s.settings;const reinforced=isCountry(s.zone)?s.regions[s.zone].upgrade:s.equipment==='artisan';
 
  function focus(){host.current?.querySelector('canvas')?.focus({preventScroll:true});}
@@ -92,6 +93,7 @@ function Session({uid,goTo,onPrevious}){
 
    {c.active&&<div className="origins-enemy"><span>{c.enemyName||'Manifestation de l’Oubli'}</span><meter aria-label="Vie de l’adversaire" min="0" max={c.enemyMax||130} value={c.enemy}/><small>{c.state==='windup'?'Attaque annoncée · esquive !':c.state==='recover'?'Ouverture · frappe maintenant':c.state==='stagger'?'L’Oubli recule':'Écoute les deux voix. Protège leurs souvenirs.'}</small></div>}
 
+   {c.active&&c.combo>1&&<div className="origins-combo" aria-label={c.combo+' coups consécutifs'}><strong>×{c.combo}</strong><span>Enchaînement</span></div>}
    {(c.guard>0||c.slow>0)&&<div className="origins-support-status" role="status">{c.guard>0?'Protection : prochain impact':'Adversaire ralenti'} · {Math.ceil(c.guard||c.slow)} s</div>}
    {snapshot?.vision>0&&<div className="origins-vision">VISION DE MÉMOIRE · {Math.ceil(snapshot.vision)} s</div>}
 
@@ -103,19 +105,19 @@ function Session({uid,goTo,onPrevious}){
 
      <button onClick={()=>action('vision')} disabled={snapshot?.visionCooldown>0} aria-label="Vision de Mémoire"><Eye/><span>{snapshot?.visionCooldown>0?Math.ceil(snapshot.visionCooldown)+' s':'Mémoire'} <kbd>V</kbd></span></button>
 
-     <button onClick={()=>action('light')} disabled={!!c.attack} aria-label="Attaque rapide"><Swords/><span>Rapide <kbd>J</kbd></span></button>
+     <button {...immediate('light')} disabled={c.stamina<(c.lightCost??7)} aria-label="Attaque rapide"><Swords/><span>Rapide <kbd>J</kbd></span></button>
 
-     <button onClick={()=>action('heavy')} disabled={!!c.attack||c.stamina<((isCountry(s.zone)?s.regions[s.zone].upgrade:reinforced)?20:27)} aria-label="Attaque puissante"><Shield/><span>Puissante <kbd>K</kbd></span></button>
+     <button {...immediate('heavy')} disabled={c.stamina<(c.heavyCost??27)} aria-label="Attaque puissante"><Shield/><span>Puissante <kbd>K</kbd></span></button>
 
-     <button onClick={()=>action('dodge')} disabled={c.stamina<24} aria-label="Esquive"><ArrowLeft/><span>Esquive <kbd>␣</kbd></span></button>
+     <button {...immediate('dodge')} disabled={c.stamina<24} aria-label="Esquive"><ArrowLeft/><span>Esquive <kbd>␣</kbd></span></button>
 
-     <button onClick={()=>action('circle')} disabled={!!c.attack||c.energy<40} aria-label="Pouvoir du Cercle"><Sparkles/><span>Cercle <kbd>R</kbd></span></button>
+     <button {...immediate('circle')} disabled={c.energy<40} aria-label="Pouvoir du Cercle"><Sparkles/><span>Cercle <kbd>R</kbd></span></button>
 
     </div>
 
    </div>
 
-   {snapshot?.nearby&&<button className="origins-interact" onClick={()=>action('interact')}><kbd>E</kbd>{snapshot.nearby.name}</button>}
+   {!c.active&&snapshot?.nearby&&<button className="origins-interact" onClick={()=>action('interact')}><kbd>E</kbd>{snapshot.nearby.name}</button>}
 
    {message&&<div className="origins-dialogue" role="status">{message.speaker&&<strong>{message.speaker}</strong>}<p>{message.text}</p>{message.choices&&<div className="origins-dialogue-choices">{message.choices.map(c=><button key={c.topic} onClick={()=>scene.current?.dialogue(c.id,c.topic)}>{c.label}</button>)}</div>}<button onClick={()=>{setMessage(null);focus();}} aria-label="Fermer le dialogue"><X size={17}/></button></div>}
 

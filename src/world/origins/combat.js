@@ -3,12 +3,13 @@ import {encounterProfile} from './encounters.js';
 import {distance,move,lineClear} from './space.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const ACTIONS={light:{duration:.38,impact:.13,damage:13,range:2.9,cost:7},heavy:{duration:.88,impact:.38,damage:32,range:3.5,cost:27},circle:{duration:1.1,impact:.3,damage:24,range:7,cost:0}};
+export function actionCost(kind,avatar,xp,equipment){const a=ACTIONS[kind];return a?Math.max(0,weaponAction(a,avatar,xp).cost-(kind==='heavy'&&equipment==='artisan'?7:0)):0;}
 export function createCombat(arena,zone='france'){const c= {hp:100,stamina:100,energy:60,time:0,attack:null,dodge:0,dodgeCooldown:0,combo:0,comboAt:-10,hitId:0,event:null,enemy:{x:0,z:-66,hp:130,maxHp:130,state:'patrol',timer:0,interruptCooldown:0,phase:1,pattern:0,aim:{x:0,z:-66},heading:0}};c.profile=encounterProfile(zone);c.enemy.hp=c.enemy.maxHp=c.profile.hp;c.enemy.name=c.profile.name;c.enemy.strikes=0;if(arena){c.arena=arena;c.enemy.x=arena.x;c.enemy.z=arena.z;c.enemy.aim={x:arena.x,z:arena.z};}return c;}
 export function command(c,kind,player,equipment){
  if(c.hp<=0)return false;
- if(kind==='dodge'){if(c.stamina<24||c.dodgeCooldown>0)return false;c.stamina-=24;c.dodge=.34;c.dodgeCooldown=.7;c.attack=null;c.event={id:++c.hitId,type:'dodge',...player};return true;}
- const a=ACTIONS[kind]&&weaponAction(ACTIONS[kind],c.loadout,c.xp);if(!a||c.attack||c.dodge>0||c.stamina<a.cost-(kind==='heavy'&&equipment==='artisan'?7:0)||kind==='circle'&&c.energy<40)return false;
- c.stamina-=a.cost-(kind==='heavy'&&equipment==='artisan'?7:0);if(kind==='circle')c.energy-=40;
+ if(kind==='dodge'){if(c.stamina<24||c.dodgeCooldown>0)return false;c.stamina-=24;c.dodge=.34;c.dodgeDirection=null;c.dodgeCooldown=.7;c.attack=null;c.event={id:++c.hitId,type:'dodge',...player};return true;}
+ const a=ACTIONS[kind]&&weaponAction(ACTIONS[kind],c.loadout,c.xp),cost=actionCost(kind,c.loadout,c.xp,equipment);if(!a||c.attack||c.dodge>0||c.stamina<cost||kind==='circle'&&c.energy<40)return false;
+ c.stamina-=cost;if(kind==='circle')c.energy-=40;
  c.attack={kind,definition:a,elapsed:0,hit:false};c.event={id:++c.hitId,type:kind,...player};return true;
 }
 export function stepCombat(c,dt,player,heading,flags,zone='france'){
