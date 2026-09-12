@@ -1,7 +1,8 @@
+import {WEAPONS,COMPANIONS} from './arsenal.js';
 export const SKINS=['#f4d5b3','#e8b88d','#c88e62','#a96d48','#805039','#543426'];
 export const OUTFITS=['#e6c58b','#73b7d4','#9eb887','#c88b99','#a795d6','#e19559','#344954','#d8d0b6','#9a6068','#496b66','#7c6052','#bca358'];
 export const AVATAR_PATHS={lumiere:{name:'Lumière',color:'#efd58f',description:'Soutenir tes liens. +3 soins lors des gardes en aventure.'},tempete:{name:'Tempête',color:'#84cce5',description:'Frapper fort. +3 attaque et −8 vitalité en aventure.'},nature:{name:'Nature',color:'#9aca89',description:'Tenir dans la durée. +14 vitalité en aventure.'},ombre:{name:'Ombre',color:'#b49ddd',description:'Explorer avec agilité. +5 % de vitesse et +1 attaque en aventure.'}};
-export const blankAvatar=()=>({outerColor:null,metalColor:'#c9ad75',belt:'none',pendant:false,height:1,build:1,skinColor:null,fabric:'cotton',patternScale:1,capeLength:1,hoodFit:1,created:false,name:'Voyageur',origin:'3b',nationality:'',path:'lumiere',body:'homme',hair:3,boots:0,hairColor:'#352a24',face:0,jaw:0,nose:0,skin:2,color:0,shape:'equilibre',style:'voyageur',fabricColor:null,accentColor:'#d7bd83',trouserColor:'#77644d',bootColor:'#695239',pattern:'uni',headwear:'none',outer:'none',bag:false,travelGear:'libre'});
+export const blankAvatar=()=>({weapon:'heritage',weaponForm:0,companion:'silver',outerColor:null,metalColor:'#c9ad75',belt:'none',pendant:false,height:1,build:1,skinColor:null,fabric:'cotton',patternScale:1,capeLength:1,hoodFit:1,created:false,name:'Voyageur',origin:'3b',nationality:'',path:'lumiere',body:'homme',hair:3,boots:0,hairColor:'#352a24',face:0,jaw:0,nose:0,skin:2,color:0,shape:'equilibre',style:'voyageur',fabricColor:null,accentColor:'#d7bd83',trouserColor:'#77644d',bootColor:'#695239',pattern:'uni',headwear:'none',outer:'none',bag:false,travelGear:'libre'});
 export function normalizeAvatar(a){
  const result=blankAvatar();if(!a||typeof a!=='object')return result;
  const clean=(s,max)=>typeof s==='string'?s.normalize('NFC').replace(/[^\p{L}\p{N} '\-]/gu,'').trim().slice(0,max):'';
@@ -16,5 +17,6 @@ export function normalizeAvatar(a){
  for(const [key,min,max] of [['height',.9,1.1],['build',.88,1.15],['patternScale',.5,3],['capeLength',.7,1.25],['hoodFit',.9,1.15]])result[key]=Number.isFinite(a[key])?Math.max(min,Math.min(max,a[key])):1;
  result.skinColor=/^#[a-f0-9]{6}$/i.test(a.skinColor||'')?a.skinColor:null;
  result.fabric=['cotton','linen','satin','leather'].includes(a.fabric)?a.fabric:'cotton';
+ result.weapon=WEAPONS.some(w=>w.id===a.weapon)?a.weapon:'heritage';result.weaponForm=a.weaponForm===1?1:0;result.companion=COMPANIONS.some(c=>c.id===a.companion)?a.companion:'silver';
  return result;
 }

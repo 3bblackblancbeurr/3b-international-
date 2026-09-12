@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {WEAPONS,weaponAction} from '../src/world/arsenal.js';
+import {normalizeAvatar} from '../src/world/avatar-rules.js';
+import {ACTIONS,createCombat,command} from '../src/world/origins/combat.js';
+test('equipment survives normalization; unknown IDs cannot provide stats',()=>{assert.equal(normalizeAvatar({weapon:'paris',companion:'sand',weaponForm:1}).weapon,'paris');assert.equal(normalizeAvatar({weapon:'hacked'}).weapon,'heritage');});
+test('eight signature weapons and eight traveller options have finite balanced attacks',()=>{assert.equal(WEAPONS.length,16);assert.equal(WEAPONS.filter(w=>w.country!=='3b').length,8);for(const w of WEAPONS){const a=weaponAction(ACTIONS.light,{weapon:w.id});assert.ok(a.damage>0&&a.duration>a.impact&&a.cost>0);assert.ok(w.defense<=.2);}});
+test('evolution requires earned XP and trades power and cadence for range',()=>{const avatar={weapon:'paris',weaponForm:1},locked=weaponAction(ACTIONS.light,avatar,149),open=weaponAction(ACTIONS.light,avatar,150);assert.ok(open.range>locked.range);assert.ok(open.damage<locked.damage);assert.ok(open.duration>locked.duration);});
+test('accepted attacks snapshot weapon stats and cannot be changed during impact',()=>{const c=createCombat();c.loadout={weapon:'axe'};assert.equal(command(c,'heavy',{x:0,z:0}),true);const damage=c.attack.definition.damage;c.loadout={weapon:'claws'};assert.equal(c.attack.definition.damage,damage);assert.equal(command(c,'heavy',{x:0,z:0}),false);});
+test('old avatar retains old default combat costs',()=>{assert.deepEqual(weaponAction(ACTIONS.light),ACTIONS.light);});
