@@ -9,6 +9,8 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
 import InstallApp from "./install/InstallApp.jsx";
+import { isNativeApp } from "./native/runtime.js";
+import NativeShopPage from "./native/NativeShopPage.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
@@ -260,7 +262,7 @@ export default function App() {
 
       {page === "sport" && <SportPage goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage key={loyalty.user?.id || "guest"} page={page} goTo={goTo} />}
-      {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
+      {page === "shop" && (isNativeApp() ? <NativeShopPage /> : <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />)}
       </Suspense>
       </main>
     </div>

@@ -1,7 +1,7 @@
 import {defaultDeck,validateDeck,makeDuel,duelStep} from './duel.js';
 import {blankSave,normalizeSave} from './rules.js';
 const BASE=Deno.env.get('SUPABASE_URL')!,ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
-const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174']);
+const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174']);
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 async function api(path:string,body?:unknown){const r=await fetch(BASE+path,{method:body===undefined?'GET':'POST',headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)});const data=await r.json().catch(()=>null);if(!r.ok)throw new Failure(r.status>=500?503:400,data?.message||'Arène momentanément indisponible.');return data;}
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);

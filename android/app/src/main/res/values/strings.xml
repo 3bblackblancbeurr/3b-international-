@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">3B International</string>
+    <string name="title_activity_main">3B International</string>
+    <string name="package_name">app.vercel.threebinternational</string>
+    <string name="custom_url_scheme">app.vercel.threebinternational</string>
+</resources>
