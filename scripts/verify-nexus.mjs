@@ -11,7 +11,7 @@ let browser,currentPage;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function ready(){for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');if(r.ok)return;}catch{}await sleep(200);}throw new Error('Vite did not start');}
 async function screenshot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:30000});report.screenshots.push(name);}
-async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click();await page.locator('dialog[open]').waitFor();}
+async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click();await page.locator('dialog.nexus-experience[open]').waitFor();}
 async function skip(page){const skip=page.getByRole('button',{name:'Passer l’introduction'});if(await skip.count())await skip.click();await page.locator('.nexus-experience[data-phase="nexus"]').waitFor();}
 async function webgl(page){await page.locator('.nexus-stage[data-renderer="3d"]').waitFor({timeout:30000});}
 async function pick(page,code){const codes=['FR','DZ','ES','MA','IT','TN','TR','EE'];await page.locator('.nexus-door-choice').nth(codes.indexOf(code)).click();await page.locator(`.nexus-experience[data-selected="${code}"]`).waitFor();}
@@ -22,7 +22,7 @@ try{
   await desktop.addInitScript(()=>{window.__nexusPhases=[];new MutationObserver(()=>{const d=document.querySelector('.nexus-experience');const phase=d?.dataset.phase;if(phase&&window.__nexusPhases.at(-1)?.phase!==phase)window.__nexusPhases.push({phase,time:performance.now()});}).observe(document,{attributes:true,childList:true,subtree:true,attributeFilter:['data-phase']});});
   const page=await desktop.newPage();listen(page);await open(page);await screenshot(page,'desktop-ouverture');await skip(page);await webgl(page);
   report.initialPhases=await page.evaluate(()=>window.__nexusPhases);
-  assert.equal(await page.locator('.nexus-door-choice').count(),8);assert.equal(await page.locator('dialog').evaluate(d=>d.parentElement===document.body),true);
+  assert.equal(await page.locator('.nexus-door-choice').count(),8);assert.equal(await page.locator('dialog.nexus-experience').evaluate(d=>d.parentElement===document.body),true);
   await page.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();await screenshot(page,'desktop-sanctuaire');
   const names=['France','Algérie','Espagne','Maroc','Italie','Tunisie','Turquie','Estonie'];
   for(const [i,code] of ['FR','DZ','ES','MA','IT','TN','TR','EE'].entries()){
@@ -31,7 +31,7 @@ try{
   report.checks.push('Eight countries select their own camera, title, guardian and value');
   await page.locator('.nexus-origin-link').click();assert.equal(await page.locator('.nexus-enter-world').isDisabled(),true);await screenshot(page,'desktop-origine');
   await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});await screenshot(page,'desktop-tunnel');await skip(page);report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
-  await page.keyboard.press('Escape');assert.equal(await page.locator('dialog[open]').count(),0);
+  await page.keyboard.press('Escape');assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
   report.checks.push('ORIGINE stays locked; native dialog escapes transformed ancestor; Escape restores focus and scroll');
   await page.locator('#open').click();await skip(page);await pick(page,'FR');await page.locator('.nexus-enter-world').click();
@@ -41,7 +41,7 @@ try{
 
   const mobile=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});const phone=await mobile.newPage();listen(phone);await open(phone);await skip(phone);await webgl(phone);
   await phone.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();await screenshot(phone,'mobile-sanctuaire');
-  assert.equal(await phone.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
+  assert.equal(await phone.locator('dialog.nexus-experience').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
   await pick(phone,'FR');await screenshot(phone,'mobile-france');await pick(phone,'EE');await screenshot(phone,'mobile-estonie');
   await phone.locator('.nexus-origin-link').click();await screenshot(phone,'mobile-origine');assert.equal(await phone.locator('.nexus-enter-world').isDisabled(),true);
   await phone.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();report.checks.push('390×844 touch viewport: horizontal country rail, no document overflow, three closeups and close button');await mobile.close();
@@ -62,9 +62,9 @@ try{
   const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
   await trigger.waitFor({timeout:30000});await trigger.click();await webgl(app);
   assert.equal(await app.locator('.nexus-canvas canvas').getAttribute('data-nexus-scene'),'heritage-v2');
-  assert.equal(await app.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
+  assert.equal(await app.locator('dialog.nexus-experience').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
   await screenshot(app,'application-mobile-nexus');await pick(app,'FR');await screenshot(app,'application-mobile-france');
-  await app.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await trigger.isVisible(),true);assert.equal(await app.locator('dialog[open]').count(),0);
+  await app.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await trigger.isVisible(),true);assert.equal(await app.locator('dialog.nexus-experience[open]').count(),0);
   await screenshot(app,'application-mobile-passeport');report.checks.push('Actual application: passport entry, 3D selection and return work with global styles at 390×844');await appContext.close();
 
   assert.deepEqual(report.errors,[],'Unexpected browser or shader errors');
