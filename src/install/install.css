@@ -1,0 +1,27 @@
+.install3b{position:relative;margin:20px 0 28px;text-align:left}
+.install3b-card{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #ebd5a43d;border-radius:16px;background:#0a121af0;color:#fff5e3}
+.install3b-card>img{flex:none;display:block;border-radius:11px}
+.install3b-copy-text{display:grid;gap:5px;flex:1;min-width:0}
+.install3b-copy-text strong{font-size:15px;line-height:1.4;font-weight:650}
+.install3b-copy-text span{font-size:12px;line-height:1.5;color:#c3c9d0}
+.install3b-button,.install3b-copy,.install3b-close{font:inherit;cursor:pointer}
+.install3b-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:none;min-height:44px;padding:10px 14px;border:1px solid #ebd5a470;border-radius:10px;background:#ebd5a4;color:#131c21;font-size:13px;font-weight:700;line-height:1.4}
+.install3b-button:disabled{opacity:.7;cursor:wait}
+.install3b :is(button,input):focus-visible{outline:3px solid #6ce8ff;outline-offset:3px}
+.install3b .install3b-status,.intro3b-card .install3b p.install3b-status{color:#e7d7b5;font-size:13px;line-height:1.6;margin:12px 0 0;max-width:none}
+.intro3b-card>.install3b{margin:24px auto 0;max-width:580px}
+.install3b-dialog{box-sizing:border-box;width:min(480px,calc(100vw - 28px));max-height:calc(100dvh - 32px);padding:24px;border:1px solid #ebd5a459;border-radius:20px;background:#10151d;color:#f6f1e7;box-shadow:0 24px 90px #0009;overflow:auto;text-align:left}
+.install3b-dialog::backdrop{background:#030405b8;backdrop-filter:blur(5px)}
+.install3b-dialog header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.install3b-dialog .install3b-eyebrow{font-size:10px;line-height:1.5;letter-spacing:.1em;color:#d8bf8d}
+.install3b-dialog h2{font-size:27px;font-weight:700;line-height:1.2;margin:8px 0 12px;letter-spacing:0;color:#fff5e3}
+.install3b-dialog .install3b-close{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid #ffffff24;border-radius:10px;background:#ffffff08;color:#fff}
+.install3b-dialog p,.intro3b-card .install3b-dialog p:not(.eyebrow){font-size:14px;line-height:1.7;color:#d3d5db;max-width:none;margin:14px 0;letter-spacing:0}
+.install3b-dialog ol{padding-left:22px;margin:18px 0;font-size:14px;line-height:1.7}
+.install3b-dialog li+li{margin-top:10px}
+.install3b-dialog strong{color:#fff2d6}
+.install3b-dialog .install3b-link-label{display:block;font-size:12px;margin:20px 0 8px;color:#d8bf8d}
+.install3b-dialog .install3b-link{display:block;box-sizing:border-box;width:100%;min-height:44px;padding:10px 12px;border:1px solid #ffffff30;border-radius:8px;background:#060c12;color:#ecdfc4;font:13px/1.5 monospace}
+.install3b-dialog .install3b-copy{min-height:44px;margin-top:12px;padding:10px 14px;border:1px solid #ebd5a450;border-radius:9px;background:#ebd5a40b;color:#ebd5a4;font-size:13px}
+.install3b-dialog .install3b-status:empty{display:none}
+@media(max-width:540px){.install3b-card{flex-wrap:wrap;gap:12px;padding:14px}.install3b-card>.install3b-button{width:100%}.install3b-copy-text strong{font-size:14px}.install3b-dialog{padding:20px}}
