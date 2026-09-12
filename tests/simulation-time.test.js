@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {simulationFrame} from '../src/world/origins/simulation-time.js';
+import {createCombat,stepCombat,command} from '../src/world/origins/combat.js';
+test('15, 30 and 60 FPS simulate the same elapsed time and regeneration',()=>{for(const fps of [15,30,60]){const c=createCombat();c.energy=0;c.stamina=0;for(let i=0;i<fps*3;i++){const f=simulationFrame(1/fps,true);for(let n=0;n<f.steps;n++)stepCombat(c,f.step,{x:0,z:23},0,{},'sanctuary');}assert.ok(Math.abs(c.time-3)<1e-9);assert.ok(Math.abs(c.energy-6)<1e-9);assert.ok(Math.abs(c.stamina-57)<1e-9);}});
+test('pause and hidden state have no simulation steps; stalls are capped',()=>{assert.equal(simulationFrame(.1,false).steps,0);assert.equal(simulationFrame(Infinity,true).steps,0);assert.equal(simulationFrame(-1,true).steps,0);const s=simulationFrame(4,true);assert.equal(s.steps,3);assert.equal(s.elapsed,.1);assert.ok(s.step<=1/30);});
+test('successful dodge opens one short counter without stacking',()=>{const c=createCombat();Object.assign(c.enemy,{x:0,z:22,heading:0,state:'windup',timer:0,pattern:0});c.dodge=.3;const f={echo:true,echo2:true};stepCombat(c,.05,{x:0,z:23},Math.PI,f,'sanctuary');assert.equal(c.counterWindow,1.2);assert.equal(c.hp,100);c.dodge=0;assert.equal(command(c,'light',{x:0,z:23}),true);for(let i=0;i<3;i++)stepCombat(c,.05,{x:0,z:23},Math.PI,f,'sanctuary');assert.equal(c.enemy.hp,130-13*1.25);assert.equal(c.counterWindow,0);});
+test('unused counter expires without damage',()=>{const c=createCombat();c.counterWindow=.04;stepCombat(c,.05,{x:0,z:23},0,{},'sanctuary');assert.equal(c.counterWindow,0);assert.equal(c.enemy.hp,130);});

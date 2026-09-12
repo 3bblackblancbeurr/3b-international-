@@ -91,8 +91,9 @@ function Session({uid,goTo,onPrevious}){
 
    <button className="origins-minimap" onClick={()=>setPanel('map')} aria-label="Ouvrir la carte"><MapView snapshot={snapshot}/></button>
 
-   {c.active&&<div className="origins-enemy"><span>{c.enemyName||'Manifestation de l’Oubli'}</span><meter aria-label="Vie de l’adversaire" min="0" max={c.enemyMax||130} value={c.enemy}/><small>{c.state==='windup'?'Attaque annoncée · esquive !':c.state==='recover'?'Ouverture · frappe maintenant':c.state==='stagger'?'L’Oubli recule':'Écoute les deux voix. Protège leurs souvenirs.'}</small></div>}
+   {c.active&&<div className="origins-enemy"><span>{c.enemyName||'Manifestation de l’Oubli'}</span><meter aria-label="Vie de l’adversaire" min="0" max={c.enemyMax||130} value={c.enemy}/>{c.state==='windup'&&<><progress aria-label="Préparation de l’attaque adverse" max="1" value={c.telegraph}/><em>{c.areaAttack?'Sors du cercle au sol':'Évite la zone devant l’adversaire'}</em></>}<small>{c.state==='windup'?'Attaque annoncée · esquive !':c.state==='recover'?'Ouverture · frappe maintenant':c.state==='stagger'?'L’Oubli recule':'Écoute les deux voix. Protège leurs souvenirs.'}</small></div>}
 
+   {c.active&&c.counter>0&&<div className="origins-counter" role="status">Esquive réussie · contre +25 %</div>}
    {c.active&&c.combo>1&&<div className="origins-combo" aria-label={c.combo+' coups consécutifs'}><strong>×{c.combo}</strong><span>Enchaînement</span></div>}
    {(c.guard>0||c.slow>0)&&<div className="origins-support-status" role="status">{c.guard>0?'Protection : prochain impact':'Adversaire ralenti'} · {Math.ceil(c.guard||c.slow)} s</div>}
    {snapshot?.vision>0&&<div className="origins-vision">VISION DE MÉMOIRE · {Math.ceil(snapshot.vision)} s</div>}
