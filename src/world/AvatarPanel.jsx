@@ -3,11 +3,13 @@ import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {LOOKS,TRAVEL_GEAR} from './wardrobe.js';
 import {COUNTRIES} from './catalog.js';
 import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
+import {AvatarCinematic} from './AvatarCinematic.jsx';
 import '../arena/arena.css';
 export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState('');
+ const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
- return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();if(act({type:'avatar',avatar:draft})){setMessage('Ton personnage est enregistré.');onDone?.();}}}>
+ if(reveal)return <AvatarCinematic avatar={reveal} onDone={onDone}/>;
+ return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
   <fieldset><legend>Silhouette</legend><div className="world-actions">{['homme','femme'].map(body=><button type="button" key={body} aria-pressed={draft.body===body} onClick={()=>set('body',body)}>{body==='homme'?'Homme':'Femme'}</button>)}</div></fieldset>
   <label>Morphologie<select value={draft.shape} onChange={e=>set('shape',e.target.value)}><option value="equilibre">Équilibrée</option><option value="elance">Élancée</option><option value="solide">Solide</option></select></label>
@@ -26,6 +28,6 @@ export function AvatarPanel({save,act,onDone}){
   <label>Origines personnelles · tous les pays<input maxLength={50} placeholder="Pays ou origines de ton choix" value={draft.nationality} onChange={e=>set('nationality',e.target.value)}/></label>
   <label>Pays de cœur dans le Monde 3B<select value={draft.origin} onChange={e=>set('origin',e.target.value)}><option value="3b">L’Union des huit portes</option>{COUNTRIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
   <label>Voie de pouvoir<select value={draft.path} onChange={e=>set('path',e.target.value)}>{Object.entries(AVATAR_PATHS).map(([id,p])=><option key={id} value={id}>{p.name}</option>)}</select></label><p>{AVATAR_PATHS[draft.path].description}</p><small>Ton apparence et tes origines restent libres. La voie influence l’aventure ; les duels de l’arène utilisent les statistiques équilibrées des personnages.</small>
-  <button className="world-primary" type="submit">{save.adventure.avatar.created?'Enregistrer mon personnage':'Commencer mon voyage'}</button><p role="status">{message}</p>
+  <button className="world-primary" type="submit">{save.adventure.avatar.created?'Enregistrer et voir ma présentation':'Commencer mon voyage'}</button><p role="status">{message}</p>
  </form></div>;
 }
