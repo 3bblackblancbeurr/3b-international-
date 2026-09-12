@@ -1,3 +1,4 @@
+import {unlockedForm} from '../arsenal-progression.js';
 import {normalizeRegions,regionalXP,regionalAction} from './regional-life.js';
 import {isCountry} from './countries.js';
 import {WORLDS} from './data.js';
@@ -14,7 +15,7 @@ export function normalize(raw){
  s.rewards=QUESTS.map(q=>q.id).filter(id=>Array.isArray(raw.rewards)&&raw.rewards.includes(id));
  s.regions=normalizeRegions(raw.regions);
  s.xp=regionalXP(s.regions)+s.rewards.reduce((sum,id)=>sum+QUESTS.find(q=>q.id===id).reward,0)+(s.flags.secret?15:0);
- if(s.xp<150)s.avatar.weaponForm=0;
+ s.avatar.weaponForm=unlockedForm(s.avatar.weaponForm,s.xp);
  s.bond=(s.flags.scent?1:0)+(s.flags.trial?1:0)+(s.flags.secret?1:0);
  s.hp=Math.min(100,Math.max(1,Number(raw.hp)||100));s.position=safePosition(raw.position,s.zone,s.flags);
  s.equipment=['heritage','artisan'].includes(raw.equipment)?raw.equipment:'heritage';

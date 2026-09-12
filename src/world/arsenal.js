@@ -1,3 +1,4 @@
+import {unlockedForm,FORM_RULES} from './arsenal-progression.js';
 // Fictional 3B equipment. Values below are used by both the UI and combat.
 const weapon=(id,name,country,kind,form,description,damage,range,speed,defense,color)=>({id,name,country,kind,form,description,damage,range,speed,defense,color});
 export const WEAPONS=[
@@ -20,5 +21,5 @@ export const WEAPONS=[
 ];
 export const COMPANIONS=[{id:'silver',name:'Loup argenté',color:'#9da6ad',description:'Pelage argenté. Recherche et maintien des sceaux.'},{id:'sand',name:'Loup des sables',color:'#c7a878',description:'Pelage sable. Même capacité de quête, sans bonus caché.'},{id:'night',name:'Loup nocturne',color:'#586480',description:'Pelage ardoise. Même capacité de quête, sans bonus caché.'}];
 export const getWeapon=id=>WEAPONS.find(w=>w.id===id)||WEAPONS[0];
-export function weaponAction(base,avatar={},xp=0){const w=getWeapon(avatar.weapon),evolved=avatar.weaponForm===1&&xp>=150;return {...base,damage:base.damage*w.damage*(evolved?.88:1),range:base.range*w.range*(evolved?1.2:1),duration:base.duration*w.speed*(evolved?1.15:1),impact:base.impact*w.speed*(evolved?1.15:1),cost:Math.ceil(base.cost*w.speed)};}
+export function weaponAction(base,avatar={},xp=0){const w=getWeapon(avatar.weapon),f=FORM_RULES[unlockedForm(avatar.weaponForm,xp)];return {...base,damage:base.damage*w.damage*f.damage,range:base.range*w.range*f.range,duration:base.duration*w.speed*f.time,impact:base.impact*w.speed*f.time,cost:Math.ceil(base.cost*w.speed*f.cost)};}
 export function weaponDefense(avatar={}){return getWeapon(avatar.weapon).defense;}

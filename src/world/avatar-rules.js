@@ -17,6 +17,6 @@ export function normalizeAvatar(a){
  for(const [key,min,max] of [['height',.9,1.1],['build',.88,1.15],['patternScale',.5,3],['capeLength',.7,1.25],['hoodFit',.9,1.15]])result[key]=Number.isFinite(a[key])?Math.max(min,Math.min(max,a[key])):1;
  result.skinColor=/^#[a-f0-9]{6}$/i.test(a.skinColor||'')?a.skinColor:null;
  result.fabric=['cotton','linen','satin','leather'].includes(a.fabric)?a.fabric:'cotton';
- result.weapon=WEAPONS.some(w=>w.id===a.weapon)?a.weapon:'heritage';result.weaponForm=a.weaponForm===1?1:0;result.companion=COMPANIONS.some(c=>c.id===a.companion)?a.companion:'silver';
+ result.weapon=WEAPONS.some(w=>w.id===a.weapon)?a.weapon:'heritage';result.weaponForm=Number.isInteger(a.weaponForm)?Math.max(0,Math.min(3,a.weaponForm)):0;result.companion=COMPANIONS.some(c=>c.id===a.companion)?a.companion:'silver';
  return result;
 }
