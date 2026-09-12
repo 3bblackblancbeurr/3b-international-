@@ -8,6 +8,8 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
+import InstallApp from "./install/InstallApp.jsx";
+import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
@@ -105,6 +107,7 @@ const MEMBER_MENU_ITEM = {
 };
 
 export default function App() {
+  const installation = useAppInstallation();
   const [route, setRoute] = useState(readLocation);
   const { page } = route;
   const hasStarted = page !== "intro";
@@ -207,6 +210,7 @@ export default function App() {
           >
             COMMENCER
           </button>
+          <InstallApp installation={installation} />
         </section>
       </main>
     );
@@ -224,7 +228,7 @@ export default function App() {
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
-        <HomePage goTo={goTo} menuItems={menuItems} member={member} />
+        <HomePage goTo={goTo} menuItems={menuItems} member={member} installation={installation} />
       )}
 
       {page === "passport" && (
@@ -321,4 +325,3 @@ function PassportPage({ member, goTo, options }) {
     </section>
   );
 }
-
