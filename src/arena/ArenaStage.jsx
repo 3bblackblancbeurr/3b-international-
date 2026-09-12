@@ -17,8 +17,8 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
   const mesh=(g,m)=>{geometry.push(g);const o=new THREE.Mesh(g,m);o.receiveShadow=true;scene.add(o);return o;};
   const floor=mesh(new THREE.CylinderGeometry(7,7.15,.20,64),material('#233941'));floor.position.y=-.13;
   for(const r of [3.2,5.4,6.5]){const o=mesh(new THREE.TorusGeometry(r,.018,5,80),material('#aa915e',{metalness:.8}));o.rotation.x=Math.PI/2;o.position.y=.005;}
-  for(let i=0;i<8;i++){const angle=i*Math.PI/4;const p=mesh(new THREE.CylinderGeometry(.25,.36,2.1,8),material('#32454b'));p.position.set(Math.cos(angle)*6.7,1,Math.sin(angle)*6.7);const lamp=mesh(new THREE.IcosahedronGeometry(.12,1),material('#d6bc83',{emissive:'#d6bc83',emissiveIntensity:1}));lamp.position.copy(p.position).y=2.2;}
-  let actors=[],ids=[],lastRevision='',at=performance.now(),raf,elapsed=0,impact=10,who=0,rot=.0,lastAngle=null,pointer=null,disposed=false;
+  const stands=[];for(let i=0;i<8;i++){const angle=i*Math.PI/4;const p=mesh(new THREE.CylinderGeometry(.25,.36,2.1,8),material('#32454b'));p.position.set(Math.cos(angle)*6.7,1,Math.sin(angle)*6.7);const lamp=mesh(new THREE.IcosahedronGeometry(.12,1),material('#d6bc83',{emissive:'#d6bc83',emissiveIntensity:1}));lamp.position.copy(p.position).y=2.2;stands.push(p,lamp);}
+  let assetEpoch=0;let actors=[],ids=[],lastRevision='',at=performance.now(),raf,elapsed=0,impact=10,who=0,rot=.0,lastAngle=null,pointer=null,disposed=false;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}}
   const ro=new ResizeObserver(resize);ro.observe(canvas);resize();
@@ -26,7 +26,7 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
   canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
   function tick(now){if(disposed)return;raf=requestAnimationFrame(tick);const dt=Math.min(.05,(now-at)/1000);at=now;if(document.hidden)return;elapsed+=dt;impact+=dt;
    const s=liveState.current,solo=!!s.cardId||!!s.avatar,next=s.cardId?[s.cardId]:s.avatar?['avatar:'+JSON.stringify(s.avatar)]:s.state?.sides.map(x=>x.cards[x.active].id)||[];
-   if(next.join('|')!==ids.join('|')){actors.forEach(a=>{scene.remove(a.object);a.dispose();});ids=next;actors=next.map((id,index)=>{const a=createLivingActor(library,{...(s.avatar?{avatar:s.avatar}:{card:id}),onError:setError});a.object.position.set(solo?0:index===s.side?-1.45:1.45,0,0);a.object.rotation.y=solo?0:index===s.side?.65:-.65;scene.add(a.object);return a;});}
+   for(const stand of stands)stand.visible=!solo;if(next.join('|')!==ids.join('|')){const epoch=++assetEpoch;actors.forEach(a=>{scene.remove(a.object);a.dispose();});ids=next;actors=next.map((id,index)=>{const a=createLivingActor(library,{...(s.avatar?{avatar:s.avatar}:{card:id}),onError:message=>{if(!disposed&&epoch===assetEpoch)setError(message);},onLoad:()=>{if(!disposed&&epoch===assetEpoch)setError('');}});a.object.position.set(solo?0:index===s.side?-1.45:1.45,0,0);a.object.rotation.y=solo?0:index===s.side?.65:-.65;scene.add(a.object);return a;});}
    const revision=s.state?String(s.state.round)+'-'+s.state.winner:'';
    if(s.state?.last&&revision!==lastRevision){lastRevision=revision;who=s.state.last.side;const kind=s.state.last.type;impact=kind==='strike'?0:10;if(['strike','power','relic'].includes(kind))actors[who]?.action(kind==='strike'?'Attack':'Cast');if(s.state.last.damage>0)actors[1-who]?.action(s.state.winner===who?'Death':'Hit');}
    if(s.angle!==lastAngle){if(s.angle!==null)rot=s.angle;lastAngle=s.angle;}

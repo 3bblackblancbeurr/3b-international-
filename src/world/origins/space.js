@@ -1,3 +1,4 @@
+import {serviceObstacles} from './service-interiors.js';
 import {heritageObstacles} from '../heritage.js';
 import {isCountry,countryLayout} from './countries.js';
 import {BUILDINGS,ROOMS,ROOM_SHELVES,SCALE,SPAWNS,EIFFEL_SITE} from './data.js';
@@ -5,7 +6,7 @@ export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const wall=(x,z,w,d,h=10,angle=0)=>({x,z,w,d,h,angle});
 const collisionCache=new Map();
 export function obstacles(zone,flags={}){
- if(isCountry(zone)){if(collisionCache.has(zone))return collisionCache.get(zone);const obs=countryLayout(zone).buildings.map(b=>wall(b.x,b.z,b.width,b.depth,12,b.angle));const l=countryLayout(zone);for(const h of heritageObstacles(zone,l.landmark,0))obs.push(wall(h.x,h.z,h.width||h.r*2,h.depth||h.r*2,20,h.rotation));obs.push(wall(l.centre.x,l.centre.z-6,4,4,1),wall(-3.2,32,1.1,1.3,5.4),wall(3.2,32,1.1,1.3,5.4));collisionCache.set(zone,obs);return obs;}
+ if(isCountry(zone)){if(collisionCache.has(zone))return collisionCache.get(zone);const obs=countryLayout(zone).buildings.map(b=>wall(b.x,b.z,b.width,b.depth,12,b.angle));const l=countryLayout(zone);obs.push(...serviceObstacles(l));for(const h of heritageObstacles(zone,l.landmark,0))obs.push(wall(h.x,h.z,h.width||h.r*2,h.depth||h.r*2,20,h.rotation));obs.push(wall(l.centre.x,l.centre.z-6,4,4,1),wall(-3.2,32,1.1,1.3,5.4),wall(3.2,32,1.1,1.3,5.4));collisionCache.set(zone,obs);return obs;}
  const key=zone+':'+!!flags.trial;if(collisionCache.has(key))return collisionCache.get(key);
  if(zone==='sanctuary')return [wall(0,0,12,2,16),...Array.from({length:8},(_,i)=>wall(Math.sin(i*Math.PI/4+.18)*23,-Math.cos(i*Math.PI/4+.18)*23,1.2,1.2,4)),...Array.from({length:7},(_,i)=>{const a=(i+1)*Math.PI/4;return wall(Math.sin(a)*29,-Math.cos(a)*29,4.2,.5,6,-a);})];
  const out=BUILDINGS.map(b=>wall(b.x,b.z,b.width+.2,b.depth+.2,15,b.angle));

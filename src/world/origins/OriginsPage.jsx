@@ -61,7 +61,7 @@ function Session({uid,goTo,onPrevious}){
 
  useEffect(()=>{const key=e=>{if(panel==='character')return;if(e.key==='Escape'&&!e.repeat){e.preventDefault();setPanel(p=>p?null:'pause');}if(e.key.toLowerCase()==='m'&&!e.repeat&&!['INPUT','SELECT'].includes(e.target.tagName))setPanel(p=>p==='map'?null:'map');if(e.key.toLowerCase()==='i'&&!e.repeat&&!['INPUT','SELECT'].includes(e.target.tagName))setPanel(p=>p==='journal'?null:'journal');};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[panel]);
 
- const s=snapshot?.state||initial,task=snapshot?.objective||objective(s),c=snapshot?.combat||{hp:100,energy:60,stamina:100},settings=s.settings;
+ const s=snapshot?.state||initial,task=snapshot?.objective||objective(s),c=snapshot?.combat||{hp:100,energy:60,stamina:100},settings=s.settings;const reinforced=isCountry(s.zone)?s.regions[s.zone].upgrade:s.equipment==='artisan';
 
  function focus(){host.current?.querySelector('canvas')?.focus({preventScroll:true});}
 
@@ -90,7 +90,7 @@ function Session({uid,goTo,onPrevious}){
 
    <button className="origins-minimap" onClick={()=>setPanel('map')} aria-label="Ouvrir la carte"><MapView snapshot={snapshot}/></button>
 
-   {c.active&&<div className="origins-enemy"><span>MANIFESTATION DE L’OUBLI</span><meter aria-label="Vie de l’adversaire" min="0" max="130" value={c.enemy}/><small>{c.state==='windup'?'Attaque annoncée · esquive !':c.state==='recover'?'Ouverture · frappe maintenant':c.state==='stagger'?'L’Oubli recule':'Écoute les deux voix. Protège leurs souvenirs.'}</small></div>}
+   {c.active&&<div className="origins-enemy"><span>{c.enemyName||'Manifestation de l’Oubli'}</span><meter aria-label="Vie de l’adversaire" min="0" max={c.enemyMax||130} value={c.enemy}/><small>{c.state==='windup'?'Attaque annoncée · esquive !':c.state==='recover'?'Ouverture · frappe maintenant':c.state==='stagger'?'L’Oubli recule':'Écoute les deux voix. Protège leurs souvenirs.'}</small></div>}
 
    {snapshot?.vision>0&&<div className="origins-vision">VISION DE MÉMOIRE · {Math.ceil(snapshot.vision)} s</div>}
 
@@ -104,7 +104,7 @@ function Session({uid,goTo,onPrevious}){
 
      <button onClick={()=>action('light')} disabled={!!c.attack} aria-label="Attaque rapide"><Swords/><span>Rapide <kbd>J</kbd></span></button>
 
-     <button onClick={()=>action('heavy')} disabled={!!c.attack||c.stamina<((isCountry(s.zone)?s.regions[s.zone].upgrade:s.equipment==='artisan')?20:27)} aria-label="Attaque puissante"><Shield/><span>Puissante <kbd>K</kbd></span></button>
+     <button onClick={()=>action('heavy')} disabled={!!c.attack||c.stamina<((isCountry(s.zone)?s.regions[s.zone].upgrade:reinforced)?20:27)} aria-label="Attaque puissante"><Shield/><span>Puissante <kbd>K</kbd></span></button>
 
      <button onClick={()=>action('dodge')} disabled={c.stamina<24} aria-label="Esquive"><ArrowLeft/><span>Esquive <kbd>␣</kbd></span></button>
 
@@ -139,7 +139,7 @@ function Session({uid,goTo,onPrevious}){
 
    {panel==='journal'&&<><p className="origins-current">{task.text}</p><button onClick={()=>route(task.target)}>Rejoindre le prochain lieu</button><div className="origins-quests">{isCountry(s.zone)?<article><small>VIE DU QUARTIER · {COUNTRIES[s.zone].name}</small><h3>Restaurer, se préparer et explorer</h3><ol><li>Récolter des matériaux au jardin.</li><li>Restaurer le jardin : {s.regions[s.zone].restored}/3.</li><li>Renforcer la tenue : {s.regions[s.zone].upgrade?'fait':'à faire'}.</li><li>Repousser l’Oubli pour ouvrir une nouvelle récolte : {s.regions[s.zone].wins} victoires.</li><li>Se reposer au refuge et découvrir le monument sur la carte.</li></ol><p>Tu peux poursuivre tes explorations et tes rencontres après la restauration.</p></article>:QUESTS.map(q=><article key={q.id}><small>{q.kind==='main'?'QUÊTE PRINCIPALE':'RENCONTRE'} · {s.rewards.includes(q.id)?'Accomplie':q.kind==='side'&&!(q.id==='garden'?s.flags.gardenAccepted:s.flags.memoryAccepted)?'À découvrir':'En cours'}</small><h3>{q.title}</h3><ol>{q.steps.map(text=><li key={text}>{text}</li>)}</ol></article>)}</div></>}
 
-   {panel==='inventory'&&<div className="origins-inventory"><article><Diamond/><h3>{s.flags.justice?'Fragment de Justice':'Le Cercle attend son premier fragment'}</h3><p>{s.flags.returned?'Replacé au Sanctuaire.':s.flags.justice?'Rapporte-le au Sanctuaire.':'La France garde une mémoire à retrouver.'}</p></article><article><Shield/><h3>{s.equipment==='artisan'?'Tenue renforcée par l’artisan':'Tenue Héritage'}</h3><p>{s.equipment==='artisan'?'Attaque puissante : 20 endurance au lieu de 27.':'Noir profond, détails champagne. Termine la quête de l’atelier pour la renforcer.'}</p></article><article><Footprints/><h3>Le loup · lien {s.bond}</h3><p>{s.bond>=3?'Recherche étendue à 12 mètres.':s.bond>=2?'La confiance permet de tenir les sceaux.':'Chercher ensemble renforce la confiance.'}</p></article><p>{s.xp} XP d’aventure. Aucun avantage commercial attribué par cette sauvegarde.</p></div>}
+   {panel==='inventory'&&<div className="origins-inventory"><article><Diamond/><h3>{s.flags.justice?'Fragment de Justice':'Le Cercle attend son premier fragment'}</h3><p>{s.flags.returned?'Replacé au Sanctuaire.':s.flags.justice?'Rapporte-le au Sanctuaire.':'La France garde une mémoire à retrouver.'}</p></article><article><Shield/><h3>{reinforced?'Tenue renforcée par l’artisan':'Tenue Héritage'}</h3><p>{reinforced?'Attaque puissante : 20 endurance au lieu de 27.':'Ton apparence reste personnalisable. Rends visite à l’artisan pour renforcer ta tenue.'}</p></article><article><Footprints/><h3>Le loup · lien {s.bond}</h3><p>{s.bond>=3?'Recherche étendue à 12 mètres.':s.bond>=2?'La confiance permet de tenir les sceaux.':'Chercher ensemble renforce la confiance.'}</p></article><p>{s.xp} XP d’aventure. Aucun avantage commercial attribué par cette sauvegarde.</p></div>}
 
    {panel==='map'&&<><MapView snapshot={snapshot} large/><p>Choisis un lieu pour y marcher. Tu peux reprendre la main à tout moment.</p><div className="origins-map-points">{(isCountry(s.zone)?countryLayout(s.zone).points.map(p=>[p.id,p.name]):s.zone==='sanctuary'?[['circle',POINTS.circle.name],...WORLDS.map(w=>[w.id,'Porte '+w.name])]:[['eiffel','Parvis de la tour Eiffel'],['resident','Place des Liens'],['atelier','Atelier'],['refuge','Maison des souvenirs'],['trace','Fontaine'],['guardian','Gardien'],['seal','Sceau gauche'],['trial','Plateau droit'],['echo','Premier témoignage'],['echo2','Second témoignage'],['fragment','Fond des Archives'],['memory','Passage haut'],['flower','Jardin ouest'],['secret','Tilleul'],['arrival','Retour au Sanctuaire']]).map(([id,name])=><button key={id} onClick={()=>route(id)}>{name}</button>)}</div></>}
 

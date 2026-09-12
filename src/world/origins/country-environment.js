@@ -1,3 +1,4 @@
+import {createServiceInteriors} from './service-interiors.js';
 import {createLandmark} from '../landmarks.js';
 import {randomFor} from '../terrain.js';
 import * as T from 'three';
@@ -24,7 +25,7 @@ export function createCountryEnvironment(scene,zone,{quality='high',onError=()=>
  // Civic services occupy distinct local anchors, with real restoration stages.
  const at=id=>layout.points.find(p=>p.id===id),centre=layout.centre;
  mesh(cylinder,stone,centre.x,.35,centre.z-6,2,.7,2);mesh(cylinder,mat('#559ea4',.2,.2),centre.x,.72,centre.z-6,1.7,.04,1.7);
- for(const [id,roof] of [['atelier',wood],['refuge',stone]]){const p=at(id);for(const side of [-1,1])for(const back of [2,6])mesh(box,stone,p.x+side*3,1.7,p.z-back,.3,3.4,.3);mesh(box,roof,p.x,3.5,p.z-4,7,.25,5);mesh(box,wood,p.x,.8,p.z-2,2,.14,.8);for(const side of [-1,1])mesh(box,dark,p.x+side*.8,.4,p.z-2,.1,.8,.6);}
+ const interiors=createServiceInteriors(layout,c,occlusion);root.add(interiors.root);
  for(const side of [-1,1]){mesh(box,wood,centre.x+side*12,.5,centre.z+8,2,.12,.65);mesh(box,wood,centre.x+side*12,.94,centre.z+7.7,2,.6,.08);}
  const stages=[];for(let i=0;i<3;i++){const g=new T.Group();root.add(g);const x=layout.garden.x+(i-1)*4,z=layout.garden.z-3;for(const [dx,dz,w,d] of [[0,-1.3,3.7,.2],[0,1.3,3.7,.2],[-1.8,0,.2,2.6],[1.8,0,.2,2.6]]){const m=mesh(box,stone,x+dx,.25,z+dz,w,.5,d);g.attach(m);}stages.push(g);}
  const monument=createLandmark(zone);monument.root.position.set(layout.landmark.x,0,layout.landmark.z);root.add(monument.root);
@@ -40,5 +41,5 @@ export function createCountryEnvironment(scene,zone,{quality='high',onError=()=>
  function plants(parent,type,x,z,size,angle){flora.plant(type,x,0,z,size,angle,parent);}
  for(let i=0;i<230;i++){const x=-100+rng()*195,z=-112+rng()*145;if(roadSamples.some(p=>Math.hypot(p.x-x,p.z-z)<4)||Math.hypot(x-layout.landmark.x,z-layout.landmark.z)<30||Math.hypot(x-layout.encounter.x,z-layout.encounter.z)<15||layout.buildings.some(b=>Math.abs(x-b.x)<8&&Math.abs(z-b.z)<7)||layout.points.some(p=>Math.hypot(x-p.x,z-p.z)<7))continue;const key=Math.floor(x/32)+':'+Math.floor(z/32);if(!treeGroups.has(key)){const g=new T.Group();root.add(g);treeGroups.set(key,g);}plants(treeGroups.get(key),i%3?c.tree:'Shrub',x,z,.4+rng()*.48,rng()*6.28);}
  stages.forEach((g,i)=>{for(let k=0;k<8;k++)plants(g,'Shrub',layout.garden.x+(i-1)*4+(k%4-.5)*.7-1,layout.garden.z-3+Math.floor(k/4)*.8-.4,.2,k);});flora.finish();
- return{root,memory,ready,update(s,vision,p,time){flora.tick(time);stages.forEach((g,i)=>g.visible=(s.regions?.[zone]?.restored||0)>i);monument.update(0);},dispose(){dead=true;root.removeFromParent();flora.dispose();monument.dispose();instances.forEach(m=>m.dispose());ready.catch(()=>{}).finally(()=>{for(const a of assets)a.scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t?.dispose());});}};
+ return{root,memory,ready,update(s,vision,p,time){flora.tick(time);interiors.update(p);stages.forEach((g,i)=>g.visible=(s.regions?.[zone]?.restored||0)>i);monument.update(0);},dispose(){dead=true;root.removeFromParent();flora.dispose();interiors.dispose();monument.dispose();instances.forEach(m=>m.dispose());ready.catch(()=>{}).finally(()=>{for(const a of assets)a.scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t?.dispose());});}};
 }
