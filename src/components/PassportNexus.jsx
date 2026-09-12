@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Compass, LockKeyhole, Sparkles, X } from "lucide-react";
+import "../styles/passport-nexus.css";
 
 const DOORS = [
   { code: "FR", country: "France", value: "Justice", number: "01" },
@@ -56,10 +57,16 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
 
   if (!open) return null;
 
-  function enterCountry(code) {
-    try { window.localStorage.setItem("3b:nexus-country", code); } catch { /* private mode */ }
+  function openWorld(code) {
+    if (code) {
+      try { window.localStorage.setItem("3b:nexus-country", code); } catch { /* private mode */ }
+    }
     onClose();
-    goTo?.("world3b");
+    if (goTo) {
+      goTo("world3b");
+    } else {
+      window.location.hash = "monde-3b";
+    }
   }
 
   return (
@@ -90,9 +97,7 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
               <b key={index} style={{ "--angle": `${glyph.angle}deg`, "--depth": `${glyph.depth}%`, "--glyph-delay": glyph.delay }}>{glyph.char}</b>
             ))}
           </div>
-          <div className="passport-tunnel-axis" aria-hidden="true">
-            <span>3B</span>
-          </div>
+          <div className="passport-tunnel-axis" aria-hidden="true"><span>3B</span></div>
           <div className="passport-tunnel-copy">
             <p>BLACK • BLANC • BEUR</p>
             <strong>PASSAGE VERS LE NEXUS</strong>
@@ -116,14 +121,14 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
               </div>
               <p>CERCLE BRISÉ</p>
               <small>Les fragments se synchronisent avec ta progression.</small>
-              <button type="button" className="passport-world-cta" onClick={() => { onClose(); goTo?.("world3b"); }}>
+              <button type="button" className="passport-world-cta" onClick={() => openWorld()}>
                 <Compass size={17} /> Explorer le Monde 3B
               </button>
             </div>
 
             <div className="passport-door-grid" aria-label="Les huit portes du Nexus">
               {DOORS.map((door) => (
-                <button key={door.code} type="button" className="passport-nexus-door" onClick={() => enterCountry(door.code)}>
+                <button key={door.code} type="button" className="passport-nexus-door" onClick={() => openWorld(door.code)}>
                   <span className="passport-door-number">{door.number}</span>
                   <span className="passport-door-code">{door.code}</span>
                   <strong>{door.country}</strong>
