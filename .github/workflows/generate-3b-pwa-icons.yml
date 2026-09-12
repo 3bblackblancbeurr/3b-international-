@@ -1,0 +1,88 @@
+name: Generate 3B PWA icons
+
+on:
+  push:
+    branches:
+      - fix/3b-pwa-maskable-icon-v4
+    paths:
+      - .github/workflows/generate-3b-pwa-icons.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check Pillow
+
+      - name: Generate true PNG and maskable icons
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          icon_dir = Path("public/icons")
+          source_path = icon_dir / "3b-exact-512.jpg"
+          source = Image.open(source_path).convert("RGB")
+          source = source.resize((512, 512), Image.Resampling.LANCZOS)
+
+          def save_standard(size: int, filename: str) -> None:
+              image = source.resize((size, size), Image.Resampling.LANCZOS)
+              image.save(icon_dir / filename, format="PNG", optimize=True, compress_level=9)
+
+          def save_maskable(size: int, filename: str) -> None:
+              canvas = Image.new("RGB", (size, size), "#000000")
+              inner_size = round(size * 0.82)
+              image = source.resize((inner_size, inner_size), Image.Resampling.LANCZOS)
+              offset = ((size - inner_size) // 2, (size - inner_size) // 2)
+              canvas.paste(image, offset)
+              canvas.save(icon_dir / filename, format="PNG", optimize=True, compress_level=9)
+
+          save_standard(180, "3b-app-20260912-180.png")
+          save_standard(192, "3b-app-20260912-192.png")
+          save_standard(512, "3b-app-20260912-512.png")
+          save_maskable(192, "3b-app-20260912-maskable-192.png")
+          save_maskable(512, "3b-app-20260912-maskable-512.png")
+
+          outputs = [
+              icon_dir / "3b-app-20260912-180.png",
+              icon_dir / "3b-app-20260912-192.png",
+              icon_dir / "3b-app-20260912-512.png",
+              icon_dir / "3b-app-20260912-maskable-192.png",
+              icon_dir / "3b-app-20260912-maskable-512.png",
+          ]
+          for output in outputs:
+              data = output.read_bytes()
+              if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                  raise RuntimeError(f"{output} is not a real PNG file")
+              print(f"Generated {output}: {len(data)} bytes")
+          PY
+
+      - name: Commit generated icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/icons/3b-app-20260912-180.png \
+                  public/icons/3b-app-20260912-192.png \
+                  public/icons/3b-app-20260912-512.png \
+                  public/icons/3b-app-20260912-maskable-192.png \
+                  public/icons/3b-app-20260912-maskable-512.png
+          if git diff --cached --quiet; then
+            echo "Icons are already up to date."
+            exit 0
+          fi
+          git commit -m "Generate true PNG and maskable 3B icons [skip ci]"
+          git push origin HEAD:${{ github.ref_name }}
