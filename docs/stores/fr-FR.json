@@ -13,7 +13,8 @@
     "packageName": null,
     "contactEmail": null,
     "privacyPolicyUrl": null,
-    "accountDeletionUrl": null
+    "accountDeletionUrl": null,
+    "proposedPackageName": "app.vercel.threebinternational"
   },
   "appStore": {
     "name": "3B International",
@@ -27,7 +28,8 @@
     "bundleId": null,
     "supportUrl": null,
     "privacyPolicyUrl": null,
-    "copyright": null
+    "copyright": null,
+    "proposedBundleId": "app.vercel.threebinternational"
   },
   "publicationDecisions": {
     "price": null,

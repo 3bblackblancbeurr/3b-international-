@@ -4,6 +4,8 @@ Dossier préparé le 12 septembre 2026 pour la version source `4f10e925ea7d04553
 
 **Statut : brouillons de publication. Aucun envoi aux stores n'est effectué par ces fichiers.**
 
+Les projets natifs et leur compilation de test sont désormais préparés : voir [Versions mobiles de test](VERSIONS_MOBILES.md). La validation des stores, les signatures de distribution et la recette sur téléphone restent à effectuer.
+
 La version web reste disponible sur [3B International](https://3b-international.vercel.app/). L'installation depuis Chrome et la présence dans un store sont deux parcours distincts.
 
 ## Textes prêts à reprendre

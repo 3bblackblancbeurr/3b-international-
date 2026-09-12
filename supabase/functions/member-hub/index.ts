@@ -2,7 +2,7 @@ import {validateAccount,accountEmail,themeFor,GAMES,EXPLORATIONS} from './loyalt
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
-const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174','http://127.0.0.1:5186','http://127.0.0.1:5187']);
+const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174','http://127.0.0.1:5186','http://127.0.0.1:5187']);
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const secret=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
 class Failure extends Error {constructor(public status:number,message:string){super(message);}}

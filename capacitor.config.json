@@ -1,0 +1,19 @@
+{
+  "appId": "app.vercel.threebinternational",
+  "appName": "3B International",
+  "webDir": "dist",
+  "backgroundColor": "#030405",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https",
+    "iosScheme": "capacitor"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#030405"
+  },
+  "ios": {
+    "backgroundColor": "#030405",
+    "contentInset": "automatic"
+  }
+}

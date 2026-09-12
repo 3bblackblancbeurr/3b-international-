@@ -1,5 +1,7 @@
 # Préparation technique des versions mobiles
 
+**Actualisation :** les projets Android et iOS ont été ajoutés avec Capacitor. Le choix de développement actuel et les validations réalisées sont décrits dans [Versions mobiles de test](VERSIONS_MOBILES.md). Les constats ci-dessous décrivent la base initiale auditée ; le passage sur les stores reste à terminer.
+
 ## Base examinée
 
 L'audit porte sur le commit `4f10e925ea7d04553eda584b27ae8b97eb800fd5`. Le dépôt contient une application React/Vite et un manifeste web. Aucun projet Android ou iOS, configuration Capacitor, Fastlane ou fichier Digital Asset Links n'a été retrouvé dans l'arborescence examinée. [Installation Android actuelle](../ANDROID_INSTALLATION.md).
