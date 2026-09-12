@@ -1,5 +1,4 @@
-// The Nexus reads the world's guardian seals, never XP, visits or runner keys.
-// Keep these identifiers aligned with src/world/catalog.js.
+// The public app mounts WorldEntry -> ORIGINS. Its save is NOT world/save.js.
 export const NEXUS_DOORS = Object.freeze([
   { code: "FR", region: "france", country: "France", value: "Justice", number: "01" },
   { code: "DZ", region: "algerie", country: "Algérie", value: "Loyauté", number: "02" },
@@ -10,57 +9,45 @@ export const NEXUS_DOORS = Object.freeze([
   { code: "TR", region: "turquie", country: "Turquie", value: "Foi", number: "07" },
   { code: "EE", region: "estonie", country: "Estonie", value: "Sagesse", number: "08" },
 ].map(Object.freeze));
-
 const REGIONS = new Set(NEXUS_DOORS.map(door => door.region));
 
+// Audited producers: origins/state.js emits flags.justice when the real fragment
+// is collected. regional-life.js emits supplies/restored/wins, NOT guardian keys.
+// Add the other readers only alongside actual, tested quest/key producers.
+const KEY_READERS = Object.freeze({ france: save => save?.flags?.justice === true });
 export function nexusProgress(save) {
-  const seals = new Set(Array.isArray(save?.seals) ? save.seals : []);
-  const keys = NEXUS_DOORS.filter(door => seals.has(door.region)).map(door => door.region);
-  return { keys, count: keys.length, total: NEXUS_DOORS.length,
-    originUnlocked: keys.length === NEXUS_DOORS.length };
+  const implemented = Object.keys(KEY_READERS);
+  const keys = implemented.filter(region => KEY_READERS[region](save));
+  return { keys, count: keys.length, total: NEXUS_DOORS.length, implemented,
+    missingKeyHooks: NEXUS_DOORS.filter(door => !implemented.includes(door.region)).map(door => door.region),
+    originUnlocked: implemented.length === NEXUS_DOORS.length && keys.length === NEXUS_DOORS.length };
 }
 
-export function nexusTravelCommands(save, region) {
+/** A passport journey changes location, not quests, keys, equipment or rewards. */
+export function nexusTravelState(save, region, spawn) {
   if (!REGIONS.has(region)) throw new Error("Cette porte ne correspond à aucun pays du Monde 3B.");
-  if (!save || (save.region !== "hub" && !REGIONS.has(save.region))) {
-    throw new Error("La sauvegarde du monde n’est pas encore disponible.");
+  if (!save || (save.zone !== "sanctuary" && !REGIONS.has(save.zone))) {
+    throw new Error("La sauvegarde ORIGINS n’est pas encore disponible.");
   }
-  const encounter = save.adventure?.encounter;
-  if (encounter && !encounter.result) {
-    throw new Error("Une rencontre est en cours. Reprends le monde pour la terminer ou te replier avant de changer de pays.");
-  }
-  if (save.region === region) return [];
-  // The existing engine requires a stop in the hub between countries.
-  return [
-    ...(save.region === "hub" ? [] : [{ type: "visit", region: "hub" }]),
-    { type: "visit", region },
-  ];
+  if (save.avatar?.created !== true) throw new Error("Crée d’abord ton personnage dans le Monde 3B, puis reviens au passeport.");
+  if (save.flags?.awakened !== true) throw new Error("Éveille d’abord le Cercle Brisé au centre du Sanctuaire. Le passeport ne remplace pas cette première étape.");
+  if (save.combat?.active === true) throw new Error("Termine la rencontre avant de changer de pays.");
+  if (save.zone === region) return save;
+  if (!Number.isFinite(spawn?.x) || !Number.isFinite(spawn?.z)) throw new Error("Le point d’arrivée de cette porte est indisponible.");
+  return { ...save, zone: region, position: { x: spawn.x, z: spawn.z } };
 }
 
-/**
- * Use the existing command journal and synchronization, not arbitrary save totals.
- * `isActive` prevents a late load from modifying another session, and a late
- * synchronization from navigating after the player closed the Nexus.
- * Dependencies are injected so error, offline and cancellation paths are testable.
- */
+/** Inject the ORIGINS adapter. No old-engine action journal, no cross-save merge. */
 export async function commitNexusTravel({ uid, region, store, isActive = () => true }) {
   if (!REGIONS.has(region)) throw new Error("Porte inconnue.");
   if (!isActive()) return null;
   const loaded = await store.loadWorld(uid);
   if (!isActive()) return null;
-  const commands = nexusTravelCommands(loaded.data, region);
-  let data = loaded.data;
-  for (const command of commands) data = store.recordWorldAction(uid, data, command);
-  // recordWorldAction intentionally journals first; explicitly detect a failed
-  // local snapshot instead of pretending that a guest's destination was saved.
-  if (!store.writeLocal(uid, data, true)) {
-    throw new Error("Le stockage de cet appareil est indisponible. Le passage n’a pas été confirmé ; réessaie après avoir libéré de l’espace.");
-  }
+  const data = nexusTravelState(loaded.data, region, store.spawns?.[region]);
+  if (data === loaded.data) return { data, message: loaded.message, local: true };
   const result = await store.saveWorld(uid, data);
   if (!isActive()) return null;
-  const confirmed = result.data || data;
-  if (confirmed.region !== region) {
-    throw new Error(result.message || "Le monde n’a pas confirmé cette destination. Réessaie depuis le Nexus.");
-  }
-  return { data: confirmed, pending: Boolean(result.pending), message: result.message || loaded.message || "" };
+  if (!result?.ok) throw new Error("Le stockage de cet appareil est indisponible. Le passage n’a pas été confirmé.");
+  if (result.data?.zone !== region) throw new Error("La sauvegarde ORIGINS n’a pas confirmé cette destination.");
+  return { data: result.data, message: result.message || loaded.message || "", local: true };
 }
