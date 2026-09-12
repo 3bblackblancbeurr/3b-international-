@@ -1,3 +1,4 @@
+import {AvatarCinematic} from './AvatarCinematic.jsx';
 import React,{useState} from 'react';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {LOOKS,TRAVEL_GEAR} from './wardrobe.js';
@@ -5,9 +6,10 @@ import {COUNTRIES} from './catalog.js';
 import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
 import '../arena/arena.css';
 export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState('');
+ const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[revealed,setRevealed]=useState(false);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
- return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();if(act({type:'avatar',avatar:draft})){setMessage('Ton personnage est enregistré.');onDone?.();}}}>
+ if(revealed)return <AvatarCinematic avatar={save.adventure.avatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
+ return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();if(act({type:'avatar',avatar:draft})){setMessage('Ton personnage est enregistré.');setRevealed(true);}}}>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
   <fieldset><legend>Silhouette</legend><div className="world-actions">{['homme','femme'].map(body=><button type="button" key={body} aria-pressed={draft.body===body} onClick={()=>set('body',body)}>{body==='homme'?'Homme':'Femme'}</button>)}</div></fieldset>
   <label>Morphologie<select value={draft.shape} onChange={e=>set('shape',e.target.value)}><option value="equilibre">Équilibrée</option><option value="elance">Élancée</option><option value="solide">Solide</option></select></label>
