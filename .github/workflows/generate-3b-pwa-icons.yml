@@ -1,4 +1,4 @@
-name: Generate 3B PWA icons
+name: Generate verified 3B PWA icons
 
 on:
   push:
@@ -28,20 +28,48 @@ jobs:
       - name: Install Pillow
         run: python -m pip install --disable-pip-version-check Pillow
 
-      - name: Generate true PNG and maskable icons
+      - name: Rebuild source and generate verified PNG icons
         run: |
           python - <<'PY'
-          from pathlib import Path
-          from PIL import Image, ImageFile
+          from __future__ import annotations
 
-          # The previously committed JPEG is missing its final marker but contains
-          # the complete 512 x 512 picture. Pillow can safely recover those pixels.
-          ImageFile.LOAD_TRUNCATED_IMAGES = True
+          import base64
+          import hashlib
+          from pathlib import Path
+
+          from PIL import Image, ImageStat
+
+          source_parts = sorted(Path(".icon-source").glob("part-*.txt"))
+          if len(source_parts) != 4:
+              raise RuntimeError(f"Expected 4 source chunks, found {len(source_parts)}")
+
+          encoded = "".join(part.read_text(encoding="utf-8").strip() for part in source_parts)
+          if len(encoded) != 61772:
+              raise RuntimeError(f"Unexpected Base64 length: {len(encoded)}")
+
+          source_bytes = base64.b64decode(encoded, validate=True)
+          expected_sha256 = "e58df9a4ae373efddfe449835f42c01fb0bc5190b5c817fd7320a7f4a38d08af"
+          actual_sha256 = hashlib.sha256(source_bytes).hexdigest()
+          if actual_sha256 != expected_sha256:
+              raise RuntimeError(f"Source checksum mismatch: {actual_sha256}")
+          if not source_bytes.startswith(b"\xff\xd8\xff") or not source_bytes.endswith(b"\xff\xd9"):
+              raise RuntimeError("The reconstructed source is not a complete JPEG")
+
+          temporary_source = Path(".icon-source/verified-3b-source.jpg")
+          temporary_source.write_bytes(source_bytes)
+
+          with Image.open(temporary_source) as opened:
+              opened.load()
+              if opened.size != (512, 512):
+                  raise RuntimeError(f"Unexpected source dimensions: {opened.size}")
+              source = opened.convert("RGB")
+
+          source_stddev = sum(ImageStat.Stat(source).stddev) / 3
+          if source_stddev < 20:
+              raise RuntimeError(f"Source image has insufficient visual detail: {source_stddev:.2f}")
 
           icon_dir = Path("public/icons")
-          source_path = icon_dir / "3b-exact-512.jpg"
-          source = Image.open(source_path).convert("RGB")
-          source = source.resize((512, 512), Image.Resampling.LANCZOS)
+          icon_dir.mkdir(parents=True, exist_ok=True)
 
           def save_standard(size: int, filename: str) -> None:
               image = source.resize((size, size), Image.Resampling.LANCZOS)
@@ -55,31 +83,38 @@ jobs:
               canvas.paste(image, offset)
               canvas.save(icon_dir / filename, format="PNG", optimize=True, compress_level=9)
 
-          save_standard(180, "3b-app-20260912-180.png")
-          save_standard(192, "3b-app-20260912-192.png")
-          save_standard(512, "3b-app-20260912-512.png")
-          save_maskable(192, "3b-app-20260912-maskable-192.png")
-          save_maskable(512, "3b-app-20260912-maskable-512.png")
-
-          outputs = [
-              icon_dir / "3b-app-20260912-180.png",
-              icon_dir / "3b-app-20260912-192.png",
-              icon_dir / "3b-app-20260912-512.png",
-              icon_dir / "3b-app-20260912-maskable-192.png",
-              icon_dir / "3b-app-20260912-maskable-512.png",
+          specifications = [
+              (180, "3b-app-20260912-180.png", False),
+              (192, "3b-app-20260912-192.png", False),
+              (512, "3b-app-20260912-512.png", False),
+              (192, "3b-app-20260912-maskable-192.png", True),
+              (512, "3b-app-20260912-maskable-512.png", True),
           ]
-          for output in outputs:
+
+          for size, filename, maskable in specifications:
+              if maskable:
+                  save_maskable(size, filename)
+              else:
+                  save_standard(size, filename)
+
+          for size, filename, _ in specifications:
+              output = icon_dir / filename
               data = output.read_bytes()
               if not data.startswith(b"\x89PNG\r\n\x1a\n"):
-                  raise RuntimeError(f"{output} is not a real PNG file")
+                  raise RuntimeError(f"{output} is not a real PNG")
+              if len(data) < 10_000:
+                  raise RuntimeError(f"{output} is unexpectedly small: {len(data)} bytes")
               with Image.open(output) as verified:
-                  expected = int(output.stem.split("-")[-1]) if "maskable" not in output.stem else int(output.stem.split("-")[-1])
-                  if verified.size != (expected, expected):
+                  verified.load()
+                  if verified.size != (size, size):
                       raise RuntimeError(f"Unexpected dimensions for {output}: {verified.size}")
-              print(f"Generated {output}: {len(data)} bytes")
+                  detail = sum(ImageStat.Stat(verified.convert("RGB")).stddev) / 3
+                  if detail < 15:
+                      raise RuntimeError(f"{output} lacks visual detail: {detail:.2f}")
+              print(f"Verified {output}: {len(data)} bytes, {size}x{size}")
           PY
 
-      - name: Commit generated icons
+      - name: Commit verified icon files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -89,8 +124,8 @@ jobs:
                   public/icons/3b-app-20260912-maskable-192.png \
                   public/icons/3b-app-20260912-maskable-512.png
           if git diff --cached --quiet; then
-            echo "Icons are already up to date."
+            echo "Verified icons are already up to date."
             exit 0
           fi
-          git commit -m "Generate true PNG and maskable 3B icons [skip ci]"
+          git commit -m "Add verified PNG and maskable 3B icons [skip ci]"
           git push origin HEAD:${{ github.ref_name }}
