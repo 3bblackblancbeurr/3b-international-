@@ -58,6 +58,7 @@ export default function PassportNexus({open,onClose,goTo,reducedMotion=false}) {
     return()=>{cancelled=true;scene.current?.destroy();scene.current=null;};
   },[open]);
   useEffect(()=>{scene.current?.update({phase,selected,overview,paused,reduced,quality});},[phase,selected,overview,paused,reduced,quality,renderState]);
+  useLayoutEffect(()=>{if(open&&dialog.current&&!dialog.current.contains(document.activeElement))dialog.current.querySelector('button:not(:disabled)')?.focus({preventScroll:true});},[open,phase]);
   function select(code){setSelected(code);setOverview(false);setPhase('nexus');}
   function close(){session.current++;inFlight.current=false;current.current.onClose?.();}
   async function travel(destination){
