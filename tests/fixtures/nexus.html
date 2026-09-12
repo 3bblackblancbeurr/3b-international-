@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/><title>Test Nexus 3B</title><link rel="icon" href="data:,"/><style>body{margin:0;background:#050a12;color:white;font-family:system-ui}#root>button{margin:30px;padding:14px}</style></head><body><div id="root"></div><script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import PassportNexus from '/src/components/PassportNexus.jsx';
+function Fixture(){const [open,setOpen]=React.useState(false);return React.createElement(React.Fragment,null,React.createElement('button',{onClick:()=>setOpen(true),id:'open-nexus'},'Ouvrir mon passeport'),React.createElement(PassportNexus,{open,onClose:()=>setOpen(false),goTo:value=>{window.__nexusDestination=value;},reducedMotion:new URLSearchParams(location.search).get('calm')==='1'}));}
+createRoot(document.getElementById('root')).render(React.createElement(Fixture));
+</script></body></html>
