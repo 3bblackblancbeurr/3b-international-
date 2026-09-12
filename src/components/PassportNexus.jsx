@@ -82,14 +82,21 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
   useEffect(() => {
     if (!open) return undefined;
     clearTimers(); setSelected(null); setPaused(false); setPhase(reducedMotion ? 'nexus' : 'scan');
-    if (!reducedMotion) {
-      timers.current = [
-        window.setTimeout(() => setPhase('tunnel'), 1050),
-        window.setTimeout(() => { setPhase('nexus'); if (document.activeElement?.dataset.nexusSkip) closeButton.current?.focus({ preventScroll: true }); }, 4700),
-      ];
-    }
     return clearTimers;
   }, [open, reducedMotion, replay]);
+
+  // Schedule only the next phase after React has committed the current one.
+  // A slow first GPU compilation must never batch away the whole tunnel.
+  useEffect(() => {
+    if (!open || reducedMotion || phase === 'nexus') return undefined;
+    clearTimers();
+    const timer = window.setTimeout(() => {
+      setPhase(phase === 'scan' ? 'tunnel' : 'nexus');
+      if (phase === 'tunnel' && document.activeElement?.dataset.nexusSkip) closeButton.current?.focus({ preventScroll: true });
+    }, phase === 'scan' ? 1050 : 3650);
+    timers.current = [timer];
+    return () => window.clearTimeout(timer);
+  }, [open, reducedMotion, phase, replay]);
 
   function skip() { clearTimers(); setPhase('nexus'); closeButton.current?.focus({ preventScroll: true }); }
   function selectDoor(code) { if (code === 'ORIGIN' || resolveNexusWorld(code)) setSelected(code); }
@@ -108,7 +115,8 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
     buttons[next]?.focus({ preventScroll: true }); buttons[next]?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
   }
   if (!open || typeof document === 'undefined') return null;
-  const statusLabel = rendererStatus === 'fallback' ? 'Vue légère · 3D indisponible' : rendererStatus === 'loading' ? 'Préparation du décor' : rendererStatus === 'adaptive' || quality === 'light' ? 'Rendu 3D · économie' : 'Rendu 3D en direct';
+  const economy = quality === 'light' || (rendererStatus === 'adaptive' && quality === 'auto');
+  const statusLabel = rendererStatus === 'fallback' ? 'Vue légère · 3D indisponible' : rendererStatus === 'loading' ? 'Préparation du décor' : economy ? 'Rendu 3D · économie' : 'Rendu 3D en direct';
 
   return createPortal(<dialog ref={dialog} className="nexus-experience" data-phase={phase} data-calm={reducedMotion || paused} data-selected={selected || 'overview'} aria-labelledby="nexus-title" onCancel={event => { event.preventDefault(); closeRef.current(); }}>
     <NexusStage phase={phase} selected={selected} paused={paused} reducedMotion={reducedMotion} quality={quality} onSelect={selectDoor} onStatus={setRendererStatus} />
@@ -118,7 +126,6 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
         <span className="nexus-chapter">LE CERCLE BRISÉ <i /> NEXUS</span>
         <button ref={closeButton} type="button" className="nexus-icon-button" onClick={() => closeRef.current()} aria-label="Fermer le Nexus et revenir au passeport"><X size={21} /></button>
       </header>
-
       {phase !== 'nexus' ? <section className="nexus-arrival" aria-live="polite">
         <div className="nexus-arrival-mark" aria-hidden="true"><i /><i /><span>3B</span></div>
         <p className="nexus-kicker">{phase === 'scan' ? 'PASSEPORT VIVANT' : 'TRAVERSÉE DU CERCLE'}</p>
@@ -139,7 +146,6 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
           </section>
           <div className="nexus-scene-caption" aria-hidden="true"><i /><span>{isOrigin ? 'LE SEUIL DE L’ORIGINE' : active ? active.architecture : 'LE CERCLE BRISÉ'}<small>{isOrigin ? 'Huit clés. Une seule origine.' : active ? `${active.country} · ${active.value}` : 'Ce n’est pas une marque, c’est un héritage.'}</small></span></div>
         </main>
-
         <footer className="nexus-bottom">
           <div className="nexus-destination-row"><span>LES HUIT PORTES <small>Choisis ton horizon</small></span><button type="button" className="nexus-origin-link" aria-pressed={isOrigin} onClick={() => selectDoor('ORIGIN')}><LockKeyhole size={13} /> ORIGINE <span>09</span></button></div>
           <nav className="nexus-door-rail" aria-label="Les huit portes du Nexus">
