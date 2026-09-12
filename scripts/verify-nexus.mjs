@@ -15,6 +15,7 @@ async function open(page){currentPage=page;await page.goto('http://127.0.0.1:417
 async function skip(page){const skip=page.getByRole('button',{name:'Passer l’introduction'});if(await skip.count())await skip.click();await page.locator('.nexus-experience[data-phase="nexus"]').waitFor();}
 async function webgl(page){await page.locator('.nexus-stage[data-renderer="3d"]').waitFor({timeout:30000});}
 async function pick(page,code){const codes=['FR','DZ','ES','MA','IT','TN','TR','EE'];await page.locator('.nexus-door-choice').nth(codes.indexOf(code)).click();await page.locator(`.nexus-experience[data-selected="${code}"]`).waitFor();}
+async function navigateWorld(page){await page.locator('.nexus-enter-world').click();await page.getByText('world3b',{exact:true}).waitFor({timeout:20000});}
 function listen(page,allowWebGLFailure=false){page.on('pageerror',error=>report.errors.push(String(error)));page.on('console',msg=>{if(msg.type()==='error'&&!(allowWebGLFailure&&/WebGL|context/i.test(msg.text())))report.errors.push(msg.text());});}
 try{
   await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -33,9 +34,11 @@ try{
   await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});await screenshot(page,'desktop-tunnel');await skip(page);report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
   await page.keyboard.press('Escape');assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
-  report.checks.push('ORIGINE stays locked; native dialog escapes transformed ancestor; Escape restores focus and scroll');
-  await page.locator('#open').click();await skip(page);await pick(page,'FR');await page.locator('.nexus-enter-world').click();
-  assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');report.checks.push('Country handoff and leaving the Nexus work');
+  report.checks.push('ORIGINE stays locked before real progression; modal, Escape, focus and scroll restoration work');
+  await page.locator('#open').click();await skip(page);await pick(page,'FR');await navigateWorld(page);
+  assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');
+  const savedRegion=await page.evaluate(async()=>{const {readLocal}=await import('/src/world/save.js');return readLocal(null)?.data?.region;});
+  assert.equal(savedRegion,'france');report.checks.push('France travel records the canonical guest world save before leaving the Nexus');
   for(let i=0;i<3;i++){await page.locator('#open').click();await skip(page);await webgl(page);await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await page.locator('.nexus-canvas canvas').count(),0);}
   report.checks.push('Three reopen/close cycles dispose the scene canvas');await desktop.close();
 
@@ -52,13 +55,10 @@ try{
 
   const fallback=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
   await fallback.addInitScript(()=>{const getContext=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:getContext.call(this,type,...args);};});
-  const simple=await fallback.newPage();listen(simple,true);await open(simple);await simple.locator('.nexus-stage[data-renderer="fallback"]').waitFor({timeout:20000});await pick(simple,'DZ');await screenshot(simple,'mobile-sans-webgl');await simple.locator('.nexus-enter-world').click();assert.equal(await simple.locator('#navigation-result').textContent(),'world3b');report.checks.push('Without WebGL, the illustrated fallback and navigation remain functional');await fallback.close();
+  const simple=await fallback.newPage();listen(simple,true);await open(simple);await simple.locator('.nexus-stage[data-renderer="fallback"]').waitFor({timeout:20000});await pick(simple,'DZ');await screenshot(simple,'mobile-sans-webgl');await navigateWorld(simple);assert.equal(await simple.locator('#navigation-result').textContent(),'world3b');report.checks.push('Without WebGL, the illustrated fallback and canonical travel remain functional');await fallback.close();
 
-  // Exercise the real passport page with all application providers and styles,
-  // not only the deliberately clipped fixture. No account is created.
   const appContext=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
-  const app=await appContext.newPage();currentPage=app;listen(app);
-  await app.goto('http://127.0.0.1:4177/#passeport');
+  const app=await appContext.newPage();currentPage=app;listen(app);await app.goto('http://127.0.0.1:4177/#passeport');
   const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
   await trigger.waitFor({timeout:30000});await trigger.click();await webgl(app);
   assert.equal(await app.locator('.nexus-canvas canvas').getAttribute('data-nexus-scene'),'heritage-v2');
