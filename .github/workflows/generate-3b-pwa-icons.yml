@@ -46,28 +46,7 @@ jobs:
           if len(source_parts) != 6:
               raise RuntimeError(f"Expected 6 source chunks, found {len(source_parts)}")
 
-          chunks = [part.read_text(encoding="utf-8").strip() for part in source_parts]
-          encoded = "".join(chunks)
-
-          # One upload added one extra Base64 quartet to the first chunk. Recover the
-          # exact source deterministically and accept it only when its SHA-256 matches.
-          if len(encoded) == expected_length + 4:
-              first, remainder = chunks[0], "".join(chunks[1:])
-              recovered = None
-              for position in range(len(first) - 3):
-                  candidate = first[:position] + first[position + 4:] + remainder
-                  try:
-                      candidate_bytes = base64.b64decode(candidate, validate=True)
-                  except ValueError:
-                      continue
-                  if hashlib.sha256(candidate_bytes).hexdigest() == expected_sha256:
-                      recovered = candidate
-                      print(f"Recovered exact source by removing one quartet at position {position}.")
-                      break
-              if recovered is None:
-                  raise RuntimeError("Could not recover the checksum-verified source image")
-              encoded = recovered
-
+          encoded = "".join(part.read_text(encoding="utf-8").strip() for part in source_parts)
           if len(encoded) != expected_length:
               raise RuntimeError(f"Unexpected Base64 length: {len(encoded)}")
 
