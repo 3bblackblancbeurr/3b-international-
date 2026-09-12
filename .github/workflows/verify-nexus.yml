@@ -1,0 +1,51 @@
+name: Verify Passport Nexus
+on:
+  pull_request:
+    paths:
+      - 'src/components/*Nexus*'
+      - 'src/components/nexus-*'
+      - 'src/components/passport-nexus-premium.css'
+      - 'src/world/origins/state.js'
+      - 'src/world/origins/nexus-arrival.js'
+      - 'tests/nexus*.test.js'
+      - 'tests/fixtures/nexus.html'
+      - 'scripts/verify-nexus-browser.mjs'
+      - '.github/workflows/verify-nexus.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nexus-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      # The existing world workflow independently runs the full regression suite.
+      - name: Nexus and Origins integration contracts
+        run: node --test tests/nexus.test.js tests/nexus-origins.test.js
+      - name: Production build
+        run: npm run build
+      - name: Build isolated visual evidence
+        run: |
+          node --input-type=module -e "import {build} from 'vite'; await build({configFile:false,publicDir:false,esbuild:{jsx:'automatic'},build:{outDir:'artifacts/nexus/runtime',minify:false,rollupOptions:{input:'tests/fixtures/nexus.html'}}});"
+      - name: Install pinned browser test runner
+        run: npm install --no-save --package-lock=false playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Real browser checks and screenshots
+        run: node scripts/verify-nexus-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nexus-browser-evidence
+          path: artifacts/nexus/
+          if-no-files-found: ignore
+          retention-days: 14
