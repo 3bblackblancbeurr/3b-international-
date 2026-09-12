@@ -39,16 +39,39 @@ jobs:
 
           from PIL import Image, ImageStat
 
-          source_parts = sorted(Path(".icon-source").glob("part-*.txt"))
-          if len(source_parts) != 4:
-              raise RuntimeError(f"Expected 4 source chunks, found {len(source_parts)}")
+          expected_length = 61772
+          expected_sha256 = "e58df9a4ae373efddfe449835f42c01fb0bc5190b5c817fd7320a7f4a38d08af"
 
-          encoded = "".join(part.read_text(encoding="utf-8").strip() for part in source_parts)
-          if len(encoded) != 61772:
+          source_parts = sorted(Path(".icon-source").glob("source-*.txt"))
+          if len(source_parts) != 6:
+              raise RuntimeError(f"Expected 6 source chunks, found {len(source_parts)}")
+
+          chunks = [part.read_text(encoding="utf-8").strip() for part in source_parts]
+          encoded = "".join(chunks)
+
+          # One upload added one extra Base64 quartet to the first chunk. Recover the
+          # exact source deterministically and accept it only when its SHA-256 matches.
+          if len(encoded) == expected_length + 4:
+              first, remainder = chunks[0], "".join(chunks[1:])
+              recovered = None
+              for position in range(len(first) - 3):
+                  candidate = first[:position] + first[position + 4:] + remainder
+                  try:
+                      candidate_bytes = base64.b64decode(candidate, validate=True)
+                  except ValueError:
+                      continue
+                  if hashlib.sha256(candidate_bytes).hexdigest() == expected_sha256:
+                      recovered = candidate
+                      print(f"Recovered exact source by removing one quartet at position {position}.")
+                      break
+              if recovered is None:
+                  raise RuntimeError("Could not recover the checksum-verified source image")
+              encoded = recovered
+
+          if len(encoded) != expected_length:
               raise RuntimeError(f"Unexpected Base64 length: {len(encoded)}")
 
           source_bytes = base64.b64decode(encoded, validate=True)
-          expected_sha256 = "e58df9a4ae373efddfe449835f42c01fb0bc5190b5c817fd7320a7f4a38d08af"
           actual_sha256 = hashlib.sha256(source_bytes).hexdigest()
           if actual_sha256 != expected_sha256:
               raise RuntimeError(f"Source checksum mismatch: {actual_sha256}")
