@@ -1,0 +1,48 @@
+/* Dialog top-layer reset; original Matrix artwork remains unchanged. */
+dialog.passport-portal {
+  width: 100%; max-width: none; height: 100vh; height: 100dvh;
+  min-height: 0; max-height: none; margin: 0; padding: 0; border: 0;
+  box-sizing: border-box; text-align: start;
+}
+dialog.passport-portal::backdrop { background: #000711; }
+.passport-portal *, .passport-portal *::before, .passport-portal *::after { box-sizing: border-box; }
+.passport-portal :focus-visible { outline: 3px solid #fff3a8; outline-offset: 4px; }
+.passport-portal .passport-portal-close:focus-visible { outline: 3px solid #fff3a8; outline-offset: 4px; }
+.passport-portal-skip {
+  position: fixed; z-index: 10005; left: max(16px, env(safe-area-inset-left));
+  top: max(16px, env(safe-area-inset-top)); min-height: 44px;
+  max-width: calc(100% - 90px); padding: 10px 16px; border-radius: 24px;
+  border: 1px solid #65d8ef; background: #001223; color: #eaffff;
+  font: inherit; font-size: 14px; cursor: pointer;
+}
+.passport-nexus-header { padding-top: max(26px, env(safe-area-inset-top)); }
+.passport-nexus-progress, .passport-nexus-message {
+  width: min(100%, 920px); margin: 12px auto; padding: 12px 16px;
+  border: 1px solid rgba(102,230,255,.3); border-radius: 12px;
+  color: #c7f7ff; background: rgba(0,18,35,.8); line-height: 1.6;
+  text-align: center; overflow-wrap: anywhere;
+}
+.passport-nexus-message[role="alert"] { border-color: #ffe08a; color: #fff3c7; }
+.passport-portal button:disabled { cursor: not-allowed; }
+.passport-nexus-door[data-sealed="true"] { border-color: #ffe08a; }
+.passport-nexus-door .passport-door-progress { display: block; font-size: 11px; margin-top: 7px; }
+.passport-origin-door:not(:disabled) { cursor: pointer; opacity: 1; }
+.passport-portal[data-reduced-motion="true"],
+.passport-portal[data-reduced-motion="true"] *,
+.passport-portal[data-reduced-motion="true"] *::before,
+.passport-portal[data-reduced-motion="true"] *::after,
+.passport-portal[data-reduced-motion="true"]::before {
+  animation: none !important; transition: none !important; scroll-behavior: auto !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .passport-portal, .passport-portal *, .passport-portal *::before,
+  .passport-portal *::after, .passport-portal::before {
+    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 400px) {
+  .passport-nexus-header { padding-inline: 32px; }
+  .passport-door-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .passport-nexus-door { min-width: 0; overflow-wrap: anywhere; }
+  .passport-origin-door { min-width: 0; width: 100%; }
+}

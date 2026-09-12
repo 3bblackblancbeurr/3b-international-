@@ -114,6 +114,6 @@ export default function PassportVisual({ options, goTo }) {
       <Sparkles size={15} aria-hidden="true" />
       <span>Touche le cercle lumineux <strong>3B</strong> sur le passeport pour ouvrir le passage.</span>
     </div>
-    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
+    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!animated} />
   </div>;
 }
