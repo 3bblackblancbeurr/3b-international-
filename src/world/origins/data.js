@@ -3,13 +3,13 @@ import {COUNTRIES,isCountry} from './countries.js';
 export const SCALE=Object.freeze({human:1.8,door:2.65,doorWidth:1.8,storey:3.1,step:.16,radius:.32});
 export const WORLDS=[
  {id:'france',name:'France',city:'Paris',value:'Justice',canon:true,available:true},
- {id:'algerie',name:'Algérie',city:'Alger',value:'Courage'},
- {id:'maroc',name:'Maroc',city:'Rabat',value:'Sagesse'},
- {id:'tunisie',name:'Tunisie',city:'Tunis',value:'Patience'},
- {id:'espagne',name:'Espagne',city:'Madrid',value:'Unité'},
- {id:'italie',name:'Italie',city:'Rome',value:'Loyauté'},
- {id:'turquie',name:'Turquie',city:'Istanbul / Ankara',value:'Vérité'},
- {id:'estonie',name:'Estonie',city:'Tallinn',value:'Mémoire'},
+ {id:'algerie',name:'Algérie',city:'Alger',value:'Loyauté'},
+ {id:'maroc',name:'Maroc',city:'Rabat',value:'Noblesse'},
+ {id:'tunisie',name:'Tunisie',city:'Tunis',value:'Courage'},
+ {id:'espagne',name:'Espagne',city:'Madrid',value:'Passion'},
+ {id:'italie',name:'Italie',city:'Rome',value:'Espoir'},
+ {id:'turquie',name:'Turquie',city:'Istanbul / Ankara',value:'Foi'},
+ {id:'estonie',name:'Estonie',city:'Tallinn',value:'Sagesse'},
 ].map((w,i)=>({...w,available:true,associationStatus:w.canon?'validated':'proposal',x:Math.sin(i*Math.PI/4)*29,z:-Math.cos(i*Math.PI/4)*29,angle:-i*Math.PI/4}));
 export const GUARDIAN={id:'justice-guardian',name:'Gardien de Justice',identityStatus:'pending-owner-reference',appearanceStatus:'provisional',note:'Céliane : aucun rôle attribué sans référence validée.'};
 export const SPAWNS={sanctuary:{x:0,z:20},france:{x:0,z:25},...Object.fromEntries(Object.keys(COUNTRIES).map(id=>[id,{x:0,z:25}]))};
