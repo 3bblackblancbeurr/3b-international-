@@ -1,0 +1,33 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { NEXUS_DOORS, nexusProgress, planNexusActions, enterNexusWorld, startNexusSequence } from '../src/passport/nexus-flow.js';
+import { NEXUS_ART, GATE_PATHS } from '../src/passport/nexus-art-data.js';
+import { mountNexusTunnel } from '../src/passport/nexus-tunnel.js';
+const empty = () => ({region:'hub',seals:[],adventure:{chapters:{},finished:false}});
+const complete = () => ({...empty(),seals:NEXUS_DOORS.map(d=>d.region),adventure:{finished:false,chapters:Object.fromEntries(NEXUS_DOORS.map(d=>[d.region,{restored:3}]))}});
+test('eight distinct countries, guardians and architectural gate paths',()=>{assert.equal(NEXUS_DOORS.length,8);assert.equal(new Set(NEXUS_DOORS.map(d=>d.code)).size,8);assert.equal(new Set(Object.values(NEXUS_ART).map(d=>d.guardian)).size,8);assert.equal(new Set(Object.values(GATE_PATHS)).size,9);for(const d of NEXUS_DOORS){assert.ok(NEXUS_ART[d.code]);assert.match(GATE_PATHS[d.code],/^M.+Z$/);}});
+test('null save never invents progress',()=>{const p=nexusProgress(null);assert.equal(p.sealCount,0);assert.equal(p.restoredCount,0);assert.equal(p.originReady,false);});
+test('duplicate or unknown seals never unlock ORIGINE',()=>{const p=nexusProgress({...empty(),seals:['france','france','unknown','FR']});assert.equal(p.sealCount,1);assert.equal(p.originReady,false);});
+test('eight seals without eight reconstructions remain locked',()=>{const save=complete();delete save.adventure.chapters.estonie;assert.equal(nexusProgress(save).originReady,false);assert.throws(()=>planNexusActions(save,'ORIGINE'),/huit pays/);});
+test('only stage 3 counts as reconstructed',()=>{const save=complete();save.adventure.chapters.france.restored=2;assert.equal(nexusProgress(save).restoredCount,7);assert.equal(nexusProgress(save).originReady,false);});
+test('complete world unlocks ORIGINE',()=>assert.equal(nexusProgress(complete()).originReady,true));
+test('completed finale cannot be granted again',()=>{const save=complete();save.adventure.finished=true;assert.equal(nexusProgress(save).originReady,false);assert.throws(()=>planNexusActions(save,'ORIGINE'));});
+for(const d of NEXUS_DOORS)test(`gate ${d.code} targets canonical ${d.region}`,()=>assert.deepEqual(planNexusActions(empty(),d.code),[{type:'visit',region:d.region}]));
+test('cross-country route goes through hub',()=>assert.deepEqual(planNexusActions({...empty(),region:'france'},'DZ'),[{type:'visit',region:'hub'},{type:'visit',region:'algerie'}]));
+test('same country makes no duplicate action',()=>assert.deepEqual(planNexusActions({...empty(),region:'italie'},'IT'),[]));
+test('unknown destination rejected',()=>assert.throws(()=>planNexusActions(empty(),'ZZ'),/inconnue/));
+test('resume never interrupts an encounter',()=>{const save=empty();save.adventure.encounter={result:'active'};assert.deepEqual(planNexusActions(save),[]);assert.throws(()=>planNexusActions(save,'FR'),/rencontre/);});
+test('a resolved encounter allows passage',()=>{for(const result of ['victory','recruited','missed','defeat']){const save=empty();save.adventure.encounter={result};assert.equal(planNexusActions(save,'FR').length,1);}});
+test('ORIGINE resumes an unresolved final without a new reward action',()=>{const save=complete();save.adventure.encounter={final:true};assert.deepEqual(planNexusActions(save,'ORIGINE'),[]);});
+test('a new finale uses existing engine final action',()=>assert.deepEqual(planNexusActions(complete(),'ORIGINE'),[{type:'final'}]));
+function fakeApi(save,{storage=true,invalid=false}={}){let local=save;const writes=[];return {writes,loadWorld:async()=>({data:save,message:'test'}),applyWorldAction:(s,a)=>{if(invalid)throw Error('invalid action');return {...s,region:a.region||s.region};},recordWorldAction:(uid,s,a)=>{writes.push({uid,a});local={...s,region:a.region||s.region};return local;},readLocal:()=>storage?{data:local}:null};}
+test('route validates before any write',async()=>{const api=fakeApi({...empty(),region:'france'},{invalid:true});await assert.rejects(enterNexusWorld(api,'u','DZ'));assert.equal(api.writes.length,0);});
+test('stale account ticket never records',async()=>{const api=fakeApi(empty());const result=await enterNexusWorld(api,'u','FR',()=>false);assert.equal(result,null);assert.equal(api.writes.length,0);});
+test('cancelled after load never records',async()=>{const api=fakeApi(empty());let calls=0;await enterNexusWorld(api,'u','FR',()=>++calls<2);assert.equal(api.writes.length,0);});
+test('storage failure is surfaced instead of fake navigation success',async()=>{const api=fakeApi(empty(),{storage:false});await assert.rejects(enterNexusWorld(api,null,'FR'),/conservé/);});
+test('canonical journal receives correct owner and command',async()=>{const api=fakeApi(empty());const result=await enterNexusWorld(api,'real-user','EE');assert.equal(result.data.region,'estonie');assert.deepEqual(api.writes,[{uid:'real-user',a:{type:'visit',region:'estonie'}}]);});
+function clock(){let id=0;const jobs=new Map();return {jobs,setTimeout(fn,delay){const n=++id;jobs.set(n,{fn,delay});return n;},clearTimeout(n){jobs.delete(n);}};}
+test('reduced motion bypasses both scan and tunnel',()=>{const c=clock(),phases=[];const seq=startNexusSequence(p=>phases.push(p),true,c);assert.deepEqual(phases,['nexus']);assert.equal(c.jobs.size,0);seq.dispose();});
+test('skip clears all pending timers and stays at Nexus',()=>{const c=clock(),phases=[];const seq=startNexusSequence(p=>phases.push(p),false,c);assert.equal(c.jobs.size,2);seq.skip();assert.equal(c.jobs.size,0);assert.deepEqual(phases,['scan','nexus']);seq.dispose();seq.skip();assert.deepEqual(phases,['scan','nexus']);});
+test('disposed sequence ignores already queued callbacks',()=>{const c=clock(),phases=[];const seq=startNexusSequence(p=>phases.push(p),false,c);const pending=[...c.jobs.values()];seq.dispose();for(const job of pending)job.fn();assert.deepEqual(phases,['scan']);});
+test('canvas unavailable remains safe and closable',()=>{assert.doesNotThrow(()=>mountNexusTunnel(null)());assert.doesNotThrow(()=>mountNexusTunnel({getContext:()=>null})());assert.doesNotThrow(()=>mountNexusTunnel({getContext:()=>{throw Error('unsupported');}})());});
