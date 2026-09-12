@@ -97,7 +97,7 @@ export default function PassportVisual({ options, goTo }) {
 
       <div className="passport-security-edge" aria-hidden="true" />
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> PASSEPORT VIVANT</div>
-      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir le Cercle et entrer dans le Nexus 3B">
+      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-haspopup="dialog" aria-expanded={portalOpen} aria-label="Ouvrir le Cercle et entrer dans le Nexus 3B">
         <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
         <b>3B</b>
         <small>ENTRER</small>
@@ -114,6 +114,6 @@ export default function PassportVisual({ options, goTo }) {
       <Sparkles size={15} aria-hidden="true" />
       <span>Touche le cercle lumineux <strong>3B</strong> sur le passeport pour ouvrir le passage.</span>
     </div>
-    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
+    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!animated} />
   </div>;
 }
