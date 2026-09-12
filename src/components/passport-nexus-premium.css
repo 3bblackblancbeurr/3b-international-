@@ -71,7 +71,9 @@
 .nx-fallback-door { position:relative; flex:0 0 9%; max-width:130px; height:33%; max-height:320px; border:2px solid #817251; border-radius:48% 48% 0 0; background:linear-gradient(90deg,#0a1423, #153751,#0a1423); box-shadow:inset 0 0 20px #030813,0 0 22px #60b7ff0d; transform:translateY(-10%); }
 .nx-fallback-door::before { content:''; position:absolute; inset:7px; border:1px solid var(--gate-color); border-radius:inherit; opacity:.7; }
 .nx-fallback-door span { position:absolute; left:0; right:0; bottom:12%; text-align:center; color:var(--gate-color); font:400 22px/1 Georgia,serif; }
-.nx-reduced *, .nx-shell[data-paused=true] * { animation-play-state:paused!important; }
+/* Pausing the 3D world must not freeze a newly mounted panel at opacity zero. */
+.nx-shell[data-paused=true] .nx-detail { animation:none; }
+.nx-reduced *, .nx-reduced *::before, .nx-reduced *::after { animation:none!important; transition:none!important; }
 .passport-portal-trigger { box-shadow:0 0 16px #70caff55,inset 0 0 22px #369edf35; border-color:#c7b990; background:radial-gradient(circle,#174967,#061525 66%); }
 .passport-portal-trigger > small { font-size:clamp(6px,.8cqw,9px); }
 .passport-entry-hint { border-color:#42516a; background:#07101f; color:#c0cedb; }
@@ -118,5 +120,17 @@
  .nx-fallback-door span { font-size:12px; }
 }
 @media(max-height:700px) and (max-width:759px) { .nx-heading p,.nx-description { display:none; } .nx-heading h2 { font-size:35px; } .nx-detail { bottom:211px; padding:11px 14px; } .nx-detail h3 { font-size:26px; } .nx-guardian { margin:7px 0!important; } .nx-countries .nx-country { min-height:47px; } }
-@media(max-height:500px) and (min-width:600px) { .nx-heading { top:75px; } .nx-heading h2 { font-size:38px; } .nx-heading p,.nx-description,.nx-architecture,.nx-motto { display:none; } .nx-detail { top:68px; bottom:auto; left:20px; width:260px; padding:12px; } .nx-detail h3 { font-size:28px; } .nx-guardian { margin:9px 0!important; padding-top:8px; } .nx-countries { grid-template-columns:repeat(8,minmax(0,1fr)); } .nx-country { min-height:47px; } .nx-footer-bottom { margin-top:6px; } .nx-footer { padding-top:10px; } .nx-view-label { display:none; } }
+@media(max-height:500px) and (min-width:600px) {
+ .nx-heading { top:75px; } .nx-heading h2 { font-size:38px; }
+ .nx-heading p,.nx-description,.nx-architecture,.nx-motto { display:none; }
+ .nx-detail { top:68px; bottom:auto; left:20px; width:260px; padding:12px; }
+ .nx-detail .nx-detail-top { margin-bottom:6px; }
+ .nx-detail h3 { font-size:28px; }
+ .nx-value { margin:6px 0 10px!important; font-size:10px; }
+ .nx-guardian { margin:6px 0!important; padding-top:6px; font-size:10px; }
+ .nx-enter { min-height:40px; padding:9px 12px; }
+ .nx-countries { grid-template-columns:repeat(8,minmax(0,1fr)); }
+ .nx-country { min-height:47px; } .nx-footer-bottom { margin-top:6px; } .nx-footer { padding-top:10px; } .nx-view-label { display:none; }
+}
+@media(max-height:370px) and (min-width:600px) { .nx-detail { top:61px; padding:10px; } .nx-detail h3 { font-size:23px; margin-bottom:8px; } .nx-detail .nx-value,.nx-detail .nx-guardian { display:none; } }
 @media(prefers-reduced-motion:reduce) { .nx-shell *, .nx-shell *::before, .nx-shell *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }

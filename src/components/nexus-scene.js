@@ -67,11 +67,13 @@ function arch(w,h,pointed=false) {
 function batchStatic(group) {
   group.updateMatrixWorld(true);const byMaterial=new Map();
   [...group.children].forEach(child=>{
-    // InstancedMesh already batches all its transforms in a single draw call.
-    // Treating it as one ordinary mesh would collapse the whole colonnade.
     if(!child.isMesh||child.isInstancedMesh||child.isSkinnedMesh||Array.isArray(child.material))return;
     const geo=child.geometry.clone().applyMatrix4(child.matrix);
-    const key=child.material.uuid;if(!byMaterial.has(key))byMaterial.set(key,{material:child.material,parts:[]});
+    // Extrusions are non-indexed; primitives are often indexed. Batch only
+    // compatible layouts instead of attempting an invalid mixed merge.
+    const layout=Object.entries(geo.attributes).sort(([a],[b])=>a.localeCompare(b)).map(([name,a])=>`${name}:${a.itemSize}:${a.normalized}:${a.array.constructor.name}`).join('|');
+    const key=`${child.material.uuid}:${geo.index?'indexed':'plain'}:${layout}`;
+    if(!byMaterial.has(key))byMaterial.set(key,{material:child.material,parts:[]});
     byMaterial.get(key).parts.push(geo);child.geometry.dispose();group.remove(child);
   });
   for(const {material,parts} of byMaterial.values()){
@@ -194,16 +196,17 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
     for(let j=0;j<=16;j++){const x=j*32,y=(i*37+Math.sin(j*.43+i*1.7)*40+j*9)%560; if(j===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();
   }}
   const floorTexture=new THREE.CanvasTexture(floorCanvas);floorTexture.wrapS=floorTexture.wrapT=THREE.RepeatWrapping;floorTexture.repeat.set(6,6);floorTexture.colorSpace=THREE.SRGBColorSpace;resources.push(floorTexture);
-  const floorMat=new THREE.MeshStandardMaterial({map:floorTexture,color:0x546a7c,metalness:.7,roughness:.27});
+  const floorMat=new THREE.MeshStandardMaterial({map:floorTexture,color:0x1b2838,metalness:.82,roughness:.34,envMapIntensity:.25});
   add(room,new THREE.CylinderGeometry(26,27,.5,96),floorMat,0,-.4,-3);
   for(const r of [3.2,3.4,5.5,11,17.7,21])add(room,new THREE.TorusGeometry(r,.022,5,128),r<6?warmGlow:glow,0,-.12,-3).rotation.x=Math.PI/2;
   for(let i=0;i<32;i++){
     const a=i*Math.PI/16;
     beam(room,i%4===0?gold:dark,[Math.sin(a)*4,-.1,Math.cos(a)*4-3],[Math.sin(a)*23,-.1,Math.cos(a)*23-3],i%4===0?.025:.016);
   }
-  const pillars=new THREE.InstancedMesh(new THREE.CylinderGeometry(.36,.55,16,10),dark,24),dummy=new THREE.Object3D();
-  for(let i=0;i<24;i++){const a=i*Math.PI/12;dummy.position.set(Math.sin(a)*23,7.8,Math.cos(a)*23-3);dummy.updateMatrix();pillars.setMatrixAt(i,dummy.matrix);}room.add(pillars);
-  for(const y of [9.5,14])add(room,new THREE.TorusGeometry(23,.075,6,96),gold,0,y,-3).rotation.x=Math.PI/2;
+  // Keep the entrance axis open. Foreground pillars must never hide the seal.
+  const pillarCount=18,pillars=new THREE.InstancedMesh(new THREE.CylinderGeometry(.36,.55,16,10),dark,pillarCount),dummy=new THREE.Object3D();
+  for(let i=0;i<pillarCount;i++){const a=Math.PI/2+i*Math.PI/(pillarCount-1);dummy.position.set(Math.sin(a)*25,7.8,Math.cos(a)*25-3);dummy.updateMatrix();pillars.setMatrixAt(i,dummy.matrix);}room.add(pillars);
+  for(const y of [9.5,14])add(room,new THREE.TorusGeometry(25,.075,6,96),gold,0,y,-3).rotation.x=Math.PI/2;
   add(room,new THREE.TorusGeometry(8,.12,8,96),gold,0,12,-3).rotation.x=Math.PI/2;
   add(room,new THREE.TorusGeometry(7.85,.025,5,96),glow,0,11.95,-3).rotation.x=Math.PI/2;
   batchStatic(room);
@@ -274,7 +277,6 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
       else if(originFocused){desired.set(0,4.7,portrait?-2.5:-5.3);target.set(0,3.5,-19);}
       else{desired.set(0,width<760?7.8:6.4,width<760?43:29);target.set(0,2.7,-6);}
       const blend=state.reducedMotion||state.paused?1:1-Math.exp(-Math.min(.1,delta)*5.4);camera.position.lerp(desired,blend);look.lerp(target,blend);camera.lookAt(look);
-      // On portrait screens reserve the lower half for the compact detail sheet.
       if(state.selected&&portrait)camera.setViewOffset(width,height,0,height*(height<700?.22:.18),width,height);
       else if(state.selected&&width>=760)camera.setViewOffset(width,height,-width*.14,0,width,height);
       else camera.clearViewOffset();
