@@ -17,3 +17,5 @@
 .origins-cinematic>div{width:min(720px,100%);text-align:center}.origins-cinematic strong{font-size:clamp(20px,3vw,32px);color:#f1dcae}.origins-cinematic p{font-size:15px;line-height:1.5}.origins-cinematic nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.origins-cinematic nav button{position:static;min-height:44px;padding:10px 16px;background:#142b34;color:#fff;border:1px solid #d2bb84}
 
 .origins:has(.origins-cinematic) :is(.origins-top,.origins-task,.origins-minimap,.origins-bottom,.origins-dialogue,.origins-interact,.origins-enemy,.origins-combo,.origins-counter,.origins-support-status){visibility:hidden}
+
+.origins-style-status{position:absolute;right:25px;bottom:265px;max-width:220px;padding:7px 10px;border-left:2px solid #d1b580;background:#132c31d9;font-size:11px;pointer-events:none}.origins:has(.origins-cinematic) .origins-style-status{display:none}@media(max-width:700px){.origins-style-status{right:13px;bottom:215px;max-width:185px;font-size:10px}.origins:has(.origins-style-status) .origins-interact{bottom:245px}}@media(max-height:520px){.origins-style-status{bottom:185px;font-size:9px}}
