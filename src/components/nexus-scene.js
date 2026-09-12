@@ -77,7 +77,7 @@ export function createNexusScene(canvas,{onFailure=()=>{}}={}) {
   }
   const portalVertex=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
   const portalFragment=`varying vec2 vUv;uniform float time;uniform vec3 tint;uniform float active;
-    void main(){vec2 p=vUv-.5;float r=length(p*vec2(1.,.55));float a=atan(p.y,p.x);float flow=.5+.5*sin(r*32.-time*.8+a*2.);float fil=.5+.5*sin(p.y*58.+sin(p.x*19.+time*.2)*2.);float edge=pow(abs(p.x)*2.,5.);float beam=exp(-abs(p.x)*18.);float fade=smoothstep(.5,.36,abs(p.x))*smoothstep(.5,.42,abs(p.y));vec3 col=tint*(.07+flow*.11+fil*.025+beam*.23+edge*.2)*(.55+active*.8);gl_FragColor=vec4(col,fade*.85);}`;
+    void main(){vec2 p=vUv-.5;float r=length(p*vec2(1.,.55));float a=atan(p.y,p.x);float flow=.5+.5*sin(r*32.-time*.8+a*2.);float fil=.5+.5*sin(p.y*58.+sin(p.x*19.+time*.2)*2.);float edge=pow(abs(p.x)*2.,5.);float beam=exp(-abs(p.x)*18.);float fade=(1.-smoothstep(.36,.5,abs(p.x)))*(1.-smoothstep(.42,.5,abs(p.y)));vec3 col=tint*(.07+flow*.11+fil*.025+beam*.23+edge*.2)*(.55+active*.8);gl_FragColor=vec4(col,fade*.85);}`;
   const portalMats=[],gates=[];
   NEXUS_DOORS.forEach((door,index)=>{
     const a=-1.26+index*2.52/7,g=new T.Group();g.position.set(Math.sin(a)*15,0,-Math.cos(a)*15-2);g.rotation.y=-a;hall.add(g);
@@ -142,7 +142,7 @@ export function createNexusScene(canvas,{onFailure=()=>{}}={}) {
     const passage=state.phase==='tunnel'||state.phase==='scan';tunnel.visible=passage;hall.visible=!passage;
     if(passage){
       camera.position.set(0,0,6);camera.lookAt(0,0,-60);tunnel.rotation.z=moving?Math.sin(time*.17)*.11:0;
-      for(let i=0;i<26;i++){dummy.position.set(0,0,6-((i*4.2+time*17)%110));dummy.rotation.z=i*.1+time*.09;dummy.scale.setScalar(1);dummy.updateMatrix();frames.setMatrixAt(i,dummy.matrix);}frames.instanceMatrix.needsUpdate=true;
+      for(let i=0;i<26;i++){dummy.position.set(0,0,6-(((i*4.2-time*17)%110+110)%110));dummy.rotation.z=i*.1+time*.09;dummy.scale.setScalar(1);dummy.updateMatrix();frames.setMatrixAt(i,dummy.matrix);}frames.instanceMatrix.needsUpdate=true;
       matrixMap.offset.y=time*.055;
     }else{
       let selected=NEXUS_DOORS.findIndex(d=>d.code===state.selected);
