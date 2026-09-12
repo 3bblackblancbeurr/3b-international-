@@ -76,7 +76,7 @@ function NexusSession({ uid, accountLoading, onClose, goTo, reducedMotion = fals
     setError("");
     (async () => {
       try {
-        const store = await import("../world/save.js");
+        const store = await import("../world/origins/passport-adapter.js");
         if (cancelled || !alive.current) return;
         storeRef.current = store;
         const result = await store.loadWorld(uid);
@@ -132,7 +132,8 @@ function NexusSession({ uid, accountLoading, onClose, goTo, reducedMotion = fals
   }
 
   function showOrigin() {
-    // This is a narrative sanctuary, not a reward or a bypass of the final boss.
+    // Prepared narrative sanctuary: unreachable until all eight real quest hooks exist.
+    // Never substitute legacy seals or ordinary regional wins to force activation.
     if (!loading && !busyRef.current && progress.originUnlocked) setPhase("origin");
   }
 
@@ -172,18 +173,19 @@ function NexusSession({ uid, accountLoading, onClose, goTo, reducedMotion = fals
         </header>
         <div className="passport-nexus-feedback" aria-live="polite">
           <p>{loading ? "Lecture de la progression du monde…" : message}</p>
+          {!loading && progress.missingKeyHooks.length > 0 && <p>ORIGINE reste en préparation : les sept autres clés n’ont pas encore de quête d’attribution dans ORIGINS. Les huit pays restent explorables après l’éveil du Cercle.</p>}
           {error && <p className="passport-nexus-error" role="alert">{error}</p>}
           {error && !busy && <button type="button" className="passport-world-cta" onClick={() => setReload(value => value + 1)}>Actualiser la progression</button>}
         </div>
         <div className="passport-nexus-layout" aria-busy={busy || loading}>
-          <div className="passport-nexus-core" aria-label={loading ? "Lecture des clés" : `${progress.count} clés des gardiens sur 8`}>
+          <div className="passport-nexus-core" aria-label={loading ? "Lecture des clés" : `${progress.count} fragments confirmés sur 8`}>
             <div className="passport-broken-circle" aria-hidden="true">
               {NEXUS_DOORS.map((door, index) => <i key={door.code} data-collected={progress.keys.includes(door.region)} style={{ "--segment": index }} />)}
               <span>3B</span>
             </div>
             <p>{progress.originUnlocked ? "CERCLE RECONSTITUÉ" : "CERCLE BRISÉ"}</p>
             <strong className="passport-key-count">{loading ? "— / 8" : `${progress.count} / 8`} clés</strong>
-            <small>Les clés correspondent aux sceaux des gardiens obtenus dans le Monde 3B. Une visite seule ne donne pas de clé.</small>
+            <small>Le fragment de Justice vient de ta vraie quête France. Les visites, les victoires ordinaires et les clés de l’ancien monde ne donnent pas de fragment ici.</small>
             <button type="button" className="passport-world-cta" disabled={busy || accountLoading} onClick={resumeWorld}>
               <Compass size={17} aria-hidden="true" /> Reprendre le Monde 3B
             </button>
@@ -195,7 +197,7 @@ function NexusSession({ uid, accountLoading, onClose, goTo, reducedMotion = fals
               <span className="passport-door-number">{door.number}</span>
               <span className="passport-door-code">{door.code}</span>
               <strong>{door.country}</strong><small>{door.value}</small>
-              <span className="passport-door-status">{loading ? "Lecture…" : progress.keys.includes(door.region) ? "Clé obtenue" : "Clé à retrouver"}</span>
+              <span className="passport-door-status">{loading ? "Lecture…" : progress.keys.includes(door.region) ? "Fragment obtenu" : progress.implemented.includes(door.region) ? "Fragment à retrouver" : "Clé non raccordée"}</span>
               <i aria-hidden="true" />
             </button>)}
           </div>
@@ -203,7 +205,7 @@ function NexusSession({ uid, accountLoading, onClose, goTo, reducedMotion = fals
         <button type="button" className="passport-origin-door" disabled={loading || busy || !progress.originUnlocked}
           onClick={showOrigin} aria-label={progress.originUnlocked ? "Ouvrir la porte 3B Origine" : `Porte 3B Origine verrouillée — ${progress.count} clés sur 8`}>
           {progress.originUnlocked ? <Sparkles size={18} aria-hidden="true" /> : <LockKeyhole size={18} aria-hidden="true" />}
-          <span><strong>3B — ORIGINE</strong><small>{loading ? "Lecture des clés…" : progress.originUnlocked ? "Les huit clés sont réunies · entrer" : `Verrouillée · ${progress.count} / 8 clés`}</small></span><b>09</b>
+          <span><strong>3B — ORIGINE</strong><small>{loading ? "Lecture des clés…" : progress.originUnlocked ? "Les huit clés sont réunies · entrer" : `En préparation · ${progress.count} / 8 fragments`}</small></span><b>09</b>
         </button>
       </section>}
 
