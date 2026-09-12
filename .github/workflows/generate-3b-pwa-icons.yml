@@ -1,4 +1,4 @@
-name: Generate verified 3B PWA icons
+name: Generate verified 3B PWA icons v2
 
 on:
   push:
