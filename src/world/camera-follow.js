@@ -7,7 +7,7 @@ export const angleDelta=(from,to)=>Math.atan2(Math.sin(to-from),Math.cos(to-from
 export function createMovementFrame(){
  let basis=null;
  return {reset(){basis=null;},resolve(x,z,yaw){
-  if(Math.hypot(x,z)<=.06){basis=null;return{x:0,z:0};}
+  if(Math.hypot(x,z)<=1e-5){basis=null;return{x:0,z:0};}
   if(basis===null)basis=yaw;
   return cameraRelative(x,z,basis);
  }};

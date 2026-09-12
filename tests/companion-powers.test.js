@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {invokeCompanion} from '../src/world/origins/companion-powers.js';
+import {createCombat,stepCombat} from '../src/world/origins/combat.js';
+const context=(id='silver')=>({now:10,avatar:{companion:id,weapon:'heritage'},player:{x:0,z:23},companion:{x:1,z:23},zone:'sanctuary',flags:{},active:true});
+test('guard consumes energy and a shared cooldown prevents switching companions to spam',()=>{const c=createCombat(),r={readyAt:0};assert.equal(invokeCompanion(r,c,context()).ok,true);assert.equal(c.energy,40);assert.equal(c.companionGuard,4);assert.equal(invokeCompanion(r,c,context('night')).ok,false);assert.equal(c.energy,40);});
+test('failed stamina support is free; missing stamina restores only 28',()=>{const c=createCombat(),r={readyAt:0};assert.equal(invokeCompanion(r,c,context('sand')).ok,false);assert.equal(r.readyAt,0);c.stamina=60;assert.equal(invokeCompanion(r,c,context('sand')).ok,true);assert.equal(c.stamina,88);});
+test('synergy reduces cost without increasing protection',()=>{const c=createCombat(),r={readyAt:0},x=context();x.avatar.weapon='zellige';assert.equal(invokeCompanion(r,c,x).ok,true);assert.equal(c.energy,45);assert.equal(c.companionGuard,4);});
+test('distant companion, absent combat and distant target cannot consume energy',()=>{const c=createCombat(),r={readyAt:0};assert.equal(invokeCompanion(r,c,{...context(),active:false}).ok,false);assert.equal(invokeCompanion(r,c,{...context(),companion:{x:20,z:0}}).ok,false);assert.equal(invokeCompanion(r,c,context('night')).ok,false);assert.equal(c.energy,60);});
+test('guard expires and slow does not change announced attack duration',()=>{const c=createCombat();c.companionGuard=.01;c.companionSlow=4;c.enemy.state='windup';c.enemy.timer=2;stepCombat(c,.05,{x:0,z:0},0,{echo:true,echo2:true},'sanctuary');assert.equal(c.companionGuard,0);assert.equal(c.enemy.timer,1.95);});
+test('guard reduces exactly one incoming hit',()=>{const c=createCombat();Object.assign(c.enemy,{x:0,z:22,heading:0,state:'windup',timer:0,pattern:0});c.companionGuard=4;const flags={echo:true,echo2:true};stepCombat(c,.05,{x:0,z:23},0,flags,'sanctuary');assert.equal(c.hp,89);assert.equal(c.companionGuard,0);c.enemy.state='windup';c.enemy.timer=0;stepCombat(c,.05,{x:0,z:23},0,flags,'sanctuary');assert.equal(c.hp,71);});

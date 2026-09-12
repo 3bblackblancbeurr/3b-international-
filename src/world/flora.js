@@ -62,12 +62,12 @@ export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hu
   for(let i=0;i<14;i++){const a=at(i/14),b=at((i+1)/14);branch(a,b,.27-i*.006,.255-i*.006);}
   const top=at(1);
   for(let i=0;i<11;i++){
-   const a=i/11*Math.PI*2,dir=point(Math.cos(a),0,Math.sin(a)),side=point(-dir.z,0,dir.x),curve=t=>top.clone().addScaledVector(dir,t*3.7).add(point(0,Math.sin(t*Math.PI)*1.12-t*.95,0));
+   const a=i/11*Math.PI*2,dir=point(Math.cos(a),0,Math.sin(a)),side=point(-dir.z,0,dir.x),curve=t=>top.clone().addScaledVector(dir,t*(2.9+(i%3)*.35)).add(point(0,Math.sin(t*Math.PI)*(1.8+(i%2)*.4)-t*2.1,0));
    for(let n=1;n<=9;n++){
     const t=n/10,p=curve(t);branch(curve((n-1)/10),p,.042*(1-t)+.009,.028*(1-t)+.004);
     for(const sign of [-1,1]){
      const length=Math.sin(t*Math.PI)*1.3+.22,tip=p.clone().addScaledVector(side,sign*length*.53).addScaledVector(dir,.15);tint.copy(greens[(n+i)%3]);
-     leaf(tip,length,.18,a+sign*Math.PI/2,Math.PI/2+.18+t*.25,0,tint,.5+t*.55);
+     leaf(tip,length,.26,a+sign*Math.PI/2,Math.PI/2-.4+t*.9,sign*.3,tint,.5+t*.55);
     }
    }
   }

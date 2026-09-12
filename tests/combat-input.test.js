@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createCombatInput,dodgeVector} from '../src/world/origins/combat-input.js';
+import {createCombat,command,actionCost} from '../src/world/origins/combat.js';
+import {WEAPONS} from '../src/world/arsenal.js';
+test('one buffered input executes once after recovery',()=>{const q=createCombatInput();q.queue('light',1);assert.equal(q.take(1.1,true),null);assert.equal(q.take(1.2,false),'light');assert.equal(q.take(1.21,false),null);});
+test('latest press replaces prior press; expired input never attacks later',()=>{const q=createCombatInput();q.queue('light',0);q.queue('heavy',.05);assert.equal(q.take(.1,false),'heavy');q.queue('circle',1);assert.equal(q.take(1.25,false),null);});
+test('clearing input for dodge or pause prevents delayed attacks',()=>{const q=createCombatInput();q.queue('heavy',1);q.clear();assert.equal(q.take(1.1,false),null);assert.equal(q.queue('wolf',2),false);});
+test('dodge follows movement with normalized diagonals and facing fallback',()=>{assert.deepEqual(dodgeVector(-1,0,0),{x:-1,z:0});const d=dodgeVector(1,1,0);assert.ok(Math.abs(Math.hypot(d.x,d.z)-1)<1e-10);assert.deepEqual(dodgeVector(0,0,0),{x:0,z:1});});
+test('displayed costs exactly match expenditure across weapons and evolutions',()=>{for(const w of WEAPONS)for(const weaponForm of [0,1,2,3])for(const equipment of ['heritage','artisan']){const c=createCombat();c.loadout={weapon:w.id,weaponForm};c.xp=1000;const cost=actionCost('heavy',c.loadout,c.xp,equipment);assert.equal(command(c,'heavy',{x:0,z:0},equipment),true);assert.equal(100-c.stamina,cost);}});

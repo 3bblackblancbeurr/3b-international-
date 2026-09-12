@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {normalizeAvatar} from '../src/world/avatar-rules.js';
+import {blank,normalize,persist,load} from '../src/world/origins/state.js';
+test('character and six looks survive a save without resetting progress',()=>{const memory=new Map(),storage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};const s=blank();s.flags.awakened=true;s.avatar=normalizeAvatar({created:true,name:'Nour',body:'femme',height:1.06,build:.95,face:.4,jaw:-.3,skinColor:'#916344',fabric:'satin',headwear:'beret',patternScale:2,capeLength:1.2});s.looks=[s.avatar];assert.ok(persist(storage,'qa',s));const next=load(storage,'qa');assert.deepEqual(next.avatar,s.avatar);assert.deepEqual(next.looks,s.looks);assert.equal(next.flags.awakened,true);assert.equal(load(storage,'other').avatar.created,false);});
+test('old saves get an editable character and malicious values are bounded',()=>{const s=normalize({flags:{awakened:true}});assert.equal(s.flags.awakened,true);assert.equal(s.avatar.created,false);const a=normalizeAvatar({height:50,build:-9,hoodFit:Infinity,skinColor:'url(x)',fabric:'invalid'});assert.equal(a.height,1.1);assert.equal(a.build,.88);assert.equal(a.hoodFit,1);assert.equal(a.skinColor,null);assert.equal(a.fabric,'cotton');});

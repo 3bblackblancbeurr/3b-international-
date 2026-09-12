@@ -22,8 +22,8 @@ export function createWorldSky(renderer,onEnvironment){
   }`});
  const geometry=new THREE.PlaneGeometry(2,2),root=new THREE.Mesh(geometry,material);root.renderOrder=-1000;root.frustumCulled=false;
  if(renderer)new HDRLoader().load('/world/environment/kloppenheim_06_1k.hdr',texture=>{
-  if(stopped){texture.dispose();return;}photograph=texture;texture.mapping=THREE.EquirectangularReflectionMapping;uniforms.skyPhoto.value=texture;uniforms.photoReady.value=1;
+  if(stopped){texture.dispose();return;}photograph=texture;texture.mapping=THREE.EquirectangularReflectionMapping;uniforms.skyPhoto.value=texture;uniforms.photoReady.value=uniforms.photoReady.regional?0:1;
   const pmrem=new THREE.PMREMGenerator(renderer);environment=pmrem.fromEquirectangular(texture);pmrem.dispose();onEnvironment?.(environment.texture);
  },undefined,()=>{/* The animated procedural sky remains available offline. */});
- return{root,get environment(){return environment?.texture;},setRegion(biome){uniforms.horizon.value.set(biome.haze).lerp(new THREE.Color('#adcfe9'),.78);uniforms.zenith.value.set(biome.sky).lerp(new THREE.Color('#2369bb'),.85);},update(camera,time){camera.updateMatrixWorld();uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);uniforms.cameraWorld.value.copy(camera.matrixWorld);uniforms.time.value=time;},dispose(){stopped=true;photograph?.dispose();environment?.dispose();material.dispose();geometry.dispose();}};
+ return{root,get environment(){return environment?.texture;},setRegion(biome){uniforms.photoReady.regional=!!biome.district;uniforms.photoReady.value=photograph&&!biome.district?1:0;uniforms.horizon.value.set(biome.haze).lerp(new THREE.Color('#adcfe9'),biome.district?.15:.78);uniforms.zenith.value.set(biome.sky).lerp(new THREE.Color('#2369bb'),biome.district?.15:.85);},update(camera,time){camera.updateMatrixWorld();uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);uniforms.cameraWorld.value.copy(camera.matrixWorld);uniforms.time.value=time;},dispose(){stopped=true;photograph?.dispose();environment?.dispose();material.dispose();geometry.dispose();}};
 }

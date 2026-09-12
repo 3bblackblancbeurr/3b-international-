@@ -4,17 +4,22 @@
   "models": [
     {
       "name": "Eiffel",
-      "sourceFaces": 10530,
-      "sourceBytes": 1768856,
+      "sourceFaces": 15744,
       "detail": {
         "file": "Eiffel.glb",
-        "bytes": 309436,
-        "sha256": "c5a6f16fc9f95cbbf635f4fef4888401600260262ba657266e3e8ea4ba2d2886"
+        "bytes": 255472,
+        "sha256": "49f4bcb633f778d6d66595a7a32199a20d30f240113a1393eb006772984768c2"
       },
       "distance": {
         "file": "Eiffel-lod.glb",
-        "bytes": 123816,
-        "sha256": "6b67185c3b1549714cd361c6a2e9d127d130595d91c77ab4e9dcf8ac74f8da05"
+        "bytes": 198424,
+        "sha256": "8e913a1eed9d02bf74006014f9ca5287361f2be2ea0660cfc891ad37362c967a"
+      },
+      "source": "../3b-unreal/ArtSource/Paris/EiffelReference.blend",
+      "referenceScale": {
+        "height": 60,
+        "officialHeight": 330,
+        "uniformFactor": 0.18181818181818182
       }
     },
     {

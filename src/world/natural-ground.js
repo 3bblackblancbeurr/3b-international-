@@ -14,7 +14,7 @@ export const GROUND_STYLE={
 export function createNaturalGround(region){
  const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass');
  if(texture)texture.repeat.set(260,260);
- const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.055,roughness:1});
+ const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.018,roughness:1});
  material.onBeforeCompile=shader=>{
   shader.uniforms.soilTint={value:new THREE.Color(style.soil)};shader.uniforms.groundDryness={value:style.dry};
   shader.vertexShader='varying vec2 naturalXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nnaturalXZ=(modelMatrix*vec4(position,1.)).xz;');
@@ -22,12 +22,12 @@ export function createNaturalGround(region){
    float landHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
    float landNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(landHash(i),landHash(i+vec2(1,0)),f.x),mix(landHash(i+vec2(0,1)),landHash(i+vec2(1,1)),f.x),f.y);}
    `+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
-    float patches=landNoise(naturalXZ*.075)*.65+landNoise(naturalXZ*.23)*.35;
+    float patches=landNoise(naturalXZ*.047)*.65+landNoise(naturalXZ*.23)*.35;
     float wear=smoothstep(.48-groundDryness*.22,.78-groundDryness*.18,patches);
-    float grain=landNoise(naturalXZ*5.7)*.12+landNoise(naturalXZ*1.9)*.08+.84;
+    float grain=landNoise(naturalXZ*7.3)*.12+landNoise(naturalXZ*1.9)*.08+.84;
     diffuseColor.rgb=mix(diffuseColor.rgb,soilTint*.82,wear*(.14+groundDryness*.6))*grain;
    `);
  };
- material.customProgramCacheKey=()=> '3b-ground-patches-1';
+ material.customProgramCacheKey=()=> '3b-ground-patches-2';
  return {material,texture};
 }
