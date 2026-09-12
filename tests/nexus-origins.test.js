@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {blank,act,load,persist,storageKey} from '../src/world/origins/state.js';
+import {prepareNexusArrival} from '../src/world/origins/nexus-arrival.js';
+import {NEXUS_WORLDS} from '../src/components/nexus-worlds.js';
+import {queueNexusVisit,peekNexusVisit} from '../src/components/nexus-handoff.js';
+function memory(){const values=new Map();return{getItem:k=>values.get(k)||null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};}
+for(const world of NEXUS_WORLDS)test(`Origins entry reaches ${world.id} using real gate rules`,()=>{const save=blank();save.flags.awakened=true;const before=structuredClone(save);const next=prepareNexusArrival(save,{type:'visit',region:world.id},act);assert.equal(next.zone,world.id);for(const key of ['flags','xp','rewards','regions','paris','avatar','hp'])assert.deepEqual(next[key],before[key]);assert.deepEqual(save,before);});
+test('Origins beginner is not granted awakening, keys or experience',()=>{const save=blank();const next=prepareNexusArrival(save,{type:'visit',region:'italie'},act);assert.equal(next.zone,'sanctuary');assert.equal(next.flags.awakened,undefined);assert.equal(next.xp,0);assert.deepEqual(next.rewards,[]);});
+test('Origins rejects an unknown or secret destination',()=>{const save=blank();assert.equal(prepareNexusArrival(save,{type:'visit',region:'ORIGINE'},act),save);assert.equal(prepareNexusArrival(save,null,act),save);});
+test('repeatable initializer, acknowledgement after save, no second teleport',()=>{const previousWindow=globalThis.window,local=memory(),session=memory();globalThis.window={sessionStorage:session};try{const save=blank();save.flags.awakened=true;local.setItem(storageKey('test'),JSON.stringify(save));queueNexusVisit(session,'DZ');const first=load(local,'test'),second=load(local,'test');assert.deepEqual(first,second);assert.equal(first.zone,'algerie');assert.equal(JSON.parse(local.getItem(storageKey('test'))).zone,'sanctuary');assert.ok(peekNexusVisit(session));assert.equal(persist(local,'test',first),true);assert.equal(peekNexusVisit(session),null);assert.equal(load(local,'test').zone,'algerie');}finally{if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;}});

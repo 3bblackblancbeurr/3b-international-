@@ -6,6 +6,8 @@ import {WORLDS} from './data.js';
 import {blankAvatar,normalizeAvatar} from '../avatar-rules.js';
 import {POINTS,QUESTS,SPAWNS,objective} from './data.js';
 import {distance,safePosition,ground} from './space.js';
+import {prepareNexusArrival} from './nexus-arrival.js';
+import {peekNexusVisit,consumeNexusVisit} from '../../components/nexus-handoff.js';
 export const SAVE_VERSION=1;
 const FLAGS=['awakened','met','scent','trace','guardian','trial','echo','echo2','defeated','justice','returned','gardenAccepted','seeds','gardenDone','memoryAccepted','memory','memoryDone','secret'];
 export function blank(){return {version:SAVE_VERSION,avatar:blankAvatar(),visited:[],looks:[],zone:'sanctuary',position:{...SPAWNS.sanctuary},flags:{},regions:normalizeRegions(),paris:normalizeParis(),rewards:[],xp:0,bond:0,hp:100,equipment:'heritage',settings:{sensitivity:1,shake:false,music:.25,effects:.55,quality:'auto',follow:true,zoom:8.5}};}
@@ -27,11 +29,20 @@ export function normalize(raw){
  return s;
 }
 export function storageKey(uid){return '3b-origins-v1:'+ (uid||'guest');}
-export function load(storage,uid){
+function readPersisted(storage,uid){
  for(const key of [storageKey(uid),storageKey(uid)+':backup'])try{const raw=JSON.parse(storage.getItem(key));if(raw&&typeof raw==='object'&&!Array.isArray(raw))return normalize(raw);}catch{}
  return blank();
 }
-export function persist(storage,uid,s){try{const previous=load(storage,uid),next=structuredClone(s);next.visited=[...new Set([...(previous.visited||[]),...(next.visited||[])])];next.flags={...next.flags};next.regions=normalizeRegions(next.regions);next.paris=normalizeParis(next.paris);if(previous.paris.revision>next.paris.revision)next.paris=previous.paris;for(const [id,r] of Object.entries(previous.regions))if(r.revision>next.regions[id].revision)next.regions[id]=r;for(const k of FLAGS)if(previous.flags[k])next.flags[k]=true;next.rewards=[...new Set([...previous.rewards,...next.rewards])];if(previous.equipment==='artisan')next.equipment='artisan';const previousText=storage.getItem(storageKey(uid));if(previousText)try{const raw=JSON.parse(previousText);if(raw&&typeof raw==='object'&&!Array.isArray(raw))storage.setItem(storageKey(uid)+':backup',previousText);}catch{}storage.setItem(storageKey(uid),JSON.stringify(normalize(next)));return true;}catch{return false;}}
+function pendingNexus(){try{return typeof window==='undefined'?null:peekNexusVisit(window.sessionStorage);}catch{return null;}}
+export function load(storage,uid){
+ const current=readPersisted(storage,uid),intent=pendingNexus();
+ return intent?prepareNexusArrival(current,intent,act):current;
+}
+export function persist(storage,uid,s){try{const previous=readPersisted(storage,uid),next=structuredClone(s);next.visited=[...new Set([...(previous.visited||[]),...(next.visited||[])])];next.flags={...next.flags};next.regions=normalizeRegions(next.regions);next.paris=normalizeParis(next.paris);if(previous.paris.revision>next.paris.revision)next.paris=previous.paris;for(const [id,r] of Object.entries(previous.regions))if(r.revision>next.regions[id].revision)next.regions[id]=r;for(const k of FLAGS)if(previous.flags[k])next.flags[k]=true;next.rewards=[...new Set([...previous.rewards,...next.rewards])];if(previous.equipment==='artisan')next.equipment='artisan';const previousText=storage.getItem(storageKey(uid));if(previousText)try{const raw=JSON.parse(previousText);if(raw&&typeof raw==='object'&&!Array.isArray(raw))storage.setItem(storageKey(uid)+':backup',previousText);}catch{}storage.setItem(storageKey(uid),JSON.stringify(normalize(next)));
+ // Acknowledge only after a successful save. A double React initializer reads
+ // the same intent; a failed load/render cannot consume a player's request.
+ const intent=pendingNexus();if(intent&&(next.zone===intent.region||(!next.flags.awakened&&next.zone==='sanctuary')))try{consumeNexusVisit(window.sessionStorage);}catch{}
+ return true;}catch{return false;}}
 function reward(s,id){if(s.rewards.includes(id))return;s.rewards.push(id);s.xp+=QUESTS.find(q=>q.id===id).reward;}
 export function act(current,id,context={}){
  const paris=parisAction(current,id,context);if(paris)return {...paris,objective:objective(paris.save)};

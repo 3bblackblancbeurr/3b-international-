@@ -5,7 +5,7 @@ const queues=new Map(),key=id=>'3b_world_v1_'+(id||'guest'),journalBase=id=>'3b_
 export function readLocal(id){try{const v=JSON.parse(localStorage.getItem(key(id)));return v?{...v,data:normalizeSave(v.data)}:null;}catch{return null;}}
 export function writeLocal(id,data,dirty=true){try{localStorage.setItem(key(id),JSON.stringify({data:normalizeSave(data),dirty}));return true;}catch{return false;}}
 function stateFor(id){
- if(!queues.has(id)){let device,saved;try{device=sessionStorage.getItem('3b_world_tab_'+id);if(!device){device=crypto.randomUUID();sessionStorage.setItem('3b_world_tab_'+id,device);}saved=JSON.parse(sessionStorage.getItem(journalKey(id,device))||localStorage.getItem(journalKey(id,device)));}catch{}
+ if(!queues.has(id)){let device,saved;try{device=sessionStorage.getItem('3b_world_tab_'+id);if(!device){device=crypto.randomUUID();sessionStorage.setItem('3b_world_tab_'+id,device);}saved=JSON.parse(localStorage.getItem(journalKey(id,device)));}catch{}
   queues.set(id,{device:device||crypto.randomUUID(),next:saved?.next||1,pending:Array.isArray(saved?.pending)?saved.pending:[],chain:Promise.resolve()});
  }return queues.get(id);
 }
