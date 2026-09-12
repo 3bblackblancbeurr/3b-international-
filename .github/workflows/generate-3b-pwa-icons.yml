@@ -1,0 +1,102 @@
+name: Generate 3B PWA icon assets
+
+on:
+  push:
+    branches:
+      - fix/3b-icon-png-maskable-20260912
+    paths:
+      - .github/workflows/generate-3b-pwa-icons.yml
+
+permissions:
+  contents: write
+
+jobs:
+  generate-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out icon-fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Ensure ImageMagick is available
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v convert >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y imagemagick
+          fi
+
+      - name: Generate exact PNG and maskable icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="public/icons/3b-exact-512.jpg"
+          test -s "$src"
+
+          convert "$src" -auto-orient -filter Lanczos -resize '32x32!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-32.png
+          convert "$src" -auto-orient -filter Lanczos -resize '180x180!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-180.png
+          convert "$src" -auto-orient -filter Lanczos -resize '192x192!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-192.png
+          convert "$src" -auto-orient -filter Lanczos -resize '512x512!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-512.png
+
+          convert -size 192x192 xc:black \
+            \( "$src" -auto-orient -filter Lanczos -resize '146x146!' \) \
+            -gravity center -composite -strip -colorspace sRGB \
+            PNG24:public/icons/3b-icon-20260912-maskable-192.png
+
+          convert -size 512x512 xc:black \
+            \( "$src" -auto-orient -filter Lanczos -resize '389x389!' \) \
+            -gravity center -composite -strip -colorspace sRGB \
+            PNG24:public/icons/3b-icon-20260912-maskable-512.png
+
+      - name: Validate PNG signatures and dimensions
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+
+          expected = {
+              "public/icons/3b-icon-20260912-32.png": (32, 32),
+              "public/icons/3b-icon-20260912-180.png": (180, 180),
+              "public/icons/3b-icon-20260912-192.png": (192, 192),
+              "public/icons/3b-icon-20260912-512.png": (512, 512),
+              "public/icons/3b-icon-20260912-maskable-192.png": (192, 192),
+              "public/icons/3b-icon-20260912-maskable-512.png": (512, 512),
+          }
+
+          for filename, dimensions in expected.items():
+              data = Path(filename).read_bytes()
+              if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+                  raise SystemExit(f"{filename} is not a real PNG")
+              width, height = struct.unpack(">II", data[16:24])
+              if (width, height) != dimensions:
+                  raise SystemExit(
+                      f"{filename} has {(width, height)}, expected {dimensions}"
+                  )
+              print(f"OK: {filename} — {width}x{height}")
+          PY
+
+      - name: Commit generated icon files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            public/icons/3b-icon-20260912-32.png \
+            public/icons/3b-icon-20260912-180.png \
+            public/icons/3b-icon-20260912-192.png \
+            public/icons/3b-icon-20260912-512.png \
+            public/icons/3b-icon-20260912-maskable-192.png \
+            public/icons/3b-icon-20260912-maskable-512.png
+
+          if git diff --cached --quiet; then
+            echo "The generated icons are already up to date."
+            exit 0
+          fi
+
+          git commit -m "Add real PNG and maskable 3B icon assets"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
