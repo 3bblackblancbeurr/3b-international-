@@ -109,7 +109,7 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
       const navigate = current.current.goTo;
       close();
       if (navigate) navigate('world3b');
-      else window.location.hash = 'world3b';
+      else window.location.hash = 'monde-3b';
     } catch (failure) {
       if (valid()) setError(failure instanceof Error ? failure.message : 'Ce passage n’a pas pu être ouvert. Réessaie depuis le Monde 3B.');
     } finally {
