@@ -67,7 +67,9 @@ function arch(w,h,pointed=false) {
 function batchStatic(group) {
   group.updateMatrixWorld(true);const byMaterial=new Map();
   [...group.children].forEach(child=>{
-    if(!child.isMesh||Array.isArray(child.material))return;
+    // InstancedMesh already batches all its transforms in a single draw call.
+    // Treating it as one ordinary mesh would collapse the whole colonnade.
+    if(!child.isMesh||child.isInstancedMesh||child.isSkinnedMesh||Array.isArray(child.material))return;
     const geo=child.geometry.clone().applyMatrix4(child.matrix);
     const key=child.material.uuid;if(!byMaterial.has(key))byMaterial.set(key,{material:child.material,parts:[]});
     byMaterial.get(key).parts.push(geo);child.geometry.dispose();group.remove(child);
@@ -202,7 +204,7 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
   const pillars=new THREE.InstancedMesh(new THREE.CylinderGeometry(.36,.55,16,10),dark,24),dummy=new THREE.Object3D();
   for(let i=0;i<24;i++){const a=i*Math.PI/12;dummy.position.set(Math.sin(a)*23,7.8,Math.cos(a)*23-3);dummy.updateMatrix();pillars.setMatrixAt(i,dummy.matrix);}room.add(pillars);
   for(const y of [9.5,14])add(room,new THREE.TorusGeometry(23,.075,6,96),gold,0,y,-3).rotation.x=Math.PI/2;
-  const ceiling=add(room,new THREE.TorusGeometry(8,.12,8,96),gold,0,12,-3);ceiling.rotation.x=Math.PI/2;
+  add(room,new THREE.TorusGeometry(8,.12,8,96),gold,0,12,-3).rotation.x=Math.PI/2;
   add(room,new THREE.TorusGeometry(7.85,.025,5,96),glow,0,11.95,-3).rotation.x=Math.PI/2;
   batchStatic(room);
 
@@ -243,7 +245,7 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
   const sc=sealCanvas.getContext('2d');if(sc){sc.clearRect(0,0,512,256);sc.fillStyle='#d8edff';sc.textAlign='center';sc.textBaseline='middle';sc.font='bold 128px Arial';sc.fillText('3B',256,136);}
   const sealTexture=new THREE.CanvasTexture(sealCanvas);sealTexture.colorSpace=THREE.SRGBColorSpace;resources.push(sealTexture);
   const seal=add(core,new THREE.PlaneGeometry(1.35,.675),new THREE.MeshBasicMaterial({map:sealTexture,transparent:true,depthWrite:false,toneMapped:false}),0,0,.72);
-  const plinth=add(scene,new THREE.CylinderGeometry(2.3,2.8,.38,48),dark,0,.08,-.7);
+  add(scene,new THREE.CylinderGeometry(2.3,2.8,.38,48),dark,0,.08,-.7);
   add(scene,new THREE.TorusGeometry(2.15,.033,6,80),warmGlow,0,.29,-.7).rotation.x=Math.PI/2;
 
   const origin=new THREE.Group();origin.position.set(0,0,-19);scene.add(origin);
@@ -263,15 +265,19 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
   let state={phase:'scan',selected:null,reducedMotion:false,paused:false,quality:'auto'},disposed=false,failed=false,width=1,height=1,frame=0,last=0,time=0,slowFrames=0,autoLight=false;
   const pointer=new THREE.Vector2(),raycaster=new THREE.Raycaster();let down=null;
   function resize(){if(disposed)return;width=Math.max(1,host.clientWidth);height=Math.max(1,host.clientHeight);renderer.setPixelRatio(nexusPixelRatio(width,window.devicePixelRatio,autoLight?'light':state.quality));renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();tunnelMaterial.uniforms.uAspect.value=width/height;render();}
-  function render(){
+  function render(delta=1/60){
     if(disposed||failed)return;
     try{
       const focused=gates.find(g=>g.world.code===state.selected),originFocused=state.selected==='ORIGIN';
-      if(focused){const a=focused.group.rotation.y,d=width<760?10.5:11.7;desired.set(focused.p.x+Math.sin(a)*d,3.5,focused.p.z+Math.cos(a)*d);target.set(focused.p.x,2.65,focused.p.z);}
-      else if(originFocused){desired.set(0,4.7,-5.3);target.set(0,3.5,-19);}
+      const portrait=width<760&&height>width;
+      if(focused){const a=focused.group.rotation.y,d=portrait?(height<700?14:12.5):11.7;desired.set(focused.p.x+Math.sin(a)*d,3.5,focused.p.z+Math.cos(a)*d);target.set(focused.p.x,2.65,focused.p.z);}
+      else if(originFocused){desired.set(0,4.7,portrait?-2.5:-5.3);target.set(0,3.5,-19);}
       else{desired.set(0,width<760?7.8:6.4,width<760?43:29);target.set(0,2.7,-6);}
-      const blend=state.reducedMotion||state.paused?1:.085;camera.position.lerp(desired,blend);look.lerp(target,blend);camera.lookAt(look);
-      if(state.selected&&width>=1000)camera.setViewOffset(width,height,-width*.14,0,width,height);else camera.clearViewOffset();
+      const blend=state.reducedMotion||state.paused?1:1-Math.exp(-Math.min(.1,delta)*5.4);camera.position.lerp(desired,blend);look.lerp(target,blend);camera.lookAt(look);
+      // On portrait screens reserve the lower half for the compact detail sheet.
+      if(state.selected&&portrait)camera.setViewOffset(width,height,0,height*(height<700?.22:.18),width,height);
+      else if(state.selected&&width>=760)camera.setViewOffset(width,height,-width*.14,0,width,height);
+      else camera.clearViewOffset();
       core.rotation.y=state.reducedMotion?0:Math.sin(time*.18)*.11;core.position.y=3.45+(state.reducedMotion?0:Math.sin(time*.7)*.085);crystal.rotation.y=time*.2;seal.lookAt(camera.position);particles.rotation.y=time*.004;
       for(const g of gates){g.portalMat.uniforms.uTime.value=time;g.portalMat.uniforms.uActive.value=g.world.code===state.selected?1:0;g.trim.rotation.z=time*.24;}
       tunnelMaterial.uniforms.uTime.value=time;
@@ -283,7 +289,7 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
     if(disposed||failed)return;const delta=last?Math.min((now-last)/1000,.1):.016;last=now;time+=delta;
     if(delta>.032&&frame>45)slowFrames++;else slowFrames=Math.max(0,slowFrames-1);
     if(!autoLight&&state.quality==='auto'&&slowFrames>70){autoLight=true;renderer.setPixelRatio(1);onQuality('light');}
-    render();
+    render(delta);
   }
   function schedule(){renderer.setAnimationLoop(null);last=0;if(!disposed&&!failed&&!document.hidden&&!state.reducedMotion&&!state.paused)renderer.setAnimationLoop(tick);else render();}
   function pointerDown(e){down={x:e.clientX,y:e.clientY};}
@@ -297,7 +303,7 @@ export function createNexusScene(host,{onSelect=()=>{},onReady=()=>{},onFailure=
     dispose(){
       if(disposed)return;disposed=true;renderer.setAnimationLoop(null);observer.disconnect();document.removeEventListener('visibilitychange',schedule);
       renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('webglcontextlost',lost);
-      const geometries=new Set(),materials=new Set();for(const root of [scene,tunnelScene])root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>materials.add(m));});
+      const geometries=new Set(),materials=new Set();for(const root of [scene,tunnelScene])root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.isInstancedMesh)o.dispose();if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>materials.add(m));});
       geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());resources.forEach(r=>r.dispose());renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();
     },
   };
