@@ -32,7 +32,11 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          from PIL import Image
+          from PIL import Image, ImageFile
+
+          # The previously committed JPEG is missing its final marker but contains
+          # the complete 512 x 512 picture. Pillow can safely recover those pixels.
+          ImageFile.LOAD_TRUNCATED_IMAGES = True
 
           icon_dir = Path("public/icons")
           source_path = icon_dir / "3b-exact-512.jpg"
@@ -68,6 +72,10 @@ jobs:
               data = output.read_bytes()
               if not data.startswith(b"\x89PNG\r\n\x1a\n"):
                   raise RuntimeError(f"{output} is not a real PNG file")
+              with Image.open(output) as verified:
+                  expected = int(output.stem.split("-")[-1]) if "maskable" not in output.stem else int(output.stem.split("-")[-1])
+                  if verified.size != (expected, expected):
+                      raise RuntimeError(f"Unexpected dimensions for {output}: {verified.size}")
               print(f"Generated {output}: {len(data)} bytes")
           PY
 
