@@ -1,6 +1,7 @@
 import { Check, LockKeyhole } from 'lucide-react';
 import { NEXUS_WORLDS } from './nexus-worlds.js';
 import { NEXUS_CINEMA_ASSETS, nexusDoorImage, nexusHotspotStyle } from './nexus-cinema.js';
+import '../styles/nexus-cinema-polish.css';
 
 /** Art-directed 2.5D presentation. Buttons, selection and seals are live React UI,
  * not a flattened replacement for the app. Travel is handled by useNexusJourney. */

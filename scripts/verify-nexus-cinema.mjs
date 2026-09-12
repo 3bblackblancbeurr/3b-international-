@@ -8,7 +8,9 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','1
 const report={checks:[],errors:[],screenshots:[],note:'Real React app in Chromium; simulated screen sizes, not a physical Samsung test.'};
 let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:true});report.screenshots.push(name);}
+// A native fullscreen dialog scrolls independently. Capture the actual visible
+// viewport rather than adding the inactive page below it to a full-page image.
+async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false});report.screenshots.push(name);}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -25,9 +27,13 @@ try{
     assert.equal(await page.locator('.nexus-cinema-photo').getAttribute('alt'),'');
     await shot(page,`nexus-${width}`);
     for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE']){
-      await page.locator(`.nexus-cinema-hit[data-country="${code}"]`).click();
-      assert.equal(await page.locator('dialog').getAttribute('data-selected'),code);
+      const target=page.locator(`.nexus-cinema-hit[data-country="${code}"]`);
+      const bounds=await target.boundingBox();assert.ok(bounds.width>=43.9&&bounds.height>=43.9,`Small target: ${code}/${width}`);
+      await target.click();assert.equal(await page.locator('dialog').getAttribute('data-selected'),code);
     }
+    const guardian=await page.locator('.nexus-guardian').boundingBox();
+    const description=await page.locator('.nexus-description').boundingBox();
+    assert.ok(guardian.y>=description.y+description.height-1,`Guardian overlaps copy at ${width}`);
     await page.locator('.nexus-cinema-origin').click();assert.equal(await page.locator('.nexus-enter-world').isDisabled(),true);
     assert.equal(await page.locator('#nexus-title').textContent(),'ORIGINE');
     await page.getByRole('button',{name:'Voir le sanctuaire en 3D',exact:true}).click();
@@ -35,7 +41,7 @@ try{
     await page.getByRole('button',{name:'Activer le décor cinéma',exact:true}).click();
     await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport',exact:true}).click();
     assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');
-    report.checks.push(`${width}px: art loaded, 8 art controls + gallery, locked ORIGINE, 3D/cinema switch, focus restore, no horizontal overflow`);
+    report.checks.push(`${width}px: art loaded, 8 art controls + gallery, 44px touch targets, no guardian overlap, locked ORIGINE, 3D/cinema switch, focus restore, no horizontal overflow`);
     await context.close();
   }
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
@@ -44,6 +50,7 @@ try{
   await trigger.waitFor({timeout:30000});await shot(app,'application-passeport');await trigger.click();
   await app.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();});
   await shot(app,'application-nexus');await app.locator('.nexus-cinema-hit[data-country="FR"]').click();
+  await app.locator('dialog.nexus-experience').evaluate(dialog=>{dialog.scrollTop=0;});
   await shot(app,'application-france');await app.locator('.nexus-enter-world').click();
   await app.waitForFunction(()=>!document.querySelector('dialog.nexus-experience[open]'));
   report.checks.push('Actual application: original passport, reference art, France selection and canonical world entry');await context.close();
