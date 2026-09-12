@@ -66,7 +66,7 @@ export default function InstallApp({ installation }) {
   if (installation.installed) return null;
   return <div className="install3b">
     <div className="install3b-card">
-      <img src="/icons/3b-192.png" width="48" height="48" alt="" />
+      <img src="/icons/3b-icon-20260912-192.png" width="48" height="48" alt="" />
       <div className="install3b-copy-text"><strong>3B sur ton téléphone</strong><span>Ton univers depuis l’écran d’accueil.</span></div>
       <button type="button" className="install3b-button" disabled={installation.busy}
         aria-haspopup={installation.available ? undefined : 'dialog'}
