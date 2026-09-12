@@ -8,7 +8,7 @@ import {HERITAGE} from './heritage.js';
 export function createLandmark(region,occlusion){
  const root=new THREE.Group(),lights=new THREE.Group(),owned=[],materials=new Map();root.name=HERITAGE[region].name;root.add(lights);
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,20)),sphere=geo(new THREE.SphereGeometry(1,20,12)),cone=geo(new THREE.ConeGeometry(1,1,24));
- const texture=surfaceTexture('stone');if(texture)owned.push(texture);
+ const texture=surfaceTexture(region==='algerie'?'concrete':'stone');if(texture)owned.push(texture);
  const palette={stone:region==='tunisie'?'#c9a574':region==='estonie'?'#af7568':'#ddd1b6',trim:'#f2e6cd',dark:'#303d43',gold:'#c5a66c',roof:'#54796e',glass:'#456774'};
  const mat=key=>{if(!materials.has(key)){const m=new THREE.MeshStandardMaterial({color:palette[key]||key,map:['stone','trim'].includes(key)?texture:null,bumpMap:key==='stone'?texture:null,bumpScale:.065,roughness:key==='gold'?.38:.78,metalness:key==='gold'?.6:key==='dark'?.3:0});occlusion?.apply(m);materials.set(key,m);owned.push(m);}return materials.get(key);};
  const add=(geometry,key,x,y,z,sx=1,sy=sx,sz=sx,parent=root)=>{const m=new THREE.Mesh(geometry,mat(key));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
@@ -37,11 +37,19 @@ export function createLandmark(region,occlusion){
    const w=2*Math.PI*Math.sqrt((rx*rx+rz*rz)/2)/count;
    arc('stone',0,0,0,w,5.8,.43,1.7,g);b('trim',0,6,0,w+.18,.42,1.95,g);
    for(const side of [-1,1]){add(cylinder,'trim',side*(w/2-.2),2.3,1,.18,4.3,.18,g);b('trim',side*(w/2-.2),4.6,1,.55,.28,.45,g);}
-   if(!broken&&level===2)b('stone',0,20-level*6.2,0,w+.15,2.8,1.8,g);
+   if(!broken&&level===2){
+    b('stone',0,20-level*6.2,0,w+.15,2.8,1.8,g);
+    b('dark',0,20-level*6.2,.92,.7,1.1,.05,g);
+    for(const side of [-1,1])b('trim',side*(w/2-.18),20-level*6.2,1,.22,2.9,.24,g);
+    b('trim',0,21.5-level*6.2,0,w+.25,.24,2,g);
+   }
+   // Voussoirs follow each arch, with capitals distinct from the masonry piers.
+   for(let j=0;j<=8;j++){const angle=j*Math.PI/8,r=w/2-.2;const joint=b('trim',Math.cos(angle)*r,5.8-w/2+Math.sin(angle)*r,.88,.055,.38,.08,g);joint.rotation.z=angle-Math.PI/2;}
   }
   // Elliptical stepped seating, open arena; no flat cylinder filling the arches.
-  for(let j=0;j<4;j++){
-   const g=geo(new THREE.RingGeometry(10+j*1.4,11.5+j*1.4,72));g.rotateX(-Math.PI/2);add(g,'stone',0,.3+j*.7,0,1,1,.73);
+  for(let j=0;j<12;j++){
+   const g=geo(new THREE.RingGeometry(9.5+j*.6,10.1+j*.6,72));g.rotateX(-Math.PI/2);add(g,'stone',0,.3+j*.3,0,1,1,.73);
+   const riser=geo(new THREE.CylinderGeometry(10.1+j*.6,10.1+j*.6,.3,72,1,true));add(riser,'stone',0,.15+j*.3,0,1,1,.73);
   }
  }
  if(region==='france'){
@@ -83,7 +91,9 @@ export function createLandmark(region,occlusion){
   }
   add(cylinder,'stone',0,36,0,2.6,11,2.6);add(cone,'gold',0,43,0,2.5,3,2.5);ring('gold',5,.25,.2);
  }else if(region==='maroc'){
-  b('stone',0,5,-2,29,10,19);const roof=add(geo(new THREE.CylinderGeometry(.7,1,1,4)),'roof',0,12,-2,22,4,15);roof.rotation.y=Math.PI/4;
+  b('stone',0,5,-2,29,10,19);
+  // Hipped roof with an actual ridge and eaves seated on the prayer hall.
+  const roofShape=new THREE.BufferGeometry();roofShape.setAttribute('position',new THREE.Float32BufferAttribute([-15,10,-12,15,10,-12,15,10,8,-15,10,8,-9,14,-2,9,14,-2],3));roofShape.setIndex([0,4,5,0,5,1,1,5,2,2,5,4,2,4,3,3,4,0]);roofShape.computeVertexNormals();roofShape.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(12),2));add(geo(roofShape),'roof',0,0,0);rod([-9,14,-2],[9,14,-2],.12,'roof');
   for(let face=0;face<2;face++){const g=new THREE.Group();g.rotation.y=face*Math.PI;root.add(g);for(let i=-4;i<=4;i++){b('dark',i*3,3.1,7.57,2.1,5.7,.1,g);arc('trim',i*3,.3,7.7,2.7,7,.27,.5,g);}b('gold',0,9,7.8,28,.18,.2,g);}
   b('stone',0,22,10,5.3,44,5.3);b('roof',0,37,10,5.6,3,5.6);b('trim',0,41.1,10,6.2,.8,6.2);b('stone',0,44,10,3.3,4.5,3.3);add(cone,'gold',0,47.4,10,1.9,2.1,1.9);
   for(let face=0;face<4;face++){const g=new THREE.Group();g.position.z=10;g.rotation.y=face*Math.PI/2;root.add(g);for(const x of [-1.4,1.4])b('trim',x,21,2.73,.2,34,.2,g);for(const y of [12,21,30]){arc('roof',0,y,2.8,2.2,5.6,.2,.2,g);for(let j=0;j<4;j++){const tile=b('roof',0,y+j*.85,2.86,.75,.75,.12,g);tile.rotation.z=Math.PI/4;}}}
@@ -107,6 +117,34 @@ export function createLandmark(region,occlusion){
   }
   for(let side=-1;side<=1;side+=2)for(let i=-2;i<=2;i++)for(let j=0;j<3;j++){const z=i*4.4;rod([side*10.1,3+j*2.5,z-.7],[side*10.15,5+j*2.5,z],.1,'trim');rod([side*10.1,3+j*2.5,z+.7],[side*10.15,5+j*2.5,z],.1,'trim');}
  }
+ // Secondary architectural detail stays inside the existing collision footprint.
+ if(region==='turquie'){
+  for(let row=0;row<24;row++)for(let i=0;i<32;i++){
+   const a=(i+(row%2)*.5)*Math.PI/16,g=new THREE.Group();g.rotation.y=a;root.add(g);
+   b('trim',0,row+.5,7.805,.025,.88,.035,g);
+  }
+  for(let i=0;i<48;i++){const a=i*Math.PI/24;rod([Math.sin(a)*8.1,24.4,Math.cos(a)*8.1],[Math.sin(a)*8.1,25.4,Math.cos(a)*8.1],.045,'dark');}
+  for(let i=0;i<24;i++){const a=i*Math.PI/12;rod([Math.sin(a)*8.25,29.55,Math.cos(a)*8.25],[0,40.5,0],.045,'trim');}
+ }else if(region==='estonie'){
+  for(const z of [-7.35,7.35])for(const x of [-8.5,-4.5,4.5,8.5])for(let y=1;y<10;y+=.65)b('trim',x,y,z,.8,.18,.3);
+  for(const side of [-1,1])for(const z of [-4,0,4]){const g=new THREE.Group();g.rotation.y=side*Math.PI/2;root.add(g);b('dark',z,5,9.55,1.3,3.8,.08,g);arc('trim',z,3,9.65,1.9,4.4,.2,.2,g);}
+ }else if(region==='maroc'){
+  for(let face=0;face<4;face++){const g=new THREE.Group();g.position.z=10;g.rotation.y=face*Math.PI/2;root.add(g);
+   for(const y of [8,17,26])for(let row=0;row<3;row++)for(let col=-1;col<=1;col++){const tile=b('roof',col*.55,y+row*.6,2.7,.32,.32,.05,g);tile.rotation.z=Math.PI/4;}
+   for(const y of [5,34,39])b('trim',0,y,2.76,5.5,.25,.15,g);
+  }
+  for(const x of [-9,-6,-3,0,3,6,9])rod([x,14.02,-2],[x,10.02,8],.045,'roof');
+ }else if(region==='algerie'){
+  for(let n=0;n<3;n++){const g=new THREE.Group();g.rotation.y=n*Math.PI*2/3;root.add(g);
+   for(let y=3;y<29;y+=3){const x=13-10*Math.sin(y/32*Math.PI/2);b('trim',x,y,1.13,1.4,.045,.035,g);}
+  }
+  for(const [r,y] of [[6,.08],[5.6,.16],[5.2,.24]]){const g=geo(new THREE.RingGeometry(r-.35,r,64));g.rotateX(-Math.PI/2);add(g,'trim',0,y,0);}
+ }else if(region==='espagne'){
+  for(const side of [-1,1])for(let i=-2;i<=2;i++){const z=i*4.4;for(const dz of [-.5,0,.5])rod([side*10.17,3,z+dz],[side*10.17,10,z+dz],.045,'trim');
+   for(let y=3;y<11;y+=1.4)rod([side*10.17,y,z-.7],[side*10.17,y,z+.7],.045,'trim');
+  }
+  for(const x of [-8.5,-3,3,8.5]){rod([x,0,11.55],[x,8,11.55],.16,'trim');add(cone,'stone',x,9,11.55,.42,2,.42);}
+ }
  // Compact landmarks still need to stand above their surrounding housing.
  if(['estonie','italie','tunisie'].includes(region)){
   const volume=new THREE.Group();for(const child of [...root.children])if(child!==lights)volume.add(child);volume.scale.y=1.3;root.add(volume);
@@ -121,7 +159,14 @@ export function createLandmark(region,occlusion){
  }
  const lampMat=new THREE.MeshStandardMaterial({color:'#ffe3a3',emissive:'#ffd187',emissiveIntensity:.75,roughness:.35});owned.push(lampMat);
  for(let i=0;i<16;i++){const a=i/16*Math.PI*2;const lamp=add(box,'dark',Math.sin(a)*22,.65,Math.cos(a)*22,.35,1.3,.35,lights);const bulb=new THREE.Mesh(sphere,lampMat);bulb.position.copy(lamp.position);bulb.position.y=1.35;bulb.scale.setScalar(.21);lights.add(bulb);}
- function merge(parent){parent.updateMatrixWorld(true);const groups=new Map(),inverse=new THREE.Matrix4().copy(parent.matrixWorld).invert();parent.traverse(o=>{if(!o.isMesh)return;const key=o.material.uuid;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o);});for(const meshes of groups.values()){const parts=meshes.map(m=>{const p=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return p.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse,m.matrixWorld));});const merged=geo(mergeGeometries(parts));parts.forEach(g=>g.dispose());const m=new THREE.Mesh(merged,meshes[0].material);m.castShadow=m.receiveShadow=true;meshes.forEach(m=>m.removeFromParent());parent.add(m);}}
+ function merge(parent){parent.updateMatrixWorld(true);const groups=new Map(),inverse=new THREE.Matrix4().copy(parent.matrixWorld).invert();parent.traverse(o=>{if(!o.isMesh)return;const key=o.material.uuid;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o);});for(const meshes of groups.values()){const parts=meshes.map(m=>{const p=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return p.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse,m.matrixWorld));});const merged=geo(mergeGeometries(parts));parts.forEach(g=>g.dispose());
+   // Project masonry UVs in monument meters, not one stretched tile per primitive.
+   if(meshes[0].material.map){const pos=merged.attributes.position,uv=merged.attributes.uv;
+    for(let i=0;i<pos.count;i+=3){const a=new THREE.Vector3().fromBufferAttribute(pos,i),d=new THREE.Vector3().fromBufferAttribute(pos,i+1).sub(a),e=new THREE.Vector3().fromBufferAttribute(pos,i+2).sub(a),n=d.cross(e);const ax=Math.abs(n.x),ay=Math.abs(n.y),az=Math.abs(n.z);
+     for(let j=i;j<i+3;j++)uv.setXY(j,(ax>ay&&ax>az?pos.getZ(j):pos.getX(j))/4,(ay>ax&&ay>az?pos.getZ(j):pos.getY(j))/4);
+    }
+   }
+   const m=new THREE.Mesh(merged,meshes[0].material);m.castShadow=m.receiveShadow=true;meshes.forEach(m=>m.removeFromParent());parent.add(m);}}
  lights.removeFromParent();merge(root);merge(lights);root.add(lights);
  return{root,update(stage){lights.visible=stage>=3;},dispose(){owned.forEach(v=>v.dispose());}};
 }
