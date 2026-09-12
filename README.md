@@ -1,16 +1,22 @@
-# React + Vite
+# 3B International — Black • Blanc • Beur
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Site officiel : https://3b-international.vercel.app/**
 
-Currently, two official plugins are available:
+3B International est l’application et l’univers officiel **Black • Blanc • Beur**. Le projet relie identité de marque, Passeport 3B, progression XP, cartes de fidélité, Manga 3B, Jeux 3B, Monde du 3B, communauté, espace IA et boutique.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+> « Ce n’est pas une marque, c’est un héritage. »
 
-## React Compiler
+## Liens officiels
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Application : https://3b-international.vercel.app/
+- À propos : https://3b-international.vercel.app/a-propos-3b-international.html
+- Monde du 3B : https://3b-international.vercel.app/monde-du-3b.html
+- Manga 3B — Le Cercle Brisé : https://3b-international.vercel.app/manga-3b-le-cercle-brise.html
+- Passeport 3B : https://3b-international.vercel.app/passeport-3b.html
+- Installation Android : https://3b-international.vercel.app/install-android.html
 
-## Expanding the ESLint configuration
+## Univers 3B
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+L’univers narratif est construit autour de Kaïs, du Cercle Brisé, de huit portes, huit gardiens, huit clés et huit valeurs. Les huit pays sont la France, l’Algérie, le Maroc, la Tunisie, l’Espagne, l’Italie, la Turquie et l’Estonie.
+
+Ce dépôt contient le développement de l’application 3B International.
