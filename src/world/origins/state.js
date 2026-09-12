@@ -1,3 +1,4 @@
+import {normalizeParis,parisXP,parisAction,parisChoices} from './paris-life.js';
 import {unlockedForm} from '../arsenal-progression.js';
 import {normalizeRegions,regionalXP,regionalAction} from './regional-life.js';
 import {isCountry} from './countries.js';
@@ -7,15 +8,15 @@ import {POINTS,QUESTS,SPAWNS,objective} from './data.js';
 import {distance,safePosition,ground} from './space.js';
 export const SAVE_VERSION=1;
 const FLAGS=['awakened','met','scent','trace','guardian','trial','echo','echo2','defeated','justice','returned','gardenAccepted','seeds','gardenDone','memoryAccepted','memory','memoryDone','secret'];
-export function blank(){return {version:SAVE_VERSION,avatar:blankAvatar(),visited:[],looks:[],zone:'sanctuary',position:{...SPAWNS.sanctuary},flags:{},regions:normalizeRegions(),rewards:[],xp:0,bond:0,hp:100,equipment:'heritage',settings:{sensitivity:1,shake:false,music:.25,effects:.55,quality:'auto',follow:true,zoom:8.5}};}
+export function blank(){return {version:SAVE_VERSION,avatar:blankAvatar(),visited:[],looks:[],zone:'sanctuary',position:{...SPAWNS.sanctuary},flags:{},regions:normalizeRegions(),paris:normalizeParis(),rewards:[],xp:0,bond:0,hp:100,equipment:'heritage',settings:{sensitivity:1,shake:false,music:.25,effects:.55,quality:'auto',follow:true,zoom:8.5}};}
 export function normalize(raw){
  const s=blank();if(!raw||typeof raw!=='object')return s;
  s.avatar=normalizeAvatar(raw.avatar);s.looks=Array.isArray(raw.looks)?raw.looks.slice(0,6).map(normalizeAvatar):[];
  s.visited=['sanctuary','france',...WORLDS.map(w=>w.id)].filter((id,i,all)=>all.indexOf(id)===i&&Array.isArray(raw.visited)&&raw.visited.includes(id));
  s.zone=raw.zone==='france'||isCountry(raw.zone)?raw.zone:'sanctuary';for(const k of FLAGS)s.flags[k]=raw.flags?.[k]===true;
  s.rewards=QUESTS.map(q=>q.id).filter(id=>Array.isArray(raw.rewards)&&raw.rewards.includes(id));
- s.regions=normalizeRegions(raw.regions);
- s.xp=regionalXP(s.regions)+s.rewards.reduce((sum,id)=>sum+QUESTS.find(q=>q.id===id).reward,0)+(s.flags.secret?15:0);
+ s.regions=normalizeRegions(raw.regions);s.paris=normalizeParis(raw.paris);
+ s.xp=parisXP(s.paris)+regionalXP(s.regions)+s.rewards.reduce((sum,id)=>sum+QUESTS.find(q=>q.id===id).reward,0)+(s.flags.secret?15:0);
  s.avatar.weaponForm=unlockedForm(s.avatar.weaponForm,s.xp);
  s.bond=(s.flags.scent?1:0)+(s.flags.trial?1:0)+(s.flags.secret?1:0);
  s.hp=Math.min(100,Math.max(1,Number(raw.hp)||100));s.position=safePosition(raw.position,s.zone,s.flags);
@@ -26,10 +27,14 @@ export function normalize(raw){
  return s;
 }
 export function storageKey(uid){return '3b-origins-v1:'+ (uid||'guest');}
-export function load(storage,uid){try{return normalize(JSON.parse(storage.getItem(storageKey(uid))));}catch{return blank();}}
-export function persist(storage,uid,s){try{const previous=load(storage,uid),next=structuredClone(s);next.visited=[...new Set([...(previous.visited||[]),...(next.visited||[])])];next.flags={...next.flags};next.regions=normalizeRegions(next.regions);for(const [id,r] of Object.entries(previous.regions))if(r.revision>next.regions[id].revision)next.regions[id]=r;for(const k of FLAGS)if(previous.flags[k])next.flags[k]=true;next.rewards=[...new Set([...previous.rewards,...next.rewards])];if(previous.equipment==='artisan')next.equipment='artisan';storage.setItem(storageKey(uid),JSON.stringify(normalize(next)));return true;}catch{return false;}}
+export function load(storage,uid){
+ for(const key of [storageKey(uid),storageKey(uid)+':backup'])try{const raw=JSON.parse(storage.getItem(key));if(raw&&typeof raw==='object'&&!Array.isArray(raw))return normalize(raw);}catch{}
+ return blank();
+}
+export function persist(storage,uid,s){try{const previous=load(storage,uid),next=structuredClone(s);next.visited=[...new Set([...(previous.visited||[]),...(next.visited||[])])];next.flags={...next.flags};next.regions=normalizeRegions(next.regions);next.paris=normalizeParis(next.paris);if(previous.paris.revision>next.paris.revision)next.paris=previous.paris;for(const [id,r] of Object.entries(previous.regions))if(r.revision>next.regions[id].revision)next.regions[id]=r;for(const k of FLAGS)if(previous.flags[k])next.flags[k]=true;next.rewards=[...new Set([...previous.rewards,...next.rewards])];if(previous.equipment==='artisan')next.equipment='artisan';const previousText=storage.getItem(storageKey(uid));if(previousText)try{const raw=JSON.parse(previousText);if(raw&&typeof raw==='object'&&!Array.isArray(raw))storage.setItem(storageKey(uid)+':backup',previousText);}catch{}storage.setItem(storageKey(uid),JSON.stringify(normalize(next)));return true;}catch{return false;}}
 function reward(s,id){if(s.rewards.includes(id))return;s.rewards.push(id);s.xp+=QUESTS.find(q=>q.id===id).reward;}
 export function act(current,id,context={}){
+ const paris=parisAction(current,id,context);if(paris)return {...paris,objective:objective(paris.save)};
  const regional=regionalAction(current,id,context);if(regional)return {...regional,objective:objective(regional.save)};
  const s=structuredClone(current),f=s.flags,p=context.position||s.position,near=(key,r=3.2)=>s.zone===POINTS[key].zone&&distance(p,POINTS[key])<r;
  let message='',speaker='',changed=false,cinematic=null;
@@ -58,5 +63,5 @@ export function act(current,id,context={}){
  else if(id==='memory'&&near('memory')&&f.memoryAccepted){if(!context.vision||ground(p,s.zone)<2)message='Rejoins le passage haut par sa rampe et révèle le souvenir.';else{set('memory');message='Le souvenir des retrouvailles est retrouvé. Rapporte-le à la Maison des souvenirs.';}}
  else if(id==='secret'&&near('secret')&&context.vision){if(!f.secret){set('secret');s.bond++;s.xp+=15;message='Un souvenir caché. Le lien avec ton loup se renforce : sa recherche porte plus loin.';}}
  else if(id==='archive'&&near('archive'))message=f.trial?'Les Archives sont ouvertes. Cherche les deux témoignages avec la Vision de Mémoire.':'Le sceau se dénouera lorsque les deux plateaux seront occupés.';
- return {save:s,changed,message,speaker,cinematic,objective:objective(s)};
+ return {save:s,changed,message,speaker,cinematic,choices:s.zone==='france'?parisChoices(id):undefined,objective:objective(s)};
 }

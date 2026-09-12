@@ -6,7 +6,7 @@ export function fitWeapon(model,avatar){
  function mesh(g,m,x=0,y=0,z=0){geometries.push(g);const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;root.add(o);return o;}
  function rod(x,y,z,xx,yy,zz,r=.012,m=metal){const a=new T.Vector3(x,y,z),b=new T.Vector3(xx,yy,zz),d=b.clone().sub(a),o=mesh(new T.CylinderGeometry(r,r,d.length(),6),m);o.position.copy(a.add(b).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
  function blade(x=0,y=.25,length=.7){const o=mesh(new T.ConeGeometry(.075,length,4),light,x,y+length/2);o.scale.z=.3;return o;}
- const tier=Math.max(0,Math.min(3,avatar.weaponForm||0)),evolved=tier>0,orbiters=[];
+ const tier=Math.max(0,Math.min(3,avatar.weaponForm||0)),evolved=tier>0,orbiters=[],splitBlades=[];
  if(w.kind==='Bouclier'||w.kind==='Éventail'){
   const count=w.kind==='Bouclier'?8:7;for(let i=0;i<count;i++){const a=w.kind==='Bouclier'?i*Math.PI/4:i*Math.PI/6;const o=mesh(new T.BoxGeometry(.15,.34,.035),i%2?light:metal,Math.sin(a)*(evolved?.32:.2),.3+Math.cos(a)*(evolved?.32:.2));o.rotation.z=-a;}
  }else if(w.kind==='Arc'||w.id==='romano'&&evolved){
@@ -15,7 +15,7 @@ export function fitWeapon(model,avatar){
  else if(w.kind==='Ailes'){for(let i=0;i<6;i++){const o=blade(i*.05,.03+i*.04,.5-i*.045);o.rotation.z=-i*.15;}}
  else if(w.kind==='Fil'){mesh(new T.TorusGeometry(.35,.009,4,32),light,0,.3);}
  else if(w.kind==='Doubles lames'){for(let i=0;i<2;i++){const o=mesh(new T.TorusGeometry(.27,.035,5,20,Math.PI*1.3),light,(evolved?0:(i-.5)*.35),.3);o.rotation.z=i*Math.PI;}}
- else if(w.kind==='Ciseaux'){for(let i=0;i<2;i++){const o=blade((i-.5)*(evolved?.28:.08),.15,.65);o.rotation.z=(i-.5)*.45;mesh(new T.TorusGeometry(.075,.016,5,12),metal,(i-.5)*.12,.04);}}
+ else if(w.kind==='Ciseaux'){for(let i=0;i<2;i++){const o=blade((i-.5)*(evolved?.28:.08),.15,.65);o.rotation.z=(i-.5)*.45;splitBlades.push({object:o,base:o.position.clone(),rotation:o.rotation.clone(),side:i?1:-1});mesh(new T.TorusGeometry(.075,.016,5,12),metal,(i-.5)*.12,.04);}}
  else if(w.kind==='Hache'){rod(0,-.25,0,0,.8,0,.025);const o=mesh(new T.CylinderGeometry(.28,.2,.055,6),light,.1,.65);o.rotation.x=Math.PI/2;}
  else if(w.id==='paris'&&evolved){
   for(let i=0;i<4;i++){const x=(i%2?1:-1)*.13,y=-.45+i*.37;rod(x,y,0,x,y+.23,0,.012);const tip=blade(x,y+.16,.17);if(tier>1)orbiters.push({object:tip,base:tip.position.clone(),phase:i*Math.PI/2});}
@@ -29,5 +29,6 @@ export function fitWeapon(model,avatar){
  if(hand){const p=hand.getWorldPosition(new T.Vector3());model.worldToLocal(p);root.position.copy(p);model.add(root);hand.attach(root);}else{root.position.set(.4,.85,0);model.add(root);}
  root.rotateZ(-Math.PI/2);
  root.name='3B-equipped-'+w.id;
- return {update(time){for(const o of orbiters){if(o.ring){o.object.rotation.y=time*.5;continue;}o.object.position.x=o.base.x+Math.cos(time+o.phase)*.045;o.object.position.z=o.base.z+Math.sin(time+o.phase)*.08;}},dispose(){root.removeFromParent();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ const destination=new T.Vector3();let separation=0,lastTime=0;
+ return {update(time,combat={}){const dt=Math.max(0,Math.min(.1,time-lastTime));lastTime=time;separation+=(Number(combat.detached>0)-separation)*(1-Math.exp(-dt*14));model.updateWorldMatrix(true,true);for(const b of splitBlades){destination.set(b.side*.55,1.15,1.6+Math.sin(time*7+b.side)*.3);model.localToWorld(destination);root.worldToLocal(destination);b.object.position.copy(b.base).lerp(destination,separation);b.object.rotation.copy(b.rotation);b.object.rotation.y+=separation*time*9;}for(const o of orbiters){if(o.ring){o.object.rotation.y=time*.5;continue;}o.object.position.x=o.base.x+Math.cos(time+o.phase)*.045;o.object.position.z=o.base.z+Math.sin(time+o.phase)*.08;}},dispose(){root.removeFromParent();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }

@@ -32,14 +32,16 @@ export const QUALITY_MODES=['auto','fluid','detail'];
 export function createQualityController(mode='auto'){
  let value=1,slow=0,fast=0;
  return {
+  profile(){return mode==='fluid'||mode==='auto'&&value<=.7?'light':'high';},
   setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=1;slow=fast=0;},
   ratio(width,height,dpr=1){
-   const cap=mode==='detail'?1.5:mode==='fluid'?1:1.25;
-   const pixels=mode==='detail'?2600000:mode==='fluid'?850000:1600000;
+   const cap=mode==='fluid'?1:1.75;
+   const pixels=mode==='fluid'?850000:3000000;
    return Math.max(.5,Math.min(dpr,cap,Math.sqrt(pixels/Math.max(1,width*height)))*(mode==='auto'?value:1));
   },
   sample(fps,seconds){
-   if(mode!=='auto')return false;
+   if(mode!=='auto'||!Number.isFinite(fps)||fps<=0||!Number.isFinite(seconds)||seconds<=0)return false;
+   seconds=Math.min(seconds,2);
    slow=fps<45?slow+seconds:0;fast=fps>57?fast+seconds:0;
    if(slow>=2&&value>.6){value=Math.max(.6,value-.12);slow=fast=0;return true;}
    if(fast>=12&&value<1){value=Math.min(1,value+.06);slow=fast=0;return true;}
