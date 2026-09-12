@@ -92,13 +92,14 @@ function Session({uid,goTo,onPrevious}){
 
    {c.active&&<div className="origins-enemy"><span>{c.enemyName||'Manifestation de l’Oubli'}</span><meter aria-label="Vie de l’adversaire" min="0" max={c.enemyMax||130} value={c.enemy}/><small>{c.state==='windup'?'Attaque annoncée · esquive !':c.state==='recover'?'Ouverture · frappe maintenant':c.state==='stagger'?'L’Oubli recule':'Écoute les deux voix. Protège leurs souvenirs.'}</small></div>}
 
+   {(c.guard>0||c.slow>0)&&<div className="origins-support-status" role="status">{c.guard>0?'Protection : prochain impact':'Adversaire ralenti'} · {Math.ceil(c.guard||c.slow)} s</div>}
    {snapshot?.vision>0&&<div className="origins-vision">VISION DE MÉMOIRE · {Math.ceil(snapshot.vision)} s</div>}
 
    <div className="origins-bottom"><div className="origins-quick"><button onClick={()=>setPanel('journal')} aria-label="Journal"><BookOpen size={19}/></button><button onClick={()=>action('recenter')} aria-label="Recentrer la caméra"><RotateCcw size={19}/></button><span className="origins-keyboard">ZQSD / WASD · Maj courir<br/>Glisser pour regarder · clic pour marcher</span><span className="origins-touchhint">Gauche : déplacer<br/>Droite : regarder</span></div>
 
     <div className="origins-actions">
 
-     <button onClick={()=>action('wolf')} aria-label="Commander le loup"><Footprints/><span>Loup <kbd>F</kbd></span></button>
+     <button onClick={()=>action('wolf')} disabled={c.active&&snapshot?.wolf?.cooldown>0} title={c.active?snapshot?.wolf?.power:undefined} aria-label="Commander le loup"><Footprints/><span>{c.active?(snapshot?.wolf?.cooldown>0?Math.ceil(snapshot.wolf.cooldown)+' s':'Soutien'):'Loup'} <kbd>F</kbd></span></button>
 
      <button onClick={()=>action('vision')} disabled={snapshot?.visionCooldown>0} aria-label="Vision de Mémoire"><Eye/><span>{snapshot?.visionCooldown>0?Math.ceil(snapshot.visionCooldown)+' s':'Mémoire'} <kbd>V</kbd></span></button>
 

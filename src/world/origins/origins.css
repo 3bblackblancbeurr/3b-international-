@@ -5,3 +5,5 @@
 .origins-dialogue-choices{display:flex;gap:8px;flex-wrap:wrap;padding-right:24px}.origins-dialogue .origins-dialogue-choices button{position:static;min-height:44px;padding:8px 12px;width:auto;color:#f6e8ce;background:#263c42;border:1px solid #7c948f;border-radius:8px}
 
 .origins-dialogue{max-height:calc(100dvh - 250px);overflow-y:auto;touch-action:pan-y}@media(max-height:520px){.origins-dialogue{max-height:calc(100dvh - 125px)}}
+
+.origins-support-status{position:absolute;top:130px;left:50%;transform:translateX(-50%);background:#112331e8;color:#c4e7ff;border:1px solid #9cbdd3;padding:8px 12px;border-radius:8px;font-size:12px;pointer-events:none;z-index:3;max-width:70%;text-align:center}
