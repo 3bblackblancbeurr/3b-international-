@@ -1,4 +1,4 @@
-name: Generate 3B PWA icon assets
+name: Generate exact 3B PWA icon assets
 
 on:
   push:
@@ -29,27 +29,32 @@ jobs:
             sudo apt-get install -y imagemagick
           fi
 
-      - name: Generate exact PNG and maskable icons
+      - name: Download the exact approved 3B image
         shell: bash
         run: |
           set -euo pipefail
-          src="public/icons/3b-exact-512.jpg"
-          test -s "$src"
+          source_url='https://d2jqrm6oza8nb6.cloudfront.net/datasets/7af0307b-2965-4048-aacd-04cab528d3a7.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiOTU5YTAwMjQ3M2E3ZWVjNiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4OTMyMTc2NH0.Df6i0J7a3CmU7uRkf8YTy2IFID-Q7YXP3MEusK8YnZo'
+          curl --fail --location --retry 3 --retry-delay 2 \
+            --output "$RUNNER_TEMP/3b-approved-source" \
+            "$source_url"
+          test -s "$RUNNER_TEMP/3b-approved-source"
+          identify "$RUNNER_TEMP/3b-approved-source"
+          dimensions="$(identify -format '%wx%h' "$RUNNER_TEMP/3b-approved-source")"
+          test "$dimensions" = "1536x1536"
+
+      - name: Generate real PNG icons without changing the logo
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/3b-approved-source"
 
           convert "$src" -auto-orient -filter Lanczos -resize '32x32!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-32.png
           convert "$src" -auto-orient -filter Lanczos -resize '180x180!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-180.png
           convert "$src" -auto-orient -filter Lanczos -resize '192x192!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-192.png
           convert "$src" -auto-orient -filter Lanczos -resize '512x512!' -strip -colorspace sRGB PNG24:public/icons/3b-icon-20260912-512.png
 
-          convert -size 192x192 xc:black \
-            \( "$src" -auto-orient -filter Lanczos -resize '146x146!' \) \
-            -gravity center -composite -strip -colorspace sRGB \
-            PNG24:public/icons/3b-icon-20260912-maskable-192.png
-
-          convert -size 512x512 xc:black \
-            \( "$src" -auto-orient -filter Lanczos -resize '389x389!' \) \
-            -gravity center -composite -strip -colorspace sRGB \
-            PNG24:public/icons/3b-icon-20260912-maskable-512.png
+          cp public/icons/3b-icon-20260912-192.png public/icons/3b-icon-20260912-maskable-192.png
+          cp public/icons/3b-icon-20260912-512.png public/icons/3b-icon-20260912-maskable-512.png
 
       - name: Validate PNG signatures and dimensions
         shell: bash
@@ -94,9 +99,9 @@ jobs:
             public/icons/3b-icon-20260912-maskable-512.png
 
           if git diff --cached --quiet; then
-            echo "The generated icons are already up to date."
+            echo "The exact icon files are already up to date."
             exit 0
           fi
 
-          git commit -m "Add real PNG and maskable 3B icon assets"
+          git commit -m "Add exact 3B PNG and maskable app icons"
           git push origin "HEAD:${GITHUB_REF_NAME}"
