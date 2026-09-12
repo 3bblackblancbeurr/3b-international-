@@ -158,7 +158,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = page === "intro" ? "3B International — De zéro à l’international" : `${currentPageTitle} — 3B`;
+    document.title = page === "intro" ? "3B International — Application Black Blanc Beur" : `${currentPageTitle} — 3B`;
     const heading = document.querySelector("main h1");
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
     window.scrollTo({ top: 0, behavior: "instant" });
