@@ -1,109 +1,52 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {NEXUS_DOORS, nexusProgress, nexusTravelCommands, commitNexusTravel} from '../src/lib/passport-nexus.js';
+import {readFileSync} from 'node:fs';
+import {NEXUS_DOORS,nexusProgress,nexusTravelState,commitNexusTravel} from '../src/lib/passport-nexus.js';
 
-const save = (region='hub', seals=[]) => ({region, seals, xp:0, visited:[], adventure:{encounter:null}});
-function fakeStore(initial=save(), overrides={}) {
-  const calls=[];
-  const store={
-    loadWorld:async uid=>{calls.push(['load',uid]);return {data:initial,message:'test'};},
-    recordWorldAction:(uid,data,command)=>{calls.push(['action',uid,command]);return {...data,region:command.region};},
-    writeLocal:(uid,data,dirty)=>{calls.push(['write',uid,data.region,dirty]);return true;},
-    saveWorld:async (uid,data)=>{calls.push(['sync',uid]);return {data,message:'saved'};},
-    ...overrides,
-  };
-  return {store,calls};
+const spawn={x:0,z:25};
+const save=(zone='sanctuary')=>({zone,position:{x:0,z:20},avatar:{created:true,name:'Voyageur'},flags:{awakened:true},regions:{italie:{wins:2,restored:1}},hp:42,xp:65,rewards:['justice-01'],visited:['france'],equipment:'heritage'});
+function fakeStore(initial=save(),overrides={}){
+ const calls=[];
+ const store={spawns:Object.fromEntries(NEXUS_DOORS.map(d=>[d.region,spawn])),
+  loadWorld:async uid=>{calls.push(['load',uid]);return {data:initial,message:'local'};},
+  saveWorld:async(uid,data)=>{calls.push(['save',uid,data]);return {ok:true,data,message:'local'};},...overrides};
+ return {store,calls};
 }
-test('eight unique doors with canonical country IDs and narrative values',()=>{
-  assert.equal(NEXUS_DOORS.length,8);
-  assert.equal(new Set(NEXUS_DOORS.map(d=>d.region)).size,8);
-  assert.deepEqual(NEXUS_DOORS.map(d=>[d.code,d.region,d.value]),[
-    ['FR','france','Justice'],['DZ','algerie','Loyauté'],['ES','espagne','Passion'],['MA','maroc','Noblesse'],
-    ['IT','italie','Espoir'],['TN','tunisie','Courage'],['TR','turquie','Foi'],['EE','estonie','Sagesse'],
-  ]);
+test('eight unique canonical countries and values',()=>{
+ assert.deepEqual(NEXUS_DOORS.map(d=>[d.code,d.region,d.value]),[
+  ['FR','france','Justice'],['DZ','algerie','Loyauté'],['ES','espagne','Passion'],['MA','maroc','Noblesse'],
+  ['IT','italie','Espoir'],['TN','tunisie','Courage'],['TR','turquie','Foi'],['EE','estonie','Sagesse']]);
+ assert.equal(new Set(NEXUS_DOORS.map(d=>d.region)).size,8);
 });
-test('missing and malformed saves stay locked',()=>{
-  for (const input of [null,undefined,{}, {seals:8},{seals:'france'},{seals:{length:8}}]) {
-    assert.equal(nexusProgress(input).count,0);assert.equal(nexusProgress(input).originUnlocked,false);
-  }
-});
-test('eight repeats are one key, not eight',()=>assert.equal(nexusProgress(save('hub',Array(8).fill('france'))).count,1));
-test('unknown seals cannot unlock ORIGINE',()=>assert.equal(nexusProgress(save('hub',['FR','origin','hub',null,1,'xx'])).count,0));
-test('XP, visited countries and runner keys are not guardian seals',()=>assert.equal(nexusProgress({xp:10000,visited:NEXUS_DOORS.map(d=>d.region),keys:Array(8).fill('key')}).originUnlocked,false));
-for(let count=0;count<=8;count++) test(`${count} unique seals: correct count and ORIGINE gate`,()=>{
-  const result=nexusProgress(save('hub',NEXUS_DOORS.slice(0,count).map(d=>d.region)));
-  assert.equal(result.count,count);assert.equal(result.originUnlocked,count===8);
-});
-test('progress is ordered and does not mutate input',()=>{
-  const seals=['estonie','france','estonie'];const input=save('hub',seals);
-  assert.deepEqual(nexusProgress(input).keys,['france','estonie']);assert.deepEqual(input.seals,seals);
-});
-for(const door of NEXUS_DOORS) test(`door ${door.code} plans a real visit to ${door.region}`,()=>{
-  assert.deepEqual(nexusTravelCommands(save(),door.region),[{type:'visit',region:door.region}]);
-});
-test('country-to-country travel goes through the hub',()=>assert.deepEqual(nexusTravelCommands(save('france'),'italie'),[{type:'visit',region:'hub'},{type:'visit',region:'italie'}]));
-test('same country does not replay visits or rewards',()=>assert.deepEqual(nexusTravelCommands(save('italie'),'italie'),[]));
-test('active encounter prevents teleportation',()=>{
-  const input=save('france');input.adventure.encounter={result:null};
-  assert.throws(()=>nexusTravelCommands(input,'italie'),/rencontre/);
-});
-test('completed encounter can be left by the existing visit command',()=>{
-  const input=save('france');input.adventure.encounter={result:'victory'};
-  assert.equal(nexusTravelCommands(input,'italie').length,2);
-});
-test('invalid targets and saves fail before commands',()=>{
-  for(const target of ['IT','origine','hub','__proto__','',null])assert.throws(()=>nexusTravelCommands(save(),target));
-  assert.throws(()=>nexusTravelCommands({region:'unknown'},'italie'));
-});
-test('uses the real account scope and existing command journal',async()=>{
-  const initial=save('france',['france']);const {store,calls}=fakeStore(initial);
-  const result=await commitNexusTravel({uid:'member-a',region:'italie',store});
-  assert.deepEqual(calls.filter(c=>c[0]==='action').map(c=>c[2]),[{type:'visit',region:'hub'},{type:'visit',region:'italie'}]);
-  assert.ok(calls.every(c=>c[1]==='member-a'));assert.equal(result.data.region,'italie');
-  assert.deepEqual(result.data.seals,['france']);assert.equal(result.data.xp,0);assert.equal(initial.region,'france');
-});
-test('guest travel is persisted even when sync returns only a message',async()=>{
-  const {store}=fakeStore(save(),{saveWorld:async()=>({message:'guest saved'})});
-  assert.equal((await commitNexusTravel({region:'italie',store})).data.region,'italie');
-});
-test('storage failure is not reported as a successful passage',async()=>{
-  let synced=false;const {store}=fakeStore(save(),{writeLocal:()=>false,saveWorld:async()=>{synced=true;return {};}});
-  await assert.rejects(commitNexusTravel({region:'italie',store}),/stockage/);assert.equal(synced,false);
-});
-test('offline sync keeps the local destination and exposes pending status',async()=>{
-  const {store}=fakeStore(save(),{saveWorld:async()=>({pending:true,message:'offline'})});
-  const result=await commitNexusTravel({uid:'member-a',region:'italie',store});
-  assert.equal(result.pending,true);assert.equal(result.data.region,'italie');
-});
-test('server destination wins over optimistic client state',async()=>{
-  const {store}=fakeStore(save(),{saveWorld:async()=>({data:save(),message:'server rejected'})});
-  await assert.rejects(commitNexusTravel({uid:'member-a',region:'italie',store}),/server rejected/);
-});
-test('unknown target triggers no storage or network call',async()=>{
-  const {store,calls}=fakeStore();await assert.rejects(commitNexusTravel({region:'invalid',store}));assert.equal(calls.length,0);
-});
-test('already cancelled session performs no work',async()=>{
-  const {store,calls}=fakeStore();assert.equal(await commitNexusTravel({region:'italie',store,isActive:()=>false}),null);assert.equal(calls.length,0);
-});
-test('closing or switching account during load prevents writes',async()=>{
-  let active=true;const {store,calls}=fakeStore(save(),{loadWorld:async()=>{active=false;return {data:save()};}});
-  assert.equal(await commitNexusTravel({region:'italie',store,isActive:()=>active}),null);assert.equal(calls.length,0);
-});
-test('closing during synchronization prevents a late navigation result',async()=>{
-  let active=true;const {store}=fakeStore(save(),{saveWorld:async(uid,data)=>{active=false;return {data};}});
-  assert.equal(await commitNexusTravel({region:'italie',store,isActive:()=>active}),null);
-});
-test('active encounter triggers no journal or save writes',async()=>{
-  const input=save();input.adventure.encounter={result:null};const {store,calls}=fakeStore(input);
-  await assert.rejects(commitNexusTravel({region:'italie',store}),/rencontre/);
-  assert.deepEqual(calls.map(c=>c[0]),['load']);
-});
-test('journal errors are exposed, not disguised as successful navigation',async()=>{
-  const {store}=fakeStore(save(),{recordWorldAction:()=>{throw Error('journal full');}});
-  await assert.rejects(commitNexusTravel({region:'italie',store}),/journal full/);
-});
-test('revisiting the saved destination emits no new reward-producing command',async()=>{
-  const {store,calls}=fakeStore(save('italie'));
-  await commitNexusTravel({region:'italie',store});
-  assert.equal(calls.filter(c=>c[0]==='action').length,0);
-});
+for(const [label,input] of [['null',null],['missing',undefined],['empty',{}],['old seals',{seals:NEXUS_DOORS.map(d=>d.region)}],['visits',{visited:NEXUS_DOORS.map(d=>d.region)}],['runner keys',{keys:Array(8).fill('key')}],['XP',{xp:10000}],['truthy flag',{flags:{justice:1}}]])
+ test(`${label} cannot create ORIGINS fragments`,()=>{assert.equal(nexusProgress(input).count,0);assert.equal(nexusProgress(input).originUnlocked,false);});
+test('real France quest flag contributes exactly one fragment',()=>{const p=nexusProgress({flags:{justice:true}});assert.deepEqual(p.keys,['france']);assert.equal(p.count,1);assert.equal(p.originUnlocked,false);});
+test('seven unimplemented regional keys remain explicit',()=>{const p=nexusProgress(save());assert.equal(p.missingKeyHooks.length,7);assert.deepEqual(p.implemented,['france']);assert.equal(p.total,8);});
+test('ordinary regional wins and restored gardens do not impersonate guardian keys',()=>{const s=save();s.regions=Object.fromEntries(NEXUS_DOORS.map(d=>[d.region,{wins:999,restored:3,key:true}]));assert.equal(nexusProgress(s).count,0);});
+test('legacy keys do not unlock ORIGINE even alongside the France fragment',()=>assert.equal(nexusProgress({flags:{justice:true},seals:NEXUS_DOORS.map(d=>d.region)}).originUnlocked,false));
+test('progress inspection does not mutate the save',()=>{const s=save(),before=structuredClone(s);nexusProgress(s);assert.deepEqual(s,before);});
+for(const door of NEXUS_DOORS)test(`door ${door.code} targets the current ORIGINS zone ${door.region}`,()=>{const s=save(),next=nexusTravelState(s,door.region,spawn);assert.equal(next.zone,door.region);assert.deepEqual(next.position,spawn);assert.equal(s.zone,'sanctuary');});
+test('country-to-country passport travel keeps the current ORIGINS schema',()=>{const s=save('france');const n=nexusTravelState(s,'italie',spawn);assert.equal(n.zone,'italie');assert.equal('region' in n,false);});
+test('same country preserves saved position and emits no new save',()=>{const s=save('italie');assert.equal(nexusTravelState(s,'italie',spawn),s);});
+test('character creation is not bypassed',()=>assert.throws(()=>nexusTravelState({...save(),avatar:{created:false}},'italie',spawn),/personnage/));
+test('the awakening quest is not bypassed',()=>assert.throws(()=>nexusTravelState({...save(),flags:{}},'italie',spawn),/Éveille/));
+test('an explicitly active encounter blocks a passage',()=>assert.throws(()=>nexusTravelState({...save(),combat:{active:true}},'italie',spawn),/rencontre/));
+test('unknown targets fail closed',()=>{for(const id of ['IT','hub','origine','__proto__','',null])assert.throws(()=>nexusTravelState(save(),id,spawn));});
+test('an old-world save cannot be used as an ORIGINS save',()=>assert.throws(()=>nexusTravelState({region:'hub',adventure:{avatar:{created:true}}},'italie',spawn),/ORIGINS/));
+test('invalid arrival positions fail closed',()=>{for(const p of [null,{}, {x:NaN,z:25},{x:0,z:Infinity}])assert.throws(()=>nexusTravelState(save(),'italie',p),/arrivée/);});
+test('travel never changes HP, XP, quest flags, rewards, gear, avatar or regional progress',()=>{const s=save(),before=structuredClone(s),n=nexusTravelState(s,'italie',spawn);for(const key of ['hp','xp','flags','rewards','equipment','avatar','regions','visited'])assert.deepEqual(n[key],before[key]);assert.deepEqual(s,before);});
+test('arrival position is copied rather than sharing mutable spawn configuration',()=>{const s=save(),p={...spawn},n=nexusTravelState(s,'italie',p);n.position.x=99;assert.equal(p.x,0);});
+test('adapter receives the exact account scope',async()=>{const {store,calls}=fakeStore();const r=await commitNexusTravel({uid:'member-a',region:'italie',store});assert.equal(r.data.zone,'italie');assert.equal(r.local,true);assert.ok(calls.every(c=>c[1]==='member-a'));});
+test('guest scope stays separate from a member',async()=>{const {store,calls}=fakeStore();await commitNexusTravel({region:'italie',store});assert.ok(calls.every(c=>c[1]===undefined));});
+test('storage failure is never a successful journey',async()=>{const {store}=fakeStore(save(),{saveWorld:async()=>({ok:false})});await assert.rejects(commitNexusTravel({region:'italie',store}),/stockage/);});
+test('read-back destination must match the selected country',async()=>{const {store}=fakeStore(save(),{saveWorld:async()=>({ok:true,data:save()})});await assert.rejects(commitNexusTravel({region:'italie',store}),/confirmé/);});
+test('unknown target triggers no I/O',async()=>{const {store,calls}=fakeStore();await assert.rejects(commitNexusTravel({region:'unknown',store}));assert.equal(calls.length,0);});
+test('already cancelled session performs no I/O',async()=>{const {store,calls}=fakeStore();assert.equal(await commitNexusTravel({region:'italie',store,isActive:()=>false}),null);assert.equal(calls.length,0);});
+test('closing or switching account during load prevents writes',async()=>{let active=true;const {store,calls}=fakeStore(save(),{loadWorld:async()=>{active=false;return {data:save()};}});assert.equal(await commitNexusTravel({region:'italie',store,isActive:()=>active}),null);assert.equal(calls.length,0);});
+test('closing during persistence prevents late navigation',async()=>{let active=true;const {store}=fakeStore(save(),{saveWorld:async(uid,data)=>{active=false;return {ok:true,data};}});assert.equal(await commitNexusTravel({region:'italie',store,isActive:()=>active}),null);});
+test('character prerequisites fail before any write',async()=>{const {store,calls}=fakeStore({...save(),avatar:{created:false}});await assert.rejects(commitNexusTravel({region:'italie',store}));assert.deepEqual(calls.map(c=>c[0]),['load']);});
+test('reopening the current country does not overwrite its position',async()=>{const {store,calls}=fakeStore(save('italie'));const r=await commitNexusTravel({region:'italie',store});assert.equal(r.data.zone,'italie');assert.deepEqual(calls.map(c=>c[0]),['load']);});
+test('storage exceptions are exposed',async()=>{const {store}=fakeStore(save(),{saveWorld:async()=>{throw Error('storage denied');}});await assert.rejects(commitNexusTravel({region:'italie',store}),/storage denied/);});
+test('fresh-load errors are exposed before save',async()=>{const {store,calls}=fakeStore(save(),{loadWorld:async()=>{throw Error('read denied');}});await assert.rejects(commitNexusTravel({region:'italie',store}),/read denied/);assert.equal(calls.length,0);});
+test('Nexus imports the current ORIGINS adapter, not the old world journal',()=>{const s=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');assert.match(s,/world\/origins\/passport-adapter\.js/);assert.doesNotMatch(s,/import\("\.\.\/world\/save\.js"\)/);});
+test('production adapter uses ORIGINS load/persist and configured spawn points',()=>{const s=readFileSync(new URL('../src/world/origins/passport-adapter.js',import.meta.url),'utf8');assert.match(s,/from '\.\/state\.js'/);assert.match(s,/from '\.\/data\.js'/);assert.doesNotMatch(s,/recordWorldAction|supabase|world\/save\.js/);});
