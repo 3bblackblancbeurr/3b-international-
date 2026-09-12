@@ -1,0 +1,75 @@
+/* Scoped additions: preserve the existing card artwork and Matrix treatment. */
+.passport-portal-dialog {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.passport-portal-dialog::backdrop { background: #000711; }
+.passport-portal-dialog button { touch-action: manipulation; }
+.passport-portal-dialog button:focus-visible { outline: 3px solid #fff0b0; outline-offset: 4px; }
+.passport-portal-dialog button:disabled { cursor: not-allowed; }
+.passport-portal-dialog .passport-nexus { padding-bottom: max(32px, calc(env(safe-area-inset-bottom) + 20px)); }
+.passport-portal-skip {
+  position: fixed;
+  z-index: 10005;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  min-height: 44px;
+  padding: 9px 14px;
+  max-width: calc(100% - 96px);
+  border: 1px solid #77d5eb;
+  border-radius: 14px;
+  color: #dffcff;
+  background: #001529;
+  cursor: pointer;
+}
+.passport-nexus-feedback { max-width: 900px; margin: 0 auto 18px; text-align: center; overflow-wrap: anywhere; }
+.passport-nexus-feedback p { color: #b0d8e2; font-size: 13px; line-height: 1.6; }
+.passport-nexus-feedback .passport-nexus-error { color: #ffcca8; }
+.passport-key-count { margin-top: 12px; color: #f5dfad; font-size: 24px; }
+.passport-portal-dialog .passport-broken-circle i[data-collected="false"] { opacity: .2; filter: none; }
+.passport-portal-dialog .passport-broken-circle i[data-collected="true"] { opacity: 1; border-top-color: #f5dfad; filter: drop-shadow(0 0 5px #bd9752); }
+.passport-portal-dialog .passport-door-grid { min-width: 0; }
+.passport-portal-dialog .passport-nexus-door { min-height: 168px; }
+.passport-portal-dialog .passport-nexus-door:disabled { opacity: .6; transform: none; }
+.passport-door-status { position: relative; z-index: 2; margin-top: 8px; color: #c9e5eb; font-size: 11px; }
+.passport-portal-dialog .passport-origin-door:not(:disabled) { border-color: #f5dfad; color: #fff1ce; cursor: pointer; box-shadow: 0 0 24px #b3955226; }
+.passport-portal-dialog .passport-origin-door small { color: #c7b990; }
+.passport-origin-chamber { display: grid; align-content: center; justify-items: center; gap: 18px; text-align: center; }
+.passport-origin-mark { display: grid; place-items: center; width: min(46vw, 210px); aspect-ratio: 1; border: 2px solid #f5dfad; border-radius: 50%; color: #b9f6ff; font-size: 64px; font-weight: 900; box-shadow: 0 0 55px #23c1ff40; }
+.passport-origin-signature { letter-spacing: .15em; color: #f5dfad; }
+.passport-origin-chamber blockquote { margin: 0; color: #fff1ce; font-size: clamp(20px, 4vw, 32px); }
+.passport-origin-chamber > p { max-width: 650px; line-height: 1.7; }
+.passport-origin-note { font-size: 13px; color: #b2cbd2; }
+.passport-origin-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+/* Respect both the app option (including card Pause) and system preferences. */
+.passport-portal[data-reduced-motion="true"] *,
+.passport-portal[data-reduced-motion="true"] *::before,
+.passport-portal[data-reduced-motion="true"] *::after,
+.passport-visual[data-animated="false"] .passport-portal-trigger,
+.passport-visual[data-animated="false"] .passport-portal-trigger *,
+.passport-visual[data-animated="false"] .passport-portal-trigger *::before,
+.passport-visual[data-animated="false"] .passport-portal-trigger *::after {
+  animation: none !important;
+  transition: none !important;
+}
+@media (max-width: 540px) {
+  .passport-portal-dialog .passport-nexus { width: calc(100% - 28px); }
+  .passport-portal-dialog .passport-nexus-core { padding: 18px 12px; }
+  .passport-portal-dialog .passport-broken-circle { width: 126px; margin-bottom: 10px; }
+  .passport-portal-dialog .passport-nexus-door { min-height: 144px; }
+  .passport-portal-dialog .passport-nexus-core > p { font-size: 13px; letter-spacing: .08em; }
+  .passport-portal-dialog .passport-nexus-header > p:last-child { line-height: 1.6; }
+  .passport-portal-dialog .passport-nexus-feedback { margin-bottom: 14px; }
+}
+@media (max-width: 340px) {
+  .passport-portal-dialog .passport-door-grid { grid-template-columns: 1fr; }
+}
