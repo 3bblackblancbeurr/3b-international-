@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, Sparkles } from "lucide-react";
 import DigitalHead from "./DigitalHead.jsx";
+import PassportNexus from "./PassportNexus.jsx";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   left: `${(column + 0.25) * 100 / 58}%`,
@@ -23,9 +24,10 @@ const CIRCUITS = [
   "M605 108H850L874 132H1010L1038 104H1191",
 ];
 
-export default function PassportVisual({ options }) {
+export default function PassportVisual({ options, goTo }) {
   const id = useId().replaceAll(":", "");
   const [paused, setPaused] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -93,6 +95,13 @@ export default function PassportVisual({ options }) {
       <DigitalHead animated={animated} />
       <div className="passport-portrait-scan" aria-hidden="true" />
 
+      <div className="passport-security-edge" aria-hidden="true" />
+      <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> PASSEPORT VIVANT</div>
+      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir le Cercle et entrer dans le Nexus 3B">
+        <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
+        <b>3B</b>
+        <small>ENTRER</small>
+      </button>
     </div>
     <div className="passport-animation-toolbar">
       <span><i className={animated ? "digital-status is-live" : "digital-status"} aria-hidden="true" />{animated ? "Carte digitale animée" : "Carte en mode calme"}</span>
@@ -101,5 +110,10 @@ export default function PassportVisual({ options }) {
         {motionAllowed ? (paused ? "Reprendre l’animation" : "Mettre en pause") : "Mouvements réduits"}
       </button>
     </div>
+    <div className="passport-entry-hint">
+      <Sparkles size={15} aria-hidden="true" />
+      <span>Touche le cercle lumineux <strong>3B</strong> sur le passeport pour ouvrir le passage.</span>
+    </div>
+    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
   </div>;
 }
