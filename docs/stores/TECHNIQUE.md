@@ -25,24 +25,24 @@ Ces métadonnées identifient un WebAPK utilisé par Chrome. Ce fichier ne fourn
 
 ## Android
 
-Une Trusted Web Activity peut conserver l'exécution de l'application web dans le navigateur Android. Bubblewrap fournit le projet et les outils de packaging ; le site et l'application doivent être associés par Digital Asset Links. [Guide Chrome](https://developer.chrome.com/docs/android/trusted-web-activity/quick-start).
+Le projet ajouté utilise Capacitor 8.5.2 et embarque le contenu web construit. Le SDK cible est 36, le minimum 24. Un APK de débogage et un AAB non signé ont été compilés avec succès dans GitHub Actions ; leurs résultats sont consignés dans [Versions mobiles de test](VERSIONS_MOBILES.md).
 
-Travail à réaliser :
+Travail restant :
 
-1. Définir l'identifiant Android définitif au moment de créer le projet ; vérifier les identifiants de toute autre version déjà distribuée.
-2. Générer le projet avec une version actuelle de Bubblewrap et les outils Android compatibles ; contrôler le SDK cible demandé par Play Console au moment du dépôt.
+1. Confirmer l'identifiant Android définitif avant le premier dépôt ; vérifier les identifiants de toute version déjà distribuée.
+2. Contrôler le SDK cible demandé par Play Console au moment du dépôt.
 3. Préparer la signature et conserver la clé d'import dans un emplacement privé durable. Aucune clé ne doit être ajoutée au dépôt.
-4. Produire le fichier AAB, puis configurer Play App Signing.
-5. Publier `/.well-known/assetlinks.json` avec l'identifiant retenu et l'empreinte du certificat de signature utilisé pour les installations Google Play. Une empreinte de clé d'import n'est pas interchangeable avec celle de la clé de distribution.
+4. Produire l'AAB signé, puis configurer Play App Signing.
+5. Activer les origines natives dans les services après autorisation du déploiement.
 6. Tester le lancement, le retour Android, l'authentification et les liens externes sur appareil.
 
 Les nouveaux dépôts utilisent les Android App Bundles ; les noms de package sont permanents. [Google Play : configuration](https://support.google.com/googleplay/android-developer/answer/9859152?hl=fr).
 
 ## iPhone
 
-Capacitor permet d'intégrer les fichiers web construits dans un projet iOS. L'application possède déjà les éléments de départ : `package.json`, `index.html` et la sortie Vite `dist`. Cela reste une piste d'implémentation, pas un build créé ou testé. [Installation Capacitor](https://capacitorjs.com/docs/getting-started).
+Le projet Capacitor iOS a été généré et compilé avec Xcode 26.3 pour le simulateur. La dépendance Swift est verrouillée sur Capacitor 8.5.2. Cette version sans signature ne s'installe pas sur un iPhone. [Installation Capacitor](https://capacitorjs.com/docs/getting-started).
 
-L'intégration nécessite un identifiant Bundle ID, les ressources locales, la gestion des liens et de l'authentification, puis la compilation et la signature avec Xcode. Les appels relatifs `/api/...` de la boutique doivent rejoindre le serveur HTTPS de production depuis le contexte natif. Les listes d'origines autorisées dans les fonctions serveur doivent également correspondre aux origines réelles du client natif, sans ouvrir les API à toutes les origines.
+Il reste à confirmer le Bundle ID et l'équipe Apple, finaliser l'icône, préparer la signature et tester sur appareil. La boutique physique s'ouvre dans le navigateur intégré avec son parcours web existant. Les listes d'origines autorisées dans les fonctions serveur doivent être déployées puis testées avant la recette native des fonctions connectées.
 
 Apple examine l'utilité réelle et la qualité de l'application : emballer le site ne garantit pas son acceptation. La version soumise doit dépasser une simple présentation de liens. [App Review, section 4.2](https://developer.apple.com/app-store/review/guidelines/#minimum-functionality).
 
