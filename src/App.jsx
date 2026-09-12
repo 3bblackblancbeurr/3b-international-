@@ -24,7 +24,7 @@ import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
 const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
-const WorldExperience=lazy(()=>import('./world/WorldPage.jsx'));
+const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 
 const BASE_MENU_ITEMS = [

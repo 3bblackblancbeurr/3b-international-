@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "title": "3B ORIGINS — Le Cercle Brisé",
+  "created": "2026-09-11",
+  "notes": [
+    "Concepts are not screenshots or 3D models.",
+    "The limestone file is a colour texture, not a complete generated PBR set. Normal and roughness channels are reused from the separately credited plaster material.",
+    "Kaïs reuses the existing CC0-based animated avatar, not a new faithful sculpt of an official manga reference.",
+    "Guardian and statues are provisional; no role has been attributed to Céliane."
+  ],
+  "assets": [
+    {
+      "file": "docs/origins/references/sanctuary.webp",
+      "usage": "Référence artistique uniquement : cercle monumental en pierre claire, huit portes, bronze champagne, lumière de jour ; guider les volumes 3D.",
+      "bytes": 471114,
+      "sha256": "f40d12f490272d7c29e3ac0cd3f079c10f48d77f8dec3dc2d0823b3a9f98ffa1",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "origin": "Native image generation tool invoked in this task; original PNG retained locally, WebP encoding only",
+      "rights": "AI-generated for the project; no third-party source image used in these four generations; exclusivity not asserted",
+      "status": "concept"
+    },
+    {
+      "file": "docs/origins/references/france.webp",
+      "usage": "Référence artistique uniquement : quartier parisien, façades de pierre, commerces, jardin et ajouts 3B discrets ; lumière accueillante.",
+      "bytes": 464082,
+      "sha256": "d6175a93e04808cbfeed0ed034a4d20d78f6cad4689fff343a668b5dfc5ce8cd",
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "origin": "Native image generation tool invoked in this task; original PNG retained locally, WebP encoding only",
+      "rights": "AI-generated for the project; no third-party source image used in these four generations; exclusivity not asserted",
+      "status": "concept"
+    },
+    {
+      "file": "docs/origins/references/wolf.webp",
+      "usage": "Référence de modélisation provisoire : loup gris, proportions lisibles, vues utiles à la silhouette, fond neutre ; aucune identité officielle inventée.",
+      "bytes": 173570,
+      "sha256": "7dacaf992bb02d37c95c72e70de72dd1ddaba7f89910bba2c0a31725904830d8",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "origin": "Native image generation tool invoked in this task; original PNG retained locally, WebP encoding only",
+      "rights": "AI-generated for the project; no third-party source image used in these four generations; exclusivity not asserted",
+      "status": "provisional concept"
+    },
+    {
+      "file": "public/world/origins/limestone-color.webp",
+      "usage": "Texture couleur de calcaire clair : grain fin, lumière diffuse, vue orthogonale sans objet ni texte. Utilisée sur le Sanctuaire et les murs ; répétition visible possible.",
+      "bytes": 369792,
+      "sha256": "bb529ec6f55ef0f33a7281439bced1456e9f3e461895fb975b6b51c26eefc2e0",
+      "dimensions": {
+        "width": 1254,
+        "height": 1254
+      },
+      "origin": "Native image generation tool invoked in this task; original PNG retained locally, WebP encoding only",
+      "rights": "AI-generated for the project; no third-party source image used in these four generations; exclusivity not asserted",
+      "status": "integrated colour texture"
+    },
+    {
+      "file": "public/world/origins/wolf.glb",
+      "usage": "Loup original articulé et animé dans Blender 4.5.9. Source reproductible : scripts/build-origins-wolf.py. Idle, Walk, Run, Sniff, Wait.",
+      "bytes": 622596,
+      "sha256": "8c09576f001ceaf61026282d2ac89b047728b669e385c0b98ae02b3b69663c92",
+      "dimensions": null,
+      "origin": "Original geometry and animations created locally in Blender",
+      "rights": "Original work for the 3B project; no downloaded animal model",
+      "status": "integrated prototype model"
+    }
+  ],
+  "reused": [
+    {
+      "files": "public/world/paris/{Maison,Cafe,Galerie,Residence,Eiffel}.glb",
+      "origin": "Existing original project Blender geometry",
+      "provenance": "public/world/paris/manifest.json",
+      "usage": "Instanced city facades and distant stylized Eiffel monument"
+    },
+    {
+      "files": "public/world/paris/textures/*",
+      "origin": "Poly Haven",
+      "license": "CC0",
+      "provenance": "public/world/paris/textures/sources.json",
+      "usage": "Cobblestones and plaster normal/roughness"
+    },
+    {
+      "files": "public/world/living/traveller-{0,1,2,3}.glb",
+      "origin": "Existing 3B adaptations of Quaternius CC0 humanoid meshes, clothes and animation clips",
+      "license": "CC0 source assets; 3B local adaptations",
+      "provenance": "public/world/living/CREDITS.txt",
+      "usage": "Kaïs, inhabitants, provisional guardian and manifestation"
+    },
+    {
+      "file": "public/world/environment/kloppenheim_06_1k.hdr",
+      "origin": "Poly Haven — Kloppenheim 06",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/kloppenheim_06",
+      "usage": "Environment lighting and sky, with procedural fallback"
+    },
+    {
+      "file": "src/world/foliage-atlas.js",
+      "origin": "Existing original procedural Canvas atlas, 256 × 512",
+      "usage": "Alpha-tested leaves, shared material"
+    },
+    {
+      "files": "src/world/origins/environment.js; src/world/origins/audio.js",
+      "origin": "Original procedural geometry, ground colour texture (256 × 256), vector signs, memory shapes and WebAudio synthesis",
+      "usage": "Sanctuary, rooms, furniture, effects and ambience"
+    }
+  ]
+}

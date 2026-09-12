@@ -1,0 +1,10 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {advanceMotion,pointerStick} from '../src/world/motion.js';
+import {createMovementFrame} from '../src/world/camera-follow.js';
+import {move,clear,route} from '../src/world/origins/space.js';
+const integrate=(fps,input,start={x:30,z:30},seconds=2)=>{let s={position:start,target:null,route:[]};let travelled=0;for(let i=0;i<fps*seconds;i++){s=advanceMotion(s,input,1/fps,3.3,[],0,(p,x,z)=>move(p,x,z,'france',{}));travelled+=s.travelled;}return {...s,travelled};};
+test('30/60/90/120 Hz preserve analog speed and equal diagonal speed',()=>{for(const fps of [30,60,90,120]){const full=integrate(fps,{x:1,z:0});assert.ok(Math.abs(full.travelled-6.6)<1e-8);const diagonal=integrate(fps,{x:1,z:1});assert.ok(Math.abs(diagonal.travelled-full.travelled)<1e-8);const half=integrate(fps,{x:.5,z:0});assert.ok(Math.abs(half.travelled-3.3)<1e-8);}});
+test('single radial dead zone retains small movement and rejects noise',()=>{assert.deepEqual(pointerStick(5,2),{x:0,z:0});const input=pointerStick(8,0);assert.ok(input.x>0&&input.x<.06);assert.ok(integrate(60,input).travelled>0);});
+test('camera rotation cannot curve one held gesture; release resets its basis',()=>{const f=createMovementFrame();const a=f.resolve(0,-.5,0);for(const yaw of [1,2,-2])assert.deepEqual(f.resolve(0,-.5,yaw),a);f.reset();assert.ok(Math.abs(f.resolve(0,-.5,Math.PI/2).x+.5)<1e-10);});
+test('arrival never overshoots and collision blocks at every frame rate',()=>{for(const fps of [30,60,90,120]){let s={position:{x:30,z:30},target:{x:30.17,z:30},route:[]};for(let i=0;i<fps;i++)s=advanceMotion(s,{x:0,z:0},1/fps,5.5,[],0,(p,x,z)=>move(p,x,z,'france',{}));assert.ok(Math.abs(s.position.x-30.17)<1e-9);assert.equal(s.target,null);const blocked=integrate(fps,{x:0,z:1},{x:0,z:-55.5},1);assert.ok(blocked.position.z< -55);}});
+test('Eiffel approach and central arch are walkable while stone feet collide',()=>{assert.ok(clear({x:-75,z:-118},'france'));assert.equal(clear({x:-75+52*60/330,z:-118+52*60/330},'france'),false);assert.ok(route({x:-55,z:-65},{x:-75,z:-118},'france',{}).length>0);});

@@ -33,7 +33,7 @@ export function addMeadow(field,root,owned,region){
   points.forEach((p,i)=>{dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.rotation,0);dummy.scale.setScalar(p.scale);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);tint.setRGB(p.tint,p.tint,p.tint);m.setColorAt(i,tint);});
   m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;m.computeBoundingSphere();m.boundingSphere.radius+=.5;m.receiveShadow=true;root.add(m);owned.push(m);meshes.push({mesh:m,count:points.length});
  }
- return {tick(t){time.value=t;},setQuality(mode){for(const {mesh,count} of meshes)mesh.count=Math.round(count*(mode==='fluid'?.55:1));},meshes};
+ return {tick(t,position){time.value=t;if(position)for(const {mesh} of meshes){const b=mesh.boundingSphere;mesh.visible=Math.hypot(position.x-b.center.x,position.z-b.center.z)<76+b.radius;}},setQuality(mode){for(const {mesh,count} of meshes)mesh.count=Math.round(count*(mode==='fluid'?.55:1));},meshes};
 }
 
 export function createMeadowMaterial(color){

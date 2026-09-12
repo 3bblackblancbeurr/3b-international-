@@ -12,7 +12,7 @@ export function createLivingLibrary(){
  function release(asset){const geo=new Set(),mat=new Set(),tex=new Set();asset.scene.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){mat.add(m);for(const v of Object.values(m))if(v?.isTexture)tex.add(v);}});geo.forEach(g=>g.dispose());mat.forEach(m=>m.dispose());tex.forEach(t=>t.dispose());}
  return {load(url){if(!cache.has(url))cache.set(url,loader.loadAsync(url).then(asset=>{if(disposed){release(asset);throw Error('Vue fermée.');}return asset;}).catch(error=>{cache.delete(url);throw error;}));return cache.get(url);},dispose(){disposed=true;cache.forEach(p=>p.then(release).catch(()=>{}));cache.clear();}};
 }
-export function avatarRecipe(avatar){return {body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,skin:SKINS[avatar?.skin??2],cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0};}
+export function avatarRecipe(avatar){return {body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,height:avatar?.height??1,build:avatar?.build??1,fabric:avatar?.fabric||'cotton',patternScale:avatar?.patternScale??1,capeLength:avatar?.capeLength??1,hoodFit:avatar?.hoodFit??1,skin:avatar?.skinColor||SKINS[avatar?.skin??2],cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0};}
 export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError}={}){
  const recipe=card?CARD_DESIGNS[card]:avatarRecipe(avatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
  const object=new THREE.Group(),personal=new Set();let model,mixer,garments,pattern,actions={},legActions={},legCurrent=null,current=null,dead=false,clock=0,actionEnd=0,heading=0,ready=false;
@@ -35,14 +35,14 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError}={
      if(/SkinColor|HandsColor|HairColor|ClothColor|TrouserColor|BootColor/.test(m.name))prepareTintMaterial(m,{pattern:!!pattern&&/ClothColor_ClothColor/.test(m.name)});
      if(/SkinColor|HandsColor/.test(m.name))m.color.set(recipe.skin);
      else if(/HairColor/.test(m.name))m.color.set(recipe.hairColor);
-     else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);if(pattern){m.map=pattern;m.needsUpdate=true;}}
+     else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);m.roughness=({cotton:.92,linen:1,satin:.38,leather:.55})[recipe.fabric]??.92;if(pattern){m.map=pattern;m.needsUpdate=true;}}
      else if(!card&&/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
      else if(!card&&/BootColor/.test(m.name))m.color.set(recipe.bootColor);
     }
     if(o.morphTargetDictionary)for(const [plus,minus,value] of [['FaceWide','FaceNarrow',recipe.face],['JawStrong','JawSoft',recipe.jaw],['NoseLarge','NoseSmall',recipe.nose]])for(const [key,v] of [[plus,Math.max(0,value)],[minus,Math.max(0,-value)]]){const index=o.morphTargetDictionary[key];if(index!==undefined)o.morphTargetInfluences[index]=v;}
    }
   });
-  if(!card){const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width,recipe.shape==='elance'?1.055:1,width);}
+  if(!card){const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);}
   if(!card)garments=fitGarments(model,recipe);mixer=new THREE.AnimationMixer(model);
   const layered=!!model.getObjectByName('thigh_l'),lower=t=>/^(root|pelvis|thigh_|calf_|foot_|ball_)/.test(t.name);
   for(const clip of asset.animations){const name=['Idle','Walk','Jog','Run','Attack','Hit','Death','Cast','Talk','Work'].find(n=>clip.name===n||clip.name.startsWith(n+'_')||clip.name.endsWith('_'+n));if(!name)continue;

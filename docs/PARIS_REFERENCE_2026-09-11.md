@@ -32,3 +32,7 @@ Textures photographiques 1K CC0 de Poly Haven : [pavage](https://polyhaven.com/a
 - Moteur serveur `world-engine` v9 actif : seul le reducer change par rapport à v8, pour les commandes `wait` et `provisions`. Le code relu après déploiement correspond au code local. Une requête non authentifiée reçoit 401. Aucun compte personnel n'a été utilisé pour ces essais.
 
 La capture locale a atteint 60 images/seconde sur plusieurs vues ; cette mesure ne prédit pas les performances de tous les téléphones. Les corps et créatures proviennent de la bibliothèque existante, la végétation demeure stylisée et le quartier n'atteint pas le photoréalisme des images de référence. L'essai sur le Samsung de l'utilisateur et l'évaluation artistique en jeu restent nécessaires avant d'étendre cette qualité aux autres pays. La coopération Internet du monde ouvert et un nouveau catalogue complet de personnages sculptés ne font pas partie de ce quartier.
+
+
+## Mise à jour du 12 septembre 2026
+La tour et ses deux GLB ont été remplacés via Blender puis Meshopt. Voir [le bilan graphique mobile](MOBILE_GRAPHICS_2026-09-12.md) pour les sources, mesures, captures et limites actuelles.

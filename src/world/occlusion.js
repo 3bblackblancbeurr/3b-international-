@@ -27,10 +27,13 @@ export function createSceneryOcclusion(){
     float cut = (1. - smoothstep(radius * .66, radius, side)) * smoothstep(.015, .09, along) * (1. - smoothstep(1., 1.08, along)) * cityFade;
     float pattern = fract(52.9829189 * fract(dot(floor(gl_FragCoord.xy), vec2(.06711056, .00583715))));
     float nearLens=1.-smoothstep(2.,6.,length(vCityPosition-cityCamera));
-    if(pattern < max(cut,nearLens*cityFade)) discard;
+    // Keep floors and platforms intact even when their material is also used on walls.
+    vec3 worldFaceNormal = normalize(cross(dFdx(vCityPosition), dFdy(vCityPosition)));
+    float verticalSurface = 1. - step(.72, abs(worldFaceNormal.y));
+    if(pattern < max(cut,nearLens*cityFade) * verticalSurface) discard;
    `);
   };
-  material.customProgramCacheKey=()=>previousKey+'|3b-scenery-sightline-v3';material.needsUpdate=true;
+  material.customProgramCacheKey=()=>previousKey+'|3b-scenery-sightline-v4';material.needsUpdate=true;
  }
  return {apply,update(view,focus,active=true){camera.value.copy(view);target.value.copy(focus);enabled.value=active?1:0;}};
 }

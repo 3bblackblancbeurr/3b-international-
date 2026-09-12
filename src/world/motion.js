@@ -2,9 +2,9 @@ import {distance,moveWithCollision} from './rules.js';
 
 // Consume distance in small collision steps. Arrival uses the remaining distance,
 // so a slow frame cannot skip a waypoint or alternate around the destination.
-export function advanceMotion(state,input,seconds,speed,obstacles,radius=76){
+export function advanceMotion(state,input,seconds,speed,obstacles,radius=76,moveStep=moveWithCollision){
  let {position,target}=state,route=state.route,travelled=0;
- const length=Math.hypot(input.x,input.z),manual=length>.06;
+ const length=Math.hypot(input.x,input.z),manual=length>1e-5;
  if(manual){target=null;route=[];}
  let budget=Math.max(0,Math.min(Number.isFinite(seconds)?seconds:0,.25))*speed*(manual?Math.min(length,1):1);
  while(budget>1e-7&&(manual||target)){
@@ -13,7 +13,7 @@ export function advanceMotion(state,input,seconds,speed,obstacles,radius=76){
   const step=Math.min(budget,.12,d);
   const dx=manual?input.x/length:(target.x-position.x)/d;
   const dz=manual?input.z/length:(target.z-position.z)/d;
-  const next=moveWithCollision(position,dx*step,dz*step,obstacles,radius),moved=distance(next,position);
+  const next=moveStep(position,dx*step,dz*step,obstacles,radius),moved=distance(next,position);
   budget-=step;travelled+=moved;position=next;
   if(moved<1e-7){if(!manual){target=null;route=[];}break;}
  }
