@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Supprimer mon compte | 3B International</title>
+  <meta name="description" content="Page officielle pour supprimer un compte 3B International et les données associées." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://3b-international.vercel.app/delete-account.html" />
+  <style>:root{color-scheme:dark;background:#05070b;color:#f4f7fc;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#1a2740,#070b12 52%,#05070b)}.wrap{max-width:720px;margin:auto;padding:45px 20px 70px}.card{background:#0a101a;border:1px solid #273650;border-radius:22px;padding:26px;box-shadow:0 22px 70px #0007}h1{font-size:clamp(2rem,7vw,3.6rem);line-height:1.05}.warning{border-left:4px solid #f2c46d;padding:12px 16px;background:#18130b;border-radius:10px;margin:22px 0}label{display:block;font-weight:700;margin:18px 0 7px}input{width:100%;padding:14px;border:1px solid #3a4b68;border-radius:12px;background:#070b12;color:#fff;font-size:1rem}button{width:100%;border:0;border-radius:14px;padding:15px 18px;margin-top:20px;font-weight:900;font-size:1rem;background:#f0c879;color:#150d02;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.status{margin-top:18px;padding:13px;border-radius:12px;background:#111a29;display:none}.status.show{display:block}.status.error{border:1px solid #a33}.status.ok{border:1px solid #4a8}a{color:#aed0ff}.small{color:#aeb7c7;font-size:.92rem}</style>
+</head>
+<body>
+<main class="wrap">
+  <p><a href="/">← Retour à 3B International</a></p>
+  <h1>Supprimer mon compte 3B</h1>
+  <div class="card">
+    <p>Cette page est le moyen web officiel pour supprimer un compte <strong>3B International</strong>, y compris depuis un navigateur sans utiliser l’application installée.</p>
+    <div class="warning"><strong>Suppression définitive.</strong> La suppression entraîne la fermeture du compte et la suppression des données directement rattachées au compte. Cette opération ne peut pas être annulée.</div>
+    <form id="delete-form">
+      <label for="handle">Identifiant 3B</label><input id="handle" name="handle" autocomplete="username" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9._\-]{2,23}" required placeholder="Exemple : kais3b" />
+      <label for="password">Mot de passe</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required />
+      <label for="confirm">Confirmation</label><input id="confirm" name="confirm" autocomplete="off" required placeholder="Tapez SUPPRIMER" />
+      <p class="small">Pour éviter une suppression accidentelle, saisissez exactement <strong>SUPPRIMER</strong>.</p>
+      <button id="delete-button" type="submit">Supprimer définitivement mon compte</button>
+    </form>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+  </div>
+  <p class="small">Consultez aussi la <a href="/privacy-policy.html">politique de confidentialité</a>.</p>
+</main>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://ttvhcezucsbbmnafrotq.supabase.co';
+  const PUBLIC_KEY = 'sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
+  const form = document.getElementById('delete-form');
+  const button = document.getElementById('delete-button');
+  const status = document.getElementById('status');
+  const show = (message, type = '') => { status.textContent = message; status.className = `status show ${type}`.trim(); };
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const handle = document.getElementById('handle').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    const confirmation = document.getElementById('confirm').value.trim();
+    if (confirmation !== 'SUPPRIMER') { show('Écris exactement SUPPRIMER pour confirmer.', 'error'); return; }
+    button.disabled = true; show('Vérification de ton compte…');
+    try {
+      const login = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: PUBLIC_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `u.${handle}@accounts.3b.invalid`, password }) });
+      const session = await login.json().catch(() => ({}));
+      if (!login.ok || !session.access_token) throw new Error('Identifiant ou mot de passe incorrect.');
+      show('Suppression du compte en cours…');
+      const deletion = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, { method: 'POST', headers: { apikey: PUBLIC_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: '{}' });
+      const result = await deletion.json().catch(() => ({}));
+      if (!deletion.ok || !result.ok) throw new Error(result.error || 'La suppression n’a pas abouti.');
+      try { for (const key of Object.keys(localStorage)) if (key.includes('3b_member_auth_v1')) localStorage.removeItem(key); } catch {}
+      form.reset(); form.hidden = true; show('Ton compte 3B a été supprimé.', 'ok');
+    } catch (error) { show(error?.message || 'Une erreur est survenue. Réessaie.', 'error'); button.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>
