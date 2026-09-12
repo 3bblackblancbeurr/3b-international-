@@ -3,10 +3,13 @@ on:
   pull_request:
     paths:
       - 'src/components/PassportNexus.jsx'
+      - 'src/components/NexusCinema.jsx'
       - 'src/components/nexus-*'
-      - 'src/styles/passport-nexus.css'
+      - 'src/components/useNexusJourney.js'
+      - 'src/styles/*nexus*.css'
+      - 'public/nexus/cinema-v1/**'
       - 'tests/nexus*'
-      - 'scripts/verify-nexus.mjs'
+      - 'scripts/verify-nexus*.mjs'
       - '.github/workflows/verify-nexus.yml'
   workflow_dispatch:
 permissions:
@@ -17,7 +20,7 @@ concurrency:
 jobs:
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -27,11 +30,17 @@ jobs:
       - run: npm ci
       - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
       - run: npx playwright install --with-deps chromium
-      - run: node --test tests/nexus.test.js
-      - run: node scripts/verify-nexus.mjs
+      - run: node --test tests/nexus.test.js tests/nexus-cinema.test.js
+      - name: Verify existing 3D, navigation, fallback and passport
+        run: node scripts/verify-nexus.mjs
+      - name: Verify reference artwork, mobile controls and paused tunnel
+        if: ${{ !cancelled() }}
+        run: node scripts/verify-nexus-cinema.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: nexus-browser-evidence
-          path: artifacts/nexus/
+          path: |
+            artifacts/nexus/
+            artifacts/nexus-cinema/
           retention-days: 7

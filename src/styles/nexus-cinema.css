@@ -1,0 +1,123 @@
+/* Approved 3B artwork, rendered as an interactive cinematic layer.
+   No global page redesign; no replacement of the original passport portrait. */
+dialog.nexus-experience[data-visual-mode]{--nexus-gold:#e4c48d;--nexus-ink:#f4eee2;background:#02070d}
+.nexus-experience[data-visual-mode] .nexus-shell{width:min(1380px,100%)}
+.nexus-experience[data-visual-mode] .nexus-wordmark>b{font-family:Georgia,'Times New Roman',serif;font-weight:400;color:#f2d5a0;letter-spacing:-.06em}
+.nexus-experience[data-visual-mode] .nexus-wordmark>span{color:#e6d1ac;border-color:#dabb8044}
+.nexus-experience[data-visual-mode] .nexus-topbar{padding-bottom:14px;border-bottom:1px solid #c8a66a40}
+.nexus-experience[data-visual-mode] .nexus-narrative h2{font-family:Georgia,'Times New Roman',serif;color:#f0d6a7;font-size:clamp(36px,4.5vw,68px);letter-spacing:-.035em;line-height:1.08;font-weight:400}
+.nexus-experience[data-visual-mode] .nexus-narrative h2 em{color:#e4edf3;font-weight:400}
+.nexus-experience[data-visual-mode] .nexus-description{color:#c2cdd6;font-size:14px;line-height:1.8}
+.nexus-cinematic-backdrop{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .55s;background:linear-gradient(90deg,#02070ff5 5%,#02070fde 38%,#02070f87 75%,#02070fe6),linear-gradient(0deg,#02070f 0%,transparent 30%,#02070f45 80%),url('/nexus/cinema-v1/hall-mobile.webp') 72% 45% / cover no-repeat}
+.nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinematic-backdrop{opacity:1}
+.nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-canvas{visibility:hidden}
+.nexus-experience[data-visual-mode='cinema'] .nexus-main{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(0,1.15fr);gap:clamp(22px,4vw,74px);align-items:center;min-height:0;padding-top:28px}
+.nexus-experience[data-visual-mode='cinema'] .nexus-narrative{width:100%;max-width:430px;padding:26px 12px 32px 2px}
+.nexus-experience[data-visual-mode='cinema'] .nexus-scene-caption{display:none}
+.nexus-experience[data-visual-mode='cinema'] .nexus-progress-summary{padding:12px 0;border-top:1px solid #c9ab6d3b;border-bottom:1px solid #79c7ff2b;font-size:12px}
+.nexus-experience[data-visual-mode] .nexus-guardian span{font-size:10px;color:#a9b9c6}
+.nexus-experience[data-visual-mode] .nexus-guardian strong{font-size:22px;color:#f3dcb1}
+.nexus-experience[data-visual-mode] .nexus-progress-state{font-size:11px}
+.nexus-cinema{position:relative;width:min(100%,560px);min-width:0;margin:0 auto;isolation:isolate;pointer-events:none}
+.nexus-cinema-map{position:relative;aspect-ratio:941/1116;width:100%;overflow:hidden;border-radius:36% 36% 14px 14px / 15% 15% 12px 12px;background:#030b13;box-shadow:0 0 0 1px #efd29b47,0 0 0 6px #020811,0 0 0 7px #d0ad6f24,0 20px 68px #000b,0 0 52px #0088e31c;transform:translateZ(0)}
+.nexus-cinema-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.nexus-cinema-map::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 25px #00132360;background:linear-gradient(113deg,transparent 36%,#c5eaff13 44%,transparent 49%);background-size:250% 100%;animation:nexus-cinema-sheen 14s ease-in-out infinite}
+.nexus-cinema-light{position:absolute;top:10%;bottom:5%;left:49.7%;width:.6%;pointer-events:none;background:linear-gradient(0deg,transparent,#008cff38 20%,#a5e9ff70 50%,#129dff38 70%,transparent);box-shadow:0 0 17px #159fffa3;animation:nexus-cinema-breathe 4.5s ease-in-out infinite}
+.nexus-cinema-seals{position:absolute;left:33.3%;top:34.1%;width:33.7%;height:auto;color:#9bdeff;overflow:visible;filter:drop-shadow(0 0 3px #119dff);pointer-events:none}
+.nexus-cinema-seals .is-pending{fill:#aac7dc66;stroke:#ddf5ff;stroke-width:.3}
+.nexus-cinema-seals .is-earned{fill:#ffe3a4;stroke:#fff2d6;stroke-width:.5}
+.nexus-cinema-hotspots{position:absolute;inset:0;pointer-events:none}
+.nexus-experience .nexus-cinema-hit{position:absolute;display:block;pointer-events:auto;padding:0;border:1px solid transparent;border-radius:40% 40% 8% 8% / 18% 18% 3% 3%;background:transparent;transition:border-color .25s,box-shadow .25s,background .25s;min-height:44px}
+.nexus-experience .nexus-cinema-hit:hover,.nexus-experience .nexus-cinema-hit:focus-visible{border-color:#efcc84;background:#9cdcfe08;box-shadow:0 0 20px #53bbff6b,inset 0 0 14px #eccb8b2b}
+.nexus-experience .nexus-cinema-hit[aria-pressed='true']{border-color:#fff1c9;background:#8cdbff12;box-shadow:0 0 19px #65c9ffb3,inset 0 0 20px #429bff33}
+.nexus-hit-name{position:absolute;top:12%;left:2%;right:2%;padding:5px 0;border-top:1px solid #d7b4776b;border-bottom:1px solid #d7b47740;background:#041120eb;font-size:clamp(8px,1vw,12px);color:#f6d9a5;letter-spacing:.07em;text-transform:uppercase;line-height:1.2;white-space:nowrap;text-align:center}
+.nexus-hit-seal{position:absolute;bottom:11%;right:7%;width:20px;height:20px;display:grid;place-items:center;border:1px solid #f3d599;border-radius:50%;background:#071222;color:#ffdc89}
+.nexus-experience .nexus-cinema-origin{position:absolute;left:41.5%;top:78.7%;width:17%;height:17%;min-height:60px;padding:6px 0;pointer-events:auto;border:1px solid transparent;border-radius:45% 45% 5px 5px / 32% 32% 5px 5px;background:linear-gradient(0deg,#020811f5,transparent 75%);display:flex;align-items:center;justify-content:flex-end;flex-direction:column;color:#efdab4;gap:3px}
+.nexus-cinema-origin>span{display:grid;place-items:center;width:36px;height:40px;background:#020e1e;border:1px solid #b6dcfd8f;border-radius:45% 45% 8px 8px;box-shadow:0 0 15px #45aaff88}
+.nexus-cinema-origin strong{font-size:clamp(9px,1vw,12px);font-weight:500;letter-spacing:.13em}
+.nexus-cinema-origin small{font-size:clamp(7px,.85vw,10px);line-height:1.3;color:#c2ccd8;text-align:center}
+.nexus-experience .nexus-cinema-origin:hover,.nexus-experience .nexus-cinema-origin[aria-pressed='true']{border-color:#dac18a;box-shadow:0 0 16px #d6ae6a55}
+.nexus-cinema-origin[data-unlocked='true']>span{color:#f6da98;border-color:#edd498;box-shadow:0 0 20px #e0b76288}
+.nexus-cinema-legend{margin:16px 0 0;display:flex;gap:8px;align-items:center;justify-content:center;font-size:11px;line-height:1.5;color:#afc3d3;text-align:center}
+.nexus-cinema-legend>span{width:5px;height:5px;flex-shrink:0;border-radius:50%;background:#99d9ff;box-shadow:0 0 8px #119aff}
+.nexus-experience[data-visual-mode] .nexus-bottom{padding-top:26px}
+.nexus-experience[data-visual-mode] .nexus-destination-row>span{font-size:11px;color:#e2c696}
+.nexus-experience[data-visual-mode] .nexus-destination-row small{font-size:10px;color:#b1c4d2}
+.nexus-experience[data-visual-mode] .nexus-origin-link{min-height:44px;font-size:11px!important}
+.nexus-experience[data-visual-mode] .nexus-door-rail{grid-auto-columns:minmax(116px,1fr);gap:12px;padding:7px 4px 15px;scroll-padding:4px}
+.nexus-experience[data-visual-mode] .nexus-door-choice{height:162px;display:block;padding:0!important;border:1px solid #d7b97e78;border-radius:42px 42px 9px 9px;background:#06101b;overflow:hidden;isolation:isolate;transform:translateZ(0)}
+.nexus-door-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;z-index:-2;opacity:.85}
+.nexus-experience[data-visual-mode] .nexus-door-choice::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,#010910 5%,#031122ea 25%,#02101e30 70%,#04101d55)}
+.nexus-experience[data-visual-mode] .nexus-door-choice>svg{position:absolute;top:13px;left:12px;width:25px;height:32px;color:#ffdda0;filter:drop-shadow(0 1px 4px #000);opacity:.95}
+.nexus-experience[data-visual-mode] .nexus-door-index{left:auto;right:13px;top:20px;font-size:9px;color:#ffefd0;text-shadow:0 1px 5px #000}
+.nexus-experience[data-visual-mode] .nexus-door-label{position:absolute;left:12px;right:8px;bottom:14px}
+.nexus-experience[data-visual-mode] .nexus-door-label strong{font-size:14px;font-weight:500;color:#f5e5c9}
+.nexus-experience[data-visual-mode] .nexus-door-label small{font-size:11px;margin-top:5px;color:#c4d7e5}
+.nexus-experience[data-visual-mode] .nexus-door-choice[aria-pressed='true']{border-color:#b4e6ff;box-shadow:0 0 13px #159cff64,inset 0 0 20px #2493cd33;transform:translateY(-2px)}
+.nexus-experience[data-visual-mode] .nexus-door-choice:hover{border-color:#f4d8a3}
+.nexus-experience[data-visual-mode] .nexus-controls{flex-wrap:wrap;gap:16px;border-top-color:#e0bd783b}
+.nexus-experience[data-visual-mode] .nexus-render-controls{flex-wrap:wrap;gap:9px}
+.nexus-experience[data-visual-mode] .nexus-render-status{color:#b6cad9;font-size:10px;flex-basis:100%}
+.nexus-experience .nexus-visual-toggle{min-height:44px;padding:9px 13px;font-size:11px;border:1px solid #d0b68170;border-radius:5px;color:#f0d7ad;background:#06101a}
+.nexus-experience[data-visual-mode] .nexus-render-controls .nexus-icon-button,.nexus-experience[data-visual-mode] .nexus-quality select{min-height:44px;height:44px;min-width:44px}
+.nexus-experience[data-visual-mode] .nexus-enter-world{min-height:56px;padding:13px 22px;border-radius:6px;border-color:#e2bd7a;background:linear-gradient(110deg,#f6dfb0,#c2a16a);font-size:13px!important;box-shadow:0 0 22px #c0984f12}
+.nexus-experience[data-visual-mode] .nexus-enter-world:disabled{background:#111722;color:#cec0a6!important;border-color:#b39a6954}
+.nexus-experience[data-visual-mode] .nexus-enter-world:disabled small{color:#bec8d2}
+.nexus-experience[data-visual-mode] .nexus-origin-seals small{font-size:9px}
+.nexus-experience[data-visual-mode] .nexus-back,.nexus-experience[data-visual-mode] .nexus-resume{min-height:44px!important;font-size:12px!important}
+/* Transit: actual shader in the center, architectural picture planes at the sides. */
+.nexus-transit-decor{position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;perspective:1000px}
+.nexus-transit-wing{position:absolute;top:2%;bottom:1%;width:clamp(90px,23vw,340px);display:grid;grid-template-rows:repeat(4,1fr);gap:14px;opacity:.73}
+.nexus-transit-wing-left{left:-3%;transform:perspective(900px) rotateY(42deg);transform-origin:left center}
+.nexus-transit-wing-right{right:-3%;transform:perspective(900px) rotateY(-42deg);transform-origin:right center}
+.nexus-transit-panel{position:relative;min-height:0;overflow:hidden;border:2px solid #cfb078;border-radius:38% 38% 5px 5px / 17% 17% 5px 5px;background:#020711;box-shadow:0 0 0 5px #04101b,0 0 0 6px #88734c,0 0 20px #29a5ff40}
+.nexus-transit-panel img{width:100%;height:100%;object-fit:cover;opacity:.65}
+.nexus-transit-panel span{position:absolute;bottom:0;left:0;right:0;padding:9px 3px;background:#020811d9;color:#f0d6a6;letter-spacing:.12em;text-transform:uppercase;font-size:clamp(8px,1vw,13px);text-align:center}
+.nexus-transit-axis{position:absolute;inset:0;background:linear-gradient(90deg,transparent 18%,#72caff20 19%,transparent 20%,transparent 80%,#72caff20 81%,transparent 82%);mask-image:linear-gradient(0deg,#000,transparent 65%)}
+.nexus-experience[data-visual-mode] .nexus-arrival{margin:auto;width:min(760px,100%);background:radial-gradient(ellipse,#020914d9 0%,#0209146b 38%,transparent 70%)}
+.nexus-experience[data-visual-mode] .nexus-arrival-mark{width:150px;height:150px;font-family:Georgia,'Times New Roman',serif;font-size:54px;color:#f4d59e;border:2px solid #e1c087;box-shadow:0 0 0 7px #041220,0 0 0 8px #6bbeff80,0 0 40px #219eff40,inset 0 0 35px #1597e933;background:radial-gradient(circle at 50% 50%,#030912,#062a45);margin-bottom:44px}
+.nexus-experience[data-visual-mode] .nexus-arrival h2{font-family:Georgia,'Times New Roman',serif;color:#f3dcb2;max-width:640px;font-size:clamp(30px,4.4vw,58px);text-wrap:balance}
+.nexus-experience[data-visual-mode] .nexus-arrival>p:not(.nexus-kicker){font-size:13px;color:#cfdfeb;max-width:430px}
+.nexus-intro-controls{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;pointer-events:auto}
+.nexus-intro-controls .nexus-icon-button{width:44px;height:44px}
+.nexus-experience[data-visual-mode] .nexus-arrival-progress{border:1px solid #93d9ff55;background:#001126;box-shadow:0 0 14px #139dff2e}
+/* Passport material and real portal control: keep all existing coordinates and faces. */
+.passport-card-stage{box-shadow:0 22px 65px #0009,0 0 0 1px #d9ba764d,0 0 26px #219dff26}
+.passport-security-edge{border-color:#e0bf827d;box-shadow:inset 0 0 19px #2b9fff15,0 0 8px #d7b3731f}
+.passport-portal-trigger{border-color:#e5c892;background:radial-gradient(circle at 48% 45%,#082849,#030d20 58%,#26669b 62%,#07101a 67%);box-shadow:0 0 0 3px #11273c,0 0 0 4px #d8be8566,0 0 27px #199fffa3,inset 0 0 20px #6ccbff33}
+.passport-portal-trigger:hover{box-shadow:0 0 0 4px #123458,0 0 0 5px #f1d8a6aa,0 0 40px #299fffc9,inset 0 0 22px #6fcfff4a}
+.passport-portal-trigger>b{font-family:Georgia,'Times New Roman',serif;color:#f4d7a2}
+.passport-portal-trigger>small{color:#d3ecff}.passport-entry-hint{color:#c3d6e5;border-top-color:#d2b67a44}.passport-entry-hint strong{color:#f2d6a5}
+.nexus-experience[data-calm='true'] .nexus-cinema-map::after,.nexus-experience[data-calm='true'] .nexus-cinema-light,.nexus-experience[data-economy='true'] .nexus-cinema-map::after,.nexus-experience[data-economy='true'] .nexus-cinema-light{animation:none}
+.nexus-experience[data-calm='true'] .nexus-cinema-hit{transition:none}
+@keyframes nexus-cinema-sheen{0%,20%{background-position:100% 0}70%,100%{background-position:0 0}}
+@keyframes nexus-cinema-breathe{0%,100%{opacity:.45}50%{opacity:.9}}
+@media(max-width:759px){
+ .nexus-experience[data-visual-mode] .nexus-shell{padding-left:16px;padding-right:16px}
+ .nexus-experience[data-visual-mode='cinema'] .nexus-main{display:flex;flex-direction:column;gap:12px;padding-top:22px;min-height:0}
+ .nexus-experience[data-visual-mode='cinema'] .nexus-narrative{max-width:none;padding:0 0 14px;width:100%}
+ .nexus-experience[data-visual-mode] .nexus-narrative h2{font-size:36px}
+ .nexus-experience[data-visual-mode] .nexus-kicker{font-size:9px;margin-bottom:12px}
+ .nexus-experience[data-visual-mode] .nexus-description{font-size:12px;line-height:1.7;margin-top:14px;max-width:none}
+ .nexus-experience[data-visual-mode] .nexus-narrative h2 br{display:none}
+ .nexus-experience[data-visual-mode] .nexus-narrative h2 em::before{content:' '}
+ .nexus-experience[data-visual-mode] .nexus-progress-summary{font-size:11px;margin-top:14px;padding:9px 0}
+ .nexus-cinema{width:min(100%,500px);margin-top:6px}
+ .nexus-cinema-map{box-shadow:0 0 0 1px #e7c5826b,0 0 0 4px #020811,0 0 0 5px #d0ad6f24,0 12px 36px #0009}
+ .nexus-hit-name{font-size:9px;letter-spacing:.02em;padding:4px 0}
+ .nexus-cinema-legend{font-size:10px;margin-top:12px}
+ .nexus-experience[data-visual-mode] .nexus-destination-row small{display:none}
+ .nexus-experience[data-visual-mode] .nexus-door-rail{grid-auto-columns:120px;gap:10px}
+ .nexus-experience[data-visual-mode] .nexus-door-choice{height:154px}
+ .nexus-experience[data-visual-mode] .nexus-controls{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding-top:16px}
+ .nexus-experience[data-visual-mode] .nexus-enter-world{order:-1;width:100%;justify-content:space-between}
+ .nexus-experience[data-visual-mode] .nexus-render-controls{justify-content:center}
+ .nexus-experience[data-visual-mode] .nexus-render-status{justify-content:center}
+ .nexus-experience[data-visual-mode] .nexus-guardian{margin-top:16px;gap:6px}
+ .nexus-cinematic-backdrop{background-position:center;background-image:linear-gradient(0deg,#02070fe0,#02070fde),url('/nexus/cinema-v1/hall-mobile.webp')}
+ .nexus-transit-wing{width:24vw;gap:10px;opacity:.48;top:8%;bottom:4%}
+ .nexus-experience[data-visual-mode] .nexus-arrival{padding:54px 10px}
+ .nexus-experience[data-visual-mode] .nexus-arrival-mark{width:128px;height:128px;font-size:46px}
+ .nexus-experience[data-visual-mode] .nexus-arrival>p:not(.nexus-kicker){max-width:265px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){.nexus-cinema *,.nexus-cinema-map::after,.nexus-transit-decor *{animation:none!important;transition:none!important}.passport-portal-trigger{transition:none}}

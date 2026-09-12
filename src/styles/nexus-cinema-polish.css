@@ -1,0 +1,21 @@
+/* Refinements made after reviewing actual browser screenshots, not a generated mockup.
+   Keep the artwork unobstructed; all eight controls retain their accessible names. */
+dialog.nexus-experience[data-visual-mode] .nexus-cinematic-backdrop{filter:blur(9px) brightness(.7);transform:scale(1.045)}
+dialog.nexus-experience[data-visual-mode] .nexus-topbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#020910fa,#020910ef);padding-top:6px}
+dialog.nexus-experience[data-visual-mode='cinema'][data-selected='overview'] .nexus-kicker::before{content:'NEXUS 3B · ';color:#f1d39d}
+dialog.nexus-experience[data-visual-mode] .nexus-cinema-hit{min-width:44px}
+dialog.nexus-experience[data-visual-mode] .nexus-cinema-hit .nexus-hit-name{top:auto;bottom:9%;opacity:0;transform:translateY(3px);transition:opacity .2s,transform .2s;pointer-events:none;border:1px solid #e8c9928c;border-radius:4px;padding:6px 2px;background:#03101ef5}
+dialog.nexus-experience[data-visual-mode] .nexus-cinema-hit:hover .nexus-hit-name,
+dialog.nexus-experience[data-visual-mode] .nexus-cinema-hit:focus-visible .nexus-hit-name{opacity:1;transform:none}
+dialog.nexus-experience[data-visual-mode] .nexus-render-status{max-width:none}
+dialog.nexus-experience[data-visual-mode] .nexus-narrative .nexus-guardian{position:static;max-width:none;right:auto;top:auto;margin-top:20px;padding-left:14px}
+dialog.nexus-experience[data-visual-mode] .nexus-narrative .nexus-guardian span{max-width:none}
+/* Stable screen-space targets: text changes and shader startup cannot move Skip/Pause. */
+dialog.nexus-experience[data-visual-mode] .nexus-intro-controls{position:fixed;z-index:21;bottom:max(22px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);flex-wrap:nowrap;width:max-content;max-width:calc(100vw - 28px);min-height:54px;padding:5px 9px;gap:8px;border:1px solid #cbaa715e;border-radius:32px;background:#031020f0;box-shadow:0 0 25px #047fdb20}
+dialog.nexus-experience[data-visual-mode] .nexus-intro-controls .nexus-skip{margin:0!important;padding:10px 12px;min-height:44px;white-space:nowrap}
+@media(min-width:760px){dialog.nexus-experience[data-visual-mode='cinema'] .nexus-cinema{width:min(100%,46vh,520px)}}
+@media(max-width:759px){
+ dialog.nexus-experience[data-visual-mode] .nexus-narrative .nexus-guardian{margin-top:16px}
+ dialog.nexus-experience[data-visual-mode] .nexus-cinematic-backdrop{filter:blur(7px) brightness(.62)}
+ dialog.nexus-experience[data-visual-mode] .nexus-intro-controls .nexus-skip{font-size:11px}
+}

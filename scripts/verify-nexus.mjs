@@ -12,7 +12,19 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function ready(){for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');if(r.ok)return;}catch{}await sleep(200);}throw new Error('Vite did not start');}
 async function screenshot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:30000});report.screenshots.push(name);}
 async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click();await page.locator('dialog.nexus-experience[open]').waitFor();}
-async function skip(page){const skip=page.getByRole('button',{name:'Passer l’introduction'});if(await skip.count())await skip.click();await page.locator('.nexus-experience[data-phase="nexus"]').waitFor();}
+// Navigation helper: the short introduction can finish while Playwright is waiting
+// for shader startup. Real Skip interaction is separately asserted on a paused intro
+// by verify-nexus-cinema.mjs, where the target cannot disappear automatically.
+async function skip(page){
+  const destination=page.locator('.nexus-experience[data-phase="nexus"]');
+  if(await destination.count())return;
+  const button=page.getByRole('button',{name:'Passer l’introduction'});
+  if(await button.count()){
+    try{await button.click({timeout:5000});}
+    catch(error){if(error.name!=='TimeoutError')throw error;await destination.waitFor({timeout:20000});}
+  }
+  await destination.waitFor({timeout:20000});
+}
 async function webgl(page){await page.locator('.nexus-stage[data-renderer="3d"]').waitFor({timeout:30000});}
 async function pick(page,code){const codes=['FR','DZ','ES','MA','IT','TN','TR','EE'];await page.locator('.nexus-door-choice').nth(codes.indexOf(code)).click();await page.locator(`.nexus-experience[data-selected="${code}"]`).waitFor();}
 async function navigateWorld(page){await page.locator('.nexus-enter-world').click();await page.getByText('world3b',{exact:true}).waitFor({timeout:20000});}

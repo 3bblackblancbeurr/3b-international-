@@ -1,0 +1,68 @@
+{
+  "source": "Owner-provided Nexus reference, approved in conversation",
+  "sourceSha256": "bee77ce31f829943bf157cf55e3397eaa8dd21375298a96f2bc88390066edb97",
+  "version": "cinema-reference-20260913",
+  "note": "Cropped and compressed artwork; dynamic UI and canonical progression are separate React layers. Not a newly modeled photorealistic 3D world.",
+  "assets": {
+    "hall.webp": {
+      "width": 941,
+      "height": 1116,
+      "bytes": 371598,
+      "sha256": "a728d6c2889bbaf451cba154d2fb52fcc5c2348875463d00bc3288ce178c98e9"
+    },
+    "hall-mobile.webp": {
+      "width": 564,
+      "height": 669,
+      "bytes": 154904,
+      "sha256": "68aee926ea44107e5bf71be7f7fc044ed845ad4112ed2744801005e0937ead43"
+    },
+    "FR.webp": {
+      "width": 132,
+      "height": 114,
+      "bytes": 7246,
+      "sha256": "be7fcc55afad06048e10f0bc5c456e5a1bd03c028be5d1e80e342acf2afe2cc9"
+    },
+    "DZ.webp": {
+      "width": 129,
+      "height": 108,
+      "bytes": 5822,
+      "sha256": "c04eb7ddcaebfa7ec5d41a1568081ad12dd07f88d9fc075f27a82cb1405ab0fa"
+    },
+    "ES.webp": {
+      "width": 128,
+      "height": 109,
+      "bytes": 6406,
+      "sha256": "dd07c79b1228bed987a60741de321e7404602c2eea064381cec81fbad471000e"
+    },
+    "MA.webp": {
+      "width": 131,
+      "height": 112,
+      "bytes": 7208,
+      "sha256": "0ac478bf2343c8c435f208d726dff86a31db085bd22b554cede2887d6e59d9b8"
+    },
+    "IT.webp": {
+      "width": 130,
+      "height": 112,
+      "bytes": 7058,
+      "sha256": "73d3c89546395023a804baa15129b6121242b94ac9b33cf5aaed2c7995c1f623"
+    },
+    "TN.webp": {
+      "width": 108,
+      "height": 106,
+      "bytes": 5690,
+      "sha256": "004ce4ad5c9034da2e8ecf8b95db480be31608a848209c200fd532305ca8f1d0"
+    },
+    "TR.webp": {
+      "width": 110,
+      "height": 105,
+      "bytes": 5090,
+      "sha256": "fe484681680f45e6a36ec26be72b82e24a7e1484b2c0ad0cd08ab389da19d9e9"
+    },
+    "EE.webp": {
+      "width": 107,
+      "height": 119,
+      "bytes": 6082,
+      "sha256": "a07b16648bd0792b81a3e64f5a21f4678a7cca664522f586beb7d0e60d6a65a5"
+    }
+  }
+}
