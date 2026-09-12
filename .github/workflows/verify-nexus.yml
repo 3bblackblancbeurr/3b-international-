@@ -5,8 +5,9 @@ on:
       - 'src/components/*Nexus*'
       - 'src/components/nexus-*'
       - 'src/components/passport-nexus-premium.css'
-      - 'src/world/save.js'
-      - 'tests/nexus.test.js'
+      - 'src/world/origins/state.js'
+      - 'src/world/origins/nexus-arrival.js'
+      - 'tests/nexus*.test.js'
       - 'tests/fixtures/nexus.html'
       - 'scripts/verify-nexus-browser.mjs'
       - '.github/workflows/verify-nexus.yml'
@@ -24,11 +25,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
       - run: npm ci
-      - name: Regression tests
-        run: npm test
+      # The existing Verify world and application workflow runs ALL regression
+      # tests independently. Keep visual evidence fast and focused here.
+      - name: Nexus and Origins integration contracts
+        run: node --test tests/nexus.test.js tests/nexus-origins.test.js
       - name: Production build
         run: npm run build
       - name: Install pinned browser test runner
