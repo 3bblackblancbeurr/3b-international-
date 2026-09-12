@@ -1,0 +1,41 @@
+{
+  "status": "draft_not_submitted",
+  "preparedAt": "2026-09-12",
+  "sourceCommit": "4f10e925ea7d04553eda584b27ae8b97eb800fd5",
+  "locale": "fr-FR",
+  "googlePlay": {
+    "title": "3B International",
+    "shortDescription": "Jeux, passeport et communauté dans l’univers Black Blanc Beur.",
+    "fullDescription": "Entre dans l’univers Black Blanc Beur avec 3B International.\n\nJEUX ET EXPLORATION\nDécouvre les jeux 3B, explore le Monde du 3B et retrouve ta progression dans ton espace membre.\n\nTON PASSEPORT 3B\nCrée ton compte, personnalise ton identité digitale et consulte tes cartes ainsi que tes gains de progression.\n\nLE COLLECTIF\nRejoins la communauté pour partager tes idées, découvrir des créateurs et échanger dans les salons. Les outils de signalement et de blocage sont accessibles dans cet espace.\n\nUNE APPLICATION, PLUSIEURS UNIVERS\nRetrouve les rubriques culture, sport et création depuis l’accueil.\n\nUne connexion Internet est nécessaire. Certaines fonctions nécessitent un compte 3B et l’acceptation des règles du collectif.",
+    "proposedApplicationType": "application",
+    "proposedCategory": "ENTERTAINMENT",
+    "website": "https://3b-international.vercel.app/",
+    "packageName": null,
+    "contactEmail": null,
+    "privacyPolicyUrl": null,
+    "accountDeletionUrl": null
+  },
+  "appStore": {
+    "name": "3B International",
+    "subtitle": "Jeux, culture et communauté",
+    "promotionalText": "Découvre l’univers Black Blanc Beur : jeux, passeport digital, progression et échanges au sein du collectif 3B.",
+    "description": "Entre dans l’univers Black Blanc Beur avec 3B International.\n\nJEUX ET EXPLORATION\nDécouvre les jeux 3B, explore le Monde du 3B et retrouve ta progression dans ton espace membre.\n\nTON PASSEPORT 3B\nCrée ton compte, personnalise ton identité digitale et consulte tes cartes ainsi que tes gains de progression.\n\nLE COLLECTIF\nRejoins la communauté pour partager tes idées, découvrir des créateurs et échanger dans les salons. Les outils de signalement et de blocage sont accessibles dans cet espace.\n\nUNE APPLICATION, PLUSIEURS UNIVERS\nRetrouve les rubriques culture, sport et création depuis l’accueil.\n\nUne connexion Internet est nécessaire. Certaines fonctions nécessitent un compte 3B et l’acceptation des règles du collectif.",
+    "keywords": "passeport,culture,collectif,créateurs,exploration,progression",
+    "proposedPrimaryCategory": "ENTERTAINMENT",
+    "marketingUrl": "https://3b-international.vercel.app/",
+    "proposedSku": "3B-INTERNATIONAL-IOS",
+    "bundleId": null,
+    "supportUrl": null,
+    "privacyPolicyUrl": null,
+    "copyright": null
+  },
+  "publicationDecisions": {
+    "price": null,
+    "targetAudience": null,
+    "ageRating": null,
+    "territories": null,
+    "adsDeclaration": null,
+    "dataSafetyDeclaration": null,
+    "appPrivacyDeclaration": null
+  }
+}
