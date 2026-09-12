@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
+import { build } from 'vite';
 
 const output='artifacts/nexus';await mkdir(output,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4177','--strictPort'],{stdio:'inherit'});
@@ -29,14 +30,12 @@ try{
   }
   report.checks.push('Eight countries select their own camera, title, guardian and value');
   await page.locator('.nexus-origin-link').click();assert.equal(await page.locator('.nexus-enter-world').isDisabled(),true);await screenshot(page,'desktop-origine');
-  // Check the full passage on replay after first GPU compilation has completed.
   await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});await screenshot(page,'desktop-tunnel');await skip(page);report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
   await page.keyboard.press('Escape');assert.equal(await page.locator('dialog[open]').count(),0);
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
   report.checks.push('ORIGINE stays locked; native dialog escapes transformed ancestor; Escape restores focus and scroll');
   await page.locator('#open').click();await skip(page);await pick(page,'FR');await page.locator('.nexus-enter-world').click();
-  assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');
-  report.checks.push('Country handoff and leaving the Nexus work');
+  assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');report.checks.push('Country handoff and leaving the Nexus work');
   for(let i=0;i<3;i++){await page.locator('#open').click();await skip(page);await webgl(page);await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await page.locator('.nexus-canvas canvas').count(),0);}
   report.checks.push('Three reopen/close cycles dispose the scene canvas');await desktop.close();
 
@@ -54,7 +53,23 @@ try{
   const fallback=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
   await fallback.addInitScript(()=>{const getContext=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:getContext.call(this,type,...args);};});
   const simple=await fallback.newPage();listen(simple,true);await open(simple);await simple.locator('.nexus-stage[data-renderer="fallback"]').waitFor({timeout:20000});await pick(simple,'DZ');await screenshot(simple,'mobile-sans-webgl');await simple.locator('.nexus-enter-world').click();assert.equal(await simple.locator('#navigation-result').textContent(),'world3b');report.checks.push('Without WebGL, the illustrated fallback and navigation remain functional');await fallback.close();
-  assert.deepEqual(report.errors,[],'Unexpected browser or shader errors');report.success=true;
+
+  // Exercise the real passport page with all application providers and styles,
+  // not only the deliberately clipped fixture. No account is created.
+  const appContext=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+  const app=await appContext.newPage();currentPage=app;listen(app);
+  await app.goto('http://127.0.0.1:4177/#passeport');
+  const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
+  await trigger.waitFor({timeout:30000});await trigger.click();await webgl(app);
+  assert.equal(await app.locator('.nexus-canvas canvas').getAttribute('data-nexus-scene'),'heritage-v2');
+  assert.equal(await app.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
+  await screenshot(app,'application-mobile-nexus');await pick(app,'FR');await screenshot(app,'application-mobile-france');
+  await app.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await trigger.isVisible(),true);assert.equal(await app.locator('dialog[open]').count(),0);
+  await screenshot(app,'application-mobile-passeport');report.checks.push('Actual application: passport entry, 3D selection and return work with global styles at 390×844');await appContext.close();
+
+  assert.deepEqual(report.errors,[],'Unexpected browser or shader errors');
+  await build({build:{outDir:`${output}/fixture`,emptyOutDir:true,copyPublicDir:false,rollupOptions:{input:'tests/nexus-fixture.html'}}});
+  report.checks.push('A production-compiled isolated fixture is included in the evidence archive');report.success=true;
 }catch(error){report.success=false;report.failure=error.stack;process.exitCode=1;
   if(currentPage&&!currentPage.isClosed()){
     try{report.diagnostics=await currentPage.evaluate(()=>({phase:document.querySelector('.nexus-experience')?.dataset,stage:document.querySelector('.nexus-stage')?.dataset,text:document.body.innerText,phases:window.__nexusPhases}));await screenshot(currentPage,'failure');}catch(diagnosticError){report.diagnosticFailure=String(diagnosticError);}
