@@ -1,0 +1,79 @@
+name: Render 3B Premium Videos
+
+on:
+  push:
+    branches:
+      - chatgpt-video-premium
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install production tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          python -m pip install --upgrade pip
+          pip install pillow numpy opencv-python-headless
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Restore rendering scripts
+        run: |
+          mkdir -p scripts video-production
+          cat .video-build/capture.part* | base64 -d | gzip -d > scripts/capture-3b-video.mjs
+          cat .video-build/render.part* | base64 -d | gzip -d > scripts/render-3b-videos.py
+          node --check scripts/capture-3b-video.mjs
+          python -m py_compile scripts/render-3b-videos.py
+
+      - name: Download premium phone shot
+        continue-on-error: true
+        run: |
+          curl --fail --location --retry 4 --retry-delay 2 \
+            'https://dnznrvs05pmza.cloudfront.net/gemini/gemini-3-pro-image/images/4c1d6eeb-e5c0-46b5-8eba-f674924eb64d/86a98c51-108d-4d2b-8ffe-ea3d382d2394/Vertical_photorealistic_luxury_technology_advertisement__clo.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZjNlYjY5OGVjNGJkYTcyNCIsImJ1Y2tldCI6InJ1bndheS10YXNrLWFydGlmYWN0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc4OTM4NTg3MH0.UTcHL9ZGm2AmsnIWxoPP81kzz_cv8v4uiNc1t3HNZc4' \
+            --output video-production/phone_hand.png
+          file video-production/phone_hand.png || true
+
+      - name: Capture the real public application
+        env:
+          THREE_B_URL: https://3b-international.vercel.app/
+        run: node scripts/capture-3b-video.mjs
+
+      - name: Render both premium videos
+        run: python scripts/render-3b-videos.py
+
+      - name: Technical quality control
+        run: |
+          set -e
+          for f in video-production/final/*.mp4; do
+            echo "==== $f ===="
+            ffprobe -v error -show_entries format=duration,size -show_entries stream=codec_name,width,height,r_frame_rate -of default=noprint_wrappers=1 "$f"
+          done
+          ls -lh video-production/final
+
+      - name: Upload final videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3B-Premium-Videos
+          path: video-production/final/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
