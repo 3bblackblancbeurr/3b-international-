@@ -71,3 +71,18 @@ test('Passport portal and recognition scan are premium but motion-safe', () => {
   assert.match(css,/data-calm='true'/);
   assert.doesNotMatch(css,/position:\s*fixed/);
 });
+test('V5 adds radar, optical lattice and reveal bloom without changing journey logic', () => {
+  const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-portal-v5.css',import.meta.url),'utf8');
+  assert.match(source,/nexus-portal-v5\.css/);
+  for(const signature of ['nexus-v5-passport-core','nexus-v5-radar-turn','nexus-v5-field-scan','nexus-v5-lattice-flight','nexus-v5-iris-drive','nexus-v5-reveal-bloom']) assert.match(css,new RegExp(signature));
+  assert.match(css,/data-phase='scan'.*nexus-arrival::before/s);
+  assert.match(css,/data-phase='tunnel'.*nexus-transit-decor::before/s);
+  assert.match(css,/data-phase='nexus'.*nexus-stage::after/s);
+  assert.match(css,/@media\(max-width:759px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/data-calm='true'/);
+  assert.match(css,/passport-visual\[data-animated="false"\]/);
+  assert.doesNotMatch(css,/position:\s*fixed/);
+  assert.doesNotMatch(css,/requestAnimationFrame|setInterval/);
+});
