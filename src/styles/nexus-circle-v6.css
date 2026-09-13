@@ -1,0 +1,26 @@
+/* V6 live broken circle uses the existing seal SVG so it adds no extra assets. */
+.nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinema-seals{
+  z-index:7;left:34.4%;top:41.6%;width:31.2%;transform-origin:50% 50%;
+  color:#8ee1ff;filter:drop-shadow(0 0 5px #1aa9ff) drop-shadow(0 0 11px #e1bd7466);
+  animation:nexus-v6-live-circle-spin 18s linear infinite;
+}
+.nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinema-map::before{
+  content:'3B';position:absolute;z-index:8;left:50%;top:57.2%;width:10.5%;aspect-ratio:1;
+  transform:translate(-50%,-50%);display:grid;place-items:center;border-radius:50%;pointer-events:none;
+  color:#f4dfad;font:600 clamp(10px,1.55vw,20px)/1 Georgia,'Times New Roman',serif;letter-spacing:-.06em;
+  background:radial-gradient(circle,#165b83 0,#071725 58%,#02070d 100%);
+  border:1px solid #dec2838f;box-shadow:0 0 12px #d9b87555,0 0 26px #46c9ff6e,inset 0 0 17px #7fe1ff38;
+  text-shadow:0 0 8px #fff0c7,0 0 18px #43c9ff;animation:nexus-v6-live-core 2.7s ease-in-out infinite;
+}
+@keyframes nexus-v6-live-circle-spin{to{transform:rotate(360deg)}}
+@keyframes nexus-v6-live-core{0%,100%{filter:brightness(.94);box-shadow:0 0 10px #d9b87548,0 0 22px #46c9ff58,inset 0 0 15px #7fe1ff30}50%{filter:brightness(1.15);box-shadow:0 0 18px #f0d69b72,0 0 38px #46c9ff91,inset 0 0 24px #7fe1ff50}}
+@media(max-width:759px){
+  .nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinema-seals{top:41.8%;width:31.8%;left:34.1%}
+  .nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinema-map::before{top:57.7%;width:11.5%;font-size:clamp(9px,3.1vw,16px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinema-seals,
+  .nexus-experience[data-visual-mode='cinema'][data-phase='nexus'] .nexus-cinema-map::before{animation:none!important}
+}
+dialog.nexus-experience[data-calm='true'] .nexus-cinema-seals,
+dialog.nexus-experience[data-calm='true'] .nexus-cinema-map::before{animation-play-state:paused!important}
