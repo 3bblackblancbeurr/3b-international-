@@ -19,6 +19,9 @@ async function skipIntro(page){
   }
   await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience[open]')?.dataset.phase==='nexus',undefined,{timeout:10000,polling:50});
 }
+async function waitPhase(page,value,timeout=10000){await page.waitForFunction(expected=>document.querySelector('dialog.nexus-experience[open]')?.dataset.phase===expected,value,{timeout,polling:50});}
+async function phase(page){return page.evaluate(()=>document.querySelector('dialog.nexus-experience[open]')?.dataset.phase||null);}
+async function pressIntro(page,name){const button=page.getByRole('button',{name,exact:true});await button.waitFor({state:'visible',timeout:10000});await button.evaluate(element=>element.click());}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -75,13 +78,18 @@ try{
   await app.waitForFunction(()=>!document.querySelector('dialog.nexus-experience[open]'));
   report.checks.push('Actual application: compact passport trigger, V6 Nexus, France cinematic arrival and canonical world entry');await context.close();
   const animated=await browser.newContext({viewport:{width:1440,height:1000}});const tunnel=await animated.newPage();currentPage=tunnel;
-  await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click();
-  await tunnel.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});
-  await tunnel.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();
-  await sleep(4200);assert.equal(await tunnel.locator('dialog.nexus-experience[open]').getAttribute('data-phase'),'tunnel');
-  await shot(tunnel,'tunnel-v6');await tunnel.getByRole('button',{name:'Passer l’introduction'}).click();
-  await tunnel.locator('.nexus-experience[data-phase="nexus"]').waitFor();
-  report.checks.push('V6 tunnel pause actually pauses the phase timer; introduction remains skippable');await animated.close();
+  await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click({noWaitAfter:true});
+  await waitPhase(tunnel,'scan',5000);
+  await pressIntro(tunnel,'Mettre les animations en pause');
+  await sleep(1350);assert.equal(await phase(tunnel),'scan');
+  await pressIntro(tunnel,'Reprendre les animations');
+  await waitPhase(tunnel,'tunnel',10000);
+  await pressIntro(tunnel,'Mettre les animations en pause');
+  await sleep(4200);assert.equal(await phase(tunnel),'tunnel');
+  await shot(tunnel,'tunnel-v6');
+  await pressIntro(tunnel,'Passer l’introduction');
+  await waitPhase(tunnel,'nexus',10000);
+  report.checks.push('V6 scan and tunnel timers pause deterministically; introduction remains skippable');await animated.close();
   assert.deepEqual(report.errors,[]);report.success=true;
 }catch(error){report.success=false;report.failure=error.stack;process.exitCode=1;if(currentPage&&!currentPage.isClosed())try{await shot(currentPage,'failure');report.text=await currentPage.locator('body').innerText();}catch{}}
 finally{await writeFile(`${output}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser?.close();server.kill('SIGTERM');}
