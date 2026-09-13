@@ -11,6 +11,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function shot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
 async function pressIntroControl(page,name){const button=page.getByRole('button',{name,exact:true});await button.waitFor({state:'visible',timeout:10000});await button.evaluate(element=>element.click());}
 async function phase(page){return page.evaluate(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase||null);}
+async function waitPhase(page,value,timeout=10000){await page.waitForFunction(expected=>document.querySelector('dialog.nexus-experience')?.dataset.phase===expected,value,{timeout,polling:50});}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -56,15 +57,15 @@ try{
   report.checks.push('Actual application: original passport, reference art, France selection and canonical world entry');await context.close();
   const animated=await browser.newContext({viewport:{width:1440,height:1000}});const tunnel=await animated.newPage();currentPage=tunnel;
   await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click({noWaitAfter:true});
-  await tunnel.locator('.nexus-experience[data-phase="scan"]').waitFor({timeout:5000});
+  await waitPhase(tunnel,'scan',5000);
   await pressIntroControl(tunnel,'Mettre les animations en pause');
   await sleep(1350);assert.equal(await phase(tunnel),'scan');
   await pressIntroControl(tunnel,'Reprendre les animations');
-  await tunnel.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:5000});
+  await waitPhase(tunnel,'tunnel',10000);
   await pressIntroControl(tunnel,'Mettre les animations en pause');
   await sleep(4200);assert.equal(await phase(tunnel),'tunnel');
   await shot(tunnel,'tunnel-architecture');await pressIntroControl(tunnel,'Passer l’introduction');
-  await tunnel.locator('.nexus-experience[data-phase="nexus"]').waitFor({timeout:10000});
+  await waitPhase(tunnel,'nexus',10000);
   report.checks.push('Scan and tunnel timers pause deterministically; introduction remains skippable');await animated.close();
   assert.deepEqual(report.errors,[]);report.success=true;
 }catch(error){report.success=false;report.failure=error.stack;process.exitCode=1;if(currentPage&&!currentPage.isClosed())try{await shot(currentPage,'failure');report.text=await currentPage.locator('body').innerText();}catch{}}
