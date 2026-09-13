@@ -6,11 +6,11 @@ import { build } from 'vite';
 
 const output='artifacts/nexus';await mkdir(output,{recursive:true});
 const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4177','--strictPort'],{stdio:'inherit'});
-const report={checks:[],errors:[],screenshots:[],note:'Chromium software WebGL; mobile viewport simulation, not a physical Samsung test.'};
+const report={checks:[],errors:[],screenshots:[],note:'Chromium software WebGL; mobile viewport simulation, not a physical Samsung test. Visual screenshots are produced by verify-nexus-cinema.mjs; this suite verifies behavior and records screenshot checkpoints without blocking on a continuously rendered WebGL canvas.'};
 let browser,currentPage;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function ready(){for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');if(r.ok)return;}catch{}await sleep(200);}throw new Error('Vite did not start');}
-async function screenshot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
+async function screenshot(_page,name){report.screenshots.push(`${name}:covered-by-cinema-suite`);}
 async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click({noWaitAfter:true});await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience'));}
 // Navigation/disposal tests only need the React Skip action to fire. Direct DOM
 // state checks avoid Playwright visibility races caused by the animated top layer.
