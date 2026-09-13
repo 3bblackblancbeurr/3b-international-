@@ -65,7 +65,11 @@ async function activate3d(page) {
 
 async function webgl(page) {
   await activate3d(page);
-  await page.waitForFunction(() => document.querySelector('.nexus-stage')?.dataset.renderer === '3d', undefined, { timeout: 30000, polling: 50 });
+  // Cold Three.js + software WebGL creation can take >30 s on GitHub runners.
+  // The previous green reference run naturally spent ~16 s in the intro before
+  // reaching this assertion; V5 skips that intro in the behavior suite, so give
+  // the renderer equivalent startup headroom without weakening the assertion.
+  await page.waitForFunction(() => document.querySelector('.nexus-stage')?.dataset.renderer === '3d', undefined, { timeout: 90000, polling: 50 });
 }
 
 async function pick(page, code) {
