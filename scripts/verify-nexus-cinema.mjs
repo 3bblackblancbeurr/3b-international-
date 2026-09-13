@@ -9,6 +9,12 @@ const report={checks:[],errors:[],screenshots:[],note:'Real React app in Chromiu
 let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false});report.screenshots.push(name);}
+async function skipIntro(page){
+  await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience'),undefined,{timeout:10000,polling:50});
+  const phase=await page.evaluate(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase||null);
+  if(phase!=='nexus')await page.evaluate(()=>document.querySelector('dialog.nexus-experience [data-nexus-skip="true"]')?.click());
+  await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase==='nexus',undefined,{timeout:10000,polling:50});
+}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -18,7 +24,7 @@ try{
     const page=await context.newPage();currentPage=page;
     page.on('pageerror',e=>report.errors.push(String(e)));
     await page.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await page.locator('#open').click();
-    if(width===1440)await page.getByRole('button',{name:'Passer l’introduction'}).click();
+    if(width===1440)await skipIntro(page);
     await page.locator('.nexus-experience[data-phase="nexus"][data-visual-mode="cinema"]').waitFor();
     await page.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();if(!img.naturalWidth)throw Error('Missing reference image');});
     assert.equal(await page.locator('.nexus-cinema-hit').count(),8);
