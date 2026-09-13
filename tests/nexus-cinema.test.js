@@ -36,18 +36,19 @@ test('all reference assets are local WebP files, hash-verified and within budget
 test('cinematic rendering still uses the canonical journey and offers a real 3D view', () => {
   const source=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
   assert.match(source,/useNexusJourney\(\{ open, onClose, goTo \}\)/);
-  assert.match(source,/journey\.travel\(isOrigin \? 'ORIGINE'/);
+  assert.match(source,/journey\.travel\('ORIGINE'\)/);
+  assert.match(source,/setArrivalCode\(active\.code\)/);
+  assert.match(source,/journey\.travel\(code\)/);
+  assert.match(source,/NexusCountryArrival/);
   assert.match(source,/originEnabled=\{journey\.originEnabled\}/);
   assert.match(source,/Voir le sanctuaire en 3D/);
-  assert.match(source,/paused=\{paused \|\| \(phase === 'nexus' && visualMode === 'cinema'\)\}/);
+  assert.match(source,/paused=\{paused \|\| !!arrivalWorld \|\| \(phase === 'nexus' && visualMode === 'cinema'\)\}/);
   assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
 });
 test('premium transit keeps depth, speed, country panels and mobile motion safeguards', () => {
   const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
   const css=readFileSync(new URL('../src/styles/nexus-cinema-polish.css',import.meta.url),'utf8');
-  for (const layer of ['nexus-transit-horizon','nexus-transit-depth','nexus-transit-streaks','nexus-transit-glyphs','nexus-transit-core','nexus-transit-flare','nexus-transit-vignette']) {
-    assert.match(source,new RegExp(layer));
-  }
+  for (const layer of ['nexus-transit-horizon','nexus-transit-depth','nexus-transit-streaks','nexus-transit-glyphs','nexus-transit-core','nexus-transit-flare','nexus-transit-vignette']) assert.match(source,new RegExp(layer));
   assert.match(source,/TRANSIT_RINGS/);assert.match(source,/TRANSIT_STREAKS/);assert.match(source,/TRANSIT_GLYPHS/);
   assert.match(source,/nexus-transit-panel-scan/);assert.match(source,/>\{world\.code\}<\/small>/);
   assert.match(css,/@keyframes nexus-depth-ring/);assert.match(css,/@keyframes nexus-streak-flight/);assert.match(css,/@keyframes nexus-core-approach/);
@@ -59,16 +60,10 @@ test('Passport portal and recognition scan are premium but motion-safe', () => {
   const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
   const css=readFileSync(new URL('../src/styles/nexus-portal-v4.css',import.meta.url),'utf8');
   assert.match(source,/nexus-portal-v4\.css/);
-  assert.match(css,/\.passport-portal-trigger::before/);
-  assert.match(css,/\.passport-portal-trigger::after/);
-  assert.match(css,/nexus-passport-pulse/);
-  assert.match(css,/data-phase='scan'.*nexus-arrival-mark/s);
-  assert.match(css,/nexus-recognition-scan/);
-  assert.match(css,/data-phase='tunnel'.*nexus-arrival-mark/s);
-  assert.match(css,/nexus-recognition-release/);
-  assert.match(css,/@media\(max-width:759px\)/);
-  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(css,/data-calm='true'/);
+  assert.match(css,/\.passport-portal-trigger::before/);assert.match(css,/\.passport-portal-trigger::after/);assert.match(css,/nexus-passport-pulse/);
+  assert.match(css,/data-phase='scan'.*nexus-arrival-mark/s);assert.match(css,/nexus-recognition-scan/);
+  assert.match(css,/data-phase='tunnel'.*nexus-arrival-mark/s);assert.match(css,/nexus-recognition-release/);
+  assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);
   assert.doesNotMatch(css,/position:\s*fixed/);
 });
 test('V5 adds radar, optical lattice and reveal bloom without changing journey logic', () => {
@@ -76,13 +71,18 @@ test('V5 adds radar, optical lattice and reveal bloom without changing journey l
   const css=readFileSync(new URL('../src/styles/nexus-portal-v5.css',import.meta.url),'utf8');
   assert.match(source,/nexus-portal-v5\.css/);
   for(const signature of ['nexus-v5-passport-core','nexus-v5-radar-turn','nexus-v5-field-scan','nexus-v5-lattice-flight','nexus-v5-iris-drive','nexus-v5-reveal-bloom']) assert.match(css,new RegExp(signature));
-  assert.match(css,/data-phase='scan'.*nexus-arrival::before/s);
-  assert.match(css,/data-phase='tunnel'.*nexus-transit-decor::before/s);
-  assert.match(css,/data-phase='nexus'.*nexus-stage::after/s);
-  assert.match(css,/@media\(max-width:759px\)/);
-  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(css,/data-calm='true'/);
-  assert.match(css,/passport-visual\[data-animated="false"\]/);
-  assert.doesNotMatch(css,/position:\s*fixed/);
-  assert.doesNotMatch(css,/requestAnimationFrame|setInterval/);
+  assert.match(css,/data-phase='scan'.*nexus-arrival::before/s);assert.match(css,/data-phase='tunnel'.*nexus-transit-decor::before/s);assert.match(css,/data-phase='nexus'.*nexus-stage::after/s);
+  assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);assert.match(css,/passport-visual\[data-animated="false"\]/);
+  assert.doesNotMatch(css,/position:\s*fixed/);assert.doesNotMatch(css,/requestAnimationFrame|setInterval/);
+});
+test('V6 keeps the QR visible, rotates the broken circle and gives all eight countries a final arrival scene', () => {
+  const nexus=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+  const arrival=readFileSync(new URL('../src/components/NexusCountryArrival.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-cinema-v6.css',import.meta.url),'utf8');
+  const circle=readFileSync(new URL('../src/styles/nexus-circle-v6.css',import.meta.url),'utf8');
+  assert.match(nexus,/nexus-cinema-v6\.css/);assert.match(nexus,/data-nexus-version="cinema-v6-20260913"/);assert.match(nexus,/data-arrival=\{arrivalWorld\?\.code \|\| 'none'\}/);
+  assert.match(arrival,/PortalArtwork/);assert.match(arrival,/Explorer \$\{world\.country\}/);assert.match(arrival,/nexus-country-traits/);
+  assert.match(css,/right:5\.6%!important/);assert.match(css,/width:clamp\(46px,8\.15cqw,82px\)!important/);assert.match(css,/nexus-country-arrival/);assert.match(css,/nexus-v6-gate-reveal/);assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(circle,/nexus-v6-live-circle-spin/);assert.match(circle,/\.nexus-cinema-seals/);assert.match(circle,/content:'3B'/);
+  for(const world of NEXUS_WORLDS){assert.match(world.arrivalTitle,/Bienvenue/);assert.equal(world.arrivalTraits.length,4);assert.ok(world.arrivalLead.length>25);}
 });
