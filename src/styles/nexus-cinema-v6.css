@@ -1,0 +1,172 @@
+/* NEXUS V6 — full cinematic journey. Presentation only: canonical travel, progression
+   and saves remain owned by useNexusJourney/world-engine. */
+
+/* Passport entry — smaller 3B trigger aligned with the old NFC zone, leaving the
+   printed QR code visible immediately to its left. */
+.passport-portal-trigger{
+  left:auto!important;
+  right:5.6%!important;
+  bottom:8.1%!important;
+  width:clamp(46px,8.15cqw,82px)!important;
+  border-color:#e2c88996!important;
+  background:
+    radial-gradient(circle at 50% 42%,#f9e9bd32 0 5%,transparent 15%),
+    radial-gradient(circle at 50% 48%,#7bddff52 0 13%,transparent 31%),
+    conic-gradient(from 210deg,#07121f 0 13%,#174f70 20%,#06101b 29% 51%,#8c71462e 57%,#0a2638 67%,#06101b 78% 92%,#c6a96d38),
+    #06111d!important;
+  box-shadow:0 0 0 1px #77d8ff2e,0 0 18px #35c4ff66,0 0 42px #057fbe38,inset 0 0 14px #9ce9ff3b,inset 0 -10px 20px #02070ccf!important;
+  backdrop-filter:blur(3px);
+}
+.passport-portal-trigger>b{font-size:clamp(13px,1.86cqw,21px)!important;color:#f4dfad!important;text-shadow:0 0 8px #f7e6bd7a,0 0 18px #4ed1ff!important}
+.passport-portal-trigger>small{bottom:17%!important;font-size:clamp(5px,.52cqw,7px)!important;letter-spacing:.19em!important;color:#e8d09b!important}
+.passport-portal-trigger::before{inset:-10%!important;filter:drop-shadow(0 0 4px #45c9ff67)!important}
+.passport-portal-trigger::after{inset:-17%!important;box-shadow:0 0 14px #2bbdff35,inset 0 0 10px #e5ca8b24!important}
+.passport-portal-trigger .passport-portal-orbit i:first-child{inset:-18%!important}
+.passport-portal-trigger:focus-visible{outline:2px solid #f1d397!important;outline-offset:5px!important}
+
+/* Cinematic hall — a live broken circle sits over the approved illustration and
+   rotates forever while the user is in the Nexus overview. */
+.nexus-cinema-broken-circle{
+  position:absolute;z-index:7;left:50%;top:57.6%;width:29%;aspect-ratio:1;
+  transform:translate(-50%,-50%);display:grid;place-items:center;pointer-events:none;
+  filter:drop-shadow(0 0 9px #6fdcff7a) drop-shadow(0 0 24px #d4ae6550);
+}
+.nexus-cinema-broken-circle::before{
+  content:"";position:absolute;inset:-22%;border-radius:50%;
+  background:radial-gradient(circle,#dff9ff25 0 9%,#55cfff18 17%,transparent 53%);
+  box-shadow:0 0 42px #46c9ff32,inset 0 0 24px #dfc17d20;
+  animation:nexus-v6-circle-pulse 2.8s ease-in-out infinite;
+}
+.nexus-cinema-broken-circle .nx-circle-art{width:100%;height:100%;overflow:visible;animation:nexus-v6-broken-spin 18s linear infinite;transform-origin:50% 50%}
+.nexus-cinema-broken-circle::after{
+  content:"3B";position:absolute;display:grid;place-items:center;width:31%;aspect-ratio:1;border-radius:50%;
+  color:#f5dfae;font:600 clamp(12px,2.1vw,25px)/1 Georgia,"Times New Roman",serif;letter-spacing:-.06em;
+  background:radial-gradient(circle,#0e4468 0,#071827 62%,#02070d 100%);
+  border:1px solid #d8bd7f88;box-shadow:0 0 12px #e2c48443,0 0 26px #3cc5ff4d,inset 0 0 18px #61d7ff35;
+  text-shadow:0 0 10px #fff0c9,0 0 20px #43c9ff;
+}
+.nexus-cinema-map::after{
+  content:"";position:absolute;z-index:5;inset:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 58%,transparent 0 14%,#66d6ff0b 23%,transparent 39%),linear-gradient(180deg,transparent 62%,#01060d4a 100%);
+  mix-blend-mode:screen;
+}
+
+/* The tunnel uses the same DOM as V5 but with stronger parallax and a cinematic
+   lens response. No raster video is needed, so it stays crisp at every DPR. */
+.nexus-experience[data-phase='tunnel'] .nexus-transit-decor{
+  background:
+    radial-gradient(circle at 50% 48%,#c9f4ff1f 0 3%,#168ad535 7%,transparent 23%),
+    repeating-radial-gradient(circle at 50% 48%,transparent 0 4.5%,#4dcfff0b 4.7% 4.9%,transparent 5.1% 9.8%),
+    linear-gradient(180deg,#01040a,#03101c 52%,#01040a);
+  perspective:1100px;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-depth{transform:scale(1.05);filter:contrast(1.08) brightness(1.08)}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-streaks>i{height:1.5px;box-shadow:0 0 7px #5bd4ffad,0 0 16px #168cd584}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-streaks>i:nth-child(5n+1){height:2px;background:linear-gradient(90deg,transparent,#e8c9874f 35%,#ffedbd 100%);box-shadow:0 0 7px #efce8a85}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-glyphs>b{font-weight:650;letter-spacing:.2em;filter:drop-shadow(0 0 5px #3ac8ff)}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-core{filter:drop-shadow(0 0 26px #76ddffad) saturate(1.15)}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-vignette{background:radial-gradient(ellipse at 50% 48%,transparent 0 21%,#01050a20 48%,#010308ed 100%),linear-gradient(180deg,#0009,transparent 16%,transparent 72%,#000d)}
+.nexus-experience[data-phase='tunnel'] .nexus-arrival{animation:nexus-v6-camera-drive 3.65s cubic-bezier(.18,.58,.14,1) both}
+
+/* Final country arrival — one reusable high-resolution vector scene for all eight
+   destinations, driven by each country's canonical metadata and gate artwork. */
+.nexus-country-arrival{
+  --arrival-color:#86caff;
+  position:fixed;z-index:45;inset:0;overflow:auto;overscroll-behavior:contain;
+  display:grid;grid-template-columns:minmax(300px,.9fr) minmax(420px,1.2fr);align-items:center;gap:clamp(26px,5vw,80px);
+  padding:max(76px,env(safe-area-inset-top)) clamp(26px,6vw,92px) max(36px,env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 72% 44%,color-mix(in srgb,var(--arrival-color) 28%,transparent) 0 7%,transparent 33%),
+    radial-gradient(circle at 17% 70%,#d3b26a12 0 7%,transparent 31%),
+    linear-gradient(128deg,#02060b 0,#06111d 43%,#02050a 100%);
+  color:#edf8ff;isolation:isolate;animation:nexus-v6-arrival-in .75s cubic-bezier(.16,.72,.12,1) both;
+}
+.nexus-country-arrival::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 6.8vw,color-mix(in srgb,var(--arrival-color) 8%,transparent) 6.85vw 6.9vw),
+    linear-gradient(180deg,#ffffff03,transparent 28%,transparent 70%,#0008);
+  -webkit-mask:linear-gradient(180deg,#0004,#000 27% 75%,#0004);mask:linear-gradient(180deg,#0004,#000 27% 75%,#0004);
+}
+.nexus-country-arrival::after{
+  content:"";position:fixed;z-index:-1;left:50%;top:50%;width:120vmax;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  background:repeating-conic-gradient(from 2deg,transparent 0 8deg,var(--arrival-color) 8.2deg 8.45deg,transparent 8.7deg 22deg,#d7ba7721 22.2deg 22.5deg,transparent 22.8deg 45deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 15%,#000 24% 45%,transparent 62%);mask:radial-gradient(circle,transparent 0 15%,#000 24% 45%,transparent 62%);
+  opacity:.18;animation:nexus-v6-arrival-radar 28s linear infinite;pointer-events:none;
+}
+.nexus-country-copy{position:relative;z-index:2;max-width:590px;text-shadow:0 4px 24px #010409}
+.nexus-country-copy .nexus-kicker{margin-bottom:18px;color:#e7c984;font-size:10px;letter-spacing:.26em}
+.nexus-country-copy h2{margin:0;color:#f5e8c8;font:500 clamp(44px,6.8vw,92px)/.92 Georgia,"Times New Roman",serif;letter-spacing:-.055em}
+.nexus-country-copy h2 span{display:block;color:#eef8ff;font:400 clamp(20px,2.2vw,31px)/1.25 Inter,"Segoe UI",sans-serif;letter-spacing:.03em;margin-top:14px}
+.nexus-country-lead{max-width:510px;margin:22px 0 0;color:#c2d4e1;font-size:clamp(13px,1.3vw,17px);line-height:1.75}
+.nexus-country-traits{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0 0;padding:0;list-style:none}
+.nexus-country-traits li{padding:8px 11px;border:1px solid color-mix(in srgb,var(--arrival-color) 43%,#d7bd86);border-radius:999px;background:#06121db8;color:#d8e7ef;font-size:9px;letter-spacing:.12em;text-transform:uppercase;box-shadow:inset 0 0 14px color-mix(in srgb,var(--arrival-color) 10%,transparent)}
+.nexus-country-guardian{display:flex;align-items:center;gap:13px;margin-top:22px;color:#a9becd;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.nexus-country-guardian strong{color:#f0dfbd;font-size:13px;letter-spacing:.04em;text-transform:none}
+.nexus-country-load{position:relative;max-width:500px;height:2px;margin:27px 0 0;background:#6b82942b;overflow:hidden}
+.nexus-country-load::after{content:"";position:absolute;inset:0 auto 0 0;width:58%;background:linear-gradient(90deg,var(--arrival-color),#f2d89e);box-shadow:0 0 12px var(--arrival-color);animation:nexus-v6-arrival-load 1.15s ease-out both}
+.nexus-country-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:28px}
+.nexus-country-back,.nexus-country-enter{min-height:50px;padding:12px 18px;border-radius:999px;font-size:11px;font-weight:650;letter-spacing:.03em}
+.nexus-country-back{border:1px solid #8ca5b54d;background:#06101bd1;color:#c0d0dc}
+.nexus-country-enter{display:inline-flex;align-items:center;gap:10px;border:1px solid #efd79e;background:linear-gradient(115deg,#f3dfb2,#a6d9f0);color:#07121d!important;box-shadow:0 0 24px color-mix(in srgb,var(--arrival-color) 28%,transparent)}
+.nexus-country-enter:hover:not(:disabled){filter:brightness(1.08)}
+.nexus-country-stage{position:relative;z-index:1;display:grid;place-items:center;min-height:min(78vh,780px);perspective:1100px}
+.nexus-country-stage::before{content:"";position:absolute;left:50%;top:52%;width:min(70vmin,690px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--arrival-color) 22%,transparent) 0 18%,transparent 58%);box-shadow:0 0 100px color-mix(in srgb,var(--arrival-color) 24%,transparent)}
+.nexus-country-stage::after{content:"";position:absolute;left:50%;bottom:3%;width:min(72%,620px);height:13%;transform:translateX(-50%) perspective(450px) rotateX(68deg);border:1px solid color-mix(in srgb,var(--arrival-color) 33%,#d9be83);border-radius:50%;background:repeating-radial-gradient(ellipse at center,transparent 0 11%,color-mix(in srgb,var(--arrival-color) 13%,transparent) 11.5% 12%,transparent 12.5% 23%);box-shadow:0 0 34px color-mix(in srgb,var(--arrival-color) 23%,transparent)}
+.nexus-country-portal{position:relative;width:min(66vmin,600px);max-width:100%;transform-style:preserve-3d;animation:nexus-v6-gate-reveal .9s cubic-bezier(.16,.75,.15,1) both}
+.nexus-country-portal .nx-gate-art{display:block;width:100%;height:auto;filter:drop-shadow(0 20px 35px #000b) drop-shadow(0 0 18px color-mix(in srgb,var(--arrival-color) 38%,transparent))}
+.nexus-country-portal::before,.nexus-country-portal::after{content:"";position:absolute;left:50%;top:46%;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%)}
+.nexus-country-portal::before{width:52%;aspect-ratio:1;border:1px solid color-mix(in srgb,var(--arrival-color) 52%,#e0c384);box-shadow:0 0 30px color-mix(in srgb,var(--arrival-color) 38%,transparent),inset 0 0 25px color-mix(in srgb,var(--arrival-color) 15%,transparent);animation:nexus-v6-gate-orbit 9s linear infinite}
+.nexus-country-portal::after{width:34%;aspect-ratio:1;background:radial-gradient(circle,#effcff 0 1%,var(--arrival-color) 4%,transparent 45%);opacity:.55;animation:nexus-v6-gate-pulse 2.4s ease-in-out infinite}
+.nexus-country-coordinate{position:absolute;right:0;bottom:7%;color:#9db0bf;font:600 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.19em}
+
+/* When the country arrival is active the old Nexus controls remain mounted for
+   state continuity, but are visually and interactively suppressed. */
+dialog.nexus-experience[data-arrival]:not([data-arrival='none']) .nexus-shell{opacity:0;pointer-events:none;transition:opacity .2s}
+dialog.nexus-experience[data-arrival]:not([data-arrival='none']) .nexus-stage{filter:brightness(.4) blur(5px);transform:scale(1.02);transition:filter .3s,transform .3s}
+
+@keyframes nexus-v6-broken-spin{to{transform:rotate(360deg)}}
+@keyframes nexus-v6-circle-pulse{0%,100%{transform:scale(.95);opacity:.48}50%{transform:scale(1.07);opacity:.82}}
+@keyframes nexus-v6-camera-drive{0%{transform:scale(1);filter:blur(0)}72%{transform:scale(1.025);filter:blur(0)}100%{transform:scale(1.06);filter:blur(1px)}}
+@keyframes nexus-v6-arrival-in{from{opacity:0;transform:scale(1.025)}to{opacity:1;transform:none}}
+@keyframes nexus-v6-arrival-radar{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes nexus-v6-arrival-load{from{width:0;opacity:.3}to{width:100%;opacity:1}}
+@keyframes nexus-v6-gate-reveal{from{opacity:0;transform:translateY(34px) rotateX(4deg) scale(.88);filter:blur(7px)}to{opacity:1;transform:none;filter:none}}
+@keyframes nexus-v6-gate-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes nexus-v6-gate-pulse{0%,100%{transform:translate(-50%,-50%) scale(.86);opacity:.32}50%{transform:translate(-50%,-50%) scale(1.12);opacity:.72}}
+
+@media(max-width:759px){
+  .passport-portal-trigger{right:5.2%!important;bottom:7.5%!important;width:clamp(43px,8.65cqw,70px)!important}
+  .nexus-cinema-broken-circle{top:58.2%;width:31%}
+  .nexus-country-arrival{grid-template-columns:1fr;align-content:start;gap:5px;padding:max(72px,env(safe-area-inset-top)) 20px max(26px,env(safe-area-inset-bottom));text-align:center}
+  .nexus-country-copy{max-width:none;order:2}
+  .nexus-country-copy h2{font-size:clamp(40px,12vw,64px)}
+  .nexus-country-copy h2 span{font-size:17px}
+  .nexus-country-lead{margin-left:auto;margin-right:auto;font-size:12px}
+  .nexus-country-traits,.nexus-country-actions{justify-content:center}
+  .nexus-country-guardian{justify-content:center}
+  .nexus-country-load{margin-left:auto;margin-right:auto}
+  .nexus-country-stage{order:1;min-height:44vh}
+  .nexus-country-portal{width:min(82vw,430px)}
+  .nexus-country-coordinate{right:4%;bottom:3%}
+}
+@media(max-width:420px){
+  .passport-portal-trigger{right:5%!important;bottom:7.2%!important;width:clamp(41px,9cqw,64px)!important}
+  .nexus-country-arrival{padding-left:15px;padding-right:15px}
+  .nexus-country-stage{min-height:39vh}
+  .nexus-country-copy h2{font-size:clamp(36px,11.5vw,52px)}
+  .nexus-country-traits li{font-size:8px;padding:7px 9px}
+  .nexus-country-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .nexus-country-back,.nexus-country-enter{width:100%;padding:11px 12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .nexus-cinema-broken-circle .nx-circle-art,.nexus-cinema-broken-circle::before,
+  .nexus-country-arrival,.nexus-country-arrival::after,.nexus-country-portal,
+  .nexus-country-portal::before,.nexus-country-portal::after,.nexus-country-load::after,
+  .nexus-experience[data-phase='tunnel'] .nexus-arrival{animation:none!important}
+}
+dialog.nexus-experience[data-calm='true'] .nexus-cinema-broken-circle .nx-circle-art,
+dialog.nexus-experience[data-calm='true'] .nexus-cinema-broken-circle::before,
+dialog.nexus-experience[data-calm='true'] .nexus-country-arrival::after,
+dialog.nexus-experience[data-calm='true'] .nexus-country-portal::before,
+dialog.nexus-experience[data-calm='true'] .nexus-country-portal::after{animation-play-state:paused!important}
