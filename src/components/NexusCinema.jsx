@@ -4,10 +4,14 @@ import { NEXUS_CINEMA_ASSETS, nexusDoorImage, nexusHotspotStyle } from './nexus-
 import '../styles/nexus-cinema-polish.css';
 import '../styles/nexus-portal-v4.css';
 import '../styles/nexus-portal-v5.css';
+import '../styles/nexus-v7-circle.css';
+import '../styles/nexus-v7-tunnel.css';
+import '../styles/nexus-v7-doors.css';
 
-const TRANSIT_RINGS = Array.from({ length: 10 }, (_, index) => index);
-const TRANSIT_STREAKS = Array.from({ length: 28 }, (_, index) => index);
-const TRANSIT_GLYPHS = ['3B', '01', '10', 'H', 'B', '3', '11', '00', '3B', '01', 'B', '10'];
+const TRANSIT_RINGS = Array.from({ length: 12 }, (_, index) => index);
+const TRANSIT_STREAKS = Array.from({ length: 36 }, (_, index) => index);
+const TRANSIT_GLYPHS = ['3B', '01', '10', 'H', 'B', '3', '11', '00', '3B', '01', 'B', '10', '08', '∞'];
+const SPIRAL_SPARKS = Array.from({ length: 34 }, (_, index) => index);
 
 /** Art-directed 2.5D presentation. Buttons, selection and seals are live React UI,
  * not a flattened replacement for the app. Travel is handled by useNexusJourney. */
@@ -19,14 +23,9 @@ export function NexusCinemaHall({ selected, onSelect, doors = [], originEnabled 
         sizes="(max-width: 759px) calc(100vw - 32px), 560px" width="941" height="1116"
         alt="" decoding="async" fetchPriority="high" onError={onFailure} />
       <div className="nexus-cinema-light" aria-hidden="true" />
-      <svg className="nexus-cinema-seals" viewBox="0 0 100 100" aria-hidden="true">
-        <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth=".35" />
-        {NEXUS_WORLDS.map((world, index) => {
-          const angle = (index * 45 - 90) * Math.PI / 180;
-          const complete = doors.find(door => door.code === world.code)?.sealed;
-          return <circle key={world.code} cx={50 + Math.cos(angle) * 46} cy={50 + Math.sin(angle) * 46} r={complete ? 2.3 : 1.2} className={complete ? 'is-earned' : 'is-pending'} />;
-        })}
-      </svg>
+      <div className="nexus-cinema-authentic-circle" aria-hidden="true">
+        <img src={`${NEXUS_CINEMA_ASSETS}/hall.webp`} width="941" height="1116" alt="" decoding="async" />
+      </div>
       <div className="nexus-cinema-hotspots" role="group" aria-label="Sélection des portes dans le décor">
         {NEXUS_WORLDS.map(world => {
           const progress = doors.find(door => door.code === world.code);
@@ -50,8 +49,16 @@ export function NexusCinemaHall({ selected, onSelect, doors = [], originEnabled 
   </section>;
 }
 
+function SpiralArm({ arm }) {
+  return <span className={`nexus-v7-spiral nexus-v7-spiral-${arm}`}>
+    {SPIRAL_SPARKS.map(index => <i key={`${arm}-${index}`} style={{ '--spark': index }} />)}
+  </span>;
+}
+
 export function NexusTransitDecor() {
   return <div className="nexus-transit-decor" aria-hidden="true">
+    <div className="nexus-v7-spiral-field"><SpiralArm arm="a" /><SpiralArm arm="b" /></div>
+    <div className="nexus-v7-speed-ribs" />
     <div className="nexus-transit-horizon" />
     <div className="nexus-transit-depth">
       {TRANSIT_RINGS.map(index => <i key={index} style={{ '--nexus-ring': index }} />)}

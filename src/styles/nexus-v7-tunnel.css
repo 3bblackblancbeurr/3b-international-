@@ -1,0 +1,27 @@
+/* V7: twin golden spiral tunnel inspired by the user's reference video. */
+.nexus-v7-spiral-field{position:absolute;inset:0;z-index:8;overflow:hidden;pointer-events:none;perspective:1200px;transform-style:preserve-3d;opacity:0}
+.nexus-experience[data-phase='tunnel'] .nexus-v7-spiral-field{opacity:1;animation:nexus-v7-field-drive 3.65s cubic-bezier(.12,.62,.16,1) both}
+.nexus-v7-spiral{position:absolute;left:50%;top:48%;width:0;height:0;transform-style:preserve-3d;will-change:transform}
+.nexus-v7-spiral-a{animation:nexus-v7-spiral-turn 1.18s linear infinite}
+.nexus-v7-spiral-b{transform:rotate(180deg);animation:nexus-v7-spiral-turn-reverse 1.42s linear infinite}
+.nexus-v7-spiral::before{content:"";position:absolute;left:50%;top:50%;width:min(82vmin,900px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(from 18deg,transparent 0 58%,#f7b34a08 61%,#ffd78655 64%,#fff0bf 66%,#f4a935b8 68%,#ffde8b35 71%,transparent 75% 100%);-webkit-mask:radial-gradient(circle,transparent 0 48%,#000 49.2% 51.3%,transparent 52.6%);mask:radial-gradient(circle,transparent 0 48%,#000 49.2% 51.3%,transparent 52.6%);filter:drop-shadow(0 0 8px #ffc86d) drop-shadow(0 0 20px #f29a2e7a);opacity:.92}
+.nexus-v7-spiral-b::before{transform:translate(-50%,-50%) rotate(180deg);opacity:.82}
+.nexus-v7-spiral>i{--angle:calc(var(--spark) * 17.8deg);--radius:calc(4vmin + var(--spark) * 1.72vmin);position:absolute;left:0;top:0;width:clamp(3px,.52vmin,8px);height:clamp(3px,.52vmin,8px);border-radius:50%;background:radial-gradient(circle,#fff9df 0 22%,#ffe09a 38%,#ffb33f 58%,#ff8a1400 78%);box-shadow:0 0 5px #fff1bf,0 0 12px #ffc65e,0 0 25px #e88b228c;transform:rotate(var(--angle)) translateX(var(--radius)) rotate(calc(var(--angle) * -1));opacity:.82;animation:nexus-v7-spark-flicker .78s ease-in-out infinite alternate;animation-delay:calc(var(--spark) * -37ms)}
+.nexus-v7-spiral>i::after{content:"";position:absolute;right:40%;top:50%;width:clamp(12px,3.1vmin,44px);height:1px;transform:translateY(-50%);transform-origin:right center;background:linear-gradient(90deg,transparent,#ffbd4f69,#fff0bd);filter:blur(.2px);opacity:.75}
+.nexus-v7-speed-ribs{position:absolute;inset:-24%;z-index:4;pointer-events:none;opacity:0}
+.nexus-experience[data-phase='tunnel'] .nexus-v7-speed-ribs{opacity:.9;background:repeating-conic-gradient(from 1deg at 50% 48%,transparent 0 3.9deg,#55caff0f 4deg 4.15deg,transparent 4.25deg 8deg),repeating-radial-gradient(circle at 50% 48%,transparent 0 5.7%,#66d7ff12 5.85% 5.98%,transparent 6.1% 11.4%);-webkit-mask:radial-gradient(circle at 50% 48%,transparent 0 7%,#000 13% 79%,transparent 91%);mask:radial-gradient(circle at 50% 48%,transparent 0 7%,#000 13% 79%,transparent 91%);animation:nexus-v7-rib-flight 3.65s cubic-bezier(.12,.64,.16,1) both}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-decor{background:radial-gradient(circle at 50% 48%,#dff9ff31 0 1.2%,#79dcff25 3%,#0d5f9f35 7%,transparent 21%),radial-gradient(ellipse at 50% 48%,transparent 0 14%,#071b2b4f 31%,#01040a 77%),linear-gradient(180deg,#010308,#03111d 49%,#010308)!important}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-depth>i{border-color:#7ce1ff7a!important;box-shadow:0 0 13px #47c9ff48,inset 0 0 15px #2e9fd12a!important}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-streaks>i{height:2px!important;box-shadow:0 0 7px #7ce5ff,0 0 18px #198bd88a!important}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-streaks>i:nth-child(3n+1){background:linear-gradient(90deg,transparent,#f0b74b4f 28%,#fff0bde8)!important;box-shadow:0 0 7px #ffd98f,0 0 19px #df8b25a1!important}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-horizon{width:min(22vmin,240px)!important;box-shadow:0 0 28px #e4fbff,0 0 88px #3bcaffb8,0 0 190px #006db46b!important}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-wing{opacity:.34!important;filter:blur(.2px) saturate(.86) brightness(.8)!important}
+@keyframes nexus-v7-spiral-turn{to{transform:rotate(360deg)}}
+@keyframes nexus-v7-spiral-turn-reverse{from{transform:rotate(180deg)}to{transform:rotate(-180deg)}}
+@keyframes nexus-v7-spark-flicker{from{filter:brightness(.72);opacity:.38}to{filter:brightness(1.28);opacity:1}}
+@keyframes nexus-v7-field-drive{0%{transform:translateZ(-450px) scale(.35) rotate(-6deg);opacity:0}12%{opacity:.65}58%{opacity:1}88%{transform:translateZ(180px) scale(1.46) rotate(5deg);opacity:.92}100%{transform:translateZ(380px) scale(2.35) rotate(9deg);opacity:0}}
+@keyframes nexus-v7-rib-flight{0%{transform:scale(.48) rotate(0deg);opacity:.18}42%{opacity:.8}100%{transform:scale(1.72) rotate(13deg);opacity:.08}}
+@media(max-width:759px){.nexus-v7-spiral::before{width:92vmin}.nexus-v7-spiral>i{--radius:calc(3vmin + var(--spark) * 1.45vmin)}.nexus-experience[data-phase='tunnel'] .nexus-transit-wing{opacity:.18!important}}
+@media(max-width:420px){.nexus-v7-spiral>i:nth-child(2n){display:none}.nexus-v7-speed-ribs{opacity:.72}}
+@media(prefers-reduced-motion:reduce){.nexus-v7-spiral,.nexus-v7-spiral>i,.nexus-v7-spiral-field,.nexus-v7-speed-ribs{animation:none!important}.nexus-v7-spiral-field{display:none!important}}
+dialog.nexus-experience[data-calm='true'] .nexus-v7-spiral,dialog.nexus-experience[data-calm='true'] .nexus-v7-spiral>i,dialog.nexus-experience[data-calm='true'] .nexus-v7-spiral-field,dialog.nexus-experience[data-calm='true'] .nexus-v7-speed-ribs{animation-play-state:paused!important}

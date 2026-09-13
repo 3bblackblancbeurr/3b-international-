@@ -42,7 +42,6 @@ test('cinematic rendering still uses the canonical journey and offers a real 3D 
   assert.match(source,/NexusCountryArrival/);
   assert.match(source,/originEnabled=\{journey\.originEnabled\}/);
   assert.match(source,/Voir le sanctuaire en 3D/);
-  assert.match(source,/paused=\{paused \|\| !!arrivalWorld \|\| \(phase === 'nexus' && visualMode === 'cinema'\)\}/);
   assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
 });
 test('premium transit keeps depth, speed, country panels and mobile motion safeguards', () => {
@@ -75,14 +74,17 @@ test('V5 adds radar, optical lattice and reveal bloom without changing journey l
   assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);assert.match(css,/passport-visual\[data-animated="false"\]/);
   assert.doesNotMatch(css,/position:\s*fixed/);assert.doesNotMatch(css,/requestAnimationFrame|setInterval/);
 });
-test('V6 keeps the QR visible, rotates the broken circle and gives all eight countries a final arrival scene', () => {
-  const nexus=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+test('V7 uses the authentic Nexus circle, twin spark spirals and direct country handoff', () => {
+  const cinema=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const circle=readFileSync(new URL('../src/styles/nexus-v7-circle.css',import.meta.url),'utf8');
+  const tunnel=readFileSync(new URL('../src/styles/nexus-v7-tunnel.css',import.meta.url),'utf8');
+  const doors=readFileSync(new URL('../src/styles/nexus-v7-doors.css',import.meta.url),'utf8');
   const arrival=readFileSync(new URL('../src/components/NexusCountryArrival.jsx',import.meta.url),'utf8');
-  const css=readFileSync(new URL('../src/styles/nexus-cinema-v6.css',import.meta.url),'utf8');
-  const circle=readFileSync(new URL('../src/styles/nexus-circle-v6.css',import.meta.url),'utf8');
-  assert.match(nexus,/nexus-cinema-v6\.css/);assert.match(nexus,/data-nexus-version="cinema-v6-20260913"/);assert.match(nexus,/data-arrival=\{arrivalWorld\?\.code \|\| 'none'\}/);
-  assert.match(arrival,/PortalArtwork/);assert.match(arrival,/Explorer \$\{world\.country\}/);assert.match(arrival,/nexus-country-traits/);
-  assert.match(css,/right:5\.6%!important/);assert.match(css,/width:clamp\(46px,8\.15cqw,82px\)!important/);assert.match(css,/nexus-country-arrival/);assert.match(css,/nexus-v6-gate-reveal/);assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
-  assert.match(circle,/nexus-v6-live-circle-spin/);assert.match(circle,/\.nexus-cinema-seals/);assert.match(circle,/content:'3B'/);
-  for(const world of NEXUS_WORLDS){assert.match(world.arrivalTitle,/Bienvenue/);assert.equal(world.arrivalTraits.length,4);assert.ok(world.arrivalLead.length>25);}
+  assert.match(cinema,/nexus-cinema-authentic-circle/);assert.match(cinema,/hall\.webp/);
+  assert.doesNotMatch(cinema,/nexus-cinema-seals/);
+  assert.match(circle,/nexus-v7-authentic-circle-spin/);assert.match(circle,/\.nexus-cinema-map::before\{content:none!important/);
+  assert.match(tunnel,/nexus-v7-spiral-field/);assert.match(tunnel,/nexus-v7-spiral-a/);assert.match(tunnel,/nexus-v7-spiral-b/);assert.match(tunnel,/nexus-v7-field-drive/);
+  assert.match(doors,/height:208px!important/);assert.match(doors,/\.nexus-door-choice::before/);assert.match(doors,/@media\(max-width:759px\)/);
+  assert.match(arrival,/useEffect/);assert.match(arrival,/void onEnter\(\)/);assert.match(arrival,/return null/);assert.doesNotMatch(arrival,/Bienvenue|PortalArtwork|Explorer/);
+  assert.match(circle,/data-arrival.*nexus-shell/);assert.match(circle,/@media\(prefers-reduced-motion:reduce\)/);
 });

@@ -1,0 +1,14 @@
+/* V7: animate only the authentic broken circle taken from the approved Nexus image. */
+.nexus-cinema-seals,.nexus-cinema-broken-circle{display:none!important}
+.nexus-cinema-map::before{content:none!important;display:none!important}
+.nexus-cinema-authentic-circle{position:absolute;z-index:8;left:50%;top:57.6%;width:29%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;overflow:hidden;pointer-events:none;filter:drop-shadow(0 0 8px #8ce8ff8a) drop-shadow(0 0 18px #d9b56b4d);mix-blend-mode:screen;isolation:isolate}
+.nexus-cinema-authentic-circle::before{content:"";position:absolute;inset:-8%;border-radius:50%;z-index:2;pointer-events:none;border:1px solid #7bdcff38;box-shadow:0 0 18px #57d1ff36,inset 0 0 16px #e5c6801f}
+.nexus-cinema-authentic-circle img{position:absolute;width:344.7%;height:408.8%;left:-122.4%;top:-185.5%;max-width:none;transform-origin:50% 50%;animation:nexus-v7-authentic-circle-spin 16s linear infinite;-webkit-mask:radial-gradient(circle,transparent 0 34%,#000 39% 75%,transparent 80%);mask:radial-gradient(circle,transparent 0 34%,#000 39% 75%,transparent 80%);opacity:.96;filter:saturate(1.1) contrast(1.06) brightness(1.04)}
+.nexus-experience[data-selected]:not([data-selected='overview']) .nexus-cinema-authentic-circle img{animation-duration:22s;opacity:.72}
+/* V6's country overlay is retired: keep the Nexus visible during the immediate handoff. */
+dialog.nexus-experience[data-arrival]:not([data-arrival='none']) .nexus-shell{opacity:1!important;pointer-events:auto!important}
+dialog.nexus-experience[data-arrival]:not([data-arrival='none']) .nexus-stage{filter:none!important;transform:none!important}
+@keyframes nexus-v7-authentic-circle-spin{to{transform:rotate(360deg)}}
+@media(max-width:759px){.nexus-cinema-authentic-circle{width:30.5%;top:57.5%}}
+@media(prefers-reduced-motion:reduce){.nexus-cinema-authentic-circle img{animation:none!important}}
+dialog.nexus-experience[data-calm='true'] .nexus-cinema-authentic-circle img{animation-play-state:paused!important}
