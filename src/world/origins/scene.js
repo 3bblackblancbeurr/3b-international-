@@ -77,7 +77,7 @@ export function createOriginsScene(host,{initial,onSnapshot,onSave,onMessage,onL
   if(kind==='skip'){director.skip();cinematic=director.current;return;}
   if(['light','heavy','circle'].includes(kind)&&(combat.attack||combat.dodge>0)){combatInput.queue(kind,time);return;}if(kind==='dodge')combatInput.clear();
   combat.loadout=state.avatar;combat.xp=state.xp;
-  if(command(combat,kind,position,isCountry(state.zone)&&state.regions[state.zone].upgrade?'artisan':state.equipment)){if(kind!=='dodge'){const e=combat.enemy;if((regionalEncounter||state.zone==='france'&&!state.flags.defeated)&&distance(position,e)<8)heading=Math.atan2(e.x-position.x,e.z-position.z);actors.hero.face(Math.sin(heading),Math.cos(heading),.12);actors.hero.action(kind==='guard'||state.avatar.weapon==='zellige'&&kind==='circle'?'Guard':state.avatar.weapon==='paris'?'Thrust':state.avatar.weapon==='scissors'?'Split':kind==='circle'?'Cast':'Attack',combat.attack?.definition?.duration);}else actors.hero.action('Hit');signal(kind);lastEvent=combat.event?.id||lastEvent;path=[];}
+  if(command(combat,kind,position,isCountry(state.zone)&&state.regions[state.zone].upgrade?'artisan':state.equipment)){if(kind!=='dodge'){const e=combat.enemy;if((regionalEncounter||state.zone==='france'&&!state.flags.defeated)&&distance(position,e)<8)heading=Math.atan2(e.x-position.x,e.z-position.z);actors.hero.face(Math.sin(heading),Math.cos(heading),.12);actors.hero.action(combatAnimation(kind),combat.attack?.definition?.duration);}else actors.hero.action('Hit');signal(kind);lastEvent=combat.event?.id||lastEvent;path=[];}
  }
  function navigate(id){const p=(isCountry(state.zone)?countryLayout(state.zone).points.find(p=>p.id===id):POINTS[id])||WORLDS.find(w=>w.id===id);if(!p||paused||loading||director.current)return false;if(p.zone&&p.zone!==state.zone)return false;let destination=p;if(state.zone==='sanctuary'&&WORLDS.some(w=>w.id===id))destination={x:p.x*26/29,z:p.z*26/29};
   // Approach solids and NPCs without walking through them.
@@ -97,8 +97,22 @@ export function createOriginsScene(host,{initial,onSnapshot,onSave,onMessage,onL
  window.addEventListener('keydown',keyDown);window.addEventListener('keyup',keyUp);window.addEventListener('blur',blur);renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointercancel',pointerUp);renderer.domElement.addEventListener('lostpointercapture',pointerUp);renderer.domElement.addEventListener('wheel',wheel,{passive:false});
  let snapshotClock=0;let wasVisible=!document.hidden;
  const visibility=()=>{if(document.hidden&&wasVisible)save(true);wasVisible=!document.hidden;gamepadInput.sample(navigator.getGamepads?.()||[],false);blur();audio.pause(document.hidden||paused);};document.addEventListener('visibilitychange',visibility);
- const pagehide=()=>save();window.addEventListener('pagehide',pagehide);
- function frame(){if(dead)return;raf=requestAnimationFrame(frame);clock.update();if(document.hidden)return;const raw=clock.getDelta(),timing=simulationFrame(raw,!paused&&!loading&&!document.hidden),dt=timing.elapsed;snapshotClock+=raw;frameCount++;frameTime+=raw;if(frameTime>=1){fps=Math.round(frameCount/frameTime);if(!paused&&!loading&&renderQuality.sample(fps,frameTime))resize();frameCount=frameTime=0;}
+  const pagehide=()=>save();window.addEventListener('pagehide',pagehide);
+  function combatAnimation(kind){
+   const w=state.avatar.weapon;
+   if(kind==='circle')return w==='zellige'?'Guard':'Cast';
+   if(kind==='guard')return 'Guard';
+   if(kind==='heavy'&&w==='zellige')return 'Bash';
+   if(w==='paris')return kind==='heavy'?'ThrustHeavy':'Thrust';
+   if(w==='scissors')return kind==='heavy'?'SplitHeavy':'Split';
+   if(w==='axe')return kind==='heavy'?'BashHeavy':'Bash';
+   if(w==='claws')return kind==='heavy'?'Rake':'Slash';
+   if(w==='thread')return kind==='heavy'?'CastLong':'CastLean';
+   if(w==='bow')return kind==='heavy'?'Release':'Draw';
+   if(w==='wings')return kind==='heavy'?'Dive':'Lift';
+   return 'Attack';
+  }
+  function frame(){if(dead)return;raf=requestAnimationFrame(frame);clock.update();if(document.hidden)return;const raw=clock.getDelta(),timing=simulationFrame(raw,!paused&&!loading&&!document.hidden),dt=timing.elapsed;snapshotClock+=raw;frameCount++;frameTime+=raw;if(frameTime>=1){fps=Math.round(frameCount/frameTime);if(!paused&&!loading&&renderQuality.sample(fps,frameTime))resize();frameCount=frameTime=0;}
   const pad=gamepadInput.sample(navigator.getGamepads?.()||[],!paused&&!loading&&!director.current);for(const command of pad.actions)action(command==='companion'?'wolf':command);if(pad.look.x||pad.look.y){yaw-=pad.look.x*dt*2.2*state.settings.sensitivity;pitch=Math.max(-.95,Math.min(.9,pitch+pad.look.y*dt*1.4*state.settings.sensitivity));manual=2.2;}
   let motion={dx:0,dz:0,travel:0},wMotion={dx:0,dz:0,travel:0};
   for(let simulationStep=0;simulationStep<timing.steps;simulationStep++){const dt=timing.step;director.tick(dt);cinematic=director.current;if(!cinematic)time+=dt;
