@@ -10,10 +10,14 @@ let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false});report.screenshots.push(name);}
 async function skipIntro(page){
-  await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience'),undefined,{timeout:10000,polling:50});
-  const phase=await page.evaluate(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase||null);
-  if(phase!=='nexus')await page.evaluate(()=>document.querySelector('dialog.nexus-experience [data-nexus-skip="true"]')?.click());
-  await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase==='nexus',undefined,{timeout:10000,polling:50});
+  await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience[open]'),undefined,{timeout:10000,polling:50});
+  for(let i=0;i<30;i++){
+    const phase=await page.evaluate(()=>document.querySelector('dialog.nexus-experience[open]')?.dataset.phase||null);
+    if(phase==='nexus')return;
+    await page.evaluate(()=>document.querySelector('dialog.nexus-experience[open] [data-nexus-skip="true"]')?.click());
+    await sleep(100);
+  }
+  await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience[open]')?.dataset.phase==='nexus',undefined,{timeout:10000,polling:50});
 }
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
@@ -29,7 +33,7 @@ try{
     await page.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();if(!img.naturalWidth)throw Error('Missing reference image');});
     assert.equal(await page.locator('.nexus-cinema-hit').count(),8);
     assert.equal(await page.locator('.nexus-door-choice').count(),8);
-    assert.equal(await page.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true,`Overflow at ${width}`);
+    assert.equal(await page.locator('dialog.nexus-experience[open]').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true,`Overflow at ${width}`);
     assert.equal(await page.locator('.nexus-cinema-photo').getAttribute('alt'),'');
     const circleAnimation=await page.locator('.nexus-cinema-seals').evaluate(node=>getComputedStyle(node).animationName);
     if(width===1440)assert.match(circleAnimation,/nexus-v6-live-circle-spin/);else assert.equal(circleAnimation,'none');
@@ -37,7 +41,7 @@ try{
     for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE']){
       const target=page.locator(`.nexus-cinema-hit[data-country="${code}"]`);
       const bounds=await target.boundingBox();assert.ok(bounds.width>=43.9&&bounds.height>=43.9,`Small target: ${code}/${width}`);
-      await target.click();assert.equal(await page.locator('dialog').getAttribute('data-selected'),code);
+      await target.click();assert.equal(await page.locator('dialog.nexus-experience[open]').getAttribute('data-selected'),code);
     }
     const guardian=await page.locator('.nexus-guardian').boundingBox();
     const description=await page.locator('.nexus-description').boundingBox();
@@ -62,7 +66,7 @@ try{
   await shot(app,'application-passeport-v6');await trigger.click();
   await app.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();});
   await shot(app,'application-nexus-v6');await app.locator('.nexus-cinema-hit[data-country="FR"]').click();
-  await app.locator('dialog.nexus-experience').evaluate(dialog=>{dialog.scrollTop=0;});
+  await app.locator('dialog.nexus-experience[open]').evaluate(dialog=>{dialog.scrollTop=0;});
   await shot(app,'application-france-selected');await app.locator('.nexus-enter-world').click();
   await app.locator('.nexus-country-arrival[data-country="FR"]').waitFor({timeout:10000});
   assert.equal(await app.getByRole('heading',{name:'Bienvenue en France'}).isVisible(),true);
@@ -74,7 +78,7 @@ try{
   await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click();
   await tunnel.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});
   await tunnel.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();
-  await sleep(4200);assert.equal(await tunnel.locator('dialog').getAttribute('data-phase'),'tunnel');
+  await sleep(4200);assert.equal(await tunnel.locator('dialog.nexus-experience[open]').getAttribute('data-phase'),'tunnel');
   await shot(tunnel,'tunnel-v6');await tunnel.getByRole('button',{name:'Passer l’introduction'}).click();
   await tunnel.locator('.nexus-experience[data-phase="nexus"]').waitFor();
   report.checks.push('V6 tunnel pause actually pauses the phase timer; introduction remains skippable');await animated.close();
