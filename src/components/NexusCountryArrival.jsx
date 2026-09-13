@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, ShieldCheck } from 'lucide-react';
 import { PortalArtwork } from './NexusArtwork.jsx';
 import { NEXUS_ART } from '../passport/nexus-art-data.js';
+import '../styles/nexus-circle-v6.css';
 
 export default function NexusCountryArrival({ world, busy = false, onBack, onEnter }) {
   if (!world) return null;
