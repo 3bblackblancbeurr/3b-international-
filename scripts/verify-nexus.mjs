@@ -39,11 +39,15 @@ async function open(page) {
 }
 
 async function skip(page) {
-  await page.waitForFunction(() => !!document.querySelector('dialog.nexus-experience'), undefined, { timeout: 10000, polling: 50 });
-  const current = await page.evaluate(() => document.querySelector('dialog.nexus-experience')?.dataset.phase || null);
-  if (current === 'nexus') return;
-  await page.evaluate(() => document.querySelector('[data-nexus-skip="true"]')?.click());
-  await page.waitForFunction(() => document.querySelector('dialog.nexus-experience')?.dataset.phase === 'nexus', undefined, { timeout: 30000, polling: 50 });
+  // Repeated WebGL mount/dispose cycles can keep React's main thread busy for
+  // several seconds. Retry the real Skip button until its state update commits.
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('dialog.nexus-experience');
+    if (!dialog) return false;
+    if (dialog.dataset.phase === 'nexus') return true;
+    document.querySelector('[data-nexus-skip="true"]')?.click();
+    return false;
+  }, undefined, { timeout: 90000, polling: 300 });
 }
 
 // V5 is cinema-first. Legacy 3D checks must explicitly opt into the real 3D view
