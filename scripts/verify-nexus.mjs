@@ -46,10 +46,12 @@ try{
   report.checks.push('Real 3D remains available from cinema mode; eight countries keep their title, guardian and value');
   await page.locator('dialog.nexus-experience[open] .nexus-origin-link').click();assert.equal(await page.locator('dialog.nexus-experience[open] .nexus-enter-world').isDisabled(),true);
   await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience[open]')?.dataset.phase==='tunnel',undefined,{timeout:20000,polling:50});await skip(page);
-  await page.keyboard.press('Escape');assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(()=>!document.querySelector('dialog.nexus-experience'),undefined,{timeout:10000,polling:50});
+  assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
   report.checks.push('ORIGINE stays locked; tunnel replay, Escape, focus and scroll restoration work');
 
-  await page.locator('#open').click({noWaitAfter:true});await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience[open]'));await skip(page);await pick(page,'FR');await countryArrival(page,'FR');
+  await page.locator('#open').click({noWaitAfter:true});await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience[open]'),undefined,{timeout:10000,polling:50});await skip(page);await pick(page,'FR');await countryArrival(page,'FR');
   assert.equal(await page.getByRole('heading',{name:'Bienvenue en France'}).isVisible(),true);await page.locator('.nexus-country-arrival .nexus-country-enter').click();await page.getByText('world3b',{exact:true}).waitFor({timeout:30000});
   assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');
   const savedRegion=await page.evaluate(async()=>{const {readLocal}=await import('/src/world/save.js');return readLocal(null)?.data?.region;});
