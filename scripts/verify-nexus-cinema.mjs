@@ -13,10 +13,12 @@ try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   for(const width of [320,360,390,768,1440]){
-    const context=await browser.newContext({viewport:{width,height:width>759?1000:844},deviceScaleFactor:1,reducedMotion:'reduce',isMobile:width<760,hasTouch:width<760});
+    const motion=width===1440?'no-preference':'reduce';
+    const context=await browser.newContext({viewport:{width,height:width>759?1000:844},deviceScaleFactor:1,reducedMotion:motion,isMobile:width<760,hasTouch:width<760});
     const page=await context.newPage();currentPage=page;
     page.on('pageerror',e=>report.errors.push(String(e)));
     await page.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await page.locator('#open').click();
+    if(width===1440)await page.getByRole('button',{name:'Passer l’introduction'}).click();
     await page.locator('.nexus-experience[data-phase="nexus"][data-visual-mode="cinema"]').waitFor();
     await page.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();if(!img.naturalWidth)throw Error('Missing reference image');});
     assert.equal(await page.locator('.nexus-cinema-hit').count(),8);
@@ -24,7 +26,7 @@ try{
     assert.equal(await page.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true,`Overflow at ${width}`);
     assert.equal(await page.locator('.nexus-cinema-photo').getAttribute('alt'),'');
     const circleAnimation=await page.locator('.nexus-cinema-seals').evaluate(node=>getComputedStyle(node).animationName);
-    assert.match(circleAnimation,/nexus-v6-live-circle-spin/);
+    if(width===1440)assert.match(circleAnimation,/nexus-v6-live-circle-spin/);else assert.equal(circleAnimation,'none');
     await shot(page,`nexus-${width}`);
     for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE']){
       const target=page.locator(`.nexus-cinema-hit[data-country="${code}"]`);
@@ -41,7 +43,7 @@ try{
     await page.getByRole('button',{name:'Activer le décor cinéma',exact:true}).click();
     await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport',exact:true}).click();
     assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');
-    report.checks.push(`${width}px: V6 art loaded, 8 art controls + gallery, rotating broken circle, 44px touch targets, locked ORIGINE, 3D/cinema switch, focus restore, no horizontal overflow`);
+    report.checks.push(`${width}px: V6 art loaded, 8 art controls + gallery, live broken circle policy, 44px touch targets, locked ORIGINE, 3D/cinema switch, focus restore, no horizontal overflow`);
     await context.close();
   }
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
