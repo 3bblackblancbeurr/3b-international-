@@ -55,3 +55,19 @@ test('premium transit keeps depth, speed, country panels and mobile motion safeg
   assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);
   assert.doesNotMatch(source,/requestAnimationFrame|setInterval/);
 });
+test('Passport portal and recognition scan are premium but motion-safe', () => {
+  const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-portal-v4.css',import.meta.url),'utf8');
+  assert.match(source,/nexus-portal-v4\.css/);
+  assert.match(css,/\.passport-portal-trigger::before/);
+  assert.match(css,/\.passport-portal-trigger::after/);
+  assert.match(css,/nexus-passport-pulse/);
+  assert.match(css,/data-phase='scan'.*nexus-arrival-mark/s);
+  assert.match(css,/nexus-recognition-scan/);
+  assert.match(css,/data-phase='tunnel'.*nexus-arrival-mark/s);
+  assert.match(css,/nexus-recognition-release/);
+  assert.match(css,/@media\(max-width:759px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/data-calm='true'/);
+  assert.doesNotMatch(css,/position:\s*fixed/);
+});
