@@ -5,6 +5,7 @@ import { chromium } from '@playwright/test';
 import { build } from 'vite';
 
 const output = 'artifacts/nexus';
+const DIALOG = 'dialog.nexus-experience[open]';
 await mkdir(output, { recursive: true });
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4177', '--strictPort'], { stdio: 'inherit' });
 const report = {
@@ -31,60 +32,125 @@ async function screenshot(_page, name) {
   report.screenshots.push(`${name}:covered-by-cinema-suite`);
 }
 
+async function waitOpen(page, timeout = 30000) {
+  await page.waitForFunction(selector => !!document.querySelector(selector), DIALOG, { timeout, polling: 50 });
+}
+
+async function waitClosed(page, timeout = 30000) {
+  await page.waitForFunction(selector => !document.querySelector(selector), DIALOG, { timeout, polling: 50 });
+}
+
 async function open(page) {
   currentPage = page;
   await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');
   await page.locator('#open').click({ noWaitAfter: true });
-  await page.waitForFunction(() => !!document.querySelector('dialog.nexus-experience'));
+  await waitOpen(page);
+}
+
+async function reopen(page) {
+  await waitClosed(page);
+  await page.locator('#open').click({ noWaitAfter: true });
+  await waitOpen(page);
 }
 
 async function skip(page) {
-  // Repeated WebGL mount/dispose cycles can keep React's main thread busy for
-  // several seconds. Retry the real Skip button until its state update commits.
-  await page.waitForFunction(() => {
-    const dialog = document.querySelector('dialog.nexus-experience');
+  // Only target the currently open dialog. During repeated mount/dispose cycles
+  // a closed React tree may coexist briefly with its replacement.
+  await page.waitForFunction(selector => {
+    const dialog = document.querySelector(selector);
     if (!dialog) return false;
     if (dialog.dataset.phase === 'nexus') return true;
-    document.querySelector('[data-nexus-skip="true"]')?.click();
+    dialog.querySelector('[data-nexus-skip="true"]')?.click();
     return false;
-  }, undefined, { timeout: 90000, polling: 300 });
+  }, DIALOG, { timeout: 90000, polling: 300 });
 }
 
-// V5 is cinema-first. Legacy 3D checks must explicitly opt into the real 3D view
-// instead of assuming the Three.js renderer starts as soon as the Nexus opens.
 async function activate3d(page) {
-  await page.waitForFunction(() => document.querySelector('dialog.nexus-experience')?.dataset.phase === 'nexus', undefined, { timeout: 30000, polling: 50 });
-  const mode = await page.evaluate(() => document.querySelector('dialog.nexus-experience')?.dataset.visualMode || null);
+  await page.waitForFunction(selector => document.querySelector(selector)?.dataset.phase === 'nexus', DIALOG, { timeout: 30000, polling: 50 });
+  const mode = await page.evaluate(selector => document.querySelector(selector)?.dataset.visualMode || null, DIALOG);
   if (mode !== '3d') {
-    const clicked = await page.evaluate(() => {
-      const button = [...document.querySelectorAll('button')].find(element => element.textContent?.includes('Voir le sanctuaire en 3D'));
+    const clicked = await page.evaluate(selector => {
+      const dialog = document.querySelector(selector);
+      const button = [...(dialog?.querySelectorAll('button') || [])].find(element => element.textContent?.includes('Voir le sanctuaire en 3D'));
       if (!button) return false;
       button.click();
       return true;
-    });
+    }, DIALOG);
     assert.equal(clicked, true, 'The cinema-first Nexus must expose the 3D switch');
-    await page.waitForFunction(() => document.querySelector('dialog.nexus-experience')?.dataset.visualMode === '3d', undefined, { timeout: 10000, polling: 50 });
+    await page.waitForFunction(selector => document.querySelector(selector)?.dataset.visualMode === '3d', DIALOG, { timeout: 10000, polling: 50 });
   }
 }
 
 async function webgl(page) {
   await activate3d(page);
-  // Cold Three.js + software WebGL creation can take >30 s on GitHub runners.
-  // The previous green reference run naturally spent ~16 s in the intro before
-  // reaching this assertion; V5 skips that intro in the behavior suite, so give
-  // the renderer equivalent startup headroom without weakening the assertion.
-  await page.waitForFunction(() => document.querySelector('.nexus-stage')?.dataset.renderer === '3d', undefined, { timeout: 90000, polling: 50 });
+  await page.waitForFunction(selector => document.querySelector(`${selector} .nexus-stage`)?.dataset.renderer === '3d', DIALOG, { timeout: 90000, polling: 50 });
 }
 
 async function pick(page, code) {
   const codes = ['FR', 'DZ', 'ES', 'MA', 'IT', 'TN', 'TR', 'EE'];
-  await page.locator('.nexus-door-choice').nth(codes.indexOf(code)).click();
-  await page.locator(`.nexus-experience[data-selected="${code}"]`).waitFor();
+  const index = codes.indexOf(code);
+  assert.ok(index >= 0, `Unknown test door ${code}`);
+  await page.waitForFunction(({ selector, code, index }) => {
+    const dialog = document.querySelector(selector);
+    if (!dialog || dialog.dataset.phase !== 'nexus') return false;
+    if (dialog.dataset.selected === code) return true;
+    const button = dialog.querySelectorAll('.nexus-door-choice')[index];
+    if (!button) return false;
+    button.click();
+    return false;
+  }, { selector: DIALOG, code, index }, { timeout: 30000, polling: 200 });
+}
+
+async function selectOrigin(page) {
+  await page.waitForFunction(selector => {
+    const dialog = document.querySelector(selector);
+    if (!dialog || dialog.dataset.phase !== 'nexus') return false;
+    if (dialog.dataset.selected === 'ORIGIN') return true;
+    dialog.querySelector('.nexus-origin-link')?.click();
+    return false;
+  }, DIALOG, { timeout: 30000, polling: 200 });
+}
+
+async function clickDialogText(page, text) {
+  const clicked = await page.evaluate(({ selector, text }) => {
+    const dialog = document.querySelector(selector);
+    const button = [...(dialog?.querySelectorAll('button') || [])].find(element => element.textContent?.includes(text));
+    if (!button) return false;
+    button.click();
+    return true;
+  }, { selector: DIALOG, text });
+  assert.equal(clicked, true, `Missing dialog control: ${text}`);
+}
+
+async function closeNexus(page) {
+  const clicked = await page.evaluate(selector => {
+    const button = document.querySelector(`${selector} button[aria-label="Fermer le Nexus et revenir au passeport"]`);
+    if (!button) return false;
+    button.click();
+    return true;
+  }, DIALOG);
+  assert.equal(clicked, true, 'Close control must be available');
+  await waitClosed(page);
+}
+
+async function pauseNexus(page) {
+  const clicked = await page.evaluate(selector => {
+    const button = document.querySelector(`${selector} button[aria-label="Mettre les animations en pause"]`);
+    if (!button) return false;
+    button.click();
+    return true;
+  }, DIALOG);
+  assert.equal(clicked, true, 'Pause control must be available');
 }
 
 async function navigateWorld(page) {
-  await page.locator('.nexus-enter-world').click();
+  await page.waitForFunction(selector => {
+    const button = document.querySelector(`${selector} .nexus-enter-world`);
+    return !!button && !button.disabled;
+  }, DIALOG, { timeout: 30000, polling: 100 });
+  await page.evaluate(selector => document.querySelector(`${selector} .nexus-enter-world`)?.click(), DIALOG);
   await page.getByText('world3b', { exact: true }).waitFor({ timeout: 20000 });
+  await waitClosed(page);
 }
 
 function listen(page, allowWebGLFailure = false) {
@@ -102,10 +168,10 @@ try {
   await desktop.addInitScript(() => {
     window.__nexusPhases = [];
     new MutationObserver(() => {
-      const dialog = document.querySelector('.nexus-experience');
+      const dialog = document.querySelector('dialog.nexus-experience[open]');
       const phase = dialog?.dataset.phase;
       if (phase && window.__nexusPhases.at(-1)?.phase !== phase) window.__nexusPhases.push({ phase, time: performance.now() });
-    }).observe(document, { attributes: true, childList: true, subtree: true, attributeFilter: ['data-phase'] });
+    }).observe(document, { attributes: true, childList: true, subtree: true, attributeFilter: ['data-phase', 'open'] });
   });
 
   const page = await desktop.newPage();
@@ -115,35 +181,35 @@ try {
   await skip(page);
   await webgl(page);
   report.initialPhases = await page.evaluate(() => window.__nexusPhases);
-  assert.equal(await page.locator('.nexus-door-choice').count(), 8);
-  assert.equal(await page.locator('dialog.nexus-experience').evaluate(dialog => dialog.parentElement === document.body), true);
+  assert.equal(await page.locator(`${DIALOG} .nexus-door-choice`).count(), 8);
+  assert.equal(await page.locator(DIALOG).evaluate(dialog => dialog.parentElement === document.body), true);
 
-  await page.getByRole('button', { name: 'Mettre les animations en pause', exact: true }).click();
+  await pauseNexus(page);
   await screenshot(page, 'desktop-sanctuaire');
   const names = ['France', 'Algérie', 'Espagne', 'Maroc', 'Italie', 'Tunisie', 'Turquie', 'Estonie'];
   for (const [index, code] of ['FR', 'DZ', 'ES', 'MA', 'IT', 'TN', 'TR', 'EE'].entries()) {
     await pick(page, code);
-    assert.equal(await page.locator('#nexus-title').textContent(), names[index]);
+    assert.equal(await page.locator(`${DIALOG} #nexus-title`).textContent(), names[index]);
     await screenshot(page, `desktop-${code}`);
   }
   report.checks.push('Eight countries select their own camera, title, guardian and value');
 
-  await page.locator('.nexus-origin-link').click();
-  assert.equal(await page.locator('.nexus-enter-world').isDisabled(), true);
+  await selectOrigin(page);
+  assert.equal(await page.locator(`${DIALOG} .nexus-enter-world`).isDisabled(), true);
   await screenshot(page, 'desktop-origine');
-  await page.getByRole('button', { name: 'Revoir le tunnel Matrix' }).click();
-  await page.waitForFunction(() => document.querySelector('dialog.nexus-experience')?.dataset.phase === 'tunnel', undefined, { timeout: 20000, polling: 50 });
+  await clickDialogText(page, 'Revoir le tunnel Matrix');
+  await page.waitForFunction(selector => document.querySelector(selector)?.dataset.phase === 'tunnel', DIALOG, { timeout: 20000, polling: 50 });
   await screenshot(page, 'desktop-tunnel');
   await skip(page);
   report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
 
   await page.keyboard.press('Escape');
-  assert.equal(await page.locator('dialog.nexus-experience[open]').count(), 0);
+  await waitClosed(page);
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'open');
   assert.equal(await page.evaluate(() => document.body.style.overflow), '');
   report.checks.push('ORIGINE stays locked before real progression; modal, Escape, focus and scroll restoration work');
 
-  await page.locator('#open').click({ noWaitAfter: true });
+  await reopen(page);
   await skip(page);
   await pick(page, 'FR');
   await navigateWorld(page);
@@ -157,10 +223,10 @@ try {
   report.checks.push('France travel records the canonical guest world save before leaving the Nexus');
 
   for (let i = 0; i < 3; i += 1) {
-    await page.locator('#open').click({ noWaitAfter: true });
+    await reopen(page);
     await skip(page);
     await webgl(page);
-    await page.getByRole('button', { name: 'Fermer le Nexus et revenir au passeport' }).click();
+    await closeNexus(page);
     assert.equal(await page.locator('.nexus-canvas canvas').count(), 0);
   }
   report.checks.push('Three reopen/close cycles dispose the scene canvas');
@@ -172,17 +238,17 @@ try {
   await open(phone);
   await skip(phone);
   await webgl(phone);
-  await phone.getByRole('button', { name: 'Mettre les animations en pause', exact: true }).click();
+  await pauseNexus(phone);
   await screenshot(phone, 'mobile-sanctuaire');
-  assert.equal(await phone.locator('dialog.nexus-experience').evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true);
+  assert.equal(await phone.locator(DIALOG).evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true);
   await pick(phone, 'FR');
   await screenshot(phone, 'mobile-france');
   await pick(phone, 'EE');
   await screenshot(phone, 'mobile-estonie');
-  await phone.locator('.nexus-origin-link').click();
+  await selectOrigin(phone);
   await screenshot(phone, 'mobile-origine');
-  assert.equal(await phone.locator('.nexus-enter-world').isDisabled(), true);
-  await phone.getByRole('button', { name: 'Fermer le Nexus et revenir au passeport' }).click();
+  assert.equal(await phone.locator(`${DIALOG} .nexus-enter-world`).isDisabled(), true);
+  await closeNexus(phone);
   report.checks.push('390×844 touch viewport: horizontal country rail, no document overflow, three closeups and close button');
   await mobile.close();
 
@@ -190,12 +256,12 @@ try {
   const calmPage = await calm.newPage();
   listen(calmPage);
   await open(calmPage);
-  await calmPage.waitForFunction(() => document.querySelector('dialog.nexus-experience')?.dataset.phase === 'nexus');
-  assert.equal(await calmPage.locator('.nexus-arrival').count(), 0);
+  await calmPage.waitForFunction(selector => document.querySelector(selector)?.dataset.phase === 'nexus', DIALOG);
+  assert.equal(await calmPage.locator(`${DIALOG} .nexus-arrival`).count(), 0);
   await webgl(calmPage);
   await pick(calmPage, 'MA');
   await screenshot(calmPage, 'mobile-mouvements-reduits');
-  assert.equal(await calmPage.getByRole('button', { name: 'Mettre les animations en pause', exact: true }).isDisabled(), true);
+  assert.equal(await calmPage.locator(`${DIALOG} button[aria-label="Mettre les animations en pause"]`).isDisabled(), true);
   report.checks.push('Reduced motion skips the tunnel and allows static 3D selection');
   await calm.close();
 
@@ -210,7 +276,7 @@ try {
   listen(simple, true);
   await open(simple);
   await activate3d(simple);
-  await simple.waitForFunction(() => document.querySelector('.nexus-stage')?.dataset.renderer === 'fallback', undefined, { timeout: 20000, polling: 50 });
+  await simple.waitForFunction(selector => document.querySelector(`${selector} .nexus-stage`)?.dataset.renderer === 'fallback', DIALOG, { timeout: 20000, polling: 50 });
   await pick(simple, 'DZ');
   await screenshot(simple, 'mobile-sans-webgl');
   await navigateWorld(simple);
@@ -226,15 +292,15 @@ try {
   const trigger = app.getByRole('button', { name: 'Ouvrir le Cercle et entrer dans le Nexus 3B' });
   await trigger.waitFor({ timeout: 30000 });
   await trigger.click({ noWaitAfter: true });
+  await waitOpen(app);
   await webgl(app);
-  assert.equal(await app.locator('.nexus-canvas canvas').getAttribute('data-nexus-scene'), 'heritage-v2');
-  assert.equal(await app.locator('dialog.nexus-experience').evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true);
+  assert.equal(await app.locator(`${DIALOG} .nexus-canvas canvas`).getAttribute('data-nexus-scene'), 'heritage-v2');
+  assert.equal(await app.locator(DIALOG).evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true);
   await screenshot(app, 'application-mobile-nexus');
   await pick(app, 'FR');
   await screenshot(app, 'application-mobile-france');
-  await app.getByRole('button', { name: 'Fermer le Nexus et revenir au passeport' }).click();
+  await closeNexus(app);
   assert.equal(await trigger.isVisible(), true);
-  assert.equal(await app.locator('dialog.nexus-experience[open]').count(), 0);
   await screenshot(app, 'application-mobile-passeport');
   report.checks.push('Actual application: passport entry, 3D selection and return work with global styles at 390×844');
   await appContext.close();
@@ -249,12 +315,12 @@ try {
   process.exitCode = 1;
   if (currentPage && !currentPage.isClosed()) {
     try {
-      report.diagnostics = await currentPage.evaluate(() => ({
-        phase: document.querySelector('.nexus-experience')?.dataset,
-        stage: document.querySelector('.nexus-stage')?.dataset,
+      report.diagnostics = await currentPage.evaluate(selector => ({
+        phase: document.querySelector(selector)?.dataset,
+        stage: document.querySelector(`${selector} .nexus-stage`)?.dataset,
         text: document.body.innerText,
         phases: window.__nexusPhases
-      }));
+      }), DIALOG);
       await screenshot(currentPage, 'failure');
     } catch (diagnosticError) {
       report.diagnosticFailure = String(diagnosticError);
