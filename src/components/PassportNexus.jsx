@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, Check, Compass, LockKeyhole, Pause, Play, RotateCcw, X } from 'lucide-react';
 import { NEXUS_WORLDS, rememberNexusCountry, resolveNexusWorld } from './nexus-worlds.js';
 import { useNexusJourney } from './useNexusJourney.js';
+import NexusCountryArrival from './NexusCountryArrival.jsx';
 import '../styles/passport-nexus.css';
 import '../styles/nexus-journey.css';
 import { NexusCinemaHall, NexusTransitDecor } from './NexusCinema.jsx';
 import { nexusDoorImage } from './nexus-cinema.js';
 import '../styles/nexus-cinema.css';
+import '../styles/nexus-cinema-v6.css';
 
 function GateGlyph({ code }) {
   const details = {
@@ -58,7 +60,9 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
   const [paused, setPaused] = useState(false), [quality, setQuality] = useState('auto');
   const [visualMode, setVisualMode] = useState('cinema');
   const [rendererStatus, setRendererStatus] = useState('loading'), [replay, setReplay] = useState(0);
+  const [arrivalCode, setArrivalCode] = useState(null);
   const active = resolveNexusWorld(selected), isOrigin = selected === 'ORIGIN';
+  const arrivalWorld = resolveNexusWorld(arrivalCode);
   const selectedProgress = journey.progress.doors.find(door => door.code === selected);
   const clearTimers = () => { timers.current.forEach(window.clearTimeout); timers.current = []; };
   useEffect(() => {
@@ -71,10 +75,9 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
   }, [open]);
   useEffect(() => {
     if (!open) return undefined;
-    clearTimers(); setSelected(null); setPaused(false); setPhase(reducedMotion ? 'nexus' : 'scan');
+    clearTimers(); setSelected(null); setArrivalCode(null); setPaused(false); setPhase(reducedMotion ? 'nexus' : 'scan');
     return clearTimers;
   }, [open, reducedMotion, replay]);
-  // Schedule the next phase only after the previous one was committed.
   useEffect(() => {
     if (!open || reducedMotion || paused || phase === 'nexus') return undefined;
     clearTimers();
@@ -82,10 +85,17 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
     timers.current = [timer]; return () => window.clearTimeout(timer);
   }, [open, reducedMotion, phase, replay, paused]);
   function skip() { clearTimers(); setPhase('nexus'); closeButton.current?.focus({ preventScroll: true }); }
-  function selectDoor(code) { if (code === 'ORIGIN' || resolveNexusWorld(code)) setSelected(code); }
+  function selectDoor(code) { if (code === 'ORIGIN' || resolveNexusWorld(code)) { setArrivalCode(null); setSelected(code); } }
   async function enterWorld() {
-    const success = await journey.travel(isOrigin ? 'ORIGINE' : active?.code || null);
-    if (success && active) { try { rememberNexusCountry(window.localStorage, active.code); } catch { /* Optional legacy navigation hint. */ } }
+    if (isOrigin) { await journey.travel('ORIGINE'); return; }
+    if (active) { setArrivalCode(active.code); return; }
+    await journey.travel(null);
+  }
+  async function enterCountryWorld() {
+    if (!arrivalWorld) return;
+    const code = arrivalWorld.code;
+    const success = await journey.travel(code);
+    if (success) { try { rememberNexusCountry(window.localStorage, code); } catch { /* Optional legacy navigation hint. */ } }
   }
   function doorKeys(event, index) {
     let next;
@@ -94,7 +104,7 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
     else if (event.key === 'Home') next = 0;
     else if (event.key === 'End') next = 7;
     else return;
-    event.preventDefault(); setSelected(NEXUS_WORLDS[next].code);
+    event.preventDefault(); setArrivalCode(null); setSelected(NEXUS_WORLDS[next].code);
     const button = event.currentTarget.parentElement.querySelectorAll('button')[next];
     button?.focus({ preventScroll: true }); button?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
   }
@@ -103,10 +113,10 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
   const statusLabel = visualMode === 'cinema' ? (economy ? 'Décor cinéma · économie' : 'Décor cinéma · interactif') : rendererStatus === 'fallback' ? 'Vue légère · 3D indisponible' : rendererStatus === 'loading' ? 'Préparation du décor' : economy ? 'Rendu 3D · économie' : 'Rendu 3D en direct';
   const travelDisabled = journey.busy || journey.authLoading || (isOrigin ? !journey.originEnabled : active ? !journey.world || journey.unresolved : false);
   const originText = journey.progress.finished ? 'Le Cercle est réuni. L’Union est retrouvée ; ton héritage continue.' : journey.resumeOrigin ? 'Le dernier défi est en cours. Reprends ton passage sans perdre ta progression.' : journey.originEnabled ? 'Les huit sceaux sont réunis et les huit pays reconstruits. Le passage vers ORIGINE t’attend.' : 'Derrière cette porte, les huit héritages ne font plus qu’un. Réunis les huit sceaux et reconstruis les huit pays pour ouvrir le passage.';
-  return createPortal(<dialog ref={dialog} className="nexus-experience" data-phase={phase} data-calm={reducedMotion || paused} data-selected={selected || 'overview'} data-progress-loaded={!!journey.world} data-nexus-version="cinema-reference-20260913" data-visual-mode={visualMode} data-economy={economy} aria-labelledby="nexus-title" onCancel={event => { event.preventDefault(); closeRef.current(); }}>
+  return createPortal(<dialog ref={dialog} className="nexus-experience" data-phase={phase} data-calm={reducedMotion || paused} data-selected={selected || 'overview'} data-progress-loaded={!!journey.world} data-nexus-version="cinema-v6-20260913" data-visual-mode={visualMode} data-economy={economy} data-arrival={arrivalWorld?.code || 'none'} aria-labelledby="nexus-title" onCancel={event => { event.preventDefault(); if (arrivalWorld) setArrivalCode(null); else closeRef.current(); }}>
     <div className="nexus-cinematic-backdrop" aria-hidden="true" />
     {phase !== 'nexus' && <NexusTransitDecor />}
-    <NexusStage phase={phase} selected={selected} paused={paused || (phase === 'nexus' && visualMode === 'cinema')} reducedMotion={reducedMotion} quality={quality} onSelect={selectDoor} onStatus={setRendererStatus} />
+    <NexusStage phase={phase} selected={selected} paused={paused || !!arrivalWorld || (phase === 'nexus' && visualMode === 'cinema')} reducedMotion={reducedMotion} quality={quality} onSelect={selectDoor} onStatus={setRendererStatus} />
     <div className="nexus-shell">
       <header className="nexus-topbar"><div className="nexus-wordmark"><b>3B</b><span>PASSEPORT DIGITAL<small>BLACK · BLANC · BEUR</small></span></div><span className="nexus-chapter">LE CERCLE BRISÉ <i /> NEXUS</span><button ref={closeButton} type="button" className="nexus-icon-button" onClick={() => closeRef.current()} aria-label="Fermer le Nexus et revenir au passeport"><X size={21} /></button></header>
       {phase !== 'nexus' ? <section className="nexus-arrival" aria-live="polite"><div className="nexus-arrival-mark" aria-hidden="true"><i /><i /><span>3B</span></div><p className="nexus-kicker">{phase === 'scan' ? 'PASSEPORT VIVANT' : 'TRAVERSÉE DU CERCLE'}</p><h2 id="nexus-title">{phase === 'scan' ? 'L’héritage te reconnaît.' : 'Au-delà du passeport.'}</h2><p>{phase === 'scan' ? 'Ouverture du passage vers le Nexus.' : 'Huit mondes se rejoignent. Ton voyage commence.'}</p><div className="nexus-arrival-progress" aria-hidden="true"><i /></div><div className="nexus-intro-controls"><button type="button" className="nexus-skip" data-nexus-skip="true" onClick={skip}>Passer l’introduction <ArrowRight size={16} /></button><button type="button" className="nexus-icon-button" aria-label={paused ? 'Reprendre les animations' : 'Mettre les animations en pause'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused ? <Play size={16} /> : <Pause size={16} />}</button></div></section> : <>
@@ -125,10 +135,11 @@ export default function PassportNexus({ open, onClose, goTo, reducedMotion = fal
           <nav className="nexus-door-rail" aria-label="Les huit portes du Nexus">{NEXUS_WORLDS.map((world, index) => <button key={world.code} type="button" className="nexus-door-choice" style={{ '--gate-color': world.color }} aria-label={`${world.country}, ${world.value}, gardien ${world.guardian}`} aria-pressed={selected === world.code} onClick={() => selectDoor(world.code)} onKeyDown={event => doorKeys(event, index)}><img className="nexus-door-art" src={nexusDoorImage(world.code)} alt="" width="132" height="132" decoding="async" onError={event => { event.currentTarget.style.display = 'none'; }} /><span className="nexus-door-index">{world.number}</span><GateGlyph code={world.code} /><span className="nexus-door-label"><strong>{world.country}</strong><small>{world.value}</small></span><i /></button>)}</nav>
           {(journey.error || journey.busy) && <div className="nexus-feedback" role={journey.error ? 'alert' : 'status'}><p>{journey.error || 'Préparation du passage. Ta progression est conservée.'}</p>{journey.error && <button type="button" disabled={journey.busy} onClick={journey.retry}>Réessayer la lecture de la progression</button>}</div>}
           <div className="nexus-controls"><div className="nexus-render-controls"><button type="button" className="nexus-visual-toggle" onClick={() => setVisualMode(mode => mode === 'cinema' ? '3d' : 'cinema')}>{visualMode === 'cinema' ? 'Voir le sanctuaire en 3D' : 'Activer le décor cinéma'}</button><span className="nexus-render-status"><i />{statusLabel}</span><label className="nexus-quality"><span className="nexus-visually-hidden">Qualité graphique</span><select aria-label="Qualité graphique" value={quality} onChange={event => setQuality(event.target.value)}><option value="auto">Auto</option><option value="high">Détaillé</option><option value="light">Économie</option></select></label><button type="button" className="nexus-icon-button" disabled={reducedMotion} aria-label={paused ? 'Reprendre les animations' : 'Mettre les animations en pause'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused || reducedMotion ? <Play size={16} /> : <Pause size={16} />}</button><button type="button" className="nexus-icon-button" aria-label="Revoir le tunnel Matrix" onClick={() => setReplay(value => value + 1)}><RotateCcw size={16} /></button></div>
-            <button type="button" className="nexus-enter-world" disabled={travelDisabled} onClick={enterWorld}>{isOrigin && !journey.originEnabled ? <LockKeyhole size={17} /> : <Compass size={17} />}<span>{journey.busy ? 'Préparation du passage…' : isOrigin ? journey.progress.finished ? 'L’Union retrouvée' : journey.resumeOrigin ? 'Reprendre le défi ORIGINE' : journey.originEnabled ? 'Ouvrir ORIGINE' : 'ORIGINE · accès scellé' : active ? 'Franchir la porte' : journey.unresolved ? 'Reprendre ma rencontre' : 'Explorer le Monde 3B'}{active && <small>{journey.unresolved ? 'Termine ta rencontre avant de changer de pays' : `${active.country} · progression conservée`}</small>}</span>{!travelDisabled && <ArrowRight size={18} />}</button>
+            <button type="button" className="nexus-enter-world" disabled={travelDisabled} onClick={enterWorld}>{isOrigin && !journey.originEnabled ? <LockKeyhole size={17} /> : <Compass size={17} />}<span>{journey.busy ? 'Préparation du passage…' : isOrigin ? journey.progress.finished ? 'L’Union retrouvée' : journey.resumeOrigin ? 'Reprendre le défi ORIGINE' : journey.originEnabled ? 'Ouvrir ORIGINE' : 'ORIGINE · accès scellé' : active ? 'Franchir la porte' : journey.unresolved ? 'Reprendre ma rencontre' : 'Explorer le Monde 3B'}{active && <small>{journey.unresolved ? 'Termine ta rencontre avant de changer de pays' : `${active.country} · scène d’arrivée cinématique`}</small>}</span>{!travelDisabled && <ArrowRight size={18} />}</button>
           </div>
         </footer>
       </>}
     </div>
+    {arrivalWorld && <NexusCountryArrival world={arrivalWorld} busy={journey.busy} onBack={() => setArrivalCode(null)} onEnter={enterCountryWorld} />}
   </dialog>, document.body);
 }
