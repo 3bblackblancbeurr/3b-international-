@@ -3,6 +3,7 @@ import { NEXUS_WORLDS } from './nexus-worlds.js';
 import { NEXUS_CINEMA_ASSETS, nexusDoorImage, nexusHotspotStyle } from './nexus-cinema.js';
 import '../styles/nexus-cinema-polish.css';
 import '../styles/nexus-portal-v4.css';
+import '../styles/nexus-portal-v5.css';
 
 const TRANSIT_RINGS = Array.from({ length: 10 }, (_, index) => index);
 const TRANSIT_STREAKS = Array.from({ length: 28 }, (_, index) => index);
