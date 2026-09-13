@@ -1,0 +1,218 @@
+/* Passport -> Nexus V5 cinematic polish.
+   Visual-only overrides layered after V4. No journey, storage or timing changes. */
+
+/* Passport portal: denser energy core, premium gold/Matrix contrast and HUD ticks. */
+.passport-portal-trigger{
+  background:
+    radial-gradient(circle at 50% 48%,#f4dfab24 0 4%,transparent 13%),
+    radial-gradient(circle at 50% 46%,#9eecff38 0 13%,transparent 31%),
+    conic-gradient(from 205deg,#0a2030 0 12%,#124a6d 18%,#07131f 27% 49%,#2c6e8e 58%,#07131f 67% 88%,#8d744821 94%,#0a2030),
+    radial-gradient(circle at 46% 38%,#1c658d 0,#071827 62%,#02070d 100%);
+  box-shadow:
+    0 0 0 1px #d8c38f2b,
+    0 0 24px #1db8ff66,
+    0 0 68px #057fc745,
+    0 0 110px #0078b71f,
+    inset 0 0 12px #d9c69624,
+    inset 0 0 36px #72d9ff3a,
+    inset 0 -18px 36px #02070cc7;
+  animation:nexus-v5-passport-core 3.4s ease-in-out infinite;
+}
+.passport-portal-trigger .passport-portal-orbit i:first-child::before,
+.passport-portal-trigger .passport-portal-orbit i:first-child::after{
+  content:"";
+  position:absolute;
+  inset:-13%;
+  border-radius:50%;
+  pointer-events:none;
+}
+.passport-portal-trigger .passport-portal-orbit i:first-child::before{
+  background:repeating-conic-gradient(from 2deg,#8ce3ff00 0 7deg,#8ce3ff66 7deg 8deg,#8ce3ff00 8deg 23deg,#e0c17a63 23deg 24deg,#8ce3ff00 24deg 45deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 69%,#000 70% 72%,transparent 73%);
+  mask:radial-gradient(circle,transparent 0 69%,#000 70% 72%,transparent 73%);
+  opacity:.8;
+  animation:nexus-v5-hud-ticks 16s linear infinite;
+}
+.passport-portal-trigger .passport-portal-orbit i:first-child::after{
+  inset:24%;
+  border:1px solid #d8be806b;
+  box-shadow:0 0 9px #e4c98b35,0 0 22px #5ed5ff33;
+  opacity:.62;
+  animation:nexus-v5-inner-lock 2.6s ease-in-out infinite;
+}
+.passport-portal-trigger:hover .passport-portal-orbit i:first-child::after,
+.passport-portal-trigger:focus-visible .passport-portal-orbit i:first-child::after{opacity:1;transform:scale(.9)}
+.passport-portal-trigger:active::after{animation-duration:.7s}
+.passport-portal-trigger>small{letter-spacing:.22em}
+
+/* Recognition field: large scanner/radar around the existing mark. */
+.nexus-experience[data-phase='scan'] .nexus-arrival{isolation:isolate}
+.nexus-experience[data-phase='scan'] .nexus-arrival::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;top:45%;
+  width:min(72vmin,740px);aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:
+    repeating-conic-gradient(from 0deg,#6edcff00 0 12deg,#6edcff13 12deg 12.8deg,#6edcff00 12.8deg 30deg),
+    repeating-radial-gradient(circle,#68d2ff00 0 11%,#68d2ff15 11.2% 11.55%,#68d2ff00 11.8% 22%);
+  -webkit-mask:radial-gradient(circle,transparent 0 18%,#000 19% 70%,transparent 71%);
+  mask:radial-gradient(circle,transparent 0 18%,#000 19% 70%,transparent 71%);
+  opacity:.74;
+  animation:nexus-v5-radar-turn 13s linear infinite;
+  pointer-events:none;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;top:18%;
+  width:min(86vw,980px);height:2px;
+  transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,#48c8ff42 12%,#dffaffd6 50%,#48c8ff42 88%,transparent);
+  box-shadow:0 0 12px #5bd4ff,0 0 34px #168fd67d;
+  opacity:0;
+  animation:nexus-v5-field-scan 1.02s cubic-bezier(.25,.05,.3,1) .02s both;
+  pointer-events:none;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark{
+  outline:1px solid #dfc58b2e;
+  outline-offset:18px;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark>span{
+  position:relative;
+  z-index:5;
+  color:#f6e7c3;
+  text-shadow:0 0 8px #fff4d2,0 0 24px #45c7ff,0 0 55px #0f7db9;
+}
+.nexus-experience[data-phase='scan'] .nexus-kicker{color:#e8cf98;text-shadow:0 0 18px #ddb86538}
+.nexus-experience[data-phase='scan'] .nexus-arrival h2{text-shadow:0 3px 22px #01040a,0 0 38px #168ec83a;animation:nexus-v5-copy-focus .7s ease-out both}
+
+/* Tunnel V5: optical lattice, iris and stronger sense of forward velocity. */
+.nexus-experience[data-phase='tunnel'] .nexus-transit-decor::before{
+  content:"";
+  position:absolute;
+  inset:-34%;
+  border-radius:50%;
+  background:repeating-conic-gradient(from 1deg at 50% 50%,transparent 0 5.3deg,#58ccff12 5.3deg 5.6deg,transparent 5.6deg 11.25deg);
+  -webkit-mask:radial-gradient(circle,transparent 0 10%,#000 14% 72%,transparent 84%);
+  mask:radial-gradient(circle,transparent 0 10%,#000 14% 72%,transparent 84%);
+  opacity:.82;
+  transform:scale(.56) rotate(0deg);
+  animation:nexus-v5-lattice-flight 3.65s cubic-bezier(.12,.62,.18,1) both;
+  pointer-events:none;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-decor::after{
+  content:"";
+  position:absolute;
+  left:50%;top:48%;
+  width:min(52vmin,560px);aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  background:radial-gradient(circle,transparent 0 20%,#c4f2ff0d 21% 22%,transparent 23% 37%,#65d5ff16 38% 39%,transparent 40% 57%,#d9bf8230 58% 58.5%,transparent 59%);
+  box-shadow:0 0 60px #46caff2e,inset 0 0 48px #67d8ff1c;
+  opacity:.8;
+  animation:nexus-v5-iris-drive 1.75s ease-in-out infinite;
+  pointer-events:none;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-horizon{
+  box-shadow:0 0 38px #ddf8ffad,0 0 110px #39c5ff7a,0 0 220px #0570bb54;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-horizon::before,
+.nexus-experience[data-phase='tunnel'] .nexus-transit-horizon::after{
+  content:"";
+  position:absolute;
+  inset:-62%;
+  border-radius:50%;
+  border:1px solid #7bdcff61;
+  border-top-color:#efd49d;
+  border-right-color:transparent;
+  box-shadow:0 0 14px #55d1ff29;
+  animation:nexus-v5-horizon-ring 2.4s linear infinite;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-horizon::after{
+  inset:-108%;
+  border-color:#69cffb26;
+  border-left-color:#d8ba7a70;
+  animation-duration:4.2s;
+  animation-direction:reverse;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-depth>i{
+  box-shadow:0 0 13px #6fd9ff28,inset 0 0 10px #8ce1ff18;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-streaks{filter:drop-shadow(0 0 4px #47c9ff73)}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-core{
+  background:radial-gradient(circle,#eefcff 0 2%,#83ddff 5%,#126a9cba 14%,#061524d9 46%,#02060cfa 73%);
+  box-shadow:0 0 34px #a7ecff8a,0 0 96px #31bfff66,0 0 180px #0873bd3f,inset 0 0 30px #dffaff2b;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-core strong{
+  color:#f5e5c1;
+  text-shadow:0 0 9px #fff0c5,0 0 28px #5ad3ff;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-arrival h2,
+.nexus-experience[data-phase='tunnel'] .nexus-arrival>p{
+  text-shadow:0 3px 18px #01040a,0 0 34px #010814;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-arrival-progress{box-shadow:0 0 20px #52d2ff45}
+
+/* Nexus reveal: short bloom after the travel, then leaves the real UI untouched. */
+.nexus-experience[data-phase='nexus'] .nexus-stage::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:5;
+  pointer-events:none;
+  background:radial-gradient(circle at 58% 43%,#dff9ff80 0,#5acbff25 5%,transparent 22%);
+  mix-blend-mode:screen;
+  opacity:0;
+  animation:nexus-v5-reveal-bloom .95s ease-out both;
+}
+
+@keyframes nexus-v5-passport-core{0%,100%{filter:brightness(.96)}50%{filter:brightness(1.08)}}
+@keyframes nexus-v5-hud-ticks{to{transform:rotate(360deg)}}
+@keyframes nexus-v5-inner-lock{0%,100%{transform:scale(.95);opacity:.42}50%{transform:scale(1.06);opacity:.82}}
+@keyframes nexus-v5-radar-turn{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes nexus-v5-field-scan{0%{top:18%;opacity:0;transform:translateX(-50%) scaleX(.42)}12%{opacity:.95}54%{opacity:1;transform:translateX(-50%) scaleX(1)}100%{top:78%;opacity:0;transform:translateX(-50%) scaleX(.6)}}
+@keyframes nexus-v5-copy-focus{from{opacity:.35;transform:translateY(8px);letter-spacing:.015em}to{opacity:1;transform:none;letter-spacing:normal}}
+@keyframes nexus-v5-lattice-flight{0%{transform:scale(.48) rotate(0deg);opacity:.18}35%{opacity:.74}100%{transform:scale(1.62) rotate(11deg);opacity:.12}}
+@keyframes nexus-v5-iris-drive{0%,100%{transform:translate(-50%,-50%) scale(.92);opacity:.52}50%{transform:translate(-50%,-50%) scale(1.08);opacity:.9}}
+@keyframes nexus-v5-horizon-ring{to{transform:rotate(360deg)}}
+@keyframes nexus-v5-reveal-bloom{0%{opacity:0}18%{opacity:.9}100%{opacity:0}}
+
+/* Mobile: retain the art direction but cap overdraw and continuous effects. */
+@media(max-width:759px){
+  .passport-portal-trigger{box-shadow:0 0 0 1px #d8c38f24,0 0 22px #1db8ff56,0 0 46px #057fc735,inset 0 0 24px #72d9ff2e,inset 0 -14px 28px #02070cc7}
+  .passport-portal-trigger .passport-portal-orbit i:first-child::before{opacity:.55}
+  .nexus-experience[data-phase='scan'] .nexus-arrival::before{width:min(90vmin,520px);opacity:.48}
+  .nexus-experience[data-phase='scan'] .nexus-arrival::after{width:88vw;box-shadow:0 0 8px #5bd4ff,0 0 20px #168fd65c}
+  .nexus-experience[data-phase='tunnel'] .nexus-transit-decor::before{inset:-20%;opacity:.48}
+  .nexus-experience[data-phase='tunnel'] .nexus-transit-decor::after{width:58vmin;opacity:.48}
+  .nexus-experience[data-phase='tunnel'] .nexus-transit-horizon::after{display:none}
+  .nexus-experience[data-phase='tunnel'] .nexus-transit-streaks{filter:none}
+}
+@media(max-width:420px){
+  .passport-portal-trigger .passport-portal-orbit i:first-child::before{opacity:.42}
+  .nexus-experience[data-phase='scan'] .nexus-arrival::before{opacity:.36}
+  .nexus-experience[data-phase='tunnel'] .nexus-transit-decor::before{opacity:.32}
+}
+@media(prefers-reduced-motion:reduce){
+  .passport-portal-trigger,
+  .passport-portal-trigger .passport-portal-orbit i:first-child::before,
+  .passport-portal-trigger .passport-portal-orbit i:first-child::after,
+  .nexus-arrival::before,.nexus-arrival::after,
+  .nexus-experience[data-phase='scan'] .nexus-arrival h2,
+  .nexus-transit-decor::before,.nexus-transit-decor::after,
+  .nexus-transit-horizon::before,.nexus-transit-horizon::after,
+  .nexus-experience[data-phase='nexus'] .nexus-stage::after{animation:none!important}
+}
+.passport-visual[data-animated="false"] .passport-portal-trigger,
+.passport-visual[data-animated="false"] .passport-portal-trigger .passport-portal-orbit i:first-child::before,
+.passport-visual[data-animated="false"] .passport-portal-trigger .passport-portal-orbit i:first-child::after{animation-play-state:paused!important}
+dialog.nexus-experience[data-calm='true'] .nexus-arrival::before,
+dialog.nexus-experience[data-calm='true'] .nexus-arrival::after,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-decor::before,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-decor::after,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-horizon::before,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-horizon::after{animation-play-state:paused!important}
