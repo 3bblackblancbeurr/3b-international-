@@ -8,10 +8,9 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','1
 const report={checks:[],errors:[],screenshots:[],note:'Real React app in Chromium; simulated screen sizes, not a physical Samsung test.'};
 let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-// A native fullscreen dialog scrolls independently. Freeze CSS motion only for
-// the captured frame so an infinite visual animation cannot stall Playwright.
-async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false,animations:'disabled',timeout:20000});report.screenshots.push(name);}
-async function pressIntroControl(page,name){const button=page.getByRole('button',{name,exact:true});await button.waitFor({state:'visible',timeout:10000});await button.click({force:true,noWaitAfter:true,timeout:10000});}
+async function shot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
+async function pressIntroControl(page,name){const button=page.getByRole('button',{name,exact:true});await button.waitFor({state:'visible',timeout:10000});await button.evaluate(element=>element.click());}
+async function phase(page){return page.evaluate(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase||null);}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -59,11 +58,11 @@ try{
   await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click({noWaitAfter:true});
   await tunnel.locator('.nexus-experience[data-phase="scan"]').waitFor({timeout:5000});
   await pressIntroControl(tunnel,'Mettre les animations en pause');
-  await sleep(1350);assert.equal(await tunnel.locator('dialog').getAttribute('data-phase'),'scan');
+  await sleep(1350);assert.equal(await phase(tunnel),'scan');
   await pressIntroControl(tunnel,'Reprendre les animations');
   await tunnel.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:5000});
   await pressIntroControl(tunnel,'Mettre les animations en pause');
-  await sleep(4200);assert.equal(await tunnel.locator('dialog').getAttribute('data-phase'),'tunnel');
+  await sleep(4200);assert.equal(await phase(tunnel),'tunnel');
   await shot(tunnel,'tunnel-architecture');await pressIntroControl(tunnel,'Passer l’introduction');
   await tunnel.locator('.nexus-experience[data-phase="nexus"]').waitFor({timeout:10000});
   report.checks.push('Scan and tunnel timers pause deterministically; introduction remains skippable');await animated.close();
