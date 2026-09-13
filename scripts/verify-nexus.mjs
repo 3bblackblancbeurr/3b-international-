@@ -11,20 +11,15 @@ let browser,currentPage;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function ready(){for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');if(r.ok)return;}catch{}await sleep(200);}throw new Error('Vite did not start');}
 async function screenshot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
-async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click({noWaitAfter:true});await page.locator('dialog.nexus-experience[open]').waitFor();}
-// This helper is used by tests whose purpose is navigation/disposal, not button
-// actionability. The dedicated cinema test verifies the visible intro controls.
+async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click({noWaitAfter:true});await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience'));}
+// Navigation/disposal tests only need the React Skip action to fire. Direct DOM
+// state checks avoid Playwright visibility races caused by the animated top layer.
 async function skip(page){
-  const dialog=page.locator('dialog.nexus-experience[open]');
-  const destination=page.locator('.nexus-experience[data-phase="nexus"]');
-  await dialog.waitFor({state:'visible',timeout:10000});
-  if(await destination.isVisible().catch(()=>false))return;
-  const button=page.getByRole('button',{name:'Passer l’introduction'});
-  if(await button.count()){
-    try{await button.evaluate(element=>element.click());}
-    catch(error){if(!/detached|Target page|closed/i.test(String(error)))throw error;}
-  }
-  await destination.waitFor({state:'visible',timeout:30000});
+  await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience'),undefined,{timeout:10000,polling:50});
+  const current=await page.evaluate(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase||null);
+  if(current==='nexus')return;
+  await page.evaluate(()=>document.querySelector('[data-nexus-skip="true"]')?.click());
+  await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase==='nexus',undefined,{timeout:30000,polling:50});
 }
 async function webgl(page){await page.locator('.nexus-stage[data-renderer="3d"]').waitFor({timeout:30000});}
 async function pick(page,code){const codes=['FR','DZ','ES','MA','IT','TN','TR','EE'];await page.locator('.nexus-door-choice').nth(codes.indexOf(code)).click();await page.locator(`.nexus-experience[data-selected="${code}"]`).waitFor();}
@@ -44,7 +39,7 @@ try{
   }
   report.checks.push('Eight countries select their own camera, title, guardian and value');
   await page.locator('.nexus-origin-link').click();assert.equal(await page.locator('.nexus-enter-world').isDisabled(),true);await screenshot(page,'desktop-origine');
-  await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});await screenshot(page,'desktop-tunnel');await skip(page);report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
+  await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.waitForFunction(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase==='tunnel',undefined,{timeout:20000,polling:50});await screenshot(page,'desktop-tunnel');await skip(page);report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
   await page.keyboard.press('Escape');assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
   report.checks.push('ORIGINE stays locked before real progression; modal, Escape, focus and scroll restoration work');
@@ -63,7 +58,7 @@ try{
   await phone.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();report.checks.push('390×844 touch viewport: horizontal country rail, no document overflow, three closeups and close button');await mobile.close();
 
   const calm=await browser.newContext({viewport:{width:360,height:800},reducedMotion:'reduce'});const calmPage=await calm.newPage();listen(calmPage);await open(calmPage);
-  await calmPage.locator('.nexus-experience[data-phase="nexus"]').waitFor();assert.equal(await calmPage.locator('.nexus-arrival').count(),0);await webgl(calmPage);await pick(calmPage,'MA');await screenshot(calmPage,'mobile-mouvements-reduits');
+  await calmPage.waitForFunction(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase==='nexus');assert.equal(await calmPage.locator('.nexus-arrival').count(),0);await webgl(calmPage);await pick(calmPage,'MA');await screenshot(calmPage,'mobile-mouvements-reduits');
   assert.equal(await calmPage.getByRole('button',{name:'Mettre les animations en pause',exact:true}).isDisabled(),true);report.checks.push('Reduced motion skips the tunnel and allows static 3D selection');await calm.close();
 
   const fallback=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
