@@ -8,8 +8,6 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','1
 const report={checks:[],errors:[],screenshots:[],note:'Real React app in Chromium; simulated screen sizes, not a physical Samsung test.'};
 let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-// A native fullscreen dialog scrolls independently. Capture the actual visible
-// viewport rather than adding the inactive page below it to a full-page image.
 async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false});report.screenshots.push(name);}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
@@ -25,6 +23,8 @@ try{
     assert.equal(await page.locator('.nexus-door-choice').count(),8);
     assert.equal(await page.locator('dialog').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true,`Overflow at ${width}`);
     assert.equal(await page.locator('.nexus-cinema-photo').getAttribute('alt'),'');
+    const circleAnimation=await page.locator('.nexus-cinema-seals').evaluate(node=>getComputedStyle(node).animationName);
+    assert.match(circleAnimation,/nexus-v6-live-circle-spin/);
     await shot(page,`nexus-${width}`);
     for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE']){
       const target=page.locator(`.nexus-cinema-hit[data-country="${code}"]`);
@@ -41,27 +41,35 @@ try{
     await page.getByRole('button',{name:'Activer le décor cinéma',exact:true}).click();
     await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport',exact:true}).click();
     assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');
-    report.checks.push(`${width}px: art loaded, 8 art controls + gallery, 44px touch targets, no guardian overlap, locked ORIGINE, 3D/cinema switch, focus restore, no horizontal overflow`);
+    report.checks.push(`${width}px: V6 art loaded, 8 art controls + gallery, rotating broken circle, 44px touch targets, locked ORIGINE, 3D/cinema switch, focus restore, no horizontal overflow`);
     await context.close();
   }
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const app=await context.newPage();currentPage=app;app.on('pageerror',e=>report.errors.push(String(e)));
   await app.goto('http://127.0.0.1:4181/#passeport');const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
-  await trigger.waitFor({timeout:30000});await shot(app,'application-passeport');await trigger.click();
+  await trigger.waitFor({timeout:30000});
+  const card=await app.locator('.passport-card-stage').boundingBox(),portal=await trigger.boundingBox();
+  assert.ok(portal.width<=card.width*.12,'Passport 3B trigger must stay compact');
+  assert.ok(portal.x>=card.x+card.width*.80,'Passport 3B trigger must stay in the right NFC zone and leave the QR area visible');
+  await shot(app,'application-passeport-v6');await trigger.click();
   await app.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();});
-  await shot(app,'application-nexus');await app.locator('.nexus-cinema-hit[data-country="FR"]').click();
+  await shot(app,'application-nexus-v6');await app.locator('.nexus-cinema-hit[data-country="FR"]').click();
   await app.locator('dialog.nexus-experience').evaluate(dialog=>{dialog.scrollTop=0;});
-  await shot(app,'application-france');await app.locator('.nexus-enter-world').click();
+  await shot(app,'application-france-selected');await app.locator('.nexus-enter-world').click();
+  await app.locator('.nexus-country-arrival[data-country="FR"]').waitFor({timeout:10000});
+  assert.equal(await app.getByRole('heading',{name:'Bienvenue en France'}).isVisible(),true);
+  await shot(app,'application-france-arrival');
+  await app.getByRole('button',{name:'Explorer France'}).click();
   await app.waitForFunction(()=>!document.querySelector('dialog.nexus-experience[open]'));
-  report.checks.push('Actual application: original passport, reference art, France selection and canonical world entry');await context.close();
+  report.checks.push('Actual application: compact passport trigger, V6 Nexus, France cinematic arrival and canonical world entry');await context.close();
   const animated=await browser.newContext({viewport:{width:1440,height:1000}});const tunnel=await animated.newPage();currentPage=tunnel;
   await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click();
   await tunnel.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});
   await tunnel.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();
   await sleep(4200);assert.equal(await tunnel.locator('dialog').getAttribute('data-phase'),'tunnel');
-  await shot(tunnel,'tunnel-architecture');await tunnel.getByRole('button',{name:'Passer l’introduction'}).click();
+  await shot(tunnel,'tunnel-v6');await tunnel.getByRole('button',{name:'Passer l’introduction'}).click();
   await tunnel.locator('.nexus-experience[data-phase="nexus"]').waitFor();
-  report.checks.push('Tunnel pause actually pauses the phase timer; introduction remains skippable');await animated.close();
+  report.checks.push('V6 tunnel pause actually pauses the phase timer; introduction remains skippable');await animated.close();
   assert.deepEqual(report.errors,[]);report.success=true;
 }catch(error){report.success=false;report.failure=error.stack;process.exitCode=1;if(currentPage&&!currentPage.isClosed())try{await shot(currentPage,'failure');report.text=await currentPage.locator('body').innerText();}catch{}}
 finally{await writeFile(`${output}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser?.close();server.kill('SIGTERM');}
