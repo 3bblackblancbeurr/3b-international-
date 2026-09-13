@@ -42,3 +42,16 @@ test('cinematic rendering still uses the canonical journey and offers a real 3D 
   assert.match(source,/paused=\{paused \|\| \(phase === 'nexus' && visualMode === 'cinema'\)\}/);
   assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
 });
+test('premium transit keeps depth, speed, country panels and mobile motion safeguards', () => {
+  const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-cinema-polish.css',import.meta.url),'utf8');
+  for (const layer of ['nexus-transit-horizon','nexus-transit-depth','nexus-transit-streaks','nexus-transit-glyphs','nexus-transit-core','nexus-transit-flare','nexus-transit-vignette']) {
+    assert.match(source,new RegExp(layer));
+  }
+  assert.match(source,/TRANSIT_RINGS/);assert.match(source,/TRANSIT_STREAKS/);assert.match(source,/TRANSIT_GLYPHS/);
+  assert.match(source,/nexus-transit-panel-scan/);assert.match(source,/>\{world\.code\}<\/small>/);
+  assert.match(css,/@keyframes nexus-depth-ring/);assert.match(css,/@keyframes nexus-streak-flight/);assert.match(css,/@keyframes nexus-core-approach/);
+  assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/nexus-transit-streaks>i:nth-child\(n\+19\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);
+  assert.doesNotMatch(source,/requestAnimationFrame|setInterval/);
+});
