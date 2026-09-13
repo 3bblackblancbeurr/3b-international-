@@ -11,7 +11,7 @@ let browser,currentPage;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function ready(){for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');if(r.ok)return;}catch{}await sleep(200);}throw new Error('Vite did not start');}
 async function screenshot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:30000});report.screenshots.push(name);}
-async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click();await page.locator('dialog.nexus-experience[open]').waitFor();}
+async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click({noWaitAfter:true});await page.locator('dialog.nexus-experience[open]').waitFor();}
 // Navigation helper: the short introduction can finish while Playwright is waiting
 // for shader startup. Real Skip interaction is separately asserted on a paused intro
 // by verify-nexus-cinema.mjs, where the target cannot disappear automatically.
@@ -47,11 +47,11 @@ try{
   await page.keyboard.press('Escape');assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);
   assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
   report.checks.push('ORIGINE stays locked before real progression; modal, Escape, focus and scroll restoration work');
-  await page.locator('#open').click();await skip(page);await pick(page,'FR');await navigateWorld(page);
+  await page.locator('#open').click({noWaitAfter:true});await skip(page);await pick(page,'FR');await navigateWorld(page);
   assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');
   const savedRegion=await page.evaluate(async()=>{const {readLocal}=await import('/src/world/save.js');return readLocal(null)?.data?.region;});
   assert.equal(savedRegion,'france');report.checks.push('France travel records the canonical guest world save before leaving the Nexus');
-  for(let i=0;i<3;i++){await page.locator('#open').click();await skip(page);await webgl(page);await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await page.locator('.nexus-canvas canvas').count(),0);}
+  for(let i=0;i<3;i++){await page.locator('#open').click({noWaitAfter:true});await skip(page);await webgl(page);await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await page.locator('.nexus-canvas canvas').count(),0);}
   report.checks.push('Three reopen/close cycles dispose the scene canvas');await desktop.close();
 
   const mobile=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});const phone=await mobile.newPage();listen(phone);await open(phone);await skip(phone);await webgl(phone);
@@ -72,7 +72,7 @@ try{
   const appContext=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const app=await appContext.newPage();currentPage=app;listen(app);await app.goto('http://127.0.0.1:4177/#passeport');
   const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
-  await trigger.waitFor({timeout:30000});await trigger.click();await webgl(app);
+  await trigger.waitFor({timeout:30000});await trigger.click({noWaitAfter:true});await webgl(app);
   assert.equal(await app.locator('.nexus-canvas canvas').getAttribute('data-nexus-scene'),'heritage-v2');
   assert.equal(await app.locator('dialog.nexus-experience').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
   await screenshot(app,'application-mobile-nexus');await pick(app,'FR');await screenshot(app,'application-mobile-france');
