@@ -42,3 +42,47 @@ test('cinematic rendering still uses the canonical journey and offers a real 3D 
   assert.match(source,/paused=\{paused \|\| \(phase === 'nexus' && visualMode === 'cinema'\)\}/);
   assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
 });
+test('premium transit keeps depth, speed, country panels and mobile motion safeguards', () => {
+  const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-cinema-polish.css',import.meta.url),'utf8');
+  for (const layer of ['nexus-transit-horizon','nexus-transit-depth','nexus-transit-streaks','nexus-transit-glyphs','nexus-transit-core','nexus-transit-flare','nexus-transit-vignette']) {
+    assert.match(source,new RegExp(layer));
+  }
+  assert.match(source,/TRANSIT_RINGS/);assert.match(source,/TRANSIT_STREAKS/);assert.match(source,/TRANSIT_GLYPHS/);
+  assert.match(source,/nexus-transit-panel-scan/);assert.match(source,/>\{world\.code\}<\/small>/);
+  assert.match(css,/@keyframes nexus-depth-ring/);assert.match(css,/@keyframes nexus-streak-flight/);assert.match(css,/@keyframes nexus-core-approach/);
+  assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/nexus-transit-streaks>i:nth-child\(n\+19\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);
+  assert.doesNotMatch(source,/requestAnimationFrame|setInterval/);
+});
+test('Passport portal and recognition scan are premium but motion-safe', () => {
+  const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-portal-v4.css',import.meta.url),'utf8');
+  assert.match(source,/nexus-portal-v4\.css/);
+  assert.match(css,/\.passport-portal-trigger::before/);
+  assert.match(css,/\.passport-portal-trigger::after/);
+  assert.match(css,/nexus-passport-pulse/);
+  assert.match(css,/data-phase='scan'.*nexus-arrival-mark/s);
+  assert.match(css,/nexus-recognition-scan/);
+  assert.match(css,/data-phase='tunnel'.*nexus-arrival-mark/s);
+  assert.match(css,/nexus-recognition-release/);
+  assert.match(css,/@media\(max-width:759px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/data-calm='true'/);
+  assert.doesNotMatch(css,/position:\s*fixed/);
+});
+test('V5 adds radar, optical lattice and reveal bloom without changing journey logic', () => {
+  const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/styles/nexus-portal-v5.css',import.meta.url),'utf8');
+  assert.match(source,/nexus-portal-v5\.css/);
+  for(const signature of ['nexus-v5-passport-core','nexus-v5-radar-turn','nexus-v5-field-scan','nexus-v5-lattice-flight','nexus-v5-iris-drive','nexus-v5-reveal-bloom']) assert.match(css,new RegExp(signature));
+  assert.match(css,/data-phase='scan'.*nexus-arrival::before/s);
+  assert.match(css,/data-phase='tunnel'.*nexus-transit-decor::before/s);
+  assert.match(css,/data-phase='nexus'.*nexus-stage::after/s);
+  assert.match(css,/@media\(max-width:759px\)/);
+  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(css,/data-calm='true'/);
+  assert.match(css,/passport-visual\[data-animated="false"\]/);
+  assert.doesNotMatch(css,/position:\s*fixed/);
+  assert.doesNotMatch(css,/requestAnimationFrame|setInterval/);
+});

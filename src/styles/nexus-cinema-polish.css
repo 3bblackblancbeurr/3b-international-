@@ -13,9 +13,109 @@ dialog.nexus-experience[data-visual-mode] .nexus-narrative .nexus-guardian span{
 /* Stable screen-space targets: text changes and shader startup cannot move Skip/Pause. */
 dialog.nexus-experience[data-visual-mode] .nexus-intro-controls{position:fixed;z-index:21;bottom:max(22px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);flex-wrap:nowrap;width:max-content;max-width:calc(100vw - 28px);min-height:54px;padding:5px 9px;gap:8px;border:1px solid #cbaa715e;border-radius:32px;background:#031020f0;box-shadow:0 0 25px #047fdb20}
 dialog.nexus-experience[data-visual-mode] .nexus-intro-controls .nexus-skip{margin:0!important;padding:10px 12px;min-height:44px;white-space:nowrap}
+
+/* Passport -> Nexus V4 cinematic transit. All motion is transform/opacity based
+   so the extra art direction stays cheap on mobile GPUs. */
+.nexus-transit-decor{background:radial-gradient(circle at 50% 48%,#0a4f7a1f 0 8%,transparent 27%),linear-gradient(180deg,#01050b2e,#02081212 46%,#01040a38);transform:translateZ(0)}
+.nexus-transit-horizon{position:absolute;left:50%;top:48%;width:min(28vmin,280px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,#eefaff 0 1%,#9ee7ff 2%,#248dcf80 7%,#123d6350 19%,transparent 61%);box-shadow:0 0 36px #6bd4ff78,0 0 120px #087acb47;opacity:.68;animation:nexus-horizon-breathe 1.9s ease-in-out infinite}
+.nexus-transit-depth{position:absolute;inset:0;perspective:900px;transform:translateZ(0)}
+.nexus-transit-depth>i{position:absolute;left:50%;top:48%;width:66vmin;height:66vmin;max-width:880px;max-height:880px;border:1px solid #80d6ff66;border-radius:31% 31% 26% 26% / 38% 38% 24% 24%;box-shadow:0 0 10px #33b5ff3a,inset 0 0 12px #30a8ed24;opacity:0;will-change:transform,opacity;animation:nexus-depth-ring 1.72s linear infinite;animation-delay:calc(var(--nexus-ring) * -.172s)}
+.nexus-transit-depth>i:nth-child(4n+1){border-color:#f0d7a65c;box-shadow:0 0 9px #d8b77934,inset 0 0 10px #f1d5a11f}
+.nexus-transit-streaks{position:absolute;inset:0;overflow:hidden;mix-blend-mode:screen}
+.nexus-transit-streaks>i{position:absolute;left:50%;top:48%;width:clamp(18px,4.2vmin,58px);height:1px;border-radius:50%;transform-origin:left center;background:linear-gradient(90deg,transparent,#9be6ff3d 35%,#dff8ffde 100%);box-shadow:0 0 6px #3cbcff80;opacity:0;will-change:transform,opacity;animation:nexus-streak-flight 1.15s cubic-bezier(.2,.62,.18,1) infinite;animation-delay:calc(var(--nexus-streak) * -.041s)}
+.nexus-transit-streaks>i:nth-child(6n+1){background:linear-gradient(90deg,transparent,#d5ae6940,#ffe5acdc);box-shadow:0 0 5px #d4a95d75}
+.nexus-transit-glyphs{position:absolute;inset:0;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.nexus-transit-glyphs>b{position:absolute;left:50%;top:48%;font-size:clamp(8px,1.15vmin,14px);font-weight:500;letter-spacing:.14em;color:#8bdcff;text-shadow:0 0 9px #1aaeff;opacity:0;will-change:transform,opacity;animation:nexus-glyph-flight 2.25s linear infinite;animation-delay:calc(var(--nexus-glyph) * -.188s)}
+.nexus-transit-glyphs>b:nth-child(3n){color:#f1d49b;text-shadow:0 0 8px #cba65f}
+.nexus-transit-core{position:absolute;left:50%;top:48%;width:clamp(72px,11vmin,128px);aspect-ratio:1;transform:translate(-50%,-50%);display:grid;place-items:center;border-radius:50%;color:#effaff;font-family:Georgia,'Times New Roman',serif;text-align:center;filter:drop-shadow(0 0 17px #47bdf573)}
+.nexus-transit-core>i{position:absolute;inset:0;border:1px solid #9de7ff9e;border-radius:50%;box-shadow:inset 0 0 18px #249ee569;animation:nexus-core-orbit 5.8s linear infinite}
+.nexus-transit-core>i:nth-child(2){inset:11%;border-style:dashed;border-color:#edd49ba3;animation-duration:4.2s;animation-direction:reverse}
+.nexus-transit-core>i:nth-child(3){inset:-18%;border-color:#72c9f445;border-left-color:#efd89c8c;animation-duration:9s}
+.nexus-transit-core>strong{position:relative;z-index:1;font-size:clamp(21px,3.5vmin,42px);font-weight:400;letter-spacing:-.07em;text-shadow:0 0 18px #95e6ff}
+.nexus-transit-core>span{position:absolute;top:67%;font:600 clamp(6px,.72vmin,9px)/1 Inter,"Segoe UI",sans-serif;letter-spacing:.28em;color:#eed39e;text-shadow:0 0 10px #b38a48}
+.nexus-transit-flare{position:absolute;left:50%;top:48%;width:62vw;height:1px;transform:translate(-50%,-50%);background:linear-gradient(90deg,transparent,#3aaeff20 28%,#eafaff 50%,#dcb56e2d 72%,transparent);box-shadow:0 0 16px #58c6ff50;opacity:.35;animation:nexus-flare-pulse 1.9s ease-in-out infinite}
+.nexus-transit-vignette{position:absolute;inset:-1px;background:radial-gradient(ellipse at 50% 48%,transparent 0 28%,#01060b24 56%,#01040ae8 100%),linear-gradient(180deg,#0008,transparent 17%,transparent 74%,#000c);pointer-events:none}
+
+.nexus-transit-wing{transition:opacity .55s,filter .55s;will-change:transform,opacity}
+.nexus-transit-panel{transform:translateZ(0);transition:border-color .3s,box-shadow .3s,opacity .3s;animation:nexus-panel-float 3.6s ease-in-out infinite;animation-delay:calc(var(--panel-index) * -.37s)}
+.nexus-transit-panel::after{content:'';position:absolute;inset:0;background:linear-gradient(112deg,transparent 28%,#d8f4ff14 44%,transparent 56%);transform:translateX(-130%);animation:nexus-panel-sheen 3.8s ease-in-out infinite;animation-delay:calc(var(--panel-index) * .21s)}
+.nexus-transit-panel img{transform:scale(1.03);filter:saturate(.92) contrast(1.08);transition:transform .8s,filter .8s}
+.nexus-transit-panel-scan{position:absolute;left:4%;right:4%;height:1px;top:15%;background:linear-gradient(90deg,transparent,#8ce4ffb8,transparent);box-shadow:0 0 8px #47bdff;opacity:.42;animation:nexus-panel-scan 2.8s ease-in-out infinite;animation-delay:calc(var(--panel-index) * -.23s)}
+.nexus-transit-panel>small{position:absolute;left:8px;top:7px;z-index:2;color:#9bdcff;font:650 8px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.16em;text-shadow:0 0 6px #149eea;background:#03101bb3;padding:4px 5px;border:1px solid #6fc7ef42;border-radius:3px}
+
+.nexus-experience[data-phase='scan'] .nexus-transit-depth>i,
+.nexus-experience[data-phase='scan'] .nexus-transit-streaks>i,
+.nexus-experience[data-phase='scan'] .nexus-transit-glyphs>b{animation-play-state:paused;opacity:.08}
+.nexus-experience[data-phase='scan'] .nexus-transit-core{transform:translate(-50%,-50%) scale(.78);opacity:.64}
+.nexus-experience[data-phase='scan'] .nexus-transit-wing{opacity:.34;filter:saturate(.62) brightness(.66)}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-wing-left{animation:nexus-wing-left 3.65s cubic-bezier(.15,.62,.18,1) both}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-wing-right{animation:nexus-wing-right 3.65s cubic-bezier(.15,.62,.18,1) both}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-panel img{transform:scale(1.1);filter:saturate(1.05) contrast(1.12)}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-core{animation:nexus-core-approach 3.65s cubic-bezier(.16,.72,.1,1) both}
+.nexus-experience[data-phase='tunnel'] .nexus-transit-flare{animation:nexus-flare-tunnel 3.65s ease-in both}
+.nexus-experience[data-phase='tunnel'] .nexus-arrival{animation:nexus-copy-pass 3.65s ease both}
+
+@keyframes nexus-depth-ring{
+  0%{transform:translate(-50%,-50%) scale(.045) rotate(.01deg);opacity:0}
+  12%{opacity:.22}
+  58%{opacity:.38}
+  100%{transform:translate(-50%,-50%) scale(2.45) rotate(.01deg);opacity:0}
+}
+@keyframes nexus-streak-flight{
+  0%{transform:translate(-50%,-50%) rotate(calc(var(--nexus-streak) * 12.857deg)) translateX(2vmin) scaleX(.15);opacity:0}
+  18%{opacity:.14}
+  64%{opacity:.68}
+  100%{transform:translate(-50%,-50%) rotate(calc(var(--nexus-streak) * 12.857deg)) translateX(72vmax) scaleX(3.2);opacity:0}
+}
+@keyframes nexus-glyph-flight{
+  0%{transform:translate(-50%,-50%) rotate(calc(var(--nexus-glyph) * 30deg)) translateX(5vmin) rotate(calc(var(--nexus-glyph) * -30deg)) scale(.55);opacity:0}
+  24%{opacity:.16}
+  72%{opacity:.48}
+  100%{transform:translate(-50%,-50%) rotate(calc(var(--nexus-glyph) * 30deg)) translateX(64vmax) rotate(calc(var(--nexus-glyph) * -30deg)) scale(1.45);opacity:0}
+}
+@keyframes nexus-horizon-breathe{50%{opacity:.95;transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 42px #8ee2ff8a,0 0 145px #087acb5e}}
+@keyframes nexus-core-orbit{to{transform:rotate(360deg)}}
+@keyframes nexus-flare-pulse{50%{opacity:.72;transform:translate(-50%,-50%) scaleX(1.12)}}
+@keyframes nexus-panel-float{50%{transform:translateY(-3px)}}
+@keyframes nexus-panel-sheen{0%,58%{transform:translateX(-130%)}85%,100%{transform:translateX(130%)}}
+@keyframes nexus-panel-scan{0%,100%{top:13%;opacity:.16}50%{top:83%;opacity:.54}}
+@keyframes nexus-wing-left{0%{transform:perspective(900px) rotateY(42deg) translateX(0);opacity:.73}72%{opacity:.72}100%{transform:perspective(900px) rotateY(52deg) translateX(-42%);opacity:.08}}
+@keyframes nexus-wing-right{0%{transform:perspective(900px) rotateY(-42deg) translateX(0);opacity:.73}72%{opacity:.72}100%{transform:perspective(900px) rotateY(-52deg) translateX(42%);opacity:.08}}
+@keyframes nexus-core-approach{0%{transform:translate(-50%,-50%) scale(.82);opacity:.68}60%{opacity:1}88%{transform:translate(-50%,-50%) scale(1.08);opacity:1}100%{transform:translate(-50%,-50%) scale(7.8);opacity:0}}
+@keyframes nexus-flare-tunnel{0%{opacity:.28;transform:translate(-50%,-50%) scaleX(.7)}75%{opacity:.5}92%{opacity:1;transform:translate(-50%,-50%) scaleX(1.7)}100%{opacity:0;transform:translate(-50%,-50%) scaleX(2.8)}}
+@keyframes nexus-copy-pass{0%,55%{opacity:1;transform:scale(1)}78%{opacity:.88;transform:scale(1.015)}100%{opacity:.15;transform:scale(1.045)}}
+
 @media(min-width:760px){dialog.nexus-experience[data-visual-mode='cinema'] .nexus-cinema{width:min(100%,46vh,520px)}}
 @media(max-width:759px){
  dialog.nexus-experience[data-visual-mode] .nexus-narrative .nexus-guardian{margin-top:16px}
  dialog.nexus-experience[data-visual-mode] .nexus-cinematic-backdrop{filter:blur(7px) brightness(.62)}
  dialog.nexus-experience[data-visual-mode] .nexus-intro-controls .nexus-skip{font-size:11px}
+ .nexus-transit-wing{width:clamp(80px,27vw,150px);gap:9px;top:6%;bottom:6%;opacity:.58}
+ .nexus-transit-wing-left{left:-9%}.nexus-transit-wing-right{right:-9%}
+ .nexus-transit-panel{border-width:1px;box-shadow:0 0 0 3px #04101b,0 0 0 4px #88734c99,0 0 12px #29a5ff2e}
+ .nexus-transit-panel>small{font-size:6px;padding:3px 4px;left:5px;top:5px}
+ .nexus-transit-panel span{font-size:7px;padding:6px 2px}
+ .nexus-transit-streaks>i:nth-child(n+19),.nexus-transit-glyphs>b:nth-child(n+8),.nexus-transit-depth>i:nth-child(n+9){display:none}
+ .nexus-transit-horizon{width:34vmin}
+ .nexus-transit-core{width:clamp(66px,18vmin,92px)}
+ .nexus-transit-flare{width:86vw}
 }
+@media(max-width:420px){
+ .nexus-transit-wing{width:29vw;opacity:.5}
+ .nexus-transit-panel span{display:none}
+ .nexus-transit-panel:nth-child(even){opacity:.7}
+ .nexus-transit-glyphs>b:nth-child(n+6),.nexus-transit-streaks>i:nth-child(n+15){display:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .nexus-transit-depth>i,.nexus-transit-streaks>i,.nexus-transit-glyphs>b,.nexus-transit-horizon,.nexus-transit-core>i,.nexus-transit-flare,.nexus-transit-panel,.nexus-transit-panel::after,.nexus-transit-panel-scan{animation:none!important}
+ .nexus-transit-depth>i,.nexus-transit-streaks>i,.nexus-transit-glyphs>b{opacity:.08}
+}
+dialog.nexus-experience[data-calm='true'] .nexus-transit-depth>i,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-streaks>i,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-glyphs>b,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-horizon,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-core>i,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-flare,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-panel,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-panel::after,
+dialog.nexus-experience[data-calm='true'] .nexus-transit-panel-scan{animation:none!important}
