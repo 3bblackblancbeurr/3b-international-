@@ -1,0 +1,225 @@
+/* Passport -> Nexus V4 entry polish.
+   Purely presentational: no journey state, timing, progression or storage changes. */
+
+/* The Passport button should already feel like a live portal before it is touched. */
+.passport-portal-trigger{
+  overflow:visible;
+  background:
+    radial-gradient(circle at 50% 42%,#9de8ff29 0 9%,transparent 29%),
+    radial-gradient(circle at 46% 38%,#1d6d9ecf 0,#0a2236e6 48%,#030b14f2 76%);
+  box-shadow:
+    0 0 0 1px #6fcfff24,
+    0 0 24px #168fd362,
+    0 0 58px #0874bd26,
+    inset 0 0 18px #76d5ff29,
+    inset 0 -12px 28px #020910b3;
+  text-shadow:0 0 14px #99e6ff8f;
+  transform:translateZ(0);
+  will-change:transform;
+}
+.passport-portal-trigger::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-14%;
+  border-radius:50%;
+  padding:1px;
+  background:conic-gradient(from 18deg,transparent 0 10%,#73d6ff 13%,transparent 17% 34%,#d9bb79 38%,transparent 43% 67%,#5ec9ff 72%,transparent 77% 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  filter:drop-shadow(0 0 5px #45bdf171);
+  opacity:.82;
+  animation:nexus-passport-ring 8.5s linear infinite;
+  pointer-events:none;
+}
+.passport-portal-trigger::after{
+  content:"";
+  position:absolute;
+  z-index:-2;
+  inset:-26%;
+  border:1px solid #67c6ef2e;
+  border-radius:50%;
+  opacity:0;
+  box-shadow:0 0 22px #30aff442,inset 0 0 16px #42baf12b;
+  animation:nexus-passport-pulse 2.9s ease-out infinite;
+  pointer-events:none;
+}
+.passport-portal-trigger:hover{
+  transform:translateZ(0) scale(1.065);
+  box-shadow:0 0 0 1px #9ce8ff35,0 0 35px #42bdff7d,0 0 72px #0586d33d,inset 0 0 24px #79d9ff3d,inset 0 -12px 28px #020910a8;
+}
+.passport-portal-trigger:active{
+  transform:translateZ(0) scale(.97);
+  box-shadow:0 0 0 1px #e4cf9d61,0 0 46px #6bd5ff9e,0 0 94px #0a8ad159,inset 0 0 30px #b1efff52;
+  transition-duration:.08s;
+}
+.passport-portal-trigger>b{
+  color:#f2fbff;
+  text-shadow:0 0 7px #d8f6ff,0 0 20px #45bdffad,0 2px 12px #02070b;
+}
+.passport-portal-trigger>small{
+  color:#e7ce9f;
+  text-shadow:0 0 9px #cba45f73;
+}
+.passport-portal-orbit{
+  filter:drop-shadow(0 0 5px #58c8fa45);
+}
+.passport-portal-orbit:before{
+  border-color:#7cd4f65e;
+  border-right-color:#f0d598;
+  border-bottom-color:#7ed7fb1f;
+  box-shadow:0 0 11px #2eb2f12e,inset 0 0 9px #55c8fb1f;
+}
+.passport-portal-orbit:after{
+  border-color:#b9e9fa54;
+  border-left-color:#dfbf7f99;
+  animation:nexus-passport-orbit-reverse 5.6s linear infinite;
+}
+.passport-portal-orbit i:first-child{
+  inset:-28%;
+  border-color:#77d6ff24;
+  border-top-color:#69cffa61;
+  border-bottom-color:#d8ba7b46;
+  animation:nexus-passport-orbit-slow 12s linear infinite;
+}
+
+/* Recognition phase: visual scan around the existing semantic 3B mark. */
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark{
+  isolation:isolate;
+  border-color:#9de5ff9c;
+  background:
+    radial-gradient(circle,#0c3854bf 0 18%,#061a2ac7 51%,#020a12e8 76%),
+    #04111d;
+  box-shadow:0 0 0 1px #63c6f52e,0 0 34px #19a9f45c,0 0 96px #0875b22e,inset 0 0 26px #7bdcff24;
+  text-shadow:0 0 9px #d9f7ff,0 0 28px #47c4ff;
+  animation:nexus-recognition-breathe 1.05s ease-in-out both;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark::before{
+  content:"";
+  position:absolute;
+  z-index:3;
+  left:10%;right:10%;height:1px;top:18%;
+  background:linear-gradient(90deg,transparent,#a9efff 18%,#fff 50%,#a9efff 82%,transparent);
+  box-shadow:0 0 7px #6bdcff,0 0 16px #2fbafa;
+  opacity:0;
+  animation:nexus-recognition-scan .92s cubic-bezier(.35,.02,.35,1) .08s both;
+  pointer-events:none;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:-31%;
+  border-radius:50%;
+  background:
+    linear-gradient(#77d5ffb8,#77d5ffb8) 50% 0/16% 1px no-repeat,
+    linear-gradient(#77d5ffb8,#77d5ffb8) 50% 100%/16% 1px no-repeat,
+    linear-gradient(90deg,#d5ba7d9e,#d5ba7d9e) 0 50%/1px 16% no-repeat,
+    linear-gradient(90deg,#d5ba7d9e,#d5ba7d9e) 100% 50%/1px 16% no-repeat;
+  border:1px solid #5ec8f229;
+  box-shadow:0 0 28px #29b6f234;
+  opacity:.75;
+  animation:nexus-recognition-hud 4.8s linear infinite;
+  pointer-events:none;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark>i{
+  border-color:#96ddf052;
+  border-top-color:#ecd09a;
+  box-shadow:0 0 8px #4fc6f735;
+  animation-duration:2.8s;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-mark>i:nth-child(2){
+  border-color:#a7e4fa46;
+  border-top-color:#8bdfff;
+  border-left-color:#d9bd8270;
+  animation-duration:1.9s;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-progress{
+  position:relative;
+  overflow:visible;
+  box-shadow:0 0 14px #36bdf133;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-progress::before,
+.nexus-experience[data-phase='scan'] .nexus-arrival-progress::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  width:4px;height:4px;
+  margin-top:-2px;
+  border-radius:50%;
+  background:#a9edff;
+  box-shadow:0 0 8px #58d0ff;
+  opacity:.8;
+}
+.nexus-experience[data-phase='scan'] .nexus-arrival-progress::before{left:-2px}
+.nexus-experience[data-phase='scan'] .nexus-arrival-progress::after{right:-2px}
+
+/* The exact hand-off: recognition collapses into the tunnel horizon instead of
+   looking like two unrelated screens. */
+.nexus-experience[data-phase='tunnel'] .nexus-arrival-mark{
+  border-color:#b4ecff8f;
+  background:radial-gradient(circle,#89ddff2e 0 12%,#082239b8 42%,#020a13db 78%);
+  box-shadow:0 0 34px #62ceff66,0 0 92px #178ed13d,inset 0 0 24px #8ce5ff30;
+  animation:nexus-recognition-release 3.65s cubic-bezier(.18,.65,.14,1) both;
+}
+.nexus-experience[data-phase='tunnel'] .nexus-arrival-mark>i{
+  border-top-color:#f0d59d;
+  animation-duration:1.35s;
+}
+
+@keyframes nexus-passport-ring{to{transform:rotate(360deg)}}
+@keyframes nexus-passport-orbit-reverse{to{transform:rotate(-360deg)}}
+@keyframes nexus-passport-orbit-slow{to{transform:rotate(360deg)}}
+@keyframes nexus-passport-pulse{
+  0%{transform:scale(.72);opacity:0}
+  18%{opacity:.35}
+  72%{opacity:.12}
+  100%{transform:scale(1.24);opacity:0}
+}
+@keyframes nexus-recognition-breathe{
+  0%{transform:scale(.86);opacity:.35;filter:blur(1px)}
+  48%{transform:scale(1.045);opacity:1;filter:none}
+  100%{transform:scale(1);opacity:1;filter:none}
+}
+@keyframes nexus-recognition-scan{
+  0%{top:17%;opacity:0;transform:scaleX(.45)}
+  12%{opacity:1}
+  48%{opacity:1;transform:scaleX(1)}
+  88%{opacity:.8}
+  100%{top:82%;opacity:0;transform:scaleX(.62)}
+}
+@keyframes nexus-recognition-hud{to{transform:rotate(360deg)}}
+@keyframes nexus-recognition-release{
+  0%{transform:scale(1);opacity:1}
+  38%{transform:scale(.88);opacity:1}
+  72%{transform:scale(1.22);opacity:.82}
+  100%{transform:scale(2.6);opacity:0;filter:blur(3px)}
+}
+
+/* Keep the effects light on small Android devices. */
+@media(max-width:759px){
+  .passport-portal-trigger::after{inset:-20%;box-shadow:0 0 16px #30aff435}
+  .passport-portal-trigger::before{inset:-11%;filter:drop-shadow(0 0 3px #45bdf15c)}
+  .passport-portal-orbit i:first-child{inset:-22%}
+  .nexus-experience[data-phase='scan'] .nexus-arrival-mark{box-shadow:0 0 0 1px #63c6f526,0 0 26px #19a9f44d,0 0 58px #0875b224,inset 0 0 20px #7bdcff1f}
+  .nexus-experience[data-phase='scan'] .nexus-arrival-mark::after{inset:-23%;box-shadow:0 0 18px #29b6f22b}
+}
+@media(max-width:420px){
+  .passport-portal-trigger::after{animation-duration:3.4s}
+  .nexus-experience[data-phase='scan'] .nexus-arrival-mark::after{inset:-19%;}
+}
+@media(prefers-reduced-motion:reduce){
+  .passport-portal-trigger::before,.passport-portal-trigger::after,
+  .passport-portal-orbit:after,.passport-portal-orbit i:first-child,
+  .nexus-arrival-mark::before,.nexus-arrival-mark::after,
+  .nexus-arrival-mark,.nexus-arrival-mark>i{animation:none!important}
+}
+.passport-visual[data-animated="false"] .passport-portal-trigger::before,
+.passport-visual[data-animated="false"] .passport-portal-trigger::after,
+.passport-visual[data-animated="false"] .passport-portal-orbit:after,
+.passport-visual[data-animated="false"] .passport-portal-orbit i:first-child{animation-play-state:paused}
+dialog.nexus-experience[data-calm='true'] .nexus-arrival-mark::before,
+dialog.nexus-experience[data-calm='true'] .nexus-arrival-mark::after,
+dialog.nexus-experience[data-calm='true'] .nexus-arrival-mark,
+dialog.nexus-experience[data-calm='true'] .nexus-arrival-mark>i{animation-play-state:paused!important}
