@@ -8,9 +8,10 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','1
 const report={checks:[],errors:[],screenshots:[],note:'Real React app in Chromium; simulated screen sizes, not a physical Samsung test.'};
 let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-// A native fullscreen dialog scrolls independently. Capture the actual visible
-// viewport rather than adding the inactive page below it to a full-page image.
-async function shot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false});report.screenshots.push(name);}
+async function shot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
+async function pressIntroControl(page,name){const button=page.getByRole('button',{name,exact:true});await button.waitFor({state:'visible',timeout:10000});await button.evaluate(element=>element.click());}
+async function phase(page){return page.evaluate(()=>document.querySelector('dialog.nexus-experience')?.dataset.phase||null);}
+async function waitPhase(page,value,timeout=10000){await page.waitForFunction(expected=>document.querySelector('dialog.nexus-experience')?.dataset.phase===expected,value,{timeout,polling:50});}
 try{
   for(let i=0;i<100;i++){try{if((await fetch('http://127.0.0.1:4181/tests/nexus-fixture.html')).ok)break;}catch{}await sleep(200);}
   browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -18,7 +19,7 @@ try{
     const context=await browser.newContext({viewport:{width,height:width>759?1000:844},deviceScaleFactor:1,reducedMotion:'reduce',isMobile:width<760,hasTouch:width<760});
     const page=await context.newPage();currentPage=page;
     page.on('pageerror',e=>report.errors.push(String(e)));
-    await page.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await page.locator('#open').click();
+    await page.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await page.locator('#open').click({noWaitAfter:true});
     await page.locator('.nexus-experience[data-phase="nexus"][data-visual-mode="cinema"]').waitFor();
     await page.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();if(!img.naturalWidth)throw Error('Missing reference image');});
     assert.equal(await page.locator('.nexus-cinema-hit').count(),8);
@@ -47,7 +48,7 @@ try{
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
   const app=await context.newPage();currentPage=app;app.on('pageerror',e=>report.errors.push(String(e)));
   await app.goto('http://127.0.0.1:4181/#passeport');const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
-  await trigger.waitFor({timeout:30000});await shot(app,'application-passeport');await trigger.click();
+  await trigger.waitFor({timeout:30000});await shot(app,'application-passeport');await trigger.click({noWaitAfter:true});
   await app.locator('.nexus-cinema-photo').evaluate(async img=>{await img.decode();});
   await shot(app,'application-nexus');await app.locator('.nexus-cinema-hit[data-country="FR"]').click();
   await app.locator('dialog.nexus-experience').evaluate(dialog=>{dialog.scrollTop=0;});
@@ -55,13 +56,17 @@ try{
   await app.waitForFunction(()=>!document.querySelector('dialog.nexus-experience[open]'));
   report.checks.push('Actual application: original passport, reference art, France selection and canonical world entry');await context.close();
   const animated=await browser.newContext({viewport:{width:1440,height:1000}});const tunnel=await animated.newPage();currentPage=tunnel;
-  await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click();
-  await tunnel.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});
-  await tunnel.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();
-  await sleep(4200);assert.equal(await tunnel.locator('dialog').getAttribute('data-phase'),'tunnel');
-  await shot(tunnel,'tunnel-architecture');await tunnel.getByRole('button',{name:'Passer l’introduction'}).click();
-  await tunnel.locator('.nexus-experience[data-phase="nexus"]').waitFor();
-  report.checks.push('Tunnel pause actually pauses the phase timer; introduction remains skippable');await animated.close();
+  await tunnel.goto('http://127.0.0.1:4181/tests/nexus-fixture.html');await tunnel.locator('#open').click({noWaitAfter:true});
+  await waitPhase(tunnel,'scan',5000);
+  await pressIntroControl(tunnel,'Mettre les animations en pause');
+  await sleep(1350);assert.equal(await phase(tunnel),'scan');
+  await pressIntroControl(tunnel,'Reprendre les animations');
+  await waitPhase(tunnel,'tunnel',10000);
+  await pressIntroControl(tunnel,'Mettre les animations en pause');
+  await sleep(4200);assert.equal(await phase(tunnel),'tunnel');
+  await shot(tunnel,'tunnel-architecture');await pressIntroControl(tunnel,'Passer l’introduction');
+  await waitPhase(tunnel,'nexus',10000);
+  report.checks.push('Scan and tunnel timers pause deterministically; introduction remains skippable');await animated.close();
   assert.deepEqual(report.errors,[]);report.success=true;
 }catch(error){report.success=false;report.failure=error.stack;process.exitCode=1;if(currentPage&&!currentPage.isClosed())try{await shot(currentPage,'failure');report.text=await currentPage.locator('body').innerText();}catch{}}
 finally{await writeFile(`${output}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser?.close();server.kill('SIGTERM');}

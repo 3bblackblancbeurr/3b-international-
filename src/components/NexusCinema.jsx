@@ -2,6 +2,12 @@ import { Check, LockKeyhole } from 'lucide-react';
 import { NEXUS_WORLDS } from './nexus-worlds.js';
 import { NEXUS_CINEMA_ASSETS, nexusDoorImage, nexusHotspotStyle } from './nexus-cinema.js';
 import '../styles/nexus-cinema-polish.css';
+import '../styles/nexus-portal-v4.css';
+import '../styles/nexus-portal-v5.css';
+
+const TRANSIT_RINGS = Array.from({ length: 10 }, (_, index) => index);
+const TRANSIT_STREAKS = Array.from({ length: 28 }, (_, index) => index);
+const TRANSIT_GLYPHS = ['3B', '01', '10', 'H', 'B', '3', '11', '00', '3B', '01', 'B', '10'];
 
 /** Art-directed 2.5D presentation. Buttons, selection and seals are live React UI,
  * not a flattened replacement for the app. Travel is handled by useNexusJourney. */
@@ -46,12 +52,31 @@ export function NexusCinemaHall({ selected, onSelect, doors = [], originEnabled 
 
 export function NexusTransitDecor() {
   return <div className="nexus-transit-decor" aria-hidden="true">
+    <div className="nexus-transit-horizon" />
+    <div className="nexus-transit-depth">
+      {TRANSIT_RINGS.map(index => <i key={index} style={{ '--nexus-ring': index }} />)}
+    </div>
+    <div className="nexus-transit-streaks">
+      {TRANSIT_STREAKS.map(index => <i key={index} style={{ '--nexus-streak': index }} />)}
+    </div>
+    <div className="nexus-transit-glyphs">
+      {TRANSIT_GLYPHS.map((glyph, index) => <b key={`${glyph}-${index}`} style={{ '--nexus-glyph': index }}>{glyph}</b>)}
+    </div>
     {['left', 'right'].map((side, sideIndex) => <div key={side} className={`nexus-transit-wing nexus-transit-wing-${side}`}>
-      {NEXUS_WORLDS.slice(sideIndex * 4, sideIndex * 4 + 4).map(world => <div className="nexus-transit-panel" key={world.code}>
+      {NEXUS_WORLDS.slice(sideIndex * 4, sideIndex * 4 + 4).map((world, index) => <div className="nexus-transit-panel" key={world.code} style={{ '--panel-index': index }}>
         <img src={nexusDoorImage(world.code)} width="132" height="132" alt="" decoding="async" />
+        <i className="nexus-transit-panel-scan" />
+        <small>{world.code}</small>
         <span>{world.country}</span>
       </div>)}
     </div>)}
     <div className="nexus-transit-axis" />
+    <div className="nexus-transit-core">
+      <i /><i /><i />
+      <strong>3B</strong>
+      <span>NEXUS</span>
+    </div>
+    <div className="nexus-transit-flare" />
+    <div className="nexus-transit-vignette" />
   </div>;
 }

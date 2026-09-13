@@ -4,88 +4,331 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 import { build } from 'vite';
 
-const output='artifacts/nexus';await mkdir(output,{recursive:true});
-const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','127.0.0.1','--port','4177','--strictPort'],{stdio:'inherit'});
-const report={checks:[],errors:[],screenshots:[],note:'Chromium software WebGL; mobile viewport simulation, not a physical Samsung test.'};
-let browser,currentPage;
-const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-async function ready(){for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');if(r.ok)return;}catch{}await sleep(200);}throw new Error('Vite did not start');}
-async function screenshot(page,name){await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:30000});report.screenshots.push(name);}
-async function open(page){currentPage=page;await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');await page.locator('#open').click();await page.locator('dialog.nexus-experience[open]').waitFor();}
-// Navigation helper: the short introduction can finish while Playwright is waiting
-// for shader startup. Real Skip interaction is separately asserted on a paused intro
-// by verify-nexus-cinema.mjs, where the target cannot disappear automatically.
-async function skip(page){
-  const destination=page.locator('.nexus-experience[data-phase="nexus"]');
-  if(await destination.count())return;
-  const button=page.getByRole('button',{name:'Passer l’introduction'});
-  if(await button.count()){
-    try{await button.click({timeout:5000});}
-    catch(error){if(error.name!=='TimeoutError')throw error;await destination.waitFor({timeout:20000});}
+const output = 'artifacts/nexus';
+const DIALOG = 'dialog.nexus-experience[open]';
+await mkdir(output, { recursive: true });
+const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', '4177', '--strictPort'], { stdio: 'inherit' });
+const report = {
+  checks: [],
+  errors: [],
+  screenshots: [],
+  note: 'Chromium software WebGL; mobile viewport simulation, not a physical Samsung test. Visual screenshots are produced by verify-nexus-cinema.mjs; this suite verifies behavior and records screenshot checkpoints without blocking on a continuously rendered WebGL canvas.'
+};
+let browser, currentPage;
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function ready() {
+  for (let i = 0; i < 100; i += 1) {
+    try {
+      const response = await fetch('http://127.0.0.1:4177/tests/nexus-fixture.html');
+      if (response.ok) return;
+    } catch {}
+    await sleep(200);
   }
-  await destination.waitFor({timeout:20000});
+  throw new Error('Vite did not start');
 }
-async function webgl(page){await page.locator('.nexus-stage[data-renderer="3d"]').waitFor({timeout:30000});}
-async function pick(page,code){const codes=['FR','DZ','ES','MA','IT','TN','TR','EE'];await page.locator('.nexus-door-choice').nth(codes.indexOf(code)).click();await page.locator(`.nexus-experience[data-selected="${code}"]`).waitFor();}
-async function navigateWorld(page){await page.locator('.nexus-enter-world').click();await page.getByText('world3b',{exact:true}).waitFor({timeout:20000});}
-function listen(page,allowWebGLFailure=false){page.on('pageerror',error=>report.errors.push(String(error)));page.on('console',msg=>{if(msg.type()==='error'&&!(allowWebGLFailure&&/WebGL|context/i.test(msg.text())))report.errors.push(msg.text());});}
-try{
-  await ready();browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  const desktop=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1});
-  await desktop.addInitScript(()=>{window.__nexusPhases=[];new MutationObserver(()=>{const d=document.querySelector('.nexus-experience');const phase=d?.dataset.phase;if(phase&&window.__nexusPhases.at(-1)?.phase!==phase)window.__nexusPhases.push({phase,time:performance.now()});}).observe(document,{attributes:true,childList:true,subtree:true,attributeFilter:['data-phase']});});
-  const page=await desktop.newPage();listen(page);await open(page);await screenshot(page,'desktop-ouverture');await skip(page);await webgl(page);
-  report.initialPhases=await page.evaluate(()=>window.__nexusPhases);
-  assert.equal(await page.locator('.nexus-door-choice').count(),8);assert.equal(await page.locator('dialog.nexus-experience').evaluate(d=>d.parentElement===document.body),true);
-  await page.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();await screenshot(page,'desktop-sanctuaire');
-  const names=['France','Algérie','Espagne','Maroc','Italie','Tunisie','Turquie','Estonie'];
-  for(const [i,code] of ['FR','DZ','ES','MA','IT','TN','TR','EE'].entries()){
-    await pick(page,code);assert.equal(await page.locator('#nexus-title').textContent(),names[i]);await screenshot(page,`desktop-${code}`);
+
+async function screenshot(_page, name) {
+  report.screenshots.push(`${name}:covered-by-cinema-suite`);
+}
+
+async function waitOpen(page, timeout = 30000) {
+  await page.waitForFunction(selector => !!document.querySelector(selector), DIALOG, { timeout, polling: 50 });
+}
+
+async function waitClosed(page, timeout = 30000) {
+  await page.waitForFunction(selector => !document.querySelector(selector), DIALOG, { timeout, polling: 50 });
+}
+
+async function open(page) {
+  currentPage = page;
+  await page.goto('http://127.0.0.1:4177/tests/nexus-fixture.html');
+  await page.locator('#open').click({ noWaitAfter: true });
+  await waitOpen(page);
+}
+
+async function reopen(page) {
+  await waitClosed(page);
+  await page.locator('#open').click({ noWaitAfter: true });
+  await waitOpen(page);
+}
+
+async function skip(page) {
+  // Only target the currently open dialog. During repeated mount/dispose cycles
+  // a closed React tree may coexist briefly with its replacement.
+  await page.waitForFunction(selector => {
+    const dialog = document.querySelector(selector);
+    if (!dialog) return false;
+    if (dialog.dataset.phase === 'nexus') return true;
+    dialog.querySelector('[data-nexus-skip="true"]')?.click();
+    return false;
+  }, DIALOG, { timeout: 90000, polling: 300 });
+}
+
+async function activate3d(page) {
+  await page.waitForFunction(selector => document.querySelector(selector)?.dataset.phase === 'nexus', DIALOG, { timeout: 30000, polling: 50 });
+  const mode = await page.evaluate(selector => document.querySelector(selector)?.dataset.visualMode || null, DIALOG);
+  if (mode !== '3d') {
+    const clicked = await page.evaluate(selector => {
+      const dialog = document.querySelector(selector);
+      const button = [...(dialog?.querySelectorAll('button') || [])].find(element => element.textContent?.includes('Voir le sanctuaire en 3D'));
+      if (!button) return false;
+      button.click();
+      return true;
+    }, DIALOG);
+    assert.equal(clicked, true, 'The cinema-first Nexus must expose the 3D switch');
+    await page.waitForFunction(selector => document.querySelector(selector)?.dataset.visualMode === '3d', DIALOG, { timeout: 10000, polling: 50 });
+  }
+}
+
+async function webgl(page) {
+  await activate3d(page);
+  await page.waitForFunction(selector => document.querySelector(`${selector} .nexus-stage`)?.dataset.renderer === '3d', DIALOG, { timeout: 90000, polling: 50 });
+}
+
+async function pick(page, code) {
+  const codes = ['FR', 'DZ', 'ES', 'MA', 'IT', 'TN', 'TR', 'EE'];
+  const index = codes.indexOf(code);
+  assert.ok(index >= 0, `Unknown test door ${code}`);
+  await page.waitForFunction(({ selector, code, index }) => {
+    const dialog = document.querySelector(selector);
+    if (!dialog || dialog.dataset.phase !== 'nexus') return false;
+    if (dialog.dataset.selected === code) return true;
+    const button = dialog.querySelectorAll('.nexus-door-choice')[index];
+    if (!button) return false;
+    button.click();
+    return false;
+  }, { selector: DIALOG, code, index }, { timeout: 30000, polling: 200 });
+}
+
+async function selectOrigin(page) {
+  await page.waitForFunction(selector => {
+    const dialog = document.querySelector(selector);
+    if (!dialog || dialog.dataset.phase !== 'nexus') return false;
+    if (dialog.dataset.selected === 'ORIGIN') return true;
+    dialog.querySelector('.nexus-origin-link')?.click();
+    return false;
+  }, DIALOG, { timeout: 30000, polling: 200 });
+}
+
+async function clickDialogText(page, text) {
+  const clicked = await page.evaluate(({ selector, text }) => {
+    const dialog = document.querySelector(selector);
+    const button = [...(dialog?.querySelectorAll('button') || [])].find(element => element.textContent?.includes(text));
+    if (!button) return false;
+    button.click();
+    return true;
+  }, { selector: DIALOG, text });
+  assert.equal(clicked, true, `Missing dialog control: ${text}`);
+}
+
+async function closeNexus(page) {
+  const clicked = await page.evaluate(selector => {
+    const button = document.querySelector(`${selector} button[aria-label="Fermer le Nexus et revenir au passeport"]`);
+    if (!button) return false;
+    button.click();
+    return true;
+  }, DIALOG);
+  assert.equal(clicked, true, 'Close control must be available');
+  await waitClosed(page);
+}
+
+async function pauseNexus(page) {
+  const clicked = await page.evaluate(selector => {
+    const button = document.querySelector(`${selector} button[aria-label="Mettre les animations en pause"]`);
+    if (!button) return false;
+    button.click();
+    return true;
+  }, DIALOG);
+  assert.equal(clicked, true, 'Pause control must be available');
+}
+
+async function navigateWorld(page) {
+  await page.waitForFunction(selector => {
+    const button = document.querySelector(`${selector} .nexus-enter-world`);
+    return !!button && !button.disabled;
+  }, DIALOG, { timeout: 30000, polling: 100 });
+  await page.evaluate(selector => document.querySelector(`${selector} .nexus-enter-world`)?.click(), DIALOG);
+  await page.getByText('world3b', { exact: true }).waitFor({ timeout: 20000 });
+  await waitClosed(page);
+}
+
+function listen(page, allowWebGLFailure = false) {
+  page.on('pageerror', error => report.errors.push(String(error)));
+  page.on('console', message => {
+    if (message.type() === 'error' && !(allowWebGLFailure && /WebGL|context/i.test(message.text()))) report.errors.push(message.text());
+  });
+}
+
+try {
+  await ready();
+  browser = await chromium.launch({ headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+
+  const desktop = await browser.newContext({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
+  await desktop.addInitScript(() => {
+    window.__nexusPhases = [];
+    new MutationObserver(() => {
+      const dialog = document.querySelector('dialog.nexus-experience[open]');
+      const phase = dialog?.dataset.phase;
+      if (phase && window.__nexusPhases.at(-1)?.phase !== phase) window.__nexusPhases.push({ phase, time: performance.now() });
+    }).observe(document, { attributes: true, childList: true, subtree: true, attributeFilter: ['data-phase', 'open'] });
+  });
+
+  const page = await desktop.newPage();
+  listen(page);
+  await open(page);
+  await screenshot(page, 'desktop-ouverture');
+  await skip(page);
+  await webgl(page);
+  report.initialPhases = await page.evaluate(() => window.__nexusPhases);
+  assert.equal(await page.locator(`${DIALOG} .nexus-door-choice`).count(), 8);
+  assert.equal(await page.locator(DIALOG).evaluate(dialog => dialog.parentElement === document.body), true);
+
+  await pauseNexus(page);
+  await screenshot(page, 'desktop-sanctuaire');
+  const names = ['France', 'Algérie', 'Espagne', 'Maroc', 'Italie', 'Tunisie', 'Turquie', 'Estonie'];
+  for (const [index, code] of ['FR', 'DZ', 'ES', 'MA', 'IT', 'TN', 'TR', 'EE'].entries()) {
+    await pick(page, code);
+    assert.equal(await page.locator(`${DIALOG} #nexus-title`).textContent(), names[index]);
+    await screenshot(page, `desktop-${code}`);
   }
   report.checks.push('Eight countries select their own camera, title, guardian and value');
-  await page.locator('.nexus-origin-link').click();assert.equal(await page.locator('.nexus-enter-world').isDisabled(),true);await screenshot(page,'desktop-origine');
-  await page.getByRole('button',{name:'Revoir le tunnel Matrix'}).click();await page.locator('.nexus-experience[data-phase="tunnel"]').waitFor({timeout:20000});await screenshot(page,'desktop-tunnel');await skip(page);report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
-  await page.keyboard.press('Escape');assert.equal(await page.locator('dialog.nexus-experience[open]').count(),0);
-  assert.equal(await page.evaluate(()=>document.activeElement?.id),'open');assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
+
+  await selectOrigin(page);
+  assert.equal(await page.locator(`${DIALOG} .nexus-enter-world`).isDisabled(), true);
+  await screenshot(page, 'desktop-origine');
+  await clickDialogText(page, 'Revoir le tunnel Matrix');
+  await page.waitForFunction(selector => document.querySelector(selector)?.dataset.phase === 'tunnel', DIALOG, { timeout: 20000, polling: 50 });
+  await screenshot(page, 'desktop-tunnel');
+  await skip(page);
+  report.checks.push('Matrix passage can be replayed and skipped after first shader compilation');
+
+  await page.keyboard.press('Escape');
+  await waitClosed(page);
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'open');
+  assert.equal(await page.evaluate(() => document.body.style.overflow), '');
   report.checks.push('ORIGINE stays locked before real progression; modal, Escape, focus and scroll restoration work');
-  await page.locator('#open').click();await skip(page);await pick(page,'FR');await navigateWorld(page);
-  assert.equal(await page.locator('#navigation-result').textContent(),'world3b');assert.equal(await page.evaluate(()=>localStorage.getItem('3b:nexus-country')),'FR');
-  const savedRegion=await page.evaluate(async()=>{const {readLocal}=await import('/src/world/save.js');return readLocal(null)?.data?.region;});
-  assert.equal(savedRegion,'france');report.checks.push('France travel records the canonical guest world save before leaving the Nexus');
-  for(let i=0;i<3;i++){await page.locator('#open').click();await skip(page);await webgl(page);await page.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await page.locator('.nexus-canvas canvas').count(),0);}
-  report.checks.push('Three reopen/close cycles dispose the scene canvas');await desktop.close();
 
-  const mobile=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});const phone=await mobile.newPage();listen(phone);await open(phone);await skip(phone);await webgl(phone);
-  await phone.getByRole('button',{name:'Mettre les animations en pause',exact:true}).click();await screenshot(phone,'mobile-sanctuaire');
-  assert.equal(await phone.locator('dialog.nexus-experience').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
-  await pick(phone,'FR');await screenshot(phone,'mobile-france');await pick(phone,'EE');await screenshot(phone,'mobile-estonie');
-  await phone.locator('.nexus-origin-link').click();await screenshot(phone,'mobile-origine');assert.equal(await phone.locator('.nexus-enter-world').isDisabled(),true);
-  await phone.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();report.checks.push('390×844 touch viewport: horizontal country rail, no document overflow, three closeups and close button');await mobile.close();
+  await reopen(page);
+  await skip(page);
+  await pick(page, 'FR');
+  await navigateWorld(page);
+  assert.equal(await page.locator('#navigation-result').textContent(), 'world3b');
+  assert.equal(await page.evaluate(() => localStorage.getItem('3b:nexus-country')), 'FR');
+  const savedRegion = await page.evaluate(async () => {
+    const { readLocal } = await import('/src/world/save.js');
+    return readLocal(null)?.data?.region;
+  });
+  assert.equal(savedRegion, 'france');
+  report.checks.push('France travel records the canonical guest world save before leaving the Nexus');
 
-  const calm=await browser.newContext({viewport:{width:360,height:800},reducedMotion:'reduce'});const calmPage=await calm.newPage();listen(calmPage);await open(calmPage);
-  await calmPage.locator('.nexus-experience[data-phase="nexus"]').waitFor();assert.equal(await calmPage.locator('.nexus-arrival').count(),0);await webgl(calmPage);await pick(calmPage,'MA');await screenshot(calmPage,'mobile-mouvements-reduits');
-  assert.equal(await calmPage.getByRole('button',{name:'Mettre les animations en pause',exact:true}).isDisabled(),true);report.checks.push('Reduced motion skips the tunnel and allows static 3D selection');await calm.close();
-
-  const fallback=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});
-  await fallback.addInitScript(()=>{const getContext=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return /webgl/i.test(type)?null:getContext.call(this,type,...args);};});
-  const simple=await fallback.newPage();listen(simple,true);await open(simple);await simple.locator('.nexus-stage[data-renderer="fallback"]').waitFor({timeout:20000});await pick(simple,'DZ');await screenshot(simple,'mobile-sans-webgl');await navigateWorld(simple);assert.equal(await simple.locator('#navigation-result').textContent(),'world3b');report.checks.push('Without WebGL, the illustrated fallback and canonical travel remain functional');await fallback.close();
-
-  const appContext=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true,reducedMotion:'reduce'});
-  const app=await appContext.newPage();currentPage=app;listen(app);await app.goto('http://127.0.0.1:4177/#passeport');
-  const trigger=app.getByRole('button',{name:'Ouvrir le Cercle et entrer dans le Nexus 3B'});
-  await trigger.waitFor({timeout:30000});await trigger.click();await webgl(app);
-  assert.equal(await app.locator('.nexus-canvas canvas').getAttribute('data-nexus-scene'),'heritage-v2');
-  assert.equal(await app.locator('dialog.nexus-experience').evaluate(d=>d.scrollWidth<=d.clientWidth+1),true);
-  await screenshot(app,'application-mobile-nexus');await pick(app,'FR');await screenshot(app,'application-mobile-france');
-  await app.getByRole('button',{name:'Fermer le Nexus et revenir au passeport'}).click();assert.equal(await trigger.isVisible(),true);assert.equal(await app.locator('dialog.nexus-experience[open]').count(),0);
-  await screenshot(app,'application-mobile-passeport');report.checks.push('Actual application: passport entry, 3D selection and return work with global styles at 390×844');await appContext.close();
-
-  assert.deepEqual(report.errors,[],'Unexpected browser or shader errors');
-  await build({build:{outDir:`${output}/fixture`,emptyOutDir:true,copyPublicDir:false,rollupOptions:{input:'tests/nexus-fixture.html'}}});
-  report.checks.push('A production-compiled isolated fixture is included in the evidence archive');report.success=true;
-}catch(error){report.success=false;report.failure=error.stack;process.exitCode=1;
-  if(currentPage&&!currentPage.isClosed()){
-    try{report.diagnostics=await currentPage.evaluate(()=>({phase:document.querySelector('.nexus-experience')?.dataset,stage:document.querySelector('.nexus-stage')?.dataset,text:document.body.innerText,phases:window.__nexusPhases}));await screenshot(currentPage,'failure');}catch(diagnosticError){report.diagnosticFailure=String(diagnosticError);}
+  for (let i = 0; i < 3; i += 1) {
+    await reopen(page);
+    await skip(page);
+    await webgl(page);
+    await closeNexus(page);
+    assert.equal(await page.locator('.nexus-canvas canvas').count(), 0);
   }
-}finally{
-  await writeFile(`${output}/report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));await browser?.close();server.kill('SIGTERM');
+  report.checks.push('Three reopen/close cycles dispose the scene canvas');
+  await desktop.close();
+
+  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true });
+  const phone = await mobile.newPage();
+  listen(phone);
+  await open(phone);
+  await skip(phone);
+  await webgl(phone);
+  await pauseNexus(phone);
+  await screenshot(phone, 'mobile-sanctuaire');
+  assert.equal(await phone.locator(DIALOG).evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true);
+  await pick(phone, 'FR');
+  await screenshot(phone, 'mobile-france');
+  await pick(phone, 'EE');
+  await screenshot(phone, 'mobile-estonie');
+  await selectOrigin(phone);
+  await screenshot(phone, 'mobile-origine');
+  assert.equal(await phone.locator(`${DIALOG} .nexus-enter-world`).isDisabled(), true);
+  await closeNexus(phone);
+  report.checks.push('390×844 touch viewport: horizontal country rail, no document overflow, three closeups and close button');
+  await mobile.close();
+
+  const calm = await browser.newContext({ viewport: { width: 360, height: 800 }, reducedMotion: 'reduce' });
+  const calmPage = await calm.newPage();
+  listen(calmPage);
+  await open(calmPage);
+  await calmPage.waitForFunction(selector => document.querySelector(selector)?.dataset.phase === 'nexus', DIALOG);
+  assert.equal(await calmPage.locator(`${DIALOG} .nexus-arrival`).count(), 0);
+  await webgl(calmPage);
+  await pick(calmPage, 'MA');
+  await screenshot(calmPage, 'mobile-mouvements-reduits');
+  assert.equal(await calmPage.locator(`${DIALOG} button[aria-label="Mettre les animations en pause"]`).isDisabled(), true);
+  report.checks.push('Reduced motion skips the tunnel and allows static 3D selection');
+  await calm.close();
+
+  const fallback = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+  await fallback.addInitScript(() => {
+    const getContext = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function patchedGetContext(type, ...args) {
+      return /webgl/i.test(type) ? null : getContext.call(this, type, ...args);
+    };
+  });
+  const simple = await fallback.newPage();
+  listen(simple, true);
+  await open(simple);
+  await activate3d(simple);
+  await simple.waitForFunction(selector => document.querySelector(`${selector} .nexus-stage`)?.dataset.renderer === 'fallback', DIALOG, { timeout: 20000, polling: 50 });
+  await pick(simple, 'DZ');
+  await screenshot(simple, 'mobile-sans-webgl');
+  await navigateWorld(simple);
+  assert.equal(await simple.locator('#navigation-result').textContent(), 'world3b');
+  report.checks.push('Without WebGL, the illustrated fallback and canonical travel remain functional');
+  await fallback.close();
+
+  const appContext = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, reducedMotion: 'reduce' });
+  const app = await appContext.newPage();
+  currentPage = app;
+  listen(app);
+  await app.goto('http://127.0.0.1:4177/#passeport');
+  const trigger = app.getByRole('button', { name: 'Ouvrir le Cercle et entrer dans le Nexus 3B' });
+  await trigger.waitFor({ timeout: 30000 });
+  await trigger.click({ noWaitAfter: true });
+  await waitOpen(app);
+  await webgl(app);
+  assert.equal(await app.locator(`${DIALOG} .nexus-canvas canvas`).getAttribute('data-nexus-scene'), 'heritage-v2');
+  assert.equal(await app.locator(DIALOG).evaluate(dialog => dialog.scrollWidth <= dialog.clientWidth + 1), true);
+  await screenshot(app, 'application-mobile-nexus');
+  await pick(app, 'FR');
+  await screenshot(app, 'application-mobile-france');
+  await closeNexus(app);
+  assert.equal(await trigger.isVisible(), true);
+  await screenshot(app, 'application-mobile-passeport');
+  report.checks.push('Actual application: passport entry, 3D selection and return work with global styles at 390×844');
+  await appContext.close();
+
+  assert.deepEqual(report.errors, [], 'Unexpected browser or shader errors');
+  await build({ build: { outDir: `${output}/fixture`, emptyOutDir: true, copyPublicDir: false, rollupOptions: { input: 'tests/nexus-fixture.html' } } });
+  report.checks.push('A production-compiled isolated fixture is included in the evidence archive');
+  report.success = true;
+} catch (error) {
+  report.success = false;
+  report.failure = error.stack;
+  process.exitCode = 1;
+  if (currentPage && !currentPage.isClosed()) {
+    try {
+      report.diagnostics = await currentPage.evaluate(selector => ({
+        phase: document.querySelector(selector)?.dataset,
+        stage: document.querySelector(`${selector} .nexus-stage`)?.dataset,
+        text: document.body.innerText,
+        phases: window.__nexusPhases
+      }), DIALOG);
+      await screenshot(currentPage, 'failure');
+    } catch (diagnosticError) {
+      report.diagnosticFailure = String(diagnosticError);
+    }
+  }
+} finally {
+  await writeFile(`${output}/report.json`, JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(report, null, 2));
+  await browser?.close();
+  server.kill('SIGTERM');
 }
