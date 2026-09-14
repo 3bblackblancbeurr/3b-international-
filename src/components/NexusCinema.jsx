@@ -7,6 +7,7 @@ import '../styles/nexus-portal-v5.css';
 import '../styles/nexus-v7-circle.css';
 import '../styles/nexus-v7-tunnel.css';
 import '../styles/nexus-v7-doors.css';
+import '../styles/nexus-v8-wheel.css';
 
 const TRANSIT_RINGS = Array.from({ length: 12 }, (_, index) => index);
 const TRANSIT_STREAKS = Array.from({ length: 36 }, (_, index) => index);
