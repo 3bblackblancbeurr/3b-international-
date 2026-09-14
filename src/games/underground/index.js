@@ -5,4 +5,5 @@ export * from './raceEngine.js';
 export * from './customization.js';
 export * from './vehiclePlatform.js';
 export * from './vehicleAssetPack.js';
+export * from './vehicleInspection.js';
 export {createModularVehicleProxy,updateProxyRuntime} from './ModularVehicleProxy.js';
