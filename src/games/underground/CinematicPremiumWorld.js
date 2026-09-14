@@ -1,6 +1,7 @@
 import {PremiumWorld} from './PremiumWorld.js';
 import {CinematicDetailPass} from './CinematicDetailPass.js';
 import {HeroArchitecturePass} from './HeroArchitecturePass.js';
+import {WetWeatherMicroFX} from './WetWeatherMicroFX.js';
 
 export class CinematicPremiumWorld extends PremiumWorld{
   constructor(scene,curve,event,options={}){
@@ -8,11 +9,13 @@ export class CinematicPremiumWorld extends PremiumWorld{
     const shared={quality:options.quality||'high',palette:this.palette};
     this.cinematic=new CinematicDetailPass(scene,curve,event,shared);
     this.heroArchitecture=new HeroArchitecturePass(scene,curve,event,shared);
+    this.wetMicro=new WetWeatherMicroFX(scene,event,{quality:shared.quality});
   }
   update(args={}){
     const base=super.update(args);
     const detail=this.cinematic.update({...args,wetness:base.wetness});
     const architecture=this.heroArchitecture.update(args);
+    this.wetMicro.update({...args,wetness:base.wetness});
     return {...base,...detail,...architecture};
   }
 }
