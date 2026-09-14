@@ -13,7 +13,7 @@ const TRANSIT_RINGS = Array.from({ length: 12 }, (_, index) => index);
 const TRANSIT_STREAKS = Array.from({ length: 36 }, (_, index) => index);
 const TRANSIT_GLYPHS = ['3B', '01', '10', 'H', 'B', '3', '11', '00', '3B', '01', 'B', '10', '08', '∞'];
 const SPIRAL_SPARKS = Array.from({ length: 34 }, (_, index) => index);
-const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
 /** Art-directed 2.5D presentation. Buttons, selection and seals are live React UI,
  * not a flattened replacement for the app. Travel is handled by useNexusJourney. */
