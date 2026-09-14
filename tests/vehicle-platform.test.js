@@ -1,0 +1,42 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {CUSTOMIZATION_SLOTS,normalizeCustomization} from '../src/games/underground/customization.js';
+import {DEFAULT_VEHICLE,normalizeVehicle} from '../src/games/underground/carModel.js';
+import {DEFAULT_PLATFORM_ID,DEFAULT_PLATFORM_MANIFEST,calculateStanceTransforms,partCompatibility,platformReadinessReport,resolveVehicleAssembly,slotBinding,validatePlatformContract} from '../src/games/underground/vehiclePlatform.js';
+import {createModularVehicleProxy} from '../src/games/underground/ModularVehicleProxy.js';
+
+test('every customization slot is bound to a modular platform anchor',()=>{
+  const report=validatePlatformContract();assert.equal(report.ok,true);assert.equal(report.slotCount,CUSTOMIZATION_SLOTS.length);assert.equal(report.missingSlots.length,0);assert.equal(report.invalidAnchors.length,0);
+  for(const slot of CUSTOMIZATION_SLOTS)assert.ok(slotBinding(slot.id)?.anchor,slot.id);
+});
+
+test('vehicle normalization pins a known platform without final model asset',()=>{
+  const v=normalizeVehicle({...DEFAULT_VEHICLE,platformId:'unknown-platform',modelAsset:'should-not-survive.glb'});
+  assert.equal(v.platformId,DEFAULT_PLATFORM_ID);assert.equal(v.modelAsset,null);assert.ok(v.platformVersion>=1);
+});
+
+test('assembly resolves all selected slots before any final art exists',()=>{
+  const assembly=resolveVehicleAssembly(DEFAULT_VEHICLE);assert.equal(assembly.platformId,DEFAULT_PLATFORM_ID);assert.equal(assembly.parts.length,CUSTOMIZATION_SLOTS.length);assert.equal(assembly.parts.every(p=>p.assetRef===null),true);assert.equal(assembly.decals.vinylLayers.length,0);
+});
+
+test('stance changes wheel transforms mathematically',()=>{
+  const stock=calculateStanceTransforms(normalizeCustomization());const lowered=normalizeCustomization();lowered.stance.rideHeight=1;lowered.stance.frontTrack=1;const tuned=calculateStanceTransforms(lowered);
+  assert.ok(tuned.rideOffsetM<stock.rideOffsetM);assert.ok(Math.abs(tuned.wheels.fl.position[0])>Math.abs(stock.wheels.fl.position[0]));
+});
+
+test('future part contracts can be checked against the platform',()=>{
+  const ok=partCompatibility(DEFAULT_PLATFORM_ID,{id:'future-seat',slotId:'seats',assetRef:'seat.glb',platformIds:[DEFAULT_PLATFORM_ID],materialChannels:['interior']});assert.equal(ok.ok,true);assert.equal(ok.anchor,'interior.seats');
+  const bad=partCompatibility(DEFAULT_PLATFORM_ID,{id:'bad',slotId:'not-a-slot',assetRef:'x.glb'});assert.equal(bad.ok,false);
+});
+
+test('readiness explicitly separates data-ready from art-ready',()=>{
+  const report=platformReadinessReport(DEFAULT_VEHICLE);assert.equal(report.totalSlots,CUSTOMIZATION_SLOTS.length);assert.equal(report.dataReady,true);assert.equal(report.artReady,false);assert.equal(report.missingCore.length,3);assert.ok(report.missingSelectedParts>0);
+});
+
+test('modular proxy already consumes the platform assembly',()=>{
+  const group=createModularVehicleProxy(DEFAULT_VEHICLE);assert.equal(group.name,'U3B_ModularVehicleProxy');assert.equal(group.userData.platformId,DEFAULT_PLATFORM_ID);assert.ok(group.children.length>10);group.traverse(o=>o.geometry?.dispose?.());
+});
+
+test('platform manifest stays assetless until real art arrives',()=>{
+  assert.equal(DEFAULT_PLATFORM_MANIFEST.chassisAsset,null);assert.equal(DEFAULT_PLATFORM_MANIFEST.cockpitAsset,null);assert.equal(DEFAULT_PLATFORM_MANIFEST.collisionAsset,null);
+});
