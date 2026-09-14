@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "id": "u3b-s1-original-car-pack",
+  "vehicleId": "prototype-01",
+  "platformId": "u3b-modular-platform-s1",
+  "label": "3B Original Car — S1 asset pack",
+  "core": {
+    "chassis": null,
+    "bodyShell": null,
+    "collision": null,
+    "cockpit": null,
+    "engineBay": null,
+    "trunk": null
+  },
+  "materials": {
+    "bodyPrimary": "M_CarPaint_Master",
+    "bodySecondary": "M_CarPaint_Master",
+    "accent": "M_Accent_Master",
+    "carbon": "M_Carbon_Master",
+    "glass": "M_Glass_Master",
+    "interior": "M_Interior_Master",
+    "stitch": "M_Stitch_Master",
+    "screen": "M_Screen_Master",
+    "lightFront": "M_Light_Front_Master",
+    "lightRear": "M_Light_Rear_Master",
+    "neon": "M_Neon_Master"
+  },
+  "parts": [
+    {
+      "id": "stock-seat-mesh",
+      "optionId": "seats-origine",
+      "mode": "mesh",
+      "assetRef": null,
+      "platformIds": ["u3b-modular-platform-s1"],
+      "materialChannels": ["interior", "stitch"],
+      "anchorOverride": "interior.seats",
+      "lodRefs": [],
+      "collisionRef": null,
+      "params": {}
+    },
+    {
+      "id": "paint-gloss-material",
+      "optionId": "finish-brillant",
+      "mode": "material",
+      "assetRef": null,
+      "platformIds": ["u3b-modular-platform-s1"],
+      "materialChannels": ["bodyPrimary", "bodySecondary"],
+      "anchorOverride": null,
+      "lodRefs": [],
+      "collisionRef": null,
+      "params": {
+        "roughness": 0.18,
+        "clearcoat": 0.95,
+        "clearcoatRoughness": 0.08
+      }
+    }
+  ]
+}
