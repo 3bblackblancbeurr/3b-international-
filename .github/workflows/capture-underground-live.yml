@@ -1,0 +1,54 @@
+name: Capture Underground live build
+
+on:
+  push:
+    branches: [chatgpt-underground-core-20260914]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capture-underground-live-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium for real build capture
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
+      - name: Start the actual Vite build source
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/u3b-vite.log 2>&1 &
+          echo $! > /tmp/u3b-vite.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:4173/capture/underground-live.html >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/u3b-vite.log
+          exit 1
+      - name: Capture actual WebGL gameplay renderer
+        run: |
+          npx --yes playwright@1.55.0 screenshot \
+            --browser chromium \
+            --viewport-size="1600,900" \
+            --wait-for-timeout=10000 \
+            http://127.0.0.1:4173/capture/underground-live.html \
+            /tmp/3b-underground-live-build.png
+      - name: Upload real gameplay screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3b-underground-live-build-screenshot
+          path: /tmp/3b-underground-live-build.png
+          if-no-files-found: error
+          retention-days: 7
