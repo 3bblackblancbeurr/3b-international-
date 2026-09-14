@@ -10,7 +10,7 @@ export function SectionIcon({ page, ...props }) {
 }
 
 export const NAV_GROUPS = [
-  { title: "Identité & progression", ids: ["passport", "loyalty"] },
+  { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
   { title: "Explorer 3B", ids: ["world3b", "games", "manga", "secret", "religion"] },
   { title: "Créer & partager", ids: ["ia", "community", "sport", "shop"] },
   { title: "Comprendre & progresser", ids: ["guide"] },
@@ -27,8 +27,8 @@ export function RouteLink({ page, goTo, children, ...props }) {
 const QUICK_LINKS = [
   { id: "home", label: "Accueil" },
   { id: "passport", label: "Passeport" },
+  { id: "world3b", label: "Monde 3B" },
   { id: "shop", label: "Boutique" },
-  { id: "member", label: "Mon espace" },
 ];
 
 export default function AppNavigation({ page, title, menuItems, goTo }) {
@@ -36,7 +36,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const activePage = page.startsWith("ia-") ? "ia" : page;
-  const allItems = menuItems.filter(item => item.id !== "member");
+  const allItems = menuItems;
 
   const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr");
   const matching = allItems.filter(item => normalize(`${item.label} ${item.description}`).includes(normalize(query.trim())));
@@ -104,4 +104,3 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
     </dialog>
   </>;
 }
-
