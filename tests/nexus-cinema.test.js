@@ -88,3 +88,11 @@ test('V7 uses the authentic Nexus circle, twin spark spirals and direct country 
   assert.match(arrival,/useEffect/);assert.match(arrival,/void onEnter\(\)/);assert.match(arrival,/return null/);assert.doesNotMatch(arrival,/Bienvenue|PortalArtwork|Explorer/);
   assert.match(circle,/data-arrival.*nexus-shell/);assert.match(circle,/@media\(prefers-reduced-motion:reduce\)/);
 });
+test('authentic Broken Circle ignores app calm mode but still honors OS reduced motion', () => {
+  const circle=readFileSync(new URL('../src/styles/nexus-v7-circle.css',import.meta.url),'utf8');
+  assert.match(circle,/html\[data-motion='reduced'\] \.nexus-cinema-authentic-circle img/);
+  assert.match(circle,/dialog\.nexus-experience\[data-calm='true'\] \.nexus-cinema-authentic-circle img/);
+  assert.match(circle,/animation:nexus-v7-authentic-circle-spin 16s linear infinite!important/);
+  assert.match(circle,/animation-play-state:running!important/);
+  assert.match(circle,/@media\(prefers-reduced-motion:reduce\)[\s\S]*animation:none!important/);
+});

@@ -10,5 +10,20 @@ dialog.nexus-experience[data-arrival]:not([data-arrival='none']) .nexus-shell{op
 dialog.nexus-experience[data-arrival]:not([data-arrival='none']) .nexus-stage{filter:none!important;transform:none!important}
 @keyframes nexus-v7-authentic-circle-spin{to{transform:rotate(360deg)}}
 @media(max-width:759px){.nexus-cinema-authentic-circle{width:30.5%;top:57.5%}}
-@media(prefers-reduced-motion:reduce){.nexus-cinema-authentic-circle img{animation:none!important}}
-dialog.nexus-experience[data-calm='true'] .nexus-cinema-authentic-circle img{animation-play-state:paused!important}
+
+/* The Broken Circle is a permanent Nexus landmark. App-level "calm" or disabled
+   decorative animations must not freeze it. The OS accessibility preference is
+   still authoritative and stops this motion when reduce-motion is requested. */
+html[data-motion='reduced'] .nexus-cinema-authentic-circle img,
+dialog.nexus-experience[data-calm='true'] .nexus-cinema-authentic-circle img{
+  animation:nexus-v7-authentic-circle-spin 16s linear infinite!important;
+  animation-play-state:running!important;
+}
+.nexus-experience[data-selected]:not([data-selected='overview']) .nexus-cinema-authentic-circle img{animation-duration:22s!important}
+@media(prefers-reduced-motion:reduce){
+  .nexus-cinema-authentic-circle img,
+  html[data-motion='reduced'] .nexus-cinema-authentic-circle img,
+  dialog.nexus-experience[data-calm='true'] .nexus-cinema-authentic-circle img{
+    animation:none!important;
+  }
+}

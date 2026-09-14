@@ -8,7 +8,7 @@ const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','--host','1
 const report={checks:[],errors:[],screenshots:[],note:'Real React app in Chromium; simulated screen sizes, not a physical Samsung test.'};
 let browser,currentPage;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function shot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
+async function shot(page,name){let style;try{style=await page.addStyleTag({content:'*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}html body dialog.nexus-experience[data-calm] .nexus-cinema-authentic-circle img{animation-play-state:paused!important}'});await page.screenshot({path:`${output}/${name}.png`,fullPage:false,timeout:20000});report.screenshots.push(name);}finally{if(style)await style.evaluate(element=>element.remove()).catch(()=>{});}}
 async function skipIntro(page){
   await page.waitForFunction(()=>!!document.querySelector('dialog.nexus-experience[open]'),undefined,{timeout:10000,polling:50});
   for(let i=0;i<30;i++){
@@ -42,7 +42,14 @@ try{
     const authentic=page.locator('.nexus-cinema-authentic-circle img');
     assert.equal(await authentic.count(),1);
     const circleAnimation=await authentic.evaluate(node=>getComputedStyle(node).animationName);
-    if(width===1440)assert.match(circleAnimation,/nexus-v7-authentic-circle-spin/);else assert.equal(circleAnimation,'none');
+    if(width===1440){
+      assert.match(circleAnimation,/nexus-v7-authentic-circle-spin/);
+      await page.evaluate(()=>{document.documentElement.dataset.motion='reduced';const dialog=document.querySelector('dialog.nexus-experience[open]');if(dialog)dialog.dataset.calm='true';});
+      const calmStyle=await authentic.evaluate(node=>{const style=getComputedStyle(node);return {name:style.animationName,state:style.animationPlayState,duration:style.animationDuration};});
+      assert.match(calmStyle.name,/nexus-v7-authentic-circle-spin/);assert.equal(calmStyle.state,'running');assert.match(calmStyle.duration,/16s|22s/);
+      await page.evaluate(()=>{delete document.documentElement.dataset.motion;const dialog=document.querySelector('dialog.nexus-experience[open]');if(dialog)dialog.dataset.calm='false';});
+      report.checks.push('Broken Circle keeps rotating through app calm/reduced mode when OS reduced motion is off');
+    }else assert.equal(circleAnimation,'none');
     await shot(page,`nexus-${width}`);
     for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE']){
       const target=page.locator(`.nexus-cinema-hit[data-country="${code}"]`);
