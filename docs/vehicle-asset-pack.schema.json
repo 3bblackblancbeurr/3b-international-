@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b-international.local/schemas/vehicle-asset-pack.schema.json",
+  "title": "3B Underground Vehicle Asset Pack",
+  "type": "object",
+  "required": ["version", "id", "vehicleId", "platformId", "core", "parts"],
+  "properties": {
+    "version": {"const": 1},
+    "id": {"type": "string", "minLength": 1},
+    "vehicleId": {"type": "string", "minLength": 1},
+    "platformId": {"const": "u3b-modular-platform-s1"},
+    "label": {"type": "string"},
+    "core": {
+      "type": "object",
+      "properties": {
+        "chassis": {"type": ["string", "null"]},
+        "bodyShell": {"type": ["string", "null"]},
+        "collision": {"type": ["string", "null"]},
+        "cockpit": {"type": ["string", "null"]},
+        "engineBay": {"type": ["string", "null"]},
+        "trunk": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "materials": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "parts": {
+      "type": "array",
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "required": ["id", "optionId"],
+        "properties": {
+          "id": {"type": "string"},
+          "optionId": {"type": "string"},
+          "mode": {"enum": ["mesh", "material", "light", "decal"]},
+          "assetRef": {"type": ["string", "null"]},
+          "platformIds": {"type": "array", "items": {"type": "string"}},
+          "materialChannels": {"type": "array", "items": {"type": "string"}},
+          "anchorOverride": {"type": ["string", "null"]},
+          "lodRefs": {"type": "array", "maxItems": 5, "items": {"type": "string"}},
+          "collisionRef": {"type": ["string", "null"]},
+          "params": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
