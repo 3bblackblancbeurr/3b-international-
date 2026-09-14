@@ -89,12 +89,12 @@ test('V8 isolates the authentic Broken Circle as its own rotating crop', () => {
   const wheel=readFileSync(new URL('../src/styles/nexus-v8-wheel.css',import.meta.url),'utf8');
   assert.match(cinema,/nexus-v8-wheel\.css/);
   assert.match(cinema,/nexus-cinema-authentic-wheel-art/);
-  assert.doesNotMatch(cinema,/nexus-cinema-authentic-circle[^]*<img/);
+  assert.match(cinema,/TRANSPARENT_PIXEL/);
   assert.match(wheel,/background-image:url\('\/nexus\/cinema-v1\/hall\.webp'\)/);
   assert.match(wheel,/background-size:344\.7% 408\.8%/);
   assert.match(wheel,/background-position:50% 60\.1%/);
-  assert.match(wheel,/@keyframes nexus-v8-wheel-spin/);
-  assert.match(wheel,/animation:nexus-v8-wheel-spin 10s linear infinite/);
+  assert.match(wheel,/@keyframes nexus-v7-authentic-circle-spin\{to\{transform:rotate\(720deg\)\}\}/);
+  assert.match(wheel,/animation:nexus-v7-authentic-circle-spin 16s linear infinite!important/);
   assert.match(wheel,/html\[data-motion='reduced'\] \.nexus-cinema-authentic-wheel-art/);
   assert.match(wheel,/dialog\.nexus-experience\[data-calm='true'\] \.nexus-cinema-authentic-wheel-art/);
   assert.match(wheel,/animation-play-state:running!important/);
