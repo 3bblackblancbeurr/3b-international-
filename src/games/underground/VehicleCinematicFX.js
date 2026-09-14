@@ -15,7 +15,7 @@ export function attachVehicleCinematicFX(root,{ai=false,accent='#ff203c'}={}){
 
 export function updateVehicleCinematicFX(root,{speedKph=0,wetness=.6,brake=0,time=0}={}){
   const fx=root?.userData?.cinematicFX;if(!fx)return;const speed=clamp((speedKph-70)/220),wet=clamp(wetness),br=clamp(brake);
-  fx.userData.trailMaterials.forEach((m,i)=>{m.opacity=(.025+.22*speed)*(.55+.45*wet)+br*.08;m.color.offsetHSL(0,0,.002*Math.sin(time*2+i));});
+  fx.userData.trailMaterials.forEach((m,i)=>{m.opacity=(.025+.22*speed)*(.55+.45*wet)+br*.08;m.opacity*=.96+.04*Math.sin(time*2+i);});
   fx.userData.beamMaterials.forEach(m=>{m.opacity=.012+.045*(1-speed*.35);});
   fx.userData.reflectionMaterials.forEach(m=>{m.opacity=(.025+.105*wet)*(1+.12*Math.sin(time*1.7));});
   for(const child of fx.children)if(child.geometry?.type==='BoxGeometry'){child.scale.z=.55+1.35*speed;child.position.z=(child.userData.baseZ||3.42)+1.2*speed;}
