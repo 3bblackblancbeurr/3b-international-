@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {CUSTOMIZATION_SLOTS,normalizeCustomization} from '../src/games/underground/customization.js';
 import {DEFAULT_VEHICLE,normalizeVehicle} from '../src/games/underground/carModel.js';
 import {DEFAULT_PLATFORM_ID,DEFAULT_PLATFORM_MANIFEST,calculateStanceTransforms,partCompatibility,platformReadinessReport,resolveVehicleAssembly,slotBinding,validatePlatformContract} from '../src/games/underground/vehiclePlatform.js';
+import {EMPTY_ASSET_PACK,assetPackReadiness,resolveAssetBackedAssembly,validateVehicleAssetPack} from '../src/games/underground/vehicleAssetPack.js';
 import {createModularVehicleProxy} from '../src/games/underground/ModularVehicleProxy.js';
 
 test('every customization slot is bound to a modular platform anchor',()=>{
@@ -39,4 +40,13 @@ test('modular proxy already consumes the platform assembly',()=>{
 
 test('platform manifest stays assetless until real art arrives',()=>{
   assert.equal(DEFAULT_PLATFORM_MANIFEST.chassisAsset,null);assert.equal(DEFAULT_PLATFORM_MANIFEST.cockpitAsset,null);assert.equal(DEFAULT_PLATFORM_MANIFEST.collisionAsset,null);
+});
+
+test('empty future asset pack is valid as a draft but not final-ready',()=>{
+  const validated=validateVehicleAssetPack(EMPTY_ASSET_PACK);assert.equal(validated.errors.length,0);const readiness=assetPackReadiness(EMPTY_ASSET_PACK);assert.equal(readiness.readyForProxy,true);assert.equal(readiness.readyForFinal,false);assert.equal(readiness.assetOptions,0);
+});
+
+test('asset-backed assembly can replace one selected proxy part without changing save data',()=>{
+  const selected=DEFAULT_VEHICLE.customization.selections.seats;const pack={version:1,id:'partial',platformId:DEFAULT_PLATFORM_ID,core:{},parts:[{id:'seat-art',optionId:selected,assetRef:'/cars/s1/seat.glb',platformIds:[DEFAULT_PLATFORM_ID],materialChannels:['interior']}]};
+  const resolved=resolveAssetBackedAssembly(DEFAULT_VEHICLE,pack);assert.equal(resolved.compatible,true);const seat=resolved.parts.find(p=>p.slotId==='seats');assert.equal(seat.finalAssetRef,'/cars/s1/seat.glb');assert.equal(DEFAULT_VEHICLE.customization.selections.seats,selected);
 });
