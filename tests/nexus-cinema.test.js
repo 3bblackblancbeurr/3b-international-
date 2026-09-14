@@ -74,25 +74,29 @@ test('V5 adds radar, optical lattice and reveal bloom without changing journey l
   assert.match(css,/@media\(max-width:759px\)/);assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);assert.match(css,/data-calm='true'/);assert.match(css,/passport-visual\[data-animated="false"\]/);
   assert.doesNotMatch(css,/position:\s*fixed/);assert.doesNotMatch(css,/requestAnimationFrame|setInterval/);
 });
-test('V7 uses the authentic Nexus circle, twin spark spirals and direct country handoff', () => {
+test('V7 keeps twin spark spirals, premium doors and direct country handoff', () => {
   const cinema=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
-  const circle=readFileSync(new URL('../src/styles/nexus-v7-circle.css',import.meta.url),'utf8');
   const tunnel=readFileSync(new URL('../src/styles/nexus-v7-tunnel.css',import.meta.url),'utf8');
   const doors=readFileSync(new URL('../src/styles/nexus-v7-doors.css',import.meta.url),'utf8');
   const arrival=readFileSync(new URL('../src/components/NexusCountryArrival.jsx',import.meta.url),'utf8');
-  assert.match(cinema,/nexus-cinema-authentic-circle/);assert.match(cinema,/hall\.webp/);
-  assert.doesNotMatch(cinema,/nexus-cinema-seals/);
-  assert.match(circle,/nexus-v7-authentic-circle-spin/);assert.match(circle,/\.nexus-cinema-map::before\{content:none!important/);
+  assert.match(cinema,/nexus-v7-tunnel\.css/);assert.match(cinema,/nexus-v7-doors\.css/);
   assert.match(tunnel,/nexus-v7-spiral-field/);assert.match(tunnel,/nexus-v7-spiral-a/);assert.match(tunnel,/nexus-v7-spiral-b/);assert.match(tunnel,/nexus-v7-field-drive/);
   assert.match(doors,/height:208px!important/);assert.match(doors,/\.nexus-door-choice::before/);assert.match(doors,/@media\(max-width:759px\)/);
   assert.match(arrival,/useEffect/);assert.match(arrival,/void onEnter\(\)/);assert.match(arrival,/return null/);assert.doesNotMatch(arrival,/Bienvenue|PortalArtwork|Explorer/);
-  assert.match(circle,/data-arrival.*nexus-shell/);assert.match(circle,/@media\(prefers-reduced-motion:reduce\)/);
 });
-test('authentic Broken Circle ignores app calm mode but still honors OS reduced motion', () => {
-  const circle=readFileSync(new URL('../src/styles/nexus-v7-circle.css',import.meta.url),'utf8');
-  assert.match(circle,/html\[data-motion='reduced'\] \.nexus-cinema-authentic-circle img/);
-  assert.match(circle,/dialog\.nexus-experience\[data-calm='true'\] \.nexus-cinema-authentic-circle img/);
-  assert.match(circle,/animation:nexus-v7-authentic-circle-spin 16s linear infinite!important/);
-  assert.match(circle,/animation-play-state:running!important/);
-  assert.match(circle,/@media\(prefers-reduced-motion:reduce\)[\s\S]*animation:none!important/);
+test('V8 isolates the authentic Broken Circle as its own rotating crop', () => {
+  const cinema=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
+  const wheel=readFileSync(new URL('../src/styles/nexus-v8-wheel.css',import.meta.url),'utf8');
+  assert.match(cinema,/nexus-v8-wheel\.css/);
+  assert.match(cinema,/nexus-cinema-authentic-wheel-art/);
+  assert.doesNotMatch(cinema,/nexus-cinema-authentic-circle[^]*<img/);
+  assert.match(wheel,/background-image:url\('\/nexus\/cinema-v1\/hall\.webp'\)/);
+  assert.match(wheel,/background-size:344\.7% 408\.8%/);
+  assert.match(wheel,/background-position:50% 60\.1%/);
+  assert.match(wheel,/@keyframes nexus-v8-wheel-spin/);
+  assert.match(wheel,/animation:nexus-v8-wheel-spin 10s linear infinite/);
+  assert.match(wheel,/html\[data-motion='reduced'\] \.nexus-cinema-authentic-wheel-art/);
+  assert.match(wheel,/dialog\.nexus-experience\[data-calm='true'\] \.nexus-cinema-authentic-wheel-art/);
+  assert.match(wheel,/animation-play-state:running!important/);
+  assert.match(wheel,/@media\(prefers-reduced-motion:reduce\)[\s\S]*animation:none!important/);
 });
