@@ -28,10 +28,7 @@ function concrete(size=192){
 }
 
 export function createProceduralSurfacePack(){return {asphalt:asphalt(),limestone:limestone(),concrete:concrete()};}
-
-function apply(mat,pack,{bumpScale=.08,roughnessMap=true,map=true}={}){
-  if(!mat||!pack)return;if(map)mat.map=pack.color||null;if(pack.bump){mat.bumpMap=pack.bump;mat.bumpScale=bumpScale;}if(roughnessMap&&pack.rough)mat.roughnessMap=pack.rough;mat.needsUpdate=true;
-}
+function apply(mat,pack,{bumpScale=.08,roughnessMap=true,map=true}={}){if(!mat||!pack)return;if(map)mat.map=pack.color||null;if(pack.bump){mat.bumpMap=pack.bump;mat.bumpScale=bumpScale;}if(roughnessMap&&pack.rough)mat.roughnessMap=pack.rough;mat.needsUpdate=true;}
 
 export class SurfaceUpgradeV7{
   constructor(world){
@@ -40,6 +37,7 @@ export class SurfaceUpgradeV7{
     apply(world?.materials?.shoulder,this.pack.concrete,{bumpScale:.05,roughnessMap:false});
     apply(world?.materials?.stone,this.pack.limestone,{bumpScale:.09,roughnessMap:true});
     const gm=world?.geometryV6?.materials;if(gm){apply(gm.stone,this.pack.limestone,{bumpScale:.10});apply(gm.stoneDark,this.pack.concrete,{bumpScale:.06,roughnessMap:false});apply(gm.tunnel,this.pack.concrete,{bumpScale:.035,roughnessMap:false});}
+    const cm=world?.compositionV7?.mats;if(cm){apply(cm.stone,this.pack.limestone,{bumpScale:.10});apply(cm.base,this.pack.concrete,{bumpScale:.055,roughnessMap:false});apply(cm.sidewalk,this.pack.concrete,{bumpScale:.04,roughnessMap:false});apply(cm.trim,this.pack.limestone,{bumpScale:.04});}
   }
   dispose(){for(const family of Object.values(this.pack))for(const tex of Object.values(family))tex?.dispose?.();}
 }
