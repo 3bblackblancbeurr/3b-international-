@@ -1,5 +1,6 @@
 import {VEHICLE_CLASSES} from './data.js';
 import {DEFAULT_CUSTOMIZATION,normalizeCustomization} from './customization.js';
+import {DEFAULT_PLATFORM_ID,VEHICLE_PLATFORM_VERSION,normalizePlatformId} from './vehiclePlatform.js';
 
 const G=9.80665,RHO=1.225;
 export const UPGRADE_KEYS=['engine','intake','ecu','fuel','exhaust','turbo','intercooler','cooling','clutch','transmission','differential','tires','brakes','suspension','aero','weight','nitrous','electronics'];
@@ -13,6 +14,7 @@ export const DEFAULT_TUNE=Object.freeze({
 
 export const DEFAULT_VEHICLE={
   id:'prototype-01',name:'Prototype 3B',modelAsset:null,
+  platformId:DEFAULT_PLATFORM_ID,platformVersion:VEHICLE_PLATFORM_VERSION,bodyStyle:'sports-coupe',
   massKg:1420,powerKw:170,torqueNm:330,drive:'RWD',gears:6,
   cd:0.31,frontalAreaM2:2.08,rollingResistance:0.012,
   tireMu:1.04,brakeMu:1.15,wheelbaseM:2.68,maxSteerRad:0.57,
@@ -27,6 +29,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 export function normalizeVehicle(vehicle=DEFAULT_VEHICLE){
   const v={...DEFAULT_VEHICLE,...vehicle,modelAsset:null};
+  v.platformId=normalizePlatformId(vehicle?.platformId);v.platformVersion=VEHICLE_PLATFORM_VERSION;v.bodyStyle=typeof vehicle?.bodyStyle==='string'?vehicle.bodyStyle:DEFAULT_VEHICLE.bodyStyle;
   v.upgrades={...DEFAULT_VEHICLE.upgrades,...(vehicle?.upgrades||{})};
   v.tune={...DEFAULT_TUNE,...(vehicle?.tune||{})};
   for(const k of Object.keys(v.tune))v.tune[k]=clamp(Number(v.tune[k])||0,0,1);
