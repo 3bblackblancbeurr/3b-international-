@@ -4,6 +4,7 @@ import {CUSTOMIZATION_SLOTS,normalizeCustomization} from '../src/games/undergrou
 import {DEFAULT_VEHICLE,normalizeVehicle} from '../src/games/underground/carModel.js';
 import {DEFAULT_PLATFORM_ID,DEFAULT_PLATFORM_MANIFEST,calculateStanceTransforms,partCompatibility,platformReadinessReport,resolveVehicleAssembly,slotBinding,validatePlatformContract} from '../src/games/underground/vehiclePlatform.js';
 import {EMPTY_ASSET_PACK,assetPackReadiness,resolveAssetBackedAssembly,validateVehicleAssetPack} from '../src/games/underground/vehicleAssetPack.js';
+import {INSPECTION_PRESETS,inspectionState,validateInspectionContract,VEHICLE_MECHANISMS} from '../src/games/underground/vehicleInspection.js';
 import {createModularVehicleProxy} from '../src/games/underground/ModularVehicleProxy.js';
 
 test('every customization slot is bound to a modular platform anchor',()=>{
@@ -54,4 +55,8 @@ test('asset-backed assembly can replace one selected proxy part without changing
 test('material-only customization can be defined without duplicating a mesh',()=>{
   const finish=DEFAULT_VEHICLE.customization.selections.finish;const pack={version:1,id:'material-partial',platformId:DEFAULT_PLATFORM_ID,parts:[{id:'paint-finish',optionId:finish,mode:'material',materialChannels:['bodyPrimary'],params:{roughness:.22,clearcoat:.9}}]};
   const validated=validateVehicleAssetPack(pack);assert.equal(validated.errors.length,0);assert.equal(validated.warnings.some(x=>x===`part-asset-missing:${finish}`),false);const resolved=resolveAssetBackedAssembly(DEFAULT_VEHICLE,pack);const paint=resolved.parts.find(p=>p.slotId==='finish');assert.deepEqual(paint.materialParams,{roughness:.22,clearcoat:.9});
+});
+
+test('inspection contract opens detachable areas without final art',()=>{
+  const contract=validateInspectionContract();assert.equal(contract.ok,true);assert.ok(contract.mechanisms>=4);assert.ok(contract.presets>=8);const engine=inspectionState(DEFAULT_VEHICLE,'engineBay');assert.equal(engine.mechanisms.hood.amount,1);assert.equal(engine.mechanisms.trunk.amount,0);assert.ok(engine.visibleGroups.includes('engineBay'));assert.equal(INSPECTION_PRESETS.cockpit.open.includes('doorRight'),true);assert.ok(VEHICLE_MECHANISMS.trunk.exposes.includes('audio.trunk'));
 });
