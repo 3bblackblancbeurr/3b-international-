@@ -43,10 +43,15 @@ test('platform manifest stays assetless until real art arrives',()=>{
 });
 
 test('empty future asset pack is valid as a draft but not final-ready',()=>{
-  const validated=validateVehicleAssetPack(EMPTY_ASSET_PACK);assert.equal(validated.errors.length,0);const readiness=assetPackReadiness(EMPTY_ASSET_PACK);assert.equal(readiness.readyForProxy,true);assert.equal(readiness.readyForFinal,false);assert.equal(readiness.assetOptions,0);
+  const validated=validateVehicleAssetPack(EMPTY_ASSET_PACK);assert.equal(validated.errors.length,0);const readiness=assetPackReadiness(EMPTY_ASSET_PACK);assert.equal(readiness.readyForProxy,true);assert.equal(readiness.readyForFinal,false);assert.equal(readiness.meshAssetOptions,0);assert.equal(readiness.materialDefinitions,0);assert.ok(readiness.meshOptionTotal>0);assert.ok(readiness.materialOptionTotal>0);
 });
 
 test('asset-backed assembly can replace one selected proxy part without changing save data',()=>{
   const selected=DEFAULT_VEHICLE.customization.selections.seats;const pack={version:1,id:'partial',platformId:DEFAULT_PLATFORM_ID,core:{},parts:[{id:'seat-art',optionId:selected,assetRef:'/cars/s1/seat.glb',platformIds:[DEFAULT_PLATFORM_ID],materialChannels:['interior']}]};
   const resolved=resolveAssetBackedAssembly(DEFAULT_VEHICLE,pack);assert.equal(resolved.compatible,true);const seat=resolved.parts.find(p=>p.slotId==='seats');assert.equal(seat.finalAssetRef,'/cars/s1/seat.glb');assert.equal(DEFAULT_VEHICLE.customization.selections.seats,selected);
+});
+
+test('material-only customization can be defined without duplicating a mesh',()=>{
+  const finish=DEFAULT_VEHICLE.customization.selections.finish;const pack={version:1,id:'material-partial',platformId:DEFAULT_PLATFORM_ID,parts:[{id:'paint-finish',optionId:finish,mode:'material',materialChannels:['bodyPrimary'],params:{roughness:.22,clearcoat:.9}}]};
+  const validated=validateVehicleAssetPack(pack);assert.equal(validated.errors.length,0);assert.equal(validated.warnings.some(x=>x===`part-asset-missing:${finish}`),false);const resolved=resolveAssetBackedAssembly(DEFAULT_VEHICLE,pack);const paint=resolved.parts.find(p=>p.slotId==='finish');assert.deepEqual(paint.materialParams,{roughness:.22,clearcoat:.9});
 });
