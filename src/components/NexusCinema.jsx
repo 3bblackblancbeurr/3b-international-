@@ -24,7 +24,7 @@ export function NexusCinemaHall({ selected, onSelect, doors = [], originEnabled 
         alt="" decoding="async" fetchPriority="high" onError={onFailure} />
       <div className="nexus-cinema-light" aria-hidden="true" />
       <div className="nexus-cinema-authentic-circle" aria-hidden="true">
-        <img src={`${NEXUS_CINEMA_ASSETS}/hall.webp`} width="941" height="1116" alt="" decoding="async" />
+        <span className="nexus-cinema-authentic-wheel-art" />
       </div>
       <div className="nexus-cinema-hotspots" role="group" aria-label="Sélection des portes dans le décor">
         {NEXUS_WORLDS.map(world => {
