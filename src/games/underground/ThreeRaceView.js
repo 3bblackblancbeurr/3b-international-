@@ -5,6 +5,7 @@ import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {CinematicPremiumWorld} from './CinematicPremiumWorld.js';
 import {createModularVehicleProxy,updateProxyRuntime} from './ModularVehicleProxy.js';
+import {attachVehicleCinematicFX,updateVehicleCinematicFX} from './VehicleCinematicFX.js';
 import {cameraFov,chooseQuality,internalPixelRatio,QUALITY_PROFILES} from './visualConfig.js';
 import './visual-premium.css';
 
@@ -20,7 +21,6 @@ function trackCurve(event){
   }
   return new THREE.CatmullRomCurve3(pts,true,'catmullrom',.25);
 }
-
 function hardwareProfile(canvas){const nav=typeof navigator!=='undefined'?navigator:{};return chooseQuality({width:canvas.clientWidth||1280,height:canvas.clientHeight||720,dpr:window.devicePixelRatio||1,memoryGb:nav.deviceMemory||8,cores:nav.hardwareConcurrency||8});}
 
 export class ThreeRaceView{
@@ -33,8 +33,8 @@ export class ThreeRaceView{
   }
   buildWorld(){
     this.world=new CinematicPremiumWorld(this.scene,this.curve,this.event,{quality:this.profile,shadowMap:this.profileData.shadowMap});
-    this.player=createModularVehicleProxy(this.vehicle);this.player.name='U3B_PlayerVehicle';this.scene.add(this.player);
-    this.aiCars=Array.from({length:8},(_,i)=>{const m=createModularVehicleProxy(undefined,{ai:true,accentOverride:i%2?'#3f78ff':'#e64444'});m.name=`U3B_AI_${i+1}`;m.scale.multiplyScalar(.96);this.scene.add(m);return m;});
+    this.player=createModularVehicleProxy(this.vehicle);this.player.name='U3B_PlayerVehicle';attachVehicleCinematicFX(this.player,{accent:'#ff203c'});this.scene.add(this.player);
+    this.aiCars=Array.from({length:8},(_,i)=>{const accent=i%2?'#3f78ff':'#e64444',m=createModularVehicleProxy(undefined,{ai:true,accentOverride:accent});m.name=`U3B_AI_${i+1}`;m.scale.multiplyScalar(.96);attachVehicleCinematicFX(m,{ai:true,accent});this.scene.add(m);return m;});
   }
   setupPostFX(){
     if(!this.postFxEnabled)return;
@@ -49,8 +49,9 @@ export class ThreeRaceView{
     if(Math.abs(next-this.pixelRatio)>.02){this.pixelRatio=next;this.renderer.setPixelRatio(this.pixelRatio);this.resize();}
   }
   render(session,dt=.016){
-    this.elapsed+=dt;const total=session.totalDistanceM,{u,p,t,side}=this.place(this.player,session.player.distanceM,total,session.player.lane),speed=session.player.state.speedMps*3.6;updateProxyRuntime(this.player,this.vehicle,{speedKph:speed,time:this.elapsed});
-    session.ai.forEach((ai,i)=>{if(this.aiCars[i]){const car=this.aiCars[i];car.visible=true;this.place(car,ai.distanceM,total,ai.lane);updateProxyRuntime(car,undefined,{speedKph:(ai.state?.speedMps||session.player.state.speedMps*.92)*3.6,time:this.elapsed+i*.13});}});for(let i=session.ai.length;i<this.aiCars.length;i++)this.aiCars[i].visible=false;
+    this.elapsed+=dt;const total=session.totalDistanceM,{u,p,t,side}=this.place(this.player,session.player.distanceM,total,session.player.lane),speed=session.player.state.speedMps*3.6;
+    updateProxyRuntime(this.player,this.vehicle,{speedKph:speed,time:this.elapsed,brake:session.player.brake||0,steer:session.player.lane||0});updateVehicleCinematicFX(this.player,{speedKph:speed,wetness:this.visualState?.wetness??.7,brake:session.player.brake||0,time:this.elapsed});
+    session.ai.forEach((ai,i)=>{if(this.aiCars[i]){const car=this.aiCars[i],aiSpeed=(ai.state?.speedMps||session.player.state.speedMps*.92)*3.6;car.visible=true;this.place(car,ai.distanceM,total,ai.lane);updateProxyRuntime(car,undefined,{speedKph:aiSpeed,time:this.elapsed+i*.13});updateVehicleCinematicFX(car,{speedKph:aiSpeed,wetness:this.visualState?.wetness??.7,time:this.elapsed+i*.17});}});for(let i=session.ai.length;i<this.aiCars.length;i++)this.aiCars[i].visible=false;
     const speedT=clamp(speed/300,0,1),back=9.5+clamp(speed*.0135,0,4.25),height=3.7+speedT*.9,target=p.clone().add(new THREE.Vector3(0,1.0,0)),bob=Math.sin(this.elapsed*4.2)*.012*speedT,cam=target.clone().addScaledVector(t,-back).add(new THREE.Vector3(0,height+bob,0)).addScaledVector(side,session.player.lane*.20);
     this.camera.position.lerp(cam,1-Math.pow(.0025,dt));const look=target.clone().addScaledVector(t,11+speed*.029).addScaledVector(side,(session.player.state.yaw||0)*.16);this.camera.lookAt(look);
     const desiredRoll=clamp(-(session.player.state.yaw||0)*.012-session.player.lane*.0045,-.028,.028);this.camera.rotation.z=THREE.MathUtils.lerp(this.camera.rotation.z,desiredRoll,1-Math.pow(.045,dt));
@@ -59,7 +60,5 @@ export class ThreeRaceView{
     this.renderer.toneMappingExposure=THREE.MathUtils.lerp(this.renderer.toneMappingExposure,visual.exposure,1-Math.pow(.02,dt));if(this.bloom)this.bloom.strength=this.bloomBase*(.78+.32*visual.wetness+.08*Math.sin(this.elapsed*.6));this.adaptResolution(dt);
     if(this.composer)this.composer.render(dt);else this.renderer.render(this.scene,this.camera);
   }
-  dispose(){
-    this.composer?.dispose?.();this.scene.traverse(o=>{if(o.geometry)o.geometry.dispose?.();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m.dispose?.());}});this.renderer.dispose();
-  }
+  dispose(){this.composer?.dispose?.();this.scene.traverse(o=>{if(o.geometry)o.geometry.dispose?.();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>m.dispose?.());}});this.renderer.dispose();}
 }
