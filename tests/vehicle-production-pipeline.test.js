@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {normalizeVehicle} from '../src/games/underground/carModel.js';
 import {GOLD_MASTER_COUNTRY_ORDER,GOLD_MASTER_VEHICLES,GOLD_MASTER_BY_ID,goldMastersForCountry,vehicleProductionCatalogReport} from '../src/games/underground/productionCatalog.js';
 import {createProductionState,countryProductionReport,globalProductionReport,nextProductionGate,updateVehicleProduction} from '../src/games/underground/productionPipeline.js';
 import {bindGoldMasterAsset,createGoldMasterVehicle} from '../src/games/underground/productionVehicleFactory.js';
@@ -39,10 +41,11 @@ test('production gates do not pretend art is ready before GLB, capture and valid
   assert.equal(global.totals.validated,0);
 });
 
-test('a Gold Master can be bound to a real GLB without lying about production readiness',()=>{
+test('real GLB paths survive vehicle normalization and can enter production state',()=>{
   const id='u3b-gm-france-paris',asset=GOLD_MASTER_BY_ID[id].expectedAsset;
   const vehicle=createGoldMasterVehicle(id,{modelAsset:asset});
   assert.equal(vehicle.modelAsset,asset);
+  assert.equal(normalizeVehicle(vehicle).modelAsset,asset);
   assert.equal(vehicle.productionRef,id);
   const rebound=bindGoldMasterAsset(vehicle,asset);
   assert.equal(rebound.modelAsset,asset);
@@ -51,4 +54,15 @@ test('a Gold Master can be bound to a real GLB without lying about production re
   const report=countryProductionReport('france',state);
   assert.equal(report.counts.mesh,1);
   assert.equal(report.counts.integration,0);
+});
+
+test('race renderer and Vehicle Lab both contain production GLB loading with proxy fallback',()=>{
+  const race=fs.readFileSync(new URL('../src/games/underground/ThreeRaceView.js',import.meta.url),'utf8');
+  const lab=fs.readFileSync(new URL('../src/games/underground/VehicleLabPreview.jsx',import.meta.url),'utf8');
+  for(const source of [race,lab]){
+    assert.match(source,/loadProductionVehicle/);
+    assert.match(source,/proxy/i);
+  }
+  assert.match(race,/vehicleAssetState/);
+  assert.match(lab,/MODÈLE 3D GOLD MASTER/);
 });
