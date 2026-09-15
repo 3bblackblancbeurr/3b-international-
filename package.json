@@ -8,7 +8,8 @@
     "dev:api": "node --env-file-if-exists=.env.local scripts/shop-server.js",
     "test": "node --test tests/*.test.js",
     "verify": "node scripts/verify-world.mjs",
-    "validate:vehicle-pack": "node scripts/validate-vehicle-pack.mjs"
+    "validate:vehicle-pack": "node scripts/validate-vehicle-pack.mjs",
+    "validate:vehicle-production": "node scripts/validate-vehicle-production.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",
