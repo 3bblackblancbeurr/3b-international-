@@ -5,6 +5,7 @@ import "./shop.css";
 import {useLoyalty} from "../loyalty/LoyaltyContext.jsx";
 import {checkoutAuth} from "../loyalty/client.js";
 import {discountFor} from "../../shared/loyalty.js";
+import { MyOrdersPanel, SellerOrdersPanel } from "./OrderPanels.jsx";
 
 const money = (amount, currency = "eur") => new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount / 100);
 const variantLabel = item => [item.color, item.logoCountry, item.size && item.size !== "Taille unique" ? item.size : ""].filter(Boolean).join(" · ");
@@ -78,7 +79,7 @@ function ProductCard({ variants, onAdd, disabled, shippingIncluded }) {
           </label>
         ) : <p className="shop-variant">{variantLabel(product)}</p>}
         <CountryChoices />
-        <div className="shop-delivery-note"><Truck size={18} aria-hidden="true" /> France : expédition/livraison annoncée sous 2 à 3 jours après paiement confirmé.</div>
+        <div className="shop-delivery-note"><Truck size={18} aria-hidden="true" /> Après paiement : prise en charge par 3B sous 5 jours maximum, puis expédition sous 2 jours.</div>
         <button type="button" className="shop-button" disabled={disabled}
           onClick={() => onAdd(product)} aria-label={`Ajouter ${product.name} ${variantLabel(product)} au panier`}>
           <ShoppingBag size={18} aria-hidden="true" /> Ajouter au panier
@@ -98,7 +99,7 @@ function PullPreview() {
         <p>Pull premium noir ou blanc avec relief 3B International. Choisis l’un des huit logos brodés thermocollants à chaud.</p>
         <div className="shop-product-price"><strong>80,00 €</strong><span>TTC · livraison France incluse</span></div>
         <CountryChoices />
-        <div className="shop-delivery-note"><Truck size={18} aria-hidden="true" /> France : 2 à 3 jours après paiement confirmé.</div>
+        <div className="shop-delivery-note"><Truck size={18} aria-hidden="true" /> Après paiement : prise en charge sous 5 jours maximum, puis expédition sous 2 jours.</div>
         <div className="shop-preview-status"><BadgeCheck size={18} aria-hidden="true" /> Présentation en ligne. Le bouton de paiement s’active uniquement quand Stripe et les paramètres vendeur sont complètement validés.</div>
         <button type="button" className="shop-button" disabled><ShoppingBag size={18} aria-hidden="true" /> Paiement bientôt disponible</button>
       </div>
@@ -237,10 +238,11 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
       </div>}
       {returnState.action === "success" && <div className="shop-confirmation" role="status" aria-live="polite">
         {confirmation?.state === "paid" ? <>
-          <CheckCircle2 aria-hidden="true" /><h2>Merci pour ta commande.</h2>
+          <CheckCircle2 aria-hidden="true" /><h2>Paiement reçu.</h2>
           <p>Paiement confirmé : {money(confirmation.amount, confirmation.currency)}.</p>
+          <p><strong>Statut : en attente de prise en charge par 3B.</strong> La commande sera prise en charge sous 5 jours maximum. Après validation vendeur, l’expédition est prévue sous 2 jours.</p>
           <p>Référence : <strong>{confirmation.reference}</strong></p>
-          <button type="button" className="shop-text-button" onClick={dismissReturn}>Continuer mes découvertes</button>
+          <button type="button" className="shop-text-button" onClick={dismissReturn}>Voir le suivi de ma commande</button>
         </> : confirmation?.state === "expired" ? <>
           <h2>Cette session de paiement a expiré.</h2>
           <p>Ton panier est conservé.</p>
@@ -293,7 +295,7 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
             <div><dt>Livraison</dt><dd>{catalog?.shipping ? (shippingIncluded ? "Incluse" : money(catalog.shipping.amount)) : "À confirmer"}</dd></div>
             {catalog?.shipping && !invalidCart && <div className="shop-total"><dt>Total TTC</dt><dd>{money(subtotal + catalog.shipping.amount)}</dd></div>}
           </dl>}
-          {catalog?.shipping && <p className="shop-muted">Livraison : {catalog.shipping.countries.map(code => new Intl.DisplayNames(["fr"], { type: "region" }).of(code)).join(", ")}. Délai annoncé en France : 2 à 3 jours après paiement confirmé.</p>}
+          {catalog?.shipping && <p className="shop-muted">Livraison France incluse. Après paiement : prise en charge sous 5 jours maximum, puis expédition sous 2 jours.</p>}
           {invalidCart && catalog && <p className="shop-error" role="alert">Un article est indisponible ou sa quantité a changé. Ajuste ton panier avant de payer.</p>}
           <button type="button" className="shop-button shop-pay" onClick={checkout}
             disabled={busy || resolvingPayment || !catalog?.enabled || !cart.length || invalidCart || !!loadError}>
@@ -305,6 +307,10 @@ export default function ShopPage({ goTo, reducedMotion = false }) {
             <button type="button" className="shop-text-button" onClick={() => setReload(n => n + 1)}>Actualiser la collection</button></div>}
         </aside>
       </div>
+
+      <MyOrdersPanel enabled={!!account.profile} />
+      <SellerOrdersPanel enabled={account.profile?.handle === "3b.moderation"} />
+
       <nav className="shop-footer" aria-label="Informations de vente">
         {Object.entries(catalog?.links || {}).filter(([, url]) => url).map(([key, url]) => <a key={key} href={url} target="_blank" rel="noopener noreferrer">{LINK_NAMES[key]}</a>)}
       </nav>
