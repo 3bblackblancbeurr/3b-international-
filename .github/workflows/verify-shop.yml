@@ -29,5 +29,5 @@ jobs:
       - run: npm ci
       - name: Build application
         run: npm run build
-      - name: Test seller and customer order workflow
-        run: node --test tests/shop-order-workflow.test.js
+      - name: Test seller, customer and notification workflow
+        run: node --test tests/shop-order-workflow.test.js tests/shop-notifications.test.js
