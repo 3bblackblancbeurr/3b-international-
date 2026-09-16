@@ -66,6 +66,7 @@ function publicPrice(price) {
   return { id: price.id, productId: product.metadata?.shop_group || product.id, name: product.metadata?.shop_name || product.name,
     description: product.description || "", image: safeUrl(product.images?.[0]),
     size: metadata.size || "Taille unique", color: metadata.color || "",
+    logoCountry: metadata.logo_country || "",
     amount: price.unit_amount, currency: "eur", livemode: price.livemode,
     maxQuantity: Number.isInteger(max) && max > 0 ? Math.min(max, 5) : 5 };
 }
@@ -128,28 +129,31 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     }
     return client;
   }
+
   async function catalog() {
     if (!env.STRIPE_SECRET_KEY) return [];
     if (config.catalogMode === "metadata") {
       const items = [];
       let cursor;
-      // Only explicitly published products and their current default price are sellable.
-      // Read Stripe directly on each request, including checkout, without a stale search index.
+      // Products are explicitly published with shop_visible=true.
+      // Every active one-time EUR price becomes a server-authorized variant.
       for (let page = 0; page < 5; page++) {
         const result = await stripe().products.list({ active: true, limit: 100,
-          expand: ["data.default_price"], ...(cursor ? { starting_after: cursor } : {}) });
+          ...(cursor ? { starting_after: cursor } : {}) });
         for (const product of result.data) {
           if (product.metadata?.shop_visible !== "true") continue;
-          const price = product.default_price;
-          const item = price && typeof price === "object" ? publicPrice({ ...price, product }) : null;
-          if (item) items.push(item);
+          const prices = await stripe().prices.list({ product: product.id, active: true, type: "one_time", limit: 100 });
+          if (prices.has_more) throw new ShopError(503, UNAVAILABLE);
+          for (const price of prices.data) {
+            const item = publicPrice({ ...price, product });
+            if (item) items.push(item);
+          }
         }
         if (!result.has_more) return items;
         const next = result.data.at(-1)?.id;
         if (!next || next === cursor) throw new ShopError(503, UNAVAILABLE);
         cursor = next;
       }
-      // Never expose a silently truncated catalogue or authorize its partial contents.
       throw new ShopError(503, UNAVAILABLE);
     }
     if (config.catalogMode !== "allowlist") throw new ShopError(503, UNAVAILABLE);
@@ -159,6 +163,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     const prices = await Promise.all(config.priceIds.map(id => stripe().prices.retrieve(id, { expand: ["product"] })));
     return prices.map(publicPrice).filter(Boolean);
   }
+
   async function shipping() {
     if (!config.shippingRateId) return null;
     const rate = await stripe().shippingRates.retrieve(config.shippingRateId);
@@ -167,6 +172,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       || (config.automaticTax && rate.tax_behavior !== "inclusive")) throw new ShopError(503, UNAVAILABLE);
     return { name: rate.display_name, amount: rate.fixed_amount.amount, currency: "eur", countries: config.countries };
   }
+
   async function ordersRequest(method, body) {
     const base = safeUrl(env.SUPABASE_URL);
     if (!base || !env.SUPABASE_SERVICE_ROLE_KEY) throw new ShopError(503, "La confirmation de commande est temporairement indisponible.");
@@ -179,6 +185,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     }, ...(body ? { body: JSON.stringify(body) } : {}) });
     if (!response.ok) throw new ShopError(503, "La confirmation prend un peu de temps. Ne repaie pas ; réessaie la vérification dans un instant.");
   }
+
   async function savePaidOrder(session) {
     if (session.metadata?.integration !== INTEGRATION || session.mode !== "payment"
       || session.status !== "complete" || session.payment_status !== "paid") return false;
@@ -194,22 +201,24 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       items: lines.data.map(item => ({ price_id: item.price?.id, description: item.description,
         quantity: item.quantity, amount_total: item.amount_total, currency: item.currency,
         size: item.price?.metadata?.size || item.price?.product?.metadata?.size || null,
-        color: item.price?.metadata?.color || item.price?.product?.metadata?.color || null })),
+        color: item.price?.metadata?.color || item.price?.product?.metadata?.color || null,
+        logo_country: item.price?.metadata?.logo_country || item.price?.product?.metadata?.logo_country || null })),
     });
     await loyalty.purchase(session,lines.data,stripe());
     return true;
   }
+
   function wrap(method, fn) {
     return async request => {
       if (request.method !== method) return json({ error: "Méthode non autorisée." }, 405, { Allow: method });
       try { return await fn(request); }
       catch (error) {
-        // Never echo Stripe errors, request bodies, keys or customer details.
         return json({ error: error instanceof ShopError ? error.message : "Le service est momentanément indisponible. Réessaie dans un instant." },
           error instanceof ShopError ? error.status : 503);
       }
     };
   }
+
   return {
     catalog: wrap("GET", async () => {
       const items = await catalog();
@@ -219,6 +228,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
         links: { terms: config.termsUrl, privacy: config.privacyUrl, shipping: config.shippingUrl,
           returns: config.returnsUrl, legal: config.legalUrl } });
     }),
+
     checkout: wrap("POST", async request => {
       if (!config.enabled) throw new ShopError(503, UNAVAILABLE);
       if (request.headers.get("origin") !== config.origin) throw new ShopError(403, "Origine de la demande invalide.");
@@ -234,7 +244,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       try { member=await loyalty.member(request); } catch { throw new ShopError(401,"Reconnecte-toi au compte 3B pour vérifier tes avantages avant le paiement."); }
       const lines = normalizeCart(body, await catalog());
       await shipping();
-      await ordersRequest("GET"); // Refuse checkout if durable order storage is unavailable.
+      await ordersRequest("GET");
       const digest = createHash("sha256").update(JSON.stringify({ lines, origin: config.origin, shipping: config.shippingRateId, member: member?.id || null, discount: member?.discount || 0 })).digest("hex");
       const coupon = member?.discount ? await loyaltyCoupon(stripe(),member.discount) : null;
       const loyaltyMetadata = member ? {loyalty_user_id:member.id,loyalty_discount:String(member.discount)} : {};
@@ -257,6 +267,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
         "Set-Cookie": `${cookieName(session.id)}=${cookieValue(session.id, env.STRIPE_SECRET_KEY)}; HttpOnly; SameSite=Lax; Path=/api; Max-Age=86400${secure}`,
       });
     }),
+
     status: wrap("GET", async request => {
       const id = new URL(request.url).searchParams.get("session_id") || "";
       if (!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(id) || !env.STRIPE_SECRET_KEY || !validCookie(request, id, env.STRIPE_SECRET_KEY))
@@ -264,10 +275,10 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       const session = await stripe().checkout.sessions.retrieve(id);
       if (session.metadata?.integration !== INTEGRATION) throw new ShopError(404, "Commande introuvable.");
       const paid = await savePaidOrder(session);
-      // No email, address or member identity is returned to the browser.
       return json({ paid, status: session.status, paymentStatus: session.payment_status,
         amount: session.amount_total, currency: session.currency, reference: session.id.slice(-10).toUpperCase() });
     }),
+
     webhook: wrap("POST", async request => {
       if (!env.STRIPE_WEBHOOK_SECRET) throw new ShopError(503, "Webhook non configuré.");
       const body = await readBody(request, 262144);
@@ -277,7 +288,6 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
         const incoming = event.data.object;
         if (incoming.metadata?.integration === INTEGRATION) {
-          // Re-fetch authoritative payment state. An event alone never authorizes fulfillment.
           const session = await stripe().checkout.sessions.retrieve(incoming.id);
           await savePaidOrder(session);
         }
