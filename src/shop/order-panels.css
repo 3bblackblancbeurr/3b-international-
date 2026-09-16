@@ -1,0 +1,21 @@
+.order-panel { max-width:1360px; margin:0 auto 36px; padding:0 28px; color:#fff8e8; }
+.order-panel-heading { display:flex; align-items:end; justify-content:space-between; gap:16px; flex-wrap:wrap; border-top:1px solid #6b552f; padding-top:26px; }
+.order-panel-heading h2 { margin:4px 0 10px; font-size:clamp(1.5rem,3vw,2.1rem); display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.order-panel-heading button, .seller-panel article button, .seller-alert-settings button { border:1px solid #e0bd6a; background:#e0bd6a; color:#17110a; border-radius:10px; padding:10px 14px; font-weight:700; }
+.seller-help { color:#d5cdbd; max-width:850px; line-height:1.6; }
+.order-list { display:grid; gap:14px; }
+.order-list article { border:1px solid #5e4b2e; background:#090e14; border-radius:16px; padding:18px; }
+.order-list article.order-needs-action { border-color:#d7a93f; box-shadow:0 0 0 1px #d7a93f33, 0 18px 60px #0004; }
+.order-card-head { display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:12px; }
+.order-status-line { display:flex; gap:10px; align-items:flex-start; padding:12px; border-radius:12px; background:#0c1920; border:1px solid #315467; }
+.order-status-line svg { color:#e6c56e; flex:0 0 auto; }
+.order-status-line p { margin:4px 0 0; color:#c9d1d6; }
+.order-date { color:#aeb6bc; font-size:.9rem; }
+.order-list ul { margin:10px 0 14px; padding-left:20px; color:#d9d1c2; }
+.seller-panel { padding-bottom:18px; }
+.order-count-badge { min-width:28px; height:28px; padding:0 8px; display:inline-grid; place-items:center; border-radius:999px; background:#e0bd6a; color:#17110a; font-size:.82rem; font-weight:800; }
+.seller-alert-settings { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:16px 0 20px; padding:14px 16px; border:1px solid #355b70; border-radius:14px; background:#0b1821; color:#d5e9f2; line-height:1.55; }
+.seller-alert-settings svg { flex:0 0 auto; color:#e6c56e; }
+.seller-alert-settings span { flex:1 1 360px; }
+@media (max-width:720px){ .order-panel{padding:0 16px;} .seller-alert-settings button{width:100%;} }
+.shop3b .order-panel { max-width:none; padding:0; margin:38px 0 0; }

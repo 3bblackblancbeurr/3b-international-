@@ -1,0 +1,33 @@
+name: Verify shop
+
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'server/shop*.js'
+      - 'src/shop/**'
+      - 'public/shop/**'
+      - 'public/shipping.html'
+      - 'tests/shop*.test.js'
+      - '.env.example'
+      - 'package*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-shop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build application
+        run: npm run build
+      - name: Test seller, customer and notification workflow
+        run: node --test tests/shop-order-workflow.test.js tests/shop-notifications.test.js
