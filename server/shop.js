@@ -3,10 +3,10 @@ import {createMemberCommerce,loyaltyCoupon} from "./member-commerce.js";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const INTEGRATION = "3b-shop-v1";
-// Stable random suffix identifies this integration across idempotent retries.
 const CHECKOUT_INTEGRATION = "3b-international-rxqvnmka";
 const MAX_LINES = 20;
 const MAX_ITEMS = 20;
+const DAY = 86400000;
 const UNAVAILABLE = "La boutique prépare son ouverture. Le paiement sera bientôt disponible.";
 
 export class ShopError extends Error {
@@ -45,14 +45,16 @@ export function configFrom(env) {
   const shippingUrl = safeUrl(env.SHOP_SHIPPING_URL);
   const returnsUrl = safeUrl(env.SHOP_RETURNS_URL);
   const legalUrl = safeUrl(env.SHOP_LEGAL_URL);
+  const shippingIncluded = env.SHOP_SHIPPING_INCLUDED === "true";
+  const shippingRateId = env.STRIPE_SHIPPING_RATE_ID || "";
+  const shippingConfigured = shippingIncluded || /^shr_[A-Za-z0-9]+$/.test(shippingRateId);
   const enabled = env.SHOP_ENABLED === "true" && !!origin && !!env.STRIPE_SECRET_KEY
     && !!env.STRIPE_WEBHOOK_SECRET && !!safeUrl(env.SUPABASE_URL) && !!env.SUPABASE_SERVICE_ROLE_KEY
     && !!termsUrl && !!privacyUrl && !!shippingUrl && !!returnsUrl && !!legalUrl
-    && /^shr_[A-Za-z0-9]+$/.test(env.STRIPE_SHIPPING_RATE_ID || "")
-    && catalogConfigured
+    && shippingConfigured && catalogConfigured
     && countries.length > 0 && countries.every(c => /^(FR|IT|EE|TR|DZ|TN|MA|ES)$/.test(c));
   return { origin, priceIds, catalogMode, countries, enabled, termsUrl, privacyUrl, shippingUrl, returnsUrl, legalUrl,
-    shippingRateId: env.STRIPE_SHIPPING_RATE_ID, automaticTax: env.SHOP_AUTOMATIC_TAX === "true" };
+    shippingRateId, shippingIncluded, automaticTax: env.SHOP_AUTOMATIC_TAX === "true" };
 }
 
 function publicPrice(price) {
@@ -135,8 +137,6 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     if (config.catalogMode === "metadata") {
       const items = [];
       let cursor;
-      // Products are explicitly published with shop_visible=true.
-      // Every active one-time EUR price becomes a server-authorized variant.
       for (let page = 0; page < 5; page++) {
         const result = await stripe().products.list({ active: true, limit: 100,
           ...(cursor ? { starting_after: cursor } : {}) });
@@ -165,6 +165,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
   }
 
   async function shipping() {
+    if (config.shippingIncluded) return { name: "Livraison France incluse", amount: 0, currency: "eur", countries: config.countries };
     if (!config.shippingRateId) return null;
     const rate = await stripe().shippingRates.retrieve(config.shippingRateId);
     if (!rate.active || rate.type !== "fixed_amount" || rate.fixed_amount?.currency !== "eur"
@@ -191,9 +192,12 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       || session.status !== "complete" || session.payment_status !== "paid") return false;
     const lines = await stripe().checkout.sessions.listLineItems(session.id, { limit: 100, expand: ["data.price.product"] });
     if (lines.has_more) throw new ShopError(503, "Vérification de la commande en cours.");
+    const now = new Date();
+    const loyaltyUserId = /^[0-9a-f-]{36}$/i.test(session.metadata?.loyalty_user_id || "") ? session.metadata.loyalty_user_id : null;
     await ordersRequest("POST", {
       stripe_session_id: session.id, payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
-      livemode: session.livemode, payment_status: "paid", fulfillment_status: "new",
+      livemode: session.livemode, payment_status: "paid", fulfillment_status: "awaiting_seller",
+      loyalty_user_id: loyaltyUserId, seller_due_at: new Date(now.getTime() + 5 * DAY).toISOString(), updated_at: now.toISOString(),
       amount_total: session.amount_total, currency: session.currency,
       customer_email: session.customer_details?.email || null,
       customer_name: session.customer_details?.name || null,
@@ -222,7 +226,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
   return {
     catalog: wrap("GET", async () => {
       const items = await catalog();
-      const delivery = items.length && config.shippingRateId ? await shipping() : null;
+      const delivery = items.length ? await shipping() : null;
       return json({ items, shipping: delivery, enabled: config.enabled && items.length > 0 && !!delivery,
         testMode: items.length > 0 && items.every(item => !item.livemode),
         links: { terms: config.termsUrl, privacy: config.privacyUrl, shipping: config.shippingUrl,
@@ -245,15 +249,19 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       const lines = normalizeCart(body, await catalog());
       await shipping();
       await ordersRequest("GET");
-      const digest = createHash("sha256").update(JSON.stringify({ lines, origin: config.origin, shipping: config.shippingRateId, member: member?.id || null, discount: member?.discount || 0 })).digest("hex");
+      const shippingKey = config.shippingIncluded ? "included" : config.shippingRateId;
+      const digest = createHash("sha256").update(JSON.stringify({ lines, origin: config.origin, shipping: shippingKey, member: member?.id || null, discount: member?.discount || 0 })).digest("hex");
       const coupon = member?.discount ? await loyaltyCoupon(stripe(),member.discount) : null;
       const loyaltyMetadata = member ? {loyalty_user_id:member.id,loyalty_discount:String(member.discount)} : {};
+      const shippingOptions = config.shippingIncluded
+        ? [{ shipping_rate_data: { type: "fixed_amount", fixed_amount: { amount: 0, currency: "eur" }, display_name: "Livraison France incluse" } }]
+        : [{ shipping_rate: config.shippingRateId }];
       const session = await stripe().checkout.sessions.create({
         mode: "payment", locale: "fr", submit_type: "pay", integration_identifier: CHECKOUT_INTEGRATION,
         ...(coupon ? {discounts:[{coupon}]} : {}),
         line_items: lines, billing_address_collection: "required",
         shipping_address_collection: { allowed_countries: config.countries },
-        shipping_options: [{ shipping_rate: config.shippingRateId }],
+        shipping_options: shippingOptions,
         automatic_tax: { enabled: config.automaticTax },
         consent_collection: { terms_of_service: "required" },
         metadata: { integration: INTEGRATION, ...loyaltyMetadata }, payment_intent_data: { metadata: { integration: INTEGRATION, ...loyaltyMetadata } },
