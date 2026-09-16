@@ -84,17 +84,16 @@ test('V7 keeps twin spark spirals, premium doors and direct country handoff', ()
   assert.match(doors,/height:208px!important/);assert.match(doors,/\.nexus-door-choice::before/);assert.match(doors,/@media\(max-width:759px\)/);
   assert.match(arrival,/useEffect/);assert.match(arrival,/void onEnter\(\)/);assert.match(arrival,/return null/);assert.doesNotMatch(arrival,/Bienvenue|PortalArtwork|Explorer/);
 });
-test('V8 isolates the authentic Broken Circle as its own rotating crop', () => {
+test('V8 isolates the authentic Broken Circle as its own rotating sprite', () => {
   const cinema=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
   const wheel=readFileSync(new URL('../src/styles/nexus-v8-wheel.css',import.meta.url),'utf8');
   assert.match(cinema,/nexus-v8-wheel\.css/);
   assert.match(cinema,/nexus-cinema-authentic-wheel-art/);
   assert.match(cinema,/TRANSPARENT_PIXEL/);
-  assert.match(wheel,/background-image:url\('\/nexus\/cinema-v1\/hall\.webp'\)/);
-  assert.match(wheel,/background-size:344\.7% 408\.8%/);
-  assert.match(wheel,/background-position:50% 60\.1%/);
-  assert.match(wheel,/@keyframes nexus-v7-authentic-circle-spin\{to\{transform:rotate\(720deg\)\}\}/);
-  assert.match(wheel,/animation:nexus-v7-authentic-circle-spin 16s linear infinite!important/);
+  assert.match(wheel,/\.nexus-cinema-authentic-circle\{/);
+  assert.match(wheel,/background-image:url\(["']data:image\/webp;base64,/);
+  assert.match(wheel,/@keyframes nexus-broken-circle-clockwise\{from\{transform:rotate\(0deg\)\}to\{transform:rotate\(360deg\)\}\}/);
+  assert.match(wheel,/animation:nexus-broken-circle-clockwise 16s linear infinite!important/);
   assert.match(wheel,/html\[data-motion='reduced'\] \.nexus-cinema-authentic-wheel-art/);
   assert.match(wheel,/dialog\.nexus-experience\[data-calm='true'\] \.nexus-cinema-authentic-wheel-art/);
   assert.match(wheel,/animation-play-state:running!important/);

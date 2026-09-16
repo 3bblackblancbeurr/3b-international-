@@ -43,10 +43,10 @@ try{
     assert.equal(await authentic.count(),1);
     const circleAnimation=await authentic.evaluate(node=>getComputedStyle(node).animationName);
     if(width===1440){
-      assert.match(circleAnimation,/nexus-v7-authentic-circle-spin/);
+      assert.match(circleAnimation,/nexus-broken-circle-clockwise/);
       await page.evaluate(()=>{document.documentElement.dataset.motion='reduced';const dialog=document.querySelector('dialog.nexus-experience[open]');if(dialog)dialog.dataset.calm='true';});
       const calmStyle=await authentic.evaluate(node=>{const style=getComputedStyle(node);return {name:style.animationName,state:style.animationPlayState,duration:style.animationDuration};});
-      assert.match(calmStyle.name,/nexus-v7-authentic-circle-spin/);assert.equal(calmStyle.state,'running');assert.match(calmStyle.duration,/16s|22s/);
+      assert.match(calmStyle.name,/nexus-broken-circle-clockwise/);assert.equal(calmStyle.state,'running');assert.match(calmStyle.duration,/16s|22s/);
       await page.evaluate(()=>{delete document.documentElement.dataset.motion;const dialog=document.querySelector('dialog.nexus-experience[open]');if(dialog)dialog.dataset.calm='false';});
       report.checks.push('Broken Circle keeps rotating through app calm/reduced mode when OS reduced motion is off');
     }else assert.equal(circleAnimation,'none');
