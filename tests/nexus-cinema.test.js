@@ -92,8 +92,8 @@ test('V8 isolates the authentic Broken Circle as its own rotating sprite', () =>
   assert.match(cinema,/TRANSPARENT_PIXEL/);
   assert.match(wheel,/\.nexus-cinema-authentic-circle\{/);
   assert.match(wheel,/background-image:url\(["']data:image\/webp;base64,/);
-  assert.match(wheel,/@keyframes nexus-v7-authentic-circle-spin\{to\{transform:rotate\(720deg\)\}\}/);
-  assert.match(wheel,/animation:nexus-v7-authentic-circle-spin 16s linear infinite!important/);
+  assert.match(wheel,/@keyframes nexus-broken-circle-clockwise\{from\{transform:rotate\(0deg\)\}to\{transform:rotate\(360deg\)\}\}/);
+  assert.match(wheel,/animation:nexus-broken-circle-clockwise 16s linear infinite!important/);
   assert.match(wheel,/html\[data-motion='reduced'\] \.nexus-cinema-authentic-wheel-art/);
   assert.match(wheel,/dialog\.nexus-experience\[data-calm='true'\] \.nexus-cinema-authentic-wheel-art/);
   assert.match(wheel,/animation-play-state:running!important/);
