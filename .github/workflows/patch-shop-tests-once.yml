@@ -16,8 +16,9 @@ jobs:
         with:
           ref: chatgpt-mobile-clean-20260917
       - name: Update legacy Stripe catalogue fixtures
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
           p = Path('tests/shop.test.js')
           s = p.read_text()
@@ -86,6 +87,7 @@ jobs:
           s = s.replace(old, new, 1)
 
           p.write_text(s)
+          PY
       - name: Commit test compatibility update
         run: |
           git config user.name "github-actions[bot]"
