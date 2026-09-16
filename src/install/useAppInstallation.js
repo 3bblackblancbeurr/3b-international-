@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { isNativeApp } from '../native/runtime.js';
 
 // Keep the browser's one-use prompt at App level, including while visiting games.
 export function useAppInstallation() {
@@ -6,12 +7,13 @@ export function useAppInstallation() {
   const pending = useRef(false);
   const [available, setAvailable] = useState(false);
   const [installed, setInstalled] = useState(() =>
-    window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
+    isNativeApp() || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (isNativeApp()) return;
     const display = window.matchMedia('(display-mode: standalone)');
     function ready(event) {
       if (typeof event.prompt !== 'function') return;
@@ -47,7 +49,6 @@ export function useAppInstallation() {
     setBusy(true);
     setMessage('');
     try {
-      // Call within the button gesture; the browser still asks for confirmation.
       await request.prompt();
       const choice = await request.userChoice;
       setMessage(choice?.outcome === 'accepted'

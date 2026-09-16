@@ -33,7 +33,15 @@ function fixture(overrides = {}) {
   const signer = new Stripe("sk_test_fixture");
   const stripe = {
     products: { list: async params => { calls.productLists.push(params); return { data: Object.values(products), has_more: false }; } },
-    prices: { retrieve: async id => prices[id] },
+    prices: {
+      retrieve: async id => prices[id],
+      list: async ({ product, active, type }) => ({
+        data: Object.values(prices)
+          .filter(price => price.product?.id === product && (!active || price.active) && (!type || price.type === type))
+          .map(price => ({ ...price, product })),
+        has_more: false,
+      }),
+    },
     shippingRates: { retrieve: async () => ({ active: true, type: "fixed_amount", display_name: "Livraison test", fixed_amount: { amount: 500, currency: "eur" }, tax_behavior: "inclusive" }) },
     checkout: { sessions: {
       create: async (params, options) => { calls.creates.push({ params, options }); return session; },
@@ -255,11 +263,10 @@ test("dashboard catalogue exposes only explicitly published valid default prices
   assert.deepEqual(data.items.map(p => p.id), ["price_M"]);
   assert.equal(data.items[0].size, "M"); assert.equal(data.items[0].color, "Noir");
   assert.equal(data.enabled, true);
-  for (const mutate of [p => p.active = false, p => p.default_price.active = false,
-    p => p.default_price.type = "recurring", p => p.default_price.tax_behavior = "exclusive",
-    p => p.default_price.currency = "usd", p => p.default_price = null,
-    p => p.metadata.shop_visible = "TRUE"]) {
-    const invalid = dashboardFixture(); mutate(invalid.products.prod_M);
+  for (const mutate of [f => f.products.prod_M.active = false, f => f.prices.price_M.active = false,
+    f => f.prices.price_M.type = "recurring", f => f.prices.price_M.tax_behavior = "exclusive",
+    f => f.prices.price_M.currency = "usd", f => f.products.prod_M.metadata.shop_visible = "TRUE"]) {
+    const invalid = dashboardFixture(); mutate(invalid);
     assert.equal((await invalid.shop.checkout(checkoutRequest())).status, 409);
     assert.equal(invalid.calls.creates.length, 0);
   }
@@ -272,15 +279,16 @@ test("a new garment appears and can be checked out without updating the deployme
   product.metadata.size = "XL"; product.default_price.id = "price_New";
   product.default_price.product = product.id; product.default_price.unit_amount = 12500;
   f.products.prod_New = product;
+  f.prices.price_New = { ...product.default_price, product };
   const data = await (await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`))).json();
   assert.equal(data.items.find(item => item.id === "price_New").amount, 12500);
   assert.equal((await f.shop.checkout(checkoutRequest([{ priceId: "price_New", quantity: 1 }]))).status, 200);
   assert.deepEqual(f.calls.creates[0].params.line_items, [{ price: "price_New", quantity: 1 }]);
 });
-test("unpublishing a product or replacing its default price rejects the previously displayed price", async () => {
-  for (const mutate of [p => p.metadata.shop_visible = "false", p => p.default_price.id = "price_Replacement"]) {
+test("unpublishing a product or deactivating its price rejects the previously displayed price", async () => {
+  for (const mutate of [f => f.products.prod_M.metadata.shop_visible = "false", f => f.prices.price_M.active = false]) {
     const f = dashboardFixture(); await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`));
-    mutate(f.products.prod_M);
+    mutate(f);
     assert.equal((await f.shop.checkout(checkoutRequest())).status, 409);
     assert.equal(f.calls.creates.length, 0);
   }
@@ -294,7 +302,7 @@ test("dashboard catalogue reads subsequent product pages and refuses an incomple
   };
   const data = await (await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`))).json();
   assert.equal(data.items.length, 2); assert.equal(calls[1].starting_after, "prod_M");
-  assert.deepEqual(calls[0].expand, ["data.default_price"]);
+  assert.equal(calls[0].expand, undefined);
   let page = 0;
   f.stripe.products.list = async () => ({ data: [{ id: `prod_Page${++page}`, metadata: {} }], has_more: true });
   assert.equal((await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`))).status, 503);

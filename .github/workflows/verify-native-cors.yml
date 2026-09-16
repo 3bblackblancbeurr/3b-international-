@@ -1,0 +1,58 @@
+name: Verify native Supabase CORS
+
+on:
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'ios/**'
+      - 'src/native/**'
+      - 'src/arena/client.js'
+      - 'api/card-arena-proxy.js'
+      - 'server/card-arena-proxy.js'
+      - 'tests/native-arena-proxy.test.js'
+      - 'capacitor.config.json'
+      - '.github/workflows/verify-native-cors.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-cors:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Test native Arena proxy
+        run: node --test tests/native-arena-proxy.test.js tests/native-navigation.test.js
+      - name: Verify native origins on direct Supabase functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          project='ttvhcezucsbbmnafrotq'
+          functions=(member-hub ecosystem world-engine)
+          native_origins=('https://localhost' 'capacitor://localhost')
+          for fn in "${functions[@]}"; do
+            url="https://${project}.supabase.co/functions/v1/${fn}"
+            for origin in "${native_origins[@]}"; do
+              headers="$(curl --fail-with-body --silent --show-error --dump-header - --output /dev/null --request OPTIONS "$url" \
+                --header "Origin: $origin" \
+                --header 'Access-Control-Request-Method: POST' \
+                --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info')"
+              printf '%s\n' "$headers"
+              printf '%s\n' "$headers" | tr -d '\r' | grep -Fqi "access-control-allow-origin: $origin"
+            done
+            foreign="$(curl --fail-with-body --silent --show-error --dump-header - --output /dev/null --request OPTIONS "$url" \
+              --header 'Origin: https://example.invalid' \
+              --header 'Access-Control-Request-Method: POST' \
+              --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info')"
+            if printf '%s\n' "$foreign" | tr -d '\r' | grep -qi '^access-control-allow-origin:'; then
+              echo "Foreign origin was unexpectedly allowed for $fn" >&2
+              exit 1
+            fi
+          done
