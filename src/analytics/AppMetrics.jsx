@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Activity, Download, Users } from 'lucide-react';
 import { getAppMetrics } from './telemetry.js';
+import './metrics.css';
 
 export default function AppMetrics() {
   const [metrics, setMetrics] = useState(null);
