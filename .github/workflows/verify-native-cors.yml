@@ -6,6 +6,10 @@ on:
       - 'android/**'
       - 'ios/**'
       - 'src/native/**'
+      - 'src/arena/client.js'
+      - 'api/card-arena-proxy.js'
+      - 'server/card-arena-proxy.js'
+      - 'tests/native-arena-proxy.test.js'
       - 'capacitor.config.json'
       - '.github/workflows/verify-native-cors.yml'
   workflow_dispatch:
@@ -16,14 +20,22 @@ permissions:
 jobs:
   native-cors:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Verify native origins and reject foreign origin
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Test native Arena proxy
+        run: node --test tests/native-arena-proxy.test.js tests/native-navigation.test.js
+      - name: Verify native origins on direct Supabase functions
         shell: bash
         run: |
           set -euo pipefail
           project='ttvhcezucsbbmnafrotq'
-          functions=(member-hub ecosystem world-engine card-arena)
+          functions=(member-hub ecosystem world-engine)
           native_origins=('https://localhost' 'capacitor://localhost')
           for fn in "${functions[@]}"; do
             url="https://${project}.supabase.co/functions/v1/${fn}"
