@@ -6,6 +6,7 @@ import { NexusCinemaHall, NexusTransitDecor } from './NexusCinema.jsx';
 import { NEXUS_WORLDS } from './nexus-worlds.js';
 import City3BPortal from './City3BPortal.jsx';
 import '../styles/nexus-city-gateway.css';
+import '../styles/passport-nexus-entry.css';
 
 export default function NexusCityGateway({ open, onClose, reducedMotion = false, goTo }) {
   const account = useLoyalty();
