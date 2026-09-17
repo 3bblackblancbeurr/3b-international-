@@ -1,5 +1,6 @@
 import React,{useMemo,useState} from 'react';
 import {Eye,EyeOff,Package,Search} from 'lucide-react';
+import './nexus-collection.css';
 const RARITIES=['','common','rare','epic','special','ultra-rare','legendary','ultimate','unique'];
 const FAMILIES=['','skin','outfit','weapon','companion','vehicle','tool','blueprint','decoration','effect','badge'];
 const LABEL={common:'Commun',rare:'Rare',epic:'Épique',special:'Spécial','ultra-rare':'Ultra rare',legendary:'Légendaire',ultimate:'Ultime',unique:'Unique',skin:'Skins',outfit:'Tenues',weapon:'Armes',companion:'Compagnons',vehicle:'Véhicules',tool:'Outils',blueprint:'Plans',decoration:'Décorations',effect:'Effets',badge:'Badges'};
