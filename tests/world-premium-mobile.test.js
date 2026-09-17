@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {pointerStick,createQualityController} from '../src/world/motion.js';
 import {DEFAULT_ORBIT,restoreOrbit} from '../src/world/orbit.js';
 import {parisRenderBudget} from '../src/world/paris-district.js';
+import {floraRenderBudget} from '../src/world/flora.js';
 import {cardById} from '../src/world/catalog.js';
 import {CHAPTERS,chapterObjective} from '../src/world/chapters.js';
 import {blankSave,beacon} from '../src/world/rules.js';
@@ -42,6 +43,12 @@ test('Paris uses shorter LOD ranges and lighter materials on weak mobile hardwar
  assert.equal(weak.normalMap,false);
  assert.equal(balanced.normalMap,true);
  assert.equal(ultra.normalMap,true);
+});
+
+test('weak mobile hardware keeps instanced flora visible but removes its shadow pass',()=>{
+ assert.equal(floraRenderBudget(2,4).castShadow,false);
+ assert.equal(floraRenderBudget(4,6).castShadow,true);
+ assert.equal(floraRenderBudget(8,8).castShadow,true);
 });
 
 test('France vertical slice is canonically Celiane and Justice',()=>{
