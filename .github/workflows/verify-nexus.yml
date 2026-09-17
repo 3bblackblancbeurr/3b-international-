@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'src/components/PassportNexus.jsx'
+      - 'src/components/PassportVisual.jsx'
       - 'src/components/NexusCinema.jsx'
       - 'src/components/nexus-*'
       - 'src/components/useNexusJourney.js'
@@ -28,34 +29,39 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Detect current passport destination
+      - name: Detect current Passport destination
         id: mode
         shell: bash
         run: |
-          if grep -q "city3bRequest" src/components/PassportNexus.jsx; then
-            echo "city=true" >> "$GITHUB_OUTPUT"
+          if grep -q "PassportNexus" src/components/PassportVisual.jsx && grep -q "city3bRequest" src/components/PassportNexus.jsx; then
+            echo "mode=city" >> "$GITHUB_OUTPUT"
+          elif grep -q "PassportNexus" src/components/PassportVisual.jsx; then
+            echo "mode=legacy" >> "$GITHUB_OUTPUT"
+          elif grep -q "world3b" src/components/PassportVisual.jsx; then
+            echo "mode=world" >> "$GITHUB_OUTPUT"
           else
-            echo "city=false" >> "$GITHUB_OUTPUT"
+            echo "Unknown Passport destination" >&2
+            exit 1
           fi
       - name: Verify shared Nexus assets and compatibility
         run: node --test tests/nexus.test.js tests/nexus-cinema.test.js
       - name: Install Playwright for legacy Nexus visual checks
-        if: steps.mode.outputs.city != 'true'
+        if: steps.mode.outputs.mode == 'legacy'
         run: npm install --no-save --package-lock=false @playwright/test@1.56.1
       - name: Install Chromium for legacy Nexus visual checks
-        if: steps.mode.outputs.city != 'true'
+        if: steps.mode.outputs.mode == 'legacy'
         run: npx playwright install --with-deps chromium
       - name: Verify existing 3D, navigation, fallback and passport
-        if: steps.mode.outputs.city != 'true'
+        if: steps.mode.outputs.mode == 'legacy'
         run: node scripts/verify-nexus.mjs
       - name: Verify reference artwork, mobile controls and paused tunnel
-        if: steps.mode.outputs.city != 'true' && !cancelled()
+        if: steps.mode.outputs.mode == 'legacy' && !cancelled()
         run: node scripts/verify-nexus-cinema.mjs
-      - name: Verify City 3B replacement build
-        if: steps.mode.outputs.city == 'true'
+      - name: Verify world-first or City 3B destination build
+        if: steps.mode.outputs.mode != 'legacy'
         run: npm run build
       - uses: actions/upload-artifact@v4
-        if: always() && steps.mode.outputs.city != 'true'
+        if: always() && steps.mode.outputs.mode == 'legacy'
         with:
           name: nexus-browser-evidence
           path: |
