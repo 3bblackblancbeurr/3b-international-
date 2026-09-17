@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {surfaceTexture} from './surfaces.js';
 
 export const GROUND_STYLE={
- hub:{dry:.08,soil:'#8e815c',grass:'#7d9e58',count:19000},france:{dry:.1,soil:'#9f8b63',grass:'#7b9954',count:18000},
+ hub:{dry:.08,soil:'#8e815c',grass:'#7d9e58',count:19000},france:{dry:.12,soil:'#91836c',grass:'#6f855f',count:18000},
  italie:{dry:.38,soil:'#b19b70',grass:'#9da567',count:11000},estonie:{dry:.03,soil:'#877e62',grass:'#709577',count:15500},
  turquie:{dry:.67,soil:'#b9a181',grass:'#a0a378',count:6000},algerie:{dry:.8,soil:'#cbb080',grass:'#a5ae76',count:4600},
  tunisie:{dry:.43,soil:'#c2b48b',grass:'#a6b185',count:7500},maroc:{dry:.73,soil:'#b69770',grass:'#a5a57a',count:5100},
