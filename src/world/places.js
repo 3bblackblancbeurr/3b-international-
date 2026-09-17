@@ -17,8 +17,10 @@ export function livingPlaceCollisions(region){
 }
 
 export function addLivingPlaces(models,region,root,height,flora){
- const groups=[],materials=[],living=[],gardens=[];
- function place(name,x,z,rotation=0){const source=models.places.scene.getObjectByName(name);if(!source)return null;const p=toLandscape(region,x,z),g=source.clone(true);g.position.set(p.x,height(p.x,p.z)+.09,p.z);g.rotation.y=rotation;g.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const list=[o.material].flat();o.material=list.map(m=>{const n=m.clone();materials.push(n);if(/Living_leaves|Living leaves|Spring_water|Spring water/.test(n.name))living.push({material:n,color:n.color.clone()});return n;});if(o.material.length===1)o.material=o.material[0];});root.add(g);groups.push(g);return g;}
+ const groups=[],materials=[],living=[],gardens=[];let disposed=false,active=region==='hub';
+ const relevant=region==='hub'||region==='maroc',container=relevant?new THREE.Group():null;
+ if(container){container.name='Authored living places';root.add(container);groups.push(container);}
+ function place(asset,name,x,z,rotation=0){const source=asset?.scene?.getObjectByName(name);if(!source||disposed)return null;const p=toLandscape(region,x,z),g=source.clone(true);g.position.set(p.x,height(p.x,p.z)+.09,p.z);g.rotation.y=rotation;g.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const list=[o.material].flat();o.material=list.map(m=>{const n=m.clone();materials.push(n);if(/Living_leaves|Living leaves|Spring_water|Spring water/.test(n.name))living.push({material:n,color:n.color.clone()});return n;});if(o.material.length===1)o.material=o.material[0];});container.add(g);return g;}
  function replant(group,type){
   if(!group||!flora)return;const old=[];group.traverse(o=>{if(o.isMesh&&/Living[_ ]leaves/.test(o.material?.name||''))old.push(o);});old.forEach(o=>o.removeFromParent());
   const plants=new THREE.Group();group.add(plants);
@@ -27,10 +29,19 @@ export function addLivingPlaces(models,region,root,height,flora){
    gardens.push(plants);
   }else for(const x of [-4,4])for(const z of [-4,4])flora.plant('Shrub',x,1.65,z,1.2,x+z,plants);
  }
- if(region==='maroc'){
-  place('Riad',-18,17,-.72);place('Aqueduct',49,19,-.72);
-  place('Terraces',46,40,-.72);place('Terraces',48,8,-.72);
-  for(const g of groups)if(g.name==='Riad'||g.name==='Terraces')replant(g,g.name);
- }else if(region==='hub')place('UnionWorkshop',-18,17);
- return{groups,update(save){const active=region==='hub'||chapterState(save,region).restored>=2;for(const g of gardens)g.visible=active;for(const entry of living){entry.material.color.copy(entry.color);if(!active)entry.material.color.lerp(new THREE.Color('#b19c74'),.85);}},dispose(){materials.forEach(m=>m.dispose());}};
+ function applyState(){for(const g of gardens)g.visible=active;for(const entry of living){entry.material.color.copy(entry.color);if(!active)entry.material.color.lerp(new THREE.Color('#b19c74'),.85);}}
+ function build(asset){
+  if(disposed||!relevant)return;
+  if(region==='maroc'){
+   const made=[place(asset,'Riad',-18,17,-.72),place(asset,'Aqueduct',49,19,-.72),place(asset,'Terraces',46,40,-.72),place(asset,'Terraces',48,8,-.72)];
+   for(const g of made)if(g&&(g.name==='Riad'||g.name==='Terraces'))replant(g,g.name);
+  }else place(asset,'UnionWorkshop',-18,17);
+  applyState();
+ }
+ let ready=Promise.resolve();
+ if(relevant){
+  if(typeof models.getPlaces==='function')ready=models.getPlaces().then(build).catch(()=>{});
+  else build(models.places);
+ }
+ return{groups,ready,update(save){active=region==='hub'||chapterState(save,region).restored>=2;applyState();},dispose(){disposed=true;materials.forEach(m=>m.dispose());container?.removeFromParent();}};
 }
