@@ -1,19 +1,36 @@
-name: Verify City 3B Release
+name: Verify City 3B
 
 on:
   push:
     branches:
+      - main
       - release-city3b
+    paths:
+      - 'src/city/**'
+      - 'src/components/PassportNexus.jsx'
+      - 'src/components/PassportVisual.jsx'
+      - 'src/styles/city-3b.css'
+      - 'tests/city3b.test.js'
+      - 'tests/nexus-cinema.test.js'
+      - '.github/workflows/verify-city3b-release.yml'
   pull_request:
     branches:
       - main
+    paths:
+      - 'src/city/**'
+      - 'src/components/PassportNexus.jsx'
+      - 'src/components/PassportVisual.jsx'
+      - 'src/styles/city-3b.css'
+      - 'tests/city3b.test.js'
+      - 'tests/nexus-cinema.test.js'
+      - '.github/workflows/verify-city3b-release.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: verify-city3b-release-${{ github.ref }}
+  group: verify-city3b-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
