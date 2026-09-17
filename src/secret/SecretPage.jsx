@@ -139,12 +139,11 @@ export default function SecretPage() {
   );
 
   const nextSlot = useMemo(
-    () => slots.find((slot) => new Date(slot.publish_at).getTime() > now) || null,
-    [slots, now]
+    () => slots.find((slot) => !clueBySlot.has(String(slot.id))) || null,
+    [slots, clueBySlot]
   );
 
-  const allTransmissionsOpen =
-    slots.length > 0 && releasedCount === slots.length && nextSlot === null;
+  const allTransmissionsOpen = slots.length > 0 && releasedCount === slots.length;
   const digitCount = phoneDigitCount(draft);
   const callable = allTransmissionsOpen && digitCount >= 10 && digitCount <= 15;
   const dialValue = normalizePhoneDraft(draft);
