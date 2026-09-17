@@ -1,9 +1,19 @@
 import * as THREE from 'three';
 
-// A small HDR sky, prefiltered once on arrival, gives metal, water and cloth a
-// shared lighting environment without an extra full-screen rendering pass.
+export function daylightResolution(memory=4,cores=4){
+ const m=Number(memory)||4,c=Number(cores)||4;
+ if(m<=3||c<=4)return{width:64,height:32};
+ if(m>=8&&c>=8)return{width:256,height:128};
+ return{width:128,height:64};
+}
+
+// A compact HDR sky, prefiltered once on arrival, gives metal, water and cloth a
+// shared lighting environment without an extra full-screen rendering pass. The
+// source precision follows the phone: weak devices spend less startup/GPU memory,
+// powerful devices get cleaner reflections without heavier scene geometry.
 export function createDaylight(renderer,biome){
- const width=128,height=64,data=new Float32Array(width*height*4),sky=new THREE.Color(biome.sky),horizon=new THREE.Color(biome.haze),earth=new THREE.Color(biome.low),color=new THREE.Color();
+ const memory=typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,cores=typeof navigator!=='undefined'?Number(navigator.hardwareConcurrency)||4:4;
+ const {width,height}=daylightResolution(memory,cores),data=new Float32Array(width*height*4),sky=new THREE.Color(biome.sky),horizon=new THREE.Color(biome.haze),earth=new THREE.Color(biome.low),color=new THREE.Color();
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   const up=Math.cos((y+.5)/height*Math.PI),angle=(x+.5)/width*Math.PI*2;
   if(up>=0){
