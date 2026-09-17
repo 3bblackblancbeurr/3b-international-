@@ -123,7 +123,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
             <div className="nexus-visual-copy">
               <span>CERCLE BRISÉ · ROTATION ACTIVE</span>
               <strong>Une porte. Ta ville.</strong>
-              <small>Le Nexus ne contient plus les huit portes : elles appartiennent au Monde du 3B.</small>
+              <small>Le Cercle Brisé ouvre l’accès à ta cité personnelle 3B.</small>
             </div>
           </section>
 
