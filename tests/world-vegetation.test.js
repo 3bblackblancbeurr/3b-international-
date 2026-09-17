@@ -20,14 +20,14 @@ test('six plant silhouettes have finite geometry, individual leaves and a bounde
  assert.ok(heights[2]>heights[0]&&heights[0]>heights[1]&&heights[1]>heights[5]);
 });
 
-test('trees share instance batches but separate garden visibility, with matching camera occlusion and wind',()=>{
+test('trees share instance batches and keep camera occlusion while weak devices skip wind',()=>{
  const root=new Group(),garden=new Group(),occlusion=createSceneryOcclusion(),flora=createFlora('france',13,occlusion);root.add(garden);
  for(let i=0;i<20;i++)flora.plant('Tree',i*5,0,30,1,0,root);
  flora.plant('Tree',0,0,0,.7,0,garden);flora.finish();
  assert.equal(flora.instances.length,4);assert.equal(flora.instances[0].count,20);assert.equal(flora.instances[2].count,1);garden.visible=false;assert.equal(root.children[1].visible,true);
  const matrix=new Matrix4();flora.instances[0].getMatrixAt(19,matrix);assert.equal(new Vector3().setFromMatrixPosition(matrix).x,95);
- const leaf=flora.instances[1],wood=flora.instances[0];assert.notEqual(leaf.material.customProgramCacheKey(),wood.material.customProgramCacheKey());
- const shader={uniforms:{},vertexShader:'#include <begin_vertex>\n#include <project_vertex>',fragmentShader:'#include <alphatest_fragment>'};leaf.material.onBeforeCompile(shader);assert.ok(shader.vertexShader.includes('cityWorld=instanceMatrix*cityWorld'));assert.ok(shader.uniforms.floraTime&&shader.uniforms.cityCamera);assert.ok(leaf.customDepthMaterial);
+ const leaf=flora.instances[1],wood=flora.instances[0];assert.equal(leaf.material.customProgramCacheKey(),wood.material.customProgramCacheKey());
+ const shader={uniforms:{},vertexShader:'#include <begin_vertex>\n#include <project_vertex>',fragmentShader:'#include <alphatest_fragment>'};leaf.material.onBeforeCompile(shader);assert.ok(shader.vertexShader.includes('cityWorld=instanceMatrix*cityWorld'));assert.ok(!shader.uniforms.floraTime&&shader.uniforms.cityCamera);assert.ok(leaf.customDepthMaterial);
  let disposed=0;for(const m of flora.instances)m.addEventListener('dispose',()=>disposed++);flora.dispose();assert.equal(disposed,4);
 });
 
