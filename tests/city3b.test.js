@@ -18,7 +18,7 @@ test('passport now enters City 3B instead of the legacy Nexus journey',()=>{
 test('City 3B keeps permanent progression and the eight established values',()=>{
   assert.match(component,/Aucun reset, aucune saison/);
   assert.match(client,/France:'Justice'/);
-  assert.match(client,/Algérie:'Loyauté'/);
+  assert.match(client,/["']Algérie["']:'Loyauté'/);
   assert.match(client,/Espagne:'Passion'/);
   assert.match(client,/Maroc:'Noblesse'/);
   assert.match(client,/Italie:'Espoir'/);
