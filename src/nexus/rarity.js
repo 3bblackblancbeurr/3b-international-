@@ -5,7 +5,7 @@ export const RARITIES = Object.freeze([
   { id: 'special', name: 'Spécial', percent: 2, supplyCap: null, glow: '#44e0d1' },
   { id: 'ultra-rare', name: 'Ultra rare', percent: 0.8, supplyCap: null, glow: '#ff80cc' },
   { id: 'legendary', name: 'Légendaire', percent: 0.19, supplyCap: null, glow: '#f4c860' },
-  { id: 'ultimate', name: 'Ultime', percent: 0.0099999, supplyCap: 8, glow: '#ff7a45' },
+  { id: 'ultimate', name: 'Ultime', percent: 100-(70+20+7+2+0.8+0.19)-0.0000001, supplyCap: 8, glow: '#ff7a45' },
   { id: 'unique', name: 'Unique', percent: 0.0000001, supplyCap: 1, glow: '#ffffff' },
 ]);
 
@@ -14,7 +14,7 @@ export const UNIQUE_ODDS = 1_000_000_000;
 
 export function validateRarityTable(table = RARITIES) {
   const sum = table.reduce((total, rarity) => total + rarity.percent, 0);
-  if (Math.abs(sum - 100) > 1e-9) throw new Error(`La table de rareté doit totaliser 100 %, reçu ${sum}.`);
+  if (sum !== 100) throw new Error(`La table de rareté doit totaliser exactement 100 %, reçu ${sum}.`);
   if (RARITY_BY_ID.unique.percent !== 100 / UNIQUE_ODDS) throw new Error('La rareté Unique doit rester à une chance sur un milliard.');
   return true;
 }
