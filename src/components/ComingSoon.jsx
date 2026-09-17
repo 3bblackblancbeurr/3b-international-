@@ -3,8 +3,8 @@ import { Pause, Play } from 'lucide-react';
 import SecretPage from '../secret/SecretPage.jsx';
 
 export default function ComingSoon({secret=false}){
- if(secret)return <SecretPage/>;
  const[paused,setPaused]=useState(false);
+ if(secret)return <SecretPage/>;
  return <section className="coming-page" data-paused={paused}>
   <p className="eyebrow">3B INTERNATIONAL</p><h1>Manga 3B</h1>
   <p className="coming-label">Bientôt</p>
