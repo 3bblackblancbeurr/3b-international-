@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {MEGA_CATALOG} from '../src/nexus/mega-catalog.js';import {ECONOMY_ACTIONS,constructionPrice,constructionRequirement,canBuyConstruction,rewardForAction,eventIdentity} from '../src/economy/world-economy-links.js';
+test('all core world and Nexus actions have nonnegative rewards and no token',()=>{for(const [id,r] of Object.entries(ECONOMY_ACTIONS)){assert.ok(r.xp>=0&&r.coins>=0,id);assert.equal(rewardForAction(id).token,0);}});
+test('all 960 constructions have valid prices and requirements',()=>{for(const b of MEGA_CATALOG){for(let u=1;u<=5;u++){assert.ok(constructionPrice(b.id,u)>0);const req=constructionRequirement(b.id,u);assert.ok(req>=1&&req<=150);}}});
+test('upgrade prices increase monotonically',()=>{for(const b of MEGA_CATALOG.slice(0,100)){let prev=0;for(let u=1;u<=5;u++){const p=constructionPrice(b.id,u);assert.ok(p>prev);prev=p;}}});
+test('purchase checks both level and coins',()=>{const b=MEGA_CATALOG[0];assert.equal(canBuyConstruction({level:1,coins:0},b.id,1).ok,false);assert.equal(canBuyConstruction({level:150,coins:9999999},b.id,1).ok,true);});
+test('event identities strip unsafe characters',()=>{assert.equal(eventIdentity('mission_main','abc<script>'),'mission_main:abcscript');});
