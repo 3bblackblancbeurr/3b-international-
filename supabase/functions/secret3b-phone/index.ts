@@ -5,6 +5,37 @@ import { createClient } from "npm:@supabase/supabase-js@2.116.0";
 const CAMPAIGN_SLUG = "telephone-secret-3b";
 const XML_HEADERS = { "Content-Type": "text/xml; charset=utf-8", "Cache-Control": "no-store" };
 
+type CampaignRow = {
+  id: number;
+  status: string;
+};
+
+type ContestConfig = {
+  enabled: boolean;
+  question_text: string;
+  option_1_text: string;
+  option_2_text: string;
+  correct_digit: string | null;
+  max_winners: number;
+  opens_at: string | null;
+  closes_at: string | null;
+  intro_text: string;
+  winner_text: string;
+  wrong_text: string;
+  late_text: string;
+  duplicate_text: string;
+};
+
+type Contest = {
+  campaign: CampaignRow;
+  config: ContestConfig;
+};
+
+type AnswerClaimResult = {
+  result: string;
+  winner_rank: number | null;
+};
+
 function xmlEscape(value: unknown) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -73,27 +104,31 @@ function getAdminClient() {
   });
 }
 
-async function loadContest(admin: ReturnType<typeof createClient>) {
-  const { data: campaign, error: campaignError } = await admin
+// The repository does not currently ship generated Supabase Database types.
+// Keep the client untyped at this boundary, then narrow every row below.
+async function loadContest(admin: any): Promise<Contest | null> {
+  const { data: campaignData, error: campaignError } = await admin
     .from("secret3b_campaigns")
     .select("id,status")
     .eq("slug", CAMPAIGN_SLUG)
     .maybeSingle();
   if (campaignError) throw campaignError;
+  const campaign = campaignData as CampaignRow | null;
   if (!campaign) return null;
 
-  const { data: config, error: configError } = await admin
+  const { data: configData, error: configError } = await admin
     .from("secret3b_phone_contests")
     .select("enabled,question_text,option_1_text,option_2_text,correct_digit,max_winners,opens_at,closes_at,intro_text,winner_text,wrong_text,late_text,duplicate_text")
     .eq("campaign_id", campaign.id)
     .maybeSingle();
   if (configError) throw configError;
+  const config = configData as ContestConfig | null;
   if (!config) return null;
 
   return { campaign, config };
 }
 
-function contestIsOpen(contest: Awaited<ReturnType<typeof loadContest>>) {
+function contestIsOpen(contest: Contest | null) {
   if (!contest) return false;
   const { campaign, config } = contest;
   if (campaign.status !== "active" || !config.enabled || !config.correct_digit) return false;
@@ -141,7 +176,7 @@ Deno.serve(async (req: Request) => {
     return twiml(say("Le canal secret est momentanément indisponible."), hangup());
   }
 
-  let contest;
+  let contest: Contest | null;
   try {
     contest = await loadContest(admin);
   } catch (error) {
@@ -199,7 +234,7 @@ Deno.serve(async (req: Request) => {
     return twiml(say("Une erreur technique a interrompu la transmission. Aucun résultat n'a été modifié."), hangup());
   }
 
-  const result = Array.isArray(data) ? data[0] : data;
+  const result = (Array.isArray(data) ? data[0] : data) as AnswerClaimResult | null;
   switch (result?.result) {
     case "winner":
       return twiml(
