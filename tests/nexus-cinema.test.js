@@ -33,8 +33,17 @@ test('all reference assets are local WebP files, hash-verified and within budget
   }
   assert.ok(total<750000);assert.ok(manifest.assets['hall-mobile.webp'].bytes<250000);
 });
-test('cinematic rendering still uses the canonical journey and offers a real 3D view', () => {
+test('passport destination is either the legacy journey or the intentional City 3B replacement', () => {
   const source=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+  if (source.includes('city3bRequest')) {
+    assert.match(source,/CRÉE TA VILLE/);
+    assert.match(source,/Fonder ma ville/);
+    assert.match(source,/nexus_city_place_v2|call\('place'/);
+    assert.match(source,/Collection permanente/);
+    assert.match(source,/Découvrir les villes 3B/);
+    assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
+    return;
+  }
   assert.match(source,/useNexusJourney\(\{ open, onClose, goTo \}\)/);
   assert.match(source,/journey\.travel\('ORIGINE'\)/);
   assert.match(source,/setArrivalCode\(active\.code\)/);
