@@ -23,7 +23,9 @@ export function createRegionalDistrict({region,field,root,fallback,occlusion,onE
  for(const [key,channel] of [['map','Diffuse'],['roughnessMap','Rough'],...(budget.normalMap?[['normalMap','nor_gl']]:[])]){const t=new THREE.TextureLoader().load('/world/paris/textures/plastered_wall_02_'+channel+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=budget.anisotropy;if(key==='map')t.colorSpace=THREE.SRGBColorSpace;maps[key]=t;textures.push(t);}
  async function load(level,high){
   const asset=await loader.loadAsync(`/world/districts/${region}-${level}${high?'':'-lod'}.glb`);assets.push(asset);if(dead)return;
-  asset.scene.updateMatrixWorld(true);asset.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material.clone();owned.push(material);if(/Masonry|Dressed stone/.test(material.name)){Object.assign(material,maps);if(budget.normalMap)material.normalScale.set(.2,.2);material.needsUpdate=true;}occlusion?.apply(material);
+  asset.scene.updateMatrixWorld(true);asset.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material.clone();owned.push(material);if(/Masonry|Dressed stone/.test(material.name)){
+   Object.assign(material,maps);if(budget.normalMap)material.normalScale.set(.2,.2);else{material.normalMap=null;material.normalScale.set(0,0);}material.needsUpdate=true;
+  }occlusion?.apply(material);
    const mesh=new THREE.InstancedMesh(o.geometry,material,Math.max(1,entries.length));mesh.castShadow=budget.castShadow;mesh.receiveShadow=true;mesh.count=0;group.add(mesh);batches.push({mesh,level,high,local:o.matrixWorld.clone()});
   });lastX=Infinity;
  }
