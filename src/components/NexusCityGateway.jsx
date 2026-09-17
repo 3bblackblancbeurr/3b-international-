@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, Building2, Sparkles, X } from 'lucide-react';
+import { useLoyalty } from '../loyalty/LoyaltyContext.jsx';
 import { NexusCinemaHall, NexusTransitDecor } from './NexusCinema.jsx';
 import { NEXUS_WORLDS } from './nexus-worlds.js';
 import City3BPortal from './City3BPortal.jsx';
 import '../styles/nexus-city-gateway.css';
 
-export default function NexusCityGateway({ open, onClose, reducedMotion = false }) {
+export default function NexusCityGateway({ open, onClose, reducedMotion = false, goTo }) {
+  const account = useLoyalty();
   const [selected, setSelected] = useState('FR');
   const [stage, setStage] = useState('hall');
   const [cityOpen, setCityOpen] = useState(false);
+  const isLoggedIn = !!account.user?.id;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -41,6 +44,16 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
     () => NEXUS_WORLDS.find((item) => item.code === selected) || NEXUS_WORLDS[0],
     [selected],
   );
+
+  const enterPersonalSpace = () => {
+    if (account.loading) return;
+    if (!isLoggedIn) {
+      onClose?.();
+      goTo?.('member');
+      return;
+    }
+    setCityOpen(true);
+  };
 
   if (!open) return null;
 
@@ -91,11 +104,13 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
 
               <div className="nexus-city-divider" />
               <p className="nexus-city-kicker">TON ESPACE PERSONNEL</p>
-              <h4>Crée ta ville 3B</h4>
-              <p>Depuis le Nexus, ouvre ta cité permanente, construis tes bâtiments, développe tes huit quartiers et expose ta collection.</p>
-              <button type="button" className="nexus-city-primary" onClick={() => setCityOpen(true)}>
+              <h4>{isLoggedIn ? 'Crée ta ville 3B' : 'Connecte ton Passeport 3B'}</h4>
+              <p>{isLoggedIn
+                ? 'Depuis le Nexus, ouvre ta cité permanente, construis tes bâtiments, développe tes huit quartiers et expose ta collection.'
+                : 'Ta ville 3B est liée à ton compte. Ouvre ton espace membre pour te connecter ou créer ton compte, puis reviens dans le Passeport.'}</p>
+              <button type="button" className="nexus-city-primary" disabled={account.loading} onClick={enterPersonalSpace}>
                 <Building2 size={18} />
-                <span>CRÉER MA VILLE 3B</span>
+                <span>{account.loading ? 'VÉRIFICATION…' : isLoggedIn ? 'CRÉER MA VILLE 3B' : 'OUVRIR MON ESPACE MEMBRE'}</span>
                 <ArrowRight size={18} />
               </button>
               <button type="button" className="nexus-city-secondary" onClick={onClose}>Retour au Passeport</button>
