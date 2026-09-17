@@ -1,5 +1,5 @@
 export const DEFAULT_ORBIT={yaw:0,pitch:.075,distance:30};
-export const MIN_ORBIT_DISTANCE=18,MAX_ORBIT_DISTANCE=48;
+export const MIN_ORBIT_DISTANCE=18,MAX_ORBIT_DISTANCE=48,MIN_RENDER_DISTANCE=26;
 export function normalizeOrbit(value){return {yaw:Number.isFinite(value?.yaw)?value.yaw%(Math.PI*2):0,pitch:Number.isFinite(value?.pitch)?Math.max(-.34,Math.min(1.15,value.pitch)):DEFAULT_ORBIT.pitch,distance:Number.isFinite(value?.distance)?Math.max(MIN_ORBIT_DISTANCE,Math.min(MAX_ORBIT_DISTANCE,value.distance)):DEFAULT_ORBIT.distance};}
 export function restoreOrbit(value){
  const orbit=normalizeOrbit(value);
@@ -11,7 +11,11 @@ export function restoreOrbit(value){
  return orbit;
 }
 export function orbitView(orbit,position,height,portrait=false,heightAt){
- const distance=orbit.distance*(portrait?1.12:1),flat=Math.cos(orbit.pitch)*distance;
+ // scene.js still exposes an older secondary preset at 24. Clamp only the
+ // rendered rig, not the saved physical orbit value, so legacy/alternate views
+ // can never make the avatar dominate the mobile frame again.
+ const renderedDistance=Math.max(MIN_RENDER_DISTANCE,orbit.distance);
+ const distance=renderedDistance*(portrait?1.12:1),flat=Math.cos(orbit.pitch)*distance;
  // A slightly higher shoulder target keeps more city and horizon visible while
  // the longer rig makes the hero occupy less of the landscape frame.
  const target={x:position.x,y:height+2.15+Math.max(0,-orbit.pitch)*distance*1.08,z:position.z};
