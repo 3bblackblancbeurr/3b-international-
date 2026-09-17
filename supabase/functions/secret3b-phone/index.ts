@@ -117,8 +117,9 @@ Deno.serve(async (req: Request) => {
   }
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  if (!authToken) {
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN") || "";
+  const contestSecret = Deno.env.get("SECRET3B_CONTEST_SECRET") || "";
+  if (authToken.length < 16 || contestSecret.length < 32) {
     return new Response("Phone service not configured", { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 
@@ -180,9 +181,9 @@ Deno.serve(async (req: Request) => {
   const callSid = form.get("CallSid") || "";
   if (!callSid) return twiml(say("Appel invalide."), hangup());
 
-  const callerHash = await hmacHex(authToken, `secret3b-caller-v1:${caller}`);
-  const claimCode = await deterministicClaimCode(authToken, callSid, caller);
-  const claimTokenHash = await hmacHex(authToken, `secret3b-claim-v1:${claimCode}`);
+  const callerHash = await hmacHex(contestSecret, `secret3b-caller-v1:${caller}`);
+  const claimCode = await deterministicClaimCode(contestSecret, callSid, caller);
+  const claimTokenHash = await hmacHex(contestSecret, `secret3b-claim-v1:${claimCode}`);
 
   const { data, error } = await admin.rpc("secret3b_claim_phone_answer", {
     p_campaign_slug: CAMPAIGN_SLUG,
