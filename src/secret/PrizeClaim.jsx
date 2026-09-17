@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Gift, LockKeyhole, MapPin, PackageCheck, ShieldCheck } from "lucide-react";
 import { useLoyalty } from "../loyalty/LoyaltyContext.jsx";
 import { secretClaimRequest } from "./secretClaimClient.js";
+import "./prize-claim.css";
 
 const EMPTY_FORM = {
   code: "",
@@ -58,6 +59,14 @@ export default function PrizeClaim({ unlocked, goTo }) {
     setForm((current) => ({ ...current, [name]: value }));
     setError("");
     setNotice("");
+  }
+
+  function openAccount() {
+    if (goTo) {
+      goTo("member");
+      return;
+    }
+    window.location.hash = "membre";
   }
 
   async function submit(event) {
@@ -121,7 +130,7 @@ export default function PrizeClaim({ unlocked, goTo }) {
           <div>
             <strong>Connexion requise</strong>
             <p>Le code gagnant doit être rattaché à un compte 3B pour empêcher qu'il soit utilisé deux fois.</p>
-            <button type="button" className="secret3b-call-button" onClick={() => goTo?.("member")}>Me connecter à mon compte 3B</button>
+            <button type="button" className="secret3b-call-button" onClick={openAccount}>Me connecter à mon compte 3B</button>
           </div>
         </div>
       ) : unlocked && account.user ? (
