@@ -17,7 +17,8 @@ test('ultra map is thousands of times larger in surface than the old playfield',
 
 test('rarity table totals 100 percent and keeps the unique at one in a billion', () => {
   assert.equal(validateRarityTable(), true);
-  assert.equal(RARITIES.reduce((sum, rarity) => sum + rarity.percent, 0), 100);
+  const total = RARITIES.reduce((sum, rarity) => sum + rarity.percent, 0);
+  assert.ok(Math.abs(total - 100) < 1e-9, `rarity total ${total}`);
   assert.equal(UNIQUE_ODDS, 1_000_000_000);
   assert.equal(RARITY_BY_ID.unique.percent, 0.0000001);
   assert.equal(RARITY_BY_ID.unique.supplyCap, 1);
