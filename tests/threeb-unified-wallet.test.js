@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
+const sql=readFileSync(new URL('../supabase/threeb-unified-wallet.sql',import.meta.url),'utf8');
+test('wallet updates are serialized per player and bounded',()=>{assert.match(sql,/pg_advisory_xact_lock/);assert.match(sql,/wallet_delta_out_of_bounds/);assert.match(sql,/v_new_coins<0/);assert.match(sql,/insufficient_coins/);});
+test('member XP and economy XP are synchronized',()=>{assert.match(sql,/greatest\(v_account\.xp::bigint,coalesce\(v_profile_xp,0\)\)/);assert.match(sql,/update public\.member_profiles set xp=v_new_xp/);assert.match(sql,/update public\.economy_accounts set xp=v_new_xp::integer/);});
+test('unified wallet cannot be executed by normal clients',()=>{assert.match(sql,/revoke all on function public\.threeb_wallet_apply_server\(uuid,integer,bigint\) from public,anon,authenticated/);assert.match(sql,/grant execute on function public\.threeb_wallet_apply_server\(uuid,integer,bigint\) to service_role/);});
+test('wallet response keeps Token disabled',()=>{assert.match(sql,/jsonb_build_object\('xp',v_account\.xp,'coins',v_account\.coins,'token',0\)/);assert.doesNotMatch(sql,/token[^,)]*[1-9]/i);});
