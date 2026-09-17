@@ -8,9 +8,9 @@ import {frontierState} from './frontier.js';
 
 export function parisRenderBudget(memory=4,cores=4){
  const m=Number(memory)||4,c=Number(cores)||4;
- if(m<=3||c<=4)return{detail:64,visible:185,eiffelDetail:145,anisotropy:2};
- if(m>=8&&c>=8)return{detail:100,visible:285,eiffelDetail:285,anisotropy:6};
- return{detail:84,visible:235,eiffelDetail:220,anisotropy:4};
+ if(m<=3||c<=4)return{detail:64,visible:185,eiffelDetail:145,anisotropy:2,normalMap:false};
+ if(m>=8&&c>=8)return{detail:100,visible:285,eiffelDetail:285,anisotropy:6,normalMap:true};
+ return{detail:84,visible:235,eiffelDetail:220,anisotropy:4,normalMap:true};
 }
 
 // Each building loads once. Low detail arrives first; nearby buildings request
@@ -23,14 +23,15 @@ export function createParisDistrict({region,field,root,resident,flora,occlusion,
  let dead=false,running=0,lastZone=null;
  const textureLoader=new THREE.TextureLoader();
  function texture(channel){const t=textureLoader.load('/world/paris/textures/plastered_wall_02_'+channel+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=budget.anisotropy;if(channel==='Diffuse')t.colorSpace=THREE.SRGBColorSpace;textures.push(t);return t;}
- const maps=region==='france'?{map:texture('Diffuse'),normalMap:texture('nor_gl'),roughnessMap:texture('Rough')}:null;
+ const maps={map:texture('Diffuse'),roughnessMap:texture('Rough')};
+ if(budget.normalMap)maps.normalMap=texture('nor_gl');
  function pump(){while(running<2&&queue.length){running++;const {url,resolve,reject}=queue.shift();loader.loadAsync(url).then(a=>{assets.push(a);resolve(a);},reject).finally(()=>{running--;pump();});}}
  function load(name){if(!cache.has(name))cache.set(name,new Promise((resolve,reject)=>{queue.push({url:'/world/paris/'+name+'.glb',resolve,reject});pump();}));return cache.get(name);}
  const entries=[];
  function attach(asset,entry,high){
   if(dead)return;const model=asset.scene.clone(true);
   model.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const m=o.material.clone();owned.push(m);o.material=m;occlusion?.apply(m);
-   if(m.name==='Paris limestone'){Object.assign(m,maps);m.normalScale.set(.28,.28);m.color.set('#eee4ce');}
+   if(m.name==='Paris limestone'){Object.assign(m,maps);if(budget.normalMap)m.normalScale.set(.28,.28);m.color.set('#eee4ce');m.needsUpdate=true;}
    if(entry.site.interior){m.clippingPlanes=[entry.plane];m.clipShadows=true;}
   });
   entry.lod.addLevel(model,high?0:entry.site.id==='eiffel'?Math.min(220,budget.eiffelDetail):budget.detail,.15);entry.lod.updateMatrixWorld();
