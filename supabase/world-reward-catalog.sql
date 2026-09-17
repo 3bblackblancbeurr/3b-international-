@@ -1,0 +1,21 @@
+-- 3B World gameplay rewards: 8 countries × 10 families × 8 rarities = 640 definitions.
+-- No paid chance mechanic: these rows are not purchasable, marketable or cashable.
+
+alter table public.inventory_items drop constraint if exists inventory_items_item_type_check;
+alter table public.inventory_items add constraint inventory_items_item_type_check check (item_type = any(array['skin','outfit','effect','vehicle','animation','accessory','badge','collectible','passport_cosmetic','world_object','cosmetic','weapon','companion','tool','blueprint','decoration']));
+alter table public.inventory_items drop constraint if exists inventory_items_rarity_check;
+alter table public.inventory_items add constraint inventory_items_rarity_check check (rarity = any(array['common','uncommon','rare','epic','special','ultra-rare','legendary','ultimate','mythic','unique']));
+
+with countries(id,label) as (values
+ ('france','France'),('italie','Italie'),('estonie','Estonie'),('turquie','Turquie'),('algerie','Algérie'),('tunisie','Tunisie'),('maroc','Maroc'),('espagne','Espagne')
+),families(id,label) as (values
+ ('skin','Skin'),('outfit','Tenue'),('weapon','Arme'),('companion','Compagnon'),('vehicle','Véhicule'),('tool','Outil'),('blueprint','Plan'),('decoration','Décoration'),('effect','Effet'),('badge','Badge')
+),rarities(id,label,weight,supply) as (values
+ ('common','Commun',700000000::bigint,null::bigint),('rare','Rare',200000000,null),('epic','Épique',70000000,null),('special','Spécial',20000000,null),('ultra-rare','Ultra rare',8000000,null),('legendary','Légendaire',1900000,null),('ultimate','Ultime',99999,8),('unique','Unique',1,1)
+)
+insert into public.inventory_items(code,name,category,coin_price,active,metadata,description,item_type,rarity,tradeable,marketable,permanent,stackable,max_supply)
+select c.id||'-'||f.id||'-'||r.id,f.label||' '||c.label||' · '||r.label,'world_reward',0,true,
+ jsonb_build_object('country',c.id,'family',f.id,'source','world3b','gameplay_only',true,'rarity_weight',r.weight,'token',0),
+ 'Récompense de gameplay du Monde 3B. Non achetable et sans conversion monétaire.',f.id,r.id,false,false,true,false,r.supply
+from countries c cross join families f cross join rarities r
+on conflict(code) do update set name=excluded.name,category=excluded.category,coin_price=0,active=true,metadata=excluded.metadata,description=excluded.description,item_type=excluded.item_type,rarity=excluded.rarity,tradeable=false,marketable=false,permanent=true,stackable=false,max_supply=excluded.max_supply;
