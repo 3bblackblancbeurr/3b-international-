@@ -2,14 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const component=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+const gateway=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+const component=readFileSync(new URL('../src/city/City3B.jsx',import.meta.url),'utf8');
 const visual=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
 const client=readFileSync(new URL('../src/city/city3b-client.js',import.meta.url),'utf8');
+const viewport=readFileSync(new URL('../src/city/CityViewport.jsx',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/city-3b.css',import.meta.url),'utf8');
 
 test('passport now enters City 3B instead of the legacy Nexus journey',()=>{
   assert.match(visual,/MA VILLE/);
   assert.match(visual,/Ouvrir Crée ta ville 3B/);
+  assert.match(gateway,/City3B/);
   assert.match(component,/CRÉE TA VILLE/);
   assert.match(component,/Fonder ma ville/);
   assert.doesNotMatch(component,/useNexusJourney|journey\.travel/);
@@ -34,11 +37,18 @@ test('City API calls are authenticated and target only the city Edge Function',(
   assert.doesNotMatch(client,/service_role|secret|SUPABASE_SERVICE/);
 });
 
-test('construction uses an idempotency request and explicit parcel coordinates',()=>{
+test('city HUD uses the canonical economy wallet instead of loyalty points',()=>{
+  assert.match(component,/data\?\.wallet\?\.coins/);
+  assert.doesNotMatch(component,/profile\.points/);
+});
+
+test('construction and movement use idempotency requests and explicit parcels',()=>{
   assert.match(component,/request:reqId\(\)/);
-  assert.match(component,/building:selected\.code/);
-  assert.match(component,/rotation:Number\(rotation\)/);
-  assert.match(component,/Le serveur contrôle niveau, quartier, collisions et Coins/);
+  assert.match(component,/call\('place'/);
+  assert.match(component,/call\('move'/);
+  assert.match(component,/call\('store'/);
+  assert.match(component,/Ranger/);
+  assert.doesNotMatch(component,/call\('remove'/);
 });
 
 test('signed-out members get an explicit Passport requirement instead of an endless loader',()=>{
@@ -46,8 +56,18 @@ test('signed-out members get an explicit Passport requirement instead of an endl
   assert.match(component,/needsLogin=!account\.loading&&!uid/);
 });
 
+test('City V2 includes a real Three.js viewport and interactive placement preview',()=>{
+  assert.match(viewport,/from 'three'/);
+  assert.match(viewport,/OrbitControls/);
+  assert.match(viewport,/TorusGeometry/);
+  assert.match(viewport,/dblclick/);
+  assert.match(component,/CityViewport/);
+  assert.match(component,/Emplacement valide|validation\.reason/);
+});
+
 test('City UI includes responsive mobile navigation and premium 3B styling',()=>{
   assert.match(css,/city3b-nav/);
+  assert.match(css,/city3b-viewport/);
   assert.match(css,/@media\(max-width:620px\)/);
   assert.match(css,/#d7bc78|#e4c879/);
   assert.match(css,/#63d9ff|#35cdfa/);

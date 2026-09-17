@@ -3,12 +3,15 @@ on:
   pull_request:
     paths:
       - 'src/components/PassportNexus.jsx'
+      - 'src/city/**'
       - 'src/components/NexusCinema.jsx'
       - 'src/components/nexus-*'
       - 'src/components/useNexusJourney.js'
       - 'src/styles/*nexus*.css'
+      - 'src/styles/city-3b.css'
       - 'public/nexus/cinema-v1/**'
       - 'tests/nexus*'
+      - 'tests/city3b*'
       - 'scripts/verify-nexus*.mjs'
       - '.github/workflows/verify-nexus.yml'
   workflow_dispatch:
@@ -32,7 +35,7 @@ jobs:
         id: mode
         shell: bash
         run: |
-          if grep -q "city3bRequest" src/components/PassportNexus.jsx; then
+          if grep -qE "City3B|city3bRequest" src/components/PassportNexus.jsx; then
             echo "city=true" >> "$GITHUB_OUTPUT"
           else
             echo "city=false" >> "$GITHUB_OUTPUT"

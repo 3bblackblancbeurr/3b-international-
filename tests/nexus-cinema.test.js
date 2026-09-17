@@ -34,24 +34,27 @@ test('all reference assets are local WebP files, hash-verified and within budget
   assert.ok(total<750000);assert.ok(manifest.assets['hall-mobile.webp'].bytes<250000);
 });
 test('passport destination is either the legacy journey or the intentional City 3B replacement', () => {
-  const source=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
-  if (source.includes('city3bRequest')) {
+  const gateway=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+  const cityMode=gateway.includes('City3B')||gateway.includes('city3bRequest');
+  if (cityMode) {
+    const source=gateway.includes('City3B')?readFileSync(new URL('../src/city/City3B.jsx',import.meta.url),'utf8'):gateway;
+    assert.match(gateway,/City3B|city3bRequest/);
     assert.match(source,/CRÉE TA VILLE/);
     assert.match(source,/Fonder ma ville/);
-    assert.match(source,/nexus_city_place_v2|call\('place'/);
+    assert.match(source,/call\('place'/);
     assert.match(source,/Collection permanente/);
     assert.match(source,/Découvrir les villes 3B/);
-    assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
+    assert.doesNotMatch(gateway+source,/localStorage\.clear|sessionStorage\.clear/);
     return;
   }
-  assert.match(source,/useNexusJourney\(\{ open, onClose, goTo \}\)/);
-  assert.match(source,/journey\.travel\('ORIGINE'\)/);
-  assert.match(source,/setArrivalCode\(active\.code\)/);
-  assert.match(source,/journey\.travel\(code\)/);
-  assert.match(source,/NexusCountryArrival/);
-  assert.match(source,/originEnabled=\{journey\.originEnabled\}/);
-  assert.match(source,/Voir le sanctuaire en 3D/);
-  assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
+  assert.match(gateway,/useNexusJourney\(\{ open, onClose, goTo \}\)/);
+  assert.match(gateway,/journey\.travel\('ORIGINE'\)/);
+  assert.match(gateway,/setArrivalCode\(active\.code\)/);
+  assert.match(gateway,/journey\.travel\(code\)/);
+  assert.match(gateway,/NexusCountryArrival/);
+  assert.match(gateway,/originEnabled=\{journey\.originEnabled\}/);
+  assert.match(gateway,/Voir le sanctuaire en 3D/);
+  assert.doesNotMatch(gateway,/localStorage\.clear|sessionStorage\.clear/);
 });
 test('premium transit keeps depth, speed, country panels and mobile motion safeguards', () => {
   const source=readFileSync(new URL('../src/components/NexusCinema.jsx',import.meta.url),'utf8');
