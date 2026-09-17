@@ -70,11 +70,15 @@ export function createCreature(asset,region,color,scale=2){
 }
 
 export function isCelianeResident(kind,color){return kind==='woman'&&String(color).toLowerCase()==='#7bbdff';}
+function createCelianeResident(living){
+ const actor=createLivingActor(living,{avatar:{body:'femme',style:'sentinelle',hair:4,color:2,fabricColor:'#17263d',accentColor:'#d7bd83',trouserColor:'#202b3b',bootColor:'#151922',outer:'none',bag:false,skin:2},scale:2.08});
+ const geometry=new THREE.TorusGeometry(1.05,.028,6,40),material=new THREE.MeshBasicMaterial({color:'#e0c27b',transparent:true,opacity:.48,depthWrite:false}),aura=new THREE.Mesh(geometry,material);aura.name='Celiane · Justice aura';aura.rotation.x=Math.PI/2;aura.position.y=.045;actor.object.add(aura);let time=0;
+ return{object:actor.object,get ready(){return actor.ready;},action:name=>actor.action(name),face:(dx,dz,dt)=>actor.face(dx,dz,dt),update(dt,dx=0,dz=0,travelled=0){actor.update(dt,dx,dz,travelled);time+=dt;aura.rotation.z=time*.16;material.opacity=.36+Math.sin(time*1.7)*.1;},reset(){actor.reset();time=0;},setColor:color=>actor.setColor(color),dispose(){actor.dispose();geometry.dispose();material.dispose();}};
+}
 export function createResident(asset,kind,color){
  if(asset.living){
-  const celiane=isCelianeResident(kind,color);
-  const avatar=celiane?{body:'femme',style:'sentinelle',hair:4,color:2,fabricColor:'#17263d',accentColor:'#d7bd83',trouserColor:'#202b3b',bootColor:'#151922',outer:'none',bag:false,skin:2}:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,fabricColor:color,outer:kind==='artisan'?'apron':'none',bag:kind==='traveler',skin:2};
-  return createLivingActor(asset.living,{avatar,scale:celiane?2.08:2});
+  if(isCelianeResident(kind,color))return createCelianeResident(asset.living);
+  return createLivingActor(asset.living,{avatar:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,fabricColor:color,outer:kind==='artisan'?'apron':'none',bag:kind==='traveler',skin:2},scale:2});
  }
  const source=asset.scene.getObjectByName('Resident_'+kind);if(!source)throw Error('Habitant manquant : '+kind);const object=source.clone(true),owned=[];object.scale.setScalar(2.4);
  object.traverse(o=>{if(o.isMesh&&o.material.name==='Resident cloth'){o.material=o.material.clone();o.material.color.set(color).multiplyScalar(.65);owned.push(o.material);}});
