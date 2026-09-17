@@ -28,16 +28,34 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1
-      - run: npx playwright install --with-deps chromium
-      - run: node --test tests/nexus.test.js tests/nexus-cinema.test.js
+      - name: Detect current passport destination
+        id: mode
+        shell: bash
+        run: |
+          if grep -q "city3bRequest" src/components/PassportNexus.jsx; then
+            echo "city=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "city=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify shared Nexus assets and compatibility
+        run: node --test tests/nexus.test.js tests/nexus-cinema.test.js
+      - name: Install Playwright for legacy Nexus visual checks
+        if: steps.mode.outputs.city != 'true'
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - name: Install Chromium for legacy Nexus visual checks
+        if: steps.mode.outputs.city != 'true'
+        run: npx playwright install --with-deps chromium
       - name: Verify existing 3D, navigation, fallback and passport
+        if: steps.mode.outputs.city != 'true'
         run: node scripts/verify-nexus.mjs
       - name: Verify reference artwork, mobile controls and paused tunnel
-        if: ${{ !cancelled() }}
+        if: steps.mode.outputs.city != 'true' && !cancelled()
         run: node scripts/verify-nexus-cinema.mjs
+      - name: Verify City 3B replacement build
+        if: steps.mode.outputs.city == 'true'
+        run: npm run build
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.mode.outputs.city != 'true'
         with:
           name: nexus-browser-evidence
           path: |

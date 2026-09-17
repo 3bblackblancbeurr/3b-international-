@@ -1,145 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, Check, Compass, LockKeyhole, Pause, Play, RotateCcw, X } from 'lucide-react';
-import { NEXUS_WORLDS, rememberNexusCountry, resolveNexusWorld } from './nexus-worlds.js';
-import { useNexusJourney } from './useNexusJourney.js';
-import NexusCountryArrival from './NexusCountryArrival.jsx';
-import '../styles/passport-nexus.css';
-import '../styles/nexus-journey.css';
-import { NexusCinemaHall, NexusTransitDecor } from './NexusCinema.jsx';
-import { nexusDoorImage } from './nexus-cinema.js';
-import '../styles/nexus-cinema.css';
-import '../styles/nexus-cinema-v6.css';
-
-function GateGlyph({ code }) {
-  const details = {
-    FR: 'M30 8L16 48M30 8L44 48M21 32H39M18 42H42M23 26L37 38M37 26L23 38M26 17H34',
-    DZ: 'M15 48Q22 39 30 10Q31 39 44 48M30 10V48M15 48H44',
-    ES: 'M17 48V22L21 11L25 22V48M34 48V19L38 8L42 19V48M13 48H47',
-    MA: 'M13 48V20H20V48M40 48V20H47V48M21 48V34Q17 23 30 18Q43 23 39 34V48M11 18H22M38 18H49',
-    IT: 'M12 20Q30 10 48 20V45Q30 53 12 45ZM12 29Q30 38 48 29M12 38Q30 47 48 38M19 20V47M27 23V49M35 23V49M43 21V47',
-    TN: 'M12 46H48M16 42V19M24 42V19M36 42V19M44 42V19M12 17H48M10 50H50M19 13L30 8L41 13',
-    TR: 'M16 46V32Q30 6 44 32V46M16 32H44M11 46V19L13 12L15 19M45 46V19L47 12L49 19M30 16V9',
-    EE: 'M14 48V28H23V48M12 28L18 15L25 28M25 48V19H35V48M23 19L30 7L37 19M38 48V29H47V48M36 29L42 17L49 29',
-  };
-  return <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={details[code] || details.FR} /></svg>;
+import {useEffect,useMemo,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
+import {Building2,CarFront,Coins,Eye,Globe2,Map,Package,Settings2,Shirt,Trash2,X} from 'lucide-react';
+import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
+import {CITY_COUNTRIES,CITY_VALUES,city3bRequest} from '../city/city3b-client.js';
+import '../styles/city-3b.css';
+const TABS=[['city','Ville',Building2],['build','Construire',Building2],['districts','Quartiers',Map],['collection','Collection',Package],['visit','Visiter',Globe2]];
+const reqId=()=>crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;
+export default function PassportNexus({open,onClose}){
+ const account=useLoyalty(),uid=account.user?.id,dialog=useRef(null);const[data,setData]=useState(null),[tab,setTab]=useState('city'),[busy,setBusy]=useState(false),[error,setError]=useState('');const[name,setName]=useState('Ma ville 3B'),[country,setCountry]=useState('France');
+ const call=async(action,body={})=>{setBusy(true);setError('');try{const v=await city3bRequest(action,body,uid);setData(v);return v}catch(e){setError(e.message);return null}finally{setBusy(false)}};
+ useEffect(()=>{if(open&&uid){setTab('city');call('snapshot')}else if(open&&!account.loading){setData(null);setError('')}},[open,uid,account.loading]);if(!open)return null;const city=data?.city,profile=account.profile||{},needsLogin=!account.loading&&!uid;
+ return createPortal(<dialog ref={dialog} open className="city3b-dialog" aria-label="Crée ta ville 3B"><div className="city3b-shell"><header className="city3b-top"><div className="city3b-brand"><b>3B</b><span>CRÉE TA VILLE</span></div><div className="city3b-stats"><span className="city3b-chip">NIV. {city?.city_level||1}</span><span className="city3b-chip"><Coins size={13}/> {profile.points||0} Coins</span><span className="city3b-chip">Terrain {city?.land_tier||1}/10</span></div><button className="city3b-close" onClick={onClose} aria-label="Fermer"><X size={20}/></button></header><main className="city3b-main">{error&&<div className="city3b-error" role="alert">{error}</div>}{account.loading?<div className="city3b-loading">VÉRIFICATION DU PASSEPORT…</div>:needsLogin?<LoginRequired/>:!data&&!error?<div className="city3b-loading">SYNCHRONISATION VILLE 3B…</div>:!city?<CreateCity name={name} setName={setName} country={country} setCountry={setCountry} busy={busy} create={()=>call('create',{name:name.trim(),country})}/>:<CityContent tab={tab} setTab={setTab} data={data} uid={uid} busy={busy} call={call}/>}</main>{city&&<nav className="city3b-nav" aria-label="Navigation Ville 3B">{TABS.map(([id,label,Icon])=><button key={id} aria-current={tab===id} onClick={()=>setTab(id)}><Icon size={18}/><br/>{label}</button>)}</nav>}</div></dialog>,document.body)
 }
-function SceneFallback({ selected }) {
-  const world = resolveNexusWorld(selected);
-  return <div className="nexus-fallback" aria-hidden="true" style={{ '--gate-color': world?.color || '#92c9ff' }}><div className="nexus-fallback-vault" /><div className="nexus-fallback-floor" /><div className="nexus-fallback-gates">{NEXUS_WORLDS.map(w => <div key={w.code} data-selected={w.code === selected} style={{ '--gate-color': w.color }}><GateGlyph code={w.code} /></div>)}</div><div className="nexus-fallback-seal"><span>3B</span></div></div>;
-}
-function NexusStage({ phase, selected, paused, reducedMotion, quality, onSelect, onStatus }) {
-  const host = useRef(null), api = useRef(null), latest = useRef(null);
-  latest.current = { phase, selected, paused, reducedMotion, quality, onSelect, onStatus };
-  const [status, setStatus] = useState('loading');
-  useEffect(() => {
-    let live = true, instance = null, failed = false;
-    function report(value) { if (live) { setStatus(value); latest.current.onStatus(value); } }
-    import('./nexus-scene.js').then(({ createNexusScene }) => {
-      if (!live || !host.current) return;
-      try {
-        instance = createNexusScene(host.current, {
-          onSelect: code => latest.current.onSelect(code), onReady: () => report('3d'),
-          onFailure: () => { failed = true; report('fallback'); },
-          onQuality: () => { if (live) latest.current.onStatus('adaptive'); },
-        });
-        if (failed) { instance.dispose(); return; }
-        api.current = instance; instance.update(latest.current);
-      } catch { report('fallback'); host.current?.replaceChildren(); }
-    }).catch(() => report('fallback'));
-    return () => { live = false; instance?.dispose(); api.current = null; };
-  }, []);
-  useEffect(() => { api.current?.update({ phase, selected, paused, reducedMotion, quality }); }, [phase, selected, paused, reducedMotion, quality]);
-  return <div className="nexus-stage" data-renderer={status} data-phase={phase}><SceneFallback selected={selected} /><div ref={host} className="nexus-canvas" /><div className="nexus-atmosphere" aria-hidden="true" /></div>;
-}
-export default function PassportNexus({ open, onClose, goTo, reducedMotion = false }) {
-  const journey = useNexusJourney({ open, onClose, goTo });
-  const dialog = useRef(null), closeButton = useRef(null), timers = useRef([]), closeRef = useRef(journey.close);
-  closeRef.current = journey.close;
-  const [phase, setPhase] = useState('scan'), [selected, setSelected] = useState(null);
-  const [paused, setPaused] = useState(false), [quality, setQuality] = useState('auto');
-  const [visualMode, setVisualMode] = useState('cinema');
-  const [rendererStatus, setRendererStatus] = useState('loading'), [replay, setReplay] = useState(0);
-  const [arrivalCode, setArrivalCode] = useState(null);
-  const active = resolveNexusWorld(selected), isOrigin = selected === 'ORIGIN';
-  const arrivalWorld = resolveNexusWorld(arrivalCode);
-  const selectedProgress = journey.progress.doors.find(door => door.code === selected);
-  const clearTimers = () => { timers.current.forEach(window.clearTimeout); timers.current = []; };
-  useEffect(() => {
-    if (!open) return undefined;
-    const previousFocus = document.activeElement, oldOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    if (dialog.current && !dialog.current.open) dialog.current.showModal();
-    closeButton.current?.focus({ preventScroll: true });
-    return () => { clearTimers(); dialog.current?.close(); document.body.style.overflow = oldOverflow; if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true }); };
-  }, [open]);
-  useEffect(() => {
-    if (!open) return undefined;
-    clearTimers(); setSelected(null); setArrivalCode(null); setPaused(false); setPhase(reducedMotion ? 'nexus' : 'scan');
-    return clearTimers;
-  }, [open, reducedMotion, replay]);
-  useEffect(() => {
-    if (!open || reducedMotion || paused || phase === 'nexus') return undefined;
-    clearTimers();
-    const timer = window.setTimeout(() => { setPhase(phase === 'scan' ? 'tunnel' : 'nexus'); if (phase === 'tunnel' && document.activeElement?.dataset.nexusSkip) closeButton.current?.focus({ preventScroll: true }); }, phase === 'scan' ? 1050 : 3650);
-    timers.current = [timer]; return () => window.clearTimeout(timer);
-  }, [open, reducedMotion, phase, replay, paused]);
-  function skip() { clearTimers(); setPhase('nexus'); closeButton.current?.focus({ preventScroll: true }); }
-  function selectDoor(code) { if (code === 'ORIGIN' || resolveNexusWorld(code)) { setArrivalCode(null); setSelected(code); } }
-  async function enterWorld() {
-    if (isOrigin) { await journey.travel('ORIGINE'); return; }
-    if (active) { setArrivalCode(active.code); return; }
-    await journey.travel(null);
-  }
-  async function enterCountryWorld() {
-    if (!arrivalWorld) return;
-    const code = arrivalWorld.code;
-    const success = await journey.travel(code);
-    if (success) { try { rememberNexusCountry(window.localStorage, code); } catch { /* Optional legacy navigation hint. */ } }
-  }
-  function doorKeys(event, index) {
-    let next;
-    if (event.key === 'ArrowRight') next = (index + 1) % 8;
-    else if (event.key === 'ArrowLeft') next = (index + 7) % 8;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = 7;
-    else return;
-    event.preventDefault(); setArrivalCode(null); setSelected(NEXUS_WORLDS[next].code);
-    const button = event.currentTarget.parentElement.querySelectorAll('button')[next];
-    button?.focus({ preventScroll: true }); button?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
-  }
-  if (!open || typeof document === 'undefined') return null;
-  const economy = quality === 'light' || (rendererStatus === 'adaptive' && quality === 'auto');
-  const statusLabel = visualMode === 'cinema' ? (economy ? 'Décor cinéma · économie' : 'Décor cinéma · interactif') : rendererStatus === 'fallback' ? 'Vue légère · 3D indisponible' : rendererStatus === 'loading' ? 'Préparation du décor' : economy ? 'Rendu 3D · économie' : 'Rendu 3D en direct';
-  const travelDisabled = journey.busy || journey.authLoading || (isOrigin ? !journey.originEnabled : active ? !journey.world || journey.unresolved : false);
-  const originText = journey.progress.finished ? 'Le Cercle est réuni. L’Union est retrouvée ; ton héritage continue.' : journey.resumeOrigin ? 'Le dernier défi est en cours. Reprends ton passage sans perdre ta progression.' : journey.originEnabled ? 'Les huit sceaux sont réunis et les huit pays reconstruits. Le passage vers ORIGINE t’attend.' : 'Derrière cette porte, les huit héritages ne font plus qu’un. Réunis les huit sceaux et reconstruis les huit pays pour ouvrir le passage.';
-  return createPortal(<dialog ref={dialog} className="nexus-experience" data-phase={phase} data-calm={reducedMotion || paused} data-selected={selected || 'overview'} data-progress-loaded={!!journey.world} data-nexus-version="cinema-v6-20260913" data-visual-mode={visualMode} data-economy={economy} data-arrival={arrivalWorld?.code || 'none'} aria-labelledby="nexus-title" onCancel={event => { event.preventDefault(); if (arrivalWorld) setArrivalCode(null); else closeRef.current(); }}>
-    <div className="nexus-cinematic-backdrop" aria-hidden="true" />
-    {phase !== 'nexus' && <NexusTransitDecor />}
-    <NexusStage phase={phase} selected={selected} paused={paused || !!arrivalWorld || (phase === 'nexus' && visualMode === 'cinema')} reducedMotion={reducedMotion} quality={quality} onSelect={selectDoor} onStatus={setRendererStatus} />
-    <div className="nexus-shell">
-      <header className="nexus-topbar"><div className="nexus-wordmark"><b>3B</b><span>PASSEPORT DIGITAL<small>BLACK · BLANC · BEUR</small></span></div><span className="nexus-chapter">LE CERCLE BRISÉ <i /> NEXUS</span><button ref={closeButton} type="button" className="nexus-icon-button" onClick={() => closeRef.current()} aria-label="Fermer le Nexus et revenir au passeport"><X size={21} /></button></header>
-      {phase !== 'nexus' ? <section className="nexus-arrival" aria-live="polite"><div className="nexus-arrival-mark" aria-hidden="true"><i /><i /><span>3B</span></div><p className="nexus-kicker">{phase === 'scan' ? 'PASSEPORT VIVANT' : 'TRAVERSÉE DU CERCLE'}</p><h2 id="nexus-title">{phase === 'scan' ? 'L’héritage te reconnaît.' : 'Au-delà du passeport.'}</h2><p>{phase === 'scan' ? 'Ouverture du passage vers le Nexus.' : 'Huit mondes se rejoignent. Ton voyage commence.'}</p><div className="nexus-arrival-progress" aria-hidden="true"><i /></div><div className="nexus-intro-controls"><button type="button" className="nexus-skip" data-nexus-skip="true" onClick={skip}>Passer l’introduction <ArrowRight size={16} /></button><button type="button" className="nexus-icon-button" aria-label={paused ? 'Reprendre les animations' : 'Mettre les animations en pause'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused ? <Play size={16} /> : <Pause size={16} />}</button></div></section> : <>
-        <main className="nexus-main"><section className="nexus-narrative" aria-live="polite" aria-atomic="true">
-          <p className="nexus-kicker">{active ? `PORTE ${active.number} / 08 · ${active.architecture}` : isOrigin ? 'PORTE 09 · LE DERNIER PASSAGE' : 'LE SANCTUAIRE DES HÉRITAGES'}</p>
-          <h2 id="nexus-title">{active ? active.country : isOrigin ? 'ORIGINE' : <>Huit mondes.<br /><em>Un seul héritage.</em></>}</h2>
-          {active && <p className="nexus-value" style={{ color: active.color }}>{active.value}</p>}
-          <p className="nexus-description">{active ? active.description : isOrigin ? originText : 'Choisis une porte. Retrouve un gardien. Rassemble ce que l’Oubli a séparé.'}</p>
-          {active && <><div className="nexus-guardian"><span>GARDIEN DE LA PORTE</span><strong>{active.guardian}</strong></div><p className="nexus-progress-state">{!journey.world ? 'Lecture de ta progression…' : selectedProgress?.restored ? 'Pays reconstruit · sceau retrouvé' : selectedProgress?.sealed ? 'Sceau retrouvé' : 'Un héritage à découvrir'}</p></>}
-          {!active && <div className="nexus-progress-summary"><strong>{journey.world ? journey.progress.sealCount : '—'} / 8 sceaux</strong><span>{journey.world ? journey.progress.restoredCount : '—'} / 8 pays reconstruits</span></div>}
-          {isOrigin && <div className="nexus-origin-seals" aria-label="Les huit sceaux de la porte ORIGINE">{journey.progress.doors.map(door => <span key={door.code} data-complete={door.sealed} title={`${door.country} · ${door.sealed ? 'Sceau retrouvé' : 'Sceau à retrouver'}`}>{door.sealed ? <Check size={12} /> : <LockKeyhole size={12} />}<small>{door.code}</small></span>)}</div>}
-          {selected && <button type="button" className="nexus-back" onClick={() => setSelected(null)}><ArrowLeft size={15} /> Vue du sanctuaire</button>}
-          {selected && <button type="button" className="nexus-resume" disabled={journey.busy || journey.authLoading} onClick={() => journey.travel(null)}><Compass size={14} />{journey.unresolved ? 'Reprendre ma rencontre en cours' : 'Reprendre mon aventure'}</button>}
-        </section>{visualMode === 'cinema' && <NexusCinemaHall selected={selected} onSelect={selectDoor} doors={journey.progress.doors} originEnabled={journey.originEnabled} economy={economy} onFailure={() => setVisualMode('3d')} />}<div className="nexus-scene-caption" aria-hidden="true"><i /><span>{isOrigin ? 'LE SEUIL DE L’ORIGINE' : active ? active.architecture : 'LE CERCLE BRISÉ'}<small>{isOrigin ? 'Huit valeurs. Une seule origine.' : active ? `${active.country} · ${active.value}` : 'Ce n’est pas une marque, c’est un héritage.'}</small></span></div></main>
-        <footer className="nexus-bottom"><div className="nexus-destination-row"><span>LES HUIT PORTES <small>Choisis ton horizon</small></span><button type="button" className="nexus-origin-link" aria-pressed={isOrigin} onClick={() => selectDoor('ORIGIN')}><LockKeyhole size={13} /> ORIGINE <span>09</span></button></div>
-          <nav className="nexus-door-rail" aria-label="Les huit portes du Nexus">{NEXUS_WORLDS.map((world, index) => <button key={world.code} type="button" className="nexus-door-choice" style={{ '--gate-color': world.color }} aria-label={`${world.country}, ${world.value}, gardien ${world.guardian}`} aria-pressed={selected === world.code} onClick={() => selectDoor(world.code)} onKeyDown={event => doorKeys(event, index)}><img className="nexus-door-art" src={nexusDoorImage(world.code)} alt="" width="132" height="132" decoding="async" onError={event => { event.currentTarget.style.display = 'none'; }} /><span className="nexus-door-index">{world.number}</span><GateGlyph code={world.code} /><span className="nexus-door-label"><strong>{world.country}</strong><small>{world.value}</small></span><i /></button>)}</nav>
-          {(journey.error || journey.busy) && <div className="nexus-feedback" role={journey.error ? 'alert' : 'status'}><p>{journey.error || 'Préparation du passage. Ta progression est conservée.'}</p>{journey.error && <button type="button" disabled={journey.busy} onClick={journey.retry}>Réessayer la lecture de la progression</button>}</div>}
-          <div className="nexus-controls"><div className="nexus-render-controls"><button type="button" className="nexus-visual-toggle" onClick={() => setVisualMode(mode => mode === 'cinema' ? '3d' : 'cinema')}>{visualMode === 'cinema' ? 'Voir le sanctuaire en 3D' : 'Activer le décor cinéma'}</button><span className="nexus-render-status"><i />{statusLabel}</span><label className="nexus-quality"><span className="nexus-visually-hidden">Qualité graphique</span><select aria-label="Qualité graphique" value={quality} onChange={event => setQuality(event.target.value)}><option value="auto">Auto</option><option value="high">Détaillé</option><option value="light">Économie</option></select></label><button type="button" className="nexus-icon-button" disabled={reducedMotion} aria-label={paused ? 'Reprendre les animations' : 'Mettre les animations en pause'} aria-pressed={paused} onClick={() => setPaused(value => !value)}>{paused || reducedMotion ? <Play size={16} /> : <Pause size={16} />}</button><button type="button" className="nexus-icon-button" aria-label="Revoir le tunnel Matrix" onClick={() => setReplay(value => value + 1)}><RotateCcw size={16} /></button></div>
-            <button type="button" className="nexus-enter-world" disabled={travelDisabled} onClick={enterWorld}>{isOrigin && !journey.originEnabled ? <LockKeyhole size={17} /> : <Compass size={17} />}<span>{journey.busy ? 'Préparation du passage…' : isOrigin ? journey.progress.finished ? 'L’Union retrouvée' : journey.resumeOrigin ? 'Reprendre le défi ORIGINE' : journey.originEnabled ? 'Ouvrir ORIGINE' : 'ORIGINE · accès scellé' : active ? 'Franchir la porte' : journey.unresolved ? 'Reprendre ma rencontre' : 'Explorer le Monde 3B'}{active && <small>{journey.unresolved ? 'Termine ta rencontre avant de changer de pays' : `${active.country} · scène d’arrivée cinématique`}</small>}</span>{!travelDisabled && <ArrowRight size={18} />}</button>
-          </div>
-        </footer>
-      </>}
-    </div>
-    {arrivalWorld && <NexusCountryArrival world={arrivalWorld} busy={journey.busy} onBack={() => setArrivalCode(null)} onEnter={enterCountryWorld} />}
-  </dialog>, document.body);
-}
+function LoginRequired(){return <section className="city3b-hero"><div className="city3b-grid"/><div className="city3b-horizon"/><div className="city3b-hero-copy"><p className="city3b-kicker">PASSEPORT 3B REQUIS</p><h2>Connecte ton <em>espace membre.</em></h2><p>Ta ville, tes constructions et ta collection sont liées à ton compte 3B. Connecte-toi d’abord depuis l’Espace membre, puis rouvre le Passeport.</p></div></section>}
+function CreateCity({name,setName,country,setCountry,busy,create}){return <section className="city3b-hero"><div className="city3b-grid"/><div className="city3b-horizon"/><div className="city3b-hero-copy"><p className="city3b-kicker">DE ZÉRO À TA PROPRE CITÉ</p><h2>Crée ta <em>ville 3B.</em></h2><p>Une ville permanente. Huit quartiers. Aucun reset, aucune saison.</p><div className="city3b-form"><input aria-label="Nom de la ville" value={name} maxLength={40} onChange={e=>setName(e.target.value)}/><select aria-label="Pays d’origine" value={country} onChange={e=>setCountry(e.target.value)}>{CITY_COUNTRIES.map(c=><option key={c}>{c}</option>)}</select><button className="city3b-btn primary" disabled={busy||name.trim().length<2} onClick={create}>{busy?'Création…':'Fonder ma ville'}</button></div></div></section>}
+function CityContent({tab,setTab,data,uid,busy,call}){const c=data.city;if(tab==='city')return <CityHome data={data} call={call} setTab={setTab} busy={busy}/>;if(tab==='build')return <BuildPanel data={data} busy={busy} call={call}/>;if(tab==='districts')return <Districts data={data} busy={busy} call={call}/>;if(tab==='collection')return <Collection data={data} busy={busy} call={call}/>;if(tab==='settings')return <CitySettings city={c} busy={busy} call={call} setTab={setTab}/>;return <Discovery uid={uid}/>}
+function CityHome({data,call,setTab,busy}){const c=data.city;return <><section className="city3b-hero"><div className="city3b-grid"/><div className="city3b-horizon"/><div className="city3b-hero-copy"><p className="city3b-kicker">{c.origin_country?.toUpperCase()} · {CITY_VALUES[c.origin_country]}</p><h2>{c.name}</h2><p>Niveau {c.city_level} · {c.city_xp} XP ville · {c.visitors} visites</p><div className="city3b-progress"><i style={{width:`${Math.min(100,(c.city_xp%1000)/10)}%`}}/></div><div className="city3b-actions"><button className="city3b-btn primary" onClick={()=>setTab('build')}>Construire</button><button className="city3b-btn blue" disabled={busy} onClick={()=>call('recalculate')}>Actualiser</button><button className="city3b-btn" onClick={()=>setTab('settings')}><Settings2 size={15}/> Paramètres</button></div></div></section><section className="city3b-panel"><h3>Ma cité</h3><div className="city3b-cards"><article className="city3b-card"><strong>{data.placements?.length||0}</strong><small>constructions</small></article><article className="city3b-card"><strong>{data.districts?.filter(x=>x.unlocked).length||1}/8</strong><small>quartiers</small></article><article className="city3b-card"><strong>{data.items?.length||0}</strong><small>objets permanents</small></article><article className="city3b-card"><strong>{c.day_mode} · {c.weather}</strong><small>{c.ambience}</small></article></div></section>{data.placements?.length>0&&<section className="city3b-panel"><h3>Bâtiments placés</h3><div className="city3b-cards">{data.placements.slice(-12).map(p=><article key={p.id} className="city3b-card"><strong>{p.building_code}</strong><small>Parcelle {p.x}, {p.z} · {p.rotation}°</small><button className="city3b-btn danger" disabled={busy} onClick={()=>call('remove',{placement:p.id})}><Trash2 size={14}/> Retirer</button></article>)}</div></section>}</>}
+function BuildPanel({data,busy,call}){const[selected,setSelected]=useState(null),[x,setX]=useState(0),[z,setZ]=useState(0),[rotation,setRotation]=useState(0);const build=()=>selected&&call('place',{building:selected.code,x:Number(x),z:Number(z),rotation:Number(rotation),request:reqId()});return <section className="city3b-panel"><h3>Construire</h3><p>Choisis un bâtiment, puis une parcelle. Le serveur contrôle niveau, quartier, collisions et Coins.</p><div className="city3b-cards">{(data.buildings||[]).map(b=><button key={b.code} className="city3b-card" aria-pressed={selected?.code===b.code} onClick={()=>setSelected(b)}><strong>{b.name}</strong><span>{b.cost_coins} Coins</span><small>Niveau {b.unlock_level}{b.country?` · ${b.country}`:''}</small></button>)}</div>{selected&&<div className="city3b-placement"><strong>{selected.name}</strong><label>X<input type="number" min="-500" max="500" value={x} onChange={e=>setX(e.target.value)}/></label><label>Z<input type="number" min="-500" max="500" value={z} onChange={e=>setZ(e.target.value)}/></label><label>Rotation<select value={rotation} onChange={e=>setRotation(e.target.value)}><option>0</option><option>90</option><option>180</option><option>270</option></select></label><button className="city3b-btn primary" disabled={busy} onClick={build}>{busy?'Validation…':`Construire · ${selected.cost_coins} Coins`}</button></div>}</section>}
+function Districts({data,busy,call}){return <section className="city3b-panel"><h3>Les huit quartiers</h3><div className="city3b-cards">{(data.districts||[]).map(d=><article key={d.country} className="city3b-card" data-locked={!d.unlocked}><strong>{d.country}</strong><span>{CITY_VALUES[d.country]}</span><small>{d.unlocked?`Quartier niveau ${d.level}`:'À débloquer avec ta progression'}</small>{!d.unlocked&&<button className="city3b-btn" disabled={busy} onClick={()=>call('unlock_district',{country:d.country})}>Débloquer</button>}</article>)}</div></section>}
+function Collection({data,busy,call}){const defs=useMemo(()=>new Map((data.definitions||[]).map(d=>[d.code,d])),[data.definitions]);const displayed=new Set((data.displays||[]).map(d=>d.item_instance_id));return <section className="city3b-panel"><h3>Collection permanente</h3><p>Expose tes objets dans la ville, ou range les véhicules et tenues dans les espaces dédiés.</p>{!data.items?.length?<div className="city3b-empty">Aucun objet permanent dans ton inventaire.</div>:<div className="city3b-cards">{data.items.map((item,index)=>{const d=defs.get(item.item_code)||{};return <article key={item.id} className="city3b-card"><strong>{d.name||item.item_code}</strong><span>{d.rarity||'3B'} · #{item.serial_no}</span><small>{d.item_type||'collectible'}</small>{displayed.has(item.id)?<button className="city3b-btn" disabled={busy} onClick={()=>call('remove_display',{item:item.id})}>Retirer de la ville</button>:<button className="city3b-btn blue" disabled={busy} onClick={()=>call('display',{item:item.id,x:20+(index%8)*2,z:20+Math.floor(index/8)*2,rotation:0})}><Eye size={14}/> Exposer</button>}{d.item_type==='vehicle'&&<button className="city3b-btn" disabled={busy} onClick={()=>call('asset_set',{asset:'GARAGE_3B',slot:(index%8)+1,item:item.id})}><CarFront size={14}/> Garage</button>}{d.item_type==='outfit'&&<button className="city3b-btn" disabled={busy} onClick={()=>call('asset_set',{asset:'DRESSING_3B',slot:(index%20)+1,item:item.id})}><Shirt size={14}/> Dressing</button>}</article>})}</div>}</section>}
+function Discovery({uid}){const[rows,setRows]=useState(null),[visit,setVisit]=useState(null),[notice,setNotice]=useState('');useEffect(()=>{city3bRequest('discover',{},uid).then(v=>setRows(v.cities||[])).catch(()=>setRows([]))},[uid]);const open=async c=>{setNotice('');try{const v=await city3bRequest('visit',{city:c.city_id},uid);setVisit(v)}catch(e){setNotice(e.message)}};return <section className="city3b-panel"><h3>Découvrir les villes 3B</h3>{notice&&<div className="city3b-error">{notice}</div>}{visit&&<div className="city3b-visit"><strong>{visit.city?.name}</strong><span>{visit.city?.origin_country} · niveau {visit.city?.city_level}</span><small>{visit.placements?.length||0} bâtiments · {visit.displays?.length||0} objets exposés</small><button className="city3b-btn" onClick={()=>setVisit(null)}>Retour à la liste</button></div>}{!visit&&(!rows?<div className="city3b-empty">Recherche…</div>:rows.length===0?<div className="city3b-empty">Les premières villes publiques apparaîtront ici.</div>:<div className="city3b-cards">{rows.map(c=><article key={c.city_id} className="city3b-card"><strong>{c.name}</strong><span>{c.origin_country} · niv. {c.level}</span><small>{c.visitors} visites</small><button className="city3b-btn blue" onClick={()=>open(c)}>Visiter</button><button className="city3b-btn" onClick={()=>city3bRequest('favorite',{city:c.city_id,add:true},uid)}>☆ Favori</button></article>)}</div>)}</section>}
+function CitySettings({city,busy,call,setTab}){const[n,setN]=useState(city.name),[visibility,setVisibility]=useState(city.visibility),[day,setDay]=useState(city.day_mode),[weather,setWeather]=useState(city.weather),[ambience,setAmbience]=useState(city.ambience);return <section className="city3b-panel"><h3><Settings2 size={18}/> Paramètres de la ville</h3><div className="city3b-form"><input value={n} maxLength={40} onChange={e=>setN(e.target.value)}/><select value={visibility} onChange={e=>setVisibility(e.target.value)}><option value="private">Privée</option><option value="friends">Amis</option><option value="public">Publique</option></select><button className="city3b-btn primary" disabled={busy} onClick={()=>call('settings',{name:n,visibility})}>Enregistrer l’identité</button><select value={day} onChange={e=>setDay(e.target.value)}><option value="auto">Jour/nuit automatique</option><option value="day">Jour</option><option value="night">Nuit</option></select><select value={weather} onChange={e=>setWeather(e.target.value)}><option value="clear">Clair</option><option value="rain">Pluie</option><option value="fog">Brouillard</option><option value="snow">Neige</option><option value="storm">Tempête</option></select><select value={ambience} onChange={e=>setAmbience(e.target.value)}><option value="matrix">Matrix</option><option value="gold">Or</option><option value="urban">Urbaine</option><option value="cinematic">Cinéma</option><option value="calm">Calme</option></select><button className="city3b-btn blue" disabled={busy} onClick={()=>call('environment',{day,weather,ambience})}>Appliquer l’ambiance</button><button className="city3b-btn" onClick={()=>setTab('city')}>← Retour à ma ville</button></div></section>}
