@@ -6,5 +6,6 @@
 .world-shell .play-button,.world-shell .play-objective-chip,.world-shell .play-supplies,.world-shell .play-companion{box-shadow:0 10px 34px rgba(0,7,12,.22),inset 0 1px 0 rgba(255,255,255,.025)}
 .world-shell .play-objective-chip{background:linear-gradient(145deg,rgba(9,31,43,.82),rgba(9,22,31,.72));border-color:rgba(230,201,135,.26)}
 .world-shell .play-objective-chip small{color:var(--cinema-gold)}
+@media (max-width:700px){.world-shell:after{mix-blend-mode:normal;opacity:.7}.world-vignette{box-shadow:inset 0 0 58px rgba(0,8,15,.12)}}
 @media (prefers-reduced-motion:reduce){.world-shell:after{display:none}}
 @media (max-height:550px) and (orientation:landscape){.world-vignette{box-shadow:inset 0 0 58px rgba(0,8,15,.12)}}
