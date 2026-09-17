@@ -5,6 +5,7 @@ import {DEFAULT_ORBIT,restoreOrbit} from '../src/world/orbit.js';
 import {parisRenderBudget} from '../src/world/paris-district.js';
 import {regionalRenderBudget} from '../src/world/regional-district.js';
 import {floraRenderBudget} from '../src/world/flora.js';
+import {isCelianeResident} from '../src/world/models.js';
 import {cardById} from '../src/world/catalog.js';
 import {CHAPTERS,chapterObjective} from '../src/world/chapters.js';
 import {blankSave,beacon} from '../src/world/rules.js';
@@ -68,6 +69,9 @@ test('France vertical slice is canonically Celiane and Justice',()=>{
  assert.equal(cardById.C002.name,'Céliane — Justice');
  assert.equal(cardById.C213.name,'Fragment de Justice');
  assert.match(cardById.C165.power,/Justice/);
+ assert.equal(isCelianeResident('woman','#7bbdff'),true);
+ assert.equal(isCelianeResident('woman','#577b78'),false);
+ assert.equal(isCelianeResident('artisan','#7bbdff'),false);
  const objective=chapterObjective(blankSave(),'france');
  assert.match(objective.title,/Céliane/);
 });
