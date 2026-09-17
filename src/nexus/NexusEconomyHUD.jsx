@@ -1,0 +1,4 @@
+import React from 'react';
+import {Coins,Star,ShieldCheck} from 'lucide-react';
+import {economyHud} from '../economy/economy-ui-model.js';
+export default function NexusEconomyHUD({wallet={}}){const hud=economyHud(wallet);return <div className="nexus-economy-hud" aria-label={`Niveau ${hud.level}, ${hud.xp} XP 3B, ${hud.coins} 3B Coins`}><div className="nexus-economy-level"><Star size={16}/><span>{hud.labels.level}</span></div><div className="nexus-economy-xp"><span>XP 3B</span><div className="nexus-economy-track"><i style={{width:`${Math.round(hud.progress*100)}%`}}/></div><strong>{hud.xp.toLocaleString('fr-FR')}</strong></div><div className="nexus-economy-coins"><Coins size={17}/><strong>{hud.coins.toLocaleString('fr-FR')}</strong><span>3B Coins</span></div><div className="nexus-economy-safe" title="3B Token désactivé"><ShieldCheck size={14}/><span>Économie interne</span></div></div>;}
