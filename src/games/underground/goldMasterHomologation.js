@@ -1,0 +1,2 @@
+import {GOLD_MASTER_BY_ID} from './productionCatalog.js';
+export function homologationSpec(vehicleId){const v=GOLD_MASTER_BY_ID[vehicleId];if(!v)return null;return {vehicleId,wheelContactRequired:true,minGroundClearanceM:.06,maxGroundClearanceM:.35,maxWidthM:2.6,maxLengthM:6.5,maxHeightM:2.4,cockpitRequired:true,steeringRequired:true,brakeLightsRequired:true,headlightsRequired:true,collisionRequired:true,allowUnconventionalBody:true,allowEarthMaterials:true,rule:'radical form allowed; driving contacts visibility and collision remain gameplay-legible'};}

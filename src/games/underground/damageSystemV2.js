@@ -1,0 +1,4 @@
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+export function createDamageState(){return {body:0,engine:0,suspension:0,tires:0,total:0,limp:false,disabled:false};}
+export function applyDamage(state,{impact=0,zone='body',speedKph=0}={}){const gain=Math.max(0,impact)*(1+Math.min(2,speedKph/180));const next={...state,[zone]:clamp((state[zone]||0)+gain,0,100)};next.total=clamp(next.body*.35+next.engine*.3+next.suspension*.2+next.tires*.15,0,100);next.limp=next.total>=70||next.engine>=75||next.tires>=80;next.disabled=next.total>=98||next.engine>=100;return next;}
+export function damagePerformanceMultiplier(state){return {power:state.disabled?0:clamp(1-state.engine*.0065,.35,1),grip:clamp(1-state.tires*.005-state.suspension*.003,.42,1),steering:clamp(1-state.suspension*.004,.55,1),topSpeed:state.limp?.72:1};}

@@ -1,0 +1,26 @@
+name: Underground V2
+on:
+  pull_request:
+    paths:
+      - 'src/games/underground/**'
+      - 'tests/underground-*.test.js'
+      - 'tests/police-*.test.js'
+      - 'tests/final-assets-v3.test.js'
+      - 'package.json'
+  push:
+    branches:
+      - chatgpt-vehicle-production-pipeline-20260915
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run validate:underground-v2
+      - run: npm run validate:vehicle-production
+      - run: npm run validate:final-assets
+      - run: npm run build
