@@ -1,13 +1,13 @@
 import source from './cards-source.json' with {type:'json'};
 export const COUNTRIES = [
- {id:'france',name:'France',title:'Les Jardins de la mémoire',color:'#7bbdff',ground:'#253c52',stone:'#7c94a4',sky:'#101f36',biome:'city',symbol:'✧',portal:[-70,-80],lore:'Sous les arches bleues, les souvenirs prennent la forme de lumière.'},
- {id:'italie',name:'Italie',title:'Les Terrasses vivantes',color:'#95e4b6',ground:'#35514c',stone:'#c4b9a0',sky:'#182b32',biome:'terrace',symbol:'▱',portal:[30,-120],lore:'Des jardins suspendus relient les vestiges d’une cité qui se réveille.'},
- {id:'estonie',name:'Estonie',title:'La Forêt des aurores',color:'#9ce8f4',ground:'#34515c',stone:'#a0c7d2',sky:'#122b3c',biome:'ice',symbol:'❋',portal:[110,-60],lore:'Chaque clairière abrite un écho. Suis les lumières entre les sapins.'},
- {id:'turquie',name:'Turquie',title:'L’Observatoire des lunes',color:'#e9a4e8',ground:'#3d304d',stone:'#a793b4',sky:'#261d3c',biome:'dome',symbol:'☾',portal:[120,20],lore:'Huit constellations veillent sur les coupoles et les pierres flottantes.'},
- {id:'algerie',name:'Algérie',title:'L’Oasis des fragments',color:'#b8dda2',ground:'#796747',stone:'#c7b487',sky:'#323c3a',biome:'desert',symbol:'◇',portal:[70,105],lore:'L’eau et les arches du désert gardent la trace des passages oubliés.'},
- {id:'tunisie',name:'Tunisie',title:'Les Rivages de Carthage',color:'#ffb3a4',ground:'#68646a',stone:'#ddd1b2',sky:'#233747',biome:'coast',symbol:'⌘',portal:[-25,120],lore:'Des colonnes éclairées bordent une mer de brume et de souvenirs.'},
- {id:'maroc',name:'Maroc',title:'Les Cimes de l’Atlas',color:'#f7c77e',ground:'#665144',stone:'#c29972',sky:'#342c35',biome:'atlas',symbol:'☀',portal:[-110,70],lore:'Les portes dorées s’ouvrent sur des jardins protégés par les montagnes.'},
- {id:'espagne',name:'Espagne',title:'Les Falaises du crépuscule',color:'#ff9e86',ground:'#6c4546',stone:'#cf9278',sky:'#382330',biome:'cliff',symbol:'♜',portal:[-125,-20],lore:'Le vent traverse les moulins. Une lumière rouge court sur les falaises.'},
+ {id:'france',name:'France',title:'Les Jardins de la mémoire',color:'#7bbdff',ground:'#253c52',stone:'#7c94a4',sky:'#101f36',biome:'city',symbol:'✧',portal:[-22,-24],lore:'Sous les arches bleues, les souvenirs prennent la forme de lumière.'},
+ {id:'italie',name:'Italie',title:'Les Terrasses vivantes',color:'#95e4b6',ground:'#35514c',stone:'#c4b9a0',sky:'#182b32',biome:'terrace',symbol:'▱',portal:[14,-40],lore:'Des jardins suspendus relient les vestiges d’une cité qui se réveille.'},
+ {id:'estonie',name:'Estonie',title:'La Forêt des aurores',color:'#9ce8f4',ground:'#34515c',stone:'#a0c7d2',sky:'#122b3c',biome:'ice',symbol:'❋',portal:[43,-24],lore:'Chaque clairière abrite un écho. Suis les lumières entre les sapins.'},
+ {id:'turquie',name:'Turquie',title:'L’Observatoire des lunes',color:'#e9a4e8',ground:'#3d304d',stone:'#a793b4',sky:'#261d3c',biome:'dome',symbol:'☾',portal:[42,13],lore:'Huit constellations veillent sur les coupoles et les pierres flottantes.'},
+ {id:'algerie',name:'Algérie',title:'L’Oasis des fragments',color:'#b8dda2',ground:'#796747',stone:'#c7b487',sky:'#323c3a',biome:'desert',symbol:'◇',portal:[24,42],lore:'L’eau et les arches du désert gardent la trace des passages oubliés.'},
+ {id:'tunisie',name:'Tunisie',title:'Les Rivages de Carthage',color:'#ffb3a4',ground:'#68646a',stone:'#ddd1b2',sky:'#233747',biome:'coast',symbol:'⌘',portal:[-9,47],lore:'Des colonnes éclairées bordent une mer de brume et de souvenirs.'},
+ {id:'maroc',name:'Maroc',title:'Les Cimes de l’Atlas',color:'#f7c77e',ground:'#665144',stone:'#c29972',sky:'#342c35',biome:'atlas',symbol:'☀',portal:[-42,25],lore:'Les portes dorées s’ouvrent sur des jardins protégés par les montagnes.'},
+ {id:'espagne',name:'Espagne',title:'Les Falaises du crépuscule',color:'#ff9e86',ground:'#6c4546',stone:'#cf9278',sky:'#382330',biome:'cliff',symbol:'♜',portal:[-48,-8],lore:'Le vent traverse les moulins. Une lumière rouge court sur les falaises.'},
 ];
 
 export const countryById = Object.fromEntries(COUNTRIES.map(c=>[c.id,c]));
