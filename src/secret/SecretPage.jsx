@@ -9,6 +9,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { authClient } from "../loyalty/client.js";
+import PrizeClaim from "./PrizeClaim.jsx";
 import {
   countdownTo,
   formatParisDate,
@@ -55,7 +56,7 @@ function Countdown({ target, now }) {
   );
 }
 
-export default function SecretPage() {
+export default function SecretPage({ goTo }) {
   const [campaign, setCampaign] = useState(null);
   const [slots, setSlots] = useState([]);
   const [clues, setClues] = useState([]);
@@ -335,6 +336,8 @@ export default function SecretPage() {
               )}
             </div>
           </article>
+
+          <PrizeClaim unlocked={allTransmissionsOpen} goTo={goTo} />
         </>
       )}
     </section>
