@@ -1,0 +1,2 @@
+export const GOLD_MASTER_VARIANTS=Object.freeze([{id:'S',role:'street'},{id:'GT',role:'grand-touring'},{id:'RS',role:'racing-sport'},{id:'X',role:'extreme'},{id:'Black Series',role:'ultimate-3b'}]);
+export function variantsForGoldMaster(vehicleId){return GOLD_MASTER_VARIANTS.map((v,index)=>({...v,vehicleId,variantId:`${vehicleId}-${v.id.toLowerCase().replace(/\s+/g,'-')}`,visualDeltaRequired:index>0,tuningDeltaRequired:true,sameBaseIdentity:true}));}
