@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {pointerStick,createQualityController} from '../src/world/motion.js';
 import {DEFAULT_ORBIT,restoreOrbit} from '../src/world/orbit.js';
+import {parisRenderBudget} from '../src/world/paris-district.js';
 import {cardById} from '../src/world/catalog.js';
 import {CHAPTERS,chapterObjective} from '../src/world/chapters.js';
 import {blankSave,beacon} from '../src/world/rules.js';
@@ -30,6 +31,14 @@ test('quality modes keep detail sharp and fluid mode GPU-bounded',()=>{
  const before=quality.scale;
  quality.sample(20,1.1);assert.equal(quality.sample(20,1.1),true);
  assert.ok(quality.scale<before);
+});
+
+test('Paris uses shorter LOD ranges on weak mobile hardware',()=>{
+ const weak=parisRenderBudget(2,4),balanced=parisRenderBudget(4,6),ultra=parisRenderBudget(8,8);
+ assert.ok(weak.detail<balanced.detail&&balanced.detail<ultra.detail);
+ assert.ok(weak.visible<balanced.visible&&balanced.visible<ultra.visible);
+ assert.ok(weak.eiffelDetail<balanced.eiffelDetail&&balanced.eiffelDetail<ultra.eiffelDetail);
+ assert.ok(weak.anisotropy<balanced.anisotropy&&balanced.anisotropy<ultra.anisotropy);
 });
 
 test('France vertical slice is canonically Celiane and Justice',()=>{
