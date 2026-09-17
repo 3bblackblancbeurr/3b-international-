@@ -1,0 +1,47 @@
+name: Verify Nexus City Gateway
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/components/NexusCityGateway.jsx'
+      - 'src/styles/nexus-city-premium.css'
+      - 'src/assets/nexus-bg-part-*.js'
+      - 'src/assets/nexus-premium-bg.js'
+      - 'tests/nexus-city-gateway.test.js'
+      - '.github/workflows/verify-nexus-city-gateway.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/components/NexusCityGateway.jsx'
+      - 'src/styles/nexus-city-premium.css'
+      - 'src/assets/nexus-bg-part-*.js'
+      - 'src/assets/nexus-premium-bg.js'
+      - 'tests/nexus-city-gateway.test.js'
+      - '.github/workflows/verify-nexus-city-gateway.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nexus-city-gateway-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Test Nexus to City gate
+        run: node --test tests/nexus-city-gateway.test.js
+      - name: Production build
+        run: npm run build
