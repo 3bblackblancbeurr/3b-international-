@@ -5,6 +5,7 @@ import {DEFAULT_ORBIT,restoreOrbit} from '../src/world/orbit.js';
 import {parisRenderBudget} from '../src/world/paris-district.js';
 import {regionalRenderBudget} from '../src/world/regional-district.js';
 import {floraRenderBudget} from '../src/world/flora.js';
+import {meadowRenderBudget} from '../src/world/vegetation.js';
 import {isCelianeResident} from '../src/world/models.js';
 import {cardById} from '../src/world/catalog.js';
 import {CHAPTERS,chapterObjective} from '../src/world/chapters.js';
@@ -57,10 +58,13 @@ test('regional districts reduce detail, material and shadow cost on weak hardwar
  assert.equal(ultra.castShadow,true);
 });
 
-test('weak mobile hardware keeps instanced flora visible but removes its shadow pass',()=>{
- assert.equal(floraRenderBudget(2,4).castShadow,false);
- assert.equal(floraRenderBudget(4,6).castShadow,true);
- assert.equal(floraRenderBudget(8,8).castShadow,true);
+test('vegetation budgets remove wind and shadows on weak hardware and scale meadow density',()=>{
+ const weakFlora=floraRenderBudget(2,4),balancedFlora=floraRenderBudget(4,6),ultraFlora=floraRenderBudget(8,8);
+ assert.equal(weakFlora.castShadow,false);assert.equal(weakFlora.wind,false);
+ assert.equal(balancedFlora.castShadow,true);assert.equal(balancedFlora.wind,true);
+ assert.equal(ultraFlora.castShadow,true);assert.equal(ultraFlora.wind,true);
+ const weakMeadow=meadowRenderBudget(2,4),balancedMeadow=meadowRenderBudget(4,6),ultraMeadow=meadowRenderBudget(8,8);
+ assert.equal(weakMeadow.density,.55);assert.equal(balancedMeadow.density,.82);assert.equal(ultraMeadow.density,1);
 });
 
 test('France vertical slice is canonically Celiane and Justice',()=>{
