@@ -11,7 +11,6 @@ const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   digits: Array.from({ length: 38 }, (_, row) => (column * 13 + row * 7 + row * row) % 3 === 0 ? "1" : "0").join(""),
 }));
 
-// These coordinates follow the printed circuit tracks inside the central card.
 const CIRCUITS = [
   "M505 535H725L779 481H828L866 443H966L1000 409H1030",
   "M507 523H714L761 476H810L860 426H950L993 383H1029",
@@ -66,8 +65,6 @@ export default function PassportVisual({ options, goTo }) {
         </g>
       </svg>
 
-      {/* The original portrait is clipped from the unchanged artwork and animated
-          over its own digital background, so no second face shows underneath. */}
       <svg className="passport-live-portrait" viewBox="465 75 848 502" preserveAspectRatio="none" aria-hidden="true" focusable="false">
         <defs>
           <clipPath id={`${id}-panel`}><rect x="1061" y="166" width="197" height="216" rx="10" /></clipPath>
@@ -97,10 +94,10 @@ export default function PassportVisual({ options, goTo }) {
 
       <div className="passport-security-edge" aria-hidden="true" />
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> PASSEPORT VIVANT</div>
-      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir le Cercle et entrer dans le Nexus 3B">
+      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir Crée ta ville 3B">
         <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
         <b>3B</b>
-        <small>ENTRER</small>
+        <small>MA VILLE</small>
       </button>
     </div>
     <div className="passport-animation-toolbar">
@@ -112,7 +109,7 @@ export default function PassportVisual({ options, goTo }) {
     </div>
     <div className="passport-entry-hint">
       <Sparkles size={15} aria-hidden="true" />
-      <span>Touche le cercle lumineux <strong>3B</strong> sur le passeport pour ouvrir le passage.</span>
+      <span>Touche le cercle lumineux <strong>3B</strong> pour créer, construire et visiter ta ville 3B.</span>
     </div>
     <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
   </div>;
