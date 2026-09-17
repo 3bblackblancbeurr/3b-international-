@@ -2,7 +2,7 @@ name: Verify world and application
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, chatgpt-improvements]
 permissions:
   contents: read
 concurrency:
