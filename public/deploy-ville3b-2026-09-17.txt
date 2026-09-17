@@ -1,0 +1,4 @@
+3B International — production redeploy marker
+Purpose: publish the merged “Crée ta ville 3B” replacement for the legacy Nexus.
+Date: 2026-09-17
+Source branch target: main
