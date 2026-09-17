@@ -1,0 +1,2 @@
+3B International — retry production deploy for Passport → Nexus entry visibility fix.
+Commit source already contains the Nexus gateway and mobile-visible entry button.
