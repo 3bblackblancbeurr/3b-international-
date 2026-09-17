@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {COUNTRY_ASSET_KITS,ASSET_COUNTRIES} from '../src/world/country-assets.js';
+test('eight countries plus International have complete unique kits',()=>{assert.equal(ASSET_COUNTRIES.length,9);for(const [id,kit] of Object.entries(COUNTRY_ASSET_KITS)){assert.ok(kit.architecture.length>=6,`${id} architecture`);assert.ok(kit.materials.length>=3);assert.ok(kit.vegetation.length>=3);assert.ok(kit.vehicles.length>=2);assert.ok(kit.companion&&kit.weapon);assert.ok(kit.decor.length>=3);}});
+test('building names do not repeat across identities',()=>{const names=ASSET_COUNTRIES.flatMap(id=>COUNTRY_ASSET_KITS[id].architecture);assert.equal(new Set(names).size,names.length);});
+test('each identity has its own hero building',()=>{const heroes=ASSET_COUNTRIES.map(id=>COUNTRY_ASSET_KITS[id].architecture[0]);assert.equal(new Set(heroes).size,9);});
