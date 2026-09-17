@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
+const NexusCityPage = lazy(() => import("./nexus/NexusCityPageV2.jsx"));
 import { readLocation, navigateTo } from "./lib/navigation.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
@@ -53,7 +54,7 @@ const BASE_MENU_ITEMS = [
     id: "world3b",
     label: "Le Monde du 3B",
     icon: "🌍",
-    description: "Huit pays vivants, des personnages et créatures à rencontrer, des lieux à reconstruire.",
+    description: "Une Ultra Map, huit portails-pays, une grande ville et le Nexus à retrouver.",
   },
   {
     id: "games",
@@ -113,7 +114,6 @@ export default function App() {
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
 
-
   const loyalty = useLoyalty();
   const [localMember] = useState(() =>
     normalizeMember(loadJsonStorage(STORAGE_MEMBER_KEY, createTestMember()))
@@ -143,6 +143,7 @@ export default function App() {
 
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
+    if (page === "nexus-city") return "Nexus · Crée ta ville 3B";
     if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, menuItems, member.isRegistered]);
@@ -221,7 +222,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
+      {!['world3b','nexus-city','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
       <Suspense fallback={<div className="page-section" role="status">Ouverture de la rubrique…</div>}>
       <ExplorationRewards page={page}/>
@@ -247,6 +248,7 @@ export default function App() {
       {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
       {page === "secret" && <ComingSoon secret />}
       {page === "world3b" && <Suspense fallback={<div className="page-section">Ouverture du Monde 3B…</div>}><WorldExperience goTo={goTo}/></Suspense>}
+      {page === "nexus-city" && <NexusCityPage goTo={goTo}/>} 
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<p>Ouverture de l’arène…</p>}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
       {page === "member" && (
@@ -296,7 +298,7 @@ function PassportPage({ member, goTo, options }) {
         goTo={goTo}
       />
 
-      <PassportVisual options={options} />
+      <PassportVisual options={options} goTo={goTo} />
 
       <div className="info-grid">
         <article className="premium-panel">

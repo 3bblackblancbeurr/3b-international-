@@ -1,0 +1,4 @@
+import {footprintsOverlap} from './placement-geometry.js';
+export const NEXUS_DB_CELL=12;
+const cells=[];for(let z=-18;z<=18;z+=2)for(let x=-18;x<=18;x+=2)cells.push({x,z,ring:Math.max(Math.abs(x),Math.abs(z)),distance:Math.hypot(x,z)});cells.sort((a,b)=>b.ring-a.ring||b.distance-a.distance||a.z-b.z||a.x-b.x);
+export function findCollectibleDisplaySlot({placements=[],displays=[]}={}){const occupied=new Set(displays.map(d=>`${Math.round(Number(d.x||0)/NEXUS_DB_CELL)}:${Math.round(Number(d.z||0)/NEXUS_DB_CELL)}`));for(const c of cells){if(occupied.has(`${c.x}:${c.z}`))continue;const candidate={x:c.x,z:c.z,footprint:[1,1],rotation:0};const blocked=placements.some(p=>footprintsOverlap(candidate,{x:Number(p.x||0)/NEXUS_DB_CELL,z:Number(p.z||0)/NEXUS_DB_CELL,footprint:[Number(p.footprint_w||1),Number(p.footprint_h||1)],rotation:Number(p.rotation||0)}));if(!blocked)return{x:c.x*NEXUS_DB_CELL,z:c.z*NEXUS_DB_CELL,cellX:c.x,cellZ:c.z};}return null;}

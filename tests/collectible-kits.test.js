@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {COLLECTIBLE_KITS} from '../src/world/collectible-kits.js';
+test('all eight countries define five assets in five collectible families',()=>{assert.equal(Object.keys(COLLECTIBLE_KITS).length,8);for(const [country,kit] of Object.entries(COLLECTIBLE_KITS)){for(const family of ['vehicles','companions','weapons','skins','decor']){assert.equal(kit[family].length,5,`${country}/${family}`);assert.equal(new Set(kit[family].map(x=>x.name)).size,5);}}});
+test('collectible ids are globally unique',()=>{const all=Object.values(COLLECTIBLE_KITS).flatMap(kit=>Object.values(kit).flat());assert.equal(new Set(all.map(x=>x.id)).size,all.length);});

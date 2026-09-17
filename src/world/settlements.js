@@ -4,7 +4,7 @@ import {RESOURCE_SITES,frontierState,patrolOpponent} from './frontier.js';
 import {PARIS_LANES,PARIS_BOULEVARD} from './paris-layout.js';
 // Authored districts inspired by real places, not geographic replicas.
 export const REGIONS={
- hub:{city:'Le Nexus',craft:'Le Cercle des artisans',rural:'Les jardins des liens',crop:'garden',paving:'#b8b6a0',earth:'#8c9270'},
+ hub:{city:'Cité Origine',craft:'Quartier des Ateliers',rural:'Grandes Pâtures',crop:'orchard',paving:'#b8b6a0',earth:'#72805f'},
  france:{city:'Les passages de Paris',craft:'Le quartier des verrières',rural:'Les vergers de Loire',crop:'orchard',paving:'#c8bba5',earth:'#a49b70',source:'https://parisjetaime.com/article/paris-insolite-les-passages-couverts-a1801'},
  italie:{city:'Les cours de Florence',craft:'La place des ateliers',rural:'Les vignes de Toscane',crop:'vineyard',paving:'#c0a183',earth:'#ae946b',source:'https://www.feelflorence.it/'},
  estonie:{city:'Les ruelles de Tallinn',craft:'La cour des tisserands',rural:'La lisière de Lahemaa',crop:'forest',paving:'#9ea9a1',earth:'#6e8373',source:'https://visitestonia.com/en/where-to-go/lahemaa-national-park-estonia'},
@@ -15,7 +15,20 @@ export const REGIONS={
  espagne:{city:'Les patios de Séville',craft:'La place des azulejos',rural:'Les oliviers d’Andalousie',crop:'olive',paving:'#d0b591',earth:'#b79f70',source:'https://www.spain.info/en/region/andalusia/'},
 };
 export const DISTRICT_SPOTS=[{key:'city',x:-18,z:-12,r:35},{key:'craft',x:-18,z:17,r:14},{key:'rural',x:48,z:28,r:23}];
-export function districtAt(region,position,transform){if(region==='hub')return REGIONS.hub.city;const config=REGIONS[region]||REGIONS.hub;let closest='Les chemins du pays',best=Infinity;const outer=[{x:-101,z:-8,name:config.city+' · quartier ancien'},{x:-40,z:-96,name:config.craft+' · faubourg'},{x:88,z:66,name:config.rural+' · village'}];for(const d of outer){const p=transform(d.x,d.z);if(Math.hypot(p.x-position.x,p.z-position.z)<62)return d.name;}for(const d of DISTRICT_SPOTS){const p=transform(d.x,d.z),distance=Math.hypot(p.x-position.x,p.z-position.z);if(distance<d.r*1.6&&distance<best){closest=config[d.key];best=distance;}}return closest;}
+export function districtAt(region,position,transform){
+ if(region==='hub'){
+  const points=[
+   {x:0,z:-3,r:54,name:'Cité Origine · Place Zéro'},
+   {x:-50,z:40,r:34,name:'Cité Origine · Gare des Horizons'},
+   {x:-18,z:17,r:28,name:'Cité Origine · Quartier des Ateliers'},
+   {x:55,z:66,r:42,name:'Cité Origine · Grandes Pâtures'},
+   {x:92,z:-84,r:38,name:'Cité Origine · District du Nexus'},
+  ];
+  for(const point of points){const p=transform(point.x,point.z);if(Math.hypot(p.x-position.x,p.z-position.z)<point.r)return point.name;}
+  return 'Cité Origine · Ceinture des Horizons';
+ }
+ const config=REGIONS[region]||REGIONS.hub;let closest='Les chemins du pays',best=Infinity;const outer=[{x:-101,z:-8,name:config.city+' · quartier ancien'},{x:-40,z:-96,name:config.craft+' · faubourg'},{x:88,z:66,name:config.rural+' · village'}];for(const d of outer){const p=transform(d.x,d.z);if(Math.hypot(p.x-position.x,p.z-position.z)<62)return d.name;}for(const d of DISTRICT_SPOTS){const p=transform(d.x,d.z),distance=Math.hypot(p.x-position.x,p.z-position.z);if(distance<d.r*1.6&&distance<best){closest=config[d.key];best=distance;}}return closest;
+}
 // Rounded corners are shared by rendering, footprints and the mini-map.
 function roundLane(points){
  const result=[points[0]];
@@ -27,7 +40,23 @@ function roundLane(points){
  result.push(points.at(-1));return result;
 }
 export function settlementPlan(region){
- const c=REGIONS[region]||REGIONS.hub;if(region==='hub')return{roads:[{kind:'street',width:5.5,points:roundLane([[0,-3],[0,-28],[-6,-43],[0,-56]])}],plots:[],squares:[{x:0,z:-3,r:14},{x:-18,z:17,r:8},{x:0,z:-56,r:12}],fields:[]};
+ const c=REGIONS[region]||REGIONS.hub;
+ if(region==='hub')return{
+  roads:[
+   {kind:'street',width:7.2,points:roundLane([[0,8],[0,-28],[12,-58],[0,-92]])},
+   {kind:'street',width:6.4,points:roundLane([[-118,-18],[-72,-12],[-34,-8],[0,-3],[43,-10],[83,-2],[122,20]])},
+   {kind:'street',width:5.8,points:roundLane([[-78,82],[-50,40],[-18,17],[0,-3],[37,-38],[92,-84]])},
+   {kind:'street',width:5.5,points:roundLane([[-112,70],[-76,58],[-50,40],[-22,58],[-25,112]])},
+   {kind:'street',width:5.5,points:roundLane([[118,20],[94,50],[70,104],[38,104],[-25,112]])},
+   {kind:'trail',width:4.2,points:roundLane([[18,20],[38,40],[55,66],[78,76],[96,68]])},
+   {kind:'trail',width:3.8,points:roundLane([[-6,35],[-32,54],[-62,72],[-92,84]])},
+  ],
+  plots:[],
+  squares:[{x:0,z:-3,r:15},{x:-18,z:17,r:10},{x:-50,z:40,r:11},{x:92,z:-84,r:13},{x:55,z:66,r:9}],
+  fields:[
+   {x:48,z:67,w:30,h:18,kind:c.crop},{x:74,z:80,w:27,h:16,kind:c.crop},{x:-72,z:76,w:30,h:18,kind:c.crop},{x:-91,z:52,w:25,h:15,kind:c.crop},
+  ]
+ };
  // Streets grow around courtyards and an old trade road, not a grid.
  const roads=[],plots=[],index=Object.keys(REGIONS).indexOf(region);
  const warp=([x,z])=>[x+Math.sin(z*.058+index)*({france:1,italie:2,estonie:3,turquie:2.8,algerie:3.8,tunisie:2.5,maroc:3.5,espagne:1.8}[region]),z+Math.sin(x*.045+index*.7)*2.2];
@@ -58,12 +87,16 @@ export function settlementPlan(region){
  for(const [i,[x,z]] of [[34,34],[60,11],[60,40],[35,51],[23,40],[56,-9]].entries())plots.push({x,z,rotation:i*.8,variant:60+i,urban:false});
  return {roads,plots,squares:[...(region==='france'?[{x:10,z:1,r:11},{x:-30,z:4,r:4}]:[]),{x:-18,z:17,r:8},{x:9,z:-4,r:7},{x:49,z:26,r:7}],fields:[{x:46,z:40,w:19,h:12,kind:c.crop},{x:48,z:8,w:16,h:10,kind:c.crop},{x:76,z:71,w:24,h:16,kind:c.crop},{x:-70,z:-67,w:18,h:13,kind:c.crop}]};
 }
-export function districtDestinations(region){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:vista:maison',type:'vista',name:'La Maison des mondes',x:0,z:-56,color:'#d6bb7e',range:6}];return[
+export function districtDestinations(region){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[
+ {id:'hub:vista:maison',type:'vista',name:'Place Zéro · Cité Origine',x:0,z:-56,color:'#d6bb7e',range:6},
+ {id:'hub:vista:gare',type:'vista',name:'Gare des Horizons',x:-50,z:40,color:'#6bdcff',range:6},
+ {id:'hub:vista:patures',type:'vista',name:'Grandes Pâtures',x:55,z:66,color:'#9fca80',range:6},
+];return[
  {key:'ancien',x:-103,z:-35,name:c.city+' · quartier ancien'},
  {key:'faubourg',x:-45,z:-99,name:c.craft+' · faubourg'},
  {key:'village',x:95,z:95,name:c.rural+' · village'},
  ].map(p=>({...p,id:region+':vista:'+p.key,type:'vista',range:5,color:'#b9cea7'}));}
-export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5}];return[
+export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Quartier des Ateliers',x:-18,z:17,color:'#efbd72',range:5}];return[
  ...(region==='france'?[{id:'france:cafe',type:'cafe',name:'Café des Liens',x:-6.84,z:-2.53,color:'#dfc18c',range:4}]:[]),
  {id:region+':landmark',type:'landmark',name:HERITAGE[region].name,...LANDMARK_APPROACH,color:'#d6bb7e',range:6},
  {id:region+':cooperation',type:'cooperation',name:'Notre refuge commun',x:-65,z:42,color:'#9be0cd',range:7},

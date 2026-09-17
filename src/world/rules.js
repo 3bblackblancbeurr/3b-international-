@@ -4,6 +4,7 @@ import {blankAdventure,normalizeAdventure} from './adventure-state.js';
 import {TRAVEL_GEAR} from './wardrobe.js';
 import {obstacleDistance} from './collision.js';
 import {CHAPTERS,chapterState,nexusLevel} from './chapters.js';
+import {NEXUS_SITE} from './ultra-map.js';
 export const SAVE_VERSION=1;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -70,7 +71,6 @@ export function battleTurn(enc,action){
  if(enc.result||!['strike','guard','power','trap','support'].includes(action)||(action==='power'&&enc.focus<2)||(action==='trap'&&!enc.traps)||(action==='support'&&!enc.support))return enc;
  const e={...enc,turn:enc.turn+1},s=e.stats;
  let damage=action==='strike'?s.attack+s.affinity:action==='power'?(s.attack+s.affinity)*2+6:0;
- // A ritual leaves the guardian exposed; a charged piercing strike defeats a guard.
  if(e.intent==='rituel')damage=Math.round(damage*1.35);
  e.enemy=Math.max(0,e.enemy-damage);e.focus=action==='power'?0:Math.min(3,e.focus+1);
  if(action==='trap')e.traps--;if(action==='support'){e.support=false;e.hp=clamp(e.hp+24,0,e.maxHP);}
@@ -94,9 +94,13 @@ export function nearestInteraction(position,items){return items.filter(i=>distan
 export const countryCard=region=>CARDS.find(c=>c.country===region&&c.character);
 export function encounterCards(region,save){const available=CARDS.filter(c=>c.country===region&&c.category==='Personnage classique'&&(c.rarity==='Commun'||save.beacons.filter(id=>id.startsWith(region+':')).length>=2));return [...available.filter(c=>!save.collection[c.id]),...available.filter(c=>save.collection[c.id])];}
 export function worldItems(region,save){
- if(region==='hub')return [...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),{id:'final',type:'final',name:save.adventure?.finished?'L’Union retrouvée':`L’Oubli · ${nexusLevel(save)}/8 pays`,x:0,z:-3,color:'#e4cd94',range:5}];
+ if(region==='hub')return [
+  ...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),
+  {...NEXUS_SITE},
+  {id:'final',type:'final',name:save.adventure?.finished?'L’Union retrouvée':`L’Oubli · ${nexusLevel(save)}/8 pays`,x:0,z:-3,color:'#e4cd94',range:5}
+ ];
  const c=countryById[region],cards=encounterCards(region,save);
- return [{id:'hub',type:'portal',name:'Place des huit portes',x:0,z:20,color:'#e9d59e',range:6},{id:region+':story',type:'story',name:CHAPTERS[region].resident.split(',')[0]+' · '+CHAPTERS[region].title,x:11,z:-4,color:c.color,range:6,done:chapterState(save,region).restored===3},
+ return [{id:'hub',type:'portal',name:'Retour vers Cité Origine',x:0,z:20,color:'#e9d59e',range:6},{id:region+':story',type:'story',name:CHAPTERS[region].resident.split(',')[0]+' · '+CHAPTERS[region].title,x:11,z:-4,color:c.color,range:6,done:chapterState(save,region).restored===3},
  ...[[-20,0],[18,-16],[-8,-39]].map(([x,z],i)=>({id:region+':'+i,type:'beacon',name:save.beacons.includes(region+':'+i)?'Souvenir retrouvé':'Éveiller le souvenir',x,z,color:c.color,done:save.beacons.includes(region+':'+i)})),
  ...[[-9,5],[27,7],[-32,-20],[9,-31]].map(([x,z],i)=>{const card=cards[i%cards.length];return{id:region+':echo:'+i,type:'echo',name:card.name,card:card.id,x,z,color:c.color};}),
  {id:region+':guardian',type:'guardian',name:save.seals.includes(region)?'Défier à nouveau le gardien':'Gardien du sceau',card:CARDS.find(c=>c.country===region&&c.category==='Carte unique').id,x:0,z:-57,color:c.color,range:7}];

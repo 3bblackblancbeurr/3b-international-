@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {THREEB_ECONOMY,STARTER_WALLET,FIRST_BUILD_BONUS,awardWallet,spendCoins,levelFromXp} from '../src/economy/threeb-economy.js';
+test('XP is gameplay progression and not purchasable',()=>{assert.equal(THREEB_ECONOMY.xp.purchasable,false);assert.equal(THREEB_ECONOMY.xp.transferable,false);});
+test('3B Coins remain closed-loop with no cash out',()=>{assert.equal(THREEB_ECONOMY.coins.cashOut,false);assert.equal(THREEB_ECONOMY.coins.transferable,false);});
+test('3B Token crypto functionality stays disabled',()=>{assert.equal(THREEB_ECONOMY.token.enabled,false);assert.equal(THREEB_ECONOMY.token.blockchain,false);assert.equal(THREEB_ECONOMY.token.tradable,false);assert.equal(THREEB_ECONOMY.token.purchasable,false);assert.equal(THREEB_ECONOMY.token.cashOut,false);});
+test('starter wallet and first build reward never grant tokens',()=>{assert.deepEqual(STARTER_WALLET,{xp:0,coins:500,token:0});assert.deepEqual(FIRST_BUILD_BONUS,{xp:60,coins:25,token:0});const w=awardWallet(STARTER_WALLET,'placeFirstBuilding');assert.equal(w.xp,60);assert.equal(w.coins,525);assert.equal(w.token,0);});
+test('missions award XP and coins without token',()=>{const w=awardWallet({xp:0,coins:0},'mainMission');assert.ok(w.xp>0);assert.ok(w.coins>0);assert.equal(w.token,0);assert.equal(w.level,levelFromXp(w.xp));});
+test('coins cannot go negative',()=>{assert.equal(spendCoins({coins:10},20).ok,false);const r=spendCoins({coins:20},10);assert.equal(r.ok,true);assert.equal(r.wallet.coins,10);});

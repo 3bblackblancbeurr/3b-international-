@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {CITY_LEVELS,levelForCityXp,availableCityEvents,completeCityEvent} from '../src/nexus/progression.js';import {blankCity} from '../src/nexus/city-save.js';
+test('city progression contains 50 ordered levels',()=>{assert.equal(CITY_LEVELS.length,50);for(let i=1;i<CITY_LEVELS.length;i++)assert.ok(CITY_LEVELS[i].xp>CITY_LEVELS[i-1].xp);});
+test('events unlock progressively',()=>{assert.equal(availableCityEvents(1).length,0);assert.ok(availableCityEvents(10).length>=5);});
+test('event rewards update city without exceeding progression rules',()=>{const city={...blankCity(),level:2};const next=completeCityEvent(city,'market-day');assert.ok(next.xp>city.xp);assert.ok(next.currency>city.currency);assert.equal(next.level,levelForCityXp(next.xp));});

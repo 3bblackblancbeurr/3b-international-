@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {DAILY_LIMITS,clampDailyEarnings,milestoneRewards,cityHourlyNet,validateWalletDelta} from '../src/economy/economy-balance.js';
+test('daily rewards are capped against farming',()=>{const g=clampDailyEarnings({xp:DAILY_LIMITS.xp-10,coins:DAILY_LIMITS.coins-5},{xp:100,coins:100});assert.deepEqual(g,{xp:10,coins:5});});
+test('milestones only return newly crossed rewards',()=>{const m=milestoneRewards(0,2000000);assert.ok(m.length>0);assert.equal(new Set(m.map(x=>x.level)).size,m.length);});
+test('city economy calculates income and upkeep separately',()=>{const n=cityHourlyNet([{type:'shop',level:2},{type:'tower',level:1}]);assert.equal(n.income,8);assert.equal(n.upkeep,3);assert.equal(n.net,5);});
+test('wallet validation rejects negatives unsafe values and token balances',()=>{assert.equal(validateWalletDelta({xp:0,coins:0},{xp:1,coins:2,token:0}),true);assert.equal(validateWalletDelta({xp:0,coins:0},{xp:-1,coins:2,token:0}),false);assert.equal(validateWalletDelta({xp:0,coins:0},{xp:1,coins:2,token:1}),false);});

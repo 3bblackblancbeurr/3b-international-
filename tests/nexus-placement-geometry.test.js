@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {rotatedFootprint,footprintInsideBounds,footprintsOverlap} from '../src/nexus/placement-geometry.js';
+test('rotation swaps rectangular footprints at 90 degrees',()=>{assert.deepEqual(rotatedFootprint([3,1],0),[3,1]);assert.deepEqual(rotatedFootprint([3,1],90),[1,3]);assert.deepEqual(rotatedFootprint([3,1],180),[3,1]);});
+test('15 degree rotation uses a conservative bounding footprint',()=>{const [w,d]=rotatedFootprint([4,2],15);assert.ok(w>=4);assert.ok(d>=2);});
+test('building footprint must remain inside the city boundary',()=>{assert.equal(footprintInsideBounds({x:18,z:0,footprint:[4,2],rotation:0},20),true);assert.equal(footprintInsideBounds({x:19,z:0,footprint:[4,2],rotation:0},20),false);});
+test('overlap accounts for both rotations',()=>{const a={x:0,z:0,footprint:[3,1],rotation:90};assert.equal(footprintsOverlap(a,{x:0,z:2,footprint:[1,1],rotation:0}),true);assert.equal(footprintsOverlap(a,{x:0,z:3,footprint:[1,1],rotation:0}),false);});

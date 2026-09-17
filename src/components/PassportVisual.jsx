@@ -1,7 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Pause, Play, Sparkles } from "lucide-react";
 import DigitalHead from "./DigitalHead.jsx";
-import PassportNexus from "./PassportNexus.jsx";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   left: `${(column + 0.25) * 100 / 58}%`,
@@ -26,7 +25,6 @@ const CIRCUITS = [
 export default function PassportVisual({ options, goTo }) {
   const id = useId().replaceAll(":", "");
   const [paused, setPaused] = useState(false);
-  const [portalOpen, setPortalOpen] = useState(false);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -94,10 +92,10 @@ export default function PassportVisual({ options, goTo }) {
 
       <div className="passport-security-edge" aria-hidden="true" />
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> PASSEPORT VIVANT</div>
-      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir Crée ta ville 3B">
+      <button type="button" className="passport-portal-trigger" onClick={() => goTo?.('world3b')} aria-label="Entrer dans le Monde du 3B">
         <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
         <b>3B</b>
-        <small>MA VILLE</small>
+        <small>MONDE</small>
       </button>
     </div>
     <div className="passport-animation-toolbar">
@@ -109,8 +107,7 @@ export default function PassportVisual({ options, goTo }) {
     </div>
     <div className="passport-entry-hint">
       <Sparkles size={15} aria-hidden="true" />
-      <span>Touche le cercle lumineux <strong>3B</strong> pour créer, construire et visiter ta ville 3B.</span>
+      <span>Le Passeport ouvre le <strong>Monde du 3B</strong>. Le Nexus se découvre désormais dans la grande ville du départ.</span>
     </div>
-    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
   </div>;
 }

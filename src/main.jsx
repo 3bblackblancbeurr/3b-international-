@@ -4,9 +4,11 @@ import App from "./App.jsx";
 import {LoyaltyProvider} from './loyalty/LoyaltyContext.jsx';
 import "./index.css";
 import { setupNativeApp } from './native/runtime.js';
+import { startAppTelemetry } from './analytics/telemetry.js';
 
 const nativeSetup = setupNativeApp().catch(() => () => {});
-if (import.meta.hot) import.meta.hot.dispose(() => { nativeSetup.then(dispose => dispose()); });
+const stopTelemetry = startAppTelemetry(window.location.hash || 'intro');
+if (import.meta.hot) import.meta.hot.dispose(() => { nativeSetup.then(dispose => dispose()); stopTelemetry(); });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
