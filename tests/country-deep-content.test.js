@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {COUNTRY_DEEP_CONTENT} from '../src/world/country-content-deep.js';
+test('all eight countries have six side missions and three cinematics',()=>{assert.equal(Object.keys(COUNTRY_DEEP_CONTENT).length,8);for(const [country,data] of Object.entries(COUNTRY_DEEP_CONTENT)){assert.equal(data.side.length,6,country);assert.equal(data.cinematics.length,3,country);assert.equal(new Set(data.side).size,6);assert.deepEqual(data.cinematics.map(x=>x[0]),['arrival','guardian','restore']);}});
