@@ -29,6 +29,10 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   update();orientation.addEventListener?.('change',update);touch.addEventListener?.('change',update);window.addEventListener('resize',update);
   return()=>{orientation.removeEventListener?.('change',update);touch.removeEventListener?.('change',update);window.removeEventListener('resize',update);};
  },[]);
+ useEffect(()=>()=>{
+  try{screen.orientation?.unlock?.();}catch{}
+  try{const full=document.fullscreenElement;if(full?.classList?.contains('world-shell'))document.exitFullscreen?.().catch?.(()=>{});}catch{}
+ },[]);
  async function enterLandscape(){
   setImmersiveError('');
   const shell=document.querySelector('.world-shell');
