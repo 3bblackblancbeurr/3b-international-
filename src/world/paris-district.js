@@ -30,11 +30,13 @@ export function createParisDistrict({region,field,root,resident,flora,occlusion,
  const entries=[];
  function attach(asset,entry,high){
   if(dead)return;const model=asset.scene.clone(true);
-  model.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const m=o.material.clone();owned.push(m);o.material=m;occlusion?.apply(m);
+  model.traverse(o=>{if(!o.isMesh)return;o.castShadow=budget.normalMap;o.receiveShadow=true;const m=o.material.clone();owned.push(m);o.material=m;occlusion?.apply(m);
    if(m.name==='Paris limestone'){
     Object.assign(m,maps);
-    if(budget.normalMap)m.normalScale.set(.28,.28);else{m.normalMap=null;m.normalScale.set(0,0);}
-    m.color.set('#eee4ce');m.needsUpdate=true;
+    if(budget.normalMap)m.normalScale.set(.24,.24);else{m.normalMap=null;m.normalScale.set(0,0);}
+    // Limestone is dielectric and fairly matte. Correct PBR values make the
+    // facade read as stone under the HDR instead of shiny plastic.
+    m.color.set('#eee4ce');m.metalness=0;m.roughness=.86;m.envMapIntensity=.72;m.needsUpdate=true;
    }
    if(entry.site.interior){m.clippingPlanes=[entry.plane];m.clipShadows=true;}
   });
@@ -46,7 +48,7 @@ export function createParisDistrict({region,field,root,resident,flora,occlusion,
  const improvements=[];
  for(const site of field.paris.filter(s=>s.interior)){
   const g=new THREE.Group();g.position.set(site.x,.1,site.z);g.rotation.y=site.rotation;group.add(g);
-  const geo=new THREE.BoxGeometry(1,1,1),mat=new THREE.MeshStandardMaterial({color:'#d5b477',metalness:.5,roughness:.4});owned.push(mat);
+  const geo=new THREE.BoxGeometry(1,1,1),mat=new THREE.MeshStandardMaterial({color:'#d5b477',metalness:.38,roughness:.5,envMapIntensity:.9});owned.push(mat);
   for(let rank=1;rank<=8;rank++){const flag=new THREE.Mesh(geo,mat);flag.position.set(-8+(rank-1)*2.25,4,site.depth/2+.35);flag.scale.set(.75,.8,.12);g.add(flag);improvements.push({flag,rank,kind:site.id==='refuge'?'camp':'forge',geometry:geo});}
  }
  if(region==='france'){
