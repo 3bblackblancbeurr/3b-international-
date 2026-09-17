@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowRight, Building2, Sparkles, X } from 'lucide-react';
 import { NexusCinemaHall, NexusTransitDecor } from './NexusCinema.jsx';
 import { NEXUS_WORLDS } from './nexus-worlds.js';
-import PassportNexus from './PassportNexus.jsx';
+import City3BPortal from './City3BPortal.jsx';
 import '../styles/nexus-city-gateway.css';
 
 export default function NexusCityGateway({ open, onClose, reducedMotion = false }) {
@@ -45,7 +45,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
   if (!open) return null;
 
   if (cityOpen) {
-    return <PassportNexus open onClose={() => setCityOpen(false)} reducedMotion={reducedMotion} />;
+    return <City3BPortal open onClose={() => setCityOpen(false)} reducedMotion={reducedMotion} />;
   }
 
   return createPortal(
