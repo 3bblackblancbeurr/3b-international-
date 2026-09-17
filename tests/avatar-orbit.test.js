@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {normalizeAvatar,blankAvatar} from '../src/world/avatar-rules.js';
-import {DEFAULT_ORBIT,MIN_ORBIT_DISTANCE,MAX_ORBIT_DISTANCE,rotateOrbit,zoomOrbit,cameraRelative} from '../src/world/orbit.js';
+import {DEFAULT_ORBIT,MIN_ORBIT_DISTANCE,MAX_ORBIT_DISTANCE,MIN_RENDER_DISTANCE,rotateOrbit,zoomOrbit,cameraRelative,orbitView} from '../src/world/orbit.js';
 import {blankSave,teamStats} from '../src/world/rules.js';import {applyWorldAction} from '../src/world/engine.js';
 test('avatar identity is independent from gameplay power and rejects invalid data',()=>{
  const avatar=normalizeAvatar({created:true,name:'Aïcha',body:'femme',nationality:'Japon et Brésil',hair:4,face:.8,jaw:-.5,nose:.2,path:'nature'});
@@ -16,4 +16,11 @@ test('free camera controls remain bounded and movement follows camera without sp
  assert.ok(MIN_ORBIT_DISTANCE>=18);assert.ok(DEFAULT_ORBIT.distance>MIN_ORBIT_DISTANCE);assert.ok(MAX_ORBIT_DISTANCE<=48);
  for(const yaw of [0,Math.PI/2,Math.PI,20]){const p=cameraRelative(.4,-.8,yaw);assert.ok(Math.abs(Math.hypot(p.x,p.z)-Math.hypot(.4,.8))<1e-10);}
  const p=cameraRelative(0,-1,Math.PI/2);assert.ok(Math.abs(p.x+1)<1e-10);assert.ok(Math.abs(p.z)<1e-10);
+});
+test('legacy secondary camera can never collapse the exploration framing',()=>{
+ const view=orbitView({yaw:0,pitch:0,distance:24},{x:0,z:0},0,false,()=>0);
+ assert.ok(MIN_RENDER_DISTANCE>=26);
+ assert.ok(Math.abs(view.position.z-MIN_RENDER_DISTANCE)<1e-9);
+ const portrait=orbitView({yaw:0,pitch:0,distance:24},{x:0,z:0},0,true,()=>0);
+ assert.ok(portrait.position.z>view.position.z);
 });
