@@ -24,26 +24,50 @@ export function advanceMotion(state,input,seconds,speed,obstacles,radius=76){
 export function pointerStick(dx,dy){
  const distance=Math.hypot(dx,dy);
  if(distance<=7)return {x:0,z:0};
- const strength=Math.min(1,(distance-7)/48);
+ // The first centimetres stay precise for walking, then ramp progressively to
+ // full speed. This keeps a landscape-mode thumb stick controllable one-handed.
+ const strength=Math.min(1,Math.pow((distance-7)/48,.9));
  return {x:dx/distance*strength,z:dy/distance*strength};
 }
 
 export const QUALITY_MODES=['auto','fluid','detail'];
+
+// Conservative capability hint only: FPS remains the source of truth. Browsers
+// may omit deviceMemory, so the fallback deliberately lands on balanced.
+export function detectDeviceProfile(){
+ if(typeof navigator==='undefined')return 'balanced';
+ const memory=Number(navigator.deviceMemory)||4,cores=Number(navigator.hardwareConcurrency)||4;
+ if(memory<=3||cores<=4)return 'performance';
+ if(memory>=8&&cores>=8)return 'ultra';
+ return 'balanced';
+}
+
 export function createQualityController(mode='auto'){
- let value=1,slow=0,fast=0;
+ const profile=detectDeviceProfile();
+ let value=profile==='performance'?.86:1,slow=0,fast=0;
+ const autoConfig={
+  performance:{cap:1,pixels:950000,slowFps:31,fastFps:42,min:.58,down:.1,up:.04,recover:18},
+  balanced:{cap:1.25,pixels:1500000,slowFps:45,fastFps:57,min:.6,down:.12,up:.05,recover:14},
+  ultra:{cap:1.4,pixels:1950000,slowFps:52,fastFps:59,min:.66,down:.1,up:.04,recover:16},
+ };
  return {
-  setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=1;slow=fast=0;},
+  setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=mode==='auto'&&profile==='performance'?.86:1;slow=fast=0;},
   ratio(width,height,dpr=1){
-   const cap=mode==='detail'?1.5:mode==='fluid'?1:1.25;
-   const pixels=mode==='detail'?2600000:mode==='fluid'?850000:1600000;
-   return Math.max(.5,Math.min(dpr,cap,Math.sqrt(pixels/Math.max(1,width*height)))*(mode==='auto'?value:1));
+   if(mode==='detail')return Math.max(.5,Math.min(dpr,1.5,Math.sqrt(2600000/Math.max(1,width*height))));
+   if(mode==='fluid')return Math.max(.5,Math.min(dpr,1,Math.sqrt(850000/Math.max(1,width*height))));
+   const config=autoConfig[profile];
+   return Math.max(.5,Math.min(dpr,config.cap,Math.sqrt(config.pixels/Math.max(1,width*height)))*value);
   },
   sample(fps,seconds){
    if(mode!=='auto')return false;
-   slow=fps<45?slow+seconds:0;fast=fps>57?fast+seconds:0;
-   if(slow>=2&&value>.6){value=Math.max(.6,value-.12);slow=fast=0;return true;}
-   if(fast>=12&&value<1){value=Math.min(1,value+.06);slow=fast=0;return true;}
+   const config=autoConfig[profile];
+   slow=fps<config.slowFps?slow+seconds:Math.max(0,slow-seconds*1.5);
+   fast=fps>config.fastFps?fast+seconds:Math.max(0,fast-seconds*2);
+   if(slow>=2&&value>config.min){value=Math.max(config.min,value-config.down);slow=fast=0;return true;}
+   if(fast>=config.recover&&value<1){value=Math.min(1,value+config.up);slow=fast=0;return true;}
    return false;
-  }
+  },
+  get profile(){return profile;},
+  get scale(){return value;},
  };
 }
