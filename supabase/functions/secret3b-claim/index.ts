@@ -8,6 +8,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://127.0.0.1:5173",
 ];
 
+type CampaignIdRow = { id: number };
+type WinnerStatusRow = { winner_rank: number; claimed_at: string | null };
+type PrizeClaimResult = { result: string; winner_rank: number | null };
+
 function readKeyMap(name: string) {
   const raw = Deno.env.get(name) || "";
   if (!raw) return {} as Record<string, string>;
@@ -109,22 +113,26 @@ function clean(value: unknown, max: number) {
   return String(value ?? "").trim().slice(0, max);
 }
 
-async function claimStatus(admin: ReturnType<typeof createClient>, userId: string) {
-  const { data: campaign, error: campaignError } = await admin
+// Generated database types are not committed in this repository yet, so narrow
+// the exact rows returned by these two fixed selects at the function boundary.
+async function claimStatus(admin: any, userId: string) {
+  const { data: campaignData, error: campaignError } = await admin
     .from("secret3b_campaigns")
     .select("id")
     .eq("slug", CAMPAIGN_SLUG)
     .maybeSingle();
   if (campaignError) throw campaignError;
+  const campaign = campaignData as CampaignIdRow | null;
   if (!campaign) return { claimed: false };
 
-  const { data: winner, error: winnerError } = await admin
+  const { data: winnerData, error: winnerError } = await admin
     .from("secret3b_phone_winners")
     .select("winner_rank,claimed_at")
     .eq("campaign_id", campaign.id)
     .eq("claimed_by", userId)
     .maybeSingle();
   if (winnerError) throw winnerError;
+  const winner = winnerData as WinnerStatusRow | null;
   if (!winner) return { claimed: false };
   return { claimed: true, winnerRank: winner.winner_rank, claimedAt: winner.claimed_at };
 }
@@ -209,7 +217,7 @@ Deno.serve(async (req: Request) => {
     return json(req, { error: "La vérification du code a échoué. Réessaie plus tard." }, 500);
   }
 
-  const result = Array.isArray(data) ? data[0] : data;
+  const result = (Array.isArray(data) ? data[0] : data) as PrizeClaimResult | null;
   switch (result?.result) {
     case "claimed":
       return json(req, {
