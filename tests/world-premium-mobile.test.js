@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {pointerStick,createQualityController} from '../src/world/motion.js';
 import {DEFAULT_ORBIT,restoreOrbit} from '../src/world/orbit.js';
 import {parisRenderBudget} from '../src/world/paris-district.js';
+import {regionalRenderBudget} from '../src/world/regional-district.js';
 import {floraRenderBudget} from '../src/world/flora.js';
 import {cardById} from '../src/world/catalog.js';
 import {CHAPTERS,chapterObjective} from '../src/world/chapters.js';
@@ -43,6 +44,16 @@ test('Paris uses shorter LOD ranges and lighter materials on weak mobile hardwar
  assert.equal(weak.normalMap,false);
  assert.equal(balanced.normalMap,true);
  assert.equal(ultra.normalMap,true);
+});
+
+test('regional districts reduce detail, material and shadow cost on weak hardware',()=>{
+ const weak=regionalRenderBudget(2,4),balanced=regionalRenderBudget(4,6),ultra=regionalRenderBudget(8,8);
+ assert.ok(weak.detail<balanced.detail&&balanced.detail<ultra.detail);
+ assert.ok(weak.visible<balanced.visible&&balanced.visible<ultra.visible);
+ assert.equal(weak.normalMap,false);
+ assert.equal(weak.castShadow,false);
+ assert.equal(balanced.normalMap,true);
+ assert.equal(ultra.castShadow,true);
 });
 
 test('weak mobile hardware keeps instanced flora visible but removes its shadow pass',()=>{
