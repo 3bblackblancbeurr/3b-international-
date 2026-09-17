@@ -6,7 +6,7 @@ import City3BPortal from './City3BPortal.jsx';
 import '../styles/nexus-city-gateway.css';
 import '../styles/passport-nexus-entry.css';
 
-const BUILDINGS = [34,52,42,76,58,92,64,48,70,40,56];
+const BUILDINGS = [34, 48, 42, 66, 54, 88, 64, 100, 72, 58, 82, 46, 62, 38, 52];
 
 export default function NexusCityGateway({ open, onClose, reducedMotion = false }) {
   const account = useLoyalty();
@@ -110,16 +110,47 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
 
         <div className="nexus-solo-layout">
           <section className="nexus-city-visual" aria-label="Cercle Brisé animé autour de la ville 3B">
+            <div className="nexus-space-nebula" aria-hidden="true" />
             <div className="nexus-starfield" aria-hidden="true" />
+            <div className="nexus-horizon" aria-hidden="true" />
+            <div className="nexus-depth-grid" aria-hidden="true" />
             <div className="nexus-energy-beam" aria-hidden="true" />
+
+            <div className="nexus-orbit-shell" aria-hidden="true">
+              <i /><i /><i />
+            </div>
+
             <div className="nexus-broken-ring" aria-hidden="true"><i /><i /><i /></div>
+
             <div className="nexus-city-hologram" aria-hidden="true">
+              <span className="nexus-city-aura" />
               <div className="nexus-city-buildings">
-                {BUILDINGS.map((height, index) => <i key={index} style={{ '--h': `${height}%`, '--delay': `${index * -.18}s` }} />)}
+                {BUILDINGS.map((height, index) => (
+                  <i
+                    key={index}
+                    style={{
+                      '--h': `${height}%`,
+                      '--delay': `${index * -.16}s`,
+                      '--depth': `${Math.abs(index - 7)}`,
+                    }}
+                  />
+                ))}
               </div>
+              <span className="nexus-city-bridge nexus-city-bridge-left" />
+              <span className="nexus-city-bridge nexus-city-bridge-right" />
               <b>3B</b>
               <span className="nexus-city-island" />
+              <span className="nexus-city-platform" />
+              <span className="nexus-city-reflection" />
             </div>
+
+            <div className="nexus-hero-caption nexus-hero-caption-left" aria-hidden="true">
+              <span>VISION</span><span>UNITÉ</span><span>PROGRÈS</span>
+            </div>
+            <div className="nexus-hero-caption nexus-hero-caption-right" aria-hidden="true">
+              <span>IDÉES</span><span>TERRITOIRES</span><span>AVENIR</span>
+            </div>
+
             <div className="nexus-visual-copy">
               <span>CERCLE BRISÉ · ROTATION ACTIVE</span>
               <strong>Une porte. Ta ville.</strong>
@@ -128,6 +159,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
           </section>
 
           <aside className="nexus-city-panel">
+            <div className="nexus-panel-glow" aria-hidden="true" />
             <p className="nexus-city-kicker">PORTAIL VILLE 3B</p>
             <h3>Crée ta ville 3B</h3>
             <p>Le Nexus est uniquement la porte d’entrée vers ta cité : construis, développe tes quartiers, expose ta collection et fais évoluer ta ville.</p>
