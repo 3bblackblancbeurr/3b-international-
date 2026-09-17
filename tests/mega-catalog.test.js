@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {MEGA_CATALOG,MEGA_COUNTS,megaForCountry} from '../src/nexus/mega-catalog.js';
+const countries=['france','algerie','maroc','tunisie','turquie','espagne','italie','estonie'];
+test('catalog reaches 960 authored construction definitions',()=>{assert.equal(MEGA_CATALOG.length,960);for(const c of countries)assert.equal(MEGA_COUNTS[c],100);assert.equal(MEGA_COUNTS.international,160);});
+test('all ids and names are unique within each identity',()=>{assert.equal(new Set(MEGA_CATALOG.map(x=>x.id)).size,MEGA_CATALOG.length);for(const c of [...countries,'international']){const list=megaForCountry(c);assert.equal(new Set(list.map(x=>x.name)).size,list.length);}});
+test('each country spans many functional types and five upgrades',()=>{for(const c of [...countries,'international']){const list=megaForCountry(c);assert.ok(new Set(list.map(x=>x.type)).size>=35);assert.ok(list.every(x=>x.upgradeLevels===5&&x.rotationStep===15));}});
+test('country forms remain distinct between identities',()=>{const forms=new Map();for(const item of MEGA_CATALOG){if(!forms.has(item.country))forms.set(item.country,new Set());forms.get(item.country).add(item.form);}for(const [a,fa] of forms)for(const [b,fb] of forms)if(a<b)assert.equal([...fa].some(x=>fb.has(x)),false,`${a}/${b} shared form`);});
