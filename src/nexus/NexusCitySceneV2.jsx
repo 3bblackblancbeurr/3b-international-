@@ -2,10 +2,10 @@ import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {sceneBuildingById} from './scene-building-adapter.js';
 import {createProceduralBuildingMesh} from './procedural-building-mesh.js';
+import {footprintInsideBounds,footprintsOverlap} from './placement-geometry.js';
 
 const CELL=6,GRID=40,HALF=GRID/2;
-function rotatedFootprint(def,rotation=0){const [w,d]=def.footprint,rad=THREE.MathUtils.degToRad(((rotation%360)+360)%360),c=Math.abs(Math.cos(rad)),s=Math.abs(Math.sin(rad));return[Math.max(1,Math.ceil(w*c+d*s)),Math.max(1,Math.ceil(w*s+d*c))];}
-function collides(city,candidate){const def=sceneBuildingById(candidate.buildingId,candidate.upgradeLevel||1);if(!def)return true;const[aw,ad]=rotatedFootprint(def,candidate.rotation||0);if(Math.abs(candidate.x)+aw/2>HALF||Math.abs(candidate.z)+ad/2>HALF)return true;return city.some(item=>{if(item.id&&candidate.id&&item.id===candidate.id)return false;const other=sceneBuildingById(item.buildingId,item.upgradeLevel||1);if(!other)return false;const[bw,bd]=rotatedFootprint(other,item.rotation||0);return Math.abs(item.x-candidate.x)<(aw+bw)/2&&Math.abs(item.z-candidate.z)<(ad+bd)/2;});}
+function collides(city,candidate){const def=sceneBuildingById(candidate.buildingId,candidate.upgradeLevel||1);if(!def)return true;const shaped={...candidate,footprint:def.footprint};if(!footprintInsideBounds(shaped,HALF))return true;return city.some(item=>{if(item.id&&candidate.id&&item.id===candidate.id)return false;const other=sceneBuildingById(item.buildingId,item.upgradeLevel||1);return other?footprintsOverlap(shaped,{...item,footprint:other.footprint}):false;});}
 function clampCell(v){return Math.max(-HALF+1,Math.min(HALF-1,Math.round(v)));}
 export default function NexusCitySceneV2({city=[],started=false,selectedBuilding,onPlace,rotation=0,ignorePlacementId=null}){
  const canvasRef=useRef(null),placeRef=useRef(onPlace),selectedRef=useRef(selectedBuilding),cityRef=useRef(city),rotationRef=useRef(rotation),ignoreRef=useRef(ignorePlacementId);placeRef.current=onPlace;selectedRef.current=selectedBuilding;cityRef.current=city;rotationRef.current=rotation;ignoreRef.current=ignorePlacementId;
