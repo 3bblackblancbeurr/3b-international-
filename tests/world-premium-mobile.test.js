@@ -33,12 +33,15 @@ test('quality modes keep detail sharp and fluid mode GPU-bounded',()=>{
  assert.ok(quality.scale<before);
 });
 
-test('Paris uses shorter LOD ranges on weak mobile hardware',()=>{
+test('Paris uses shorter LOD ranges and lighter materials on weak mobile hardware',()=>{
  const weak=parisRenderBudget(2,4),balanced=parisRenderBudget(4,6),ultra=parisRenderBudget(8,8);
  assert.ok(weak.detail<balanced.detail&&balanced.detail<ultra.detail);
  assert.ok(weak.visible<balanced.visible&&balanced.visible<ultra.visible);
  assert.ok(weak.eiffelDetail<balanced.eiffelDetail&&balanced.eiffelDetail<ultra.eiffelDetail);
  assert.ok(weak.anisotropy<balanced.anisotropy&&balanced.anisotropy<ultra.anisotropy);
+ assert.equal(weak.normalMap,false);
+ assert.equal(balanced.normalMap,true);
+ assert.equal(ultra.normalMap,true);
 });
 
 test('France vertical slice is canonically Celiane and Justice',()=>{
