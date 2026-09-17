@@ -9,12 +9,14 @@ export const GROUND_STYLE={
  espagne:{dry:.48,soil:'#bda077',grass:'#a6aa71',count:8000},
 };
 
+export const groundPbrForDryness=dry=>({roughness:.92+Math.max(0,Math.min(1,dry))*.07,envMapIntensity:.34-Math.max(0,Math.min(1,dry))*.1});
+
 // Mix broad patches in world space with fine surface grain. No visible grid of
 // repeated grass photos, and the ground remains readable beyond the 3D meadow.
 export function createNaturalGround(region){
- const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass');
+ const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass'),pbr=groundPbrForDryness(style.dry);
  if(texture)texture.repeat.set(260,260);
- const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.055,roughness:1});
+ const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.062,roughness:pbr.roughness,envMapIntensity:pbr.envMapIntensity});
  material.onBeforeCompile=shader=>{
   shader.uniforms.soilTint={value:new THREE.Color(style.soil)};shader.uniforms.groundDryness={value:style.dry};
   shader.vertexShader='varying vec2 naturalXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nnaturalXZ=(modelMatrix*vec4(position,1.)).xz;');
@@ -28,6 +30,6 @@ export function createNaturalGround(region){
     diffuseColor.rgb=mix(diffuseColor.rgb,soilTint*.82,wear*(.14+groundDryness*.6))*grain;
    `);
  };
- material.customProgramCacheKey=()=> '3b-ground-patches-1';
+ material.customProgramCacheKey=()=> '3b-ground-patches-2';
  return {material,texture};
 }
