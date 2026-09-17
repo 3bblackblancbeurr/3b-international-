@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
 
+export const skyCloudOctaves=(memory=4,cores=4)=>Number(memory)<=3||Number(cores)<=4?2:4;
+
 // One background draw: a continuous horizon, broad cloud banks and a soft sun.
 // No texture download beyond the existing 1K HDR, volumetric ray march or extra pass.
 export function createWorldSky(renderer,onEnvironment){
  let stopped=false,photograph=null,environment=null;
- const memory=typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,cores=typeof navigator!=='undefined'?Number(navigator.hardwareConcurrency)||4:4,lowEnd=memory<=3||cores<=4;
+ const memory=typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,cores=typeof navigator!=='undefined'?Number(navigator.hardwareConcurrency)||4:4,octaves=skyCloudOctaves(memory,cores);
  const uniforms={skyPhoto:{value:null},photoReady:{value:0},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},zenith:{value:new THREE.Color('#628fac')},horizon:{value:new THREE.Color('#d6ddcd')},time:{value:0}};
- const cloudFunction=lowEnd?'float cloud(vec2 p){return noise(p)*.68+noise(p*2.07)*.32;}':'float cloud(vec2 p){return noise(p)*.55+noise(p*2.07)*.27+noise(p*4.13)*.13+noise(p*8.31)*.05;}';
+ const cloudFunction=octaves===2?'float cloud(vec2 p){return noise(p)*.68+noise(p*2.07)*.32;}':'float cloud(vec2 p){return noise(p)*.55+noise(p*2.07)*.27+noise(p*4.13)*.13+noise(p*8.31)*.05;}';
  const material=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms,vertexShader:'varying vec2 skyUV;void main(){skyUV=uv;gl_Position=vec4(position.xy,1.,1.);}',fragmentShader:`
   varying vec2 skyUV;uniform mat4 inverseProjection,cameraWorld;uniform vec3 zenith,horizon;uniform float time;uniform sampler2D skyPhoto;uniform float photoReady;
   float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
