@@ -2,12 +2,14 @@ import React,{memo,useEffect,useState,useMemo} from 'react';
 import {Menu,BookOpen,Map,ArrowUp,MessageCircle,DoorOpen,Sparkles,Swords,Trees,Mountain,Wheat} from 'lucide-react';
 import {CompanionPortrait} from './Companions.jsx';
 import {countryById,cardById} from './catalog.js';
+import {chapterObjective} from './chapters.js';
 import {Compass,MiniMap,DetailedMap} from './Cartography.jsx';
 import {HERITAGE} from './heritage.js';
 import {landscapeItems} from './terrain.js';
 import {frontierState} from './frontier.js';
 import {levelFor} from './rules.js';
 import {compassHeading} from './settlements.js';
+import './objective-hud.css';
 
 const rotateGateStyle={position:'fixed',inset:0,zIndex:1200,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:14,padding:28,textAlign:'center',background:'radial-gradient(circle at 50% 38%,#17384a 0,#081722 58%,#040b11 100%)',color:'#f4f0e5'};
 const rotatePhoneStyle={width:92,height:54,border:'2px solid #e5c990',borderRadius:14,boxShadow:'0 0 35px #e5c99030',transform:'rotate(0deg)',display:'grid',placeItems:'center',fontSize:11,letterSpacing:2,color:'#e5c990'};
@@ -15,6 +17,7 @@ const rotatePhoneStyle={width:92,height:54,border:'2px solid #e5c990',borderRadi
 export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onGuide,loaded}){
  const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
  const mapItems=useMemo(()=>landscapeItems(snapshot.region,save),[snapshot.region,save]);
+ const objective=useMemo(()=>chapterObjective(save,snapshot.region),[save,snapshot.region]);
  const [arrival,setArrival]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  const [portraitTouch,setPortraitTouch]=useState(false),[immersiveError,setImmersiveError]=useState('');
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
@@ -50,6 +53,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
    {country&&<button className="play-supplies" aria-label={home.wood+' bois, '+home.stone+' pierre, '+home.food+' provisions. Ouvrir mon refuge'} title="Provisions et refuge" onClick={()=>onPanel('camp')}><span><Trees size={15}/>{home.wood}</span><span><Mountain size={15}/>{home.stone}</span><span><Wheat size={15}/>{home.food}</span></button>}
    <Compass heading={snapshot.heading} waypoint={snapshot.waypoint} position={snapshot.position}/>
    <div className="world-district">{snapshot.district||country?.name||'Le Nexus'}</div>
+   {loaded&&!arrival&&objective&&<button className="play-objective-chip" onClick={()=>onPanel('journal')} aria-label={'Objectif : '+objective.title+'. Récompense : '+objective.reward}><small>OBJECTIF</small><strong>{objective.title}</strong><span>{objective.reward}</span></button>}
    <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} onOpen={()=>onPanel('atlas')}/>
    {arrival&&loaded&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Le Val des huit portes'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
    <button className="play-profile" aria-label={(save.adventure.avatar.name||'Voyageur')+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" onClick={()=>onPanel('team')}><span>{(save.adventure.avatar.name||'V').slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></button>
