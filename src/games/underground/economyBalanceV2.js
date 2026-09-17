@@ -1,0 +1,8 @@
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+export const ECONOMY_RULES=Object.freeze({sellRate:.62,repairBase:450,respecBase:1200,eventFloor:500,eventCeiling:25000,legendaryResale:false,payToWin:false});
+export function vehiclePurchasePrice({performanceIndex=300,rarity='common',countryOrder=0}={}){const mult={common:1,rare:1.35,epic:1.8,legendary:2.6,unique:3.4}[rarity]||1;return Math.round((7000+performanceIndex*58+countryOrder*3200)*mult/100)*100;}
+export function partPrice({tier=1,category='engine'}={}){const base={engine:3600,turbo:4200,brakes:2200,suspension:2600,tires:2400,aero:2800,visual:900,interior:1200,audio:1400}[category]||1800;return Math.round(base*Math.pow(1.58,clamp(tier,1,5)-1)/50)*50;}
+export function eventPayout({tier=1,minutes=3,mastery=false,heat=0,position=1}={}){const placement=[0,1,.78,.62,.5,.42,.36,.31,.27][clamp(position,1,8)]||.25,base=1200+tier*650+minutes*180+heat*140;return Math.round(clamp(base*placement*(mastery?1.18:1),ECONOMY_RULES.eventFloor,ECONOMY_RULES.eventCeiling));}
+export function repairCost({damage=0,vehicleValue=20000}={}){return Math.round(ECONOMY_RULES.repairBase+vehicleValue*.00012*Math.pow(clamp(damage,0,100),1.28));}
+export function sellValue({purchasePrice=0,legendary=false}={}){return legendary?null:Math.round(purchasePrice*ECONOMY_RULES.sellRate);}
+export function economyHealth(sample={}){const racesToAfford=Math.max(0,(sample.vehiclePrice||0)-(sample.balance||0))/Math.max(1,sample.avgEventPayout||1);return {racesToAfford:Number(racesToAfford.toFixed(1)),healthy:racesToAfford>=2&&racesToAfford<=12,noPayToWin:ECONOMY_RULES.payToWin===false};}
