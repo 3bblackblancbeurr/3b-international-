@@ -69,8 +69,13 @@ export function createCreature(asset,region,color,scale=2){
  return{object,update(dt,camera,moving=false){object.update(camera);if(!high.visible)return;const next=moving?'Walk':'Idle';if(next!==current){actions[next]?.reset().play();actions[current]?.crossFadeTo(actions[next],.2,false);current=next;}mixer.update(dt*(moving?2:1));},dispose(){mixer.stopAllAction();mixer.uncacheRoot(high);high.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});geometry.dispose();material.dispose();}};
 }
 
+export function isCelianeResident(kind,color){return kind==='woman'&&String(color).toLowerCase()==='#7bbdff';}
 export function createResident(asset,kind,color){
- if(asset.living)return createLivingActor(asset.living,{avatar:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,fabricColor:color,outer:kind==='artisan'?'apron':'none',bag:kind==='traveler',skin:2},scale:2});
+ if(asset.living){
+  const celiane=isCelianeResident(kind,color);
+  const avatar=celiane?{body:'femme',style:'sentinelle',hair:4,color:2,fabricColor:'#17263d',accentColor:'#d7bd83',trouserColor:'#202b3b',bootColor:'#151922',outer:'none',bag:false,skin:2}:{body:kind==='woman'?'femme':'homme',style:kind==='elder'?'mystique':kind==='artisan'?'sentinelle':'voyageur',hair:kind==='woman'?4:kind==='elder'?6:3,color:2,fabricColor:color,outer:kind==='artisan'?'apron':'none',bag:kind==='traveler',skin:2};
+  return createLivingActor(asset.living,{avatar,scale:celiane?2.08:2});
+ }
  const source=asset.scene.getObjectByName('Resident_'+kind);if(!source)throw Error('Habitant manquant : '+kind);const object=source.clone(true),owned=[];object.scale.setScalar(2.4);
  object.traverse(o=>{if(o.isMesh&&o.material.name==='Resident cloth'){o.material=o.material.clone();o.material.color.set(color).multiplyScalar(.65);owned.push(o.material);}});
  let elapsed=0;return{object,update(dt){elapsed+=dt;object.position.y=Math.sin(elapsed*1.5)*.018;},dispose(){owned.forEach(m=>m.dispose());}};
