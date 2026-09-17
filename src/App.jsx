@@ -2,7 +2,7 @@ import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
-const NexusCityPage = lazy(() => import("./nexus/NexusCityPage.jsx"));
+const NexusCityPage = lazy(() => import("./nexus/NexusCityPageV2.jsx"));
 import { readLocation, navigateTo } from "./lib/navigation.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
