@@ -113,7 +113,7 @@ export function createFlora(region,seed=1,occlusion){
   if(!geometries.has(type))geometries.set(type,createPlantGeometry(type,seed+FLORA_TYPES.indexOf(type)*19,FLORA_PALETTES[region]||FLORA_PALETTES.hub));
   if(!batches.has(parent))batches.set(parent,new Map());const group=batches.get(parent);
   if(!group.has(type)){
-   const parts=['wood','leaves'].map((part,i)=>{const m=new THREE.InstancedMesh(geometries.get(type)[part],i?leaves:wood,1024);m.name='flora-'+type+'-'+part;m.count=0;m.castShadow=budget.castShadow;m.receiveShadow=true;if(i&&budget.castShadow)m.customDepthMaterial=depth;parent.add(m);instances.push(m);return m;});group.set(type,parts);
+   const parts=['wood','leaves'].map((part,i)=>{const m=new THREE.InstancedMesh(geometries.get(type)[part],i?leaves:wood,1024);m.name='flora-'+type+'-'+part;m.count=0;m.castShadow=budget.castShadow;m.receiveShadow=true;if(i)m.customDepthMaterial=depth;parent.add(m);instances.push(m);return m;});group.set(type,parts);
   }
   dummy.position.set(x,y,z);dummy.rotation.set(0,rotation,0);dummy.scale.setScalar(scale);dummy.updateMatrix();
   for(const mesh of group.get(type)){if(mesh.count>=1024)throw Error('Vegetation instance budget exceeded');mesh.setMatrixAt(mesh.count++,dummy.matrix);mesh.instanceMatrix.needsUpdate=true;}
