@@ -1,0 +1,8 @@
+import {GOLD_MASTER_VEHICLES} from './productionCatalog.js';import {variantsForGoldMaster} from './goldMasterVariantSystem.js';
+const countries=[...new Set(GOLD_MASTER_VEHICLES.map(v=>v.countryId))];
+export const CITY_VARIANT_VEHICLES=Object.freeze(GOLD_MASTER_VEHICLES.flatMap(v=>variantsForGoldMaster(v.id).map(x=>({id:x.variantId,baseVehicleId:v.id,countryId:v.countryId,city:v.city,name:`${v.displayName} ${x.id}`,kind:'city-variant',series:x.id}))));
+export const NATIONAL_LEGENDARIES=Object.freeze(countries.map(id=>({id:`u3b-legend-${id}`,countryId:id,name:`3B ${id.toUpperCase()}`,kind:'national-legendary',unlock:`guardian-${id}`})));
+export const SECRET_CITY_VEHICLES=Object.freeze(GOLD_MASTER_VEHICLES.map((v,i)=>({id:`${v.id}-secret`,baseVehicleId:v.id,countryId:v.countryId,city:v.city,name:`${v.displayName} Secret`,kind:'secret',rarity:i%20===0?'unique':'legendary'})));
+export const NEXUS_SPECIALS=Object.freeze(Array.from({length:32},(_,i)=>({id:`u3b-nexus-${String(i+1).padStart(2,'0')}`,countryId:countries[i%countries.length],name:`3B Nexus ${String(i+1).padStart(2,'0')}`,kind:'nexus-special',rarity:i>=24?'unique':'epic'})));
+export const EXTENDED_VEHICLE_CATALOGUE=Object.freeze([...CITY_VARIANT_VEHICLES,...NATIONAL_LEGENDARIES,...SECRET_CITY_VEHICLES,...NEXUS_SPECIALS]);
+export function extendedCatalogueReport(){const byKind=Object.fromEntries([...new Set(EXTENDED_VEHICLE_CATALOGUE.map(v=>v.kind))].map(k=>[k,EXTENDED_VEHICLE_CATALOGUE.filter(v=>v.kind===k).length]));return {total:EXTENDED_VEHICLE_CATALOGUE.length,byKind,countries:Object.fromEntries(countries.map(id=>[id,EXTENDED_VEHICLE_CATALOGUE.filter(v=>v.countryId===id).length])),uniqueIds:new Set(EXTENDED_VEHICLE_CATALOGUE.map(v=>v.id)).size===EXTENDED_VEHICLE_CATALOGUE.length};}
