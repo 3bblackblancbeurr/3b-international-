@@ -24,7 +24,10 @@ export function createRegionalDistrict({region,field,root,fallback,occlusion,onE
  async function load(level,high){
   const asset=await loader.loadAsync(`/world/districts/${region}-${level}${high?'':'-lod'}.glb`);assets.push(asset);if(dead)return;
   asset.scene.updateMatrixWorld(true);asset.scene.traverse(o=>{if(!o.isMesh)return;const material=o.material.clone();owned.push(material);if(/Masonry|Dressed stone/.test(material.name)){
-   Object.assign(material,maps);if(budget.normalMap)material.normalScale.set(.2,.2);else{material.normalMap=null;material.normalScale.set(0,0);}material.needsUpdate=true;
+   Object.assign(material,maps);if(budget.normalMap)material.normalScale.set(.18,.18);else{material.normalMap=null;material.normalScale.set(0,0);}
+   // Stone and plaster are dielectric, diffuse materials. Keeping roughness high
+   // lets the new HDR lighting describe volume without the old plastic sheen.
+   material.metalness=0;material.roughness=.84;material.envMapIntensity=.7;material.needsUpdate=true;
   }occlusion?.apply(material);
    const mesh=new THREE.InstancedMesh(o.geometry,material,Math.max(1,entries.length));mesh.castShadow=budget.castShadow;mesh.receiveShadow=true;mesh.count=0;group.add(mesh);batches.push({mesh,level,high,local:o.matrixWorld.clone()});
   });lastX=Infinity;
