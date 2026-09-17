@@ -24,8 +24,11 @@ test('world save rejects forged cards, invalid equipment and non-character team 
  const s=normalizeSave({...blankSave(),xp:Infinity,shards:-20,leader:'FAKE',collection:{FAKE:3,C002:2,C173:1},team:['C173','FAKE','C002','C002'],loadout:{terrain:'FAKE',fragment:'C173'},seals:['france','france','unknown'],finalOpened:true});
  assert.equal(s.xp,0);assert.equal(s.shards,0);assert.equal(s.collection.FAKE,undefined);assert.deepEqual(s.team,['C002']);assert.equal(s.loadout.terrain,undefined);assert.deepEqual(s.seals,['france']);assert.equal(s.finalOpened,false);
 });
-test('every portal is distinct and traversable; interactions require proximity',()=>{
- const s=blankSave(),items=worldItems('hub',s);assert.equal(items.filter(i=>i.type==='portal').length,8);
+test('eight country portals plus the separate Nexus are distinct and traversable; interactions require proximity',()=>{
+ const s=blankSave(),items=worldItems('hub',s),portals=items.filter(i=>i.type==='portal');
+ assert.equal(portals.length,9);
+ assert.equal(COUNTRIES.filter(c=>portals.some(p=>p.id===c.id)).length,8);
+ assert.equal(portals.filter(p=>p.id==='nexus').length,1);
  assert.equal(new Set(items.map(i=>[i.x,i.z].join(','))).size,items.length);
  for(const c of COUNTRIES){assert.ok(Math.hypot(...c.portal)<76);const gate=items.find(i=>i.id===c.id);assert.equal(nearestInteraction({x:gate.x,z:gate.z},[gate]),gate);assert.equal(nearestInteraction({x:gate.x+10,z:gate.z},[gate]),null);const region=worldItems(c.id,s);assert.ok(region.some(i=>i.type==='portal'&&i.id==='hub'));assert.equal(region.filter(i=>i.type==='beacon').length,3);}
 });
