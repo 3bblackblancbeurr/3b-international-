@@ -10,25 +10,33 @@ function fallbackAtlas(){
 }
 async function optionalTexture(url){try{return await new THREE.TextureLoader().loadAsync(url);}catch(error){console.warn('[3B world] texture optionnelle indisponible',url,error);return fallbackAtlas();}}
 async function optionalScene(loader,url){try{return await loader.loadAsync(url);}catch(error){console.warn('[3B world] décor optionnel indisponible',url,error);return{scene:new THREE.Group(),animations:[]};}}
+function disposeScene(root){
+ const geometries=new Set(),materials=new Set(),textures=new Set();
+ root?.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}});
+ geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
+}
+function prepareStaticScene(root){root?.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);});}
 
 export async function loadWorldModels(){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary();
- // Traveller + chapter kit are essential gameplay assets. The atlas and authored
- // places are visual enrichment: their failure must not take down the whole world.
- const [hero,kit,atlas,places]=await Promise.all([
+ // Only gameplay-critical assets block entry. The authored place pack is ~1 MB
+ // and is requested lazily by Hub/Maroc after the world can already start.
+ const [hero,kit,atlas]=await Promise.all([
   living.load('/world/living/traveller-0.glb'),
   loader.loadAsync('/world/models/chapter-kit.glb'),
-  optionalTexture('/world/guardians-atlas.webp'),
-  optionalScene(loader,'/world/places/living-places.glb')
+  optionalTexture('/world/guardians-atlas.webp')
  ]);
- kit.living=living;const assets=[kit.scene,places.scene];
- assets.forEach(root=>root.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);}));
- atlas.colorSpace=THREE.SRGBColorSpace;
- return {hero,kit,atlas,places,living,dispose(){
-  living.dispose();
-  const geometries=new Set(),materials=new Set(),textures=new Set();
-  assets.forEach(root=>root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}}));
-  geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());atlas.dispose();
+ kit.living=living;prepareStaticScene(kit.scene);atlas.colorSpace=THREE.SRGBColorSpace;
+ let dead=false,placesAsset=null,placesPromise=null;
+ function getPlaces(){
+  if(!placesPromise)placesPromise=optionalScene(loader,'/world/places/living-places.glb').then(asset=>{
+   if(dead){disposeScene(asset.scene);return{scene:new THREE.Group(),animations:[]};}
+   prepareStaticScene(asset.scene);placesAsset=asset;return asset;
+  });
+  return placesPromise;
+ }
+ return {hero,kit,atlas,living,getPlaces,dispose(){
+  if(dead)return;dead=true;living.dispose();disposeScene(kit.scene);if(placesAsset)disposeScene(placesAsset.scene);else placesPromise?.then(asset=>disposeScene(asset.scene)).catch(()=>{});atlas.dispose();
  }};
 }
 
