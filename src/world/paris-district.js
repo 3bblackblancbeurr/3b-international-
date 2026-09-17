@@ -31,7 +31,11 @@ export function createParisDistrict({region,field,root,resident,flora,occlusion,
  function attach(asset,entry,high){
   if(dead)return;const model=asset.scene.clone(true);
   model.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const m=o.material.clone();owned.push(m);o.material=m;occlusion?.apply(m);
-   if(m.name==='Paris limestone'){Object.assign(m,maps);if(budget.normalMap)m.normalScale.set(.28,.28);m.color.set('#eee4ce');m.needsUpdate=true;}
+   if(m.name==='Paris limestone'){
+    Object.assign(m,maps);
+    if(budget.normalMap)m.normalScale.set(.28,.28);else{m.normalMap=null;m.normalScale.set(0,0);}
+    m.color.set('#eee4ce');m.needsUpdate=true;
+   }
    if(entry.site.interior){m.clippingPlanes=[entry.plane];m.clipShadows=true;}
   });
   entry.lod.addLevel(model,high?0:entry.site.id==='eiffel'?Math.min(220,budget.eiffelDetail):budget.detail,.15);entry.lod.updateMatrixWorld();
