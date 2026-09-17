@@ -1,5 +1,6 @@
 export const DEFAULT_ORBIT={yaw:0,pitch:.075,distance:30};
-export function normalizeOrbit(value){return {yaw:Number.isFinite(value?.yaw)?value.yaw%(Math.PI*2):0,pitch:Number.isFinite(value?.pitch)?Math.max(-.34,Math.min(1.15,value.pitch)):DEFAULT_ORBIT.pitch,distance:Number.isFinite(value?.distance)?Math.max(10,Math.min(52,value.distance)):DEFAULT_ORBIT.distance};}
+export const MIN_ORBIT_DISTANCE=18,MAX_ORBIT_DISTANCE=48;
+export function normalizeOrbit(value){return {yaw:Number.isFinite(value?.yaw)?value.yaw%(Math.PI*2):0,pitch:Number.isFinite(value?.pitch)?Math.max(-.34,Math.min(1.15,value.pitch)):DEFAULT_ORBIT.pitch,distance:Number.isFinite(value?.distance)?Math.max(MIN_ORBIT_DISTANCE,Math.min(MAX_ORBIT_DISTANCE,value.distance)):DEFAULT_ORBIT.distance};}
 export function restoreOrbit(value){
  const orbit=normalizeOrbit(value);
  // Migrate the former close exploration preset without destroying a zoom that
@@ -19,5 +20,5 @@ export function orbitView(orbit,position,height,portrait=false,heightAt){
  return{target,position:eye};
 }
 export function rotateOrbit(orbit,dx,dy){return{...orbit,yaw:orbit.yaw-dx*.0046,pitch:Math.max(-.34,Math.min(1.15,orbit.pitch+dy*.0032))};}
-export function zoomOrbit(orbit,delta){return{...orbit,distance:Math.max(10,Math.min(52,orbit.distance+delta*.025))};}
+export function zoomOrbit(orbit,delta){return{...orbit,distance:Math.max(MIN_ORBIT_DISTANCE,Math.min(MAX_ORBIT_DISTANCE,orbit.distance+delta*.025))};}
 export function cameraRelative(x,z,yaw){return{x:x*Math.cos(yaw)+z*Math.sin(yaw),z:z*Math.cos(yaw)-x*Math.sin(yaw)};}
