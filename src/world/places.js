@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {toLandscape} from './terrain.js';
 import {chapterState} from './chapters.js';
+import {currentSceneryOcclusion} from './occlusion.js';
 
 // The authored Blender courtyards have open entrances; collisions follow pillars,
 // not a solid bounding box across the playable courtyard.
@@ -17,10 +18,10 @@ export function livingPlaceCollisions(region){
 }
 
 export function addLivingPlaces(models,region,root,height,flora){
- const groups=[],materials=[],living=[],gardens=[];let disposed=false,active=region==='hub';
+ const groups=[],materials=[],living=[],gardens=[],occlusion=currentSceneryOcclusion();let disposed=false,active=region==='hub';
  const relevant=region==='hub'||region==='maroc',container=relevant?new THREE.Group():null;
  if(container){container.name='Authored living places';root.add(container);groups.push(container);}
- function place(asset,name,x,z,rotation=0){const source=asset?.scene?.getObjectByName(name);if(!source||disposed)return null;const p=toLandscape(region,x,z),g=source.clone(true);g.position.set(p.x,height(p.x,p.z)+.09,p.z);g.rotation.y=rotation;g.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const list=[o.material].flat();o.material=list.map(m=>{const n=m.clone();materials.push(n);if(/Living_leaves|Living leaves|Spring_water|Spring water/.test(n.name))living.push({material:n,color:n.color.clone()});return n;});if(o.material.length===1)o.material=o.material[0];});container.add(g);return g;}
+ function place(asset,name,x,z,rotation=0){const source=asset?.scene?.getObjectByName(name);if(!source||disposed)return null;const p=toLandscape(region,x,z),g=source.clone(true);g.position.set(p.x,height(p.x,p.z)+.09,p.z);g.rotation.y=rotation;g.traverse(o=>{if(!o.isMesh)return;o.castShadow=o.receiveShadow=true;const list=[o.material].flat();o.material=list.map(m=>{const n=m.clone();materials.push(n);occlusion?.apply(n);if(/Living_leaves|Living leaves|Spring_water|Spring water/.test(n.name))living.push({material:n,color:n.color.clone()});return n;});if(o.material.length===1)o.material=o.material[0];});container.add(g);return g;}
  function replant(group,type){
   if(!group||!flora)return;const old=[];group.traverse(o=>{if(o.isMesh&&/Living[_ ]leaves/.test(o.material?.name||''))old.push(o);});old.forEach(o=>o.removeFromParent());
   const plants=new THREE.Group();group.add(plants);
