@@ -1,0 +1,2 @@
+[functions.secret3b-phone]
+verify_jwt = false
