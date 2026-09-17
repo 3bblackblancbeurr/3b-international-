@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {MEGA_CATALOG} from '../src/nexus/mega-catalog.js';import {proceduralBuildingSpec} from '../src/nexus/procedural-building-grammar.js';
+test('every construction can produce a procedural 3D spec',()=>{for(const b of MEGA_CATALOG){const s=proceduralBuildingSpec(b.id,1);assert.ok(s);assert.equal(s.id,b.id);assert.ok(s.height>0&&s.width>0&&s.depth>0);assert.ok(s.form&&s.facade&&s.roof&&s.entrance);}});
+test('upgrades change height while keeping identity stable',()=>{for(const b of MEGA_CATALOG.slice(0,120)){const a=proceduralBuildingSpec(b.id,1),c=proceduralBuildingSpec(b.id,5);assert.equal(a.form,c.form);assert.equal(a.facade,c.facade);assert.ok(c.height>a.height);}});
+test('LOD strips expensive detail at distance',()=>{const s=proceduralBuildingSpec(MEGA_CATALOG[0].id,1);assert.equal(s.lod.near.props,true);assert.equal(s.lod.far.props,false);assert.equal(s.lod.far.windows,false);});
