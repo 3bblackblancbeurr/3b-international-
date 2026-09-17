@@ -94,10 +94,10 @@ export default function PassportVisual({ options, goTo }) {
 
       <div className="passport-security-edge" aria-hidden="true" />
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> PASSEPORT VIVANT</div>
-      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir Crée ta ville 3B">
+      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir le Nexus 3B">
         <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
         <b>3B</b>
-        <small>MA VILLE</small>
+        <small>NEXUS</small>
       </button>
     </div>
     <div className="passport-animation-toolbar">
@@ -107,10 +107,10 @@ export default function PassportVisual({ options, goTo }) {
         {motionAllowed ? (paused ? "Reprendre l’animation" : "Mettre en pause") : "Mouvements réduits"}
       </button>
     </div>
-    <div className="passport-entry-hint">
+    <button type="button" className="passport-entry-hint" onClick={() => setPortalOpen(true)} aria-label="Entrer dans le Nexus 3B">
       <Sparkles size={15} aria-hidden="true" />
-      <span>Touche le cercle lumineux <strong>3B</strong> pour créer, construire et visiter ta ville 3B.</span>
-    </div>
+      <span>Entrer dans le Nexus 3B, puis ouvrir Crée ta ville 3B.</span>
+    </button>
     <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
   </div>;
 }
