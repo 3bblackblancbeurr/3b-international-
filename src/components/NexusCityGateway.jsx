@@ -1,29 +1,53 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowRight, Building2, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Building2, CheckCircle2, Globe2, LockKeyhole, Sparkles, Target, X } from 'lucide-react';
 import { useLoyalty } from '../loyalty/LoyaltyContext.jsx';
-import { NexusCinemaHall, NexusTransitDecor } from './NexusCinema.jsx';
-import { NEXUS_WORLDS } from './nexus-worlds.js';
 import City3BPortal from './City3BPortal.jsx';
 import '../styles/nexus-city-gateway.css';
 import '../styles/passport-nexus-entry.css';
 
-export default function NexusCityGateway({ open, onClose, reducedMotion = false, goTo }) {
+const BUILDINGS = [34,52,42,76,58,92,64,48,70,40,56];
+
+export default function NexusCityGateway({ open, onClose, reducedMotion = false }) {
   const account = useLoyalty();
-  const [selected, setSelected] = useState('FR');
-  const [stage, setStage] = useState('hall');
   const [cityOpen, setCityOpen] = useState(false);
-  const isLoggedIn = !!account.user?.id;
+  const [unlockState, setUnlockState] = useState('checking');
+  const [syncNote, setSyncNote] = useState('');
+  const uid = account.user?.id;
+  const isLoggedIn = !!uid;
 
   useEffect(() => {
     if (!open) return undefined;
-    setSelected('FR');
     setCityOpen(false);
-    setStage(reducedMotion ? 'hall' : 'transit');
-    if (reducedMotion) return undefined;
-    const timer = window.setTimeout(() => setStage('hall'), 1150);
-    return () => window.clearTimeout(timer);
-  }, [open, reducedMotion]);
+    if (account.loading) {
+      setUnlockState('checking');
+      return undefined;
+    }
+    if (!uid) {
+      setUnlockState('locked');
+      setSyncNote('Connecte ton Passeport 3B pour enregistrer le déblocage.');
+      return undefined;
+    }
+
+    let live = true;
+    setUnlockState('checking');
+    (async () => {
+      try {
+        const { readLocal, loadWorld } = await import('../world/save.js');
+        const local = readLocal(uid)?.data;
+        if (live && local?.beacons?.length) setUnlockState('unlocked');
+        const result = await loadWorld(uid);
+        if (!live) return;
+        setUnlockState(result.data?.beacons?.length ? 'unlocked' : 'locked');
+        setSyncNote(result.message || 'Progression du Monde du 3B vérifiée.');
+      } catch (error) {
+        if (!live) return;
+        setUnlockState('locked');
+        setSyncNote(error?.message || 'La progression du Monde du 3B n’a pas pu être vérifiée.');
+      }
+    })();
+    return () => { live = false; };
+  }, [open, account.loading, uid]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -41,89 +65,104 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false,
     };
   }, [open, cityOpen, onClose]);
 
-  const world = useMemo(
-    () => NEXUS_WORLDS.find((item) => item.code === selected) || NEXUS_WORLDS[0],
-    [selected],
-  );
+  const leaveTo = (hash) => {
+    onClose?.();
+    window.setTimeout(() => { window.location.hash = hash; }, 0);
+  };
 
-  const enterPersonalSpace = () => {
-    if (account.loading) return;
+  const primaryAction = () => {
+    if (account.loading || unlockState === 'checking') return;
     if (!isLoggedIn) {
-      onClose?.();
-      goTo?.('member');
+      leaveTo('#membre');
+      return;
+    }
+    if (unlockState !== 'unlocked') {
+      leaveTo('#monde-3b');
       return;
     }
     setCityOpen(true);
   };
 
   if (!open) return null;
+  if (cityOpen) return <City3BPortal open onClose={() => setCityOpen(false)} reducedMotion={reducedMotion} />;
 
-  if (cityOpen) {
-    return <City3BPortal open onClose={() => setCityOpen(false)} reducedMotion={reducedMotion} />;
-  }
+  const checking = account.loading || unlockState === 'checking';
+  const unlocked = isLoggedIn && unlockState === 'unlocked';
+  const buttonLabel = checking
+    ? 'VÉRIFICATION…'
+    : !isLoggedIn
+      ? 'OUVRIR MON ESPACE MEMBRE'
+      : unlocked
+        ? 'CRÉER MA VILLE 3B'
+        : 'DÉBLOQUER DANS LE MONDE DU 3B';
 
   return createPortal(
-    <section className="nexus-city-gateway" role="dialog" aria-modal="true" aria-label="Nexus 3B">
-      {stage === 'transit' ? (
-        <div className="nexus-city-transit">
-          <NexusTransitDecor />
-          <div className="nexus-city-transit-copy">
-            <span>PROTOCOLE PASSEPORT</span>
-            <strong>NEXUS 3B</strong>
-            <small>Synchronisation du Cercle Brisé…</small>
+    <section className="nexus-city-gateway" data-motion={reducedMotion ? 'reduced' : 'full'} role="dialog" aria-modal="true" aria-label="Nexus 3B · Créer ma ville">
+      <div className="nexus-city-shell">
+        <header className="nexus-city-header">
+          <div>
+            <p><Sparkles size={14} /> PASSEPORT 3B · PORTAIL ACTIF</p>
+            <h2>NEXUS <em>3B</em></h2>
+            <span className="nexus-city-subtitle">LE PORTAIL VERS TA VILLE 3B</span>
           </div>
-        </div>
-      ) : (
-        <div className="nexus-city-shell">
-          <header className="nexus-city-header">
-            <div>
-              <p><Sparkles size={14} /> PASSEPORT 3B · PORTAIL ACTIF</p>
-              <h2>NEXUS <em>3B</em></h2>
+          <button type="button" onClick={onClose} aria-label="Fermer le Nexus"><X size={24} /></button>
+        </header>
+
+        <div className="nexus-solo-layout">
+          <section className="nexus-city-visual" aria-label="Cercle Brisé animé autour de la ville 3B">
+            <div className="nexus-starfield" aria-hidden="true" />
+            <div className="nexus-energy-beam" aria-hidden="true" />
+            <div className="nexus-broken-ring" aria-hidden="true"><i /><i /><i /></div>
+            <div className="nexus-city-hologram" aria-hidden="true">
+              <div className="nexus-city-buildings">
+                {BUILDINGS.map((height, index) => <i key={index} style={{ '--h': `${height}%`, '--delay': `${index * -.18}s` }} />)}
+              </div>
+              <b>3B</b>
+              <span className="nexus-city-island" />
             </div>
-            <button type="button" onClick={onClose} aria-label="Fermer le Nexus"><X size={22} /></button>
-          </header>
+            <div className="nexus-visual-copy">
+              <span>CERCLE BRISÉ · ROTATION ACTIVE</span>
+              <strong>Une porte. Ta ville.</strong>
+              <small>Le Nexus ne contient plus les huit portes : elles appartiennent au Monde du 3B.</small>
+            </div>
+          </section>
 
-          <div className="nexus-city-layout">
-            <div className="nexus-city-hall">
-              <NexusCinemaHall
-                selected={selected}
-                onSelect={setSelected}
-                doors={[]}
-                originEnabled={false}
-                economy={false}
-              />
+          <aside className="nexus-city-panel">
+            <p className="nexus-city-kicker">PORTAIL VILLE 3B</p>
+            <h3>Crée ta ville 3B</h3>
+            <p>Le Nexus est uniquement la porte d’entrée vers ta cité : construis, développe tes quartiers, expose ta collection et fais évoluer ta ville.</p>
+
+            <button type="button" className="nexus-city-primary" disabled={checking} onClick={primaryAction}>
+              {unlocked ? <Building2 size={19} /> : !isLoggedIn ? <LockKeyhole size={19} /> : <Globe2 size={19} />}
+              <span>{buttonLabel}</span>
+              <ArrowRight size={19} />
+            </button>
+
+            <div className={`nexus-unlock-card ${unlocked ? 'is-unlocked' : ''}`}>
+              <div className="nexus-unlock-icon">{unlocked ? <CheckCircle2 size={24} /> : <Target size={24} />}</div>
+              <div>
+                <strong>{unlocked ? 'MODE DÉBLOQUÉ' : isLoggedIn ? 'MISSION RAPIDE · 0/1' : 'PASSEPORT 3B REQUIS'}</strong>
+                <p>{unlocked
+                  ? 'Un Souvenir a été réveillé dans le Monde du 3B. L’accès à ta ville est activé.'
+                  : isLoggedIn
+                    ? 'Dans le Monde du 3B, entre dans n’importe quel pays et active un point « Éveiller le souvenir ». C’est tout.'
+                    : 'Connecte-toi d’abord. Ton déblocage sera ensuite lié à la progression de ton compte.'}</p>
+                <small>{unlocked ? 'Déblocage acquis' : 'Déblocage rapide'}{syncNote ? ` · ${syncNote}` : ''}</small>
+              </div>
             </div>
 
-            <aside className="nexus-city-panel" style={{ '--nexus-selected': world.color }}>
-              <p className="nexus-city-kicker">PORTE {world.number} · {world.value.toUpperCase()}</p>
-              <h3>{world.country}</h3>
-              <p>{world.description}</p>
-              <dl>
-                <div><dt>Gardien</dt><dd>{world.guardian}</dd></div>
-                <div><dt>Valeur</dt><dd>{world.value}</dd></div>
-              </dl>
-
-              <div className="nexus-city-divider" />
-              <p className="nexus-city-kicker">TON ESPACE PERSONNEL</p>
-              <h4>{isLoggedIn ? 'Crée ta ville 3B' : 'Connecte ton Passeport 3B'}</h4>
-              <p>{isLoggedIn
-                ? 'Depuis le Nexus, ouvre ta cité permanente, construis tes bâtiments, développe tes huit quartiers et expose ta collection.'
-                : 'Ta ville 3B est liée à ton compte. Ouvre ton espace membre pour te connecter ou créer ton compte, puis reviens dans le Passeport.'}</p>
-              <button type="button" className="nexus-city-primary" disabled={account.loading} onClick={enterPersonalSpace}>
-                <Building2 size={18} />
-                <span>{account.loading ? 'VÉRIFICATION…' : isLoggedIn ? 'CRÉER MA VILLE 3B' : 'OUVRIR MON ESPACE MEMBRE'}</span>
-                <ArrowRight size={18} />
-              </button>
-              <button type="button" className="nexus-city-secondary" onClick={onClose}>Retour au Passeport</button>
-            </aside>
-          </div>
-
-          <footer className="nexus-city-footer">
-            <span>8 PORTES · 8 VALEURS · 1 HÉRITAGE</span>
-            <strong>Ce n’est pas une marque. C’est un héritage.</strong>
-          </footer>
+            {!unlocked && isLoggedIn && !checking && (
+              <button type="button" className="nexus-city-secondary" onClick={() => leaveTo('#monde-3b')}>Aller au Monde du 3B</button>
+            )}
+            <button type="button" className="nexus-city-secondary" onClick={onClose}>Retour au Passeport</button>
+          </aside>
         </div>
-      )}
+
+        <footer className="nexus-city-footer">
+          <span>1 NEXUS · 1 VILLE · 1 HÉRITAGE</span>
+          <strong>Ce n’est pas une marque. C’est un héritage.</strong>
+        </footer>
+      </div>
     </section>,
     document.body,
   );
