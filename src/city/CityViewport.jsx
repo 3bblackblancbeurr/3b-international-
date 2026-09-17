@@ -11,7 +11,7 @@ export default function CityViewport({city,placements=[],buildings=[],preview=nu
  useEffect(()=>{
   const mount=mountRef.current;if(!mount||!city)return;
   const scene=new THREE.Scene();scene.background=new THREE.Color(BG[city.day_mode]??BG.auto);
-  if(city.weather==='fog'||city.weather==='rain'||city.weather==='snow'||city.weather==='storm')scene.fog=new THREE.FogExp2(scene.background,city.weather==='fog'?.012:.006);
+  if(city.weather==='fog'||city.weather==='rain'||city.weather==='snow'||city.weather==='storm')scene.fog=new THREE.FogExp2(scene.background,city.weather==='fog'?0.012:0.006);
   const camera=new THREE.PerspectiveCamera(48,1,.1,2200);camera.position.set(130,120,170);
   const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;mount.replaceChildren(renderer.domElement);
   const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.target.set(0,10,0);controls.minDistance=35;controls.maxDistance=650;controls.maxPolarAngle=Math.PI*.49;controls.enablePan=true;
