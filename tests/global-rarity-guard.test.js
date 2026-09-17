@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {RARITIES} from '../src/world/reward-catalog.js';
+const sql=readFileSync(new URL('../supabase/global-rarity-guard-v2.sql',import.meta.url),'utf8');
+test('scarce tiers are guarded across the whole rarity, not per definition only',()=>{assert.match(sql,/3b-global-rarity:/);assert.match(sql,/where d\.rarity=v_rarity/);assert.match(sql,/v_count>=v_cap/);assert.match(sql,/global_rarity_supply_exhausted/);});
+test('global cap checks are serialized',()=>{assert.match(sql,/pg_advisory_xact_lock\(hashtextextended\('3b-global-rarity:'/);assert.match(sql,/before insert on public\.item_instances/);});
+test('published scarcity remains Unique 1 and Ultimate 8',()=>{assert.equal(RARITIES.find(r=>r.id==='unique').supply,1);assert.equal(RARITIES.find(r=>r.id==='ultimate').supply,8);});
+test('clients may read remaining supply but cannot invoke the guard',()=>{assert.match(sql,/grant execute on function public\.threeb_rarity_supply_status\(\) to authenticated,service_role/);assert.match(sql,/revoke all on function public\.threeb_enforce_global_item_rarity_supply\(\) from public,anon,authenticated/);});
