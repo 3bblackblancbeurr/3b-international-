@@ -4,13 +4,22 @@ import {clone} from 'three/addons/utils/SkeletonUtils.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {createLivingLibrary,createLivingActor} from './living.js';
 
+function fallbackAtlas(){
+ const texture=new THREE.DataTexture(new Uint8Array([72,96,112,255]),1,1,THREE.RGBAFormat);
+ texture.colorSpace=THREE.SRGBColorSpace;texture.needsUpdate=true;return texture;
+}
+async function optionalTexture(url){try{return await new THREE.TextureLoader().loadAsync(url);}catch(error){console.warn('[3B world] texture optionnelle indisponible',url,error);return fallbackAtlas();}}
+async function optionalScene(loader,url){try{return await loader.loadAsync(url);}catch(error){console.warn('[3B world] décor optionnel indisponible',url,error);return{scene:new THREE.Group(),animations:[]};}}
+
 export async function loadWorldModels(){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary();
+ // Traveller + chapter kit are essential gameplay assets. The atlas and authored
+ // places are visual enrichment: their failure must not take down the whole world.
  const [hero,kit,atlas,places]=await Promise.all([
   living.load('/world/living/traveller-0.glb'),
   loader.loadAsync('/world/models/chapter-kit.glb'),
-  new THREE.TextureLoader().loadAsync('/world/guardians-atlas.webp'),
-  loader.loadAsync('/world/places/living-places.glb')
+  optionalTexture('/world/guardians-atlas.webp'),
+  optionalScene(loader,'/world/places/living-places.glb')
  ]);
  kit.living=living;const assets=[kit.scene,places.scene];
  assets.forEach(root=>root.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);}));
