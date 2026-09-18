@@ -1,9 +1,10 @@
 import {cameraRelative} from './orbit.js';
 
+export const CAMERA_FOLLOW_RESUME_SECONDS=.55;
+export const CAMERA_FOLLOW_MAX_SPEED=2.35;
+export const CAMERA_FOLLOW_REDUCED_MAX_SPEED=1.25;
 export const angleDelta=(from,to)=>Math.atan2(Math.sin(to-from),Math.cos(to-from));
 
-// Lock the input frame for one continuous gesture. Rotating the following
-// camera must never bend a held direction into an endless circle.
 export function createMovementFrame(){
  let basis=null;
  return {reset(){basis=null;},resolve(x,z,yaw){
@@ -14,10 +15,11 @@ export function createMovementFrame(){
 }
 
 export function followMovement(orbit,dx,dz,dt,{enabled=true,manual=false,quietFor=Infinity,reducedMotion=false}={}){
- if(!enabled||manual||quietFor<1.4||Math.hypot(dx,dz)<1e-5)return orbit;
+ if(!enabled||manual||quietFor<CAMERA_FOLLOW_RESUME_SECONDS||Math.hypot(dx,dz)<1e-5)return orbit;
  const desired=Math.atan2(-dx,-dz),delta=angleDelta(orbit.yaw,desired);
  if(Math.abs(delta)<.004)return orbit;
- const step=Math.sign(delta)*Math.min(Math.abs(delta)*(1-Math.exp(-Math.min(dt,.25)*4)),Math.min(dt,.25)*(reducedMotion?1.1:1.9));
+ const seconds=Math.min(dt,.25),response=reducedMotion?3.2:5.2,maxSpeed=reducedMotion?CAMERA_FOLLOW_REDUCED_MAX_SPEED:CAMERA_FOLLOW_MAX_SPEED;
+ const step=Math.sign(delta)*Math.min(Math.abs(delta)*(1-Math.exp(-seconds*response)),seconds*maxSpeed);
  return {...orbit,yaw:orbit.yaw+step};
 }
 

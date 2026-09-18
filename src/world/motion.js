@@ -21,11 +21,33 @@ export function advanceMotion(state,input,seconds,speed,obstacles,radius=76,move
  return {position,target,route,travelled,moving:travelled>1e-5};
 }
 
-export function pointerStick(dx,dy){
- const distance=Math.hypot(dx,dy);
- if(distance<=7)return {x:0,z:0};
- const strength=Math.min(1,(distance-7)/48);
- return {x:dx/distance*strength,z:dy/distance*strength};
+export function createMotionSmoother({acceleration=14,deceleration=20,epsilon=.012}={}){
+ let x=0,z=0;
+ const reset=()=>{x=0;z=0;};
+ return {
+  update(input={x:0,z:0},seconds=0){
+   const dt=Math.max(0,Math.min(Number.isFinite(seconds)?seconds:0,.25));
+   let tx=Number.isFinite(input.x)?input.x:0,tz=Number.isFinite(input.z)?input.z:0;
+   const targetLength=Math.hypot(tx,tz);
+   if(targetLength>1){tx/=targetLength;tz/=targetLength;}
+   const hasIntent=Math.hypot(tx,tz)>epsilon,rate=hasIntent?acceleration:deceleration;
+   const blend=1-Math.exp(-Math.max(0,rate)*dt);
+   x+=(tx-x)*blend;z+=(tz-z)*blend;
+   if(!hasIntent&&Math.hypot(x,z)<epsilon)reset();
+   const length=Math.hypot(x,z);if(length>1){x/=length;z/=length;}
+   return {x,z};
+  },
+  reset,
+  value(){return{x,z};}
+ };
+}
+
+export function pointerStick(dx,dy,{deadZone=10,maxRadius=72,exponent=1.22}={}){
+ const length=Math.hypot(dx,dy);
+ if(length<=deadZone)return {x:0,z:0};
+ const linear=Math.min(1,(length-deadZone)/Math.max(1,maxRadius-deadZone));
+ const strength=Math.pow(linear,exponent);
+ return {x:dx/length*strength,z:dy/length*strength};
 }
 
 export const QUALITY_MODES=['auto','fluid','detail'];

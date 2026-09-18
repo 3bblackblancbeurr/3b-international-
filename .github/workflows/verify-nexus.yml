@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'src/components/PassportNexus.jsx'
+      - 'src/components/NexusCityGateway.jsx'
+      - 'src/components/City3BPortal.jsx'
       - 'src/components/NexusCinema.jsx'
       - 'src/components/nexus-*'
       - 'src/components/useNexusJourney.js'
@@ -32,7 +34,10 @@ jobs:
         id: mode
         shell: bash
         run: |
-          if grep -q "city3bRequest" src/components/PassportNexus.jsx; then
+          if grep -Eq "NexusCityGateway|City3BPortal|city3bRequest" \
+            src/components/PassportNexus.jsx \
+            src/components/NexusCityGateway.jsx \
+            src/components/City3BPortal.jsx; then
             echo "city=true" >> "$GITHUB_OUTPUT"
           else
             echo "city=false" >> "$GITHUB_OUTPUT"
