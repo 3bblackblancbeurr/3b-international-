@@ -116,7 +116,11 @@ export class GarageStageV2{
     if(this.contextLost)this.canvas.removeEventListener('webglcontextlost',this.contextLost);
     this.controls?.dispose();disposeGarageVehicle(this.model);this.model=null;
     this.showroom?.userData.dispose?.();this.lights?.traverse(o=>{o.shadow?.dispose?.();});
-    this.environment?.dispose();this.pmrem?.dispose();this.renderer?.dispose();this.renderer?.forceContextLoss();
+    this.environment?.dispose();this.pmrem?.dispose();this.renderer?.dispose();
+    // React StrictMode reuses the connected canvas during effect replay. Only
+    // lose a detached canvas context, after the real DOM unmount has completed.
+    const retiredRenderer=this.renderer,retiredCanvas=this.canvas;
+    queueMicrotask(()=>{if(!retiredCanvas.isConnected)retiredRenderer?.forceContextLoss();});
     if(this.canvas?.dataset){delete this.canvas.dataset.garageVersion;delete this.canvas.dataset.environment;delete this.canvas.dataset.cameraState;}
   }
 }

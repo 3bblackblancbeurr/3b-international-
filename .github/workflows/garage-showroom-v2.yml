@@ -35,3 +35,20 @@ jobs:
           name: garage-showroom-v2-captures
           path: test-results/garage
           retention-days: 14
+  local-validation-kit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Package code and dependencies for offline renderer debugging
+        run: tar -czf /tmp/garage-local-kit.tgz node_modules src tests package.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: garage-local-validation-kit
+          path: /tmp/garage-local-kit.tgz
+          retention-days: 3
