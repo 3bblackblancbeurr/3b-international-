@@ -16,7 +16,9 @@
 
 - Le build signale encore des chunks JavaScript supérieurs à 500 kB.
 - L'avatar, Three.js et certains écrans secondaires doivent être chargés plus tardivement.
-- L'installation npm signale trois vulnérabilités modérées et une dépendance historique `uuid@7.0.3`; le paquet parent doit être identifié avant mise à jour.
+- L'audit production (`npm audit --omit=dev`) remonte **0 vulnérabilité**.
+- Les trois alertes modérées concernent uniquement les dépendances de développement : `@capacitor/cli@8.5.2` → `xcode@3.0.1` → `uuid@7.0.3`.
+- npm propose un retour de `@capacitor/cli` vers `8.4.3`, ce qui désalignerait la pile Capacitor 8.5.2. Aucun downgrade ou override risqué n'est donc appliqué sans validation du build Android/iOS.
 
 ## P1 — Supabase
 
@@ -38,4 +40,5 @@
 
 ## Non considéré comme terminé
 
-- Aucun changement de la branche n'est en production tant que la PR n'est pas fusionnée dans `main` et que le déploiement Vercel de production n'est pas confirmé.
+- La PR 72 possède une preview Vercel réussie et tous les contrôles automatisés sont verts.
+- Elle reste volontairement en brouillon et n'est pas fusionnée dans `main` tant que le test physique Samsung en paysage n'a pas validé les commandes.
