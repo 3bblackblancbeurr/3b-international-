@@ -16,7 +16,7 @@ jobs:
   apply-test-commit:
     if: ${{ !contains(github.event.head_commit.message, '[motion-v2-applied]') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout branch
         uses: actions/checkout@v4
@@ -29,14 +29,16 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Apply deterministic migration
-        run: node scripts/apply-world-motion-v2.mjs
+      - name: Apply deterministic migrations
+        run: |
+          node scripts/apply-world-motion-v2.mjs
+          node scripts/complete-world-motion-v2.mjs
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run motion and camera tests
-        run: node --test tests/world-motion.test.js tests/camera-follow.test.js
+      - name: Run focused controls tests
+        run: node --test tests/world-motion.test.js tests/camera-follow.test.js tests/mobile-mission.test.js tests/origins-controls-v2.test.js
 
       - name: Run complete test suite
         run: npm test
@@ -56,6 +58,22 @@ jobs:
           fi
           git config user.name "3B Automation"
           git config user.email "3bblackblancbeurr@users.noreply.github.com"
-          git add src/world/motion.js src/world/camera-follow.js src/world/scene.js tests/world-motion.test.js tests/camera-follow.test.js docs/3B_AAA_MASTER/03_GAMEPLAY_CONTROLES_CAMERA.md docs/reports/BASELINE_AUDIT.md docs/reports/WORK_LOG.md
-          git commit -m "feat(world): ship motion v2 controls and camera [motion-v2-applied]"
+          git add \
+            src/world/motion.js \
+            src/world/camera-follow.js \
+            src/world/scene.js \
+            src/world/origins/scene.js \
+            src/world/origins/OriginsPage.jsx \
+            src/world/origins/origins.css \
+            src/components/PassportVisual.jsx \
+            tests/world-motion.test.js \
+            tests/camera-follow.test.js \
+            tests/mobile-mission.test.js \
+            tests/world-director.test.js \
+            tests/city3b.test.js \
+            tests/origins-controls-v2.test.js \
+            docs/3B_AAA_MASTER/03_GAMEPLAY_CONTROLES_CAMERA.md \
+            docs/reports/BASELINE_AUDIT.md \
+            docs/reports/WORK_LOG.md
+          git commit -m "feat(world): ship Motion V2 controls and camera [motion-v2-applied]"
           git push origin HEAD:${{ github.ref_name }}
