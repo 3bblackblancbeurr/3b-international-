@@ -55,3 +55,20 @@ repeating-linear-gradient(0deg,transparent 0 79px,#2d7bff06 80px)}
 @media (orientation:landscape) and (max-height:560px){
   .u3b-top{height:50px}.u3b-top>div small{display:none}.u3b-page{padding-top:14px;padding-bottom:54px}.u3b-hero,.u3b-region,.u3b-garage-head{padding:17px}.u3b-hero h1,.u3b-region h1,.u3b-garage-head h1{font-size:clamp(27px,4vw,42px)}.u3b-hero p,.u3b-region p,.u3b-garage-head p{margin-bottom:8px}.u3b-rank{top:60px;font-size:42px}.u3b-racebar{top:54px}.u3b-police-heat{top:58px}.u3b-speed{bottom:18px}.u3b-speed b{font-size:52px}.u3b-steer-pad{height:62px}.u3b-steer-thumb{width:46px;height:46px}.u3b-touch .u3b-pedals .gas{height:88px}.u3b-touch .u3b-pedals .brake{height:68px}
 }
+
+
+/* Premium landscape navigation + settings */
+.u3b-main-menu{position:sticky;top:62px;z-index:19;display:flex;gap:2px;align-items:stretch;padding:0 max(14px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));overflow-x:auto;scrollbar-width:none;background:#03070ceF;border-bottom:1px solid #4f91ff2e;backdrop-filter:blur(18px)}
+.u3b-main-menu::-webkit-scrollbar{display:none}
+.u3b-main-menu button{flex:0 0 auto;min-height:42px;padding:0 13px;border:0;border-right:1px solid #ffffff0b;background:transparent;color:#8390a4;font-size:9px;font-weight:900;letter-spacing:.13em}
+.u3b-main-menu button:hover,.u3b-main-menu button.active{color:#edf5ff;background:linear-gradient(180deg,#2d7bff18,#2d7bff08);box-shadow:inset 0 -2px 0 #3f86ff}
+.u3b-settings-head{padding:28px 30px;border:1px solid #4f91ff32;border-radius:8px;background:linear-gradient(125deg,#0f1d2d,#090e16 55%,#05070c);box-shadow:0 22px 70px #0007}
+.u3b-settings-head>span{color:#6fa6ff;font-size:10px;font-weight:900;letter-spacing:.18em}.u3b-settings-head h1{font-size:clamp(32px,5vw,58px);margin:8px 0}.u3b-settings-head p{max-width:760px;color:#9ca9ba}
+.u3b-settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.u3b-settings-grid label{min-height:78px;display:grid;grid-template-columns:minmax(150px,.7fr) 1fr auto;gap:14px;align-items:center;padding:15px 16px;border:1px solid #4f91ff28;border-radius:7px;background:linear-gradient(145deg,#0d1723,#060a10);box-shadow:inset 0 1px 0 #ffffff08}
+.u3b-settings-grid label>span{font-size:11px;font-weight:900;letter-spacing:.06em;color:#dfe9f7}.u3b-settings-grid label>b{min-width:50px;text-align:right;color:#7eafff;font-size:11px}
+.u3b-settings-grid input[type=range]{width:100%;accent-color:#3984ff}.u3b-settings-grid select{width:100%;min-height:38px;border:1px solid #5a97ff38;border-radius:6px;padding:0 10px;background:#06101c;color:#eef5ff}
+.u3b-settings-grid .u3b-toggle{grid-template-columns:1fr auto}.u3b-settings-grid .u3b-toggle input{width:24px;height:24px;accent-color:#3984ff}
+.u3b-touch .u3b-pedals .cam{height:64px;min-width:68px;color:#bcd4ff}.u3b-touch .u3b-pedals .cam small{font-size:7px;color:#6fa6ff;letter-spacing:.05em}
+@media(max-width:900px){.u3b-settings-grid{grid-template-columns:1fr}.u3b-settings-grid label{grid-template-columns:minmax(130px,.65fr) 1fr auto}}
+@media (orientation:landscape) and (max-height:560px){.u3b-main-menu{top:50px}.u3b-main-menu button{min-height:34px;padding:0 10px;font-size:8px}.u3b-settings-head{padding:16px 18px}.u3b-settings-head h1{font-size:30px}.u3b-settings-grid{gap:7px}.u3b-settings-grid label{min-height:58px;padding:9px 11px}}
