@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {advanceMotion,pointerStick,createQualityController} from '../src/world/motion.js';
+import {advanceMotion,pointerStick,createQualityController,createMotionSmoother} from '../src/world/motion.js';
 import {COUNTRIES} from '../src/world/catalog.js';
 import {findPath} from '../src/world/navigation.js';
 
@@ -47,4 +47,20 @@ test('Kaïs ships with a skinned mesh and separate Idle, Walk and Run clips',()=
  const gltf=JSON.parse(b.subarray(20,20+b.readUInt32LE(12)));
  assert.ok(gltf.skins.length);assert.deepEqual(gltf.animations.map(a=>a.name).sort(),['Idle','Run','Walk']);
  assert.ok(gltf.meshes.every(m=>m.primitives.every(p=>p.attributes.JOINTS_0!==undefined&&p.attributes.WEIGHTS_0!==undefined)));
+});
+
+
+test('motion smoothing is frame-rate independent and preserves precise stops',()=>{
+ const samples=[];
+ for(const fps of [30,60,120]){const controller=createMotionSmoother();let value;for(let i=0;i<fps/2;i++)value=controller.update({x:1,z:0},1/fps);samples.push(value.x);}
+ assert.ok(Math.max(...samples)-Math.min(...samples)<1e-10);
+ const controller=createMotionSmoother(),started=controller.update({x:1,z:0},1/60);assert.ok(started.x>0&&started.x<1);
+ const released=controller.update({x:0,z:0},1/60);assert.ok(released.x>0&&released.x<started.x);
+ for(let i=0;i<60;i++)controller.update({x:0,z:0},1/60);assert.deepEqual(controller.value(),{x:0,z:0});
+ controller.update({x:1,z:1},1);assert.ok(Math.hypot(controller.value().x,controller.value().z)<=1+1e-12);controller.reset();assert.deepEqual(controller.value(),{x:0,z:0});
+});
+
+test('floating joystick offers precision near centre and full sprint at a comfortable radius',()=>{
+ assert.deepEqual(pointerStick(9,0),{x:0,z:0});
+ const precise=pointerStick(24,0),running=pointerStick(72,0);assert.ok(precise.x>0&&precise.x<.3);assert.equal(running.x,1);
 });

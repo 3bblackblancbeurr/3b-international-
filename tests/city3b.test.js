@@ -2,14 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const component=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+const gateway=readFileSync(new URL('../src/components/NexusCityGateway.jsx',import.meta.url),'utf8');
+const portal=readFileSync(new URL('../src/components/City3BPortal.jsx',import.meta.url),'utf8');
+const component=gateway+'\n'+portal;
 const visual=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
 const client=readFileSync(new URL('../src/city/city3b-client.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/city-3b.css',import.meta.url),'utf8');
 
 test('passport now enters City 3B instead of the legacy Nexus journey',()=>{
   assert.match(visual,/MA VILLE/);
-  assert.match(visual,/Ouvrir Crée ta ville 3B/);
+  assert.match(visual,/Ouvrir ma Ville 3B|Entrer dans ma Ville 3B/);
   assert.match(component,/CRÉE TA VILLE/);
   assert.match(component,/Fonder ma ville/);
   assert.doesNotMatch(component,/useNexusJourney|journey\.travel/);

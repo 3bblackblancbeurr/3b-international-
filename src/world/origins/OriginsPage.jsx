@@ -58,6 +58,8 @@ function Session({uid,goTo,onPrevious}){
 
  const pendingRoute=useRef(null),host=useRef(),scene=useRef(),messageTimer=useRef(),[snapshot,setSnapshot]=useState(null),[initial]=useState(()=>load(localStorage,uid)),[panel,setPanel]=useState('start'),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState(null),[saveError,setSaveError]=useState(false);
 
+ useEffect(()=>{const orientation=globalThis.screen?.orientation;orientation?.lock?.('landscape').catch(()=>{});return()=>orientation?.unlock?.();},[]);
+
  useEffect(()=>{let live=true;try{scene.current=createOriginsScene(host.current,{initial,onSnapshot:v=>{if(live)setSnapshot(v);},onLoad:v=>{if(live)setLoading(v);},onError:e=>{if(live)setError(e);},onSave:s=>{const ok=persist(localStorage,uid,s);if(live)setSaveError(!ok);return ok;},onMessage:m=>{if(!live)return;setMessage(m);clearTimeout(messageTimer.current);if(!m.speaker&&!m.choices)messageTimer.current=setTimeout(()=>setMessage(null),6500);}});scene.current.pause(true);}catch(e){setError('Le rendu 3D ne démarre pas : '+e.message);setLoading(false);}return()=>{live=false;clearTimeout(messageTimer.current);scene.current?.destroy();scene.current=null;};},[uid,initial]);
 
  useEffect(()=>{scene.current?.pause(!!panel||!!error);if(!panel&&!error&&pendingRoute.current){const id=pendingRoute.current;pendingRoute.current=null;if(!scene.current?.navigate(id))setMessage({text:'Ce lieu est inaccessible depuis ta position actuelle.'});}},[panel,error]);
@@ -84,6 +86,8 @@ function Session({uid,goTo,onPrevious}){
 
  return <section className="origins" aria-label="3B ORIGINS — Le Cercle Brisé">
 
+  <div className="origins-rotate-device" role="status"><RotateCcw/><strong>Tourne ton téléphone</strong><span>Le Monde du 3B se joue en horizontal.</span></div>
+
   <div className="origins-viewport" ref={host}/>
 
   {!panel&&<>
@@ -102,7 +106,7 @@ function Session({uid,goTo,onPrevious}){
    {(c.guard>0||c.slow>0)&&<div className="origins-support-status" role="status">{c.guard>0?'Protection : prochain impact':'Adversaire ralenti'} · {Math.ceil(c.guard||c.slow)} s</div>}
    {snapshot?.vision>0&&<div className="origins-vision">VISION DE MÉMOIRE · {Math.ceil(snapshot.vision)} s</div>}
 
-   <div className="origins-bottom"><div className="origins-quick"><button onClick={()=>setPanel('journal')} aria-label="Journal"><BookOpen size={19}/></button><button onClick={()=>action('recenter')} aria-label="Recentrer la caméra"><RotateCcw size={19}/></button><span className="origins-keyboard">ZQSD / WASD · Maj courir<br/>Glisser pour regarder · clic pour marcher</span><span className="origins-touchhint">Gauche : déplacer<br/>Droite : regarder</span></div>
+   <div className="origins-bottom"><div className="origins-quick"><button onClick={()=>setPanel('journal')} aria-label="Journal"><BookOpen size={19}/></button><button onClick={()=>action('recenter')} aria-label="Recentrer la caméra"><RotateCcw size={19}/></button><span className="origins-keyboard">ZQSD / WASD · Maj courir<br/>Glisser pour regarder · clic pour marcher</span><span className="origins-touchhint">Gauche : joystick ou double tap pour courir<br/>Droite : regarder · double tap recentrer</span></div>
 
     <div className="origins-actions">
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createMovementFrame,followMovement,angleDelta,viewBearing} from '../src/world/camera-follow.js';
+import {createMovementFrame,followMovement,angleDelta,viewBearing,CAMERA_FOLLOW_RESUME_SECONDS,CAMERA_FOLLOW_MAX_SPEED} from '../src/world/camera-follow.js';
 import {DEFAULT_ORBIT,orbitView,restoreOrbit} from '../src/world/orbit.js';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction,advanceBattle} from '../src/world/engine.js';
@@ -21,9 +21,9 @@ test('follow takes the short rotation, preserves framing, and respects free look
  const orbit={yaw:Math.PI-.03,pitch:.77,distance:36};
  const to=-Math.PI+.03,v={x:-Math.sin(to),z:-Math.cos(to)};
  const next=followMovement(orbit,v.x,v.z,1/60);assert.ok(next.yaw>orbit.yaw);assert.equal(next.pitch,orbit.pitch);assert.equal(next.distance,36);
- for(const options of [{enabled:false},{manual:true},{quietFor:1.3}])assert.deepEqual(followMovement(orbit,1,0,.1,options),orbit);
+ for(const options of [{enabled:false},{manual:true},{quietFor:CAMERA_FOLLOW_RESUME_SECONDS-.01}])assert.deepEqual(followMovement(orbit,1,0,.1,options),orbit);
  assert.deepEqual(followMovement(orbit,0,0,.1),orbit);
- assert.ok(Math.abs(angleDelta(orbit.yaw,followMovement(orbit,1,0,.25).yaw))<=1.9*.25+1e-10);
+ assert.ok(Math.abs(angleDelta(orbit.yaw,followMovement(orbit,1,0,.25).yaw))<=CAMERA_FOLLOW_MAX_SPEED*.25+1e-10);
  assert.equal(viewBearing({x:0,z:12},{x:0,z:0}),0);
 });
 test('country buildings vary in volume without reducing usable door dimensions',()=>{
