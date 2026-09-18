@@ -33,6 +33,7 @@ jobs:
         run: |
           node scripts/apply-world-motion-v2.mjs
           node scripts/complete-world-motion-v2.mjs
+          node scripts/finalize-world-motion-v2.mjs
 
       - name: Install dependencies
         run: npm ci
