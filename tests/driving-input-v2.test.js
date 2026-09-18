@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createDrivingControlState,shapeAnalog,steeringAuthority,updateDrivingControlState} from '../src/games/underground/DrivingInputV2.js';
 import {DEFAULT_VEHICLE,createVehicleState,stepVehicle} from '../src/games/underground/carModel.js';
+import {createCareerState,setSetting,validateCareerState} from '../src/games/underground/career.js';
 
 function simulate(fps,seconds,raw,speedMps=0){
   let state=createDrivingControlState();
@@ -37,4 +38,15 @@ test('vehicle acceleration ramps instead of jumping to full throttle',()=>{
   for(let i=0;i<120;i++)state=stepVehicle(DEFAULT_VEHICLE,state,{throttle:1,brake:0,steer:0,nitrous:false},1/60,{grip:1,slope:0});
   assert.ok(state.controls.throttle>.95);
   assert.ok(state.speedMps>0);
+});
+
+test('Gold Master driving settings persist and legacy chase camera migrates',()=>{
+  let career=createCareerState();
+  career=setSetting(career,'steeringSensitivity',1.25);
+  career=setSetting(career,'fpsTarget','30');
+  assert.equal(career.settings.steeringSensitivity,1.25);
+  assert.equal(career.settings.fpsTarget,'30');
+  const legacy={...career,settings:{...career.settings,camera:'chase'}};
+  const normalized=validateCareerState(legacy);
+  assert.equal(normalized.settings.camera,'medium');
 });
