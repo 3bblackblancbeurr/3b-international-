@@ -11,7 +11,7 @@
     "validate:vehicle-pack": "node scripts/validate-vehicle-pack.mjs",
     "validate:vehicle-production": "node scripts/validate-vehicle-production.mjs",
     "validate:final-assets": "node --test tests/final-assets-v3.test.js",
-    "validate:underground-v2": "node --test tests/underground-completion-v2.test.js tests/underground-systems-v2.test.js tests/final-assets-v3.test.js tests/police-pursuit-system.test.js tests/police-production.test.js tests/police-world-integration.test.js tests/police-driving-ai.test.js"
+    "validate:underground-v2": "node --test tests/underground-completion-v2.test.js tests/underground-systems-v2.test.js tests/final-assets-v3.test.js tests/police-pursuit-system.test.js tests/police-production.test.js tests/police-world-integration.test.js tests/police-driving-ai.test.js tests/france-vertical-slice.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",

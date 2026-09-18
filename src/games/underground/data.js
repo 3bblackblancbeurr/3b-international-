@@ -1,5 +1,5 @@
 export const GAME_ID='underground';
-export const SAVE_VERSION=1;
+export const SAVE_VERSION=2;
 
 export const TIER_THRESHOLDS=[0,1000,2500,4500,6500,8000,10000];
 export const TIERS=[

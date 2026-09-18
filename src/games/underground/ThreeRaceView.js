@@ -19,6 +19,12 @@ function randomFrom(seed){let s=seed>>>0;return()=>{s=(Math.imul(s,1664525)+1013
 function trackCurve(event){const rnd=randomFrom(hash(event.id));const pts=[],n=18,country=event.countryId||'france';for(let i=0;i<n;i++){const a=i/n*Math.PI*2,regional=country==='france'&&i>11?1.18:1,r=(130+(rnd()-.5)*58)*regional;pts.push(new THREE.Vector3(Math.cos(a)*r,(rnd()-.5)*(country==='france'&&i>11?9:4),Math.sin(a)*r*.74));}return new THREE.CatmullRomCurve3(pts,true,'catmullrom',.25);}
 function hardwareProfile(canvas){const nav=typeof navigator!=='undefined'?navigator:{};return chooseQuality({width:canvas.clientWidth||1280,height:canvas.clientHeight||720,dpr:window.devicePixelRatio||1,memoryGb:nav.deviceMemory||8,cores:nav.hardwareConcurrency||8});}
 function disposeObject(root){root?.traverse?.(o=>{o.geometry?.dispose?.();if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m.dispose?.());}});root?.userData?.disposeProductionAsset?.();}
+function addPoliceLightbar(root,index=0){
+  const bar=new THREE.Group();bar.name='U3B_PoliceLightbar';bar.position.set(0,1.42,.05);
+  const red=new THREE.Mesh(new THREE.BoxGeometry(.42,.08,.18),new THREE.MeshPhysicalMaterial({color:0x430007,emissive:0xff1738,emissiveIntensity:4,metalness:.35,roughness:.18}));
+  const blue=new THREE.Mesh(new THREE.BoxGeometry(.42,.08,.18),new THREE.MeshPhysicalMaterial({color:0x041947,emissive:0x2878ff,emissiveIntensity:4,metalness:.35,roughness:.18}));
+  red.position.x=-.24;blue.position.x=.24;bar.add(red,blue);bar.userData.red=red.material;bar.userData.blue=blue.material;bar.userData.phase=index*.7;root.add(bar);root.userData.policeLightbar=bar;return root;
+}
 
 export class ThreeRaceView{
   constructor(canvas,event,vehicle){
@@ -32,6 +38,7 @@ export class ThreeRaceView{
     this.world=new CinematicPremiumWorld(this.scene,this.curve,this.event,{quality:this.profile,shadowMap:this.profileData.shadowMap});
     this.player=upgradeVehicleProxyV7(createModularVehicleProxy(this.vehicle));this.player.name='U3B_PlayerVehicle_Proxy';attachVehicleCinematicFX(this.player,{accent:'#ff203c'});this.scene.add(this.player);
     this.aiCars=Array.from({length:8},(_,i)=>{const accent=i%2?'#3f78ff':'#e64444',m=upgradeVehicleProxyV7(createModularVehicleProxy(undefined,{ai:true,accentOverride:accent}),{ai:true});m.name=`U3B_AI_${i+1}`;m.scale.multiplyScalar(.96);attachVehicleCinematicFX(m,{ai:true,accent});this.scene.add(m);return m;});
+    this.policeEnabled=this.event?.verticalSlice===true;this.policeCars=this.policeEnabled?Array.from({length:3},(_,i)=>{const m=addPoliceLightbar(upgradeVehicleProxyV7(createModularVehicleProxy(undefined,{ai:true,accentOverride:'#10151d'}),{ai:true}),i);m.name=`U3B_POLICE_${i+1}`;m.scale.multiplyScalar(.98);attachVehicleCinematicFX(m,{ai:true,accent:i%2?'#2878ff':'#ff1738'});this.scene.add(m);return m;}):[];
   }
   async loadFinalPlayerAsset(){
     if(!hasProductionVehicleAsset(this.vehicle))return null;
@@ -53,6 +60,7 @@ export class ThreeRaceView{
     this.elapsed+=dt;const total=session.totalDistanceM,{u,p,t,side}=this.place(this.player,session.player.distanceM,total,session.player.lane),speed=session.player.state.speedMps*3.6,steerVisual=clamp((session.player.state.yaw||0)*.35,-1,1);
     if(this.playerIsProduction)updateProductionVehicleRuntime(this.player,{speedKph:speed,time:this.elapsed,steer:steerVisual});else updateProxyRuntime(this.player,this.vehicle,{speedKph:speed,time:this.elapsed,brake:session.player.brake||0,steer:steerVisual});updateVehicleCinematicFX(this.player,{speedKph:speed,wetness:this.visualState?.wetness??.7,brake:session.player.brake||0,time:this.elapsed});
     session.ai.forEach((ai,i)=>{if(this.aiCars[i]){const car=this.aiCars[i],aiSpeed=(ai.state?.speedMps||session.player.state.speedMps*.92)*3.6;car.visible=true;this.place(car,ai.distanceM,total,ai.lane);updateProxyRuntime(car,undefined,{speedKph:aiSpeed,time:this.elapsed+i*.13});updateVehicleCinematicFX(car,{speedKph:aiSpeed,wetness:this.visualState?.wetness??.7,time:this.elapsed+i*.17});}});for(let i=session.ai.length;i<this.aiCars.length;i++)this.aiCars[i].visible=false;
+    if(this.policeEnabled)this.policeCars.forEach((car,i)=>{const gap=22+i*18+Math.sin(this.elapsed*.7+i)*5,policeDistance=Math.max(0,session.player.distanceM-gap),lane=i===0?-.8:i===1?.8:0;this.place(car,policeDistance,total,lane);const policeSpeed=Math.max(80,speed+8-i*3);updateProxyRuntime(car,undefined,{speedKph:policeSpeed,time:this.elapsed+i*.21});updateVehicleCinematicFX(car,{speedKph:policeSpeed,wetness:this.visualState?.wetness??.7,time:this.elapsed+i*.19});const bar=car.userData.policeLightbar;if(bar){const pulse=Math.sin(this.elapsed*10+bar.userData.phase)>0;bar.userData.red.emissiveIntensity=pulse?7:1.2;bar.userData.blue.emissiveIntensity=pulse?1.2:7;}});
     const speedT=clamp(speed/300,0,1),back=9.1+clamp(speed*.0128,0,4.0),height=3.45+speedT*.78,target=p.clone().add(new THREE.Vector3(0,.90,0)),bob=Math.sin(this.elapsed*4.2)*.009*speedT,cam=target.clone().addScaledVector(t,-back).add(new THREE.Vector3(0,height+bob,0)).addScaledVector(side,session.player.lane*.17);
     this.camera.position.lerp(cam,1-Math.pow(.0025,dt));const look=target.clone().addScaledVector(t,12.5+speed*.031).addScaledVector(side,(session.player.state.yaw||0)*.13);this.camera.lookAt(look);const desiredRoll=clamp(-(session.player.state.yaw||0)*.010-session.player.lane*.0038,-.024,.024);this.camera.rotation.z=THREE.MathUtils.lerp(this.camera.rotation.z,desiredRoll,1-Math.pow(.045,dt));
     const fov=cameraFov(speed);if(Math.abs(this.camera.fov-fov)>.05){this.camera.fov=THREE.MathUtils.lerp(this.camera.fov,fov,1-Math.pow(.02,dt));this.camera.updateProjectionMatrix();}

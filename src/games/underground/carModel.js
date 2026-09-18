@@ -29,7 +29,8 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const normalizeModelAsset=value=>typeof value==='string'&&(/\.glb(?:$|\?)/i.test(value)||/^https?:\/\//i.test(value))?value:null;
 
 export function normalizeVehicle(vehicle=DEFAULT_VEHICLE){
-  const v={...DEFAULT_VEHICLE,...vehicle,modelAsset:normalizeModelAsset(vehicle?.modelAsset)};
+  // Save/career normalization never trusts an arbitrary model path. A production asset is rebound explicitly by productionVehicleFactory after normalization.
+  const v={...DEFAULT_VEHICLE,...vehicle,modelAsset:null};
   v.platformId=normalizePlatformId(vehicle?.platformId);v.platformVersion=VEHICLE_PLATFORM_VERSION;v.bodyStyle=typeof vehicle?.bodyStyle==='string'?vehicle.bodyStyle:DEFAULT_VEHICLE.bodyStyle;
   v.upgrades={...DEFAULT_VEHICLE.upgrades,...(vehicle?.upgrades||{})};
   v.tune={...DEFAULT_TUNE,...(vehicle?.tune||{})};
