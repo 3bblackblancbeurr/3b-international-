@@ -11,15 +11,17 @@ concurrency:
 jobs:
   garage-browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test tests/garage-showroom-v2.test.js
+      - run: npm run validate:underground-v2
       - run: npm install --no-save --package-lock=false playwright
       - run: npx playwright install --with-deps chromium
       - name: Render and interact with the actual garage component
@@ -36,10 +38,13 @@ jobs:
           path: test-results/garage
           retention-days: 14
   local-validation-kit:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

@@ -27,7 +27,7 @@ export function steeringAuthority(speedMps=0){
   const speedKph=Math.max(0,Number(speedMps)||0)*3.6;
   const t=clamp(speedKph/240,0,1);
   const eased=t*t*(3-2*t);
-  return 1-(1-DRIVING_INPUT_V2.highSpeedSteerFloor)*eased;
+  return clamp(1-(1-DRIVING_INPUT_V2.highSpeedSteerFloor)*eased,DRIVING_INPUT_V2.highSpeedSteerFloor,1);
 }
 
 export function createDrivingControlState(){

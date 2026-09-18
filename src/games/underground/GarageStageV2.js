@@ -102,7 +102,7 @@ export class GarageStageV2{
       if(now-t.started>=1500||(this.camera.position.distanceToSquared(t.position)<.00002&&this.controls.target.distanceToSquared(t.target)<.00002&&Math.abs(this.camera.fov-t.fov)<.02)){this.camera.position.copy(t.position);this.controls.target.copy(t.target);this.camera.fov=t.fov;this.camera.updateProjectionMatrix();this.transition=null;}
     }
     const changed=this.controls.update(Math.min(.1,dt));
-    try{if((this.dirty||this.controls.autoRotate)&&now-this.lastRender>=1000/60-.5){this.renderer.render(this.scene,this.camera);this.lastRender=now;this.dirty=false;}}
+    try{if((this.dirty||this.controls.autoRotate)&&now-this.lastRender>=1000/60-.5){this.renderer.render(this.scene,this.camera);this.lastRender=now;this.dirty=false;this.canvas.dataset.cameraDistance=this.camera.position.distanceTo(this.controls.target).toFixed(4);this.canvas.dataset.exposure=String(this.renderer.toneMappingExposure);this.canvas.dataset.renderCount=String(this.renderCount=(this.renderCount||0)+1);}}
     catch(error){this.failed=true;this.onError(error.message||'Rendu 3D indisponible.');return;}
     // On-demand loop: stop both CPU RAF and GPU draws when the camera settles.
     const moving=Boolean(this.transition||this.controls.autoRotate||changed);
@@ -121,6 +121,6 @@ export class GarageStageV2{
     // lose a detached canvas context, after the real DOM unmount has completed.
     const retiredRenderer=this.renderer,retiredCanvas=this.canvas;
     queueMicrotask(()=>{if(!retiredCanvas.isConnected)retiredRenderer?.forceContextLoss();});
-    if(this.canvas?.dataset){delete this.canvas.dataset.garageVersion;delete this.canvas.dataset.environment;delete this.canvas.dataset.cameraState;}
+    if(this.canvas?.dataset){delete this.canvas.dataset.garageVersion;delete this.canvas.dataset.environment;delete this.canvas.dataset.cameraState;delete this.canvas.dataset.cameraDistance;delete this.canvas.dataset.exposure;delete this.canvas.dataset.renderCount;}
   }
 }
