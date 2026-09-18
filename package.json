@@ -2,7 +2,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
-    "build": "vite build",
+    "build": "node --test tests/garage-showroom-v2.test.js && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test:shop": "node --test tests/shop.test.js",
     "dev:api": "node --env-file-if-exists=.env.local scripts/shop-server.js",
@@ -11,7 +11,8 @@
     "validate:vehicle-pack": "node scripts/validate-vehicle-pack.mjs",
     "validate:vehicle-production": "node scripts/validate-vehicle-production.mjs",
     "validate:final-assets": "node --test tests/final-assets-v3.test.js",
-    "validate:underground-v2": "node --test tests/underground-completion-v2.test.js tests/underground-systems-v2.test.js tests/final-assets-v3.test.js tests/police-pursuit-system.test.js tests/police-production.test.js tests/police-world-integration.test.js tests/police-driving-ai.test.js tests/france-vertical-slice.test.js tests/driving-input-v2.test.js"
+    "validate:garage-v2": "node --test tests/garage-showroom-v2.test.js",
+    "validate:underground-v2": "node --test tests/underground-completion-v2.test.js tests/underground-systems-v2.test.js tests/final-assets-v3.test.js tests/police-pursuit-system.test.js tests/police-production.test.js tests/police-world-integration.test.js tests/police-driving-ai.test.js tests/france-vertical-slice.test.js tests/driving-input-v2.test.js tests/garage-showroom-v2.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.116.0",

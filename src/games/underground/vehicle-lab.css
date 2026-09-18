@@ -1,11 +1,46 @@
-.u3b-lab-preview{margin:18px 0 24px;border:1px solid #d7b76b35;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,#0d1118,#05070b);box-shadow:0 24px 70px #0008}.u3b-lab-stage{position:relative;height:clamp(280px,43vw,520px);min-height:280px;touch-action:none;cursor:grab}.u3b-lab-stage:active{cursor:grabbing}.u3b-lab-stage canvas{width:100%;height:100%;display:block}.u3b-lab-stage>span{position:absolute;left:14px;bottom:13px;padding:7px 10px;border:1px solid #ffffff20;border-radius:999px;background:#05070bc9;color:#d6dbe5;font-size:9px;letter-spacing:.14em;pointer-events:none}.u3b-lab-presets{display:flex;gap:7px;padding:11px;overflow:auto;border-top:1px solid #ffffff12;background:#06080c}.u3b-lab-presets button{flex:0 0 auto;border:1px solid #ffffff1c;border-radius:999px;background:#ffffff07;padding:8px 11px;font-size:10px;color:#aeb7c4}.u3b-lab-presets button.active{border-color:#d7b76b88;background:#d7b76b18;color:#f0d996}.u3b-lab-presets button:hover{border-color:#d7b76b55}@media(max-width:650px){.u3b-lab-stage{height:310px}.u3b-lab-presets{padding:8px}.u3b-lab-presets button{padding:7px 9px;font-size:9px}}
-
-
-/* Garage V2 showroom */
-.u3b-lab-preview{border-radius:8px;border-color:#5b98ff40;background:linear-gradient(145deg,#0c1826,#05080e);box-shadow:0 30px 90px #000b,0 0 0 1px #2d7bff0d}
-.u3b-lab-stage{height:clamp(300px,48vw,580px);background:radial-gradient(ellipse at 50% 58%,#1b2b3d 0,#0b121d 38%,#04070c 74%);isolation:isolate}
-.u3b-lab-stage:before,.u3b-lab-stage:after{content:"";position:absolute;z-index:1;pointer-events:none;left:8%;right:8%;height:2px;background:linear-gradient(90deg,transparent,#a9c8ff,#4a8fff,#a9c8ff,transparent);box-shadow:0 0 18px #5b98ff99}
-.u3b-lab-stage:before{top:8%}.u3b-lab-stage:after{top:15%;opacity:.55}
-.u3b-lab-stage canvas{position:relative;z-index:0}.u3b-lab-stage>span{z-index:2;border-radius:6px;border-color:#5c9bff45;background:#06101de8;color:#dbe8ff}
-.u3b-lab-presets{border-top-color:#5795ff28;background:#050b13}.u3b-lab-presets button{border-radius:6px}.u3b-lab-presets button.active{border-color:#5795ff;background:#2d7bff20;color:#e5efff}
-@media (orientation:landscape) and (max-height:560px){.u3b-lab-stage{height:64vh;min-height:250px}.u3b-lab-presets{padding:7px}}
+/* Modern Garage V2. Real WebGL room, no screenshot backdrop or fake LED overlay. */
+.u3b-showroom-v2{--garage-blue:#2d7bff;margin:16px 0 22px;border:1px solid #82afff5c;border-radius:8px;overflow:hidden;background:#111b28;box-shadow:0 22px 60px #0008;color:#f5f8ff;isolation:isolate}
+.u3b-showroom-v2 *{box-sizing:border-box}
+.u3b-showroom-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 17px;background:linear-gradient(100deg,#172a42,#101923);border-bottom:1px solid #82afff33}
+.u3b-showroom-heading span{font:700 9px/1.4 system-ui,sans-serif;letter-spacing:.15em;color:#8fbcff}
+.u3b-showroom-v2 .u3b-showroom-heading h2{margin:4px 0 0!important;font:700 clamp(15px,2vw,24px)/1.1 system-ui,sans-serif;letter-spacing:.02em}
+.u3b-showroom-v2 button{border:1px solid #7baeff45;border-radius:5px;background:#182a40;color:#eef5ff;min-height:42px;padding:8px 12px;font:650 11px/1.2 system-ui,sans-serif;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.u3b-showroom-v2 button:hover{background:#264872;border-color:#84b4ff}
+.u3b-showroom-v2 button:focus-visible,.u3b-showroom-v2 input:focus-visible,.u3b-showroom-v2 summary:focus-visible{outline:2px solid #b7d4ff;outline-offset:2px}
+.u3b-showroom-v2 button.active,.u3b-showroom-v2 button[aria-pressed=true]{background:#255caa;border-color:#9fc7ff;box-shadow:inset 0 -2px 0 #b6d3ff}
+.u3b-showroom-v2 .u3b-lab-stage{position:relative;height:clamp(340px,43vw,640px);min-height:260px;cursor:grab;background:#3e4a5b;touch-action:none}
+.u3b-showroom-v2 .u3b-lab-stage:active{cursor:grabbing}
+.u3b-showroom-v2 .u3b-lab-stage canvas{width:100%;height:100%;display:block;touch-action:none}
+.u3b-showroom-v2 .u3b-lab-stage>span{position:absolute;left:14px;bottom:12px;background:#0d1725dd;border:1px solid #9fc7ff4a;border-radius:4px;padding:7px 10px;font:650 9px/1.2 system-ui,sans-serif;letter-spacing:.11em;color:#dcecff;pointer-events:none}
+.u3b-showroom-zoom{position:absolute;right:14px;bottom:12px;display:flex;gap:6px}
+.u3b-showroom-zoom button{font-size:24px;width:44px;height:44px;padding:0;background:#122238dc}
+.u3b-showroom-toolbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:9px;padding:10px 12px;background:#0d1724;border-top:1px solid #82afff33}
+.u3b-showroom-toolbar nav{display:flex;gap:5px;flex-wrap:wrap;min-width:0}
+.u3b-showroom-brightness{display:flex;align-items:center;gap:9px;padding:0 6px;min-height:42px;font:650 11px/1.2 system-ui,sans-serif}
+.u3b-showroom-brightness input{width:110px;min-height:30px;accent-color:#75aaff;cursor:pointer}
+.u3b-showroom-brightness output{width:36px;color:#afd0ff;font-variant-numeric:tabular-nums;text-align:right}
+.u3b-showroom-inspection{border-top:1px solid #82afff22;background:#101b29}
+.u3b-showroom-inspection summary{padding:12px 16px;min-height:42px;cursor:pointer;font:600 11px/1.3 system-ui,sans-serif;color:#a8bfdd}
+.u3b-showroom-v2 .u3b-lab-presets{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 12px}
+.u3b-showroom-error{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#0c1629ef;padding:22px;text-align:center}
+.u3b-showroom-error p{max-width:560px;color:#b6c8df}
+.u3b-showroom-v2.is-expanded{position:fixed;inset:0;margin:0;border:0;border-radius:0;z-index:40000;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:#0d1724}
+.u3b-showroom-v2.is-expanded .u3b-lab-stage{flex:1;height:auto;min-height:120px}
+.u3b-showroom-v2.is-expanded .u3b-showroom-heading,.u3b-showroom-v2.is-expanded .u3b-showroom-toolbar{flex-shrink:0}
+.u3b-showroom-v2.is-expanded .u3b-showroom-inspection{max-height:32vh;overflow:auto;flex-shrink:0}
+/* Reduce the old developer introduction; leave all tuning/economy controls intact. */
+.u3b-page:has(>.u3b-showroom-v2)>.u3b-garage-head{padding:15px 18px}
+.u3b-page:has(>.u3b-showroom-v2)>.u3b-garage-head h1{font-size:30px;margin:5px 0}
+.u3b-page:has(>.u3b-showroom-v2)>.u3b-garage-head p{display:none}
+.u3b-page:has(>.u3b-showroom-v2)>.u3b-garage-head>div:last-child{width:65px}
+.u3b-page:has(>.u3b-showroom-v2)>.u3b-garage-head>div:last-child b{font-size:24px}
+@media(orientation:landscape) and (max-height:560px){
+ .u3b-showroom-v2 .u3b-lab-stage{height:68dvh;min-height:230px}
+ .u3b-showroom-heading{padding:8px 12px}.u3b-showroom-heading span{font-size:8px}
+ .u3b-showroom-toolbar{padding:6px 9px;gap:4px}
+ .u3b-showroom-v2 button{font-size:10px;padding:7px 9px;min-height:42px}
+ .u3b-showroom-brightness input{width:85px}
+ .u3b-showroom-v2.is-expanded .u3b-lab-stage{min-height:90px}
+ .u3b-showroom-v2.is-expanded .u3b-showroom-inspection summary{padding:7px 12px;min-height:32px}
+}
+@media(prefers-reduced-motion:reduce){.u3b-showroom-v2 *{scroll-behavior:auto}}

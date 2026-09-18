@@ -1,37 +1,66 @@
 import React,{useEffect,useRef,useState} from 'react';
-import * as THREE from 'three';
-import {createModularVehicleProxy,updateProxyRuntime} from './ModularVehicleProxy.js';
+import {createModularVehicleProxy} from './ModularVehicleProxy.js';
 import {upgradeVehicleProxyV7} from './VehicleProxyV7.js';
-import {hasProductionVehicleAsset,loadProductionVehicle,updateProductionVehicleRuntime} from './ProductionVehicleLoader.js';
+import {hasProductionVehicleAsset,loadProductionVehicle} from './ProductionVehicleLoader.js';
 import {INSPECTION_PRESETS,inspectionState} from './vehicleInspection.js';
+import {GarageStageV2,GARAGE_VIEWS,disposeGarageVehicle,garageBrightness} from './GarageStageV2.js';
 import './vehicle-lab.css';
 
-function disposeObject(root){root?.userData?.disposeProductionAsset?.();root?.traverse?.(o=>{o.geometry?.dispose?.();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose?.());}});}
+const LIGHT_STORAGE='3b_underground_garage_light_v2';
+function loadBrightness(){try{return garageBrightness(JSON.parse(localStorage.getItem(LIGHT_STORAGE)||'1'));}catch{return 1;}}
 
 export default function VehicleLabPreview({vehicle}){
-  const canvas=useRef(null),sceneRef=useRef(null),vehicleRef=useRef(null),cameraRef=useRef(null),rafRef=useRef(0),drag=useRef({active:false,x:0,yaw:0}),requestRef=useRef(0),[preset,setPreset]=useState('exterior'),[assetState,setAssetState]=useState('proxy');
+  const canvas=useRef(null),runtime=useRef(null),request=useRef(0);
+  const[preset,setPreset]=useState('exterior'),[assetState,setAssetState]=useState('loading');
+  const[error,setError]=useState(''),[retry,setRetry]=useState(0),[expanded,setExpanded]=useState(false),[auto,setAuto]=useState(false);
+  const[brightness,setBrightness]=useState(loadBrightness);
   useEffect(()=>{
-    const el=canvas.current;if(!el)return;const scene=new THREE.Scene();scene.background=new THREE.Color(0x05070b);scene.fog=new THREE.FogExp2(0x05070b,.025);sceneRef.current=scene;const camera=new THREE.PerspectiveCamera(42,1,.1,100);cameraRef.current=camera;
-    const renderer=new THREE.WebGLRenderer({canvas:el,antialias:true,powerPreference:'high-performance',alpha:false});renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio||1,1.7));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-    scene.add(new THREE.HemisphereLight(0xb9d4ff,0x1b2230,1.75));
-    const key=new THREE.DirectionalLight(0xffe4b8,4.8);key.position.set(-5,7,-4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);
-    const leftFill=new THREE.RectAreaLight(0xdbe8ff,3.8,5.5,3.0);leftFill.position.set(-4.6,2.8,3.6);leftFill.lookAt(0,.75,0);scene.add(leftFill);
-    const rightFill=new THREE.RectAreaLight(0xb7ceff,3.3,5.0,2.8);rightFill.position.set(4.8,2.5,3.2);rightFill.lookAt(0,.7,0);scene.add(rightFill);
-    const topFill=new THREE.RectAreaLight(0xffffff,4.4,6.5,2.2);topFill.position.set(0,5.2,.2);topFill.rotation.x=-Math.PI/2;scene.add(topFill);
-    const rim=new THREE.DirectionalLight(0x2d7bff,3.1);rim.position.set(5,3,-3);scene.add(rim);
-    const frontGlow=new THREE.PointLight(0x4d8cff,1.1,12,2);frontGlow.position.set(0,1.2,4.5);scene.add(frontGlow);
-    const floor=new THREE.Mesh(new THREE.CircleGeometry(8,64),new THREE.MeshPhysicalMaterial({color:0x111720,metalness:.34,roughness:.18,clearcoat:1,clearcoatRoughness:.1}));floor.rotation.x=-Math.PI/2;floor.position.y=.02;floor.receiveShadow=true;scene.add(floor);const ring=new THREE.Mesh(new THREE.TorusGeometry(3.4,.025,8,96),new THREE.MeshBasicMaterial({color:0xd7b76b,transparent:true,opacity:.38}));ring.rotation.x=Math.PI/2;ring.position.y=.035;scene.add(ring);
-    const resize=()=>{const w=el.clientWidth||600,h=el.clientHeight||360;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false);};const ro=new ResizeObserver(resize);ro.observe(el);resize();let start=performance.now();const loop=now=>{const dt=Math.min(.05,(now-start)/1000);start=now;const model=vehicleRef.current;if(model){if(model.userData?.productionVehicle)updateProductionVehicleRuntime(model,{speedKph:0,time:now/1000});else updateProxyRuntime(model,vehicle,{speedKph:0,time:now/1000});if(!drag.current.active)model.rotation.y+=dt*.12;}renderer.render(scene,camera);rafRef.current=requestAnimationFrame(loop);};rafRef.current=requestAnimationFrame(loop);
-    return()=>{requestRef.current++;cancelAnimationFrame(rafRef.current);ro.disconnect();disposeObject(vehicleRef.current);scene.traverse(o=>{o.geometry?.dispose?.();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose?.());}});renderer.dispose();};
-  },[]);
+    let stage;setError('');
+    try{stage=new GarageStageV2(canvas.current,{onError:setError,onInteract:()=>setAuto(false)});runtime.current=stage;stage.setBrightness(brightness);}
+    catch(e){setError(e.message||'Ce navigateur ne peut pas afficher le garage 3D.');return;}
+    return()=>{request.current++;runtime.current=null;stage.dispose();};
+  },[retry]);
   useEffect(()=>{
-    const scene=sceneRef.current;if(!scene)return;const request=++requestRef.current;
-    if(vehicleRef.current){scene.remove(vehicleRef.current);disposeObject(vehicleRef.current);}
-    const proxy=upgradeVehicleProxyV7(createModularVehicleProxy(vehicle));proxy.position.y=.03;proxy.rotation.y=drag.current.yaw;vehicleRef.current=proxy;scene.add(proxy);setAssetState(hasProductionVehicleAsset(vehicle)?'loading':'proxy');
-    if(hasProductionVehicleAsset(vehicle))loadProductionVehicle(vehicle).then(finalModel=>{if(!finalModel||request!==requestRef.current){disposeObject(finalModel);return;}scene.remove(proxy);disposeObject(proxy);finalModel.position.y=.03;finalModel.rotation.y=drag.current.yaw;vehicleRef.current=finalModel;scene.add(finalModel);setAssetState(finalModel.userData?.productionMeta?.candidate?'candidate':'ready');}).catch(()=>{if(request===requestRef.current)setAssetState('failed');});
-  },[vehicle]);
-  useEffect(()=>{const camera=cameraRef.current,model=vehicleRef.current;if(!camera||!model)return;const state=inspectionState(vehicle,preset),p=state.preset;camera.position.set(...p.camera);camera.fov=p.fov;camera.updateProjectionMatrix();camera.lookAt(new THREE.Vector3(...p.target));model.userData.inspectionState=state;},[preset,vehicle,assetState]);
-  const pointerDown=e=>{drag.current.active=true;drag.current.x=e.clientX;e.currentTarget.setPointerCapture?.(e.pointerId);};const pointerMove=e=>{if(!drag.current.active||!vehicleRef.current)return;const dx=e.clientX-drag.current.x;drag.current.x=e.clientX;drag.current.yaw+=dx*.008;vehicleRef.current.rotation.y=drag.current.yaw;};const pointerEnd=()=>{drag.current.active=false;};
-  const stateLabel=assetState==='ready'?'MODÈLE 3D GOLD MASTER':assetState==='candidate'?'GOLD MASTER CANDIDATE · PBR':assetState==='loading'?'CHARGEMENT MODÈLE 3D…':assetState==='failed'?'ASSET INDISPONIBLE · PROXY V7':'PROXY V7 SCULPTÉ';
-  return <section className="u3b-lab-preview" aria-label="Aperçu véhicule modulaire"><div className="u3b-lab-stage" onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}><canvas ref={canvas}/><span>{stateLabel} · glisse pour tourner</span></div><div className="u3b-lab-presets">{Object.values(INSPECTION_PRESETS).map(p=><button key={p.id} className={preset===p.id?'active':''} onClick={()=>setPreset(p.id)}>{p.label}</button>)}</div></section>;
+    const stage=runtime.current;if(!stage)return;
+    const id=++request.current;setAssetState('loading');
+    const install=(model,state)=>{
+      if(id!==request.current||stage.disposed){disposeGarageVehicle(model);return;}
+      stage.setModel(model);setAssetState(state);
+    };
+    if(hasProductionVehicleAsset(vehicle)){
+      loadProductionVehicle(vehicle).then(model=>{
+        if(!model)throw new Error('Modèle vide.');
+        install(model,model.userData?.productionMeta?.candidate?'candidate':'ready');
+      }).catch(()=>{
+        if(id===request.current&&!stage.disposed)install(upgradeVehicleProxyV7(createModularVehicleProxy(vehicle)),'fallback');
+      });
+    }else install(upgradeVehicleProxyV7(createModularVehicleProxy(vehicle)),'proxy');
+    return()=>{if(request.current===id)request.current++;};
+  },[vehicle,retry]);
+  useEffect(()=>{
+    const stage=runtime.current;if(!stage)return;
+    const chosen=GARAGE_VIEWS[preset]||INSPECTION_PRESETS[preset]||GARAGE_VIEWS.exterior;
+    if(stage.model)stage.model.userData.inspectionState=inspectionState(vehicle,INSPECTION_PRESETS[preset]?preset:'exterior');
+    stage.selectView(chosen);
+  },[preset,assetState,retry]);
+  useEffect(()=>{runtime.current?.setBrightness(brightness);try{localStorage.setItem(LIGHT_STORAGE,JSON.stringify(brightness));}catch{}},[brightness]);
+  useEffect(()=>{
+    if(!expanded)return;
+    const key=e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();setExpanded(false);}};
+    window.addEventListener('keydown',key,true);return()=>window.removeEventListener('keydown',key,true);
+  },[expanded]);
+  const select=id=>{setAuto(false);setPreset(id);if(id===preset)runtime.current?.selectView(GARAGE_VIEWS[id]||INSPECTION_PRESETS[id]);};
+  const toggleAuto=()=>{const next=!auto;setAuto(next);runtime.current?.setAutoRotate(next);};
+  const label={ready:'MODÈLE 3D',candidate:'MONTARA · CANDIDATE PBR',loading:'CHARGEMENT 3D…',fallback:'APERÇU DE SECOURS',proxy:'PROTOTYPE 3D'}[assetState];
+  return <section className={`u3b-lab-preview u3b-showroom-v2${expanded?' is-expanded':''}`} aria-label="Garage automobile 3B" data-garage="modern-showroom-v2">
+    <header className="u3b-showroom-heading"><div><span>3B UNDERGROUND / ATELIER 01</span><h2>{vehicle.name||'Mon véhicule'}</h2></div><button type="button" onClick={()=>setExpanded(v=>!v)} aria-label={expanded?'Réduire le garage':'Agrandir le garage'}>{expanded?'RÉDUIRE':'AGRANDIR'} ↗</button></header>
+    <div className="u3b-lab-stage"><canvas ref={canvas} aria-label="Voiture dans le garage 3D, faire glisser pour tourner et pincer pour zoomer"/><span className="u3b-showroom-status">{label}</span>
+      <div className="u3b-showroom-zoom"><button type="button" aria-label="Zoom avant" onClick={()=>runtime.current?.zoom(.88)}>+</button><button type="button" aria-label="Zoom arrière" onClick={()=>runtime.current?.zoom(1.14)}>−</button></div>
+      {error&&<div className="u3b-showroom-error" role="alert"><strong>Le garage 3D ne s’affiche pas</strong><p>{error}</p><button type="button" onClick={()=>{setAssetState('loading');setRetry(v=>v+1);}}>Relancer le rendu</button></div>}
+    </div>
+    <div className="u3b-showroom-toolbar"><nav aria-label="Vues du véhicule">{Object.values(GARAGE_VIEWS).map(view=><button type="button" key={view.id} className={preset===view.id?'active':''} aria-pressed={preset===view.id} onClick={()=>select(view.id)}>{view.label}</button>)}<button type="button" aria-pressed={auto} onClick={toggleAuto}>{auto?'Arrêter la rotation':'Rotation 360°'}</button><button type="button" onClick={()=>select('exterior')}>Recentrer</button></nav>
+      <label className="u3b-showroom-brightness"><span>Lumière</span><input aria-label="Luminosité du garage" type="range" min=".9" max="1.45" step=".05" value={brightness} onChange={e=>setBrightness(garageBrightness(e.target.value))}/><output>{Math.round(brightness*100)}%</output></label>
+    </div>
+    <details className="u3b-showroom-inspection"><summary>Inspection détaillée — roues, habitacle, moteur</summary><div className="u3b-lab-presets">{Object.values(INSPECTION_PRESETS).filter(p=>!['exterior','front'].includes(p.id)).map(p=><button type="button" key={p.id} className={preset===p.id?'active':''} onClick={()=>select(p.id)}>{p.label}</button>)}</div></details>
+  </section>;
 }
