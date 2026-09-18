@@ -1,0 +1,59 @@
+name: Garage Showroom V2
+on:
+  push:
+    branches: [chatgpt-underground-gold-master-landscape-20260919]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: garage-showroom-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  garage-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run validate:underground-v2
+      - run: npm install --no-save --package-lock=false playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Render and interact with the actual garage component
+        run: |
+          npm run dev > /tmp/garage-vite.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" || true' EXIT
+          for i in $(seq 1 40); do curl -fsS http://127.0.0.1:5173/tests/fixtures/garage.html > /dev/null && break; sleep 1; done
+          node scripts/test-garage-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: garage-showroom-v2-captures
+          path: test-results/garage
+          retention-days: 14
+  local-validation-kit:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Package code and dependencies for offline renderer debugging
+        run: tar -czf /tmp/garage-local-kit.tgz node_modules src tests package.json package-lock.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: garage-local-validation-kit
+          path: /tmp/garage-local-kit.tgz
+          retention-days: 3

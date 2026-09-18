@@ -1,6 +1,7 @@
 import {VEHICLE_CLASSES} from './data.js';
 import {DEFAULT_CUSTOMIZATION,normalizeCustomization} from './customization.js';
 import {DEFAULT_PLATFORM_ID,VEHICLE_PLATFORM_VERSION,normalizePlatformId} from './vehiclePlatform.js';
+import {createDrivingControlState,updateDrivingControlState} from './DrivingInputV2.js';
 
 const G=9.80665,RHO=1.225;
 export const UPGRADE_KEYS=['engine','intake','ecu','fuel','exhaust','turbo','intercooler','cooling','clutch','transmission','differential','tires','brakes','suspension','aero','weight','nitrous','electronics'];
@@ -78,5 +79,32 @@ export function upgradeCost(vehicle,key){const current=level(vehicle,key);if(cur
 export function applyUpgrade(vehicle,key){if(!UPGRADE_KEYS.includes(key))return vehicle;const current=level(vehicle,key);if(current>=5)return vehicle;const v=normalizeVehicle(vehicle);return {...v,upgrades:{...v.upgrades,[key]:current+1}};}
 export function tuneVehicle(vehicle,key,value){if(!(key in DEFAULT_TUNE))return normalizeVehicle(vehicle);const v=normalizeVehicle(vehicle);return {...v,tune:{...v.tune,[key]:clamp(Number(value)||0,0,1)}};}
 
-export function createVehicleState(){return {speedMps:0,gear:1,rpm:950,nitrous:1,damage:0,lateral:0,yaw:0};}
-export function stepVehicle(vehicle,state,input,dt,environment={grip:1,slope:0}){const s=effectiveSpec(vehicle),next={...state};const throttle=clamp(input.throttle||0,0,1),brake=clamp(input.brake||0,0,1),steer=clamp(input.steer||0,-1,1),nitrous=Boolean(input.nitrous)&&next.nitrous>0;const speed=Math.max(0,next.speedMps),surfaceGrip=clamp(environment.grip??1,.35,1.15);const tcLoss=1-(1-s.tune.tractionControl)*.03*Math.max(0,throttle-.6);const usablePower=(s.powerKwEff+(nitrous?s.nitrousKw:0))*1000*.87;const powerForce=usablePower/Math.max(4,speed);const driveForce=throttle*Math.min(powerForce,tractionForce(s,speed)*surfaceGrip*tcLoss);const braking=brake*s.brakeMuEff*s.massKgEff*G*surfaceGrip;const slopeForce=s.massKgEff*G*Math.sin(environment.slope||0);const net=driveForce-dragForce(s,speed)-rollingForce(s)-braking-slopeForce;next.speedMps=Math.max(0,speed+net/s.massKgEff*dt);if(nitrous)next.nitrous=Math.max(0,next.nitrous-dt*.16);else next.nitrous=Math.min(1,next.nitrous+dt*.025);const steeringFalloff=1/(1+next.speedMps*.055),steerAngle=s.maxSteerRad*s.steeringFactor*steer*(.25+.75*steeringFalloff);const maxYaw=(next.speedMps/Math.max(1.8,s.wheelbaseM))*Math.tan(steerAngle);next.yaw=maxYaw*surfaceGrip*(.73+s.stabilityEff*.27);next.lateral=clamp(next.lateral+steer*dt*(.9+next.speedMps*.025),-1.25,1.25);const ratios=s.gears===5?[3.2,1.95,1.32,.98,.78]:s.gears===7?[3.4,2.25,1.65,1.28,1.03,.84,.7]:[3.35,2.1,1.5,1.16,.92,.75];const wheelRpm=next.speedMps/(2*Math.PI*.33)*60,final=3.4*(.82+s.tune.finalDrive*.36);let gear=1;for(let i=0;i<ratios.length;i++){const rpm=wheelRpm*ratios[i]*final;if(rpm<6900){gear=i+1;break;}gear=ratios.length;}next.gear=gear;next.rpm=clamp(wheelRpm*ratios[gear-1]*final,900,7200);return next;}
+export function createVehicleState(){return {speedMps:0,gear:1,rpm:950,nitrous:1,damage:0,lateral:0,yaw:0,controls:createDrivingControlState()};}
+export function stepVehicle(vehicle,state,input,dt,environment={grip:1,slope:0}){
+  const s=effectiveSpec(vehicle),next={...state},speed=Math.max(0,next.speedMps),surfaceGrip=clamp(environment.grip??1,.35,1.15);
+  const controls=updateDrivingControlState(next.controls||createDrivingControlState(),input,dt,speed);next.controls=controls;
+  const throttle=controls.throttle,brake=controls.brake,steer=controls.steer,nitrous=Boolean(input.nitrous)&&next.nitrous>0;
+  const tcLoss=1-(1-s.tune.tractionControl)*.03*Math.max(0,throttle-.6);
+  const usablePower=(s.powerKwEff+(nitrous?s.nitrousKw:0))*1000*.87;
+  const powerForce=usablePower/Math.max(4,speed);
+  const launchProgress=clamp(speed/10,0,1),launchSoftener=.72+.28*launchProgress;
+  const driveForce=throttle*launchSoftener*Math.min(powerForce,tractionForce(s,speed)*surfaceGrip*tcLoss);
+  const progressiveBrake=brake*(.28+.72*brake);
+  const braking=progressiveBrake*s.brakeMuEff*s.massKgEff*G*surfaceGrip;
+  const engineBrake=(1-throttle)*(1-brake)*Math.min(s.massKgEff*G*.07,speed*s.massKgEff*.08);
+  const slopeForce=s.massKgEff*G*Math.sin(environment.slope||0);
+  const net=driveForce-dragForce(s,speed)-rollingForce(s)-braking-engineBrake-slopeForce;
+  next.speedMps=Math.max(0,speed+net/s.massKgEff*dt);
+  if(next.speedMps<.08&&throttle<.03)next.speedMps=0;
+  if(nitrous)next.nitrous=Math.max(0,next.nitrous-dt*.16);else next.nitrous=Math.min(1,next.nitrous+dt*.025);
+  const speedRatio=clamp(next.speedMps/68,0,1);
+  const steerAngle=s.maxSteerRad*s.steeringFactor*steer*(1-speedRatio*.48);
+  const maxYaw=(next.speedMps/Math.max(1.8,s.wheelbaseM))*Math.tan(steerAngle);
+  const yawTarget=maxYaw*surfaceGrip*(.73+s.stabilityEff*.27);
+  next.yaw+=(yawTarget-next.yaw)*(1-Math.exp(-8.5*dt));
+  next.lateral=clamp(next.lateral+steer*dt*(.62+next.speedMps*.014),-1.25,1.25);
+  const ratios=s.gears===5?[3.2,1.95,1.32,.98,.78]:s.gears===7?[3.4,2.25,1.65,1.28,1.03,.84,.7]:[3.35,2.1,1.5,1.16,.92,.75];
+  const wheelRpm=next.speedMps/(2*Math.PI*.33)*60,final=3.4*(.82+s.tune.finalDrive*.36);let gear=1;
+  for(let i=0;i<ratios.length;i++){const rpm=wheelRpm*ratios[i]*final;if(rpm<6900){gear=i+1;break;}gear=ratios.length;}
+  next.gear=gear;next.rpm=clamp(wheelRpm*ratios[gear-1]*final,900,7200);return next;
+}
