@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>3B Underground — Live Renderer Capture</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#010204;font-family:Inter,system-ui,Arial,sans-serif;color:white}canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 3px 18px #000}.top{position:absolute;top:22px;left:28px}.top b{display:block;font-size:19px;letter-spacing:.18em}.top small{display:block;margin-top:4px;color:#d7b76b;letter-spacing:.13em}.pos{position:absolute;top:24px;right:30px;text-align:right}.pos b{font-size:54px;font-weight:800;font-style:italic}.pos small{display:block;letter-spacing:.15em;color:#c8d3e4}.speed{position:absolute;right:32px;bottom:28px;text-align:right;border-right:2px solid #d7b76b;padding-right:14px}.speed b{font-size:78px;line-height:.88;font-style:italic;letter-spacing:-.06em}.speed span{display:block;color:#d7b76b;letter-spacing:.18em;font-size:12px}.nitro{margin-top:9px;width:160px;height:6px;background:#182136;border-radius:8px;overflow:hidden}.nitro i{display:block;width:78%;height:100%;background:linear-gradient(90deg,#1b57ff,#6aa7ff)}.zone{position:absolute;left:28px;bottom:28px;padding:12px 14px;background:linear-gradient(90deg,rgba(3,6,10,.75),rgba(3,6,10,.18));border-left:2px solid #d7b76b}.zone b{display:block}.zone small{color:#aebcd0}.vignette{position:fixed;inset:0;box-shadow:inset 0 0 150px rgba(0,0,0,.45);pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="vignette"></div>
+<div id="hud">
+  <div class="top"><b>3B UNDERGROUND</b><small>FRANCE · QUAIS DE JUSTICE</small></div>
+  <div class="pos"><small>POSITION</small><b>2/8</b></div>
+  <div class="speed"><b id="spd">218</b><span>KM/H</span><div class="nitro"><i></i></div></div>
+  <div class="zone"><b>JUSTICE · CÉLIANE</b><small>Rendu live du moteur 3D actuel</small></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+import {CinematicPremiumWorld} from '../src/games/underground/CinematicPremiumWorld.js';
+import {createModularVehicleProxy,updateProxyRuntime} from '../src/games/underground/ModularVehicleProxy.js';
+import {attachVehicleCinematicFX,updateVehicleCinematicFX} from '../src/games/underground/VehicleCinematicFX.js';
+import {DEFAULT_VEHICLE} from '../src/games/underground/carModel.js';
+import {cameraFov} from '../src/games/underground/visualConfig.js';
+
+const canvas=document.getElementById('c'),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(68,innerWidth/innerHeight,.1,1250);
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.04;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const composer=new EffectComposer(renderer),renderPass=new RenderPass(scene,camera),bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.36,.26,.9),out=new OutputPass();composer.addPass(renderPass);composer.addPass(bloom);composer.addPass(out);
+function hash(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0}function rnd(seed){let s=seed>>>0;return()=>{s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296}}
+const R=rnd(hash('france-capture-live'));const pts=[];for(let i=0;i<18;i++){const a=i/18*Math.PI*2,r=145+(R()-.5)*50;pts.push(new THREE.Vector3(Math.cos(a)*r,(R()-.5)*6,Math.sin(a)*r*.74))}const curve=new THREE.CatmullRomCurve3(pts,true,'catmullrom',.25);
+const event={id:'france-capture-live',countryId:'france',weather:'pluie forte',discipline:'rush',name:'Quais de Justice'};
+const world=new CinematicPremiumWorld(scene,curve,event,{quality:'ultra',shadowMap:2048});
+const vehicle=structuredClone(DEFAULT_VEHICLE);vehicle.customization.colors.primary='#05070b';vehicle.customization.colors.secondary='#11151c';vehicle.customization.colors.accent='#d7b76b';vehicle.customization.neon.enabled=true;vehicle.customization.neon.color='#2f75ff';vehicle.customization.neon.intensity=.45;
+const player=createModularVehicleProxy(vehicle);attachVehicleCinematicFX(player,{accent:'#d7b76b'});scene.add(player);
+const ai=[];for(let i=0;i<6;i++){const a=createModularVehicleProxy(undefined,{ai:true,accentOverride:i%2?'#3f78ff':'#ff3048'});a.scale.multiplyScalar(.95);attachVehicleCinematicFX(a,{ai:true,accent:i%2?'#3f78ff':'#ff3048'});scene.add(a);ai.push(a)}
+function place(mesh,u,lane=0){u=(u%1+1)%1;const p=curve.getPointAt(u),t=curve.getTangentAt(u).normalize(),side=new THREE.Vector3(-t.z,0,t.x).normalize();mesh.position.copy(p).addScaledVector(side,lane*4.25);mesh.position.y+=.38;mesh.rotation.y=Math.atan2(t.x,t.z);return {p,t,side}}
+let start=performance.now(),progress=.195,last=start;
+function loop(now){const dt=Math.min(.04,(now-last)/1000);last=now;const speed=218+Math.sin(now*.0008)*12;progress=(progress+dt*(speed/3.6)/curve.getLength())%1;const {p,t,side}=place(player,progress,.1);updateProxyRuntime(player,vehicle,{speedKph:speed,time:now/1000});updateVehicleCinematicFX(player,{speedKph:speed,wetness:.86,time:now/1000});
+ const offs=[.010,.018,.028,.041,.056,.072],lanes=[-.72,.65,.1,-.32,.82,-.9];ai.forEach((m,i)=>{place(m,progress+offs[i],lanes[i]);updateProxyRuntime(m,undefined,{speedKph:speed*(.96+i*.008),time:now/1000+i});updateVehicleCinematicFX(m,{speedKph:speed*(.96+i*.008),wetness:.86,time:now/1000+i})});
+ const back=10.8,height=4.25,target=p.clone().add(new THREE.Vector3(0,1.05,0)),cam=target.clone().addScaledVector(t,-back).add(new THREE.Vector3(0,height,0)).addScaledVector(side,.08);camera.position.lerp(cam,1-Math.pow(.002,dt));camera.lookAt(target.clone().addScaledVector(t,16));camera.fov=THREE.MathUtils.lerp(camera.fov,cameraFov(speed),.08);camera.updateProjectionMatrix();
+ const visual=world.update({progress,playerPosition:p,playerTangent:t,speedKph:speed,dt,puddleDepth:.48});renderer.toneMappingExposure=THREE.MathUtils.lerp(renderer.toneMappingExposure,visual.exposure,.08);bloom.strength=.34*(.82+.3*visual.wetness);document.getElementById('spd').textContent=Math.round(speed);composer.render(dt);requestAnimationFrame(loop)}requestAnimationFrame(loop);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
+</script>
+</body>
+</html>
