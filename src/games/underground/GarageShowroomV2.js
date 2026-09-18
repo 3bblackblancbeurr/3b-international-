@@ -11,7 +11,7 @@ export const GARAGE_LIGHTING = Object.freeze({
   rim:{position:[.4,2.4,3.4],target:[0,.9,.5],width:2.4,height:1.2,intensity:7.2,color:0xc6dcff},
   top:{height:4.1,width:4.5,depth:.35,intensity:11.5,z:[-1.4,0,1.4]},
 });
-export const GARAGE_PALETTE = Object.freeze({blue:0x2d7bff,wall:0x59616c,metal:0x202630,floor:0x414956});
+export const GARAGE_PALETTE = Object.freeze({blue:0x2d7bff,wall:0x384351,metal:0x202630,floor:0x242d39});
 export const GARAGE_INVENTORY = Object.freeze([
   'murs et plafond','porte sectionnelle','LED plafond','cloison vitrée',
   'établi','servante à outils','armoires','outils suspendus','présentoir jantes',
@@ -84,7 +84,7 @@ export function createGarageShowroom({labels=true}={}){
   }
   const architecture=item('garage_architecture');
   const floorMaterial=new THREE.MeshPhysicalMaterial({color:GARAGE_PALETTE.floor,roughness:.26,metalness:.02,clearcoat:.3,clearcoatRoughness:.32,specularIntensity:.55});
-  const floor=box(architecture,floorMaterial,'garage_floor',[0,-.07,0],[18,.12,17]);floor.userData.batch=false;
+  const floor=box(architecture,floorMaterial,'garage_floor',[0,-.06,0],[18,.12,17]);floor.userData.batch=false;
   box(architecture,M.wall,'back_wall',[0,2.4,8.35],[18,4.8,.18]);
   box(architecture,M.wall,'front_wall',[0,2.4,-8.35],[18,4.8,.18]);
   box(architecture,M.frame,'exit_frame',[0,1.7,-8.20],[5.6,3.4,.1]);
@@ -188,5 +188,5 @@ export function addGarageLighting(scene){
   GARAGE_LIGHTING.top.z.forEach((z,i)=>area(`garage_top_${i}`,{position:[0,4.1,z],target:[0,.7,z],width:4.5,height:.35,intensity:11.5,color:0xfff8ed}));
   // RectAreaLight has no shadows. One bounded directional shadow anchors the car.
   const shadow=new THREE.DirectionalLight(0xfff5e8,1.4);shadow.name='garage_contact_key';shadow.position.set(-3.5,6,-4);shadow.castShadow=true;
-  shadow.shadow.mapSize.set(1024,1024);Object.assign(shadow.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:.1,far:24});shadow.shadow.bias=-.00015;shadow.shadow.normalBias=.02;rig.add(shadow,shadow.target);scene.add(rig);return rig;
+  shadow.shadow.mapSize.set(1024,1024);Object.assign(shadow.shadow.camera,{left:-5,right:5,top:5,bottom:-5,near:.1,far:24});shadow.shadow.camera.updateProjectionMatrix();shadow.shadow.bias=-.00015;shadow.shadow.normalBias=.02;rig.add(shadow,shadow.target);scene.add(rig);return rig;
 }
