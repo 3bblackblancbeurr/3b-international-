@@ -1,0 +1,61 @@
+name: Apply and validate World Motion V2
+
+on:
+  push:
+    branches:
+      - chatgpt-improvements-world-motion-v2
+
+permissions:
+  contents: write
+
+concurrency:
+  group: world-motion-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apply-test-commit:
+    if: ${{ !contains(github.event.head_commit.message, '[motion-v2-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply deterministic migration
+        run: node scripts/apply-world-motion-v2.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run motion and camera tests
+        run: node --test tests/world-motion.test.js tests/camera-follow.test.js
+
+      - name: Run complete test suite
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Verify generated diff
+        run: git diff --check
+
+      - name: Commit validated implementation
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No implementation diff to commit."
+            exit 0
+          fi
+          git config user.name "3B Automation"
+          git config user.email "3bblackblancbeurr@users.noreply.github.com"
+          git add src/world/motion.js src/world/camera-follow.js src/world/scene.js tests/world-motion.test.js tests/camera-follow.test.js docs/3B_AAA_MASTER/03_GAMEPLAY_CONTROLES_CAMERA.md docs/reports/BASELINE_AUDIT.md docs/reports/WORK_LOG.md
+          git commit -m "feat(world): ship motion v2 controls and camera [motion-v2-applied]"
+          git push origin HEAD:${{ github.ref_name }}
