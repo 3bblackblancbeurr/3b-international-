@@ -23,8 +23,30 @@ function rivalEvent(country,rival,index){return {id:`${country.id}-rival-${index
 function bossEvent(country,stage){return {id:`${country.id}-boss-${stage}`,countryId:country.id,discipline:BOSS_DISCIPLINES[country.id][stage],routeId:country.routes[Math.min(country.routes.length-1,stage+4)].id,name:`${country.guardian} · ${country.stages[stage]}`,distanceKm:5.2+stage*1.45,weather:country.weather[stage%country.weather.length],traffic:stage===2?'low':'medium',mastery:{targetFactor:.955},reward:{influence:0,xp:0,coins:0}};}
 function bossQualified(id,r){if(r.position!==1)return false;return ({france:r.collisions<=2,algeria:r.collisions<=4,spain:r.driftScore>=450,morocco:r.collisions<=1,italy:r.time<=r.targetTime*1.18,tunisia:r.bestSpeedKph>=175,turkey:r.offroadSeconds<=4,estonia:r.collisions<=3}[id]??true);}
 
+function useLandscapeOnly(){
+  const initial=()=>typeof window!=='undefined'?window.matchMedia('(orientation: portrait)').matches:false;
+  const[portrait,setPortrait]=useState(initial);
+  useEffect(()=>{
+    if(typeof window==='undefined')return;
+    const mq=window.matchMedia('(orientation: portrait)');
+    const sync=()=>setPortrait(mq.matches);
+    sync();
+    mq.addEventListener?.('change',sync);
+    window.addEventListener('orientationchange',sync);
+    globalThis.screen?.orientation?.lock?.('landscape').catch?.(()=>{});
+    document.documentElement.classList.add('u3b-landscape-session');
+    return()=>{mq.removeEventListener?.('change',sync);window.removeEventListener('orientationchange',sync);document.documentElement.classList.remove('u3b-landscape-session');};
+  },[]);
+  return portrait;
+}
+
+function LandscapeGate(){
+  return <div className="u3b-landscape-gate" role="status" aria-live="polite"><div className="u3b-phone-rotate"><i/><i/></div><span>3B UNDERGROUND</span><h2>Tourne ton appareil</h2><p>Le jeu est désormais conçu exclusivement en mode horizontal pour la conduite, le garage et les menus.</p></div>;
+}
+
 export default function Underground3B({onClose}){
   const[career,setCareer]=useState(load),[screen,setScreen]=useState('nexus'),[countryId,setCountryId]=useState(()=>load().activeCountryId),[race,setRace]=useState(null),[result,setResult]=useState(null),[notice,setNotice]=useState('');
+  const portrait=useLandscapeOnly();
   useEffect(()=>{try{localStorage.setItem(STORAGE,JSON.stringify(career));}catch{}},[career]);
   const country=COUNTRY_BY_ID[countryId]||COUNTRIES[0],vehicle=activeVehicle(career),summary=territorySummary(career,country.id),events=availableEvents(career,country.id);
   const goCountry=id=>{if(!isCountryUnlocked(id,career))return;setCareer(setActiveCountry(career,id));setCountryId(id);setScreen('territory');setResult(null);};
@@ -39,7 +61,7 @@ export default function Underground3B({onClose}){
     setCareer(next);setResult({race:{...race},data:r,reward,qualified,message});setRace(null);
   };
   const close=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(career));}catch{}onClose?.();};
-  if(race)return <RaceScene config={race} vehicle={vehicle} difficulty={career.settings.difficulty} onFinish={finish} onAbort={()=>setRace(null)}/>;
+  if(race)return <><RaceScene config={race} vehicle={vehicle} difficulty={career.settings.difficulty} onFinish={finish} onAbort={()=>setRace(null)}/>{portrait&&<LandscapeGate/>}</>;
   return <div className="u3b-shell" role="dialog" aria-modal="true" aria-label="3B Underground">
     <header className="u3b-top"><button onClick={screen==='nexus'?close:()=>setScreen('nexus')}><ArrowLeft/></button><div><b>3B UNDERGROUND</b><small>LE CERCLE BRISÉ</small></div><nav><span>Niv. {career.level}</span><span>{career.coins.toLocaleString('fr-FR')} 3B</span><span>{career.fragments.length}/8 fragments</span></nav><button onClick={close}><X/></button></header>
     {notice&&<div className="u3b-notice">{notice}<button onClick={()=>setNotice('')}><X size={14}/></button></div>}
@@ -47,6 +69,7 @@ export default function Underground3B({onClose}){
     {screen==='territory'&&<Territory country={country} career={career} summary={summary} events={events} vehicle={vehicle} onEvent={startEvent} onRival={startRival} onBoss={startBoss} onGarage={()=>setScreen('garage')}/>} 
     {screen==='garage'&&<Garage career={career} vehicle={vehicle} onChange={setCareer} onBack={()=>setScreen('territory')}/>} 
     {result&&<Result result={result} onClose={()=>setResult(null)} onRetry={()=>{setRace(result.race);setResult(null);}}/>}
+    {portrait&&<LandscapeGate/>}
   </div>;
 }
 
@@ -80,7 +103,7 @@ function Garage({career,vehicle,onChange,onBack}){
 }
 
 function RaceScene({config,vehicle,difficulty,onFinish,onAbort}){
-  const canvas=useRef(null),session=useRef(null),input=useRef({throttle:0,brake:0,steer:0,nitrous:false}),pausedRef=useRef(false),finished=useRef(false),[hud,setHud]=useState(null),[paused,setPaused]=useState(false),[error,setError]=useState('');
+  const canvas=useRef(null),session=useRef(null),input=useRef({throttle:0,brake:0,steer:0,nitrous:false}),steerPad=useRef(null),steerPointer=useRef(null),pausedRef=useRef(false),finished=useRef(false),[hud,setHud]=useState(null),[paused,setPaused]=useState(false),[error,setError]=useState(''),[touchSteer,setTouchSteer]=useState(0);
   useEffect(()=>{
     const s=createRaceSession({event:config.event,vehicle,difficulty,boss:config.kind==='boss',bossStage:config.stage||0});session.current=s;let renderer;
     try{renderer=new ThreeRaceView(canvas.current,config.event,vehicle);}catch(e){setError(e.message||'WebGL indisponible.');return;}
@@ -88,11 +111,18 @@ function RaceScene({config,vehicle,difficulty,onFinish,onAbort}){
     const down=e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','shift'].includes(k))e.preventDefault();if(k==='escape'||k==='p'){pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);return;}if(k==='arrowup'||k==='w'||k==='z')input.current.throttle=1;if(k==='arrowdown'||k==='s')input.current.brake=1;if(k==='arrowleft'||k==='a'||k==='q')input.current.steer=-1;if(k==='arrowright'||k==='d')input.current.steer=1;if(k===' '||k==='shift')input.current.nitrous=true;};
     const up=e=>{const k=e.key.toLowerCase();if(k==='arrowup'||k==='w'||k==='z')input.current.throttle=0;if(k==='arrowdown'||k==='s')input.current.brake=0;if((k==='arrowleft'||k==='a'||k==='q')&&input.current.steer<0)input.current.steer=0;if((k==='arrowright'||k==='d')&&input.current.steer>0)input.current.steer=0;if(k===' '||k==='shift')input.current.nitrous=false;};
     window.addEventListener('keydown',down,{passive:false});window.addEventListener('keyup',up);
-    const loop=now=>{const dt=Math.min(.05,(now-last)/1000);last=now;if(!pausedRef.current)stepRace(s,input.current,dt);renderer.render(s,dt);tick+=dt;if(tick>.08){tick=0;setHud(raceHud(s));}if(s.status==='finished'&&!finished.current){finished.current=true;setTimeout(()=>onFinish(raceResult(s)),350);return;}raf=requestAnimationFrame(loop);};raf=requestAnimationFrame(loop);
+    const loop=now=>{const dt=Math.min(.05,(now-last)/1000);last=now;if(!pausedRef.current)stepRace(s,input.current,dt);if(s.feedback){globalThis.navigator?.vibrate?.(s.feedback==='collision'?28:14);s.feedback=null;}renderer.render(s,dt);tick+=dt;if(tick>.08){tick=0;setHud(raceHud(s));}if(s.status==='finished'&&!finished.current){finished.current=true;setTimeout(()=>onFinish(raceResult(s)),350);return;}raf=requestAnimationFrame(loop);};raf=requestAnimationFrame(loop);
     return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);renderer.dispose();};
   },[]);
   const touch=patch=>({onPointerDown:e=>{e.currentTarget.setPointerCapture?.(e.pointerId);Object.assign(input.current,patch);},onPointerUp:()=>Object.keys(patch).forEach(k=>input.current[k]=k==='nitrous'?false:0),onPointerCancel:()=>Object.keys(patch).forEach(k=>input.current[k]=k==='nitrous'?false:0)});
-  return <div className="u3b-race"><canvas ref={canvas}/><header><button onClick={onAbort}><X/></button><div><small>{DISCIPLINES[config.event.discipline].name}</small><b>{config.event.name}</b></div><button onClick={()=>{pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);}}>{paused?'▶':'Ⅱ'}</button></header>{config.pursuit&&<div className="u3b-police-heat">POLICE · HEAT {config.pursuit.state.heat} · {config.pursuit.budget.maxUnits} unités</div>}{hud&&<><div className="u3b-rank">{hud.position}<small>/{hud.total}</small></div><div className="u3b-racebar"><i style={{width:`${hud.progress*100}%`}}/></div><div className="u3b-speed"><b>{hud.speedKph}</b><span>KM/H</span><small>V{hud.gear} · NITRO {Math.round(hud.nitrous*100)}%</small></div></>}<div className="u3b-touch"><div><button {...touch({steer:-1})}>◀</button><button {...touch({steer:1})}>▶</button></div><div><button {...touch({brake:1})}>FREIN</button><button className="nitro" {...touch({nitrous:true})}><Zap/>NITRO</button><button className="gas" {...touch({throttle:1})}>GAZ</button></div></div>{session.current?.status==='countdown'&&<div className="u3b-count">{Math.max(1,Math.ceil(session.current.countdown))}</div>}{paused&&<div className="u3b-overlay"><h2>PAUSE</h2><button onClick={()=>{pausedRef.current=false;setPaused(false);}}>Reprendre</button><button onClick={onAbort}>Quitter</button></div>}{error&&<div className="u3b-overlay"><h2>Rendu 3D indisponible</h2><p>{error}</p><button onClick={onAbort}>Retour</button></div>}</div>;
+  const updateSteer=e=>{const el=steerPad.current;if(!el)return;const rect=el.getBoundingClientRect(),center=rect.left+rect.width/2,range=Math.max(1,rect.width*.42),value=Math.max(-1,Math.min(1,(e.clientX-center)/range));input.current.steer=value;setTouchSteer(value);};
+  const steerHandlers={
+    onPointerDown:e=>{steerPointer.current=e.pointerId;e.currentTarget.setPointerCapture?.(e.pointerId);updateSteer(e);},
+    onPointerMove:e=>{if(steerPointer.current===e.pointerId)updateSteer(e);},
+    onPointerUp:e=>{if(steerPointer.current!==e.pointerId)return;steerPointer.current=null;input.current.steer=0;setTouchSteer(0);},
+    onPointerCancel:e=>{if(steerPointer.current!==e.pointerId)return;steerPointer.current=null;input.current.steer=0;setTouchSteer(0);}
+  };
+  return <div className="u3b-race"><canvas ref={canvas}/><header><button onClick={onAbort}><X/></button><div><small>{DISCIPLINES[config.event.discipline].name}</small><b>{config.event.name}</b></div><button onClick={()=>{pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);}}>{paused?'▶':'Ⅱ'}</button></header>{config.pursuit&&<div className="u3b-police-heat">POLICE · HEAT {config.pursuit.state.heat} · {config.pursuit.budget.maxUnits} unités</div>}{hud&&<><div className="u3b-rank">{hud.position}<small>/{hud.total}</small></div><div className="u3b-racebar"><i style={{width:`${hud.progress*100}%`}}/></div><div className="u3b-speed"><b>{hud.speedKph}</b><span>KM/H</span><small>V{hud.gear} · NITRO {Math.round(hud.nitrous*100)}%</small></div></>}<div className="u3b-touch"><div className="u3b-steering"><span>DIRECTION</span><div ref={steerPad} className="u3b-steer-pad" style={{'--steer':touchSteer}} {...steerHandlers}><i className="u3b-steer-center"/><i className="u3b-steer-thumb"/></div></div><div className="u3b-pedals"><button className="brake" aria-label="Frein" {...touch({brake:1})}>FREIN</button><button className="nitro" aria-label="Nitro" {...touch({nitrous:true})}><Zap/>NITRO</button><button className="gas" aria-label="Accélérateur" {...touch({throttle:1})}><small>ACCÉL.</small>GAZ</button></div></div>{session.current?.status==='countdown'&&<div className="u3b-count">{Math.max(1,Math.ceil(session.current.countdown))}</div>}{paused&&<div className="u3b-overlay"><h2>PAUSE</h2><button onClick={()=>{pausedRef.current=false;setPaused(false);}}>Reprendre</button><button onClick={onAbort}>Quitter</button></div>}{error&&<div className="u3b-overlay"><h2>Rendu 3D indisponible</h2><p>{error}</p><button onClick={onAbort}>Retour</button></div>}</div>;
 }
 
 function Result({result,onClose,onRetry}){
