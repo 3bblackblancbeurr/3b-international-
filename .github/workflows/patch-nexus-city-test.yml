@@ -1,0 +1,33 @@
+name: Patch active City 3B contract test
+
+on:
+  push:
+    branches:
+      - chatgpt-improvements-world-motion-v2
+
+permissions:
+  contents: write
+
+jobs:
+  patch-test:
+    if: ${{ !contains(github.event.head_commit.message, '[city-test-applied]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply patch
+        run: node scripts/patch-nexus-city-test.mjs
+      - name: Validate Nexus suite
+        run: node --test tests/nexus-cinema.test.js
+      - name: Commit validated test
+        run: |
+          git config user.name "3B Automation"
+          git config user.email "3bblackblancbeurr@users.noreply.github.com"
+          git add tests/nexus-cinema.test.js
+          git commit -m "test(city3b): validate active Passport gateway [city-test-applied]"
+          git push origin HEAD:${{ github.ref_name }}
