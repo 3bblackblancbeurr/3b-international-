@@ -1,7 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {ArrowLeft,Car,ChevronRight,LockKeyhole,Play,Shield,Star,Trophy,Wrench,X,Zap} from 'lucide-react';
 import {COUNTRIES,COUNTRY_BY_ID,DISCIPLINES,isCountryUnlocked,opponentsFor} from './data.js';
-import {activeVehicle,addVehicleSticker,addVehicleVinyl,applyVehicleLook,availableEvents,bossUnlocked,buyUpgrade,buyVisualPart,completeBossStage,completeEvent,createCareerState,progressPercent,registerRivalDefeat,removeVehicleSticker,removeVehicleVinyl,saveVehicleLook,setActiveCountry,setTune,setVehicleNeon,setVehiclePlate,setVehicleStance,setVisualColor,territorySummary,validateCareerState} from './career.js';
+import {activeVehicle,addVehicleSticker,addVehicleVinyl,applyVehicleLook,availableEvents,bossUnlocked,buyUpgrade,buyVisualPart,completeBossStage,completeEvent,createCareerState,progressPercent,registerRivalDefeat,removeVehicleSticker,removeVehicleVinyl,saveVehicleLook,setActiveCountry,setSetting,setTune,setVehicleNeon,setVehiclePlate,setVehicleStance,setVisualColor,territorySummary,validateCareerState} from './career.js';
 import {effectiveSpec,estimateTopSpeedKph,estimateZeroToHundred,performanceIndex,UPGRADE_KEYS,upgradeCost,vehicleClass} from './carModel.js';
 import {CUSTOMIZATION_CATEGORIES,CUSTOMIZATION_SLOTS,customizationStats} from './customization.js';
 import {createRaceSession,raceHud,raceResult,stepRace} from './raceEngine.js';
@@ -61,13 +61,26 @@ export default function Underground3B({onClose}){
     setCareer(next);setResult({race:{...race},data:r,reward,qualified,message});setRace(null);
   };
   const close=()=>{try{localStorage.setItem(STORAGE,JSON.stringify(career));}catch{}onClose?.();};
-  if(race)return <><RaceScene config={race} vehicle={vehicle} difficulty={career.settings.difficulty} onFinish={finish} onAbort={()=>setRace(null)}/>{portrait&&<LandscapeGate/>}</>;
+  if(race)return <><RaceScene config={race} vehicle={vehicle} settings={career.settings} onFinish={finish} onAbort={()=>setRace(null)}/>{portrait&&<LandscapeGate/>}</>;
   return <div className="u3b-shell" role="dialog" aria-modal="true" aria-label="3B Underground">
     <header className="u3b-top"><button onClick={screen==='nexus'?close:()=>setScreen('nexus')}><ArrowLeft/></button><div><b>3B UNDERGROUND</b><small>LE CERCLE BRISÉ</small></div><nav><span>Niv. {career.level}</span><span>{career.coins.toLocaleString('fr-FR')} 3B</span><span>{career.fragments.length}/8 fragments</span></nav><button onClick={close}><X/></button></header>
+    <nav className="u3b-main-menu" aria-label="Menu 3B Underground">
+      <button className={screen==='territory'?'active':''} onClick={()=>setScreen('territory')}>JOUER</button>
+      <button className={screen==='garage'?'active':''} onClick={()=>setScreen('garage')}>GARAGE</button>
+      <button className={screen==='nexus'?'active':''} onClick={()=>setScreen('nexus')}>CARTE</button>
+      <button className={screen==='territory'?'active':''} onClick={()=>setScreen('territory')}>CARRIÈRE</button>
+      <button onClick={()=>setScreen('territory')}>COURSES</button>
+      <button onClick={()=>setScreen('garage')}>VÉHICULE</button>
+      <button onClick={()=>setScreen('garage')}>CUSTOMISATION</button>
+      <button onClick={()=>{goCountry('france');setNotice('POLICE V1 · Lance France Gold Slice · Quais de Justice.');}}>POLICE</button>
+      <button onClick={()=>setScreen('nexus')}>PROGRESSION</button>
+      <button className={screen==='settings'?'active':''} onClick={()=>setScreen('settings')}>PARAMÈTRES</button>
+    </nav>
     {notice&&<div className="u3b-notice">{notice}<button onClick={()=>setNotice('')}><X size={14}/></button></div>}
     {screen==='nexus'&&<Nexus career={career} onCountry={goCountry} onGarage={()=>setScreen('garage')}/>} 
     {screen==='territory'&&<Territory country={country} career={career} summary={summary} events={events} vehicle={vehicle} onEvent={startEvent} onRival={startRival} onBoss={startBoss} onGarage={()=>setScreen('garage')}/>} 
     {screen==='garage'&&<Garage career={career} vehicle={vehicle} onChange={setCareer} onBack={()=>setScreen('territory')}/>} 
+    {screen==='settings'&&<Settings career={career} onChange={setCareer}/>} 
     {result&&<Result result={result} onClose={()=>setResult(null)} onRetry={()=>{setRace(result.race);setResult(null);}}/>}
     {portrait&&<LandscapeGate/>}
   </div>;
@@ -102,27 +115,41 @@ function Garage({career,vehicle,onChange,onBack}){
   </main>;
 }
 
-function RaceScene({config,vehicle,difficulty,onFinish,onAbort}){
-  const canvas=useRef(null),session=useRef(null),input=useRef({throttle:0,brake:0,steer:0,nitrous:false}),steerPad=useRef(null),steerPointer=useRef(null),pausedRef=useRef(false),finished=useRef(false),[hud,setHud]=useState(null),[paused,setPaused]=useState(false),[error,setError]=useState(''),[touchSteer,setTouchSteer]=useState(0);
+function Settings({career,onChange}){
+  const s=career.settings;
+  const change=(key,value)=>onChange(setSetting(career,key,value));
+  return <main className="u3b-page"><section className="u3b-settings-head"><span>3B UNDERGROUND · PILOTAGE</span><h1>Paramètres Gold Master</h1><p>Ajuste les sensations sans casser la physique : direction, caméra, vibrations et cible FPS.</p></section><section className="u3b-settings-grid">
+    <label><span>Difficulté</span><select value={s.difficulty} onChange={e=>change('difficulty',e.target.value)}><option value="easy">Facile</option><option value="normal">Normal</option><option value="hard">Difficile</option><option value="legend">Légende</option></select></label>
+    <label><span>Sensibilité direction</span><input type="range" min=".6" max="1.4" step=".05" value={s.steeringSensitivity} onChange={e=>change('steeringSensitivity',Number(e.target.value))}/><b>{Math.round(s.steeringSensitivity*100)}%</b></label>
+    <label><span>Caméra</span><select value={s.camera} onChange={e=>change('camera',e.target.value)}><option value="close">Proche</option><option value="medium">Moyenne</option><option value="far">Éloignée</option></select></label>
+    <label><span>Vibrations caméra</span><input type="range" min="0" max="1" step=".05" value={s.cameraShake} onChange={e=>change('cameraShake',Number(e.target.value))}/><b>{Math.round(s.cameraShake*100)}%</b></label>
+    <label><span>FPS</span><select value={String(s.fpsTarget)} onChange={e=>change('fpsTarget',e.target.value)}><option value="auto">Auto</option><option value="60">60 FPS</option><option value="30">30 FPS stable</option></select></label>
+    <label className="u3b-toggle"><span>Retour haptique</span><input type="checkbox" checked={s.haptics!==false} onChange={e=>change('haptics',e.target.checked)}/></label>
+  </section></main>;
+}
+
+function RaceScene({config,vehicle,settings,onFinish,onAbort}){
+  const canvas=useRef(null),session=useRef(null),rendererRef=useRef(null),input=useRef({throttle:0,brake:0,steer:0,nitrous:false}),steerPad=useRef(null),steerPointer=useRef(null),pausedRef=useRef(false),finished=useRef(false),[hud,setHud]=useState(null),[paused,setPaused]=useState(false),[error,setError]=useState(''),[touchSteer,setTouchSteer]=useState(0),[cameraMode,setCameraMode]=useState(settings?.camera||'medium');
   useEffect(()=>{
-    const s=createRaceSession({event:config.event,vehicle,difficulty,boss:config.kind==='boss',bossStage:config.stage||0});session.current=s;let renderer;
-    try{renderer=new ThreeRaceView(canvas.current,config.event,vehicle);}catch(e){setError(e.message||'WebGL indisponible.');return;}
+    const difficulty=settings?.difficulty||'normal';const s=createRaceSession({event:config.event,vehicle,difficulty,boss:config.kind==='boss',bossStage:config.stage||0});session.current=s;let renderer;
+    try{renderer=new ThreeRaceView(canvas.current,config.event,vehicle,{cameraMode:settings?.camera||'medium',cameraShake:settings?.cameraShake??.18});rendererRef.current=renderer;}catch(e){setError(e.message||'WebGL indisponible.');return;}
     let raf,last=performance.now(),tick=0;const resize=()=>renderer.resize();window.addEventListener('resize',resize);
-    const down=e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','shift'].includes(k))e.preventDefault();if(k==='escape'||k==='p'){pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);return;}if(k==='arrowup'||k==='w'||k==='z')input.current.throttle=1;if(k==='arrowdown'||k==='s')input.current.brake=1;if(k==='arrowleft'||k==='a'||k==='q')input.current.steer=-1;if(k==='arrowright'||k==='d')input.current.steer=1;if(k===' '||k==='shift')input.current.nitrous=true;};
+    const down=e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','shift','c'].includes(k))e.preventDefault();if(k==='escape'||k==='p'){pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);return;}if(k==='c'){const mode=rendererRef.current?.cycleCameraMode?.();if(mode)setCameraMode(mode);return;}if(k==='arrowup'||k==='w'||k==='z')input.current.throttle=1;if(k==='arrowdown'||k==='s')input.current.brake=1;if(k==='arrowleft'||k==='a'||k==='q')input.current.steer=-1;if(k==='arrowright'||k==='d')input.current.steer=1;if(k===' '||k==='shift')input.current.nitrous=true;};
     const up=e=>{const k=e.key.toLowerCase();if(k==='arrowup'||k==='w'||k==='z')input.current.throttle=0;if(k==='arrowdown'||k==='s')input.current.brake=0;if((k==='arrowleft'||k==='a'||k==='q')&&input.current.steer<0)input.current.steer=0;if((k==='arrowright'||k==='d')&&input.current.steer>0)input.current.steer=0;if(k===' '||k==='shift')input.current.nitrous=false;};
     window.addEventListener('keydown',down,{passive:false});window.addEventListener('keyup',up);
-    const loop=now=>{const dt=Math.min(.05,(now-last)/1000);last=now;if(!pausedRef.current)stepRace(s,input.current,dt);if(s.feedback){globalThis.navigator?.vibrate?.(s.feedback==='collision'?28:14);s.feedback=null;}renderer.render(s,dt);tick+=dt;if(tick>.08){tick=0;setHud(raceHud(s));}if(s.status==='finished'&&!finished.current){finished.current=true;setTimeout(()=>onFinish(raceResult(s)),350);return;}raf=requestAnimationFrame(loop);};raf=requestAnimationFrame(loop);
-    return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);renderer.dispose();};
+    const targetFrameMs=String(settings?.fpsTarget)==='30'?1000/30:0;const loop=now=>{if(targetFrameMs&&now-last<targetFrameMs){raf=requestAnimationFrame(loop);return;}const dt=Math.min(.05,(now-last)/1000);last=now;if(!pausedRef.current)stepRace(s,input.current,dt);if(s.feedback){if(settings?.haptics!==false)globalThis.navigator?.vibrate?.(s.feedback==='collision'?28:14);s.feedback=null;}renderer.render(s,dt);tick+=dt;if(tick>.08){tick=0;setHud(raceHud(s));}if(s.status==='finished'&&!finished.current){finished.current=true;setTimeout(()=>onFinish(raceResult(s)),350);return;}raf=requestAnimationFrame(loop);};raf=requestAnimationFrame(loop);
+    return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);rendererRef.current=null;renderer.dispose();};
   },[]);
   const touch=patch=>({onPointerDown:e=>{e.currentTarget.setPointerCapture?.(e.pointerId);Object.assign(input.current,patch);},onPointerUp:()=>Object.keys(patch).forEach(k=>input.current[k]=k==='nitrous'?false:0),onPointerCancel:()=>Object.keys(patch).forEach(k=>input.current[k]=k==='nitrous'?false:0)});
-  const updateSteer=e=>{const el=steerPad.current;if(!el)return;const rect=el.getBoundingClientRect(),center=rect.left+rect.width/2,range=Math.max(1,rect.width*.42),value=Math.max(-1,Math.min(1,(e.clientX-center)/range));input.current.steer=value;setTouchSteer(value);};
+  const updateSteer=e=>{const el=steerPad.current;if(!el)return;const rect=el.getBoundingClientRect(),center=rect.left+rect.width/2,range=Math.max(1,rect.width*.42),sensitivity=settings?.steeringSensitivity??1,value=Math.max(-1,Math.min(1,((e.clientX-center)/range)*sensitivity));input.current.steer=value;setTouchSteer(value);};
   const steerHandlers={
     onPointerDown:e=>{steerPointer.current=e.pointerId;e.currentTarget.setPointerCapture?.(e.pointerId);updateSteer(e);},
     onPointerMove:e=>{if(steerPointer.current===e.pointerId)updateSteer(e);},
     onPointerUp:e=>{if(steerPointer.current!==e.pointerId)return;steerPointer.current=null;input.current.steer=0;setTouchSteer(0);},
     onPointerCancel:e=>{if(steerPointer.current!==e.pointerId)return;steerPointer.current=null;input.current.steer=0;setTouchSteer(0);}
   };
-  return <div className="u3b-race"><canvas ref={canvas}/><header><button onClick={onAbort}><X/></button><div><small>{DISCIPLINES[config.event.discipline].name}</small><b>{config.event.name}</b></div><button onClick={()=>{pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);}}>{paused?'▶':'Ⅱ'}</button></header>{config.pursuit&&<div className="u3b-police-heat">POLICE · HEAT {config.pursuit.state.heat} · {config.pursuit.budget.maxUnits} unités</div>}{hud&&<><div className="u3b-rank">{hud.position}<small>/{hud.total}</small></div><div className="u3b-racebar"><i style={{width:`${hud.progress*100}%`}}/></div><div className="u3b-speed"><b>{hud.speedKph}</b><span>KM/H</span><small>V{hud.gear} · NITRO {Math.round(hud.nitrous*100)}%</small></div></>}<div className="u3b-touch"><div className="u3b-steering"><span>DIRECTION</span><div ref={steerPad} className="u3b-steer-pad" style={{'--steer':touchSteer}} {...steerHandlers}><i className="u3b-steer-center"/><i className="u3b-steer-thumb"/></div></div><div className="u3b-pedals"><button className="brake" aria-label="Frein" {...touch({brake:1})}>FREIN</button><button className="nitro" aria-label="Nitro" {...touch({nitrous:true})}><Zap/>NITRO</button><button className="gas" aria-label="Accélérateur" {...touch({throttle:1})}><small>ACCÉL.</small>GAZ</button></div></div>{session.current?.status==='countdown'&&<div className="u3b-count">{Math.max(1,Math.ceil(session.current.countdown))}</div>}{paused&&<div className="u3b-overlay"><h2>PAUSE</h2><button onClick={()=>{pausedRef.current=false;setPaused(false);}}>Reprendre</button><button onClick={onAbort}>Quitter</button></div>}{error&&<div className="u3b-overlay"><h2>Rendu 3D indisponible</h2><p>{error}</p><button onClick={onAbort}>Retour</button></div>}</div>;
+  const cycleCamera=()=>{const mode=rendererRef.current?.cycleCameraMode?.();if(mode)setCameraMode(mode);};
+  return <div className="u3b-race"><canvas ref={canvas}/><header><button onClick={onAbort}><X/></button><div><small>{DISCIPLINES[config.event.discipline].name}</small><b>{config.event.name}</b></div><button onClick={()=>{pausedRef.current=!pausedRef.current;setPaused(pausedRef.current);}}>{paused?'▶':'Ⅱ'}</button></header>{config.pursuit&&<div className="u3b-police-heat">POLICE · HEAT {config.pursuit.state.heat} · {config.pursuit.budget.maxUnits} unités</div>}{hud&&<><div className="u3b-rank">{hud.position}<small>/{hud.total}</small></div><div className="u3b-racebar"><i style={{width:`${hud.progress*100}%`}}/></div><div className="u3b-speed"><b>{hud.speedKph}</b><span>KM/H</span><small>V{hud.gear} · NITRO {Math.round(hud.nitrous*100)}%</small></div></>}<div className="u3b-touch"><div className="u3b-steering"><span>DIRECTION</span><div ref={steerPad} className="u3b-steer-pad" style={{'--steer':touchSteer}} {...steerHandlers}><i className="u3b-steer-center"/><i className="u3b-steer-thumb"/></div></div><div className="u3b-pedals"><button className="brake" aria-label="Frein" {...touch({brake:1})}>FREIN</button><button className="cam" aria-label="Changer caméra" onPointerDown={e=>{e.preventDefault();cycleCamera();}}>CAM<br/><small>{cameraMode.toUpperCase()}</small></button><button className="nitro" aria-label="Nitro" {...touch({nitrous:true})}><Zap/>NITRO</button><button className="gas" aria-label="Accélérateur" {...touch({throttle:1})}><small>ACCÉL.</small>GAZ</button></div></div>{session.current?.status==='countdown'&&<div className="u3b-count">{Math.max(1,Math.ceil(session.current.countdown))}</div>}{paused&&<div className="u3b-overlay"><h2>PAUSE</h2><button onClick={()=>{pausedRef.current=false;setPaused(false);}}>Reprendre</button><button onClick={onAbort}>Quitter</button></div>}{error&&<div className="u3b-overlay"><h2>Rendu 3D indisponible</h2><p>{error}</p><button onClick={onAbort}>Retour</button></div>}</div>;
 }
 
 function Result({result,onClose,onRetry}){
