@@ -72,3 +72,11 @@ repeating-linear-gradient(0deg,transparent 0 79px,#2d7bff06 80px)}
 .u3b-touch .u3b-pedals .cam{height:64px;min-width:68px;color:#bcd4ff}.u3b-touch .u3b-pedals .cam small{font-size:7px;color:#6fa6ff;letter-spacing:.05em}
 @media(max-width:900px){.u3b-settings-grid{grid-template-columns:1fr}.u3b-settings-grid label{grid-template-columns:minmax(130px,.65fr) 1fr auto}}
 @media (orientation:landscape) and (max-height:560px){.u3b-main-menu{top:50px}.u3b-main-menu button{min-height:34px;padding:0 10px;font-size:8px}.u3b-settings-head{padding:16px 18px}.u3b-settings-head h1{font-size:30px}.u3b-settings-grid{gap:7px}.u3b-settings-grid label{min-height:58px;padding:9px 11px}}
+
+.u3b-steering{width:clamp(180px,calc(30vw * var(--control-scale,1)),380px)}
+.u3b-steer-pad{height:calc(72px * var(--control-scale,1))}
+.u3b-steer-thumb{width:calc(54px * var(--control-scale,1));height:calc(54px * var(--control-scale,1))}
+.u3b-touch .u3b-pedals button{min-width:calc(72px * var(--control-scale,1));height:calc(64px * var(--control-scale,1))}
+.u3b-touch .u3b-pedals .brake{height:calc(76px * var(--control-scale,1))}
+.u3b-touch .u3b-pedals .nitro{height:calc(72px * var(--control-scale,1))}
+.u3b-touch .u3b-pedals .gas{height:calc(100px * var(--control-scale,1));min-width:calc(86px * var(--control-scale,1))}
