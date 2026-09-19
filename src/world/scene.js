@@ -269,7 +269,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     for(const actor of hubNpcActors){
      const d=Math.hypot(actor.item.x-position.x,actor.item.z-position.z),lod=lodForDistance(d,stream),visible=lod<3;
      actor.body.visible=visible;actor.head.visible=visible&&lod<2;if(!visible)continue;
-     const pose=hubNpcPose(actor.item,elapsed),gy=groundY(pose.x,pose.z);actor.item.x=pose.x;actor.item.z=pose.z;
+     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused}),gy=groundY(pose.x,pose.z);actor.item.x=pose.x;actor.item.z=pose.z;actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
      actor.body.position.set(pose.x,gy+1.05,pose.z);actor.head.position.set(pose.x,gy+2.25,pose.z);actor.body.rotation.y=pose.heading;actor.head.rotation.y=pose.heading;
     }
    }
