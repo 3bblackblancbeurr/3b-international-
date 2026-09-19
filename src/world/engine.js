@@ -8,7 +8,7 @@ import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMission
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
-import {HUB_EVENT_SET,HUB_SECRET_SET} from './hub/activity-catalog.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET} from './hub/activity-catalog.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -87,6 +87,26 @@ export function applyWorldAction(input,action){
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
    if(s.hub.secrets.includes(action.id))return s;
    return reward(gain(s,{hub:{...s.hub,secrets:[...s.hub.secrets,action.id]}}),80,20);
+  }
+  case 'hubNpcTalk':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.id),'Personnage Hub inconnu.');
+   const talks={...s.hub.stats.npcTalks,[action.id]:Math.min(99,(s.hub.stats.npcTalks[action.id]||0)+1)};
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,npcTalks:talks}}});
+  }
+  case 'hubDistrictVisit':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_DISTRICT_SET.has(action.id),'Quartier Hub inconnu.');
+   if(s.hub.stats.districtVisits.includes(action.id))return s;
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,districtVisits:[...s.hub.stats.districtVisits,action.id]}}});
+  }
+  case 'hubTransportRide':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   requireThat(HUB_TRANSPORT_SET.has(action.transport),'Transport Hub inconnu.');
+   requireThat(HUB_DISTRICT_SET.has(action.from)&&HUB_DISTRICT_SET.has(action.to),'Arrêt Hub inconnu.');
+   const rides={...s.hub.stats.transportRides,[action.transport]:Math.min(999,(s.hub.stats.transportRides[action.transport]||0)+1)};
+   const stop=action.transport+':'+action.to,transportStops=s.hub.stats.transportStops.includes(stop)?s.hub.stats.transportStops:[...s.hub.stats.transportStops,stop];
+   let nightTrainDates=s.hub.stats.nightTrainDates;
+   if(action.transport==='train'&&action.night===true&&/^\d{4}-\d{2}-\d{2}$/.test(action.dateKey||'')&&!nightTrainDates.includes(action.dateKey))nightTrainDates=[...nightTrainDates,action.dateKey].slice(-16);
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}});
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
