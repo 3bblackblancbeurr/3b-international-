@@ -14,11 +14,12 @@ export function createLivingLibrary(){
  function release(asset){const geo=new Set(),mat=new Set(),tex=new Set();asset.scene.traverse(o=>{if(o.geometry)geo.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){mat.add(m);for(const v of Object.values(m))if(v?.isTexture)tex.add(v);}});geo.forEach(g=>g.dispose());mat.forEach(m=>m.dispose());tex.forEach(t=>t.dispose());}
  return {load(url){if(!cache.has(url))cache.set(url,loader.loadAsync(url).then(asset=>{if(disposed){release(asset);throw Error('Vue fermée.');}return asset;}).catch(error=>{cache.delete(url);throw error;}));return cache.get(url);},dispose(){disposed=true;cache.forEach(p=>p.then(release).catch(()=>{}));cache.clear();}};
 }
-export function avatarRecipe(avatar){return {outerColor:avatar?.outerColor,metalColor:avatar?.metalColor||'#c9ad75',belt:avatar?.belt||'none',pendant:!!avatar?.pendant,body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,height:avatar?.height??1,build:avatar?.build??1,fabric:avatar?.fabric||'cotton',patternScale:avatar?.patternScale??1,capeLength:avatar?.capeLength??1,hoodFit:avatar?.hoodFit??1,skin:avatar?.skinColor||SKINS[avatar?.skin??2],cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0};}
+export function avatarRecipe(avatar){return {outerColor:avatar?.outerColor,metalColor:avatar?.metalColor||'#c9ad75',belt:avatar?.belt||'none',pendant:!!avatar?.pendant,body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,height:avatar?.height??1,build:avatar?.build??1,fabric:avatar?.fabric||'cotton',patternScale:avatar?.patternScale??1,patternRotation:avatar?.patternRotation??0,patternIntensity:avatar?.patternIntensity??.8,capeLength:avatar?.capeLength??1,hoodFit:avatar?.hoodFit??1,skin:avatar?.skinColor||SKINS[avatar?.skin??2],skinUndertone:avatar?.skinUndertone||'neutral',cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0,weapon:avatar?.weapon||'heritage'};}
+function skinTint(recipe){const c=new THREE.Color(recipe.skin);if(recipe.skinUndertone==='warm')c.lerp(new THREE.Color('#ffb48f'),.08);if(recipe.skinUndertone==='cool')c.lerp(new THREE.Color('#b7d2ff'),.065);return c;}
 export const avatarModelKey=avatar=>`${avatar?.body==='femme'?'femme':'homme'}:${['voyageur','sentinelle','mystique'].includes(avatar?.style)?avatar.style:'voyageur'}`;
 export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,weaponState='world'}={}){
  let currentAvatar=avatar?{...avatar}:null,currentAvatarSignature=JSON.stringify(currentAvatar||{}),recipe=card?CARD_DESIGNS[card]:avatarRecipe(currentAvatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
- const object=new THREE.Group(),personal=new Set();let model,mixer,garments,weaponModel,pattern,actions={},legActions={},legCurrent=null,current=null,dead=false,clock=0,actionEnd=0,heading=0,ready=false,combatPose={},weaponForced=weaponState==='preview',weaponReadyUntil=0;
+ const object=new THREE.Group(),personal=new Set();let model,mixer,garments,weaponModel,pattern,idleClip,actions={},legActions={},legCurrent=null,current=null,dead=false,clock=0,actionEnd=0,heading=0,ready=false,combatPose={},weaponForced=weaponState==='preview',weaponReadyUntil=0;
  object.scale.setScalar(scale);
  function transition(name,once=false){
   if(dead)return;
@@ -29,17 +30,17 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
   if(card||!nextAvatar||!model)return;
   const signature=JSON.stringify(nextAvatar);if(!forceGarments&&signature===currentAvatarSignature)return;
   const previous=currentAvatar||{},nextRecipe=avatarRecipe(nextAvatar);
-  const garmentKeys=['headwear','outer','bag','belt','pendant','outerColor','metalColor','accentColor','bootColor','fabricColor','color','fabric','pattern','patternScale','capeLength','hoodFit'];
+  const garmentKeys=['headwear','outer','bag','belt','pendant','outerColor','metalColor','accentColor','bootColor','fabricColor','color','fabric','pattern','patternScale','patternRotation','patternIntensity','capeLength','hoodFit'];
   const garmentsChanged=forceGarments||garmentKeys.some(key=>previous?.[key]!==nextAvatar?.[key]);
   const weaponChanged=previous?.weapon!==nextAvatar?.weapon||previous?.weaponForm!==nextAvatar?.weaponForm;
-  currentAvatar={...nextAvatar};currentAvatarSignature=signature;recipe=nextRecipe;
+  currentAvatar={...nextAvatar};currentAvatarSignature=signature;recipe=nextRecipe;const skinTone=skinTint(recipe);
   const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);
   if(garmentsChanged){garments?.dispose();pattern?.dispose();pattern=garmentPattern(recipe);garments=fitGarments(model,recipe);}
   model.traverse(o=>{
    if(!o.isMesh)return;
    const hair=o.name.match(/^Hair_(\d+)/),boots=o.name.match(/^Boots_(\d+)/);if(hair)o.visible=Number(hair[1])===recipe.hair&&recipe.headwear!=='hood';if(boots)o.visible=Number(boots[1])===recipe.boots;
    for(const m of [o.material].flat().filter(Boolean)){
-    if(/SkinColor|HandsColor/.test(m.name))m.color.set(recipe.skin);
+    if(/SkinColor|HandsColor/.test(m.name))m.color.copy(skinTone);
     else if(/HairColor/.test(m.name))m.color.set(recipe.hairColor);
     else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);m.roughness=({cotton:.92,linen:1,satin:.38,leather:.55})[recipe.fabric]??.92;if(garmentsChanged){m.map=pattern||null;m.needsUpdate=true;}}
     else if(/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
@@ -47,10 +48,10 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
    }
    if(o.morphTargetDictionary)for(const [plus,minus,value] of [['FaceWide','FaceNarrow',recipe.face],['JawStrong','JawSoft',recipe.jaw],['NoseLarge','NoseSmall',recipe.nose]])for(const [key,v] of [[plus,Math.max(0,value)],[minus,Math.max(0,-value)]]){const index=o.morphTargetDictionary[key];if(index!==undefined)o.morphTargetInfluences[index]=v;}
   });
-  if(weaponChanged){weaponModel?.dispose();weaponModel=nextAvatar.weapon?fitWeapon(model,nextAvatar,{drawn:weaponState==='preview'||weaponForced}):null;}
+  if(weaponChanged){weaponModel?.dispose();weaponModel=nextAvatar.weapon?fitWeapon(model,nextAvatar,{drawn:weaponState==='preview'||weaponForced}):null;if(mixer&&idleClip){for(const clip of weaponAnimations(idleClip,nextAvatar.weapon)){actions[clip.name]?.stop();actions[clip.name]=mixer.clipAction(clip);}}}
  }
  library.load(url).then(asset=>{
-  if(dead)return;model=clone(asset.scene);object.add(model);if(!card)pattern=garmentPattern(recipe);
+  if(dead)return;model=clone(asset.scene);object.add(model);if(!card)pattern=garmentPattern(recipe);const skinTone=skinTint(recipe);
   model.traverse(o=>{
    if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;
    o.material=Array.isArray(o.material)?o.material.map(m=>{const c=m.clone();personal.add(c);return c;}):o.material?.clone();if(o.material&&!Array.isArray(o.material))personal.add(o.material);
@@ -60,7 +61,7 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
      // Imported ORM maps incorrectly made fabric and skin fully metallic.
      // These surfaces need diffuse daylight, not an environment reflection.
      if(/SkinColor|HandsColor|HairColor|ClothColor|TrouserColor|BootColor/.test(m.name))prepareTintMaterial(m,{pattern:!!pattern&&/ClothColor_ClothColor/.test(m.name)});
-     if(/SkinColor|HandsColor/.test(m.name))m.color.set(recipe.skin);
+     if(/SkinColor|HandsColor/.test(m.name))m.color.copy(skinTone);
      else if(/HairColor/.test(m.name))m.color.set(recipe.hairColor);
      else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);m.roughness=({cotton:.92,linen:1,satin:.38,leather:.55})[recipe.fabric]??.92;if(pattern){m.map=pattern;m.needsUpdate=true;}}
      else if(!card&&/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
@@ -77,7 +78,7 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
    if(layered&&['Idle','Walk','Jog','Run'].includes(name))legActions[name]=mixer.clipAction(new THREE.AnimationClip(name+'-legs',clip.duration,clip.tracks.filter(lower)));
   }
   if(!card){
-   const styleClips=weaponAnimations(asset.animations.find(c=>c.name==='Idle'),avatar?.weapon);
+   idleClip=asset.animations.find(c=>c.name==='Idle');const styleClips=weaponAnimations(idleClip,avatar?.weapon);
    for(const clip of styleClips)actions[clip.name]=mixer.clipAction(clip);
   }
   transition('Idle');mixer.update(0);ready=true;onLoad?.();
