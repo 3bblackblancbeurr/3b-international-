@@ -3,11 +3,16 @@ import React,{useState} from 'react';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {LOOKS,TRAVEL_GEAR} from './wardrobe.js';
 import {COUNTRIES} from './catalog.js';
-import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';\nimport {WEAPONS} from './arsenal.js';\nimport {EVOLUTION_XP,formName} from './arsenal-progression.js';\nimport {weaponPreview,WEAPON_PHOTO_CREDITS} from './weapon-previews.js';
-import '../arena/arena.css';\nimport './avatar-weapons.css';
+import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
+import {WEAPONS} from './arsenal.js';
+import {EVOLUTION_XP,formName} from './arsenal-progression.js';
+import {weaponPreview,WEAPON_PHOTO_CREDITS} from './weapon-previews.js';
+import '../arena/arena.css';
+import './avatar-weapons.css';
 export function AvatarPanel({save,act,onDone}){
  const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[revealed,setRevealed]=useState(false);
- const set=(key,value)=>setDraft(d=>({...d,[key]:value}));\n const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],photo=weaponPreview(draft.weapon),xp=Number.isFinite(save.xp)?save.xp:0,maxWeaponForm=EVOLUTION_XP.reduce((max,need,index)=>xp>=need?index:max,0);
+ const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
+ const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],photo=weaponPreview(draft.weapon),xp=Number.isFinite(save.xp)?save.xp:0,maxWeaponForm=EVOLUTION_XP.reduce((max,need,index)=>xp>=need?index:max,0);
  if(revealed)return <AvatarCinematic avatar={save.adventure.avatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
  return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();if(act({type:'avatar',avatar:draft})){setMessage('Ton personnage est enregistré.');setRevealed(true);}}}>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
