@@ -47,6 +47,6 @@ export function guardianValueOptions(region,state){
  const rotate=(region.length+current.step)%options.length;
  return [...options.slice(rotate),...options.slice(0,rotate)];
 }
-export function guardianHubPresence(seals=[]){
- return Object.entries(GUARDIAN_VALUES).filter(([region])=>seals.includes(region)).map(([region,data])=>({region,...data}));
+export function guardianHubPresence(seals=[],restoredRegions=[]){
+ return Object.entries(GUARDIAN_VALUES).filter(([region])=>seals.includes(region)&&restoredRegions.includes(region)).map(([region,data])=>({region,...data}));
 }
