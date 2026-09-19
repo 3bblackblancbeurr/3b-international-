@@ -35,6 +35,7 @@ import './companions.css';
 import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
 import {hubNpcDialogue} from './hub/npc-dialogue.js';
+import {isAutoHubMission} from './hub/mission-signals.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -93,7 +94,10 @@ function WorldSession({uid,goTo}){
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
-   if(current.status==='active'){const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;}
+   if(current.status==='active'){
+    if(isAutoHubMission(item.missionId)){announce(item.name+' · objectif '+(current.completedObjectives+1)+'/'+current.totalObjectives+' · '+(item.objectives?.[current.completedObjectives]||'continue dans le monde'));return;}
+    const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;
+   }
    if(current.status==='completed'&&!current.claimed){const next=act({type:'hubMissionClaim',id:item.missionId});if(next)announce(item.name+' · récompense récupérée');return;}
    announce(item.name+' · mission déjà accomplie');return;
   }
