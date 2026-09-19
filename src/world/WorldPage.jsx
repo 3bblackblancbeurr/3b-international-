@@ -98,6 +98,8 @@ function WorldSession({uid,goTo}){
    announce(item.name+' · mission déjà accomplie');return;
   }
   if(item.type==='hubTransport'){announce(item.name+' · véhicule en circulation');return;}
+  if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
+  if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
   if(item.type==='hubDistrict'){announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
