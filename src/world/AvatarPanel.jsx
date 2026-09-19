@@ -4,10 +4,19 @@ import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {LOOKS,TRAVEL_GEAR} from './wardrobe.js';
 import {COUNTRIES} from './catalog.js';
 import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
+import {WEAPONS} from './arsenal.js';
+import {EVOLUTION_XP,formName} from './arsenal-progression.js';
+import {WEAPON_ART_ATLAS,weaponArtStyle,weaponDisplayName,weaponStats} from './weapon-art.js';
 import '../arena/arena.css';
+import './weapon-customizer.css';
+
 export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[revealed,setRevealed]=useState(false);
+ const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[weaponMessage,setWeaponMessage]=useState(''),[revealed,setRevealed]=useState(false);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
+ const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],stats=weaponStats(selectedWeapon),xp=Number.isFinite(save.xp)?Math.max(0,save.xp):0;
+ const maxWeaponForm=EVOLUTION_XP.reduce((max,need,index)=>xp>=need?index:max,0);
+ const chooseWeapon=id=>{setDraft(d=>({...d,weapon:id,weaponForm:0}));setWeaponMessage('');};
+ const chooseWeaponForm=tier=>{if(tier<=maxWeaponForm){set('weaponForm',tier);setWeaponMessage('');}};
  if(revealed)return <AvatarCinematic avatar={save.adventure.avatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
  return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();if(act({type:'avatar',avatar:draft})){setMessage('Ton personnage est enregistré.');setRevealed(true);}}}>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
@@ -23,6 +32,23 @@ export function AvatarPanel({save,act,onDone}){
   <label>Motif<select value={draft.pattern} onChange={e=>set('pattern',e.target.value)}>{[['uni','Uni'],['bandes','Rayures'],['damier','Damier'],['insigne','Signature 3B'],['broderie','Broderie géométrique']].map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>
   <div className="avatar-pair"><label>Couvre-chef<select value={draft.headwear} onChange={e=>set('headwear',e.target.value)}><option value="none">Aucun</option><option value="beret">Béret</option><option value="brim">Chapeau de voyage</option><option value="hood">Capuche</option></select></label><label>Accessoire<select value={draft.outer} onChange={e=>set('outer',e.target.value)}><option value="none">Aucun</option><option value="cape">Cape</option><option value="scarf">Écharpe</option><option value="apron">Tablier d’artisan</option></select></label></div>
   <label className="avatar-check"><input type="checkbox" checked={draft.bag} onChange={e=>set('bag',e.target.checked)}/> Sac de voyage</label>
+
+  <section className="avatar-weapon-studio" style={{'--weapon-atlas':`url("${WEAPON_ART_ATLAS}")`}} aria-label="Personnalisation de l’arme">
+   <header className="weapon-studio-header"><span className="weapon-studio-kicker">PERSONNALISATION</span><h2>Choix de l’arme</h2><div className="weapon-studio-tabs" aria-hidden="true"><span className="weapon-studio-tab">Personnage</span><span className="weapon-studio-tab is-active">Arme</span><span className="weapon-studio-tab">Style</span></div></header>
+   <div className="weapon-stage">
+    <div className="weapon-stage-art"><span className="weapon-art weapon-hero-art" style={weaponArtStyle(selectedWeapon.id)} role="img" aria-label={weaponDisplayName(selectedWeapon)}/></div>
+    <div className="weapon-hero-info"><span className="weapon-type-pill">{selectedWeapon.kind} · {selectedWeapon.form}</span><h3>{weaponDisplayName(selectedWeapon)}</h3><p>{selectedWeapon.description}</p>
+     {[['Puissance',stats.power],['Vitesse',stats.speed],['Portée',stats.range]].map(([label,value])=><div className="weapon-stat" key={label}><span>{label}</span><span className="weapon-stat-track"><i className="weapon-stat-fill" style={{'--value':value}}/></span><b>{value}</b></div>)}
+    </div>
+   </div>
+   <div className="weapon-gallery-label"><span>Arsenal 3B</span><small>Glisse pour parcourir · {WEAPONS.length} armes</small></div>
+   <div className="weapon-gallery" role="list">{WEAPONS.map(w=><button className="weapon-card" type="button" role="listitem" key={w.id} aria-pressed={draft.weapon===w.id} onClick={()=>chooseWeapon(w.id)}><span className="weapon-art weapon-card-art" style={weaponArtStyle(w.id)} aria-hidden="true"/><strong>{weaponDisplayName(w)}</strong><small>{w.kind} · {w.country==='3b'?'International':w.country}</small></button>)}</div>
+   <div className="weapon-evolution-label"><span>Évolution de l’arme</span><small>{xp} XP monde</small></div>
+   <div className="weapon-evolution-grid">{EVOLUTION_XP.map((need,tier)=><button className="weapon-form-button" type="button" key={tier} disabled={tier>maxWeaponForm} aria-pressed={draft.weaponForm===tier} onClick={()=>chooseWeaponForm(tier)}><b>{formName(selectedWeapon,tier)}</b><small>{tier===0?'Disponible':tier<=maxWeaponForm?'Débloquée':need+' XP requis'}</small></button>)}</div>
+   <button className="weapon-equip" type="button" onClick={()=>setWeaponMessage(weaponDisplayName(selectedWeapon)+' équipée pour ton personnage.')}>Équiper</button>
+   <p className="weapon-equipped-note" role="status">{weaponMessage}</p>
+  </section>
+
   <label>Équipement de voyage<select value={draft.travelGear} onChange={e=>set('travelGear',e.target.value)}>{Object.entries(TRAVEL_GEAR).map(([id,g])=><option key={id} value={id}>{g.name}</option>)}</select></label><p>{TRAVEL_GEAR[draft.travelGear].description} Sans effet dans l’arène.</p>
   <label>Chaussures<select value={draft.boots} onChange={e=>set('boots',Number(e.target.value))}><option value="0">Chaussures de voyage</option><option value="1">Bottes d’exploration</option><option value="2">Bottes de garde</option></select></label>
   <label>Origines personnelles · tous les pays<input maxLength={50} placeholder="Pays ou origines de ton choix" value={draft.nationality} onChange={e=>set('nationality',e.target.value)}/></label>
