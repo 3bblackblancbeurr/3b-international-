@@ -1,8 +1,8 @@
-import plan from './data/hub-master-plan-v2.json';
-import npcs from './data/npcs-v1.json';
-import missions from './data/missions-v1.json';
-import events from './data/events-v1.json';
-import secrets from './data/secrets-v1.json';
+import plan from './data/hub-master-plan-v2.json' with { type: 'json' };
+import npcs from './data/npcs-v1.json' with { type: 'json' };
+import missions from './data/missions-v1.json' with { type: 'json' };
+import events from './data/events-v1.json' with { type: 'json' };
+import secrets from './data/secrets-v1.json' with { type: 'json' };
 import { buildHubRuntimeItems } from './runtime.js';
 
 export const HUB_PLAN = plan;
