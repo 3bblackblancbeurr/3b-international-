@@ -8,8 +8,8 @@ import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMission
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
-import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET} from './hub/activity-catalog.js';
-import {hubSecretReady} from './hub/secret-runtime.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS} from './hub/activity-catalog.js';
+import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -83,6 +83,13 @@ export function applyWorldAction(input,action){
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
    if(s.hub.events.includes(action.id))return s;
    return reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+  }
+  case 'hubSecretStep':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   const count=HUB_SECRET_STEP_COUNTS[action.id];requireThat(count,'Secret progressif inconnu.');
+   requireThat(hubSecretStepAllowed(action.id,s.hub,action.step,count),'Étape secrète invalide ou déjà enregistrée.');
+   const secretProgress={...s.hub.stats.secretProgress,[action.id]:[...(s.hub.stats.secretProgress[action.id]||[]),action.step]};
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,secretProgress}}});
   }
   case 'hubSecretUnlock':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
