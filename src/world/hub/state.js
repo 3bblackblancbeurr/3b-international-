@@ -1,5 +1,6 @@
 import {HUB_MISSIONS,HUB_MISSION_BY_ID} from './mission-catalog.js';
 import {HUB_MISSION_TASKS} from './mission-tasks.js';
+import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_TYPES,HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 
 export function blankHubState(){
@@ -15,6 +16,7 @@ export function blankHubState(){
       nightTrainDates:[],
       secretProgress:{},
       missionTasks:{},
+      missionSignals:{},
     },
   };
 }
@@ -49,6 +51,16 @@ export function normalizeHubState(input){
    const allowed=new Set(tasks.map((task)=>task.id));
    const done=[...new Set(Array.isArray(stats.missionTasks?.[missionId])?stats.missionTasks[missionId]:[])].filter((id)=>allowed.has(id)).slice(0,tasks.length);
    if(done.length)base.stats.missionTasks[missionId]=done;
+  }
+  for(const [missionId,rules] of Object.entries(HUB_MISSION_SIGNAL_RULES)){
+   const source=stats.missionSignals?.[missionId];if(!source||typeof source!=='object')continue;
+   const clean={};
+   rules.forEach((rule,index)=>{
+    if(!rule||!(rule.count>1))return;
+    const values=[...new Set(Array.isArray(source[index])?source[index]:[])].filter((value)=>typeof value==='string'&&value.length>0&&value.length<=80).slice(0,rule.count);
+    if(values.length)clean[index]=values;
+   });
+   if(Object.keys(clean).length)base.stats.missionSignals[missionId]=clean;
   }
   return base;
 }
