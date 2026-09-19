@@ -2,12 +2,17 @@ import * as T from 'three';
 import plan from './data/hub-master-plan-v2.json';
 import npcs from './data/npcs-v1.json';
 import missions from './data/missions-v1.json';
+import events from './data/events-v1.json';
+import secrets from './data/secrets-v1.json';
 import {buildHubLayout,hubDistrictAt,hubPopulationBudget,nearestHubInteraction,nextStop} from './runtime-core.js';
 import {activeHubMission,applyHubEvent,missionForNpc,normalizeHubProgress,startHubMission} from './mission-runtime.js';
+import {deriveHubSecrets,evaluateHubEvents,eventForDistrict} from './living-world.js';
 
 export const HUB_PLAN=plan;
 export const HUB_NPCS=npcs;
 export const HUB_MISSIONS=missions;
+export const HUB_EVENTS=events;
+export const HUB_SECRETS=secrets;
 export const HUB_LAYOUT=buildHubLayout(plan,npcs,missions);
 
 const v=(x,y,z)=>new T.Vector3(x,y,z);
@@ -46,6 +51,14 @@ export function hubInteractions(){
 function applyEvent(progress,event){
   return applyHubEvent(progress,event,HUB_MISSIONS);
 }
+export function settleHubSecrets(progress){
+  const result=deriveHubSecrets(HUB_SECRETS,progress);
+  return {progress:{...progress,secrets:result.ids},unlocked:result.unlocked};
+}
+export function hubLivingState(progress,date=new Date(),district=null){
+  const activeEvents=evaluateHubEvents(HUB_EVENTS,{date,progress});
+  return {events:activeEvents,event:district?eventForDistrict(activeEvents,district):activeEvents[0]||null,secrets:deriveHubSecrets(HUB_SECRETS,progress)};
+}
 
 export function resolveHubInteraction(interaction,rawProgress){
   let progress=normalizeHubProgress(rawProgress,HUB_MISSIONS),message='',destination=null,completedMission=null,changed=false;
@@ -83,8 +96,9 @@ export function resolveHubInteraction(interaction,rawProgress){
   }else if(interaction.type==='hub-beacon'){
     merge(applyEvent(progress,{type:'activate',id:'archive_beacon'}));message='Balise des Archives activée. La mémoire du quartier devient plus stable.';
   }
+  const secretState=settleHubSecrets(progress);if(secretState.unlocked.length){progress=secretState.progress;changed=true;message+=' Secret découvert : '+secretState.unlocked.map(s=>s.reward).join(' · ')+'.';}
   if(completedMission)message+=' Mission terminée : « '+completedMission.title+' ».';
-  return {progress,changed,message,destination,completedMission};
+  return {progress,changed,message,destination,completedMission,secretsUnlocked:secretState.unlocked};
 }
 
 export function createHubRuntime(scene,{quality='auto'}={}){
