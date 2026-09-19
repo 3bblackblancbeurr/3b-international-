@@ -1,4 +1,5 @@
 import {HUB_MISSIONS,HUB_MISSION_BY_ID} from './mission-catalog.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET} from './activity-catalog.js';
 
 export function blankHubState(){
   return {
@@ -22,7 +23,7 @@ export function normalizeHubState(input){
       claimed:completed&&raw.claimed===true,
     };
   }
-  base.secrets=[...new Set(Array.isArray(source.secrets)?source.secrets:[])].filter((id)=>typeof id==='string'&&/^secret_[a-z0-9_]+$/.test(id)).slice(0,64);
-  base.events=[...new Set(Array.isArray(source.events)?source.events:[])].filter((id)=>typeof id==='string'&&/^[a-z0-9_]+$/.test(id)).slice(0,64);
+  base.secrets=[...new Set(Array.isArray(source.secrets)?source.secrets:[])].filter((id)=>HUB_SECRET_SET.has(id));
+  base.events=[...new Set(Array.isArray(source.events)?source.events:[])].filter((id)=>HUB_EVENT_SET.has(id));
   return base;
 }
