@@ -104,8 +104,8 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const ring=mesh('ring',mat,item.x,y+.08,item.z,.9,.9,.9);ring.rotation.x=-Math.PI/2;itemVisuals.set(item.id,[ob,ring]);continue;
    }
    if(item.type==='hubTransport'){
-    const y=groundY(item.x,item.z),color=item.transport==='train'?'#d6b46a':'#00a8ff',mat=material(color,{emissive:color,emissiveIntensity:.3,metalness:.5});
-    const pylon=mesh('cylinder',mat,item.x,y+.9,item.z,.3,1.8,.3);const ring=mesh('ring',mat,item.x,y+1.9,item.z,.72,.72,.72);ring.rotation.x=Math.PI/2;itemVisuals.set(item.id,[pylon,ring]);continue;
+    const y=groundY(item.x,item.z),colors={train:'#d6b46a',boat:'#00a8ff',telepheric:'#b9d7ff',zipline:'#ffdf88'},color=colors[item.transport]||'#00a8ff',mat=material(color,{emissive:color,emissiveIntensity:item.boardable===false?.08:.3,metalness:.5});
+    const pylon=mesh('cylinder',mat,item.x,y+.9,item.z,item.boardable===false?.2:.3,item.boardable===false?1.25:1.8,item.boardable===false?.2:.3);const ring=mesh('ring',mat,item.x,y+1.9,item.z,.72,.72,.72);ring.rotation.x=Math.PI/2;itemVisuals.set(item.id,[pylon,ring]);continue;
    }
    if(item.type==='hubDistrict'){
     const y=groundY(item.x,item.z),mat=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.12,metalness:.4});
@@ -136,11 +136,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    itemVisuals.set(item.id,root.children.slice(first));
   }
   if(region==='hub'){
-   for(const spec of [{transport:'train',cycle:38,color:'#d6b46a',height:1.15,scale:[1.25,.78,3.8]},{transport:'boat',cycle:52,color:'#00a8ff',height:.5,scale:[1.15,.45,2.2]}]){
-    const stops=items.filter(i=>i.type==='hubTransport'&&i.transport===spec.transport).sort((a,b)=>a.stopIndex-b.stopIndex);
-    if(stops.length>1){
+   for(const spec of [{transport:'train',cycle:38,color:'#d6b46a',height:1.15,scale:[1.25,.78,3.8]},{transport:'boat',cycle:52,color:'#00a8ff',height:.5,scale:[1.15,.45,2.2]},{transport:'telepheric',cycle:18,color:'#b9d7ff',height:4.2,scale:[1.05,.8,1.5]}]){
+    const candidates=items.filter(i=>i.type==='hubTransport'&&i.transport===spec.transport),lines=[...new Set(candidates.map(i=>i.line||spec.transport))];
+    for(const line of lines){
+     const stops=candidates.filter(i=>(i.line||spec.transport)===line).sort((a,b)=>a.stopIndex-b.stopIndex);
+     if(stops.length<2)continue;
      const vehicle=mesh('box',material(spec.color,{emissive:spec.color,emissiveIntensity:.18,metalness:.5}),stops[0].x,groundY(stops[0].x,stops[0].z)+spec.height,stops[0].z,...spec.scale);
-     hubVehicles.push({vehicle,stops,...spec});
+     hubVehicles.push({vehicle,stops,line,...spec});
     }
    }
   }
@@ -292,12 +294,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);shot={...p,angle:-BIOMES[region].angle+.35,duration:6500,until:performance.now()+6500,heritage:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
   skipCinematic(){shot=null;needsRender=true;},
   rideHubTransport(item){
-   if(region!=='hub'||transportRide||item?.type!=='hubTransport')return null;
-   const stops=items.filter(i=>i.type==='hubTransport'&&i.transport===item.transport).sort((a,b)=>a.stopIndex-b.stopIndex),index=stops.findIndex(stop=>stop.id===item.id);
+   if(region!=='hub'||transportRide||item?.type!=='hubTransport'||item.boardable===false)return null;
+   const line=item.line||item.transport,stops=items.filter(i=>i.type==='hubTransport'&&i.transport===item.transport&&(i.line||i.transport)===line).sort((a,b)=>a.stopIndex-b.stopIndex),index=stops.findIndex(stop=>stop.id===item.id);
    if(index<0||stops.length<2)return null;
-   const next=stops[(index+1)%stops.length];clearInput();waypoint=null;position={x:item.x,z:item.z};
-   transportRide={transport:item.transport,from:{x:item.x,z:item.z},to:{x:next.x,z:next.z},fromDistrict:item.district,toDistrict:next.district,started:performance.now(),duration:item.transport==='train'?3600:5200};
-   needsRender=true;return {transport:item.transport,from:item.district,to:next.district,duration:transportRide.duration};
+   const next=item.transport==='zipline'?stops[index+1]:stops[(index+1)%stops.length];if(!next)return null;
+   const durations={train:3600,boat:5200,telepheric:4300,zipline:2300};clearInput();waypoint=null;position={x:item.x,z:item.z};
+   transportRide={transport:item.transport,line,from:{x:item.x,z:item.z},to:{x:next.x,z:next.z},fromDistrict:item.district,toDistrict:next.district,started:performance.now(),duration:durations[item.transport]||4200};
+   needsRender=true;return {transport:item.transport,line,from:item.district,to:next.district,duration:transportRide.duration};
   },
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,

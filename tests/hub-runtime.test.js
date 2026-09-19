@@ -20,6 +20,8 @@ test('Hub runtime exposes every canonical district and mission', () => {
   assert.equal(runtime.meta.missions, 20);
   assert.equal(runtime.meta.trainStops, 10);
   assert.equal(runtime.meta.boatStops, 5);
+  assert.equal(runtime.meta.telephericStops, 6);
+  assert.equal(runtime.meta.ziplineStarts, 6);
   assert.equal(runtime.meta.events, 10);
   assert.equal(runtime.meta.secrets, 16);
   assert.equal(new Set(runtime.items.map((item) => item.id)).size, runtime.items.length);
