@@ -14,7 +14,7 @@ test('world-engine deployment pack includes nested Hub reducer dependencies',()=
  try{
   execFileSync(process.execPath,[join(root,'scripts','prepare-world-engine.mjs'),out],{cwd:root,stdio:'pipe'});
   const names=new Set(JSON.parse(readFileSync(out,'utf8')).map((file)=>file.name));
-  for(const name of ['hub/state.js','hub/mission-catalog.js','hub/mission-runtime.js','hub/activity-catalog.js','hub/secret-runtime.js','hub/mission-signals.js','hub/mission-graph.js','hub/dialogue-v3.js','guardian-values.js'])assert.ok(names.has(name),name);
+  for(const name of ['hub/state.js','hub/mission-catalog.js','hub/mission-runtime.js','hub/activity-catalog.js','hub/secret-runtime.js','hub/mission-signals.js','hub/mission-graph.js','hub/dialogue-v3.js','guardian-values.js','cinematic-events.js'])assert.ok(names.has(name),name);
   assert.ok(names.has('engine.js'));
   assert.ok(names.has('rules.js'));
   assert.ok(names.has('index.ts'));

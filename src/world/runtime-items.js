@@ -10,6 +10,7 @@ export function worldRuntimeItems(region,save){
   storyFlag:!!save.adventure?.finished,
   hubState:save.hub,
   seals:save.seals||[],
+  restoredRegions:Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id),
  }).items;
  return [...base,...hub];
 }

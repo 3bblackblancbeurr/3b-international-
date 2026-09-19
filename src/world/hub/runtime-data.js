@@ -23,5 +23,5 @@ export function hubRuntime(profile = 'mobileMedium',context = {}) {
     storyProgress:!!context.storyProgress,
     storyFlag:!!context.storyFlag,
   };
-  return buildHubRuntimeItems({ plan, npcs, missions, events, secrets, profile, eventContext, hubState:context.hubState||null, seals:context.seals||[] });
+  return buildHubRuntimeItems({ plan, npcs, missions, events, secrets, profile, eventContext, hubState:context.hubState||null, seals:context.seals||[], restoredRegions:context.restoredRegions||[] });
 }

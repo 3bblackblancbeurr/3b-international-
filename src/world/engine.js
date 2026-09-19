@@ -14,6 +14,7 @@ import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
 import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
 import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState} from './guardian-values.js';
+import {isWorldCinematicKey} from './cinematic-events.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -67,6 +68,11 @@ export function applyWorldAction(input,action){
  const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
  const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
+  case 'cinematicSeen':{
+   requireThat(isWorldCinematicKey(action.key),'Cinématique inconnue.');
+   if(s.adventure.cinematicSeen?.includes(action.key))return s;
+   return adventure(s,{cinematicSeen:[...(s.adventure.cinematicSeen||[]),action.key]});
+  }
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
    const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');requireThat(hubMissionPrerequisitesMet(action.id,s.hub.missions),'Termine d’abord les missions liées.');
@@ -190,9 +196,9 @@ export function applyWorldAction(input,action){
    if(cs.restored===2){requireThat(s.seals.includes(region),'Libère le gardien du pays.');return reward(chapter(s,region,{restored:3}),200,70);}return s;
   }
   case 'encounter':{
-   peaceful();inCountry();let item=worldItems(region,s).find(i=>i.id===action.id&&['echo','guardian'].includes(i.type));
+   peaceful();inCountry();if(action.id===region+':guardian'&&!s.seals.includes(region))requireThat(s.adventure.values?.[region]?.completed,`Maîtrise d’abord la valeur ${GUARDIAN_VALUES[region]?.value||'du Gardien'}.`);let item=worldItems(region,s).find(i=>i.id===action.id&&['echo','guardian'].includes(i.type));
    requireThat(item,'Cette rencontre n’existe pas.');
-   const boss=item.type==='guardian';if(boss)requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');
+   const boss=item.type==='guardian';if(boss){requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');if(!s.seals.includes(region))requireThat(s.adventure.values?.[region]?.completed,`Maîtrise d’abord la valeur ${GUARDIAN_VALUES[region]?.value||'du Gardien'}.`);}
    if(action.outdoor){requireThat(!boss&&s.adventure.outdoorCredits>0,'Marche pour révéler un écho du dehors.');s=adventure(s,{outdoorCredits:s.adventure.outdoorCredits-1});}
    const enc={...makeEncounter(cardById[item.card],s,boss),recoveries:2},expert=s.adventure.difficulty==='expert';
    if(boss&&s.adventure.values?.[region]?.completed){enc.focus=Math.min(3,enc.focus+1);enc.hp+=12;enc.maxHP+=12;enc.stats.health+=12;}
