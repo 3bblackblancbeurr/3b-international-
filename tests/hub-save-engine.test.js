@@ -28,7 +28,7 @@ test('Shared reducer validates full Hub mission lifecycle and grants reward once
  assert.throws(()=>applyWorldAction(save,{type:'hubMissionClaim',id:'first_echo'}),/Récompense indisponible/);
 });
 
-test('Hub mission objectives must be completed in order',()=>{
- let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'first_steps'});
- assert.throws(()=>applyWorldAction(save,{type:'hubMissionStep',id:'first_steps',objective:2}),/Objectif invalide/);
+test('Manual Hub mission objectives must be completed in order',()=>{
+ let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'first_echo'});
+ assert.throws(()=>applyWorldAction(save,{type:'hubMissionStep',id:'first_echo',objective:2}),/Objectif invalide/);
 });
