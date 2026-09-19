@@ -54,7 +54,7 @@ export function AvatarPanel({save,act,onDone}){
  const recovered=useMemo(()=>readDraft(initial),[initial]);
  const [draft,setDraft]=useState(recovered.avatar),[message,setMessage]=useState(recovered.recovered?'Brouillon local restauré.':''),[weaponMessage,setWeaponMessage]=useState('');
  const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(readPresets);
- const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true),[lighting,setLighting]=useState('studio');
+ const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true),[lighting,setLighting]=useState('studio'),[previewQuality,setPreviewQuality]=useState('balanced');
  const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0);
  const stepIndex=STEPS.findIndex(([id])=>id===activeStep);
  const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],stats=weaponStats(selectedWeapon),xp=Number.isFinite(save.xp)?Math.max(0,save.xp):0;
@@ -100,12 +100,13 @@ export function AvatarPanel({save,act,onDone}){
  if(revealed)return <AvatarCinematic avatar={savedAvatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
  return <div className="avatar-editor-v2">
   <aside className="avatar-preview-v2">
-   <div className="avatar-preview-stage"><ArenaStage avatar={draft} focus={previewFocus} pose={previewPose} angle={previewAngle} weaponState={weaponDrawn?'preview':'world'} lighting={lighting} showAura={activeStep==='world'||activeStep==='finish'} showCompanion={activeStep==='world'||activeStep==='finish'}/></div>
+   <div className="avatar-preview-stage"><ArenaStage avatar={draft} focus={previewFocus} pose={previewPose} angle={previewAngle} weaponState={weaponDrawn?'preview':'world'} lighting={lighting} quality={previewQuality} showAura={activeStep==='world'||activeStep==='finish'} showCompanion={activeStep==='world'||activeStep==='finish'}/></div>
    <div className="avatar-preview-toolbar" aria-label="Contrôles de prévisualisation">
     <div><button type="button" aria-pressed={previewFocus==='body'} onClick={()=>setPreviewFocus('body')}>Corps</button><button type="button" aria-pressed={previewFocus==='face'} onClick={()=>setPreviewFocus('face')}>Visage</button></div>
     <div><button type="button" aria-pressed={previewAngle===0} onClick={()=>setPreviewAngle(0)}>Face</button><button type="button" aria-pressed={previewAngle===Math.PI/2} onClick={()=>setPreviewAngle(Math.PI/2)}>Profil</button><button type="button" aria-pressed={previewAngle===Math.PI} onClick={()=>setPreviewAngle(Math.PI)}>Dos</button></div>
     <div><button type="button" aria-pressed={previewPose==='idle'} onClick={()=>setPreviewPose('idle')}>Repos</button><button type="button" aria-pressed={previewPose==='walk'} onClick={()=>setPreviewPose('walk')}>Marche</button><button type="button" aria-pressed={previewPose==='run'} onClick={()=>setPreviewPose('run')}>Course</button><button type="button" aria-pressed={previewPose==='guard'} onClick={()=>setPreviewPose('guard')}>Garde</button><button type="button" onClick={()=>setPreviewPose('attack')}>Attaque</button><button type="button" onClick={()=>setPreviewPose('cast')}>Pouvoir</button></div>
     <div className="avatar-lighting-row">{[['studio','Studio'],['sun','Soleil'],['night','Nuit'],['rain','Pluie']].map(([id,label])=><button type="button" key={id} aria-pressed={lighting===id} onClick={()=>setLighting(id)}>{label}</button>)}</div>
+    <div className="avatar-quality-row">{[['quality','Qualité'],['balanced','Équilibré'],['fluid','Fluidité']].map(([id,label])=><button type="button" key={id} aria-pressed={previewQuality===id} onClick={()=>setPreviewQuality(id)}>{label}</button>)}</div>
     <div><button type="button" className="avatar-full-test" disabled={testing} onClick={startTest}>{testing?'Test en cours…':'TEST COMPLET'}</button></div>
    </div>
    <p className="avatar-preview-hint">Glisse pour tourner. Pince à deux doigts ou utilise la molette pour zoomer. Les changements légers ne rechargent pas le GLB.</p>
