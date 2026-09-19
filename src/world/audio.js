@@ -1,3 +1,5 @@
+import {spatialAudio} from './audio-spatial.js';
+import {audioStateProfile} from './audio-director.js';
 const NOTES={hub:174.61,france:196,italie:220,estonie:164.81,turquie:146.83,algerie:174.61,tunisie:196,maroc:146.83,espagne:164.81};
 const SCALES={
  hub:[1,1.2,1.5,2],france:[1,1.125,1.5,1.75],italie:[1,1.25,1.5,1.875],estonie:[1,1.2,1.6,2],
@@ -8,15 +10,17 @@ const hash=s=>{let h=0;for(const c of String(s||''))h=(Math.imul(h,31)+c.charCod
 
 export function createWorldAudio(){
  let ctx,master,musicBus,ambienceBus,sfxBus,voiceBus,pad=[],enabled=false,hidden=false,noiseBuffer;
- let musicTimer,ambienceTimer,currentRegion='hub',inside=false,currentWeather='clear',currentPhase='day',stepFlip=false,lastSpeech='';
+ let musicTimer,ambienceTimer,currentRegion='hub',inside=false,currentWeather='clear',currentPhase='day',audioState='exploration',stepFlip=false,lastSpeech='',voiceDucking=false,speaking=false,speechQueue=[];
+ let listenerPose={x:0,z:0,heading:0};
  const mix={master:.78,music:.34,ambience:.55,sfx:.78,voice:.9};
 
  function gainNode(value){const g=ctx.createGain();g.gain.value=value;return g;}
  function applyMix(){
   if(!ctx)return;
+  const profile=audioStateProfile(audioState),phase=currentPhase==='night'?.68:currentPhase==='dawn'?.82:currentPhase==='sunset'?.88:1,duck=voiceDucking?.38:1;
   master.gain.setTargetAtTime(clamp(mix.master)*.42,ctx.currentTime,.08);
-  musicBus.gain.setTargetAtTime(clamp(mix.music),ctx.currentTime,.08);
-  ambienceBus.gain.setTargetAtTime(clamp(mix.ambience),ctx.currentTime,.08);
+  musicBus.gain.setTargetAtTime(clamp(mix.music)*phase*profile.music*duck,ctx.currentTime,.12);
+  ambienceBus.gain.setTargetAtTime(clamp(mix.ambience)*profile.ambience*(voiceDucking?.58:1),ctx.currentTime,.12);
   sfxBus.gain.setTargetAtTime(clamp(mix.sfx),ctx.currentTime,.08);
   voiceBus.gain.setTargetAtTime(clamp(mix.voice),ctx.currentTime,.08);
  }
@@ -47,6 +51,14 @@ export function createWorldAudio(){
   g.gain.setValueAtTime(Math.max(.0001,gain),t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g).connect(bus);o.start(t);o.stop(t+duration+.03);o.onended=()=>{o.disconnect();g.disconnect();};
  }
  function tone(f,d,g,t='sine'){baseTone(f,d,g,t,sfxBus);}
+ function spatialTone(frequency,duration,gain,type='sine',pan=0){
+  if(!ctx||!enabled||hidden)return false;ctx.resume().catch(()=>{});
+  const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime,p=ctx.createStereoPanner?.();
+  o.type=type;o.frequency.setValueAtTime(Math.max(20,frequency),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,frequency*.76),t+duration);
+  g.gain.setValueAtTime(Math.max(.0001,gain),t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);
+  if(p){p.pan.value=clamp(pan);g.connect(p).connect(sfxBus);}else g.connect(sfxBus);
+  o.start(t);o.stop(t+duration+.03);o.onended=()=>{o.disconnect();g.disconnect();p?.disconnect();};return true;
+ }
  function noise(duration,gain,frequency,bus=sfxBus){
   if(!ctx||!enabled||hidden||!noiseBuffer)return;const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),volume=ctx.createGain();source.buffer=noiseBuffer;filter.type='bandpass';filter.frequency.value=frequency;filter.Q.value=.7;volume.gain.setValueAtTime(gain,ctx.currentTime);volume.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+duration);source.connect(filter).connect(volume).connect(bus);source.start();source.stop(ctx.currentTime+duration);source.onended=()=>{source.disconnect();filter.disconnect();volume.disconnect();};
  }
@@ -64,23 +76,38 @@ export function createWorldAudio(){
   else if(type==='reward'||type==='hubMissionClaim'){tone(440,.28,.08);setTimeout(()=>tone(660,.45,.07),120);}
   else tone(type==='power'?440:660,.3,.07);
  }
+ function playSpeechQueue(){
+  if(speaking||!speechQueue.length||!enabled||hidden)return;
+  const entry=speechQueue.shift(),u=new globalThis.SpeechSynthesisUtterance(entry.text),voices=globalThis.speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith(entry.lang.slice(0,2).toLowerCase())),seed=hash(entry.character);
+  if(voices.length)u.voice=voices[seed%voices.length];u.lang=entry.lang;u.rate=.9+(seed%9)/100;u.pitch=.82+(seed%24)/100;u.volume=clamp(mix.voice);
+  speaking=true;voiceDucking=true;applyMix();
+  const done=()=>{speaking=false;voiceDucking=false;applyMix();playSpeechQueue();};u.onend=done;u.onerror=done;
+  globalThis.speechSynthesis.speak(u);
+ }
  function speak(text,{character='narrator',lang='fr-FR'}={}){
   if(!enabled||hidden||!text||typeof globalThis.speechSynthesis==='undefined'||typeof globalThis.SpeechSynthesisUtterance==='undefined')return false;
-  const clean=String(text).replace(/\s+/g,' ').slice(0,420);if(clean===lastSpeech)return false;lastSpeech=clean;speechSynthesis.cancel();
-  const u=new globalThis.SpeechSynthesisUtterance(clean),voices=globalThis.speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith(lang.slice(0,2).toLowerCase())),seed=hash(character);
-  if(voices.length)u.voice=voices[seed%voices.length];u.lang=lang;u.rate=.9+(seed%9)/100;u.pitch=.82+(seed%24)/100;u.volume=clamp(mix.voice);
-  globalThis.speechSynthesis.speak(u);return true;
+  const clean=String(text).replace(/\s+/g,' ').slice(0,420);if(clean===lastSpeech)return false;lastSpeech=clean;
+  speechQueue.push({text:clean,character,lang});if(speechQueue.length>5)speechQueue=speechQueue.slice(-5);playSpeechQueue();return true;
+ }
+ function setListener(position={},heading=0){listenerPose={x:Number(position.x)||0,z:Number(position.z)||0,heading:Number(heading)||0};}
+ function spatialEvent(kind,source={}){
+  const spatial=spatialAudio(listenerPose,source,kind==='hubTransport'?70:46);if(spatial.gain<.002)return false;
+  const cfg={hubNpc:[420,.16,.055,'sine'],hubMission:[520,.2,.07,'triangle'],hubSecret:[690,.28,.08,'sine'],hubSecretStep:[610,.18,.065,'triangle'],hubGuardian:[260,.34,.085,'triangle'],valueTrial:[330,.3,.08,'sine'],hubTransport:[150,.26,.07,'triangle']}[kind]||[380,.16,.045,'sine'];
+  return spatialTone(cfg[0],cfg[1],cfg[2]*spatial.gain,cfg[3],spatial.pan);
  }
  return{
-  enable(value,id){enabled=value;try{if(value){init();region(id);ctx?.resume().catch(()=>{});}else{globalThis.speechSynthesis?.cancel?.();ctx?.suspend().catch(()=>{});}}catch{}},
+  enable(value,id){enabled=value;try{if(value){init();region(id);ctx?.resume().catch(()=>{});playSpeechQueue();}else{speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();applyMix();ctx?.suspend().catch(()=>{});}}catch{}},
   region,
   ambience(id,interior){currentRegion=id;inside=!!interior;},
   weather(value){currentWeather=value||'clear';},
-  phase(value){currentPhase=value||'day';if(!ctx)return;const factor=currentPhase==='night'?.68:currentPhase==='dawn'?.82:currentPhase==='sunset'?.88:1;musicBus.gain.setTargetAtTime(clamp(mix.music)*factor,ctx.currentTime,.5);},
+  phase(value){currentPhase=value||'day';applyMix();},
+  state(value){audioState=audioStateProfile(value)?value:'exploration';applyMix();},
+  listener:setListener,
+  spatialEvent,
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);applyMix();},
   step(id){stepFlip=!stepFlip;noise(.06,inside?.06:.035,inside?520:1450);tone((inside?100:id==='estonie'?175:132)*(stepFlip?1:1.04),.055,.025,'triangle');},
   event,speak,transport,
   visibility(value){hidden=value;if(!ctx)return;if(value){globalThis.speechSynthesis?.pause?.();ctx.suspend().catch(()=>{});}else if(enabled){globalThis.speechSynthesis?.resume?.();ctx.resume().catch(()=>{});}},
-  close(){clearInterval(musicTimer);clearInterval(ambienceTimer);globalThis.speechSynthesis?.cancel?.();enabled=false;pad.forEach(p=>p.o.stop());ctx?.close();}
+  close(){clearInterval(musicTimer);clearInterval(ambienceTimer);speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();enabled=false;pad.forEach(p=>p.o.stop());ctx?.close();}
  };
 }
