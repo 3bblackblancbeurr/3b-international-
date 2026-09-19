@@ -23,19 +23,29 @@ test('Hub event discovery rewards once and survives reducer normalization',()=>{
  assert.deepEqual({xp:save.xp,shards:save.shards},after);
 });
 
-test('Hub secret unlock is gated by real recorded progress and rewarded once',()=>{
+test('Hub secret unlock requires physical ordered progress and rewards once',()=>{
  let save=blankSave();
- assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'}),/condition/);
- save={...save,hub:{...save.hub,missions:{...save.hub.missions,boat_without_flag:{...save.hub.missions.boat_without_flag,status:'completed',completedObjectives:2}}}};
+ assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_three_lights'}),/condition/);
+ assert.throws(()=>applyWorldAction(save,{type:'hubSecretStep',id:'secret_archive_reverse',step:0}),/Étape secrète invalide/);
+ save=applyWorldAction(save,{type:'hubSecretStep',id:'secret_three_lights',step:0});
+ save=applyWorldAction(save,{type:'hubSecretStep',id:'secret_three_lights',step:1});
+ save=applyWorldAction(save,{type:'hubSecretStep',id:'secret_three_lights',step:2});
  const before={xp:save.xp,shards:save.shards};
- save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'});
- assert.ok(save.hub.secrets.includes('secret_abandoned_quay'));
+ save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_three_lights'});
+ assert.ok(save.hub.secrets.includes('secret_three_lights'));
  assert.equal(save.xp,before.xp+80);
  assert.equal(save.shards,before.shards+20);
  const after={xp:save.xp,shards:save.shards};
- save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'});
+ save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_three_lights'});
  assert.deepEqual({xp:save.xp,shards:save.shards},after);
  assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_not_real'}),/Secret Hub inconnu/);
+});
+
+test('Archive reverse secret enforces the canonical reverse order',()=>{
+ let save=blankSave();
+ for(const step of [3,2,1,0])save=applyWorldAction(save,{type:'hubSecretStep',id:'secret_archive_reverse',step});
+ save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_archive_reverse'});
+ assert.ok(save.hub.secrets.includes('secret_archive_reverse'));
 });
 
 test('Hub daily weather is deterministic and uses supported states',()=>{
