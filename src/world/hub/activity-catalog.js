@@ -17,6 +17,14 @@ export const HUB_NPC_IDS=[
  'youssef_ben_salem','lucia_navaro','meryem_alaoui','noah_leroux','the_conductor','kadra_zerrouki','adrian_sol','soraya_najem',
 ];
 export const HUB_TRANSPORT_TYPES=['train','boat'];
+export const HUB_SECRET_STEP_COUNTS={
+ secret_three_lights:3,
+ secret_rain_symbol:3,
+ secret_workers_names:8,
+ secret_broken_elevator:1,
+ secret_archive_reverse:4,
+};
+export const HUB_SECRET_STEP_SET=new Set(Object.keys(HUB_SECRET_STEP_COUNTS));
 export const HUB_EVENT_SET=new Set(HUB_EVENT_IDS);
 export const HUB_SECRET_SET=new Set(HUB_SECRET_IDS);
 export const HUB_DISTRICT_SET=new Set(HUB_DISTRICT_IDS);
