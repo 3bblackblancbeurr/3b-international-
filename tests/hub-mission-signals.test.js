@@ -60,3 +60,43 @@ test('Silent Cable requires inspect, repair, then an actual telepheric ride',()=
  save=applyWorldAction(save,{type:'hubTransportRide',transport:'telepheric',from:'docks',to:'broken_circle_tower',night:false,dateKey:'2026-09-19'});
  assert.equal(save.hub.missions.silent_cable.status,'completed');
 });
+
+
+test('Rooftops Circle needs two distinct zipline routes',()=>{
+ let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'rooftops_circle'});
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'rooftops_circle',task:'course'});
+ assert.equal(save.hub.missions.rooftops_circle.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'gardens',to:'docks',night:false,dateKey:'2026-09-19'});
+ assert.equal(save.hub.missions.rooftops_circle.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'gardens',to:'docks',night:false,dateKey:'2026-09-19'});
+ assert.equal(save.hub.missions.rooftops_circle.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'archives',to:'community',night:false,dateKey:'2026-09-19'});
+ assert.equal(save.hub.missions.rooftops_circle.completedObjectives,2);
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'rooftops_circle',task:'viewpoint'});
+ assert.equal(save.hub.missions.rooftops_circle.status,'completed');
+});
+
+test('Wagon Eight requires a night train before wagon and eight-value tasks',()=>{
+ let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'wagon_eight'});
+ save=applyWorldAction(save,{type:'hubTransportRide',transport:'train',from:'heritage_square',to:'archives',night:false,dateKey:'2026-09-19'});
+ assert.equal(save.hub.missions.wagon_eight.completedObjectives,0);
+ save=applyWorldAction(save,{type:'hubTransportRide',transport:'train',from:'heritage_square',to:'archives',night:true,dateKey:'2026-09-19'});
+ assert.equal(save.hub.missions.wagon_eight.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'wagon_eight',task:'missing_wagon'});
+ assert.equal(save.hub.missions.wagon_eight.completedObjectives,2);
+ for(let i=1;i<=8;i++)save=applyWorldAction(save,{type:'hubMissionTask',id:'wagon_eight',task:'value_'+i});
+ assert.equal(save.hub.missions.wagon_eight.status,'completed');
+});
+
+test('Voices Square counts three distinct canonical residents',()=>{
+ let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'voices_square'});
+ save=applyWorldAction(save,{type:'hubNpcTalk',id:'amira_mansouri'});
+ save=applyWorldAction(save,{type:'hubNpcTalk',id:'amira_mansouri'});
+ assert.equal(save.hub.missions.voices_square.completedObjectives,0);
+ save=applyWorldAction(save,{type:'hubNpcTalk',id:'lucia_navaro'});
+ save=applyWorldAction(save,{type:'hubNpcTalk',id:'soraya_najem'});
+ assert.equal(save.hub.missions.voices_square.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'voices_square',task:'resolve_dispute'});
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'voices_square',task:'organize_meeting'});
+ assert.equal(save.hub.missions.voices_square.status,'completed');
+});
