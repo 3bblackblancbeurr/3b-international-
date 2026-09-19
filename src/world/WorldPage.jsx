@@ -35,6 +35,7 @@ import './companions.css';
 import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
 import {hubNpcDialogue} from './hub/npc-dialogue.js';
+import {hubDialogueScene} from './hub/dialogue-v3.js';
 import {isAutoHubMission} from './hub/mission-signals.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
@@ -64,7 +65,7 @@ function WorldSession({uid,goTo}){
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
- const [combatImpact,setCombatImpact]=useState(null);
+ const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null);
  const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),dialogueTurns=useRef(new Map());
  saveRef.current=save;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
@@ -87,10 +88,16 @@ function WorldSession({uid,goTo}){
  }
  function travel(id){if(!act({type:'visit',region:id}))return;scene.current?.travel(id);audio.current?.region(id);setPanel(null);chime();}
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
- function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
+ function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
-  if(item.type==='hubNpc'){if(!act({type:'hubNpcTalk',id:item.npcId}))return;const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,saveRef.current.hub?.missions,turn));return;}
+  if(item.type==='hubNpc'){
+   const next=act({type:'hubNpcTalk',id:item.npcId});if(!next)return;
+   const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);
+   const scene=hubDialogueScene(item,{hour:new Date().getHours(),missionState:next.hub?.missions,talks:next.hub?.stats?.npcTalks?.[item.npcId]||0});
+   if(scene.choices?.length){setNpcDialogue({item,scene});setPanel('hubDialogue');}
+   else announce(scene.text||hubNpcDialogue(item,next.hub?.missions,turn));return;
+  }
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
@@ -165,7 +172,8 @@ function WorldSession({uid,goTo}){
   {error&&<div className="world-failure" role="alert"><h2>Reprendre l’exploration</h2><p>{error}</p><button className="world-primary" onClick={()=>location.reload()}>Recharger le monde</button><button onClick={()=>goTo('home')}>Retour à l’application</button></div>}
   {fieldCombat&&<FieldEncounter save={save} act={act} onRetreat={finishEncounter} onPause={()=>setPanel('encounterPause')} snapshot={snapshot}/>}
   {!panel&&snapshot.region!=='hub'&&<>{!(snapshot.waypoint&&snapshot.remaining>7)&&<button className="paris-journal-link" onClick={()=>setPanel('paris')}>La vie du quartier</button>}{snapshot.interior&&<div className="paris-place">{snapshot.interior==='atelier'?'Atelier des Verrières':'Refuge des Liens'}</div>}</>}
-  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena'].includes(panel)}>
+  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena'].includes(panel)}>
+   {panel==='hubDialogue'&&npcDialogue&&<div className="hub-dialogue-v3"><span className="world-kicker">{npcDialogue.item.role} · {npcDialogue.item.activity||npcDialogue.item.district}</span><h3>{npcDialogue.item.name}</h3><p>{npcDialogue.scene.text}</p><div className="world-actions">{npcDialogue.scene.choices.map(choice=><button key={choice.id} onClick={()=>{const next=act({type:'hubDialogueChoice',npcId:npcDialogue.item.npcId,sceneId:npcDialogue.scene.id,choiceId:choice.id});if(next){announce(choice.value+' · choix mémorisé');setNpcDialogue(null);setPanel(null);}}}>{choice.label}</button>)}</div></div>}
    {panel==='party'&&<PartyPanel uid={uid} state={partyState} save={save} connection={connection} onState={data=>partyLink.current?.update(data)} onFlush={async()=>{const result=await sync();if(result?.pending)throw Error('Attends la synchronisation de ta progression avant de contribuer.');}} onRefreshWorld={refreshWorld} onLocate={locateMember} onLogin={()=>goTo('member')} onSignal={kind=>{partyLink.current?.signal(kind);setPanel(null);}}/>}
    {panel==='encounterPause'&&<div className="encounter-pause"><h3>Ton groupe t’attend.</h3><p>Tu peux reprendre cette rencontre, y compris après avoir rechargé la page.</p><button className="world-primary" onClick={()=>setPanel('encounter')}>Reprendre le combat</button><button onClick={finishEncounter}>Se replier dans le monde</button><small>{save.adventure.encounter?.patrol?'La provision de cette expédition reste consommée. Tes constructions et tes compagnons sont conservés.':'Un repli ne donne aucune récompense.'}</small></div>}
    {panel==='heritage'&&country&&<div className="heritage-panel"><span className="world-kicker">{HERITAGE[country.id].city} · {country.name}</span><h3>{HERITAGE[country.id].name}</h3><p>{HERITAGE[country.id].form}</p><p>Une interprétation 3D à l’échelle du jeu. Ce pays réunit plusieurs lieux et paysages : il ne reproduit pas le plan d’une ville réelle.</p><p>Les travaux du pays rallument le parvis. Continue ensuite à développer ton refuge, entraîner tes compagnons et protéger les environs.</p><div className="world-actions"><button className="world-primary" onClick={()=>{setPanel(null);scene.current?.inspectLandmark();}}>Admirer le monument</button><button onClick={()=>setPanel('story')}>Les travaux du pays</button></div><a href={HERITAGE[country.id].source} target="_blank" rel="noreferrer">Découvrir le lieu réel ↗</a></div>}
