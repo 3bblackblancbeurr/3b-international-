@@ -5,6 +5,7 @@ import {applyWorldAction} from '../src/world/engine.js';
 import {worldCinematicEvents,isWorldCinematicKey} from '../src/world/cinematic-events.js';
 import {storyCinematicPresentation} from '../src/world/story-cinematic.js';
 import {GUARDIAN_VALUES,guardianHubPresence} from '../src/world/guardian-values.js';
+import {chapterObjective} from '../src/world/chapters.js';
 
 test('Gold Master cinematic keys are bounded and persistent',()=>{
  assert.equal(isWorldCinematicKey('value:france'),true);
@@ -70,4 +71,16 @@ test('a guardian appears in the Hub only after seal and full restoration',()=>{
  assert.equal(visible.length,1);
  assert.equal(visible[0].name,'Céliane');
  assert.equal(visible[0].value,'Justice');
+});
+
+
+test('restored France explicitly guides Céliane back to the Hub until homecoming is acknowledged',()=>{
+ let save=blankSave();save.region='france';save.seals=['france'];
+ save.adventure.chapters.france={helped:true,powers:['ally','ambiance','terrain'],solved:true,restored:3,challenge:false,choice:'garden',board:[]};
+ let objective=chapterObjective(save,'france');
+ assert.equal(objective.target,'hub');
+ assert.match(objective.title,/Céliane/);
+ save.adventure.cinematicSeen=['homecoming:france'];
+ objective=chapterObjective(save,'france');
+ assert.equal(objective.target,'france:guardian');
 });
