@@ -11,7 +11,7 @@ export function fitWeapon(model,avatar,{drawn=true}={}){
  const tier=Math.max(0,Math.min(3,avatar.weaponForm||0)),evolved=tier>0,orbiters=[],splitBlades=[];
  if(w.kind==='Bouclier'||w.kind==='Éventail'){
   const count=w.kind==='Bouclier'?8:7;for(let i=0;i<count;i++){const a=w.kind==='Bouclier'?i*Math.PI/4:i*Math.PI/6;const o=mesh(new T.BoxGeometry(.15,.34,.035),i%2?light:metal,Math.sin(a)*(evolved?.32:.2),.3+Math.cos(a)*(evolved?.32:.2));o.rotation.z=-a;}
- }else if(w.kind==='Arc'||w.id==='romano'&&evolved){
+ }else if(w.kind==='Arc'||w.id==='romano'){
   const o=mesh(new T.TorusGeometry(.47,.025,5,24,Math.PI),metal,0,.3);o.rotation.z=-Math.PI/2;rod(0,-.17,0,0,.77,0,.004,light);rod(-.25,.3,0,.4,.3,0,.012,light);
  }else if(w.kind==='Griffes'){for(let i=0;i<3;i++)blade((i-1)*.06,.05,.48);}
  else if(w.kind==='Gantelet'){
