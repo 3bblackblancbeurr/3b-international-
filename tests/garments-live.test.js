@@ -21,3 +21,13 @@ test('live garment rebuild removes old generated accessory meshes',()=>{
  garments.dispose();
  for(const piece of generated)assert.equal(piece.parent,null);
 });
+
+
+test('cloth motion stays finite when preview speed changes',()=>{
+ const model=avatarRig();
+ const garments=fitGarments(model,{cloth:'#445566',accentColor:'#d7bd83',bootColor:'#4a382d',metalColor:'#c9ad75',outerColor:'#223344',fabric:'cotton',headwear:'none',outer:'cape',bag:false,belt:'none',pendant:false,capeLength:1,hoodFit:1,pattern:'uni',weapon:'heritage'});
+ for(let i=0;i<120;i++)garments.update(i/30,{speed:i<60?0:6,turn:i%20===0?.8:0});
+ let checked=0;model.traverse(o=>{if(o.geometry?.attributes?.position){for(const value of o.geometry.attributes.position.array)assert.ok(Number.isFinite(value));checked++;}});
+ assert.ok(checked>0);
+ garments.dispose();
+});
