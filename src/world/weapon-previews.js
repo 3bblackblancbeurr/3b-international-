@@ -3,7 +3,8 @@ const commonsPage=file=>`https://commons.wikimedia.org/wiki/File:${encodeURIComp
 
 const SOURCES={
   sabre:{file:'Sabre of Henryk Dembinski detail.jpg',credit:'Wikimedia Commons · CC0',position:'50% 48%'},
-  spear:{file:'Hand Spear (Nage-yari) or Javelin (Te-yari) with Sheath MET LC-36 25 1975a b-004.jpg',credit:'The Metropolitan Museum of Art · CC0',position:'50% 50%'},\n  trident:{file:'Trident, Burmese, 18th century.JPG',credit:'Wikimedia Commons · domaine public',position:'50% 48%'},
+  spear:{file:'Hand Spear (Nage-yari) or Javelin (Te-yari) with Sheath MET LC-36 25 1975a b-004.jpg',credit:'The Metropolitan Museum of Art · CC0',position:'50% 50%'},
+  trident:{file:'Trident, Burmese, 18th century.JPG',credit:'Wikimedia Commons · domaine public',position:'50% 48%'},
   bow:{file:'Recurve bow.jpg',credit:'Johnwxh30 · Wikimedia Commons · CC0',position:'50% 52%'},
   knives:{file:'Throwing knives.jpg',credit:'www.knifethrowing.info · CC BY-SA 3.0',position:'50% 50%'},
   gauntlet:{file:'Gauntlet for the Right Hand, Belonging to the Armor of Don Alonzo Pérez de Guzman el Bueno (1550–1619), Count of Niebla and Duke of Medina-Sidonia MET DP104361.jpg',credit:'The Metropolitan Museum of Art · CC0',position:'50% 52%'},
