@@ -52,3 +52,30 @@ export function recordHubSecret(hub,id){
  next=step(next,'boat_without_flag',id==='secret_abandoned_quay'&&next.missions.boat_without_flag?.completedObjectives===1);
  return next;
 }
+
+
+export function canUnlockHubSecret(hub,id){
+ const mission=(missionId)=>hub.missions?.[missionId];
+ const hasDistrict=(district)=>hub.districts?.includes(district);
+ const transit=(prefix)=>hub.transits?.filter((value)=>value.startsWith(prefix))||[];
+ const npcs=new Set(hub.npcs||[]);
+ switch(id){
+  case 'secret_last_train':return new Set(transit('train:')).size>=3;
+  case 'secret_waterfall_door':return hasDistrict('gardens')&&mission('eight_seeds')?.status==='completed';
+  case 'secret_three_lights':return hasDistrict('heritage_square')&&mission('first_steps')?.status==='completed';
+  case 'secret_rain_symbol':return hub.events?.includes('heavy_rain_echo');
+  case 'secret_silent_cabin':return transit('telepheric:').length>0;
+  case 'secret_roof_signal':return hasDistrict('archives');
+  case 'secret_abandoned_quay':return transit('boat:').length>0;
+  case 'secret_workers_names':return hasDistrict('gardens')&&npcs.size>=8;
+  case 'secret_lost_station':return hasDistrict('community')&&npcs.size>=4;
+  case 'secret_broken_elevator':return hasDistrict('broken_circle_tower')&&mission('eight_signals')?.status==='completed';
+  case 'secret_arena_floor':return hasDistrict('arena')&&mission('passion_trial')?.status==='completed';
+  case 'secret_market_code':return hasDistrict('commerce')&&npcs.size>=5;
+  case 'secret_city_guest':return hasDistrict('city3b_portal')&&npcs.size>=3;
+  case 'secret_fog_tree':return hub.events?.includes('dock_fog');
+  case 'secret_archive_reverse':return mission('first_echo')?.status==='active'&&mission('first_echo')?.completedObjectives>=2;
+  case 'secret_train_window':return new Set(transit('train:')).size>=8;
+  default:return false;
+ }
+}
