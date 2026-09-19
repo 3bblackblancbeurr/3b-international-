@@ -36,6 +36,7 @@ import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
 import {hubNpcDialogue} from './hub/npc-dialogue.js';
 import {isAutoHubMission} from './hub/mission-signals.js';
+import {isPhysicalHubMission} from './hub/mission-tasks.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -95,12 +96,13 @@ function WorldSession({uid,goTo}){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
    if(current.status==='active'){
-    if(isAutoHubMission(item.missionId)){announce(item.name+' · objectif '+(current.completedObjectives+1)+'/'+current.totalObjectives+' · '+(item.objectives?.[current.completedObjectives]||'continue dans le monde'));return;}
+    if(isAutoHubMission(item.missionId)||isPhysicalHubMission(item.missionId)){announce(item.name+' · objectif '+(current.completedObjectives+1)+'/'+current.totalObjectives+' · '+(item.objectives?.[current.completedObjectives]||'continue dans le monde'));return;}
     const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;
    }
    if(current.status==='completed'&&!current.claimed){const next=act({type:'hubMissionClaim',id:item.missionId});if(next)announce(item.name+' · récompense récupérée');return;}
    announce(item.name+' · mission déjà accomplie');return;
   }
+  if(item.type==='hubMissionTask'){const next=act({type:'hubMissionTask',id:item.missionId,task:item.taskId,evidence:item.evidence||{}});if(next){const current=next.hub.missions[item.missionId];announce(item.name+' · '+(current.status==='completed'?'mission terminée':'progression enregistrée'));chime();}return;}
   if(item.type==='hubTransport'){const now=new Date(),ride=scene.current?.rideHubTransport(item);if(!ride){announce('Ce transport n’est pas disponible pour le moment.');return;}const next=act({type:'hubTransportRide',transport:ride.transport,from:ride.from,to:ride.to,night:now.getHours()>=20||now.getHours()<6,dateKey:now.toISOString().slice(0,10)});if(next)announce(item.name+' · départ vers '+ride.to);return;}
   if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
   if(item.type==='hubSecretStep'){

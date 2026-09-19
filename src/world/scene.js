@@ -103,6 +103,11 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const ob=mesh('sphere',mat,item.x,y+1.35,item.z,.34,.65,.34);animations.push({mesh:ob,type:'float',y:y+1.35,itemId:item.id});
     const ring=mesh('ring',mat,item.x,y+.08,item.z,.9,.9,.9);ring.rotation.x=-Math.PI/2;itemVisuals.set(item.id,[ob,ring]);continue;
    }
+   if(item.type==='hubMissionTask'){
+    const y=groundY(item.x,item.z),mat=material('#8fd8ff',{emissive:'#00a8ff',emissiveIntensity:.42,metalness:.28});
+    const core=mesh('sphere',mat,item.x,y+1.05,item.z,.3,.5,.3);const ring=mesh('ring',mat,item.x,y+.08,item.z,.72,.72,.72);ring.rotation.x=-Math.PI/2;
+    itemVisuals.set(item.id,[core,ring]);continue;
+   }
    if(item.type==='hubTransport'){
     const y=groundY(item.x,item.z),colors={train:'#d6b46a',boat:'#00a8ff',telepheric:'#b9d7ff',zipline:'#ffdf88'},color=colors[item.transport]||'#00a8ff',mat=material(color,{emissive:color,emissiveIntensity:item.boardable===false?.08:.3,metalness:.5});
     const pylon=mesh('cylinder',mat,item.x,y+.9,item.z,item.boardable===false?.2:.3,item.boardable===false?1.25:1.8,item.boardable===false?.2:.3);const ring=mesh('ring',mat,item.x,y+1.9,item.z,.72,.72,.72);ring.rotation.x=Math.PI/2;itemVisuals.set(item.id,[pylon,ring]);continue;
