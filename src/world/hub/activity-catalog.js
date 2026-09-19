@@ -16,7 +16,7 @@ export const HUB_NPC_IDS=[
  'leyla_demir','maarja_saar','giulia_ferri','omar_el_fassi','amira_mansouri','elio_romano','arda_kaya','evelin_tamm',
  'youssef_ben_salem','lucia_navaro','meryem_alaoui','noah_leroux','the_conductor','kadra_zerrouki','adrian_sol','soraya_najem',
 ];
-export const HUB_TRANSPORT_TYPES=['train','boat'];
+export const HUB_TRANSPORT_TYPES=['train','boat','telepheric','zipline'];
 export const HUB_SECRET_STEP_COUNTS={
  secret_three_lights:3,
  secret_rain_symbol:3,
