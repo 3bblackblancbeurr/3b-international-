@@ -116,6 +116,11 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const core=mesh('sphere',mat,item.x,y+1.45,item.z,.46,.7,.46);const ring=mesh('ring',mat,item.x,y+.1,item.z,1.2,1.2,1.2);ring.rotation.x=-Math.PI/2;
     animations.push({mesh:core,type:'float',y:y+1.45,itemId:item.id});itemVisuals.set(item.id,[core,ring]);continue;
    }
+   if(item.type==='hubSecretStep'){
+    const y=groundY(item.x,item.z),color=item.done?'#58616b':item.expected?'#d6b46a':'#00a8ff',mat=material(color,{emissive:color,emissiveIntensity:item.done?.05:.35,metalness:.35});
+    const core=mesh('sphere',mat,item.x,y+.85,item.z,.24,.4,.24);const ring=mesh('ring',mat,item.x,y+.08,item.z,.55,.55,.55);ring.rotation.x=-Math.PI/2;
+    itemVisuals.set(item.id,[core,ring]);continue;
+   }
    if(item.type==='hubSecret'){continue;}
    if(item.type==='job'||item.type==='cooperation'||item.type==='cafe'||item.type==='story'||item.type==='atelier'||item.type==='sanctuary'||item.type==='camp'||item.type==='resource'||item.type==='landmark'||item.type==='vista')continue;
    if(item.type==='survey'){const y=groundY(item.x,item.z);mesh('cylinder',stone,item.x,y+.5,item.z,.52,1,.52);const book=mesh('box',gold,item.x,y+1.15,item.z,.9,.1,.62);book.rotation.x=.25;obstacles.push({x:item.x,z:item.z,r:.65});continue;}
