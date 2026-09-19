@@ -11,8 +11,8 @@ export const PLAYABLE_MISSION_EVENTS=Object.freeze({
     {type:'arrive',id:'heritage_square'}
   ],
   first_echo:[
-    {type:'visit',id:'memory_archives'},
     {type:'inspect',id:'archive_signal'},
+    {type:'restore',id:'archive_memory'},
     {type:'activate',id:'archive_beacon'}
   ],
   rooftops_circle:[
