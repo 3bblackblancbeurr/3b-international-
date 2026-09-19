@@ -34,7 +34,7 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
   const previous=currentAvatar||{},nextRecipe=avatarRecipe(nextAvatar);
   const garmentKeys=['headwear','outer','bag','belt','pendant','outerColor','metalColor','accentColor','bootColor','fabricColor','color','fabric','pattern','patternScale','patternRotation','patternIntensity','capeLength','hoodFit'];
   const garmentsChanged=forceGarments||garmentKeys.some(key=>previous?.[key]!==nextAvatar?.[key]);
-  const weaponChanged=previous?.weapon!==nextAvatar?.weapon||previous?.weaponForm!==nextAvatar?.weaponForm;
+  const weaponChanged=previous?.weapon!==nextAvatar?.weapon||previous?.weaponForm!==nextAvatar?.weaponForm||previous?.handedness!==nextAvatar?.handedness;
   currentAvatar={...nextAvatar};currentAvatarSignature=signature;recipe=nextRecipe;const skinTone=skinTint(recipe);
   const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);
   if(garmentsChanged){garments?.dispose();pattern?.dispose();pattern=garmentPattern(recipe);garments=fitGarments(model,recipe);}
@@ -69,7 +69,7 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
      else if(!card&&/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
      else if(!card&&/BootColor/.test(m.name))m.color.set(recipe.bootColor);
     }
-    if(o.morphTargetDictionary)for(const [plus,minus,value] of [['FaceWide','FaceNarrow',recipe.face],['JawStrong','JawSoft',recipe.jaw],['NoseLarge','NoseSmall',recipe.nose]])for(const [key,v] of [[plus,Math.max(0,value)],[minus,Math.max(0,-value)]]){const index=o.morphTargetDictionary[key];if(index!==undefined)o.morphTargetInfluences[index]=v;}
+    if(o.morphTargetDictionary){for(const [plus,minus,value] of [['FaceWide','FaceNarrow',recipe.face],['JawStrong','JawSoft',recipe.jaw],['NoseLarge','NoseSmall',recipe.nose]])for(const [key,v] of [[plus,Math.max(0,value)],[minus,Math.max(0,-value)]]){const index=o.morphTargetDictionary[key];if(index!==undefined)o.morphTargetInfluences[index]=v;}if(['Blink_L','Blink_R','EyeBlink_L','EyeBlink_R'].some(key=>o.morphTargetDictionary[key]!==undefined)&&!blinkMeshes.includes(o))blinkMeshes.push(o);}
    }
   });
   if(!card){const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);}
