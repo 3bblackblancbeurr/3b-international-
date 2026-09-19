@@ -45,6 +45,7 @@ export function buildHubRuntimeItems({
   eventContext = {},
   hubState = null,
   seals = [],
+  restoredRegions = [],
 }) {
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
@@ -134,7 +135,7 @@ export function buildHubRuntimeItems({
     return {id:`hub:zipline:${line.id}:${stopIndex}`,type:'hubTransport',transport:'zipline',line:line.id,stopIndex,district,boardable:stopIndex===0,name:`Tyrolienne ${line.id} · ${plan.districts.find((entry)=>entry.id===district)?.name||district}`,x:center.x+d.x,z:center.z+d.z};
   }));
 
-  const guardianItems=guardianHubPresence(seals).map((guardian,index)=>{
+  const guardianItems=guardianHubPresence(seals,restoredRegions).map((guardian,index)=>{
     const center=hubDistrictPosition(plan,guardian.district),d=offset(`guardian:${guardian.region}`,5);
     return {id:`hub:guardian:${guardian.region}`,type:'hubGuardian',region:guardian.region,card:guardian.card,name:guardian.name,value:guardian.value,district:guardian.district,x:center.x+d.x,z:center.z+d.z,range:6,index};
   });
