@@ -62,7 +62,7 @@ export function fitWeapon(model,avatar,{drawn=true,library=null}={}){
   const bind=bindRelative.get(spec.bone)||tmpRel;tmpDelta.copy(tmpRel).multiply(tmpInvBind.copy(bind).invert());tmpBase.setFromEuler(tmpEuler.set(...spec.rotation));targetQuat.copy(tmpDelta).multiply(tmpBase).normalize();tmpOffset.set(...spec.position).applyQuaternion(tmpDelta);targetPos.add(tmpOffset);targetScale.setScalar(spec.scale||1);return true;
  }
  function place(group,spec,scaleFactor=1){if(!sampleMount(spec))return false;group.position.copy(targetPos);group.quaternion.copy(targetQuat);group.scale.copy(targetScale).multiplyScalar(scaleFactor);return true;}
- function applyInitial(){const hidden=!drawn&&profile.stow==='hidden',spec=hidden?profile.grip:(drawn?profile.grip:profile.holster||profile.grip);place(root,spec,hidden?.02:1);root.visible=!hidden||drawn;if(profile.holster&&supportRoot.children.length)place(supportRoot,profile.holster,1);}
+ function applyInitial(){const hidden=!drawn&&profile.stow==='hidden',spec=hidden?profile.grip:(drawn?profile.grip:profile.holster||profile.grip);place(root,spec,hidden ? .02 : 1);root.visible=!hidden||drawn;if(profile.holster&&supportRoot.children.length)place(supportRoot,profile.holster,1);}
  applyInitial();
 
  let assetScene=null,assetSource='fallback',disposed=false;
@@ -86,7 +86,7 @@ export function fitWeapon(model,avatar,{drawn=true,library=null}={}){
   update(time,combat={}){
    const dt=Math.max(0,Math.min(.1,time-lastTime));lastTime=time;separation+=(Number(combat.detached>0)-separation)*(1-Math.exp(-dt*14));
    const hidden=!drawn&&profile.stow==='hidden',spec=hidden?profile.grip:(drawn?profile.grip:profile.holster||profile.grip);
-   if(sampleMount(spec)){const duration=Math.max(.08,drawn?profile.drawTime:profile.sheatheTime),blend=1-Math.exp(-dt*4/duration);root.position.lerp(targetPos,blend);root.quaternion.slerp(targetQuat,blend);const target=targetScale.clone().multiplyScalar(hidden?.02:1);root.scale.lerp(target,blend);root.visible=drawn||profile.stow!=='hidden'||root.scale.length()>.08;}
+   if(sampleMount(spec)){const duration=Math.max(.08,drawn?profile.drawTime:profile.sheatheTime),blend=1-Math.exp(-dt*4/duration);root.position.lerp(targetPos,blend);root.quaternion.slerp(targetQuat,blend);const target=targetScale.clone().multiplyScalar(hidden ? .02 : 1);root.scale.lerp(target,blend);root.visible=drawn||profile.stow!=='hidden'||root.scale.length()>.08;}
    if(profile.holster&&supportRoot.children.length&&sampleMount(profile.holster)){supportRoot.position.lerp(targetPos,1-Math.exp(-dt*18));supportRoot.quaternion.slerp(targetQuat,1-Math.exp(-dt*18));supportRoot.scale.lerp(targetScale,1-Math.exp(-dt*18));}
    model.updateWorldMatrix(true,true);
    for(const b of splitBlades){destination.set(b.side*.55,1.15,1.6+Math.sin(time*7+b.side)*.3);model.localToWorld(destination);root.worldToLocal(destination);b.object.position.copy(b.base).lerp(destination,separation);b.object.rotation.copy(b.rotation);b.object.rotation.y+=separation*time*9;}
