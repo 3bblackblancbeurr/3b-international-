@@ -24,6 +24,17 @@ const HUB_OBJECTIVE_TARGETS={
  rooftops_circle:['hub-building:tower_circle','zipline:Z1','hub-building:tower_circle'],
  boat_without_flag:['boat:docks','hub-building:central_marina']
 };
+const HUB_MAP_POINTS=[
+ ['hub-building:heritage_welcome','Maison de l’Accueil'],
+ ['hub-building:tower_circle','Tour du Cercle Brisé'],
+ ['hub-building:memory_archives','Archives de la Mémoire'],
+ ['hub-building:central_marina','Gare Maritime Centrale'],
+ ['hub-building:train_station','Gare du 3B Express'],
+ ['hub-building:city_planning_office','Bureau d’Urbanisme · Ville 3B'],
+ ['train:heritage_square','3B Express · Place de l’Héritage'],
+ ['boat:docks','Bateau-taxi · Docks'],
+ ['zipline:Z1','Tyrolienne · Tour → Place']
+];
 
 
 
@@ -34,7 +45,7 @@ function MapView({snapshot,large=false,onRoute}){
  const layout=countryLayout(s.zone),mapBuildings=layout?.buildings||BUILDINGS,mapRoads=layout?.roads||ROADS;
  const points=layout?layout.points:s.zone==='sanctuary'?[{id:'circle',...POINTS.circle},...WORLDS,...HUB_LAYOUT.districts.map(d=>({id:'district:'+d.id,x:d.x,z:d.z,name:d.name}))]:Object.entries(POINTS).filter(([id,p])=>p.zone==='france'&&!['seal','trial','echo','echo2','fragment','secret','memory','flower'].includes(id)).map(([id,p])=>({id,...p}));
 
- return <svg className={'origins-map '+(large?'origins-map-large':'')} viewBox={s.zone==='sanctuary'?'-125 -125 250 250':(large||p.z< -78?'-115 -150 225 200':'-69 -84 138 130')} role="img" aria-label={'Plan du '+(s.zone==='sanctuary'?'Sanctuaire':(COUNTRIES[s.zone]?.district||'quartier France'))}>
+ return <svg className={'origins-map '+(large?'origins-map-large':'')} viewBox={s.zone==='sanctuary'?'-125 -125 250 250':(large||p.z< -78?'-115 -150 225 200':'-69 -84 138 130')} role="img" aria-label={'Plan du '+(s.zone==='sanctuary'?'Cité des Huit Héritages':(COUNTRIES[s.zone]?.district||'quartier France'))}>
 
   <rect x="-120" y="-155" width="240" height="270" fill="#1d3438"/>
 
@@ -149,7 +160,7 @@ function Session({uid,goTo,onPrevious}){
 
   {error&&<div className="origins-failure" role="alert"><h2>Le lieu n’a pas pu s’ouvrir</h2><p>{error}</p><button onClick={()=>location.reload()}>Réessayer</button><button onClick={()=>goTo('accueil')}>Retour à l’application</button></div>}
 
-  {panel==='start'&&<div className="origins-start"><div><p className="origins-eyebrow">3B INTERNATIONAL</p><h1>ORIGINS</h1><h2>LE CERCLE BRISÉ</h2><p>Certains lieux n’attendent pas d’être découverts.<br/>Ils attendent qu’on se souvienne.</p><button className="origins-primary" disabled={loading||!!error} onClick={start}><Play size={19}/>{s.flags.awakened?'Reprendre l’aventure':'Entrer dans le Sanctuaire'}</button><button disabled={loading||!!error} onClick={()=>setPanel('character')}>Créer ou modifier mon personnage</button><small>Ton personnage · ton loup · ton histoire</small><button className="origins-textbutton" onClick={()=>goTo('accueil')}>Retour à l’application</button></div><footer>BLACK • BLANC • BEUR<br/><span>Ce n’est pas une marque, c’est un héritage.</span></footer></div>}
+  {panel==='start'&&<div className="origins-start"><div><p className="origins-eyebrow">3B INTERNATIONAL</p><h1>ORIGINS</h1><h2>LE CERCLE BRISÉ</h2><p>Certains lieux n’attendent pas d’être découverts.<br/>Ils attendent qu’on se souvienne.</p><button className="origins-primary" disabled={loading||!!error} onClick={start}><Play size={19}/>{s.flags.awakened?'Reprendre l’aventure':'Entrer dans la Cité'}</button><button disabled={loading||!!error} onClick={()=>setPanel('character')}>Créer ou modifier mon personnage</button><small>Ton personnage · ton loup · ton histoire</small><button className="origins-textbutton" onClick={()=>goTo('accueil')}>Retour à l’application</button></div><footer>BLACK • BLANC • BEUR<br/><span>Ce n’est pas une marque, c’est un héritage.</span></footer></div>}
 
   {panel&&panel!=='start'&&<Panel title={panel==='awakening'?'L’Éveil de l’Héritage':panel==='character'?'Mon personnage':panel==='pause'?'L’aventure attend':panel==='settings'?'Paramètres':panel==='map'?'Les lieux retrouvés':panel==='inventory'?'Équipement et fragments':'Journal de '+s.avatar.name} close={panel==='character'?()=>setPanel('start'):close}>
 
@@ -163,7 +174,7 @@ function Session({uid,goTo,onPrevious}){
 
    {panel==='inventory'&&<div className="origins-inventory">{s.zone==='sanctuary'&&<article><h3>Cité des Huit Héritages</h3><p>{s.hub.xp} XP Cité · {s.hub.coins} Coins · {s.hub.completed.length} missions terminées.</p><p>Récompenses : {s.hub.rewards.length?s.hub.rewards.join(' · '):'aucune pour le moment'}.</p></article>}<article><h3>Quartier de Paris</h3><p>{s.paris.materials} matériaux · {s.paris.coins} pièces · {s.paris.deliveries} livraisons</p><p>Atelier : {s.paris.workshop?'restauré':'à restaurer'}. Récolte au jardin ouest, puis prépare les livraisons à l’atelier.</p></article><article><Diamond/><h3>{s.flags.justice?'Fragment de Justice':'Le Cercle attend son premier fragment'}</h3><p>{s.flags.returned?'Replacé au Sanctuaire.':s.flags.justice?'Rapporte-le au Sanctuaire.':'La France garde une mémoire à retrouver.'}</p></article><article><Shield/><h3>{reinforced?'Tenue renforcée par l’artisan':'Tenue Héritage'}</h3><p>{reinforced?'Attaque puissante : 20 endurance au lieu de 27.':'Ton apparence reste personnalisable. Rends visite à l’artisan pour renforcer ta tenue.'}</p></article><article><Footprints/><h3>Le loup · lien {s.bond}</h3><p>{s.bond>=3?'Recherche étendue à 12 mètres.':s.bond>=2?'La confiance permet de tenir les sceaux.':'Chercher ensemble renforce la confiance.'}</p></article><p>{s.xp} XP d’aventure. Aucun avantage commercial attribué par cette sauvegarde.</p></div>}
 
-   {panel==='map'&&<><MapView snapshot={snapshot} large/><p>Choisis un lieu pour y marcher. Tu peux reprendre la main à tout moment.</p><div className="origins-map-points">{(isCountry(s.zone)?countryLayout(s.zone).points.map(p=>[p.id,p.name]):s.zone==='sanctuary'?[['circle',POINTS.circle.name],...WORLDS.map(w=>[w.id,'Porte '+w.name])]:[['eiffel','Parvis de la tour Eiffel'],['resident','Place des Liens'],['atelier','Atelier'],['refuge','Maison des souvenirs'],['trace','Fontaine'],['guardian','Gardien'],['seal','Sceau gauche'],['trial','Plateau droit'],['echo','Premier témoignage'],['echo2','Second témoignage'],['fragment','Fond des Archives'],['memory','Passage haut'],['flower','Jardin ouest'],['secret','Tilleul'],['arrival','Retour au Sanctuaire']]).map(([id,name])=><button key={id} onClick={()=>route(id)}>{name}</button>)}</div></>}
+   {panel==='map'&&<><MapView snapshot={snapshot} large/><p>Choisis un lieu pour y marcher. Tu peux reprendre la main à tout moment.</p><div className="origins-map-points">{(isCountry(s.zone)?countryLayout(s.zone).points.map(p=>[p.id,p.name]):s.zone==='sanctuary'?[['circle',POINTS.circle.name],...HUB_MAP_POINTS,...WORLDS.map(w=>[w.id,'Porte '+w.name])]:[['eiffel','Parvis de la tour Eiffel'],['resident','Place des Liens'],['atelier','Atelier'],['refuge','Maison des souvenirs'],['trace','Fontaine'],['guardian','Gardien'],['seal','Sceau gauche'],['trial','Plateau droit'],['echo','Premier témoignage'],['echo2','Second témoignage'],['fragment','Fond des Archives'],['memory','Passage haut'],['flower','Jardin ouest'],['secret','Tilleul'],['arrival','Retour au Sanctuaire']]).map(([id,name])=><button key={id} onClick={()=>route(id)}>{name}</button>)}</div></>}
 
   </Panel>}
 
