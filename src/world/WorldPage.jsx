@@ -100,7 +100,7 @@ function WorldSession({uid,goTo}){
   }
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
-   if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
+   if(current.status==='available'){if(item.locked){announce(item.name+' · termine d’abord : '+item.missingPrerequisites.join(', '));return;}const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
    if(current.status==='active'){
     if(isAutoHubMission(item.missionId)){announce(item.name+' · objectif '+(current.completedObjectives+1)+'/'+current.totalObjectives+' · '+(item.objectives?.[current.completedObjectives]||'continue dans le monde'));return;}
     const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;
@@ -150,8 +150,8 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{
   const hidden=()=>{audio.current?.visibility(document.hidden);if(document.hidden){stopGPS('GPS arrêté en arrière-plan. Réactive-le pour une nouvelle sortie.');if(dirty.current)saveWorld(uid,saveRef.current);} };
   document.addEventListener('visibilitychange',hidden);
-  const timer=setInterval(()=>{if(ready.current&&dirty.current)sync();},20000);
-  return()=>{document.removeEventListener('visibilitychange',hidden);clearInterval(timer);clearTimeout(noticeTimer.current);clearTimeout(saveTimer.current);if(watch.current!==null)navigator.geolocation?.clearWatch(watch.current);if(dirty.current)saveWorld(uid,saveRef.current);audio.current?.close();};
+  const timer=setInterval(()=>{if(ready.current&&dirty.current)sync();},20000),scheduleTimer=setInterval(()=>scene.current?.refreshHubSchedule(),60000);
+  return()=>{document.removeEventListener('visibilitychange',hidden);clearInterval(timer);clearInterval(scheduleTimer);clearTimeout(noticeTimer.current);clearTimeout(saveTimer.current);if(watch.current!==null)navigator.geolocation?.clearWatch(watch.current);if(dirty.current)saveWorld(uid,saveRef.current);audio.current?.close();};
  },[uid,loaded]);
  const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
  function navigateTo(id){const item=regionItems.find(i=>i.id===id);if(item)navigate(item);}
