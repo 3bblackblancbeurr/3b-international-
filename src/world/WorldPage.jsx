@@ -89,6 +89,7 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
+  if(item.type==='hubBuilding'){act({type:'hubBuildingVisit',id:item.buildingId});announce(item.name+' · '+(item.functions?.join(' · ')||'bâtiment de la Cité'));return;}
   if(item.type==='hubNpc'){const next=act({type:'hubNpcTalk',id:item.npcId})||saveRef.current,turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,next.hub?.missions,turn));return;}
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
