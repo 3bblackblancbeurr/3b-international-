@@ -11,8 +11,8 @@ export function hubNpcPose(item,timeSeconds){
   const speed=.12+((seed>>>16)%16)/100;
   const angle=phase+timeSeconds*speed;
   return {
-    x:item.homeX??item.x + Math.cos(angle)*radius,
-    z:item.homeZ??item.z + Math.sin(angle)*radius,
+    x:(item.homeX??item.x) + Math.cos(angle)*radius,
+    z:(item.homeZ??item.z) + Math.sin(angle)*radius,
     heading:angle+Math.PI/2,
   };
 }
