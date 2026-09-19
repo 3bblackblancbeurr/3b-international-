@@ -44,7 +44,7 @@ export function AvatarPanel({save,act,onDone}){
    pattern:pick(['uni','bandes','damier','insigne','broderie']),headwear:pick(['none','beret','brim','hood']),outer:pick(['none','cape','scarf']),
    bag:Math.random()>.5,belt:pick(['none','simple','utility']),pendant:Math.random()>.55,boots:Math.floor(Math.random()*3),
    weapon:pick(WEAPONS).id,weaponForm:0,companion:pick(COMPANIONS).id,path:pick(Object.keys(AVATAR_PATHS)),origin:pick(['3b',...COUNTRIES.map(c=>c.id)])
-  })));
+  }));
  };
  if(revealed)return <AvatarCinematic avatar={savedAvatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
  return <div className="avatar-editor-v2">
