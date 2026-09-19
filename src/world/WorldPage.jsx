@@ -24,7 +24,7 @@ import './adventure.css';
 import {ADAPTED_ART} from './portraits.js';
 import {createWorldAudio} from './audio.js';
 import {WorldHUD,WorldMap} from './WorldHUD.jsx';
-import {landscapeItems} from './terrain.js';
+import {worldRuntimeItems} from './runtime-items.js';
 import './immersion.css';
 import ArenaPage from '../arena/ArenaPage.jsx';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
@@ -137,7 +137,7 @@ function WorldSession({uid,goTo}){
   const timer=setInterval(()=>{if(ready.current&&dirty.current)sync();},20000);
   return()=>{document.removeEventListener('visibilitychange',hidden);clearInterval(timer);clearTimeout(noticeTimer.current);clearTimeout(saveTimer.current);if(watch.current!==null)navigator.geolocation?.clearWatch(watch.current);if(dirty.current)saveWorld(uid,saveRef.current);audio.current?.close();};
  },[uid,loaded]);
- const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>landscapeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
+ const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
  function navigateTo(id){const item=regionItems.find(i=>i.id===id);if(item)navigate(item);}
  function navigate(item){scene.current?.waypoint(item,false);setPanel(null);}
  function exportSave(){const blob=new Blob([JSON.stringify(saveRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-monde-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
