@@ -23,7 +23,7 @@ export function randomFor(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=
 export function toLandscape(region,x,z){const b=BIOMES[region]||BIOMES.hub,c=Math.cos(b.angle),s=Math.sin(b.angle);return{x:(x*c-z*s)*b.scale,z:(x*s+z*c)*b.scale};}
 export function landscapeItems(region,save){
  const base=[...worldItems(region,save),...serviceItems(region,save),...districtDestinations(region)];
- const hub=region==='hub'?hubRuntime(typeof navigator!=='undefined'&&navigator.deviceMemory>=8?'mobileHigh':'mobileMedium').items:[];
+ const hub=region==='hub'?hubRuntime(typeof navigator!=='undefined'&&navigator.deviceMemory>=8?'mobileHigh':'mobileMedium',{storyProgress:(save.seals?.length||0)>0,storyFlag:!!save.adventure?.finished}).items:[];
  return [...base,...hub].map(item=>({...item,...toLandscape(region,item.x,item.z)}));
 }
 export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
