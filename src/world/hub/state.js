@@ -1,5 +1,5 @@
 import {HUB_MISSIONS,HUB_MISSION_BY_ID} from './mission-catalog.js';
-import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_TYPES} from './activity-catalog.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_TYPES,HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 
 export function blankHubState(){
   return {
@@ -12,6 +12,7 @@ export function blankHubState(){
       transportRides:{train:0,boat:0},
       transportStops:[],
       nightTrainDates:[],
+      secretProgress:{},
     },
   };
 }
@@ -38,5 +39,9 @@ export function normalizeHubState(input){
   for(const type of HUB_TRANSPORT_TYPES)base.stats.transportRides[type]=Math.max(0,Math.min(999,Math.floor(Number(stats.transportRides?.[type])||0)));
   base.stats.transportStops=[...new Set(Array.isArray(stats.transportStops)?stats.transportStops:[])].filter((id)=>typeof id==='string'&&/^(train|boat):[a-z0-9_]+$/.test(id)).slice(0,64);
   base.stats.nightTrainDates=[...new Set(Array.isArray(stats.nightTrainDates)?stats.nightTrainDates:[])].filter((value)=>/^\d{4}-\d{2}-\d{2}$/.test(value)).slice(-16);
+  for(const [id,count] of Object.entries(HUB_SECRET_STEP_COUNTS)){
+   const steps=[...new Set(Array.isArray(stats.secretProgress?.[id])?stats.secretProgress[id]:[])].filter((step)=>Number.isInteger(step)&&step>=0&&step<count).slice(0,count);
+   if(steps.length)base.stats.secretProgress[id]=steps;
+  }
   return base;
 }
