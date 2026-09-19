@@ -36,6 +36,7 @@ import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
 import {hubNpcDialogue} from './hub/npc-dialogue.js';
 import {hubDialogueScene} from './hub/dialogue-v3.js';
+import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from './guardian-values.js';
 import {isAutoHubMission} from './hub/mission-signals.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
@@ -65,7 +66,7 @@ function WorldSession({uid,goTo}){
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
- const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null);
+ const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null);
  const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),dialogueTurns=useRef(new Map());
  saveRef.current=save;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
@@ -98,6 +99,7 @@ function WorldSession({uid,goTo}){
    if(scene.choices?.length){setNpcDialogue({item,scene});setPanel('hubDialogue');}
    else announce(scene.text||hubNpcDialogue(item,next.hub?.missions,turn));return;
   }
+  if(item.type==='hubGuardian'){setHubGuardianInfo(item);setPanel('guardianHub');return;}
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){if(item.locked){announce(item.name+' · termine d’abord : '+item.missingPrerequisites.join(', '));return;}const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
@@ -117,6 +119,7 @@ function WorldSession({uid,goTo}){
   }
   if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId,evidence:item.evidence||{}});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
   if(item.type==='hubDistrict'){act({type:'hubDistrictVisit',id:item.district});announce(item.name+' · '+item.purpose);return;}
+  if(item.type==='valueTrial'){setPanel('valueTrial');return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='job'){const next=act({type:'jobDone',id:item.job});if(next)chime();return;}
@@ -154,6 +157,7 @@ function WorldSession({uid,goTo}){
   return()=>{document.removeEventListener('visibilitychange',hidden);clearInterval(timer);clearInterval(scheduleTimer);clearTimeout(noticeTimer.current);clearTimeout(saveTimer.current);if(watch.current!==null)navigator.geolocation?.clearWatch(watch.current);if(dirty.current)saveWorld(uid,saveRef.current);audio.current?.close();};
  },[uid,loaded]);
  const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
+ const valueRule=GUARDIAN_VALUES[save.region],valueState=save.adventure.values?.[save.region],valueStep=valueRule?guardianValueStep(save.region,valueState):null,valueOptions=valueRule?guardianValueOptions(save.region,valueState):[];
  function navigateTo(id){const item=regionItems.find(i=>i.id===id);if(item)navigate(item);}
  function navigate(item){scene.current?.waypoint(item,false);setPanel(null);}
  function exportSave(){const blob=new Blob([JSON.stringify(saveRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-monde-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
@@ -172,7 +176,9 @@ function WorldSession({uid,goTo}){
   {error&&<div className="world-failure" role="alert"><h2>Reprendre l’exploration</h2><p>{error}</p><button className="world-primary" onClick={()=>location.reload()}>Recharger le monde</button><button onClick={()=>goTo('home')}>Retour à l’application</button></div>}
   {fieldCombat&&<FieldEncounter save={save} act={act} onRetreat={finishEncounter} onPause={()=>setPanel('encounterPause')} snapshot={snapshot}/>}
   {!panel&&snapshot.region!=='hub'&&<>{!(snapshot.waypoint&&snapshot.remaining>7)&&<button className="paris-journal-link" onClick={()=>setPanel('paris')}>La vie du quartier</button>}{snapshot.interior&&<div className="paris-place">{snapshot.interior==='atelier'?'Atelier des Verrières':'Refuge des Liens'}</div>}</>}
-  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena'].includes(panel)}>
+  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation',valueTrial:valueRule?'Épreuve · '+valueRule.value:'Épreuve du Gardien',guardianHub:hubGuardianInfo?.name||'Gardien'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena'].includes(panel)}>
+   {panel==='guardianHub'&&hubGuardianInfo&&<div className="guardian-hub-panel"><span className="world-kicker">{hubGuardianInfo.value} · Gardien libéré</span><h3>{hubGuardianInfo.name}</h3><p>Le Gardien reste présent dans la Cité. Tu peux retourner dans son pays pour poursuivre les défis, les rencontres et la reconstruction.</p><div className="world-actions"><button className="world-primary" onClick={()=>{const region=hubGuardianInfo.region;setHubGuardianInfo(null);setPanel(null);travel(region);}}>Retourner en {countryById[hubGuardianInfo.region]?.name||hubGuardianInfo.region}</button><button onClick={()=>{setHubGuardianInfo(null);setPanel(null);}}>Rester dans la Cité</button></div></div>}
+   {panel==='valueTrial'&&valueRule&&<div className="guardian-value-panel"><span className="world-kicker">{valueRule.name} · {valueRule.value}</span>{valueState?.completed?<><h3>Valeur maîtrisée</h3><p>Cette épreuve est terminée. Ton groupe commencera le combat du Gardien avec une préparation supplémentaire.</p><button className="world-primary" onClick={()=>setPanel(null)}>Reprendre l’exploration</button></>:valueStep?<><h3>Étape {valueStep.step+1}/3</h3><p>Choisis la réponse qui correspond le mieux à la valeur <strong>{valueRule.value}</strong>.</p><div className="world-actions">{valueOptions.map(option=><button key={option.id} onClick={()=>{const next=act({type:'guardianValueChoice',choiceId:option.id});if(next?.adventure.values?.[save.region]?.completed)chime();}}>{option.label}</button>)}</div></>:<p>Épreuve indisponible.</p>}</div>}
    {panel==='hubDialogue'&&npcDialogue&&<div className="hub-dialogue-v3"><span className="world-kicker">{npcDialogue.item.role} · {npcDialogue.item.activity||npcDialogue.item.district}</span><h3>{npcDialogue.item.name}</h3><p>{npcDialogue.scene.text}</p><div className="world-actions">{npcDialogue.scene.choices.map(choice=><button key={choice.id} onClick={()=>{const next=act({type:'hubDialogueChoice',npcId:npcDialogue.item.npcId,sceneId:npcDialogue.scene.id,choiceId:choice.id});if(next){announce(choice.value+' · choix mémorisé');setNpcDialogue(null);setPanel(null);}}}>{choice.label}</button>)}</div></div>}
    {panel==='party'&&<PartyPanel uid={uid} state={partyState} save={save} connection={connection} onState={data=>partyLink.current?.update(data)} onFlush={async()=>{const result=await sync();if(result?.pending)throw Error('Attends la synchronisation de ta progression avant de contribuer.');}} onRefreshWorld={refreshWorld} onLocate={locateMember} onLogin={()=>goTo('member')} onSignal={kind=>{partyLink.current?.signal(kind);setPanel(null);}}/>}
    {panel==='encounterPause'&&<div className="encounter-pause"><h3>Ton groupe t’attend.</h3><p>Tu peux reprendre cette rencontre, y compris après avoir rechargé la page.</p><button className="world-primary" onClick={()=>setPanel('encounter')}>Reprendre le combat</button><button onClick={finishEncounter}>Se replier dans le monde</button><small>{save.adventure.encounter?.patrol?'La provision de cette expédition reste consommée. Tes constructions et tes compagnons sont conservés.':'Un repli ne donne aucune récompense.'}</small></div>}
