@@ -5,6 +5,7 @@ import {settlementPlan,serviceItems,districtDestinations} from './settlements.js
 import {buildingDimensions} from './building-scale.js';
 import {obstacleDistance} from './collision.js';
 import {parisSites} from './paris-layout.js';
+import {hubRuntime} from './hub/runtime-data.js';
 
 export const WORLD_RADIUS=260;
 export const BIOMES={
@@ -20,7 +21,11 @@ export const BIOMES={
 };
 export function randomFor(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 export function toLandscape(region,x,z){const b=BIOMES[region]||BIOMES.hub,c=Math.cos(b.angle),s=Math.sin(b.angle);return{x:(x*c-z*s)*b.scale,z:(x*s+z*c)*b.scale};}
-export function landscapeItems(region,save){return [...worldItems(region,save),...serviceItems(region,save),...districtDestinations(region)].map(item=>({...item,...toLandscape(region,item.x,item.z)}));}
+export function landscapeItems(region,save){
+ const base=[...worldItems(region,save),...serviceItems(region,save),...districtDestinations(region)];
+ const hub=region==='hub'?hubRuntime(typeof navigator!=='undefined'&&navigator.deviceMemory>=8?'mobileHigh':'mobileMedium').items:[];
+ return [...base,...hub].map(item=>({...item,...toLandscape(region,item.x,item.z)}));
+}
 export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
 export function landscapeRoads(region){return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));}
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
