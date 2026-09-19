@@ -1,0 +1,79 @@
+export const HUB_PROGRESS_VERSION=1;
+
+export const PLAYABLE_MISSION_EVENTS=Object.freeze({
+  first_steps:[
+    {type:'visit',id:'heritage_welcome'},
+    {type:'ride_train'},
+    {type:'arrive',id:'heritage_square'}
+  ],
+  first_echo:[
+    {type:'visit',id:'memory_archives'},
+    {type:'inspect',id:'archive_signal'},
+    {type:'activate',id:'archive_beacon'}
+  ],
+  rooftops_circle:[
+    {type:'reach',id:'broken_circle_tower'},
+    {type:'ride_zipline'},
+    {type:'ride_zipline'}
+  ],
+  boat_without_flag:[
+    {type:'ride_boat'},
+    {type:'visit',id:'central_marina'}
+  ]
+});
+
+export function blankHubProgress(){
+  return {version:HUB_PROGRESS_VERSION,active:null,completed:[],missions:{},rides:{train:0,boat:0,zipline:0},visited:[]};
+}
+
+export function normalizeHubProgress(raw,missions=[]){
+  const next=blankHubProgress(),known=new Set(missions.map(m=>m.id));
+  if(!raw||typeof raw!=='object')return next;
+  next.completed=[...new Set(Array.isArray(raw.completed)?raw.completed:[])].filter(id=>known.has(id));
+  next.active=known.has(raw.active)&&!next.completed.includes(raw.active)?raw.active:null;
+  for(const id of known){
+    const value=raw.missions?.[id];
+    if(value&&typeof value==='object')next.missions[id]={step:Math.max(0,Math.floor(Number(value.step)||0)),startedAt:Number(value.startedAt)||0,updatedAt:Number(value.updatedAt)||0};
+  }
+  next.rides={train:Math.max(0,Math.floor(Number(raw.rides?.train)||0)),boat:Math.max(0,Math.floor(Number(raw.rides?.boat)||0)),zipline:Math.max(0,Math.floor(Number(raw.rides?.zipline)||0))};
+  next.visited=[...new Set(Array.isArray(raw.visited)?raw.visited.filter(x=>typeof x==='string').slice(0,100):[])];
+  return next;
+}
+
+export function startHubMission(progress,id,missions=[]){
+  const mission=missions.find(m=>m.id===id);if(!mission||progress.completed.includes(id))return {progress,changed:false,mission};
+  const next=structuredClone(progress);next.active=id;next.missions[id]??={step:0,startedAt:Date.now(),updatedAt:Date.now()};return {progress:next,changed:true,mission};
+}
+
+function matches(expected,event){
+  if(!expected||!event||expected.type!==event.type)return false;
+  return expected.id===undefined||expected.id===event.id;
+}
+
+export function applyHubEvent(progress,event,missions=[]){
+  let next=structuredClone(progress),changed=false,completedMission=null;
+  if(event.type==='ride_train'){next.rides.train++;changed=true;}
+  if(event.type==='ride_boat'){next.rides.boat++;changed=true;}
+  if(event.type==='ride_zipline'){next.rides.zipline++;changed=true;}
+  if(event.type==='visit'||event.type==='arrive'||event.type==='reach'){if(event.id&&!next.visited.includes(event.id)){next.visited.push(event.id);changed=true;}}
+  const active=next.active,sequence=PLAYABLE_MISSION_EVENTS[active];
+  if(active&&sequence){
+    const state=next.missions[active]??={step:0,startedAt:Date.now(),updatedAt:Date.now()};
+    if(matches(sequence[state.step],event)){
+      state.step++;state.updatedAt=Date.now();next.missions[active]=state;changed=true;
+      if(state.step>=sequence.length){next.completed=[...new Set([...next.completed,active])];next.active=null;completedMission=missions.find(m=>m.id===active)||{id:active};}
+    }
+  }
+  return {progress:next,changed,completedMission};
+}
+
+export function activeHubMission(progress,missions=[]){
+  const mission=missions.find(m=>m.id===progress?.active);if(!mission)return null;
+  const step=progress.missions?.[mission.id]?.step||0;
+  return {...mission,step,currentObjective:mission.objectives?.[step]||null,total:mission.objectives?.length||0};
+}
+
+export function missionForNpc(npc,progress,missions=[]){
+  if(!npc?.missionIds?.length)return null;
+  return npc.missionIds.map(id=>missions.find(m=>m.id===id)).find(m=>m&&!progress.completed.includes(m.id))||null;
+}
