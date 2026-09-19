@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {blankSave,normalizeSave} from '../src/world/rules.js';
+import {blankSave,normalizeSave,worldItems} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {worldCinematicEvents,isWorldCinematicKey} from '../src/world/cinematic-events.js';
 import {storyCinematicPresentation} from '../src/world/story-cinematic.js';
@@ -83,4 +83,33 @@ test('restored France explicitly guides Céliane back to the Hub until homecomin
  save.adventure.cinematicSeen=['homecoming:france'];
  objective=chapterObjective(save,'france');
  assert.equal(objective.target,'france:guardian');
+});
+
+
+test('France hides Céliane until Justice and locks the value trial before restoration stage two',()=>{
+ let save=applyWorldAction(blankSave(),{type:'visit',region:'france'});
+ let items=worldItems('france',save);
+ assert.equal(items.find(item=>item.type==='valueTrial')?.locked,true);
+ assert.equal(items.some(item=>item.type==='guardian'),false);
+
+ save=normalizeSave({...save,
+  collection:{...save.collection,C002:1},
+  team:['C002'],
+  beacons:['france:0','france:1','france:2'],
+  adventure:{...save.adventure,chapters:{...save.adventure.chapters,france:{helped:true,powers:['ally','ambiance','terrain'],solved:true,restored:2,challenge:false,choice:'garden',board:[]}}}
+ });
+ items=worldItems('france',save);
+ assert.equal(items.find(item=>item.type==='valueTrial')?.locked,false);
+ assert.equal(items.some(item=>item.type==='guardian'),false);
+
+ for(const [choiceId] of GUARDIAN_VALUES.france.choices)save=applyWorldAction(save,{type:'guardianValueChoice',choiceId});
+ items=worldItems('france',save);
+ assert.equal(items.some(item=>item.type==='guardian'&&item.card==='C165'),true);
+});
+
+test('non-guardian story beats never reveal a guardian portrait early',()=>{
+ const entry=storyCinematicPresentation({kind:'country-first-entry',key:'country:france',region:'france',context:{region:'france'}});
+ assert.equal(entry.card,null);
+ const intro=storyCinematicPresentation({kind:'guardian-intro',key:'intro:france:C165:adventure',region:'france',context:{region:'france',card:'C165'}});
+ assert.equal(intro.card,'C165');
 });
