@@ -20,11 +20,13 @@ const FACE_PRESETS=[
  {name:'Neutre',face:0,jaw:0,nose:0},{name:'Doux',face:.35,jaw:-.25,nose:-.15},
  {name:'Défini',face:-.15,jaw:.55,nose:.1},{name:'Large',face:.65,jaw:.25,nose:.25}
 ];
+const PRESET_KEY='3b-avatar-presets-v1';
+const readPresets=()=>{try{const value=JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');return Array.isArray(value)?value.slice(0,3):[];}catch{return [];}};
 
 export function AvatarPanel({save,act,onDone}){
  const initial=useMemo(()=>normalizeAvatar(save.adventure.avatar),[save.adventure.avatar]);
  const [draft,setDraft]=useState(initial),[message,setMessage]=useState(''),[weaponMessage,setWeaponMessage]=useState('');
- const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity');
+ const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(readPresets);
  const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
  const stepIndex=STEPS.findIndex(([id])=>id===activeStep);
@@ -33,6 +35,9 @@ export function AvatarPanel({save,act,onDone}){
  const chooseWeapon=id=>{setDraft(d=>({...d,weapon:id,weaponForm:0}));setWeaponMessage('');};
  const chooseWeaponForm=tier=>{if(tier<=maxWeaponForm){set('weaponForm',tier);setWeaponMessage('');}};
  const goto=id=>{setActiveStep(id);setMessage('');document.querySelector('.avatar-editor-v2')?.scrollIntoView({behavior:'smooth',block:'start'});};
+ const resetDraft=()=>{setDraft(initial);setMessage('Personnage restauré depuis la dernière version enregistrée.');};
+ const savePreset=index=>{const next=[...presets];next[index]={...draft,created:false,name:draft.name||'Voyageur'};setPresets(next);try{localStorage.setItem(PRESET_KEY,JSON.stringify(next));}catch{}setMessage('Look '+(index+1)+' mémorisé sur cet appareil.');};
+ const loadPreset=index=>{const preset=presets[index];if(!preset)return;setDraft(d=>normalizeAvatar({...preset,name:d.name,created:d.created}));setMessage('Look '+(index+1)+' chargé.');};
  const randomize=()=>{
   const pick=a=>a[Math.floor(Math.random()*a.length)],base=blankAvatar();
   setDraft(d=>normalizeAvatar({...base,...d,
@@ -61,7 +66,7 @@ export function AvatarPanel({save,act,onDone}){
   <form className="avatar-fields-v2" onSubmit={e=>{e.preventDefault();const normalized=normalizeAvatar({...draft,created:true});if(act({type:'avatar',avatar:normalized})){setSavedAvatar(normalized);setMessage('Ton personnage est enregistré.');setRevealed(true);}}}>
    <header className="avatar-creator-header">
     <div><span>MONDE DU 3B</span><h2>Créer mon personnage</h2><p>Personnalise ton identité, ton apparence, ta tenue, ton arme et ta voie avant d’entrer dans le monde ouvert.</p></div>
-    <button type="button" className="avatar-random" onClick={randomize}>Personnage aléatoire</button>
+    <div className="avatar-header-actions"><button type="button" className="avatar-random" onClick={randomize}>Personnage aléatoire</button><button type="button" className="avatar-reset" onClick={resetDraft}>Revenir à l’enregistré</button></div>
    </header>
 
    <nav className="avatar-step-nav" aria-label="Étapes de personnalisation">{STEPS.map(([id,label],index)=><button type="button" key={id} aria-current={activeStep===id?'step':undefined} onClick={()=>goto(id)}><b>{String(index+1).padStart(2,'0')}</b><span>{label}</span></button>)}</nav>
@@ -147,6 +152,7 @@ export function AvatarPanel({save,act,onDone}){
      <div><span>Compagnon</span><strong>{COMPANIONS.find(c=>c.id===draft.companion)?.name}</strong></div><div><span>Équipement</span><strong>{TRAVEL_GEAR[draft.travelGear].name}</strong></div>
     </div>
     <p className="avatar-inline-note">Tu pourras revenir modifier ton personnage plus tard. Les choix d’apparence n’augmentent pas artificiellement les statistiques d’arène.</p>
+    <fieldset className="avatar-preset-slots"><legend>Mes looks enregistrés sur cet appareil</legend><div>{[0,1,2].map(index=><article key={index}><strong>Look {index+1}</strong><small>{presets[index]?`${presets[index].style} · ${weaponDisplayName(WEAPONS.find(w=>w.id===presets[index].weapon)||WEAPONS[0])}`:'Emplacement libre'}</small><span><button type="button" onClick={()=>savePreset(index)}>Mémoriser</button><button type="button" disabled={!presets[index]} onClick={()=>loadPreset(index)}>Charger</button></span></article>)}</div></fieldset>
     <button className="world-primary avatar-final-submit" type="submit">{save.adventure.avatar.created?'Enregistrer les modifications':'Commencer mon voyage'}</button><p role="status">{message}</p>
    </section>}
 
