@@ -77,6 +77,8 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{audio.current?.ambience(snapshot.region,snapshot.interior);},[snapshot.region,snapshot.interior]);
  useEffect(()=>{audio.current?.weather(snapshot.weather);},[snapshot.weather]);
  useEffect(()=>{audio.current?.phase(snapshot.time?.phase);},[snapshot.time?.phase]);
+ useEffect(()=>{audio.current?.listener(snapshot.position,snapshot.heading);},[snapshot.position?.x,snapshot.position?.z,snapshot.heading]);
+ useEffect(()=>{audio.current?.state(fieldCombat?'combat':panel==='valueTrial'||panel==='guardianHub'?'guardian':panel==='journal'||panel==='story'?'mission':'exploration');},[fieldCombat,panel]);
  useEffect(()=>{audio.current?.setMix(audioMix);},[audioMix]);
  function chime(){audio.current?.event('reward');}
  function updateAudioMix(key,value){const next={...audioMix,[key]:Math.max(0,Math.min(1,Number(value)))};setAudioMix(next);try{localStorage.setItem('3b-world-audio-mix',JSON.stringify(next));}catch{}}
@@ -97,6 +99,7 @@ function WorldSession({uid,goTo}){
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
  function interact(item){
+  if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
   if(item.type==='portal'){travel(item.id);return;}
   if(item.type==='hubNpc'){
    const next=act({type:'hubNpcTalk',id:item.npcId});if(!next)return;
