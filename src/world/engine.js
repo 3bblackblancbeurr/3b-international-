@@ -86,8 +86,8 @@ export function applyWorldAction(input,action){
   }
   case 'hubEventDiscover':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
-   if(s.hub.events.includes(action.id))return s;
-   return reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+   const next=s.hub.events.includes(action.id)?s:reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+   return hubSignal(next,{type:'event',id:action.id});
   }
   case 'hubSecretStep':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
