@@ -89,18 +89,18 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
-  if(item.type==='hubNpc'){const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,saveRef.current.hub?.missions,turn));return;}
+  if(item.type==='hubNpc'){const next=act({type:'hubNpcTalk',id:item.npcId})||saveRef.current,turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,next.hub?.missions,turn));return;}
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
-   if(current.status==='active'){const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;}
+   if(current.status==='active'){announce(item.name+' · '+(item.objectives?.[current.completedObjectives]||'Continue ton objectif dans la Cité.'));return;}
    if(current.status==='completed'&&!current.claimed){const next=act({type:'hubMissionClaim',id:item.missionId});if(next)announce(item.name+' · récompense récupérée');return;}
    announce(item.name+' · mission déjà accomplie');return;
   }
-  if(item.type==='hubTransport'){announce(item.name+' · véhicule en circulation');return;}
+  if(item.type==='hubTransport'){const ride=scene.current?.rideTransport(item);if(ride)announce(item.name+' · départ vers '+(ride.to||'le prochain arrêt'));else announce('Transport indisponible pour le moment.');return;}
   if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
   if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
-  if(item.type==='hubDistrict'){announce(item.name+' · '+item.purpose);return;}
+  if(item.type==='hubDistrict'){act({type:'hubDistrictVisit',id:item.district});announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='job'){const next=act({type:'jobDone',id:item.job});if(next)chime();return;}
@@ -117,11 +117,11 @@ function WorldSession({uid,goTo}){
   if(item.type==='beacon'){if(act({type:'beacon',id:item.id}))chime();return;}
   if(act({type:'encounter',id:item.id})){act({type:'fieldStart'});scene.current?.cooldown(item.id);setPanel('encounter');}
  }
- callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region)};
+ callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region),transit:item=>{const before=saveRef.current.hub?.missions,next=act({type:'hubTransit',id:item.transitId});if(next){const changed=Object.keys(next.hub.missions).find(id=>next.hub.missions[id].completedObjectives!==(before?.[id]?.completedObjectives||0));announce(changed?'Objectif validé · '+changed.replaceAll('_',' '):'Arrivée · '+item.name);}}};
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
   if(!loaded)return;
-  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);ready.current=true;}
+  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onTransitComplete:item=>callbacks.current.transit(item),onError:setError});scene.current.setQuality(quality);ready.current=true;}
   catch{setError('Le navigateur n’a pas pu ouvrir la 3D. Active l’accélération graphique ou essaie un autre navigateur. Ta sauvegarde est conservée.');}
   return()=>{ready.current=false;scene.current?.destroy();scene.current=null;};
  },[loaded]);
