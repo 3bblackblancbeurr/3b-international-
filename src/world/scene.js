@@ -47,7 +47,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let partyActors=null,latestPeers=[],partyState=null;
  let fieldRival=null,combatDistance=Infinity,combatClock=0,combatButton=null;
  const combatInput={x:0,z:0};
- let qualityMode='auto',cameraFollow=true,manualCameraAt=-Infinity,travelTimer=null,routeSprintUntil=0,lastGroundTapAt=-Infinity,lastCameraTapAt=-Infinity;
+ let qualityMode='auto',cameraFollow=true,manualCameraAt=-Infinity,travelTimer=null,transportRide=null,routeSprintUntil=0,lastGroundTapAt=-Infinity,lastCameraTapAt=-Infinity;
  try{cameraFollow=localStorage.getItem('3b-world-camera-follow')!=='false';}catch{}
  const movementFrame=createMovementFrame(),motionSmoother=createMotionSmoother();
  let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{orbit=restoreOrbit(JSON.parse(localStorage.getItem('3b-world-camera')));}catch{}
@@ -82,7 +82,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function rebuild(nextRegion){
   onLoadState?.(true);
   partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;fieldRival=null;combatFx.clear();lastCombat=null;
-  hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];hubNpcActors=[];hubVehicles=[];scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
+  hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];hubNpcActors=[];hubVehicles=[];transportRide=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;items=worldRuntimeItems(region,save);position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);scene.fog=new THREE.Fog(0xbacdd6,220,780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
@@ -163,7 +163,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function startRoute(destination,interaction=false,run=false){motionSmoother.reset();route=(interaction?findInteractionPath:findPath)(position,destination,obstacles,WORLD_RADIUS);target=route.shift()||null;routeSprintUntil=run?performance.now()+2200:0;needsRender=true;}
  function clearInput(){keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
  function down(e){
-  if(paused||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
+  if(paused||transportRide||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
   const rect=canvas.getBoundingClientRect(),cameraTouch=e.pointerType==='touch'&&e.clientX-rect.left>=rect.width*.52;
   if(e.button===2||cameraTouch){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!orbitHeld)orbitHeld={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,drag:false};if(touchPoints.size===2){const p=[...touchPoints.values()];pinchDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}return;}
   if(held)return;held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,run:false};target=null;route=[];
@@ -190,9 +190,9 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function wheel(e){if(paused)return;e.preventDefault();orbit=zoomOrbit(orbit,e.deltaY);rememberCamera();needsRender=true;onActivity();}
  const context=e=>e.preventDefault();
  function toggleCamera(){cameraMode=1-cameraMode;orbit={...orbit,distance:cameraMode?36:24,pitch:cameraMode?.5:DEFAULT_ORBIT.pitch};rememberCamera();needsRender=true;}
- function keydown(e){if(paused||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','e','shift','c'].includes(key)){e.preventDefault();if(key==='c'){if(!e.repeat)toggleCamera();return;}keys.add(key);target=null;route=[];onActivity();if(key==='e'&&!e.repeat)interact();}}
+ function keydown(e){if(paused||transportRide||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright',' ','w','a','s','d','z','q','e','shift','c'].includes(key)){e.preventDefault();if(key==='c'){if(!e.repeat)toggleCamera();return;}keys.add(key);target=null;route=[];onActivity();if(key==='e'&&!e.repeat)interact();}}
  function keyup(e){keys.delete(e.key.toLowerCase());}
- function interact(){if(paused)return;const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)));if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
+ function interact(){if(paused||transportRide)return;const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)));if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
  const hidden=()=>{clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
  const lost=e=>{e.preventDefault();paused=true;onError('Le rendu 3D a été interrompu. Recharge le monde pour reprendre ta sauvegarde.');};
  canvas.addEventListener('wheel',wheel,{passive:false});canvas.addEventListener('contextmenu',context);canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);canvas.addEventListener('lostpointercapture',up);canvas.addEventListener('webglcontextlost',lost);
@@ -204,22 +204,30 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   const dt=Math.min(rawDt,.25);elapsed+=dt;let travelled=0,dx=0,dz=0;
   if(!paused&&!shot){
    if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
-   dx=stick.x+((keys.has('d')||keys.has('arrowright'))?1:0)-((keys.has('a')||keys.has('q')||keys.has('arrowleft'))?1:0);
-   dz=stick.z+((keys.has('s')||keys.has('arrowdown'))?1:0)-((keys.has('w')||keys.has('z')||keys.has('arrowup'))?1:0);
-   const rawInput=movementFrame.resolve(dx,dz,viewBearing(camera.position,cameraTarget));
-   ({x:dx,z:dz}=motionSmoother.update(rawInput,dt));
-   const sprinting=keys.has('shift')||held?.run||target&&routeSprintUntil>now;
-   const previous=position,next=advanceMotion({position,target,route},{x:dx,z:dz},dt,10.5*stats.speed*(sprinting?1.4:1),obstacles,WORLD_RADIUS);
-   if(fieldCombat){
-    const inputLength=Math.max(1,Math.hypot(dx,dz));combatInput.x=Math.round(dx/inputLength*1000)/1000;combatInput.z=Math.round(dz/inputLength*1000)/1000;
-    if(target&&Math.hypot(dx,dz)<.05){const d=Math.hypot(target.x-position.x,target.z-position.z)||1;combatInput.x=(target.x-position.x)/d;combatInput.z=(target.z-position.z)/d;}
-    combatClock+=dt;
-    if(combatClock>=.1){combatClock%=.1;const kind=combatButton;combatButton=null;onCombatStep?.({...combatInput,...(kind?{kind}:{})});}
-    const p=save.adventure.encounter.field.p,blend=1-Math.exp(-dt*22);position={x:position.x+(p.x-position.x)*blend,z:position.z+(p.z-position.z)*blend};
-    travelled=Math.hypot(position.x-previous.x,position.z-previous.z);moving=travelled>.001;
-   }else{combatClock=0;({position,target,route,travelled,moving}=next);}
-   dx=position.x-previous.x;dz=position.z-previous.z;
-   if(moving){const nextHeading=movementHeading(dx,dz,heading);if(Math.abs(((nextHeading-heading+540)%360)-180)>2.5)report=0;heading=nextHeading;orbit=followMovement(orbit,dx,dz,dt,{enabled:cameraFollow,manual:!!orbitHeld,quietFor:(now-manualCameraAt)/1000,reducedMotion});onActivity();stepDistance+=travelled;if(stepDistance>2.1){stepDistance=0;onStep?.(region);}}
+   if(transportRide){
+    const previous=position,progress=Math.min(1,(now-transportRide.started)/transportRide.duration),smooth=progress*progress*(3-2*progress);
+    position={x:transportRide.from.x+(transportRide.to.x-transportRide.from.x)*smooth,z:transportRide.from.z+(transportRide.to.z-transportRide.from.z)*smooth};
+    dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=progress<1;
+    if(travelled>.001)heading=movementHeading(dx,dz,heading);
+    if(progress>=1){position={...transportRide.to};transportRide=null;moving=false;onActivity();}
+   }else{
+    dx=stick.x+((keys.has('d')||keys.has('arrowright'))?1:0)-((keys.has('a')||keys.has('q')||keys.has('arrowleft'))?1:0);
+    dz=stick.z+((keys.has('s')||keys.has('arrowdown'))?1:0)-((keys.has('w')||keys.has('z')||keys.has('arrowup'))?1:0);
+    const rawInput=movementFrame.resolve(dx,dz,viewBearing(camera.position,cameraTarget));
+    ({x:dx,z:dz}=motionSmoother.update(rawInput,dt));
+    const sprinting=keys.has('shift')||held?.run||target&&routeSprintUntil>now;
+    const previous=position,next=advanceMotion({position,target,route},{x:dx,z:dz},dt,10.5*stats.speed*(sprinting?1.4:1),obstacles,WORLD_RADIUS);
+    if(fieldCombat){
+     const inputLength=Math.max(1,Math.hypot(dx,dz));combatInput.x=Math.round(dx/inputLength*1000)/1000;combatInput.z=Math.round(dz/inputLength*1000)/1000;
+     if(target&&Math.hypot(dx,dz)<.05){const d=Math.hypot(target.x-position.x,target.z-position.z)||1;combatInput.x=(target.x-position.x)/d;combatInput.z=(target.z-position.z)/d;}
+     combatClock+=dt;
+     if(combatClock>=.1){combatClock%=.1;const kind=combatButton;combatButton=null;onCombatStep?.({...combatInput,...(kind?{kind}:{})});}
+     const p=save.adventure.encounter.field.p,blend=1-Math.exp(-dt*22);position={x:position.x+(p.x-position.x)*blend,z:position.z+(p.z-position.z)*blend};
+     travelled=Math.hypot(position.x-previous.x,position.z-previous.z);moving=travelled>.001;
+    }else{combatClock=0;({position,target,route,travelled,moving}=next);}
+    dx=position.x-previous.x;dz=position.z-previous.z;
+    if(moving){const nextHeading=movementHeading(dx,dz,heading);if(Math.abs(((nextHeading-heading+540)%360)-180)>2.5)report=0;heading=nextHeading;orbit=followMovement(orbit,dx,dz,dt,{enabled:cameraFollow,manual:!!orbitHeld,quietFor:(now-manualCameraAt)/1000,reducedMotion});onActivity();stepDistance+=travelled;if(stepDistance>2.1){stepDistance=0;onStep?.(region);}}
+   }
   }else moving=false;
   const y=groundY(position.x,position.z),age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   avatar.position.set(position.x,y,position.z);hero.update(dt,dx,dz,travelled);
@@ -278,6 +286,14 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   feedback(type,action,previous,next){if(type==='field'){const f=next?.adventure.encounter?.field;if(!f?.last)return;action=f.last;type='battle';}if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,WORLD_RADIUS);position=dodge.position;}if(type==='battle'){lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;hero?.action(action==='enemy'?'Hit':action==='guard'||action==='dodge'||action==='wait'||action==='miss'?'Idle':action==='power'||action==='support'||action==='trap'?'Cast':'Attack');const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
   inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);shot={...p,angle:-BIOMES[region].angle+.35,duration:6500,until:performance.now()+6500,heritage:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
   skipCinematic(){shot=null;needsRender=true;},
+  rideHubTransport(item){
+   if(region!=='hub'||transportRide||item?.type!=='hubTransport')return null;
+   const stops=items.filter(i=>i.type==='hubTransport'&&i.transport===item.transport).sort((a,b)=>a.stopIndex-b.stopIndex),index=stops.findIndex(stop=>stop.id===item.id);
+   if(index<0||stops.length<2)return null;
+   const next=stops[(index+1)%stops.length];clearInput();waypoint=null;position={x:item.x,z:item.z};
+   transportRide={transport:item.transport,from:{x:item.x,z:item.z},to:{x:next.x,z:next.z},fromDistrict:item.district,toDistrict:next.district,started:performance.now(),duration:item.transport==='train'?3600:5200};
+   needsRender=true;return {transport:item.transport,from:item.district,to:next.district,duration:transportRide.duration};
+  },
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,
   setCameraFollow(value){cameraFollow=!!value;if(!cameraFollow)orbit={...orbit,yaw:viewBearing(camera.position,cameraTarget)};rememberCamera();try{localStorage.setItem('3b-world-camera-follow',String(cameraFollow));}catch{}needsRender=true;},
