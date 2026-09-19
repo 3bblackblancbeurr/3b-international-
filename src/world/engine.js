@@ -9,7 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET} from './hub/activity-catalog.js';
-import {recordHubDistrict,recordHubNpc,recordHubTransit,recordHubEvent,recordHubSecret} from './hub/interaction-runtime.js';
+import {recordHubDistrict,recordHubNpc,recordHubTransit,recordHubEvent,recordHubSecret,canUnlockHubSecret} from './hub/interaction-runtime.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -98,7 +98,7 @@ export function applyWorldAction(input,action){
   }
   case 'hubSecretUnlock':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
-   if(s.hub.secrets.includes(action.id))return s;
+   if(s.hub.secrets.includes(action.id))return s;requireThat(canUnlockHubSecret(s.hub,action.id),'Les conditions de ce secret ne sont pas encore réunies.');
    return reward(gain(s,{hub:recordHubSecret({...s.hub,secrets:[...s.hub.secrets,action.id]},action.id)}),80,20);
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
