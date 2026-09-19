@@ -6,6 +6,8 @@ import {avatarCompatibility,resolveWeaponHandling} from '../src/world/avatar-com
 import {existsSync,readFileSync} from 'node:fs';
 import {availableWeaponAssets} from '../src/world/weapon-assets.js';
 import {fileURLToPath} from 'node:url';
+import {blankSave,normalizeSave} from '../src/world/rules.js';
+import {applyWorldAction} from '../src/world/engine.js';
 
 test('ultimate creator only exposes morphs backed by current GLB targets',()=>{
  assert.deepEqual(ACTIVE_FACE_CAPABILITIES.map(x=>x.id),['face','jaw','nose']);
@@ -67,4 +69,20 @@ test('every activated weapon GLTF/GLB registry entry points to a real valid asse
   if(assetPath.endsWith('.glb')){assert.equal(bytes.subarray(0,4).toString(),'glTF',id+' invalid GLB header');}
   else{const json=JSON.parse(bytes.toString('utf8'));assert.equal(json.asset?.version,'2.0',id+' invalid glTF version');}
  }
+});
+
+
+test('avatar look presets survive the authoritative world save round trip',()=>{
+ const avatar=normalizeAvatar({name:'Preset',style:'mystique',hair:4,skin:4,pattern:'matrix',patternRotation:35,patternIntensity:.75,outer:'cape',bag:true,weapon:'carthage',weaponForm:2});
+ const action={type:'avatarPreset',index:1,name:'Combat Nuit',avatar};
+ assert.ok(JSON.stringify(action).length<=1000,'preset action must remain within world-engine command limit');
+ const saved=applyWorldAction(blankSave(),action);
+ assert.equal(saved.adventure.avatarPresets[1].name,'Combat Nuit');
+ assert.equal(saved.adventure.avatarPresets[1].avatar.weapon,'carthage');
+ assert.equal(saved.adventure.avatarPresets[1].avatar.pattern,'matrix');
+ const roundTrip=normalizeSave(JSON.parse(JSON.stringify(saved)));
+ assert.equal(roundTrip.adventure.avatarPresets[1].name,'Combat Nuit');
+ assert.equal(roundTrip.adventure.avatarPresets[1].avatar.weaponForm,2);
+ const deleted=applyWorldAction(roundTrip,{type:'avatarPreset',index:1,avatar:null});
+ assert.equal(deleted.adventure.avatarPresets[1],null);
 });
