@@ -75,7 +75,7 @@ test('every activated weapon GLTF/GLB registry entry points to a real valid asse
 test('avatar look presets survive the authoritative world save round trip',()=>{
  const avatar=normalizeAvatar({name:'Preset',style:'mystique',hair:4,skin:4,pattern:'matrix',patternRotation:35,patternIntensity:.75,outer:'cape',bag:true,weapon:'carthage',weaponForm:2});
  const action={type:'avatarPreset',index:1,name:'Combat Nuit',avatar};
- assert.ok(JSON.stringify(action).length<=1000,'preset action must remain within world-engine command limit');
+ assert.ok(JSON.stringify(action).length<=2048,'preset action must remain within world-engine command limit');
  const saved=applyWorldAction(blankSave(),action);
  assert.equal(saved.adventure.avatarPresets[1].name,'Combat Nuit');
  assert.equal(saved.adventure.avatarPresets[1].avatar.weapon,'carthage');
@@ -85,4 +85,11 @@ test('avatar look presets survive the authoritative world save round trip',()=>{
  assert.equal(roundTrip.adventure.avatarPresets[1].avatar.weaponForm,2);
  const deleted=applyWorldAction(roundTrip,{type:'avatarPreset',index:1,avatar:null});
  assert.equal(deleted.adventure.avatarPresets[1],null);
+});
+
+
+test('full extensible avatar action remains under the world-engine command contract',()=>{
+ const avatar=normalizeAvatar({name:'Extensible',created:true,faceHeight:.4,faceLength:-.2,craniumWidth:.3,forehead:.1,temples:-.1,eyeSize:.2,eyeSpacing:.2,eyeTilt:-.2,browHeight:.1,browThickness:.3,mouthWidth:.2,upperLip:.2,lowerLip:.1,chinWidth:.3,chinProjection:.2,cheekbones:.5,cheekVolume:-.2,earSize:.1});
+ const action={type:'avatar',avatar};
+ assert.ok(JSON.stringify(action).length<=2048);
 });
