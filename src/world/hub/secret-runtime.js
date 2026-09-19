@@ -36,3 +36,10 @@ export function nextHubSecretStep(id,hub){
  if(order)return order[done.length]??null;
  return done.length;
 }
+
+export function hubSecretStepAllowed(id,hub,step,count){
+ const done=progress(hub,id);
+ if(!Number.isInteger(step)||step<0||step>=count||done.includes(step))return false;
+ const order=HUB_SECRET_ORDER[id];
+ return order?step===order[done.length]:true;
+}
