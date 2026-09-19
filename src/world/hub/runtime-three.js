@@ -38,6 +38,7 @@ export function hubInteractions(){
     ...HUB_LAYOUT.ziplines.map(z=>({id:'zipline:'+z.id,type:'hub-zipline',name:'Tyrolienne '+z.id,x:z.from.x,z:z.from.z,to:z.to,range:4})),
     ...HUB_LAYOUT.buildings.filter(b=>b.tier===0).map(b=>({id:'hub-building:'+b.id,type:'hub-building',name:b.name,x:b.x,z:b.z,buildingId:b.id,range:4.2})),
     {id:'hub-signal:archive_signal',type:'hub-signal',name:'Analyser le signal des Archives',x:archive.x+5,z:archive.z-1,range:3.5},
+    {id:'hub-memory:archive_memory',type:'hub-memory',name:'Restaurer le souvenir des Archives',x:archive.x,z:archive.z-6,range:3.5},
     {id:'hub-beacon:archive_beacon',type:'hub-beacon',name:'Activer la balise des Archives',x:archive.x-5,z:archive.z+2,range:3.5},
   ];
 }
@@ -77,6 +78,8 @@ export function resolveHubInteraction(interaction,rawProgress){
     merge(applyEvent(progress,{type:'ride_zipline'}));destination={x:interaction.to.x+2,z:interaction.to.z+1};message=interaction.name+' · arrivée dans un autre secteur de la Cité.';
   }else if(interaction.type==='hub-signal'){
     merge(applyEvent(progress,{type:'inspect',id:'archive_signal'}));message='Signal des Archives analysé. Une fréquence du Cercle Brisé répond.';
+  }else if(interaction.type==='hub-memory'){
+    merge(applyEvent(progress,{type:'restore',id:'archive_memory'}));message='Souvenir des Archives restauré. Les fragments de voix se recomposent.';
   }else if(interaction.type==='hub-beacon'){
     merge(applyEvent(progress,{type:'activate',id:'archive_beacon'}));message='Balise des Archives activée. La mémoire du quartier devient plus stable.';
   }
@@ -103,6 +106,10 @@ export function createHubRuntime(scene,{quality='auto'}={}){
   HUB_LAYOUT.buildings.filter(b=>b.tier===0).forEach((b,i)=>{matrix4.compose(v(b.x,b.h+.6,b.z),quat,scale.set(1.1,1.2,1.1));crowns.setMatrixAt(i,matrix4);});crowns.instanceMatrix.needsUpdate=true;root.add(crowns);
 
   const roadMaterial=disposableMaterial(new T.LineBasicMaterial({color:colors.gold,transparent:true,opacity:.38}),materials);
+  const roadGeo=new T.BoxGeometry(1,1,1);geometries.add(roadGeo);
+  const roadSegments=[...HUB_LAYOUT.districts.map(d=>({a:HUB_LAYOUT.districtById.heritage_square,b:d})),...HUB_LAYOUT.trainStations.map((s,i)=>({a:s,b:HUB_LAYOUT.trainStations[(i+1)%HUB_LAYOUT.trainStations.length]}))];
+  const roads=new T.InstancedMesh(roadGeo,stone,roadSegments.length);
+  roadSegments.forEach((segment,i)=>{const dx=segment.b.x-segment.a.x,dz=segment.b.z-segment.a.z,len=Math.hypot(dx,dz),mid=v((segment.a.x+segment.b.x)/2,.035,(segment.a.z+segment.b.z)/2),q=new T.Quaternion().setFromEuler(new T.Euler(0,Math.atan2(dx,dz),0));matrix4.compose(mid,q,scale.set(2.4,.07,len));roads.setMatrixAt(i,matrix4);});roads.instanceMatrix.needsUpdate=true;roads.receiveShadow=true;root.add(roads);
   const stationPath=HUB_LAYOUT.trainStations.map(s=>({x:s.x,z:s.z}));const rail=pathLine(stationPath,roadMaterial);root.add(rail);geometries.add(rail.geometry);
   const cableMat=disposableMaterial(new T.LineBasicMaterial({color:colors.matrix,transparent:true,opacity:.5}),materials),cables=new T.LineSegments(cableGeometry(HUB_LAYOUT.ziplines),cableMat);root.add(cables);geometries.add(cables.geometry);
 
@@ -117,7 +124,7 @@ export function createHubRuntime(scene,{quality='auto'}={}){
 
   const signalGeo=new T.IcosahedronGeometry(.65,1);geometries.add(signalGeo);
   const archive=HUB_LAYOUT.districtById.archives;
-  for(const [x,z] of [[archive.x+5,archive.z-1],[archive.x-5,archive.z+2]]){const beacon=new T.Mesh(signalGeo,matrix);beacon.position.set(x,1.1,z);root.add(beacon);dynamic.push(beacon);}
+  for(const [x,z] of [[archive.x+5,archive.z-1],[archive.x,archive.z-6],[archive.x-5,archive.z+2]]){const beacon=new T.Mesh(signalGeo,matrix);beacon.position.set(x,1.1,z);root.add(beacon);dynamic.push(beacon);}
 
   function update(position,time,profile=quality){
     const budget=hubPopulationBudget(plan,profile==='light'?'light':profile==='high'?'high':'auto'),nearDistance=profile==='light'?42:62;
