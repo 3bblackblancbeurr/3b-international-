@@ -15,14 +15,38 @@ export function createLivingLibrary(){
  return {load(url){if(!cache.has(url))cache.set(url,loader.loadAsync(url).then(asset=>{if(disposed){release(asset);throw Error('Vue fermée.');}return asset;}).catch(error=>{cache.delete(url);throw error;}));return cache.get(url);},dispose(){disposed=true;cache.forEach(p=>p.then(release).catch(()=>{}));cache.clear();}};
 }
 export function avatarRecipe(avatar){return {outerColor:avatar?.outerColor,metalColor:avatar?.metalColor||'#c9ad75',belt:avatar?.belt||'none',pendant:!!avatar?.pendant,body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,height:avatar?.height??1,build:avatar?.build??1,fabric:avatar?.fabric||'cotton',patternScale:avatar?.patternScale??1,capeLength:avatar?.capeLength??1,hoodFit:avatar?.hoodFit??1,skin:avatar?.skinColor||SKINS[avatar?.skin??2],cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0};}
+export const avatarModelKey=avatar=>`${avatar?.body==='femme'?'femme':'homme'}:${['voyageur','sentinelle','mystique'].includes(avatar?.style)?avatar.style:'voyageur'}`;
 export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,weaponState='world'}={}){
- const recipe=card?CARD_DESIGNS[card]:avatarRecipe(avatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
+ let currentAvatar=avatar?{...avatar}:null,recipe=card?CARD_DESIGNS[card]:avatarRecipe(currentAvatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
  const object=new THREE.Group(),personal=new Set();let model,mixer,garments,weaponModel,pattern,actions={},legActions={},legCurrent=null,current=null,dead=false,clock=0,actionEnd=0,heading=0,ready=false,combatPose={},weaponForced=weaponState==='preview',weaponReadyUntil=0;
  object.scale.setScalar(scale);
  function transition(name,once=false){
   if(dead)return;
   const next=actions[name]||actions.Idle;if(!next||current===name&&!once)return;
   const previous=actions[current];next.reset().setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);next.clampWhenFinished=once;next.enabled=true;next.setEffectiveWeight(1).setEffectiveTimeScale(1).play();if(previous&&previous!==next)previous.crossFadeTo(next,.18,false);current=name;
+ }
+ function applyAvatar(nextAvatar,{forceGarments=false}={}){
+  if(card||!nextAvatar||!model)return;
+  const previous=currentAvatar||{},nextRecipe=avatarRecipe(nextAvatar);
+  const garmentKeys=['headwear','outer','bag','belt','pendant','outerColor','metalColor','accentColor','bootColor','fabricColor','color','fabric','pattern','patternScale','capeLength','hoodFit'];
+  const garmentsChanged=forceGarments||garmentKeys.some(key=>previous?.[key]!==nextAvatar?.[key]);
+  const weaponChanged=previous?.weapon!==nextAvatar?.weapon||previous?.weaponForm!==nextAvatar?.weaponForm;
+  currentAvatar={...nextAvatar};recipe=nextRecipe;
+  const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);
+  if(garmentsChanged){garments?.dispose();pattern?.dispose();pattern=garmentPattern(recipe);garments=fitGarments(model,recipe);}
+  model.traverse(o=>{
+   if(!o.isMesh)return;
+   const hair=o.name.match(/^Hair_(\d+)/),boots=o.name.match(/^Boots_(\d+)/);if(hair)o.visible=Number(hair[1])===recipe.hair&&recipe.headwear!=='hood';if(boots)o.visible=Number(boots[1])===recipe.boots;
+   for(const m of [o.material].flat().filter(Boolean)){
+    if(/SkinColor|HandsColor/.test(m.name))m.color.set(recipe.skin);
+    else if(/HairColor/.test(m.name))m.color.set(recipe.hairColor);
+    else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);m.roughness=({cotton:.92,linen:1,satin:.38,leather:.55})[recipe.fabric]??.92;if(garmentsChanged){m.map=pattern||null;m.needsUpdate=true;}}
+    else if(/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
+    else if(/BootColor/.test(m.name))m.color.set(recipe.bootColor);
+   }
+   if(o.morphTargetDictionary)for(const [plus,minus,value] of [['FaceWide','FaceNarrow',recipe.face],['JawStrong','JawSoft',recipe.jaw],['NoseLarge','NoseSmall',recipe.nose]])for(const [key,v] of [[plus,Math.max(0,value)],[minus,Math.max(0,-value)]]){const index=o.morphTargetDictionary[key];if(index!==undefined)o.morphTargetInfluences[index]=v;}
+  });
+  if(weaponChanged){weaponModel?.dispose();weaponModel=nextAvatar.weapon?fitWeapon(model,nextAvatar,{drawn:weaponState==='preview'||weaponForced}):null;}
  }
  library.load(url).then(asset=>{
   if(dead)return;model=clone(asset.scene);object.add(model);if(!card)pattern=garmentPattern(recipe);
@@ -57,8 +81,8 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
   }
   transition('Idle');mixer.update(0);ready=true;onLoad?.();
  }).catch(error=>{if(!dead){console.error('[3B living]',url,error);onError?.('Le modèle n’a pas pu être chargé.');}});
- return {object,setCombat(value){combatPose=value||{};},setWeaponDrawn(value){weaponForced=!!value;},get ready(){return ready;},action(name,duration){if(!ready)return;const timed=Number.isFinite(duration)&&duration>0;const length=timed?Math.max(.18,Math.min(3.5,duration)):(name==='Death'?2.5:name==='Hit'?.35:Math.min(3.5,Math.max(.5,actions[name]?.getClip().duration||.75)));actionEnd=clock+length;if(['Attack','Cast','Guard'].includes(name)){weaponReadyUntil=Math.max(weaponReadyUntil,clock+length+1.4);weaponModel?.setDrawn(true);}transition(name,true);if(timed&&actions[name])actions[name].setEffectiveTimeScale(actions[name].getClip().duration/length);},face(dx,dz,dt){const target=Math.atan2(dx,dz);heading+=Math.atan2(Math.sin(target-heading),Math.cos(target-heading))*(1-Math.exp(-dt*16));object.rotation.y=heading;},
+ return {object,setCombat(value){combatPose=value||{};},setWeaponDrawn(value){weaponForced=!!value;},setAvatar(value){applyAvatar(value);},get ready(){return ready;},action(name,duration){if(!ready)return;const timed=Number.isFinite(duration)&&duration>0;const length=timed?Math.max(.18,Math.min(3.5,duration)):(name==='Death'?2.5:name==='Hit'?.35:Math.min(3.5,Math.max(.5,actions[name]?.getClip().duration||.75)));actionEnd=clock+length;if(['Attack','Cast','Guard'].includes(name)){weaponReadyUntil=Math.max(weaponReadyUntil,clock+length+1.4);weaponModel?.setDrawn(true);}transition(name,true);if(timed&&actions[name])actions[name].setEffectiveTimeScale(actions[name].getClip().duration/length);},face(dx,dz,dt){const target=Math.atan2(dx,dz);heading+=Math.atan2(Math.sin(target-heading),Math.cos(target-heading))*(1-Math.exp(-dt*16));object.rotation.y=heading;},
   update(dt,dx=0,dz=0,travelled=0){if(dead)return;clock+=dt;garments?.update(clock);const armed=weaponState==='preview'||weaponForced||clock<weaponReadyUntil||combatPose.guard>0||combatPose.detached>0;weaponModel?.setDrawn(armed);weaponModel?.update(clock,combatPose);if(!mixer)return;const speed=dt>0?travelled/dt:0;if(combatPose.guard>0&&actions.Guard){if(current!=='Guard')transition('Guard',true);actionEnd=clock+.1;}else if(current==='Guard'&&clock<actionEnd)actionEnd=clock;if(clock>=actionEnd){const locomotion=speed>.08?(speed/scale>4?'Run':'Walk'):'Idle',name=armed&&actions.Ready?'Ready':locomotion;transition(name);if(!armed&&speed>.08){actions[name]?.setEffectiveTimeScale(Math.min(2.2,Math.max(.6,speed/scale/(name==='Run'?4.8:1.6))));}}if(speed>.08)this.face(dx,dz,dt);const gait=speed>.08?(speed/scale>4?'Run':speed/scale>2.4&&legActions.Jog?'Jog':'Walk'):'Idle';if(legActions[gait]){if(current==='Death'&&clock<actionEnd){for(const a of Object.values(legActions))a.stop();legCurrent=null;}else{if(legCurrent!==gait){const next=legActions[gait];next.reset().play();if(legActions[legCurrent])legActions[legCurrent].crossFadeTo(next,.18,false);legCurrent=gait;}if(speed>.08)legActions[gait].setEffectiveTimeScale(Math.min(2,Math.max(.65,speed/scale/(gait==='Run'?4.8:gait==='Jog'?3.2:1.6))));}}mixer.update(Math.min(.1,dt));},
-  reset(){heading=0;object.rotation.y=0;actionEnd=0;transition('Idle');},setColor(color){if(card)return;recipe.cloth=color||avatarRecipe(avatar).cloth;for(const m of personal)if(/ClothColor/.test(m.name))m.color.set(recipe.cloth);},dispose(){if(dead)return;dead=true;ready=false;garments?.dispose();weaponModel?.dispose();pattern?.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});}personal.forEach(m=>m.dispose());object.clear();}
+  reset(){heading=0;object.rotation.y=0;actionEnd=0;transition('Idle');},setColor(color){if(card)return;recipe.cloth=color||avatarRecipe(currentAvatar).cloth;for(const m of personal)if(/ClothColor/.test(m.name))m.color.set(recipe.cloth);},dispose(){if(dead)return;dead=true;ready=false;garments?.dispose();weaponModel?.dispose();pattern?.dispose();mixer?.stopAllAction();if(model){mixer?.uncacheRoot(model);model.traverse(o=>{if(o.isSkinnedMesh)o.skeleton.dispose();});}personal.forEach(m=>m.dispose());object.clear();}
  };
 }
