@@ -31,3 +31,26 @@ export const HUB_SECRET_SET=new Set(HUB_SECRET_IDS);
 export const HUB_DISTRICT_SET=new Set(HUB_DISTRICT_IDS);
 export const HUB_NPC_SET=new Set(HUB_NPC_IDS);
 export const HUB_TRANSPORT_SET=new Set(HUB_TRANSPORT_TYPES);
+
+const TRAIN_RING=['heritage_square','archives','community','gardens','docks','city3b_portal','commerce','arena','innovation','broken_circle_tower'];
+const BOAT_RING=['docks','gardens','city3b_portal','commerce','heritage_square'];
+export const HUB_TRANSPORT_ROUTES={
+ train:TRAIN_RING.map((from,index)=>[from,TRAIN_RING[(index+1)%TRAIN_RING.length]]),
+ boat:BOAT_RING.map((from,index)=>[from,BOAT_RING[(index+1)%BOAT_RING.length]]),
+ telepheric:[
+  ['docks','broken_circle_tower'],['broken_circle_tower','docks'],
+  ['gardens','archives'],['archives','gardens'],
+  ['commerce','innovation'],['innovation','commerce'],
+ ],
+ zipline:[
+  ['broken_circle_tower','heritage_square'],
+  ['archives','community'],
+  ['arena','commerce'],
+  ['innovation','arena'],
+  ['gardens','docks'],
+  ['city3b_portal','docks'],
+ ],
+};
+export function validHubTransportRide(transport,from,to){
+ return HUB_TRANSPORT_SET.has(transport)&&HUB_TRANSPORT_ROUTES[transport]?.some(([a,b])=>a===from&&b===to)===true;
+}
