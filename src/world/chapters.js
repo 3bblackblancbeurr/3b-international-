@@ -1,4 +1,5 @@
 import {CARDS,COUNTRIES,cardById,cardSlot} from './catalog.js';
+import {GUARDIAN_VALUES} from './guardian-values.js';
 
 // Chapter mechanics are shared by the browser and the authenticated game engine.
 export const CHAPTERS={
@@ -28,6 +29,7 @@ export function chapterObjective(save,region=save.region){
  const missing=[0,1,2].find(i=>!save.beacons.includes(region+':'+i));
  if(missing!==undefined)return{title:'Retrouver les souvenirs',detail:'Les fragments alimentent la reconstruction du quartier.',target:region+':'+missing,reward:'45 XP · 15 éclats · équipement'};
  if(s.restored<2)return{title:'Reconstruire '+c.restores[1],detail:'Les trois souvenirs ont retrouvé leur place. Choisis le futur du quartier.',target:region+':story',reward:'140 XP · 40 éclats'};
+ if(!save.adventure?.values?.[region]?.completed){const value=GUARDIAN_VALUES[region];return{title:'Comprendre '+value.value,detail:`Avant de libérer ${value.name}, termine l’épreuve de ${value.value}. Cette étape prépare aussi ton groupe au combat.`,target:region+':value',reward:'Valeur maîtrisée · préparation Gardien · 60 XP'};}
  if(!save.seals.includes(region)){const guardian=CARDS.find(card=>card.country===region&&card.category==='Carte unique');return{title:'Libérer '+(guardian?.name||'le gardien'),detail:(guardian?.power?guardian.power+' · ':'')+c.guardian,target:region+':guardian',reward:'Sceau · gardien allié · 250 XP'};}
  if(s.restored<3)return{title:'Inaugurer '+c.restores[2],detail:'Le gardien reconnaît tes liens. Le pays peut maintenant rejoindre le Nexus.',target:region+':story',reward:'200 XP · 70 éclats · tenue régionale'};
  return{title:'Un pays retrouvé',detail:c.ending,target:region+':guardian',reward:s.challenge?'Défi maîtrisé · rencontres libres':'Défi expert optionnel · 180 XP'};
