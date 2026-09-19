@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {normalizeAvatar} from '../src/world/avatar-rules.js';
 import {ACTIVE_FACE_CAPABILITIES,BEARD_CATALOG,FABRIC_CATALOG,HAIR_CATALOG,PATTERN_CATALOG,creatorCapabilities} from '../src/world/avatar-capabilities.js';
 import {avatarCompatibility,resolveWeaponHandling} from '../src/world/avatar-compatibility.js';
-import {existsSync} from 'node:fs';
+import {existsSync,readFileSync} from 'node:fs';
+import {availableWeaponAssets} from '../src/world/weapon-assets.js';
 import {fileURLToPath} from 'node:url';
 
 test('ultimate creator only exposes morphs backed by current GLB targets',()=>{
@@ -55,4 +56,15 @@ test('compatibility rules protect dense back configurations without changing sav
 test('creator companion preview keeps a real wolf asset in the repository',()=>{
  const path=fileURLToPath(new URL('../public/world/origins/wolf.glb',import.meta.url));
  assert.equal(existsSync(path),true);
+});
+
+
+test('every activated weapon GLTF/GLB registry entry points to a real valid asset',()=>{
+ for(const {id,path:assetPath} of availableWeaponAssets()){
+  const path=fileURLToPath(new URL('..'+assetPath,import.meta.url));
+  assert.equal(existsSync(path),true,id+' asset missing');
+  const bytes=readFileSync(path);
+  if(assetPath.endsWith('.glb')){assert.equal(bytes.subarray(0,4).toString(),'glTF',id+' invalid GLB header');}
+  else{const json=JSON.parse(bytes.toString('utf8'));assert.equal(json.asset?.version,'2.0',id+' invalid glTF version');}
+ }
 });
