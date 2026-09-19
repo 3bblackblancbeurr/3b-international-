@@ -196,7 +196,7 @@ export function applyWorldAction(input,action){
    if(cs.restored===2){requireThat(s.seals.includes(region),'Libère le gardien du pays.');return reward(chapter(s,region,{restored:3}),200,70);}return s;
   }
   case 'encounter':{
-   peaceful();inCountry();let item=worldItems(region,s).find(i=>i.id===action.id&&['echo','guardian'].includes(i.type));
+   peaceful();inCountry();if(action.id===region+':guardian'&&!s.seals.includes(region))requireThat(s.adventure.values?.[region]?.completed,`Maîtrise d’abord la valeur ${GUARDIAN_VALUES[region]?.value||'du Gardien'}.`);let item=worldItems(region,s).find(i=>i.id===action.id&&['echo','guardian'].includes(i.type));
    requireThat(item,'Cette rencontre n’existe pas.');
    const boss=item.type==='guardian';if(boss){requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');if(!s.seals.includes(region))requireThat(s.adventure.values?.[region]?.completed,`Maîtrise d’abord la valeur ${GUARDIAN_VALUES[region]?.value||'du Gardien'}.`);}
    if(action.outdoor){requireThat(!boss&&s.adventure.outdoorCredits>0,'Marche pour révéler un écho du dehors.');s=adventure(s,{outdoorCredits:s.adventure.outdoorCredits-1});}
