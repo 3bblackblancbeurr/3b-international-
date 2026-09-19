@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {buildHubLayout,HUB_RADIUS,hubDistrictAt,nextStop} from '../src/world/hub/runtime-core.js';
 import {applyHubEvent,blankHubProgress,normalizeHubProgress,startHubMission} from '../src/world/hub/mission-runtime.js';
+import {deriveHubSecrets,evaluateHubEvents} from '../src/world/hub/living-world.js';
 import {WORLDS} from '../src/world/origins/data.js';
 import {clear,route} from '../src/world/origins/space.js';
 
@@ -10,6 +11,8 @@ const json=path=>JSON.parse(fs.readFileSync(new URL('../'+path,import.meta.url),
 const plan=json('src/world/hub/data/hub-master-plan-v2.json');
 const npcs=json('src/world/hub/data/npcs-v1.json');
 const missions=json('src/world/hub/data/missions-v1.json');
+const events=json('src/world/hub/data/events-v1.json');
+const secrets=json('src/world/hub/data/secrets-v1.json');
 const layout=buildHubLayout(plan,npcs,missions);
 
 test('living hub turns canonical data into a bounded runtime layout',()=>{
@@ -62,4 +65,22 @@ test('Origins values and guardians follow the canonical eight-country direction'
       ['espagne','Diego','Passion'],['italie','Alessio','Espoir'],['turquie','Émir','Foi'],['estonie','Eira','Sagesse']
     ]
   );
+});
+
+
+test('living-world events are deterministic and weather events stay disabled without weather input',()=>{
+  const date=new Date('2026-09-19T21:00:00');
+  const active=evaluateHubEvents(events,{date,progress:{completed:['first_steps','first_echo','rooftops_circle']}});
+  assert.ok(active.some(e=>e.id==='market_night'));
+  assert.ok(active.some(e=>e.id==='power_flicker'));
+  assert.equal(active.some(e=>e.id==='heavy_rain_echo'),false);
+  assert.equal(active.some(e=>e.id==='dock_fog'),false);
+});
+
+test('a completed boat-without-flag mission unlocks its canonical abandoned-quay secret once',()=>{
+  const first=deriveHubSecrets(secrets,{completed:['boat_without_flag'],secrets:[]});
+  assert.deepEqual(first.ids,['secret_abandoned_quay']);
+  assert.equal(first.unlocked.length,1);
+  const second=deriveHubSecrets(secrets,{completed:['boat_without_flag'],secrets:first.ids});
+  assert.equal(second.unlocked.length,0);
 });
