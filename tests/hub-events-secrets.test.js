@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isHubEventActive} from '../src/world/hub/event-runtime.js';
+import {hubWeatherForDate,isHubEventActive} from '../src/world/hub/event-runtime.js';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 
@@ -23,11 +23,23 @@ test('Hub event discovery rewards once and survives reducer normalization',()=>{
  assert.deepEqual({xp:save.xp,shards:save.shards},after);
 });
 
-test('Hub secret unlock is canonical, hidden-state persistent and rewarded once',()=>{
- let save=blankSave(),before={xp:save.xp,shards:save.shards};
- save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_three_lights'});
- assert.ok(save.hub.secrets.includes('secret_three_lights'));
+test('Hub secret unlock is gated by real recorded progress and rewarded once',()=>{
+ let save=blankSave();
+ assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'}),/condition/);
+ save={...save,hub:{...save.hub,missions:{...save.hub.missions,boat_without_flag:{...save.hub.missions.boat_without_flag,status:'completed',completedObjectives:2}}}};
+ const before={xp:save.xp,shards:save.shards};
+ save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'});
+ assert.ok(save.hub.secrets.includes('secret_abandoned_quay'));
  assert.equal(save.xp,before.xp+80);
  assert.equal(save.shards,before.shards+20);
+ const after={xp:save.xp,shards:save.shards};
+ save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'});
+ assert.deepEqual({xp:save.xp,shards:save.shards},after);
  assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_not_real'}),/Secret Hub inconnu/);
+});
+
+test('Hub daily weather is deterministic and uses supported states',()=>{
+ const a=hubWeatherForDate('2026-09-19'),b=hubWeatherForDate('2026-09-19');
+ assert.equal(a,b);
+ assert.ok(['clear','rain','heavy_rain','fog'].includes(a));
 });
