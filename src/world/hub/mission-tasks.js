@@ -56,6 +56,8 @@ export const HUB_MISSION_TASKS={
  ],
 };
 
+export const isPhysicalHubMission=(id)=>Object.hasOwn(HUB_MISSION_TASKS,id);
+
 export const HUB_MISSION_TASK_BY_KEY=Object.fromEntries(
  Object.entries(HUB_MISSION_TASKS).flatMap(([missionId,tasks])=>tasks.map((task)=>[missionId+':'+task.id,{...task,missionId}]))
 );
