@@ -1,5 +1,9 @@
 export const HUB_PROGRESS_VERSION=1;
 
+export const HUB_MISSION_IDS=Object.freeze([
+  'first_steps','first_echo','eight_signals','rooftops_circle','boat_without_flag','storm_rescue','memory_under_water','wagon_eight','blue_blackout','garden_listens','first_foundation','voices_square','passion_trial','silent_cable','three_reflections','eight_seeds','golden_pattern','living_fabric','lost_wolf_signal','broken_record'
+]);
+
 export const PLAYABLE_MISSION_EVENTS=Object.freeze({
   first_steps:[
     {type:'visit',id:'heritage_welcome'},
@@ -27,7 +31,7 @@ export function blankHubProgress(){
 }
 
 export function normalizeHubProgress(raw,missions=[]){
-  const next=blankHubProgress(),known=new Set(missions.map(m=>m.id));
+  const next=blankHubProgress(),known=new Set((missions.length?missions:HUB_MISSION_IDS.map(id=>({id}))).map(m=>m.id));
   if(!raw||typeof raw!=='object')return next;
   next.completed=[...new Set(Array.isArray(raw.completed)?raw.completed:[])].filter(id=>known.has(id));
   next.active=known.has(raw.active)&&!next.completed.includes(raw.active)?raw.active:null;
