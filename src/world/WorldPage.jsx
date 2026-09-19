@@ -59,11 +59,13 @@ function Art({card,className=''}){
  return <div className={'world-card-art '+className} style={{'--art-x':(index%4)/3*100+'%','--art-y':index<4?'0%':'100%','--country-color':country.color}} aria-hidden="true"><div/><span>{card.country==='3b'?'3B':country.name.toUpperCase()}</span></div>;
 }
 function Card({card,owned,onClick}){return <CompanionRow person={card} owned={owned} onClick={onClick}/>;}
+const DEFAULT_AUDIO_MIX={master:.78,music:.34,ambience:.55,sfx:.78,voice:.9};
 export default function WorldPage({goTo}){const account=useLoyalty();return account.loading?<div className="world-loading">Ouverture du Monde 3B…</div>:<WorldSession key={account.user?.id||'guest'} uid={account.user?.id} goTo={goTo}/>;}
 
 function WorldSession({uid,goTo}){
  const[save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[snapshot,setSnapshot]=useState({region:'hub',position:{x:0,z:9}}),[panel,setPanel]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[saveMessage,setSaveMessage]=useState('Chargement de la sauvegarde…'),[gps,setGPS]=useState(false),[gpsMessage,setGPSMessage]=useState('Le GPS est désactivé.'),[walkSession,setWalkSession]=useState(0),[sound,setSound]=useState(false);
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
+ const [audioMix,setAudioMix]=useState(()=>{try{return {...DEFAULT_AUDIO_MIX,...JSON.parse(localStorage.getItem('3b-world-audio-mix')||'{}')}}catch{return {...DEFAULT_AUDIO_MIX}}});
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
  const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null);
@@ -75,8 +77,10 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{audio.current?.ambience(snapshot.region,snapshot.interior);},[snapshot.region,snapshot.interior]);
  useEffect(()=>{audio.current?.weather(snapshot.weather);},[snapshot.weather]);
  useEffect(()=>{audio.current?.phase(snapshot.time?.phase);},[snapshot.time?.phase]);
+ useEffect(()=>{audio.current?.setMix(audioMix);},[audioMix]);
  function chime(){audio.current?.event('reward');}
- function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.enable(next,saveRef.current.region);setSound(next);}
+ function updateAudioMix(key,value){const next={...audioMix,[key]:Math.max(0,Math.min(1,Number(value)))};setAudioMix(next);try{localStorage.setItem('3b-world-audio-mix',JSON.stringify(next));}catch{}}
+ function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.setMix(audioMix);audio.current.enable(next,saveRef.current.region);setSound(next);}
  async function sync(){if(!loaded)return;dirty.current=false;const result=await saveWorld(uid,saveRef.current);if(result.pending)dirty.current=true;setSaveMessage(result.message);if(result.data){if(result.data.region!==saveRef.current.region)scene.current?.travel(result.data.region);saveRef.current=result.data;setSave(result.data);}return result;}
  async function refreshWorld(){const result=await loadWorld(uid);saveRef.current=result.data;setSave(result.data);scene.current?.setSave(result.data);}
  function locateMember(member){if(member.camp){navigateTo(save.region+':cooperation');return;}const peer=peersRef.current.find(p=>p.id===member.id);if(!peer){announce('Ce voyageur est hors ligne ou en train de rejoindre le groupe.');return;}if(peer.region!==saveRef.current.region){announce('Retrouve ce voyageur dans '+(countryById[peer.region]?.name||'le Nexus')+'. Traverse la porte correspondante.');return;}navigate({id:peer.id,name:member.avatar?.name||'Voyageur',x:peer.x,z:peer.z});}
