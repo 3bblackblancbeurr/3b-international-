@@ -51,11 +51,11 @@ export const FABRIC_CATALOG={
  linen:{name:'Lin',available:true,roughness:1},
  satin:{name:'Satin',available:true,roughness:.38},
  leather:{name:'Cuir',available:true,roughness:.55},
- denim:{name:'Jean',available:false,roughness:.78,needsMaps:true},
- wool:{name:'Laine',available:false,roughness:.96,needsMaps:true},
- knit:{name:'Maille',available:false,roughness:.95,needsMaps:true},
- velvet:{name:'Velours',available:false,roughness:.88,needsMaps:true},
- technical:{name:'Tissu technique',available:false,roughness:.48,needsMaps:true}
+ denim:{name:'Jean',available:true,roughness:.8,surfaceSource:'procedural-pbr'},
+ wool:{name:'Laine',available:true,roughness:.94,surfaceSource:'procedural-pbr'},
+ knit:{name:'Maille',available:true,roughness:.92,surfaceSource:'procedural-pbr'},
+ velvet:{name:'Velours',available:true,roughness:.84,surfaceSource:'procedural-pbr'},
+ technical:{name:'Tissu technique',available:true,roughness:.46,surfaceSource:'procedural-pbr'}
 };
 
 export const PATTERN_CATALOG=[
