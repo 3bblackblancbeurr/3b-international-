@@ -123,3 +123,23 @@ test('left-handed ready and strike clips mirror the active arm',()=>{
  assert.notDeepEqual(values(right,'Ready','upperarm_r'),values(left,'Ready','upperarm_r'));
  assert.notDeepEqual(values(right,'WeaponStrike','upperarm_r'),values(left,'WeaponStrike','upperarm_r'));
 });
+
+
+test('all 16 weapons stay finite for both handedness and holster states',()=>{
+ for(const handedness of ['right','left'])for(const weaponDef of WEAPONS){
+  const model=new THREE.Group();
+  const bones={
+   pelvis:[0,.85,0],spine_02:[0,1.25,-.12],spine_03:[0,1.45,0],
+   upperarm_r:[.22,1.42,0],lowerarm_r:[.24,-.25,0],hand_r:[0,-.25,0],
+   upperarm_l:[-.22,1.42,0],lowerarm_l:[-.24,-.25,0],hand_l:[0,-.25,0]
+  };
+  const objects={};
+  for(const [name,pos] of Object.entries(bones)){const bone=new THREE.Group();bone.name=name;bone.position.set(...pos);objects[name]=bone;}
+  model.add(objects.pelvis,objects.spine_02,objects.spine_03,objects.upperarm_r,objects.upperarm_l);
+  objects.upperarm_r.add(objects.lowerarm_r);objects.lowerarm_r.add(objects.hand_r);objects.upperarm_l.add(objects.lowerarm_l);objects.lowerarm_l.add(objects.hand_l);
+  model.updateMatrixWorld(true);
+  const weapon=fitWeapon(model,{weapon:weaponDef.id,weaponForm:0,handedness},{drawn:false});
+  for(const drawn of [false,true]){weapon.setDrawn(drawn);for(let i=1;i<=12;i++)weapon.update(i/30,{});const root=model.getObjectByName('3B-equipped-'+weaponDef.id);assert.ok(root,weaponDef.id+' missing root');for(const n of [...root.position,...root.quaternion,...root.scale])assert.ok(Number.isFinite(n),weaponDef.id+' '+handedness+' produced non-finite transform');}
+  weapon.dispose();assert.equal(model.getObjectByName('3B-equipped-'+weaponDef.id),undefined);
+ }
+});
