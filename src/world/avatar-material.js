@@ -1,9 +1,10 @@
 import {ShaderChunk} from 'three';
+import {applySurfaceMaps} from './avatar-surface.js';
 
 // Keep the imported fabric/skin detail, but remove its baked color before applying
 // the player's palette. Multiplying two colored albedos made custom outfits dark.
-export function prepareTintMaterial(material,{pattern=false}={}){
- material.metalness=0;material.metalnessMap=null;material.roughness=.86;
+export function prepareTintMaterial(material,{pattern=false,surface='cotton'}={}){
+ material.metalness=0;material.metalnessMap=null;applySurfaceMaps(material,surface);
  if(material.map&&!pattern){
   material.onBeforeCompile=shader=>{
    const map=ShaderChunk.map_fragment.replace('diffuseColor *= sampledDiffuseColor;',
