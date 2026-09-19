@@ -1,4 +1,5 @@
 import {HUB_MISSIONS,HUB_MISSION_BY_ID} from './mission-catalog.js';
+import {HUB_MISSION_TASKS} from './mission-tasks.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_TYPES,HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 
 export function blankHubState(){
@@ -13,6 +14,7 @@ export function blankHubState(){
       transportStops:[],
       nightTrainDates:[],
       secretProgress:{},
+      missionTasks:{},
     },
   };
 }
@@ -42,6 +44,11 @@ export function normalizeHubState(input){
   for(const [id,count] of Object.entries(HUB_SECRET_STEP_COUNTS)){
    const steps=[...new Set(Array.isArray(stats.secretProgress?.[id])?stats.secretProgress[id]:[])].filter((step)=>Number.isInteger(step)&&step>=0&&step<count).slice(0,count);
    if(steps.length)base.stats.secretProgress[id]=steps;
+  }
+  for(const [missionId,tasks] of Object.entries(HUB_MISSION_TASKS)){
+   const allowed=new Set(tasks.map((task)=>task.id));
+   const done=[...new Set(Array.isArray(stats.missionTasks?.[missionId])?stats.missionTasks[missionId]:[])].filter((id)=>allowed.has(id)).slice(0,tasks.length);
+   if(done.length)base.stats.missionTasks[missionId]=done;
   }
   return base;
 }
