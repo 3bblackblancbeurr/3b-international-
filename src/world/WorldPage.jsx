@@ -99,6 +99,11 @@ function WorldSession({uid,goTo}){
   }
   if(item.type==='hubTransport'){const now=new Date(),ride=scene.current?.rideHubTransport(item);if(!ride){announce('Ce transport n’est pas disponible pour le moment.');return;}const next=act({type:'hubTransportRide',transport:ride.transport,from:ride.from,to:ride.to,night:now.getHours()>=20||now.getHours()<6,dateKey:now.toISOString().slice(0,10)});if(next)announce(item.name+' · départ vers '+ride.to);return;}
   if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
+  if(item.type==='hubSecretStep'){
+   if(saveRef.current.hub?.secrets?.includes(item.secretId)){announce('Ce secret est déjà découvert.');return;}
+   if(item.done){announce(item.name+' · déjà enregistré');return;}
+   const next=act({type:'hubSecretStep',id:item.secretId,step:item.step});if(next){const count=next.hub.stats.secretProgress[item.secretId]?.length||0;announce(item.name+' · indice '+count+' enregistré');chime();}return;
+  }
   if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId,evidence:item.evidence||{}});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
   if(item.type==='hubDistrict'){act({type:'hubDistrictVisit',id:item.district});announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
