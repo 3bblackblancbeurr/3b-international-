@@ -9,6 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET} from './hub/activity-catalog.js';
+import {hubSecretReady} from './hub/secret-runtime.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -86,6 +87,7 @@ export function applyWorldAction(input,action){
   case 'hubSecretUnlock':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
    if(s.hub.secrets.includes(action.id))return s;
+   requireThat(hubSecretReady(action.id,s.hub,action.evidence||{}),'La condition de ce secret n’est pas encore remplie.');
    return reward(gain(s,{hub:{...s.hub,secrets:[...s.hub.secrets,action.id]}}),80,20);
   }
   case 'hubNpcTalk':{
