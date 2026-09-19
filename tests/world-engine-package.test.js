@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {execFileSync} from 'node:child_process';
+
+const here=dirname(fileURLToPath(import.meta.url));
+const root=join(here,'..');
+
+test('world-engine deployment pack includes nested Hub reducer dependencies',()=>{
+ const dir=mkdtempSync(join(tmpdir(),'3b-world-engine-')),out=join(dir,'deployment.json');
+ try{
+  execFileSync(process.execPath,[join(root,'scripts','prepare-world-engine.mjs'),out],{cwd:root,stdio:'pipe'});
+  const names=new Set(JSON.parse(readFileSync(out,'utf8')).map((file)=>file.name));
+  for(const name of ['hub/state.js','hub/mission-catalog.js','hub/mission-runtime.js','hub/activity-catalog.js'])assert.ok(names.has(name),name);
+  assert.ok(names.has('engine.js'));
+  assert.ok(names.has('rules.js'));
+  assert.ok(names.has('index.ts'));
+  assert.ok(names.has('deno.json'));
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});

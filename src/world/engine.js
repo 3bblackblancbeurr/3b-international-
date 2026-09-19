@@ -6,6 +6,9 @@ import {beginField,fieldMover} from './field-world.js';
 import {frontierState,RESOURCE_SITES,BUILDINGS,buildCost,patrolOpponent} from './frontier.js';
 import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMissions,makeEncounter,worldItems,guardianReady,clamp} from './rules.js';
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
+import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
+import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET} from './hub/activity-catalog.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -58,6 +61,33 @@ export function applyWorldAction(input,action){
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
  const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
  switch(action.type){
+  case 'hubMissionStart':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
+   const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');
+   return gain(s,{hub:{...s.hub,missions:startHubMission(s.hub.missions,action.id)}});
+  }
+  case 'hubMissionStep':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
+   const current=s.hub.missions[action.id];requireThat(current?.status==='active','Commence d’abord cette mission.');
+   requireThat(Number.isInteger(action.objective)&&action.objective===current.completedObjectives,'Objectif invalide ou déjà validé.');
+   return gain(s,{hub:{...s.hub,missions:advanceHubMission(s.hub.missions,action.id,1)}});
+  }
+  case 'hubMissionClaim':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
+   const current=s.hub.missions[action.id];requireThat(current?.status==='completed'&&!current.claimed,'Récompense indisponible.');
+   const missions=claimHubMission(s.hub.missions,action.id),rewardValue=hubMissionReward(mission);
+   s=gain(s,{hub:{...s.hub,missions}});return reward(s,rewardValue.xp,rewardValue.shards);
+  }
+  case 'hubEventDiscover':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
+   if(s.hub.events.includes(action.id))return s;
+   return reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+  }
+  case 'hubSecretUnlock':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
+   if(s.hub.secrets.includes(action.id))return s;
+   return reward(gain(s,{hub:{...s.hub,secrets:[...s.hub.secrets,action.id]}}),80,20);
+  }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
   case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden:0)),harvest:[...home.harvest,site.id]});}

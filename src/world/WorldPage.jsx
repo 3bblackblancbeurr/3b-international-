@@ -24,7 +24,7 @@ import './adventure.css';
 import {ADAPTED_ART} from './portraits.js';
 import {createWorldAudio} from './audio.js';
 import {WorldHUD,WorldMap} from './WorldHUD.jsx';
-import {landscapeItems} from './terrain.js';
+import {worldRuntimeItems} from './runtime-items.js';
 import './immersion.css';
 import ArenaPage from '../arena/ArenaPage.jsx';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
@@ -34,6 +34,7 @@ import {Companions,CompanionRow,Sanctuary,TALENT_NAMES} from './Companions.jsx';
 import './companions.css';
 import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
+import {hubNpcDialogue} from './hub/npc-dialogue.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -63,7 +64,7 @@ function WorldSession({uid,goTo}){
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
  const [combatImpact,setCombatImpact]=useState(null);
- const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null);
+ const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),dialogueTurns=useRef(new Map());
  saveRef.current=save;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
  const announce=useCallback(text=>{setNotice(text);clearTimeout(noticeTimer.current);noticeTimer.current=setTimeout(()=>setNotice(''),2400);},[]);
@@ -88,6 +89,18 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
+  if(item.type==='hubNpc'){const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,saveRef.current.hub?.missions,turn));return;}
+  if(item.type==='hubMission'){
+   const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
+   if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
+   if(current.status==='active'){const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;}
+   if(current.status==='completed'&&!current.claimed){const next=act({type:'hubMissionClaim',id:item.missionId});if(next)announce(item.name+' · récompense récupérée');return;}
+   announce(item.name+' · mission déjà accomplie');return;
+  }
+  if(item.type==='hubTransport'){announce(item.name+' · véhicule en circulation');return;}
+  if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
+  if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
+  if(item.type==='hubDistrict'){announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='job'){const next=act({type:'jobDone',id:item.job});if(next)chime();return;}
@@ -124,7 +137,7 @@ function WorldSession({uid,goTo}){
   const timer=setInterval(()=>{if(ready.current&&dirty.current)sync();},20000);
   return()=>{document.removeEventListener('visibilitychange',hidden);clearInterval(timer);clearTimeout(noticeTimer.current);clearTimeout(saveTimer.current);if(watch.current!==null)navigator.geolocation?.clearWatch(watch.current);if(dirty.current)saveWorld(uid,saveRef.current);audio.current?.close();};
  },[uid,loaded]);
- const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>landscapeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
+ const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
  function navigateTo(id){const item=regionItems.find(i=>i.id===id);if(item)navigate(item);}
  function navigate(item){scene.current?.waypoint(item,false);setPanel(null);}
  function exportSave(){const blob=new Blob([JSON.stringify(saveRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-monde-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}

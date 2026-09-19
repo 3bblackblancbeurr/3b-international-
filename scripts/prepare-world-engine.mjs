@@ -6,7 +6,16 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 if(!process.argv[2])throw Error('Provide an output JSON path outside the repository.');
 const names=new Set();
-function visit(name){if(names.has(name))return;names.add(name);const source=fs.readFileSync(path.join(root,'src/world',name),'utf8');for(const match of source.matchAll(/from\s+['"]\.\/([^'"]+)['"]/g))visit(match[1]);}
+function visit(name){
+ const normalized=path.posix.normalize(name).replace(/^\.\//,'');
+ if(names.has(normalized))return;
+ names.add(normalized);
+ const source=fs.readFileSync(path.join(root,'src/world',normalized),'utf8');
+ const base=path.posix.dirname(normalized);
+ for(const match of source.matchAll(/from\s+['"]\.\/([^'"]+)['"]/g)){
+  visit(path.posix.join(base,match[1]));
+ }
+}
 visit('engine.js');visit('rules.js');
 const files=[...names].map(name=>{
  let content=fs.readFileSync(path.join(root,'src/world',name),'utf8').replace(/^\uFEFF/,'');
