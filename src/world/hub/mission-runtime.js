@@ -27,7 +27,7 @@ export const PLAYABLE_MISSION_EVENTS=Object.freeze({
 });
 
 export function blankHubProgress(){
-  return {version:HUB_PROGRESS_VERSION,active:null,completed:[],missions:{},rides:{train:0,boat:0,zipline:0},visited:[],xp:0,coins:0,rewards:[]};
+  return {version:HUB_PROGRESS_VERSION,active:null,completed:[],missions:{},rides:{train:0,boat:0,zipline:0},visited:[],xp:0,coins:0,rewards:[],secrets:[]};
 }
 
 export function normalizeHubProgress(raw,missions=[]){
@@ -41,7 +41,7 @@ export function normalizeHubProgress(raw,missions=[]){
   }
   next.rides={train:Math.max(0,Math.floor(Number(raw.rides?.train)||0)),boat:Math.max(0,Math.floor(Number(raw.rides?.boat)||0)),zipline:Math.max(0,Math.floor(Number(raw.rides?.zipline)||0))};
   next.visited=[...new Set(Array.isArray(raw.visited)?raw.visited.filter(x=>typeof x==='string').slice(0,100):[])];
-  next.xp=Math.max(0,Math.floor(Number(raw.xp)||0));next.coins=Math.max(0,Math.floor(Number(raw.coins)||0));next.rewards=[...new Set(Array.isArray(raw.rewards)?raw.rewards.filter(x=>typeof x==='string').slice(0,100):[])];
+  next.xp=Math.max(0,Math.floor(Number(raw.xp)||0));next.coins=Math.max(0,Math.floor(Number(raw.coins)||0));next.rewards=[...new Set(Array.isArray(raw.rewards)?raw.rewards.filter(x=>typeof x==='string').slice(0,100):[])];next.secrets=[...new Set(Array.isArray(raw.secrets)?raw.secrets.filter(x=>typeof x==='string').slice(0,100):[])];
   return next;
 }
 
