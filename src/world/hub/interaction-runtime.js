@@ -10,30 +10,50 @@ const step=(hub,id,condition)=>{
 export function recordHubDistrict(hub,id){
  if(!HUB_DISTRICT_SET.has(id))throw Error('Quartier Hub inconnu.');
  const first=!hub.districts.includes(id),districts=first?[...hub.districts,id]:hub.districts;
- let next={...hub,districts};
- const firstSteps=next.missions.first_steps;
- next=step(next,'first_steps',id==='heritage_square'&&(firstSteps?.completedObjectives===0||firstSteps?.completedObjectives===2));
- next=step(next,'first_echo',id==='archives'&&next.missions.first_echo?.completedObjectives===1);
- next=step(next,'rooftops_circle',id==='arena'&&next.missions.rooftops_circle?.completedObjectives===0);
- next=step(next,'rooftops_circle',id==='broken_circle_tower'&&next.missions.rooftops_circle?.completedObjectives===2);
+ let next={...hub,districts},stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
+ next=step(next,'first_steps',id==='heritage_square'&&(stage('first_steps',0)||stage('first_steps',2)));
+ next=step(next,'first_echo',id==='archives'&&stage('first_echo',1));
+ next=step(next,'rooftops_circle',id==='arena'&&stage('rooftops_circle',0));
+ next=step(next,'rooftops_circle',id==='broken_circle_tower'&&stage('rooftops_circle',2));
+ next=step(next,'storm_rescue',id==='docks'&&stage('storm_rescue',2));
+ next=step(next,'eight_seeds',id==='gardens'&&stage('eight_seeds',1));
+ next=step(next,'golden_pattern',id==='commerce'&&stage('golden_pattern',1));
+ next=step(next,'living_fabric',id==='innovation'&&stage('living_fabric',1));
+ next=step(next,'lost_wolf_signal',id==='gardens'&&stage('lost_wolf_signal',1));
+ next=step(next,'broken_record',id==='archives'&&stage('broken_record',1));
+ next=step(next,'first_foundation',id==='city3b_portal'&&stage('first_foundation',1));
  return next;
 }
 
 export function recordHubNpc(hub,id){
  if(!HUB_NPC_SET.has(id))throw Error('Personnage Hub inconnu.');
  const npcs=hub.npcs.includes(id)?hub.npcs:[...hub.npcs,id];
- let next={...hub,npcs};
- next=step(next,'first_echo',id==='ines_varga'&&next.missions.first_echo?.completedObjectives===0);
+ let next={...hub,npcs},stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
+ const map=[
+  ['first_echo','ines_varga',0],['storm_rescue','youssef_ben_salem',0],['memory_under_water','kadra_zerrouki',0],
+  ['wagon_eight','the_conductor',0],['blue_blackout','arda_kaya',0],['garden_listens','maarja_saar',0],
+  ['first_foundation','elio_romano',0],['voices_square','amira_mansouri',0],['voices_square','lucia_navaro',1],
+  ['voices_square','soraya_najem',2],['passion_trial','sofia_vega',0],['silent_cable','leyla_demir',0],
+  ['three_reflections','nora_khelifi',0],['eight_seeds','giulia_ferri',0],['golden_pattern','omar_el_fassi',0],
+  ['living_fabric','meryem_alaoui',0],['lost_wolf_signal','evelin_tamm',0],['broken_record','celine_moreau',0],
+  ['eight_signals','noah_leroux',0],
+ ];
+ for(const [mission,npc,objective] of map)next=step(next,mission,id===npc&&stage(mission,objective));
+ if(id==='elio_romano'&&stage('first_foundation',2))next=step(next,'first_foundation',true);
  return next;
 }
 
 export function recordHubTransit(hub,id){
  if(!HUB_TRANSIT_SET.has(id))throw Error('Transport Hub inconnu.');
  const transits=hub.transits.includes(id)?hub.transits:[...hub.transits,id];
- let next={...hub,transits};
- next=step(next,'first_steps',id.startsWith('train:')&&next.missions.first_steps?.completedObjectives===1);
- next=step(next,'boat_without_flag',id.startsWith('boat:')&&next.missions.boat_without_flag?.completedObjectives===0);
- if(next.missions.rooftops_circle?.completedObjectives===1){
+ let next={...hub,transits},stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
+ next=step(next,'first_steps',id.startsWith('train:')&&stage('first_steps',1));
+ next=step(next,'boat_without_flag',id.startsWith('boat:')&&stage('boat_without_flag',0));
+ next=step(next,'storm_rescue',id.startsWith('boat:')&&stage('storm_rescue',1));
+ next=step(next,'memory_under_water',id.startsWith('boat:')&&stage('memory_under_water',1));
+ next=step(next,'wagon_eight',id.startsWith('train:')&&stage('wagon_eight',1));
+ next=step(next,'silent_cable',id.startsWith('telepheric:')&&stage('silent_cable',1));
+ if(stage('rooftops_circle',1)){
    const used=transits.filter((value)=>value.startsWith('zipline:'));
    if(new Set(used).size>=2)next=step(next,'rooftops_circle',true);
  }
@@ -41,18 +61,27 @@ export function recordHubTransit(hub,id){
 }
 
 export function recordHubEvent(hub,id){
- let next=hub;
- next=step(next,'first_echo',id==='guardian_projection'&&next.missions.first_echo?.completedObjectives===2);
+ let next=hub,stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
+ next=step(next,'first_echo',id==='guardian_projection'&&stage('first_echo',2));
+ next=step(next,'eight_signals',id==='guardian_projection'&&stage('eight_signals',1));
+ next=step(next,'blue_blackout',id==='power_flicker'&&stage('blue_blackout',1));
+ next=step(next,'garden_listens',id==='dock_fog'&&stage('garden_listens',1));
+ next=step(next,'passion_trial',id==='arena_public_challenge'&&stage('passion_trial',1));
+ next=step(next,'memory_under_water',id==='dock_fog'&&stage('memory_under_water',2));
  return next;
 }
 
 export function recordHubSecret(hub,id){
- let next=hub;
- next=step(next,'first_echo',id==='secret_archive_reverse'&&next.missions.first_echo?.completedObjectives===2);
- next=step(next,'boat_without_flag',id==='secret_abandoned_quay'&&next.missions.boat_without_flag?.completedObjectives===1);
+ let next=hub,stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
+ next=step(next,'first_echo',id==='secret_archive_reverse'&&stage('first_echo',2));
+ next=step(next,'boat_without_flag',id==='secret_abandoned_quay'&&stage('boat_without_flag',1));
+ next=step(next,'wagon_eight',id==='secret_train_window'&&stage('wagon_eight',2));
+ next=step(next,'garden_listens',id==='secret_fog_tree'&&stage('garden_listens',2));
+ next=step(next,'silent_cable',id==='secret_silent_cabin'&&stage('silent_cable',2));
+ next=step(next,'three_reflections',id==='secret_rain_symbol'&&stage('three_reflections',1));
+ next=step(next,'golden_pattern',id==='secret_market_code'&&stage('golden_pattern',2));
  return next;
 }
-
 
 export function canUnlockHubSecret(hub,id){
  const mission=(missionId)=>hub.missions?.[missionId];
