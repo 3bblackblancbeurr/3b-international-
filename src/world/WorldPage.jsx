@@ -88,6 +88,11 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
+  if(item.type==='hubNpc'){announce(item.name+' · '+item.role+(item.missionIds?.length?' · '+item.missionIds.length+' mission'+(item.missionIds.length>1?'s':''):''));
+   return;}
+  if(item.type==='hubMission'){announce(item.name+' · '+(item.objectives?.[0]||'Mission disponible'));return;}
+  if(item.type==='hubTransport'){announce(item.name+' · point de transport actif');return;}
+  if(item.type==='hubDistrict'){announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='job'){const next=act({type:'jobDone',id:item.job});if(next)chime();return;}
