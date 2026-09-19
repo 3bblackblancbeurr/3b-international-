@@ -11,6 +11,8 @@ import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-r
 import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
+import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
+import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -66,7 +68,7 @@ export function applyWorldAction(input,action){
  switch(action.type){
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
-   const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');
+   const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');requireThat(hubMissionPrerequisitesMet(action.id,s.hub.missions),'Termine d’abord les missions liées.');
    return gain(s,{hub:{...s.hub,missions:startHubMission(s.hub.missions,action.id)}});
   }
   case 'hubMissionStep':{
@@ -104,6 +106,12 @@ export function applyWorldAction(input,action){
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.id),'Personnage Hub inconnu.');
    const talks={...s.hub.stats.npcTalks,[action.id]:Math.min(99,(s.hub.stats.npcTalks[action.id]||0)+1)};
    return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,npcTalks:talks}}}),{type:'npc',id:action.id});
+  }
+  case 'hubDialogueChoice':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.npcId),'Personnage Hub inconnu.');
+   requireThat(HUB_DIALOGUE_CHOICE_SET.has(action.choiceId),'Choix de dialogue inconnu.');
+   const history=[...(s.hub.stats.dialogueHistory||[]),{npcId:action.npcId,sceneId:String(action.sceneId||'scene').slice(0,48),choiceId:action.choiceId}].slice(-120);
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,dialogueHistory:history}}});
   }
   case 'hubDistrictVisit':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_DISTRICT_SET.has(action.id),'Quartier Hub inconnu.');
