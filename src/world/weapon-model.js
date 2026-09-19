@@ -53,7 +53,7 @@ export function fitWeapon(model,avatar,{drawn=true}={}){
  }
  function applyInitial(){
   const hidden=!drawn&&profile.stow==='hidden',spec=hidden?profile.grip:(drawn?profile.grip:profile.holster||profile.grip);
-  if(sampleMount(spec)){root.position.copy(targetPos);root.quaternion.copy(targetQuat);root.scale.copy(targetScale).multiplyScalar(hidden?.02:1);}
+  if(sampleMount(spec)){root.position.copy(targetPos);root.quaternion.copy(targetQuat);root.scale.copy(targetScale).multiplyScalar(hidden ? .02 : 1);}
   root.visible=!hidden||drawn;
  }
  applyInitial();
@@ -68,7 +68,7 @@ export function fitWeapon(model,avatar,{drawn=true}={}){
    if(sampleMount(spec)){
     const duration=Math.max(.08,drawn?profile.drawTime:profile.sheatheTime),blend=1-Math.exp(-dt*4/duration);
     root.position.lerp(targetPos,blend);root.quaternion.slerp(targetQuat,blend);
-    const scale=targetScale.clone().multiplyScalar(hidden?.02:1);root.scale.lerp(scale,blend);
+    const scale=targetScale.clone().multiplyScalar(hidden ? .02 : 1);root.scale.lerp(scale,blend);
     root.visible=drawn||profile.stow!=='hidden'||root.scale.length()>.08;
    }
    model.updateWorldMatrix(true,true);
