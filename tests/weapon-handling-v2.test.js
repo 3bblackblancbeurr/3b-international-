@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {WEAPONS} from '../src/world/arsenal.js';
 import {getWeaponHandling,weaponHandlingIds} from '../src/world/weapon-handling.js';
+import {resolveWeaponHandling} from '../src/world/avatar-compatibility.js';
 import {weaponAnimations} from '../src/world/weapon-animation.js';
 import {fitWeapon} from '../src/world/weapon-model.js';
 
@@ -101,4 +102,24 @@ test('holstered blades keep a visible support or scabbard on the body',()=>{
  const support=model.getObjectByName('3B-support-saber');
  assert.ok(support);assert.ok(support.children.length>=2);
  weapon.dispose();assert.equal(model.getObjectByName('3B-support-saber'),undefined);
+});
+
+
+test('left-handed configuration mirrors primary and secondary weapon hands',()=>{
+ const right=resolveWeaponHandling('axe',{weapon:'axe',handedness:'right'});
+ const left=resolveWeaponHandling('axe',{weapon:'axe',handedness:'left'});
+ assert.equal(right.grip.bone,'hand_r');assert.equal(left.grip.bone,'hand_l');
+ assert.equal(right.secondary.hand,'hand_l');assert.equal(left.secondary.hand,'hand_r');
+ assert.equal(left.grip.position[0],-right.grip.position[0]);
+ assert.equal(left.holster.position[0],-right.holster.position[0]);
+});
+
+test('left-handed ready and strike clips mirror the active arm',()=>{
+ const bones=['spine_02','upperarm_r','lowerarm_r','upperarm_l','lowerarm_l'];
+ const idle=new THREE.AnimationClip('Idle',1,bones.map(n=>new THREE.QuaternionKeyframeTrack(n+'.quaternion',[0,1],[0,0,0,1,0,0,0,1])));
+ const right=weaponAnimations(idle,'saber','right'),left=weaponAnimations(idle,'saber','left');
+ for(const name of ['Ready','EquipDraw','EquipSheathe','WeaponStrike']){assert.ok(right.some(c=>c.name===name));assert.ok(left.some(c=>c.name===name));}
+ const values=(clips,name,bone)=>Array.from(clips.find(c=>c.name===name).tracks.find(t=>t.name===bone+'.quaternion').values);
+ assert.notDeepEqual(values(right,'Ready','upperarm_r'),values(left,'Ready','upperarm_r'));
+ assert.notDeepEqual(values(right,'WeaponStrike','upperarm_r'),values(left,'WeaponStrike','upperarm_r'));
 });
