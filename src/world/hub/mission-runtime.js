@@ -23,7 +23,7 @@ export const PLAYABLE_MISSION_EVENTS=Object.freeze({
 });
 
 export function blankHubProgress(){
-  return {version:HUB_PROGRESS_VERSION,active:null,completed:[],missions:{},rides:{train:0,boat:0,zipline:0},visited:[]};
+  return {version:HUB_PROGRESS_VERSION,active:null,completed:[],missions:{},rides:{train:0,boat:0,zipline:0},visited:[],xp:0,coins:0,rewards:[]};
 }
 
 export function normalizeHubProgress(raw,missions=[]){
@@ -37,6 +37,7 @@ export function normalizeHubProgress(raw,missions=[]){
   }
   next.rides={train:Math.max(0,Math.floor(Number(raw.rides?.train)||0)),boat:Math.max(0,Math.floor(Number(raw.rides?.boat)||0)),zipline:Math.max(0,Math.floor(Number(raw.rides?.zipline)||0))};
   next.visited=[...new Set(Array.isArray(raw.visited)?raw.visited.filter(x=>typeof x==='string').slice(0,100):[])];
+  next.xp=Math.max(0,Math.floor(Number(raw.xp)||0));next.coins=Math.max(0,Math.floor(Number(raw.coins)||0));next.rewards=[...new Set(Array.isArray(raw.rewards)?raw.rewards.filter(x=>typeof x==='string').slice(0,100):[])];
   return next;
 }
 
@@ -61,7 +62,7 @@ export function applyHubEvent(progress,event,missions=[]){
     const state=next.missions[active]??={step:0,startedAt:Date.now(),updatedAt:Date.now()};
     if(matches(sequence[state.step],event)){
       state.step++;state.updatedAt=Date.now();next.missions[active]=state;changed=true;
-      if(state.step>=sequence.length){next.completed=[...new Set([...next.completed,active])];next.active=null;completedMission=missions.find(m=>m.id===active)||{id:active};}
+      if(state.step>=sequence.length){next.completed=[...new Set([...next.completed,active])];next.active=null;completedMission=missions.find(m=>m.id===active)||{id:active};const rewardXp=completedMission.importance==='major'?120:completedMission.importance==='normal'?75:45;next.xp+=rewardXp;if((completedMission.rewards||[]).includes('coins'))next.coins+=60;next.rewards=[...new Set([...next.rewards,...(completedMission.rewards||[])])];}
     }
   }
   return {progress:next,changed,completedMission};
