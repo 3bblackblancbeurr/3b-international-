@@ -1,5 +1,5 @@
 import {spatialAudio} from './audio-spatial.js';
-import {audioStateProfile} from './audio-director.js';
+import {AUDIO_STATES,audioStateProfile} from './audio-director.js';
 const NOTES={hub:174.61,france:196,italie:220,estonie:164.81,turquie:146.83,algerie:174.61,tunisie:196,maroc:146.83,espagne:164.81};
 const SCALES={
  hub:[1,1.2,1.5,2],france:[1,1.125,1.5,1.75],italie:[1,1.25,1.5,1.875],estonie:[1,1.2,1.6,2],
@@ -101,7 +101,7 @@ export function createWorldAudio(){
   ambience(id,interior){currentRegion=id;inside=!!interior;},
   weather(value){currentWeather=value||'clear';},
   phase(value){currentPhase=value||'day';applyMix();},
-  state(value){audioState=audioStateProfile(value)?value:'exploration';applyMix();},
+  state(value){audioState=Object.hasOwn(AUDIO_STATES,value)?value:'exploration';applyMix();},
   listener:setListener,
   spatialEvent,
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);applyMix();},
