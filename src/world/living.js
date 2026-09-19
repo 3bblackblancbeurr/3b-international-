@@ -89,7 +89,7 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
   if(!card){const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);}
   if(!card){garments=fitGarments(model,recipe);if(avatar?.weapon)weaponModel=fitWeapon(model,avatar,{drawn:weaponForced,library});}mixer=new THREE.AnimationMixer(model);
   const layered=!!model.getObjectByName('thigh_l'),lower=t=>/^(root|pelvis|thigh_|calf_|foot_|ball_)/.test(t.name);
-  for(const clip of asset.animations){const name=['Idle','Walk','Jog','Run','Attack','Hit','Death','Cast','Talk','Work'].find(n=>clip.name===n||clip.name.startsWith(n+'_')||clip.name.endsWith('_'+n));if(!name)continue;
+  for(const clip of asset.animations){const name=['Idle','Walk','Jog','Run','Jump','Attack','Hit','Death','Cast','Interact','Talk','Work'].find(n=>clip.name===n||clip.name.startsWith(n+'_')||clip.name.endsWith('_'+n));if(!name)continue;
    const body=layered&&name!=='Death'?new THREE.AnimationClip(name+'-upper',clip.duration,clip.tracks.filter(t=>!lower(t))):clip;actions[name]=mixer.clipAction(body);
    if(layered&&['Idle','Walk','Jog','Run'].includes(name))legActions[name]=mixer.clipAction(new THREE.AnimationClip(name+'-legs',clip.duration,clip.tracks.filter(lower)));
   }
