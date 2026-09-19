@@ -134,7 +134,8 @@ export function buildHubRuntimeItems({
       boatStops: boatItems.length,
       events: events.length,
       activeEvents: eventItems.length,
-      secrets: secretItems.length,
+      secrets: secrets.length,
+      activeSecrets: secretItems.length,
       profile,
     },
   };
