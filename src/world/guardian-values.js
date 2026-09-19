@@ -37,6 +37,16 @@ export function guardianValueStep(region,state){
  const rule=GUARDIAN_VALUES[region],step=state?.step||0;if(!rule||step>=3)return null;
  const [id,label]=rule.choices[step];return {id,label,step,value:rule.value,name:rule.name};
 }
+export function guardianValueOptions(region,state){
+ const current=guardianValueStep(region,state);if(!current)return[];
+ const decoys=[
+  {id:'raccourci',label:'Prendre le raccourci le plus avantageux'},
+  {id:'ignorer',label:'Ignorer ce qui complique la décision'},
+ ];
+ const options=[{id:current.id,label:current.label,correct:true},...decoys];
+ const rotate=(region.length+current.step)%options.length;
+ return [...options.slice(rotate),...options.slice(0,rotate)];
+}
 export function guardianHubPresence(seals=[]){
  return Object.entries(GUARDIAN_VALUES).filter(([region])=>seals.includes(region)).map(([region,data])=>({region,...data}));
 }
