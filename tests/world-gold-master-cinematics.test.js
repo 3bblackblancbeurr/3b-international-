@@ -4,7 +4,7 @@ import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {worldCinematicEvents,isWorldCinematicKey} from '../src/world/cinematic-events.js';
 import {storyCinematicPresentation} from '../src/world/story-cinematic.js';
-import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
+import {GUARDIAN_VALUES,guardianHubPresence} from '../src/world/guardian-values.js';
 
 test('Gold Master cinematic keys are bounded and persistent',()=>{
  assert.equal(isWorldCinematicKey('value:france'),true);
@@ -47,4 +47,27 @@ test('a rebuilt France emits a one-time Céliane homecoming when returning to th
  next.adventure.cinematicSeen=['homecoming:france'];
  events=worldCinematicEvents(previous,next,{type:'visit',region:'hub'});
  assert.equal(events.some(row=>row.kind==='guardian-homecoming'),false);
+});
+
+
+test('first guardian liberation requires the country value trial',()=>{
+ let save=applyWorldAction(blankSave(),{type:'visit',region:'france'});
+ save=normalizeSave({...save,
+  collection:{...save.collection,C002:1},
+  team:['C002'],
+  beacons:['france:0','france:1','france:2'],
+  adventure:{...save.adventure,chapters:{...save.adventure.chapters,france:{helped:true,powers:['ally','ambiance','terrain'],solved:true,restored:2,challenge:false,choice:'garden',board:[]}}}
+ });
+ assert.throws(()=>applyWorldAction(save,{type:'encounter',id:'france:guardian'}),/Maîtrise d’abord la valeur Justice/);
+ for(const [choiceId] of GUARDIAN_VALUES.france.choices)save=applyWorldAction(save,{type:'guardianValueChoice',choiceId});
+ const ready=applyWorldAction(save,{type:'encounter',id:'france:guardian'});
+ assert.equal(ready.adventure.encounter.card,'C165');
+});
+
+test('a guardian appears in the Hub only after seal and full restoration',()=>{
+ assert.equal(guardianHubPresence(['france'],[]).length,0);
+ const visible=guardianHubPresence(['france'],['france']);
+ assert.equal(visible.length,1);
+ assert.equal(visible[0].name,'Céliane');
+ assert.equal(visible[0].value,'Justice');
 });
