@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {normalizeAvatar} from '../src/world/avatar-rules.js';
 import {ACTIVE_FACE_CAPABILITIES,BEARD_CATALOG,FABRIC_CATALOG,HAIR_CATALOG,PATTERN_CATALOG,creatorCapabilities} from '../src/world/avatar-capabilities.js';
 import {avatarCompatibility,resolveWeaponHandling} from '../src/world/avatar-compatibility.js';
+import {existsSync} from 'node:fs';
+import {fileURLToPath} from 'node:url';
 
 test('ultimate creator only exposes morphs backed by current GLB targets',()=>{
  assert.deepEqual(ACTIVE_FACE_CAPABILITIES.map(x=>x.id),['face','jaw','nose']);
@@ -47,4 +49,10 @@ test('compatibility rules protect dense back configurations without changing sav
  const dense=resolveWeaponHandling('paris',avatar);
  assert.ok(dense.holster.position[2]<plain.holster.position[2]);
  assert.equal(avatar.bag,true);assert.equal(avatar.outer,'cape');
+});
+
+
+test('creator companion preview keeps a real wolf asset in the repository',()=>{
+ const path=fileURLToPath(new URL('../public/world/origins/wolf.glb',import.meta.url));
+ assert.equal(existsSync(path),true);
 });
