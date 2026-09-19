@@ -23,7 +23,7 @@ test('Archive Reverse secret only unlocks at the final First Echo objective',()=
  let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'first_echo'});
  assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_archive_reverse'}),/conditions/);
  save=applyWorldAction(save,{type:'hubNpcTalk',id:'ines_varga'});
- save=applyWorldAction(save,{type:'hubDistrictVisit',id:'archives'});
+ save=applyWorldAction(save,{type:'hubBuildingVisit',id:'memory_archives'});
  save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_archive_reverse'});
  assert.ok(save.hub.secrets.includes('secret_archive_reverse'));
  assert.equal(save.hub.missions.first_echo.status,'completed');
