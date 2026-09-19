@@ -32,6 +32,8 @@ export function chapterObjective(save,region=save.region){
  if(!save.adventure?.values?.[region]?.completed){const value=GUARDIAN_VALUES[region];return{title:'Comprendre '+value.value,detail:`Avant de libérer ${value.name}, termine l’épreuve de ${value.value}. Cette étape prépare aussi ton groupe au combat.`,target:region+':value',reward:'Valeur maîtrisée · préparation Gardien · 60 XP'};}
  if(!save.seals.includes(region)){const guardian=CARDS.find(card=>card.country===region&&card.category==='Carte unique');return{title:'Libérer '+(guardian?.name||'le gardien'),detail:(guardian?.power?guardian.power+' · ':'')+c.guardian,target:region+':guardian',reward:'Sceau · gardien allié · 250 XP'};}
  if(s.restored<3)return{title:'Inaugurer '+c.restores[2],detail:'Le gardien reconnaît tes liens. Le pays peut maintenant rejoindre le Nexus.',target:region+':story',reward:'200 XP · 70 éclats · tenue régionale'};
+ const guardian=GUARDIAN_VALUES[region],homecomingKey='homecoming:'+region;
+ if(!(save.adventure?.cinematicSeen||[]).includes(homecomingKey))return{title:'Ramener '+guardian.name+' à la Cité',detail:`Le pays est reconstruit. Traverse la porte du Nexus pour rendre visible le retour de ${guardian.name} dans la Cité des Huit Héritages.`,target:'hub',reward:'Gardien présent dans la Cité'};
  return{title:'Un pays retrouvé',detail:c.ending,target:region+':guardian',reward:s.challenge?'Défi maîtrisé · rencontres libres':'Défi expert optionnel · 180 XP'};
 }
 export function puzzleStart(region){const c=CHAPTERS[region];return [...(c.initial||[])];}
