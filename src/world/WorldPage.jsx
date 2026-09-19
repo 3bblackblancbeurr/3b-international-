@@ -89,7 +89,7 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
-  if(item.type==='hubNpc'){const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,saveRef.current.hub?.missions,turn));return;}
+  if(item.type==='hubNpc'){if(!act({type:'hubNpcTalk',id:item.npcId}))return;const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,saveRef.current.hub?.missions,turn));return;}
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
@@ -97,10 +97,10 @@ function WorldSession({uid,goTo}){
    if(current.status==='completed'&&!current.claimed){const next=act({type:'hubMissionClaim',id:item.missionId});if(next)announce(item.name+' · récompense récupérée');return;}
    announce(item.name+' · mission déjà accomplie');return;
   }
-  if(item.type==='hubTransport'){announce(item.name+' · véhicule en circulation');return;}
+  if(item.type==='hubTransport'){const now=new Date(),ride=scene.current?.rideHubTransport(item);if(!ride){announce('Ce transport n’est pas disponible pour le moment.');return;}const next=act({type:'hubTransportRide',transport:ride.transport,from:ride.from,to:ride.to,night:now.getHours()>=20||now.getHours()<6,dateKey:now.toISOString().slice(0,10)});if(next)announce(item.name+' · départ vers '+ride.to);return;}
   if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
-  if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
-  if(item.type==='hubDistrict'){announce(item.name+' · '+item.purpose);return;}
+  if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId,evidence:item.evidence||{}});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
+  if(item.type==='hubDistrict'){act({type:'hubDistrictVisit',id:item.district});announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='job'){const next=act({type:'jobDone',id:item.job});if(next)chime();return;}
