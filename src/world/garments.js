@@ -1,6 +1,7 @@
 import {hoodGeometry,hoodHemGeometry} from './hood.js';
 import {avatarCompatibility} from './avatar-compatibility.js';
 import {FABRIC_CATALOG} from './avatar-capabilities.js';
+import {applySurfaceMaps} from './avatar-surface.js';
 import * as THREE from 'three';
 
 export function garmentPattern(recipe){
@@ -38,11 +39,10 @@ export function garmentPattern(recipe){
 export function fitGarments(model,recipe){
  const geometries=[],materials=[],cloth=[],pieces=[],compat=avatarCompatibility(recipe),adjust=compat.adjustments;
  const roughness=FABRIC_CATALOG[recipe.fabric]?.roughness??.92;
- const material=(color,metalness=0)=>{const m=new THREE.MeshStandardMaterial({color,roughness:metalness?.4:roughness,metalness,side:THREE.DoubleSide});materials.push(m);return m;},fabric=material(recipe.cloth),accent=material(recipe.accentColor),leather=material(recipe.bootColor),gold=material(recipe.metalColor||'#c9ad75',.6),outerFabric=material(recipe.outerColor||recipe.cloth);
+ const material=(color,metalness=0,surface=recipe.fabric||'cotton')=>{const m=new THREE.MeshStandardMaterial({color,roughness:metalness?.4:roughness,metalness,side:THREE.DoubleSide});if(!metalness)applySurfaceMaps(m,surface);materials.push(m);return m;},fabric=material(recipe.cloth,0,recipe.fabric),accent=material(recipe.accentColor,0,recipe.fabric),leather=material(recipe.bootColor,0,'leather'),gold=material(recipe.metalColor||'#c9ad75',.6),outerFabric=material(recipe.outerColor||recipe.cloth,0,recipe.fabric);
  model.updateWorldMatrix(true,true);const bone=name=>model.getObjectByName(name),location=name=>{const v=new THREE.Vector3();bone(name)?.getWorldPosition(v);return model.worldToLocal(v);};
  const head=location('Head'),chest=location('spine_03'),waist=location('pelvis');
  function attach(geometry,mat,position,scale,boneName='spine_03'){geometries.push(geometry);const m=new THREE.Mesh(geometry,mat);pieces.push(m);m.position.copy(position);m.scale.set(...scale);m.castShadow=m.receiveShadow=true;model.add(m);model.updateWorldMatrix(true,true);bone(boneName)?.attach(m);return m;}
- outerFabric.roughness=fabric.roughness=roughness;
  const at=(v,x=0,y=0,z=0)=>new THREE.Vector3(v.x+x,v.y+y,v.z+z),box=(mat,p,scale,boneName)=>attach(new THREE.BoxGeometry(1,1,1),mat,p,scale,boneName);
  if(recipe.bag){const z=-.22+adjust.bagDepth;box(leather,at(chest,0,-.17,z),[.3,.36,.16]);box(accent,at(chest,0,-.23,z-.10),[.23,.12,.06]);for(const s of [-1,1])box(leather,at(chest,s*.13,-.12,.08),[.036,.38,.025]);box(gold,at(chest,0,-.05,z-.10),[.065,.035,.025]);}
  if(recipe.headwear==='beret'){const beret=attach(new THREE.SphereGeometry(1,16,8),accent,at(head,0,.23,.01),[.22,.075,.19],'Head');beret.rotateZ(.13);}
