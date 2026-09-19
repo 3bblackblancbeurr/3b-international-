@@ -80,5 +80,5 @@ export function activeHubMission(progress,missions=[]){
 
 export function missionForNpc(npc,progress,missions=[]){
   if(!npc?.missionIds?.length)return null;
-  return npc.missionIds.map(id=>missions.find(m=>m.id===id)).find(m=>m&&!progress.completed.includes(m.id))||null;
+  return npc.missionIds.map(id=>missions.find(m=>m.id===id)).find(m=>m&&PLAYABLE_MISSION_EVENTS[m.id]&&!progress.completed.includes(m.id))||null;
 }
