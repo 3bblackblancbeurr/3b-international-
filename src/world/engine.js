@@ -8,7 +8,7 @@ import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMission
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
-import {applyHubMissionSignal} from './hub/mission-signals.js';
+import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 
@@ -72,6 +72,7 @@ export function applyWorldAction(input,action){
   case 'hubMissionStep':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
    const current=s.hub.missions[action.id];requireThat(current?.status==='active','Commence d’abord cette mission.');
+   requireThat(!isAutoHubMission(action.id),'Cette mission avance uniquement par tes actions dans la Cité.');
    requireThat(Number.isInteger(action.objective)&&action.objective===current.completedObjectives,'Objectif invalide ou déjà validé.');
    return gain(s,{hub:{...s.hub,missions:advanceHubMission(s.hub.missions,action.id,1)}});
   }
