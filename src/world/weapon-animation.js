@@ -44,6 +44,7 @@ function createClip(base,name,idle,times=[0,.18,.38,.55,.78,1],weights=name==='G
  return new AnimationClip(name,Math.max(...times),tracks);
 }
 function createReadyClip(pose,idle){return createClip(pose,'Ready',idle,[0,1],[1,1]);}
+function createTransitionClip(pose,name,idle,reverse=false){return createClip(pose,name,idle,[0,.18,.42],reverse?[1,.55,0]:[0,.55,1]);}
 
 function mapWeaponPose(weapon,action,power='Light'){
  const profile=weaponPoses[weapon]||{},bonus=profile[power]||{},base=basePoses[action]||{},keys=new Set([...Object.keys(base),...Object.keys(bonus)]),merged={};
@@ -55,12 +56,12 @@ export function weaponAnimations(idle,weapon=''){
  if(!idle)return [];
  const base=Object.entries(basePoses).map(([name,pose])=>createClip(pose,name,idle));
  if(!weapon)return base;
- const ready=readyPoses[weapon]?[createReadyClip(readyPoses[weapon],idle)]:[];
+ const pose=readyPoses[weapon],ready=pose?[createReadyClip(pose,idle)]:[],equip=pose?[createTransitionClip(pose,'EquipDraw',idle),createTransitionClip(pose,'EquipSheathe',idle,true)]:[];
  const byWeapon={
   paris:{Light:'ThrustLight',Heavy:'ThrustHeavy'},scissors:{Light:'SplitLight',Heavy:'SplitHeavy'},axe:{Light:'BashLight',Heavy:'BashHeavy'},claws:{Light:'Slash',Heavy:'Rake'},thread:{Light:'CastLean',Heavy:'CastLong'},bow:{Light:'Draw',Heavy:'Release'},wings:{Light:'Lift',Heavy:'Dive'}
  };
  const aliases=byWeapon[weapon];
- if(!aliases)return [...base,...ready];
+ if(!aliases)return [...base,...ready,...equip];
  const variants=[{name:aliases.Light,action:'Thrust',power:'Light'},{name:aliases.Heavy,action:'Thrust',power:'Heavy'}];
  const special={
   scissors:[{name:aliases.Light,action:'Split',power:'Light'},{name:aliases.Heavy,action:'Split',power:'Heavy'}],
@@ -71,5 +72,5 @@ export function weaponAnimations(idle,weapon=''){
   wings:[{name:'Lift',action:'Thrust',power:'Light'},{name:'Dive',action:'Thrust',power:'Heavy'}]
  };
  const selected=special[weapon]||variants,extra=selected.map(s=>createClip(mapWeaponPose(weapon,s.action,s.power),s.name,idle));
- return [...base,...ready,...extra];
+ return [...base,...ready,...equip,...extra];
 }
