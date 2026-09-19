@@ -2,7 +2,7 @@ import {advanceHubMission} from './mission-runtime.js';
 
 export const HUB_MISSION_SIGNAL_RULES={
  first_steps:[
-  {type:'district',id:'heritage_square'},
+  null,
   {type:'transport',id:'train'},
   {type:'district',id:'heritage_square'},
  ],
