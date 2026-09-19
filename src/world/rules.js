@@ -4,11 +4,12 @@ import {blankAdventure,normalizeAdventure} from './adventure-state.js';
 import {TRAVEL_GEAR} from './wardrobe.js';
 import {obstacleDistance} from './collision.js';
 import {CHAPTERS,chapterState,nexusLevel} from './chapters.js';
+import {blankHubState,normalizeHubState} from './hub/state.js';
 export const SAVE_VERSION=1;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const number=(v,max=1e7)=>Number.isFinite(v)?clamp(Math.floor(v),0,max):0;
-export function blankSave(){return{version:SAVE_VERSION,xp:0,shards:25,collection:{C001:1,C357:1},leader:'C001',team:[],loadout:{energy:'C357',traps:[]},beacons:[],seals:[],visited:[],wins:0,walked:0,region:'hub',finalOpened:false,adventure:blankAdventure(),updatedAt:0};}
+export function blankSave(){return{version:SAVE_VERSION,xp:0,shards:25,collection:{C001:1,C357:1},leader:'C001',team:[],loadout:{energy:'C357',traps:[]},beacons:[],seals:[],visited:[],wins:0,walked:0,region:'hub',finalOpened:false,adventure:blankAdventure(),hub:blankHubState(),updatedAt:0};}
 export function normalizeSave(input){
  const s=blankSave();if(!input||input.version!==SAVE_VERSION)return s;
  for(const key of ['xp','shards','wins','walked'])s[key]=number(input[key]);
@@ -20,7 +21,7 @@ export function normalizeSave(input){
  s.loadout.traps=[...new Set(Array.isArray(input.loadout?.traps)?input.loadout.traps:[])].filter(id=>s.collection[id]&&cardSlot(cardById[id])==='trap').slice(0,3);
  s.beacons=[...new Set(Array.isArray(input.beacons)?input.beacons:[])].filter(id=>typeof id==='string'&&/^(france|italie|estonie|turquie|algerie|tunisie|maroc|espagne):[012]$/.test(id));
  for(const key of ['visited','seals'])s[key]=[...new Set(Array.isArray(input[key])?input[key]:[])].filter(id=>countryById[id]);
- s.region=countryById[input.region]?input.region:'hub';s.finalOpened=!!input.finalOpened&&s.seals.length>=5;s.adventure=normalizeAdventure(input.adventure);if(!s.collection[s.adventure.companion])s.adventure.companion=null;if(s.adventure.preparation&&chapterState(s,s.adventure.preparation).restored<2)s.adventure.preparation=null;s.updatedAt=number(input.updatedAt,1e15);return s;
+ s.region=countryById[input.region]?input.region:'hub';s.finalOpened=!!input.finalOpened&&s.seals.length>=5;s.adventure=normalizeAdventure(input.adventure);s.hub=normalizeHubState(input.hub);if(!s.collection[s.adventure.companion])s.adventure.companion=null;if(s.adventure.preparation&&chapterState(s,s.adventure.preparation).restored<2)s.adventure.preparation=null;s.updatedAt=number(input.updatedAt,1e15);return s;
 }
 export const levelFor=xp=>Math.min(50,1+Math.floor(Math.sqrt(Math.max(0,xp)/90)));
 export const nextLevelXP=xp=>90*levelFor(xp)**2;
