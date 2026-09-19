@@ -1,4 +1,8 @@
 function hash(input){let h=2166136261;for(let i=0;i<input.length;i+=1){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+export function hubWeatherForDate(dateKey='day'){
+ const value=hash(String(dateKey))%10;
+ return value===0?'fog':value<=2?'heavy_rain':value<=4?'rain':'clear';
+}
 export function isHubEventActive(event,context={}){
  const hour=Number.isFinite(context.hour)?context.hour:12,day=Number.isFinite(context.day)?context.day:1,trigger=event.trigger||'';
  if(trigger==='daily')return true;
