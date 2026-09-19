@@ -1,10 +1,10 @@
 import React,{useEffect,useRef,useState} from 'react';
 import * as THREE from 'three';
-import {createLivingLibrary,createLivingActor} from '../world/living.js';
+import {createLivingLibrary,createLivingActor,avatarModelKey} from '../world/living.js';
 import {countryById,cardById} from '../world/catalog.js';
 
-export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',angle=null,cinematic=null}){
- const ref=useRef(null),liveState=useRef({state,side,cardId,avatar,focus,pose,angle,cinematic}),[error,setError]=useState('');liveState.current={state,side,cardId,avatar,focus,pose,angle,cinematic};
+export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',angle=null,cinematic=null,weaponState='preview'}){
+ const ref=useRef(null),liveState=useRef({state,side,cardId,avatar,focus,pose,angle,cinematic,weaponState}),[error,setError]=useState('');liveState.current={state,side,cardId,avatar,focus,pose,angle,cinematic,weaponState};
  useEffect(()=>{
   const canvas=ref.current;let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les commandes restent accessibles.');return;}
   const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,90),geometry=[],materials=[];
@@ -18,19 +18,20 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
   const floor=mesh(new THREE.CylinderGeometry(7,7.15,.20,64),material('#233941'));floor.position.y=-.13;floor.visible=!avatar;
   for(const r of [3.2,5.4,6.5]){const o=mesh(new THREE.TorusGeometry(r,.018,5,80),material('#aa915e',{metalness:.8}));o.rotation.x=Math.PI/2;o.position.y=.005;o.visible=!avatar;}
   const stands=[];for(let i=0;i<8;i++){const angle=i*Math.PI/4;const p=mesh(new THREE.CylinderGeometry(.25,.36,2.1,8),material('#32454b'));p.position.set(Math.cos(angle)*6.7,1,Math.sin(angle)*6.7);const lamp=mesh(new THREE.IcosahedronGeometry(.12,1),material('#d6bc83',{emissive:'#d6bc83',emissiveIntensity:1}));lamp.position.copy(p.position).y=2.2;stands.push(p,lamp);}
-  let lastFilm='';let assetEpoch=0;let actors=[],ids=[],lastRevision='',at=performance.now(),raf,elapsed=0,impact=10,who=0,rot=.0,lastAngle=null,pointer=null,disposed=false;
+  let lastFilm='',lastPreviewPose='';let assetEpoch=0;let actors=[],ids=[],lastRevision='',at=performance.now(),raf,elapsed=0,impact=10,who=0,rot=.0,lastAngle=null,pointer=null,disposed=false;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}}
   const ro=new ResizeObserver(resize);ro.observe(canvas);resize();
   const down=e=>{if(liveState.current.cinematic)return;pointer={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);};const move=e=>{if(pointer?.id===e.pointerId){rot+=(e.clientX-pointer.x)*.007;pointer.x=e.clientX;}};const up=()=>{pointer=null;};
   canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
   function tick(now){if(disposed)return;raf=requestAnimationFrame(tick);const dt=liveState.current.cinematic?.paused||liveState.current.cinematic?.reduced?0:Math.min(.05,(now-at)/1000);at=now;if(document.hidden)return;elapsed+=dt;impact+=dt;
-   const s=liveState.current,film=s.cinematic,solo=!!s.cardId||!!s.avatar,next=s.cardId?[s.cardId]:s.avatar?['avatar:'+JSON.stringify(s.avatar)]:s.state?.sides.map(x=>x.cards[x.active].id)||[];
-   for(const stand of stands)stand.visible=!solo;if(next.join('|')!==ids.join('|')){const epoch=++assetEpoch;actors.forEach(a=>{scene.remove(a.object);a.dispose();});ids=next;actors=next.map((id,index)=>{const a=createLivingActor(library,{...(s.avatar?{avatar:s.avatar,weaponState:'preview'}:{card:id}),onError:message=>{if(!disposed&&epoch===assetEpoch)setError(message);},onLoad:()=>{if(!disposed&&epoch===assetEpoch)setError('');}});a.object.position.set(solo?0:index===s.side?-1.45:1.45,0,0);a.object.rotation.y=solo?0:index===s.side?.65:-.65;scene.add(a.object);return a;});}
+   const s=liveState.current,film=s.cinematic,solo=!!s.cardId||!!s.avatar,next=s.cardId?[s.cardId]:s.avatar?['avatar:'+avatarModelKey(s.avatar)]:s.state?.sides.map(x=>x.cards[x.active].id)||[];
+   for(const stand of stands)stand.visible=!solo;if(next.join('|')!==ids.join('|')){const epoch=++assetEpoch;actors.forEach(a=>{scene.remove(a.object);a.dispose();});ids=next;actors=next.map((id,index)=>{const a=createLivingActor(library,{...(s.avatar?{avatar:s.avatar,weaponState:s.weaponState}:{card:id}),onError:message=>{if(!disposed&&epoch===assetEpoch)setError(message);},onLoad:()=>{if(!disposed&&epoch===assetEpoch)setError('');}});a.object.position.set(solo?0:index===s.side?-1.45:1.45,0,0);a.object.rotation.y=solo?0:index===s.side?.65:-.65;scene.add(a.object);return a;});}
+   if(s.avatar&&actors[0]){actors[0].setAvatar?.(s.avatar);actors[0].setWeaponDrawn?.(s.weaponState==='preview');if(s.pose!==lastPreviewPose){if(s.pose==='attack')actors[0].action('Attack');else if(s.pose==='cast')actors[0].action('Cast');lastPreviewPose=s.pose;}}
    const revision=s.state?String(s.state.round)+'-'+s.state.winner:'';
    if(s.state?.last&&revision!==lastRevision){lastRevision=revision;who=s.state.last.side;const kind=s.state.last.type;impact=kind==='strike'?0:10;if(['strike','power','relic'].includes(kind))actors[who]?.action(kind==='strike'?'Attack':'Cast');if(s.state.last.damage>0)actors[1-who]?.action(s.state.winner===who?'Death':'Hit');}
    if(film&&film.id!==lastFilm){lastFilm=film.id;if(!film.reduced)actors[0]?.action(film.action||'Idle');}if(s.angle!==lastAngle){if(s.angle!==null)rot=s.angle;lastAngle=s.angle;}
-   for(const [i,a] of actors.entries()){a.update(dt,0,1,solo&&s.pose==='walk'?dt*1.6:0);a.object.rotation.y=solo?rot:i===s.side?.7:-.7;if(!solo){const x=i===s.side?-1.45:1.45;a.object.position.x=x+(i===who&&!reduced?Math.sin(Math.min(1,impact/.65)*Math.PI)*.5*(x<0?1:-1):0);}}
+   for(const [i,a] of actors.entries()){const previewTravel=solo&&s.avatar?(s.pose==='run'?dt*5.6:s.pose==='walk'?dt*1.7:0):0;a.update(dt,0,1,previewTravel);a.object.rotation.y=solo?rot:i===s.side?.7:-.7;if(!solo){const x=i===s.side?-1.45:1.45;a.object.position.x=x+(i===who&&!reduced?Math.sin(Math.min(1,impact/.65)*Math.PI)*.5*(x<0?1:-1):0);}}
    const intro=!solo&&!reduced?Math.max(0,1-elapsed/2.5):0,zoom=solo?(s.focus==='face'?1.35:3.4):5.2+intro*1.5,orbit=solo?0:rot*.2;camera.position.set(Math.sin(orbit)*zoom,solo?(s.focus==='face'?1.68:1.8):2.15+intro*.5,Math.cos(orbit)*zoom);let targetX=0,targetY=solo&&s.focus==='face'?1.57:.95;
    if(film){const f=film.camera,progress=film.reduced?0:film.progress,range=f==='portrait'?1.8:f==='equipment'?2.7:f==='departure'?4+progress:3.6;camera.position.set(film.reduced?0:Math.sin((progress-.5)*.35)*range,f==='portrait'?1.75:1.8,range);targetY=f==='portrait'?1.55:1;}
    else if(!solo&&(s.state?.winner===0||s.state?.winner===1)){targetX=s.state.winner===s.side?-1.45:1.45;camera.position.set(targetX*.5,2,4.5);}
