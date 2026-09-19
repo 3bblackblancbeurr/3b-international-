@@ -9,7 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
-import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS} from './hub/activity-catalog.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 
 const fail=text=>{throw Error(text);};
@@ -114,6 +114,7 @@ export function applyWorldAction(input,action){
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
    requireThat(HUB_TRANSPORT_SET.has(action.transport),'Transport Hub inconnu.');
    requireThat(HUB_DISTRICT_SET.has(action.from)&&HUB_DISTRICT_SET.has(action.to),'Arrêt Hub inconnu.');
+   requireThat(validHubTransportRide(action.transport,action.from,action.to),'Trajet Hub invalide.');
    const rides={...s.hub.stats.transportRides,[action.transport]:Math.min(999,(s.hub.stats.transportRides[action.transport]||0)+1)};
    const stop=action.transport+':'+action.to,transportStops=s.hub.stats.transportStops.includes(stop)?s.hub.stats.transportStops:[...s.hub.stats.transportStops,stop];
    let nightTrainDates=s.hub.stats.nightTrainDates;
