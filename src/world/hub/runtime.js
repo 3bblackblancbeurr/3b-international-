@@ -1,5 +1,6 @@
 import {activeHubEvents} from './event-runtime.js';
-import {hubSecretReady} from './secret-runtime.js';
+import {hubSecretReady,HUB_SECRET_ORDER} from './secret-runtime.js';
+import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 
 const DEFAULT_SCALE = 74;
 
@@ -118,13 +119,30 @@ export function buildHubRuntimeItems({
     return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:event.id.replaceAll('_',' '),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
   });
   const evidence={weather:eventContext.weather,night:eventContext.hour>=20||eventContext.hour<6};
-  const secretItems = secrets.filter((secret)=>hubSecretReady(secret.id,hubState,evidence)).map((secret)=>{
+  const stepLabels={
+   secret_three_lights:'Lampe scellée',
+   secret_rain_symbol:'Reflet de vitrine',
+   secret_workers_names:'Nom du mémorial',
+   secret_lost_station:'Rumeur du quartier',
+   secret_broken_elevator:'Panneau d’ascenseur',
+   secret_archive_reverse:'Fragment de chronologie',
+  };
+  const secretStepItems=secrets.flatMap((secret)=>{
+   const count=HUB_SECRET_STEP_COUNTS[secret.id]||0;if(!count)return[];
+   if(secret.id==='secret_rain_symbol'&&eventContext.weather!=='heavy_rain')return[];
+   const done=hubState?.stats?.secretProgress?.[secret.id]||[],center=hubDistrictPosition(plan,secret.district),order=HUB_SECRET_ORDER[secret.id];
+   return Array.from({length:count},(_,step)=>{
+    const d=offset(`secret-step:${secret.id}:${step}`,5+step*.8);
+    return {id:`hub:secret-step:${secret.id}:${step}`,type:'hubSecretStep',secretId:secret.id,step,district:secret.district,name:(stepLabels[secret.id]||'Indice secret')+' '+(step+1),done:done.includes(step),expected:order?order[done.length]===step:true,range:3,x:center.x+d.x,z:center.z+d.z};
+   });
+  });
+  const secretItems = secrets.filter((secret)=>!(hubState?.secrets||[]).includes(secret.id)&&hubSecretReady(secret.id,hubState,evidence)).map((secret)=>{
     const center=hubDistrictPosition(plan,secret.district),d=offset(`secret:${secret.id}`,13);
     return {id:`hub:secret:${secret.id}`,type:'hubSecret',secretId:secret.id,district:secret.district,name:'Secret de la Cité',condition:secret.condition,reward:secret.reward,evidence,range:2.8,x:center.x+d.x,z:center.z+d.z};
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...eventItems, ...secretItems],
+    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
@@ -136,6 +154,7 @@ export function buildHubRuntimeItems({
       activeEvents: eventItems.length,
       secrets: secrets.length,
       activeSecrets: secretItems.length,
+      secretSteps: secretStepItems.length,
       profile,
     },
   };
