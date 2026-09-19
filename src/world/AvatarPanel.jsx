@@ -38,7 +38,7 @@ const readPresets=()=>{
  try{
   const value=JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');
   if(!Array.isArray(value))return [];
-  return value.slice(0,3).map((entry,index)=>entry?.avatar?entry:entry?{name:'Look '+(index+1),avatar:entry}:null);
+  return value.slice(0,3).map((entry,index)=>entry&&Object.prototype.hasOwnProperty.call(entry,'avatar')?entry:entry?{name:'Look '+(index+1),avatar:entry}:null);
  }catch{return [];}
 };
 const readDraft=base=>{
