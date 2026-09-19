@@ -50,6 +50,13 @@ export function buildHubRuntimeItems({
     ...hubDistrictPosition(plan, district.id),
   }));
 
+  const buildingItems=plan.buildings.map((building)=>{
+    const group=plan.buildings.filter((entry)=>entry.district===building.district),index=Math.max(0,group.findIndex((entry)=>entry.id===building.id)),center=hubDistrictPosition(plan,building.district);
+    const angle=(index/Math.max(1,group.length))*Math.PI*2+hash(building.district)%100/100,distance=9+building.tier*3;
+    const width=6.5+((hash(building.id)>>5)%30)/10,depth=5.8+((hash(building.id)>>11)%24)/10,height=4.8+building.tier*2.2+(building.interior==='separate_cell'?2.4:0);
+    return {id:`hub:building:${building.id}`,type:'hubBuilding',buildingId:building.id,district:building.district,name:building.name,tier:building.tier,functions:building.functions||[],interior:building.interior,x:center.x+Math.cos(angle)*distance,z:center.z+Math.sin(angle)*distance,width,depth,height};
+  });
+
   const maxNpcs = selectNpcBudget(plan, profile);
   const npcItems = npcs.slice(0, maxNpcs).map((npc) => {
     const center = hubDistrictPosition(plan, npc.district);
@@ -134,9 +141,10 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretItems],
+    items: [...districtItems, ...buildingItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretItems],
     meta: {
       districts: districtItems.length,
+      buildings: buildingItems.length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
