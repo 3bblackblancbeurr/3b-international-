@@ -42,6 +42,7 @@ const readPresets=()=>{
  }catch{return [];}
 };
 const readPortrait=()=>{try{return localStorage.getItem(PORTRAIT_KEY)||'';}catch{return '';}};
+const mergePresetSources=cloud=>{const local=readPresets();return Array.from({length:3},(_,index)=>cloud?.[index]||local[index]||null);};
 const readDraft=base=>{
  try{
   const value=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
@@ -54,7 +55,7 @@ export function AvatarPanel({save,act,onDone}){
  const initial=useMemo(()=>normalizeAvatar(save.adventure.avatar),[save.adventure.avatar]);
  const recovered=useMemo(()=>readDraft(initial),[initial]);
  const [draft,setDraft]=useState(recovered.avatar),[message,setMessage]=useState(recovered.recovered?'Brouillon local restauré.':''),[weaponMessage,setWeaponMessage]=useState('');
- const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(readPresets);
+ const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(()=>mergePresetSources(save.adventure.avatarPresets));
  const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true),[lighting,setLighting]=useState('studio'),[previewQuality,setPreviewQuality]=useState('balanced');
  const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0),[portrait,setPortrait]=useState(readPortrait);
  const stepIndex=STEPS.findIndex(([id])=>id===activeStep);
@@ -73,11 +74,11 @@ export function AvatarPanel({save,act,onDone}){
  const goto=id=>{setActiveStep(id);setMessage('');document.querySelector('.avatar-editor-v2')?.scrollIntoView({behavior:'smooth',block:'start'});};
  const resetDraft=()=>{applyDraft(initial);try{localStorage.removeItem(DRAFT_KEY);}catch{}setMessage('Personnage restauré depuis la dernière version enregistrée.');};
  const savePresets=next=>{setPresets(next);try{localStorage.setItem(PRESET_KEY,JSON.stringify(next));}catch{}};
- const savePreset=index=>{const next=[...presets];next[index]={name:next[index]?.name||'Look '+(index+1),avatar:{...draft,created:false}};savePresets(next);setMessage((next[index].name||'Look '+(index+1))+' mémorisé sur cet appareil.');};
+ const savePreset=index=>{const next=[...presets],entry={name:next[index]?.name||'Look '+(index+1),avatar:{...draft,created:false}};next[index]=entry;savePresets(next);act({type:'avatarPreset',index,name:entry.name,avatar:entry.avatar});setMessage(entry.name+' enregistré dans la sauvegarde du Monde 3B.');};
  const loadPreset=index=>{const preset=presets[index]?.avatar;if(!preset)return;applyDraft(d=>({...preset,name:d.name,created:d.created}));setMessage((presets[index]?.name||'Look '+(index+1))+' chargé.');};
  const renamePreset=(index,name)=>{const next=[...presets];if(!next[index])next[index]={name,avatar:null};else next[index]={...next[index],name:name.slice(0,24)};savePresets(next);};
- const deletePreset=index=>{const next=[...presets];next[index]=null;savePresets(next);setMessage('Preset supprimé.');};
- const duplicatePreset=index=>{const source=presets[index];if(!source?.avatar)return;const target=[0,1,2].find(i=>!presets[i]);if(target===undefined){setMessage('Les trois emplacements sont déjà utilisés.');return;}const next=[...presets];next[target]={name:(source.name||'Look')+' copie',avatar:{...source.avatar}};savePresets(next);setMessage('Preset dupliqué dans Look '+(target+1)+'.');};
+ const deletePreset=index=>{const next=[...presets];next[index]=null;savePresets(next);act({type:'avatarPreset',index,avatar:null});setMessage('Preset supprimé de la sauvegarde du Monde 3B.');};
+ const duplicatePreset=index=>{const source=presets[index];if(!source?.avatar)return;const target=[0,1,2].find(i=>!presets[i]);if(target===undefined){setMessage('Les trois emplacements sont déjà utilisés.');return;}const entry={name:(source.name||'Look')+' copie',avatar:{...source.avatar}},next=[...presets];next[target]=entry;savePresets(next);act({type:'avatarPreset',index:target,name:entry.name,avatar:entry.avatar});setMessage('Preset dupliqué dans Look '+(target+1)+' et ajouté à la sauvegarde.');};
  const randomize=()=>{
   const pick=a=>a[Math.floor(Math.random()*a.length)],base=blankAvatar(),look=pick(LOOKS),theme=look.name;
   applyDraft(d=>({...base,...d,...look,
@@ -210,7 +211,7 @@ export function AvatarPanel({save,act,onDone}){
     </div>
     <p className="avatar-inline-note">Le brouillon est sauvegardé automatiquement sur cet appareil jusqu’à la validation finale.</p>
     <fieldset className="avatar-passport-portrait"><legend>Portrait Passeport 3B</legend><div>{portrait?<img src={portrait} alt="Portrait local du personnage pour le Passeport 3B"/>:<span className="avatar-portrait-empty">Aucun portrait généré</span>}<section><button type="button" onClick={capturePortrait}>{portrait?'Regénérer le portrait':'Générer le portrait'}</button><button type="button" disabled={!portrait} onClick={clearPortrait}>Supprimer</button></section></div><small>Le portrait est généré depuis le vrai rendu 3D du créateur et reste local sur cet appareil pour l’instant.</small></fieldset>
-    <fieldset className="avatar-preset-slots"><legend>Mes looks enregistrés sur cet appareil</legend><div>{[0,1,2].map(index=>{const preset=presets[index];return <article key={index}><input aria-label={'Nom du preset '+(index+1)} maxLength={24} value={preset?.name||'Look '+(index+1)} onChange={e=>renamePreset(index,e.target.value)}/><small>{preset?.avatar?`${preset.avatar.style} · ${weaponDisplayName(WEAPONS.find(w=>w.id===preset.avatar.weapon)||WEAPONS[0])}`:'Emplacement libre'}</small><span><button type="button" onClick={()=>savePreset(index)}>Mémoriser</button><button type="button" disabled={!preset?.avatar} onClick={()=>loadPreset(index)}>Charger</button></span><span><button type="button" disabled={!preset?.avatar} onClick={()=>duplicatePreset(index)}>Dupliquer</button><button type="button" disabled={!preset} onClick={()=>deletePreset(index)}>Supprimer</button></span></article>;})}</div></fieldset>
+    <fieldset className="avatar-preset-slots"><legend>Mes looks · sauvegarde Monde 3B + copie locale</legend><div>{[0,1,2].map(index=>{const preset=presets[index];return <article key={index}><input aria-label={'Nom du preset '+(index+1)} maxLength={24} value={preset?.name||'Look '+(index+1)} onChange={e=>renamePreset(index,e.target.value)}/><small>{preset?.avatar?`${preset.avatar.style} · ${weaponDisplayName(WEAPONS.find(w=>w.id===preset.avatar.weapon)||WEAPONS[0])}`:'Emplacement libre'}</small><span><button type="button" onClick={()=>savePreset(index)}>Mémoriser</button><button type="button" disabled={!preset?.avatar} onClick={()=>loadPreset(index)}>Charger</button></span><span><button type="button" disabled={!preset?.avatar} onClick={()=>duplicatePreset(index)}>Dupliquer</button><button type="button" disabled={!preset} onClick={()=>deletePreset(index)}>Supprimer</button></span></article>;})}</div></fieldset>
     <button className="world-primary avatar-final-submit" type="submit">{save.adventure.avatar.created?'Enregistrer les modifications':'Commencer mon voyage'}</button><p role="status">{message}</p>
    </section>}
 
