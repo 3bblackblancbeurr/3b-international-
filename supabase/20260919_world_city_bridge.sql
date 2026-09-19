@@ -12,7 +12,7 @@ declare
   region text;
   country_name text;
   item_code text;
-  origin_ref text;
+  v_origin_ref text;
   secret_id text;
   secret_country text;
   unlocked_count integer := 0;
@@ -38,12 +38,12 @@ begin
     if found then unlocked_count:=unlocked_count+1; end if;
 
     item_code:=region||'-companion-unique';
-    origin_ref:='world:guardian:'||region;
+    v_origin_ref:='world:guardian:'||region;
     if exists(select 1 from public.inventory_items where code=item_code and active=true)
-       and not exists(select 1 from public.item_instances where owner_id=p_user and origin_ref=origin_ref)
+       and not exists(select 1 from public.item_instances where owner_id=p_user and item_instances.origin_ref=v_origin_ref)
     then
       perform public.market_mint_item(
-        p_user,item_code,'achievement',origin_ref,
+        p_user,item_code,'achievement',v_origin_ref,
         jsonb_build_object('source','world','kind','guardian','region',region)
       );
       minted_count:=minted_count+1;
@@ -64,12 +64,12 @@ begin
       when 'secret_fog_tree' then 'estonie'
       else 'france' end;
     item_code:=secret_country||'-decoration-special';
-    origin_ref:='world:secret:'||secret_id;
+    v_origin_ref:='world:secret:'||secret_id;
     if exists(select 1 from public.inventory_items where code=item_code and active=true)
-       and not exists(select 1 from public.item_instances where owner_id=p_user and origin_ref=origin_ref)
+       and not exists(select 1 from public.item_instances where owner_id=p_user and item_instances.origin_ref=v_origin_ref)
     then
       perform public.market_mint_item(
-        p_user,item_code,'achievement',origin_ref,
+        p_user,item_code,'achievement',v_origin_ref,
         jsonb_build_object('source','world','kind','secret','secret',secret_id,'country',secret_country)
       );
       minted_count:=minted_count+1;
