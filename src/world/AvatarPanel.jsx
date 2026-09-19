@@ -29,6 +29,7 @@ const TEST_FRAMES=[
  {pose:'idle',drawn:false,angle:0,label:'Repos · arme rangée'},
  {pose:'walk',drawn:false,angle:Math.PI/2,label:'Marche · profil'},
  {pose:'run',drawn:true,angle:Math.PI,label:'Course · dos'},
+ {pose:'jump',drawn:true,angle:0,label:'Saut · face'},
  {pose:'guard',drawn:true,angle:0,label:'Garde · face'},
  {pose:'attack',drawn:true,angle:Math.PI/2,label:'Attaque · profil'},
  {pose:'idle',drawn:false,angle:Math.PI,label:'Retour au rangement'}
@@ -109,7 +110,7 @@ export function AvatarPanel({save,act,onDone}){
    <div className="avatar-preview-toolbar" aria-label="Contrôles de prévisualisation">
     <div><button type="button" aria-pressed={previewFocus==='body'} onClick={()=>setPreviewFocus('body')}>Corps</button><button type="button" aria-pressed={previewFocus==='face'} onClick={()=>setPreviewFocus('face')}>Visage</button></div>
     <div><button type="button" aria-pressed={previewAngle===0} onClick={()=>setPreviewAngle(0)}>Face</button><button type="button" aria-pressed={previewAngle===Math.PI/2} onClick={()=>setPreviewAngle(Math.PI/2)}>Profil</button><button type="button" aria-pressed={previewAngle===Math.PI} onClick={()=>setPreviewAngle(Math.PI)}>Dos</button></div>
-    <div><button type="button" aria-pressed={previewPose==='idle'} onClick={()=>setPreviewPose('idle')}>Repos</button><button type="button" aria-pressed={previewPose==='walk'} onClick={()=>setPreviewPose('walk')}>Marche</button><button type="button" aria-pressed={previewPose==='run'} onClick={()=>setPreviewPose('run')}>Course</button><button type="button" aria-pressed={previewPose==='guard'} onClick={()=>setPreviewPose('guard')}>Garde</button><button type="button" onClick={()=>setPreviewPose('attack')}>Attaque</button><button type="button" onClick={()=>setPreviewPose('cast')}>Pouvoir</button></div>
+    <div><button type="button" aria-pressed={previewPose==='idle'} onClick={()=>setPreviewPose('idle')}>Repos</button><button type="button" aria-pressed={previewPose==='walk'} onClick={()=>setPreviewPose('walk')}>Marche</button><button type="button" aria-pressed={previewPose==='run'} onClick={()=>setPreviewPose('run')}>Course</button><button type="button" onClick={()=>setPreviewPose('jump')}>Saut</button><button type="button" onClick={()=>setPreviewPose('interact')}>Interaction</button><button type="button" aria-pressed={previewPose==='guard'} onClick={()=>setPreviewPose('guard')}>Garde</button><button type="button" onClick={()=>setPreviewPose('attack')}>Attaque</button><button type="button" onClick={()=>setPreviewPose('cast')}>Pouvoir</button></div>
     <div className="avatar-lighting-row">{[['studio','Studio'],['sun','Soleil'],['night','Nuit'],['rain','Pluie']].map(([id,label])=><button type="button" key={id} aria-pressed={lighting===id} onClick={()=>setLighting(id)}>{label}</button>)}</div>
     <div className="avatar-quality-row">{[['quality','Qualité'],['balanced','Équilibré'],['fluid','Fluidité']].map(([id,label])=><button type="button" key={id} aria-pressed={previewQuality===id} onClick={()=>setPreviewQuality(id)}>{label}</button>)}</div>
     <div><button type="button" className="avatar-full-test" disabled={testing} onClick={startTest}>{testing?'Test en cours…':'TEST COMPLET'}</button></div>
