@@ -1,5 +1,5 @@
 import {advanceHubMission} from './mission-runtime.js';
-import {HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSIT_SET} from './interaction-catalog.js';
+import {HUB_DISTRICT_SET,HUB_BUILDING_SET,HUB_NPC_SET,HUB_TRANSIT_SET} from './interaction-catalog.js';
 
 const step=(hub,id,condition)=>{
  const current=hub.missions[id];
@@ -11,17 +11,25 @@ export function recordHubDistrict(hub,id){
  if(!HUB_DISTRICT_SET.has(id))throw Error('Quartier Hub inconnu.');
  const first=!hub.districts.includes(id),districts=first?[...hub.districts,id]:hub.districts;
  let next={...hub,districts},stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
- next=step(next,'first_steps',id==='heritage_square'&&(stage('first_steps',0)||stage('first_steps',2)));
- next=step(next,'first_echo',id==='archives'&&stage('first_echo',1));
+ next=step(next,'first_steps',id==='heritage_square'&&stage('first_steps',2));
  next=step(next,'rooftops_circle',id==='arena'&&stage('rooftops_circle',0));
  next=step(next,'rooftops_circle',id==='broken_circle_tower'&&stage('rooftops_circle',2));
  next=step(next,'storm_rescue',id==='docks'&&stage('storm_rescue',2));
  next=step(next,'eight_seeds',id==='gardens'&&stage('eight_seeds',1));
  next=step(next,'golden_pattern',id==='commerce'&&stage('golden_pattern',1));
- next=step(next,'living_fabric',id==='innovation'&&stage('living_fabric',1));
  next=step(next,'lost_wolf_signal',id==='gardens'&&stage('lost_wolf_signal',1));
- next=step(next,'broken_record',id==='archives'&&stage('broken_record',1));
- next=step(next,'first_foundation',id==='city3b_portal'&&stage('first_foundation',1));
+ return next;
+}
+
+export function recordHubBuilding(hub,id){
+ if(!HUB_BUILDING_SET.has(id))throw Error('Bâtiment Hub inconnu.');
+ const buildings=hub.buildings.includes(id)?hub.buildings:[...hub.buildings,id];
+ let next={...hub,buildings},stage=(mission,n)=>next.missions[mission]?.completedObjectives===n;
+ next=step(next,'first_steps',id==='heritage_welcome'&&stage('first_steps',0));
+ next=step(next,'first_echo',id==='memory_archives'&&stage('first_echo',1));
+ next=step(next,'broken_record',id==='memory_archives'&&stage('broken_record',1));
+ next=step(next,'first_foundation',id==='city_planning_office'&&stage('first_foundation',1));
+ next=step(next,'living_fabric',id==='ai_textile_lab'&&stage('living_fabric',1));
  return next;
 }
 
