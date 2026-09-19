@@ -92,3 +92,12 @@
 .world-quality{margin:22px 0}.world-quality label{display:block;color:var(--gold);margin-bottom:8px}.world-quality select{width:100%;padding:13px;border:1px solid #afc1c055;border-radius:10px;background:#122935;color:var(--text);font:inherit}.world-quality p{font-size:11px}.world-loading{background:radial-gradient(ellipse at 50% 25%,#365e63,#102231 65%)}
 .world-location{padding:14px 18px;border-radius:0 16px 16px 0;background:linear-gradient(90deg,#112b3de8,#112b3d91);border-left:2px solid #ddc386;max-width:440px}.world-location h1{font-size:clamp(24px,2.4vw,35px)}.world-location p{color:#d6e2de}.world-objective{padding:12px 16px;background:#112b3de0;border-radius:12px;border:1px solid #e4cf9733}.world-player{padding:12px 15px;background:#112b3de8;border:1px solid #e4cf9733;border-radius:14px}.world-minimap span{color:#122b3c;font-weight:700;text-shadow:0 1px 3px #fff9}
 @media(max-width:640px){.world-location{padding:10px 12px;max-width:250px}.world-location h1{font-size:24px}.world-objective{padding:8px 10px;max-width:220px}.world-player{padding:8px 10px}}
+
+/* Hub V2 — transport and mission feedback */
+.hub-transit-hud,.hub-mission-hud{position:absolute;z-index:34;left:50%;transform:translateX(-50%);pointer-events:none;background:rgba(3,7,12,.88);border:1px solid rgba(214,180,106,.48);box-shadow:0 14px 40px rgba(0,0,0,.38);backdrop-filter:blur(12px);color:#eef7ff}
+.hub-transit-hud{top:max(14px,env(safe-area-inset-top));min-width:min(420px,82vw);padding:10px 14px;border-radius:14px;display:grid;grid-template-columns:1fr auto;gap:4px 14px}
+.hub-transit-hud b,.hub-mission-hud b{color:#d6b46a;letter-spacing:.04em}.hub-transit-hud span{color:#7ed8ff;text-transform:uppercase;font-size:.72rem}
+.hub-transit-hud i{grid-column:1/-1;height:3px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden}.hub-transit-hud em{display:block;height:100%;background:linear-gradient(90deg,#00a8ff,#d6b46a);transition:width .1s linear}
+.hub-mission-hud{left:max(12px,env(safe-area-inset-left));transform:none;bottom:max(16px,env(safe-area-inset-bottom));max-width:min(420px,72vw);padding:11px 14px;border-radius:14px;display:grid;gap:3px}
+.hub-mission-hud span{font-size:.82rem;color:#dce9f2}.hub-mission-hud small{color:#7ed8ff;font-weight:700}
+@media(max-width:700px){.hub-mission-hud{max-width:62vw;font-size:.85rem}.hub-transit-hud{min-width:70vw}}
