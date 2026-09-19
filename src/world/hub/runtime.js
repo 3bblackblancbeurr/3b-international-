@@ -1,6 +1,8 @@
 import {activeHubEvents} from './event-runtime.js';
 import {hubSecretReady,HUB_SECRET_ORDER} from './secret-runtime.js';
 import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
+import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.js';
+import {hubNpcSchedule} from './npc-schedule.js';
 
 const DEFAULT_SCALE = 74;
 
@@ -52,14 +54,18 @@ export function buildHubRuntimeItems({
   }));
 
   const maxNpcs = selectNpcBudget(plan, profile);
-  const npcItems = npcs.slice(0, maxNpcs).map((npc) => {
-    const center = hubDistrictPosition(plan, npc.district);
+  const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
+    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress});
+    if(schedule.rare)return [];
+    const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
     const d = offset(npc.id, 8);
     return {
       id: `hub:npc:${npc.id}`,
       type: 'hubNpc',
       npcId: npc.id,
-      district: npc.district,
+      district,
+      homeDistrict:npc.district,
+      activity:schedule.activity,
       name: npc.name,
       role: npc.role,
       rarity: npc.rarity,
@@ -70,7 +76,7 @@ export function buildHubRuntimeItems({
   });
 
   const missionItems = missions.map((mission) => {
-    const center = hubDistrictPosition(plan, mission.district);
+    const center = hubDistrictPosition(plan, mission.district),locked=!hubMissionPrerequisitesMet(mission.id,hubState?.missions),missing=hubMissionLockReason(mission.id,hubState?.missions);
     const d = offset(`mission:${mission.id}`, 11);
     return {
       id: `hub:mission:${mission.id}`,
@@ -83,6 +89,8 @@ export function buildHubRuntimeItems({
       giver: mission.giver,
       objectives: mission.objectives || [],
       rewards: mission.rewards || [],
+      locked,
+      missingPrerequisites:missing||[],
       x: center.x + d.x,
       z: center.z + d.z,
     };
