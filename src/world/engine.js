@@ -9,6 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
+import {applyHubMissionTask,HUB_MISSION_TASK_BY_KEY} from './hub/mission-tasks.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 
@@ -64,6 +65,13 @@ export function applyWorldAction(input,action){
  const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
  const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
+  case 'hubMissionTask':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   requireThat(HUB_MISSION_TASK_BY_KEY[action.id+':'+action.task],'Tâche Hub inconnue.');
+   const result=applyHubMissionTask(s.hub.missions,s.hub.stats.missionTasks,action.id,action.task,action.evidence||{});
+   requireThat(result,'Cette tâche n’est pas disponible maintenant.');
+   return gain(s,{hub:{...s.hub,missions:result.missions,stats:{...s.hub.stats,missionTasks:result.taskState}}});
+  }
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
    const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');
