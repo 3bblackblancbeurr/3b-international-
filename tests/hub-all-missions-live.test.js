@@ -36,7 +36,7 @@ test('Blackout, Passion and Living Fabric complete through their districts and e
  let s=start('blue_blackout');
  s=act(s,{type:'hubNpcTalk',id:'arda_kaya'});s=act(s,{type:'hubEventDiscover',id:'power_flicker'});done(s,'blue_blackout');
  s=start('passion_trial');s=act(s,{type:'hubNpcTalk',id:'sofia_vega'});s=act(s,{type:'hubEventDiscover',id:'arena_public_challenge'});done(s,'passion_trial');
- s=start('living_fabric');s=act(s,{type:'hubNpcTalk',id:'meryem_alaoui'});s=act(s,{type:'hubDistrictVisit',id:'innovation'});done(s,'living_fabric');
+ s=start('living_fabric');s=act(s,{type:'hubNpcTalk',id:'meryem_alaoui'});s=act(s,{type:'hubBuildingVisit',id:'ai_textile_lab'});done(s,'living_fabric');
 });
 
 test('Garden Listens completes only after fog event and fog-tree secret',()=>{
@@ -50,7 +50,7 @@ test('Garden Listens completes only after fog event and fog-tree secret',()=>{
 test('First Foundation uses Elio, the City portal and a final save conversation',()=>{
  let s=start('first_foundation');
  s=act(s,{type:'hubNpcTalk',id:'elio_romano'});
- s=act(s,{type:'hubDistrictVisit',id:'city3b_portal'});
+ s=act(s,{type:'hubBuildingVisit',id:'city_planning_office'});
  s=act(s,{type:'hubNpcTalk',id:'elio_romano'});
  done(s,'first_foundation');
 });
@@ -80,7 +80,7 @@ test('Three Reflections requires Nora and the rain-gated reflection secret',()=>
 test('Eight Seeds, Lost Wolf and Broken Record use their canonical NPC and district',()=>{
  let s=start('eight_seeds');s=act(s,{type:'hubNpcTalk',id:'giulia_ferri'});s=act(s,{type:'hubDistrictVisit',id:'gardens'});done(s,'eight_seeds');
  s=start('lost_wolf_signal');s=act(s,{type:'hubNpcTalk',id:'evelin_tamm'});s=act(s,{type:'hubDistrictVisit',id:'gardens'});done(s,'lost_wolf_signal');
- s=start('broken_record');s=act(s,{type:'hubNpcTalk',id:'celine_moreau'});s=act(s,{type:'hubDistrictVisit',id:'archives'});done(s,'broken_record');
+ s=start('broken_record');s=act(s,{type:'hubNpcTalk',id:'celine_moreau'});s=act(s,{type:'hubBuildingVisit',id:'memory_archives'});done(s,'broken_record');
 });
 
 test('Golden Pattern requires artisan, commerce and secret-market social condition',()=>{
