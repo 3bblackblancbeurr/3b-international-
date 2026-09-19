@@ -89,18 +89,19 @@ function WorldSession({uid,goTo}){
  function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setPanel(null);}
  function interact(item){
   if(item.type==='portal'){travel(item.id);return;}
-  if(item.type==='hubNpc'){const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,saveRef.current.hub?.missions,turn));return;}
+  if(item.type==='hubBuilding'){act({type:'hubBuildingVisit',id:item.buildingId});announce(item.name+' · '+(item.functions?.join(' · ')||'bâtiment de la Cité'));return;}
+  if(item.type==='hubNpc'){const next=act({type:'hubNpcTalk',id:item.npcId})||saveRef.current,turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);announce(hubNpcDialogue(item,next.hub?.missions,turn));return;}
   if(item.type==='hubMission'){
    const current=saveRef.current.hub?.missions?.[item.missionId];if(!current)return;
    if(current.status==='available'){const next=act({type:'hubMissionStart',id:item.missionId});if(next)announce(item.name+' · mission commencée');return;}
-   if(current.status==='active'){const next=act({type:'hubMissionStep',id:item.missionId,objective:current.completedObjectives});if(next){const after=next.hub.missions[item.missionId];announce(after.status==='completed'?item.name+' · objectifs terminés':item.name+' · objectif '+after.completedObjectives+'/'+after.totalObjectives);}return;}
+   if(current.status==='active'){announce(item.name+' · '+(item.objectives?.[current.completedObjectives]||'Continue ton objectif dans la Cité.'));return;}
    if(current.status==='completed'&&!current.claimed){const next=act({type:'hubMissionClaim',id:item.missionId});if(next)announce(item.name+' · récompense récupérée');return;}
    announce(item.name+' · mission déjà accomplie');return;
   }
-  if(item.type==='hubTransport'){announce(item.name+' · véhicule en circulation');return;}
+  if(item.type==='hubTransport'){const ride=scene.current?.rideTransport(item);if(ride)announce(item.name+' · départ vers '+(ride.to||'le prochain arrêt'));else announce('Transport indisponible pour le moment.');return;}
   if(item.type==='hubEvent'){const before=saveRef.current.hub?.events?.includes(item.eventId),next=act({type:'hubEventDiscover',id:item.eventId});if(next){announce(before?item.effect:item.effect+' · +25 XP · +6 éclats');if(!before)chime();}return;}
   if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
-  if(item.type==='hubDistrict'){announce(item.name+' · '+item.purpose);return;}
+  if(item.type==='hubDistrict'){act({type:'hubDistrictVisit',id:item.district});announce(item.name+' · '+item.purpose);return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
   if(item.type==='landmark'){setPanel('heritage');return;}
   if(item.type==='job'){const next=act({type:'jobDone',id:item.job});if(next)chime();return;}
@@ -117,11 +118,11 @@ function WorldSession({uid,goTo}){
   if(item.type==='beacon'){if(act({type:'beacon',id:item.id}))chime();return;}
   if(act({type:'encounter',id:item.id})){act({type:'fieldStart'});scene.current?.cooldown(item.id);setPanel('encounter');}
  }
- callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region)};
+ callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region),transit:item=>{const before=saveRef.current.hub?.missions,next=act({type:'hubTransit',id:item.transitId});if(next){const changed=Object.keys(next.hub.missions).find(id=>next.hub.missions[id].completedObjectives!==(before?.[id]?.completedObjectives||0));announce(changed?'Objectif validé · '+changed.replaceAll('_',' '):'Arrivée · '+item.name);}}};
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
   if(!loaded)return;
-  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);ready.current=true;}
+  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onTransitComplete:item=>callbacks.current.transit(item),onError:setError});scene.current.setQuality(quality);ready.current=true;}
   catch{setError('Le navigateur n’a pas pu ouvrir la 3D. Active l’accélération graphique ou essaie un autre navigateur. Ta sauvegarde est conservée.');}
   return()=>{ready.current=false;scene.current?.destroy();scene.current=null;};
  },[loaded]);
@@ -137,7 +138,7 @@ function WorldSession({uid,goTo}){
   const timer=setInterval(()=>{if(ready.current&&dirty.current)sync();},20000);
   return()=>{document.removeEventListener('visibilitychange',hidden);clearInterval(timer);clearTimeout(noticeTimer.current);clearTimeout(saveTimer.current);if(watch.current!==null)navigator.geolocation?.clearWatch(watch.current);if(dirty.current)saveWorld(uid,saveRef.current);audio.current?.close();};
  },[uid,loaded]);
- const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits;
+ const country=countryById[snapshot.region],stats=useMemo(()=>teamStats(save),[save]),regionItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]),outdoorEchoes=save.adventure.outdoorCredits,activeHubMission=snapshot.region==='hub'?regionItems.find(item=>item.type==='hubMission'&&save.hub?.missions?.[item.missionId]?.status==='active'):null;
  function navigateTo(id){const item=regionItems.find(i=>i.id===id);if(item)navigate(item);}
  function navigate(item){scene.current?.waypoint(item,false);setPanel(null);}
  function exportSave(){const blob=new Blob([JSON.stringify(saveRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-monde-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
@@ -148,6 +149,8 @@ function WorldSession({uid,goTo}){
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
   <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
   {!panel&&<><button className="play-button play-party" aria-label="Groupe et coopération" title="Groupe et coopération" onClick={()=>setPanel('party')}><Users size={21}/></button>{partyState?.party&&<span className={'party-online '+connection}>{connection==='connected'?'● Groupe '+partyState.members.length+'/4':'Reconnexion…'}</span>}</>}
+  {snapshot.transit&&!panel&&<div className="hub-transit-hud" role="status"><b>{snapshot.transit.name}</b><span>{snapshot.transit.transport}</span><i><em style={{width:Math.round((snapshot.transit.progress||0)*100)+'%'}}/></i></div>}
+  {activeHubMission&&!panel&&<div className="hub-mission-hud"><b>{activeHubMission.name}</b><span>{activeHubMission.objectives?.[save.hub.missions[activeHubMission.missionId].completedObjectives]||'Mission terminée'}</span><small>{save.hub.missions[activeHubMission.missionId].completedObjectives}/{save.hub.missions[activeHubMission.missionId].totalObjectives}</small></div>}
   {snapshot.cinematic&&!panel&&<div className="play-cinematic"><div><h2>{snapshot.cinematic.title}</h2><p>{snapshot.cinematic.detail}</p></div><button onClick={()=>scene.current?.skipCinematic()}>Passer</button></div>}
   {gps&&!panel&&<button className="play-gps" onClick={()=>setPanel('gps')} aria-label="Sortie GPS"> <Footprints size={16}/> {walkSession} m</button>}
   {snapshot.joystick&&<div className="world-joystick" style={{left:snapshot.joystick.x,top:snapshot.joystick.y}}><i style={{transform:`translate(${snapshot.joystick.dx}px,${snapshot.joystick.dy}px)`}}/></div>}

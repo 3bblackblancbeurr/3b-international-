@@ -4,6 +4,7 @@ import missions from './data/missions-v1.json' with { type: 'json' };
 import events from './data/events-v1.json' with { type: 'json' };
 import secrets from './data/secrets-v1.json' with { type: 'json' };
 import { buildHubRuntimeItems } from './runtime.js';
+import {hubWeatherFor} from './weather.js';
 
 export const HUB_PLAN = plan;
 export const HUB_NPCS = npcs;
@@ -17,9 +18,9 @@ export function hubRuntime(profile = 'mobileMedium',context = {}) {
     hour:context.hour??now.getHours(),
     day:context.day??now.getDay(),
     dateKey:context.dateKey??now.toISOString().slice(0,10),
-    weather:context.weather||'clear',
+    weather:context.weather||hubWeatherFor(now),
     storyProgress:!!context.storyProgress,
     storyFlag:!!context.storyFlag,
   };
-  return buildHubRuntimeItems({ plan, npcs, missions, events, secrets, profile, eventContext });
+  return buildHubRuntimeItems({ plan, npcs, missions, events, secrets, profile, eventContext, hubState:context.hubState||null });
 }

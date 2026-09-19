@@ -9,6 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET} from './hub/activity-catalog.js';
+import {recordHubDistrict,recordHubBuilding,recordHubNpc,recordHubTransit,recordHubEvent,recordHubSecret,canUnlockHubSecret} from './hub/interaction-runtime.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -72,6 +73,22 @@ export function applyWorldAction(input,action){
    requireThat(Number.isInteger(action.objective)&&action.objective===current.completedObjectives,'Objectif invalide ou déjà validé.');
    return gain(s,{hub:{...s.hub,missions:advanceHubMission(s.hub.missions,action.id,1)}});
   }
+  case 'hubDistrictVisit':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   return gain(s,{hub:recordHubDistrict(s.hub,action.id)});
+  }
+  case 'hubBuildingVisit':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   return gain(s,{hub:recordHubBuilding(s.hub,action.id)});
+  }
+  case 'hubNpcTalk':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   return gain(s,{hub:recordHubNpc(s.hub,action.id)});
+  }
+  case 'hubTransit':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   return gain(s,{hub:recordHubTransit(s.hub,action.id)});
+  }
   case 'hubMissionClaim':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
    const current=s.hub.missions[action.id];requireThat(current?.status==='completed'&&!current.claimed,'Récompense indisponible.');
@@ -81,12 +98,12 @@ export function applyWorldAction(input,action){
   case 'hubEventDiscover':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
    if(s.hub.events.includes(action.id))return s;
-   return reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+   return reward(gain(s,{hub:recordHubEvent({...s.hub,events:[...s.hub.events,action.id]},action.id)}),25,6);
   }
   case 'hubSecretUnlock':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
-   if(s.hub.secrets.includes(action.id))return s;
-   return reward(gain(s,{hub:{...s.hub,secrets:[...s.hub.secrets,action.id]}}),80,20);
+   if(s.hub.secrets.includes(action.id))return s;requireThat(canUnlockHubSecret(s.hub,action.id),'Les conditions de ce secret ne sont pas encore réunies.');
+   return reward(gain(s,{hub:recordHubSecret({...s.hub,secrets:[...s.hub.secrets,action.id]},action.id)}),80,20);
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}

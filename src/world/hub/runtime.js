@@ -1,4 +1,5 @@
 import {activeHubEvents} from './event-runtime.js';
+import {canUnlockHubSecret} from './interaction-runtime.js';
 
 const DEFAULT_SCALE = 74;
 
@@ -38,6 +39,7 @@ export function buildHubRuntimeItems({
   secrets = [],
   profile = 'mobileMedium',
   eventContext = {},
+  hubState = null,
 }) {
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
@@ -47,6 +49,13 @@ export function buildHubRuntimeItems({
     purpose: district.purpose,
     ...hubDistrictPosition(plan, district.id),
   }));
+
+  const buildingItems=plan.buildings.map((building)=>{
+    const group=plan.buildings.filter((entry)=>entry.district===building.district),index=Math.max(0,group.findIndex((entry)=>entry.id===building.id)),center=hubDistrictPosition(plan,building.district);
+    const angle=(index/Math.max(1,group.length))*Math.PI*2+hash(building.district)%100/100,distance=9+building.tier*3;
+    const width=6.5+((hash(building.id)>>5)%30)/10,depth=5.8+((hash(building.id)>>11)%24)/10,height=4.8+building.tier*2.2+(building.interior==='separate_cell'?2.4:0);
+    return {id:`hub:building:${building.id}`,type:'hubBuilding',buildingId:building.id,district:building.district,name:building.name,tier:building.tier,functions:building.functions||[],interior:building.interior,range:5.5,x:center.x+Math.cos(angle)*distance,z:center.z+Math.sin(angle)*distance,width,depth,height};
+  });
 
   const maxNpcs = selectNpcBudget(plan, profile);
   const npcItems = npcs.slice(0, maxNpcs).map((npc) => {
@@ -90,6 +99,7 @@ export function buildHubRuntimeItems({
     type: 'hubTransport',
     transport: 'train',
     line: plan.transport.train.name,
+    transitId: `train:${district}`,
     stopIndex: index,
     district,
     name: `${plan.transport.train.name} · ${plan.districts.find((d) => d.id === district)?.name || district}`,
@@ -103,6 +113,7 @@ export function buildHubRuntimeItems({
       id: `hub:boat:${district}`,
       type: 'hubTransport',
       transport: 'boat',
+      transitId: `boat:${district}`,
       stopIndex: index,
       district,
       name: `Bateau-taxi · ${plan.districts.find((entry) => entry.id === district)?.name || district}`,
@@ -111,24 +122,36 @@ export function buildHubRuntimeItems({
     };
   });
 
+  const telephericItems=(plan.transport?.telepherics?.lines||[]).map((line)=>{
+    const start=hubDistrictPosition(plan,line.from),target=hubDistrictPosition(plan,line.to),d=offset(`telepheric:${line.id}`,4);
+    return {id:`hub:telepheric:${line.id}`,type:'hubTransport',transport:'telepheric',transitId:`telepheric:${line.id}`,line:line.id,district:line.from,targetDistrict:line.to,targetX:target.x,targetZ:target.z,name:`Téléphérique ${line.id} · ${line.role}`,x:start.x+d.x,z:start.z+d.z};
+  });
+  const ziplineItems=(plan.transport?.ziplines?.lines||[]).map((line)=>{
+    const start=hubDistrictPosition(plan,line.from),target=hubDistrictPosition(plan,line.to),d=offset(`zipline:${line.id}`,3);
+    return {id:`hub:zipline:${line.id}`,type:'hubTransport',transport:'zipline',transitId:`zipline:${line.id}`,line:line.id,district:line.from,targetDistrict:line.to,targetX:target.x,targetZ:target.z,name:`Tyrolienne ${line.id} · ${line.from} → ${line.to}`,x:start.x+d.x,z:start.z+d.z};
+  });
+
   const eventItems = activeHubEvents(events,eventContext).map((event)=>{
     const center=hubDistrictPosition(plan,event.district),d=offset(`event:${event.id}`,7);
     return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:event.id.replaceAll('_',' '),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
   });
-  const secretItems = secrets.map((secret)=>{
+  const secretItems = secrets.filter((secret)=>hubState?canUnlockHubSecret(hubState,secret.id):true).map((secret)=>{
     const center=hubDistrictPosition(plan,secret.district),d=offset(`secret:${secret.id}`,13);
     return {id:`hub:secret:${secret.id}`,type:'hubSecret',secretId:secret.id,district:secret.district,name:'Secret de la Cité',condition:secret.condition,reward:secret.reward,range:2.8,x:center.x+d.x,z:center.z+d.z};
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...eventItems, ...secretItems],
+    items: [...districtItems, ...buildingItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretItems],
     meta: {
       districts: districtItems.length,
+      buildings: buildingItems.length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
       trainStops: stationItems.length,
       boatStops: boatItems.length,
+      telepherics: telephericItems.length,
+      ziplines: ziplineItems.length,
       events: events.length,
       activeEvents: eventItems.length,
       secrets: secretItems.length,
