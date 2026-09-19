@@ -28,7 +28,7 @@ export function hubNpcNeeds(item,timeSeconds=0,{weather='clear'}={}){
     rest:clamp01((resting?.2:working?.72:.48)+wave(.13)*.18),
     food:clamp01(.28+wave(.42)*.6),
     social:clamp01((social?.16:.52)+wave(.71)*.28),
-    safety:clamp01(weather==='heavy_rain'||weather==='storm'?.82:.18),
+    safety:clamp01((weather==='heavy_rain'||weather==='storm') ? .82 : .18),
     purpose:clamp01((working?.2:.48)+wave(.04)*.26),
   };
 }
