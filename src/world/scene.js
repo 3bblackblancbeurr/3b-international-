@@ -22,6 +22,8 @@ import {landscapeItems,WORLD_RADIUS,BIOMES,randomFor} from './terrain.js';
 import {COSMETICS} from './chapters.js';
 import {findPath,findInteractionPath} from './navigation.js';
 import {distance,nearestInteraction,teamStats} from './rules.js';
+import {hubNpcPose} from './hub/npc-motion.js';
+import {routePose} from './hub/transport-motion.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -39,7 +41,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],region=save.region,position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
- let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null;
+ let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],hubNpcActors=[],hubVehicles=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null;
  let escort=null,escortId=null,trail=[],shot=null,daylight=null,retaliationPlayed=true;
  let partyActors=null,latestPeers=[],partyState=null;
  let fieldRival=null,combatDistance=Infinity,combatClock=0,combatButton=null;
@@ -79,7 +81,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function rebuild(nextRegion){
   onLoadState?.(true);
   partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;fieldRival=null;combatFx.clear();lastCombat=null;
-  hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
+  hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];hubNpcActors=[];hubVehicles=[];scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;items=landscapeItems(region,save);position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);scene.fog=new THREE.Fog(0xbacdd6,220,780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
@@ -90,9 +92,10 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    if(item.type==='portal'){portal(item);continue;}
    if(item.type==='hubNpc'){
     const y=groundY(item.x,item.z),rarity={common:'#c9d1d9',rare:'#00a8ff',epic:'#9b6cff',legendary:'#d6b46a',unique:'#ffffff'}[item.rarity]||'#c9d1d9';
+    item.homeX=item.x;item.homeZ=item.z;
     const body=mesh('cylinder',material(rarity,{emissive:rarity,emissiveIntensity:.08}),item.x,y+1.05,item.z,.42,1.35,.42);
     const head=mesh('sphere',material('#c9a987'),item.x,y+2.25,item.z,.38,.42,.38);
-    itemVisuals.set(item.id,[body,head]);obstacles.push({x:item.x,z:item.z,r:.72});continue;
+    hubNpcActors.push({item,body,head});itemVisuals.set(item.id,[body,head]);continue;
    }
    if(item.type==='hubMission'){
     const y=groundY(item.x,item.z),mat=material(item.importance==='major'?'#d6b46a':'#00a8ff',{emissive:item.importance==='major'?'#d6b46a':'#00a8ff',emissiveIntensity:.5,metalness:.45});
@@ -119,6 +122,15 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const ring=mesh('ring',mat,item.x,y+1.7,item.z,1,1,1);ring.rotation.x=.5;
    }
    itemVisuals.set(item.id,root.children.slice(first));
+  }
+  if(region==='hub'){
+   for(const spec of [{transport:'train',cycle:38,color:'#d6b46a',height:1.15,scale:[1.25,.78,3.8]},{transport:'boat',cycle:52,color:'#00a8ff',height:.5,scale:[1.15,.45,2.2]}]){
+    const stops=items.filter(i=>i.type==='hubTransport'&&i.transport===spec.transport).sort((a,b)=>a.stopIndex-b.stopIndex);
+    if(stops.length>1){
+     const vehicle=mesh('box',material(spec.color,{emissive:spec.color,emissiveIntensity:.18,metalness:.5}),stops[0].x,groundY(stops[0].x,stops[0].z)+spec.height,stops[0].z,...spec.scale);
+     hubVehicles.push({vehicle,stops,...spec});
+    }
+   }
   }
   hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatarKey=JSON.stringify(save.adventure.avatar);avatar=hero.object;root.add(avatar);hero.setColor(save.adventure.cosmetic!=='voyageur'?COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color:null);
   const shadow=mesh(register(new THREE.CircleGeometry(1,24)),register(new THREE.MeshBasicMaterial({color:'#12261c',transparent:true,opacity:.3,depthWrite:false})),0,.06,0,.85,.85,1);shadow.rotation.x=-Math.PI/2;animations.push({mesh:shadow,type:'shadow'});
@@ -204,6 +216,16 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   }else moving=false;
   const y=groundY(position.x,position.z),age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   avatar.position.set(position.x,y,position.z);hero.update(dt,dx,dz,travelled);
+  if(region==='hub'){
+   for(const actor of hubNpcActors){
+    const pose=hubNpcPose(actor.item,elapsed),gy=groundY(pose.x,pose.z);actor.item.x=pose.x;actor.item.z=pose.z;
+    actor.body.position.set(pose.x,gy+1.05,pose.z);actor.head.position.set(pose.x,gy+2.25,pose.z);actor.body.rotation.y=pose.heading;actor.head.rotation.y=pose.heading;
+   }
+   for(const vehicle of hubVehicles){
+    const pose=routePose(vehicle.stops,elapsed,vehicle.cycle);if(!pose)continue;
+    vehicle.vehicle.position.set(pose.x,groundY(pose.x,pose.z)+vehicle.height,pose.z);vehicle.vehicle.rotation.y=pose.heading;
+   }
+  }
   const encounter=save.adventure.encounter;
   let opponent=cinematic?(encounter?.final?items.find(i=>i.type==='final'):encounter?.patrol?items.find(i=>i.type==='patrol'):battleTarget?.card===encounter?.card?battleTarget:items.find(i=>i.card===encounter?.card)):null;
   if(fieldCombat&&opponent){
