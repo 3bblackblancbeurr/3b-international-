@@ -54,3 +54,14 @@ test('a physical weapon transitions from holster toward the grip hand',()=>{
  assert.ok(root.position.distanceTo(handR.position)<root.position.distanceTo(pelvis.position));
  weapon.dispose();
 });
+
+
+test('L’Arco Romano renders as a bow from its base form',()=>{
+ const model=new THREE.Group();
+ for(const [name,x,y] of [['hand_r',.6,1.1],['hand_l',-.6,1.1],['spine_02',0,1.25],['pelvis',0,.85]]){const bone=new THREE.Group();bone.name=name;bone.position.set(x,y,0);model.add(bone);}
+ model.updateMatrixWorld(true);
+ const weapon=fitWeapon(model,{weapon:'romano',weaponForm:0},{drawn:true});
+ const root=model.getObjectByName('3B-equipped-romano');
+ assert.ok(root.children.some(child=>child.geometry?.type==='TorusGeometry'));
+ weapon.dispose();
+});
