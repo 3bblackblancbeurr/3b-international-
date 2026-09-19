@@ -9,6 +9,7 @@ export const HUB_DIALOGUE_CHOICES={
   {id:'adapter',label:'L’adapter pour qu’il parle au présent',value:'Espoir'},
  ],
 };
+export const HUB_DIALOGUE_CHOICE_SET=new Set(Object.values(HUB_DIALOGUE_CHOICES).flat().map(choice=>choice.id));
 
 export function hubDialogueScene(npc,{hour=12,missionState={},talks=0,afterCombat=null}={}){
  const active=(npc.missionIds||[]).find(id=>missionState[id]?.status==='active');
