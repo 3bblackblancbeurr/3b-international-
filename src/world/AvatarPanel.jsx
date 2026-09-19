@@ -24,7 +24,7 @@ const FACE_PRESETS=[
  {name:'Anguleux',face:-.25,jaw:.7,nose:.45},{name:'Rond',face:.72,jaw:-.42,nose:-.18}
 ];
 const HAIR_COLORS=['#171717','#352a24','#5a3a24','#8b6b4a','#b59a78','#d4c2aa','#5f3b2f'];
-const PRESET_KEY='3b-avatar-presets-v2',DRAFT_KEY='3b-avatar-draft-v3',HISTORY_LIMIT=30;
+const PRESET_KEY='3b-avatar-presets-v2',DRAFT_KEY='3b-avatar-draft-v3',PORTRAIT_KEY='3b-passport-avatar-portrait-v1',HISTORY_LIMIT=30;
 const TEST_FRAMES=[
  {pose:'idle',drawn:false,angle:0,label:'Repos · arme rangée'},
  {pose:'walk',drawn:false,angle:Math.PI/2,label:'Marche · profil'},
@@ -41,6 +41,7 @@ const readPresets=()=>{
   return value.slice(0,3).map((entry,index)=>entry&&Object.prototype.hasOwnProperty.call(entry,'avatar')?entry:entry?{name:'Look '+(index+1),avatar:entry}:null);
  }catch{return [];}
 };
+const readPortrait=()=>{try{return localStorage.getItem(PORTRAIT_KEY)||'';}catch{return '';}};
 const readDraft=base=>{
  try{
   const value=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
@@ -55,7 +56,7 @@ export function AvatarPanel({save,act,onDone}){
  const [draft,setDraft]=useState(recovered.avatar),[message,setMessage]=useState(recovered.recovered?'Brouillon local restauré.':''),[weaponMessage,setWeaponMessage]=useState('');
  const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(readPresets);
  const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true),[lighting,setLighting]=useState('studio'),[previewQuality,setPreviewQuality]=useState('balanced');
- const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0);
+ const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0),[portrait,setPortrait]=useState(readPortrait);
  const stepIndex=STEPS.findIndex(([id])=>id===activeStep);
  const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],stats=weaponStats(selectedWeapon),xp=Number.isFinite(save.xp)?Math.max(0,save.xp):0;
  const maxWeaponForm=EVOLUTION_XP.reduce((max,need,index)=>xp>=need?index:max,0),compatibility=useMemo(()=>avatarCompatibility(draft),[draft]);
@@ -90,6 +91,8 @@ export function AvatarPanel({save,act,onDone}){
   }));setMessage('Profil cohérent généré : '+theme+'.');
  };
  const startTest=()=>{setTesting(true);setTestIndex(0);setPreviewFocus('body');};
+ const capturePortrait=()=>{setPreviewFocus('face');setPreviewAngle(0);setPreviewPose('idle');setWeaponDrawn(false);setMessage('Préparation du portrait Passeport…');requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{try{const canvas=document.querySelector('canvas[data-character-preview="true"]');if(!canvas)throw Error('canvas');const data=canvas.toDataURL('image/jpeg',.82);if(!data||data.length<1200)throw Error('capture');localStorage.setItem(PORTRAIT_KEY,data);setPortrait(data);setMessage('Portrait Passeport généré sur cet appareil.');}catch{setMessage('Le portrait n’a pas pu être généré sur cet appareil.');}},90)));};
+ const clearPortrait=()=>{try{localStorage.removeItem(PORTRAIT_KEY);}catch{}setPortrait('');setMessage('Portrait local supprimé.');};
  useEffect(()=>{const timer=setTimeout(()=>{try{localStorage.setItem(DRAFT_KEY,JSON.stringify({version:3,updatedAt:Date.now(),avatar:draft}));}catch{}},320);return()=>clearTimeout(timer);},[draft]);
  useEffect(()=>{
   if(!testing)return;
@@ -206,6 +209,7 @@ export function AvatarPanel({save,act,onDone}){
      <div><span>Compagnon</span><strong>{COMPANIONS.find(c=>c.id===draft.companion)?.name}</strong></div><div><span>Équipement</span><strong>{TRAVEL_GEAR[draft.travelGear].name}</strong></div>
     </div>
     <p className="avatar-inline-note">Le brouillon est sauvegardé automatiquement sur cet appareil jusqu’à la validation finale.</p>
+    <fieldset className="avatar-passport-portrait"><legend>Portrait Passeport 3B</legend><div>{portrait?<img src={portrait} alt="Portrait local du personnage pour le Passeport 3B"/>:<span className="avatar-portrait-empty">Aucun portrait généré</span>}<section><button type="button" onClick={capturePortrait}>{portrait?'Regénérer le portrait':'Générer le portrait'}</button><button type="button" disabled={!portrait} onClick={clearPortrait}>Supprimer</button></section></div><small>Le portrait est généré depuis le vrai rendu 3D du créateur et reste local sur cet appareil pour l’instant.</small></fieldset>
     <fieldset className="avatar-preset-slots"><legend>Mes looks enregistrés sur cet appareil</legend><div>{[0,1,2].map(index=>{const preset=presets[index];return <article key={index}><input aria-label={'Nom du preset '+(index+1)} maxLength={24} value={preset?.name||'Look '+(index+1)} onChange={e=>renamePreset(index,e.target.value)}/><small>{preset?.avatar?`${preset.avatar.style} · ${weaponDisplayName(WEAPONS.find(w=>w.id===preset.avatar.weapon)||WEAPONS[0])}`:'Emplacement libre'}</small><span><button type="button" onClick={()=>savePreset(index)}>Mémoriser</button><button type="button" disabled={!preset?.avatar} onClick={()=>loadPreset(index)}>Charger</button></span><span><button type="button" disabled={!preset?.avatar} onClick={()=>duplicatePreset(index)}>Dupliquer</button><button type="button" disabled={!preset} onClick={()=>deletePreset(index)}>Supprimer</button></span></article>;})}</div></fieldset>
     <button className="world-primary avatar-final-submit" type="submit">{save.adventure.avatar.created?'Enregistrer les modifications':'Commencer mon voyage'}</button><p role="status">{message}</p>
    </section>}
