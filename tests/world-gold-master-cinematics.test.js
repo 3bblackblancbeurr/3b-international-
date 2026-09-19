@@ -76,7 +76,7 @@ test('a guardian appears in the Hub only after seal and full restoration',()=>{
 
 test('restored France explicitly guides Céliane back to the Hub until homecoming is acknowledged',()=>{
  let save=blankSave();save.region='france';save.seals=['france'];save.beacons=['france:0','france:1','france:2'];
- save.adventure.chapters.france={helped:true,powers:['ally','ambiance','terrain'],solved:true,restored:3,challenge:false,choice:'garden',board:[]};
+ save.adventure.chapters.france={helped:true,powers:['ally','ambiance','terrain'],solved:true,restored:3,challenge:false,choice:'garden',board:[]};save.adventure.values.france={step:3,completed:true,choices:GUARDIAN_VALUES.france.choices.map(([id])=>id)};
  let objective=chapterObjective(save,'france');
  assert.equal(objective.target,'hub');
  assert.match(objective.title,/Céliane/);
