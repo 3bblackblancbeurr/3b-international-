@@ -8,7 +8,7 @@ import {COMPANIONS} from '../world/arsenal.js';
 export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',angle=null,cinematic=null,weaponState='preview',lighting='studio',showAura=false,showCompanion=false,quality='balanced'}){
  const ref=useRef(null),liveState=useRef({state,side,cardId,avatar,focus,pose,angle,cinematic,weaponState,lighting,showAura,showCompanion,quality}),[error,setError]=useState('');liveState.current={state,side,cardId,avatar,focus,pose,angle,cinematic,weaponState,lighting,showAura,showCompanion,quality};
  useEffect(()=>{
-  const canvas=ref.current;let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les commandes restent accessibles.');return;}
+  const canvas=ref.current;let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance',preserveDrawingBuffer:!!avatar});}catch{setError('La 3D est indisponible sur ce navigateur. Les commandes restent accessibles.');return;}
   const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,90),geometry=[],materials=[];
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.32;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
   scene.background=avatar?null:new THREE.Color('#101c27');scene.fog=new THREE.Fog('#101c27',13,29);
@@ -55,5 +55,5 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
   raf=requestAnimationFrame(tick);
   return()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect();actors.forEach(a=>a.dispose());library.dispose();geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('wheel',wheel);wolfMaterials.forEach(m=>m.dispose());};
  },[]);
- return <><canvas ref={ref} className="arena-stage" aria-label={cardId?'Modèle 3D de '+cardById[cardId].name+'. Glisse pour tourner.':avatar?'Aperçu 3D de ton personnage. Glisse pour tourner.':'Duel 3D des personnages. Les commandes de combat sont sous la scène.'}/>{error&&<p className="arena-model-error" role="status">{error}</p>}</>;
+ return <><canvas ref={ref} className="arena-stage" data-character-preview={avatar?'true':undefined} aria-label={cardId?'Modèle 3D de '+cardById[cardId].name+'. Glisse pour tourner.':avatar?'Aperçu 3D de ton personnage. Glisse pour tourner.':'Duel 3D des personnages. Les commandes de combat sont sous la scène.'}/>{error&&<p className="arena-model-error" role="status">{error}</p>}</>;
 }
