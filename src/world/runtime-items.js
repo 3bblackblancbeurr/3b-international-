@@ -8,6 +8,7 @@ export function worldRuntimeItems(region,save){
  const hub=hubRuntime(high?'mobileHigh':'mobileMedium',{
   storyProgress:(save.seals?.length||0)>0,
   storyFlag:!!save.adventure?.finished,
+  hubState:save.hub,
  }).items;
  return [...base,...hub];
 }
