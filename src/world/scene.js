@@ -23,7 +23,7 @@ import {worldRuntimeItems} from './runtime-items.js';
 import {COSMETICS} from './chapters.js';
 import {findPath,findInteractionPath} from './navigation.js';
 import {distance,nearestInteraction,teamStats} from './rules.js';
-import {hubNpcPose} from './hub/npc-motion.js';
+import {hubNpcPose,npcSimulationTier} from './hub/npc-motion.js';
 import {routePose} from './hub/transport-motion.js';
 import {worldTimeSnapshot} from './world-time.js';
 import {streamingProfile,lodForDistance} from './streaming.js';
@@ -99,7 +99,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     item.homeX=item.x;item.homeZ=item.z;
     const body=mesh('cylinder',material(rarity,{emissive:rarity,emissiveIntensity:.08}),item.x,y+1.05,item.z,.42,1.35,.42);
     const head=mesh('sphere',material('#c9a987'),item.x,y+2.25,item.z,.38,.42,.38);
-    hubNpcActors.push({item,body,head});itemVisuals.set(item.id,[body,head]);continue;
+    hubNpcActors.push({item,body,head,lastSimAt:0});itemVisuals.set(item.id,[body,head]);continue;
    }
    if(item.type==='hubGuardian'){
     itemVisuals.set(item.id,[makeActor(item)]);continue;
@@ -269,7 +269,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     for(const actor of hubNpcActors){
      const d=Math.hypot(actor.item.x-position.x,actor.item.z-position.z),lod=lodForDistance(d,stream),visible=lod<3;
      actor.body.visible=visible;actor.head.visible=visible&&lod<2;if(!visible)continue;
-     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused}),gy=groundY(pose.x,pose.z);actor.item.x=pose.x;actor.item.z=pose.z;actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
+     const sim=npcSimulationTier(d),interval=1000/Math.max(.25,sim.updateHz);if(actor.lastSimAt&&now-actor.lastSimAt<interval)continue;actor.lastSimAt=now;const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused}),gy=groundY(pose.x,pose.z);actor.item.x=pose.x;actor.item.z=pose.z;actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
      actor.body.position.set(pose.x,gy+1.05,pose.z);actor.head.position.set(pose.x,gy+2.25,pose.z);actor.body.rotation.y=pose.heading;actor.head.rotation.y=pose.heading;
     }
    }
