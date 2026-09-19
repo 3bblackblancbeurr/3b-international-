@@ -1,4 +1,5 @@
 import {activeHubEvents} from './event-runtime.js';
+import {hubSecretReady} from './secret-runtime.js';
 
 const DEFAULT_SCALE = 74;
 
@@ -38,6 +39,7 @@ export function buildHubRuntimeItems({
   secrets = [],
   profile = 'mobileMedium',
   eventContext = {},
+  hubState = null,
 }) {
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
@@ -115,9 +117,10 @@ export function buildHubRuntimeItems({
     const center=hubDistrictPosition(plan,event.district),d=offset(`event:${event.id}`,7);
     return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:event.id.replaceAll('_',' '),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
   });
-  const secretItems = secrets.map((secret)=>{
+  const evidence={weather:eventContext.weather,night:eventContext.hour>=20||eventContext.hour<6};
+  const secretItems = secrets.filter((secret)=>hubSecretReady(secret.id,hubState,evidence)).map((secret)=>{
     const center=hubDistrictPosition(plan,secret.district),d=offset(`secret:${secret.id}`,13);
-    return {id:`hub:secret:${secret.id}`,type:'hubSecret',secretId:secret.id,district:secret.district,name:'Secret de la Cité',condition:secret.condition,reward:secret.reward,range:2.8,x:center.x+d.x,z:center.z+d.z};
+    return {id:`hub:secret:${secret.id}`,type:'hubSecret',secretId:secret.id,district:secret.district,name:'Secret de la Cité',condition:secret.condition,reward:secret.reward,evidence,range:2.8,x:center.x+d.x,z:center.z+d.z};
   });
 
   return {
