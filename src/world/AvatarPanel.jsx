@@ -36,7 +36,7 @@ const TEST_FRAMES=[
 
 const readPresets=()=>{
  try{
-  const value=JSON.parse(localStorage.getItem(PRESET_KEY)||'[]');
+  const value=JSON.parse(localStorage.getItem(PRESET_KEY)||localStorage.getItem('3b-avatar-presets-v1')||'[]');
   if(!Array.isArray(value))return [];
   return value.slice(0,3).map((entry,index)=>entry&&Object.prototype.hasOwnProperty.call(entry,'avatar')?entry:entry?{name:'Look '+(index+1),avatar:entry}:null);
  }catch{return [];}
