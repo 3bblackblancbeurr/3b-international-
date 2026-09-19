@@ -8,6 +8,7 @@ import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMission
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
+import {applyHubMissionSignal} from './hub/mission-signals.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 
@@ -61,6 +62,7 @@ export function applyWorldAction(input,action){
  const inCountry=()=>requireThat(!!c&&s.visited.includes(region),'Traverse d’abord une porte.');
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
  const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
+ const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
@@ -89,23 +91,23 @@ export function applyWorldAction(input,action){
    const count=HUB_SECRET_STEP_COUNTS[action.id];requireThat(count,'Secret progressif inconnu.');
    requireThat(hubSecretStepAllowed(action.id,s.hub,action.step,count),'Étape secrète invalide ou déjà enregistrée.');
    const secretProgress={...s.hub.stats.secretProgress,[action.id]:[...(s.hub.stats.secretProgress[action.id]||[]),action.step]};
-   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,secretProgress}}});
+   return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,secretProgress}}}),{type:'secretStep',id:action.id,step:action.step});
   }
   case 'hubSecretUnlock':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_SECRET_SET.has(action.id),'Secret Hub inconnu.');
    if(s.hub.secrets.includes(action.id))return s;
    requireThat(hubSecretReady(action.id,s.hub,action.evidence||{}),'La condition de ce secret n’est pas encore remplie.');
-   return reward(gain(s,{hub:{...s.hub,secrets:[...s.hub.secrets,action.id]}}),80,20);
+   return hubSignal(reward(gain(s,{hub:{...s.hub,secrets:[...s.hub.secrets,action.id]}}),80,20),{type:'secret',id:action.id});
   }
   case 'hubNpcTalk':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.id),'Personnage Hub inconnu.');
    const talks={...s.hub.stats.npcTalks,[action.id]:Math.min(99,(s.hub.stats.npcTalks[action.id]||0)+1)};
-   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,npcTalks:talks}}});
+   return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,npcTalks:talks}}}),{type:'npc',id:action.id});
   }
   case 'hubDistrictVisit':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_DISTRICT_SET.has(action.id),'Quartier Hub inconnu.');
-   if(s.hub.stats.districtVisits.includes(action.id))return s;
-   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,districtVisits:[...s.hub.stats.districtVisits,action.id]}}});
+   const next=s.hub.stats.districtVisits.includes(action.id)?s:gain(s,{hub:{...s.hub,stats:{...s.hub.stats,districtVisits:[...s.hub.stats.districtVisits,action.id]}}});
+   return hubSignal(next,{type:'district',id:action.id});
   }
   case 'hubTransportRide':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
@@ -115,7 +117,7 @@ export function applyWorldAction(input,action){
    const stop=action.transport+':'+action.to,transportStops=s.hub.stats.transportStops.includes(stop)?s.hub.stats.transportStops:[...s.hub.stats.transportStops,stop];
    let nightTrainDates=s.hub.stats.nightTrainDates;
    if(action.transport==='train'&&action.night===true&&/^\d{4}-\d{2}-\d{2}$/.test(action.dateKey||'')&&!nightTrainDates.includes(action.dateKey))nightTrainDates=[...nightTrainDates,action.dateKey].slice(-16);
-   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}});
+   return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}}),{type:'transport',id:action.transport,from:action.from,to:action.to});
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
