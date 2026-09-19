@@ -112,3 +112,5 @@
 @keyframes storyCinematicIn{from{opacity:0;transform:scale(1.018)}to{opacity:1;transform:scale(1)}}
 @media(max-width:680px){.world-story-cinematic{padding:12px}.world-story-cinematic-card{grid-template-columns:1fr;max-height:92vh;overflow:auto}.world-story-cinematic-card .story-cinematic-art{min-height:180px;max-height:36vh}.world-story-cinematic-card h2{font-size:clamp(1.75rem,9vw,2.7rem)}}
 @media(prefers-reduced-motion:reduce){.world-story-cinematic{animation:none}}
+
+.world-story-cinematic-card.no-art{grid-template-columns:1fr;max-width:720px}
