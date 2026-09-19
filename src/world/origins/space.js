@@ -2,6 +2,7 @@ import {serviceObstacles} from './service-interiors.js';
 import {heritageObstacles} from '../heritage.js';
 import {isCountry,countryLayout} from './countries.js';
 import {BUILDINGS,ROOMS,ROOM_SHELVES,SCALE,SPAWNS,EIFFEL_SITE} from './data.js';
+import {HUB_RADIUS} from '../hub/runtime-core.js';
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const wall=(x,z,w,d,h=10,angle=0)=>({x,z,w,d,h,angle});
 const collisionCache=new Map();
@@ -24,30 +25,30 @@ export function obstacles(zone,flags={}){
  collisionCache.set(key,out);return out;
 }
 export function inside(p,o,r=SCALE.radius){const a=o.angle||0,c=Math.cos(a),s=Math.sin(a),x=(p.x-o.x)*c-(p.z-o.z)*s,z=(p.x-o.x)*s+(p.z-o.z)*c;return Math.abs(x)<o.w/2+r&&Math.abs(z)<o.d/2+r;}
-export function clear(p,zone,flags={},radius=SCALE.radius){
+export function clear(p,zone,flags={},radius=SCALE.radius,extra=[]){
  if(!Number.isFinite(p.x)||!Number.isFinite(p.z))return false;
- if(zone==='sanctuary'&&Math.hypot(p.x,p.z)>39)return false;
+ if(zone==='sanctuary'&&Math.hypot(p.x,p.z)>HUB_RADIUS)return false;
  if(isCountry(zone)&&(Math.abs(p.x)>105||p.z< -120||p.z>45))return false;
  if(zone==='france'&&(p.x< -110||p.x>65||p.z< -145||p.z>40))return false;
- return !obstacles(zone,flags).some(o=>inside(p,o,radius));
+ return ![...obstacles(zone,flags),...extra].some(o=>inside(p,o,radius));
 }
 export function safePosition(p,zone,flags){return p&&clear(p,zone,flags)?{x:p.x,z:p.z}:{...SPAWNS[zone]};}
-export function move(p,dx,dz,zone,flags={},radius=SCALE.radius){
- const result={...p},steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.18)),obs=obstacles(zone,flags);
- const valid=q=>(zone==='sanctuary'?Math.hypot(q.x,q.z)<39:isCountry(zone)?Math.abs(q.x)<105&&q.z> -120&&q.z<45:q.x> -110&&q.x<65&&q.z> -145&&q.z<40)&&!obs.some(o=>inside(q,o,radius));
+export function move(p,dx,dz,zone,flags={},radius=SCALE.radius,extra=[]){
+ const result={...p},steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.18)),obs=[...obstacles(zone,flags),...extra];
+ const valid=q=>(zone==='sanctuary'?Math.hypot(q.x,q.z)<HUB_RADIUS:isCountry(zone)?Math.abs(q.x)<105&&q.z> -120&&q.z<45:q.x> -110&&q.x<65&&q.z> -145&&q.z<40)&&!obs.some(o=>inside(q,o,radius));
  for(let i=0;i<steps;i++){let q={x:result.x+dx/steps,z:result.z};if(valid(q))result.x=q.x;q={x:result.x,z:result.z+dz/steps};if(valid(q))result.z=q.z;}
  return result;
 }
-export function lineClear(a,b,zone,flags,radius=SCALE.radius){const n=Math.max(1,Math.ceil(distance(a,b)/.25));for(let i=1;i<=n;i++)if(!clear({x:a.x+(b.x-a.x)*i/n,z:a.z+(b.z-a.z)*i/n},zone,flags,radius))return false;return true;}
+export function lineClear(a,b,zone,flags,radius=SCALE.radius,extra=[]){const n=Math.max(1,Math.ceil(distance(a,b)/.25));for(let i=1;i<=n;i++)if(!clear({x:a.x+(b.x-a.x)*i/n,z:a.z+(b.z-a.z)*i/n},zone,flags,radius,extra))return false;return true;}
 // The raised promenade has continuous ramps at both ends, no invisible teleport.
 export function ground(p,zone){if(isCountry(zone))return 0;if(zone==='sanctuary'){const r=Math.hypot(p.x,p.z-9);return r<2.8?.6:r<3.1?.4:r<3.4?.2:0;}if(Math.abs(p.z+34)>2)return 0;const x=Math.abs(p.x);return x<9?2.4:x<17?(17-x)*.3:0;}
-export function route(start,end,zone,flags){
- if(lineClear(start,end,zone,flags,.36))return [end];
+export function route(start,end,zone,flags,extra=[]){
+ if(lineClear(start,end,zone,flags,.36,extra))return [end];
  const step=1, key=p=>`${Math.round(p.x)},${Math.round(p.z)}`,first={x:Math.round(start.x),z:Math.round(start.z)},last={x:Math.round(end.x),z:Math.round(end.z)};
  const open=[first],cost=new Map([[key(first),0]]),parents=new Map(),points=new Map([[key(first),first]]),closed=new Set();let iterations=0;
  const heuristic=p=>Math.abs(p.x-last.x)+Math.abs(p.z-last.z);
- while(open.length&&iterations++<10000){open.sort((a,b)=>cost.get(key(b))+heuristic(b)-cost.get(key(a))-heuristic(a));const p=open.pop(),k=key(p);if(closed.has(k))continue;closed.add(k);
-  if(distance(p,last)<1.5&&lineClear(p,end,zone,flags,.36)){const path=[end];let id=k;while(parents.has(id)){path.unshift(points.get(id));id=parents.get(id);}return path;}
-  for(const [dx,dz] of [[step,0],[-step,0],[0,step],[0,-step]]){const q={x:p.x+dx,z:p.z+dz},id=key(q),n=cost.get(k)+1;if(closed.has(id)||n>=(cost.get(id)??Infinity)||!lineClear(p,q,zone,flags,.36))continue;cost.set(id,n);parents.set(id,k);points.set(id,q);open.push(q);}
+ while(open.length&&iterations++<(zone==='sanctuary'?45000:10000)){open.sort((a,b)=>cost.get(key(b))+heuristic(b)-cost.get(key(a))-heuristic(a));const p=open.pop(),k=key(p);if(closed.has(k))continue;closed.add(k);
+  if(distance(p,last)<1.5&&lineClear(p,end,zone,flags,.36,extra)){const path=[end];let id=k;while(parents.has(id)){path.unshift(points.get(id));id=parents.get(id);}return path;}
+  for(const [dx,dz] of [[step,0],[-step,0],[0,step],[0,-step]]){const q={x:p.x+dx,z:p.z+dz},id=key(q),n=cost.get(k)+1;if(closed.has(id)||n>=(cost.get(id)??Infinity)||!lineClear(p,q,zone,flags,.36,extra))continue;cost.set(id,n);parents.set(id,k);points.set(id,q);open.push(q);}
  }return [];
 }
