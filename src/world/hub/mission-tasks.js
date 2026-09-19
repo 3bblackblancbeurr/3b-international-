@@ -61,6 +61,29 @@ export const HUB_MISSION_TASKS={
   {id:'inspect_line',objective:0,label:'Inspecter la ligne du téléphérique'},
   {id:'repair_pylon',objective:1,label:'Pylône à réparer'},
  ],
+ eight_signals:[
+  ...Array.from({length:8},(_,index)=>({id:'frequency_'+(index+1),objective:0,label:'Fréquence '+(index+1)})),
+  {id:'unstable_gate',objective:1,label:'Porte instable'},
+ ],
+ rooftops_circle:[
+  {id:'course',objective:0,label:'Parcours des Toits'},
+  {id:'viewpoint',objective:2,label:'Belvédère du Cercle'},
+ ],
+ memory_under_water:[
+  {id:'submerged_archive',objective:0,label:'Archive submergée'},
+  {id:'trace_a',objective:1,label:'Trace engloutie I'},
+  {id:'trace_b',objective:1,label:'Trace engloutie II'},
+  {id:'trace_c',objective:1,label:'Trace engloutie III'},
+  {id:'return_memory',objective:2,label:'Souvenir à ramener'},
+ ],
+ wagon_eight:[
+  {id:'missing_wagon',objective:1,label:'Wagon absent'},
+  ...Array.from({length:8},(_,index)=>({id:'value_'+(index+1),objective:2,label:'Valeur '+(index+1)})),
+ ],
+ voices_square:[
+  {id:'resolve_dispute',objective:1,label:'Résoudre le désaccord'},
+  {id:'organize_meeting',objective:2,label:'Organiser la rencontre'},
+ ],
 };
 
 export const isPhysicalHubMission=(id)=>Object.hasOwn(HUB_MISSION_TASKS,id);
