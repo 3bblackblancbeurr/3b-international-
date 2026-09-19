@@ -1,6 +1,9 @@
 import {activeHubEvents} from './event-runtime.js';
 import {hubSecretReady,HUB_SECRET_ORDER} from './secret-runtime.js';
 import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
+import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.js';
+import {hubNpcSchedule} from './npc-schedule.js';
+import {guardianHubPresence} from '../guardian-values.js';
 
 const DEFAULT_SCALE = 74;
 
@@ -41,6 +44,7 @@ export function buildHubRuntimeItems({
   profile = 'mobileMedium',
   eventContext = {},
   hubState = null,
+  seals = [],
 }) {
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
@@ -52,14 +56,18 @@ export function buildHubRuntimeItems({
   }));
 
   const maxNpcs = selectNpcBudget(plan, profile);
-  const npcItems = npcs.slice(0, maxNpcs).map((npc) => {
-    const center = hubDistrictPosition(plan, npc.district);
+  const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
+    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress});
+    if(schedule.rare)return [];
+    const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
     const d = offset(npc.id, 8);
     return {
       id: `hub:npc:${npc.id}`,
       type: 'hubNpc',
       npcId: npc.id,
-      district: npc.district,
+      district,
+      homeDistrict:npc.district,
+      activity:schedule.activity,
       name: npc.name,
       role: npc.role,
       rarity: npc.rarity,
@@ -70,7 +78,7 @@ export function buildHubRuntimeItems({
   });
 
   const missionItems = missions.map((mission) => {
-    const center = hubDistrictPosition(plan, mission.district);
+    const center = hubDistrictPosition(plan, mission.district),locked=!hubMissionPrerequisitesMet(mission.id,hubState?.missions),missing=hubMissionLockReason(mission.id,hubState?.missions);
     const d = offset(`mission:${mission.id}`, 11);
     return {
       id: `hub:mission:${mission.id}`,
@@ -83,6 +91,8 @@ export function buildHubRuntimeItems({
       giver: mission.giver,
       objectives: mission.objectives || [],
       rewards: mission.rewards || [],
+      locked,
+      missingPrerequisites:missing||[],
       x: center.x + d.x,
       z: center.z + d.z,
     };
@@ -124,6 +134,11 @@ export function buildHubRuntimeItems({
     return {id:`hub:zipline:${line.id}:${stopIndex}`,type:'hubTransport',transport:'zipline',line:line.id,stopIndex,district,boardable:stopIndex===0,name:`Tyrolienne ${line.id} · ${plan.districts.find((entry)=>entry.id===district)?.name||district}`,x:center.x+d.x,z:center.z+d.z};
   }));
 
+  const guardianItems=guardianHubPresence(seals).map((guardian,index)=>{
+    const center=hubDistrictPosition(plan,guardian.district),d=offset(`guardian:${guardian.region}`,5);
+    return {id:`hub:guardian:${guardian.region}`,type:'hubGuardian',region:guardian.region,card:guardian.card,name:guardian.name,value:guardian.value,district:guardian.district,x:center.x+d.x,z:center.z+d.z,range:6,index};
+  });
+
   const eventItems = activeHubEvents(events,eventContext).map((event)=>{
     const center=hubDistrictPosition(plan,event.district),d=offset(`event:${event.id}`,7);
     return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:event.id.replaceAll('_',' '),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
@@ -152,12 +167,13 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
+      guardians:guardianItems.length,
       trainStops: stationItems.length,
       boatStops: boatItems.length,
       telephericStops: telephericItems.length,

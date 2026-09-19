@@ -9,6 +9,7 @@ export function worldRuntimeItems(region,save){
   storyProgress:(save.seals?.length||0)>0,
   storyFlag:!!save.adventure?.finished,
   hubState:save.hub,
+  seals:save.seals||[],
  }).items;
  return [...base,...hub];
 }
