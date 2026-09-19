@@ -17,6 +17,8 @@ const bodyReady={spine_02:[.02,0,0],upperarm_r:[-.12,-.02,-.05],lowerarm_r:[-.18
 const readyPoses={
  heritage:oneHandReady,paris:twoHandReady,romano:bowReady,tallinn:oneHandReady,bosphore:dualReady,alger:oneHandReady,carthage:twoHandReady,zellige:shieldReady,abanico:oneHandReady,scissors:dualReady,axe:twoHandReady,saber:oneHandReady,bow:bowReady,claws:dualReady,wings:bodyReady,thread:oneHandReady
 };
+const swapSide=name=>name.replace(/_(r|l)$/,(_,side)=>side==='r'?'_l':'_r');
+function mirrorPose(pose){const mirrored={};for(const [bone,value] of Object.entries(pose||{}))mirrored[swapSide(bone)]=[value[0],-value[1],-value[2]];return mirrored;}
 
 const weaponPoses={
  paris:{Light:{Thrust:[.04,-.2,0]},Heavy:{Thrust:[.18,-.34,0], upperarm_r:[-.72,.02,-.34],lowerarm_r:[-.12,-.02,0]}},
@@ -46,22 +48,23 @@ function createClip(base,name,idle,times=[0,.18,.38,.55,.78,1],weights=name==='G
 function createReadyClip(pose,idle){return createClip(pose,'Ready',idle,[0,1],[1,1]);}
 function createTransitionClip(pose,name,idle,reverse=false){return createClip(pose,name,idle,[0,.18,.42],reverse?[1,.55,0]:[0,.55,1]);}
 
-function mapWeaponPose(weapon,action,power='Light'){
+function mapWeaponPose(weapon,action,power='Light',handedness='right'){
  const profile=weaponPoses[weapon]||{},bonus=profile[power]||{},base=basePoses[action]||{},keys=new Set([...Object.keys(base),...Object.keys(bonus)]),merged={};
  for(const key of keys){const a=base[key]||[0,0,0],b=bonus[key]||[0,0,0];merged[key]=addBoneOffset(a,key,b);}
- return merged;
+ return handedness==='left'?mirrorPose(merged):merged;
 }
 
-export function weaponAnimations(idle,weapon=''){
+export function weaponAnimations(idle,weapon='',handedness='right'){
  if(!idle)return [];
- const base=Object.entries(basePoses).map(([name,pose])=>createClip(pose,name,idle));
+ const left=handedness==='left',base=Object.entries(basePoses).map(([name,pose])=>createClip(left?mirrorPose(pose):pose,name,idle));
  if(!weapon)return base;
- const pose=readyPoses[weapon],ready=pose?[createReadyClip(pose,idle)]:[],equip=pose?[createTransitionClip(pose,'EquipDraw',idle),createTransitionClip(pose,'EquipSheathe',idle,true)]:[];
+ const originalPose=readyPoses[weapon],pose=left?mirrorPose(originalPose):originalPose,ready=pose?[createReadyClip(pose,idle)]:[],equip=pose?[createTransitionClip(pose,'EquipDraw',idle),createTransitionClip(pose,'EquipSheathe',idle,true)]:[];
+ const strikeAction=['axe','zellige','abanico'].includes(weapon)?'Bash':['scissors','bosphore','claws'].includes(weapon)?'Split':'Thrust',strike=[createClip(mapWeaponPose(weapon,strikeAction,'Light',handedness),'WeaponStrike',idle)];
  const byWeapon={
   paris:{Light:'ThrustLight',Heavy:'ThrustHeavy'},scissors:{Light:'SplitLight',Heavy:'SplitHeavy'},axe:{Light:'BashLight',Heavy:'BashHeavy'},claws:{Light:'Slash',Heavy:'Rake'},thread:{Light:'CastLean',Heavy:'CastLong'},bow:{Light:'Draw',Heavy:'Release'},wings:{Light:'Lift',Heavy:'Dive'}
  };
  const aliases=byWeapon[weapon];
- if(!aliases)return [...base,...ready,...equip];
+ if(!aliases)return [...base,...ready,...equip,...strike];
  const variants=[{name:aliases.Light,action:'Thrust',power:'Light'},{name:aliases.Heavy,action:'Thrust',power:'Heavy'}];
  const special={
   scissors:[{name:aliases.Light,action:'Split',power:'Light'},{name:aliases.Heavy,action:'Split',power:'Heavy'}],
@@ -71,6 +74,6 @@ export function weaponAnimations(idle,weapon=''){
   bow:[{name:'Draw',action:'Thrust',power:'Light'},{name:'Release',action:'Thrust',power:'Heavy'}],
   wings:[{name:'Lift',action:'Thrust',power:'Light'},{name:'Dive',action:'Thrust',power:'Heavy'}]
  };
- const selected=special[weapon]||variants,extra=selected.map(s=>createClip(mapWeaponPose(weapon,s.action,s.power),s.name,idle));
- return [...base,...ready,...equip,...extra];
+ const selected=special[weapon]||variants,extra=selected.map(s=>createClip(mapWeaponPose(weapon,s.action,s.power,handedness),s.name,idle));
+ return [...base,...ready,...equip,...strike,...extra];
 }
