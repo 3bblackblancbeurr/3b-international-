@@ -7,7 +7,7 @@ import {blankAvatar,normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-r
 import {WEAPONS,COMPANIONS} from './arsenal.js';
 import {EVOLUTION_XP,formName} from './arsenal-progression.js';
 import {WEAPON_ART_ATLAS,weaponArtStyle,weaponDisplayName,weaponStats} from './weapon-art.js';
-import {ACTIVE_FACE_CAPABILITIES,FABRIC_CATALOG,HAIR_CATALOG,PATTERN_CATALOG} from './avatar-capabilities.js';
+import {FACE_CAPABILITIES,FABRIC_CATALOG,HAIR_CATALOG,PATTERN_CATALOG} from './avatar-capabilities.js';
 import {avatarCompatibility} from './avatar-compatibility.js';
 import '../arena/arena.css';
 import './weapon-customizer.css';
@@ -57,10 +57,11 @@ export function AvatarPanel({save,act,onDone}){
  const [draft,setDraft]=useState(recovered.avatar),[message,setMessage]=useState(recovered.recovered?'Brouillon local restauré.':''),[weaponMessage,setWeaponMessage]=useState('');
  const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(()=>mergePresetSources(save.adventure.avatarPresets));
  const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true),[lighting,setLighting]=useState('studio'),[previewQuality,setPreviewQuality]=useState('balanced');
- const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0),[portrait,setPortrait]=useState(readPortrait);
+ const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0),[portrait,setPortrait]=useState(readPortrait),[runtimeCapabilities,setRuntimeCapabilities]=useState({morphTargets:[],expressions:[]}),[expression,setExpression]=useState('neutral');
  const stepIndex=STEPS.findIndex(([id])=>id===activeStep);
  const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],stats=weaponStats(selectedWeapon),xp=Number.isFinite(save.xp)?Math.max(0,save.xp):0;
  const maxWeaponForm=EVOLUTION_XP.reduce((max,need,index)=>xp>=need?index:max,0),compatibility=useMemo(()=>avatarCompatibility(draft),[draft]);
+ const activeFaceCapabilities=useMemo(()=>FACE_CAPABILITIES.filter(cap=>cap.available||(cap.morphs||[]).some(name=>runtimeCapabilities.morphTargets.includes(name))),[runtimeCapabilities.morphTargets]);
  const applyDraft=updater=>{
   const next=typeof updater==='function'?updater(draft):updater;if(!next)return;
   const normalized=normalizeAvatar(next);if(JSON.stringify(normalized)===JSON.stringify(draft))return;
@@ -104,7 +105,7 @@ export function AvatarPanel({save,act,onDone}){
  if(revealed)return <AvatarCinematic avatar={savedAvatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
  return <div className="avatar-editor-v2">
   <aside className="avatar-preview-v2">
-   <div className="avatar-preview-stage"><ArenaStage avatar={draft} focus={previewFocus} pose={previewPose} angle={previewAngle} weaponState={weaponDrawn?'preview':'world'} lighting={lighting} quality={previewQuality} showAura={activeStep==='world'||activeStep==='finish'} showCompanion={activeStep==='world'||activeStep==='finish'}/></div>
+   <div className="avatar-preview-stage"><ArenaStage avatar={draft} focus={previewFocus} pose={previewPose} angle={previewAngle} weaponState={weaponDrawn?'preview':'world'} lighting={lighting} quality={previewQuality} expression={expression} onCapabilities={setRuntimeCapabilities} showAura={activeStep==='world'||activeStep==='finish'} showCompanion={activeStep==='world'||activeStep==='finish'}/></div>
    <div className="avatar-preview-toolbar" aria-label="Contrôles de prévisualisation">
     <div><button type="button" aria-pressed={previewFocus==='body'} onClick={()=>setPreviewFocus('body')}>Corps</button><button type="button" aria-pressed={previewFocus==='face'} onClick={()=>setPreviewFocus('face')}>Visage</button></div>
     <div><button type="button" aria-pressed={previewAngle===0} onClick={()=>setPreviewAngle(0)}>Face</button><button type="button" aria-pressed={previewAngle===Math.PI/2} onClick={()=>setPreviewAngle(Math.PI/2)}>Profil</button><button type="button" aria-pressed={previewAngle===Math.PI} onClick={()=>setPreviewAngle(Math.PI)}>Dos</button></div>
@@ -136,7 +137,8 @@ export function AvatarPanel({save,act,onDone}){
     <fieldset><legend>Teint</legend><div className="avatar-swatches-v2">{SKINS.map((s,i)=><button type="button" key={s} aria-label={'Teint '+(i+1)} aria-pressed={!draft.skinColor&&draft.skin===i} onClick={()=>applyDraft(d=>({...d,skin:i,skinColor:null}))} style={{background:s}}/>)}</div></fieldset>
     <div className="avatar-grid-2"><label className="avatar-color-line">Teint personnalisé<input type="color" value={draft.skinColor||SKINS[draft.skin]} onChange={e=>set('skinColor',e.target.value)}/><button type="button" onClick={()=>set('skinColor',null)}>Palette</button></label><label>Sous-ton<select value={draft.skinUndertone} onChange={e=>set('skinUndertone',e.target.value)}><option value="neutral">Neutre</option><option value="warm">Chaud</option><option value="cool">Froid</option></select></label></div>
     <fieldset><legend>Presets de visage</legend><div className="avatar-choice-grid four">{FACE_PRESETS.map(p=><button type="button" key={p.name} onClick={()=>applyDraft(d=>({...d,face:p.face,jaw:p.jaw,nose:p.nose}))}>{p.name}</button>)}</div></fieldset>
-    <fieldset><legend>Réglages fins disponibles</legend>{ACTIVE_FACE_CAPABILITIES.map(({id,label})=><label className="avatar-range-v2" key={id}><span>{label}</span><input type="range" min="-1" max="1" step=".05" value={draft[id]} onChange={e=>set(id,Number(e.target.value))}/><output>{Number(draft[id]).toFixed(2)}</output></label>)}</fieldset>
+    <fieldset><legend>Réglages fins disponibles</legend>{activeFaceCapabilities.map(({id,label})=><label className="avatar-range-v2" key={id}><span>{label}</span><input type="range" min="-1" max="1" step=".05" value={draft[id]} onChange={e=>set(id,Number(e.target.value))}/><output>{Number(draft[id]).toFixed(2)}</output></label>)}</fieldset>
+    {!!runtimeCapabilities.expressions.length&&<fieldset><legend>Expressions disponibles dans ce GLB</legend><div className="avatar-choice-grid four"><button type="button" aria-pressed={expression==='neutral'} onClick={()=>setExpression('neutral')}>Neutre</button>{runtimeCapabilities.expressions.map(id=><button type="button" key={id} aria-pressed={expression===id} onClick={()=>setExpression(id)}>{({smile:'Sourire',serious:'Sérieux',surprise:'Surprise'})[id]||id}</button>)}</div></fieldset>}
     <div className="avatar-grid-2"><label>Coiffure<select value={draft.hair} onChange={e=>set('hair',Number(e.target.value))}>{HAIR_CATALOG.filter(h=>h.available).map(h=><option key={h.id} value={h.id}>{h.name}</option>)}</select></label><label>Couleur des cheveux<input type="color" value={draft.hairColor} onChange={e=>set('hairColor',e.target.value)}/></label></div>
     <fieldset><legend>Couleurs naturelles</legend><div className="avatar-swatches-v2">{HAIR_COLORS.map(color=><button type="button" key={color} aria-label={'Cheveux '+color} aria-pressed={draft.hairColor===color} onClick={()=>set('hairColor',color)} style={{background:color}}/>)}</div></fieldset>
     <div className="avatar-inline-note">Barbe séparée : architecture prête, mais aucun nouveau mesh de barbe n’est affiché tant qu’un asset réel n’est pas disponible.</div>
