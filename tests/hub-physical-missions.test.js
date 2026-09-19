@@ -35,3 +35,21 @@ test('Mission task normalization removes forged task identifiers',()=>{
  assert.deepEqual(normalized.hub.stats.missionTasks.first_echo,['signal']);
  assert.deepEqual(normalized.hub.stats.missionTasks.eight_seeds,['seed_1']);
 });
+
+
+test('Eight Signals requires all eight frequencies before identifying the unstable gate',()=>{
+ let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'eight_signals'});
+ for(let i=1;i<=8;i++)save=applyWorldAction(save,{type:'hubMissionTask',id:'eight_signals',task:'frequency_'+i});
+ assert.equal(save.hub.missions.eight_signals.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'eight_signals',task:'unstable_gate'});
+ assert.equal(save.hub.missions.eight_signals.status,'completed');
+});
+
+test('Memory Under Water requires archive, three traces and returning the memory',()=>{
+ let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'memory_under_water'});
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'memory_under_water',task:'submerged_archive'});
+ for(const task of ['trace_a','trace_b','trace_c'])save=applyWorldAction(save,{type:'hubMissionTask',id:'memory_under_water',task});
+ assert.equal(save.hub.missions.memory_under_water.completedObjectives,2);
+ save=applyWorldAction(save,{type:'hubMissionTask',id:'memory_under_water',task:'return_memory'});
+ assert.equal(save.hub.missions.memory_under_water.status,'completed');
+});
