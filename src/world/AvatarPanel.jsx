@@ -90,7 +90,7 @@ export function AvatarPanel({save,act,onDone}){
   }));setMessage('Profil cohérent généré : '+theme+'.');
  };
  const startTest=()=>{setTesting(true);setTestIndex(0);setPreviewFocus('body');};
- useEffect(()=>{try{localStorage.setItem(DRAFT_KEY,JSON.stringify({version:3,updatedAt:Date.now(),avatar:draft}));}catch{}},[draft]);
+ useEffect(()=>{const timer=setTimeout(()=>{try{localStorage.setItem(DRAFT_KEY,JSON.stringify({version:3,updatedAt:Date.now(),avatar:draft}));}catch{}},320);return()=>clearTimeout(timer);},[draft]);
  useEffect(()=>{
   if(!testing)return;
   const frame=TEST_FRAMES[testIndex];setPreviewPose(frame.pose);setWeaponDrawn(frame.drawn);setPreviewAngle(frame.angle);setMessage('TEST COMPLET · '+frame.label);
