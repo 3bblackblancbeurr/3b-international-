@@ -70,7 +70,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   mesh(filmGeo,filmMat,item.x,y+4,item.z+.1,2.95,3.45,1);portalMaterials.push(filmMat);
  }
  function makeActor(item){
-  const card=cardById[item.card],creature=item.type==='guardian';
+  const card=cardById[item.card],creature=item.type==='guardian'||item.type==='hubGuardian';
   const actor=createLivingActor(models.living,{card:card.id,scale:creature?2.5:2,onError});
   actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.rotation.y=(card?.number||0)*.7;root.add(actor.object);
   actors.push({controller:actor,itemId:item.id,creature,x:item.x,z:item.z});return actor.object;
@@ -100,6 +100,9 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const head=mesh('sphere',material('#c9a987'),item.x,y+2.25,item.z,.38,.42,.38);
     hubNpcActors.push({item,body,head});itemVisuals.set(item.id,[body,head]);continue;
    }
+   if(item.type==='hubGuardian'){
+    itemVisuals.set(item.id,[makeActor(item)]);continue;
+   }
    if(item.type==='hubMission'){
     const y=groundY(item.x,item.z),mat=material(item.importance==='major'?'#d6b46a':'#00a8ff',{emissive:item.importance==='major'?'#d6b46a':'#00a8ff',emissiveIntensity:.5,metalness:.45});
     const ob=mesh('sphere',mat,item.x,y+1.35,item.z,.34,.65,.34);animations.push({mesh:ob,type:'float',y:y+1.35,itemId:item.id});
@@ -125,6 +128,11 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    }
    if(item.type==='hubSecret'){continue;}
    if(item.type==='job'||item.type==='cooperation'||item.type==='cafe'||item.type==='story'||item.type==='atelier'||item.type==='sanctuary'||item.type==='camp'||item.type==='resource'||item.type==='landmark'||item.type==='vista')continue;
+   if(item.type==='valueTrial'){
+    const y=groundY(item.x,item.z),color=item.done?'#d6b46a':'#00a8ff',mat=material(color,{emissive:color,emissiveIntensity:item.done?.14:.5,metalness:.45});
+    const core=mesh('sphere',mat,item.x,y+1.25,item.z,.5,.8,.5);const ring=mesh('ring',mat,item.x,y+.08,item.z,1.1,1.1,1.1);ring.rotation.x=-Math.PI/2;
+    itemVisuals.set(item.id,[core,ring]);continue;
+   }
    if(item.type==='survey'){const y=groundY(item.x,item.z);mesh('cylinder',stone,item.x,y+.5,item.z,.52,1,.52);const book=mesh('box',gold,item.x,y+1.15,item.z,.9,.1,.62);book.rotation.x=.25;obstacles.push({x:item.x,z:item.z,r:.65});continue;}
    if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C164',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
    const first=root.children.length,y=groundY(item.x,item.z);
