@@ -88,6 +88,25 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   const stone=material(c?.stone||'#cfc7ae'),gold=material(accent,{emissive:accent,emissiveIntensity:.22,metalness:.4});
   for(const item of items){
    if(item.type==='portal'){portal(item);continue;}
+   if(item.type==='hubNpc'){
+    const y=groundY(item.x,item.z),rarity={common:'#c9d1d9',rare:'#00a8ff',epic:'#9b6cff',legendary:'#d6b46a',unique:'#ffffff'}[item.rarity]||'#c9d1d9';
+    const body=mesh('cylinder',material(rarity,{emissive:rarity,emissiveIntensity:.08}),item.x,y+1.05,item.z,.42,1.35,.42);
+    const head=mesh('sphere',material('#c9a987'),item.x,y+2.25,item.z,.38,.42,.38);
+    itemVisuals.set(item.id,[body,head]);obstacles.push({x:item.x,z:item.z,r:.72});continue;
+   }
+   if(item.type==='hubMission'){
+    const y=groundY(item.x,item.z),mat=material(item.importance==='major'?'#d6b46a':'#00a8ff',{emissive:item.importance==='major'?'#d6b46a':'#00a8ff',emissiveIntensity:.5,metalness:.45});
+    const ob=mesh('sphere',mat,item.x,y+1.35,item.z,.34,.65,.34);animations.push({mesh:ob,type:'float',y:y+1.35,itemId:item.id});
+    const ring=mesh('ring',mat,item.x,y+.08,item.z,.9,.9,.9);ring.rotation.x=-Math.PI/2;itemVisuals.set(item.id,[ob,ring]);continue;
+   }
+   if(item.type==='hubTransport'){
+    const y=groundY(item.x,item.z),color=item.transport==='train'?'#d6b46a':'#00a8ff',mat=material(color,{emissive:color,emissiveIntensity:.3,metalness:.5});
+    const pylon=mesh('cylinder',mat,item.x,y+.9,item.z,.3,1.8,.3);const ring=mesh('ring',mat,item.x,y+1.9,item.z,.72,.72,.72);ring.rotation.x=Math.PI/2;itemVisuals.set(item.id,[pylon,ring]);continue;
+   }
+   if(item.type==='hubDistrict'){
+    const y=groundY(item.x,item.z),mat=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.12,metalness:.4});
+    const marker=mesh('cylinder',mat,item.x,y+.18,item.z,1.05,.18,1.05);itemVisuals.set(item.id,[marker]);continue;
+   }
    if(item.type==='job'||item.type==='cooperation'||item.type==='cafe'||item.type==='story'||item.type==='atelier'||item.type==='sanctuary'||item.type==='camp'||item.type==='resource'||item.type==='landmark'||item.type==='vista')continue;
    if(item.type==='survey'){const y=groundY(item.x,item.z);mesh('cylinder',stone,item.x,y+.5,item.z,.52,1,.52);const book=mesh('box',gold,item.x,y+1.15,item.z,.9,.1,.62);book.rotation.x=.25;obstacles.push({x:item.x,z:item.z,r:.65});continue;}
    if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C164',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
