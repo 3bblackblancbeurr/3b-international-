@@ -3,17 +3,18 @@ import {normalizeField} from './field-combat.js';
 import {COUNTRIES,cardById} from './catalog.js';
 import {blankAvatar,normalizeAvatar} from './avatar-rules.js';
 import {DISCOVERY_IDS} from './settlements.js';
+import {GUARDIAN_VALUES,normalizeGuardianValueState} from './guardian-values.js';
 const integer=(v,max)=>Number.isFinite(v)?Math.max(0,Math.min(max,Math.floor(v))):0;
 const strings=(v,allowed)=>[...new Set(Array.isArray(v)?v:[])].filter(x=>allowed.includes(x));
-export function blankAdventure(){return{frontier:{},mastery:{},companion:null,companionHidden:false,preparation:null,chapters:{},discoveries:[],finished:false,cosmetic:'voyageur',nexusStyle:'garden',difficulty:'adventure',encounter:null,outdoorCredits:0,avatar:blankAvatar()};}
+export function blankAdventure(){return{frontier:{},mastery:{},companion:null,companionHidden:false,companionOrder:'follow',preparation:null,chapters:{},values:{},discoveries:[],finished:false,cosmetic:'voyageur',nexusStyle:'garden',difficulty:'adventure',encounter:null,outdoorCredits:0,avatar:blankAvatar()};}
 export function normalizeAdventure(input){
  const a=blankAdventure();if(!input||typeof input!=='object')return a;
  a.avatar=normalizeAvatar(input.avatar);a.frontier=normalizeFrontier(input.frontier);a.mastery=normalizeMastery(input.mastery);
  a.companionHidden=input.companionHidden===true;
- a.companion=cardById[input.companion]?.character?input.companion:null;
+ a.companion=cardById[input.companion]?.character?input.companion:null;a.companionOrder=['follow','scout','support','guard'].includes(input.companionOrder)?input.companionOrder:'follow';
  a.preparation=COUNTRIES.some(c=>c.id===input.preparation)?input.preparation:null;
  a.discoveries=strings(input.discoveries,DISCOVERY_IDS);
- for(const c of COUNTRIES){const s=input.chapters?.[c.id];if(!s)continue;const powers=strings(s.powers,['ally','ambiance','terrain']);a.chapters[c.id]={helped:!!s.helped,powers:s.helped?powers:[],solved:!!s.solved&&powers.length===3,restored:s.solved&&powers.length===3?integer(s.restored,3):0,challenge:!!s.challenge,choice:['garden','workshop'].includes(s.choice)?s.choice:null,board:(Array.isArray(s.board)?s.board:[]).slice(0,9).map(n=>integer(n,8))};}
+ for(const c of COUNTRIES){const s=input.chapters?.[c.id];if(s){const powers=strings(s.powers,['ally','ambiance','terrain']);a.chapters[c.id]={helped:!!s.helped,powers:s.helped?powers:[],solved:!!s.solved&&powers.length===3,restored:s.solved&&powers.length===3?integer(s.restored,3):0,challenge:!!s.challenge,choice:['garden','workshop'].includes(s.choice)?s.choice:null,board:(Array.isArray(s.board)?s.board:[]).slice(0,9).map(n=>integer(n,8))};}if(GUARDIAN_VALUES[c.id])a.values[c.id]=normalizeGuardianValueState(c.id,input.values?.[c.id]);}
  a.finished=!!input.finished&&COUNTRIES.every(c=>a.chapters[c.id]?.restored===3);
  const colors=['voyageur',...COUNTRIES.map(c=>c.id),'union'];a.cosmetic=colors.includes(input.cosmetic)?input.cosmetic:'voyageur';a.nexusStyle=input.nexusStyle==='workshop'?'workshop':'garden';a.difficulty=input.difficulty==='expert'?'expert':'adventure';a.outdoorCredits=integer(input.outdoorCredits,50);
  const e=input.encounter;

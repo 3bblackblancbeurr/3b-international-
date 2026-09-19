@@ -3,6 +3,7 @@ import React from 'react';
 import {COUNTRIES,cardById,countryById} from './catalog.js';
 import {CHAPTERS,chapterState,chapterCards,chapterObjective,nexusLevel,COSMETICS,cosmeticUnlocked,puzzleSolved,waterFlow} from './chapters.js';
 import {INTENTS,pactCue,pactChoices} from './engine.js';
+import {hubMissionJournal,hubMissionSummary} from './hub/mission-journal.js';
 
 export function StoryPanel({save,act,onNavigate,onClose}){
  const id=save.region,c=CHAPTERS[id],s=chapterState(save,id),cards=chapterCards(id),objective=chapterObjective(save,id);
@@ -36,9 +37,13 @@ export function StoryPanel({save,act,onNavigate,onClose}){
 }
 
 export function AdventureJournal({save,onNavigate,onStyle}){
+ const hubRows=hubMissionJournal(save),hubSummary=hubMissionSummary(save);
  return <><div className="adventure-banner"><span>◈</span><div><small>UN MONDE À HABITER</small><h3>Explore. Construis. Protège tes liens.</h3><p>Huit pays ouverts, des refuges à développer et un groupe qui progresse avec toi.</p></div><b>{nexusLevel(save)}/8<small>PAYS VIVANTS</small></b></div>
   <p>Choisis ta prochaine sortie : récolter pour construire, protéger les environs ou aider un habitant. Les histoires locales ouvrent des lieux ; elles ne terminent pas le jeu.</p>
   {save.region!=='hub'&&<button className="world-primary" onClick={()=>onNavigate(save.region+':camp')}>Rejoindre mon refuge</button>}
+  <h3>Missions de la Cité</h3>
+  <div className="adventure-banner"><span>◎</span><div><small>CITÉ DES HUIT HÉRITAGES</small><h3>{hubSummary.completed}/{hubSummary.total} missions terminées</h3><p>{hubSummary.active} active(s) · {hubSummary.unlocked} accessibles</p></div><b>{hubSummary.claimed}<small>RÉCOMPENSES</small></b></div>
+  <div className="adventure-chapters">{hubRows.map(m=><article key={m.id} data-locked={m.locked}><span>{m.status==='completed'?'◆':m.locked?'◇':'◈'}</span><div><small>{m.category.toUpperCase()} · {m.completedObjectives}/{m.totalObjectives}</small><h3>{m.title}</h3><p>{m.locked?'Prérequis : '+m.missingPrerequisites.join(', '):m.status==='active'?(m.objectives[m.completedObjectives]||'Objectifs terminés'):m.status==='completed'?(m.claimed?'Récompense récupérée':'Récompense disponible'):'Mission disponible'}</p><progress max={m.totalObjectives} value={m.completedObjectives}/>{m.optional.length>0&&<small>Optionnel · {m.optional.join(' · ')}</small>}</div><button disabled={m.locked} onClick={()=>onNavigate(save.region==='hub'?'hub:mission:'+m.id:'hub')}>{save.region==='hub'?'Repérer':'Retour Cité'}</button></article>)}</div>
   <h3>Les histoires des pays</h3><div className="adventure-chapters">{COUNTRIES.map(c=>{const s=chapterState(save,c.id),o=chapterObjective(save,c.id);return <article key={c.id} style={{'--chapter-color':c.color}}><span>{c.symbol}</span><div><small>{c.name.toUpperCase()} · {s.restored}/3 LIEUX</small><h3>{CHAPTERS[c.id].title}</h3><p>{o.title}</p><progress max={3} value={s.restored}/><small>{s.challenge?'◆ Défi expert accompli':o.reward}</small></div><button onClick={()=>onNavigate(save.region===c.id?o.target:save.region==='hub'?c.id:'hub')}>{save.region===c.id?'Suivre':'Rejoindre'}</button></article>;})}</div>
   <div className="adventure-economy"><article><strong>XP monde</strong><p>Quêtes, pactes et gardiens font progresser ton personnage. Les premiers niveaux sont rapides, les suivants demandent plus d’exploration.</p></article><article><strong>Éclats</strong><p>Assemble des équipements et propose des offrandes. Les pouvoirs nécessaires à chaque chapitre sont enseignés par son habitant.</p></article><article><strong>Fidélité du compte</strong><p>Les minutes de jeu actif et les achats de vêtements validés suivent le programme de ton compte. Les éclats du monde ne se convertissent pas en argent ni en points d’achat.</p></article></div>
   <h3>Le style de ton Nexus</h3><div className="world-actions"><button aria-pressed={save.adventure.nexusStyle==='garden'} onClick={()=>onStyle('garden')}>Jardins et fleurs</button><button aria-pressed={save.adventure.nexusStyle==='workshop'} onClick={()=>onStyle('workshop')}>Ateliers et lanternes</button></div>

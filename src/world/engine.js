@@ -11,6 +11,9 @@ import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-r
 import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
+import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
+import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
+import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState} from './guardian-values.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -66,7 +69,7 @@ export function applyWorldAction(input,action){
  switch(action.type){
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
-   const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');
+   const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');requireThat(hubMissionPrerequisitesMet(action.id,s.hub.missions),'Termine d’abord les missions liées.');
    return gain(s,{hub:{...s.hub,missions:startHubMission(s.hub.missions,action.id)}});
   }
   case 'hubMissionStep':{
@@ -84,8 +87,8 @@ export function applyWorldAction(input,action){
   }
   case 'hubEventDiscover':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
-   if(s.hub.events.includes(action.id))return s;
-   return reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+   const next=s.hub.events.includes(action.id)?s:reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
+   return hubSignal(next,{type:'event',id:action.id});
   }
   case 'hubSecretStep':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
@@ -105,6 +108,12 @@ export function applyWorldAction(input,action){
    const talks={...s.hub.stats.npcTalks,[action.id]:Math.min(99,(s.hub.stats.npcTalks[action.id]||0)+1)};
    return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,npcTalks:talks}}}),{type:'npc',id:action.id});
   }
+  case 'hubDialogueChoice':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.npcId),'Personnage Hub inconnu.');
+   requireThat(HUB_DIALOGUE_CHOICE_SET.has(action.choiceId),'Choix de dialogue inconnu.');
+   const history=[...(s.hub.stats.dialogueHistory||[]),{npcId:action.npcId,sceneId:String(action.sceneId||'scene').slice(0,48),choiceId:action.choiceId}].slice(-120);
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,dialogueHistory:history}}});
+  }
   case 'hubDistrictVisit':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_DISTRICT_SET.has(action.id),'Quartier Hub inconnu.');
    const next=s.hub.stats.districtVisits.includes(action.id)?s:gain(s,{hub:{...s.hub,stats:{...s.hub.stats,districtVisits:[...s.hub.stats.districtVisits,action.id]}}});
@@ -121,6 +130,15 @@ export function applyWorldAction(input,action){
    if(action.transport==='train'&&action.night===true&&/^\d{4}-\d{2}-\d{2}$/.test(action.dateKey||'')&&!nightTrainDates.includes(action.dateKey))nightTrainDates=[...nightTrainDates,action.dateKey].slice(-16);
    return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}}),{type:'transport',id:action.transport,from:action.from,to:action.to});
   }
+  case 'guardianValueChoice':{
+   peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis d’abord le quartier avant l’épreuve du Gardien.');
+   const rule=GUARDIAN_VALUES[region],current=normalizeGuardianValueState(region,s.adventure.values?.[region]),step=guardianValueStep(region,current);
+   requireThat(rule&&step&&!current.completed,'Cette épreuve de valeur est déjà terminée.');
+   requireThat(action.choiceId===step.id,'Ce choix ne correspond pas à la valeur attendue.');
+   const nextValue=normalizeGuardianValueState(region,{choices:[...current.choices,action.choiceId]}),values={...s.adventure.values,[region]:nextValue};
+   s=adventure(s,{values});
+   return nextValue.completed?reward(s,60,15):s;
+  }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
   case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden:0)),harvest:[...home.harvest,site.id]});}
@@ -135,6 +153,7 @@ export function applyWorldAction(input,action){
    return adventure(s,{encounter:{...enc,patrol:true,region,expert,phase:1,pactSeed:home.expedition,intent:c.pattern[home.expedition%c.pattern.length],log:'Protège les environs. Une victoire renouvelle les ressources et entraîne ton groupe.'}});
   }
   case 'companion':{peaceful();if(action.id===null)return adventure(s,{companionHidden:true});requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id,companionHidden:false});}
+  case 'companionOrder':{peaceful();requireThat(['follow','scout','support','guard'].includes(action.value),'Ordre compagnon invalide.');return adventure(s,{companionOrder:action.value});}
   case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
   case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
@@ -176,6 +195,7 @@ export function applyWorldAction(input,action){
    const boss=item.type==='guardian';if(boss)requireThat(cs.restored>=2&&guardianReady(s,region),'Reconstruis le quartier, retrouve trois souvenirs et équipe un Allié.');
    if(action.outdoor){requireThat(!boss&&s.adventure.outdoorCredits>0,'Marche pour révéler un écho du dehors.');s=adventure(s,{outdoorCredits:s.adventure.outdoorCredits-1});}
    const enc={...makeEncounter(cardById[item.card],s,boss),recoveries:2},expert=s.adventure.difficulty==='expert';
+   if(boss&&s.adventure.values?.[region]?.completed){enc.focus=Math.min(3,enc.focus+1);enc.hp+=12;enc.maxHP+=12;enc.stats.health+=12;}
    if(s.adventure.preparation){const prepared=chapterState(s,s.adventure.preparation);if(prepared.restored>=2){if(prepared.choice==='workshop')enc.stats.attack+=4;else{enc.hp+=16;enc.maxHP+=16;enc.stats.health+=16;}}s=adventure(s,{preparation:null});}
    if(expert){enc.enemy=Math.round(enc.enemy*1.4);enc.enemyMax=enc.enemy;}
    return adventure(s,{encounter:{...enc,region,expert,phase:1,pactSeed:cardById[item.card].number+s.wins,intent:boss?c.pattern[0]:'frappe'}});
