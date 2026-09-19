@@ -147,6 +147,7 @@ export function AvatarPanel({save,act,onDone}){
     <label>Morphologie<select value={draft.shape} onChange={e=>set('shape',e.target.value)}><option value="equilibre">Équilibrée</option><option value="elance">Élancée</option><option value="solide">Solide</option></select></label>
     <label className="avatar-range-v2"><span>Taille</span><input type="range" min=".9" max="1.1" step=".01" value={draft.height} onChange={e=>set('height',Number(e.target.value))}/><output>{Math.round(draft.height*100)}%</output></label>
     <label className="avatar-range-v2"><span>Corpulence</span><input type="range" min=".88" max="1.15" step=".01" value={draft.build} onChange={e=>set('build',Number(e.target.value))}/><output>{Math.round(draft.build*100)}%</output></label>
+    <fieldset><legend>Posture</legend><div className="avatar-choice-grid four">{[['neutral','Neutre'],['relaxed','Détendue'],['confident','Assurée'],['warrior','Guerrière']].map(([id,label])=><button type="button" key={id} aria-pressed={draft.posture===id} onClick={()=>set('posture',id)}>{label}</button>)}</div></fieldset>
     <div className="avatar-inline-note">Épaules, torse, hanches, bras et jambes sont préparés comme futurs morph targets mais ne sont pas simulés tant qu’ils n’existent pas dans les GLB.</div>
    </section>}
 
@@ -174,6 +175,7 @@ export function AvatarPanel({save,act,onDone}){
 
    {activeStep==='weapon'&&<section className="avatar-step-card avatar-step-weapon">
     <div className="avatar-step-heading"><span>06</span><div><h3>Arme</h3><p>Choisis l’arme premium puis vérifie-la rangée, dégainée et pendant les animations.</p></div></div>
+    <fieldset><legend>Main dominante</legend><div className="avatar-choice-grid two"><button type="button" aria-pressed={draft.handedness==='right'} onClick={()=>set('handedness','right')}>Droitier</button><button type="button" aria-pressed={draft.handedness==='left'} onClick={()=>set('handedness','left')}>Gaucher</button></div></fieldset>
     <div className="weapon-preview-toggle"><button type="button" aria-pressed={!weaponDrawn} onClick={()=>setWeaponDrawn(false)}>Rangée</button><button type="button" aria-pressed={weaponDrawn} onClick={()=>setWeaponDrawn(true)}>Dégainée</button></div>
     {!!compatibility.warnings.length&&<div className="avatar-compatibility">{compatibility.warnings.filter(w=>w.id.includes('back')).map(w=><p key={w.id} data-level={w.level}>{w.message}</p>)}</div>}
     <section className="avatar-weapon-studio" style={{'--weapon-atlas':`url("${WEAPON_ART_ATLAS}")`}} aria-label="Personnalisation de l’arme">
