@@ -127,7 +127,7 @@ export function applyWorldAction(input,action){
    const stop=action.transport+':'+action.to,transportStops=s.hub.stats.transportStops.includes(stop)?s.hub.stats.transportStops:[...s.hub.stats.transportStops,stop];
    let nightTrainDates=s.hub.stats.nightTrainDates;
    if(action.transport==='train'&&action.night===true&&/^\d{4}-\d{2}-\d{2}$/.test(action.dateKey||'')&&!nightTrainDates.includes(action.dateKey))nightTrainDates=[...nightTrainDates,action.dateKey].slice(-16);
-   return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}}),{type:'transport',id:action.transport,from:action.from,to:action.to});
+   return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}}),{type:'transport',id:action.transport,from:action.from,to:action.to,night:action.night===true,dateKey:action.dateKey});
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
