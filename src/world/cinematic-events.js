@@ -17,7 +17,7 @@ export function worldCinematicEvents(previous,next,action){
  if(!previous||!next||!action?.type)return[];
  const before=previous.adventure||{},after=next.adventure||{},seen=new Set(after.cinematicSeen||[]);
  const oldFight=before.encounter,fight=after.encounter,region=next.region||'hub',events=[];
- const add=(kind,key,context,priority=20)=>{if(isWorldCinematicKey(key)&&!seen.has(key))events.push({kind,key,region,context,priority});};
+ const add=(kind,key,context,priority=20)=>{if(typeof key==='string'&&key.length<=96&&!seen.has(key))events.push({kind,key,region,context,priority});};
  const important=encounter=>!!encounter&&(encounter.final||(encounter.boss&&!encounter.patrol));
 
  if(action.type==='visit'&&region!=='hub'&&previous.region!==region&&!(previous.visited||[]).includes(region)&&(next.visited||[]).includes(region)){
