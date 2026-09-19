@@ -23,8 +23,14 @@ test('Hub event discovery rewards once and survives reducer normalization',()=>{
  assert.deepEqual({xp:save.xp,shards:save.shards},after);
 });
 
-test('Hub secret unlock is canonical, hidden-state persistent and rewarded once',()=>{
- let save=blankSave(),before={xp:save.xp,shards:save.shards};
+test('Hub secret unlock is canonical, condition-gated, persistent and rewarded once',()=>{
+ let save=blankSave();
+ assert.throws(()=>applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_three_lights'}),/conditions/);
+ save=applyWorldAction(save,{type:'hubMissionStart',id:'first_steps'});
+ save=applyWorldAction(save,{type:'hubBuildingVisit',id:'heritage_welcome'});
+ save=applyWorldAction(save,{type:'hubTransit',id:'train:heritage_square'});
+ save=applyWorldAction(save,{type:'hubDistrictVisit',id:'heritage_square'});
+ const before={xp:save.xp,shards:save.shards};
  save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_three_lights'});
  assert.ok(save.hub.secrets.includes('secret_three_lights'));
  assert.equal(save.xp,before.xp+80);
