@@ -17,6 +17,7 @@ export function createLivingLibrary(){
 }
 export function avatarRecipe(avatar){return {outerColor:avatar?.outerColor,metalColor:avatar?.metalColor||'#c9ad75',belt:avatar?.belt||'none',pendant:!!avatar?.pendant,body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,height:avatar?.height??1,build:avatar?.build??1,fabric:avatar?.fabric||'cotton',patternScale:avatar?.patternScale??1,patternRotation:avatar?.patternRotation??0,patternIntensity:avatar?.patternIntensity??.8,capeLength:avatar?.capeLength??1,hoodFit:avatar?.hoodFit??1,skin:avatar?.skinColor||SKINS[avatar?.skin??2],skinUndertone:avatar?.skinUndertone||'neutral',cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0,...Object.fromEntries(FACE_CAPABILITIES.filter(x=>!['face','jaw','nose'].includes(x.id)).map(x=>[x.id,avatar?.[x.id]||0])),weapon:avatar?.weapon||'heritage',posture:avatar?.posture||'neutral',handedness:avatar?.handedness==='left'?'left':'right'};}
 function skinTint(recipe){const c=new THREE.Color(recipe.skin||'#c89b78');if(recipe.skinUndertone==='warm')c.lerp(new THREE.Color('#ffb48f'),.08);if(recipe.skinUndertone==='cool')c.lerp(new THREE.Color('#b7d2ff'),.065);return c;}
+function materialSurface(name,recipe){if(/SkinColor|HandsColor/.test(name))return 'skin';if(/HairColor/.test(name))return 'hair';if(/BootColor/.test(name))return 'leather';if(/ClothColor/.test(name))return recipe.fabric||'cotton';return 'cotton';}
 const EXPRESSION_TARGETS={
  smile:['Smile','MouthSmile','MouthSmile_L','MouthSmile_R'],
  serious:['Frown','MouthFrown','BrowDown','BrowDown_L','BrowDown_R'],
@@ -56,9 +57,10 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
    if(!o.isMesh)return;
    const hair=o.name.match(/^Hair_(\d+)/),boots=o.name.match(/^Boots_(\d+)/);if(hair)o.visible=Number(hair[1])===recipe.hair&&recipe.headwear!=='hood';if(boots)o.visible=Number(boots[1])===recipe.boots;
    for(const m of [o.material].flat().filter(Boolean)){
+    if(/SkinColor|HandsColor|HairColor|ClothColor|TrouserColor|BootColor/.test(m.name))prepareTintMaterial(m,{pattern:!!pattern&&/ClothColor/.test(m.name),surface:materialSurface(m.name,recipe)});
     if(/SkinColor|HandsColor/.test(m.name))m.color.copy(skinTone);
     else if(/HairColor/.test(m.name))m.color.set(recipe.hairColor);
-    else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);m.roughness=({cotton:.92,linen:1,satin:.38,leather:.55})[recipe.fabric]??.92;if(garmentsChanged){m.map=pattern||null;m.needsUpdate=true;}}
+    else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);if(garmentsChanged){m.map=pattern||null;m.needsUpdate=true;}}
     else if(/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
     else if(/BootColor/.test(m.name))m.color.set(recipe.bootColor);
    }
@@ -76,10 +78,10 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
     for(const m of [o.material].flat().filter(Boolean)){
      // Imported ORM maps incorrectly made fabric and skin fully metallic.
      // These surfaces need diffuse daylight, not an environment reflection.
-     if(/SkinColor|HandsColor|HairColor|ClothColor|TrouserColor|BootColor/.test(m.name))prepareTintMaterial(m,{pattern:!!pattern&&/ClothColor_ClothColor/.test(m.name)});
+     if(/SkinColor|HandsColor|HairColor|ClothColor|TrouserColor|BootColor/.test(m.name))prepareTintMaterial(m,{pattern:!!pattern&&/ClothColor_ClothColor/.test(m.name),surface:materialSurface(m.name,recipe)});
      if(/SkinColor|HandsColor/.test(m.name))m.color.copy(skinTone);
      else if(/HairColor/.test(m.name))m.color.set(recipe.hairColor);
-     else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);m.roughness=({cotton:.92,linen:1,satin:.38,leather:.55})[recipe.fabric]??.92;if(pattern){m.map=pattern;m.needsUpdate=true;}}
+     else if(/ClothColor/.test(m.name)){m.color.set(recipe.cloth);if(pattern){m.map=pattern;m.needsUpdate=true;}}
      else if(!card&&/TrouserColor/.test(m.name))m.color.set(recipe.trouserColor);
      else if(!card&&/BootColor/.test(m.name))m.color.set(recipe.bootColor);
     }
