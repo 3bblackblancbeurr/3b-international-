@@ -13,6 +13,7 @@ export function blankHubState(){
       transportStops:[],
       nightTrainDates:[],
       secretProgress:{},
+      dialogueHistory:[],
     },
   };
 }
@@ -39,6 +40,7 @@ export function normalizeHubState(input){
   for(const type of HUB_TRANSPORT_TYPES)base.stats.transportRides[type]=Math.max(0,Math.min(999,Math.floor(Number(stats.transportRides?.[type])||0)));
   base.stats.transportStops=[...new Set(Array.isArray(stats.transportStops)?stats.transportStops:[])].filter((id)=>typeof id==='string'&&/^(train|boat|telepheric|zipline):[A-Za-z0-9_]+$/.test(id)).slice(0,96);
   base.stats.nightTrainDates=[...new Set(Array.isArray(stats.nightTrainDates)?stats.nightTrainDates:[])].filter((value)=>/^\d{4}-\d{2}-\d{2}$/.test(value)).slice(-16);
+  base.stats.dialogueHistory=(Array.isArray(stats.dialogueHistory)?stats.dialogueHistory:[]).filter((row)=>row&&HUB_NPC_SET.has(row.npcId)&&typeof row.sceneId==='string'&&typeof row.choiceId==='string').slice(-120).map((row)=>({npcId:row.npcId,sceneId:row.sceneId.slice(0,48),choiceId:row.choiceId.slice(0,48)}));
   for(const [id,count] of Object.entries(HUB_SECRET_STEP_COUNTS)){
    const steps=[...new Set(Array.isArray(stats.secretProgress?.[id])?stats.secretProgress[id]:[])].filter((step)=>Number.isInteger(step)&&step>=0&&step<count).slice(0,count);
    if(steps.length)base.stats.secretProgress[id]=steps;
