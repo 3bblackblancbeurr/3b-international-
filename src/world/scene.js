@@ -92,6 +92,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   const stone=material(c?.stone||'#cfc7ae'),gold=material(accent,{emissive:accent,emissiveIntensity:.22,metalness:.4});
   for(const item of items){
    if(item.type==='portal'){portal(item);continue;}
+   if(item.type==='hubBuilding'){
+    const y=groundY(item.x,item.z),wall=material(item.tier===0?'#263744':item.tier===1?'#1d2b36':'#17232d',{metalness:.22,roughness:.68}),trim=material(item.tier===0?'#d6b46a':'#00a8ff',{emissive:item.tier===0?'#d6b46a':'#00a8ff',emissiveIntensity:.18,metalness:.5});
+    const body=mesh('box',wall,item.x,y+item.height/2,item.z,item.width,item.height,item.depth);
+    const crown=mesh('box',trim,item.x,y+item.height+.16,item.z,item.width*1.04,.28,item.depth*1.04);
+    const door=mesh('box',trim,item.x,y+1.15,item.z+item.depth/2+.04,1.15,2.3,.08);
+    obstacles.push({x:item.x,z:item.z,r:Math.max(2.8,Math.hypot(item.width,item.depth)*.34)});itemVisuals.set(item.id,[body,crown,door]);continue;
+   }
    if(item.type==='hubNpc'){
     const y=groundY(item.x,item.z),rarity={common:'#c9d1d9',rare:'#00a8ff',epic:'#9b6cff',legendary:'#d6b46a',unique:'#ffffff'}[item.rarity]||'#c9d1d9';
     item.homeX=item.x;item.homeZ=item.z;
