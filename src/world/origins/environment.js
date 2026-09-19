@@ -14,7 +14,7 @@ import {foliageAtlas} from '../foliage-atlas.js';
 const v=(x,y,z)=>new T.Vector3(x,y,z);
 export function createEnvironment(scene,zone,{onError=()=>{},quality='high',occlusion}={}){
  if(isCountry(zone))return createCountryEnvironment(scene,zone,{onError,quality,occlusion});
- const root=new T.Group();scene.add(root);root.name=zone==='sanctuary'?'Sanctuaire du Cercle':'France · Quartier des Liens';
+ const root=new T.Group();scene.add(root);root.name=zone==='sanctuary'?'Cité des Huit Héritages · Cercle central':'France · Quartier des Liens';
  const owned=new Set(),textures=new Set(),batches=new Map(),assets=[],animated=[],restored=new T.Group(),corruption=new T.Group(),memory=new T.Group();
  root.add(restored,corruption,memory);let dead=false,flags={};
  const textureLoader=new T.TextureLoader();
