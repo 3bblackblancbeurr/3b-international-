@@ -1,6 +1,9 @@
 import {advanceHubMission} from './mission-runtime.js';
 
 export const HUB_MISSION_TASKS={
+ first_steps:[
+  {id:'welcome_house',objective:0,label:'Maison de l’Accueil'},
+ ],
  first_echo:[
   {id:'signal',objective:0,label:'Signal des Archives'},
   {id:'memory',objective:1,label:'Souvenir à restaurer'},
@@ -53,6 +56,10 @@ export const HUB_MISSION_TASKS={
  ],
  storm_rescue:[
   {id:'rescue_crew',objective:1,label:'Équipage en détresse'},
+ ],
+ silent_cable:[
+  {id:'inspect_line',objective:0,label:'Inspecter la ligne du téléphérique'},
+  {id:'repair_pylon',objective:1,label:'Pylône à réparer'},
  ],
 };
 
