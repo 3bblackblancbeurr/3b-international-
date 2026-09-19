@@ -1,6 +1,7 @@
 import {activeHubEvents} from './event-runtime.js';
 import {hubSecretReady,HUB_SECRET_ORDER} from './secret-runtime.js';
 import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
+import {HUB_MISSION_TASKS} from './mission-tasks.js';
 
 const DEFAULT_SCALE = 74;
 
@@ -88,6 +89,16 @@ export function buildHubRuntimeItems({
     };
   });
 
+  const missionTaskItems=Object.entries(HUB_MISSION_TASKS).flatMap(([missionId,tasks])=>{
+    const state=hubState?.missions?.[missionId];if(state?.status!=='active')return[];
+    const mission=missions.find((entry)=>entry.id===missionId);if(!mission)return[];
+    const done=hubState?.stats?.missionTasks?.[missionId]||[],center=hubDistrictPosition(plan,mission.district);
+    return tasks.filter((task)=>task.objective===state.completedObjectives&&!done.includes(task.id)&&(task.weather?task.weather===eventContext.weather:true)).map((task,index)=>{
+      const d=offset(`mission-task:${missionId}:${task.id}`,5+index*1.15);
+      return {id:`hub:mission-task:${missionId}:${task.id}`,type:'hubMissionTask',missionId,taskId:task.id,district:mission.district,name:task.label,objective:task.objective,evidence:{weather:eventContext.weather,night:eventContext.hour>=20||eventContext.hour<6},range:3.2,x:center.x+d.x,z:center.z+d.z};
+    });
+  });
+
   const stationItems = (plan.transport?.train?.stations || []).map((district, index) => ({
     id: `hub:train:${district}`,
     type: 'hubTransport',
@@ -152,12 +163,13 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...districtItems, ...npcItems, ...missionItems, ...missionTaskItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
+      activeMissionTasks: missionTaskItems.length,
       trainStops: stationItems.length,
       boatStops: boatItems.length,
       telephericStops: telephericItems.length,
