@@ -17,7 +17,7 @@ export function createLivingLibrary(){
 export function avatarRecipe(avatar){return {outerColor:avatar?.outerColor,metalColor:avatar?.metalColor||'#c9ad75',belt:avatar?.belt||'none',pendant:!!avatar?.pendant,body:avatar?.body==='femme'?1:0,style:['voyageur','sentinelle','mystique'].indexOf(avatar?.style||'voyageur'),hair:avatar?.hair??3,boots:avatar?.boots??0,height:avatar?.height??1,build:avatar?.build??1,fabric:avatar?.fabric||'cotton',patternScale:avatar?.patternScale??1,capeLength:avatar?.capeLength??1,hoodFit:avatar?.hoodFit??1,skin:avatar?.skinColor||SKINS[avatar?.skin??2],cloth:avatar?.fabricColor||OUTFITS[avatar?.color??0],accentColor:avatar?.accentColor||'#d7bd83',trouserColor:avatar?.trouserColor||'#77644d',bootColor:avatar?.bootColor||'#695239',pattern:avatar?.pattern||'uni',headwear:avatar?.headwear||'none',outer:avatar?.outer||'none',bag:!!avatar?.bag,hairColor:avatar?.hairColor||'#352a24',shape:avatar?.shape||'equilibre',face:avatar?.face||0,jaw:avatar?.jaw||0,nose:avatar?.nose||0};}
 export const avatarModelKey=avatar=>`${avatar?.body==='femme'?'femme':'homme'}:${['voyageur','sentinelle','mystique'].includes(avatar?.style)?avatar.style:'voyageur'}`;
 export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,weaponState='world'}={}){
- let currentAvatar=avatar?{...avatar}:null,recipe=card?CARD_DESIGNS[card]:avatarRecipe(currentAvatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
+ let currentAvatar=avatar?{...avatar}:null,currentAvatarSignature=JSON.stringify(currentAvatar||{}),recipe=card?CARD_DESIGNS[card]:avatarRecipe(currentAvatar),url=card?'/world/card-models/'+card+(card==='C165'?'-v2':'')+'.glb':'/world/living/traveller-'+(recipe.body*3+recipe.style)+'.glb';
  const object=new THREE.Group(),personal=new Set();let model,mixer,garments,weaponModel,pattern,actions={},legActions={},legCurrent=null,current=null,dead=false,clock=0,actionEnd=0,heading=0,ready=false,combatPose={},weaponForced=weaponState==='preview',weaponReadyUntil=0;
  object.scale.setScalar(scale);
  function transition(name,once=false){
@@ -27,11 +27,12 @@ export function createLivingActor(library,{card,avatar,scale=1,onLoad,onError,we
  }
  function applyAvatar(nextAvatar,{forceGarments=false}={}){
   if(card||!nextAvatar||!model)return;
+  const signature=JSON.stringify(nextAvatar);if(!forceGarments&&signature===currentAvatarSignature)return;
   const previous=currentAvatar||{},nextRecipe=avatarRecipe(nextAvatar);
   const garmentKeys=['headwear','outer','bag','belt','pendant','outerColor','metalColor','accentColor','bootColor','fabricColor','color','fabric','pattern','patternScale','capeLength','hoodFit'];
   const garmentsChanged=forceGarments||garmentKeys.some(key=>previous?.[key]!==nextAvatar?.[key]);
   const weaponChanged=previous?.weapon!==nextAvatar?.weapon||previous?.weaponForm!==nextAvatar?.weaponForm;
-  currentAvatar={...nextAvatar};recipe=nextRecipe;
+  currentAvatar={...nextAvatar};currentAvatarSignature=signature;recipe=nextRecipe;
   const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);
   if(garmentsChanged){garments?.dispose();pattern?.dispose();pattern=garmentPattern(recipe);garments=fitGarments(model,recipe);}
   model.traverse(o=>{
