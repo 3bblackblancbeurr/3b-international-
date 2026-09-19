@@ -32,4 +32,6 @@ test('Telepherics and ziplines are server-valid transport actions',()=>{
  assert.equal(save.hub.stats.transportRides.zipline,1);
  assert.ok(save.hub.stats.transportStops.includes('telepheric:broken_circle_tower'));
  assert.ok(save.hub.stats.transportStops.includes('zipline:docks'));
+ assert.throws(()=>applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'docks',to:'gardens',night:false,dateKey:'2026-09-19'}),/Trajet Hub invalide/);
+ assert.throws(()=>applyWorldAction(save,{type:'hubTransportRide',transport:'train',from:'heritage_square',to:'docks',night:false,dateKey:'2026-09-19'}),/Trajet Hub invalide/);
 });
