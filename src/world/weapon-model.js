@@ -1,10 +1,10 @@
 import * as T from 'three';
 import {getWeapon} from './arsenal.js';
-import {getWeaponHandling} from './weapon-handling.js';
+import {resolveWeaponHandling} from './avatar-compatibility.js';
 
 // Lightweight authored silhouettes with per-weapon hand/holster mounting.
 export function fitWeapon(model,avatar,{drawn=true}={}){
- const w=getWeapon(avatar.weapon),profile=getWeaponHandling(w.id),root=new T.Group(),geometries=[],materials=[],metal=new T.MeshStandardMaterial({color:'#bfaa79',metalness:.72,roughness:.32}),light=new T.MeshStandardMaterial({color:w.color,emissive:w.color,emissiveIntensity:.35,metalness:.35,roughness:.28});materials.push(metal,light);
+ const w=getWeapon(avatar.weapon),profile=resolveWeaponHandling(w.id,avatar),root=new T.Group(),geometries=[],materials=[],metal=new T.MeshStandardMaterial({color:'#bfaa79',metalness:.72,roughness:.32}),light=new T.MeshStandardMaterial({color:w.color,emissive:w.color,emissiveIntensity:.35,metalness:.35,roughness:.28});materials.push(metal,light);
  function mesh(g,m,x=0,y=0,z=0){geometries.push(g);const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;root.add(o);return o;}
  function rod(x,y,z,xx,yy,zz,r=.012,m=metal){const a=new T.Vector3(x,y,z),b=new T.Vector3(xx,yy,zz),d=b.clone().sub(a),o=mesh(new T.CylinderGeometry(r,r,d.length(),6),m);o.position.copy(a.add(b).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
  function blade(x=0,y=.25,length=.7){const o=mesh(new T.ConeGeometry(.075,length,4),light,x,y+length/2);o.scale.z=.3;return o;}
