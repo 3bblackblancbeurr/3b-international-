@@ -106,6 +106,7 @@ export function buildHubRuntimeItems({
       id: `hub:boat:${district}`,
       type: 'hubTransport',
       transport: 'boat',
+      line: 'boat-loop',
       stopIndex: index,
       district,
       name: `Bateau-taxi · ${plan.districts.find((entry) => entry.id === district)?.name || district}`,
@@ -113,6 +114,15 @@ export function buildHubRuntimeItems({
       z: center.z + d.z,
     };
   });
+
+  const telephericItems=(plan.transport?.telepherics?.lines||[]).flatMap((line)=>[line.from,line.to].map((district,stopIndex)=>{
+    const center=hubDistrictPosition(plan,district),d=offset(`telepheric:${line.id}:${stopIndex}`,3);
+    return {id:`hub:telepheric:${line.id}:${stopIndex}`,type:'hubTransport',transport:'telepheric',line:line.id,stopIndex,district,name:`Téléphérique ${line.id} · ${plan.districts.find((entry)=>entry.id===district)?.name||district}`,x:center.x+d.x,z:center.z+d.z};
+  }));
+  const ziplineItems=(plan.transport?.ziplines?.lines||[]).flatMap((line)=>[line.from,line.to].map((district,stopIndex)=>{
+    const center=hubDistrictPosition(plan,district),d=offset(`zipline:${line.id}:${stopIndex}`,3.5);
+    return {id:`hub:zipline:${line.id}:${stopIndex}`,type:'hubTransport',transport:'zipline',line:line.id,stopIndex,district,boardable:stopIndex===0,name:`Tyrolienne ${line.id} · ${plan.districts.find((entry)=>entry.id===district)?.name||district}`,x:center.x+d.x,z:center.z+d.z};
+  }));
 
   const eventItems = activeHubEvents(events,eventContext).map((event)=>{
     const center=hubDistrictPosition(plan,event.district),d=offset(`event:${event.id}`,7);
@@ -142,7 +152,7 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
@@ -150,6 +160,8 @@ export function buildHubRuntimeItems({
       missions: missionItems.length,
       trainStops: stationItems.length,
       boatStops: boatItems.length,
+      telephericStops: telephericItems.length,
+      ziplineStarts: ziplineItems.filter((item)=>item.boardable).length,
       events: events.length,
       activeEvents: eventItems.length,
       secrets: secrets.length,
