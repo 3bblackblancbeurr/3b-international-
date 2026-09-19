@@ -3,6 +3,12 @@ export const HUB_DISTRICT_IDS=[
 ];
 export const HUB_DISTRICT_SET=new Set(HUB_DISTRICT_IDS);
 
+export const HUB_BUILDING_IDS=[
+ 'tower_circle','heritage_welcome','mission_hotel','memory_archives','living_cards_gallery','arena_3b','mobility_center','house_3b','garage_3b',
+ 'community_house','ai_textile_lab','mode3_studio','central_marina','shipyard_3b','train_station','workers_memorial','wildlife_refuge','city_planning_office','city_gallery',
+];
+export const HUB_BUILDING_SET=new Set(HUB_BUILDING_IDS);
+
 export const HUB_NPC_IDS=[
  'ines_varga','mael_rivière','celine_moreau','samir_benyahia','lyna_amrane','nora_khelifi','hugo_martel','sofia_vega',
  'leyla_demir','maarja_saar','giulia_ferri','omar_el_fassi','amira_mansouri','elio_romano','arda_kaya','evelin_tamm',
