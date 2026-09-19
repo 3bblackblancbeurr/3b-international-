@@ -18,7 +18,7 @@ export function resolveWeaponHandling(id,avatar={}){
  const result={...base,grip:cloneMount(base.grip),holster:cloneMount(base.holster)};
  if(result.holster&&adjustments.weaponClearance){
   result.holster.position[2]-=adjustments.weaponClearance;
-  result.holster.position[0]+=id==='paris'||id==='carthage'?.04:-.04;
+  result.holster.position[0]+=(id==='paris'||id==='carthage')?.04:-.04;
  }
  return result;
 }
