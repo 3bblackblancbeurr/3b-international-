@@ -4,6 +4,7 @@ import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {COUNTRIES,CARDS} from '../src/world/catalog.js';
 import {CHAPTERS,chapterState,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,chapterCards} from '../src/world/chapters.js';
 import {applyWorldAction,advanceBattle,pactCue,pactCues} from '../src/world/engine.js';
+import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
 const solutions={france:[0,1,2,3],italie:[0,3,4,7,8],estonie:[2],turquie:[0,0,1,1,2,2],algerie:[0,0,1,3,3,3],tunisie:[0,0,1,2,2,2],maroc:[0,1,1,2,2,2],espagne:[0,1,2,2]};
 const act=(s,type,extra={})=>applyWorldAction(s,{type,...extra});
 function prepare(s,id){
@@ -12,6 +13,7 @@ function prepare(s,id){
  for(const index of solutions[id])s=act(s,'puzzleStep',{index});s=act(s,'solve');
  for(const i of [0,1,2])s=act(s,'beacon',{id:id+':'+i});s=act(s,'restore',{choice:'garden'});
  for(const c of CARDS.filter(c=>c.country===id&&s.collection[c.id]&&['Terrain','Ambiance','Fragment / Pierre'].includes(c.category)))s=act(s,'equip',{id:c.id});
+ for(const [choiceId] of GUARDIAN_VALUES[id].choices)s=act(s,'guardianValueChoice',{choiceId});
  return s;
 }
 function battle(s){
