@@ -92,3 +92,13 @@
 .world-quality{margin:22px 0}.world-quality label{display:block;color:var(--gold);margin-bottom:8px}.world-quality select{width:100%;padding:13px;border:1px solid #afc1c055;border-radius:10px;background:#122935;color:var(--text);font:inherit}.world-quality p{font-size:11px}.world-loading{background:radial-gradient(ellipse at 50% 25%,#365e63,#102231 65%)}
 .world-location{padding:14px 18px;border-radius:0 16px 16px 0;background:linear-gradient(90deg,#112b3de8,#112b3d91);border-left:2px solid #ddc386;max-width:440px}.world-location h1{font-size:clamp(24px,2.4vw,35px)}.world-location p{color:#d6e2de}.world-objective{padding:12px 16px;background:#112b3de0;border-radius:12px;border:1px solid #e4cf9733}.world-player{padding:12px 15px;background:#112b3de8;border:1px solid #e4cf9733;border-radius:14px}.world-minimap span{color:#122b3c;font-weight:700;text-shadow:0 1px 3px #fff9}
 @media(max-width:640px){.world-location{padding:10px 12px;max-width:250px}.world-location h1{font-size:24px}.world-objective{padding:8px 10px;max-width:220px}.world-player{padding:8px 10px}}
+
+
+.world-audio-mixer{padding:15px;border:1px solid #d6b46a33;border-radius:14px;background:linear-gradient(145deg,#08141dcf,#112735b8)}
+.world-audio-slider{display:grid!important;grid-template-columns:118px 1fr;gap:12px;align-items:center;margin:10px 0!important;color:#d7e7e6!important}
+.world-audio-slider span{display:flex;justify-content:space-between;gap:8px;font-size:10px;letter-spacing:.06em}.world-audio-slider b{color:var(--gold);font-weight:600}
+.world-audio-slider input[type=range]{width:100%;accent-color:#d6b46a}
+.hub-dialogue-v3,.guardian-value-panel,.guardian-hub-panel{padding:10px 2px}.hub-dialogue-v3 h3,.guardian-value-panel h3,.guardian-hub-panel h3{margin-bottom:10px}
+.hub-dialogue-v3 .world-actions,.guardian-value-panel .world-actions,.guardian-hub-panel .world-actions{display:grid;gap:10px;margin-top:18px}
+.adventure-chapters article[data-locked="true"]{opacity:.55;filter:saturate(.55)}.adventure-chapters article[data-locked="true"] button{cursor:not-allowed}
+@media(max-width:700px){.world-audio-slider{grid-template-columns:95px 1fr}.world-audio-slider span{font-size:9px}}
