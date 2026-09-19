@@ -23,6 +23,7 @@ export const HUB_SECRET_STEP_COUNTS={
  secret_workers_names:8,
  secret_broken_elevator:1,
  secret_archive_reverse:4,
+ secret_lost_station:4,
 };
 export const HUB_SECRET_STEP_SET=new Set(Object.keys(HUB_SECRET_STEP_COUNTS));
 export const HUB_EVENT_SET=new Set(HUB_EVENT_IDS);
