@@ -4,6 +4,7 @@ import {blankAdventure,normalizeAdventure} from './adventure-state.js';
 import {TRAVEL_GEAR} from './wardrobe.js';
 import {obstacleDistance} from './collision.js';
 import {CHAPTERS,chapterState,nexusLevel} from './chapters.js';
+import {GUARDIAN_VALUES} from './guardian-values.js';
 import {blankHubState,normalizeHubState} from './hub/state.js';
 export const SAVE_VERSION=1;
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -96,9 +97,9 @@ export const countryCard=region=>CARDS.find(c=>c.country===region&&c.character);
 export function encounterCards(region,save){const available=CARDS.filter(c=>c.country===region&&c.category==='Personnage classique'&&(c.rarity==='Commun'||save.beacons.filter(id=>id.startsWith(region+':')).length>=2));return [...available.filter(c=>!save.collection[c.id]),...available.filter(c=>save.collection[c.id])];}
 export function worldItems(region,save){
  if(region==='hub')return [...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),{id:'final',type:'final',name:save.adventure?.finished?'L’Union retrouvée':`L’Oubli · ${nexusLevel(save)}/8 pays`,x:0,z:-3,color:'#e4cd94',range:5}];
- const c=countryById[region],cards=encounterCards(region,save),guardian=CARDS.find(card=>card.country===region&&card.category==='Carte unique');
+ const c=countryById[region],cards=encounterCards(region,save),guardian=CARDS.find(card=>card.country===region&&card.category==='Carte unique'),valueRule=GUARDIAN_VALUES[region],valueDone=!!save.adventure.values?.[region]?.completed;
  return [{id:'hub',type:'portal',name:'Place des huit portes',x:0,z:20,color:'#e9d59e',range:6},{id:region+':story',type:'story',name:CHAPTERS[region].resident.split(',')[0]+' · '+CHAPTERS[region].title,x:11,z:-4,color:c.color,range:6,done:chapterState(save,region).restored===3},
  ...[[-20,0],[18,-16],[-8,-39]].map(([x,z],i)=>({id:region+':'+i,type:'beacon',name:save.beacons.includes(region+':'+i)?'Souvenir retrouvé':'Éveiller le souvenir',x,z,color:c.color,done:save.beacons.includes(region+':'+i)})),
  ...[[-9,5],[27,7],[-32,-20],[9,-31]].map(([x,z],i)=>{const card=cards[i%cards.length];return{id:region+':echo:'+i,type:'echo',name:card.name,card:card.id,x,z,color:c.color};}),
- {id:region+':guardian',type:'guardian',name:save.seals.includes(region)?'Défier à nouveau '+guardian.name:guardian.name,detail:guardian.power,card:guardian.id,x:0,z:-57,color:c.color,range:7}];
+ {id:region+':value',type:'valueTrial',name:valueDone?'Valeur maîtrisée · '+valueRule.value:'Épreuve · '+valueRule.value,x:-13,z:-50,color:c.color,range:5,done:valueDone},{id:region+':guardian',type:'guardian',name:save.seals.includes(region)?'Défier à nouveau '+guardian.name:guardian.name,detail:guardian.power,card:guardian.id,x:0,z:-57,color:c.color,range:7}];
 }
