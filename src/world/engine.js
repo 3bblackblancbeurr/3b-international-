@@ -9,7 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET} from './hub/activity-catalog.js';
-import {recordHubDistrict,recordHubNpc,recordHubTransit,recordHubEvent,recordHubSecret,canUnlockHubSecret} from './hub/interaction-runtime.js';
+import {recordHubDistrict,recordHubBuilding,recordHubNpc,recordHubTransit,recordHubEvent,recordHubSecret,canUnlockHubSecret} from './hub/interaction-runtime.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -76,6 +76,10 @@ export function applyWorldAction(input,action){
   case 'hubDistrictVisit':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
    return gain(s,{hub:recordHubDistrict(s.hub,action.id)});
+  }
+  case 'hubBuildingVisit':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   return gain(s,{hub:recordHubBuilding(s.hub,action.id)});
   }
   case 'hubNpcTalk':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
