@@ -5,10 +5,12 @@ import {blankAvatar,normalizeAvatar} from './avatar-rules.js';
 import {DISCOVERY_IDS} from './settlements.js';
 const integer=(v,max)=>Number.isFinite(v)?Math.max(0,Math.min(max,Math.floor(v))):0;
 const strings=(v,allowed)=>[...new Set(Array.isArray(v)?v:[])].filter(x=>allowed.includes(x));
-export function blankAdventure(){return{frontier:{},mastery:{},companion:null,companionHidden:false,preparation:null,chapters:{},discoveries:[],finished:false,cosmetic:'voyageur',nexusStyle:'garden',difficulty:'adventure',encounter:null,outdoorCredits:0,avatar:blankAvatar()};}
+const presetName=value=>typeof value==='string'?value.normalize('NFC').replace(/[^\p{L}\p{N} '\-]/gu,'').trim().slice(0,24):'';
+export function normalizeAvatarPresets(value){const source=Array.isArray(value)?value:[];return Array.from({length:3},(_,index)=>{const entry=source[index];if(!entry||typeof entry!=='object'||!entry.avatar)return null;const avatar=normalizeAvatar({...entry.avatar,created:false});avatar.created=false;return{name:presetName(entry.name)||'Look '+(index+1),avatar};});}
+export function blankAdventure(){return{frontier:{},mastery:{},companion:null,companionHidden:false,preparation:null,chapters:{},discoveries:[],finished:false,cosmetic:'voyageur',nexusStyle:'garden',difficulty:'adventure',encounter:null,outdoorCredits:0,avatar:blankAvatar(),avatarPresets:[null,null,null]};}
 export function normalizeAdventure(input){
  const a=blankAdventure();if(!input||typeof input!=='object')return a;
- a.avatar=normalizeAvatar(input.avatar);a.frontier=normalizeFrontier(input.frontier);a.mastery=normalizeMastery(input.mastery);
+ a.avatar=normalizeAvatar(input.avatar);a.avatarPresets=normalizeAvatarPresets(input.avatarPresets);a.frontier=normalizeFrontier(input.frontier);a.mastery=normalizeMastery(input.mastery);
  a.companionHidden=input.companionHidden===true;
  a.companion=cardById[input.companion]?.character?input.companion:null;
  a.preparation=COUNTRIES.some(c=>c.id===input.preparation)?input.preparation:null;

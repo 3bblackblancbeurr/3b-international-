@@ -1,6 +1,9 @@
 import {getWeaponHandling} from './weapon-handling.js';
 
 const cloneMount=mount=>mount?{...mount,position:[...mount.position],rotation:[...mount.rotation]}:null;
+const swapSide=name=>typeof name==='string'?name.replace(/_(r|l)$/,(_,side)=>side==='r'?'_l':'_r'):name;
+const mirrorMount=mount=>mount?{...mount,bone:swapSide(mount.bone),position:[-mount.position[0],mount.position[1],mount.position[2]],rotation:[mount.rotation[0],-mount.rotation[1],-mount.rotation[2]]}:null;
+const mirrorSecondary=secondary=>secondary?{...secondary,hand:swapSide(secondary.hand),chain:secondary.chain?.map(swapSide),position:[-secondary.position[0],secondary.position[1],secondary.position[2]]}:null;
 
 export function avatarCompatibility(avatar={}){
  const warnings=[],adjustments={bagDepth:0,pendantDepth:0,capeClearance:0,weaponClearance:0};
@@ -15,7 +18,7 @@ export function avatarCompatibility(avatar={}){
 
 export function resolveWeaponHandling(id,avatar={}){
  const base=getWeaponHandling(id),{adjustments}=avatarCompatibility({...avatar,weapon:id});
- const result={...base,grip:cloneMount(base.grip),holster:cloneMount(base.holster)};
+ const left=avatar.handedness==='left',result={...base,grip:left?mirrorMount(base.grip):cloneMount(base.grip),holster:left?mirrorMount(base.holster):cloneMount(base.holster),secondary:left?mirrorSecondary(base.secondary):base.secondary?{...base.secondary,position:[...base.secondary.position],chain:[...(base.secondary.chain||[])]}:null};
  if(result.holster&&adjustments.weaponClearance){
   result.holster.position[2]-=adjustments.weaponClearance;
   result.holster.position[0]+=(id==='paris'||id==='carthage') ? .04 : -.04;

@@ -7,7 +7,7 @@ import {blankAvatar,normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-r
 import {WEAPONS,COMPANIONS} from './arsenal.js';
 import {EVOLUTION_XP,formName} from './arsenal-progression.js';
 import {WEAPON_ART_ATLAS,weaponArtStyle,weaponDisplayName,weaponStats} from './weapon-art.js';
-import {ACTIVE_FACE_CAPABILITIES,FABRIC_CATALOG,HAIR_CATALOG,PATTERN_CATALOG} from './avatar-capabilities.js';
+import {FACE_CAPABILITIES,FABRIC_CATALOG,HAIR_CATALOG,PATTERN_CATALOG} from './avatar-capabilities.js';
 import {avatarCompatibility} from './avatar-compatibility.js';
 import '../arena/arena.css';
 import './weapon-customizer.css';
@@ -24,11 +24,12 @@ const FACE_PRESETS=[
  {name:'Anguleux',face:-.25,jaw:.7,nose:.45},{name:'Rond',face:.72,jaw:-.42,nose:-.18}
 ];
 const HAIR_COLORS=['#171717','#352a24','#5a3a24','#8b6b4a','#b59a78','#d4c2aa','#5f3b2f'];
-const PRESET_KEY='3b-avatar-presets-v2',DRAFT_KEY='3b-avatar-draft-v3',HISTORY_LIMIT=30;
+const PRESET_KEY='3b-avatar-presets-v2',DRAFT_KEY='3b-avatar-draft-v3',PORTRAIT_KEY='3b-passport-avatar-portrait-v1',HISTORY_LIMIT=30;
 const TEST_FRAMES=[
  {pose:'idle',drawn:false,angle:0,label:'Repos · arme rangée'},
  {pose:'walk',drawn:false,angle:Math.PI/2,label:'Marche · profil'},
  {pose:'run',drawn:true,angle:Math.PI,label:'Course · dos'},
+ {pose:'jump',drawn:true,angle:0,label:'Saut · face'},
  {pose:'guard',drawn:true,angle:0,label:'Garde · face'},
  {pose:'attack',drawn:true,angle:Math.PI/2,label:'Attaque · profil'},
  {pose:'idle',drawn:false,angle:Math.PI,label:'Retour au rangement'}
@@ -41,6 +42,8 @@ const readPresets=()=>{
   return value.slice(0,3).map((entry,index)=>entry&&Object.prototype.hasOwnProperty.call(entry,'avatar')?entry:entry?{name:'Look '+(index+1),avatar:entry}:null);
  }catch{return [];}
 };
+const readPortrait=()=>{try{return localStorage.getItem(PORTRAIT_KEY)||'';}catch{return '';}};
+const mergePresetSources=cloud=>{const local=readPresets();return Array.from({length:3},(_,index)=>cloud?.[index]||local[index]||null);};
 const readDraft=base=>{
  try{
   const value=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
@@ -53,12 +56,13 @@ export function AvatarPanel({save,act,onDone}){
  const initial=useMemo(()=>normalizeAvatar(save.adventure.avatar),[save.adventure.avatar]);
  const recovered=useMemo(()=>readDraft(initial),[initial]);
  const [draft,setDraft]=useState(recovered.avatar),[message,setMessage]=useState(recovered.recovered?'Brouillon local restauré.':''),[weaponMessage,setWeaponMessage]=useState('');
- const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(readPresets);
+ const [revealed,setRevealed]=useState(false),[savedAvatar,setSavedAvatar]=useState(initial),[activeStep,setActiveStep]=useState('identity'),[presets,setPresets]=useState(()=>mergePresetSources(save.adventure.avatarPresets));
  const [previewFocus,setPreviewFocus]=useState('body'),[previewPose,setPreviewPose]=useState('idle'),[previewAngle,setPreviewAngle]=useState(0),[weaponDrawn,setWeaponDrawn]=useState(true),[lighting,setLighting]=useState('studio'),[previewQuality,setPreviewQuality]=useState('balanced');
- const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0);
+ const [history,setHistory]=useState({past:[],future:[]}),[testing,setTesting]=useState(false),[testIndex,setTestIndex]=useState(0),[portrait,setPortrait]=useState(readPortrait),[runtimeCapabilities,setRuntimeCapabilities]=useState({morphTargets:[],expressions:[]}),[expression,setExpression]=useState('neutral');
  const stepIndex=STEPS.findIndex(([id])=>id===activeStep);
  const selectedWeapon=WEAPONS.find(w=>w.id===draft.weapon)||WEAPONS[0],stats=weaponStats(selectedWeapon),xp=Number.isFinite(save.xp)?Math.max(0,save.xp):0;
  const maxWeaponForm=EVOLUTION_XP.reduce((max,need,index)=>xp>=need?index:max,0),compatibility=useMemo(()=>avatarCompatibility(draft),[draft]);
+ const activeFaceCapabilities=useMemo(()=>FACE_CAPABILITIES.filter(cap=>cap.available||(cap.morphs||[]).some(name=>runtimeCapabilities.morphTargets.includes(name))),[runtimeCapabilities.morphTargets]);
  const applyDraft=updater=>{
   const next=typeof updater==='function'?updater(draft):updater;if(!next)return;
   const normalized=normalizeAvatar(next);if(JSON.stringify(normalized)===JSON.stringify(draft))return;
@@ -72,11 +76,11 @@ export function AvatarPanel({save,act,onDone}){
  const goto=id=>{setActiveStep(id);setMessage('');document.querySelector('.avatar-editor-v2')?.scrollIntoView({behavior:'smooth',block:'start'});};
  const resetDraft=()=>{applyDraft(initial);try{localStorage.removeItem(DRAFT_KEY);}catch{}setMessage('Personnage restauré depuis la dernière version enregistrée.');};
  const savePresets=next=>{setPresets(next);try{localStorage.setItem(PRESET_KEY,JSON.stringify(next));}catch{}};
- const savePreset=index=>{const next=[...presets];next[index]={name:next[index]?.name||'Look '+(index+1),avatar:{...draft,created:false}};savePresets(next);setMessage((next[index].name||'Look '+(index+1))+' mémorisé sur cet appareil.');};
+ const savePreset=index=>{const next=[...presets],entry={name:next[index]?.name||'Look '+(index+1),avatar:{...draft,created:false}};next[index]=entry;savePresets(next);act({type:'avatarPreset',index,name:entry.name,avatar:entry.avatar});setMessage(entry.name+' enregistré dans la sauvegarde du Monde 3B.');};
  const loadPreset=index=>{const preset=presets[index]?.avatar;if(!preset)return;applyDraft(d=>({...preset,name:d.name,created:d.created}));setMessage((presets[index]?.name||'Look '+(index+1))+' chargé.');};
  const renamePreset=(index,name)=>{const next=[...presets];if(!next[index])next[index]={name,avatar:null};else next[index]={...next[index],name:name.slice(0,24)};savePresets(next);};
- const deletePreset=index=>{const next=[...presets];next[index]=null;savePresets(next);setMessage('Preset supprimé.');};
- const duplicatePreset=index=>{const source=presets[index];if(!source?.avatar)return;const target=[0,1,2].find(i=>!presets[i]);if(target===undefined){setMessage('Les trois emplacements sont déjà utilisés.');return;}const next=[...presets];next[target]={name:(source.name||'Look')+' copie',avatar:{...source.avatar}};savePresets(next);setMessage('Preset dupliqué dans Look '+(target+1)+'.');};
+ const deletePreset=index=>{const next=[...presets];next[index]=null;savePresets(next);act({type:'avatarPreset',index,avatar:null});setMessage('Preset supprimé de la sauvegarde du Monde 3B.');};
+ const duplicatePreset=index=>{const source=presets[index];if(!source?.avatar)return;const target=[0,1,2].find(i=>!presets[i]);if(target===undefined){setMessage('Les trois emplacements sont déjà utilisés.');return;}const entry={name:(source.name||'Look')+' copie',avatar:{...source.avatar}},next=[...presets];next[target]=entry;savePresets(next);act({type:'avatarPreset',index:target,name:entry.name,avatar:entry.avatar});setMessage('Preset dupliqué dans Look '+(target+1)+' et ajouté à la sauvegarde.');};
  const randomize=()=>{
   const pick=a=>a[Math.floor(Math.random()*a.length)],base=blankAvatar(),look=pick(LOOKS),theme=look.name;
   applyDraft(d=>({...base,...d,...look,
@@ -90,6 +94,8 @@ export function AvatarPanel({save,act,onDone}){
   }));setMessage('Profil cohérent généré : '+theme+'.');
  };
  const startTest=()=>{setTesting(true);setTestIndex(0);setPreviewFocus('body');};
+ const capturePortrait=()=>{setPreviewFocus('face');setPreviewAngle(0);setPreviewPose('idle');setWeaponDrawn(false);setMessage('Préparation du portrait Passeport…');requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{try{const canvas=document.querySelector('canvas[data-character-preview="true"]');if(!canvas)throw Error('canvas');const data=canvas.toDataURL('image/jpeg',.82);if(!data||data.length<1200)throw Error('capture');localStorage.setItem(PORTRAIT_KEY,data);setPortrait(data);setMessage('Portrait Passeport généré sur cet appareil.');}catch{setMessage('Le portrait n’a pas pu être généré sur cet appareil.');}},90)));};
+ const clearPortrait=()=>{try{localStorage.removeItem(PORTRAIT_KEY);}catch{}setPortrait('');setMessage('Portrait local supprimé.');};
  useEffect(()=>{const timer=setTimeout(()=>{try{localStorage.setItem(DRAFT_KEY,JSON.stringify({version:3,updatedAt:Date.now(),avatar:draft}));}catch{}},320);return()=>clearTimeout(timer);},[draft]);
  useEffect(()=>{
   if(!testing)return;
@@ -100,11 +106,11 @@ export function AvatarPanel({save,act,onDone}){
  if(revealed)return <AvatarCinematic avatar={savedAvatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
  return <div className="avatar-editor-v2">
   <aside className="avatar-preview-v2">
-   <div className="avatar-preview-stage"><ArenaStage avatar={draft} focus={previewFocus} pose={previewPose} angle={previewAngle} weaponState={weaponDrawn?'preview':'world'} lighting={lighting} quality={previewQuality} showAura={activeStep==='world'||activeStep==='finish'} showCompanion={activeStep==='world'||activeStep==='finish'}/></div>
+   <div className="avatar-preview-stage"><ArenaStage avatar={draft} focus={previewFocus} pose={previewPose} angle={previewAngle} weaponState={weaponDrawn?'preview':'world'} lighting={lighting} quality={previewQuality} expression={expression} onCapabilities={setRuntimeCapabilities} showAura={activeStep==='world'||activeStep==='finish'} showCompanion={activeStep==='world'||activeStep==='finish'}/></div>
    <div className="avatar-preview-toolbar" aria-label="Contrôles de prévisualisation">
     <div><button type="button" aria-pressed={previewFocus==='body'} onClick={()=>setPreviewFocus('body')}>Corps</button><button type="button" aria-pressed={previewFocus==='face'} onClick={()=>setPreviewFocus('face')}>Visage</button></div>
     <div><button type="button" aria-pressed={previewAngle===0} onClick={()=>setPreviewAngle(0)}>Face</button><button type="button" aria-pressed={previewAngle===Math.PI/2} onClick={()=>setPreviewAngle(Math.PI/2)}>Profil</button><button type="button" aria-pressed={previewAngle===Math.PI} onClick={()=>setPreviewAngle(Math.PI)}>Dos</button></div>
-    <div><button type="button" aria-pressed={previewPose==='idle'} onClick={()=>setPreviewPose('idle')}>Repos</button><button type="button" aria-pressed={previewPose==='walk'} onClick={()=>setPreviewPose('walk')}>Marche</button><button type="button" aria-pressed={previewPose==='run'} onClick={()=>setPreviewPose('run')}>Course</button><button type="button" aria-pressed={previewPose==='guard'} onClick={()=>setPreviewPose('guard')}>Garde</button><button type="button" onClick={()=>setPreviewPose('attack')}>Attaque</button><button type="button" onClick={()=>setPreviewPose('cast')}>Pouvoir</button></div>
+    <div><button type="button" aria-pressed={previewPose==='idle'} onClick={()=>setPreviewPose('idle')}>Repos</button><button type="button" aria-pressed={previewPose==='walk'} onClick={()=>setPreviewPose('walk')}>Marche</button><button type="button" aria-pressed={previewPose==='run'} onClick={()=>setPreviewPose('run')}>Course</button><button type="button" onClick={()=>setPreviewPose('jump')}>Saut</button><button type="button" onClick={()=>setPreviewPose('interact')}>Interaction</button><button type="button" aria-pressed={previewPose==='guard'} onClick={()=>setPreviewPose('guard')}>Garde</button><button type="button" onClick={()=>setPreviewPose('attack')}>Attaque</button><button type="button" onClick={()=>setPreviewPose('cast')}>Pouvoir</button></div>
     <div className="avatar-lighting-row">{[['studio','Studio'],['sun','Soleil'],['night','Nuit'],['rain','Pluie']].map(([id,label])=><button type="button" key={id} aria-pressed={lighting===id} onClick={()=>setLighting(id)}>{label}</button>)}</div>
     <div className="avatar-quality-row">{[['quality','Qualité'],['balanced','Équilibré'],['fluid','Fluidité']].map(([id,label])=><button type="button" key={id} aria-pressed={previewQuality===id} onClick={()=>setPreviewQuality(id)}>{label}</button>)}</div>
     <div><button type="button" className="avatar-full-test" disabled={testing} onClick={startTest}>{testing?'Test en cours…':'TEST COMPLET'}</button></div>
@@ -132,7 +138,8 @@ export function AvatarPanel({save,act,onDone}){
     <fieldset><legend>Teint</legend><div className="avatar-swatches-v2">{SKINS.map((s,i)=><button type="button" key={s} aria-label={'Teint '+(i+1)} aria-pressed={!draft.skinColor&&draft.skin===i} onClick={()=>applyDraft(d=>({...d,skin:i,skinColor:null}))} style={{background:s}}/>)}</div></fieldset>
     <div className="avatar-grid-2"><label className="avatar-color-line">Teint personnalisé<input type="color" value={draft.skinColor||SKINS[draft.skin]} onChange={e=>set('skinColor',e.target.value)}/><button type="button" onClick={()=>set('skinColor',null)}>Palette</button></label><label>Sous-ton<select value={draft.skinUndertone} onChange={e=>set('skinUndertone',e.target.value)}><option value="neutral">Neutre</option><option value="warm">Chaud</option><option value="cool">Froid</option></select></label></div>
     <fieldset><legend>Presets de visage</legend><div className="avatar-choice-grid four">{FACE_PRESETS.map(p=><button type="button" key={p.name} onClick={()=>applyDraft(d=>({...d,face:p.face,jaw:p.jaw,nose:p.nose}))}>{p.name}</button>)}</div></fieldset>
-    <fieldset><legend>Réglages fins disponibles</legend>{ACTIVE_FACE_CAPABILITIES.map(({id,label})=><label className="avatar-range-v2" key={id}><span>{label}</span><input type="range" min="-1" max="1" step=".05" value={draft[id]} onChange={e=>set(id,Number(e.target.value))}/><output>{Number(draft[id]).toFixed(2)}</output></label>)}</fieldset>
+    <fieldset><legend>Réglages fins disponibles</legend>{activeFaceCapabilities.map(({id,label})=><label className="avatar-range-v2" key={id}><span>{label}</span><input type="range" min="-1" max="1" step=".05" value={draft[id]} onChange={e=>set(id,Number(e.target.value))}/><output>{Number(draft[id]).toFixed(2)}</output></label>)}</fieldset>
+    {!!runtimeCapabilities.expressions.length&&<fieldset><legend>Expressions disponibles dans ce GLB</legend><div className="avatar-choice-grid four"><button type="button" aria-pressed={expression==='neutral'} onClick={()=>setExpression('neutral')}>Neutre</button>{runtimeCapabilities.expressions.map(id=><button type="button" key={id} aria-pressed={expression===id} onClick={()=>setExpression(id)}>{({smile:'Sourire',serious:'Sérieux',surprise:'Surprise'})[id]||id}</button>)}</div></fieldset>}
     <div className="avatar-grid-2"><label>Coiffure<select value={draft.hair} onChange={e=>set('hair',Number(e.target.value))}>{HAIR_CATALOG.filter(h=>h.available).map(h=><option key={h.id} value={h.id}>{h.name}</option>)}</select></label><label>Couleur des cheveux<input type="color" value={draft.hairColor} onChange={e=>set('hairColor',e.target.value)}/></label></div>
     <fieldset><legend>Couleurs naturelles</legend><div className="avatar-swatches-v2">{HAIR_COLORS.map(color=><button type="button" key={color} aria-label={'Cheveux '+color} aria-pressed={draft.hairColor===color} onClick={()=>set('hairColor',color)} style={{background:color}}/>)}</div></fieldset>
     <div className="avatar-inline-note">Barbe séparée : architecture prête, mais aucun nouveau mesh de barbe n’est affiché tant qu’un asset réel n’est pas disponible.</div>
@@ -143,6 +150,7 @@ export function AvatarPanel({save,act,onDone}){
     <label>Morphologie<select value={draft.shape} onChange={e=>set('shape',e.target.value)}><option value="equilibre">Équilibrée</option><option value="elance">Élancée</option><option value="solide">Solide</option></select></label>
     <label className="avatar-range-v2"><span>Taille</span><input type="range" min=".9" max="1.1" step=".01" value={draft.height} onChange={e=>set('height',Number(e.target.value))}/><output>{Math.round(draft.height*100)}%</output></label>
     <label className="avatar-range-v2"><span>Corpulence</span><input type="range" min=".88" max="1.15" step=".01" value={draft.build} onChange={e=>set('build',Number(e.target.value))}/><output>{Math.round(draft.build*100)}%</output></label>
+    <fieldset><legend>Posture</legend><div className="avatar-choice-grid four">{[['neutral','Neutre'],['relaxed','Détendue'],['confident','Assurée'],['warrior','Guerrière']].map(([id,label])=><button type="button" key={id} aria-pressed={draft.posture===id} onClick={()=>set('posture',id)}>{label}</button>)}</div></fieldset>
     <div className="avatar-inline-note">Épaules, torse, hanches, bras et jambes sont préparés comme futurs morph targets mais ne sont pas simulés tant qu’ils n’existent pas dans les GLB.</div>
    </section>}
 
@@ -170,6 +178,7 @@ export function AvatarPanel({save,act,onDone}){
 
    {activeStep==='weapon'&&<section className="avatar-step-card avatar-step-weapon">
     <div className="avatar-step-heading"><span>06</span><div><h3>Arme</h3><p>Choisis l’arme premium puis vérifie-la rangée, dégainée et pendant les animations.</p></div></div>
+    <fieldset><legend>Main dominante</legend><div className="avatar-choice-grid two"><button type="button" aria-pressed={draft.handedness==='right'} onClick={()=>set('handedness','right')}>Droitier</button><button type="button" aria-pressed={draft.handedness==='left'} onClick={()=>set('handedness','left')}>Gaucher</button></div></fieldset>
     <div className="weapon-preview-toggle"><button type="button" aria-pressed={!weaponDrawn} onClick={()=>setWeaponDrawn(false)}>Rangée</button><button type="button" aria-pressed={weaponDrawn} onClick={()=>setWeaponDrawn(true)}>Dégainée</button></div>
     {!!compatibility.warnings.length&&<div className="avatar-compatibility">{compatibility.warnings.filter(w=>w.id.includes('back')).map(w=><p key={w.id} data-level={w.level}>{w.message}</p>)}</div>}
     <section className="avatar-weapon-studio" style={{'--weapon-atlas':`url("${WEAPON_ART_ATLAS}")`}} aria-label="Personnalisation de l’arme">
@@ -206,7 +215,8 @@ export function AvatarPanel({save,act,onDone}){
      <div><span>Compagnon</span><strong>{COMPANIONS.find(c=>c.id===draft.companion)?.name}</strong></div><div><span>Équipement</span><strong>{TRAVEL_GEAR[draft.travelGear].name}</strong></div>
     </div>
     <p className="avatar-inline-note">Le brouillon est sauvegardé automatiquement sur cet appareil jusqu’à la validation finale.</p>
-    <fieldset className="avatar-preset-slots"><legend>Mes looks enregistrés sur cet appareil</legend><div>{[0,1,2].map(index=>{const preset=presets[index];return <article key={index}><input aria-label={'Nom du preset '+(index+1)} maxLength={24} value={preset?.name||'Look '+(index+1)} onChange={e=>renamePreset(index,e.target.value)}/><small>{preset?.avatar?`${preset.avatar.style} · ${weaponDisplayName(WEAPONS.find(w=>w.id===preset.avatar.weapon)||WEAPONS[0])}`:'Emplacement libre'}</small><span><button type="button" onClick={()=>savePreset(index)}>Mémoriser</button><button type="button" disabled={!preset?.avatar} onClick={()=>loadPreset(index)}>Charger</button></span><span><button type="button" disabled={!preset?.avatar} onClick={()=>duplicatePreset(index)}>Dupliquer</button><button type="button" disabled={!preset} onClick={()=>deletePreset(index)}>Supprimer</button></span></article>;})}</div></fieldset>
+    <fieldset className="avatar-passport-portrait"><legend>Portrait Passeport 3B</legend><div>{portrait?<img src={portrait} alt="Portrait local du personnage pour le Passeport 3B"/>:<span className="avatar-portrait-empty">Aucun portrait généré</span>}<section><button type="button" onClick={capturePortrait}>{portrait?'Regénérer le portrait':'Générer le portrait'}</button><button type="button" disabled={!portrait} onClick={clearPortrait}>Supprimer</button></section></div><small>Le portrait est généré depuis le vrai rendu 3D du créateur et reste local sur cet appareil pour l’instant.</small></fieldset>
+    <fieldset className="avatar-preset-slots"><legend>Mes looks · sauvegarde Monde 3B + copie locale</legend><div>{[0,1,2].map(index=>{const preset=presets[index];return <article key={index}><input aria-label={'Nom du preset '+(index+1)} maxLength={24} value={preset?.name||'Look '+(index+1)} onChange={e=>renamePreset(index,e.target.value)}/><small>{preset?.avatar?`${preset.avatar.style} · ${weaponDisplayName(WEAPONS.find(w=>w.id===preset.avatar.weapon)||WEAPONS[0])}`:'Emplacement libre'}</small><span><button type="button" onClick={()=>savePreset(index)}>Mémoriser</button><button type="button" disabled={!preset?.avatar} onClick={()=>loadPreset(index)}>Charger</button></span><span><button type="button" disabled={!preset?.avatar} onClick={()=>duplicatePreset(index)}>Dupliquer</button><button type="button" disabled={!preset} onClick={()=>deletePreset(index)}>Supprimer</button></span></article>;})}</div></fieldset>
     <button className="world-primary avatar-final-submit" type="submit">{save.adventure.avatar.created?'Enregistrer les modifications':'Commencer mon voyage'}</button><p role="status">{message}</p>
    </section>}
 
