@@ -54,7 +54,7 @@ export function addMeadow(field,root,owned,region){
   points.forEach((p,i)=>{dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.rotation,0);dummy.scale.set(p.scale*p.width,p.scale*p.height,p.scale*p.width);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);tint.copy(baseTint).offsetHSL((p.tint-.85)*.035,(p.edge?.05:0),p.tint-.88);m.setColorAt(i,tint);});
   m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;m.computeBoundingSphere();m.boundingSphere.radius+=.5;m.receiveShadow=true;root.add(m);owned.push(m);meshes.push({mesh:m,count:points.length});
  }
- return {tick(t,position){time.value=t;if(position)for(const {mesh} of meshes){const b=mesh.boundingSphere;mesh.visible=Math.hypot(position.x-b.center.x,position.z-b.center.z)<76+b.radius;}},setQuality(mode){for(const {mesh,count} of meshes)mesh.count=Math.round(count*(mode==='fluid'?.48:mode==='detail'?1:.82));},meshes};
+ return {tick(t,position){time.value=t;if(position)for(const {mesh} of meshes){const b=mesh.boundingSphere;mesh.visible=Math.hypot(position.x-b.center.x,position.z-b.center.z)<76+b.radius;}},setQuality(mode){for(const {mesh,count} of meshes)mesh.count=Math.round(count*(mode==='fluid'?.55:mode==='detail'?1:.82));},meshes};
 }
 
 export function createMeadowMaterial(color){
