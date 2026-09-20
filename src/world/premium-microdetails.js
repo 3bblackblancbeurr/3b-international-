@@ -2,6 +2,16 @@ import * as THREE from 'three';
 
 function hash(input){let h=2166136261;for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function seeded(id){let h=hash(id);return()=>{h=(Math.imul(h,1664525)+1013904223)>>>0;return h/4294967296;};}
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+function localSlope(field,x,z,sample=1.35){
+ const y=field.height(x,z);
+ return Math.max(
+  Math.abs(field.height(x+sample,z)-y),
+  Math.abs(field.height(x-sample,z)-y),
+  Math.abs(field.height(x,z+sample)-y),
+  Math.abs(field.height(x,z-sample)-y),
+ )/sample;
+}
 
 function instanced(root,owned,name,geometry,material,transforms){
  if(!transforms.length)return null;
@@ -34,16 +44,24 @@ export function addPremiumMicroDetails({region,field,root,owned}){
  for(const road of field.roads||[]){
   for(let i=1;i<road.points.length;i++){
    const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len,heading=Math.atan2(dx,dz),rng=seeded(region+':road:'+road.id+':'+i);
-   const step=region==='hub'?28:36,count=Math.floor(len/step);
+   const baseStep=region==='hub'?28:36,spacing=baseStep*(.78+rng()*.55),count=Math.floor(len/spacing),activity=.18+rng()*.72;
    for(let n=1;n<=count;n++){
-    const t=n/(count+1),cx=a.x+dx*t,cz=a.z+dz*t,side=rng()>.5?1:-1,edge=(road.width||5)/2+.75+rng()*.7,x=cx+nx*edge*side,z=cz+nz*edge*side,y=field.height(x,z);
+    const t=clamp((n+(rng()-.5)*.34)/(count+1),.05,.95),cx=a.x+dx*t,cz=a.z+dz*t,side=rng()>.5?1:-1,roadHalf=(road.width||5)/2,edge=roadHalf+.75+rng()*.7,x=cx+nx*edge*side,z=cz+nz*edge*side,y=field.height(x,z);
     if(field.buildings.some(s=>Math.hypot(s.x-x,s.z-z)<Math.hypot(s.width,s.depth)/2+2.5))continue;
-    if(rng()>.30)bollards.push({x,y:y+.42,z,sx:.10,sy:.82,sz:.10});
-    drains.push({x:cx+nx*((road.width||5)/2-.28)*side,y:field.height(cx,cz)+.075,z:cz+nz*((road.width||5)/2-.28)*side,sx:.34,sy:.035,sz:.58,ry:heading});
-    if(rng()>.54)puddles.push({x:cx-nx*side*(road.width||5)*.18,y:field.height(cx,cz)+.085,z:cz-nz*side*(road.width||5)*.18,sx:.8+rng()*1.7,sy:1,sz:.42+rng()*.75,ry:heading+(rng()-.5)*.5});
-    if(rng()>.84)litter.push({x:x+nx*side*.4,y:y+.045,z:z+nz*side*.4,sx:.10+rng()*.15,sy:.025,sz:.14+rng()*.22,ry:rng()*Math.PI});
-    if(rng()>.76)bins.push({x:x-nx*side*.55,y:y+.48,z:z-nz*side*.55,sx:.34,sy:.82,sz:.34,ry:heading});
-    if(rng()>.88)signs.push({x:x+nx*side*.95,y:y+1.45,z:z+nz*side*.95,sx:.08,sy:2.2,sz:.08,ry:heading});
+    if(rng()>.38+(1-activity)*.18)bollards.push({x,y:y+.42,z,sx:.10,sy:.82,sz:.10});
+
+    const drainOffset=Math.max(.15,roadHalf-.28),leftX=cx+nx*drainOffset,leftZ=cz+nz*drainOffset,rightX=cx-nx*drainOffset,rightZ=cz-nz*drainOffset;
+    const drainSide=field.height(leftX,leftZ)<=field.height(rightX,rightZ)?1:-1,drainX=cx+nx*drainOffset*drainSide,drainZ=cz+nz*drainOffset*drainSide;
+    drains.push({x:drainX,y:field.height(drainX,drainZ)+.075,z:drainZ,sx:.34,sy:.035,sz:.58,ry:heading});
+
+    const slope=localSlope(field,cx,cz);
+    if(slope<.12&&rng()>.66+(1-activity)*.18){
+     const puddleOffset=Math.max(.35,roadHalf*.42),px=cx+nx*puddleOffset*drainSide,pz=cz+nz*puddleOffset*drainSide;
+     puddles.push({x:px,y:field.height(px,pz)+.085,z:pz,sx:.8+rng()*1.7,sy:1,sz:.42+rng()*.75,ry:heading+(rng()-.5)*.5});
+    }
+    if(activity>.46&&rng()>.90)litter.push({x:x+nx*side*.4,y:y+.045,z:z+nz*side*.4,sx:.10+rng()*.15,sy:.025,sz:.14+rng()*.22,ry:rng()*Math.PI});
+    if(rng()>.82-activity*.12)bins.push({x:x-nx*side*.55,y:y+.48,z:z-nz*side*.55,sx:.34,sy:.82,sz:.34,ry:heading});
+    if(rng()>.91-activity*.08)signs.push({x:x+nx*side*.95,y:y+1.45,z:z+nz*side*.95,sx:.08,sy:2.2,sz:.08,ry:heading});
    }
   }
  }
@@ -56,11 +74,11 @@ export function addPremiumMicroDetails({region,field,root,owned}){
 
  // Waterfront gets a few deliberate service objects without turning into clutter.
  if(region==='hub'){
-  const toCity=Math.atan2(-field.lake.z,-field.lake.x);
-  for(let i=0;i<14;i++){
-   const a=toCity-1+i/13*2,r=field.lake.r+9+(i%3)*1.2,x=field.lake.x+Math.cos(a)*r,z=field.lake.z+Math.sin(a)*r,y=Math.max(-.75,field.height(x,z));
-   if(i%3===0)utility.push({x,y:y+.62,z,sx:.7,sy:1.1,sz:.52,ry:-a});
-   if(i%2===0)crates.push({x:x+Math.sin(a)*1.5,y:y+.32,z:z-Math.cos(a)*1.5,sx:.62,sy:.58,sz:.62,ry:a});
+  const toCity=Math.atan2(-field.lake.z,-field.lake.x),rng=seeded(region+':waterfront-service'),count=11;
+  for(let i=0;i<count;i++){
+   const t=(i+.5)/count,a=toCity-1.05+t*2.1+(rng()-.5)*.14,r=field.lake.r+8.4+rng()*4.8,x=field.lake.x+Math.cos(a)*r,z=field.lake.z+Math.sin(a)*r,y=Math.max(-.75,field.height(x,z));
+   if(rng()>.62)utility.push({x,y:y+.62,z,sx:.62+rng()*.18,sy:1+rng()*.25,sz:.46+rng()*.16,ry:-a+(rng()-.5)*.12});
+   if(rng()>.48)crates.push({x:x+Math.sin(a)*(1.1+rng()),y:y+.32,z:z-Math.cos(a)*(1.1+rng()),sx:.54+rng()*.16,sy:.5+rng()*.16,sz:.54+rng()*.16,ry:a+(rng()-.5)*.25});
   }
  }
 
