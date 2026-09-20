@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b.international/contracts/world-bootstrap.schema.json",
+  "title": "3B World Bootstrap",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["user_id","passport","world","city"],
+  "properties": {
+    "user_id": {"type": "string", "format": "uuid"},
+    "passport": {
+      "type": ["object","null"],
+      "properties": {
+        "user_id": {"type": "string", "format": "uuid"},
+        "handle": {"type": "string"},
+        "name": {"type": "string"},
+        "country": {"type": "string"},
+        "xp": {"type": "integer", "minimum": 0},
+        "points": {"type": "integer", "minimum": 0}
+      }
+    },
+    "world": {
+      "type": ["object","null"],
+      "properties": {
+        "data": {"type": "object"},
+        "revision": {"type": "integer", "minimum": 1},
+        "updated_at": {"type": "string"}
+      }
+    },
+    "city": {
+      "type": ["object","null"],
+      "properties": {
+        "city_id": {"type": "string", "format": "uuid"},
+        "name": {"type": "string"},
+        "origin_country": {"type": "string"},
+        "city_level": {"type": "integer", "minimum": 1},
+        "placements": {"type": "array"},
+        "districts": {"type": "array"}
+      }
+    }
+  }
+}
