@@ -71,3 +71,10 @@ test('city origin is displayed as Passport-controlled and not user-selectable',(
  assert.match(source,/call\('create',\{name:name\.trim\(\),country\}\)/);
  assert.doesNotMatch(source,/setCountry/);
 });
+
+
+test('legacy on-device identity is migration input only, never the active app identity',()=>{
+ const source=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
+ assert.match(source,/const member = loyalty\.profile \? remoteMember\(loyalty\.profile\) : createTestMember\(\);/);
+ assert.match(source,/legacy=\{localMember\}/);
+});
