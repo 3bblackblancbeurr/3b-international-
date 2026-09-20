@@ -22,7 +22,7 @@ test('NPC schedules change by day part and keep rare conductor at night',()=>{
  assert.equal(hubDayPart(12),'day');
  assert.equal(hubNpcSchedule('the_conductor',{hour:12}).rare,true);
  assert.equal(hubNpcSchedule('the_conductor',{hour:23}).rare,false);
- assert.equal(hubNpcSchedule('ines_varga',{hour:12}).district,'archives');
+ const lunch=hubNpcSchedule('ines_varga',{hour:12,day:1,weather:'clear'});assert.equal(lunch.activity,'pause de midi');assert.equal(lunch.social,true);assert.ok(['commerce','gardens','heritage_square','community'].includes(lunch.district));
 });
 
 test('dialogue V3 choices are bounded and server-known',()=>{
