@@ -43,9 +43,9 @@ export function buildPremiumHubRoad(item,{mesh,material,groundY}){
 
 export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true}){
  const visuals=[],bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),width=item.width,depth=item.depth,height=item.height;
- const glass=material('#103d55',{emissive:'#00a8ff',emissiveIntensity:canonical?.18:.06,roughness:.25,metalness:.28});
- const gold=material('#d6b46a',{emissive:'#8b6b2e',emissiveIntensity:.10,roughness:.32,metalness:.72});
- const trim=material('#10161b',{roughness:.58,metalness:.38});
+ const glass=material('#103d55',{emissive:'#00a8ff',emissiveIntensity:canonical?.16:.05,roughness:.14,metalness:.04,transmission:.12,ior:1.46,thickness:.16,specularIntensity:.9,clearcoat:.54,clearcoatRoughness:.11});
+ const gold=material('#d6b46a',{emissive:'#8b6b2e',emissiveIntensity:.08,roughness:.24,metalness:.92,clearcoat:.18,clearcoatRoughness:.14});
+ const trim=material('#10161b',{roughness:.46,metalness:.58,clearcoat:.08,clearcoatRoughness:.24});
  const stone=material('#30383d',{roughness:.78,metalness:.10});
 
  const base=mesh('box',stone,bx,y+.45,bz,width*1.06,.9,depth*1.06);base.castShadow=true;visuals.push(base);
