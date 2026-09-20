@@ -28,6 +28,8 @@
  .world-shell .play-supplies{top:72px;left:18px;min-height:40px}
  .world-shell .play-bearing{top:121px;left:18px;min-height:40px}
  .world-shell .play-arena{right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom))}
+ .world-shell .play-companion{left:66px;bottom:max(12px,env(safe-area-inset-bottom));padding:5px}
+ .world-shell .play-companion>span:last-child{display:none}
  .world-shell .play-interaction{max-width:calc(100% - 210px)}
  .world-shell .combat-focus{bottom:78px;left:auto;right:22px;transform:none;font-size:9px}
  .world-dialog-encounter .world-battle>p[role=status]{bottom:78px;width:55%;left:40%}
