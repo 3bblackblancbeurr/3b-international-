@@ -99,3 +99,16 @@ test('Unreal layout export preserves canonical scale and complete world topology
   assert.ok(r>30000&&r<layout.world.radius_cm,gate.id);
  }
 });
+
+test('Unreal transport and crowd exports preserve the canonical network budgets',()=>{
+ const transport=readJson('../unreal/3BWorld/Data/Production/transport-network-unreal.json');
+ const crowd=readJson('../unreal/3BWorld/Data/Production/crowd-budgets.json');
+ assert.equal(transport.train.stations.length,10);
+ assert.equal(transport.boats.stops.length,5);
+ assert.equal(transport.telepherics.length,3);
+ assert.equal(transport.ziplines.length,6);
+ assert.equal(crowd.narrative_npcs,24);
+ assert.equal(crowd.profiles.mobileMedium.target_fps,30);
+ assert.equal(crowd.profiles.mobileHigh.target_fps,60);
+ assert.equal(crowd.profiles.desktop.target_fps,60);
+});
