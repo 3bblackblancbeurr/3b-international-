@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import {WORLD_SCALE,buildingDimensions,facadeBayCount} from '../src/world/building-scale.js';
 
 const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -193,4 +194,32 @@ test('building feet use instanced contact shadows and weather-driven dampness',(
  assert.match(contact,/setWeather\(weather\)/);
  assert.match(contact,/setQuality\(mode\)/);
  assert.match(landscape,/buildingContact\.setWeather/);
+});
+
+
+test('canonical world scale keeps inhabited architecture believable across regions',()=>{
+ const regions=['france','italie','estonie','turquie','algerie','tunisie','maroc','espagne'];
+ for(const region of regions)for(let variant=0;variant<5;variant++){
+  const d=buildingDimensions(region,variant,true),doorRatio=d.doorHeight/WORLD_SCALE.avatarHeight;
+  assert.ok(doorRatio>=WORLD_SCALE.minDoorClearanceRatio&&doorRatio<=WORLD_SCALE.maxDoorClearanceRatio,`${region}/${variant} door ratio ${doorRatio}`);
+  assert.ok(d.storey-d.doorHeight>=WORLD_SCALE.minStoreyHeadroom,`${region}/${variant} storey headroom`);
+  for(const [face,span] of [d.width,d.depth].entries()){
+   const bays=facadeBayCount(span,variant,face),pitch=(span-.75)/bays;
+   assert.ok(bays>=3&&bays<=5,`${region}/${variant} bay count`);
+   assert.ok(pitch>=WORLD_SCALE.minFacadeBay&&pitch<=WORLD_SCALE.maxFacadeBay,`${region}/${variant} facade pitch ${pitch}`);
+  }
+ }
+});
+
+test('credibility pass breaks mechanical urban repetition without adding draw-call-heavy unique meshes',()=>{
+ const architecture=read('src/world/architecture.js'),details=read('src/world/premium-microdetails.js'),metro=read('src/world/hub/metropolis.js');
+ assert.match(architecture,/facadeBayCount\(span,variant,face\)/);
+ assert.match(architecture,/col-\(bays-1\)\/2/);
+ assert.match(details,/localSlope\(field,cx,cz\)/);
+ assert.match(details,/spacing=baseStep\*\(\.78\+rng\(\)\*\.55\)/);
+ assert.match(details,/drainSide=/);
+ assert.match(details,/InstancedMesh/);
+ assert.match(metro,/GOLDEN_ANGLE/);
+ assert.match(metro,/districtSeed/);
+ assert.match(metro,/basePhase=.*jitter=/);
 });
