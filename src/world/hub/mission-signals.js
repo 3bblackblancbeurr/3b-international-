@@ -49,9 +49,9 @@ export const HUB_MISSION_SIGNAL_RULES={
   {type:'secret',id:'secret_fog_tree'},
  ],
  first_foundation:[
-  {type:'building',id:'city_planning_office'},
-  {type:'district',id:'city3b_portal'},
-  {type:'building',id:'city_gallery'},
+  {type:'city',id:'founded'},
+  {type:'city',id:'synced'},
+  {type:'city',id:'built'},
  ],
  voices_square:[
   {type:'npc',id:'amira_mansouri'},
