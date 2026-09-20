@@ -89,3 +89,13 @@ Never progress while any of these is true:
 - Quant can sign;
 - recovery has never been tested;
 - token/blockchain/trading flags enabled by accident.
+
+
+## Gate 0 follow-up
+Fortress branch verification now shows 19 workflows / 74 external action references with zero mutable action refs. This remains branch-only until PR review and merge.
+
+## Gate 1 follow-up
+The disabled SQL token staging ledger is quarantined and fail-closed. This does NOT satisfy Wallet/Testnet gates and does not authorize a cryptocurrency launch.
+
+## Platform prerequisite still open
+Legacy PostgreSQL default privileges currently expose future newly-created objects too broadly unless each migration revokes them explicitly. Changing those owner-level defaults is blocked by the available connector permissions. Treat explicit REVOKE/GRANT review as a mandatory migration gate until the platform default is corrected.
