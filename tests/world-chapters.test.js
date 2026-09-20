@@ -4,7 +4,7 @@ import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {COUNTRIES,CARDS} from '../src/world/catalog.js';
 import {CHAPTERS,chapterState,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,chapterCards} from '../src/world/chapters.js';
 import {applyWorldAction,advanceBattle,pactCue,pactCues} from '../src/world/engine.js';
-import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
+import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from '../src/world/guardian-values.js';
 const solutions={france:[0,1,2,3],italie:[0,3,4,7,8],estonie:[2],turquie:[0,0,1,1,2,2],algerie:[0,0,1,3,3,3],tunisie:[0,0,1,2,2,2],maroc:[0,1,1,2,2,2],espagne:[0,1,2,2]};
 const act=(s,type,extra={})=>applyWorldAction(s,{type,...extra});
 function prepare(s,id){
@@ -27,6 +27,17 @@ function battle(s){
 test('all eight distinct puzzles can be solved through their actual controls',()=>{
  assert.equal(new Set(Object.values(CHAPTERS).map(c=>c.kind)).size,8);
  for(const c of COUNTRIES){let b=puzzleStart(c.id);assert.equal(puzzleSolved(c.id,b),false);for(const i of solutions[c.id])b=puzzleStep(c.id,b,i);assert.equal(puzzleSolved(c.id,b),true,c.id);}
+});
+
+test('guardian value trials use three contextual dilemmas per country',()=>{
+ for(const country of COUNTRIES)for(let step=0;step<3;step++){
+  const state={step},scene=guardianValueStep(country.id,state),options=guardianValueOptions(country.id,state);
+  assert.ok(scene.prompt.length>30,country.id+' step '+step);
+  assert.equal(options.length,3);
+  assert.equal(options.filter(option=>option.correct).length,1);
+  assert.equal(options.find(option=>option.correct).id,GUARDIAN_VALUES[country.id].choices[step][0]);
+  assert.equal(new Set(options.map(option=>option.id)).size,3);
+ }
 });
 test('a fresh player can rebuild all eight countries and win the playable finale',()=>{
  let s=blankSave();
