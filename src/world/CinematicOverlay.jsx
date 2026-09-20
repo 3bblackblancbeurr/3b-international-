@@ -25,7 +25,7 @@ export function CinematicOverlay({presentation,onDone,onSkip}){
  useEffect(()=>{root.current?.querySelector('button')?.focus({preventScroll:true});},[presentation?.key]);
  if(!presentation)return null;
  const complete=skip=>{if(finished.current)return;finished.current=true;(skip?onSkip:onDone)?.();};
- return <section ref={root} className={`world-cinematic-director tier-${presentation.tier} recipe-${presentation.recipe} phase-${phase}`} style={cinematicCssVars(presentation)} aria-label={presentation.title} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();complete(true);}}}>
+ return <section ref={root} className={`world-cinematic-director tier-${presentation.tier} recipe-${presentation.recipe} phase-${phase}`} style={cinematicCssVars(presentation)} role="dialog" aria-modal="true" aria-label={presentation.title} onKeyDownCapture={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();complete(true);}}}>
   <div className="cinema-world-backdrop" aria-hidden="true">
    <div className="cinema-world-haze"/><div className="cinema-world-rain"/><div className="cinema-world-scan"/>
    <div className="cinema-world-orb"/><div className="cinema-world-gold"/>

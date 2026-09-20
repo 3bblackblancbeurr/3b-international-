@@ -64,12 +64,17 @@ test('the live Passport visual contains no baked member artwork',()=>{
  assert.match(source,/identity\.passportId/);
 });
 
-test('city origin is displayed as Passport-controlled and not user-selectable',()=>{
- const source=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
- assert.match(source,/lié au Passeport 3B/);
- assert.match(source,/readOnly/);
- assert.match(source,/call\('create',\{name:name\.trim\(\),country\}\)/);
- assert.doesNotMatch(source,/setCountry/);
+test('both real City screens use the owned Passport country, without a France fallback',()=>{
+ for(const path of ['../src/components/City3BPortal.jsx','../src/city/City3BPanel.jsx']){
+  const source=readFileSync(new URL(path,import.meta.url),'utf8');
+  assert.match(source,/lié au Passeport 3B/);
+  assert.match(source,/readOnly/);
+  assert.match(source,/passport\?\.userId===uid/);
+  assert.match(source,/'create',\{name:name\.trim\(\),country\}/);
+  assert.doesNotMatch(source,/setCountry/);
+ }
+ const gateway=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
+ assert.match(gateway,/NexusCityGateway/);
 });
 
 
