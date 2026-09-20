@@ -25,8 +25,8 @@ test('passport identity is derived from the signed-in member profile',()=>{
  assert.equal(passport.flag,'🇲🇦');
  assert.equal(passport.xp,840);
  assert.equal(passport.points,1250);
- assert.equal(passport.passportId,'3B-PASS-123E4567E89B12D3A456426614174000');
- assert.equal(passport.memberId,'3B-MEM-123E4567E89B12D3A456426614174000');
+ assert.equal(passport.passportId,'3B-PASS-123E4567-E89B-12D3-A456-426614174000');
+ assert.equal(passport.memberId,'3B-MEM-123E4567-E89B-12D3-A456-426614174000');
  assert.equal(passportInitials(passport),'AE');
 });
 
