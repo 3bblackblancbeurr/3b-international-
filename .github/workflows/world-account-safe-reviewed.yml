@@ -95,6 +95,7 @@ jobs:
               path=pathlib.Path(name);text=path.read_text()
               text=text.replace(',Map,',',Map as MapIcon,').replace('<Map/>','<MapIcon/>')
               text=text.replace("['districts','Quartiers',Map]","['districts','Quartiers',MapIcon]")
+              text=text.replace('onDone={finishAvatarReveal}/>} \n','onDone={finishAvatarReveal}/>}\n')
               path.write_text(text)
           pathlib.Path('tests/builtin-icon-shadowing.test.js').write_bytes(git('show','4f7164cda8f55873e2173537942f74b1cd32960f:tests/builtin-icon-shadowing.test.js'))
           note=pathlib.Path('docs/WORLD_CONSOLIDATION_20260920.md')
