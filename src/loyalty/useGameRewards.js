@@ -12,7 +12,7 @@ export function useGameRewards(game,engine,paused,ready,activity){
   // Serialize starts so a slow, abandoned game cannot invalidate a newer run.
   const pending=(starts.get(uid)||Promise.resolve()).catch(()=>{}).then(()=>live?memberRequest('start',{game},uid):null);
   starts.set(uid,pending);
-  pending.then(r=>{if(!r)return;if(!live){memberRequest('end',{run:r.run},uid).catch(()=>{});return;}run=r.run;setMessage('Récompenses actives · 20 XP et 1 point par minute de jeu.');}).catch(()=>{if(live)setMessage('Récompenses indisponibles pour cette partie. Tu peux continuer à jouer.');}).finally(()=>{if(starts.get(uid)===pending)starts.delete(uid);});
+  pending.then(r=>{if(!r)return;if(!live){memberRequest('end',{run:r.run},uid).catch(()=>{});return;}run=r.run;setMessage('Récompenses actives · gains calculés, plafonnés et validés par le serveur.');}).catch(()=>{if(live)setMessage('Récompenses indisponibles pour cette partie. Tu peux continuer à jouer.');}).finally(()=>{if(starts.get(uid)===pending)starts.delete(uid);});
   const timer=setInterval(async()=>{
    if(!run||busy||!live||paused.current||!ready.current||document.hidden||engine.current.status!=='playing'||Date.now()-activity.current>20000)return;
    busy=true;
