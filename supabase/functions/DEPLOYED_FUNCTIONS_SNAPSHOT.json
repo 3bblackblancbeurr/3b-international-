@@ -1,0 +1,96 @@
+{
+  "snapshot_date": "2026-09-20",
+  "note": "Runtime snapshot for source-parity auditing; versions may advance after deployments.",
+  "functions": [
+    {
+      "slug": "card-arena",
+      "version": 3,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "city-3b",
+      "version": 8,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "delete-account",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "ecosystem",
+      "version": 5,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "ecosystem-private",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "ecosystem-public",
+      "version": 1,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "marketplace-3b",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "member-api",
+      "version": 2,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "member-auth",
+      "version": 1,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "member-hub",
+      "version": 8,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "secret3b-claim",
+      "version": 2,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "secret3b-phone",
+      "version": 4,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "world-bootstrap",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "world-engine",
+      "version": 24,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "world-engine-goldmaster-candidate",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    }
+  ]
+}
