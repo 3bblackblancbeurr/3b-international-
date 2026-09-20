@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
 const QUALITY={
- low:{quality:.34,waveAmp:.58,normalStrength:.16,foam:.22,reflection:.42,mist:0},
- medium:{quality:.68,waveAmp:.82,normalStrength:.23,foam:.48,reflection:.68,mist:.035},
- high:{quality:1,waveAmp:1,normalStrength:.31,foam:.78,reflection:1,mist:.07},
+ low:{quality:.34,waveAmp:.58,normalStrength:.16,foam:.22,reflection:.42,mist:0,sceneReflection:0,reflectionSize:0,reflectionHz:0},
+ medium:{quality:.68,waveAmp:.82,normalStrength:.23,foam:.48,reflection:.68,mist:.035,sceneReflection:0,reflectionSize:0,reflectionHz:0},
+ high:{quality:1,waveAmp:1,normalStrength:.31,foam:.78,reflection:1,mist:.07,sceneReflection:.72,reflectionSize:512,reflectionHz:18},
 };
 
 function qualityProfile(mode){
@@ -42,6 +42,8 @@ const vertexShader=`
  varying vec2 vUv;
  varying vec2 vLocal;
  varying vec3 vWorld;
+ varying vec4 vReflectionCoord;
+ uniform mat4 reflectionMatrix;
  uniform float time;
  uniform float waveAmp;
  void main(){
@@ -54,6 +56,7 @@ const vertexShader=`
   vUv=uv;
   vLocal=position.xy;
   vWorld=world.xyz;
+  vReflectionCoord=reflectionMatrix*world;
   gl_Position=projectionMatrix*viewMatrix*world;
  }
 `;
@@ -62,13 +65,18 @@ const fragmentShader=`
  varying vec2 vUv;
  varying vec2 vLocal;
  varying vec3 vWorld;
+ varying vec4 vReflectionCoord;
  uniform sampler2D normalA;
  uniform sampler2D normalB;
+ uniform sampler2D contactFoam;
+ uniform sampler2D reflectionTexture;
  uniform float time;
  uniform float radius;
  uniform float normalStrength;
  uniform float foamAmount;
  uniform float reflectionAmount;
+ uniform float sceneReflection;
+ uniform float reflectionReady;
  uniform float rain;
  uniform float daylight;
  uniform vec3 deepColor;
@@ -105,6 +113,13 @@ const fragmentShader=`
   vec3 sky=mix(skyNight,skyDay,daylight);
   vec3 color=mix(base,sky,fresnel*.52*reflectionAmount);
 
+  vec2 reflectionUv=vReflectionCoord.xy/max(vReflectionCoord.w,.0001);
+  reflectionUv+=slope*vec2(.045,.032);
+  float reflectionBounds=step(0.,reflectionUv.x)*step(reflectionUv.x,1.)*step(0.,reflectionUv.y)*step(reflectionUv.y,1.);
+  vec3 sceneMirror=texture2D(reflectionTexture,clamp(reflectionUv,vec2(.001),vec2(.999))).rgb;
+  float mirrorWeight=fresnel*sceneReflection*reflectionAmount*reflectionReady*reflectionBounds;
+  color=mix(color,sceneMirror,clamp(mirrorWeight,0.,.84));
+
   float matrixBand=pow(max(0.,sin(vWorld.x*.055+vWorld.z*.027-time*.25)),18.)*
                    (.35+.65*pow(1.-ndv,2.));
   color+=matrixBlue*matrixBand*.18*reflectionAmount*(.35+.65*(1.-daylight));
@@ -118,8 +133,9 @@ const fragmentShader=`
 
   float shore=smoothstep(.82,.995,radial);
   float foamNoise=.55+.45*sin(vWorld.x*.72+sin(vWorld.z*.31)+time*.9);
-  float foam=shore*foamNoise*foamAmount;
-  color=mix(color,vec3(.64,.76,.79),foam*.42);
+  float contact=texture2D(contactFoam,clamp(vUv+slope*.012,vec2(.001),vec2(.999))).r;
+  float foam=max(shore*.78,contact*(.72+.28*foamNoise))*foamNoise*foamAmount;
+  color=mix(color,vec3(.64,.76,.79),foam*.48);
 
   float alpha=mix(.84,.975,deep);
   alpha+=fresnel*.02;
@@ -147,21 +163,31 @@ const mistFragment=`
 `;
 
 export function createPremiumWater({region='hub',lake,owned=[]}){
- const normalA=createNormalMap(64,13),normalB=createNormalMap(64,47);
- owned.push(normalA,normalB);
+ const normalA=createNormalMap(64,13),normalB=createNormalMap(64,47),foamSize=128,foamData=new Uint8Array(foamSize*foamSize);
+ const contactFoam=new THREE.DataTexture(foamData,foamSize,foamSize,THREE.RedFormat,THREE.UnsignedByteType);
+ contactFoam.minFilter=contactFoam.magFilter=THREE.LinearFilter;contactFoam.wrapS=contactFoam.wrapT=THREE.ClampToEdgeWrapping;contactFoam.needsUpdate=true;
+ owned.push(normalA,normalB,contactFoam);
  const deepColor=new THREE.Color(region==='hub'?'#020a12':region==='estonie'?'#06161c':'#031018');
  const shallowColor=new THREE.Color(region==='hub'?'#0d2633':'#17343b');
+ const reflectionMatrix=new THREE.Matrix4(),mirrorCamera=new THREE.PerspectiveCamera(),biasMatrix=new THREE.Matrix4().set(
+  .5,0,0,.5,
+  0,.5,0,.5,
+  0,0,.5,.5,
+  0,0,0,1
+ );
+ let reflectionTarget=null,reflectionProfile=QUALITY.medium,lastReflection=-Infinity,waterMesh=null,mistMesh=null;
  const material=new THREE.ShaderMaterial({
   side:THREE.DoubleSide,
   transparent:true,
   depthWrite:true,
   uniforms:{
-   normalA:{value:normalA},normalB:{value:normalB},
+   normalA:{value:normalA},normalB:{value:normalB},contactFoam:{value:contactFoam},
+   reflectionTexture:{value:normalA},reflectionMatrix:{value:reflectionMatrix},reflectionReady:{value:0},
    time:{value:0},radius:{value:lake.r+2},
    waveAmp:{value:QUALITY.medium.waveAmp},
    normalStrength:{value:QUALITY.medium.normalStrength},
    foamAmount:{value:QUALITY.medium.foam},
-   reflectionAmount:{value:QUALITY.medium.reflection},
+   reflectionAmount:{value:QUALITY.medium.reflection},sceneReflection:{value:0},
    rain:{value:0},daylight:{value:1},
    deepColor:{value:deepColor},shallowColor:{value:shallowColor},
    matrixBlue:{value:new THREE.Color('#00a8ff')},
@@ -178,12 +204,22 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
  });
  owned.push(material,mistMaterial);
 
+ function ensureReflectionTarget(size){
+  if(!size)return;
+  if(!reflectionTarget){
+   reflectionTarget=new THREE.WebGLRenderTarget(size,size,{depthBuffer:true,stencilBuffer:false,minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+   reflectionTarget.texture.name='3B-Water-Planar-Reflection';
+   material.uniforms.reflectionTexture.value=reflectionTarget.texture;
+  }else if(reflectionTarget.width!==size||reflectionTarget.height!==size)reflectionTarget.setSize(size,size);
+ }
  function setQuality(mode){
-  const q=qualityProfile(mode);
+  const q=qualityProfile(mode);reflectionProfile=q;
   material.uniforms.waveAmp.value=q.waveAmp;
   material.uniforms.normalStrength.value=q.normalStrength;
   material.uniforms.foamAmount.value=q.foam;
   material.uniforms.reflectionAmount.value=q.reflection;
+  material.uniforms.sceneReflection.value=q.sceneReflection;
+  if(q.sceneReflection>0)ensureReflectionTarget(q.reflectionSize);else material.uniforms.reflectionReady.value=0;
   mistMaterial.uniforms.opacity.value=q.mist;
  }
  function setWeather(weather){
@@ -192,9 +228,46 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
  function setDaylight(value){
   material.uniforms.daylight.value=Math.max(0,Math.min(1,Number(value)||0));
  }
+ function setFoamContacts(contacts=[]){
+  foamData.fill(0);
+  const diameter=(lake.r+2)*2;
+  for(let py=0;py<foamSize;py++)for(let px=0;px<foamSize;px++){
+   const wx=lake.x+(px/(foamSize-1)-.5)*diameter,wz=lake.z-(py/(foamSize-1)-.5)*diameter;
+   let strength=0;
+   for(const point of contacts){
+    const radius=Math.max(.35,point.r||1.2),d=Math.hypot(wx-point.x,wz-point.z);
+    if(d>=radius)continue;
+    const t=1-d/radius;strength=Math.max(strength,t*t*(3-2*t)*(point.strength||1));
+    if(strength>.98)break;
+   }
+   foamData[py*foamSize+px]=Math.round(Math.min(1,strength)*255);
+  }
+  contactFoam.needsUpdate=true;
+ }
+ function attachMeshes(water,mist){waterMesh=water;mistMesh=mist;}
+ function renderReflection(renderer,scene,camera,time=0){
+  const q=reflectionProfile;if(!q.sceneReflection||!waterMesh||!reflectionTarget||!renderer||!scene||!camera)return false;
+  if(time-lastReflection<1/q.reflectionHz)return false;lastReflection=time;
+  const waterWorld=new THREE.Vector3();waterMesh.getWorldPosition(waterWorld);const waterY=waterWorld.y;
+  const cameraPos=new THREE.Vector3(),target=new THREE.Vector3(),forward=new THREE.Vector3(0,0,-1),up=new THREE.Vector3(0,1,0);
+  camera.getWorldPosition(cameraPos);forward.applyQuaternion(camera.quaternion);up.applyQuaternion(camera.quaternion);target.copy(cameraPos).add(forward);
+  const reflectPoint=point=>{point.y=2*waterY-point.y;return point;};
+  reflectPoint(cameraPos);reflectPoint(target);up.y*=-1;
+  mirrorCamera.copy(camera,false);mirrorCamera.position.copy(cameraPos);mirrorCamera.up.copy(up);mirrorCamera.lookAt(target);mirrorCamera.updateMatrixWorld();mirrorCamera.updateProjectionMatrix();
+  reflectionMatrix.copy(biasMatrix).multiply(mirrorCamera.projectionMatrix).multiply(mirrorCamera.matrixWorldInverse);
+  material.uniforms.reflectionMatrix.value.copy(reflectionMatrix);
+
+  const previousTarget=renderer.getRenderTarget(),previousPlanes=renderer.clippingPlanes,previousXr=renderer.xr.enabled,waterVisible=waterMesh.visible,mistVisible=mistMesh?.visible;
+  waterMesh.visible=false;if(mistMesh)mistMesh.visible=false;renderer.xr.enabled=false;
+  renderer.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,1,0),-waterY-.025)];
+  renderer.setRenderTarget(reflectionTarget);renderer.clear();renderer.render(scene,mirrorCamera);
+  renderer.setRenderTarget(previousTarget);renderer.clippingPlanes=previousPlanes;renderer.xr.enabled=previousXr;waterMesh.visible=waterVisible;if(mistMesh)mistMesh.visible=mistVisible;
+  material.uniforms.reflectionReady.value=1;return true;
+ }
  function update(time){
   material.uniforms.time.value=time;
   mistMaterial.uniforms.time.value=time;
  }
- return{material,mistMaterial,setQuality,setWeather,setDaylight,update};
+ function disposeReflection(){reflectionTarget?.dispose();reflectionTarget=null;}
+ return{material,mistMaterial,setQuality,setWeather,setDaylight,setFoamContacts,attachMeshes,renderReflection,disposeReflection,update};
 }
