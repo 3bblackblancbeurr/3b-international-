@@ -1,5 +1,5 @@
 import {COUNTRIES,isCountry} from './countries.js';
-import {CANON_WORLDS} from '../story-canon.js';
+import {CANON_WORLDS,FRANCE_CANON_ARC} from '../story-canon.js';
 // One unit = one metre. Canon comes from the owner's 3B ORIGINS brief.
 export const SCALE=Object.freeze({human:1.8,door:2.65,doorWidth:1.8,storey:3.1,step:.16,radius:.32});
 export const WORLDS=[
@@ -51,9 +51,9 @@ export const POINTS={
  memory:{zone:'france',x:0,z:-34,name:'Souvenir du passage haut',y:2.4},
 };
 export const QUESTS=[
- {id:'justice-01',kind:'main',title:'Les voix effacées',reward:40,steps:['Traverser la porte France et parler à une habitante.','Demander au loup de chercher près de la fontaine.','Révéler la trace avec la Vision de Mémoire, puis la lire.']},
- {id:'justice-02',kind:'main',title:'Les deux plateaux',reward:60,steps:['Rencontrer le gardien devant les Archives.','Confier le sceau gauche au loup, puis activer le plateau droit.']},
- {id:'justice-03',kind:'main',title:'Ce qui nous relie',reward:120,steps:['Retrouver les deux témoignages dans les Archives.','Dissiper la manifestation de l’Oubli.','Recueillir le fragment de Justice et le replacer au Sanctuaire.']},
+ {id:'justice-01',kind:'main',campaign:FRANCE_CANON_ARC.title,act:1,title:'Les voix effacées',reward:40,steps:['Traverser la porte France et parler à une habitante.','Demander au loup de chercher près de la fontaine.','Révéler la trace avec la Vision de Mémoire, puis la lire.']},
+ {id:'justice-02',kind:'main',campaign:FRANCE_CANON_ARC.title,act:2,title:'Les deux plateaux',reward:60,steps:['Rencontrer le gardien devant les Archives.','Confier le sceau gauche au loup, puis activer le plateau droit.']},
+ {id:'justice-03',kind:'main',campaign:FRANCE_CANON_ARC.title,act:3,title:'Ce qui nous relie',reward:120,steps:['Retrouver les deux témoignages dans les Archives.','Dissiper la manifestation de l’Oubli.','Recueillir le fragment de Justice et le replacer au Sanctuaire.']},
  {id:'garden',kind:'side',title:'Un jardin pour demain',reward:30,steps:['Parler à l’artisan dans l’atelier.','Récupérer les graines du jardin ouest et les rapporter.']},
  {id:'remembrance',kind:'side',title:'La mémoire des hauteurs',reward:35,steps:['Parler à l’habitante de la Maison des souvenirs.','Révéler le souvenir sur le passage haut et le rapporter.']},
 ];
