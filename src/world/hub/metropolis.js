@@ -110,7 +110,7 @@ function road(from,to,id,kind='avenue'){
     z:(from.z+to.z)/2,
     from,to,
     length,
-    width:kind==='express'?HUB_METROPOLIS.roadWidth+5:HUB_METROPOLIS.roadWidth,
+    width:kind==='express'?HUB_METROPOLIS.roadWidth+5:kind==='lane'?6.5:HUB_METROPOLIS.roadWidth,
     heading:Math.atan2(dx,dz),
   };
 }
@@ -127,11 +127,23 @@ export function metropolisRoadItems(plan){
     if(district.id==='heritage_square')continue;
     roads.push(road(heritage,hubDistrictPosition(plan,district.id),`spoke:heritage_square:${district.id}`,'avenue'));
   }
+
+  // Human-scale shortcuts break the hub's ring-and-spoke feel. Each link bends
+  // around district cores instead of drawing another giant straight avenue.
+  const shortcuts=[
+    ['archives','innovation'],['community','commerce'],['gardens','city3b_portal'],
+    ['docks','commerce'],['arena','broken_circle_tower'],
+  ];
+  for(const [fromId,toId] of shortcuts){
+    const from=hubDistrictPosition(plan,fromId),to=hubDistrictPosition(plan,toId),dx=to.x-from.x,dz=to.z-from.z,len=Math.hypot(dx,dz)||1,h=hash(`lane:${fromId}:${toId}`);
+    const nx=-dz/len,nz=dx/len,bend=22+((h>>>7)%20),side=h%2?1:-1,mid={x:(from.x+to.x)/2+nx*bend*side,z:(from.z+to.z)/2+nz*bend*side};
+    roads.push(road(from,mid,`lane:${fromId}:${toId}:a`,'lane'),road(mid,to,`lane:${fromId}:${toId}:b`,'lane'));
+  }
   return roads;
 }
 
 export function metropolisTrafficItems(plan,profile){
-  const roads=metropolisRoadItems(plan).filter((_,index)=>index%2===0);
+  const roads=metropolisRoadItems(plan).filter(route=>route.kind!=='lane').filter((_,index)=>index%2===0);
   const count=profile==='desktop'?12:profile==='mobileHigh'?8:5;
   return Array.from({length:count},(_,index)=>{
     const route=roads[index%roads.length],h=hash(`${route.id}:traffic:${index}`);
