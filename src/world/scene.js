@@ -358,7 +358,7 @@ function hubNpcAvatar(item){
   const wide=cameraMode===1,portrait=camera.aspect<.85;
   if(opponent&&!fieldCombat){const mx=(avatar.position.x+opponent.x)/2,mz=(avatar.position.z+opponent.z)/2,my=(avatar.position.y+groundY(opponent.x,opponent.z))/2;desiredTarget.set(mx,my+1.8,mz);desiredCamera.set(mx+(portrait?12:15),my+(portrait?14:11),mz+(portrait?20:18));}
   else{const view=orbitView(orbit,position,y,portrait,groundY);desiredTarget.copy(view.target);desiredCamera.copy(view.position);}
-  if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),ease=age*age*(3-2*age),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+age*arc,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*age));desiredTarget.set(shot.x,baseY+(shot.focusY??(shot.heritage?28:2)),shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+(shot.height??(shot.heritage?36:14)),shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){desiredCamera.lerp(shot.endCamera,ease);desiredTarget.lerp(shot.endTarget,ease);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
+  if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),ease=age*age*(3-2*age),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+age*arc,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*age)),waterReveal=shot.kind==='world-opening'&&region==='hub',focusLift=waterReveal?2.6+(shot.focusY-2.6)*ease:(shot.focusY??(shot.heritage?28:2)),cameraLift=waterReveal?4.2+((shot.height??18)-4.2)*ease:(shot.height??(shot.heritage?36:14));desiredTarget.set(shot.x,baseY+focusLift,shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+cameraLift,shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){const returnBlend=waterReveal?Math.max(0,(ease-.72)/.28):ease;desiredCamera.lerp(shot.endCamera,returnBlend);desiredTarget.lerp(shot.endTarget,returnBlend);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
 
   const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
@@ -405,7 +405,15 @@ function hubNpcAvatar(item){
    const encounter=save.adventure.encounter||{},now=performance.now(),major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind);
    let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16,focusItemId=null,endCamera=null,endTarget=null,fovStart=null,fovEnd=null;
    if(kind==='world-opening'){
-    focus={...position};radius=camera.aspect<.85?78:112;height=camera.aspect<.85?50:64;focusY=5.5;arc=.58;dolly=.08;angle=orbit.yaw-.58;fovStart=72;fovEnd=60;
+    if(region==='hub'){
+     const water=BIOMES.hub.water;
+     focus={x:0,z:-145};radius=camera.aspect<.85?470:540;height=18;focusY=54;arc=.20;dolly=.54;
+     angle=Math.atan2(water.x-focus.x,water.z-focus.z);
+     fovStart=70;fovEnd=60;
+     context={...context,waterReveal:true};
+    }else{
+     focus={...position};radius=camera.aspect<.85?78:112;height=camera.aspect<.85?50:64;focusY=5.5;arc=.58;dolly=.08;angle=orbit.yaw-.58;fovStart=72;fovEnd=60;
+    }
     const finalView=cinematicReturnView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);endCamera=finalView.position;endTarget=finalView.target;hero?.action('Idle');
    }else if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=camera.aspect<.85?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
    else if(['guardian-intro','final-combat-intro','important-combat-result'].includes(kind)){
