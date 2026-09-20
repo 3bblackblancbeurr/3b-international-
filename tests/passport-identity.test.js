@@ -34,9 +34,10 @@ test('a profile from another authenticated account is rejected',()=>{
  assert.equal(passportFromProfile(profile(),{id:'00000000-0000-0000-0000-000000000000'}),null);
 });
 
-test('missing profile cannot fabricate a passport',()=>{
+test('missing or invalid profile cannot fabricate a passport or country',()=>{
  assert.equal(passportFromProfile(null,{id:UID}),null);
  assert.equal(passportFromProfile({}, {id:UID}),null);
+ assert.equal(passportFromProfile({...profile(),country:'Unknown'}, {id:UID}),null);
 });
 
 test('the eight canonical countries keep their 3B code and value',()=>{
