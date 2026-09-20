@@ -74,7 +74,7 @@ jobs:
           fi
           # Incremental merge commits only: do not replace newer main/France
           # files by the entire divergent chatgpt-improvements branch.
-          for source in 4a6fb16d0e0af4cc941fe0d20bae89e87d2170a2 0d8cf1d76f217fa6546dac5053561195e9cf6d60 264b2a0dd8433a9148edef27b71274229432e80d; do
+          for source in d2eb47a1f47be4c514c1e68f7605a67d788084f1 0d8cf1d76f217fa6546dac5053561195e9cf6d60 264b2a0dd8433a9148edef27b71274229432e80d; do
             git cat-file -e "$source^{commit}"
             if ! git merge-base --is-ancestor "$source" HEAD; then
               if ! git cherry-pick -x -m 1 "$source"; then
@@ -128,6 +128,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/world-consolidation"
           git status --short > "$RUNNER_TEMP/world-consolidation/git-status.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/world-consolidation/last-local-revision.txt"
           git diff --cc > "$RUNNER_TEMP/world-consolidation/conflicts.patch"
           if test -s "$RUNNER_TEMP/world-consolidation/conflicts.patch"; then
             head -180 "$RUNNER_TEMP/world-consolidation/conflicts.patch"
