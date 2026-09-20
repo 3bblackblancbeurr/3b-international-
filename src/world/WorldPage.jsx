@@ -136,6 +136,7 @@ function WorldSession({uid,goTo}){
   audio.current?.cinematic(activeCinematic.kind);
  },[activeCinematic?.key]);
  useEffect(()=>{if(activeCinematic||!cinematicResumePanel.current)return;const resume=cinematicResumePanel.current;cinematicResumePanel.current=null;setPanel(resume);},[activeCinematic?.key]);
+ useEffect(()=>{if(panel==='story'&&!activeCinematic)scene.current?.playCinematicShot('story-alliance',{region:snapshot.region},12000);},[panel,snapshot.region,activeCinematic?.key]);
  useEffect(()=>{if(!uid||!loaded)return;partyLink.current=createPartyConnection({uid,onState:setPartyState,onPeers:peers=>{peersRef.current=peers;scene.current?.setPeers(peers);},onConnection:setConnection,onError:announce});return()=>{partyLink.current?.dispose();partyLink.current=null;};},[uid,loaded]);
  useEffect(()=>{partyLink.current?.pose({region:snapshot.region,x:snapshot.position.x,z:snapshot.position.z,heading:snapshot.heading||0});},[snapshot]);
  useEffect(()=>{scene.current?.setParty(partyState?.party);},[partyState,loaded]);
