@@ -194,7 +194,7 @@ test('building feet use instanced contact shadows and weather-driven dampness',(
  assert.match(contact,/MeshPhysicalMaterial/);
  assert.match(contact,/setWeather\(weather\)/);
  assert.match(contact,/setQuality\(mode\)/);
- assert.match(landscape,/buildingContact\.setWeather/);
+ assert.match(landscape,/buildingContact\.setWetness/);
 });
 
 
