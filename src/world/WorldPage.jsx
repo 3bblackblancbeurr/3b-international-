@@ -156,6 +156,20 @@ function WorldSession({uid,goTo}){
    const next=act({type:'hubSecretStep',id:item.secretId,step:item.step});if(next){const count=next.hub.stats.secretProgress[item.secretId]?.length||0;announce(item.name+' · indice '+count+' enregistré');chime();}return;
   }
   if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId,evidence:item.evidence||{}});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
+  if(item.type==='hubBuilding'){
+   act({type:'hubDistrictVisit',id:item.district});const next=act({type:'hubBuildingVisit',id:item.buildingId});if(!next)return;
+   const functions=item.functions||[];
+   if(item.buildingId==='city_planning_office'||item.buildingId==='city_gallery'){setPanel('city3b');return;}
+   if(functions.includes('combat')||functions.includes('movement_training')){setPanel('arena');return;}
+   if(functions.includes('textile_ai')){goTo('ia-textile');return;}
+   if(functions.includes('styling')){goTo('ia-trio');return;}
+   if(functions.includes('shop')){goTo('shop');return;}
+   if(functions.includes('groups')){goTo('community');return;}
+   if(functions.includes('world_map')){setPanel('atlas');return;}
+   if(functions.includes('collection')||functions.includes('character_collection')){setPanel('collection');return;}
+   if(functions.includes('tutorial')||functions.includes('public_missions')){setPanel('journal');return;}
+   announce(item.name+' · '+functions.join(' · '));return;
+  }
   if(item.type==='hubDistrict'){act({type:'hubDistrictVisit',id:item.district});if(item.district==='city3b_portal'){setPanel('city3b');return;}announce(item.name+' · '+item.purpose);return;}
   if(item.type==='valueTrial'){if(item.locked){announce('Reconstruis d’abord les deux premières étapes du pays avant cette épreuve.');return;}const vr=GUARDIAN_VALUES[saveRef.current.region],vs=saveRef.current.adventure.values?.[saveRef.current.region],step=vr?guardianValueStep(saveRef.current.region,vs):null;if(step)audio.current?.speak('Épreuve de '+vr.value+'. '+step.label,{character:vr.card});setPanel('valueTrial');return;}
   if(item.type==='vista'){announce(item.name+' · explore les rues et les alentours librement.');return;}
