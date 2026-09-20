@@ -26,7 +26,7 @@ export function hubPortalPosition(portal){
 }
 
 const BUILDING_SHAPES={
-  tower_circle:[38,38,92],
+  tower_circle:[42,42,118],
   heritage_welcome:[34,24,18],
   mission_hotel:[46,32,28],
   memory_archives:[62,44,34],
@@ -81,7 +81,8 @@ function fillerItems(plan,profile){
     return Array.from({length:perDistrict},(_,index)=>{
       const h=hash(`${district.id}:filler:${index}`),angle=index/perDistrict*Math.PI*2+((h%100)/100)*.35;
       const ring=78+(index%3)*34+(h>>>9)%28;
-      const width=22+(h%24),depth=18+((h>>>5)%22),height=18+((h>>>11)%54);
+      const width=20+(h%26),depth=17+((h>>>5)%24),tierRoll=(h>>>11)%100;
+      const height=tierRoll<58?14+((h>>>17)%18):tierRoll<90?30+((h>>>17)%28):60+((h>>>17)%24);
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
