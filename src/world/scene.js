@@ -232,6 +232,9 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     focus=toLandscape(region,...(stage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:stage===2?[29,15]:[11,-4]));heritage=stage===3;radius=heritage?(camera.aspect<.85?110:98):18;height=heritage?35:11;focusY=heritage?27:2.4;arc=.34;dolly=.12;
    }else if(kind==='discovery'){
     const place=items.find(i=>i.id===region+':survey:'+context.place);if(place)focus={x:place.x,z:place.z};radius=14;height=9;focusY=2.2;arc=.3;dolly=.1;
+   }else if(kind==='story-alliance'){
+    const resident=items.find(i=>i.type==='story'||i.id===region+':story');
+    if(resident)focus={x:resident.x,z:resident.z};radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
    }else if(kind==='story-power'){radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
    shot={...focus,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,title:'',detail:''};clearInput();needsRender=true;
   },
