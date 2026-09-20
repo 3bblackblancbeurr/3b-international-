@@ -10,7 +10,7 @@ function child(group,geometry,material,{x=0,y=0,z=0,sx=1,sy=sx,sz=sx,rx=0,ry=0,r
 
 export function buildPremiumHubRoad(item,{mesh,material,groundY}){
  const visuals=[],y=groundY(item.x,item.z),heading=item.heading||0;
- const asphalt=material(item.kind==='express'?'#11171d':'#171d22',{roughness:.97,metalness:.03});
+ const asphalt=material(item.kind==='express'?'#11171d':item.kind==='lane'?'#2c3133':'#171d22',{roughness:item.kind==='lane'?.88:.97,metalness:.03});
  const paving=material('#4d5457',{roughness:.9,metalness:.04});
  const curbMat=material('#8e8a7b',{roughness:.78,metalness:.08});
  const marking=material(item.kind==='express'?'#d6b46a':'#d7d8d0',{roughness:.52,metalness:.15,emissive:item.kind==='express'?'#805d16':'#2d3537',emissiveIntensity:.08});
@@ -18,22 +18,22 @@ export function buildPremiumHubRoad(item,{mesh,material,groundY}){
 
  const sideX=Math.cos(heading),sideZ=-Math.sin(heading),forwardX=Math.sin(heading),forwardZ=Math.cos(heading);
  for(const side of [-1,1]){
-  const offset=item.width/2+1.35,x=item.x+sideX*offset*side,z=item.z+sideZ*offset*side;
-  const walk=mesh('box',paving,x,y+.11,z,2.25,.16,item.length);walk.rotation.y=heading;walk.castShadow=false;visuals.push(walk);
+  const offset=item.width/2+(item.kind==='lane'?.82:1.35),x=item.x+sideX*offset*side,z=item.z+sideZ*offset*side;
+  const walk=mesh('box',paving,x,y+.11,z,item.kind==='lane'?1.2:2.25,.16,item.length);walk.rotation.y=heading;walk.castShadow=false;visuals.push(walk);
   const curb=mesh('box',curbMat,item.x+sideX*(item.width/2+.16)*side,y+.13,item.z+sideZ*(item.width/2+.16)*side,.28,.20,item.length);curb.rotation.y=heading;curb.castShadow=false;visuals.push(curb);
  }
 
  const dashCount=clamp(Math.floor(item.length/28),4,18),spacing=item.length/(dashCount+1);
- for(let i=1;i<=dashCount;i++){
+ if(item.kind!=='lane')for(let i=1;i<=dashCount;i++){
   const along=-item.length/2+i*spacing,x=item.x+forwardX*along,z=item.z+forwardZ*along;
   const dash=mesh('box',marking,x,y+.105,z,.16,.018,Math.min(4.2,spacing*.42));dash.rotation.y=heading;dash.castShadow=false;visuals.push(dash);
  }
  if(item.kind==='express')for(const side of [-1,1]){
   const lane=mesh('box',marking,item.x+sideX*(item.width*.24)*side,y+.102,item.z+sideZ*(item.width*.24)*side,.10,.016,item.length*.96);lane.rotation.y=heading;lane.castShadow=false;visuals.push(lane);
  }
- const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.42,roughness:.25,metalness:.62}),roadSeed=hash(item.id||'hub-road');
- const lampFractions=[-.34+((roadSeed>>>4)%9)/100,.26+((roadSeed>>>9)%11)/100];
- lampFractions.forEach((fraction,station)=>{for(const side of [-1,1]){
+ const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:item.kind==='lane'?.18:.42,roughness:.25,metalness:.62}),roadSeed=hash(item.id||'hub-road');
+ const lampFractions=item.kind==='lane'?[.04]:[-.34+((roadSeed>>>4)%9)/100,.26+((roadSeed>>>9)%11)/100];
+ lampFractions.forEach((fraction,station)=>{for(const side of item.kind==='lane'?[roadSeed%2?1:-1]:[-1,1]){
   const stagger=side*((((roadSeed>>>(station*3+13))%7)-3)/100),along=item.length*(fraction+stagger),offset=item.width/2+2.65,x=item.x+forwardX*along+sideX*offset*side,z=item.z+forwardZ*along+sideZ*offset*side;
   const pole=mesh('cylinder',streetMetal,x,y+2.15,z,.075,4.1,.075);pole.castShadow=false;visuals.push(pole);
   const cap=mesh('box',streetGlow,x,y+4.23,z,.26,.09,.26);cap.castShadow=false;visuals.push(cap);
