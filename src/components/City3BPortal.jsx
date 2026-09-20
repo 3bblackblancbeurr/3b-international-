@@ -1,10 +1,10 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {Building2,CarFront,Coins,Eye,Globe2,Map,Package,Settings2,Shirt,Trash2,X} from 'lucide-react';
+import {Building2,CarFront,Coins,Eye,Globe2,Map as MapIcon,Package,Settings2,Shirt,Trash2,X} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {CITY_COUNTRIES,CITY_VALUES,city3bRequest} from '../city/city3b-client.js';
 import '../styles/city-3b.css';
-const TABS=[['city','Ville',Building2],['build','Construire',Building2],['districts','Quartiers',Map],['collection','Collection',Package],['visit','Visiter',Globe2]];
+const TABS=[['city','Ville',Building2],['build','Construire',Building2],['districts','Quartiers',MapIcon],['collection','Collection',Package],['visit','Visiter',Globe2]];
 const reqId=()=>crypto.randomUUID?.()||`${Date.now()}-${Math.random()}`;
 export default function City3BPortal(props){
  const account=useLoyalty();
