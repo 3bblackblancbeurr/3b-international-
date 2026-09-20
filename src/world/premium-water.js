@@ -220,7 +220,11 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
   material.uniforms.foamAmount.value=q.foam;
   material.uniforms.reflectionAmount.value=q.reflection;
   material.uniforms.sceneReflection.value=sceneReflection;
-  if(sceneReflection>0)ensureReflectionTarget(q.reflectionSize);else material.uniforms.reflectionReady.value=0;
+  if(sceneReflection>0)ensureReflectionTarget(q.reflectionSize);
+  else{
+   material.uniforms.reflectionReady.value=0;
+   if(reflectionTarget){reflectionTarget.dispose();reflectionTarget=null;material.uniforms.reflectionTexture.value=normalA;}
+  }
   mistMaterial.uniforms.opacity.value=q.mist;
  }
  function setWeather(weather){
