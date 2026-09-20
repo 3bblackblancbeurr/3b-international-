@@ -40,6 +40,7 @@ import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from './guardian
 import {isAutoHubMission} from './hub/mission-signals.js';
 import {worldCinematicEvents} from './cinematic-events.js';
 import {storyCinematicPresentation} from './story-cinematic.js';
+import {CinematicOverlay} from './CinematicOverlay.jsx';
 import {City3BPanel} from '../city/City3BPanel.jsx';
 import {cityUnlockGuide,cityUnlockGuideRequested,cityUnlockGuideStorage} from './city-unlock-guide.js';
 
@@ -96,14 +97,14 @@ function WorldSession({uid,goTo}){
   if(storyCinematic||!cinematicQueue.length)return;
   const event=cinematicQueue[0],presentation=storyCinematicPresentation(event);setCinematicQueue(queue=>queue.slice(1));
   if(!presentation){cinematicKeys.current.delete(event.key);return;}
-  setStoryCinematic(presentation);audio.current?.state(presentation.audioState);audio.current?.speak(presentation.title+'. '+presentation.detail,{character:presentation.voiceCharacter});
+  setStoryCinematic(presentation);scene.current?.playCinematicShot?.(presentation.kind,presentation.context,presentation.duration);audio.current?.cinematic?.(presentation.kind);audio.current?.state(presentation.audioState);audio.current?.speak(presentation.title+'. '+presentation.detail,{character:presentation.voiceCharacter});
  },[cinematicQueue,storyCinematic]);
  function chime(){audio.current?.event('reward');}
  function updateAudioMix(key,value){const next={...audioMix,[key]:Math.max(0,Math.min(1,Number(value)))};setAudioMix(next);try{localStorage.setItem('3b-world-audio-mix',JSON.stringify(next));}catch{}}
  function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.setMix(audioMix);audio.current.enable(next,saveRef.current.region);setSound(next);}
  function finishStoryCinematic(){
   const current=storyCinematic;if(!current)return;
-  act({type:'cinematicSeen',key:current.key});cinematicKeys.current.delete(current.key);setStoryCinematic(null);
+  scene.current?.skipCinematic();act({type:'cinematicSeen',key:current.key});cinematicKeys.current.delete(current.key);setStoryCinematic(null);
  }
  async function sync(){if(!loaded)return;dirty.current=false;const result=await saveWorld(uid,saveRef.current);if(result.pending)dirty.current=true;setSaveMessage(result.message);if(result.data){if(result.data.region!==saveRef.current.region)scene.current?.travel(result.data.region);saveRef.current=result.data;setSave(result.data);}return result;}
  async function refreshWorld(){const result=await loadWorld(uid);saveRef.current=result.data;setSave(result.data);scene.current?.setSave(result.data);}
@@ -202,7 +203,7 @@ function WorldSession({uid,goTo}){
  return <section ref={shell} className="world-shell" aria-label="Le Monde du 3B">
   <canvas ref={canvas} className="world-canvas" tabIndex={0} aria-label="Monde 3D. Glisse à gauche pour avancer, à droite pour tourner la caméra. Flèches ou ZQSD, E pour interagir."/>
   <div className="world-vignette"/>
-  {storyCinematic&&<div className="world-story-cinematic" role="dialog" aria-modal="true" aria-label={storyCinematic.title}><article className={'world-story-cinematic-card'+(storyCinematic.card?'':' no-art')}>{storyCinematic.card&&cardById[storyCinematic.card]&&<Art card={cardById[storyCinematic.card]} className="story-cinematic-art"/>}<div><span className="world-kicker">{storyCinematic.kicker}</span><h2>{storyCinematic.title}</h2><p>{storyCinematic.detail}</p><button className="world-primary" onClick={finishStoryCinematic}>{storyCinematic.nextLabel}</button></div></article></div>}
+  {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>} 
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
   <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
   {uid&&loaded&&cityUnlockMission&&!cityGuide.unlocked&&!panel&&<aside className="world-city-unlock-guide" aria-label="Mission de déblocage Ville 3B">

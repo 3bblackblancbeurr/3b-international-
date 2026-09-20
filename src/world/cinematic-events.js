@@ -7,6 +7,7 @@ const KEY_PATTERNS=[
  new RegExp('^intro:'+REGION+':C\\d{3}:(?:expert|adventure)$'),
  new RegExp('^result:'+REGION+':C\\d{3}:(?:victory|defeat)$'),
  new RegExp('^discovery:'+REGION+':(?:city|rural)$'),
+ new RegExp('^memory:'+REGION+':\\d+$'),
  /^bond:C\d{3}$/,
  /^story:circle-restored$/,
 ];
@@ -52,6 +53,10 @@ export function worldCinematicEvents(previous,next,action){
 
  if(action.type==='pactChoice'&&fight?.result==='recruited'&&oldFight?.result!=='recruited'&&!previous.collection?.[fight.card]&&next.collection?.[fight.card]){
   add('companion-first-bond',`bond:${fight.card}`,{region:fight.region||region,card:fight.card},40);
+ }
+
+ if(action.type==='beacon'&&action.id&&!(previous.beacons||[]).includes(action.id)&&(next.beacons||[]).includes(action.id)){
+  add('memory-fragment',`memory:${action.id}`,{region,id:action.id},30);
  }
 
  if(action.type==='survey'){
