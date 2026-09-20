@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL then SHA-256",
   "generated_at": "2026-09-20",
-  "count": 98,
+  "count": 99,
   "migrations": [
     {
       "version": "20260910020445",
@@ -493,6 +493,11 @@
       "version": "20260920191103",
       "name": "threeb_economy_integrity_crypto_gate_v2",
       "sha256": "53cab089903ad5d4b9a7ef46d7e3f432c37533e45370dd4aaef842b2dc3ff7d4"
+    },
+    {
+      "version": "20260920191606",
+      "name": "threeb_reward_lifetime_caps",
+      "sha256": "452f98b460126fab62bceb85f8c64b3a046f50f566bacefc1b446362da8e2cf0"
     }
   ]
 }
