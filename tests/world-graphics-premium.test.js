@@ -304,3 +304,25 @@ test('ground facades puddles contacts and hub materials share the progressive we
  assert.match(scene,/sceneWetness\.value=advanceWetness\(sceneWetness\.value,sceneWetnessTarget,dt\)/);
  for(const source of [ground,architecture,details,contact])assert.match(source,/setWetness/);
 });
+
+
+test('PBR pass separates color data from bump and roughness response',()=>{
+ const surfaces=read('src/world/surfaces.js'),architecture=read('src/world/architecture.js'),settlement=read('src/world/settlement-mesh.js');
+ assert.match(surfaces,/surfaceMaterialMaps/);
+ assert.match(surfaces,/bumpMap\.colorSpace=THREE\.NoColorSpace/);
+ assert.match(surfaces,/roughnessTexture/);
+ assert.match(architecture,/roughnessMap:maps\?\.roughnessMap/);
+ assert.match(architecture,/transmission:\.14/);
+ assert.match(architecture,/ior:1\.46/);
+ assert.match(settlement,/\.\.\.stoneMaps/);
+ assert.match(settlement,/\.\.\.earthMaps/);
+});
+
+test('hub physical materials distinguish glass champagne gold and black metal',()=>{
+ const scene=read('src/world/scene.js'),visuals=read('src/world/premium-hub-visuals.js');
+ assert.match(scene,/THREE\.MeshPhysicalMaterial/);
+ assert.match(scene,/\['clearcoat','transmission','ior','thickness','specularIntensity'\]/);
+ assert.match(visuals,/transmission:\.12/);
+ assert.match(visuals,/metalness:\.92/);
+ assert.match(visuals,/clearcoatRoughness:\.14/);
+});
