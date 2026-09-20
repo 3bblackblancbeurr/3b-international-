@@ -1,9 +1,10 @@
 # 3B Economy — XP global, Coins, Ville 3B et 3BC
 
 ## Version
-- economy_version: `2026.1`
-- xp_curve_version: `global-150-v1`
+- economy_version: `2026.2`
+- xp_curve_version: `global-150-v2`
 - niveau global: 1 → 150
+- seuil niveau 150: `450 992 XP`
 
 ## Autorité
 
@@ -35,16 +36,16 @@ Aucune des trois ne doit être remplacée silencieusement par une autre.
 
 Le serveur stocke la table `threeb_level_curve`.
 
-Repères v1 :
+Repères v2 :
 - niveau 1 : 0 XP
-- niveau 2 : 45 XP
-- niveau 5 : 1 254 XP
-- niveau 10 : 8 778 XP
-- niveau 30 : 145 535 XP
-- niveau 60 : 800 308 XP
-- niveau 100 : 2 771 641 XP
-- niveau 130 : 5 231 519 XP
-- niveau 150 : 7 393 661 XP
+- niveau 2 : 50 XP
+- niveau 5 : 623 XP
+- niveau 10 : 2 727 XP
+- niveau 30 : 22 937 XP
+- niveau 60 : 83 545 XP
+- niveau 100 : 214 302 XP
+- niveau 130 : 346 931 XP
+- niveau 150 : 450 992 XP
 
 La courbe est versionnée. On ne change jamais les seuils historiques sans changer de version.
 
@@ -145,6 +146,17 @@ Le ledger SQL 3BC est en quarantaine fail-closed :
 - toute écriture est refusée tant que token + blockchain ne sont pas explicitement activés.
 
 Aucun mint réel n'existe dans cette architecture.
+
+## Étape autorisée avant toute valeur réelle
+
+La prochaine étape crypto éventuelle est uniquement un **testnet zéro valeur** :
+- aucune monnaie réelle ;
+- aucune seed ou clé privée dans GitHub ;
+- aucune treasury réelle ;
+- aucun mainnet ;
+- aucun mécanisme permettant d'acheter, vendre ou convertir une valeur.
+
+Le testnet ne doit être ouvert qu'après les audits applicatifs, base de données, permissions, idempotence, concurrence et replay.
 
 ## Avant activation réelle 3BC
 
