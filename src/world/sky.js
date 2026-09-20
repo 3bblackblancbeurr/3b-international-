@@ -11,6 +11,9 @@ export function createWorldSky(renderer,onEnvironment){
   zenith:{value:new THREE.Color('#628fac')},horizon:{value:new THREE.Color('#d6ddcd')},
   time:{value:0},daylight:{value:1},cloudiness:{value:.28},storminess:{value:0},mistiness:{value:0},
  };
+ const targetAtmosphere={daylight:1,cloudiness:.28,storminess:0,mistiness:0};
+ let lastTime=null;
+ const approach=(value,target,dt,speed)=>value+(target-value)*(1-Math.exp(-dt*speed));
  const material=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,uniforms,vertexShader:'varying vec2 skyUV;void main(){skyUV=uv;gl_Position=vec4(position.xy,1.,1.);}',fragmentShader:`
   varying vec2 skyUV;uniform mat4 inverseProjection,cameraWorld;uniform vec3 zenith,horizon;uniform float time,daylight,cloudiness,storminess,mistiness;uniform sampler2D skyPhoto;uniform float photoReady;
   float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
@@ -49,8 +52,20 @@ export function createWorldSky(renderer,onEnvironment){
   root,
   get environment(){return environment?.texture;},
   setRegion(biome){uniforms.photoReady.regional=!!biome.district;uniforms.photoReady.value=photograph&&!biome.district?1:0;uniforms.horizon.value.set(biome.haze).lerp(new THREE.Color('#adcfe9'),biome.district?.15:.78);uniforms.zenith.value.set(biome.sky).lerp(new THREE.Color('#2369bb'),biome.district?.15:.85);},
-  setAtmosphere({daylight=1,weather='clear'}={}){uniforms.daylight.value=Math.max(0,Math.min(1,daylight));uniforms.cloudiness.value=({clear:.22,rain:.72,heavy_rain:.88,fog:.74,snow:.66,storm:.98})[weather]??.28;uniforms.storminess.value=weather==='storm'?1:weather==='heavy_rain'?.46:weather==='rain'?.18:0;uniforms.mistiness.value=weather==='fog'?1:weather==='heavy_rain'?.52:weather==='rain'?.25:weather==='snow'?.34:.10;},
-  update(camera,time){camera.updateMatrixWorld();uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);uniforms.cameraWorld.value.copy(camera.matrixWorld);uniforms.time.value=time;},
+  setAtmosphere({daylight=1,weather='clear'}={}){
+   targetAtmosphere.daylight=Math.max(0,Math.min(1,daylight));
+   targetAtmosphere.cloudiness=({clear:.22,rain:.72,heavy_rain:.88,fog:.74,snow:.66,storm:.98})[weather]??.28;
+   targetAtmosphere.storminess=weather==='storm'?1:weather==='heavy_rain'?.46:weather==='rain'?.18:0;
+   targetAtmosphere.mistiness=weather==='fog'?1:weather==='heavy_rain'?.52:weather==='rain'?.25:weather==='snow'?.34:.10;
+  },
+  update(camera,time){
+   const rawDt=lastTime==null?1/60:Math.max(0,time-lastTime),dt=Math.min(.12,rawDt>5?rawDt/1000:rawDt);lastTime=time;
+   uniforms.daylight.value=approach(uniforms.daylight.value,targetAtmosphere.daylight,dt,3.4);
+   uniforms.cloudiness.value=approach(uniforms.cloudiness.value,targetAtmosphere.cloudiness,dt,1.35);
+   uniforms.storminess.value=approach(uniforms.storminess.value,targetAtmosphere.storminess,dt,1.15);
+   uniforms.mistiness.value=approach(uniforms.mistiness.value,targetAtmosphere.mistiness,dt,1.05);
+   camera.updateMatrixWorld();uniforms.inverseProjection.value.copy(camera.projectionMatrixInverse);uniforms.cameraWorld.value.copy(camera.matrixWorld);uniforms.time.value=time;
+  },
   dispose(){stopped=true;photograph?.dispose();environment?.dispose();material.dispose();geometry.dispose();}
  };
 }
