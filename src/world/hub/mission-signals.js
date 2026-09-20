@@ -100,7 +100,16 @@ function matches(rule,signal){
  if(!rule||!signal||rule.type!==signal.type)return false;
  if(rule.id!==undefined&&rule.id!==signal.id)return false;
  if(rule.step!==undefined&&rule.step!==signal.step)return false;
+ if(rule.from!==undefined&&rule.from!==signal.from)return false;
+ if(rule.to!==undefined&&rule.to!==signal.to)return false;
  return true;
+}
+
+function signalCheckpoint(signal){
+ const id=signal?.id??'';
+ const route=signal?.from||signal?.to?`:${signal.from??''}>${signal.to??''}`:'';
+ const step=signal?.step!==undefined?`:${signal.step}`:'';
+ return `signal:${signal?.type??'unknown'}:${id}${route}${step}`.slice(0,80);
 }
 
 export function applyHubMissionSignal(missions,signal){
@@ -108,7 +117,11 @@ export function applyHubMissionSignal(missions,signal){
  for(const [id,rules] of Object.entries(HUB_MISSION_SIGNAL_RULES)){
   const current=next[id];if(current?.status!=='active')continue;
   const rule=rules[current.completedObjectives];if(!matches(rule,signal))continue;
-  next=advanceHubMission(next,id,1);advanced.push(id);
+  const checkpoint=signalCheckpoint(signal);
+  // Consecutive objectives that use the same transport/action must represent a
+  // new real action. Replaying the exact same route no longer double-validates.
+  if(current.checkpoint===checkpoint)continue;
+  next=advanceHubMission(next,id,1,{checkpoint});advanced.push(id);
  }
  return {missions:next,advanced};
 }
