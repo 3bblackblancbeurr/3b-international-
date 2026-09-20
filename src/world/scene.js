@@ -69,7 +69,7 @@ function hubNpcAvatar(item){
   let h=2166136261;const key=item.npcId||item.id||'3b';for(let i=0;i<key.length;i+=1){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}
   const cloth=['#202833','#15364a','#4a3423','#243c34','#4a2744','#3d3d46'][h%6];
   const skin=['#5f3d2b','#7b5138','#9a6c4e','#b98663','#d0a17d','#e0b896'][(h>>>4)%6];
-  return {body:(h>>>7)%2?'femme':'homme',style:['voyageur','sentinelle','mystique'][(h>>>9)%3],hair:(h>>>12)%7,boots:(h>>>15)%3,fabricColor:cloth,skinColor:skin,hairColor:['#171310','#352a24','#6a4a34','#16191d'][(h>>>18)%4],outer:(h>>>21)%3===0?'worker':'none',bag:(h>>>23)%3===0,pattern:(h>>>25)%4===0?'matrix':'uni'};
+  return {body:(h>>>7)%2?'femme':'homme',style:['voyageur','sentinelle','mystique'][(h>>>9)%3],hair:(h>>>12)%7,boots:(h>>>15)%3,fabricColor:cloth,skinColor:skin,hairColor:['#171310','#352a24','#6a4a34','#16191d'][(h>>>18)%4],outer:(h>>>21)%3===0?'apron':'none',bag:(h>>>23)%3===0,pattern:(h>>>25)%4===0?'matrix':'uni'};
  }
   function buildCinematicFx(){
   const group=new THREE.Group(),blue=register(new THREE.MeshBasicMaterial({color:'#58d1ff',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})),gold=register(new THREE.MeshBasicMaterial({color:'#e0c486',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
