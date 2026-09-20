@@ -24,3 +24,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node --test tests/unreal-preproduction-contract.test.js
+      - name: Validate Unreal editor Python syntax
+        run: python -m py_compile unreal/3BWorld/Scripts/build_metropolis_blockout.py
