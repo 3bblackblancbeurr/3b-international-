@@ -18,6 +18,9 @@ public:
     UPROPERTY(BlueprintAssignable, Category="3B|Backend")
     FThreeBBackendResponse OnCityResponse;
 
+    UPROPERTY(BlueprintAssignable, Category="3B|Backend")
+    FThreeBBackendResponse OnBootstrapResponse;
+
     UFUNCTION(BlueprintCallable, Category="3B|Backend")
     void ConfigurePublicBackend(const FString& InBaseUrl, const FString& InPublishableKey);
 
@@ -32,6 +35,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category="3B|Backend")
     void RequestCitySnapshot();
+
+    UFUNCTION(BlueprintCallable, Category="3B|Backend")
+    void RequestWorldBootstrap();
 
 private:
     FString BaseUrl;
