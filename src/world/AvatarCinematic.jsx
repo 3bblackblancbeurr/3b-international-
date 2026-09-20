@@ -1,11 +1,13 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {characterSequence,frameAt} from './cinematic-script.js';
+import {AVATAR_PATHS} from './avatar-rules.js';
+import {TRAVEL_GEAR} from './wardrobe.js';
 import {COUNTRIES} from './catalog.js';
 import './cinematics.css';
 
 export function AvatarCinematic({avatar,onDone,sequence:suppliedSequence}){
- const sequence=useMemo(()=>suppliedSequence||characterSequence({avatar}),[avatar,suppliedSequence]);
+ const sequence=useMemo(()=>suppliedSequence||characterSequence({avatar,power:AVATAR_PATHS[avatar.path],gear:TRAVEL_GEAR[avatar.travelGear]}),[avatar,suppliedSequence]);
  const [elapsed,setElapsed]=useState(0),[paused,setPaused]=useState(false);
  const [reduced,setReduced]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
  const done=useRef(false),callback=useRef(onDone),root=useRef(null);callback.current=onDone;

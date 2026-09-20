@@ -8,10 +8,10 @@ import {AVATAR_ASSET_SLOTS,AVATAR_SLOT_LABELS} from './avatar-assets.js';
 import {BODY_CAPABILITIES,FACE_CAPABILITIES} from './avatar-capabilities.js';
 import '../arena/arena.css';
 export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[revealed,setRevealed]=useState(false);
+ const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
- if(revealed)return <AvatarCinematic avatar={save.adventure.avatar} onDone={()=>{setRevealed(false);onDone?.();}}/>;
- return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();if(act({type:'avatar',avatar:draft})){setMessage('Ton personnage est enregistré.');setRevealed(true);}}}>
+ if(reveal)return <AvatarCinematic avatar={reveal} onDone={()=>onDone?.({firstCreation:!initiallyCreated,avatar:reveal})}/>;
+ return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
   <fieldset><legend>Silhouette</legend><div className="world-actions">{['homme','femme'].map(body=><button type="button" key={body} aria-pressed={draft.body===body} onClick={()=>set('body',body)}>{body==='homme'?'Homme':'Femme'}</button>)}</div></fieldset>
   <label>Morphologie<select value={draft.shape} onChange={e=>set('shape',e.target.value)}><option value="equilibre">Équilibrée</option><option value="elance">Élancée</option><option value="solide">Solide</option></select></label>

@@ -86,6 +86,10 @@ function WorldSession({uid,goTo}){
   const fresh=events.filter(event=>{if(cinematicKeys.current.has(event.key))return false;cinematicKeys.current.add(event.key);return true;});
   if(fresh.length)setCinematicQueue(queue=>[...queue,...fresh].sort((a,b)=>b.priority-a.priority));
  },[]);
+ const finishAvatarReveal=useCallback(({firstCreation=false}={})=>{
+  setPanel(null);
+  if(firstCreation)enqueueCinematics([{kind:'world-opening',key:'opening:gold-master-v4',region:saveRef.current.region||'hub',context:{region:saveRef.current.region||'hub'},priority:110}]);
+ },[enqueueCinematics]);
  const act=useCallback(command=>{try{const previous=saveRef.current;if(command.type==='battle'&&previous.adventure.encounter?.field){scene.current?.combatAction(command.action);return previous;}if(command.type==='battle'&&previous.region==='france'&&scene.current&&!scene.current.canBattle(command.action)){announce('Rapproche-toi de ton adversaire.');return null;}const next=recordWorldAction(uid,previous,command);const storyEvents=worldCinematicEvents(previous,next,command);if(storyEvents.length)enqueueCinematics(storyEvents);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();if(command.type!=='cinematicSeen'&&(command.type!=='field'||next.adventure.encounter?.field?.last))audio.current?.event(command.type==='field'?'battle':command.type,command.type==='field'?next.adventure.encounter.field.last:(command.action||command.transport||command.choiceId||command.id));if(command.type!=='cinematicSeen')scene.current?.feedback(command.type,command.action,previous,next);if(command.type==='field')scene.current?.setSave(next);if(command.type==='battle'||command.type==='field'){const cue=combatCue(previous.adventure.encounter,next.adventure.encounter,command.type==='field'?next.adventure.encounter.field.last:command.action,next.adventure.avatar);if(cue&&(cue.outgoing||cue.incoming||cue.healing))setCombatImpact({...cue,key:next.adventure.encounter.turn});}else if(['leave','visit','patrol','encounter'].includes(command.type))setCombatImpact(null);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde'+(next.shards>previous.shards?' · +'+(next.shards-previous.shards)+' éclats':''));}return next;}catch(error){announce(error.message);return null;}},[uid,announce,enqueueCinematics]);
  useEffect(()=>{audio.current?.ambience(snapshot.region,snapshot.interior);},[snapshot.region,snapshot.interior]);
  useEffect(()=>{audio.current?.weather(snapshot.weather);},[snapshot.weather]);
@@ -104,7 +108,7 @@ function WorldSession({uid,goTo}){
  function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.setMix(audioMix);audio.current.enable(next,saveRef.current.region);setSound(next);}
  function finishStoryCinematic(){
   const current=storyCinematic;if(!current)return;
-  scene.current?.skipCinematic();act({type:'cinematicSeen',key:current.key});cinematicKeys.current.delete(current.key);setStoryCinematic(null);
+  scene.current?.skipCinematic();if(current.kind!=='world-opening')act({type:'cinematicSeen',key:current.key});cinematicKeys.current.delete(current.key);setStoryCinematic(null);
  }
  async function sync(){if(!loaded)return;dirty.current=false;const result=await saveWorld(uid,saveRef.current);if(result.pending)dirty.current=true;setSaveMessage(result.message);if(result.data){if(result.data.region!==saveRef.current.region)scene.current?.travel(result.data.region);saveRef.current=result.data;setSave(result.data);}return result;}
  async function refreshWorld(){const result=await loadWorld(uid);saveRef.current=result.data;setSave(result.data);scene.current?.setSave(result.data);}
@@ -234,7 +238,7 @@ function WorldSession({uid,goTo}){
    {panel==='paris'&&<ParisJournal save={save} act={act} onNavigate={navigateTo} onPanel={setPanel}/>}
    {panel==='camp'&&<FrontierPanel save={save} act={act} onNavigate={navigateTo}/>}
    {panel==='arena'&&<ArenaPage onExit={closePanel} onAccount={()=>goTo('member')}/>}
-   {panel==='avatar'&&<AvatarPanel save={save} act={act} onDone={closePanel}/>}
+   {panel==='avatar'&&<AvatarPanel save={save} act={act} onDone={finishAvatarReveal}/>} 
    {panel==='collection'&&<Companions save={save} act={act}/>}
    {panel==='encounter'&&<AdventureEncounter save={save} act={act} onClose={finishEncounter} Art={Art}/>}
    {panel==='story'&&<StoryPanel save={save} act={act} onNavigate={navigateTo} onClose={closePanel}/>}

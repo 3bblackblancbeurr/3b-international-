@@ -109,7 +109,7 @@ export function createWorldAudio(){
   event,speak,transport,
  cinematic(kind='micro'){
   if(!ctx||!enabled||hidden)return;
-  const major=['country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-intro','final-combat-intro','important-combat-result'].includes(kind);
+  const major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-intro','final-combat-intro','important-combat-result'].includes(kind);
   noise(major?.7:.32,major?.11:.065,major?420:760);tone(major?58:92,major?1.05:.55,major?.12:.075,'sine');
   setTimeout(()=>tone(guardian?196:major?261.63:392,major?.9:.48,major?.075:.05,'triangle'),major?180:90);
   if(major)setTimeout(()=>tone(guardian?293.66:392,.95,.055,'sine'),430);
