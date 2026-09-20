@@ -1,5 +1,6 @@
 import {CARDS,COUNTRIES,cardById,cardSlot} from './catalog.js';
 import {GUARDIAN_VALUES} from './guardian-values.js';
+import {campaignFor,narrativeFor} from './narrative-canon.js';
 
 // Chapter mechanics are shared by the browser and the authenticated game engine.
 export const CHAPTERS={
@@ -20,22 +21,54 @@ export const chapterCards=region=>({
 export function chapterState(save,region){return save.adventure?.chapters?.[region]||{helped:false,powers:[],solved:false,restored:0,challenge:false,choice:null};}
 export const restoredCountries=save=>COUNTRIES.filter(c=>chapterState(save,c.id).restored===3);
 export const nexusLevel=save=>restoredCountries(save).length;
-export function chapterObjective(save,region=save.region){
- if(region==='hub'){const n=nexusLevel(save);return n===8?{title:save.adventure?.finished?'De nouvelles expéditions':'Défi de l’Union',detail:save.adventure?.finished?'Construis tes refuges, protège les environs et entraîne tes compagnons.':'Le défi de l’Oubli est disponible. Les expéditions continuent dans chaque pays.',target:save.adventure?.finished?'france':'final',reward:'Défi optionnel · tenue Union'}:{title:`${n} / 8 pays reconstruits`,detail:'Traverse une porte, aide un habitant et rends vie à son pays.',target:COUNTRIES.find(c=>chapterState(save,c.id).restored<3)?.id,reward:'Un nouveau quartier au Nexus'};}
- const c=CHAPTERS[region],s=chapterState(save,region);
- if(!s.helped)return{title:'Rencontrer '+c.resident.split(',')[0],detail:c.need,target:region+':story',reward:'Un compagnon et ses pouvoirs · 80 XP'};
- if(s.powers.length<3)return{title:'Éveiller les pouvoirs de ton compagnon',detail:'Au monument : suivre ton compagnon, comprendre les souvenirs et raviver le lieu.',target:region+':story',reward:'Un passage visible · 60 XP'};
- if(!s.solved)return{title:c.puzzle,detail:c.instruction,target:region+':story',reward:c.restores[0]+' · 120 XP'};
- const missing=[0,1,2].find(i=>!save.beacons.includes(region+':'+i));
- if(missing!==undefined)return{title:'Retrouver les souvenirs',detail:'Les fragments alimentent la reconstruction du quartier.',target:region+':'+missing,reward:'45 XP · 15 éclats · équipement'};
- if(s.restored<2)return{title:'Reconstruire '+c.restores[1],detail:'Les trois souvenirs ont retrouvé leur place. Choisis le futur du quartier.',target:region+':story',reward:'140 XP · 40 éclats'};
- if(!save.adventure?.values?.[region]?.completed){const value=GUARDIAN_VALUES[region];return{title:'Comprendre '+value.value,detail:`Avant de libérer ${value.name}, termine l’épreuve de ${value.value}. Cette étape prépare aussi ton groupe au combat.`,target:region+':value',reward:'Valeur maîtrisée · préparation Gardien · 60 XP'};}
- if(!save.seals.includes(region)){const guardian=CARDS.find(card=>card.country===region&&card.category==='Carte unique');return{title:'Libérer '+(guardian?.name||'le gardien'),detail:(guardian?.power?guardian.power+' · ':'')+c.guardian,target:region+':guardian',reward:'Sceau · gardien allié · 250 XP'};}
- if(s.restored<3)return{title:'Inaugurer '+c.restores[2],detail:'Le gardien reconnaît tes liens. Le pays peut maintenant rejoindre le Nexus.',target:region+':story',reward:'200 XP · 70 éclats · tenue régionale'};
- const guardian=GUARDIAN_VALUES[region],homecomingKey='homecoming:'+region;
- if(!(save.adventure?.cinematicSeen||[]).includes(homecomingKey))return{title:'Ramener '+guardian.name+' à la Cité',detail:`Le pays est reconstruit. Traverse la porte du Nexus pour rendre visible le retour de ${guardian.name} dans la Cité des Huit Héritages.`,target:'hub',reward:'Gardien présent dans la Cité'};
- return{title:'Un pays retrouvé',detail:c.ending,target:region+':guardian',reward:s.challenge?'Défi maîtrisé · rencontres libres':'Défi expert optionnel · 180 XP'};
+
+export function campaignBeat(save,region=save.region){
+ if(region==='hub')return null;
+ const beats=campaignFor(region),s=chapterState(save,region);
+ if(!beats.length)return null;
+ let index=0;
+ if(!s.helped)index=0;
+ else if(s.powers.length<3)index=Math.min(1+s.powers.length,beats.length-1);
+ else if(!s.solved)index=Math.min(4,beats.length-1);
+ else{
+  const missing=[0,1,2].find(i=>!save.beacons.includes(region+':'+i));
+  if(missing!==undefined)index=Math.min(5+missing,beats.length-1);
+  else index=beats.length-1;
+ }
+ return {...beats[index],index,total:beats.length};
 }
+export function chapterObjective(save,region=save.region){
+ if(region==='hub'){
+  const n=nexusLevel(save);
+  if(n===8)return save.adventure?.finished
+   ?{title:'Le monde continue',detail:'Le Cercle est reconstitué, mais les conséquences de l’Oubli restent visibles. Explore, reconstruis et poursuis les liens laissés ouverts.',target:'france',reward:'Expéditions libres · Ville 3B · histoires secondaires'}
+   :{title:'Le Cercle répond',detail:'Les huit fragments sont réunis. Avant d’aller plus loin, souviens-toi : réparer le Cercle peut aussi réveiller ce que sa fracture maintenait séparé.',target:'final',reward:'Révélation majeure · suite du Cercle'};
+  const next=COUNTRIES.find(c=>chapterState(save,c.id).restored<3),narrative=narrativeFor(next?.id);
+  return{title:`${n} / 8 héritages reliés`,detail:narrative?`La prochaine Porte mène vers ${next.name} : ${narrative.question}`:'Trouve une Porte, découvre ce que l’Oubli a effacé et restaure un lien réel.',target:next?.id,reward:'Souvenirs · Gardien · évolution visible de la Cité'};
+ }
+ const c=CHAPTERS[region],s=chapterState(save,region),beat=campaignBeat(save,region),narrative=narrativeFor(region);
+ const beatTitle=beat?.title;
+ const beatDetail=beat?.purpose;
+ if(!s.helped)return{title:beatTitle||('Rencontrer '+c.resident.split(',')[0]),detail:beatDetail||c.need,target:region+':story',reward:'Un premier lien · 80 XP'};
+ if(s.powers.length<3)return{title:beatTitle||'Suivre les traces',detail:beatDetail||'Comprendre les indices laissés dans le quartier et raviver les liens utiles à la suite.',target:region+':story',reward:'Un passage visible · 60 XP'};
+ if(!s.solved)return{title:beatTitle||c.puzzle,detail:beatDetail||c.instruction,target:region+':story',reward:c.restores[0]+' · 120 XP'};
+ const missing=[0,1,2].find(i=>!save.beacons.includes(region+':'+i));
+ if(missing!==undefined)return{title:beatTitle||'Retrouver les souvenirs',detail:beatDetail||'Les Souvenirs ne sont pas de simples objets : chacun révèle ce que l’Oubli a retiré aux habitants.',target:region+':'+missing,reward:'45 XP · 15 éclats · équipement'};
+ if(s.restored<2)return{title:beatTitle||('Reconstruire '+c.restores[1]),detail:beatDetail||'Les Souvenirs retrouvés modifient maintenant réellement le quartier.',target:region+':story',reward:'140 XP · 40 éclats'};
+ if(!save.adventure?.values?.[region]?.completed){
+  const value=GUARDIAN_VALUES[region],step=save.adventure?.values?.[region]?.step||0;
+  return{title:beatTitle||('Comprendre '+value.value),detail:step===0?`${value.question} ${value.flaw}`:step===1?`La réponse facile ne suffit plus. ${value.missionStyle}.`:`Dernière étape : prouve cette valeur par tes actes avant de rencontrer ${value.name}.`,target:region+':value',reward:'Valeur vécue · préparation Gardien · 60 XP'};
+ }
+ if(!save.seals.includes(region)){
+  const guardian=CARDS.find(card=>card.country===region&&card.category==='Carte unique'),value=GUARDIAN_VALUES[region];
+  return{title:'Épreuve de '+(guardian?.name||value.name),detail:`${value.evolution} Cette confrontation est une épreuve de maîtrise, pas une simple chasse au boss. ${c.guardian}`,target:region+':guardian',reward:'Fragment · Gardien allié · 250 XP'};
+ }
+ if(s.restored<3)return{title:'Rendre visible '+c.restores[2],detail:'Le fragment retrouvé doit maintenant laisser une conséquence visible dans le pays et dans la Cité des Huit Héritages.',target:region+':story',reward:'200 XP · 70 éclats · tenue régionale'};
+ const guardian=GUARDIAN_VALUES[region],homecomingKey='homecoming:'+region;
+ if(!(save.adventure?.cinematicSeen||[]).includes(homecomingKey))return{title:'Ramener '+guardian.name+' à la Cité',detail:`Le pays est reconstruit. Le retour de ${guardian.name} doit modifier la Cité, les dialogues et le Cercle, pas seulement un compteur.`,target:'hub',reward:'Gardien présent · Cité transformée'};
+ return{title:'Un héritage retrouvé',detail:c.ending,target:region+':guardian',reward:s.challenge?'Épreuve maîtrisée · rencontres libres':'Défi expert optionnel · 180 XP'};
+}
+
 export function puzzleStart(region){const c=CHAPTERS[region];return [...(c.initial||[])];}
 export function puzzleStep(region,board,index){
  const c=CHAPTERS[region];if(!c||!Number.isInteger(index)||index<0||index>8)return board;
