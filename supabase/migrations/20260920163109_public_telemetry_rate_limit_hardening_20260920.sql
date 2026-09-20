@@ -1,6 +1,6 @@
 -- 3B public telemetry abuse hardening.
--- Intentionally public telemetry remains available, but write amplification is bounded
--- by a pseudonymized request-IP key. Raw IP addresses are not stored here.
+-- Keep intentionally public telemetry RPCs available, but bound write amplification
+-- by a pseudonymized request-IP key. Raw IP addresses are never stored here.
 
 create or replace function public.app_install_ping(
   p_install_id uuid,
