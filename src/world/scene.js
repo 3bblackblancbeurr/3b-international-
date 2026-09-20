@@ -1,6 +1,7 @@
 import {createPartyActors} from './party-actors.js';
 import {createCombatTelegraph} from './combat-telegraph.js';
 import {createWorldPost} from './postprocessing.js';
+import {cinemaProfile} from './cinematic-director.js';
 import {createWorldSky} from './sky.js';
 import {createMovementFrame,followMovement,viewBearing} from './camera-follow.js';
 import {combatCue,createCombatEffects} from './combat-effects.js';
@@ -33,12 +34,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const hemi=new THREE.HemisphereLight(0xdcefff,0x61736b,1.1);scene.add(hemi);const fill=new THREE.DirectionalLight('#d9edff',.22);fill.position.set(-30,25,-40);scene.add(fill);
  const sun=new THREE.DirectionalLight(0xffe5bd,2.4);scene.add(sun,sun.target);sun.castShadow=true;
  const portraitLight=new THREE.DirectionalLight('#fff1dc',.22);scene.add(portraitLight,portraitLight.target);
+ const cinematicBlue=new THREE.PointLight('#58d1ff',0,34,2),cinematicGold=new THREE.PointLight('#e0c486',0,28,2);scene.add(cinematicBlue,cinematicGold);
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-36,right:36,top:36,bottom:-36,near:1,far:130});sun.shadow.bias=-.0004;sun.shadow.normalBias=.025;sun.shadow.radius=3;sun.shadow.camera.updateProjectionMatrix();
  const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],region=save.region,position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
- let avatar,companion,focusRing,waypointRing,effect,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
+ let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null;
  let escort=null,escortId=null,trail=[],shot=null,daylight=null,retaliationPlayed=true;
  let partyActors=null,latestPeers=[],partyState=null;
@@ -56,6 +58,12 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const geometry={box:new THREE.BoxGeometry(1,1,1),cylinder:new THREE.CylinderGeometry(1,1,1,20),sphere:new THREE.IcosahedronGeometry(1,1),ring:new THREE.TorusGeometry(1,.065,6,48)};
  const groundY=(x,z)=>landscape?.height(x,z)||0;
  function mesh(g,mat,x,y,z,sx=1,sy=sx,sz=sx){const m=new THREE.Mesh(typeof g==='string'?geometry[g]:g,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);root.add(m);return m;}
+ function buildCinematicFx(){
+  const group=new THREE.Group(),blue=register(new THREE.MeshBasicMaterial({color:'#58d1ff',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})),gold=register(new THREE.MeshBasicMaterial({color:'#e0c486',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
+  const outer=new THREE.Mesh(register(new THREE.TorusGeometry(1,.028,6,72)),blue),inner=new THREE.Mesh(register(new THREE.TorusGeometry(1,.018,6,64)),gold);outer.rotation.x=inner.rotation.x=-Math.PI/2;inner.scale.setScalar(.68);group.add(outer,inner);
+  const pointsData=new Float32Array(48*3);for(let i=0;i<48;i++){const a=i/48*Math.PI*2,r=.5+(i%7)/7*2.2;pointsData[i*3]=Math.cos(a)*r;pointsData[i*3+1]=.2+(i%9)*.16;pointsData[i*3+2]=Math.sin(a)*r;}
+  const pg=register(new THREE.BufferGeometry());pg.setAttribute('position',new THREE.BufferAttribute(pointsData,3));const pm=register(new THREE.PointsMaterial({color:'#e0c486',size:.07,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})),points=new THREE.Points(pg,pm);group.add(points);group.visible=false;root.add(group);cinematicFx={group,outer,inner,points,blue,gold,pm};
+ }
  function glowTexture(){const cv=document.createElement('canvas');cv.width=cv.height=64;const ctx=cv.getContext('2d'),gradient=ctx.createRadialGradient(32,32,0,32,32,32);gradient.addColorStop(0,'rgba(255,255,255,1)');gradient.addColorStop(.2,'rgba(255,255,255,.7)');gradient.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gradient;ctx.fillRect(0,0,64,64);return register(new THREE.CanvasTexture(cv));}
  function portal(item){
   const index=Math.max(0,COUNTRIES.findIndex(c=>c.id===item.id)),y=groundY(item.x,item.z);
@@ -78,7 +86,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function syncEscort(){if(!models)return;if(save.adventure.companionHidden){escort?.object.removeFromParent();escort?.dispose();escort=null;escortId=null;trail=[];return;}const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
  function rebuild(nextRegion){
   onLoadState?.(true);
-  partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;fieldRival=null;combatFx.clear();lastCombat=null;
+  partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;items=landscapeItems(region,save);position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
@@ -107,7 +115,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   const ringMat=register(new THREE.MeshBasicMaterial({color:'#fae3a2',transparent:true,opacity:.55,depthWrite:false}));
   focusRing=mesh('ring',ringMat,0,0,0,1.35);focusRing.rotation.x=-Math.PI/2;focusRing.visible=false;
   waypointRing=mesh('ring',ringMat,0,0,0,1.6);waypointRing.rotation.x=-Math.PI/2;waypointRing.visible=false;
-  effect=mesh('ring',register(new THREE.MeshBasicMaterial({color:'#fff0ab',transparent:true,opacity:0,depthWrite:false})),0,0,0,1);effect.rotation.x=-Math.PI/2;
+  effect=mesh('ring',register(new THREE.MeshBasicMaterial({color:'#fff0ab',transparent:true,opacity:0,depthWrite:false})),0,0,0,1);effect.rotation.x=-Math.PI/2;buildCinematicFx();
   const spriteTex=glowTexture(),coords=new Float32Array(90*3);for(let i=0;i<90;i++){coords[i*3]=(rng()-.5)*160;coords[i*3+1]=3+rng()*18;coords[i*3+2]=(rng()-.5)*160;}
   const particleGeo=register(new THREE.BufferGeometry());particleGeo.setAttribute('position',new THREE.BufferAttribute(coords,3));
   const points=new THREE.Points(particleGeo,register(new THREE.PointsMaterial({size:.18,color:accent,map:spriteTex,transparent:true,opacity:.5,depthWrite:false,blending:THREE.AdditiveBlending})));root.add(points);animations.push({mesh:points,type:'particles'});
@@ -156,7 +164,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function tick(now){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
-  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until)shot=null;if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
+  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
   const dt=Math.min(rawDt,.25);elapsed+=dt;let travelled=0,dx=0,dz=0;
   if(!paused&&!shot){
    if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
@@ -194,10 +202,16 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
 
   const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
+  if(shot?.cinematic&&cinematicFx){
+   const p=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),fade=Math.sin(Math.PI*p),baseY=groundY(shot.x,shot.z),scale=shot.heritage?8:shot.kind==='final-combat-intro'?5.2:shot.kind==='guardian-intro'?3.8:shot.kind==='memory-fragment'?1.8:2.8;
+   cinematicFx.group.visible=true;cinematicFx.group.position.set(shot.x,baseY+.18,shot.z);cinematicFx.outer.scale.setScalar(scale*(.72+p*.44));cinematicFx.inner.scale.setScalar(scale*(.44+p*.18));cinematicFx.outer.rotation.z+=dt*.22;cinematicFx.inner.rotation.z-=dt*.31;cinematicFx.points.rotation.y+=dt*.18;cinematicFx.points.position.y=.25+Math.sin(elapsed*1.2)*.12;cinematicFx.points.scale.setScalar(scale*.72);
+   cinematicFx.blue.color.set(shot.accent||'#58d1ff');cinematicFx.blue.opacity=.12+.32*fade;cinematicFx.gold.opacity=.08+.26*fade;cinematicFx.pm.opacity=.12+.42*fade;cinematicFx.pm.color.set(shot.secondary||'#e0c486');
+   cinematicBlue.color.set(shot.accent||'#58d1ff');cinematicGold.color.set(shot.secondary||'#e0c486');cinematicBlue.position.set(shot.x+4,baseY+5,shot.z+3);cinematicGold.position.set(shot.x-3,baseY+3.2,shot.z-2);cinematicBlue.intensity=(shot.major?7.5:4.6)*fade;cinematicGold.intensity=(shot.major?5.2:3.2)*fade;
+  }else{if(cinematicFx)cinematicFx.group.visible=false;cinematicBlue.intensity*=.82;cinematicGold.intensity*=.82;}
   sun.position.set(position.x-38,y+54,position.z+35);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>mat.uniforms.time.value=elapsed);
   for(const a of animations){if(a.type==='float'){a.mesh.position.y=a.y+Math.sin(elapsed*1.5+a.mesh.position.x)*.15;a.mesh.rotation.y+=dt*.3;}if(a.type==='shadow')a.mesh.position.set(avatar.position.x,avatar.position.y+.07,avatar.position.z);if(a.type==='particles')a.mesh.rotation.y=Math.sin(elapsed*.04)*.03;}
   partyActors?.tick(dt,region);landscape.tick(elapsed,dt,position);landscape.updateDistrict(camera,position);
-  for(const a of actors){const object=a.controller.object,active=cinematic&&opponent?.id===a.itemId;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;const ax=active?opponent.x:a.x+wander,az=active?opponent.z:a.z;object.position.set(ax,groundY(ax,az),az);const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);if(active){const d=Math.hypot(position.x-ax,position.z-az)||1;const response=lastCombat?.counter?retaliation:0;object.position.x+=(position.x-ax)/d*response*.9;object.position.z+=(position.z-az)/d*response*.9;object.rotation.y=Math.atan2(position.x-ax,position.z-az);object.rotation.z=lastCombat?.outgoing?impact*.06:0;}else object.rotation.z=0;}
+  for(const a of actors){const object=a.controller.object,combatActive=cinematic&&opponent?.id===a.itemId,shotActive=!!shot?.cinematic&&shot.focusItemId===a.itemId,active=combatActive||shotActive,focusActor=combatActive?opponent:shotActive?{x:a.x,z:a.z}:null;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;const ax=focusActor?focusActor.x:a.x+wander,az=focusActor?focusActor.z:a.z;object.position.set(ax,groundY(ax,az),az);const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);if(active){if(combatActive){const d=Math.hypot(position.x-ax,position.z-az)||1,response=lastCombat?.counter?retaliation:0;object.position.x+=(position.x-ax)/d*response*.9;object.position.z+=(position.z-az)/d*response*.9;object.rotation.y=Math.atan2(position.x-ax,position.z-az);object.rotation.z=lastCombat?.outgoing?impact*.06:0;}else{object.rotation.y=Math.atan2(camera.position.x-ax,camera.position.z-az);object.rotation.z=0;}}else object.rotation.z=0;}
   if(opponent){opponentPosition.set(opponent.x,groundY(opponent.x,opponent.z),opponent.z);combatFx.update(elapsed,avatar.position,opponentPosition);}else combatFx.clear();
   threat.update(opponent?encounter:null,elapsed,avatar.position,opponentPosition,combatFx.state.active);
   const closest=nearestInteraction(position,items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)));
@@ -222,11 +236,11 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   feedback(type,action,previous,next){if(type==='field'){const f=next?.adventure.encounter?.field;if(!f?.last)return;action=f.last;type='battle';}if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,WORLD_RADIUS);position=dodge.position;}if(type==='battle'){lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;hero?.action(action==='enemy'?'Hit':action==='guard'||action==='dodge'||action==='wait'||action==='miss'?'Idle':action==='power'||action==='support'||action==='trap'?'Cast':'Attack');const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
   playCinematicShot(kind,context={},duration=5200){
    const encounter=save.adventure.encounter||{},now=performance.now(),major=['country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind);
-   let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16;
+   let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16,focusItemId=null;
    if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=camera.aspect<.85?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
    else if(['guardian-intro','final-combat-intro','important-combat-result'].includes(kind)){
     const rival=battleTarget||items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===(context.card||encounter.card));
-    if(rival){focus={x:rival.x,z:rival.z};radius=kind==='final-combat-intro'?18:12;height=kind==='final-combat-intro'?11:7.5;focusY=2.2;arc=.52;dolly=.18;angle=orbit.yaw-.3;}
+    if(rival){focus={x:rival.x,z:rival.z};focusItemId=rival.id;radius=kind==='final-combat-intro'?18:12;height=kind==='final-combat-intro'?11:7.5;focusY=2.2;arc=.52;dolly=.18;angle=orbit.yaw-.3;const actor=actors.find(a=>a.itemId===rival.id);actor?.controller.action(kind==='important-combat-result'?'Idle':'Cast');}
    }else if(kind==='story-restoration'&&region!=='hub'){
     const stage=context.stage||save.adventure.chapters[region]?.restored||1;
     focus=toLandscape(region,...(stage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:stage===2?[29,15]:[11,-4]));heritage=stage===3;radius=heritage?(camera.aspect<.85?110:98):18;height=heritage?35:11;focusY=heritage?27:2.4;arc=.34;dolly=.12;
@@ -237,12 +251,14 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     if(fragment)focus={x:fragment.x,z:fragment.z};radius=7.8;height=5.1;focusY=1.1;arc=.46;dolly=.25;angle=orbit.yaw-.22;
    }else if(kind==='story-alliance'){
     const resident=items.find(i=>i.type==='story'||i.id===region+':story');
-    if(resident)focus={x:resident.x,z:resident.z};radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
-   }else if(kind==='story-power'){radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
-   shot={...focus,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,title:'',detail:''};clearInput();needsRender=true;
+    if(resident){focus={x:resident.x,z:resident.z};landscape?.cinematicFocus(focus.x,focus.z,'Talk',elapsed);}radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
+   }else if(kind==='story-power'){hero?.action('Cast');radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
+   const profile=cinemaProfile(region),accent=profile.accent,secondary=profile.secondary,micro=['memory-fragment','discovery','story-power'].includes(kind);
+   post.setCinematic({active:true,intensity:major?1:micro?.72:.84,accent,secondary});
+   shot={...focus,kind,major,focusItemId,accent,secondary,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,title:'',detail:''};clearInput();needsRender=true;
   },
-  inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);shot={...p,angle:-BIOMES[region].angle+.35,duration:6500,until:performance.now()+6500,heritage:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
-  skipCinematic(){shot=null;needsRender=true;},
+  inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),duration=6500,profile=cinemaProfile(region),accent=profile.accent,secondary=profile.secondary;post.setCinematic({active:true,intensity:.82,accent,secondary});shot={...p,kind:'heritage-inspection',major:false,accent,secondary,angle:-BIOMES[region].angle+.35,duration,until:performance.now()+duration,heritage:true,cinematic:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
+  skipCinematic(){if(shot?.cinematic)post.setCinematic(null);shot=null;needsRender=true;},
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,
   setCameraFollow(value){cameraFollow=!!value;if(!cameraFollow)orbit={...orbit,yaw:viewBearing(camera.position,cameraTarget)};rememberCamera();try{localStorage.setItem('3b-world-camera-follow',String(cameraFollow));}catch{}needsRender=true;},

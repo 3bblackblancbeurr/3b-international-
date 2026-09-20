@@ -10,6 +10,7 @@ import {isCelianeResident} from '../src/world/models.js';
 import {cardById} from '../src/world/catalog.js';
 import {CHAPTERS,chapterObjective} from '../src/world/chapters.js';
 import {blankSave,beacon} from '../src/world/rules.js';
+import {cinematicPostBudget} from '../src/world/postprocessing.js';
 
 test('landscape thumb stick keeps a dead zone and progressive analog travel',()=>{
  assert.deepEqual(pointerStick(4,3),{x:0,z:0});
@@ -86,4 +87,14 @@ test('first France memory grants the real Justice fragment through the existing 
  assert.ok(after.beacons.includes('france:0'));
  assert.equal(after.xp,before.xp+45);
  assert.equal(after.shards,before.shards+15);
+});
+
+
+test('cinematic post-processing scales down on weak and fluid hardware',()=>{
+ const weak=cinematicPostBudget('auto',2,4),balanced=cinematicPostBudget('auto',4,6),detail=cinematicPostBudget('detail',8,8),fluid=cinematicPostBudget('fluid',8,8);
+ assert.ok(weak.scale<balanced.scale);
+ assert.ok(fluid.scale<balanced.scale);
+ assert.equal(detail.scale,1);
+ assert.ok(weak.flare<detail.flare);
+ assert.ok(weak.grain<detail.grain);
 });
