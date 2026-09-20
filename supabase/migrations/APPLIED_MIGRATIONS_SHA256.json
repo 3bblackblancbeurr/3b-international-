@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL then SHA-256",
   "generated_at": "2026-09-20",
-  "count": 102,
+  "count": 104,
   "migrations": [
     {
       "version": "20260910020445",
@@ -513,6 +513,16 @@
       "version": "20260920192820",
       "name": "threeb_city_progression_world_city_decoupling_v2",
       "sha256": "a8a818f8876465de9023b16439916579e2e9d1c1a6cd8c8546779483d4f10ff3"
+    },
+    {
+      "version": "20260920193014",
+      "name": "threeb_activate_global_xp_curve_v2",
+      "sha256": "d647db51a83e5186b931dee11b288760ef1b926deeec0cc634edab603725f1b2"
+    },
+    {
+      "version": "20260920193130",
+      "name": "threeb_economy_config_owner_only_2026_2",
+      "sha256": "0c7ea3967380d65dea95c7f4a49f496b62a929b8a7303b63dd9155e143be6011"
     }
   ]
 }
