@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {WORLD_SCALE,buildingDimensions,facadeBayCount} from '../src/world/building-scale.js';
+import {wetnessForWeather,advanceWetness} from '../src/world/wetness.js';
 
 const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -279,4 +280,27 @@ test('hub skyline protects sightlines around the Broken Circle tower and waterfr
  assert.match(metro,/protectedVista=\['heritage_square','broken_circle_tower','docks'\]/);
  assert.match(metro,/district\.id==='broken_circle_tower'/);
  assert.match(metro,/Math\.min\(height,44\)/);
+});
+
+
+test('wetness is continuous, wets faster than it dries and remains bounded',()=>{
+ assert.equal(wetnessForWeather('storm'),1);
+ assert.equal(wetnessForWeather('rain'),.55);
+ assert.equal(wetnessForWeather('clear'),.06);
+ let wet=.06;for(let i=0;i<20;i++)wet=advanceWetness(wet,1,.25);
+ let dry=1;for(let i=0;i<20;i++)dry=advanceWetness(dry,.06,.25);
+ assert.ok(wet>.85,'rain should build visible wetness quickly');
+ assert.ok(dry>.55,'surfaces should remain visibly wet shortly after rain stops');
+ assert.ok(wet>=0&&wet<=1&&dry>=0&&dry<=1);
+});
+
+test('ground facades puddles contacts and hub materials share the progressive wetness signal',()=>{
+ const landscape=read('src/world/landscape.js'),scene=read('src/world/scene.js'),ground=read('src/world/natural-ground.js'),architecture=read('src/world/architecture.js'),details=read('src/world/premium-microdetails.js'),contact=read('src/world/contact-lighting.js');
+ assert.match(landscape,/wetnessState=advanceWetness\(wetnessState,wetnessTarget,dt\)/);
+ assert.match(landscape,/soil\.setWetness\?\.\(wetnessState\)/);
+ assert.match(landscape,/architecture\.setWetness\?\.\(wetnessState\)/);
+ assert.match(landscape,/microDetails\.setWetness\?\.\(wetnessState\)/);
+ assert.match(landscape,/buildingContact\.setWetness\?\.\(wetnessState\)/);
+ assert.match(scene,/sceneWetness\.value=advanceWetness\(sceneWetness\.value,sceneWetnessTarget,dt\)/);
+ for(const source of [ground,architecture,details,contact])assert.match(source,/setWetness/);
 });
