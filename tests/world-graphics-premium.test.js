@@ -175,3 +175,12 @@ test('roads and building feet receive explicit premium transition layers',()=>{
  assert.match(settlement,/road\.width\+1\.45/);
  assert.match(settlement,/baseSeam/);
 });
+
+
+test('hub skyline has deliberate low medium high tiers and a dominant Broken Circle Tower',()=>{
+ const metro=read('src/world/hub/metropolis.js');
+ assert.match(metro,/tower_circle:\[42,42,118\]/);
+ assert.match(metro,/tierRoll<58/);
+ assert.match(metro,/tierRoll<90/);
+ assert.match(metro,/60\+\(\(h>>>17\)%24\)/);
+});
