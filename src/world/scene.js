@@ -30,6 +30,7 @@ import {routePose} from './hub/transport-motion.js';
 import {worldTimeSnapshot} from './world-time.js';
 import {streamingProfile,lodForDistance} from './streaming.js';
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
+import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle} from './premium-hub-visuals.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
@@ -61,7 +62,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const rememberCamera=()=>{try{localStorage.setItem('3b-world-camera',JSON.stringify({...orbit,version:2}));}catch{}};const touchPoints=new Map();let pinchDistance=null;
  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  const combatFx=createCombatEffects({reducedMotion}),threat=createCombatTelegraph({reducedMotion});scene.add(combatFx.root,threat.root);let lastCombat=null;const opponentPosition=new THREE.Vector3();
- const register=asset=>(resources.push(asset),asset),sceneWetness={value:.06},sceneDaylight={value:1};
+ const register=asset=>(resources.push(asset),asset),sceneWetness={value:.06},sceneDaylight={value:1};let sceneWetnessTarget=.06;
  const material=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materialCache.has(key)){
   const m=new THREE.MeshStandardMaterial({color,roughness:.8,metalness:.08,...extra});
   if(!extra.transparent){const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.sceneWetness=sceneWetness;shader.uniforms.sceneDaylight=sceneDaylight;shader.vertexShader='varying vec3 sceneSurfacePos;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nsceneSurfacePos=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 sceneSurfacePos;uniform float sceneWetness;uniform float sceneDaylight;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
@@ -153,7 +154,7 @@ function hubNpcAvatar(item){
   onLoadState?.(true);
   partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
-  region=nextRegion;worldRadius=worldRadiusFor(region);items=worldRuntimeItems(region,save);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);sceneWetness.value=weather==='storm'?1:weather==='heavy_rain'?.82:weather==='rain'?.55:weather==='fog'?.22:.06;sceneDaylight.value=worldTime.daylight;position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
+  region=nextRegion;worldRadius=worldRadiusFor(region);items=worldRuntimeItems(region,save);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});scene.fog=new THREE.Fog(0xbacdd6,region==='hub'?300:220,region==='hub'?1350:780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
   daylight?.dispose();daylight=createDaylight(renderer,biome);scene.environment=sky.environment||daylight.texture;scene.environmentIntensity=.55;
@@ -293,9 +294,9 @@ function hubNpcAvatar(item){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
   const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
-  const dt=Math.min(rawDt,.25);elapsed+=dt;let travelled=0,dx=0,dz=0;
+  const dt=Math.min(rawDt,.25);elapsed+=dt;sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
   if(now-lastWorldTimeAt>=1000){
-   lastWorldTimeAt=now;worldTime=worldTimeSnapshot();sceneDaylight.value=worldTime.daylight;const nextWeather=worldWeatherForDate(region,new Date());if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetness.value=weather==='storm'?1:weather==='heavy_rain'?.82:weather==='rain'?.55:weather==='fog'?.22:.06;landscape?.setWeather?.(weather);if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
+   lastWorldTimeAt=now;worldTime=worldTimeSnapshot();sceneDaylight.value=worldTime.daylight;const nextWeather=worldWeatherForDate(region,new Date());if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);landscape?.setWeather?.(weather);if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
    const biome=BIOMES[region]||BIOMES.hub,dayColor=new THREE.Color(biome.sky),nightColor=new THREE.Color('#07101a');
    scene.background.copy(dayColor).lerp(nightColor,1-worldTime.daylight);
    sun.intensity=3.5*worldTime.sun;hemi.intensity=.55*worldTime.daylight;fill.intensity=.22*Math.max(.28,worldTime.daylight);
