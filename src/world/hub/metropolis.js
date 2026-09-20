@@ -115,6 +115,53 @@ function road(from,to,id,kind='avenue'){
   };
 }
 
+function segmentClearance(pointA,pointB,blockers){
+  const vx=pointB.x-pointA.x,vz=pointB.z-pointA.z,lengthSq=vx*vx+vz*vz||1;
+  let clearance=Infinity;
+  for(const blocker of blockers){
+    const wx=blocker.x-pointA.x,wz=blocker.z-pointA.z,t=Math.max(0,Math.min(1,(wx*vx+wz*vz)/lengthSq));
+    const x=pointA.x+vx*t,z=pointA.z+vz*t;
+    clearance=Math.min(clearance,Math.hypot(blocker.x-x,blocker.z-z)-blocker.r);
+  }
+  return clearance;
+}
+
+function metropolisBuildingBlockers(plan){
+  return plan.buildings.map((building,index)=>{
+    const center=hubDistrictPosition(plan,building.district),offset=buildingOffset(building.id,index),[width,depth]=BUILDING_SHAPES[building.id]||[42,30,22];
+    return {id:building.id,x:center.x+offset.x,z:center.z+offset.z,r:Math.hypot(width,depth)/2+8};
+  });
+}
+
+function laneAnchor(center,dx,dz,blockers){
+  const base=Math.atan2(dz,dx),angles=[0,.28,-.28,.56,-.56,.84,-.84,1.12,-1.12,1.4,-1.4];
+  let best=null;
+  for(const radius of [82,96,110,124])for(const delta of angles){
+    const angle=base+delta,point={x:center.x+Math.cos(angle)*radius,z:center.z+Math.sin(angle)*radius};
+    const clearance=Math.min(...blockers.map(blocker=>Math.hypot(point.x-blocker.x,point.z-blocker.z)-blocker.r));
+    const score=clearance-Math.abs(delta)*2;
+    if(!best||score>best.score)best={...point,score};
+  }
+  return {x:best.x,z:best.z};
+}
+
+function pedestrianLaneRoute(plan,fromId,toId,blockers){
+  const fromCenter=hubDistrictPosition(plan,fromId),toCenter=hubDistrictPosition(plan,toId),vx=toCenter.x-fromCenter.x,vz=toCenter.z-fromCenter.z,length=Math.hypot(vx,vz)||1,dx=vx/length,dz=vz/length,nx=-dz,nz=dx;
+  const from=laneAnchor(fromCenter,dx,dz,blockers),to=laneAnchor(toCenter,-dx,-dz,blockers),baseMid={x:(from.x+to.x)/2,z:(from.z+to.z)/2};
+  let best={mid:baseMid,clearance:Math.min(segmentClearance(from,baseMid,blockers),segmentClearance(baseMid,to,blockers))};
+  for(const bend of [30,50,70,90,115,145,180,220])for(const side of [-1,1]){
+    const mid={x:baseMid.x+nx*bend*side,z:baseMid.z+nz*bend*side};
+    const pointClearance=Math.min(...blockers.map(blocker=>Math.hypot(mid.x-blocker.x,mid.z-blocker.z)-blocker.r));
+    const clearance=Math.min(pointClearance,segmentClearance(from,mid,blockers),segmentClearance(mid,to,blockers));
+    if(clearance>best.clearance)best={mid,clearance};
+  }
+  return {from,mid:best.mid,to,clearance:best.clearance};
+}
+
+export function pedestrianLaneMinimumClearance(plan,lane){
+  return segmentClearance(lane.from,lane.to,metropolisBuildingBlockers(plan));
+}
+
 export function metropolisRoadItems(plan){
   const stations=plan.transport?.train?.stations||[];
   const roads=[];
@@ -128,16 +175,18 @@ export function metropolisRoadItems(plan){
     roads.push(road(heritage,hubDistrictPosition(plan,district.id),`spoke:heritage_square:${district.id}`,'avenue'));
   }
 
-  // Human-scale shortcuts break the hub's ring-and-spoke feel. Each link bends
-  // around district cores instead of drawing another giant straight avenue.
+  // Human-scale shortcuts use safe district-edge anchors and deterministic
+  // bends chosen for maximum clearance from canonical building footprints.
   const shortcuts=[
     ['archives','innovation'],['community','commerce'],['gardens','city3b_portal'],
     ['docks','commerce'],['arena','broken_circle_tower'],
-  ];
+  ],blockers=metropolisBuildingBlockers(plan);
   for(const [fromId,toId] of shortcuts){
-    const from=hubDistrictPosition(plan,fromId),to=hubDistrictPosition(plan,toId),dx=to.x-from.x,dz=to.z-from.z,len=Math.hypot(dx,dz)||1,h=hash(`lane:${fromId}:${toId}`);
-    const nx=-dz/len,nz=dx/len,bend=22+((h>>>7)%20),side=h%2?1:-1,mid={x:(from.x+to.x)/2+nx*bend*side,z:(from.z+to.z)/2+nz*bend*side};
-    roads.push(road(from,mid,`lane:${fromId}:${toId}:a`,'lane'),road(mid,to,`lane:${fromId}:${toId}:b`,'lane'));
+    const route=pedestrianLaneRoute(plan,fromId,toId,blockers);
+    roads.push(
+      road(route.from,route.mid,`lane:${fromId}:${toId}:a`,'lane'),
+      road(route.mid,route.to,`lane:${fromId}:${toId}:b`,'lane'),
+    );
   }
   return roads;
 }
