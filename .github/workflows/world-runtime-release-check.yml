@@ -1,0 +1,137 @@
+name: World runtime release check
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths: [.github/workflows/world-runtime-release-check.yml]
+permissions:
+  contents: write
+  statuses: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      candidate: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Apply reviewed aliases only
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:src/world/WorldPage.jsx)" = f69baf69981698bfb1777032f57e8820464847ed
+          test "$(git rev-parse HEAD:src/components/City3BPortal.jsx)" = 976da5196fd9f055f1687f14e85b288cbb210255
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['src/world/WorldPage.jsx','src/components/City3BPortal.jsx']:
+              p=Path(name);s=p.read_text();assert ',Map,' in s
+              s=s.replace(',Map,',',Map as MapIcon,',1).replace('<Map/>','<MapIcon/>').replace("['districts','Quartiers',Map]","['districts','Quartiers',MapIcon]")
+              p.write_text(s)
+          PY
+          git diff --check
+          git diff --stat
+      - run: npm ci --no-audit --no-fund
+      - run: node --test tests/builtin-icon-shadowing.test.js tests/passport-identity.test.js tests/cinematics-gold-master.test.js tests/city-unlock-guide.test.js && npm run build
+      - name: Publish only the tested correction to the candidate branch
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET=chatgpt-improvements-world-consolidation-20260920
+          test "$GITHUB_REF" = "refs/heads/$TARGET"
+          test "$(git ls-remote origin "refs/heads/$TARGET" | cut -f1)" = "$GITHUB_SHA"
+          git config user.name '3B Integration'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/world/WorldPage.jsx src/components/City3BPortal.jsx
+          git commit -m 'fix(world): stop Map icons from crashing world and City collections'
+          cat > "$RUNNER_TEMP/git-askpass" <<'SH'
+          #!/bin/sh
+          case "$1" in *Username*) printf '%s\n' x-access-token;; *) printf '%s\n' "$GH_TOKEN";; esac
+          SH
+          chmod 700 "$RUNNER_TEMP/git-askpass"
+          GIT_ASKPASS="$RUNNER_TEMP/git-askpass" GIT_TERMINAL_PROMPT=0 git push origin "HEAD:refs/heads/$TARGET"
+          rm -f "$RUNNER_TEMP/git-askpass"
+          CANDIDATE=$(git rev-parse HEAD)
+          echo "sha=$CANDIDATE" >> "$GITHUB_OUTPUT"
+          for CHECK in threeb/release-browser threeb/release-verify; do
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state=pending -f context="$CHECK" -f description='Checking corrected runtime' -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          done
+  browser:
+    needs: repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repair.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund && npm run build
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1 && npx playwright install --with-deps chromium
+      - name: Inspect the real application entry and save/reload flow
+        id: test
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/world-release
+          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/world-release/preview.log 2>&1 &
+          SERVER=$!; trap 'kill "$SERVER" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do if curl -sf http://127.0.0.1:4173/ >/dev/null; then break; fi; sleep 1; done
+          node scripts/verify-world-release-browser.mjs
+      - name: Record the browser outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.test.outcome }}
+          CANDIDATE: ${{ needs.repair.outputs.candidate }}
+        run: |
+          STATE=failure; test "$RESULT" = success && STATE=success
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-browser -f description="Desktop and touch: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corrected-world-browser
+          path: artifacts/world-release/
+          retention-days: 7
+  verify:
+    needs: repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repair.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Full regression and build
+        id: test
+        run: |
+          set -euo pipefail
+          npm run verify | tee /tmp/world-verify.log
+      - name: Record the complete verification outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.test.outcome }}
+          CANDIDATE: ${{ needs.repair.outputs.candidate }}
+        run: |
+          STATE=failure; test "$RESULT" = success && STATE=success
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-verify -f description="Complete regression and build: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corrected-world-verify
+          path: /tmp/world-verify.log
+          retention-days: 7
