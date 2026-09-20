@@ -127,9 +127,9 @@ test('vegetation breaks repetition with edge growth and multiple botanical silho
  const grass=read('src/world/vegetation.js'),flora=read('src/world/flora.js');
  assert.match(grass,/edgeGrowthPlacements/);
  assert.match(grass,/width:\.72\+rng/);
- assert.match(grass,/mode==='fluid'\?\.48/);
+ assert.match(grass,/mode==='fluid'\?\.55/);
  assert.match(flora,/variant=.*%3/);
- assert.match(flora,/flora-'\+type\+'-v'/);
+ assert.match(flora,/varying every tree's proportions/);
 });
 
 test('sky is weather-aware with premium night depth clouds mist and stars',()=>{
