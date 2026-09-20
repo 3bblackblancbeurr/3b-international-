@@ -120,16 +120,16 @@ function hubNpcAvatar(item){
     road.rotation.y=item.heading;itemVisuals.set(item.id,[road]);continue;
    }
    if(item.type==='hubBuilding'||item.type==='hubStructure'){
-    const y=groundY(item.x,item.z),canonical=item.type==='hubBuilding',tier=item.tier||0;
+    const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0;
     const palette=canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
-    const body=mesh('box',material(palette,{roughness:.7,metalness:canonical?.16:.07}),item.x,y+item.height/2,item.z,item.width,item.height,item.depth);
+    const body=mesh('box',material(palette,{roughness:.7,metalness:canonical?.16:.07}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
     const visuals=[body];
     if(canonical){
-      const glass=mesh('box',material('#2e90b4',{emissive:'#00a8ff',emissiveIntensity:.16,roughness:.28,metalness:.25}),item.x,y+item.height*.58,item.z,item.width*1.015,Math.max(.7,item.height*.08),item.depth*1.015);
-      const crown=mesh('box',material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.13,metalness:.6,roughness:.34}),item.x,y+item.height+.35,item.z,item.width*.72,.7,item.depth*.72);
+      const glass=mesh('box',material('#2e90b4',{emissive:'#00a8ff',emissiveIntensity:.16,roughness:.28,metalness:.25}),bx,y+item.height*.58,bz,item.width*1.015,Math.max(.7,item.height*.08),item.depth*1.015);
+      const crown=mesh('box',material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.13,metalness:.6,roughness:.34}),bx,y+item.height+.35,bz,item.width*.72,.7,item.depth*.72);
       visuals.push(glass,crown);
     }
-    obstacles.push({x:item.x,z:item.z,width:item.width+.8,depth:item.depth+.8,rotation:0});itemVisuals.set(item.id,visuals);continue;
+    obstacles.push({x:bx,z:bz,width:item.width+.8,depth:item.depth+.8,rotation:0});itemVisuals.set(item.id,visuals);continue;
    }
    if(item.type==='hubTraffic'){
     const car=mesh('box',material('#192f3b',{emissive:'#00a8ff',emissiveIntensity:.1,metalness:.45,roughness:.35}),item.x,groundY(item.x,item.z)+.55,item.z,1.8,.65,3.8);
@@ -429,6 +429,6 @@ function hubNpcAvatar(item){
   interact,
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk)startRoute(item,true);},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},
-  destroy(){clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
+  destroy(){clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };
 }
