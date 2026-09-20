@@ -112,3 +112,21 @@ test('Unreal transport and crowd exports preserve the canonical network budgets'
  assert.equal(crowd.profiles.mobileHigh.target_fps,60);
  assert.equal(crowd.profiles.desktop.target_fps,60);
 });
+
+test('Gold Master slice keeps identity, City and server-authority invariants explicit',()=>{
+ const flow=readJson('../unreal/3BWorld/Data/Production/vertical-slice-state-machine.json');
+ const qa=readJson('../unreal/3BWorld/Data/Production/acceptance-tests.json');
+ assert.equal(flow.initial,'SESSION_REQUIRED');
+ assert.equal(flow.states.at(-1).id,'SLICE_COMPLETE');
+ assert.ok(flow.invariants.includes('existing_city => city_access_allowed'));
+ assert.ok(flow.invariants.includes('client_cannot_assert_city_proof'));
+ assert.ok(flow.invariants.includes('passport.user_id == authenticated.user_id'));
+ const cases=qa.suites.flatMap(suite=>suite.cases);
+ for(const required of [
+  'new_account_sees_own_passport',
+  'existing_city_never_relocks',
+  'world_sync_receipt_is_server_written',
+  'mobile_medium_30fps_target_profiled',
+  'network_loss_during_world_sync_recovers'
+ ])assert.ok(cases.includes(required),required);
+});
