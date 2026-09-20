@@ -52,10 +52,10 @@ export function buildHubRuntimeItems({
 
   const maxNpcs = selectNpcBudget(plan, profile);
   const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
-    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress});
+    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather});
     if(schedule.rare)return [];
     const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
-    const d = offset(npc.id, 8);
+    const d = offset(npc.id, schedule.shelter?3.5:schedule.social?5.2:8);
     return {
       id: `hub:npc:${npc.id}`,
       type: 'hubNpc',
@@ -63,6 +63,8 @@ export function buildHubRuntimeItems({
       district,
       homeDistrict:npc.district,
       activity:schedule.activity,
+      shelter:!!schedule.shelter,
+      social:!!schedule.social,
       name: npc.name,
       role: npc.role,
       rarity: npc.rarity,
