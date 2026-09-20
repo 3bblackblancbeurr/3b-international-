@@ -5,7 +5,8 @@ import {settlementPlan,serviceItems,districtDestinations} from './settlements.js
 import {buildingDimensions} from './building-scale.js';
 import {obstacleDistance} from './collision.js';
 import {parisSites} from './paris-layout.js';
-import {HUB_METROPOLIS,hubPortalPosition} from './hub/metropolis.js';
+import hubPlan from './hub/data/hub-master-plan-v2.json' with { type: 'json' };
+import {HUB_METROPOLIS,hubPortalPosition,metropolisRoadItems,buildMetropolisRuntimeItems} from './hub/metropolis.js';
 
 export const WORLD_RADIUS=260;
 export const HUB_WORLD_RADIUS=HUB_METROPOLIS.radius;
@@ -28,7 +29,10 @@ export function landscapeItems(region,save){return [...worldItems(region,save),.
  return {...item,...toLandscape(region,item.x,item.z)};
 });}
 export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
-export function landscapeRoads(region){return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));}
+export function landscapeRoads(region){
+ if(region==='hub')return metropolisRoadItems(hubPlan).map(r=>({id:r.id,width:r.width,points:[r.from,r.to]}));
+ return settlementPlan(region).roads.map(r=>({...r,width:r.width*(BIOMES[region]?.scale||1),points:r.points.map(p=>toLandscape(region,...p))}));
+}
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
 export function landmarkSightline(region){return{a:{x:0,z:5},b:toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z)};}
 export function buildingSites(region,anchors=[]){
@@ -39,9 +43,9 @@ export function buildingSites(region,anchors=[]){
  return sites.filter(p=>segmentDistance(p.x,p.z,sightline.a,sightline.b)>Math.hypot(p.width,p.depth)/2+4&&Math.hypot(p.x,p.z)<WORLD_RADIUS-18&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='cooperation'?28:a.type==='camp'?22:a.type==='atelier'?13:6))).reduce((accepted,p)=>{if(!accepted.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11))accepted.push(p);return accepted;},[]);
 }
 export function createTerrainField(region,save){
- const radius=worldRadiusFor(region),biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
+ const radius=worldRadiusFor(region),biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),metropolis=region==='hub'?buildMetropolisRuntimeItems(hubPlan,'desktop').items.filter(i=>i.type==='hubBuilding'||i.type==='hubStructure'):[],squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
  const civic=civicSites(anchors),paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
- const clearings=[...paris.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+3})),...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='cooperation'?29:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
+ const clearings=[...paris.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+3})),...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...metropolis.map(p=>({x:p.buildingX??p.x,z:p.buildingZ??p.z,r:Math.hypot(p.width,p.depth)/2+3})),...anchors.map(p=>({...p,r:p.type==='cooperation'?29:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
  // Find a dry margin around every interaction and building before carving water.
  let lake={...biome.water},found=false;
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
