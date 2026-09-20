@@ -39,6 +39,7 @@ import {hubDialogueScene} from './hub/dialogue-v3.js';
 import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from './guardian-values.js';
 import {isAutoHubMission} from './hub/mission-signals.js';
 import {worldCinematicEvents} from './cinematic-events.js';
+import {cinematicSeenCommand} from './cinematic-persistence.js';
 import {storyCinematicPresentation} from './story-cinematic.js';
 import {CinematicOverlay} from './CinematicOverlay.jsx';
 import {City3BPanel} from '../city/City3BPanel.jsx';
@@ -109,7 +110,7 @@ function WorldSession({uid,goTo}){
  function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.setMix(audioMix);audio.current.enable(next,saveRef.current.region);setSound(next);}
  function finishStoryCinematic(){
   const current=storyCinematic;if(!current)return;
-  scene.current?.skipCinematic();if(current.kind!=='world-opening')act({type:'cinematicSeen',key:current.key});cinematicKeys.current.delete(current.key);setStoryCinematic(null);
+  scene.current?.skipCinematic();const seenCommand=cinematicSeenCommand(current);if(seenCommand)act(seenCommand);cinematicKeys.current.delete(current.key);setStoryCinematic(null);
  }
  async function sync(){if(!loaded)return;dirty.current=false;const result=await saveWorld(uid,saveRef.current);if(result.pending)dirty.current=true;setSaveMessage(result.message);if(result.data){if(result.data.region!==saveRef.current.region)scene.current?.travel(result.data.region);saveRef.current=result.data;setSave(result.data);}return result;}
  async function refreshWorld(){const result=await loadWorld(uid);saveRef.current=result.data;setSave(result.data);scene.current?.setSave(result.data);}
