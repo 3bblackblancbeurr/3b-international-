@@ -41,6 +41,15 @@ export const STORY_CANON=Object.freeze({
  }),
 });
 
+export const FRANCE_CANON_ARC=Object.freeze({
+ title:'Les noms effacés',
+ acts:Object.freeze([
+  {id:'justice-01',title:'Les voix effacées',purpose:'Rencontrer les habitants, retrouver la première trace et comprendre qu’un jugement sans écoute nourrit l’Oubli.'},
+  {id:'justice-02',title:'Les deux plateaux',purpose:'Apprendre que la Justice ne se porte pas seul et ouvrir les Archives par une action coordonnée.'},
+  {id:'justice-03',title:'Ce qui nous relie',purpose:'Réunir les deux témoignages, dissiper la manifestation de l’Oubli et restituer le fragment de Justice.'},
+ ]),
+});
+
 export const STORY_ACTS=Object.freeze([
  {id:'prologue',title:'Kaïs',purpose:'Naissance, rejet, fuite, première rencontre avec le Monstre de l’Oubli et découverte de l’anneau.'},
  {id:'circle',title:'Le Cercle Brisé',purpose:'Éveil du Nexus, découverte des huit Portes et première compréhension des Souvenirs.'},
