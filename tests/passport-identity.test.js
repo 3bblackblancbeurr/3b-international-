@@ -68,5 +68,6 @@ test('city origin is displayed as Passport-controlled and not user-selectable',(
  const source=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
  assert.match(source,/lié au Passeport 3B/);
  assert.match(source,/readOnly/);
+ assert.match(source,/call\('create',\{name:name\.trim\(\),country\}\)/);
  assert.doesNotMatch(source,/setCountry/);
 });
