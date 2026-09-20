@@ -103,12 +103,13 @@ export function createFlora(region,seed=1,occlusion){
  occlusion?.apply(wood);occlusion?.apply(leaves);
  function plant(type,x,y,z,scale=1,rotation=0,parent){
   if(!FLORA_TYPES.includes(type))return null;
-  const variant=Math.abs(Math.floor((x*.73+z*1.17+seed)*.17))%3,key=type+':'+variant;
-  if(!geometries.has(key))geometries.set(key,createPlantGeometry(type,seed+FLORA_TYPES.indexOf(type)*19+variant*101,FLORA_PALETTES[region]||FLORA_PALETTES.hub));
+  const variant=Math.abs(Math.floor((x*.73+z*1.17+seed)*.17))%3,key=type;
+  if(!geometries.has(key))geometries.set(key,createPlantGeometry(type,seed+FLORA_TYPES.indexOf(type)*19,FLORA_PALETTES[region]||FLORA_PALETTES.hub));
   if(!batches.has(parent))batches.set(parent,new Map());const group=batches.get(parent);
   if(!group.has(key)){
-   const parts=['wood','leaves'].map((part,i)=>{const m=new THREE.InstancedMesh(geometries.get(key)[part],i?leaves:wood,1024);m.name='flora-'+type+'-v'+variant+'-'+part;m.count=0;m.castShadow=true;m.receiveShadow=true;if(i)m.customDepthMaterial=depth;parent.add(m);instances.push(m);return m;});group.set(key,parts);
+   const parts=['wood','leaves'].map((part,i)=>{const m=new THREE.InstancedMesh(geometries.get(key)[part],i?leaves:wood,1024);m.name='flora-'+type+'-'+part;m.count=0;m.castShadow=true;m.receiveShadow=true;if(i)m.customDepthMaterial=depth;parent.add(m);instances.push(m);return m;});group.set(key,parts);
   }
+  // Preserve one draw batch per species while varying every tree's proportions.
   const width=scale*(.91+variant*.055),height=scale*(.95+((variant+1)%3)*.055),depthScale=scale*(.94+((variant+2)%3)*.045);
   dummy.position.set(x,y,z);dummy.rotation.set(0,rotation+(variant-1)*.055,0);dummy.scale.set(width,height,depthScale);dummy.updateMatrix();
   for(const mesh of group.get(key)){if(mesh.count>=1024)throw Error('Vegetation instance budget exceeded');mesh.setMatrixAt(mesh.count++,dummy.matrix);mesh.instanceMatrix.needsUpdate=true;}
