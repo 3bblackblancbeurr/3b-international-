@@ -1,0 +1,105 @@
+name: Monde 3B consolidation 2026-09-20
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidated-20260920]
+    paths:
+      - .github/workflows/world-consolidation-20260920.yml
+      - scripts/world-consolidation-resolve.mjs
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/world-consolidation-20260920.yml
+permissions:
+  contents: read
+concurrency:
+  group: world-consolidation-20260920-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  consolidate:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Consolidate fixed reviewed branch heads without force
+        id: merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = 'chatgpt-improvements-world-consolidated-20260920'
+          git config user.name '3B integration'
+          git config user.email '283291333+3bblackblancbeurr@users.noreply.github.com'
+          mkdir -p /tmp/world-diagnostics
+          for entry in \
+            'france-npc-missions:3ede9bcff13ad26b370d78b1ec7c4852fc0aa3c1' \
+            'city-unlock:a9f3a85da19792165053b43113cb4e7c0372ce25' \
+            'hub-avatar-weapons:3940f5c0d934b351fe7c4747651789ab3c575350' \
+            'passport-cinematics:264b2a0dd8433a9148edef27b71274229432e80d'; do
+            name=${entry%%:*}
+            sha=${entry#*:}
+            git cat-file -e "$sha^{commit}"
+            echo "=== Integrating $name at $sha ==="
+            if git merge --no-ff --no-edit "$sha" -m "merge(world): consolidate $name at ${sha:0:12}"; then
+              echo "$name $sha merged" | tee -a /tmp/world-diagnostics/summary.txt
+            else
+              git diff --name-only --diff-filter=U | tee /tmp/world-diagnostics/conflicted-files.txt
+              git diff --cc > /tmp/world-diagnostics/conflicts.patch
+              git status --short
+              cat /tmp/world-diagnostics/conflicts.patch
+              if test -f scripts/world-consolidation-resolve.mjs; then
+                node scripts/world-consolidation-resolve.mjs "$name"
+              fi
+              if test -n "$(git diff --name-only --diff-filter=U)"; then
+                echo "Unresolved conflicts: no production or main mutation." | tee -a /tmp/world-diagnostics/summary.txt
+                exit 1
+              fi
+              git commit --no-edit
+            fi
+          done
+          git diff --check
+          git push origin HEAD:refs/heads/chatgpt-improvements-world-consolidated-20260920
+          git rev-parse HEAD | tee /tmp/world-diagnostics/candidate-sha.txt
+      - name: Full application tests
+        if: steps.merge.outcome == 'success'
+        run: set -o pipefail; npm test 2>&1 | tee /tmp/world-diagnostics/tests.log
+      - name: World verification and production build
+        if: steps.merge.outcome == 'success'
+        run: set -o pipefail; npm run verify 2>&1 | tee /tmp/world-diagnostics/verify.log
+      - name: Capture reproducible source and dependency bundle
+        if: always()
+        run: |
+          mkdir -p /tmp/world-diagnostics
+          git log -12 --oneline > /tmp/world-diagnostics/commits.txt
+          git bundle create /tmp/world-diagnostics/repository.bundle --all
+          if test -d node_modules; then tar -czf /tmp/world-diagnostics/dependencies.tar.gz node_modules; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-consolidation-diagnostics-${{ github.run_id }}
+          path: /tmp/world-diagnostics
+          retention-days: 3
+  verify-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run verify
