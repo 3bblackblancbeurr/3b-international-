@@ -90,6 +90,50 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
   case 'city_gallery':{
    const crown=mesh('box',gold,bx,y+height+.45,bz,width*.62,.55,depth*.62);visuals.push(crown);break;
   }
+  case 'heritage_welcome':
+  case 'mission_hotel':
+  case 'living_cards_gallery':{
+   for(const side of [-1,1]){
+    const pillar=mesh('box',stone,bx+side*width*.34,y+3.2,bz+depth*.565,.55,5.8,.55);visuals.push(pillar);
+    const lantern=mesh('box',gold,bx+side*width*.34,y+6.35,bz+depth*.60,.22,.32,.22);lantern.castShadow=false;visuals.push(lantern);
+   }
+   break;
+  }
+  case 'house_3b':{
+   for(const side of [-1,0,1]){
+    const display=mesh('box',glass,bx+side*width*.22,y+3.1,bz+depth*.525,width*.17,3.8,.12);display.castShadow=false;visuals.push(display);
+   }
+   const signature=mesh('box',gold,bx,y+6.0,bz+depth*.54,width*.34,.16,.12);signature.castShadow=false;visuals.push(signature);break;
+  }
+  case 'garage_3b':{
+   for(const side of [-1,0,1]){
+    const door=mesh('box',trim,bx+side*width*.245,y+3.1,bz+depth*.515,width*.20,5.4,.16);visuals.push(door);
+    for(let row=0;row<4;row++){const strip=mesh('box',glass,bx+side*width*.245,y+1.55+row*1.02,bz+depth*.526,width*.17,.08,.05);strip.castShadow=false;visuals.push(strip);}
+   }
+   break;
+  }
+  case 'community_house':{
+   const terrace=mesh('box',stone,bx,y+height*.67,bz+depth*.54,width*.72,.35,4.4);visuals.push(terrace);
+   for(const side of [-1,1]){const beacon=mesh('cylinder',gold,bx+side*width*.36,y+height*.70,bz+depth*.58,.18,1.8,.18);beacon.castShadow=false;visuals.push(beacon);}break;
+  }
+  case 'central_marina':{
+   for(const side of [-1,1]){
+    const mast=mesh('cylinder',gold,bx+side*width*.32,y+height*.72,bz,.16,height*.78,.16);visuals.push(mast);
+    const sail=mesh('box',glass,bx+side*width*.22,y+height*.80,bz+side*depth*.18,width*.22,.18,depth*.62);sail.rotation.z=side*.16;sail.castShadow=false;visuals.push(sail);
+   }
+   break;
+  }
+  case 'shipyard_3b':{
+   for(const side of [-1,1]){const gantry=mesh('box',trim,bx+side*width*.43,y+height*.70,bz,.45,height*.72,.45);visuals.push(gantry);}
+   const bridge=mesh('box',gold,bx,y+height*.92,bz,width*.86,.30,.48);visuals.push(bridge);break;
+  }
+  case 'workers_memorial':{
+   for(let i=-2;i<=2;i++){const slab=mesh('box',i===0?gold:stone,bx+i*width*.13,y+height*.42,bz+depth*.54,width*.055,height*.62,.28);visuals.push(slab);}break;
+  }
+  case 'wildlife_refuge':{
+   for(const side of [-1,1]){const pergola=mesh('box',stone,bx+side*width*.33,y+4.0,bz+depth*.55,.48,6.5,.48);visuals.push(pergola);}
+   const roof=mesh('box',glass,bx,y+7.35,bz+depth*.55,width*.74,.20,3.8);roof.castShadow=false;visuals.push(roof);break;
+  }
   default:break;
  }
  return visuals;
