@@ -1,0 +1,26 @@
+name: World candidate dependencies
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths: [.github/workflows/world-candidate-dependencies.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: tar -czf /tmp/world-dependencies.tar.gz node_modules
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-locked-dependencies
+          path: /tmp/world-dependencies.tar.gz
+          retention-days: 1
