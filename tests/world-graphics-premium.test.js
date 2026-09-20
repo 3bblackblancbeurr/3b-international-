@@ -93,3 +93,20 @@ test('hub waterfront adds promenade, wet edge, stairs, pontoons and controlled l
  assert.match(waterfront,/waterfront pavilion/);
  assert.match(landscape,/addPremiumWaterfront/);
 });
+
+
+test('opening cinematic starts low over water before revealing the hub skyline',()=>{
+ const scene=read('src/world/scene.js');
+ assert.match(scene,/waterReveal:true/);
+ assert.match(scene,/focus=\{x:0,z:-145\}/);
+ assert.match(scene,/cameraLift=waterReveal\?4\.2/);
+ assert.match(scene,/focusLift=waterReveal\?2\.6/);
+ assert.match(scene,/returnBlend=waterReveal/);
+});
+
+test('quality selector exposes LOW MEDIUM HIGH while preserving legacy technical values',()=>{
+ const page=read('src/world/WorldPage.jsx');
+ assert.match(page,/value="fluid">LOW/);
+ assert.match(page,/value="auto">MEDIUM/);
+ assert.match(page,/value="detail">HIGH/);
+});
