@@ -22,8 +22,8 @@ export function AvatarCinematic({avatar,onDone,sequence:suppliedSequence}){
  useEffect(()=>{if(frame?.done)finish();},[frame?.done]);
  const next=()=>{if(frame.index===frame.count-1){finish();return;}setElapsed(sequence.shots.slice(0,frame.index+1).reduce((sum,shot)=>sum+shot.duration,0));};
  if(!frame)return null;
- const isBlack=frame.id==='blackout',showCountries=frame.id==='eight-worlds',signature=frame.id==='signature';
- return <section ref={root} className={`avatar-cinematic cinema-shot-${frame.id} cinema-effect-${frame.effect||'none'}`} aria-label={sequence.title} onKeyDownCapture={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();finish();}}}>
+ const isBlack=frame.id==='identity'&&frame.progress<.13,showCountries=frame.effect==='countries',signature=frame.effect==='signature',handoff=frame.id==='departure'&&frame.progress>.72;
+ return <section ref={root} className={`avatar-cinematic cinema-shot-${frame.id} cinema-effect-${frame.effect||'none'}${isBlack?' is-blackout':''}${handoff?' is-handoff':''}`} aria-label={sequence.title} onKeyDownCapture={event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();finish();}}}>
   <div className="cinema-viewport"><ArenaStage avatar={avatar} cinematic={{...frame,reduced,paused}}/><div className="cinema-shade" aria-hidden="true"/></div>
   <div className="cinema-letterbox-avatar cinema-letterbox-avatar-top" aria-hidden="true"/><div className="cinema-letterbox-avatar cinema-letterbox-avatar-bottom" aria-hidden="true"/>
   <div className="cinema-fx" aria-hidden="true"><i className="cinema-fx-scan"/><i className="cinema-fx-rain"/><i className="cinema-fx-gold"/><i className="cinema-fx-gate"/></div>
