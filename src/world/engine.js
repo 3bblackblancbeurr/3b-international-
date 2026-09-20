@@ -9,7 +9,7 @@ import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,n
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
 import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
-import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
+import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_BUILDING_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
 import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
@@ -73,6 +73,19 @@ export function applyWorldAction(input,action){
    if(s.adventure.cinematicSeen?.includes(action.key))return s;
    return adventure(s,{cinematicSeen:[...(s.adventure.cinematicSeen||[]),action.key]});
   }
+  case 'hubCitySync':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   return s;
+  }
+  case 'hubCityProof':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   const proof=action.proof&&typeof action.proof==='object'?action.proof:{};
+   let next=s;
+   if(proof.founded===true)next=hubSignal(next,{type:'city',id:'founded'});
+   if(proof.synced===true)next=hubSignal(next,{type:'city',id:'synced'});
+   if(proof.built===true)next=hubSignal(next,{type:'city',id:'built'});
+   return next;
+  }
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
    const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');requireThat(hubMissionPrerequisitesMet(action.id,s.hub.missions),'Termine d’abord les missions liées.');
@@ -124,6 +137,11 @@ export function applyWorldAction(input,action){
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_DISTRICT_SET.has(action.id),'Quartier Hub inconnu.');
    const next=s.hub.stats.districtVisits.includes(action.id)?s:gain(s,{hub:{...s.hub,stats:{...s.hub.stats,districtVisits:[...s.hub.stats.districtVisits,action.id]}}});
    return hubSignal(next,{type:'district',id:action.id});
+  }
+  case 'hubBuildingVisit':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_BUILDING_SET.has(action.id),'Bâtiment Hub inconnu.');
+   const next=s.hub.stats.buildingVisits.includes(action.id)?s:gain(s,{hub:{...s.hub,stats:{...s.hub.stats,buildingVisits:[...s.hub.stats.buildingVisits,action.id]}}});
+   return hubSignal(next,{type:'building',id:action.id});
   }
   case 'hubTransportRide':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');

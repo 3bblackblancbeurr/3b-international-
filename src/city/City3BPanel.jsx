@@ -4,14 +4,14 @@ import {CITY3B_POIS,city3bVisualStage} from './city3b-world.js';
 import '../styles/city-3b.css';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 
-export function City3BPanel({uid,onLogin,onNotice}){
+export function City3BPanel({uid,onLogin,onNotice,onWorldCitySync}){
  const[data,setData]=useState(null),[loading,setLoading]=useState(!!uid),[busy,setBusy]=useState(''),[error,setError]=useState('');
  const account=useLoyalty(),country=account.passport?.userId===uid?account.passport.country:'';
- const scope=useRef(uid);scope.current=uid;const mounted=useRef(true);useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+ const scope=useRef(uid);scope.current=uid;const worldSyncRef=useRef(onWorldCitySync);worldSyncRef.current=onWorldCitySync;const mounted=useRef(true);useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  const[name,setName]=useState('Ma Ville 3B');
- const refresh=useCallback(async()=>{if(!uid)return;setLoading(true);setError('');try{const next=await city3bRequest('snapshot',{},uid);if(mounted.current&&scope.current===uid)setData(next);}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setLoading(false);}},[uid]);
+ const refresh=useCallback(async()=>{if(!uid)return;setLoading(true);setError('');try{const next=await city3bRequest('snapshot',{},uid);if(mounted.current&&scope.current===uid){setData(next);if(next?.city)worldSyncRef.current?.();}}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setLoading(false);}},[uid]);
  useEffect(()=>{setData(null);setBusy('');refresh();},[refresh]);
- async function action(kind,body={}){if(!uid||busy)return;setBusy(kind);setError('');try{const next=await city3bRequest(kind,body,uid);if(!mounted.current||scope.current!==uid)return;setData(next);onNotice?.(kind==='sync_world'?'Ville 3B synchronisée avec le Monde du 3B.':'Ville 3B mise à jour.');}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setBusy('');}}
+ async function action(kind,body={}){if(!uid||busy)return;setBusy(kind);setError('');try{const next=await city3bRequest(kind,body,uid);if(!mounted.current||scope.current!==uid)return;setData(next);onNotice?.(kind==='sync_world'?'Ville 3B synchronisée avec le Monde du 3B.':'Ville 3B mise à jour.');if(next?.city)await worldSyncRef.current?.();}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setBusy('');}}
  const stage=useMemo(()=>city3bVisualStage(data),[data]);
  if(!uid)return <div className="city3b-world-panel"><span className="city3b-kicker">VILLE 3B · COMPTE REQUIS</span><h3>Ta ville appartient à ton Passeport 3B.</h3><p>Connecte ton compte pour charger ta ville, ses quartiers, ses placements et sa progression.</p><button className="city3b-btn primary" onClick={onLogin}>Ouvrir mon compte 3B</button></div>;
  if(loading&&!data)return <div className="city3b-loading">CHARGEMENT DE VILLE 3B…</div>;

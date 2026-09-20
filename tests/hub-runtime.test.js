@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildHubRuntimeItems, hubDistrictPosition, selectNpcBudget } from '../src/world/hub/runtime.js';
+import { buildHubRuntimeItems, selectNpcBudget } from '../src/world/hub/runtime.js';
+import {HUB_METROPOLIS,hubDistrictPosition} from '../src/world/hub/metropolis.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', 'src', 'world', 'hub', 'data');
@@ -39,7 +40,7 @@ test('Every runtime item has finite coordinates in the hub', () => {
   for (const item of runtime.items) {
     assert.ok(Number.isFinite(item.x), item.id);
     assert.ok(Number.isFinite(item.z), item.id);
-    assert.ok(Math.hypot(item.x, item.z) < 120, item.id);
+    assert.ok(Math.hypot(item.x, item.z) < HUB_METROPOLIS.radius, item.id);
   }
 });
 

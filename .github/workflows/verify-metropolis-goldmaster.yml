@@ -1,0 +1,38 @@
+name: Verify Metropolis Gold Master
+
+on:
+  pull_request:
+    paths:
+      - 'src/world/**'
+      - 'src/city/**'
+      - 'tests/hub-*.test.js'
+      - 'tests/world*.test.js'
+      - '.github/workflows/verify-metropolis-goldmaster.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metropolis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Metropolis gameplay and compatibility tests
+        run: >
+          node --test
+          tests/hub-metropolis-goldmaster.test.js
+          tests/hub-runtime.test.js
+          tests/hub-mission-signals.test.js
+          tests/hub-save-engine.test.js
+          tests/world.test.js
+          tests/world-landscape.test.js
+          tests/world-city-metropolis-bridge.test.js
+      - name: Production build
+        run: npm run build

@@ -8,7 +8,7 @@ import {createLandscape,bakeGeometry} from '../src/world/landscape.js';
 import {blankSave} from '../src/world/rules.js';
 import {COUNTRIES} from '../src/world/catalog.js';
 import {findInteractionPath} from '../src/world/navigation.js';
-import {landscapeItems,WORLD_RADIUS} from '../src/world/terrain.js';
+import {landscapeItems,worldRadiusFor} from '../src/world/terrain.js';
 import {advanceMotion} from '../src/world/motion.js';
 const load=async name=>{const b=fs.readFileSync(new URL('../public/world/models/'+name+'.glb',import.meta.url));return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');};
 test('compressed normalized positions retain world-space height and location when batched',()=>{
@@ -25,15 +25,15 @@ test('all eight authored country layouts preserve routes to every objective and 
   for(const item of objectives){
    const label=country.id+' '+item.id;
    assert.ok(Math.abs(world.height(item.x,item.z))<.05,'Dry level interaction: '+label);
-   const path=findInteractionPath({x:0,z:5},item,obstacles,WORLD_RADIUS);assert.ok(path.length,label);
+   const path=findInteractionPath({x:0,z:5},item,obstacles,worldRadiusFor(country.id));assert.ok(path.length,label);
    let state={position:{x:0,z:5},target:path.shift(),route:path};
-   for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,WORLD_RADIUS);
+   for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,worldRadiusFor(country.id));
    assert.ok(Math.hypot(state.position.x-item.x,state.position.z-item.z)<(item.range||5.5),'Actual movement reaches '+label);
   }
   if(country.id!=='hub'){
    const built=blankSave();built.adventure.frontier[country.id]={camp:1,forge:1,garden:1,wood:0,stone:0,food:2,expedition:0,harvest:[]};world.update(built);
    for(const item of objectives.filter(i=>['camp','patrol','resource','sanctuary'].includes(i.type))){
-    const path=findInteractionPath({x:0,z:5},item,obstacles,WORLD_RADIUS);assert.ok(path.length,'Built refuge route '+country.id+' '+item.id);let state={position:{x:0,z:5},target:path.shift(),route:path};for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,WORLD_RADIUS);assert.ok(Math.hypot(state.position.x-item.x,state.position.z-item.z)<(item.range||5.5),'Built refuge movement '+country.id+' '+item.id);
+    const path=findInteractionPath({x:0,z:5},item,obstacles,worldRadiusFor(country.id));assert.ok(path.length,'Built refuge route '+country.id+' '+item.id);let state={position:{x:0,z:5},target:path.shift(),route:path};for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,worldRadiusFor(country.id));assert.ok(Math.hypot(state.position.x-item.x,state.position.z-item.z)<(item.range||5.5),'Built refuge movement '+country.id+' '+item.id);
    }
   }
   for(const building of world.field.buildings)assert.ok(Math.hypot(building.x-world.field.lake.x,building.z-world.field.lake.z)>world.field.lake.r+6,'Dry architecture');

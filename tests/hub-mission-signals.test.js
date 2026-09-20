@@ -5,7 +5,7 @@ import {applyWorldAction} from '../src/world/engine.js';
 
 function completeFirstSteps(){
  let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'first_steps'});
- save=applyWorldAction(save,{type:'hubDistrictVisit',id:'heritage_square'});
+ save=applyWorldAction(save,{type:'hubBuildingVisit',id:'heritage_welcome'});
  save=applyWorldAction(save,{type:'hubTransportRide',transport:'train',from:'heritage_square',to:'archives',night:false,dateKey:'2026-09-19'});
  save=applyWorldAction(save,{type:'hubDistrictVisit',id:'heritage_square'});
  return applyWorldAction(save,{type:'hubMissionClaim',id:'first_steps'});
@@ -14,7 +14,7 @@ function completeFirstSteps(){
 test('First Steps advances only from the real district/transport/district sequence',()=>{
  let save=applyWorldAction(blankSave(),{type:'hubMissionStart',id:'first_steps'});
  assert.throws(()=>applyWorldAction(save,{type:'hubMissionStep',id:'first_steps',objective:0}),/uniquement par tes actions/);
- save=applyWorldAction(save,{type:'hubDistrictVisit',id:'heritage_square'});
+ save=applyWorldAction(save,{type:'hubBuildingVisit',id:'heritage_welcome'});
  assert.equal(save.hub.missions.first_steps.completedObjectives,1);
  save=applyWorldAction(save,{type:'hubNpcTalk',id:'mael_rivière'});
  assert.equal(save.hub.missions.first_steps.completedObjectives,1);
@@ -29,6 +29,7 @@ test('Boat Without Flag advances from a boat ride then returning to the docks',(
  save=applyWorldAction(save,{type:'hubTransportRide',transport:'boat',from:'docks',to:'gardens',night:false,dateKey:'2026-09-19'});
  assert.equal(save.hub.missions.boat_without_flag.completedObjectives,1);
  save=applyWorldAction(save,{type:'hubDistrictVisit',id:'docks'});
+ save=applyWorldAction(save,{type:'hubSecretUnlock',id:'secret_abandoned_quay'});
  assert.equal(save.hub.missions.boat_without_flag.status,'completed');
 });
 
