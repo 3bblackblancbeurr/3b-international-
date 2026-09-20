@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
+const hash=input=>{let h=2166136261;for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
 
 function child(group,geometry,material,{x=0,y=0,z=0,sx=1,sy=sx,sz=sx,rx=0,ry=0,rz=0,cast=true}={}){
  const mesh=new THREE.Mesh(geometry,material);
@@ -30,12 +31,13 @@ export function buildPremiumHubRoad(item,{mesh,material,groundY}){
  if(item.kind==='express')for(const side of [-1,1]){
   const lane=mesh('box',marking,item.x+sideX*(item.width*.24)*side,y+.102,item.z+sideZ*(item.width*.24)*side,.10,.016,item.length*.96);lane.rotation.y=heading;lane.castShadow=false;visuals.push(lane);
  }
- const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.42,roughness:.25,metalness:.62});
- for(const fraction of [-.30,.30])for(const side of [-1,1]){
-  const along=item.length*fraction,offset=item.width/2+2.65,x=item.x+forwardX*along+sideX*offset*side,z=item.z+forwardZ*along+sideZ*offset*side;
+ const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.42,roughness:.25,metalness:.62}),roadSeed=hash(item.id||'hub-road');
+ const lampFractions=[-.34+((roadSeed>>>4)%9)/100,.26+((roadSeed>>>9)%11)/100];
+ lampFractions.forEach((fraction,station)=>{for(const side of [-1,1]){
+  const stagger=side*((((roadSeed>>>(station*3+13))%7)-3)/100),along=item.length*(fraction+stagger),offset=item.width/2+2.65,x=item.x+forwardX*along+sideX*offset*side,z=item.z+forwardZ*along+sideZ*offset*side;
   const pole=mesh('cylinder',streetMetal,x,y+2.15,z,.075,4.1,.075);pole.castShadow=false;visuals.push(pole);
   const cap=mesh('box',streetGlow,x,y+4.23,z,.26,.09,.26);cap.castShadow=false;visuals.push(cap);
- }
+ }});
  return visuals;
 }
 
@@ -47,16 +49,18 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
  const stone=material('#30383d',{roughness:.78,metalness:.10});
 
  const base=mesh('box',stone,bx,y+.45,bz,width*1.06,.9,depth*1.06);base.castShadow=true;visuals.push(base);
- const levels=clamp(Math.floor(height/9),2,7);
+ const rhythmSeed=hash(item.buildingId||item.id||'hub-building'),glassMode=rhythmSeed%3,levels=clamp(Math.floor(height/9),2,7);
  for(let level=1;level<levels;level++){
-  const wy=y+height*(level/(levels+.1)),front=mesh('box',glass,bx,wy,bz+depth*.505,width*.82,.95,.10),back=mesh('box',glass,bx,wy,bz-depth*.505,width*.82,.95,.10);
+  const phase=(level+glassMode)%3,bandWidth=width*(phase===0?.68:phase===1?.82:.74),bandHeight=phase===0?.72:phase===1?.95:.82,wy=y+height*(level/(levels+.1));
+  const front=mesh('box',glass,bx,wy,bz+depth*.505,bandWidth,bandHeight,.10),back=mesh('box',glass,bx,wy,bz-depth*.505,bandWidth,bandHeight,.10);
   front.castShadow=back.castShadow=false;visuals.push(front,back);
-  if(width<76){
-   const left=mesh('box',glass,bx-width*.505,wy,bz,.10,.95,depth*.70),right=mesh('box',glass,bx+width*.505,wy,bz,.10,.95,depth*.70);left.castShadow=right.castShadow=false;visuals.push(left,right);
+  if(width<76&&phase!==1){
+   const sideDepth=depth*(phase===2?.56:.70),left=mesh('box',glass,bx-width*.505,wy,bz,.10,bandHeight,sideDepth),right=mesh('box',glass,bx+width*.505,wy,bz,.10,bandHeight,sideDepth);left.castShadow=right.castShadow=false;visuals.push(left,right);
   }
  }
- for(const side of [-1,1])for(const zside of [-1,1]){
-  const fin=mesh('box',canonical?gold:trim,bx+side*width*.46,y+height*.52,bz+zside*depth*.505,.11,height*.92,.16);fin.castShadow=false;visuals.push(fin);
+ let finIndex=0;for(const side of [-1,1])for(const zside of [-1,1]){
+  const accent=canonical&&((finIndex+((rhythmSeed>>>5)%4))%3===0)?gold:trim;
+  const fin=mesh('box',accent,bx+side*width*.46,y+height*.52,bz+zside*depth*.505,.11,height*.92,.16);fin.castShadow=false;visuals.push(fin);finIndex++;
  }
  const canopy=mesh('box',trim,bx,y+3.2,bz+depth*.57,width*.26,.26,depth*.18);visuals.push(canopy);
  const light=mesh('box',glass,bx,y+2.7,bz+depth*.665,width*.18,.18,.08);light.castShadow=false;visuals.push(light);
