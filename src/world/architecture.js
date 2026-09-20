@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {surfaceTexture} from './surfaces.js';
-import {buildingDimensions} from './building-scale.js';
+import {buildingDimensions,facadeBayCount} from './building-scale.js';
 
 // A facade is assembled as piers, spandrels, recessed glazing and cornices.
 // Keeping real depth lets the same daylight describe every country's architecture.
@@ -46,7 +46,7 @@ export function createArchitecture(occlusion){
   b('#6d6c60',0,h/2,0,w-.85,h,depth-.85,g,s.kind);
   b(s.trim,0,.3,0,w+.35,.6,depth+.35);
   for(let face=0;face<4;face++){
-   const front=new THREE.Group();front.rotation.y=face*Math.PI/2;g.add(front);const span=face%2?depth:w,z=(face%2?w:depth)/2,bays=3,pitch=(span-.75)/bays,opening=pitch*.63;
+   const front=new THREE.Group();front.rotation.y=face*Math.PI/2;g.add(front);const span=face%2?depth:w,z=(face%2?w:depth)/2,bays=facadeBayCount(span,variant,face),pitch=(span-.75)/bays,opening=pitch*.63,doorCol=bays%2?Math.floor(bays/2):1+(variant%2);
    const east=['maroc','tunisie','algerie'].includes(region);
    for(let floor=0;floor<floors;floor++){
     const y=floor*storey,winHeight=floor?3.25:3.8,sill=floor?1.0:.55;
@@ -54,7 +54,7 @@ export function createArchitecture(occlusion){
     b(wall,0,y+(sill+winHeight+storey)/2,z,span,storey-sill-winHeight,.52,front,s.kind);
     for(let col=0;col<=bays;col++){const x=-span/2+.2+col*(span-.4)/bays;b(wall,x,y+storey/2,z,pitch-opening,storey,.62,front,s.kind);}
     for(let col=0;col<bays;col++){
-     const x=(col-1)*pitch,door=floor===0&&face===0&&col===1,base=y+(door?.08:sill),height=door?d.doorHeight:winHeight,ww=door?d.doorWidth:opening;
+     const x=(col-(bays-1)/2)*pitch,door=floor===0&&face===0&&col===doorCol,base=y+(door?.08:sill),height=door?d.doorHeight:winHeight,ww=door?d.doorWidth:opening;
      b(s.wood,x,base+height/2,z-.28,ww+.08,height,.11,front,'timber');
      if(!door){
       b('#183942',x,base+height/2+.03,z-.20,ww-.22,height-.22,.055,front,'glass');
