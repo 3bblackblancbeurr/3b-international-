@@ -1,6 +1,7 @@
 import {createPartyActors} from './party-actors.js';
 import {createCombatTelegraph} from './combat-telegraph.js';
 import {createWorldPost} from './postprocessing.js';
+import {cinemaProfile} from './cinematic-director.js';
 import {createWorldSky} from './sky.js';
 import {createMovementFrame,followMovement,viewBearing} from './camera-follow.js';
 import {combatCue,createCombatEffects} from './combat-effects.js';
@@ -252,11 +253,11 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const resident=items.find(i=>i.type==='story'||i.id===region+':story');
     if(resident){focus={x:resident.x,z:resident.z};landscape?.cinematicFocus(focus.x,focus.z,'Talk',elapsed);}radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
    }else if(kind==='story-power'){hero?.action('Cast');radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
-   const accent=countryById[region]?.color||'#58d1ff',secondary='#e0c486',micro=['memory-fragment','discovery','story-power'].includes(kind);
+   const profile=cinemaProfile(region),accent=profile.accent,secondary=profile.secondary,micro=['memory-fragment','discovery','story-power'].includes(kind);
    post.setCinematic({active:true,intensity:major?1:micro?.72:.84,accent,secondary});
    shot={...focus,kind,major,focusItemId,accent,secondary,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,title:'',detail:''};clearInput();needsRender=true;
   },
-  inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),duration=6500,accent=countryById[region]?.color||'#58d1ff',secondary='#e0c486';post.setCinematic({active:true,intensity:.82,accent,secondary});shot={...p,kind:'heritage-inspection',major:false,accent,secondary,angle:-BIOMES[region].angle+.35,duration,until:performance.now()+duration,heritage:true,cinematic:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
+  inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),duration=6500,profile=cinemaProfile(region),accent=profile.accent,secondary=profile.secondary;post.setCinematic({active:true,intensity:.82,accent,secondary});shot={...p,kind:'heritage-inspection',major:false,accent,secondary,angle:-BIOMES[region].angle+.35,duration,until:performance.now()+duration,heritage:true,cinematic:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
   skipCinematic(){if(shot?.cinematic)post.setCinematic(null);shot=null;needsRender=true;},
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,
