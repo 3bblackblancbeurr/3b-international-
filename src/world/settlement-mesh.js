@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {REGIONS} from './settlements.js';
-import {surfaceTexture} from './surfaces.js';
+import {surfaceMaterialMaps} from './surfaces.js';
 
 export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned}){
- const c=REGIONS[region],{height,roads,squares,fields,biome}=field,texture=surfaceTexture('stone'),soil=surfaceTexture('earth');if(texture)owned.push(texture);if(soil)owned.push(soil);
- let paving=mat(c.paving,{map:texture,bumpMap:texture,bumpScale:.085,roughness:.92}),earth=mat(c.earth,{map:soil,bumpMap:soil,bumpScale:.07}),wood=mat('#72604b',{roughness:.78}),iron=mat('#26363a',{metalness:.62,roughness:.42}),edge=mat('#5c584d',{roughness:.98}),curb=mat('#7d817d',{roughness:.82}),wetSeam=mat('#283336',{roughness:.48,metalness:.08});
+ const c=REGIONS[region],{height,roads,squares,fields,biome}=field,stoneMaps=surfaceMaterialMaps('stone'),earthMaps=surfaceMaterialMaps('earth');for(const bundle of [stoneMaps,earthMaps])for(const texture of Object.values(bundle))if(texture)owned.push(texture);
+ let paving=mat(c.paving,{...stoneMaps,bumpScale:.06,roughness:1}),earth=mat(c.earth,{...earthMaps,bumpScale:.05,roughness:1}),wood=mat('#72604b',{roughness:.78}),iron=mat('#26363a',{metalness:.62,roughness:.42}),edge=mat('#5c584d',{roughness:.98}),curb=mat('#7d817d',{roughness:.82}),wetSeam=mat('#283336',{roughness:.48,metalness:.08});
  if(region!=='hub'&&typeof document!=='undefined'){const loader=new THREE.TextureLoader(),maps={};for(const [key,channel] of [['map','Diffuse'],['normalMap','nor_gl'],['roughnessMap','Rough']]){const t=loader.load('/world/paris/textures/cobblestone_floor_08_'+channel+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;if(key==='map')t.colorSpace=THREE.SRGBColorSpace;owned.push(t);maps[key]=t;}paving=mat(region==='france'?'#e0dacd':c.paving,{...maps,normalScale:new THREE.Vector2(.35,.35),roughness:.85});}
  function strip(points,width,material){
   const dense=[points[0]],verts=[],uv=[],indices=[],lift=material===paving?.08:.035;
