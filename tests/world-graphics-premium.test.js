@@ -39,3 +39,20 @@ test('premium visual helpers remain rendering-only and do not mutate world progr
   assert.doesNotMatch(source,/recordWorldAction|saveWorld|supabase|reward|xp\s*[+\-]=|shards\s*[+\-]=/i);
  }
 });
+
+
+test('premium desktop rendering increases shadow detail without forcing mobile cost',()=>{
+ const scene=read('src/world/scene.js');
+ assert.match(scene,/highEndAuto=mode==='auto'/);
+ assert.match(scene,/memory>=8/);
+ assert.match(scene,/\?2048:1024/);
+ assert.match(scene,/renderer\.shadowMap\.enabled=mode!==\'fluid\'/);
+});
+
+test('premium exploration HUD keeps information but reduces its visual footprint',()=>{
+ const css=read('src/world/exploration.css');
+ assert.match(css,/Premium graphics pass/);
+ assert.match(css,/\.world-shell \.world-minimap:hover/);
+ assert.match(css,/width:118px/);
+ assert.match(css,/\.world-shell \.play-interaction/);
+});
