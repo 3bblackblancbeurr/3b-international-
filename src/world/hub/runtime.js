@@ -5,6 +5,7 @@ import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.j
 import {hubNpcSchedule} from './npc-schedule.js';
 import {guardianHubPresence} from '../guardian-values.js';
 import {buildMetropolisRuntimeItems,hubDistrictPosition} from './metropolis.js';
+export {hubDistrictPosition};
 
 function hash(input) {
   let value = 2166136261;
