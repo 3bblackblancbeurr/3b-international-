@@ -33,3 +33,5 @@
 .world-dialog-story .world-primary{box-shadow:0 10px 34px #0006,0 0 22px color-mix(in srgb,var(--chapter-color) 12%,transparent)}
 @media(max-width:820px){.world-dialog-story{width:calc(100vw - 24px);max-height:61svh;margin:auto 12px max(10px,env(safe-area-inset-bottom));border-radius:16px}.world-dialog-story::backdrop{background:linear-gradient(180deg,transparent 0 34%,#01050a80 66%,#01050ac7)}.world-dialog-story>header{padding-top:12px}.world-dialog-story .adventure-dialogue{font-size:17px}}
 @media(max-height:560px) and (orientation:landscape){.world-dialog-story{width:min(620px,58vw);max-height:82svh;margin:auto auto 12px 18px}.world-dialog-story .adventure-banner{padding:10px}.world-dialog-story .adventure-dialogue{font-size:15px;margin:10px 0}}
+
+@media (min-aspect-ratio:16/10) and (min-width:720px){.tier-major .cinema-letterbox{height:12.8vh}}
