@@ -165,7 +165,7 @@ function hubNpcAvatar(item){
     item.homeX=item.x;item.homeZ=item.z;
     const controller=createLivingActor(models.living,{avatar:hubNpcAvatar(item),scale:1.9,onError});
     controller.object.position.set(item.x,groundY(item.x,item.z),item.z);root.add(controller.object);
-    hubNpcActors.push({item,controller,object:controller.object,lastSimAt:0,lastX:item.x,lastZ:item.z});itemVisuals.set(item.id,[controller.object]);continue;
+    hubNpcActors.push({item,controller,object:controller.object,lastSimAt:0,targetX:item.x,targetZ:item.z,targetHeading:controller.object.rotation.y||0,simulationMoving:false,activityState:null});itemVisuals.set(item.id,[controller.object]);continue;
    }
    if(item.type==='hubRoad'){
     const visuals=buildPremiumHubRoad(item,{mesh,material,groundY});itemVisuals.set(item.id,visuals);continue;
@@ -337,11 +337,31 @@ function hubNpcAvatar(item){
    if(now-lastNpcUpdateAt>=1000/stream.npcUpdateHz){
     lastNpcUpdateAt=now;
     for(const actor of hubNpcActors){
-     const d=Math.hypot(actor.item.x-position.x,actor.item.z-position.z),lod=lodForDistance(d,stream),visible=lod<3;
-     actor.object.visible=visible;if(!visible)continue;
-     const sim=npcSimulationTier(d),interval=1000/Math.max(.25,sim.updateHz);if(actor.lastSimAt&&now-actor.lastSimAt<interval)continue;const delta=Math.max(.001,(now-(actor.lastSimAt||now-16))/1000);actor.lastSimAt=now;const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused}),gy=groundY(pose.x,pose.z);actor.item.x=pose.x;actor.item.z=pose.z;actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
-     actor.object.visible=visible;actor.object.position.set(pose.x,gy,pose.z);actor.object.rotation.y=pose.heading;const moved=Math.hypot(pose.x-actor.lastX,pose.z-actor.lastZ);actor.controller.update(delta,pose.x-actor.lastX,pose.z-actor.lastZ,moved);actor.lastX=pose.x;actor.lastZ=pose.z;
+     const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),sim=npcSimulationTier(d),interval=1000/Math.max(.25,sim.updateHz);
+     if(actor.lastSimAt&&now-actor.lastSimAt<interval)continue;
+     actor.lastSimAt=now;
+     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused});
+     actor.targetX=pose.x;actor.targetZ=pose.z;actor.targetHeading=pose.heading;actor.simulationMoving=pose.moving;
+     actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
+     if(actor.activityState!==pose.state){
+      actor.activityState=pose.state;
+      actor.controller.setActivity?.(pose.state==='Work'?'Work':pose.state==='Talk'?'Talk':null);
+     }
     }
+   }
+   // Decision making may run at 10/3 Hz, but visible transforms and skeletal
+   // animation must stay frame-rate smooth. This prevents the "10 fps NPC" look.
+   for(const actor of hubNpcActors){
+    const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),lod=lodForDistance(d,stream),visible=lod<3;
+    actor.object.visible=visible;if(!visible)continue;
+    const beforeX=actor.object.position.x,beforeZ=actor.object.position.z,tier=actor.item.simulationTier||'full';
+    const follow=tier==='full'?13:tier==='simplified'?7:3.5,blend=1-Math.exp(-dt*follow);
+    actor.object.position.x+=(actor.targetX-beforeX)*blend;actor.object.position.z+=(actor.targetZ-beforeZ)*blend;
+    actor.object.position.y=groundY(actor.object.position.x,actor.object.position.z);
+    const mx=actor.object.position.x-beforeX,mz=actor.object.position.z-beforeZ,moved=Math.hypot(mx,mz);
+    actor.item.x=actor.object.position.x;actor.item.z=actor.object.position.z;
+    actor.controller.update(dt,mx,mz,moved);
+    if(moved<.0015&&Number.isFinite(actor.targetHeading))actor.controller.face(Math.sin(actor.targetHeading),Math.cos(actor.targetHeading),dt);
    }
    if(now-lastStreamingAt>=350){
     lastStreamingAt=now;
