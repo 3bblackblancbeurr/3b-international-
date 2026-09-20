@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {surfaceTexture} from './surfaces.js';
+import {surfaceMaterialMaps} from './surfaces.js';
 import {wetnessForWeather} from './wetness.js';
 
 export const GROUND_STYLE={
@@ -11,9 +11,9 @@ export const GROUND_STYLE={
 };
 
 export function createNaturalGround(region){
- const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass');
- if(texture)texture.repeat.set(260,260);
- const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.026,roughness:.98,metalness:0});
+ const style=GROUND_STYLE[region]||GROUND_STYLE.hub,maps=surfaceMaterialMaps('grass'),texture=maps.map;
+ for(const t of Object.values(maps))if(t)t.repeat.set(260,260);
+ const material=new THREE.MeshStandardMaterial({vertexColors:true,map:maps.map,bumpMap:maps.bumpMap,roughnessMap:maps.roughnessMap,bumpScale:.026,roughness:1,metalness:0});
  const uniforms={
   soilTint:{value:new THREE.Color(style.soil)},
   groundDryness:{value:style.dry},
@@ -55,5 +55,5 @@ export function createNaturalGround(region){
  function setWeather(weather){setWetness(wetnessForWeather(weather));}
  function setDaylight(value){uniforms.daylight.value=Math.max(0,Math.min(1,Number(value)||0));}
  function setQuality(mode){uniforms.detailStrength.value=mode==='fluid'?.45:mode==='detail'?1.15:.82;material.bumpScale=mode==='fluid'?.012:mode==='detail'?.032:.024;material.needsUpdate=true;}
- return {material,texture,setWetness,setWeather,setDaylight,setQuality};
+ return {material,texture,maps,setWetness,setWeather,setDaylight,setQuality};
 }
