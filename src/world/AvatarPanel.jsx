@@ -6,12 +6,15 @@ import {COUNTRIES} from './catalog.js';
 import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
 import {AVATAR_ASSET_SLOTS,AVATAR_SLOT_LABELS} from './avatar-assets.js';
 import {BODY_CAPABILITIES,FACE_CAPABILITIES} from './avatar-capabilities.js';
+import Armory from './origins/Armory.jsx';
 import '../arena/arena.css';
 export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created);
+ const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created),[section,setSection]=useState('appearance');
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
+ const merge=values=>setDraft(d=>({...d,...values}));
  if(reveal)return <AvatarCinematic avatar={reveal} onDone={()=>onDone?.({firstCreation:!initiallyCreated,avatar:reveal})}/>;
- return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
+ return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><div className="avatar-workbench"><nav className="avatar-tabs" aria-label="Personnalisation du personnage"><button type="button" aria-pressed={section==='appearance'} onClick={()=>setSection('appearance')}>Apparence</button><button type="button" aria-pressed={section==='armory'} onClick={()=>setSection('armory')}>Armurerie</button></nav><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
+  {section==='appearance'?<>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
   <fieldset><legend>Silhouette</legend><div className="world-actions">{['homme','femme'].map(body=><button type="button" key={body} aria-pressed={draft.body===body} onClick={()=>set('body',body)}>{body==='homme'?'Homme':'Femme'}</button>)}</div></fieldset>
   <label>Morphologie<select value={draft.shape} onChange={e=>set('shape',e.target.value)}><option value="equilibre">Équilibrée</option><option value="elance">Élancée</option><option value="solide">Solide</option></select></label>
@@ -33,6 +36,7 @@ export function AvatarPanel({save,act,onDone}){
   <label>Origines personnelles · tous les pays<input maxLength={50} placeholder="Pays ou origines de ton choix" value={draft.nationality} onChange={e=>set('nationality',e.target.value)}/></label>
   <label>Pays de cœur dans le Monde 3B<select value={draft.origin} onChange={e=>set('origin',e.target.value)}><option value="3b">L’Union des huit portes</option>{COUNTRIES.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
   <label>Voie de pouvoir<select value={draft.path} onChange={e=>set('path',e.target.value)}>{Object.entries(AVATAR_PATHS).map(([id,p])=><option key={id} value={id}>{p.name}</option>)}</select></label><p>{AVATAR_PATHS[draft.path].description}</p><small>Ton apparence et tes origines restent libres. La voie influence l’aventure ; les duels de l’arène utilisent les statistiques équilibrées des personnages.</small>
-  <button className="world-primary" type="submit">{save.adventure.avatar.created?'Enregistrer mon personnage':'Commencer mon voyage'}</button><p role="status">{message}</p>
- </form></div>;
+  </>:<Armory draft={draft} change={merge} xp={save.xp}/>} 
+  <div className="avatar-savebar"><button className="world-primary" type="submit">{save.adventure.avatar.created?'Enregistrer personnage & arme':'Commencer mon voyage'}</button><p role="status">{message}</p></div>
+ </form></div></div>;
 }
