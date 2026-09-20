@@ -20,7 +20,8 @@ test('premium narrative has one coherent world mystery and no chosen-one shortcu
  assert.match(WORLD_NARRATIVE.oblivion.origin,/protection/i);
  assert.match(WORLD_NARRATIVE.oblivion.corruption,/préservé|préserver/i);
  assert.match(WORLD_NARRATIVE.circle.danger,/réveille|réveiller/i);
- assert.doesNotMatch(WORLD_NARRATIVE.player.role,/élu/i);
+ assert.match(WORLD_NARRATIVE.player.role,/n’est pas un élu/i);
+ assert.doesNotMatch(WORLD_NARRATIVE.player.role,/destin|prophétie|choisi par le destin/i);
  assert.equal(WORLD_NARRATIVE.reveals.length,5);
 });
 
