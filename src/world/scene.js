@@ -28,7 +28,7 @@ import {distance,nearestInteraction,teamStats} from './rules.js';
 import {hubNpcPose,npcSimulationTier} from './hub/npc-motion.js';
 import {routePose} from './hub/transport-motion.js';
 import {worldTimeSnapshot} from './world-time.js';
-import {streamingProfile,lodForDistance} from './streaming.js';
+import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './streaming.js';
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
 import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle} from './premium-hub-visuals.js';
@@ -50,7 +50,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
- let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],hubNpcActors=[],hubVehicles=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null;
+ let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],hubNpcActors=[],hubVehicles=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null,hubLodState=new Map();
  let escort=null,escortId=null,trail=[],shot=null,daylight=null,retaliationPlayed=true;
  let partyActors=null,latestPeers=[],partyState=null;
  let fieldRival=null,combatDistance=Infinity,combatClock=0,combatButton=null;
@@ -157,7 +157,7 @@ function hubNpcAvatar(item){
  function rebuild(nextRegion){
   onLoadState?.(true);
   partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
-  hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
+  hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];hubLodState.clear();transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;worldRadius=worldRadiusFor(region);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);items=worldRuntimeItems(region,save,{weather});sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});scene.fog=new THREE.Fog(0xbacdd6,region==='hub'?300:220,region==='hub'?1350:780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
@@ -170,7 +170,7 @@ function hubNpcAvatar(item){
     item.homeX=item.x;item.homeZ=item.z;
     const controller=createLivingActor(models.living,{avatar:hubNpcAvatar(item),scale:1.9,onError});
     controller.object.position.set(item.x,groundY(item.x,item.z),item.z);root.add(controller.object);
-    hubNpcActors.push({item,controller,object:controller.object,lastSimAt:0,targetX:item.x,targetZ:item.z,targetHeading:controller.object.rotation.y||0,simulationMoving:false,activityState:null});itemVisuals.set(item.id,[controller.object]);continue;
+    hubNpcActors.push({item,controller,object:controller.object,lastSimAt:0,targetX:item.x,targetZ:item.z,targetHeading:controller.object.rotation.y||0,simulationMoving:false,activityState:null,lod:null});itemVisuals.set(item.id,[controller.object]);continue;
    }
    if(item.type==='hubRoad'){
     const visuals=buildPremiumHubRoad(item,{mesh,material,groundY});itemVisuals.set(item.id,visuals);continue;
@@ -357,8 +357,8 @@ function hubNpcAvatar(item){
    // Decision making may run at 10/3 Hz, but visible transforms and skeletal
    // animation must stay frame-rate smooth. This prevents the "10 fps NPC" look.
    for(const actor of hubNpcActors){
-    const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),lod=lodForDistance(d,stream),visible=lod<3;
-    actor.object.visible=visible;if(!visible)continue;
+    const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),lod=lodForDistanceHysteresis(d,stream,actor.lod,.09),visible=lod<3;
+    actor.lod=lod;actor.object.visible=visible;if(!visible)continue;
     const beforeX=actor.object.position.x,beforeZ=actor.object.position.z,tier=actor.item.simulationTier||'full';
     const follow=tier==='full'?13:tier==='simplified'?7:3.5,blend=1-Math.exp(-dt*follow);
     actor.object.position.x+=(actor.targetX-beforeX)*blend;actor.object.position.z+=(actor.targetZ-beforeZ)*blend;
@@ -373,8 +373,8 @@ function hubNpcAvatar(item){
     for(const [id,visuals] of itemVisuals){
      if(!id.startsWith('hub:')||id.startsWith('hub:npc:'))continue;
      const item=items.find(entry=>entry.id===id);if(!item)continue;
-     const lod=lodForDistance(Math.hypot(item.x-position.x,item.z-position.z),stream);
-     visuals.forEach((visual,index)=>{visual.visible=lod<3&&(lod<2||index===0);});
+     const distanceToItem=Math.hypot(item.x-position.x,item.z-position.z),previousLod=hubLodState.get(id),lod=lodForDistanceHysteresis(distanceToItem,stream,previousLod,.08);
+     hubLodState.set(id,lod);visuals.forEach((visual,index)=>{visual.visible=lod<3&&(lod<2||index===0);});
     }
    }
    for(const vehicle of hubVehicles){
