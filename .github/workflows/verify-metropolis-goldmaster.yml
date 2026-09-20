@@ -33,5 +33,6 @@ jobs:
           tests/hub-save-engine.test.js
           tests/world.test.js
           tests/world-landscape.test.js
+          tests/world-city-metropolis-bridge.test.js
       - name: Production build
         run: npm run build
