@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition} from '../src/world/hub/metropolis.js';
+import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
 import {HUB_BUILDING_IDS} from '../src/world/hub/activity-catalog.js';
@@ -70,4 +70,15 @@ test('City 3B district remains a real metropolitan destination',()=>{
  const gallery=plan.buildings.find(b=>b.id==='city_gallery');
  assert.equal(planning.district,'city3b_portal');
  assert.equal(gallery.district,'city3b_portal');
+});
+
+
+test('human-scale pedestrian shortcuts break the hub ring-and-spoke pattern',()=>{
+ const roads=metropolisRoadItems(plan),lanes=roads.filter(r=>r.kind==='lane');
+ assert.equal(lanes.length,10);
+ assert.ok(lanes.every(r=>r.width===6.5));
+ assert.ok(lanes.every(r=>r.length>10));
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const trafficRoutes=new Set(runtime.items.filter(i=>i.type==='hubTraffic').map(i=>i.routeId));
+ assert.ok(lanes.every(lane=>!trafficRoutes.has(lane.id)));
 });
