@@ -1,5 +1,3 @@
--- The member profile is the single source of truth for Passport 3B origin.
--- p_country is kept only for compatibility with existing clients; it is ignored.
 create or replace function public.nexus_city_create(p_user uuid, p_name text, p_country text)
 returns uuid
 language plpgsql
