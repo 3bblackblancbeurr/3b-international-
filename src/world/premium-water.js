@@ -212,14 +212,15 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
    material.uniforms.reflectionTexture.value=reflectionTarget.texture;
   }else if(reflectionTarget.width!==size||reflectionTarget.height!==size)reflectionTarget.setSize(size,size);
  }
- function setQuality(mode){
-  const q=qualityProfile(mode);reflectionProfile=q;
+ function setQuality(mode,{allowPlanarReflection=true}={}){
+  const q=qualityProfile(mode),sceneReflection=allowPlanarReflection?q.sceneReflection:0;
+  reflectionProfile=sceneReflection>0?q:{...q,sceneReflection:0,reflectionHz:0};
   material.uniforms.waveAmp.value=q.waveAmp;
   material.uniforms.normalStrength.value=q.normalStrength;
   material.uniforms.foamAmount.value=q.foam;
   material.uniforms.reflectionAmount.value=q.reflection;
-  material.uniforms.sceneReflection.value=q.sceneReflection;
-  if(q.sceneReflection>0)ensureReflectionTarget(q.reflectionSize);else material.uniforms.reflectionReady.value=0;
+  material.uniforms.sceneReflection.value=sceneReflection;
+  if(sceneReflection>0)ensureReflectionTarget(q.reflectionSize);else material.uniforms.reflectionReady.value=0;
   mistMaterial.uniforms.opacity.value=q.mist;
  }
  function setWeather(weather){
