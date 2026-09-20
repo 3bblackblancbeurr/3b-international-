@@ -8,17 +8,31 @@ export function ArenaStage({state,side=0,cardId,avatar,cinematic}){
  const ref=useRef(null),liveState=useRef({state,side,cardId,avatar,cinematic}),[error,setError]=useState('');liveState.current={state,side,cardId,avatar,cinematic};
  useEffect(()=>{
   const canvas=ref.current;let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les textes et les commandes restent accessibles.');return;}
-  const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,90),geometry=[],materials=[];
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.32;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;
-  scene.background=new THREE.Color('#101c27');scene.fog=new THREE.Fog('#101c27',13,29);
-  scene.add(new THREE.HemisphereLight('#ecf6ff','#a0aa92',3.2));
-  const light=new THREE.DirectionalLight('#ffe7b5',4);light.position.set(-4,7,6);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-6,right:6,top:5,bottom:-5});light.shadow.normalBias=.035;scene.add(light);
-  const rim=new THREE.DirectionalLight('#74c6e7',3);rim.position.set(4,3,-5);scene.add(rim);
-  const material=(color,extra={})=>{const m=new THREE.MeshStandardMaterial({color,roughness:.67,metalness:.2,...extra});materials.push(m);return m;};
-  const mesh=(g,m)=>{geometry.push(g);const o=new THREE.Mesh(g,m);o.receiveShadow=true;scene.add(o);return o;};
-  const floor=mesh(new THREE.CylinderGeometry(7,7.15,.20,64),material('#233941'));floor.position.y=-.13;
-  for(const r of [3.2,5.4,6.5]){const o=mesh(new THREE.TorusGeometry(r,.018,5,80),material('#aa915e',{metalness:.8}));o.rotation.x=Math.PI/2;o.position.y=.005;}
-  for(let i=0;i<8;i++){const angle=i*Math.PI/4;const p=mesh(new THREE.CylinderGeometry(.25,.36,2.1,8),material('#32454b'));p.position.set(Math.cos(angle)*6.7,1,Math.sin(angle)*6.7);const lamp=mesh(new THREE.IcosahedronGeometry(.12,1),material('#d6bc83',{emissive:'#d6bc83',emissiveIntensity:1}));lamp.position.copy(p.position).y=2.2;}
+  const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,110),geometry=[],materials=[];
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  scene.background=new THREE.Color('#07111d');scene.fog=new THREE.FogExp2('#07111d',.026);
+  scene.add(new THREE.HemisphereLight('#dceeff','#07101b',2.15));
+  const light=new THREE.DirectionalLight('#ffe1a6',4.4);light.position.set(-4,7,6);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-6,right:6,top:5,bottom:-5});light.shadow.normalBias=.035;scene.add(light);
+  const rim=new THREE.DirectionalLight('#65cfff',3.5);rim.position.set(4,3,-5);scene.add(rim);
+  const bluePulse=new THREE.PointLight('#52cfff',0,14,2);bluePulse.position.set(2.8,3,-2.2);scene.add(bluePulse);
+  const goldPulse=new THREE.PointLight('#e2c27d',0,12,2);goldPulse.position.set(-2.4,2.2,-1.6);scene.add(goldPulse);
+  const material=(color,extra={})=>{const m=new THREE.MeshStandardMaterial({color,roughness:.62,metalness:.18,...extra});materials.push(m);return m;};
+  const mesh=(g,m,parent=scene)=>{geometry.push(g);const o=new THREE.Mesh(g,m);o.receiveShadow=true;parent.add(o);return o;};
+  const floor=mesh(new THREE.CylinderGeometry(7,7.15,.20,64),material('#162936',{roughness:.32,metalness:.14}));floor.position.y=-.13;
+  for(const r of [3.2,5.4,6.5]){const o=mesh(new THREE.TorusGeometry(r,.018,5,80),material('#aa915e',{metalness:.82,roughness:.28}));o.rotation.x=Math.PI/2;o.position.y=.005;}
+  for(let i=0;i<8;i++){const angle=i*Math.PI/4;const p=mesh(new THREE.CylinderGeometry(.25,.36,2.1,8),material('#263c48'));p.position.set(Math.cos(angle)*6.7,1,Math.sin(angle)*6.7);const lamp=mesh(new THREE.IcosahedronGeometry(.12,1),material('#d6bc83',{emissive:'#d6bc83',emissiveIntensity:1.2,roughness:.2}));lamp.position.copy(p.position).y=2.2;}
+  const portal=new THREE.Group();portal.position.set(0,2.25,-1.85);scene.add(portal);
+  const portalMat=material('#55cfff',{emissive:'#38bfff',emissiveIntensity:2.4,metalness:.72,roughness:.18,transparent:true,opacity:.18});
+  const portalGold=material('#e0c17c',{emissive:'#b88d38',emissiveIntensity:1.4,metalness:.86,roughness:.2,transparent:true,opacity:.12});
+  mesh(new THREE.TorusGeometry(2.65,.048,10,128),portalMat,portal);
+  const inner=mesh(new THREE.TorusGeometry(2.28,.022,8,112),portalGold,portal);inner.rotation.z=.21;
+  for(let i=0;i<8;i++){const shard=mesh(new THREE.BoxGeometry(.055,.42,.055),i%2?portalMat:portalGold,portal),angle=i*Math.PI/4;shard.position.set(Math.cos(angle)*2.46,Math.sin(angle)*2.46,0);shard.rotation.z=angle;shard.rotation.y=.35;}
+  portal.visible=false;
+  const particleGeometry=new THREE.BufferGeometry(),particlePositions=new Float32Array(96*3);
+  for(let i=0;i<96;i++){particlePositions[i*3]=(Math.random()-.5)*10;particlePositions[i*3+1]=Math.random()*6-.5;particlePositions[i*3+2]=(Math.random()-.5)*6-1;}
+  particleGeometry.setAttribute('position',new THREE.BufferAttribute(particlePositions,3));geometry.push(particleGeometry);
+  const particleMat=new THREE.PointsMaterial({color:'#d9c083',size:.035,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});materials.push(particleMat);
+  const particles=new THREE.Points(particleGeometry,particleMat);particles.visible=false;scene.add(particles);
   let actors=[],ids=[],lastRevision='',at=performance.now(),raf,elapsed=0,impact=10,who=0,rot=0,pointer=null,disposed=false;
   let lastFilm='',lastRound=null,lastWinner=null,introAge=0,resultAge=0;
   const media=matchMedia('(prefers-reduced-motion: reduce)');
@@ -49,10 +63,26 @@ export function ArenaStage({state,side=0,cardId,avatar,cinematic}){
    if(film){
     // Different framings of the saved avatar, not pre-rendered stock characters.
     const p=Math.max(0,Math.min(1,film.progress||0)),smooth=p*p*(3-2*p),portrait=camera.aspect<.85;
-    const shot=({portrait:{radius:3.05,y:1.75,focus:1.23,from:-.16,to:.13},full:{radius:5.25,y:2.2,focus:1.12,from:-.38,to:.15},equipment:{radius:3.8,y:1.7,focus:.98,from:.38,to:.05},power:{radius:4.65,y:1.95,focus:1.1,from:.3,to:-.3},departure:{radius:6.3,y:2.9,focus:1.1,from:-.16,to:0}})[film.camera]||{radius:4.5,y:2.1,focus:1.1,from:0,to:0};
-    const angle=reduced?0:shot.from+(shot.to-shot.from)*smooth,radius=shot.radius*(portrait?1.12:1);
-    desired.set(Math.sin(angle)*radius,shot.y,Math.cos(angle)*radius);target.set(0,shot.focus,0);
-    rim.color.set(AVATAR_PATHS[s.avatar?.path]?.color||'#74c6e7');
+    const shot=({
+     blackout:{radius:4.8,y:2.1,focus:1.1,from:0,to:0,fov:38},
+     scan:{radius:2.72,y:1.64,focus:1.34,from:-.08,to:.06,fov:31},
+     portrait:{radius:3.15,y:1.76,focus:1.28,from:-.18,to:.12,fov:34},
+     orbit:{radius:4.25,y:2.0,focus:1.12,from:-.46,to:.34,fov:40},
+     portal:{radius:5.15,y:2.25,focus:1.22,from:.32,to:-.22,fov:44},
+     worlds:{radius:6.4,y:2.75,focus:1.18,from:-.28,to:.28,fov:48},
+     traversal:{radius:4.05,y:1.86,focus:1.15,from:.5,to:-.48,fov:54},
+     reveal:{radius:7.25,y:3.2,focus:1.12,from:-.12,to:.12,fov:50},
+     signature:{radius:5.85,y:2.5,focus:1.16,from:.08,to:-.08,fov:42},
+     handoff:{radius:5.05,y:2.18,focus:1.12,from:-.04,to:0,fov:38},
+    })[film.camera]||{radius:4.5,y:2.1,focus:1.1,from:0,to:0,fov:38};
+    const angle=reduced?0:shot.from+(shot.to-shot.from)*smooth,radius=shot.radius*(portrait?1.1:1),verticalLift=film.camera==='traversal'&&!reduced?Math.sin(p*Math.PI)*.35:0;
+    desired.set(Math.sin(angle)*radius,shot.y+verticalLift,Math.cos(angle)*radius);target.set(0,shot.focus,0);
+    const fovBlend=reduced?1:1-Math.exp(-rawDt*4.5);camera.fov+=((shot.fov||38)-camera.fov)*fovBlend;camera.updateProjectionMatrix();
+    rim.color.set(AVATAR_PATHS[s.avatar?.path]?.color||'#65cfff');
+    const gate=['portal','worlds','warp','world','signature'].includes(film.effect);
+    portal.visible=gate;particles.visible=film.effect!=='blackout';portal.rotation.z+=dt*(film.effect==='warp'?.34:.08);inner.rotation.z-=dt*.13;
+    const pulse=.5+.5*Math.sin(elapsed*2.2);portalMat.opacity=gate?.22+pulse*.22:.04;portalGold.opacity=gate?.16+pulse*.16:.03;particleMat.opacity=film.effect==='warp'?.68:film.effect==='world'?.52:.28;particles.rotation.y+=dt*.025;particles.position.y=Math.sin(elapsed*.35)*.12;
+    bluePulse.intensity=gate?2.3+pulse*2.1:.35;goldPulse.intensity=gate?1.6+pulse*1.4:.25;renderer.toneMappingExposure=film.effect==='portal'||film.effect==='warp'?1.38:film.effect==='world'?1.3:1.22;
    }else if(!solo&&!reduced&&(s.state?.winner===0||s.state?.winner===1)){
     // Presentation only: do not pause a live match or alter its server deadline.
     const x=s.state.winner===s.side?-1.45:1.45,p=Math.min(1,resultAge/5),angle=(x<0?-.12:.12)*p;
@@ -61,7 +91,7 @@ export function ArenaStage({state,side=0,cardId,avatar,cinematic}){
    const blend=reduced?1:1-Math.exp(-rawDt*5);camera.position.lerp(desired,blend);look.lerp(target,blend);camera.lookAt(look);renderer.render(scene,camera);
   }
   raf=requestAnimationFrame(tick);
-  return()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect();actors.forEach(a=>a.dispose());library.dispose();geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);};
+  return()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect();actors.forEach(a=>a.dispose());portal.removeFromParent();particles.removeFromParent();library.dispose();geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);};
  },[]);
  return <><canvas ref={ref} className="arena-stage" aria-label={cinematic?'Mise en scène 3D de ton personnage personnalisé.':cardId?'Modèle 3D de '+(cardById[cardId]?.name||'ton personnage')+'. Glisse pour tourner.':avatar?'Aperçu 3D de ton personnage. Glisse pour tourner.':'Duel 3D des personnages. Les commandes de combat sont sous la scène.'}/>{error&&<p className="arena-model-error" role="status">{error}</p>}</>;
 }

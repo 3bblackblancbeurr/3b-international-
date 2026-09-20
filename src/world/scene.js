@@ -156,7 +156,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function tick(now){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
-  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until)shot=null;if(document.hidden||!models||!avatar||paused&&!cinematic&&!needsRender)return;
+  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until)shot=null;if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
   const dt=Math.min(rawDt,.25);elapsed+=dt;let travelled=0,dx=0,dz=0;
   if(!paused&&!shot){
    if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
@@ -190,7 +190,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   const wide=cameraMode===1,portrait=camera.aspect<.85;
   if(opponent&&!fieldCombat){const mx=(avatar.position.x+opponent.x)/2,mz=(avatar.position.z+opponent.z)/2,my=(avatar.position.y+groundY(opponent.x,opponent.z))/2;desiredTarget.set(mx,my+1.8,mz);desiredCamera.set(mx+(portrait?12:15),my+(portrait?14:11),mz+(portrait?20:18));}
   else{const view=orbitView(orbit,position,y,portrait,groundY);desiredTarget.copy(view.target);desiredCamera.copy(view.position);}
-  if(shot&&(!reducedMotion||shot.heritage)){const age=1-(shot.until-now)/shot.duration,a=shot.angle+(reducedMotion?0:age*.28);desiredTarget.set(shot.x,groundY(shot.x,shot.z)+(shot.heritage?28:2),shot.z);const radius=shot.heritage?(portrait?118:106):23;desiredCamera.set(shot.x+Math.sin(a)*radius,groundY(shot.x,shot.z)+(shot.heritage?36:14),shot.z+Math.cos(a)*radius);}
+  if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+age*arc,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*age));desiredTarget.set(shot.x,baseY+(shot.focusY??(shot.heritage?28:2)),shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+(shot.height??(shot.heritage?36:14)),shot.z+Math.cos(a)*radius);}
 
   const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
@@ -220,6 +220,27 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   setPaused(value){paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value)clearInput();},
   setPresentation(value){presentation=value;if(value!=='encounter')combatFx.clear();needsRender=true;},
   feedback(type,action,previous,next){if(type==='field'){const f=next?.adventure.encounter?.field;if(!f?.last)return;action=f.last;type='battle';}if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,WORLD_RADIUS);position=dodge.position;}if(type==='battle'){lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;hero?.action(action==='enemy'?'Hit':action==='guard'||action==='dodge'||action==='wait'||action==='miss'?'Idle':action==='power'||action==='support'||action==='trap'?'Cast':'Attack');const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
+  playCinematicShot(kind,context={},duration=5200){
+   const encounter=save.adventure.encounter||{},now=performance.now(),major=['country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind);
+   let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16;
+   if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=camera.aspect<.85?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
+   else if(['guardian-intro','final-combat-intro','important-combat-result'].includes(kind)){
+    const rival=battleTarget||items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===(context.card||encounter.card));
+    if(rival){focus={x:rival.x,z:rival.z};radius=kind==='final-combat-intro'?18:12;height=kind==='final-combat-intro'?11:7.5;focusY=2.2;arc=.52;dolly=.18;angle=orbit.yaw-.3;}
+   }else if(kind==='story-restoration'&&region!=='hub'){
+    const stage=context.stage||save.adventure.chapters[region]?.restored||1;
+    focus=toLandscape(region,...(stage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:stage===2?[29,15]:[11,-4]));heritage=stage===3;radius=heritage?(camera.aspect<.85?110:98):18;height=heritage?35:11;focusY=heritage?27:2.4;arc=.34;dolly=.12;
+   }else if(kind==='discovery'){
+    const place=items.find(i=>i.id===region+':survey:'+context.place);if(place)focus={x:place.x,z:place.z};radius=14;height=9;focusY=2.2;arc=.3;dolly=.1;
+   }else if(kind==='memory-fragment'){
+    const fragment=items.find(i=>i.id===context.id||i.type==='beacon'&&i.id===context.id);
+    if(fragment)focus={x:fragment.x,z:fragment.z};radius=7.8;height=5.1;focusY=1.1;arc=.46;dolly=.25;angle=orbit.yaw-.22;
+   }else if(kind==='story-alliance'){
+    const resident=items.find(i=>i.type==='story'||i.id===region+':story');
+    if(resident)focus={x:resident.x,z:resident.z};radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
+   }else if(kind==='story-power'){radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
+   shot={...focus,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,title:'',detail:''};clearInput();needsRender=true;
+  },
   inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);shot={...p,angle:-BIOMES[region].angle+.35,duration:6500,until:performance.now()+6500,heritage:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
   skipCinematic(){shot=null;needsRender=true;},
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},

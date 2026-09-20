@@ -34,6 +34,9 @@ import {Companions,CompanionRow,Sanctuary,TALENT_NAMES} from './Companions.jsx';
 import './companions.css';
 import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
+import {CinematicOverlay} from './CinematicOverlay.jsx';
+import {worldCinematicEvents} from './cinematic-events.js';
+import {storyCinematicPresentation} from './story-cinematic.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -62,12 +65,24 @@ function WorldSession({uid,goTo}){
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
- const [combatImpact,setCombatImpact]=useState(null);
- const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null);
+ const [combatImpact,setCombatImpact]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
+ const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),cinematicSeen=useRef(new Set()),cinematicResumePanel=useRef(null);
  saveRef.current=save;
+ const activeCinematic=cinematicQueue[0]||null;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
  const announce=useCallback(text=>{setNotice(text);clearTimeout(noticeTimer.current);noticeTimer.current=setTimeout(()=>setNotice(''),2400);},[]);
- const act=useCallback(command=>{try{const previous=saveRef.current;if(command.type==='battle'&&previous.adventure.encounter?.field){scene.current?.combatAction(command.action);return previous;}if(command.type==='battle'&&previous.region==='france'&&scene.current&&!scene.current.canBattle(command.action)){announce('Rapproche-toi de ton adversaire.');return null;}const next=recordWorldAction(uid,previous,command);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();if(command.type!=='field'||next.adventure.encounter?.field?.last)audio.current?.event(command.type==='field'?'battle':command.type,command.type==='field'?next.adventure.encounter.field.last:command.action);scene.current?.feedback(command.type,command.action,previous,next);if(command.type==='field')scene.current?.setSave(next);if(command.type==='battle'||command.type==='field'){const cue=combatCue(previous.adventure.encounter,next.adventure.encounter,command.type==='field'?next.adventure.encounter.field.last:command.action,next.adventure.avatar);if(cue&&(cue.outgoing||cue.incoming||cue.healing))setCombatImpact({...cue,key:next.adventure.encounter.turn});}else if(['leave','visit','patrol','encounter'].includes(command.type))setCombatImpact(null);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde'+(next.shards>previous.shards?' · +'+(next.shards-previous.shards)+' éclats':''));}return next;}catch(error){announce(error.message);return null;}},[uid,announce]);
+ const enqueueCinematics=useCallback(events=>{
+  const presentations=[];
+  for(const event of events||[]){
+   if(!event?.key||cinematicSeen.current.has(event.key))continue;
+   const presentation=storyCinematicPresentation(event);
+   if(!presentation)continue;
+   cinematicSeen.current.add(event.key);presentations.push(presentation);
+  }
+  if(presentations.length)setCinematicQueue(queue=>[...queue,...presentations]);
+ },[]);
+ const finishCinematic=useCallback(()=>{scene.current?.skipCinematic();setCinematicQueue(queue=>queue.slice(1));},[]);
+ const act=useCallback(command=>{try{const previous=saveRef.current;if(command.type==='battle'&&previous.adventure.encounter?.field){scene.current?.combatAction(command.action);return previous;}if(command.type==='battle'&&previous.region==='france'&&scene.current&&!scene.current.canBattle(command.action)){announce('Rapproche-toi de ton adversaire.');return null;}const next=recordWorldAction(uid,previous,command);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();enqueueCinematics(worldCinematicEvents(previous,next,command));if(command.type!=='field'||next.adventure.encounter?.field?.last)audio.current?.event(command.type==='field'?'battle':command.type,command.type==='field'?next.adventure.encounter.field.last:command.action);scene.current?.feedback(command.type,command.action,previous,next);if(command.type==='field')scene.current?.setSave(next);if(command.type==='battle'||command.type==='field'){const cue=combatCue(previous.adventure.encounter,next.adventure.encounter,command.type==='field'?next.adventure.encounter.field.last:command.action,next.adventure.avatar);if(cue&&(cue.outgoing||cue.incoming||cue.healing))setCombatImpact({...cue,key:next.adventure.encounter.turn});}else if(['leave','visit','patrol','encounter'].includes(command.type))setCombatImpact(null);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde'+(next.shards>previous.shards?' · +'+(next.shards-previous.shards)+' éclats':''));}return next;}catch(error){announce(error.message);return null;}},[uid,announce,enqueueCinematics]);
  useEffect(()=>{audio.current?.ambience(snapshot.region,snapshot.interior);},[snapshot.region,snapshot.interior]);
  function chime(){audio.current?.event('reward');}
  function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.enable(next,saveRef.current.region);setSound(next);}
@@ -113,7 +128,15 @@ function WorldSession({uid,goTo}){
   return()=>{ready.current=false;scene.current?.destroy();scene.current=null;};
  },[loaded]);
  useEffect(()=>{if(panel!=='encounter')setCombatImpact(null);else if(saveRef.current.adventure.encounter&&!saveRef.current.adventure.encounter.result&&!saveRef.current.adventure.encounter.field)act({type:'fieldStart'});},[panel,loaded]);
- useEffect(()=>{paused.current=(!!panel&&!['encounter','gps'].includes(panel))||!!error;scene.current?.setPaused((!!panel&&!fieldCombat)||!!error);scene.current?.setPresentation(panel);},[panel,error,loaded,fieldCombat]);
+ useEffect(()=>{const cinematicPaused=!!activeCinematic;paused.current=(!!panel&&!['encounter','gps'].includes(panel))||!!error||cinematicPaused;scene.current?.setPaused((!!panel&&!fieldCombat)||!!error||cinematicPaused);scene.current?.setPresentation(panel);},[panel,error,loaded,fieldCombat,activeCinematic?.key]);
+ useEffect(()=>{
+  if(!activeCinematic)return;
+  if(panel){cinematicResumePanel.current=panel;setPanel(null);}
+  scene.current?.playCinematicShot(activeCinematic.kind,activeCinematic.context,activeCinematic.duration);
+  audio.current?.cinematic(activeCinematic.kind);
+ },[activeCinematic?.key]);
+ useEffect(()=>{if(activeCinematic||!cinematicResumePanel.current)return;const resume=cinematicResumePanel.current;cinematicResumePanel.current=null;setPanel(resume);},[activeCinematic?.key]);
+ useEffect(()=>{if(panel==='story'&&!activeCinematic)scene.current?.playCinematicShot('story-alliance',{region:snapshot.region},12000);},[panel,snapshot.region,activeCinematic?.key]);
  useEffect(()=>{if(!uid||!loaded)return;partyLink.current=createPartyConnection({uid,onState:setPartyState,onPeers:peers=>{peersRef.current=peers;scene.current?.setPeers(peers);},onConnection:setConnection,onError:announce});return()=>{partyLink.current?.dispose();partyLink.current=null;};},[uid,loaded]);
  useEffect(()=>{partyLink.current?.pose({region:snapshot.region,x:snapshot.position.x,z:snapshot.position.z,heading:snapshot.heading||0});},[snapshot]);
  useEffect(()=>{scene.current?.setParty(partyState?.party);},[partyState,loaded]);
@@ -132,10 +155,11 @@ function WorldSession({uid,goTo}){
  return <section ref={shell} className="world-shell" aria-label="Le Monde du 3B">
   <canvas ref={canvas} className="world-canvas" tabIndex={0} aria-label="Monde 3D. Glisse à gauche pour avancer, à droite pour tourner la caméra. Flèches ou ZQSD, E pour interagir."/>
   <div className="world-vignette"/>
+  {activeCinematic&&<CinematicOverlay presentation={activeCinematic} onDone={finishCinematic} onSkip={finishCinematic}/>}
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
   <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
   {!panel&&<><button className="play-button play-party" aria-label="Groupe et coopération" title="Groupe et coopération" onClick={()=>setPanel('party')}><Users size={21}/></button>{partyState?.party&&<span className={'party-online '+connection}>{connection==='connected'?'● Groupe '+partyState.members.length+'/4':'Reconnexion…'}</span>}</>}
-  {snapshot.cinematic&&!panel&&<div className="play-cinematic"><div><h2>{snapshot.cinematic.title}</h2><p>{snapshot.cinematic.detail}</p></div><button onClick={()=>scene.current?.skipCinematic()}>Passer</button></div>}
+  {snapshot.cinematic&&!panel&&!activeCinematic&&<div className="play-cinematic"><div><h2>{snapshot.cinematic.title}</h2><p>{snapshot.cinematic.detail}</p></div><button onClick={()=>scene.current?.skipCinematic()}>Passer</button></div>}
   {gps&&!panel&&<button className="play-gps" onClick={()=>setPanel('gps')} aria-label="Sortie GPS"> <Footprints size={16}/> {walkSession} m</button>}
   {snapshot.joystick&&<div className="world-joystick" style={{left:snapshot.joystick.x,top:snapshot.joystick.y}}><i style={{transform:`translate(${snapshot.joystick.dx}px,${snapshot.joystick.dy}px)`}}/></div>}
   {notice&&<div className="world-notice" role="status">{notice}</div>}
