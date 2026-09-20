@@ -73,7 +73,10 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   `).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
    float srNoise=fract(sin(dot(floor(sceneSurfacePos.xz*2.1),vec2(12.9898,78.233)))*43758.5453);
    roughnessFactor=mix(roughnessFactor,.27,sceneWetness*(.30+.70*smoothstep(.72,.97,srNoise)));
-  `);};m.customProgramCacheKey=()=> '3b-scene-wetness-v1';}
+  `).replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+   // 3B emissive hierarchy: daylight keeps materials physical; night reveals Matrix / Héritage.
+   totalEmissiveRadiance*=mix(1.12,.48,sceneDaylight);
+  `);};m.customProgramCacheKey=()=> '3b-scene-wetness-v2';}
   materialCache.set(key,register(m));
  }return materialCache.get(key);};
  const geometry={box:new THREE.BoxGeometry(1,1,1),cylinder:new THREE.CylinderGeometry(1,1,1,20),sphere:new THREE.IcosahedronGeometry(1,1),ring:new THREE.TorusGeometry(1,.065,6,48)};
@@ -124,7 +127,7 @@ function hubNpcAvatar(item){
   const index=Math.max(0,COUNTRIES.findIndex(c=>c.id===item.id)),y=groundY(item.x,item.z);
   const frame=createPortalFrame(countryById[item.id]?item.id:region,item.color);register(frame);frame.group.position.set(item.x,y,item.z);root.add(frame.group);for(const side of [-1,1])obstacles.push({x:item.x+side*3.65,z:item.z,r:1.25});
   const filmGeo=register(new THREE.CircleGeometry(1,40));
-  const filmMat=register(new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{time:{value:0},tint:{value:new THREE.Color(item.color)},art:{value:models.atlas},tile:{value:new THREE.Vector2(index%4*.25,index<4?.5:0)}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv; uniform float time; uniform vec3 tint; uniform sampler2D art; uniform vec2 tile; void main(){vec2 p=vUv-.5;float r=length(p)*2.;float ripple=sin(r*24.-time*1.7)*.5+.5;vec2 uv=vUv+sin(vUv.yx*10.+time*.4)*.005;vec3 c=texture2D(art,uv*vec2(.25,.5)+tile).rgb;gl_FragColor=vec4(mix(c,tint,pow(r,5.)*.55+ripple*.05),.93);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
+  const filmMat=register(new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{time:{value:0},daylight:{value:worldTime.daylight},tint:{value:new THREE.Color(item.color)},art:{value:models.atlas},tile:{value:new THREE.Vector2(index%4*.25,index<4?.5:0)}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv; uniform float time,daylight; uniform vec3 tint; uniform sampler2D art; uniform vec2 tile; void main(){vec2 p=vUv-.5;float r=length(p)*2.;float ripple=sin(r*24.-time*1.7)*.5+.5;vec2 uv=vUv+sin(vUv.yx*10.+time*.4)*.005;vec3 c=texture2D(art,uv*vec2(.25,.5)+tile).rgb;float pulse=mix(.075,.026,daylight);float rim=mix(.58,.42,daylight);vec3 color=mix(c,tint,pow(r,5.)*rim+ripple*pulse);float alpha=mix(.95,.87,daylight);gl_FragColor=vec4(color,alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
   mesh(filmGeo,filmMat,item.x,y+4,item.z+.1,2.95,3.45,1);portalMaterials.push(filmMat);
   if(region==='hub'){
    const accentMat=material(item.color,{emissive:item.color,emissiveIntensity:.34,metalness:.58,roughness:.26}),champagne=material('#d6b46a',{emissive:'#7b5d24',emissiveIntensity:.12,metalness:.78,roughness:.28}),dark=material('#0c1218',{roughness:.48,metalness:.42});
@@ -402,7 +405,7 @@ function hubNpcAvatar(item){
    cinematicFx.blue.color.set(shot.accent||'#58d1ff');cinematicFx.blue.opacity=.12+.32*fade;cinematicFx.gold.opacity=.08+.26*fade;cinematicFx.pm.opacity=.12+.42*fade;cinematicFx.pm.color.set(shot.secondary||'#e0c486');
    cinematicBlue.color.set(shot.accent||'#58d1ff');cinematicGold.color.set(shot.secondary||'#e0c486');cinematicBlue.position.set(shot.x+4,baseY+5,shot.z+3);cinematicGold.position.set(shot.x-3,baseY+3.2,shot.z-2);cinematicBlue.intensity=(shot.major?7.5:4.6)*fade;cinematicGold.intensity=(shot.major?5.2:3.2)*fade;
   }else{if(cinematicFx)cinematicFx.group.visible=false;cinematicBlue.intensity*=.82;cinematicGold.intensity*=.82;}
-  sun.position.set(position.x-38,y+54,position.z+35);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>mat.uniforms.time.value=elapsed);
+  sun.position.set(position.x-38,y+54,position.z+35);sun.target.position.set(position.x,y,position.z);portalMaterials.forEach(mat=>{mat.uniforms.time.value=elapsed;if(mat.uniforms.daylight)mat.uniforms.daylight.value=sceneDaylight.value;});
   for(const a of animations){if(a.type==='float'){a.mesh.position.y=a.y+Math.sin(elapsed*1.5+a.mesh.position.x)*.15;a.mesh.rotation.y+=dt*.3;}if(a.type==='shadow')a.mesh.position.set(avatar.position.x,avatar.position.y+.07,avatar.position.z);if(a.type==='particles')a.mesh.rotation.y=Math.sin(elapsed*.04)*.03;}
   if(weatherFx?.visible&&weatherPositions){weatherFx.position.set(position.x,groundY(position.x,position.z)+1,position.z);for(let i=0;i<weatherPositions.length;i+=3){weatherPositions[i]+=weatherState.wind*dt*2;weatherPositions[i+1]-=weatherState.speed*dt;if(weatherPositions[i+1]<0){weatherPositions[i+1]=32;weatherPositions[i]=(Math.random()-.5)*72;weatherPositions[i+2]=(Math.random()-.5)*72;}}weatherFx.geometry.attributes.position.needsUpdate=true;}
   partyActors?.tick(dt,region);landscape.tick(elapsed,dt,position);landscape.updateDistrict(camera,position);
