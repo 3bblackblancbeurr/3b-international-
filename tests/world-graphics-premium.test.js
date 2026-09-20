@@ -159,7 +159,7 @@ test('architecture and scene materials use controlled live wetness',()=>{
  assert.match(architecture,/setWeather\(weather\)/);
  assert.match(scene,/sceneWetness/);
  assert.match(scene,/sceneDaylight/);
- assert.match(scene,/3b-scene-wetness-v1/);
+ assert.match(scene,/3b-scene-wetness-v2/);
 });
 
 test('night lighting preserves 3B hierarchy and scales down in LOW',()=>{
