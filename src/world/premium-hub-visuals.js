@@ -30,6 +30,12 @@ export function buildPremiumHubRoad(item,{mesh,material,groundY}){
  if(item.kind==='express')for(const side of [-1,1]){
   const lane=mesh('box',marking,item.x+sideX*(item.width*.24)*side,y+.102,item.z+sideZ*(item.width*.24)*side,.10,.016,item.length*.96);lane.rotation.y=heading;lane.castShadow=false;visuals.push(lane);
  }
+ const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.42,roughness:.25,metalness:.62});
+ for(const fraction of [-.30,.30])for(const side of [-1,1]){
+  const along=item.length*fraction,offset=item.width/2+2.65,x=item.x+forwardX*along+sideX*offset*side,z=item.z+forwardZ*along+sideZ*offset*side;
+  const pole=mesh('cylinder',streetMetal,x,y+2.15,z,.075,4.1,.075);pole.castShadow=false;visuals.push(pole);
+  const cap=mesh('box',streetGlow,x,y+4.23,z,.26,.09,.26);cap.castShadow=false;visuals.push(cap);
+ }
  return visuals;
 }
 
@@ -135,7 +141,10 @@ export function createPremiumHubMarker(item,{root,geometry,material,groundY,kind
  const baseMat=material('#111920',{roughness:.58,metalness:.36});
  const accentMat=material(accent,{color:accent,emissive:accent,emissiveIntensity:kind==='secret'?.18:.55,metalness:.52,roughness:.23,transparent:kind==='secret',opacity:kind==='secret'?.72:1});
  child(group,geometry.cylinder,baseMat,{y:.12,sx:.72,sy:.24,sz:.72});
- if(kind==='secret'){
+ if(kind==='district'){
+  child(group,geometry.cylinder,accentMat,{y:.255,sx:1.28,sy:.035,sz:1.28,ry:Math.PI/8,cast:false});
+  for(let i=0;i<4;i++)child(group,geometry.box,accentMat,{x:Math.cos(i*Math.PI/2)*1.55,y:.18,z:Math.sin(i*Math.PI/2)*1.55,sx:.08,sy:.16,sz:.32,ry:i*Math.PI/2,cast:false});
+ }else if(kind==='secret'){
   child(group,geometry.box,accentMat,{y:.15,sx:1.15,sy:.025,sz:1.15,ry:Math.PI/4,cast:false});
   child(group,geometry.box,accentMat,{y:.66,sx:.09,sy:.75,sz:.09,ry:Math.PI/4,cast:false});
  }else{
