@@ -44,3 +44,11 @@ test('gameplay transitions create presentation events without granting rewards',
  assert.equal(events[0].kind,'country-first-entry');
  assert.equal(events[0].context.region,'france');
 });
+
+test('recovered memories trigger a premium micro cinematic',()=>{
+ const previous={region:'france',beacons:[],adventure:{chapters:{france:{}},cinematicSeen:[]},collection:{}};
+ const next={region:'france',beacons:['france:0'],adventure:{chapters:{france:{}},cinematicSeen:[]},collection:{}};
+ const events=worldCinematicEvents(previous,next,{type:'beacon',id:'france:0'});
+ assert.equal(events[0].kind,'memory-fragment');
+ assert.equal(cinematicSpec('memory-fragment','france').tier,'micro');
+});
