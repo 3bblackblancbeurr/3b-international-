@@ -203,7 +203,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
   if(shot?.cinematic&&cinematicFx){
    const p=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),fade=Math.sin(Math.PI*p),baseY=groundY(shot.x,shot.z),scale=shot.heritage?8:shot.kind==='final-combat-intro'?5.2:shot.kind==='guardian-intro'?3.8:shot.kind==='memory-fragment'?1.8:2.8;
-   cinematicFx.group.visible=true;cinematicFx.group.position.set(shot.x,baseY+.18,shot.z);cinematicFx.outer.scale.setScalar(scale*(.72+p*.44));cinematicFx.inner.scale.setScalar(scale*(.44+p*.18));cinematicFx.outer.rotation.z+=dt*.22;cinematicFx.inner.rotation.z-=dt*.31;cinematicFx.points.rotation.y+=dt*.18;cinematicFx.points.position.y=.25+Math.sin(elapsed*1.2)*.12;
+   cinematicFx.group.visible=true;cinematicFx.group.position.set(shot.x,baseY+.18,shot.z);cinematicFx.outer.scale.setScalar(scale*(.72+p*.44));cinematicFx.inner.scale.setScalar(scale*(.44+p*.18));cinematicFx.outer.rotation.z+=dt*.22;cinematicFx.inner.rotation.z-=dt*.31;cinematicFx.points.rotation.y+=dt*.18;cinematicFx.points.position.y=.25+Math.sin(elapsed*1.2)*.12;cinematicFx.points.scale.setScalar(scale*.72);
    cinematicFx.blue.color.set(shot.accent||'#58d1ff');cinematicFx.blue.opacity=.12+.32*fade;cinematicFx.gold.opacity=.08+.26*fade;cinematicFx.pm.opacity=.12+.42*fade;cinematicFx.pm.color.set(shot.secondary||'#e0c486');
    cinematicBlue.color.set(shot.accent||'#58d1ff');cinematicGold.color.set(shot.secondary||'#e0c486');cinematicBlue.position.set(shot.x+4,baseY+5,shot.z+3);cinematicGold.position.set(shot.x-3,baseY+3.2,shot.z-2);cinematicBlue.intensity=(shot.major?7.5:4.6)*fade;cinematicGold.intensity=(shot.major?5.2:3.2)*fade;
   }else{if(cinematicFx)cinematicFx.group.visible=false;cinematicBlue.intensity*=.82;cinematicGold.intensity*=.82;}
@@ -250,7 +250,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     if(fragment)focus={x:fragment.x,z:fragment.z};radius=7.8;height=5.1;focusY=1.1;arc=.46;dolly=.25;angle=orbit.yaw-.22;
    }else if(kind==='story-alliance'){
     const resident=items.find(i=>i.type==='story'||i.id===region+':story');
-    if(resident){focus={x:resident.x,z:resident.z};landscape?.cinematicFocus(focus.x,focus.z,'Talk');}radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
+    if(resident){focus={x:resident.x,z:resident.z};landscape?.cinematicFocus(focus.x,focus.z,'Talk',elapsed);}radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
    }else if(kind==='story-power'){hero?.action('Cast');radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
    const accent=countryById[region]?.color||'#58d1ff',secondary='#e0c486',micro=['memory-fragment','discovery','story-power'].includes(kind);
    post.setCinematic({active:true,intensity:major?1:micro?.72:.84,accent,secondary});
