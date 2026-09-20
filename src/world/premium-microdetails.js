@@ -30,7 +30,7 @@ export function addPremiumMicroDetails({region,field,root,owned}){
  };
  Object.values(materials).forEach(m=>owned.push(m));
 
- const bollards=[],drains=[],utility=[],litter=[],puddles=[],crates=[];
+ const bollards=[],drains=[],utility=[],litter=[],puddles=[],crates=[],signs=[],bins=[];
  for(const road of field.roads||[]){
   for(let i=1;i<road.points.length;i++){
    const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len,heading=Math.atan2(dx,dz),rng=seeded(region+':road:'+road.id+':'+i);
@@ -42,6 +42,8 @@ export function addPremiumMicroDetails({region,field,root,owned}){
     drains.push({x:cx+nx*((road.width||5)/2-.28)*side,y:field.height(cx,cz)+.075,z:cz+nz*((road.width||5)/2-.28)*side,sx:.34,sy:.035,sz:.58,ry:heading});
     if(rng()>.54)puddles.push({x:cx-nx*side*(road.width||5)*.18,y:field.height(cx,cz)+.085,z:cz-nz*side*(road.width||5)*.18,sx:.8+rng()*1.7,sy:1,sz:.42+rng()*.75,ry:heading+(rng()-.5)*.5});
     if(rng()>.84)litter.push({x:x+nx*side*.4,y:y+.045,z:z+nz*side*.4,sx:.10+rng()*.15,sy:.025,sz:.14+rng()*.22,ry:rng()*Math.PI});
+    if(rng()>.76)bins.push({x:x-nx*side*.55,y:y+.48,z:z-nz*side*.55,sx:.34,sy:.82,sz:.34,ry:heading});
+    if(rng()>.88)signs.push({x:x+nx*side*.95,y:y+1.45,z:z+nz*side*.95,sx:.08,sy:2.2,sz:.08,ry:heading});
    }
   }
  }
@@ -68,9 +70,15 @@ export function addPremiumMicroDetails({region,field,root,owned}){
   instanced(root,owned,'micro-utility',geometries.box,materials.utility,utility),
   instanced(root,owned,'micro-litter',geometries.box,materials.litter,litter),
   instanced(root,owned,'micro-crates',geometries.box,materials.paint,crates),
+  instanced(root,owned,'micro-bins',geometries.box,materials.utility,bins),
+  instanced(root,owned,'micro-sign-posts',geometries.box,materials.iron,signs),
   instanced(root,owned,'micro-puddles',geometries.puddle,materials.puddle,puddles),
  ].filter(Boolean);
  const counts=meshes.map(m=>m.count);
+ const signFaces=signs.slice(0,Math.min(signs.length,80)).map((s,i)=>({x:s.x,y:s.y+.62,z:s.z,sx:.62,sy:.32,sz:.04,ry:s.ry,rz:(i%3-1)*.025}));
+ const signFaceMat=new THREE.MeshStandardMaterial({color:'#17242c',roughness:.38,metalness:.28,emissive:'#00a8ff',emissiveIntensity:.08});owned.push(signFaceMat);
+ const signFacesMesh=instanced(root,owned,'micro-sign-faces',geometries.box,signFaceMat,signFaces);
+ if(signFacesMesh){meshes.push(signFacesMesh);counts.push(signFacesMesh.count);}
 
  // Sparse overhead service cables establish urban scale with one line draw.
  const cablePoints=[];
