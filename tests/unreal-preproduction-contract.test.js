@@ -80,3 +80,22 @@ test('Unreal backend subsystem requires a user session and uses weak async owner
  assert.match(source,/Bearer /);
  assert.doesNotMatch(source,/service_role/i);
 });
+
+test('Unreal layout export preserves canonical scale and complete world topology',()=>{
+ const layout=readJson('../unreal/3BWorld/Data/Production/world-layout-unreal.json');
+ assert.equal(layout.world.width_cm,180000);
+ assert.equal(layout.world.depth_cm,140000);
+ assert.equal(layout.world.radius_cm,65000);
+ assert.equal(layout.world.cell_target_cm,15000);
+ assert.equal(layout.districts.length,10);
+ assert.equal(layout.buildings.length,19);
+ assert.equal(layout.gates.length,8);
+ assert.equal(layout.roads.length,19);
+ for(const district of layout.districts){
+  assert.ok(Math.hypot(district.location_cm.x,district.location_cm.y)<layout.world.radius_cm);
+ }
+ for(const gate of layout.gates){
+  const r=Math.hypot(gate.location_cm.x,gate.location_cm.y);
+  assert.ok(r>30000&&r<layout.world.radius_cm,gate.id);
+ }
+});
