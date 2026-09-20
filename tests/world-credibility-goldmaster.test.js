@@ -8,7 +8,7 @@ import {worldVisualCapabilities} from '../src/world/device-capabilities.js';
 import {STREAMING_PROFILES,lodForDistanceHysteresis} from '../src/world/streaming.js';
 import {cinematicEase,cinematicRiseProgress,cinematicReturnBlend} from '../src/world/cinematic-camera.js';
 import {hubNpcSimulation} from '../src/world/hub/npc-motion.js';
-import {metropolisRoadItems} from '../src/world/hub/metropolis.js';
+import {metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
 
 const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const plan=JSON.parse(read('src/world/hub/data/hub-master-plan-v2.json'));
@@ -66,6 +66,7 @@ test('Gold Master credibility: level design, VFX and cinematic camera avoid prot
  const lanes=metropolisRoadItems(plan).filter(road=>road.kind==='lane');
  assert.equal(lanes.length,10);
  assert.ok(lanes.every(road=>road.width===6.5));
+ assert.ok(lanes.every(road=>pedestrianLaneMinimumClearance(plan,road)>12));
 
  const scene=read('src/world/scene.js'),post=read('src/world/postprocessing.js');
  assert.match(scene,/totalEmissiveRadiance\*=mix\(1\.12,\.48,sceneDaylight\)/);
