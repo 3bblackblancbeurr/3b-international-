@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {surfaceTexture} from './surfaces.js';
+import {surfaceMaterialMaps} from './surfaces.js';
 import {buildingDimensions,facadeBayCount} from './building-scale.js';
 import {wetnessForWeather} from './wetness.js';
 
@@ -25,8 +25,9 @@ export function createArchitecture(occlusion){
  const mat=(color,kind='stone')=>{
   const key=color+kind;if(materials.has(key))return materials.get(key);
   const glass=kind==='glass',metal=kind==='metal',surface=glass?null:metal?'metal':kind==='plaster'?'concrete':kind;
-  if(surface&&!textures.has(surface))textures.set(surface,surfaceTexture(surface));
-  const m=glass?new THREE.MeshPhysicalMaterial({color,roughness:.14,metalness:.18,clearcoat:.42,clearcoatRoughness:.12,envMapIntensity:1.7}):new THREE.MeshStandardMaterial({color,map:surface?textures.get(surface):null,bumpMap:surface?textures.get(surface):null,bumpScale:kind==='timber'?.035:metal?.012:.026,roughness:metal?.32:kind==='timber'?.72:.82,metalness:metal?.78:0,envMapIntensity:metal?1.25:1});
+  if(surface&&!textures.has(surface))textures.set(surface,surfaceMaterialMaps(surface));
+  const maps=surface?textures.get(surface):null;
+  const m=glass?new THREE.MeshPhysicalMaterial({color,roughness:.12,metalness:.03,transmission:.14,ior:1.46,thickness:.12,specularIntensity:.92,clearcoat:.56,clearcoatRoughness:.10,envMapIntensity:1.7}):new THREE.MeshStandardMaterial({color,map:maps?.map||null,bumpMap:maps?.bumpMap||null,roughnessMap:maps?.roughnessMap||null,bumpScale:kind==='timber'?.035:metal?.012:.026,roughness:1,metalness:metal?.82:0,envMapIntensity:metal?1.3:1});
   if(surface)m.userData.worldTexScale=kind==='limestone'?5:kind==='timber'?4:kind==='metal'?2.5:3;
   const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.archWetness=wetness;shader.vertexShader='varying vec3 archWorld;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narchWorld=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 archWorld;uniform float archWetness;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
    float archNoise=fract(sin(dot(floor(archWorld.xz*1.7),vec2(12.9898,78.233)))*43758.5453);
@@ -114,5 +115,5 @@ export function createArchitecture(occlusion){
   return g;
  }
  const setWetness=value=>{wetness.value=Math.max(0,Math.min(1,Number(value)||0));};
- return{building,setWetness,setWeather(weather){setWetness(wetnessForWeather(weather));},dispose(){textures.forEach(t=>t?.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ return{building,setWetness,setWeather(weather){setWetness(wetnessForWeather(weather));},dispose(){textures.forEach(bundle=>Object.values(bundle||{}).forEach(t=>t?.dispose?.()));geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }
