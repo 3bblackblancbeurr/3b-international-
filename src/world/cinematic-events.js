@@ -37,6 +37,10 @@ export function worldCinematicEvents(previous,next,action){
   add('companion-first-bond',`bond:${fight.card}`,{region:fight.region||region,card:fight.card},45);
  }
 
+ if(action.type==='beacon'&&action.id&&!(previous.beacons||[]).includes(action.id)&&(next.beacons||[]).includes(action.id)){
+  add('memory-fragment',`memory:${action.id}`,{region,id:action.id},30);
+ }
+
  if(action.type==='survey'){
   const id=`${region}:${action.id}`;
   if(!(before.discoveries||[]).includes(id)&&(after.discoveries||[]).includes(id))add('discovery',`discovery:${id}`,{region,place:action.id},20);
