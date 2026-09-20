@@ -44,7 +44,7 @@ test('mobile mode reduces expensive effects while keeping the scene usable', () 
 test('existing cities stay accessible and locked members receive the real guided World mission', () => {
   assert.match(gateway, /city3bRequest\('access'/);
   assert.match(gateway, /cityResult\.value\?\.hasCity === true/);
-  assert.match(gateway, /VILLE EXISTANTE DÉTECTÉE/);
+  assert.match(gateway, /setAccessReason\('city'\)/);
   assert.match(gateway, /MISSION VILLE · ÉTAPE/);
   assert.match(gateway, /cityUnlockGuideStorage\(true\)/);
   assert.match(gateway, /leaveTo\('#monde-3b', \{ cityGuide: true \}\)/);
