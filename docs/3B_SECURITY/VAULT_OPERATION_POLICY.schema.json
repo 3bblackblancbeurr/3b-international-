@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b.international/security/vault-operation-policy.schema.json",
+  "title": "3B Vault Operation Policy — Draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["request_id","operation","asset_id","amount","destination","policy_version","state"],
+  "properties": {
+    "request_id": {"type": "string", "format": "uuid"},
+    "operation": {"enum": ["transfer","signing-set-rotation","recovery-test"]},
+    "asset_id": {"type": "string"},
+    "amount": {"type": "string", "pattern": "^[0-9]+$"},
+    "destination": {"type": "string"},
+    "policy_version": {"type": "string"},
+    "state": {"enum": ["requested","policy_checked","risk_checked","human_approved","threshold_approved","broadcast","reconciled","rejected","cancelled"]},
+    "risk_class": {"enum": ["low","medium","high","critical"]},
+    "required_approval_class": {"enum": ["standard","elevated","recovery"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": ["string","null"], "format": "date-time"}
+  }
+}
