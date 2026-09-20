@@ -110,3 +110,68 @@ test('quality selector exposes LOW MEDIUM HIGH while preserving legacy technical
  assert.match(page,/value="auto">MEDIUM/);
  assert.match(page,/value="detail">HIGH/);
 });
+
+
+test('premium ground reacts to weather and adds controlled wear cracks joints and puddle roughness',()=>{
+ const ground=read('src/world/natural-ground.js'),landscape=read('src/world/landscape.js');
+ assert.match(ground,/surfaceWetness/);
+ assert.match(ground,/crackField/);
+ assert.match(ground,/urbanJoint/);
+ assert.match(ground,/wetMask/);
+ assert.match(ground,/roughnessFactor=mix/);
+ assert.match(ground,/setWeather\(weather\)/);
+ assert.match(landscape,/soil\.setWeather/);
+});
+
+test('vegetation breaks repetition with edge growth and multiple botanical silhouettes',()=>{
+ const grass=read('src/world/vegetation.js'),flora=read('src/world/flora.js');
+ assert.match(grass,/edgeGrowthPlacements/);
+ assert.match(grass,/width:\.72\+rng/);
+ assert.match(grass,/mode==='fluid'\?\.48/);
+ assert.match(flora,/variant=.*%3/);
+ assert.match(flora,/flora-'\+type\+'-v'/);
+});
+
+test('sky is weather-aware with premium night depth clouds mist and stars',()=>{
+ const sky=read('src/world/sky.js'),scene=read('src/world/scene.js');
+ assert.match(sky,/cloudiness/);
+ assert.match(sky,/storminess/);
+ assert.match(sky,/mistiness/);
+ assert.match(sky,/starCell/);
+ assert.match(sky,/setAtmosphere/);
+ assert.match(scene,/sky\.setAtmosphere/);
+});
+
+test('premium micro-details stay instanced and quality scalable',()=>{
+ const details=read('src/world/premium-microdetails.js'),landscape=read('src/world/landscape.js');
+ for(const token of ['micro-bollards','micro-drains','micro-utility','micro-litter','micro-crates','micro-bins','micro-sign-faces','micro-puddles'])assert.match(details,new RegExp(token));
+ assert.match(details,/InstancedMesh/);
+ assert.match(details,/mode==='fluid'\?\.45/);
+ assert.match(landscape,/addPremiumMicroDetails/);
+});
+
+test('architecture and scene materials use controlled live wetness',()=>{
+ const architecture=read('src/world/architecture.js'),scene=read('src/world/scene.js');
+ assert.match(architecture,/archWetness/);
+ assert.match(architecture,/MeshPhysicalMaterial/);
+ assert.match(architecture,/setWeather\(weather\)/);
+ assert.match(scene,/sceneWetness/);
+ assert.match(scene,/sceneDaylight/);
+ assert.match(scene,/3b-scene-wetness-v1/);
+});
+
+test('night lighting preserves 3B hierarchy and scales down in LOW',()=>{
+ const lighting=read('src/world/premium-lighting.js'),landscape=read('src/world/landscape.js');
+ assert.match(lighting,/#d6b46a/);
+ assert.match(lighting,/#00a8ff/);
+ assert.match(lighting,/Math\.pow\(night,1\.65\)/);
+ assert.match(lighting,/mode!==\'fluid\'/);
+ assert.match(landscape,/addPremiumWorldLighting/);
+});
+
+test('roads and building feet receive explicit premium transition layers',()=>{
+ const settlement=read('src/world/settlement-mesh.js');
+ assert.match(settlement,/wetSeam/);
+ assert.match(settlement,/road\.width\+1\.45/);
+ assert.match(settlement,/baseSeam/);
+});
