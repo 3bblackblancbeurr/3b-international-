@@ -19,6 +19,6 @@ export function addBuildingContact(field,root,owned){
  const full=sites.length;
  return{
   setWeather(weather){dampMat.opacity=weather==='storm'?.24:weather==='heavy_rain'?.20:weather==='rain'?.14:weather==='fog'?.09:.035;dampMat.needsUpdate=true;},
-  setQuality(mode){damp.count=mode==='fluid'?Math.round(full*.55):full;shadow.count=mode==='fluid'?Math.round(full*.72):full;},
+  setQuality(mode){damp.count=mode==='fluid'?Math.round(full*.68):full;shadow.count=full;},
  };
 }
