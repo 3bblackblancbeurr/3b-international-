@@ -83,3 +83,15 @@ test('legacy on-device identity is migration input only, never the active app id
  assert.match(source,/const member = loyalty\.profile \? remoteMember\(loyalty\.profile\) : createTestMember\(\);/);
  assert.match(source,/legacy=\{localMember\}/);
 });
+
+test('registration and account switching cannot reuse another member passport',()=> {
+ const account=readFileSync(new URL('../src/loyalty/AccountPage.jsx',import.meta.url),'utf8');
+ const context=readFileSync(new URL('../src/loyalty/LoyaltyContext.jsx',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
+ assert.match(account,/memberRequest\('register',input\)/);
+ assert.match(account,/signInWithPassword\(\{email:accountEmail\(input\.handle\),password:input\.password\}\)/);
+ assert.match(context,/setData\(null\)/);
+ assert.match(context,/data\?\.profile\?\.user_id===session\?\.user\?\.id\?data:null/);
+ assert.match(context,/passportFromProfile\(owned\?\.profile,session\?\.user\)/);
+ assert.match(app,/identity=\{loyalty\.passport\}/);
+});
