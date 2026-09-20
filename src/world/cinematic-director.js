@@ -20,6 +20,7 @@ const KIND_PRESETS={
  'country-first-entry':{tier:'major',shot:'country-reveal',recipe:'world-reveal',duration:7000},
  'story-alliance':{tier:'narrative',shot:'intimate-orbit',recipe:'character-presence',duration:5200},
  'story-power':{tier:'micro',shot:'power-push',recipe:'matrix-pulse',duration:3900},
+ 'memory-fragment':{tier:'micro',shot:'fragment-macro',recipe:'fragment-reveal',duration:3200},
  'story-restoration':{tier:'narrative',shot:'heritage-rise',recipe:'restoration',duration:5700},
  'guardian-intro':{tier:'major',shot:'guardian-low',recipe:'guardian-arrival',duration:6500},
  'final-combat-intro':{tier:'major',shot:'boss-reveal',recipe:'boss-arrival',duration:7400},
