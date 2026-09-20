@@ -1,0 +1,4 @@
+alter table public.nexus_city_buildings drop constraint if exists nexus_city_buildings_category_check;
+alter table public.nexus_city_buildings add constraint nexus_city_buildings_category_check check (category = any(array['home','villa','residence','apartment','tower','skyscraper','shop','hotel','restaurant','workshop','factory','school','culture','hospital','stadium','arena','station','transit','port','energy','monument','park','square','bridge','tunnel','road','street','furniture','garden','market','library','museum','lab','community','garage','farm','water','sport','event','lookout','nature','decoration']::text[]));
+alter table public.nexus_city_buildings drop constraint if exists nexus_city_buildings_country_check;
+alter table public.nexus_city_buildings add constraint nexus_city_buildings_country_check check (country is null or country = any(array['France','Italie','Estonie','Turquie','Algérie','Tunisie','Maroc','Espagne','3B International']::text[]));
