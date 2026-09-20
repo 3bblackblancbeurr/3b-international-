@@ -1,6 +1,6 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
-  "normalization": "trim UTF-8 SQL then SHA-256",
+  "normalization": "btrim/trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-20",
   "count": 104,
   "migrations": [
@@ -12,37 +12,37 @@
     {
       "version": "20260910105242",
       "name": "member_accounts_loyalty_and_game_rewards",
-      "sha256": "7f709992da07d34030f2b3d558a89f52a7e36e68c0d07392d6cbb03eb8a920ea"
+      "sha256": "987683628cdeefc8b91cb01c905be587d09dd56e5e1a1fe2693bdabc4cf2c8af"
     },
     {
       "version": "20260910105244",
       "name": "prepare_private_shop_order_storage",
-      "sha256": "adec17b900d4ba801251b751c5a84ef164b92c89ead15fc4c707f1b85d41786d"
+      "sha256": "0344e3b0a0b031cc897c8b3fe14dcb6977f72b459a5bf02c0c439a25fb5c4c41"
     },
     {
       "version": "20260910110739",
       "name": "loyalty_check_revoked_sessions_in_rls",
-      "sha256": "cea074a409b1b72d9efdff6b9004c226b66a6060dbf4972d356408367eaa2dad"
+      "sha256": "0f037e0ef2c92eedbedbf58fab3fce243d4f39ae87e6488f2a9877d5b84f5d06"
     },
     {
       "version": "20260910110824",
       "name": "settle_purchase_rewards_with_existing_refunds",
-      "sha256": "6a289519821a608e9887a0f57529b2f6574c5b9fe2c76fdf2f472d8fc18ee807"
+      "sha256": "cabc9491b9e4cb93cd80c1f85f127dd6cf478d02828d35d9b351035382df73df"
     },
     {
       "version": "20260910121757",
       "name": "member_open_world_progress",
-      "sha256": "be947cfcbb2bfc6197248ff342a7de288971df799cf503c7e4fcd4899ccbf9e1"
+      "sha256": "b865192f03ebc24d93d9fc243cca1f7232de391de208ec34e893286f3a7b14cf"
     },
     {
       "version": "20260910151239",
       "name": "world_chapter_engine_tables",
-      "sha256": "27dad56d5321c18d501751eda3cab8f5143f92657e7f4930ff96306818b0f55d"
+      "sha256": "b6a8883010505e5e03e91ffcfc1ad3fbc0d2f30c2ceb8fb04de50e1fd75c364c"
     },
     {
       "version": "20260910155410",
       "name": "world_chapters_account_cutover",
-      "sha256": "10ea2a1197396a719ba183022335d8d621707b378bf08278390d87811046ad7c"
+      "sha256": "d14ce53b5102848a65ac7ca13091c46c4c4746757f033b6596d4d4f89a1f8130"
     },
     {
       "version": "20260910212823",
@@ -57,12 +57,12 @@
     {
       "version": "20260910222929",
       "name": "card_arena_server_authority",
-      "sha256": "2548ac94d541b76c50135a89d2bab4442ce8aa56b8243204b56656550af80a84"
+      "sha256": "36e2f5d81ee7fbacb9fb8d913221e1ed9f96fcd6fb18e77565650ee1b52c2318"
     },
     {
       "version": "20260910230210",
       "name": "card_arena_capped_account_rewards",
-      "sha256": "6b21e1b982b0fe84191184a2154dc41ea9c9cc7222ae568b78472369d6e181b1"
+      "sha256": "ec18e17e2b7ef503848d599ba6e71b99f7523d2ef3344e5a373d4d2033741f08"
     },
     {
       "version": "20260910230429",
@@ -72,7 +72,7 @@
     {
       "version": "20260911180838",
       "name": "world_private_cooperative_refuges",
-      "sha256": "6d4da27554de50a7f09f8584aaa9c4af25750246a73934b50e6e812f17542d50"
+      "sha256": "caa166f26d838f91be5169cc6a613438a77e6dfdbb03b3d3e79b7951babd8c0f"
     },
     {
       "version": "20260911191522",
@@ -147,7 +147,7 @@
     {
       "version": "20260917102234",
       "name": "nexus_city_saves_v1",
-      "sha256": "b085e465a4f1e9913d474d4ceae437ca8dfdfe10af786e0418034a3dd32e69e0"
+      "sha256": "71ec00b1dea30c9da977546c4143c360f8c1494d588c0925032def67d001f13e"
     },
     {
       "version": "20260917103353",
@@ -202,12 +202,12 @@
     {
       "version": "20260917112028",
       "name": "threeb_wallet_ledger_guards",
-      "sha256": "9b6f377992b416382f1716cf5110bb5a774f44561c3fa61f396a79ec4989de09"
+      "sha256": "5177f9351b38f1a0563cf3f0a3a97891dc6c0a76d93b0e56461dd5a0e4b906cf"
     },
     {
       "version": "20260917114300",
       "name": "atomic_nexus_build_purchase_v1",
-      "sha256": "0059e25046c88a10d613b244af59abafb936a9eecb722c2a5ca7ab7edc6abb01"
+      "sha256": "41bb403ebc72c1b66327304bf5e5360f4f56df40d07dce04b0b4a75261a51553"
     },
     {
       "version": "20260917114643",
@@ -217,7 +217,7 @@
     {
       "version": "20260917114921",
       "name": "nexus_security_hardening_and_sync_v3",
-      "sha256": "63b2d933d6ce9e1b84fcf2090306e87239b2f462c2597a71e4a166e86b142ae2"
+      "sha256": "423b95861b07645df167e664ab5b99d5b1adf79a3c8e675bf473fa1efb492756"
     },
     {
       "version": "20260917115217",
@@ -237,17 +237,17 @@
     {
       "version": "20260917122743",
       "name": "nexus_rotation_aware_collisions_v2",
-      "sha256": "390a134dbea3e6240500833f2b8514d1ae886244d733d5c4f507a7d30cfb599e"
+      "sha256": "564fa2b5a35c00e2632f4e80d70b426ea05f1141365d37e9a447c30d3ed3173a"
     },
     {
       "version": "20260917122836",
       "name": "nexus_footprint_bounds_v3",
-      "sha256": "5a5219bda6b525a75a71b482a00767302e20b26db2ef3325139576824df28bae"
+      "sha256": "35091d0682168e4b782db2312b453ffb60c96978bad609ed5fd782fbf44b7b20"
     },
     {
       "version": "20260917122934",
       "name": "nexus_upgrade_progression_rewards_v4",
-      "sha256": "ecc288cc36e45620a1372c3128589e35b763777da86103dacf51dbe8854ff991"
+      "sha256": "117419bd5e346f97b785eab1701de5f14cdba6b3c55de5af8c780f5681f21317"
     },
     {
       "version": "20260917131102",
@@ -267,12 +267,12 @@
     {
       "version": "20260917132531",
       "name": "nexus_upgrade_level_guard_v2",
-      "sha256": "248ab6c41b088f82eb9537c0d5045d709153867eea46c4e05c8709b129115ece"
+      "sha256": "196ccf623638f0e4736013ce60899a591ca8f2815046465947c2ec66e4b1e49a"
     },
     {
       "version": "20260917132604",
       "name": "nexus_rotated_collision_guard_v2",
-      "sha256": "a51babb926eab2d43f41c1348d1b8455c1d66bded4364b9874fefa5863d23091"
+      "sha256": "5e1052ceaed1c587fa07576bc4caa29cdbb6614f93646da311d1e3c5dc8c9e5f"
     },
     {
       "version": "20260917132653",
@@ -282,7 +282,7 @@
     {
       "version": "20260917132704",
       "name": "nexus_starter_wallet_and_first_build_reward_v1",
-      "sha256": "ba96274470cacf08f3704ddea58fc11ec96832797f4c487eb3b323439a2e7364"
+      "sha256": "f0b349dfc187a157da9e584024ce6139c0881f8a14bf61c70079c25b6916e31b"
     },
     {
       "version": "20260917132738",
@@ -292,27 +292,27 @@
     {
       "version": "20260917132817",
       "name": "nexus_upgrade_awards_xp_v1",
-      "sha256": "aad403f5156cd021d64622d9e00db7738a969a339e4478c8e029879cecff9e2c"
+      "sha256": "e905ea3012adc4050868884933d7e2d6f0c74610aee81b6b8de1cec47ba7d4ff"
     },
     {
       "version": "20260917133238",
       "name": "expand_3b_reward_inventory_schema_v1",
-      "sha256": "1a4283d6819cff732a86f314458afce61e2f81a21716198d6fcc089f38ebec67"
+      "sha256": "49adb21e67065bef6d91ba37489b61d9a1b39b8f0eb2ad4da14531b4bd1d9c66"
     },
     {
       "version": "20260917133254",
       "name": "seed_3b_world_reward_catalog_v1",
-      "sha256": "a94116c8ca3780338db6f9e8255a72204f9f8fa9a26f429b35a146f318b07945"
+      "sha256": "d4da43257173d1f9c1d7f6cd59a640ba4df1a10f080b72f5531fa05ab137a8fd"
     },
     {
       "version": "20260917133439",
       "name": "nexus_collectible_display_v2",
-      "sha256": "652396ba793765c3da086f301d15844772c2f7bc2ae73a9af811eff7042577a3"
+      "sha256": "3187162b893f4e9117ee2dae771fce0667adac273b3de66281e11aa020cc588f"
     },
     {
       "version": "20260917133505",
       "name": "nexus_state_inventory_v2",
-      "sha256": "eef53e6932309c5a03c235906158bbcc42d6c47b505be4b8d1472188ee3e6d33"
+      "sha256": "bd1a20870c5cd12692c3034606deea2b304ecc6a0997f79ba1a78790bea4e057"
     },
     {
       "version": "20260917133917",
@@ -327,17 +327,17 @@
     {
       "version": "20260917134124",
       "name": "unify_3b_xp_wallet_v1",
-      "sha256": "c0ad2dd14fc5fb14be057b30c9c9d614b88fe8280ac4518786a671842f6f6f80"
+      "sha256": "4757b42cf44d2d3f559a08197882bf77b1a636dfe038a358500a112ce1dca9a2"
     },
     {
       "version": "20260917134253",
       "name": "global_rarity_supply_guard_v2",
-      "sha256": "1cc5979ce5c6e972237ddcfeae46799aa92f220b34ad4e8739a82352803ddb2f"
+      "sha256": "211d7b0cd59e19ded2b4f6a288b9e5161bbfd2b652e59455f81e9479a519e519"
     },
     {
       "version": "20260917134357",
       "name": "nexus_state_rarity_supply_v2",
-      "sha256": "7de00f639ca9760f1b9edc5a7e87e63e575be68ac3a4c5c12ffb0832c7aaaacf"
+      "sha256": "70100b91c395e50ebe55701c56ba7fc5935a7262ba19d70811108c5707569a62"
     },
     {
       "version": "20260917134434",
@@ -372,7 +372,7 @@
     {
       "version": "20260919181748",
       "name": "world_city_bridge_20260919",
-      "sha256": "c235918e1a3cac8b32d1901d65b302545759ac69822bc9158ec48307f0963b21"
+      "sha256": "9cd82145f437b4cd6a1db6d09fa5d15ef13c38b663d0f386b83960a998ff7777"
     },
     {
       "version": "20260920012315",
@@ -397,37 +397,37 @@
     {
       "version": "20260920162537",
       "name": "threeb_global_xp_150_antifarm_token_foundation",
-      "sha256": "a4cd7745aa8c0c18b88d2bb8d4a927f300ca12d408f8c119b740f02c26df807c"
+      "sha256": "1f7ef7128b5247822f1e07e770711000493b1b9b540b40f1dab5a289a1010c9c"
     },
     {
       "version": "20260920162852",
       "name": "threeb_loyalty_global_ledger_unification",
-      "sha256": "fa5a5931b7a8221eac742d0d87fec53703ce589b19a471d15698ec8a75493999"
+      "sha256": "5805dcd712441d60b6b1c0ebaf780993a3c60d0ac4fdd9fccf49e54fe553b722"
     },
     {
       "version": "20260920163109",
       "name": "public_telemetry_rate_limit_hardening_20260920",
-      "sha256": "b29f6a98c9dda9b0d4ed1993f8663167cc3bfbccf8e8f2f3c753c5c5f338abf1"
+      "sha256": "610c390feb30d0d6281e2354742b905073438e4b31e61a6473b55e8895258c12"
     },
     {
       "version": "20260920163234",
       "name": "threeb_city_economy_global_level_unification",
-      "sha256": "40b9c09a101746203ab1c93a06af198e147a68133024eb360b7f62ea0d2d2a68"
+      "sha256": "cbee9ecd13fc12c2443218cafacb9edc95ad3be5eb596d73e4a9b9bc62de8a21"
     },
     {
       "version": "20260920163251",
       "name": "quarantine_disabled_3bc_sql_ledger_20260920",
-      "sha256": "4b88a683184b4ea914ce7a3264df7b4aaab91ec3f065f354e71125f72582db4c"
+      "sha256": "b12381cddbc6c7627827fa3f1d254ca6921974cf00579181e5f56acebce282ae"
     },
     {
       "version": "20260920163347",
       "name": "threeb_world_reward_transactional_outbox_v1",
-      "sha256": "b137dee615cc33e7ebf708b69bc659eb862e2030d7c804059769cbb1dd42b3bc"
+      "sha256": "b19f1b3cedb97c1c61ceca84c1f700cdf19449fb3a4517c4485aadb4cd8bdd87"
     },
     {
       "version": "20260920163445",
       "name": "fortress_level_curve_and_city_rpc_hardening_20260920",
-      "sha256": "10796588ff1567845afbcc3a1a7fbdf8742020f562e06116a1bba11112e63d02"
+      "sha256": "507d937c43a1095a6a53054e7c30077f5b3431cd5042157056891aa706c3bb60"
     },
     {
       "version": "20260920164016",
@@ -437,92 +437,92 @@
     {
       "version": "20260920164750",
       "name": "threeb_economy_risk_seasons_prestige_foundation",
-      "sha256": "d69366fa7bd90d3893b54d2963d467708a0fa9af3aeef06a640fae3653a765c8"
+      "sha256": "75dde95d593b8577cc91f1c4043fa7c37d3dd139aa0778e462b49650ef665366"
     },
     {
       "version": "20260920165411",
       "name": "fortress_postgres_default_privileges_private_by_default",
-      "sha256": "97a3266dfbf399ad01c2808d704aa436ead0a6feb2f4402081cfaef86b9cd7ec"
+      "sha256": "a257aabf2f818c119ebb4a5cb0311b4f4c9de94fe49641aab0a12ebcd34c56a4"
     },
     {
       "version": "20260920170825",
       "name": "threeb_progress_prestige_snapshot_v1",
-      "sha256": "328074f698fba8fa0fec4d9e4181b8d5b6c7b7fb5c2663de5f5627cb658fdb79"
+      "sha256": "ac225d638588d64b0d98351f598aaae8ff3fbef3acef67af89606e133ea1d19f"
     },
     {
       "version": "20260920180033",
       "name": "threeb_crypto_release_gate_fail_closed",
-      "sha256": "b3d27f6264fb2b85d9d1a556890592898ab68445c4c1678bcf477bd130a5ea16"
+      "sha256": "5d0ce5eeb8f3e9eee40cdc1e73dffd17ba8ec4f1d372d645591099226d6da070"
     },
     {
       "version": "20260920180319",
       "name": "threeb_economy_health_observability",
-      "sha256": "ff6421bf48b8a8fe39d38d808246f081299fae712ac320502e8a407a2cddba75"
+      "sha256": "3fe700394a32ebc29ad76daa60824bed8147c01fd884701c818217ce3f3dee0d"
     },
     {
       "version": "20260920182959",
       "name": "threeb_economy_integrity_report",
-      "sha256": "1b63aeb50570909cc307cdf3057c95417cfe379af7c3be7b404647d1c4735c69"
+      "sha256": "ff9e5e6286b14abb9c2b4405feaa2526f8c4828b3adb8d7b9ba6fb5d02924ee7"
     },
     {
       "version": "20260920183658",
       "name": "threeb_curve_season_prestige_hardening_v2",
-      "sha256": "780fbdb42159eef9294e9645c0a5454690449b56dfb5c613ce1156935f55df9f"
+      "sha256": "db1c0301dc4b13ddbbfed68f7dffcdb1f9266f9cc426ab62e19fc35297e3c722"
     },
     {
       "version": "20260920184052",
       "name": "threeb_token_policy_fail_closed",
-      "sha256": "1e3b6fcb49e516dd4203e18cfe0a14974dcae94625f9ed0e7ddf7cb308854a23"
+      "sha256": "66db71ec094266e9d268343dc440e673f156196a681c0e99ae602d0cb61e1ae1"
     },
     {
       "version": "20260920184222",
       "name": "threeb_prestige_eligibility_read_only",
-      "sha256": "be97beedd805764e036afba0e6ed219dae6e133ed35f91bb2370ac52bdef198d"
+      "sha256": "fbc92eac7e217f5ab8a3661f64bd7226dd2f0623b94ed037972fa0413416c348"
     },
     {
       "version": "20260920184352",
       "name": "threeb_read_only_progress_snapshots",
-      "sha256": "b8d5acb2d827f622212f381e94f8549568a717eab61731ffd22654ae35882c4e"
+      "sha256": "49990b0e645cdcbb11187583fde3a561be474f2c2366c654cc3f7c0a9c88f882"
     },
     {
       "version": "20260920184729",
       "name": "threeb_prestige_country_coverage_hardening",
-      "sha256": "459106014aea6d33d3d9161398d4790c66899cf9a1e470c0f652f090020b3c9d"
+      "sha256": "cff3ab624a5c7094acc133838a3c2fa76edbfdd80678a3bf738d318fab20c0c5"
     },
     {
       "version": "20260920191103",
       "name": "threeb_economy_integrity_crypto_gate_v2",
-      "sha256": "53cab089903ad5d4b9a7ef46d7e3f432c37533e45370dd4aaef842b2dc3ff7d4"
+      "sha256": "b7031bd0662919cf40a981ee43d7a821b9912087f6b9b0bfd3eadacddaa256ab"
     },
     {
       "version": "20260920191606",
       "name": "threeb_reward_lifetime_caps",
-      "sha256": "452f98b460126fab62bceb85f8c64b3a046f50f566bacefc1b446362da8e2cf0"
+      "sha256": "1e7250e666265892847a9ec8938869d471f190d63a5d5ec2933665db43cf19ca"
     },
     {
       "version": "20260920192148",
       "name": "threeb_world_finite_reward_caps",
-      "sha256": "dc536224157a14de72731a86ff7aa0a44f5057decef02d49a61719887187d7de"
+      "sha256": "364b6151bef8cbb980d4ea9b51f2bd62b01d948a0510b576deef173c2feb20c1"
     },
     {
       "version": "20260920192342",
       "name": "threeb_level_curve_v2_candidate_shadow",
-      "sha256": "1cf24639530f7616416afd70af91dca803a81de53d8b23db18110f4f5e287dbd"
+      "sha256": "64a71a4276b7f10d2aa792c5fede7b6ee0f9a105f45d5f58bbbe389e87bd5a59"
     },
     {
       "version": "20260920192820",
       "name": "threeb_city_progression_world_city_decoupling_v2",
-      "sha256": "a8a818f8876465de9023b16439916579e2e9d1c1a6cd8c8546779483d4f10ff3"
+      "sha256": "fc3f233d8eb2dc2ae7ff195970d077e90bfe384d7123ed550013acf97146ce31"
     },
     {
       "version": "20260920193014",
       "name": "threeb_activate_global_xp_curve_v2",
-      "sha256": "d647db51a83e5186b931dee11b288760ef1b926deeec0cc634edab603725f1b2"
+      "sha256": "8a810e20d24a7d4026f141b5bb6166ea30818b715d6729b4740d01612dbc57e3"
     },
     {
       "version": "20260920193130",
       "name": "threeb_economy_config_owner_only_2026_2",
-      "sha256": "0c7ea3967380d65dea95c7f4a49f496b62a929b8a7303b63dd9155e143be6011"
+      "sha256": "cdd2e0b659174316194c7169e62a3dd976fefce0efa309e829b2bbafaf1d0dc3"
     }
   ]
 }
