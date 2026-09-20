@@ -7,6 +7,14 @@ on:
       - release-city3b
     paths:
       - 'src/city/**'
+      - 'tests/nexus-city-gateway.test.js'
+      - 'tests/city3b-access.test.js'
+      - 'tests/city-unlock-guide.test.js'
+      - 'supabase/functions/city-3b/**'
+      - 'src/world/world.css'
+      - 'src/world/WorldPage.jsx'
+      - 'src/world/city-unlock-guide.js'
+      - 'src/components/NexusCityGateway.jsx'
       - 'src/components/PassportNexus.jsx'
       - 'src/components/PassportVisual.jsx'
       - 'src/styles/city-3b.css'
