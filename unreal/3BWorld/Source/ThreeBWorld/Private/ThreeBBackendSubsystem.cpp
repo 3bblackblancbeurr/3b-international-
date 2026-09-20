@@ -31,11 +31,11 @@ void UThreeBBackendSubsystem::SendWorldCommands(const FString& DeviceId, const F
 
     const FString Body = FString::Printf(
         TEXT("{\"device\":\"%s\",\"commands\":%s}"),
-        *DeviceId.ReplaceCharWithEscapedChar(),
+        *DeviceId,
         *CommandsJson
     );
 
-    SendJsonPost(ThreeBBackend::WorldEnginePath, Body, &OnWorldResponse);
+    SendJsonPost(ThreeBBackend::WorldEnginePath, Body, EThreeBBackendChannel::World);
 }
 
 void UThreeBBackendSubsystem::RequestCitySnapshot()
@@ -46,7 +46,7 @@ void UThreeBBackendSubsystem::RequestCitySnapshot()
         return;
     }
 
-    SendJsonPost(ThreeBBackend::City3BPath, TEXT("{\"action\":\"snapshot\"}"), &OnCityResponse);
+    SendJsonPost(ThreeBBackend::City3BPath, TEXT("{\"action\":\"snapshot\"}"), EThreeBBackendChannel::City);
 }
 
 void UThreeBBackendSubsystem::RequestWorldBootstrap()
@@ -57,10 +57,10 @@ void UThreeBBackendSubsystem::RequestWorldBootstrap()
         return;
     }
 
-    SendJsonPost(ThreeBBackend::WorldBootstrapPath, TEXT("{}"), &OnBootstrapResponse);
+    SendJsonPost(ThreeBBackend::WorldBootstrapPath, TEXT("{}"), EThreeBBackendChannel::Bootstrap);
 }
 
-void UThreeBBackendSubsystem::SendJsonPost(const FString& Path, const FString& Body, FThreeBBackendResponse* Event)
+void UThreeBBackendSubsystem::SendJsonPost(const FString& Path, const FString& Body, EThreeBBackendChannel Channel)
 {
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
     Request->SetURL(BaseUrl + Path);
@@ -70,14 +70,30 @@ void UThreeBBackendSubsystem::SendJsonPost(const FString& Path, const FString& B
     Request->SetHeader(ThreeBBackend::HeaderAuthorization, TEXT("Bearer ") + AccessToken);
     Request->SetContentAsString(Body);
 
+    const TWeakObjectPtr<UThreeBBackendSubsystem> WeakThis(this);
     Request->OnProcessRequestComplete().BindLambda(
-        [Event](FHttpRequestPtr, FHttpResponsePtr Response, bool Connected)
+        [WeakThis, Channel](FHttpRequestPtr, FHttpResponsePtr Response, bool Connected)
         {
+            if (!WeakThis.IsValid())
+            {
+                return;
+            }
+
             const int32 Status = Response.IsValid() ? Response->GetResponseCode() : 0;
             const FString Json = Response.IsValid() ? Response->GetContentAsString() : TEXT("{}");
-            if (Event)
+            const bool Success = Connected && Status >= 200 && Status < 300;
+
+            switch (Channel)
             {
-                Event->Broadcast(Connected && Status >= 200 && Status < 300, Status, Json);
+                case EThreeBBackendChannel::World:
+                    WeakThis->OnWorldResponse.Broadcast(Success, Status, Json);
+                    break;
+                case EThreeBBackendChannel::City:
+                    WeakThis->OnCityResponse.Broadcast(Success, Status, Json);
+                    break;
+                case EThreeBBackendChannel::Bootstrap:
+                    WeakThis->OnBootstrapResponse.Broadcast(Success, Status, Json);
+                    break;
             }
         }
     );
