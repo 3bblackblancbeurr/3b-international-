@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems} from '../src/world/hub/metropolis.js';
+import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
 import {HUB_BUILDING_IDS} from '../src/world/hub/activity-catalog.js';
@@ -78,6 +78,7 @@ test('human-scale pedestrian shortcuts break the hub ring-and-spoke pattern',()=
  assert.equal(lanes.length,10);
  assert.ok(lanes.every(r=>r.width===6.5));
  assert.ok(lanes.every(r=>r.length>10));
+ assert.ok(lanes.every(r=>pedestrianLaneMinimumClearance(plan,r)>12),'pedestrian lanes must stay clear of canonical building footprints');
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
  const trafficRoutes=new Set(runtime.items.filter(i=>i.type==='hubTraffic').map(i=>i.routeId));
  assert.ok(lanes.every(lane=>!trafficRoutes.has(lane.id)));
