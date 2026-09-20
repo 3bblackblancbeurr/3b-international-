@@ -223,3 +223,29 @@ test('credibility pass breaks mechanical urban repetition without adding draw-ca
  assert.match(metro,/districtSeed/);
  assert.match(metro,/basePhase=.*jitter=/);
 });
+
+
+test('credibility pass 2 removes symmetric lighting and periodic waterfront cadence',()=>{
+ const visuals=read('src/world/premium-hub-visuals.js'),lighting=read('src/world/premium-lighting.js'),waterfront=read('src/world/premium-waterfront.js');
+ assert.match(visuals,/rhythmSeed=hash/);
+ assert.match(visuals,/lampFractions=/);
+ assert.match(lighting,/userData\.priority/);
+ assert.match(lighting,/mode!==\'fluid\'\|\|light\.userData\.priority>=\.72/);
+ assert.doesNotMatch(lighting,/for\(let i=0;i<6;i\+\+\)/);
+ assert.match(waterfront,/railSegments=new Set/);
+ assert.match(waterfront,/lampSegments=new Set/);
+ assert.doesNotMatch(waterfront,/i%4===1/);
+});
+
+test('weather atmosphere transitions progressively instead of snapping every state',()=>{
+ const sky=read('src/world/sky.js');
+ assert.match(sky,/targetAtmosphere/);
+ assert.match(sky,/Math\.exp\(-dt\*speed\)/);
+ assert.match(sky,/approach\(uniforms\.cloudiness\.value,targetAtmosphere\.cloudiness/);
+});
+
+test('LOW keeps cheap building contact shadows to avoid floating architecture',()=>{
+ const contact=read('src/world/contact-lighting.js');
+ assert.match(contact,/shadow\.count=full/);
+ assert.match(contact,/damp\.count=mode===\'fluid\'/);
+});
