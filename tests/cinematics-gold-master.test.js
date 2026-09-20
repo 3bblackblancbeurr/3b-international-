@@ -9,9 +9,9 @@ test('Gold Master opening stays inside the 35–50 second target',()=>{
  const total=sequence.shots.reduce((sum,shot)=>sum+shot.duration,0);
  assert.equal(sequence.id,'character-reveal-gold-master-v2');
  assert.ok(total>=35000&&total<=50000,`unexpected duration ${total}ms`);
- assert.ok(sequence.shots.some(shot=>shot.id==='gate'));
- assert.ok(sequence.shots.some(shot=>shot.id==='eight-worlds'));
- assert.ok(sequence.shots.some(shot=>shot.id==='signature'&&shot.line.includes('héritage')));
+ assert.ok(sequence.shots.some(shot=>shot.effect==='portal'));
+ assert.ok(sequence.shots.some(shot=>shot.effect==='countries'));
+ assert.ok(sequence.shots.some(shot=>shot.effect==='signature'&&shot.line.includes('héritage')));
  assert.equal(frameAt(sequence,total).done,true);
 });
 
