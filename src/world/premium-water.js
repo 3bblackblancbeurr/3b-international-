@@ -175,7 +175,7 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
   0,0,.5,.5,
   0,0,0,1
  );
- let reflectionTarget=null,reflectionProfile=QUALITY.medium,lastReflection=-Infinity,waterMesh=null,mistMesh=null;
+ let reflectionTarget=null,reflectionProfile=QUALITY.medium,lastReflection=-Infinity,waterMesh=null,mistMesh=null;const reflectionFrustum=new THREE.Frustum(),reflectionViewProjection=new THREE.Matrix4(),waterSphere=new THREE.Sphere(new THREE.Vector3(lake.x,-1.5,lake.z),lake.r+12);
  const material=new THREE.ShaderMaterial({
   side:THREE.DoubleSide,
   transparent:true,
@@ -252,8 +252,10 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
  function attachMeshes(water,mist){waterMesh=water;mistMesh=mist;}
  function renderReflection(renderer,scene,camera,time=0){
   const q=reflectionProfile;if(!q.sceneReflection||!waterMesh||!reflectionTarget||!renderer||!scene||!camera)return false;
+  camera.updateMatrixWorld();reflectionViewProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);reflectionFrustum.setFromProjectionMatrix(reflectionViewProjection);
+  waterMesh.getWorldPosition(waterSphere.center);waterSphere.radius=lake.r+12;if(!reflectionFrustum.intersectsSphere(waterSphere))return false;
   if(time-lastReflection<1/q.reflectionHz)return false;lastReflection=time;
-  const waterWorld=new THREE.Vector3();waterMesh.getWorldPosition(waterWorld);const waterY=waterWorld.y;
+  const waterWorld=waterSphere.center,waterY=waterWorld.y;
   const cameraPos=new THREE.Vector3(),target=new THREE.Vector3(),forward=new THREE.Vector3(0,0,-1),up=new THREE.Vector3(0,1,0);
   camera.getWorldPosition(cameraPos);forward.applyQuaternion(camera.quaternion);up.applyQuaternion(camera.quaternion);target.copy(cameraPos).add(forward);
   const reflectPoint=point=>{point.y=2*waterY-point.y;return point;};
