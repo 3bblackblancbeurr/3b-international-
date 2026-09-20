@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 
+let latest=null;
+export const currentSceneryOcclusion=()=>latest;
+
 // Open a soft, screen-sized sightline through scenery instead of moving the
 // camera. Stable dither writes depth normally, so batched walls need no sorting.
 export function createSceneryOcclusion(){
@@ -35,5 +38,6 @@ export function createSceneryOcclusion(){
   };
   material.customProgramCacheKey=()=>previousKey+'|3b-scenery-sightline-v4';material.needsUpdate=true;
  }
- return {apply,update(view,focus,active=true){camera.value.copy(view);target.value.copy(focus);enabled.value=active?1:0;}};
+ const api={apply,update(view,focus,active=true){camera.value.copy(view);target.value.copy(focus);enabled.value=active?1:0;}};
+ latest=api;return api;
 }

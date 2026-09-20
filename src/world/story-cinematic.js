@@ -1,6 +1,7 @@
 import {cardById,countryById} from './catalog.js';
 import {CHAPTERS} from './chapters.js';
 import {GUARDIAN_VALUES} from './guardian-values.js';
+import {cinematicSpec} from './cinematic-director.js';
 
 const shortGuardian=(region,cardId)=>{
  const rule=GUARDIAN_VALUES[region],card=cardById[cardId||rule?.card];
@@ -10,8 +11,10 @@ const shortGuardian=(region,cardId)=>{
 export function storyCinematicPresentation(event){
  if(!event?.kind||!event?.key)return null;
  const region=event.context?.region||event.region, country=countryById[region], chapter=CHAPTERS[region],guardian=shortGuardian(region,event.context?.card);
- const base={key:event.key,kind:event.kind,region,card:event.context?.card||null,audioState:'mission',voiceCharacter:'narrator',nextLabel:'Continuer'};
+ const base={...cinematicSpec(event.kind,region),context:event.context||{},key:event.key,kind:event.kind,region,countryName:country?.name||'3B',value:guardian.rule?.value||'Héritage',card:event.context?.card||null,audioState:'mission',voiceCharacter:'narrator',nextLabel:'Continuer'};
  switch(event.kind){
+  case 'world-opening':return {...base,countryName:'3B INTERNATIONAL',value:'Héritage',kicker:'LES HUIT PORTES',title:'LE MONDE DU 3B',detail:'Huit pays. Huit valeurs. Le voyage commence maintenant dans le monde réel du 3B.',nextLabel:'Prendre le contrôle'};
+  case 'memory-fragment':return {...base,kicker:'FRAGMENT DE MÉMOIRE',title:'Un souvenir répond',detail:'Un fragment de mémoire rejoint ta progression.',nextLabel:'Reprendre le voyage'};
   case 'country-first-entry':return {...base,kicker:(country?.name||region).toUpperCase()+' · PREMIÈRE ENTRÉE',title:country?.title||'Une nouvelle porte',detail:country?.lore||'Le pays attend que ses liens soient reconstruits.'};
   case 'story-alliance':return {...base,kicker:'UN LIEN SE FORME',title:chapter?.resident?.split(',')[0]||'Un habitant te fait confiance',detail:chapter?.need||'Une première alliance ouvre la suite de l’histoire.'};
   case 'story-power':return {...base,kicker:'RÉSONANCE',title:'Un pouvoir se réveille',detail:'Ce lien n’est plus seulement un souvenir : il devient une capacité utile à l’exploration et à la reconstruction.'};

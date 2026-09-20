@@ -6,8 +6,10 @@ export function addBuildingContact(field,root,owned){
  const sites=[...field.buildings,...field.civic];if(!sites.length)return;
  const size=64,data=new Uint8Array(size*size*4);
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
-  const dx=Math.max(0,Math.abs((x+.5)/size*2-1)-.7),dy=Math.max(0,Math.abs((y+.5)/size*2-1)-.7),t=Math.max(0,1-Math.hypot(dx,dy)/.3),i=(y*size+x)*4;
-  data[i]=15;data[i+1]=23;data[i+2]=28;data[i+3]=Math.round(t*t*(3-2*t)*90);
+  const dx=Math.max(0,Math.abs((x+.5)/size*2-1)-.66),dy=Math.max(0,Math.abs((y+.5)/size*2-1)-.66),t=Math.max(0,1-Math.hypot(dx,dy)/.34),i=(y*size+x)*4;
+  // Keep buildings grounded without painting a visibly black rectangle below
+  // them. GTAO handles close detail; this cheap instanced layer handles distance.
+  data[i]=10;data[i+1]=18;data[i+2]=24;data[i+3]=Math.round(t*t*(3-2*t)*66);
  }
  const texture=new THREE.DataTexture(data,size,size);texture.magFilter=texture.minFilter=THREE.LinearFilter;texture.needsUpdate=true;
  const geometry=new THREE.PlaneGeometry(1,1);geometry.rotateX(-Math.PI/2);

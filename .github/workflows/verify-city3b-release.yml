@@ -7,6 +7,14 @@ on:
       - release-city3b
     paths:
       - 'src/city/**'
+      - 'tests/nexus-city-gateway.test.js'
+      - 'tests/city3b-access.test.js'
+      - 'tests/city-unlock-guide.test.js'
+      - 'supabase/functions/city-3b/**'
+      - 'src/world/world.css'
+      - 'src/world/WorldPage.jsx'
+      - 'src/world/city-unlock-guide.js'
+      - 'src/components/NexusCityGateway.jsx'
       - 'src/components/PassportNexus.jsx'
       - 'src/components/PassportVisual.jsx'
       - 'src/styles/city-3b.css'
@@ -18,6 +26,14 @@ on:
       - main
     paths:
       - 'src/city/**'
+      - 'src/components/NexusCityGateway.jsx'
+      - 'src/world/city-unlock-guide.js'
+      - 'src/world/WorldPage.jsx'
+      - 'src/world/world.css'
+      - 'supabase/functions/city-3b/**'
+      - 'tests/city-unlock-guide.test.js'
+      - 'tests/city3b-access.test.js'
+      - 'tests/nexus-city-gateway.test.js'
       - 'src/components/PassportNexus.jsx'
       - 'src/components/PassportVisual.jsx'
       - 'src/styles/city-3b.css'

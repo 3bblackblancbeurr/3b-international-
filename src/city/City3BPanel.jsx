@@ -1,18 +1,22 @@
-import React,{useCallback,useEffect,useMemo,useState} from 'react';
-import {city3bRequest,CITY_COUNTRIES} from './city3b-client.js';
+import React,{useMemo,useState} from 'react';
+import {CITY_COUNTRIES} from './city3b-client.js';
 import {CITY3B_POIS,city3bVisualStage} from './city3b-world.js';
+import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
+import {useCityState} from './useCityState.js';
 import '../styles/city-3b.css';
 
-export function City3BPanel({uid,onLogin,onNotice}){
- const[data,setData]=useState(null),[loading,setLoading]=useState(!!uid),[busy,setBusy]=useState(''),[error,setError]=useState('');
- const[name,setName]=useState('Ma Ville 3B'),[country,setCountry]=useState('France');
- const refresh=useCallback(async()=>{if(!uid)return;setLoading(true);setError('');try{setData(await city3bRequest('snapshot',{},uid));}catch(e){setError(e.message);}finally{setLoading(false);}},[uid]);
- useEffect(()=>{refresh();},[refresh]);
- async function action(kind,body={}){if(!uid||busy)return;setBusy(kind);setError('');try{const next=await city3bRequest(kind,body,uid);setData(next);onNotice?.(kind==='sync_world'?'Ville 3B synchronisée avec le Monde du 3B.':'Ville 3B mise à jour.');}catch(e){setError(e.message);}finally{setBusy('');}}
+export function City3BPanel(props){return <City3BAccountPanel key={props.uid||'guest'} {...props}/>;}
+function City3BAccountPanel({uid,onLogin,onNotice}){
+ const account=useLoyalty(),identity=account.passport?.userId===uid?account.passport:null,country=identity?.country||'';
+ const[name,setName]=useState('Ma Ville 3B');
+ const {data,loading,busy,error,call}=useCityState(uid);
+ const refresh=()=>call('snapshot');
+ async function action(kind,body={}){const next=await call(kind,body);if(next)onNotice?.(kind==='sync_world'?'Ville 3B synchronisée avec le Monde du 3B.':'Ville 3B mise à jour.');}
  const stage=useMemo(()=>city3bVisualStage(data),[data]);
  if(!uid)return <div className="city3b-world-panel"><span className="city3b-kicker">VILLE 3B · COMPTE REQUIS</span><h3>Ta ville appartient à ton Passeport 3B.</h3><p>Connecte ton compte pour charger ta ville, ses quartiers, ses placements et sa progression.</p><button className="city3b-btn primary" onClick={onLogin}>Ouvrir mon compte 3B</button></div>;
  if(loading&&!data)return <div className="city3b-loading">CHARGEMENT DE VILLE 3B…</div>;
- if(!data?.city)return <div className="city3b-world-panel"><span className="city3b-kicker">FONDATION</span><h3>Créer la première fondation de Ville 3B</h3><p>Une seule ville par compte. Elle grandit avec ta progression et les quartiers que tu débloques.</p>{error&&<p className="city3b-error">{error}</p>}<div className="city3b-form"><label>Nom<input maxLength={40} value={name} onChange={e=>setName(e.target.value)}/></label><label>Origine<select value={country} onChange={e=>setCountry(e.target.value)}>{CITY_COUNTRIES.map(value=><option key={value}>{value}</option>)}</select></label><button className="city3b-btn primary" disabled={!!busy||!name.trim()} onClick={()=>action('create',{name:name.trim(),country})}>{busy?'Création…':'Créer ma Ville 3B'}</button></div></div>;
+ if(error&&!data)return <div className="city3b-world-panel"><p className="city3b-error" role="alert">{error}</p><button className="city3b-btn" disabled={busy} onClick={refresh}>Réessayer</button></div>;
+ if(!data?.city)return <div className="city3b-world-panel"><span className="city3b-kicker">FONDATION</span><h3>Créer la première fondation de Ville 3B</h3><p>Une seule ville par compte. Elle grandit avec ta progression et les quartiers que tu débloques.</p>{error&&<p className="city3b-error">{error}</p>}<div className="city3b-form"><label>Nom<input maxLength={40} value={name} onChange={e=>setName(e.target.value)}/></label><label>Origine liée au Passeport 3B<input aria-label="Pays lié au Passeport 3B" value={country} readOnly placeholder="Complète ton Passeport 3B"/></label><button className="city3b-btn primary" disabled={!!busy||name.trim().length<2||!country} onClick={()=>action('create',{name:name.trim(),country})}>{busy?'Création…':'Créer ma Ville 3B'}</button></div></div>;
  const city=data.city,wallet=data.wallet||{},districts=Array.isArray(data.districts)?data.districts:[],placements=Array.isArray(data.placements)?data.placements:[],definitions=Array.isArray(data.buildings)?data.buildings:[];
  return <div className="city3b-world-panel">
   <section className="city3b-world-hero">

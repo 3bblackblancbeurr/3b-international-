@@ -29,8 +29,8 @@ test('manual steering cancels a path; diagonal movement is normalized',()=>{
 });
 test('quality adapts gradually and respects the screen pixel budget',()=>{
  const q=createQualityController(),ratio=q.ratio(3840,2160,2);assert.ok(3840*2160*ratio*ratio<=3000001);
- q.sample(25,1);assert.equal(q.sample(25,1),true);assert.ok(q.ratio(1000,700,2)<1.75);
- q.setMode('detail');assert.equal(q.sample(15,10),false);assert.equal(q.ratio(1000,700,2),1.75);
+ q.sample(25,1);assert.equal(q.sample(25,1),true);assert.ok(q.ratio(1000,700,2)<1.5);
+ q.setMode('detail');assert.equal(q.sample(15,10),false);assert.equal(q.ratio(1000,700,2),1.5);
  q.setMode('fluid');assert.ok(q.ratio(1000,700,2)<=1);
 });
 test('all eight redesigned gates are reachable with the exported Blender collisions',()=>{

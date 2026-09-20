@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowRight, Building2, CheckCircle2, Globe2, LockKeyhole, Sparkles, Target, X } from 'lucide-react';
 import { useLoyalty } from '../loyalty/LoyaltyContext.jsx';
+import { city3bRequest } from '../city/city3b-client.js';
+import { cityUnlockGuide, cityUnlockGuideStorage } from '../world/city-unlock-guide.js';
 import NEXUS_CITY_BG from '../assets/nexus-premium-bg.js';
 import City3BPortal from './City3BPortal.jsx';
 import '../styles/nexus-city-gateway.css';
@@ -50,18 +52,22 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
   const [cityOpen, setCityOpen] = useState(false);
   const [unlockState, setUnlockState] = useState('checking');
   const [syncNote, setSyncNote] = useState('');
+  const [unlockGuide, setUnlockGuide] = useState(() => cityUnlockGuide(null));
+  const [accessReason, setAccessReason] = useState(null);
   const uid = account.user?.id;
   const isLoggedIn = !!uid;
 
   useEffect(() => {
     if (!open) return undefined;
     setCityOpen(false);
+    setAccessReason(null);
     if (account.loading) {
       setUnlockState('checking');
       return undefined;
     }
     if (!uid) {
       setUnlockState('locked');
+      setUnlockGuide(cityUnlockGuide(null));
       setSyncNote('Connecte ton Passeport 3B pour enregistrer le déblocage.');
       return undefined;
     }
@@ -72,14 +78,51 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
       try {
         const { readLocal, loadWorld } = await import('../world/save.js');
         const local = readLocal(uid)?.data;
-        if (live && local?.beacons?.length) setUnlockState('unlocked');
-        const result = await loadWorld(uid);
+        const localGuide = cityUnlockGuide(local);
+        if (live) {
+          setUnlockGuide(localGuide);
+          if (localGuide.unlocked) {
+            setUnlockState('unlocked');
+            setAccessReason('souvenir');
+          }
+        }
+
+        const [worldResult, cityResult] = await Promise.allSettled([
+          loadWorld(uid),
+          city3bRequest('access', {}, uid),
+        ]);
         if (!live) return;
-        setUnlockState(result.data?.beacons?.length ? 'unlocked' : 'locked');
-        setSyncNote(result.message || 'Progression du Monde du 3B vérifiée.');
+
+        const worldData = worldResult.status === 'fulfilled' ? worldResult.value.data : local;
+        const guide = cityUnlockGuide(worldData);
+        const hasCity = cityResult.status === 'fulfilled' && cityResult.value?.hasCity === true;
+        setUnlockGuide(guide);
+
+        if (hasCity) {
+          setUnlockState('unlocked');
+          setAccessReason('city');
+          setSyncNote('Ville 3B existante détectée · accès conservé.');
+          return;
+        }
+        if (guide.unlocked) {
+          setUnlockState('unlocked');
+          setAccessReason('souvenir');
+          setSyncNote(worldResult.status === 'fulfilled'
+            ? worldResult.value.message || 'Souvenir vérifié sur ton compte.'
+            : 'Souvenir retrouvé dans ta copie locale.');
+          return;
+        }
+
+        setUnlockState('locked');
+        setAccessReason(null);
+        const notes = [];
+        if (worldResult.status === 'fulfilled' && worldResult.value.message) notes.push(worldResult.value.message);
+        if (cityResult.status === 'rejected') notes.push('Vérification de la ville indisponible');
+        setSyncNote(notes.join(' · ') || 'Progression du Monde du 3B vérifiée.');
       } catch (error) {
         if (!live) return;
         setUnlockState('locked');
+        setAccessReason(null);
         setSyncNote(error?.message || 'La progression du Monde du 3B n’a pas pu être vérifiée.');
       }
     })();
@@ -102,7 +145,8 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
     };
   }, [open, cityOpen, onClose]);
 
-  const leaveTo = (hash) => {
+  const leaveTo = (hash, options = {}) => {
+    if (options.cityGuide) cityUnlockGuideStorage(true);
     onClose?.();
     window.setTimeout(() => { window.location.hash = hash; }, 0);
   };
@@ -114,7 +158,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
       return;
     }
     if (unlockState !== 'unlocked') {
-      leaveTo('#monde-3b');
+      leaveTo('#monde-3b', { cityGuide: true });
       return;
     }
     setCityOpen(true);
@@ -130,7 +174,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
     : !isLoggedIn
       ? 'OUVRIR MON ESPACE MEMBRE'
       : unlocked
-        ? 'CRÉER MA VILLE 3B'
+        ? accessReason === 'city' ? 'REJOINDRE MA VILLE 3B' : 'CRÉER MA VILLE 3B'
         : 'DÉBLOQUER DANS LE MONDE DU 3B';
 
   return createPortal(
@@ -187,18 +231,22 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
             <div className={`nexus-unlock-card ${unlocked ? 'is-unlocked' : ''}`}>
               <div className="nexus-unlock-icon">{unlocked ? <CheckCircle2 size={24} /> : <Target size={24} />}</div>
               <div>
-                <strong>{unlocked ? 'MODE DÉBLOQUÉ' : isLoggedIn ? 'MISSION RAPIDE · 0/1' : 'PASSEPORT 3B REQUIS'}</strong>
+                <strong>{unlocked
+                  ? accessReason === 'city' ? 'VILLE EXISTANTE DÉTECTÉE' : 'MODE DÉBLOQUÉ'
+                  : isLoggedIn ? `MISSION VILLE · ÉTAPE ${unlockGuide.step}/${unlockGuide.total}` : 'PASSEPORT 3B REQUIS'}</strong>
                 <p>{unlocked
-                  ? 'Un Souvenir a été réveillé dans le Monde du 3B. L’accès à ta ville est activé.'
+                  ? accessReason === 'city'
+                    ? 'Ta Ville 3B existe déjà. Elle reste accessible même si le parcours du premier Souvenir n’est pas terminé.'
+                    : 'Un Souvenir est enregistré dans le Monde du 3B. L’accès à la création de ta ville est activé.'
                   : isLoggedIn
-                    ? 'Dans le Monde du 3B, entre dans n’importe quel pays et active un point « Éveiller le souvenir ». C’est tout.'
+                    ? `${unlockGuide.title}. ${unlockGuide.detail}`
                     : 'Connecte-toi d’abord. Ton déblocage sera ensuite lié à la progression de ton compte.'}</p>
-                <small>{unlocked ? 'Déblocage acquis' : 'Déblocage rapide'}{syncNote ? ` · ${syncNote}` : ''}</small>
+                <small>{unlocked ? 'Accès permanent' : 'Progression guidée'}{syncNote ? ` · ${syncNote}` : ''}</small>
               </div>
             </div>
 
             {!unlocked && isLoggedIn && !checking && (
-              <button type="button" className="nexus-city-secondary" onClick={() => leaveTo('#monde-3b')}>Aller au Monde du 3B</button>
+              <button type="button" className="nexus-city-secondary" onClick={() => leaveTo('#monde-3b', { cityGuide: true })}>Continuer la mission dans le Monde du 3B</button>
             )}
             <button type="button" className="nexus-city-secondary" onClick={onClose}>Retour au Passeport</button>
           </aside>

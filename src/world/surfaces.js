@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+export const surfaceAnisotropy=(memory=4,cores=4)=>Number(memory)<=3||Number(cores)<=4?2:4;
 export function surfaceTexture(kind='stone'){
  if(typeof document==='undefined')return null;
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d');let seed=31;const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
@@ -14,5 +15,7 @@ export function surfaceTexture(kind='stone'){
   // Wrap blades across the texture boundary so tiles join without seams.
   for(const ox of [-256,0,256])for(const oy of [-256,0,256]){c.beginPath();c.moveTo(x+ox,y+oy);c.lineTo(x+ox+Math.cos(angle)*length,y+oy+Math.sin(angle)*length);c.stroke();}
  }
- const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=4;texture.repeat.set(kind==='stone'?1:2,kind==='stone'?1:2);return texture;
+ const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.colorSpace=THREE.SRGBColorSpace;
+ const memory=typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,cores=typeof navigator!=='undefined'?Number(navigator.hardwareConcurrency)||4:4;texture.anisotropy=surfaceAnisotropy(memory,cores);
+ texture.repeat.set(kind==='stone'?1:2,kind==='stone'?1:2);return texture;
 }

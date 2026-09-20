@@ -9,7 +9,7 @@ import {parisSites} from './paris-layout.js';
 export const WORLD_RADIUS=260;
 export const BIOMES={
  hub:{seed:83,angle:0,scale:1.8,low:'#376b3d',high:'#72974d',rock:'#838a78',sky:'#9dbec5',haze:'#b8c8b2',amplitude:5.8,tree:'Tree',water:{x:-37,z:6,r:12}},
- france:{seed:13,angle:-.24,scale:1.6,low:'#416b3b',high:'#839e58',rock:'#a0a590',sky:'#a3bec7',haze:'#d2d2ba',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
+ france:{seed:13,angle:-.24,scale:1.6,low:'#385c43',high:'#70865b',rock:'#92988f',sky:'#7fa6bf',haze:'#bdc9c6',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
  italie:{seed:29,angle:.5,scale:1.65,low:'#697b44',high:'#adad72',rock:'#b6aa8d',sky:'#a8c3c7',haze:'#ded1b1',amplitude:7,tree:'Cypress',water:{x:47,z:32,r:10}},
  estonie:{seed:41,angle:-.62,scale:1.65,low:'#3b615c',high:'#77988c',rock:'#abb6af',sky:'#6c959f',haze:'#a6c2bd',amplitude:5.8,tree:'Pine',water:{x:-35,z:30,r:14}},
  turquie:{seed:67,angle:1.1,scale:1.65,low:'#928474',high:'#c8b59b',rock:'#baa28d',sky:'#899dab',haze:'#d3b9b2',amplitude:7.4,tree:'Cypress',water:{x:43,z:23,r:8}},

@@ -29,7 +29,7 @@ Deno.serve(async req=>{
   if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>65536){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}text+=decoder.decode(chunk.value,{stream:true});}text+=decoder.decode();}finally{reader.releaseLock();}
   let body;try{body=JSON.parse(text);}catch{throw new Failure(400,'Demande invalide.');}
   if(!body||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(body.device)||!Array.isArray(body.commands)||body.commands.length>100)throw new Failure(400,'Journal invalide.');
-  for(let i=0;i<body.commands.length;i++){const item=body.commands[i];if(!Number.isSafeInteger(item.seq)||item.seq<1||!item.action||JSON.stringify(item.action).length>1000||(i&&item.seq!==body.commands[i-1].seq+1))throw new Failure(400,'Séquence invalide.');}
+  for(let i=0;i<body.commands.length;i++){const item=body.commands[i];if(!Number.isSafeInteger(item.seq)||item.seq<1||!item.action||JSON.stringify(item.action).length>2048||(i&&item.seq!==body.commands[i-1].seq+1))throw new Failure(400,'Séquence invalide.');}
   const uid=await authenticate(req);
   if(!await rpc('loyalty_rate',{p_key:uid+':world-engine',p_limit:60,p_window:60}))throw new Failure(429,'Patiente un instant puis réessaie.');
   for(let attempt=0;attempt<3;attempt++){

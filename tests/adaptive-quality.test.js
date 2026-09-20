@@ -29,5 +29,6 @@ test('invalid samples and short fluctuations do not reduce quality; manual modes
  q.setMode('detail');
  for(let i=0;i<100;i++)q.sample(20,1);
  assert.equal(q.profile(),'high');
- assert.equal(q.ratio(1280,720,2),start);
+ assert.ok(q.ratio(1280,720,2)>=start);
+ assert.equal(q.ratio(1280,720,2),1.5);
 });

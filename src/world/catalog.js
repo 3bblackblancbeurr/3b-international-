@@ -1,6 +1,6 @@
 import source from './cards-source.json' with {type:'json'};
 export const COUNTRIES = [
- {id:'france',name:'France',title:'Les Jardins de la mémoire',color:'#7bbdff',ground:'#253c52',stone:'#7c94a4',sky:'#101f36',biome:'city',symbol:'✧',portal:[-22,-24],lore:'Sous les arches bleues, les souvenirs prennent la forme de lumière.'},
+ {id:'france',name:'France',title:'Les Jardins de la mémoire',color:'#7bbdff',ground:'#253c52',stone:'#7c94a4',sky:'#101f36',biome:'city',symbol:'✧',portal:[-22,-24],lore:'Sous les arches bleues, Céliane veille sur la Justice et les souvenirs prennent la forme de lumière.'},
  {id:'italie',name:'Italie',title:'Les Terrasses vivantes',color:'#95e4b6',ground:'#35514c',stone:'#c4b9a0',sky:'#182b32',biome:'terrace',symbol:'▱',portal:[14,-40],lore:'Des jardins suspendus relient les vestiges d’une cité qui se réveille.'},
  {id:'estonie',name:'Estonie',title:'La Forêt des aurores',color:'#9ce8f4',ground:'#34515c',stone:'#a0c7d2',sky:'#122b3c',biome:'ice',symbol:'❋',portal:[43,-24],lore:'Chaque clairière abrite un écho. Suis les lumières entre les sapins.'},
  {id:'turquie',name:'Turquie',title:'L’Observatoire des lunes',color:'#e9a4e8',ground:'#3d304d',stone:'#a793b4',sky:'#261d3c',biome:'dome',symbol:'☾',portal:[42,13],lore:'Huit constellations veillent sur les coupoles et les pierres flottantes.'},
@@ -23,8 +23,13 @@ const CANON_GUARDIANS={
  C171:{name:'Naël — Maroc',value:'Noblesse'},
  C172:{name:'Diego — Espagne',value:'Passion'},
 };
-export const CARDS=source.cards.map(c=>{
- const country=slug(c.country),character=c.number<=172,canon=CANON_GUARDIANS[c.id];
+const CANONICAL_CARD_OVERRIDES={
+ C002:{name:'Léa — Relieuse de souvenirs',subtype:'Artisane',effect:'Léa aide à reconstruire les ateliers et révèle les souvenirs de France. Céliane reste la Gardienne de Justice.'},
+ C165:{effect:'Incarnation unique de la valeur Justice. Active la Porte de France et compte comme un Sceau.'},
+ C213:{name:'Fragment de Justice',effect:'Ajoute +1 puissance et matérialise le premier Fragment de Justice de France.'},
+};
+export const CARDS=source.cards.map(raw=>{
+ const c={...raw,...CANONICAL_CARD_OVERRIDES[raw.id]},country=slug(c.country),character=c.number<=172,canon=CANON_GUARDIANS[c.id];
  const role=c.subtype.includes('Gardien')?'protecteur':c.number%5===0?'soigneur':c.number%5===1?'éclaireur':c.number%5===2?'mystique':c.defense>c.attack?'protecteur':'assaillant';
  const effect=canon?`Gardien de la valeur ${canon.value}. Active la Porte de ${c.country} et compte comme un Sceau.`:c.effect;
  return {...c,name:canon?.name||c.name,effect,originalAttack:c.attack,originalDefense:c.defense,country,countryName:c.country,character,role,

@@ -2,19 +2,21 @@ import * as THREE from 'three';
 import {surfaceTexture} from './surfaces.js';
 
 export const GROUND_STYLE={
- hub:{dry:.08,soil:'#8e815c',grass:'#7d9e58',count:19000},france:{dry:.1,soil:'#9f8b63',grass:'#7b9954',count:18000},
+ hub:{dry:.08,soil:'#8e815c',grass:'#7d9e58',count:19000},france:{dry:.12,soil:'#91836c',grass:'#6f855f',count:18000},
  italie:{dry:.38,soil:'#b19b70',grass:'#9da567',count:11000},estonie:{dry:.03,soil:'#877e62',grass:'#709577',count:15500},
  turquie:{dry:.67,soil:'#b9a181',grass:'#a0a378',count:6000},algerie:{dry:.8,soil:'#cbb080',grass:'#a5ae76',count:4600},
  tunisie:{dry:.43,soil:'#c2b48b',grass:'#a6b185',count:7500},maroc:{dry:.73,soil:'#b69770',grass:'#a5a57a',count:5100},
  espagne:{dry:.48,soil:'#bda077',grass:'#a6aa71',count:8000},
 };
 
+export const groundPbrForDryness=dry=>({roughness:.92+Math.max(0,Math.min(1,dry))*.07,envMapIntensity:.34-Math.max(0,Math.min(1,dry))*.1});
+
 // Mix broad patches in world space with fine surface grain. No visible grid of
 // repeated grass photos, and the ground remains readable beyond the 3D meadow.
 export function createNaturalGround(region){
- const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass');
+ const style=GROUND_STYLE[region]||GROUND_STYLE.hub,texture=surfaceTexture('grass'),pbr=groundPbrForDryness(style.dry);
  if(texture)texture.repeat.set(260,260);
- const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.018,roughness:1});
+ const material=new THREE.MeshStandardMaterial({vertexColors:true,map:texture,bumpMap:texture,bumpScale:.062,roughness:pbr.roughness,envMapIntensity:pbr.envMapIntensity});
  material.onBeforeCompile=shader=>{
   shader.uniforms.soilTint={value:new THREE.Color(style.soil)};shader.uniforms.groundDryness={value:style.dry};
   shader.vertexShader='varying vec2 naturalXZ;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nnaturalXZ=(modelMatrix*vec4(position,1.)).xz;');

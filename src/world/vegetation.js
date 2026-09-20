@@ -3,6 +3,13 @@ import {roadDistance,randomFor} from './terrain.js';
 import {obstacleDistance} from './collision.js';
 import {GROUND_STYLE} from './natural-ground.js';
 
+export function meadowRenderBudget(memory=4,cores=4){
+ const m=Number(memory)||4,c=Number(cores)||4;
+ if(m<=3||c<=4)return{density:.55};
+ if(m>=8&&c>=8)return{density:1};
+ return{density:.82};
+}
+
 export function plantingAllowed(field,x,z,pad=0){
  if(Math.hypot(x-field.lake.x,z-field.lake.z)<field.lake.r+4+pad||roadDistance(x,z,field.roads)<1.1+pad)return false;
  if(field.squares.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad))return false;
@@ -25,15 +32,16 @@ export function meadowPlacements(field,region){
 }
 
 export function addMeadow(field,root,owned,region){
+ const budget=meadowRenderBudget(typeof navigator==='undefined'?4:navigator.deviceMemory,typeof navigator==='undefined'?4:navigator.hardwareConcurrency);
  const {material,time}=createMeadowMaterial((GROUND_STYLE[region]||GROUND_STYLE.hub).grass),geometry=createMeadowGeometry(),cells=new Map(),dummy=new THREE.Object3D(),tint=new THREE.Color();owned.push(material,geometry);
  for(const p of meadowPlacements(field,region)){const key=Math.floor((p.x+field.radius)/(field.radius/2))+':'+Math.floor((p.z+field.radius)/(field.radius/2));if(!cells.has(key))cells.set(key,[]);cells.get(key).push(p);}
  const meshes=[];
  for(const points of cells.values()){
   const m=new THREE.InstancedMesh(geometry,material,points.length);m.name='meadow-patch';
   points.forEach((p,i)=>{dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.rotation,0);dummy.scale.setScalar(p.scale);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);tint.setRGB(p.tint,p.tint,p.tint);m.setColorAt(i,tint);});
-  m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;m.computeBoundingSphere();m.boundingSphere.radius+=.5;m.receiveShadow=true;root.add(m);owned.push(m);meshes.push({mesh:m,count:points.length});
+  m.instanceMatrix.needsUpdate=true;m.instanceColor.needsUpdate=true;m.computeBoundingSphere();m.boundingSphere.radius+=.5;m.receiveShadow=true;m.count=Math.round(points.length*budget.density);root.add(m);owned.push(m);meshes.push({mesh:m,count:points.length});
  }
- return {tick(t,position){time.value=t;if(position)for(const {mesh} of meshes){const b=mesh.boundingSphere;mesh.visible=Math.hypot(position.x-b.center.x,position.z-b.center.z)<76+b.radius;}},setQuality(mode){for(const {mesh,count} of meshes)mesh.count=Math.round(count*(mode==='fluid'?.55:1));},meshes};
+ return {tick(t,position){time.value=t;if(position)for(const {mesh} of meshes){const b=mesh.boundingSphere;mesh.visible=Math.hypot(position.x-b.center.x,position.z-b.center.z)<76+b.radius;}},setQuality(mode){const density=mode==='fluid'?.55:mode==='detail'?1:budget.density;for(const {mesh,count} of meshes)mesh.count=Math.round(count*density);},meshes};
 }
 
 export function createMeadowMaterial(color){

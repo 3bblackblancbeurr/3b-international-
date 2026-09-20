@@ -162,7 +162,8 @@ export function applyWorldAction(input,action){
   case 'companionOrder':{peaceful();requireThat(['follow','scout','support','guard'].includes(action.value),'Ordre compagnon invalide.');return adventure(s,{companionOrder:action.value});}
   case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
-  case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
+  case 'avatarPreset':{peaceful();requireThat(Number.isInteger(action.index)&&action.index>=0&&action.index<3,'Emplacement de look invalide.');const presets=[...(s.adventure.avatarPresets||[null,null,null])];if(action.avatar===null)presets[action.index]=null;else{requireThat(action.avatar&&typeof action.avatar==='object','Look invalide.');const avatar=normalizeAvatar({...action.avatar,created:false}),name=typeof action.name==='string'?action.name.normalize('NFC').replace(/[^\p{L}\p{N} '\-]/gu,'').trim().slice(0,24):'';avatar.created=false;presets[action.index]={name:name||'Look '+(action.index+1),avatar};}return adventure(s,{avatarPresets:presets});}
+    case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
   case 'visit':{
    peaceful();requireThat(action.region==='hub'||countryById[action.region],'Pays inconnu.');
    requireThat(region==='hub'||action.region==='hub'||action.region===region,'Reviens au Nexus pour changer de pays.');

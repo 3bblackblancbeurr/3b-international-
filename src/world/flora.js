@@ -11,6 +11,12 @@ export const FLORA_PALETTES={
  tunisie:['#496b52','#819770','#b7bd8a'],maroc:['#426953','#7b9060','#b9ac79'],espagne:['#536d4b','#8b9a70','#b9bd88'],
 };
 
+export function floraRenderBudget(memory=4,cores=4){
+ const m=Number(memory)||4,c=Number(cores)||4;
+ if(m<=3||c<=4)return{castShadow:false,wind:false};
+ return{castShadow:true,wind:true};
+}
+
 // Tapered branches and masked botanical clusters shared between instances.
 export function createPlantGeometry(type='Tree',seed=1,palette=FLORA_PALETTES.hub){
  const rng=randomFor(seed),wood=[],leaves=[],woodColors=[],leafColors=[],flex=[],leafUV=[];
@@ -96,21 +102,23 @@ function windShader(material,time){
 
 export function createFlora(region,seed=1,occlusion){
  const geometries=new Map(),batches=new Map(),instances=[],dummy=new THREE.Object3D(),time={value:0};
+ const budget=floraRenderBudget(typeof navigator==='undefined'?4:navigator.deviceMemory,typeof navigator==='undefined'?4:navigator.hardwareConcurrency);
  const wood=new THREE.MeshStandardMaterial({vertexColors:true,roughness:1});
  const atlas=foliageAtlas();
  const leaves=new THREE.MeshStandardMaterial({map:atlas,alphaTest:.24,alphaToCoverage:true,vertexColors:true,roughness:.92,side:THREE.DoubleSide});
- const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:atlas,alphaTest:.24,side:THREE.DoubleSide});windShader(leaves,time);windShader(depth,time);
+ const depth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:atlas,alphaTest:.24,side:THREE.DoubleSide});
+ if(budget.wind){windShader(leaves,time);windShader(depth,time);}
  occlusion?.apply(wood);occlusion?.apply(leaves);
  function plant(type,x,y,z,scale=1,rotation=0,parent){
   if(!FLORA_TYPES.includes(type))return null;
   if(!geometries.has(type))geometries.set(type,createPlantGeometry(type,seed+FLORA_TYPES.indexOf(type)*19,FLORA_PALETTES[region]||FLORA_PALETTES.hub));
   if(!batches.has(parent))batches.set(parent,new Map());const group=batches.get(parent);
   if(!group.has(type)){
-   const parts=['wood','leaves'].map((part,i)=>{const m=new THREE.InstancedMesh(geometries.get(type)[part],i?leaves:wood,1024);m.name='flora-'+type+'-'+part;m.count=0;m.castShadow=true;m.receiveShadow=true;if(i)m.customDepthMaterial=depth;parent.add(m);instances.push(m);return m;});group.set(type,parts);
+   const parts=['wood','leaves'].map((part,i)=>{const m=new THREE.InstancedMesh(geometries.get(type)[part],i?leaves:wood,1024);m.name='flora-'+type+'-'+part;m.count=0;m.castShadow=budget.castShadow;m.receiveShadow=true;if(i)m.customDepthMaterial=depth;parent.add(m);instances.push(m);return m;});group.set(type,parts);
   }
   dummy.position.set(x,y,z);dummy.rotation.set(0,rotation,0);dummy.scale.setScalar(scale);dummy.updateMatrix();
   for(const mesh of group.get(type)){if(mesh.count>=1024)throw Error('Vegetation instance budget exceeded');mesh.setMatrixAt(mesh.count++,dummy.matrix);mesh.instanceMatrix.needsUpdate=true;}
   return group.get(type)[0];
  }
- return {plant,finish(){for(const m of instances){m.computeBoundingSphere();m.boundingSphere.radius+=.3;}},tick(t){time.value=t;},dispose(){for(const m of instances)m.dispose();for(const g of geometries.values()){g.wood.dispose();g.leaves.dispose();}atlas?.dispose();wood.dispose();leaves.dispose();depth.dispose();},instances};
+ return {plant,finish(){for(const m of instances){m.computeBoundingSphere();m.boundingSphere.radius+=.3;}},tick(t){if(budget.wind)time.value=t;},dispose(){for(const m of instances)m.dispose();for(const g of geometries.values()){g.wood.dispose();g.leaves.dispose();}atlas?.dispose();wood.dispose();leaves.dispose();depth.dispose();},instances};
 }

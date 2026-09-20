@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from "react";
 import { Pause, Play, Sparkles } from "lucide-react";
-import DigitalHead from "./DigitalHead.jsx";
 import PassportNexus from "./PassportNexus.jsx";
+import {readAvatarPortrait,avatarStorageKeys,AVATAR_PORTRAIT_EVENT} from "../world/avatar-storage.js";
+import { passportInitials } from "../passport/identity.js";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   left: `${(column + 0.25) * 100 / 58}%`,
@@ -23,10 +24,21 @@ const CIRCUITS = [
   "M605 108H850L874 132H1010L1038 104H1191",
 ];
 
-export default function PassportVisual({ options, goTo }) {
+const formatNumber = value => new Intl.NumberFormat("fr-FR").format(Number(value) || 0);
+
+export default function PassportVisual({ options, identity, goTo, syncing = false }) {
   const id = useId().replaceAll(":", "");
   const [paused, setPaused] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
+  const userId=identity?.userId||null;
+  const [portraitState,setPortraitState]=useState(()=>({owner:userId,image:readAvatarPortrait(userId)}));
+  const portrait=portraitState.owner===userId?portraitState.image:'';
+  useEffect(()=>{
+    const update=()=>setPortraitState({owner:userId,image:readAvatarPortrait(userId)});
+    const storage=event=>{if(!event.key||event.key===avatarStorageKeys(userId).portrait)update();};
+    update();window.addEventListener(AVATAR_PORTRAIT_EVENT,update);window.addEventListener('storage',storage);
+    return()=>{window.removeEventListener(AVATAR_PORTRAIT_EVENT,update);window.removeEventListener('storage',storage);};
+  },[userId]);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -35,14 +47,21 @@ export default function PassportVisual({ options, goTo }) {
     preference.addEventListener("change", update);
     return () => preference.removeEventListener("change", update);
   }, []);
+  useEffect(() => { setPortalOpen(false); }, [identity?.userId]);
+
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
   const animated = motionAllowed && !paused;
-  return <div className="passport-visual" data-animated={animated} data-matrix={options.matrix}>
+  const active = !!identity?.userId;
+  const status = syncing ? "SYNCHRONISATION" : active ? "IDENTITÉ VÉRIFIÉE" : "À ACTIVER";
+  const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
+
+  return <div className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
     <div className="passport-card-stage">
-      <svg className="passport-card-art" viewBox="465 75 848 502" role="img" aria-label="Carte Passeport Digital 3B" focusable="false">
-        <defs><clipPath id={`${id}-card`}><rect x="465" y="75" width="848" height="502" rx="44" /></clipPath></defs>
-        <image href="/passport-digital-3bv2.png" width="1694" height="928" clipPath={`url(#${id}-card)`} />
-      </svg>
+      <div className="passport-card-base" aria-hidden="true">
+        <span className="passport-card-halo passport-card-halo-blue" />
+        <span className="passport-card-halo passport-card-halo-gold" />
+        <span className="passport-card-line" />
+      </div>
 
       <div className="passport-matrix-rain" aria-hidden="true">
         {STREAMS.map((stream, index) => <span key={index} className="passport-matrix-stream" style={{ left: stream.left, "--fall-delay": stream.delay, "--fall-duration": stream.duration, "--stream-opacity": stream.opacity }}>{stream.digits}<b>1</b></span>)}
@@ -60,57 +79,70 @@ export default function PassportVisual({ options, goTo }) {
           <rect className="passport-circuit-perimeter" x="478" y="87" width="820" height="478" rx="34" pathLength="100" filter={`url(#${id}-electric)`} />
           <rect className="passport-chip-signal" x="517" y="102" width="75" height="60" rx="10" />
         </g>
-        <g className="passport-circuit-nodes" fill="#9cffff">
-          <circle cx="1030" cy="409" r="2.5" /><circle cx="1029" cy="383" r="2" /><circle cx="1021" cy="381" r="2" /><circle cx="887" cy="403" r="2" /><circle cx="845" cy="458" r="2.5" /><circle cx="1191" cy="104" r="2.5" />
-        </g>
       </svg>
 
-      <svg className="passport-live-portrait" viewBox="465 75 848 502" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-        <defs>
-          <clipPath id={`${id}-panel`}><rect x="1061" y="166" width="197" height="216" rx="10" /></clipPath>
-          <clipPath id={`${id}-head`}><path d="M1158 172 C1112 172 1089 203 1089 238 C1080 239 1080 254 1085 269 C1087 281 1094 291 1102 293 C1109 312 1121 328 1131 335 L1131 353 C1120 367 1103 374 1080 384 L1238 384 C1218 373 1196 369 1186 354 L1186 335 C1200 324 1212 309 1218 292 C1228 286 1232 270 1232 255 C1233 244 1228 238 1224 238 C1223 201 1202 172 1158 172 Z" /></clipPath>
-          <pattern id={`${id}-grid`} width="12" height="12" patternUnits="userSpaceOnUse"><path d="M12 0H0V12" fill="none" stroke="#137ac6" strokeWidth=".5" /></pattern>
-          <radialGradient id={`${id}-aura`}><stop stopColor="#006ec4" stopOpacity=".45" /><stop offset="1" stopColor="#001026" /></radialGradient>
-          <linearGradient id={`${id}-scan`} x1="0" x2="0" y1="0" y2="1"><stop stopColor="#14cbff" stopOpacity="0" /><stop offset=".85" stopColor="#18e3ff" stopOpacity=".18" /><stop offset="1" stopColor="#afffff" stopOpacity=".8" /></linearGradient>
-        </defs>
-        <g clipPath={`url(#${id}-panel)`}>
-          <rect x="1061" y="166" width="197" height="216" fill={`url(#${id}-aura)`} />
-          <rect x="1061" y="166" width="197" height="216" fill={`url(#${id}-grid)`} />
-          <g>
-            <image href="/passport-digital-3bv2.png" width="1694" height="928" clipPath={`url(#${id}-head)`} />
-            <g className="passport-eye-glow" fill="#9bffff">
-              <ellipse cx="1129" cy="269" rx="8" ry="2.6" /><ellipse cx="1185" cy="269" rx="8" ry="2.6" />
-            </g>
-            <g className="passport-eye-blink" fill="#00294e">
-              <ellipse cx="1129" cy="269" rx="16" ry="7" /><ellipse cx="1185" cy="269" rx="16" ry="7" />
-            </g>
-          </g>
-          <rect className="passport-face-scan" x="1061" y="150" width="197" height="28" fill={`url(#${id}-scan)`} />
-          <path className="passport-face-signal" d="M1068 215V184H1099 M1220 184H1251V215 M1068 337V369H1099 M1220 369H1251V337" fill="none" stroke="#31dfff" strokeWidth="1.4" />
-        </g>
-      </svg>
-      <DigitalHead animated={animated} />
-      <div className="passport-portrait-scan" aria-hidden="true" />
+      <section className="passport-identity-layer" aria-label={active ? `Passeport 3B de ${identity.name}` : "Passeport 3B non activé"}>
+        <header className="passport-card-brand">
+          <div className="passport-3b-mark">3B</div>
+          <div><strong>INTERNATIONAL</strong><span>PASSEPORT DIGITAL</span></div>
+          <small>{status}</small>
+        </header>
+
+        <div className="passport-holder-block">
+          <span className="passport-data-label">TITULAIRE</span>
+          <h2>{syncing ? "Chargement du profil…" : active ? identity.name : "TON IDENTITÉ 3B"}</h2>
+          <p>{active && identity.handle ? `@${identity.handle}` : active ? "Membre 3B" : "Crée ton compte pour personnaliser ce passeport."}</p>
+        </div>
+
+        <div className="passport-country-block">
+          <span className="passport-country-flag" aria-hidden="true">{active ? identity.flag : "3B"}</span>
+          <div>
+            <span className="passport-data-label">PAYS D’ORIGINE</span>
+            <strong>{active ? identity.country : "NON DÉFINI"}</strong>
+            <small>{active ? `${identity.countryCode} · ${identity.value}` : "8 pays · 8 portes · 8 valeurs"}</small>
+          </div>
+        </div>
+
+        <div className="passport-avatar-panel" aria-hidden="true">
+          <div className="passport-avatar-rings"><i /><i /><i /></div>
+          <div className="passport-avatar-monogram">{active&&portrait?<img src={portrait} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"inherit"}}/>:active ? passportInitials(identity) : "3B"}</div>
+          <span>{active ? identity.countryCode : "ID"}</span>
+        </div>
+
+        <div className="passport-id-block">
+          <span className="passport-data-label">IDENTIFIANT PASSEPORT</span>
+          <code>{active ? identity.passportId : "3B-PASS-À-ACTIVER"}</code>
+        </div>
+
+        <div className="passport-progress-strip">
+          <span><small>XP 3B</small><b>{active ? formatNumber(identity.xp) : "0"}</b></span>
+          <span><small>FIDÉLITÉ</small><b>{active ? formatNumber(identity.points) : "0"}</b></span>
+          <span><small>STATUT</small><b>{active ? "ACTIF" : "INVITÉ"}</b></span>
+        </div>
+      </section>
 
       <div className="passport-security-edge" aria-hidden="true" />
-      <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> PASSEPORT VIVANT</div>
-      <button type="button" className="passport-portal-trigger" onClick={() => setPortalOpen(true)} aria-label="Ouvrir ma Ville 3B">
+      <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> {active ? "PASSEPORT VIVANT" : "IDENTITÉ PERSONNELLE"}</div>
+      <button type="button" className="passport-portal-trigger" onClick={openPassport} aria-label={active ? "Ouvrir ma Ville 3B" : "Créer mon identité 3B"}>
         <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
         <b>3B</b>
-        <small>MA VILLE</small>
+        <small>{active ? "MA VILLE" : "ACTIVER"}</small>
       </button>
     </div>
+
     <div className="passport-animation-toolbar">
-      <span><i className={animated ? "digital-status is-live" : "digital-status"} aria-hidden="true" />{animated ? "Carte digitale animée" : "Carte en mode calme"}</span>
+      <span><i className={animated ? "digital-status is-live" : "digital-status"} aria-hidden="true" />{syncing ? "Synchronisation de ton identité…" : animated ? "Carte digitale animée" : "Carte en mode calme"}</span>
       <button type="button" className="passport-animation-toggle" disabled={!motionAllowed} aria-pressed={paused} onClick={() => setPaused(value => !value)}>
         {animated ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
         {motionAllowed ? (paused ? "Reprendre l’animation" : "Mettre en pause") : "Mouvements réduits"}
       </button>
     </div>
-    <button type="button" className="passport-entry-hint" onClick={() => setPortalOpen(true)} aria-label="Entrer dans ma Ville 3B">
+
+    <div className="passport-entry-hint">
       <Sparkles size={15} aria-hidden="true" />
-      <span>Entrer dans ma Ville 3B.</span>
-    </button>
-    <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />
+      <span>{active ? <>Ce passeport appartient à <strong>{identity.name}</strong>. Son identité suit le compte dans tout l’écosystème 3B.</> : "Active ton compte pour générer ton passeport personnel."}</span>
+    </div>
+
+    {active && <PassportNexus open={portalOpen} onClose={() => setPortalOpen(false)} />}
   </div>;
 }
