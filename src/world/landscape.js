@@ -20,6 +20,7 @@ import {addSettlement} from './settlement-mesh.js';
 import {addTownGardens} from './town-gardens.js';
 import {createNaturalGround} from './natural-ground.js';
 import {createPremiumWater} from './premium-water.js';
+import {addPremiumWaterfront} from './premium-waterfront.js';
 import {addMeadow} from './vegetation.js';
 import {createFlora,FLORA_TYPES} from './flora.js';
 import {BIOMES,createTerrainField,randomFor,toLandscape} from './terrain.js';
@@ -77,6 +78,7 @@ export function createLandscape(models,region,save,onError=console.error){
  const premiumWater=createPremiumWater({region,lake,owned});
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,96)),premiumWater.material,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
  const waterMist=shape(geo(new THREE.CircleGeometry(lake.r+7,64)),premiumWater.mistMaterial,lake.x,-1.08,lake.z);waterMist.rotation.x=-Math.PI/2;waterMist.castShadow=false;waterMist.receiveShadow=false;
+ if(hub)addPremiumWaterfront({root,shape,geo,mat,height,lake,owned});
  for(let i=0;i<20;i++){const a=rng()*Math.PI*2,r=lake.r+3+rng()*2,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;shape(ball,mat(biome.rock),x,height(x,z)-.1,z,.7+rng(),.4+rng()*.6,.7+rng());}
  for(let i=0;i<380;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
  for(let i=0;i<48;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
