@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {CANON_WORLDS,STORY_CANON,STORY_ACTS,STORY_REVELATIONS,FRANCE_CANON_ARC} from '../src/world/story-canon.js';
+import {CANON_WORLDS,STORY_CANON,STORY_ACTS,STORY_REVELATIONS,FRANCE_CANON_ARC,GUARDIAN_STORIES} from '../src/world/story-canon.js';
 import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
 import {WORLDS,QUESTS} from '../src/world/origins/data.js';
 import {NEXUS_WORLDS} from '../src/components/nexus-worlds.js';
@@ -48,4 +48,16 @@ test('legacy France Justice quests are now explicit acts of Les noms effaces',()
  assert.deepEqual(main.map(quest=>quest.id),FRANCE_CANON_ARC.acts.map(act=>act.id));
  assert.deepEqual(main.map(quest=>quest.title),FRANCE_CANON_ARC.acts.map(act=>act.title));
  assert.ok(main.every((quest,index)=>quest.campaign===FRANCE_CANON_ARC.title&&quest.act===index+1));
+});
+
+
+test('every guardian has a distinct personal conflict tied to the canonical value',()=>{
+ for(const [id,canon] of Object.entries(CANON_WORLDS)){
+  const story=GUARDIAN_STORIES[id];
+  assert.ok(story,id);
+  assert.equal(story.name,canon.guardian,id+' story name');
+  assert.equal(story.value,canon.value,id+' story value');
+  for(const key of ['temperament','flaw','fear','conflict','oubli','kais'])assert.ok(story[key].length>25,id+' '+key);
+ }
+ assert.equal(new Set(Object.values(GUARDIAN_STORIES).map(story=>story.conflict)).size,8);
 });
