@@ -1,0 +1,159 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+
+const readJson=url=>JSON.parse(readFileSync(new URL(url,import.meta.url),'utf8'));
+const readText=url=>readFileSync(new URL(url,import.meta.url),'utf8');
+
+const pairs=[
+ ['../src/world/hub/data/hub-master-plan-v2.json','../unreal/3BWorld/Data/Canonical/hub-master-plan-v2.json'],
+ ['../src/world/hub/data/npcs-v1.json','../unreal/3BWorld/Data/Canonical/npcs-v1.json'],
+ ['../src/world/hub/data/missions-v1.json','../unreal/3BWorld/Data/Canonical/missions-v1.json'],
+ ['../src/world/hub/data/events-v1.json','../unreal/3BWorld/Data/Canonical/events-v1.json'],
+ ['../src/world/hub/data/secrets-v1.json','../unreal/3BWorld/Data/Canonical/secrets-v1.json'],
+];
+
+test('Unreal canonical mirrors stay byte-equivalent at the JSON data level',()=>{
+ for(const [web,unreal] of pairs)assert.deepEqual(readJson(web),readJson(unreal),unreal);
+});
+
+test('Unreal preproduction keeps the complete Cité canon',()=>{
+ const plan=readJson('../unreal/3BWorld/Data/Canonical/hub-master-plan-v2.json');
+ const npcs=readJson('../unreal/3BWorld/Data/Canonical/npcs-v1.json');
+ const missions=readJson('../unreal/3BWorld/Data/Canonical/missions-v1.json');
+ const events=readJson('../unreal/3BWorld/Data/Canonical/events-v1.json');
+ const secrets=readJson('../unreal/3BWorld/Data/Canonical/secrets-v1.json');
+ assert.equal(plan.districts.length,10);
+ assert.equal(plan.buildings.length,19);
+ assert.equal(plan.countries.length,8);
+ assert.equal(npcs.length,24);
+ assert.equal(missions.length,20);
+ assert.equal(events.length,10);
+ assert.equal(secrets.length,16);
+});
+
+test('Unreal project is explicitly parallel and targets UE 5.8',()=>{
+ const project=readJson('../unreal/3BWorld/3BWorld.uproject');
+ const readme=readText('../unreal/3BWorld/README.md');
+ assert.equal(project.EngineAssociation,'5.8');
+ assert.equal(project.Modules[0].Name,'ThreeBWorld');
+ assert.match(readme,/Three\.js reste la référence fonctionnelle/);
+ assert.match(readme,/aucun secret Supabase/i);
+});
+
+test('Unreal C++ contract keeps private backend credentials out of the client',()=>{
+ const contract=readText('../unreal/3BWorld/Source/ThreeBWorld/Public/ThreeBBackendContract.h');
+ assert.match(contract,/WorldEnginePath/);
+ assert.match(contract,/City3BPath/);
+ assert.doesNotMatch(contract,/service_role\s*=/i);
+ assert.doesNotMatch(contract,/SUPABASE_SERVICE_ROLE_KEY\s*=/);
+});
+
+test('backend JSON schemas preserve account and City ownership boundaries',()=>{
+ const passport=readJson('../unreal/3BWorld/Data/Contracts/passport.schema.json');
+ const city=readJson('../unreal/3BWorld/Data/Contracts/city3b.schema.json');
+ const world=readJson('../unreal/3BWorld/Data/Contracts/world-state.schema.json');
+ assert.ok(passport.required.includes('user_id'));
+ assert.ok(passport.required.includes('country'));
+ assert.equal(city.properties.placements.items.properties.rotation.enum.length,4);
+ assert.equal(world.properties.version.const,1);
+});
+
+test('world-bootstrap is account-scoped and read-only by construction',()=>{
+ const source=readText('../supabase/functions/world-bootstrap/index.ts');
+ assert.match(source,/const uid=await authenticate\(req\)/);
+ assert.match(source,/member_profiles\?user_id=eq\.'\+uid/);
+ assert.match(source,/member_world_state\?user_id=eq\.'\+uid/);
+ assert.match(source,/nexus_cities\?user_id=eq\.'\+uid/);
+ assert.doesNotMatch(source,/body\.user_id/);
+ assert.doesNotMatch(source,/req\.json\(\)/);
+ assert.doesNotMatch(source,/SUPABASE_SERVICE_ROLE_KEY\s*=\s*['"][^'"]+/);
+});
+
+test('Unreal backend subsystem requires a user session and uses weak async ownership',()=>{
+ const header=readText('../unreal/3BWorld/Source/ThreeBWorld/Public/ThreeBBackendSubsystem.h');
+ const source=readText('../unreal/3BWorld/Source/ThreeBWorld/Private/ThreeBBackendSubsystem.cpp');
+ assert.match(header,/HasAuthenticatedSession/);
+ assert.match(header,/RequestWorldBootstrap/);
+ assert.match(source,/TWeakObjectPtr<UThreeBBackendSubsystem>/);
+ assert.match(source,/Authorization/);
+ assert.match(source,/Bearer /);
+ assert.doesNotMatch(source,/service_role/i);
+});
+
+test('Unreal layout export preserves canonical scale and complete world topology',()=>{
+ const layout=readJson('../unreal/3BWorld/Data/Production/world-layout-unreal.json');
+ assert.equal(layout.world.width_cm,180000);
+ assert.equal(layout.world.depth_cm,140000);
+ assert.equal(layout.world.radius_cm,65000);
+ assert.equal(layout.world.cell_target_cm,15000);
+ assert.equal(layout.districts.length,10);
+ assert.equal(layout.buildings.length,19);
+ assert.equal(layout.gates.length,8);
+ assert.equal(layout.roads.length,19);
+ for(const district of layout.districts){
+  assert.ok(Math.hypot(district.location_cm.x,district.location_cm.y)<layout.world.radius_cm);
+ }
+ for(const gate of layout.gates){
+  const r=Math.hypot(gate.location_cm.x,gate.location_cm.y);
+  assert.ok(r>30000&&r<layout.world.radius_cm,gate.id);
+ }
+});
+
+test('Unreal transport and crowd exports preserve the canonical network budgets',()=>{
+ const transport=readJson('../unreal/3BWorld/Data/Production/transport-network-unreal.json');
+ const crowd=readJson('../unreal/3BWorld/Data/Production/crowd-budgets.json');
+ assert.equal(transport.train.stations.length,10);
+ assert.equal(transport.boats.stops.length,5);
+ assert.equal(transport.telepherics.length,3);
+ assert.equal(transport.ziplines.length,6);
+ assert.equal(crowd.narrative_npcs,24);
+ assert.equal(crowd.profiles.mobileMedium.target_fps,30);
+ assert.equal(crowd.profiles.mobileHigh.target_fps,60);
+ assert.equal(crowd.profiles.desktop.target_fps,60);
+});
+
+test('Gold Master slice keeps identity, City and server-authority invariants explicit',()=>{
+ const flow=readJson('../unreal/3BWorld/Data/Production/vertical-slice-state-machine.json');
+ const qa=readJson('../unreal/3BWorld/Data/Production/acceptance-tests.json');
+ assert.equal(flow.initial,'SESSION_REQUIRED');
+ assert.equal(flow.states.at(-1).id,'SLICE_COMPLETE');
+ assert.ok(flow.invariants.includes('existing_city => city_access_allowed'));
+ assert.ok(flow.invariants.includes('client_cannot_assert_city_proof'));
+ assert.ok(flow.invariants.includes('passport.user_id == authenticated.user_id'));
+ const cases=qa.suites.flatMap(suite=>suite.cases);
+ for(const required of [
+  'new_account_sees_own_passport',
+  'existing_city_never_relocks',
+  'world_sync_receipt_is_server_written',
+  'mobile_medium_30fps_target_profiled',
+  'network_loss_during_world_sync_recovers'
+ ])assert.ok(cases.includes(required),required);
+});
+
+test('Unreal bootstrap reads economy progression server-side and never receives risk internals',()=>{
+ const edge=readText('../supabase/functions/world-bootstrap/index.ts');
+ const schema=readJson('../unreal/3BWorld/Data/Contracts/world-bootstrap.schema.json');
+ const contract=readText('../unreal/3BWorld/Source/ThreeBWorld/Public/ThreeBDataContracts.h');
+ assert.match(edge,/threeb_progress_snapshot_server/);
+ assert.match(edge,/economy/);
+ assert.ok(schema.required.includes('economy'));
+ assert.equal(schema.properties.economy.properties.global_level.maximum,150);
+ assert.equal(schema.properties.economy.properties.prestige_level.maximum,3);
+ assert.equal(schema.properties.economy.properties.token_enabled.const,false);
+ assert.equal(schema.properties.economy.properties.token_blockchain_enabled.const,false);
+ assert.equal(schema.properties.economy.properties.token_trading_enabled.const,false);
+ assert.match(contract,/FThreeBEconomySnapshot/);
+ assert.match(contract,/FThreeBSeasonSnapshot/);
+ assert.doesNotMatch(edge,/risk_score|review_required|sensitive_rewards_held/);
+});
+
+test('Unreal never derives XP level or token state locally',()=>{
+ const contract=readText('../unreal/3BWorld/Source/ThreeBWorld/Public/ThreeBDataContracts.h');
+ const backend=readText('../unreal/3BWorld/Source/ThreeBWorld/Private/ThreeBBackendSubsystem.cpp');
+ assert.doesNotMatch(backend,/sqrt\s*\(|pow\s*\([^\n]*GlobalLevel|1000\s*XP/);
+ assert.match(contract,/GlobalLevel = 1/);
+ assert.match(contract,/TokenEnabled = false/);
+ assert.match(contract,/TokenBlockchainEnabled = false/);
+ assert.match(contract,/TokenTradingEnabled = false/);
+});

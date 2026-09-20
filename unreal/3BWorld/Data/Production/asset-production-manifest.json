@@ -1,0 +1,493 @@
+{
+  "version": "1.0.0",
+  "source": "hub-master-plan-v2",
+  "buildings": [
+    {
+      "id": "tower_circle",
+      "name": "Tour du Cercle Brisé",
+      "district": "broken_circle_tower",
+      "priority": "P0",
+      "interior": "separate_cell",
+      "gameplay_functions": [
+        "story",
+        "fragments",
+        "world_map",
+        "fast_travel"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "heritage_welcome",
+      "name": "Maison de l’Accueil",
+      "district": "heritage_square",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "tutorial",
+        "accessibility",
+        "orientation"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "mission_hotel",
+      "name": "Hôtel des Missions",
+      "district": "heritage_square",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "public_missions",
+        "district_contracts",
+        "events"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "memory_archives",
+      "name": "Archives de la Mémoire",
+      "district": "archives",
+      "priority": "P0",
+      "interior": "separate_cell",
+      "gameplay_functions": [
+        "lore",
+        "memory_restoration",
+        "collection",
+        "secrets"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "living_cards_gallery",
+      "name": "Chambre des Cartes Vivantes",
+      "district": "archives",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "character_collection",
+        "relationships",
+        "city_invites"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "arena_3b",
+      "name": "Arène 3B",
+      "district": "arena",
+      "priority": "P1",
+      "interior": "open",
+      "gameplay_functions": [
+        "combat",
+        "training",
+        "boss_simulation",
+        "rankings"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "mobility_center",
+      "name": "Centre de Mobilité",
+      "district": "arena",
+      "priority": "P1",
+      "interior": "open",
+      "gameplay_functions": [
+        "movement_training",
+        "zipline_challenges",
+        "time_trials"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "house_3b",
+      "name": "Maison 3B",
+      "district": "commerce",
+      "priority": "P1",
+      "interior": "small",
+      "gameplay_functions": [
+        "shop",
+        "brand_lore",
+        "collections"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "garage_3b",
+      "name": "Garage 3B",
+      "district": "commerce",
+      "priority": "P1",
+      "interior": "separate_cell",
+      "gameplay_functions": [
+        "vehicles",
+        "customization",
+        "delivery_missions"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "community_house",
+      "name": "Maison de la Communauté",
+      "district": "community",
+      "priority": "P1",
+      "interior": "small",
+      "gameplay_functions": [
+        "groups",
+        "friends",
+        "coop",
+        "announcements"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "ai_textile_lab",
+      "name": "Laboratoire IA Textile",
+      "district": "innovation",
+      "priority": "P2",
+      "interior": "separate_cell",
+      "gameplay_functions": [
+        "textile_ai",
+        "materials",
+        "prototype_missions"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "mode3_studio",
+      "name": "Studio Mode 3 IA",
+      "district": "innovation",
+      "priority": "P2",
+      "interior": "small",
+      "gameplay_functions": [
+        "styling",
+        "avatar",
+        "outfit_previews"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "central_marina",
+      "name": "Gare Maritime Centrale",
+      "district": "docks",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "boat_taxi",
+        "routes",
+        "tickets",
+        "weather"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "shipyard_3b",
+      "name": "Chantier Naval 3B",
+      "district": "docks",
+      "priority": "P0",
+      "interior": "open",
+      "gameplay_functions": [
+        "boat_repair",
+        "boat_customization",
+        "maritime_missions"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "train_station",
+      "name": "Gare du 3B Express",
+      "district": "docks",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "circular_train",
+        "panoramic_tour",
+        "train_missions"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "workers_memorial",
+      "name": "Mémorial des Ouvriers",
+      "district": "gardens",
+      "priority": "P1",
+      "interior": "open",
+      "gameplay_functions": [
+        "heritage",
+        "emotional_missions",
+        "memory"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "wildlife_refuge",
+      "name": "Refuge Animalier",
+      "district": "gardens",
+      "priority": "P2",
+      "interior": "open",
+      "gameplay_functions": [
+        "animals",
+        "care_missions",
+        "observation_collection"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "city_planning_office",
+      "name": "Bureau d’Urbanisme",
+      "district": "city3b_portal",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "place_building",
+        "move_building",
+        "roads",
+        "undo_redo"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    },
+    {
+      "id": "city_gallery",
+      "name": "Galerie des Villes 3B",
+      "district": "city3b_portal",
+      "priority": "P0",
+      "interior": "small",
+      "gameplay_functions": [
+        "visit_cities",
+        "favorites",
+        "rankings"
+      ],
+      "production": {
+        "blockout": "required",
+        "final_mesh": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "materials_pbr": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE",
+        "collision": "required",
+        "lod_hlod": "required",
+        "audio": "required_if_interactive",
+        "signage": "required"
+      }
+    }
+  ],
+  "gates": [
+    {
+      "code": "FR",
+      "country": "France",
+      "guardian": "Céliane",
+      "value": "Justice",
+      "gate_district": "archives",
+      "visual_identity": "ville patrimoniale et ouvrière futuriste, pluie, pierre, verre bleu, lumière or",
+      "priority": "P0",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "DZ",
+      "country": "Algérie",
+      "guardian": "Yliane",
+      "value": "Loyauté",
+      "gate_district": "docks",
+      "visual_identity": "Casbah de Demain, oasis, Atlas, Tassili, Sahara et Méditerranée futuristes",
+      "priority": "P0",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "MA",
+      "country": "Maroc",
+      "guardian": "Naël",
+      "value": "Noblesse",
+      "gate_district": "commerce",
+      "visual_identity": "médina futuriste, patios, zellige numérique, lanternes et artisanat premium",
+      "priority": "P2",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "TN",
+      "country": "Tunisie",
+      "guardian": "Soraya",
+      "value": "Courage",
+      "gate_district": "docks",
+      "visual_identity": "côte solaire, désert, architecture blanche, eau et énergie lumineuse",
+      "priority": "P2",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "ES",
+      "country": "Espagne",
+      "guardian": "Diego",
+      "value": "Passion",
+      "gate_district": "arena",
+      "visual_identity": "grandes places, mouvement, falaises, lumière chaude et architecture expressive",
+      "priority": "P2",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "IT",
+      "country": "Italie",
+      "guardian": "Alessio",
+      "value": "Espoir",
+      "gate_district": "gardens",
+      "visual_identity": "piazzas, jardins, pierre élégante, canaux et restauration du patrimoine",
+      "priority": "P2",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "TR",
+      "country": "Turquie",
+      "guardian": "Émir",
+      "value": "Foi",
+      "gate_district": "innovation",
+      "visual_identity": "ponts, dômes, bazar futuriste, Bosphore symbolique et observatoires",
+      "priority": "P2",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "code": "EE",
+      "country": "Estonie",
+      "guardian": "Eira",
+      "value": "Sagesse",
+      "gate_district": "gardens",
+      "visual_identity": "forêt numérique, brume, lacs, bois sombre, signaux et lumière froide",
+      "priority": "P2",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b.international/contracts/passport.schema.json",
+  "title": "3B Passport Identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["user_id", "country"],
+  "properties": {
+    "user_id": {"type": "string", "format": "uuid"},
+    "name": {"type": "string", "maxLength": 80},
+    "handle": {"type": "string", "maxLength": 24},
+    "country": {"enum": ["France","Italie","Estonie","Turquie","Algérie","Tunisie","Maroc","Espagne"]},
+    "passport_id": {"type": "string", "maxLength": 128}
+  }
+}
