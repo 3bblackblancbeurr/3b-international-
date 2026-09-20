@@ -17,6 +17,7 @@ export function storyCinematicPresentation(event){
   case 'country-first-entry':return {...base,kicker:`${(country?.name||region).toUpperCase()} · ${value.toUpperCase()}`,title:country?.title||'Une nouvelle porte',detail:country?.lore||'Une nouvelle partie du Monde 3B se révèle.',nextLabel:'Entrer dans le pays'};
   case 'story-alliance':return {...base,kicker:'UN LIEN SE FORME',title:chapter?.resident||'Une alliance commence',detail:chapter?.need||'Une présence du pays accepte de marcher avec toi.'};
   case 'story-power':return {...base,kicker:`${value.toUpperCase()} · RÉSONANCE`,title:'Un pouvoir se réveille',detail:'La lumière Matrix se condense autour de toi. Cette résonance devient une capacité réelle de ton voyage.'};
+  case 'memory-fragment':return {...base,kicker:`${value.toUpperCase()} · FRAGMENT`,title:'Un souvenir répond',detail:'La matière s’illumine, le bruit du monde se coupe une seconde et un fragment de mémoire rejoint le pays.'};
   case 'story-restoration':{
    const stage=event.context?.stage||1,name=chapter?.restores?.[Math.max(0,stage-1)]||'Le quartier';
    return {...base,kicker:`RECONSTRUCTION · ${String(stage).padStart(2,'0')}/03`,title:`${name} reprend vie`,detail:stage===3?(chapter?.ending||'Le pays retrouve son souffle.'):'La lumière, les habitants et les signes du pays répondent à tes actions.'};
