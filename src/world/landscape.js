@@ -87,7 +87,7 @@ export function createLandscape(models,region,save,onError=console.error){
  const groundSize=hub?1500:1000,groundSegments=hub?200:220;const ground=geo(new THREE.PlaneGeometry(groundSize,groundSize,groundSegments,groundSegments));ground.rotateX(-Math.PI/2);
  const positions=ground.getAttribute('position'),colors=new Float32Array(positions.count*3),low=new THREE.Color(biome.low),high=new THREE.Color(biome.high),rock=new THREE.Color(biome.rock),color=new THREE.Color();
  for(let i=0;i<positions.count;i++){const x=positions.getX(i),z=positions.getZ(i),y=height(x,z);positions.setY(i,y);const mottling=.48+.12*Math.sin(x*.17)*Math.cos(z*.19)+.06*Math.sin(x*1.37-z*.82),slope=Math.abs(height(x+.7,z)-y)+Math.abs(height(x,z+.7)-y);color.copy(low).lerp(high,Math.max(0,Math.min(1,mottling))).lerp(rock,Math.min(.8,slope*.55));colors.set(color.toArray(),i*3);}
- ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);if(soil.texture)owned.push(soil.texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
+ ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);for(const texture of Object.values(soil.maps||{}))if(texture)owned.push(texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
  collisions.push({x:lake.x,z:lake.z,r:lake.r-1});
  const premiumWater=createPremiumWater({region,lake,owned});
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,96)),premiumWater.material,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
