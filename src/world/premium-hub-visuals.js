@@ -131,7 +131,7 @@ export function createPremiumTransportVisual(item,{root,geometry,material,ground
 
 export function createPremiumHubMarker(item,{root,geometry,material,groundY,kind='mission'}){
  const group=new THREE.Group();group.name='3B-Marker-'+kind;root.add(group);group.position.set(item.x,groundY(item.x,item.z),item.z);
- const major=item.importance==='major'||kind==='event'||kind==='trial',accent=major?'#d6b46a':'#00a8ff';
+ const major=item.importance==='major'||kind==='event'||kind==='trial',accent=kind==='secret'?(item.done?'#58616b':item.expected?'#d6b46a':'#00a8ff'):major?'#d6b46a':'#00a8ff';
  const baseMat=material('#111920',{roughness:.58,metalness:.36});
  const accentMat=material(accent,{color:accent,emissive:accent,emissiveIntensity:kind==='secret'?.18:.55,metalness:.52,roughness:.23,transparent:kind==='secret',opacity:kind==='secret'?.72:1});
  child(group,geometry.cylinder,baseMat,{y:.12,sx:.72,sy:.24,sz:.72});
@@ -145,4 +145,28 @@ export function createPremiumHubMarker(item,{root,geometry,material,groundY,kind
   if(kind==='trial')for(const side of [-1,1])child(group,geometry.box,accentMat,{x:side*.92,y:.62,sx:.10,sy:1.15,sz:.10,cast:false});
  }
  return group;
+}
+
+
+export function createPremiumTransitVehicle(spec,start,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Moving-'+spec.transport;root.add(group);
+ const dark=material('#11171c',{roughness:.42,metalness:.52});
+ const accent=material(spec.color,{emissive:spec.color,emissiveIntensity:.22,metalness:.68,roughness:.24});
+ const glass=material('#113f58',{emissive:'#00a8ff',emissiveIntensity:.12,metalness:.35,roughness:.15});
+ if(spec.transport==='train'){
+  child(group,geometry.box,dark,{y:0,sx:1.65,sy:.72,sz:4.9});
+  child(group,geometry.box,glass,{y:.50,z:-.25,sx:1.34,sy:.42,sz:3.55});
+  for(const z of [-4.25,-2.2,0,2.2,4.25])child(group,geometry.box,accent,{y:.08,z,sx:1.45,sy:.08,sz:.05,cast:false});
+  for(const x of [-1.34,1.34])for(const z of [-3.25,3.25])child(group,geometry.cylinder,dark,{x,y:-.52,z,sx:.24,sy:.20,sz:.24,rz:Math.PI/2});
+ }else if(spec.transport==='boat'){
+  child(group,geometry.box,dark,{y:-.05,sx:1.65,sy:.35,sz:3.3});
+  child(group,geometry.box,glass,{y:.48,z:-.35,sx:1.18,sy:.50,sz:1.65});
+  child(group,geometry.box,accent,{y:.05,z:2.55,sx:1.15,sy:.08,sz:.55,cast:false});
+ }else{
+  child(group,geometry.box,dark,{y:0,sx:1.32,sy:.82,sz:1.62});
+  child(group,geometry.box,glass,{y:.05,z:.10,sx:1.06,sy:.62,sz:1.25});
+  child(group,geometry.box,accent,{y:.98,sx:1.14,sy:.10,sz:.16,cast:false});
+  for(const x of [-.9,.9])child(group,geometry.cylinder,dark,{x,y:1.22,sx:.16,sy:.18,sz:.16,rz:Math.PI/2});
+ }
+ group.position.set(start.x,groundY(start.x,start.z)+spec.height,start.z);return group;
 }
