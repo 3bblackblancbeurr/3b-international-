@@ -111,10 +111,27 @@ Ainsi :
 
 ## Ville 3B
 
-Toutes les règles de niveau doivent utiliser :
-`threeb_level_from_xp()`.
+La Ville possède une progression **séparée** du niveau global :
 
-L'ancienne formule locale `sqrt(xp/110)` ne doit plus être utilisée dans les fonctions Ville.
+- `city_xp` : progression propre à la Ville ;
+- `city_level` : niveau Ville 1 → 50 ;
+- `land_tier` : taille/capacité du terrain, dérivée du niveau Ville.
+
+Le niveau global 1–150 reste calculé par `threeb_level_from_xp()`, mais il ne doit plus remplacer le niveau Ville.
+
+Le runtime actif de construction utilise `nexus_city_place_v2` :
+- prérequis basés sur `city_level` ;
+- quartier du pays requis lorsqu’un bâtiment est régional ;
+- collisions et limites de terrain vérifiées côté serveur ;
+- coût Coins débité côté serveur ;
+- idempotence par `request_id` ;
+- recalcul Ville par `nexus_city_recalculate()`.
+
+Les upgrades utilisent eux aussi le niveau Ville.
+
+L'ancien RPC `nexus_purchase_and_place_building`, qui utilisait encore le niveau global, est déprécié et n'est plus le chemin de construction actif.
+
+Les quartiers autres que le pays d'origine sont reliés au Monde : ils exigent la libération du Gardien correspondant.
 
 Achats, upgrades et remboursements doivent écrire :
 - wallet ledger ;
