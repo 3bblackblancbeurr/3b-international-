@@ -12,7 +12,7 @@ export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
  const box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,12));
 
  const toCity=Math.atan2(-lake.z,-lake.x),radius=lake.r+5.2,segments=22,arc=2.25;
- const points=[];
+ const points=[],railSegments=new Set([0,1,3,4,7,8,10,13,14,17,18,20]),lampSegments=new Set([2,6,11,15,19]);
  for(let i=0;i<segments;i++){
   const t=i/(segments-1),a=toCity-arc/2+t*arc;
   const x=lake.x+Math.cos(a)*radius,z=lake.z+Math.sin(a)*radius;
@@ -24,11 +24,11 @@ export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
   const waterSideX=lake.x-x,waterSideZ=lake.z-z,sideLen=Math.hypot(waterSideX,waterSideZ)||1,nx=waterSideX/sideLen,nz=waterSideZ/sideLen;
   const wallX=x+nx*3.85,wallZ=z+nz*3.85,wall=shape(box,edgeStone,wallX,-.10,wallZ,.55,2.45,length*1.10,group);wall.rotation.y=heading;
   const wetBand=shape(box,blackMetal,wallX,-1.10,wallZ,.59,.26,length*1.11,group);wetBand.rotation.y=heading;wetBand.castShadow=false;
-  if(i%2===0){
+  if(railSegments.has(i)){
    const railX=x+nx*3.75,railZ=z+nz*3.75;
    const rail=shape(box,blackMetal,railX,y+1.0,railZ,.08,1.45,length*.96,group);rail.rotation.y=heading;rail.castShadow=false;
   }
-  if(i%4===1){
+  if(lampSegments.has(i)){
    const landX=x-nx*3.3,landZ=z-nz*3.3;
    const pole=shape(cylinder,blackMetal,landX,y+1.95,landZ,.085,3.7,.085,group);pole.castShadow=false;
    const lamp=shape(box,matrix,landX,y+3.92,landZ,.25,.16,.25,group);lamp.castShadow=false;
@@ -37,7 +37,7 @@ export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
  }
 
  // Three stairs and pontoons create a readable transition instead of a hard coast/water seam.
- for(const offset of [-.72,0,.72]){
+ for(const offset of [-.78,-.07,.66]){
   const a=toCity+offset,dx=Math.cos(a),dz=Math.sin(a),tx=-dz,tz=dx;
   const outer=lake.r+7.7;
   for(let step=0;step<7;step++){
