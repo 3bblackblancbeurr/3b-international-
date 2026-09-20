@@ -48,7 +48,9 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
   else if(context.playerVisible===true&&distance<9)state='Observe';
   else if(item.activity==='repos')state='Idle';
   else if(item.activity==='travail'||item.activity==='préparation')state='Work';
-  else if(item.activity==='rencontre publique')state='Talk';
+  else if(item.activity==='rencontre publique'||item.activity==='pause de midi')state='Talk';
+  else if(item.activity==='abri météo')state='Idle';
+  else if(item.activity==='promenade')state='Walk';
 
   if(context.returnToRoutine===true)state='ReturnToRoutine';
   const moving=['Walk','ReturnToRoutine','Investigate','Help','Flee'].includes(state);
