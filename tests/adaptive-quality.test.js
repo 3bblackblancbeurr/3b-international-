@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {createQualityController} from '../src/world/motion.js';
 import {STREAMING_PROFILES,lodForDistance,lodForDistanceHysteresis} from '../src/world/streaming.js';
 
@@ -50,7 +51,6 @@ test('LOD hysteresis prevents boundary flicker while still advancing when distan
 });
 
 test('scene stores LOD state for Hub structures and NPCs instead of using stateless thresholds',()=>{
- const fs=await import('node:fs');
  const scene=fs.readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
  assert.match(scene,/hubLodState=new Map/);
  assert.match(scene,/lodForDistanceHysteresis\(d,stream,actor\.lod,\.09\)/);
