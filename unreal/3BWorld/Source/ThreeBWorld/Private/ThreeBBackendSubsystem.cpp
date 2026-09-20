@@ -49,6 +49,17 @@ void UThreeBBackendSubsystem::RequestCitySnapshot()
     SendJsonPost(ThreeBBackend::City3BPath, TEXT("{\"action\":\"snapshot\"}"), &OnCityResponse);
 }
 
+void UThreeBBackendSubsystem::RequestWorldBootstrap()
+{
+    if (!HasAuthenticatedSession())
+    {
+        OnBootstrapResponse.Broadcast(false, 0, TEXT("{\"error\":\"missing_session\"}"));
+        return;
+    }
+
+    SendJsonPost(ThreeBBackend::WorldBootstrapPath, TEXT("{}"), &OnBootstrapResponse);
+}
+
 void UThreeBBackendSubsystem::SendJsonPost(const FString& Path, const FString& Body, FThreeBBackendResponse* Event)
 {
     TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
