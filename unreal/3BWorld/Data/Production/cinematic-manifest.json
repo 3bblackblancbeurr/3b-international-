@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "shots": [
+    {
+      "id": "world_opening",
+      "priority": "P0",
+      "trigger": "first_character_creation",
+      "handoff": "heritage_square_gameplay",
+      "status": "PREPRODUCTION",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "id": "city_arrival",
+      "priority": "P0",
+      "trigger": "first_hub_entry",
+      "handoff": "player_control",
+      "status": "PREPRODUCTION",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "id": "broken_circle_reveal",
+      "priority": "P0",
+      "trigger": "first_tower_approach",
+      "handoff": "tower_exploration",
+      "status": "PREPRODUCTION",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "id": "france_gate_reveal",
+      "priority": "P0",
+      "trigger": "first_france_gate_interaction",
+      "handoff": "country_travel",
+      "status": "PREPRODUCTION",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "id": "first_memory",
+      "priority": "P0",
+      "trigger": "first_server_memory",
+      "handoff": "mission_progress",
+      "status": "PREPRODUCTION",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "id": "city_unlock",
+      "priority": "P0",
+      "trigger": "city_access_becomes_allowed",
+      "handoff": "city3b_portal",
+      "status": "PREPRODUCTION",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    },
+    {
+      "id": "guardian_intro",
+      "priority": "P1",
+      "trigger": "guardian_first_encounter",
+      "handoff": "guardian_gameplay",
+      "status": "BACKLOG",
+      "final_asset": "ASSET_ARTISTIQUE_FINAL_A_PRODUIRE"
+    }
+  ],
+  "invariants": [
+    "no_duplicate_reward",
+    "camera_handoff_matches_gameplay",
+    "skip_does_not_break_progression",
+    "reduced_motion_supported"
+  ]
+}
