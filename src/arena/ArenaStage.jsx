@@ -7,9 +7,10 @@ import {AVATAR_PATHS} from '../world/avatar-rules.js';
 export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',angle=null,cinematic=null}){
  const ref=useRef(null),liveState=useRef({state,side,cardId,avatar,focus,pose,angle,cinematic}),[error,setError]=useState('');liveState.current={state,side,cardId,avatar,focus,pose,angle,cinematic};
  useEffect(()=>{
-  const canvas=ref.current;let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les textes et les commandes restent accessibles.');return;}
+  const canvas=ref.current;let lowPower=false;try{lowPower=localStorage.getItem('3b-world-quality')==='fluid';}catch{}
+  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:!lowPower,alpha:true,powerPreference:lowPower?'low-power':'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les textes et les commandes restent accessibles.');return;}
   const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,110),geometry=[],materials=[];
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,lowPower?1:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;renderer.shadowMap.enabled=!lowPower;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   const backdrop=new THREE.Color('#07111d');scene.background=avatar&&!cinematic?null:backdrop;scene.fog=new THREE.FogExp2('#07111d',.026);
   scene.add(new THREE.HemisphereLight('#dceeff','#07101b',2.15));
   const light=new THREE.DirectionalLight('#ffe1a6',4.4);light.position.set(-4,7,6);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-6,right:6,top:5,bottom:-5});light.shadow.normalBias=.035;scene.add(light);
@@ -41,9 +42,10 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
   camera.position.copy(desired);
   function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();}}
   const ro=new ResizeObserver(resize);ro.observe(canvas);resize();
+  let inView=true;const io=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{inView=entries.some(entry=>entry.isIntersecting);}):null;io?.observe(canvas);
   const down=e=>{if(liveState.current.cinematic)return;pointer={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);};const move=e=>{if(pointer?.id===e.pointerId){rot+=(e.clientX-pointer.x)*.007;pointer.x=e.clientX;}};const up=()=>{pointer=null;};
   canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
-  function tick(now){if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.min(.05,Math.max(0,(now-at)/1000));at=now;if(document.hidden)return;
+  function tick(now){if(disposed)return;raf=requestAnimationFrame(tick);if(document.hidden||!inView){at=now;return;}if(lowPower&&now-at<1000/30)return;const rawDt=Math.min(.05,Math.max(0,(now-at)/1000));at=now;
    const s=liveState.current,film=s.cinematic,reduced=media.matches||film?.reduced,dt=film?.paused?0:rawDt;
    elapsed+=dt;impact+=dt;
    const solo=!!s.cardId||!!s.avatar,next=s.cardId?[s.cardId]:s.avatar?['avatar:'+JSON.stringify(s.avatar)]:s.state?.sides.map(x=>x.cards[x.active].id)||[];
@@ -95,7 +97,7 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
    const blend=reduced?1:1-Math.exp(-dt*5);camera.position.lerp(desired,blend);look.lerp(target,blend);camera.lookAt(look);renderer.render(scene,camera);
   }
   raf=requestAnimationFrame(tick);
-  return()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect();actors.forEach(a=>a.dispose());portal.removeFromParent();particles.removeFromParent();library.dispose();geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);};
+  return()=>{disposed=true;cancelAnimationFrame(raf);ro.disconnect();io?.disconnect();actors.forEach(a=>a.dispose());portal.removeFromParent();particles.removeFromParent();library.dispose();geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);};
  },[]);
  return <><canvas ref={ref} className="arena-stage" aria-label={cinematic?'Mise en scène 3D de ton personnage personnalisé.':cardId?'Modèle 3D de '+(cardById[cardId]?.name||'ton personnage')+'. Glisse pour tourner.':avatar?'Aperçu 3D de ton personnage. Glisse pour tourner.':'Duel 3D des personnages. Les commandes de combat sont sous la scène.'}/>{error&&<p className="arena-model-error" role="status">{error}</p>}</>;
 }

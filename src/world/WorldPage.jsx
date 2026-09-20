@@ -69,6 +69,7 @@ export default function WorldPage({goTo}){const account=useLoyalty();return acco
 
 function WorldSession({uid,goTo}){
  const[save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[snapshot,setSnapshot]=useState({region:'hub',position:{x:0,z:9}}),[panel,setPanel]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[saveMessage,setSaveMessage]=useState('Chargement de la sauvegarde…'),[gps,setGPS]=useState(false),[gpsMessage,setGPSMessage]=useState('Le GPS est désactivé.'),[walkSession,setWalkSession]=useState(0),[sound,setSound]=useState(false);
+ const [worldRequested,setWorldRequested]=useState(false);
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const [audioMix,setAudioMix]=useState(()=>{try{return {...DEFAULT_AUDIO_MIX,...JSON.parse(localStorage.getItem('3b-world-audio-mix')||'{}')}}catch{return {...DEFAULT_AUDIO_MIX}}});
  const [cityUnlockMission,setCityUnlockMission]=useState(()=>cityUnlockGuideRequested());
@@ -87,7 +88,7 @@ function WorldSession({uid,goTo}){
   if(fresh.length)setCinematicQueue(queue=>[...queue,...fresh].sort((a,b)=>b.priority-a.priority));
  },[]);
  const finishAvatarReveal=useCallback(({firstCreation=false}={})=>{
-  setPanel(null);
+  setWorldRequested(true);setPanel(null);
   if(firstCreation)enqueueCinematics([{kind:'world-opening',key:'opening:gold-master-v4',region:saveRef.current.region||'hub',context:{region:saveRef.current.region||'hub'},priority:110}]);
  },[enqueueCinematics]);
  const act=useCallback(command=>{try{const previous=saveRef.current;if(command.type==='battle'&&previous.adventure.encounter?.field){scene.current?.combatAction(command.action);return previous;}if(command.type==='battle'&&previous.region==='france'&&scene.current&&!scene.current.canBattle(command.action)){announce('Rapproche-toi de ton adversaire.');return null;}const next=recordWorldAction(uid,previous,command);const storyEvents=worldCinematicEvents(previous,next,command);if(storyEvents.length)enqueueCinematics(storyEvents);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();if(command.type!=='cinematicSeen'&&(command.type!=='field'||next.adventure.encounter?.field?.last))audio.current?.event(command.type==='field'?'battle':command.type,command.type==='field'?next.adventure.encounter.field.last:(command.action||command.transport||command.choiceId||command.id));if(command.type!=='cinematicSeen')scene.current?.feedback(command.type,command.action,previous,next);if(command.type==='field')scene.current?.setSave(next);if(command.type==='battle'||command.type==='field'){const cue=combatCue(previous.adventure.encounter,next.adventure.encounter,command.type==='field'?next.adventure.encounter.field.last:command.action,next.adventure.avatar);if(cue&&(cue.outgoing||cue.incoming||cue.healing))setCombatImpact({...cue,key:next.adventure.encounter.turn});}else if(['leave','visit','patrol','encounter'].includes(command.type))setCombatImpact(null);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde'+(next.shards>previous.shards?' · +'+(next.shards-previous.shards)+' éclats':''));}return next;}catch(error){announce(error.message);return null;}},[uid,announce,enqueueCinematics]);
@@ -98,11 +99,11 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{audio.current?.state(storyCinematic?.audioState||(fieldCombat?'combat':panel==='valueTrial'||panel==='guardianHub'?'guardian':panel==='journal'||panel==='story'?'mission':'exploration'));},[fieldCombat,panel,storyCinematic]);
  useEffect(()=>{audio.current?.setMix(audioMix);},[audioMix]);
  useEffect(()=>{
-  if(storyCinematic||!cinematicQueue.length)return;
+  if(storyCinematic||!cinematicQueue.length||assetsLoading||!scene.current)return;
   const event=cinematicQueue[0],presentation=storyCinematicPresentation(event);setCinematicQueue(queue=>queue.slice(1));
   if(!presentation){cinematicKeys.current.delete(event.key);return;}
   setStoryCinematic(presentation);scene.current?.playCinematicShot?.(presentation.kind,presentation.context,presentation.duration);audio.current?.cinematic?.(presentation.kind);audio.current?.state(presentation.audioState);audio.current?.speak(presentation.title+'. '+presentation.detail,{character:presentation.voiceCharacter});
- },[cinematicQueue,storyCinematic]);
+ },[cinematicQueue,storyCinematic,assetsLoading,worldRequested]);
  function chime(){audio.current?.event('reward');}
  function updateAudioMix(key,value){const next={...audioMix,[key]:Math.max(0,Math.min(1,Number(value)))};setAudioMix(next);try{localStorage.setItem('3b-world-audio-mix',JSON.stringify(next));}catch{}}
  function toggleSound(){const next=!sound;if(!audio.current)audio.current=createWorldAudio();audio.current.setMix(audioMix);audio.current.enable(next,saveRef.current.region);setSound(next);}
@@ -124,7 +125,7 @@ function WorldSession({uid,goTo}){
  }
  function travel(id){if(!act({type:'visit',region:id}))return;scene.current?.travel(id);audio.current?.region(id);setPanel(null);chime();}
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
- function closePanel(){const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
+ function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
  function interact(item){
   if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
   if(item.type==='portal'){travel(item.id);return;}
@@ -173,15 +174,15 @@ function WorldSession({uid,goTo}){
   if(act({type:'encounter',id:item.id})){act({type:'fieldStart'});scene.current?.cooldown(item.id);setPanel('encounter');}
  }
  callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region)};
- useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
+ useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
-  if(!loaded)return;
+  if(!loaded||!worldRequested)return;
   try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);ready.current=true;}
   catch{setError('Le navigateur n’a pas pu ouvrir la 3D. Active l’accélération graphique ou essaie un autre navigateur. Ta sauvegarde est conservée.');}
   return()=>{ready.current=false;scene.current?.destroy();scene.current=null;};
- },[loaded]);
+ },[loaded,worldRequested]);
  useEffect(()=>{if(panel!=='encounter')setCombatImpact(null);else if(!storyCinematic&&!cinematicQueue.length&&saveRef.current.adventure.encounter&&!saveRef.current.adventure.encounter.result&&!saveRef.current.adventure.encounter.field)act({type:'fieldStart'});},[panel,loaded,storyCinematic,cinematicQueue.length]);
- useEffect(()=>{paused.current=!!storyCinematic||(!!panel&&!['encounter','gps'].includes(panel))||!!error;scene.current?.setPaused(!!storyCinematic||(!!panel&&!fieldCombat)||!!error);scene.current?.setPresentation(storyCinematic?'storyCinematic':panel);},[panel,error,loaded,fieldCombat,storyCinematic]);
+ useEffect(()=>{paused.current=!!storyCinematic||(!!panel&&!['encounter','gps'].includes(panel))||!!error;scene.current?.setPaused(!!storyCinematic||(!!panel&&!fieldCombat)||!!error);scene.current?.setPresentation(storyCinematic?'storyCinematic':panel);},[panel,error,loaded,worldRequested,fieldCombat,storyCinematic]);
  useEffect(()=>{if(!uid||!loaded)return;partyLink.current=createPartyConnection({uid,onState:setPartyState,onPeers:peers=>{peersRef.current=peers;scene.current?.setPeers(peers);},onConnection:setConnection,onError:announce});return()=>{partyLink.current?.dispose();partyLink.current=null;};},[uid,loaded]);
  useEffect(()=>{partyLink.current?.pose({region:snapshot.region,x:snapshot.position.x,z:snapshot.position.z,heading:snapshot.heading||0});},[snapshot]);
  useEffect(()=>{scene.current?.setParty(partyState?.party);},[partyState,loaded]);
