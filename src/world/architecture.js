@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {surfaceTexture} from './surfaces.js';
 import {buildingDimensions,facadeBayCount} from './building-scale.js';
+import {wetnessForWeather} from './wetness.js';
 
 // A facade is assembled as piers, spandrels, recessed glazing and cornices.
 // Keeping real depth lets the same daylight describe every country's architecture.
@@ -112,5 +113,6 @@ export function createArchitecture(occlusion){
   }
   return g;
  }
- return{building,setWeather(weather){wetness.value=weather==='storm'?1:weather==='heavy_rain'?.82:weather==='rain'?.55:weather==='fog'?.22:.06;},dispose(){textures.forEach(t=>t?.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ const setWetness=value=>{wetness.value=Math.max(0,Math.min(1,Number(value)||0));};
+ return{building,setWetness,setWeather(weather){setWetness(wetnessForWeather(weather));},dispose(){textures.forEach(t=>t?.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }
