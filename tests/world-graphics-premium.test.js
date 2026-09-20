@@ -184,3 +184,13 @@ test('hub skyline has deliberate low medium high tiers and a dominant Broken Cir
  assert.match(metro,/tierRoll<90/);
  assert.match(metro,/60\+\(\(h>>>17\)%24\)/);
 });
+
+
+test('building feet use instanced contact shadows and weather-driven dampness',()=>{
+ const contact=read('src/world/contact-lighting.js'),landscape=read('src/world/landscape.js');
+ assert.match(contact,/Town damp building feet/);
+ assert.match(contact,/MeshPhysicalMaterial/);
+ assert.match(contact,/setWeather\(weather\)/);
+ assert.match(contact,/setQuality\(mode\)/);
+ assert.match(landscape,/buildingContact\.setWeather/);
+});
