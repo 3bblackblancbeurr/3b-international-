@@ -73,12 +73,26 @@ test('future postgres-owned public objects are private by default',()=>{
 });
 
 test('disabled 3BC staging ledger is fail-closed and client-inaccessible',()=>{
-  const sql=read('supabase/migrations/20260920163251_quarantine_disabled_3bc_sql_ledger_20260920.sql');
-  assert.match(sql,/token_enabled\s*=\s*false/i);
-  assert.match(sql,/token_blockchain_enabled\s*=\s*false/i);
-  assert.match(sql,/token_trading_enabled\s*=\s*false/i);
-  assert.match(sql,/revoke all[\s\S]*threeb_token_ledger from anon,\s*authenticated/i);
-  assert.match(sql,/3bc_disabled_security_gate/i);
+  const ledger=read('supabase/migrations/20260920163251_quarantine_disabled_3bc_sql_ledger_20260920.sql');
+  const gates=read('supabase/migrations/20260920180033_threeb_crypto_release_gate_fail_closed.sql');
+  const policy=read('supabase/migrations/20260920184052_threeb_token_policy_fail_closed.sql');
+
+  // Applied migrations are immutable: verify the actual fail-closed contract
+  // instead of requiring a later flag value to be rewritten into old SQL.
+  assert.match(ledger,/revoke all privileges[\s\S]*threeb_token_ledger from anon,\s*authenticated/i);
+  assert.match(ledger,/token_enabled\s*=\s*true[\s\S]*token_blockchain_enabled\s*=\s*true/i);
+  assert.match(ledger,/raise exception '3bc_disabled_security_gate'/i);
+  assert.match(ledger,/before insert or update on public\.threeb_token_ledger/i);
+
+  assert.match(gates,/wallet_model_approved boolean not null default false/i);
+  assert.match(gates,/testnet_authorized boolean not null default false/i);
+  assert.match(gates,/mainnet_authorized boolean not null default false/i);
+  assert.match(gates,/3bc_testnet_gate_not_satisfied/i);
+  assert.match(gates,/3bc_mainnet_gate_not_satisfied/i);
+
+  assert.match(policy,/testnet_authorized,false/i);
+  assert.match(policy,/protocol_security_reviewed,false/i);
+  assert.match(policy,/3bc_reward_rule_gate_not_satisfied/i);
 });
 
 test('wallet and Vault documents create no real key material',()=>{
