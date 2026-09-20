@@ -19,7 +19,8 @@ export function passportFromProfile(profile, user = null) {
   if (!profile || typeof profile !== 'object' || !profile.user_id) return null;
   if (user?.id && profile.user_id !== user.id) return null;
 
-  const country = Object.hasOwn(PASSPORT_COUNTRIES, profile.country) ? profile.country : 'France';
+  if (!Object.hasOwn(PASSPORT_COUNTRIES, profile.country)) return null;
+  const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
   const compactId = userId.replace(/-/g, '').toUpperCase();
