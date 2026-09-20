@@ -46,3 +46,10 @@ test('database XP invariant matches the server wallet upper bound',()=>{
   const sql=read('supabase/migrations/20260920161644_threeb_economy_xp_cap_alignment_20260920.sql');
   assert.match(sql,/xp >= 0 and xp <= 1000000000/i);
 });
+
+test('legacy passport fixture contains no personal email or verified-security claims',()=>{
+  const fixture=read('src/passport/passportData.js');
+  assert.doesNotMatch(fixture,/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  assert.doesNotMatch(fixture,/AES-256|INTÉGRITÉ DES DONNÉES[^\n]*100%|BIOMÉTRIE[^\n]*ACTIVE/i);
+  assert.match(fixture,/Never use this file as an identity, authentication or wallet source of truth/);
+});
