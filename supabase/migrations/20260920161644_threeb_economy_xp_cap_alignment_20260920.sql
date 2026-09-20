@@ -1,6 +1,5 @@
--- 3B economy invariant alignment — applied to Supabase on 2026-09-20.
--- Existing data was verified below the previous 10,000 XP cap before applying.
--- This keeps the database aligned with the authoritative server rule.
+-- Align the database invariant with the authoritative server wallet rule.
+-- Existing rows were verified below the old cap before this migration.
 
 alter table public.economy_accounts
   drop constraint if exists economy_accounts_xp_check;

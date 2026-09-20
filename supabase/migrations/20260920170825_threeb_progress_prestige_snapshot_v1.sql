@@ -1,6 +1,3 @@
--- Applied Supabase migration: 20260920170825
--- Links global level/title/prestige/season into the authoritative progression snapshot.
-
 create table if not exists public.threeb_prestige_events (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,

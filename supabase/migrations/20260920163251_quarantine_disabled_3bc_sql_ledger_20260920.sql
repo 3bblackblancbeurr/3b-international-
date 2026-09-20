@@ -1,23 +1,17 @@
--- Mirrors deployed Supabase migration 20260920163251.
--- Fail-closed quarantine for the disabled 3BC SQL ledger.
+-- Quarantine the disabled SQL token foundation.
+-- This table is NOT a blockchain and MUST NOT become authoritative 3BC state.
 
-update public.threeb_economy_flags
-set token_enabled=false,
-    token_blockchain_enabled=false,
-    token_trading_enabled=false,
-    updated_at=now()
-where singleton=true;
-
+revoke all privileges on table public.threeb_token_ledger from anon, authenticated;
 drop policy if exists threeb_token_ledger_read_own on public.threeb_token_ledger;
-revoke all on public.threeb_token_ledger from anon,authenticated;
-grant select,insert,update,delete,truncate,references,trigger
-on public.threeb_token_ledger to service_role;
+
+comment on table public.threeb_token_ledger is
+  'NON-AUTHORITATIVE DISABLED STAGING LEDGER. Not blockchain state. No real 3BC value. Client access forbidden until security/testnet gates are satisfied.';
 
 create or replace function public.threeb_token_ledger_fail_closed()
 returns trigger
 language plpgsql
-set search_path to ''
-as $$
+set search_path = ''
+as $function$
 begin
   if not exists (
     select 1
@@ -30,12 +24,10 @@ begin
   end if;
   return new;
 end;
-$$;
+$function$;
 
-revoke all on function public.threeb_token_ledger_fail_closed()
-from public,anon,authenticated;
-grant execute on function public.threeb_token_ledger_fail_closed()
-to service_role;
+revoke all on function public.threeb_token_ledger_fail_closed() from public, anon, authenticated;
+grant execute on function public.threeb_token_ledger_fail_closed() to service_role;
 
 drop trigger if exists threeb_token_ledger_fail_closed on public.threeb_token_ledger;
 create trigger threeb_token_ledger_fail_closed

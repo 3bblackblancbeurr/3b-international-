@@ -1,0 +1,528 @@
+{
+  "generated_from": "supabase_migrations.schema_migrations",
+  "normalization": "btrim/trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
+  "generated_at": "2026-09-20",
+  "count": 104,
+  "migrations": [
+    {
+      "version": "20260910020445",
+      "name": "arcade_anonymous_owner_saves",
+      "sha256": "3410f2a7dfd3450ec757c5842a90be58aa45a915ff0e5969f66e4f2b254fad4a"
+    },
+    {
+      "version": "20260910105242",
+      "name": "member_accounts_loyalty_and_game_rewards",
+      "sha256": "987683628cdeefc8b91cb01c905be587d09dd56e5e1a1fe2693bdabc4cf2c8af"
+    },
+    {
+      "version": "20260910105244",
+      "name": "prepare_private_shop_order_storage",
+      "sha256": "0344e3b0a0b031cc897c8b3fe14dcb6977f72b459a5bf02c0c439a25fb5c4c41"
+    },
+    {
+      "version": "20260910110739",
+      "name": "loyalty_check_revoked_sessions_in_rls",
+      "sha256": "0f037e0ef2c92eedbedbf58fab3fce243d4f39ae87e6488f2a9877d5b84f5d06"
+    },
+    {
+      "version": "20260910110824",
+      "name": "settle_purchase_rewards_with_existing_refunds",
+      "sha256": "cabc9491b9e4cb93cd80c1f85f127dd6cf478d02828d35d9b351035382df73df"
+    },
+    {
+      "version": "20260910121757",
+      "name": "member_open_world_progress",
+      "sha256": "b865192f03ebc24d93d9fc243cca1f7232de391de208ec34e893286f3a7b14cf"
+    },
+    {
+      "version": "20260910151239",
+      "name": "world_chapter_engine_tables",
+      "sha256": "b6a8883010505e5e03e91ffcfc1ad3fbc0d2f30c2ceb8fb04de50e1fd75c364c"
+    },
+    {
+      "version": "20260910155410",
+      "name": "world_chapters_account_cutover",
+      "sha256": "d14ce53b5102848a65ac7ca13091c46c4c4746757f033b6596d4d4f89a1f8130"
+    },
+    {
+      "version": "20260910212823",
+      "name": "community_studio_and_sport",
+      "sha256": "ebf0defee03618d04ecc20b9d90bf1586049bc2106f4046b00bcee7889dcf93d"
+    },
+    {
+      "version": "20260910213325",
+      "name": "retire_legacy_chat_and_refresh_sport_daily",
+      "sha256": "d29fd454e73f75f5aa4ab00ba5628007c4efb91378d68213cae5953bda15c30b"
+    },
+    {
+      "version": "20260910222929",
+      "name": "card_arena_server_authority",
+      "sha256": "36e2f5d81ee7fbacb9fb8d913221e1ed9f96fcd6fb18e77565650ee1b52c2318"
+    },
+    {
+      "version": "20260910230210",
+      "name": "card_arena_capped_account_rewards",
+      "sha256": "ec18e17e2b7ef503848d599ba6e71b99f7523d2ef3344e5a373d4d2033741f08"
+    },
+    {
+      "version": "20260910230429",
+      "name": "community_enrollment_consent",
+      "sha256": "4aa66607edbe4215413fbdbe3cb26a61d3720efedda60b14d5fbb061961a7cd6"
+    },
+    {
+      "version": "20260911180838",
+      "name": "world_private_cooperative_refuges",
+      "sha256": "caa166f26d838f91be5169cc6a613438a77e6dfdbb03b3d3e79b7951babd8c0f"
+    },
+    {
+      "version": "20260911191522",
+      "name": "world_party_foreign_key_indexes",
+      "sha256": "22b07b325e275fb8c371309797d859c1089d95a9b1c0224795e9ee422e06ab6a"
+    },
+    {
+      "version": "20260913150615",
+      "name": "create_3b_economy_tables",
+      "sha256": "c3c88ccb2c37649280d31684746b2a4368d4e1ce429b1567cd9ba75ab6a2f6f6"
+    },
+    {
+      "version": "20260913150619",
+      "name": "secure_3b_economy_rls",
+      "sha256": "4a1811472604deeae75fd82f19e3e165a4aecf606ba6cad02081239a37cf00f9"
+    },
+    {
+      "version": "20260913150638",
+      "name": "add_reward_claim_index",
+      "sha256": "c8859cf5e5cfe80acea823a35a33b56681b3c17d2c77eb3358ef0d6c9f16ba2d"
+    },
+    {
+      "version": "20260913150642",
+      "name": "add_inventory_item_index",
+      "sha256": "597ceeb49a24510a583a02c9226345bdd14c6e6ef48c502c8951bb2b16dfa3bb"
+    },
+    {
+      "version": "20260916211212",
+      "name": "shop_manual_fulfillment_workflow",
+      "sha256": "bd619a2d78e4031fdaa7800ee274f6f55f747970c3971c465269f128a7b128d1"
+    },
+    {
+      "version": "20260916211320",
+      "name": "shop_allow_legacy_new_status_during_rollout",
+      "sha256": "995040a908bf0edb298a7ae93b907d37b820c211e8e7fe7a9ecc9778a88df019"
+    },
+    {
+      "version": "20260916213730",
+      "name": "shop_notification_delivery_log",
+      "sha256": "27251baec628168c54d84aa29bec57f501967bee3bf5e0e4f8d871bd4e15bec0"
+    },
+    {
+      "version": "20260916222127",
+      "name": "permanent_collectibles_marketplace_memberships",
+      "sha256": "a3075ebdf70a099b55fedc5ffb545112fbd509d2954cab83c915fef56f77f173"
+    },
+    {
+      "version": "20260916231733",
+      "name": "app_install_presence_metrics",
+      "sha256": "67216f3602f36ac61828792015ceba872930838524492a16f83a7287c61f7a42"
+    },
+    {
+      "version": "20260916232407",
+      "name": "nexus_global_rarity_supply",
+      "sha256": "746f3f077199f3ad91107982c46587c4af2f1836923102a05e09d03f4b66ff35"
+    },
+    {
+      "version": "20260917095102",
+      "name": "arcade_rls_initplan_and_fk_indexes",
+      "sha256": "e6c3a3c156f5cc32b15213a8956e3e13d4ead32575f6e166778ae8e7facae7cb"
+    },
+    {
+      "version": "20260917095113",
+      "name": "marketplace_fk_indexes",
+      "sha256": "71db2845dc78bf8cf1d82d25ab6d92195276f6994d02ddf05f73526973a26ec7"
+    },
+    {
+      "version": "20260917095127",
+      "name": "secure_internal_metrics_and_collectible_rpcs",
+      "sha256": "056275461095c8f96f8cb3ae34060df547a0c9cff17dcaa083dfae26051484bb"
+    },
+    {
+      "version": "20260917102234",
+      "name": "nexus_city_saves_v1",
+      "sha256": "71ec00b1dea30c9da977546c4143c360f8c1494d588c0925032def67d001f13e"
+    },
+    {
+      "version": "20260917103353",
+      "name": "marketplace_permanence_rules",
+      "sha256": "449bfd5f92d318eb6cdb23ee89b15ed25f58088a9c20ebf8ef663b9d4f2b9eb3"
+    },
+    {
+      "version": "20260917103459",
+      "name": "marketplace_read_models_and_sponsors",
+      "sha256": "0f779cdd0144f3c2a7ff9a9d9c302ef0dfeccc817ddd16a5fa814910df346cd1"
+    },
+    {
+      "version": "20260917105315",
+      "name": "create_your_3b_city_v2",
+      "sha256": "251b0960d690b924a6211e9d04c03c8577a3de1fa533e9689f323e4b2c816847"
+    },
+    {
+      "version": "20260917105501",
+      "name": "city_3b_districts_and_collectibles",
+      "sha256": "58037cdda0ffda8265b92a58e850b6aae9cc0d1fa2bc2f6a6ce4faf67b265235"
+    },
+    {
+      "version": "20260917105553",
+      "name": "city_3b_server_engine",
+      "sha256": "2cfee0af5ee46f1ddc9f7eb5dd2dd43e8e9906aaa84153e7920c828bf4d9a432"
+    },
+    {
+      "version": "20260917110620",
+      "name": "city_3b_social_progression",
+      "sha256": "e79a41b9384f51b2854f69c770f3187ea8cf6f49dcfe3ffee621075fec8728cd"
+    },
+    {
+      "version": "20260917111213",
+      "name": "city_3b_progression_catalog_v3",
+      "sha256": "f27daf2a0aaed9b30f8a86698ff585f1c26b7027c3bff00a65dcb028e1c8ad0a"
+    },
+    {
+      "version": "20260917111223",
+      "name": "city_3b_rules_v3",
+      "sha256": "9a9bab082080afb5050d3e4ae6fca14cd33142df21e399d3275c7d0c04bd4d01"
+    },
+    {
+      "version": "20260917111506",
+      "name": "city_3b_integrity_limits_v4",
+      "sha256": "fd3af64580a59d7350dcdeebed1e0e9a84acee77e620a573c38673c7399d475b"
+    },
+    {
+      "version": "20260917111518",
+      "name": "city_3b_visits_private_policy",
+      "sha256": "3fc6713e3f7d827fe389b2897b73cf614751f8cea860f4446652a4a582a4d496"
+    },
+    {
+      "version": "20260917112028",
+      "name": "threeb_wallet_ledger_guards",
+      "sha256": "5177f9351b38f1a0563cf3f0a3a97891dc6c0a76d93b0e56461dd5a0e4b906cf"
+    },
+    {
+      "version": "20260917114300",
+      "name": "atomic_nexus_build_purchase_v1",
+      "sha256": "41bb403ebc72c1b66327304bf5e5360f4f56df40d07dce04b0b4a75261a51553"
+    },
+    {
+      "version": "20260917114643",
+      "name": "nexus_atomic_upgrade_remove_rewards_v2",
+      "sha256": "68fea36f1d5f0c15668aaf627a0f9d37852e291db90870730b1b5af2a57dade1"
+    },
+    {
+      "version": "20260917114921",
+      "name": "nexus_security_hardening_and_sync_v3",
+      "sha256": "423b95861b07645df167e664ab5b99d5b1adf79a3c8e675bf473fa1efb492756"
+    },
+    {
+      "version": "20260917115217",
+      "name": "expand_nexus_building_taxonomy_v2",
+      "sha256": "c9c4fd665fdaa7543e80f421281f18dcdeb48ad30821aa9874959cce824a929c"
+    },
+    {
+      "version": "20260917115233",
+      "name": "seed_nexus_mega_catalog_v2",
+      "sha256": "bb8a25a5ac20ed98153e3ee79861e440ecd2cb2b0cf98f4b7e97ac5c21b37391"
+    },
+    {
+      "version": "20260917115328",
+      "name": "nexus_state_snapshot_v4",
+      "sha256": "5e01061b7ce3e53623ace3b5a6e5f170cae8b3a446ebece8e8054d5147fe5fd3"
+    },
+    {
+      "version": "20260917122743",
+      "name": "nexus_rotation_aware_collisions_v2",
+      "sha256": "564fa2b5a35c00e2632f4e80d70b426ea05f1141365d37e9a447c30d3ed3173a"
+    },
+    {
+      "version": "20260917122836",
+      "name": "nexus_footprint_bounds_v3",
+      "sha256": "35091d0682168e4b782db2312b453ffb60c96978bad609ed5fd782fbf44b7b20"
+    },
+    {
+      "version": "20260917122934",
+      "name": "nexus_upgrade_progression_rewards_v4",
+      "sha256": "117419bd5e346f97b785eab1701de5f14cdba6b3c55de5af8c780f5681f21317"
+    },
+    {
+      "version": "20260917131102",
+      "name": "secret3b_campaign_engine",
+      "sha256": "f8cba607582e249f44806ebfd66257d05945c398f03f444b513e782cb055cd81"
+    },
+    {
+      "version": "20260917131911",
+      "name": "secret3b_phone_contest_engine",
+      "sha256": "f7698015cfe3589fb864989dce223e5f1be63141ea59a9dfc29cd456c2c3cf5d"
+    },
+    {
+      "version": "20260917131935",
+      "name": "secret3b_phone_claim_null_guard",
+      "sha256": "2a19d2e860ff64a181a5f2dcdaffe7762ba7a566f3a7b8055ca46145221f6f15"
+    },
+    {
+      "version": "20260917132531",
+      "name": "nexus_upgrade_level_guard_v2",
+      "sha256": "196ccf623638f0e4736013ce60899a591ca8f2815046465947c2ec66e4b1e49a"
+    },
+    {
+      "version": "20260917132604",
+      "name": "nexus_rotated_collision_guard_v2",
+      "sha256": "5e1052ceaed1c587fa07576bc4caa29cdbb6614f93646da311d1e3c5dc8c9e5f"
+    },
+    {
+      "version": "20260917132653",
+      "name": "secret3b_prize_claim_flow",
+      "sha256": "a000721ef9ee768194a542e37f564535ec9f27be856ae593197f1ee20549425f"
+    },
+    {
+      "version": "20260917132704",
+      "name": "nexus_starter_wallet_and_first_build_reward_v1",
+      "sha256": "f0b349dfc187a157da9e584024ce6139c0881f8a14bf61c70079c25b6916e31b"
+    },
+    {
+      "version": "20260917132738",
+      "name": "city3b_wallet_store_move_v5",
+      "sha256": "09770637c1b4cd2d7d88c59c9783dd9fdea13311ac075790c7e51c2ba262eab7"
+    },
+    {
+      "version": "20260917132817",
+      "name": "nexus_upgrade_awards_xp_v1",
+      "sha256": "e905ea3012adc4050868884933d7e2d6f0c74610aee81b6b8de1cec47ba7d4ff"
+    },
+    {
+      "version": "20260917133238",
+      "name": "expand_3b_reward_inventory_schema_v1",
+      "sha256": "49adb21e67065bef6d91ba37489b61d9a1b39b8f0eb2ad4da14531b4bd1d9c66"
+    },
+    {
+      "version": "20260917133254",
+      "name": "seed_3b_world_reward_catalog_v1",
+      "sha256": "d4da43257173d1f9c1d7f6cd59a640ba4df1a10f080b72f5531fa05ab137a8fd"
+    },
+    {
+      "version": "20260917133439",
+      "name": "nexus_collectible_display_v2",
+      "sha256": "3187162b893f4e9117ee2dae771fce0667adac273b3de66281e11aa020cc588f"
+    },
+    {
+      "version": "20260917133505",
+      "name": "nexus_state_inventory_v2",
+      "sha256": "bd1a20870c5cd12692c3034606deea2b304ecc6a0997f79ba1a78790bea4e057"
+    },
+    {
+      "version": "20260917133917",
+      "name": "city3b_preserve_large_footprints_v5_1",
+      "sha256": "128837562d889adba474c1bc5be9bc55337a067fbfe81a0ec978bbb78fb9842f"
+    },
+    {
+      "version": "20260917133952",
+      "name": "city3b_large_footprint_constraints_v5_2",
+      "sha256": "31129edeae76eddf4725cf6396623cf15b2142e8a4fc3486458b1aa8f8066e05"
+    },
+    {
+      "version": "20260917134124",
+      "name": "unify_3b_xp_wallet_v1",
+      "sha256": "4757b42cf44d2d3f559a08197882bf77b1a636dfe038a358500a112ce1dca9a2"
+    },
+    {
+      "version": "20260917134253",
+      "name": "global_rarity_supply_guard_v2",
+      "sha256": "211d7b0cd59e19ded2b4f6a288b9e5161bbfd2b652e59455f81e9479a519e519"
+    },
+    {
+      "version": "20260917134357",
+      "name": "nexus_state_rarity_supply_v2",
+      "sha256": "70100b91c395e50ebe55701c56ba7fc5935a7262ba19d70811108c5707569a62"
+    },
+    {
+      "version": "20260917134434",
+      "name": "secret3b_claim_idempotence_and_indexes",
+      "sha256": "5687af0b3519d01bc212bcea51a5471b084d3c8b1d18d7a447427fe7ba89d1d2"
+    },
+    {
+      "version": "20260917134534",
+      "name": "city3b_legacy_rpc_lockdown_starter_wallet_v5_3",
+      "sha256": "0e7434712428f63fe215866fae50a5d7e068dd1a0436fe32aa44bb9751844ffb"
+    },
+    {
+      "version": "20260917135304",
+      "name": "secret3b_winner_limit_source_of_truth",
+      "sha256": "1f56cc137ed27103a97f11c641f40ac751a83d74cb42dc53756e288f464c1a36"
+    },
+    {
+      "version": "20260917141845",
+      "name": "nexus_upgrade_remove_revision_guards",
+      "sha256": "b9831de9e8a58f6da48b53a45fcb142a73b5ad972812f2d2059ced1629092a8a"
+    },
+    {
+      "version": "20260918173805",
+      "name": "city3b_performance_hardening_20260918",
+      "sha256": "1d53b88f27b0001fe5f5928063794b209d67a267a6a3f8d06d8d52bcac548f83"
+    },
+    {
+      "version": "20260918173831",
+      "name": "nexus_city_rpc_security_hardening_20260918",
+      "sha256": "a2d83d65de11d67104b50e3d90b71bedf3d2eccf4ee352c6a16de57580969524"
+    },
+    {
+      "version": "20260919181748",
+      "name": "world_city_bridge_20260919",
+      "sha256": "9cd82145f437b4cd6a1db6d09fa5d15ef13c38b663d0f386b83960a998ff7777"
+    },
+    {
+      "version": "20260920012315",
+      "name": "nexus_city_require_world_souvenir",
+      "sha256": "f27b8046d8934e10975a0dc35f42ce9355f50ae300de50aa918c2846df87eb0c"
+    },
+    {
+      "version": "20260920013436",
+      "name": "passport_city_origin_from_member_profile",
+      "sha256": "e803d8c432cadd0854d1784d286c4325428aafa0b8def697fa783884f5f935d5"
+    },
+    {
+      "version": "20260920161246",
+      "name": "threeb_fortress_foundation_hardening_20260920",
+      "sha256": "bec5e504d7db349aa733188ebcdf46946f07c7548998f9f24d74304eb675189e"
+    },
+    {
+      "version": "20260920161644",
+      "name": "threeb_economy_xp_cap_alignment_20260920",
+      "sha256": "2d47c983c34bac5f6feed6a6c478df8e272c7e2413db4c8b5177b6a852a12a17"
+    },
+    {
+      "version": "20260920162537",
+      "name": "threeb_global_xp_150_antifarm_token_foundation",
+      "sha256": "1f7ef7128b5247822f1e07e770711000493b1b9b540b40f1dab5a289a1010c9c"
+    },
+    {
+      "version": "20260920162852",
+      "name": "threeb_loyalty_global_ledger_unification",
+      "sha256": "5805dcd712441d60b6b1c0ebaf780993a3c60d0ac4fdd9fccf49e54fe553b722"
+    },
+    {
+      "version": "20260920163109",
+      "name": "public_telemetry_rate_limit_hardening_20260920",
+      "sha256": "610c390feb30d0d6281e2354742b905073438e4b31e61a6473b55e8895258c12"
+    },
+    {
+      "version": "20260920163234",
+      "name": "threeb_city_economy_global_level_unification",
+      "sha256": "cbee9ecd13fc12c2443218cafacb9edc95ad3be5eb596d73e4a9b9bc62de8a21"
+    },
+    {
+      "version": "20260920163251",
+      "name": "quarantine_disabled_3bc_sql_ledger_20260920",
+      "sha256": "b12381cddbc6c7627827fa3f1d254ca6921974cf00579181e5f56acebce282ae"
+    },
+    {
+      "version": "20260920163347",
+      "name": "threeb_world_reward_transactional_outbox_v1",
+      "sha256": "b19f1b3cedb97c1c61ceca84c1f700cdf19449fb3a4517c4485aadb4cd8bdd87"
+    },
+    {
+      "version": "20260920163445",
+      "name": "fortress_level_curve_and_city_rpc_hardening_20260920",
+      "sha256": "507d937c43a1095a6a53054e7c30077f5b3431cd5042157056891aa706c3bb60"
+    },
+    {
+      "version": "20260920164016",
+      "name": "threeb_reward_outbox_reward_code_index",
+      "sha256": "a75bc0e4bbf24e06f391fa4f5884213c84534773870b98994f0fd75932137d11"
+    },
+    {
+      "version": "20260920164750",
+      "name": "threeb_economy_risk_seasons_prestige_foundation",
+      "sha256": "75dde95d593b8577cc91f1c4043fa7c37d3dd139aa0778e462b49650ef665366"
+    },
+    {
+      "version": "20260920165411",
+      "name": "fortress_postgres_default_privileges_private_by_default",
+      "sha256": "a257aabf2f818c119ebb4a5cb0311b4f4c9de94fe49641aab0a12ebcd34c56a4"
+    },
+    {
+      "version": "20260920170825",
+      "name": "threeb_progress_prestige_snapshot_v1",
+      "sha256": "ac225d638588d64b0d98351f598aaae8ff3fbef3acef67af89606e133ea1d19f"
+    },
+    {
+      "version": "20260920180033",
+      "name": "threeb_crypto_release_gate_fail_closed",
+      "sha256": "5d0ce5eeb8f3e9eee40cdc1e73dffd17ba8ec4f1d372d645591099226d6da070"
+    },
+    {
+      "version": "20260920180319",
+      "name": "threeb_economy_health_observability",
+      "sha256": "3fe700394a32ebc29ad76daa60824bed8147c01fd884701c818217ce3f3dee0d"
+    },
+    {
+      "version": "20260920182959",
+      "name": "threeb_economy_integrity_report",
+      "sha256": "ff9e5e6286b14abb9c2b4405feaa2526f8c4828b3adb8d7b9ba6fb5d02924ee7"
+    },
+    {
+      "version": "20260920183658",
+      "name": "threeb_curve_season_prestige_hardening_v2",
+      "sha256": "db1c0301dc4b13ddbbfed68f7dffcdb1f9266f9cc426ab62e19fc35297e3c722"
+    },
+    {
+      "version": "20260920184052",
+      "name": "threeb_token_policy_fail_closed",
+      "sha256": "66db71ec094266e9d268343dc440e673f156196a681c0e99ae602d0cb61e1ae1"
+    },
+    {
+      "version": "20260920184222",
+      "name": "threeb_prestige_eligibility_read_only",
+      "sha256": "fbc92eac7e217f5ab8a3661f64bd7226dd2f0623b94ed037972fa0413416c348"
+    },
+    {
+      "version": "20260920184352",
+      "name": "threeb_read_only_progress_snapshots",
+      "sha256": "49990b0e645cdcbb11187583fde3a561be474f2c2366c654cc3f7c0a9c88f882"
+    },
+    {
+      "version": "20260920184729",
+      "name": "threeb_prestige_country_coverage_hardening",
+      "sha256": "cff3ab624a5c7094acc133838a3c2fa76edbfdd80678a3bf738d318fab20c0c5"
+    },
+    {
+      "version": "20260920191103",
+      "name": "threeb_economy_integrity_crypto_gate_v2",
+      "sha256": "b7031bd0662919cf40a981ee43d7a821b9912087f6b9b0bfd3eadacddaa256ab"
+    },
+    {
+      "version": "20260920191606",
+      "name": "threeb_reward_lifetime_caps",
+      "sha256": "1e7250e666265892847a9ec8938869d471f190d63a5d5ec2933665db43cf19ca"
+    },
+    {
+      "version": "20260920192148",
+      "name": "threeb_world_finite_reward_caps",
+      "sha256": "364b6151bef8cbb980d4ea9b51f2bd62b01d948a0510b576deef173c2feb20c1"
+    },
+    {
+      "version": "20260920192342",
+      "name": "threeb_level_curve_v2_candidate_shadow",
+      "sha256": "64a71a4276b7f10d2aa792c5fede7b6ee0f9a105f45d5f58bbbe389e87bd5a59"
+    },
+    {
+      "version": "20260920192820",
+      "name": "threeb_city_progression_world_city_decoupling_v2",
+      "sha256": "fc3f233d8eb2dc2ae7ff195970d077e90bfe384d7123ed550013acf97146ce31"
+    },
+    {
+      "version": "20260920193014",
+      "name": "threeb_activate_global_xp_curve_v2",
+      "sha256": "8a810e20d24a7d4026f141b5bb6166ea30818b715d6729b4740d01612dbc57e3"
+    },
+    {
+      "version": "20260920193130",
+      "name": "threeb_economy_config_owner_only_2026_2",
+      "sha256": "cdd2e0b659174316194c7169e62a3dd976fefce0efa309e829b2bbafaf1d0dc3"
+    }
+  ]
+}

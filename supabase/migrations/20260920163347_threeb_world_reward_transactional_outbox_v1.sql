@@ -1,13 +1,11 @@
--- Applied Supabase migration: 20260920163347
--- Transactional outbox keeps World save commits and global reward intents reliable.
-
 create table if not exists public.threeb_reward_outbox (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
   reward_code text not null references public.reward_definitions(code),
   event_id text not null check (event_id ~ '^[A-Za-z0-9:_-]{3,160}$'),
   source text not null default 'world' check (length(source) between 2 and 40),
-  status text not null default 'pending' check (status in ('pending','credited','rejected')),
+  status text not null default 'pending'
+    check (status in ('pending','credited','rejected')),
   attempts smallint not null default 0 check (attempts between 0 and 100),
   last_error text,
   created_at timestamptz not null default now(),
@@ -51,13 +49,17 @@ begin
   where user_id=p_user
   for update;
 
-  if current_revision is null or current_revision<>p_revision then return false; end if;
+  if current_revision is null or current_revision<>p_revision then
+    return false;
+  end if;
 
   select sequence into old_sequence
   from public.member_world_devices
   where user_id=p_user and device=p_device;
 
-  if p_sequence<coalesce(old_sequence,0) then return false; end if;
+  if p_sequence<coalesce(old_sequence,0) then
+    return false;
+  end if;
 
   update public.member_world_state
   set data=p_data,revision=revision+1,updated_at=now()
@@ -137,7 +139,15 @@ begin
       credited_count:=credited_count+1;
     exception when others then
       err:=sqlerrm;
-      if err in ('reward_daily_event_cap','reward_daily_value_cap','reward_already_claimed','reward_level_required','unknown_reward','reward_policy_missing') then
+
+      if err in (
+        'reward_daily_event_cap',
+        'reward_daily_value_cap',
+        'reward_already_claimed',
+        'reward_level_required',
+        'unknown_reward',
+        'reward_policy_missing'
+      ) then
         update public.threeb_reward_outbox
         set status='rejected',processed_at=now(),last_error=err
         where id=row.id;
@@ -153,14 +163,21 @@ begin
             processed_at=case when attempts+1>=5 then now() else null end,
             last_error=left(err,240)
         where id=row.id;
-        if row.attempts+1>=5 then rejected_count:=rejected_count+1;
-        else pending_count:=pending_count+1;
+
+        if row.attempts+1>=5 then
+          rejected_count:=rejected_count+1;
+        else
+          pending_count:=pending_count+1;
         end if;
       end if;
     end;
   end loop;
 
-  return jsonb_build_object('credited',credited_count,'rejected',rejected_count,'pending',pending_count);
+  return jsonb_build_object(
+    'credited',credited_count,
+    'rejected',rejected_count,
+    'pending',pending_count
+  );
 end
 $$;
 

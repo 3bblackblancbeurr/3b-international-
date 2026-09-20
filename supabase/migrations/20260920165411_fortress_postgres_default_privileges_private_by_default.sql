@@ -1,7 +1,4 @@
--- Applied Supabase migration: 20260920165411
--- Future objects created by postgres in public are private-by-default.
--- Objects that must be client-readable/writable require explicit GRANT + RLS policy.
-
+-- Fortress: future objects created by postgres in public become private by default.
 alter default privileges for role postgres in schema public
   revoke all on tables from anon, authenticated;
 
