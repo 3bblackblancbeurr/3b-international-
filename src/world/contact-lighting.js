@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import {wetnessForWeather} from './wetness.js';
 
 // Soft contact + controlled damp skirt. One shared texture and instanced draws.
 export function addBuildingContact(field,root,owned){
- const sites=[...field.buildings,...field.civic];if(!sites.length)return{setWeather(){},setQuality(){}};
+ const sites=[...field.buildings,...field.civic];if(!sites.length)return{setWetness(){},setWeather(){},setQuality(){}};
  const size=64,data=new Uint8Array(size*size*4);
  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
   const dx=Math.max(0,Math.abs((x+.5)/size*2-1)-.7),dy=Math.max(0,Math.abs((y+.5)/size*2-1)-.7),t=Math.max(0,1-Math.hypot(dx,dy)/.3),i=(y*size+x)*4;
@@ -17,8 +18,10 @@ export function addBuildingContact(field,root,owned){
  for(const mesh of [shadow,damp]){mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();root.add(mesh);owned.push(mesh);}
  owned.push(texture,geometry,shadowMat,dampMat);
  const full=sites.length;
+ const setWetness=value=>{const wet=Math.max(0,Math.min(1,Number(value)||0));dampMat.opacity=.025+wet*.215;dampMat.needsUpdate=true;};
  return{
-  setWeather(weather){dampMat.opacity=weather==='storm'?.24:weather==='heavy_rain'?.20:weather==='rain'?.14:weather==='fog'?.09:.035;dampMat.needsUpdate=true;},
+  setWetness,
+  setWeather(weather){setWetness(wetnessForWeather(weather));},
   setQuality(mode){damp.count=mode==='fluid'?Math.round(full*.68):full;shadow.count=full;},
  };
 }
