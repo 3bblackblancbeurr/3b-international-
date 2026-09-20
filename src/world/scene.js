@@ -2,6 +2,7 @@ import {createPartyActors} from './party-actors.js';
 import {createCombatTelegraph} from './combat-telegraph.js';
 import {createWorldPost} from './postprocessing.js';
 import {cinemaProfile} from './cinematic-director.js';
+import {cinematicReturnView} from './cinematic-camera.js';
 import {createWorldSky} from './sky.js';
 import {createMovementFrame,followMovement,viewBearing} from './camera-follow.js';
 import {combatCue,createCombatEffects} from './combat-effects.js';
@@ -356,7 +357,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16,focusItemId=null,endCamera=null,endTarget=null,fovStart=null,fovEnd=null;
    if(kind==='world-opening'){
     focus={...position};radius=camera.aspect<.85?78:112;height=camera.aspect<.85?50:64;focusY=5.5;arc=.58;dolly=.08;angle=orbit.yaw-.58;fovStart=72;fovEnd=60;
-    const finalView=orbitView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);endCamera=finalView.position.clone();endTarget=finalView.target.clone();hero?.action('Idle');
+    const finalView=cinematicReturnView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);endCamera=finalView.position;endTarget=finalView.target;hero?.action('Idle');
    }else if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=camera.aspect<.85?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
    else if(['guardian-intro','final-combat-intro','important-combat-result'].includes(kind)){
     const rival=battleTarget||items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===(context.card||encounter.card));
