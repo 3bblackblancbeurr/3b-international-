@@ -249,3 +249,34 @@ test('LOW keeps cheap building contact shadows to avoid floating architecture',(
  assert.match(contact,/shadow\.count=full/);
  assert.match(contact,/damp\.count=mode===\'fluid\'/);
 });
+
+
+test('HIGH water can mirror real scene geometry without charging LOW or MEDIUM',()=>{
+ const water=read('src/world/premium-water.js'),landscape=read('src/world/landscape.js'),scene=read('src/world/scene.js');
+ assert.match(water,/new THREE\.WebGLRenderTarget/);
+ assert.match(water,/reflectionMatrix/);
+ assert.match(water,/mirrorCamera/);
+ assert.match(water,/high:\{[^\n]*sceneReflection:\.72/);
+ assert.match(water,/medium:\{[^\n]*sceneReflection:0/);
+ assert.match(water,/low:\{[^\n]*sceneReflection:0/);
+ assert.match(water,/renderer\.render\(scene,mirrorCamera\)/);
+ assert.match(landscape,/renderWaterReflection\(renderer,scene,camera,time\)/);
+ assert.match(scene,/renderWaterReflection\?\.\(renderer,scene,camera,elapsed\)/);
+});
+
+test('waterfront geometry contributes real contact foam around walls stairs and pontoons',()=>{
+ const water=read('src/world/premium-water.js'),waterfront=read('src/world/premium-waterfront.js'),landscape=read('src/world/landscape.js');
+ assert.match(water,/contactFoam/);
+ assert.match(water,/setFoamContacts/);
+ assert.match(waterfront,/foamContacts\.push/);
+ assert.match(waterfront,/pontoon/);
+ assert.match(waterfront,/step>=4/);
+ assert.match(landscape,/premiumWater\.setFoamContacts\(waterfront\.foamContacts\)/);
+});
+
+test('hub skyline protects sightlines around the Broken Circle tower and waterfront',()=>{
+ const metro=read('src/world/hub/metropolis.js');
+ assert.match(metro,/protectedVista=\['heritage_square','broken_circle_tower','docks'\]/);
+ assert.match(metro,/district\.id==='broken_circle_tower'/);
+ assert.match(metro,/Math\.min\(height,44\)/);
+});
