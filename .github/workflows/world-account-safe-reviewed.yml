@@ -1,0 +1,145 @@
+name: Verify reviewed World account-safe candidate
+
+on:
+  push:
+    branches: [chatgpt-improvements-world-account-safe-20260920]
+    paths: ['.github/workflows/world-account-safe-reviewed.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: world-account-safe-reviewed-20260920
+  cancel-in-progress: false
+
+jobs:
+  restore-test-publish:
+    if: github.ref == 'refs/heads/chatgpt-improvements-world-account-safe-20260920'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_BRANCH: chatgpt-improvements-world-account-safe-20260920
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Restore hash-verified reviewed source without overwriting another branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TARGET_BRANCH"
+          mkdir -p "$RUNNER_TEMP/world-reviewed"
+          git config user.name '3B Reviewed Integration'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, re, subprocess
+          def git(*args):
+              return subprocess.check_output(['git',*args])
+          chunks=['b72028dd18625890d771a2864de4624aab84ebc9','539f4d0be607f8f39b45a48407583bdfff719c0a','20d5bdc2a9b5471ac1d10e16ee7520b6bd7a2ed5']
+          compressed=b''
+          for sha in chunks:
+              response=json.loads(subprocess.check_output(['gh','api',f'repos/{os.environ["GITHUB_REPOSITORY"]}/git/blobs/{sha}']))
+              part=base64.b64decode(response['content'])
+              assert hashlib.sha1(b'blob '+str(len(part)).encode()+b'\0'+part).hexdigest()==sha
+              compressed+=part
+          raw=lzma.decompress(compressed)
+          assert hashlib.sha256(raw).hexdigest()=='d77be3d5a1cc5fe748d135fa85df735474288073d525512daf9878e2c32dc6fd'
+          manifest=json.loads(raw)
+          assert manifest['format']==1 and len(manifest['files'])==100
+          base=manifest['base']
+          changed=git('diff','--name-only',base,'HEAD').decode().splitlines()
+          assert all(p=='.github/workflows/world-account-safe-reviewed.yml' for p in changed), 'Concurrent source change: refusing to overwrite it'
+          prepared={}
+          for item in manifest['files']:
+              name=item['p'];path=pathlib.Path(name)
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
+              assert name.startswith(('src/','tests/','docs/','scripts/','supabase/')) or name=='.github/workflows/verify-city3b-release.yml'
+              if item.get('delete'):
+                  prepared[name]=None
+                  continue
+              source=git('cat-file','blob',item['source']) if item.get('source') else b''
+              if 'parts' in item:
+                  output=[]
+                  for operation in item['parts']:
+                      if isinstance(operation,list):
+                          offset,length=operation
+                          assert 0<=offset<=len(source) and 0<=length<=len(source)-offset
+                          output.append(source[offset:offset+length])
+                      else:
+                          output.append(operation.encode('utf-8'))
+                  data=b''.join(output)
+              else:
+                  data=source
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==item['sha'],name
+              prepared[name]=data
+          for name,data in prepared.items():
+              path=pathlib.Path(name)
+              assert not path.is_symlink()
+              if data is None:path.unlink(missing_ok=True)
+              else:
+                  path.parent.mkdir(parents=True,exist_ok=True)
+                  path.write_bytes(data)
+          # Incorporate the reviewed two-file runtime fix found in the shared
+          # candidate while this independent integration was being tested.
+          # Map remains the JavaScript collection; only the icon is renamed.
+          for name in ['src/world/WorldPage.jsx','src/components/City3BPortal.jsx']:
+              path=pathlib.Path(name);text=path.read_text()
+              text=text.replace(',Map,',',Map as MapIcon,').replace('<Map/>','<MapIcon/>')
+              text=text.replace("['districts','Quartiers',Map]","['districts','Quartiers',MapIcon]")
+              path.write_text(text)
+          pathlib.Path('tests/builtin-icon-shadowing.test.js').write_bytes(git('show','4f7164cda8f55873e2173537942f74b1cd32960f:tests/builtin-icon-shadowing.test.js'))
+          note=pathlib.Path('docs/WORLD_CONSOLIDATION_20260920.md')
+          note.write_text(note.read_text().replace('Branche candidate : `chatgpt-improvements-world-consolidation-20260920`.','Branche candidate isolée : `chatgpt-improvements-world-account-safe-20260920`. La branche de consolidation partagée a évolué concurremment ; elle n’a pas été écrasée. Le correctif de collision Map/MapIcon du commit 4f7164c a été repris. Les résultats CI ci-dessous concernent la version finale ; les 629 tests cités sont le contrôle local précédent.'))
+          pathlib.Path(os.environ['RUNNER_TEMP'],'world-reviewed','source-manifest.json').write_bytes(raw)
+          PY
+          git diff --check
+          git add src tests docs scripts supabase .github/workflows/verify-city3b-release.yml
+          git commit -m 'feat(world): reviewed cinematics, creator and account-safe Passport/City integration'
+          git rev-parse HEAD > "$RUNNER_TEMP/world-reviewed/tested-sha.txt"
+          git diff --stat "$GITHUB_SHA" HEAD > "$RUNNER_TEMP/world-reviewed/changes.txt"
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Verify complete application and production build
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT="$RUNNER_TEMP/world-reviewed/verify.log"
+          if npm run verify > "$REPORT" 2>&1; then
+            grep -E '^# (tests|pass|fail|duration_ms)' "$REPORT"
+            tail -18 "$REPORT"
+          else
+            grep -n -A 22 -B 3 -E 'not ok|error:|Error:|ERR_|failed|FAIL' "$REPORT" | head -180 || true
+            tail -40 "$REPORT"
+            exit 1
+          fi
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Push verified source to this isolated branch only
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$TARGET_BRANCH" = chatgpt-improvements-world-account-safe-20260920
+          CURRENT=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)
+          test "$CURRENT" = "$GITHUB_SHA" || { echo 'Remote branch changed. No overwrite permitted.'; exit 1; }
+          VERIFIED=$(cat "$RUNNER_TEMP/world-reviewed/tested-sha.txt")
+          test "$(git rev-parse HEAD)" = "$VERIFIED"
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$VERIFIED" -f state=success -f context='3B account-safe / full verify' -f description='Complete tests and build passed; production/server parity is not attested' -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          printf 'Verified candidate source: `%s`\n\nNo main update, no database write, no production promotion.\n' "$VERIFIED" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-account-safe-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/world-reviewed/
+          retention-days: 3
