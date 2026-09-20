@@ -83,8 +83,10 @@ function fillerItems(plan,profile){
     return Array.from({length:perDistrict},(_,index)=>{
       const h=hash(`${district.id}:filler:${index}`),angle=baseRotation+index*GOLDEN_ANGLE+(((h>>>4)%100)/100-.5)*.22;
       const band=index%4,ring=64+band*27+((h>>>9)%31);
-      const width=20+(h%26),depth=17+((h>>>5)%24),tierRoll=(h>>>11)%100;
-      const height=tierRoll<58?14+((h>>>17)%18):tierRoll<90?30+((h>>>17)%28):60+((h>>>17)%24);
+      const width=20+(h%26),depth=17+((h>>>5)%24),tierRoll=(h>>>11)%100,protectedVista=['heritage_square','broken_circle_tower','docks'].includes(district.id);
+      let height=tierRoll<58?14+((h>>>17)%18):tierRoll<90?30+((h>>>17)%28):60+((h>>>17)%24);
+      if(protectedVista&&height>52)height=34+((h>>>19)%18);
+      if(district.id==='broken_circle_tower')height=Math.min(height,44);
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
