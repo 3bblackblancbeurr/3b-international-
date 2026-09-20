@@ -40,9 +40,16 @@ public:
     void RequestWorldBootstrap();
 
 private:
+    enum class EThreeBBackendChannel : uint8
+    {
+        World,
+        City,
+        Bootstrap
+    };
+
     FString BaseUrl;
     FString PublishableKey;
     FString AccessToken;
 
-    void SendJsonPost(const FString& Path, const FString& Body, FThreeBBackendResponse* Event);
+    void SendJsonPost(const FString& Path, const FString& Body, EThreeBBackendChannel Channel);
 };
