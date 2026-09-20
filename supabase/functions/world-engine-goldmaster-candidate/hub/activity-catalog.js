@@ -16,6 +16,10 @@ export const HUB_NPC_IDS=[
  'leyla_demir','maarja_saar','giulia_ferri','omar_el_fassi','amira_mansouri','elio_romano','arda_kaya','evelin_tamm',
  'youssef_ben_salem','lucia_navaro','meryem_alaoui','noah_leroux','the_conductor','kadra_zerrouki','adrian_sol','soraya_najem',
 ];
+export const HUB_BUILDING_IDS=[
+ 'tower_circle','heritage_welcome','mission_hotel','memory_archives','living_cards_gallery','arena_3b','mobility_center','house_3b','garage_3b',
+ 'community_house','ai_textile_lab','mode3_studio','central_marina','shipyard_3b','train_station','workers_memorial','wildlife_refuge','city_planning_office','city_gallery',
+];
 export const HUB_TRANSPORT_TYPES=['train','boat','telepheric','zipline'];
 export const HUB_SECRET_STEP_COUNTS={
  secret_three_lights:3,
@@ -31,6 +35,7 @@ export const HUB_SECRET_SET=new Set(HUB_SECRET_IDS);
 export const HUB_DISTRICT_SET=new Set(HUB_DISTRICT_IDS);
 export const HUB_NPC_SET=new Set(HUB_NPC_IDS);
 export const HUB_TRANSPORT_SET=new Set(HUB_TRANSPORT_TYPES);
+export const HUB_BUILDING_SET=new Set(HUB_BUILDING_IDS);
 
 const TRAIN_RING=['heritage_square','archives','community','gardens','docks','city3b_portal','commerce','arena','innovation','broken_circle_tower'];
 const BOAT_RING=['docks','gardens','city3b_portal','commerce','heritage_square'];
