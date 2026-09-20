@@ -2,9 +2,11 @@ import {DISTRICT_JOBS} from './district-jobs.js';
 import {HERITAGE,LANDMARK_APPROACH} from './heritage.js';
 import {RESOURCE_SITES,frontierState,patrolOpponent} from './frontier.js';
 import {PARIS_LANES,PARIS_BOULEVARD} from './paris-layout.js';
+import hubPlan from './hub/data/hub-master-plan-v2.json' with { type:'json' };
+import {hubDistrictPosition} from './hub/metropolis.js';
 // Authored districts inspired by real places, not geographic replicas.
 export const REGIONS={
- hub:{city:'Le Nexus',craft:'Le Cercle des artisans',rural:'Les jardins des liens',crop:'garden',paving:'#b8b6a0',earth:'#8c9270'},
+ hub:{city:'Cité des Huit Héritages',craft:'Le Cercle des artisans',rural:'Les jardins des liens',crop:'garden',paving:'#b8b6a0',earth:'#8c9270'},
  france:{city:'Les passages de Paris',craft:'Le quartier des verrières',rural:'Les vergers de Loire',crop:'orchard',paving:'#c8bba5',earth:'#a49b70',source:'https://parisjetaime.com/article/paris-insolite-les-passages-couverts-a1801'},
  italie:{city:'Les cours de Florence',craft:'La place des ateliers',rural:'Les vignes de Toscane',crop:'vineyard',paving:'#c0a183',earth:'#ae946b',source:'https://www.feelflorence.it/'},
  estonie:{city:'Les ruelles de Tallinn',craft:'La cour des tisserands',rural:'La lisière de Lahemaa',crop:'forest',paving:'#9ea9a1',earth:'#6e8373',source:'https://visitestonia.com/en/where-to-go/lahemaa-national-park-estonia'},
@@ -15,7 +17,11 @@ export const REGIONS={
  espagne:{city:'Les patios de Séville',craft:'La place des azulejos',rural:'Les oliviers d’Andalousie',crop:'olive',paving:'#d0b591',earth:'#b79f70',source:'https://www.spain.info/en/region/andalusia/'},
 };
 export const DISTRICT_SPOTS=[{key:'city',x:-18,z:-12,r:35},{key:'craft',x:-18,z:17,r:14},{key:'rural',x:48,z:28,r:23}];
-export function districtAt(region,position,transform){if(region==='hub')return REGIONS.hub.city;const config=REGIONS[region]||REGIONS.hub;let closest='Les chemins du pays',best=Infinity;const outer=[{x:-101,z:-8,name:config.city+' · quartier ancien'},{x:-40,z:-96,name:config.craft+' · faubourg'},{x:88,z:66,name:config.rural+' · village'}];for(const d of outer){const p=transform(d.x,d.z);if(Math.hypot(p.x-position.x,p.z-position.z)<62)return d.name;}for(const d of DISTRICT_SPOTS){const p=transform(d.x,d.z),distance=Math.hypot(p.x-position.x,p.z-position.z);if(distance<d.r*1.6&&distance<best){closest=config[d.key];best=distance;}}return closest;}
+export function districtAt(region,position,transform){if(region==='hub'){
+ let best=null,distance=Infinity;
+ for(const district of hubPlan.districts){const p=hubDistrictPosition(hubPlan,district.id),d=Math.hypot(p.x-position.x,p.z-position.z);if(d<distance){distance=d;best=district;}}
+ return distance<165?best?.name||REGIONS.hub.city:REGIONS.hub.city;
+}const config=REGIONS[region]||REGIONS.hub;let closest='Les chemins du pays',best=Infinity;const outer=[{x:-101,z:-8,name:config.city+' · quartier ancien'},{x:-40,z:-96,name:config.craft+' · faubourg'},{x:88,z:66,name:config.rural+' · village'}];for(const d of outer){const p=transform(d.x,d.z);if(Math.hypot(p.x-position.x,p.z-position.z)<62)return d.name;}for(const d of DISTRICT_SPOTS){const p=transform(d.x,d.z),distance=Math.hypot(p.x-position.x,p.z-position.z);if(distance<d.r*1.6&&distance<best){closest=config[d.key];best=distance;}}return closest;}
 // Rounded corners are shared by rendering, footprints and the mini-map.
 function roundLane(points){
  const result=[points[0]];
