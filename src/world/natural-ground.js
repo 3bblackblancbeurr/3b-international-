@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {surfaceTexture} from './surfaces.js';
+import {wetnessForWeather} from './wetness.js';
 
 export const GROUND_STYLE={
  hub:{dry:.08,soil:'#5e5a48',grass:'#667e4b',count:19000},france:{dry:.1,soil:'#8d7a5b',grass:'#6d8c50',count:18000},
@@ -50,8 +51,9 @@ export function createNaturalGround(region){
    `);
  };
  material.customProgramCacheKey=()=> '3b-ground-premium-4';
- function setWeather(weather){uniforms.surfaceWetness.value=weather==='storm'?1:weather==='heavy_rain'?.82:weather==='rain'?.52:weather==='fog'?.22:.06;}
+ function setWetness(value){uniforms.surfaceWetness.value=Math.max(0,Math.min(1,Number(value)||0));}
+ function setWeather(weather){setWetness(wetnessForWeather(weather));}
  function setDaylight(value){uniforms.daylight.value=Math.max(0,Math.min(1,Number(value)||0));}
  function setQuality(mode){uniforms.detailStrength.value=mode==='fluid'?.45:mode==='detail'?1.15:.82;material.bumpScale=mode==='fluid'?.012:mode==='detail'?.032:.024;material.needsUpdate=true;}
- return {material,texture,setWeather,setDaylight,setQuality};
+ return {material,texture,setWetness,setWeather,setDaylight,setQuality};
 }
