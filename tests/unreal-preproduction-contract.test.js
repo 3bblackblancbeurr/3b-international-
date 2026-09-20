@@ -58,3 +58,25 @@ test('backend JSON schemas preserve account and City ownership boundaries',()=>{
  assert.equal(city.properties.placements.items.properties.rotation.enum.length,4);
  assert.equal(world.properties.version.const,1);
 });
+
+test('world-bootstrap is account-scoped and read-only by construction',()=>{
+ const source=readText('../supabase/functions/world-bootstrap/index.ts');
+ assert.match(source,/const uid=await authenticate\(req\)/);
+ assert.match(source,/member_profiles\?user_id=eq\.'\+uid/);
+ assert.match(source,/member_world_state\?user_id=eq\.'\+uid/);
+ assert.match(source,/nexus_cities\?user_id=eq\.'\+uid/);
+ assert.doesNotMatch(source,/body\.user_id/);
+ assert.doesNotMatch(source,/req\.json\(\)/);
+ assert.doesNotMatch(source,/SUPABASE_SERVICE_ROLE_KEY\s*=\s*['"][^'"]+/);
+});
+
+test('Unreal backend subsystem requires a user session and uses weak async ownership',()=>{
+ const header=readText('../unreal/3BWorld/Source/ThreeBWorld/Public/ThreeBBackendSubsystem.h');
+ const source=readText('../unreal/3BWorld/Source/ThreeBWorld/Private/ThreeBBackendSubsystem.cpp');
+ assert.match(header,/HasAuthenticatedSession/);
+ assert.match(header,/RequestWorldBootstrap/);
+ assert.match(source,/TWeakObjectPtr<UThreeBBackendSubsystem>/);
+ assert.match(source,/Authorization/);
+ assert.match(source,/Bearer /);
+ assert.doesNotMatch(source,/service_role/i);
+});
