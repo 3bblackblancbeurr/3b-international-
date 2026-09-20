@@ -338,3 +338,12 @@ test('VFX hierarchy reduces permanent neon in daylight while preserving night id
  assert.match(post,/streak\*\.045\*flare\*intensity/);
  assert.match(post,/\.0075\*grain\*intensity/);
 });
+
+
+test('natural ground uses separated linear bump and roughness maps and disposes them with the landscape',()=>{
+ const ground=read('src/world/natural-ground.js'),landscape=read('src/world/landscape.js');
+ assert.match(ground,/surfaceMaterialMaps\('grass'\)/);
+ assert.match(ground,/bumpMap:maps\.bumpMap/);
+ assert.match(ground,/roughnessMap:maps\.roughnessMap/);
+ assert.match(landscape,/Object\.values\(soil\.maps\|\|\{\}\)/);
+});
