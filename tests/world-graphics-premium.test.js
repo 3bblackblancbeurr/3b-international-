@@ -56,3 +56,12 @@ test('premium exploration HUD keeps information but reduces its visual footprint
  assert.match(css,/width:118px/);
  assert.match(css,/\.world-shell \.play-interaction/);
 });
+
+
+test('the eight hub portals receive a monumental outer frame without changing country portal logic',()=>{
+ const scene=read('src/world/scene.js'),portals=read('src/world/portals.js');
+ assert.match(scene,/if\(region==='hub'\)/);
+ assert.match(scene,/TorusGeometry\(1,\.045,8,96\)/);
+ assert.match(scene,/obstacles\.push\(\{x:px,z:item\.z,r:\.72\}\)/);
+ assert.match(portals,/Eight crafted thresholds/);
+});
