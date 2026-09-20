@@ -87,3 +87,14 @@ test('client no longer advertises a hard-coded game reward rate',()=>{
  assert.doesNotMatch(source,/20 XP et 1 point par minute/);
  assert.match(source,/gains calculés, plafonnés et validés par le serveur/);
 });
+
+test('permanent item minting is idempotent by owner and origin reference',()=>{
+ const sql=read('../supabase/migrations/20260920205347_threeb_item_origin_idempotence_hardening.sql');
+ assert.match(sql,/create unique index if not exists item_instances_owner_origin_ref_unique[\s\S]*owner_id,origin_ref[\s\S]*origin_ref is not null/i);
+ assert.match(sql,/pg_advisory_xact_lock[\s\S]*item-origin:/i);
+ assert.match(sql,/where owner_id=p_user[\s\S]*origin_ref=normalized_origin_ref/i);
+ assert.match(sql,/if existing_id is not null[\s\S]*return existing_id/i);
+ assert.match(sql,/raise exception 'origin_ref_conflict'/i);
+ assert.match(sql,/revoke all on function public\.market_mint_item[\s\S]*from public,anon,authenticated/i);
+ assert.match(sql,/grant execute on function public\.market_mint_item[\s\S]*to service_role/i);
+});
