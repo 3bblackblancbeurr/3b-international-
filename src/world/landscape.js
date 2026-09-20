@@ -67,7 +67,7 @@ export function createLandscape(models,region,save,onError=console.error){
   flora.plant(type,x,height(x,z),z,size,rng()*Math.PI*2,root);collisions.push({x,z,r:.65});
  }
  // One continuous surface, with no radial paths or raised navigation decks.
- const ground=geo(new THREE.PlaneGeometry(1000,1000,220,220));ground.rotateX(-Math.PI/2);
+ const groundSize=hub?1500:1000,groundSegments=hub?240:220;const ground=geo(new THREE.PlaneGeometry(groundSize,groundSize,groundSegments,groundSegments));ground.rotateX(-Math.PI/2);
  const positions=ground.getAttribute('position'),colors=new Float32Array(positions.count*3),low=new THREE.Color(biome.low),high=new THREE.Color(biome.high),rock=new THREE.Color(biome.rock),color=new THREE.Color();
  for(let i=0;i<positions.count;i++){const x=positions.getX(i),z=positions.getZ(i),y=height(x,z);positions.setY(i,y);const mottling=.48+.12*Math.sin(x*.17)*Math.cos(z*.19)+.06*Math.sin(x*1.37-z*.82),slope=Math.abs(height(x+.7,z)-y)+Math.abs(height(x,z+.7)-y);color.copy(low).lerp(high,Math.max(0,Math.min(1,mottling))).lerp(rock,Math.min(.8,slope*.55));colors.set(color.toArray(),i*3);}
  ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);if(soil.texture)owned.push(soil.texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
