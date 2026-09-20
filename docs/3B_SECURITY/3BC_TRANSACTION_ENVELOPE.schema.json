@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b.international/security/3bc-transaction-envelope.schema.json",
+  "title": "3BC Signed Transaction Envelope — Draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol_version",
+    "suite_id",
+    "network_id",
+    "sender",
+    "recipient",
+    "asset_id",
+    "amount",
+    "nonce",
+    "payload_hash",
+    "signature"
+  ],
+  "properties": {
+    "protocol_version": {"type": "string", "minLength": 1, "maxLength": 32},
+    "suite_id": {"type": "string", "minLength": 3, "maxLength": 64},
+    "network_id": {"type": "string", "minLength": 3, "maxLength": 64},
+    "sender": {"type": "string", "minLength": 8, "maxLength": 256},
+    "recipient": {"type": "string", "minLength": 8, "maxLength": 256},
+    "asset_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "amount": {"type": "string", "pattern": "^[0-9]+$"},
+    "nonce": {"type": "string", "pattern": "^[0-9]+$"},
+    "valid_until": {"type": ["string","null"], "format": "date-time"},
+    "payload_hash": {"type": "string", "minLength": 32, "maxLength": 256},
+    "signature": {"type": "string", "minLength": 32, "maxLength": 512},
+    "memo_hash": {"type": ["string","null"], "maxLength": 256}
+  }
+}
