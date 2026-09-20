@@ -90,7 +90,7 @@ export function addPremiumMicroDetails({region,field,root,owned}){
  }
  let cable=null;
  if(cablePoints.length){
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(cablePoints,3));const m=new THREE.LineBasicMaterial({color:'#11171c',transparent:true,opacity:.58});cable=new THREE.LineSegments(g,m);root.add(cable);owned.push(g,m,cable);
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(cablePoints,3));const m=new THREE.LineBasicMaterial({color:'#11171c',transparent:true,opacity:.58});cable=new THREE.LineSegments(g,m);root.add(cable);owned.push(g,m);
  }
 
  return{
