@@ -50,12 +50,13 @@ const BUILDING_SHAPES={
 function buildingOffset(id,index){
   const h=hash(id),angle=(h%628)/100;
   const radius=32+(h>>>8)%34+index%3*8;
-  return {x:Math.cos(angle)*radius,z:Math.sin(angle)*radius};
+  return {x:Math.cos(angle)*radius,z:Math.sin(angle)*radius,angle};
 }
 
 function buildingItem(plan,building,index){
   const center=hubDistrictPosition(plan,building.district),offset=buildingOffset(building.id,index);
   const [width,depth,height]=BUILDING_SHAPES[building.id]||[42,30,22+building.tier*8];
+  const buildingX=center.x+offset.x,buildingZ=center.z+offset.z,entranceDistance=Math.max(width,depth)/2+8;
   return {
     id:`hub:building:${building.id}`,
     type:'hubBuilding',
@@ -65,10 +66,11 @@ function buildingItem(plan,building,index){
     functions:building.functions||[],
     interior:building.interior||'none',
     tier:building.tier||0,
-    x:center.x+offset.x,
-    z:center.z+offset.z,
+    x:buildingX+Math.cos(offset.angle)*entranceDistance,
+    z:buildingZ+Math.sin(offset.angle)*entranceDistance,
+    buildingX,buildingZ,
     width,depth,height,
-    range:Math.max(7,Math.min(12,Math.max(width,depth)*.16)),
+    range:8,
   };
 }
 
