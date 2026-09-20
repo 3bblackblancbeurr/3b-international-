@@ -10,6 +10,15 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
  const data=await r.json().catch(()=>null);if(!r.ok)throw new Failure(r.status>=500?503:400,'Synchronisation momentanément indisponible.');return data;
 }
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
+async function cityProof(uid:string){
+ const city=(await api('/rest/v1/nexus_cities?user_id=eq.'+uid+'&select=city_id&limit=1'))?.[0];
+ if(!city?.city_id)return{founded:false,synced:false,built:false};
+ const [placements,syncRows]=await Promise.all([
+  api('/rest/v1/nexus_city_placements?city_id=eq.'+city.city_id+'&placement_state=eq.placed&select=id&limit=1'),
+  api('/rest/v1/nexus_city_journal?user_id=eq.'+uid+'&city_id=eq.'+city.city_id+'&action=eq.world_sync&select=id&limit=1'),
+ ]);
+ return{founded:true,synced:!!syncRows?.[0],built:!!placements?.[0]};
+}
 async function authenticate(req:Request){
  const header=req.headers.get('authorization')||'';if(!header.startsWith('Bearer '))throw new Failure(401,'Connecte-toi à ton compte 3B.');
  const response=await fetch(BASE+'/auth/v1/user',{headers:{apikey:PUBLIC,Authorization:header},signal:AbortSignal.timeout(10000)});
@@ -48,7 +57,9 @@ Deno.serve(async req=>{
     if(entry.seq<=seq)continue;
     if(entry.seq!==seq+1)throw new Failure(409,'Une action manque dans le journal. Rouvre le monde pour synchroniser.');
     try{
-     const next=applyWorldAction(data,entry.action);
+     if(entry.action.type==='hubCityProof')throw Error('Action Ville 3B interne refusée.');
+     const action=entry.action.type==='hubCitySync'?{type:'hubCityProof',proof:await cityProof(uid)}:entry.action;
+     const next=applyWorldAction(data,action);
      if(entry.action.type==='walk'&&next.walked-Number(row.walk_baseline)>(Date.now()-Date.parse(row.created_at))/1000*3+200)throw Error('Cette distance est trop rapide.');
      data=next;
     }catch(error){rejected.push({seq:entry.seq,message:error instanceof Error?error.message:'Action non validée.'});}
