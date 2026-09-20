@@ -1,0 +1,78 @@
+name: World public release audit
+on:
+  push:
+    branches: [chatgpt-improvements-world-production-audit-20260920]
+    paths: [.github/workflows/world-public-release-audit.yml]
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PRODUCTION_SHA: 73dab31e4d7de2fc2e76b87bc237561e092bbd65
+      WORLD_TEST_URL: https://3b-international.vercel.app
+      WORLD_TEST_OUT: artifacts/world-public
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 73dab31e4d7de2fc2e76b87bc237561e092bbd65
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Associate this public-browser audit with the deployed main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$PRODUCTION_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$PRODUCTION_SHA" -f state=pending -f context=threeb/production-browser -f description='Checking actual public URL in PC and touch browsers' -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - run: npm ci --no-audit --no-fund
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1 && npx playwright install --with-deps chromium
+      - name: Capture the public HTTP response and loaded module URLs without changing the deployed app
+        run: |
+          mkdir -p artifacts/world-public
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          const url=process.env.WORLD_TEST_URL+'/?release_audit='+process.env.PRODUCTION_SHA;
+          const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(30000)});
+          if(!response.ok)throw Error('Public HTTP '+response.status);
+          const html=await response.text();
+          const scripts=[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g)].map(m=>new URL(m[1],url).href);
+          if(!scripts.length)throw Error('No application entry script returned');
+          fs.writeFileSync('artifacts/world-public/public-response.json',JSON.stringify({url:response.url,status:response.status,etag:response.headers.get('etag'),cacheControl:response.headers.get('cache-control'),scripts,expectedMain:process.env.PRODUCTION_SHA},null,2));
+          JS
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/verify-world-release-browser.mjs');s=p.read_text()
+          assert 'const report=[];' in s
+          s=s.replace('const report=[];','const report=[]; const servedModules=new Set();')
+          assert 'const page=await context.newPage();' in s
+          s=s.replace('const page=await context.newPage();',"const page=await context.newPage();page.on('response',response=>{const url=response.url();if(url.includes('/assets/')&&url.endsWith('.js'))servedModules.add(url);});")
+          assert 'await browser.close();fs.writeFileSync' in s
+          s=s.replace('await browser.close();fs.writeFileSync',"await browser.close();fs.writeFileSync(out+'/served-modules.json',JSON.stringify([...servedModules],null,2));fs.writeFileSync")
+          p.write_text(s)
+          PY
+      - name: Run the same validated onboarding and save-reload checks against production
+        id: test
+        run: |
+          set -euo pipefail
+          node scripts/verify-world-release-browser.mjs
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$PRODUCTION_SHA"
+      - name: Record the observed public result, never a preview result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.test.outcome }}
+        run: |
+          STATE=failure; test "$RESULT" = success && STATE=success
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$PRODUCTION_SHA" -f state="$STATE" -f context=threeb/production-browser -f description="Public PC and touch browser audit: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-public-release-proof
+          path: artifacts/world-public/
+          retention-days: 7
