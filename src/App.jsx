@@ -119,7 +119,7 @@ export default function App() {
     normalizeMember(loadJsonStorage(STORAGE_MEMBER_KEY, createTestMember()))
   );
 
-  const member = loyalty.profile ? remoteMember(loyalty.profile) : localMember;
+  const member = loyalty.profile ? remoteMember(loyalty.profile) : (!loyalty.loading && !loyalty.user ? localMember : createTestMember());
   const [options, setOptions] = useState(() =>
     normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
@@ -233,7 +233,8 @@ export default function App() {
 
       {page === "passport" && (
         <PassportPage
-          member={member}
+          identity={loyalty.passport}
+          syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
           goTo={goTo}
         />
@@ -283,39 +284,40 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ member, goTo, options }) {
+function PassportPage({ identity, syncing, goTo, options }) {
   return (
     <section className="page-section">
       <PageHeader
         title="Passeport 3B"
         subtitle={
-          member.isRegistered
-            ? "Ton identité digitale dans l’univers 3B."
-            : "Crée ton passeport 3B pour débloquer ton espace membre."
+          syncing
+            ? "Synchronisation sécurisée de ton identité 3B."
+            : identity
+              ? `Passeport personnel de ${identity.name} · ${identity.country}.`
+              : "Crée ton compte pour générer ton passeport 3B personnel."
         }
         goTo={goTo}
       />
 
-      <PassportVisual options={options} />
+      <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
 
       <div className="info-grid">
         <article className="premium-panel">
-          <p className="eyebrow">Identité digitale</p>
-          <h2>{member.isRegistered ? member.passportId : "Non activé"}</h2>
+          <p className="eyebrow">Identité unique 3B</p>
+          <h2>{syncing ? "Synchronisation…" : identity ? identity.passportId : "Non activé"}</h2>
           <p>
-            Ton passeport est lié à ton compte 3B connecté. Un ancien profil local reste disponible sur cet appareil.
+            Le passeport lit uniquement le profil du compte connecté. Jeux, Monde 3B, Ville 3B, fidélité et boutique utilisent le même identifiant utilisateur.
           </p>
         </article>
 
         <article className="premium-panel">
-          <p className="eyebrow">Origine active</p>
-          <h2>{member.originCountry || "France"}</h2>
+          <p className="eyebrow">Origine du titulaire</p>
+          <h2>{identity ? `${identity.flag} ${identity.country}` : "À définir à l’inscription"}</h2>
           <p>
-            Ton pays d’origine sera lié à ton passeport, à tes cartes et à tes
-            futurs personnages 3B.
+            Le pays enregistré dans ton compte devient l’origine de référence de ton passeport et des expériences 3B qui utilisent cette identité.
           </p>
 
-          {!member.isRegistered && (
+          {!identity && !syncing && (
             <button type="button" className="primary-button" onClick={() => goTo("member")}>
               Activer mon passeport 3B
             </button>
