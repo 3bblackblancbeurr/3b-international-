@@ -223,13 +223,13 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
   playCinematicShot(kind,context={},duration=5200){
    const encounter=save.adventure.encounter||{},now=performance.now(),major=['country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind);
    let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16;
-   if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=portrait?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
+   if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=camera.aspect<.85?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
    else if(['guardian-intro','final-combat-intro','important-combat-result'].includes(kind)){
     const rival=battleTarget||items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===(context.card||encounter.card));
     if(rival){focus={x:rival.x,z:rival.z};radius=kind==='final-combat-intro'?18:12;height=kind==='final-combat-intro'?11:7.5;focusY=2.2;arc=.52;dolly=.18;angle=orbit.yaw-.3;}
    }else if(kind==='story-restoration'&&region!=='hub'){
     const stage=context.stage||save.adventure.chapters[region]?.restored||1;
-    focus=toLandscape(region,...(stage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:stage===2?[29,15]:[11,-4]));heritage=stage===3;radius=heritage?(portrait?110:98):18;height=heritage?35:11;focusY=heritage?27:2.4;arc=.34;dolly=.12;
+    focus=toLandscape(region,...(stage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:stage===2?[29,15]:[11,-4]));heritage=stage===3;radius=heritage?(camera.aspect<.85?110:98):18;height=heritage?35:11;focusY=heritage?27:2.4;arc=.34;dolly=.12;
    }else if(kind==='discovery'){
     const place=items.find(i=>i.id===region+':survey:'+context.place);if(place)focus={x:place.x,z:place.z};radius=14;height=9;focusY=2.2;arc=.3;dolly=.1;
    }else if(kind==='story-power'){radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
