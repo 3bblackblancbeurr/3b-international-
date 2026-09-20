@@ -4,15 +4,7 @@ import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.js';
 import {hubNpcSchedule} from './npc-schedule.js';
 import {guardianHubPresence} from '../guardian-values.js';
-
-const DEFAULT_SCALE = 74;
-
-export function hubDistrictPosition(plan, districtId, scale = DEFAULT_SCALE) {
-  const district = plan.districts.find((entry) => entry.id === districtId);
-  if (!district) return null;
-  const [u, v] = district.center;
-  return { x: (u - 0.5) * scale * 2, z: (v - 0.5) * scale * 2 };
-}
+import {buildMetropolisRuntimeItems,hubDistrictPosition} from './metropolis.js';
 
 function hash(input) {
   let value = 2166136261;
@@ -47,6 +39,7 @@ export function buildHubRuntimeItems({
   seals = [],
   restoredRegions = [],
 }) {
+  const metropolis=buildMetropolisRuntimeItems(plan,profile);
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
     type: 'hubDistrict',
@@ -168,7 +161,7 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...metropolis.items, ...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
@@ -185,6 +178,7 @@ export function buildHubRuntimeItems({
       activeSecrets: secretItems.length,
       secretSteps: secretStepItems.length,
       profile,
+      metropolis:metropolis.meta,
     },
   };
 }
