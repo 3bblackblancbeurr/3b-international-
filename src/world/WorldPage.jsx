@@ -41,6 +41,7 @@ import {isAutoHubMission} from './hub/mission-signals.js';
 import {worldCinematicEvents} from './cinematic-events.js';
 import {storyCinematicPresentation} from './story-cinematic.js';
 import {City3BPanel} from '../city/City3BPanel.jsx';
+import {cityUnlockGuide,cityUnlockGuideRequested,cityUnlockGuideStorage} from './city-unlock-guide.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -69,13 +70,16 @@ function WorldSession({uid,goTo}){
  const[save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[snapshot,setSnapshot]=useState({region:'hub',position:{x:0,z:9}}),[panel,setPanel]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[saveMessage,setSaveMessage]=useState('Chargement de la sauvegarde…'),[gps,setGPS]=useState(false),[gpsMessage,setGPSMessage]=useState('Le GPS est désactivé.'),[walkSession,setWalkSession]=useState(0),[sound,setSound]=useState(false);
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const [audioMix,setAudioMix]=useState(()=>{try{return {...DEFAULT_AUDIO_MIX,...JSON.parse(localStorage.getItem('3b-world-audio-mix')||'{}')}}catch{return {...DEFAULT_AUDIO_MIX}}});
+ const [cityUnlockMission,setCityUnlockMission]=useState(()=>cityUnlockGuideRequested());
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
  const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null),[storyCinematic,setStoryCinematic]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
  const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),dialogueTurns=useRef(new Map()),cinematicKeys=useRef(new Set());
  saveRef.current=save;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
+ const cityGuide=useMemo(()=>cityUnlockGuide(save),[save]);
  const announce=useCallback(text=>{setNotice(text);clearTimeout(noticeTimer.current);noticeTimer.current=setTimeout(()=>setNotice(''),2400);},[]);
+ useEffect(()=>{if(cityUnlockMission&&cityGuide.unlocked){cityUnlockGuideStorage(false);setCityUnlockMission(false);announce('Ville 3B débloquée · ton premier Souvenir est enregistré.');}},[cityUnlockMission,cityGuide.unlocked,announce]);
  const enqueueCinematics=useCallback(events=>{
   if(!events?.length)return;
   const fresh=events.filter(event=>{if(cinematicKeys.current.has(event.key))return false;cinematicKeys.current.add(event.key);return true;});
@@ -187,6 +191,12 @@ function WorldSession({uid,goTo}){
  const valueRule=GUARDIAN_VALUES[save.region],valueState=save.adventure.values?.[save.region],valueStep=valueRule?guardianValueStep(save.region,valueState):null,valueOptions=valueRule?guardianValueOptions(save.region,valueState):[];
  function navigateTo(id){const item=regionItems.find(i=>i.id===id);if(item)navigate(item);}
  function navigate(item){scene.current?.waypoint(item,false);setPanel(null);}
+ function followCityUnlock(){
+  if(cityGuide.action==='atlas'){setPanel('atlas');return;}
+  const item=regionItems.find(i=>i.id===cityGuide.target);
+  if(item){scene.current?.waypoint(item,true);setPanel(null);announce(cityGuide.title+' · suis le repère lumineux.');return;}
+  setPanel('atlas');announce('Ouvre l’Atlas pour rejoindre l’étape suivante.');
+ }
  function exportSave(){const blob=new Blob([JSON.stringify(saveRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-monde-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
  async function importSave(event){const file=event.target.files?.[0];if(!file)return;try{if(file.size>300000)throw Error();const raw=JSON.parse(await file.text());if(raw.version!==1||!raw.collection)throw Error();if(uid){announce('Les comptes restaurent leur progression depuis le serveur. Ta copie peut être utilisée en mode invité.');return;}const restored=normalizeSave(raw);setSave(restored);saveRef.current=restored;scene.current?.setSave(restored);writeLocal(null,restored);dirty.current=true;scene.current?.travel(restored.region);announce('Ta copie de sauvegarde a été restaurée.');}catch{announce('Ce fichier n’est pas une sauvegarde du Monde 3B valide.');}event.target.value='';}
  return <section ref={shell} className="world-shell" aria-label="Le Monde du 3B">
@@ -195,6 +205,13 @@ function WorldSession({uid,goTo}){
   {storyCinematic&&<div className="world-story-cinematic" role="dialog" aria-modal="true" aria-label={storyCinematic.title}><article className={'world-story-cinematic-card'+(storyCinematic.card?'':' no-art')}>{storyCinematic.card&&cardById[storyCinematic.card]&&<Art card={cardById[storyCinematic.card]} className="story-cinematic-art"/>}<div><span className="world-kicker">{storyCinematic.kicker}</span><h2>{storyCinematic.title}</h2><p>{storyCinematic.detail}</p><button className="world-primary" onClick={finishStoryCinematic}>{storyCinematic.nextLabel}</button></div></article></div>}
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
   <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
+  {uid&&loaded&&cityUnlockMission&&!cityGuide.unlocked&&!panel&&<aside className="world-city-unlock-guide" aria-label="Mission de déblocage Ville 3B">
+   <button className="world-city-unlock-dismiss" aria-label="Masquer la mission Ville 3B" onClick={()=>{cityUnlockGuideStorage(false);setCityUnlockMission(false);}}>×</button>
+   <small>VILLE 3B · ÉTAPE {cityGuide.step}/{cityGuide.total}</small>
+   <strong>{cityGuide.title}</strong>
+   <p>{cityGuide.detail}</p>
+   <button className="world-primary" onClick={followCityUnlock}>{cityGuide.action==='beacon'?'Guider vers le Souvenir':cityGuide.action==='story'?'Guider vers la mission':cityGuide.action==='travel'?'Guider vers la porte':'Choisir un pays'}</button>
+  </aside>}
   {!panel&&<><button className="play-button play-party" aria-label="Groupe et coopération" title="Groupe et coopération" onClick={()=>setPanel('party')}><Users size={21}/></button>{partyState?.party&&<span className={'party-online '+connection}>{connection==='connected'?'● Groupe '+partyState.members.length+'/4':'Reconnexion…'}</span>}</>}
   {snapshot.cinematic&&!panel&&!storyCinematic&&<div className="play-cinematic"><div><h2>{snapshot.cinematic.title}</h2><p>{snapshot.cinematic.detail}</p></div><button onClick={()=>scene.current?.skipCinematic()}>Passer</button></div>}
   {gps&&!panel&&<button className="play-gps" onClick={()=>setPanel('gps')} aria-label="Sortie GPS"> <Footprints size={16}/> {walkSession} m</button>}
