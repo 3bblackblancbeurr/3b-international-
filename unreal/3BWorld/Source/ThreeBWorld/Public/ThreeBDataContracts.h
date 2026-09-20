@@ -86,3 +86,30 @@ struct FThreeBWorldProgress
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<FString> Seals;
 };
+
+USTRUCT(BlueprintType)
+struct FThreeBWorldBootstrap
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString UserId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FThreeBPassportIdentity Passport;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FThreeBWorldProgress World;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FThreeBCitySnapshot City;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    bool HasPassport = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    bool HasWorldSave = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    bool HasCity = false;
+};
