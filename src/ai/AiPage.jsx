@@ -3,11 +3,11 @@ import {useEffect,useRef,useState} from 'react';
 import {ArrowLeft,ArrowRight,Layers3,Shirt,Sparkles,Send,Download,Mic,Square,Check} from 'lucide-react';
 import {GARMENT_GROUPS,GARMENTS,MATERIAL_GROUPS,MATERIALS,CUTS,PATTERNS,TECHNIQUES,DEFAULT_DESIGN,garmentFamily,textilePrompt,validateDesign} from '../../shared/studio.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
-import {ECOSYSTEM_URL,ecosystem} from '../lib/ecosystem.js';
+import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import CompactCard from '../components/CompactCard.jsx';
 import DesignPreview from './DesignPreview.jsx';
 import './studio.css';
-function useCapabilities(){const[caps,setCaps]=useState(null);useEffect(()=>{const c=new AbortController();fetch(ECOSYSTEM_URL+'?section=capabilities',{signal:c.signal}).then(r=>{if(!r.ok)throw Error();return r.json();}).then(setCaps).catch(()=>setCaps({}));return()=>c.abort();},[]);return caps;}
+function useCapabilities(){const[caps,setCaps]=useState(null);useEffect(()=>{const c=new AbortController();ecosystemPublic('capabilities',{signal:c.signal}).then(setCaps).catch(()=>setCaps({}));return()=>c.abort();},[]);return caps;}
 function readDraft(){try{const saved=JSON.parse(localStorage.getItem('3b-studio-config')||'null');return saved?{design:validateDesign(saved.design||saved),idea:typeof saved.idea==='string'?saved.idea.slice(0,2000):''}:{design:DEFAULT_DESIGN,idea:''};}catch{return {design:DEFAULT_DESIGN,idea:''};}}
 function GroupOptions({groups}){return Object.entries(groups).map(([label,options])=><optgroup label={label} key={label}>{options.map(x=><option key={x}>{x}</option>)}</optgroup>);}
 const PRESETS={Essentiel:{material:'Coton épais',pattern:'Uni',techniques:['Broderie'],color:'#14191e',accent:'#e4c17b'},Sport:{material:'Jersey technique',pattern:'Rayures',techniques:['Sublimation'],color:'#142e45',accent:'#e4c17b'},Signature:{material:'Jacquard',pattern:'Monogramme',techniques:['Jacquard tissé'],color:'#172523',accent:'#cfba83'}};
