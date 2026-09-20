@@ -2,7 +2,7 @@ import {validateAccount,accountEmail,themeFor,GAMES,EXPLORATIONS} from './loyalt
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
-const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174','http://127.0.0.1:5186','http://127.0.0.1:5187']);
+const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174','http://127.0.0.1:5186','http://127.0.0.1:5187']);
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const secret=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
 class Failure extends Error {constructor(public status:number,message:string){super(message);}}
@@ -69,6 +69,14 @@ Deno.serve(async req=>{
   }
   const uid=await authenticate(req);
   if(!await rpc('loyalty_rate',{p_key:uid+':requests',p_limit:100,p_window:60}))throw new Failure(429,'Patiente un instant puis réessaie.');
+  if(action==='prestige'){
+   if(!await rpc('loyalty_rate',{p_key:uid+':prestige',p_limit:5,p_window:3600}))throw new Failure(429,'Patiente avant de réessayer.');
+   const current=await snapshot(uid);
+   const next=Number(current?.economy?.next_prestige_level||0);
+   if(current?.economy?.prestige_eligible!==true||next<1||next>3)throw new Failure(403,'Les conditions du prochain Prestige ne sont pas encore remplies.');
+   const prestige=await rpc('threeb_unlock_prestige_server',{p_user:uid,p_event_id:'prestige:'+next+':v1'});
+   return reply({prestige,...await snapshot(uid)});
+  }
   if(action==='snapshot')return reply(await snapshot(uid));
   if(action==='daily'||action==='explore'){
    const kind=action==='daily'?'daily':body.page;if(action==='explore'&&!Object.hasOwn(EXPLORATIONS,kind))throw new Failure(400,'Découverte inconnue.');
