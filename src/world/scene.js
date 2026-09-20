@@ -78,7 +78,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function syncEscort(){if(!models)return;if(save.adventure.companionHidden){escort?.object.removeFromParent();escort?.dispose();escort=null;escortId=null;trail=[];return;}const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
  function rebuild(nextRegion){
   onLoadState?.(true);
-  partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;fieldRival=null;combatFx.clear();lastCombat=null;
+  partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());actors=[];scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;items=landscapeItems(region,save);position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
@@ -156,7 +156,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function tick(now){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
-  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until)shot=null;if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
+  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
   const dt=Math.min(rawDt,.25);elapsed+=dt;let travelled=0,dx=0,dz=0;
   if(!paused&&!shot){
    if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
@@ -239,10 +239,12 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
     const resident=items.find(i=>i.type==='story'||i.id===region+':story');
     if(resident)focus={x:resident.x,z:resident.z};radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
    }else if(kind==='story-power'){radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
+   const accent=countryById[region]?.color||'#58d1ff',micro=['memory-fragment','discovery','story-power'].includes(kind);
+   post.setCinematic({active:true,intensity:major?1:micro?.72:.84,accent,secondary:'#e0c486'});
    shot={...focus,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,title:'',detail:''};clearInput();needsRender=true;
   },
-  inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);shot={...p,angle:-BIOMES[region].angle+.35,duration:6500,until:performance.now()+6500,heritage:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
-  skipCinematic(){shot=null;needsRender=true;},
+  inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),duration=6500;post.setCinematic({active:true,intensity:.82,accent:countryById[region]?.color||'#58d1ff',secondary:'#e0c486'});shot={...p,angle:-BIOMES[region].angle+.35,duration,until:performance.now()+duration,heritage:true,cinematic:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
+  skipCinematic(){if(shot?.cinematic)post.setCinematic(null);shot=null;needsRender=true;},
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,
   setCameraFollow(value){cameraFollow=!!value;if(!cameraFollow)orbit={...orbit,yaw:viewBearing(camera.position,cameraTarget)};rememberCamera();try{localStorage.setItem('3b-world-camera-follow',String(cameraFollow));}catch{}needsRender=true;},
