@@ -64,7 +64,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const combatFx=createCombatEffects({reducedMotion}),threat=createCombatTelegraph({reducedMotion});scene.add(combatFx.root,threat.root);let lastCombat=null;const opponentPosition=new THREE.Vector3();
  const register=asset=>(resources.push(asset),asset),sceneWetness={value:.06},sceneDaylight={value:1};let sceneWetnessTarget=.06;
  const material=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materialCache.has(key)){
-  const m=new THREE.MeshStandardMaterial({color,roughness:.8,metalness:.08,...extra});
+  const physical=['clearcoat','transmission','ior','thickness','specularIntensity'].some(key=>extra[key]!==undefined),Material=physical?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;const m=new Material({color,roughness:.8,metalness:.08,...extra});
   if(!extra.transparent){const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.sceneWetness=sceneWetness;shader.uniforms.sceneDaylight=sceneDaylight;shader.vertexShader='varying vec3 sceneSurfacePos;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nsceneSurfacePos=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 sceneSurfacePos;uniform float sceneWetness;uniform float sceneDaylight;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
    float sNoise=fract(sin(dot(floor(sceneSurfacePos.xz*2.1),vec2(12.9898,78.233)))*43758.5453);
    float sWet=sceneWetness*(.26+.74*smoothstep(.72,.97,sNoise));
