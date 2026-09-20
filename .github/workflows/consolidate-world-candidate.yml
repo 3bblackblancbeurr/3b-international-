@@ -1,0 +1,140 @@
+name: Consolidate Monde 3B candidate
+
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths: ['.github/workflows/consolidate-world-candidate.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+concurrency:
+  group: world-consolidation-candidate
+  cancel-in-progress: false
+
+jobs:
+  consolidate-and-verify:
+    if: github.ref == 'refs/heads/chatgpt-improvements-world-consolidation-20260920'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_BRANCH: chatgpt-improvements-world-consolidation-20260920
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Combine reviewed source revisions without changing main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TARGET_BRANCH"
+          mkdir -p "$RUNNER_TEMP/world-consolidation"
+          git config user.name '3B Integration Automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin refs/heads/chatgpt-improvements-city-unlock-v1:refs/remotes/origin/city-unlock-source refs/heads/chatgpt-improvements:refs/remotes/origin/cinematics-source
+          # Only independent, single-line import additions may be combined
+          # automatically. Any executable-code conflict stops the integration.
+          cat > "$RUNNER_TEMP/resolve-world-imports.py" <<'PY'
+          import pathlib, re, subprocess
+          paths = subprocess.check_output(['git','diff','--name-only','--diff-filter=U'], text=True).splitlines()
+          if not paths:
+              raise SystemExit(0)
+          pattern = re.compile(r'^<<<<<<<[^\n]*\n(.*?)^=======\n(.*?)^>>>>>>>[^\n]*\n', re.M | re.S)
+          for name in paths:
+              if name != 'src/world/WorldPage.jsx':
+                  raise SystemExit('Unreviewed conflict: ' + name)
+              path = pathlib.Path(name)
+              text = path.read_text()
+              def combine(match):
+                  lines = [line for side in match.groups() for line in side.splitlines() if line.strip()]
+                  if not lines or any(not re.fullmatch(r'\s*import\s+.+;\s*', line) for line in lines):
+                      raise SystemExit('Executable-code conflict requires review: ' + name)
+                  return ''.join(line + '\n' for line in dict.fromkeys(lines))
+              result, count = pattern.subn(combine, text)
+              if not count or re.search(r'^(<<<<<<<|=======|>>>>>>>)', result, re.M):
+                  raise SystemExit('Unresolved conflict markers: ' + name)
+              path.write_text(result)
+              subprocess.run(['git','add','--',name],check=True)
+          PY
+          CITY=ba1f8d2ec7892d79738c21e6e4665142e863231e
+          git cat-file -e "$CITY^{commit}"
+          if ! git merge-base --is-ancestor "$CITY" HEAD; then
+            if ! git merge --no-ff --no-edit "$CITY"; then
+              python3 "$RUNNER_TEMP/resolve-world-imports.py"
+              test -z "$(git diff --name-only --diff-filter=U)"
+              git commit --no-edit
+            fi
+          fi
+          # Incremental merge commits only: do not replace newer main/France
+          # files by the entire divergent chatgpt-improvements branch.
+          for source in 4a6fb16d0e0af4cc941fe0d20bae89e87d2170a2 0d8cf1d76f217fa6546dac5053561195e9cf6d60 264b2a0dd8433a9148edef27b71274229432e80d; do
+            git cat-file -e "$source^{commit}"
+            if ! git merge-base --is-ancestor "$source" HEAD; then
+              if ! git cherry-pick -x -m 1 "$source"; then
+                python3 "$RUNNER_TEMP/resolve-world-imports.py"
+                test -z "$(git diff --name-only --diff-filter=U)"
+                if git diff --cached --quiet; then
+                  git cherry-pick --skip
+                else
+                  GIT_EDITOR=true git cherry-pick --continue
+                fi
+              fi
+            fi
+          done
+          git log -8 --oneline > "$RUNNER_TEMP/world-consolidation/revisions.txt"
+          git rev-parse HEAD > "$RUNNER_TEMP/world-consolidation/tested-sha.txt"
+          git diff --stat "$GITHUB_SHA" HEAD > "$RUNNER_TEMP/world-consolidation/changes.txt"
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run the unchanged complete application validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT="$RUNNER_TEMP/world-consolidation/verify.log"
+          if npm run verify > "$REPORT" 2>&1; then
+            tail -70 "$REPORT"
+          else
+            grep -n -A 25 -B 3 -E 'not ok|error:|Error:|ERR_|failed|FAIL' "$REPORT" | head -220 || true
+            tail -50 "$REPORT"
+            exit 1
+          fi
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Publish only the verified candidate branch
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TARGET_BRANCH"
+          test "$TARGET_BRANCH" != main
+          CURRENT=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)
+          test "$CURRENT" = "$GITHUB_SHA" || { echo 'Candidate changed during validation; refusing to overwrite it.'; exit 1; }
+          VERIFIED=$(cat "$RUNNER_TEMP/world-consolidation/tested-sha.txt")
+          test "$(git rev-parse HEAD)" = "$VERIFIED"
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$VERIFIED" -f state=success -f context='3B consolidation / full verify' -f description='npm run verify passed on this exact consolidated source; not a production attestation' -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          printf 'Verified candidate: `%s`\n\nNo main update and no production promotion.\n' "$VERIFIED" >> "$GITHUB_STEP_SUMMARY"
+      - name: Capture diagnostics without credentials or account data
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/world-consolidation"
+          git status --short > "$RUNNER_TEMP/world-consolidation/git-status.txt"
+          git diff --cc > "$RUNNER_TEMP/world-consolidation/conflicts.patch"
+          if test -s "$RUNNER_TEMP/world-consolidation/conflicts.patch"; then
+            head -180 "$RUNNER_TEMP/world-consolidation/conflicts.patch"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-consolidation-review-${{ github.run_id }}
+          path: ${{ runner.temp }}/world-consolidation/
+          retention-days: 3
