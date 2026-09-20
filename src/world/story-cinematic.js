@@ -14,6 +14,7 @@ export function storyCinematicPresentation(event){
  const spec=cinematicSpec(event.kind,region);
  const base={...spec,key:event.key,kind:event.kind,region,context:event.context||{},countryName:country?.name||'3B',value,nextLabel:'Continuer'};
  switch(event.kind){
+  case 'world-opening':return {...base,countryName:'3B INTERNATIONAL',value:'Héritage',kicker:'LES HUIT PORTES',title:'LE MONDE DU 3B',detail:'Huit pays. Huit valeurs. Le voyage commence maintenant dans le monde réel du 3B.',nextLabel:'Prendre le contrôle'};
   case 'country-first-entry':return {...base,kicker:`${(country?.name||region).toUpperCase()} · ${value.toUpperCase()}`,title:country?.title||'Une nouvelle porte',detail:country?.lore||'Une nouvelle partie du Monde 3B se révèle.',nextLabel:'Entrer dans le pays'};
   case 'story-alliance':return {...base,kicker:'UN LIEN SE FORME',title:chapter?.resident||'Une alliance commence',detail:chapter?.need||'Une présence du pays accepte de marcher avec toi.'};
   case 'story-power':return {...base,kicker:`${value.toUpperCase()} · RÉSONANCE`,title:'Un pouvoir se réveille',detail:'La lumière Matrix se condense autour de toi. Cette résonance devient une capacité réelle de ton voyage.'};

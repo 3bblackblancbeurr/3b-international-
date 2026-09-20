@@ -35,3 +35,14 @@
 @media(max-height:560px) and (orientation:landscape){.world-dialog-story{width:min(620px,58vw);max-height:82svh;margin:auto auto 12px 18px}.world-dialog-story .adventure-banner{padding:10px}.world-dialog-story .adventure-dialogue{font-size:15px;margin:10px 0}}
 
 @media (min-aspect-ratio:16/10) and (min-width:720px){.tier-major .cinema-letterbox{height:12.8vh}}
+
+.recipe-world-entry{background:linear-gradient(180deg,#010409b5 0%,#01040936 28%,transparent 52%,#0104098a 100%)}
+.recipe-world-entry .cinema-world-haze{opacity:.62}
+.recipe-world-entry .cinema-world-rain{opacity:.38}
+.recipe-world-entry .cinema-world-orb{opacity:.28;right:-12%;transform:scale(1.08)}
+.recipe-world-entry .cinema-world-copy{align-self:center;max-width:min(920px,88vw);margin:auto auto 9vh;text-align:center}
+.recipe-world-entry .cinema-world-copy h2{max-width:none;font-size:clamp(42px,7vw,92px)!important;letter-spacing:-.05em}
+.recipe-world-entry .cinema-world-copy p{max-width:720px;margin:18px auto 0!important}
+.recipe-world-entry .cinema-world-kicker{letter-spacing:.34em}
+.recipe-world-entry.phase-handoff .cinema-world-copy,.recipe-world-entry.phase-handoff .cinema-world-meta,.recipe-world-entry.phase-handoff .cinema-world-signature{opacity:0;transform:translateY(-8px);transition:opacity .75s ease,transform .75s ease}
+@media(max-width:720px){.recipe-world-entry .cinema-world-copy{margin-bottom:16vh}.recipe-world-entry .cinema-world-copy h2{font-size:clamp(34px,12vw,58px)!important}.recipe-world-entry .cinema-world-rain{opacity:.26}}

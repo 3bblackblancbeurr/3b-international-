@@ -6,9 +6,9 @@ import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
 import {AvatarCinematic} from './AvatarCinematic.jsx';
 import '../arena/arena.css';
 export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null);
+ const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
- if(reveal)return <AvatarCinematic avatar={reveal} onDone={onDone}/>;
+ if(reveal)return <AvatarCinematic avatar={reveal} onDone={()=>onDone?.({firstCreation:!initiallyCreated,avatar:reveal})}/>;
  return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
   <fieldset><legend>Silhouette</legend><div className="world-actions">{['homme','femme'].map(body=><button type="button" key={body} aria-pressed={draft.body===body} onClick={()=>set('body',body)}>{body==='homme'?'Homme':'Femme'}</button>)}</div></fieldset>

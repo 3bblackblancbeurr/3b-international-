@@ -82,6 +82,10 @@ function WorldSession({uid,goTo}){
   if(presentations.length)setCinematicQueue(queue=>[...queue,...presentations]);
  },[]);
  const finishCinematic=useCallback(()=>{scene.current?.skipCinematic();setCinematicQueue(queue=>queue.slice(1));},[]);
+ const finishAvatarReveal=useCallback(({firstCreation=false}={})=>{
+  setPanel(null);
+  if(firstCreation)enqueueCinematics([{kind:'world-opening',key:'opening:gold-master-v4',region:saveRef.current.region||'hub',context:{region:saveRef.current.region||'hub'}}]);
+ },[enqueueCinematics]);
  const act=useCallback(command=>{try{const previous=saveRef.current;if(command.type==='battle'&&previous.adventure.encounter?.field){scene.current?.combatAction(command.action);return previous;}if(command.type==='battle'&&previous.region==='france'&&scene.current&&!scene.current.canBattle(command.action)){announce('Rapproche-toi de ton adversaire.');return null;}const next=recordWorldAction(uid,previous,command);saveRef.current=next;setSave(next);dirty.current=true;activity.current=Date.now();enqueueCinematics(worldCinematicEvents(previous,next,command));if(command.type!=='field'||next.adventure.encounter?.field?.last)audio.current?.event(command.type==='field'?'battle':command.type,command.type==='field'?next.adventure.encounter.field.last:command.action);scene.current?.feedback(command.type,command.action,previous,next);if(command.type==='field')scene.current?.setSave(next);if(command.type==='battle'||command.type==='field'){const cue=combatCue(previous.adventure.encounter,next.adventure.encounter,command.type==='field'?next.adventure.encounter.field.last:command.action,next.adventure.avatar);if(cue&&(cue.outgoing||cue.incoming||cue.healing))setCombatImpact({...cue,key:next.adventure.encounter.turn});}else if(['leave','visit','patrol','encounter'].includes(command.type))setCombatImpact(null);if(['restore','solve'].includes(command.type)&&(next.adventure.chapters[next.region]?.restored||0)>(previous.adventure.chapters[previous.region]?.restored||0))setPanel(null);if(next.xp>previous.xp){announce('+'+(next.xp-previous.xp)+' XP monde'+(next.shards>previous.shards?' · +'+(next.shards-previous.shards)+' éclats':''));}return next;}catch(error){announce(error.message);return null;}},[uid,announce,enqueueCinematics]);
  useEffect(()=>{audio.current?.ambience(snapshot.region,snapshot.interior);},[snapshot.region,snapshot.interior]);
  function chime(){audio.current?.event('reward');}
@@ -175,7 +179,7 @@ function WorldSession({uid,goTo}){
    {panel==='paris'&&<ParisJournal save={save} act={act} onNavigate={navigateTo} onPanel={setPanel}/>}
    {panel==='camp'&&<FrontierPanel save={save} act={act} onNavigate={navigateTo}/>}
    {panel==='arena'&&<ArenaPage onExit={closePanel} onAccount={()=>goTo('member')}/>}
-   {panel==='avatar'&&<AvatarPanel save={save} act={act} onDone={closePanel}/>}
+   {panel==='avatar'&&<AvatarPanel save={save} act={act} onDone={finishAvatarReveal}/>} 
    {panel==='collection'&&<Companions save={save} act={act}/>}
    {panel==='encounter'&&<AdventureEncounter save={save} act={act} onClose={finishEncounter} Art={Art}/>}
    {panel==='story'&&<StoryPanel save={save} act={act} onNavigate={navigateTo} onClose={closePanel}/>}
