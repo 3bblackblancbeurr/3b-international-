@@ -1,0 +1,32 @@
+name: Verify 3B Economy Hardening
+
+on:
+  pull_request:
+    paths:
+      - 'src/world/global-rewards.js'
+      - 'src/loyalty/**'
+      - 'supabase/functions/member-hub/**'
+      - 'supabase/functions/world-engine/**'
+      - 'supabase/migrations/**'
+      - 'tests/economy-hardening.test.js'
+      - '.github/workflows/verify-economy-hardening.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  economy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Economy authority tests
+        run: node --test tests/economy-hardening.test.js
+      - name: Production build
+        run: npm run build
