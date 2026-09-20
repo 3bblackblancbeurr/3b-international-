@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "btrim/trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-20",
-  "count": 104,
+  "count": 105,
   "migrations": [
     {
       "version": "20260910020445",
@@ -523,6 +523,11 @@
       "version": "20260920193130",
       "name": "threeb_economy_config_owner_only_2026_2",
       "sha256": "cdd2e0b659174316194c7169e62a3dd976fefce0efa309e829b2bbafaf1d0dc3"
+    },
+    {
+      "version": "20260920205347",
+      "name": "threeb_item_origin_idempotence_hardening",
+      "sha256": "5a1a6bf6978b1453b23cc3e03c2ea4ca392a5f91631fc9ed21ca6b7ab496dbf4"
     }
   ]
 }
