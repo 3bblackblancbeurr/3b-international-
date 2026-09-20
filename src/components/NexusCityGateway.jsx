@@ -174,8 +174,8 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
     : !isLoggedIn
       ? 'OUVRIR MON ESPACE MEMBRE'
       : unlocked
-        ? accessReason === 'city' ? 'REJOINDRE MA VILLE 3B' : 'CRÉER MA VILLE 3B'
-        : 'DÉBLOQUER DANS LE MONDE DU 3B';
+        ? accessReason === 'city' ? 'ENTRER DANS MA VILLE' : 'CRÉER MA VILLE'
+        : 'CONTINUER LA MISSION';
 
   return createPortal(
     <section className="nexus-city-gateway" data-motion={reducedMotion ? 'reduced' : 'full'} role="dialog" aria-modal="true" aria-label="Nexus 3B · Créer ma ville">
@@ -232,16 +232,16 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
               <div className="nexus-unlock-icon">{unlocked ? <CheckCircle2 size={24} /> : <Target size={24} />}</div>
               <div>
                 <strong>{unlocked
-                  ? accessReason === 'city' ? 'VILLE EXISTANTE DÉTECTÉE' : 'MODE DÉBLOQUÉ'
-                  : isLoggedIn ? `MISSION VILLE · ÉTAPE ${unlockGuide.step}/${unlockGuide.total}` : 'PASSEPORT 3B REQUIS'}</strong>
+                  ? accessReason === 'city' ? 'MA VILLE 3B' : 'VILLE 3B DÉBLOQUÉE'
+                  : isLoggedIn ? 'VILLE 3B — VERROUILLÉE' : 'PASSEPORT 3B REQUIS'}</strong>
                 <p>{unlocked
                   ? accessReason === 'city'
-                    ? 'Ta Ville 3B existe déjà. Elle reste accessible même si le parcours du premier Souvenir n’est pas terminé.'
-                    : 'Un Souvenir est enregistré dans le Monde du 3B. L’accès à la création de ta ville est activé.'
+                    ? 'Ta Ville 3B existe déjà. Son accès est permanent et aucune mission ou mise à jour ne peut la reverrouiller.'
+                    : 'Ton premier Souvenir est enregistré. Tu peux maintenant créer ta Ville 3B.'
                   : isLoggedIn
-                    ? `${unlockGuide.title}. ${unlockGuide.detail}`
+                    ? `Obtiens ton premier Souvenir pour débloquer ta ville. ${unlockGuide.title}. ${unlockGuide.detail}`
                     : 'Connecte-toi d’abord. Ton déblocage sera ensuite lié à la progression de ton compte.'}</p>
-                <small>{unlocked ? 'Accès permanent' : 'Progression guidée'}{syncNote ? ` · ${syncNote}` : ''}</small>
+                <small>{unlocked ? 'Accès permanent' : `MISSION VILLE · ÉTAPE ${unlockGuide.step}/${unlockGuide.total} · Progression guidée`}{syncNote ? ` · ${syncNote}` : ''}</small>
               </div>
             </div>
 
