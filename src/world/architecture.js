@@ -5,7 +5,7 @@ import {buildingDimensions} from './building-scale.js';
 // A facade is assembled as piers, spandrels, recessed glazing and cornices.
 // Keeping real depth lets the same daylight describe every country's architecture.
 export function createArchitecture(occlusion){
- const geometries=[],materials=new Map(),textures=new Map();
+ const geometries=[],materials=new Map(),textures=new Map(),wetness={value:.06};
  const geo=g=>(geometries.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,16)),dome=geo(new THREE.SphereGeometry(1,20,12,0,Math.PI*2,0,Math.PI/2));
  const hip=geo(new THREE.CylinderGeometry(.56,1,1,4));hip.rotateY(Math.PI/4);
  const triangular=new THREE.Shape();triangular.moveTo(-.5,0);triangular.lineTo(.5,0);triangular.lineTo(0,1);triangular.closePath();const gable=geo(new THREE.ExtrudeGeometry(triangular,{depth:1,bevelEnabled:false}));gable.translate(0,0,-.5);
@@ -23,10 +23,19 @@ export function createArchitecture(occlusion){
  };
  const mat=(color,kind='stone')=>{
   const key=color+kind;if(materials.has(key))return materials.get(key);
-  const glass=kind==='glass',metal=kind==='metal',surface=glass||metal?null:kind;
+  const glass=kind==='glass',metal=kind==='metal',surface=glass?null:metal?'metal':kind==='plaster'?'concrete':kind;
   if(surface&&!textures.has(surface))textures.set(surface,surfaceTexture(surface));
-  const m=new THREE.MeshStandardMaterial({color,map:surface?textures.get(surface):null,roughness:glass?.19:metal?.36:.82,metalness:glass?.25:metal?.75:0,envMapIntensity:glass?1.65:1});
-  if(surface)m.userData.worldTexScale=kind==='limestone'?5:kind==='timber'?4:3;
+  const m=glass?new THREE.MeshPhysicalMaterial({color,roughness:.14,metalness:.18,clearcoat:.42,clearcoatRoughness:.12,envMapIntensity:1.7}):new THREE.MeshStandardMaterial({color,map:surface?textures.get(surface):null,bumpMap:surface?textures.get(surface):null,bumpScale:kind==='timber'?.035:metal?.012:.026,roughness:metal?.32:kind==='timber'?.72:.82,metalness:metal?.78:0,envMapIntensity:metal?1.25:1});
+  if(surface)m.userData.worldTexScale=kind==='limestone'?5:kind==='timber'?4:kind==='metal'?2.5:3;
+  const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.archWetness=wetness;shader.vertexShader='varying vec3 archWorld;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narchWorld=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 archWorld;uniform float archWetness;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+   float archNoise=fract(sin(dot(floor(archWorld.xz*1.7),vec2(12.9898,78.233)))*43758.5453);
+   float archStreak=smoothstep(.72,.98,fract(archNoise+archWorld.y*.037));
+   float archWet=archWetness*(.42+.58*archStreak);
+   diffuseColor.rgb*=mix(1.,.72,archWet);
+  `).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+   float archNoiseR=fract(sin(dot(floor(archWorld.xz*1.7),vec2(12.9898,78.233)))*43758.5453);
+   roughnessFactor=mix(roughnessFactor,.28,archWetness*(.34+.66*smoothstep(.72,.98,archNoiseR)));
+  `);};m.customProgramCacheKey=()=> '3b-architecture-premium-'+kind;
   occlusion?.apply(m);materials.set(key,m);return m;
  };
  function building(region,variant=0,{urban=true}={}){
@@ -103,5 +112,5 @@ export function createArchitecture(occlusion){
   }
   return g;
  }
- return{building,dispose(){textures.forEach(t=>t?.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ return{building,setWeather(weather){wetness.value=weather==='storm'?1:weather==='heavy_rain'?.82:weather==='rain'?.55:weather==='fog'?.22:.06;},dispose(){textures.forEach(t=>t?.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }
