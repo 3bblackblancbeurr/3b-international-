@@ -119,7 +119,7 @@ export default function App() {
     normalizeMember(loadJsonStorage(STORAGE_MEMBER_KEY, createTestMember()))
   );
 
-  const member = loyalty.profile ? remoteMember(loyalty.profile) : (!loyalty.loading && !loyalty.user ? localMember : createTestMember());
+  const member = loyalty.profile ? remoteMember(loyalty.profile) : createTestMember();
   const [options, setOptions] = useState(() =>
     normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
