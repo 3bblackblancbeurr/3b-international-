@@ -14,12 +14,13 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
 }
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
 async function snapshot(uid:string){
- const [profiles,events]=await Promise.all([
+ const [profiles,events,economy]=await Promise.all([
  api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=user_id,handle,name,country,xp,points,theme,created_at'),
- api('/rest/v1/member_ledger?user_id=eq.'+uid+'&select=id,source,label,xp,points,created_at,event_key&order=created_at.desc&limit=80')]);
+ api('/rest/v1/member_ledger?user_id=eq.'+uid+'&select=id,source,label,xp,points,created_at,event_key&order=created_at.desc&limit=80'),
+ rpc('threeb_progress_snapshot_server',{p_user:uid})]);
  if(!profiles?.[0])throw new Failure(404,'Ton compte est en cours de préparation. Réessaie.');
  const profile=profiles[0];profile.theme=themeFor(profile.theme,profile.xp).id;
- return{profile,events};
+ return{profile,events,economy};
 }
 async function authenticate(req:Request){
  const header=req.headers.get('authorization')||'';if(!header.startsWith('Bearer '))throw new Failure(401,'Connecte-toi à ton compte 3B.');
