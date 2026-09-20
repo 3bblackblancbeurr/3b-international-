@@ -41,6 +41,73 @@ export const STORY_CANON=Object.freeze({
  }),
 });
 
+export const GUARDIAN_STORIES=Object.freeze({
+ france:Object.freeze({
+  name:'Céliane',value:'Justice',temperament:'Calme, précise, attentive aux contradictions.',
+  flaw:'Elle peut chercher une preuve parfaite si longtemps qu’elle oublie la personne qui souffre devant elle.',
+  fear:'Condamner un innocent ou réparer une injustice par une nouvelle injustice.',
+  conflict:'Comprendre que la Justice exige trois gestes : écouter, vérifier puis réparer proportionnellement.',
+  oubli:'L’Oubli falsifie les témoignages, efface le contexte et transforme les habitants en juges les uns des autres.',
+  kais:'Elle se méfie d’abord de l’anneau de Kaïs parce qu’il répond à des mémoires contradictoires ; elle devient la première à comprendre qu’il relie sans décider à la place des autres.',
+ }),
+ algerie:Object.freeze({
+  name:'Yliane',value:'Loyauté',temperament:'Protectrice, directe, très attachée au groupe.',
+  flaw:'Elle confond parfois protéger les siens avec les empêcher de partir ou de choisir seuls.',
+  fear:'Être abandonnée au moment où le groupe a le plus besoin d’unité.',
+  conflict:'Apprendre que la Loyauté n’est ni l’obéissance aveugle ni le silence : elle peut exiger de dire une vérité difficile.',
+  oubli:'L’Oubli fabrique de faux signes de trahison et pousse chacun à soupçonner les autres.',
+  kais:'Kaïs lui montre qu’un lien reste loyal même lorsqu’il laisse à l’autre une porte de sortie.',
+ }),
+ maroc:Object.freeze({
+  name:'Naël',value:'Noblesse',temperament:'Digne, mesuré, attaché au geste juste et au savoir-faire.',
+  flaw:'Sa fierté peut l’empêcher de demander de l’aide ou de montrer qu’il doute.',
+  fear:'Être humilié, ou humilier quelqu’un en croyant l’aider.',
+  conflict:'Découvrir que la Noblesse se mesure davantage à la manière de traiter quelqu’un sans pouvoir qu’à la manière de se présenter devant ses égaux.',
+  oubli:'L’Oubli transforme la dignité en hiérarchie et le don en dette.',
+  kais:'Il apprend à Kaïs à transmettre sans écraser ; Kaïs lui apprend qu’accepter de recevoir peut aussi préserver la dignité.',
+ }),
+ tunisie:Object.freeze({
+  name:'Soraya',value:'Courage',temperament:'Rapide, volontaire, première à avancer lorsqu’un danger apparaît.',
+  flaw:'Elle peut agir trop vite pour ne pas laisser voir qu’elle a peur.',
+  fear:'Rester immobile pendant que quelqu’un d’autre paie le prix.',
+  conflict:'Distinguer le Courage de la témérité : préparer, intervenir, puis assumer les conséquences.',
+  oubli:'L’Oubli amplifie soit la panique, soit l’envie de foncer sans réfléchir.',
+  kais:'Kaïs comprend avec elle que reconnaître sa peur ne retire rien au courage ; cela permet de choisir malgré elle.',
+ }),
+ espagne:Object.freeze({
+  name:'Diego',value:'Passion',temperament:'Intense, créatif, expressif, capable d’entraîner une foule.',
+  flaw:'Il peut confondre intensité et justesse et pousser un geste trop loin.',
+  fear:'Que tout devienne froid, indifférent et sans désir de créer.',
+  conflict:'Transformer l’émotion en création et en maîtrise plutôt qu’en destruction ou en épuisement.',
+  oubli:'L’Oubli pousse les émotions jusqu’à la frénésie, puis laisse derrière lui fatigue et vide.',
+  kais:'Diego oblige Kaïs à cesser de seulement contenir ce qu’il ressent ; Kaïs lui rappelle qu’une passion qui dure doit savoir se maîtriser.',
+ }),
+ italie:Object.freeze({
+  name:'Alessio',value:'Espoir',temperament:'Patient, bâtisseur, capable de recommencer après un échec.',
+  flaw:'Il peut masquer une perte réelle derrière un optimisme trop rapide.',
+  fear:'Admettre qu’une chose aimée ne reviendra jamais exactement comme avant.',
+  conflict:'Comprendre que l’Espoir n’efface pas la perte : il ouvre une possibilité nouvelle à partir de ce qui reste.',
+  oubli:'L’Oubli répète que tout ce qui est cassé est définitivement perdu ou doit être reconstruit à l’identique.',
+  kais:'Alessio apprend à Kaïs qu’un héritage vivant peut changer de forme sans être trahi.',
+ }),
+ turquie:Object.freeze({
+  name:'Émir',value:'Foi',temperament:'Posé, constant, fidèle à sa parole.',
+  flaw:'Il peut chercher trop de certitude et prendre le doute pour une faiblesse.',
+  fear:'Agir sans garantie et découvrir qu’il s’est trompé.',
+  conflict:'Accepter que la Foi puisse traverser la question et le doute tout en restant cohérente dans l’action.',
+  oubli:'L’Oubli transforme l’incertitude soit en rigidité, soit en paralysie.',
+  kais:'Kaïs lui montre qu’un lien peut être réel avant d’être entièrement compris ; Émir apprend à Kaïs à avancer sans inventer de fausses certitudes.',
+ }),
+ estonie:Object.freeze({
+  name:'Eira',value:'Sagesse',temperament:'Observatrice, silencieuse, excellente pour relier des indices dispersés.',
+  flaw:'Elle peut analyser si longtemps qu’elle devient extérieure à ce qui arrive.',
+  fear:'Prendre une décision irréversible sur une compréhension incomplète.',
+  conflict:'Comprendre que la Sagesse n’est pas seulement savoir attendre : elle doit aussi reconnaître le moment où il faut agir.',
+  oubli:'L’Oubli produit du bruit, de faux motifs et trop d’informations pour empêcher toute décision.',
+  kais:'Eira aide Kaïs à distinguer mémoire, interprétation et preuve ; Kaïs lui rappelle qu’un lien n’existe que s’il est vécu.',
+ }),
+});
+
 export const FRANCE_CANON_ARC=Object.freeze({
  title:'Les noms effacés',
  acts:Object.freeze([
