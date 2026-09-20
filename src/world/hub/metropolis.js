@@ -1,4 +1,5 @@
 const hash=input=>{let h=2166136261;for(let i=0;i<input.length;i+=1){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
+const GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
 
 export const HUB_METROPOLIS=Object.freeze({
   width:1800,
@@ -77,18 +78,19 @@ function buildingItem(plan,building,index){
 function fillerItems(plan,profile){
   const perDistrict=profile==='desktop'?8:profile==='mobileHigh'?6:4;
   return plan.districts.flatMap((district)=>{
-    const center=hubDistrictPosition(plan,district.id);
+    const center=hubDistrictPosition(plan,district.id),districtSeed=hash(`${district.id}:layout`),baseRotation=(districtSeed%6283)/1000;
+    const stretchX=.84+((districtSeed>>>7)%25)/100,stretchZ=.84+((districtSeed>>>13)%25)/100;
     return Array.from({length:perDistrict},(_,index)=>{
-      const h=hash(`${district.id}:filler:${index}`),angle=index/perDistrict*Math.PI*2+((h%100)/100)*.35;
-      const ring=78+(index%3)*34+(h>>>9)%28;
+      const h=hash(`${district.id}:filler:${index}`),angle=baseRotation+index*GOLDEN_ANGLE+(((h>>>4)%100)/100-.5)*.22;
+      const band=index%4,ring=64+band*27+((h>>>9)%31);
       const width=20+(h%26),depth=17+((h>>>5)%24),tierRoll=(h>>>11)%100;
       const height=tierRoll<58?14+((h>>>17)%18):tierRoll<90?30+((h>>>17)%28):60+((h>>>17)%24);
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
         district:district.id,
-        x:center.x+Math.cos(angle)*ring,
-        z:center.z+Math.sin(angle)*ring,
+        x:center.x+Math.cos(angle)*ring*stretchX,
+        z:center.z+Math.sin(angle)*ring*stretchZ,
         width,depth,height,
         tier:district.tier||0,
       };
@@ -130,7 +132,8 @@ export function metropolisTrafficItems(plan,profile){
   const roads=metropolisRoadItems(plan).filter((_,index)=>index%2===0);
   const count=profile==='desktop'?12:profile==='mobileHigh'?8:5;
   return Array.from({length:count},(_,index)=>{
-    const route=roads[index%roads.length],phase=(index+.5)/count;
+    const route=roads[index%roads.length],h=hash(`${route.id}:traffic:${index}`);
+    const basePhase=(index+.5)/count,jitter=(((h>>>5)%100)/100-.5)*.62/count,phase=Math.max(.04,Math.min(.96,basePhase+jitter));
     return {
       id:`hub:traffic:${index}`,
       type:'hubTraffic',
@@ -138,7 +141,7 @@ export function metropolisTrafficItems(plan,profile){
       from:route.from,
       to:route.to,
       phase,
-      speed:10+(index%4)*2.5,
+      speed:9+((h>>>12)%76)/10,
       x:route.from.x+(route.to.x-route.from.x)*phase,
       z:route.from.z+(route.to.z-route.from.z)*phase,
     };
