@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {wetnessForWeather} from './wetness.js';
 
 function hash(input){let h=2166136261;for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function seeded(id){let h=hash(id);return()=>{h=(Math.imul(h,1664525)+1013904223)>>>0;return h/4294967296;};}
@@ -111,8 +112,10 @@ export function addPremiumMicroDetails({region,field,root,owned}){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(cablePoints,3));const m=new THREE.LineBasicMaterial({color:'#11171c',transparent:true,opacity:.58});cable=new THREE.LineSegments(g,m);root.add(cable);owned.push(g,m);
  }
 
+ const setWetness=value=>{const wet=Math.max(0,Math.min(1,Number(value)||0));materials.puddle.opacity=.035+wet*.425;materials.puddle.roughness=Math.max(.055,.16-wet*.08);materials.puddle.needsUpdate=true;};
  return{
-  setWeather(weather){materials.puddle.opacity=weather==='storm'?.46:weather==='heavy_rain'?.38:weather==='rain'?.28:weather==='fog'?.16:.06;materials.puddle.needsUpdate=true;},
+  setWetness,
+  setWeather(weather){setWetness(wetnessForWeather(weather));},
   setDaylight(daylight){materials.paint.emissive?.set?.('#000000');materials.puddle.clearcoat=Math.max(.58,.92-(Number(daylight)||0)*.08);},
   setQuality(mode){const factor=mode==='fluid'?.45:mode==='detail'?1:.76;meshes.forEach((mesh,i)=>mesh.count=Math.max(0,Math.round(counts[i]*factor)));if(cable)cable.visible=mode!=='fluid';},
  };
