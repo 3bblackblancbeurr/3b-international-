@@ -85,6 +85,17 @@ function hubNpcAvatar(item){
   const filmGeo=register(new THREE.CircleGeometry(1,40));
   const filmMat=register(new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{time:{value:0},tint:{value:new THREE.Color(item.color)},art:{value:models.atlas},tile:{value:new THREE.Vector2(index%4*.25,index<4?.5:0)}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv; uniform float time; uniform vec3 tint; uniform sampler2D art; uniform vec2 tile; void main(){vec2 p=vUv-.5;float r=length(p)*2.;float ripple=sin(r*24.-time*1.7)*.5+.5;vec2 uv=vUv+sin(vUv.yx*10.+time*.4)*.005;vec3 c=texture2D(art,uv*vec2(.25,.5)+tile).rgb;gl_FragColor=vec4(mix(c,tint,pow(r,5.)*.55+ripple*.05),.93);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
   mesh(filmGeo,filmMat,item.x,y+4,item.z+.1,2.95,3.45,1);portalMaterials.push(filmMat);
+  if(region==='hub'){
+   const accentMat=material(item.color,{emissive:item.color,emissiveIntensity:.34,metalness:.58,roughness:.26}),champagne=material('#d6b46a',{emissive:'#7b5d24',emissiveIntensity:.12,metalness:.78,roughness:.28}),dark=material('#0c1218',{roughness:.48,metalness:.42});
+   const haloGeo=register(new THREE.TorusGeometry(1,.045,8,96)),halo=mesh(haloGeo,accentMat,item.x,y+4.4,item.z-.72,4.9,5.65,1);halo.castShadow=false;
+   for(const side of [-1,1]){
+    const px=item.x+side*5.9;
+    const pylon=mesh('box',dark,px,y+4.25,item.z-.15,.52,8.5,.72),fin=mesh('box',champagne,px,y+7.95,item.z+.28,.72,.18,.38),beacon=mesh('sphere',accentMat,px,y+8.55,item.z+.05,.28,.42,.28);
+    pylon.castShadow=true;fin.castShadow=beacon.castShadow=false;obstacles.push({x:px,z:item.z,r:.72});
+    for(let stripe=0;stripe<3;stripe++){const light=mesh('box',accentMat,px,y+2.4+stripe*1.7,item.z+.58,.12,.55,.06);light.castShadow=false;}
+   }
+   const crown=mesh('box',champagne,item.x,y+9.55,item.z-.22,2.2,.18,.42);crown.castShadow=false;
+  }
  }
  function makeActor(item){
   const card=cardById[item.card],creature=item.type==='guardian'||item.type==='hubGuardian';
