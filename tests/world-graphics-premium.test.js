@@ -326,3 +326,15 @@ test('hub physical materials distinguish glass champagne gold and black metal',(
  assert.match(visuals,/metalness:\.92/);
  assert.match(visuals,/clearcoatRoughness:\.14/);
 });
+
+
+test('VFX hierarchy reduces permanent neon in daylight while preserving night identity',()=>{
+ const scene=read('src/world/scene.js'),post=read('src/world/postprocessing.js');
+ assert.match(scene,/totalEmissiveRadiance\*=mix\(1\.12,\.48,sceneDaylight\)/);
+ assert.match(scene,/uniform float time,daylight/);
+ assert.match(scene,/float pulse=mix\(\.075,\.026,daylight\)/);
+ assert.match(scene,/mat\.uniforms\.daylight\.value=sceneDaylight\.value/);
+ assert.match(post,/\.008\*intensity/);
+ assert.match(post,/streak\*\.045\*flare\*intensity/);
+ assert.match(post,/\.0075\*grain\*intensity/);
+});
