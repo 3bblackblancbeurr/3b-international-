@@ -88,4 +88,5 @@ test('scene forwards device capability gates into landscape quality and water',(
  assert.match(water,/sceneReflection=allowPlanarReflection\?q\.sceneReflection:0/);
  assert.match(water,/reflectionTarget\.dispose\(\);reflectionTarget=null/);
  assert.match(water,/reflectionTexture\.value=normalA/);
+ assert.match(water,/reflectionFrustum\.intersectsSphere\(waterSphere\)/);
 });
