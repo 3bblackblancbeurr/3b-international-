@@ -62,6 +62,10 @@ test('expert guardians have stronger attacks and a single distinct challenge rew
  let s=prepare(blankSave(),'france');s=act(s,'difficulty',{value:'expert'});s=act(s,'encounter',{id:'france:guardian'});assert.equal(s.adventure.encounter.expert,true);assert.ok(s.adventure.encounter.enemyMax>120);
  s=battle(s);assert.equal(chapterState(s,'france').challenge,true);const xp=s.xp;s=act(s,'leave');s=act(s,'encounter',{id:'france:guardian'});s=battle(s);assert.equal(s.xp-xp,35);
 });
-test('legacy progress survives while new story and final rewards remain unclaimed',()=>{
- const s=normalizeSave({...blankSave(),xp:1500,collection:{C001:2,C022:3},seals:['france','italie','estonie','turquie','algerie'],finalOpened:true,adventure:undefined});assert.equal(s.xp,1500);assert.equal(s.collection.C022,3);assert.equal(s.finalOpened,true);assert.equal(s.adventure.finished,false);assert.equal(nexusLevel(s),0);
+test('legacy progress survives but the final gate now requires all eight seals',()=>{
+ const five=['france','italie','estonie','turquie','algerie'];
+ const partial=normalizeSave({...blankSave(),xp:1500,collection:{C001:2,C022:3},seals:five,finalOpened:true,adventure:undefined});
+ assert.equal(partial.xp,1500);assert.equal(partial.collection.C022,3);assert.equal(partial.finalOpened,false);assert.equal(partial.adventure.finished,false);assert.equal(nexusLevel(partial),0);
+ const all=COUNTRIES.map(country=>country.id),complete=normalizeSave({...blankSave(),seals:all,finalOpened:true});
+ assert.equal(complete.finalOpened,true);
 });
