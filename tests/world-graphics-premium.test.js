@@ -65,3 +65,31 @@ test('the eight hub portals receive a monumental outer frame without changing co
  assert.match(scene,/obstacles\.push\(\{x:px,z:item\.z,r:\.72\}\)/);
  assert.match(portals,/Eight crafted thresholds/);
 });
+
+
+test('premium water uses two animated normal maps, Fresnel, depth, rain, foam and adaptive quality',()=>{
+ const water=read('src/world/premium-water.js'),landscape=read('src/world/landscape.js'),scene=read('src/world/scene.js');
+ assert.match(water,/normalA/);
+ assert.match(water,/normalB/);
+ assert.match(water,/fresnel/);
+ assert.match(water,/refract\(/);
+ assert.match(water,/foamAmount/);
+ assert.match(water,/rainPulse/);
+ assert.match(water,/matrixBlue/);
+ assert.match(water,/champagneGold/);
+ assert.match(water,/low:\{/);
+ assert.match(water,/medium:\{/);
+ assert.match(water,/high:\{/);
+ assert.match(landscape,/createPremiumWater/);
+ assert.match(scene,/setWeather\?\.\(weather\)/);
+ assert.match(scene,/setDaylight\?\.\(worldTime\.daylight\)/);
+});
+
+test('hub waterfront adds promenade, wet edge, stairs, pontoons and controlled lighting',()=>{
+ const waterfront=read('src/world/premium-waterfront.js'),landscape=read('src/world/landscape.js');
+ assert.match(waterfront,/3B-Premium-Waterfront/);
+ assert.match(waterfront,/wetBand/);
+ assert.match(waterfront,/Three stairs and pontoons/);
+ assert.match(waterfront,/waterfront pavilion/);
+ assert.match(landscape,/addPremiumWaterfront/);
+});
