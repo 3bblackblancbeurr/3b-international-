@@ -8,6 +8,7 @@ import {AVATAR_ASSET_SLOTS,AVATAR_SLOT_LABELS} from './avatar-assets.js';
 import {BODY_CAPABILITIES,FACE_CAPABILITIES} from './avatar-capabilities.js';
 import Armory from './origins/Armory.jsx';
 import '../arena/arena.css';
+import './origins/creator.css';
 export function AvatarPanel({save,act,onDone}){
  const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created),[section,setSection]=useState('appearance');
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
