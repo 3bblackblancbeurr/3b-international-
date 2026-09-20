@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -52,4 +52,14 @@ test('legacy passport fixture contains no personal email or verified-security cl
   assert.doesNotMatch(fixture,/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
   assert.doesNotMatch(fixture,/AES-256|INTÉGRITÉ DES DONNÉES[^\n]*100%|BIOMÉTRIE[^\n]*ACTIVE/i);
   assert.match(fixture,/Never use this file as an identity, authentication or wallet source of truth/);
+});
+
+test('GitHub Actions are pinned to immutable commit SHAs',()=>{
+  const dir=new URL('../.github/workflows/',import.meta.url);
+  for(const name of readdirSync(dir).filter(name=>/\.ya?ml$/.test(name))){
+    const yaml=readFileSync(new URL(name,dir),'utf8');
+    for(const match of yaml.matchAll(/uses:\s*([^@\s]+)@([^\s#]+)/g)){
+      assert.match(match[2],/^[0-9a-f]{40}$/i,`${name}: ${match[1]} must use an immutable SHA`);
+    }
+  }
 });
