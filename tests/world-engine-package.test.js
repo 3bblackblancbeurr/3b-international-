@@ -21,3 +21,13 @@ test('world-engine deployment pack includes nested Hub reducer dependencies',()=
   assert.ok(names.has('deno.json'));
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
+
+
+test('authoritative world engine mirrors critical client gameplay reducers',()=>{
+ const critical=['engine.js','guardian-values.js','hub/activity-catalog.js','hub/state.js','hub/mission-signals.js','hub/mission-runtime.js','hub/mission-catalog.js','hub/mission-graph.js'];
+ for(const name of critical){
+  const client=readFileSync(join(root,'src','world',name),'utf8');
+  const server=readFileSync(join(root,'supabase','functions','world-engine-goldmaster-candidate',name),'utf8');
+  assert.equal(server,client,name+' diverged between client and authoritative server');
+ }
+});
