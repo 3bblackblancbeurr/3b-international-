@@ -1,0 +1,102 @@
+name: Reviewed World release
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths: [.github/workflows/world-release-reviewed.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  statuses: write
+concurrency:
+  group: world-reviewed-release
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.ref == 'refs/heads/chatgpt-improvements-world-consolidation-20260920'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TARGET_BRANCH: chatgpt-improvements-world-consolidation-20260920
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Reproduce the reviewed conflict resolutions
+        run: |
+          set -euo pipefail
+          git config user.name '3B Integration'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 scripts/replay-world-release-20260920.py
+          # Exact trees from the local run: 582 tests passed, zero failures, production build passed.
+          test "$(git rev-parse HEAD:src)" = 62e14aab2c4323c20e0ae8cda0d81429a9dc5f54
+          test "$(git rev-parse HEAD:tests)" = c6b2edb97c74a177269456e14d7cc60e27f51353
+          test "$(git rev-parse HEAD:supabase)" = 28b083a690755b1997b31213e38cca86b2cd3fa0
+          test "$(git rev-parse HEAD:public)" = 9ec9e786219a113a85de15646f2fb5968e0bce71
+          test "$(git rev-parse HEAD:package-lock.json)" = 4e51d7637e9e64c060a7465397035350015d8292
+          test "$(git rev-parse HEAD:package.json)" = 4c835c327e2a4205e149a4f9a98e0e0b1ab8d2bf
+          mkdir -p artifacts/world-release
+          git rev-parse HEAD > artifacts/world-release/candidate-sha.txt
+          git log -8 --oneline > artifacts/world-release/commits.txt
+          git diff --stat "$GITHUB_SHA" HEAD > artifacts/world-release/changes.txt
+      - run: npm ci --no-audit --no-fund
+      - name: Recheck integration tests and production compilation
+        run: |
+          set -euo pipefail
+          node --test tests/cinematics-gold-master.test.js tests/cinematic-post-budget.test.js tests/passport-identity.test.js tests/city-unlock-guide.test.js tests/city3b-access.test.js tests/nexus-city-gateway.test.js | tee artifacts/world-release/targeted-tests.log
+          npm run build | tee artifacts/world-release/build.log
+      - name: Publish the candidate branch without touching main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TARGET_BRANCH"
+          test "$TARGET_BRANCH" != main
+          CURRENT=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)
+          test "$CURRENT" = "$GITHUB_SHA" || { echo 'Branch changed; refusing to overwrite concurrent work.'; exit 1; }
+          cat > "$RUNNER_TEMP/world-git-askpass" <<'SH'
+          #!/bin/sh
+          case "$1" in *Username*) printf '%s\n' x-access-token;; *) printf '%s\n' "$GH_TOKEN";; esac
+          SH
+          chmod 700 "$RUNNER_TEMP/world-git-askpass"
+          GIT_ASKPASS="$RUNNER_TEMP/world-git-askpass" GIT_TERMINAL_PROMPT=0 git push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          rm -f "$RUNNER_TEMP/world-git-askpass"
+          CANDIDATE=$(cat artifacts/world-release/candidate-sha.txt)
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state=pending -f context=threeb/release-browser -f description='Desktop and touch browser validation running' -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - name: Install isolated browser test dependencies
+        run: |
+          npm install --no-save --package-lock=false @playwright/test@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Check desktop and touch candidate in an isolated browser
+        id: browser
+        run: |
+          set -euo pipefail
+          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/world-release/preview.log 2>&1 &
+          SERVER=$!
+          trap 'kill "$SERVER" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do if curl -sf http://127.0.0.1:4173/ >/dev/null; then break; fi; sleep 1; done
+          node scripts/verify-world-release-browser.mjs
+      - name: Record browser result against the actual candidate commit
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BROWSER_RESULT: ${{ steps.browser.outcome }}
+        run: |
+          if test -f artifacts/world-release/candidate-sha.txt; then
+            CANDIDATE=$(cat artifacts/world-release/candidate-sha.txt)
+            REMOTE=$(git ls-remote origin "refs/heads/$TARGET_BRANCH" | cut -f1)
+            if test "$REMOTE" = "$CANDIDATE"; then
+              STATE=failure; test "$BROWSER_RESULT" = success && STATE=success
+              gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-browser -f description="Browser validation: $BROWSER_RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            fi
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reviewed-world-release-report
+          path: artifacts/world-release/
+          retention-days: 7
