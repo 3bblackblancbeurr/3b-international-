@@ -14,7 +14,7 @@ export function LoyaltyProvider({children}){
  useEffect(()=>{const focus=()=>{if(!document.hidden)refresh();};document.addEventListener('visibilitychange',focus);return()=>document.removeEventListener('visibilitychange',focus);},[]);
  const owned=data?.profile?.user_id===session?.user?.id?data:null;
  const passport=passportFromProfile(owned?.profile,session?.user);
- return <Context.Provider value={{session,user:session?.user,profile:owned?.profile,passport,events:owned?.events||[],loading,error,accept,refresh}}>{children}</Context.Provider>;
+ return <Context.Provider value={{session,user:session?.user,profile:owned?.profile,passport,economy:owned?.economy||null,events:owned?.events||[],loading,error,accept,refresh}}>{children}</Context.Provider>;
 }
 export function remoteMember(profile){
  const passport=passportFromProfile(profile);
