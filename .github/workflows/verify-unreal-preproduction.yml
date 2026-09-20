@@ -1,0 +1,26 @@
+name: Verify Unreal Preproduction
+
+on:
+  pull_request:
+    paths:
+      - 'unreal/**'
+      - 'src/world/hub/data/**'
+      - 'tests/unreal-preproduction-contract.test.js'
+      - '.github/workflows/verify-unreal-preproduction.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/unreal-preproduction-contract.test.js
