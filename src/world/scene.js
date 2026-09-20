@@ -68,9 +68,37 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  function mesh(g,mat,x,y,z,sx=1,sy=sx,sz=sx){const m=new THREE.Mesh(typeof g==='string'?geometry[g]:g,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);root.add(m);return m;}
 function hubNpcAvatar(item){
   let h=2166136261;const key=item.npcId||item.id||'3b';for(let i=0;i<key.length;i+=1){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}
-  const cloth=['#202833','#15364a','#4a3423','#243c34','#4a2744','#3d3d46'][h%6];
-  const skin=['#5f3d2b','#7b5138','#9a6c4e','#b98663','#d0a17d','#e0b896'][(h>>>4)%6];
-  return {body:(h>>>7)%2?'femme':'homme',style:['voyageur','sentinelle','mystique'][(h>>>9)%3],hair:(h>>>12)%7,boots:(h>>>15)%3,fabricColor:cloth,skinColor:skin,hairColor:['#171310','#352a24','#6a4a34','#16191d'][(h>>>18)%4],outer:(h>>>21)%3===0?'apron':'none',bag:(h>>>23)%3===0,pattern:(h>>>25)%4===0?'matrix':'uni'};
+  const pick=(values,shift=0)=>values[(h>>>shift)%values.length];
+  const cloth=pick(['#202833','#15364a','#4a3423','#243c34','#4a2744','#3d3d46','#2b3848','#5a4437','#263c3a','#463b55'],0);
+  const skin=pick(['#5f3d2b','#7b5138','#9a6c4e','#b98663','#d0a17d','#e0b896'],4);
+  const hairColor=pick(['#171310','#352a24','#6a4a34','#16191d','#4b3428','#221b19'],18);
+  const accentColor=pick(['#d6b46a','#78bfe8','#9ab67f','#c98986','#b09bd4','#d9d0bd'],21);
+  const style=pick(['voyageur','sentinelle','mystique'],9),headwearRoll=(h>>>26)%7,outerRoll=(h>>>22)%7;
+  return {
+   body:(h>>>7)%2?'femme':'homme',
+   style,
+   hair:(h>>>12)%7,
+   boots:(h>>>15)%3,
+   fabricColor:cloth,
+   skinColor:skin,
+   hairColor,
+   accentColor,
+   trouserColor:pick(['#242a31','#4b4037','#35443f','#4a3946','#565148'],6),
+   bootColor:pick(['#30251f','#45352b','#20272d','#5a4434'],11),
+   metalColor:'#d6b46a',
+   outerColor:pick([cloth,accentColor,'#20272d'],3),
+   fabric:pick(['cotton','linen','satin','leather'],13),
+   pattern:pick(['uni','bandes','damier','insigne','broderie'],25),
+   patternScale:.78+((h>>>16)%7)*.12,
+   shape:pick(['equilibre','elance','solide'],5),
+   height:.94+((h>>>20)%7)*.02,
+   build:.94+((h>>>10)%6)*.025,
+   headwear:headwearRoll===0?'beret':headwearRoll===1?'brim':headwearRoll===2?'hood':'none',
+   outer:outerRoll===0?'cape':outerRoll<=2?'scarf':outerRoll===3?'apron':'none',
+   bag:(h>>>23)%3===0,
+   belt:(h>>>17)%4===0?'utility':(h>>>17)%3===0?'simple':'none',
+   pendant:(h>>>29)%4===0,
+  };
  }
   function buildCinematicFx(){
   const group=new THREE.Group(),blue=register(new THREE.MeshBasicMaterial({color:'#58d1ff',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending})),gold=register(new THREE.MeshBasicMaterial({color:'#e0c486',transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}));
