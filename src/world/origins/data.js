@@ -1,17 +1,18 @@
 import {COUNTRIES,isCountry} from './countries.js';
+import {CANON_WORLDS} from '../story-canon.js';
 // One unit = one metre. Canon comes from the owner's 3B ORIGINS brief.
 export const SCALE=Object.freeze({human:1.8,door:2.65,doorWidth:1.8,storey:3.1,step:.16,radius:.32});
 export const WORLDS=[
- {id:'france',name:'France',city:'Paris',value:'Justice',canon:true,available:true},
- {id:'algerie',name:'Algérie',city:'Alger',value:'Courage'},
- {id:'maroc',name:'Maroc',city:'Rabat',value:'Sagesse'},
- {id:'tunisie',name:'Tunisie',city:'Tunis',value:'Patience'},
- {id:'espagne',name:'Espagne',city:'Madrid',value:'Unité'},
- {id:'italie',name:'Italie',city:'Rome',value:'Loyauté'},
- {id:'turquie',name:'Turquie',city:'Istanbul / Ankara',value:'Vérité'},
- {id:'estonie',name:'Estonie',city:'Tallinn',value:'Mémoire'},
-].map((w,i)=>({...w,available:true,associationStatus:w.canon?'validated':'proposal',x:Math.sin(i*Math.PI/4)*29,z:-Math.cos(i*Math.PI/4)*29,angle:-i*Math.PI/4}));
-export const GUARDIAN={id:'justice-guardian',name:'Gardien de Justice',identityStatus:'pending-owner-reference',appearanceStatus:'provisional',note:'Céliane : aucun rôle attribué sans référence validée.'};
+ {id:'france',name:'France',city:'Paris'},
+ {id:'algerie',name:'Algérie',city:'Alger'},
+ {id:'maroc',name:'Maroc',city:'Rabat'},
+ {id:'tunisie',name:'Tunisie',city:'Tunis'},
+ {id:'espagne',name:'Espagne',city:'Madrid'},
+ {id:'italie',name:'Italie',city:'Rome'},
+ {id:'turquie',name:'Turquie',city:'Istanbul / Ankara'},
+ {id:'estonie',name:'Estonie',city:'Tallinn'},
+].map((w,i)=>({...w,value:CANON_WORLDS[w.id].value,guardian:CANON_WORLDS[w.id].guardian,canon:true,available:true,associationStatus:'validated',x:Math.sin(i*Math.PI/4)*29,z:-Math.cos(i*Math.PI/4)*29,angle:-i*Math.PI/4}));
+export const GUARDIAN={id:'justice-guardian',name:'Céliane',value:'Justice',identityStatus:'canonical',appearanceStatus:'pending-owner-reference',note:'Céliane est le Gardien canonique de la Justice ; son apparence 3D finale reste à valider.'};
 export const SPAWNS={sanctuary:{x:0,z:20},france:{x:0,z:25},...Object.fromEntries(Object.keys(COUNTRIES).map(id=>[id,{x:0,z:25}]))};
 export const BUILDINGS=[
  ['maison-sud','Maison',-21,16,.2],['cafe-ouest','Cafe',-39,16,0],['residence-sud','Residence',19,15,-.1],['angle-est','Maison',39,17,-.15],
