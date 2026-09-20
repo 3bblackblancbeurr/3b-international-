@@ -23,14 +23,14 @@ export function passportFromProfile(profile, user = null) {
   const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
-  const compactId = userId.replace(/-/g, '').toUpperCase();
+  const canonicalId = userId.toUpperCase();
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
 
   return Object.freeze({
     userId,
-    passportId: `3B-PASS-${compactId}`,
-    memberId: `3B-MEM-${compactId}`,
+    passportId: `3B-PASS-${canonicalId}`,
+    memberId: `3B-MEM-${canonicalId}`,
     name,
     handle,
     country,
