@@ -44,10 +44,11 @@ test('premium visual helpers remain rendering-only and do not mutate world progr
 
 
 test('premium desktop rendering increases shadow detail without forcing mobile cost',()=>{
- const scene=read('src/world/scene.js');
- assert.match(scene,/highEndAuto=mode==='auto'/);
- assert.match(scene,/memory>=8/);
- assert.match(scene,/\?2048:1024/);
+ const scene=read('src/world/scene.js'),capabilities=read('src/world/device-capabilities.js');
+ assert.match(capabilities,/desktopClass=!coarsePointer&&viewport>=900&&memory>=8/);
+ assert.match(capabilities,/highEndAuto=mode==='auto'&&desktopClass/);
+ assert.match(capabilities,/shadowMapSize=.*2048:1024/);
+ assert.match(scene,/capabilities\.shadowMapSize/);
  assert.match(scene,/renderer\.shadowMap\.enabled=mode!==\'fluid\'/);
 });
 
@@ -98,12 +99,13 @@ test('hub waterfront adds promenade, wet edge, stairs, pontoons and controlled l
 
 
 test('opening cinematic starts low over water before revealing the hub skyline',()=>{
- const scene=read('src/world/scene.js');
+ const scene=read('src/world/scene.js'),camera=read('src/world/cinematic-camera.js');
  assert.match(scene,/waterReveal:true/);
  assert.match(scene,/focus=\{x:0,z:-145\}/);
  assert.match(scene,/cameraLift=waterReveal\?4\.2/);
  assert.match(scene,/focusLift=waterReveal\?2\.6/);
- assert.match(scene,/returnBlend=waterReveal/);
+ assert.match(scene,/cinematicReturnBlend\(age,\{waterReveal\}\)/);
+ assert.match(camera,/waterReveal\?\.80:\.72/);
 });
 
 test('quality selector exposes LOW MEDIUM HIGH while preserving legacy technical values',()=>{
@@ -114,15 +116,16 @@ test('quality selector exposes LOW MEDIUM HIGH while preserving legacy technical
 });
 
 
-test('premium ground reacts to weather and adds controlled wear cracks joints and puddle roughness',()=>{
+test('premium ground reacts progressively to weather and adds controlled wear cracks joints and puddle roughness',()=>{
  const ground=read('src/world/natural-ground.js'),landscape=read('src/world/landscape.js');
  assert.match(ground,/surfaceWetness/);
  assert.match(ground,/crackField/);
  assert.match(ground,/urbanJoint/);
  assert.match(ground,/wetMask/);
  assert.match(ground,/roughnessFactor=mix/);
- assert.match(ground,/setWeather\(weather\)/);
- assert.match(landscape,/soil\.setWeather/);
+ assert.match(ground,/setWetness/);
+ assert.match(landscape,/wetnessTarget=wetnessForWeather\(value\)/);
+ assert.match(landscape,/soil\.setWetness\?\.\(wetnessState\)/);
 });
 
 test('vegetation breaks repetition with edge growth and multiple botanical silhouettes',()=>{
