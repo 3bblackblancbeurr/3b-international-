@@ -1,5 +1,6 @@
 import {applyWorldAction} from './engine.js';
 import {blankSave,normalizeSave} from './rules.js';
+import {worldGlobalRewardIntents} from './global-rewards.js';
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -52,7 +53,7 @@ Deno.serve(async req=>{
    }
    if(!row)throw new Failure(503,'Le compte est en préparation.');
    const device=(await api('/rest/v1/member_world_devices?user_id=eq.'+uid+'&device=eq.'+body.device+'&select=sequence'))?.[0];
-   let seq=Number(device?.sequence||0),data=normalizeSave(row.data);const rejected=[];
+   let seq=Number(device?.sequence||0),data=normalizeSave(row.data);const rejected=[],rewardIntents=[];
    for(const entry of body.commands){
     if(entry.seq<=seq)continue;
     if(entry.seq!==seq+1)throw new Failure(409,'Une action manque dans le journal. Rouvre le monde pour synchroniser.');
@@ -61,13 +62,21 @@ Deno.serve(async req=>{
      const action=entry.action.type==='hubCitySync'?{type:'hubCityProof',proof:await cityProof(uid)}:entry.action;
      const next=applyWorldAction(data,action);
      if(entry.action.type==='walk'&&next.walked-Number(row.walk_baseline)>(Date.now()-Date.parse(row.created_at))/1000*3+200)throw Error('Cette distance est trop rapide.');
+     rewardIntents.push(...worldGlobalRewardIntents(data,next,action));
      data=next;
     }catch(error){rejected.push({seq:entry.seq,message:error instanceof Error?error.message:'Action non validée.'});}
     seq=entry.seq;
    }
-   if(seq===Number(device?.sequence||0))return reply({data,sequence:seq,revision:row.revision,rejected,legacy:row.legacy});
-   const ok=await rpc('world_commit',{p_user:uid,p_revision:row.revision,p_data:data,p_device:body.device,p_sequence:seq});
-   if(ok)return reply({data,sequence:seq,revision:Number(row.revision)+1,rejected,legacy:row.legacy});
+   const rewards=[...new Map(rewardIntents.map(item=>[item.rewardCode+':'+item.eventId,item])).values()];
+   if(seq===Number(device?.sequence||0)){
+    const economy=await rpc('threeb_process_reward_outbox_server',{p_user:uid,p_limit:32}).catch(()=>null);
+    return reply({data,sequence:seq,revision:row.revision,rejected,legacy:row.legacy,economy});
+   }
+   const ok=await rpc('world_commit_v2',{p_user:uid,p_revision:row.revision,p_data:data,p_device:body.device,p_sequence:seq,p_rewards:rewards});
+   if(ok){
+    const economy=await rpc('threeb_process_reward_outbox_server',{p_user:uid,p_limit:32}).catch(()=>null);
+    return reply({data,sequence:seq,revision:Number(row.revision)+1,rejected,legacy:row.legacy,economy});
+   }
   }
   throw new Failure(409,'Autre appareil actif. La synchronisation va réessayer.');
  }catch(error){return reply({error:error instanceof Failure?error.message:'Le service du monde est momentanément indisponible.'},error instanceof Failure?error.status:503);}
