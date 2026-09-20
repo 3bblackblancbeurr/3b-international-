@@ -13,7 +13,7 @@ Required:
 - rollback path documented.
 
 Current status: **PARTIAL**.
-Known gap: existing legacy workflows still use mutable `@v4` action tags and some request `contents: write`.
+Fortress branch status: all 74 third-party action references across the 19 audited workflows are pinned to immutable commit SHAs. Merge to `main` is still pending. Some branch-specific release workflows intentionally require `contents: write` and were retained after review.
 
 ## Gate 1 — Existing application/server boundary
 Required:
