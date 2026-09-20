@@ -54,3 +54,28 @@ export function surfaceTexture(kind='stone'){
  texture.repeat.set(['stone','limestone','concrete'].includes(kind)?1:2,['stone','limestone','concrete'].includes(kind)?1:2);
  return texture;
 }
+
+
+function roughnessTexture(kind='stone'){
+ const size=64,data=new Uint8Array(size*size*4),base={
+  stone:.82,limestone:.78,earth:.94,gravel:.9,grass:.96,timber:.76,tile:.74,slate:.70,concrete:.86,asphalt:.91,metal:.34,
+ }[kind]??.82;
+ let seed=9137+kind.length*131;
+ const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const grain=(random()-.5)*.16,band=kind==='metal'?Math.sin(y*.92)*.035:kind==='timber'?Math.sin(x*.38)*.045:0;
+  const value=Math.max(.08,Math.min(.99,base+grain+band)),v=Math.round(value*255),i=(y*size+x)*4;
+  data[i]=data[i+1]=data[i+2]=v;data[i+3]=255;
+ }
+ const texture=new THREE.DataTexture(data,size,size,THREE.RGBAFormat);
+ texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;texture.generateMipmaps=true;texture.needsUpdate=true;
+ texture.repeat.set(['stone','limestone','concrete'].includes(kind)?1:2,['stone','limestone','concrete'].includes(kind)?1:2);
+ return texture;
+}
+
+export function surfaceMaterialMaps(kind='stone'){
+ const map=surfaceTexture(kind);if(!map)return{map:null,bumpMap:null,roughnessMap:null};
+ const bumpMap=map.clone();bumpMap.colorSpace=THREE.NoColorSpace;bumpMap.needsUpdate=true;
+ const roughnessMap=roughnessTexture(kind);
+ return{map,bumpMap,roughnessMap};
+}
