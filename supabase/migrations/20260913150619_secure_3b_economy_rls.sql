@@ -1,0 +1,16 @@
+alter table public.economy_accounts enable row level security;
+alter table public.economy_transactions enable row level security;
+alter table public.reward_definitions enable row level security;
+alter table public.reward_claims enable row level security;
+alter table public.inventory_items enable row level security;
+alter table public.inventory enable row level security;
+revoke all on public.economy_accounts, public.economy_transactions, public.reward_claims, public.inventory from anon, authenticated;
+grant select on public.economy_accounts, public.economy_transactions, public.reward_claims, public.inventory to authenticated;
+revoke all on public.reward_definitions, public.inventory_items from anon, authenticated;
+grant select on public.reward_definitions, public.inventory_items to authenticated;
+create policy economy_account_read_own on public.economy_accounts for select to authenticated using ((select auth.uid()) = user_id);
+create policy economy_transactions_read_own on public.economy_transactions for select to authenticated using ((select auth.uid()) = user_id);
+create policy reward_claims_read_own on public.reward_claims for select to authenticated using ((select auth.uid()) = user_id);
+create policy inventory_read_own on public.inventory for select to authenticated using ((select auth.uid()) = user_id);
+create policy reward_definitions_read_active on public.reward_definitions for select to authenticated using (active = true);
+create policy inventory_items_read_active on public.inventory_items for select to authenticated using (active = true);
