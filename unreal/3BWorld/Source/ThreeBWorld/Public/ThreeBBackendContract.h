@@ -8,6 +8,7 @@ namespace ThreeBBackend
     static constexpr const TCHAR* WorldEnginePath = TEXT("/functions/v1/world-engine");
     static constexpr const TCHAR* City3BPath = TEXT("/functions/v1/city-3b");
     static constexpr const TCHAR* MemberHubPath = TEXT("/functions/v1/member-hub");
+    static constexpr const TCHAR* WorldBootstrapPath = TEXT("/functions/v1/world-bootstrap");
 
     static constexpr const TCHAR* HeaderAuthorization = TEXT("Authorization");
     static constexpr const TCHAR* HeaderApiKey = TEXT("apikey");
