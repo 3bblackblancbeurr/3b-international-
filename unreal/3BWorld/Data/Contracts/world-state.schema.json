@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b.international/contracts/world-state.schema.json",
+  "title": "3B World State",
+  "type": "object",
+  "required": ["version","region","visited","beacons","seals","hub","adventure"],
+  "properties": {
+    "version": {"const": 1},
+    "region": {"enum": ["hub","france","italie","estonie","turquie","algerie","tunisie","maroc","espagne"]},
+    "visited": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "beacons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "seals": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "hub": {"type": "object"},
+    "adventure": {"type": "object"}
+  }
+}
