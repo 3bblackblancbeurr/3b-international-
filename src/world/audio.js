@@ -12,7 +12,7 @@ export function createWorldAudio(){
  event(type,action){if(type==='battle'){const defence=['guard','dodge'].includes(action);noise(defence?.23:.13,defence?.1:.19,action==='dodge'?2300:action==='power'?1000:650);tone(action==='power'?330:defence?210:95,action==='power'?.42:.14,.13,defence?'sine':'triangle');}else if(type==='gather'){noise(.12,.07,1200);tone(380,.14,.07,'triangle');}else if(type==='build'||type==='restore'){tone(330,.6,.1);setTimeout(()=>tone(495,.6,.08),140);setTimeout(()=>tone(660,.7,.06),280);}else tone(type==='power'?440:660,.45,.1);},
  cinematic(kind='micro'){
   if(!ctx||!enabled||hidden)return;
-  const major=['country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-intro','final-combat-intro','important-combat-result'].includes(kind);
+  const major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-intro','final-combat-intro','important-combat-result'].includes(kind);
   noise(major?.7:.32,major?.11:.065,major?420:760);tone(major?58:92,major?1.05:.55,major?.12:.075,'sine');
   setTimeout(()=>tone(guardian?196:major?261.63:392,major?.9:.48,major?.075:.05,'triangle'),major?180:90);
   if(major)setTimeout(()=>tone(guardian?293.66:392,.95,.055,'sine'),430);
