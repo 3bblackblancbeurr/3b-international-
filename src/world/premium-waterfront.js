@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
- const group=new THREE.Group();group.name='3B-Premium-Waterfront';root.add(group);
+ const group=new THREE.Group();group.name='3B-Premium-Waterfront';root.add(group);const foamContacts=[];
  const physical=options=>{const m=new THREE.MeshPhysicalMaterial(options);owned.push(m);return m;};
  const wetStone=physical({color:'#1b2329',roughness:.34,metalness:.08,clearcoat:.55,clearcoatRoughness:.22});
  const edgeStone=physical({color:'#0d151b',roughness:.48,metalness:.12,clearcoat:.28});
@@ -23,6 +23,7 @@ export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
   const walk=shape(box,wetStone,x,y,z,4.6,.18,length*1.08,group);walk.rotation.y=heading;walk.castShadow=false;
   const waterSideX=lake.x-x,waterSideZ=lake.z-z,sideLen=Math.hypot(waterSideX,waterSideZ)||1,nx=waterSideX/sideLen,nz=waterSideZ/sideLen;
   const wallX=x+nx*3.85,wallZ=z+nz*3.85,wall=shape(box,edgeStone,wallX,-.10,wallZ,.55,2.45,length*1.10,group);wall.rotation.y=heading;
+  const samples=Math.max(2,Math.ceil(length/3));for(let sample=0;sample<=samples;sample++){const t=sample/samples;foamContacts.push({x:a.x+(b.x-a.x)*t+nx*3.85,z:a.z+(b.z-a.z)*t+nz*3.85,r:1.45,strength:.9});}
   const wetBand=shape(box,blackMetal,wallX,-1.10,wallZ,.59,.26,length*1.11,group);wetBand.rotation.y=heading;wetBand.castShadow=false;
   if(railSegments.has(i)){
    const railX=x+nx*3.75,railZ=z+nz*3.75;
@@ -42,10 +43,10 @@ export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
   const outer=lake.r+7.7;
   for(let step=0;step<7;step++){
    const r=outer-step*.72,x=lake.x+dx*r,z=lake.z+dz*r,y=-.10-step*.20;
-   const stair=shape(box,wetStone,x,y,z,4.4,.19,1.0,group);stair.rotation.y=Math.atan2(dx,dz);stair.castShadow=false;
+   const stair=shape(box,wetStone,x,y,z,4.4,.19,1.0,group);stair.rotation.y=Math.atan2(dx,dz);stair.castShadow=false;if(step>=4)foamContacts.push({x,z,r:1.7,strength:.78});
   }
   const pontoonR=lake.r-2.5,px=lake.x+dx*pontoonR,pz=lake.z+dz*pontoonR;
-  const pontoon=shape(box,wetStone,px,-1.28,pz,3.8,.20,10.5,group);pontoon.rotation.y=Math.atan2(dx,dz);pontoon.castShadow=false;
+  const pontoon=shape(box,wetStone,px,-1.28,pz,3.8,.20,10.5,group);pontoon.rotation.y=Math.atan2(dx,dz);pontoon.castShadow=false;for(const along of [-4,-2,0,2,4])foamContacts.push({x:px+dx*along,z:pz+dz*along,r:1.45,strength:1});
   for(const side of [-1,1])for(const along of [-4.6,4.6]){
    const postX=px+tx*side*1.55+dx*along,postZ=pz+tz*side*1.55+dz*along;
    shape(cylinder,blackMetal,postX,-.05,postZ,.11,2.8,.11,group);
@@ -64,5 +65,5 @@ export function addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}){
  }
  const canopy=shape(box,glass,px,py+4.82,pz,7.4,.15,5.4,group);canopy.rotation.y=Math.atan2(pdx,pdz);canopy.castShadow=false;
 
- return{group};
+ return{group,foamContacts};
 }
