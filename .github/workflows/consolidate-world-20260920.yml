@@ -1,0 +1,98 @@
+name: Consolidate Monde 3B safely
+
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths:
+      - .github/workflows/consolidate-world-20260920.yml
+      - scripts/resolve-world-consolidation-20260920.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: world-consolidation-20260920
+  cancel-in-progress: false
+
+jobs:
+  consolidate:
+    if: github.ref == 'refs/heads/chatgpt-improvements-world-consolidation-20260920'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Merge exact reviewed source without overriding conflicts
+        env:
+          SOURCE_SHA: ba1f8d2ec7892d79738c21e6e4665142e863231e
+        run: |
+          set -euo pipefail
+          git config user.name '3B consolidation'
+          git config user.email '283291333+3bblackblancbeurr@users.noreply.github.com'
+          if git merge-base --is-ancestor "$SOURCE_SHA" HEAD; then
+            echo 'The pinned City source is already integrated.'
+            exit 0
+          fi
+          if ! git merge --no-commit --no-ff "$SOURCE_SHA"; then
+            if [ -f scripts/resolve-world-consolidation-20260920.py ]; then
+              python3 scripts/resolve-world-consolidation-20260920.py
+            fi
+            if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+              python3 - <<'PY'
+          import pathlib, subprocess
+          paths = subprocess.check_output(['git','diff','--name-only','--diff-filter=U'], text=True).splitlines()
+          for path in paths:
+              print('\nCONSOLIDATION_CONFLICT_FILE: ' + path)
+              lines = pathlib.Path(path).read_text().splitlines()
+              printing = False
+              for number, line in enumerate(lines, 1):
+                  if line.startswith('<<<<<<< '):
+                      printing = True
+                      for i in range(max(0, number-4), number-1):
+                          print(str(i+1) + ': ' + lines[i])
+                  if printing:
+                      print(str(number) + ': ' + line)
+                  if line.startswith('>>>>>>> '):
+                      printing = False
+                      for i in range(number, min(len(lines), number+3)):
+                          print(str(i+1) + ': ' + lines[i])
+          PY
+              echo 'Unreviewed merge conflicts: nothing has been pushed.'
+              exit 1
+            fi
+          fi
+          git diff --check
+          if git grep -nE '^(<<<<<<< |=======$|>>>>>>> )' -- src tests scripts supabase; then
+            echo 'Conflict markers remain; refusing consolidation.'
+            exit 1
+          fi
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Run all unit and integration tests
+        run: npm test
+      - name: Verify world and application
+        run: npm run verify
+      - name: Build production bundle
+        run: npm run build
+      - name: Publish tested merge to consolidation branch only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: chatgpt-improvements-world-consolidation-20260920
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TARGET_BRANCH"
+          if [ ! -f .git/MERGE_HEAD ]; then
+            echo 'No new merge to publish.'
+            exit 0
+          fi
+          git commit -m 'merge(world): integrate tested City unlock fixes with France foundations'
+          BASIC_AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          echo "::add-mask::$BASIC_AUTH"
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $BASIC_AUTH" push origin "HEAD:refs/heads/$TARGET_BRANCH"
+          printf '## Tested consolidation\n\nCommit: `%s`\n\nPublished to `%s` only. Main and production unchanged.\n' "$(git rev-parse HEAD)" "$TARGET_BRANCH" >> "$GITHUB_STEP_SUMMARY"

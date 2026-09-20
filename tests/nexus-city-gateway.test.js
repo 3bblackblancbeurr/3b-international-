@@ -41,10 +41,13 @@ test('mobile mode reduces expensive effects while keeping the scene usable', () 
   assert.match(premium, /nexus-boat-b\{display:none\}/);
 });
 
-test('Souvenir unlock still gates City 3B and locked members return to Monde du 3B', () => {
-  assert.match(gateway, /local\?\.beacons\?\.length/);
-  assert.match(gateway, /result\.data\?\.beacons\?\.length/);
-  assert.match(gateway, /leaveTo\('#monde-3b'\)/);
+test('existing cities stay accessible and locked members receive the real guided World mission', () => {
+  assert.match(gateway, /city3bRequest\('access'/);
+  assert.match(gateway, /cityResult\.value\?\.hasCity === true/);
+  assert.match(gateway, /VILLE EXISTANTE DÉTECTÉE/);
+  assert.match(gateway, /MISSION VILLE · ÉTAPE/);
+  assert.match(gateway, /cityUnlockGuideStorage\(true\)/);
+  assert.match(gateway, /leaveTo\('#monde-3b', \{ cityGuide: true \}\)/);
   assert.match(gateway, /setCityOpen\(true\)/);
   assert.match(gateway, /<City3BPortal open/);
 });

@@ -1,0 +1,51 @@
+name: World consolidation audit
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths: [.github/workflows/world-consolidation-audit.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Inspect pinned candidate merges without changing a remote branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/world-consolidation
+          git config user.name '3B release validation'
+          git config user.email 'release-validation@users.noreply.github.com'
+          for source in ba1f8d2ec7892d79738c21e6e4665142e863231e 264b2a0dd8433a9148edef27b71274229432e80d; do
+            git cat-file -e "$source^{commit}"
+            echo "=== SOURCE $source ==="
+            if git merge --no-commit --no-ff "$source"; then
+              git diff --cached --stat
+            else
+              git diff --name-only --diff-filter=U
+              git diff --cc > "/tmp/world-consolidation/conflicts-$source.diff"
+              cat "/tmp/world-consolidation/conflicts-$source.diff"
+            fi
+            git merge --abort || true
+          done
+          git status --porcelain
+          git log -1 --format='%H %s' > /tmp/world-consolidation/source-commit.txt
+      - name: Archive reproducible checkout including Git history, never credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git config --local --get-regexp 'http\..*extraheader'; then
+            echo 'Unexpected persisted authentication configuration'; exit 1
+          fi
+          tar -czf /tmp/world-consolidation/source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: world-consolidation-source
+          path: /tmp/world-consolidation/
+          retention-days: 2

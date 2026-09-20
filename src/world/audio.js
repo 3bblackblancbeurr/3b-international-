@@ -107,6 +107,16 @@ export function createWorldAudio(){
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);applyMix();},
   step(id){stepFlip=!stepFlip;noise(.06,inside?.06:.035,inside?520:1450);tone((inside?100:id==='estonie'?175:132)*(stepFlip?1:1.04),.055,.025,'triangle');},
   event,speak,transport,
+ cinematic(kind='micro'){
+  if(!ctx||!enabled||hidden)return;
+  const major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-intro','final-combat-intro','important-combat-result'].includes(kind);
+  noise(major?.7:.32,major?.11:.065,major?420:760);tone(major?58:92,major?1.05:.55,major?.12:.075,'sine');
+  setTimeout(()=>tone(guardian?196:major?261.63:392,major?.9:.48,major?.075:.05,'triangle'),major?180:90);
+  if(major)setTimeout(()=>tone(guardian?293.66:392,.95,.055,'sine'),430);
+  if(kind==='story-power')setTimeout(()=>{noise(.24,.055,1800);tone(523.25,.5,.055,'triangle');},120);
+  if(kind==='story-restoration')setTimeout(()=>{tone(329.63,.7,.055);tone(493.88,.9,.035);},260);
+ },
+
   visibility(value){hidden=value;if(!ctx)return;if(value){globalThis.speechSynthesis?.pause?.();ctx.suspend().catch(()=>{});}else if(enabled){globalThis.speechSynthesis?.resume?.();ctx.resume().catch(()=>{});}},
   close(){clearInterval(musicTimer);clearInterval(ambienceTimer);speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();enabled=false;pad.forEach(p=>p.o.stop());ctx?.close();}
  };

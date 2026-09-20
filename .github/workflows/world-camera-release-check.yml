@@ -1,0 +1,132 @@
+name: World camera release check
+on:
+  push:
+    branches: [chatgpt-improvements-world-consolidation-20260920]
+    paths: [.github/workflows/world-camera-release-check.yml]
+permissions:
+  contents: write
+  statuses: write
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      candidate: ${{ steps.commit.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Reproduce locally tested camera contract correction
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD:src/world/scene.js)" = a911fd82e02dd7a1b582712d7f8b7b9cee32af31
+          python3 scripts/apply-world-camera-fix.py
+          test "$(git hash-object src/world/scene.js)" = 0ea029852be831fec4e52617af6aef8050461c6e
+          test "$(git hash-object src/world/cinematic-camera.js)" = 7ddff356fbdcf089ae666f0f1d1c706e8d3e515f
+          test "$(git hash-object tests/cinematic-camera.test.js)" = 43a07aa16fded01c782f90a807a1fd8488e2efd6
+          git diff --check
+      - run: npm ci --no-audit --no-fund
+      - run: node --test tests/cinematic-camera.test.js tests/world-onboarding-lifecycle.test.js tests/builtin-icon-shadowing.test.js tests/cinematics-gold-master.test.js && npm run build
+      - name: Publish reviewed correction only to the candidate branch
+        id: commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TARGET=chatgpt-improvements-world-consolidation-20260920
+          test "$GITHUB_REF" = "refs/heads/$TARGET"
+          test "$(git ls-remote origin "refs/heads/$TARGET" | cut -f1)" = "$GITHUB_SHA"
+          git config user.name '3B Integration'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/world/scene.js src/world/cinematic-camera.js tests/cinematic-camera.test.js
+          git commit -m 'fix(world): convert gameplay orbit coordinates before cinematic interpolation'
+          cat > "$RUNNER_TEMP/git-askpass" <<'SH'
+          #!/bin/sh
+          case "$1" in *Username*) printf '%s\n' x-access-token;; *) printf '%s\n' "$GH_TOKEN";; esac
+          SH
+          chmod 700 "$RUNNER_TEMP/git-askpass"
+          GIT_ASKPASS="$RUNNER_TEMP/git-askpass" GIT_TERMINAL_PROMPT=0 git push origin "HEAD:refs/heads/$TARGET"
+          rm -f "$RUNNER_TEMP/git-askpass"
+          CANDIDATE=$(git rev-parse HEAD)
+          echo "sha=$CANDIDATE" >> "$GITHUB_OUTPUT"
+          for CHECK in threeb/release-browser threeb/release-verify; do
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state=pending -f context="$CHECK" -f description='Verifying real cinematic handoff' -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          done
+  browser:
+    needs: repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repair.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund && npm run build
+      - run: npm install --no-save --package-lock=false @playwright/test@1.56.1 && npx playwright install --with-deps chromium
+      - name: Check real avatar creation, cinematics, game entry and reload
+        id: test
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/world-release
+          npm run preview -- --host 127.0.0.1 --port 4173 > artifacts/world-release/preview.log 2>&1 &
+          SERVER=$!; trap 'kill "$SERVER" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do if curl -sf http://127.0.0.1:4173/ >/dev/null; then break; fi; sleep 1; done
+          node scripts/verify-world-release-browser.mjs
+      - name: Record browser outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.test.outcome }}
+          CANDIDATE: ${{ needs.repair.outputs.candidate }}
+        run: |
+          STATE=failure; test "$RESULT" = success && STATE=success
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-browser -f description="Desktop and touch: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-camera-browser
+          path: artifacts/world-release/
+          retention-days: 7
+  verify:
+    needs: repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.repair.outputs.candidate }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Full regression and production build
+        id: test
+        run: |
+          set -euo pipefail
+          npm run verify | tee /tmp/world-verify.log
+      - name: Record full regression outcome
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.test.outcome }}
+          CANDIDATE: ${{ needs.repair.outputs.candidate }}
+        run: |
+          STATE=failure; test "$RESULT" = success && STATE=success
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-verify -f description="Full regression and build: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: world-camera-verify
+          path: /tmp/world-verify.log
+          retention-days: 7
