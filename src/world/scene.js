@@ -12,7 +12,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {loadWorldModels} from './models.js';
 import {createLivingActor} from './living.js';
 import {DEFAULT_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
-import {advanceMotion,pointerStick,createQualityController,createMotionSmoother} from './motion.js';
+import {advanceMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
 import {movementHeading} from './heading.js';
 import {COUNTRIES,countryById,cardById} from './catalog.js';
 import {createPortalFrame} from './portals.js';
@@ -258,14 +258,14 @@ function hubNpcAvatar(item){
   if(paused||transportRide||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
   const rect=canvas.getBoundingClientRect(),cameraTouch=e.pointerType==='touch'&&e.clientX-rect.left>=rect.width*.52;
   if(e.button===2||cameraTouch){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!orbitHeld)orbitHeld={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,drag:false};if(touchPoints.size===2){const p=[...touchPoints.values()];pinchDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}return;}
-  if(held)return;held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,run:false};target=null;route=[];
+  if(held)return;held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,fullTiltAt:null,control:joystickProfile(rect.width,rect.height,e.pointerType)};target=null;route=[];
  }
  function move(e){
   if(touchPoints.has(e.pointerId)){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});onActivity();needsRender=true;manualCameraAt=performance.now();
    if(touchPoints.size===2){const p=[...touchPoints.values()],distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchDistance!==null)orbit=zoomOrbit(orbit,(pinchDistance-distance)*5);pinchDistance=distance;if(orbitHeld){orbitHeld.drag=true;const q=touchPoints.get(orbitHeld.id);if(q){orbitHeld.x=q.x;orbitHeld.y=q.y;}}return;}
    if(orbitHeld?.id===e.pointerId){const dx=e.clientX-orbitHeld.x,dy=e.clientY-orbitHeld.y;orbit=rotateOrbit(orbit,dx,dy);orbitHeld.x=e.clientX;orbitHeld.y=e.clientY;if(Math.hypot(e.clientX-orbitHeld.startX,e.clientY-orbitHeld.startY)>7)orbitHeld.drag=true;}return;
   }
-  if(!held||held.id!==e.pointerId)return;const dx=e.clientX-held.x,dy=e.clientY-held.y,len=Math.hypot(dx,dy);if(len>10)held.drag=true;held.run=len>68;stick=pointerStick(dx,dy);onActivity();
+  if(!held||held.id!==e.pointerId)return;const dx=e.clientX-held.x,dy=e.clientY-held.y,len=Math.hypot(dx,dy);if(len>held.control.deadZone)held.drag=true;stick=pointerStick(dx,dy,held.control);const magnitude=Math.hypot(stick.x,stick.z);if(magnitude>=held.control.sprintThreshold){if(held.fullTiltAt===null)held.fullTiltAt=performance.now();}else if(magnitude<held.control.sprintThreshold-.08)held.fullTiltAt=null;onActivity();
  }
  function pointRoute(e,run=false){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObject(landscape.ground,false)[0];if(hit){const p=hit.point,r=Math.hypot(p.x,p.z),scale=Math.min(1,(worldRadius-2)/r);startRoute({x:p.x*scale,z:p.z*scale},false,run);}}
  function up(e){
@@ -316,7 +316,7 @@ function hubNpcAvatar(item){
     dz=stick.z+((keys.has('s')||keys.has('arrowdown'))?1:0)-((keys.has('w')||keys.has('z')||keys.has('arrowup'))?1:0);
     const rawInput=movementFrame.resolve(dx,dz,viewBearing(camera.position,cameraTarget));
     ({x:dx,z:dz}=motionSmoother.update(rawInput,dt));
-    const sprinting=keys.has('shift')||held?.run||target&&routeSprintUntil>now;
+    const sprinting=keys.has('shift')||!!held&&sprintIntent(stick,held.fullTiltAt,now,held.control)||target&&routeSprintUntil>now;
     const previous=position,next=advanceMotion({position,target,route},{x:dx,z:dz},dt,10.5*stats.speed*(sprinting?1.4:1),obstacles,worldRadius);
     if(fieldCombat){
      const inputLength=Math.max(1,Math.hypot(dx,dz));combatInput.x=Math.round(dx/inputLength*1000)/1000;combatInput.z=Math.round(dz/inputLength*1000)/1000;
