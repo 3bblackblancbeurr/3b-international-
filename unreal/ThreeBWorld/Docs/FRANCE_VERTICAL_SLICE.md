@@ -109,7 +109,7 @@ Additional runtime contracts prepare the real handoff and co-op validation befor
 
 The Editor validator now checks that all France contracts exist and share the canonical slice before checking future Unreal assets. This remains preproduction evidence, not proof that the assets exist.
 
-## ACTION UNREAL EDITOR RESTANTE
+## Editor execution order\n\n`Data/France/france-editor-execution-plan-v1.json` defines the ordered UE5.8 stages and required proof for compile, worlds, player/input, Céliane, story layers, network/reconnect, profiling and packaging. It is a preparation contract only and cannot mark a stage validated by itself.\n\n## ACTION UNREAL EDITOR RESTANTE
 
 Git can prepare the contract, C++ types, tags, tests and source data. Unreal Editor is still required to create/validate:
 

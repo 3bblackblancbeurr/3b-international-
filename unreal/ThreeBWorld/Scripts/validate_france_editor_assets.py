@@ -21,6 +21,7 @@ CONTRACT_FILES = (
     "france-nexus-handoff-v1.json",
     "france-coop-session-v1.json",
     "celiane-state-tree-spec.json",
+    "france-editor-execution-plan-v1.json",
 )
 
 

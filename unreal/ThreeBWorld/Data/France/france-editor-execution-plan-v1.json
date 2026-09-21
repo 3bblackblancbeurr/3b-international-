@@ -1,0 +1,161 @@
+{
+  "version": "1.0.0",
+  "engine": "5.8",
+  "slice_id": "france_justice_v1",
+  "purpose": "Ordered Unreal Editor execution plan. This file prepares work; it does not claim any .uasset exists.",
+  "status_model": [
+    "prepared",
+    "editor_required",
+    "validated"
+  ],
+  "evidence_rules": {
+    "no_step_may_claim_validated_without_editor_proof": true,
+    "required_proof_types": [
+      "compile_log",
+      "asset_validator_output",
+      "pie_test_result",
+      "profiling_capture",
+      "packaged_build_smoke_test"
+    ]
+  },
+  "stages": [
+    {
+      "id": "stage_01_compile",
+      "order": 1,
+      "editor_required": true,
+      "goals": [
+        "open_project",
+        "compile_editor",
+        "compile_client",
+        "compile_server"
+      ],
+      "evidence": [
+        "compile_log"
+      ]
+    },
+    {
+      "id": "stage_02_worlds",
+      "order": 2,
+      "editor_required": true,
+      "asset_paths": [
+        "/Game/3B/World/Nexus/Maps/L_Nexus",
+        "/Game/3B/World/France/Maps/L_France_OpenWorld"
+      ],
+      "evidence": [
+        "asset_validator_output"
+      ]
+    },
+    {
+      "id": "stage_03_story_data",
+      "order": 3,
+      "editor_required": true,
+      "asset_paths": [
+        "/Game/3B/World/France/Data/DA_FranceJusticeSlice"
+      ],
+      "source_contracts": [
+        "france-justice-v1.json",
+        "france-checkpoint-reconnect-v1.json",
+        "france-npc-dialogue-v1.json",
+        "france-presentation-v1.json",
+        "france-nexus-handoff-v1.json",
+        "france-coop-session-v1.json"
+      ],
+      "evidence": [
+        "asset_validator_output"
+      ]
+    },
+    {
+      "id": "stage_04_player_input",
+      "order": 4,
+      "editor_required": true,
+      "asset_paths": [
+        "/Game/3B/Player/BP_ThreeBCharacter",
+        "/Game/3B/Input/IMC_ThreeBDefault",
+        "/Game/3B/Input/Actions/IA_Move",
+        "/Game/3B/Input/Actions/IA_Look",
+        "/Game/3B/Input/Actions/IA_Jump",
+        "/Game/3B/Input/Actions/IA_Sprint",
+        "/Game/3B/Input/Actions/IA_Interact"
+      ],
+      "evidence": [
+        "asset_validator_output",
+        "pie_test_result"
+      ]
+    },
+    {
+      "id": "stage_05_celiane",
+      "order": 5,
+      "editor_required": true,
+      "asset_paths": [
+        "/Game/3B/Characters/Celiane/BP_Celiane",
+        "/Game/3B/Characters/Celiane/AI/ST_Celiane"
+      ],
+      "source_contracts": [
+        "celiane-state-tree-spec.json"
+      ],
+      "evidence": [
+        "asset_validator_output",
+        "pie_test_result"
+      ]
+    },
+    {
+      "id": "stage_06_story_layers",
+      "order": 6,
+      "editor_required": true,
+      "asset_paths": [
+        "/Game/3B/World/France/DataLayers/DL_Story_PreJustice",
+        "/Game/3B/World/France/DataLayers/DL_Story_JusticeCrisis",
+        "/Game/3B/World/France/DataLayers/DL_Story_CelianeLiberated",
+        "/Game/3B/World/France/DataLayers/DL_Story_Reconstruction",
+        "/Game/3B/World/France/DataLayers/DL_Story_PostLiberation"
+      ],
+      "evidence": [
+        "asset_validator_output",
+        "pie_test_result"
+      ]
+    },
+    {
+      "id": "stage_07_network_persistence",
+      "order": 7,
+      "editor_required": true,
+      "goals": [
+        "pie_two_players",
+        "disconnect_reconnect",
+        "revive",
+        "shared_objective",
+        "no_duplicate_reward"
+      ],
+      "evidence": [
+        "pie_test_result"
+      ]
+    },
+    {
+      "id": "stage_08_profile",
+      "order": 8,
+      "editor_required": true,
+      "goals": [
+        "profile_reference_pc",
+        "check_streaming_hlod",
+        "check_critical_route"
+      ],
+      "evidence": [
+        "profiling_capture"
+      ]
+    },
+    {
+      "id": "stage_09_package",
+      "order": 9,
+      "editor_required": true,
+      "goals": [
+        "package_client",
+        "package_server",
+        "test_threebworld_protocol",
+        "smoke_test_clean_machine"
+      ],
+      "evidence": [
+        "packaged_build_smoke_test"
+      ]
+    }
+  ],
+  "completion_rule": "Gold Master only after every stage has real external evidence; source contracts alone remain PREPARED."
+}
