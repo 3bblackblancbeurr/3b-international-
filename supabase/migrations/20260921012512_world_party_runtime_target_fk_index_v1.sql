@@ -1,0 +1,3 @@
+create index world_party_runtime_receipts_target_user_idx
+on public.world_party_runtime_receipts(target_user_id)
+where target_user_id is not null;
