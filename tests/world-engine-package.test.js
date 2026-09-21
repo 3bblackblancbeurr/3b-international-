@@ -24,7 +24,7 @@ test('world-engine deployment pack includes nested Hub reducer dependencies',()=
 
 
 test('authoritative world engine mirrors critical client gameplay reducers',()=>{
- const critical=['engine.js','rules.js','adventure-state.js','field-combat.js','guardian-values.js','guardian-combat.js','final-circle.js','hub/activity-catalog.js','hub/state.js','hub/mission-signals.js','hub/mission-actions.js','hub/mission-runtime.js','hub/mission-catalog.js','hub/mission-graph.js','hub/dialogue-intents.js'];
+ const critical=['engine.js','rules.js','adventure-state.js','frontier.js','district-jobs.js','field-combat.js','guardian-values.js','guardian-combat.js','final-circle.js','hub/activity-catalog.js','hub/state.js','hub/mission-signals.js','hub/mission-actions.js','hub/mission-runtime.js','hub/mission-catalog.js','hub/mission-graph.js','hub/dialogue-intents.js'];
  for(const name of critical){
   const client=readFileSync(join(root,'src','world',name),'utf8');
   const server=readFileSync(join(root,'supabase','functions','world-engine-goldmaster-candidate',name),'utf8');
