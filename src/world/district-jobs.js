@@ -31,10 +31,12 @@ export const DISTRICT_JOBS=Object.freeze({
   stage(a('courier:checkpoint','Faire contrôler le sceau en route','inspect',34,44)),
   stage(a('courier:deliver','Remettre le paquet au destinataire','talk',95,95)),
  ]}),
- field_rescue:job('Deux personnes manquent à l’appel','Localise deux personnes distinctes, stabilise-les puis reviens signaler que la zone est sûre.',{cost:1,reward:{food:2,wood:1},xp:45,shards:8,target:[27,25],steps:[
+ field_rescue:job('Deux personnes manquent à l’appel','Localise deux personnes distinctes, stabilise-les, remets la première debout, réanime la seconde puis évacue-les jusqu’au point sûr avant de revenir au refuge.',{cost:1,reward:{food:2,wood:1},xp:45,shards:8,target:[27,25],steps:[
   stage(a('rescue:locate1','Localiser la première personne','scan',64,-8),a('rescue:locate2','Localiser la deuxième personne','scan',78,4)),
   stage(a('rescue:help1','Stabiliser la première personne','help',64,-8),a('rescue:help2','Stabiliser la deuxième personne','help',78,4)),
-  stage(a('rescue:return','Revenir au refuge','talk',27,25)),
+  stage(a('rescue:support1','Soutenir la première personne pour la remettre debout','support',64,-8),a('rescue:revive2','Réanimer la deuxième personne','revive',78,4)),
+  stage(a('rescue:escort1','Accompagner la première personne jusqu’au point sûr','support',49,10),a('rescue:carry2','Porter la deuxième personne jusqu’au point sûr','carry',54,15)),
+  stage(a('rescue:return','Revenir au refuge et confirmer l’évacuation','talk',27,25)),
  ]}),
  signal_watch:job('Le signal qui décroche','Inspecte le relais, réaligne deux éléments différents puis confirme la stabilité du signal.',{reward:{stone:2,wood:1},xp:40,shards:7,target:[-45,-99],steps:[
   stage(a('signal:inspect','Diagnostiquer le relais','scan',-51,-92)),
