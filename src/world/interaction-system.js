@@ -1,5 +1,6 @@
 // Systemic interaction contract for the Monde du 3B.
 // Rendering and input layers consume this catalog; progression remains server-authoritative.
+import {resonanceContextCandidate,resonanceActionPresentation} from './resonance-context.js';
 
 export const ACTION_CATEGORIES=Object.freeze(['social','investigation','world','traversal','rescue','craft','vehicle','combat','companion','rest']);
 
@@ -35,6 +36,7 @@ export const ACTIONS=Object.freeze({
  fight:{label:'Affronter',category:'combat',animation:'Draw',audio:'combat_ready',caption:'Combat',haptic:'strong',input:'press'},
  guard:{label:'Protéger',category:'combat',animation:'Guard',audio:'guard',caption:'Protection',haptic:'medium',input:'press'},
  commandCompanion:{label:'Donner un ordre',category:'companion',animation:'Point',audio:'companion',caption:'Ordre au compagnon',haptic:'light',input:'press'},
+ resonance:{label:'Activer la Résonance',category:'companion',animation:'Cast',audio:'memory',caption:'Résonance contextuelle',haptic:'medium',input:'press'},
  travel:{label:'Traverser',category:'traversal',animation:'Walk',audio:'portal',caption:'Passage',haptic:'medium',input:'press'},
  enter:{label:'Entrer',category:'world',animation:'Walk',audio:'door',caption:'Entrée',haptic:'light',input:'press'},
 });
@@ -102,8 +104,11 @@ export function contextActions(item,context={}){
   if(item.type==='beacon')overrides={label:item.done?'Souvenir retrouvé':'Recueillir le Souvenir'};
   if(item.type==='guardian')overrides={label:save.seals?.includes(item.region)?'Défier à nouveau':'Affronter le Gardien'};
   if(item.type==='hubGuardian'&&id==='talk')overrides={label:'Parler au Gardien'};
+  const assisted=resonanceActionPresentation(save,item,id);if(assisted)overrides={...overrides,caption:assisted.caption};
   const action=cloneAction(id,overrides);if(action)actions.push(action);
  }
+ const baseVerb=actions[0]?.id,assist=baseVerb?resonanceContextCandidate(save,item,baseVerb):null;
+ if(assist){const action=cloneAction('resonance',{label:'Résonance · '+assist.name,caption:assist.caption,resonanceVerb:baseVerb,resonanceRegion:assist.region});if(action)actions.push(action);}
  return actions;
 }
 
