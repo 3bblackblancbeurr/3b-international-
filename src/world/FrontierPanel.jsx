@@ -1,13 +1,15 @@
 import React from 'react';
 import {BUILDINGS,RESOURCE_SITES,frontierState,buildCost,masteryLevel} from './frontier.js';
 import {cardById} from './catalog.js';
+import {DISTRICT_JOBS,availableJobs,currentJobActions,jobReadyToTurnIn} from './district-jobs.js';
 
 export function FrontierPanel({save,act,onNavigate}){
- const home=frontierState(save);
+ const home=frontierState(save),offers=availableJobs(home),active=home.activeJob?DISTRICT_JOBS[home.activeJob]:null,pending=currentJobActions(home),ready=jobReadyToTurnIn(home);
  return <div className="frontier-panel"><small>TON LIEU DANS CE PAYS</small><h3>Construire. Protéger. Grandir.</h3><p>Développe ton refuge à ton rythme. Les expéditions se renouvellent ; ton groupe conserve son expérience.</p>
   <div className="frontier-stock"><span>Bois <b>{home.wood}</b></span><span>Pierre <b>{home.stone}</b></span><span>Provisions <b>{home.food}</b></span></div>
   <div className="frontier-buildings">{Object.entries(BUILDINGS).map(([id,b])=>{const cost=buildCost(home,id);return <article key={id}><div><h4>{b.name} <small>{home[id]}/8</small></h4><p>{b.detail}</p></div><button disabled={home[id]>=8||home.wood<cost.wood||home.stone<cost.stone} onClick={()=>act({type:'build',building:id})}>{home[id]>=8?'Rang maximal':home[id]?'Améliorer':'Construire'}<small>{home[id]<8?`${cost.wood} bois · ${cost.stone} pierre`:''}</small></button></article>;})}</div>
   <h4>Prochaine sortie</h4><div className="frontier-gather">{RESOURCE_SITES.map(p=><button disabled={home.harvest.includes(p.id)} key={p.id} onClick={()=>onNavigate(save.region+':resource:'+p.id)}>{home.harvest.includes(p.id)?'✓ Récolté':p.name}<small>{home.harvest.includes(p.id)?'Revient après une victoire':'Repérer dans la campagne'}</small></button>)}</div>
+  <h4>Contrats indépendants</h4>{active?<section className="frontier-contract-active"><strong>{active.title}</strong><p>{active.detail}</p><small>Étape {Math.min((home.jobStage||0)+1,active.steps.length)}/{active.steps.length} · {pending.length?pending.map(action=>action.label).join(' · '):'Toutes les actions sont enregistrées.'}</small><div className="world-actions">{!ready&&pending[0]&&<button className="world-primary" onClick={()=>onNavigate(save.region+':job-action:'+home.activeJob+':'+pending[0].id)}>Rejoindre · {pending[0].label}</button>}{ready&&<button className="world-primary" onClick={()=>onNavigate(save.region+':job:'+home.activeJob)}>Remettre le contrat</button>}</div></section>:<div className="frontier-contracts">{offers.map(([id,job])=><article key={id}><div><strong>{job.title}</strong><p>{job.detail}</p><small>{job.steps.length} étapes · {job.xp} XP{job.shards?' · '+job.shards+' éclats':''}{job.cost?' · coût '+job.cost+' provision':''}</small></div><button disabled={home.food<job.cost} onClick={()=>act({type:'jobAccept',id})}>Accepter</button></article>)}</div>}
   <button className="world-primary" disabled={!home.food} onClick={()=>onNavigate(save.region+':patrol')}>Protéger les environs · 1 provision</button>
   {!home.food&&<button onClick={()=>act({type:'recover'})}>Préparer une ration de secours</button>}
   <p className="frontier-note">Victoire : +35 XP monde, +8 éclats, +30 expérience pour chaque membre du groupe et retour des ressources. Un repli coûte la provision engagée, sans perdre tes constructions. Rien ne se dégrade hors connexion.</p>
