@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {startField,stepField,attackContains,normalizeField} from '../src/world/field-combat.js';
+import {finalCirclePhase,finalCirclePhaseMastered,finalCircleLockedEnemyFloor,finalCircleMasteryCount} from '../src/world/final-circle.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {COUNTRIES} from '../src/world/catalog.js';
@@ -75,6 +76,36 @@ test('regional guardians enforce distinct field mechanics instead of stat-only r
  let espagne=boss('espagne');espagne=idle(espagne,'strike');assert.ok(espagne.guardianMeter>0,'Passion builds intensity');
  let italie=boss('italie');italie=idle(italie,'strike');assert.equal(italie.enemy,1000,'Espoir rebuild shield absorbs the first hit');assert.ok(italie.guardianShield<26);
  let maroc=idle(boss('maroc'));assert.equal(maroc.guardianMeter,100,'Noblesse starts with an inheritance to protect');
+});
+
+test('final circle damage cannot cross a Guardian threshold until that phase mechanic is mastered',()=>{
+ let e={...encounter(),boss:true,final:true,region:'france',enemy:321,enemyMax:360,stats:{...encounter().stats,attack:80}};
+ e=idle(e);assert.equal(finalCirclePhase(e).index,1);assert.equal(finalCirclePhaseMastered(e),false);
+ e.field.cooldown=0;e.field.phase='pursuit';e.field.p={x:0,z:6};e.field.enemy={x:0,z:0};
+ e=idle(e,'strike');
+ assert.equal(e.enemy,finalCircleLockedEnemyFloor(e,{index:1}), 'unverified damage must stop before phase 2');
+ assert.equal(finalCirclePhase(e).index,1);
+ e.guardianFlag=true;e.field.cooldown=0;e.field.phase='recovery';e.field.recover=500;e.field.p={x:0,z:6};e.field.enemy={x:0,z:0};
+ e=idle(e,'strike');
+ assert.equal(finalCirclePhaseMastered(e,{index:1}),true);
+ assert.ok(e.enemy<finalCircleLockedEnemyFloor(e,{index:1}));
+});
+
+test('each of the eight final Guardian mechanics can mark its own mastery bit',()=>{
+ const make=index=>{
+  const enemyMax=800,enemy=Math.max(1,800-(index-1)*100);
+  let e={...encounter(),boss:true,final:true,region:'france',enemy,enemyMax,stats:{...encounter().stats,attack:40}};
+  e=idle(e);return e;
+ };
+ let e=make(1);e.guardianFlag=true;e.field.phase='recovery';e.field.recover=500;e.field.cooldown=0;e=idle(e,'strike');assert.equal(finalCirclePhaseMastered(e,{index:1}),true);
+ e=make(2);e.field.phase='windup';e.field.windup=0;e.field.guard=500;e.field.p={...e.field.home};e=idle(e);assert.equal(finalCirclePhaseMastered(e,{index:2}),true);
+ e=make(3);e.field.phase='windup';e.field.windup=0;e.field.guard=500;e.field.p={...e.field.home};e=idle(e);assert.equal(finalCirclePhaseMastered(e,{index:3}),true);
+ e=make(4);e.field.phase='windup';e.field.windup=0;e.field.dodge=500;e.field.enemy={x:0,z:0};e.field.p={x:0,z:4};e.field.aim={x:0,z:10};e=idle(e);assert.equal(finalCirclePhaseMastered(e,{index:4}),true);
+ e=make(5);e.guardianFlag=true;e.guardianMeter=30;e.field.cooldown=0;e=idle(e,'guard');assert.equal(finalCirclePhaseMastered(e,{index:5}),true);
+ e=make(6);e.guardianShield=10;e.field.cooldown=0;e.field.p={x:0,z:6};e.field.enemy={x:0,z:0};e=idle(e,'strike');assert.equal(finalCirclePhaseMastered(e,{index:6}),true);
+ e=make(7);e.guardianFlag=true;e.field.phase='windup';e.field.windup=0;e.field.guard=500;e=idle(e);assert.equal(finalCirclePhaseMastered(e,{index:7}),true);
+ e=make(8);e.field.phase='recovery';e.field.recover=500;e.field.cooldown=0;e.field.p={x:0,z:6};e.field.enemy={x:0,z:0};e=idle(e,'strike');assert.equal(finalCirclePhaseMastered(e,{index:8}),true);
+ assert.equal(finalCircleMasteryCount(e),1,'isolated phase fixture should only set its own bit');
 });
 
 test('final field combat rotates through all eight guardian mechanics by enemy health',()=>{
