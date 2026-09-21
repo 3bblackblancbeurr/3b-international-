@@ -56,3 +56,12 @@ test('installed app exposes shortcuts to the three core 3B journeys',()=>{
  assert.deepEqual(manifest.shortcuts.map(item=>item.url),['/#passeport','/#monde-3b','/#boutique']);
  assert.ok(manifest.categories.includes('lifestyle'));
 });
+
+
+test('Manga and Secret placeholders read as intentional premium previews',()=>{
+ const coming=read('src/components/ComingSoon.jsx');
+ assert.match(coming,/Le Cercle Brisé/);
+ assert.match(coming,/8 Portes · 8 valeurs/);
+ assert.match(coming,/PROTOCOLE VERROUILLÉ/);
+ assert.match(coming,/Entrer dans le Monde du 3B/);
+});
