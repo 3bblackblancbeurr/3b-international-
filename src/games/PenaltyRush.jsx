@@ -162,7 +162,13 @@ export default function PenaltyRush({ onClose, onAccount }) {
       {notice && <div className="penalty-notice" role="status">{notice}</div>}
 
       {room?.status === 'active' || room?.status === 'finished'
-        ? <MatchRoom room={room} profile={profile} busy={busy} request={request} onLeave={() => request('leave', { room: room.id }).catch(() => {})} />
+        ? <MatchRoom room={room} profile={profile} busy={busy} request={request} onLeave={async () => {
+            const id = room.id;
+            try {
+              await request('leave', { room: id });
+              await request('status', {});
+            } catch {}
+          }} />
         : (
           <>
             <nav className="penalty-nav" aria-label="Penalty Rush">
@@ -520,7 +526,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
       {state.phase === 'second-half' && state.possession === 1 && <div className="penalty-phase-banner">MI-TEMPS · INVERSION DES RÔLES</div>}
       {state.phase === 'golden-duel' && <div className="penalty-phase-banner gold">DUEL D’OR · UNE ATTAQUE CHACUN</div>}
-      {room.status === 'finished' && <div className="penalty-result-overlay"><section><span className="penalty-kicker">RÉSULTAT SERVEUR</span><h2>{state.winner === selfIndex ? 'Victoire' : state.winner === null ? 'Égalité' : 'Défaite'}</h2><p>{score[0]} — {score[1]}</p><button className="penalty-primary" onClick={() => request('leave', { room: room.id }).catch(() => {})}>Retour au hub</button></section></div>}
+      {room.status === 'finished' && <div className="penalty-result-overlay"><section><span className="penalty-kicker">RÉSULTAT SERVEUR</span><h2>{state.winner === selfIndex ? 'Victoire' : state.winner === null ? 'Égalité' : 'Défaite'}</h2><p>{score[0]} — {score[1]}</p><button className="penalty-primary" onClick={onLeave}>Retour au hub</button></section></div>}
 
       <button className="penalty-match-exit" onClick={onLeave}>Quitter</button>
     </main>
