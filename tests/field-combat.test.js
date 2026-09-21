@@ -88,7 +88,8 @@ test('final circle damage cannot cross a Guardian threshold until that phase mec
  e.guardianFlag=true;e.field.cooldown=0;e.field.phase='recovery';e.field.recover=500;e.field.p={x:0,z:6};e.field.enemy={x:0,z:0};
  e=idle(e,'strike');
  assert.equal(finalCirclePhaseMastered(e,{index:1}),true);
- assert.ok(e.enemy<finalCircleLockedEnemyFloor(e,{index:1}));
+ assert.equal(e.enemy,finalCircleLockedEnemyFloor(e,{index:1}));
+ assert.equal(finalCirclePhase(e).index,2,'a mastered hit may enter only the immediate next phase');
 });
 
 test('each of the eight final Guardian mechanics can mark its own mastery bit',()=>{
