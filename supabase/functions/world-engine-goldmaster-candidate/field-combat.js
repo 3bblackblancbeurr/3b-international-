@@ -57,7 +57,7 @@ export function stepField(enc,input,move){
  const event=kind=>{f.last=kind;f.event++;e.turn++;};
  const kind=f.cooldown?null:input.kind;
  if(kind==='resonance'&&useResonance(e,f,event)){}
- elseif(kind==='dodge'&&f.stamina>=32){
+ else if(kind==='dodge'&&f.stamina>=32){
   let v=direction;if(length<.05){const x=f.p.x-f.enemy.x,z=f.p.z-f.enemy.z,d=Math.hypot(x,z)||1;v={x:z/d,z:-x/d};}
   f.p=move(f.p,v,5.2);f.stamina-=32;f.dodge=420;f.cooldown=550;e.opening=true;event(kind);
  }else if(kind==='guard'&&f.stamina>=18){f.stamina-=18;f.guard=950;f.cooldown=400;event(kind);}
