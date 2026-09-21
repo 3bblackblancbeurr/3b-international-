@@ -228,10 +228,21 @@ def fill_mission_catalog(asset, missions_source: dict[str, Any]) -> None:
         safe_set(mission, "id", make_name(item["id"]))
         safe_set(mission, "title", item.get("title", ""), required=False)
         safe_set(mission, "district_id", make_name(item["district_id"]))
+        safe_set(mission, "mission_type", make_name(item.get("type")))
         safe_set(
             mission,
             "available_phase_ids",
             [make_name(x) for x in item.get("available_phases", [])],
+        )
+        safe_set(
+            mission,
+            "required_world_state_ids",
+            [make_name(x) for x in item.get("requires_world_state", [])],
+        )
+        safe_set(
+            mission,
+            "gameplay_modes",
+            [make_name(x) for x in item.get("gameplay", [])],
         )
 
         objectives = []
@@ -289,6 +300,37 @@ def fill_population_asset(asset, source: dict[str, Any]) -> None:
         safe_set(value, "roles", [make_name(x) for x in item["roles"]])
         archetypes.append(value)
     safe_set(asset, "archetypes", archetypes)
+
+    role_cls = reflected("ThreeBNpcRoleDefinition")
+    roles = []
+    for item in source.get("npc_roles", []):
+        value = role_cls()
+        safe_set(value, "id", make_name(item["id"]))
+        safe_set(value, "zone_id", make_name(item["zone"]))
+        safe_set(value, "district_id", make_name(item["district_id"]))
+        safe_set(value, "routine_id", make_name(item["routine"]))
+        safe_set(
+            value,
+            "active_phase_ids",
+            [make_name(x) for x in item.get("active_phases", [])],
+        )
+        safe_set(
+            value,
+            "memory_fact_keys",
+            [make_name(x) for x in item.get("memory_fact_keys", [])],
+        )
+        safe_set(
+            value,
+            "intents",
+            [make_name(x) for x in item.get("intents", [])],
+        )
+        safe_set(
+            value,
+            "post_liberation_behavior",
+            make_name(item.get("post_liberation_behavior")),
+        )
+        roles.append(value)
+    safe_set(asset, "npc_roles", roles)
 
 
 def fill_weather_asset(asset, source: dict[str, Any], story_source: dict[str, Any]) -> None:
