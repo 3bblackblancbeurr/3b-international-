@@ -17,6 +17,7 @@ import {HUB_MISSION_ACTION_PLANS,applyHubMissionAction,hubMissionActionTargets,v
 import {hubRuntime} from '../src/world/hub/runtime-data.js';
 import {DISTRICT_JOBS,applyDistrictJobAction,currentJobActions,jobReadyToTurnIn,validateDistrictJobs} from '../src/world/district-jobs.js';
 import {serviceItems} from '../src/world/settlements.js';
+import {PARTY_SIGNALS,sharedObjectiveState,validateCoopSession} from '../src/world/coop-session.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -227,6 +228,21 @@ test('core controls are remappable by action and preserve AZERTY WASD and arrow 
  assert.equal(actionHeld(remapped,'moveForward',new Set(['z'])),true);
  const invalid=normalizeControlBindings({interact:['not-a-key']});
  assert.equal(invalid.interact[0],CONTROL_ACTIONS.interact.default[0]);
+});
+
+test('co-op coordination provides modern pings and proximity-based shared objective readiness',()=>{
+ assert.equal(validateCoopSession(),true);
+ assert.ok(Object.keys(PARTY_SIGNALS).length>=8);
+ for(const id of ['danger','ready','regroup','objective','wait'])assert.ok(PARTY_SIGNALS[id],id);
+ const now=10000,peers=[
+  {id:'a',region:'france',x:1,z:1,received:9900},
+  {id:'b',region:'france',x:20,z:20,received:9900},
+  {id:'c',region:'italie',x:1,z:1,received:9900},
+ ];
+ let state=sharedObjectiveState(peers,{region:'france',x:0,z:0},{required:2,radius:5,selfPresent:true,now});
+ assert.equal(state.ready,true);assert.equal(state.count,2);assert.deepEqual(state.members,['a']);
+ state=sharedObjectiveState(peers,{region:'france',x:0,z:0},{required:3,radius:5,selfPresent:true,now});
+ assert.equal(state.ready,false);
 });
 
 test('co-op pose validation covers the real metropolis radius instead of the old 261-unit cap',()=>{
