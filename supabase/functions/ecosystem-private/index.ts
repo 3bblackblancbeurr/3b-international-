@@ -94,6 +94,35 @@ Deno.serve(async req=>{
   const reader=req.body?.getReader();let length=0,raw='';const decoder=new TextDecoder();if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;length+=chunk.value.length;if(length>100000){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}finally{reader.releaseLock();}
   let body;try{body=JSON.parse(raw);}catch{throw new Failure(400,'Demande invalide.');}if(!body||typeof body!=='object'||Array.isArray(body))throw new Failure(400,'Demande invalide.');
   const {uid,client}=await authenticate(req);const action=body.action;
+  if(action==='textile-list'){
+   await rate(uid,'textile-list',60,60);
+   const projects=check(await admin.from('textile_projects').select('id,title,design,idea,asset_path,created_at,updated_at').eq('user_id',uid).order('updated_at',{ascending:false}).limit(30));
+   const signed=await Promise.all(projects.map(async(project:any)=>{if(!project.asset_path)return{...project,imageUrl:null};const{data}=await admin.storage.from('studio-3b').createSignedUrl(project.asset_path,1800);return{...project,imageUrl:data?.signedUrl||null};}));
+   return reply({projects:signed});
+  }
+  if(action==='textile-save'){
+   await rate(uid,'textile-save',30,3600);
+   const id=uuid(body.id),title=text(body.title||'',3,100),design=validateDesign(body.design),idea=text(body.idea||'',0,2000);
+   let asset_path=null;
+   if(body.assetPath){
+    asset_path=text(body.assetPath,10,180);
+    const asset=check(await admin.from('studio_assets').select('path').eq('path',asset_path).eq('user_id',uid).maybeSingle());
+    if(!asset)throw new Failure(403,'Ce visuel ne t’appartient pas.');
+   }
+   const existing=check(await admin.from('textile_projects').select('id').eq('id',id).maybeSingle());
+   if(existing){
+    const owned=check(await admin.from('textile_projects').select('id').eq('id',id).eq('user_id',uid).maybeSingle());
+    if(!owned)throw new Failure(403,'Projet inaccessible.');
+   }
+   check(await admin.from('textile_projects').upsert({id,user_id:uid,title,design,idea,asset_path,updated_at:new Date().toISOString()},{onConflict:'id'}));
+   return reply({ok:true,id});
+  }
+  if(action==='textile-delete'){
+   await rate(uid,'textile-delete',20,3600);
+   const id=uuid(body.id);
+   check(await admin.from('textile_projects').delete().eq('id',id).eq('user_id',uid));
+   return reply({ok:true});
+  }
   if(action==='sport-challenges')return reply(await sportChallengeSnapshot(uid));
   if(action==='sport-challenge-join'){
    await rate(uid,'sport-challenge-join',12,3600);
