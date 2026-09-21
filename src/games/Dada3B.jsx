@@ -185,7 +185,7 @@ function RuleToggle({ checked, onChange, title, detail }) {
   );
 }
 
-function Board({ match, motion, blast, focus, busy, onPiece }) {
+function Board({ match, motion, blast, captureGhosts, focus, busy, onPiece }) {
   const activeCountries = useMemo(
     () => match.players.map((player) => countryFor(player.countryId)),
     [match.players],
@@ -293,6 +293,7 @@ function Board({ match, motion, blast, focus, busy, onPiece }) {
             && playerIndex === match.turn
             && match.pendingMoves.includes(pieceIndex)
             && !motion;
+          const returning = captureGhosts?.some((ghost) => ghost.countryId === player.countryId && ghost.pieceIndex === pieceIndex);
           return (
             <button
               type="button"
@@ -301,6 +302,7 @@ function Board({ match, motion, blast, focus, busy, onPiece }) {
               data-shape={country.shape}
               data-legal={canMove}
               data-finished={piece.steps === FINISH_STEP}
+              data-returning={returning}
               style={{
                 left: `${position.left}%`,
                 top: `${position.top}%`,
@@ -314,6 +316,21 @@ function Board({ match, motion, blast, focus, busy, onPiece }) {
             </button>
           );
         });
+      })}
+
+      {captureGhosts?.map((ghost) => {
+        const country = countryFor(ghost.countryId);
+        return (
+          <span
+            key={'ghost-' + ghost.countryId + '-' + ghost.pieceIndex}
+            className="dada3b-capture-ghost"
+            data-phase={ghost.phase}
+            style={{ left: ghost.left + '%', top: ghost.top + '%', '--country': country.accent }}
+            aria-hidden="true"
+          >
+            <GuardianTotem country={country} pieceIndex={ghost.pieceIndex} />
+          </span>
+        );
       })}
 
       {blast && (
@@ -363,6 +380,7 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
   const [busy, setBusy] = useState(false);
   const [motion, setMotion] = useState(null);
   const [blast, setBlast] = useState(null);
+  const [captureGhosts, setCaptureGhosts] = useState([]);
   const [focus, setFocus] = useState(null);
   const [notice, setNotice] = useState('Choisis de 2 à 8 pays.');
   const [turnRemaining, setTurnRemaining] = useState(0);
@@ -469,6 +487,7 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
     setBusy(false);
     setMotion(null);
     setBlast(null);
+    setCaptureGhosts([]);
     setFocus(null);
     setNotice('Le Cercle des 8 Portes est ouvert.');
     persist(next);
@@ -500,6 +519,7 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
     setBusy(false);
     setMotion(null);
     setBlast(null);
+    setCaptureGhosts([]);
     setFocus(null);
     setNotice('Nouvelle partie · le dé attend le premier joueur.');
     persist(next);
@@ -548,6 +568,14 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
 
     if (result.event?.captured?.length && result.event.landing !== null) {
       const point = trackPosition(result.event.landing);
+      const ghosts = result.event.captured.map((captured) => {
+        const targetCountry = countryFor(captured.countryId);
+        const end = positionForPiece(targetCountry, STABLE, captured.pieceIndex);
+        return { ...captured, left: point.left, top: point.top, endLeft: end.left, endTop: end.top, phase: 'portal' };
+      });
+      setCaptureGhosts(ghosts);
+      setTimeout(() => setCaptureGhosts((current) => current.map((ghost) => ({ ...ghost, left: ghost.endLeft, top: ghost.endTop, phase: 'return' }))), 55);
+      setTimeout(() => setCaptureGhosts([]), 720);
       setFocus({ ...point, type: 'capture' });
       setBlast({ ...point, key: Date.now() });
       setTimeout(() => setBlast(null), 850);
@@ -923,7 +951,7 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
 
       <div className="dada3b-arena">
         <div className="dada3b-board-wrap">
-          <Board match={match} motion={motion} blast={blast} focus={focus} busy={busy} onPiece={choosePiece} />
+          <Board match={match} motion={motion} blast={blast} captureGhosts={captureGhosts} focus={focus} busy={busy} onPiece={choosePiece} />
         </div>
 
         <aside className="dada3b-sidebar">
