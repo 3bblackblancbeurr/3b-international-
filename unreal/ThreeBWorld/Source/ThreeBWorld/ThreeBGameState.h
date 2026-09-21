@@ -35,6 +35,8 @@ struct FThreeBReplicatedStoryState
     }
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FThreeBStoryStateChanged, FThreeBReplicatedStoryState, StoryState);
+
 UCLASS()
 class THREEBWORLD_API AThreeBGameState : public AGameStateBase
 {
@@ -47,6 +49,9 @@ public:
 
     UFUNCTION(BlueprintPure, Category="3B|Story")
     FThreeBReplicatedStoryState GetStoryState() const { return StoryState; }
+
+    UPROPERTY(BlueprintAssignable, Category="3B|Story")
+    FThreeBStoryStateChanged OnStoryStateChanged;
 
     // C++ server path only. This is deliberately not exposed as a client RPC or Blueprint mutation.
     bool ApplyAuthoritativeStoryState(const FThreeBReplicatedStoryState& NewState);
