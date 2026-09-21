@@ -64,7 +64,7 @@ export function validateRegistration(input){
  validateStrongPassword(input.password);
  if(String(input?.website||'').trim())throw Error('Inscription refusée.');
  if(input?.termsAccepted!==true)throw Error('Accepte les conditions du compte 3B pour continuer.');
- if(input?.privacyAccepted!==true)throw Error('Accepte la politique de confidentialité pour continuer.');
+ if(input?.privacyAccepted!==true)throw Error('Confirme avoir pris connaissance de la politique de confidentialité pour continuer.');
  return{...base,email,marketingOptIn:input?.marketingOptIn===true};
 }
 
