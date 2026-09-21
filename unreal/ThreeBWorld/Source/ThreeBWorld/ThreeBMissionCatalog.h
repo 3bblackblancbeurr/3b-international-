@@ -45,10 +45,16 @@ struct FThreeBMissionDefinitionEntry
     FName DistrictId;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName MissionType;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<FName> AvailablePhaseIds;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
-    FGameplayTagContainer RequiredWorldStateTags;
+    TArray<FName> RequiredWorldStateIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> GameplayModes;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<FThreeBMissionObjectiveDefinition> Objectives;
