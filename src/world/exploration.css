@@ -130,3 +130,11 @@
 @media(prefers-reduced-motion:reduce){
  .world-shell .play-context-actions{transition:none!important;animation:none!important}
 }
+
+
+.world-sound-caption{
+ position:absolute;z-index:18;left:50%;bottom:max(92px,calc(env(safe-area-inset-bottom) + 82px));transform:translateX(-50%);
+ max-width:min(620px,84vw);padding:7px 12px;border-radius:10px;background:#061417e8;border:1px solid #9dc7c53b;
+ color:#dce9e4;font-size:11px;line-height:1.35;text-align:center;box-shadow:0 10px 28px #0007;pointer-events:none;
+}
+@media(max-width:700px){.world-sound-caption{bottom:max(78px,calc(env(safe-area-inset-bottom) + 68px));font-size:10px;max-width:78vw}}
