@@ -141,11 +141,18 @@ Personnalisation cosmétique :
 
 - couleur principale et secondaire du maillot ;
 - motif ;
-- short ;
-- chaussettes ;
+- manches courtes, longues ou 3/4 ;
+- col rond, V, rétro ou futuriste ;
+- couleur et coupe du short ;
+- couleur et hauteur des chaussettes ;
 - silhouette de chaussures ;
+- matière de chaussure ;
+- crampons terrain ferme, souple, hybrides ou lames ;
 - couleur chaussure / semelle / lacets ;
+- petite signature personnalisée sur la chaussure ;
 - célébration.
+
+Ces champs restent dans les JSON `kit` et `boots` normalisés côté serveur. Ils sont strictement cosmétiques.
 
 **Règle non négociable : aucun cosmétique acheté ou débloqué n'augmente vitesse, précision, puissance, portée ou énergie.**
 
@@ -209,11 +216,15 @@ Le radar national prend en compte :
 
 États :
 
-`non classé → radar → observé → présélection → sélection`.
+`non classé → radar → observé → présélection → convocation → sélection`.
 
-Message signature :
+Pendant une fenêtre internationale ayant le statut `selection`, le serveur recalcule le rang national, la réputation et la performance en Duel d’Or. Un joueur qui atteint le niveau de présélection peut recevoir automatiquement une ligne `penalty_international_selections` liée à cette fenêtre.
+
+La présélection n’est pas encore une sélection définitive : le joueur reçoit le message signature :
 
 > **Le pays a besoin de toi.**
+
+Il choisit **Accepter la convocation** ou **Décliner**. L’Edge Function vérifie que la convocation appartient bien au joueur, qu’elle est encore `preselected` et que la fenêtre de sélection est toujours ouverte avant de passer le statut à `selected` ou `declined`.
 
 Une convocation est un événement de carrière. Elle ne peut pas être achetée.
 
