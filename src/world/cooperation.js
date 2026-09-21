@@ -40,5 +40,5 @@ export function createPartyConnection({uid,onState,onPeers,onConnection,onError,
   emit();
  },100);
  refresh();
- return{update,refresh,pose(value){pose=value;},signal(value){if(!PARTY_SIGNAL_SET.has(value)||!pose)return false;pose={...pose,signal:value};const duration=PARTY_SIGNALS[value]?.duration||1800;setTimeout(()=>{if(pose?.signal===value)pose={...pose,signal:null};},duration);return true;}},dispose(){disposed=true;clearInterval(timer);remove();}};
+ return{update,refresh,pose(value){pose=value;},signal(value){if(!PARTY_SIGNAL_SET.has(value)||!pose)return false;pose={...pose,signal:value};const duration=PARTY_SIGNALS[value]?.duration||1800;setTimeout(()=>{if(pose?.signal===value)pose={...pose,signal:null};},duration);return true;},dispose(){disposed=true;clearInterval(timer);remove();}};
 }
