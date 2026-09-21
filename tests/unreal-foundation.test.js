@@ -65,7 +65,7 @@ test('Unreal migration stays fail-closed to browser roles',()=>{
 
 test('migration integrity manifest includes all current applied migrations',()=>{
  const manifest=JSON.parse(read('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json'));
- assert.equal(manifest.count,119);
+ assert.equal(manifest.count,120);
  const unreal=manifest.migrations.find(m=>m.version==='20260921141028');
  assert.deepEqual(unreal,{
   version:'20260921141028',
