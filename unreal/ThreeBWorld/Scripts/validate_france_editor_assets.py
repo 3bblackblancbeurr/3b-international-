@@ -17,6 +17,7 @@ LAYOUT = FRANCE_DATA / "france-blockout-layout.json"
 CONTRACT_FILES = (
     "france-justice-v1.json",
     "france-blockout-layout.json",
+    "france-district-content-v1.json",
     "france-checkpoint-reconnect-v1.json",
     "france-npc-dialogue-v1.json",
     "france-presentation-v1.json",
