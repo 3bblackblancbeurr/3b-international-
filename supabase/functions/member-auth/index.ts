@@ -74,6 +74,10 @@ async function authApi(path:string,body:unknown){
 }
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
 
+async function loadSettings(){
+ const rows=await api('/rest/v1/member_auth_settings?singleton=eq.true&select=allow_legacy_flows&limit=1');
+ return{allowLegacy:rows?.[0]?.allow_legacy_flows===true};
+}
 function clientIp(req:Request){
  return(req.headers.get('cf-connecting-ip')||req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown').slice(0,128);
 }
@@ -115,6 +119,56 @@ async function resolveLoginEmail(identifier:string,isEmail:boolean){
  }
 }
 
+async function legacyRegister(body:any,ipHash:string){
+ const settings=await loadSettings();
+ if(!settings.allowLegacy)throw new Failure(426,'Cette version de l’application doit être mise à jour avant de créer un compte.');
+ const input=validateAccount(body);
+ const recovery=secret();let user;
+ try{
+  user=await api('/auth/v1/admin/users',{
+   email:accountEmail(input.handle),
+   password:input.password,
+   email_confirm:true,
+   user_metadata:{display_name:input.name}
+  });
+ }catch{
+  throw new Failure(409,'Cet identifiant est indisponible. Choisis-en un autre ou connecte-toi.');
+ }
+ try{
+  await api('/rest/v1/member_profiles',{
+   user_id:user.id,handle:input.handle,name:input.name,country:input.country,
+   recovery_hash:await hash(recovery),registration_version:1
+  });
+ }catch(error){
+  await api('/auth/v1/admin/users/'+user.id,undefined,'DELETE').catch(()=>{});
+  throw error;
+ }
+ await audit('register.legacy_created',true,ipHash,user.id,{});
+ return{recovery,handle:input.handle,legacy:true};
+}
+
+async function legacyRecover(body:any,ipHash:string){
+ const settings=await loadSettings();
+ if(!settings.allowLegacy)throw new Failure(426,'Cette version de l’application doit être mise à jour avant de récupérer un compte.');
+ const input=validateAccount(body);
+ const code=String(body.recovery||'').replace(/\s|-/g,'').toLowerCase();
+ if(!/^[a-f0-9]{64}$/.test(code))throw new Failure(400,'Clé de secours invalide.');
+ const recovery=secret(),oldHash=await hash(code),newHash=await hash(recovery);
+ const uid=await rpc('loyalty_recovery',{p_handle:input.handle,p_old:oldHash,p_new:newHash});
+ if(!uid)throw new Failure(400,'Identifiant ou clé de secours incorrect.');
+ try{await api('/auth/v1/admin/users/'+uid,{password:input.password},'PUT');}
+ catch(error){
+  await rpc('loyalty_recovery',{p_handle:input.handle,p_old:newHash,p_new:oldHash});
+  throw error;
+ }
+ const user=await api('/auth/v1/admin/users/'+uid);
+ const login=await authApi('/auth/v1/token?grant_type=password',{email:user.email,password:input.password});
+ if(!login.ok||!login.data?.access_token)throw new Failure(503,'Mot de passe remplacé. Reconnecte-toi.');
+ await fetch(BASE+'/auth/v1/logout?scope=others',{method:'POST',headers:{apikey:PUBLIC,Authorization:'Bearer '+login.data.access_token}}).catch(()=>{});
+ await audit('recovery_key.legacy_success',true,ipHash,uid,{});
+ return{recovery,session:login.data,legacy:true};
+}
+
 Deno.serve(async req=>{
  const origin=req.headers.get('origin')||'';
  const cors={
@@ -134,15 +188,22 @@ Deno.serve(async req=>{
   const body=await readJson(req);
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Failure(400,'Demande invalide.');
   const action=body.action;
-  if(!['register','login','recover','reset-request','resend-confirmation'].includes(action))throw new Failure(404,'Action publique inconnue.');
+  const allowed=['register','register-v2','login','recover','recover-v2','reset-request','resend-confirmation'];
+  if(!allowed.includes(action))throw new Failure(404,'Action publique inconnue.');
 
   const ipHash=await hash(action+':'+clientIp(req));
-  const cap=captchaToken(body);
-  const limits:Record<string,number>={register:5,login:12,recover:8,'reset-request':5,'resend-confirmation':5};
+  const limits:Record<string,number>={
+   register:5,'register-v2':5,login:12,recover:8,'recover-v2':8,'reset-request':5,'resend-confirmation':5
+  };
   if(!await rpc('loyalty_rate',{p_key:ipHash,p_limit:limits[action]||5,p_window:3600}))
    throw new Failure(429,'Trop de tentatives. Réessaie plus tard.');
 
-  if(action==='register'){
+  if(action==='register')return reply(await legacyRegister(body,ipHash),201);
+  if(action==='recover')return reply(await legacyRecover(body,ipHash));
+
+  const cap=captchaToken(body);
+
+  if(action==='register-v2'){
    const input=validateRegistration(body);
    const identifierHash=await hash('register:'+input.email);
    if(!await rpc('loyalty_rate',{p_key:identifierHash,p_limit:3,p_window:3600}))
@@ -227,7 +288,7 @@ Deno.serve(async req=>{
    return reply({session:login.data});
   }
 
-  if(action==='recover'){
+  if(action==='recover-v2'){
    const input=validateAccount(body);
    validateStrongPassword(input.password);
    if(input.password!==body.passwordConfirm)throw new Failure(400,'Les deux mots de passe ne correspondent pas.');
