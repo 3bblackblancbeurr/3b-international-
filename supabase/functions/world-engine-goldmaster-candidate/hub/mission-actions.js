@@ -82,7 +82,7 @@ export function hubMissionActionTargets(missionId,row,recorded=[]){
  if(!row||row.status!=='active')return[];
  const actions=hubMissionActionStage(missionId,row.completedObjectives);if(!actions)return[];
  const done=new Set(recorded);
- return actions.filter(action=>!done.has(action.id));
+ return actions.filter(action=>!done.has(action.id)&&!action.requires?.some(required=>!done.has(required)));
 }
 
 export function isHubMissionActionKnown(missionId,actionId){
