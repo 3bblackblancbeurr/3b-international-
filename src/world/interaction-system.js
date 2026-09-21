@@ -86,7 +86,8 @@ function cloneAction(id,overrides={}){
 
 export function contextActions(item,context={}){
  if(!item)return[];
- const ids=[...(TYPE_ACTIONS[item.type]||item.actions||['inspect'])],save=context.save||{},actions=[];
+ let ids=[...(TYPE_ACTIONS[item.type]||item.actions||['inspect'])];const save=context.save||{},region=context.region||item.region,actions=[];
+ if(item.type==='echo'&&!save.adventure?.chapters?.[region]?.helped)ids=ids.filter(id=>id!=='calm');
  for(const id of ids){
   if(id==='collect'&&item.done)continue;
   if(id==='fight'&&item.done)continue;
