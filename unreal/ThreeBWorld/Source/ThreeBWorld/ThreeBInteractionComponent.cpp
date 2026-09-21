@@ -15,14 +15,15 @@ UThreeBInteractionComponent::UThreeBInteractionComponent()
 AActor* UThreeBInteractionComponent::FindFocusedActor() const
 {
     const AThreeBCharacter* Character = Cast<AThreeBCharacter>(GetOwner());
-    if (!Character || !Character->Controller)
+    const AController* Controller = Character ? Character->GetController() : nullptr;
+    if (!Character || !Controller)
     {
         return nullptr;
     }
 
     FVector ViewLocation;
     FRotator ViewRotation;
-    Character->Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
+    Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
     const float SafeDistance = FMath::Clamp(InteractionDistance, 150.0f, 450.0f);
     const FVector End = ViewLocation + ViewRotation.Vector() * SafeDistance;
@@ -65,7 +66,8 @@ void UThreeBInteractionComponent::ServerInteract_Implementation(AActor* Target)
 bool UThreeBInteractionComponent::ValidateServerTarget(AActor* Target) const
 {
     const AThreeBCharacter* Character = Cast<AThreeBCharacter>(GetOwner());
-    if (!Character || !Character->HasAuthority() || !Character->Controller || !IsValid(Target))
+    const AController* Controller = Character ? Character->GetController() : nullptr;
+    if (!Character || !Character->HasAuthority() || !Controller || !IsValid(Target))
     {
         return false;
     }
@@ -87,7 +89,7 @@ bool UThreeBInteractionComponent::ValidateServerTarget(AActor* Target) const
 
     FVector ViewLocation;
     FRotator ViewRotation;
-    Character->Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
+    Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
     const FVector Direction = (TargetLocation - ViewLocation).GetSafeNormal();
     if (FVector::DotProduct(ViewRotation.Vector(), Direction) < FMath::Clamp(MinimumFacingDot, -1.0f, 1.0f))
     {
