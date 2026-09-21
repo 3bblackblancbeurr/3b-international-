@@ -1,7 +1,13 @@
 {
-  "snapshot_date": "2026-09-20",
-  "note": "Runtime snapshot for source-parity auditing; versions may advance after deployments.",
+  "snapshot_date": "2026-09-21",
+  "note": "Verified runtime snapshot refreshed from the production Supabase project. Source content is tracked under each function directory; security-sensitive deployments must refresh this file.",
   "functions": [
+    {
+      "slug": "ai-council-orchestrate",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
     {
       "slug": "card-arena",
       "version": 3,
@@ -22,19 +28,19 @@
     },
     {
       "slug": "ecosystem",
-      "version": 5,
+      "version": 7,
       "verify_jwt": false,
       "status": "ACTIVE"
     },
     {
       "slug": "ecosystem-private",
-      "version": 1,
+      "version": 4,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
       "slug": "ecosystem-public",
-      "version": 1,
+      "version": 3,
       "verify_jwt": false,
       "status": "ACTIVE"
     },
@@ -82,14 +88,26 @@
     },
     {
       "slug": "world-engine",
-      "version": 24,
+      "version": 25,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
       "slug": "world-engine-goldmaster-candidate",
-      "version": 1,
+      "version": 7,
       "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "world-unreal-launch",
+      "version": 2,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "world-unreal-redeem",
+      "version": 2,
+      "verify_jwt": false,
       "status": "ACTIVE"
     }
   ]

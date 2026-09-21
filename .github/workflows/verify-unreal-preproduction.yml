@@ -1,9 +1,10 @@
-name: Verify Unreal Preproduction
+name: Verify Unreal Canonical Foundation
 
 on:
   pull_request:
     paths:
       - 'unreal/**'
+      - 'supabase/functions/world-unreal-*/**'
       - 'src/world/hub/data/**'
       - 'tests/unreal-preproduction-contract.test.js'
       - '.github/workflows/verify-unreal-preproduction.yml'
@@ -24,5 +25,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node --test tests/unreal-preproduction-contract.test.js
-      - name: Validate Unreal editor Python syntax
-        run: python -m py_compile unreal/3BWorld/Scripts/build_metropolis_blockout.py
+      - name: Validate canonical Unreal editor Python syntax
+        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py

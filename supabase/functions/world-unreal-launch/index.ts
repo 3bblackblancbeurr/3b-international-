@@ -56,7 +56,9 @@ Deno.serve(async req=>{
 
   return reply({
    ticket,
-   launch_url:`threebworld://launch?ticket=${encodeURIComponent(ticket)}&api=${encodeURIComponent(BASE)}`,
+   // The native client owns the trusted API base. Never put an API override in
+   // a custom protocol URL because protocol URLs are attacker-controllable.
+   launch_url:`threebworld://launch?ticket=${encodeURIComponent(ticket)}`,
    expires_in:90
   });
  }catch(error){

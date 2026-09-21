@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "systems": [
+    {
+      "id": "matrix_rain",
+      "priority": "P0",
+      "system": "Niagara",
+      "scalable": true
+    },
+    {
+      "id": "portal_country",
+      "priority": "P0",
+      "system": "Niagara",
+      "scalable": true
+    },
+    {
+      "id": "memory_reveal",
+      "priority": "P0",
+      "system": "Niagara",
+      "scalable": true
+    },
+    {
+      "id": "city_unlock",
+      "priority": "P0",
+      "system": "Niagara",
+      "scalable": true
+    },
+    {
+      "id": "weather_rain",
+      "priority": "P0",
+      "system": "Niagara",
+      "scalable": true
+    },
+    {
+      "id": "transport_motion_accents",
+      "priority": "P1",
+      "system": "Niagara",
+      "scalable": true
+    },
+    {
+      "id": "guardian_power",
+      "priority": "P1",
+      "system": "Niagara",
+      "scalable": true
+    }
+  ],
+  "profiles": {
+    "mobileMedium": {
+      "spawn_multiplier": 0.35,
+      "lights": "minimal"
+    },
+    "mobileHigh": {
+      "spawn_multiplier": 0.65,
+      "lights": "limited"
+    },
+    "desktop": {
+      "spawn_multiplier": 1,
+      "lights": "full_profiled"
+    }
+  },
+  "rule": "No VFX is final until GPU cost is profiled in its real gameplay context."
+}

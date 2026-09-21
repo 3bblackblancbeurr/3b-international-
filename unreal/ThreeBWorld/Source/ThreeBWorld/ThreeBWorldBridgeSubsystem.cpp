@@ -8,10 +8,26 @@
 #include "Serialization/JsonSerializer.h"
 #include "Serialization/JsonWriter.h"
 
+namespace
+{
+    constexpr const TCHAR* ProductionApiBase = TEXT("https://ttvhcezucsbbmnafrotq.supabase.co");
+}
+
 void UThreeBWorldBridgeSubsystem::ConfigureApiBase(const FString& InApiBase)
 {
-    ApiBase = InApiBase;
-    ApiBase.RemoveFromEnd(TEXT("/"));
+    FString Candidate = InApiBase.TrimStartAndEnd();
+    Candidate.RemoveFromEnd(TEXT("/"));
+
+    // Fail closed: the packaged client may only redeem 3B tickets against the
+    // production project. Never trust a protocol/deep-link supplied API host.
+    if (!Candidate.Equals(ProductionApiBase, ESearchCase::IgnoreCase))
+    {
+        ApiBase.Reset();
+        Fail(TEXT("Configuration du portail 3B refusée."));
+        return;
+    }
+
+    ApiBase = MoveTemp(Candidate);
 }
 
 void UThreeBWorldBridgeSubsystem::Fail(const FString& Message)

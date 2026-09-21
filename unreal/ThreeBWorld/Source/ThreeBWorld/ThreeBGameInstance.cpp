@@ -36,22 +36,12 @@ void UThreeBGameInstance::Init()
     Super::Init();
 
     FString Ticket;
-    FString ApiBase = DefaultApiBase;
     FParse::Value(FCommandLine::Get(), TEXT("ThreeBTicket="), Ticket);
 
     FString LaunchUrl;
-    if (FParse::Value(FCommandLine::Get(), TEXT("ThreeBLaunchUrl="), LaunchUrl))
+    if (FParse::Value(FCommandLine::Get(), TEXT("ThreeBLaunchUrl="), LaunchUrl) && Ticket.IsEmpty())
     {
-        if (Ticket.IsEmpty())
-        {
-            Ticket = QueryValue(LaunchUrl, TEXT("ticket"));
-        }
-
-        const FString UrlApi = QueryValue(LaunchUrl, TEXT("api"));
-        if (!UrlApi.IsEmpty())
-        {
-            ApiBase = UrlApi;
-        }
+        Ticket = QueryValue(LaunchUrl, TEXT("ticket"));
     }
 
     if (Ticket.IsEmpty())
@@ -65,7 +55,9 @@ void UThreeBGameInstance::Init()
         return;
     }
 
-    Bridge->ConfigureApiBase(ApiBase);
+    // The API origin is trusted application configuration, never a deep-link parameter.
+    // A crafted threebworld:// URL must not be able to redirect a one-time launch ticket.
+    Bridge->ConfigureApiBase(DefaultApiBase);
 
     FString DeviceId = FPlatformMisc::GetDeviceId();
     if (DeviceId.IsEmpty())
