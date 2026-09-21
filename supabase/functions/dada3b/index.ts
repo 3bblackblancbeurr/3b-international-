@@ -24,7 +24,7 @@ const ORIGINS=new Set([
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const CODE=/^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip','claim','tournaments','tournament_create','tournament_join','tournament_status','tournament_match']);
+const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip','claim','tournaments','tournament_create','tournament_join','tournament_status','tournament_match','metrics']);
 const ONLINE_MODES=new Set(['private','quick','ranked','team2v2','tournament']);
 const COSMETIC_SLOTS=new Set(['totem_skin','trail','dice_skin','board_skin','capture_fx','intro_fx']);
 const STARTER_COSMETICS=['DADA_TOTEM_CORE','DADA_TRAIL_MATRIX','DADA_DICE_CORE','DADA_BOARD_NEXUS','DADA_CAPTURE_FRACTURE','DADA_INTRO_EIGHT_DOORS'];
@@ -996,6 +996,39 @@ async function createTournamentRoom(uid:string,code:string){
   return room;
 }
 
+async function metrics7d(){
+  const since=new Date(Date.now()-7*24*60*60_000).toISOString();
+  const rows=await admin('/rest/v1/dada_rooms?status=eq.finished&finished_at=gte.'+encodeURIComponent(since)+'&select=mode,started_at,finished_at,state,players&order=finished_at.desc&limit=500');
+  const rooms=Array.isArray(rows)?rows:[];
+  const byMode:Record<string,number>={};
+  let durationTotal=0,durationCount=0,rolls=0,captures=0,timeouts=0,players=0,soloResolved=0,firstWins=0;
+  for(const room of rooms){
+    const mode=String(room.mode||'unknown');byMode[mode]=(byMode[mode]||0)+1;
+    const started=Date.parse(room.started_at||''),finished=Date.parse(room.finished_at||'');
+    if(Number.isFinite(started)&&Number.isFinite(finished)&&finished>=started){durationTotal+=finished-started;durationCount+=1;}
+    const state=room.state&&typeof room.state==='object'?room.state:null;
+    const statePlayers=Array.isArray(state?.players)?state.players:[];
+    players+=statePlayers.length;
+    for(const p of statePlayers){rolls+=Number(p?.stats?.rolls||0);captures+=Number(p?.stats?.captures||0);timeouts+=Number(p?.stats?.turnsTimedOut||0);}
+    if(!state?.winnerTeam&&state?.winner&&statePlayers.length>=2){
+      soloResolved+=1;if(statePlayers[0]?.countryId===state.winner)firstWins+=1;
+    }
+  }
+  return {
+    windowDays:7,
+    matches:rooms.length,
+    byMode,
+    avgDurationSeconds:durationCount?Math.round(durationTotal/durationCount/1000):0,
+    avgRolls:rooms.length?Math.round((rolls/rooms.length)*10)/10:0,
+    avgCaptures:rooms.length?Math.round((captures/rooms.length)*10)/10:0,
+    avgPlayers:rooms.length?Math.round((players/rooms.length)*10)/10:0,
+    timeouts,
+    firstPlayerWinRate:soloResolved?Math.round(firstWins*1000/soloResolved)/10:null,
+    soloResolved,
+    privacy:'aggregated-only',
+  };
+}
+
 async function readBody(req:Request){
   const type=req.headers.get('content-type')||'';
   if(!type.startsWith('application/json'))throw new Failure(415,'Format JSON requis.');
@@ -1042,6 +1075,9 @@ Deno.serve(async(req)=>{
     if(body.action==='leaderboard'){
       const board=body.board==='team'?'team':'solo';
       return reply({leaderboard:await leaderboard(board),board,serverTime:nowIso()});
+    }
+    if(body.action==='metrics'){
+      return reply({metrics:await metrics7d(),serverTime:nowIso()});
     }
     if(body.action==='tournaments'){
       return reply({tournaments:await listTournaments(uid),serverTime:nowIso()});
