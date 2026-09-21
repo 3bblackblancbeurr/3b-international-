@@ -34,6 +34,7 @@ test('Penalty Rush is tuned for short two-thumb possessions', () => {
 test('attacker gestures map to acceleration, feints and a single expressive shot gesture', () => {
   assert.equal(interpretAttackGesture({ dx: 8, dy: 2, durationMs: 160, taps: 2 }).type, 'accelerate');
   assert.equal(interpretAttackGesture({ dx: 22, dy: 4, durationMs: 250, taps: 0 }).type, 'feint');
+  assert.equal(interpretAttackGesture({ dx: 90, dy: 8, durationMs: 110, heldMs: 110, taps: 0 }).type, 'cut');
 
   const shot = interpretAttackGesture({ dx: 70, dy: -35, durationMs: 500, heldMs: 500, curve: .35 });
   assert.equal(shot.type, 'curved-shot');
