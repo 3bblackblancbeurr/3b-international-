@@ -1,5 +1,6 @@
 import {
   ENERGY_MAX,
+  ballTouchDistance,
   createPenaltyMatch,
   energyAfterAction,
   expirePossession,
@@ -39,6 +40,13 @@ const COUNTRY_FROM_NAME: Record<string,string> = {
 const STYLES = new Set(['technicien', 'explosif', 'finisseur', 'imprevisible', 'maestro']);
 const POWERS = new Set(['impulse', 'read', 'phantom', 'anchor']);
 const BOOTS = new Set(['classic', 'speed', 'control', 'future', 'retro']);
+const STYLE_TUNING:Record<string,{control:number,burst:number,shot:number,flow:number}> = {
+  technicien:{control:1.06,burst:.96,shot:1,flow:1.08},
+  explosif:{control:.98,burst:1.07,shot:1,flow:.96},
+  finisseur:{control:.98,burst:.99,shot:1.07,flow:.96},
+  imprevisible:{control:1,burst:1.02,shot:.98,flow:1},
+  maestro:{control:1.03,burst:1.03,shot:.98,flow:.96},
+};
 const PHASE_LABEL: Record<string,string> = {
   'first-half': '1ère période',
   'second-half': '2e période',
@@ -231,11 +239,6 @@ async function saveProfile(uid:string, input:any) {
     method:'PATCH', body:patch, prefer:'return=representation',
   });
   if (!Array.isArray(rows) || !rows[0]) throw new Failure(409, 'Le profil a changé. Réessaie.');
-  await admin('/rest/v1/penalty_ratings?on_conflict=user_id', {
-    method:'POST',
-    body:{ user_id:uid, country_id:countryId },
-    prefer:'resolution=merge-duplicates,return=minimal',
-  });
   return rows[0];
 }
 
@@ -352,6 +355,15 @@ async function fetchRoom(id:string):Promise<Room|null> {
 async function fetchRoomByCode(code:string):Promise<Room|null> {
   if (!CODE.test(code)) return null;
   const rows = await admin('/rest/v1/penalty_rooms?code=eq.' + encodeURIComponent(code) + '&select=*&limit=1');
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function openRoomFor(uid:string):Promise<Room|null> {
+  const rows = await admin(
+    '/rest/v1/penalty_rooms?member_ids=cs.%7B' + encodeURIComponent(uid) +
+    '%7D&status=in.(waiting,active)&expires_at=gt.' + encodeURIComponent(nowIso()) +
+    '&order=created_at.desc&limit=1&select=*'
+  );
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
@@ -558,21 +570,25 @@ function safeIntensity(value:unknown) {
   return clamp(number(value), 0, 1);
 }
 
-function normalizedShot(input:any, progress:number) {
+function normalizedShot(input:any, progress:number, styleId:string) {
   const raw = input?.shot || {};
   const distanceFactor = clamp(.62 + progress * .38, .62, 1);
+  const tuning = STYLE_TUNING[styleId] || STYLE_TUNING.technicien;
   return {
     type:['shot','curved-shot','panenka'].includes(input?.type) ? input.type : 'shot',
-    power:clamp(number(raw.power,.5) * (.72 + progress * .28), .08, 1),
-    precision:clamp(number(raw.precision,.78) * distanceFactor, .45, 1),
+    power:clamp(number(raw.power,.5) * (.72 + progress * .28) * tuning.shot, .08, 1),
+    precision:clamp(number(raw.precision,.78) * distanceFactor * Math.min(1.035,tuning.shot), .45, 1),
     curve:clamp(number(raw.curve), -.7, .7),
     targetX:clamp(number(raw.targetX), -1, 1),
     targetY:clamp(number(raw.targetY,.45), .04, 1),
   };
 }
 
-function updateFlowState(state:any, index:number, type:string, success=true) {
-  state.flow[index] = flowAfterAction(number(state.flow[index]), type, state.previousAction?.[index], success);
+function updateFlowState(state:any, index:number, type:string, success=true, styleId='technicien') {
+  const before = number(state.flow[index]);
+  const base = flowAfterAction(before, type, state.previousAction?.[index], success);
+  const tuning = STYLE_TUNING[styleId] || STYLE_TUNING.technicien;
+  state.flow[index] = clamp(before + (base-before)*tuning.flow, 0, 100);
   state.energy[index] = energyAfterAction(number(state.energy[index],100), type);
   state.previousAction[index] = type;
   const stats = state.matchStats?.[index];
@@ -611,10 +627,12 @@ async function processInput(room:Room, uid:string, input:any) {
     const iy = safeDirection(input?.y);
     const intensity = safeIntensity(input?.intensity);
     const sprinting = at < number(state.sprintUntil);
+    const style = STYLE_TUNING[room.players[playerIndex]?.styleId] || STYLE_TUNING.technicien;
     const forward = clamp(-iy, 0, 1);
-    const speed = (.12 + intensity * .13) * (sprinting ? 1.34 : 1);
+    const speed = (.12 + intensity * .13) * (sprinting ? 1.34 : 1) * style.burst;
     state.positions.attacker.x = clamp(number(state.positions.attacker.x) + forward * speed * dt, 0, 1);
     state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.16 + intensity*.12) * dt, -.92, .92);
+    state.ballLead = ballTouchDistance(intensity * (sprinting ? 1 : .78), style.control);
     state.lastMoveAt = at;
     state.lastEvent = { type:'move', text:sprinting ? 'Accélération contrôlée.' : 'Lecture et placement.' };
     return await commitRoom(room, {state}, uid, 'move', {x:state.positions.attacker.x,y:state.positions.attacker.y});
@@ -652,7 +670,7 @@ async function processInput(room:Room, uid:string, input:any) {
   if (['accelerate','feint','cut','rhythm'].includes(type)) {
     if (playerIndex !== state.attacker) throw new Failure(403, 'Action attaquant uniquement.');
     if (number(state.energy[playerIndex],100) <= 2) throw new Failure(409, 'Ralentis : ton énergie est trop basse.');
-    updateFlowState(state, playerIndex, type, true);
+    updateFlowState(state, playerIndex, type, true, room.players[playerIndex]?.styleId);
     if (type === 'accelerate') state.sprintUntil = at + 850;
     if (type === 'feint' || type === 'cut') {
       const direction = safeDirection(input?.direction?.x);
@@ -665,8 +683,8 @@ async function processInput(room:Room, uid:string, input:any) {
   if (['shot','curved-shot','panenka'].includes(type)) {
     if (playerIndex !== state.attacker) throw new Failure(403, 'Seul l’attaquant peut frapper.');
     const progress = clamp(number(state.positions?.attacker?.x), 0, 1);
-    const shot = normalizedShot(input, progress);
-    updateFlowState(state, playerIndex, type, true);
+    const shot = normalizedShot(input, progress, room.players[playerIndex]?.styleId);
+    updateFlowState(state, playerIndex, type, true, room.players[playerIndex]?.styleId);
 
     const intent = state.keeperIntent && at - number(state.keeperIntent.at) <= 950
       ? state.keeperIntent
@@ -792,9 +810,10 @@ async function route(req:Request) {
   if (action === 'status') {
     const club = await clubFor(uid);
     const room = body.room && UUID.test(String(body.room)) ? await fetchRoom(String(body.room)) : null;
-    const ownedRoom = room && room.member_ids?.includes(uid) && ['waiting','active','finished'].includes(room.status)
+    let ownedRoom = room && room.member_ids?.includes(uid) && ['waiting','active','finished'].includes(room.status)
       ? await tickRoom(room)
       : null;
+    if (ownedRoom?.status === 'finished' && !ownedRoom.settled_at) ownedRoom = await settleIfFinished(ownedRoom);
     return {
       profile:publicProfile(profile, club?.name || ''),
       snapshot:await snapshotFor(uid, profile),
@@ -803,6 +822,8 @@ async function route(req:Request) {
   }
 
   if (action === 'create') {
+    const existing = await openRoomFor(uid);
+    if (existing) return { room:publicRoom(existing, uid), message:existing.status === 'active' ? 'Duel en cours retrouvé.' : 'Salon en attente retrouvé.' };
     const room = await insertRoom(uid, profile, 'private');
     return { room:publicRoom(room, uid), message:'Salon privé créé.' };
   }
@@ -815,6 +836,8 @@ async function route(req:Request) {
   if (action === 'queue') {
     const mode = String(body.mode || '');
     if (!MODES.has(mode) || mode === 'private') throw new Failure(400, 'Mode de matchmaking invalide.');
+    const existing = await openRoomFor(uid);
+    if (existing) return { room:publicRoom(existing, uid), message:existing.status === 'active' ? 'Duel en cours retrouvé.' : 'Recherche déjà active…' };
     const room = await queueRoom(uid, profile, mode);
     return { room:publicRoom(room, uid), message:room.status === 'active' ? 'Adversaire trouvé.' : 'Recherche d’un adversaire…' };
   }
@@ -840,6 +863,7 @@ async function route(req:Request) {
   room = await tickRoom(room);
 
   if (action === 'room' || action === 'tick') {
+    if (room.status === 'finished' && !room.settled_at) room = await settleIfFinished(room);
     return { room:publicRoom(room, uid) };
   }
 
