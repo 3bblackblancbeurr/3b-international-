@@ -11,7 +11,7 @@ import {FINAL_CIRCLE_PHASES,finalCirclePhase,validateFinalCircle} from '../src/w
 import {CONTROL_ACTIONS,defaultControlBindings,normalizeControlBindings,setPrimaryControl,controlMatches,actionHeld,controlLabel,validateControlBindings} from '../src/world/control-bindings.js';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
-import {validPose} from '../src/world/cooperation.js';
+import {validPose,validRuntimeMember,mergeRuntimePeers,partyRuntimeRequest} from '../src/world/cooperation.js';
 import {worldRadiusFor,WORLD_RADIUS} from '../src/world/terrain.js';
 import {HUB_MISSION_ACTION_PLANS,applyHubMissionAction,hubMissionActionTargets,validateHubMissionActionPlans} from '../src/world/hub/mission-actions.js';
 import {hubRuntime} from '../src/world/hub/runtime-data.js';
@@ -301,6 +301,43 @@ test('co-op coordination provides modern pings and proximity-based shared object
  assert.equal(state.ready,true);assert.equal(state.count,2);assert.deepEqual(state.members,['a']);
  state=sharedObjectiveState(peers,{region:'france',x:0,z:0},{required:3,radius:5,selfPresent:true,now});
  assert.equal(state.ready,false);
+});
+
+test('authoritative coop runtime uses its own RPC and merges state without replacing smooth realtime pose',async()=>{
+ let call=null;
+ const client={rpc:async(name,args)=>{call={name,args};return{data:{party_id:'party',members:[]},error:null};}};
+ const result=await partyRuntimeRequest('heartbeat',{region:'france',x:4,z:5,heading:90},client);
+ assert.equal(result.party_id,'party');
+ assert.equal(call.name,'world_party_runtime_command');
+ assert.deepEqual(call.args,{p_action:'heartbeat',p_payload:{region:'france',x:4,z:5,heading:90}});
+ assert.equal(validRuntimeMember({id:'u2',region:'france',x:2,z:3,heading:0,state:'downed'}),true);
+ assert.equal(validRuntimeMember({id:'u2',region:'france',x:999,z:3,heading:0,state:'downed'}),false);
+ const realtime=[{id:'u2',region:'france',x:9,z:10,heading:45,seq:8,received:900,signal:null}];
+ const runtime=[{id:'u2',region:'france',x:2,z:3,heading:0,state:'downed',revision:4,updated_at:'2026-09-21T01:00:00Z'},{id:'u3',region:'france',x:6,z:7,heading:15,state:'active',revision:2}];
+ const members=[{id:'u2',avatar:{name:'A'}},{id:'u3',avatar:{name:'B'}}];
+ const merged=mergeRuntimePeers(realtime,runtime,members,1000),u2=merged.find(peer=>peer.id==='u2'),u3=merged.find(peer=>peer.id==='u3');
+ assert.equal(u2.lifeState,'downed');assert.equal(u2.x,9);assert.equal(u2.z,10);assert.equal(u2.runtimeRevision,4);
+ assert.equal(u3.lifeState,'active');assert.equal(u3.x,6);assert.equal(u3.z,7);
+});
+
+test('coop authority is wired through downed interactions shared objectives and the applied migration manifest',()=>{
+ const scene=read('src/world/scene.js'),page=read('src/world/WorldPage.jsx'),actors=read('src/world/party-actors.js'),panel=read('src/world/PartyPanel.jsx');
+ assert.match(scene,/type:'downedPlayer'/);
+ assert.match(page,/\.revive\(item\.userId\)/);
+ assert.match(page,/\.down\(\)/);
+ assert.match(page,/refuge-regroup:/);
+ assert.match(panel,/Valider le regroupement · 2 voyageurs/);
+ assert.match(actors,/À TERRE/);
+ const manifest=JSON.parse(read('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json'));
+ assert.equal(manifest.count,108);
+ for(const version of ['20260921012440','20260921012512','20260921013055'])assert.ok(manifest.migrations.some(row=>row.version===version),version);
+ const runtimeSql=read('supabase/migrations/20260921012440_world_party_runtime_authority_v1.sql');
+ const recoverySql=read('supabase/migrations/20260921013055_world_party_runtime_save_recovery_v2.sql');
+ assert.match(runtimeSql,/world_party_runtime_command/);
+ assert.match(runtimeSql,/Rapproche-toi du voyageur pour le réanimer/);
+ assert.match(runtimeSql,/world_party_objectives/);
+ assert.match(recoverySql,/world_party_runtime_state_guard/);
+ assert.match(recoverySql,/ceil\(v_max_hp\*\.35\)/);
 });
 
 test('co-op pose validation covers the real metropolis radius instead of the old 261-unit cap',()=>{
