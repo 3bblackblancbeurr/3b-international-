@@ -273,7 +273,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
 
      {mode==='register'&&<div className="account-consents">
       <label className="account-check"><input type="checkbox" checked={fields.termsAccepted} onChange={e=>field('termsAccepted',e.target.checked)}/><span>J’accepte les <a href="/account-terms.html" target="_blank" rel="noreferrer">conditions du compte 3B</a> (version {ACCOUNT_TERMS_VERSION}).</span></label>
-      <label className="account-check"><input type="checkbox" checked={fields.privacyAccepted} onChange={e=>field('privacyAccepted',e.target.checked)}/><span>J’ai lu et j’accepte la <a href="/privacy-policy.html" target="_blank" rel="noreferrer">politique de confidentialité</a>.</span></label>
+      <label className="account-check"><input type="checkbox" checked={fields.privacyAccepted} onChange={e=>field('privacyAccepted',e.target.checked)}/><span>J’ai pris connaissance de la <a href="/privacy-policy.html" target="_blank" rel="noreferrer">politique de confidentialité</a>.</span></label>
       <label className="account-check optional"><input type="checkbox" checked={fields.marketingOptIn} onChange={e=>field('marketingOptIn',e.target.checked)}/><span>Je souhaite recevoir les nouveautés 3B. Facultatif.</span></label>
      </div>}
 
