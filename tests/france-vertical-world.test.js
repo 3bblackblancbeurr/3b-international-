@@ -291,3 +291,37 @@ test('runtime assets are critical and planned exactly once',()=>{
   }
   assert.equal(manifest.runtime_sources.story_signal,'AThreeBGameState.OnStoryStateChanged');
 });
+
+
+test('France weather narrative overrides reference registered authoritative WorldState tags',()=>{
+  const story=json('unreal/ThreeBWorld/Data/France/france-justice-v1.json');
+  const config=read('unreal/ThreeBWorld/Config/DefaultGameplayTags.ini');
+  const presentation=json('unreal/ThreeBWorld/Data/France/france-presentation-v1.json');
+  const profileH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.h');
+  const profileCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.cpp');
+  const directorCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherDirector.cpp');
+  const ids=new Set(story.world_states.map(x=>x.id));
+  for(const [stateId] of Object.entries(presentation.weather_state_machine.narrative_overrides)){
+    assert.ok(ids.has(stateId),stateId);
+  }
+  for(const state of story.world_states){
+    assert.match(config,new RegExp(state.tag.replace(/[.]/g,'\\.')),state.tag);
+  }
+  assert.match(profileH,/TMap<FName, EThreeBWeatherState> WorldStateOverrides/);
+  assert.match(profileCpp,/WorldStateOverrides\.Find\(WorldStateTagName\)/);
+  assert.match(directorCpp,/OnStoryStateChanged\.AddDynamic/);
+  assert.match(directorCpp,/OnStoryStateChanged\.RemoveDynamic/);
+  assert.match(directorCpp,/WorldStateTag\.GetTagName\(\)/);
+  assert.match(directorCpp,/if \(!HasAuthority\(\)/);
+});
+
+test('Editor bootstrap imports world-state weather overrides and has robust reflected error reporting',()=>{
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(bootstrap,/def reflected_type_name/);
+  assert.match(bootstrap,/world_state_overrides/);
+  assert.match(bootstrap,/france-justice-v1\.json/);
+  assert.match(bootstrap,/narrative_overrides/);
+  assert.match(bootstrap,/DataLayerCreationParameters/);
+  assert.match(bootstrap,/save_loaded_asset/);
+  assert.doesNotMatch(bootstrap,/service_role|grant_global_xp|grant_fragment|mint_inventory/i);
+});
