@@ -515,13 +515,18 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAc
     setDice(result.match.pendingRoll);
     setNotice(result.event?.text || result.match.lastEvent?.text || 'Tour résolu.');
     persist(result.match);
-    feedback.current.event(feedbackForEvent(result.event));
+    feedback.current.event(feedbackForEvent(result.event), { countryId: result.event?.countryId });
 
     if (result.event?.captured?.length && result.event.landing !== null) {
       const point = trackPosition(result.event.landing);
       setFocus({ ...point, type: 'capture' });
       setBlast({ ...point, key: Date.now() });
       setTimeout(() => setBlast(null), 850);
+      setTimeout(() => setFocus(null), 1050);
+    } else if (result.event?.type === 'door') {
+      const country = countryFor(result.event.countryId);
+      const point = homePosition(country, 0);
+      setFocus({ ...point, type: 'door' });
       setTimeout(() => setFocus(null), 1050);
     } else if (result.event?.type === 'finish' || result.event?.type === 'victory') {
       const country = countryFor(result.event.countryId);
@@ -976,6 +981,8 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAc
                 <span key={achievement.id}><b>{achievement.title}</b><small>{achievement.detail}</small></span>
               ))}
             </div>
+
+            <details className="dada3b-history"><summary>Historique de la partie</summary><div>{match.history.slice(-24).reverse().map((event) => <p key={event.id}><b>#{event.id}</b> {event.text}</p>)}</div></details>
 
             <div className="dada3b-victory-actions">
               <button type="button" className="dada3b-primary" onClick={replay}><RotateCcw size={17} /> Rejouer</button>
