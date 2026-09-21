@@ -46,7 +46,7 @@ import {storyCinematicPresentation} from './story-cinematic.js';
 import {CinematicOverlay} from './CinematicOverlay.jsx';
 import {City3BPanel} from '../city/City3BPanel.jsx';
 import {cityUnlockGuide,cityUnlockGuideRequested,cityUnlockGuideStorage} from './city-unlock-guide.js';
-import {primaryContextAction,actionFeedback} from './interaction-system.js';
+import {contextActions,primaryContextAction,actionFeedback} from './interaction-system.js';
 import {guardianHubState} from './guardian-relations.js';
 import {resonanceFor,unlockedResonances} from './guardian-resonances.js';
 import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,loadControlBindings,saveControlBindings,setPrimaryControl,controlLabel} from './control-bindings.js';
@@ -142,10 +142,7 @@ function WorldSession({uid,goTo}){
  function travel(id){if(!act({type:'visit',region:id}))return;scene.current?.travel(id);audio.current?.region(id);setPanel(null);chime();}
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
  function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
- function interact(item){
-  const contextAction=primaryContextAction(item,{save:saveRef.current,region:snapshot.region}),feedback=contextAction?actionFeedback(contextAction.id):null;
-  if(contextAction)audio.current?.interaction?.(contextAction.id);
-  if(haptics&&feedback?.haptic&&globalThis.navigator?.vibrate){const pattern={light:12,medium:24,strong:[28,18,34]}[feedback.haptic];if(pattern)globalThis.navigator.vibrate(pattern);}
+ function interactDefault(item){
   if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
   if(item.type==='portal'){travel(item.id);return;}
   if(item.type==='hubNpc'){
@@ -206,6 +203,29 @@ function WorldSession({uid,goTo}){
   if(item.type==='beacon'){if(act({type:'beacon',id:item.id}))chime();return;}
   if(act({type:'encounter',id:item.id})){act({type:'fieldStart'});scene.current?.cooldown(item.id);setPanel('encounter');}
  }
+ function interact(item,actionId=null){
+  if(!item)return;
+  const actions=contextActions(item,{save:saveRef.current,region:snapshot.region}),contextAction=(actionId?actions.find(action=>action.id===actionId):actions[0])||primaryContextAction(item,{save:saveRef.current,region:snapshot.region});
+  if(!contextAction)return;
+  const feedback=actionFeedback(contextAction.id);audio.current?.interaction?.(contextAction.id);
+  if(haptics&&feedback?.haptic&&globalThis.navigator?.vibrate){const pattern={light:12,medium:24,strong:[28,18,34]}[feedback.haptic];if(pattern)globalThis.navigator.vibrate(pattern);}
+  if(['inspect','observe','scan','memoryVision'].includes(contextAction.id)){
+   const descriptions={
+    inspect:item.detail||item.purpose||item.effect||('Tu examines '+(item.name||'cet élément')+'.'),
+    observe:item.detail||item.purpose||('Tu prends le temps d’observer '+(item.name||'la situation')+' avant d’agir.'),
+    scan:'Le scan relève les éléments visibles et les conserve comme contexte ; il ne valide pas une mission à lui seul.',
+    memoryVision:item.done?'Ce Souvenir a déjà été restauré. La Vision révèle encore les traces de ce qui s’est passé ici.':'La Vision montre une résonance autour de ce point. Pour restaurer le Souvenir, il faut encore accomplir l’action demandée.',
+   };
+   announce(descriptions[contextAction.id]);return;
+  }
+  if(contextAction.id==='calm'&&item.type==='echo'){
+   const region=saveRef.current.region;if(!saveRef.current.adventure.chapters?.[region]?.helped){announce('Aide d’abord l’habitant du pays pour apprendre à approcher cet Écho sans combattre.');return;}
+   if(!act({type:'encounter',id:item.id}))return;
+   const next=act({type:'approach',kind:'help'});if(next){setPanel('encounter');announce('Approche pacifique · observe maintenant les besoins de l’Écho pour créer un lien.');}
+   return;
+  }
+  interactDefault(item);
+ }
  callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region)};
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
@@ -247,7 +267,7 @@ function WorldSession({uid,goTo}){
   <div className="world-vignette"/>
   {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>} 
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
-  <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading} controls={controls}/>
+  <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onContextAction={(item,id)=>interact(item,id)} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading} controls={controls}/>
   {uid&&loaded&&cityUnlockMission&&!cityGuide.unlocked&&!panel&&<aside className="world-city-unlock-guide" aria-label="Mission de déblocage Ville 3B">
    <button className="world-city-unlock-dismiss" aria-label="Masquer la mission Ville 3B" onClick={()=>{cityUnlockGuideStorage(false);setCityUnlockMission(false);}}>×</button>
    <small>VILLE 3B · ÉTAPE {cityGuide.step}/{cityGuide.total}</small>
