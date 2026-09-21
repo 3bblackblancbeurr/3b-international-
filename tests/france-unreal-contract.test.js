@@ -151,3 +151,18 @@ test('sprint request is predicted locally but bounded again by the server Charac
  assert.match(source,/ETriggerEvent::Canceled/);
  assert.ok(manifest.required_assets.some(x=>x.path.endsWith('/IA_Sprint')));
 });
+
+
+test('shared story state replicates from GameState and has no client mutation RPC',()=>{
+ const header=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameState.h');
+ const source=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameState.cpp');
+ const mode=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameMode.cpp');
+ assert.match(header,/FThreeBReplicatedStoryState/);
+ assert.match(header,/ReplicatedUsing=OnRep_StoryState/);
+ assert.match(header,/ApplyAuthoritativeStoryState/);
+ assert.doesNotMatch(header,/UFUNCTION\(Server[^)]*\)[\s\S]{0,120}ApplyAuthoritativeStoryState/);
+ assert.match(source,/if \(!HasAuthority\(\)/);
+ assert.match(source,/NewState\.Revision < StoryState\.Revision/);
+ assert.match(source,/DOREPLIFETIME\(AThreeBGameState, StoryState\)/);
+ assert.match(mode,/GameStateClass = AThreeBGameState::StaticClass\(\)/);
+});
