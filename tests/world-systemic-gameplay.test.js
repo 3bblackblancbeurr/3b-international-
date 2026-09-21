@@ -16,7 +16,7 @@ import {validPose,validRuntimeMember,mergeRuntimePeers,partyRuntimeRequest} from
 import {worldRadiusFor,WORLD_RADIUS} from '../src/world/terrain.js';
 import {HUB_MISSION_ACTION_PLANS,applyHubMissionAction,hubMissionActionTargets,validateHubMissionActionPlans} from '../src/world/hub/mission-actions.js';
 import {hubRuntime} from '../src/world/hub/runtime-data.js';
-import {DISTRICT_JOBS,applyDistrictJobAction,currentJobActions,jobReadyToTurnIn,validateDistrictJobs} from '../src/world/district-jobs.js';
+import {DISTRICT_JOBS,availableJobs,applyDistrictJobAction,currentJobActions,jobReadyToTurnIn,validateDistrictJobs} from '../src/world/district-jobs.js';
 import {serviceItems} from '../src/world/settlements.js';
 import {PARTY_SIGNALS,sharedObjectiveState,validateCoopSession} from '../src/world/coop-session.js';
 
@@ -141,7 +141,7 @@ test('authoritative mission action endpoint rejects wrong-stage actions and make
 
 test('independent country contracts are multi-step systemic jobs rather than one-click errands',()=>{
  assert.equal(validateDistrictJobs(),true);
- assert.equal(Object.keys(DISTRICT_JOBS).length,8);
+ assert.equal(Object.keys(DISTRICT_JOBS).length,9);
  let home={wood:0,stone:0,food:3,camp:0,forge:0,garden:0,expedition:0,harvest:[],jobs:[],activeJob:'route_repair',jobStage:0,jobProgress:[]};
  assert.deepEqual(currentJobActions(home).map(action=>action.id),['route:inspect']);
  let result=applyDistrictJobAction(home,'route:repair1');assert.equal(result.ok,false);
@@ -151,6 +151,37 @@ test('independent country contracts are multi-step systemic jobs rather than one
  const duplicate=applyDistrictJobAction(home,'route:repair1');assert.equal(duplicate.duplicate,true);
  result=applyDistrictJobAction(home,'route:repair2');home=result.home;assert.equal(home.jobStage,2);
  result=applyDistrictJobAction(home,'route:verify');home=result.home;assert.equal(jobReadyToTurnIn(home),true);
+});
+
+test('France Justice post-Guardian dossier unlocks only after Céliane and remains server-authoritative',()=>{
+ let save=applyWorldAction(blankSave(),{type:'visit',region:'france'}),home=save.adventure.frontier.france||{jobs:[],activeJob:null};
+ assert.equal(availableJobs(home,{region:'france',seals:save.seals}).some(([id])=>id==='justice_case'),false);
+ assert.throws(()=>applyWorldAction(save,{type:'jobAccept',id:'justice_case'}),/pas disponible/);
+
+ let italy=applyWorldAction(blankSave(),{type:'visit',region:'italie'});italy={...italy,seals:['france']};
+ assert.throws(()=>applyWorldAction(italy,{type:'jobAccept',id:'justice_case'}),/pas disponible/);
+
+ save={...save,seals:['france'],adventure:{...save.adventure,resonance:'france'}};
+ home=save.adventure.frontier.france||{jobs:[],activeJob:null};
+ assert.equal(availableJobs(home,{region:'france',seals:save.seals}).some(([id])=>id==='justice_case'),true);
+ save=applyWorldAction(save,{type:'jobAccept',id:'justice_case'});
+ assert.equal(save.adventure.frontier.france.activeJob,'justice_case');
+
+ for(const id of ['justice:witness1','justice:witness2'])save=applyWorldAction(save,{type:'jobAction',job:'justice_case',actionId:id});
+ let items=serviceItems('france',save).filter(item=>item.type==='jobAction');
+ assert.deepEqual(items.map(item=>item.actionId).sort(),['justice:proof1','justice:proof2']);
+ assert.ok(items.every(item=>primaryContextAction(item,{save})?.id==='scan'));
+ assert.ok(items.every(item=>contextActions(item,{save,region:'france'}).some(action=>action.id==='resonance'&&action.resonanceRegion==='france')));
+
+ for(const id of ['justice:proof1','justice:proof2','justice:verify','justice:mediate','justice:report'])save=applyWorldAction(save,{type:'jobAction',job:'justice_case',actionId:id});
+ assert.equal(jobReadyToTurnIn(save.adventure.frontier.france),true);
+ const before={xp:save.xp,shards:save.shards,stone:save.adventure.frontier.france.stone};
+ save=applyWorldAction(save,{type:'jobDone',id:'justice_case'});
+ assert.equal(save.xp-before.xp,65);
+ assert.equal(save.shards-before.shards,12);
+ assert.equal(save.adventure.frontier.france.stone-before.stone,1);
+ assert.ok(save.adventure.frontier.france.jobs.includes('justice_case'));
+ assert.throws(()=>applyWorldAction(save,{type:'jobDone',id:'justice_case'}),/Aucun contrat/);
 });
 
 test('relay repair requires diagnosis repairs assembly and final verification in order',()=>{
