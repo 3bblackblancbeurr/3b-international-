@@ -96,3 +96,37 @@
 @media(prefers-reduced-motion:reduce){
  .world-shell .world-minimap{transition:none}
 }
+
+
+/* Systemic context actions: one primary verb, optional explicit alternatives. */
+.world-shell .play-interaction-cluster{
+ position:absolute;z-index:16;bottom:max(29px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+ display:flex;align-items:center;gap:6px;max-width:calc(100% - 150px);
+}
+.world-shell .play-interaction-cluster .play-interaction{
+ position:static;left:auto;right:auto;bottom:auto;transform:none;max-width:min(520px,calc(100vw - 220px));min-width:0;
+}
+.world-shell .play-interaction-more{
+ min-width:44px;min-height:44px;padding:0 11px;border-radius:50%;
+ border:1px solid #d8c48b60;background:#0d2526e8;color:#eee1b9;font-weight:700;letter-spacing:1px;
+ box-shadow:0 10px 30px #02080f52;backdrop-filter:blur(10px);
+}
+.world-shell .play-context-actions{
+ position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%);
+ width:min(360px,78vw);display:grid;gap:6px;padding:8px;border-radius:16px;
+ border:1px solid #d8c48b4d;background:#07161bf2;box-shadow:0 18px 48px #02080f88;backdrop-filter:blur(14px);
+}
+.world-shell .play-context-actions button{
+ display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;
+ min-height:44px;padding:9px 12px;border-radius:11px;border:1px solid #d8c48b26;background:#15312eaa;color:#eee5cf;
+}
+.world-shell .play-context-actions button span{font-size:11px;font-weight:650}
+.world-shell .play-context-actions button small{font-size:8px;color:#aac2ba;text-align:right}
+@media(max-width:700px){
+ .world-shell .play-interaction-cluster{left:auto;right:14px;transform:none;bottom:max(18px,env(safe-area-inset-bottom));max-width:calc(100% - 92px)}
+ .world-shell .play-interaction-cluster .play-interaction{right:auto;max-width:calc(100vw - 160px)}
+ .world-shell .play-context-actions{left:auto;right:0;transform:none;width:min(320px,82vw)}
+}
+@media(prefers-reduced-motion:reduce){
+ .world-shell .play-context-actions{transition:none!important;animation:none!important}
+}
