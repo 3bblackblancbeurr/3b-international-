@@ -42,12 +42,28 @@ export function createMotionSmoother({acceleration=14,deceleration=20,epsilon=.0
  };
 }
 
+export const TOUCH_SPRINT_THRESHOLD=.9;
+export const TOUCH_SPRINT_DELAY_MS=120;
+
+export function joystickProfile(width,height,pointerType='touch'){
+ if(pointerType!=='touch')return {deadZone:10,maxRadius:72,exponent:1.22,sprintThreshold:TOUCH_SPRINT_THRESHOLD,sprintDelayMs:TOUCH_SPRINT_DELAY_MS};
+ const shortSide=Math.max(1,Math.min(Number(width)||1,Number(height)||1));
+ const maxRadius=Math.max(56,Math.min(84,shortSide*.18));
+ const deadZone=Math.max(8,Math.min(12,maxRadius*.14));
+ return {deadZone,maxRadius,exponent:1.22,sprintThreshold:TOUCH_SPRINT_THRESHOLD,sprintDelayMs:TOUCH_SPRINT_DELAY_MS};
+}
+
 export function pointerStick(dx,dy,{deadZone=10,maxRadius=72,exponent=1.22}={}){
  const length=Math.hypot(dx,dy);
  if(length<=deadZone)return {x:0,z:0};
  const linear=Math.min(1,(length-deadZone)/Math.max(1,maxRadius-deadZone));
  const strength=Math.pow(linear,exponent);
  return {x:dx/length*strength,z:dy/length*strength};
+}
+
+export function sprintIntent(stick,enteredAt,now,{sprintThreshold=TOUCH_SPRINT_THRESHOLD,sprintDelayMs=TOUCH_SPRINT_DELAY_MS}={}){
+ if(!Number.isFinite(enteredAt)||!Number.isFinite(now))return false;
+ return Math.hypot(stick?.x||0,stick?.z||0)>=sprintThreshold&&now-enteredAt>=sprintDelayMs;
 }
 
 export const QUALITY_MODES=['auto','fluid','detail'];
