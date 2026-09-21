@@ -26,7 +26,7 @@ async function authenticate(req:Request){
 }
 async function sports(){
  const cache=check(await admin.from('sport_cache').select('payload,updated_at').eq('id','headlines').maybeSingle());
- if(cache&&Date.now()-Date.parse(cache.updated_at)<600000)return{...cache.payload,stale:false};
+ if(cache?.payload?.version===2&&Date.now()-Date.parse(cache.updated_at)<600000)return{...cache.payload,stale:false};
  try{const payload=await fetchSports();check(await admin.from('sport_cache').upsert({id:'headlines',payload,updated_at:payload.updatedAt}));return{...payload,stale:false};}
  catch{if(cache)return{...cache.payload,stale:true};throw new Failure(503,'Les sources sportives sont momentanément indisponibles. Réessaie dans quelques minutes.');}
 }
