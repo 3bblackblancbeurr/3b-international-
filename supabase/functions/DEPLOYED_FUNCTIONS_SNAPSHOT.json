@@ -4,7 +4,7 @@
   "functions": [
     {
       "slug": "ai-council-orchestrate",
-      "version": 1,
+      "version": 2,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
