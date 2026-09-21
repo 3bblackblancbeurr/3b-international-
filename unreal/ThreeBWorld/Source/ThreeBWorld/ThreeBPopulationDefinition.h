@@ -55,6 +55,36 @@ struct FThreeBPopulationArchetype
     TArray<FName> Roles;
 };
 
+USTRUCT(BlueprintType)
+struct FThreeBNpcRoleDefinition
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName Id;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName ZoneId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName DistrictId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName RoutineId;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> ActivePhaseIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> MemoryFactKeys;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TArray<FName> Intents;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName PostLiberationBehavior;
+};
+
 UCLASS(BlueprintType)
 class THREEBWORLD_API UThreeBPopulationDefinition : public UPrimaryDataAsset
 {
@@ -76,8 +106,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Population")
     TArray<FThreeBPopulationArchetype> Archetypes;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Population")
+    TArray<FThreeBNpcRoleDefinition> NpcRoles;
+
     UFUNCTION(BlueprintPure, Category="3B|Population")
     bool FindRoutine(FName Id, FThreeBPopulationRoutineProfile& OutRoutine) const;
+
+    UFUNCTION(BlueprintPure, Category="3B|Population")
+    bool FindNpcRole(FName Id, FThreeBNpcRoleDefinition& OutRole) const;
 
     UFUNCTION(BlueprintPure, Category="3B|Population")
     bool ValidateDefinition(TArray<FString>& OutErrors) const;
