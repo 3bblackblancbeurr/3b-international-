@@ -98,6 +98,7 @@ export function contextActions(item,context={}){
   let overrides={};
   if(item.type==='portal')overrides={label:item.id==='hub'?'Retourner à la Cité':'Traverser la Porte'};
   if(item.type==='hubMission'){const row=save.hub?.missions?.[item.missionId];overrides={label:item.locked?'Voir les prérequis':row?.status==='available'?'Commencer la mission':row?.status==='active'?'Voir l’objectif':row?.status==='completed'&&!row?.claimed?'Récupérer la récompense':'Mission accomplie'};}
+  if(item.type==='hubMissionAction')overrides={label:item.actionLabel||item.name||base?.label};
   if(item.type==='beacon')overrides={label:item.done?'Souvenir retrouvé':'Recueillir le Souvenir'};
   if(item.type==='guardian')overrides={label:save.seals?.includes(item.region)?'Défier à nouveau':'Affronter le Gardien'};
   if(item.type==='hubGuardian'&&id==='talk')overrides={label:'Parler au Gardien'};
