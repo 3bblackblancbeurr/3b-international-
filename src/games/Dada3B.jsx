@@ -352,6 +352,7 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage }) {
   const [feedbackPrefs, setFeedbackPrefs] = useState(readDadaFeedbackPreferences);
   const feedback = useRef(null);
   const sequence = useRef(0);
+  const matchRef = useRef(null);
   const turnDeadline = useRef(0);
   const endRecorded = useRef(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -360,6 +361,7 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage }) {
   });
 
   if (!feedback.current) feedback.current = createDadaFeedback(feedbackPrefs);
+  matchRef.current = match;
 
   useEffect(() => () => {
     sequence.current += 1;
@@ -680,7 +682,9 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage }) {
       setMatchRemaining(Math.ceil(remainingMs / 1000));
       if (remainingMs <= 0) {
         clearInterval(timer);
-        const finished = finishByTime(match);
+        const latest = matchRef.current;
+        if (!latest || latest.status !== 'playing') return;
+        const finished = finishByTime(latest);
         setMatch(finished);
         setDice(null);
         setNotice(finished.lastEvent?.text || 'Temps de partie écoulé.');
