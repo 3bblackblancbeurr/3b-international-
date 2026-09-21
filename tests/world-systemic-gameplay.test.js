@@ -112,7 +112,7 @@ test('guardian resonances have combat exploration puzzle and rescue uses without
   for(const key of ['combat','exploration','puzzle','rescue','limit'])assert.ok(ability[key].length>30,region+' '+key);
  }
  const save={...blankSave(),seals:['france','algerie','estonie']};
- assert.deepEqual(unlockedResonances(save).map(a=>a.region),['france','estonie','algerie'].filter(id=>save.seals.includes(id)));
+ assert.deepEqual(unlockedResonances(save).map(a=>a.region),['france','algerie','estonie']);
  assert.match(RING_ABILITIES.linkPulse.rule,/pas une neuvième valeur/i);
 });
 
