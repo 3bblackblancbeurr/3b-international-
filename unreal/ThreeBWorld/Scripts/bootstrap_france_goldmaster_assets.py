@@ -135,7 +135,7 @@ def create_or_load_data_layer(asset_path: str):
     return asset
 
 
-def fill_region_asset(asset, layout: dict[str, Any]) -> None:
+def fill_region_asset(asset, layout: dict[str, Any], mission_asset, population_asset, weather_asset) -> None:
     safe_set(asset, "region_id", make_name("france"))
     safe_set(asset, "schema_version", 2)
 
@@ -212,6 +212,9 @@ def fill_region_asset(asset, layout: dict[str, Any]) -> None:
         [make_name(x) for x in stream_source.get("always_visible_proxies", [])],
     )
     safe_set(asset, "streaming", streaming)
+    safe_set(asset, "mission_catalog", mission_asset)
+    safe_set(asset, "population_definition", population_asset)
+    safe_set(asset, "weather_profile", weather_asset)
 
 
 def fill_mission_catalog(asset, missions_source: dict[str, Any]) -> None:
@@ -458,10 +461,16 @@ def main() -> None:
         "DA_FranceWeather", DATA_DIR, "ThreeBWeatherProfile"
     )
 
-    fill_region_asset(region_asset, layout)
     fill_mission_catalog(mission_asset, missions)
     fill_population_asset(population_asset, population)
     fill_weather_asset(weather_asset, presentation, story)
+    fill_region_asset(
+        region_asset,
+        layout,
+        mission_asset,
+        population_asset,
+        weather_asset,
+    )
 
     created_layers = []
     for entry in manifest.get("required_assets", []):
