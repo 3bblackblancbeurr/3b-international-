@@ -13,6 +13,9 @@ import './dada3b.css';
 
 const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const A11Y_DEFAULT=Object.freeze({largeText:false,highContrast:false,colorblind:false,reducedMotion:false});
+function readA11y(){try{const raw=JSON.parse(localStorage.getItem('dada3b:a11y')||'null');return raw&&typeof raw==='object'?{...A11Y_DEFAULT,...raw}:A11Y_DEFAULT;}catch{return A11Y_DEFAULT;}}
+function writeA11y(value){try{localStorage.setItem('dada3b:a11y',JSON.stringify(value));}catch{}}
 const initialSeats=()=>COUNTRIES_3B.map((country,index)=>({countryId:country.id,type:index<2?'human':index===2?'bot':'off',aiLevel:'tactique',team:null}));
 const COSMETIC_SLOT_LABELS={totem_skin:'Totem',trail:'Trace',dice_skin:'Dé',board_skin:'Plateau',capture_fx:'Capture',intro_fx:'Introduction'};
 const COUNTRY_SKIN_PREFIX={fr:'DADA_TOTEM_FR_',dz:'DADA_TOTEM_DZ_',es:'DADA_TOTEM_ES_',ma:'DADA_TOTEM_MA_',it:'DADA_TOTEM_IT_',tn:'DADA_TOTEM_TN_',tr:'DADA_TOTEM_TR_',ee:'DADA_TOTEM_EE_'};
@@ -83,10 +86,23 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const[view,setView]=useState('menu'),[seats,setSeats]=useState(initialSeats),[rules,setRules]=useState(()=>normalizeRules(DEFAULT_RULES));
  const[match,setMatch]=useState(null),[lastSeats,setLastSeats]=useState(null),[dice,setDice]=useState(null),[legal,setLegal]=useState([]),[busy,setBusy]=useState(false),[motion,setMotion]=useState(null),[blast,setBlast]=useState(null),[notice,setNotice]=useState('Le Cercle attend.');
  const[sound,setSound]=useState(true),[haptic,setHaptic]=useState(true),[voice,setVoice]=useState(false),[tutorial,setTutorial]=useState(false),[tutorialStep,setTutorialStep]=useState(0),[localDeadline,setLocalDeadline]=useState(null),[clock,setClock]=useState(Date.now());
- const[onlineRoom,setOnlineRoom]=useState(null),[onlineMode,setOnlineMode]=useState('private'),[onlineCountry,setOnlineCountry]=useState('fr'),[roomCode,setRoomCode]=useState(''),[onlineBusy,setOnlineBusy]=useState(false),[onlineStatus,setOnlineStatus]=useState(''),[maxPlayers,setMaxPlayers]=useState(4),[leaderboard,setLeaderboard]=useState([]);
+ const[onlineRoom,setOnlineRoom]=useState(null),[onlineMode,setOnlineMode]=useState('private'),[onlineCountry,setOnlineCountry]=useState('fr'),[roomCode,setRoomCode]=useState(''),[onlineBusy,setOnlineBusy]=useState(false),[onlineStatus,setOnlineStatus]=useState(''),[maxPlayers,setMaxPlayers]=useState(4),[leaderboard,setLeaderboard]=useState([]),[leaderboardBoard,setLeaderboardBoard]=useState('solo');
  const[cosmetics,setCosmetics]=useState(null),[cosmeticStatus,setCosmeticStatus]=useState('');
+ const[tournaments,setTournaments]=useState([]),[tournament,setTournament]=useState(null),[tournamentCode,setTournamentCode]=useState(''),[tournamentTitle,setTournamentTitle]=useState('Tournoi DADA 3B'),[tournamentSize,setTournamentSize]=useState(4),[tournamentStatus,setTournamentStatus]=useState('');
+ const[a11y,setA11y]=useState(readA11y);
  const sequence=useRef(0),recorded=useRef(false);
  useEffect(()=>()=>{sequence.current++;closeDadaAudio();},[]);
+ useEffect(()=>{
+  writeA11y(a11y);
+  const root=document.documentElement;
+  const classes=['dada3b-a11y-large','dada3b-a11y-contrast','dada3b-a11y-colorblind','dada3b-a11y-reduced'];
+  classes.forEach(x=>root.classList.remove(x));
+  if(a11y.largeText)root.classList.add(classes[0]);
+  if(a11y.highContrast)root.classList.add(classes[1]);
+  if(a11y.colorblind)root.classList.add(classes[2]);
+  if(a11y.reducedMotion)root.classList.add(classes[3]);
+  return()=>classes.forEach(x=>root.classList.remove(x));
+ },[a11y]);
  useEffect(()=>{
   if(!account.user){setCosmetics(null);return;}
   let live=true;
@@ -133,7 +149,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   if(!info){setBusy(false);return;}
   const result=movePiece(source,pieceIndex),countryId=source.players[source.turn].countryId;
   const steps=info.from===STABLE?[0]:Array.from({length:Math.max(0,info.to-info.from)},(_,i)=>info.from+i+1);
-  for(const step of steps){if(id!==sequence.current)return;setMotion({countryId,pieceIndex,step});await wait(window.matchMedia('(prefers-reduced-motion: reduce)').matches?10:90);}
+  for(const step of steps){if(id!==sequence.current)return;setMotion({countryId,pieceIndex,step});await wait(a11y.reducedMotion||window.matchMedia('(prefers-reduced-motion: reduce)').matches?10:90);}
   if(id!==sequence.current)return;setMotion(null);
   if(result.event?.captured?.length&&result.event.landing!==null){const p=trackPosition(result.event.landing);setBlast({...p,key:Date.now(),fx:cosmeticLoadout?.capture_fx});setTimeout(()=>setBlast(null),720);}
   setBusy(false);setDice(null);adoptLocal(result.match,result.match.status==='finished'&&!recorded.current);
@@ -143,7 +159,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   if(!match||match.status!=='playing'||busy||match.pendingRoll!==null)return;
   const player=currentPlayer(match);if(!player||(!automated&&player.type==='bot'))return;
   setBusy(true);setLegal([]);setNotice(countryFor(player.countryId).name+' lance le dé…');dadaTone('roll',sound);dadaHaptic('roll',haptic);
-  const finalRoll=secureRoll();for(let i=0;i<6;i++){setDice(i===5?finalRoll:secureRoll());await wait(48);}
+  const finalRoll=secureRoll();for(let i=0;i<(a11y.reducedMotion?1:6);i++){setDice(i===(a11y.reducedMotion?0:5)?finalRoll:secureRoll());await wait(a11y.reducedMotion?10:48);}
   const rolled=rollTurn(match,finalRoll);setDice(finalRoll);adoptLocal(rolled.match);
   if(rolled.match.status!=='playing'||rolled.autoPass||rolled.match.pendingRoll===null){setBusy(false);await wait(260);setDice(null);return;}
   const moves=rolled.match.pendingMoves,active=rolled.match.players[rolled.match.turn],allStable=finalRoll===6&&moves.length&&moves.every(i=>active.pieces[i].steps===STABLE);
@@ -203,7 +219,36 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   if(!account.user){setOnlineStatus('Connecte-toi à ton compte 3B pour jouer en ligne.');setView('online');setOnlineMode(mode);return;}
   setView('online');setOnlineMode(mode);
   if(['quick','ranked','team2v2'].includes(mode))await onlineAction('queue',{mode,countryId:onlineCountry,rules:{...rules,teamMode:mode==='team2v2'}});
-  if(mode==='leaderboard'){const data=await onlineAction('leaderboard');if(data?.leaderboard)setLeaderboard(data.leaderboard);}
+  if(mode==='leaderboard'){const data=await onlineAction('leaderboard',{board:leaderboardBoard});if(data?.leaderboard)setLeaderboard(data.leaderboard);}
+ }
+ async function refreshLeaderboard(board=leaderboardBoard){
+  setLeaderboardBoard(board);const data=await onlineAction('leaderboard',{board});if(data?.leaderboard)setLeaderboard(data.leaderboard);
+ }
+ async function loadTournaments(){
+  if(!account.user){setTournamentStatus('Compte 3B requis.');setView('tournaments');return;}
+  setTournamentStatus('Chargement des tournois…');setView('tournaments');
+  try{const data=await dadaRequest('tournaments');setTournaments(data.tournaments||[]);setTournamentStatus('Tournois synchronisés.');}
+  catch(error){setTournamentStatus(error.message||'Tournois indisponibles.');}
+ }
+ async function createTournamentUi(){
+  setTournamentStatus('Création du bracket…');
+  try{const data=await dadaRequest('tournament_create',{title:tournamentTitle,maxEntries:tournamentSize});setTournament(data);setTournamentCode(data.tournament?.code||'');setTournamentStatus('Tournoi créé.');await loadTournaments();}
+  catch(error){setTournamentStatus(error.message||'Création impossible.');}
+ }
+ async function openTournament(code){
+  setTournamentStatus('Chargement du bracket…');
+  try{const data=await dadaRequest('tournament_status',{code});setTournament(data);setTournamentCode(code);setTournamentStatus('Bracket synchronisé.');}
+  catch(error){setTournamentStatus(error.message||'Bracket indisponible.');}
+ }
+ async function joinTournamentUi(){
+  setTournamentStatus('Inscription…');
+  try{const code=tournamentCode.trim().toUpperCase();const data=await dadaRequest('tournament_join',{code,countryId:onlineCountry});setTournament(data);setTournamentStatus('Inscription validée.');}
+  catch(error){setTournamentStatus(error.message||'Inscription impossible.');}
+ }
+ async function playTournamentMatch(){
+  setTournamentStatus('Ouverture du match…');
+  try{const code=tournament?.tournament?.code||tournamentCode.trim().toUpperCase();const data=await dadaRequest('tournament_match',{code});setOnlineRoom(data.room);setOnlineMode('tournament');setView('online');}
+  catch(error){setTournamentStatus(error.message||'Match pas encore disponible.');}
  }
  useEffect(()=>{
   if(!onlineRoom?.id||!account.user)return;
@@ -234,9 +279,46 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     <button onClick={()=>enterOnline('team2v2')}><strong>2v2 équipes</strong><small>OR contre MATRIX · matchmaking à 4</small></button>
     <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Regarde une partie privée autorisée</small></button>
     <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection DADA</strong><small>Totems · dés · traces · plateaux · effets</small></button>
+    <button onClick={loadTournaments}><strong>Tournois</strong><small>Brackets 4 / 8 / 16 · élimination directe</small></button>
+    <button onClick={()=>setView('accessibility')}><strong>Accessibilité</strong><small>Contraste · texte · daltonisme · animations</small></button>
    </div>
    {restored?.status==='playing'&&<button className="dada3b-primary dada3b-resume" onClick={resumeLocal}><Play size={17}/> Reprendre ma partie sauvegardée</button>}
-   <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button><button onClick={()=>enterOnline('leaderboard')}>Classement</button></div>
+   <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button><button onClick={()=>enterOnline('leaderboard')}>Classements</button></div>
+  </section></main>
+ </div>;
+
+ if(view==='accessibility')return <div className="dada3b-shell" role="dialog" aria-modal="true">
+  <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Confort de jeu</small><strong>Accessibilité DADA 3B</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
+  <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-accessibility">
+   <span className="dada3b-kicker">RÉGLAGES LOCAUX · SAUVEGARDÉS SUR CET APPAREIL</span><h2>Rendre le Cercle lisible pour tous.</h2>
+   <div className="dada3b-rule-grid">
+    <RuleToggle checked={a11y.largeText} onChange={v=>setA11y(x=>({...x,largeText:v}))} label="Texte large" detail="Augmente les textes, boutons et informations critiques."/>
+    <RuleToggle checked={a11y.highContrast} onChange={v=>setA11y(x=>({...x,highContrast:v}))} label="Contraste renforcé" detail="Renforce contours, fonds et focus clavier."/>
+    <RuleToggle checked={a11y.colorblind} onChange={v=>setA11y(x=>({...x,colorblind:v}))} label="Mode daltonisme" detail="Ajoute motifs et formes sans dépendre uniquement des couleurs."/>
+    <RuleToggle checked={a11y.reducedMotion} onChange={v=>setA11y(x=>({...x,reducedMotion:v}))} label="Animations réduites" detail="Supprime zooms, pulsations et accélère les déplacements."/>
+   </div>
+   <div className="dada3b-event"><b>Clavier & lecteur d’écran</b><br/>Tous les Totems jouables, le dé, les réglages et les actions principales restent des boutons natifs. Les changements de tour et événements sont annoncés via zones live.</div>
+  </section></main>
+ </div>;
+
+ if(view==='tournaments')return <div className="dada3b-shell" role="dialog" aria-modal="true">
+  <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Compétition DADA 3B</small><strong>Tournois à élimination directe</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
+  <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-tournaments">
+   <span className="dada3b-kicker">BRACKETS SERVEUR · 4 / 8 / 16 JOUEURS</span><h2>Le Cercle compétitif.</h2>
+   <div className="dada3b-tournament-actions">
+    <label className="dada3b-field"><span>Nom</span><input value={tournamentTitle} maxLength={80} onChange={e=>setTournamentTitle(e.target.value)}/></label>
+    <label className="dada3b-field"><span>Taille</span><select value={tournamentSize} onChange={e=>setTournamentSize(Number(e.target.value))}>{[4,8,16].map(v=><option key={v}>{v}</option>)}</select></label>
+    <button className="dada3b-primary" disabled={!account.user} onClick={createTournamentUi}>Créer</button>
+   </div>
+   <div className="dada3b-tournament-actions">
+    <CountryPicker value={onlineCountry} onChange={setOnlineCountry} label="Pays du tournoi"/>
+    <label className="dada3b-field"><span>Code</span><input value={tournamentCode} maxLength={6} onChange={e=>setTournamentCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g,''))} placeholder="ABC234"/></label>
+    <button className="dada3b-secondary" disabled={!account.user||tournamentCode.length!==6} onClick={joinTournamentUi}>S’inscrire</button>
+    <button className="dada3b-secondary" disabled={tournamentCode.length!==6} onClick={()=>openTournament(tournamentCode)}>Voir bracket</button>
+   </div>
+   <div className="dada3b-tournament-list">{tournaments.map(t=><button key={t.code} onClick={()=>openTournament(t.code)}><strong>{t.title}</strong><small>{t.code} · {t.entries}/{t.maxEntries} · {t.status}{t.isMine?' · inscrit':''}</small></button>)}</div>
+   {tournament?.tournament&&<section className="dada3b-bracket"><header><div><span className="dada3b-kicker">{tournament.tournament.status}</span><h3>{tournament.tournament.title}</h3></div><b>{tournament.tournament.code}</b></header><div className="dada3b-bracket-entries">{tournament.entries.map((e,i)=>{const cc=countryFor(e.countryId);return <span key={i}>{e.seed?'#'+e.seed+' ':''}{cc?.flag} {e.handle}{e.isSelf?' · TOI':''} · {e.status}</span>;})}</div><div className="dada3b-bracket-rounds">{[...new Set(tournament.matches.map(m=>m.round))].map(round=><section key={round}><h4>Tour {round}</h4>{tournament.matches.filter(m=>m.round===round).map(m=><article key={m.id} data-status={m.status}><span>{m.playerA||'À déterminer'}</span><b>VS</b><span>{m.playerB||'À déterminer'}</span>{m.winner&&<small>✓ {m.winner}</small>}</article>)}</section>)}</div>{tournament.matches.some(m=>m.isMine&&['ready','active'].includes(m.status))&&<button className="dada3b-primary" onClick={playTournamentMatch}>Jouer mon prochain match</button>}</section>}
+   <p role="status">{tournamentStatus}</p>
   </section></main>
  </div>;
 
@@ -278,7 +360,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Multijoueur sécurisé</small><strong>{onlineMode==='ranked'?'Classé':onlineMode==='quick'?'Jeu rapide':onlineMode==='team2v2'?'2v2 équipes':onlineMode==='spectate'?'Spectateur':onlineMode==='join'?'Rejoindre un salon':'Salon privé'}</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-online-setup">
    {!account.user&&<div className="dada3b-event"><b>Compte 3B requis</b><br/>Le multijoueur utilise ton identité 3B, le dé serveur et la reprise après déconnexion.</div>}
-   {onlineMode==='leaderboard'?<><h2>Classement DADA 3B</h2><button className="dada3b-primary" disabled={!account.user||onlineBusy} onClick={async()=>{const d=await onlineAction('leaderboard');if(d?.leaderboard)setLeaderboard(d.leaderboard);}}>Actualiser</button><div className="dada3b-leaderboard">{leaderboard.map(r=><div key={r.rank}><b>#{r.rank} {r.handle}</b><span>{r.rating} · {r.wins} V / {r.losses} D</span></div>)}</div></>:
+   {onlineMode==='leaderboard'?<><h2>Classements DADA 3B</h2><div className="dada3b-leaderboard-tabs"><button aria-pressed={leaderboardBoard==='solo'} onClick={()=>refreshLeaderboard('solo')}>Classé 1v1</button><button aria-pressed={leaderboardBoard==='team'} onClick={()=>refreshLeaderboard('team')}>Classé 2v2</button></div><button className="dada3b-primary" disabled={!account.user||onlineBusy} onClick={()=>refreshLeaderboard()}>Actualiser</button><div className="dada3b-leaderboard">{leaderboard.map(r=><div key={r.rank}><b>#{r.rank} {r.handle}</b><span>{r.rating} · {r.wins} V / {r.losses} D · {r.games} parties</span></div>)}</div></>:
    <><CountryPicker value={onlineCountry} onChange={setOnlineCountry}/>
     {['join','spectate'].includes(onlineMode)&&<label className="dada3b-field"><span>Code du salon</span><input value={roomCode} maxLength={6} onChange={e=>setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g,''))} placeholder="ABC234"/></label>}
     {onlineMode==='private'&&<><RuleToggle checked={rules.teamMode} onChange={v=>{updateRule('teamMode',v);if(v)setMaxPlayers(4);}} label="Salon 2v2" detail="Deux équipes de deux. OR contre MATRIX."/><label className="dada3b-field"><span>Nombre maximum</span><select value={rules.teamMode?4:maxPlayers} disabled={rules.teamMode} onChange={e=>setMaxPlayers(Number(e.target.value))}>{[2,3,4,5,6,7,8].map(v=><option key={v}>{v}</option>)}</select></label></>}
@@ -299,7 +381,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const isOnline=Boolean(onlineRoom);
  const timeLeft=deadlineMs===null?null:Math.ceil(deadlineMs/1000);
  const focus=renderMatch.lastEvent?.type||'';
- return <div className="dada3b-shell" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true">
+ return <div className="dada3b-shell" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true"><div className="dada3b-sr-only" aria-live="assertive">{renderMatch.lastEvent?.text||('Tour de '+(turnCountry?.name||''))}</div>
   <header className="dada3b-topbar"><div><small>{isOnline?(onlineRoom.mode==='ranked'?'CLASSÉ':onlineRoom.mode.toUpperCase()):'LOCAL'} · Manche {renderMatch.round}</small><strong>DADA 3B · {turnCountry?.name||''}</strong></div><div className="dada3b-top-actions">{timeLeft!==null&&<span className="dada3b-timer" data-low={timeLeft<=7}>{timeLeft}s</span>}{isOnline&&<span className="dada3b-live"><Wifi size={14}/> LIVE</span>}<button className="dada3b-icon-button" onClick={()=>isOnline?leaveOnline():setView('menu')}><X size={20}/></button></div></header>
   <div className="dada3b-arena"><div className="dada3b-board-wrap"><Board match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={piece=>isOnline?onlineAction('move',{room:onlineRoom.id,revision:onlineRoom.revision,piece}):chooseLocal(piece)} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry}/></div>
    <aside className="dada3b-sidebar"><section className="dada3b-turn-card" style={{'--country':turnCountry?.accent||'#c7a66a'}}><div className="dada3b-turn-line"><div><span className="dada3b-kicker">Tour actuel</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><small>{turnCountry?.guardian} · {turnCountry?.value}{turnPlayer?.type==='bot'?' · IA '+(turnPlayer.aiLevel||''):''}</small></div></div>
