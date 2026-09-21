@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 125,
+  "count": 127,
   "migrations": [
     {
       "version": "20260910020445",
@@ -628,6 +628,16 @@
       "version": "20260921191253",
       "name": "dada3b_atomic_commit_and_settlement_v1",
       "sha256": "631f15a200d870ef24bc655f83996ab0a518d659a546e3237aa0462447ea3313"
+    },
+    {
+      "version": "20260921194045",
+      "name": "public_director_identity_v1",
+      "sha256": "PENDING_REPO_VERIFIER"
+    },
+    {
+      "version": "20260921194443",
+      "name": "penalty_rush_multiplayer_v1",
+      "sha256": "PENDING_REPO_VERIFIER"
     }
   ]
 }
