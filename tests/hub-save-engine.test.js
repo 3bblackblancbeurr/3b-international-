@@ -24,9 +24,11 @@ test('Shared reducer validates full Hub mission lifecycle and grants reward once
  let save=completeFirstSteps();
  save=applyWorldAction(save,{type:'hubMissionStart',id:'first_echo'});
  assert.equal(save.hub.missions.first_echo.status,'active');
- save=applyWorldAction(save,{type:'hubBuildingVisit',id:'memory_archives'});
- save=applyWorldAction(save,{type:'hubNpcTalk',id:'ines_varga'});
- save=applyWorldAction(save,{type:'hubBuildingVisit',id:'tower_circle'});
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'first_echo',actionId:'signal:locate'});
+ assert.equal(save.hub.missions.first_echo.completedObjectives,1);
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'first_echo',actionId:'memory:restore'});
+ assert.equal(save.hub.missions.first_echo.completedObjectives,2);
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'first_echo',actionId:'beacon:activate'});
  assert.equal(save.hub.missions.first_echo.status,'completed');
  const before={xp:save.xp,shards:save.shards};
  save=applyWorldAction(save,{type:'hubMissionClaim',id:'first_echo'});
