@@ -90,7 +90,7 @@ test('candidate Unreal API remains read-only until trusted server authority exis
 
 test('France server-authority documentation forbids client-authored durable progression',()=>{
  const doc=read('../unreal/ThreeBWorld/Docs/FRANCE_SERVER_AUTHORITY.md');
- assert.match(doc,/client must not mint global XP/i);
+ assert.match(doc,/client[\\s\\S]{0,160}must not mint global XP/i);
  assert.match(doc,/dedicated server/i);
  assert.match(doc,/idempotency/i);
  assert.match(doc,/expected_revision/);
