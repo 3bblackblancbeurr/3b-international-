@@ -5,17 +5,19 @@ import {blankAvatar,normalizeAvatar} from './avatar-rules.js';
 import {DISCOVERY_IDS} from './settlements.js';
 import {GUARDIAN_VALUES,normalizeGuardianValueState} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
+import {normalizeResonanceContext} from './resonance-context.js';
 const integer=(v,max)=>Number.isFinite(v)?Math.max(0,Math.min(max,Math.floor(v))):0;
 const strings=(v,allowed)=>[...new Set(Array.isArray(v)?v:[])].filter(x=>allowed.includes(x));
 const presetName=value=>typeof value==='string'?value.normalize('NFC').replace(/[^\p{L}\p{N} '\-]/gu,'').trim().slice(0,24):'';
 export function normalizeAvatarPresets(value){const source=Array.isArray(value)?value:[];return Array.from({length:3},(_,index)=>{const entry=source[index];if(!entry||typeof entry!=='object'||!entry.avatar)return null;const avatar=normalizeAvatar({...entry.avatar,created:false});avatar.created=false;return{name:presetName(entry.name)||'Look '+(index+1),avatar};});}
-export function blankAdventure(){return{frontier:{},mastery:{},companion:null,companionHidden:false,companionOrder:'follow',resonance:null,preparation:null,chapters:{},values:{},cinematicSeen:[],discoveries:[],finished:false,cosmetic:'voyageur',nexusStyle:'garden',difficulty:'adventure',encounter:null,outdoorCredits:0,avatar:blankAvatar(),avatarPresets:[null,null,null]};}
+export function blankAdventure(){return{frontier:{},mastery:{},companion:null,companionHidden:false,companionOrder:'follow',resonance:null,resonanceContext:null,preparation:null,chapters:{},values:{},cinematicSeen:[],discoveries:[],finished:false,cosmetic:'voyageur',nexusStyle:'garden',difficulty:'adventure',encounter:null,outdoorCredits:0,avatar:blankAvatar(),avatarPresets:[null,null,null]};}
 export function normalizeAdventure(input){
  const a=blankAdventure();if(!input||typeof input!=='object')return a;
  a.avatar=normalizeAvatar(input.avatar);a.avatarPresets=normalizeAvatarPresets(input.avatarPresets);a.frontier=normalizeFrontier(input.frontier);a.mastery=normalizeMastery(input.mastery);
  a.companionHidden=input.companionHidden===true;
  a.companion=cardById[input.companion]?.character?input.companion:null;a.companionOrder=['follow','scout','support','guard'].includes(input.companionOrder)?input.companionOrder:'follow';
  a.resonance=COUNTRIES.some(country=>country.id===input.resonance)?input.resonance:null;
+ const resonanceContext=normalizeResonanceContext(input.resonanceContext);a.resonanceContext=resonanceContext?.region===a.resonance?resonanceContext:null;
  a.preparation=COUNTRIES.some(c=>c.id===input.preparation)?input.preparation:null;
  a.discoveries=strings(input.discoveries,DISCOVERY_IDS);a.cinematicSeen=[...new Set(Array.isArray(input.cinematicSeen)?input.cinematicSeen:[])].filter(isWorldCinematicKey).slice(-96);
  for(const c of COUNTRIES){const s=input.chapters?.[c.id];if(s){const powers=strings(s.powers,['ally','ambiance','terrain']);a.chapters[c.id]={helped:!!s.helped,powers:s.helped?powers:[],solved:!!s.solved&&powers.length===3,restored:s.solved&&powers.length===3?integer(s.restored,3):0,challenge:!!s.challenge,choice:['garden','workshop'].includes(s.choice)?s.choice:null,board:(Array.isArray(s.board)?s.board:[]).slice(0,9).map(n=>integer(n,8))};}if(GUARDIAN_VALUES[c.id])a.values[c.id]=normalizeGuardianValueState(c.id,input.values?.[c.id]);}
