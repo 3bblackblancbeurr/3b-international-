@@ -1,6 +1,6 @@
 const a=(id,label,verb,x,z)=>Object.freeze({id,label,verb,x,z});
 const stage=(...actions)=>Object.freeze(actions);
-const job=(title,detail,{cost=0,reward={},xp=20,shards=0,target=[0,0],steps=[]}={})=>Object.freeze({title,detail,cost,reward,xp,shards,target:Object.freeze(target),steps:Object.freeze(steps)});
+const job=(title,detail,{cost=0,reward={},xp=20,shards=0,target=[0,0],steps=[],regions=null,requiresSeal=null}={})=>Object.freeze({title,detail,cost,reward,xp,shards,target:Object.freeze(target),steps:Object.freeze(steps),regions:regions?Object.freeze(regions):null,requiresSeal});
 
 export const DISTRICT_JOBS=Object.freeze({
  atelier:job('Le repas des bâtisseurs','Apporte une provision, vérifie les besoins de l’atelier puis livre sans interrompre le chantier.',{cost:1,reward:{wood:2,stone:1},xp:20,target:[-18,17],steps:[
@@ -44,11 +44,20 @@ export const DISTRICT_JOBS=Object.freeze({
   stage(a('signal:bridge','Assembler le pont de synchronisation','assemble',-38,-104)),
   stage(a('signal:confirm','Confirmer la stabilité du signal','observe',-34,-106)),
  ]}),
+ justice_case:job('Les dossiers revenus','Depuis sa libération, Céliane rouvre les dossiers que l’Oubli avait rendus contradictoires. Écoute deux versions, vérifie deux preuves, présente seulement ce qui est vérifiable puis apaise le désaccord sans choisir un coupable à la place des habitants.',{regions:['france'],requiresSeal:'france',reward:{stone:1},xp:65,shards:12,target:[27,25],steps:[
+  stage(a('justice:witness1','Écouter le premier témoignage','talk',-103,-35),a('justice:witness2','Écouter le second témoignage','talk',-45,-99)),
+  stage(a('justice:proof1','Scanner la première preuve','scan',-94,-63),a('justice:proof2','Scanner la deuxième preuve','scan',-30,4)),
+  stage(a('justice:verify','Présenter uniquement les éléments vérifiés','showEvidence',-18,17)),
+  stage(a('justice:mediate','Mener la médiation sans humilier une partie','talk',10,1)),
+  stage(a('justice:report','Remettre le dossier au relais de Céliane','talk',27,25)),
+ ]}),
 });
 
 export const DISTRICT_JOB_IDS=Object.freeze(Object.keys(DISTRICT_JOBS));
 
-export function availableJobs(home){return Object.entries(DISTRICT_JOBS).filter(([id])=>!home.jobs?.includes(id)&&home.activeJob!==id);}
+export function jobAvailableInContext(entry,region,seals=[]){if(!entry)return false;if(entry.regions&&!entry.regions.includes(region))return false;if(entry.requiresSeal&&!seals.includes(entry.requiresSeal))return false;return true;}
+
+export function availableJobs(home,{region=null,seals=[]}={}){return Object.entries(DISTRICT_JOBS).filter(([id,entry])=>!home.jobs?.includes(id)&&home.activeJob!==id&&jobAvailableInContext(entry,region,seals));}
 
 export function districtJobActionIds(id){return new Set((DISTRICT_JOBS[id]?.steps||[]).flat().map(action=>action.id));}
 
