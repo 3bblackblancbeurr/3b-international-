@@ -82,13 +82,13 @@ public:
     TArray<FThreeBAltitudeEnvironmentProfile> AltitudeProfiles;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Weather")
-    TMap<FGameplayTag, EThreeBWeatherState> WorldStateOverrides;
+    TMap<FName, EThreeBWeatherState> WorldStateOverrides;
 
     UFUNCTION(BlueprintPure, Category="3B|Weather")
     bool FindState(EThreeBWeatherState State, FThreeBWeatherStateDefinition& OutState) const;
 
     UFUNCTION(BlueprintPure, Category="3B|Weather")
-    bool FindWorldStateOverride(FGameplayTag WorldStateTag, EThreeBWeatherState& OutState) const;
+    bool FindWorldStateOverride(FName WorldStateTagName, EThreeBWeatherState& OutState) const;
 
     UFUNCTION(BlueprintPure, Category="3B|Weather")
     bool ValidateProfile(TArray<FString>& OutErrors) const;
