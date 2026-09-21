@@ -23,7 +23,7 @@ export const GUARDIAN_CAMPAIGNS=Object.freeze({
    phase('value','Épreuve de Justice','écouter, vérifier, réparer'),
    phase('guardian','Céliane','duel de lecture et contre'),
    phase('homecoming','Le retour de Céliane','restauration et retour à la Cité'),
-   phase('post','Les dossiers revenus','enquêtes post-Gardien','framework'),
+   phase('post','Les dossiers revenus','enquêtes post-Gardien'),
   ]),
  }),
  algerie:Object.freeze({
