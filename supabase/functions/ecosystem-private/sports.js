@@ -4,8 +4,9 @@ export const SPORTS=[
 ];
 
 export const FEEDS=[
- {url:'https://www.franceinfo.fr/sports.rss',name:'Franceinfo',lang:'fr',host:'franceinfo.fr'},
  {url:'https://www.france24.com/fr/sports/rss',name:'France 24',lang:'fr',host:'france24.com'},
+ {url:'https://feeds.bbci.co.uk/sport/rss.xml',name:'BBC Sport',lang:'en',host:'bbc.co.uk',hosts:['bbc.com']},
+ {url:'https://www.franceinfo.fr/sports.rss',name:'Franceinfo',lang:'fr',host:'franceinfo.fr'},
  {url:'https://www.20minutes.fr/feeds/rss-sport.xml',name:'20 Minutes',lang:'fr',host:'20minutes.fr'},
  {url:'https://www.ouest-france.fr/rss/sport',name:'Ouest-France',lang:'fr',host:'ouest-france.fr'},
  {url:'https://www.franceinfo.fr/sports/basket.rss',name:'Franceinfo',lang:'fr',host:'franceinfo.fr',category:'Basket'},
@@ -15,7 +16,6 @@ export const FEEDS=[
  {url:'https://www.franceinfo.fr/sports/auto-moto/formule-1.rss',name:'Franceinfo',lang:'fr',host:'franceinfo.fr',category:'Formule 1'},
  {url:'https://www.franceinfo.fr/sports/mma.rss',name:'Franceinfo',lang:'fr',host:'franceinfo.fr',category:'Sports de combat'},
  {url:'https://www.franceinfo.fr/sports/sports-d-hiver.rss',name:'Franceinfo',lang:'fr',host:'franceinfo.fr',category:'Sports d’hiver'},
- {url:'https://feeds.bbci.co.uk/sport/rss.xml',name:'BBC Sport',lang:'en',host:'bbc.co.uk',hosts:['bbc.com']}
 ];
 
 const tags=[
