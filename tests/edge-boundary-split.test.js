@@ -8,7 +8,7 @@ test('member client routes public auth separately from private member API',()=>{
  const client=read('src/loyalty/client.js');
  assert.match(client,/MEMBER_AUTH_URL=.*member-auth/);
  assert.match(client,/MEMBER_API_URL=.*member-api/);
- assert.match(client,/PUBLIC_ACTIONS=new Set\(\['register','login','recover','reset-request','resend-confirmation'\]\)/);
+ assert.match(client,/PUBLIC_ACTIONS=new Set\(\['register','register-v2','login','recover','recover-v2','reset-request','resend-confirmation'\]\)/);
  assert.match(client,/const isPublic=PUBLIC_ACTIONS\.has\(action\)/);
  assert.match(client,/if\(!isPublic&&!session\)throw Error/);
 });
@@ -21,7 +21,7 @@ test('member-api refuses public registration recovery actions behind the JWT gat
 
 test('member-auth exposes only the hardened public authentication actions',()=>{
  const source=read('supabase/functions/member-auth/index.ts');
- assert.match(source,/\['register','login','recover','reset-request','resend-confirmation'\]\.includes\(action\)/);
+ assert.match(source,/\['register','register-v2','login','recover','recover-v2','reset-request','resend-confirmation'\]/);
  assert.doesNotMatch(source,/action==='heartbeat'/);
  assert.doesNotMatch(source,/action==='snapshot'/);
 });
