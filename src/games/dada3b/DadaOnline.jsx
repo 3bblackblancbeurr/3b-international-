@@ -17,6 +17,7 @@ import {
   scoreFor,
 } from './engine.js';
 import {createDadaFeedback,readDadaFeedbackPreferences} from './feedback.js';
+import './online.css';
 import {
   dadaOnlineRequest,
   rememberDadaRoom,
@@ -312,7 +313,7 @@ export default function DadaOnline({onBack,onClose,onAccount}){
   useEffect(()=>{
     if(!room?.id)return undefined;
     const unsubscribe=subscribeDadaRoom(room.id,()=>sync(room.id),status=>{
-      setConnection(status==='SUBSCRIBED'?'online':status==='CHANNEL_ERROR'?'offline':connection);
+      setConnection(current=>status==='SUBSCRIBED'?'online':status==='CHANNEL_ERROR'?'offline':current);
     });
     const timer=setInterval(()=>sync(room.id),4500);
     const visible=()=>{if(!document.hidden)sync(room.id);};
