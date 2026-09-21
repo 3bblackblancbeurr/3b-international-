@@ -1,6 +1,7 @@
 import {HUB_MISSIONS,HUB_MISSION_BY_ID} from './mission-catalog.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_BUILDING_SET,HUB_TRANSPORT_TYPES,HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 import {normalizeHubMissionRow} from './mission-runtime.js';
+import {HUB_MISSION_ACTION_IDS} from './mission-actions.js';
 
 export function blankHubState(){
   return {
@@ -16,6 +17,7 @@ export function blankHubState(){
       nightTrainDates:[],
       secretProgress:{},
       dialogueHistory:[],
+      missionActions:{},
     },
   };
 }
@@ -37,6 +39,7 @@ export function normalizeHubState(input){
   base.stats.transportStops=[...new Set(Array.isArray(stats.transportStops)?stats.transportStops:[])].filter((id)=>typeof id==='string'&&/^(train|boat|telepheric|zipline):[A-Za-z0-9_]+$/.test(id)).slice(0,96);
   base.stats.nightTrainDates=[...new Set(Array.isArray(stats.nightTrainDates)?stats.nightTrainDates:[])].filter((value)=>/^\d{4}-\d{2}-\d{2}$/.test(value)).slice(-16);
   base.stats.dialogueHistory=(Array.isArray(stats.dialogueHistory)?stats.dialogueHistory:[]).filter((row)=>row&&HUB_NPC_SET.has(row.npcId)&&typeof row.sceneId==='string'&&typeof row.choiceId==='string').slice(-120).map((row)=>({npcId:row.npcId,sceneId:row.sceneId.slice(0,48),choiceId:row.choiceId.slice(0,48)}));
+  for(const [missionId,allowed] of Object.entries(HUB_MISSION_ACTION_IDS)){const actions=[...new Set(Array.isArray(stats.missionActions?.[missionId])?stats.missionActions[missionId]:[])].filter((id)=>allowed.has(id)).slice(-64);if(actions.length)base.stats.missionActions[missionId]=actions;}
   for(const [id,count] of Object.entries(HUB_SECRET_STEP_COUNTS)){
    const steps=[...new Set(Array.isArray(stats.secretProgress?.[id])?stats.secretProgress[id]:[])].filter((step)=>Number.isInteger(step)&&step>=0&&step<count).slice(0,count);
    if(steps.length)base.stats.secretProgress[id]=steps;
