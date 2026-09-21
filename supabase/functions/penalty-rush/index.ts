@@ -30,7 +30,7 @@ const CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACTIONS = new Set([
   'status', 'profile.save', 'create', 'join', 'queue', 'room', 'ready', 'start',
-  'input', 'tick', 'leave', 'club.create', 'club.join',
+  'input', 'tick', 'leave', 'club.create', 'club.join', 'international.respond',
 ]);
 const MODES = new Set(['private', 'quick', 'ranked']);
 const COUNTRY_IDS = new Set(['fr', 'dz', 'ma', 'tn', 'tr', 'it', 'es', 'ee']);
@@ -164,15 +164,23 @@ function sanitizeKit(value:any={}) {
     socks: sanitizeColor(value?.socks, '#08090b'),
     trim: sanitizeColor(value?.trim, '#d8b35e'),
     pattern: ['clean','stripe','split','gradient','matrix'].includes(value?.pattern) ? value.pattern : 'clean',
+    sleeves: ['short','long','three-quarter'].includes(value?.sleeves) ? value.sleeves : 'short',
+    collar: ['crew','v','retro','future'].includes(value?.collar) ? value.collar : 'v',
+    shortsCut: ['classic','slim','loose'].includes(value?.shortsCut) ? value.shortsCut : 'classic',
+    socksStyle: ['high','mid','low'].includes(value?.socksStyle) ? value.socksStyle : 'high',
   };
 }
 
 function sanitizeBoots(value:any={}) {
+  const signature = String(value?.signature || '').trim().toUpperCase().replace(/[^A-Z0-9À-ÖØ-Ý -]/g, '').slice(0, 8);
   return {
     preset: BOOTS.has(String(value?.preset)) ? String(value.preset) : 'control',
     upper: sanitizeColor(value?.upper, '#08090b'),
     sole: sanitizeColor(value?.sole, '#d8b35e'),
     laces: sanitizeColor(value?.laces, '#d8b35e'),
+    material: ['leather','knit','synthetic','carbon'].includes(value?.material) ? value.material : 'synthetic',
+    studs: ['firm','soft','mixed','blade'].includes(value?.studs) ? value.studs : 'mixed',
+    signature,
   };
 }
 
