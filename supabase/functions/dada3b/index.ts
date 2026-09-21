@@ -123,13 +123,14 @@ async function loadoutFor(uid:string){
 }
 
 async function cosmeticState(uid:string){
-  const [loadout,catalog,legacyOwned,instances,rules,claims]=await Promise.all([
+  const [loadout,catalog,legacyOwned,instances,rules,claims,seasons]=await Promise.all([
     loadoutFor(uid),
     admin('/rest/v1/inventory_items?active=eq.true&select=code,name,rarity,description,metadata&order=code.asc'),
     admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&select=item_code,quantity'),
     admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&select=item_code'),
     admin('/rest/v1/collectible_reward_rules?active=eq.true&code=like.dada_%25&select=code,item_code,label,xp_required'),
     admin('/rest/v1/collectible_reward_claims?user_id=eq.'+encodeURIComponent(uid)+'&rule_code=like.dada_%25&select=rule_code'),
+    admin('/rest/v1/threeb_seasons?status=in.(active,draft)&select=code,label,status,starts_at,ends_at,metadata&order=created_at.desc'),
   ]);
   const items=(Array.isArray(catalog)?catalog:[]).filter((item:any)=>item?.metadata?.game==='dada3b'&&COSMETIC_SLOTS.has(item?.metadata?.slot));
   const ownedCodes=new Set([
@@ -138,8 +139,20 @@ async function cosmeticState(uid:string){
   ]);
   const ruleByItem=new Map((Array.isArray(rules)?rules:[]).map((row:any)=>[row.item_code,row]));
   const claimed=new Set((Array.isArray(claims)?claims:[]).map((row:any)=>row.rule_code));
+  const seasonRows=(Array.isArray(seasons)?seasons:[]).filter((row:any)=>row?.metadata?.game==='dada3b');
+  const activeSeason=seasonRows.find((row:any)=>row.status==='active')||seasonRows.find((row:any)=>row.status==='draft')||null;
   return {
     loadout,
+    season:activeSeason?{
+      code:activeSeason.code,
+      label:activeSeason.label,
+      status:activeSeason.status,
+      startsAt:activeSeason.starts_at,
+      endsAt:activeSeason.ends_at,
+      rotation:Array.isArray(activeSeason.metadata?.rotation)?activeSeason.metadata.rotation.slice(0,8):[],
+      payToWin:false,
+      competitiveRulesUnchanged:true,
+    }:null,
     catalog:items.map((item:any)=>{
       const rule=ruleByItem.get(item.code);
       return {
