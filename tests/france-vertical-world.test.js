@@ -213,3 +213,81 @@ test('France local missions use canonical districts, story phases and vertical g
   assert.ok(districtMissions.invariants.some(x=>x.includes('never bypass justice_trial')));
   assert.ok(districtMissions.authority_model.client_may_not.includes('set_guardian_liberated'));
 });
+
+
+test('generic mission population and weather runtime types stay reusable and authority-safe',()=>{
+  const missionH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionCatalog.h');
+  const missionCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionCatalog.cpp');
+  const popH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.h');
+  const popCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.cpp');
+  const weatherH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.h');
+  const weatherCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.cpp');
+  for(const source of [missionH,missionCpp,popH,popCpp,weatherH,weatherCpp]){
+    assert.doesNotMatch(source,/Céliane|france_centre|monumental_waterfall|fragment_justice/i);
+  }
+  assert.match(missionH,/UThreeBMissionCatalog/);
+  assert.match(missionH,/EThreeBMissionAuthority/);
+  assert.match(missionCpp,/Server-verified mission/);
+  assert.match(popH,/UThreeBPopulationDefinition/);
+  assert.match(popH,/ActiveAiControllerBudget/);
+  assert.match(popCpp,/Simulation tiers must be ordered by distance/);
+  assert.match(weatherH,/UThreeBWeatherProfile/);
+  assert.match(weatherH,/enum class EThreeBWeatherState/);
+  assert.match(weatherCpp,/States\.Num\(\) != 8/);
+});
+
+test('Weather Director is replicated, event-driven and cannot author progression',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherDirector.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherDirector.cpp');
+  assert.match(header,/AThreeBWeatherDirector/);
+  assert.match(header,/ReplicatedUsing=OnRep_WeatherState/);
+  assert.match(header,/BlueprintAuthorityOnly/);
+  assert.match(header,/BlueprintImplementableEvent/);
+  assert.match(source,/DOREPLIFETIME\(AThreeBWeatherDirector, CurrentWeather\)/);
+  assert.match(source,/if \(!HasAuthority\(\)\)/);
+  assert.match(source,/OnWeatherChanged\.Broadcast/);
+  assert.doesNotMatch(header+source,/grant_global_xp|grant_fragment|inventory|guardian_liberated/i);
+  assert.doesNotMatch(header+source,/Tick\(/);
+});
+
+test('replicated story state now exposes a presentation reaction signal without client mutation',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameState.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameState.cpp');
+  assert.match(header,/FThreeBStoryStateChanged/);
+  assert.match(header,/BlueprintAssignable/);
+  assert.match(header,/OnStoryStateChanged/);
+  assert.match(source,/OnStoryStateChanged\.Broadcast\(StoryState\)/);
+  assert.match(source,/if \(!HasAuthority\(\)/);
+  assert.doesNotMatch(header,/UFUNCTION\(Server[^)]*\)[\s\S]{0,160}ApplyAuthoritativeStoryState/);
+});
+
+test('France Editor bootstrap creates canonical assets and layers without destructive operations',()=>{
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  const prepare=read('unreal/ThreeBWorld/Scripts/prepare_france_goldmaster.py');
+  for(const token of [
+    'DA_FranceRegion','DA_FranceMissions','DA_FrancePopulation','DA_FranceWeather',
+    'DataAssetFactory','DataLayerFactory','create_data_layer_instance',
+    'ThreeBWeatherDirector','save_current_level'
+  ]) assert.match(bootstrap,new RegExp(token),token);
+  assert.match(prepare,/bootstrap_france_goldmaster_assets/);
+  assert.match(prepare,/build_france_blockout/);
+  assert.match(prepare,/validate_france_editor_assets/);
+  assert.doesNotMatch(bootstrap,/delete_asset|delete_directory|rename_asset|duplicate_asset/i);
+});
+
+test('runtime assets are critical and planned exactly once',()=>{
+  const required=[
+    ['/Game/3B/World/France/Data/DA_FranceMissions','ThreeBMissionCatalog'],
+    ['/Game/3B/World/France/Data/DA_FrancePopulation','ThreeBPopulationDefinition'],
+    ['/Game/3B/World/France/Data/DA_FranceWeather','ThreeBWeatherProfile']
+  ];
+  const planned=plan.stages.flatMap(x=>x.asset_paths||[]);
+  for(const [path,kind] of required){
+    const entry=manifest.required_assets.find(x=>x.path===path);
+    assert.ok(entry,path);
+    assert.equal(entry.kind,kind,path);
+    assert.equal(entry.critical,true,path);
+    assert.equal(planned.filter(x=>x===path).length,1,path);
+  }
+  assert.equal(manifest.runtime_sources.story_signal,'AThreeBGameState.OnStoryStateChanged');
+});
