@@ -13,7 +13,7 @@ export const authClient=createClient(SUPABASE_URL,PUBLIC_KEY,{
 export const MEMBER_AUTH_URL=SUPABASE_URL+'/functions/v1/member-auth';
 export const MEMBER_API_URL=SUPABASE_URL+'/functions/v1/member-api';
 
-const PUBLIC_ACTIONS=new Set(['register','login','recover','reset-request','resend-confirmation']);
+const PUBLIC_ACTIONS=new Set(['register','register-v2','login','recover','recover-v2','reset-request','resend-confirmation']);
 
 export async function memberRequest(action,body={},expectedUser){
  const {data:{session}}=await authClient.auth.getSession();
