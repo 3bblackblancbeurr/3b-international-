@@ -33,7 +33,8 @@ export function finalCircleMasteryCount(encounter){
 }
 
 export function finalCircleLockedEnemyFloor(encounter,phase=finalCirclePhase(encounter)){
- if(!phase)return 0;const max=Math.max(1,Number(encounter?.enemyMax)||1);return phase.index===8?1:Math.floor(max*(8-phase.index)/8)+1;
+ if(!phase)return 0;const max=Math.max(1,Number(encounter?.enemyMax)||1),threshold=phase.index===8?0:Math.floor(max*(8-phase.index)/8);
+ return threshold+(finalCirclePhaseMastered(encounter,phase)?0:1);
 }
 
 export function finalCircleStatus(encounter){
