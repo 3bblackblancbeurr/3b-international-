@@ -10,7 +10,10 @@
     "verify": "node scripts/verify-world.mjs",
     "mobile:sync": "npm run build && cap sync && node scripts/pin-mobile-dependencies.mjs",
     "mobile:android": "cap open android",
-    "mobile:ios": "cap open ios"
+    "mobile:ios": "cap open ios",
+    "unreal:bridge:health": "node scripts/threeb-unreal-bridge.mjs health",
+    "unreal:bridge:actors": "node scripts/threeb-unreal-bridge.mjs actors",
+    "unreal:bridge:snapshot": "node scripts/threeb-unreal-bridge.mjs snapshot"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
