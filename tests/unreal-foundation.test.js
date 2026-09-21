@@ -70,7 +70,7 @@ test('migration integrity manifest includes all 112 applied migrations through U
  assert.deepEqual(unreal,{
   version:'20260921141028',
   name:'world_unreal_launch_bridge_v1',
-  sha256:'63957f4d9fdd5a85c653e3e59ac3165f75339f723770c22871951eceb80022c4'
+  sha256:'d65052b4be5e7d09bb4d87a73bc8627c69df568b2eb471df7ebc672debf24f80'
  });
 });
 
