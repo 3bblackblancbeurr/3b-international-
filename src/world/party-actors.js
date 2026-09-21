@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {createLivingActor} from './living.js';
 import {normalizeAvatar} from './avatar-rules.js';
+import {partySignalLabel} from './coop-session.js';
 export function createPartyActors(models,root,height,onError){
  const actors=new Map();let peers=[];
  function destroy(a){a.actor.dispose();a.actor.object.removeFromParent();a.label.material.map.dispose();a.label.material.dispose();}
@@ -11,7 +12,7 @@ export function createPartyActors(models,root,height,onError){
    if(!a){const actor=createLivingActor(models.living,{avatar:normalizeAvatar(p.avatar),scale:2.2,onError}),tag=label(p.avatar?.name||'Voyageur');actor.object.add(tag);actor.object.position.set(p.x,height(p.x,p.z),p.z);root.add(actor.object);a={actor,label:tag,signal:null};actors.set(p.id,a);}
    const object=a.actor.object,old=object.position.clone(),blend=1-Math.exp(-dt*13);object.position.x+=(p.x-object.position.x)*blend;object.position.z+=(p.z-object.position.z)*blend;object.position.y=height(object.position.x,object.position.z);a.actor.update(dt,object.position.x-old.x,object.position.z-old.z,object.position.distanceTo(old));
    if(object.position.distanceTo(old)<.01)object.rotation.y=Math.PI-p.heading*Math.PI/180;
-   if(p.signal!==a.signal){a.signal=p.signal;a.label.material.map.dispose();a.label.material.dispose();a.label.removeFromParent();a.label=label(p.signal?({hello:'Bonjour !',follow:'Suivez-moi',help:'Besoin d’aide'})[p.signal]:p.avatar?.name||'Voyageur');object.add(a.label);if(p.signal==='hello')a.actor.action('Cast');}
+   if(p.signal!==a.signal){a.signal=p.signal;a.label.material.map.dispose();a.label.material.dispose();a.label.removeFromParent();a.label=label(p.signal?partySignalLabel(p.signal):p.avatar?.name||'Voyageur');object.add(a.label);if(p.signal==='hello'||p.signal==='ready')a.actor.action('Cast');else if(p.signal==='danger'||p.signal==='objective')a.actor.action('Attack');}
   }
   for(const [id,a] of actors)if(!active.has(id)){destroy(a);actors.delete(id);}
  },dispose(){actors.forEach(destroy);actors.clear();}};
