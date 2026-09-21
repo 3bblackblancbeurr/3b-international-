@@ -13,6 +13,8 @@ import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {validPose} from '../src/world/cooperation.js';
 import {worldRadiusFor,WORLD_RADIUS} from '../src/world/terrain.js';
+import {HUB_MISSION_ACTION_PLANS,applyHubMissionAction,hubMissionActionTargets,validateHubMissionActionPlans} from '../src/world/hub/mission-actions.js';
+import {hubRuntime} from '../src/world/hub/runtime-data.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -69,6 +71,51 @@ test('central mission index distinguishes all eight guardian campaigns and indep
  assert.equal(new Set(INDEPENDENT_MISSION_ARCHETYPES.map(m=>m.id)).size,16);
  const verbs=new Set(INDEPENDENT_MISSION_ARCHETYPES.flatMap(m=>m.gameplay));
  assert.ok(verbs.size>=25,'independent missions need broad gameplay coverage');
+});
+
+test('structured mission actions require every unique real action before an objective advances',()=>{
+ assert.equal(validateHubMissionActionPlans(),true);
+ assert.ok(Object.keys(HUB_MISSION_ACTION_PLANS).length>=14);
+ let save=blankSave(),missions={...save.hub.missions,eight_signals:{...save.hub.missions.eight_signals,status:'active',phase:'ACTIVE'}},progress={};
+ for(let i=1;i<=7;i++){
+  const result=applyHubMissionAction(missions,progress,'eight_signals','frequency:'+i);assert.equal(result.ok,true);assert.equal(result.objectiveComplete,false);
+  missions=result.missions;progress=result.progress;assert.equal(missions.eight_signals.completedObjectives,0);
+ }
+ let result=applyHubMissionAction(missions,progress,'eight_signals','frequency:1');
+ assert.equal(result.duplicate,true);assert.equal(result.missions.eight_signals.completedObjectives,0);
+ result=applyHubMissionAction(missions,progress,'eight_signals','frequency:8');
+ assert.equal(result.objectiveComplete,true);assert.equal(result.missions.eight_signals.completedObjectives,1);
+ const targets=hubMissionActionTargets('eight_signals',result.missions.eight_signals,result.progress.eight_signals);
+ assert.deepEqual(targets.map(item=>item.id),['door:identify']);
+});
+
+test('Hub runtime materializes only the pending physical actions for the active mission objective',()=>{
+ let save=blankSave();
+ save={...save,hub:{...save.hub,missions:{...save.hub.missions,eight_seeds:{...save.hub.missions.eight_seeds,status:'active',phase:'ACTIVE'}}}};
+ let runtime=hubRuntime('mobileMedium',{now:new Date('2026-09-21T12:00:00Z'),hubState:save.hub});
+ let actions=runtime.items.filter(item=>item.type==='hubMissionAction'&&item.missionId==='eight_seeds');
+ assert.equal(actions.length,8);assert.ok(actions.every(item=>item.actionId.startsWith('seed:')));
+ const recorded=Array.from({length:7},(_,i)=>'seed:'+(i+1));
+ save={...save,hub:{...save.hub,stats:{...save.hub.stats,missionActions:{eight_seeds:recorded}}}};
+ runtime=hubRuntime('mobileMedium',{now:new Date('2026-09-21T12:00:00Z'),hubState:save.hub});
+ actions=runtime.items.filter(item=>item.type==='hubMissionAction'&&item.missionId==='eight_seeds');
+ assert.deepEqual(actions.map(item=>item.actionId),['seed:8']);
+});
+
+test('authoritative mission action endpoint rejects wrong-stage actions and makes eight seeds real',()=>{
+ let save=blankSave();
+ save=applyWorldAction(save,{type:'hubMissionStart',id:'first_steps'});
+ save=applyWorldAction(save,{type:'hubBuildingVisit',id:'heritage_welcome'});
+ save=applyWorldAction(save,{type:'hubTransportRide',transport:'train',from:'heritage_square',to:'archives',night:false,dateKey:'2026-09-21'});
+ save=applyWorldAction(save,{type:'hubDistrictVisit',id:'heritage_square'});
+ save=applyWorldAction(save,{type:'hubMissionClaim',id:'first_steps'});
+ save=applyWorldAction(save,{type:'hubMissionStart',id:'eight_seeds'});
+ assert.throws(()=>applyWorldAction(save,{type:'hubMissionAction',missionId:'eight_seeds',actionId:'conservatory:restore'}),/Action de mission invalide/);
+ for(let i=1;i<=8;i++)save=applyWorldAction(save,{type:'hubMissionAction',missionId:'eight_seeds',actionId:'seed:'+i});
+ assert.equal(save.hub.missions.eight_seeds.completedObjectives,1);
+ assert.equal(save.hub.stats.missionActions.eight_seeds.filter(id=>id.startsWith('seed:')).length,8);
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'eight_seeds',actionId:'conservatory:restore'});
+ assert.equal(save.hub.missions.eight_seeds.status,'completed');
 });
 
 test('hub conversations expose multiple intentions and persist intent memory authoritatively',()=>{
