@@ -156,3 +156,75 @@
  .sport-stats span{font-size:9px}
  .sport-language button{font-size:8px;padding-inline:7px}
 }
+
+
+/* Challenge tracking */
+.sport-challenge-dashboard{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:center;margin:22px 0;padding:14px;border:1px solid #d0b06b32;border-radius:14px;background:#0f1718}
+.sport-challenge-dashboard>div{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px 10px;min-height:58px;padding:12px 14px;border:1px solid #ffffff10;border-radius:11px;background:#ffffff03;color:#a9bdc2}
+.sport-challenge-dashboard>div svg{grid-row:1/3;color:#d9bd7d}
+.sport-challenge-dashboard>div span{font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.sport-challenge-dashboard>div strong{grid-column:3;grid-row:1/3;color:#f1d79d;font:400 28px Georgia,serif}
+.sport-challenge-dashboard>div small{grid-column:2;color:#7f989f;font-size:9px}
+.sport-challenge-dashboard>.quiet-button{height:100%;min-height:58px}
+.sport-challenge-login{display:flex;align-items:center;gap:18px;margin:22px 0;padding:22px;border:1px solid #c7aa6940;border-radius:15px;background:linear-gradient(130deg,#1b1d18,#102025)}
+.sport-challenge-login>svg{flex:0 0 auto;color:#d7b875}
+.sport-challenge-login>div{flex:1}
+.sport-challenge-login strong{color:#f1e1c0;font-size:14px}
+.sport-challenge-login p{margin:6px 0 0;color:#91a6ac;font-size:11px;line-height:1.6}
+.sport-challenge-login .surface-button{flex:0 0 auto}
+.sport-challenge-card{display:flex;flex-direction:column}
+.sport-challenge-card.status-verified{border-color:#80c5a54d;background:linear-gradient(145deg,#12221b,#0e1717)}
+.sport-challenge-card.status-pending{border-color:#b5a3714c;background:linear-gradient(145deg,#211d15,#10191b)}
+.sport-challenge-card.status-eligible{border-color:#d7b76a5c}
+.sport-challenge-card-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.sport-challenge-card-head .sport-action-icon{margin-bottom:0}
+.sport-challenge-status{display:inline-flex;align-items:center;min-height:28px;padding:5px 9px;border:1px solid #ffffff13;border-radius:999px;color:#8fa6ad;background:#ffffff04;font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.sport-challenge-status.active{color:#b8cbd0;border-color:#83a3ab35;background:#6d939c12}
+.sport-challenge-status.eligible{color:#efd293;border-color:#d1ac5a55;background:#b58b2f18}
+.sport-challenge-status.pending{color:#dccb9f;border-color:#ae985f48;background:#8b77391a}
+.sport-challenge-status.verified{color:#bfe5d0;border-color:#75b89552;background:#52897018}
+.sport-challenge-status.muted{color:#85979c}
+.sport-challenge-reward{display:flex;align-items:baseline;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid #ffffff10}
+.sport-challenge-reward strong{color:#e1c582;font-size:13px}
+.sport-challenge-reward small{color:#7f969d;font-size:9px}
+.sport-progress-row{display:flex;justify-content:space-between;gap:12px;margin-top:16px;color:#9eb2b8;font-size:9px}
+.sport-progress-track{height:5px;margin:7px 0 17px;border-radius:999px;background:#ffffff0d;overflow:hidden}
+.sport-progress-track>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8aaab2,#d7b66c);transition:width .25s ease}
+.sport-challenge-main-action{display:flex!important;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:auto}
+.sport-challenge-field{display:flex;flex-direction:column;gap:7px;margin:10px 0;color:#baa873;font-size:9px;text-transform:uppercase;letter-spacing:.06em}
+.sport-challenge-field input,.sport-challenge-field textarea{width:100%;border:1px solid #7e989f3b;border-radius:9px;background:#0b1519;color:#f0e7d7;padding:11px 12px;font:14px/1.5 system-ui;text-transform:none;letter-spacing:0}
+.sport-challenge-field textarea{resize:vertical;min-height:84px}
+.sport-challenge-field input:focus,.sport-challenge-field textarea:focus{outline:2px solid #d1b16d;outline-offset:2px}
+.sport-abandon{align-self:flex-start;margin-top:5px;color:#7f9298}
+.sport-pending-box,.sport-verified-box{display:flex;align-items:center;gap:11px;margin-top:auto;padding:13px;border-radius:10px}
+.sport-pending-box{border:1px solid #c1a66235;background:#9a803114;color:#ddc997}
+.sport-verified-box{border:1px solid #7eb6973d;background:#53846c14;color:#bde0ce}
+.sport-pending-box svg,.sport-verified-box svg{flex:0 0 auto}
+.sport-pending-box strong,.sport-verified-box strong{display:block;font-size:11px}
+.sport-pending-box small,.sport-verified-box small{display:block;margin-top:4px;color:#879da2;font-size:8px}
+.sport-challenge-level{display:block;margin-top:14px;color:#738a92;font-size:8px;text-transform:uppercase;letter-spacing:.09em}
+.sport-review-feedback{padding:11px 12px;border-left:2px solid #d3b56f;background:#d3b56f0c;color:#aabcc0!important;font-size:10px!important}
+.sport-review-feedback strong{color:#dec481}
+.sport-verification-explainer{display:flex;gap:15px;align-items:flex-start;margin-top:20px;padding:20px 22px;border:1px solid #7fa0a632;border-radius:14px;background:#0d171b}
+.sport-verification-explainer>svg{flex:0 0 auto;color:#d6b875}
+.sport-verification-explainer strong{color:#e9d8b3;font-size:13px}
+.sport-verification-explainer p{margin:6px 0 0;color:#91a6ac;font-size:11px;line-height:1.7}
+.sport-moderation{margin-top:36px;padding-top:12px;border-top:1px solid #d0b47420}
+.sport-review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.sport-review-card{padding:21px;border:1px solid #8aa4aa2c;border-radius:14px;background:#101a1e}
+.sport-review-person{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid #ffffff0e;color:#d8bd80}
+.sport-review-person strong{display:block;color:#ede1c7;font-size:12px}
+.sport-review-person small{display:block;margin-top:3px;color:#8199a1;font-size:9px}
+.sport-review-card>p{color:#adbec2;font-size:12px;line-height:1.7;white-space:pre-wrap}
+.sport-review-card>small{color:#7f989f;font-size:9px}
+.sport-review-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+.sport-review-actions button{display:flex;align-items:center;gap:7px}
+
+@media(max-width:720px){
+ .sport-challenge-dashboard{grid-template-columns:1fr 1fr}
+ .sport-challenge-dashboard>.quiet-button{grid-column:1/-1;min-height:44px}
+ .sport-challenge-login{align-items:flex-start;flex-direction:column}
+ .sport-challenge-login .surface-button{width:100%}
+ .sport-review-grid{grid-template-columns:1fr}
+ .sport-verification-explainer{padding:18px}
+}
