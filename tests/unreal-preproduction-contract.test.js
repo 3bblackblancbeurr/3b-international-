@@ -137,3 +137,12 @@ test('canonical typed contracts keep token state fail-closed',()=>{
  assert.match(contract,/TokenBlockchainEnabled = false/);
  assert.match(contract,/TokenTradingEnabled = false/);
 });
+
+
+test('native launch bridge uses an ephemeral client instance id instead of hardware identity',()=>{
+ const source=readText('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameInstance.cpp');
+ assert.doesNotMatch(source,/FPlatformMisc::GetDeviceId|GetDeviceId\(/);
+ assert.match(source,/FGuid::NewGuid\(\)/);
+ assert.match(source,/ClientInstanceId/);
+ assert.match(source,/user_id is the player identity/i);
+});
