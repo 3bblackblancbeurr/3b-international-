@@ -354,6 +354,7 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
   const resumeCandidate = useMemo(() => safeSaved(saved), [saved]);
   const [seats, setSeats] = useState(initialSeats);
   const [onlineOpen, setOnlineOpen] = useState(false);
+  const [opening, setOpening] = useState(true);
   const [cosmetics, setCosmetics] = useState(() => readCosmetics(record));
   const [rules, setRules] = useState({ ...DEFAULT_RULES });
   const [match, setMatch] = useState(null);
@@ -379,6 +380,11 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
 
   if (!feedback.current) feedback.current = createDadaFeedback(feedbackPrefs);
   matchRef.current = match;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setOpening(false), 1900);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => () => {
     sequence.current += 1;
@@ -753,6 +759,13 @@ export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessa
             <button type="button" className="dada3b-icon-button" onClick={onClose} aria-label="Fermer"><X size={20} /></button>
           </div>
         </header>
+
+        {opening && <div className="dada3b-opening" aria-label="Ouverture du Cercle des 8 Portes">
+          <div className="dada3b-opening-ring" aria-hidden="true">
+            {COUNTRIES_3B.map((country,index) => <span key={country.id} style={{'--door':country.accent,'--angle':(index*45)+'deg'}}>{country.code}</span>)}
+          </div>
+          <div className="dada3b-opening-core"><strong>3B</strong><small>LE CERCLE EST OUVERT</small></div>
+        </div>}
 
         <main className="dada3b-setup">
           <section className="dada3b-setup-card">
