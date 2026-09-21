@@ -44,14 +44,22 @@ test('day-night clock and LOD profiles remain bounded',()=>{
  assert.equal(lodForDistance(low.far+1,low),3);
 });
 
-test('France Justice trial is server validated and gives guardian preparation',()=>{
+test('France Justice trial remembers tensions and allows a reflection path instead of retrying a wrong answer',()=>{
  let save=applyWorldAction(blankSave(),{type:'visit',region:'france'});
  save={...save,adventure:{...save.adventure,chapters:{...save.adventure.chapters,france:{helped:true,powers:['ally','ambiance','terrain'],solved:true,restored:2,challenge:false,choice:'garden',board:[]}}}};
- const options=guardianValueOptions('france',save.adventure.values.france);
- assert.ok(options.some(option=>option.correct));
- assert.throws(()=>applyWorldAction(save,{type:'guardianValueChoice',choiceId:'raccourci'}),/valeur attendue/);
- for(const [choiceId] of GUARDIAN_VALUES.france.choices)save=applyWorldAction(save,{type:'guardianValueChoice',choiceId});
+ let options=guardianValueOptions('france',save.adventure.values.france);
+ assert.ok(options.some(option=>option.id==='trancher'));
+ save=applyWorldAction(save,{type:'guardianValueChoice',choiceId:'trancher'});
+ save=applyWorldAction(save,{type:'guardianValueChoice',choiceId:'rumeur'});
+ save=applyWorldAction(save,{type:'guardianValueChoice',choiceId:'réparer'});
+ assert.equal(save.adventure.values.france.completed,false);
+ assert.equal(save.adventure.values.france.reflectionNeeded,true);
+ assert.equal(save.adventure.values.france.tensions.length,2);
+ options=guardianValueOptions('france',save.adventure.values.france);
+ assert.ok(options.every(option=>option.stance==='reflection'));
+ save=applyWorldAction(save,{type:'guardianValueChoice',choiceId:'assumer_devant_les_autres'});
  assert.equal(save.adventure.values.france.completed,true);
+ assert.equal(save.adventure.values.france.reflection,'assumer_devant_les_autres');
  const trial=worldItems('france',save).find(item=>item.type==='valueTrial');
  assert.equal(trial.done,true);
 });
