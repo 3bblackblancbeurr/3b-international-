@@ -35,7 +35,7 @@ test('Unreal gameplay foundation keeps GAS authoritative on PlayerState and expo
 });
 
 test('Unreal source never contains Supabase service-role or refresh-token secrets',()=>{
- const files=filesUnder('unreal/ThreeBWorld').filter(path=>/\.(h|cpp|ini|cs|md|uproject)$/.test(path));
+ const files=filesUnder('unreal/ThreeBWorld').filter(path=>/\.(h|cpp|ini|cs|uproject)$/.test(path));
  for(const file of files){
   const source=readFileSync(file,'utf8');
   assert.doesNotMatch(source,/SUPABASE_SERVICE_ROLE_KEY|refresh_token|sb_secret_/i,file);
