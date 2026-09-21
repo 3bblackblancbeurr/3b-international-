@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "ThreeBPlayerState.h"
+#include "ThreeBInteractionComponent.h"
 
 AThreeBCharacter::AThreeBCharacter()
 {
@@ -26,6 +27,8 @@ AThreeBCharacter::AThreeBCharacter()
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     FollowCamera->bUsePawnControlRotation = false;
+
+    InteractionComponent = CreateDefaultSubobject<UThreeBInteractionComponent>(TEXT("InteractionComponent"));
 }
 
 void AThreeBCharacter::BeginPlay()
@@ -110,6 +113,10 @@ void AThreeBCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         Enhanced->BindAction(SprintAction, ETriggerEvent::Completed, this, &AThreeBCharacter::StopSprint);
         Enhanced->BindAction(SprintAction, ETriggerEvent::Canceled, this, &AThreeBCharacter::StopSprint);
     }
+    if (InteractAction)
+    {
+        Enhanced->BindAction(InteractAction, ETriggerEvent::Started, this, &AThreeBCharacter::RequestInteraction);
+    }
 }
 
 void AThreeBCharacter::Move(const FInputActionValue& Value)
@@ -141,6 +148,14 @@ void AThreeBCharacter::StartSprint()
 void AThreeBCharacter::StopSprint()
 {
     SetSprintRequested(false);
+}
+
+void AThreeBCharacter::RequestInteraction()
+{
+    if (InteractionComponent)
+    {
+        InteractionComponent->RequestInteract();
+    }
 }
 
 void AThreeBCharacter::SetSprintRequested(bool bRequested)

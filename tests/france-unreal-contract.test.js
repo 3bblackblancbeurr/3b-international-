@@ -166,3 +166,21 @@ test('shared story state replicates from GameState and has no client mutation RP
  assert.match(source,/DOREPLIFETIME\(AThreeBGameState, StoryState\)/);
  assert.match(mode,/GameStateClass = AThreeBGameState::StaticClass\(\)/);
 });
+
+
+test('interaction request is revalidated on the server before an interactable executes',()=>{
+ const iface=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBInteractable.h');
+ const header=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBInteractionComponent.h');
+ const source=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBInteractionComponent.cpp');
+ const character=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBCharacter.cpp');
+ assert.match(iface,/BlueprintAuthorityOnly/);
+ assert.match(header,/UFUNCTION\(Server, Reliable\)/);
+ assert.match(source,/ValidateServerTarget\(Target\)/);
+ assert.match(source,/Character->HasAuthority\(\)/);
+ assert.match(source,/SizeSquared\(\) > FMath::Square/);
+ assert.match(source,/FVector::DotProduct/);
+ assert.match(source,/LineTraceSingleByChannel/);
+ assert.match(source,/Execute_CanInteract/);
+ assert.match(source,/Execute_AuthorizedInteract/);
+ assert.match(character,/InteractionComponent->RequestInteract\(\)/);
+});

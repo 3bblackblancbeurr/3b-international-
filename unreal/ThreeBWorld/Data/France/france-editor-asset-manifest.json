@@ -50,6 +50,11 @@
       "critical": true
     },
     {
+      "path": "/Game/3B/Input/Actions/IA_Interact",
+      "kind": "InputAction",
+      "critical": true
+    },
+    {
       "path": "/Game/3B/Characters/Celiane/BP_Celiane",
       "kind": "Blueprint",
       "critical": true

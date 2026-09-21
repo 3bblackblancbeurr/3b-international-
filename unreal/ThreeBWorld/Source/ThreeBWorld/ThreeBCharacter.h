@@ -11,6 +11,7 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class USpringArmComponent;
+class UThreeBInteractionComponent;
 
 UCLASS()
 class THREEBWORLD_API AThreeBCharacter : public ACharacter, public IAbilitySystemInterface
@@ -49,6 +50,12 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="3B|Input")
     TObjectPtr<UInputAction> SprintAction;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="3B|Input")
+    TObjectPtr<UInputAction> InteractAction;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="3B|Interaction")
+    TObjectPtr<UThreeBInteractionComponent> InteractionComponent;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="3B|Movement", meta=(ClampMin="150.0", ClampMax="650.0"))
     float WalkSpeed = 500.0f;
 
@@ -63,6 +70,7 @@ private:
     void Look(const FInputActionValue& Value);
     void StartSprint();
     void StopSprint();
+    void RequestInteraction();
     void SetSprintRequested(bool bRequested);
     void ApplySprintState();
 
