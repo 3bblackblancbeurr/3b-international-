@@ -66,3 +66,25 @@ test('resonance selection is server validated and copied into a real encounter',
  assert.equal(save.adventure.encounter.resonanceCharges,0);
  assert.equal(normalizeSave(save).adventure.encounter.resonance,'france');
 });
+
+
+test('regional guardians enforce distinct field mechanics instead of stat-only reskins',()=>{
+ const boss=region=>({...encounter(),boss:true,region,enemy:1000,enemyMax:1000});
+ let france=idle(boss('france'),'strike');assert.ok(france.enemy>985,'Justice reduces unverified opening damage');
+ let estonie=idle(boss('estonie'),'strike');assert.ok(estonie.enemy>france.enemy,'Sagesse punishes attacks outside recovery even more strongly');
+ let espagne=boss('espagne');espagne=idle(espagne,'strike');assert.ok(espagne.guardianMeter>0,'Passion builds intensity');
+ let italie=boss('italie');italie=idle(italie,'strike');assert.equal(italie.enemy,1000,'Espoir rebuild shield absorbs the first hit');assert.ok(italie.guardianShield<26);
+ let maroc=idle(boss('maroc'));assert.equal(maroc.guardianMeter,100,'Noblesse starts with an inheritance to protect');
+});
+
+test('final field combat rotates through all eight guardian mechanics by enemy health',()=>{
+ let e={...encounter(),boss:true,final:true,region:'france',enemy:800,enemyMax:800};
+ const expected=['france','algerie','maroc','tunisie','espagne','italie','turquie','estonie'];
+ for(let index=0;index<8;index++){
+  e.enemy=Math.max(1,800-index*100);
+  e=idle(e);
+  assert.equal(e.finalCirclePhase,index+1,'phase '+(index+1));
+  if(expected[index]==='maroc')assert.equal(e.guardianMeter,100);
+  if(expected[index]==='italie')assert.equal(e.guardianShield,26);
+ }
+});
