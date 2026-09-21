@@ -37,7 +37,7 @@ test('login remains compatible with legacy handles while accepting real email',(
 
 test('member auth source uses public signup, generic login and service-only audit trail',()=>{
  const source=readFileSync('supabase/functions/member-auth/index.ts','utf8');
- assert.match(source,/\/auth\/v1\/signup/);
+ assert.match(source,/\/auth\/v1\/signup/);\n assert.match(source,/register-v2/);\n assert.match(source,/recover-v2/);\n assert.match(source,/member_auth_settings/);
  assert.match(source,/\/auth\/v1\/token\?grant_type=password/);
  assert.match(source,/member_auth_events/);
  assert.match(source,/member_consents/);
@@ -55,7 +55,7 @@ test('registration UI exposes email confirmation, two recovery paths and legal c
  assert.match(page,/Récupération par e-mail/);
  assert.match(page,/account-terms\.html/);
  assert.match(page,/privacy-policy\.html/);
- assert.match(page,/TurnstileField/);
+ assert.match(page,/TurnstileField/);\n assert.match(page,/memberRequest\('register-v2'/);\n assert.match(page,/memberRequest\('recover-v2'/);
 });
 
 test('registration schema is service-only and represented in applied migration manifest',()=>{
@@ -66,7 +66,7 @@ test('registration schema is service-only and represented in applied migration m
  const manifest=JSON.parse(readFileSync('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json','utf8'));
  const row=manifest.migrations.find(item=>item.version==='20260921171141');
  assert.equal(row?.sha256,'c1700cb278f74422f839d7bf4a8b68abbf0b3e65cec83281218660f60aba01b3');
- assert.equal(manifest.count,119);
+ assert.equal(manifest.count,120);
 });
 
 
@@ -76,4 +76,19 @@ test('auth email returns are routed to the member area and cleaned on navigation
  assert.match(navigation,/params\.get\("auth"\) === "confirmed"/);
  assert.match(navigation,/url\.searchParams\.delete\("auth"\)/);
  assert.match(navigation,/url\.searchParams\.delete\("reset"\)/);
+});
+
+
+test('zero-downtime auth rollout gate is service-only and removable after v2 frontend cutover',()=>{
+ const migration=readFileSync('supabase/migrations/20260921172824_member_auth_rollout_gate_v1.sql','utf8');
+ assert.match(migration,/member_auth_settings/);
+ assert.match(migration,/allow_legacy_flows boolean not null default true/);
+ assert.match(migration,/revoke all on public\.member_auth_settings from public,anon,authenticated/);
+ const source=readFileSync('supabase/functions/member-auth/index.ts','utf8');
+ assert.match(source,/allow_legacy_flows/);
+ assert.match(source,/Cette version de l’application doit être mise à jour/);
+ const manifest=JSON.parse(readFileSync('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json','utf8'));
+ const row=manifest.migrations.find(item=>item.version==='20260921172824');
+ assert.equal(row?.sha256,'2b817049381abf7b537d28d9c14efc0dfa95d803bdd7968cb35e92778f72d093');
+ assert.equal(manifest.count,120);
 });
