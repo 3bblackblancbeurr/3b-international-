@@ -13,6 +13,16 @@ bool UThreeBWeatherProfile::FindState(EThreeBWeatherState State, FThreeBWeatherS
     return false;
 }
 
+bool UThreeBWeatherProfile::FindWorldStateOverride(FGameplayTag WorldStateTag, EThreeBWeatherState& OutState) const
+{
+    if (const EThreeBWeatherState* Found = WorldStateOverrides.Find(WorldStateTag))
+    {
+        OutState = *Found;
+        return true;
+    }
+    return false;
+}
+
 bool UThreeBWeatherProfile::ValidateProfile(TArray<FString>& OutErrors) const
 {
     OutErrors.Reset();
