@@ -30,9 +30,9 @@ function finalBattle(s){
  for(let i=0;i<7000&&!s.adventure.encounter.result;i++){
   const e=s.adventure.encounter,f=e.field,phase=finalCirclePhase(e),dx=f.enemy.x-f.p.x,dz=f.enemy.z-f.p.z,d=Math.hypot(dx,dz)||1;
   let x=0,z=0,kind;
-  if(f.phase==='windup'&&f.windup<=350){
-   if(phase?.region==='tunisie'&&f.stamina>=32&&!f.cooldown){x=dx/d;z=dz/d;kind='dodge';}
-   else if(f.stamina>=18&&!f.cooldown)kind='guard';
+  if(f.phase==='windup'){
+   if(phase?.region==='tunisie'&&f.windup<=350&&f.stamina>=32&&!f.cooldown){x=dx/d;z=dz/d;kind='dodge';}
+   else if(phase?.region!=='tunisie'&&f.stamina>=18&&!f.cooldown)kind='guard';
   }else if(phase?.region==='espagne'&&e.guardianFlag&&f.stamina>=18&&!f.cooldown)kind='guard';
   else if(f.phase==='recovery'&&!f.cooldown)kind=e.focus>=2?'power':'strike';
   else if(d>6){x=dx/d;z=dz/d;}
