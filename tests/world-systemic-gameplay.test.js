@@ -6,6 +6,7 @@ import {GUARDIAN_CAMPAIGNS,INDEPENDENT_MISSION_ARCHETYPES,centralMissionIndex,va
 import {HUB_DIALOGUE_INTENT_SET,hubDialogueIntents,hubDialogueIntentResponse} from '../src/world/hub/dialogue-intents.js';
 import {GUARDIAN_RELATIONSHIPS,guardianRelationshipsFor,guardianHubState,validateGuardianRelationships} from '../src/world/guardian-relations.js';
 import {GUARDIAN_RESONANCES,RING_ABILITIES,unlockedResonances,validateResonances} from '../src/world/guardian-resonances.js';
+import {RESONANCE_CONTEXT_CONTRACTS,resonanceContextCandidate,resonanceContextMessage,validateResonanceContextContracts} from '../src/world/resonance-context.js';
 import {GUARDIAN_COMBAT_RULES,validateGuardianCombatRules} from '../src/world/guardian-combat.js';
 import {FINAL_CIRCLE_PHASES,finalCirclePhase,validateFinalCircle} from '../src/world/final-circle.js';
 import {CONTROL_ACTIONS,defaultControlBindings,normalizeControlBindings,setPrimaryControl,controlMatches,actionHeld,controlLabel,validateControlBindings} from '../src/world/control-bindings.js';
@@ -246,6 +247,33 @@ test('liberated guardians stay alive through post-missions relationships and fin
  const union=guardianHubState('estonie',{seals:Object.keys(GUARDIAN_RESONANCES)});
  assert.equal(union.stage,'union');
  assert.match(union.line,/pattern final/i);
+});
+
+test('all eight guardian resonances are usable out of combat without awarding or skipping progression',()=>{
+ assert.equal(validateResonanceContextContracts(),true);
+ assert.equal(Object.keys(RESONANCE_CONTEXT_CONTRACTS).length,8);
+ assert.equal(new Set(Object.values(RESONANCE_CONTEXT_CONTRACTS).map(rule=>rule.mode)).size,8);
+ const regions=Object.keys(GUARDIAN_RESONANCES),base=blankSave();
+ for(const region of regions){
+  const rule=RESONANCE_CONTEXT_CONTRACTS[region],item={id:'context:'+region,type:rule.types[0]},verb=rule.verbs[0];
+  let save={...base,seals:[...regions],adventure:{...base.adventure,resonance:region}};
+  const candidate=resonanceContextCandidate(save,item,verb);assert.equal(candidate?.region,region,region);
+  const before={xp:save.xp,shards:save.shards,missions:JSON.stringify(save.hub.missions)};
+  save=applyWorldAction(save,{type:'resonanceContext',targetId:item.id,targetType:item.type,verb});
+  assert.equal(save.adventure.resonanceContext.region,region);
+  assert.equal(save.adventure.resonanceContext.mode,rule.mode);
+  assert.equal(save.xp,before.xp,region+' xp');
+  assert.equal(save.shards,before.shards,region+' shards');
+  assert.equal(JSON.stringify(save.hub.missions),before.missions,region+' mission progression');
+  assert.ok(resonanceContextMessage(save.adventure.resonanceContext).length>35,region+' message');
+ }
+ let france={...base,seals:['france'],adventure:{...base.adventure,resonance:'france'}};
+ let actions=contextActions({id:'proof:a',type:'evidence'},{save:france,region:'france'});
+ assert.ok(actions.some(action=>action.id==='resonance'&&action.resonanceRegion==='france'));
+ france=applyWorldAction(france,{type:'resonanceContext',targetId:'proof:a',targetType:'evidence',verb:'inspect'});
+ actions=contextActions({id:'proof:a',type:'evidence'},{save:france,region:'france'});
+ assert.match(actions.find(action=>action.id==='inspect')?.caption||'',/Lecture juste active/);
+ assert.throws(()=>applyWorldAction(france,{type:'resonanceContext',targetId:'enemy',targetType:'vehicle',verb:'drive'}),/ne répond pas/);
 });
 
 test('guardian resonances have combat exploration puzzle and rescue uses without creating a ninth value',()=>{
