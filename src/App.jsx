@@ -253,9 +253,9 @@ export default function App() {
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} />}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
-      {page === "manga" && <ComingSoon />}
+      {page === "manga" && <ComingSoon goTo={goTo} />}
       {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
-      {page === "secret" && <ComingSoon secret />}
+      {page === "secret" && <ComingSoon secret goTo={goTo} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
