@@ -66,5 +66,5 @@ test('online-only client talks only to the authenticated Penalty Rush Edge endpo
   assert.match(source,/functions\/v1\/penalty-rush/);
   assert.match(source,/Authorization:'Bearer '\+session\.access_token/);
   assert.match(source,/postgres_changes/);
-  assert.match(source,/table:'penalty_rooms'/);
+  assert.match(source,/table\\s*:\\s*'penalty_rooms'/);
 });
