@@ -160,7 +160,7 @@ test('generic Unreal region data asset extends the existing territory definition
   assert.doesNotMatch(header,/Céliane|Justice|france_centre|monumental_waterfall/i);
   assert.match(world,/#include \"ThreeBRegionDefinition\.h\"/);
   assert.match(world,/TSoftObjectPtr<UThreeBRegionDefinition> RegionDefinition/);
-  assert.doesNotMatch(world,/\\\\n/);
+  assert.doesNotMatch(world,/\\n/);
   assert.ok(manifest.required_assets.some(x=>x.path.endsWith('/DA_FranceRegion')&&x.kind==='ThreeBRegionDefinition'));
 });
 
