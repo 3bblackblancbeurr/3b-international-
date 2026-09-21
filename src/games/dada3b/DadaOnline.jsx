@@ -353,10 +353,13 @@ export default function DadaOnline({onBack,onClose,onAccount}){
         const point=trackPosition(event.landing);
         setBlast({...point,key:Date.now()});setFocus(point);
         setTimeout(()=>setBlast(null),850);setTimeout(()=>setFocus(null),1050);
+      }else if(event.type==='door'){
+        const country=countryFor(event.countryId),point=homePosition(country,0);
+        setFocus(point);setTimeout(()=>setFocus(null),1050);
       }else if(event.type==='finish'||event.type==='victory'){
         setFocus({left:50,top:50});setTimeout(()=>setFocus(null),1100);
       }
-      feedback.current?.event(event.type==='triple-six'?'tripleSix':event.type||'move');
+      feedback.current?.event(event.type==='triple-six'?'tripleSix':event.type||'move',{countryId:event.countryId});
     };
     run();
   },[room?.state?.sequence]);
@@ -489,6 +492,7 @@ export default function DadaOnline({onBack,onClose,onAccount}){
             <small>{player.stats.captures} captures · {player.stats.sixes} six · {player.stats.finished} fragment(s)</small></article>;
         })}</div>
         <p className="dada3b-online-reward-note">XP et Coins sont calculés avec plafonds anti-farming et idempotence serveur. Le téléphone ne choisit jamais le montant.</p>
+        <details className="dada3b-history"><summary>Historique serveur</summary><div>{state.history.slice(-24).reverse().map(event=><p key={event.id}><b>#{event.id}</b> {event.text}</p>)}</div></details>
         <div className="dada3b-victory-actions"><button className="dada3b-primary" onClick={()=>{rememberDadaRoom(null);setRoom(null);setLeaderboard(null);}}>Nouvelle partie</button>
           <button className="dada3b-secondary" onClick={showLeaderboard}>Classement</button><button className="dada3b-secondary" onClick={onClose}>Retour aux Jeux 3B</button></div>
       </section>
