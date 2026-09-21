@@ -24,8 +24,18 @@ const ORIGINS=new Set([
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const CODE=/^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard']);
-const ONLINE_MODES=new Set(['private','quick','ranked']);
+const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip','claim']);
+const ONLINE_MODES=new Set(['private','quick','ranked','team2v2']);
+const COSMETIC_SLOTS=new Set(['totem_skin','trail','dice_skin','board_skin','capture_fx','intro_fx']);
+const STARTER_COSMETICS=['DADA_TOTEM_CORE','DADA_TRAIL_MATRIX','DADA_DICE_CORE','DADA_BOARD_NEXUS','DADA_CAPTURE_FRACTURE','DADA_INTRO_EIGHT_DOORS'];
+const DEFAULT_LOADOUT={
+  totem_skin:'DADA_TOTEM_CORE',
+  trail:'DADA_TRAIL_MATRIX',
+  dice_skin:'DADA_DICE_CORE',
+  board_skin:'DADA_BOARD_NEXUS',
+  capture_fx:'DADA_CAPTURE_FRACTURE',
+  intro_fx:'DADA_INTRO_EIGHT_DOORS',
+};
 
 class Failure extends Error {
   constructor(public status:number,message:string){super(message);}
@@ -86,10 +96,112 @@ async function userFor(req:Request){
   return String(user.id);
 }
 
+async function ensureStarterCosmetics(uid:string){
+  const filter='('+STARTER_COSMETICS.join(',')+')';
+  const rows=await admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&item_code=in.'+encodeURIComponent(filter)+'&select=item_code');
+  const owned=new Set((Array.isArray(rows)?rows:[]).map((row:any)=>row.item_code));
+  for(const itemCode of STARTER_COSMETICS){
+    if(owned.has(itemCode))continue;
+    await rpc('market_mint_item',{
+      p_user:uid,
+      p_item_code:itemCode,
+      p_origin:'game_reward',
+      p_origin_ref:'dada:starter:'+itemCode,
+      p_metadata:{game:'dada3b',starter:true},
+    }).catch(()=>null);
+  }
+}
+
+async function loadoutFor(uid:string){
+  await ensureStarterCosmetics(uid);
+  const rows=await admin('/rest/v1/dada_cosmetic_loadouts?user_id=eq.'+encodeURIComponent(uid)+'&select=user_id,totem_skin,trail,dice_skin,board_skin,capture_fx,intro_fx&limit=1');
+  if(Array.isArray(rows)&&rows[0])return Object.fromEntries(Object.keys(DEFAULT_LOADOUT).map(key=>[key,rows[0][key]||DEFAULT_LOADOUT[key]]));
+  await admin('/rest/v1/dada_cosmetic_loadouts?on_conflict=user_id',{
+    method:'POST',body:{user_id:uid,...DEFAULT_LOADOUT},prefer:'resolution=merge-duplicates,return=minimal',
+  });
+  return {...DEFAULT_LOADOUT};
+}
+
+async function cosmeticState(uid:string){
+  const [loadout,catalog,legacyOwned,instances,rules,claims,seasons]=await Promise.all([
+    loadoutFor(uid),
+    admin('/rest/v1/inventory_items?active=eq.true&select=code,name,rarity,description,metadata&order=code.asc'),
+    admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&select=item_code,quantity'),
+    admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&select=item_code'),
+    admin('/rest/v1/collectible_reward_rules?active=eq.true&code=like.dada_%25&select=code,item_code,label,xp_required'),
+    admin('/rest/v1/collectible_reward_claims?user_id=eq.'+encodeURIComponent(uid)+'&rule_code=like.dada_%25&select=rule_code'),
+    admin('/rest/v1/threeb_seasons?status=in.(active,draft)&select=code,label,status,starts_at,ends_at,metadata&order=created_at.desc'),
+  ]);
+  const items=(Array.isArray(catalog)?catalog:[]).filter((item:any)=>item?.metadata?.game==='dada3b'&&COSMETIC_SLOTS.has(item?.metadata?.slot));
+  const ownedCodes=new Set([
+    ...(Array.isArray(legacyOwned)?legacyOwned:[]).filter((row:any)=>Number(row.quantity)>0).map((row:any)=>row.item_code),
+    ...(Array.isArray(instances)?instances:[]).map((row:any)=>row.item_code),
+  ]);
+  const ruleByItem=new Map((Array.isArray(rules)?rules:[]).map((row:any)=>[row.item_code,row]));
+  const claimed=new Set((Array.isArray(claims)?claims:[]).map((row:any)=>row.rule_code));
+  const seasonRows=(Array.isArray(seasons)?seasons:[]).filter((row:any)=>row?.metadata?.game==='dada3b');
+  const activeSeason=seasonRows.find((row:any)=>row.status==='active')||seasonRows.find((row:any)=>row.status==='draft')||null;
+  return {
+    loadout,
+    season:activeSeason?{
+      code:activeSeason.code,
+      label:activeSeason.label,
+      status:activeSeason.status,
+      startsAt:activeSeason.starts_at,
+      endsAt:activeSeason.ends_at,
+      rotation:Array.isArray(activeSeason.metadata?.rotation)?activeSeason.metadata.rotation.slice(0,8):[],
+      payToWin:false,
+      competitiveRulesUnchanged:true,
+    }:null,
+    catalog:items.map((item:any)=>{
+      const rule=ruleByItem.get(item.code);
+      return {
+        code:item.code,name:item.name,rarity:item.rarity,description:item.description,
+        slot:item.metadata.slot,collection:item.metadata.collection||'core',
+        country:item.metadata.country||null,value:item.metadata.value||null,
+        owned:ownedCodes.has(item.code),payToWin:false,
+        ruleCode:rule?.code||null,xpRequired:Number(rule?.xp_required||0),
+        claimed:rule?claimed.has(rule.code):ownedCodes.has(item.code),
+      };
+    }),
+  };
+}
+
+async function equipCosmetic(uid:string,body:any){
+  const slot=String(body.slot||''),itemCode=String(body.itemCode||'');
+  if(!COSMETIC_SLOTS.has(slot)||!/^[A-Z0-9_]{5,80}$/.test(itemCode))throw new Failure(400,'Cosmétique invalide.');
+  const items=await admin('/rest/v1/inventory_items?code=eq.'+encodeURIComponent(itemCode)+'&active=eq.true&select=code,metadata&limit=1');
+  const item=Array.isArray(items)?items[0]:null;
+  if(!item||item.metadata?.game!=='dada3b'||item.metadata?.slot!==slot||item.metadata?.pay_to_win!==false)throw new Failure(400,'Ce cosmétique ne peut pas être équipé ici.');
+  const [legacyOwned,instances]=await Promise.all([
+    admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&item_code=eq.'+encodeURIComponent(itemCode)+'&select=quantity&limit=1'),
+    admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&item_code=eq.'+encodeURIComponent(itemCode)+'&select=id&limit=1'),
+  ]);
+  const owns=(Array.isArray(legacyOwned)&&legacyOwned[0]&&Number(legacyOwned[0].quantity)>0)||(Array.isArray(instances)&&Boolean(instances[0]));
+  if(!owns)throw new Failure(403,'Ce cosmétique n’est pas encore débloqué.');
+  const current=await loadoutFor(uid);
+  const next={...current,[slot]:itemCode};
+  await admin('/rest/v1/dada_cosmetic_loadouts?on_conflict=user_id',{
+    method:'POST',body:{user_id:uid,...next,updated_at:nowIso()},prefer:'resolution=merge-duplicates,return=minimal',
+  });
+  return await cosmeticState(uid);
+}
+
+async function claimCosmetic(uid:string,body:any){
+  const rule=String(body.ruleCode||'');
+  if(!/^dada_[a-z0-9_]{4,80}$/.test(rule))throw new Failure(400,'Récompense DADA invalide.');
+  try{await rpc('market_claim_reward',{p_user:uid,p_rule:rule});}
+  catch(error){
+    const message=error instanceof Error?error.message:String(error);
+    if(!/déjà récupérée|already/i.test(message))throw new Failure(400,/XP insuffisante/i.test(message)?'XP insuffisante pour cette récompense.':'Récompense momentanément indisponible.');
+  }
+  return await cosmeticState(uid);
+}
+
 async function profileFor(uid:string){
   const rows=await admin('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(uid)+'&select=user_id,handle&limit=1');
   if(!Array.isArray(rows)||!rows[0])throw new Failure(403,'Active ton profil 3B avant de jouer en ligne.');
-  return {handle:String(rows[0].handle||'Joueur 3B').slice(0,24)};
+  return {handle:String(rows[0].handle||'Joueur 3B').slice(0,24),cosmetics:await loadoutFor(uid)};
 }
 
 function assertCountry(value:unknown){
@@ -104,7 +216,7 @@ function onlineRules(input:unknown){
   return rules;
 }
 
-function playerEntry(uid:string,handle:string,countryId:string,ready=false):Player{
+function playerEntry(uid:string,handle:string,countryId:string,ready=false,team:string|null=null,cosmetics:any=null):Player{
   return {
     uid,
     name:handle,
@@ -114,7 +226,8 @@ function playerEntry(uid:string,handle:string,countryId:string,ready=false):Play
     botTakeover:false,
     joinedAt:nowIso(),
     lastSeen:nowIso(),
-    team:null,
+    team:['A','B'].includes(team||'')?team:null,
+    cosmetics:cosmetics&&typeof cosmetics==='object'?cosmetics:{...DEFAULT_LOADOUT},
   };
 }
 
@@ -151,7 +264,7 @@ async function cleanupExpiredWaiting(){
   }).catch(()=>null);
 }
 
-async function insertRoom(uid:string,handle:string,countryId:string,mode:string,maxPlayers:number,rules:any){
+async function insertRoom(uid:string,handle:string,countryId:string,mode:string,maxPlayers:number,rules:any,team:string|null=null,cosmetics:any=null){
   for(let attempt=0;attempt<6;attempt++){
     const code=randomCode();
     try{
@@ -162,7 +275,7 @@ async function insertRoom(uid:string,handle:string,countryId:string,mode:string,
         status:'waiting',
         max_players:maxPlayers,
         rules,
-        players:[playerEntry(uid,handle,countryId,true)],
+        players:[playerEntry(uid,handle,countryId,true,team,cosmetics)],
         spectators:[],
         member_ids:[uid],
         expires_at:plusMs(mode==='private'?30*60_000:8*60_000),
@@ -205,6 +318,7 @@ function deadlineFor(state:any){
 }
 
 function winnerUid(room:Room,state:any){
+  if(state?.winnerTeam)return null;
   if(!state?.winner)return null;
   return room.players?.find((player:any)=>player.countryId===state.winner)?.uid||null;
 }
@@ -268,7 +382,15 @@ async function settleIfFinished(room:Room){
         });
       }
     }
-    if(room.winner_user_id){
+    if(state.winnerTeam){
+      for(const player of humanPlayers.filter((entry:any)=>entry.team===state.winnerTeam)){
+        rewards.push({
+          userId:player.uid,
+          rewardCode:'dada_win',
+          eventId:`dada:${room.id}:team-win:${state.winnerTeam}:${player.uid}`,
+        });
+      }
+    }else if(room.winner_user_id){
       rewards.push({
         userId:room.winner_user_id,
         rewardCode:'dada_win',
@@ -363,6 +485,7 @@ function publicRoom(room:Room,uid:string){
     isSelf:player.uid===uid,
     lastSeen:player.lastSeen,
     team:player.team??null,
+    cosmetics:player.cosmetics&&typeof player.cosmetics==='object'?player.cosmetics:{...DEFAULT_LOADOUT},
   }));
   const spectators=(room.spectators||[]).map((entry:any)=>({
     name:entry.name,
@@ -382,6 +505,7 @@ function publicRoom(room:Room,uid:string){
     turnDeadline:room.turn_deadline,
     isHost:room.host_user_id===uid,
     winnerCountryId:room.state?.winner||null,
+    winnerTeam:room.state?.winnerTeam||null,
     createdAt:room.created_at,
     startedAt:room.started_at,
     finishedAt:room.finished_at,
@@ -397,11 +521,20 @@ async function startRoom(room:Room,actor:string){
   if(new Set(countries).size!==countries.length)throw new Failure(409,'Deux joueurs ne peuvent pas représenter le même pays.');
 
   const rules=onlineRules(room.rules);
-  const state=createMatch((room.players||[]).map((player:any)=>({
+  if(rules.teamMode){
+    if((room.players||[]).length!==4)throw new Failure(409,'Le 2v2 demande exactement quatre joueurs.');
+    if(room.players.filter((player:any)=>player.team==='A').length!==2||room.players.filter((player:any)=>player.team==='B').length!==2)throw new Failure(409,'Le 2v2 demande deux joueurs dans chaque équipe.');
+  }
+  const refreshedPlayers=await Promise.all((room.players||[]).map(async(player:any)=>({
+    ...player,
+    cosmetics:UUID.test(player.uid||'')?await loadoutFor(player.uid).catch(()=>player.cosmetics||{...DEFAULT_LOADOUT}):player.cosmetics||{...DEFAULT_LOADOUT},
+  })));
+  const state=createMatch(refreshedPlayers.map((player:any)=>({
     countryId:player.countryId,
     type:'human',
     name:player.name,
     aiLevel:'gardien',
+    team:player.team??null,
   })),rules);
   const started=nowIso();
   const horizon=rules.maxDurationMinutes>0
@@ -409,6 +542,7 @@ async function startRoom(room:Room,actor:string){
     : 4*60*60_000;
 
   return await commitRoom(room,{
+    players:refreshedPlayers,
     state,
     status:'active',
     turn_deadline:deadlineFor(state),
@@ -424,9 +558,9 @@ async function startRoom(room:Room,actor:string){
 async function createPrivate(uid:string,body:any){
   const profile=await profileFor(uid);
   const countryId=assertCountry(body.countryId);
-  const maxPlayers=Number.isInteger(body.maxPlayers)?Math.max(2,Math.min(8,body.maxPlayers)):4;
   const rules=onlineRules(body.rules);
-  return await insertRoom(uid,profile.handle,countryId,'private',maxPlayers,rules);
+  const maxPlayers=rules.teamMode?4:(Number.isInteger(body.maxPlayers)?Math.max(2,Math.min(8,body.maxPlayers)):4);
+  return await insertRoom(uid,profile.handle,countryId,'private',maxPlayers,rules,rules.teamMode?'A':null,profile.cosmetics);
 }
 
 async function joinPrivate(uid:string,body:any){
@@ -440,7 +574,13 @@ async function joinPrivate(uid:string,body:any){
   if((room.players||[]).length>=room.max_players)throw new Failure(409,'Ce salon est complet.');
   if((room.players||[]).some((player:any)=>player.countryId===countryId))throw new Failure(409,'Ce pays est déjà représenté dans ce salon.');
 
-  const players=[...(room.players||[]),playerEntry(uid,profile.handle,countryId,false)];
+  let team:string|null=null;
+  if(room.rules?.teamMode){
+    const a=(room.players||[]).filter((player:any)=>player.team==='A').length;
+    const b=(room.players||[]).filter((player:any)=>player.team==='B').length;
+    team=a<=b?'A':'B';
+  }
+  const players=[...(room.players||[]),playerEntry(uid,profile.handle,countryId,false,team,profile.cosmetics)];
   room=await commitRoom(room,{
     players,
     member_ids:roomMembers(players,room.spectators||[]),
@@ -469,12 +609,15 @@ async function joinSpectator(uid:string,body:any){
 
 async function queueRoom(uid:string,body:any){
   const mode=String(body.mode||'');
-  if(!['quick','ranked'].includes(mode))throw new Failure(400,'File de jeu inconnue.');
+  if(!['quick','ranked','team2v2'].includes(mode))throw new Failure(400,'File de jeu inconnue.');
   const profile=await profileFor(uid);
   const countryId=assertCountry(body.countryId);
+  const teamMode=mode==='team2v2';
+  const targetPlayers=teamMode?4:2;
   const rules=onlineRules({
     ...(body.rules||{}),
     piecesPerPlayer:4,
+    teamMode,
     timerSeconds:mode==='ranked'?20:30,
     captureRequired:mode==='ranked'?true:Boolean(body.rules?.captureRequired),
   });
@@ -486,25 +629,31 @@ async function queueRoom(uid:string,body:any){
   );
 
   let room=(Array.isArray(candidates)?candidates:[]).find((candidate:any)=>
-    (candidate.players||[]).length===1
+    (candidate.players||[]).length<targetPlayers
     && !(candidate.member_ids||[]).includes(uid)
     && !(candidate.players||[]).some((player:any)=>player.countryId===countryId)
   );
 
   if(!room){
-    return await insertRoom(uid,profile.handle,countryId,mode,2,rules);
+    return await insertRoom(uid,profile.handle,countryId,mode,targetPlayers,rules,teamMode?'A':null,profile.cosmetics);
   }
 
+  let team:string|null=null;
+  if(teamMode){
+    const a=(room.players||[]).filter((player:any)=>player.team==='A').length;
+    const b=(room.players||[]).filter((player:any)=>player.team==='B').length;
+    team=a<=b?'A':'B';
+  }
   const players=[
     ...(room.players||[]).map((player:any)=>({...player,ready:true})),
-    playerEntry(uid,profile.handle,countryId,true),
+    playerEntry(uid,profile.handle,countryId,true,team,profile.cosmetics),
   ];
   room=await commitRoom(room,{
     players,
     member_ids:roomMembers(players,room.spectators||[]),
     expires_at:plusMs(8*60_000),
-  },uid,'matchmaking_join',{mode,countryId});
-  return await startRoom(room,uid);
+  },uid,'matchmaking_join',{mode,countryId,team});
+  return players.length===targetPlayers?await startRoom(room,uid):room;
 }
 
 async function readyRoom(uid:string,body:any){
@@ -716,6 +865,15 @@ Deno.serve(async(req)=>{
 
     if(body.action==='leaderboard'){
       return reply({leaderboard:await leaderboard(),serverTime:nowIso()});
+    }
+    if(body.action==='cosmetics'){
+      return reply({...await cosmeticState(uid),serverTime:nowIso()});
+    }
+    if(body.action==='equip'){
+      return reply({...await equipCosmetic(uid,body),serverTime:nowIso()});
+    }
+    if(body.action==='claim'){
+      return reply({...await claimCosmetic(uid,body),serverTime:nowIso()});
     }
 
     let room:Room|null=null;

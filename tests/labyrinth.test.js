@@ -5,8 +5,10 @@ import {Maze,paths,lineOfSight,DIRS} from '../src/games/maze.js';
 import {GAME_CATALOG,KEY_RACE_URL} from '../src/games/catalog.js';
 import {createStepper} from '../src/games/runtime.js';
 
-test('the library contains three embedded games and the original key race as an equal fourth card',()=>{
- assert.deepEqual(GAME_CATALOG.map(g=>g.id),['arena','tower','maze','key-race']);assert.equal(GAME_CATALOG[3].href,KEY_RACE_URL);
+test('the library keeps the four existing games and adds DADA 3B as the fifth card',()=>{
+ assert.deepEqual(GAME_CATALOG.map(g=>g.id),['arena','tower','maze','key-race','dada3b']);
+ assert.equal(GAME_CATALOG[3].href,KEY_RACE_URL);
+ assert.equal(GAME_CATALOG[4].title,'DADA 3B — Le Cercle des 8 Portes');
  assert.equal(KEY_RACE_URL,'https://troisb-course-des-cles-demo.stetienne86pp.chatgpt.site/');
 });
 test('200 ruins have distinct reachable supplies, three shrines, safe borders and alternate routes',()=>{
