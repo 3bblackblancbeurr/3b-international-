@@ -1,0 +1,1 @@
+create index if not exists ai_council_reviews_reviewed_run_idx on public.ai_council_reviews(reviewed_run_id);
