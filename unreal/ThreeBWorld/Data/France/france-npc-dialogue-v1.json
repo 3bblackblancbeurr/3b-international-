@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "purpose": "Preproduction contract for non-Guardian France NPC roles, contextual dialogue and persistent memory boundaries.",
+  "authority_model": {
+    "local": [
+      "subtitle_rendering",
+      "conversation_camera",
+      "choice_highlight",
+      "ambient_barks"
+    ],
+    "server_verified": [
+      "persistent_memory",
+      "validated_evidence",
+      "rescue_outcome",
+      "justice_trial_outcome",
+      "guardian_liberated"
+    ],
+    "rule": "Dialogue may request a durable change; only authoritative story state may confirm it."
+  },
+  "localization": {
+    "final_dialogue_in_json": false,
+    "key_prefix": "france.dialogue",
+    "rule": "Store intent and localization keys here; final localized copy belongs in Unreal localization assets."
+  },
+  "dialogue_intents": [
+    {
+      "id": "ask_context",
+      "persistent_effect": false
+    },
+    {
+      "id": "ask_relationship",
+      "persistent_effect": false
+    },
+    {
+      "id": "present_evidence",
+      "persistent_effect": "server_verified"
+    },
+    {
+      "id": "challenge_statement",
+      "persistent_effect": "server_verified"
+    },
+    {
+      "id": "request_help",
+      "persistent_effect": "server_verified"
+    },
+    {
+      "id": "reflect_outcome",
+      "persistent_effect": false
+    }
+  ],
+  "npc_roles": [
+    {
+      "id": "resident_witness_a",
+      "zone": "residential",
+      "active_phases": [
+        "human_problem",
+        "investigation"
+      ],
+      "memory_fact_keys": [
+        "france.evidence.witness_a"
+      ],
+      "intents": [
+        "ask_context",
+        "present_evidence",
+        "challenge_statement"
+      ],
+      "post_liberation_behavior": "normal_routine_with_memory"
+    },
+    {
+      "id": "resident_witness_b",
+      "zone": "community_square",
+      "active_phases": [
+        "human_problem",
+        "investigation"
+      ],
+      "memory_fact_keys": [
+        "france.evidence.witness_b"
+      ],
+      "intents": [
+        "ask_context",
+        "present_evidence",
+        "challenge_statement"
+      ],
+      "post_liberation_behavior": "normal_routine_with_memory"
+    },
+    {
+      "id": "archive_clerk",
+      "zone": "civic_archive",
+      "active_phases": [
+        "investigation"
+      ],
+      "memory_fact_keys": [
+        "france.evidence.institutional_record"
+      ],
+      "intents": [
+        "ask_context",
+        "present_evidence"
+      ],
+      "post_liberation_behavior": "archive_reopens"
+    },
+    {
+      "id": "rescue_coordinator",
+      "zone": "rescue_site",
+      "active_phases": [
+        "rescue",
+        "aftermath"
+      ],
+      "memory_fact_keys": [
+        "france.rescue_outcome"
+      ],
+      "intents": [
+        "request_help",
+        "reflect_outcome"
+      ],
+      "post_liberation_behavior": "recovery_support"
+    },
+    {
+      "id": "civic_mediator",
+      "zone": "tribunal",
+      "active_phases": [
+        "pressure",
+        "justice_trial",
+        "aftermath"
+      ],
+      "memory_fact_keys": [
+        "france.justice_trial_outcome"
+      ],
+      "intents": [
+        "ask_context",
+        "present_evidence",
+        "reflect_outcome"
+      ],
+      "post_liberation_behavior": "public_mediation"
+    },
+    {
+      "id": "reconstruction_lead",
+      "zone": "post_liberation_hub",
+      "active_phases": [
+        "aftermath",
+        "return_nexus"
+      ],
+      "memory_fact_keys": [
+        "france.guardian_liberated"
+      ],
+      "intents": [
+        "ask_relationship",
+        "reflect_outcome"
+      ],
+      "post_liberation_behavior": "coordinates_reconstruction"
+    },
+    {
+      "id": "roaming_resident",
+      "zone": "community_square",
+      "active_phases": [
+        "human_problem",
+        "aftermath"
+      ],
+      "memory_fact_keys": [],
+      "intents": [
+        "ask_context",
+        "reflect_outcome"
+      ],
+      "post_liberation_behavior": "ambient_social_life"
+    }
+  ],
+  "guardian_reference": {
+    "id": "celiane",
+    "contract": "celiane-state-tree-spec.json",
+    "rule": "Céliane behavior is governed by her dedicated StateTree contract and is not duplicated here."
+  }
+}

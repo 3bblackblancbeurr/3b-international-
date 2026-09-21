@@ -225,8 +225,11 @@ Deno.serve(async req=>{
     }
    );
 
-   const user=signup.data?.user;
-   if(!signup.ok||!user?.id||(Array.isArray(user.identities)&&user.identities.length===0)){
+   const rawSignup=signup.data||{};
+   const user=rawSignup?.user?.id?rawSignup.user:rawSignup?.id?rawSignup:null;
+   const signupSession=rawSignup?.session||(rawSignup?.access_token&&rawSignup?.refresh_token?rawSignup:null);
+   const identities=user?.identities;
+   if(!signup.ok||!user?.id||(Array.isArray(identities)&&identities.length===0)){
     await audit('register.rejected',false,ipHash,null,{status:signup.status});
     if(signup.status===429)throw new Failure(429,'Trop de tentatives. Réessaie plus tard.');
     throw new Failure(409,'Impossible de créer ce compte avec ces informations. Vérifie l’adresse ou connecte-toi si tu as déjà un compte.');
@@ -244,7 +247,7 @@ Deno.serve(async req=>{
      terms_accepted_at:now,
      privacy_accepted_at:now,
      marketing_opt_in:input.marketingOptIn,
-     last_login_at:signup.data?.session?now:null
+     last_login_at:signupSession?now:null
     });
     await api('/rest/v1/member_consents',[
      {user_id:user.id,kind:'terms',version:ACCOUNT_TERMS_VERSION,granted:true,ip_hash:ipHash},
@@ -256,12 +259,12 @@ Deno.serve(async req=>{
     throw error;
    }
 
-   await audit('register.created',true,ipHash,user.id,{confirmation_required:!signup.data?.session});
+   await audit('register.created',true,ipHash,user.id,{confirmation_required:!signupSession});
    return reply({
     recovery,
     handle:input.handle,
-    session:signup.data?.session||null,
-    email_confirmation_required:!signup.data?.session
+    session:signupSession||null,
+    email_confirmation_required:!signupSession
    },201);
   }
 
