@@ -218,7 +218,9 @@ Le radar national prend en compte :
 
 `non classé → radar → observé → présélection → convocation → sélection`.
 
-Pendant une fenêtre internationale ayant le statut `selection`, le serveur recalcule le rang national, la réputation et la performance en Duel d’Or. Un joueur qui atteint le niveau de présélection peut recevoir automatiquement une ligne `penalty_international_selections` liée à cette fenêtre.
+Pendant une fenêtre internationale ayant le statut `selection`, le serveur recalcule le rang national, la réputation et la performance en Duel d’Or. Il calcule aussi **le profil dont chaque pays manque le plus** à partir des profils déjà présélectionnés/sélectionnés. Un joueur déjà au niveau de présélection reste éligible normalement ; un profil actuellement recherché peut également ouvrir une présélection à un joueur observé qui possède au moins 10 matchs, un rang national ≤ 30 et une réputation ≥ 420. Le besoin du pays compte donc réellement sans remplacer le mérite sportif.
+
+Un joueur éligible peut recevoir automatiquement une ligne `penalty_international_selections` liée à cette fenêtre.
 
 La présélection n’est pas encore une sélection définitive : le joueur reçoit le message signature :
 
