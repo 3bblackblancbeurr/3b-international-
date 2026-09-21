@@ -30,7 +30,7 @@ const CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACTIONS = new Set([
   'status', 'profile.save', 'create', 'join', 'queue', 'room', 'ready', 'start',
-  'input', 'tick', 'leave', 'club.create', 'club.join',
+  'input', 'tick', 'leave', 'club.create', 'club.join', 'club.leave', 'club.disband', 'international.respond',
 ]);
 const MODES = new Set(['private', 'quick', 'ranked']);
 const COUNTRY_IDS = new Set(['fr', 'dz', 'ma', 'tn', 'tr', 'it', 'es', 'ee']);
@@ -39,6 +39,7 @@ const COUNTRY_FROM_NAME: Record<string,string> = {
   Italie: 'it', Espagne: 'es', Estonie: 'ee',
 };
 const STYLES = new Set(['technicien', 'explosif', 'finisseur', 'imprevisible', 'maestro']);
+const SELECTION_ROLES = ['technicien', 'explosif', 'finisseur', 'imprevisible', 'maestro', 'pression'];
 const POWERS = new Set(['impulse', 'read', 'phantom', 'anchor']);
 const BOOTS = new Set(['classic', 'speed', 'control', 'future', 'retro']);
 const STYLE_TUNING:Record<string,{control:number,burst:number,shot:number,flow:number}> = {
@@ -164,15 +165,23 @@ function sanitizeKit(value:any={}) {
     socks: sanitizeColor(value?.socks, '#08090b'),
     trim: sanitizeColor(value?.trim, '#d8b35e'),
     pattern: ['clean','stripe','split','gradient','matrix'].includes(value?.pattern) ? value.pattern : 'clean',
+    sleeves: ['short','long','three-quarter'].includes(value?.sleeves) ? value.sleeves : 'short',
+    collar: ['crew','v','retro','future'].includes(value?.collar) ? value.collar : 'v',
+    shortsCut: ['classic','slim','loose'].includes(value?.shortsCut) ? value.shortsCut : 'classic',
+    socksStyle: ['high','mid','low'].includes(value?.socksStyle) ? value.socksStyle : 'high',
   };
 }
 
 function sanitizeBoots(value:any={}) {
+  const signature = String(value?.signature || '').trim().toUpperCase().replace(/[^A-Z0-9À-ÖØ-Ý -]/g, '').slice(0, 8);
   return {
     preset: BOOTS.has(String(value?.preset)) ? String(value.preset) : 'control',
     upper: sanitizeColor(value?.upper, '#08090b'),
     sole: sanitizeColor(value?.sole, '#d8b35e'),
     laces: sanitizeColor(value?.laces, '#d8b35e'),
+    material: ['leather','knit','synthetic','carbon'].includes(value?.material) ? value.material : 'synthetic',
+    studs: ['firm','soft','mixed','blade'].includes(value?.studs) ? value.studs : 'mixed',
+    signature,
   };
 }
 
@@ -295,21 +304,137 @@ function scoutingBand(rank:number, matches:number, reputation:number, pressure:n
   return 'club';
 }
 
+async function activeInternationalWindow() {
+  const at = nowIso();
+  const rows = await admin(
+    '/rest/v1/penalty_international_windows?status=eq.selection' +
+    '&starts_at=lte.' + encodeURIComponent(at) +
+    '&ends_at=gte.' + encodeURIComponent(at) +
+    '&order=starts_at.asc&limit=1&select=*'
+  ).catch(() => []);
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function selectionForWindow(uid:string, windowId:string) {
+  const rows = await admin(
+    '/rest/v1/penalty_international_selections?window_id=eq.' + encodeURIComponent(windowId) +
+    '&user_id=eq.' + encodeURIComponent(uid) +
+    '&select=*&limit=1'
+  ).catch(() => []);
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function countryNeededRole(windowId:string, countryId:string) {
+  const rows = await admin(
+    '/rest/v1/penalty_international_selections?window_id=eq.' + encodeURIComponent(windowId) +
+    '&country_id=eq.' + encodeURIComponent(countryId) +
+    '&status=in.(preselected,selected)&select=role_profile&limit=200'
+  ).catch(() => []);
+  const counts = Object.fromEntries(SELECTION_ROLES.map((role) => [role, 0]));
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const role = String(row?.role_profile || '');
+    if (Object.hasOwn(counts, role)) counts[role] += 1;
+  }
+  const countrySeed = [...String(countryId)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const rotated = (role:string) => {
+    const length = SELECTION_ROLES.length;
+    return ((SELECTION_ROLES.indexOf(role) - countrySeed) % length + length) % length;
+  };
+  return [...SELECTION_ROLES]
+    .sort((a, b) => counts[a] - counts[b] || rotated(a) - rotated(b))[0];
+}
+
+async function refreshInternationalSelection(uid:string, profile:any, rating:any, rank:number, pressure:number) {
+  const matches = number(rating.games);
+  const reputation = number(profile.reputation);
+  const baseScouting = scoutingBand(rank, matches, reputation, pressure);
+  const window = await activeInternationalWindow();
+  if (!window) return { scouting:baseScouting, selection:null, window:null, neededRole:null, needMatched:false };
+
+  const neededRole = await countryNeededRole(window.id, profile.country_id);
+  const playerStyle = STYLES.has(String(profile.style_id)) ? String(profile.style_id) : 'technicien';
+  const needMatched = neededRole === playerStyle || (neededRole === 'pression' && pressure >= .65);
+  const needQualified = matches >= 10 && rank <= 30 && reputation >= 420 && needMatched;
+
+  let selection = await selectionForWindow(uid, window.id);
+  if (!selection && (baseScouting === 'selection' || baseScouting === 'preselection' || needQualified)) {
+    const roleProfile = needMatched ? neededRole : pressure >= .65 ? 'pression' : playerStyle;
+    const created = await admin('/rest/v1/penalty_international_selections?select=*', {
+      method:'POST',
+      body:{
+        window_id:window.id,
+        user_id:uid,
+        country_id:profile.country_id,
+        status:'preselected',
+        role_profile:roleProfile,
+      },
+      prefer:'return=representation',
+    }).catch(() => []);
+    selection = Array.isArray(created) ? created[0] || null : null;
+  }
+
+  const visibleScouting =
+    selection?.status === 'selected' ? 'selection'
+      : selection?.status === 'preselected' ? 'preselection'
+        : selection?.status === 'declined' ? 'declined'
+          : baseScouting;
+  return { scouting:visibleScouting, selection, window, neededRole, needMatched };
+}
+
+async function respondInternationalSelection(uid:string, selectionId:unknown, decision:unknown) {
+  const id = String(selectionId || '');
+  const answer = String(decision || '');
+  if (!UUID.test(id)) throw new Failure(400, 'Convocation invalide.');
+  if (!['accept','decline'].includes(answer)) throw new Failure(400, 'Réponse de convocation invalide.');
+
+  const rows = await admin(
+    '/rest/v1/penalty_international_selections?id=eq.' + encodeURIComponent(id) +
+    '&user_id=eq.' + encodeURIComponent(uid) +
+    '&select=*&limit=1'
+  );
+  const selection = Array.isArray(rows) ? rows[0] : null;
+  if (!selection) throw new Failure(404, 'Convocation introuvable.');
+
+  const expectedStatus = answer === 'accept' ? 'selected' : 'declined';
+  if (selection.status === expectedStatus) return selection;
+  if (selection.status !== 'preselected') throw new Failure(409, 'Cette convocation a déjà été traitée.');
+
+  const windows = await admin(
+    '/rest/v1/penalty_international_windows?id=eq.' + encodeURIComponent(selection.window_id) +
+    '&select=*&limit=1'
+  );
+  const window = Array.isArray(windows) ? windows[0] : null;
+  const at = Date.now();
+  if (!window || window.status !== 'selection' || Date.parse(window.starts_at) > at || Date.parse(window.ends_at) < at) {
+    throw new Failure(409, 'La fenêtre de sélection est terminée.');
+  }
+
+  const updated = await admin(
+    '/rest/v1/penalty_international_selections?id=eq.' + encodeURIComponent(id) +
+    '&user_id=eq.' + encodeURIComponent(uid) +
+    '&status=eq.preselected&select=*',
+    {
+      method:'PATCH',
+      body:{status:expectedStatus,updated_at:nowIso()},
+      prefer:'return=representation',
+    },
+  );
+  if (!Array.isArray(updated) || !updated[0]) throw new Failure(409, 'La convocation a changé. Synchronise ton profil.');
+  return updated[0];
+}
+
 async function snapshotFor(uid:string, profile:any) {
   const club = await clubFor(uid);
   const rating = await ensureRating(uid, profile.country_id);
   const rank = await nationalRank(profile, rating);
   const pressure = rating.games ? clamp(number(rating.duel_gold_wins) / Math.max(1, number(rating.duel_gold_played)), 0, 1) : 0;
-  const scouting = scoutingBand(rank, number(rating.games), number(profile.reputation), pressure);
+  const internationalState = await refreshInternationalSelection(uid, profile, rating, rank, pressure);
+  const selection = internationalState.selection;
+  const window = internationalState.window;
   const history = await admin(
     '/rest/v1/penalty_match_history?or=(player_a.eq.' + encodeURIComponent(uid) + ',player_b.eq.' + encodeURIComponent(uid) + ')' +
     '&select=id,mode,player_a,player_b,winner_user_id,score_a,score_b,created_at&order=created_at.desc&limit=12'
   );
-  const selections = await admin(
-    '/rest/v1/penalty_international_selections?user_id=eq.' + encodeURIComponent(uid) +
-    '&status=in.(preselected,selected)&select=id,status,country_id,role_profile,window_id,created_at&order=created_at.desc&limit=1'
-  ).catch(() => []);
-  const selection = Array.isArray(selections) ? selections[0] : null;
   return {
     rating,
     club,
@@ -321,11 +446,21 @@ async function snapshotFor(uid:string, profile:any) {
     },
     international: {
       nationalRank: rank,
-      scouting: selection?.status === 'selected' ? 'selection' : selection?.status === 'preselected' ? 'preselection' : scouting,
+      scouting: internationalState.scouting,
       caps: number(profile.international_caps),
       goals: number(profile.international_goals),
+      pressureScore: pressure,
+      neededRole: internationalState.neededRole || null,
+      needMatched: Boolean(internationalState.needMatched),
+      selectionId: selection?.id || null,
+      selectionStatus: selection?.status || null,
       roleProfile: selection?.role_profile || null,
-      windowLabel: selection ? 'Fenêtre internationale active' : 'Hors fenêtre internationale',
+      windowId: window?.id || null,
+      windowName: window?.name || null,
+      competition: window?.competition || null,
+      windowStartsAt: window?.starts_at || null,
+      windowEndsAt: window?.ends_at || null,
+      windowLabel: window ? window.name : 'Hors fenêtre internationale',
     },
     history: Array.isArray(history) ? history.map((item:any) => ({
       id:item.id,
@@ -761,11 +896,16 @@ async function tickRoom(room:Room) {
   return finished ? await settleIfFinished(next) : next;
 }
 
-async function createClub(uid:string, nameInput:unknown) {
+async function createClub(uid:string, nameInput:unknown, colorsInput:any={}) {
   const existing = await clubFor(uid);
   if (existing) throw new Failure(409, 'Tu appartiens déjà à un club.');
   const name = String(nameInput || '').trim().slice(0, 40);
   if (name.length < 3) throw new Failure(400, 'Le nom du club doit contenir au moins 3 caractères.');
+  const colors = {
+    primary:sanitizeColor(colorsInput?.primary, '#08090b'),
+    secondary:sanitizeColor(colorsInput?.secondary, '#d8b35e'),
+  };
+  if (colors.primary === colors.secondary) throw new Failure(400, 'Choisis deux couleurs de club différentes.');
   for (let attempt=0; attempt<6; attempt++) {
     const code = randomCode();
     try {
@@ -803,6 +943,36 @@ async function joinClub(uid:string, codeInput:unknown) {
     method:'POST', body:{club_id:club.id,user_id:uid,role:'member'}, prefer:'return=minimal',
   });
   return club;
+}
+
+async function leaveClub(uid:string) {
+  const club = await clubFor(uid);
+  if (!club) throw new Failure(404, 'Tu n’appartiens à aucun club.');
+  if (club.role === 'owner') {
+    if (number(club.members, 1) > 1) {
+      throw new Failure(409, 'Le fondateur ne peut pas quitter un club avec d’autres membres. Dissous le club ou transfère sa direction plus tard.');
+    }
+    await admin('/rest/v1/penalty_clubs?id=eq.' + encodeURIComponent(club.id), {
+      method:'DELETE', prefer:'return=minimal',
+    });
+    return { disbanded:true, name:club.name };
+  }
+  await admin(
+    '/rest/v1/penalty_club_members?club_id=eq.' + encodeURIComponent(club.id) +
+    '&user_id=eq.' + encodeURIComponent(uid),
+    { method:'DELETE', prefer:'return=minimal' },
+  );
+  return { disbanded:false, name:club.name };
+}
+
+async function disbandClub(uid:string) {
+  const club = await clubFor(uid);
+  if (!club) throw new Failure(404, 'Tu n’appartiens à aucun club.');
+  if (club.role !== 'owner') throw new Failure(403, 'Seul le fondateur peut dissoudre le club.');
+  await admin('/rest/v1/penalty_clubs?id=eq.' + encodeURIComponent(club.id), {
+    method:'DELETE', prefer:'return=minimal',
+  });
+  return { name:club.name };
 }
 
 async function route(req:Request) {
@@ -855,7 +1025,7 @@ async function route(req:Request) {
   }
 
   if (action === 'club.create') {
-    await createClub(uid, body.name);
+    await createClub(uid, body.name, body.colors);
     const fresh = await ensureProfile(uid);
     const club = await clubFor(uid);
     return { profile:publicProfile(fresh, club?.name || ''), snapshot:await snapshotFor(uid, fresh), message:'Club créé.' };
@@ -866,6 +1036,35 @@ async function route(req:Request) {
     const fresh = await ensureProfile(uid);
     const club = await clubFor(uid);
     return { profile:publicProfile(fresh, club?.name || ''), snapshot:await snapshotFor(uid, fresh), message:'Club rejoint.' };
+  }
+
+  if (action === 'club.leave') {
+    const result = await leaveClub(uid);
+    const fresh = await ensureProfile(uid);
+    return {
+      profile:publicProfile(fresh, ''),
+      snapshot:await snapshotFor(uid, fresh),
+      message:result.disbanded ? 'Club fermé.' : 'Tu as quitté le club.',
+    };
+  }
+
+  if (action === 'club.disband') {
+    await disbandClub(uid);
+    const fresh = await ensureProfile(uid);
+    return { profile:publicProfile(fresh, ''), snapshot:await snapshotFor(uid, fresh), message:'Club dissous.' };
+  }
+
+  if (action === 'international.respond') {
+    const selection = await respondInternationalSelection(uid, body.selectionId, body.decision);
+    const fresh = await ensureProfile(uid);
+    const club = await clubFor(uid);
+    return {
+      profile:publicProfile(fresh, club?.name || ''),
+      snapshot:await snapshotFor(uid, fresh),
+      message:selection.status === 'selected'
+        ? 'Convocation acceptée · tu représenteras ton pays.'
+        : 'Convocation déclinée.',
+    };
   }
 
   const roomId = String(body.room || '');
