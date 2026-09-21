@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "GameplayTagContainer.h"
 #include "ThreeBWeatherProfile.generated.h"
 
 UENUM(BlueprintType)
@@ -80,8 +81,14 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Weather")
     TArray<FThreeBAltitudeEnvironmentProfile> AltitudeProfiles;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Weather")
+    TMap<FGameplayTag, EThreeBWeatherState> WorldStateOverrides;
+
     UFUNCTION(BlueprintPure, Category="3B|Weather")
     bool FindState(EThreeBWeatherState State, FThreeBWeatherStateDefinition& OutState) const;
+
+    UFUNCTION(BlueprintPure, Category="3B|Weather")
+    bool FindWorldStateOverride(FGameplayTag WorldStateTag, EThreeBWeatherState& OutState) const;
 
     UFUNCTION(BlueprintPure, Category="3B|Weather")
     bool ValidateProfile(TArray<FString>& OutErrors) const;
