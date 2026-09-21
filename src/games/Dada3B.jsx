@@ -32,6 +32,7 @@ import {
   readDadaFeedbackPreferences,
 } from './dada3b/feedback.js';
 import DadaOnline from './dada3b/DadaOnline.jsx';
+import {COSMETICS,cosmeticWins,readCosmetics,saveCosmetics,unlockedCosmetic} from './dada3b/cosmetics.js';
 import './dada3b.css';
 
 const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -160,6 +161,19 @@ function SeatCard({ seat, country, aiLevel, onChange }) {
       </div>
     </article>
   );
+}
+
+function CosmeticSelector({type,value,record,onChange}) {
+  return <div className="dada3b-cosmetic-group">
+    <span>{type==='dice'?'Dé':type==='totem'?'Totem':'Trace'}</span>
+    <div>{COSMETICS[type].map(item=>{
+      const unlocked=unlockedCosmetic(item,record);
+      return <button type="button" key={item.id} data-cosmetic={item.id} aria-pressed={value===item.id}
+        disabled={!unlocked} onClick={()=>onChange(item.id)}>
+        <b>{item.name}</b><small>{unlocked?item.detail:`Débloqué à ${item.wins} victoire${item.wins>1?'s':''}`}</small>
+      </button>;
+    })}</div>
+  </div>;
 }
 
 function RuleToggle({ checked, onChange, title, detail }) {
@@ -336,10 +350,11 @@ function Tutorial({ step, onNext, onClose }) {
   );
 }
 
-export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAccount }) {
+export default function Dada3B({ saved, record, onClose, onCheckpoint, saveMessage, onAccount }) {
   const resumeCandidate = useMemo(() => safeSaved(saved), [saved]);
   const [seats, setSeats] = useState(initialSeats);
   const [onlineOpen, setOnlineOpen] = useState(false);
+  const [cosmetics, setCosmetics] = useState(() => readCosmetics(record));
   const [rules, setRules] = useState({ ...DEFAULT_RULES });
   const [match, setMatch] = useState(null);
   const [lastSeats, setLastSeats] = useState(null);
@@ -369,6 +384,14 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAc
     sequence.current += 1;
     feedback.current?.close();
   }, []);
+
+  useEffect(() => {
+    setCosmetics((current) => saveCosmetics(current, record));
+  }, [record?.wins]);
+
+  function chooseCosmetic(type, id) {
+    setCosmetics((current) => saveCosmetics({ ...current, [type]: id }, record));
+  }
 
   function persist(next) {
     if (!next) return;
@@ -708,12 +731,18 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAc
   const activeSeats = seats.filter((seat) => seat.type !== 'off');
 
   if (onlineOpen && !match) {
-    return <DadaOnline onBack={() => setOnlineOpen(false)} onClose={onClose} onAccount={onAccount} />;
+    return <DadaOnline
+      record={record}
+      onValidatedResult={(result) => onCheckpoint?.(result, 'dada3b', true)}
+      onBack={() => setOnlineOpen(false)}
+      onClose={onClose}
+      onAccount={onAccount}
+    />;
   }
 
   if (!match) {
     return (
-      <div className="dada3b-shell" role="dialog" aria-modal="true" aria-label="DADA 3B — configuration">
+      <div className="dada3b-shell" data-dice={cosmetics.dice} data-totem={cosmetics.totem} data-trail={cosmetics.trail} role="dialog" aria-modal="true" aria-label="DADA 3B — configuration">
         <header className="dada3b-topbar">
           <div>
             <small>Jeux 3B · Gold Master</small>
@@ -829,6 +858,16 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAc
               ))}
             </div>
 
+            <div className="dada3b-section-title">
+              <div><span className="dada3b-kicker">Cosmétiques</span><h3>Personnalisation sans avantage</h3></div>
+              <span>{cosmeticWins(record)} victoire(s)</span>
+            </div>
+            <div className="dada3b-cosmetics-panel">
+              <CosmeticSelector type="dice" value={cosmetics.dice} record={record} onChange={(id) => chooseCosmetic('dice', id)} />
+              <CosmeticSelector type="totem" value={cosmetics.totem} record={record} onChange={(id) => chooseCosmetic('totem', id)} />
+              <CosmeticSelector type="trail" value={cosmetics.trail} record={record} onChange={(id) => chooseCosmetic('trail', id)} />
+            </div>
+
             <div className="dada3b-launch">
               <span role="status">
                 {activeSeats.length} pays · {activeSeats.filter((seat) => seat.type === 'human').length} humain(s) · {activeSeats.filter((seat) => seat.type === 'bot').length} IA
@@ -853,7 +892,7 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAc
     : `${Math.floor(matchRemaining / 60)}:${String(matchRemaining % 60).padStart(2, '0')}`;
 
   return (
-    <div className="dada3b-shell" role="dialog" aria-modal="true" aria-label="DADA 3B — partie">
+    <div className="dada3b-shell" data-dice={cosmetics.dice} data-totem={cosmetics.totem} data-trail={cosmetics.trail} role="dialog" aria-modal="true" aria-label="DADA 3B — partie">
       <header className="dada3b-topbar">
         <div>
           <small>Le Cercle des 8 Portes · Manche {match.round}{timeText ? ` · Partie ${timeText}` : ''}</small>
