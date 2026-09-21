@@ -20,6 +20,11 @@
       "critical": true
     },
     {
+      "path": "/Game/3B/World/France/Data/DA_FranceRegion",
+      "kind": "ThreeBRegionDefinition",
+      "critical": true
+    },
+    {
       "path": "/Game/3B/Player/BP_ThreeBCharacter",
       "kind": "Blueprint",
       "critical": true
