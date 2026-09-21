@@ -11,6 +11,7 @@ import {RESONANCE_CONTEXT_CONTRACTS,resonanceContextCandidate,resonanceContextMe
 import {GUARDIAN_COMBAT_RULES,validateGuardianCombatRules} from '../src/world/guardian-combat.js';
 import {FINAL_CIRCLE_PHASES,finalCirclePhase,validateFinalCircle} from '../src/world/final-circle.js';
 import {CONTROL_ACTIONS,defaultControlBindings,normalizeControlBindings,setPrimaryControl,controlMatches,actionHeld,controlLabel,validateControlBindings} from '../src/world/control-bindings.js';
+import {PHYSICAL_TRAVERSAL_ACTIONS,traversalPlan,traversalPose,shortenTraversalPlan,validateTraversalProfiles} from '../src/world/traversal-motion.js';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {validPose,validRuntimeMember,mergeRuntimePeers,partyRuntimeRequest} from '../src/world/cooperation.js';
@@ -352,6 +353,28 @@ test('guardian fights and the final confrontation expose eight distinct gameplay
  assert.equal(finalCirclePhase({final:true,enemy:700,enemyMax:800}).index,2);
  assert.equal(finalCirclePhase({final:true,enemy:400,enemyMax:800}).index,5);
  assert.equal(finalCirclePhase({final:true,enemy:0,enemyMax:800}).index,8);
+});
+
+test('premium traversal actions use timed physical paths before mission validation',()=>{
+ assert.equal(validateTraversalProfiles(),true);
+ assert.deepEqual(PHYSICAL_TRAVERSAL_ACTIONS,['vault','climb','zipline','swim','dive']);
+ for(const id of PHYSICAL_TRAVERSAL_ACTIONS){
+  const plan=traversalPlan(id,{x:0,z:0},{x:2,z:0},90,260);assert.ok(plan.distance>=3,id);assert.ok(plan.duration>=300,id);
+  const start=traversalPose(plan,0),middle=traversalPose(plan,plan.duration/2),end=traversalPose(plan,plan.duration);
+  assert.equal(start.progress,0);assert.equal(end.progress,1);assert.equal(end.done,true);assert.deepEqual({x:end.x,z:end.z},plan.to);
+  assert.ok(Math.abs(middle.lift)>0,id+' lift');
+  const shorter=shortenTraversalPlan(plan,.5);assert.ok(shorter.distance<plan.distance);assert.ok(shorter.duration<plan.duration);
+ }
+ const rooftop=HUB_MISSION_ACTION_PLANS.rooftops_circle.flat().map(action=>action.verb);
+ const underwater=HUB_MISSION_ACTION_PLANS.memory_under_water.flat().map(action=>action.verb);
+ assert.ok(rooftop.includes('vault')&&rooftop.includes('zipline'));
+ assert.ok(underwater.includes('dive')&&underwater.includes('swim'));
+ const page=read('src/world/WorldPage.jsx'),scene=read('src/world/scene.js');
+ assert.match(scene,/performTraversal\(actionId,item\)/);
+ assert.match(scene,/contextTraversal/);
+ const perform=page.indexOf("performTraversal?.(contextAction.id,item)");
+ const record=page.indexOf("type:'hubMissionAction'");
+ assert.ok(perform>=0&&record>perform,'physical traversal must complete before authoritative mission action');
 });
 
 test('core controls are remappable by action and preserve AZERTY WASD and arrow fallbacks',()=>{
