@@ -1,13 +1,14 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "slice_id": "france_justice_v1",
-  "purpose": "Preproduction contract for non-Guardian France NPC roles, contextual dialogue and persistent memory boundaries.",
+  "purpose": "Preproduction contract for France population roles, scalable routines, contextual dialogue and persistent memory boundaries.",
   "authority_model": {
     "local": [
       "subtitle_rendering",
       "conversation_camera",
       "choice_highlight",
-      "ambient_barks"
+      "ambient_barks",
+      "routine_presentation"
     ],
     "server_verified": [
       "persistent_memory",
@@ -16,13 +17,193 @@
       "justice_trial_outcome",
       "guardian_liberated"
     ],
-    "rule": "Dialogue may request a durable change; only authoritative story state may confirm it."
+    "rule": "Dialogue and routines may request or present change; only authoritative story state may confirm durable progression."
   },
   "localization": {
     "final_dialogue_in_json": false,
     "key_prefix": "france.dialogue",
     "rule": "Store intent and localization keys here; final localized copy belongs in Unreal localization assets."
   },
+  "population_rules": {
+    "districts_required": 8,
+    "active_ai_controller_budget": 48,
+    "simulation_tiers": [
+      {
+        "id": "near",
+        "distance_cm": 12000,
+        "mode": "full_ai_navigation_dialogue"
+      },
+      {
+        "id": "mid",
+        "distance_cm": 30000,
+        "mode": "scheduled_low_frequency"
+      },
+      {
+        "id": "far",
+        "distance_cm": 60000,
+        "mode": "presentation_proxy_no_ai_controller"
+      }
+    ],
+    "tick_rule": "Prefer events, timers and StateTree tasks; no per-frame routine tick for the full population.",
+    "streaming_rule": "Population unloads with its World Partition cell unless mission-persistent.",
+    "weather_reaction": true,
+    "liberation_reaction": true
+  },
+  "routine_profiles": [
+    {
+      "id": "resident_daily",
+      "slots": {
+        "morning": "home_to_local_activity",
+        "day": "district_activity",
+        "evening": "social_or_return",
+        "night": "home_or_reduced_population"
+      }
+    },
+    {
+      "id": "shopkeeper_daily",
+      "slots": {
+        "morning": "open_shop",
+        "day": "serve_and_stock",
+        "evening": "close_shop",
+        "night": "offscreen_or_home"
+      }
+    },
+    {
+      "id": "artisan_shift",
+      "slots": {
+        "morning": "workshop_open",
+        "day": "craft_work",
+        "evening": "clean_close",
+        "night": "offscreen"
+      }
+    },
+    {
+      "id": "archive_service",
+      "slots": {
+        "morning": "prepare_archive",
+        "day": "public_service",
+        "evening": "close_archive",
+        "night": "restricted_presence"
+      }
+    },
+    {
+      "id": "civic_service",
+      "slots": {
+        "morning": "briefing",
+        "day": "mediation_and_cases",
+        "evening": "public_followup",
+        "night": "reduced_watch"
+      }
+    },
+    {
+      "id": "reconstruction_shift",
+      "slots": {
+        "morning": "site_brief",
+        "day": "repair_activity",
+        "evening": "community_update",
+        "night": "secured_site"
+      }
+    },
+    {
+      "id": "sentinel_watch",
+      "slots": {
+        "morning": "patrol",
+        "day": "patrol",
+        "evening": "patrol_shift",
+        "night": "night_watch"
+      }
+    },
+    {
+      "id": "roaming_civilian",
+      "slots": {
+        "morning": "commute",
+        "day": "ambient_activity",
+        "evening": "social",
+        "night": "despawn_or_home"
+      }
+    }
+  ],
+  "population_archetypes": [
+    {
+      "district_id": "france_centre",
+      "target_population": 28,
+      "roles": [
+        "resident",
+        "merchant",
+        "civic_worker",
+        "roaming_civilian"
+      ]
+    },
+    {
+      "district_id": "france_populaire",
+      "target_population": 34,
+      "roles": [
+        "resident",
+        "merchant",
+        "artisan",
+        "roaming_civilian"
+      ]
+    },
+    {
+      "district_id": "france_ancien",
+      "target_population": 22,
+      "roles": [
+        "resident",
+        "historian",
+        "merchant",
+        "sentinel"
+      ]
+    },
+    {
+      "district_id": "france_residentiel",
+      "target_population": 26,
+      "roles": [
+        "resident",
+        "family_group",
+        "roaming_civilian"
+      ]
+    },
+    {
+      "district_id": "france_artisanat",
+      "target_population": 24,
+      "roles": [
+        "artisan",
+        "worker",
+        "rescue_support",
+        "merchant"
+      ]
+    },
+    {
+      "district_id": "france_culture",
+      "target_population": 20,
+      "roles": [
+        "archive_staff",
+        "visitor",
+        "historian",
+        "sentinel"
+      ]
+    },
+    {
+      "district_id": "france_monumental",
+      "target_population": 18,
+      "roles": [
+        "civic_worker",
+        "mediator",
+        "sentinel",
+        "visitor"
+      ]
+    },
+    {
+      "district_id": "france_peripherie",
+      "target_population": 12,
+      "roles": [
+        "resident",
+        "ranger",
+        "roaming_civilian",
+        "hidden_npc"
+      ]
+    }
+  ],
   "dialogue_intents": [
     {
       "id": "ask_context",
@@ -53,6 +234,8 @@
     {
       "id": "resident_witness_a",
       "zone": "residential",
+      "district_id": "france_residentiel",
+      "routine": "resident_daily",
       "active_phases": [
         "human_problem",
         "investigation"
@@ -70,6 +253,8 @@
     {
       "id": "resident_witness_b",
       "zone": "community_square",
+      "district_id": "france_centre",
+      "routine": "resident_daily",
       "active_phases": [
         "human_problem",
         "investigation"
@@ -87,6 +272,8 @@
     {
       "id": "archive_clerk",
       "zone": "civic_archive",
+      "district_id": "france_culture",
+      "routine": "archive_service",
       "active_phases": [
         "investigation"
       ],
@@ -102,6 +289,8 @@
     {
       "id": "rescue_coordinator",
       "zone": "rescue_site",
+      "district_id": "france_artisanat",
+      "routine": "artisan_shift",
       "active_phases": [
         "rescue",
         "aftermath"
@@ -118,6 +307,8 @@
     {
       "id": "civic_mediator",
       "zone": "tribunal",
+      "district_id": "france_monumental",
+      "routine": "civic_service",
       "active_phases": [
         "pressure",
         "justice_trial",
@@ -136,6 +327,8 @@
     {
       "id": "reconstruction_lead",
       "zone": "post_liberation_hub",
+      "district_id": "france_centre",
+      "routine": "reconstruction_shift",
       "active_phases": [
         "aftermath",
         "return_nexus"
@@ -152,6 +345,8 @@
     {
       "id": "roaming_resident",
       "zone": "community_square",
+      "district_id": "france_populaire",
+      "routine": "roaming_civilian",
       "active_phases": [
         "human_problem",
         "aftermath"
@@ -162,8 +357,56 @@
         "reflect_outcome"
       ],
       "post_liberation_behavior": "ambient_social_life"
+    },
+    {
+      "id": "periphery_ranger",
+      "zone": "gate_arrival",
+      "district_id": "france_peripherie",
+      "routine": "sentinel_watch",
+      "active_phases": [
+        "arrival",
+        "human_problem",
+        "aftermath"
+      ],
+      "memory_fact_keys": [],
+      "intents": [
+        "ask_context",
+        "reflect_outcome"
+      ],
+      "post_liberation_behavior": "opens_lower_routes"
+    },
+    {
+      "id": "historic_keeper",
+      "zone": "residential",
+      "district_id": "france_ancien",
+      "routine": "resident_daily",
+      "active_phases": [
+        "investigation",
+        "aftermath"
+      ],
+      "memory_fact_keys": [],
+      "intents": [
+        "ask_context",
+        "reflect_outcome"
+      ],
+      "post_liberation_behavior": "reveals_restored_history"
     }
   ],
+  "world_reactions": {
+    "weather": {
+      "LIGHT_RAIN": "seek_partial_cover_or_use_rain_idle",
+      "HEAVY_RAIN": "reduce_ambient_roaming",
+      "STORM": "shelter_non_mission_civilians",
+      "POST_RAIN": "resume_activity_gradually"
+    },
+    "liberation": {
+      "pre_justice": "tense_and_guarded",
+      "justice_crisis": "reactive_and_concerned",
+      "celiane_liberated": "witness_release",
+      "reconstruction": "repair_and_reopen",
+      "post_liberation": "stable_living_routines"
+    }
+  },
   "guardian_reference": {
     "id": "celiane",
     "contract": "celiane-state-tree-spec.json",
