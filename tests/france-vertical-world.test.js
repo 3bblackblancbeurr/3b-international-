@@ -362,3 +362,39 @@ test('runtime population definition preserves named France NPC roles and routine
     assert.ok(role.active_phases.length>0,role.id);
   }
 });
+
+
+test('mission subsystem filters availability without granting progression',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionSubsystem.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionSubsystem.cpp');
+  assert.match(header,/UGameInstanceSubsystem/);
+  assert.match(header,/IsMissionAvailable/);
+  assert.match(header,/GetAvailableMissionIds/);
+  assert.match(source,/AvailablePhaseIds\.Contains\(CurrentPhaseId\)/);
+  assert.match(source,/RequiredWorldStateIds\.Contains\(CurrentWorldStateId\)/);
+  assert.doesNotMatch(header+source,/grant|reward|fragment|inventory|guardian/i);
+});
+
+test('population subsystem resolves distance tier and daily routine without a global Tick',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationSubsystem.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationSubsystem.cpp');
+  assert.match(header,/UWorldSubsystem/);
+  assert.match(header,/EThreeBDayPeriod/);
+  assert.match(header,/ResolveSimulationTier/);
+  assert.match(header,/ResolveRoutineActivity/);
+  assert.match(header,/CanActivateFullAi/);
+  assert.match(source,/ActiveAiControllerBudget/);
+  assert.doesNotMatch(header+source,/Tick\(/);
+  assert.doesNotMatch(header+source,/SpawnActor|spawn_actor/i);
+});
+
+test('region definition owns soft runtime references for missions population and weather',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBRegionDefinition.h');
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(header,/TSoftObjectPtr<UThreeBMissionCatalog> MissionCatalog/);
+  assert.match(header,/TSoftObjectPtr<UThreeBPopulationDefinition> PopulationDefinition/);
+  assert.match(header,/TSoftObjectPtr<UThreeBWeatherProfile> WeatherProfile/);
+  assert.match(bootstrap,/mission_catalog/);
+  assert.match(bootstrap,/population_definition/);
+  assert.match(bootstrap,/weather_profile/);
+});
