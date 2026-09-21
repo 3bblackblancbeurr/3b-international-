@@ -49,3 +49,10 @@ test('premium shell includes mobile performance and reduced-motion safeguards',(
  assert.match(css,/home-journey-status/);
  assert.match(css,/app-crash/);
 });
+
+
+test('installed app exposes shortcuts to the three core 3B journeys',()=>{
+ const manifest=JSON.parse(read('public/manifest.webmanifest'));
+ assert.deepEqual(manifest.shortcuts.map(item=>item.url),['/#passeport','/#monde-3b','/#boutique']);
+ assert.ok(manifest.categories.includes('lifestyle'));
+});
