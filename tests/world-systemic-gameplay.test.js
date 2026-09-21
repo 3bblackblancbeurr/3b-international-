@@ -69,7 +69,7 @@ test('central mission index distinguishes all eight guardian campaigns and indep
  for(const mission of guardians){
   assert.ok(mission.phases.length>=8,mission.region);
   assert.ok(mission.gameplay.length>=4,mission.region);
-  assert.equal(mission.implementation,'hybrid');
+  assert.equal(mission.implementation,mission.region==='france'?'runtime':'hybrid',mission.region);
  }
  assert.equal(INDEPENDENT_MISSION_ARCHETYPES.length,16);
  assert.equal(new Set(INDEPENDENT_MISSION_ARCHETYPES.map(m=>m.id)).size,16);
