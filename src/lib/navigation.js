@@ -8,7 +8,9 @@ export function readLocation(location = window.location) {
   const search = location.search || "";
   const params = new URLSearchParams(search);
   const checkout = params.get("checkout");
-  const page = ["success", "cancel"].includes(checkout) ? "shop"
+  const authReturn = params.get("reset") === "1" || params.get("auth") === "confirmed";
+  const page = authReturn ? "member"
+    : ["success", "cancel"].includes(checkout) ? "shop"
     : location.hash === "#musique" ? "religion" : Object.entries(PAGE_HASHES).find(([, hash]) => `#${hash}` === location.hash)?.[0] || "intro";
   return { page, search };
 }
@@ -18,6 +20,8 @@ export function navigateTo(page) {
   const url = new URL(window.location.href);
   url.searchParams.delete("checkout");
   url.searchParams.delete("session_id");
+  url.searchParams.delete("auth");
+  url.searchParams.delete("reset");
   url.hash = PAGE_HASHES[target];
   if (url.href !== window.location.href) window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
 }
