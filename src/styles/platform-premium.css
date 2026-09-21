@@ -78,3 +78,48 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 .manga-preview-page .coming-label{font-size:11px;letter-spacing:.18em;color:#cdb57f}
 .secret-page .coming-copy{max-width:640px}
 @media(max-width:720px){.coming-status-grid{grid-template-columns:1fr}.manga-preview-mark{width:150px;height:150px}.manga-preview-mark span{font-size:72px}.coming-copy{font-size:13px;padding-inline:8px}}
+
+
+/* Dimensional bridge between the current 3B platform and the UE5 world client. */
+.world-portal{position:relative;display:grid;grid-template-columns:minmax(0,.92fr) minmax(360px,1.08fr);gap:clamp(24px,5vw,72px);align-items:center;min-height:460px;margin:0 0 34px;padding:clamp(24px,4vw,52px);overflow:hidden;border:1px solid #d9bb8238;border-radius:24px;background:radial-gradient(circle at 76% 42%,#00d5ff16,transparent 26%),radial-gradient(circle at 24% 18%,#e6bd6418,transparent 30%),linear-gradient(135deg,#0d151bf2,#070b0ef7 58%,#11130ff2);box-shadow:0 32px 90px #0007,inset 0 1px #ffffff0a}
+.world-portal::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,#d9bb8208 49%,transparent 61%);pointer-events:none}
+.world-portal-copy{position:relative;z-index:2}
+.world-portal-copy h2{max-width:650px;margin:12px 0 18px;font:500 clamp(34px,4.7vw,62px)/1.02 Georgia,serif;letter-spacing:-.045em;color:#f1e7d1}
+.world-portal-copy h2 em{color:#e0bf7f;font-style:normal}
+.world-portal-copy>p:not(.eyebrow):not(.world-portal-message){max-width:630px;margin:0;color:#aebbc0;font-size:14px;line-height:1.8}
+.world-portal-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}
+.world-portal-meta span{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 11px;border:1px solid #ffffff17;border-radius:999px;background:#ffffff05;color:#c6d2d5;font-size:10px;letter-spacing:.04em}
+.world-portal-meta svg{color:#d8bd82}
+.world-portal-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.world-portal-actions a{text-decoration:none}
+.world-portal-message{margin:13px 0 0;color:#d9c69c;font-size:12px}
+.world-portal-stage{position:relative;isolation:isolate;min-height:360px;perspective:980px;transform-style:preserve-3d}
+.world-portal-horizon{position:absolute;z-index:-2;inset:8% 3% 14%;border-radius:50%;background:radial-gradient(ellipse,#00d5ff18 0 17%,#00d5ff08 22%,transparent 63%);filter:blur(3px)}
+.world-portal-ring{position:absolute;left:50%;top:48%;width:min(390px,82%);aspect-ratio:1;transform:translate(-50%,-50%) rotateX(64deg) rotateZ(-10deg);border:1px solid #dfc17761;border-radius:50%;box-shadow:0 0 0 18px #d9bb8205,0 0 55px #00d5ff16,inset 0 0 46px #e6bd6412;transform-style:preserve-3d;animation:worldPortalFloat 9s ease-in-out infinite alternate}
+.world-portal-ring::before,.world-portal-ring::after{content:'';position:absolute;border-radius:50%;inset:12%;border:1px solid #00d5ff35;box-shadow:inset 0 0 34px #00d5ff0d}
+.world-portal-ring::after{inset:28%;border-color:#e6bd6450}
+.world-portal-core{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:126px;height:126px;transform:translate(-50%,-50%) translateZ(40px) rotateZ(10deg);border:1px solid #e6bd6485;border-radius:50%;background:radial-gradient(circle,#2b2416,#0a1015 68%);box-shadow:0 0 42px #e6bd642e,0 0 78px #00d5ff18}
+.world-portal-core span{font-size:48px;font-weight:950;line-height:1;letter-spacing:-.09em;color:#e6c987;text-shadow:0 0 22px #e6bd6445}
+.world-portal-core small{margin-top:-26px;font-size:7px;letter-spacing:.28em;color:#9abac1}
+.world-gate{--angle:calc(var(--gate) * 45deg);position:absolute;left:50%;top:50%;display:grid;place-items:center;width:68px;height:68px;transform:rotate(var(--angle)) translateX(194px) rotate(calc(-1 * var(--angle))) translate(-50%,-50%) translateZ(18px) rotateZ(10deg);border:1px solid #ffffff20;border-radius:16px;background:linear-gradient(145deg,#182229,#0c1116);box-shadow:0 10px 28px #0008,0 0 18px #00d5ff0b}
+.world-gate b{font-size:14px;color:#e3c987}
+.world-gate small{font-size:7px;color:#90a4aa}
+.world-portal-floor{position:absolute;z-index:-1;left:8%;right:8%;bottom:0;height:42%;transform:rotateX(69deg);transform-origin:bottom;background:linear-gradient(#00d5ff09 1px,transparent 1px),linear-gradient(90deg,#00d5ff09 1px,transparent 1px);background-size:38px 38px;mask-image:linear-gradient(to top,#000,transparent)}
+.world-portal-floor i{display:none}
+@keyframes worldPortalFloat{from{transform:translate(-50%,-50%) rotateX(64deg) rotateZ(-10deg) translateY(-4px)}to{transform:translate(-50%,-50%) rotateX(61deg) rotateZ(-7deg) translateY(5px)}}
+
+@media(max-width:900px){.world-portal{grid-template-columns:1fr;min-height:0}.world-portal-stage{min-height:340px;order:-1}}
+@media(max-width:720px){
+ .world-portal{gap:14px;margin-bottom:24px;padding:20px;border-radius:18px}
+ .world-portal-stage{min-height:250px}
+ .world-portal-ring{width:min(270px,82%)}
+ .world-gate{width:52px;height:52px;transform:rotate(var(--angle)) translateX(135px) rotate(calc(-1 * var(--angle))) translate(-50%,-50%) translateZ(14px) rotateZ(10deg)}
+ .world-gate small{display:none}
+ .world-portal-core{width:96px;height:96px}
+ .world-portal-core span{font-size:38px}
+ .world-portal-copy h2{font-size:35px}
+ .world-portal-actions{display:grid}
+ .world-portal-actions :is(a,button){width:100%}
+}
+[data-motion=reduced] .world-portal-ring{animation:none}
+@media(prefers-reduced-motion:reduce){.world-portal-ring{animation:none}}
