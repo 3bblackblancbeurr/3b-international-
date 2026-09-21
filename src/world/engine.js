@@ -13,6 +13,7 @@ import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_BUILDING_S
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
 import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
+import {HUB_DIALOGUE_INTENT_SET} from './hub/dialogue-intents.js';
 import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
 
@@ -131,6 +132,13 @@ export function applyWorldAction(input,action){
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.npcId),'Personnage Hub inconnu.');
    requireThat(HUB_DIALOGUE_CHOICE_SET.has(action.choiceId),'Choix de dialogue inconnu.');
    const history=[...(s.hub.stats.dialogueHistory||[]),{npcId:action.npcId,sceneId:String(action.sceneId||'scene').slice(0,48),choiceId:action.choiceId}].slice(-120);
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,dialogueHistory:history}}});
+  }
+  case 'hubDialogueIntent':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.npcId),'Personnage Hub inconnu.');
+   requireThat(HUB_DIALOGUE_INTENT_SET.has(action.intentId),'Sujet de conversation inconnu.');
+   const row={npcId:action.npcId,sceneId:'intent',choiceId:action.intentId},existing=s.hub.stats.dialogueHistory||[],last=existing.at(-1);
+   const history=last?.npcId===row.npcId&&last?.sceneId===row.sceneId&&last?.choiceId===row.choiceId?existing:[...existing,row].slice(-120);
    return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,dialogueHistory:history}}});
   }
   case 'hubDistrictVisit':{
