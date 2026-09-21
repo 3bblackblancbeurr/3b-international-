@@ -6,6 +6,7 @@ import {
   expirePossession,
   flowAfterAction,
   keeperPowerState,
+  recoverEnergy,
   resolveShot,
   settlePossession,
 } from './engine.js';
@@ -640,8 +641,11 @@ async function processInput(room:Room, uid:string, input:any) {
     state.positions.attacker.x = clamp(number(state.positions.attacker.x) + forward * speed * dt, 0, 1);
     state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.16 + intensity*.12) * dt, -.92, .92);
     state.ballLead = ballTouchDistance(intensity * (sprinting ? 1 : .78), style.control);
+    if (!sprinting && intensity < .42) {
+      state.energy[playerIndex] = recoverEnergy(number(state.energy[playerIndex],100), dt, false);
+    }
     state.lastMoveAt = at;
-    state.lastEvent = { type:'move', text:sprinting ? 'Accélération contrôlée.' : 'Lecture et placement.' };
+    state.lastEvent = { type:'move', text:sprinting ? 'Accélération contrôlée.' : intensity < .42 ? 'Tempo · énergie récupérée.' : 'Lecture et placement.' };
     return await commitRoom(room, {state}, uid, 'move', {x:state.positions.attacker.x,y:state.positions.attacker.y});
   }
 
@@ -691,7 +695,7 @@ async function processInput(room:Room, uid:string, input:any) {
     if (playerIndex !== state.attacker) throw new Failure(403, 'Seul l’attaquant peut frapper.');
     const progress = clamp(number(state.positions?.attacker?.x), 0, 1);
     const shot = normalizedShot(input, progress, room.players[playerIndex]?.styleId);
-    updateFlowState(state, playerIndex, type, true, room.players[playerIndex]?.styleId);
+    const flowBeforeShot = number(state.flow[playerIndex]);
 
     const intent = state.keeperIntent && at - number(state.keeperIntent.at) <= 950
       ? state.keeperIntent
@@ -702,8 +706,9 @@ async function processInput(room:Room, uid:string, input:any) {
       keeperX:number(state.positions?.keeper?.y),
       keeperGesture:intent,
       keeperEffect,
-      attackerFlow:number(state.flow[playerIndex]),
+      attackerFlow:flowBeforeShot,
     });
+    updateFlowState(state, playerIndex, type, result.goal, room.players[playerIndex]?.styleId);
     const keeperIndex = state.keeper;
     const statsA = state.matchStats[playerIndex];
     const statsK = state.matchStats[keeperIndex];
