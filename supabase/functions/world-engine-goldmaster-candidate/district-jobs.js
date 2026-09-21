@@ -38,10 +38,11 @@ export const DISTRICT_JOBS=Object.freeze({
   stage(a('rescue:escort1','Accompagner la première personne jusqu’au point sûr','support',49,10),a('rescue:carry2','Porter la deuxième personne jusqu’au point sûr','carry',54,15)),
   stage(a('rescue:return','Revenir au refuge et confirmer l’évacuation','talk',27,25)),
  ]}),
- signal_watch:job('Le signal qui décroche','Inspecte le relais, réaligne deux éléments différents puis confirme la stabilité du signal.',{reward:{stone:2,wood:1},xp:40,shards:7,target:[-45,-99],steps:[
+ signal_watch:job('Le signal qui décroche','Diagnostique le relais, répare ses deux modules, assemble le pont de synchronisation puis confirme la stabilité du signal.',{reward:{stone:2,wood:1},xp:40,shards:7,target:[-45,-99],steps:[
   stage(a('signal:inspect','Diagnostiquer le relais','scan',-51,-92)),
-  stage(a('signal:align1','Réaligner le premier module','repair',-47,-97),a('signal:align2','Réaligner le deuxième module','repair',-41,-102)),
-  stage(a('signal:confirm','Confirmer la stabilité du signal','observe',-36,-105)),
+  stage(a('signal:align1','Réparer le premier module','repair',-47,-97),a('signal:align2','Réparer le deuxième module','repair',-41,-102)),
+  stage(a('signal:bridge','Assembler le pont de synchronisation','assemble',-38,-104)),
+  stage(a('signal:confirm','Confirmer la stabilité du signal','observe',-34,-106)),
  ]}),
 });
 
