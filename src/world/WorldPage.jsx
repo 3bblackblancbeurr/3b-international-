@@ -49,6 +49,7 @@ import {cityUnlockGuide,cityUnlockGuideRequested,cityUnlockGuideStorage} from '.
 import {primaryContextAction,actionFeedback} from './interaction-system.js';
 import {guardianHubState} from './guardian-relations.js';
 import {resonanceFor,unlockedResonances} from './guardian-resonances.js';
+import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,loadControlBindings,saveControlBindings,setPrimaryControl,controlLabel} from './control-bindings.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -75,7 +76,7 @@ export default function WorldPage({goTo}){const account=useLoyalty();return acco
 
 function WorldSession({uid,goTo}){
  const[save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[snapshot,setSnapshot]=useState({region:'hub',position:{x:0,z:9}}),[panel,setPanel]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[saveMessage,setSaveMessage]=useState('Chargement de la sauvegarde…'),[gps,setGPS]=useState(false),[gpsMessage,setGPSMessage]=useState('Le GPS est désactivé.'),[walkSession,setWalkSession]=useState(0),[sound,setSound]=useState(false);
- const [worldRequested,setWorldRequested]=useState(false),[haptics,setHaptics]=useState(()=>{try{return localStorage.getItem('3b-world-haptics')!=='0';}catch{return true;}});
+ const [worldRequested,setWorldRequested]=useState(false),[haptics,setHaptics]=useState(()=>{try{return localStorage.getItem('3b-world-haptics')!=='0';}catch{return true;}}),[controls,setControls]=useState(()=>loadControlBindings());
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const [audioMix,setAudioMix]=useState(()=>{try{return {...DEFAULT_AUDIO_MIX,...JSON.parse(localStorage.getItem('3b-world-audio-mix')||'{}')}}catch{return {...DEFAULT_AUDIO_MIX}}});
  const [cityUnlockMission,setCityUnlockMission]=useState(()=>cityUnlockGuideRequested());
@@ -88,6 +89,7 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{const orientation=globalThis.screen?.orientation;orientation?.lock?.('landscape').catch(()=>{});return()=>orientation?.unlock?.();},[]);
  const cityGuide=useMemo(()=>cityUnlockGuide(save),[save]);
  const announce=useCallback(text=>{setNotice(text);clearTimeout(noticeTimer.current);noticeTimer.current=setTimeout(()=>setNotice(''),2400);},[]);
+ const updateControl=useCallback((action,key)=>{setControls(current=>saveControlBindings(setPrimaryControl(current,action,key)));},[]);
  useEffect(()=>{if(cityUnlockMission&&cityGuide.unlocked){cityUnlockGuideStorage(false);setCityUnlockMission(false);announce('Ville 3B débloquée · ton premier Souvenir est enregistré.');}},[cityUnlockMission,cityGuide.unlocked,announce]);
  const enqueueCinematics=useCallback(events=>{
   if(!events?.length)return;
@@ -208,7 +210,7 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
   if(!loaded||!worldRequested)return;
-  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);ready.current=true;}
+  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);scene.current.setControls?.(controls);ready.current=true;}
   catch{setError('Le navigateur n’a pas pu ouvrir la 3D. Active l’accélération graphique ou essaie un autre navigateur. Ta sauvegarde est conservée.');}
   return()=>{ready.current=false;scene.current?.destroy();scene.current=null;};
  },[loaded,worldRequested]);
@@ -218,6 +220,7 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{partyLink.current?.pose({region:snapshot.region,x:snapshot.position.x,z:snapshot.position.z,heading:snapshot.heading||0});},[snapshot]);
  useEffect(()=>{scene.current?.setParty(partyState?.party);},[partyState,loaded]);
  useEffect(()=>{scene.current?.setSave(save);if(!loaded||!dirty.current)return;clearTimeout(saveTimer.current);saveTimer.current=setTimeout(sync,1200);return()=>clearTimeout(saveTimer.current);},[save,loaded]);
+ useEffect(()=>{scene.current?.setControls?.(controls);},[controls]);
  useEffect(()=>{
   const hidden=()=>{audio.current?.visibility(document.hidden);if(document.hidden){stopGPS('GPS arrêté en arrière-plan. Réactive-le pour une nouvelle sortie.');if(dirty.current)saveWorld(uid,saveRef.current);} };
   document.addEventListener('visibilitychange',hidden);
@@ -240,11 +243,11 @@ function WorldSession({uid,goTo}){
  async function importSave(event){const file=event.target.files?.[0];if(!file)return;try{if(file.size>300000)throw Error();const raw=JSON.parse(await file.text());if(raw.version!==1||!raw.collection)throw Error();if(uid){announce('Les comptes restaurent leur progression depuis le serveur. Ta copie peut être utilisée en mode invité.');return;}const restored=normalizeSave(raw);setSave(restored);saveRef.current=restored;scene.current?.setSave(restored);writeLocal(null,restored);dirty.current=true;scene.current?.travel(restored.region);announce('Ta copie de sauvegarde a été restaurée.');}catch{announce('Ce fichier n’est pas une sauvegarde du Monde 3B valide.');}event.target.value='';}
  return <section ref={shell} className="world-shell" aria-label="Le Monde du 3B">
   <div className="world-rotate-device" role="status"><RotateCcw/><strong>Tourne ton téléphone</strong><span>Le Monde du 3B se joue en horizontal.</span></div>
-  <canvas ref={canvas} className="world-canvas" tabIndex={0} aria-label="Monde 3D. Glisse à gauche pour avancer, à droite pour tourner la caméra. Flèches ou ZQSD, E pour interagir."/>
+  <canvas ref={canvas} className="world-canvas" tabIndex={0} aria-label={"Monde 3D. Glisse à gauche pour avancer, à droite pour tourner la caméra. "+controlLabel(controls,'interact')+" pour interagir."}/>
   <div className="world-vignette"/>
   {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>} 
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
-  <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
+  <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading} controls={controls}/>
   {uid&&loaded&&cityUnlockMission&&!cityGuide.unlocked&&!panel&&<aside className="world-city-unlock-guide" aria-label="Mission de déblocage Ville 3B">
    <button className="world-city-unlock-dismiss" aria-label="Masquer la mission Ville 3B" onClick={()=>{cityUnlockGuideStorage(false);setCityUnlockMission(false);}}>×</button>
    <small>VILLE 3B · ÉTAPE {cityGuide.step}/{cityGuide.total}</small>
