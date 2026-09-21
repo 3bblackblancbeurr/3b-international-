@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 112,
+  "count": 114,
   "migrations": [
     {
       "version": "20260910020445",
@@ -563,6 +563,16 @@
       "version": "20260921141028",
       "name": "world_unreal_launch_bridge_v1",
       "sha256": "d65052b4be5e7d09bb4d87a73bc8627c69df568b2eb471df7ebc672debf24f80"
+    },
+    {
+      "version": "20260921154102",
+      "name": "ai_council_core_v1",
+      "sha256": "b54048cc719cbac5c9c6d01a445598b28c161c41453d0efc9e48eaddca69511e"
+    },
+    {
+      "version": "20260921154300",
+      "name": "ai_council_reviewed_run_index_v1",
+      "sha256": "bd30c93f2082d9e2efabd4550ffa3f019c4315bc3ae81ad1c751ed00eb9c0d18"
     }
   ]
 }
