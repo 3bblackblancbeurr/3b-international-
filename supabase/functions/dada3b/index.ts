@@ -525,7 +525,11 @@ async function startRoom(room:Room,actor:string){
     if((room.players||[]).length!==4)throw new Failure(409,'Le 2v2 demande exactement quatre joueurs.');
     if(room.players.filter((player:any)=>player.team==='A').length!==2||room.players.filter((player:any)=>player.team==='B').length!==2)throw new Failure(409,'Le 2v2 demande deux joueurs dans chaque équipe.');
   }
-  const state=createMatch((room.players||[]).map((player:any)=>({
+  const refreshedPlayers=await Promise.all((room.players||[]).map(async(player:any)=>({
+    ...player,
+    cosmetics:UUID.test(player.uid||'')?await loadoutFor(player.uid).catch(()=>player.cosmetics||{...DEFAULT_LOADOUT}):player.cosmetics||{...DEFAULT_LOADOUT},
+  })));
+  const state=createMatch(refreshedPlayers.map((player:any)=>({
     countryId:player.countryId,
     type:'human',
     name:player.name,
@@ -538,6 +542,7 @@ async function startRoom(room:Room,actor:string){
     : 4*60*60_000;
 
   return await commitRoom(room,{
+    players:refreshedPlayers,
     state,
     status:'active',
     turn_deadline:deadlineFor(state),
