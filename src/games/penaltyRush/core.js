@@ -172,7 +172,10 @@ export function resolveShot({ shot, keeperX = 0, keeperGesture, keeperEffect, at
   const flowBonus = clamp(attackerFlow / 100, 0, 1) * 0.055;
   const precision = clamp(shot.precision + flowBonus, 0.55, 1);
   const curveOffset = shot.curve * 0.16;
-  const target = clamp(shot.targetX + curveOffset * precision, -1, 1);
+  const disruption = keeperEffect?.id === 'impulse'
+    ? Math.sign(shot.targetX || 1) * Number(keeperEffect.disruption || 0)
+    : 0;
+  const target = clamp(shot.targetX + curveOffset * precision + disruption, -1, 1);
   const shotHeight = clamp(shot.targetY, 0, 1);
 
   let center = clamp(keeperX, -1, 1);
@@ -195,13 +198,6 @@ export function resolveShot({ shot, keeperX = 0, keeperGesture, keeperEffect, at
 
   if (keeperEffect?.reach) reach *= keeperEffect.reach;
   if (keeperEffect?.phantom) reach += keeperEffect.phantom * 0.38;
-  if (keeperEffect?.id === 'impulse') {
-    const displaced = clamp(target + Math.sign(target || 1) * keeperEffect.disruption, -1, 1);
-    if (Math.abs(displaced) > Math.abs(target)) {
-      shot = { ...shot, targetX: displaced };
-    }
-  }
-
   const horizontalGap = Math.abs(target - center);
   const verticalFactor = shotHeight <= heightReach ? 1 : clamp(1 - (shotHeight - heightReach) * 2.2, 0.42, 1);
   const powerEscape = clamp((shot.power - 0.68) * 0.18, 0, 0.06);
