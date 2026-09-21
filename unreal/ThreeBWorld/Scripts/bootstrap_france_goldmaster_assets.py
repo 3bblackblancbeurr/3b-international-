@@ -47,18 +47,26 @@ def reflected(name: str):
     return value
 
 
+def reflected_type_name(obj) -> str:
+    try:
+        return obj.get_class().get_name()
+    except Exception:
+        return type(obj).__name__
+
+
 def safe_set(obj, property_name: str, value, *, required: bool = True) -> bool:
     try:
         obj.set_editor_property(property_name, value)
         return True
     except Exception as exc:
+        object_name = reflected_type_name(obj)
         if required:
             raise RuntimeError(
-                f"Failed to set {obj.get_class().get_name()}.{property_name}: {exc}"
+                f"Failed to set {object_name}.{property_name}: {exc}"
             ) from exc
         unreal.log_warning(
             f"[3B France] optional property skipped: "
-            f"{obj.get_class().get_name()}.{property_name}: {exc}"
+            f"{object_name}.{property_name}: {exc}"
         )
         return False
 
@@ -283,7 +291,7 @@ def fill_population_asset(asset, source: dict[str, Any]) -> None:
     safe_set(asset, "archetypes", archetypes)
 
 
-def fill_weather_asset(asset, source: dict[str, Any]) -> None:
+def fill_weather_asset(asset, source: dict[str, Any], story_source: dict[str, Any]) -> None:
     safe_set(asset, "profile_id", make_name("france_weather"))
     weather_enum = reflected("ThreeBWeatherState")
     safe_set(asset, "default_state", weather_enum.LOW_CLOUD)
@@ -312,6 +320,18 @@ def fill_weather_asset(asset, source: dict[str, Any]) -> None:
         safe_set(value, "cloud_relation", make_name(item["cloud_relation"]))
         profiles.append(value)
     safe_set(asset, "altitude_profiles", profiles)
+
+    state_tags = {
+        item["id"]: item["tag"]
+        for item in story_source.get("world_states", [])
+    }
+    overrides = {}
+    for state_id, weather_id in source["weather_state_machine"].get("narrative_overrides", {}).items():
+        tag_name = state_tags.get(state_id)
+        if not tag_name:
+            raise RuntimeError(f"Missing gameplay tag for France world state: {state_id}")
+        overrides[make_name(tag_name)] = getattr(weather_enum, weather_id)
+    safe_set(asset, "world_state_overrides", overrides)
 
 
 def ensure_data_layer_instances(data_layers: list[Any]) -> None:
@@ -379,6 +399,7 @@ def main() -> None:
     missions = load_json("france-district-missions-v1.json")
     population = load_json("france-npc-dialogue-v1.json")
     presentation = load_json("france-presentation-v1.json")
+    story = load_json("france-justice-v1.json")
 
     ensure_directories(manifest)
 
@@ -398,7 +419,7 @@ def main() -> None:
     fill_region_asset(region_asset, layout)
     fill_mission_catalog(mission_asset, missions)
     fill_population_asset(population_asset, population)
-    fill_weather_asset(weather_asset, presentation)
+    fill_weather_asset(weather_asset, presentation, story)
 
     created_layers = []
     for entry in manifest.get("required_assets", []):
