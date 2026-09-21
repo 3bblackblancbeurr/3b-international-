@@ -219,6 +219,13 @@ async function saveProfile(uid:string, input:any) {
   const displayName = String(input?.displayName || current.display_name).trim().slice(0, 24);
   if (displayName.length < 2) throw new Failure(400, 'Le prénom ou pseudo doit contenir au moins 2 caractères.');
   const countryId = COUNTRY_IDS.has(String(input?.countryId)) ? String(input.countryId) : current.country_id;
+  if (countryId !== current.country_id) {
+    const ratingRows = await admin('/rest/v1/penalty_ratings?user_id=eq.' + encodeURIComponent(uid) + '&select=games&limit=1');
+    const games = Array.isArray(ratingRows) && ratingRows[0] ? number(ratingRows[0].games) : 0;
+    if (games > 0 || number(current.international_caps) > 0) {
+      throw new Failure(409, 'Ton pays de carrière est verrouillé après ton premier duel officiel.');
+    }
+  }
   const styleId = STYLES.has(String(input?.styleId)) ? String(input.styleId) : current.style_id;
   const shirtName = String(input?.shirtName || current.shirt_name).trim().toUpperCase().slice(0, 14);
   const shirtNumber = clamp(Math.trunc(number(input?.shirtNumber, current.shirt_number)), 1, 99);
