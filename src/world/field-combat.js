@@ -12,7 +12,7 @@ export function normalizeField(f){
  for(const key of ['time','cooldown','dodge','guard','recover','windup','stagger','comboUntil','event'])result[key]=clamp(number(f[key]),0,1e9);
  result.stamina=clamp(number(f.stamina,100),0,100);result.combo=clamp(Math.floor(number(f.combo)),0,3);
  result.phase=['pursuit','windup','recovery'].includes(f.phase)?f.phase:'pursuit';
- result.last=['strike','power','guard','dodge','trap','support','enemy','miss'].includes(f.last)?f.last:null;
+ result.last=['strike','power','guard','dodge','trap','support','resonance','enemy','miss'].includes(f.last)?f.last:null;
  return result;
 }
 export function startField(p,enemy){return normalizeField({version:1,p,enemy,home:enemy,aim:p,stamina:100,recover:800});}
@@ -24,17 +24,40 @@ export function attackContains(field,intent,p=field.p){
  const ax=field.aim.x-field.enemy.x,az=field.aim.z-field.enemy.z,px=p.x-field.enemy.x,pz=p.z-field.enemy.z;
  return (ax*px+az*pz)/Math.max(.001,Math.hypot(ax,az)*Math.hypot(px,pz))>Math.cos(Math.PI*.31);
 }
+function useResonance(e,f,event){
+ if(!e.resonance||!(e.resonanceCharges>0))return false;
+ const id=e.resonance;
+ if(id==='france'){
+  e.opening=true;if(f.phase==='windup')f.windup+=350;e.log='Lecture juste : les faux signaux se séparent. Ta prochaine ouverture est plus lisible.';
+ }else if(id==='algerie'){
+  e.resonanceShield=Math.max(e.resonanceShield||0,.35);e.log='Lien fidèle : le prochain impact est partagé par le lien au lieu de t’isoler.';
+ }else if(id==='maroc'){
+  e.resonanceShield=Math.max(e.resonanceShield||0,.65);e.resonancePenalty=true;e.log='Garde noble : forte protection, mais ta prochaine attaque volontairement retenue frappe moins fort.';
+ }else if(id==='tunisie'){
+  f.dodge=Math.max(f.dodge,260);f.stamina=Math.min(100,f.stamina+24);e.log='Pas de courage : une courte fenêtre pour traverser le danger, sans rendre Kaïs invulnérable.';
+ }else if(id==='espagne'){
+  f.combo=2;f.comboUntil=f.time+2200;e.log='Élan maîtrisé : la prochaine frappe propre peut conclure un enchaînement renforcé.';
+ }else if(id==='italie'){
+  e.hp=Math.min(e.maxHP,e.hp+20);f.stamina=Math.min(100,f.stamina+12);e.log='Reprise : tu reconstruis juste assez pour essayer autrement.';
+ }else if(id==='turquie'){
+  e.focus=Math.min(3,e.focus+1);e.resonanceAnchor=true;e.log='Ancrage : tu conserves un repère fiable ; le prochain effet de gel ne peut pas disperser ta concentration.';
+ }else if(id==='estonie'){
+  e.opening=true;f.phase='recovery';f.windup=0;f.recover=Math.max(f.recover,800);f.stagger=Math.max(f.stagger,500);e.log='Clarté : le leurre tombe et la vraie fenêtre d’action apparaît.';
+ }else return false;
+ e.resonanceCharges=Math.max(0,e.resonanceCharges-1);f.cooldown=Math.max(f.cooldown,700);event('resonance');return true;
+}
 export function stepField(enc,input,move){
  if(!enc?.field||enc.result)throw Error('Cette rencontre est terminée.');
  if(!input||!Number.isFinite(input.x)||!Number.isFinite(input.z)||Math.abs(input.x)>1||Math.abs(input.z)>1)throw Error('Direction de combat invalide.');
- if(input.kind&&!['strike','power','guard','dodge','trap','support'].includes(input.kind))throw Error('Action de combat inconnue.');
+ if(input.kind&&!['strike','power','guard','dodge','trap','support','resonance'].includes(input.kind))throw Error('Action de combat inconnue.');
  const e={...enc,field:normalizeField(enc.field)},f=e.field,dt=COMBAT_TICK;
  f.time+=dt;for(const key of ['cooldown','dodge','guard','recover','windup','stagger'])f[key]=Math.max(0,f[key]-dt);
  f.stamina=Math.min(100,f.stamina+2.8);f.last=null;
  const length=Math.hypot(input.x,input.z),direction={x:input.x/Math.max(1,length),z:input.z/Math.max(1,length)};
  const event=kind=>{f.last=kind;f.event++;e.turn++;};
  const kind=f.cooldown?null:input.kind;
- if(kind==='dodge'&&f.stamina>=32){
+ if(kind==='resonance'&&useResonance(e,f,event)){}
+ elseif(kind==='dodge'&&f.stamina>=32){
   let v=direction;if(length<.05){const x=f.p.x-f.enemy.x,z=f.p.z-f.enemy.z,d=Math.hypot(x,z)||1;v={x:z/d,z:-x/d};}
   f.p=move(f.p,v,5.2);f.stamina-=32;f.dodge=420;f.cooldown=550;e.opening=true;event(kind);
  }else if(kind==='guard'&&f.stamina>=18){f.stamina-=18;f.guard=950;f.cooldown=400;event(kind);}
@@ -48,6 +71,7 @@ export function stepField(enc,input,move){
    f.combo=f.time<f.comboUntil?f.combo%3+1:1;f.comboUntil=f.time+1800;
    let damage=e.stats.attack+e.stats.affinity;
    damage*=kind==='power'?2.1:1+(f.combo===3?.5:0);
+   if(e.resonancePenalty){damage*=.8;e.resonancePenalty=false;}
    if(e.opening)damage*=1.35;
    if(e.intent==='rempart'&&f.phase!=='recovery')damage*=kind==='power'?.8:.55;
    if(f.phase==='recovery')damage*=1.2;
@@ -67,10 +91,12 @@ export function stepField(enc,input,move){
   if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};}
  }else if(f.phase==='windup'&&!f.windup){
   const inside=attackContains(f,e.intent),blocked=!!f.guard,evaded=!!f.dodge||!inside;
-  let hit=evaded?0:Math.round(({frappe:18,percée:27,double:30,rituel:22,gel:19,vague:28,sable:24,éclipse:25,rempart:14,soin:12}[e.intent]||18)*(e.expert?1.25:1)*(blocked?(e.intent==='percée'?.5:.18):1));
+  const resonanceReduction=Math.max(0,Math.min(.85,Number(e.resonanceShield)||0));
+  let hit=evaded?0:Math.round(({frappe:18,percée:27,double:30,rituel:22,gel:19,vague:28,sable:24,éclipse:25,rempart:14,soin:12}[e.intent]||18)*(e.expert?1.25:1)*(blocked?(e.intent==='percée'?.5:.18):1 )*(1-resonanceReduction));
+  if(inside&&!evaded&&resonanceReduction)e.resonanceShield=0;
   e.hp=Math.max(0,e.hp-hit);if(blocked&&inside&&!evaded){e.opening=true;if(e.hp)e.hp=Math.min(e.maxHP,e.hp+(e.stats.heal||0));}
   if(e.intent==='soin')e.enemy=Math.min(e.enemyMax,e.enemy+12);
-  if(e.intent==='gel'&&hit&&!blocked)e.focus=Math.max(0,e.focus-1);
+  if(e.intent==='gel'&&hit&&!blocked){if(e.resonanceAnchor)e.resonanceAnchor=false;else e.focus=Math.max(0,e.focus-1);}
   e.log=hit?`Impact : −${hit} vitalité.`:inside?'Esquive réussie.':'Attaque évitée en quittant sa trajectoire.';
   event(hit||inside?'enemy':'miss');f.phase='recovery';f.recover=e.expert?850:1150;
   if(!e.hp){e.result='defeat';e.log='Retourne au refuge et prépare ton groupe. Tes compagnons restent avec toi.';}
