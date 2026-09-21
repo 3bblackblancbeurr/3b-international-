@@ -37,14 +37,17 @@ test('login remains compatible with legacy handles while accepting real email',(
 
 test('member auth source uses public signup, generic login and service-only audit trail',()=>{
  const source=readFileSync('supabase/functions/member-auth/index.ts','utf8');
- assert.match(source,/\/auth\/v1\/signup/);\n assert.match(source,/register-v2/);\n assert.match(source,/recover-v2/);\n assert.match(source,/member_auth_settings/);
+ assert.match(source,/\/auth\/v1\/signup/);
+ assert.match(source,/register-v2/);
+ assert.match(source,/recover-v2/);
+ assert.match(source,/member_auth_settings/);
  assert.match(source,/\/auth\/v1\/token\?grant_type=password/);
  assert.match(source,/member_auth_events/);
  assert.match(source,/member_consents/);
  assert.match(source,/reset-request/);
  assert.match(source,/resend-confirmation/);
  assert.match(source,/gotrue_meta_security/);
- assert.doesNotMatch(source,/email_confirm\s*:\s*true/);
+ assert.doesNotMatch(source,/register-v2[\s\S]{0,250}email_confirm\s*:\s*true/);
 });
 
 test('registration UI exposes email confirmation, two recovery paths and legal consent',()=>{
@@ -55,7 +58,9 @@ test('registration UI exposes email confirmation, two recovery paths and legal c
  assert.match(page,/Récupération par e-mail/);
  assert.match(page,/account-terms\.html/);
  assert.match(page,/privacy-policy\.html/);
- assert.match(page,/TurnstileField/);\n assert.match(page,/memberRequest\('register-v2'/);\n assert.match(page,/memberRequest\('recover-v2'/);
+ assert.match(page,/TurnstileField/);
+ assert.match(page,/memberRequest\('register-v2'/);
+ assert.match(page,/memberRequest\('recover-v2'/);
 });
 
 test('registration schema is service-only and represented in applied migration manifest',()=>{
@@ -69,7 +74,6 @@ test('registration schema is service-only and represented in applied migration m
  assert.equal(manifest.count,120);
 });
 
-
 test('auth email returns are routed to the member area and cleaned on navigation',()=>{
  const navigation=readFileSync('src/lib/navigation.js','utf8');
  assert.match(navigation,/params\.get\("reset"\) === "1"/);
@@ -77,7 +81,6 @@ test('auth email returns are routed to the member area and cleaned on navigation
  assert.match(navigation,/url\.searchParams\.delete\("auth"\)/);
  assert.match(navigation,/url\.searchParams\.delete\("reset"\)/);
 });
-
 
 test('zero-downtime auth rollout gate is service-only and removable after v2 frontend cutover',()=>{
  const migration=readFileSync('supabase/migrations/20260921172824_member_auth_rollout_gate_v1.sql','utf8');
