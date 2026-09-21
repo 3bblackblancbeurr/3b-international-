@@ -11,6 +11,7 @@ import {
   interpretAttackGesture,
   interpretKeeperGesture,
   keeperPowerState,
+  recoverEnergy,
   resolveShot,
   scoutingBand,
   settlePossession,
@@ -66,6 +67,8 @@ test('energy prevents feint and acceleration spam while varied actions build Flo
   const varied = flowAfterAction(first, 'cut', 'feint', true);
   const repeated = flowAfterAction(first, 'feint', 'feint', true);
   assert.ok(varied > repeated);
+  assert.ok(recoverEnergy(40, 2, false) > 40);
+  assert.ok(recoverEnergy(40, 2, true) < recoverEnergy(40, 2, false));
 });
 
 test('keeper powers share energy and all expose a drawback', () => {
