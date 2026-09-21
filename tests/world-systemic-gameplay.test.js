@@ -135,6 +135,29 @@ test('independent country contracts are multi-step systemic jobs rather than one
  result=applyDistrictJobAction(home,'route:verify');home=result.home;assert.equal(jobReadyToTurnIn(home),true);
 });
 
+test('relay repair requires diagnosis repairs assembly and final verification in order',()=>{
+ let save=applyWorldAction(blankSave(),{type:'visit',region:'estonie'});
+ save=applyWorldAction(save,{type:'jobAccept',id:'signal_watch'});
+ let items=serviceItems('estonie',save).filter(item=>item.type==='jobAction');
+ assert.deepEqual(items.map(item=>item.actionId),['signal:inspect']);
+ assert.equal(primaryContextAction(items[0],{save})?.id,'scan');
+ assert.throws(()=>applyWorldAction(save,{type:'jobAction',job:'signal_watch',actionId:'signal:bridge'}),/Action de contrat invalide/);
+ save=applyWorldAction(save,{type:'jobAction',job:'signal_watch',actionId:'signal:inspect'});
+ items=serviceItems('estonie',save).filter(item=>item.type==='jobAction');
+ assert.deepEqual(items.map(item=>item.actionId).sort(),['signal:align1','signal:align2']);
+ assert.ok(items.every(item=>primaryContextAction(item,{save})?.id==='repair'));
+ for(const actionId of ['signal:align1','signal:align2'])save=applyWorldAction(save,{type:'jobAction',job:'signal_watch',actionId});
+ items=serviceItems('estonie',save).filter(item=>item.type==='jobAction');
+ assert.deepEqual(items.map(item=>item.actionId),['signal:bridge']);
+ assert.equal(primaryContextAction(items[0],{save})?.id,'assemble');
+ save=applyWorldAction(save,{type:'jobAction',job:'signal_watch',actionId:'signal:bridge'});
+ items=serviceItems('estonie',save).filter(item=>item.type==='jobAction');
+ assert.deepEqual(items.map(item=>item.actionId),['signal:confirm']);
+ assert.equal(primaryContextAction(items[0],{save})?.id,'observe');
+ save=applyWorldAction(save,{type:'jobAction',job:'signal_watch',actionId:'signal:confirm'});
+ assert.equal(jobReadyToTurnIn(save.adventure.frontier.estonie),true);
+});
+
 test('authoritative independent contract cannot be turned in before every real action',()=>{
  let save=applyWorldAction(blankSave(),{type:'visit',region:'france'});
  save=applyWorldAction(save,{type:'jobAccept',id:'field_rescue'});
