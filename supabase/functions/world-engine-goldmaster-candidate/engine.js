@@ -2,6 +2,7 @@ import {DISTRICT_JOBS,applyDistrictJobAction,jobReadyToTurnIn} from './district-
 import {CARDS,COUNTRIES,cardById,countryById} from './catalog.js';
 import {normalizeAvatar} from './avatar-rules.js';
 import {stepField} from './field-combat.js';
+import {resolveResonanceContext} from './resonance-context.js';
 import {beginField,fieldMover} from './field-world.js';
 import {frontierState,RESOURCE_SITES,BUILDINGS,buildCost,patrolOpponent} from './frontier.js';
 import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMissions,makeEncounter,worldItems,guardianReady,clamp} from './rules.js';
@@ -196,7 +197,8 @@ export function applyWorldAction(input,action){
   }
   case 'companion':{peaceful();if(action.id===null)return adventure(s,{companionHidden:true});requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id,companionHidden:false});}
   case 'companionOrder':{peaceful();requireThat(['follow','scout','support','guard'].includes(action.value),'Ordre compagnon invalide.');return adventure(s,{companionOrder:action.value});}
-  case 'resonanceSelect':{peaceful();if(action.region===null)return adventure(s,{resonance:null});requireThat(!!GUARDIAN_VALUES[action.region]&&s.seals.includes(action.region),'Libère d’abord ce Gardien pour utiliser sa Résonance.');return adventure(s,{resonance:action.region});}
+  case 'resonanceSelect':{peaceful();if(action.region===null)return adventure(s,{resonance:null,resonanceContext:null});requireThat(!!GUARDIAN_VALUES[action.region]&&s.seals.includes(action.region),'Libère d’abord ce Gardien pour utiliser sa Résonance.');return adventure(s,{resonance:action.region,resonanceContext:null});}
+  case 'resonanceContext':{peaceful();const resonanceContext=resolveResonanceContext(s,action);return adventure(s,{resonanceContext});}
   case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
   case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
