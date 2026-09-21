@@ -13,12 +13,14 @@ test('deliveries debit provisions, survive reload, reward once and stay specific
   s=applyWorldAction(s,{type:'jobAccept',id:'atelier'});s=normalizeSave(s);
   assert.equal(frontierState(s,region).food,before.food-1);
   assert.throws(()=>applyWorldAction(s,{type:'jobAccept',id:'garden'}));
+  for(const actionId of ['atelier:inspect','atelier:deliver'])s=applyWorldAction(s,{type:'jobAction',job:'atelier',actionId});
   s=applyWorldAction(s,{type:'jobDone',id:'atelier'});
   assert.equal(frontierState(s,region).wood,before.wood+2);
   assert.equal(frontierState(s,region).stone,before.stone+1);
   assert.throws(()=>applyWorldAction(s,{type:'jobDone',id:'atelier'}));
   assert.throws(()=>applyWorldAction(s,{type:'jobAccept',id:'atelier'}));
   s=applyWorldAction(s,{type:'jobAccept',id:'garden'});
+  for(const actionId of ['garden:bed1','garden:bed2','garden:harvest'])s=applyWorldAction(s,{type:'jobAction',job:'garden',actionId});
   s=applyWorldAction(s,{type:'jobDone',id:'garden'});
   assert.equal(frontierState(s,region).food,before.food+1);
  }
