@@ -336,8 +336,12 @@ async function countryNeededRole(windowId:string, countryId:string) {
     if (Object.hasOwn(counts, role)) counts[role] += 1;
   }
   const countrySeed = [...String(countryId)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const rotated = (role:string) => {
+    const length = SELECTION_ROLES.length;
+    return ((SELECTION_ROLES.indexOf(role) - countrySeed) % length + length) % length;
+  };
   return [...SELECTION_ROLES]
-    .sort((a, b) => counts[a] - counts[b] || ((SELECTION_ROLES.indexOf(a) - countrySeed) % SELECTION_ROLES.length) - ((SELECTION_ROLES.indexOf(b) - countrySeed) % SELECTION_ROLES.length))[0];
+    .sort((a, b) => counts[a] - counts[b] || rotated(a) - rotated(b))[0];
 }
 
 async function refreshInternationalSelection(uid:string, profile:any, rating:any, rank:number, pressure:number) {
