@@ -96,3 +96,46 @@
 @media(prefers-reduced-motion:reduce){
  .world-shell .world-minimap{transition:none}
 }
+
+.world-shell .play-interaction-cluster{
+ position:absolute;
+ left:50%;
+ bottom:18px;
+ transform:translateX(-50%);
+ display:flex;
+ gap:7px;
+ align-items:stretch;
+ z-index:23;
+}
+.world-shell .play-interaction-cluster .play-interaction{
+ position:static;
+ transform:none;
+ min-width:min(62vw,330px);
+}
+.world-shell .play-interaction-more{
+ min-width:46px;
+ min-height:44px;
+ border-radius:14px;
+ border:1px solid #d8c48b60;
+ background:linear-gradient(120deg,#07161be8,#14332fde);
+ color:#f1dfb0;
+ font-weight:800;
+ letter-spacing:2px;
+ box-shadow:0 10px 30px #02080f52;
+ backdrop-filter:blur(10px);
+}
+.world-context-actions .world-actions button{
+ display:flex;
+ flex-direction:column;
+ align-items:flex-start;
+ gap:3px;
+ text-align:left;
+}
+.world-context-actions .world-actions button small{
+ opacity:.68;
+ font-size:11px;
+}
+@media(max-width:720px){
+ .world-shell .play-interaction-cluster{bottom:12px;max-width:92vw}
+ .world-shell .play-interaction-cluster .play-interaction{min-width:min(68vw,290px)}
+}
