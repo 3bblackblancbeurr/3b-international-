@@ -65,6 +65,15 @@ test('registration UI exposes email confirmation, two recovery paths and legal c
  assert.match(page,/memberRequest\('recover-v2'/);
 });
 
+test('confirmed email callback forces login mode and clears stale register intent',()=>{
+ const page=readFileSync('src/loyalty/AccountPage.jsx','utf8');
+ assert.match(page,/params\.get\('auth'\)==='confirmed'\)return'login'/);
+ assert.match(page,/sessionStorage\.removeItem\('3b-auth-intent'\)/);
+ assert.match(page,/Adresse e-mail confirmée\. Connecte-toi avec ton e-mail et ton mot de passe\./);
+ assert.match(page,/setMode\('login'\)/);
+ assert.match(page,/identifier:email/);
+});
+
 test('registration schema is service-only and represented in applied migration manifest',()=>{
  const migration=readFileSync('supabase/migrations/20260921171141_member_registration_security_v2.sql','utf8');
  assert.match(migration,/member_consents/);
