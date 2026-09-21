@@ -13,6 +13,19 @@ bool UThreeBPopulationDefinition::FindRoutine(FName Id, FThreeBPopulationRoutine
     return false;
 }
 
+bool UThreeBPopulationDefinition::FindNpcRole(FName Id, FThreeBNpcRoleDefinition& OutRole) const
+{
+    for (const FThreeBNpcRoleDefinition& Role : NpcRoles)
+    {
+        if (Role.Id == Id)
+        {
+            OutRole = Role;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool UThreeBPopulationDefinition::ValidateDefinition(TArray<FString>& OutErrors) const
 {
     OutErrors.Reset();
@@ -73,6 +86,34 @@ bool UThreeBPopulationDefinition::ValidateDefinition(TArray<FString>& OutErrors)
         if (Archetype.TargetPopulation < 0)
         {
             OutErrors.Add(FString::Printf(TEXT("Negative population target in district %s."), *Archetype.DistrictId.ToString()));
+        }
+    }
+
+    TSet<FName> RoleIds;
+    for (const FThreeBNpcRoleDefinition& Role : NpcRoles)
+    {
+        if (Role.Id.IsNone())
+        {
+            OutErrors.Add(TEXT("NPC role with empty Id."));
+            continue;
+        }
+        if (RoleIds.Contains(Role.Id))
+        {
+            OutErrors.Add(FString::Printf(TEXT("Duplicate NPC role: %s"), *Role.Id.ToString()));
+        }
+        RoleIds.Add(Role.Id);
+
+        if (Role.DistrictId.IsNone() || Role.ZoneId.IsNone())
+        {
+            OutErrors.Add(FString::Printf(TEXT("NPC role %s is missing district or zone."), *Role.Id.ToString()));
+        }
+        if (!Role.RoutineId.IsNone() && !RoutineIds.Contains(Role.RoutineId))
+        {
+            OutErrors.Add(FString::Printf(
+                TEXT("NPC role %s references unknown routine %s."),
+                *Role.Id.ToString(),
+                *Role.RoutineId.ToString()
+            ));
         }
     }
 
