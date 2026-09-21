@@ -1,6 +1,7 @@
 import { NAV_GROUPS, RouteLink } from './AppNavigation.jsx';
 import SectionCard from './SectionCard.jsx';
 import InstallApp from '../install/InstallApp.jsx';
+import WorldPortalCard from './WorldPortalCard.jsx';
 
 const PRIMARY_IDS = ['passport', 'world3b', 'shop'];
 
@@ -18,6 +19,7 @@ export default function HomePage({goTo,menuItems,installation,member}){
    <article className="home-status-item" data-state="ready"><span>Monde du 3B</span><strong>Ouvert · 8 héritages</strong></article>
    <article className="home-status-item" data-state={installation?.installed?'ready':'active'}><span>Application</span><strong>{installation?.installed?'Installée':'Web · installable'}</strong></article>
   </div>
+  <WorldPortalCard goTo={goTo} registered={registered} />
   <InstallApp installation={installation} />
   <section className="universe-directory" aria-labelledby="journey-title"><div className="section-heading"><h2 id="journey-title">Ton parcours principal</h2><span>Accueil → Passeport → Monde du 3B → Boutique</span></div><div className="universe-grid">{primary.map((item,index)=><SectionCard key={item.id} item={item} index={index} goTo={goTo}/>)}</div></section>
   <section className="universe-directory" aria-labelledby="directory-title"><div className="section-heading"><h2 id="directory-title">Explorer le reste de 3B</h2><span>{secondary.length} rubriques complémentaires</span></div>

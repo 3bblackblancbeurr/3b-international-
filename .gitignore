@@ -26,3 +26,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Unreal Engine generated files
+unreal/**/Binaries/
+unreal/**/DerivedDataCache/
+unreal/**/Intermediate/
+unreal/**/Saved/
+unreal/**/.vs/
+unreal/**/*.VC.db
+unreal/**/*.opensdf
+unreal/**/*.sdf
