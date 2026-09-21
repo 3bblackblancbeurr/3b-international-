@@ -70,27 +70,81 @@ export const GUARDIAN_VALUE_SCENES={
  ],
 };
 
-export function blankGuardianValueState(){return {step:0,completed:false,choices:[]};}
+export const GUARDIAN_VALUE_REFLECTIONS=Object.freeze([
+ {id:'reparer_consequence',label:'Réparer concrètement ce que mon choix a abîmé',mode:'repair'},
+ {id:'assumer_devant_les_autres',label:'Assumer mon choix devant les personnes touchées',mode:'accountability'},
+ {id:'demander_comment_avancer',label:'Demander aux personnes concernées comment avancer ensemble',mode:'dialogue'},
+]);
+
+const sceneOptionIds=(region,step)=>{
+ const aligned=GUARDIAN_VALUES[region]?.choices?.[step]?.[0],decoys=GUARDIAN_VALUE_SCENES[region]?.[step]?.decoys||[];
+ return [aligned,...decoys.map(([id])=>id)].filter(Boolean);
+};
+
+export function blankGuardianValueState(){return {step:0,completed:false,choices:[],decisions:[],alignment:0,tensions:[],reflectionNeeded:false,reflection:null};}
+
 export function normalizeGuardianValueState(region,input){
  const rule=GUARDIAN_VALUES[region],base=blankGuardianValueState();if(!rule||!input)return base;
- const choices=Array.isArray(input.choices)?input.choices.filter((id,i)=>rule.choices[i]?.[0]===id).slice(0,3):[];
- return {step:choices.length,completed:choices.length===3,choices};
+ let decisions=Array.isArray(input.decisions)?input.decisions.filter((id,index)=>sceneOptionIds(region,index).includes(id)).slice(0,3):[];
+ if(!decisions.length&&Array.isArray(input.choices))decisions=input.choices.filter((id,index)=>sceneOptionIds(region,index).includes(id)).slice(0,3);
+ const alignment=decisions.reduce((total,id,index)=>total+(rule.choices[index]?.[0]===id?1:0),0);
+ const choices=decisions.filter((id,index)=>rule.choices[index]?.[0]===id);
+ const tensions=decisions.map((id,index)=>rule.choices[index]?.[0]===id?null:`step:${index+1}:${id}`).filter(Boolean);
+ const rawReflection=input.reflection&&GUARDIAN_VALUE_REFLECTIONS.some(option=>option.id===input.reflection)?input.reflection:null;
+ const reflectionNeeded=decisions.length===3&&alignment<2&&!rawReflection;
+ const completed=decisions.length===3&&(alignment>=2||!!rawReflection);
+ return {step:decisions.length,completed,choices,decisions,alignment,tensions,reflectionNeeded,reflection:rawReflection};
 }
+
 export function guardianValueStep(region,state){
- const rule=GUARDIAN_VALUES[region],step=state?.step||0;if(!rule||step>=3)return null;
- const [id,label]=rule.choices[step],scene=GUARDIAN_VALUE_SCENES[region]?.[step];
- return {id,label,step,value:rule.value,name:rule.name,prompt:scene?.prompt||`Choisis comment incarner ${rule.value} dans cette situation.`};
+ const rule=GUARDIAN_VALUES[region],normalized=normalizeGuardianValueState(region,state);if(!rule)return null;
+ if(normalized.reflectionNeeded)return {
+  id:'reflection',step:3,value:rule.value,name:rule.name,reflection:true,
+  prompt:`Tes décisions ont créé plusieurs tensions autour de ${rule.value}. Il ne s’agit pas de recommencer le QCM : choisis comment tu assumes maintenant leurs conséquences.`,
+  label:'Assumer les conséquences',
+ };
+ if(normalized.completed||normalized.step>=3)return null;
+ const step=normalized.step,[id,label]=rule.choices[step],scene=GUARDIAN_VALUE_SCENES[region]?.[step];
+ return {id,label,step,value:rule.value,name:rule.name,prompt:scene?.prompt||`Choisis comment agir face à cette situation de ${rule.value}.`,reflection:false};
 }
+
 export function guardianValueOptions(region,state){
  const current=guardianValueStep(region,state);if(!current)return[];
- const decoys=(GUARDIAN_VALUE_SCENES[region]?.[current.step]?.decoys||[
+ if(current.reflection)return GUARDIAN_VALUE_REFLECTIONS.map(option=>({...option,stance:'reflection',consequence:'Cette réponse reconnaît les conséquences au lieu d’effacer le choix précédent.'}));
+ const rule=GUARDIAN_VALUES[region],scene=GUARDIAN_VALUE_SCENES[region]?.[current.step],aligned=rule.choices[current.step];
+ const alternatives=(scene?.decoys||[
   ['raccourci','Choisir la solution la plus facile sans examiner ses conséquences'],
   ['ignorer','Éviter la décision pour ne pas assumer son résultat'],
- ]).map(([id,label])=>({id,label,correct:false}));
- const options=[{id:current.id,label:current.label,correct:true},...decoys];
+ ]).map(([id,label])=>({id,label,stance:'tension',consequence:`Ce choix crée une tension avec ${rule.value} ; le monde et le Gardien pourront s’en souvenir.`}));
+ const options=[{id:aligned[0],label:aligned[1],stance:'aligned',consequence:`Ce choix est fortement cohérent avec ${rule.value}, sans garantir qu’il soit sans coût.`},...alternatives];
  const rotate=(region.length+current.step)%options.length;
  return [...options.slice(rotate),...options.slice(0,rotate)];
 }
+
+export function guardianValueDecision(region,state,choiceId){
+ const current=normalizeGuardianValueState(region,state),step=guardianValueStep(region,current),options=guardianValueOptions(region,current);
+ if(!step)return {ok:false,state:current,reason:'complete'};
+ const option=options.find(item=>item.id===choiceId);if(!option)return {ok:false,state:current,reason:'unknown-choice'};
+ if(step.reflection){
+  return {ok:true,option,state:normalizeGuardianValueState(region,{...current,reflection:choiceId})};
+ }
+ const decisions=[...current.decisions,choiceId];
+ return {ok:true,option,state:normalizeGuardianValueState(region,{...current,decisions})};
+}
+
+export function guardianValueOutcome(region,state){
+ const rule=GUARDIAN_VALUES[region],s=normalizeGuardianValueState(region,state);if(!rule)return null;
+ return {
+  value:rule.value,
+  guardian:rule.name,
+  alignment:s.alignment,
+  tensions:s.tensions.length,
+  reflection:s.reflection,
+  completed:s.completed,
+  summary:s.completed?(s.reflection?`${rule.name} reconnaît que tu as su assumer les conséquences de tes choix.`:`${rule.name} reconnaît une compréhension cohérente de ${rule.value}.`):s.reflectionNeeded?`Tes choix demandent maintenant une réflexion sur leurs conséquences.`:`${s.step}/3 décisions traversées.`,
+ };
+}
+
 export function guardianHubPresence(seals=[],restoredRegions=[]){
  return Object.entries(GUARDIAN_VALUES).filter(([region])=>seals.includes(region)&&restoredRegions.includes(region)).map(([region,data])=>({region,...data}));
 }
