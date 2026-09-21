@@ -247,7 +247,7 @@ export function applyWorldAction(input,action){
   }
   case 'fieldStart':{requireThat(e&&!e.result,'Aucune rencontre en cours.');return adventure(s,{encounter:{...e,field:e.field||beginField(s,e)}});}
   case 'field':case 'battle':{
-   requireThat(action.type==='field'||!e?.field,'Ce combat se joue en temps réel.');
+   requireThat(action.type==='field'||(!e?.field&&!e?.final),e?.final?'La finale se joue uniquement en temps réel.':'Ce combat se joue en temps réel.');
    let next=action.type==='field'?stepField(e,action,fieldMover(s)):advanceBattle(e,action.action);
    if(next.result==='victory'&&!e.rewarded){
     if(e.patrol){const h=frontierState(s,e.region),mastery={...s.adventure.mastery};for(const id of new Set([s.leader,...s.team]))mastery[id]=Math.min(999999,(mastery[id]||0)+30);s=reward(adventure(s,{frontier:{...s.adventure.frontier,[e.region]:{...h,expedition:h.expedition+1,harvest:[],jobs:[]}},mastery}),35,8);}
@@ -284,7 +284,9 @@ export function applyWorldAction(input,action){
   case 'final':{
    peaceful();requireThat(region==='hub'&&nexusLevel(s)===COUNTRIES.length&&s.seals.length===COUNTRIES.length,'Reconstruis les huit pays et réunis les huit sceaux.');requireThat(!s.adventure.finished,'L’Union est déjà retrouvée.');
    const card=CARDS.find(c=>c.id==='C164'),enc=makeEncounter(card,s,true);enc.hp=enc.maxHP+=40;enc.enemy=enc.enemyMax=360;
-   return adventure(s,{encounter:{...enc,recoveries:2,final:true,region:'france',expert:false,resonance:activeResonance(),resonanceCharges:activeResonance()?1:0,phase:1,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Protège ton équipe et attends ses ouvertures.'}});
+   const finale={...enc,recoveries:2,final:true,region:'france',expert:false,resonance:activeResonance(),resonanceCharges:activeResonance()?1:0,phase:1,finalCirclePhase:0,finalCircleMastery:0,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Chaque passage exige de comprendre la mécanique du Gardien qui intervient.'};
+   finale.field=beginField(s,finale);requireThat(finale.field,'L’arène finale n’a pas pu être préparée.');
+   return adventure(s,{encounter:finale});
   }
   default:fail('Action de jeu non autorisée.');
  }
