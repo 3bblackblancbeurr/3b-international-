@@ -36,6 +36,8 @@ import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
 import {hubNpcDialogue} from './hub/npc-dialogue.js';
 import {hubDialogueScene} from './hub/dialogue-v3.js';
+import {hubDialogueIntents,hubDialogueIntentResponse} from './hub/dialogue-intents.js';
+import {CANON_WORLDS} from './story-canon.js';
 import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from './guardian-values.js';
 import {isAutoHubMission} from './hub/mission-signals.js';
 import {worldCinematicEvents} from './cinematic-events.js';
@@ -141,9 +143,9 @@ function WorldSession({uid,goTo}){
   if(item.type==='hubNpc'){
    const next=act({type:'hubNpcTalk',id:item.npcId});if(!next)return;
    const turn=dialogueTurns.current.get(item.npcId)||0;dialogueTurns.current.set(item.npcId,turn+1);
-   const scene=hubDialogueScene(item,{hour:new Date().getHours(),missionState:next.hub?.missions,talks:next.hub?.stats?.npcTalks?.[item.npcId]||0});audio.current?.speak(scene.text,{character:item.npcId});
-   if(scene.choices?.length){setNpcDialogue({item,scene});setPanel('hubDialogue');}
-   else announce(scene.text||hubNpcDialogue(item,next.hub?.missions,turn));return;
+   const dialogueContext={hour:new Date().getHours(),weather:snapshot.weather||'clear'},scene=hubDialogueScene(item,{...dialogueContext,missionState:next.hub?.missions,talks:next.hub?.stats?.npcTalks?.[item.npcId]||0}),intents=hubDialogueIntents(item,next,dialogueContext);
+   audio.current?.speak(scene.text||hubNpcDialogue(item,next.hub?.missions,turn),{character:item.npcId});
+   setNpcDialogue({item,scene,intents,response:null});setPanel('hubDialogue');return;
   }
   if(item.type==='hubGuardian'){audio.current?.speak(item.name+' · Gardien de la valeur '+item.value,{character:item.card});setHubGuardianInfo(item);setPanel('guardianHub');return;}
   if(item.type==='hubMission'){
