@@ -67,7 +67,8 @@
         "france-presentation-v1.json",
         "france-nexus-handoff-v1.json",
         "france-coop-session-v1.json",
-        "france-district-content-v1.json"
+        "france-district-content-v1.json",
+        "france-district-missions-v1.json"
       ],
       "evidence": [
         "asset_validator_output"
@@ -198,13 +199,16 @@
       "order": 10,
       "editor_required": true,
       "source_contracts": [
-        "france-npc-dialogue-v1.json"
+        "france-npc-dialogue-v1.json",
+        "france-district-content-v1.json",
+        "france-district-missions-v1.json"
       ],
       "goals": [
         "author_population_sets_for_eight_districts",
         "author_routine_profiles",
         "build_navigation_across_main_vertical_and_lower_routes",
-        "verify_far_population_has_no_full_ai_controller"
+        "verify_far_population_has_no_full_ai_controller",
+        "wire_district_mission_givers_and_local_activity_hooks"
       ],
       "evidence": [
         "pie_test_result",
