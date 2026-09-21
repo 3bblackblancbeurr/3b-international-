@@ -1,7 +1,6 @@
 #include "ThreeBGameInstance.h"
 
 #include "GenericPlatform/GenericPlatformHttp.h"
-#include "HAL/PlatformMisc.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Guid.h"
 #include "Misc/Parse.h"
@@ -59,11 +58,8 @@ void UThreeBGameInstance::Init()
     // A crafted threebworld:// URL must not be able to redirect a one-time launch ticket.
     Bridge->ConfigureApiBase(DefaultApiBase);
 
-    FString DeviceId = FPlatformMisc::GetDeviceId();
-    if (DeviceId.IsEmpty())
-    {
-        DeviceId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphensLower);
-    }
-
-    Bridge->RedeemLaunchTicket(Ticket, DeviceId);
+    // This is deliberately ephemeral. Supabase user_id is the player identity;
+    // the native bridge does not need a stable hardware identifier.
+    const FString ClientInstanceId = FGuid::NewGuid().ToString(EGuidFormats::DigitsWithHyphensLower);
+    Bridge->RedeemLaunchTicket(Ticket, ClientInstanceId);
 }
