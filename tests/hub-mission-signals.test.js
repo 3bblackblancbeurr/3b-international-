@@ -46,14 +46,20 @@ test('Telepherics and ziplines are server-valid transport actions',()=>{
 });
 
 
-test('repeating the exact same transport route cannot satisfy two mission objectives',()=>{
+test('complex rooftop mission ignores symbolic transport spam and requires its structured actions',()=>{
  let save=applyWorldAction(completeFirstSteps(),{type:'hubMissionStart',id:'rooftops_circle'});
  save=applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'archives',to:'community',night:false,dateKey:'2026-09-21'});
+ assert.equal(save.hub.missions.rooftops_circle.completedObjectives,0,'ordinary zipline signal must not replace the route challenge');
+ assert.throws(()=>applyWorldAction(save,{type:'hubMissionStep',id:'rooftops_circle',objective:0}),/uniquement par tes actions/);
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'rooftops_circle',actionId:'route:finish'});
  assert.equal(save.hub.missions.rooftops_circle.completedObjectives,1);
- save=applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'archives',to:'community',night:false,dateKey:'2026-09-21'});
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'rooftops_circle',actionId:'zipline:1'});
  assert.equal(save.hub.missions.rooftops_circle.completedObjectives,1);
- save=applyWorldAction(save,{type:'hubTransportRide',transport:'zipline',from:'gardens',to:'docks',night:false,dateKey:'2026-09-21'});
+ const once=save.hub.stats.missionActions.rooftops_circle.length;
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'rooftops_circle',actionId:'zipline:1'});
+ assert.equal(save.hub.stats.missionActions.rooftops_circle.length,once,'duplicate structured action must be idempotent');
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'rooftops_circle',actionId:'zipline:2'});
  assert.equal(save.hub.missions.rooftops_circle.completedObjectives,2);
- save=applyWorldAction(save,{type:'hubDistrictVisit',id:'arena'});
+ save=applyWorldAction(save,{type:'hubMissionAction',missionId:'rooftops_circle',actionId:'belvedere:reach'});
  assert.equal(save.hub.missions.rooftops_circle.status,'completed');
 });
