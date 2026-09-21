@@ -140,3 +140,22 @@ test('blockout generator consumes the canonical vertical contract instead of a s
   assert.match(script,/3B_FR_WATERFALL_/);
   assert.match(script,/3B_FR_VISTA_/);
 });
+
+
+test('generic Unreal region data asset extends the existing territory definition without France hard-coding',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBRegionDefinition.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBRegionDefinition.cpp');
+  const world=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWorldDefinition.h');
+  assert.match(header,/UThreeBRegionDefinition/);
+  assert.match(header,/FThreeBAltitudeBandDefinition/);
+  assert.match(header,/FThreeBDistrictDefinition/);
+  assert.match(header,/FThreeBHydrologyLinkDefinition/);
+  assert.match(header,/FThreeBVistaDefinition/);
+  assert.match(header,/FThreeBRegionStreamingProfile/);
+  assert.match(source,/ValidateDefinition/);
+  assert.match(source,/Duplicate altitude band/);
+  assert.match(source,/Duplicate district/);
+  assert.doesNotMatch(header,/Céliane|Justice|france_centre|monumental_waterfall/i);
+  assert.match(world,/TSoftObjectPtr<UThreeBRegionDefinition> RegionDefinition/);
+  assert.ok(manifest.required_assets.some(x=>x.path.endsWith('/DA_FranceRegion')&&x.kind==='ThreeBRegionDefinition'));
+});
