@@ -38,10 +38,26 @@ public:
     UFUNCTION(BlueprintPure, Category="3B|Bridge")
     FString GetAuthenticatedUserId() const { return UserId; }
 
+    UFUNCTION(BlueprintPure, Category="3B|Bridge")
+    FString GetPassportId() const { return PassportId; }
+
+    UFUNCTION(BlueprintPure, Category="3B|Bridge")
+    FString GetCountry() const { return Country; }
+
+    UFUNCTION(BlueprintPure, Category="3B|Bridge")
+    int32 GetWorldRevision() const { return WorldRevision; }
+
+    UFUNCTION(BlueprintPure, Category="3B|Bridge")
+    FString GetBootstrapWorldJson() const { return BootstrapWorldJson; }
+
 private:
     FString ApiBase;
     FString SessionToken;
     FString UserId;
+    FString PassportId;
+    FString Country;
+    FString BootstrapWorldJson;
+    int32 WorldRevision = 0;
 
     void Fail(const FString& Message);
 };
