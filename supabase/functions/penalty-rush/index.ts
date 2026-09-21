@@ -303,21 +303,112 @@ function scoutingBand(rank:number, matches:number, reputation:number, pressure:n
   return 'club';
 }
 
+async function activeInternationalWindow() {
+  const at = nowIso();
+  const rows = await admin(
+    '/rest/v1/penalty_international_windows?status=eq.selection' +
+    '&starts_at=lte.' + encodeURIComponent(at) +
+    '&ends_at=gte.' + encodeURIComponent(at) +
+    '&order=starts_at.asc&limit=1&select=*'
+  ).catch(() => []);
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function selectionForWindow(uid:string, windowId:string) {
+  const rows = await admin(
+    '/rest/v1/penalty_international_selections?window_id=eq.' + encodeURIComponent(windowId) +
+    '&user_id=eq.' + encodeURIComponent(uid) +
+    '&select=*&limit=1'
+  ).catch(() => []);
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function refreshInternationalSelection(uid:string, profile:any, rating:any, rank:number, pressure:number) {
+  const baseScouting = scoutingBand(rank, number(rating.games), number(profile.reputation), pressure);
+  const window = await activeInternationalWindow();
+  if (!window) return { scouting:baseScouting, selection:null, window:null };
+
+  let selection = await selectionForWindow(uid, window.id);
+  if (!selection && (baseScouting === 'selection' || baseScouting === 'preselection')) {
+    const roleProfile = pressure >= .65
+      ? 'pression'
+      : STYLES.has(String(profile.style_id)) ? String(profile.style_id) : 'technicien';
+    const created = await admin('/rest/v1/penalty_international_selections?select=*', {
+      method:'POST',
+      body:{
+        window_id:window.id,
+        user_id:uid,
+        country_id:profile.country_id,
+        status:'preselected',
+        role_profile:roleProfile,
+      },
+      prefer:'return=representation',
+    }).catch(() => []);
+    selection = Array.isArray(created) ? created[0] || null : null;
+  }
+
+  const visibleScouting =
+    selection?.status === 'selected' ? 'selection'
+      : selection?.status === 'preselected' ? 'preselection'
+        : selection?.status === 'declined' ? 'declined'
+          : baseScouting;
+  return { scouting:visibleScouting, selection, window };
+}
+
+async function respondInternationalSelection(uid:string, selectionId:unknown, decision:unknown) {
+  const id = String(selectionId || '');
+  const answer = String(decision || '');
+  if (!UUID.test(id)) throw new Failure(400, 'Convocation invalide.');
+  if (!['accept','decline'].includes(answer)) throw new Failure(400, 'Réponse de convocation invalide.');
+
+  const rows = await admin(
+    '/rest/v1/penalty_international_selections?id=eq.' + encodeURIComponent(id) +
+    '&user_id=eq.' + encodeURIComponent(uid) +
+    '&select=*&limit=1'
+  );
+  const selection = Array.isArray(rows) ? rows[0] : null;
+  if (!selection) throw new Failure(404, 'Convocation introuvable.');
+
+  const expectedStatus = answer === 'accept' ? 'selected' : 'declined';
+  if (selection.status === expectedStatus) return selection;
+  if (selection.status !== 'preselected') throw new Failure(409, 'Cette convocation a déjà été traitée.');
+
+  const windows = await admin(
+    '/rest/v1/penalty_international_windows?id=eq.' + encodeURIComponent(selection.window_id) +
+    '&select=*&limit=1'
+  );
+  const window = Array.isArray(windows) ? windows[0] : null;
+  const at = Date.now();
+  if (!window || window.status !== 'selection' || Date.parse(window.starts_at) > at || Date.parse(window.ends_at) < at) {
+    throw new Failure(409, 'La fenêtre de sélection est terminée.');
+  }
+
+  const updated = await admin(
+    '/rest/v1/penalty_international_selections?id=eq.' + encodeURIComponent(id) +
+    '&user_id=eq.' + encodeURIComponent(uid) +
+    '&status=eq.preselected&select=*',
+    {
+      method:'PATCH',
+      body:{status:expectedStatus,updated_at:nowIso()},
+      prefer:'return=representation',
+    },
+  );
+  if (!Array.isArray(updated) || !updated[0]) throw new Failure(409, 'La convocation a changé. Synchronise ton profil.');
+  return updated[0];
+}
+
 async function snapshotFor(uid:string, profile:any) {
   const club = await clubFor(uid);
   const rating = await ensureRating(uid, profile.country_id);
   const rank = await nationalRank(profile, rating);
   const pressure = rating.games ? clamp(number(rating.duel_gold_wins) / Math.max(1, number(rating.duel_gold_played)), 0, 1) : 0;
-  const scouting = scoutingBand(rank, number(rating.games), number(profile.reputation), pressure);
+  const internationalState = await refreshInternationalSelection(uid, profile, rating, rank, pressure);
+  const selection = internationalState.selection;
+  const window = internationalState.window;
   const history = await admin(
     '/rest/v1/penalty_match_history?or=(player_a.eq.' + encodeURIComponent(uid) + ',player_b.eq.' + encodeURIComponent(uid) + ')' +
     '&select=id,mode,player_a,player_b,winner_user_id,score_a,score_b,created_at&order=created_at.desc&limit=12'
   );
-  const selections = await admin(
-    '/rest/v1/penalty_international_selections?user_id=eq.' + encodeURIComponent(uid) +
-    '&status=in.(preselected,selected)&select=id,status,country_id,role_profile,window_id,created_at&order=created_at.desc&limit=1'
-  ).catch(() => []);
-  const selection = Array.isArray(selections) ? selections[0] : null;
   return {
     rating,
     club,
@@ -329,11 +420,19 @@ async function snapshotFor(uid:string, profile:any) {
     },
     international: {
       nationalRank: rank,
-      scouting: selection?.status === 'selected' ? 'selection' : selection?.status === 'preselected' ? 'preselection' : scouting,
+      scouting: internationalState.scouting,
       caps: number(profile.international_caps),
       goals: number(profile.international_goals),
+      pressureScore: pressure,
+      selectionId: selection?.id || null,
+      selectionStatus: selection?.status || null,
       roleProfile: selection?.role_profile || null,
-      windowLabel: selection ? 'Fenêtre internationale active' : 'Hors fenêtre internationale',
+      windowId: window?.id || null,
+      windowName: window?.name || null,
+      competition: window?.competition || null,
+      windowStartsAt: window?.starts_at || null,
+      windowEndsAt: window?.ends_at || null,
+      windowLabel: window ? window.name : 'Hors fenêtre internationale',
     },
     history: Array.isArray(history) ? history.map((item:any) => ({
       id:item.id,
