@@ -52,7 +52,7 @@ function freshRequestId(){
  return value;
 }
 
-export function createPartyConnection({uid,onState,onPeers,onConnection,onError,client=authClient}){
+export function createPartyConnection({uid,onState,onPeers,onConnection,onError,onRuntimeState=()=>{},client=authClient}){
  let disposed=false,current=null,channels=new Map(),peers=new Map(),runtimeMembers=[],lastPoll=0,sequence=0,pose=null,lastSend=0,polling=false,lastRuntime=0,runtimeBusy=false,lastRuntimeError=0;
  function partyMembers(){return current?.members||[];}
  function emit(){
@@ -62,7 +62,10 @@ export function createPartyConnection({uid,onState,onPeers,onConnection,onError,
  function remove(){for(const c of channels.values())client.removeChannel(c);channels.clear();peers.clear();runtimeMembers=[];emit();}
  function applyRuntime(data){
   if(disposed||data?.party_id&&data.party_id!==current?.party?.id)return;
-  runtimeMembers=Array.isArray(data?.members)?data.members.filter(row=>row.id!==uid):runtimeMembers;
+  if(Array.isArray(data?.members)){
+   const all=data.members.filter(validRuntimeMember),self=all.find(row=>row.id===uid)||null;
+   runtimeMembers=all.filter(row=>row.id!==uid);onRuntimeState(self);
+  }
   const now=performance.now(),merged=mergeRuntimePeers([...peers.values()],runtimeMembers,partyMembers(),now);
   peers=new Map(merged.filter(peer=>peer.id!==uid).map(peer=>[peer.id,peer]));emit();
  }
