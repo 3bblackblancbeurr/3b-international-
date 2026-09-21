@@ -44,6 +44,7 @@ import {storyCinematicPresentation} from './story-cinematic.js';
 import {CinematicOverlay} from './CinematicOverlay.jsx';
 import {City3BPanel} from '../city/City3BPanel.jsx';
 import {cityUnlockGuide,cityUnlockGuideRequested,cityUnlockGuideStorage} from './city-unlock-guide.js';
+import {interactionDescription} from './interaction-actions.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -76,7 +77,7 @@ function WorldSession({uid,goTo}){
  const [cityUnlockMission,setCityUnlockMission]=useState(()=>cityUnlockGuideRequested());
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
- const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null),[storyCinematic,setStoryCinematic]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
+ const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null),[interactionMenu,setInteractionMenu]=useState(null),[storyCinematic,setStoryCinematic]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
  const canvas=useRef(null),shell=useRef(null),scene=useRef(null),saveRef=useRef(save),callbacks=useRef({}),ready=useRef(false),paused=useRef(false),activity=useRef(0),rewardEngine=useRef({status:'playing'}),watch=useRef(null),tracker=useRef(createWalkTracker()),walkRef=useRef(0),audio=useRef(null),dirty=useRef(false),saveTimer=useRef(null),noticeTimer=useRef(null),dialogueTurns=useRef(new Map()),cinematicKeys=useRef(new Set());
  saveRef.current=save;
  const rewardMessage=useGameRewards('world',rewardEngine,paused,ready,activity);
@@ -134,7 +135,7 @@ function WorldSession({uid,goTo}){
  }
  function travel(id){if(!act({type:'visit',region:id}))return;scene.current?.travel(id);audio.current?.region(id);setPanel(null);chime();}
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
- function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
+ function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setInteractionMenu(null);setPanel(null);}
  function interact(item){
   if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
   if(item.type==='portal'){travel(item.id);return;}
@@ -196,6 +197,60 @@ function WorldSession({uid,goTo}){
   if(item.type==='beacon'){if(act({type:'beacon',id:item.id}))chime();return;}
   if(act({type:'encounter',id:item.id})){act({type:'fieldStart'});scene.current?.cooldown(item.id);setPanel('encounter');}
  }
+ function runContextAction(item,entry){
+  if(!item||!entry)return;
+  if(entry.id==='primary'){setInteractionMenu(null);interact(item);return;}
+  if(entry.id==='map'||entry.id==='transport-line'){setInteractionMenu(null);setPanel('atlas');return;}
+  if(entry.id==='journal'){setInteractionMenu(null);setPanel('journal');return;}
+  if(entry.id==='team'){setInteractionMenu(null);setPanel('team');return;}
+  if(entry.id==='story'){setInteractionMenu(null);setPanel('story');return;}
+  if(entry.id==='waypoint'){setInteractionMenu(null);navigate(item);announce(item.name+' · repère placé');return;}
+  if(entry.id==='mission'){
+   const ids=item.missionIds||[],targets=ids.map(id=>regionItems.find(candidate=>candidate.type==='hubMission'&&candidate.missionId===id)).filter(Boolean);
+   const target=targets.find(candidate=>saveRef.current.hub?.missions?.[candidate.missionId]?.status==='active')||targets.find(candidate=>saveRef.current.hub?.missions?.[candidate.missionId]?.status==='available')||targets[0];
+   setInteractionMenu(null);
+   if(target){navigate(target);announce(target.name+' · repère de mission placé');}else announce(item.name+' n’a aucune mission disponible ici.');
+   return;
+  }
+  if(entry.id==='guardian-topic'){
+   const rule=GUARDIAN_VALUES[item.country];setInteractionMenu(null);
+   if(rule){scene.current?.contextEffect?.('memory',item);announce(rule.name+' · '+rule.value+' · son histoire se révèle en avançant dans '+(countryById[item.country]?.name||item.country)+'.');}
+   else announce('Ce personnage ne connaît pas encore de Gardien lié à son histoire.');
+   return;
+  }
+  if(entry.id==='directions'){
+   const target=regionItems.find(candidate=>candidate.type==='hubDistrict'&&candidate.district===item.district);setInteractionMenu(null);
+   if(target){navigate(target);announce('Direction · '+target.name);}else announce('Aucun repère de quartier disponible.');
+   return;
+  }
+  if(entry.id==='return-country'){setInteractionMenu(null);if(item.region)travel(item.region);return;}
+  if(entry.id==='guardian-value'){
+   setInteractionMenu(null);
+   if(item.type==='hubGuardian'){setHubGuardianInfo(item);setPanel('guardianHub');}else setPanel('valueTrial');
+   return;
+  }
+  if(entry.id==='memory-vision'){
+   setInteractionMenu(null);scene.current?.contextEffect?.('memory',item);audio.current?.event('vision');announce(interactionDescription(item,entry.id,{save:saveRef.current}));return;
+  }
+  if(entry.id==='companion-scout'){
+   setInteractionMenu(null);scene.current?.contextEffect?.('scout',item);scene.current?.waypoint?.(item,false);announce(interactionDescription(item,entry.id,{save:saveRef.current}));return;
+  }
+  if(entry.id==='prepare'){
+   setInteractionMenu(null);const next=act({type:'prepare'});if(next)announce('Groupe préparé · le prochain affrontement profitera du quartier restauré.');return;
+  }
+  if(entry.id==='rest'){
+   setInteractionMenu(null);
+   if(item.type==='cafe'){setPanel('cafe');return;}
+   if(item.type==='camp'){setPanel('camp');return;}
+   announce('Tu prends un moment pour observer et reprendre ton souffle.');return;
+  }
+  if(entry.id==='avoid'){setInteractionMenu(null);announce(item.name+' · tu choisis de ne pas engager cette rencontre maintenant.');return;}
+  if(entry.id==='final-recap'){setInteractionMenu(null);announce(interactionDescription(item,entry.id,{save:saveRef.current}));setPanel('journal');return;}
+  if(['mission-details','building-functions','district-purpose','event-observe','inspect-resource','observe-enemy'].includes(entry.id)){
+   setInteractionMenu(null);scene.current?.contextEffect?.('inspect',item);announce(interactionDescription(item,entry.id,{save:saveRef.current}));return;
+  }
+  setInteractionMenu(null);announce(interactionDescription(item,entry.id,{save:saveRef.current})||entry.label);
+ }
  callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region)};
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
@@ -234,7 +289,7 @@ function WorldSession({uid,goTo}){
   <div className="world-vignette"/>
   {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>} 
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
-  <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
+  <WorldHUD snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={entry=>runContextAction(snapshot.near,entry)} onMore={(item,actions)=>{setInteractionMenu({item,actions});setPanel('interaction');}} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading}/>
   {uid&&loaded&&cityUnlockMission&&!cityGuide.unlocked&&!panel&&<aside className="world-city-unlock-guide" aria-label="Mission de déblocage Ville 3B">
    <button className="world-city-unlock-dismiss" aria-label="Masquer la mission Ville 3B" onClick={()=>{cityUnlockGuideStorage(false);setCityUnlockMission(false);}}>×</button>
    <small>VILLE 3B · ÉTAPE {cityGuide.step}/{cityGuide.total}</small>
@@ -251,7 +306,7 @@ function WorldSession({uid,goTo}){
   {error&&<div className="world-failure" role="alert"><h2>Reprendre l’exploration</h2><p>{error}</p><button className="world-primary" onClick={()=>location.reload()}>Recharger le monde</button><button onClick={()=>goTo('home')}>Retour à l’application</button></div>}
   {fieldCombat&&<FieldEncounter save={save} act={act} onRetreat={finishEncounter} onPause={()=>setPanel('encounterPause')} snapshot={snapshot}/>}
   {!panel&&snapshot.region!=='hub'&&<>{!(snapshot.waypoint&&snapshot.remaining>7)&&<button className="paris-journal-link" onClick={()=>setPanel('paris')}>La vie du quartier</button>}{snapshot.interior&&<div className="paris-place">{snapshot.interior==='atelier'?'Atelier des Verrières':'Refuge des Liens'}</div>}</>}
-  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation',valueTrial:valueRule?'Épreuve · '+valueRule.value:'Épreuve du Gardien',guardianHub:hubGuardianInfo?.name||'Gardien',city3b:'Ville 3B'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena','city3b'].includes(panel)}>
+  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation',valueTrial:valueRule?'Épreuve · '+valueRule.value:'Épreuve du Gardien',guardianHub:hubGuardianInfo?.name||'Gardien',city3b:'Ville 3B',interaction:interactionMenu?.item?.name||'Actions contextuelles'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena','city3b'].includes(panel)}>
    {panel==='city3b'&&<City3BPanel uid={uid} onLogin={()=>goTo('member')} onNotice={announce} onWorldCitySync={syncCityProgress}/>}
    {panel==='guardianHub'&&hubGuardianInfo&&<div className="guardian-hub-panel"><span className="world-kicker">{hubGuardianInfo.value} · Gardien libéré</span><h3>{hubGuardianInfo.name}</h3><p>Le Gardien reste présent dans la Cité. Tu peux retourner dans son pays pour poursuivre les défis, les rencontres et la reconstruction.</p><div className="world-actions"><button className="world-primary" onClick={()=>{const region=hubGuardianInfo.region;setHubGuardianInfo(null);setPanel(null);travel(region);}}>Retourner en {countryById[hubGuardianInfo.region]?.name||hubGuardianInfo.region}</button><button onClick={()=>{setHubGuardianInfo(null);setPanel(null);}}>Rester dans la Cité</button></div></div>}
    {panel==='valueTrial'&&valueRule&&<div className="guardian-value-panel"><span className="world-kicker">{valueRule.name} · {valueRule.value}</span>{valueState?.completed?<><h3>Valeur maîtrisée</h3><p>Cette épreuve est terminée. Ton groupe commencera le combat du Gardien avec une préparation supplémentaire.</p><button className="world-primary" onClick={()=>setPanel(null)}>Reprendre l’exploration</button></>:valueStep?<><h3>Étape {valueStep.step+1}/3</h3><p>Choisis la réponse qui correspond le mieux à la valeur <strong>{valueRule.value}</strong>.</p><div className="world-actions">{valueOptions.map(option=><button key={option.id} onClick={()=>{const next=act({type:'guardianValueChoice',choiceId:option.id});if(next?.adventure.values?.[save.region]?.completed)chime();}}>{option.label}</button>)}</div></>:<p>Épreuve indisponible.</p>}</div>}
