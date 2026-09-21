@@ -4,8 +4,10 @@ import {
 } from 'lucide-react';
 import { useLoyalty } from '../loyalty/LoyaltyContext.jsx';
 import {
-  BOOT_PRESETS, COMPETITIONS, KEEPER_POWERS, PENALTY_COUNTRIES, PLAYER_STYLES,
-  SHIRT_COLORS, careerTierFor, countryById, createDefaultPenaltyProfile, normalizePenaltyProfile,
+  BOOT_MATERIALS, BOOT_PRESETS, BOOT_STUDS, COMPETITIONS, KEEPER_POWERS,
+  KIT_COLLARS, KIT_SLEEVES, PENALTY_COUNTRIES, PLAYER_STYLES, SHIRT_COLORS,
+  SHORTS_CUTS, SOCKS_STYLES, careerTierFor, countryById, createDefaultPenaltyProfile,
+  normalizePenaltyProfile,
 } from './penaltyRush/config.js';
 import {
   interpretAttackGesture, interpretKeeperGesture, remainingPossessionSeconds,
@@ -188,7 +190,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
                     : tab === 'club'
                       ? <ClubPanel snapshot={snapshot} profile={profile} busy={busy} request={request} />
                       : tab === 'international'
-                        ? <InternationalPanel snapshot={snapshot} profile={profile} />
+                        ? <InternationalPanel snapshot={snapshot} profile={profile} busy={busy} request={request} />
                         : <CareerPanel snapshot={snapshot} rating={rating} tier={tier} profile={profile} />}
             </main>
           </>
@@ -302,7 +304,14 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
           <label>Motif du maillot<select value={profile.kit.pattern} onChange={(e) => patchNested('kit', 'pattern', e.target.value)}>
             <option value="clean">Épuré</option><option value="stripe">Bandes</option><option value="split">Bicolore</option><option value="gradient">Dégradé</option><option value="matrix">Matrix discret</option>
           </select></label>
+          <label>Manches<select value={profile.kit.sleeves || 'short'} onChange={(e) => patchNested('kit', 'sleeves', e.target.value)}>{KIT_SLEEVES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Col<select value={profile.kit.collar || 'v'} onChange={(e) => patchNested('kit', 'collar', e.target.value)}>{KIT_COLLARS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Coupe du short<select value={profile.kit.shortsCut || 'classic'} onChange={(e) => patchNested('kit', 'shortsCut', e.target.value)}>{SHORTS_CUTS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Hauteur des chaussettes<select value={profile.kit.socksStyle || 'high'} onChange={(e) => patchNested('kit', 'socksStyle', e.target.value)}>{SOCKS_STYLES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
           <label>Chaussures<select value={profile.boots.preset} onChange={(e) => patchNested('boots', 'preset', e.target.value)}>{BOOT_PRESETS.map((boot) => <option value={boot.id} key={boot.id}>{boot.name}</option>)}</select></label>
+          <label>Matière<select value={profile.boots.material || 'synthetic'} onChange={(e) => patchNested('boots', 'material', e.target.value)}>{BOOT_MATERIALS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Type de crampons<select value={profile.boots.studs || 'mixed'} onChange={(e) => patchNested('boots', 'studs', e.target.value)}>{BOOT_STUDS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Signature sur la chaussure<input value={profile.boots.signature || ''} maxLength={8} placeholder="NOM / 3B" onChange={(e) => patchNested('boots', 'signature', e.target.value.toUpperCase())} /></label>
           {[
             ['upper', 'Chaussure'],
             ['sole', 'Semelle'],
@@ -311,6 +320,7 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
           <label>Célébration<select value={profile.celebration} onChange={(e) => patch('celebration', e.target.value)}>
             <option value="calme">Calme</option><option value="crown">Couronne 3B</option><option value="respect">Respect</option><option value="matrix">Matrix</option>
           </select></label>
+          <small className="penalty-field-note">Toutes ces options sont visuelles : aucune tenue, chaussure, matière ou signature ne donne un bonus de gameplay.</small>
         </article>
 
         <article>
@@ -348,35 +358,71 @@ function ClubPanel({ snapshot, profile, busy, request }) {
   );
 }
 
-function InternationalPanel({ snapshot, profile }) {
+function InternationalPanel({ snapshot, profile, busy, request }) {
   const country = countryById(profile.countryId);
   const international = snapshot?.international || {};
   const statusText = {
-    selection: 'Sélection',
+    selection: 'Sélection confirmée',
     preselection: 'Présélection',
+    declined: 'Convocation déclinée',
     observe: 'Observé',
     radar: 'Radar national',
     club: 'Carrière club',
     'non-classe': '10 matchs requis',
   }[international.scouting] || 'Radar national';
+
+  const hasCallup = international.selectionStatus === 'preselected' && international.selectionId;
+  const selected = international.selectionStatus === 'selected';
+
   return (
     <section className="penalty-panel-page">
       <span className="penalty-kicker">INTERNATIONAL</span><h1>{country.flag} {country.name} peut avoir besoin de toi.</h1>
-      <p>La sélection regarde le classement national, la forme récente, la performance sous pression et les besoins de profils. Être premier ne garantit pas automatiquement une convocation.</p>
+      <p>La sélection regarde ton classement national, ta forme, tes performances sous pression et le profil recherché. Le classement seul ne garantit jamais une place.</p>
+
+      {hasCallup && (
+        <div className="penalty-callup" data-state="urgent">
+          <Globe2 size={32}/>
+          <div>
+            <b>LE PAYS A BESOIN DE TOI</b>
+            <p>{country.name} t’a présélectionné{international.windowName ? ' pour ' + international.windowName : ''}. Profil recherché : {international.roleProfile || PLAYER_STYLES[profile.styleId]?.name || 'polyvalent'}.</p>
+            <div className="penalty-inline-actions">
+              <button className="penalty-primary" disabled={busy} onClick={() => request('international.respond', { selectionId: international.selectionId, decision: 'accept' }).catch(() => {})}>Accepter la convocation</button>
+              <button className="penalty-secondary" disabled={busy} onClick={() => request('international.respond', { selectionId: international.selectionId, decision: 'decline' }).catch(() => {})}>Décliner</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selected && (
+        <div className="penalty-callup" data-state="selected">
+          <Globe2 size={32}/>
+          <div>
+            <b>{country.flag} SÉLECTION CONFIRMÉE</b>
+            <p>Tu représenteras {country.name}{international.windowName ? ' pendant ' + international.windowName : ''}. Le maillot de sélection remplace automatiquement la tenue club pendant les rencontres internationales, sans modifier tes chaussures ni ton identité.</p>
+          </div>
+        </div>
+      )}
+
       <div className="penalty-international-grid">
         <article><small>RANG NATIONAL</small><strong>{international.nationalRank ? '#' + international.nationalRank : '—'}</strong><span>{country.name}</span></article>
         <article><small>STATUT</small><strong>{statusText}</strong><span>{international.windowLabel || 'Hors fenêtre internationale'}</span></article>
+        <article><small>PRESSION</small><strong>{Math.round((international.pressureScore || 0) * 100)} %</strong><span>Duels d’Or gagnés</span></article>
         <article><small>SÉLECTIONS</small><strong>{international.caps || 0}</strong><span>{international.goals || 0} but(s) international(aux)</span></article>
       </div>
+
+      <div className="penalty-rule-note">Parcours : radar national → observé → présélection → convocation → sélection. Une place internationale se gagne en multijoueur et ne peut pas être achetée.</div>
+
       <h2>Compétitions 3B</h2>
       <div className="penalty-competition-list">{COMPETITIONS.map((competition) => <article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
-      <div className="penalty-callup">
-        <Globe2 size={28}/><div><b>Le pays a besoin de toi</b><p>Lors d’une fenêtre, une convocation serveur peut apparaître selon ton rang, ta forme et le profil recherché. La sélection reste un événement de carrière, pas un bonus acheté.</p></div>
-      </div>
+
+      {!hasCallup && !selected && (
+        <div className="penalty-callup">
+          <Globe2 size={28}/><div><b>Le pays a besoin de toi</b><p>Lors d’une fenêtre officielle, le serveur peut te présélectionner selon ton rang, ta réputation, ta résistance à la pression et le profil dont la sélection a besoin.</p></div>
+        </div>
+      )}
     </section>
   );
 }
-
 function CareerPanel({ snapshot, rating, tier, profile }) {
   const career = snapshot?.career || {};
   const history = snapshot?.history || [];
