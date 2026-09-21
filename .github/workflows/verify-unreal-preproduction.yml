@@ -5,8 +5,12 @@ on:
     paths:
       - 'unreal/**'
       - 'supabase/functions/world-unreal-*/**'
+      - 'supabase/functions/ai-council-orchestrate/**'
+      - 'supabase/migrations/**ai_council**'
+      - 'scripts/threeb-unreal-bridge.mjs'
       - 'src/world/hub/data/**'
       - 'tests/unreal-preproduction-contract.test.js'
+      - 'tests/ai-council-unreal-bridge.test.js'
       - '.github/workflows/verify-unreal-preproduction.yml'
   workflow_dispatch:
 
@@ -25,5 +29,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node --test tests/unreal-preproduction-contract.test.js
+      - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
         run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py
