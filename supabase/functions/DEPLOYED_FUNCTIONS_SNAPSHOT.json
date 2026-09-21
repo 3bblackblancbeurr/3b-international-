@@ -21,6 +21,18 @@
       "status": "ACTIVE"
     },
     {
+      "slug": "control-center",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "control-center-agent",
+      "version": 1,
+      "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
       "slug": "delete-account",
       "version": 1,
       "verify_jwt": true,
@@ -58,7 +70,7 @@
     },
     {
       "slug": "member-auth",
-      "version": 2,
+      "version": 3,
       "verify_jwt": false,
       "status": "ACTIVE"
     },
