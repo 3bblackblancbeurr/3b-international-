@@ -178,7 +178,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
                 : tab === 'play'
                   ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} code={privateCode} setCode={setPrivateCode} request={request} />
                   : tab === 'player'
-                    ? <PlayerStudio profile={profile} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
+                    ? <PlayerStudio profile={profile} rating={rating} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
                     : tab === 'club'
                       ? <ClubPanel snapshot={snapshot} profile={profile} busy={busy} request={request} />
                       : tab === 'international'
@@ -245,7 +245,7 @@ function PlayHome({ busy, profile, rating, tier, code, setCode, request }) {
   );
 }
 
-function PlayerStudio({ profile, setProfile, busy, onSave }) {
+function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
   const country = countryById(profile.countryId);
   function patch(key, value) { setProfile((current) => ({ ...current, [key]: value })); }
   function patchNested(key, child, value) {
@@ -271,8 +271,9 @@ function PlayerStudio({ profile, setProfile, busy, onSave }) {
           <label>Prénom / pseudo<input value={profile.displayName} maxLength={24} onChange={(e) => patch('displayName', e.target.value)} /></label>
           <label>Nom sur le maillot<input value={profile.shirtName} maxLength={14} onChange={(e) => patch('shirtName', e.target.value.toUpperCase())} /></label>
           <label>Numéro<input type="number" min="1" max="99" value={profile.shirtNumber} onChange={(e) => patch('shirtNumber', e.target.value)} /></label>
-          <label>Pays<select value={profile.countryId} onChange={(e) => patch('countryId', e.target.value)}>{PENALTY_COUNTRIES.map((c) => <option value={c.id} key={c.id}>{c.flag} {c.name}</option>)}</select></label>
-          <label>Club affiché<input value={profile.clubName} maxLength={40} placeholder="Sans club" onChange={(e) => patch('clubName', e.target.value)} /></label>
+          <label>Pays<select value={profile.countryId} disabled={(rating?.games || 0) > 0} onChange={(e) => patch('countryId', e.target.value)}>{PENALTY_COUNTRIES.map((c) => <option value={c.id} key={c.id}>{c.flag} {c.name}</option>)}</select></label>
+          {(rating?.games || 0) > 0 && <small className="penalty-field-note">Pays de carrière verrouillé après ton premier duel officiel.</small>}
+          <label>Club<span className="penalty-readonly-field">{profile.clubName || 'Sans club · rejoins-en un dans l’onglet Club'}</span></label>
         </article>
 
         <article>
@@ -292,7 +293,18 @@ function PlayerStudio({ profile, setProfile, busy, onSave }) {
             ['shorts', 'Short'],
             ['socks', 'Chaussettes'],
           ].map(([key, label]) => <div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={label + ' ' + color} aria-pressed={profile.kit[key] === color} style={{ '--swatch': color }} onClick={() => patchNested('kit', key, color)} />)}</div></div>)}
+          <label>Motif du maillot<select value={profile.kit.pattern} onChange={(e) => patchNested('kit', 'pattern', e.target.value)}>
+            <option value="clean">Épuré</option><option value="stripe">Bandes</option><option value="split">Bicolore</option><option value="gradient">Dégradé</option><option value="matrix">Matrix discret</option>
+          </select></label>
           <label>Chaussures<select value={profile.boots.preset} onChange={(e) => patchNested('boots', 'preset', e.target.value)}>{BOOT_PRESETS.map((boot) => <option value={boot.id} key={boot.id}>{boot.name}</option>)}</select></label>
+          {[
+            ['upper', 'Chaussure'],
+            ['sole', 'Semelle'],
+            ['laces', 'Lacets'],
+          ].map(([key, label]) => <div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={label + ' ' + color} aria-pressed={profile.boots[key] === color} style={{ '--swatch': color }} onClick={() => patchNested('boots', key, color)} />)}</div></div>)}
+          <label>Célébration<select value={profile.celebration} onChange={(e) => patch('celebration', e.target.value)}>
+            <option value="calme">Calme</option><option value="crown">Couronne 3B</option><option value="respect">Respect</option><option value="matrix">Matrix</option>
+          </select></label>
         </article>
 
         <article>
