@@ -56,7 +56,8 @@
       "order": 3,
       "editor_required": true,
       "asset_paths": [
-        "/Game/3B/World/France/Data/DA_FranceJusticeSlice"
+        "/Game/3B/World/France/Data/DA_FranceJusticeSlice",
+        "/Game/3B/World/France/Data/DA_FranceRegion"
       ],
       "source_contracts": [
         "france-justice-v1.json",
@@ -69,6 +70,11 @@
       ],
       "evidence": [
         "asset_validator_output"
+      ],
+      "goals": [
+        "create_story_slice_data_asset",
+        "create_region_definition_from_vertical_contract",
+        "link_france_territory_to_region_definition"
       ]
     },
     {
