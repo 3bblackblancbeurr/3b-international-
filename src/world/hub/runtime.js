@@ -67,6 +67,7 @@ export function buildHubRuntimeItems({
       social:!!schedule.social,
       name: npc.name,
       role: npc.role,
+      country:npc.country||null,
       rarity: npc.rarity,
       missionIds: npc.missionIds || [],
       x: center.x + d.x,
