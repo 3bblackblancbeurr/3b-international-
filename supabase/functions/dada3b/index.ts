@@ -74,7 +74,10 @@ async function userFor(req:Request){
 
   let sessionId:string|null=null;
   try{
-    const payload=JSON.parse(atob(auth.slice(7).split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const segment=auth.slice(7).split('.')[1]||'';
+    const normalized=segment.replace(/-/g,'+').replace(/_/g,'/');
+    const padded=normalized+'='.repeat((4-(normalized.length%4))%4);
+    const payload=JSON.parse(atob(padded));
     sessionId=payload?.session_id||null;
   }catch{}
   if(!sessionId||!await rpc('loyalty_session_valid',{p_user:user.id,p_session:sessionId})){
