@@ -95,6 +95,14 @@ test('la capture obligatoire filtre les mouvements non offensifs quand une captu
   assert.deepEqual(legalMoves(match, 3), [0]);
 });
 
+test('le premier pas dans la voie finale déclenche l’ouverture de la Porte nationale', () => {
+  const match = createMatch(seats);
+  match.players[0].pieces[0].steps = TRACK_LENGTH - 2;
+  const result = movePiece(match, 0, 2);
+  assert.equal(result.event.type, 'door');
+  assert.equal(result.match.players[0].pieces[0].steps, TRACK_LENGTH);
+});
+
 test('il faut le compte exact pour atteindre le Nexus', () => {
   const match = createMatch(seats);
   match.players[0].pieces[0].steps = FINISH_STEP - 2;
