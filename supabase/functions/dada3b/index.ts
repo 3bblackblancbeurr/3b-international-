@@ -24,7 +24,7 @@ const ORIGINS=new Set([
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const CODE=/^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip']);
+const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip','claim']);
 const ONLINE_MODES=new Set(['private','quick','ranked','team2v2']);
 const COSMETIC_SLOTS=new Set(['totem_skin','trail','dice_skin','board_skin','capture_fx','intro_fx']);
 const STARTER_COSMETICS=['DADA_TOTEM_CORE','DADA_TRAIL_MATRIX','DADA_DICE_CORE','DADA_BOARD_NEXUS','DADA_CAPTURE_FRACTURE','DADA_INTRO_EIGHT_DOORS'];
@@ -97,11 +97,15 @@ async function userFor(req:Request){
 }
 
 async function ensureStarterCosmetics(uid:string){
-  await admin('/rest/v1/inventory?on_conflict=user_id,item_code',{
-    method:'POST',
-    body:STARTER_COSMETICS.map(item_code=>({user_id:uid,item_code,quantity:1})),
-    prefer:'resolution=merge-duplicates,return=minimal',
-  });
+  for(const itemCode of STARTER_COSMETICS){
+    await rpc('market_mint_item',{
+      p_user:uid,
+      p_item_code:itemCode,
+      p_origin:'game_reward',
+      p_origin_ref:'dada:starter:'+itemCode,
+      p_metadata:{game:'dada3b',starter:true},
+    }).catch(()=>null);
+  }
 }
 
 async function loadoutFor(uid:string){
@@ -115,21 +119,34 @@ async function loadoutFor(uid:string){
 }
 
 async function cosmeticState(uid:string){
-  const [loadout,catalog,owned]=await Promise.all([
+  const [loadout,catalog,legacyOwned,instances,rules,claims]=await Promise.all([
     loadoutFor(uid),
     admin('/rest/v1/inventory_items?active=eq.true&select=code,name,rarity,description,metadata&order=code.asc'),
     admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&select=item_code,quantity'),
+    admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&select=item_code'),
+    admin('/rest/v1/collectible_reward_rules?active=eq.true&code=like.dada_%25&select=code,item_code,label,xp_required'),
+    admin('/rest/v1/collectible_reward_claims?user_id=eq.'+encodeURIComponent(uid)+'&rule_code=like.dada_%25&select=rule_code'),
   ]);
   const items=(Array.isArray(catalog)?catalog:[]).filter((item:any)=>item?.metadata?.game==='dada3b'&&COSMETIC_SLOTS.has(item?.metadata?.slot));
-  const ownedCodes=new Set((Array.isArray(owned)?owned:[]).filter((row:any)=>Number(row.quantity)>0).map((row:any)=>row.item_code));
+  const ownedCodes=new Set([
+    ...(Array.isArray(legacyOwned)?legacyOwned:[]).filter((row:any)=>Number(row.quantity)>0).map((row:any)=>row.item_code),
+    ...(Array.isArray(instances)?instances:[]).map((row:any)=>row.item_code),
+  ]);
+  const ruleByItem=new Map((Array.isArray(rules)?rules:[]).map((row:any)=>[row.item_code,row]));
+  const claimed=new Set((Array.isArray(claims)?claims:[]).map((row:any)=>row.rule_code));
   return {
     loadout,
-    catalog:items.map((item:any)=>({
-      code:item.code,name:item.name,rarity:item.rarity,description:item.description,
-      slot:item.metadata.slot,collection:item.metadata.collection||'core',
-      country:item.metadata.country||null,value:item.metadata.value||null,
-      owned:ownedCodes.has(item.code),payToWin:false,
-    })),
+    catalog:items.map((item:any)=>{
+      const rule=ruleByItem.get(item.code);
+      return {
+        code:item.code,name:item.name,rarity:item.rarity,description:item.description,
+        slot:item.metadata.slot,collection:item.metadata.collection||'core',
+        country:item.metadata.country||null,value:item.metadata.value||null,
+        owned:ownedCodes.has(item.code),payToWin:false,
+        ruleCode:rule?.code||null,xpRequired:Number(rule?.xp_required||0),
+        claimed:rule?claimed.has(rule.code):ownedCodes.has(item.code),
+      };
+    }),
   };
 }
 
@@ -139,13 +156,28 @@ async function equipCosmetic(uid:string,body:any){
   const items=await admin('/rest/v1/inventory_items?code=eq.'+encodeURIComponent(itemCode)+'&active=eq.true&select=code,metadata&limit=1');
   const item=Array.isArray(items)?items[0]:null;
   if(!item||item.metadata?.game!=='dada3b'||item.metadata?.slot!==slot||item.metadata?.pay_to_win!==false)throw new Failure(400,'Ce cosmétique ne peut pas être équipé ici.');
-  const owned=await admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&item_code=eq.'+encodeURIComponent(itemCode)+'&select=quantity&limit=1');
-  if(!Array.isArray(owned)||!owned[0]||Number(owned[0].quantity)<1)throw new Failure(403,'Ce cosmétique n’est pas encore débloqué.');
+  const [legacyOwned,instances]=await Promise.all([
+    admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&item_code=eq.'+encodeURIComponent(itemCode)+'&select=quantity&limit=1'),
+    admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&item_code=eq.'+encodeURIComponent(itemCode)+'&select=id&limit=1'),
+  ]);
+  const owns=(Array.isArray(legacyOwned)&&legacyOwned[0]&&Number(legacyOwned[0].quantity)>0)||(Array.isArray(instances)&&Boolean(instances[0]));
+  if(!owns)throw new Failure(403,'Ce cosmétique n’est pas encore débloqué.');
   const current=await loadoutFor(uid);
   const next={...current,[slot]:itemCode};
   await admin('/rest/v1/dada_cosmetic_loadouts?on_conflict=user_id',{
     method:'POST',body:{user_id:uid,...next,updated_at:nowIso()},prefer:'resolution=merge-duplicates,return=minimal',
   });
+  return await cosmeticState(uid);
+}
+
+async function claimCosmetic(uid:string,body:any){
+  const rule=String(body.ruleCode||'');
+  if(!/^dada_[a-z0-9_]{4,80}$/.test(rule))throw new Failure(400,'Récompense DADA invalide.');
+  try{await rpc('market_claim_reward',{p_user:uid,p_rule:rule});}
+  catch(error){
+    const message=error instanceof Error?error.message:String(error);
+    if(!/déjà récupérée|already/i.test(message))throw new Failure(400,/XP insuffisante/i.test(message)?'XP insuffisante pour cette récompense.':'Récompense momentanément indisponible.');
+  }
   return await cosmeticState(uid);
 }
 
@@ -817,6 +849,9 @@ Deno.serve(async(req)=>{
     }
     if(body.action==='equip'){
       return reply({...await equipCosmetic(uid,body),serverTime:nowIso()});
+    }
+    if(body.action==='claim'){
+      return reply({...await claimCosmetic(uid,body),serverTime:nowIso()});
     }
 
     let room:Room|null=null;
