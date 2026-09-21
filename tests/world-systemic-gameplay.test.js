@@ -6,6 +6,8 @@ import {GUARDIAN_CAMPAIGNS,INDEPENDENT_MISSION_ARCHETYPES,centralMissionIndex,va
 import {HUB_DIALOGUE_INTENT_SET,hubDialogueIntents,hubDialogueIntentResponse} from '../src/world/hub/dialogue-intents.js';
 import {GUARDIAN_RELATIONSHIPS,guardianRelationshipsFor,guardianHubState,validateGuardianRelationships} from '../src/world/guardian-relations.js';
 import {GUARDIAN_RESONANCES,RING_ABILITIES,unlockedResonances,validateResonances} from '../src/world/guardian-resonances.js';
+import {GUARDIAN_COMBAT_RULES,validateGuardianCombatRules} from '../src/world/guardian-combat.js';
+import {FINAL_CIRCLE_PHASES,finalCirclePhase,validateFinalCircle} from '../src/world/final-circle.js';
 import {CONTROL_ACTIONS,defaultControlBindings,normalizeControlBindings,setPrimaryControl,controlMatches,actionHeld,controlLabel,validateControlBindings} from '../src/world/control-bindings.js';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
@@ -114,6 +116,19 @@ test('guardian resonances have combat exploration puzzle and rescue uses without
  const save={...blankSave(),seals:['france','algerie','estonie']};
  assert.deepEqual(unlockedResonances(save).map(a=>a.region),['france','algerie','estonie']);
  assert.match(RING_ABILITIES.linkPulse.rule,/pas une neuvième valeur/i);
+});
+
+test('guardian fights and the final confrontation expose eight distinct gameplay rules',()=>{
+ assert.equal(validateGuardianCombatRules(),true);
+ assert.equal(Object.keys(GUARDIAN_COMBAT_RULES).length,8);
+ assert.equal(new Set(Object.values(GUARDIAN_COMBAT_RULES).map(rule=>rule.id)).size,8);
+ assert.equal(validateFinalCircle(),true);
+ assert.equal(FINAL_CIRCLE_PHASES.length,8);
+ assert.deepEqual(FINAL_CIRCLE_PHASES.map(phase=>phase.region),['france','algerie','maroc','tunisie','espagne','italie','turquie','estonie']);
+ assert.equal(finalCirclePhase({final:true,enemy:800,enemyMax:800}).index,1);
+ assert.equal(finalCirclePhase({final:true,enemy:700,enemyMax:800}).index,2);
+ assert.equal(finalCirclePhase({final:true,enemy:400,enemyMax:800}).index,5);
+ assert.equal(finalCirclePhase({final:true,enemy:0,enemyMax:800}).index,8);
 });
 
 test('core controls are remappable by action and preserve AZERTY WASD and arrow fallbacks',()=>{
