@@ -33,7 +33,7 @@ test('agent API uses revocable device tokens and atomic command RPCs',()=>{
  assert.match(source,/control_center_pair_device/);
  assert.match(source,/control_center_claim_command/);
  assert.match(source,/control_center_complete_command/);
- assert.doesNotMatch(source,/Authorization:'Bearer '/);
+ assert.doesNotMatch(source,/req\.headers\.get\(['\"]authorization['\"]\)/i);
 });
 
 test('local PC agent has a fixed command switch and no free shell execution',()=>{
