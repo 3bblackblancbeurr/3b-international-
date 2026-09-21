@@ -47,6 +47,7 @@ import {CinematicOverlay} from './CinematicOverlay.jsx';
 import {City3BPanel} from '../city/City3BPanel.jsx';
 import {cityUnlockGuide,cityUnlockGuideRequested,cityUnlockGuideStorage} from './city-unlock-guide.js';
 import {contextActions,primaryContextAction,actionFeedback} from './interaction-system.js';
+import {isPhysicalTraversalAction} from './traversal-motion.js';
 import {guardianHubState} from './guardian-relations.js';
 import {resonanceFor,unlockedResonances} from './guardian-resonances.js';
 import {resonanceContextMessage} from './resonance-context.js';
@@ -211,12 +212,16 @@ function WorldSession({uid,goTo}){
   if(item.type==='beacon'){if(act({type:'beacon',id:item.id}))chime();return;}
   if(act({type:'encounter',id:item.id})){act({type:'fieldStart'});scene.current?.cooldown(item.id);setPanel('encounter');}
  }
- function interact(item,actionId=null){
+ async function interact(item,actionId=null){
   if(!item)return;
   const actions=contextActions(item,{save:saveRef.current,region:snapshot.region}),contextAction=(actionId?actions.find(action=>action.id===actionId):actions[0])||primaryContextAction(item,{save:saveRef.current,region:snapshot.region});
   if(!contextAction)return;
   const feedback=actionFeedback(contextAction.id);scene.current?.contextAction?.(contextAction.id,item);audio.current?.interaction?.(contextAction.id);if(soundCaptions&&feedback?.caption)captionAudio('['+feedback.caption+']');
   if(haptics&&feedback?.haptic&&globalThis.navigator?.vibrate){const pattern={light:12,medium:24,strong:[28,18,34]}[feedback.haptic];if(pattern)globalThis.navigator.vibrate(pattern);}
+  if((item.type==='hubMissionAction'||item.type==='jobAction')&&isPhysicalTraversalAction(contextAction.id)){
+   const moved=await scene.current?.performTraversal?.(contextAction.id,item);
+   if(!moved){announce('Le passage physique est bloqué. Replace-toi près de la cible et réessaie.');return;}
+  }
   if(contextAction.id==='resonance'){
    const next=act({type:'resonanceContext',targetId:item.id,targetType:item.type,verb:contextAction.resonanceVerb});if(next)announce(resonanceContextMessage(next.adventure.resonanceContext));return;
   }
