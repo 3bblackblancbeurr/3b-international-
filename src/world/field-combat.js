@@ -54,7 +54,7 @@ export function stepField(enc,input,move){
  if(input.kind&&!['strike','power','guard','dodge','trap','support','resonance'].includes(input.kind))throw Error('Action de combat inconnue.');
  const e={...enc,field:normalizeField(enc.field)},f=e.field,dt=COMBAT_TICK;
  const circlePhase=e.final?finalCirclePhase(e):null,guardianBoss=!!e.boss,mechanicRegion=circlePhase?.region||e.region;
- if(e.final&&circlePhase&&e.finalCirclePhase!==circlePhase.index){Object.assign(e,initialGuardianCombatState(mechanicRegion));e.finalCirclePhase=circlePhase.index;e.intent=(FIELD_PATTERNS[mechanicRegion]||FIELD_PATTERNS.france)[0];e.log=`Le Lien répond · ${circlePhase.guardian} · ${circlePhase.value}. ${circlePhase.role}`;}
+ if(e.final&&circlePhase&&e.finalCirclePhase!==circlePhase.index){const previousPhase=Math.max(0,Math.min(8,Math.floor(Number(e.finalCirclePhase)||0)));if(previousPhase&&circlePhase.index>previousPhase){markFinalCirclePhaseMastered(e,{index:previousPhase});e.hp=Math.min(e.maxHP,e.hp+Math.max(14,Math.round(e.maxHP*.12)));e.focus=Math.min(3,(e.focus||0)+1);f.stamina=Math.min(100,(f.stamina||0)+18);}Object.assign(e,initialGuardianCombatState(mechanicRegion));e.finalCirclePhase=circlePhase.index;e.intent=(FIELD_PATTERNS[mechanicRegion]||FIELD_PATTERNS.france)[0];e.log=`Le Lien répond · ${circlePhase.guardian} · ${circlePhase.value}. ${circlePhase.role}`;}
  else if(guardianBoss&&!e.final&&!e.guardianStep)Object.assign(e,initialGuardianCombatState(mechanicRegion));
  if(guardianBoss&&mechanicRegion==='espagne')e.guardianMeter=Math.max(0,(e.guardianMeter||0)-3);
  f.time+=dt;for(const key of ['cooldown','dodge','guard','recover','windup','stagger'])f[key]=Math.max(0,f[key]-dt);
