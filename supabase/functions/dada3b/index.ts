@@ -24,8 +24,18 @@ const ORIGINS=new Set([
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const CODE=/^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard']);
+const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip']);
 const ONLINE_MODES=new Set(['private','quick','ranked','team2v2']);
+const COSMETIC_SLOTS=new Set(['totem_skin','trail','dice_skin','board_skin','capture_fx','intro_fx']);
+const STARTER_COSMETICS=['DADA_TOTEM_CORE','DADA_TRAIL_MATRIX','DADA_DICE_CORE','DADA_BOARD_NEXUS','DADA_CAPTURE_FRACTURE','DADA_INTRO_EIGHT_DOORS'];
+const DEFAULT_LOADOUT={
+  totem_skin:'DADA_TOTEM_CORE',
+  trail:'DADA_TRAIL_MATRIX',
+  dice_skin:'DADA_DICE_CORE',
+  board_skin:'DADA_BOARD_NEXUS',
+  capture_fx:'DADA_CAPTURE_FRACTURE',
+  intro_fx:'DADA_INTRO_EIGHT_DOORS',
+};
 
 class Failure extends Error {
   constructor(public status:number,message:string){super(message);}
@@ -86,10 +96,63 @@ async function userFor(req:Request){
   return String(user.id);
 }
 
+async function ensureStarterCosmetics(uid:string){
+  await admin('/rest/v1/inventory?on_conflict=user_id,item_code',{
+    method:'POST',
+    body:STARTER_COSMETICS.map(item_code=>({user_id:uid,item_code,quantity:1})),
+    prefer:'resolution=merge-duplicates,return=minimal',
+  });
+}
+
+async function loadoutFor(uid:string){
+  await ensureStarterCosmetics(uid);
+  const rows=await admin('/rest/v1/dada_cosmetic_loadouts?user_id=eq.'+encodeURIComponent(uid)+'&select=user_id,totem_skin,trail,dice_skin,board_skin,capture_fx,intro_fx&limit=1');
+  if(Array.isArray(rows)&&rows[0])return Object.fromEntries(Object.keys(DEFAULT_LOADOUT).map(key=>[key,rows[0][key]||DEFAULT_LOADOUT[key]]));
+  await admin('/rest/v1/dada_cosmetic_loadouts?on_conflict=user_id',{
+    method:'POST',body:{user_id:uid,...DEFAULT_LOADOUT},prefer:'resolution=merge-duplicates,return=minimal',
+  });
+  return {...DEFAULT_LOADOUT};
+}
+
+async function cosmeticState(uid:string){
+  const [loadout,catalog,owned]=await Promise.all([
+    loadoutFor(uid),
+    admin('/rest/v1/inventory_items?active=eq.true&select=code,name,rarity,description,metadata&order=code.asc'),
+    admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&select=item_code,quantity'),
+  ]);
+  const items=(Array.isArray(catalog)?catalog:[]).filter((item:any)=>item?.metadata?.game==='dada3b'&&COSMETIC_SLOTS.has(item?.metadata?.slot));
+  const ownedCodes=new Set((Array.isArray(owned)?owned:[]).filter((row:any)=>Number(row.quantity)>0).map((row:any)=>row.item_code));
+  return {
+    loadout,
+    catalog:items.map((item:any)=>({
+      code:item.code,name:item.name,rarity:item.rarity,description:item.description,
+      slot:item.metadata.slot,collection:item.metadata.collection||'core',
+      country:item.metadata.country||null,value:item.metadata.value||null,
+      owned:ownedCodes.has(item.code),payToWin:false,
+    })),
+  };
+}
+
+async function equipCosmetic(uid:string,body:any){
+  const slot=String(body.slot||''),itemCode=String(body.itemCode||'');
+  if(!COSMETIC_SLOTS.has(slot)||!/^[A-Z0-9_]{5,80}$/.test(itemCode))throw new Failure(400,'Cosmétique invalide.');
+  const items=await admin('/rest/v1/inventory_items?code=eq.'+encodeURIComponent(itemCode)+'&active=eq.true&select=code,metadata&limit=1');
+  const item=Array.isArray(items)?items[0]:null;
+  if(!item||item.metadata?.game!=='dada3b'||item.metadata?.slot!==slot||item.metadata?.pay_to_win!==false)throw new Failure(400,'Ce cosmétique ne peut pas être équipé ici.');
+  const owned=await admin('/rest/v1/inventory?user_id=eq.'+encodeURIComponent(uid)+'&item_code=eq.'+encodeURIComponent(itemCode)+'&select=quantity&limit=1');
+  if(!Array.isArray(owned)||!owned[0]||Number(owned[0].quantity)<1)throw new Failure(403,'Ce cosmétique n’est pas encore débloqué.');
+  const current=await loadoutFor(uid);
+  const next={...current,[slot]:itemCode};
+  await admin('/rest/v1/dada_cosmetic_loadouts?on_conflict=user_id',{
+    method:'POST',body:{user_id:uid,...next,updated_at:nowIso()},prefer:'resolution=merge-duplicates,return=minimal',
+  });
+  return await cosmeticState(uid);
+}
+
 async function profileFor(uid:string){
   const rows=await admin('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(uid)+'&select=user_id,handle&limit=1');
   if(!Array.isArray(rows)||!rows[0])throw new Failure(403,'Active ton profil 3B avant de jouer en ligne.');
-  return {handle:String(rows[0].handle||'Joueur 3B').slice(0,24)};
+  return {handle:String(rows[0].handle||'Joueur 3B').slice(0,24),cosmetics:await loadoutFor(uid)};
 }
 
 function assertCountry(value:unknown){
@@ -104,7 +167,7 @@ function onlineRules(input:unknown){
   return rules;
 }
 
-function playerEntry(uid:string,handle:string,countryId:string,ready=false,team:string|null=null):Player{
+function playerEntry(uid:string,handle:string,countryId:string,ready=false,team:string|null=null,cosmetics:any=null):Player{
   return {
     uid,
     name:handle,
@@ -115,6 +178,7 @@ function playerEntry(uid:string,handle:string,countryId:string,ready=false,team:
     joinedAt:nowIso(),
     lastSeen:nowIso(),
     team:['A','B'].includes(team||'')?team:null,
+    cosmetics:cosmetics&&typeof cosmetics==='object'?cosmetics:{...DEFAULT_LOADOUT},
   };
 }
 
@@ -151,7 +215,7 @@ async function cleanupExpiredWaiting(){
   }).catch(()=>null);
 }
 
-async function insertRoom(uid:string,handle:string,countryId:string,mode:string,maxPlayers:number,rules:any,team:string|null=null){
+async function insertRoom(uid:string,handle:string,countryId:string,mode:string,maxPlayers:number,rules:any,team:string|null=null,cosmetics:any=null){
   for(let attempt=0;attempt<6;attempt++){
     const code=randomCode();
     try{
@@ -162,7 +226,7 @@ async function insertRoom(uid:string,handle:string,countryId:string,mode:string,
         status:'waiting',
         max_players:maxPlayers,
         rules,
-        players:[playerEntry(uid,handle,countryId,true,team)],
+        players:[playerEntry(uid,handle,countryId,true,team,cosmetics)],
         spectators:[],
         member_ids:[uid],
         expires_at:plusMs(mode==='private'?30*60_000:8*60_000),
@@ -372,6 +436,7 @@ function publicRoom(room:Room,uid:string){
     isSelf:player.uid===uid,
     lastSeen:player.lastSeen,
     team:player.team??null,
+    cosmetics:player.cosmetics&&typeof player.cosmetics==='object'?player.cosmetics:{...DEFAULT_LOADOUT},
   }));
   const spectators=(room.spectators||[]).map((entry:any)=>({
     name:entry.name,
@@ -441,7 +506,7 @@ async function createPrivate(uid:string,body:any){
   const countryId=assertCountry(body.countryId);
   const rules=onlineRules(body.rules);
   const maxPlayers=rules.teamMode?4:(Number.isInteger(body.maxPlayers)?Math.max(2,Math.min(8,body.maxPlayers)):4);
-  return await insertRoom(uid,profile.handle,countryId,'private',maxPlayers,rules,rules.teamMode?'A':null);
+  return await insertRoom(uid,profile.handle,countryId,'private',maxPlayers,rules,rules.teamMode?'A':null,profile.cosmetics);
 }
 
 async function joinPrivate(uid:string,body:any){
@@ -461,7 +526,7 @@ async function joinPrivate(uid:string,body:any){
     const b=(room.players||[]).filter((player:any)=>player.team==='B').length;
     team=a<=b?'A':'B';
   }
-  const players=[...(room.players||[]),playerEntry(uid,profile.handle,countryId,false,team)];
+  const players=[...(room.players||[]),playerEntry(uid,profile.handle,countryId,false,team,profile.cosmetics)];
   room=await commitRoom(room,{
     players,
     member_ids:roomMembers(players,room.spectators||[]),
@@ -516,7 +581,7 @@ async function queueRoom(uid:string,body:any){
   );
 
   if(!room){
-    return await insertRoom(uid,profile.handle,countryId,mode,targetPlayers,rules,teamMode?'A':null);
+    return await insertRoom(uid,profile.handle,countryId,mode,targetPlayers,rules,teamMode?'A':null,profile.cosmetics);
   }
 
   let team:string|null=null;
@@ -527,7 +592,7 @@ async function queueRoom(uid:string,body:any){
   }
   const players=[
     ...(room.players||[]).map((player:any)=>({...player,ready:true})),
-    playerEntry(uid,profile.handle,countryId,true,team),
+    playerEntry(uid,profile.handle,countryId,true,team,profile.cosmetics),
   ];
   room=await commitRoom(room,{
     players,
@@ -746,6 +811,12 @@ Deno.serve(async(req)=>{
 
     if(body.action==='leaderboard'){
       return reply({leaderboard:await leaderboard(),serverTime:nowIso()});
+    }
+    if(body.action==='cosmetics'){
+      return reply({...await cosmeticState(uid),serverTime:nowIso()});
+    }
+    if(body.action==='equip'){
+      return reply({...await equipCosmetic(uid,body),serverTime:nowIso()});
     }
 
     let room:Room|null=null;
