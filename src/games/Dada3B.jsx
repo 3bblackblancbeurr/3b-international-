@@ -87,6 +87,12 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const[cosmetics,setCosmetics]=useState(null),[cosmeticStatus,setCosmeticStatus]=useState('');
  const sequence=useRef(0),recorded=useRef(false);
  useEffect(()=>()=>{sequence.current++;closeDadaAudio();},[]);
+ useEffect(()=>{
+  if(!account.user){setCosmetics(null);return;}
+  let live=true;
+  dadaRequest('cosmetics').then(data=>{if(live)setCosmetics({loadout:data.loadout,catalog:data.catalog||[]});}).catch(()=>{});
+  return()=>{live=false;};
+ },[account.user?.id]);
 
  const activeSeats=seats.filter(s=>s.type!=='off');
  const renderMatch=onlineRoom?.state||match;
