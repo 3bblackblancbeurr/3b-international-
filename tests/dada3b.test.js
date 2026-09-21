@@ -136,3 +136,65 @@ test('succès 8 nations et 4 au Nexus sont calculés',()=>{
   assert.ok(ids.includes('four-nexus'));
   assert.ok(ids.includes('eight-nations'));
 });
+
+
+test('2v2 exige exactement deux joueurs par équipe',()=>{
+  assert.throws(()=>createMatch([
+    {countryId:'fr',team:'A'},{countryId:'dz',team:'A'},{countryId:'es',team:'A'},{countryId:'ma',team:'B'},
+  ],{teamMode:true}),/deux joueurs dans chaque équipe/);
+  const match=createMatch([
+    {countryId:'fr',team:'A'},{countryId:'dz',team:'B'},{countryId:'es',team:'A'},{countryId:'ma',team:'B'},
+  ],{teamMode:true});
+  assert.equal(match.players.filter(p=>p.team==='A').length,2);
+  assert.equal(match.players.filter(p=>p.team==='B').length,2);
+});
+
+test('un allié 2v2 ne peut jamais être capturé',()=>{
+  let match=createMatch([
+    {countryId:'fr',team:'A'},{countryId:'dz',team:'B'},{countryId:'es',team:'A'},{countryId:'ma',team:'B'},
+  ],{teamMode:true,safeCells:false});
+  match.players[0].pieces[0].steps=2;
+  const landing=globalCellFor('fr',5);
+  match.players[2].pieces[0].steps=stepForCell('es',landing);
+  match=rollTurn(match,3).match;
+  const result=movePiece(match,0);
+  assert.notEqual(result.match.players[2].pieces[0].steps,STABLE);
+  assert.equal(result.match.players[0].stats.captures,0);
+});
+
+test('deux alliés peuvent former un Bouclier d Alliance',()=>{
+  let match=createMatch([
+    {countryId:'fr',team:'A'},{countryId:'dz',team:'B'},{countryId:'es',team:'A'},{countryId:'ma',team:'B'},
+  ],{teamMode:true,safeCells:false,barricades:true});
+  match.players[0].pieces[0].steps=2;
+  const landing=globalCellFor('fr',5);
+  match.players[2].pieces[0].steps=stepForCell('es',landing);
+  match=rollTurn(match,3).match;
+  const result=movePiece(match,0);
+  assert.equal(result.event.formsBarricade,true);
+  assert.equal(result.match.players[0].stats.barricadesFormed,1);
+});
+
+test('la victoire 2v2 attend les deux partenaires',()=>{
+  let match=createMatch([
+    {countryId:'fr',team:'A'},{countryId:'dz',team:'B'},{countryId:'es',team:'A'},{countryId:'ma',team:'B'},
+  ],{teamMode:true});
+  match.players[0].pieces.forEach(p=>{p.steps=FINISH_STEP;});
+  match.players[2].pieces.forEach(p=>{p.steps=FINISH_STEP;});
+  match.players[2].pieces[0].steps=FINISH_STEP-1;
+  match.turn=2;
+  match=rollTurn(match,1).match;
+  const result=movePiece(match,0);
+  assert.equal(result.match.status,'finished');
+  assert.equal(result.match.winnerTeam,'A');
+});
+
+test('sauvegarde 2v2 conserve les équipes',()=>{
+  const match=createMatch([
+    {countryId:'fr',team:'A'},{countryId:'dz',team:'B'},{countryId:'es',team:'A'},{countryId:'ma',team:'B'},
+  ],{teamMode:true});
+  const restored=readMatchSnapshot(serializeMatch(match));
+  assert.ok(restored);
+  assert.equal(restored.rules.teamMode,true);
+  assert.deepEqual(restored.players.map(p=>p.team),['A','B','A','B']);
+});
