@@ -214,6 +214,11 @@ function WorldSession({uid,goTo}){
    const after=next.hub?.missions?.[item.missionId],advanced=(after?.completedObjectives||0)>(before?.completedObjectives||0);
    announce(item.actionLabel+(advanced?' · objectif validé':' · action enregistrée'));if(advanced)chime();return;
   }
+  if(item.type==='jobAction'){
+   const before=saveRef.current.adventure?.frontier?.[saveRef.current.region],next=act({type:'jobAction',job:item.job,actionId:item.actionId});if(!next)return;
+   const after=next.adventure?.frontier?.[next.region],advanced=(after?.jobStage||0)>(before?.jobStage||0);
+   announce(item.actionLabel+(advanced?' · étape terminée':' · action enregistrée'));if(advanced)chime();return;
+  }
   if(['inspect','observe','scan','memoryVision'].includes(contextAction.id)){
    const descriptions={
     inspect:item.detail||item.purpose||item.effect||('Tu examines '+(item.name||'cet élément')+'.'),
