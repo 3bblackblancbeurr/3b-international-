@@ -101,6 +101,14 @@ The following files deepen France without claiming final Unreal assets exist:
 
 These contracts are validated by `tests/france-preproduction-depth.test.js`. They prepare Data Assets/StateTrees/Sequencer work; they do not count as created .uasset content.
 
+
+Additional runtime contracts prepare the real handoff and co-op validation before Editor work:
+
+- `Data/France/france-nexus-handoff-v1.json` — one-time App→Unreal ticket, Nexus→France entry and persisted France→Nexus return;
+- `Data/France/france-coop-session-v1.json` — authoritative party runtime, revive, proximity, shared objectives and reconnect invariants.
+
+The Editor validator now checks that all France contracts exist and share the canonical slice before checking future Unreal assets. This remains preproduction evidence, not proof that the assets exist.
+
 ## ACTION UNREAL EDITOR RESTANTE
 
 Git can prepare the contract, C++ types, tags, tests and source data. Unreal Editor is still required to create/validate:
