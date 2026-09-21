@@ -12,7 +12,7 @@ Il définit :
 - les arcs personnels des Gardiens ;
 - la finale et les révélations.
 
-`src/world/country-campaigns.js` est seulement un **catalogue de questions, styles et beats de campagne**. Il ne peut pas contredire ou remplacer `story-canon.js`.
+`src/world/country-campaigns.js` est seulement un **catalogue de questions, styles et beats de campagne**. Il ne peut pas contredire ou remplacer `story-canon.js`, et il n'est pas injecté dans le reducer autoritaire `guardian-values.js`.
 
 ## Règle des huit
 
@@ -28,3 +28,7 @@ Ces fichiers sont narratifs/data-driven. Ils ne peuvent pas :
 - prétendre qu'un asset Unreal existe.
 
 La cohérence est verrouillée par `tests/world-narrative-canon-v2.test.js`.
+
+## Frontière gameplay
+
+`guardian-values.js` reste inchangé et continue d'être mirrorré côté moteur serveur. Les métadonnées narratives ne modifient donc aucun reducer, calcul de progression ou état autoritaire.
