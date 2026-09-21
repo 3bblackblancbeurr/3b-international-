@@ -107,6 +107,7 @@
 .penalty-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .penalty-form-grid article{padding:18px}.penalty-form-grid h3{margin:6px 0 15px;font-size:20px}
 .penalty-form-grid label{display:block;margin:10px 0;color:#899698;font-size:10px}.penalty-form-grid label input,.penalty-form-grid label select{margin-top:5px;color:#e8e4da}
+.penalty-field-note{display:block;margin:-4px 0 8px;color:#c7aa68;font-size:8px;line-height:1.45}.penalty-readonly-field{display:block;margin-top:5px;min-height:42px;padding:10px 11px;border:1px solid #ffffff0f;border-radius:10px;background:#080c0d;color:#a8b2b0;font-size:10px}
 .penalty-style-list,.penalty-power-list{display:flex;flex-direction:column;gap:6px}
 .penalty-style-list button,.penalty-power-list button{display:flex;width:100%;align-items:flex-start;gap:10px;padding:11px;border:1px solid #ffffff10;border-radius:12px;background:#090e0f;color:#dfe4df;text-align:left}
 .penalty-style-list button[aria-pressed="true"],.penalty-power-list button[aria-pressed="true"]{border-color:#d7b55e68;background:linear-gradient(100deg,#d9b45b11,#4cc5eb0b)}
