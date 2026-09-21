@@ -1,6 +1,7 @@
 import {authClient} from '../loyalty/client.js';
 import {countryById} from './catalog.js';
 import {worldRadiusFor} from './terrain.js';
+import {PARTY_SIGNAL_SET,PARTY_SIGNALS} from './coop-session.js';
 export async function partyRequest(action,payload={},client=authClient){
  const {data,error}=await client.rpc('world_party_command',{p_action:action,p_payload:payload});
  if(error)throw Error(error.message||'Le groupe est momentanément indisponible.');return data;
@@ -25,7 +26,7 @@ export function createPartyConnection({uid,onState,onPeers,onConnection,onError,
     if(disposed||current?.party?.id!==partyId||!validPose(payload)||member.id===uid)return;
     const old=peers.get(member.id);if(old&&payload.seq<=old.seq&&performance.now()-old.received<4500)return;
     const info=current.members.find(m=>m.id===member.id);if(!info)return;
-    peers.set(member.id,{...payload,id:member.id,avatar:info.avatar,received:performance.now(),signal:['hello','follow','help'].includes(payload.signal)?payload.signal:null});emit();
+    peers.set(member.id,{...payload,id:member.id,avatar:info.avatar,received:performance.now(),signal:PARTY_SIGNAL_SET.has(payload.signal)?payload.signal:null});emit();
    }).subscribe(status=>{if(disposed)return;if(member.id===uid)onConnection(status==='SUBSCRIBED'?'connected':status==='CHANNEL_ERROR'||status==='TIMED_OUT'?'reconnecting':'connecting');});
   }
   emit();
@@ -39,5 +40,5 @@ export function createPartyConnection({uid,onState,onPeers,onConnection,onError,
   emit();
  },100);
  refresh();
- return{update,refresh,pose(value){pose=value;},signal(value){if(pose){pose={...pose,signal:value};setTimeout(()=>{if(pose?.signal===value)pose={...pose,signal:null};},1600);}},dispose(){disposed=true;clearInterval(timer);remove();}};
+ return{update,refresh,pose(value){pose=value;},signal(value){if(!PARTY_SIGNAL_SET.has(value)||!pose)return false;pose={...pose,signal:value};const duration=PARTY_SIGNALS[value]?.duration||1800;setTimeout(()=>{if(pose?.signal===value)pose={...pose,signal:null};},duration);return true;}},dispose(){disposed=true;clearInterval(timer);remove();}};
 }
