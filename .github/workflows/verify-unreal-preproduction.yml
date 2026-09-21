@@ -10,6 +10,8 @@ on:
       - 'scripts/threeb-unreal-bridge.mjs'
       - 'src/world/hub/data/**'
       - 'tests/unreal-preproduction-contract.test.js'
+      - 'tests/france-unreal-contract.test.js'
+      - 'tests/world-unreal-story-state-contract.test.js'
       - 'tests/ai-council-unreal-bridge.test.js'
       - '.github/workflows/verify-unreal-preproduction.yml'
   workflow_dispatch:
@@ -28,7 +30,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node --test tests/unreal-preproduction-contract.test.js
+      - run: node --test tests/unreal-preproduction-contract.test.js tests/france-unreal-contract.test.js tests/world-unreal-story-state-contract.test.js
       - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
-        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py
+        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py unreal/ThreeBWorld/Scripts/build_france_blockout.py
