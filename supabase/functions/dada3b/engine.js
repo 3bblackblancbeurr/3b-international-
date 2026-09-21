@@ -364,7 +364,7 @@ function applyMove(match, pieceIndex) {
 
   const won = player.pieces.every((candidate) => candidate.steps === FINISH_STEP);
   const event = {
-    type: info.captures.length ? 'capture' : info.finishes ? 'finish' : info.exitsStable ? 'exit' : info.formsBarricade ? 'barricade' : 'move',
+    type: info.captures.length ? 'capture' : info.finishes ? 'finish' : info.exitsStable ? 'exit' : info.entersHome ? 'door' : info.formsBarricade ? 'barricade' : 'move',
     countryId: player.countryId,
     pieceIndex,
     roll,
@@ -379,7 +379,9 @@ function applyMove(match, pieceIndex) {
       : info.finishes
         ? `${country.name} transforme un totem en fragment lumineux dans le Nexus.`
         : info.exitsStable
-          ? `${country.name} ouvre sa Porte et libère un totem.`
+          ? `${country.name} ouvre son écurie et libère un totem.`
+          : info.entersHome
+            ? `Porte ${country.name} ouverte · ${country.guardian} guide le totem vers le Nexus.`
           : info.formsBarricade
             ? `${country.name} forme un Bouclier 3B.`
             : info.sanctuary
