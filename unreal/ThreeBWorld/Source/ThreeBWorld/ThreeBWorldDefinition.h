@@ -3,7 +3,8 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
-#include "ThreeBWorldDefinition.generated.h"\n\nclass UThreeBRegionDefinition;
+#include "ThreeBRegionDefinition.h"
+#include "ThreeBWorldDefinition.generated.h"
 
 USTRUCT(BlueprintType)
 struct FThreeBTerritoryDefinition
