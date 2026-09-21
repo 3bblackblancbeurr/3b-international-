@@ -191,6 +191,8 @@ See `Data/France/france-justice-acceptance-tests.json`, `tests/france-vertical-w
 
 The following files deepen France without claiming final Unreal assets exist:
 
+- `Data/France/france-district-content-v1.json` — eight district identities, building catalog, activities, secrets, vertical connections and pre/post-Céliane deltas;
+- `Data/France/france-district-missions-v1.json` — France-local district/exploration missions tied to the canonical Justice phases and server reward policy;
 - `Data/France/france-npc-dialogue-v1.json` — population roles, routines, dialogue intents and memory authority;
 - `Data/France/france-checkpoint-reconnect-v1.json` — last-known-good checkpoints, reconnect/CAS rules and anti-replay behavior;
 - `Data/France/france-presentation-v1.json` — cosmetic-only weather, audio, altitude atmosphere, lighting, VFX and cinematic beats;
@@ -205,7 +207,7 @@ The Editor validator checks that contracts exist, share the canonical slice, and
 
 1. compile Editor/Client/Server;
 2. worlds + World Partition;
-3. story data;
+3. story/region/district/mission data;
 4. player/input;
 5. Céliane;
 6. system Data Layers;
