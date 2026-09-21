@@ -305,3 +305,5 @@
  .dada3b-cosmetic-grid{grid-template-columns:1fr}
  .dada3b-cosmetic-grid article{min-height:138px}
 }
+
+.dada3b-totem-preview img{width:40px;height:46px;object-fit:cover;border:2px solid color-mix(in srgb,var(--country) 75%,white);border-radius:50% 50% 18% 18%;box-shadow:0 8px 16px #0008,0 0 16px color-mix(in srgb,var(--country) 28%,transparent)}
