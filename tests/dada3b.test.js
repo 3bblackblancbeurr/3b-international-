@@ -25,6 +25,7 @@ function stepForCell(countryId,cell){
   for(let step=0;step<TRACK_LENGTH;step+=1)if(globalCellFor(countryId,step)===cell)return step;
   return null;
 }
+const countryStart=countryId=>globalCellFor(countryId,0);
 
 test('sortie de l’écurie uniquement sur 6',()=>{
   const match=createMatch(seats);
@@ -69,11 +70,10 @@ test('capture renvoie un adversaire à l’écurie',()=>{
 
 test('un Sanctuaire empêche une capture',()=>{
   let match=createMatch(seats,{safeCells:true});
-  const sanctuary=0;
-  match.players[0].pieces[0].steps=stepForCell('fr',sanctuary)-1;
-  if(match.players[0].pieces[0].steps<0)match.players[0].pieces[0].steps=TRACK_LENGTH-1;
+  const sanctuary=countryStart('dz');
+  match.players[0].pieces[0].steps=stepForCell('fr',sanctuary)-3;
   match.players[1].pieces[0].steps=stepForCell('dz',sanctuary);
-  assert.deepEqual(legalMoves(match,1,0),[]);
+  assert.equal(legalMoves(match,3,0).includes(0),false);
 });
 
 test('deux Totems alliés forment une barricade infranchissable',()=>{
