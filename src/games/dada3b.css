@@ -288,3 +288,10 @@
 @keyframes dadaOpeningOut{0%,78%{opacity:1}100%{opacity:0}}
 @media(max-width:620px){.dada3b-opening-ring{width:86vw}.dada3b-opening-ring span{--r:35vw;width:42px;height:58px;font-size:8px}.dada3b-opening-core{width:118px}.dada3b-opening-core strong{font-size:46px}}
 @media(prefers-reduced-motion:reduce){.dada3b-opening{animation-duration:.35s}.dada3b-opening-ring,.dada3b-opening-ring span,.dada3b-opening-core{animation:none}}
+
+.dada3b-piece[data-returning="true"]{opacity:0;pointer-events:none}
+.dada3b-capture-ghost{position:absolute;z-index:25;width:5.65%;aspect-ratio:.88;transform:translate(-50%,-50%) scale(1.08);color:var(--country);filter:drop-shadow(0 0 10px var(--country));transition:left .62s cubic-bezier(.18,.78,.2,1),top .62s cubic-bezier(.18,.78,.2,1),transform .62s,opacity .62s;pointer-events:none}
+.dada3b-capture-ghost[data-phase="portal"]{animation:dadaGhostPortal .2s ease both}
+.dada3b-capture-ghost[data-phase="return"]{transform:translate(-50%,-50%) scale(.72);opacity:.25}
+@keyframes dadaGhostPortal{0%{transform:translate(-50%,-50%) scale(1);filter:drop-shadow(0 0 5px var(--country))}55%{transform:translate(-50%,-50%) scale(.45) rotate(12deg);filter:drop-shadow(0 0 20px #61d4ef)}100%{transform:translate(-50%,-50%) scale(1.08);filter:drop-shadow(0 0 12px var(--country))}}
+@media(prefers-reduced-motion:reduce){.dada3b-capture-ghost{transition:none;animation:none}}
