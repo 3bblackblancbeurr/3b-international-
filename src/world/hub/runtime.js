@@ -3,6 +3,7 @@ import {hubSecretReady,HUB_SECRET_ORDER} from './secret-runtime.js';
 import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.js';
 import {hubNpcSchedule} from './npc-schedule.js';
+import {hubMissionActionTargets,hasHubMissionActionPlan} from './mission-actions.js';
 import {guardianHubPresence} from '../guardian-values.js';
 import {buildMetropolisRuntimeItems,hubDistrictPosition} from './metropolis.js';
 export {hubDistrictPosition};
@@ -95,6 +96,30 @@ export function buildHubRuntimeItems({
     };
   });
 
+  const missionActionItems = missions.flatMap((mission)=>{
+    if(!hasHubMissionActionPlan(mission.id))return[];
+    const row=hubState?.missions?.[mission.id];if(row?.status!=='active')return[];
+    const recorded=hubState?.stats?.missionActions?.[mission.id]||[],targets=hubMissionActionTargets(mission.id,row,recorded);
+    const center=hubDistrictPosition(plan,mission.district);
+    return targets.map((action,index)=>{
+      const d=offset(`mission-action:${mission.id}:${action.id}`,7+index*1.15);
+      return {
+        id:`hub:mission-action:${mission.id}:${action.id}`,
+        type:'hubMissionAction',
+        missionId:mission.id,
+        actionId:action.id,
+        actionLabel:action.label,
+        actions:[action.verb],
+        district:mission.district,
+        objective:row.completedObjectives,
+        name:action.label,
+        range:3.2,
+        x:center.x+d.x,
+        z:center.z+d.z,
+      };
+    });
+  });
+
   const stationItems = (plan.transport?.train?.stations || []).map((district, index) => ({
     id: `hub:train:${district}`,
     type: 'hubTransport',
@@ -164,12 +189,13 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...metropolis.items, ...districtItems, ...npcItems, ...missionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...metropolis.items, ...districtItems, ...npcItems, ...missionItems, ...missionActionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
+      missionActions:missionActionItems.length,
       guardians:guardianItems.length,
       trainStops: stationItems.length,
       boatStops: boatItems.length,
