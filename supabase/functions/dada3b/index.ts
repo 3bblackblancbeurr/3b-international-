@@ -24,8 +24,8 @@ const ORIGINS=new Set([
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const CODE=/^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip','claim']);
-const ONLINE_MODES=new Set(['private','quick','ranked','team2v2']);
+const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard','cosmetics','equip','claim','tournaments','tournament_create','tournament_join','tournament_status','tournament_match']);
+const ONLINE_MODES=new Set(['private','quick','ranked','team2v2','tournament']);
 const COSMETIC_SLOTS=new Set(['totem_skin','trail','dice_skin','board_skin','capture_fx','intro_fx']);
 const STARTER_COSMETICS=['DADA_TOTEM_CORE','DADA_TRAIL_MATRIX','DADA_DICE_CORE','DADA_BOARD_NEXUS','DADA_CAPTURE_FRACTURE','DADA_INTRO_EIGHT_DOORS'];
 const DEFAULT_LOADOUT={
@@ -800,8 +800,9 @@ async function reconnectRoom(uid:string,body:any){
   return await commitRoom(room,{players,state},uid,'reconnect',{countryId:player.countryId});
 }
 
-async function leaderboard(){
-  const ratings=await admin('/rest/v1/dada_ratings?select=user_id,rating,games,wins,losses,streak&order=rating.desc,wins.desc&limit=20');
+async function leaderboard(board='solo'){
+  const table=board==='team'?'dada_team_ratings':'dada_ratings';
+  const ratings=await admin('/rest/v1/'+table+'?select=user_id,rating,games,wins,losses,streak&order=rating.desc,wins.desc&limit=20');
   const ids=(Array.isArray(ratings)?ratings:[]).map((row:any)=>row.user_id).filter((id:string)=>UUID.test(id));
   let handles=new Map<string,string>();
   if(ids.length){
@@ -817,7 +818,182 @@ async function leaderboard(){
     wins:row.wins,
     losses:row.losses,
     streak:row.streak,
+    board,
   }));
+}
+
+
+async function tournamentByCode(code:string){
+  if(!CODE.test(code))return null;
+  const rows=await admin('/rest/v1/dada_tournaments?code=eq.'+encodeURIComponent(code)+'&select=*&limit=1');
+  return Array.isArray(rows)?rows[0]||null:null;
+}
+
+async function tournamentHandles(ids:string[]){
+  const clean=[...new Set(ids.filter(id=>UUID.test(id)))];
+  if(!clean.length)return new Map<string,string>();
+  const filter='('+clean.join(',')+')';
+  const rows=await admin('/rest/v1/member_profiles?user_id=in.'+encodeURIComponent(filter)+'&select=user_id,handle');
+  return new Map((Array.isArray(rows)?rows:[]).map((row:any)=>[row.user_id,String(row.handle||'Joueur 3B').slice(0,24)]));
+}
+
+async function tournamentSnapshot(code:string,uid:string){
+  const tournament=await tournamentByCode(code);
+  if(!tournament)throw new Failure(404,'Tournoi DADA introuvable.');
+  const [entries,matches]=await Promise.all([
+    admin('/rest/v1/dada_tournament_entries?tournament_id=eq.'+encodeURIComponent(tournament.id)+'&select=user_id,country_id,seed,status,joined_at&order=seed.asc.nullslast,joined_at.asc'),
+    admin('/rest/v1/dada_tournament_matches?tournament_id=eq.'+encodeURIComponent(tournament.id)+'&select=id,round_no,slot_no,player_a,player_b,winner_user_id,room_id,status&order=round_no.asc,slot_no.asc'),
+  ]);
+  const entryRows=Array.isArray(entries)?entries:[];
+  const matchRows=Array.isArray(matches)?matches:[];
+  const handles=await tournamentHandles([
+    ...entryRows.map((e:any)=>e.user_id),
+    ...matchRows.flatMap((m:any)=>[m.player_a,m.player_b,m.winner_user_id]),
+  ]);
+  return {
+    tournament:{
+      code:tournament.code,title:tournament.title,status:tournament.status,
+      format:tournament.format,maxEntries:tournament.max_entries,
+      createdBySelf:tournament.created_by===uid,
+      startedAt:tournament.started_at,finishedAt:tournament.finished_at,
+    },
+    entries:entryRows.map((e:any)=>({
+      handle:handles.get(e.user_id)||'Joueur 3B',
+      countryId:e.country_id,seed:e.seed,status:e.status,isSelf:e.user_id===uid,
+    })),
+    matches:matchRows.map((m:any)=>({
+      id:m.id,round:m.round_no,slot:m.slot_no,status:m.status,
+      playerA:m.player_a?handles.get(m.player_a)||'Joueur 3B':null,
+      playerB:m.player_b?handles.get(m.player_b)||'Joueur 3B':null,
+      winner:m.winner_user_id?handles.get(m.winner_user_id)||'Joueur 3B':null,
+      hasRoom:Boolean(m.room_id),
+      isMine:m.player_a===uid||m.player_b===uid,
+    })),
+  };
+}
+
+async function listTournaments(uid:string){
+  const rows=await admin('/rest/v1/dada_tournaments?status=in.(open,active)&select=id,code,title,status,max_entries,created_by,created_at&order=created_at.desc&limit=20');
+  const tournaments=Array.isArray(rows)?rows:[];
+  if(!tournaments.length)return [];
+  const ids='('+tournaments.map((t:any)=>t.id).join(',')+')';
+  const entries=await admin('/rest/v1/dada_tournament_entries?tournament_id=in.'+encodeURIComponent(ids)+'&select=tournament_id,user_id');
+  const counts=new Map<string,number>();
+  const mine=new Set<string>();
+  for(const row of Array.isArray(entries)?entries:[]){
+    counts.set(row.tournament_id,(counts.get(row.tournament_id)||0)+1);
+    if(row.user_id===uid)mine.add(row.tournament_id);
+  }
+  return tournaments.map((t:any)=>({
+    code:t.code,title:t.title,status:t.status,maxEntries:t.max_entries,
+    entries:counts.get(t.id)||0,isMine:mine.has(t.id),createdBySelf:t.created_by===uid,
+  }));
+}
+
+async function createTournament(uid:string,body:any){
+  const title=String(body.title||'Tournoi DADA 3B').trim().replace(/\s+/g,' ').slice(0,80);
+  const maxEntries=[4,8,16].includes(Number(body.maxEntries))?Number(body.maxEntries):4;
+  if(title.length<3)throw new Failure(400,'Le nom du tournoi est trop court.');
+  const existing=await admin('/rest/v1/dada_tournaments?created_by=eq.'+encodeURIComponent(uid)+'&status=in.(open,active)&select=id&limit=1');
+  if(Array.isArray(existing)&&existing[0])throw new Failure(409,'Termine ou annule ton tournoi actuel avant d’en créer un autre.');
+  for(let attempt=0;attempt<6;attempt++){
+    try{
+      const rows=await admin('/rest/v1/dada_tournaments?select=*',{
+        method:'POST',
+        body:{code:randomCode(),title,status:'open',format:'single_elimination',max_entries:maxEntries,created_by:uid},
+        prefer:'return=representation',
+      });
+      if(Array.isArray(rows)&&rows[0])return await tournamentSnapshot(rows[0].code,uid);
+    }catch(error){
+      if(!(error instanceof Failure)||!/duplicate|unique/i.test(error.message))throw error;
+    }
+  }
+  throw new Failure(503,'Impossible de créer le code du tournoi.');
+}
+
+async function joinTournament(uid:string,body:any){
+  const code=String(body.code||'').trim().toUpperCase();
+  const countryId=assertCountry(body.countryId);
+  const tournament=await tournamentByCode(code);
+  if(!tournament||tournament.status!=='open')throw new Failure(404,'Ce tournoi n’accepte plus d’inscriptions.');
+  const own=await admin('/rest/v1/dada_tournament_entries?tournament_id=eq.'+encodeURIComponent(tournament.id)+'&user_id=eq.'+encodeURIComponent(uid)+'&select=user_id&limit=1');
+  if(Array.isArray(own)&&own[0])return await tournamentSnapshot(code,uid);
+  const countRows=await admin('/rest/v1/dada_tournament_entries?tournament_id=eq.'+encodeURIComponent(tournament.id)+'&select=user_id');
+  if((Array.isArray(countRows)?countRows.length:0)>=tournament.max_entries)throw new Failure(409,'Le tournoi est complet.');
+  await admin('/rest/v1/dada_tournament_entries',{
+    method:'POST',body:{tournament_id:tournament.id,user_id:uid,country_id:countryId},prefer:'return=minimal',
+  });
+  const after=await admin('/rest/v1/dada_tournament_entries?tournament_id=eq.'+encodeURIComponent(tournament.id)+'&select=user_id');
+  if((Array.isArray(after)?after.length:0)===tournament.max_entries){
+    await rpc('dada3b_seed_tournament',{p_tournament:tournament.id});
+  }
+  return await tournamentSnapshot(code,uid);
+}
+
+async function createTournamentRoom(uid:string,code:string){
+  const tournament=await tournamentByCode(code);
+  if(!tournament||tournament.status!=='active')throw new Failure(409,'Le bracket n’est pas encore actif.');
+  const matches=await admin(
+    '/rest/v1/dada_tournament_matches?tournament_id=eq.'+encodeURIComponent(tournament.id)+
+    '&or=(player_a.eq.'+encodeURIComponent(uid)+',player_b.eq.'+encodeURIComponent(uid)+')'+
+    '&status=in.(ready,active)&order=round_no.asc&limit=4&select=*'
+  );
+  const match=(Array.isArray(matches)?matches:[]).find((m:any)=>m.player_a===uid||m.player_b===uid);
+  if(!match)throw new Failure(404,'Aucun match de tournoi prêt pour ton compte.');
+  if(match.room_id){
+    const existing=await fetchRoom(match.room_id);
+    if(!existing)throw new Failure(503,'Salon de tournoi introuvable.');
+    assertMember(existing,uid);
+    return existing;
+  }
+  if(!match.player_a||!match.player_b)throw new Failure(409,'L’adversaire du prochain tour n’est pas encore connu.');
+
+  const ids=[match.player_a,match.player_b];
+  const idFilter='('+ids.join(',')+')';
+  const [entries,profiles]=await Promise.all([
+    admin('/rest/v1/dada_tournament_entries?tournament_id=eq.'+encodeURIComponent(tournament.id)+'&user_id=in.'+encodeURIComponent(idFilter)+'&select=user_id,country_id'),
+    admin('/rest/v1/member_profiles?user_id=in.'+encodeURIComponent(idFilter)+'&select=user_id,handle'),
+  ]);
+  const entryMap=new Map((Array.isArray(entries)?entries:[]).map((e:any)=>[e.user_id,e.country_id]));
+  const handleMap=new Map((Array.isArray(profiles)?profiles:[]).map((p:any)=>[p.user_id,String(p.handle||'Joueur 3B').slice(0,24)]));
+  if(ids.some(id=>!entryMap.get(id)))throw new Failure(503,'Inscription tournoi incohérente.');
+
+  const loadouts=await Promise.all(ids.map(id=>loadoutFor(id).catch(()=>({...DEFAULT_LOADOUT}))));
+  const players=ids.map((id,index)=>playerEntry(id,handleMap.get(id)||'Joueur 3B',entryMap.get(id),true,null,loadouts[index]));
+  const rules=onlineRules({piecesPerPlayer:4,timerSeconds:20,captureRequired:true,safeCells:true,barricades:true,teamMode:false});
+  const state=createMatch(players.map((p:any)=>({countryId:p.countryId,type:'human',name:p.name,aiLevel:'gardien'})),rules);
+
+  let room:any=null;
+  for(let attempt=0;attempt<6&&!room;attempt++){
+    try{
+      const rows=await admin('/rest/v1/dada_rooms?select=*',{
+        method:'POST',
+        body:{
+          code:randomCode(),mode:'tournament',host_user_id:ids[0],status:'active',max_players:2,
+          rules,players,spectators:[],member_ids:ids,state,turn_deadline:deadlineFor(state),
+          started_at:nowIso(),expires_at:plusMs(4*60*60_000),
+        },
+        prefer:'return=representation',
+      });
+      room=Array.isArray(rows)?rows[0]||null:null;
+    }catch(error){
+      if(!(error instanceof Failure)||!/duplicate|unique/i.test(error.message))throw error;
+    }
+  }
+  if(!room)throw new Failure(503,'Impossible d’ouvrir le salon du bracket.');
+
+  const attached=await admin('/rest/v1/dada_tournament_matches?id=eq.'+encodeURIComponent(match.id)+'&room_id=is.null&select=*',{
+    method:'PATCH',body:{room_id:room.id,status:'active',updated_at:nowIso()},prefer:'return=representation',
+  });
+  if(!Array.isArray(attached)||!attached[0]){
+    await admin('/rest/v1/dada_rooms?id=eq.'+encodeURIComponent(room.id),{method:'PATCH',body:{status:'cancelled',updated_at:nowIso()},prefer:'return=minimal'}).catch(()=>null);
+    const freshMatches=await admin('/rest/v1/dada_tournament_matches?id=eq.'+encodeURIComponent(match.id)+'&select=room_id&limit=1');
+    const existingId=Array.isArray(freshMatches)?freshMatches[0]?.room_id:null;
+    const existing=existingId?await fetchRoom(existingId):null;
+    if(!existing)throw new Failure(409,'Le match vient d’être ouvert sur un autre appareil. Recharge le bracket.');
+    return existing;
+  }
+  return room;
 }
 
 async function readBody(req:Request){
@@ -864,7 +1040,26 @@ Deno.serve(async(req)=>{
     await cleanupExpiredWaiting();
 
     if(body.action==='leaderboard'){
-      return reply({leaderboard:await leaderboard(),serverTime:nowIso()});
+      const board=body.board==='team'?'team':'solo';
+      return reply({leaderboard:await leaderboard(board),board,serverTime:nowIso()});
+    }
+    if(body.action==='tournaments'){
+      return reply({tournaments:await listTournaments(uid),serverTime:nowIso()});
+    }
+    if(body.action==='tournament_create'){
+      return reply({...await createTournament(uid,body),serverTime:nowIso()});
+    }
+    if(body.action==='tournament_join'){
+      return reply({...await joinTournament(uid,body),serverTime:nowIso()});
+    }
+    if(body.action==='tournament_status'){
+      const code=String(body.code||'').trim().toUpperCase();
+      return reply({...await tournamentSnapshot(code,uid),serverTime:nowIso()});
+    }
+    if(body.action==='tournament_match'){
+      const code=String(body.code||'').trim().toUpperCase();
+      const tournamentRoom=await createTournamentRoom(uid,code);
+      return reply({room:publicRoom(tournamentRoom,uid),serverTime:nowIso()});
     }
     if(body.action==='cosmetics'){
       return reply({...await cosmeticState(uid),serverTime:nowIso()});
