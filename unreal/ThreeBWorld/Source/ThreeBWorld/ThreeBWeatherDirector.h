@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ThreeBWeatherProfile.h"
+#include "ThreeBGameState.h"
 #include "ThreeBWeatherDirector.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(
@@ -20,6 +21,7 @@ public:
     AThreeBWeatherDirector();
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Weather")
     TObjectPtr<UThreeBWeatherProfile> WeatherProfile;
@@ -47,6 +49,9 @@ protected:
 
     UFUNCTION()
     void OnRep_WeatherState();
+
+    UFUNCTION()
+    void HandleStoryStateChanged(FThreeBReplicatedStoryState StoryState);
 
     UFUNCTION(BlueprintImplementableEvent, Category="3B|Weather")
     void ApplyWeatherPresentation(EThreeBWeatherState WeatherState, float TransitionSeconds);
