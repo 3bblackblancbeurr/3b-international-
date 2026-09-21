@@ -74,7 +74,7 @@ function safeState(value){
   try{return readMatchSnapshot(value);}catch{return null;}
 }
 
-function OnlineBoard({room,motion,blast,focus,busy,onPiece}){
+function OnlineBoard({room,motion,blast,captureGhosts,focus,busy,onPiece}){
   const state=safeState(room?.state);
   if(!state)return <div className="dada3b-online-empty">Synchronisation du plateau…</div>;
   const activeCountries=state.players.map(player=>countryFor(player.countryId)).filter(Boolean);
@@ -116,8 +116,9 @@ function OnlineBoard({room,motion,blast,focus,busy,onPiece}){
         const shown=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex?motion.step:piece.steps;
         const pos=positionForPiece(country,shown,pieceIndex);
         const legal=canControl&&!busy&&playerIndex===state.turn&&state.pendingMoves.includes(pieceIndex)&&!motion;
+        const returning=captureGhosts?.some(ghost=>ghost.countryId===player.countryId&&ghost.pieceIndex===pieceIndex);
         return <button key={country.id+'-'+pieceIndex} type="button" className="dada3b-piece"
-          data-shape={country.shape} data-legal={legal} data-finished={piece.steps===FINISH_STEP}
+          data-shape={country.shape} data-legal={legal} data-finished={piece.steps===FINISH_STEP} data-returning={returning}
           style={{left:pos.left+'%',top:pos.top+'%','--country':country.accent}}
           disabled={!legal} onClick={()=>onPiece(pieceIndex)}
           aria-label={country.name+', totem '+(pieceIndex+1)+(legal?', jouable':'')}>
@@ -125,6 +126,9 @@ function OnlineBoard({room,motion,blast,focus,busy,onPiece}){
         </button>;
       });
     })}
+    {captureGhosts?.map(ghost=>{const country=countryFor(ghost.countryId);return <span key={'ghost-'+ghost.countryId+'-'+ghost.pieceIndex}
+      className="dada3b-capture-ghost" data-phase={ghost.phase}
+      style={{left:ghost.left+'%',top:ghost.top+'%','--country':country.accent}} aria-hidden="true"><GuardianTotem country={country} pieceIndex={ghost.pieceIndex}/></span>;})}
     {blast&&<span key={blast.key} className="dada3b-burst" style={{left:blast.left+'%',top:blast.top+'%'}} aria-hidden="true"/>}
   </div>;
 }
@@ -259,6 +263,7 @@ export default function DadaOnline({record,onValidatedResult,onBack,onClose,onAc
   const [turnRemaining,setTurnRemaining]=useState(0);
   const [motion,setMotion]=useState(null);
   const [blast,setBlast]=useState(null);
+  const [captureGhosts,setCaptureGhosts]=useState([]);
   const [focus,setFocus]=useState(null);
   const feedback=useRef(null);
   const recordedRoom=useRef(null);
@@ -365,6 +370,13 @@ export default function DadaOnline({record,onValidatedResult,onBack,onClose,onAc
       setMotion(null);
       if(event.type==='capture'&&event.landing!==null){
         const point=trackPosition(event.landing);
+        const ghosts=(event.captured||[]).map(captured=>{
+          const targetCountry=countryFor(captured.countryId),end=positionForPiece(targetCountry,STABLE,captured.pieceIndex);
+          return {...captured,left:point.left,top:point.top,endLeft:end.left,endTop:end.top,phase:'portal'};
+        });
+        setCaptureGhosts(ghosts);
+        setTimeout(()=>setCaptureGhosts(current=>current.map(ghost=>({...ghost,left:ghost.endLeft,top:ghost.endTop,phase:'return'}))),55);
+        setTimeout(()=>setCaptureGhosts([]),720);
         setBlast({...point,key:Date.now()});setFocus(point);
         setTimeout(()=>setBlast(null),850);setTimeout(()=>setFocus(null),1050);
       }else if(event.type==='door'){
@@ -464,7 +476,7 @@ export default function DadaOnline({record,onValidatedResult,onBack,onClose,onAc
     {error&&<div className="dada3b-online-notice" role="status">{error}</div>}
 
     <div className="dada3b-arena">
-      <div className="dada3b-board-wrap"><OnlineBoard room={room} motion={motion} blast={blast} focus={focus} busy={busy}
+      <div className="dada3b-board-wrap"><OnlineBoard room={room} motion={motion} blast={blast} captureGhosts={captureGhosts} focus={focus} busy={busy}
         onPiece={piece=>request('move',{room:room.id,revision:room.revision,piece}).catch(()=>{})}/></div>
       <aside className="dada3b-sidebar">
         <section className="dada3b-turn-card" style={{'--country':currentCountry?.accent||'#c7a66a'}}>
