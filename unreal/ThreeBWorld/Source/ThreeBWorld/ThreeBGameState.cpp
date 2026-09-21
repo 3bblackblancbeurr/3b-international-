@@ -32,10 +32,12 @@ bool AThreeBGameState::ApplyAuthoritativeStoryState(const FThreeBReplicatedStory
 
     StoryState = NewState;
     ForceNetUpdate();
+    OnStoryStateChanged.Broadcast(StoryState);
     return true;
 }
 
 void AThreeBGameState::OnRep_StoryState()
 {
-    // Presentation systems may read GetStoryState(). Persistent authority remains on the server.
+    // Presentation systems react to replicated authority; they never create persistent state here.
+    OnStoryStateChanged.Broadcast(StoryState);
 }
