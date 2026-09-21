@@ -1,6 +1,7 @@
 /* Final shared shell polish: reliability, hierarchy, network state and mobile comfort. */
 html{scrollbar-gutter:stable;color-scheme:dark}
 body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+.app3b :is(a,button,[role=button]){touch-action:manipulation}
 .route-announcer{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .app3b{min-height:100dvh}
 .app3b #main-content{min-height:calc(100dvh - 140px)}
@@ -38,7 +39,7 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 .app-crash-actions a{text-decoration:none}
 .storage-notice{border-radius:10px!important;border-color:#e29a5945!important;background:#6b39161f!important;color:#f0d0aa!important}
 @keyframes platformSpin{to{transform:rotate(360deg)}}
-@media(max-width:900px){.home-journey-status{grid-template-columns:repeat(2,minmax(0,1fr))}.network-status{display:none}}
+@media(max-width:900px){.home-journey-status{grid-template-columns:repeat(2,minmax(0,1fr))}.network-status{display:none}.network-status.is-offline{display:inline-flex}}
 @media(max-width:720px){
  html{scrollbar-gutter:auto}
  .app3b #main-content{min-height:calc(100dvh - 150px)}
@@ -55,3 +56,10 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 @media(max-width:390px){.home-journey-status{grid-template-columns:1fr 1fr}.home-status-item span{font-size:8px}.home-status-item strong{font-size:11px}}
 [data-motion=reduced] .app-loading-mark i{animation:none}
 @media(prefers-reduced-motion:reduce){.app-loading-mark i{animation:none}}
+
+@media(prefers-contrast:more){
+ .app3b{--line:#e6c98288}
+ .site-header,.home-journey-status,.app3b .compact-card,.app3b .surface-panel{border-color:#d9bb8288!important}
+ .app3b :is(a,button,input,select,textarea):focus-visible{outline-width:3px!important}
+ .network-status{border-color:#ffffff55}
+}
