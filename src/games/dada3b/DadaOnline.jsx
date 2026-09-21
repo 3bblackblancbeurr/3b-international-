@@ -17,6 +17,7 @@ import {
   scoreFor,
 } from './engine.js';
 import {createDadaFeedback,readDadaFeedbackPreferences} from './feedback.js';
+import {readCosmetics} from './cosmetics.js';
 import './online.css';
 import {
   dadaOnlineRequest,
@@ -244,7 +245,7 @@ function Leaderboard({rows,onBack}){
   </main>;
 }
 
-export default function DadaOnline({onBack,onClose,onAccount}){
+export default function DadaOnline({record,onValidatedResult,onBack,onClose,onAccount}){
   const account=useLoyalty();
   const [country,setCountry]=useState('fr');
   const [code,setCode]=useState('');
@@ -260,6 +261,8 @@ export default function DadaOnline({onBack,onClose,onAccount}){
   const [blast,setBlast]=useState(null);
   const [focus,setFocus]=useState(null);
   const feedback=useRef(null);
+  const recordedRoom=useRef(null);
+  const cosmetics=useMemo(()=>readCosmetics(record),[record?.wins]);
   const serverOffset=useRef(0);
   const syncBusy=useRef(false);
   const animationToken=useRef(0);
@@ -269,6 +272,17 @@ export default function DadaOnline({onBack,onClose,onAccount}){
   if(!feedback.current)feedback.current=createDadaFeedback(readDadaFeedbackPreferences());
 
   useEffect(()=>()=>{animationToken.current+=1;feedback.current?.close();},[]);
+
+  useEffect(()=>{
+    if(room?.status!=='finished'||recordedRoom.current===room?.id)return;
+    const finished=safeState(room?.state),selfPlayer=room?.players?.find(player=>player.isSelf);
+    if(!finished||!selfPlayer)return;
+    recordedRoom.current=room.id;
+    onValidatedResult?.({
+      score:scoreFor(finished,selfPlayer.countryId),
+      won:finished.winner===selfPlayer.countryId,
+    });
+  },[room?.status,room?.id,room?.revision,onValidatedResult]);
 
   const applyData=useCallback((data)=>{
     if(data?.serverTime)serverOffset.current=Date.parse(data.serverTime)-Date.now();
@@ -437,7 +451,7 @@ export default function DadaOnline({onBack,onClose,onAccount}){
     </div>;
   }
 
-  return <div className="dada3b-shell" role="dialog" aria-modal="true" aria-label="DADA 3B multijoueur">
+  return <div className="dada3b-shell" data-dice={cosmetics.dice} data-totem={cosmetics.totem} data-trail={cosmetics.trail} role="dialog" aria-modal="true" aria-label="DADA 3B multijoueur">
     <header className="dada3b-topbar">
       <div><small>{room.mode.toUpperCase()} · {isSpectator?'Spectateur':self?.botTakeover?'IA temporaire':'Joueur'} · révision {room.revision}</small>
         <strong>{currentCountry?.flag} {currentCountry?.name||'DADA 3B'} · {THEME_LABELS[state?.rules?.boardTheme]||'Nexus 3B'}</strong></div>
@@ -494,7 +508,7 @@ export default function DadaOnline({onBack,onClose,onAccount}){
         <p className="dada3b-online-reward-note">XP et Coins sont calculés avec plafonds anti-farming et idempotence serveur. Le téléphone ne choisit jamais le montant.</p>
         <details className="dada3b-history"><summary>Historique serveur</summary><div>{state.history.slice(-24).reverse().map(event=><p key={event.id}><b>#{event.id}</b> {event.text}</p>)}</div></details>
         <div className="dada3b-victory-actions"><button className="dada3b-primary" onClick={()=>{rememberDadaRoom(null);setRoom(null);setLeaderboard(null);}}>Nouvelle partie</button>
-          <button className="dada3b-secondary" onClick={showLeaderboard}>Classement</button><button className="dada3b-secondary" onClick={onClose}>Retour aux Jeux 3B</button></div>
+          <button className="dada3b-secondary" onClick={async()=>{await showLeaderboard();rememberDadaRoom(null);setRoom(null);}}>Classement</button><button className="dada3b-secondary" onClick={onClose}>Retour aux Jeux 3B</button></div>
       </section>
     </div>}
   </div>;
