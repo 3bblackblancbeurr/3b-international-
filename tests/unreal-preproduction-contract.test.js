@@ -146,3 +146,11 @@ test('native launch bridge uses an ephemeral client instance id instead of hardw
  assert.match(source,/ClientInstanceId/);
  assert.match(source,/user_id is the player identity/i);
 });
+
+
+test('UE5.8 setup documentation points only to the canonical ThreeBWorld project',()=>{
+ const setup=readText('../unreal/ThreeBWorld/Docs/Production/SETUP_UNREAL_58.md');
+ assert.match(setup,/unreal\/ThreeBWorld\/ThreeBWorld\.uproject/);
+ assert.doesNotMatch(setup,/unreal\/3BWorld\/3BWorld\.uproject/);
+ assert.match(setup,/build_france_blockout\.py/);
+});
