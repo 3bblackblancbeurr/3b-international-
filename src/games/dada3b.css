@@ -233,3 +233,18 @@
 @media (prefers-reduced-motion:reduce){
  .dada3b-door-intro i,.dada3b-timer[data-low="true"],.dada3b-board[data-focus]{animation:none!important}
 }
+
+/* Country themes tint the environment only; official nation/Totem colors stay unchanged. */
+.dada3b-board[data-theme]{filter:none;--theme-glow:#50bdd633}
+.dada3b-board[data-theme="fr"]{--theme-glow:#2f80ed4a;background-color:#061120}
+.dada3b-board[data-theme="dz"]{--theme-glow:#1f9d6245;background-color:#06140d}
+.dada3b-board[data-theme="es"]{--theme-glow:#e4ad2440;background-color:#181005}
+.dada3b-board[data-theme="ma"]{--theme-glow:#a72a4745;background-color:#16070b}
+.dada3b-board[data-theme="it"]{--theme-glow:#37a66c45;background-color:#07150f}
+.dada3b-board[data-theme="tn"]{--theme-glow:#ef5c6240;background-color:#190809}
+.dada3b-board[data-theme="tr"]{--theme-glow:#d52b3f42;background-color:#17080a}
+.dada3b-board[data-theme="ee"]{--theme-glow:#45a8ff48;background-color:#07131c}
+.dada3b-board::after{content:"";position:absolute;inset:3%;z-index:0;border-radius:50%;pointer-events:none;box-shadow:inset 0 0 48px var(--theme-glow),0 0 30px var(--theme-glow)}
+.dada3b-board>.dada3b-track-cell,.dada3b-board>.dada3b-home-cell,.dada3b-board>.dada3b-stable,.dada3b-board>.dada3b-nexus,.dada3b-board>.dada3b-piece,.dada3b-board>.dada3b-burst{z-index:2}
+.dada3b-board>.dada3b-piece{z-index:7}
+.dada3b-board>.dada3b-piece[data-legal="true"]{z-index:12}
