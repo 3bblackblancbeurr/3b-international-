@@ -4,8 +4,9 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 .app3b :is(a,button,[role=button]){touch-action:manipulation}
 .route-announcer{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .app3b{min-height:100dvh}
+.intro3b{min-height:100dvh}
 .app3b #main-content{min-height:calc(100dvh - 140px)}
-.site-header{isolation:isolate}
+.site-header{position:sticky;top:0;isolation:isolate;z-index:40;box-shadow:0 12px 34px #0004}
 .site-header::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#00d5ff44 32%,#e6bd6466 68%,transparent);opacity:.7;pointer-events:none}
 .header-actions{display:flex;align-items:center;gap:10px}
 .network-status{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 10px;border:1px solid #ffffff18;border-radius:999px;color:#aeb9b9;background:#ffffff05;font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
@@ -44,7 +45,7 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
  html{scrollbar-gutter:auto}
  .app3b #main-content{min-height:calc(100dvh - 150px)}
  .app3b::before{animation:none!important;transform:none!important}
- .site-header{background:#090e11f2}
+ .site-header{position:relative;top:auto;background:#090e11f2;box-shadow:none}
  .home-journey-status{gap:7px;margin-bottom:24px;padding:8px}
  .home-status-item{padding:11px}
  .home-status-item strong{font-size:12px}
