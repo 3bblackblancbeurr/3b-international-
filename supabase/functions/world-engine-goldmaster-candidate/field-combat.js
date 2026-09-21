@@ -1,5 +1,5 @@
 import {initialGuardianCombatState} from './guardian-combat.js';
-import {finalCirclePhase} from './final-circle.js';
+import {finalCirclePhase,finalCirclePhaseMastered,markFinalCirclePhaseMastered,finalCircleLockedEnemyFloor} from './final-circle.js';
 // Fixed-step combat shared by the browser and the account service. Inputs are
 // directions and buttons; a client never submits damage, HP or a winning result.
 export const COMBAT_TICK = 100;
@@ -61,6 +61,7 @@ export function stepField(enc,input,move){
  f.stamina=Math.min(100,f.stamina+2.8);f.last=null;
  const length=Math.hypot(input.x,input.z),direction={x:input.x/Math.max(1,length),z:input.z/Math.max(1,length)};
  const event=kind=>{f.last=kind;f.event++;e.turn++;};
+ const masterFinal=()=>e.final&&circlePhase?markFinalCirclePhaseMastered(e,circlePhase):false;
  const kind=f.cooldown?null:input.kind;
  if(kind==='resonance'&&useResonance(e,f,event)){}
  else if(kind==='dodge'&&f.stamina>=32){
@@ -78,21 +79,22 @@ export function stepField(enc,input,move){
    let damage=e.stats.attack+e.stats.affinity;
    damage*=kind==='power'?2.1:1+(f.combo===3?.5:0);
    if(e.resonancePenalty){damage*=.8;e.resonancePenalty=false;}
-   if(guardianBoss&&mechanicRegion==='france'){if(e.guardianFlag){damage*=1.2;e.guardianFlag=false;}else if(f.phase!=='recovery')damage*=.55;}
-   if(guardianBoss&&mechanicRegion==='estonie'&&f.phase!=='recovery')damage*=.4;
-   if(guardianBoss&&mechanicRegion==='espagne'){if((e.guardianMeter||0)>=80)damage*=.72;e.guardianMeter=Math.min(100,(e.guardianMeter||0)+(kind==='power'?34:24));}
+   if(guardianBoss&&mechanicRegion==='france'){if(e.guardianFlag){damage*=1.2;masterFinal();e.guardianFlag=false;}else if(f.phase!=='recovery')damage*=.55;}
+   if(guardianBoss&&mechanicRegion==='estonie'){if(f.phase!=='recovery')damage*=.4;else if(e.final)masterFinal();}
+   if(guardianBoss&&mechanicRegion==='espagne'){if((e.guardianMeter||0)>=80)damage*=.72;e.guardianMeter=Math.min(100,(e.guardianMeter||0)+(kind==='power'?34:24));if(e.final&&(e.guardianMeter||0)>=20)e.guardianFlag=true;}
    if(e.opening)damage*=1.35;
    if(e.intent==='rempart'&&f.phase!=='recovery')damage*=kind==='power'?.8:.55;
    if(f.phase==='recovery')damage*=1.2;
    let dealt=Math.round(damage),absorbed=0;
-   if(guardianBoss&&mechanicRegion==='italie'&&(e.guardianShield||0)>0){absorbed=Math.min(e.guardianShield,dealt);e.guardianShield-=absorbed;dealt-=absorbed;}
-   e.enemy=Math.max(0,e.enemy-dealt);e.opening=false;
+   if(guardianBoss&&mechanicRegion==='italie'&&(e.guardianShield||0)>0){absorbed=Math.min(e.guardianShield,dealt);e.guardianShield-=absorbed;dealt-=absorbed;if(e.final&&(e.guardianShield||0)<=0)masterFinal();}
+   const candidateEnemy=Math.max(0,e.enemy-dealt);
+   e.enemy=e.final&&circlePhase&&!finalCirclePhaseMastered(e,circlePhase)?Math.max(finalCircleLockedEnemyFloor(e,circlePhase),candidateEnemy):candidateEnemy;e.opening=false;
    if(kind==='strike')e.focus=Math.min(3,e.focus+1);
    e.log=f.combo===3?'Enchaînement : troisième frappe renforcée.':'Une ouverture dans sa défense.';
   }else e.log='Ton attaque ne porte pas. Rapproche-toi ou utilise ton pouvoir.';
   event(kind);
  }
- if(guardianBoss&&mechanicRegion==='espagne'&&['guard','dodge'].includes(f.last))e.guardianMeter=Math.max(0,(e.guardianMeter||0)-18);
+ if(guardianBoss&&mechanicRegion==='espagne'&&['guard','dodge'].includes(f.last)){e.guardianMeter=Math.max(0,(e.guardianMeter||0)-18);if(e.final&&e.guardianFlag){masterFinal();e.guardianFlag=false;}}
  if(length>.05)f.p=move(f.p,direction,1.05*clamp(e.stats.speed||1,.7,1.8)*(f.guard?.45:1));
  if(!e.enemy){e.result=e.boss?'victory':'calm';e.log=e.boss?'La menace est repoussée. Les environs peuvent respirer.':'La créature s’apaise. Tu peux gagner sa confiance.';return e;}
  // An enemy locks its aim at the start of preparation. Moving out of the
@@ -102,15 +104,17 @@ export function stepField(enc,input,move){
   if(d>6){const x=(f.p.x-f.enemy.x)/d,z=(f.p.z-f.enemy.z)/d;f.enemy=move(f.enemy,{x,z},e.expert?.78:.65);}
   if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&mechanicRegion==='turquie')e.guardianFlag=(e.turn+1)%3===0;}
  }else if(f.phase==='windup'&&!f.windup){
-  const inside=attackContains(f,e.intent),blocked=!!f.guard,evaded=!!f.dodge||!inside;
+  const inside=attackContains(f,e.intent),blocked=!!f.guard,evaded=!!f.dodge||!inside,hiddenSignal=guardianBoss&&mechanicRegion==='turquie'&&e.guardianFlag;
   const resonanceReduction=Math.max(0,Math.min(.85,Number(e.resonanceShield)||0));
   const linkPenalty=guardianBoss&&mechanicRegion==='algerie'&&distance(f.p,f.home)>14?1.35:1;
   let hit=evaded?0:Math.round(({frappe:18,percée:27,double:30,rituel:22,gel:19,vague:28,sable:24,éclipse:25,rempart:14,soin:12}[e.intent]||18)*(e.expert?1.25:1)*(blocked?(e.intent==='percée'?.5:.18):1 )*(1-resonanceReduction)*linkPenalty);
   if(inside&&!evaded&&resonanceReduction)e.resonanceShield=0;
+  if(guardianBoss&&mechanicRegion==='algerie'&&(blocked||evaded)&&distance(f.p,f.home)<=14&&e.final)masterFinal();
   if(guardianBoss&&mechanicRegion==='maroc'&&evaded&&distance(f.p,f.home)>10)e.guardianMeter=Math.max(0,(e.guardianMeter||100)-12);
-  if(guardianBoss&&mechanicRegion==='maroc'&&blocked&&distance(f.p,f.home)<=10)e.opening=true;
-  if(guardianBoss&&mechanicRegion==='tunisie'&&evaded&&distance(f.p,f.enemy)<distance(f.aim,f.enemy)-1){e.opening=true;e.focus=Math.min(3,e.focus+1);}
+  if(guardianBoss&&mechanicRegion==='maroc'&&blocked&&distance(f.p,f.home)<=10){e.opening=true;if(e.final)masterFinal();}
+  if(guardianBoss&&mechanicRegion==='tunisie'&&evaded&&distance(f.p,f.enemy)<distance(f.aim,f.enemy)-1){e.opening=true;e.focus=Math.min(3,e.focus+1);if(e.final)masterFinal();}
   if(guardianBoss&&mechanicRegion==='france'&&(blocked||evaded))e.guardianFlag=true;
+  if(hiddenSignal&&(blocked||evaded)&&e.final)masterFinal();
   e.hp=Math.max(0,e.hp-hit);if(blocked&&inside&&!evaded){e.opening=true;if(e.hp)e.hp=Math.min(e.maxHP,e.hp+(e.stats.heal||0));}
   if(guardianBoss&&mechanicRegion==='maroc'&&(e.guardianMeter||0)<=0){e.result='defeat';e.log='L’héritage n’a pas été protégé. Reviens avec une autre approche.';return e;}
   if(e.intent==='soin')e.enemy=Math.min(e.enemyMax,e.enemy+12);
