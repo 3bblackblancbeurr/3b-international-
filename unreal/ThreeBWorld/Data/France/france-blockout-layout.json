@@ -1,19 +1,179 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "slice_id": "france_justice_v1",
   "units": "centimeters",
   "bounds_cm": {
     "width": 60000,
-    "depth": 45000
+    "depth": 45000,
+    "height": 56000
   },
-  "rule": "Compact interconnected blockout for validation, not a final recreation of a real French city.",
+  "rule": "Single canonical France blockout: layered world-mass with playable surface, interior, underside, vertical districts, hydrology, floating islands and directed vistas. This remains reversible blockout geometry, not final art.",
+  "altitude_bands": [
+    {
+      "id": "celestial",
+      "z_cm": 28000,
+      "purpose": "Sanctuaire Céliane, vérité et vues macro"
+    },
+    {
+      "id": "high_city",
+      "z_cm": 18000,
+      "purpose": "Quartier monumental, culture haute et toits"
+    },
+    {
+      "id": "main_city",
+      "z_cm": 8000,
+      "purpose": "Ville principale et vie civile"
+    },
+    {
+      "id": "terraces",
+      "z_cm": 2000,
+      "purpose": "Terrasses, jardins, ateliers et routes basses"
+    },
+    {
+      "id": "lower",
+      "z_cm": -5000,
+      "purpose": "Fondations, niveaux inférieurs et bassins"
+    },
+    {
+      "id": "caves",
+      "z_cm": -9500,
+      "purpose": "Cavernes, tunnels et histoire environnementale"
+    },
+    {
+      "id": "underside",
+      "z_cm": -14000,
+      "purpose": "Sous-face jouable et structures suspendues"
+    },
+    {
+      "id": "floating_islands",
+      "z_cm": -22000,
+      "purpose": "Îlots inférieurs, secrets et vertige"
+    }
+  ],
+  "districts": [
+    {
+      "id": "france_centre",
+      "label": "Cœur de France",
+      "kind": "civic",
+      "altitude_band": "main_city",
+      "location_cm": {
+        "x": -5000,
+        "y": 1000,
+        "z": 8000
+      },
+      "data_layer": "DL_District_France_Centre",
+      "population_budget": 28,
+      "visual_rule": "Axes civiques lisibles, place centrale, mix pierre/métal et circulation piétonne dense."
+    },
+    {
+      "id": "france_populaire",
+      "label": "Quartier populaire",
+      "kind": "social",
+      "altitude_band": "main_city",
+      "location_cm": {
+        "x": -13000,
+        "y": -5000,
+        "z": 6500
+      },
+      "data_layer": "DL_District_France_Populaire",
+      "population_budget": 34,
+      "visual_rule": "Ruelles serrées, commerces, ateliers de proximité, balcons, linge et vie de rue."
+    },
+    {
+      "id": "france_ancien",
+      "label": "Quartier ancien",
+      "kind": "historic",
+      "altitude_band": "main_city",
+      "location_cm": {
+        "x": -9000,
+        "y": 10000,
+        "z": 10000
+      },
+      "data_layer": "DL_District_France_Ancien",
+      "population_budget": 22,
+      "visual_rule": "Passages étroits, arches, escaliers, sous-sols et pierre patinée."
+    },
+    {
+      "id": "france_residentiel",
+      "label": "Quartier résidentiel",
+      "kind": "residential",
+      "altitude_band": "main_city",
+      "location_cm": {
+        "x": -17000,
+        "y": 8000,
+        "z": 7000
+      },
+      "data_layer": "DL_District_France_Residentiel",
+      "population_budget": 26,
+      "visual_rule": "Habitations, jardins, petites places et transitions calmes vers la falaise ouest."
+    },
+    {
+      "id": "france_artisanat",
+      "label": "Quartier artisanat / industrie",
+      "kind": "craft",
+      "altitude_band": "terraces",
+      "location_cm": {
+        "x": 6500,
+        "y": -9000,
+        "z": 2500
+      },
+      "data_layer": "DL_District_France_Artisanat",
+      "population_budget": 24,
+      "visual_rule": "Ateliers, halles, charpentes, conduites d’eau, passerelles et volumes utilitaires."
+    },
+    {
+      "id": "france_culture",
+      "label": "Quartier culturel",
+      "kind": "culture",
+      "altitude_band": "high_city",
+      "location_cm": {
+        "x": 0,
+        "y": 11000,
+        "z": 12000
+      },
+      "data_layer": "DL_District_France_Culture",
+      "population_budget": 20,
+      "visual_rule": "Archives, galeries, places en terrasses et cadrages vers le sanctuaire."
+    },
+    {
+      "id": "france_monumental",
+      "label": "Quartier monumental",
+      "kind": "monumental",
+      "altitude_band": "high_city",
+      "location_cm": {
+        "x": 15500,
+        "y": 1500,
+        "z": 18000
+      },
+      "data_layer": "DL_District_France_Monumental",
+      "population_budget": 18,
+      "visual_rule": "Tribunal, grandes marches, silhouettes verticales et architecture visible depuis plusieurs altitudes."
+    },
+    {
+      "id": "france_peripherie",
+      "label": "Périphérie / nature",
+      "kind": "nature",
+      "altitude_band": "terraces",
+      "location_cm": {
+        "x": -23500,
+        "y": 0,
+        "z": 3000
+      },
+      "data_layer": "DL_District_France_Peripherie",
+      "population_budget": 12,
+      "visual_rule": "Corniches, forêt, ruines, sources d’eau, chemins de falaise et accès aux niveaux inférieurs."
+    }
+  ],
   "zones": [
     {
       "id": "gate_arrival",
-      "label": "Porte France / transit",
+      "label": "Porte France / corniche d’arrivée",
+      "district_id": "france_peripherie",
+      "altitude_band": "high_city",
       "location_cm": {
         "x": -26000,
-        "y": 0
+        "y": 0,
+        "z": 12000
       },
       "radius_cm": 3500,
       "story_phase": "arrival"
@@ -21,9 +181,12 @@
     {
       "id": "residential",
       "label": "Rue résidentielle",
+      "district_id": "france_residentiel",
+      "altitude_band": "main_city",
       "location_cm": {
         "x": -17000,
-        "y": 8000
+        "y": 8000,
+        "z": 7000
       },
       "radius_cm": 4500,
       "story_phase": "human_problem"
@@ -31,9 +194,12 @@
     {
       "id": "community_square",
       "label": "Place communautaire",
+      "district_id": "france_centre",
+      "altitude_band": "main_city",
       "location_cm": {
         "x": -9000,
-        "y": 0
+        "y": 0,
+        "z": 8000
       },
       "radius_cm": 5000,
       "story_phase": "human_problem"
@@ -41,9 +207,12 @@
     {
       "id": "civic_archive",
       "label": "Archives civiques",
+      "district_id": "france_culture",
+      "altitude_band": "main_city",
       "location_cm": {
         "x": 0,
-        "y": 10000
+        "y": 10000,
+        "z": 11000
       },
       "radius_cm": 4000,
       "story_phase": "investigation"
@@ -51,9 +220,12 @@
     {
       "id": "rooftop_route",
       "label": "Route verticale / toits",
+      "district_id": "france_culture",
+      "altitude_band": "high_city",
       "location_cm": {
         "x": 7500,
-        "y": 15000
+        "y": 15000,
+        "z": 17500
       },
       "radius_cm": 3500,
       "story_phase": "investigation"
@@ -61,9 +233,12 @@
     {
       "id": "rescue_site",
       "label": "Site de secours",
+      "district_id": "france_artisanat",
+      "altitude_band": "terraces",
       "location_cm": {
         "x": 6500,
-        "y": -9000
+        "y": -9000,
+        "z": 2500
       },
       "radius_cm": 4500,
       "story_phase": "rescue"
@@ -71,19 +246,25 @@
     {
       "id": "tribunal",
       "label": "Repère civique / tribunal",
+      "district_id": "france_monumental",
+      "altitude_band": "high_city",
       "location_cm": {
         "x": 15500,
-        "y": 0
+        "y": 0,
+        "z": 18000
       },
       "radius_cm": 5000,
       "story_phase": "pressure"
     },
     {
       "id": "celiane_space",
-      "label": "Espace Céliane",
+      "label": "Sanctuaire Céliane / Justice",
+      "district_id": "france_monumental",
+      "altitude_band": "celestial",
       "location_cm": {
         "x": 23500,
-        "y": 6500
+        "y": 6500,
+        "z": 28000
       },
       "radius_cm": 5000,
       "story_phase": "celiane_contact"
@@ -91,9 +272,12 @@
     {
       "id": "post_liberation_hub",
       "label": "Hub social post-libération",
+      "district_id": "france_centre",
+      "altitude_band": "main_city",
       "location_cm": {
         "x": 18500,
-        "y": -11000
+        "y": -11000,
+        "z": 9000
       },
       "radius_cm": 5000,
       "story_phase": "aftermath"
@@ -178,13 +362,326 @@
       "width_cm": 1000
     }
   ],
+  "vertical_links": [
+    {
+      "id": "arrival_cliff_descent",
+      "from": "gate_arrival",
+      "to": "residential",
+      "kind": "cliff_path",
+      "width_cm": 650
+    },
+    {
+      "id": "centre_to_lower_workshops",
+      "from": "community_square",
+      "to": "rescue_site",
+      "kind": "terraced_ramp",
+      "width_cm": 850
+    },
+    {
+      "id": "archive_rooftop_ascent",
+      "from": "civic_archive",
+      "to": "rooftop_route",
+      "kind": "stairs_rooftop",
+      "width_cm": 600
+    },
+    {
+      "id": "rooftop_to_monumental",
+      "from": "rooftop_route",
+      "to": "tribunal",
+      "kind": "high_bridge",
+      "width_cm": 700
+    },
+    {
+      "id": "monumental_to_celiane",
+      "from": "tribunal",
+      "to": "celiane_space",
+      "kind": "sanctuary_ascent",
+      "width_cm": 800
+    }
+  ],
+  "world_masses": [
+    {
+      "id": "main_core",
+      "kind": "main_plateau",
+      "location_cm": {
+        "x": -3000,
+        "y": 0,
+        "z": 500
+      },
+      "size_cm": {
+        "x": 36000,
+        "y": 27000,
+        "z": 15000
+      }
+    },
+    {
+      "id": "west_residential_shelf",
+      "kind": "cliff_shelf",
+      "location_cm": {
+        "x": -18000,
+        "y": 6500,
+        "z": 2500
+      },
+      "size_cm": {
+        "x": 17000,
+        "y": 15000,
+        "z": 9000
+      }
+    },
+    {
+      "id": "north_culture_shelf",
+      "kind": "upper_shelf",
+      "location_cm": {
+        "x": 1000,
+        "y": 11500,
+        "z": 7000
+      },
+      "size_cm": {
+        "x": 22000,
+        "y": 12000,
+        "z": 10000
+      }
+    },
+    {
+      "id": "south_artisan_shelf",
+      "kind": "lower_shelf",
+      "location_cm": {
+        "x": 6500,
+        "y": -9500,
+        "z": -2500
+      },
+      "size_cm": {
+        "x": 20000,
+        "y": 15000,
+        "z": 10000
+      }
+    },
+    {
+      "id": "east_monumental_mass",
+      "kind": "upper_mass",
+      "location_cm": {
+        "x": 15500,
+        "y": 1000,
+        "z": 11500
+      },
+      "size_cm": {
+        "x": 17000,
+        "y": 14000,
+        "z": 13000
+      }
+    },
+    {
+      "id": "arrival_spur",
+      "kind": "arrival_cornice",
+      "location_cm": {
+        "x": -25000,
+        "y": 0,
+        "z": 7000
+      },
+      "size_cm": {
+        "x": 9000,
+        "y": 8000,
+        "z": 10000
+      }
+    },
+    {
+      "id": "celiane_pillar",
+      "kind": "sanctuary_pillar",
+      "location_cm": {
+        "x": 23500,
+        "y": 6500,
+        "z": 14000
+      },
+      "size_cm": {
+        "x": 11000,
+        "y": 9000,
+        "z": 28000
+      }
+    },
+    {
+      "id": "under_core",
+      "kind": "underside",
+      "location_cm": {
+        "x": -2000,
+        "y": 0,
+        "z": -11000
+      },
+      "size_cm": {
+        "x": 30000,
+        "y": 23000,
+        "z": 8000
+      }
+    },
+    {
+      "id": "under_east_spine",
+      "kind": "underside_spine",
+      "location_cm": {
+        "x": 13000,
+        "y": 2000,
+        "z": -9000
+      },
+      "size_cm": {
+        "x": 12000,
+        "y": 9000,
+        "z": 14000
+      }
+    }
+  ],
+  "cavities": [
+    {
+      "id": "cave_west",
+      "kind": "cave",
+      "location_cm": {
+        "x": -12000,
+        "y": 2500,
+        "z": -8500
+      },
+      "size_cm": {
+        "x": 7000,
+        "y": 5000,
+        "z": 3500
+      },
+      "connects": [
+        "france_residentiel",
+        "france_centre"
+      ]
+    },
+    {
+      "id": "foundation_tunnel",
+      "kind": "tunnel",
+      "location_cm": {
+        "x": 2000,
+        "y": -3500,
+        "z": -9500
+      },
+      "size_cm": {
+        "x": 10000,
+        "y": 2500,
+        "z": 2800
+      },
+      "connects": [
+        "france_centre",
+        "france_artisanat"
+      ]
+    },
+    {
+      "id": "water_cavern",
+      "kind": "water_cave",
+      "location_cm": {
+        "x": 11500,
+        "y": -7500,
+        "z": -10500
+      },
+      "size_cm": {
+        "x": 8500,
+        "y": 6500,
+        "z": 4200
+      },
+      "connects": [
+        "france_artisanat",
+        "france_monumental"
+      ]
+    },
+    {
+      "id": "under_france_exit",
+      "kind": "underside_exit",
+      "location_cm": {
+        "x": 5000,
+        "y": 9500,
+        "z": -13500
+      },
+      "size_cm": {
+        "x": 6000,
+        "y": 4000,
+        "z": 3000
+      },
+      "connects": [
+        "france_culture",
+        "underside"
+      ]
+    }
+  ],
+  "floating_islands": [
+    {
+      "id": "island_memory",
+      "location_cm": {
+        "x": -21000,
+        "y": -13000,
+        "z": -12000
+      },
+      "size_cm": {
+        "x": 7000,
+        "y": 5500,
+        "z": 3500
+      },
+      "purpose": "secret_lore"
+    },
+    {
+      "id": "island_water",
+      "location_cm": {
+        "x": 15000,
+        "y": -16000,
+        "z": -17000
+      },
+      "size_cm": {
+        "x": 8000,
+        "y": 6500,
+        "z": 4000
+      },
+      "purpose": "waterfall_lower_basin"
+    },
+    {
+      "id": "island_justice_view",
+      "location_cm": {
+        "x": 26000,
+        "y": -4000,
+        "z": -9000
+      },
+      "size_cm": {
+        "x": 6000,
+        "y": 5000,
+        "z": 3000
+      },
+      "purpose": "vista_reward"
+    },
+    {
+      "id": "island_underpass",
+      "location_cm": {
+        "x": 5000,
+        "y": 17000,
+        "z": -20000
+      },
+      "size_cm": {
+        "x": 7500,
+        "y": 5500,
+        "z": 3500
+      },
+      "purpose": "underside_route"
+    },
+    {
+      "id": "island_fragment",
+      "location_cm": {
+        "x": -7000,
+        "y": -18000,
+        "z": -22000
+      },
+      "size_cm": {
+        "x": 5000,
+        "y": 4500,
+        "z": 2800
+      },
+      "purpose": "high_risk_secret"
+    }
+  ],
   "masses": [
     {
       "id": "residential_a",
+      "category": "medium",
       "zone": "residential",
       "offset_cm": {
         "x": -1200,
-        "y": 700
+        "y": 700,
+        "z": 0
       },
       "size_cm": {
         "x": 3200,
@@ -194,10 +691,12 @@
     },
     {
       "id": "residential_b",
+      "category": "medium",
       "zone": "residential",
       "offset_cm": {
         "x": 1700,
-        "y": -900
+        "y": -900,
+        "z": 0
       },
       "size_cm": {
         "x": 2600,
@@ -206,11 +705,28 @@
       }
     },
     {
+      "id": "residential_kiosk",
+      "category": "small",
+      "zone": "residential",
+      "offset_cm": {
+        "x": 2500,
+        "y": 1300,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 1000,
+        "y": 700,
+        "z": 500
+      }
+    },
+    {
       "id": "market_hall",
+      "category": "large",
       "zone": "community_square",
       "offset_cm": {
         "x": -1500,
-        "y": -2200
+        "y": -2200,
+        "z": 0
       },
       "size_cm": {
         "x": 4200,
@@ -219,11 +735,28 @@
       }
     },
     {
+      "id": "community_shops",
+      "category": "medium",
+      "zone": "community_square",
+      "offset_cm": {
+        "x": 2000,
+        "y": 1800,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 3600,
+        "y": 1600,
+        "z": 1200
+      }
+    },
+    {
       "id": "archive",
+      "category": "large",
       "zone": "civic_archive",
       "offset_cm": {
         "x": 0,
-        "y": 0
+        "y": 0,
+        "z": 0
       },
       "size_cm": {
         "x": 4800,
@@ -232,11 +765,28 @@
       }
     },
     {
+      "id": "archive_annex",
+      "category": "medium",
+      "zone": "civic_archive",
+      "offset_cm": {
+        "x": -3200,
+        "y": 1800,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 2600,
+        "y": 1800,
+        "z": 1100
+      }
+    },
+    {
       "id": "rooftop_a",
+      "category": "medium",
       "zone": "rooftop_route",
       "offset_cm": {
         "x": -1600,
-        "y": 0
+        "y": 0,
+        "z": 0
       },
       "size_cm": {
         "x": 2600,
@@ -246,10 +796,12 @@
     },
     {
       "id": "rooftop_b",
+      "category": "medium",
       "zone": "rooftop_route",
       "offset_cm": {
         "x": 1700,
-        "y": 600
+        "y": 600,
+        "z": 0
       },
       "size_cm": {
         "x": 2400,
@@ -259,10 +811,12 @@
     },
     {
       "id": "rescue_shell",
+      "category": "large",
       "zone": "rescue_site",
       "offset_cm": {
         "x": 0,
-        "y": 0
+        "y": 0,
+        "z": 0
       },
       "size_cm": {
         "x": 5200,
@@ -271,43 +825,440 @@
       }
     },
     {
+      "id": "workshop_row",
+      "category": "medium",
+      "zone": "rescue_site",
+      "offset_cm": {
+        "x": -3200,
+        "y": 2500,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 4200,
+        "y": 1800,
+        "z": 1000
+      }
+    },
+    {
+      "id": "water_works",
+      "category": "medium",
+      "zone": "rescue_site",
+      "offset_cm": {
+        "x": 3500,
+        "y": -2200,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 3000,
+        "y": 2200,
+        "z": 1600
+      }
+    },
+    {
       "id": "tribunal",
+      "category": "iconic",
       "zone": "tribunal",
       "offset_cm": {
         "x": 0,
-        "y": 0
+        "y": 0,
+        "z": 0
       },
       "size_cm": {
         "x": 6200,
         "y": 3600,
-        "z": 2200
+        "z": 5200
+      }
+    },
+    {
+      "id": "monumental_hall",
+      "category": "large",
+      "zone": "tribunal",
+      "offset_cm": {
+        "x": -4800,
+        "y": 2500,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 5200,
+        "y": 3000,
+        "z": 3000
       }
     },
     {
       "id": "celiane_landmark",
+      "category": "iconic",
       "zone": "celiane_space",
       "offset_cm": {
         "x": 0,
-        "y": 1000
+        "y": 1000,
+        "z": 0
       },
       "size_cm": {
         "x": 5000,
         "y": 3000,
-        "z": 2000
+        "z": 7000
+      }
+    },
+    {
+      "id": "sanctuary_gate",
+      "category": "large",
+      "zone": "celiane_space",
+      "offset_cm": {
+        "x": -4200,
+        "y": -1800,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 3200,
+        "y": 1800,
+        "z": 4200
       }
     },
     {
       "id": "post_hub",
+      "category": "large",
       "zone": "post_liberation_hub",
       "offset_cm": {
         "x": 0,
-        "y": 0
+        "y": 0,
+        "z": 0
       },
       "size_cm": {
         "x": 5000,
         "y": 2500,
-        "z": 900
+        "z": 1200
+      }
+    },
+    {
+      "id": "post_hub_market",
+      "category": "medium",
+      "zone": "post_liberation_hub",
+      "offset_cm": {
+        "x": 4200,
+        "y": 2200,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 3300,
+        "y": 2000,
+        "z": 1100
+      }
+    },
+    {
+      "id": "post_hub_kiosk",
+      "category": "small",
+      "zone": "post_liberation_hub",
+      "offset_cm": {
+        "x": -3200,
+        "y": -1800,
+        "z": 0
+      },
+      "size_cm": {
+        "x": 900,
+        "y": 700,
+        "z": 500
       }
     }
-  ]
+  ],
+  "hydrology": {
+    "origin_chain": [
+      "rain_capture",
+      "high_source",
+      "upper_stream",
+      "justice_basin",
+      "monumental_waterfall",
+      "lower_basin",
+      "cloud_fall"
+    ],
+    "source_markers": [
+      {
+        "id": "high_source",
+        "location_cm": {
+          "x": 19500,
+          "y": 9000,
+          "z": 27000
+        },
+        "kind": "spring"
+      },
+      {
+        "id": "rain_capture",
+        "location_cm": {
+          "x": 12000,
+          "y": 12000,
+          "z": 21000
+        },
+        "kind": "catchment"
+      }
+    ],
+    "horizontal_segments": [
+      {
+        "id": "upper_stream",
+        "from": {
+          "x": 19500,
+          "y": 9000,
+          "z": 27000
+        },
+        "to": {
+          "x": 14500,
+          "y": 6000,
+          "z": 21000
+        },
+        "width_cm": 700,
+        "depth_cm": 120
+      },
+      {
+        "id": "justice_river",
+        "from": {
+          "x": 14500,
+          "y": 6000,
+          "z": 21000
+        },
+        "to": {
+          "x": 12500,
+          "y": 2500,
+          "z": 18500
+        },
+        "width_cm": 1100,
+        "depth_cm": 150
+      },
+      {
+        "id": "lower_outflow",
+        "from": {
+          "x": 15000,
+          "y": -12000,
+          "z": -15500
+        },
+        "to": {
+          "x": 15000,
+          "y": -16000,
+          "z": -17000
+        },
+        "width_cm": 900,
+        "depth_cm": 120
+      }
+    ],
+    "basins": [
+      {
+        "id": "justice_basin",
+        "location_cm": {
+          "x": 12500,
+          "y": 2500,
+          "z": 18300
+        },
+        "size_cm": {
+          "x": 5200,
+          "y": 4200,
+          "z": 220
+        }
+      },
+      {
+        "id": "lower_basin",
+        "location_cm": {
+          "x": 15000,
+          "y": -15000,
+          "z": -16700
+        },
+        "size_cm": {
+          "x": 6200,
+          "y": 5000,
+          "z": 260
+        }
+      }
+    ],
+    "waterfalls": [
+      {
+        "id": "monumental_waterfall",
+        "top_cm": {
+          "x": 12500,
+          "y": 2500,
+          "z": 18200
+        },
+        "bottom_cm": {
+          "x": 15000,
+          "y": -12000,
+          "z": -15500
+        },
+        "width_cm": 1700,
+        "thickness_cm": 160
+      },
+      {
+        "id": "cloud_fall",
+        "top_cm": {
+          "x": 15000,
+          "y": -16000,
+          "z": -17000
+        },
+        "bottom_cm": {
+          "x": 16000,
+          "y": -18000,
+          "z": -24000
+        },
+        "width_cm": 900,
+        "thickness_cm": 120
+      }
+    ]
+  },
+  "vistas": [
+    {
+      "id": "arrival_reveal",
+      "location_cm": {
+        "x": -26000,
+        "y": 0,
+        "z": 12500
+      },
+      "target_cm": {
+        "x": 5000,
+        "y": 2000,
+        "z": 12000
+      },
+      "required_visible_bands": [
+        "celestial",
+        "main_city",
+        "lower"
+      ],
+      "landmark": "monumental_waterfall"
+    },
+    {
+      "id": "centre_three_levels",
+      "location_cm": {
+        "x": -8000,
+        "y": -1000,
+        "z": 9000
+      },
+      "target_cm": {
+        "x": 15500,
+        "y": 2000,
+        "z": 16000
+      },
+      "required_visible_bands": [
+        "high_city",
+        "main_city",
+        "underside"
+      ],
+      "landmark": "tribunal"
+    },
+    {
+      "id": "waterfall_reveal",
+      "location_cm": {
+        "x": 9000,
+        "y": -3000,
+        "z": 12000
+      },
+      "target_cm": {
+        "x": 14000,
+        "y": -9000,
+        "z": -8000
+      },
+      "required_visible_bands": [
+        "high_city",
+        "terraces",
+        "floating_islands"
+      ],
+      "landmark": "monumental_waterfall"
+    },
+    {
+      "id": "under_france",
+      "location_cm": {
+        "x": 5000,
+        "y": 10000,
+        "z": -14500
+      },
+      "target_cm": {
+        "x": 0,
+        "y": 3000,
+        "z": 5000
+      },
+      "required_visible_bands": [
+        "high_city",
+        "main_city",
+        "underside"
+      ],
+      "landmark": "under_core"
+    },
+    {
+      "id": "celiane_truth",
+      "location_cm": {
+        "x": 19000,
+        "y": 4500,
+        "z": 22000
+      },
+      "target_cm": {
+        "x": 23500,
+        "y": 6500,
+        "z": 28000
+      },
+      "required_visible_bands": [
+        "celestial",
+        "high_city",
+        "main_city"
+      ],
+      "landmark": "celiane_landmark"
+    }
+  ],
+  "detail_program": {
+    "micro": [
+      "fissures",
+      "flaques",
+      "mousse",
+      "gouttes",
+      "racines",
+      "débris",
+      "mobilier",
+      "enseignes",
+      "tissus",
+      "outils",
+      "traces_de_vie"
+    ],
+    "meso": [
+      "ponts",
+      "escaliers",
+      "terrasses",
+      "fontaines",
+      "façades",
+      "petites_places",
+      "bassins",
+      "ateliers",
+      "ruelles",
+      "arches",
+      "chemins_suspendus"
+    ],
+    "macro": [
+      "falaises",
+      "world_masses",
+      "skyline",
+      "cascade_monumentale",
+      "sanctuaire",
+      "îlots",
+      "monuments",
+      "silhouettes_lointaines",
+      "océan_de_nuages"
+    ],
+    "interior_priority": [
+      "archive",
+      "tribunal",
+      "rescue_shell",
+      "celiane_landmark"
+    ]
+  },
+  "streaming": {
+    "world_partition_required": true,
+    "target_cell_cm": 12000,
+    "desktop_initial_active_cells_max": 6,
+    "always_visible_proxies": [
+      "celiane_pillar",
+      "monumental_waterfall",
+      "east_monumental_mass"
+    ],
+    "rule": "Never require the full France region to be loaded to preserve the macro silhouette."
+  },
+  "qa_gates": {
+    "no_flat_platform": true,
+    "playable_underside": true,
+    "three_altitudes_visible_from_vistas": true,
+    "waterfall_has_origin": true,
+    "district_count": 8,
+    "minimum_floating_islands": 5,
+    "minimum_cavities": 4,
+    "side_view_must_show_thickness": true
+  }
 }
