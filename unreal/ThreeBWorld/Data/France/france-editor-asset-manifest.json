@@ -1,0 +1,115 @@
+{
+  "version": "1.0.0",
+  "engine": "5.8",
+  "slice_id": "france_justice_v1",
+  "note": "Target asset paths. These are not claimed to exist until validate_france_editor_assets.py passes inside Unreal Editor.",
+  "required_assets": [
+    {
+      "path": "/Game/3B/World/Nexus/Maps/L_Nexus",
+      "kind": "World",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/Maps/L_France_OpenWorld",
+      "kind": "World",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/Data/DA_FranceJusticeSlice",
+      "kind": "ThreeBStorySliceDefinition",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Player/BP_ThreeBCharacter",
+      "kind": "Blueprint",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Input/IMC_ThreeBDefault",
+      "kind": "InputMappingContext",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Input/Actions/IA_Move",
+      "kind": "InputAction",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Input/Actions/IA_Look",
+      "kind": "InputAction",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Input/Actions/IA_Jump",
+      "kind": "InputAction",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Characters/Celiane/BP_Celiane",
+      "kind": "Blueprint",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/Characters/Celiane/AI/ST_Celiane",
+      "kind": "StateTree",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Story_PreJustice",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Story_JusticeCrisis",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Story_CelianeLiberated",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Story_Reconstruction",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Story_PostLiberation",
+      "kind": "DataLayerAsset",
+      "critical": true
+    }
+  ],
+  "directories": [
+    "/Game/3B/World/France/Maps",
+    "/Game/3B/World/France/Data",
+    "/Game/3B/World/France/DataLayers",
+    "/Game/3B/World/France/Environment",
+    "/Game/3B/World/France/Gameplay",
+    "/Game/3B/World/France/NPC",
+    "/Game/3B/World/France/Audio",
+    "/Game/3B/World/France/VFX",
+    "/Game/3B/World/France/Cinematics",
+    "/Game/3B/Characters/Celiane"
+  ],
+  "data_layer_rules": {
+    "mutually_exclusive_story_layers": [
+      "DL_Story_PreJustice",
+      "DL_Story_JusticeCrisis",
+      "DL_Story_CelianeLiberated",
+      "DL_Story_Reconstruction",
+      "DL_Story_PostLiberation"
+    ],
+    "authority": "persistent server world_state selects durable story layer",
+    "client_rule": "client may preview only non-persistent presentation state"
+  },
+  "profiling_targets": {
+    "source": "Docs/Production/PERFORMANCE_BUDGETS.md",
+    "desktop": {
+      "target_fps": 60,
+      "frame_budget_ms": 16.67,
+      "initial_active_cells_max": 6
+    },
+    "note": "Targets must be replaced/confirmed with captured Unreal profiling measurements."
+  }
+}

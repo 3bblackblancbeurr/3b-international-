@@ -27,4 +27,4 @@ jobs:
       - run: npm ci
       - run: node --test tests/unreal-preproduction-contract.test.js tests/france-unreal-contract.test.js
       - name: Validate canonical Unreal editor Python syntax
-        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py
+        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py

@@ -96,3 +96,26 @@ test('France server-authority documentation forbids client-authored durable prog
  assert.match(doc,/expected_revision/);
  assert.match(doc,/candidate\/read-only/i);
 });
+
+
+test('France editor manifest has unique canonical 3B asset paths and five story Data Layers',()=>{
+ const manifest=json('../unreal/ThreeBWorld/Data/France/france-editor-asset-manifest.json');
+ const paths=manifest.required_assets.map(x=>x.path);
+ assert.equal(paths.length,new Set(paths).size);
+ assert.ok(paths.every(path=>path.startsWith('/Game/3B/')));
+ const story=paths.filter(path=>path.includes('/DataLayers/DL_Story_'));
+ assert.equal(story.length,5);
+ assert.match(manifest.data_layer_rules.authority,/server/i);
+ assert.equal(manifest.profiling_targets.desktop.target_fps,60);
+});
+
+test('Céliane StateTree spec cannot liberate from health or client-only state',()=>{
+ const spec=json('../unreal/ThreeBWorld/Data/France/celiane-state-tree-spec.json');
+ const liberated=spec.transitions.filter(t=>t.to==='liberated');
+ assert.equal(liberated.length,1);
+ assert.ok(liberated[0].when.includes('france.guardian_liberated == true'));
+ assert.ok(liberated[0].when.includes('server_revision_advanced'));
+ assert.ok(spec.forbidden_shortcuts.some(x=>x.includes('health <= 0')));
+ assert.ok(spec.server_owned_facts.includes('france.justice_trial_outcome'));
+ assert.ok(spec.server_owned_facts.includes('france.rescue_outcome'));
+});

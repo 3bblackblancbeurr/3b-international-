@@ -1,0 +1,122 @@
+{
+  "version": "1.0.0",
+  "id": "celiane_state_tree_v1",
+  "guardian": "Céliane",
+  "territory": "france",
+  "value": "Justice",
+  "principle": "Céliane is a character before a reward; liberation is a server fact, never an HP condition.",
+  "server_owned_facts": [
+    "france.current_phase",
+    "france.validated_evidence",
+    "france.rescue_outcome",
+    "france.justice_trial_outcome",
+    "france.guardian_liberated"
+  ],
+  "local_observations": [
+    "player_distance",
+    "line_of_sight",
+    "combat_pressure",
+    "animation_complete",
+    "local_dialogue_finished"
+  ],
+  "states": [
+    {
+      "id": "await_context",
+      "purpose": "Wait for authoritative France snapshot before story-critical behavior."
+    },
+    {
+      "id": "observe_player",
+      "purpose": "Ambient observation and non-hostile reactions."
+    },
+    {
+      "id": "challenge_evidence",
+      "purpose": "React to evidence/rescue state and expose contradictions."
+    },
+    {
+      "id": "pressure_response",
+      "purpose": "React to hostile pressure without turning Céliane into a simple damage sponge."
+    },
+    {
+      "id": "justice_trial",
+      "purpose": "Require Justice resonance and validated contradiction."
+    },
+    {
+      "id": "liberation_pending_server",
+      "purpose": "Presentation waits for authoritative liberation acknowledgement."
+    },
+    {
+      "id": "liberated",
+      "purpose": "Persistent ally/guardian behavior after server confirmation."
+    }
+  ],
+  "transitions": [
+    {
+      "from": "await_context",
+      "to": "observe_player",
+      "when": [
+        "server_snapshot_loaded"
+      ]
+    },
+    {
+      "from": "observe_player",
+      "to": "challenge_evidence",
+      "when": [
+        "france.current_phase == celiane_contact",
+        "validated_contradiction == true"
+      ]
+    },
+    {
+      "from": "challenge_evidence",
+      "to": "pressure_response",
+      "when": [
+        "combat_pressure == active",
+        "france.guardian_liberated == false"
+      ]
+    },
+    {
+      "from": "pressure_response",
+      "to": "challenge_evidence",
+      "when": [
+        "combat_pressure == cleared",
+        "france.guardian_liberated == false"
+      ]
+    },
+    {
+      "from": "challenge_evidence",
+      "to": "justice_trial",
+      "when": [
+        "france.current_phase == justice_trial",
+        "validated_contradiction == true"
+      ]
+    },
+    {
+      "from": "justice_trial",
+      "to": "liberation_pending_server",
+      "when": [
+        "local_justice_sequence_complete",
+        "server_ack_pending"
+      ]
+    },
+    {
+      "from": "liberation_pending_server",
+      "to": "liberated",
+      "when": [
+        "france.guardian_liberated == true",
+        "server_revision_advanced"
+      ]
+    },
+    {
+      "from": "liberated",
+      "to": "liberated",
+      "when": [
+        "persistent_world_reloaded"
+      ]
+    }
+  ],
+  "forbidden_shortcuts": [
+    "health <= 0 => liberated",
+    "client_phase == liberation => liberated",
+    "local_animation_complete => grant_fragment",
+    "local_dialogue_finished => grant_global_xp"
+  ]
+}
