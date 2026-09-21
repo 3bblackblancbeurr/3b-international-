@@ -163,7 +163,27 @@ test('player customization is cosmetic and normalizes identity safely', () => {
   assert.equal(normalized.styleId, 'technicien');
   assert.deepEqual(normalized.keeperPowers, ['read', 'anchor']);
   assert.equal(normalized.kit.shirtPrimary, '#ff00ff');
+  assert.equal(normalized.kit.sleeves, 'short');
+  assert.equal(normalized.kit.collar, 'v');
+  assert.equal(normalized.kit.shortsCut, 'classic');
+  assert.equal(normalized.kit.socksStyle, 'high');
   assert.equal(normalized.boots.preset, 'future');
+  assert.equal(normalized.boots.material, 'synthetic');
+  assert.equal(normalized.boots.studs, 'mixed');
+  assert.equal(normalized.boots.signature, '');
+
+  const personalized = normalizePenaltyProfile({
+    ...base,
+    kit: { ...base.kit, sleeves: 'long', collar: 'retro', shortsCut: 'slim', socksStyle: 'low' },
+    boots: { ...base.boots, material: 'carbon', studs: 'blade', signature: 'NEO7' },
+  }, account);
+  assert.equal(personalized.kit.sleeves, 'long');
+  assert.equal(personalized.kit.collar, 'retro');
+  assert.equal(personalized.kit.shortsCut, 'slim');
+  assert.equal(personalized.kit.socksStyle, 'low');
+  assert.equal(personalized.boots.material, 'carbon');
+  assert.equal(personalized.boots.studs, 'blade');
+  assert.equal(personalized.boots.signature, 'NEO7');
 
   for (const style of Object.values(PLAYER_STYLES)) {
     for (const value of Object.values(style.tuning)) assert.ok(value >= .95 && value <= 1.08);
