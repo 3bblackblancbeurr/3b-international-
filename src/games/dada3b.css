@@ -241,3 +241,10 @@
 @media (prefers-reduced-motion:reduce){
   .dada3b-piece,.dada3b-burst,.dada3b-board{transition:none;animation:none!important}
 }
+
+.dada3b-history{margin:16px 0;padding:11px 13px;border:1px solid #ffffff10;border-radius:13px;background:#070b0b;text-align:left}
+.dada3b-history summary{cursor:pointer;color:#d9c28e;font-size:11px;font-weight:750}
+.dada3b-history>div{max-height:190px;overflow:auto;margin-top:9px;padding-right:4px}
+.dada3b-history p{margin:0;padding:6px 0;border-top:1px solid #ffffff0b;color:#8e9892;font-size:9px;line-height:1.4}
+.dada3b-history p:first-child{border-top:0}
+.dada3b-history b{color:#6fb9ca}
