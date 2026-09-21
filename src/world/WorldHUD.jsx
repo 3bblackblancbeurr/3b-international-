@@ -10,8 +10,9 @@ import {frontierState} from './frontier.js';
 import {levelFor} from './rules.js';
 import {compassHeading} from './settlements.js';
 import {contextActions} from './interaction-system.js';
+import {controlLabel} from './control-bindings.js';
 
-export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onGuide,loaded}){
+export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onGuide,loaded,controls}){
  const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
  const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]);
  const [arrival,setArrival]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
@@ -32,7 +33,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   <button className="play-button play-arena" aria-label="Arène en ligne" title="Arène en ligne" onClick={()=>onPanel('arena')}><Swords size={21}/></button>
   {snapshot.companion&&<button className="play-companion" aria-label={cardById[snapshot.companion]?.name+' · ouvrir les compagnons'} onClick={()=>onPanel('collection')}><CompanionPortrait id={snapshot.companion}/><span><small>À tes côtés</small><strong>{cardById[snapshot.companion]?.name}</strong></span></button>}
   {snapshot.waypoint&&snapshot.remaining>7&&<button className="play-bearing" aria-label={'Repère : '+snapshot.waypoint.name+', '+snapshot.remaining+' mètres. Rejoindre automatiquement.'} title="Rejoindre le repère" onClick={onGuide}><ArrowUp size={18} style={{transform:`rotate(${bearing}deg)`}}/><small>{snapshot.remaining} m</small></button>}
-  {near&&<button key={near.id} className="play-interaction" onClick={onInteract} aria-label={(name||'Interagir')+(extraActions?' · '+extraActions+' autres actions possibles':'')} title={actions.map(action=>action.label).join(' · ')}><Icon size={20}/><span>{name}{extraActions>0&&<small> +{extraActions}</small>}</span><kbd>E</kbd></button>}
+  {near&&<button key={near.id} className="play-interaction" onClick={onInteract} aria-label={(name||'Interagir')+(extraActions?' · '+extraActions+' autres actions possibles':'')} title={actions.map(action=>action.label).join(' · ')}><Icon size={20}/><span>{name}{extraActions>0&&<small> +{extraActions}</small>}</span><kbd>{controlLabel(controls,'interact')}</kbd></button>}
   {hint&&!near&&!snapshot.moving&&!arrival&&<div className="play-first-hint">Glisse à gauche pour avancer · à droite pour regarder</div>}
  </div>;
 });
