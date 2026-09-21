@@ -30,7 +30,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node --test tests/unreal-preproduction-contract.test.js tests/france-unreal-contract.test.js tests/world-unreal-story-state-contract.test.js
+      - run: node --test tests/unreal-preproduction-contract.test.js tests/france-unreal-contract.test.js tests/france-preproduction-depth.test.js tests/world-unreal-story-state-contract.test.js
       - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
         run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py unreal/ThreeBWorld/Scripts/build_france_blockout.py
