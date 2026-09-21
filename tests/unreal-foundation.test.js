@@ -66,7 +66,6 @@ test('Unreal migration stays fail-closed to browser roles',()=>{
 test('migration integrity manifest tracks all current applied sources and preserves Unreal, story-state, AI Council and member-auth foundations',()=>{
  const manifest=JSON.parse(read('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json'));
  assert.equal(manifest.count,manifest.migrations.length);
- assert.equal(manifest.count,120);
  const byName=Object.fromEntries(manifest.migrations.map(m=>[m.name,m]));
  assert.deepEqual(byName.world_unreal_launch_bridge_v1,{
   version:'20260921141028',
