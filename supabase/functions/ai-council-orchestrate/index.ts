@@ -76,12 +76,23 @@ async function adminApi(path: string, init: RequestInit = {}) {
   return data;
 }
 
+type CouncilSettings = {
+  enabled: boolean;
+  owner_email: string | null;
+  require_owner_match: boolean;
+};
+
+async function loadCouncilSettings(): Promise<CouncilSettings> {
+  const rows = await adminApi(
+    '/rest/v1/ai_council_settings?singleton=eq.true&select=enabled,owner_email,require_owner_match&limit=1',
+  ) as CouncilSettings[];
+  return rows?.[0] || { enabled: false, owner_email: null, require_owner_match: true };
+}
+
 async function authenticateOwner(req: Request) {
-  if (Deno.env.get('AI_COUNCIL_ENABLED') !== 'true') {
-    throw new Failure(503, 'Conseil IA désactivé.');
-  }
-  const ownerId = Deno.env.get('AI_COUNCIL_OWNER_USER_ID') || '';
-  if (!ownerId) throw new Failure(503, 'Propriétaire du Conseil IA non configuré.');
+  const settings = await loadCouncilSettings();
+  const enabled = Deno.env.get('AI_COUNCIL_ENABLED') === 'true' || settings.enabled === true;
+  if (!enabled) throw new Failure(503, 'Conseil IA désactivé.');
 
   const auth = req.headers.get('authorization') || '';
   if (!auth.startsWith('Bearer ')) throw new Failure(401, 'Authentification requise.');
@@ -93,7 +104,20 @@ async function authenticateOwner(req: Request) {
   });
   const user = await response.json().catch(() => null);
   if (!response.ok || !user?.id) throw new Failure(401, 'Session invalide.');
-  if (user.id !== ownerId) throw new Failure(403, 'Accès Conseil IA refusé.');
+
+  if (settings.require_owner_match !== false) {
+    const ownerId = Deno.env.get('AI_COUNCIL_OWNER_USER_ID') || '';
+    const ownerEmail = (settings.owner_email || '').trim().toLowerCase();
+    const userEmail = typeof user.email === 'string' ? user.email.trim().toLowerCase() : '';
+
+    if (ownerId) {
+      if (user.id !== ownerId) throw new Failure(403, 'Accès Conseil IA refusé.');
+    } else {
+      if (!ownerEmail) throw new Failure(503, 'Propriétaire du Conseil IA non configuré.');
+      if (!userEmail || userEmail !== ownerEmail) throw new Failure(403, 'Accès Conseil IA refusé.');
+    }
+  }
+
   return user.id as string;
 }
 
