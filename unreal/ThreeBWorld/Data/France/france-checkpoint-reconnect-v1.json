@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "purpose": "Safe checkpoint and reconnect contract for France without client-authored durable progression.",
+  "snapshot": {
+    "authority": "server_only",
+    "required_fields": [
+      "save_version",
+      "world_revision",
+      "slice_id",
+      "phase",
+      "validated_evidence",
+      "rescue_outcome",
+      "guardian_state",
+      "world_state",
+      "checkpoint_id",
+      "timestamp"
+    ],
+    "local_cache_role": "presentation_and_recovery_hint_only",
+    "reject_if": [
+      "stale_world_revision",
+      "wrong_user",
+      "wrong_slice",
+      "invalid_phase",
+      "invalid_checkpoint"
+    ],
+    "last_known_good": true
+  },
+  "checkpoints": [
+    {
+      "id": "cp_arrival",
+      "requires_phases": [
+        "arrival"
+      ],
+      "safe_zone": "gate_arrival",
+      "resume_phase": "human_problem"
+    },
+    {
+      "id": "cp_context",
+      "requires_phases": [
+        "human_problem"
+      ],
+      "safe_zone": "community_square",
+      "resume_phase": "rescue"
+    },
+    {
+      "id": "cp_pre_pressure",
+      "requires_phases": [
+        "rescue",
+        "investigation"
+      ],
+      "safe_zone": "tribunal",
+      "resume_phase": "pressure"
+    },
+    {
+      "id": "cp_celiane",
+      "requires_phases": [
+        "pressure"
+      ],
+      "safe_zone": "celiane_space",
+      "resume_phase": "celiane_contact"
+    },
+    {
+      "id": "cp_trial",
+      "requires_phases": [
+        "celiane_contact"
+      ],
+      "safe_zone": "celiane_space",
+      "resume_phase": "justice_trial"
+    },
+    {
+      "id": "cp_liberated",
+      "requires_phases": [
+        "liberation"
+      ],
+      "safe_zone": "celiane_space",
+      "resume_phase": "aftermath"
+    },
+    {
+      "id": "cp_aftermath",
+      "requires_phases": [
+        "aftermath"
+      ],
+      "safe_zone": "post_liberation_hub",
+      "resume_phase": "return_nexus"
+    },
+    {
+      "id": "cp_returned_nexus",
+      "requires_phases": [
+        "return_nexus"
+      ],
+      "safe_zone": "nexus",
+      "resume_phase": "return_nexus"
+    }
+  ],
+  "reconnect_policy": {
+    "server_snapshot_wins": true,
+    "compare_and_swap_revision": true,
+    "duplicate_event_policy": "idempotent_receipt",
+    "reward_replay_allowed": false,
+    "guardian_liberation_replay_allowed": false,
+    "restore_party_if_valid": true,
+    "invalid_party_fallback": "resume_solo_at_last_safe_checkpoint"
+  },
+  "crash_windows": [
+    {
+      "case": "before_server_ack",
+      "result": "replay_request_with_same_event_id"
+    },
+    {
+      "case": "after_server_ack_before_local_ui",
+      "result": "reload_authoritative_snapshot_without_new_reward"
+    },
+    {
+      "case": "during_region_stream",
+      "result": "spawn_at_last_safe_checkpoint_after_snapshot_validation"
+    }
+  ]
+}
