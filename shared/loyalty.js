@@ -20,6 +20,32 @@ export const tierFor=xp=>TIERS.filter(t=>t.xp<=Math.max(0,Number(xp)||0)).at(-1)
 export const discountFor=points=>DISCOUNTS.filter(t=>t.points<=Math.max(0,Number(points)||0)).at(-1)?.percent||0;
 export const nextTier=xp=>TIERS.find(t=>t.xp>xp)||null;
 export const themeFor=(id,xp)=>TIERS.find(t=>t.id===id&&t.xp<=xp)||tierFor(xp);
+export const ACCOUNT_TERMS_VERSION='2026-09-21';
+
+export function normalizeEmail(value){
+ const email=String(value||'').trim().toLowerCase();
+ if(email.length<5||email.length>254||!/^\S+@\S+\.\S+$/.test(email))throw Error('Entre une adresse e-mail valide.');
+ if(email.endsWith('@accounts.3b.invalid'))throw Error('Utilise une vraie adresse e-mail.');
+ return email;
+}
+
+export function passwordRequirements(password){
+ const value=typeof password==='string'?password:'';
+ return{
+  length:value.length>=12&&value.length<=128,
+  lower:/[a-z]/.test(value),
+  upper:/[A-Z]/.test(value),
+  digit:/[0-9]/.test(value),
+  symbol:/[^A-Za-z0-9]/.test(value)
+ };
+}
+
+export function validateStrongPassword(password){
+ const rules=passwordRequirements(password);
+ if(!Object.values(rules).every(Boolean))throw Error('Le mot de passe doit contenir 12 caractères minimum, avec minuscule, majuscule, chiffre et symbole.');
+ return password;
+}
+
 export function validateAccount(input){
  const handle=String(input?.handle||'').trim().toLowerCase();
  if(!/^[a-z0-9][a-z0-9._-]{2,23}$/.test(handle))throw Error('Choisis un identifiant de 3 à 24 lettres minuscules, chiffres, points ou tirets.');
@@ -28,6 +54,31 @@ export function validateAccount(input){
  const country=input.country||'France';if(!COUNTRIES.includes(country))throw Error('Choisis un pays 3B.');
  return{handle,password:input.password,name,country};
 }
+
+export function validateRegistration(input){
+ const base=validateAccount(input);
+ const email=normalizeEmail(input?.email);
+ const emailConfirm=normalizeEmail(input?.emailConfirm);
+ if(email!==emailConfirm)throw Error('Les deux adresses e-mail ne correspondent pas.');
+ if(input.password!==input.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
+ validateStrongPassword(input.password);
+ if(String(input?.website||'').trim())throw Error('Inscription refusée.');
+ if(input?.termsAccepted!==true)throw Error('Accepte les conditions du compte 3B pour continuer.');
+ if(input?.privacyAccepted!==true)throw Error('Confirme avoir pris connaissance de la politique de confidentialité pour continuer.');
+ return{...base,email,marketingOptIn:input?.marketingOptIn===true};
+}
+
+export function validateLogin(input){
+ const identifier=String(input?.identifier||input?.handle||'').trim().toLowerCase();
+ if(!identifier||identifier.length>254)throw Error('Entre ton identifiant 3B ou ton e-mail.');
+ const isEmail=identifier.includes('@');
+ if(isEmail)normalizeEmail(identifier);
+ else if(!/^[a-z0-9][a-z0-9._-]{2,23}$/.test(identifier))throw Error('Entre ton identifiant 3B ou ton e-mail.');
+ const password=typeof input?.password==='string'?input.password:'';
+ if(password.length<1||password.length>128)throw Error('Mot de passe invalide.');
+ return{identifier,password,isEmail};
+}
+
 export const accountEmail=handle=>'u.'+handle+'@accounts.3b.invalid';
 export function purchaseRewards(cents){
  if(!Number.isSafeInteger(cents)||cents<0)throw Error('Montant invalide.');
