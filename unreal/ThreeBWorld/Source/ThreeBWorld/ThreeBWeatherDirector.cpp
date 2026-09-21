@@ -19,7 +19,23 @@ void AThreeBWeatherDirector::BeginPlay()
         ForceNetUpdate();
     }
 
+    if (AThreeBGameState* StoryGameState = GetWorld() ? GetWorld()->GetGameState<AThreeBGameState>() : nullptr)
+    {
+        StoryGameState->OnStoryStateChanged.AddDynamic(this, &AThreeBWeatherDirector::HandleStoryStateChanged);
+        HandleStoryStateChanged(StoryGameState->GetStoryState());
+    }
+
     BroadcastWeatherPresentation();
+}
+
+void AThreeBWeatherDirector::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    if (AThreeBGameState* StoryGameState = GetWorld() ? GetWorld()->GetGameState<AThreeBGameState>() : nullptr)
+    {
+        StoryGameState->OnStoryStateChanged.RemoveDynamic(this, &AThreeBWeatherDirector::HandleStoryStateChanged);
+    }
+
+    Super::EndPlay(EndPlayReason);
 }
 
 void AThreeBWeatherDirector::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -64,6 +80,20 @@ bool AThreeBWeatherDirector::SetWeatherState(EThreeBWeatherState NewState, float
 void AThreeBWeatherDirector::OnRep_WeatherState()
 {
     BroadcastWeatherPresentation();
+}
+
+void AThreeBWeatherDirector::HandleStoryStateChanged(FThreeBReplicatedStoryState StoryState)
+{
+    if (!HasAuthority() || !WeatherProfile || !StoryState.WorldStateTag.IsValid())
+    {
+        return;
+    }
+
+    EThreeBWeatherState OverrideState = CurrentWeather;
+    if (WeatherProfile->FindWorldStateOverride(StoryState.WorldStateTag, OverrideState))
+    {
+        SetWeatherState(OverrideState);
+    }
 }
 
 void AThreeBWeatherDirector::BroadcastWeatherPresentation()
