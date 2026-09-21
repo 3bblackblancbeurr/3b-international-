@@ -8,6 +8,7 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
+import AppLoadingState from "./components/AppLoadingState.jsx";
 import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
@@ -159,10 +160,17 @@ export default function App() {
 
   useEffect(() => {
     document.title = page === "intro" ? "3B International — Application Black Blanc Beur" : `${currentPageTitle} — 3B`;
+    const routeDescription = page === "intro"
+      ? "Application officielle 3B International — Black Blanc Beur."
+      : page === "home"
+        ? "Passeport, Monde du 3B, boutique, jeux, communauté et expériences 3B réunis dans un même univers."
+        : menuItems.find(item => item.id === (page.startsWith("ia-") ? "ia" : page))?.description;
+    const description = document.querySelector('meta[name="description"]');
+    if (description && routeDescription) description.setAttribute("content", `3B International — ${routeDescription}`);
     const heading = document.querySelector("main h1");
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [page, currentPageTitle]);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [page, currentPageTitle, menuItems]);
 
   useEffect(() => {
     document.documentElement.dataset.motion = options.reducedMotion || !options.animations ? "reduced" : "full";
@@ -223,7 +231,8 @@ export default function App() {
 
       {!['world3b','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
-      <Suspense fallback={<div className="page-section" role="status">Ouverture de la rubrique…</div>}>
+      <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
+      <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
       <ExplorationRewards page={page}/>
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
@@ -244,11 +253,11 @@ export default function App() {
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} />}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
-      {page === "manga" && <ComingSoon />}
+      {page === "manga" && <ComingSoon goTo={goTo} />}
       {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
-      {page === "secret" && <ComingSoon secret />}
-      {page === "world3b" && <Suspense fallback={<div className="page-section">Ouverture du Monde 3B…</div>}><WorldExperience goTo={goTo}/></Suspense>}
-      {page === "arena" && <div className="arena-standalone"><Suspense fallback={<p>Ouverture de l’arène…</p>}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
+      {page === "secret" && <ComingSoon secret goTo={goTo} />}
+      {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
+      {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
       {page === "member" && (
         <AccountPage
