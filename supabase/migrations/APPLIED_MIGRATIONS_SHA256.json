@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "btrim/trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 110,
+  "count": 112,
   "migrations": [
     {
       "version": "20260910020445",
@@ -553,6 +553,16 @@
       "version": "20260921130859",
       "name": "sport_challenge_fk_indexes_v1",
       "sha256": "ae62bc52bed085e5b195b729b738b4c561bfe7702295d7cfa53562d1ed916c75"
+    },
+    {
+      "version": "20260921132943",
+      "name": "textile_projects_v1",
+      "sha256": "b396ca70842a212b5b1a6f6206a9f4271176ca052c481bea77f42f8eaa8c1fa6"
+    },
+    {
+      "version": "20260921141028",
+      "name": "world_unreal_launch_bridge_v1",
+      "sha256": "63957f4d9fdd5a85c653e3e59ac3165f75339f723770c22871951eceb80022c4"
     }
   ]
 }
