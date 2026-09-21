@@ -1,47 +1,30 @@
 # Monde du 3B — Canon narratif versionné
 
-Source exécutable : `src/world/narrative-canon.js`.
+## Source de vérité unique
 
-Ce module fixe uniquement le **canon narratif partagé**. Il ne valide pas à lui seul qu'une mission, une cinématique ou un asset Unreal existe réellement.
+Le canon mondial officiel reste **`src/world/story-canon.js`**.
 
-## Piliers
+Il définit :
+- Kaïs, Porteur du Lien ;
+- le Cercle Brisé ;
+- la nature de l'Oubli ;
+- les huit Gardiens et les huit valeurs ;
+- les arcs personnels des Gardiens ;
+- la finale et les révélations.
 
-- Mémoire
-- Héritage
-- Valeurs
-- Reconstruction
+`src/world/country-campaigns.js` est seulement un **catalogue de questions, styles et beats de campagne**. Il ne peut pas contredire ou remplacer `story-canon.js`.
 
 ## Règle des huit
 
-Le Monde du 3B possède exactement huit Gardiens et huit valeurs :
+Il existe exactement huit pays, huit Gardiens, huit valeurs et huit fragments. Kaïs n'est jamais un neuvième Gardien ou une neuvième valeur.
 
-- France — Céliane — Justice
-- Algérie — Yliane — Loyauté
-- Espagne — Diego — Passion
-- Maroc — Naël — Noblesse
-- Italie — Alessio — Espoir
-- Tunisie — Soraya — Courage
-- Turquie — Émir — Foi
-- Estonie — Eira — Sagesse
+## Autorité
 
-Kaïs n'est ni un neuvième Gardien ni une neuvième valeur. Il est le fil narratif qui précède le joueur.
-
-## Oubli
-
-L'Oubli est défini comme un mécanisme de protection corrompu devenu incapable de distinguer ce qui doit être caché de ce qui doit être préservé. Le Monstre de l'Oubli en est une manifestation, pas une justification pour réduire la finale à un simple boss à points de vie.
-
-## Utilisation
-
-Les systèmes peuvent lire :
-- la question centrale de chaque territoire ;
-- le défaut et l'évolution du Gardien ;
-- le style de mission ;
-- les beats de campagne.
-
-Ils ne doivent pas :
-- créer une récompense client ;
-- modifier la progression persistante ;
-- remplacer les contrats serveur France/Unreal ;
-- introduire une neuvième valeur.
+Ces fichiers sont narratifs/data-driven. Ils ne peuvent pas :
+- accorder XP, fragments ou inventaire ;
+- valider une mission ;
+- modifier le WorldState ;
+- remplacer l'autorité Supabase/Unreal ;
+- prétendre qu'un asset Unreal existe.
 
 La cohérence est verrouillée par `tests/world-narrative-canon-v2.test.js`.
