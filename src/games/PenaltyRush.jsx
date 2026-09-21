@@ -410,6 +410,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const remaining = remainingPossessionSeconds(state, Date.now());
   const leftGesture = useRef(null);
   const rightGesture = useRef(null);
+  const rightLastTap = useRef(0);
   const moveThrottle = useRef(0);
   const opponent = room.players?.find((player) => !player.isSelf);
 
@@ -449,14 +450,22 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     const gesture = rightGesture.current;
     if (!gesture || gesture.pointer !== event.pointerId) return;
     rightGesture.current = null;
+    const endedAt = performance.now();
     const dx = event.clientX - gesture.x;
     const dy = event.clientY - gesture.y;
-    const durationMs = performance.now() - gesture.t;
+    const durationMs = endedAt - gesture.t;
+    const distance = Math.hypot(dx, dy);
+    let taps = 0;
+    if (isAttacker && distance < 22 && durationMs < 220) {
+      taps = endedAt - rightLastTap.current <= 320 ? 2 : 1;
+      rightLastTap.current = endedAt;
+      if (taps === 1) return;
+    }
     const curve = gesture.path.length > 2
       ? Math.max(-1, Math.min(1, (gesture.path[Math.floor(gesture.path.length / 2)].x - (gesture.x + dx / 2)) / 45))
       : 0;
     const parsed = isAttacker
-      ? interpretAttackGesture({ dx, dy, durationMs, heldMs: durationMs, curve, taps: 0 })
+      ? interpretAttackGesture({ dx, dy, durationMs, heldMs: durationMs, curve, taps })
       : interpretKeeperGesture({ dx, dy, durationMs });
     request('input', { room: room.id, revision: room.revision, input: parsed }, { silent: true }).catch(() => {});
   }
@@ -486,13 +495,13 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       <section className="penalty-pitch">
         <div className="penalty-goal-visual"><span /></div>
         <div className="penalty-keeper-avatar" style={{ left: `${50 + (positions.keeper?.y || 0) * 30}%` }}>GK</div>
-        <div className="penalty-ball-avatar" style={{ left: `${50 + (positions.attacker?.y || 0) * 28}%`, bottom: `${18 + (positions.attacker?.x || .15) * 50}%` }}>3B</div>
+        <div className="penalty-ball-avatar" style={{ left: `${50 + (positions.attacker?.y || 0) * 28}%`, bottom: `${18 + (positions.attacker?.x || .15) * 50 + Math.min(4, Number(state.ballLead || 0) * 6)}%` }}>3B</div>
         <div className="penalty-attacker-avatar" style={{ left: `${50 + (positions.attacker?.y || 0) * 28}%`, bottom: `${10 + (positions.attacker?.x || .15) * 50}%` }}>10</div>
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
         {isAttacker && <div className="penalty-touch-left" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd}><span /></div>}
-        <div className="penalty-touch-right" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightEnd}><span>{isAttacker ? 'GLISSE · FRAPPE' : 'GLISSE · PLONGE'}</span></div>
+        <div className="penalty-touch-right" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightEnd}><span>{isAttacker ? 'GESTES · MAINTIENS POUR FRAPPER' : 'GLISSE · PLONGE'}</span></div>
 
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
       </section>
