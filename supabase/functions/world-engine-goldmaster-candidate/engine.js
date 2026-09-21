@@ -14,6 +14,7 @@ import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
 import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
 import {HUB_DIALOGUE_INTENT_SET} from './hub/dialogue-intents.js';
+import {applyHubMissionAction} from './hub/mission-actions.js';
 import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
 
@@ -105,6 +106,14 @@ export function applyWorldAction(input,action){
    const current=s.hub.missions[action.id];requireThat(current?.status==='completed'&&!current.claimed,'Récompense indisponible.');
    const missions=claimHubMission(s.hub.missions,action.id),rewardValue=hubMissionReward(mission);
    s=gain(s,{hub:{...s.hub,missions}});return reward(s,rewardValue.xp,rewardValue.shards);
+  }
+  case 'hubMissionAction':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   requireThat(HUB_MISSION_BY_ID[action.missionId],'Mission Hub inconnue.');
+   const result=applyHubMissionAction(s.hub.missions,s.hub.stats.missionActions||{},action.missionId,action.actionId);
+   requireThat(result.ok,'Action de mission invalide pour cet objectif.');
+   if(result.duplicate)return s;
+   return gain(s,{hub:{...s.hub,missions:result.missions,stats:{...s.hub.stats,missionActions:result.progress}}});
   }
   case 'hubEventDiscover':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
