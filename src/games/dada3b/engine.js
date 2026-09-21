@@ -592,7 +592,7 @@ export function achievementsFor(match, countryId) {
   if (!player) return [];
   const achievements = [];
   if (player.stats.captures >= 1) achievements.push({ id: 'first-capture', title: 'Première capture', detail: 'Déclencher Fracture Matrix une première fois.' });
-  if (player.pieces.every((piece) => piece.steps === FINISH_STEP)) achievements.push({ id: 'four-nexus', title: '4 au Nexus', detail: 'Réunir tous ses totems dans le Nexus.' });
+  if (player.pieces.every((piece) => piece.steps === FINISH_STEP)) achievements.push({ id: 'four-nexus', title: 'Tous au Nexus', detail: 'Réunir tous ses Totems dans le Nexus.' });
   const wonSide = match.rules?.teamMode ? Boolean(player.team && match.winnerTeam === player.team) : match.winner === countryId;
   if (wonSide && player.stats.timesCaptured === 0) achievements.push({ id: 'untouchable', title: 'Aucun pion capturé', detail: 'Gagner sans retour forcé à l’écurie.' });
   if (match.winner === countryId && match.players.length === 8) achievements.push({ id: 'eight-nations', title: '8 nations', detail: 'Gagner une partie complète à huit pays.' });
