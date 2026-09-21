@@ -61,3 +61,20 @@
 .guardian-mechanic strong{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#efd39a}
 .guardian-mechanic span{font-size:10px;line-height:1.45;color:#b9ccc5}
 @media(max-width:700px){.guardian-mechanic{max-width:92vw;padding:7px 9px}.guardian-mechanic span{font-size:9px}}
+
+
+.frontier-contracts{display:grid;gap:8px;margin:8px 0 14px}
+.frontier-contracts article,.frontier-contract-active{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:13px;
+ border:1px solid #d9c88b2e;background:#0e2926a6;
+}
+.frontier-contracts article>div{min-width:0}.frontier-contracts strong,.frontier-contract-active strong{color:#eed49c;font-size:11px}
+.frontier-contracts p,.frontier-contract-active p{margin:3px 0;font-size:9px;color:#b9c9c3;line-height:1.45}
+.frontier-contracts small,.frontier-contract-active small{font-size:8px;color:#8eb2ac}
+.frontier-contract-active{display:block;margin:8px 0 14px}
+.frontier-contract-active .world-actions{margin-top:8px}
+.world-resonance-picker .world-actions button{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.world-resonance-picker .world-actions button small{opacity:.7}
+.guardian-value-panel .world-actions button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left}
+.guardian-value-panel .world-actions button small{font-size:8px;line-height:1.4;color:#9fbcb5}
+@media(max-width:700px){.frontier-contracts article{align-items:stretch;flex-direction:column}.frontier-contracts article button{width:100%}}
