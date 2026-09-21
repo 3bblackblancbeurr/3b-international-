@@ -81,3 +81,34 @@ test('home portal represents all eight canonical gates and keeps native launch f
  assert.match(portal,/UNREAL_LAUNCH_ENABLED/);
  assert.match(env,/VITE_UNREAL_LAUNCH_ENABLED=false/);
 });
+
+
+test('dedicated client and server targets exist for authoritative multiplayer',()=>{
+ const client=read('unreal/ThreeBWorld/Source/ThreeBWorldClient.Target.cs');
+ const server=read('unreal/ThreeBWorld/Source/ThreeBWorldServer.Target.cs');
+ assert.match(client,/TargetType\.Client/);
+ assert.match(server,/TargetType\.Server/);
+ assert.match(client,/BuildSettingsVersion\.Latest/);
+ assert.match(server,/BuildSettingsVersion\.Latest/);
+});
+
+test('one-time redemption returns the same account world snapshot to Unreal',()=>{
+ const redeem=read('supabase/functions/world-unreal-redeem/index.ts');
+ const bridge=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWorldBridgeSubsystem.cpp');
+ assert.match(redeem,/select=revision,data,legacy/);
+ assert.match(redeem,/world_state:state\?\.\[0\]\?\.data\|\|null/);
+ assert.match(bridge,/BootstrapWorldJson/);
+ assert.match(bridge,/world_state/);
+});
+
+test('dimensional platform layer loads after compact styles and exposes the 3B world portal',()=>{
+ const app=read('src/App.jsx');
+ const home=read('src/components/HomePage.jsx');
+ const dimension=read('src/styles/dimension.css');
+ assert.match(app,/styles\/compact\.css/);
+ assert.match(app,/styles\/dimension\.css/);
+ assert.ok(app.indexOf('styles/dimension.css')>app.indexOf('styles/compact.css'));
+ assert.match(home,/WorldPortalCard/);
+ assert.match(dimension,/dimensional surface layer/i);
+ assert.match(dimension,/box-shadow/);
+});
