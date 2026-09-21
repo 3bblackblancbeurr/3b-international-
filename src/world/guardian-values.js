@@ -1,4 +1,6 @@
-export const GUARDIAN_VALUES={
+import {COUNTRY_NARRATIVE} from './narrative-canon.js';
+
+const CORE_GUARDIAN_VALUES={
  france:{card:'C165',name:'Céliane',value:'Justice',district:'archives',choices:[
   ['écouter','Écouter les deux versions avant de décider'],
   ['preuve','Chercher ce qui peut être vérifié'],
@@ -26,6 +28,20 @@ export const GUARDIAN_VALUES={
   ['canaliser','Canaliser l’intensité'],['créer','Transformer l’émotion en création'],['maîtriser','Rester maître de son geste'],
  ]},
 };
+
+export const GUARDIAN_VALUES=Object.fromEntries(
+ Object.entries(CORE_GUARDIAN_VALUES).map(([region,data])=>{
+  const narrative=COUNTRY_NARRATIVE[region];
+  return [region,{
+   ...data,
+   question:narrative?.question||'',
+   missionStyle:narrative?.missionStyle||'',
+   flaw:narrative?.guardian?.flaw||'',
+   evolution:narrative?.guardian?.evolution||'',
+   campaign:narrative?.campaign||[],
+  }];
+ })
+);
 
 export const GUARDIAN_VALUE_SCENES={
  france:[
