@@ -162,7 +162,7 @@ export default function App() {
     document.title = page === "intro" ? "3B International — Application Black Blanc Beur" : `${currentPageTitle} — 3B`;
     const heading = document.querySelector("main h1");
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
-    window.scrollTo({ top: 0, behavior: "instant" });
+    window.scrollTo({ top: 0, behavior: "auto" });
   }, [page, currentPageTitle]);
 
   useEffect(() => {
