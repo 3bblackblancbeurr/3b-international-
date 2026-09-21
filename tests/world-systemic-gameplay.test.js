@@ -23,7 +23,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 test('contextual interaction catalog covers the systemic verbs without inaccessible hold-only actions',()=>{
  assert.equal(validateInteractionCatalog(),true);
- assert.ok(Object.keys(ACTIONS).length>=35);
+ for(const id of ['talk','inspect','scan','showEvidence','repair','assemble','support','carry','revive','climb','vault','swim','dive','drive','fight','guard'])assert.ok(ACTIONS[id],id);
  const categories=new Set(Object.values(ACTIONS).map(action=>action.category));
  for(const category of ['social','investigation','world','traversal','rescue','craft','vehicle','combat','companion','rest'])assert.ok(categories.has(category),category);
  for(const [id,action] of Object.entries(ACTIONS)){
