@@ -34,6 +34,7 @@ import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {worldVisualCapabilities} from './device-capabilities.js';
 import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle} from './premium-hub-visuals.js';
 import {loadControlBindings,normalizeControlBindings,controlMatches,actionHeld} from './control-bindings.js';
+import {actionFeedback} from './interaction-system.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -439,6 +440,12 @@ function hubNpcAvatar(item){
   canBattle(action){return !['strike','power','wait'].includes(action)||combatDistance<=(action==='power'?22:action==='wait'?8:7.5);},
   setPaused(value){paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value)clearInput();},
   setPresentation(value){presentation=value;if(value!=='encounter')combatFx.clear();needsRender=true;},
+  contextAction(actionId,item){
+   const info=actionFeedback(actionId);if(!info)return false;
+   if(item&&Number.isFinite(item.x)&&Number.isFinite(item.z)){const dx=item.x-position.x,dz=item.z-position.z;if(Math.hypot(dx,dz)>.01){heading=Math.atan2(dx,dz)*180/Math.PI;hero?.face?.(dx,dz,.18);}}
+   const animation={Talk:'Talk',Inspect:'Talk',Use:'Cast',Work:'Work',Help:'Talk',Pickup:'Work',Carry:'Idle',Climb:'Idle',Vault:'Idle',Ride:'Idle',Swim:'Idle',Dive:'Idle',Sit:'Idle',Cast:'Cast',Draw:'Attack',Guard:'Idle',Point:'Cast',Walk:'Idle'}[info.animation]||'Idle';
+   hero?.action?.(animation);feedbackAt=elapsed;feedbackAction='context:'+actionId;needsRender=true;return true;
+  },
   feedback(type,action,previous,next){if(type==='field'){const f=next?.adventure.encounter?.field;if(!f?.last)return;action=f.last;type='battle';}if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,worldRadius);position=dodge.position;}if(type==='battle'){lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;hero?.action(action==='enemy'?'Hit':action==='guard'||action==='dodge'||action==='wait'||action==='miss'?'Idle':action==='power'||action==='support'||action==='trap'?'Cast':'Attack');const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
   playCinematicShot(kind,context={},duration=5200){
    const encounter=save.adventure.encounter||{},now=performance.now(),major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind);
