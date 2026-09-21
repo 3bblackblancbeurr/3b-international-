@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engine": "5.8",
   "slice_id": "france_justice_v1",
-  "note": "Target asset paths. These are not claimed to exist until validate_france_editor_assets.py passes inside Unreal Editor.",
+  "note": "Target asset paths for the single canonical France region. These are not claimed to exist until validate_france_editor_assets.py passes inside Unreal Editor.",
   "required_assets": [
     {
       "path": "/Game/3B/World/Nexus/Maps/L_Nexus",
@@ -17,6 +17,11 @@
     {
       "path": "/Game/3B/World/France/Data/DA_FranceJusticeSlice",
       "kind": "ThreeBStorySliceDefinition",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/Data/DA_FranceRegion",
+      "kind": "ThreeBRegionDefinition",
       "critical": true
     },
     {
@@ -65,6 +70,41 @@
       "critical": true
     },
     {
+      "path": "/Game/3B/World/France/DataLayers/DL_BaseGeometry",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Water",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Vegetation",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Architecture",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Population",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_WeatherVariants",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/DataLayers/DL_Cinematic",
+      "kind": "DataLayerAsset",
+      "critical": true
+    },
+    {
       "path": "/Game/3B/World/France/DataLayers/DL_Story_PreJustice",
       "kind": "DataLayerAsset",
       "critical": true
@@ -95,14 +135,29 @@
     "/Game/3B/World/France/Data",
     "/Game/3B/World/France/DataLayers",
     "/Game/3B/World/France/Environment",
+    "/Game/3B/World/France/Environment/Geometry",
+    "/Game/3B/World/France/Environment/Architecture",
+    "/Game/3B/World/France/Environment/Vegetation",
+    "/Game/3B/World/France/Environment/Water",
     "/Game/3B/World/France/Gameplay",
+    "/Game/3B/World/France/Gameplay/Traversal",
     "/Game/3B/World/France/NPC",
+    "/Game/3B/World/France/NPC/Routines",
     "/Game/3B/World/France/Audio",
     "/Game/3B/World/France/VFX",
     "/Game/3B/World/France/Cinematics",
     "/Game/3B/Characters/Celiane"
   ],
   "data_layer_rules": {
+    "system_layers": [
+      "DL_BaseGeometry",
+      "DL_Water",
+      "DL_Vegetation",
+      "DL_Architecture",
+      "DL_Population",
+      "DL_WeatherVariants",
+      "DL_Cinematic"
+    ],
     "mutually_exclusive_story_layers": [
       "DL_Story_PreJustice",
       "DL_Story_JusticeCrisis",
@@ -111,15 +166,24 @@
       "DL_Story_PostLiberation"
     ],
     "authority": "persistent server world_state selects durable story layer",
-    "client_rule": "client may preview only non-persistent presentation state"
+    "client_rule": "client may preview only non-persistent presentation state",
+    "streaming_rule": "system layers may stream independently; story state must never require loading the full France region"
   },
   "profiling_targets": {
     "source": "Docs/Production/PERFORMANCE_BUDGETS.md",
     "desktop": {
       "target_fps": 60,
       "frame_budget_ms": 16.67,
-      "initial_active_cells_max": 6
+      "initial_active_cells_max": 6,
+      "target_cell_cm": 12000,
+      "active_ai_controller_budget": 48
     },
+    "invariants": [
+      "major_world_silhouette",
+      "main_waterfall",
+      "height_readability",
+      "celiane_landmark"
+    ],
     "note": "Targets must be replaced/confirmed with captured Unreal profiling measurements."
   }
 }

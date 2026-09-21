@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "ThreeBRegionDefinition.h"
 #include "ThreeBWorldDefinition.generated.h"
 
 USTRUCT(BlueprintType)
@@ -30,6 +31,9 @@ struct FThreeBTerritoryDefinition
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TSoftObjectPtr<UWorld> EntryWorld;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    TSoftObjectPtr<UThreeBRegionDefinition> RegionDefinition;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(MultiLine=true))
     FText CreativeRule;

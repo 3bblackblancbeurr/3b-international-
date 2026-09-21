@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "engine": "5.8",
   "slice_id": "france_justice_v1",
-  "purpose": "Ordered Unreal Editor execution plan. This file prepares work; it does not claim any .uasset exists.",
+  "purpose": "Ordered Unreal Editor execution plan for the canonical vertical France region. This prepares and verifies work; it does not claim any .uasset exists.",
   "status_model": [
     "prepared",
     "editor_required",
@@ -14,6 +14,8 @@
       "compile_log",
       "asset_validator_output",
       "pie_test_result",
+      "anti_flat_capture_set",
+      "navigation_capture",
       "profiling_capture",
       "packaged_build_smoke_test"
     ]
@@ -41,6 +43,10 @@
         "/Game/3B/World/Nexus/Maps/L_Nexus",
         "/Game/3B/World/France/Maps/L_France_OpenWorld"
       ],
+      "goals": [
+        "create_or_open_open_world_map",
+        "confirm_world_partition_enabled"
+      ],
       "evidence": [
         "asset_validator_output"
       ]
@@ -50,18 +56,27 @@
       "order": 3,
       "editor_required": true,
       "asset_paths": [
-        "/Game/3B/World/France/Data/DA_FranceJusticeSlice"
+        "/Game/3B/World/France/Data/DA_FranceJusticeSlice",
+        "/Game/3B/World/France/Data/DA_FranceRegion"
       ],
       "source_contracts": [
         "france-justice-v1.json",
+        "france-blockout-layout.json",
         "france-checkpoint-reconnect-v1.json",
         "france-npc-dialogue-v1.json",
         "france-presentation-v1.json",
         "france-nexus-handoff-v1.json",
-        "france-coop-session-v1.json"
+        "france-coop-session-v1.json",
+        "france-district-content-v1.json",
+        "france-district-missions-v1.json"
       ],
       "evidence": [
         "asset_validator_output"
+      ],
+      "goals": [
+        "create_story_slice_data_asset",
+        "create_region_definition_from_vertical_contract",
+        "link_france_territory_to_region_definition"
       ]
     },
     {
@@ -99,8 +114,29 @@
       ]
     },
     {
-      "id": "stage_06_story_layers",
+      "id": "stage_06_system_layers",
       "order": 6,
+      "editor_required": true,
+      "asset_paths": [
+        "/Game/3B/World/France/DataLayers/DL_BaseGeometry",
+        "/Game/3B/World/France/DataLayers/DL_Water",
+        "/Game/3B/World/France/DataLayers/DL_Vegetation",
+        "/Game/3B/World/France/DataLayers/DL_Architecture",
+        "/Game/3B/World/France/DataLayers/DL_Population",
+        "/Game/3B/World/France/DataLayers/DL_WeatherVariants",
+        "/Game/3B/World/France/DataLayers/DL_Cinematic"
+      ],
+      "goals": [
+        "separate_streamable_system_layers",
+        "keep_macro_silhouette_available_via_proxies"
+      ],
+      "evidence": [
+        "asset_validator_output"
+      ]
+    },
+    {
+      "id": "stage_07_story_layers",
+      "order": 7,
       "editor_required": true,
       "asset_paths": [
         "/Game/3B/World/France/DataLayers/DL_Story_PreJustice",
@@ -115,36 +151,105 @@
       ]
     },
     {
-      "id": "stage_07_network_persistence",
-      "order": 7,
+      "id": "stage_08_vertical_blockout",
+      "order": 8,
+      "editor_required": true,
+      "source_contracts": [
+        "france-blockout-layout.json",
+        "france-district-content-v1.json"
+      ],
+      "goals": [
+        "run_build_france_blockout_py",
+        "validate_eight_districts",
+        "validate_playable_underside",
+        "validate_five_vistas",
+        "capture_player_edge_side_under_distance_views",
+        "prove_three_altitudes_visible",
+        "prove_platform_has_visible_thickness",
+        "validate_building_program_small_medium_large_iconic",
+        "validate_district_secrets_and_vertical_connections"
+      ],
+      "evidence": [
+        "asset_validator_output",
+        "anti_flat_capture_set"
+      ]
+    },
+    {
+      "id": "stage_09_hydrology_weather_audio",
+      "order": 9,
+      "editor_required": true,
+      "source_contracts": [
+        "france-blockout-layout.json",
+        "france-presentation-v1.json"
+      ],
+      "goals": [
+        "author_water_source_river_basin_waterfall_chain",
+        "author_waterfall_mesh_material_niagara",
+        "wire_weather_state_machine",
+        "wire_altitude_audio_profiles",
+        "verify_waterfall_audible_before_reveal"
+      ],
+      "evidence": [
+        "pie_test_result",
+        "anti_flat_capture_set"
+      ]
+    },
+    {
+      "id": "stage_10_population_navigation",
+      "order": 10,
+      "editor_required": true,
+      "source_contracts": [
+        "france-npc-dialogue-v1.json",
+        "france-district-content-v1.json",
+        "france-district-missions-v1.json"
+      ],
+      "goals": [
+        "author_population_sets_for_eight_districts",
+        "author_routine_profiles",
+        "build_navigation_across_main_vertical_and_lower_routes",
+        "verify_far_population_has_no_full_ai_controller",
+        "wire_district_mission_givers_and_local_activity_hooks"
+      ],
+      "evidence": [
+        "pie_test_result",
+        "navigation_capture"
+      ]
+    },
+    {
+      "id": "stage_11_network_persistence",
+      "order": 11,
       "editor_required": true,
       "goals": [
         "pie_two_players",
         "disconnect_reconnect",
         "revive",
         "shared_objective",
-        "no_duplicate_reward"
+        "no_duplicate_reward",
+        "post_liberation_state_restores"
       ],
       "evidence": [
         "pie_test_result"
       ]
     },
     {
-      "id": "stage_08_profile",
-      "order": 8,
+      "id": "stage_12_profile",
+      "order": 12,
       "editor_required": true,
       "goals": [
         "profile_reference_pc",
         "check_streaming_hlod",
-        "check_critical_route"
+        "check_critical_route",
+        "profile_ai_budget",
+        "profile_volumetrics",
+        "profile_niagara_waterfall"
       ],
       "evidence": [
         "profiling_capture"
       ]
     },
     {
-      "id": "stage_09_package",
-      "order": 9,
+      "id": "stage_13_package",
+      "order": 13,
       "editor_required": true,
       "goals": [
         "package_client",
@@ -157,5 +262,5 @@
       ]
     }
   ],
-  "completion_rule": "Gold Master only after every stage has real external evidence; source contracts alone remain PREPARED."
+  "completion_rule": "Gold Master only after every stage has real external evidence; source contracts and generated blockout remain PREPARED until Editor, PIE, profiling and packaged-build evidence exist."
 }

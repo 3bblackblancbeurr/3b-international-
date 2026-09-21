@@ -1,17 +1,132 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "slice_id": "france_justice_v1",
-  "purpose": "Cosmetic-only presentation contract for France audio, VFX, lighting and cinematic beats.",
+  "purpose": "Cosmetic-only presentation contract for France audio, VFX, lighting, weather, altitude ambience and cinematic beats.",
   "authority": {
     "persistent_mutation": false,
     "gameplay_reward": false,
     "rule": "Presentation reacts to authoritative state; it never creates authoritative state."
   },
+  "weather_state_machine": {
+    "authority": "presentation_only",
+    "default_state": "LOW_CLOUD",
+    "states": [
+      {
+        "id": "CLEAR",
+        "visibility": "long",
+        "wetness": 0,
+        "wind": "light",
+        "clouds": "sparse_high",
+        "rain": "none"
+      },
+      {
+        "id": "GOLDEN_CLEAR",
+        "visibility": "long",
+        "wetness": 0,
+        "wind": "light",
+        "clouds": "sparse",
+        "rain": "none"
+      },
+      {
+        "id": "HIGH_CLOUD",
+        "visibility": "long",
+        "wetness": 0,
+        "wind": "light",
+        "clouds": "high",
+        "rain": "none"
+      },
+      {
+        "id": "LOW_CLOUD",
+        "visibility": "medium",
+        "wetness": 0.1,
+        "wind": "medium",
+        "clouds": "intermediate_and_low",
+        "rain": "none"
+      },
+      {
+        "id": "LIGHT_RAIN",
+        "visibility": "medium",
+        "wetness": 0.55,
+        "wind": "medium",
+        "clouds": "dense_low",
+        "rain": "light"
+      },
+      {
+        "id": "HEAVY_RAIN",
+        "visibility": "short",
+        "wetness": 1,
+        "wind": "strong",
+        "clouds": "dense",
+        "rain": "heavy"
+      },
+      {
+        "id": "STORM",
+        "visibility": "short",
+        "wetness": 1,
+        "wind": "very_strong",
+        "clouds": "fast_dense",
+        "rain": "heavy_thunder"
+      },
+      {
+        "id": "POST_RAIN",
+        "visibility": "medium_to_long",
+        "wetness": 0.8,
+        "wind": "light",
+        "clouds": "opening",
+        "rain": "residual"
+      }
+    ],
+    "transitions": {
+      "CLEAR": [
+        "GOLDEN_CLEAR",
+        "HIGH_CLOUD"
+      ],
+      "GOLDEN_CLEAR": [
+        "CLEAR",
+        "HIGH_CLOUD"
+      ],
+      "HIGH_CLOUD": [
+        "CLEAR",
+        "LOW_CLOUD",
+        "LIGHT_RAIN"
+      ],
+      "LOW_CLOUD": [
+        "HIGH_CLOUD",
+        "LIGHT_RAIN"
+      ],
+      "LIGHT_RAIN": [
+        "LOW_CLOUD",
+        "HEAVY_RAIN",
+        "POST_RAIN"
+      ],
+      "HEAVY_RAIN": [
+        "LIGHT_RAIN",
+        "STORM",
+        "POST_RAIN"
+      ],
+      "STORM": [
+        "HEAVY_RAIN",
+        "POST_RAIN"
+      ],
+      "POST_RAIN": [
+        "GOLDEN_CLEAR",
+        "HIGH_CLOUD",
+        "CLEAR"
+      ]
+    },
+    "narrative_overrides": {
+      "pre_justice": "LOW_CLOUD",
+      "justice_crisis": "LIGHT_RAIN",
+      "celiane_liberated": "POST_RAIN",
+      "reconstruction": "GOLDEN_CLEAR",
+      "post_liberation": "HIGH_CLOUD"
+    }
+  },
   "world_state_profiles": [
     {
       "world_state": "pre_justice",
       "lighting": "cool_overcast",
-      "weather": "light_rain",
+      "weather": "LOW_CLOUD",
       "ambience": "tense_city_low",
       "music_layer": "france_mystery",
       "vfx_density": "low"
@@ -19,7 +134,7 @@
     {
       "world_state": "justice_crisis",
       "lighting": "wet_high_contrast",
-      "weather": "rain",
+      "weather": "LIGHT_RAIN",
       "ambience": "city_pressure",
       "music_layer": "france_tension",
       "vfx_density": "medium"
@@ -27,15 +142,15 @@
     {
       "world_state": "celiane_liberated",
       "lighting": "rain_break",
-      "weather": "rain_easing",
+      "weather": "POST_RAIN",
       "ambience": "release",
       "music_layer": "justice_reveal",
       "vfx_density": "focused"
     },
     {
       "world_state": "reconstruction",
-      "lighting": "warmer_daylight",
-      "weather": "clearing",
+      "lighting": "champagne_golden",
+      "weather": "GOLDEN_CLEAR",
       "ambience": "community_rebuild",
       "music_layer": "france_rebuild",
       "vfx_density": "low"
@@ -43,10 +158,68 @@
     {
       "world_state": "post_liberation",
       "lighting": "balanced_day_night",
-      "weather": "dynamic_calm",
+      "weather": "HIGH_CLOUD",
       "ambience": "living_district",
       "music_layer": "france_legacy",
       "vfx_density": "contextual"
+    }
+  ],
+  "altitude_environment_profiles": [
+    {
+      "altitude_band": "celestial",
+      "wind": "strong_clean",
+      "fog": "very_low",
+      "audio": "high_altitude_sparse",
+      "cloud_relation": "above"
+    },
+    {
+      "altitude_band": "high_city",
+      "wind": "medium",
+      "fog": "low",
+      "audio": "city_high",
+      "cloud_relation": "above_or_inside"
+    },
+    {
+      "altitude_band": "main_city",
+      "wind": "light",
+      "fog": "local",
+      "audio": "city_dense",
+      "cloud_relation": "above"
+    },
+    {
+      "altitude_band": "terraces",
+      "wind": "medium",
+      "fog": "local_valleys",
+      "audio": "gardens_workshops",
+      "cloud_relation": "above_or_inside"
+    },
+    {
+      "altitude_band": "lower",
+      "wind": "low",
+      "fog": "humid",
+      "audio": "water_low_city",
+      "cloud_relation": "inside"
+    },
+    {
+      "altitude_band": "caves",
+      "wind": "drafts",
+      "fog": "local",
+      "audio": "cave_reverb",
+      "cloud_relation": "none"
+    },
+    {
+      "altitude_band": "underside",
+      "wind": "strong",
+      "fog": "moving_mist",
+      "audio": "underside_void",
+      "cloud_relation": "inside_or_below"
+    },
+    {
+      "altitude_band": "floating_islands",
+      "wind": "strong",
+      "fog": "cloud_ocean",
+      "audio": "void_islands",
+      "cloud_relation": "below"
     }
   ],
   "audio_layers": [
@@ -54,21 +227,25 @@
       "id": "rain_surface",
       "driven_by": [
         "weather",
-        "interior_exterior"
+        "interior_exterior",
+        "surface_material"
       ]
     },
     {
       "id": "city_bed",
       "driven_by": [
         "world_state",
-        "zone"
+        "zone",
+        "district",
+        "time_of_day"
       ]
     },
     {
       "id": "crowd_tension",
       "driven_by": [
         "world_state",
-        "phase"
+        "phase",
+        "district"
       ]
     },
     {
@@ -81,7 +258,8 @@
       "id": "celiane_presence",
       "driven_by": [
         "phase",
-        "guardian_state"
+        "guardian_state",
+        "altitude_band"
       ]
     },
     {
@@ -95,7 +273,83 @@
       "driven_by": [
         "world_state"
       ]
+    },
+    {
+      "id": "waterfall_distance",
+      "driven_by": [
+        "distance_to_waterfall",
+        "occlusion",
+        "altitude_band"
+      ]
+    },
+    {
+      "id": "void_wind",
+      "driven_by": [
+        "altitude_band",
+        "edge_proximity",
+        "weather"
+      ]
+    },
+    {
+      "id": "cave_reverb",
+      "driven_by": [
+        "interior_exterior",
+        "cavity_id"
+      ]
     }
+  ],
+  "environment_motion": [
+    "cloud_drift",
+    "water_flow",
+    "vegetation_wind",
+    "birds_pass",
+    "mist_motion",
+    "cloth_motion",
+    "drips",
+    "light_variation",
+    "dust_in_light"
+  ],
+  "vista_rules": {
+    "minimum_directed_vistas": 5,
+    "require_three_altitudes_visible": true,
+    "require_under_france_vista": true,
+    "require_waterfall_vista": true,
+    "sun_used_as_composition_tool": true,
+    "fog_must_not_permanently_hide_height": true
+  },
+  "quality_profiles": {
+    "CINEMATIC": {
+      "volumetrics": "maximum_capture",
+      "particles": "maximum_capture",
+      "distant_vistas": "full"
+    },
+    "ULTRA": {
+      "volumetrics": "high",
+      "particles": "high",
+      "distant_vistas": "full"
+    },
+    "HIGH": {
+      "volumetrics": "balanced",
+      "particles": "balanced",
+      "distant_vistas": "full"
+    },
+    "MEDIUM": {
+      "volumetrics": "reduced",
+      "particles": "reduced",
+      "distant_vistas": "proxy"
+    },
+    "PERFORMANCE": {
+      "volumetrics": "low",
+      "particles": "low",
+      "distant_vistas": "proxy"
+    }
+  },
+  "quality_invariants": [
+    "world_silhouette",
+    "major_waterfalls",
+    "height_readability",
+    "essential_cloud_ocean",
+    "guardian_landmark"
   ],
   "cinematic_beats": [
     {
@@ -107,6 +361,12 @@
     {
       "id": "human_problem_incident",
       "phase": "human_problem",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "under_france_reveal",
+      "phase": "investigation",
       "skippable": true,
       "persistent_mutation": false
     },

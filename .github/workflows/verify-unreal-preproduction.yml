@@ -11,6 +11,10 @@ on:
       - 'src/world/hub/data/**'
       - 'tests/unreal-preproduction-contract.test.js'
       - 'tests/france-unreal-contract.test.js'
+      - 'tests/france-preproduction-depth.test.js'
+      - 'tests/france-handoff-coop-editor.test.js'
+      - 'tests/france-editor-readiness.test.js'
+      - 'tests/france-vertical-world.test.js'
       - 'tests/world-unreal-story-state-contract.test.js'
       - 'tests/ai-council-unreal-bridge.test.js'
       - '.github/workflows/verify-unreal-preproduction.yml'
@@ -30,7 +34,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node --test tests/unreal-preproduction-contract.test.js tests/france-unreal-contract.test.js tests/france-preproduction-depth.test.js tests/france-handoff-coop-editor.test.js tests/france-editor-readiness.test.js tests/world-unreal-story-state-contract.test.js
+      - name: Verify canonical France and Unreal contracts
+        run: >-
+          node --test
+          tests/unreal-preproduction-contract.test.js
+          tests/france-unreal-contract.test.js
+          tests/france-preproduction-depth.test.js
+          tests/france-handoff-coop-editor.test.js
+          tests/france-editor-readiness.test.js
+          tests/france-vertical-world.test.js
+          tests/world-unreal-story-state-contract.test.js
       - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
         run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py unreal/ThreeBWorld/Scripts/build_france_blockout.py

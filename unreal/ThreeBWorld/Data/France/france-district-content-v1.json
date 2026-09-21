@@ -1,0 +1,913 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "purpose": "Production content contract for the eight France districts. Defines buildings, activities, secrets and before/after-Celiane visual/gameplay deltas without pretending final Unreal art assets exist.",
+  "rules": {
+    "one_region_not_eight_maps": true,
+    "final_interiors_only_when_gameplay_or_story_requires": true,
+    "every_district_has_vertical_connection": true,
+    "every_district_has_daily_life": true,
+    "every_district_changes_after_celiane": true,
+    "filler_buildings_forbidden": true
+  },
+  "districts": [
+    {
+      "id": "france_centre",
+      "name": "Cœur de France",
+      "role": "civic_social",
+      "identity": "Grande place civique découpée en terrasses, axes lisibles et vues simultanées vers le tribunal, la cascade et les niveaux bas.",
+      "architecture": [
+        "pierre_claire_patinee",
+        "metal_sombre",
+        "verre_limite",
+        "arches_civiques",
+        "escaliers_monumentaux"
+      ],
+      "signature_materials": [
+        "pierre_calcaire",
+        "acier_noir",
+        "laiton_champagne",
+        "sol_mouille"
+      ],
+      "building_ids": [
+        "bld_kiosk_news",
+        "bld_cafe_corner",
+        "bld_market_stall",
+        "bld_small_clinic",
+        "bld_apartment_centre_a",
+        "bld_apartment_centre_b",
+        "bld_market_hall",
+        "bld_civic_service",
+        "landmark_place_justice"
+      ],
+      "activities": [
+        "marche",
+        "mediation_publique",
+        "petits_commerces",
+        "rassemblements",
+        "retour_missions"
+      ],
+      "mission_hooks": [
+        "human_problem",
+        "aftermath"
+      ],
+      "secrets": [
+        "passage_sous_fontaine",
+        "temoignage_cache_place"
+      ],
+      "vertical_connections": [
+        "france_populaire",
+        "france_culture",
+        "lower",
+        "france_monumental"
+      ],
+      "ambience": {
+        "day": "dense_civic_life",
+        "night": "warm_public_lighting",
+        "audio": "crowd_fountain_city"
+      },
+      "pre_liberation": [
+        "barrieres_temporaires",
+        "tension_groupes",
+        "pluie_et_sol_sombre"
+      ],
+      "post_liberation": [
+        "place_reouverte",
+        "mediations_publiques",
+        "marches_plus_actifs",
+        "lumiere_plus_chaude"
+      ]
+    },
+    {
+      "id": "france_populaire",
+      "name": "Quartier populaire",
+      "role": "local_life",
+      "identity": "Ruelles serrées et superposées, balcons, petits commerces, ateliers de proximité et raccourcis entre immeubles.",
+      "architecture": [
+        "facades_mixtes",
+        "balcons",
+        "passages_couverts",
+        "escaliers_exterieurs",
+        "toits_accessibles"
+      ],
+      "signature_materials": [
+        "enduit_use",
+        "brique",
+        "acier_peint",
+        "bois",
+        "neons_discrets"
+      ],
+      "building_ids": [
+        "bld_bakery",
+        "bld_grocery",
+        "bld_barber",
+        "bld_corner_shop",
+        "bld_small_workshop",
+        "bld_row_housing_a",
+        "bld_row_housing_b",
+        "bld_neighborhood_house",
+        "bld_local_school"
+      ],
+      "activities": [
+        "achats",
+        "travail_artisan",
+        "discussions_balcons",
+        "jeu_rue",
+        "micro_evenements"
+      ],
+      "mission_hooks": [
+        "human_problem",
+        "investigation"
+      ],
+      "secrets": [
+        "toits_chain",
+        "cour_interieure_cachee"
+      ],
+      "vertical_connections": [
+        "france_centre",
+        "france_ancien",
+        "france_artisanat",
+        "rooftop_route"
+      ],
+      "ambience": {
+        "day": "busy_intimate",
+        "night": "window_lights_and_small_groups",
+        "audio": "voices_tools_radio"
+      },
+      "pre_liberation": [
+        "volets_fermes",
+        "groupes_mefiants",
+        "accès_toit_partiellement_bloques"
+      ],
+      "post_liberation": [
+        "commerces_reouverts",
+        "fresque_collective",
+        "raccourcis_toits_ouverts"
+      ]
+    },
+    {
+      "id": "france_ancien",
+      "name": "Quartier ancien",
+      "role": "historic_investigation",
+      "identity": "Tissu ancien en pente avec arches, cours, escaliers et sous-sols donnant accès aux fondations de France.",
+      "architecture": [
+        "pierre_epaisse",
+        "ruelles_irregulieres",
+        "arches",
+        "caves",
+        "petites_tours"
+      ],
+      "signature_materials": [
+        "pierre_sombre_humide",
+        "bois_ancien",
+        "fer_forge",
+        "mousse"
+      ],
+      "building_ids": [
+        "bld_antique_shop",
+        "bld_old_inn",
+        "bld_old_house_a",
+        "bld_old_house_b",
+        "bld_history_house",
+        "bld_old_archive_annex",
+        "bld_clock_house"
+      ],
+      "activities": [
+        "visites",
+        "recherche_lore",
+        "commerce_ancien",
+        "observation"
+      ],
+      "mission_hooks": [
+        "investigation",
+        "justice_trial"
+      ],
+      "secrets": [
+        "cave_west_access",
+        "mur_faux_archive",
+        "ancienne_conduite_eau"
+      ],
+      "vertical_connections": [
+        "france_populaire",
+        "france_culture",
+        "caves",
+        "underside"
+      ],
+      "ambience": {
+        "day": "quiet_textured",
+        "night": "narrow_shadow_lanterns",
+        "audio": "steps_bells_drips"
+      },
+      "pre_liberation": [
+        "archives_secondaires_scellees",
+        "rumeurs_contradictoires"
+      ],
+      "post_liberation": [
+        "documents_restitues",
+        "cave_historique_ouverte",
+        "visiteurs_reviennent"
+      ]
+    },
+    {
+      "id": "france_residentiel",
+      "name": "Quartier résidentiel",
+      "role": "civilian_home",
+      "identity": "Habitations, jardins et petites places posées près des falaises ouest, offrant des vues sur le vide.",
+      "architecture": [
+        "maisons_mitoyennes",
+        "petits_immeubles",
+        "jardins",
+        "murs_bas",
+        "belvederes"
+      ],
+      "signature_materials": [
+        "pierre_claire",
+        "enduit",
+        "bois",
+        "vegetation",
+        "tuiles_sombres"
+      ],
+      "building_ids": [
+        "bld_home_a",
+        "bld_home_b",
+        "bld_home_c",
+        "bld_garden_shed",
+        "bld_small_playhouse",
+        "bld_residential_block_a",
+        "bld_residential_block_b",
+        "bld_health_house"
+      ],
+      "activities": [
+        "vie_familiale",
+        "jardinage",
+        "promenade",
+        "petits_services"
+      ],
+      "mission_hooks": [
+        "human_problem",
+        "rescue"
+      ],
+      "secrets": [
+        "belvedere_memory",
+        "garden_lower_path"
+      ],
+      "vertical_connections": [
+        "gate_arrival",
+        "france_centre",
+        "france_peripherie",
+        "cave_west"
+      ],
+      "ambience": {
+        "day": "calm_human",
+        "night": "domestic_warmth",
+        "audio": "birds_distant_city_wind"
+      },
+      "pre_liberation": [
+        "habitants_inquiets",
+        "accès_falaise_ferme"
+      ],
+      "post_liberation": [
+        "jardins_occupes",
+        "belvedere_rouvert",
+        "dialogues_soulages"
+      ]
+    },
+    {
+      "id": "france_artisanat",
+      "name": "Quartier artisanat / industrie",
+      "role": "production_rescue",
+      "identity": "Halles, ateliers, conduites et passerelles sur terrasses basses, directement liées au réseau d’eau et aux fondations.",
+      "architecture": [
+        "halles_metalliques",
+        "ateliers_pierre",
+        "charpentes",
+        "passerelles",
+        "conduites"
+      ],
+      "signature_materials": [
+        "acier_use",
+        "beton",
+        "brique_sombre",
+        "eau",
+        "huile_non_glissante"
+      ],
+      "building_ids": [
+        "bld_tool_shop",
+        "bld_repair_booth",
+        "bld_worker_canteen",
+        "bld_small_depot",
+        "bld_workshop_row",
+        "bld_machine_hall",
+        "bld_rescue_station",
+        "bld_waterworks",
+        "landmark_lower_aqueduct"
+      ],
+      "activities": [
+        "fabrication",
+        "reparation",
+        "secours",
+        "transport_materiaux"
+      ],
+      "mission_hooks": [
+        "rescue",
+        "pressure"
+      ],
+      "secrets": [
+        "foundation_tunnel_access",
+        "waterworks_bypass"
+      ],
+      "vertical_connections": [
+        "france_populaire",
+        "france_centre",
+        "lower",
+        "water_cavern",
+        "france_monumental"
+      ],
+      "ambience": {
+        "day": "productive_loud",
+        "night": "reduced_shift",
+        "audio": "tools_machinery_water"
+      },
+      "pre_liberation": [
+        "secours_sous_tension",
+        "passerelles_endommagees",
+        "debit_eau_instable"
+      ],
+      "post_liberation": [
+        "atelier_reconstruction",
+        "passerelles_reparees",
+        "flux_eau_stabilise"
+      ]
+    },
+    {
+      "id": "france_culture",
+      "name": "Quartier culturel",
+      "role": "knowledge_memory",
+      "identity": "Archives et galeries sur terrasses hautes avec parcours de toits et cadrages vers Céliane.",
+      "architecture": [
+        "archives_massives",
+        "galeries",
+        "cours",
+        "toits_jouables",
+        "ponts_hauts"
+      ],
+      "signature_materials": [
+        "pierre_fine",
+        "metal_noir",
+        "verre",
+        "or_champagne_discret"
+      ],
+      "building_ids": [
+        "bld_bookstall",
+        "bld_small_gallery",
+        "bld_archive_annex",
+        "bld_gallery_medium",
+        "bld_civic_archive",
+        "bld_memory_library",
+        "landmark_archive_tower"
+      ],
+      "activities": [
+        "consultation",
+        "exposition",
+        "enquete",
+        "observation_vistas"
+      ],
+      "mission_hooks": [
+        "investigation",
+        "celiane_contact"
+      ],
+      "secrets": [
+        "roof_evidence_cache",
+        "under_archive_stair",
+        "hidden_record_room"
+      ],
+      "vertical_connections": [
+        "france_ancien",
+        "france_centre",
+        "rooftop_route",
+        "france_monumental",
+        "under_france_exit"
+      ],
+      "ambience": {
+        "day": "focused_public",
+        "night": "quiet_blue_gold",
+        "audio": "interior_murmur_wind_chimes"
+      },
+      "pre_liberation": [
+        "sections_restreintes",
+        "documents_manquants"
+      ],
+      "post_liberation": [
+        "archives_completes",
+        "nouvelle_exposition_justice",
+        "toits_accessibles"
+      ]
+    },
+    {
+      "id": "france_monumental",
+      "name": "Quartier monumental",
+      "role": "justice_guardian",
+      "identity": "Grands degrés, tribunal, halls et montée vers le sanctuaire, dominant plusieurs niveaux de France.",
+      "architecture": [
+        "grandes_marches",
+        "colonnes_abstraites",
+        "ponts",
+        "terrasses_monumentales",
+        "silhouette_verticale"
+      ],
+      "signature_materials": [
+        "pierre_noble",
+        "metal_noir",
+        "or_champagne",
+        "eau_reflechissante"
+      ],
+      "building_ids": [
+        "bld_guard_post",
+        "bld_public_chamber",
+        "bld_monumental_hall",
+        "bld_tribunal",
+        "bld_sanctuary_gate",
+        "landmark_tribunal",
+        "landmark_celiane_sanctuary"
+      ],
+      "activities": [
+        "mediation",
+        "proces_narratif",
+        "ceremonie",
+        "ascension"
+      ],
+      "mission_hooks": [
+        "pressure",
+        "celiane_contact",
+        "justice_trial",
+        "liberation"
+      ],
+      "secrets": [
+        "tribunal_lower_archive",
+        "sanctuary_side_path"
+      ],
+      "vertical_connections": [
+        "france_centre",
+        "france_culture",
+        "france_artisanat",
+        "celestial",
+        "underside"
+      ],
+      "ambience": {
+        "day": "formal_windy",
+        "night": "dramatic_sparse",
+        "audio": "wind_water_large_reverb"
+      },
+      "pre_liberation": [
+        "accès_sanctuaire_bloque",
+        "presence_hostile",
+        "lumiere_dure"
+      ],
+      "post_liberation": [
+        "sanctuaire_ouvert",
+        "eau_calme",
+        "lumiere_champagne",
+        "habitants_reviennent"
+      ]
+    },
+    {
+      "id": "france_peripherie",
+      "name": "Périphérie / nature",
+      "role": "arrival_nature",
+      "identity": "Corniches, forêt, ruines, sources et accès aux bords du Bloc-Monde, avec première lecture du vide.",
+      "architecture": [
+        "petits_postes",
+        "ruines",
+        "murets",
+        "ponts_legers",
+        "sentiers_tailles"
+      ],
+      "signature_materials": [
+        "roche",
+        "mousse",
+        "bois",
+        "acier_noir",
+        "eau_claire"
+      ],
+      "building_ids": [
+        "bld_ranger_post",
+        "bld_trail_shelter",
+        "bld_small_shrine",
+        "bld_ruin_house",
+        "bld_periphery_lodge",
+        "landmark_gate_france"
+      ],
+      "activities": [
+        "orientation",
+        "exploration",
+        "observation",
+        "collecte_lore"
+      ],
+      "mission_hooks": [
+        "arrival",
+        "aftermath"
+      ],
+      "secrets": [
+        "arrival_lower_cliff",
+        "source_path",
+        "island_memory_route"
+      ],
+      "vertical_connections": [
+        "gate_arrival",
+        "france_residentiel",
+        "terraces",
+        "caves",
+        "floating_islands"
+      ],
+      "ambience": {
+        "day": "wind_birds_water",
+        "night": "sparse_safe_lights",
+        "audio": "wind_forest_distant_waterfall"
+      },
+      "pre_liberation": [
+        "nuages_bas",
+        "route_inferieure_difficile_a_lire"
+      ],
+      "post_liberation": [
+        "vistas_plus_ouvertes",
+        "nouveaux_chemins_guides"
+      ]
+    }
+  ],
+  "building_catalog": {
+    "small": [
+      {
+        "id": "bld_kiosk_news",
+        "district": "france_centre",
+        "function": "information",
+        "interior": "none"
+      },
+      {
+        "id": "bld_cafe_corner",
+        "district": "france_centre",
+        "function": "social",
+        "interior": "small"
+      },
+      {
+        "id": "bld_market_stall",
+        "district": "france_centre",
+        "function": "commerce",
+        "interior": "none"
+      },
+      {
+        "id": "bld_small_clinic",
+        "district": "france_centre",
+        "function": "care",
+        "interior": "small"
+      },
+      {
+        "id": "bld_bakery",
+        "district": "france_populaire",
+        "function": "commerce",
+        "interior": "small"
+      },
+      {
+        "id": "bld_grocery",
+        "district": "france_populaire",
+        "function": "commerce",
+        "interior": "small"
+      },
+      {
+        "id": "bld_barber",
+        "district": "france_populaire",
+        "function": "social",
+        "interior": "small"
+      },
+      {
+        "id": "bld_corner_shop",
+        "district": "france_populaire",
+        "function": "commerce",
+        "interior": "small"
+      },
+      {
+        "id": "bld_small_workshop",
+        "district": "france_populaire",
+        "function": "craft",
+        "interior": "small"
+      },
+      {
+        "id": "bld_antique_shop",
+        "district": "france_ancien",
+        "function": "lore_commerce",
+        "interior": "small"
+      },
+      {
+        "id": "bld_old_inn",
+        "district": "france_ancien",
+        "function": "social",
+        "interior": "small"
+      },
+      {
+        "id": "bld_home_a",
+        "district": "france_residentiel",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_home_b",
+        "district": "france_residentiel",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_home_c",
+        "district": "france_residentiel",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_garden_shed",
+        "district": "france_residentiel",
+        "function": "prop_gameplay",
+        "interior": "none"
+      },
+      {
+        "id": "bld_small_playhouse",
+        "district": "france_residentiel",
+        "function": "community",
+        "interior": "none"
+      },
+      {
+        "id": "bld_tool_shop",
+        "district": "france_artisanat",
+        "function": "commerce_craft",
+        "interior": "small"
+      },
+      {
+        "id": "bld_repair_booth",
+        "district": "france_artisanat",
+        "function": "repair",
+        "interior": "small"
+      },
+      {
+        "id": "bld_worker_canteen",
+        "district": "france_artisanat",
+        "function": "social",
+        "interior": "small"
+      },
+      {
+        "id": "bld_small_depot",
+        "district": "france_artisanat",
+        "function": "storage",
+        "interior": "none"
+      },
+      {
+        "id": "bld_bookstall",
+        "district": "france_culture",
+        "function": "commerce_lore",
+        "interior": "none"
+      },
+      {
+        "id": "bld_small_gallery",
+        "district": "france_culture",
+        "function": "culture",
+        "interior": "small"
+      },
+      {
+        "id": "bld_guard_post",
+        "district": "france_monumental",
+        "function": "sentinel",
+        "interior": "small"
+      },
+      {
+        "id": "bld_ranger_post",
+        "district": "france_peripherie",
+        "function": "orientation",
+        "interior": "small"
+      },
+      {
+        "id": "bld_trail_shelter",
+        "district": "france_peripherie",
+        "function": "shelter",
+        "interior": "none"
+      },
+      {
+        "id": "bld_small_shrine",
+        "district": "france_peripherie",
+        "function": "lore",
+        "interior": "none"
+      }
+    ],
+    "medium": [
+      {
+        "id": "bld_apartment_centre_a",
+        "district": "france_centre",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_apartment_centre_b",
+        "district": "france_centre",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_row_housing_a",
+        "district": "france_populaire",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_row_housing_b",
+        "district": "france_populaire",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_neighborhood_house",
+        "district": "france_populaire",
+        "function": "community",
+        "interior": "small"
+      },
+      {
+        "id": "bld_local_school",
+        "district": "france_populaire",
+        "function": "community",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_old_house_a",
+        "district": "france_ancien",
+        "function": "historic_residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_old_house_b",
+        "district": "france_ancien",
+        "function": "historic_residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_history_house",
+        "district": "france_ancien",
+        "function": "lore",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_old_archive_annex",
+        "district": "france_ancien",
+        "function": "lore",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_clock_house",
+        "district": "france_ancien",
+        "function": "landmark_minor",
+        "interior": "none"
+      },
+      {
+        "id": "bld_residential_block_a",
+        "district": "france_residentiel",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_residential_block_b",
+        "district": "france_residentiel",
+        "function": "residential",
+        "interior": "none"
+      },
+      {
+        "id": "bld_health_house",
+        "district": "france_residentiel",
+        "function": "care",
+        "interior": "small"
+      },
+      {
+        "id": "bld_workshop_row",
+        "district": "france_artisanat",
+        "function": "craft",
+        "interior": "open"
+      },
+      {
+        "id": "bld_waterworks",
+        "district": "france_artisanat",
+        "function": "hydrology_gameplay",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_archive_annex",
+        "district": "france_culture",
+        "function": "lore",
+        "interior": "small"
+      },
+      {
+        "id": "bld_gallery_medium",
+        "district": "france_culture",
+        "function": "culture",
+        "interior": "small"
+      },
+      {
+        "id": "bld_public_chamber",
+        "district": "france_monumental",
+        "function": "civic",
+        "interior": "small"
+      },
+      {
+        "id": "bld_ruin_house",
+        "district": "france_peripherie",
+        "function": "exploration",
+        "interior": "open"
+      },
+      {
+        "id": "bld_periphery_lodge",
+        "district": "france_peripherie",
+        "function": "rest_orientation",
+        "interior": "small"
+      }
+    ],
+    "large": [
+      {
+        "id": "bld_market_hall",
+        "district": "france_centre",
+        "function": "commerce_social",
+        "interior": "open"
+      },
+      {
+        "id": "bld_civic_service",
+        "district": "france_centre",
+        "function": "civic",
+        "interior": "small"
+      },
+      {
+        "id": "bld_machine_hall",
+        "district": "france_artisanat",
+        "function": "industry",
+        "interior": "open"
+      },
+      {
+        "id": "bld_rescue_station",
+        "district": "france_artisanat",
+        "function": "rescue_mission",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_civic_archive",
+        "district": "france_culture",
+        "function": "investigation",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_memory_library",
+        "district": "france_culture",
+        "function": "lore",
+        "interior": "small"
+      },
+      {
+        "id": "bld_monumental_hall",
+        "district": "france_monumental",
+        "function": "civic_narrative",
+        "interior": "open"
+      },
+      {
+        "id": "bld_tribunal",
+        "district": "france_monumental",
+        "function": "justice_trial",
+        "interior": "mission_only"
+      },
+      {
+        "id": "bld_sanctuary_gate",
+        "district": "france_monumental",
+        "function": "guardian_access",
+        "interior": "open"
+      }
+    ],
+    "landmarks": [
+      {
+        "id": "landmark_place_justice",
+        "district": "france_centre",
+        "function": "orientation_civic"
+      },
+      {
+        "id": "landmark_lower_aqueduct",
+        "district": "france_artisanat",
+        "function": "hydrology_scale"
+      },
+      {
+        "id": "landmark_archive_tower",
+        "district": "france_culture",
+        "function": "culture_vista"
+      },
+      {
+        "id": "landmark_tribunal",
+        "district": "france_monumental",
+        "function": "justice_skyline"
+      },
+      {
+        "id": "landmark_celiane_sanctuary",
+        "district": "france_monumental",
+        "function": "guardian_destination"
+      },
+      {
+        "id": "landmark_gate_france",
+        "district": "france_peripherie",
+        "function": "arrival"
+      }
+    ]
+  }
+}
