@@ -1,0 +1,311 @@
+{
+  "version": "1.0.0",
+  "schema_version": 1,
+  "slice_id": "france_justice_v1",
+  "territory": {
+    "id": "france",
+    "guardian": "Céliane",
+    "value": "Justice",
+    "territory_tag": "World.Country.France",
+    "resonance_tag": "Resonance.Justice"
+  },
+  "authority_model": {
+    "principle": "client_requests_server_verifies",
+    "local_only": [
+      "camera",
+      "input",
+      "cosmetic_vfx",
+      "temporary_ui",
+      "unconfirmed_interaction_feedback"
+    ],
+    "server_verified": [
+      "evidence_discovery",
+      "rescue_outcome",
+      "phase_completion",
+      "celiane_liberation",
+      "fragment_justice",
+      "global_xp",
+      "inventory_rewards",
+      "persistent_world_state"
+    ],
+    "forbidden_client_assertions": [
+      "grant_global_xp",
+      "grant_fragment",
+      "mint_inventory",
+      "set_guardian_liberated",
+      "set_persistent_world_state"
+    ]
+  },
+  "world_states": [
+    {
+      "id": "pre_justice",
+      "tag": "WorldState.France.PreJustice",
+      "data_layer": "Story_PreJustice"
+    },
+    {
+      "id": "justice_crisis",
+      "tag": "WorldState.France.JusticeCrisis",
+      "data_layer": "Story_JusticeCrisis"
+    },
+    {
+      "id": "celiane_liberated",
+      "tag": "WorldState.France.CelianeLiberated",
+      "data_layer": "Story_CelianeLiberated"
+    },
+    {
+      "id": "reconstruction",
+      "tag": "WorldState.France.Reconstruction",
+      "data_layer": "Story_Reconstruction"
+    },
+    {
+      "id": "post_liberation",
+      "tag": "WorldState.France.PostLiberation",
+      "data_layer": "Story_PostLiberation"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "physical_trace",
+      "category": "physical",
+      "tag": "Evidence.France.Physical",
+      "authority": "server_verified",
+      "fact_key": "france.evidence.physical_trace"
+    },
+    {
+      "id": "witness_statement_a",
+      "category": "witness",
+      "tag": "Evidence.France.Witness",
+      "authority": "server_verified",
+      "fact_key": "france.evidence.witness_a"
+    },
+    {
+      "id": "witness_statement_b",
+      "category": "witness",
+      "tag": "Evidence.France.Witness",
+      "authority": "server_verified",
+      "fact_key": "france.evidence.witness_b"
+    },
+    {
+      "id": "institutional_record",
+      "category": "institutional",
+      "tag": "Evidence.France.Institutional",
+      "authority": "server_verified",
+      "fact_key": "france.evidence.institutional_record"
+    },
+    {
+      "id": "validated_contradiction",
+      "category": "contradiction",
+      "tag": "Evidence.France.Contradiction",
+      "authority": "server_verified",
+      "fact_key": "france.evidence.validated_contradiction"
+    }
+  ],
+  "phases": [
+    {
+      "id": "arrival",
+      "tag": "Story.France.Arrival",
+      "requires": [],
+      "evidence": [],
+      "abilities": [],
+      "authority": "presentation_only",
+      "server_event": "",
+      "data_layer": "Story_PreJustice",
+      "goal": "Entrer dans le quartier et comprendre la situation sans combat forcé."
+    },
+    {
+      "id": "human_problem",
+      "tag": "Story.France.HumanProblem",
+      "requires": [
+        "arrival"
+      ],
+      "evidence": [],
+      "abilities": [
+        "Ability.Interaction.Inspect"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.human_problem_seen",
+      "data_layer": "Story_JusticeCrisis",
+      "goal": "Rencontrer les habitants et constater les versions contradictoires."
+    },
+    {
+      "id": "rescue",
+      "tag": "Story.France.Rescue",
+      "requires": [
+        "human_problem"
+      ],
+      "evidence": [],
+      "abilities": [
+        "Ability.Traversal.Sprint",
+        "Ability.Traversal.Vault",
+        "Ability.Interaction.Rescue"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.rescue_resolved",
+      "data_layer": "Story_JusticeCrisis",
+      "goal": "Secourir un civil sous pression sans transformer l'incident en simple arène."
+    },
+    {
+      "id": "investigation",
+      "tag": "Story.France.Investigation",
+      "requires": [
+        "human_problem"
+      ],
+      "evidence": [
+        "physical_trace",
+        "witness_statement_a",
+        "witness_statement_b",
+        "institutional_record"
+      ],
+      "abilities": [
+        "Ability.Interaction.Investigate"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.investigation_ready",
+      "data_layer": "Story_JusticeCrisis",
+      "goal": "Reconstruire les faits à partir de preuves réellement découvertes."
+    },
+    {
+      "id": "pressure",
+      "tag": "Story.France.Pressure",
+      "requires": [
+        "rescue",
+        "investigation"
+      ],
+      "evidence": [],
+      "abilities": [
+        "Ability.Combat.Light",
+        "Ability.Combat.Dodge"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.pressure_survived",
+      "data_layer": "Story_JusticeCrisis",
+      "goal": "Traverser l'escalade hostile sans contourner l'enquête."
+    },
+    {
+      "id": "celiane_contact",
+      "tag": "Story.France.CelianeContact",
+      "requires": [
+        "pressure"
+      ],
+      "evidence": [
+        "validated_contradiction"
+      ],
+      "abilities": [
+        "Ability.Resonance.Justice.RevealContradiction"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.celiane_contacted",
+      "data_layer": "Story_JusticeCrisis",
+      "goal": "Présenter à Céliane un état des faits cohérent, pas un compteur de collectibles."
+    },
+    {
+      "id": "justice_trial",
+      "tag": "Story.France.JusticeTrial",
+      "requires": [
+        "celiane_contact"
+      ],
+      "evidence": [
+        "validated_contradiction"
+      ],
+      "abilities": [
+        "Ability.Resonance.Justice.LinkEvidence",
+        "Ability.Resonance.Justice.StabilizeDispute"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.justice_trial_resolved",
+      "data_layer": "Story_JusticeCrisis",
+      "goal": "Utiliser Justice pour résoudre ce que les armes ne peuvent pas résoudre."
+    },
+    {
+      "id": "liberation",
+      "tag": "Story.France.Liberation",
+      "requires": [
+        "justice_trial"
+      ],
+      "evidence": [],
+      "abilities": [
+        "Resonance.Justice"
+      ],
+      "authority": "server_verified",
+      "server_event": "france.celiane_liberated",
+      "data_layer": "Story_CelianeLiberated",
+      "goal": "Libérer Céliane uniquement après validation serveur de l'épreuve."
+    },
+    {
+      "id": "aftermath",
+      "tag": "Story.France.Aftermath",
+      "requires": [
+        "liberation"
+      ],
+      "evidence": [],
+      "abilities": [],
+      "authority": "server_verified",
+      "server_event": "france.aftermath_applied",
+      "data_layer": "Story_Reconstruction",
+      "goal": "Voir le quartier changer durablement et accéder au nouvel état social."
+    },
+    {
+      "id": "return_nexus",
+      "tag": "Story.France.ReturnNexus",
+      "requires": [
+        "aftermath"
+      ],
+      "evidence": [],
+      "abilities": [],
+      "authority": "server_verified",
+      "server_event": "france.returned_to_nexus",
+      "data_layer": "Story_PostLiberation",
+      "goal": "Retourner au Nexus avec la progression déjà persistée côté serveur."
+    }
+  ],
+  "resonance_actions": [
+    {
+      "id": "reveal_contradiction",
+      "tag": "Ability.Resonance.Justice.RevealContradiction",
+      "persistent_effect": false
+    },
+    {
+      "id": "link_evidence",
+      "tag": "Ability.Resonance.Justice.LinkEvidence",
+      "persistent_effect": false
+    },
+    {
+      "id": "stabilize_dispute",
+      "tag": "Ability.Resonance.Justice.StabilizeDispute",
+      "persistent_effect": false
+    },
+    {
+      "id": "protect_witness",
+      "tag": "Ability.Resonance.Justice.ProtectWitness",
+      "persistent_effect": false
+    }
+  ],
+  "rewards": {
+    "fragment": {
+      "id": "fragment_justice",
+      "server_only": true,
+      "idempotent": true
+    },
+    "global_xp": {
+      "server_only": true,
+      "amount": "policy_defined",
+      "idempotent": true
+    },
+    "inventory": {
+      "server_only": true,
+      "items": "reward_policy_defined"
+    }
+  },
+  "persistence": {
+    "revisioned": true,
+    "reconnect_restores": [
+      "phase",
+      "validated_evidence",
+      "rescue_outcome",
+      "guardian_state",
+      "world_state"
+    ],
+    "duplicate_event_policy": "idempotent_reject_or_replay_same_result",
+    "client_snapshot_is_not_authoritative": true
+  }
+}

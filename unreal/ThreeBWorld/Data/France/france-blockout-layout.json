@@ -1,0 +1,313 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "units": "centimeters",
+  "bounds_cm": {
+    "width": 60000,
+    "depth": 45000
+  },
+  "rule": "Compact interconnected blockout for validation, not a final recreation of a real French city.",
+  "zones": [
+    {
+      "id": "gate_arrival",
+      "label": "Porte France / transit",
+      "location_cm": {
+        "x": -26000,
+        "y": 0
+      },
+      "radius_cm": 3500,
+      "story_phase": "arrival"
+    },
+    {
+      "id": "residential",
+      "label": "Rue résidentielle",
+      "location_cm": {
+        "x": -17000,
+        "y": 8000
+      },
+      "radius_cm": 4500,
+      "story_phase": "human_problem"
+    },
+    {
+      "id": "community_square",
+      "label": "Place communautaire",
+      "location_cm": {
+        "x": -9000,
+        "y": 0
+      },
+      "radius_cm": 5000,
+      "story_phase": "human_problem"
+    },
+    {
+      "id": "civic_archive",
+      "label": "Archives civiques",
+      "location_cm": {
+        "x": 0,
+        "y": 10000
+      },
+      "radius_cm": 4000,
+      "story_phase": "investigation"
+    },
+    {
+      "id": "rooftop_route",
+      "label": "Route verticale / toits",
+      "location_cm": {
+        "x": 7500,
+        "y": 15000
+      },
+      "radius_cm": 3500,
+      "story_phase": "investigation"
+    },
+    {
+      "id": "rescue_site",
+      "label": "Site de secours",
+      "location_cm": {
+        "x": 6500,
+        "y": -9000
+      },
+      "radius_cm": 4500,
+      "story_phase": "rescue"
+    },
+    {
+      "id": "tribunal",
+      "label": "Repère civique / tribunal",
+      "location_cm": {
+        "x": 15500,
+        "y": 0
+      },
+      "radius_cm": 5000,
+      "story_phase": "pressure"
+    },
+    {
+      "id": "celiane_space",
+      "label": "Espace Céliane",
+      "location_cm": {
+        "x": 23500,
+        "y": 6500
+      },
+      "radius_cm": 5000,
+      "story_phase": "celiane_contact"
+    },
+    {
+      "id": "post_liberation_hub",
+      "label": "Hub social post-libération",
+      "location_cm": {
+        "x": 18500,
+        "y": -11000
+      },
+      "radius_cm": 5000,
+      "story_phase": "aftermath"
+    }
+  ],
+  "story_route": [
+    "gate_arrival",
+    "residential",
+    "community_square",
+    "rescue_site",
+    "civic_archive",
+    "rooftop_route",
+    "tribunal",
+    "celiane_space",
+    "post_liberation_hub"
+  ],
+  "roads": [
+    {
+      "id": "gate_to_residential",
+      "from": "gate_arrival",
+      "to": "residential",
+      "width_cm": 1000
+    },
+    {
+      "id": "residential_to_square",
+      "from": "residential",
+      "to": "community_square",
+      "width_cm": 900
+    },
+    {
+      "id": "square_to_rescue",
+      "from": "community_square",
+      "to": "rescue_site",
+      "width_cm": 1000
+    },
+    {
+      "id": "square_to_archive",
+      "from": "community_square",
+      "to": "civic_archive",
+      "width_cm": 1100
+    },
+    {
+      "id": "archive_to_rooftop",
+      "from": "civic_archive",
+      "to": "rooftop_route",
+      "width_cm": 700
+    },
+    {
+      "id": "rescue_to_tribunal",
+      "from": "rescue_site",
+      "to": "tribunal",
+      "width_cm": 1000
+    },
+    {
+      "id": "archive_to_tribunal",
+      "from": "civic_archive",
+      "to": "tribunal",
+      "width_cm": 1200
+    },
+    {
+      "id": "rooftop_to_celiane",
+      "from": "rooftop_route",
+      "to": "celiane_space",
+      "width_cm": 650
+    },
+    {
+      "id": "tribunal_to_celiane",
+      "from": "tribunal",
+      "to": "celiane_space",
+      "width_cm": 1200
+    },
+    {
+      "id": "tribunal_to_post_hub",
+      "from": "tribunal",
+      "to": "post_liberation_hub",
+      "width_cm": 1200
+    },
+    {
+      "id": "celiane_to_post_hub",
+      "from": "celiane_space",
+      "to": "post_liberation_hub",
+      "width_cm": 1000
+    }
+  ],
+  "masses": [
+    {
+      "id": "residential_a",
+      "zone": "residential",
+      "offset_cm": {
+        "x": -1200,
+        "y": 700
+      },
+      "size_cm": {
+        "x": 3200,
+        "y": 1800,
+        "z": 1100
+      }
+    },
+    {
+      "id": "residential_b",
+      "zone": "residential",
+      "offset_cm": {
+        "x": 1700,
+        "y": -900
+      },
+      "size_cm": {
+        "x": 2600,
+        "y": 1600,
+        "z": 1500
+      }
+    },
+    {
+      "id": "market_hall",
+      "zone": "community_square",
+      "offset_cm": {
+        "x": -1500,
+        "y": -2200
+      },
+      "size_cm": {
+        "x": 4200,
+        "y": 2000,
+        "z": 900
+      }
+    },
+    {
+      "id": "archive",
+      "zone": "civic_archive",
+      "offset_cm": {
+        "x": 0,
+        "y": 0
+      },
+      "size_cm": {
+        "x": 4800,
+        "y": 3000,
+        "z": 1600
+      }
+    },
+    {
+      "id": "rooftop_a",
+      "zone": "rooftop_route",
+      "offset_cm": {
+        "x": -1600,
+        "y": 0
+      },
+      "size_cm": {
+        "x": 2600,
+        "y": 2200,
+        "z": 1800
+      }
+    },
+    {
+      "id": "rooftop_b",
+      "zone": "rooftop_route",
+      "offset_cm": {
+        "x": 1700,
+        "y": 600
+      },
+      "size_cm": {
+        "x": 2400,
+        "y": 2000,
+        "z": 2400
+      }
+    },
+    {
+      "id": "rescue_shell",
+      "zone": "rescue_site",
+      "offset_cm": {
+        "x": 0,
+        "y": 0
+      },
+      "size_cm": {
+        "x": 5200,
+        "y": 2600,
+        "z": 1200
+      }
+    },
+    {
+      "id": "tribunal",
+      "zone": "tribunal",
+      "offset_cm": {
+        "x": 0,
+        "y": 0
+      },
+      "size_cm": {
+        "x": 6200,
+        "y": 3600,
+        "z": 2200
+      }
+    },
+    {
+      "id": "celiane_landmark",
+      "zone": "celiane_space",
+      "offset_cm": {
+        "x": 0,
+        "y": 1000
+      },
+      "size_cm": {
+        "x": 5000,
+        "y": 3000,
+        "z": 2000
+      }
+    },
+    {
+      "id": "post_hub",
+      "zone": "post_liberation_hub",
+      "offset_cm": {
+        "x": 0,
+        "y": 0
+      },
+      "size_cm": {
+        "x": 5000,
+        "y": 2500,
+        "z": 900
+      }
+    }
+  ]
+}

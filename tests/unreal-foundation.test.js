@@ -63,15 +63,20 @@ test('Unreal migration stays fail-closed to browser roles',()=>{
  assert.match(sql,/grant execute on function public\.world_unreal_redeem_ticket[\s\S]*to service_role/i);
 });
 
-test('migration integrity manifest includes all 112 applied migrations through Unreal bridge',()=>{
+test('migration integrity manifest tracks every applied source and preserves Unreal + AI Council foundations',()=>{
  const manifest=JSON.parse(read('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json'));
- assert.equal(manifest.count,112);
- const unreal=manifest.migrations.find(m=>m.version==='20260921141028');
- assert.deepEqual(unreal,{
+ assert.equal(manifest.count,manifest.migrations.length);
+ assert.ok(manifest.count>=114);
+ const byName=Object.fromEntries(manifest.migrations.map(m=>[m.name,m]));
+ assert.deepEqual(byName.world_unreal_launch_bridge_v1,{
   version:'20260921141028',
   name:'world_unreal_launch_bridge_v1',
   sha256:'d65052b4be5e7d09bb4d87a73bc8627c69df568b2eb471df7ebc672debf24f80'
  });
+ assert.ok(byName.ai_council_core_v1);
+ assert.ok(byName.ai_council_reviewed_run_index_v1);
+ const versions=manifest.migrations.map(m=>m.version);
+ assert.deepEqual([...versions].sort(),versions);
 });
 
 test('home portal represents all eight canonical gates and keeps native launch feature-gated',()=>{
