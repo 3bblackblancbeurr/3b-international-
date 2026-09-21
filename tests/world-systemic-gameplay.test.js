@@ -92,6 +92,23 @@ test('structured mission actions require every unique real action before an obje
  assert.deepEqual(targets.map(item=>item.id),['door:identify']);
 });
 
+test('evidence presentation stays hidden and rejected until the proof has been scanned',()=>{
+ let missions={voices_square:{status:'active',phase:'OBJECTIVE_2',completedObjectives:1,totalObjectives:3,claimed:false}},progress={};
+ let targets=hubMissionActionTargets('voices_square',missions.voices_square,[]);
+ assert.deepEqual(targets.map(action=>action.id),['dispute:evidence']);
+ let result=applyHubMissionAction(missions,progress,'voices_square','dispute:present');
+ assert.equal(result.ok,false);assert.equal(result.reason,'missing-action-dependency');
+ result=applyHubMissionAction(missions,progress,'voices_square','dispute:evidence');
+ assert.equal(result.ok,true);assert.equal(result.objectiveComplete,false);
+ missions=result.missions;progress=result.progress;
+ targets=hubMissionActionTargets('voices_square',missions.voices_square,progress.voices_square);
+ assert.deepEqual(targets.map(action=>action.id),['dispute:present']);
+ assert.equal(targets[0].verb,'showEvidence');
+ result=applyHubMissionAction(missions,progress,'voices_square','dispute:present');
+ assert.equal(result.ok,true);assert.equal(result.objectiveComplete,true);
+ assert.equal(result.missions.voices_square.completedObjectives,2);
+});
+
 test('Hub runtime materializes only the pending physical actions for the active mission objective',()=>{
  let save=blankSave();
  save={...save,hub:{...save.hub,missions:{...save.hub.missions,eight_seeds:{...save.hub.missions.eight_seeds,status:'active',phase:'ACTIVE'}}}};
