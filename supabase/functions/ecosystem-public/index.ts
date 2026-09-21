@@ -32,7 +32,7 @@ async function rate(req:Request,action:string,limit:number,window=60){
 async function sportsFeed(){
  const {data:cache,error:cacheError}=await admin.from('sport_cache').select('payload,updated_at').eq('id','headlines').maybeSingle();
  if(cacheError)throw new Failure(503,'Le flux sportif est momentanément indisponible.');
- if(cache&&Date.now()-Date.parse(cache.updated_at)<600000)return{...cache.payload,stale:false};
+ if(cache?.payload?.version===2&&Date.now()-Date.parse(cache.updated_at)<600000)return{...cache.payload,stale:false};
  try{
   const payload=await fetchSports();
   const {error}=await admin.from('sport_cache').upsert({id:'headlines',payload,updated_at:payload.updatedAt});
