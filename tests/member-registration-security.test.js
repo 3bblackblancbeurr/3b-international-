@@ -68,3 +68,12 @@ test('registration schema is service-only and represented in applied migration m
  assert.equal(row?.sha256,'c1700cb278f74422f839d7bf4a8b68abbf0b3e65cec83281218660f60aba01b3');
  assert.equal(manifest.count,119);
 });
+
+
+test('auth email returns are routed to the member area and cleaned on navigation',()=>{
+ const navigation=readFileSync('src/lib/navigation.js','utf8');
+ assert.match(navigation,/params\.get\("reset"\) === "1"/);
+ assert.match(navigation,/params\.get\("auth"\) === "confirmed"/);
+ assert.match(navigation,/url\.searchParams\.delete\("auth"\)/);
+ assert.match(navigation,/url\.searchParams\.delete\("reset"\)/);
+});
