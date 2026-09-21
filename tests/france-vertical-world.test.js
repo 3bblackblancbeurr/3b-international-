@@ -10,6 +10,7 @@ const npc=json('unreal/ThreeBWorld/Data/France/france-npc-dialogue-v1.json');
 const presentation=json('unreal/ThreeBWorld/Data/France/france-presentation-v1.json');
 const manifest=json('unreal/ThreeBWorld/Data/France/france-editor-asset-manifest.json');
 const plan=json('unreal/ThreeBWorld/Data/France/france-editor-execution-plan-v1.json');
+const districtContent=json('unreal/ThreeBWorld/Data/France/france-district-content-v1.json');
 
 test('France vertical contract defines eight districts and eight altitude bands',()=>{
   assert.equal(layout.version,'2.0.0');
@@ -158,4 +159,32 @@ test('generic Unreal region data asset extends the existing territory definition
   assert.doesNotMatch(header,/Céliane|Justice|france_centre|monumental_waterfall/i);
   assert.match(world,/TSoftObjectPtr<UThreeBRegionDefinition> RegionDefinition/);
   assert.ok(manifest.required_assets.some(x=>x.path.endsWith('/DA_FranceRegion')&&x.kind==='ThreeBRegionDefinition'));
+});
+
+
+test('district content turns the eight district labels into a production-ready building and activity program',()=>{
+  const layoutDistricts=new Set(layout.districts.map(x=>x.id));
+  const contentDistricts=new Set(districtContent.districts.map(x=>x.id));
+  assert.deepEqual([...contentDistricts].sort(),[...layoutDistricts].sort());
+  assert.ok(districtContent.building_catalog.small.length>=20);
+  assert.ok(districtContent.building_catalog.medium.length>=10);
+  assert.ok(districtContent.building_catalog.large.length>=5);
+  assert.ok(districtContent.building_catalog.landmarks.length>=3);
+
+  const catalog=Object.values(districtContent.building_catalog).flat();
+  const buildingIds=new Set(catalog.map(x=>x.id));
+  assert.equal(buildingIds.size,catalog.length);
+
+  for(const item of catalog)assert.ok(layoutDistricts.has(item.district),item.id);
+  for(const district of districtContent.districts){
+    assert.ok(district.activities.length>0,district.id);
+    assert.ok(district.mission_hooks.length>0,district.id);
+    assert.ok(district.secrets.length>0,district.id);
+    assert.ok(district.vertical_connections.length>0,district.id);
+    assert.ok(district.pre_liberation.length>0,district.id);
+    assert.ok(district.post_liberation.length>0,district.id);
+    for(const id of district.building_ids)assert.ok(buildingIds.has(id),district.id+':'+id);
+  }
+  assert.equal(districtContent.rules.filler_buildings_forbidden,true);
+  assert.equal(districtContent.rules.one_region_not_eight_maps,true);
 });
