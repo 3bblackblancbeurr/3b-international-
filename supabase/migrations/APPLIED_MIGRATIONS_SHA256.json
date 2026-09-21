@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "btrim/trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 108,
+  "count": 110,
   "migrations": [
     {
       "version": "20260910020445",
@@ -543,6 +543,16 @@
       "version": "20260921013055",
       "name": "world_party_runtime_save_recovery_v2",
       "sha256": "f02fbaa72f5ca6ca000b602849f65f4eda7beaf876b602c9b36be32d57c49f4e"
+    },
+    {
+      "version": "20260921130205",
+      "name": "sport_challenge_tracking_v1",
+      "sha256": "ed4a530a2716b3890b299c6b5a64e31c5768e86ed02e6efd0634e5c1ae69e17c"
+    },
+    {
+      "version": "20260921130859",
+      "name": "sport_challenge_fk_indexes_v1",
+      "sha256": "ae62bc52bed085e5b195b729b738b4c561bfe7702295d7cfa53562d1ed916c75"
     }
   ]
 }

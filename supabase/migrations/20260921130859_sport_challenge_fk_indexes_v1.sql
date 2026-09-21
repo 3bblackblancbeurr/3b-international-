@@ -1,0 +1,7 @@
+begin;
+create index sport_challenge_checkins_challenge_idx on public.sport_challenge_checkins(challenge_id);
+create index sport_challenge_entries_challenge_idx on public.sport_challenge_entries(challenge_id);
+create index sport_challenge_entries_reviewer_idx on public.sport_challenge_entries(reviewer_id) where reviewer_id is not null;
+create index sport_challenge_reviews_challenge_idx on public.sport_challenge_reviews(challenge_id);
+create index sport_challenge_reviews_reviewer_idx on public.sport_challenge_reviews(reviewer_id);
+commit;
