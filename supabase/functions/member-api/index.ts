@@ -15,7 +15,7 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
 async function snapshot(uid:string){
  const [profiles,events,economy]=await Promise.all([
- api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=user_id,handle,name,country,xp,points,theme,created_at'),
+ api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=user_id,handle,name,country,xp,points,theme,created_at,public_badge_key,public_title,public_verified'),
  api('/rest/v1/member_ledger?user_id=eq.'+uid+'&select=id,source,label,xp,points,created_at,event_key&order=created_at.desc&limit=80'),
  rpc('threeb_progress_snapshot_server',{p_user:uid})]);
  if(!profiles?.[0])throw new Failure(404,'Ton compte est en cours de préparation. Réessaie.');

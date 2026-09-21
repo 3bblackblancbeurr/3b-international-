@@ -33,6 +33,12 @@
       "status": "ACTIVE"
     },
     {
+      "slug": "dada3b",
+      "version": 3,
+      "verify_jwt": true,
+      "status": "ACTIVE"
+    },
+    {
       "slug": "delete-account",
       "version": 1,
       "verify_jwt": true,
@@ -46,7 +52,7 @@
     },
     {
       "slug": "ecosystem-private",
-      "version": 4,
+      "version": 5,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
@@ -64,7 +70,7 @@
     },
     {
       "slug": "member-api",
-      "version": 2,
+      "version": 3,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
@@ -76,8 +82,14 @@
     },
     {
       "slug": "member-hub",
-      "version": 8,
+      "version": 9,
       "verify_jwt": false,
+      "status": "ACTIVE"
+    },
+    {
+      "slug": "penalty-rush",
+      "version": 3,
+      "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
