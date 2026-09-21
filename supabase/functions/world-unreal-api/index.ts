@@ -1,3 +1,4 @@
+// CANDIDATE ONLY — not deployed. Keep read-only until the dedicated-server authority contract is reviewed.
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
