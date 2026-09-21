@@ -31,6 +31,7 @@ import {
   createDadaFeedback,
   readDadaFeedbackPreferences,
 } from './dada3b/feedback.js';
+import DadaOnline from './dada3b/DadaOnline.jsx';
 import './dada3b.css';
 
 const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -335,9 +336,10 @@ function Tutorial({ step, onNext, onClose }) {
   );
 }
 
-export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage }) {
+export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage, onAccount }) {
   const resumeCandidate = useMemo(() => safeSaved(saved), [saved]);
   const [seats, setSeats] = useState(initialSeats);
+  const [onlineOpen, setOnlineOpen] = useState(false);
   const [rules, setRules] = useState({ ...DEFAULT_RULES });
   const [match, setMatch] = useState(null);
   const [lastSeats, setLastSeats] = useState(null);
@@ -700,6 +702,10 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage }) {
   const turnCountry = turnPlayer ? countryFor(turnPlayer.countryId) : null;
   const activeSeats = seats.filter((seat) => seat.type !== 'off');
 
+  if (onlineOpen && !match) {
+    return <DadaOnline onBack={() => setOnlineOpen(false)} onClose={onClose} onAccount={onAccount} />;
+  }
+
   if (!match) {
     return (
       <div className="dada3b-shell" role="dialog" aria-modal="true" aria-label="DADA 3B — configuration">
@@ -734,8 +740,13 @@ export default function Dada3B({ saved, onClose, onCheckpoint, saveMessage }) {
               </div>
             )}
 
+            <div className="dada3b-online-entry">
+              <div><span className="dada3b-kicker">Nouveau · Multijoueur</span><h3>Jouer en ligne avec le serveur 3B</h3><p>Privé 2–8, jeu rapide, classé 1v1, spectateur, reconnexion et IA de relais.</p></div>
+              <button type="button" className="dada3b-primary" onClick={() => setOnlineOpen(true)}>Entrer en ligne</button>
+            </div>
+
             <div className="dada3b-section-title">
-              <div><span className="dada3b-kicker">Préréglages</span><h3>Choisis ton rythme</h3></div>
+              <div><span className="dada3b-kicker">Préréglages locaux</span><h3>Choisis ton rythme</h3></div>
             </div>
             <div className="dada3b-presets">
               <button type="button" onClick={() => applyPreset('quick')}><strong>Jeu rapide</strong><small>1 joueur + 3 IA</small></button>
