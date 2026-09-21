@@ -325,3 +325,40 @@ test('Editor bootstrap imports world-state weather overrides and has robust refl
   assert.match(bootstrap,/save_loaded_asset/);
   assert.doesNotMatch(bootstrap,/service_role|grant_global_xp|grant_fragment|mint_inventory/i);
 });
+
+
+test('runtime mission catalog preserves mission type world-state gates and gameplay modes from France source',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionCatalog.h');
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(header,/FName MissionType/);
+  assert.match(header,/TArray<FName> RequiredWorldStateIds/);
+  assert.match(header,/TArray<FName> GameplayModes/);
+  assert.match(bootstrap,/mission_type/);
+  assert.match(bootstrap,/required_world_state_ids/);
+  assert.match(bootstrap,/gameplay_modes/);
+  for(const mission of districtMissions.missions){
+    assert.ok(mission.type,mission.id);
+    assert.ok(mission.requires_world_state.length>0,mission.id);
+    assert.ok(mission.gameplay.length>0,mission.id);
+  }
+});
+
+test('runtime population definition preserves named France NPC roles and routine bindings',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.cpp');
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(header,/FThreeBNpcRoleDefinition/);
+  assert.match(header,/TArray<FThreeBNpcRoleDefinition> NpcRoles/);
+  assert.match(header,/FindNpcRole/);
+  assert.match(source,/Duplicate NPC role/);
+  assert.match(source,/references unknown routine/);
+  assert.match(bootstrap,/ThreeBNpcRoleDefinition/);
+  assert.match(bootstrap,/npc_roles/);
+  const routines=new Set(npc.routine_profiles.map(x=>x.id));
+  for(const role of npc.npc_roles){
+    assert.ok(role.zone,role.id);
+    assert.ok(role.district_id,role.id);
+    assert.ok(routines.has(role.routine),role.id);
+    assert.ok(role.active_phases.length>0,role.id);
+  }
+});
