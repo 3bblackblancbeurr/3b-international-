@@ -1,4 +1,5 @@
 import {initialGuardianCombatState} from './guardian-combat.js';
+import {finalCirclePhase} from './final-circle.js';
 // Fixed-step combat shared by the browser and the account service. Inputs are
 // directions and buttons; a client never submits damage, HP or a winning result.
 export const COMBAT_TICK = 100;
@@ -52,7 +53,10 @@ export function stepField(enc,input,move){
  if(!input||!Number.isFinite(input.x)||!Number.isFinite(input.z)||Math.abs(input.x)>1||Math.abs(input.z)>1)throw Error('Direction de combat invalide.');
  if(input.kind&&!['strike','power','guard','dodge','trap','support','resonance'].includes(input.kind))throw Error('Action de combat inconnue.');
  const e={...enc,field:normalizeField(enc.field)},f=e.field,dt=COMBAT_TICK;
- const guardianBoss=!!e.boss&&!e.final;if(guardianBoss&&!e.guardianStep)Object.assign(e,initialGuardianCombatState(e.region));if(guardianBoss&&e.region==='espagne')e.guardianMeter=Math.max(0,(e.guardianMeter||0)-3);
+ const circlePhase=e.final?finalCirclePhase(e):null,guardianBoss=!!e.boss,mechanicRegion=circlePhase?.region||e.region;
+ if(e.final&&circlePhase&&e.finalCirclePhase!==circlePhase.index){Object.assign(e,initialGuardianCombatState(mechanicRegion));e.finalCirclePhase=circlePhase.index;e.intent=(FIELD_PATTERNS[mechanicRegion]||FIELD_PATTERNS.france)[0];e.log=`Le Lien répond · ${circlePhase.guardian} · ${circlePhase.value}. ${circlePhase.role}`;}
+ else if(guardianBoss&&!e.final&&!e.guardianStep)Object.assign(e,initialGuardianCombatState(mechanicRegion));
+ if(guardianBoss&&mechanicRegion==='espagne')e.guardianMeter=Math.max(0,(e.guardianMeter||0)-3);
  f.time+=dt;for(const key of ['cooldown','dodge','guard','recover','windup','stagger'])f[key]=Math.max(0,f[key]-dt);
  f.stamina=Math.min(100,f.stamina+2.8);f.last=null;
  const length=Math.hypot(input.x,input.z),direction={x:input.x/Math.max(1,length),z:input.z/Math.max(1,length)};
@@ -74,21 +78,21 @@ export function stepField(enc,input,move){
    let damage=e.stats.attack+e.stats.affinity;
    damage*=kind==='power'?2.1:1+(f.combo===3?.5:0);
    if(e.resonancePenalty){damage*=.8;e.resonancePenalty=false;}
-   if(guardianBoss&&e.region==='france'){if(e.guardianFlag){damage*=1.2;e.guardianFlag=false;}else if(f.phase!=='recovery')damage*=.55;}
-   if(guardianBoss&&e.region==='estonie'&&f.phase!=='recovery')damage*=.4;
-   if(guardianBoss&&e.region==='espagne'){if((e.guardianMeter||0)>=80)damage*=.72;e.guardianMeter=Math.min(100,(e.guardianMeter||0)+(kind==='power'?34:24));}
+   if(guardianBoss&&mechanicRegion==='france'){if(e.guardianFlag){damage*=1.2;e.guardianFlag=false;}else if(f.phase!=='recovery')damage*=.55;}
+   if(guardianBoss&&mechanicRegion==='estonie'&&f.phase!=='recovery')damage*=.4;
+   if(guardianBoss&&mechanicRegion==='espagne'){if((e.guardianMeter||0)>=80)damage*=.72;e.guardianMeter=Math.min(100,(e.guardianMeter||0)+(kind==='power'?34:24));}
    if(e.opening)damage*=1.35;
    if(e.intent==='rempart'&&f.phase!=='recovery')damage*=kind==='power'?.8:.55;
    if(f.phase==='recovery')damage*=1.2;
    let dealt=Math.round(damage),absorbed=0;
-   if(guardianBoss&&e.region==='italie'&&(e.guardianShield||0)>0){absorbed=Math.min(e.guardianShield,dealt);e.guardianShield-=absorbed;dealt-=absorbed;}
+   if(guardianBoss&&mechanicRegion==='italie'&&(e.guardianShield||0)>0){absorbed=Math.min(e.guardianShield,dealt);e.guardianShield-=absorbed;dealt-=absorbed;}
    e.enemy=Math.max(0,e.enemy-dealt);e.opening=false;
    if(kind==='strike')e.focus=Math.min(3,e.focus+1);
    e.log=f.combo===3?'Enchaînement : troisième frappe renforcée.':'Une ouverture dans sa défense.';
   }else e.log='Ton attaque ne porte pas. Rapproche-toi ou utilise ton pouvoir.';
   event(kind);
  }
- if(guardianBoss&&e.region==='espagne'&&['guard','dodge'].includes(f.last))e.guardianMeter=Math.max(0,(e.guardianMeter||0)-18);
+ if(guardianBoss&&mechanicRegion==='espagne'&&['guard','dodge'].includes(f.last))e.guardianMeter=Math.max(0,(e.guardianMeter||0)-18);
  if(length>.05)f.p=move(f.p,direction,1.05*clamp(e.stats.speed||1,.7,1.8)*(f.guard?.45:1));
  if(!e.enemy){e.result=e.boss?'victory':'calm';e.log=e.boss?'La menace est repoussée. Les environs peuvent respirer.':'La créature s’apaise. Tu peux gagner sa confiance.';return e;}
  // An enemy locks its aim at the start of preparation. Moving out of the
@@ -96,26 +100,26 @@ export function stepField(enc,input,move){
  const d=distance(f.p,f.enemy);
  if(f.phase==='pursuit'&&!f.stagger){
   if(d>6){const x=(f.p.x-f.enemy.x)/d,z=(f.p.z-f.enemy.z)/d;f.enemy=move(f.enemy,{x,z},e.expert?.78:.65);}
-  if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&e.region==='turquie')e.guardianFlag=(e.turn+1)%3===0;}
+  if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&mechanicRegion==='turquie')e.guardianFlag=(e.turn+1)%3===0;}
  }else if(f.phase==='windup'&&!f.windup){
   const inside=attackContains(f,e.intent),blocked=!!f.guard,evaded=!!f.dodge||!inside;
   const resonanceReduction=Math.max(0,Math.min(.85,Number(e.resonanceShield)||0));
-  const linkPenalty=guardianBoss&&e.region==='algerie'&&distance(f.p,f.home)>14?1.35:1;
+  const linkPenalty=guardianBoss&&mechanicRegion==='algerie'&&distance(f.p,f.home)>14?1.35:1;
   let hit=evaded?0:Math.round(({frappe:18,percée:27,double:30,rituel:22,gel:19,vague:28,sable:24,éclipse:25,rempart:14,soin:12}[e.intent]||18)*(e.expert?1.25:1)*(blocked?(e.intent==='percée'?.5:.18):1 )*(1-resonanceReduction)*linkPenalty);
   if(inside&&!evaded&&resonanceReduction)e.resonanceShield=0;
-  if(guardianBoss&&e.region==='maroc'&&evaded&&distance(f.p,f.home)>10)e.guardianMeter=Math.max(0,(e.guardianMeter||100)-12);
-  if(guardianBoss&&e.region==='maroc'&&blocked&&distance(f.p,f.home)<=10)e.opening=true;
-  if(guardianBoss&&e.region==='tunisie'&&evaded&&distance(f.p,f.enemy)<distance(f.aim,f.enemy)-1){e.opening=true;e.focus=Math.min(3,e.focus+1);}
-  if(guardianBoss&&e.region==='france'&&(blocked||evaded))e.guardianFlag=true;
+  if(guardianBoss&&mechanicRegion==='maroc'&&evaded&&distance(f.p,f.home)>10)e.guardianMeter=Math.max(0,(e.guardianMeter||100)-12);
+  if(guardianBoss&&mechanicRegion==='maroc'&&blocked&&distance(f.p,f.home)<=10)e.opening=true;
+  if(guardianBoss&&mechanicRegion==='tunisie'&&evaded&&distance(f.p,f.enemy)<distance(f.aim,f.enemy)-1){e.opening=true;e.focus=Math.min(3,e.focus+1);}
+  if(guardianBoss&&mechanicRegion==='france'&&(blocked||evaded))e.guardianFlag=true;
   e.hp=Math.max(0,e.hp-hit);if(blocked&&inside&&!evaded){e.opening=true;if(e.hp)e.hp=Math.min(e.maxHP,e.hp+(e.stats.heal||0));}
-  if(guardianBoss&&e.region==='maroc'&&(e.guardianMeter||0)<=0){e.result='defeat';e.log='L’héritage n’a pas été protégé. Reviens avec une autre approche.';return e;}
+  if(guardianBoss&&mechanicRegion==='maroc'&&(e.guardianMeter||0)<=0){e.result='defeat';e.log='L’héritage n’a pas été protégé. Reviens avec une autre approche.';return e;}
   if(e.intent==='soin')e.enemy=Math.min(e.enemyMax,e.enemy+12);
   if(e.intent==='gel'&&hit&&!blocked){if(e.resonanceAnchor)e.resonanceAnchor=false;else e.focus=Math.max(0,e.focus-1);}
   e.log=hit?`Impact : −${hit} vitalité.`:inside?'Esquive réussie.':'Attaque évitée en quittant sa trajectoire.';
   event(hit||inside?'enemy':'miss');f.phase='recovery';f.recover=e.expert?850:1150;
-  if(guardianBoss&&e.region==='turquie')e.guardianFlag=false;
+  if(guardianBoss&&mechanicRegion==='turquie')e.guardianFlag=false;
   if(!e.hp){e.result='defeat';e.log='Retourne au refuge et prépare ton groupe. Tes compagnons restent avec toi.';}
- }else if(f.phase==='recovery'&&!f.recover){f.phase='pursuit';const nextPhase=e.enemy/e.enemyMax<.35?3:e.enemy/e.enemyMax<.7?2:1;if(guardianBoss&&e.region==='italie'&&nextPhase>(e.guardianStep||1)){e.guardianShield=18+nextPhase*6;e.guardianStep=nextPhase;}e.phase=nextPhase;const pattern=FIELD_PATTERNS[e.region]||FIELD_PATTERNS.france;e.intent=pattern[Math.floor(f.time/2400)%pattern.length];}
+ }else if(f.phase==='recovery'&&!f.recover){f.phase='pursuit';const nextPhase=e.enemy/e.enemyMax<.35?3:e.enemy/e.enemyMax<.7?2:1;if(guardianBoss&&!e.final&&mechanicRegion==='italie'&&nextPhase>(e.guardianStep||1)){e.guardianShield=18+nextPhase*6;e.guardianStep=nextPhase;}e.phase=nextPhase;const pattern=FIELD_PATTERNS[mechanicRegion]||FIELD_PATTERNS.france;e.intent=pattern[Math.floor(f.time/2400)%pattern.length];}
  return e;
 }
 // Patterns retain each country's identity without importing presentation code.
