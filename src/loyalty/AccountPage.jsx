@@ -83,6 +83,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     if(fields.password!==fields.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
     const{error:updateError}=await authClient.auth.updateUser({password:fields.password});
     if(updateError)throw updateError;
+    await authClient.auth.signOut({scope:'others'}).catch(()=>{});
+    setMode('login');
     try{
      const url=new URL(window.location.href);url.searchParams.delete('reset');
      history.replaceState(history.state,'',url.pathname+url.search+'#membre');
@@ -160,7 +162,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
 
   {account.loading?<p role="status">Ouverture de ton compte…</p>
   :account.user&&!profile?<div className="loyalty-empty"><p>Synchronisation de ton compte…</p><button onClick={account.refresh}>Réessayer</button><button onClick={logout}>Se déconnecter</button></div>
-  :profile?<>
+  :profile&&mode!=='reset-password'?<>
    {(()=>{try{return sessionStorage.getItem('3b-community-intent')==='chat';}catch{return false;}})()&&
     <button className="surface-button account-community-return" onClick={()=>{try{sessionStorage.removeItem('3b-auth-intent');}catch{}goTo('community');}}>Continuer vers la communauté <ArrowUpRight size={17}/></button>}
 
@@ -191,10 +193,10 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   </>
   :<div className="account-entry">
    <div className="account-form-panel">
-    <div className="account-tabs" role="group" aria-label="Accéder au compte">
+    {mode!=='reset-password'&&<div className="account-tabs" role="group" aria-label="Accéder au compte">
      <button aria-pressed={mode==='login'} onClick={()=>switchMode('login')}>Connexion</button>
      <button aria-pressed={mode==='register'} onClick={()=>switchMode('register')}>Créer un compte</button>
-    </div>
+    </div>}
 
     <h2>{
      mode==='register'?'Créer mon identité 3B':
