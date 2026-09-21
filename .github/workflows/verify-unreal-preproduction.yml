@@ -46,4 +46,4 @@ jobs:
           tests/world-unreal-story-state-contract.test.js
       - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
-        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py unreal/ThreeBWorld/Scripts/build_france_blockout.py
+        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py unreal/ThreeBWorld/Scripts/build_france_blockout.py unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py unreal/ThreeBWorld/Scripts/prepare_france_goldmaster.py

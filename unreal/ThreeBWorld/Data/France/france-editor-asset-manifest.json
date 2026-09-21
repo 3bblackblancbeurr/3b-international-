@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engine": "5.8",
   "slice_id": "france_justice_v1",
   "note": "Target asset paths for the single canonical France region. These are not claimed to exist until validate_france_editor_assets.py passes inside Unreal Editor.",
@@ -22,6 +22,21 @@
     {
       "path": "/Game/3B/World/France/Data/DA_FranceRegion",
       "kind": "ThreeBRegionDefinition",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/Data/DA_FranceMissions",
+      "kind": "ThreeBMissionCatalog",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/Data/DA_FrancePopulation",
+      "kind": "ThreeBPopulationDefinition",
+      "critical": true
+    },
+    {
+      "path": "/Game/3B/World/France/Data/DA_FranceWeather",
+      "kind": "ThreeBWeatherProfile",
       "critical": true
     },
     {
@@ -185,5 +200,13 @@
       "celiane_landmark"
     ],
     "note": "Targets must be replaced/confirmed with captured Unreal profiling measurements."
+  },
+  "runtime_sources": {
+    "region_definition": "ThreeBRegionDefinition",
+    "mission_catalog": "ThreeBMissionCatalog",
+    "population_definition": "ThreeBPopulationDefinition",
+    "weather_profile": "ThreeBWeatherProfile",
+    "weather_director": "ThreeBWeatherDirector",
+    "story_signal": "AThreeBGameState.OnStoryStateChanged"
   }
 }

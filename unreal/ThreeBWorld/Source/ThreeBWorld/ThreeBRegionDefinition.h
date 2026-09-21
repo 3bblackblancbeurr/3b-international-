@@ -4,6 +4,10 @@
 #include "Engine/DataAsset.h"
 #include "ThreeBRegionDefinition.generated.h"
 
+class UThreeBMissionCatalog;
+class UThreeBPopulationDefinition;
+class UThreeBWeatherProfile;
+
 USTRUCT(BlueprintType)
 struct FThreeBAltitudeBandDefinition
 {
@@ -132,6 +136,15 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Region")
     FThreeBRegionStreamingProfile Streaming;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Region|Runtime")
+    TSoftObjectPtr<UThreeBMissionCatalog> MissionCatalog;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Region|Runtime")
+    TSoftObjectPtr<UThreeBPopulationDefinition> PopulationDefinition;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="3B|Region|Runtime")
+    TSoftObjectPtr<UThreeBWeatherProfile> WeatherProfile;
 
     UFUNCTION(BlueprintPure, Category="3B|Region")
     bool FindAltitudeBand(FName Id, FThreeBAltitudeBandDefinition& OutBand) const;

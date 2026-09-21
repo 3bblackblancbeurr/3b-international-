@@ -201,6 +201,38 @@ The following files deepen France without claiming final Unreal assets exist:
 
 The Editor validator checks that contracts exist, share the canonical slice, and that the vertical blockout contract contains the required districts/underside/hydrology/vistas before checking future Unreal assets. It remains read-only.
 
+## Runtime data assets and automatic Editor bootstrap
+
+France now has generic native runtime contracts for the data already versioned in JSON:
+
+- `UThreeBMissionCatalog` — mission definitions, objectives, district ownership and reward policy keys;
+- `UThreeBPopulationDefinition` — simulation tiers, daily routines and district population archetypes;
+- `UThreeBWeatherProfile` — eight weather states, altitude environment profiles and world-state overrides;
+- `AThreeBWeatherDirector` — replicated, event-driven weather state with no global Tick;
+- `AThreeBGameState::OnStoryStateChanged` — presentation systems react to the replicated server story state instead of mutating it.
+
+The Editor bootstrap script is:
+
+`Scripts/bootstrap_france_goldmaster_assets.py`
+
+After the C++ Editor target compiles and `L_France_OpenWorld` is open, it creates/updates:
+
+- `DA_FranceRegion`;
+- `DA_FranceMissions`;
+- `DA_FrancePopulation`;
+- `DA_FranceWeather`;
+- required runtime Data Layer Assets;
+- Data Layer Instances when the open World Partition world accepts them;
+- one native France Weather Director linked to `DA_FranceWeather`.
+
+For a single preparation pass, execute:
+
+`Scripts/prepare_france_goldmaster.py`
+
+That script runs bootstrap → vertical blockout generation → strict validation. The final validator may still fail intentionally until genuine Céliane/input/art/navigation assets have been authored; a source script never upgrades missing binary work to “validated”.
+
+The weather profile maps the registered France WorldState tags to the presentation states defined in `france-presentation-v1.json`. The authoritative GameState remains the source of truth; weather is a replicated presentation consequence only.
+
 ## Editor execution order
 
 `Data/France/france-editor-execution-plan-v1.json` defines thirteen ordered UE5.8 stages:

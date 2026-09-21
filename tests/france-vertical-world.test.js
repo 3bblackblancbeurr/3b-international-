@@ -213,3 +213,188 @@ test('France local missions use canonical districts, story phases and vertical g
   assert.ok(districtMissions.invariants.some(x=>x.includes('never bypass justice_trial')));
   assert.ok(districtMissions.authority_model.client_may_not.includes('set_guardian_liberated'));
 });
+
+
+test('generic mission population and weather runtime types stay reusable and authority-safe',()=>{
+  const missionH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionCatalog.h');
+  const missionCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionCatalog.cpp');
+  const popH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.h');
+  const popCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.cpp');
+  const weatherH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.h');
+  const weatherCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.cpp');
+  for(const source of [missionH,missionCpp,popH,popCpp,weatherH,weatherCpp]){
+    assert.doesNotMatch(source,/Céliane|france_centre|monumental_waterfall|fragment_justice/i);
+  }
+  assert.match(missionH,/UThreeBMissionCatalog/);
+  assert.match(missionH,/EThreeBMissionAuthority/);
+  assert.match(missionCpp,/Server-verified mission/);
+  assert.match(popH,/UThreeBPopulationDefinition/);
+  assert.match(popH,/ActiveAiControllerBudget/);
+  assert.match(popCpp,/Simulation tiers must be ordered by distance/);
+  assert.match(weatherH,/UThreeBWeatherProfile/);
+  assert.match(weatherH,/enum class EThreeBWeatherState/);
+  assert.match(weatherCpp,/States\.Num\(\) != 8/);
+});
+
+test('Weather Director is replicated, event-driven and cannot author progression',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherDirector.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherDirector.cpp');
+  assert.match(header,/AThreeBWeatherDirector/);
+  assert.match(header,/ReplicatedUsing=OnRep_WeatherState/);
+  assert.match(header,/BlueprintAuthorityOnly/);
+  assert.match(header,/BlueprintImplementableEvent/);
+  assert.match(source,/DOREPLIFETIME\(AThreeBWeatherDirector, CurrentWeather\)/);
+  assert.match(source,/if \(!HasAuthority\(\)\)/);
+  assert.match(source,/OnWeatherChanged\.Broadcast/);
+  assert.doesNotMatch(header+source,/grant_global_xp|grant_fragment|inventory|guardian_liberated/i);
+  assert.doesNotMatch(header+source,/Tick\(/);
+});
+
+test('replicated story state now exposes a presentation reaction signal without client mutation',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameState.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBGameState.cpp');
+  assert.match(header,/FThreeBStoryStateChanged/);
+  assert.match(header,/BlueprintAssignable/);
+  assert.match(header,/OnStoryStateChanged/);
+  assert.match(source,/OnStoryStateChanged\.Broadcast\(StoryState\)/);
+  assert.match(source,/if \(!HasAuthority\(\)/);
+  assert.doesNotMatch(header,/UFUNCTION\(Server[^)]*\)[\s\S]{0,160}ApplyAuthoritativeStoryState/);
+});
+
+test('France Editor bootstrap creates canonical assets and layers without destructive operations',()=>{
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  const prepare=read('unreal/ThreeBWorld/Scripts/prepare_france_goldmaster.py');
+  for(const token of [
+    'DA_FranceRegion','DA_FranceMissions','DA_FrancePopulation','DA_FranceWeather',
+    'DataAssetFactory','DataLayerFactory','create_data_layer_instance',
+    'ThreeBWeatherDirector','save_current_level'
+  ]) assert.match(bootstrap,new RegExp(token),token);
+  assert.match(prepare,/bootstrap_france_goldmaster_assets/);
+  assert.match(prepare,/build_france_blockout/);
+  assert.match(prepare,/validate_france_editor_assets/);
+  assert.doesNotMatch(bootstrap,/delete_asset|delete_directory|rename_asset|duplicate_asset/i);
+});
+
+test('runtime assets are critical and planned exactly once',()=>{
+  const required=[
+    ['/Game/3B/World/France/Data/DA_FranceMissions','ThreeBMissionCatalog'],
+    ['/Game/3B/World/France/Data/DA_FrancePopulation','ThreeBPopulationDefinition'],
+    ['/Game/3B/World/France/Data/DA_FranceWeather','ThreeBWeatherProfile']
+  ];
+  const planned=plan.stages.flatMap(x=>x.asset_paths||[]);
+  for(const [path,kind] of required){
+    const entry=manifest.required_assets.find(x=>x.path===path);
+    assert.ok(entry,path);
+    assert.equal(entry.kind,kind,path);
+    assert.equal(entry.critical,true,path);
+    assert.equal(planned.filter(x=>x===path).length,1,path);
+  }
+  assert.equal(manifest.runtime_sources.story_signal,'AThreeBGameState.OnStoryStateChanged');
+});
+
+
+test('France weather narrative overrides reference registered authoritative WorldState tags',()=>{
+  const story=json('unreal/ThreeBWorld/Data/France/france-justice-v1.json');
+  const config=read('unreal/ThreeBWorld/Config/DefaultGameplayTags.ini');
+  const presentation=json('unreal/ThreeBWorld/Data/France/france-presentation-v1.json');
+  const profileH=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.h');
+  const profileCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherProfile.cpp');
+  const directorCpp=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBWeatherDirector.cpp');
+  const ids=new Set(story.world_states.map(x=>x.id));
+  for(const [stateId] of Object.entries(presentation.weather_state_machine.narrative_overrides)){
+    assert.ok(ids.has(stateId),stateId);
+  }
+  for(const state of story.world_states){
+    assert.match(config,new RegExp(state.tag.replace(/[.]/g,'\\.')),state.tag);
+  }
+  assert.match(profileH,/TMap<FName, EThreeBWeatherState> WorldStateOverrides/);
+  assert.match(profileCpp,/WorldStateOverrides\.Find\(WorldStateTagName\)/);
+  assert.match(directorCpp,/OnStoryStateChanged\.AddDynamic/);
+  assert.match(directorCpp,/OnStoryStateChanged\.RemoveDynamic/);
+  assert.match(directorCpp,/WorldStateTag\.GetTagName\(\)/);
+  assert.match(directorCpp,/if \(!HasAuthority\(\)/);
+});
+
+test('Editor bootstrap imports world-state weather overrides and has robust reflected error reporting',()=>{
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(bootstrap,/def reflected_type_name/);
+  assert.match(bootstrap,/world_state_overrides/);
+  assert.match(bootstrap,/france-justice-v1\.json/);
+  assert.match(bootstrap,/narrative_overrides/);
+  assert.match(bootstrap,/DataLayerCreationParameters/);
+  assert.match(bootstrap,/save_loaded_asset/);
+  assert.doesNotMatch(bootstrap,/service_role|grant_global_xp|grant_fragment|mint_inventory/i);
+});
+
+
+test('runtime mission catalog preserves mission type world-state gates and gameplay modes from France source',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionCatalog.h');
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(header,/FName MissionType/);
+  assert.match(header,/TArray<FName> RequiredWorldStateIds/);
+  assert.match(header,/TArray<FName> GameplayModes/);
+  assert.match(bootstrap,/mission_type/);
+  assert.match(bootstrap,/required_world_state_ids/);
+  assert.match(bootstrap,/gameplay_modes/);
+  for(const mission of districtMissions.missions){
+    assert.ok(mission.type,mission.id);
+    assert.ok(mission.requires_world_state.length>0,mission.id);
+    assert.ok(mission.gameplay.length>0,mission.id);
+  }
+});
+
+test('runtime population definition preserves named France NPC roles and routine bindings',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationDefinition.cpp');
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(header,/FThreeBNpcRoleDefinition/);
+  assert.match(header,/TArray<FThreeBNpcRoleDefinition> NpcRoles/);
+  assert.match(header,/FindNpcRole/);
+  assert.match(source,/Duplicate NPC role/);
+  assert.match(source,/references unknown routine/);
+  assert.match(bootstrap,/ThreeBNpcRoleDefinition/);
+  assert.match(bootstrap,/npc_roles/);
+  const routines=new Set(npc.routine_profiles.map(x=>x.id));
+  for(const role of npc.npc_roles){
+    assert.ok(role.zone,role.id);
+    assert.ok(role.district_id,role.id);
+    assert.ok(routines.has(role.routine),role.id);
+    assert.ok(role.active_phases.length>0,role.id);
+  }
+});
+
+
+test('mission subsystem filters availability without granting progression',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionSubsystem.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBMissionSubsystem.cpp');
+  assert.match(header,/UGameInstanceSubsystem/);
+  assert.match(header,/IsMissionAvailable/);
+  assert.match(header,/GetAvailableMissionIds/);
+  assert.match(source,/AvailablePhaseIds\.Contains\(CurrentPhaseId\)/);
+  assert.match(source,/RequiredWorldStateIds\.Contains\(CurrentWorldStateId\)/);
+  assert.doesNotMatch(header+source,/grant|reward|fragment|inventory|guardian/i);
+});
+
+test('population subsystem resolves distance tier and daily routine without a global Tick',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationSubsystem.h');
+  const source=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBPopulationSubsystem.cpp');
+  assert.match(header,/UWorldSubsystem/);
+  assert.match(header,/EThreeBDayPeriod/);
+  assert.match(header,/ResolveSimulationTier/);
+  assert.match(header,/ResolveRoutineActivity/);
+  assert.match(header,/CanActivateFullAi/);
+  assert.match(source,/ActiveAiControllerBudget/);
+  assert.doesNotMatch(header+source,/Tick\(/);
+  assert.doesNotMatch(header+source,/SpawnActor|spawn_actor/i);
+});
+
+test('region definition owns soft runtime references for missions population and weather',()=>{
+  const header=read('unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBRegionDefinition.h');
+  const bootstrap=read('unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py');
+  assert.match(header,/TSoftObjectPtr<UThreeBMissionCatalog> MissionCatalog/);
+  assert.match(header,/TSoftObjectPtr<UThreeBPopulationDefinition> PopulationDefinition/);
+  assert.match(header,/TSoftObjectPtr<UThreeBWeatherProfile> WeatherProfile/);
+  assert.match(bootstrap,/mission_catalog/);
+  assert.match(bootstrap,/population_definition/);
+  assert.match(bootstrap,/weather_profile/);
+});

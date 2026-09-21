@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engine": "5.8",
   "slice_id": "france_justice_v1",
   "purpose": "Ordered Unreal Editor execution plan for the canonical vertical France region. This prepares and verifies work; it does not claim any .uasset exists.",
@@ -57,7 +57,10 @@
       "editor_required": true,
       "asset_paths": [
         "/Game/3B/World/France/Data/DA_FranceJusticeSlice",
-        "/Game/3B/World/France/Data/DA_FranceRegion"
+        "/Game/3B/World/France/Data/DA_FranceRegion",
+        "/Game/3B/World/France/Data/DA_FranceMissions",
+        "/Game/3B/World/France/Data/DA_FrancePopulation",
+        "/Game/3B/World/France/Data/DA_FranceWeather"
       ],
       "source_contracts": [
         "france-justice-v1.json",
@@ -76,7 +79,11 @@
       "goals": [
         "create_story_slice_data_asset",
         "create_region_definition_from_vertical_contract",
-        "link_france_territory_to_region_definition"
+        "link_france_territory_to_region_definition",
+        "run_bootstrap_france_goldmaster_assets",
+        "create_mission_catalog_from_contract",
+        "create_population_definition_from_contract",
+        "create_weather_profile_from_contract"
       ]
     },
     {
@@ -128,7 +135,8 @@
       ],
       "goals": [
         "separate_streamable_system_layers",
-        "keep_macro_silhouette_available_via_proxies"
+        "keep_macro_silhouette_available_via_proxies",
+        "create_runtime_data_layer_instances_from_assets"
       ],
       "evidence": [
         "asset_validator_output"
@@ -187,7 +195,9 @@
         "author_waterfall_mesh_material_niagara",
         "wire_weather_state_machine",
         "wire_altitude_audio_profiles",
-        "verify_waterfall_audible_before_reveal"
+        "verify_waterfall_audible_before_reveal",
+        "place_native_weather_director_and_assign_profile",
+        "react_to_authoritative_story_state"
       ],
       "evidence": [
         "pie_test_result",
