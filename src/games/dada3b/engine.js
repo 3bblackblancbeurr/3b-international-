@@ -6,6 +6,7 @@ export const FINISH_STEP = TRACK_LENGTH + HOME_LENGTH;
 export const MATCH_VERSION = 2;
 
 export const AI_LEVELS = ['normal', 'tactique', 'gardien'];
+export const BOARD_THEMES = ['nexus', 'fr', 'dz', 'es', 'ma', 'it', 'tn', 'tr', 'ee'];
 
 export const DEFAULT_RULES = Object.freeze({
   piecesPerPlayer: 4,
@@ -17,6 +18,7 @@ export const DEFAULT_RULES = Object.freeze({
   timerSeconds: 30,
   maxDurationMinutes: 0,
   aiLevel: 'tactique',
+  boardTheme: 'nexus',
 });
 
 export const COUNTRIES_3B = [
@@ -52,6 +54,7 @@ export function normalizeRules(input = {}) {
     timerSeconds: [0, 20, 30, 45].includes(value.timerSeconds) ? value.timerSeconds : DEFAULT_RULES.timerSeconds,
     maxDurationMinutes: [0, 10, 20, 30, 45, 60].includes(value.maxDurationMinutes) ? value.maxDurationMinutes : DEFAULT_RULES.maxDurationMinutes,
     aiLevel: AI_LEVELS.includes(value.aiLevel) ? value.aiLevel : DEFAULT_RULES.aiLevel,
+    boardTheme: BOARD_THEMES.includes(value.boardTheme) ? value.boardTheme : DEFAULT_RULES.boardTheme,
   };
 }
 
