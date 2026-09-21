@@ -29,14 +29,16 @@ test('all eight distinct puzzles can be solved through their actual controls',()
  for(const c of COUNTRIES){let b=puzzleStart(c.id);assert.equal(puzzleSolved(c.id,b),false);for(const i of solutions[c.id])b=puzzleStep(c.id,b,i);assert.equal(puzzleSolved(c.id,b),true,c.id);}
 });
 
-test('guardian value trials use three contextual dilemmas per country',()=>{
+test('guardian value trials use contextual consequential dilemmas instead of right-wrong QCM',()=>{
  for(const country of COUNTRIES)for(let step=0;step<3;step++){
-  const state={step},scene=guardianValueStep(country.id,state),options=guardianValueOptions(country.id,state);
+  const decisions=GUARDIAN_VALUES[country.id].choices.slice(0,step).map(choice=>choice[0]),state={decisions},scene=guardianValueStep(country.id,state),options=guardianValueOptions(country.id,state);
   assert.ok(scene.prompt.length>30,country.id+' step '+step);
   assert.equal(options.length,3);
-  assert.equal(options.filter(option=>option.correct).length,1);
-  assert.equal(options.find(option=>option.correct).id,GUARDIAN_VALUES[country.id].choices[step][0]);
+  assert.equal(options.filter(option=>option.stance==='aligned').length,1);
+  assert.equal(options.find(option=>option.stance==='aligned').id,GUARDIAN_VALUES[country.id].choices[step][0]);
   assert.equal(new Set(options.map(option=>option.id)).size,3);
+  assert.ok(options.every(option=>option.consequence.length>30));
+  assert.ok(options.every(option=>option.correct===undefined),'UI contract must not expose a right-answer flag');
  }
 });
 test('a fresh player can rebuild all eight countries and win the playable finale',()=>{
