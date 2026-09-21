@@ -22,6 +22,7 @@ import "./styles/passport-effects.css";
 import "./styles/games.css";
 import "./styles/refinement.css";
 import "./styles/compact.css";
+import "./styles/dimension.css";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
