@@ -8,6 +8,7 @@ const serverEngine=readFileSync(new URL('../supabase/functions/dada3b/engine.js'
 const edge=readFileSync(new URL('../supabase/functions/dada3b/index.ts',import.meta.url),'utf8');
 const cosmeticsMigration=readFileSync(new URL('../supabase/migrations/20260921225943_dada3b_teams_cosmetics_v2.sql',import.meta.url),'utf8');
 const realtimeMigration=readFileSync(new URL('../supabase/migrations/20260921230003_dada3b_realtime_broadcast_v1.sql',import.meta.url),'utf8');
+const seasonMigration=readFileSync(new URL('../supabase/migrations/20260921230844_dada3b_founder_season_v1.sql',import.meta.url),'utf8');
 
 test('DADA client and authoritative server use byte-identical rules',()=>{
   assert.equal(clientEngine,serverEngine);
@@ -50,4 +51,17 @@ test('DADA realtime stays private and room membership scoped',()=>{
   assert.match(realtimeMigration,/for select\s+to authenticated/);
   assert.match(realtimeMigration,/auth\.uid\(\).*any\(r\.member_ids\)/s);
   assert.match(realtimeMigration,/dada:room:/);
+});
+
+
+test('DADA founder season is visual-only and contains all eight nations',()=>{
+  assert.match(seasonMigration,/'dada_cercle_fondateur'/);
+  assert.match(seasonMigration,/'draft'/);
+  assert.match(seasonMigration,/xp_multiplier=1/);
+  assert.match(seasonMigration,/coins_multiplier=1/);
+  assert.match(seasonMigration,/token_budget=0/);
+  assert.match(seasonMigration,/"pay_to_win":false/);
+  assert.match(seasonMigration,/"competitive_rules_unchanged":true/);
+  const countries=['fr','dz','es','ma','it','tn','tr','ee'];
+  for(const country of countries)assert.match(seasonMigration,new RegExp('"country":"'+country+'"'));
 });
