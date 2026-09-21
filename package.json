@@ -13,7 +13,11 @@
     "mobile:ios": "cap open ios",
     "unreal:bridge:health": "node scripts/threeb-unreal-bridge.mjs health",
     "unreal:bridge:actors": "node scripts/threeb-unreal-bridge.mjs actors",
-    "unreal:bridge:snapshot": "node scripts/threeb-unreal-bridge.mjs snapshot"
+    "unreal:bridge:snapshot": "node scripts/threeb-unreal-bridge.mjs snapshot",
+    "control:pair": "node scripts/threeb-control-agent.mjs pair",
+    "control:agent": "node scripts/threeb-control-agent.mjs run",
+    "control:once": "node scripts/threeb-control-agent.mjs once",
+    "control:status": "node scripts/threeb-control-agent.mjs status"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
