@@ -119,3 +119,22 @@ test('Céliane StateTree spec cannot liberate from health or client-only state',
  assert.ok(spec.server_owned_facts.includes('france.justice_trial_outcome'));
  assert.ok(spec.server_owned_facts.includes('france.rescue_outcome'));
 });
+
+
+test('France blockout is compact, connected and follows the canonical story route',()=>{
+ const layout=json('../unreal/ThreeBWorld/Data/France/france-blockout-layout.json');
+ assert.equal(layout.zones.length,9);
+ assert.equal(layout.story_route.length,9);
+ const ids=new Set(layout.zones.map(z=>z.id));
+ assert.equal(ids.size,layout.zones.length);
+ for(const id of layout.story_route)assert.ok(ids.has(id),id);
+ for(const road of layout.roads){
+  assert.ok(ids.has(road.from),road.from);
+  assert.ok(ids.has(road.to),road.to);
+  assert.ok(road.width_cm>=600&&road.width_cm<=1400,road.id);
+ }
+ assert.ok(layout.bounds_cm.width<=60000);
+ assert.ok(layout.bounds_cm.depth<=45000);
+ assert.equal(layout.story_route[0],'gate_arrival');
+ assert.equal(layout.story_route.at(-1),'post_liberation_hub');
+});
