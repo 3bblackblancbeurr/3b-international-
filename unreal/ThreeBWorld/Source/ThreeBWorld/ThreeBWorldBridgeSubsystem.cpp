@@ -94,10 +94,14 @@ void UThreeBWorldBridgeSubsystem::RedeemLaunchTicket(const FString& Ticket, cons
             }
 
             FString WorldJson;
-            if (const TSharedPtr<FJsonValue>* WorldValue = Json->Values.Find(TEXT("world_state")); WorldValue && WorldValue->IsValid() && !(*WorldValue)->IsNull())
+            if (const TSharedPtr<FJsonValue>* WorldValue = Json->Values.Find(TEXT("world_state"));
+                WorldValue && WorldValue->IsValid() && (*WorldValue)->Type == EJson::Object)
             {
-                const TSharedRef<TJsonWriter<>> WorldWriter = TJsonWriterFactory<>::Create(&WorldJson);
-                FJsonSerializer::Serialize((*WorldValue)->AsObject().ToSharedRef(), WorldWriter);
+                if (const TSharedPtr<FJsonObject> WorldObject = (*WorldValue)->AsObject(); WorldObject.IsValid())
+                {
+                    const TSharedRef<TJsonWriter<>> WorldWriter = TJsonWriterFactory<>::Create(&WorldJson);
+                    FJsonSerializer::Serialize(WorldObject.ToSharedRef(), WorldWriter);
+                }
             }
 
             SessionToken = MoveTemp(NewSessionToken);
