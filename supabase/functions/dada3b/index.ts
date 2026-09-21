@@ -25,7 +25,7 @@ const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]
 const CODE=/^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACTIONS=new Set(['status','create','join','spectate','ready','start','queue','roll','move','tick','leave','reconnect','leaderboard']);
-const ONLINE_MODES=new Set(['private','quick','ranked']);
+const ONLINE_MODES=new Set(['private','quick','ranked','team2v2']);
 
 class Failure extends Error {
   constructor(public status:number,message:string){super(message);}
@@ -104,7 +104,7 @@ function onlineRules(input:unknown){
   return rules;
 }
 
-function playerEntry(uid:string,handle:string,countryId:string,ready=false):Player{
+function playerEntry(uid:string,handle:string,countryId:string,ready=false,team:string|null=null):Player{
   return {
     uid,
     name:handle,
@@ -114,7 +114,7 @@ function playerEntry(uid:string,handle:string,countryId:string,ready=false):Play
     botTakeover:false,
     joinedAt:nowIso(),
     lastSeen:nowIso(),
-    team:null,
+    team:['A','B'].includes(team||'')?team:null,
   };
 }
 
@@ -151,7 +151,7 @@ async function cleanupExpiredWaiting(){
   }).catch(()=>null);
 }
 
-async function insertRoom(uid:string,handle:string,countryId:string,mode:string,maxPlayers:number,rules:any){
+async function insertRoom(uid:string,handle:string,countryId:string,mode:string,maxPlayers:number,rules:any,team:string|null=null){
   for(let attempt=0;attempt<6;attempt++){
     const code=randomCode();
     try{
@@ -162,7 +162,7 @@ async function insertRoom(uid:string,handle:string,countryId:string,mode:string,
         status:'waiting',
         max_players:maxPlayers,
         rules,
-        players:[playerEntry(uid,handle,countryId,true)],
+        players:[playerEntry(uid,handle,countryId,true,team)],
         spectators:[],
         member_ids:[uid],
         expires_at:plusMs(mode==='private'?30*60_000:8*60_000),
@@ -205,6 +205,7 @@ function deadlineFor(state:any){
 }
 
 function winnerUid(room:Room,state:any){
+  if(state?.winnerTeam)return null;
   if(!state?.winner)return null;
   return room.players?.find((player:any)=>player.countryId===state.winner)?.uid||null;
 }
@@ -268,7 +269,15 @@ async function settleIfFinished(room:Room){
         });
       }
     }
-    if(room.winner_user_id){
+    if(state.winnerTeam){
+      for(const player of humanPlayers.filter((entry:any)=>entry.team===state.winnerTeam)){
+        rewards.push({
+          userId:player.uid,
+          rewardCode:'dada_win',
+          eventId:`dada:${room.id}:team-win:${state.winnerTeam}:${player.uid}`,
+        });
+      }
+    }else if(room.winner_user_id){
       rewards.push({
         userId:room.winner_user_id,
         rewardCode:'dada_win',
@@ -382,6 +391,7 @@ function publicRoom(room:Room,uid:string){
     turnDeadline:room.turn_deadline,
     isHost:room.host_user_id===uid,
     winnerCountryId:room.state?.winner||null,
+    winnerTeam:room.state?.winnerTeam||null,
     createdAt:room.created_at,
     startedAt:room.started_at,
     finishedAt:room.finished_at,
@@ -397,11 +407,16 @@ async function startRoom(room:Room,actor:string){
   if(new Set(countries).size!==countries.length)throw new Failure(409,'Deux joueurs ne peuvent pas représenter le même pays.');
 
   const rules=onlineRules(room.rules);
+  if(rules.teamMode){
+    if((room.players||[]).length!==4)throw new Failure(409,'Le 2v2 demande exactement quatre joueurs.');
+    if(room.players.filter((player:any)=>player.team==='A').length!==2||room.players.filter((player:any)=>player.team==='B').length!==2)throw new Failure(409,'Le 2v2 demande deux joueurs dans chaque équipe.');
+  }
   const state=createMatch((room.players||[]).map((player:any)=>({
     countryId:player.countryId,
     type:'human',
     name:player.name,
     aiLevel:'gardien',
+    team:player.team??null,
   })),rules);
   const started=nowIso();
   const horizon=rules.maxDurationMinutes>0
@@ -424,9 +439,9 @@ async function startRoom(room:Room,actor:string){
 async function createPrivate(uid:string,body:any){
   const profile=await profileFor(uid);
   const countryId=assertCountry(body.countryId);
-  const maxPlayers=Number.isInteger(body.maxPlayers)?Math.max(2,Math.min(8,body.maxPlayers)):4;
   const rules=onlineRules(body.rules);
-  return await insertRoom(uid,profile.handle,countryId,'private',maxPlayers,rules);
+  const maxPlayers=rules.teamMode?4:(Number.isInteger(body.maxPlayers)?Math.max(2,Math.min(8,body.maxPlayers)):4);
+  return await insertRoom(uid,profile.handle,countryId,'private',maxPlayers,rules,rules.teamMode?'A':null);
 }
 
 async function joinPrivate(uid:string,body:any){
@@ -440,7 +455,13 @@ async function joinPrivate(uid:string,body:any){
   if((room.players||[]).length>=room.max_players)throw new Failure(409,'Ce salon est complet.');
   if((room.players||[]).some((player:any)=>player.countryId===countryId))throw new Failure(409,'Ce pays est déjà représenté dans ce salon.');
 
-  const players=[...(room.players||[]),playerEntry(uid,profile.handle,countryId,false)];
+  let team:string|null=null;
+  if(room.rules?.teamMode){
+    const a=(room.players||[]).filter((player:any)=>player.team==='A').length;
+    const b=(room.players||[]).filter((player:any)=>player.team==='B').length;
+    team=a<=b?'A':'B';
+  }
+  const players=[...(room.players||[]),playerEntry(uid,profile.handle,countryId,false,team)];
   room=await commitRoom(room,{
     players,
     member_ids:roomMembers(players,room.spectators||[]),
@@ -469,12 +490,15 @@ async function joinSpectator(uid:string,body:any){
 
 async function queueRoom(uid:string,body:any){
   const mode=String(body.mode||'');
-  if(!['quick','ranked'].includes(mode))throw new Failure(400,'File de jeu inconnue.');
+  if(!['quick','ranked','team2v2'].includes(mode))throw new Failure(400,'File de jeu inconnue.');
   const profile=await profileFor(uid);
   const countryId=assertCountry(body.countryId);
+  const teamMode=mode==='team2v2';
+  const targetPlayers=teamMode?4:2;
   const rules=onlineRules({
     ...(body.rules||{}),
     piecesPerPlayer:4,
+    teamMode,
     timerSeconds:mode==='ranked'?20:30,
     captureRequired:mode==='ranked'?true:Boolean(body.rules?.captureRequired),
   });
@@ -486,25 +510,31 @@ async function queueRoom(uid:string,body:any){
   );
 
   let room=(Array.isArray(candidates)?candidates:[]).find((candidate:any)=>
-    (candidate.players||[]).length===1
+    (candidate.players||[]).length<targetPlayers
     && !(candidate.member_ids||[]).includes(uid)
     && !(candidate.players||[]).some((player:any)=>player.countryId===countryId)
   );
 
   if(!room){
-    return await insertRoom(uid,profile.handle,countryId,mode,2,rules);
+    return await insertRoom(uid,profile.handle,countryId,mode,targetPlayers,rules,teamMode?'A':null);
   }
 
+  let team:string|null=null;
+  if(teamMode){
+    const a=(room.players||[]).filter((player:any)=>player.team==='A').length;
+    const b=(room.players||[]).filter((player:any)=>player.team==='B').length;
+    team=a<=b?'A':'B';
+  }
   const players=[
     ...(room.players||[]).map((player:any)=>({...player,ready:true})),
-    playerEntry(uid,profile.handle,countryId,true),
+    playerEntry(uid,profile.handle,countryId,true,team),
   ];
   room=await commitRoom(room,{
     players,
     member_ids:roomMembers(players,room.spectators||[]),
     expires_at:plusMs(8*60_000),
-  },uid,'matchmaking_join',{mode,countryId});
-  return await startRoom(room,uid);
+  },uid,'matchmaking_join',{mode,countryId,team});
+  return players.length===targetPlayers?await startRoom(room,uid):room;
 }
 
 async function readyRoom(uid:string,body:any){
