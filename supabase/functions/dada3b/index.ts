@@ -97,7 +97,11 @@ async function userFor(req:Request){
 }
 
 async function ensureStarterCosmetics(uid:string){
+  const filter='('+STARTER_COSMETICS.join(',')+')';
+  const rows=await admin('/rest/v1/item_instances?owner_id=eq.'+encodeURIComponent(uid)+'&item_code=in.'+encodeURIComponent(filter)+'&select=item_code');
+  const owned=new Set((Array.isArray(rows)?rows:[]).map((row:any)=>row.item_code));
   for(const itemCode of STARTER_COSMETICS){
+    if(owned.has(itemCode))continue;
     await rpc('market_mint_item',{
       p_user:uid,
       p_item_code:itemCode,
