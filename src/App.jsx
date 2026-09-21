@@ -160,10 +160,17 @@ export default function App() {
 
   useEffect(() => {
     document.title = page === "intro" ? "3B International — Application Black Blanc Beur" : `${currentPageTitle} — 3B`;
+    const routeDescription = page === "intro"
+      ? "Application officielle 3B International — Black Blanc Beur."
+      : page === "home"
+        ? "Passeport, Monde du 3B, boutique, jeux, communauté et expériences 3B réunis dans un même univers."
+        : menuItems.find(item => item.id === (page.startsWith("ia-") ? "ia" : page))?.description;
+    const description = document.querySelector('meta[name="description"]');
+    if (description && routeDescription) description.setAttribute("content", `3B International — ${routeDescription}`);
     const heading = document.querySelector("main h1");
     if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
     window.scrollTo({ top: 0, behavior: "auto" });
-  }, [page, currentPageTitle]);
+  }, [page, currentPageTitle, menuItems]);
 
   useEffect(() => {
     document.documentElement.dataset.motion = options.reducedMotion || !options.animations ? "reduced" : "full";
