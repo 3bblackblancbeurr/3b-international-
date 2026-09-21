@@ -7,6 +7,7 @@ import {
 import {authClient,memberRequest} from './client.js';
 import {useLoyalty} from './LoyaltyContext.jsx';
 import BoutiqueCard from './BoutiqueCard.jsx';
+import PublicIdentityBadge from '../components/PublicIdentityBadge.jsx';
 import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
@@ -169,7 +170,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    <div className="account-dashboard">
     <div><BoutiqueCard profile={profile}/><p className="account-boutique-label">Ta carte de fidélité boutique · vêtements et accessoires</p><RewardStats profile={profile}/></div>
     <article className="account-summary">
-     <span className="loyalty-eyebrow">MEMBRE DU CERCLE</span><h2>@{profile.handle}</h2>
+     <span className="loyalty-eyebrow">MEMBRE DU CERCLE</span><h2>@{profile.handle}</h2><PublicIdentityBadge profile={profile}/>
      <div className="loyalty-numbers">
       <div><span>NIVEAU GLOBAL</span><strong>{economy?.global_level??'—'} <small>/ 150</small></strong></div>
       <div><span>EXPÉRIENCE</span><strong>{economy?.xp??profile.xp} <small>XP</small></strong></div>
