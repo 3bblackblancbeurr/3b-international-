@@ -90,7 +90,7 @@ void AThreeBWeatherDirector::HandleStoryStateChanged(FThreeBReplicatedStoryState
     }
 
     EThreeBWeatherState OverrideState = CurrentWeather;
-    if (WeatherProfile->FindWorldStateOverride(StoryState.WorldStateTag, OverrideState))
+    if (WeatherProfile->FindWorldStateOverride(StoryState.WorldStateTag.GetTagName(), OverrideState))
     {
         SetWeatherState(OverrideState);
     }
