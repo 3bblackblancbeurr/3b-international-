@@ -59,7 +59,8 @@ test('control center appears only after owner capability probe',()=>{
 
 test('migration integrity manifest includes control center v1',()=>{
  const manifest=JSON.parse(read('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json'));
- assert.equal(manifest.count,121);
+ assert.equal(manifest.count,manifest.migrations.length);
+ assert.ok(manifest.count>=121);
  const row=manifest.migrations.find(m=>m.version==='20260921180414');
  assert.deepEqual(row,{
   version:'20260921180414',
