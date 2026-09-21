@@ -66,7 +66,8 @@
         "france-npc-dialogue-v1.json",
         "france-presentation-v1.json",
         "france-nexus-handoff-v1.json",
-        "france-coop-session-v1.json"
+        "france-coop-session-v1.json",
+        "france-district-content-v1.json"
       ],
       "evidence": [
         "asset_validator_output"
@@ -153,7 +154,8 @@
       "order": 8,
       "editor_required": true,
       "source_contracts": [
-        "france-blockout-layout.json"
+        "france-blockout-layout.json",
+        "france-district-content-v1.json"
       ],
       "goals": [
         "run_build_france_blockout_py",
@@ -162,7 +164,9 @@
         "validate_five_vistas",
         "capture_player_edge_side_under_distance_views",
         "prove_three_altitudes_visible",
-        "prove_platform_has_visible_thickness"
+        "prove_platform_has_visible_thickness",
+        "validate_building_program_small_medium_large_iconic",
+        "validate_district_secrets_and_vertical_connections"
       ],
       "evidence": [
         "asset_validator_output",
