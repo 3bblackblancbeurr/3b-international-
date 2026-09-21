@@ -208,7 +208,7 @@ function WorldSession({uid,goTo}){
   if(!item)return;
   const actions=contextActions(item,{save:saveRef.current,region:snapshot.region}),contextAction=(actionId?actions.find(action=>action.id===actionId):actions[0])||primaryContextAction(item,{save:saveRef.current,region:snapshot.region});
   if(!contextAction)return;
-  const feedback=actionFeedback(contextAction.id);audio.current?.interaction?.(contextAction.id);if(soundCaptions&&feedback?.caption)captionAudio('['+feedback.caption+']');
+  const feedback=actionFeedback(contextAction.id);scene.current?.contextAction?.(contextAction.id,item);audio.current?.interaction?.(contextAction.id);if(soundCaptions&&feedback?.caption)captionAudio('['+feedback.caption+']');
   if(haptics&&feedback?.haptic&&globalThis.navigator?.vibrate){const pattern={light:12,medium:24,strong:[28,18,34]}[feedback.haptic];if(pattern)globalThis.navigator.vibrate(pattern);}
   if(item.type==='hubMissionAction'){
    const before=saveRef.current.hub?.missions?.[item.missionId],next=act({type:'hubMissionAction',missionId:item.missionId,actionId:item.actionId});if(!next)return;
