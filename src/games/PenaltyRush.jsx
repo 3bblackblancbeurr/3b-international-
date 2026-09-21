@@ -373,6 +373,9 @@ function InternationalPanel({ snapshot, profile, busy, request }) {
 
   const hasCallup = international.selectionStatus === 'preselected' && international.selectionId;
   const selected = international.selectionStatus === 'selected';
+  const neededRoleLabel = international.neededRole === 'pression'
+    ? 'Spécialiste des Duels d’Or'
+    : PLAYER_STYLES[international.neededRole]?.name || null;
 
   return (
     <section className="penalty-panel-page">
@@ -410,7 +413,7 @@ function InternationalPanel({ snapshot, profile, busy, request }) {
         <article><small>SÉLECTIONS</small><strong>{international.caps || 0}</strong><span>{international.goals || 0} but(s) international(aux)</span></article>
       </div>
 
-      <div className="penalty-rule-note">Parcours : radar national → observé → présélection → convocation → sélection. Une place internationale se gagne en multijoueur et ne peut pas être achetée.</div>
+      <div className="penalty-rule-note">{neededRoleLabel ? <><b>Besoin actuel de la sélection : {neededRoleLabel}.</b> {' '}Le besoin est recalculé selon les profils déjà retenus. </> : null}Parcours : radar national → observé → présélection → convocation → sélection. Une place internationale se gagne en multijoueur et ne peut pas être achetée.</div>
 
       <h2>Compétitions 3B</h2>
       <div className="penalty-competition-list">{COMPETITIONS.map((competition) => <article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
