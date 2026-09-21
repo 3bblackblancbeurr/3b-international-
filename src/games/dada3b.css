@@ -307,3 +307,10 @@
 }
 
 .dada3b-totem-preview img{width:40px;height:46px;object-fit:cover;border:2px solid color-mix(in srgb,var(--country) 75%,white);border-radius:50% 50% 18% 18%;box-shadow:0 8px 16px #0008,0 0 16px color-mix(in srgb,var(--country) 28%,transparent)}
+
+.dada3b-season-card{margin:22px 0;padding:18px;border:1px solid #d8b56b4d;border-radius:18px;background:radial-gradient(circle at top left,#d7b46c16,#09100f 58%)}
+.dada3b-season-card[data-status="draft"]{border-style:dashed}
+.dada3b-season-card h3{margin:6px 0 7px;color:#f0ddb0;font-size:20px}
+.dada3b-season-card p{margin:0;color:#a4ada7;font-size:11px;line-height:1.5}
+.dada3b-season-card>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
+.dada3b-season-card>div span{padding:6px 8px;border:1px solid #ffffff12;border-radius:999px;background:#0c1211;color:#bfc5c0;font-size:9px}
