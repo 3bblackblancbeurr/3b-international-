@@ -52,3 +52,12 @@
 .play-arrival .arrival-landmark{font:500 13px system-ui;letter-spacing:1px;color:#f6dfb3;margin:18px 0 0;text-shadow:0 2px 8px #16212f}.combat-retreat kbd{font-size:9px;opacity:.65;margin-left:8px}
 
 .combat-impact-layer{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}.combat-impact-layer b{position:absolute;color:#fff3c4;font:800 30px system-ui;text-shadow:0 2px 4px #243735,0 0 12px #2d2d2299;animation:combat-impact 1.1s ease-out both}.combat-impact-layer .impact-hero{color:#ffb5a3;animation-delay:.3s}.combat-impact-layer .impact-heal{color:#b1f3ce;animation-delay:.2s}@keyframes combat-impact{0%{opacity:0;transform:translate(-50%,0) scale(.8)}15%{opacity:1;transform:translate(-50%,-10px) scale(1.08)}65%{opacity:1}100%{opacity:0;transform:translate(-50%,-45px) scale(.95)}}@media(prefers-reduced-motion:reduce){.combat-impact-layer b{animation-name:combat-impact-still}}@keyframes combat-impact-still{0%,85%{opacity:1}100%{opacity:0}}
+
+
+.guardian-mechanic{
+ margin-top:8px;display:flex;flex-direction:column;gap:3px;padding:8px 11px;border-radius:12px;
+ border:1px solid #d9c68e38;background:#0c2428dc;color:#efe3bf;max-width:min(520px,90vw);
+}
+.guardian-mechanic strong{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#efd39a}
+.guardian-mechanic span{font-size:10px;line-height:1.45;color:#b9ccc5}
+@media(max-width:700px){.guardian-mechanic{max-width:92vw;padding:7px 9px}.guardian-mechanic span{font-size:9px}}
