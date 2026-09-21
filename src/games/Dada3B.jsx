@@ -89,6 +89,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const[onlineRoom,setOnlineRoom]=useState(null),[onlineMode,setOnlineMode]=useState('private'),[onlineCountry,setOnlineCountry]=useState('fr'),[roomCode,setRoomCode]=useState(''),[onlineBusy,setOnlineBusy]=useState(false),[onlineStatus,setOnlineStatus]=useState(''),[maxPlayers,setMaxPlayers]=useState(4),[leaderboard,setLeaderboard]=useState([]),[leaderboardBoard,setLeaderboardBoard]=useState('solo');
  const[cosmetics,setCosmetics]=useState(null),[cosmeticStatus,setCosmeticStatus]=useState('');
  const[tournaments,setTournaments]=useState([]),[tournament,setTournament]=useState(null),[tournamentCode,setTournamentCode]=useState(''),[tournamentTitle,setTournamentTitle]=useState('Tournoi DADA 3B'),[tournamentSize,setTournamentSize]=useState(4),[tournamentStatus,setTournamentStatus]=useState('');
+ const[metrics,setMetrics]=useState(null),[metricsStatus,setMetricsStatus]=useState('');
  const[a11y,setA11y]=useState(readA11y);
  const sequence=useRef(0),recorded=useRef(false);
  useEffect(()=>()=>{sequence.current++;closeDadaAudio();},[]);
@@ -224,6 +225,12 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  async function refreshLeaderboard(board=leaderboardBoard){
   setLeaderboardBoard(board);const data=await onlineAction('leaderboard',{board});if(data?.leaderboard)setLeaderboard(data.leaderboard);
  }
+ async function loadMetrics(){
+  setView('metrics');setMetricsStatus('Calcul des statistiques agrégées…');
+  if(!account.user){setMetricsStatus('Compte 3B requis.');return;}
+  try{const data=await dadaRequest('metrics');setMetrics(data.metrics||null);setMetricsStatus('Observatoire synchronisé.');}
+  catch(error){setMetricsStatus(error.message||'Observatoire indisponible.');}
+ }
  async function loadTournaments(){
   if(!account.user){setTournamentStatus('Compte 3B requis.');setView('tournaments');return;}
   setTournamentStatus('Chargement des tournois…');setView('tournaments');
@@ -281,6 +288,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection DADA</strong><small>Totems · dés · traces · plateaux · effets</small></button>
     <button onClick={loadTournaments}><strong>Tournois</strong><small>Brackets 4 / 8 / 16 · élimination directe</small></button>
     <button onClick={()=>setView('accessibility')}><strong>Accessibilité</strong><small>Contraste · texte · daltonisme · animations</small></button>
+    <button onClick={loadMetrics}><strong>Observatoire</strong><small>Durée · captures · timeouts · équilibre 7 jours</small></button>
    </div>
    {restored?.status==='playing'&&<button className="dada3b-primary dada3b-resume" onClick={resumeLocal}><Play size={17}/> Reprendre ma partie sauvegardée</button>}
    <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button><button onClick={()=>enterOnline('leaderboard')}>Classements</button></div>
@@ -298,6 +306,27 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     <RuleToggle checked={a11y.reducedMotion} onChange={v=>setA11y(x=>({...x,reducedMotion:v}))} label="Animations réduites" detail="Supprime zooms, pulsations et accélère les déplacements."/>
    </div>
    <div className="dada3b-event"><b>Clavier & lecteur d’écran</b><br/>Tous les Totems jouables, le dé, les réglages et les actions principales restent des boutons natifs. Les changements de tour et événements sont annoncés via zones live.</div>
+  </section></main>
+ </div>;
+
+ if(view==='metrics')return <div className="dada3b-shell" role="dialog" aria-modal="true">
+  <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Qualité & équilibre</small><strong>Observatoire DADA 3B</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
+  <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-observatory">
+   <span className="dada3b-kicker">DONNÉES AGRÉGÉES · FENÊTRE 7 JOURS · AUCUNE IDENTITÉ</span><h2>Surveiller le jeu réel.</h2>
+   {!metrics?<button className="dada3b-primary" disabled={!account.user} onClick={loadMetrics}>Actualiser</button>:<>
+    <div className="dada3b-metric-grid">
+     <article><strong>{metrics.matches}</strong><span>parties terminées</span></article>
+     <article><strong>{metrics.avgDurationSeconds?Math.round(metrics.avgDurationSeconds/60)+' min':'—'}</strong><span>durée moyenne</span></article>
+     <article><strong>{metrics.avgRolls||0}</strong><span>lancers / partie</span></article>
+     <article><strong>{metrics.avgCaptures||0}</strong><span>captures / partie</span></article>
+     <article><strong>{metrics.timeouts||0}</strong><span>timeouts cumulés</span></article>
+     <article><strong>{metrics.firstPlayerWinRate===null?'—':metrics.firstPlayerWinRate+' %'}</strong><span>victoires du 1er joueur</span></article>
+    </div>
+    <section className="dada3b-observatory-modes"><h3>Répartition des modes</h3>{Object.entries(metrics.byMode||{}).map(([mode,count])=><span key={mode}><b>{mode}</b>{count}</span>)}</section>
+    <div className="dada3b-event"><b>Lecture automatique</b><br/>{metrics.matches<10?'Échantillon encore trop faible pour conclure sur l’équilibrage.':metrics.firstPlayerWinRate!==null&&(metrics.firstPlayerWinRate>60||metrics.firstPlayerWinRate<40)?'Signal à examiner : le taux de victoire du premier joueur sort de la zone 40–60 %.':'Aucun signal évident d’avantage du premier joueur sur cette fenêtre.'}</div>
+    <button className="dada3b-secondary" onClick={loadMetrics}>Actualiser</button>
+   </>}
+   <p role="status">{metricsStatus}</p>
   </section></main>
  </div>;
 
