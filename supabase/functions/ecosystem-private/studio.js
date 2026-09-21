@@ -52,7 +52,7 @@ export const DEFAULT_DESIGN={
 
 export function garmentFamily(garment){return Object.keys(GARMENT_GROUPS).find(g=>GARMENT_GROUPS[g].includes(garment))||'Sur mesure';}
 const clean=(value,max=160)=>{const v=value??'';if(typeof v!=='string'||v.length>max||/[\u0000-\u001f]/.test(v))throw Error('Détail invalide.');return v.trim();};
-const pick=(value,list,fallback)=>{const v=value??fallback;if(!list.includes(v))throw Error('Option de design invalide.');return v;};
+const pick=(value,list,fallback)=>{const v=value===undefined?fallback:value;if(!list.includes(v))throw Error('Option de design invalide.');return v;};
 
 export function validateDesign(value){
  if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Design invalide.');
@@ -64,7 +64,7 @@ export function validateDesign(value){
  result.placement=pick(base.placement,['Poitrine','Centre','Dos','Manche','Jambe','Discret','Sans logo'],DEFAULT_DESIGN.placement);
  result.view=pick(base.view,['Face','Dos'],DEFAULT_DESIGN.view);
  for(const key of ['color','secondary','accent']){const v=base[key]??DEFAULT_DESIGN[key];if(typeof v!=='string'||!/^#[0-9a-f]{6}$/i.test(v))throw Error('Couleur invalide.');result[key]=v.toLowerCase();}
- const techniques=base.techniques??[];if(!Array.isArray(techniques)||techniques.length>8||techniques.some(t=>!TECHNIQUES.includes(t)))throw Error('Techniques invalides.');result.techniques=[...new Set(techniques)];
+ const techniques=Object.hasOwn(value,'techniques')?value.techniques:[];if(!Array.isArray(techniques)||techniques.length>8||techniques.some(t=>!TECHNIQUES.includes(t)))throw Error('Techniques invalides.');result.techniques=[...new Set(techniques)];
  for(const key of ['customGarment','customMaterial','customTechnique','personalization'])result[key]=clean(base[key],160);
  result.jerseySport=pick(base.jerseySport,JERSEY_SPORTS,DEFAULT_DESIGN.jerseySport);
  result.sleeve=pick(base.sleeve,JERSEY_SLEEVES,DEFAULT_DESIGN.sleeve);
@@ -93,6 +93,10 @@ export function designReadiness(value){
 
 export function textilePrompt(config,idea=''){
  const d=validateDesign(config),extra=String(idea||d.notes||'').trim().slice(0,2000);
+ if(d.garment!=='Maillot'){
+  const custom=(base,detail)=>detail?base+' ('+detail+')':base;
+  return 'Concept de mode 3B International. Pièce : '+custom(d.garment,d.customGarment)+'. Matière : '+custom(d.material,d.customMaterial)+'. Coupe : '+d.cut+'. Motif : '+d.pattern+'. Couleur : '+d.color+'. Accent : '+d.accent+'. Marquage : '+d.placement+'. Vue : '+d.view+'. Techniques : '+(d.techniques.join(', ')||'À définir')+(d.customTechnique?' — '+d.customTechnique:'')+'. Personnalisation : '+(d.personalization||'Sans texte ajouté')+'. '+extra+'\nPhotographie de prototype produit en studio, pièce entière, détails réalistes et finitions soignées, fond uni anthracite. Aucun logo de marque tierce. Réserver une zone propre pour poser le logo officiel 3B sans le redessiner. Ce visuel est un concept : compatibilité matière/technique, patronage, tailles et coût à valider par un atelier avant fabrication.';
+ }
  const identity=[
   d.teamName&&('équipe « '+d.teamName+' »'),
   d.playerName&&('nom dos « '+d.playerName+' »'),
