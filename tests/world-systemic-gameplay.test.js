@@ -141,7 +141,7 @@ test('co-op pose validation covers the real metropolis radius instead of the old
 });
 
 test('runtime surfaces use contextual prompts multimodal feedback and remappable controls',()=>{
- const hud=read('src/world/WorldHUD.jsx'),page=read('src/world/WorldPage.jsx'),scene=read('src/world/scene.js'),audio=read('src/world/audio.js');
+ const hud=read('src/world/WorldHUD.jsx'),page=read('src/world/WorldPage.jsx'),scene=read('src/world/scene.js'),audio=read('src/world/audio.js'),controls=read('src/world/CombatControls.jsx'),field=read('src/world/FieldEncounter.jsx');
  assert.match(hud,/contextActions/);
  assert.match(hud,/controlLabel\(controls,'interact'\)/);
  assert.doesNotMatch(hud,/<kbd>E<\/kbd>/);
@@ -155,4 +155,9 @@ test('runtime surfaces use contextual prompts multimodal feedback and remappable
  assert.doesNotMatch(scene,/key==='e'/);
  assert.match(audio,/function interaction\(actionId\)/);
  assert.match(audio,/actionFeedback/);
+ assert.match(hud,/play-context-actions/);
+ assert.match(hud,/onContextAction/);
+ assert.match(page,/scene\.current\?\.combatAction\(kind\)/);
+ assert.match(controls,/if\(e\.field\)onFieldAction\?\.\(kind\)/);
+ assert.match(field,/onFieldAction=\{onFieldAction\}/);
 });
