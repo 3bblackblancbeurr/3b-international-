@@ -75,7 +75,7 @@ export function createOriginsScene(host,{initial,onSnapshot,onSave,onMessage,onL
   if(kind==='vision'){if(visionCooldown>0)return;vision=7;visionCooldown=11;actors.hero.action('Cast');signal('vision');snapshot();return;}
   if(kind==='recenter'){yaw=heading+Math.PI;manual=0;return;}
   if(kind==='skip'){director.skip();cinematic=director.current;return;}
-  if(['light','heavy','circle'].includes(kind)&&(combat.attack||combat.dodge>0)){combatInput.queue(kind,time);return;}if(kind==='dodge')combatInput.clear();
+  if(['light','heavy','circle','guard'].includes(kind)&&(combat.attack||combat.dodge>0)){combatInput.queue(kind,time);return;}if(kind==='dodge')combatInput.clear();
   combat.loadout=state.avatar;combat.xp=state.xp;
   if(command(combat,kind,position,isCountry(state.zone)&&state.regions[state.zone].upgrade?'artisan':state.equipment)){if(kind!=='dodge'){const e=combat.enemy;if((regionalEncounter||state.zone==='france'&&!state.flags.defeated)&&distance(position,e)<8)heading=Math.atan2(e.x-position.x,e.z-position.z);actors.hero.face(Math.sin(heading),Math.cos(heading),.12);actors.hero.action(combatAnimation(kind),combat.attack?.definition?.duration);}else actors.hero.action('Hit');signal(kind);lastEvent=combat.event?.id||lastEvent;path=[];}
  }

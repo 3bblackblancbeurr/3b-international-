@@ -5,6 +5,7 @@ import {PARIS_DECOR,parisWalls} from './paris-layout.js';
 import {createLandmark} from './landmarks.js';
 import {addBuildingContact} from './contact-lighting.js';
 import {LANDMARK_SITE,heritageObstacles} from './heritage.js';
+import {addHeritagePlatform} from './heritage-platform.js';
 import {addCivicBuildings} from './civic-buildings.js';
 import {frontierState} from './frontier.js';
 import * as THREE from 'three';
@@ -18,9 +19,14 @@ import {addLivingPlaces,livingPlaceCollisions} from './places.js';
 import {addSettlement} from './settlement-mesh.js';
 import {addTownGardens} from './town-gardens.js';
 import {createNaturalGround} from './natural-ground.js';
+import {createPremiumWater} from './premium-water.js';
+import {addPremiumWaterfront} from './premium-waterfront.js';
+import {addPremiumMicroDetails} from './premium-microdetails.js';
+import {addPremiumWorldLighting} from './premium-lighting.js';
 import {addMeadow} from './vegetation.js';
 import {createFlora,FLORA_TYPES} from './flora.js';
 import {BIOMES,createTerrainField,randomFor,toLandscape} from './terrain.js';
+import {wetnessForWeather,advanceWetness} from './wetness.js';
 export const countryPalette=id=>{const b=BIOMES[id]||BIOMES.hub;return[b.sky,b.low,b.high];};
 export function bakeGeometry(source,matrix){
  const geometry=source.index?source.toNonIndexed():source.clone();
@@ -38,12 +44,23 @@ export function architecturalUV(geometry,scale){
  return geometry;
 }
 export function createLandscape(models,region,save,onError=console.error){
- const root=new THREE.Group(),owned=[],materials=new Map(),collisions=[],residents=[],stages=[],decorations=[],frontierGroups=[],resourceGroups=[];
+ const root=new THREE.Group(),owned=[],materials=new Map(),collisions=[],residents=[],stages=[],decorations=[],frontierGroups=[],resourceGroups=[],surfaceWetness={value:.06},surfaceDaylight={value:1};let wetnessState=.06,wetnessTarget=.06;
  const country=countryById[region],hub=!country,field=createTerrainField(region,save),{biome,lake,height}=field;
  const rng=randomFor(biome.seed),occlusion=createSceneryOcclusion(),architecture=createArchitecture(occlusion);
- let heritage=null;const genericBuildings=new THREE.Group();root.add(genericBuildings);
+ let heritage=null,premiumPlatform=null;const genericBuildings=new THREE.Group();root.add(genericBuildings);
  const flora=createFlora(region,biome.seed,occlusion);
- const mat=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materials.has(key)){const m=new THREE.MeshStandardMaterial({color,roughness:.92,...extra});materials.set(key,m);owned.push(m);}return materials.get(key);};
+ const mat=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materials.has(key)){const m=new THREE.MeshStandardMaterial({color,roughness:.92,...extra});
+  if(!extra.transparent){const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.worldWetness=surfaceWetness;shader.uniforms.worldDaylight=surfaceDaylight;shader.vertexShader='varying vec3 worldSurfacePos;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nworldSurfacePos=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 worldSurfacePos;uniform float worldWetness;uniform float worldDaylight;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+   float surfaceGrain=fract(sin(dot(floor(worldSurfacePos.xz*2.3),vec2(12.9898,78.233)))*43758.5453);
+   float surfaceStreak=smoothstep(.78,.985,fract(surfaceGrain+worldSurfacePos.y*.031));
+   float localWet=worldWetness*(.28+.72*surfaceStreak);
+   diffuseColor.rgb*=mix(1.,.76,localWet);
+   diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb+vec3(.008,.015,.022),(.18*(1.-worldDaylight))*localWet);
+  `).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+   float roughNoise=fract(sin(dot(floor(worldSurfacePos.xz*2.3),vec2(12.9898,78.233)))*43758.5453);
+   roughnessFactor=mix(roughnessFactor,.30,worldWetness*(.24+.76*smoothstep(.78,.985,roughNoise)));
+  `);};m.customProgramCacheKey=()=> '3b-world-surface-premium';}
+  materials.set(key,m);owned.push(m);}return materials.get(key);};
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),ball=geo(new THREE.IcosahedronGeometry(1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,24));
  function shape(geometry,material,x,y,z,sx=1,sy=sx,sz=sx,parent=root){const m=new THREE.Mesh(geometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.receiveShadow=true;m.castShadow=true;parent.add(m);return m;}
  function asset(name,x,z,scale=1,rotation=0,parent=root){
@@ -70,21 +87,22 @@ export function createLandscape(models,region,save,onError=console.error){
  const groundSize=hub?1500:1000,groundSegments=hub?200:220;const ground=geo(new THREE.PlaneGeometry(groundSize,groundSize,groundSegments,groundSegments));ground.rotateX(-Math.PI/2);
  const positions=ground.getAttribute('position'),colors=new Float32Array(positions.count*3),low=new THREE.Color(biome.low),high=new THREE.Color(biome.high),rock=new THREE.Color(biome.rock),color=new THREE.Color();
  for(let i=0;i<positions.count;i++){const x=positions.getX(i),z=positions.getZ(i),y=height(x,z);positions.setY(i,y);const mottling=.48+.12*Math.sin(x*.17)*Math.cos(z*.19)+.06*Math.sin(x*1.37-z*.82),slope=Math.abs(height(x+.7,z)-y)+Math.abs(height(x,z+.7)-y);color.copy(low).lerp(high,Math.max(0,Math.min(1,mottling))).lerp(rock,Math.min(.8,slope*.55));colors.set(color.toArray(),i*3);}
- ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);if(soil.texture)owned.push(soil.texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
+ ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);for(const texture of Object.values(soil.maps||{}))if(texture)owned.push(texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
  collisions.push({x:lake.x,z:lake.z,r:lake.r-1});
- const waterMat=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{time:{value:0},color:{value:new THREE.Color(region==='estonie'?'#3b7d89':'#4d9697')}},vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 p;uniform float time;uniform vec3 color;void main(){float waves=sin(p.x*2.4+p.y*.8+time*.8)*sin(p.y*3.1-time*.55);float light=pow(max(0.,waves),12.);gl_FragColor=vec4(color+vec3(.12,.17,.14)*waves*.18+light*.13,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});owned.push(waterMat);
- const water=shape(geo(new THREE.CircleGeometry(lake.r+2,64)),waterMat,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
+ const premiumWater=createPremiumWater({region,lake,owned});
+ const water=shape(geo(new THREE.CircleGeometry(lake.r+2,96)),premiumWater.material,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
+ const waterMist=shape(geo(new THREE.CircleGeometry(lake.r+7,64)),premiumWater.mistMaterial,lake.x,-1.08,lake.z);waterMist.rotation.x=-Math.PI/2;waterMist.castShadow=false;waterMist.receiveShadow=false;
+ premiumWater.attachMeshes(water,waterMist);
+ const waterfront=hub?addPremiumWaterfront({root,shape,geo,mat,height,lake,owned}):null;if(waterfront)premiumWater.setFoamContacts(waterfront.foamContacts);
  for(let i=0;i<20;i++){const a=rng()*Math.PI*2,r=lake.r+3+rng()*2,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;shape(ball,mat(biome.rock),x,height(x,z)-.1,z,.7+rng(),.4+rng()*.6,.7+rng());}
  for(let i=0;i<380;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
  for(let i=0;i<48;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
- const meadow=addMeadow(field,root,owned,region),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const meadow=addMeadow(field,root,owned,region),microDetails=addPremiumMicroDetails({region,field,root,owned}),premiumLighting=addPremiumWorldLighting({region,root,field}),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  addTownGardens(field,root,owned,region,flora);
  if(hub){
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
-  const core=toLandscape(region,0,-3);shape(cylinder,mat('#d9ceb0'),core.x,.18,core.z,3,.36,3);const orb=shape(ball,mat('#76bac0',{emissive:'#5a979e',emissiveIntensity:.3,metalness:.4}),core.x,3.5,core.z,1.1);decorations.push({orb});
-  for(let i=0;i<8;i++){const a=i*Math.PI/4,x=core.x+Math.cos(a)*18,z=core.z+Math.sin(a)*18;asset('Bench',x,z,.95,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.2);}
-  for(const radius of [4.2,7,21]){const ring=geo(new THREE.TorusGeometry(radius,.07,4,96));ring.rotateX(-Math.PI/2);const rim=shape(ring,mat('#dbbb76',{metalness:.45,roughness:.48}),core.x,.1,core.z);rim.castShadow=false;}
-  for(let i=0;i<3;i++){const ring=shape(geo(new THREE.TorusGeometry(1.9,.065,8,64)),mat('#d8bd80',{metalness:.5}),core.x,3.5,core.z);ring.rotation.set(Math.PI/3+i*.7,i*Math.PI/3,.4);}
+  const core=toLandscape(region,0,-3);premiumPlatform=addHeritagePlatform({root,shape,geo,mat,height,owned,center:core});
+  for(let i=0;i<8;i++){const a=i*Math.PI/4,x=core.x+Math.cos(a)*38,z=core.z+Math.sin(a)*38;asset('Bench',x,z,.95,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.2);}
   for(const [index,c] of COUNTRIES.entries()){
    const p=toLandscape(region,...c.portal),site=field.buildings[index];house(site.id,site.x,site.z,site.rotation,site.variant);tree(p.x-10,p.z-7,.95,BIOMES[c.id].tree);
    const group=new THREE.Group();root.add(group);const workshop=new THREE.Group(),garden=new THREE.Group();group.add(workshop,garden);asset('Market',p.x+10,p.z+6,.85,0,workshop);asset('Planter',p.x-9,p.z+4,1.6,0,garden);asset('Tree',p.x+9,p.z+6,.85,0,garden);batch(workshop);batch(garden);stages.push({group,country:c.id,workshop,garden});resident(p.x+7,p.z+5,c.color,group,index%2?'artisan':'woman');
@@ -154,9 +172,9 @@ export function createLandscape(models,region,save,onError=console.error){
  function setParty(party){const rank=party?.camps?.[region]?.rank||0;sharedCamp.visible=!hub;for(const s of sharedStages)s.group.visible=s.onlyZero?rank===0:rank>=s.rank;if(sharedCollision)sharedCollision.enabled=rank>0;}
  setParty(null);
  // Batch only static descendants. Keep visibility stages separate.
- const dynamic=[genericBuildings,regional.group,sharedCamp,paris.group,...(heritage?[heritage.root]:[]),...frontierGroups.map(p=>p.group),...resourceGroups.map(p=>p.group),...authored.groups,...stages.map(s=>s.group),...decorations.flatMap(d=>[d.landmark,d.ruin,d.garden,d.workshop,d.grove].filter(Boolean)),...residents.filter(r=>r.parent===root).map(r=>r.hero.object)];
+ const dynamic=[genericBuildings,regional.group,sharedCamp,paris.group,...(heritage?[heritage.root]:[]),...frontierGroups.map(p=>p.group),...resourceGroups.map(p=>p.group),...authored.groups,...stages.map(s=>s.group),...(premiumPlatform?[premiumPlatform.dynamicRoot]:[]),...decorations.flatMap(d=>[d.landmark,d.ruin,d.garden,d.workshop,d.grove].filter(Boolean)),...residents.filter(r=>r.parent===root).map(r=>r.hero.object)];
  for(const g of dynamic)g.removeFromParent();batch(root);for(const g of dynamic)if(!g.parent)root.add(g);
  function update(next){save=next;paris.update(save);const home=frontierState(save,region);for(const p of frontierGroups){p.group.visible=home[p.kind]>=(p.rank||1);if(p.collision)p.collision.enabled=p.group.visible;}for(const p of resourceGroups)p.group.visible=!home.harvest.includes(p.id);authored.update(save);const s=chapterState(save,region);heritage?.update(s.restored);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
- addBuildingContact(field,root,owned);flora.finish();update(save);
- return{root,setParty,get architectureDiagnostics(){return regional.diagnostics;},ready:Promise.all([paris.ready,regional.ready]),get interior(){return paris.interior;},updateDistrict(camera,position){paris.tick(camera,position);regional.tick(camera,position);},cinematicFocus(x,z,action='Talk',time=0){let best=null,dist=Infinity;for(const r of residents){const d=Math.hypot(r.hero.object.position.x-x,r.hero.object.position.z-z);if(d<dist){dist=d;best=r;}}if(best&&dist<18){best.hero.object.visible=true;best.hero.action?.(action);best.nextGesture=time+4;return true;}return false;},ground:terrain,collisions,height,field,update,setQuality:meadow.setQuality,updateCamera:occlusion.update,tick(time,dt,position){meadow.tick(reduceWind?0:time,position);flora.tick(reduceWind?0:time);waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&(r.route?Math.min(...r.route.points.map(p=>Math.hypot(position.x-p.x,position.z-p.z)))<38:Math.hypot(position.x-r.x,position.z-r.z)<46);if(r.hero.object.visible){if(r.route){const activity=residentSchedule(r.route,time,r.kind),x=activity.position.x,z=activity.position.z,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));if(activity.activity&&time>r.nextGesture){r.hero.action?.(activity.activity);r.nextGesture=time+3.5;}}else{r.hero.update(dt);if(time>r.nextGesture){r.hero.action?.(r.kind==='artisan'?'Work':'Talk');r.nextGesture=time+3+(r.phase%4);}if(Math.hypot(position.x-r.x,position.z-r.z)<7)r.hero.face?.(position.x-r.x,position.z-r.z,dt);}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){regional.dispose();paris.dispose();heritage?.dispose();flora.dispose();authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
+ const buildingContact=addBuildingContact(field,root,owned);flora.finish();update(save);
+ return{root,setParty,get architectureDiagnostics(){return regional.diagnostics;},ready:Promise.all([paris.ready,regional.ready]),get interior(){return paris.interior;},updateDistrict(camera,position){paris.tick(camera,position);regional.tick(camera,position);},renderWaterReflection(renderer,scene,camera,time){return premiumWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(x,z,action='Talk',time=0){let best=null,dist=Infinity;for(const r of residents){const d=Math.hypot(r.hero.object.position.x-x,r.hero.object.position.z-z);if(d<dist){dist=d;best=r;}}if(best&&dist<18){best.hero.object.visible=true;best.hero.action?.(action);best.nextGesture=time+4;return true;}return false;},ground:terrain,collisions,height,field,update,setQuality(mode,capabilities={}){meadow.setQuality(mode);premiumWater.setQuality(mode,capabilities);soil.setQuality?.(mode);microDetails.setQuality?.(mode);premiumLighting.setQuality?.(mode);buildingContact.setQuality?.(mode);},setWeather(value){wetnessTarget=wetnessForWeather(value);premiumWater.setWeather(value);},setDaylight(value){surfaceDaylight.value=Math.max(0,Math.min(1,Number(value)||0));premiumWater.setDaylight(value);soil.setDaylight?.(value);microDetails.setDaylight?.(value);premiumLighting.setDaylight?.(value);},updateCamera:occlusion.update,tick(time,dt,position){wetnessState=advanceWetness(wetnessState,wetnessTarget,dt);surfaceWetness.value=wetnessState;soil.setWetness?.(wetnessState);microDetails.setWetness?.(wetnessState);architecture.setWetness?.(wetnessState);buildingContact.setWetness?.(wetnessState);meadow.tick(reduceWind?0:time,position);flora.tick(reduceWind?0:time);premiumWater.update(time);for(const r of residents){r.hero.object.visible=r.parent.visible&&(r.route?Math.min(...r.route.points.map(p=>Math.hypot(position.x-p.x,position.z-p.z)))<38:Math.hypot(position.x-r.x,position.z-r.z)<46);if(r.hero.object.visible){if(r.route){const activity=residentSchedule(r.route,time,r.kind),x=activity.position.x,z=activity.position.z,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));if(activity.activity&&time>r.nextGesture){r.hero.action?.(activity.activity);r.nextGesture=time+3.5;}}else{r.hero.update(dt);if(time>r.nextGesture){r.hero.action?.(r.kind==='artisan'?'Work':'Talk');r.nextGesture=time+3+(r.phase%4);}if(Math.hypot(position.x-r.x,position.z-r.z)<7)r.hero.face?.(position.x-r.x,position.z-r.z,dt);}}}for(const d of decorations){if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}}if(premiumPlatform)premiumPlatform.tick(time);},dispose(){regional.dispose();paris.dispose();heritage?.dispose();flora.dispose();authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();premiumWater.disposeReflection?.();owned.forEach(r=>r.dispose());}};
 }

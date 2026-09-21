@@ -4,7 +4,7 @@ import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {COUNTRIES,CARDS} from '../src/world/catalog.js';
 import {CHAPTERS,chapterState,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,chapterCards} from '../src/world/chapters.js';
 import {applyWorldAction,advanceBattle,pactCue,pactCues} from '../src/world/engine.js';
-import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
+import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from '../src/world/guardian-values.js';
 const solutions={france:[0,1,2,3],italie:[0,3,4,7,8],estonie:[2],turquie:[0,0,1,1,2,2],algerie:[0,0,1,3,3,3],tunisie:[0,0,1,2,2,2],maroc:[0,1,1,2,2,2],espagne:[0,1,2,2]};
 const act=(s,type,extra={})=>applyWorldAction(s,{type,...extra});
 function prepare(s,id){
@@ -27,6 +27,17 @@ function battle(s){
 test('all eight distinct puzzles can be solved through their actual controls',()=>{
  assert.equal(new Set(Object.values(CHAPTERS).map(c=>c.kind)).size,8);
  for(const c of COUNTRIES){let b=puzzleStart(c.id);assert.equal(puzzleSolved(c.id,b),false);for(const i of solutions[c.id])b=puzzleStep(c.id,b,i);assert.equal(puzzleSolved(c.id,b),true,c.id);}
+});
+
+test('guardian value trials use three contextual dilemmas per country',()=>{
+ for(const country of COUNTRIES)for(let step=0;step<3;step++){
+  const state={step},scene=guardianValueStep(country.id,state),options=guardianValueOptions(country.id,state);
+  assert.ok(scene.prompt.length>30,country.id+' step '+step);
+  assert.equal(options.length,3);
+  assert.equal(options.filter(option=>option.correct).length,1);
+  assert.equal(options.find(option=>option.correct).id,GUARDIAN_VALUES[country.id].choices[step][0]);
+  assert.equal(new Set(options.map(option=>option.id)).size,3);
+ }
 });
 test('a fresh player can rebuild all eight countries and win the playable finale',()=>{
  let s=blankSave();
@@ -51,6 +62,10 @@ test('expert guardians have stronger attacks and a single distinct challenge rew
  let s=prepare(blankSave(),'france');s=act(s,'difficulty',{value:'expert'});s=act(s,'encounter',{id:'france:guardian'});assert.equal(s.adventure.encounter.expert,true);assert.ok(s.adventure.encounter.enemyMax>120);
  s=battle(s);assert.equal(chapterState(s,'france').challenge,true);const xp=s.xp;s=act(s,'leave');s=act(s,'encounter',{id:'france:guardian'});s=battle(s);assert.equal(s.xp-xp,35);
 });
-test('legacy progress survives while new story and final rewards remain unclaimed',()=>{
- const s=normalizeSave({...blankSave(),xp:1500,collection:{C001:2,C022:3},seals:['france','italie','estonie','turquie','algerie'],finalOpened:true,adventure:undefined});assert.equal(s.xp,1500);assert.equal(s.collection.C022,3);assert.equal(s.finalOpened,true);assert.equal(s.adventure.finished,false);assert.equal(nexusLevel(s),0);
+test('legacy progress survives but the final gate now requires all eight seals',()=>{
+ const five=['france','italie','estonie','turquie','algerie'];
+ const partial=normalizeSave({...blankSave(),xp:1500,collection:{C001:2,C022:3},seals:five,finalOpened:true,adventure:undefined});
+ assert.equal(partial.xp,1500);assert.equal(partial.collection.C022,3);assert.equal(partial.finalOpened,false);assert.equal(partial.adventure.finished,false);assert.equal(nexusLevel(partial),0);
+ const all=COUNTRIES.map(country=>country.id),complete=normalizeSave({...blankSave(),seals:all,finalOpened:true});
+ assert.equal(complete.finalOpened,true);
 });

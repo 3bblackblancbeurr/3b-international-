@@ -1,4 +1,5 @@
 const hash=input=>{let h=2166136261;for(let i=0;i<input.length;i+=1){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
+const GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
 
 export const HUB_METROPOLIS=Object.freeze({
   width:1800,
@@ -26,7 +27,7 @@ export function hubPortalPosition(portal){
 }
 
 const BUILDING_SHAPES={
-  tower_circle:[38,38,92],
+  tower_circle:[42,42,118],
   heritage_welcome:[34,24,18],
   mission_hotel:[46,32,28],
   memory_archives:[62,44,34],
@@ -77,17 +78,21 @@ function buildingItem(plan,building,index){
 function fillerItems(plan,profile){
   const perDistrict=profile==='desktop'?8:profile==='mobileHigh'?6:4;
   return plan.districts.flatMap((district)=>{
-    const center=hubDistrictPosition(plan,district.id);
+    const center=hubDistrictPosition(plan,district.id),districtSeed=hash(`${district.id}:layout`),baseRotation=(districtSeed%6283)/1000;
+    const stretchX=.84+((districtSeed>>>7)%25)/100,stretchZ=.84+((districtSeed>>>13)%25)/100;
     return Array.from({length:perDistrict},(_,index)=>{
-      const h=hash(`${district.id}:filler:${index}`),angle=index/perDistrict*Math.PI*2+((h%100)/100)*.35;
-      const ring=78+(index%3)*34+(h>>>9)%28;
-      const width=22+(h%24),depth=18+((h>>>5)%22),height=18+((h>>>11)%54);
+      const h=hash(`${district.id}:filler:${index}`),angle=baseRotation+index*GOLDEN_ANGLE+(((h>>>4)%100)/100-.5)*.22;
+      const band=index%4,ring=64+band*27+((h>>>9)%31);
+      const width=20+(h%26),depth=17+((h>>>5)%24),tierRoll=(h>>>11)%100,protectedVista=['heritage_square','broken_circle_tower','docks'].includes(district.id);
+      let height=tierRoll<58?14+((h>>>17)%18):tierRoll<90?30+((h>>>17)%28):60+((h>>>17)%24);
+      if(protectedVista&&height>52)height=34+((h>>>19)%18);
+      if(district.id==='broken_circle_tower')height=Math.min(height,44);
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
         district:district.id,
-        x:center.x+Math.cos(angle)*ring,
-        z:center.z+Math.sin(angle)*ring,
+        x:center.x+Math.cos(angle)*ring*stretchX,
+        z:center.z+Math.sin(angle)*ring*stretchZ,
         width,depth,height,
         tier:district.tier||0,
       };
@@ -105,9 +110,56 @@ function road(from,to,id,kind='avenue'){
     z:(from.z+to.z)/2,
     from,to,
     length,
-    width:kind==='express'?HUB_METROPOLIS.roadWidth+5:HUB_METROPOLIS.roadWidth,
+    width:kind==='express'?HUB_METROPOLIS.roadWidth+5:kind==='lane'?6.5:HUB_METROPOLIS.roadWidth,
     heading:Math.atan2(dx,dz),
   };
+}
+
+function segmentClearance(pointA,pointB,blockers){
+  const vx=pointB.x-pointA.x,vz=pointB.z-pointA.z,lengthSq=vx*vx+vz*vz||1;
+  let clearance=Infinity;
+  for(const blocker of blockers){
+    const wx=blocker.x-pointA.x,wz=blocker.z-pointA.z,t=Math.max(0,Math.min(1,(wx*vx+wz*vz)/lengthSq));
+    const x=pointA.x+vx*t,z=pointA.z+vz*t;
+    clearance=Math.min(clearance,Math.hypot(blocker.x-x,blocker.z-z)-blocker.r);
+  }
+  return clearance;
+}
+
+function metropolisBuildingBlockers(plan){
+  return plan.buildings.map((building,index)=>{
+    const center=hubDistrictPosition(plan,building.district),offset=buildingOffset(building.id,index),[width,depth]=BUILDING_SHAPES[building.id]||[42,30,22];
+    return {id:building.id,x:center.x+offset.x,z:center.z+offset.z,r:Math.hypot(width,depth)/2+8};
+  });
+}
+
+function laneAnchor(center,dx,dz,blockers){
+  const base=Math.atan2(dz,dx),angles=[0,.28,-.28,.56,-.56,.84,-.84,1.12,-1.12,1.4,-1.4];
+  let best=null;
+  for(const radius of [82,96,110,124])for(const delta of angles){
+    const angle=base+delta,point={x:center.x+Math.cos(angle)*radius,z:center.z+Math.sin(angle)*radius};
+    const clearance=Math.min(...blockers.map(blocker=>Math.hypot(point.x-blocker.x,point.z-blocker.z)-blocker.r));
+    const score=clearance-Math.abs(delta)*2;
+    if(!best||score>best.score)best={...point,score};
+  }
+  return {x:best.x,z:best.z};
+}
+
+function pedestrianLaneRoute(plan,fromId,toId,blockers){
+  const fromCenter=hubDistrictPosition(plan,fromId),toCenter=hubDistrictPosition(plan,toId),vx=toCenter.x-fromCenter.x,vz=toCenter.z-fromCenter.z,length=Math.hypot(vx,vz)||1,dx=vx/length,dz=vz/length,nx=-dz,nz=dx;
+  const from=laneAnchor(fromCenter,dx,dz,blockers),to=laneAnchor(toCenter,-dx,-dz,blockers),baseMid={x:(from.x+to.x)/2,z:(from.z+to.z)/2};
+  let best={mid:baseMid,clearance:Math.min(segmentClearance(from,baseMid,blockers),segmentClearance(baseMid,to,blockers))};
+  for(const bend of [30,50,70,90,115,145,180,220])for(const side of [-1,1]){
+    const mid={x:baseMid.x+nx*bend*side,z:baseMid.z+nz*bend*side};
+    const pointClearance=Math.min(...blockers.map(blocker=>Math.hypot(mid.x-blocker.x,mid.z-blocker.z)-blocker.r));
+    const clearance=Math.min(pointClearance,segmentClearance(from,mid,blockers),segmentClearance(mid,to,blockers));
+    if(clearance>best.clearance)best={mid,clearance};
+  }
+  return {from,mid:best.mid,to,clearance:best.clearance};
+}
+
+export function pedestrianLaneMinimumClearance(plan,lane){
+  return segmentClearance(lane.from,lane.to,metropolisBuildingBlockers(plan));
 }
 
 export function metropolisRoadItems(plan){
@@ -122,14 +174,29 @@ export function metropolisRoadItems(plan){
     if(district.id==='heritage_square')continue;
     roads.push(road(heritage,hubDistrictPosition(plan,district.id),`spoke:heritage_square:${district.id}`,'avenue'));
   }
+
+  // Human-scale shortcuts use safe district-edge anchors and deterministic
+  // bends chosen for maximum clearance from canonical building footprints.
+  const shortcuts=[
+    ['archives','innovation'],['community','commerce'],['gardens','city3b_portal'],
+    ['docks','commerce'],['arena','broken_circle_tower'],
+  ],blockers=metropolisBuildingBlockers(plan);
+  for(const [fromId,toId] of shortcuts){
+    const route=pedestrianLaneRoute(plan,fromId,toId,blockers);
+    roads.push(
+      road(route.from,route.mid,`lane:${fromId}:${toId}:a`,'lane'),
+      road(route.mid,route.to,`lane:${fromId}:${toId}:b`,'lane'),
+    );
+  }
   return roads;
 }
 
 export function metropolisTrafficItems(plan,profile){
-  const roads=metropolisRoadItems(plan).filter((_,index)=>index%2===0);
+  const roads=metropolisRoadItems(plan).filter(route=>route.kind!=='lane').filter((_,index)=>index%2===0);
   const count=profile==='desktop'?12:profile==='mobileHigh'?8:5;
   return Array.from({length:count},(_,index)=>{
-    const route=roads[index%roads.length],phase=(index+.5)/count;
+    const route=roads[index%roads.length],h=hash(`${route.id}:traffic:${index}`);
+    const basePhase=(index+.5)/count,jitter=(((h>>>5)%100)/100-.5)*.62/count,phase=Math.max(.04,Math.min(.96,basePhase+jitter));
     return {
       id:`hub:traffic:${index}`,
       type:'hubTraffic',
@@ -137,7 +204,7 @@ export function metropolisTrafficItems(plan,profile){
       from:route.from,
       to:route.to,
       phase,
-      speed:10+(index%4)*2.5,
+      speed:9+((h>>>12)%76)/10,
       x:route.from.x+(route.to.x-route.from.x)*phase,
       z:route.from.z+(route.to.z-route.from.z)*phase,
     };

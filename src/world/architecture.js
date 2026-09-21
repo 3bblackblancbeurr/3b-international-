@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import {surfaceTexture} from './surfaces.js';
-import {buildingDimensions} from './building-scale.js';
+import {surfaceMaterialMaps} from './surfaces.js';
+import {buildingDimensions,facadeBayCount} from './building-scale.js';
+import {wetnessForWeather} from './wetness.js';
 
 // A facade is assembled as piers, spandrels, recessed glazing and cornices.
 // Keeping real depth lets the same daylight describe every country's architecture.
 export function createArchitecture(occlusion){
- const geometries=[],materials=new Map(),textures=new Map();
+ const geometries=[],materials=new Map(),textures=new Map(),wetness={value:.06};
  const geo=g=>(geometries.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,16)),dome=geo(new THREE.SphereGeometry(1,20,12,0,Math.PI*2,0,Math.PI/2));
  const hip=geo(new THREE.CylinderGeometry(.56,1,1,4));hip.rotateY(Math.PI/4);
  const triangular=new THREE.Shape();triangular.moveTo(-.5,0);triangular.lineTo(.5,0);triangular.lineTo(0,1);triangular.closePath();const gable=geo(new THREE.ExtrudeGeometry(triangular,{depth:1,bevelEnabled:false}));gable.translate(0,0,-.5);
@@ -23,10 +24,20 @@ export function createArchitecture(occlusion){
  };
  const mat=(color,kind='stone')=>{
   const key=color+kind;if(materials.has(key))return materials.get(key);
-  const glass=kind==='glass',metal=kind==='metal',surface=glass||metal?null:kind;
-  if(surface&&!textures.has(surface))textures.set(surface,surfaceTexture(surface));
-  const m=new THREE.MeshStandardMaterial({color,map:surface?textures.get(surface):null,roughness:glass?.19:metal?.36:.82,metalness:glass?.25:metal?.75:0,envMapIntensity:glass?1.65:1});
-  if(surface)m.userData.worldTexScale=kind==='limestone'?5:kind==='timber'?4:3;
+  const glass=kind==='glass',metal=kind==='metal',surface=glass?null:metal?'metal':kind==='plaster'?'concrete':kind;
+  if(surface&&!textures.has(surface))textures.set(surface,surfaceMaterialMaps(surface));
+  const maps=surface?textures.get(surface):null;
+  const m=glass?new THREE.MeshPhysicalMaterial({color,roughness:.12,metalness:.03,transmission:.14,ior:1.46,thickness:.12,specularIntensity:.92,clearcoat:.56,clearcoatRoughness:.10,envMapIntensity:1.7}):new THREE.MeshStandardMaterial({color,map:maps?.map||null,bumpMap:maps?.bumpMap||null,roughnessMap:maps?.roughnessMap||null,bumpScale:kind==='timber'?.035:metal?.012:.026,roughness:1,metalness:metal?.82:0,envMapIntensity:metal?1.3:1});
+  if(surface)m.userData.worldTexScale=kind==='limestone'?5:kind==='timber'?4:kind==='metal'?2.5:3;
+  const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.archWetness=wetness;shader.vertexShader='varying vec3 archWorld;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\narchWorld=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 archWorld;uniform float archWetness;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+   float archNoise=fract(sin(dot(floor(archWorld.xz*1.7),vec2(12.9898,78.233)))*43758.5453);
+   float archStreak=smoothstep(.72,.98,fract(archNoise+archWorld.y*.037));
+   float archWet=archWetness*(.42+.58*archStreak);
+   diffuseColor.rgb*=mix(1.,.72,archWet);
+  `).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+   float archNoiseR=fract(sin(dot(floor(archWorld.xz*1.7),vec2(12.9898,78.233)))*43758.5453);
+   roughnessFactor=mix(roughnessFactor,.28,archWetness*(.34+.66*smoothstep(.72,.98,archNoiseR)));
+  `);};m.customProgramCacheKey=()=> '3b-architecture-premium-'+kind;
   occlusion?.apply(m);materials.set(key,m);return m;
  };
  function building(region,variant=0,{urban=true}={}){
@@ -37,7 +48,7 @@ export function createArchitecture(occlusion){
   b('#6d6c60',0,h/2,0,w-.85,h,depth-.85,g,s.kind);
   b(s.trim,0,.3,0,w+.35,.6,depth+.35);
   for(let face=0;face<4;face++){
-   const front=new THREE.Group();front.rotation.y=face*Math.PI/2;g.add(front);const span=face%2?depth:w,z=(face%2?w:depth)/2,bays=3,pitch=(span-.75)/bays,opening=pitch*.63;
+   const front=new THREE.Group();front.rotation.y=face*Math.PI/2;g.add(front);const span=face%2?depth:w,z=(face%2?w:depth)/2,bays=facadeBayCount(span,variant,face),pitch=(span-.75)/bays,opening=pitch*.63,doorCol=bays%2?Math.floor(bays/2):1+(variant%2);
    const east=['maroc','tunisie','algerie'].includes(region);
    for(let floor=0;floor<floors;floor++){
     const y=floor*storey,winHeight=floor?3.25:3.8,sill=floor?1.0:.55;
@@ -45,7 +56,7 @@ export function createArchitecture(occlusion){
     b(wall,0,y+(sill+winHeight+storey)/2,z,span,storey-sill-winHeight,.52,front,s.kind);
     for(let col=0;col<=bays;col++){const x=-span/2+.2+col*(span-.4)/bays;b(wall,x,y+storey/2,z,pitch-opening,storey,.62,front,s.kind);}
     for(let col=0;col<bays;col++){
-     const x=(col-1)*pitch,door=floor===0&&face===0&&col===1,base=y+(door?.08:sill),height=door?d.doorHeight:winHeight,ww=door?d.doorWidth:opening;
+     const x=(col-(bays-1)/2)*pitch,door=floor===0&&face===0&&col===doorCol,base=y+(door?.08:sill),height=door?d.doorHeight:winHeight,ww=door?d.doorWidth:opening;
      b(s.wood,x,base+height/2,z-.28,ww+.08,height,.11,front,'timber');
      if(!door){
       b('#183942',x,base+height/2+.03,z-.20,ww-.22,height-.22,.055,front,'glass');
@@ -103,5 +114,6 @@ export function createArchitecture(occlusion){
   }
   return g;
  }
- return{building,dispose(){textures.forEach(t=>t?.dispose());geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ const setWetness=value=>{wetness.value=Math.max(0,Math.min(1,Number(value)||0));};
+ return{building,setWetness,setWeather(weather){setWetness(wetnessForWeather(weather));},dispose(){textures.forEach(bundle=>Object.values(bundle||{}).forEach(t=>t?.dispose?.()));geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }

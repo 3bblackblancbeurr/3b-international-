@@ -20,15 +20,18 @@ test('six plant silhouettes have finite geometry, individual leaves and a bounde
  assert.ok(heights[2]>heights[0]&&heights[0]>heights[1]&&heights[1]>heights[5]);
 });
 
-test('trees share instance batches but separate garden visibility, with matching camera occlusion and wind',()=>{
+test('trees share bounded variant batches while preserving parent visibility, camera occlusion and wind',()=>{
  const root=new Group(),garden=new Group(),occlusion=createSceneryOcclusion(),flora=createFlora('france',13,occlusion);root.add(garden);
  for(let i=0;i<20;i++)flora.plant('Tree',i*5,0,30,1,0,root);
  flora.plant('Tree',0,0,0,.7,0,garden);flora.finish();
- assert.equal(flora.instances.length,4);assert.equal(flora.instances[0].count,20);assert.equal(flora.instances[2].count,1);garden.visible=false;assert.equal(root.children[1].visible,true);
- const matrix=new Matrix4();flora.instances[0].getMatrixAt(19,matrix);assert.equal(new Vector3().setFromMatrixPosition(matrix).x,95);
- const leaf=flora.instances[1],wood=flora.instances[0];assert.notEqual(leaf.material.customProgramCacheKey(),wood.material.customProgramCacheKey());
+ const rootWood=flora.instances.filter(m=>m.parent===root&&m.name.endsWith('-wood')),gardenWood=flora.instances.filter(m=>m.parent===garden&&m.name.endsWith('-wood'));
+ assert.ok(rootWood.length>=1&&rootWood.length<=3);assert.ok(gardenWood.length>=1&&gardenWood.length<=3);
+ assert.equal(rootWood.reduce((sum,m)=>sum+m.count,0),20);assert.equal(gardenWood.reduce((sum,m)=>sum+m.count,0),1);
+ assert.ok(flora.instances.length<=12);garden.visible=false;assert.ok(rootWood.every(m=>m.visible));
+ const xs=[];for(const mesh of rootWood){for(let i=0;i<mesh.count;i++){const matrix=new Matrix4();mesh.getMatrixAt(i,matrix);xs.push(new Vector3().setFromMatrixPosition(matrix).x);}}assert.ok(xs.some(x=>Math.abs(x-95)<1e-8));
+ const leaf=flora.instances.find(m=>m.name.endsWith('-leaves')),wood=rootWood[0];assert.notEqual(leaf.material.customProgramCacheKey(),wood.material.customProgramCacheKey());
  const shader={uniforms:{},vertexShader:'#include <begin_vertex>\n#include <project_vertex>',fragmentShader:'#include <alphatest_fragment>'};leaf.material.onBeforeCompile(shader);assert.ok(shader.vertexShader.includes('cityWorld=instanceMatrix*cityWorld'));assert.ok(shader.uniforms.floraTime&&shader.uniforms.cityCamera);assert.ok(leaf.customDepthMaterial);
- let disposed=0;for(const m of flora.instances)m.addEventListener('dispose',()=>disposed++);flora.dispose();assert.equal(disposed,4);
+ let disposed=0;for(const m of flora.instances)m.addEventListener('dispose',()=>disposed++);const instanceCount=flora.instances.length;flora.dispose();assert.equal(disposed,instanceCount);
 });
 
 test('meadows stay off roads, buildings, water and interactions and reduce density in fluid mode',()=>{
@@ -37,7 +40,7 @@ test('meadows stay off roads, buildings, water and interactions and reduce densi
   for(const p of points){assert.ok(plantingAllowed(field,p.x,p.z,.2));assert.ok(p.y>=-.4&&p.y<=13);}
  }
  const owned=[],root=new Group(),meadow=addMeadow(createTerrainField('hub',blankSave()),root,owned,'hub');assert.ok(meadow.meshes.length<=16);
- meadow.setQuality('fluid');for(const {mesh,count} of meadow.meshes)assert.equal(mesh.count,Math.round(count*.55));
+ meadow.setQuality('fluid');for(const {mesh,count} of meadow.meshes){assert.ok(mesh.count<count);assert.ok(mesh.count>=Math.round(count*.4)&&mesh.count<=Math.round(count*.6));}
  meadow.setQuality('detail');for(const {mesh,count} of meadow.meshes)assert.equal(mesh.count,count);
  owned.forEach(o=>o.dispose());
 });

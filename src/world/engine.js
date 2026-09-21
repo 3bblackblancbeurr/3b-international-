@@ -261,7 +261,7 @@ export function applyWorldAction(input,action){
   case 'nexusStyle':return adventure(s,{nexusStyle:action.value==='workshop'?'workshop':'garden'});
   case 'walk':{requireThat(Number.isFinite(action.metres)&&action.metres>0&&action.metres<=200,'Distance invalide.');const walked=s.walked+Math.floor(action.metres),credits=Math.floor(walked/100)-Math.floor(s.walked/100);s=gain(s,{walked});return adventure(s,{outdoorCredits:Math.min(50,s.adventure.outdoorCredits+credits)});}
   case 'final':{
-   peaceful();requireThat(region==='hub'&&nexusLevel(s)===8&&s.seals.length===8,'Reconstruis les huit pays et réunis les huit sceaux.');requireThat(!s.adventure.finished,'L’Union est déjà retrouvée.');
+   peaceful();requireThat(region==='hub'&&nexusLevel(s)===COUNTRIES.length&&s.seals.length===COUNTRIES.length,'Reconstruis les huit pays et réunis les huit sceaux.');requireThat(!s.adventure.finished,'L’Union est déjà retrouvée.');
    const card=CARDS.find(c=>c.id==='C164'),enc=makeEncounter(card,s,true);enc.hp=enc.maxHP+=40;enc.enemy=enc.enemyMax=360;
    return adventure(s,{encounter:{...enc,recoveries:2,final:true,region:'france',expert:false,phase:1,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Protège ton équipe et attends ses ouvertures.'}});
   }

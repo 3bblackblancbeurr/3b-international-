@@ -18,3 +18,14 @@ export function lodForDistance(distance,profile=STREAMING_PROFILES.auto){
  return 3;
 }
 export function shouldRenderAtDistance(distance,profile){return lodForDistance(distance,profile)<3;}
+
+
+export function lodForDistanceHysteresis(distance,profile=STREAMING_PROFILES.auto,previous=null,margin=.08){
+ const base=previous==null?lodForDistance(distance,profile):Math.max(0,Math.min(3,Math.round(previous)));
+ if(previous==null)return base;
+ const d=Number.isFinite(distance)?Math.max(0,distance):Infinity,thresholds=[profile.near,profile.mid,profile.far];
+ let lod=base;
+ while(lod<3&&d>thresholds[lod]*(1+margin))lod++;
+ while(lod>0&&d<thresholds[lod-1]*(1-margin))lod--;
+ return lod;
+}

@@ -48,25 +48,45 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
   else if(context.playerVisible===true&&distance<9)state='Observe';
   else if(item.activity==='repos')state='Idle';
   else if(item.activity==='travail'||item.activity==='préparation')state='Work';
-  else if(item.activity==='rencontre publique')state='Talk';
+  else if(item.activity==='rencontre publique'||item.activity==='pause de midi')state='Talk';
+  else if(item.activity==='abri météo')state='Idle';
+  else if(item.activity==='promenade')state='Walk';
 
   if(context.returnToRoutine===true)state='ReturnToRoutine';
-  if(tier==='abstract')return {x:baseX,z:baseZ,heading:phase,state,needs,tier,updateHz};
+  const moving=['Walk','ReturnToRoutine','Investigate','Help','Flee'].includes(state);
+  if(tier==='abstract')return {x:baseX,z:baseZ,heading:phase,state,needs,tier,updateHz,moving:false};
 
-  const tierScale=tier==='full'?1:.55;
-  const activityRadius=state==='Work'?.9:state==='Talk'?1.25:state==='Idle'?.18:2.2;
-  const radius=(activityRadius+((seed>>>8)%120)/100)*tierScale;
-  const speed=(state==='Idle'?.025:state==='Work'?.07:state==='Talk'?.045:.14)+((seed>>>16)%12)/1000;
-  const angle=phase+timeSeconds*speed;
-  const pausePulse=Math.sin(timeSeconds*.37+phase);
-  const walking=state==='Walk'||state==='ReturnToRoutine'||state==='Investigate'||state==='Help'||state==='Flee';
-  const movementScale=walking?1:Math.max(.18,.45+pausePulse*.15);
-  const x=baseX+Math.cos(angle)*radius*movementScale;
-  const z=baseZ+Math.sin(angle)*radius*movementScale;
-  return {x,z,heading:angle+Math.PI/2,state,needs,tier,updateHz};
+  const tierScale=tier==='full'?1:.62;
+  if(!moving){
+    // Work, Talk, Observe and Idle should read as intentional activities, not people
+    // orbiting their home point. Keep only a few centimetres of root drift.
+    const stanceRadius=(state==='Work'?.12:state==='Talk'?.09:state==='Observe'?.055:.035)*tierScale;
+    const stanceSpeed=.08+((seed>>>16)%7)/100;
+    const sway=timeSeconds*stanceSpeed+phase;
+    const x=baseX+Math.cos(sway*1.13)*stanceRadius;
+    const z=baseZ+Math.sin(sway*.87)*stanceRadius;
+    const heading=phase+Math.sin(timeSeconds*.16+phase)*.22;
+    return {x,z,heading,state,needs,tier,updateHz,moving:false};
+  }
+
+  // A pair of incommensurate harmonics produces a compact, deterministic
+  // pedestrian loop without the obvious circular "NPC orbit" pattern.
+  const urgency=state==='Flee'?1.55:state==='Help'?1.18:state==='Investigate'?.92:1;
+  const radius=(1.65+((seed>>>8)%125)/100)*tierScale*urgency;
+  const speed=(.11+((seed>>>16)%15)/1000)*urgency;
+  const t=timeSeconds*speed+phase;
+  const skew=.72+((seed>>>24)%20)/100;
+  const x=baseX+(Math.cos(t)*.78+Math.cos(t*.47+phase*1.7)*.31)*radius;
+  const z=baseZ+(Math.sin(t)*skew+Math.sin(t*.63-phase*.8)*.24)*radius;
+  const eps=.025;
+  const t2=t+eps;
+  const x2=baseX+(Math.cos(t2)*.78+Math.cos(t2*.47+phase*1.7)*.31)*radius;
+  const z2=baseZ+(Math.sin(t2)*skew+Math.sin(t2*.63-phase*.8)*.24)*radius;
+  const heading=Math.atan2(x2-x,z2-z);
+  return {x,z,heading,state,needs,tier,updateHz,moving:true};
 }
 
 export function hubNpcPose(item,timeSeconds,context={}){
   const simulation=hubNpcSimulation(item,timeSeconds,context);
-  return {x:simulation.x,z:simulation.z,heading:simulation.heading,state:simulation.state,needs:simulation.needs,tier:simulation.tier,updateHz:simulation.updateHz};
+  return {x:simulation.x,z:simulation.z,heading:simulation.heading,state:simulation.state,needs:simulation.needs,tier:simulation.tier,updateHz:simulation.updateHz,moving:simulation.moving};
 }

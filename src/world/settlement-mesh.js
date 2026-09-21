@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {REGIONS} from './settlements.js';
-import {surfaceTexture} from './surfaces.js';
+import {surfaceMaterialMaps} from './surfaces.js';
 
 export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned}){
- const c=REGIONS[region],{height,roads,squares,fields,biome}=field,texture=surfaceTexture('stone'),soil=surfaceTexture('earth');if(texture)owned.push(texture);if(soil)owned.push(soil);
- let paving=mat(c.paving,{map:texture,bumpMap:texture,bumpScale:.085,roughness:.96}),earth=mat(c.earth,{map:soil,bumpMap:soil,bumpScale:.07}),wood=mat('#72604b'),iron=mat('#3c5352',{metalness:.55});
+ const c=REGIONS[region],{height,roads,squares,fields,biome}=field,stoneMaps=surfaceMaterialMaps('stone'),earthMaps=surfaceMaterialMaps('earth');for(const bundle of [stoneMaps,earthMaps])for(const texture of Object.values(bundle))if(texture)owned.push(texture);
+ let paving=mat(c.paving,{...stoneMaps,bumpScale:.06,roughness:1}),earth=mat(c.earth,{...earthMaps,bumpScale:.05,roughness:1}),wood=mat('#72604b',{roughness:.78}),iron=mat('#26363a',{metalness:.62,roughness:.42}),edge=mat('#5c584d',{roughness:.98}),curb=mat('#7d817d',{roughness:.82}),wetSeam=mat('#283336',{roughness:.48,metalness:.08});
  if(region!=='hub'&&typeof document!=='undefined'){const loader=new THREE.TextureLoader(),maps={};for(const [key,channel] of [['map','Diffuse'],['normalMap','nor_gl'],['roughnessMap','Rough']]){const t=loader.load('/world/paris/textures/cobblestone_floor_08_'+channel+'.jpg');t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;if(key==='map')t.colorSpace=THREE.SRGBColorSpace;owned.push(t);maps[key]=t;}paving=mat(region==='france'?'#e0dacd':c.paving,{...maps,normalScale:new THREE.Vector2(.35,.35),roughness:.85});}
  function strip(points,width,material){
   const dense=[points[0]],verts=[],uv=[],indices=[],lift=material===paving?.08:.035;
@@ -17,10 +17,14 @@ export function addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat
   const g=geo(new THREE.BufferGeometry());g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();const mesh=new THREE.Mesh(g,material);mesh.receiveShadow=true;root.add(mesh);
  }
 
- for(const road of roads){if(road.kind==='street')strip(road.points,road.width+.55,mat('#a79d87'));strip(road.points,road.width,road.kind==='street'?paving:earth);}
+ for(const road of roads){
+  if(road.kind==='street'){strip(road.points,road.width+1.45,edge);strip(road.points,road.width+.78,curb);strip(road.points,road.width+.34,wetSeam);}
+  strip(road.points,road.width,road.kind==='street'?paving:earth);
+ }
  for(const p of squares){const g=geo(new THREE.CircleGeometry(p.r,48));g.rotateX(-Math.PI/2);const a=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<a.count;i++){a.setY(i,height(a.getX(i)+p.x,a.getZ(i)+p.z)+.052);uv.setXY(i,(a.getX(i)+p.x)/5,(a.getZ(i)+p.z)/5);}g.computeVertexNormals();const square=shape(g,paving,p.x,0,p.z);square.castShadow=false;}
  for(const plot of field.buildings.filter(p=>p.urban)){
   const apron=shape(box,paving,plot.x,height(plot.x,plot.z)-.03,plot.z,plot.width+2.7,.16,plot.depth+3.8);apron.rotation.y=plot.rotation;apron.castShadow=false;
+  const baseSeam=shape(box,wetSeam,plot.x,height(plot.x,plot.z)+.035,plot.z,plot.width+1.05,.035,plot.depth+1.05);baseSeam.rotation.y=plot.rotation;baseSeam.castShadow=false;
  }
  // An open artisan courtyard: usable entrance, market stalls, signs and seating.
  const workshop=field.anchors.find(a=>a.type==='atelier');if(workshop&&!['maroc','france'].includes(region)){const {x,z}=workshop;
