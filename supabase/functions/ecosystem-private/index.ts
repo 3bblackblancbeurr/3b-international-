@@ -14,6 +14,7 @@ const env=(key:string)=>Deno.env.get(key)||'';
 const capability=()=>{const enabled=env('AI_ENABLED')==='true';return{image:enabled&&!!env('OPENAI_API_KEY')&&!!env('OPENAI_IMAGE_MODEL'),gpt:enabled&&!!env('OPENAI_API_KEY')&&!!env('OPENAI_CHAT_MODEL'),claude:enabled&&!!env('ANTHROPIC_API_KEY')&&!!env('ANTHROPIC_CHAT_MODEL'),gemini:enabled&&!!env('GEMINI_API_KEY')&&!!env('GEMINI_CHAT_MODEL')};};
 const text=(value:unknown,min:number,max:number)=>{if(typeof value!=='string')throw new Failure(400,'Texte invalide.');const s=value.trim();if(s.length<min||s.length>max||/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(s))throw new Failure(400,'Vérifie la longueur et le contenu du texte.');return s;};
 const uuid=(value:unknown)=>{if(typeof value!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))throw new Failure(400,'Référence invalide.');return value;};
+const challengeCode=(value:unknown)=>{const s=text(value,3,50);if(!/^[a-z0-9-]+$/.test(s))throw new Failure(400,'Défi invalide.');return s;};
 function check(result:any){if(result.error)throw new Failure(503,'La demande n’a pas abouti. Réessaie dans un instant.');return result.data;}
 async function rate(uid:string,action:string,limit:number,window=60){const ok=check(await admin.rpc('loyalty_rate',{p_key:'ecosystem:'+action+':'+uid,p_limit:limit,p_window:window}));if(!ok)throw new Failure(429,'Tu as atteint la limite de cette action. Réessaie plus tard.');}
 async function authenticate(req:Request){
@@ -29,6 +30,45 @@ async function sports(){
  if(cache?.payload?.version===2&&Date.now()-Date.parse(cache.updated_at)<600000)return{...cache.payload,stale:false};
  try{const payload=await fetchSports();check(await admin.from('sport_cache').upsert({id:'headlines',payload,updated_at:payload.updatedAt}));return{...payload,stale:false};}
  catch{if(cache)return{...cache.payload,stale:true};throw new Failure(503,'Les sources sportives sont momentanément indisponibles. Réessaie dans quelques minutes.');}
+}
+const CHALLENGE_ERRORS={
+ challenge_unavailable:'Ce défi n’est plus disponible.',
+ member_required:'Active ton compte 3B pour participer.',
+ challenge_not_joined:'Rejoins d’abord ce défi.',
+ challenge_already_verified:'Ce défi est déjà validé.',
+ challenge_under_review:'Ta réussite est déjà en cours de validation.',
+ challenge_abandoned:'Reprends le défi avant d’ajouter une progression.',
+ challenge_target_not_reached:'L’objectif doit être atteint avant l’envoi en validation.',
+ challenge_proof_required:'Ajoute une preuve ou une explication de 10 à 1200 caractères.',
+ challenge_locked:'Ce défi ne peut plus être abandonné pendant ou après la validation.',
+ challenge_not_pending:'Cette validation n’est plus en attente.',
+ staff_required:'Accès réservé à la validation 3B.',
+ invalid_checkin:'Progression invalide.',
+ invalid_review:'Validation invalide.'
+};
+function challengeCheck(result:any){
+ if(!result.error)return result.data;
+ const raw=String(result.error.message||'');
+ const code=Object.keys(CHALLENGE_ERRORS).find(key=>raw.includes(key));
+ throw new Failure(code==='staff_required'?403:code&&['challenge_already_verified','challenge_under_review','challenge_locked','challenge_not_pending'].includes(code)?409:400,code?CHALLENGE_ERRORS[code]:'La progression du défi n’a pas pu être enregistrée.');
+}
+async function sportChallengeSnapshot(uid:string){
+ await rate(uid,'sport-challenge-read',90,60);
+ const [catalogResult,entriesResult,checkinsResult,staffResult]=await Promise.all([
+  admin.from('sport_challenges').select('*').eq('active',true).order('sort_order'),
+  admin.from('sport_challenge_entries').select('*').eq('user_id',uid).order('updated_at',{ascending:false}),
+  admin.from('sport_challenge_checkins').select('challenge_id,challenge_day,value,note,created_at,updated_at').eq('user_id',uid).order('challenge_day',{ascending:false}).limit(80),
+  admin.from('community_staff').select('user_id').eq('user_id',uid).maybeSingle()
+ ]);
+ const catalog=check(catalogResult),entries=check(entriesResult),checkins=check(checkinsResult),moderator=!!check(staffResult);
+ let pending:any[]=[];
+ if(moderator){
+  const rows=check(await admin.from('sport_challenge_entries').select('user_id,challenge_id,status,progress,proof_note,submitted_at,updated_at').eq('status','submitted').order('submitted_at',{ascending:true}).limit(60));
+  const ids=[...new Set(rows.map((row:any)=>row.user_id))];
+  const profiles=ids.length?check(await admin.from('member_profiles').select('user_id,name,handle').in('user_id',ids)):[];
+  pending=rows.map((row:any)=>({...row,member:profiles.find((profile:any)=>profile.user_id===row.user_id)||null}));
+ }
+ return{catalog,entries,checkins,moderator,pending};
 }
 async function signAssets(posts:any[]){return await Promise.all(posts.map(async p=>{if(!p.asset_path)return p;const{data}=await admin.storage.from('studio-3b').createSignedUrl(p.asset_path,600);return{...p,imageUrl:data?.signedUrl||null};}));}
 async function participating(uid:string){const p=check(await admin.from('community_profiles').select('*').eq('user_id',uid).maybeSingle());if(!p?.listed||p.rules_version!==RULES_VERSION||!p.rules_accepted_at)throw new Failure(403,'Active ton profil et accepte les règles du collectif pour participer.');return p;}
@@ -54,6 +94,34 @@ Deno.serve(async req=>{
   const reader=req.body?.getReader();let length=0,raw='';const decoder=new TextDecoder();if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;length+=chunk.value.length;if(length>100000){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}raw+=decoder.decode(chunk.value,{stream:true});}raw+=decoder.decode();}finally{reader.releaseLock();}
   let body;try{body=JSON.parse(raw);}catch{throw new Failure(400,'Demande invalide.');}if(!body||typeof body!=='object'||Array.isArray(body))throw new Failure(400,'Demande invalide.');
   const {uid,client}=await authenticate(req);const action=body.action;
+  if(action==='sport-challenges')return reply(await sportChallengeSnapshot(uid));
+  if(action==='sport-challenge-join'){
+   await rate(uid,'sport-challenge-join',12,3600);
+   const result=challengeCheck(await admin.rpc('sport_challenge_join_server',{p_user:uid,p_challenge:challengeCode(body.challenge)}));
+   return reply({...result,snapshot:await sportChallengeSnapshot(uid)});
+  }
+  if(action==='sport-challenge-checkin'){
+   await rate(uid,'sport-challenge-checkin',24,3600);
+   const value=Number(body.value);if(!Number.isFinite(value)||value<0||value>10000000)throw new Failure(400,'Progression invalide.');
+   const result=challengeCheck(await admin.rpc('sport_challenge_checkin_server',{p_user:uid,p_challenge:challengeCode(body.challenge),p_value:value,p_note:text(body.note||'',0,500)}));
+   return reply({...result,snapshot:await sportChallengeSnapshot(uid)});
+  }
+  if(action==='sport-challenge-submit'){
+   await rate(uid,'sport-challenge-submit',8,3600);
+   const result=challengeCheck(await admin.rpc('sport_challenge_submit_server',{p_user:uid,p_challenge:challengeCode(body.challenge),p_proof:text(body.proof||'',10,1200)}));
+   return reply({...result,snapshot:await sportChallengeSnapshot(uid)});
+  }
+  if(action==='sport-challenge-abandon'){
+   await rate(uid,'sport-challenge-abandon',8,3600);
+   const result=challengeCheck(await admin.rpc('sport_challenge_abandon_server',{p_user:uid,p_challenge:challengeCode(body.challenge)}));
+   return reply({...result,snapshot:await sportChallengeSnapshot(uid)});
+  }
+  if(action==='sport-challenge-review'){
+   const target=uuid(body.user);const challenge=challengeCode(body.challenge),approve=body.approve===true,note=text(body.note||'',0,1200);
+   await rate(uid,'sport-challenge-review',40,3600);
+   const result=challengeCheck(await admin.rpc('sport_challenge_review_server',{p_reviewer:uid,p_user:target,p_challenge:challenge,p_approve:approve,p_note:note}));
+   return reply({...result,snapshot:await sportChallengeSnapshot(uid)});
+  }
   if(action==='snapshot'){
    await rate(uid,'read',120);const sort=body.sort==='votes'?'votes':'created_at';const category=['discussion','creation','challenge','collaboration'].includes(body.category)?body.category:null;
    let query=client.from('community_ranked_posts').select('*').order(sort,{ascending:false}).order('id').limit(60);if(category)query=query.eq('category',category);
