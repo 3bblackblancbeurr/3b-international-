@@ -120,6 +120,45 @@ export const BOOT_PRESETS = [
   { id: 'retro', name: 'Rétro', sole: 'standard' },
 ];
 
+export const KIT_SLEEVES = [
+  { id: 'short', name: 'Manches courtes' },
+  { id: 'long', name: 'Manches longues' },
+  { id: 'three-quarter', name: 'Manches 3/4' },
+];
+
+export const KIT_COLLARS = [
+  { id: 'crew', name: 'Col rond' },
+  { id: 'v', name: 'Col V' },
+  { id: 'retro', name: 'Col rétro' },
+  { id: 'future', name: 'Col futuriste' },
+];
+
+export const SHORTS_CUTS = [
+  { id: 'classic', name: 'Coupe classique' },
+  { id: 'slim', name: 'Coupe ajustée' },
+  { id: 'loose', name: 'Coupe ample' },
+];
+
+export const SOCKS_STYLES = [
+  { id: 'high', name: 'Hautes' },
+  { id: 'mid', name: 'Mi-hautes' },
+  { id: 'low', name: 'Basses' },
+];
+
+export const BOOT_MATERIALS = [
+  { id: 'leather', name: 'Cuir' },
+  { id: 'knit', name: 'Maille technique' },
+  { id: 'synthetic', name: 'Synthétique premium' },
+  { id: 'carbon', name: 'Composite carbone' },
+];
+
+export const BOOT_STUDS = [
+  { id: 'firm', name: 'Terrain ferme' },
+  { id: 'soft', name: 'Terrain souple' },
+  { id: 'mixed', name: 'Hybrides' },
+  { id: 'blade', name: 'Lames' },
+];
+
 export const CAREER_TIERS = [
   { id: 'unknown', label: 'Inconnu', minReputation: 0 },
   { id: 'prospect', label: 'Prospect', minReputation: 80 },
@@ -153,12 +192,19 @@ export function createDefaultPenaltyProfile(account) {
       socks: '#08090b',
       trim: '#d8b35e',
       pattern: 'clean',
+      sleeves: 'short',
+      collar: 'v',
+      shortsCut: 'classic',
+      socksStyle: 'high',
     },
     boots: {
       preset: 'control',
       upper: '#08090b',
       sole: '#d8b35e',
       laces: '#d8b35e',
+      material: 'synthetic',
+      studs: 'mixed',
+      signature: '',
     },
     celebration: 'calme',
   };
