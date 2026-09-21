@@ -2,9 +2,9 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowLeft,Copy,Play,RotateCcw,Shield,Users,Wifi,X} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {
-  AI_LEVELS,BOARD_THEMES,COUNTRIES_3B,DEFAULT_RULES,FINISH_STEP,HOME_LENGTH,SANCTUARY_CELLS,STABLE,TRACK_LENGTH,
+  AI_LEVELS,BOARD_THEMES,COUNTRIES_3B,DEFAULT_RULES,FINISH_STEP,HOME_LENGTH,SANCTUARY_CELLS,STABLE,TEAM_LABELS,TRACK_LENGTH,
   achievementsFor,blockadeOwnerAt,countryFor,createMatch,currentPlayer,finishByTime,globalCellFor,homeIndexFor,
-  movePiece,normalizeRules,previewMove,readMatchSnapshot,resolveTimeout,rollTurn,scoreFor,secureRoll,selectBotMove,serializeMatch,
+  movePiece,normalizeRules,previewMove,readMatchSnapshot,resolveTimeout,rollTurn,scoreFor,secureRoll,selectBotMove,serializeMatch,teamScoreFor,
 } from './dada3b/engine.js';
 import {dadaRequest,subscribeDadaRoom} from './dada3b/online.js';
 import {closeDadaAudio,dadaHaptic,dadaSpeak,dadaTone} from './dada3b/audio.js';
@@ -12,7 +12,7 @@ import './dada3b.css';
 
 const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-const initialSeats=()=>COUNTRIES_3B.map((country,index)=>({countryId:country.id,type:index<2?'human':index===2?'bot':'off',aiLevel:'tactique'}));
+const initialSeats=()=>COUNTRIES_3B.map((country,index)=>({countryId:country.id,type:index<2?'human':index===2?'bot':'off',aiLevel:'tactique',team:null}));
 const tutorialSteps=[
   ['1 · Sortir','Fais 6 pour ouvrir ton écurie. Un 6 te laisse rejouer.'],
   ['2 · Avancer','Le dé fixe la distance. Si plusieurs Totems peuvent bouger, choisis celui qui brille.'],
@@ -44,12 +44,13 @@ function eventFeedback(event,sound,haptic,voice){
 function CountryPicker({value,onChange,label='Pays'}){return <label className="dada3b-field"><span>{label}</span><select value={value} onChange={e=>onChange(e.target.value)}>{COUNTRIES_3B.map(c=><option value={c.id} key={c.id}>{c.flag} {c.name} · {c.guardian}</option>)}</select></label>;}
 function RuleToggle({checked,onChange,label,detail}){return <button type="button" className="dada3b-rule-toggle" aria-pressed={checked} onClick={()=>onChange(!checked)}><span><strong>{label}</strong><small>{detail}</small></span><b>{checked?'ON':'OFF'}</b></button>;}
 
-function SeatCard({seat,country,onChange}){
- return <article className="dada3b-country-card" data-state={seat.type} style={{'--country':country.accent}}>
-  <header><div><b>{country.name}</b><p>{country.code} · {country.value}</p></div><em>{country.flag}</em></header>
+function SeatCard({seat,country,onChange,teamMode=false}){
+ return <article className="dada3b-country-card" data-state={seat.type} data-team={seat.team||''} style={{'--country':country.accent}}>
+  <header><div><b>{country.name}</b><p>{country.code} · {country.value}{teamMode&&seat.team?' · Équipe '+TEAM_LABELS[seat.team]:''}</p></div><em>{country.flag}</em></header>
   <div className="dada3b-totem-preview" data-shape={country.shape}><span>{country.crest}</span><small>{country.guardian}</small></div>
-  <div className="dada3b-seat-switch">{[['human','Joueur'],['bot','IA'],['off','Absent']].map(([v,l])=><button type="button" key={v} aria-pressed={seat.type===v} onClick={()=>onChange({...seat,type:v})}>{l}</button>)}</div>
+  <div className="dada3b-seat-switch">{[['human','Joueur'],['bot','IA'],['off','Absent']].map(([v,l])=><button type="button" key={v} aria-pressed={seat.type===v} disabled={teamMode&&v==='off'} onClick={()=>onChange({...seat,type:v})}>{l}</button>)}</div>
   {seat.type==='bot'&&<select aria-label={'Niveau IA '+country.name} value={seat.aiLevel} onChange={e=>onChange({...seat,aiLevel:e.target.value})}>{AI_LEVELS.map(v=><option key={v} value={v}>{v[0].toUpperCase()+v.slice(1)}</option>)}</select>}
+  {teamMode&&seat.type!=='off'&&<select className="dada3b-team-select" aria-label={'Équipe '+country.name} value={seat.team||'A'} onChange={e=>onChange({...seat,team:e.target.value})}><option value="A">Équipe OR</option><option value="B">Équipe MATRIX</option></select>}
  </article>;
 }
 
@@ -89,14 +90,24 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const currentLegal=onlineRoom?selfTurn?(onlineRoom.state.pendingMoves||[]):[]:legal;
  const shownDice=onlineRoom?.state?.pendingRoll??dice??(renderMatch?.lastEvent?.roll||null);
 
- function checkpoint(next,record=false){if(!next)return;onCheckpoint?.({snapshot:()=>serializeMatch(next),score:next.winner?scoreFor(next,next.winner):0,won:next.status==='finished'},'dada3b',record);}
+ function checkpoint(next,record=false){if(!next)return;const score=next.winnerTeam?teamScoreFor(next,next.winnerTeam):(next.winner?scoreFor(next,next.winner):0);onCheckpoint?.({snapshot:()=>serializeMatch(next),score,won:next.status==='finished'},'dada3b',record);}
  function adoptLocal(next,record=false){setMatch(next);setLegal(next?.pendingMoves||[]);setDice(next?.pendingRoll||null);setNotice(next?.lastEvent?.text||'Le Cercle continue.');checkpoint(next,record);if(next?.lastEvent)eventFeedback(next.lastEvent,sound,haptic,voice);}
  function updateSeat(countryId,next){setSeats(current=>current.map(s=>s.countryId===countryId?next:s));}
  function updateRule(key,value){setRules(r=>normalizeRules({...r,[key]:value}));}
+ function setTeamMode(enabled){
+  setRules(r=>normalizeRules({...r,teamMode:enabled}));
+  setSeats(current=>current.map((seat,index)=>{
+   if(!enabled)return {...seat,team:null};
+   if(index<4)return {...seat,type:seat.type==='off'?'bot':seat.type,team:index%2===0?'A':'B'};
+   return {...seat,type:'off',team:null};
+  }));
+ }
 
  function beginLocal(){
-  if(activeSeats.length<2){setNotice('Active au moins deux pays.');return;}
-  const config=activeSeats.map(s=>({countryId:s.countryId,type:s.type,aiLevel:s.aiLevel,name:countryFor(s.countryId).name}));
+  if(rules.teamMode){
+   if(activeSeats.length!==4||activeSeats.filter(s=>s.team==='A').length!==2||activeSeats.filter(s=>s.team==='B').length!==2){setNotice('Le 2v2 demande exactement 4 pays : 2 OR et 2 MATRIX.');return;}
+  }else if(activeSeats.length<2){setNotice('Active au moins deux pays.');return;}
+  const config=activeSeats.map(s=>({countryId:s.countryId,type:s.type,aiLevel:s.aiLevel,team:s.team,name:countryFor(s.countryId).name}));
   const next=createMatch(config,rules);recorded.current=false;setLastSeats(config);setView('local');adoptLocal(next);setTutorial(true);setTutorialStep(0);
  }
  function resumeLocal(){if(!restored||restored.status!=='playing')return;recorded.current=false;setView('local');setRules(restored.rules);adoptLocal(restored);setNotice('Partie restaurée depuis ta sauvegarde 3B.');}
@@ -159,7 +170,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  async function enterOnline(mode){
   if(!account.user){setOnlineStatus('Connecte-toi à ton compte 3B pour jouer en ligne.');setView('online');setOnlineMode(mode);return;}
   setView('online');setOnlineMode(mode);
-  if(mode==='quick'||mode==='ranked')await onlineAction('queue',{mode,countryId:onlineCountry,rules});
+  if(['quick','ranked','team2v2'].includes(mode))await onlineAction('queue',{mode,countryId:onlineCountry,rules:{...rules,teamMode:mode==='team2v2'}});
   if(mode==='leaderboard'){const data=await onlineAction('leaderboard');if(data?.leaderboard)setLeaderboard(data.leaderboard);}
  }
  useEffect(()=>{
@@ -173,6 +184,8 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
 
  const deadlineMs=onlineRoom?.turnDeadline?Math.max(0,Date.parse(onlineRoom.turnDeadline)-clock):localDeadline?Math.max(0,localDeadline-clock):null;
  const winner=renderMatch?.winner?countryFor(renderMatch.winner):null;
+ const winningTeam=renderMatch?.winnerTeam||null;
+ const winningPlayers=winningTeam?renderMatch.players.filter(p=>p.team===winningTeam):[];
  const endAchievements=winner&&renderMatch?achievementsFor(renderMatch,winner.id):[];
 
  if(view==='menu')return <div className="dada3b-shell" role="dialog" aria-modal="true">
@@ -186,6 +199,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     <button onClick={()=>enterOnline('join')}><strong>Rejoindre</strong><small>Entre le code d’un ami</small></button>
     <button onClick={()=>enterOnline('quick')}><strong>Jeu rapide</strong><small>Matchmaking serveur</small></button>
     <button onClick={()=>enterOnline('ranked')}><strong>Classé</strong><small>1v1 · dé serveur · classement</small></button>
+    <button onClick={()=>enterOnline('team2v2')}><strong>2v2 équipes</strong><small>OR contre MATRIX · matchmaking à 4</small></button>
     <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Regarde une partie privée autorisée</small></button>
    </div>
    {restored?.status==='playing'&&<button className="dada3b-primary dada3b-resume" onClick={resumeLocal}><Play size={17}/> Reprendre ma partie sauvegardée</button>}
@@ -197,25 +211,26 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Configuration locale</small><strong>2 à 8 joueurs · humains + IA</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup"><section className="dada3b-setup-card">
    <span className="dada3b-kicker">TOTEMS 3B</span><h2>Compose ton Cercle.</h2>
-   <div className="dada3b-country-grid">{COUNTRIES_3B.map(c=><SeatCard key={c.id} country={c} seat={seats.find(s=>s.countryId===c.id)} onChange={next=>updateSeat(c.id,next)}/>)}</div>
+   <div className="dada3b-country-grid">{COUNTRIES_3B.map(c=><SeatCard key={c.id} country={c} seat={seats.find(s=>s.countryId===c.id)} teamMode={rules.teamMode} onChange={next=>updateSeat(c.id,next)}/>)}</div>
    <div className="dada3b-settings"><h3>Règles avancées</h3><div className="dada3b-rule-grid">
     <RuleToggle checked={rules.safeCells} onChange={v=>updateRule('safeCells',v)} label="Sanctuaires" detail="Les huit Portes de départ protègent les Totems."/>
     <RuleToggle checked={rules.barricades} onChange={v=>updateRule('barricades',v)} label="Bouclier 3B" detail="Deux Totems alliés forment une barricade."/>
     <RuleToggle checked={rules.captureRequired} onChange={v=>updateRule('captureRequired',v)} label="Capture obligatoire" detail="Une capture disponible doit être jouée."/>
     <RuleToggle checked={rules.bonusOnCapture} onChange={v=>updateRule('bonusOnCapture',v)} label="Bonus capture" detail="Une capture donne un nouveau tour."/>
     <RuleToggle checked={rules.tripleSixPenalty} onChange={v=>updateRule('tripleSixPenalty',v)} label="Trois 6" detail="Le troisième 6 consécutif déclenche la surcharge Matrix."/>
+    <RuleToggle checked={rules.teamMode} onChange={setTeamMode} label="2v2 local" detail="Deux équipes de deux pays. Les alliés ne peuvent pas se capturer."/>
    </div><div className="dada3b-select-grid">
     <label className="dada3b-field"><span>Totems</span><select value={rules.piecesPerPlayer} onChange={e=>updateRule('piecesPerPlayer',Number(e.target.value))}>{[2,3,4].map(v=><option key={v}>{v}</option>)}</select></label>
     <label className="dada3b-field"><span>Timer</span><select value={rules.timerSeconds} onChange={e=>updateRule('timerSeconds',Number(e.target.value))}>{[0,20,30,45].map(v=><option key={v} value={v}>{v?v+' s':'Libre'}</option>)}</select></label>
     <label className="dada3b-field"><span>Durée max</span><select value={rules.maxDurationMinutes} onChange={e=>updateRule('maxDurationMinutes',Number(e.target.value))}>{[0,10,20,30,45,60].map(v=><option key={v} value={v}>{v?v+' min':'Libre'}</option>)}</select></label>
     <label className="dada3b-field"><span>Plateau</span><select value={rules.boardTheme} onChange={e=>updateRule('boardTheme',e.target.value)}>{BOARD_THEMES.map(v=><option key={v} value={v}>{v==='nexus'?'Nexus 3B':countryFor(v)?.name||v}</option>)}</select></label>
    </div></div>
-   <div className="dada3b-launch"><span>{activeSeats.length} pays actifs · {activeSeats.filter(s=>s.type==='human').length} humain(s) · {activeSeats.filter(s=>s.type==='bot').length} IA</span><button className="dada3b-primary" disabled={activeSeats.length<2} onClick={beginLocal}>Ouvrir le Cercle</button></div>
+   <div className="dada3b-launch"><span>{activeSeats.length} pays actifs · {activeSeats.filter(s=>s.type==='human').length} humain(s) · {activeSeats.filter(s=>s.type==='bot').length} IA{rules.teamMode?' · OR '+activeSeats.filter(s=>s.team==='A').length+' / MATRIX '+activeSeats.filter(s=>s.team==='B').length:''}</span><button className="dada3b-primary" disabled={rules.teamMode?activeSeats.length!==4:activeSeats.length<2} onClick={beginLocal}>Ouvrir le Cercle</button></div>
   </section></main>
  </div>;
 
  if(view==='online'&&!onlineRoom)return <div className="dada3b-shell" role="dialog" aria-modal="true">
-  <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Multijoueur sécurisé</small><strong>{onlineMode==='ranked'?'Classé':onlineMode==='quick'?'Jeu rapide':onlineMode==='spectate'?'Spectateur':onlineMode==='join'?'Rejoindre un salon':'Salon privé'}</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
+  <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Multijoueur sécurisé</small><strong>{onlineMode==='ranked'?'Classé':onlineMode==='quick'?'Jeu rapide':onlineMode==='team2v2'?'2v2 équipes':onlineMode==='spectate'?'Spectateur':onlineMode==='join'?'Rejoindre un salon':'Salon privé'}</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-online-setup">
    {!account.user&&<div className="dada3b-event"><b>Compte 3B requis</b><br/>Le multijoueur utilise ton identité 3B, le dé serveur et la reprise après déconnexion.</div>}
    {onlineMode==='leaderboard'?<><h2>Classement DADA 3B</h2><button className="dada3b-primary" disabled={!account.user||onlineBusy} onClick={async()=>{const d=await onlineAction('leaderboard');if(d?.leaderboard)setLeaderboard(d.leaderboard);}}>Actualiser</button><div className="dada3b-leaderboard">{leaderboard.map(r=><div key={r.rank}><b>#{r.rank} {r.handle}</b><span>{r.rating} · {r.wins} V / {r.losses} D</span></div>)}</div></>:
@@ -230,7 +245,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
 
  if(onlineRoom?.status==='waiting')return <div className="dada3b-shell" role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={leaveOnline}><ArrowLeft size={19}/></button><div><small>Salon privé · {onlineRoom.players.length}/{onlineRoom.maxPlayers}</small><strong>Code {onlineRoom.code}</strong></div><button className="dada3b-icon-button" onClick={()=>navigator.clipboard?.writeText(onlineRoom.code)}><Copy size={18}/></button></header>
-  <main className="dada3b-setup"><section className="dada3b-setup-card"><span className="dada3b-kicker">EN ATTENTE</span><h2>Rassemble les nations.</h2><div className="dada3b-lobby-list">{onlineRoom.players.map((p,i)=>{const c=countryFor(p.countryId);return <div key={i} style={{'--country':c.accent}}><b>{c.flag} {p.name}{p.isSelf?' · TOI':''}</b><span>{p.ready?'PRÊT':'EN ATTENTE'}</span></div>;})}</div>
+  <main className="dada3b-setup"><section className="dada3b-setup-card"><span className="dada3b-kicker">EN ATTENTE</span><h2>Rassemble les nations.</h2><div className="dada3b-lobby-list">{onlineRoom.players.map((p,i)=>{const c=countryFor(p.countryId);return <div key={i} style={{'--country':c.accent}}><b>{c.flag} {p.name}{p.isSelf?' · TOI':''}{p.team?' · '+TEAM_LABELS[p.team]:''}</b><span>{p.ready?'PRÊT':'EN ATTENTE'}</span></div>;})}</div>
    <div className="dada3b-victory-actions">{selfOnline&&<button className="dada3b-secondary" disabled={onlineBusy} onClick={()=>onlineAction('ready',{room:onlineRoom.id,ready:!selfOnline.ready})}>{selfOnline.ready?'Annuler prêt':'Je suis prêt'}</button>}{onlineRoom.isHost&&<button className="dada3b-primary" disabled={onlineBusy||onlineRoom.players.length<2||onlineRoom.players.some(p=>!p.ready)} onClick={()=>onlineAction('start',{room:onlineRoom.id})}>Ouvrir le Cercle</button>}<button className="dada3b-secondary" onClick={leaveOnline}>Quitter</button></div><p role="status">{onlineStatus}</p>
   </section></main>
  </div>;
@@ -247,12 +262,12 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     {isOnline&&selfOnline?.botTakeover&&<button className="dada3b-secondary" onClick={()=>onlineAction('reconnect',{room:onlineRoom.id})}>Reprendre ma place</button>}
    </section>
    <section className="dada3b-event" aria-live="polite"><b>Transmission 3B</b><br/>{isOnline?(renderMatch.lastEvent?.text||onlineStatus):notice}</section>
-   <section className="dada3b-roster"><h3>Progression</h3>{renderMatch.players.map((p,i)=>{const c=countryFor(p.countryId),home=p.pieces.filter(x=>x.steps===FINISH_STEP).length,stable=p.pieces.filter(x=>x.steps===STABLE).length;return <div className="dada3b-roster-row" key={c.id} style={{'--country':c.accent}}><span className="dada3b-roster-dot"/><div><strong>{i===renderMatch.turn?'› ':''}{c.flag} {c.name}</strong><small>{stable} écurie · {p.stats.captures} captures · {p.stats.barricadesFormed} boucliers</small></div><span>{home}/{renderMatch.rules.piecesPerPlayer}</span></div>;})}</section>
+   <section className="dada3b-roster"><h3>Progression</h3>{renderMatch.players.map((p,i)=>{const c=countryFor(p.countryId),home=p.pieces.filter(x=>x.steps===FINISH_STEP).length,stable=p.pieces.filter(x=>x.steps===STABLE).length;return <div className="dada3b-roster-row" key={c.id} style={{'--country':c.accent}}><span className="dada3b-roster-dot"/><div><strong>{i===renderMatch.turn?'› ':''}{c.flag} {c.name}</strong><small>{stable} écurie · {p.stats.captures} captures · {p.stats.barricadesFormed} boucliers{p.team?' · '+TEAM_LABELS[p.team]:''}</small></div><span>{home}/{renderMatch.rules.piecesPerPlayer}</span></div>;})}</section>
    <details className="dada3b-history"><summary>Historique & statistiques</summary>{(renderMatch.history||[]).slice(-8).reverse().map(e=><p key={e.id}>{e.text}</p>)}</details>
-   <div className="dada3b-rules"><Shield size={13}/> Sanctuaires {renderMatch.rules.safeCells?'ON':'OFF'} · Bouclier {renderMatch.rules.barricades?'ON':'OFF'} · 3×6 {renderMatch.rules.tripleSixPenalty?'ON':'OFF'}</div>
+   <div className="dada3b-rules"><Shield size={13}/> Sanctuaires {renderMatch.rules.safeCells?'ON':'OFF'} · Bouclier {renderMatch.rules.barricades?'ON':'OFF'} · 3×6 {renderMatch.rules.tripleSixPenalty?'ON':'OFF'}{renderMatch.rules.teamMode?' · 2v2 OR/MATRIX':''}</div>
    </aside>
   </div>
   {tutorial&&<Tutorial step={tutorialStep} setStep={setTutorialStep} onClose={()=>setTutorial(false)}/>}
-  {winner&&<div className="dada3b-victory"><section className="dada3b-victory-card" style={{'--country':winner.accent}}><span className="dada3b-kicker">{renderMatch.endedReason==='time'?'TEMPS ÉCOULÉ':'NEXUS COMPLÉTÉ'} · Score {scoreFor(renderMatch,winner.id)}</span><h2>{winner.flag} {winner.name}</h2><p>{winner.guardian} scelle <strong>{winner.value}</strong>. {renderMatch.players.find(p=>p.countryId===winner.id)?.stats.captures||0} capture(s), {renderMatch.players.find(p=>p.countryId===winner.id)?.stats.maxSixStreak||0} meilleur enchaînement de 6.</p>{endAchievements.length>0&&<div className="dada3b-achievements">{endAchievements.map(a=><span key={a.id}>✓ {a.title}</span>)}</div>}<div className="dada3b-victory-actions">{!isOnline&&lastSeats&&<button className="dada3b-primary" onClick={replay}><RotateCcw size={17}/> Rejouer</button>}<button className="dada3b-secondary" onClick={()=>isOnline?leaveOnline():setView('menu')}>Retour aux modes</button></div></section></div>}
+  {winner&&<div className="dada3b-victory"><section className="dada3b-victory-card" style={{'--country':winner.accent}}><span className="dada3b-kicker">{renderMatch.endedReason==='time'?'TEMPS ÉCOULÉ':'NEXUS COMPLÉTÉ'} · Score {winningTeam?teamScoreFor(renderMatch,winningTeam):scoreFor(renderMatch,winner.id)}</span><h2>{winningTeam?'Équipe '+TEAM_LABELS[winningTeam]:winner.flag+' '+winner.name}</h2><p>{winningTeam?winningPlayers.map(p=>countryFor(p.countryId).flag+' '+countryFor(p.countryId).name).join(' + ')+' remportent le Cercle ensemble.':winner.guardian+' scelle '+winner.value+'. '+(renderMatch.players.find(p=>p.countryId===winner.id)?.stats.captures||0)+' capture(s).'}</p>{endAchievements.length>0&&<div className="dada3b-achievements">{endAchievements.map(a=><span key={a.id}>✓ {a.title}</span>)}</div>}<div className="dada3b-victory-actions">{!isOnline&&lastSeats&&<button className="dada3b-primary" onClick={replay}><RotateCcw size={17}/> Rejouer</button>}<button className="dada3b-secondary" onClick={()=>isOnline?leaveOnline():setView('menu')}>Retour aux modes</button></div></section></div>}
  </div>;
 }
