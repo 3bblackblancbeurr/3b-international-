@@ -209,6 +209,11 @@ function WorldSession({uid,goTo}){
   if(!contextAction)return;
   const feedback=actionFeedback(contextAction.id);audio.current?.interaction?.(contextAction.id);
   if(haptics&&feedback?.haptic&&globalThis.navigator?.vibrate){const pattern={light:12,medium:24,strong:[28,18,34]}[feedback.haptic];if(pattern)globalThis.navigator.vibrate(pattern);}
+  if(item.type==='hubMissionAction'){
+   const before=saveRef.current.hub?.missions?.[item.missionId],next=act({type:'hubMissionAction',missionId:item.missionId,actionId:item.actionId});if(!next)return;
+   const after=next.hub?.missions?.[item.missionId],advanced=(after?.completedObjectives||0)>(before?.completedObjectives||0);
+   announce(item.actionLabel+(advanced?' · objectif validé':' · action enregistrée'));if(advanced)chime();return;
+  }
   if(['inspect','observe','scan','memoryVision'].includes(contextAction.id)){
    const descriptions={
     inspect:item.detail||item.purpose||item.effect||('Tu examines '+(item.name||'cet élément')+'.'),
