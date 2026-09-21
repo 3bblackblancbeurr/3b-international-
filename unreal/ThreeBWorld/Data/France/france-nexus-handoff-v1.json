@@ -1,0 +1,88 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "purpose": "Authoritative App 3B -> Unreal -> Nexus -> France -> Nexus handoff contract.",
+  "identity": {
+    "canonical_key": "supabase_user_id",
+    "separate_unreal_account": false,
+    "passport_must_match_user": true
+  },
+  "launch": {
+    "request_function": "world-unreal-launch",
+    "ticket_ttl_seconds": 90,
+    "ticket_properties": [
+      "opaque",
+      "random_32_bytes",
+      "sha256_at_rest",
+      "single_use"
+    ],
+    "protocol_template": "threebworld://launch?ticket=<opaque>",
+    "forbidden_url_material": [
+      "api_override",
+      "access_token",
+      "refresh_token",
+      "service_role",
+      "password"
+    ]
+  },
+  "redeem": {
+    "function": "world-unreal-redeem",
+    "client_header_prefix": "unreal-",
+    "native_session_ttl_seconds": 1800,
+    "returns": [
+      "session_token",
+      "user_id",
+      "passport_id",
+      "country",
+      "world_revision",
+      "world_state",
+      "world_legacy"
+    ],
+    "replay_rejected": true
+  },
+  "entry_sequence": [
+    "app_authenticated",
+    "launch_ticket_issued",
+    "native_protocol_opened",
+    "ticket_redeemed_once",
+    "authoritative_world_snapshot_loaded",
+    "nexus_loaded",
+    "france_gate_selected",
+    "france_stream_ready"
+  ],
+  "france_entry": {
+    "gate": "france",
+    "required_world": "/Game/3B/World/France/Maps/L_France_OpenWorld",
+    "initial_checkpoint": "cp_arrival",
+    "durable_phase_mutation_by_client": false
+  },
+  "france_return": {
+    "required_phase": "return_nexus",
+    "persist_before_map_transition": true,
+    "target_world": "/Game/3B/World/Nexus/Maps/L_Nexus",
+    "safe_checkpoint": "cp_returned_nexus",
+    "fragment_or_reward_must_already_be_server_committed": true
+  },
+  "failure_policy": [
+    {
+      "case": "ticket_expired",
+      "result": "request_new_ticket_from_authenticated_app"
+    },
+    {
+      "case": "ticket_reused",
+      "result": "reject_without_session"
+    },
+    {
+      "case": "snapshot_missing",
+      "result": "do_not_enter_france"
+    },
+    {
+      "case": "user_mismatch",
+      "result": "clear_native_identity_and_abort"
+    },
+    {
+      "case": "return_persist_failed",
+      "result": "stay_in_france_or_last_safe_checkpoint"
+    }
+  ]
+}
