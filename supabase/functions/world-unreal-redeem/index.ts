@@ -48,7 +48,7 @@ Deno.serve(async req=>{
   const uid=identity.user_id as string;
   const [profile,state]=await Promise.all([
    api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=name,handle,country,xp,points&limit=1'),
-   api('/rest/v1/member_world_state?user_id=eq.'+uid+'&select=revision&limit=1')
+   api('/rest/v1/member_world_state?user_id=eq.'+uid+'&select=revision,data,legacy&limit=1')
   ]);
   const p=profile?.[0]||{};
   return reply({
@@ -57,6 +57,8 @@ Deno.serve(async req=>{
    passport_id:'3B-PASS-'+uid.toUpperCase(),
    country:p.country||'France',
    world_revision:Number(state?.[0]?.revision||0),
+   world_state:state?.[0]?.data||null,
+   world_legacy:!!state?.[0]?.legacy,
    expires_in:1800
   });
  }catch(error){
