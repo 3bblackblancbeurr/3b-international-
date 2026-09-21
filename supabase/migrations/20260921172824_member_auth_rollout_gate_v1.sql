@@ -1,4 +1,3 @@
-
 create table if not exists public.member_auth_settings (
   singleton boolean primary key default true check (singleton),
   allow_legacy_flows boolean not null default true,

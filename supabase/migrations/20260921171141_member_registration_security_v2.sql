@@ -1,4 +1,3 @@
-
 alter table public.member_profiles
   add column if not exists registration_version smallint not null default 1,
   add column if not exists terms_accepted_at timestamptz,

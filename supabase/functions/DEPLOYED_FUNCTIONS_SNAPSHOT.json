@@ -58,7 +58,7 @@
     },
     {
       "slug": "member-auth",
-      "version": 1,
+      "version": 2,
       "verify_jwt": false,
       "status": "ACTIVE"
     },
