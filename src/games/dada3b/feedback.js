@@ -9,6 +9,7 @@ const DEFAULTS = Object.freeze({
 const PATTERNS = {
   roll: [220, 0.035],
   exit: [330, 0.06, 440, 0.08],
+  door: [294, 0.06, 392, 0.08, 587, 0.12],
   move: [260, 0.035],
   sanctuary: [392, 0.06, 523, 0.1],
   barricade: [196, 0.07, 294, 0.09],
@@ -20,7 +21,8 @@ const PATTERNS = {
 };
 
 const VOICE = {
-  exit: 'Porte ouverte.',
+  exit: 'Écurie ouverte.',
+  door: 'Porte nationale ouverte.',
   capture: 'Fracture Matrix.',
   finish: 'Fragment sécurisé.',
   victory: 'Nexus complété.',
@@ -29,9 +31,15 @@ const VOICE = {
   timeout: 'Temps écoulé.',
 };
 
+const COUNTRY_PITCH = {
+  fr: 1.00, dz: 0.93, es: 1.08, ma: 0.96,
+  it: 1.04, tn: 1.11, tr: 0.89, ee: 1.16,
+};
+
 const HAPTICS = {
   roll: 18,
   exit: [25, 30, 35],
+  door: [22, 25, 38, 25, 60],
   move: 12,
   sanctuary: [18, 22, 18],
   barricade: [30, 25, 45],
@@ -90,12 +98,13 @@ export function createDadaFeedback(initial = readDadaFeedbackPreferences()) {
     oscillator.stop(audio.currentTime + delay + duration + 0.02);
   }
 
-  function sound(type) {
+  function sound(type, countryId) {
     if (!prefs.sound) return;
     const pattern = PATTERNS[type] || PATTERNS.move;
+    const pitch = COUNTRY_PITCH[countryId] || 1;
     let delay = 0;
     for (let index = 0; index < pattern.length; index += 2) {
-      const frequency = pattern[index];
+      const frequency = pattern[index] * pitch;
       const duration = pattern[index + 1] || 0.05;
       tone(frequency, duration, delay);
       delay += duration + 0.025;
@@ -130,8 +139,8 @@ export function createDadaFeedback(initial = readDadaFeedbackPreferences()) {
     get() {
       return { ...prefs };
     },
-    event(type) {
-      sound(type);
+    event(type, meta = {}) {
+      sound(type, meta.countryId);
       haptic(type);
       voice(type);
     },
