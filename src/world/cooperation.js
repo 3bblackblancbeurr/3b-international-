@@ -1,10 +1,11 @@
 import {authClient} from '../loyalty/client.js';
 import {countryById} from './catalog.js';
+import {worldRadiusFor} from './terrain.js';
 export async function partyRequest(action,payload={},client=authClient){
  const {data,error}=await client.rpc('world_party_command',{p_action:action,p_payload:payload});
  if(error)throw Error(error.message||'Le groupe est momentanément indisponible.');return data;
 }
-export function validPose(p){return p&&Number.isSafeInteger(p.seq)&&p.seq>=0&&(p.region==='hub'||!!countryById[p.region])&&Number.isFinite(p.x)&&Number.isFinite(p.z)&&Math.hypot(p.x,p.z)<=261&&Number.isFinite(p.heading);}
+export function validPose(p){if(!p||!Number.isSafeInteger(p.seq)||p.seq<0||!(p.region==='hub'||!!countryById[p.region])||!Number.isFinite(p.x)||!Number.isFinite(p.z)||!Number.isFinite(p.heading))return false;return Math.hypot(p.x,p.z)<=worldRadiusFor(p.region)+1;}
 export function createPartyConnection({uid,onState,onPeers,onConnection,onError,client=authClient}){
  let disposed=false,current=null,channels=new Map(),peers=new Map(),lastPoll=0,sequence=0,pose=null,lastSend=0,polling=false;
  function emit(){onPeers([...peers.values()].filter(p=>performance.now()-p.received<4500));}
