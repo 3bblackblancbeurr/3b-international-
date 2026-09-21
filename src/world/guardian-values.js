@@ -1,7 +1,4 @@
-import {GUARDIAN_STORIES} from './story-canon.js';
-import {COUNTRY_CAMPAIGNS} from './country-campaigns.js';
-
-const CORE_GUARDIAN_VALUES={
+export const GUARDIAN_VALUES={
  france:{card:'C165',name:'Céliane',value:'Justice',district:'archives',choices:[
   ['écouter','Écouter les deux versions avant de décider'],
   ['preuve','Chercher ce qui peut être vérifié'],
@@ -29,20 +26,6 @@ const CORE_GUARDIAN_VALUES={
   ['canaliser','Canaliser l’intensité'],['créer','Transformer l’émotion en création'],['maîtriser','Rester maître de son geste'],
  ]},
 };
-
-export const GUARDIAN_VALUES=Object.fromEntries(
- Object.entries(CORE_GUARDIAN_VALUES).map(([region,data])=>{
-  const campaign=COUNTRY_CAMPAIGNS[region],story=GUARDIAN_STORIES[region];
-  return [region,{
-   ...data,
-   question:campaign?.question||'',
-   missionStyle:campaign?.missionStyle||'',
-   flaw:story?.flaw||'',
-   evolution:story?.conflict||'',
-   campaign:campaign?.campaign||[],
-  }];
- })
-);
 
 export const GUARDIAN_VALUE_SCENES={
  france:[
