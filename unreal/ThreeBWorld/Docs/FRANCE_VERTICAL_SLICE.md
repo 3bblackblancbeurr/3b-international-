@@ -91,6 +91,16 @@ France is not considered reusable as the template for the other countries until 
 
 See `Data/France/france-justice-acceptance-tests.json` for the versioned acceptance matrix and `Docs/FRANCE_SERVER_AUTHORITY.md` for the write-authority boundary.
 
+## Complementary preproduction contracts
+
+The following files deepen France without claiming final Unreal assets exist:
+
+- `Data/France/france-npc-dialogue-v1.json` — non-Guardian NPC roles, dialogue intents, persistent-memory authority and localization boundary;
+- `Data/France/france-checkpoint-reconnect-v1.json` — last-known-good checkpoints, reconnect/CAS rules and anti-replay behavior;
+- `Data/France/france-presentation-v1.json` — cosmetic-only audio, lighting, VFX and cinematic beats driven by authoritative story state.
+
+These contracts are validated by `tests/france-preproduction-depth.test.js`. They prepare Data Assets/StateTrees/Sequencer work; they do not count as created .uasset content.
+
 ## ACTION UNREAL EDITOR RESTANTE
 
 Git can prepare the contract, C++ types, tags, tests and source data. Unreal Editor is still required to create/validate:
