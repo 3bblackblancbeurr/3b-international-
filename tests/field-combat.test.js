@@ -37,3 +37,32 @@ test('the eight countries share real-time combat, reload safely and grant expedi
   assert.equal(s.adventure.encounter.result,'victory',c.id);const xp=s.xp;assert.throws(()=>applyWorldAction(s,{type:'field',x:0,z:0}));assert.equal(s.xp,xp);
  }
 });
+
+
+test('eight guardian resonances are real one-charge field actions with distinct effects',()=>{
+ const base=id=>({...encounter(),resonance:id,resonanceCharges:1});
+ const use=id=>idle(base(id),'resonance');
+ let e=use('france');assert.equal(e.resonanceCharges,0);assert.equal(e.field.last,'resonance');assert.equal(e.opening,true);
+ e=use('algerie');assert.ok(e.resonanceShield>=.35);
+ e=use('maroc');assert.ok(e.resonanceShield>=.65);assert.equal(e.resonancePenalty,true);
+ e=base('tunisie');e.field.stamina=50;e=idle(e,'resonance');assert.ok(e.field.dodge>0);assert.ok(e.field.stamina>50);
+ e=use('espagne');assert.equal(e.field.combo,2);assert.ok(e.field.comboUntil>e.field.time);
+ e=base('italie');e.hp=55;e=idle(e,'resonance');assert.ok(e.hp>55);
+ e=base('turquie');e.focus=0;e=idle(e,'resonance');assert.equal(e.focus,1);assert.equal(e.resonanceAnchor,true);
+ e=use('estonie');assert.equal(e.field.phase,'recovery');assert.equal(e.opening,true);
+});
+
+test('resonance selection is server validated and copied into a real encounter',()=>{
+ let save=normalizeSave({...blankSave(),seals:['france']});
+ assert.throws(()=>applyWorldAction(save,{type:'resonanceSelect',region:'algerie'}),/Libère d’abord/);
+ save=applyWorldAction(save,{type:'resonanceSelect',region:'france'});
+ assert.equal(save.adventure.resonance,'france');
+ save=applyWorldAction(save,{type:'visit',region:'france'});
+ save=applyWorldAction(save,{type:'patrol'});
+ assert.equal(save.adventure.encounter.resonance,'france');
+ assert.equal(save.adventure.encounter.resonanceCharges,1);
+ save=applyWorldAction(save,{type:'fieldStart'});
+ save=applyWorldAction(save,{type:'field',x:0,z:0,kind:'resonance'});
+ assert.equal(save.adventure.encounter.resonanceCharges,0);
+ assert.equal(normalizeSave(save).adventure.encounter.resonance,'france');
+});
