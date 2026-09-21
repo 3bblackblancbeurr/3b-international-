@@ -18,9 +18,27 @@ export function finalCirclePhase(encounter){
  return FINAL_CIRCLE_PHASES[index-1];
 }
 
+export function finalCircleMasteryMask(encounter){return Math.max(0,Math.min(255,Math.floor(Number(encounter?.finalCircleMastery)||0)));}
+
+export function finalCirclePhaseMastered(encounter,phase=finalCirclePhase(encounter)){
+ if(!phase)return false;return (finalCircleMasteryMask(encounter)&(1<<(phase.index-1)))!==0;
+}
+
+export function markFinalCirclePhaseMastered(encounter,phase=finalCirclePhase(encounter)){
+ if(!encounter||!phase)return false;const bit=1<<(phase.index-1),before=finalCircleMasteryMask(encounter);encounter.finalCircleMastery=before|bit;return before!==encounter.finalCircleMastery;
+}
+
+export function finalCircleMasteryCount(encounter){
+ let mask=finalCircleMasteryMask(encounter),count=0;while(mask){count+=mask&1;mask>>=1;}return count;
+}
+
+export function finalCircleLockedEnemyFloor(encounter,phase=finalCirclePhase(encounter)){
+ if(!phase)return 0;const max=Math.max(1,Number(encounter?.enemyMax)||1);return phase.index===8?1:Math.floor(max*(8-phase.index)/8)+1;
+}
+
 export function finalCircleStatus(encounter){
- const phase=finalCirclePhase(encounter);if(!phase)return null;
- return {...phase,label:`Phase ${phase.index}/8 · ${phase.guardian} · ${phase.value}`,status:`${phase.title} — ${phase.role}`,link:`Lien ${phase.index}/8`};
+ const phase=finalCirclePhase(encounter);if(!phase)return null;const mastered=finalCirclePhaseMastered(encounter,phase),mastery=finalCircleMasteryCount(encounter);
+ return {...phase,mastered,mastery,label:`Phase ${phase.index}/8 · ${phase.guardian} · ${phase.value}`,status:mastered?`Maîtrise validée · passage vers la phase suivante ouvert. ${phase.role}`:`${phase.title} — ${phase.role}`,link:`Lien ${mastery}/8`};
 }
 
 export function validateFinalCircle(){
