@@ -47,6 +47,8 @@ test('member auth source uses public signup, generic login and service-only audi
  assert.match(source,/reset-request/);
  assert.match(source,/resend-confirmation/);
  assert.match(source,/gotrue_meta_security/);
+ assert.match(source,/const user=rawSignup\?\.user\?\.id\?rawSignup\.user:rawSignup\?\.id\?rawSignup:null/);
+ assert.match(source,/const signupSession=rawSignup\?\.session\|\|\(rawSignup\?\.access_token&&rawSignup\?\.refresh_token\?rawSignup:null\)/);
  assert.doesNotMatch(source,/register-v2[\s\S]{0,250}email_confirm\s*:\s*true/);
 });
 

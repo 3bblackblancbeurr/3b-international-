@@ -70,7 +70,7 @@
     },
     {
       "slug": "member-auth",
-      "version": 3,
+      "version": 4,
       "verify_jwt": false,
       "status": "ACTIVE"
     },
