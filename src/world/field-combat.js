@@ -96,7 +96,7 @@ export function stepField(enc,input,move){
  const d=distance(f.p,f.enemy);
  if(f.phase==='pursuit'&&!f.stagger){
   if(d>6){const x=(f.p.x-f.enemy.x)/d,z=(f.p.z-f.enemy.z)/d;f.enemy=move(f.enemy,{x,z},e.expert?.78:.65);}
-  if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&e.region==='turquie')e.guardianFlag=((e.enemy.strikes||0)+1)%3===0;}
+  if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&e.region==='turquie')e.guardianFlag=(e.turn+1)%3===0;}
  }else if(f.phase==='windup'&&!f.windup){
   const inside=attackContains(f,e.intent),blocked=!!f.guard,evaded=!!f.dodge||!inside;
   const resonanceReduction=Math.max(0,Math.min(.85,Number(e.resonanceShield)||0));
