@@ -15,6 +15,8 @@ import {validPose} from '../src/world/cooperation.js';
 import {worldRadiusFor,WORLD_RADIUS} from '../src/world/terrain.js';
 import {HUB_MISSION_ACTION_PLANS,applyHubMissionAction,hubMissionActionTargets,validateHubMissionActionPlans} from '../src/world/hub/mission-actions.js';
 import {hubRuntime} from '../src/world/hub/runtime-data.js';
+import {DISTRICT_JOBS,applyDistrictJobAction,currentJobActions,jobReadyToTurnIn,validateDistrictJobs} from '../src/world/district-jobs.js';
+import {serviceItems} from '../src/world/settlements.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -116,6 +118,40 @@ test('authoritative mission action endpoint rejects wrong-stage actions and make
  assert.equal(save.hub.stats.missionActions.eight_seeds.filter(id=>id.startsWith('seed:')).length,8);
  save=applyWorldAction(save,{type:'hubMissionAction',missionId:'eight_seeds',actionId:'conservatory:restore'});
  assert.equal(save.hub.missions.eight_seeds.status,'completed');
+});
+
+test('independent country contracts are multi-step systemic jobs rather than one-click errands',()=>{
+ assert.equal(validateDistrictJobs(),true);
+ assert.equal(Object.keys(DISTRICT_JOBS).length,8);
+ let home={wood:0,stone:0,food:3,camp:0,forge:0,garden:0,expedition:0,harvest:[],jobs:[],activeJob:'route_repair',jobStage:0,jobProgress:[]};
+ assert.deepEqual(currentJobActions(home).map(action=>action.id),['route:inspect']);
+ let result=applyDistrictJobAction(home,'route:repair1');assert.equal(result.ok,false);
+ result=applyDistrictJobAction(home,'route:inspect');assert.equal(result.stageComplete,true);home=result.home;
+ assert.equal(home.jobStage,1);assert.deepEqual(currentJobActions(home).map(action=>action.id),['route:repair1','route:repair2']);
+ result=applyDistrictJobAction(home,'route:repair1');home=result.home;assert.equal(home.jobStage,1);
+ const duplicate=applyDistrictJobAction(home,'route:repair1');assert.equal(duplicate.duplicate,true);
+ result=applyDistrictJobAction(home,'route:repair2');home=result.home;assert.equal(home.jobStage,2);
+ result=applyDistrictJobAction(home,'route:verify');home=result.home;assert.equal(jobReadyToTurnIn(home),true);
+});
+
+test('authoritative independent contract cannot be turned in before every real action',()=>{
+ let save=applyWorldAction(blankSave(),{type:'visit',region:'france'});
+ save=applyWorldAction(save,{type:'jobAccept',id:'field_rescue'});
+ assert.equal(save.adventure.frontier.france.activeJob,'field_rescue');
+ let items=serviceItems('france',save).filter(item=>item.type==='jobAction');
+ assert.equal(items.length,2);assert.ok(items.every(item=>item.actionId.startsWith('rescue:locate')));
+ assert.throws(()=>applyWorldAction(save,{type:'jobDone',id:'field_rescue'}),/Termine toutes les étapes/);
+ assert.throws(()=>applyWorldAction(save,{type:'jobAction',job:'field_rescue',actionId:'rescue:help1'}),/Action de contrat invalide/);
+ for(const actionId of ['rescue:locate1','rescue:locate2','rescue:help1','rescue:help2','rescue:return'])save=applyWorldAction(save,{type:'jobAction',job:'field_rescue',actionId});
+ assert.equal(jobReadyToTurnIn(save.adventure.frontier.france),true);
+ items=serviceItems('france',save).filter(item=>item.type==='job');
+ assert.equal(items.length,1);assert.equal(items[0].job,'field_rescue');
+ const xp=save.xp,shards=save.shards;
+ save=applyWorldAction(save,{type:'jobDone',id:'field_rescue'});
+ assert.equal(save.adventure.frontier.france.activeJob,null);
+ assert.ok(save.adventure.frontier.france.jobs.includes('field_rescue'));
+ assert.equal(save.xp-xp,DISTRICT_JOBS.field_rescue.xp);
+ assert.equal(save.shards-shards,DISTRICT_JOBS.field_rescue.shards);
 });
 
 test('hub conversations expose multiple intentions and persist intent memory authoritatively',()=>{
