@@ -5,6 +5,7 @@ import {COUNTRIES,CARDS} from '../src/world/catalog.js';
 import {CHAPTERS,chapterState,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,chapterCards} from '../src/world/chapters.js';
 import {applyWorldAction,advanceBattle,pactCue,pactCues} from '../src/world/engine.js';
 import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions} from '../src/world/guardian-values.js';
+import {finalCirclePhase,finalCircleMasteryCount} from '../src/world/final-circle.js';
 const solutions={france:[0,1,2,3],italie:[0,3,4,7,8],estonie:[2],turquie:[0,0,1,1,2,2],algerie:[0,0,1,3,3,3],tunisie:[0,0,1,2,2,2],maroc:[0,1,1,2,2,2],espagne:[0,1,2,2]};
 const act=(s,type,extra={})=>applyWorldAction(s,{type,...extra});
 function prepare(s,id){
@@ -23,6 +24,24 @@ function battle(s){
   s=act(s,'battle',{action});
  }
  assert.equal(s.adventure.encounter.result,'victory',JSON.stringify(s.adventure.encounter));return s;
+}
+function finalBattle(s){
+ assert.ok(s.adventure.encounter?.final&&s.adventure.encounter?.field,'the final must start directly in real-time field combat');
+ for(let i=0;i<7000&&!s.adventure.encounter.result;i++){
+  const e=s.adventure.encounter,f=e.field,phase=finalCirclePhase(e),dx=f.enemy.x-f.p.x,dz=f.enemy.z-f.p.z,d=Math.hypot(dx,dz)||1;
+  let x=0,z=0,kind;
+  if(f.phase==='windup'&&f.windup<=350){
+   if(phase?.region==='tunisie'&&f.stamina>=32&&!f.cooldown){x=dx/d;z=dz/d;kind='dodge';}
+   else if(f.stamina>=18&&!f.cooldown)kind='guard';
+  }else if(phase?.region==='espagne'&&e.guardianFlag&&f.stamina>=18&&!f.cooldown)kind='guard';
+  else if(f.phase==='recovery'&&!f.cooldown)kind=e.focus>=2?'power':'strike';
+  else if(d>6){x=dx/d;z=dz/d;}
+  else if(!f.cooldown&&phase?.region!=='estonie')kind=e.focus>=2?'power':'strike';
+  s=act(s,'field',{x,z,...(kind?{kind}:{})});
+ }
+ assert.equal(s.adventure.encounter.result,'victory',JSON.stringify({phase:finalCirclePhase(s.adventure.encounter),encounter:s.adventure.encounter}));
+ assert.equal(finalCircleMasteryCount(s.adventure.encounter),8,'all eight Guardian mechanics must be mastered');
+ return s;
 }
 test('all eight distinct puzzles can be solved through their actual controls',()=>{
  assert.equal(new Set(Object.values(CHAPTERS).map(c=>c.kind)).size,8);
@@ -47,7 +66,7 @@ test('a fresh player can rebuild all eight countries and win the playable finale
   s=prepare(s,c.id);s=act(s,'encounter',{id:c.id+':guardian'});s=battle(s);s=act(s,'leave');s=act(s,'restore');assert.equal(chapterState(s,c.id).restored,3);
   assert.deepEqual(normalizeSave(s),s);
  }
- assert.equal(nexusLevel(s),8);s=act(s,'visit',{region:'hub'});s=act(s,'final');s=battle(s);assert.equal(s.adventure.finished,true);assert.equal(s.adventure.cosmetic,'union');
+ assert.equal(nexusLevel(s),8);s=act(s,'visit',{region:'hub'});s=act(s,'final');assert.throws(()=>act(s,'battle',{action:'strike'}),/finale se joue uniquement en temps réel/);s=finalBattle(s);assert.equal(s.adventure.finished,true);assert.equal(s.adventure.cosmetic,'union');
  const xp=s.xp;s=act(s,'leave');assert.throws(()=>act(s,'final'));assert.equal(s.xp,xp);
 });
 test('quest order, rewards and cosmetics reject fabricated or repeated claims',()=>{
