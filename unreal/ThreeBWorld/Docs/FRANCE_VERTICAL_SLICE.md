@@ -4,76 +4,60 @@
 
 France is the quality bar for the future Unreal client. The objective is not to build all eight countries quickly. The objective is to prove one complete, replayable and technically scalable territory.
 
+The executable/data contract is now versioned as `Data/France/france-justice-v1.json`. The shared framework is `UThreeBStorySliceDefinition`: reuse that framework for later territories, never the France content solution.
+
+## Canonical story phases
+
+1. `arrival` — Porte France and environmental read;
+2. `human_problem` — conflicting human accounts;
+3. `rescue` — movement + rescue under pressure;
+4. `investigation` — physical, witness and institutional evidence;
+5. `pressure` — hostile escalation;
+6. `celiane_contact` — Céliane reacts to validated facts;
+7. `justice_trial` — non-combat Justice resolution;
+8. `liberation` — server-verified Céliane liberation;
+9. `aftermath` — persistent district transformation;
+10. `return_nexus` — return only after state is persisted.
+
+The client can present local feedback, but phases marked server-verified cannot become durable because the client says so.
+
 ## Player promise
 
 The player crosses the France Gate from the Nexus and enters a district where public trust has collapsed. Justice is not represented by a simple boss fight: the player must investigate, protect people, compare testimony, survive hostile pressure and make a decision that changes the district before Céliane can be liberated.
 
-## Playable loop
+## Evidence model
 
-### 1. Arrival
-
-- short seamless transition from Nexus;
-- camera reveals a dense rain-marked civic district;
-- first objective is environmental, not a waypoint wall;
-- player can inspect the environment before combat starts.
-
-### 2. Human problem
-
-Three witnesses disagree about the same event. The game stores what the player actually discovered instead of merely marking three collectibles.
-
-Evidence categories:
+Evidence is not a generic collectible count. France distinguishes:
 
 - physical trace;
 - witness statement;
 - institutional record;
-- contradiction.
+- validated contradiction.
 
-### 3. Rescue
+Evidence ids used for persistent progression are server facts. A local client snapshot is not proof.
 
-A civilian incident forces movement under pressure. This validates sprint, vault, climb, contextual interaction and a first non-combat use of a Resonance.
+## Justice gameplay
 
-### 4. Investigation space
+Justice must have multiple functions:
 
-The player reconstructs a sequence from evidence. Wrong conclusions must change dialogue or route pressure rather than produce an arbitrary “wrong answer” screen.
+- reveal a validated contradiction;
+- link evidence;
+- stabilize a dispute;
+- protect a witness/civil.
 
-### 5. Combat escalation
+At least one critical resolution must prove that weapons cannot bypass the Justice mechanic.
 
-Combat validates:
+## Persistent world states / Data Layers
 
-- light/heavy actions;
-- dodge;
-- stamina;
-- focus;
-- animation reaction;
-- cover/readability;
-- server-owned completion state.
+Prepare these canonical states:
 
-### 6. Céliane contact
+- `Story_PreJustice`;
+- `Story_JusticeCrisis`;
+- `Story_CelianeLiberated`;
+- `Story_Reconstruction`;
+- `Story_PostLiberation`.
 
-Céliane is a character before she is a reward. Her StateTree must react to the player's evidence state, rescue result and prior choices.
-
-### 7. Justice Resonance
-
-Justice is a gameplay mechanic: reveal contradiction, stabilize a dispute, or expose a hidden causal link. It should solve problems that weapons cannot.
-
-### 8. Guardian liberation
-
-The climax combines investigation state, movement, combat and Resonance. No single damage bar can bypass the validated mechanics.
-
-### 9. Visible aftermath
-
-Use Data Layers and persistent state to transform the district:
-
-- lighting and public spaces reopen;
-- hostile checkpoints disappear or change ownership;
-- NPC schedules/dialogue change;
-- repaired infrastructure remains repaired;
-- optional activities unlock;
-- Céliane remains present in the world.
-
-### 10. Return to Nexus
-
-The same player identity receives the Justice fragment and the web application can display the progression after sync.
+The persistent server state selects the durable story state. Data Layers visualize that state; Data Layers are not the authority.
 
 ## Level-design zones
 
@@ -104,6 +88,22 @@ France is not considered reusable as the template for the other countries until 
 - Céliane reacts to at least the major investigation/rescue outcomes;
 - liberated state visibly changes the district;
 - 60 FPS is a target on the chosen reference profile after profiling, not an assumption.
+
+See `Data/France/france-justice-acceptance-tests.json` for the versioned acceptance matrix and `Docs/FRANCE_SERVER_AUTHORITY.md` for the write-authority boundary.
+
+## ACTION UNREAL EDITOR RESTANTE
+
+Git can prepare the contract, C++ types, tags, tests and source data. Unreal Editor is still required to create/validate:
+
+- the Open World France map;
+- World Partition/HLOD cells;
+- the five Data Layer assets and state wiring;
+- Blueprints/Data Assets derived from the versioned contract;
+- Céliane mesh/animation/StateTree;
+- Enhanced Input assets;
+- Motion Warping/traversal assets;
+- real environment/material/audio/Niagara/Sequencer assets;
+- PIE network tests and packaged build.
 
 ## What must not be copied to the seven other territories
 

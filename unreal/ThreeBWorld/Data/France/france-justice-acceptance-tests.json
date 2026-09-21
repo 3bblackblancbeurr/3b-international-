@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "suites": [
+    {
+      "id": "identity_and_entry",
+      "cases": [
+        "same_supabase_user_id_survives_app_ticket_unreal_handoff",
+        "expired_or_reused_launch_ticket_is_rejected",
+        "wrong_or_revoked_origin_auth_session_is_rejected",
+        "france_entry_never_creates_second_player_identity"
+      ]
+    },
+    {
+      "id": "story_authority",
+      "cases": [
+        "client_cannot_assert_evidence_without_server_validation",
+        "client_cannot_skip_from_arrival_to_liberation",
+        "stale_expected_revision_is_rejected",
+        "duplicate_story_event_is_idempotent",
+        "celiane_liberation_requires_justice_trial",
+        "fragment_justice_is_granted_only_by_server_reward_pipeline"
+      ]
+    },
+    {
+      "id": "justice_gameplay",
+      "cases": [
+        "contradiction_requires_validated_evidence_set",
+        "justice_has_non_combat_resolution_path",
+        "justice_resonance_does_not_mint_reward_locally",
+        "wrong_investigation_conclusion_changes_pressure_without_corrupting_save"
+      ]
+    },
+    {
+      "id": "persistence",
+      "cases": [
+        "reconnect_restores_phase_and_validated_evidence",
+        "crash_after_server_ack_does_not_duplicate_reward",
+        "second_device_reads_same_liberated_guardian_state",
+        "last_known_good_state_survives_invalid_client_snapshot",
+        "post_liberation_data_layer_state_restores_after_restart"
+      ]
+    },
+    {
+      "id": "coop",
+      "cases": [
+        "two_players_share_objective_without_double_completion",
+        "disconnecting_member_can_rejoin_current_phase",
+        "revive_does_not_replay_story_reward",
+        "party_member_cannot_claim_host_only_story_transition"
+      ]
+    },
+    {
+      "id": "world_state",
+      "cases": [
+        "pre_justice_and_crisis_layers_are_mutually_consistent",
+        "celiane_liberated_layer_requires_server_state",
+        "reconstruction_changes_npc_dialogue_and_public_space",
+        "return_to_nexus_keeps_france_post_liberation"
+      ]
+    },
+    {
+      "id": "performance_and_readability",
+      "cases": [
+        "critical_route_has_no_world_partition_empty_cell",
+        "rain_wetness_keeps_interaction_readable",
+        "principal_vistas_meet_hlod_popin_budget",
+        "reference_pc_60fps_target_is_profiled_not_assumed"
+      ]
+    }
+  ]
+}
