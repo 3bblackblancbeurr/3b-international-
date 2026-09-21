@@ -1,0 +1,151 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "purpose": "Cosmetic-only presentation contract for France audio, VFX, lighting and cinematic beats.",
+  "authority": {
+    "persistent_mutation": false,
+    "gameplay_reward": false,
+    "rule": "Presentation reacts to authoritative state; it never creates authoritative state."
+  },
+  "world_state_profiles": [
+    {
+      "world_state": "pre_justice",
+      "lighting": "cool_overcast",
+      "weather": "light_rain",
+      "ambience": "tense_city_low",
+      "music_layer": "france_mystery",
+      "vfx_density": "low"
+    },
+    {
+      "world_state": "justice_crisis",
+      "lighting": "wet_high_contrast",
+      "weather": "rain",
+      "ambience": "city_pressure",
+      "music_layer": "france_tension",
+      "vfx_density": "medium"
+    },
+    {
+      "world_state": "celiane_liberated",
+      "lighting": "rain_break",
+      "weather": "rain_easing",
+      "ambience": "release",
+      "music_layer": "justice_reveal",
+      "vfx_density": "focused"
+    },
+    {
+      "world_state": "reconstruction",
+      "lighting": "warmer_daylight",
+      "weather": "clearing",
+      "ambience": "community_rebuild",
+      "music_layer": "france_rebuild",
+      "vfx_density": "low"
+    },
+    {
+      "world_state": "post_liberation",
+      "lighting": "balanced_day_night",
+      "weather": "dynamic_calm",
+      "ambience": "living_district",
+      "music_layer": "france_legacy",
+      "vfx_density": "contextual"
+    }
+  ],
+  "audio_layers": [
+    {
+      "id": "rain_surface",
+      "driven_by": [
+        "weather",
+        "interior_exterior"
+      ]
+    },
+    {
+      "id": "city_bed",
+      "driven_by": [
+        "world_state",
+        "zone"
+      ]
+    },
+    {
+      "id": "crowd_tension",
+      "driven_by": [
+        "world_state",
+        "phase"
+      ]
+    },
+    {
+      "id": "justice_resonance",
+      "driven_by": [
+        "resonance_use"
+      ]
+    },
+    {
+      "id": "celiane_presence",
+      "driven_by": [
+        "phase",
+        "guardian_state"
+      ]
+    },
+    {
+      "id": "combat_pressure",
+      "driven_by": [
+        "combat_pressure"
+      ]
+    },
+    {
+      "id": "reconstruction",
+      "driven_by": [
+        "world_state"
+      ]
+    }
+  ],
+  "cinematic_beats": [
+    {
+      "id": "gate_france_reveal",
+      "phase": "arrival",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "human_problem_incident",
+      "phase": "human_problem",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "celiane_reveal",
+      "phase": "celiane_contact",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "justice_trial_focus",
+      "phase": "justice_trial",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "celiane_liberation",
+      "phase": "liberation",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "district_reconstruction",
+      "phase": "aftermath",
+      "skippable": true,
+      "persistent_mutation": false
+    },
+    {
+      "id": "return_to_nexus",
+      "phase": "return_nexus",
+      "skippable": true,
+      "persistent_mutation": false
+    }
+  ],
+  "accessibility_rules": {
+    "subtitles_required": true,
+    "cinematic_skip_required": true,
+    "reduced_motion_variant": true,
+    "camera_shake_scaleable": true,
+    "music_voice_sfx_separate": true
+  }
+}
