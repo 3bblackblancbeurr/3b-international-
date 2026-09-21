@@ -341,19 +341,28 @@ function ClubPanel({ snapshot, profile, busy, request }) {
   const club = snapshot?.club;
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
+  const [colors, setColors] = useState({ primary:'#08090b', secondary:'#d8b35e' });
   return (
     <section className="penalty-panel-page">
       <span className="penalty-kicker">CARRIÈRE CLUB</span><h1>Gagner seul. Construire ensemble.</h1>
       <p>Les matchs restent 1v1, mais les clubs réunissent plusieurs résultats dans des rencontres collectives. Cinq duels peuvent composer une confrontation de club.</p>
       {club ? (
-        <div className="penalty-big-card"><Users size={28} /><div><h2>{club.name}</h2><p>{club.role} · {club.members || 1} membre(s) · code {club.code}</p></div></div>
+        <div className="penalty-big-card" style={{ '--club-primary':club.colors?.primary || '#08090b', '--club-secondary':club.colors?.secondary || '#d8b35e' }}>
+          <span className="penalty-club-crest">3B</span><div><h2>{club.name}</h2><p>{club.role} · {club.members || 1} membre(s) · code {club.code}</p><small>Couleurs officielles du club</small></div>
+        </div>
       ) : (
         <div className="penalty-club-actions">
-          <article><h3>Créer un club</h3><input value={name} maxLength={40} placeholder="Nom du club" onChange={(e) => setName(e.target.value)} /><button className="penalty-primary" disabled={busy || name.trim().length < 3} onClick={() => request('club.create', { name }).catch(() => {})}>Créer</button></article>
-          <article><h3>Rejoindre un club</h3><input value={code} maxLength={6} placeholder="CODE" onChange={(e) => setCode(e.target.value.toUpperCase())} /><button className="penalty-secondary" disabled={busy || code.trim().length < 4} onClick={() => request('club.join', { code }).catch(() => {})}>Rejoindre</button></article>
+          <article>
+            <h3>Créer un club</h3>
+            <input value={name} maxLength={40} placeholder="Nom du club" onChange={(e) => setName(e.target.value)} />
+            <div className="penalty-color-row"><span>Principale</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={'Couleur principale ' + color} aria-pressed={colors.primary === color} style={{ '--swatch':color }} onClick={() => setColors((current) => ({ ...current, primary:color }))} />)}</div></div>
+            <div className="penalty-color-row"><span>Secondaire</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={'Couleur secondaire ' + color} aria-pressed={colors.secondary === color} style={{ '--swatch':color }} onClick={() => setColors((current) => ({ ...current, secondary:color }))} />)}</div></div>
+            <button className="penalty-primary" disabled={busy || name.trim().length < 3 || colors.primary === colors.secondary} onClick={() => request('club.create', { name, colors }).catch(() => {})}>Créer mon club</button>
+          </article>
+          <article><h3>Rejoindre un club</h3><input value={code} maxLength={6} placeholder="CODE" onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, '').slice(0, 6))} /><button className="penalty-secondary" disabled={busy || code.trim().length !== 6} onClick={() => request('club.join', { code }).catch(() => {})}>Rejoindre</button></article>
         </div>
       )}
-      <div className="penalty-rule-note">Les vêtements, chaussures et cosmétiques de club ne modifient jamais vitesse, portée, puissance ou précision.</div>
+      <div className="penalty-rule-note">Les couleurs du club identifient l’équipe. Les vêtements, chaussures et cosmétiques ne modifient jamais vitesse, portée, puissance ou précision.</div>
     </section>
   );
 }
