@@ -78,3 +78,17 @@ test('responsive bracket remains usable on narrow mobile screens',()=>{
   assert.match(css,/overflow-x:auto/);
   assert.match(css,/@media\(max-width:480px\)/);
 });
+
+
+test('observatory exposes aggregated seven-day metrics without player identities',()=>{
+  assert.match(edge,/async function metrics7d/);
+  assert.match(edge,/windowDays:7/);
+  assert.match(edge,/privacy:'aggregated-only'/);
+  assert.match(edge,/firstPlayerWinRate/);
+  assert.match(edge,/avgDurationSeconds/);
+  assert.match(edge,/if\(body\.action==='metrics'\)/);
+  assert.match(ui,/Observatoire DADA 3B/);
+  assert.match(ui,/DONNÉES AGRÉGÉES/);
+  assert.match(ui,/Échantillon encore trop faible/);
+  assert.doesNotMatch(edge,/metrics7d[\s\S]{0,4000}user_id/);
+});
