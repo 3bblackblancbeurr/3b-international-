@@ -896,11 +896,16 @@ async function tickRoom(room:Room) {
   return finished ? await settleIfFinished(next) : next;
 }
 
-async function createClub(uid:string, nameInput:unknown) {
+async function createClub(uid:string, nameInput:unknown, colorsInput:any={}) {
   const existing = await clubFor(uid);
   if (existing) throw new Failure(409, 'Tu appartiens déjà à un club.');
   const name = String(nameInput || '').trim().slice(0, 40);
   if (name.length < 3) throw new Failure(400, 'Le nom du club doit contenir au moins 3 caractères.');
+  const colors = {
+    primary:sanitizeColor(colorsInput?.primary, '#08090b'),
+    secondary:sanitizeColor(colorsInput?.secondary, '#d8b35e'),
+  };
+  if (colors.primary === colors.secondary) throw new Failure(400, 'Choisis deux couleurs de club différentes.');
   for (let attempt=0; attempt<6; attempt++) {
     const code = randomCode();
     try {
@@ -990,7 +995,7 @@ async function route(req:Request) {
   }
 
   if (action === 'club.create') {
-    await createClub(uid, body.name);
+    await createClub(uid, body.name, body.colors);
     const fresh = await ensureProfile(uid);
     const club = await clubFor(uid);
     return { profile:publicProfile(fresh, club?.name || ''), snapshot:await snapshotFor(uid, fresh), message:'Club créé.' };
