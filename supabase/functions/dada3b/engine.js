@@ -6,6 +6,7 @@ export const FINISH_STEP = TRACK_LENGTH + HOME_LENGTH;
 export const MATCH_VERSION = 2;
 
 export const AI_LEVELS = ['normal', 'tactique', 'gardien'];
+export const TEAM_LABELS = Object.freeze({ A: 'OR', B: 'MATRIX' });
 export const BOARD_THEMES = ['nexus', 'fr', 'dz', 'es', 'ma', 'it', 'tn', 'tr', 'ee'];
 
 export const DEFAULT_RULES = Object.freeze({
@@ -19,6 +20,7 @@ export const DEFAULT_RULES = Object.freeze({
   maxDurationMinutes: 0,
   aiLevel: 'tactique',
   boardTheme: 'nexus',
+  teamMode: false,
 });
 
 export const COUNTRIES_3B = [
@@ -55,6 +57,7 @@ export function normalizeRules(input = {}) {
     maxDurationMinutes: [0, 10, 20, 30, 45, 60].includes(value.maxDurationMinutes) ? value.maxDurationMinutes : DEFAULT_RULES.maxDurationMinutes,
     aiLevel: AI_LEVELS.includes(value.aiLevel) ? value.aiLevel : DEFAULT_RULES.aiLevel,
     boardTheme: BOARD_THEMES.includes(value.boardTheme) ? value.boardTheme : DEFAULT_RULES.boardTheme,
+    teamMode: value.teamMode === true,
   };
 }
 
@@ -98,17 +101,25 @@ export function createMatch(seats, ruleInput = {}) {
       countryId: seat.countryId,
       type: seat.type === 'bot' ? 'bot' : 'human',
       aiLevel: AI_LEVELS.includes(seat.aiLevel) ? seat.aiLevel : rules.aiLevel,
+      team: rules.teamMode && ['A','B'].includes(seat.team) ? seat.team : null,
       name: String(seat.name || countryFor(seat.countryId)?.name || 'Joueur').slice(0, 24),
     }));
 
   if (active.length < 2 || active.length > 8) throw new Error('Une partie demande de 2 à 8 joueurs.');
   if (new Set(active.map((seat) => seat.countryId)).size !== active.length) throw new Error('Chaque pays ne peut être choisi qu’une fois.');
   if (active.some((seat) => !countryFor(seat.countryId))) throw new Error('Un pays de la partie est invalide.');
+  if (rules.teamMode) {
+    if (active.length !== 4) throw new Error('Le mode 2v2 demande exactement quatre joueurs.');
+    const teamA = active.filter((seat) => seat.team === 'A').length;
+    const teamB = active.filter((seat) => seat.team === 'B').length;
+    if (teamA !== 2 || teamB !== 2) throw new Error('Le mode 2v2 demande deux joueurs dans chaque équipe.');
+  }
 
   const match = {
     version: MATCH_VERSION,
     status: 'playing',
     winner: null,
+    winnerTeam: null,
     turn: 0,
     round: 1,
     turnSixes: 0,
@@ -172,13 +183,27 @@ export function occupantsAt(match, cell, exclude = null) {
   return occupants;
 }
 
+export function sameSide(match, aIndex, bIndex) {
+  if (aIndex === bIndex) return true;
+  if (!match?.rules?.teamMode) return false;
+  const a = match.players?.[aIndex], b = match.players?.[bIndex];
+  return Boolean(a?.team && b?.team && a.team === b.team);
+}
+
+function sideKey(match, playerIndex) {
+  const player = match?.players?.[playerIndex];
+  return match?.rules?.teamMode && player?.team ? 'team:' + player.team : 'player:' + playerIndex;
+}
+
 export function blockadeOwnerAt(match, cell, exclude = null) {
   if (!match?.rules?.barricades) return null;
-  const counts = new Map();
+  const counts = new Map(), first = new Map();
   for (const occupant of occupantsAt(match, cell, exclude)) {
-    counts.set(occupant.playerIndex, (counts.get(occupant.playerIndex) || 0) + 1);
+    const key = sideKey(match, occupant.playerIndex);
+    counts.set(key, (counts.get(key) || 0) + 1);
+    if (!first.has(key)) first.set(key, occupant.playerIndex);
   }
-  for (const [playerIndex, count] of counts) if (count >= 2) return playerIndex;
+  for (const [key, count] of counts) if (count >= 2) return first.get(key);
   return null;
 }
 
@@ -210,8 +235,7 @@ function baseMoveInfo(match, playerIndex, pieceIndex, roll) {
   const exclude = { playerIndex, pieceIndex };
 
   for (const cell of path) {
-    const owner = blockadeOwnerAt(match, cell, exclude);
-    if (owner !== null && !(landing === cell && owner === playerIndex && occupantsAt(match, cell, exclude).length < 2)) return null;
+    if (blockadeOwnerAt(match, cell, exclude) !== null) return null;
   }
 
   let captures = [];
@@ -221,15 +245,15 @@ function baseMoveInfo(match, playerIndex, pieceIndex, roll) {
   if (landing !== null) {
     sanctuary = isSanctuaryCell(match, landing);
     const occupants = occupantsAt(match, landing, exclude);
-    const own = occupants.filter((entry) => entry.playerIndex === playerIndex);
-    const opponents = occupants.filter((entry) => entry.playerIndex !== playerIndex);
+    const own = occupants.filter((entry) => sameSide(match, entry.playerIndex, playerIndex));
+    const opponents = occupants.filter((entry) => !sameSide(match, entry.playerIndex, playerIndex));
 
     if (match.rules.barricades && own.length >= 2) return null;
     if (sanctuary && opponents.length) return null;
 
     if (match.rules.barricades) {
       const opponentCounts = new Map();
-      for (const entry of opponents) opponentCounts.set(entry.playerIndex, (opponentCounts.get(entry.playerIndex) || 0) + 1);
+      for (const entry of opponents) { const key = sideKey(match, entry.playerIndex); opponentCounts.set(key, (opponentCounts.get(key) || 0) + 1); }
       if ([...opponentCounts.values()].some((count) => count >= 2)) return null;
     }
 
@@ -362,7 +386,10 @@ function applyMove(match, pieceIndex) {
   if (info.sanctuary) player.stats.safeLandings += 1;
   if (info.formsBarricade) player.stats.barricadesFormed += 1;
 
-  const won = player.pieces.every((candidate) => candidate.steps === FINISH_STEP);
+  const personalComplete = player.pieces.every((candidate) => candidate.steps === FINISH_STEP);
+  const won = next.rules.teamMode && player.team
+    ? next.players.filter((candidate) => candidate.team === player.team).every((candidate) => candidate.pieces.every((piece) => piece.steps === FINISH_STEP))
+    : personalComplete;
   const event = {
     type: info.captures.length ? 'capture' : info.finishes ? 'finish' : info.exitsStable ? 'exit' : info.entersHome ? 'door' : info.formsBarricade ? 'barricade' : 'move',
     countryId: player.countryId,
@@ -395,10 +422,11 @@ function applyMove(match, pieceIndex) {
   if (won) {
     next.status = 'finished';
     next.winner = player.countryId;
+    next.winnerTeam = next.rules.teamMode ? player.team : null;
     next.endedAt = Date.now();
     next.endedReason = 'nexus';
     event.type = 'victory';
-    event.text = `${country.name} rassemble tous ses totems · Nexus 3B complété.`;
+    event.text = next.winnerTeam ? `Équipe ${TEAM_LABELS[next.winnerTeam]} · les deux nations ont complété le Nexus 3B.` : `${country.name} rassemble tous ses totems · Nexus 3B complété.`;
   } else {
     const keepTurn = roll === 6 || (info.captures.length > 0 && next.rules.bonusOnCapture);
     if (!keepTurn) advanceTurn(next);
@@ -443,7 +471,7 @@ export function threatCount(match, playerIndex, cell) {
   if (cell === null || isSanctuaryCell(match, cell)) return 0;
   let threats = 0;
   match.players.forEach((player, opponentIndex) => {
-    if (opponentIndex === playerIndex) return;
+    if (sameSide(match, opponentIndex, playerIndex)) return;
     player.pieces.forEach((piece) => {
       if (distanceToCell(player.countryId, piece.steps, cell) !== null) threats += 1;
     });
@@ -512,20 +540,36 @@ export function resolveTimeout(match, forcedRoll = secureRoll()) {
   return applyMove(next, pieceIndex);
 }
 
+export function teamScoreFor(match, team) {
+  if (!match?.rules?.teamMode || !['A','B'].includes(team)) return 0;
+  return match.players.filter((player) => player.team === team).reduce((sum, player) => sum + scoreFor(match, player.countryId, true), 0);
+}
+
 export function finishByTime(match) {
   if (!match || match.status !== 'playing') return match;
   const next = structuredClone(match);
-  const ranked = next.players
-    .map((player) => ({
-      countryId: player.countryId,
-      score: scoreFor(next, player.countryId),
-      finished: player.stats.finished,
-      captures: player.stats.captures,
-      distance: player.stats.distance,
-    }))
-    .sort((a, b) => b.score - a.score || b.finished - a.finished || b.captures - a.captures || b.distance - a.distance || a.countryId.localeCompare(b.countryId));
+  if (next.rules.teamMode) {
+    const rankedTeams = ['A','B'].map((team) => ({
+      team,
+      score: teamScoreFor(next, team),
+      finished: next.players.filter((p) => p.team === team).reduce((sum,p) => sum + p.stats.finished, 0),
+      captures: next.players.filter((p) => p.team === team).reduce((sum,p) => sum + p.stats.captures, 0),
+    })).sort((a,b) => b.score-a.score || b.finished-a.finished || b.captures-a.captures || a.team.localeCompare(b.team));
+    next.winnerTeam = rankedTeams[0]?.team || null;
+    next.winner = next.players.find((player) => player.team === next.winnerTeam)?.countryId || null;
+  } else {
+    const ranked = next.players
+      .map((player) => ({
+        countryId: player.countryId,
+        score: scoreFor(next, player.countryId),
+        finished: player.stats.finished,
+        captures: player.stats.captures,
+        distance: player.stats.distance,
+      }))
+      .sort((a, b) => b.score - a.score || b.finished - a.finished || b.captures - a.captures || b.distance - a.distance || a.countryId.localeCompare(b.countryId));
+    next.winner = ranked[0]?.countryId || null;
+  }
   next.status = 'finished';
-  next.winner = ranked[0]?.countryId || null;
   next.endedAt = Date.now();
   next.endedReason = 'time';
   next.pendingRoll = null;
@@ -533,9 +577,12 @@ export function finishByTime(match) {
   appendEvent(next, {
     type: 'time-limit',
     countryId: next.winner,
-    text: next.winner
-      ? `Temps écoulé · ${countryFor(next.winner).name} prend l’avantage au classement de la partie.`
-      : 'Temps écoulé · partie terminée.',
+    team: next.winnerTeam,
+    text: next.winnerTeam
+      ? `Temps écoulé · Équipe ${TEAM_LABELS[next.winnerTeam]} prend l’avantage au score cumulé.`
+      : next.winner
+        ? `Temps écoulé · ${countryFor(next.winner).name} prend l’avantage au classement de la partie.`
+        : 'Temps écoulé · partie terminée.',
   });
   return next;
 }
@@ -546,17 +593,20 @@ export function achievementsFor(match, countryId) {
   const achievements = [];
   if (player.stats.captures >= 1) achievements.push({ id: 'first-capture', title: 'Première capture', detail: 'Déclencher Fracture Matrix une première fois.' });
   if (player.pieces.every((piece) => piece.steps === FINISH_STEP)) achievements.push({ id: 'four-nexus', title: '4 au Nexus', detail: 'Réunir tous ses totems dans le Nexus.' });
-  if (match.winner === countryId && player.stats.timesCaptured === 0) achievements.push({ id: 'untouchable', title: 'Aucun pion capturé', detail: 'Gagner sans retour forcé à l’écurie.' });
+  const wonSide = match.rules?.teamMode ? Boolean(player.team && match.winnerTeam === player.team) : match.winner === countryId;
+  if (wonSide && player.stats.timesCaptured === 0) achievements.push({ id: 'untouchable', title: 'Aucun pion capturé', detail: 'Gagner sans retour forcé à l’écurie.' });
   if (match.winner === countryId && match.players.length === 8) achievements.push({ id: 'eight-nations', title: '8 nations', detail: 'Gagner une partie complète à huit pays.' });
   if (player.stats.barricadesFormed >= 2) achievements.push({ id: 'shield-master', title: 'Bouclier 3B', detail: 'Former deux barricades dans la même partie.' });
+  if (match.rules?.teamMode && wonSide) achievements.push({ id: 'alliance-2v2', title: 'Alliance 2v2', detail: 'Compléter le Nexus avec son partenaire.' });
   return achievements;
 }
 
-export function scoreFor(match, countryId) {
+export function scoreFor(match, countryId, ignoreVictory = false) {
   const player = match?.players?.find((candidate) => candidate.countryId === countryId);
   if (!player) return 0;
   const progress = player.pieces.reduce((sum, piece) => sum + Math.max(0, piece.steps + 1), 0);
-  const victory = match.winner === countryId ? 2200 : 0;
+  const wonSide = match?.rules?.teamMode ? Boolean(player.team && match.winnerTeam === player.team) : match.winner === countryId;
+  const victory = !ignoreVictory && wonSide ? 2200 : 0;
   return Math.round(
     victory
     + player.stats.captures * 190
@@ -598,6 +648,7 @@ export function readMatchSnapshot(value) {
       type: player.type === 'bot' ? 'bot' : 'human',
       aiLevel: AI_LEVELS.includes(player.aiLevel) ? player.aiLevel : rules.aiLevel,
       name: String(player.name || countryFor(player.countryId).name).slice(0, 24),
+      team: rules.teamMode && ['A','B'].includes(player.team) ? player.team : null,
       pieces,
       stats,
     };
@@ -607,6 +658,7 @@ export function readMatchSnapshot(value) {
     version: MATCH_VERSION,
     status: value.status,
     winner: value.winner && countryFor(value.winner) ? value.winner : null,
+    winnerTeam: rules.teamMode && ['A','B'].includes(value.winnerTeam) ? value.winnerTeam : null,
     turn: value.turn,
     round: clampInt(value.round, 1, 1e6, 1),
     turnSixes: clampInt(value.turnSixes, 0, 3, 0),
@@ -622,6 +674,9 @@ export function readMatchSnapshot(value) {
     lastEvent: plain(value.lastEvent) ? value.lastEvent : null,
   };
 
+  if (rules.teamMode) {
+    if (players.length !== 4 || players.filter((p)=>p.team==='A').length !== 2 || players.filter((p)=>p.team==='B').length !== 2) return null;
+  }
   if (result.pendingRoll !== null && result.status === 'playing') result.pendingMoves = legalMoves(result, result.pendingRoll);
   if (result.status === 'finished' && !result.winner) return null;
   return result;
