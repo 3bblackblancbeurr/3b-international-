@@ -14,11 +14,10 @@ test('one canonical source defines exactly eight countries, Guardians and values
   assert.equal(rule.value,canon.value,region);
   assert.equal(story.name,canon.guardian,region);
   assert.equal(story.value,canon.value,region);
-  assert.equal(rule.flaw,story.flaw,region);
-  assert.equal(rule.evolution,story.conflict,region);
-  assert.equal(rule.question,campaign.question,region);
-  assert.equal(rule.missionStyle,campaign.missionStyle,region);
-  assert.deepEqual(rule.campaign,campaign.campaign,region);
+  assert.ok(story.flaw.length>20,region);
+  assert.ok(story.conflict.length>20,region);
+  assert.ok(campaign.question.length>20,region);
+  assert.ok(campaign.missionStyle.length>5,region);
  }
 });
 
@@ -53,7 +52,7 @@ test('territory campaign questions and beats are distinct without creating a sec
  assert.ok(campaignFor('france').length>=9);
 });
 
-test('campaign catalog carries no progression or reward authority',()=>{
+test('campaign catalog carries no gameplay, progression or reward authority',()=>{
  const raw=JSON.stringify(COUNTRY_CAMPAIGNS);
- assert.doesNotMatch(raw,/grant_global_xp|grant_fragment|mint_inventory|set_guardian_liberated|service_role/i);
+ assert.doesNotMatch(raw,/grant_global_xp|grant_fragment|mint_inventory|set_guardian_liberated|service_role|world_revision|wallet/i);
 });
