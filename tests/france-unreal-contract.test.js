@@ -138,3 +138,16 @@ test('France blockout is compact, connected and follows the canonical story rout
  assert.equal(layout.story_route[0],'gate_arrival');
  assert.equal(layout.story_route.at(-1),'post_liberation_hub');
 });
+
+
+test('sprint request is predicted locally but bounded again by the server Character',()=>{
+ const header=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBCharacter.h');
+ const source=read('../unreal/ThreeBWorld/Source/ThreeBWorld/ThreeBCharacter.cpp');
+ const manifest=json('../unreal/ThreeBWorld/Data/France/france-editor-asset-manifest.json');
+ assert.match(header,/SprintAction/);
+ assert.match(header,/UFUNCTION\(Server, Reliable\)/);
+ assert.match(source,/ServerSetSprintRequested_Implementation/);
+ assert.match(source,/FMath::Clamp\(SprintSpeed, SafeWalkSpeed, 850\.0f\)/);
+ assert.match(source,/ETriggerEvent::Canceled/);
+ assert.ok(manifest.required_assets.some(x=>x.path.endsWith('/IA_Sprint')));
+});
