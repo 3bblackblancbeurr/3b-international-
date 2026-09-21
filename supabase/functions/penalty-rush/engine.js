@@ -30,7 +30,7 @@ export function interpretAttackGesture(sample = {}) {
     return { type: 'accelerate', intensity: clamp(0.62 + speed * 0.55, 0.62, 1) };
   }
 
-  if (heldMs >= 160 && distance >= 18) {
+  if (heldMs >= 320 && distance >= 18) {
     const shot = shotFromGesture({ dx, dy, durationMs, heldMs, curve });
     return { type: shot.type, shot };
   }
