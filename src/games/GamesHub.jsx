@@ -20,6 +20,7 @@ import './premium.css';
 import './labyrinth.css';
 import {GAME_CATALOG} from './catalog.js';
 import {MazeCampaign,MazeResult} from './MazeCampaign.jsx';
+import Dada3B from './Dada3B.jsx';
 import {unlockedMazeLevel} from './maze-campaign.js';
 import './maze-campaign.css';
 export const GAME_LIST=GAME_CATALOG.map(g=>({...g,create:{arena:()=>new Arena(),maze:(saved,level)=>new Maze(undefined,saved,level)}[g.id]}));
@@ -38,7 +39,7 @@ export default function GamesHub({goTo}){
   <div className="premium-library" aria-label="Choisir un jeu">{GAME_LIST.map(g=>{const Card=g.href?'a':'button';return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{setSelection(g.id);setActive(g);}})}><span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span><span className="premium-card-copy"><span className="premium-card-genre">{g.genre} · {g.time}</span><strong>{g.title}</strong><span className="premium-card-description">{g.text}</span><span className="premium-card-bottom"><span>{g.href?'S’ouvre dans un nouvel onglet':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span><span className="premium-card-play"><Play size={15}/>Jouer</span></span></span></Card>;})}</div>
   <details className="game-progress"><summary>Sauvegarde et progression</summary><p role="status">{saveMessage}</p><div><button onClick={exportSave}><Download size={15}/> Exporter la sauvegarde</button> <button onClick={()=>fileRef.current.click()} disabled={loading}><Upload size={15}/> Importer</button><input hidden ref={fileRef} type="file" accept=".json,application/json" onChange={importSave} aria-label="Importer une sauvegarde Jeux 3B"/></div></details>
   <p className="arcade-small">Les huit pays : {COUNTRIES.join(' · ')}.</p>
-  {active&&createPortal(React.createElement(active.id==='tower'?DoorPlayer:GamePlayer, {key:active.id,config:active,saved:progress[active.id],onCheckpoint:checkpoint,saveMessage,onClose:()=>setActive(null),onBenefits:()=>{setActive(null);goTo(user?'loyalty':'member');}}),document.body)}
+  {active&&createPortal(active.id==='dada3b'?<Dada3B key={active.id} saved={progress.dada3b} record={progress.records.dada3b} onCheckpoint={checkpoint} saveMessage={saveMessage} onClose={()=>setActive(null)} onAccount={()=>{setActive(null);goTo('member');}}/>:React.createElement(active.id==='tower'?DoorPlayer:GamePlayer, {key:active.id,config:active,saved:progress[active.id],onCheckpoint:checkpoint,saveMessage,onClose:()=>setActive(null),onBenefits:()=>{setActive(null);goTo(user?'loyalty':'member');}}),document.body)}
  </section>;
 }
 function GamePlayer({config,onClose,onBenefits,saved,onCheckpoint,saveMessage}){
