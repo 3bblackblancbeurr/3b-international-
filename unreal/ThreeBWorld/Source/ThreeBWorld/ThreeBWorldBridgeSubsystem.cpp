@@ -18,6 +18,10 @@ void UThreeBWorldBridgeSubsystem::Fail(const FString& Message)
 {
     SessionToken.Reset();
     UserId.Reset();
+    PassportId.Reset();
+    Country.Reset();
+    BootstrapWorldJson.Reset();
+    WorldRevision = 0;
     OnBridgeError.Broadcast(Message);
 }
 
@@ -89,9 +93,20 @@ void UThreeBWorldBridgeSubsystem::RedeemLaunchTicket(const FString& Ticket, cons
                 return;
             }
 
+            FString WorldJson;
+            if (const TSharedPtr<FJsonValue>* WorldValue = Json->Values.Find(TEXT("world_state")); WorldValue && WorldValue->IsValid() && !(*WorldValue)->IsNull())
+            {
+                const TSharedRef<TJsonWriter<>> WorldWriter = TJsonWriterFactory<>::Create(&WorldJson);
+                FJsonSerializer::Serialize((*WorldValue)->AsObject().ToSharedRef(), WorldWriter);
+            }
+
             SessionToken = MoveTemp(NewSessionToken);
             UserId = MoveTemp(NewUserId);
-            OnBridgeReady.Broadcast(UserId, PassportId, Country, FMath::Max(0, FMath::RoundToInt(Revision)));
+            this->PassportId = MoveTemp(PassportId);
+            this->Country = MoveTemp(Country);
+            BootstrapWorldJson = MoveTemp(WorldJson);
+            WorldRevision = FMath::Max(0, FMath::RoundToInt(Revision));
+            OnBridgeReady.Broadcast(UserId, this->PassportId, this->Country, WorldRevision);
         });
 
     if (!Request->ProcessRequest())
