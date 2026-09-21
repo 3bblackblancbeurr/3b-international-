@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
+import {HUB_MISSION_ACTION_PLANS} from '../src/world/hub/mission-actions.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
 import {HUB_BUILDING_IDS} from '../src/world/hub/activity-catalog.js';
 import {findPath} from '../src/world/navigation.js';
@@ -33,12 +34,16 @@ test('metropolis runtime exposes the 19 canonical buildings plus adaptive city f
  }
 });
 
-test('all 20 canonical Hub missions are action-driven',()=>{
+test('all 20 canonical Hub missions are action-driven through signals or physical action plans',()=>{
  assert.equal(plan.firstPlayableSlice.missions.length,4);
- assert.equal(Object.keys(HUB_MISSION_SIGNAL_RULES).length,20);
+ const signalIds=Object.keys(HUB_MISSION_SIGNAL_RULES),actionIds=Object.keys(HUB_MISSION_ACTION_PLANS);
  const missionIds=JSON.parse(readFileSync(new URL('../src/world/hub/data/missions-v1.json',import.meta.url),'utf8')).map(m=>m.id).sort();
- assert.deepEqual(Object.keys(HUB_MISSION_SIGNAL_RULES).sort(),missionIds);
+ const covered=[...new Set([...signalIds,...actionIds])].sort();
+ assert.equal(covered.length,20);
+ assert.deepEqual(covered,missionIds);
+ assert.equal(signalIds.length+actionIds.length,20,'a mission must have one authoritative driver');
  for(const rules of Object.values(HUB_MISSION_SIGNAL_RULES))assert.ok(rules.length>=2);
+ for(const stages of Object.values(HUB_MISSION_ACTION_PLANS))assert.ok(stages.length>=1);
 });
 
 test('all 16 canonical secrets have a live unlock contract',()=>{

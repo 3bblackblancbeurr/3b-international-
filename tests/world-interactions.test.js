@@ -48,8 +48,10 @@ test('World HUD and page wire the compact secondary action surface',()=>{
  const page=fs.readFileSync(new URL('../src/world/WorldPage.jsx',import.meta.url),'utf8');
  const scene=fs.readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
  assert.match(hud,/play-interaction-more/);
- assert.match(hud,/contextualActions/);
- assert.match(page,/runContextAction/);
- assert.match(page,/ACTION · RÉACTION · CONSÉQUENCE/);
- assert.match(scene,/contextEffect\(kind,item\)/);
+ assert.match(hud,/contextActions/);
+ assert.match(hud,/play-context-actions/);
+ assert.match(page,/async function interact\(item,actionId=null\)/);
+ assert.match(page,/actionFeedback/);
+ assert.match(scene,/contextAction\(actionId,item\)/);
+ assert.match(scene,/performTraversal\(actionId,item\)/);
 });

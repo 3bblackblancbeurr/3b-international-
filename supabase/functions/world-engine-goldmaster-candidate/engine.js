@@ -1,7 +1,8 @@
-import {DISTRICT_JOBS} from './district-jobs.js';
+import {DISTRICT_JOBS,applyDistrictJobAction,jobReadyToTurnIn,jobAvailableInContext} from './district-jobs.js';
 import {CARDS,COUNTRIES,cardById,countryById} from './catalog.js';
 import {normalizeAvatar} from './avatar-rules.js';
 import {stepField} from './field-combat.js';
+import {resolveResonanceContext} from './resonance-context.js';
 import {beginField,fieldMover} from './field-world.js';
 import {frontierState,RESOURCE_SITES,BUILDINGS,buildCost,patrolOpponent} from './frontier.js';
 import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMissions,makeEncounter,worldItems,guardianReady,clamp} from './rules.js';
@@ -13,7 +14,9 @@ import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_BUILDING_S
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
 import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
-import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState} from './guardian-values.js';
+import {HUB_DIALOGUE_INTENT_SET} from './hub/dialogue-intents.js';
+import {applyHubMissionAction} from './hub/mission-actions.js';
+import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState,guardianValueDecision} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
 
 const fail=text=>{throw Error(text);};
@@ -66,6 +69,7 @@ export function applyWorldAction(input,action){
  const inCountry=()=>requireThat(!!c&&s.visited.includes(region),'Traverse d’abord une porte.');
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
  const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
+ const activeResonance=()=>s.adventure.resonance&&s.seals.includes(s.adventure.resonance)?s.adventure.resonance:null;
  const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
   case 'cinematicSeen':{
@@ -104,6 +108,14 @@ export function applyWorldAction(input,action){
    const missions=claimHubMission(s.hub.missions,action.id),rewardValue=hubMissionReward(mission);
    s=gain(s,{hub:{...s.hub,missions}});return reward(s,rewardValue.xp,rewardValue.shards);
   }
+  case 'hubMissionAction':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   requireThat(HUB_MISSION_BY_ID[action.missionId],'Mission Hub inconnue.');
+   const result=applyHubMissionAction(s.hub.missions,s.hub.stats.missionActions||{},action.missionId,action.actionId);
+   requireThat(result.ok,'Action de mission invalide pour cet objectif.');
+   if(result.duplicate)return s;
+   return gain(s,{hub:{...s.hub,missions:result.missions,stats:{...s.hub.stats,missionActions:result.progress}}});
+  }
   case 'hubEventDiscover':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_EVENT_SET.has(action.id),'Événement Hub inconnu.');
    const next=s.hub.events.includes(action.id)?s:reward(gain(s,{hub:{...s.hub,events:[...s.hub.events,action.id]}}),25,6);
@@ -133,6 +145,13 @@ export function applyWorldAction(input,action){
    const history=[...(s.hub.stats.dialogueHistory||[]),{npcId:action.npcId,sceneId:String(action.sceneId||'scene').slice(0,48),choiceId:action.choiceId}].slice(-120);
    return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,dialogueHistory:history}}});
   }
+  case 'hubDialogueIntent':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_NPC_SET.has(action.npcId),'Personnage Hub inconnu.');
+   requireThat(HUB_DIALOGUE_INTENT_SET.has(action.intentId),'Sujet de conversation inconnu.');
+   const row={npcId:action.npcId,sceneId:'intent',choiceId:action.intentId},existing=s.hub.stats.dialogueHistory||[],last=existing.at(-1);
+   const history=last?.npcId===row.npcId&&last?.sceneId===row.sceneId&&last?.choiceId===row.choiceId?existing:[...existing,row].slice(-120);
+   return gain(s,{hub:{...s.hub,stats:{...s.hub.stats,dialogueHistory:history}}});
+  }
   case 'hubDistrictVisit':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');requireThat(HUB_DISTRICT_SET.has(action.id),'Quartier Hub inconnu.');
    const next=s.hub.stats.districtVisits.includes(action.id)?s:gain(s,{hub:{...s.hub,stats:{...s.hub.stats,districtVisits:[...s.hub.stats.districtVisits,action.id]}}});
@@ -158,13 +177,13 @@ export function applyWorldAction(input,action){
    peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis d’abord le quartier avant l’épreuve du Gardien.');
    const rule=GUARDIAN_VALUES[region],current=normalizeGuardianValueState(region,s.adventure.values?.[region]),step=guardianValueStep(region,current);
    requireThat(rule&&step&&!current.completed,'Cette épreuve de valeur est déjà terminée.');
-   requireThat(action.choiceId===step.id,'Ce choix ne correspond pas à la valeur attendue.');
-   const nextValue=normalizeGuardianValueState(region,{choices:[...current.choices,action.choiceId]}),values={...s.adventure.values,[region]:nextValue};
-   s=adventure(s,{values});
-   return nextValue.completed?reward(s,60,15):s;
+   const decision=guardianValueDecision(region,current,action.choiceId);requireThat(decision.ok,'Cette réponse ne correspond pas à la situation actuelle.');
+   const nextValue=decision.state,values={...s.adventure.values,[region]:nextValue};s=adventure(s,{values});
+   return nextValue.completed&&!current.completed?reward(s,60,15):s;
   }
-  case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
-  case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
+  case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(jobAvailableInContext(job,region,s.seals),'Ce contrat n’est pas disponible dans ce pays ou à ce stade.');requireThat(!home.activeJob,'Termine d’abord ton contrat actuel.');requireThat(!home.jobs?.includes(action.id),'Ce contrat reviendra après une nouvelle expédition.');requireThat(home.food>=job.cost,'Il faut davantage de provisions pour accepter ce contrat.');return setHome({food:home.food-job.cost,activeJob:action.id,jobStage:0,jobProgress:[]});}
+  case 'jobAction':{peaceful();inCountry();requireThat(home.activeJob===action.job,'Cette action n’appartient pas à ton contrat actif.');const result=applyDistrictJobAction(home,action.actionId);requireThat(result.ok,'Action de contrat invalide pour cette étape.');if(result.duplicate)return s;return setHome({jobStage:result.home.jobStage,jobProgress:result.home.jobProgress});}
+  case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucun contrat à remettre ici.');requireThat(jobReadyToTurnIn(home),'Termine toutes les étapes du contrat avant de revenir.');const delta={activeJob:null,jobStage:0,jobProgress:[],jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,job.xp||20,job.shards||0);}
   case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden:0)),harvest:[...home.harvest,site.id]});}
   case 'build':{peaceful();inCountry();const cost=buildCost(home,action.building);requireThat(cost&&BUILDINGS[action.building],'Construction inconnue.');requireThat(home[action.building]<8,'Ce bâtiment est au rang maximal.');requireThat(home.wood>=cost.wood&&home.stone>=cost.stone,'Récolte le bois et la pierre nécessaires.');s=setHome({wood:home.wood-cost.wood,stone:home.stone-cost.stone,[action.building]:home[action.building]+1});return reward(s,40,0);}
   case 'recover':{peaceful();inCountry();requireThat(home.food===0,'Tu as déjà des provisions.');return setHome({food:1});}
@@ -174,10 +193,12 @@ export function applyWorldAction(input,action){
    const person=patrolOpponent(region,home.expedition);
    const enc={...makeEncounter(person,s,true),recoveries:2},expert=s.adventure.difficulty==='expert';
    enc.enemy=enc.enemyMax=100+Math.min(180,home.expedition*8)+(expert?55:0);s=setHome({food:home.food-1});
-   return adventure(s,{encounter:{...enc,patrol:true,region,expert,phase:1,pactSeed:home.expedition,intent:c.pattern[home.expedition%c.pattern.length],log:'Protège les environs. Une victoire renouvelle les ressources et entraîne ton groupe.'}});
+   return adventure(s,{encounter:{...enc,patrol:true,region,expert,resonance:activeResonance(),resonanceCharges:activeResonance()?1:0,phase:1,pactSeed:home.expedition,intent:c.pattern[home.expedition%c.pattern.length],log:'Protège les environs. Une victoire renouvelle les ressources et entraîne ton groupe.'}});
   }
   case 'companion':{peaceful();if(action.id===null)return adventure(s,{companionHidden:true});requireThat(cardById[action.id]?.character&&s.collection[action.id],'Gagne d’abord la confiance de ce personnage.');return adventure(s,{companion:action.id,companionHidden:false});}
   case 'companionOrder':{peaceful();requireThat(['follow','scout','support','guard'].includes(action.value),'Ordre compagnon invalide.');return adventure(s,{companionOrder:action.value});}
+  case 'resonanceSelect':{peaceful();if(action.region===null)return adventure(s,{resonance:null,resonanceContext:null});requireThat(!!GUARDIAN_VALUES[action.region]&&s.seals.includes(action.region),'Libère d’abord ce Gardien pour utiliser sa Résonance.');return adventure(s,{resonance:action.region,resonanceContext:null});}
+  case 'resonanceContext':{peaceful();const resonanceContext=resolveResonanceContext(s,action);return adventure(s,{resonanceContext});}
   case 'prepare':{peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis ce quartier pour préparer ton groupe.');return adventure(s,{preparation:region});}
   case 'survey':{peaceful();inCountry();requireThat(['city','rural'].includes(action.id),'Lieu inconnu.');const id=region+':'+action.id;if(s.adventure.discoveries.includes(id))return s;return reward(adventure(s,{discoveries:[...s.adventure.discoveries,id]}),25,6);}
   case 'avatar':{peaceful();const avatar=normalizeAvatar({...action.avatar,created:true});requireThat(avatar.created,'Choisis un nom pour ton personnage.');return adventure(s,{avatar});}
@@ -222,11 +243,11 @@ export function applyWorldAction(input,action){
    if(boss&&s.adventure.values?.[region]?.completed){enc.focus=Math.min(3,enc.focus+1);enc.hp+=12;enc.maxHP+=12;enc.stats.health+=12;}
    if(s.adventure.preparation){const prepared=chapterState(s,s.adventure.preparation);if(prepared.restored>=2){if(prepared.choice==='workshop')enc.stats.attack+=4;else{enc.hp+=16;enc.maxHP+=16;enc.stats.health+=16;}}s=adventure(s,{preparation:null});}
    if(expert){enc.enemy=Math.round(enc.enemy*1.4);enc.enemyMax=enc.enemy;}
-   return adventure(s,{encounter:{...enc,region,expert,phase:1,pactSeed:cardById[item.card].number+s.wins,intent:boss?c.pattern[0]:'frappe'}});
+   return adventure(s,{encounter:{...enc,region,expert,resonance:activeResonance(),resonanceCharges:activeResonance()?1:0,phase:1,pactSeed:cardById[item.card].number+s.wins,intent:boss?c.pattern[0]:'frappe'}});
   }
   case 'fieldStart':{requireThat(e&&!e.result,'Aucune rencontre en cours.');return adventure(s,{encounter:{...e,field:e.field||beginField(s,e)}});}
   case 'field':case 'battle':{
-   requireThat(action.type==='field'||!e?.field,'Ce combat se joue en temps réel.');
+   requireThat(action.type==='field'||(!e?.field&&!e?.final),e?.final?'La finale se joue uniquement en temps réel.':'Ce combat se joue en temps réel.');
    let next=action.type==='field'?stepField(e,action,fieldMover(s)):advanceBattle(e,action.action);
    if(next.result==='victory'&&!e.rewarded){
     if(e.patrol){const h=frontierState(s,e.region),mastery={...s.adventure.mastery};for(const id of new Set([s.leader,...s.team]))mastery[id]=Math.min(999999,(mastery[id]||0)+30);s=reward(adventure(s,{frontier:{...s.adventure.frontier,[e.region]:{...h,expedition:h.expedition+1,harvest:[],jobs:[]}},mastery}),35,8);}
@@ -263,7 +284,9 @@ export function applyWorldAction(input,action){
   case 'final':{
    peaceful();requireThat(region==='hub'&&nexusLevel(s)===COUNTRIES.length&&s.seals.length===COUNTRIES.length,'Reconstruis les huit pays et réunis les huit sceaux.');requireThat(!s.adventure.finished,'L’Union est déjà retrouvée.');
    const card=CARDS.find(c=>c.id==='C164'),enc=makeEncounter(card,s,true);enc.hp=enc.maxHP+=40;enc.enemy=enc.enemyMax=360;
-   return adventure(s,{encounter:{...enc,recoveries:2,final:true,region:'france',expert:false,phase:1,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Protège ton équipe et attends ses ouvertures.'}});
+   const finale={...enc,recoveries:2,final:true,region:'france',expert:false,resonance:activeResonance(),resonanceCharges:activeResonance()?1:0,phase:1,finalCirclePhase:0,finalCircleMastery:0,pactSeed:0,intent:'frappe',log:'L’Oubli rassemble les attaques des huit gardiens. Chaque passage exige de comprendre la mécanique du Gardien qui intervient.'};
+   finale.field=beginField(s,finale);requireThat(finale.field,'L’arène finale n’a pas pu être préparée.');
+   return adventure(s,{encounter:finale});
   }
   default:fail('Action de jeu non autorisée.');
  }

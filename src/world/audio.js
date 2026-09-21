@@ -1,5 +1,6 @@
 import {spatialAudio} from './audio-spatial.js';
 import {AUDIO_STATES,audioStateProfile} from './audio-director.js';
+import {actionFeedback} from './interaction-system.js';
 const NOTES={hub:174.61,france:196,italie:220,estonie:164.81,turquie:146.83,algerie:174.61,tunisie:196,maroc:146.83,espagne:164.81};
 const SCALES={
  hub:[1,1.2,1.5,2],france:[1,1.125,1.5,1.75],italie:[1,1.25,1.5,1.875],estonie:[1,1.2,1.6,2],
@@ -76,6 +77,21 @@ export function createWorldAudio(){
   else if(type==='reward'||type==='hubMissionClaim'){tone(440,.28,.08);setTimeout(()=>tone(660,.45,.07),120);}
   else tone(type==='power'?440:660,.3,.07);
  }
+ function interaction(actionId){
+  const feedback=actionFeedback(actionId);if(!feedback)return false;
+  const cfg={
+   talk:[410,.10,.035,'sine'],talk_soft:[360,.10,.028,'sine'],evidence:[690,.18,.055,'triangle'],inspect:[520,.12,.032,'sine'],
+   scan:[760,.22,.045,'sine'],memory:[280,.34,.065,'triangle'],collect:[620,.16,.052,'triangle'],use:[460,.12,.042,'triangle'],
+   door:[190,.16,.05,'triangle'],repair:[145,.22,.055,'triangle'],assemble:[240,.2,.05,'triangle'],help:[330,.18,.045,'sine'],
+   carry:[120,.16,.04,'triangle'],revive:[392,.34,.07,'sine'],climb:[155,.1,.032,'triangle'],vault:[250,.09,.04,'triangle'],
+   zipline:[540,.18,.05,'triangle'],water:[210,.18,.045,'sine'],dive:[150,.28,.055,'sine'],board:[180,.14,.04,'triangle'],
+   engine:[95,.28,.06,'triangle'],transport:[150,.22,.045,'triangle'],cloth:[230,.08,.025,'sine'],rest:[261,.24,.035,'sine'],
+   focus:[520,.14,.03,'sine'],calm:[349,.28,.05,'sine'],combat_ready:[98,.22,.075,'triangle'],guard:[220,.12,.06,'sine'],
+   companion:[440,.16,.04,'sine'],portal:[300,.32,.065,'triangle']
+  }[feedback.audio]||[380,.14,.035,'sine'];
+  if(['repair','assemble','carry','climb','vault','water','dive','engine'].includes(feedback.audio))noise(cfg[1],cfg[2]*.55,feedback.audio==='water'||feedback.audio==='dive'?900:520,sfxBus);
+  tone(cfg[0],cfg[1],cfg[2],cfg[3]);return true;
+ }
  function playSpeechQueue(){
   if(speaking||!speechQueue.length||!enabled||hidden)return;
   const entry=speechQueue.shift(),u=new globalThis.SpeechSynthesisUtterance(entry.text),voices=globalThis.speechSynthesis.getVoices().filter(v=>v.lang?.toLowerCase().startsWith(entry.lang.slice(0,2).toLowerCase())),seed=hash(entry.character);
@@ -106,7 +122,7 @@ export function createWorldAudio(){
   spatialEvent,
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);applyMix();},
   step(id){stepFlip=!stepFlip;noise(.06,inside?.06:.035,inside?520:1450);tone((inside?100:id==='estonie'?175:132)*(stepFlip?1:1.04),.055,.025,'triangle');},
-  event,speak,transport,
+  event,interaction,speak,transport,
  cinematic(kind='micro'){
   if(!ctx||!enabled||hidden)return;
   const major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-intro','final-combat-intro','important-combat-result'].includes(kind);

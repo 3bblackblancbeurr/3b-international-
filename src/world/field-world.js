@@ -15,8 +15,9 @@ export function combatObstacles(save){
  return cache.get(key);
 }
 export function beginField(save,encounter){
- const items=landscapeItems(save.region,save),enemy=items.find(i=>encounter.patrol?i.type==='patrol':i.card===encounter.card);
+ const items=landscapeItems(save.region,save),enemy=items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===encounter.card);
  if(!enemy)return null;
+ if(encounter.final)return startField({x:enemy.x,z:enemy.z+11},enemy);
  const obstacles=combatObstacles(save),approach=findInteractionPath({x:0,z:5},enemy,obstacles,WORLD_RADIUS).at(-1)||{x:enemy.x,z:enemy.z+8};
  return startField(approach,enemy);
 }
