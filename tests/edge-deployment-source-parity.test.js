@@ -16,11 +16,11 @@ test('Edge Function JWT classifications keep private and custom-auth boundaries 
   const bySlug=Object.fromEntries(manifest.functions.map(fn=>[fn.slug,fn]));
   for(const slug of [
     'ai-council-orchestrate','world-engine','world-bootstrap','city-3b','card-arena',
-    'marketplace-3b','delete-account','member-api','ecosystem-private','world-unreal-launch'
+    'marketplace-3b','delete-account','member-api','ecosystem-private','world-unreal-launch','control-center'
   ]){
     assert.equal(bySlug[slug]?.verify_jwt,true,slug);
   }
-  for(const slug of ['member-auth','ecosystem-public','member-hub','secret3b-claim','secret3b-phone','ecosystem']){
+  for(const slug of ['member-auth','ecosystem-public','member-hub','secret3b-claim','secret3b-phone','ecosystem','control-center-agent']){
     assert.equal(bySlug[slug]?.verify_jwt,false,slug);
   }
 
@@ -33,6 +33,12 @@ test('Edge Function JWT classifications keep private and custom-auth boundaries 
   assert.match(redeem,/loyalty_rate/);
   assert.match(redeem,/world_unreal_redeem_ticket/);
   assert.match(redeem,/p_session_ttl_seconds:1800/);
+
+  const controlAgent=readFileSync(new URL('../supabase/functions/control-center-agent/index.ts',import.meta.url),'utf8');
+  assert.match(controlAgent,/x-3b-device-token/);
+  assert.match(controlAgent,/sha256\(token\)/);
+  assert.match(controlAgent,/control_center_claim_command/);
+  assert.doesNotMatch(controlAgent,/req\.headers\.get\(['"]authorization['"]\)/i);
 
   // The long-lived API is source-only until the dedicated-server authority contract is approved.
   assert.equal(bySlug['world-unreal-api'],undefined);
