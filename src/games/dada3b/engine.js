@@ -114,6 +114,7 @@ export function createMatch(seats, ruleInput = {}) {
     rules,
     createdAt: Date.now(),
     endedAt: null,
+    endedReason: null,
     sequence: 0,
     history: [],
     players: active.map((seat) => ({
@@ -390,6 +391,7 @@ function applyMove(match, pieceIndex) {
     next.status = 'finished';
     next.winner = player.countryId;
     next.endedAt = Date.now();
+    next.endedReason = 'nexus';
     event.type = 'victory';
     event.text = `${country.name} rassemble tous ses totems · Nexus 3B complété.`;
   } else {
@@ -505,6 +507,34 @@ export function resolveTimeout(match, forcedRoll = secureRoll()) {
   return applyMove(next, pieceIndex);
 }
 
+export function finishByTime(match) {
+  if (!match || match.status !== 'playing') return match;
+  const next = structuredClone(match);
+  const ranked = next.players
+    .map((player) => ({
+      countryId: player.countryId,
+      score: scoreFor(next, player.countryId),
+      finished: player.stats.finished,
+      captures: player.stats.captures,
+      distance: player.stats.distance,
+    }))
+    .sort((a, b) => b.score - a.score || b.finished - a.finished || b.captures - a.captures || b.distance - a.distance || a.countryId.localeCompare(b.countryId));
+  next.status = 'finished';
+  next.winner = ranked[0]?.countryId || null;
+  next.endedAt = Date.now();
+  next.endedReason = 'time';
+  next.pendingRoll = null;
+  next.pendingMoves = [];
+  appendEvent(next, {
+    type: 'time-limit',
+    countryId: next.winner,
+    text: next.winner
+      ? `Temps écoulé · ${countryFor(next.winner).name} prend l’avantage au classement de la partie.`
+      : 'Temps écoulé · partie terminée.',
+  });
+  return next;
+}
+
 export function achievementsFor(match, countryId) {
   const player = match?.players?.find((candidate) => candidate.countryId === countryId);
   if (!player) return [];
@@ -580,6 +610,7 @@ export function readMatchSnapshot(value) {
     rules,
     createdAt: Number.isFinite(value.createdAt) ? value.createdAt : Date.now(),
     endedAt: Number.isFinite(value.endedAt) ? value.endedAt : null,
+    endedReason: ['nexus', 'time'].includes(value.endedReason) ? value.endedReason : null,
     sequence: clampInt(value.sequence, 0, 1e7, 0),
     history: Array.isArray(value.history) ? value.history.slice(-80).filter(plain) : [],
     players,
