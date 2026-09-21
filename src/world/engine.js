@@ -15,7 +15,7 @@ import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
 import {HUB_DIALOGUE_CHOICE_SET} from './hub/dialogue-v3.js';
 import {HUB_DIALOGUE_INTENT_SET} from './hub/dialogue-intents.js';
 import {applyHubMissionAction} from './hub/mission-actions.js';
-import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState} from './guardian-values.js';
+import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState,guardianValueDecision} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
 
 const fail=text=>{throw Error(text);};
@@ -176,10 +176,9 @@ export function applyWorldAction(input,action){
    peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis d’abord le quartier avant l’épreuve du Gardien.');
    const rule=GUARDIAN_VALUES[region],current=normalizeGuardianValueState(region,s.adventure.values?.[region]),step=guardianValueStep(region,current);
    requireThat(rule&&step&&!current.completed,'Cette épreuve de valeur est déjà terminée.');
-   requireThat(action.choiceId===step.id,'Ce choix ne correspond pas à la valeur attendue.');
-   const nextValue=normalizeGuardianValueState(region,{choices:[...current.choices,action.choiceId]}),values={...s.adventure.values,[region]:nextValue};
-   s=adventure(s,{values});
-   return nextValue.completed?reward(s,60,15):s;
+   const decision=guardianValueDecision(region,current,action.choiceId);requireThat(decision.ok,'Cette réponse ne correspond pas à la situation actuelle.');
+   const nextValue=decision.state,values={...s.adventure.values,[region]:nextValue};s=adventure(s,{values});
+   return nextValue.completed&&!current.completed?reward(s,60,15):s;
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(!home.activeJob,'Termine ta livraison actuelle.');requireThat(!home.jobs?.includes(action.id),'Les habitants proposeront une nouvelle mission après une expédition.');requireThat(home.food>=job.cost,'Il faut une provision pour partir.');return setHome({food:home.food-job.cost,activeJob:action.id});}
   case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucune livraison attendue ici.');const delta={activeJob:null,jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,15,0);}
