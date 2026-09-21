@@ -88,7 +88,7 @@ export function stepField(enc,input,move){
    let dealt=Math.round(damage),absorbed=0;
    if(guardianBoss&&mechanicRegion==='italie'&&(e.guardianShield||0)>0){absorbed=Math.min(e.guardianShield,dealt);e.guardianShield-=absorbed;dealt-=absorbed;if(e.final&&(e.guardianShield||0)<=0)masterFinal();}
    const candidateEnemy=Math.max(0,e.enemy-dealt);
-   e.enemy=e.final&&circlePhase&&!finalCirclePhaseMastered(e,circlePhase)?Math.max(finalCircleLockedEnemyFloor(e,circlePhase),candidateEnemy):candidateEnemy;e.opening=false;
+   if(e.final&&circlePhase){const floor=finalCircleLockedEnemyFloor(e,circlePhase),mastered=finalCirclePhaseMastered(e,circlePhase);e.enemy=!mastered?Math.max(floor,candidateEnemy):circlePhase.index<8?Math.max(floor-1,candidateEnemy):candidateEnemy;}else e.enemy=candidateEnemy;e.opening=false;
    if(kind==='strike')e.focus=Math.min(3,e.focus+1);
    e.log=f.combo===3?'Enchaînement : troisième frappe renforcée.':'Une ouverture dans sa défense.';
   }else e.log='Ton attaque ne porte pas. Rapproche-toi ou utilise ton pouvoir.';
