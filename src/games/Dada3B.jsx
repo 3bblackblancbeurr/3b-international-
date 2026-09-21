@@ -7,6 +7,7 @@ import {
   movePiece,normalizeRules,previewMove,readMatchSnapshot,resolveTimeout,rollTurn,scoreFor,secureRoll,selectBotMove,serializeMatch,teamScoreFor,
 } from './dada3b/engine.js';
 import {dadaRequest,subscribeDadaRoom} from './dada3b/online.js';
+import {guardianAssetFor} from './dada3b/guardians.js';
 import {closeDadaAudio,dadaHaptic,dadaSpeak,dadaTone} from './dada3b/audio.js';
 import './dada3b.css';
 
@@ -48,9 +49,10 @@ function CountryPicker({value,onChange,label='Pays'}){return <label className="d
 function RuleToggle({checked,onChange,label,detail}){return <button type="button" className="dada3b-rule-toggle" aria-pressed={checked} onClick={()=>onChange(!checked)}><span><strong>{label}</strong><small>{detail}</small></span><b>{checked?'ON':'OFF'}</b></button>;}
 
 function SeatCard({seat,country,onChange,teamMode=false}){
+ const guardian=guardianAssetFor(country.id);
  return <article className="dada3b-country-card" data-state={seat.type} data-team={seat.team||''} style={{'--country':country.accent}}>
   <header><div><b>{country.name}</b><p>{country.code} · {country.value}{teamMode&&seat.team?' · Équipe '+TEAM_LABELS[seat.team]:''}</p></div><em>{country.flag}</em></header>
-  <div className="dada3b-totem-preview" data-shape={country.shape}><span>{country.crest}</span><small>{country.guardian}</small></div>
+  <div className="dada3b-totem-preview" data-shape={country.shape}>{guardian?.portrait?<img src={guardian.portrait} alt={guardian.alt}/>:<span>{country.crest}</span>}<small>{country.guardian}</small></div>
   <div className="dada3b-seat-switch">{[['human','Joueur'],['bot','IA'],['off','Absent']].map(([v,l])=><button type="button" key={v} aria-pressed={seat.type===v} disabled={teamMode&&v==='off'} onClick={()=>onChange({...seat,type:v})}>{l}</button>)}</div>
   {seat.type==='bot'&&<select aria-label={'Niveau IA '+country.name} value={seat.aiLevel} onChange={e=>onChange({...seat,aiLevel:e.target.value})}>{AI_LEVELS.map(v=><option key={v} value={v}>{v[0].toUpperCase()+v.slice(1)}</option>)}</select>}
   {teamMode&&seat.type!=='off'&&<select className="dada3b-team-select" aria-label={'Équipe '+country.name} value={seat.team||'A'} onChange={e=>onChange({...seat,team:e.target.value})}><option value="A">Équipe OR</option><option value="B">Équipe MATRIX</option></select>}
