@@ -36,7 +36,7 @@ export function mergeRuntimePeers(peers=[],runtimeMembers=[],partyMembers=[],now
    region:existing?.region||row.region,
    x:existing?.x??Number(row.x),
    z:existing?.z??Number(row.z),
-   heading:existing?.heading??Number(row.heading)||0,
+   heading:(existing?.heading??Number(row.heading))||0,
    lifeState:row.state,
    runtimeRevision:Number(row.revision)||0,
    runtimeUpdatedAt:row.updated_at||null,
