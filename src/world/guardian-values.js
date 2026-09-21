@@ -1,4 +1,5 @@
-import {COUNTRY_NARRATIVE} from './narrative-canon.js';
+import {GUARDIAN_STORIES} from './story-canon.js';
+import {COUNTRY_CAMPAIGNS} from './country-campaigns.js';
 
 const CORE_GUARDIAN_VALUES={
  france:{card:'C165',name:'Céliane',value:'Justice',district:'archives',choices:[
@@ -31,14 +32,14 @@ const CORE_GUARDIAN_VALUES={
 
 export const GUARDIAN_VALUES=Object.fromEntries(
  Object.entries(CORE_GUARDIAN_VALUES).map(([region,data])=>{
-  const narrative=COUNTRY_NARRATIVE[region];
+  const campaign=COUNTRY_CAMPAIGNS[region],story=GUARDIAN_STORIES[region];
   return [region,{
    ...data,
-   question:narrative?.question||'',
-   missionStyle:narrative?.missionStyle||'',
-   flaw:narrative?.guardian?.flaw||'',
-   evolution:narrative?.guardian?.evolution||'',
-   campaign:narrative?.campaign||[],
+   question:campaign?.question||'',
+   missionStyle:campaign?.missionStyle||'',
+   flaw:story?.flaw||'',
+   evolution:story?.conflict||'',
+   campaign:campaign?.campaign||[],
   }];
  })
 );
