@@ -18,7 +18,7 @@ const completedMission=(item,missions)=>first((item.missionIds||[]).map(id=>[id,
 export function hubDialogueIntents(item,save,{hour=12,weather='clear'}={}){
  const missions=save?.hub?.missions||{},active=activeMission(item,missions),completed=completedMission(item,missions),options=['identity','district'];
  if(active)options.push('clue');else if((item.missionIds||[]).length)options.push('mission');
- if(item.guardianRegion||item.guardian||item.value)options.push('guardian');
+ if(item.country||item.guardianRegion||item.guardian||item.value)options.push('guardian');
  if((save?.seals?.length||0)>0||item.npcId==='noah_leroux'||item.npcId==='the_conductor')options.push('oubli');
  if((save?.beacons?.length||0)>0||completed)options.push('memory');
  if((save?.seals?.length||0)>0||weather!=='clear'||hour>=20||hour<6)options.push('opinion');
