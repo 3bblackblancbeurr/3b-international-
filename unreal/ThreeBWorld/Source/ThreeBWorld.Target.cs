@@ -6,7 +6,7 @@ public class ThreeBWorldTarget : TargetRules
     public ThreeBWorldTarget(TargetInfo Target) : base(Target)
     {
         Type = TargetType.Game;
-        DefaultBuildSettings = BuildSettingsVersion.V6;
+        DefaultBuildSettings = BuildSettingsVersion.Latest;
         IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
         ExtraModuleNames.Add("ThreeBWorld");
     }
