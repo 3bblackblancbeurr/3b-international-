@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 128,
+  "count": 129,
   "migrations": [
     {
       "version": "20260910020445",
@@ -643,6 +643,11 @@
       "version": "20260921200411",
       "name": "penalty_rooms_rls_initplan_v1",
       "sha256": "6e21c05d1cc1910c773623eb22c55e4c08df315e7452eca087f2e1b95d85d9bd"
+    },
+    {
+      "version": "20260921222400",
+      "name": "dada3b_realtime_broadcast_v1",
+      "sha256": "906dc4a4148ee6fe172b871ab03cb1c86eccb7c7d02f47261a354ee1272301f4"
     }
   ]
 }
