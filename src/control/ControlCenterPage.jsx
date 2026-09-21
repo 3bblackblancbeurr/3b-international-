@@ -77,7 +77,7 @@ export default function ControlCenterPage({goTo}){
     <button className="control-primary" onClick={createPairing} disabled={!!busy}><KeyRound size={16}/> {busy==='pair'?'Création…':'Appairer un PC'}</button>
     {pairing&&<div className="control-pairing">
      <span>CODE TEMPORAIRE</span><strong>{pairing.code}</strong>
-     <small>À saisir dans l’agent 3B du PC. Ce code expire automatiquement.</small>
+     <small>Sur le PC, double-clique <strong>scripts/pair-3b-control-agent.cmd</strong> et saisis ce code. Ensuite lance <strong>start-3b-control-agent.cmd</strong>. Le code expire automatiquement.</small>
     </div>}
    </article>
 
