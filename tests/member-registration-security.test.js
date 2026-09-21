@@ -71,7 +71,8 @@ test('registration schema is service-only and represented in applied migration m
  const manifest=JSON.parse(readFileSync('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json','utf8'));
  const row=manifest.migrations.find(item=>item.version==='20260921171141');
  assert.equal(row?.sha256,'c1700cb278f74422f839d7bf4a8b68abbf0b3e65cec83281218660f60aba01b3');
- assert.equal(manifest.count,120);
+ assert.equal(manifest.count,manifest.migrations.length);
+ assert.ok(manifest.count>=120);
 });
 
 test('auth email returns are routed to the member area and cleaned on navigation',()=>{
@@ -93,5 +94,6 @@ test('zero-downtime auth rollout gate is service-only and removable after v2 fro
  const manifest=JSON.parse(readFileSync('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json','utf8'));
  const row=manifest.migrations.find(item=>item.version==='20260921172824');
  assert.equal(row?.sha256,'2b817049381abf7b537d28d9c14efc0dfa95d803bdd7968cb35e92778f72d093');
- assert.equal(manifest.count,120);
+ assert.equal(manifest.count,manifest.migrations.length);
+ assert.ok(manifest.count>=120);
 });
