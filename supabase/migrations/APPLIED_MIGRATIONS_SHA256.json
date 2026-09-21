@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 121,
+  "count": 122,
   "migrations": [
     {
       "version": "20260910020445",
@@ -608,6 +608,11 @@
       "version": "20260921180414",
       "name": "control_center_v1",
       "sha256": "f4643698a97fa2246f372cce03293e20120525e1f665537d059bbd3ecf8d1001"
+    },
+    {
+      "version": "20260921182535",
+      "name": "control_center_fk_indexes_v1",
+      "sha256": "f76d20babbeb3a5ca0c2b2d578d4883f3bdf7af5b333a9a20761649de8fee2c9"
     }
   ]
 }
