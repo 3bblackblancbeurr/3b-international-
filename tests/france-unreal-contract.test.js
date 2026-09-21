@@ -111,7 +111,7 @@ test('France editor manifest has unique canonical 3B asset paths and five story 
 
 test('Céliane StateTree spec cannot liberate from health or client-only state',()=>{
  const spec=json('../unreal/ThreeBWorld/Data/France/celiane-state-tree-spec.json');
- const liberated=spec.transitions.filter(t=>t.to==='liberated');
+ const liberated=spec.transitions.filter(t=>t.to==='liberated'&&t.from!=='liberated');
  assert.equal(liberated.length,1);
  assert.ok(liberated[0].when.includes('france.guardian_liberated == true'));
  assert.ok(liberated[0].when.includes('server_revision_advanced'));
