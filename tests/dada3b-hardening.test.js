@@ -90,5 +90,10 @@ test('observatory exposes aggregated seven-day metrics without player identities
   assert.match(ui,/Observatoire DADA 3B/);
   assert.match(ui,/DONNÉES AGRÉGÉES/);
   assert.match(ui,/Échantillon encore trop faible/);
-  assert.doesNotMatch(edge,/metrics7d[\s\S]{0,4000}user_id/);
+  const start=edge.indexOf('async function metrics7d');
+  const end=edge.indexOf('async function readBody',start);
+  const metricsBody=edge.slice(start,end);
+  assert.ok(start>=0&&end>start);
+  assert.doesNotMatch(metricsBody,/user_id/);
+  assert.doesNotMatch(metricsBody,/handle/);
 });
