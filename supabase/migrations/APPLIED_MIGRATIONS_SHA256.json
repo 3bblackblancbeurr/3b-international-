@@ -632,12 +632,12 @@
     {
       "version": "20260921194045",
       "name": "public_director_identity_v1",
-      "sha256": "PENDING_REPO_VERIFIER"
+      "sha256": "28b8d262a7567a055a96954ee9c2b78f53aae111d718ff205d66954cbd3c58ec"
     },
     {
       "version": "20260921194443",
       "name": "penalty_rush_multiplayer_v1",
-      "sha256": "PENDING_REPO_VERIFIER"
+      "sha256": "f8cc3dc2cfcadc828e14129900276fb3f186ff59f1ee0827019ee077294009a3"
     }
   ]
 }
