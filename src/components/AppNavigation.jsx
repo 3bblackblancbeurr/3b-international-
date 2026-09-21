@@ -32,9 +32,10 @@ const QUICK_LINKS = [
 ];
 
 export default function AppNavigation({ page, title, menuItems, goTo }) {
-  const dialog = useRef(null);
+  const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
   const activePage = page.startsWith("ia-") ? "ia" : page;
   const allItems = menuItems;
 
@@ -42,6 +43,24 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
   const matching = allItems.filter(item => normalize(`${item.label} ${item.description}`).includes(normalize(query.trim())));
 
   useEffect(() => { dialog.current?.close(); }, [page]);
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => { window.removeEventListener('online', update); window.removeEventListener('offline', update); };
+  }, []);
+  useEffect(() => {
+    const shortcut = event => {
+      if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey) return;
+      const tag = event.target?.tagName;
+      if (event.target?.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+      event.preventDefault();
+      if (!dialog.current?.open) openMenu();
+      else searchInput.current?.focus();
+    };
+    window.addEventListener('keydown', shortcut);
+    return () => window.removeEventListener('keydown', shortcut);
+  }, []);
   useEffect(() => {
     if (!isOpen) return;
     const previous = document.body.style.overflow;
@@ -51,8 +70,9 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
 
   function openMenu() {
     setQuery("");
-    dialog.current.showModal();
+    if (!dialog.current?.open) dialog.current?.showModal();
     setIsOpen(true);
+    requestAnimationFrame(() => searchInput.current?.focus());
   }
   function navigate(nextPage) {
     dialog.current.close();
@@ -71,7 +91,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen}><Menu size={20} aria-hidden="true" /><span>Menu</span></button>
+      <div className="header-actions"><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></button></div>
     </header>
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">
@@ -92,7 +112,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current.close();
     }}>
       <div className="dialog-heading"><div><p className="eyebrow">Tout commence ici</p><h2 id="menu-title">L’univers 3B</h2></div><button className="icon-button" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={23} aria-hidden="true" /></button></div>
-      <div className="menu-search"><Search size={19} aria-hidden="true" /><input type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher une rubrique…" value={query} onChange={event => setQuery(event.target.value)} /></div>
+      <div className="menu-search"><Search size={19} aria-hidden="true" /><input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher une rubrique…  /" value={query} onChange={event => setQuery(event.target.value)} /></div>
       <div className="dialog-scroll">
         {NAV_GROUPS.map(group => {
           const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
