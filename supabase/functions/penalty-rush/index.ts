@@ -975,6 +975,19 @@ async function route(req:Request) {
     return { profile:publicProfile(fresh, club?.name || ''), snapshot:await snapshotFor(uid, fresh), message:'Club rejoint.' };
   }
 
+  if (action === 'international.respond') {
+    const selection = await respondInternationalSelection(uid, body.selectionId, body.decision);
+    const fresh = await ensureProfile(uid);
+    const club = await clubFor(uid);
+    return {
+      profile:publicProfile(fresh, club?.name || ''),
+      snapshot:await snapshotFor(uid, fresh),
+      message:selection.status === 'selected'
+        ? 'Convocation acceptée · tu représenteras ton pays.'
+        : 'Convocation déclinée.',
+    };
+  }
+
   const roomId = String(body.room || '');
   let room = await fetchRoom(roomId);
   if (!room) throw new Failure(404, 'Duel introuvable.');
