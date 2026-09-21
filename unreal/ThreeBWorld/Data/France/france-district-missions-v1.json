@@ -1,0 +1,350 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "purpose": "France-local mission and exploration contract. It complements the ten canonical Justice phases without replacing the Nexus canonical mission catalog.",
+  "authority_model": {
+    "completion": "server_verified_for_persistent_outcomes",
+    "rewards": "server_policy_only",
+    "client_may_present": [
+      "markers",
+      "dialogue",
+      "temporary_feedback",
+      "cinematic_feedback"
+    ],
+    "client_may_not": [
+      "grant_global_xp",
+      "grant_inventory",
+      "grant_fragment",
+      "set_guardian_liberated"
+    ]
+  },
+  "mission_types": [
+    "district",
+    "exploration",
+    "rescue",
+    "investigation",
+    "weather",
+    "secret",
+    "post_liberation"
+  ],
+  "missions": [
+    {
+      "id": "fr_centre_balances",
+      "title": "Les Balances de la Place",
+      "type": "district",
+      "district_id": "france_centre",
+      "available_phases": [
+        "human_problem",
+        "investigation"
+      ],
+      "requires_world_state": [
+        "pre_justice",
+        "justice_crisis"
+      ],
+      "objectives": [
+        "écouter deux groupes en conflit",
+        "retrouver un fait vérifiable",
+        "présenter le fait au médiateur"
+      ],
+      "gameplay": [
+        "dialogue",
+        "evidence",
+        "justice_resonance"
+      ],
+      "consequence": "reduces_square_tension",
+      "reward_policy_key": "france.district.centre.mediation"
+    },
+    {
+      "id": "fr_populaire_three_doors",
+      "title": "Trois portes, trois versions",
+      "type": "investigation",
+      "district_id": "france_populaire",
+      "available_phases": [
+        "human_problem",
+        "investigation"
+      ],
+      "requires_world_state": [
+        "justice_crisis"
+      ],
+      "objectives": [
+        "suivre trois témoignages",
+        "inspecter les toits",
+        "identifier la contradiction commune"
+      ],
+      "gameplay": [
+        "parkour",
+        "dialogue",
+        "evidence"
+      ],
+      "consequence": "opens_rooftop_shortcut",
+      "reward_policy_key": "france.district.populaire.truth"
+    },
+    {
+      "id": "fr_ancien_foundations",
+      "title": "Sous les Fondations",
+      "type": "exploration",
+      "district_id": "france_ancien",
+      "available_phases": [
+        "investigation",
+        "pressure"
+      ],
+      "requires_world_state": [
+        "justice_crisis"
+      ],
+      "objectives": [
+        "ouvrir l’accès d’une cave",
+        "descendre dans les fondations",
+        "retrouver un ancien registre d’eau"
+      ],
+      "gameplay": [
+        "vertical_traversal",
+        "caves",
+        "environmental_lore"
+      ],
+      "consequence": "reveals_foundation_tunnel",
+      "reward_policy_key": "france.district.ancien.foundation"
+    },
+    {
+      "id": "fr_residentiel_edge",
+      "title": "Au bord du vide",
+      "type": "rescue",
+      "district_id": "france_residentiel",
+      "available_phases": [
+        "rescue"
+      ],
+      "requires_world_state": [
+        "justice_crisis"
+      ],
+      "objectives": [
+        "atteindre le belvédère fermé",
+        "sécuriser un passage de falaise",
+        "ramener un civil vers une zone sûre"
+      ],
+      "gameplay": [
+        "traversal",
+        "rescue",
+        "edge_navigation"
+      ],
+      "consequence": "reopens_residential_belvedere",
+      "reward_policy_key": "france.district.residentiel.rescue"
+    },
+    {
+      "id": "fr_artisanat_water_truth",
+      "title": "L’Eau qui ment",
+      "type": "investigation",
+      "district_id": "france_artisanat",
+      "available_phases": [
+        "investigation",
+        "pressure"
+      ],
+      "requires_world_state": [
+        "justice_crisis"
+      ],
+      "objectives": [
+        "suivre le débit depuis l’atelier",
+        "inspecter les conduites",
+        "atteindre la caverne d’eau",
+        "identifier la vraie cause du blocage"
+      ],
+      "gameplay": [
+        "hydrology_navigation",
+        "investigation",
+        "lower_level"
+      ],
+      "consequence": "stabilizes_lower_water_route",
+      "reward_policy_key": "france.district.artisanat.water"
+    },
+    {
+      "id": "fr_culture_missing_pages",
+      "title": "Les Pages manquantes",
+      "type": "investigation",
+      "district_id": "france_culture",
+      "available_phases": [
+        "investigation"
+      ],
+      "requires_world_state": [
+        "justice_crisis"
+      ],
+      "objectives": [
+        "comparer deux archives",
+        "atteindre la salle cachée",
+        "restaurer l’ordre des documents"
+      ],
+      "gameplay": [
+        "archive_puzzle",
+        "rooftop_route",
+        "evidence"
+      ],
+      "consequence": "unlocks_hidden_record_room",
+      "reward_policy_key": "france.district.culture.archive"
+    },
+    {
+      "id": "fr_monumental_weight",
+      "title": "Le Poids d’une décision",
+      "type": "district",
+      "district_id": "france_monumental",
+      "available_phases": [
+        "pressure",
+        "celiane_contact",
+        "justice_trial"
+      ],
+      "requires_world_state": [
+        "justice_crisis"
+      ],
+      "objectives": [
+        "entrer au tribunal",
+        "présenter les preuves validées",
+        "résister à la pression sans abandonner l’enquête"
+      ],
+      "gameplay": [
+        "justice_resonance",
+        "dialogue",
+        "combat_pressure"
+      ],
+      "consequence": "prepares_justice_trial",
+      "reward_policy_key": "france.district.monumental.justice"
+    },
+    {
+      "id": "fr_peripherie_below",
+      "title": "Sous France",
+      "type": "exploration",
+      "district_id": "france_peripherie",
+      "available_phases": [
+        "investigation",
+        "pressure",
+        "aftermath"
+      ],
+      "requires_world_state": [
+        "pre_justice",
+        "justice_crisis",
+        "reconstruction"
+      ],
+      "objectives": [
+        "trouver la descente de corniche",
+        "traverser une cavité",
+        "sortir sous la masse principale",
+        "observer France depuis la sous-face"
+      ],
+      "gameplay": [
+        "vertical_traversal",
+        "caves",
+        "underside",
+        "vista"
+      ],
+      "consequence": "marks_under_france_route",
+      "reward_policy_key": "france.exploration.underside"
+    },
+    {
+      "id": "fr_waterfall_behind_fall",
+      "title": "Derrière la Chute",
+      "type": "secret",
+      "district_id": "france_artisanat",
+      "available_phases": [
+        "investigation",
+        "aftermath"
+      ],
+      "requires_world_state": [
+        "justice_crisis",
+        "reconstruction"
+      ],
+      "objectives": [
+        "remonter le bruit de la cascade",
+        "atteindre le bassin inférieur",
+        "passer derrière la chute",
+        "ouvrir le passage rocheux"
+      ],
+      "gameplay": [
+        "water",
+        "secret_route",
+        "cave"
+      ],
+      "consequence": "opens_waterfall_secret_passage",
+      "reward_policy_key": "france.secret.waterfall"
+    },
+    {
+      "id": "fr_islands_void_fragments",
+      "title": "Fragments du vide",
+      "type": "exploration",
+      "district_id": "france_peripherie",
+      "available_phases": [
+        "pressure",
+        "aftermath"
+      ],
+      "requires_world_state": [
+        "justice_crisis",
+        "reconstruction"
+      ],
+      "objectives": [
+        "atteindre trois îlots",
+        "activer les points de vue",
+        "revenir par une route différente"
+      ],
+      "gameplay": [
+        "floating_islands",
+        "risk_route",
+        "vista"
+      ],
+      "consequence": "reveals_island_route",
+      "reward_policy_key": "france.exploration.islands"
+    },
+    {
+      "id": "fr_weather_after_rain",
+      "title": "Après la pluie",
+      "type": "weather",
+      "district_id": "france_centre",
+      "available_phases": [
+        "liberation",
+        "aftermath"
+      ],
+      "requires_world_state": [
+        "celiane_liberated",
+        "reconstruction"
+      ],
+      "objectives": [
+        "observer l’ouverture des nuages",
+        "suivre les nouveaux écoulements",
+        "retrouver trois habitants affectés"
+      ],
+      "gameplay": [
+        "weather_observation",
+        "social",
+        "hydrology"
+      ],
+      "consequence": "documents_post_rain_transition",
+      "reward_policy_key": "france.weather.post_rain"
+    },
+    {
+      "id": "fr_reconstruction_together",
+      "title": "Reconstruire ensemble",
+      "type": "post_liberation",
+      "district_id": "france_centre",
+      "available_phases": [
+        "aftermath",
+        "return_nexus"
+      ],
+      "requires_world_state": [
+        "reconstruction",
+        "post_liberation"
+      ],
+      "objectives": [
+        "visiter trois quartiers transformés",
+        "aider un chantier",
+        "parler aux habitants revenus"
+      ],
+      "gameplay": [
+        "social",
+        "district_revisit",
+        "world_state_comparison"
+      ],
+      "consequence": "confirms_france_reconstruction",
+      "reward_policy_key": "france.post_liberation.reconstruction"
+    }
+  ],
+  "invariants": [
+    "side missions never bypass justice_trial",
+    "district mission completion never liberates Celiane directly",
+    "persistent outcomes require server authority",
+    "rewards are policy keys, never client-authored amounts",
+    "exploration missions use vertical geography rather than only horizontal distance"
+  ]
+}
