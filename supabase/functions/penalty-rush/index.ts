@@ -39,6 +39,7 @@ const COUNTRY_FROM_NAME: Record<string,string> = {
   Italie: 'it', Espagne: 'es', Estonie: 'ee',
 };
 const STYLES = new Set(['technicien', 'explosif', 'finisseur', 'imprevisible', 'maestro']);
+const SELECTION_ROLES = ['technicien', 'explosif', 'finisseur', 'imprevisible', 'maestro', 'pression'];
 const POWERS = new Set(['impulse', 'read', 'phantom', 'anchor']);
 const BOOTS = new Set(['classic', 'speed', 'control', 'future', 'retro']);
 const STYLE_TUNING:Record<string,{control:number,burst:number,shot:number,flow:number}> = {
@@ -323,16 +324,37 @@ async function selectionForWindow(uid:string, windowId:string) {
   return Array.isArray(rows) ? rows[0] || null : null;
 }
 
+async function countryNeededRole(windowId:string, countryId:string) {
+  const rows = await admin(
+    '/rest/v1/penalty_international_selections?window_id=eq.' + encodeURIComponent(windowId) +
+    '&country_id=eq.' + encodeURIComponent(countryId) +
+    '&status=in.(preselected,selected)&select=role_profile&limit=200'
+  ).catch(() => []);
+  const counts = Object.fromEntries(SELECTION_ROLES.map((role) => [role, 0]));
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const role = String(row?.role_profile || '');
+    if (Object.hasOwn(counts, role)) counts[role] += 1;
+  }
+  const countrySeed = [...String(countryId)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return [...SELECTION_ROLES]
+    .sort((a, b) => counts[a] - counts[b] || ((SELECTION_ROLES.indexOf(a) - countrySeed) % SELECTION_ROLES.length) - ((SELECTION_ROLES.indexOf(b) - countrySeed) % SELECTION_ROLES.length))[0];
+}
+
 async function refreshInternationalSelection(uid:string, profile:any, rating:any, rank:number, pressure:number) {
-  const baseScouting = scoutingBand(rank, number(rating.games), number(profile.reputation), pressure);
+  const matches = number(rating.games);
+  const reputation = number(profile.reputation);
+  const baseScouting = scoutingBand(rank, matches, reputation, pressure);
   const window = await activeInternationalWindow();
-  if (!window) return { scouting:baseScouting, selection:null, window:null };
+  if (!window) return { scouting:baseScouting, selection:null, window:null, neededRole:null, needMatched:false };
+
+  const neededRole = await countryNeededRole(window.id, profile.country_id);
+  const playerStyle = STYLES.has(String(profile.style_id)) ? String(profile.style_id) : 'technicien';
+  const needMatched = neededRole === playerStyle || (neededRole === 'pression' && pressure >= .65);
+  const needQualified = matches >= 10 && rank <= 30 && reputation >= 420 && needMatched;
 
   let selection = await selectionForWindow(uid, window.id);
-  if (!selection && (baseScouting === 'selection' || baseScouting === 'preselection')) {
-    const roleProfile = pressure >= .65
-      ? 'pression'
-      : STYLES.has(String(profile.style_id)) ? String(profile.style_id) : 'technicien';
+  if (!selection && (baseScouting === 'selection' || baseScouting === 'preselection' || needQualified)) {
+    const roleProfile = needMatched ? neededRole : pressure >= .65 ? 'pression' : playerStyle;
     const created = await admin('/rest/v1/penalty_international_selections?select=*', {
       method:'POST',
       body:{
@@ -352,7 +374,7 @@ async function refreshInternationalSelection(uid:string, profile:any, rating:any
       : selection?.status === 'preselected' ? 'preselection'
         : selection?.status === 'declined' ? 'declined'
           : baseScouting;
-  return { scouting:visibleScouting, selection, window };
+  return { scouting:visibleScouting, selection, window, neededRole, needMatched };
 }
 
 async function respondInternationalSelection(uid:string, selectionId:unknown, decision:unknown) {
@@ -424,6 +446,8 @@ async function snapshotFor(uid:string, profile:any) {
       caps: number(profile.international_caps),
       goals: number(profile.international_goals),
       pressureScore: pressure,
+      neededRole: internationalState.neededRole || null,
+      needMatched: Boolean(internationalState.needMatched),
       selectionId: selection?.id || null,
       selectionStatus: selection?.status || null,
       roleProfile: selection?.role_profile || null,
