@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { Pause, Play, Sparkles } from "lucide-react";
 import PassportNexus from "./PassportNexus.jsx";
+import OfficialIdentityBadge from "./OfficialIdentityBadge.jsx";
 import { passportInitials } from "../passport/identity.js";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
@@ -82,6 +83,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
           <span className="passport-data-label">TITULAIRE</span>
           <h2>{syncing ? "Chargement du profil…" : active ? identity.name : "TON IDENTITÉ 3B"}</h2>
           <p>{active && identity.handle ? `@${identity.handle}` : active ? "Membre 3B" : "Crée ton compte pour personnaliser ce passeport."}</p>
+          {active && <OfficialIdentityBadge profile={identity}/>} 
         </div>
 
         <div className="passport-country-block">
