@@ -12,7 +12,7 @@ import {GUARDIAN_COMBAT_RULES,validateGuardianCombatRules} from '../src/world/gu
 import {FINAL_CIRCLE_PHASES,finalCirclePhase,validateFinalCircle} from '../src/world/final-circle.js';
 import {CONTROL_ACTIONS,defaultControlBindings,normalizeControlBindings,setPrimaryControl,controlMatches,actionHeld,controlLabel,validateControlBindings} from '../src/world/control-bindings.js';
 import {PHYSICAL_TRAVERSAL_ACTIONS,traversalPlan,traversalPose,shortenTraversalPlan,validateTraversalProfiles} from '../src/world/traversal-motion.js';
-import {blankSave} from '../src/world/rules.js';
+import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {validPose,validRuntimeMember,mergeRuntimePeers,partyRuntimeRequest} from '../src/world/cooperation.js';
 import {worldRadiusFor,WORLD_RADIUS} from '../src/world/terrain.js';
