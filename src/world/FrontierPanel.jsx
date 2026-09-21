@@ -4,7 +4,7 @@ import {cardById} from './catalog.js';
 import {DISTRICT_JOBS,availableJobs,currentJobActions,jobReadyToTurnIn} from './district-jobs.js';
 
 export function FrontierPanel({save,act,onNavigate}){
- const home=frontierState(save),offers=availableJobs(home),active=home.activeJob?DISTRICT_JOBS[home.activeJob]:null,pending=currentJobActions(home),ready=jobReadyToTurnIn(home);
+ const home=frontierState(save),offers=availableJobs(home,{region:save.region,seals:save.seals}),active=home.activeJob?DISTRICT_JOBS[home.activeJob]:null,pending=currentJobActions(home),ready=jobReadyToTurnIn(home);
  return <div className="frontier-panel"><small>TON LIEU DANS CE PAYS</small><h3>Construire. Protéger. Grandir.</h3><p>Développe ton refuge à ton rythme. Les expéditions se renouvellent ; ton groupe conserve son expérience.</p>
   <div className="frontier-stock"><span>Bois <b>{home.wood}</b></span><span>Pierre <b>{home.stone}</b></span><span>Provisions <b>{home.food}</b></span></div>
   <div className="frontier-buildings">{Object.entries(BUILDINGS).map(([id,b])=>{const cost=buildCost(home,id);return <article key={id}><div><h4>{b.name} <small>{home[id]}/8</small></h4><p>{b.detail}</p></div><button disabled={home[id]>=8||home.wood<cost.wood||home.stone<cost.stone} onClick={()=>act({type:'build',building:id})}>{home[id]>=8?'Rang maximal':home[id]?'Améliorer':'Construire'}<small>{home[id]<8?`${cost.wood} bois · ${cost.stone} pierre`:''}</small></button></article>;})}</div>
