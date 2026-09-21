@@ -1,0 +1,22 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.8",
+  "Category": "Games",
+  "Description": "Monde du 3B — client Unreal Engine haut de gamme relié au Passeport 3B.",
+  "Modules": [
+    {
+      "Name": "ThreeBWorld",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    { "Name": "EnhancedInput", "Enabled": true },
+    { "Name": "GameplayAbilities", "Enabled": true },
+    { "Name": "StateTree", "Enabled": true },
+    { "Name": "GameplayStateTree", "Enabled": true },
+    { "Name": "Niagara", "Enabled": true },
+    { "Name": "MotionWarping", "Enabled": true },
+    { "Name": "SmartObjects", "Enabled": true }
+  ]
+}
