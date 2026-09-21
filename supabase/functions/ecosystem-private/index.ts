@@ -127,7 +127,7 @@ Deno.serve(async req=>{
    let query=client.from('community_ranked_posts').select('*').order(sort,{ascending:false}).order('id').limit(60);if(category)query=query.eq('category',category);
    const [postResult,profileResult,mineResult,followResult,blockResult,staffResult]=await Promise.all([query,client.from('community_profiles').select('*').eq('listed',true).order('created_at',{ascending:false}).limit(100),client.from('community_profiles').select('*').eq('user_id',uid).maybeSingle(),client.from('community_follows').select('target_id'),client.from('community_blocks').select('target_id'),admin.from('community_staff').select('user_id').eq('user_id',uid).maybeSingle()]);
    const posts=check(postResult);const ids=posts.map((p:any)=>p.id);const likes=ids.length?check(await client.from('community_likes').select('post_id').eq('user_id',uid).in('post_id',ids)):[];
-   const authors=[...new Set(posts.map((p:any)=>p.author_id))];const postAuthors=authors.length?check(await client.from('community_profiles').select('user_id,name,handle,kind').in('user_id',authors)):[];
+   const authors=[...new Set(posts.map((p:any)=>p.author_id))];const postAuthors=authors.length?check(await client.from('community_profiles').select('user_id,name,handle,kind,public_badge_key,public_title,public_verified').in('user_id',authors)):[];
    return reply({posts:await signAssets(posts),profiles:check(profileResult),postAuthors,mine:check(mineResult),follows:check(followResult),blocks:check(blockResult),likes,moderator:!!check(staffResult)});
   }
   if(action==='profile'){
@@ -143,7 +143,7 @@ Deno.serve(async req=>{
    await participating(uid);await rate(uid,'read',120);if(!rooms.includes(body.room))throw new Failure(400,'Salon invalide.');
    let query=client.from('community_chat').select('*').eq('room',body.room).order('created_at',{ascending:false}).limit(80);
    if(body.before)query=query.lt('created_at',text(body.before,10,40));const messages=check(await query).reverse();const authors=[...new Set(messages.map((m:any)=>m.author_id))];
-   const profiles=authors.length?check(await client.from('community_profiles').select('user_id,name,handle').in('user_id',authors)):[];return reply({messages,profiles});
+   const profiles=authors.length?check(await client.from('community_profiles').select('user_id,name,handle,public_badge_key,public_title,public_verified').in('user_id',authors)):[];return reply({messages,profiles});
   }
   if(action==='post'){
    await participating(uid);await rate(uid,'post',5,3600);const category=['discussion','creation','challenge','collaboration'].includes(body.category)?body.category:null;if(!category)throw new Failure(400,'Catégorie invalide.');
