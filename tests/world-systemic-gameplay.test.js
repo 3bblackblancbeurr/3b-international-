@@ -433,7 +433,7 @@ test('coop authority is wired through downed interactions shared objectives and 
  assert.match(panel,/Valider le regroupement · 2 voyageurs/);
  assert.match(actors,/À TERRE/);
  const manifest=JSON.parse(read('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json'));
- assert.equal(manifest.count,108);
+ assert.equal(manifest.count,manifest.migrations.length);assert.ok(manifest.count>=108);
  for(const version of ['20260921012440','20260921012512','20260921013055'])assert.ok(manifest.migrations.some(row=>row.version===version),version);
  const runtimeSql=read('supabase/migrations/20260921012440_world_party_runtime_authority_v1.sql');
  const recoverySql=read('supabase/migrations/20260921013055_world_party_runtime_save_recovery_v2.sql');
