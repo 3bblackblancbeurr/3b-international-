@@ -90,7 +90,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  useEffect(()=>{
   if(!account.user){setCosmetics(null);return;}
   let live=true;
-  dadaRequest('cosmetics').then(data=>{if(live)setCosmetics({loadout:data.loadout,catalog:data.catalog||[]});}).catch(()=>{});
+  dadaRequest('cosmetics').then(data=>{if(live)setCosmetics({loadout:data.loadout,catalog:data.catalog||[],season:data.season||null});}).catch(()=>{});
   return()=>{live=false;};
  },[account.user?.id]);
 
@@ -179,17 +179,17 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  async function loadCosmetics(){
   if(!account.user){setCosmeticStatus('Connecte-toi à ton compte 3B pour utiliser la collection.');return null;}
   setCosmeticStatus('Chargement de la collection…');
-  try{const data=await dadaRequest('cosmetics');setCosmetics({loadout:data.loadout,catalog:data.catalog||[]});setCosmeticStatus('Collection synchronisée.');return data;}
+  try{const data=await dadaRequest('cosmetics');setCosmetics({loadout:data.loadout,catalog:data.catalog||[],season:data.season||null});setCosmeticStatus('Collection synchronisée.');return data;}
   catch(error){setCosmeticStatus(error.message||'Collection indisponible.');return null;}
  }
  async function equipCosmetic(slot,itemCode){
   setCosmeticStatus('Équipement…');
-  try{const data=await dadaRequest('equip',{slot,itemCode});setCosmetics({loadout:data.loadout,catalog:data.catalog||[]});setCosmeticStatus('Cosmétique équipé.');}
+  try{const data=await dadaRequest('equip',{slot,itemCode});setCosmetics({loadout:data.loadout,catalog:data.catalog||[],season:data.season||null});setCosmeticStatus('Cosmétique équipé.');}
   catch(error){setCosmeticStatus(error.message||'Équipement impossible.');}
  }
  async function claimCosmetic(ruleCode){
   setCosmeticStatus('Validation de l’XP…');
-  try{const data=await dadaRequest('claim',{ruleCode});setCosmetics({loadout:data.loadout,catalog:data.catalog||[]});setCosmeticStatus('Récompense ajoutée à ton inventaire 3B.');}
+  try{const data=await dadaRequest('claim',{ruleCode});setCosmetics({loadout:data.loadout,catalog:data.catalog||[],season:data.season||null});setCosmeticStatus('Récompense ajoutée à ton inventaire 3B.');}
   catch(error){setCosmeticStatus(error.message||'Récompense indisponible.');}
  }
 
@@ -247,7 +247,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
    <p>Les objets débloqués restent dans ton inventaire 3B. Les Totems nationaux ne s’affichent que lorsque tu joues le pays correspondant.</p>
    {!account.user?<div className="dada3b-event"><b>Compte 3B requis</b><br/>La collection permanente est liée à ton compte.</div>:
    !cosmetics?<button className="dada3b-primary" onClick={loadCosmetics}>Charger ma collection</button>:
-   <div className="dada3b-cosmetic-groups">{Object.entries(COSMETIC_SLOT_LABELS).map(([slot,label])=><section key={slot}><h3>{label}</h3><div className="dada3b-cosmetic-grid">{cosmetics.catalog.filter(item=>item.slot===slot).map(item=>{const equipped=cosmetics.loadout?.[slot]===item.code,canClaim=!item.owned&&item.ruleCode&&currentXp>=item.xpRequired;return <article key={item.code} data-rarity={item.rarity} data-owned={item.owned}><div><b>{item.name}</b><small>{item.collection} · {item.rarity}{item.value?' · '+item.value:''}</small></div><p>{item.description}</p><footer>{item.owned?<button className={equipped?'dada3b-secondary':'dada3b-primary'} disabled={equipped} onClick={()=>equipCosmetic(slot,item.code)}>{equipped?'Équipé':'Équiper'}</button>:item.ruleCode?<button className="dada3b-secondary" disabled={!canClaim} onClick={()=>claimCosmetic(item.ruleCode)}>{canClaim?'Réclamer':item.xpRequired.toLocaleString('fr-FR')+' XP requis'}</button>:<span>Verrouillé</span>}</footer></article>;})}</div></section>)}</div>}
+   <>{cosmetics.season&&<section className="dada3b-season-card" data-status={cosmetics.season.status}><span className="dada3b-kicker">{cosmetics.season.status==='active'?'SAISON ACTIVE':'SAISON EN PRÉPARATION'}</span><h3>{cosmetics.season.label}</h3><p>{cosmetics.season.status==='draft'?'Aucune date n’est publiée. Les règles compétitives restent identiques.':'Rotation visuelle des huit nations en cours.'}</p><div>{cosmetics.season.rotation.map(stop=>{const country=countryFor(stop.country);return <span key={stop.country}>{country?.flag} {country?.name} · {stop.value}</span>;})}</div></section>}<div className="dada3b-cosmetic-groups">{Object.entries(COSMETIC_SLOT_LABELS).map(([slot,label])=><section key={slot}><h3>{label}</h3><div className="dada3b-cosmetic-grid">{cosmetics.catalog.filter(item=>item.slot===slot).map(item=>{const equipped=cosmetics.loadout?.[slot]===item.code,canClaim=!item.owned&&item.ruleCode&&currentXp>=item.xpRequired;return <article key={item.code} data-rarity={item.rarity} data-owned={item.owned}><div><b>{item.name}</b><small>{item.collection} · {item.rarity}{item.value?' · '+item.value:''}</small></div><p>{item.description}</p><footer>{item.owned?<button className={equipped?'dada3b-secondary':'dada3b-primary'} disabled={equipped} onClick={()=>equipCosmetic(slot,item.code)}>{equipped?'Équipé':'Équiper'}</button>:item.ruleCode?<button className="dada3b-secondary" disabled={!canClaim} onClick={()=>claimCosmetic(item.ruleCode)}>{canClaim?'Réclamer':item.xpRequired.toLocaleString('fr-FR')+' XP requis'}</button>:<span>Verrouillé</span>}</footer></article>;})}</div></section>)}</div></>}
    <p role="status">{cosmeticStatus}</p>
   </section></main>
  </div>;
