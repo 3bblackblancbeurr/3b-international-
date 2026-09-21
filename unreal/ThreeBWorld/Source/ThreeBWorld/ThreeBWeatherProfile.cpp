@@ -13,9 +13,9 @@ bool UThreeBWeatherProfile::FindState(EThreeBWeatherState State, FThreeBWeatherS
     return false;
 }
 
-bool UThreeBWeatherProfile::FindWorldStateOverride(FGameplayTag WorldStateTag, EThreeBWeatherState& OutState) const
+bool UThreeBWeatherProfile::FindWorldStateOverride(FName WorldStateTagName, EThreeBWeatherState& OutState) const
 {
-    if (const EThreeBWeatherState* Found = WorldStateOverrides.Find(WorldStateTag))
+    if (const EThreeBWeatherState* Found = WorldStateOverrides.Find(WorldStateTagName))
     {
         OutState = *Found;
         return true;
