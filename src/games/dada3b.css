@@ -388,3 +388,16 @@ html.dada3b-a11y-reduced .dada3b-shell *::after{animation-duration:.001ms!import
  .dada3b-tournament-actions,.dada3b-tournament-list{grid-template-columns:1fr}
  .dada3b-bracket>header{align-items:flex-start;flex-direction:column}
 }
+
+
+.dada3b-observatory{max-width:980px}
+.dada3b-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0}
+.dada3b-metric-grid article{display:grid;gap:5px;min-height:104px;align-content:center;padding:15px;border:1px solid #ffffff12;border-radius:15px;background:linear-gradient(145deg,#0e1513,#080d0c);text-align:center}
+.dada3b-metric-grid strong{color:#efd291;font-size:26px;font-variant-numeric:tabular-nums}
+.dada3b-metric-grid span{color:#939c96;font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.dada3b-observatory-modes{margin:16px 0;padding:14px;border:1px solid #ffffff10;border-radius:14px;background:#09100f}
+.dada3b-observatory-modes h3{margin:0 0 10px;color:#d5c08c;font-size:12px}
+.dada3b-observatory-modes>span{display:inline-flex;align-items:center;gap:7px;margin:4px;padding:6px 9px;border:1px solid #ffffff12;border-radius:999px;color:#aeb6b0;font-size:10px}
+.dada3b-observatory-modes b{color:#74d9e6}
+@media(max-width:680px){.dada3b-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.dada3b-metric-grid{grid-template-columns:1fr}}
