@@ -11,6 +11,7 @@ const presentation=json('unreal/ThreeBWorld/Data/France/france-presentation-v1.j
 const manifest=json('unreal/ThreeBWorld/Data/France/france-editor-asset-manifest.json');
 const plan=json('unreal/ThreeBWorld/Data/France/france-editor-execution-plan-v1.json');
 const districtContent=json('unreal/ThreeBWorld/Data/France/france-district-content-v1.json');
+const districtMissions=json('unreal/ThreeBWorld/Data/France/france-district-missions-v1.json');
 
 test('France vertical contract defines eight districts and eight altitude bands',()=>{
   assert.equal(layout.version,'2.0.0');
@@ -187,4 +188,26 @@ test('district content turns the eight district labels into a production-ready b
   }
   assert.equal(districtContent.rules.filler_buildings_forbidden,true);
   assert.equal(districtContent.rules.one_region_not_eight_maps,true);
+});
+
+
+test('France local missions use canonical districts, story phases and vertical gameplay without bypassing Céliane authority',()=>{
+  const districtIds=new Set(layout.districts.map(x=>x.id));
+  const story=json('unreal/ThreeBWorld/Data/France/france-justice-v1.json');
+  const phases=new Set(story.phases.map(x=>x.id));
+  const states=new Set(story.world_states.map(x=>x.id));
+  assert.ok(districtMissions.missions.length>=12);
+  for(const mission of districtMissions.missions){
+    assert.ok(districtIds.has(mission.district_id),mission.id);
+    assert.ok(mission.objectives.length>=3,mission.id);
+    assert.ok(mission.gameplay.length>0,mission.id);
+    assert.match(mission.reward_policy_key,/^france\./);
+    for(const phase of mission.available_phases)assert.ok(phases.has(phase),mission.id+':'+phase);
+    for(const state of mission.requires_world_state)assert.ok(states.has(state),mission.id+':'+state);
+  }
+  assert.ok(districtMissions.missions.some(x=>x.gameplay.includes('underside')));
+  assert.ok(districtMissions.missions.some(x=>x.gameplay.includes('floating_islands')));
+  assert.ok(districtMissions.missions.some(x=>x.gameplay.includes('hydrology')));
+  assert.ok(districtMissions.invariants.some(x=>x.includes('never bypass justice_trial')));
+  assert.ok(districtMissions.authority_model.client_may_not.includes('set_guardian_liberated'));
 });
