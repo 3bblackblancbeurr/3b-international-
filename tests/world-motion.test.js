@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {advanceMotion,pointerStick,createQualityController,createMotionSmoother} from '../src/world/motion.js';
+import {advanceMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from '../src/world/motion.js';
 import {COUNTRIES} from '../src/world/catalog.js';
 import {findPath} from '../src/world/navigation.js';
 
@@ -63,4 +63,26 @@ test('motion smoothing is frame-rate independent and preserves precise stops',()
 test('floating joystick offers precision near centre and full sprint at a comfortable radius',()=>{
  assert.deepEqual(pointerStick(9,0),{x:0,z:0});
  const precise=pointerStick(24,0),running=pointerStick(72,0);assert.ok(precise.x>0&&precise.x<.3);assert.equal(running.x,1);
+});
+
+
+test('touch joystick uses screen-relative geometry and a deliberate normalized sprint gesture',()=>{
+ const phoneLandscape=joystickProfile(844,390,'touch'),phonePortrait=joystickProfile(390,844,'touch'),tablet=joystickProfile(1280,800,'touch');
+ assert.equal(phoneLandscape.maxRadius,phonePortrait.maxRadius);
+ assert.ok(phoneLandscape.maxRadius>=56&&phoneLandscape.maxRadius<=84);
+ assert.ok(tablet.maxRadius>=phoneLandscape.maxRadius&&tablet.maxRadius<=84);
+ const nearFull=pointerStick(phoneLandscape.maxRadius*.94,0,phoneLandscape);
+ assert.ok(Math.hypot(nearFull.x,nearFull.z)>=phoneLandscape.sprintThreshold);
+ assert.equal(sprintIntent(nearFull,1000,1119,phoneLandscape),false);
+ assert.equal(sprintIntent(nearFull,1000,1120,phoneLandscape),true);
+ assert.equal(sprintIntent(pointerStick(phoneLandscape.maxRadius*.65,0,phoneLandscape),1000,1400,phoneLandscape),false);
+});
+
+test('scene no longer uses a raw-pixel sprint threshold and keeps all release safety hooks',()=>{
+ const source=fs.readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/held\.run\s*=\s*len\s*>\s*68/);
+ assert.match(source,/joystickProfile\(rect\.width,rect\.height,e\.pointerType\)/);
+ assert.match(source,/sprintIntent\(stick,held\.fullTiltAt,now,held\.control\)/);
+ for(const event of ['pointerup','pointercancel','lostpointercapture'])assert.match(source,new RegExp(`addEventListener\\('${event}'`));
+ assert.match(source,/window\.addEventListener\('blur',clearInput\)/);
 });
