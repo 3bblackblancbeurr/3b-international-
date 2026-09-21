@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-21",
-  "count": 130,
+  "count": 131,
   "migrations": [
     {
       "version": "20260910020445",
@@ -653,6 +653,11 @@
       "version": "20260921230003",
       "name": "dada3b_realtime_broadcast_v1",
       "sha256": "906dc4a4148ee6fe172b871ab03cb1c86eccb7c7d02f47261a354ee1272301f4"
+    },
+    {
+      "version": "20260921230844",
+      "name": "dada3b_founder_season_v1",
+      "sha256": "941298285d2117d3677da79faa7c3c76068372ff4e32f6b4bf180653c91ff169"
     }
   ]
 }
