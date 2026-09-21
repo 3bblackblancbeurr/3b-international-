@@ -348,7 +348,16 @@ function ClubPanel({ snapshot, profile, busy, request }) {
       <p>Les matchs restent 1v1, mais les clubs réunissent plusieurs résultats dans des rencontres collectives. Cinq duels peuvent composer une confrontation de club.</p>
       {club ? (
         <div className="penalty-big-card" style={{ '--club-primary':club.colors?.primary || '#08090b', '--club-secondary':club.colors?.secondary || '#d8b35e' }}>
-          <span className="penalty-club-crest">3B</span><div><h2>{club.name}</h2><p>{club.role} · {club.members || 1} membre(s) · code {club.code}</p><small>Couleurs officielles du club</small></div>
+          <span className="penalty-club-crest">3B</span>
+          <div className="penalty-club-summary">
+            <h2>{club.name}</h2><p>{club.role} · {club.members || 1} membre(s) · code {club.code}</p><small>Couleurs officielles du club</small>
+            <div className="penalty-club-manage">
+              <button className="penalty-copy" type="button" onClick={() => navigator.clipboard?.writeText(club.code).catch(() => {})}><Copy size={13}/> Copier le code</button>
+              {club.role === 'owner'
+                ? <button className="penalty-danger" type="button" disabled={busy} onClick={() => { if (window.confirm('Dissoudre définitivement ce club ?')) request('club.disband', {}).catch(() => {}); }}>Dissoudre</button>
+                : <button className="penalty-secondary" type="button" disabled={busy} onClick={() => { if (window.confirm('Quitter ce club ?')) request('club.leave', {}).catch(() => {}); }}>Quitter</button>}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="penalty-club-actions">
