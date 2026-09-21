@@ -1,6 +1,6 @@
 import {advanceHubMission} from './mission-runtime.js';
 
-const a=(id,label,verb='use')=>Object.freeze({id,label,verb});
+const a=(id,label,verb='use',requires=[])=>Object.freeze({id,label,verb,requires:Object.freeze(requires)});
 const stage=(...actions)=>Object.freeze(actions);
 
 export const HUB_MISSION_ACTION_PLANS=Object.freeze({
@@ -39,7 +39,7 @@ export const HUB_MISSION_ACTION_PLANS=Object.freeze({
  ]),
  voices_square:Object.freeze([
   stage(a('voice:1','Écouter le premier habitant','talk'),a('voice:2','Écouter le deuxième habitant','talk'),a('voice:3','Écouter le troisième habitant','talk')),
-  stage(a('dispute:evidence','Scanner la preuve contradictoire','scan'),a('dispute:present','Présenter la preuve vérifiée aux habitants','showEvidence')),
+  stage(a('dispute:evidence','Scanner la preuve contradictoire','scan'),a('dispute:present','Présenter la preuve vérifiée aux habitants','showEvidence',['dispute:evidence'])),
   stage(a('meeting:organize','Organiser la rencontre','talk')),
  ]),
  passion_trial:Object.freeze([
@@ -95,6 +95,8 @@ export function applyHubMissionAction(missions,progress={},missionId,actionId){
  if(!stageActions.some(action=>action.id===actionId))return {ok:false,reason:'wrong-objective-action',missions,progress};
  const previous=Array.isArray(progress[missionId])?progress[missionId]:[];
  if(previous.includes(actionId))return {ok:true,duplicate:true,missions,progress};
+ const selected=stageActions.find(action=>action.id===actionId);
+ if(selected?.requires?.some(required=>!previous.includes(required)))return {ok:false,reason:'missing-action-dependency',missions,progress};
  const nextRecorded=[...previous,actionId].slice(-64),nextProgress={...progress,[missionId]:nextRecorded};
  const objectiveComplete=stageActions.every(action=>nextRecorded.includes(action.id));
  const nextMissions=objectiveComplete?advanceHubMission(missions,missionId,1,{checkpoint:`mission-action:${missionId}:${row.completedObjectives+1}`}):missions;
@@ -104,10 +106,17 @@ export function applyHubMissionAction(missions,progress={},missionId,actionId){
 export function validateHubMissionActionPlans(){
  for(const [missionId,stages] of Object.entries(HUB_MISSION_ACTION_PLANS)){
   if(!stages.length)throw Error('Plan vide : '+missionId);
-  const ids=new Set();
+  const ids=new Set(),all=new Map();
   for(const actions of stages){
    if(!actions.length)throw Error('Objectif sans action : '+missionId);
-   for(const action of actions){if(ids.has(action.id))throw Error('Action dupliquée : '+missionId+'/'+action.id);ids.add(action.id);if(!/^[a-z0-9:_-]+$/.test(action.id)||!action.label||!action.verb)throw Error('Action invalide : '+missionId);}
+   for(const action of actions){
+    if(ids.has(action.id))throw Error('Action dupliquée : '+missionId+'/'+action.id);
+    ids.add(action.id);all.set(action.id,action);
+    if(!/^[a-z0-9:_-]+$/.test(action.id)||!action.label||!action.verb||!Array.isArray(action.requires))throw Error('Action invalide : '+missionId);
+   }
+  }
+  for(const action of all.values())for(const required of action.requires){
+   if(required===action.id||!all.has(required))throw Error('Dépendance action invalide : '+missionId+'/'+action.id+' -> '+required);
   }
  }
  return true;
