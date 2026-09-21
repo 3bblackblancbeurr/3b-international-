@@ -31,6 +31,7 @@ AThreeBCharacter::AThreeBCharacter()
 void AThreeBCharacter::BeginPlay()
 {
     Super::BeginPlay();
+    ApplySprintState();
 
     const APlayerController* PC = Cast<APlayerController>(Controller);
     if (!PC || !PC->IsLocalController() || !DefaultMappingContext)
@@ -51,6 +52,7 @@ void AThreeBCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
     InitAbilityActorInfo();
+    ApplySprintState();
 }
 
 void AThreeBCharacter::OnRep_PlayerState()
@@ -102,6 +104,12 @@ void AThreeBCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         Enhanced->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
         Enhanced->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
     }
+    if (SprintAction)
+    {
+        Enhanced->BindAction(SprintAction, ETriggerEvent::Started, this, &AThreeBCharacter::StartSprint);
+        Enhanced->BindAction(SprintAction, ETriggerEvent::Completed, this, &AThreeBCharacter::StopSprint);
+        Enhanced->BindAction(SprintAction, ETriggerEvent::Canceled, this, &AThreeBCharacter::StopSprint);
+    }
 }
 
 void AThreeBCharacter::Move(const FInputActionValue& Value)
@@ -123,4 +131,44 @@ void AThreeBCharacter::Look(const FInputActionValue& Value)
     const FVector2D Axis = Value.Get<FVector2D>();
     AddControllerYawInput(Axis.X);
     AddControllerPitchInput(Axis.Y);
+}
+
+void AThreeBCharacter::StartSprint()
+{
+    SetSprintRequested(true);
+}
+
+void AThreeBCharacter::StopSprint()
+{
+    SetSprintRequested(false);
+}
+
+void AThreeBCharacter::SetSprintRequested(bool bRequested)
+{
+    bSprintRequested = bRequested;
+    ApplySprintState();
+
+    if (!HasAuthority())
+    {
+        ServerSetSprintRequested(bRequested);
+    }
+}
+
+void AThreeBCharacter::ServerSetSprintRequested_Implementation(bool bRequested)
+{
+    bSprintRequested = bRequested;
+    ApplySprintState();
+}
+
+void AThreeBCharacter::ApplySprintState()
+{
+    UCharacterMovementComponent* Movement = GetCharacterMovement();
+    if (!Movement)
+    {
+        return;
+    }
+
+    const float SafeWalkSpeed = FMath::Clamp(WalkSpeed, 150.0f, 650.0f);
+    const float SafeSprintSpeed = FMath::Clamp(SprintSpeed, SafeWalkSpeed, 850.0f);
+    Movement->MaxWalkSpeed = bSprintRequested ? SafeSprintSpeed : SafeWalkSpeed;
 }
