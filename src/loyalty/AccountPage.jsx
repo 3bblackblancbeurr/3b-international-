@@ -53,7 +53,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     setFields(f=>({...f,password:''}));
    }else if(mode==='register'){
     validateRegistration(fields);
-    const result=await memberRequest('register',{...fields,captchaToken});
+    const result=await memberRequest('register-v2',{...fields,captchaToken});
     setRecovery(result.recovery||'');
     setPendingEmail(fields.email.trim().toLowerCase());
     if(result.session){
@@ -66,7 +66,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    }else if(mode==='recover'){
     validateStrongPassword(fields.password);
     if(fields.password!==fields.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
-    const result=await memberRequest('recover',{
+    const result=await memberRequest('recover-v2',{
      handle:fields.handle,password:fields.password,passwordConfirm:fields.passwordConfirm,
      recovery:fields.recovery,captchaToken
     });
