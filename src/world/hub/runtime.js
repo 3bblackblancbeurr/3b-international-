@@ -5,6 +5,7 @@ import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.j
 import {hubNpcSchedule} from './npc-schedule.js';
 import {hubMissionActionTargets,hasHubMissionActionPlan} from './mission-actions.js';
 import {guardianHubPresence} from '../guardian-values.js';
+import {hubNpcMemory,hubNpcMemorySummary} from './npc-memory.js';
 import {buildMetropolisRuntimeItems,hubDistrictPosition} from './metropolis.js';
 export {hubDistrictPosition};
 
@@ -51,8 +52,9 @@ export function buildHubRuntimeItems({
     ...hubDistrictPosition(plan, district.id),
   }));
 
-  const maxNpcs = selectNpcBudget(plan, profile);
+  const maxNpcs = selectNpcBudget(plan, profile),memorySave={hub:hubState||{},seals:[...seals]};
   const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
+    const memory=hubNpcMemory({...npc,npcId:npc.id},memorySave,{hour:eventContext.hour,weather:eventContext.weather});
     const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather});
     if(schedule.rare)return [];
     const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
@@ -70,6 +72,13 @@ export function buildHubRuntimeItems({
       role: npc.role,
       rarity: npc.rarity,
       missionIds: npc.missionIds || [],
+      familiarity:memory.familiarity,
+      familiarityScore:memory.familiarityScore,
+      mood:memory.mood,
+      tension:memory.tension,
+      guardianLiberated:memory.guardianLiberated,
+      rememberedIntents:[...memory.uniqueIntents],
+      memorySummary:hubNpcMemorySummary(memory),
       x: center.x + d.x,
       z: center.z + d.z,
     };
