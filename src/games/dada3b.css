@@ -314,3 +314,77 @@
 .dada3b-season-card p{margin:0;color:#a4ada7;font-size:11px;line-height:1.5}
 .dada3b-season-card>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
 .dada3b-season-card>div span{padding:6px 8px;border:1px solid #ffffff12;border-radius:999px;background:#0c1211;color:#bfc5c0;font-size:9px}
+
+
+/* ---- DADA 3B · accessibilité & compétition ---- */
+.dada3b-sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.dada3b-leaderboard-tabs{display:flex;gap:8px;margin:12px 0}
+.dada3b-leaderboard-tabs button{padding:9px 12px;border:1px solid #ffffff16;border-radius:999px;background:#09100f;color:#9fa8a2}
+.dada3b-leaderboard-tabs button[aria-pressed="true"]{border-color:#d8b56c88;background:#1b160d;color:#f1d79a}
+
+.dada3b-accessibility{max-width:860px}
+.dada3b-tournaments{max-width:1180px}
+.dada3b-tournament-actions{display:grid;grid-template-columns:minmax(180px,2fr) minmax(120px,1fr) auto;gap:10px;align-items:end;margin:12px 0}
+.dada3b-tournament-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:20px 0}
+.dada3b-tournament-list button{min-height:78px;padding:12px;border:1px solid #ffffff12;border-radius:14px;background:#09100f;color:#e9e0ce;text-align:left}
+.dada3b-tournament-list strong,.dada3b-tournament-list small{display:block}
+.dada3b-tournament-list small{margin-top:5px;color:#89928c;font-size:9px}
+.dada3b-bracket{margin-top:22px;padding:16px;border:1px solid #d9b66d44;border-radius:18px;background:linear-gradient(145deg,#111713,#080d0c)}
+.dada3b-bracket>header{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.dada3b-bracket>header h3{margin:5px 0 0;color:#eddbb2;font-size:20px}
+.dada3b-bracket>header>b{padding:7px 10px;border:1px solid #d9b66d55;border-radius:10px;color:#ebcd8d;letter-spacing:.12em}
+.dada3b-bracket-entries{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}
+.dada3b-bracket-entries span{padding:6px 8px;border:1px solid #ffffff10;border-radius:999px;background:#0a100f;color:#aeb6b0;font-size:9px}
+.dada3b-bracket-rounds{display:flex;gap:14px;overflow-x:auto;padding:8px 0 14px;scroll-snap-type:x proximity}
+.dada3b-bracket-rounds>section{min-width:220px;display:grid;align-content:start;gap:8px;scroll-snap-align:start}
+.dada3b-bracket-rounds h4{margin:0 0 4px;color:#cfb77f;font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.dada3b-bracket-rounds article{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:7px;min-height:66px;padding:9px;border:1px solid #ffffff10;border-radius:12px;background:#080d0c;color:#d8dfda;font-size:10px}
+.dada3b-bracket-rounds article b{color:#6fd9e8;font-size:9px}
+.dada3b-bracket-rounds article small{grid-column:1/-1;color:#dcbf7b}
+.dada3b-bracket-rounds article[data-status="active"]{border-color:#63d6e777;box-shadow:0 0 18px #63d6e722}
+.dada3b-bracket-rounds article[data-status="finished"]{opacity:.78}
+
+html.dada3b-a11y-large .dada3b-shell{font-size:118%}
+html.dada3b-a11y-large .dada3b-topbar strong{font-size:16px}
+html.dada3b-a11y-large .dada3b-event,
+html.dada3b-a11y-large .dada3b-roster-row small,
+html.dada3b-a11y-large .dada3b-rules{font-size:12px}
+html.dada3b-a11y-large button,
+html.dada3b-a11y-large select,
+html.dada3b-a11y-large input{min-height:44px}
+
+html.dada3b-a11y-contrast .dada3b-shell{background:#000;color:#fff}
+html.dada3b-a11y-contrast .dada3b-setup-card,
+html.dada3b-a11y-contrast .dada3b-sidebar>*,
+html.dada3b-a11y-contrast .dada3b-country-card{border-color:#fff6!important;background:#050505!important}
+html.dada3b-a11y-contrast button:focus-visible,
+html.dada3b-a11y-contrast select:focus-visible,
+html.dada3b-a11y-contrast input:focus-visible{outline:3px solid #fff!important;outline-offset:3px!important}
+html.dada3b-a11y-contrast .dada3b-kicker,
+html.dada3b-a11y-contrast .dada3b-rules,
+html.dada3b-a11y-contrast small{color:#fff!important}
+
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="shield"]{border-style:solid}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="diamond"]{border-style:dashed}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="sun"]{border-style:dotted}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="hex"]{outline:2px double #fff9}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="arch"]{box-shadow:inset 0 0 0 2px #000,0 0 0 2px #fff8}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="round"]{outline:2px solid #fff8}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="star"]{outline:2px dashed #fff9}
+html.dada3b-a11y-colorblind .dada3b-piece[data-shape="rune"]{outline:3px dotted #fff}
+html.dada3b-a11y-colorblind .dada3b-track-cell[data-start="true"]::after{content:"•";display:block;color:#fff;font-size:6px}
+
+html.dada3b-a11y-reduced .dada3b-shell *,
+html.dada3b-a11y-reduced .dada3b-shell *::before,
+html.dada3b-a11y-reduced .dada3b-shell *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+
+@media(max-width:760px){
+ .dada3b-tournament-actions{grid-template-columns:1fr 1fr}
+ .dada3b-tournament-actions button{grid-column:1/-1}
+ .dada3b-tournament-list{grid-template-columns:1fr 1fr}
+ .dada3b-bracket-rounds>section{min-width:190px}
+}
+@media(max-width:480px){
+ .dada3b-tournament-actions,.dada3b-tournament-list{grid-template-columns:1fr}
+ .dada3b-bracket>header{align-items:flex-start;flex-direction:column}
+}
