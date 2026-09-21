@@ -30,7 +30,7 @@ const CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACTIONS = new Set([
   'status', 'profile.save', 'create', 'join', 'queue', 'room', 'ready', 'start',
-  'input', 'tick', 'leave', 'club.create', 'club.join', 'international.respond',
+  'input', 'tick', 'leave', 'club.create', 'club.join', 'club.leave', 'club.disband', 'international.respond',
 ]);
 const MODES = new Set(['private', 'quick', 'ranked']);
 const COUNTRY_IDS = new Set(['fr', 'dz', 'ma', 'tn', 'tr', 'it', 'es', 'ee']);
@@ -945,6 +945,36 @@ async function joinClub(uid:string, codeInput:unknown) {
   return club;
 }
 
+async function leaveClub(uid:string) {
+  const club = await clubFor(uid);
+  if (!club) throw new Failure(404, 'Tu n’appartiens à aucun club.');
+  if (club.role === 'owner') {
+    if (number(club.members, 1) > 1) {
+      throw new Failure(409, 'Le fondateur ne peut pas quitter un club avec d’autres membres. Dissous le club ou transfère sa direction plus tard.');
+    }
+    await admin('/rest/v1/penalty_clubs?id=eq.' + encodeURIComponent(club.id), {
+      method:'DELETE', prefer:'return=minimal',
+    });
+    return { disbanded:true, name:club.name };
+  }
+  await admin(
+    '/rest/v1/penalty_club_members?club_id=eq.' + encodeURIComponent(club.id) +
+    '&user_id=eq.' + encodeURIComponent(uid),
+    { method:'DELETE', prefer:'return=minimal' },
+  );
+  return { disbanded:false, name:club.name };
+}
+
+async function disbandClub(uid:string) {
+  const club = await clubFor(uid);
+  if (!club) throw new Failure(404, 'Tu n’appartiens à aucun club.');
+  if (club.role !== 'owner') throw new Failure(403, 'Seul le fondateur peut dissoudre le club.');
+  await admin('/rest/v1/penalty_clubs?id=eq.' + encodeURIComponent(club.id), {
+    method:'DELETE', prefer:'return=minimal',
+  });
+  return { name:club.name };
+}
+
 async function route(req:Request) {
   const uid = await userFor(req);
   const body = await req.json().catch(() => ({}));
@@ -1006,6 +1036,22 @@ async function route(req:Request) {
     const fresh = await ensureProfile(uid);
     const club = await clubFor(uid);
     return { profile:publicProfile(fresh, club?.name || ''), snapshot:await snapshotFor(uid, fresh), message:'Club rejoint.' };
+  }
+
+  if (action === 'club.leave') {
+    const result = await leaveClub(uid);
+    const fresh = await ensureProfile(uid);
+    return {
+      profile:publicProfile(fresh, ''),
+      snapshot:await snapshotFor(uid, fresh),
+      message:result.disbanded ? 'Club fermé.' : 'Tu as quitté le club.',
+    };
+  }
+
+  if (action === 'club.disband') {
+    await disbandClub(uid);
+    const fresh = await ensureProfile(uid);
+    return { profile:publicProfile(fresh, ''), snapshot:await snapshotFor(uid, fresh), message:'Club dissous.' };
   }
 
   if (action === 'international.respond') {
