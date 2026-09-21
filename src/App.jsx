@@ -2,6 +2,8 @@ import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
+const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
+import { controlCenterRequest } from "./control/client.js";
 import { readLocation, navigateTo } from "./lib/navigation.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
@@ -101,6 +103,13 @@ const BASE_MENU_ITEMS = [
   },
 ];
 
+const CONTROL_MENU_ITEM = {
+  id: "control",
+  label: "Centre de commande 3B",
+  icon: "⌁",
+  description: "Piloter ton PC, Unreal et les outils 3B depuis tes appareils.",
+};
+
 const MEMBER_MENU_ITEM = {
   id: "member",
   label: "Espace membre 3B",
@@ -114,6 +123,7 @@ export default function App() {
   const { page } = route;
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
+  const [controlAvailable, setControlAvailable] = useState(false);
 
 
   const loyalty = useLoyalty();
@@ -126,17 +136,30 @@ export default function App() {
     normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
 
+  useEffect(() => {
+    let active = true;
+    if (!loyalty.user?.id) {
+      setControlAvailable(false);
+      return () => { active = false; };
+    }
+    controlCenterRequest("status")
+      .then(() => { if (active) setControlAvailable(true); })
+      .catch(() => { if (active) setControlAvailable(false); });
+    return () => { active = false; };
+  }, [loyalty.user?.id]);
+
   const menuItems = useMemo(() => {
     if (member.isRegistered) {
       return [
         ...BASE_MENU_ITEMS.slice(0, 2),
         MEMBER_MENU_ITEM,
+        ...(controlAvailable ? [CONTROL_MENU_ITEM] : []),
         ...BASE_MENU_ITEMS.slice(2),
       ];
     }
 
     return BASE_MENU_ITEMS;
-  }, [member.isRegistered]);
+  }, [member.isRegistered, controlAvailable]);
 
   const currentPageTitle = useMemo(() => {
     if (page === "member") {
@@ -145,6 +168,7 @@ export default function App() {
 
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
+    if (page === "control") return "Centre de commande 3B";
     if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, menuItems, member.isRegistered]);
@@ -270,6 +294,7 @@ export default function App() {
       )}
 
       {page === "sport" && <SportPage goTo={goTo} />}
+      {page === "control" && <ControlCenterPage goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage key={loyalty.user?.id || "guest"} page={page} goTo={goTo} />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
       </Suspense>
