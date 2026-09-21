@@ -39,7 +39,7 @@ export const HUB_MISSION_ACTION_PLANS=Object.freeze({
  ]),
  voices_square:Object.freeze([
   stage(a('voice:1','Écouter le premier habitant','talk'),a('voice:2','Écouter le deuxième habitant','talk'),a('voice:3','Écouter le troisième habitant','talk')),
-  stage(a('dispute:resolve','Résoudre le désaccord','talk')),
+  stage(a('dispute:evidence','Scanner la preuve contradictoire','scan'),a('dispute:present','Présenter la preuve vérifiée aux habitants','showEvidence')),
   stage(a('meeting:organize','Organiser la rencontre','talk')),
  ]),
  passion_trial:Object.freeze([
