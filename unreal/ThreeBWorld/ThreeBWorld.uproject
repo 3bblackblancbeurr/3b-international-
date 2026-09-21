@@ -17,6 +17,9 @@
     { "Name": "GameplayStateTree", "Enabled": true },
     { "Name": "Niagara", "Enabled": true },
     { "Name": "MotionWarping", "Enabled": true },
-    { "Name": "SmartObjects", "Enabled": true }
+    { "Name": "SmartObjects", "Enabled": true },
+    { "Name": "PythonScriptPlugin", "Enabled": true },
+    { "Name": "EditorScriptingUtilities", "Enabled": true },
+    { "Name": "RemoteControl", "Enabled": true }
   ]
 }
