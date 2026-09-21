@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {ACTIONS,contextActions,primaryContextAction,validateInteractionCatalog} from '../src/world/interaction-system.js';
 import {GUARDIAN_CAMPAIGNS,INDEPENDENT_MISSION_ARCHETYPES,centralMissionIndex,validateMissionArchitecture} from '../src/world/mission-index.js';
 import {HUB_DIALOGUE_INTENT_SET,hubDialogueIntents,hubDialogueIntentResponse} from '../src/world/hub/dialogue-intents.js';
+import {hubNpcMemory,hubNpcMemorySummary,validateNpcMemory} from '../src/world/hub/npc-memory.js';
 import {GUARDIAN_RELATIONSHIPS,guardianRelationshipsFor,guardianHubState,validateGuardianRelationships} from '../src/world/guardian-relations.js';
 import {GUARDIAN_RESONANCES,RING_ABILITIES,unlockedResonances,validateResonances} from '../src/world/guardian-resonances.js';
 import {RESONANCE_CONTEXT_CONTRACTS,resonanceContextCandidate,resonanceContextMessage,validateResonanceContextContracts} from '../src/world/resonance-context.js';
@@ -243,6 +244,27 @@ test('authoritative independent contract cannot be turned in before every real a
  assert.ok(save.adventure.frontier.france.jobs.includes('field_rescue'));
  assert.equal(save.xp-xp,DISTRICT_JOBS.field_rescue.xp);
  assert.equal(save.shards-shards,DISTRICT_JOBS.field_rescue.shards);
+});
+
+test('Hub NPC social memory persists across conversations and reacts to missions Guardians weather and familiarity',()=>{
+ let save=blankSave(),item={npcId:'mael_rivière',name:'Maël Rivière',role:'guide',district:'heritage_square',country:'France',missionIds:['first_steps']};
+ let memory=hubNpcMemory(item,save,{hour:12,weather:'clear'});
+ assert.equal(validateNpcMemory(memory),true);assert.equal(memory.familiarity,'stranger');assert.equal(memory.guardianLiberated,false);
+ save=applyWorldAction(save,{type:'hubNpcTalk',id:'mael_rivière'});
+ for(const intentId of ['identity','district','mission','identity','memory','opinion']){
+  if(HUB_DIALOGUE_INTENT_SET.has(intentId))save=applyWorldAction(save,{type:'hubDialogueIntent',npcId:'mael_rivière',intentId});
+ }
+ memory=hubNpcMemory(item,save,{hour:23,weather:'heavy_rain'});
+ assert.equal(validateNpcMemory(memory),true);assert.ok(memory.familiarityScore>0);assert.ok(memory.uniqueIntents.includes('identity'));assert.ok(memory.tension>0);assert.ok(hubNpcMemorySummary(memory).includes('humeur'));
+ const persisted=normalizeSave(save),persistedMemory=hubNpcMemory(item,persisted,{hour:23,weather:'heavy_rain'});
+ assert.deepEqual(persistedMemory.uniqueIntents,memory.uniqueIntents);
+ save={...save,seals:['france']};memory=hubNpcMemory(item,save,{hour:12,weather:'clear'});
+ assert.equal(memory.guardianLiberated,true);assert.ok(['soulagé','ouvert','confiant','neutre'].includes(memory.mood));
+ const guardian=hubDialogueIntentResponse(item,'guardian',save,{guardianName:'Céliane',value:'Justice'});
+ assert.match(guardian.text,/est revenu dans la Cité/);
+ const runtime=hubRuntime('mobileMedium',{now:new Date('2026-09-21T12:00:00Z'),hubState:save.hub,seals:save.seals});
+ const npc=runtime.items.find(row=>row.type==='hubNpc'&&row.npcId==='mael_rivière');
+ assert.equal(npc.guardianLiberated,true);assert.equal(typeof npc.memorySummary,'string');assert.ok(npc.memorySummary.length>20);
 });
 
 test('hub conversations expose multiple intentions and persist intent memory authoritatively',()=>{
