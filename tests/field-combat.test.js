@@ -91,6 +91,16 @@ test('final circle damage cannot cross a Guardian threshold until that phase mec
  assert.ok(e.enemy<finalCircleLockedEnemyFloor(e,{index:1}));
 });
 
+test('validated final phase transitions restore a bounded part of the player resources',()=>{
+ let e={...encounter(),boss:true,final:true,region:'france',enemy:315,enemyMax:360,hp:50,maxHP:100,finalCirclePhase:1,finalCircleMastery:1};
+ e.field.stamina=40;e=idle(e);
+ assert.equal(e.finalCirclePhase,2);
+ assert.ok(e.hp>=64&&e.hp<=e.maxHP,'phase recovery must be useful but bounded');
+ assert.ok(e.focus>=1,'the Guardian link restores one focus on a validated transition');
+ assert.ok(e.field.stamina>=58,'the Guardian link restores some endurance');
+ assert.equal(finalCirclePhaseMastered(e,{index:1}),true);
+});
+
 test('each of the eight final Guardian mechanics can mark its own mastery bit',()=>{
  const make=index=>{
   const enemyMax=800,enemy=Math.max(1,800-(index-1)*100);
