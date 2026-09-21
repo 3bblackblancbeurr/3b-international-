@@ -40,6 +40,9 @@ export function passportFromProfile(profile, user = null) {
     xp: safeNumber(profile.xp),
     points: safeNumber(profile.points),
     theme: cleanText(profile.theme, 32),
+    public_badge_key: cleanText(profile.public_badge_key, 40),
+    public_title: cleanText(profile.public_title, 80),
+    public_verified: profile.public_verified === true,
     createdAt: profile.created_at || null,
   });
 }
