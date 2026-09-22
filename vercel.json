@@ -40,6 +40,21 @@
   ],
   "redirects": [
     {
+      "source": "/application-3b",
+      "destination": "/application-3b-international.html",
+      "permanent": true
+    },
+    {
+      "source": "/application",
+      "destination": "/application-3b-international.html",
+      "permanent": true
+    },
+    {
+      "source": "/app",
+      "destination": "/application-3b-international.html",
+      "permanent": true
+    },
+    {
       "source": "/iphone",
       "destination": "/install-iphone.html",
       "permanent": true
