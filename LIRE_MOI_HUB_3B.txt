@@ -1,0 +1,43 @@
+3B INTERNATIONAL — HUB PRINCIPAL
+
+CE QUE TU DOIS FAIRE
+
+1. Ferme Unreal Engine s'il est ouvert.
+2. Double-clique sur :
+
+   LANCER_HUB_3B.bat
+
+3. Attends.
+
+Le lanceur cherche automatiquement Unreal Engine 5.8 sur ton PC.
+Il ouvre le vrai projet :
+
+unreal\ThreeBWorld\ThreeBWorld.uproject
+
+Puis il déclenche automatiquement la construction de :
+
+Hub3B_Blockout_V01
+
+Tu n'as PAS besoin de :
+- créer la map à la main ;
+- ouvrir la console Python ;
+- choisir le script manuellement ;
+- toucher au terrain actuel.
+
+Le constructeur prépare :
+- le centre du hub ;
+- 6 grandes masses principales ;
+- 6 plateformes satellites ;
+- 12 ponts ;
+- les vrais espaces vides ;
+- les dessous des plateformes ;
+- les fragments flottants ;
+- les points de sécurité ;
+- l'atmosphère de base.
+
+SI UNE FENETRE NOIRE AFFICHE UNE ERREUR :
+ne la ferme pas et prends une photo du message.
+
+IMPORTANT :
+le rendu obtenu est le blockout de construction du hub.
+Les vrais matériaux, architecture finale, Nanite, Lumen, nuages et VFX seront travaillés ensuite.
