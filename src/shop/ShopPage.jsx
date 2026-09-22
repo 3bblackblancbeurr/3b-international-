@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2, Truck, BadgeCheck } from "lucide-react";
+import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2, Truck, BadgeCheck, ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { CART_KEY, PENDING_KEY, readStored, writeStored, sanitizeCart, subtractPurchased } from "./cart.js";
 import "./shop.css";
 import {useLoyalty} from "../loyalty/LoyaltyContext.jsx";
@@ -27,11 +27,52 @@ async function requestJson(url, options = {}) {
 
 function ProductGallery() {
   const [active, setActive] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const touchStart = useRef(null);
+  const total = SHOP_MEDIA.length;
+  const move = step => setActive(current => (current + step + total) % total);
+
+  useEffect(() => {
+    if (!viewerOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = event => {
+      if (event.key === "Escape") setViewerOpen(false);
+      if (event.key === "ArrowLeft") move(-1);
+      if (event.key === "ArrowRight") move(1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [viewerOpen, total]);
+
+  const rememberTouch = event => {
+    touchStart.current = event.changedTouches?.[0]?.clientX ?? null;
+  };
+  const finishTouch = event => {
+    if (touchStart.current === null) return;
+    const currentX = event.changedTouches?.[0]?.clientX ?? touchStart.current;
+    const delta = currentX - touchStart.current;
+    touchStart.current = null;
+    if (Math.abs(delta) < 45) return;
+    move(delta > 0 ? -1 : 1);
+  };
+
   return (
     <div className="shop-gallery">
-      <div className="shop-gallery-main">
-        <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} loading={active ? "lazy" : "eager"} />
-      </div>
+      <button
+        className="shop-gallery-main"
+        type="button"
+        onClick={() => setViewerOpen(true)}
+        aria-label={`Voir la photo ${active + 1} sur ${total} en plein écran`}
+      >
+        <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} loading={active ? "lazy" : "eager"} draggable="false" />
+        <span className="shop-photo-counter" aria-hidden="true">{active + 1} / {total}</span>
+        <span className="shop-zoom-hint"><Maximize2 size={18} aria-hidden="true" /> Voir en grand</span>
+      </button>
+
       <div className="shop-gallery-thumbs" aria-label="Photos du Pull 3B International">
         {SHOP_MEDIA.map((media, index) => (
           <button key={media.src} type="button" className={active === index ? "is-active" : ""}
@@ -40,6 +81,37 @@ function ProductGallery() {
           </button>
         ))}
       </div>
+
+      {viewerOpen && (
+        <div
+          className="shop-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Photo produit ${active + 1} sur ${total}`}
+          onClick={event => { if (event.target === event.currentTarget) setViewerOpen(false); }}
+        >
+          <button type="button" className="shop-lightbox-close" onClick={() => setViewerOpen(false)} aria-label="Fermer la photo plein écran">
+            <X size={28} aria-hidden="true" />
+          </button>
+          <button type="button" className="shop-lightbox-nav is-prev" onClick={() => move(-1)} aria-label="Photo précédente">
+            <ChevronLeft size={34} aria-hidden="true" />
+          </button>
+          <figure className="shop-lightbox-stage" onTouchStart={rememberTouch} onTouchEnd={finishTouch}>
+            <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} draggable="false" />
+            <figcaption>{active + 1} / {total} · Glisse à gauche ou à droite pour changer de photo</figcaption>
+          </figure>
+          <button type="button" className="shop-lightbox-nav is-next" onClick={() => move(1)} aria-label="Photo suivante">
+            <ChevronRight size={34} aria-hidden="true" />
+          </button>
+          <div className="shop-lightbox-thumbs" aria-label="Choisir une photo">
+            {SHOP_MEDIA.map((media, index) => (
+              <button key={media.src} type="button" className={active === index ? "is-active" : ""} onClick={() => setActive(index)} aria-label={`Voir la photo ${index + 1}`}>
+                <img src={media.src} alt="" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -70,6 +142,11 @@ function ProductCard({ variants, onAdd, disabled, shippingIncluded }) {
         {product.description && <p>{product.description}</p>}
         <div className="shop-product-price">
           <strong>{money(product.amount)}</strong><span>TTC {shippingIncluded ? "· livraison incluse" : ""}</span>
+        </div>
+        <div className="shop-product-benefits" aria-label="Points forts de la présentation produit">
+          <span><Maximize2 size={16} aria-hidden="true" /> Photos plein écran</span>
+          <span><BadgeCheck size={16} aria-hidden="true" /> Relief 3B premium</span>
+          <span><Truck size={16} aria-hidden="true" /> Suivi de livraison</span>
         </div>
         {variants.length > 1 ? (
           <label>Couleur et logo

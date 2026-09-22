@@ -2,7 +2,7 @@
   "id": "/",
   "name": "3B International",
   "short_name": "3B",
-  "description": "Ton passeport, tes jeux, tes créations et le Monde du 3B, réunis dans une application.",
+  "description": "Ton Passeport, le Monde du 3B, Crée ta ville 3B, les jeux et la boutique réunis dans une application.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
@@ -25,13 +25,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/3b-icon-20260912-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/3b-icon-20260912-maskable-512.png",
+      "src": "/icons/3b-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

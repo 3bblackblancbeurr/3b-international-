@@ -42,7 +42,7 @@ export default function WorldPortalCard({goTo,registered=false}){
    <div className="world-portal-horizon"/>
    <div className="world-portal-ring">
     {GATES.map(([code,value],index)=><div className="world-gate" key={code} style={{'--gate':index}}><b>{code}</b><small>{value}</small></div>)}
-    <div className="world-portal-core"><span>3B</span><small>NEXUS</small></div>
+    <div className="world-portal-core"><span>3B</span><small>MONDE</small></div>
    </div>
    <div className="world-portal-floor"><i/><i/><i/><i/><i/></div>
   </div>
