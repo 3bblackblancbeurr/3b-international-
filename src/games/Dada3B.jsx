@@ -31,7 +31,7 @@ function PremiumDice({value,rolling,disabled,onClick,skin,country,pending,advers
   <span className="dada3b-die-face dada3b-die-top"><DiceFace value={5}/></span><span className="dada3b-die-face dada3b-die-bottom"><DiceFace value={6}/></span>
  </span></span>;
  return <button className="dada3b-dice dada3b-dice-premium" data-skin={skin} data-value={shown} data-rolling={rolling} data-webgl={!webglFailed} style={{'--country':country||'#c7a66a'}} onClick={onClick} disabled={disabled} aria-label={value?'Dé '+value+' · '+status:status}>
-  {webglFailed?fallback:<Dice3DErrorBoundary fallback={fallback} onFail={()=>setWebglFailed(true)}><React.Suspense fallback={fallback}><DadaDice3D value={shown} rolling={rolling} skin={skin} country={country||'#c7a66a'} onUnsupported={()=>setWebglFailed(true)}/></React.Suspense></Dice3DErrorBoundary>}
+  {webglFailed?fallback:<Dice3DErrorBoundary fallback={fallback} onFail={()=>setWebglFailed(true)}><React.Suspense fallback={fallback}><DadaDice3D key={(skin||'core')+':'+(country||'neutral')} value={shown} rolling={rolling} skin={skin} country={country||'#c7a66a'} onUnsupported={()=>setWebglFailed(true)}/></React.Suspense></Dice3DErrorBoundary>}
   <span className="dada3b-dice-meta"><b>{value?value:'3B'}</b><small>{status}</small></span>
  </button>;
 }
