@@ -20,7 +20,10 @@
     "deploymentBranch": "main",
     "observedWorkspaceSlug": "3bblackblancbeurr-7911s-projects",
     "accountEmail": null,
-    "accountEmailStatus": "not exposed by connector"
+    "accountEmailStatus": "not exposed by connector",
+    "teamId": "team_pii0LCfZEGvY02L2a5LwIDER",
+    "connectorWorkspaceAccess": "reauthentication-required",
+    "connectorWorkspaceAccessReason": "The connected Vercel app is not currently authorized for the canonical 3B workspace scope."
   },
   "games": {
     "keyRace": {
