@@ -23,7 +23,7 @@ test('capture sends the eaten piece back to the stable in the rules engine',()=>
 });
 
 test('capture rendering uses a bounded return-to-stable animation',()=>{
-  assert.match(three,/captureReturn:\{from:group\.position\.clone\(\),to:target\.clone\(\),startedAt:performance\.now\(\),duration:460\}/);
+  assert.match(three,/group\.userData\.captureReturn=\{from:group\.position\.clone\(\),to:target\.clone\(\),startedAt:performance\.now\(\),duration:460\}/);
   assert.match(three,/group\.position\.lerpVectors\(captureReturn\.from,captureReturn\.to,k\)/);
   assert.match(three,/group\.userData\.captureReturn=null/);
   assert.match(three,/pieceWorldPosition\(country,STABLE,captured\.pieceIndex\)/);
