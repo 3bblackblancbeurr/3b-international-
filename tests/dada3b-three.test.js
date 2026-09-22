@@ -34,7 +34,7 @@ test('DADA 3D keeps mobile safety and WebGL recovery paths',()=>{
 });
 
 test('DADA 3D remains synchronized with live board state and cosmetics',()=>{
-  assert.match(three,/updateBoardState\(runtime,match,loadout\)/);
+  assert.match(three,/updateBoardState\(runtime,match,loadout,legal\)/);
   assert.match(three,/blockadeOwnerAt\(match/);
   assert.match(three,/cosmeticsByCountry/);
   assert.match(three,/DADA_TRAIL_GOLD/);
