@@ -3,6 +3,7 @@
   const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isSafari = isIOS && /Safari/i.test(ua) && !/(CriOS|FxiOS|EdgiOS|OPiOS)/i.test(ua);
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isInAppBrowser = /(Instagram|FBAN|FBAV|TikTok|Bytedance|Snapchat|Line\/|GSA\/|Twitter)/i.test(ua);
   const status = document.getElementById('device-status');
   const browserAdvice = document.getElementById('browser-advice');
   const installed = document.getElementById('installed-state');
@@ -10,14 +11,19 @@
   const shareButton = document.getElementById('share-link');
   const copyStatus = document.getElementById('copy-status');
   const nativeLinks = document.getElementById('native-links');
-  const installUrl = window.location.origin + '/install-iphone.html';
+  const installUrl = window.location.origin + '/iphone';
 
   if (isStandalone) {
     installed.hidden = false;
     status.textContent = '3B est déjà installé sur cet iPhone.';
     status.dataset.state = 'ready';
+  } else if (isIOS && isInAppBrowser) {
+    status.textContent = 'iPhone détecté · ouvre ce lien dans Safari pour installer 3B.';
+    status.dataset.state = 'attention';
+    browserAdvice.hidden = false;
+    browserAdvice.innerHTML = '<strong>Navigateur intégré détecté.</strong><br>Dans TikTok, Instagram, Facebook ou une messagerie, ouvre le menu de la page puis choisis <strong>Ouvrir dans Safari</strong> ou <strong>Ouvrir dans le navigateur</strong>. Si l’option n’apparaît pas, copie le lien ci-dessous.';
   } else if (isIOS && isSafari) {
-    status.textContent = 'iPhone détecté · Safari prêt pour l’installation.';
+    status.textContent = 'iPhone détecté · Safari est prêt pour l’installation.';
     status.dataset.state = 'ready';
   } else if (isIOS) {
     status.textContent = 'iPhone détecté · ouvre cette page dans Safari.';
