@@ -188,6 +188,21 @@ export default function App() {
     persist(STORAGE_OPTIONS_KEY, nextOptions);
   }
 
+  function playWelcomeVoice() {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const welcome = new SpeechSynthesisUtterance(
+      "Bienvenue dans l’univers 3B. L’héritage commence maintenant."
+    );
+    welcome.lang = "fr-FR";
+    welcome.rate = 0.92;
+    welcome.pitch = 0.9;
+    welcome.volume = 1;
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(welcome);
+  }
+
   if (!hasStarted) {
     return (
       <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
@@ -198,15 +213,15 @@ export default function App() {
           <p className="eyebrow">3B International</p>
           <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
           <h1>De zéro à l’international</h1>
-          <p>
-            Un écosystème premium pour ton passeport, tes cartes, tes jeux, ton
-            manga, ton monde 3B et ton héritage.
-          </p>
+          <p>Un écosystème premium.</p>
 
           <button
             type="button"
             className="primary-button"
-            onClick={() => goTo("home")}
+            onClick={() => {
+              playWelcomeVoice();
+              goTo("home");
+            }}
           >
             COMMENCER
           </button>
