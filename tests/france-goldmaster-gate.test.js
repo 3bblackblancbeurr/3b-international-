@@ -44,7 +44,7 @@ test('France Gold Master gates are exhaustive unique and conservative',()=>{
 
 test('strict Editor gate cannot turn PREPARED into Gold Master',()=>{
   assert.match(gateScript,/GOLD_MASTER_VALIDATED/);
-  assert.match(gateScript,/\\["status"\\] != "PASS"/);
+  assert.ok(gateScript.includes('by_id[gate_id]["status"] != "PASS"'));
   assert.match(gateScript,/Gold Master is true only when every required gate has real PASS evidence/);
   assert.match(gateScript,/vertical_foundation/);
   assert.match(gateScript,/PREPARED/);
