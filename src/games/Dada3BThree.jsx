@@ -211,10 +211,10 @@ function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout
   const country=countryFor(player.countryId);
   player.pieces.forEach((piece,pieceIndex)=>{
    const key=country.id+':'+pieceIndex;live.add(key);
-   let group=runtime.pieceMap.get(key);
-   if(!group){group=createPiece(country,pieceIndex,runtime.shadows);runtime.pieces.add(group);runtime.pieceMap.set(key,group);}
+   let group=runtime.pieceMap.get(key),created=false;
+   if(!group){group=createPiece(country,pieceIndex,runtime.shadows);runtime.pieces.add(group);runtime.pieceMap.set(key,group);created=true;}
    const shown=motion?.countryId===country.id&&motion.pieceIndex===pieceIndex?motion.step:piece.steps;
-   group.userData.target.copy(pieceWorldPosition(country,shown,pieceIndex));
+   group.userData.target.copy(pieceWorldPosition(country,shown,pieceIndex));if(created)group.position.copy(group.userData.target);
    group.userData.legal=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion;
    group.userData.isMoving=motion?.countryId===country.id&&motion.pieceIndex===pieceIndex;
    const playerLoadout=cosmeticsByCountry?.[country.id]||loadout||{},trail=playerLoadout.trail||'';
