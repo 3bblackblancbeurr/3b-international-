@@ -63,3 +63,9 @@ test("Android install page exposes PWA metadata and Samsung instructions", async
   assert.match(android, /Ouvrir 3B maintenant/);
   assert.match(android, /decouvrir-3b\.html/);
 });
+
+
+test("Discover page contains clean HTML line breaks", async () => {
+  const discover = await read("public/decouvrir-3b.html");
+  assert.doesNotMatch(discover, /\\\\n/);
+});
