@@ -1,0 +1,32 @@
+name: Notify search engines with IndexNow
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'public/**'
+      - 'scripts/submit-indexnow.mjs'
+      - '.github/workflows/indexnow.yml'
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow-production
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Notify IndexNow-enabled search engines
+        run: node scripts/submit-indexnow.mjs
