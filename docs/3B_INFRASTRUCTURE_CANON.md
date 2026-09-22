@@ -29,6 +29,8 @@ Ne pas créer un second backend 3B pour contourner un problème de connexion.
 - Production : `https://3b-international.vercel.app`
 - Les déploiements Git sont activés uniquement depuis `main`.
 - Workspace observé dans les statuts GitHub : `3bblackblancbeurr-7911s-projects`.
+- Team ID observé : `team_pii0LCfZEGvY02L2a5LwIDER`.
+- Le connecteur Vercel ChatGPT est installé mais doit être ré-authentifié explicitement sur ce workspace pour permettre le pilotage direct.
 - L'adresse e-mail du compte Vercel n'est pas exposée par le connecteur ; ne pas la deviner.
 
 ## Jeux 3B
