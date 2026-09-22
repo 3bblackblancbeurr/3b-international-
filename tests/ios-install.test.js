@@ -21,6 +21,7 @@ test('iPhone install surface keeps Apple web-app instructions and required PWA m
 test('iPhone install works without email invitation and exposes a future native distribution registry', () => {
   const page = read('public/install-iphone.html');
   const script = read('public/install-iphone.js');
+  const chooser = read('public/install.js');
   const config = JSON.parse(read('public/ios-distribution.json'));
   assert.match(page, /Sans invitation/);
   assert.match(script, /ios-distribution\.json/);
@@ -40,4 +41,7 @@ test('short public install aliases are deployed and social browsers receive Safa
   assert.match(script, /Instagram/);
   assert.match(script, /TikTok/);
   assert.match(script, /Ouvrir dans Safari/);
+  assert.match(chooser, /iPhone \/ iPad détecté/);
+  assert.match(chooser, /\/iphone/);
+  assert.match(chooser, /\/android/);
 });
