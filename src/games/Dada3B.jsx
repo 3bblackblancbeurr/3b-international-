@@ -117,6 +117,10 @@ function Board({match,legal=[],motion,blast,onPiece,focusEvent,loadout=null,cosm
  const starts=useMemo(()=>new Map(COUNTRIES_3B.map(c=>[c.start,c])),[]);
  const railPoints=useMemo(()=>trackRailPoints(),[]);
  const finished=match.players.flatMap(player=>{const c=countryFor(player.countryId);return player.pieces.filter(p=>p.steps===FINISH_STEP).map((_,i)=>({c,i}));});
+ const legalPreviews=legal.map(pieceIndex=>previewMove(match,pieceIndex)).filter(Boolean);
+ const legalTrackTargets=new Set(legalPreviews.map(move=>move.landing).filter(Number.isInteger));
+ const legalHomeTargets=new Set(legalPreviews.filter(move=>move.to>=TRACK_LENGTH&&move.to<FINISH_STEP).map(move=>move.to));
+ const currentCountry=countryFor(match.players?.[match.turn]?.countryId);
  const powerLabel=POWER_EVENT_LABELS[focusEvent]||'';
  return <div className="dada3b-board" data-theme={match.rules?.boardTheme||'nexus'} data-board-skin={loadout?.board_skin||'DADA_BOARD_NEXUS'} data-focus={focusEvent||''} aria-label="Plateau DADA 3B">
   <div className="dada3b-board-aura" aria-hidden="true"/><div className="dada3b-board-depth" aria-hidden="true"/>
@@ -128,8 +132,8 @@ function Board({match,legal=[],motion,blast,onPiece,focusEvent,loadout=null,cosm
   </svg>
   <div className="dada3b-board-orbit" aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--orbit':c.accent}}/>)}</div>
   {powerLabel&&<div key={'power-'+(match.lastEvent?.id||0)} className="dada3b-power-flash" data-power={focusEvent}><small>POUVOIR DU CERCLE</small><strong>{powerLabel}</strong></div>}
-  {Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index),start=starts.get(index),sanctuary=SANCTUARY_CELLS.includes(index)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,index)!==null;return <span key={'t'+index} className="dada3b-track-cell" data-start={!!start} data-sanctuary={sanctuary} data-barricade={barrier} data-sector={Math.floor(index/TRACK_SECTOR)} style={{left:p.left+'%',top:p.top+'%','--cell-color':start?.accent||'#bca56f'}}><i/>{start?start.code:sanctuary?'◇':barrier?'▰':''}</span>;})}
-  {COUNTRIES_3B.flatMap(c=>Array.from({length:HOME_LENGTH},(_,index)=>{const p=homePosition(c,index);return <span key={c.id+index} className="dada3b-home-cell" data-home-index={index} style={{left:p.left+'%',top:p.top+'%','--cell-color':c.accent}}><i/></span>;}))}
+  {Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index),start=starts.get(index),sanctuary=SANCTUARY_CELLS.includes(index)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,index)!==null,target=legalTrackTargets.has(index);return <span key={'t'+index} className="dada3b-track-cell" data-start={!!start} data-sanctuary={sanctuary} data-barricade={barrier} data-legal-target={target} data-sector={Math.floor(index/TRACK_SECTOR)} style={{left:p.left+'%',top:p.top+'%','--cell-color':start?.accent||'#bca56f'}}><i/>{target?'•':start?start.code:sanctuary?'◇':barrier?'▰':''}</span>;})}
+  {COUNTRIES_3B.flatMap(c=>Array.from({length:HOME_LENGTH},(_,index)=>{const p=homePosition(c,index),target=c.id===currentCountry?.id&&legalHomeTargets.has(TRACK_LENGTH+index);return <span key={c.id+index} className="dada3b-home-cell" data-home-index={index} data-legal-target={target} style={{left:p.left+'%',top:p.top+'%','--cell-color':c.accent}}><i/></span>;}))}
   <div className="dada3b-nexus"><div><i className="dada3b-nexus-halo"/><strong>3B</strong><small>NEXUS</small><em>8 PORTES · 8 VALEURS</em><span className="dada3b-nexus-fragments">{finished.slice(0,12).map((x,i)=><i key={i} style={{'--fragment':x.c.accent}}/>)}</span></div></div>
   {COUNTRIES_3B.map(c=>{const p=stableCenter(c),active=match.players.some(player=>player.countryId===c.id),guardian=guardianAssetFor(c.id);return <div key={'s'+c.id} className="dada3b-stable" data-active={active} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}}><i className="dada3b-gate-aura"/>{guardian?.portrait?<img src={guardian.portrait} alt="" aria-hidden="true"/>:<span>{c.crest}</span>}<strong>{c.guardian}</strong><small>{c.value} · {c.code}</small></div>;})}
   {match.players.flatMap((player,playerIndex)=>{const c=countryFor(player.countryId),playerLoadout=cosmeticsByCountry?.[player.countryId]||loadout||{},skin=skinForCountry(playerLoadout.totem_skin,c.id);return player.pieces.map((piece,pieceIndex)=>{const shown=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex?motion.step:piece.steps,p=positionForPiece(c,shown,pieceIndex),can=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion,isMoving=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex;return <button type="button" key={c.id+pieceIndex} className="dada3b-piece dada3b-totem" data-shape={c.shape} data-legal={can} data-totem-skin={skin} data-trail={isMoving?(playerLoadout.trail||loadout?.trail||''):''} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}} disabled={!can} onClick={()=>onPiece(pieceIndex)} aria-label={c.name+' Totem '+(pieceIndex+1)+(can?' jouable':'')}><i className="dada3b-totem-shadow"/><i className="dada3b-totem-aura"/><span className="dada3b-totem-model"><i className="dada3b-totem-crown"/><b>{c.crest}</b><i className="dada3b-totem-core"/><i className="dada3b-totem-base"/></span><small>{pieceIndex+1}</small></button>;});})}
@@ -290,26 +294,23 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const winningPlayers=winningTeam?renderMatch.players.filter(p=>p.team===winningTeam):[];
  const endAchievements=winner&&renderMatch?achievementsFor(renderMatch,winner.id):[];
 
- if(view==='menu')return <div className="dada3b-shell" role="dialog" aria-modal="true">
-  <header className="dada3b-topbar"><div><small>Jeux 3B · Protocole plateau</small><strong>DADA 3B — Le Cercle des 8 Portes</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
-  <main className="dada3b-setup dada3b-menu-setup"><section className="dada3b-setup-card dada3b-home-menu dada3b-home-menu-v7">
-   <div className="dada3b-menu-hero">
-    <div className="dada3b-menu-copy"><span className="dada3b-kicker">DADA 3B · APEX LUXE</span><h2>Le Cercle est ouvert.</h2><p>8 nations. 8 Portes. Un Nexus. Choisis ton mode et joue.</p></div>
-    <div className="dada3b-door-intro" data-intro={cosmeticLoadout?.intro_fx||'DADA_INTRO_EIGHT_DOORS'} aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--door':c.accent}}><span>{c.crest}</span></i>)}</div>
+ if(view==='menu')return <div className="dada3b-shell dada3b-shell-v8" role="dialog" aria-modal="true">
+  <header className="dada3b-topbar"><div><small>Jeux 3B</small><strong>DADA 3B — Le Cercle des 8 Portes</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
+  <main className="dada3b-setup dada3b-menu-setup"><section className="dada3b-setup-card dada3b-home-menu dada3b-home-menu-v8">
+   <div className="dada3b-menu-hero dada3b-menu-hero-v8">
+    <div className="dada3b-menu-copy"><span className="dada3b-kicker">APEX CLARTÉ</span><h2>Choisis. Lance. Joue.</h2><p>Le plateau t’indique directement le Totem actif, les déplacements possibles, les protections et les impacts.</p></div>
+    <div className="dada3b-door-intro dada3b-door-intro-v8" data-intro={cosmeticLoadout?.intro_fx||'DADA_INTRO_EIGHT_DOORS'} aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--door':c.accent}}><span>{c.crest}</span></i>)}</div>
    </div>
-   <div className="dada3b-menu-primary">
-    {restored?.status==='playing'&&<button className="dada3b-menu-cta dada3b-menu-resume" onClick={resumeLocal}><Play size={18}/><span><strong>Reprendre</strong><small>Continuer la partie sauvegardée</small></span></button>}
-    <button className="dada3b-menu-cta" onClick={()=>setView('local-setup')}><Play size={18}/><span><strong>Jouer</strong><small>Local & IA · 2 à 8 pays</small></span></button>
-    <button className="dada3b-menu-cta" onClick={()=>enterOnline('quick')}><Wifi size={18}/><span><strong>Jeu rapide</strong><small>Matchmaking serveur</small></span></button>
-    <button className="dada3b-menu-cta" onClick={()=>enterOnline('private')}><Users size={18}/><span><strong>Salon privé</strong><small>Créer une partie avec code</small></span></button>
+   <div className="dada3b-menu-primary dada3b-menu-primary-v8">
+    <button className="dada3b-menu-cta dada3b-menu-play" onClick={()=>setView('local-setup')}><Play size={20}/><span><strong>Jouer</strong><small>Local & IA</small></span></button>
+    <button className="dada3b-menu-cta" disabled={restored?.status!=='playing'} onClick={resumeLocal}><RotateCcw size={20}/><span><strong>Reprendre</strong><small>{restored?.status==='playing'?'Partie sauvegardée':'Aucune sauvegarde'}</small></span></button>
+    <button className="dada3b-menu-cta" onClick={()=>{setView('online');setOnlineMode('quick');setOnlineStatus('');}}><Users size={20}/><span><strong>Multijoueur</strong><small>Rapide · privé · classé · 2v2</small></span></button>
+    <button className="dada3b-menu-cta" onClick={()=>enterOnline('leaderboard')}><Shield size={20}/><span><strong>Classement</strong><small>Voir les meilleurs joueurs</small></span></button>
    </div>
-   <div className="dada3b-menu-shortcuts">
-    <button onClick={()=>enterOnline('join')}>Rejoindre</button><button onClick={()=>enterOnline('ranked')}>Classé</button>
-    <button onClick={()=>enterOnline('team2v2')}>2v2 OR / MATRIX</button><button onClick={()=>enterOnline('leaderboard')}>Classement</button>
-   </div>
-   <details className="dada3b-menu-more"><summary>Options & collection</summary><div>
-    <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Observer un salon autorisé</small></button>
-    <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection DADA</strong><small>Totems · dés · traces · plateaux</small></button>
+   <details className="dada3b-menu-more dada3b-menu-more-v8"><summary>Plus d’options</summary><div>
+    <button onClick={()=>enterOnline('join')}><strong>Rejoindre</strong><small>Entrer un code de salon</small></button>
+    <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Observer une partie</small></button>
+    <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection</strong><small>Totems · dés · traces</small></button>
     <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button></div>
    </div></details>
   </section></main>
@@ -352,7 +353,10 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  if(view==='online'&&!onlineRoom)return <div className="dada3b-shell" role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Multijoueur sécurisé</small><strong>{onlineMode==='ranked'?'Classé':onlineMode==='quick'?'Jeu rapide':onlineMode==='team2v2'?'2v2 équipes':onlineMode==='spectate'?'Spectateur':onlineMode==='join'?'Rejoindre un salon':'Salon privé'}</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-online-setup">
-   {!account.user&&<div className="dada3b-event"><b>Compte 3B requis</b><br/>Le multijoueur utilise ton identité 3B, le dé serveur et la reprise après déconnexion.</div>}
+   <div className="dada3b-online-tabs" role="tablist" aria-label="Modes multijoueur">
+    {[['quick','Rapide'],['private','Privé'],['join','Rejoindre'],['ranked','Classé'],['team2v2','2v2']].map(([mode,label])=><button key={mode} aria-pressed={onlineMode===mode} onClick={()=>{setOnlineMode(mode);setOnlineStatus('');}}>{label}</button>)}
+   </div>
+   {!account.user&&<div className="dada3b-event"><b>Compte 3B requis</b><br/>Connecte-toi pour jouer en ligne.</div>}
    {onlineMode==='leaderboard'?<><h2>Classement DADA 3B</h2><button className="dada3b-primary" disabled={!account.user||onlineBusy} onClick={async()=>{const d=await onlineAction('leaderboard');if(d?.leaderboard)setLeaderboard(d.leaderboard);}}>Actualiser</button><div className="dada3b-leaderboard">{leaderboard.map(r=><div key={r.rank}><b>#{r.rank} {r.handle}</b><span>{r.rating} · {r.wins} V / {r.losses} D</span></div>)}</div></>:
    <><CountryPicker value={onlineCountry} onChange={setOnlineCountry}/>
     {['join','spectate'].includes(onlineMode)&&<label className="dada3b-field"><span>Code du salon</span><input value={roomCode} maxLength={6} onChange={e=>setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z2-9]/g,''))} placeholder="ABC234"/></label>}
@@ -376,9 +380,11 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const focus=renderMatch.lastEvent?.sanctuary?'sanctuary':renderMatch.lastEvent?.type||'';
  const boardPieceAction=piece=>isOnline?onlineAction('move',{room:onlineRoom.id,revision:onlineRoom.revision,piece}):chooseLocal(piece);
  const fallbackBoard=<Board match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry}/>;
- return <div className="dada3b-shell" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true">
+ const ownsTurn=isOnline?selfTurn:turnPlayer?.type!=='bot';
+ const turnLabel=turnPlayer?.type==='bot'?'IA':ownsTurn?'À TOI':'ADVERSE';
+ return <div className="dada3b-shell dada3b-shell-v8" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><div><small>{isOnline?(onlineRoom.mode==='ranked'?'CLASSÉ':onlineRoom.mode.toUpperCase()):'LOCAL'} · Manche {renderMatch.round}</small><strong>DADA 3B · {turnCountry?.name||''}</strong></div><div className="dada3b-top-actions"><button className="dada3b-render-toggle" aria-pressed={threeD&&!threeFailed} onClick={()=>{if(threeFailed){setThreeFailed(false);setThreeD(true);}else setThreeD(v=>!v);}}>{threeD&&!threeFailed?'3D APEX':'2,5D'}</button>{timeLeft!==null&&<span className="dada3b-timer" data-low={timeLeft<=7}>{timeLeft}s</span>}{isOnline&&<span className="dada3b-live"><Wifi size={14}/> LIVE</span>}<button className="dada3b-icon-button" onClick={()=>isOnline?leaveOnline():setView('menu')}><X size={20}/></button></div></header>
-  <div className="dada3b-arena"><div className="dada3b-board-wrap">{threeD&&!threeFailed?<Dada3DErrorBoundary fallback={fallbackBoard} onFail={()=>setThreeFailed(true)}><React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense></Dada3DErrorBoundary>:fallbackBoard}</div>
+  <div className="dada3b-arena"><div className="dada3b-board-wrap">{threeD&&!threeFailed?<Dada3DErrorBoundary fallback={fallbackBoard} onFail={()=>setThreeFailed(true)}><React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense></Dada3DErrorBoundary>:fallbackBoard}<div className="dada3b-board-turn-chip" style={{'--country':turnCountry?.accent||'#6fe7f8'}}><span>TOUR</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><em data-own={ownsTurn}>{turnLabel}</em></div></div>
    <aside className="dada3b-sidebar"><section className="dada3b-turn-card" style={{'--country':turnCountry?.accent||'#c7a66a'}}><div className="dada3b-turn-line"><div><span className="dada3b-kicker">Tour actuel</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><small>{turnCountry?.guardian} · {turnCountry?.value}{turnPlayer?.type==='bot'?' · IA '+(turnPlayer.aiLevel||''):''}</small></div></div>
     <PremiumDice value={shownDice} rolling={(busy||onlineBusy)&&renderMatch.pendingRoll===null} skin={cosmeticLoadout?.dice_skin||'DADA_DICE_CORE'} country={turnCountry?.accent} pending={Boolean(renderMatch.pendingRoll)} adverse={Boolean(isOnline&&!selfTurn)} onClick={()=>isOnline?onlineAction('roll',{room:onlineRoom.id,revision:onlineRoom.revision}):rollLocal(false)} disabled={busy||onlineBusy||renderMatch.status!=='playing'||renderMatch.pendingRoll!==null||(isOnline?!selfTurn:turnPlayer?.type==='bot')}/>
     {isOnline&&selfOnline?.botTakeover&&<button className="dada3b-secondary" onClick={()=>onlineAction('reconnect',{room:onlineRoom.id})}>Reprendre ma place</button>}

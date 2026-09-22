@@ -1212,3 +1212,226 @@
 @media(prefers-reduced-motion:reduce){
  .dada3b-victory::before{animation:none!important}
 }
+
+
+/* ========================================================================== */
+/* DADA 3B V8 · CLARTÉ + IMPACT · moins noir, plus évident à jouer           */
+/* ========================================================================== */
+.dada3b-shell-v8{
+  background:
+    radial-gradient(ellipse at 50% 34%,rgba(100,220,235,.20) 0 14%,rgba(47,117,132,.15) 30%,transparent 58%),
+    radial-gradient(circle at 8% 5%,rgba(225,193,116,.16),transparent 30%),
+    linear-gradient(145deg,#17333a 0%,#102930 46%,#0b2026 100%);
+}
+.dada3b-shell-v8 .dada3b-topbar{
+  background:linear-gradient(180deg,rgba(18,44,50,.96),rgba(12,31,36,.92));
+  border-bottom-color:rgba(159,225,232,.16);
+  box-shadow:0 8px 28px rgba(2,12,14,.22);
+}
+.dada3b-shell-v8 .dada3b-topbar small{color:#92cbd2}
+.dada3b-shell-v8 .dada3b-topbar strong{color:#f4ead4}
+
+/* Le plateau doit ressortir sans vignette noire agressive. */
+.dada3b-shell-v8 .dada3b-board-wrap{
+  background:
+    radial-gradient(ellipse at 50% 50%,rgba(120,231,242,.18) 0 18%,rgba(63,139,153,.12) 38%,transparent 66%),
+    linear-gradient(180deg,#17343b,#0f272d 72%,#0c2228);
+  box-shadow:inset 0 0 34px rgba(0,0,0,.22),0 22px 60px rgba(0,0,0,.28),0 0 38px rgba(91,217,239,.10);
+}
+.dada3b-shell-v8 .dada3b-board-wrap::before{
+  opacity:.36;filter:blur(18px);background:rgba(0,0,0,.45)
+}
+.dada3b-shell-v8 .dada3b-three{
+  background:
+    radial-gradient(circle at 50% 46%,#245462 0 8%,#173840 32%,#102a31 68%,#0d252b 100%);
+}
+.dada3b-shell-v8 .dada3b-three::after{
+  background:
+    radial-gradient(ellipse at center,transparent 66%,rgba(4,15,18,.20) 100%),
+    linear-gradient(180deg,rgba(255,255,255,.045),transparent 22% 82%,rgba(218,190,121,.05));
+  box-shadow:inset 0 0 24px rgba(0,0,0,.20);
+}
+
+/* Tour actuel visible sans quitter le plateau des yeux. */
+.dada3b-board-turn-chip{
+  position:absolute;z-index:8;left:50%;top:12px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:8px;min-height:38px;padding:6px 8px 6px 11px;
+  border:1px solid color-mix(in srgb,var(--country) 55%,#dcebed);
+  border-radius:999px;
+  background:rgba(19,48,54,.88);
+  box-shadow:0 8px 22px rgba(0,0,0,.25),0 0 18px color-mix(in srgb,var(--country) 16%,transparent);
+  backdrop-filter:blur(12px);pointer-events:none;
+}
+.dada3b-board-turn-chip>span{
+  color:#99c9cf;font-size:6px;font-weight:900;letter-spacing:.16em
+}
+.dada3b-board-turn-chip>strong{
+  color:#fff1d3;font-size:10px;white-space:nowrap
+}
+.dada3b-board-turn-chip>em{
+  padding:5px 8px;border-radius:999px;background:#26383a;color:#c4d1cf;
+  font-size:7px;font-style:normal;font-weight:950;letter-spacing:.08em
+}
+.dada3b-board-turn-chip>em[data-own="true"]{
+  background:color-mix(in srgb,var(--country) 38%,#173138);
+  color:white;box-shadow:0 0 12px color-mix(in srgb,var(--country) 32%,transparent)
+}
+
+/* Destinations jouables explicites en 2,5D. */
+.dada3b-track-cell[data-legal-target="true"],
+.dada3b-home-cell[data-legal-target="true"]{
+  z-index:9!important;
+  color:#fff!important;
+  border-color:#d9fbff!important;
+  background:
+    radial-gradient(circle at 40% 30%,#ffffff88 0 7%,transparent 8%),
+    linear-gradient(145deg,#58dcea,#176777 68%,#0c343d)!important;
+  box-shadow:
+    0 6px 0 #0d4650,
+    0 10px 15px rgba(0,0,0,.35),
+    0 0 12px #8bedf7,
+    0 0 28px rgba(101,229,243,.70)!important;
+  animation:dadaLegalTargetV8 1s ease-in-out infinite!important;
+}
+.dada3b-track-cell[data-legal-target="true"]{font-size:11px!important;text-shadow:0 0 8px white}
+@keyframes dadaLegalTargetV8{
+  50%{filter:brightness(1.22);transform:translate(-50%,-61%) translateZ(12px) scale(1.14)}
+}
+
+/* Les Totems non actifs restent lisibles; l'actif devient évident. */
+.dada3b-shell-v8 .dada3b-totem-model{
+  filter:brightness(1.10) saturate(1.03);
+}
+.dada3b-shell-v8 .dada3b-piece[data-legal="true"] .dada3b-totem-model{
+  filter:brightness(1.35) saturate(1.16);
+}
+.dada3b-shell-v8 .dada3b-piece[data-legal="true"] .dada3b-totem-aura{
+  background:radial-gradient(circle,color-mix(in srgb,var(--country) 22%,transparent),transparent 64%);
+  box-shadow:0 0 18px #e9fdff,0 0 38px color-mix(in srgb,var(--country) 72%,transparent)
+}
+
+/* Cartes d'interface : bleu-gris lisible plutôt que noir sur noir. */
+.dada3b-shell-v8 .dada3b-turn-card,
+.dada3b-shell-v8 .dada3b-event,
+.dada3b-shell-v8 .dada3b-roster,
+.dada3b-shell-v8 .dada3b-history,
+.dada3b-shell-v8 .dada3b-power-deck,
+.dada3b-shell-v8 .dada3b-tactical-panel{
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.045),transparent 32%),
+    linear-gradient(180deg,rgba(26,58,63,.94),rgba(17,43,48,.94));
+  border-color:rgba(166,220,226,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 8px 20px rgba(0,0,0,.18);
+}
+.dada3b-shell-v8 .dada3b-event{color:#d7e2df}
+.dada3b-shell-v8 .dada3b-event b{color:#f4d99c}
+.dada3b-shell-v8 .dada3b-rules{color:#a9c1c1;background:rgba(17,43,48,.72);border-radius:10px}
+
+/* Menu V8 : quatre décisions, aucun labyrinthe. */
+.dada3b-home-menu-v8{
+  width:min(1040px,100%);padding:clamp(14px,2.2vw,24px);
+  background:
+    radial-gradient(circle at 84% 6%,rgba(104,224,238,.14),transparent 28%),
+    radial-gradient(circle at 7% 2%,rgba(226,192,111,.14),transparent 27%),
+    linear-gradient(155deg,rgba(30,67,73,.96),rgba(17,45,51,.96));
+  border-color:rgba(190,224,226,.15);
+  box-shadow:0 28px 70px rgba(1,10,12,.30),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.dada3b-menu-hero-v8{
+  grid-template-columns:minmax(0,1.2fr) minmax(290px,.8fr);gap:16px
+}
+.dada3b-menu-hero-v8 .dada3b-menu-copy h2{
+  color:#fff0ce;font-size:clamp(32px,4.5vw,56px);text-shadow:0 3px 12px rgba(0,0,0,.22)
+}
+.dada3b-menu-hero-v8 .dada3b-menu-copy p{
+  max-width:640px;color:#c7d5d1;font-size:12px;line-height:1.45
+}
+.dada3b-door-intro-v8{opacity:.82;filter:brightness(1.10)}
+.dada3b-menu-primary-v8{
+  grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:16px
+}
+.dada3b-menu-primary-v8 .dada3b-menu-cta{
+  min-height:76px;background:linear-gradient(145deg,#284d50,#17383d);
+  border-color:rgba(184,224,226,.16)
+}
+.dada3b-menu-primary-v8 .dada3b-menu-cta:not(:disabled):hover{
+  border-color:rgba(240,208,139,.55);background:linear-gradient(145deg,#315d60,#1c4248)
+}
+.dada3b-menu-primary-v8 .dada3b-menu-cta:disabled{
+  opacity:.45;filter:saturate(.65);cursor:not-allowed
+}
+.dada3b-menu-primary-v8 .dada3b-menu-play{
+  background:linear-gradient(145deg,#2d6268,#1a444b);border-color:rgba(117,232,243,.42)
+}
+.dada3b-menu-primary-v8 .dada3b-menu-cta strong{color:#fff0d3;font-size:14px}
+.dada3b-menu-primary-v8 .dada3b-menu-cta small{color:#a9c5c5;font-size:8px}
+.dada3b-menu-more-v8{
+  margin-top:8px;background:rgba(18,43,48,.72);border-color:rgba(175,215,218,.12)
+}
+.dada3b-menu-more-v8>summary{color:#d9c693}
+
+/* Le choix du multijoueur est visible dans un seul écran. */
+.dada3b-online-tabs{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-bottom:12px;padding:5px;
+  border:1px solid rgba(169,220,225,.12);border-radius:13px;background:rgba(18,44,49,.70)
+}
+.dada3b-online-tabs button{
+  min-height:38px;padding:7px 6px;border:1px solid transparent;border-radius:9px;
+  background:transparent;color:#9fb8b8;font-size:9px;font-weight:850
+}
+.dada3b-online-tabs button[aria-pressed="true"]{
+  color:#fff0ce;border-color:rgba(112,226,239,.36);
+  background:linear-gradient(145deg,#2d5f65,#1b4248);
+  box-shadow:0 0 14px rgba(91,217,239,.14)
+}
+
+/* Dé : le cadre reste clair, le cube est la vedette. */
+.dada3b-shell-v8 .dada3b-dice-premium{
+  background:
+    radial-gradient(circle at 18% 22%,color-mix(in srgb,var(--country) 26%,transparent),transparent 34%),
+    linear-gradient(145deg,#294b4f,#18363b 60%,#112b30);
+  box-shadow:0 7px 0 #0a2226,0 13px 24px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.18),0 0 20px color-mix(in srgb,var(--country) 18%,transparent)
+}
+.dada3b-shell-v8 .dada3b-dice-meta>small{color:#b9eef2!important}
+
+/* Animations : ambiant calme, feedback de jeu fort et bref. */
+.dada3b-shell-v8 .dada3b-gate-aura{opacity:.32}
+.dada3b-shell-v8 .dada3b-board-orbit{opacity:.35}
+.dada3b-shell-v8 .dada3b-power-flash,
+.dada3b-shell-v8 .dada3b-three-power{animation-duration:.82s}
+
+/* Victoire claire, pas d'écran noir. */
+.dada3b-shell-v8 .dada3b-victory{
+  background:
+    radial-gradient(circle at 50% 42%,rgba(78,174,190,.90),rgba(24,67,75,.92) 45%,rgba(11,35,41,.95) 100%);
+}
+.dada3b-shell-v8 .dada3b-victory-card{
+  background:radial-gradient(circle at top,rgba(230,196,119,.25),rgba(26,59,64,.97) 56%);
+}
+
+/* Mobile : quatre choix restent accessibles sans long scroll. */
+@media(max-width:900px){
+  .dada3b-menu-hero-v8{grid-template-columns:1fr}
+  .dada3b-menu-primary-v8{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dada3b-online-tabs{grid-template-columns:repeat(5,minmax(58px,1fr));overflow-x:auto}
+  .dada3b-board-turn-chip{top:7px}
+}
+@media(max-width:560px){
+  .dada3b-shell-v8 .dada3b-topbar{min-height:48px}
+  .dada3b-home-menu-v8{padding:11px}
+  .dada3b-menu-hero-v8{gap:7px}
+  .dada3b-menu-hero-v8 .dada3b-menu-copy h2{font-size:29px}
+  .dada3b-menu-hero-v8 .dada3b-menu-copy p{font-size:9px}
+  .dada3b-menu-primary-v8{gap:5px;margin-top:8px}
+  .dada3b-menu-primary-v8 .dada3b-menu-cta{min-height:58px;padding:8px}
+  .dada3b-menu-primary-v8 .dada3b-menu-cta strong{font-size:11px}
+  .dada3b-menu-primary-v8 .dada3b-menu-cta small{display:none}
+  .dada3b-board-turn-chip{min-height:31px;padding:4px 6px 4px 8px;gap:5px}
+  .dada3b-board-turn-chip>strong{font-size:8px}
+  .dada3b-board-turn-chip>em{padding:4px 6px;font-size:6px}
+  .dada3b-online-tabs{margin-bottom:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .dada3b-track-cell[data-legal-target="true"],
+  .dada3b-home-cell[data-legal-target="true"]{animation:none!important}
+}
