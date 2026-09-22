@@ -14,6 +14,19 @@ import './dada3b.css';
 
 const Dada3BThree=React.lazy(()=>import('./Dada3BThree.jsx'));
 const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+const DICE_PIPS=Object.freeze({1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]});
+function DiceFace({value}){return <span className="dada3b-die-face-pips" aria-hidden="true">{DICE_PIPS[value].map(slot=><i key={slot} data-slot={slot}/>)}</span>;}
+function PremiumDice({value,rolling,disabled,onClick,skin,country,pending,adverse}){
+ const shown=value||1,status=pending?'Choisis un Totem':adverse?'Tour adverse':'Lancer le dé';
+ return <button className="dada3b-dice dada3b-dice-premium" data-skin={skin} data-value={shown} data-rolling={rolling} style={{'--country':country||'#c7a66a'}} onClick={onClick} disabled={disabled} aria-label={value?'Dé '+value+' · '+status:status}>
+  <span className="dada3b-dice-stage" aria-hidden="true"><span className="dada3b-die-cube">
+   <span className="dada3b-die-face dada3b-die-front"><DiceFace value={1}/></span><span className="dada3b-die-face dada3b-die-right"><DiceFace value={2}/></span>
+   <span className="dada3b-die-face dada3b-die-back"><DiceFace value={3}/></span><span className="dada3b-die-face dada3b-die-left"><DiceFace value={4}/></span>
+   <span className="dada3b-die-face dada3b-die-top"><DiceFace value={5}/></span><span className="dada3b-die-face dada3b-die-bottom"><DiceFace value={6}/></span>
+  </span></span>
+  <span className="dada3b-dice-meta"><b>{value?value:'3B'}</b><small>{status}</small></span>
+ </button>;
+}
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const initialSeats=()=>COUNTRIES_3B.map((country,index)=>({countryId:country.id,type:index<2?'human':index===2?'bot':'off',aiLevel:'tactique',team:null}));
 const COSMETIC_SLOT_LABELS={totem_skin:'Totem',trail:'Trace',dice_skin:'Dé',board_skin:'Plateau',capture_fx:'Capture',intro_fx:'Introduction'};
@@ -354,7 +367,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   <header className="dada3b-topbar"><div><small>{isOnline?(onlineRoom.mode==='ranked'?'CLASSÉ':onlineRoom.mode.toUpperCase()):'LOCAL'} · Manche {renderMatch.round}</small><strong>DADA 3B · {turnCountry?.name||''}</strong></div><div className="dada3b-top-actions"><button className="dada3b-render-toggle" aria-pressed={threeD&&!threeFailed} onClick={()=>{if(threeFailed){setThreeFailed(false);setThreeD(true);}else setThreeD(v=>!v);}}>{threeD&&!threeFailed?'3D APEX':'2,5D'}</button>{timeLeft!==null&&<span className="dada3b-timer" data-low={timeLeft<=7}>{timeLeft}s</span>}{isOnline&&<span className="dada3b-live"><Wifi size={14}/> LIVE</span>}<button className="dada3b-icon-button" onClick={()=>isOnline?leaveOnline():setView('menu')}><X size={20}/></button></div></header>
   <div className="dada3b-arena"><div className="dada3b-board-wrap">{threeD&&!threeFailed?<Dada3DErrorBoundary fallback={fallbackBoard} onFail={()=>setThreeFailed(true)}><React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense></Dada3DErrorBoundary>:fallbackBoard}</div>
    <aside className="dada3b-sidebar"><section className="dada3b-turn-card" style={{'--country':turnCountry?.accent||'#c7a66a'}}><div className="dada3b-turn-line"><div><span className="dada3b-kicker">Tour actuel</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><small>{turnCountry?.guardian} · {turnCountry?.value}{turnPlayer?.type==='bot'?' · IA '+(turnPlayer.aiLevel||''):''}</small></div></div>
-    <button className="dada3b-dice" data-skin={cosmeticLoadout?.dice_skin||'DADA_DICE_CORE'} onClick={()=>isOnline?onlineAction('roll',{room:onlineRoom.id,revision:onlineRoom.revision}):rollLocal(false)} disabled={busy||onlineBusy||renderMatch.status!=='playing'||renderMatch.pendingRoll!==null||(isOnline?!selfTurn:turnPlayer?.type==='bot')}><b>{shownDice?DICE[shownDice]:'◇'}</b><small>{renderMatch.pendingRoll?'Choisis un Totem':isOnline&&!selfTurn?'Tour adverse':'Appuie pour lancer'}</small></button>
+    <PremiumDice value={shownDice} rolling={(busy||onlineBusy)&&renderMatch.pendingRoll===null} skin={cosmeticLoadout?.dice_skin||'DADA_DICE_CORE'} country={turnCountry?.accent} pending={Boolean(renderMatch.pendingRoll)} adverse={Boolean(isOnline&&!selfTurn)} onClick={()=>isOnline?onlineAction('roll',{room:onlineRoom.id,revision:onlineRoom.revision}):rollLocal(false)} disabled={busy||onlineBusy||renderMatch.status!=='playing'||renderMatch.pendingRoll!==null||(isOnline?!selfTurn:turnPlayer?.type==='bot')}/>
     {isOnline&&selfOnline?.botTakeover&&<button className="dada3b-secondary" onClick={()=>onlineAction('reconnect',{room:onlineRoom.id})}>Reprendre ma place</button>}
    </section>
    <section className="dada3b-event" aria-live="polite"><b>Transmission 3B</b><br/>{isOnline?(renderMatch.lastEvent?.text||onlineStatus):notice}</section>
