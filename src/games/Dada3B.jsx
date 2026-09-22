@@ -23,12 +23,37 @@ const tutorialSteps=[
   ['3 · Défendre','Les Portes de départ sont des Sanctuaires. Deux Totems alliés peuvent former un Bouclier 3B.'],
   ['4 · Gagner','Fais le tour, traverse les six cases de ta Porte et entre dans le Nexus avec le compte exact.'],
 ];
+const POWER_EVENT_LABELS=Object.freeze({
+  capture:'FRACTURE MATRIX',barricade:'BOUCLIER 3B',sanctuary:'SANCTUAIRE',door:'PORTE DU NEXUS',finish:'FRAGMENT NEXUS',exit:'LIBÉRATION TOTEM','triple-six':'SURCHARGE MATRIX',victory:'NEXUS COMPLET',
+});
+const POWER_CARDS=Object.freeze([
+  {id:'capture',sigil:'✦',name:'Fracture Matrix',detail:'Capture un Totem adverse et fracture sa progression.'},
+  {id:'sanctuary',sigil:'◇',name:'Sanctuaire',detail:'Les 8 Portes deviennent des zones protégées.'},
+  {id:'barricade',sigil:'⬢',name:'Bouclier 3B',detail:'Deux Totems alliés verrouillent le passage.'},
+  {id:'door',sigil:'⌁',name:'Porte du Nexus',detail:'Le dernier corridor conduit au cœur du plateau.'},
+  {id:'triple-six',sigil:'Ⅵ',name:'Surcharge Matrix',detail:'Trois 6 consécutifs déclenchent la surcharge.'},
+]);
 
 function polar(angleDeg,radius){const a=angleDeg*Math.PI/180;return{left:50+Math.cos(a)*radius,top:50+Math.sin(a)*radius};}
-function trackPosition(index){return polar(-90+index*360/TRACK_LENGTH,38.8);}
-function homePosition(country,index){return polar(-90+country.start*360/TRACK_LENGTH,31.6-index*4.1);}
-function stableCenter(country){return polar(-90+country.start*360/TRACK_LENGTH,44);}
-function finishedPosition(country,pieceIndex){return polar(-90+country.start*360/TRACK_LENGTH+pieceIndex*4-6,6.4+(pieceIndex%2)*1.3);}
+const TRACK_ANCHORS=Object.freeze([[50,8],[81,17],[92,47],[82,80],[49,92],[18,82],[8,53],[17,19]]);
+const TRACK_SECTOR=TRACK_LENGTH/8;
+const smoothStep=t=>t*t*(3-2*t);
+function trackPosition(index){
+ const normalized=((index%TRACK_LENGTH)+TRACK_LENGTH)%TRACK_LENGTH,sector=Math.floor(normalized/TRACK_SECTOR),t=(normalized%TRACK_SECTOR)/TRACK_SECTOR;
+ const a=TRACK_ANCHORS[sector],b=TRACK_ANCHORS[(sector+1)%TRACK_ANCHORS.length],s=smoothStep(t),dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy)||1;
+ const bend=Math.sin(Math.PI*t)*(sector%2===0?1.65:-1.25);
+ return{left:a[0]+dx*s+(-dy/length)*bend,top:a[1]+dy*s+(dx/length)*bend};
+}
+function homePosition(country,index){
+ const gate=trackPosition(country.start),factor=.72-index*.102;
+ return{left:50+(gate.left-50)*factor,top:50+(gate.top-50)*factor};
+}
+function stableCenter(country){
+ const gate=trackPosition(country.start),factor=1.085;
+ return{left:50+(gate.left-50)*factor,top:50+(gate.top-50)*factor};
+}
+function finishedPosition(country,pieceIndex){return polar(-90+country.start*360/TRACK_LENGTH+pieceIndex*5-7.5,6.1+(pieceIndex%2)*1.15);}
+function trackRailPoints(){return Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index);return p.left.toFixed(2)+','+p.top.toFixed(2);}).join(' ');}
 function positionForPiece(country,steps,pieceIndex){
  if(steps===STABLE){const b=stableCenter(country),a=pieceIndex*Math.PI/2+Math.PI/4;return{left:b.left+Math.cos(a)*2.7,top:b.top+Math.sin(a)*2.7};}
  if(steps===FINISH_STEP)return finishedPosition(country,pieceIndex);
@@ -61,13 +86,24 @@ function SeatCard({seat,country,onChange,teamMode=false}){
 
 function Board({match,legal=[],motion,blast,onPiece,focusEvent,loadout=null,cosmeticsByCountry=null}){
  const starts=useMemo(()=>new Map(COUNTRIES_3B.map(c=>[c.start,c])),[]);
+ const railPoints=useMemo(()=>trackRailPoints(),[]);
  const finished=match.players.flatMap(player=>{const c=countryFor(player.countryId);return player.pieces.filter(p=>p.steps===FINISH_STEP).map((_,i)=>({c,i}));});
+ const powerLabel=POWER_EVENT_LABELS[focusEvent]||'';
  return <div className="dada3b-board" data-theme={match.rules?.boardTheme||'nexus'} data-board-skin={loadout?.board_skin||'DADA_BOARD_NEXUS'} data-focus={focusEvent||''} aria-label="Plateau DADA 3B">
-  {Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index),start=starts.get(index),sanctuary=SANCTUARY_CELLS.includes(index)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,index)!==null;return <span key={'t'+index} className="dada3b-track-cell" data-start={!!start} data-sanctuary={sanctuary} data-barricade={barrier} style={{left:p.left+'%',top:p.top+'%','--cell-color':start?.accent||'#bca56f'}}>{start?start.code:sanctuary?'◇':barrier?'▰':''}</span>;})}
-  {COUNTRIES_3B.flatMap(c=>Array.from({length:HOME_LENGTH},(_,index)=>{const p=homePosition(c,index);return <span key={c.id+index} className="dada3b-home-cell" style={{left:p.left+'%',top:p.top+'%','--cell-color':c.accent}}/>;}))}
-  <div className="dada3b-nexus"><div><strong>3B</strong><small>NEXUS</small><span className="dada3b-nexus-fragments">{finished.slice(0,12).map((x,i)=><i key={i} style={{'--fragment':x.c.accent}}/>)}</span></div></div>
-  {match.players.map(player=>{const c=countryFor(player.countryId),p=stableCenter(c);return <div key={'s'+c.id} className="dada3b-stable" style={{left:p.left+'%',top:p.top+'%','--country':c.accent}}><span>{c.crest}</span><small>{c.code} · ÉCURIE</small></div>;})}
-  {match.players.flatMap((player,playerIndex)=>{const c=countryFor(player.countryId),playerLoadout=cosmeticsByCountry?.[player.countryId]||loadout||{},skin=skinForCountry(playerLoadout.totem_skin,c.id);return player.pieces.map((piece,pieceIndex)=>{const shown=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex?motion.step:piece.steps,p=positionForPiece(c,shown,pieceIndex),can=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion,isMoving=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex;return <button type="button" key={c.id+pieceIndex} className="dada3b-piece dada3b-totem" data-shape={c.shape} data-legal={can} data-totem-skin={skin} data-trail={isMoving?(playerLoadout.trail||loadout?.trail||''):''} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}} disabled={!can} onClick={()=>onPiece(pieceIndex)} aria-label={c.name+' Totem '+(pieceIndex+1)+(can?' jouable':'')}><span>{c.crest}</span><small>{pieceIndex+1}</small></button>;});})}
+  <div className="dada3b-board-aura" aria-hidden="true"/><div className="dada3b-board-depth" aria-hidden="true"/>
+  <svg className="dada3b-track-rails" viewBox="0 0 100 100" aria-hidden="true">
+   <polyline className="dada3b-rail-shadow" points={railPoints}/>
+   <polyline className="dada3b-rail-metal" points={railPoints}/>
+   <polyline className="dada3b-rail-energy" points={railPoints}/>
+   {COUNTRIES_3B.map(c=>{const a=trackPosition(c.start),b=homePosition(c,HOME_LENGTH-1);return <line key={'rail-'+c.id} className="dada3b-home-rail" x1={a.left} y1={a.top} x2={b.left} y2={b.top} style={{'--rail-color':c.accent}}/>;})}
+  </svg>
+  <div className="dada3b-board-orbit" aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--orbit':c.accent}}/>)}</div>
+  {powerLabel&&<div className="dada3b-power-flash" data-power={focusEvent}><small>POUVOIR DU CERCLE</small><strong>{powerLabel}</strong></div>}
+  {Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index),start=starts.get(index),sanctuary=SANCTUARY_CELLS.includes(index)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,index)!==null;return <span key={'t'+index} className="dada3b-track-cell" data-start={!!start} data-sanctuary={sanctuary} data-barricade={barrier} data-sector={Math.floor(index/TRACK_SECTOR)} style={{left:p.left+'%',top:p.top+'%','--cell-color':start?.accent||'#bca56f'}}><i/>{start?start.code:sanctuary?'◇':barrier?'▰':''}</span>;})}
+  {COUNTRIES_3B.flatMap(c=>Array.from({length:HOME_LENGTH},(_,index)=>{const p=homePosition(c,index);return <span key={c.id+index} className="dada3b-home-cell" data-home-index={index} style={{left:p.left+'%',top:p.top+'%','--cell-color':c.accent}}><i/></span>;}))}
+  <div className="dada3b-nexus"><div><i className="dada3b-nexus-halo"/><strong>3B</strong><small>NEXUS</small><em>8 PORTES · 8 VALEURS</em><span className="dada3b-nexus-fragments">{finished.slice(0,12).map((x,i)=><i key={i} style={{'--fragment':x.c.accent}}/>)}</span></div></div>
+  {COUNTRIES_3B.map(c=>{const p=stableCenter(c),active=match.players.some(player=>player.countryId===c.id),guardian=guardianAssetFor(c.id);return <div key={'s'+c.id} className="dada3b-stable" data-active={active} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}}><i className="dada3b-gate-aura"/>{guardian?.portrait?<img src={guardian.portrait} alt="" aria-hidden="true"/>:<span>{c.crest}</span>}<strong>{c.guardian}</strong><small>{c.value} · {c.code}</small></div>;})}
+  {match.players.flatMap((player,playerIndex)=>{const c=countryFor(player.countryId),playerLoadout=cosmeticsByCountry?.[player.countryId]||loadout||{},skin=skinForCountry(playerLoadout.totem_skin,c.id);return player.pieces.map((piece,pieceIndex)=>{const shown=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex?motion.step:piece.steps,p=positionForPiece(c,shown,pieceIndex),can=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion,isMoving=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex;return <button type="button" key={c.id+pieceIndex} className="dada3b-piece dada3b-totem" data-shape={c.shape} data-legal={can} data-totem-skin={skin} data-trail={isMoving?(playerLoadout.trail||loadout?.trail||''):''} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}} disabled={!can} onClick={()=>onPiece(pieceIndex)} aria-label={c.name+' Totem '+(pieceIndex+1)+(can?' jouable':'')}><i className="dada3b-totem-shadow"/><i className="dada3b-totem-aura"/><span className="dada3b-totem-model"><i className="dada3b-totem-crown"/><b>{c.crest}</b><i className="dada3b-totem-core"/><i className="dada3b-totem-base"/></span><small>{pieceIndex+1}</small></button>;});})}
   {blast&&<span key={blast.key} className="dada3b-burst" data-fx={blast.fx||loadout?.capture_fx||'DADA_CAPTURE_FRACTURE'} style={{left:blast.left+'%',top:blast.top+'%'}}/>}
  </div>;
 }
@@ -75,6 +111,10 @@ function Board({match,legal=[],motion,blast,onPiece,focusEvent,loadout=null,cosm
 function Tutorial({step,setStep,onClose}){
  const [title,copy]=tutorialSteps[step];
  return <div className="dada3b-victory dada3b-tutorial"><section className="dada3b-victory-card"><span className="dada3b-kicker">Tutoriel interactif · {step+1}/4</span><h2>{title}</h2><p>{copy}</p><div className="dada3b-victory-actions">{step>0&&<button className="dada3b-secondary" onClick={()=>setStep(step-1)}>Précédent</button>}<button className="dada3b-primary" onClick={()=>step<3?setStep(step+1):onClose()}>{step<3?'Suivant':'Jouer'}</button></div></section></div>;
+}
+function PowerDeck({match,focus}){
+ const enabled=id=>id==='capture'||id==='door'||(id==='sanctuary'&&match.rules.safeCells)||(id==='barricade'&&match.rules.barricades)||(id==='triple-six'&&match.rules.tripleSixPenalty);
+ return <section className="dada3b-power-deck"><header><div><span className="dada3b-kicker">Arsenal du Cercle</span><h3>Pouvoirs du plateau</h3></div><b>5</b></header><div>{POWER_CARDS.map(power=><article key={power.id} data-enabled={enabled(power.id)} data-active={focus===power.id}><span>{power.sigil}</span><div><strong>{power.name}</strong><small>{power.detail}</small></div><i>{enabled(power.id)?'ACTIF':'OFF'}</i></article>)}</div></section>;
 }
 
 export default function Dada3B({saved,onClose,onCheckpoint}){
@@ -298,7 +338,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  if(!renderMatch)return null;
  const isOnline=Boolean(onlineRoom);
  const timeLeft=deadlineMs===null?null:Math.ceil(deadlineMs/1000);
- const focus=renderMatch.lastEvent?.type||'';
+ const focus=renderMatch.lastEvent?.sanctuary?'sanctuary':renderMatch.lastEvent?.type||'';
  return <div className="dada3b-shell" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><div><small>{isOnline?(onlineRoom.mode==='ranked'?'CLASSÉ':onlineRoom.mode.toUpperCase()):'LOCAL'} · Manche {renderMatch.round}</small><strong>DADA 3B · {turnCountry?.name||''}</strong></div><div className="dada3b-top-actions">{timeLeft!==null&&<span className="dada3b-timer" data-low={timeLeft<=7}>{timeLeft}s</span>}{isOnline&&<span className="dada3b-live"><Wifi size={14}/> LIVE</span>}<button className="dada3b-icon-button" onClick={()=>isOnline?leaveOnline():setView('menu')}><X size={20}/></button></div></header>
   <div className="dada3b-arena"><div className="dada3b-board-wrap"><Board match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={piece=>isOnline?onlineAction('move',{room:onlineRoom.id,revision:onlineRoom.revision,piece}):chooseLocal(piece)} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry}/></div>
@@ -308,6 +348,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
    </section>
    <section className="dada3b-event" aria-live="polite"><b>Transmission 3B</b><br/>{isOnline?(renderMatch.lastEvent?.text||onlineStatus):notice}</section>
    <section className="dada3b-roster"><h3>Progression</h3>{renderMatch.players.map((p,i)=>{const c=countryFor(p.countryId),home=p.pieces.filter(x=>x.steps===FINISH_STEP).length,stable=p.pieces.filter(x=>x.steps===STABLE).length;return <div className="dada3b-roster-row" key={c.id} style={{'--country':c.accent}}><span className="dada3b-roster-dot"/><div><strong>{i===renderMatch.turn?'› ':''}{c.flag} {c.name}</strong><small>{stable} écurie · {p.stats.captures} captures · {p.stats.barricadesFormed} boucliers{p.team?' · '+TEAM_LABELS[p.team]:''}</small></div><span>{home}/{renderMatch.rules.piecesPerPlayer}</span></div>;})}</section>
+   <PowerDeck match={renderMatch} focus={focus}/>
    <details className="dada3b-history"><summary>Historique & statistiques</summary>{(renderMatch.history||[]).slice(-8).reverse().map(e=><p key={e.id}>{e.text}</p>)}</details>
    <div className="dada3b-rules"><Shield size={13}/> Sanctuaires {renderMatch.rules.safeCells?'ON':'OFF'} · Bouclier {renderMatch.rules.barricades?'ON':'OFF'} · 3×6 {renderMatch.rules.tripleSixPenalty?'ON':'OFF'}{renderMatch.rules.teamMode?' · 2v2 OR/MATRIX':''}</div>
    </aside>
