@@ -8,6 +8,14 @@ on:
       - 'src/shop/**'
       - 'public/shop/**'
       - 'public/shipping.html'
+      - 'public/boutique.html'
+      - 'public/decouvrir-3b.html'
+      - 'public/monde-du-3b.html'
+      - 'public/manifest.webmanifest'
+      - 'public/sitemap.xml'
+      - 'public/install-android.html'
+      - 'src/components/AppNavigation.jsx'
+      - 'src/components/WorldPortalCard.jsx'
       - 'tests/shop*.test.js'
       - '.env.example'
       - 'package*.json'
@@ -31,3 +39,5 @@ jobs:
         run: npm run build
       - name: Test seller, customer and notification workflow
         run: node --test tests/shop-order-workflow.test.js tests/shop-notifications.test.js
+      - name: Test premium shop presentation and 3B public journey
+        run: node --test tests/shop-premium-ui.test.js
