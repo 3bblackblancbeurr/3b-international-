@@ -292,21 +292,26 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
 
  if(view==='menu')return <div className="dada3b-shell" role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><div><small>Jeux 3B · Protocole plateau</small><strong>DADA 3B — Le Cercle des 8 Portes</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
-  <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-home-menu">
-   <div className="dada3b-door-intro" data-intro={cosmeticLoadout?.intro_fx||'DADA_INTRO_EIGHT_DOORS'} aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--door':c.accent}}><span>{c.crest}</span></i>)}</div>
-   <span className="dada3b-kicker">LOCAL · IA · MULTIJOUEUR · CLASSÉ</span><h2>Le Cercle est ouvert.</h2><p>Un jeu de dada classique dans ses règles fondamentales, renforcé par les huit nations, les Gardiens, le Nexus, les Sanctuaires et le Bouclier 3B.</p>
-   <div className="dada3b-mode-grid">
-    <button onClick={()=>setView('local-setup')}><strong>Local & IA</strong><small>2 à 8 pays · règles personnalisables · reprise sauvegardée</small></button>
-    <button onClick={()=>enterOnline('private')}><strong>Salon privé</strong><small>Code 6 caractères · 2 à 8 joueurs</small></button>
-    <button onClick={()=>enterOnline('join')}><strong>Rejoindre</strong><small>Entre le code d’un ami</small></button>
-    <button onClick={()=>enterOnline('quick')}><strong>Jeu rapide</strong><small>Matchmaking serveur</small></button>
-    <button onClick={()=>enterOnline('ranked')}><strong>Classé</strong><small>1v1 · dé serveur · classement</small></button>
-    <button onClick={()=>enterOnline('team2v2')}><strong>2v2 équipes</strong><small>OR contre MATRIX · matchmaking à 4</small></button>
-    <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Regarde une partie privée autorisée</small></button>
-    <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection DADA</strong><small>Totems · dés · traces · plateaux · effets</small></button>
+  <main className="dada3b-setup dada3b-menu-setup"><section className="dada3b-setup-card dada3b-home-menu dada3b-home-menu-v7">
+   <div className="dada3b-menu-hero">
+    <div className="dada3b-menu-copy"><span className="dada3b-kicker">DADA 3B · APEX LUXE</span><h2>Le Cercle est ouvert.</h2><p>8 nations. 8 Portes. Un Nexus. Choisis ton mode et joue.</p></div>
+    <div className="dada3b-door-intro" data-intro={cosmeticLoadout?.intro_fx||'DADA_INTRO_EIGHT_DOORS'} aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--door':c.accent}}><span>{c.crest}</span></i>)}</div>
    </div>
-   {restored?.status==='playing'&&<button className="dada3b-primary dada3b-resume" onClick={resumeLocal}><Play size={17}/> Reprendre ma partie sauvegardée</button>}
-   <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button><button onClick={()=>enterOnline('leaderboard')}>Classement</button></div>
+   <div className="dada3b-menu-primary">
+    {restored?.status==='playing'&&<button className="dada3b-menu-cta dada3b-menu-resume" onClick={resumeLocal}><Play size={18}/><span><strong>Reprendre</strong><small>Continuer la partie sauvegardée</small></span></button>}
+    <button className="dada3b-menu-cta" onClick={()=>setView('local-setup')}><Play size={18}/><span><strong>Jouer</strong><small>Local & IA · 2 à 8 pays</small></span></button>
+    <button className="dada3b-menu-cta" onClick={()=>enterOnline('quick')}><Wifi size={18}/><span><strong>Jeu rapide</strong><small>Matchmaking serveur</small></span></button>
+    <button className="dada3b-menu-cta" onClick={()=>enterOnline('private')}><Users size={18}/><span><strong>Salon privé</strong><small>Créer une partie avec code</small></span></button>
+   </div>
+   <div className="dada3b-menu-shortcuts">
+    <button onClick={()=>enterOnline('join')}>Rejoindre</button><button onClick={()=>enterOnline('ranked')}>Classé</button>
+    <button onClick={()=>enterOnline('team2v2')}>2v2 OR / MATRIX</button><button onClick={()=>enterOnline('leaderboard')}>Classement</button>
+   </div>
+   <details className="dada3b-menu-more"><summary>Options & collection</summary><div>
+    <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Observer un salon autorisé</small></button>
+    <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection DADA</strong><small>Totems · dés · traces · plateaux</small></button>
+    <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button></div>
+   </div></details>
   </section></main>
  </div>;
 
@@ -327,7 +332,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   <main className="dada3b-setup"><section className="dada3b-setup-card">
    <span className="dada3b-kicker">TOTEMS 3B</span><h2>Compose ton Cercle.</h2>
    <div className="dada3b-country-grid">{COUNTRIES_3B.map(c=><SeatCard key={c.id} country={c} seat={seats.find(s=>s.countryId===c.id)} teamMode={rules.teamMode} onChange={next=>updateSeat(c.id,next)}/>)}</div>
-   <div className="dada3b-settings"><h3>Règles avancées</h3><div className="dada3b-rule-grid">
+   <details className="dada3b-settings dada3b-settings-collapsed"><summary><span>Règles avancées</span><small>Sanctuaires · Bouclier · timer · plateau</small></summary><div className="dada3b-rule-grid">
     <RuleToggle checked={rules.safeCells} onChange={v=>updateRule('safeCells',v)} label="Sanctuaires" detail="Les huit Portes de départ protègent les Totems."/>
     <RuleToggle checked={rules.barricades} onChange={v=>updateRule('barricades',v)} label="Bouclier 3B" detail="Deux Totems alliés forment une barricade."/>
     <RuleToggle checked={rules.captureRequired} onChange={v=>updateRule('captureRequired',v)} label="Capture obligatoire" detail="Une capture disponible doit être jouée."/>
@@ -339,7 +344,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     <label className="dada3b-field"><span>Timer</span><select value={rules.timerSeconds} onChange={e=>updateRule('timerSeconds',Number(e.target.value))}>{[0,20,30,45].map(v=><option key={v} value={v}>{v?v+' s':'Libre'}</option>)}</select></label>
     <label className="dada3b-field"><span>Durée max</span><select value={rules.maxDurationMinutes} onChange={e=>updateRule('maxDurationMinutes',Number(e.target.value))}>{[0,10,20,30,45,60].map(v=><option key={v} value={v}>{v?v+' min':'Libre'}</option>)}</select></label>
     <label className="dada3b-field"><span>Plateau</span><select value={rules.boardTheme} onChange={e=>updateRule('boardTheme',e.target.value)}>{BOARD_THEMES.map(v=><option key={v} value={v}>{v==='nexus'?'Nexus 3B':countryFor(v)?.name||v}</option>)}</select></label>
-   </div></div>
+   </div></details>
    <div className="dada3b-launch"><span>{activeSeats.length} pays actifs · {activeSeats.filter(s=>s.type==='human').length} humain(s) · {activeSeats.filter(s=>s.type==='bot').length} IA{rules.teamMode?' · OR '+activeSeats.filter(s=>s.team==='A').length+' / MATRIX '+activeSeats.filter(s=>s.team==='B').length:''}</span><button className="dada3b-primary" disabled={rules.teamMode?activeSeats.length!==4:activeSeats.length<2} onClick={beginLocal}>Ouvrir le Cercle</button></div>
   </section></main>
  </div>;
@@ -379,8 +384,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
     {isOnline&&selfOnline?.botTakeover&&<button className="dada3b-secondary" onClick={()=>onlineAction('reconnect',{room:onlineRoom.id})}>Reprendre ma place</button>}
    </section>
    <section className="dada3b-event" aria-live="polite"><b>Transmission 3B</b><br/>{isOnline?(renderMatch.lastEvent?.text||onlineStatus):notice}</section>
-   <section className="dada3b-roster"><h3>Progression</h3>{renderMatch.players.map((p,i)=>{const c=countryFor(p.countryId),home=p.pieces.filter(x=>x.steps===FINISH_STEP).length,stable=p.pieces.filter(x=>x.steps===STABLE).length;return <div className="dada3b-roster-row" key={c.id} style={{'--country':c.accent}}><span className="dada3b-roster-dot"/><div><strong>{i===renderMatch.turn?'› ':''}{c.flag} {c.name}</strong><small>{stable} écurie · {p.stats.captures} captures · {p.stats.barricadesFormed} boucliers{p.team?' · '+TEAM_LABELS[p.team]:''}</small></div><span>{home}/{renderMatch.rules.piecesPerPlayer}</span></div>;})}</section>
-   <PowerDeck match={renderMatch} focus={focus}/>
+   <details className="dada3b-tactical-panel"><summary>Progression & pouvoirs</summary><div className="dada3b-tactical-content"><section className="dada3b-roster"><h3>Progression</h3>{renderMatch.players.map((p,i)=>{const c=countryFor(p.countryId),home=p.pieces.filter(x=>x.steps===FINISH_STEP).length,stable=p.pieces.filter(x=>x.steps===STABLE).length;return <div className="dada3b-roster-row" key={c.id} style={{'--country':c.accent}}><span className="dada3b-roster-dot"/><div><strong>{i===renderMatch.turn?'› ':''}{c.flag} {c.name}</strong><small>{stable} écurie · {p.stats.captures} captures · {p.stats.barricadesFormed} boucliers{p.team?' · '+TEAM_LABELS[p.team]:''}</small></div><span>{home}/{renderMatch.rules.piecesPerPlayer}</span></div>;})}</section><PowerDeck match={renderMatch} focus={focus}/></div></details>
    <details className="dada3b-history"><summary>Historique & statistiques</summary>{(renderMatch.history||[]).slice(-8).reverse().map(e=><p key={e.id}>{e.text}</p>)}</details>
    <div className="dada3b-rules"><Shield size={13}/> Sanctuaires {renderMatch.rules.safeCells?'ON':'OFF'} · Bouclier {renderMatch.rules.barricades?'ON':'OFF'} · 3×6 {renderMatch.rules.tripleSixPenalty?'ON':'OFF'}{renderMatch.rules.teamMode?' · 2v2 OR/MATRIX':''}</div>
    </aside>
