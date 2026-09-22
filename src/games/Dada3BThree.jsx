@@ -289,9 +289,9 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   renderer.domElement.addEventListener('pointerdown',pointerDown,{passive:true});renderer.domElement.addEventListener('pointermove',pointerMove,{passive:true});renderer.domElement.addEventListener('pointerup',pointerUp,{passive:true});
   let frame=0;const clock=new THREE.Clock();
   const animate=()=>{
-   if(runtime.disposed)return;frame=requestAnimationFrame(animate);const t=clock.getElapsedTime(),now=performance.now();
+   if(runtime.disposed)return;frame=requestAnimationFrame(animate);const t=clock.getElapsedTime(),now=performance.now(),focus=now<runtime.focusUntil;
    controls.autoRotate=focus&&runtime.focusType==='victory';controls.autoRotateSpeed=.8;controls.update();renderer.toneMappingExposure=THREE.MathUtils.lerp(renderer.toneMappingExposure,focus?1.3:1.16,.06);
-   const focus=now<runtime.focusUntil;camera.fov=THREE.MathUtils.lerp(camera.fov,focus ? (runtime.focusType==='victory' ? 32 : 35) : 38,.055);camera.updateProjectionMatrix();
+   camera.fov=THREE.MathUtils.lerp(camera.fov,focus ? (runtime.focusType==='victory' ? 32 : 35) : 38,.055);camera.updateProjectionMatrix();
    runtime.energyRail.material.opacity=.32+Math.sin(t*2.2)*.12;
    runtime.nexusRings.forEach((ring,i)=>{ring.rotation.y+=.003*(i+1);ring.rotation.z+=.0015*(i%2?1:-1);});
    if(runtime.nexusCore){runtime.nexusCore.rotation.x=t*.55;runtime.nexusCore.rotation.y=t*.82;runtime.nexusCore.scale.setScalar(1+Math.sin(t*3)*.035);}
