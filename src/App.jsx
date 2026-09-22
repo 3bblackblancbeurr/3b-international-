@@ -192,7 +192,7 @@ export default function App() {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     const welcome = new SpeechSynthesisUtterance(
-      "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout partout."
+      "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout le temps partout."
     );
 
     const voices = window.speechSynthesis.getVoices();
