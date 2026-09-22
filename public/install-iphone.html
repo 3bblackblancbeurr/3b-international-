@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#030405">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="3B International">
+  <title>Installer 3B International sur iPhone</title>
+  <meta name="description" content="Installez 3B International sur iPhone depuis Safari, sans invitation, puis retrouvez l’application depuis l’écran d’accueil.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://3b-international.vercel.app/install-iphone.html">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/3b-icon-20260912-180.png">
+  <link rel="icon" href="/favicon-3b.svg" type="image/svg+xml">
+  <meta property="og:title" content="Installer 3B International sur iPhone">
+  <meta property="og:description" content="Installation officielle 3B sur iPhone depuis Safari, sans invitation.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://3b-international.vercel.app/install-iphone.html">
+  <meta property="og:image" content="https://3b-international.vercel.app/icons/3b-icon-20260912-512.png">
+  <style>
+    :root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#030405;color:#f7f4ed}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#0b3150 0,#07121d 28%,#030405 67%);line-height:1.6}
+    main{max-width:820px;margin:auto;padding:calc(34px + env(safe-area-inset-top)) 20px calc(56px + env(safe-area-inset-bottom))}
+    .brand{letter-spacing:.18em;text-transform:uppercase;color:#d9bf86;font-weight:800;font-size:.78rem}.hero{padding:28px;border:1px solid #e4c98f35;border-radius:26px;background:#071019e8;box-shadow:0 24px 100px #0008}
+    .app-icon{width:74px;height:74px;border-radius:18px;box-shadow:0 10px 32px #0009}h1{font-size:clamp(2rem,9vw,4.4rem);line-height:1.02;margin:18px 0 12px}h1 em{font-style:normal;color:#8ee8ff}
+    .lead{font-size:1.04rem;color:#cbd3dc;max-width:62ch}.status{margin:20px 0 0;padding:12px 14px;border-radius:12px;background:#0d1b25;border:1px solid #ffffff16;color:#c8d5df;font-weight:700}.status[data-state="ready"]{border-color:#69e2ff55;color:#9cecff}.status[data-state="attention"]{border-color:#ffd27355;color:#ffe09d}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}.button,.secondary,.native-button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 17px;border-radius:12px;text-decoration:none;font-weight:850;border:1px solid #e7ca8d66}.button{background:#e7ca8d;color:#111820}.secondary{background:#0b2232;color:#bdeeff;border-color:#6ddcff55}.native-button{background:#f5f5f7;color:#101114;border-color:#fff}
+    .card{margin-top:18px;padding:22px;border:1px solid #ffffff16;border-radius:20px;background:#08111ae8}.card h2{margin:0 0 12px;font-size:1.35rem}.steps{display:grid;gap:12px;margin:18px 0}.step{display:grid;grid-template-columns:42px 1fr;gap:12px;padding:14px;border-radius:15px;background:#050b11;border:1px solid #ffffff12}.num{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#e7ca8d;color:#131b22;font-weight:950;font-size:1.1rem}.step strong{color:#fff}.hint{color:#9dabb7;font-size:.93rem}.warning{padding:14px;border:1px solid #ffd27355;border-radius:13px;background:#3a280a6b;color:#ffe1a3}.installed{padding:14px;border-radius:13px;background:#083022;border:1px solid #76e5b55c;color:#aef2cf}
+    .native{margin-top:18px}.native [data-native-list]{display:flex;flex-wrap:wrap;gap:10px}.small{font-size:.86rem;color:#9aa7b2}.address{overflow-wrap:anywhere;color:#bfeaff}.footer{margin-top:26px;color:#95a2ad;font-size:.88rem}.footer a{color:#cfe9ff}
+    @media(max-width:560px){.hero{padding:21px}.actions>*{width:100%}.step{grid-template-columns:38px 1fr}.num{width:36px;height:36px}}
+  </style>
+  <script src="/install-iphone.js" defer></script>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <img class="app-icon" src="/icons/3b-icon-20260912-192.png" alt="Icône 3B International" width="74" height="74">
+    <p class="brand">3B International · iPhone</p>
+    <h1>Installer 3B sur iPhone.<br><em>Sans invitation.</em></h1>
+    <p class="lead">La méthode la plus rapide fonctionne directement avec Safari : 3B s’ajoute à l’écran d’accueil et s’ouvre ensuite comme une application web dédiée.</p>
+    <p id="device-status" class="status" role="status">Vérification de ton appareil…</p>
+    <div id="installed-state" class="installed" hidden>✓ Installation détectée. Tu peux lancer 3B depuis son icône sur l’écran d’accueil.</div>
+    <div class="actions">
+      <a class="button" href="/">Ouvrir 3B maintenant</a>
+      <button id="share-link" class="secondary" type="button">Partager ce lien</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3 gestes dans Safari</h2>
+    <div id="browser-advice" class="warning" hidden><strong>Tu es sur iPhone, mais pas dans Safari.</strong><br>Appuie sur “Copier le lien”, ouvre Safari, colle l’adresse puis continue avec les étapes ci-dessous.</div>
+    <div class="steps">
+      <div class="step"><span class="num">1</span><div><strong>Ouvre cette page dans Safari.</strong><br><span class="hint">Utilise Safari sur l’iPhone ou l’iPad.</span></div></div>
+      <div class="step"><span class="num">2</span><div><strong>Appuie sur Partager → Sur l’écran d’accueil.</strong><br><span class="hint">Si l’option n’apparaît pas, fais défiler les actions du menu Partager.</span></div></div>
+      <div class="step"><span class="num">3</span><div><strong>Active “Ouvrir en app web” si proposé, puis Ajouter.</strong><br><span class="hint">L’icône 3B apparaît ensuite sur l’écran d’accueil.</span></div></div>
+    </div>
+    <div class="actions">
+      <button id="copy-link" class="secondary" type="button">Copier le lien pour Safari</button>
+    </div>
+    <p id="copy-status" class="small" role="status"></p>
+    <p class="address"><strong>Adresse officielle :</strong> https://3b-international.vercel.app/install-iphone.html</p>
+  </section>
+
+  <section id="native-links" class="card native" hidden>
+    <h2>Version native Apple disponible</h2>
+    <p>Si une distribution Apple officielle 3B est active, utilise l’un des liens ci-dessous.</p>
+    <div data-native-list></div>
+  </section>
+
+  <section class="card">
+    <h2>Et TestFlight ?</h2>
+    <p>Tu n’as pas besoin de TestFlight pour installer la version web 3B. Si une bêta native iPhone est proposée, un <strong>lien TestFlight public</strong> pourra apparaître ici afin d’éviter les invitations par e-mail.</p>
+    <p class="small">Une version App Store ou une distribution Apple depuis le web peut également être affichée ici lorsqu’elle est officiellement disponible.</p>
+  </section>
+
+  <div class="footer"><a href="/install.html">Toutes les méthodes d’installation</a> · <a href="/install-android.html">Android</a> · <a href="/privacy-policy.html">Confidentialité</a></div>
+</main>
+</body>
+</html>
