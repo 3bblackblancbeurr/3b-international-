@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $project = Join-Path $repoRoot "unreal\ThreeBWorld\ThreeBWorld.uproject"
-$builder = Join-Path $repoRoot "unreal\ThreeBWorld\Scripts\build_hub3b_void_blockout_v3.py"
+$builder = Join-Path $repoRoot "unreal\ThreeBWorld\Scripts\build_hub3b_main_v4.py"
 $initScript = Join-Path $repoRoot "unreal\ThreeBWorld\Content\Python\init_unreal.py"
 
 function Fail([string]$message) {
@@ -68,13 +68,13 @@ if (-not $editor) {
 Write-Host "Projet : $project" -ForegroundColor Cyan
 Write-Host "Unreal : $editor" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Unreal va s'ouvrir. Le Hub 3B sera construit automatiquement." -ForegroundColor Green
+Write-Host "Unreal va s'ouvrir. Le Hub 3B V4 avec les 8 portails sera construit automatiquement." -ForegroundColor Green
 Write-Host "Ne clique sur rien pendant le chargement initial." -ForegroundColor Yellow
 Write-Host ""
 
 $arguments = @(
     ('"' + $project + '"'),
-    "-3BHubAutoBuild"
+    "-3BHubV4AutoBuild"
 )
 
 Start-Process -FilePath $editor -ArgumentList $arguments -WorkingDirectory (Split-Path $project -Parent)
