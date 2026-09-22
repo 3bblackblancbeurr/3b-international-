@@ -19,7 +19,7 @@ function makeFaceTexture(value,{champagne=false,country='#5bd9ef'}={}){
   const pipColor=champagne?'#f5c85d':'#72e8f8';
   const edge=champagne?'rgba(255,226,158,.65)':'rgba(119,234,248,.55)';
   ctx.strokeStyle=edge;ctx.lineWidth=5;ctx.shadowBlur=14;ctx.shadowColor=pipColor;
-  ctx.beginPath();ctx.roundRect(22,22,212,212,36);ctx.stroke();ctx.shadowBlur=0;
+  ctx.beginPath();if(typeof ctx.roundRect==='function')ctx.roundRect(22,22,212,212,36);else ctx.rect(22,22,212,212);ctx.stroke();ctx.shadowBlur=0;
   ctx.globalAlpha=.16;ctx.font='900 84px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=country;ctx.fillText('3B',128,128);ctx.globalAlpha=1;
   for(const slot of PIPS[value]){
     const row=Math.floor((slot-1)/3),col=(slot-1)%3,x=65+col*63,y=65+row*63;
@@ -100,8 +100,13 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
     const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(1.32,1.5,.16,48),pedestalMat);pedestal.position.y=-1.08;scene.add(pedestal);
     const ringMat=new THREE.MeshBasicMaterial({color:new THREE.Color(champagne?'#f2c665':'#69e5f6'),transparent:true,opacity:.52,blending:THREE.AdditiveBlending,depthWrite:false});
     const ring=new THREE.Mesh(new THREE.TorusGeometry(1.26,.035,8,64),ringMat);ring.rotation.x=Math.PI/2;ring.position.y=-.97;scene.add(ring);
+    const sparkGeo=new THREE.BufferGeometry(),sparkCount=28,sparkPositions=new Float32Array(sparkCount*3);
+    for(let i=0;i<sparkCount;i++){const a=i/sparkCount*Math.PI*2,r=1.35+(i%4)*.08;sparkPositions[i*3]=Math.cos(a)*r;sparkPositions[i*3+1]=-.3+(i%7)*.17;sparkPositions[i*3+2]=Math.sin(a)*r;}
+    sparkGeo.setAttribute('position',new THREE.BufferAttribute(sparkPositions,3));
+    const sparkMat=new THREE.PointsMaterial({color:new THREE.Color(champagne?'#f2c665':propsRef.current.country),size:.055,transparent:true,opacity:.16,depthWrite:false,blending:THREE.AdditiveBlending});
+    const sparks=new THREE.Points(sparkGeo,sparkMat);scene.add(sparks);
 
-    const runtime={renderer,scene,camera,root,bodyMaterial,edgeMaterial,ring,ringMat,cyan,gold,target:new THREE.Quaternion(),lastRolling:false,lastValue:propsRef.current.value||1,spin:new THREE.Vector3(4.4,6.2,3.7),disposed:false};
+    const runtime={renderer,scene,camera,root,bodyMaterial,edgeMaterial,ring,ringMat,sparks,sparkMat,cyan,gold,target:new THREE.Quaternion(),lastRolling:false,lastValue:propsRef.current.value||1,spin:new THREE.Vector3(4.4,6.2,3.7),disposed:false};
     runtimeRef.current=runtime;setTargetQuaternion(runtime,runtime.lastValue);root.quaternion.copy(runtime.target);
 
     const resize=()=>{
@@ -119,7 +124,9 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
       const champagneNow=p.skin==='DADA_DICE_CHAMPAGNE';
       runtime.cyan.color.set(p.country||'#5bd9ef');runtime.cyan.intensity=9+Math.sin(t*3.2)*2.3;
       runtime.gold.intensity=champagneNow?11:7;
-      runtime.ringMat.color.set(champagneNow?'#f2c665':p.country||'#69e5f6');runtime.ringMat.opacity=.42+Math.sin(t*4)*.13;runtime.ring.rotation.z+=dt*.7;
+      const six=!p.rolling&&currentValue===6;
+      runtime.ringMat.color.set(champagneNow?'#f2c665':p.country||'#69e5f6');runtime.ringMat.opacity=(six ? .68 : .42)+Math.sin(t*4)*(six ? .19 : .13);runtime.ring.rotation.z+=dt*(six?1.45:.7);
+      runtime.sparkMat.color.set(champagneNow?'#f2c665':p.country||'#69e5f6');runtime.sparkMat.opacity=p.rolling ? .52 : six ? .48 : .13;runtime.sparks.rotation.y+=dt*(p.rolling?2.6:six?1.3:.35);runtime.sparks.rotation.z+=dt*.18;
       runtime.bodyMaterial.color.set(champagneNow?'#6b532c':'#1a292b');
       runtime.bodyMaterial.metalness=champagneNow ? .72 : .62;runtime.bodyMaterial.roughness=champagneNow ? .18 : .22;
       runtime.bodyMaterial.emissive.set(champagneNow?'#6b4d18':p.country||'#173c42');
