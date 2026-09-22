@@ -112,10 +112,10 @@ function addTrackCells(scene,match,runtime){
  for(let i=0;i<TRACK_LENGTH;i++){
   const country=startMap.get(i),sanctuary=SANCTUARY_CELLS.includes(i)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,i)!==null;
   const color=country?.accent||(sanctuary?'#e2c470':barrier?'#65dff0':'#263334');
-  const mat=makeMaterial(color,{metal:.76,rough:.27,emissive:color,emissiveIntensity:country?.35:sanctuary?.52:barrier?.6:.06});
+  const mat=makeMaterial(color,{metal:.76,rough:.27,emissive:color,emissiveIntensity:country ? .35 : sanctuary ? .52 : barrier ? .6 : .06});
   const cell=mesh(new THREE.CylinderGeometry(country?.46:.37,country?.42:.34,country?.24:.18,country?8:6),mat,true,true);
   const p=worldFromPercent(trackPosition(i),.49);cell.position.copy(p);cell.rotation.y=(i/TRACK_LENGTH)*Math.PI*2;
-  cell.userData={kind:'cell',index:i,material:mat,sanctuary,barrier,baseColor:new THREE.Color(color),baseEmissive:country?.35:sanctuary?.52:.06};scene.add(cell);runtime.trackCells.push(cell);
+  cell.userData={kind:'cell',index:i,material:mat,sanctuary,barrier,baseColor:new THREE.Color(color),baseEmissive:country ? .35 : sanctuary ? .52 : .06};scene.add(cell);runtime.trackCells.push(cell);
   if(country){
    const beaconMat=new THREE.MeshBasicMaterial({color:new THREE.Color(country.accent),transparent:true,opacity:.25,blending:THREE.AdditiveBlending,depthWrite:false});
    const beacon=mesh(new THREE.CylinderGeometry(.06,.3,1.7,12,1,true),beaconMat,false,false);beacon.position.copy(p);beacon.position.y=.92;scene.add(beacon);
@@ -132,8 +132,8 @@ function addTrackCells(scene,match,runtime){
 }
 function addGate(scene,country,active,runtime){
  const p=worldFromPercent(stableCenter(country),.18),group=new THREE.Group();group.position.copy(p);group.lookAt(0,p.y,0);
- const dark=makeMaterial('#090d0e',{metal:.72,rough:.35,emissive:country.accent,emissiveIntensity:active?.17:.035});
- const accent=makeMaterial(country.accent,{metal:.78,rough:.24,emissive:country.accent,emissiveIntensity:active?.55:.08});
+ const dark=makeMaterial('#090d0e',{metal:.72,rough:.35,emissive:country.accent,emissiveIntensity:active ? .17 : .035});
+ const accent=makeMaterial(country.accent,{metal:.78,rough:.24,emissive:country.accent,emissiveIntensity:active ? .55 : .08});
  const pedestal=mesh(new THREE.CylinderGeometry(1.05,1.18,.34,8),dark,true,true);pedestal.position.y=.04;group.add(pedestal);
  [-.69,.69].forEach(x=>{
   const tower=mesh(new THREE.CylinderGeometry(.15,.22,1.55,8),accent,true,true);tower.position.set(x,.82,0);group.add(tower);
@@ -219,7 +219,7 @@ function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout
    group.userData.trail=trail;
    group.userData.haloMat.color.set(trail==='DADA_TRAIL_GOLD'?'#e6bd68':trail==='DADA_TRAIL_MATRIX'?'#5cd9ff':country.accent);
    group.userData.bodyMat.metalness=playerLoadout.totem_skin&&playerLoadout.totem_skin!=='DADA_TOTEM_CORE'?.82:.7;
-   group.userData.bodyMat.emissiveIntensity=group.userData.legal?.72:playerLoadout.totem_skin&&playerLoadout.totem_skin!=='DADA_TOTEM_CORE'?.27:.16;
+   group.userData.bodyMat.emissiveIntensity=group.userData.legal ? .72 : playerLoadout.totem_skin&&playerLoadout.totem_skin!=='DADA_TOTEM_CORE' ? .27 : .16;
    group.userData.coreMat.emissiveIntensity=group.userData.legal?3.2:2.1;
   });
  });
@@ -287,7 +287,7 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   const animate=()=>{
    if(runtime.disposed)return;frame=requestAnimationFrame(animate);const t=clock.getElapsedTime(),now=performance.now();
    controls.update();
-   const focus=now<runtime.focusUntil;camera.fov=THREE.MathUtils.lerp(camera.fov,focus?(runtime.focusType==='victory'?32:35):38,.055);camera.updateProjectionMatrix();
+   const focus=now<runtime.focusUntil;camera.fov=THREE.MathUtils.lerp(camera.fov,focus ? (runtime.focusType==='victory' ? 32 : 35) : 38,.055);camera.updateProjectionMatrix();
    runtime.energyRail.material.opacity=.32+Math.sin(t*2.2)*.12;runtime.energyRail.rotation.y=t*.018;
    runtime.nexusRings.forEach((ring,i)=>{ring.rotation.y+=.003*(i+1);ring.rotation.z+=.0015*(i%2?1:-1);});
    if(runtime.nexusCore){runtime.nexusCore.rotation.x=t*.55;runtime.nexusCore.rotation.y=t*.82;runtime.nexusCore.scale.setScalar(1+Math.sin(t*3)*.035);}
@@ -296,11 +296,11 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    runtime.gateHalos.forEach((halo,i)=>{halo.rotation.z=t*(.18+i*.006);halo.material.opacity=.34+Math.sin(t*1.7+i)*.16;});
    runtime.beacons.forEach((beacon,i)=>{beacon.material.opacity=.18+Math.sin(t*2+i*.4)*.08;});
    for(const group of runtime.pieceMap.values()){
-    const target=group.userData.target,bob=group.userData.legal?Math.sin(t*5+group.userData.pieceIndex)*.13:group.userData.isMoving?Math.abs(Math.sin(t*10))*.18:0;
+    const target=group.userData.target,bob=group.userData.legal ? Math.sin(t*5+group.userData.pieceIndex)*.13:group.userData.isMoving ? Math.abs(Math.sin(t*10))*.18:0;
     group.position.x=THREE.MathUtils.lerp(group.position.x,target.x,.23);group.position.z=THREE.MathUtils.lerp(group.position.z,target.z,.23);group.position.y=THREE.MathUtils.lerp(group.position.y,target.y+bob,.25);
-    group.rotation.y+=group.userData.legal?.016:.003;
-    group.userData.haloMat.opacity=THREE.MathUtils.lerp(group.userData.haloMat.opacity,group.userData.legal?.72:.08,.12);
-    const pulse=group.userData.legal?1+Math.sin(t*6)*.045:1;group.scale.setScalar(pulse);
+    group.rotation.y+=group.userData.legal ? .016 : .003;
+    group.userData.haloMat.opacity=THREE.MathUtils.lerp(group.userData.haloMat.opacity,group.userData.legal ? .72 : .08,.12);
+    const pulse=group.userData.legal ? 1+Math.sin(t*6)*.045:1;group.scale.setScalar(pulse);
    }
    runtime.effects=runtime.effects.filter(fx=>{
     const age=(now-fx.birth)/1000;if(age>.82){scene.remove(fx.group);disposeTree(fx.group);return false;}
