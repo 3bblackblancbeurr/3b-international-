@@ -11,9 +11,10 @@ export function SectionIcon({ page, ...props }) {
 
 export const NAV_GROUPS = [
   { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
-  { title: "Explorer 3B", ids: ["world3b", "games", "manga", "secret", "religion"] },
+  { title: "Explorer 3B", ids: ["world3b", "games", "religion"] },
   { title: "Créer & partager", ids: ["ia", "community", "sport", "shop"] },
   { title: "Comprendre & progresser", ids: ["guide"] },
+  { title: "À venir", ids: ["manga", "secret"] },
 ];
 
 export function RouteLink({ page, goTo, children, ...props }) {
@@ -118,7 +119,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
           const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
           return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}</section>;
         })}
-        {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « manga » ou « boutique ».</p>}
+        {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « monde » ou « boutique ».</p>}
       </div>
       <div className="dialog-footer"><RouteLink page="intro" goTo={navigate}>Revoir l’introduction <ArrowUpRight size={16} aria-hidden="true" /></RouteLink><span>De zéro à l’international.</span></div>
     </dialog>
