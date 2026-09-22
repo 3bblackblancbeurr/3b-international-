@@ -195,7 +195,9 @@ function createPiece(country,pieceIndex,shadows){
  group.traverse(o=>{o.userData.pieceRoot=group;});
  return group;
 }
-function updateBoardState(runtime,match){
+function updateBoardState(runtime,match,loadout=null){
+ const theme=countryFor(match.rules?.boardTheme),themeColor=theme?.accent||'#45dff6';
+ if(runtime.themeLight){runtime.themeLight.color.set(themeColor);runtime.themeLight.intensity=loadout?.board_skin==='DADA_BOARD_EIGHT_VALUES'?22:18;}
  runtime.trackCells.forEach(cell=>{
   const barrier=blockadeOwnerAt(match,cell.userData.index)!==null;
   cell.userData.barrier=barrier;
@@ -259,11 +261,11 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   const gold=new THREE.PointLight(0xd7ad57,12,25,2);gold.position.set(-10,5,9);scene.add(gold);
   const ground=mesh(new THREE.CircleGeometry(38,64),makeMaterial('#030506',{metal:.1,rough:.95,emissive:'#061013',emissiveIntensity:.08}),false,true);ground.rotation.x=-Math.PI/2;ground.position.y=-1.38;scene.add(ground);
   const pieces=new THREE.Group();scene.add(pieces);
-  const runtime={renderer,scene,camera,controls,pieces,pieceMap:new Map(),trackCells:[],shadows,energyRail:null,nexusRings:[],nexusCore:null,nexusLight:null,stars:null,gateHalos:[],beacons:[],effects:[],focusUntil:0,focusType:'',disposed:false};
+  const runtime={renderer,scene,camera,controls,pieces,pieceMap:new Map(),trackCells:[],shadows,themeLight:blue,energyRail:null,nexusRings:[],nexusCore:null,nexusLight:null,stars:null,gateHalos:[],beacons:[],effects:[],focusUntil:0,focusType:'',disposed:false};
   runtimeRef.current=runtime;
   addBoardFoundation(scene,runtime);addTrackCells(scene,match,runtime);
   COUNTRIES_3B.forEach(c=>addGate(scene,c,match.players.some(p=>p.countryId===c.id),runtime));
-  addNexus(scene,runtime);addAtmosphere(scene,runtime);updateBoardState(runtime,match);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);
+  addNexus(scene,runtime);addAtmosphere(scene,runtime);updateBoardState(runtime,match,loadout);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);
   const resize=()=>{
    const rect=host.getBoundingClientRect();if(!rect.width||!rect.height)return;
    renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();
@@ -282,13 +284,15 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    const hit=raycaster.intersectObjects([...runtime.pieceMap.values()],true).map(i=>findPieceRoot(i.object)).find(root=>root?.userData.legal);
    if(hit)onPieceRef.current?.(hit.userData.pieceIndex);
   };
+  const contextLost=e=>{e.preventDefault();onUnsupported?.(new Error('Contexte WebGL perdu.'));};
+  renderer.domElement.addEventListener('webglcontextlost',contextLost,false);
   renderer.domElement.addEventListener('pointerdown',pointerDown,{passive:true});renderer.domElement.addEventListener('pointermove',pointerMove,{passive:true});renderer.domElement.addEventListener('pointerup',pointerUp,{passive:true});
   let frame=0;const clock=new THREE.Clock();
   const animate=()=>{
    if(runtime.disposed)return;frame=requestAnimationFrame(animate);const t=clock.getElapsedTime(),now=performance.now();
-   controls.update();
+   controls.autoRotate=focus&&runtime.focusType==='victory';controls.autoRotateSpeed=.8;controls.update();renderer.toneMappingExposure=THREE.MathUtils.lerp(renderer.toneMappingExposure,focus?1.3:1.16,.06);
    const focus=now<runtime.focusUntil;camera.fov=THREE.MathUtils.lerp(camera.fov,focus ? (runtime.focusType==='victory' ? 32 : 35) : 38,.055);camera.updateProjectionMatrix();
-   runtime.energyRail.material.opacity=.32+Math.sin(t*2.2)*.12;runtime.energyRail.rotation.y=t*.018;
+   runtime.energyRail.material.opacity=.32+Math.sin(t*2.2)*.12;
    runtime.nexusRings.forEach((ring,i)=>{ring.rotation.y+=.003*(i+1);ring.rotation.z+=.0015*(i%2?1:-1);});
    if(runtime.nexusCore){runtime.nexusCore.rotation.x=t*.55;runtime.nexusCore.rotation.y=t*.82;runtime.nexusCore.scale.setScalar(1+Math.sin(t*3)*.035);}
    if(runtime.nexusLight)runtime.nexusLight.intensity=11+Math.sin(t*2.7)*3;
@@ -310,11 +314,11 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   };animate();
   return()=>{
    runtime.disposed=true;cancelAnimationFrame(frame);ro.disconnect();controls.dispose();
-   renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);
+   renderer.domElement.removeEventListener('webglcontextlost',contextLost);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);
    disposeTree(scene);renderer.dispose();renderer.forceContextLoss?.();renderer.domElement.remove();runtimeRef.current=null;
   };
  },[]);
- useEffect(()=>{const runtime=runtimeRef.current;if(runtime){updateBoardState(runtime,match);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);}},[match,motion,legal,cosmeticsByCountry,loadout]);
+ useEffect(()=>{const runtime=runtimeRef.current;if(runtime){updateBoardState(runtime,match,loadout);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);}},[match,motion,legal,cosmeticsByCountry,loadout]);
  useEffect(()=>{
   const runtime=runtimeRef.current;if(!runtime||!focusEvent)return;
   runtime.focusType=focusEvent;runtime.focusUntil=performance.now()+(focusEvent==='victory'?1500:780);
