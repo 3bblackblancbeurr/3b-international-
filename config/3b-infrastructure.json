@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-22",
+  "canonicalAccountLabel": "stetienne86pp",
+  "privacyNote": "The full canonical owner email is intentionally not stored in this public repository.",
+  "github": {
+    "repository": "3bblackblancbeurr/3b-international-",
+    "defaultBranch": "main",
+    "connectedLoginObserved": "3bblackblancbeurr"
+  },
+  "supabase": {
+    "organizationId": "qmobfanrvjsuusdwokix",
+    "organizationName": "3b internanional",
+    "projectId": "ttvhcezucsbbmnafrotq",
+    "projectName": "3b discuter",
+    "url": "https://ttvhcezucsbbmnafrotq.supabase.co"
+  },
+  "vercel": {
+    "productionUrl": "https://3b-international.vercel.app",
+    "deploymentBranch": "main",
+    "observedWorkspaceSlug": "3bblackblancbeurr-7911s-projects",
+    "accountEmail": null,
+    "accountEmailStatus": "not exposed by connector"
+  },
+  "games": {
+    "keyRace": {
+      "title": "La course des clés",
+      "historicalUrl": "https://troisb-course-des-cles-demo.stetienne86pp.chatgpt.site/",
+      "sourceType": "ChatGPT Site / historical external game",
+      "rule": "Do not recreate or replace this game with an invented implementation. Use the historical source until the exact source can be exported."
+    },
+    "penaltyRush": {
+      "route": "/jeux/penalty-rush",
+      "mode": "internal-remote-module"
+    }
+  }
+}
