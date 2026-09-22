@@ -59,11 +59,13 @@ jobs:
           unreal/ThreeBWorld/Scripts/prepare_france_goldmaster.py
           unreal/ThreeBWorld/Scripts/france_goldmaster_gate.py
           unreal/ThreeBWorld/Scripts/build_hub3b_void_blockout_v3.py
+          unreal/ThreeBWorld/Scripts/build_hub3b_main_v4.py
           unreal/ThreeBWorld/Content/Python/init_unreal.py
       - name: Validate Hub 3B one-click manifest and launcher contract
         run: |
           python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-void-blockout-v3.json >/dev/null
+          python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json >/dev/null
           test -f LANCER_HUB_3B.bat
           test -f scripts/windows/Launch-Hub3B.ps1
-          grep -q -- "-3BHubAutoBuild" LANCER_HUB_3B.bat scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
-          grep -q "build_hub3b_void_blockout_v3.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+          grep -q -- "-3BHubV4AutoBuild" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+          grep -q "build_hub3b_main_v4.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
