@@ -53,7 +53,7 @@ function stableCenter(country){
  return{left:50+(gate.left-50)*factor,top:50+(gate.top-50)*factor};
 }
 function finishedPosition(country,pieceIndex){return polar(-90+country.start*360/TRACK_LENGTH+pieceIndex*5-7.5,6.1+(pieceIndex%2)*1.15);}
-function trackRailPoints(){return Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index);return p.left.toFixed(2)+','+p.top.toFixed(2);}).join(' ');}
+function trackRailPoints(){return Array.from({length:TRACK_LENGTH+1},(_,index)=>{const p=trackPosition(index%TRACK_LENGTH);return p.left.toFixed(2)+','+p.top.toFixed(2);}).join(' ');}
 function positionForPiece(country,steps,pieceIndex){
  if(steps===STABLE){const b=stableCenter(country),a=pieceIndex*Math.PI/2+Math.PI/4;return{left:b.left+Math.cos(a)*2.7,top:b.top+Math.sin(a)*2.7};}
  if(steps===FINISH_STEP)return finishedPosition(country,pieceIndex);
@@ -98,7 +98,7 @@ function Board({match,legal=[],motion,blast,onPiece,focusEvent,loadout=null,cosm
    {COUNTRIES_3B.map(c=>{const a=trackPosition(c.start),b=homePosition(c,HOME_LENGTH-1);return <line key={'rail-'+c.id} className="dada3b-home-rail" x1={a.left} y1={a.top} x2={b.left} y2={b.top} style={{'--rail-color':c.accent}}/>;})}
   </svg>
   <div className="dada3b-board-orbit" aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--orbit':c.accent}}/>)}</div>
-  {powerLabel&&<div className="dada3b-power-flash" data-power={focusEvent}><small>POUVOIR DU CERCLE</small><strong>{powerLabel}</strong></div>}
+  {powerLabel&&<div key={'power-'+(match.lastEvent?.id||0)} className="dada3b-power-flash" data-power={focusEvent}><small>POUVOIR DU CERCLE</small><strong>{powerLabel}</strong></div>}
   {Array.from({length:TRACK_LENGTH},(_,index)=>{const p=trackPosition(index),start=starts.get(index),sanctuary=SANCTUARY_CELLS.includes(index)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,index)!==null;return <span key={'t'+index} className="dada3b-track-cell" data-start={!!start} data-sanctuary={sanctuary} data-barricade={barrier} data-sector={Math.floor(index/TRACK_SECTOR)} style={{left:p.left+'%',top:p.top+'%','--cell-color':start?.accent||'#bca56f'}}><i/>{start?start.code:sanctuary?'◇':barrier?'▰':''}</span>;})}
   {COUNTRIES_3B.flatMap(c=>Array.from({length:HOME_LENGTH},(_,index)=>{const p=homePosition(c,index);return <span key={c.id+index} className="dada3b-home-cell" data-home-index={index} style={{left:p.left+'%',top:p.top+'%','--cell-color':c.accent}}><i/></span>;}))}
   <div className="dada3b-nexus"><div><i className="dada3b-nexus-halo"/><strong>3B</strong><small>NEXUS</small><em>8 PORTES · 8 VALEURS</em><span className="dada3b-nexus-fragments">{finished.slice(0,12).map((x,i)=><i key={i} style={{'--fragment':x.c.accent}}/>)}</span></div></div>
