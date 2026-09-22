@@ -16,7 +16,6 @@ import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
-const KeyRace3B = lazy(() => import("./games/KeyRace3B.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
 import AccountPage from "./loyalty/AccountPage.jsx";
 import {useLoyalty,remoteMember,ExplorationRewards} from "./loyalty/LoyaltyContext.jsx";
@@ -171,7 +170,7 @@ export default function App() {
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
     if (page === "control") return "Centre de commande 3B";
-    if (page === "game") return gameSlug === "penalty-rush" ? "Penalty Rush" : gameSlug === "course-des-8-cles" ? "La Course des 8 Clés" : "Jeux 3B";
+    if (page === "game") return gameSlug === "penalty-rush" ? "Penalty Rush" : "Jeux 3B";
     if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, gameSlug, menuItems, member.isRegistered]);
@@ -284,7 +283,7 @@ export default function App() {
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
-      {page === "game" && (gameSlug==="course-des-8-cles" ? <KeyRace3B onBack={() => goTo("games")} /> : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
+      {page === "game" && <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
@@ -411,7 +410,7 @@ function RemoteGamePage({ slug, onBack }) {
         >
           <div style={{ width: "min(100%, 520px)", textAlign: "center" }}>
             <p className="eyebrow">JEUX 3B</p>
-            <h1>{status === "error" ? "Jeu 3B indisponible" : "Ouverture du jeu 3B…"}</h1>
+            <h1>{status === "error" ? "Penalty Rush indisponible" : "Ouverture de Penalty Rush…"}</h1>
             <p>{status === "error" ? error : "Connexion au terrain 3B et à ton compte."}</p>
             {status === "error" && (
               <button type="button" className="primary-button" onClick={() => onBackRef.current?.()}>
