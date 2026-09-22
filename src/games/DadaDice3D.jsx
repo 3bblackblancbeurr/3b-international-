@@ -76,9 +76,9 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
     const champagne=propsRef.current.skin==='DADA_DICE_CHAMPAGNE';
     const bodyMaterial=new THREE.MeshPhysicalMaterial({
       color:new THREE.Color(champagne?'#6b532c':'#1a292b'),
-      metalness:champagne?.72:.62,roughness:champagne?.18:.22,
+      metalness:champagne ? .72 : .62,roughness:champagne ? .18 : .22,
       clearcoat:1,clearcoatRoughness:.08,
-      emissive:new THREE.Color(champagne?'#6b4d18':propsRef.current.country),emissiveIntensity:champagne?.15:.1,
+      emissive:new THREE.Color(champagne?'#6b4d18':propsRef.current.country),emissiveIntensity:champagne ? .15 : .1,
     });
     const body=new THREE.Mesh(new RoundedBoxGeometry(1.58,1.58,1.58,7,.18),bodyMaterial);root.add(body);
 
@@ -120,8 +120,10 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
       runtime.cyan.color.set(p.country||'#5bd9ef');runtime.cyan.intensity=9+Math.sin(t*3.2)*2.3;
       runtime.gold.intensity=champagneNow?11:7;
       runtime.ringMat.color.set(champagneNow?'#f2c665':p.country||'#69e5f6');runtime.ringMat.opacity=.42+Math.sin(t*4)*.13;runtime.ring.rotation.z+=dt*.7;
+      runtime.bodyMaterial.color.set(champagneNow?'#6b532c':'#1a292b');
+      runtime.bodyMaterial.metalness=champagneNow ? .72 : .62;runtime.bodyMaterial.roughness=champagneNow ? .18 : .22;
       runtime.bodyMaterial.emissive.set(champagneNow?'#6b4d18':p.country||'#173c42');
-      runtime.bodyMaterial.emissiveIntensity=champagneNow?.18:.11;
+      runtime.bodyMaterial.emissiveIntensity=champagneNow ? .18 : .11;
       runtime.edgeMaterial.color.set(champagneNow?'#f4ce7b':'#9cecf5');
 
       if(p.rolling){
