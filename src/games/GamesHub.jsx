@@ -12,6 +12,7 @@ import {DragControl} from './touchControls.js';
 import {loadGameProgress,saveGameProgress} from './memberSave.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {useGameRewards} from '../loyalty/useGameRewards.js';
+import {ecosystemPublic} from '../lib/ecosystem.js';
 import {themeFor} from '../../shared/loyalty.js';
 import {createStepper,actionState} from './runtime.js';
 import {createGameAudio} from './audio.js';
@@ -24,10 +25,30 @@ import Dada3B from './Dada3B.jsx';
 import {unlockedMazeLevel} from './maze-campaign.js';
 import './maze-campaign.css';
 export const GAME_LIST=GAME_CATALOG.map(g=>({...g,create:{arena:()=>new Arena(),maze:(saved,level)=>new Maze(undefined,saved,level)}[g.id]}));
-export default function GamesHub({goTo}){
+export default function GamesHub({goTo,goToGame}){
  const account=useLoyalty(),user=account.user;
  const[active,setActive]=useState(null),[selection,setSelection]=useState('arena');
+ const[remoteGames,setRemoteGames]=useState([]),[remoteError,setRemoteError]=useState('');
  const[progress,setProgress]=useState(freshProgress),[loading,setLoading]=useState(true),[saveMessage,setSaveMessage]=useState('Chargement de la progression…'),dataRef=useRef(progress),fileRef=useRef();
+ useEffect(()=>{
+  let live=true;
+  const controller=new AbortController();
+  ecosystemPublic('games',{signal:controller.signal})
+   .then(payload=>{
+    if(!live)return;
+    const games=Array.isArray(payload?.games)
+     ? payload.games.filter(game=>game?.playable&&game?.moduleType==='remote-module')
+     : [];
+    setRemoteGames(games);
+    setRemoteError('');
+   })
+   .catch(error=>{
+    if(!live||error?.name==='AbortError')return;
+    setRemoteGames([]);
+    setRemoteError('Les jeux connectés 3B sont momentanément indisponibles.');
+   });
+  return()=>{live=false;controller.abort();};
+ },[]);
  useEffect(()=>{let live=true;setLoading(true);loadGameProgress(user).then(result=>{if(!live)return;dataRef.current=result.data;setProgress(result.data);setSaveMessage(result.message);setLoading(false);if(result.online)saveGameProgress(result.data,user).then(m=>{if(live)setSaveMessage(m);});});return()=>{live=false;};},[user?.id]);
  const checkpoint=(g,id,record=false)=>{let next=dataRef.current;if(record)next=recordGame(next,id,g);else if(g.snapshot)next={...next,[id]:g.snapshot()};else return;dataRef.current=next;setProgress(next);saveGameProgress(next,user).then(setSaveMessage);};
  const exportSave=()=>{const blob=new Blob([JSON.stringify(dataRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-jeux-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
@@ -36,7 +57,45 @@ export default function GamesHub({goTo}){
   <div className="arcade-heading"><div><span className="arcade-eyebrow">LE MONDE DU 3B / JEUX</span><h1 id="arcade-title">Entre dans l’aventure.</h1></div><button className="arcade-back" onClick={()=>goTo('home')}><ArrowLeft size={18}/> Accueil</button></div>
   <div className="arcade-account-line"><span>{account.passport?`Passeport 3B · ${account.passport.name} · ${account.passport.country} · ${account.passport.xp} XP · ${account.passport.points} points`:'Joue librement. Active ton Passeport 3B pour rattacher progression et récompenses à ton compte.'}</span><button onClick={()=>goTo(account.passport?'loyalty':'member')}>{account.passport?'Mes avantages':'Mon compte'}</button></div>
   {progress.records[selection]&&<p className="arcade-stats">Record : {progress.records[selection].best} points · {progress.records[selection].wins} victoire(s)</p>}
-  <div className="premium-library" aria-label="Choisir un jeu">{GAME_LIST.map(g=>{const Card=g.href?'a':'button';return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{setSelection(g.id);setActive(g);}})}><span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span><span className="premium-card-copy"><span className="premium-card-genre">{g.genre} · {g.time}</span><strong>{g.title}</strong><span className="premium-card-description">{g.text}</span><span className="premium-card-bottom"><span>{g.href?'S’ouvre dans un nouvel onglet':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span><span className="premium-card-play"><Play size={15}/>Jouer</span></span></span></Card>;})}</div>
+  <div className="premium-library" aria-label="Choisir un jeu">
+   {GAME_LIST.map(g=>{
+    const Card=g.href?'a':'button';
+    return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{setSelection(g.id);setActive(g);}})}>
+     <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span>
+     <span className="premium-card-copy">
+      <span className="premium-card-genre">{g.genre} · {g.time}</span>
+      <strong>{g.title}</strong>
+      <span className="premium-card-description">{g.text}</span>
+      <span className="premium-card-bottom">
+       <span>{g.href?'S’ouvre dans un nouvel onglet':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span>
+       <span className="premium-card-play"><Play size={15}/>Jouer</span>
+      </span>
+     </span>
+    </Card>;
+   })}
+   {remoteGames.map((g,index)=>{
+    const number=String(GAME_LIST.length+index+1).padStart(2,'0');
+    return <button
+     type="button"
+     className="premium-game-card"
+     data-game={g.slug}
+     key={'remote-'+g.slug}
+     onClick={()=>goToGame?.(g.slug)}
+    >
+     <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{number}</span><span className="premium-card-sprite">⚽</span></span>
+     <span className="premium-card-copy">
+      <span className="premium-card-genre">{g.category||'JEU 3B'} · {g.badge||'EN LIGNE'}</span>
+      <strong>{g.title}</strong>
+      <span className="premium-card-description">{g.description||g.subtitle||'Expérience Jeux 3B.'}</span>
+      <span className="premium-card-bottom">
+       <span>{g.requiresAuth?'Compte 3B · Interne':'Jeu 3B · Interne'}</span>
+       <span className="premium-card-play"><Play size={15}/>Jouer</span>
+      </span>
+     </span>
+    </button>;
+   })}
+  </div>
+  {remoteError&&<p className="arcade-small" role="status">{remoteError}</p>}
   <details className="game-progress"><summary>Sauvegarde et progression</summary><p role="status">{saveMessage}</p><div><button onClick={exportSave}><Download size={15}/> Exporter la sauvegarde</button> <button onClick={()=>fileRef.current.click()} disabled={loading}><Upload size={15}/> Importer</button><input hidden ref={fileRef} type="file" accept=".json,application/json" onChange={importSave} aria-label="Importer une sauvegarde Jeux 3B"/></div></details>
   <p className="arcade-small">Les huit pays : {COUNTRIES.join(' · ')}.</p>
   {active&&createPortal(active.id==='dada3b'?<Dada3B key={active.id} saved={progress.dada3b} onCheckpoint={checkpoint} onClose={()=>setActive(null)}/>:React.createElement(active.id==='tower'?DoorPlayer:GamePlayer, {key:active.id,config:active,saved:progress[active.id],onCheckpoint:checkpoint,saveMessage,onClose:()=>setActive(null),onBenefits:()=>{setActive(null);goTo(user?'loyalty':'member');}}),document.body)}
