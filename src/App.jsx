@@ -1,10 +1,11 @@
-import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
-import { readLocation, navigateTo } from "./lib/navigation.js";
+import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
+import { ecosystemPublic } from "./lib/ecosystem.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
@@ -120,7 +121,7 @@ const MEMBER_MENU_ITEM = {
 export default function App() {
   const installation = useAppInstallation();
   const [route, setRoute] = useState(readLocation);
-  const { page } = route;
+  const { page, gameSlug } = route;
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
   const [controlAvailable, setControlAvailable] = useState(false);
@@ -169,9 +170,10 @@ export default function App() {
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
     if (page === "control") return "Centre de commande 3B";
+    if (page === "game") return gameSlug === "penalty-rush" ? "Penalty Rush" : "Jeux 3B";
     if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
-  }, [page, menuItems, member.isRegistered]);
+  }, [page, gameSlug, menuItems, member.isRegistered]);
 
   useEffect(() => {
     const syncLocation = () => setRoute(readLocation());
@@ -208,6 +210,11 @@ export default function App() {
 
   function goTo(nextPage) {
     navigateTo(nextPage);
+    setRoute(readLocation());
+  }
+
+  function goToGame(slug) {
+    navigateToGame(slug);
     setRoute(readLocation());
   }
 
@@ -254,7 +261,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
+      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
@@ -275,7 +282,8 @@ export default function App() {
       )}
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
-      {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} />}
+      {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
+      {page === "game" && <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
@@ -300,6 +308,119 @@ export default function App() {
       </Suspense>
       </main>
     </div>
+  );
+}
+
+
+function RemoteGamePage({ slug, onBack }) {
+  const mountRef = useRef(null);
+  const onBackRef = useRef(onBack);
+  const [status, setStatus] = useState("loading");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    onBackRef.current = onBack;
+  }, [onBack]);
+
+  useEffect(() => {
+    let live = true;
+    let node = null;
+    let backEvent = "threeb-game-back";
+    let backHandler = null;
+    const controller = new AbortController();
+
+    async function boot() {
+      try {
+        setStatus("loading");
+        setError("");
+
+        const payload = await ecosystemPublic("games", { signal: controller.signal });
+        const game = Array.isArray(payload?.games)
+          ? payload.games.find((entry) => entry?.slug === slug)
+          : null;
+
+        if (!game || !game.playable || game.moduleType !== "remote-module") {
+          throw new Error("Ce jeu 3B n’est pas disponible.");
+        }
+
+        const loaderUrl = new URL(String(payload.loaderUrl || ""), window.location.origin);
+        const moduleUrl = new URL(String(game.moduleUrl || ""), window.location.origin);
+        if (loaderUrl.protocol !== "https:" || loaderUrl.origin !== moduleUrl.origin) {
+          throw new Error("Module Jeux 3B non autorisé.");
+        }
+
+        await import(/* @vite-ignore */ loaderUrl.href);
+        if (!live) return;
+
+        const elementTag = String(payload.loaderElement || "threeb-remote-game");
+        if (!customElements.get(elementTag)) {
+          throw new Error("Le chargeur Jeux 3B ne s’est pas initialisé.");
+        }
+
+        const mount = mountRef.current;
+        if (!mount) return;
+
+        node = document.createElement(elementTag);
+        node.setAttribute("slug", game.slug);
+        backEvent = String(payload.backEvent || "threeb-game-back");
+        backHandler = () => onBackRef.current?.();
+        node.addEventListener(backEvent, backHandler);
+        mount.replaceChildren(node);
+        setStatus("ready");
+      } catch (bootError) {
+        if (!live || bootError?.name === "AbortError") return;
+        setError(bootError instanceof Error ? bootError.message : "Jeu momentanément indisponible.");
+        setStatus("error");
+      }
+    }
+
+    boot();
+
+    return () => {
+      live = false;
+      controller.abort();
+      if (node && backHandler) node.removeEventListener(backEvent, backHandler);
+      node?.remove();
+    };
+  }, [slug]);
+
+  return (
+    <section
+      aria-label="Jeu 3B"
+      style={{
+        minHeight: "100dvh",
+        background: "#050608",
+        color: "#f6f8fb",
+        position: "relative",
+      }}
+    >
+      <div ref={mountRef} style={{ minHeight: "100dvh" }} />
+
+      {status !== "ready" && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            padding: 24,
+            background: "#050608",
+            zIndex: 2,
+          }}
+        >
+          <div style={{ width: "min(100%, 520px)", textAlign: "center" }}>
+            <p className="eyebrow">JEUX 3B</p>
+            <h1>{status === "error" ? "Penalty Rush indisponible" : "Ouverture de Penalty Rush…"}</h1>
+            <p>{status === "error" ? error : "Connexion au terrain 3B et à ton compte."}</p>
+            {status === "error" && (
+              <button type="button" className="primary-button" onClick={() => onBackRef.current?.()}>
+                ← Retour Jeux 3B
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
