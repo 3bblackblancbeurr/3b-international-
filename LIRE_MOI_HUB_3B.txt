@@ -1,4 +1,4 @@
-3B INTERNATIONAL — HUB PRINCIPAL
+3B INTERNATIONAL — HUB PRINCIPAL V4
 
 CE QUE TU DOIS FAIRE
 
@@ -9,35 +9,35 @@ CE QUE TU DOIS FAIRE
 
 3. Attends.
 
-Le lanceur cherche automatiquement Unreal Engine 5.8 sur ton PC.
-Il ouvre le vrai projet :
+Le lanceur ouvre automatiquement le vrai projet ThreeBWorld dans Unreal Engine 5.8.
+Il crée une NOUVELLE map séparée :
 
-unreal\ThreeBWorld\ThreeBWorld.uproject
+Hub3B_Main_V04
 
-Puis il déclenche automatiquement la construction de :
+Il ne modifie pas l'ancien Hub3B_Blockout_V01.
 
-Hub3B_Blockout_V01
-
-Tu n'as PAS besoin de :
-- créer la map à la main ;
-- ouvrir la console Python ;
-- choisir le script manuellement ;
-- toucher au terrain actuel.
-
-Le constructeur prépare :
-- le centre du hub ;
-- 6 grandes masses principales ;
-- 6 plateformes satellites ;
-- 12 ponts ;
-- les vrais espaces vides ;
-- les dessous des plateformes ;
-- les fragments flottants ;
-- les points de sécurité ;
-- l'atmosphère de base.
-
-SI UNE FENETRE NOIRE AFFICHE UNE ERREUR :
-ne la ferme pas et prends une photo du message.
+La V4 construit automatiquement :
+- un cœur central 3B ;
+- un anneau principal de circulation ;
+- 8 accès intégrés ;
+- 8 vraies arches-portails visibles :
+  ESTONIE / FRANCE / ESPAGNE / MAROC / ALGÉRIE / TUNISIE / ITALIE / TURQUIE ;
+- de vrais vides entre les avancées ;
+- les dessous du hub ;
+- les nervures sous les 8 accès ;
+- les fragments de profondeur ;
+- les guides Matrix ;
+- les accents noir / or / bleu Matrix ;
+- les ancres de voyage futures pour les 8 mondes ;
+- le ciel, le brouillard et les nuages de base.
 
 IMPORTANT :
-le rendu obtenu est le blockout de construction du hub.
-Les vrais matériaux, architecture finale, Nanite, Lumen, nuages et VFX seront travaillés ensuite.
+les portails sont présents et positionnés pour les autres mondes.
+Les mondes eux-mêmes ne sont pas encore branchés : le constructeur place leurs ancres de voyage sans ouvrir une destination vide.
+
+SI UNE ERREUR APPARAÎT :
+ne sauvegarde pas une autre map.
+Prends une photo du message ou du Journal de sortie.
+
+Le fichier Hub3B_Blockout_V01 reste seulement un ancien test technique.
+Le travail principal continue désormais dans Hub3B_Main_V04.
