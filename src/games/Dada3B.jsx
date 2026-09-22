@@ -74,6 +74,12 @@ function eventFeedback(event,sound,haptic,voice){
 }
 function CountryPicker({value,onChange,label='Pays'}){return <label className="dada3b-field"><span>{label}</span><select value={value} onChange={e=>onChange(e.target.value)}>{COUNTRIES_3B.map(c=><option value={c.id} key={c.id}>{c.flag} {c.name} · {c.guardian}</option>)}</select></label>;}
 function RuleToggle({checked,onChange,label,detail}){return <button type="button" className="dada3b-rule-toggle" aria-pressed={checked} onClick={()=>onChange(!checked)}><span><strong>{label}</strong><small>{detail}</small></span><b>{checked?'ON':'OFF'}</b></button>;}
+class Dada3DErrorBoundary extends React.Component{
+ constructor(props){super(props);this.state={failed:false};}
+ static getDerivedStateFromError(){return{failed:true};}
+ componentDidCatch(error){this.props.onFail?.(error);}
+ render(){return this.state.failed?this.props.fallback:this.props.children;}
+}
 
 function SeatCard({seat,country,onChange,teamMode=false}){
  const guardian=guardianAssetFor(country.id);
@@ -346,7 +352,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const fallbackBoard=<Board match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry}/>;
  return <div className="dada3b-shell" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><div><small>{isOnline?(onlineRoom.mode==='ranked'?'CLASSÉ':onlineRoom.mode.toUpperCase()):'LOCAL'} · Manche {renderMatch.round}</small><strong>DADA 3B · {turnCountry?.name||''}</strong></div><div className="dada3b-top-actions"><button className="dada3b-render-toggle" aria-pressed={threeD&&!threeFailed} onClick={()=>{if(threeFailed){setThreeFailed(false);setThreeD(true);}else setThreeD(v=>!v);}}>{threeD&&!threeFailed?'3D APEX':'2,5D'}</button>{timeLeft!==null&&<span className="dada3b-timer" data-low={timeLeft<=7}>{timeLeft}s</span>}{isOnline&&<span className="dada3b-live"><Wifi size={14}/> LIVE</span>}<button className="dada3b-icon-button" onClick={()=>isOnline?leaveOnline():setView('menu')}><X size={20}/></button></div></header>
-  <div className="dada3b-arena"><div className="dada3b-board-wrap">{threeD&&!threeFailed?<React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense>:fallbackBoard}</div>
+  <div className="dada3b-arena"><div className="dada3b-board-wrap">{threeD&&!threeFailed?<Dada3DErrorBoundary fallback={fallbackBoard} onFail={()=>setThreeFailed(true)}><React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense></Dada3DErrorBoundary>:fallbackBoard}</div>
    <aside className="dada3b-sidebar"><section className="dada3b-turn-card" style={{'--country':turnCountry?.accent||'#c7a66a'}}><div className="dada3b-turn-line"><div><span className="dada3b-kicker">Tour actuel</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><small>{turnCountry?.guardian} · {turnCountry?.value}{turnPlayer?.type==='bot'?' · IA '+(turnPlayer.aiLevel||''):''}</small></div></div>
     <button className="dada3b-dice" data-skin={cosmeticLoadout?.dice_skin||'DADA_DICE_CORE'} onClick={()=>isOnline?onlineAction('roll',{room:onlineRoom.id,revision:onlineRoom.revision}):rollLocal(false)} disabled={busy||onlineBusy||renderMatch.status!=='playing'||renderMatch.pendingRoll!==null||(isOnline?!selfTurn:turnPlayer?.type==='bot')}><b>{shownDice?DICE[shownDice]:'◇'}</b><small>{renderMatch.pendingRoll?'Choisis un Totem':isOnline&&!selfTurn?'Tour adverse':'Appuie pour lancer'}</small></button>
     {isOnline&&selfOnline?.botTakeover&&<button className="dada3b-secondary" onClick={()=>onlineAction('reconnect',{room:onlineRoom.id})}>Reprendre ma place</button>}
