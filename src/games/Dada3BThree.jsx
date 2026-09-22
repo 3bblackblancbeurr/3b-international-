@@ -281,7 +281,7 @@ function updateBoardState(runtime,match,loadout=null,legal=[]){
  syncLegalFx(runtime,match,legal);
 }
 function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout=null){
- const live=new Set(),captureEvent=match?.lastEvent?.type==='capture'?match.lastEvent:null;
+ const live=new Set(),captureEvent=match?.lastEvent?.captured?.length?match.lastEvent:null;
  const captureKey=captureEvent?(captureEvent.id??[match.sequence,captureEvent.countryId,captureEvent.pieceIndex,captureEvent.landing].join(':')):null;
  const isNewCapture=Boolean(captureEvent&&captureKey!==runtime.lastCaptureEventKey);
  if(isNewCapture){
