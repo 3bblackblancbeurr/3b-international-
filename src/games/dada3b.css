@@ -879,3 +879,141 @@
 @media(prefers-reduced-motion:reduce){
   .dada3b-three-power{animation:none!important}
 }
+
+
+/* ========================================================================== */
+/* DADA 3B V5 · DÉ APEX 3D                                                   */
+/* ========================================================================== */
+.dada3b-dice-premium{
+  position:relative;
+  display:grid;
+  grid-template-columns:112px minmax(0,1fr);
+  align-items:center;
+  gap:14px;
+  min-height:132px;
+  padding:12px 14px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--country) 66%,#e8ce92);
+  border-radius:24px;
+  background:
+    radial-gradient(circle at 18% 20%,color-mix(in srgb,var(--country) 24%,transparent),transparent 32%),
+    linear-gradient(145deg,#142021,#080d0e 58%,#020404);
+  box-shadow:
+    0 9px 0 #020303,
+    0 18px 30px #0009,
+    inset 0 1px 0 #ffffff24,
+    inset 0 -24px 38px #0009,
+    0 0 24px color-mix(in srgb,var(--country) 24%,transparent);
+  transform:translateY(-4px);
+  isolation:isolate;
+}
+.dada3b-dice-premium::before{
+  content:"";position:absolute;inset:-40% 46% -40% -20%;z-index:-1;transform:rotate(18deg);
+  background:linear-gradient(90deg,transparent,#ffffff10,transparent);
+}
+.dada3b-dice-premium::after{
+  content:"";position:absolute;left:22px;top:50%;width:78px;height:24px;transform:translateY(33px);
+  border-radius:50%;background:#000b;filter:blur(10px);pointer-events:none;
+}
+.dada3b-dice-stage{
+  position:relative;display:grid;width:100px;height:100px;place-items:center;perspective:560px;perspective-origin:50% 42%;
+}
+.dada3b-die-cube{
+  position:relative;width:68px;height:68px;transform-style:preserve-3d;
+  transform:rotateX(-13deg) rotateY(18deg);
+  transition:transform .5s cubic-bezier(.2,.8,.2,1),filter .25s ease;
+  filter:drop-shadow(0 12px 8px #000b) drop-shadow(0 0 10px color-mix(in srgb,var(--country) 36%,transparent));
+}
+.dada3b-die-face{
+  position:absolute;inset:0;display:grid;place-items:center;border:2px solid #efd28f;
+  border-radius:16px;
+  background:
+    radial-gradient(circle at 31% 25%,#ffffff65 0 5%,transparent 6%),
+    linear-gradient(145deg,#f2e4bd 0 10%,#b89551 11% 27%,#2b2a23 29% 68%,#0a0d0d 70% 100%);
+  box-shadow:
+    inset 5px 5px 10px #ffffff18,
+    inset -8px -10px 14px #0009,
+    0 0 10px color-mix(in srgb,var(--country) 25%,transparent);
+  backface-visibility:hidden;
+}
+.dada3b-die-face::after{
+  content:"";position:absolute;inset:5px;border:1px solid #ffffff20;border-radius:12px;pointer-events:none;
+}
+.dada3b-die-front{transform:translateZ(34px)}
+.dada3b-die-back{transform:rotateY(180deg) translateZ(34px)}
+.dada3b-die-right{transform:rotateY(90deg) translateZ(34px)}
+.dada3b-die-left{transform:rotateY(-90deg) translateZ(34px)}
+.dada3b-die-top{transform:rotateX(90deg) translateZ(34px)}
+.dada3b-die-bottom{transform:rotateX(-90deg) translateZ(34px)}
+.dada3b-die-face-pips{position:relative;display:grid;width:46px;height:46px;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+.dada3b-die-face-pips i{
+  width:10px;height:10px;place-self:center;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,#ffffff 0 15%,#bdf7ff 16% 27%,#55dcf1 31% 58%,#103d47 62% 100%);
+  box-shadow:0 0 7px #64e3f6,0 1px 2px #000c,inset 0 -2px 2px #0007;
+}
+.dada3b-die-face-pips i[data-slot="1"]{grid-area:1/1}.dada3b-die-face-pips i[data-slot="2"]{grid-area:1/2}.dada3b-die-face-pips i[data-slot="3"]{grid-area:1/3}
+.dada3b-die-face-pips i[data-slot="4"]{grid-area:2/1}.dada3b-die-face-pips i[data-slot="5"]{grid-area:2/2}.dada3b-die-face-pips i[data-slot="6"]{grid-area:2/3}
+.dada3b-die-face-pips i[data-slot="7"]{grid-area:3/1}.dada3b-die-face-pips i[data-slot="8"]{grid-area:3/2}.dada3b-die-face-pips i[data-slot="9"]{grid-area:3/3}
+
+/* orientation finale selon la valeur */
+.dada3b-dice-premium[data-value="1"] .dada3b-die-cube{transform:rotateX(-13deg) rotateY(18deg)}
+.dada3b-dice-premium[data-value="2"] .dada3b-die-cube{transform:rotateX(-10deg) rotateY(-72deg)}
+.dada3b-dice-premium[data-value="3"] .dada3b-die-cube{transform:rotateX(-12deg) rotateY(198deg)}
+.dada3b-dice-premium[data-value="4"] .dada3b-die-cube{transform:rotateX(-10deg) rotateY(108deg)}
+.dada3b-dice-premium[data-value="5"] .dada3b-die-cube{transform:rotateX(-103deg) rotateY(14deg)}
+.dada3b-dice-premium[data-value="6"] .dada3b-die-cube{transform:rotateX(77deg) rotateY(14deg)}
+.dada3b-dice-premium[data-rolling="true"] .dada3b-die-cube{animation:dadaDiceApexRoll .62s cubic-bezier(.25,.7,.2,1) infinite}
+@keyframes dadaDiceApexRoll{
+  0%{transform:rotateX(0) rotateY(0) rotateZ(0) translateY(0)}
+  28%{transform:rotateX(165deg) rotateY(120deg) rotateZ(70deg) translateY(-11px)}
+  55%{transform:rotateX(310deg) rotateY(245deg) rotateZ(150deg) translateY(-4px)}
+  78%{transform:rotateX(460deg) rotateY(390deg) rotateZ(245deg) translateY(-13px)}
+  100%{transform:rotateX(620deg) rotateY(540deg) rotateZ(360deg) translateY(0)}
+}
+.dada3b-dice-meta{display:grid;align-content:center;justify-items:start;gap:3px;min-width:0;text-align:left}
+.dada3b-dice-meta>b{
+  font-size:32px!important;line-height:1!important;color:#f6ddb0!important;
+  text-shadow:0 2px 4px #000,0 0 12px color-mix(in srgb,var(--country) 44%,transparent)!important;
+}
+.dada3b-dice-meta>small{
+  display:block!important;margin:0!important;color:#8ce6f2!important;font-size:9px!important;font-weight:850!important;
+  letter-spacing:.11em!important;text-transform:uppercase!important;
+}
+.dada3b-dice-premium:not(:disabled):hover .dada3b-die-cube{filter:drop-shadow(0 14px 10px #000c) drop-shadow(0 0 18px color-mix(in srgb,var(--country) 60%,transparent))}
+.dada3b-dice-premium:not(:disabled):active{transform:translateY(1px) scale(.992)}
+.dada3b-dice-premium:disabled{opacity:.72;filter:saturate(.76)}
+.dada3b-dice-premium[data-skin="DADA_DICE_CHAMPAGNE"]{
+  border-color:#f3d58d;background:radial-gradient(circle at 20% 18%,#f6d9952b,transparent 32%),linear-gradient(145deg,#2b2417,#0b0a08 62%,#030303);
+  box-shadow:0 9px 0 #080602,0 18px 32px #0009,inset 0 1px 0 #fff3b955,inset 0 -22px 36px #000b,0 0 28px #d8b35b3b;
+}
+.dada3b-dice-premium[data-skin="DADA_DICE_CHAMPAGNE"] .dada3b-die-face{
+  border-color:#fff0b7;background:radial-gradient(circle at 31% 25%,#ffffff80 0 5%,transparent 6%),linear-gradient(145deg,#fff1c9 0 9%,#d4ad5e 10% 29%,#65502c 30% 60%,#15110b 62% 100%);
+}
+.dada3b-dice-premium[data-skin="DADA_DICE_CHAMPAGNE"] .dada3b-die-face-pips i{
+  background:radial-gradient(circle at 34% 30%,#fff 0 15%,#fff1bb 16% 30%,#e5b84d 35% 65%,#765315 70% 100%);
+  box-shadow:0 0 8px #f1c75f,0 1px 2px #000c;
+}
+@media(max-width:900px){
+  .dada3b-dice-premium{grid-template-columns:86px minmax(0,1fr);min-height:104px;padding:8px 10px}
+  .dada3b-dice-stage{width:82px;height:82px}
+  .dada3b-die-cube{width:58px;height:58px}
+  .dada3b-die-front{transform:translateZ(29px)}.dada3b-die-back{transform:rotateY(180deg) translateZ(29px)}
+  .dada3b-die-right{transform:rotateY(90deg) translateZ(29px)}.dada3b-die-left{transform:rotateY(-90deg) translateZ(29px)}
+  .dada3b-die-top{transform:rotateX(90deg) translateZ(29px)}.dada3b-die-bottom{transform:rotateX(-90deg) translateZ(29px)}
+  .dada3b-die-face-pips{width:39px;height:39px}.dada3b-die-face-pips i{width:8px;height:8px}
+  .dada3b-dice-meta>b{font-size:25px!important}
+}
+@media(max-width:560px){
+  .dada3b-dice-premium{grid-template-columns:66px minmax(0,1fr);min-height:80px;padding:6px 8px;border-radius:16px;gap:7px;box-shadow:0 5px 0 #020303,0 10px 18px #0008,inset 0 1px 0 #ffffff20}
+  .dada3b-dice-stage{width:62px;height:62px;perspective:420px}
+  .dada3b-die-cube{width:46px;height:46px}
+  .dada3b-die-face{border-radius:11px}
+  .dada3b-die-front{transform:translateZ(23px)}.dada3b-die-back{transform:rotateY(180deg) translateZ(23px)}
+  .dada3b-die-right{transform:rotateY(90deg) translateZ(23px)}.dada3b-die-left{transform:rotateY(-90deg) translateZ(23px)}
+  .dada3b-die-top{transform:rotateX(90deg) translateZ(23px)}.dada3b-die-bottom{transform:rotateX(-90deg) translateZ(23px)}
+  .dada3b-die-face-pips{width:30px;height:30px}.dada3b-die-face-pips i{width:6px;height:6px}
+  .dada3b-dice-meta>b{font-size:20px!important}.dada3b-dice-meta>small{font-size:7px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .dada3b-dice-premium[data-rolling="true"] .dada3b-die-cube{animation:none!important}
+}
