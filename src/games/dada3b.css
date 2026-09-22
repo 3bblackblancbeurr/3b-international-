@@ -578,12 +578,12 @@
   clip-path:none!important;
   background:transparent!important;
   box-shadow:none!important;
-  transform:translate(-50%,-58%) translateZ(28px)!important;
+  transform:translate(-50%,-58%) translateZ(28px);
   transition:left .11s linear,top .11s linear,filter .18s ease,transform .18s ease;
   touch-action:manipulation;
 }
 .dada3b-piece[data-shape="diamond"],.dada3b-piece[data-shape="hex"],.dada3b-piece[data-shape="sun"],.dada3b-piece[data-shape="star"]{
-  clip-path:none!important;transform:translate(-50%,-58%) translateZ(28px)!important;
+  clip-path:none;transform:translate(-50%,-58%) translateZ(28px);
 }
 .dada3b-totem-shadow{
   position:absolute;left:10%;right:10%;bottom:-4%;height:20%;border-radius:50%;background:#000c;filter:blur(3px);transform:scaleX(.9);pointer-events:none;
@@ -649,7 +649,7 @@
 }
 .dada3b-piece[data-legal="true"] .dada3b-totem-aura{border-color:#fff8;box-shadow:0 0 26px var(--country),0 0 42px color-mix(in srgb,var(--country) 55%,transparent)}
 @keyframes dadaTotemLegal{
-  50%{transform:translate(-50%,-64%) translateZ(34px) scale(1.13)!important;filter:brightness(1.32) saturate(1.15)}
+  50%{transform:translate(-50%,-64%) translateZ(34px) scale(1.13);filter:brightness(1.32) saturate(1.15)}
 }
 .dada3b-piece[data-trail="DADA_TRAIL_MATRIX"]::before,.dada3b-piece[data-trail="DADA_TRAIL_GOLD"]::before{
   content:"";position:absolute;left:50%;bottom:-8%;width:150%;height:90%;transform:translateX(-50%);
