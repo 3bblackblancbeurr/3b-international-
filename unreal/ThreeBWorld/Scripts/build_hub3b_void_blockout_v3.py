@@ -49,26 +49,47 @@ def ensure_content_path(asset_path):
         warn(f"Impossible de confirmer le dossier {folder}: {exc}")
 
 
+def current_level_name():
+    world = editor_subsystem().get_editor_world()
+    if world is None:
+        return ""
+    try:
+        return str(unreal.GameplayStatics.get_current_level_name(world, True))
+    except Exception:
+        return ""
+
+
 def open_or_create_level(asset_path):
     ensure_content_path(asset_path)
     ls = level_subsystem()
+    expected_name = asset_path.rsplit("/", 1)[-1]
 
-    loaded = False
+    exists = False
     try:
-        loaded = bool(ls.load_level(asset_path))
+        exists = bool(unreal.EditorAssetLibrary.does_asset_exist(asset_path))
     except Exception:
-        loaded = False
+        exists = False
 
-    if loaded:
-        log(f"Map existante chargée: {asset_path}")
-        return
+    if exists:
+        log(f"Chargement de la map existante: {asset_path}")
+        if not ls.load_level(asset_path):
+            raise RuntimeError(f"Impossible de charger la map Hub 3B existante: {asset_path}")
+    else:
+        log(f"Création de la map World Partition: {asset_path}")
+        if not ls.new_level(asset_path, True):
+            raise RuntimeError(
+                "Impossible de créer la map Hub 3B. Vérifier que le projet n'est pas en mode PIE "
+                "et que /Game/3binternational/Maps est accessible."
+            )
 
-    log(f"Création de la map World Partition: {asset_path}")
-    if not ls.new_level(asset_path, True):
+    actual_name = current_level_name()
+    if actual_name != expected_name:
         raise RuntimeError(
-            "Impossible de créer la map. Vérifier que le projet n'est pas en mode PIE "
-            "et que /Game/3binternational/Maps est accessible."
+            f"SÉCURITÉ: la map courante est '{actual_name or 'inconnue'}' au lieu de "
+            f"'{expected_name}'. Construction annulée pour ne pas modifier une autre map."
         )
+
+    log(f"Map Hub 3B confirmée: {actual_name}")
 
 
 def mark(actor, label, tag, folder):
@@ -235,6 +256,42 @@ def spawn_player_start(core, tag):
         mark(actor, "HUB_PLAYER_START", tag, "HUB_3B/SAFE_ANCHORS")
 
 
+def remove_landscapes_or_abort():
+    actual_name = current_level_name()
+    if actual_name != "Hub3B_Blockout_V01":
+        raise RuntimeError(
+            f"SÉCURITÉ: suppression Landscape interdite dans la map '{actual_name}'."
+        )
+
+    landscapes = []
+    for actor in actor_subsystem().get_all_level_actors():
+        try:
+            if "Landscape" in actor.get_class().get_name():
+                landscapes.append(actor)
+        except Exception:
+            pass
+
+    if landscapes:
+        warn(f"{len(landscapes)} Landscape détecté(s) dans la map Hub dédiée: suppression.")
+        for actor in landscapes:
+            try:
+                actor_subsystem().destroy_actor(actor)
+            except Exception as exc:
+                raise RuntimeError(f"Impossible de supprimer un Landscape du Hub: {exc}")
+
+
+def remove_existing_environment_actor(class_name):
+    cls = getattr(unreal, class_name, None)
+    if cls is None:
+        return
+    for actor in actor_subsystem().get_all_level_actors():
+        try:
+            if actor.get_class() == cls:
+                actor_subsystem().destroy_actor(actor)
+        except Exception:
+            pass
+
+
 def spawn_environment(tag):
     specs = [
         ("DirectionalLight", "HUB_ENV_SUN", [0, 0, 5000], [-35, -25, 0]),
@@ -245,6 +302,7 @@ def spawn_environment(tag):
     ]
     subsystem = actor_subsystem()
     for class_name, label, loc, rot in specs:
+        remove_existing_environment_actor(class_name)
         cls = getattr(unreal, class_name, None)
         if cls is None:
             warn(f"Classe environnement indisponible: {class_name}")
@@ -377,6 +435,7 @@ def build():
     log("Le terrain actuel n'est pas modifié: une map dédiée est utilisée.")
 
     open_or_create_level(map_asset)
+    remove_landscapes_or_abort()
     destroy_previous(tag)
 
     by_id = {platform["id"]: platform for platform in manifest["platforms"]}
@@ -424,10 +483,20 @@ def build():
         task.enter_progress_frame(1, "Validation et sauvegarde")
         validate(manifest, tag)
 
+    actual_name = current_level_name()
+    if actual_name != map_asset.rsplit("/", 1)[-1]:
+        raise RuntimeError(
+            f"SÉCURITÉ: la map a changé pendant la construction ({actual_name}). "
+            "Sauvegarde annulée."
+        )
+
     if not level_subsystem().save_current_level():
-        warn("La sauvegarde automatique de la map a échoué: faire Ctrl+S.")
-    else:
-        log(f"Map sauvegardée: {map_asset}")
+        raise RuntimeError(
+            "La sauvegarde automatique de Hub3B_Blockout_V01 a échoué. "
+            "Ne rien sauvegarder manuellement dans une autre map."
+        )
+
+    log(f"Map sauvegardée: {map_asset}")
 
     frame_editor_view()
 
