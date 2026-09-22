@@ -15,7 +15,8 @@ import AppLoadingState from "./components/AppLoadingState.jsx";
 import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
-const GamesHub = lazy(() => import("./games/GamesHub.jsx"));\nconst PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
+const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
+const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
 import AccountPage from "./loyalty/AccountPage.jsx";
 import {useLoyalty,remoteMember,ExplorationRewards} from "./loyalty/LoyaltyContext.jsx";
@@ -283,7 +284,9 @@ export default function App() {
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
-      {page === "game" && (gameSlug === "penalty-rush"\n        ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />\n        : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
+      {page === "game" && (gameSlug === "penalty-rush"
+        ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />
+        : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
