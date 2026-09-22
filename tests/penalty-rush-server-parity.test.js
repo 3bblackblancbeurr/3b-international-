@@ -76,7 +76,7 @@ test('Penalty Rush Edge service keeps authority and service credentials server-s
 test('online-only client talks only to the authenticated Penalty Rush Edge endpoint', () => {
   const source=fs.readFileSync(new URL('../src/games/penaltyRush/online.js',import.meta.url),'utf8');
   assert.match(source,/functions\/v1\/penalty-rush/);
-  assert.match(source,/Authorization:'Bearer '\+session\.access_token/);
+  assert.match(source,/Authorization:\s*'Bearer '\s*\+\s*session\.access_token/);
   assert.match(source,/postgres_changes/);
   assert.match(source,/table\\s*:\\s*'penalty_rooms'/);
 });
