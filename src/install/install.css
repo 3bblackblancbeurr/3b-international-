@@ -25,3 +25,15 @@
 .install3b-dialog .install3b-copy{min-height:44px;margin-top:12px;padding:10px 14px;border:1px solid #ebd5a450;border-radius:9px;background:#ebd5a40b;color:#ebd5a4;font-size:13px}
 .install3b-dialog .install3b-status:empty{display:none}
 @media(max-width:540px){.install3b-card{flex-wrap:wrap;gap:12px;padding:14px}.install3b-card>.install3b-button{width:100%}.install3b-copy-text strong{font-size:14px}.install3b-dialog{padding:20px}}
+
+.install3b-platform-links{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 4px 0;font-size:12px;color:#7e8a98}
+.install3b-platform-links a{color:#cfdcff;text-underline-offset:3px}
+.install3b-ios-badge{display:inline-flex;align-items:center;min-height:30px;padding:5px 10px;margin:2px 0 4px;border:1px solid #75d9ff55;border-radius:999px;background:#0b2533;color:#8fe7ff;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.install3b-warning{margin:16px 0;padding:13px 14px;border:1px solid #ffd27a52;border-radius:12px;background:#38280b66;color:#ffe2a3;font-size:13px;line-height:1.6}
+.install3b-steps{list-style:none!important;padding:0!important;display:grid;gap:10px}
+.install3b-steps li{display:grid;grid-template-columns:32px 1fr;align-items:start;gap:10px;margin:0!important;padding:12px;border:1px solid #ffffff14;border-radius:12px;background:#07101a}
+.install3b-steps li>span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#ebd5a4;color:#101820;font-weight:900}
+.install3b-link-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid #75d9ff55;border-radius:10px;background:#0c2635;color:#bdeeff;text-decoration:none;font-size:13px;font-weight:800}
+.install3b-note{font-size:12px!important;color:#aeb8c4!important}
+.install3b-actions{display:flex;flex-wrap:wrap;gap:10px}
+.install3b-actions .install3b-copy{display:inline-flex;align-items:center;gap:7px}
