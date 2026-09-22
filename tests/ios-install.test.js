@@ -34,6 +34,7 @@ test('iPhone install works without email invitation and exposes a future native 
 test('short public install aliases are deployed and social browsers receive Safari guidance', () => {
   const vercel = JSON.parse(read('vercel.json'));
   const script = read('public/install-iphone.js');
+  const chooser = read('public/install.js');
   const aliases = new Map((vercel.redirects || []).map(item => [item.source, item.destination]));
   assert.equal(aliases.get('/iphone'), '/install-iphone.html');
   assert.equal(aliases.get('/ios'), '/install-iphone.html');

@@ -13,17 +13,25 @@ import {closeDadaAudio,dadaHaptic,dadaSpeak,dadaTone} from './dada3b/audio.js';
 import './dada3b.css';
 
 const Dada3BThree=React.lazy(()=>import('./Dada3BThree.jsx'));
+const DadaDice3D=React.lazy(()=>import('./DadaDice3D.jsx'));
+class Dice3DErrorBoundary extends React.Component{
+ constructor(props){super(props);this.state={failed:false};}
+ static getDerivedStateFromError(){return{failed:true};}
+ componentDidCatch(error){this.props.onFail?.(error);}
+ render(){return this.state.failed?this.props.fallback:this.props.children;}
+}
 const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 const DICE_PIPS=Object.freeze({1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]});
 function DiceFace({value}){return <span className="dada3b-die-face-pips" aria-hidden="true">{DICE_PIPS[value].map(slot=><i key={slot} data-slot={slot}/>)}</span>;}
 function PremiumDice({value,rolling,disabled,onClick,skin,country,pending,adverse}){
- const shown=value||1,status=pending?'Choisis un Totem':adverse?'Tour adverse':'Lancer le dé';
- return <button className="dada3b-dice dada3b-dice-premium" data-skin={skin} data-value={shown} data-rolling={rolling} style={{'--country':country||'#c7a66a'}} onClick={onClick} disabled={disabled} aria-label={value?'Dé '+value+' · '+status:status}>
-  <span className="dada3b-dice-stage" aria-hidden="true"><span className="dada3b-die-cube">
-   <span className="dada3b-die-face dada3b-die-front"><DiceFace value={1}/></span><span className="dada3b-die-face dada3b-die-right"><DiceFace value={2}/></span>
-   <span className="dada3b-die-face dada3b-die-back"><DiceFace value={3}/></span><span className="dada3b-die-face dada3b-die-left"><DiceFace value={4}/></span>
-   <span className="dada3b-die-face dada3b-die-top"><DiceFace value={5}/></span><span className="dada3b-die-face dada3b-die-bottom"><DiceFace value={6}/></span>
-  </span></span>
+ const shown=value||1,status=pending?'Choisis un Totem':adverse?'Tour adverse':'Lancer le dé',[webglFailed,setWebglFailed]=useState(false);
+ const fallback=<span className="dada3b-dice-stage" aria-hidden="true"><span className="dada3b-die-cube">
+  <span className="dada3b-die-face dada3b-die-front"><DiceFace value={1}/></span><span className="dada3b-die-face dada3b-die-right"><DiceFace value={2}/></span>
+  <span className="dada3b-die-face dada3b-die-back"><DiceFace value={3}/></span><span className="dada3b-die-face dada3b-die-left"><DiceFace value={4}/></span>
+  <span className="dada3b-die-face dada3b-die-top"><DiceFace value={5}/></span><span className="dada3b-die-face dada3b-die-bottom"><DiceFace value={6}/></span>
+ </span></span>;
+ return <button className="dada3b-dice dada3b-dice-premium" data-skin={skin} data-value={shown} data-rolling={rolling} data-webgl={!webglFailed} style={{'--country':country||'#c7a66a'}} onClick={onClick} disabled={disabled} aria-label={value?'Dé '+value+' · '+status:status}>
+  {webglFailed?fallback:<Dice3DErrorBoundary fallback={fallback} onFail={()=>setWebglFailed(true)}><React.Suspense fallback={fallback}><DadaDice3D key={(skin||'core')+':'+(country||'neutral')} value={shown} rolling={rolling} skin={skin} country={country||'#c7a66a'} onUnsupported={()=>setWebglFailed(true)}/></React.Suspense></Dice3DErrorBoundary>}
   <span className="dada3b-dice-meta"><b>{value?value:'3B'}</b><small>{status}</small></span>
  </button>;
 }
