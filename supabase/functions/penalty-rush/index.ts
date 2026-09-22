@@ -30,7 +30,7 @@ const CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACTIONS = new Set([
   'status', 'profile.save', 'create', 'join', 'queue', 'room', 'ready', 'start',
-  'input', 'tick', 'leave', 'club.create', 'club.join', 'club.leave', 'club.disband', 'international.respond',
+  'input', 'tick', 'leave', 'leaderboard', 'club.create', 'club.join', 'club.leave', 'club.disband', 'international.respond',
 ]);
 const MODES = new Set(['private', 'quick', 'ranked']);
 const COUNTRY_IDS = new Set(['fr', 'dz', 'ma', 'tn', 'tr', 'it', 'es', 'ee']);
@@ -73,10 +73,22 @@ const plusMs = (ms:number) => new Date(Date.now() + ms).toISOString();
 const clamp = (value:number, min:number, max:number) => Math.max(min, Math.min(max, value));
 const number = (value:unknown, fallback=0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
 
+function originAllowed(origin:string) {
+  if (ORIGINS.has(origin)) return true;
+  try {
+    const url = new URL(origin);
+    return url.protocol === 'https:'
+      && url.hostname.endsWith('.vercel.app')
+      && url.hostname.startsWith('3b-international');
+  } catch {
+    return false;
+  }
+}
+
 function cors(req:Request) {
   const origin = req.headers.get('origin') || '';
   return {
-    'Access-Control-Allow-Origin': ORIGINS.has(origin) ? origin : 'https://3b-international.vercel.app',
+    'Access-Control-Allow-Origin': originAllowed(origin) ? origin : 'https://3b-international.vercel.app',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
@@ -435,7 +447,10 @@ async function snapshotFor(uid:string, profile:any) {
     '/rest/v1/penalty_match_history?or=(player_a.eq.' + encodeURIComponent(uid) + ',player_b.eq.' + encodeURIComponent(uid) + ')' +
     '&select=id,mode,player_a,player_b,winner_user_id,score_a,score_b,created_at&order=created_at.desc&limit=12'
   );
+  await rpc('threeb_process_reward_outbox_server', { p_user:uid, p_limit:8 }).catch(() => null);
+  const wallet = await rpc('threeb_wallet_snapshot_server', { p_user:uid }).catch(() => null);
   return {
+    wallet,
     rating,
     club,
     career: {
@@ -468,6 +483,53 @@ async function snapshotFor(uid:string, profile:any) {
       label:`${item.mode === 'ranked' ? 'Classé' : item.mode === 'quick' ? 'Rapide' : 'Privé'} · ${item.score_a}–${item.score_b}`,
       createdAt:item.created_at,
     })) : [],
+  };
+}
+
+async function leaderboardFor(countryInput:unknown) {
+  const requested = String(countryInput || '').trim().toLowerCase();
+  const countryId = COUNTRY_IDS.has(requested) ? requested : null;
+  const countryFilter = countryId ? 'country_id=eq.' + encodeURIComponent(countryId) + '&' : '';
+  const ratings = await admin(
+    '/rest/v1/penalty_ratings?' + countryFilter +
+    'select=user_id,country_id,rating,games,wins,losses,goals_for,goals_against,saves,duel_gold_wins,duel_gold_played' +
+    '&order=rating.desc,games.desc,wins.desc&limit=100'
+  );
+  const rows = Array.isArray(ratings) ? ratings : [];
+  if (!rows.length) return { scope:countryId || 'global', entries:[] };
+
+  const ids = rows.map((row:any) => String(row.user_id || '')).filter((id:string) => UUID.test(id));
+  const profiles = ids.length
+    ? await admin(
+        '/rest/v1/penalty_profiles?user_id=in.(' + ids.map(encodeURIComponent).join(',') + ')' +
+        '&select=user_id,display_name,shirt_name,shirt_number,country_id,style_id,reputation'
+      ).catch(() => [])
+    : [];
+  const byId = new Map((Array.isArray(profiles) ? profiles : []).map((profile:any) => [profile.user_id, profile]));
+
+  return {
+    scope:countryId || 'global',
+    entries:rows.map((row:any,index:number) => {
+      const profile:any = byId.get(row.user_id) || {};
+      return {
+        rank:index + 1,
+        displayName:String(profile.display_name || 'Joueur 3B').slice(0,24),
+        shirtName:String(profile.shirt_name || '3B').slice(0,14),
+        shirtNumber:clamp(Math.trunc(number(profile.shirt_number,10)),1,99),
+        countryId:String(row.country_id || profile.country_id || 'fr'),
+        styleId:String(profile.style_id || 'technicien'),
+        rating:number(row.rating,1000),
+        games:number(row.games),
+        wins:number(row.wins),
+        losses:number(row.losses),
+        goalsFor:number(row.goals_for),
+        goalsAgainst:number(row.goals_against),
+        saves:number(row.saves),
+        duelGoldWins:number(row.duel_gold_wins),
+        duelGoldPlayed:number(row.duel_gold_played),
+        reputation:number(profile.reputation),
+      };
+    }),
   };
 }
 
@@ -539,6 +601,9 @@ function publicRoom(room:Room, uid:string) {
     startedAt:room.started_at,
     finishedAt:room.finished_at,
     settled:Boolean(room.settled_at),
+    realtimeTopic:'penalty:' + room.id,
+    apiVersion:2,
+    serverNow:nowMs(),
   };
 }
 
@@ -638,6 +703,18 @@ async function settleIfFinished(room:Room) {
     p_score_b: Number(state.score?.[1] || 0),
     p_stats: state.matchStats || [],
   });
+
+  // Credit the global 3B economy from server-trusted settlement intents only.
+  for (const player of room.players || []) {
+    const playerUid = String(player?.uid || '');
+    if (UUID.test(playerUid)) {
+      await rpc('threeb_process_reward_outbox_server', {
+        p_user: playerUid,
+        p_limit: 16,
+      }).catch(() => null);
+    }
+  }
+
   return await fetchRoom(room.id) || room;
 }
 
@@ -981,6 +1058,18 @@ async function route(req:Request) {
   const action = String(body?.action || '');
   if (!ACTIONS.has(action)) throw new Failure(400, 'Action Penalty Rush inconnue.');
 
+  const rate = action === 'input'
+    ? { limit:60, window:2 }
+    : ['status','room','tick'].includes(action)
+      ? { limit:30, window:10 }
+      : { limit:20, window:60 };
+  const rateAllowed = await rpc('loyalty_rate', {
+    p_key:'penalty:' + uid + ':' + action,
+    p_limit:rate.limit,
+    p_window:rate.window,
+  }).catch(() => true);
+  if (rateAllowed === false) throw new Failure(429, 'Trop d’actions en peu de temps. Réessaie dans un instant.');
+
   let profile = await ensureProfile(uid);
 
   if (action === 'profile.save') {
@@ -991,7 +1080,8 @@ async function route(req:Request) {
 
   if (action === 'status') {
     const club = await clubFor(uid);
-    const room = body.room && UUID.test(String(body.room)) ? await fetchRoom(String(body.room)) : null;
+    let room = body.room && UUID.test(String(body.room)) ? await fetchRoom(String(body.room)) : null;
+    if (!room) room = await openRoomFor(uid);
     let ownedRoom = room && room.member_ids?.includes(uid) && ['waiting','active','finished'].includes(room.status)
       ? await tickRoom(room)
       : null;
@@ -1022,6 +1112,11 @@ async function route(req:Request) {
     if (existing) return { room:publicRoom(existing, uid), message:existing.status === 'active' ? 'Duel en cours retrouvé.' : 'Recherche déjà active…' };
     const room = await queueRoom(uid, profile, mode);
     return { room:publicRoom(room, uid), message:room.status === 'active' ? 'Adversaire trouvé.' : 'Recherche d’un adversaire…' };
+  }
+
+  if (action === 'leaderboard') {
+    const board = await leaderboardFor(body.countryId);
+    return { leaderboard:board.entries, scope:board.scope };
   }
 
   if (action === 'club.create') {
