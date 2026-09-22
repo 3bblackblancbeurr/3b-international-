@@ -15,6 +15,7 @@ on:
       - 'tests/france-handoff-coop-editor.test.js'
       - 'tests/france-editor-readiness.test.js'
       - 'tests/france-vertical-world.test.js'
+      - 'tests/france-goldmaster-gate.test.js'
       - 'tests/world-unreal-story-state-contract.test.js'
       - 'tests/ai-council-unreal-bridge.test.js'
       - '.github/workflows/verify-unreal-preproduction.yml'
@@ -43,7 +44,15 @@ jobs:
           tests/france-handoff-coop-editor.test.js
           tests/france-editor-readiness.test.js
           tests/france-vertical-world.test.js
+          tests/france-goldmaster-gate.test.js
           tests/world-unreal-story-state-contract.test.js
       - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
-        run: python -m py_compile unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py unreal/ThreeBWorld/Scripts/build_france_blockout.py unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py unreal/ThreeBWorld/Scripts/prepare_france_goldmaster.py
+        run: >-
+          python -m py_compile
+          unreal/ThreeBWorld/Scripts/build_metropolis_blockout.py
+          unreal/ThreeBWorld/Scripts/validate_france_editor_assets.py
+          unreal/ThreeBWorld/Scripts/build_france_blockout.py
+          unreal/ThreeBWorld/Scripts/bootstrap_france_goldmaster_assets.py
+          unreal/ThreeBWorld/Scripts/prepare_france_goldmaster.py
+          unreal/ThreeBWorld/Scripts/france_goldmaster_gate.py
