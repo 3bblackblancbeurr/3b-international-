@@ -81,7 +81,7 @@ function InstallHelp({ installation, onClose }) {
           : <>Appuie sur <strong>⋮</strong>, puis <strong>Installer l’application</strong> ou <strong>Ajouter à l’écran d’accueil</strong>.</>}</li>
         <li>Confirme l’installation sur ton téléphone.</li>
       </ol> : <ol>
-        <li>Sur iPhone, utilise la page <a href="/install-iphone.html">Installer sur iPhone</a>.</li>
+        <li>Sur iPhone, utilise la page <a href="/iphone">Installer sur iPhone</a>.</li>
         <li>Sur Android, utilise Chrome ou Samsung Internet et choisis l’option d’installation.</li>
         <li>Sur ordinateur, Chrome/Edge proposent une icône d’installation ; Safari sur Mac propose <strong>Fichier → Ajouter au Dock</strong>.</li>
       </ol>}
@@ -119,9 +119,9 @@ export default function InstallApp({ installation }) {
     <div className="install3b-platform-links" aria-label="Choisir une plateforme">
       <a href="/iphone">iPhone / iPad</a>
       <span aria-hidden="true">·</span>
-      <a href="/install-android.html">Android</a>
+      <a href="/android">Android</a>
       <span aria-hidden="true">·</span>
-      <a href="/install.html">Toutes les méthodes</a>
+      <a href="/installer">Toutes les méthodes</a>
     </div>
     {installation.message && <p className="install3b-status" role="status">{installation.message}</p>}
     {helpOpen && <InstallHelp installation={installation} onClose={() => setHelpOpen(false)} />}
