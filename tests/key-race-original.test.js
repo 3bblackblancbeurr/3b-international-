@@ -9,7 +9,7 @@ const app=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
 test('La Course des clés pointe vers le jeu historique exact',()=>{
  assert.match(catalog,/https:\/\/troisb-course-des-cles-demo\.stetienne86pp\.chatgpt\.site\//);
  assert.match(catalog,/href:KEY_RACE_URL/);
- assert.match(hub,/target=['"]_blank['"]/);
+ assert.match(hub,/target\s*:\s*['_"]_blank['_"]/);
 });
 
 test('le faux KeyRace3B recréé n’est plus branché',()=>{
