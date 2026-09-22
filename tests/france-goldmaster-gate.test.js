@@ -57,10 +57,17 @@ test('Windows runner compiles native targets and prepares official World Partiti
     assert.match(runner,new RegExp(target),target);
   }
   assert.match(runner,/InstalledBuild\.txt/);
+  assert.match(runner,/ForceSourceTargets/);
   assert.match(runner,/WorldPartitionHLODsBuilder/);
   assert.match(runner,/WorldPartitionNavigationDataBuilder/);
-  assert.match(runner,/Assert-FinalArtEvidenceForPartitionBuild/);
+  assert.match(runner,/Assert-EvidencePassList/);
   assert.match(runner,/final_nanite_geometry\.json/);
+  assert.match(runner,/pie_multiplayer\.json/);
+  assert.match(runner,/profiling\.json/);
+  assert.match(runner,/RunUAT\.bat/);
+  assert.match(runner,/BuildCookRun/);
+  assert.match(runner,/package_client\.json/);
+  assert.match(runner,/package_server\.json/);
   assert.match(runner,/ExecutePythonScript=/);
   assert.match(runner,/compile_partial\.json/);
   assert.doesNotMatch(runner,/blockout.*gold.?master.*pass/i);
