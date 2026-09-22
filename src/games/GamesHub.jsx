@@ -59,15 +59,15 @@ export default function GamesHub({goTo,goToGame}){
   {progress.records[selection]&&<p className="arcade-stats">Record : {progress.records[selection].best} points · {progress.records[selection].wins} victoire(s)</p>}
   <div className="premium-library" aria-label="Choisir un jeu">
    {GAME_LIST.map(g=>{
-    const Card=g.href?'a':'button';
-    return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{setSelection(g.id);setActive(g);}})}>
+    const Card='button';
+    return <Card type="button" className="premium-game-card" data-game={g.id} key={g.id} disabled={loading&&!g.routeSlug} onClick={()=>{if(g.routeSlug){goToGame?.(g.routeSlug);return;}setSelection(g.id);setActive(g);}}>
      <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span>
      <span className="premium-card-copy">
       <span className="premium-card-genre">{g.genre} · {g.time}</span>
       <strong>{g.title}</strong>
       <span className="premium-card-description">{g.text}</span>
       <span className="premium-card-bottom">
-       <span>{g.href?'S’ouvre dans un nouvel onglet':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span>
+       <span>{g.routeSlug?'Jeu 3B · Interne':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span>
        <span className="premium-card-play"><Play size={15}/>Jouer</span>
       </span>
      </span>
