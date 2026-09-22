@@ -1,0 +1,76 @@
+{
+  "version": "3.0.0",
+  "status": "premium-blockout-ready",
+  "map_asset": "/Game/3binternational/Maps/Hub3B_Blockout_V01",
+  "generated_tag": "3B_HUB_VOID_V3",
+  "design": {
+    "target_main_envelope_cm": [10000, 9200],
+    "composition_envelope_cm": [14500, 14500],
+    "visual_envelope_cm": [22000, 22000],
+    "target_void_ratio_main": 0.60,
+    "clear_void_below_cm": 2500,
+    "deep_cloud_start_cm": -7000,
+    "recovery_kill_z_cm": -5200
+  },
+  "platforms": [
+    {"id":"CORE","kind":"core","center_cm":[0,0],"size_cm":[2200,2200],"yaw_deg":0,"surface_z_cm":250,"thickness_cm":220,"bridge_radius_cm":1050,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+    {"id":"N","kind":"main","center_cm":[0,3500],"size_cm":[3200,1800],"yaw_deg":5,"surface_z_cm":200,"thickness_cm":220,"bridge_radius_cm":850,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+    {"id":"NE","kind":"main","center_cm":[3000,2600],"size_cm":[2800,1700],"yaw_deg":18,"surface_z_cm":100,"thickness_cm":220,"bridge_radius_cm":800,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+    {"id":"E","kind":"main","center_cm":[3600,-500],"size_cm":[3000,1900],"yaw_deg":-8,"surface_z_cm":-100,"thickness_cm":220,"bridge_radius_cm":900,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+    {"id":"SE","kind":"main","center_cm":[2700,-3100],"size_cm":[2800,1700],"yaw_deg":20,"surface_z_cm":50,"thickness_cm":220,"bridge_radius_cm":800,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+    {"id":"SW","kind":"main","center_cm":[-2800,-3000],"size_cm":[2600,1700],"yaw_deg":-25,"surface_z_cm":-150,"thickness_cm":220,"bridge_radius_cm":800,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+    {"id":"W","kind":"main","center_cm":[-3600,800],"size_cm":[3000,1900],"yaw_deg":10,"surface_z_cm":300,"thickness_cm":220,"bridge_radius_cm":900,"underside_tiers":[[0.92,0.92,500],[0.68,0.68,700],[0.42,0.42,900]]},
+
+    {"id":"SAT_N","kind":"satellite","center_cm":[0,6800],"size_cm":[1600,1800],"yaw_deg":5,"surface_z_cm":400,"thickness_cm":200,"bridge_radius_cm":750,"underside_tiers":[[0.86,0.86,500],[0.56,0.56,800]]},
+    {"id":"SAT_NE","kind":"satellite","center_cm":[5800,5000],"size_cm":[1400,1800],"yaw_deg":18,"surface_z_cm":200,"thickness_cm":200,"bridge_radius_cm":700,"underside_tiers":[[0.86,0.86,500],[0.56,0.56,800]]},
+    {"id":"SAT_E","kind":"satellite","center_cm":[7000,-1000],"size_cm":[1800,1400],"yaw_deg":-8,"surface_z_cm":-250,"thickness_cm":200,"bridge_radius_cm":700,"underside_tiers":[[0.86,0.86,500],[0.56,0.56,800]]},
+    {"id":"SAT_SE","kind":"satellite","center_cm":[3800,-6400],"size_cm":[1400,1800],"yaw_deg":20,"surface_z_cm":250,"thickness_cm":200,"bridge_radius_cm":700,"underside_tiers":[[0.86,0.86,500],[0.56,0.56,800]]},
+    {"id":"SAT_SW","kind":"satellite","center_cm":[-4000,-6500],"size_cm":[1200,1600],"yaw_deg":-25,"surface_z_cm":-300,"thickness_cm":200,"bridge_radius_cm":650,"underside_tiers":[[0.86,0.86,500],[0.56,0.56,800]]},
+    {"id":"SAT_W","kind":"satellite","center_cm":[-7000,1400],"size_cm":[1800,1600],"yaw_deg":10,"surface_z_cm":550,"thickness_cm":200,"bridge_radius_cm":750,"underside_tiers":[[0.86,0.86,500],[0.56,0.56,800]]}
+  ],
+  "connections": [
+    {"id":"CORE_N","from":"CORE","to":"N","width_cm":450},
+    {"id":"CORE_NE","from":"CORE","to":"NE","width_cm":380},
+    {"id":"CORE_E","from":"CORE","to":"E","width_cm":420},
+    {"id":"CORE_SE","from":"CORE","to":"SE","width_cm":360},
+    {"id":"CORE_SW","from":"CORE","to":"SW","width_cm":340},
+    {"id":"CORE_W","from":"CORE","to":"W","width_cm":440},
+
+    {"id":"N_SAT_N","from":"N","to":"SAT_N","width_cm":400},
+    {"id":"NE_SAT_NE","from":"NE","to":"SAT_NE","width_cm":320},
+    {"id":"E_SAT_E","from":"E","to":"SAT_E","width_cm":360},
+    {"id":"SE_SAT_SE","from":"SE","to":"SAT_SE","width_cm":320},
+    {"id":"SW_SAT_SW","from":"SW","to":"SAT_SW","width_cm":320},
+    {"id":"W_SAT_W","from":"W","to":"SAT_W","width_cm":420}
+  ],
+  "safe_anchors": [
+    {"id":"CORE_SAFE","platform":"CORE"},
+    {"id":"N_SAFE","platform":"N"},
+    {"id":"NE_SAFE","platform":"NE"},
+    {"id":"E_SAFE","platform":"E"},
+    {"id":"SE_SAFE","platform":"SE"},
+    {"id":"SW_SAFE","platform":"SW"},
+    {"id":"W_SAFE","platform":"W"}
+  ],
+  "fragments": [
+    {"id":"F01","center_cm":[1800,900,-1600],"size_cm":[650,420,280],"yaw_deg":18},
+    {"id":"F02","center_cm":[-1600,1400,-1900],"size_cm":[520,360,240],"yaw_deg":-28},
+    {"id":"F03","center_cm":[2500,-1800,-2200],"size_cm":[780,440,320],"yaw_deg":34},
+    {"id":"F04","center_cm":[-2200,-1700,-2500],"size_cm":[620,390,300],"yaw_deg":-12},
+    {"id":"F05","center_cm":[4200,1800,-2800],"size_cm":[900,480,340],"yaw_deg":8},
+    {"id":"F06","center_cm":[-4300,2200,-3000],"size_cm":[850,460,330],"yaw_deg":-20},
+    {"id":"F07","center_cm":[500,4200,-2100],"size_cm":[560,320,220],"yaw_deg":44},
+    {"id":"F08","center_cm":[-700,-4200,-2300],"size_cm":[600,350,230],"yaw_deg":-37},
+    {"id":"F09","center_cm":[5200,-2800,-3200],"size_cm":[950,520,380],"yaw_deg":16},
+    {"id":"F10","center_cm":[-5200,-2700,-3100],"size_cm":[880,500,360],"yaw_deg":-8},
+    {"id":"F11","center_cm":[2600,5000,-2700],"size_cm":[700,400,280],"yaw_deg":26},
+    {"id":"F12","center_cm":[-2800,5100,-2900],"size_cm":[760,420,300],"yaw_deg":-18}
+  ],
+  "validation": {
+    "required_platform_count": 13,
+    "required_connection_count": 12,
+    "required_safe_anchor_count": 7,
+    "required_fragment_count": 12,
+    "forbid_landscape": true
+  }
+}
