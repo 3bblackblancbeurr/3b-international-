@@ -8,15 +8,16 @@ function detectPlatform() {
   const android = /Android/i.test(ua);
   const samsung = /SamsungBrowser/i.test(ua);
   const safari = ios && /Safari/i.test(ua) && !/(CriOS|FxiOS|EdgiOS|OPiOS)/i.test(ua);
-  return { ios, android, samsung, safari };
+  const inAppBrowser = /(Instagram|FBAN|FBAV|TikTok|Bytedance|Snapchat|Line\/|GSA\/|Twitter)/i.test(ua);
+  return { ios, android, samsung, safari, inAppBrowser };
 }
 
 function InstallHelp({ installation, onClose }) {
   const dialog = useRef(null);
   const [copyMessage, setCopyMessage] = useState('');
-  const { ios, android, samsung, safari } = detectPlatform();
+  const { ios, android, samsung, safari, inAppBrowser } = detectPlatform();
   const publicLink = new URL('/install.html', window.location.href).href;
-  const iphoneLink = new URL('/install-iphone.html', window.location.href).href;
+  const iphoneLink = new URL('/iphone', window.location.href).href;
 
   useEffect(() => {
     const element = dialog.current;
@@ -63,13 +64,13 @@ function InstallHelp({ installation, onClose }) {
     {ios ? <>
       <div className="install3b-ios-badge">iPhone · sans invitation</div>
       <p>La méthode la plus simple ne demande ni invitation ni TestFlight : installe directement la version web 3B depuis Safari.</p>
-      {!safari && <div className="install3b-warning"><strong>Tu n’es pas dans Safari.</strong> Copie le lien ci-dessous, ouvre Safari et colle-le dans la barre d’adresse.</div>}
+      {!safari && <div className="install3b-warning"><strong>{inAppBrowser ? 'Navigateur intégré détecté.' : 'Tu n’es pas dans Safari.'}</strong> {inAppBrowser ? 'Dans TikTok, Instagram, Facebook ou une messagerie, ouvre le menu puis choisis Ouvrir dans Safari / Ouvrir dans le navigateur. Sinon, copie le lien ci-dessous.' : 'Copie le lien ci-dessous, ouvre Safari et colle-le dans la barre d’adresse.'}</div>}
       <ol className="install3b-steps">
         <li><span>1</span><div>Ouvre 3B dans <strong>Safari</strong>.</div></li>
         <li><span>2</span><div>Appuie sur <strong>Partager</strong>, puis <strong>Sur l’écran d’accueil</strong>.</div></li>
-        <li><span>3</span><div>Active <strong>Ouvrir en app web</strong> si l’option apparaît, puis touche <strong>Ajouter</strong>.</div></li>
+        <li><span>3</span><div>Active <strong>Ouvrir comme app web</strong>, puis touche <strong>Ajouter</strong>.</div></li>
       </ol>
-      <a className="install3b-link-button" href="/install-iphone.html"><ExternalLink size={17} aria-hidden="true"/>Guide iPhone complet</a>
+      <a className="install3b-link-button" href="/iphone"><ExternalLink size={17} aria-hidden="true"/>Guide iPhone complet</a>
       <p className="install3b-note">La page iPhone affichera aussi automatiquement un lien TestFlight public ou App Store si une version native 3B est publiée.</p>
     </> : <>
       {installation.available && <button type="button" className="install3b-button" onClick={installation.install} disabled={installation.busy}>Installer maintenant</button>}
@@ -80,7 +81,7 @@ function InstallHelp({ installation, onClose }) {
           : <>Appuie sur <strong>⋮</strong>, puis <strong>Installer l’application</strong> ou <strong>Ajouter à l’écran d’accueil</strong>.</>}</li>
         <li>Confirme l’installation sur ton téléphone.</li>
       </ol> : <ol>
-        <li>Sur iPhone, utilise la page <a href="/install-iphone.html">Installer sur iPhone</a>.</li>
+        <li>Sur iPhone, utilise la page <a href="/iphone">Installer sur iPhone</a>.</li>
         <li>Sur Android, utilise Chrome ou Samsung Internet et choisis l’option d’installation.</li>
         <li>Sur ordinateur, Chrome/Edge proposent une icône d’installation ; Safari sur Mac propose <strong>Fichier → Ajouter au Dock</strong>.</li>
       </ol>}
@@ -116,11 +117,11 @@ export default function InstallApp({ installation }) {
       </button>
     </div>
     <div className="install3b-platform-links" aria-label="Choisir une plateforme">
-      <a href="/install-iphone.html">iPhone / iPad</a>
+      <a href="/iphone">iPhone / iPad</a>
       <span aria-hidden="true">·</span>
-      <a href="/install-android.html">Android</a>
+      <a href="/android">Android</a>
       <span aria-hidden="true">·</span>
-      <a href="/install.html">Toutes les méthodes</a>
+      <a href="/installer">Toutes les méthodes</a>
     </div>
     {installation.message && <p className="install3b-status" role="status">{installation.message}</p>}
     {helpOpen && <InstallHelp installation={installation} onClose={() => setHelpOpen(false)} />}

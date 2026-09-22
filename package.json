@@ -17,7 +17,8 @@
     "control:pair": "node scripts/threeb-control-agent.mjs pair",
     "control:agent": "node scripts/threeb-control-agent.mjs run",
     "control:once": "node scripts/threeb-control-agent.mjs once",
-    "control:status": "node scripts/threeb-control-agent.mjs status"
+    "control:status": "node scripts/threeb-control-agent.mjs status",
+    "ios:distribution": "node scripts/set-ios-distribution.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
