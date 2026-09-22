@@ -1,44 +1,67 @@
-# Import du blockout dans Unreal 5.8
+# Import des blockouts dans Unreal 5.8
 
-## Préparation manuelle obligatoire une seule fois
+## Projet canonique
 
-1. Ouvrir `3BWorld.uproject` dans Unreal Engine 5.8.
-2. Activer **Python Editor Script Plugin**.
-3. Créer une carte de type **Open World / World Partition**.
-4. Sauvegarder la carte sous un nom explicite, par exemple `L_Cite_Huit_Heritages_Blockout`.
-5. Vérifier que l'échelle Unreal est en centimètres.
+Utiliser uniquement :
 
-World Partition place ensuite les Actors spatiaux dans ses cellules selon leur position. L'importeur ne fabrique pas de faux Data Layers ou HLOD assets : ces assets doivent être créés dans l'éditeur.
+`unreal/ThreeBWorld/ThreeBWorld.uproject`
 
-## Lancer l'importeur
+Le dossier legacy `unreal/3BWorld` ne doit plus recevoir de nouveau travail.
 
-Dans Unreal Python :
+## Hub principal — vides et plateformes
+
+Le nouveau constructeur premium du hub est :
+
+`Scripts/build_hub3b_void_blockout_v3.py`
+
+Il lit :
+
+`Data/Production/hub3b-void-blockout-v3.json`
+
+Il crée/recharge automatiquement une map World Partition séparée :
+
+`/Game/3binternational/Maps/Hub3B_Blockout_V01`
+
+Puis il génère le noyau, les grandes masses, satellites, ponts, dessous, fragments, Safe Anchors et atmosphère de base.
+
+### Exécution
+
+Dans Unreal Engine 5.8 :
+
+**Outils / Tools → Execute Python Script**
+
+puis sélectionner :
+
+`Scripts/build_hub3b_void_blockout_v3.py`
+
+Ou via la console Python :
 
 ```python
-exec(open(unreal.Paths.project_dir() + "Scripts/build_metropolis_blockout.py", encoding="utf-8").read())
+exec(open(unreal.Paths.project_dir() + "Scripts/build_hub3b_void_blockout_v3.py", encoding="utf-8").read())
 ```
 
-## Résultat
+Le résultat attendu dans le journal est :
 
-Le script place :
-- 10 marqueurs de quartiers ;
-- 19 axes routiers blockout ;
-- 19 volumes de bâtiments principaux ;
-- 8 volumes de portes.
+`VALIDATION BLOCKOUT V3: OK`
 
-Il lit exclusivement :
-`Data/Production/world-layout-unreal.json`.
+Voir `Docs/HUB3B_VOID_BLOCKOUT_V3.md`.
 
-## Réexécution
+---
 
-Tous les Actors générés portent le tag :
-`3B_GENERATED_BLOCKOUT`.
+## Ancien blockout métropole
 
-Le script supprime uniquement ces Actors avant de reconstruire le blockout. Les assets créés manuellement par l'artiste ne sont pas concernés.
+Le script historique reste disponible :
 
-## Après import
+`Scripts/build_metropolis_blockout.py`
 
-Ne pas détailler toute la ville immédiatement.
+Il lit :
 
-Commencer par :
-Place de l'Héritage → Tour du Cercle Brisé → Archives → Gare 3B Express → Bureau d'Urbanisme → Porte France.
+`Data/Production/world-layout-unreal.json`
+
+Il sert au blockout urbain général (quartiers/routes/bâtiments/portes), pas à la refonte spécialisée des vides du hub.
+
+Tous les Actors de cet ancien importeur portent le tag :
+
+`3B_GENERATED_BLOCKOUT`
+
+Ne pas lancer les deux scripts pour répondre au même objectif sans savoir quel niveau est actuellement ouvert.
