@@ -36,5 +36,12 @@
       "route": "/jeux/penalty-rush",
       "mode": "internal-remote-module"
     }
+  },
+  "linkage": {
+    "githubToVercel": "confirmed-via-github-vercel-status",
+    "appToSupabase": "confirmed-via-env-and-vercel-csp",
+    "chatgptToGithub": "confirmed",
+    "chatgptToSupabase": "confirmed",
+    "chatgptToVercelWorkspace": "reauthentication-required"
   }
 }
