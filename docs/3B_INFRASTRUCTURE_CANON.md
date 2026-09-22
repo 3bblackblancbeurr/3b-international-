@@ -33,6 +33,14 @@ Ne pas créer un second backend 3B pour contourner un problème de connexion.
 - Le connecteur Vercel ChatGPT est installé mais doit être ré-authentifié explicitement sur ce workspace pour permettre le pilotage direct.
 - L'adresse e-mail du compte Vercel n'est pas exposée par le connecteur ; ne pas la deviner.
 
+## État des liaisons
+
+- GitHub → Vercel : **confirmé** par les statuts Vercel attachés aux commits GitHub.
+- Application → Supabase : **confirmé** par `.env.example` et la CSP Vercel, tous deux sur `ttvhcezucsbbmnafrotq`.
+- ChatGPT → GitHub : **confirmé**.
+- ChatGPT → Supabase : **confirmé**.
+- ChatGPT → workspace Vercel 3B : **ré-authentification requise** sur le workspace canonique.
+
 ## Jeux 3B
 
 ### La course des clés
