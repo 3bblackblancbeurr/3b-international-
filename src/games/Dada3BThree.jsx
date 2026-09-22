@@ -211,7 +211,7 @@ function addAtmosphere(scene,runtime){
  const stars=new THREE.Points(geo,mat);scene.add(stars);runtime.stars=stars;
 }
 function createPiece(country,pieceIndex,shadows){
- const group=new THREE.Group();group.userData={kind:'piece',countryId:country.id,pieceIndex,legal:false,target:new THREE.Vector3(),isMoving:false,landingUntil:0};
+ const group=new THREE.Group();group.userData={kind:'piece',countryId:country.id,pieceIndex,legal:false,target:new THREE.Vector3(),isMoving:false,landingUntil:0,captureReturn:null};
  const segments=COUNTRY_SEGMENTS[country.shape]||10;
  const baseMat=makeMaterial('#c3a25d',{metal:.92,rough:.19,emissive:'#6b511e',emissiveIntensity:.13});
  const bodyMat=makeMaterial(country.accent,{metal:.78,rough:.16,emissive:country.accent,emissiveIntensity:.28,clearcoat:.92});
@@ -281,7 +281,18 @@ function updateBoardState(runtime,match,loadout=null,legal=[]){
  syncLegalFx(runtime,match,legal);
 }
 function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout=null){
- const live=new Set();
+ const live=new Set(),captureEvent=match?.lastEvent?.type==='capture'?match.lastEvent:null;
+ const captureKey=captureEvent?(captureEvent.id??[match.sequence,captureEvent.countryId,captureEvent.pieceIndex,captureEvent.landing].join(':')):null;
+ const isNewCapture=Boolean(captureEvent&&captureKey!==runtime.lastCaptureEventKey);
+ if(isNewCapture){
+  for(const captured of captureEvent.captured||[]){
+   const group=runtime.pieceMap.get(captured.countryId+':'+captured.pieceIndex),country=countryFor(captured.countryId);
+   if(!group||!country)continue;
+   const target=pieceWorldPosition(country,STABLE,captured.pieceIndex);
+   group.userData.captureReturn={from:group.position.clone(),to:target.clone(),startedAt:performance.now(),duration:460};
+  }
+  runtime.lastCaptureEventKey=captureKey;
+ }
  match.players.forEach((player,playerIndex)=>{
   const country=countryFor(player.countryId);
   player.pieces.forEach((piece,pieceIndex)=>{
@@ -340,7 +351,7 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   const rim=new THREE.PointLight(0x8cebf5,9,28,2);rim.position.set(0,6,-15);scene.add(rim);
   const ground=mesh(new THREE.CircleGeometry(38,64),makeMaterial('#0d1c21',{metal:.08,rough:.9,emissive:'#123842',emissiveIntensity:.16}),false,true);ground.rotation.x=-Math.PI/2;ground.position.y=-1.38;scene.add(ground);
   const pieces=new THREE.Group();scene.add(pieces);
-  const runtime={renderer,scene,camera,controls,pieces,pieceMap:new Map(),trackCells:[],barrierFx:new Map(),sanctuaryFx:[],legalFx:[],shadows,mobile,themeLight:blue,energyRail:null,nexusRings:[],nexusCore:null,nexusLight:null,nexusBeam:null,nexusBeamMat:null,stars:null,gateHalos:[],beacons:[],effects:[],focusUntil:0,focusType:'',focusTarget:new THREE.Vector3(0,.35,0),baseTarget:new THREE.Vector3(0,.35,0),cameraShakeUntil:0,disposed:false};
+  const runtime={renderer,scene,camera,controls,pieces,pieceMap:new Map(),trackCells:[],barrierFx:new Map(),sanctuaryFx:[],legalFx:[],shadows,mobile,themeLight:blue,energyRail:null,nexusRings:[],nexusCore:null,nexusLight:null,nexusBeam:null,nexusBeamMat:null,stars:null,gateHalos:[],beacons:[],effects:[],focusUntil:0,focusType:'',focusTarget:new THREE.Vector3(0,.35,0),baseTarget:new THREE.Vector3(0,.35,0),cameraShakeUntil:0,lastCaptureEventKey:null,contextLost:false,contextLossTimer:null,disposed:false};
   runtimeRef.current=runtime;
   addBoardFoundation(scene,runtime);addTrackCells(scene,match,runtime);
   COUNTRIES_3B.forEach(c=>addGate(scene,c,match.players.some(p=>p.countryId===c.id),runtime));
@@ -363,8 +374,17 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    const hit=raycaster.intersectObjects([...runtime.pieceMap.values()],true).map(i=>findPieceRoot(i.object)).find(root=>root?.userData.legal);
    if(hit)onPieceRef.current?.(hit.userData.pieceIndex);
   };
-  const contextLost=e=>{e.preventDefault();onUnsupported?.(new Error('Contexte WebGL perdu.'));};
+  const contextLost=e=>{
+   e.preventDefault();runtime.contextLost=true;
+   if(runtime.contextLossTimer)clearTimeout(runtime.contextLossTimer);
+   runtime.contextLossTimer=setTimeout(()=>{if(runtime.contextLost&&!runtime.disposed)onUnsupported?.(new Error('Contexte WebGL indisponible.'));},1800);
+  };
+  const contextRestored=()=>{
+   runtime.contextLost=false;
+   if(runtime.contextLossTimer){clearTimeout(runtime.contextLossTimer);runtime.contextLossTimer=null;}
+  };
   renderer.domElement.addEventListener('webglcontextlost',contextLost,false);
+  renderer.domElement.addEventListener('webglcontextrestored',contextRestored,false);
   renderer.domElement.addEventListener('pointerdown',pointerDown,{passive:true});renderer.domElement.addEventListener('pointermove',pointerMove,{passive:true});renderer.domElement.addEventListener('pointerup',pointerUp,{passive:true});
   let frame=0;const clock=new THREE.Clock();
   const animate=()=>{
@@ -385,28 +405,38 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    runtime.sanctuaryFx.forEach((fx,i)=>{fx.ring.rotation.z+=.004+i*.0002;fx.ringMat.opacity=.48+Math.sin(t*2.4+i)*.18;fx.beamMat.opacity=.09+Math.sin(t*1.8+i)*.045;});
    for(const fx of runtime.barrierFx.values()){fx.ring.rotation.z-=.012;fx.shieldMat.opacity=.14+Math.sin(t*3)*.07;fx.ringMat.opacity=.48+Math.sin(t*4)*.16;}
    for(const group of runtime.pieceMap.values()){
-    const target=group.userData.target,landingLeft=Math.max(0,group.userData.landingUntil-now),landing=landingLeft>0?Math.sin((1-landingLeft/320)*Math.PI)*.17:0;
-    const bob=group.userData.legal ? Math.sin(t*5+group.userData.pieceIndex)*.13:group.userData.isMoving ? Math.abs(Math.sin(t*10))*.18:landing;
-    group.position.x=THREE.MathUtils.lerp(group.position.x,target.x,.23);group.position.z=THREE.MathUtils.lerp(group.position.z,target.z,.23);group.position.y=THREE.MathUtils.lerp(group.position.y,target.y+bob,.25);
+    const captureReturn=group.userData.captureReturn;
+    if(captureReturn){
+     const raw=Math.min(1,(now-captureReturn.startedAt)/captureReturn.duration),k=raw*raw*(3-2*raw),arc=Math.sin(Math.PI*k)*.55;
+     group.position.lerpVectors(captureReturn.from,captureReturn.to,k);group.position.y+=arc;
+     group.scale.setScalar(1-Math.sin(Math.PI*k)*.10);
+     if(raw>=1){group.position.copy(captureReturn.to);group.scale.setScalar(1);group.userData.captureReturn=null;}
+    }else{
+     const target=group.userData.target,landingLeft=Math.max(0,group.userData.landingUntil-now),landing=landingLeft>0?Math.sin((1-landingLeft/320)*Math.PI)*.17:0;
+     const bob=group.userData.legal ? Math.sin(t*5+group.userData.pieceIndex)*.13:group.userData.isMoving ? Math.abs(Math.sin(t*10))*.18:landing;
+     group.position.x=THREE.MathUtils.lerp(group.position.x,target.x,.23);group.position.z=THREE.MathUtils.lerp(group.position.z,target.z,.23);group.position.y=THREE.MathUtils.lerp(group.position.y,target.y+bob,.25);
+     const pulse=group.userData.legal ? 1+Math.sin(t*6)*.055:landingLeft>0?1.05:1;group.scale.setScalar(pulse);
+    }
     group.rotation.y+=group.userData.legal ? .016 : .002;
     group.userData.haloMat.opacity=THREE.MathUtils.lerp(group.userData.haloMat.opacity,group.userData.legal ? .92 : .08,.14);
     group.userData.rimMat.opacity=THREE.MathUtils.lerp(group.userData.rimMat.opacity,group.userData.legal ? .46 : .10,.14);
-    const pulse=group.userData.legal ? 1+Math.sin(t*6)*.055:landingLeft>0?1.05:1;group.scale.setScalar(pulse);
    }
    runtime.effects=runtime.effects.filter(fx=>{
     const age=(now-fx.birth)/1000;if(age>.68){scene.remove(fx.group);disposeTree(fx.group);return false;}
     const k=age/.68;fx.group.scale.setScalar(.35+k*4.5);fx.material.opacity=(1-k)*.92;return true;
    });
    const shake=now<runtime.cameraShakeUntil?new THREE.Vector3(Math.sin(t*73)*.055,Math.sin(t*91)*.025,Math.cos(t*67)*.055):null;
-   if(shake)camera.position.add(shake);renderer.render(scene,camera);if(shake)camera.position.sub(shake);
+   if(shake)camera.position.add(shake);if(!runtime.contextLost)renderer.render(scene,camera);if(shake)camera.position.sub(shake);
   };animate();
   return()=>{
    runtime.disposed=true;cancelAnimationFrame(frame);ro.disconnect();controls.dispose();
-   renderer.domElement.removeEventListener('webglcontextlost',contextLost);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);
+   if(runtime.contextLossTimer)clearTimeout(runtime.contextLossTimer);
+   renderer.domElement.removeEventListener('webglcontextlost',contextLost);renderer.domElement.removeEventListener('webglcontextrestored',contextRestored);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);
    disposeTree(scene);renderer.dispose();renderer.forceContextLoss?.();renderer.domElement.remove();runtimeRef.current=null;
   };
  },[]);
- useEffect(()=>{const runtime=runtimeRef.current;if(runtime){updateBoardState(runtime,match,loadout,legal);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);}},[match,motion,legal,cosmeticsByCountry,loadout]);
+ useEffect(()=>{const runtime=runtimeRef.current;if(runtime)updateBoardState(runtime,match,loadout,legal);},[match,legal,loadout]);
+ useEffect(()=>{const runtime=runtimeRef.current;if(runtime)updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);},[match,motion,legal,cosmeticsByCountry,loadout]);
  useEffect(()=>{
   const runtime=runtimeRef.current;if(!runtime||!focusEvent)return;
   runtime.focusType=focusEvent;runtime.focusUntil=performance.now()+(focusEvent==='victory'?1700:focusEvent==='capture'?950:820);
@@ -416,13 +446,17 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
  },[focusEvent,match.lastEvent?.id]);
  useEffect(()=>{
   const runtime=runtimeRef.current;if(!runtime||!blast)return;
-  const p=worldFromPercent(blast,.82),group=new THREE.Group();group.position.copy(p),goldFx=blast.fx?.includes('GOLD');
-  const material=new THREE.MeshBasicMaterial({color:goldFx?0xf2c66f:0x74e6f8,transparent:true,opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false});
-  const ring=mesh(new THREE.TorusGeometry(.58,.06,8,48),material,false,false);ring.rotation.x=Math.PI/2;group.add(ring);
-  const ring2=mesh(new THREE.TorusGeometry(.42,.035,7,40),material,false,false);ring2.rotation.set(Math.PI/2,.65,.25);group.add(ring2);
-  const core=mesh(new THREE.IcosahedronGeometry(.34,1),material,false,false);group.add(core);
-  for(let i=0;i<10;i++){const shard=mesh(new THREE.ConeGeometry(.06,.48,5),material,false,false),a=i/10*Math.PI*2;shard.position.set(Math.cos(a)*.32,.12,Math.sin(a)*.32);shard.rotation.z=a;group.add(shard);}
-  runtime.scene.add(group);runtime.effects.push({group,material,birth:performance.now()});runtime.cameraShakeUntil=performance.now()+360;runtime.focusTarget.copy(p);
+  try{
+   const p=worldFromPercent(blast,.82),group=new THREE.Group();group.position.copy(p),goldFx=blast.fx?.includes('GOLD');
+   const material=new THREE.MeshBasicMaterial({color:goldFx?0xf2c66f:0x74e6f8,transparent:true,opacity:.92,blending:THREE.AdditiveBlending,depthWrite:false});
+   const ring=mesh(new THREE.TorusGeometry(.58,.06,8,48),material,false,false);ring.rotation.x=Math.PI/2;group.add(ring);
+   const ring2=mesh(new THREE.TorusGeometry(.42,.035,7,40),material,false,false);ring2.rotation.set(Math.PI/2,.65,.25);group.add(ring2);
+   const core=mesh(new THREE.IcosahedronGeometry(.34,1),material,false,false);group.add(core);
+   for(let i=0;i<10;i++){const shard=mesh(new THREE.ConeGeometry(.06,.48,5),material,false,false),a=i/10*Math.PI*2;shard.position.set(Math.cos(a)*.32,.12,Math.sin(a)*.32);shard.rotation.z=a;group.add(shard);}
+   runtime.scene.add(group);runtime.effects.push({group,material,birth:performance.now()});runtime.cameraShakeUntil=performance.now()+360;runtime.focusTarget.copy(p);
+  }catch{
+   runtime.cameraShakeUntil=0;
+  }
  },[blast?.key]);
  const power=POWER_LABELS[focusEvent]||'';
  return <div ref={hostRef} className="dada3b-three" role="application" aria-label="Plateau DADA 3B en trois dimensions">
