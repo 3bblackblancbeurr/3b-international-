@@ -192,11 +192,23 @@ export default function App() {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     const welcome = new SpeechSynthesisUtterance(
-      "Bienvenue dans l’univers 3B. L’héritage commence maintenant."
+      "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout partout."
     );
+
+    const voices = window.speechSynthesis.getVoices();
+    const frenchVoices = voices.filter((voice) =>
+      voice.lang?.toLowerCase().startsWith("fr")
+    );
+    const preferredVoice =
+      frenchVoices.find((voice) =>
+        /google|microsoft|natural|audrey|thomas|amelie|amélie|marie/i.test(voice.name)
+      ) || frenchVoices[0];
+
+    if (preferredVoice) welcome.voice = preferredVoice;
+
     welcome.lang = "fr-FR";
-    welcome.rate = 0.92;
-    welcome.pitch = 0.9;
+    welcome.rate = 0.84;
+    welcome.pitch = 0.78;
     welcome.volume = 1;
 
     window.speechSynthesis.cancel();
