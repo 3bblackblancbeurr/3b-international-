@@ -37,7 +37,7 @@ export default function GamesHub({goTo,goToGame}){
    .then(payload=>{
     if(!live)return;
     const games=Array.isArray(payload?.games)
-     ? payload.games.filter(game=>game?.playable&&game?.moduleType==='remote-module')
+     ? payload.games.filter(game=>game?.playable&&game?.moduleType==='remote-module'&&game?.slug!=='penalty-rush')
      : [];
     setRemoteGames(games);
     setRemoteError('');
@@ -60,7 +60,7 @@ export default function GamesHub({goTo,goToGame}){
   <div className="premium-library" aria-label="Choisir un jeu">
    {GAME_LIST.map(g=>{
     const Card=g.href?'a':'button';
-    return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{setSelection(g.id);setActive(g);}})}>
+    return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{if(g.id==='penalty-rush'){goToGame?.('penalty-rush');return;}setSelection(g.id);setActive(g);}})}>
      <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span>
      <span className="premium-card-copy">
       <span className="premium-card-genre">{g.genre} · {g.time}</span>
