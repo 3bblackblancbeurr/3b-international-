@@ -21,7 +21,7 @@ export function readLocation(location = window.location) {
     : ["success", "cancel"].includes(checkout) ? "shop"
     : location.hash === "#musique" ? "religion" : Object.entries(PAGE_HASHES).find(([, hash]) => `#${hash}` === location.hash)?.[0] || "intro";
 
-  return { page, gameSlug: null, search };
+  return { page, search };
 }
 
 function cleanTransientParams(url) {
