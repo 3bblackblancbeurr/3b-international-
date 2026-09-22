@@ -37,5 +37,32 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/iphone",
+      "destination": "/install-iphone.html",
+      "permanent": true
+    },
+    {
+      "source": "/ios",
+      "destination": "/install-iphone.html",
+      "permanent": true
+    },
+    {
+      "source": "/installer",
+      "destination": "/install.html",
+      "permanent": true
+    },
+    {
+      "source": "/telecharger",
+      "destination": "/install.html",
+      "permanent": true
+    },
+    {
+      "source": "/android",
+      "destination": "/install-android.html",
+      "permanent": true
+    }
   ]
 }
