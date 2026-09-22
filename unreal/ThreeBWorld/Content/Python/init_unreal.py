@@ -2,7 +2,7 @@ import os
 import traceback
 import unreal
 
-_FLAG = "-3BHubAutoBuild"
+_FLAG = "-3BHubV4AutoBuild"
 _STATE = {"elapsed": 0.0, "handle": None, "started": False}
 
 
@@ -26,7 +26,7 @@ def _builder_path():
     return os.path.join(
         unreal.Paths.project_dir(),
         "Scripts",
-        "build_hub3b_void_blockout_v3.py",
+        "build_hub3b_main_v4.py",
     )
 
 
@@ -79,13 +79,13 @@ def _tick(delta_seconds):
 
     try:
         _run_builder()
-        _log("Construction automatique terminee. La map Hub3B_Blockout_V01 doit etre ouverte.")
+        _log("Construction automatique V4 terminee. La map Hub3B_Main_V04 doit etre ouverte.")
     except Exception:
         _log_error("La construction automatique a echoue:\n" + traceback.format_exc())
 
 
 if _has_flag():
-    _log("Mode lancement automatique Hub 3B detecte. Attente de l'initialisation de l'editeur...")
+    _log("Mode lancement automatique Hub 3B V4 detecte. Attente de l'initialisation de l'editeur...")
     try:
         _STATE["handle"] = unreal.register_slate_post_tick_callback(_tick)
     except Exception:
