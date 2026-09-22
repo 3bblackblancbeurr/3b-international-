@@ -69,3 +69,36 @@ jobs:
           test -f scripts/windows/Launch-Hub3B.ps1
           grep -q -- "-3BHubV4AutoBuild" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
           grep -q "build_hub3b_main_v4.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+
+      - name: Validate Hub 3B V4 spatial canon
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+
+          portals = data["portals"]
+          assert len(portals) == 8, len(portals)
+          codes = [p["code"] for p in portals]
+          assert len(set(codes)) == 8, codes
+          assert set(codes) == {"EE","FR","ES","MA","DZ","TN","IT","TR"}, codes
+
+          angles = sorted(float(p["angle_deg"]) % 360 for p in portals)
+          diffs = [((angles[(i+1) % 8] - angles[i]) % 360) for i in range(8)]
+          assert all(abs(d - 45.0) < 0.001 for d in diffs), diffs
+
+          assert data["validation"]["required_map_name"] == "Hub3B_Main_V04"
+          assert data["core"]["diameter_cm"] == 2600
+          assert data["ring"]["segment_count"] == 24
+          assert data["ring"]["radius_cm"] > data["core"]["diameter_cm"] / 2
+          assert data["design"]["clear_void_below_cm"] >= 2500
+          assert data["design"]["deep_cloud_start_cm"] <= -7000
+
+          for p in portals:
+              assert p["arch_radius_cm"] > p["terrace_radius_cm"] > data["ring"]["radius_cm"]
+              assert p["state"] == "prepared"
+
+          print("Hub 3B V4 spatial canon: OK")
+          PY
