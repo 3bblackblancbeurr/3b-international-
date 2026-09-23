@@ -94,7 +94,7 @@ export function nearestInteraction(position,items){return items.filter(i=>distan
 export const countryCard=region=>CARDS.find(c=>c.country===region&&c.character);
 export function encounterCards(region,save){const available=CARDS.filter(c=>c.country===region&&c.category==='Personnage classique'&&(c.rarity==='Commun'||save.beacons.filter(id=>id.startsWith(region+':')).length>=2));return [...available.filter(c=>!save.collection[c.id]),...available.filter(c=>save.collection[c.id])];}
 export function worldItems(region,save){
- if(region==='hub')return [...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),{id:'final',type:'final',name:save.adventure?.finished?'L’Union retrouvée':`L’Oubli · ${nexusLevel(save)}/8 pays`,x:0,z:-3,color:'#e4cd94',range:5}];
+ if(region==='hub')return [...COUNTRIES.map(c=>({id:c.id,type:'portal',name:c.name,x:c.portal[0],z:c.portal[1],color:c.color,range:6})),{id:'final',type:'final',name:save.adventure?.finished?'L’Union retrouvée':save.seals.length===8?'Résonance finale du Cercle':`Cercle Brisé · ${nexusLevel(save)}/8 fragments`,x:0,z:-3,color:'#e4cd94',range:5}];
  const c=countryById[region],cards=encounterCards(region,save);
  return [{id:'hub',type:'portal',name:'Place des huit portes',x:0,z:20,color:'#e9d59e',range:6},{id:region+':story',type:'story',name:CHAPTERS[region].resident.split(',')[0]+' · '+CHAPTERS[region].title,x:11,z:-4,color:c.color,range:6,done:chapterState(save,region).restored===3},
  ...[[-20,0],[18,-16],[-8,-39]].map(([x,z],i)=>({id:region+':'+i,type:'beacon',name:save.beacons.includes(region+':'+i)?'Souvenir retrouvé':'Éveiller le souvenir',x,z,color:c.color,done:save.beacons.includes(region+':'+i)})),
