@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import './director-matrix-portrait.css';
 import DirectorMatrixDepth from './DirectorMatrixDepth.jsx';
+import { loadMatrixPortraitImage, OFFICIAL_DIRECTOR_PORTRAIT } from './official-director-portrait.js';
 
 // Share the one-time conversion between the card and settings previews.
 // At most three source photos and their glyph rasters remain in memory.
@@ -14,70 +15,53 @@ const LIGHT_COLUMNS = Array.from({ length: 8 }, (_, index) => ({
 const DIGITS = '0123456789';
 
 function rasterizePhoto(photo) {
-  return new Promise((resolve, reject) => {
-    if (!/^data:image\/(?:jpeg|png|webp);base64,/i.test(photo)) {
-      reject(new Error('Photo illisible'));
-      return;
-    }
-    const image = new Image();
-    image.decoding = 'async';
-    const release = () => { image.onload = null; image.onerror = null; };
-    image.onerror = () => { release(); reject(new Error('Photo illisible')); };
-    image.onload = () => {
-      try {
-        if (!image.naturalWidth || !image.naturalHeight) throw new Error('Photo illisible');
-        const columns = 64, rows = 70, cell = 10;
-        const sample = document.createElement('canvas');
-        sample.width = columns; sample.height = rows;
-        const input = sample.getContext('2d', { willReadFrequently: true });
-        if (!input) throw new Error('Conversion indisponible');
-        const scale = Math.max(columns / image.naturalWidth, rows / image.naturalHeight);
-        const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
-        input.drawImage(image, (columns - width) / 2, (rows - height) / 2, width, height);
-        const { data } = input.getImageData(0, 0, columns, rows);
-        const luminance = Array.from({ length: columns * rows }, (_, index) => {
-          const pixel = index * 4;
-          return (.2126 * data[pixel] + .7152 * data[pixel + 1] + .0722 * data[pixel + 2]) * data[pixel + 3] / 255;
-        });
-        const sorted = [...luminance].sort((a, b) => a - b);
-        const dark = sorted[Math.floor(sorted.length * .02)];
-        const light = sorted[Math.floor(sorted.length * .98)];
-        const range = light - dark;
-        // Both patterns retain exactly the same facial light map. Only the code
-        // changes; the source image is never painted into either visible layer.
-        const levels = luminance.map(value => {
-          const normalized = Math.max(0, Math.min(1, range < 32 ? value / 255 : (value - dark) / range));
-          // Lift the face's midtones without turning nearly black surroundings
-          // into code. The same map is used by both digit patterns.
-          return value < 9 || normalized < .035 ? 0 : Math.max(1, Math.round(Math.pow(normalized, .6) * 9)) / 9;
-        });
-        const patterns = [0, 1].map(phase => {
-          const glyphs = document.createElement('canvas');
-          glyphs.width = columns * cell; glyphs.height = rows * cell;
-          const output = glyphs.getContext('2d');
-          if (!output) throw new Error('Conversion indisponible');
-          // Monospace digits remain narrower than their 10 px cells.
-          output.font = '700 11px "Courier New", monospace';
-          output.textAlign = 'center'; output.textBaseline = 'middle';
-          for (let row = 0; row < rows; row++) {
-            for (let column = 0; column < columns; column++) {
-              const level = levels[row * columns + column];
-              if (!level) continue;
-              output.fillStyle = `rgba(${Math.round(20 + level * 100)},${Math.round(100 + level * 145)},${Math.round(215 + level * 40)},${.52 + level * .48})`;
-              const digit = (column * 7 + row * 13 + phase * (row % 7 + 3)) % DIGITS.length;
-              output.fillText(DIGITS[digit], (column + .5) * cell, (row + .5) * cell);
-            }
-          }
-          return glyphs.toDataURL('image/png');
-        });
-        resolve({ raster: patterns[0], alternate: patterns[1], levels });
-      } catch (error) {
-        reject(error);
-      } finally {
-        release();
+  return loadMatrixPortraitImage(photo).then(image => {
+    if (!image.naturalWidth || !image.naturalHeight) throw new Error('Photo illisible');
+    const columns = 64, rows = 70, cell = 10;
+    const sample = document.createElement('canvas');
+    sample.width = columns; sample.height = rows;
+    const input = sample.getContext('2d', { willReadFrequently: true });
+    if (!input) throw new Error('Conversion indisponible');
+    const scale = Math.max(columns / image.naturalWidth, rows / image.naturalHeight);
+    const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
+    input.drawImage(image, (columns - width) / 2, (rows - height) / 2, width, height);
+    const { data } = input.getImageData(0, 0, columns, rows);
+    const luminance = Array.from({ length: columns * rows }, (_, index) => {
+      const pixel = index * 4;
+      return (.2126 * data[pixel] + .7152 * data[pixel + 1] + .0722 * data[pixel + 2]) * data[pixel + 3] / 255;
+    });
+    const sorted = [...luminance].sort((a, b) => a - b);
+    const dark = sorted[Math.floor(sorted.length * .02)];
+    const light = sorted[Math.floor(sorted.length * .98)];
+    const range = light - dark;
+    // Both patterns retain exactly the same facial light map. Only the code
+    // changes; the source image is never painted into either visible layer.
+    const levels = luminance.map(value => {
+      const normalized = Math.max(0, Math.min(1, range < 32 ? value / 255 : (value - dark) / range));
+      // Lift the face's midtones without turning nearly black surroundings
+      // into code. The same map is used by both digit patterns.
+      return value < 9 || normalized < .035 ? 0 : Math.max(1, Math.round(Math.pow(normalized, .6) * 9)) / 9;
+    });
+    const patterns = [0, 1].map(phase => {
+      const glyphs = document.createElement('canvas');
+      glyphs.width = columns * cell; glyphs.height = rows * cell;
+      const output = glyphs.getContext('2d');
+      if (!output) throw new Error('Conversion indisponible');
+      // Monospace digits remain narrower than their 10 px cells.
+      output.font = '700 11px "Courier New", monospace';
+      output.textAlign = 'center'; output.textBaseline = 'middle';
+      for (let row = 0; row < rows; row++) {
+        for (let column = 0; column < columns; column++) {
+          const level = levels[row * columns + column];
+          if (!level) continue;
+          output.fillStyle = `rgba(${Math.round(20 + level * 100)},${Math.round(100 + level * 145)},${Math.round(215 + level * 40)},${.52 + level * .48})`;
+          const digit = (column * 7 + row * 13 + phase * (row % 7 + 3)) % DIGITS.length;
+          output.fillText(DIGITS[digit], (column + .5) * cell, (row + .5) * cell);
+        }
       }
-    };
-    image.src = photo;
+      return glyphs.toDataURL('image/png');
+    });
+    return { raster: patterns[0], alternate: patterns[1], levels };
   });
 }
 
@@ -149,6 +133,6 @@ export default function DirectorMatrixPortrait({ photo = '', name = '', animated
     {current.levels && <DirectorMatrixDepth levels={current.levels} animated={animated}/>}
     <div className="director-matrix-frame" aria-hidden="true"/>
     <span className="director-matrix-signature" aria-hidden="true"><b>3B</b><small>DIRECTEUR</small></span>
-    {hasPhoto && !current.raster && <span className="director-matrix-state" role="status">{current.error ? 'Photo illisible' : 'Conversion Matrix…'}</span>}
+    {hasPhoto && !current.raster && <span className="director-matrix-state" role="status">{current.error ? photo === OFFICIAL_DIRECTOR_PORTRAIT ? 'Portrait officiel indisponible' : 'Photo illisible' : 'Conversion Matrix…'}</span>}
   </div>;
 }

@@ -3,6 +3,7 @@ import {Camera,ImagePlus,ScanFace,Trash2,Type} from 'lucide-react';
 import {passportInitials} from './identity.js';
 import {appearanceFromSnapshot,appearanceStore,cleanInitials,isDirectorPortraitIdentity} from './appearance-store.js';
 import DirectorMatrixPortrait from './DirectorMatrixPortrait.jsx';
+import {matrixPortraitSource,officialDirectorPortrait} from './official-director-portrait.js';
 import './passport-appearance.css';
 
 const fallbackFor=identity=>passportInitials(identity);
@@ -89,7 +90,7 @@ export function PassportPortrait({identity,animated=true,className=''}) {
 
  return <div className={['passport-portrait','passport-portrait-'+mode,className].filter(Boolean).join(' ')} data-animated={animated} data-portrait-mode={mode}>
   {mode==='photo'?<img className="passport-portrait-photo" src={appearance.photo} alt={identity?.name?`Photo de ${identity.name}`:'Photo du titulaire'}/>
-   :mode==='matrix'?<DirectorMatrixPortrait photo={appearance.photo} name={identity?.name} animated={animated}/>
+   :mode==='matrix'?<DirectorMatrixPortrait photo={matrixPortraitSource(identity,appearance)} name={identity?.name} animated={animated}/>
    :mode==='digital'?<DigitalFace/>
    :mode==='name'?<div className="passport-portrait-first-name" aria-label={`Prénom ${firstName}`}>{firstName}</div>
    :<div className="passport-portrait-initials" aria-label={`Monogramme ${initials}`}>{initials}</div>}
@@ -105,6 +106,7 @@ export default function PassportAppearanceSettings({identity,compact=false}){
 function AppearanceSettings({identity,compact}){
  const[appearance,setAppearance]=usePassportAppearance(identity);
  const director=isDirectorPortraitIdentity(identity);
+ const hasOfficialPortrait=!!officialDirectorPortrait(identity);
  const digitalMode=director?'matrix':'digital';
  const[message,setMessage]=useState('');
  const[busy,setBusy]=useState(false);
@@ -140,7 +142,7 @@ function AppearanceSettings({identity,compact}){
  const removePhoto=()=>{
   uploadVersion.current+=1;setBusy(false);
   const saved=setAppearance(current=>({...current,mode:current.mode==='matrix'?'matrix':'initials',photo:''}));
-  setMessage(saved?'Photo retirée de cet appareil.':STORAGE_ERROR);
+  setMessage(saved?appearance.mode==='matrix'&&hasOfficialPortrait?'Photo locale retirée. Ton portrait Matrix officiel est rétabli.':'Photo retirée de cet appareil.':STORAGE_ERROR);
  };
 
  return <section className={compact?'passport-appearance passport-appearance-compact':'passport-appearance'} aria-labelledby={headingId}>
@@ -165,14 +167,14 @@ function AppearanceSettings({identity,compact}){
    <small>Par défaut : {fallback}. Maximum 4 lettres ou chiffres.</small>
   </label>}
 
-  {appearance.mode==='matrix'&&!appearance.photo&&<p className="passport-appearance-message">Ajoute ta photo pour composer ton vrai visage en caractères Matrix. En attendant, ton avatar numérique exclusif est affiché.</p>}
+  {appearance.mode==='matrix'&&!appearance.photo&&<p className="passport-appearance-message">{hasOfficialPortrait?'Ton portrait Matrix officiel est disponible sur tous tes appareils. Tu peux choisir une autre photo uniquement pour cet appareil.':'Ajoute ta photo pour composer ton vrai visage en caractères Matrix. En attendant, ton avatar numérique exclusif est affiché.'}</p>}
   {(appearance.mode==='photo'||appearance.mode==='matrix')&&<div className="passport-photo-actions">
    <input ref={inputRef} className="passport-photo-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Photo du Passeport" onChange={upload}/>
-   <button type="button" className="surface-button" disabled={busy} onClick={()=>inputRef.current?.click()}><ImagePlus size={17}/>{busy?'Préparation…':appearance.photo?'Changer ma photo':'Ajouter ma photo'}</button>
-   {appearance.photo&&<button type="button" className="quiet-button" onClick={removePhoto}><Trash2 size={16}/>Retirer</button>}
+   <button type="button" className="surface-button" disabled={busy} onClick={()=>inputRef.current?.click()}><ImagePlus size={17}/>{busy?'Préparation…':appearance.photo?'Changer ma photo':appearance.mode==='matrix'&&hasOfficialPortrait?'Choisir une autre photo':'Ajouter ma photo'}</button>
+   {appearance.photo&&<button type="button" className="quiet-button" onClick={removePhoto}><Trash2 size={16}/>{appearance.mode==='matrix'&&hasOfficialPortrait?'Revenir au portrait officiel':'Retirer'}</button>}
   </div>}
 
-  <p className="passport-appearance-privacy">La photo est recadrée et compressée dans ton navigateur. Elle reste sur cet appareil et n’est pas envoyée au serveur 3B. {director?'L’effet Matrix utilise les couleurs et la luminosité de l’image, sans reconnaissance faciale.':'Le visage digital est un avatar graphique : aucune donnée biométrique n’est analysée.'}</p>
+  <p className="passport-appearance-privacy">{hasOfficialPortrait?'Ton portrait Matrix officiel est publié. Les photos que tu ajoutes ici sont recadrées et compressées dans ton navigateur ; elles restent sur cet appareil et ne sont pas envoyées au serveur 3B.':'La photo est recadrée et compressée dans ton navigateur. Elle reste sur cet appareil et n’est pas envoyée au serveur 3B.'} {director?'L’effet Matrix utilise les couleurs et la luminosité de l’image, sans reconnaissance faciale.':'Le visage digital est un avatar graphique : aucune donnée biométrique n’est analysée.'}</p>
   {message&&<p className="passport-appearance-message" role="status">{message}</p>}
  </section>;
 }
