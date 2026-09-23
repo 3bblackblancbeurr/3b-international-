@@ -1,14 +1,17 @@
 import { useEffect, useId, useState } from 'react';
 import './director-matrix-portrait.css';
+import DirectorMatrixDepth from './DirectorMatrixDepth.jsx';
 
 // Share the one-time conversion between the card and settings previews.
 // At most three source photos and their glyph rasters remain in memory.
 const rasterCache = new Map();
 const LIGHT_COLUMNS = Array.from({ length: 8 }, (_, index) => ({
-  '--director-column': index,
-  '--director-delay': `${-(index * 1.73 % 8)}s`,
-  '--director-duration': `${6.4 + index % 4 * .65}s`,
+  '--director-column': `${(index * 8 + (index % 3) + 1) / 64 * 100}%`,
+  '--director-width': `${(index % 2 + 2) / 64 * 100}%`,
+  '--director-delay': `${-(index * 1.37 % 6)}s`,
+  '--director-duration': `${3.7 + index % 4 * .55}s`,
 }));
+const DIGITS = '0123456789';
 
 function rasterizePhoto(photo) {
   return new Promise((resolve, reject) => {
@@ -27,10 +30,7 @@ function rasterizePhoto(photo) {
         const sample = document.createElement('canvas');
         sample.width = columns; sample.height = rows;
         const input = sample.getContext('2d', { willReadFrequently: true });
-        const glyphs = document.createElement('canvas');
-        glyphs.width = columns * cell; glyphs.height = rows * cell;
-        const output = glyphs.getContext('2d');
-        if (!input || !output) throw new Error('Conversion indisponible');
+        if (!input) throw new Error('Conversion indisponible');
         const scale = Math.max(columns / image.naturalWidth, rows / image.naturalHeight);
         const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
         input.drawImage(image, (columns - width) / 2, (rows - height) / 2, width, height);
@@ -43,19 +43,34 @@ function rasterizePhoto(photo) {
         const dark = sorted[Math.floor(sorted.length * .02)];
         const light = sorted[Math.floor(sorted.length * .98)];
         const range = light - dark;
-        output.font = '700 12px "Courier New", monospace';
-        output.textAlign = 'center'; output.textBaseline = 'middle';
-        for (let row = 0; row < rows; row++) {
-          for (let column = 0; column < columns; column++) {
-            const value = luminance[row * columns + column];
-            // Flat images stay valid; do not divide by zero or invent contrast.
-            const level = Math.pow(Math.max(0, Math.min(1, range < 32 ? value / 255 : (value - dark) / range)), .82);
-            if (level < .025) continue;
-            output.fillStyle = `rgba(${Math.round(12 + level * 165)},${Math.round(68 + level * 173)},${Math.round(132 + level * 123)},${.12 + level * .88})`;
-            output.fillText((column * 7 + row * 13) % 3 ? '0' : '1', (column + .5) * cell, (row + .5) * cell);
+        // Both patterns retain exactly the same facial light map. Only the code
+        // changes; the source image is never painted into either visible layer.
+        const levels = luminance.map(value => {
+          const normalized = Math.max(0, Math.min(1, range < 32 ? value / 255 : (value - dark) / range));
+          // Lift the face's midtones without turning nearly black surroundings
+          // into code. The same map is used by both digit patterns.
+          return value < 9 || normalized < .035 ? 0 : Math.max(1, Math.round(Math.pow(normalized, .6) * 9)) / 9;
+        });
+        const patterns = [0, 1].map(phase => {
+          const glyphs = document.createElement('canvas');
+          glyphs.width = columns * cell; glyphs.height = rows * cell;
+          const output = glyphs.getContext('2d');
+          if (!output) throw new Error('Conversion indisponible');
+          // Monospace digits remain narrower than their 10 px cells.
+          output.font = '700 11px "Courier New", monospace';
+          output.textAlign = 'center'; output.textBaseline = 'middle';
+          for (let row = 0; row < rows; row++) {
+            for (let column = 0; column < columns; column++) {
+              const level = levels[row * columns + column];
+              if (!level) continue;
+              output.fillStyle = `rgba(${Math.round(20 + level * 100)},${Math.round(100 + level * 145)},${Math.round(215 + level * 40)},${.52 + level * .48})`;
+              const digit = (column * 7 + row * 13 + phase * (row % 7 + 3)) % DIGITS.length;
+              output.fillText(DIGITS[digit], (column + .5) * cell, (row + .5) * cell);
+            }
           }
-        }
-        resolve(glyphs.toDataURL('image/png'));
+          return glyphs.toDataURL('image/png');
+        });
+        resolve({ raster: patterns[0], alternate: patterns[1], levels });
       } catch (error) {
         reject(error);
       } finally {
@@ -112,25 +127,26 @@ function DigitalDirectorFace({ id }) {
 
 export default function DirectorMatrixPortrait({ photo = '', name = '', animated = true }) {
   const id = useId().replaceAll(':', '');
-  const [result, setResult] = useState({ photo: null, raster: '', error: false });
+  const [result, setResult] = useState({ photo: null, raster: '', alternate: '', error: false });
   const hasPhoto = typeof photo === 'string' && photo.length > 0;
   const current = result.photo === photo ? result : { raster: '', error: false };
   useEffect(() => {
     if (!hasPhoto) return;
     let live = true;
     cachedRaster(photo).then(
-      raster => { if (live) setResult({ photo, raster, error: false }); },
-      () => { if (live) setResult({ photo, raster: '', error: true }); },
+      rasters => { if (live) setResult({ photo, ...rasters, error: false }); },
+      () => { if (live) setResult({ photo, raster: '', alternate: '', error: true }); },
     );
     return () => { live = false; };
   }, [photo, hasPhoto]);
-  const mask = current.raster ? `url("${current.raster}")` : undefined;
-
   return <div className="director-matrix-portrait" data-animated={animated} data-has-photo={!!current.raster}>
     {current.raster
-      ? <><img className="director-matrix-glyph-face" src={current.raster} alt={name ? `Visage de ${name} composé de caractères Matrix bleus` : 'Visage composé de caractères Matrix bleus'} draggable="false"/>
-        <div className="director-matrix-light-mask" style={{ maskImage: mask, WebkitMaskImage: mask }} aria-hidden="true">{LIGHT_COLUMNS.map((style, index) => <i key={index} className="director-matrix-light" style={style}/>)}</div></>
+      ? [current.raster, current.alternate].map((raster, phase) => <div key={phase} className={`director-matrix-code-phase director-matrix-code-phase-${phase}`} aria-hidden={phase === 1 ? true : undefined}>
+          <img className="director-matrix-glyph-face" src={raster} alt={phase === 0 ? name ? `Visage de ${name} composé de caractères Matrix bleus` : 'Visage composé de caractères Matrix bleus' : ''} draggable="false"/>
+          <div className="director-matrix-light-mask" style={{ maskImage: `url("${raster}")`, WebkitMaskImage: `url("${raster}")` }} aria-hidden="true">{LIGHT_COLUMNS.map((style, index) => <i key={index} className="director-matrix-light" style={style}/>)}</div>
+        </div>)
       : <DigitalDirectorFace id={id}/>}
+    {current.levels && <DirectorMatrixDepth levels={current.levels} animated={animated}/>}
     <div className="director-matrix-frame" aria-hidden="true"/>
     <span className="director-matrix-signature" aria-hidden="true"><b>3B</b><small>DIRECTEUR</small></span>
     {hasPhoto && !current.raster && <span className="director-matrix-state" role="status">{current.error ? 'Photo illisible' : 'Conversion Matrix…'}</span>}

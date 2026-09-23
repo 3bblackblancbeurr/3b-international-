@@ -1,20 +1,29 @@
 .director-matrix-portrait{
   position:absolute;inset:0;isolation:isolate;overflow:hidden;container-type:inline-size;
   pointer-events:none;user-select:none;
-  background:radial-gradient(ellipse at 50% 38%,#0b3556 0,transparent 62%),#020b15;
+  background:#01050b;
 }
+.director-matrix-code-phase{
+  position:absolute;z-index:1;inset:0;
+  animation:directorMatrixCode 6.8s steps(1,end) infinite;
+}
+.director-matrix-code-phase-1{opacity:0;animation-name:directorMatrixCodeAlternate}
 .director-matrix-glyph-face{
   position:absolute;z-index:1;inset:0;width:100%;height:100%;object-fit:fill;
 }
 .director-matrix-face{position:absolute;z-index:1;inset:3% 2% 0;width:96%;height:97%}
+.director-matrix-depth{position:absolute;z-index:2;inset:0;width:100%;height:100%;opacity:0}
+.director-matrix-depth[data-ready="true"]{opacity:1}
+.director-matrix-portrait:has(.director-matrix-depth[data-ready="true"]) .director-matrix-code-phase{visibility:hidden;animation-play-state:paused}
+.director-matrix-portrait:has(.director-matrix-depth[data-ready="true"]) .director-matrix-light{animation-play-state:paused}
 .director-matrix-light-mask{
   position:absolute;z-index:2;inset:0;overflow:hidden;
   mask-size:100% 100%;mask-repeat:no-repeat;
   -webkit-mask-size:100% 100%;-webkit-mask-repeat:no-repeat;
 }
 .director-matrix-light{
-  position:absolute;left:calc(var(--director-column) * 12.5%);width:12.5%;top:-30%;height:30%;opacity:.6;
-  background:linear-gradient(transparent,#71dcff99 72%,#c5faffcc,transparent);
+  position:absolute;left:var(--director-column);width:var(--director-width);top:-44%;height:44%;opacity:.95;
+  background:linear-gradient(transparent,#0687ff77 40%,#33bdffcc 76%,#d5fbff 91%,#74eaff 95%,transparent);
   animation:directorMatrixLight var(--director-duration,7.8s) linear var(--director-delay,0s) infinite;
 }
 .director-matrix-frame{
@@ -33,12 +42,16 @@
   color:#d7f4ff;background:#03111de8;border:1px solid #68b5d144;border-radius:4px;
   font:600 clamp(6px,5.5cqw,10px)/1.5 system-ui;text-align:center;
 }
-@keyframes directorMatrixLight{from{transform:translateY(0)}to{transform:translateY(440%)}}
+@keyframes directorMatrixLight{from{transform:translateY(0)}to{transform:translateY(330%)}}
+/* One complete pattern at a time avoids both a dim fade and doubled digits. */
+@keyframes directorMatrixCode{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes directorMatrixCodeAlternate{0%,100%{opacity:0}50%{opacity:1}}
 .director-matrix-portrait[data-animated="false"] *,
 .passport-portrait[data-animated="false"] .director-matrix-portrait *{animation-play-state:paused!important}
 [data-motion="reduced"] .director-matrix-portrait *{animation:none!important}
-[data-motion="reduced"] .director-matrix-light{display:none}
+[data-motion="reduced"] .director-matrix-light,
+[data-motion="reduced"] .director-matrix-code-phase-1{display:none}
 @media(prefers-reduced-motion:reduce){
   .director-matrix-portrait *{animation:none!important}
-  .director-matrix-light{display:none}
+  .director-matrix-light,.director-matrix-code-phase-1{display:none}
 }
