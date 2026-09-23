@@ -1,0 +1,42 @@
+.first-launch-3b{
+  position:fixed;inset:0;z-index:100000;display:grid;place-items:center;min-height:100svh;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(22px,env(safe-area-inset-bottom));
+  overflow:hidden;background:
+    radial-gradient(circle at 20% 15%,rgba(0,213,255,.2),transparent 30%),
+    radial-gradient(circle at 80% 85%,rgba(230,189,100,.18),transparent 30%),
+    #030405;color:#fff8e8;text-align:center
+}
+.first-launch-3b-matrix{
+  position:absolute;inset:-15%;display:grid;place-items:center;color:rgba(0,213,255,.09);
+  font:900 clamp(18px,5vw,54px)/2 "Courier New",monospace;letter-spacing:.26em;word-spacing:1.5em;
+  transform:rotate(-7deg);animation:firstLaunchMatrix3B 7s linear infinite;pointer-events:none
+}
+.first-launch-3b-card{
+  position:relative;width:min(560px,100%);padding:40px 24px;border:1px solid rgba(230,189,100,.58);
+  border-radius:34px;background:linear-gradient(155deg,rgba(12,17,24,.97),rgba(2,5,8,.96));
+  box-shadow:0 32px 110px rgba(0,0,0,.72),0 0 50px rgba(0,213,255,.14),inset 0 0 42px rgba(230,189,100,.05);
+  backdrop-filter:blur(18px)
+}
+.first-launch-3b-card img{
+  display:block;margin:0 auto 22px;border-radius:24px;
+  box-shadow:0 0 34px rgba(0,213,255,.2),0 0 28px rgba(230,189,100,.18)
+}
+.first-launch-3b-eyebrow{
+  margin:0 0 12px;color:#e6bd64;font-size:12px;font-weight:950;letter-spacing:.2em;text-transform:uppercase
+}
+.first-launch-3b-card h1{
+  margin:0;color:#fff;font-size:clamp(48px,13vw,88px);line-height:.9;letter-spacing:-.055em;
+  text-shadow:0 0 28px rgba(230,189,100,.28),0 0 34px rgba(0,213,255,.18)
+}
+.first-launch-3b-card>p:not(.first-launch-3b-eyebrow){
+  margin:20px 0 0;color:#d6dde5;font-size:clamp(17px,4vw,22px);line-height:1.55;font-weight:750
+}
+.first-launch-3b-card button{
+  width:100%;min-height:58px;margin-top:30px;border:1px solid rgba(255,240,165,.76);border-radius:999px;
+  padding:14px 22px;background:linear-gradient(135deg,#fff0a5,#e6bd64 45%,#ad741f);
+  color:#080604;font:950 15px/1.2 inherit;letter-spacing:.06em;cursor:pointer;
+  box-shadow:0 16px 44px rgba(230,189,100,.28)
+}
+.first-launch-3b-card button:focus-visible{outline:3px solid #6ce8ff;outline-offset:4px}
+@keyframes firstLaunchMatrix3B{from{transform:rotate(-7deg) translateY(-16px)}to{transform:rotate(-7deg) translateY(34px)}}
+@media(prefers-reduced-motion:reduce){.first-launch-3b-matrix{animation:none}}
