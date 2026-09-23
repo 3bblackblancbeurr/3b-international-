@@ -59,7 +59,9 @@ export default function OwnerInboxPage({goTo,onChange}){
   ['Signalements',Number(stats.openReports||0),AlertTriangle],
   ['Défis à valider',Number(stats.pendingSport||0),CheckCircle2],
   ['Demandes',Number(stats.openRequests||0),Inbox],
-  ['Envois échoués',Number(stats.failedDelivery||0),Clock3]
+  ['Envois échoués',Number(stats.failedDelivery||0),Clock3],
+  ['Risques économie',Number(stats.riskReviews||0),ShieldAlert],
+  ['Récompenses bloquées',Number(stats.rewardFailures||0),AlertTriangle]
  ],[stats]);
 
  return <section className="owner-page editorial-page">
