@@ -500,14 +500,13 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const rightGesture = useRef(null);
   const rightLastTap = useRef(0);
   const moveThrottle = useRef(0);
-  const keeperMoveThrottle = useRef(0);
   const moveInFlight = useRef(false);
   const pendingMove = useRef(null);
-  const keeperMoveInFlight = useRef(false);
-  const pendingKeeperMove = useRef(null);
-  const keeperFinalAction = useRef(null);
+  const keeperInFlight = useRef(false);
+  const pendingKeeper = useRef(null);
+  const keeperMoveThrottle = useRef(0);
   const revisionRef = useRef(room.revision);
-  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
+  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ position:0, direction:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
   const rightPadRef = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
@@ -531,48 +530,22 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     flushMove();
   }
 
-  function flushKeeperFinal() {
-    if (keeperMoveInFlight.current || pendingKeeperMove.current || !keeperFinalAction.current) return;
-    const input = keeperFinalAction.current;
-    keeperFinalAction.current = null;
-    keeperMoveInFlight.current = true;
+  function flushKeeper() {
+    if (keeperInFlight.current || !pendingKeeper.current) return;
+    const input = pendingKeeper.current;
+    pendingKeeper.current = null;
+    keeperInFlight.current = true;
     request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
-      .then((data) => {
-        if (data?.room?.revision != null) revisionRef.current = data.room.revision;
-      })
       .catch(() => {})
       .finally(() => {
-        keeperMoveInFlight.current = false;
-        if (pendingKeeperMove.current) flushKeeperMove();
-        else if (keeperFinalAction.current) flushKeeperFinal();
+        keeperInFlight.current = false;
+        if (pendingKeeper.current) flushKeeper();
       });
   }
 
-  function flushKeeperMove() {
-    if (keeperMoveInFlight.current || !pendingKeeperMove.current) return;
-    const input = pendingKeeperMove.current;
-    pendingKeeperMove.current = null;
-    keeperMoveInFlight.current = true;
-    request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
-      .then((data) => {
-        if (data?.room?.revision != null) revisionRef.current = data.room.revision;
-      })
-      .catch(() => {})
-      .finally(() => {
-        keeperMoveInFlight.current = false;
-        if (pendingKeeperMove.current) flushKeeperMove();
-        else if (keeperFinalAction.current) flushKeeperFinal();
-      });
-  }
-
-  function queueKeeperMove(input) {
-    pendingKeeperMove.current = input;
-    flushKeeperMove();
-  }
-
-  function queueKeeperFinal(input) {
-    keeperFinalAction.current = input;
-    if (!keeperMoveInFlight.current && !pendingKeeperMove.current) flushKeeperFinal();
+  function queueKeeper(input) {
+    pendingKeeper.current = input;
+    flushKeeper();
   }
 
   function resetLeftPad() {
@@ -618,7 +591,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     }
 
     const now = performance.now();
-    if (now - moveThrottle.current < 50) return;
+    if (now - moveThrottle.current < 45) return;
     moveThrottle.current = now;
     queueMove({ type:'move', x, y, intensity });
   }
@@ -637,15 +610,14 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       x:event.clientX,
       y:event.clientY,
       t:performance.now(),
+      keeperBase:isKeeper ? Number(state.positions?.keeper?.y || 0) : 0,
       path:[{ x:event.clientX, y:event.clientY }],
     };
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
     event.currentTarget.style.setProperty('--gesture-opacity', '.92');
     if (isKeeper) {
-      keeperFinalAction.current = null;
-      pendingKeeperMove.current = null;
-      controlRef.current.keeper = { direction:0, intensity:0, active:true };
+      controlRef.current.keeper = { position:rightGesture.current.keeperBase, direction:0, intensity:0, active:true };
     }
   }
 
@@ -665,13 +637,20 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
     }
     if (isKeeper) {
-      const direction = Math.max(-1, Math.min(1, dx / Math.max(28, Math.abs(dx))));
-      const intensity = Math.min(1, distance / 72);
-      controlRef.current.keeper = { direction, intensity, active:true };
+      const position = Math.max(-1, Math.min(1, Number(gesture.keeperBase || 0) + dx / 74));
+      const direction = Math.sign(position) || 0;
+      const intensity = Math.min(1, Math.abs(position));
+      controlRef.current.keeper = { position, direction, intensity, active:true };
+
       const now = performance.now();
-      if (now - keeperMoveThrottle.current >= 50) {
+      if (now - keeperMoveThrottle.current >= 45) {
         keeperMoveThrottle.current = now;
-        queueKeeperMove({ type:'hold', direction, intensity });
+        queueKeeper({
+          type:'keeper-track',
+          position,
+          direction,
+          intensity,
+        });
       }
     }
   }
@@ -682,7 +661,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     rightGesture.current = null;
     resetRightPad();
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      const lastKeeperPosition = Number(controlRef.current.keeper?.position || gesture.keeperBase || 0);
+      controlRef.current.keeper = { position:lastKeeperPosition, direction:0, intensity:0, active:false };
     }
 
     const endedAt = performance.now();
@@ -705,12 +685,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       ? interpretAttackGesture({ dx, dy, durationMs, heldMs:durationMs, curve, taps })
       : interpretKeeperGesture({ dx, dy, durationMs });
 
-    if (isKeeper) {
-      pendingKeeperMove.current = null;
-      queueKeeperFinal(parsed);
-    } else {
-      request('input', { room:room.id, revision:revisionRef.current, input:parsed }, { silent:true }).catch(() => {});
-    }
+    request('input', { room:room.id, revision:revisionRef.current, input:parsed }, { silent:true }).catch(() => {});
   }
 
   function activatePower(powerId) {
