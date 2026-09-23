@@ -110,7 +110,7 @@ test('V4 normalizes player and ball dimensions to real football scale', () => {
 
 test('V4 keeper camera is physically behind the goal without an opaque end stand', () => {
   assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /2\.68/);
+  assert.match(arena, /2\.42/);
   assert.match(arena, /fov = 61/);
   assert.doesNotMatch(arena, /const endStand = new THREE\.Mesh/);
   assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.065/);
