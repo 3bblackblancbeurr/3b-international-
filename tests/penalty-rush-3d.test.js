@@ -69,7 +69,7 @@ test('V3 adds local prediction for attacker and goalkeeper while server remains 
   assert.match(arena, /predictLocalAttacker/);
   assert.match(arena, /controlRef\?\.current\?\.keeper/);
   assert.match(arena, /predictLocalKeeper/);
-  assert.match(match, /moveThrottle\.current < 60/);
+  assert.match(match, /moveThrottle\.current < 50/);
   assert.match(match, /keeper:\{ direction:0, intensity:0, active:false \}/);
 });
 
