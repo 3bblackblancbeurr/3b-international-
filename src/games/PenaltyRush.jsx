@@ -502,6 +502,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const moveThrottle = useRef(0);
   const moveInFlight = useRef(false);
   const pendingMove = useRef(null);
+  const keeperInFlight = useRef(false);
+  const pendingKeeper = useRef(null);
+  const keeperMoveThrottle = useRef(0);
   const revisionRef = useRef(room.revision);
   const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
@@ -525,6 +528,24 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   function queueMove(input) {
     pendingMove.current = input;
     flushMove();
+  }
+
+  function flushKeeper() {
+    if (keeperInFlight.current || !pendingKeeper.current) return;
+    const input = pendingKeeper.current;
+    pendingKeeper.current = null;
+    keeperInFlight.current = true;
+    request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
+      .catch(() => {})
+      .finally(() => {
+        keeperInFlight.current = false;
+        if (pendingKeeper.current) flushKeeper();
+      });
+  }
+
+  function queueKeeper(input) {
+    pendingKeeper.current = input;
+    flushKeeper();
   }
 
   function resetLeftPad() {
@@ -615,11 +636,19 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
     }
     if (isKeeper) {
-      controlRef.current.keeper = {
-        direction:Math.max(-1, Math.min(1, dx / Math.max(36, Math.abs(dx)))),
-        intensity:Math.min(1, distance / 86),
-        active:true,
-      };
+      const direction = Math.max(-1, Math.min(1, dx / Math.max(30, Math.abs(dx))));
+      const intensity = Math.min(1, distance / 72);
+      controlRef.current.keeper = { direction, intensity, active:true };
+
+      const now = performance.now();
+      if (now - keeperMoveThrottle.current >= 70) {
+        keeperMoveThrottle.current = now;
+        queueKeeper({
+          type:'hold',
+          direction,
+          intensity,
+        });
+      }
     }
   }
 
@@ -630,6 +659,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     resetRightPad();
     if (isKeeper) {
       controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      queueKeeper({ type:'hold', direction:0, intensity:0 });
     }
 
     const endedAt = performance.now();
