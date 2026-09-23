@@ -6,6 +6,7 @@ import {LoyaltyProvider} from './loyalty/LoyaltyContext.jsx';
 import "./index.css";
 import "./styles/platform-premium.css";
 import { setupNativeApp } from './native/runtime.js';
+import { captureAppOpen } from './lib/analytics.js';
 
 document.documentElement.classList.add('js-app-ready');
 const nativeSetup = setupNativeApp().catch(() => () => {});
@@ -16,3 +17,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <AppErrorBoundary><LoyaltyProvider><App /></LoyaltyProvider></AppErrorBoundary>
   </React.StrictMode>
 );
+
+captureAppOpen();
