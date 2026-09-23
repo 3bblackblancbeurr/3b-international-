@@ -619,6 +619,16 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
     armR.shoulder.rotation.z = .68;
   }
 
+  if (action === 'keeper-preview') {
+    const preview = clamp(eventT, 0, 1);
+    rig.rotation.z = -direction * preview * .18;
+    rig.position.x = direction * preview * .16;
+    armL.shoulder.rotation.z = -1.12 - preview * .22;
+    armR.shoulder.rotation.z = 1.12 + preview * .22;
+    legL.hip.rotation.z = -.12 - preview * .05;
+    legR.hip.rotation.z = .12 + preview * .05;
+  }
+
   if (action === 'dive') {
     const dive = Math.sin(clamp(eventT, 0, 1) * Math.PI / 2);
     rig.rotation.z = -direction * dive * 1.12;
@@ -952,8 +962,15 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       runtime.serverKeeper.copy(keeperPosition(state));
 
       const renderAttack = predictLocalAttacker(state, dt, selfAttacker);
+      const keeperPreview = selfKeeper ? controlRef?.current?.keeper : null;
+      const renderKeeper = runtime.serverKeeper.clone();
+      if (keeperPreview?.active) {
+        renderKeeper.x += clamp(keeperPreview.direction, -1, 1) * (.28 + clamp(keeperPreview.intensity, 0, 1) * .42);
+        renderKeeper.x = clamp(renderKeeper.x, -GOAL_W / 2, GOAL_W / 2);
+      }
+
       runtime.playerTargets[attacker].copy(renderAttack);
-      runtime.playerTargets[keeper].lerp(runtime.serverKeeper, expFollow(11, dt));
+      runtime.playerTargets[keeper].lerp(renderKeeper, expFollow(selfKeeper ? 16 : 11, dt));
 
       players.forEach((model, index) => {
         const target = runtime.playerTargets[index];
@@ -977,6 +994,12 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       let keeperAction = null;
       let eventT = 0;
       let eventDirection = 0;
+      const keeperPreview = selfKeeper ? controlRef?.current?.keeper : null;
+      if (keeperPreview?.active && clamp(keeperPreview.intensity, 0, 1) > .35) {
+        keeperAction = 'keeper-preview';
+        eventDirection = clamp(keeperPreview.direction, -1, 1) || 1;
+        eventT = clamp(keeperPreview.intensity, 0, 1);
+      }
 
       const normalBall = renderAttack.clone();
       normalBall.y = .23;
