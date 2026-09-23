@@ -1,0 +1,31 @@
+name: Beyond Real Foundation
+
+on:
+  push:
+    branches: [beyond-real-foundation]
+    paths:
+      - 'beyond-real/**'
+      - 'tests/beyond-real-foundation.test.js'
+      - 'scripts/verify-beyond-real.mjs'
+  pull_request:
+    paths:
+      - 'beyond-real/**'
+      - 'tests/beyond-real-foundation.test.js'
+      - 'scripts/verify-beyond-real.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --test tests/beyond-real-foundation.test.js
+      - run: node scripts/verify-beyond-real.mjs
