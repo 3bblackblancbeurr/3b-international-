@@ -32,7 +32,7 @@ test('mobile movement is locally predicted and server requests are coalesced', (
   assert.match(match, /controlRef = useRef/);
   assert.match(match, /moveInFlight = useRef/);
   assert.match(match, /pendingMove = useRef/);
-  assert.match(match, /now - moveThrottle\.current < 60/);
+  assert.match(match, /now - moveThrottle\.current < 45/);
   assert.match(match, /queueMove\(\{ type:'move'/);
 });
 
@@ -125,4 +125,32 @@ test('local attacker prediction prioritizes immediate input over server correcti
   assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 2\.1\)/);
   assert.match(arena, /input\?\.active \? \.9 : 8\.5/);
   assert.match(arena, /index === snapshot\.selfIndex \? 28 : 11/);
+});
+
+
+test('V3 uses official football proportions for goal and ball', () => {
+  assert.match(arena, /const GOAL_W = 7\.32/);
+  assert.match(arena, /const GOAL_H = 2\.44/);
+  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
+  assert.match(arena, /const targetHeight = 1\.82/);
+});
+
+test('behind-goal keeper camera has a permanent unobstructed central corridor', () => {
+  assert.doesNotMatch(arena, /const endStand =/);
+  assert.match(arena, /rearLeft\.position\.set\(-7\.7/);
+  assert.match(arena, /rearRight\.position\.set\(7\.7/);
+  assert.match(arena, /desired\.set\(\s*0,\s*2\.82,\s*GOAL_Z - goalDistance/);
+});
+
+test('keeper tracking is absolute, immediate and server-authoritative', () => {
+  assert.match(match, /type:'keeper-track'/);
+  assert.match(match, /const position = Math\.max\(-1, Math\.min\(1, dx \/ 74\)\)/);
+  assert.match(match, /keeperMoveThrottle\.current >= 45/);
+  assert.match(server, /if \(type === 'keeper-track'\)/);
+  assert.match(server, /state\.positions\.keeper\.y = clamp\(position, -\.95, \.95\)/);
+});
+
+test('server movement tuning supports competitive responsiveness', () => {
+  assert.match(server, /const speed = \(\.17 \+ intensity \* \.16\)/);
+  assert.match(server, /ix \* \(\.26 \+ intensity\*\.18\)/);
 });
