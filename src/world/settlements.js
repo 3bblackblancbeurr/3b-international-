@@ -2,9 +2,10 @@ import {DISTRICT_JOBS} from './district-jobs.js';
 import {HERITAGE,LANDMARK_APPROACH} from './heritage.js';
 import {RESOURCE_SITES,frontierState,patrolOpponent} from './frontier.js';
 import {PARIS_LANES,PARIS_BOULEVARD} from './paris-layout.js';
+import {COUNTRIES} from './catalog.js';
 // Authored districts inspired by real places, not geographic replicas.
 export const REGIONS={
- hub:{city:'Le Nexus',craft:'Le Cercle des artisans',rural:'Les jardins des liens',crop:'garden',paving:'#b8b6a0',earth:'#8c9270'},
+ hub:{city:'Nexus · Cité Origine',craft:'Le Cercle des artisans',rural:'Les jardins des liens',crop:'garden',paving:'#b8b6a0',earth:'#8c9270'},
  france:{city:'Les passages de Paris',craft:'Le quartier des verrières',rural:'Les vergers de Loire',crop:'orchard',paving:'#c8bba5',earth:'#a49b70',source:'https://parisjetaime.com/article/paris-insolite-les-passages-couverts-a1801'},
  italie:{city:'Les cours de Florence',craft:'La place des ateliers',rural:'Les vignes de Toscane',crop:'vineyard',paving:'#c0a183',earth:'#ae946b',source:'https://www.feelflorence.it/'},
  estonie:{city:'Les ruelles de Tallinn',craft:'La cour des tisserands',rural:'La lisière de Lahemaa',crop:'forest',paving:'#9ea9a1',earth:'#6e8373',source:'https://visitestonia.com/en/where-to-go/lahemaa-national-park-estonia'},
@@ -27,7 +28,19 @@ function roundLane(points){
  result.push(points.at(-1));return result;
 }
 export function settlementPlan(region){
- const c=REGIONS[region]||REGIONS.hub;if(region==='hub')return{roads:[{kind:'street',width:5.5,points:roundLane([[0,-3],[0,-28],[-6,-43],[0,-56]])}],plots:[],squares:[{x:0,z:-3,r:14},{x:-18,z:17,r:8},{x:0,z:-56,r:12}],fields:[]};
+ const c=REGIONS[region]||REGIONS.hub;if(region==='hub'){
+  const spokes=COUNTRIES.map((country,index)=>{
+   const [x,z]=country.portal,len=Math.hypot(x,z)||1,nx=-z/len,nz=x/len,sway=(index%2?1:-1)*2.6;
+   return {kind:'street',width:5.6,points:roundLane([[0,-3],[x*.34+nx*sway,z*.34+nz*sway],[x*.66-nx*sway*.25,z*.66-nz*sway*.25],[x*.90,z*.90]])};
+  });
+  const ringPoints=COUNTRIES.map(country=>[country.portal[0]*.58,country.portal[1]*.58]);ringPoints.push(ringPoints[0]);
+  return{
+   roads:[...spokes,{kind:'street',width:4.2,points:roundLane(ringPoints)}],
+   plots:[],
+   squares:[{x:0,z:-3,r:17},{x:-18,z:17,r:8},{x:0,z:-56,r:12},...COUNTRIES.map(country=>({x:country.portal[0]*.9,z:country.portal[1]*.9,r:7.5}))],
+   fields:[]
+  };
+ }
  // Streets grow around courtyards and an old trade road, not a grid.
  const roads=[],plots=[],index=Object.keys(REGIONS).indexOf(region);
  const warp=([x,z])=>[x+Math.sin(z*.058+index)*({france:1,italie:2,estonie:3,turquie:2.8,algerie:3.8,tunisie:2.5,maroc:3.5,espagne:1.8}[region]),z+Math.sin(x*.045+index*.7)*2.2];
