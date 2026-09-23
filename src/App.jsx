@@ -28,6 +28,7 @@ import "./styles/games.css";
 import "./styles/refinement.css";
 import "./styles/compact.css";
 import "./styles/dimension.css";
+import "./styles/home-premium.css";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
@@ -54,6 +55,7 @@ const BASE_MENU_ITEMS = [
     id: "manga",
     label: "Manga 3B",
     icon: "📖",
+    status: "soon",
     description: "Le manga de l’univers 3B.",
   },
   {
@@ -72,18 +74,21 @@ const BASE_MENU_ITEMS = [
     id: "religion",
     label: "Religion",
     icon: "✧",
+    status: "soon",
     description: "Croyances, cultures et traditions.",
   },
   {
     id: "community",
     label: "Communauté",
     icon: "👥",
+    status: "soon",
     description: "Réseau, membres, créateurs et échanges.",
   },
   {
     id: "secret",
     label: "Secret 3B",
     icon: "🔐",
+    status: "soon",
     description: "Le prochain chapitre se prépare.",
   },
   {
@@ -94,9 +99,10 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "ia",
-    label: "Espace IA",
+    label: "Espace textile & IA",
     icon: "⚙️",
-    description: "Atelier textile et maroquinerie, GPT, Claude et Gemini.",
+    status: "soon",
+    description: "Création textile, maroquinerie et outils IA 3B.",
   },
   {
     id: "shop",
@@ -292,7 +298,7 @@ export default function App() {
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
-        <HomePage goTo={goTo} menuItems={menuItems} member={member} installation={installation} />
+        <HomePage goTo={goTo} menuItems={menuItems} member={member} />
       )}
 
       {page === "passport" && (
@@ -310,10 +316,10 @@ export default function App() {
       {page === "game" && (gameSlug === "penalty-rush"
         ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />
         : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
-      {page === "religion" && <ReligionPage />}
+      {page === "religion" && <ComingSoon goTo={goTo} eyebrow="RELIGION · 3B" title="Religion" description="Cet espace consacré aux croyances, cultures et traditions est en cours de finalisation avant son ouverture dans l’application." />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
-      {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
+      {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}
       {page === "secret" && <ComingSoon secret goTo={goTo} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
@@ -329,7 +335,7 @@ export default function App() {
 
       {page === "sport" && <SportPage goTo={goTo} />}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
-      {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage key={loyalty.user?.id || "guest"} page={page} goTo={goTo} />}
+      {["ia", "ia-textile", "ia-trio"].includes(page) && <ComingSoon goTo={goTo} eyebrow="CRÉATION · 3B" title="Espace textile & IA" description="L’atelier textile, la maroquinerie et les outils IA 3B sont en cours de finition pour une expérience mobile plus lisible et plus fiable." />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}
       </Suspense>
       </main>
