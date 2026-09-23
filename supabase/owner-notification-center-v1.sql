@@ -18,6 +18,15 @@ create table if not exists public.member_notifications(
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.member_notification_preferences(
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  community_enabled boolean not null default true,
+  sport_enabled boolean not null default true,
+  marketplace_enabled boolean not null default true,
+  rewards_enabled boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
 -- Account deletion hardening discovered during the notification/privacy audit.
 -- Community content belongs to the deleted community profile and must not block auth deletion.
 alter table public.community_posts
@@ -186,21 +195,23 @@ create table if not exists public.community_moderation_state(
 );
 
 alter table public.member_notifications enable row level security;
+alter table public.member_notification_preferences enable row level security;
 alter table public.owner_inbox_events enable row level security;
 alter table public.owner_action_log enable row level security;
 alter table public.threeb_requests enable row level security;
 alter table public.community_moderation_events enable row level security;
 alter table public.community_moderation_state enable row level security;
 
-revoke all on public.member_notifications,public.owner_inbox_events,public.owner_action_log,
+revoke all on public.member_notifications,public.member_notification_preferences,public.owner_inbox_events,public.owner_action_log,
   public.threeb_requests,public.community_moderation_events,public.community_moderation_state
   from public,anon,authenticated;
 
 grant select on public.member_notifications to authenticated;
+grant select on public.member_notification_preferences to authenticated;
 grant update(read_at) on public.member_notifications to authenticated;
 grant select on public.threeb_requests to authenticated;
 
-grant all on public.member_notifications,public.owner_inbox_events,public.owner_action_log,
+grant all on public.member_notifications,public.member_notification_preferences,public.owner_inbox_events,public.owner_action_log,
   public.threeb_requests,public.community_moderation_events,public.community_moderation_state
   to service_role;
 
@@ -208,6 +219,11 @@ grant usage,select on sequence public.member_notifications_id_seq to service_rol
 grant usage,select on sequence public.owner_inbox_events_id_seq to service_role;
 grant usage,select on sequence public.owner_action_log_id_seq to service_role;
 grant usage,select on sequence public.community_moderation_events_id_seq to service_role;
+
+drop policy if exists member_notification_preferences_read_own on public.member_notification_preferences;
+create policy member_notification_preferences_read_own on public.member_notification_preferences
+  for select to authenticated
+  using((select auth.uid())=user_id and (select member_private.session_active()));
 
 drop policy if exists member_notifications_read_own on public.member_notifications;
 create policy member_notifications_read_own on public.member_notifications
@@ -229,14 +245,26 @@ create or replace function member_private.enqueue_member_notification(
   p_user uuid,p_event_key text,p_kind text,p_severity text,p_title text,p_body text,p_route text,p_metadata jsonb
 ) returns void
 language plpgsql security definer set search_path=''
-as $$
+as $member_notify$
+declare
+  v_pref public.member_notification_preferences%rowtype;
 begin
   if p_user is null then return; end if;
+
+  select * into v_pref
+  from public.member_notification_preferences
+  where user_id=p_user;
+
+  if p_kind like 'community.%' and coalesce(v_pref.community_enabled,true)=false then return; end if;
+  if p_kind like 'sport.%' and coalesce(v_pref.sport_enabled,true)=false then return; end if;
+  if p_kind like 'marketplace.%' and coalesce(v_pref.marketplace_enabled,true)=false then return; end if;
+  if p_kind like 'reward.%' and coalesce(v_pref.rewards_enabled,true)=false then return; end if;
+
   insert into public.member_notifications(user_id,event_key,kind,severity,title,body,route,metadata)
   values(p_user,nullif(p_event_key,''),p_kind,p_severity,left(p_title,160),left(coalesce(p_body,''),1500),p_route,coalesce(p_metadata,'{}'::jsonb))
   on conflict(event_key) do nothing;
 end
-$$;
+$member_notify$;
 
 create or replace function member_private.enqueue_owner_event(
   p_event_key text,p_category text,p_event_type text,p_severity text,p_title text,p_summary text,
