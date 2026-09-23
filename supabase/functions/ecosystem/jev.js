@@ -40,7 +40,7 @@ export function interpretAssistantPlan(r){
  const a=obj(r?.answers)?r.answers:{},d=a['assistant.domain'],p=a['assistant.depth'];
  const domain=obj(d)&&['general','creative','technical','threeb'].includes(d.choice)?d.choice:null;
  const depth=obj(p)&&['concise','standard','deep'].includes(p.choice)?p.choice:null;
- return domain||depth?{domain,depth}:null;
+ return domain||depth?{domain,depth,confidence:{domain:prob(d?.confidence)?d.confidence:null,depth:prob(p?.confidence)?p.confidence:null}}:null;
 }
 export async function systemOne({apiKey,model=MODEL,state,questions,fetcher=fetch,timeout=6000}){
  if(!apiKey?.trim()||!obj(questions))throw Error('Jev non configuré.');
