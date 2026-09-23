@@ -4,6 +4,9 @@ const DEFAULT_POSTHOG_HOST = "https://eu.i.posthog.com";
 const projectToken = String(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN || DEFAULT_POSTHOG_PROJECT_TOKEN).trim();
 const ingestionHost = String(import.meta.env.VITE_POSTHOG_HOST || DEFAULT_POSTHOG_HOST).replace(/\/+$/, "");
 
+const ALLOWED_EVENTS = new Set(["3b_app_open", "3b_route_view"]);
+const SENSITIVE_PROPERTY_PATTERN = /(^|[_-])(email|e-mail|name|full_name|first_name|last_name|user_id|member_id|account_id|handle|username|password|passcode|token|secret|phone|address|birth|dob|ip)([_-]|$)/i;
+
 let sessionDistinctId = "";
 let lastRouteKey = "";
 let lastRouteAt = 0;
@@ -45,17 +48,19 @@ function safeReferrerOrigin() {
 function cleanProperties(properties) {
   const clean = {};
   for (const [key, value] of Object.entries(properties || {})) {
+    if (SENSITIVE_PROPERTY_PATTERN.test(key)) continue;
     if (value === null || ["string", "number", "boolean"].includes(typeof value)) clean[key] = value;
   }
   return clean;
 }
 
 export function capture3BEvent(event, properties = {}) {
-  if (typeof window === "undefined" || !projectToken || privacySignalEnabled()) return false;
+  const normalizedEvent = String(event || "").trim();
+  if (typeof window === "undefined" || !projectToken || privacySignalEnabled() || !ALLOWED_EVENTS.has(normalizedEvent)) return false;
 
   const payload = {
     api_key: projectToken,
-    event: String(event || "3b_event").slice(0, 120),
+    event: normalizedEvent,
     distinct_id: getSessionDistinctId(),
     properties: {
       $process_person_profile: false,
