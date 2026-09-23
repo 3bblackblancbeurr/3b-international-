@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {ArrowUpRight, CircleDot, Globe2, ShieldCheck} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
+import {CircleArtwork} from './NexusArtwork.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
 
 const GATES=[
@@ -45,17 +46,9 @@ export default function WorldPortalCard({goTo}){
 
   <div className="world-portal-stage" aria-hidden="true">
    <div className="nexus-atmosphere"><i/><i/><i/></div>
-   <div className="nexus-architectural-floor">
-    <div className="nexus-floor-ring nexus-floor-ring-a"/>
-    <div className="nexus-floor-ring nexus-floor-ring-b"/>
-    <div className="nexus-floor-ring nexus-floor-ring-c"/>
-    <div className="nexus-axis nexus-axis-x"/>
-    <div className="nexus-axis nexus-axis-y"/>
-   </div>
-   <div className="nexus-monument">
-    <span className="nexus-monument-crown"/>
-    <div className="nexus-monument-core"><strong>3B</strong><small>NEXUS</small></div>
-    <span className="nexus-monument-base"/>
+   <div className="nexus-authentic-circle">
+    <CircleArtwork id="home-nexus-circle" large doors={GATES.map(gate=>({code:gate.code,sealed:false,restored:false}))}/>
+    <span className="nexus-circle-plinth"><b>3B</b><small>NEXUS</small></span>
    </div>
    <div className="nexus-gates">
     {GATES.map((gate,index)=><span className="nexus-portal-pylon" key={gate.code} style={{'--x':gate.x+'%','--y':gate.y+'%','--i':index}}>
