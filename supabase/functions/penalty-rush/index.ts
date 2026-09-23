@@ -675,6 +675,7 @@ function resetPossession(state:any, at:number) {
   state.keeperEffect = null;
   state.sprintUntil = 0;
   state.lastMoveAt = at;
+  state.lastKeeperMoveAt = at;
   state.previousAction = state.previousAction || [null,null];
   state.keeperEnergy = Array.isArray(state.keeperEnergy) ? state.keeperEnergy : [100,100];
   state.keeperEnergy[state.keeper] = clamp(number(state.keeperEnergy[state.keeper], 100) + 25, 0, 100);
@@ -692,6 +693,7 @@ function createServerMatch(players:Player[]) {
   state.previousAction = [null,null];
   state.sprintUntil = 0;
   state.lastMoveAt = at;
+  state.lastKeeperMoveAt = at;
   state.matchStats = [
     { shots:0, goals:0, saves:0, flowTotal:0, flowSamples:0, goldenGoals:0 },
     { shots:0, goals:0, saves:0, flowTotal:0, flowSamples:0, goldenGoals:0 },
@@ -871,22 +873,31 @@ async function processInput(room:Room, uid:string, input:any) {
 
   if (['dive','high-claim','close-angle','hold'].includes(type)) {
     if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut déclencher ce geste.');
-    state.keeperIntent = {
-      type,
-      direction:safeDirection(input?.direction),
-      intensity:safeIntensity(input?.intensity),
-      at,
-    };
-    state.positions.keeper.y = clamp(
-      number(state.positions.keeper.y) + safeDirection(input?.direction) * (.12 + safeIntensity(input?.intensity)*.18),
-      -.95, .95,
-    );
+    const direction = safeDirection(input?.direction);
+    const intensity = safeIntensity(input?.intensity);
+    const dt = clamp((at - number(state.lastKeeperMoveAt, at)) / 1000, 0, .12);
+    state.keeperIntent = { type, direction, intensity, at };
+
+    if (type === 'hold') {
+      const lateralSpeed = 1.65 + intensity * 1.35;
+      state.positions.keeper.y = clamp(
+        number(state.positions.keeper.y) + direction * lateralSpeed * dt,
+        -.95, .95,
+      );
+    } else {
+      state.positions.keeper.y = clamp(
+        number(state.positions.keeper.y) + direction * (.035 + intensity * .055),
+        -.95, .95,
+      );
+    }
+
+    state.lastKeeperMoveAt = at;
     state.lastEvent = {
       type:'keeper',
-      text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en attente.',
-      visual:{ at, type, direction:safeDirection(input?.direction), intensity:safeIntensity(input?.intensity) },
+      text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en déplacement.',
+      visual:{ at, type, direction, intensity },
     };
-    return await commitRoom(room, {state}, uid, 'keeper', {type});
+    return await commitRoom(room, {state}, uid, 'keeper', {type, y:state.positions.keeper.y});
   }
 
   if (type === 'power') {
