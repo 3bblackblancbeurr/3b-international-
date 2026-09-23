@@ -9,7 +9,8 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
 import InstallApp from "./install/InstallApp.jsx";
-import { useAppInstallation } from "./install/useAppInstallation.js";\nimport FirstLaunchWelcome from "./install/FirstLaunchWelcome.jsx";
+import { useAppInstallation } from "./install/useAppInstallation.js";
+import FirstLaunchWelcome from "./install/FirstLaunchWelcome.jsx";
 import PassportVisual from "./components/PassportVisual.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
