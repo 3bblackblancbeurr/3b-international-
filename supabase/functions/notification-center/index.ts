@@ -41,6 +41,7 @@ async function api(path:string,init:RequestInit={}){
 }
 async function rpc(name:string,body:unknown){return api('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(body)});}
 function jwtPayload(token:string){try{const raw=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const padded=raw+'='.repeat((4-raw.length%4)%4);return JSON.parse(atob(padded));}catch{return null;}}
+async function sha256(value:string){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function enc(value:unknown){return encodeURIComponent(String(value??''));}
 function text(value:unknown,min:number,max:number,label='Texte'){
  if(typeof value!=='string')throw new Failure(400,label+' invalide.');
@@ -159,7 +160,7 @@ async function bootstrap(user:any){
  let ownerUnread=0,ownerUrgent=0;
  if(owner){
   const [unread,urgent]=await Promise.all([
-   api('/rest/v1/owner_inbox_events?read_at=is.null&status=not.eq.archived&select=id'),
+   api('/rest/v1/owner_inbox_events?read_at=is.null&status=not.eq.archived&severity=in.(important,urgent,critical)&select=id'),
    api('/rest/v1/owner_inbox_events?severity=in.(urgent,critical)&status=in.(new,in_progress)&select=id')
   ]);
   ownerUnread=unread?.length||0;ownerUrgent=urgent?.length||0;
@@ -187,12 +188,16 @@ async function ownerList(body:any){
   const safe=search.replace(/[,%()*]/g,' ');
   path+='&or=(title.ilike.*'+enc(safe)+'*,summary.ilike.*'+enc(safe)+'*)';
  }
- const [events,requests,openReports,pendingSport,failedDelivery]=await Promise.all([
+ const [events,requests,openReports,pendingSport,failedDelivery,riskReviews,rewardFailures,members,installs7d]=await Promise.all([
   api(path),
   api('/rest/v1/threeb_requests?status=in.(new,in_progress)&select=id,user_id,category,subject,message,status,priority,owner_reply,created_at,updated_at&order=created_at.desc&limit=100'),
   api('/rest/v1/community_reports?status=eq.open&select=id'),
   api('/rest/v1/sport_challenge_entries?status=eq.submitted&select=user_id,challenge_id'),
-  api('/rest/v1/shop_notification_log?state=eq.failed&select=stripe_session_id')
+  api('/rest/v1/shop_notification_log?state=eq.failed&select=stripe_session_id'),
+  api('/rest/v1/threeb_economy_risk_profiles?review_required=eq.true&select=user_id'),
+  api('/rest/v1/threeb_reward_outbox?status=eq.rejected&select=id'),
+  api('/rest/v1/member_profiles?select=user_id'),
+  api('/rest/v1/app_installs?last_seen=gte.'+enc(new Date(Date.now()-7*86400000).toISOString())+'&select=install_id')
  ]);
  const actorIds=[...new Set([...(events||[]).map((x:any)=>x.actor_user_id),...(requests||[]).map((x:any)=>x.user_id)].filter(Boolean))];
  const profiles=actorIds.length?await api('/rest/v1/member_profiles?user_id=in.('+actorIds.join(',')+')&select=user_id,handle,name,country'):[];
@@ -204,6 +209,10 @@ async function ownerList(body:any){
    openReports:openReports?.length||0,
    pendingSport:pendingSport?.length||0,
    failedDelivery:failedDelivery?.length||0,
+   riskReviews:riskReviews?.length||0,
+   rewardFailures:rewardFailures?.length||0,
+   members:members?.length||0,
+   installs7d:installs7d?.length||0,
    openRequests:requests?.length||0
   }
  };
@@ -235,6 +244,18 @@ Deno.serve(async(req:Request)=>{
    if(body.all===true)await patch('member_notifications?user_id=eq.'+enc(uid)+'&read_at=is.null',{read_at:now});
    else await patch('member_notifications?id=eq.'+intId(body.id)+'&user_id=eq.'+enc(uid),{read_at:now});
    return reply({ok:true,...await bootstrap(user)});
+  }
+  if(action==='client-incident'){
+   await rate(uid,'client-incident',6,3600);
+   const allowed=new Set(['react-crash','service','sync','game','world','ai']);
+   const kind=String(body.kind||'');if(!allowed.has(kind))throw new Failure(400,'Type d’incident invalide.');
+   const message=text(body.message,1,300,'Incident'),route=typeof body.route==='string'?body.route.slice(0,80):'';
+   const component=typeof body.component==='string'?body.component.slice(0,1200):'';
+   const digest=await sha256(uid+'|'+kind+'|'+message+'|'+route);
+   const bucket=new Date().toISOString().slice(0,13).replace(/[-T:]/g,'');
+   await ownerEvent('client-incident:'+digest+':'+bucket,'system','client.'+kind,'important',
+    'Incident application détecté',message,uid,'client_incident',digest.slice(0,16),{kind,route,component});
+   return reply({ok:true});
   }
   if(action==='request-submit'){
    await rate(uid,'request-submit',6,3600);
