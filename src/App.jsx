@@ -15,7 +15,7 @@ import AppLoadingState from "./components/AppLoadingState.jsx";
 import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
-import { passportAccessLevel } from "./passport/access.js";
+import { hasPassportAccess } from "./passport/access.js";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
@@ -151,7 +151,7 @@ export default function App() {
   );
 
   const member = loyalty.profile ? remoteMember(loyalty.profile) : createTestMember();
-  const passportLevel = passportAccessLevel(loyalty.passport, loyalty.inventory);
+  const hasPassport = hasPassportAccess(loyalty.passport);
   const [options, setOptions] = useState(() =>
     normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
@@ -272,12 +272,11 @@ export default function App() {
     );
   }
 
-  const passportOneAllowed = new Set(["home", "passport", "member"]);
-  const needsPassportOne = !loyalty.loading && passportLevel < 1 && !passportOneAllowed.has(page);
-  const needsPassportTwo = !loyalty.loading && passportLevel < 2 && ["world3b", "arena"].includes(page);
+  const passportAllowed = new Set(["home", "passport", "member"]);
+  const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
-  if (needsPassportOne || needsPassportTwo) {
-    return <PassportAccessGate level={needsPassportTwo ? 2 : 1} goTo={goTo} />;
+  if (needsPassport) {
+    return <PassportAccessGate goTo={goTo} />;
   }
 
   return (
@@ -301,7 +300,7 @@ export default function App() {
           identity={loyalty.passport}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
-          accessLevel={passportLevel}
+          hasPassport={hasPassport}
           goTo={goTo}
         />
       )}
@@ -452,17 +451,15 @@ function RemoteGamePage({ slug, onBack }) {
 }
 
 
-function PassportAccessGate({ level, goTo }) {
+function PassportAccessGate({ goTo }) {
   return (
     <main className="intro3b" data-glow="true" data-matrix="true">
       <div className="intro3b-background" aria-hidden="true" />
       <div className="intro3b-matrix active" aria-hidden="true" />
       <section className="intro3b-card" aria-labelledby="passport-access-title">
         <p className="eyebrow">ACCÈS 3B</p>
-        <h1 id="passport-access-title">Passeport {level} requis</h1>
-        <p>{level === 2
-          ? "Le Monde du 3B est réservé aux titulaires du Passeport 2."
-          : "Cette partie de 3B International est réservée aux titulaires d’un Passeport 1 actif."}</p>
+        <h1 id="passport-access-title">Passeport 3B requis</h1>
+        <p>Un seul Passeport 3B donne accès à l’écosystème 3B, y compris au Monde du 3B.</p>
         <button type="button" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</button>
         <button type="button" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</button>
       </section>
@@ -486,7 +483,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ identity, syncing, goTo, options, accessLevel = 0 }) {
+function PassportPage({ identity, syncing, goTo, options, hasPassport = false }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -528,12 +525,10 @@ function PassportPage({ identity, syncing, goTo, options, accessLevel = 0 }) {
 
         <article className="premium-panel">
           <p className="eyebrow">Accès 3B</p>
-          <h2>{accessLevel >= 2 ? "Passeport 2 actif" : accessLevel >= 1 ? "Passeport 1 actif" : "Passeport requis"}</h2>
-          <p>{accessLevel >= 2
-            ? "Application 3B et Monde du 3B déverrouillés."
-            : accessLevel >= 1
-              ? "Application 3B déverrouillée. Le Monde du 3B demande le Passeport 2."
-              : "Active ton identité 3B pour obtenir le premier niveau d’accès."}</p>
+          <h2>{hasPassport ? "Passeport 3B actif" : "Passeport requis"}</h2>
+          <p>{hasPassport
+            ? "Ton Passeport 3B donne accès à l’application et au Monde du 3B."
+            : "Active ton identité 3B pour obtenir ton Passeport unique."}</p>
         </article>
       </div>
     </section>
