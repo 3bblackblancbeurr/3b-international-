@@ -218,6 +218,12 @@ begin
       'Nouvelle inscription 3B','Un nouveau compte membre a été créé.',new.user_id,'member',new.user_id::text,
       jsonb_build_object('country',new.country,'handle',new.handle)
     );
+    perform member_private.enqueue_member_notification(
+      new.user_id,'account.welcome:'||new.user_id::text,'account.welcome','info',
+      'Bienvenue dans 3B International',
+      'Ton compte 3B est actif. Tes informations importantes, réponses et demandes apparaîtront désormais ici.',
+      'notifications',jsonb_build_object('country',new.country)
+    );
     return new;
   end if;
   perform member_private.enqueue_owner_event(
