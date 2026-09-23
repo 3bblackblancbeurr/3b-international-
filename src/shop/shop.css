@@ -99,6 +99,10 @@
 .shop-image-viewer-thumbs button{width:64px;height:74px;padding:0;border:1px solid #5e5037;border-radius:9px;overflow:hidden;background:#080b0e}
 .shop-image-viewer-thumbs button.is-active{border-color:#f0cc72;box-shadow:0 0 0 2px #f0cc7230}
 .shop-image-viewer-thumbs img{width:100%;height:100%;object-fit:cover}
+dialog.shop-image-viewer{width:100%;height:100%;max-width:none;max-height:none;margin:0;border:0;box-sizing:border-box;color:#fff}
+dialog.shop-image-viewer:not([open]){display:none}
+.shop-image-viewer::backdrop{background:#020406f4}
+.shop-image-viewer button:focus-visible{outline:3px solid #46dcff;outline-offset:4px}
 
 @media(max-width:720px){
  .shop3b{width:100%;max-width:none}
