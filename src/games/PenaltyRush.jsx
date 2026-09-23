@@ -503,7 +503,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const moveInFlight = useRef(false);
   const pendingMove = useRef(null);
   const revisionRef = useRef(room.revision);
-  const controlRef = useRef({ x:0, y:0, intensity:0, active:false });
+  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
   const rightPadRef = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
@@ -528,7 +528,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function resetLeftPad() {
-    controlRef.current = { x:0, y:0, intensity:0, active:false };
+    controlRef.current = { ...controlRef.current, x:0, y:0, intensity:0, active:false };
     const pad = leftPadRef.current;
     if (!pad) return;
     pad.dataset.active = 'false';
@@ -560,7 +560,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     const x = dx / length;
     const y = dy / length;
     const intensity = Math.min(1, length / 70);
-    controlRef.current = { x, y, intensity, active:true };
+    controlRef.current = { ...controlRef.current, x, y, intensity, active:true };
 
     const pad = leftPadRef.current;
     if (pad) {
@@ -570,7 +570,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     }
 
     const now = performance.now();
-    if (now - moveThrottle.current < 80) return;
+    if (now - moveThrottle.current < 60) return;
     moveThrottle.current = now;
     queueMove({ type:'move', x, y, intensity });
   }
@@ -594,6 +594,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
     event.currentTarget.style.setProperty('--gesture-opacity', '.92');
+    if (isKeeper) {
+      controlRef.current.keeper = { direction:0, intensity:0, active:true };
+    }
   }
 
   function rightMove(event) {
@@ -611,6 +614,13 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       pad.style.setProperty('--gesture-angle', angle.toFixed(1) + 'deg');
       pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
     }
+    if (isKeeper) {
+      controlRef.current.keeper = {
+        direction:Math.max(-1, Math.min(1, dx / Math.max(36, Math.abs(dx)))),
+        intensity:Math.min(1, distance / 86),
+        active:true,
+      };
+    }
   }
 
   function rightEnd(event) {
@@ -618,6 +628,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     if (!gesture || gesture.pointer !== event.pointerId) return;
     rightGesture.current = null;
     resetRightPad();
+    if (isKeeper) {
+      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+    }
 
     const endedAt = performance.now();
     const dx = event.clientX - gesture.x;
@@ -664,7 +677,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
       <div className="penalty-meter-line">
         <div><span>ÉNERGIE</span><i><b style={{ width:`${state.energy?.[selfIndex] ?? 100}%` }} /></i></div>
-        <strong>{isAttacker ? 'ATTAQUE' : isKeeper ? 'GARDIEN' : 'SPECTATEUR'}</strong>
+        <strong>{isAttacker ? 'ATTAQUE' : isKeeper ? 'GARDIEN · CAGE ENTIÈRE' : 'SPECTATEUR'}</strong>
         <div><span>FLOW</span><i><b style={{ width:`${state.flow?.[selfIndex] ?? 0}%` }} /></i></div>
       </div>
 
