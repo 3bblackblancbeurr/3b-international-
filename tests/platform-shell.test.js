@@ -24,13 +24,15 @@ test('interactive app hides the static SEO fallback without removing no-JS disco
  assert.match(html,/3B International — Black • Blanc • Beur/);
 });
 
-test('home exposes a clear next step and compact journey status',()=>{
+test('home exposes a clear next step without technical journey status cards',()=>{
  const home=read('src/components/HomePage.jsx');
- assert.match(home,/home-journey-status/);
+ assert.doesNotMatch(home,/home-journey-status|home-status-item/);
+ assert.doesNotMatch(home,/Ouvert · 8 héritages|Web · installable/);
  assert.match(home,/Activer mon Passeport 3B/);
  assert.match(home,/Entrer dans le Monde du 3B/);
- assert.match(home,/Ouvert · 8 héritages/);
- assert.match(home,/Web · installable/);
+ assert.match(home,/03 \/ JEUX 3B/);
+ assert.match(home,/home-guide-zone/);
+ assert.ok(home.indexOf('home-guide-zone')>home.indexOf('Explorer 3B'));
 });
 
 test('navigation reports connectivity and supports slash search shortcut',()=>{
