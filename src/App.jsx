@@ -3,7 +3,10 @@ import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
+const NotificationCenterPage = lazy(() => import("./notifications/NotificationCenterPage.jsx"));
+const OwnerInboxPage = lazy(() => import("./owner/OwnerInboxPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
+import { notificationRequest } from "./notifications/client.js";
 import { readLocation, navigateTo } from "./lib/navigation.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
@@ -103,6 +106,20 @@ const BASE_MENU_ITEMS = [
   },
 ];
 
+const NOTIFICATION_MENU_ITEM = {
+  id: "notifications",
+  label: "Notifications",
+  icon: "🔔",
+  description: "Tes informations, réponses et demandes privées à 3B.",
+};
+
+const OWNER_MENU_ITEM = {
+  id: "owner",
+  label: "Centre propriétaire 3B",
+  icon: "◆",
+  description: "Boîte de réception, demandes, modération et alertes privées.",
+};
+
 const CONTROL_MENU_ITEM = {
   id: "control",
   label: "Centre de commande 3B",
@@ -124,6 +141,9 @@ export default function App() {
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
   const [controlAvailable, setControlAvailable] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState({
+    ready: false, memberUnread: 0, ownerAccess: false, ownerUnread: 0, ownerUrgent: 0,
+  });
 
 
   const loyalty = useLoyalty();
@@ -148,18 +168,50 @@ export default function App() {
     return () => { active = false; };
   }, [loyalty.user?.id]);
 
+  useEffect(() => {
+    let active = true, pending = false;
+    const load = async () => {
+      if (!loyalty.user?.id) {
+        if (active) setNotificationStatus({ ready: true, memberUnread: 0, ownerAccess: false, ownerUnread: 0, ownerUrgent: 0 });
+        return;
+      }
+      if (pending || document.hidden) return;
+      pending = true;
+      try {
+        const status = await notificationRequest("bootstrap", {}, loyalty.user.id);
+        if (active) setNotificationStatus({ ready: true, ...status });
+      } catch {
+        if (active) setNotificationStatus(current => ({ ...current, ready: true, memberUnread: 0, ownerUnread: 0, ownerUrgent: 0 }));
+      } finally { pending = false; }
+    };
+    load();
+    const timer = setInterval(load, 60000);
+    document.addEventListener("visibilitychange", load);
+    return () => { active = false; clearInterval(timer); document.removeEventListener("visibilitychange", load); };
+  }, [loyalty.user?.id]);
+
+  async function refreshNotificationStatus() {
+    if (!loyalty.user?.id) return;
+    try {
+      const status = await notificationRequest("bootstrap", {}, loyalty.user.id);
+      setNotificationStatus({ ready: true, ...status });
+    } catch {}
+  }
+
   const menuItems = useMemo(() => {
     if (member.isRegistered) {
       return [
         ...BASE_MENU_ITEMS.slice(0, 2),
         MEMBER_MENU_ITEM,
+        NOTIFICATION_MENU_ITEM,
+        ...(notificationStatus.ownerAccess ? [OWNER_MENU_ITEM] : []),
         ...(controlAvailable ? [CONTROL_MENU_ITEM] : []),
         ...BASE_MENU_ITEMS.slice(2),
       ];
     }
 
     return BASE_MENU_ITEMS;
-  }, [member.isRegistered, controlAvailable]);
+  }, [member.isRegistered, controlAvailable, notificationStatus.ownerAccess]);
 
   const currentPageTitle = useMemo(() => {
     if (page === "member") {
@@ -169,6 +221,8 @@ export default function App() {
     if (page === "ia-textile") return "IA textile";
     if (page === "ia-trio") return "Mode 3 IA";
     if (page === "control") return "Centre de commande 3B";
+    if (page === "notifications") return "Notifications 3B";
+    if (page === "owner") return "Centre propriétaire 3B";
     if (page === "home") return "Accueil";
     return menuItems.find((item) => item.id === page)?.label || "3B International";
   }, [page, menuItems, member.isRegistered]);
@@ -254,7 +308,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
+      {!['world3b','arena'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} notificationStatus={notificationStatus} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
@@ -294,6 +348,12 @@ export default function App() {
       )}
 
       {page === "sport" && <SportPage goTo={goTo} />}
+      {page === "notifications" && <NotificationCenterPage goTo={goTo} onChange={refreshNotificationStatus} />}
+      {page === "owner" && (!notificationStatus.ready
+        ? <AppLoadingState label="Vérification de l’accès propriétaire…" />
+        : notificationStatus.ownerAccess
+          ? <OwnerInboxPage goTo={goTo} onChange={refreshNotificationStatus} />
+          : <section className="page-section"><div className="surface-panel"><h1>Accès privé.</h1><p>Ce centre est réservé au propriétaire 3B.</p><button className="surface-button" onClick={()=>goTo("home")}>Retour à l’accueil</button></div></section>)}
       {page === "control" && <ControlCenterPage goTo={goTo} />}
       {["ia", "ia-textile", "ia-trio"].includes(page) && <AiPage key={loyalty.user?.id || "guest"} page={page} goTo={goTo} />}
       {page === "shop" && <ShopPage key={route.search} goTo={goTo} reducedMotion={options.reducedMotion || !options.animations} />}

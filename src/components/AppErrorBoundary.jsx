@@ -1,4 +1,5 @@
 import React from 'react';
+import {reportClientIncident} from '../notifications/client.js';
 
 export default class AppErrorBoundary extends React.Component {
   constructor(props){
@@ -12,6 +13,12 @@ export default class AppErrorBoundary extends React.Component {
 
   componentDidCatch(error,info){
     console.error('[3B app crash]',error,info);
+    reportClientIncident(
+      'react-crash',
+      String(error?.message||'Crash React').slice(0,300),
+      typeof window!=='undefined'?(window.location.hash||window.location.pathname):'',
+      String(info?.componentStack||'').slice(0,1200)
+    );
   }
 
   render(){

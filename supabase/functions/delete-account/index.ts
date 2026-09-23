@@ -3,6 +3,10 @@ const ADMIN = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC = Deno.env.get('SUPABASE_ANON_KEY')!;
 const ORIGINS = new Set([
   'https://3b-international.vercel.app',
+  'https://localhost',
+  'capacitor://localhost',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5174',
 ]);
@@ -33,6 +37,29 @@ Deno.serve(async (req: Request) => {
     });
     const user = await userResponse.json().catch(() => null);
     if (!userResponse.ok || !user?.id) return reply({ error: 'Ta session a expiré. Reconnecte-toi.' }, 401);
+
+    // Preserve shared club continuity before removing the auth user.
+    // During rolling deployments, a missing RPC is tolerated; the final auth deletion remains authoritative.
+    try {
+      const prepResponse = await fetch(`${BASE}/rest/v1/rpc/prepare_account_deletion`, {
+        method: 'POST',
+        headers: {
+          apikey: ADMIN,
+          Authorization: `Bearer ${ADMIN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ p_user: user.id }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!prepResponse.ok && prepResponse.status !== 404) {
+        const details = await prepResponse.json().catch(() => null);
+        console.error('3B account deletion preparation failed', prepResponse.status, details);
+        return reply({ error: 'La préparation de la suppression n’a pas abouti. Réessaie.' }, 409);
+      }
+    } catch (error) {
+      console.error('3B account deletion preparation error', error);
+      return reply({ error: 'La préparation de la suppression est momentanément indisponible. Réessaie.' }, 503);
+    }
 
     const deleteResponse = await fetch(`${BASE}/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
       method: 'DELETE',

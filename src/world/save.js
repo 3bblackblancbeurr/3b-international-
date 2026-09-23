@@ -1,4 +1,5 @@
 import {authClient,SUPABASE_URL,PUBLIC_KEY} from '../loyalty/client.js';
+import {reportClientIncident} from '../notifications/client.js';
 import {blankSave,normalizeSave} from './rules.js';
 import {applyWorldAction} from './engine.js';
 const queues=new Map(),key=id=>'3b_world_v1_'+(id||'guest'),journalBase=id=>'3b_world_actions_v2_'+id,journalKey=(id,device)=>journalBase(id)+'_'+device,ackKey=(id,device)=>'3b_world_ack_v2_'+id+'_'+device;
@@ -44,7 +45,7 @@ export async function loadWorld(id){
   await recoverOtherJournals(id,state);
   const result=await request(id,state,state.pending.slice(0,100)),data=reconcile(id,state,result);
   return{data,needsSave:!!state.pending.length,message:result.rejected?.length?'Compte synchronisé · '+result.rejected[0].message:'Monde lié à ton compte · actions validées par le serveur.'};
- }catch(error){return{data:local?.data||blankSave(),needsSave:!!state.pending.length,message:'Copie locale · '+error.message};}
+ }catch(error){reportClientIncident('world',error.message,'world:load');return{data:local?.data||blankSave(),needsSave:!!state.pending.length,message:'Copie locale · '+error.message};}
 }
 export function saveWorld(id,data){
  if(!id)return Promise.resolve({message:writeLocal(id,data,false)?'Sauvegardé sur cet appareil.':'Télécharge une copie : le stockage local est plein.'});
@@ -57,7 +58,7 @@ export function saveWorld(id,data){
    do{result=await request(id,state,state.pending.filter(e=>e.seq<=through).slice(0,100));next=reconcile(id,state,result);rejection ||= result.rejected?.[0]?.message;}while(state.pending.some(e=>e.seq<=through));
    return{data:next,pending:!!state.pending.length,message:rejection?'Compte synchronisé · '+rejection:state.pending.length?'Synchronisation du journal en cours…':'Sauvegardé sur ton compte · gains et compagnons validés.'};
   }
-  catch(error){return{pending:true,message:'Copie locale gardée · '+error.message};}
+  catch(error){reportClientIncident('world',error.message,'world:save');return{pending:true,message:'Copie locale gardée · '+error.message};}
  };
  state.chain=state.chain.then(operation,operation);return state.chain;
 }

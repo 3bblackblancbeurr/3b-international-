@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bell, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShieldAlert, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { PAGE_HASHES } from "../lib/navigation.js";
 import CompactCard from './CompactCard.jsx';
 
-const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound, notifications: Bell, owner: ShieldAlert, control: ShieldAlert };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
 }
 
 export const NAV_GROUPS = [
-  { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
+  { title: "Identité & progression", ids: ["passport", "member", "notifications", "loyalty"] },
   { title: "Explorer 3B", ids: ["world3b", "games", "religion"] },
   { title: "Créer & partager", ids: ["ia", "community", "sport", "shop"] },
+  { title: "Administration privée", ids: ["owner", "control"] },
   { title: "Comprendre & progresser", ids: ["guide"] },
   { title: "À venir", ids: ["manga", "secret"] },
 ];
@@ -32,7 +33,7 @@ const QUICK_LINKS = [
   { id: "shop", label: "Boutique" },
 ];
 
-export default function AppNavigation({ page, title, menuItems, goTo }) {
+export default function AppNavigation({ page, title, menuItems, goTo, notificationStatus }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -92,7 +93,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <div className="header-actions"><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></button></div>
+      <div className="header-actions"><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span>{menuItems.some(item=>item.id==='notifications')&&<RouteLink page="notifications" goTo={goTo} className="header-notification-link" aria-label={(notificationStatus?.memberUnread||0)+' notifications non lues'}><Bell size={19}/>{notificationStatus?.memberUnread>0&&<span className="notification-badge">{notificationStatus.memberUnread>99?'99+':notificationStatus.memberUnread}</span>}</RouteLink>}{notificationStatus?.ownerAccess&&notificationStatus?.ownerUnread>0&&<RouteLink page="owner" goTo={goTo} className="header-owner-link" aria-label={notificationStatus.ownerUnread+' éléments propriétaire non lus'}><ShieldAlert size={19}/><span className="notification-badge">{notificationStatus.ownerUnread>99?'99+':notificationStatus.ownerUnread}</span></RouteLink>}<button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></button></div>
     </header>
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">

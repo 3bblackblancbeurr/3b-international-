@@ -188,6 +188,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <button className="loyalty-primary" onClick={()=>goTo('loyalty')}>Mes cartes et avantages <ArrowUpRight size={16}/></button>
      <button onClick={()=>goTo('games')}>Jouer et gagner de l’XP</button>
      <button onClick={()=>goTo('passport')}>Voir mon passeport</button>
+     <button onClick={()=>goTo('notifications')}>Mes notifications et demandes</button>
      <button className="account-logout" onClick={logout}><LogOut size={16}/> Se déconnecter</button>
     </article>
    </div>

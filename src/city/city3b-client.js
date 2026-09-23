@@ -1,4 +1,5 @@
 import {authClient,PUBLIC_KEY,SUPABASE_URL} from '../loyalty/client.js';
+import {reportClientIncident} from '../notifications/client.js';
 
 export async function city3bRequest(action,body={},expectedUser){
   const {data:{session}}=await authClient.auth.getSession();
@@ -11,7 +12,7 @@ export async function city3bRequest(action,body={},expectedUser){
     signal:AbortSignal.timeout(15000),
   });
   const data=await response.json().catch(()=>({}));
-  if(!response.ok)throw Error(data.error||'Ville 3B momentanément indisponible.');
+  if(!response.ok){const error=Error(data.error||'Ville 3B momentanément indisponible.');if(response.status>=500)reportClientIncident('sync',error.message,'city:'+action);throw error;}
   return data;
 }
 
