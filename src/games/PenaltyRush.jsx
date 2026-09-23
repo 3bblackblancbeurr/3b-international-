@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Copy, Globe2, Play, RefreshCw, Shield, Shirt, Trophy, UserRound, Users, Wifi, X, Zap,
 } from 'lucide-react';
@@ -15,9 +15,10 @@ import {
 import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
-import PenaltyRushArena3D from './penaltyRush/PenaltyRushArena3D.jsx';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
+
+const PenaltyRushArena3D = lazy(() => import('./penaltyRush/PenaltyRushArena3D.jsx'));
 
 const NAV = [
   ['play', Play, 'Jouer'],
@@ -668,7 +669,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       </div>
 
       <section className="penalty-pitch penalty-pitch-3d">
-        <PenaltyRushArena3D room={room} profile={profile} selfIndex={selfIndex} controlRef={controlRef} />
+        <Suspense fallback={<div className="penalty-arena3d-fallback"><b>Terrain 3B</b><span>Chargement du match 3D…</span></div>}>
+          <PenaltyRushArena3D room={room} profile={profile} selfIndex={selfIndex} controlRef={controlRef} />
+        </Suspense>
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
