@@ -53,7 +53,7 @@ test('V3 deepens the pitch and guarantees a dedicated behind-goal goalkeeper cam
   assert.match(arena, /const GOAL_Z = -19\.75/);
   assert.match(arena, /keeperGoalFramingDistance/);
   assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /fov = 61/);
+  assert.match(arena, /fov = 63/);
   assert.match(arena, /goal\.userData\.netMat\.opacity/);
 });
 
