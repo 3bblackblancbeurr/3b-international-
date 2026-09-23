@@ -18,6 +18,32 @@ create table if not exists public.member_notifications(
   created_at timestamptz not null default now()
 );
 
+-- Account deletion hardening discovered during the notification/privacy audit.
+-- Community content belongs to the deleted community profile and must not block auth deletion.
+alter table public.community_posts
+  drop constraint if exists community_posts_author_id_fkey,
+  add constraint community_posts_author_id_fkey
+    foreign key(author_id) references public.community_profiles(user_id) on delete cascade;
+
+alter table public.community_chat
+  drop constraint if exists community_chat_author_id_fkey,
+  add constraint community_chat_author_id_fkey
+    foreign key(author_id) references public.community_profiles(user_id) on delete cascade;
+
+-- Keep challenge review history after a staff account disappears, without retaining its account FK.
+alter table public.sport_challenge_reviews alter column reviewer_id drop not null;
+alter table public.sport_challenge_reviews
+  drop constraint if exists sport_challenge_reviews_reviewer_id_fkey,
+  add constraint sport_challenge_reviews_reviewer_id_fkey
+    foreign key(reviewer_id) references auth.users(id) on delete set null;
+
+-- The delete-account service transfers an owned club first when another member exists.
+-- CASCADE is the safe fallback for direct/admin account deletion or a single-member club.
+alter table public.penalty_clubs
+  drop constraint if exists penalty_clubs_owner_user_id_fkey,
+  add constraint penalty_clubs_owner_user_id_fkey
+    foreign key(owner_user_id) references auth.users(id) on delete cascade;
+
 create index if not exists member_notifications_user_unread_idx
   on public.member_notifications(user_id,created_at desc) where read_at is null;
 create index if not exists member_notifications_user_created_idx
@@ -233,6 +259,37 @@ select owner_user_id from public.control_center_settings
 where singleton=true and owner_user_id is not null
 on conflict do nothing;
 
+create or replace function member_private.scrub_deleted_member_owner_refs() returns trigger
+language plpgsql security definer set search_path=''
+as $privacy$
+begin
+  update public.owner_inbox_events
+  set actor_user_id=null,
+      subject_ref=case when subject_ref=old.user_id::text then null else subject_ref end,
+      event_key=case when position(old.user_id::text in coalesce(event_key,''))>0 then 'redacted:'||id::text else event_key end,
+      payload=payload-'user_id'-'actor_user_id'-'member_id',
+      updated_at=now()
+  where actor_user_id=old.user_id
+     or subject_ref=old.user_id::text
+     or payload->>'user_id'=old.user_id::text;
+
+  update public.owner_action_log
+  set target_ref=case when target_ref=old.user_id::text then null else target_ref end,
+      before_state=before_state-'actor_user_id'-'subject_ref'-'user_id',
+      after_state=after_state-'actor_user_id'-'subject_ref'-'user_id'
+  where target_ref=old.user_id::text
+     or before_state->>'actor_user_id'=old.user_id::text
+     or after_state->>'actor_user_id'=old.user_id::text;
+  return old;
+end
+$privacy$;
+revoke all on function member_private.scrub_deleted_member_owner_refs() from public,anon,authenticated;
+
+drop trigger if exists privacy_scrub_deleted_member_owner_refs on public.member_profiles;
+create trigger privacy_scrub_deleted_member_owner_refs
+before delete on public.member_profiles
+for each row execute function member_private.scrub_deleted_member_owner_refs();
+
 create or replace function member_private.notify_member_profile_change() returns trigger
 language plpgsql security definer set search_path=''
 as $$
@@ -240,7 +297,7 @@ begin
   if tg_op='INSERT' then
     perform member_private.bump_owner_counter_event(
       'account.registrations:'||to_char(now() at time zone 'UTC','YYYYMMDD'),
-      'accounts','account.registrations.daily','Nouvelles inscriptions 3B',new.user_id,'registrations'
+      'accounts','account.registrations.daily','Nouvelles inscriptions 3B',null,'registrations'
     );
     perform member_private.enqueue_member_notification(
       new.user_id,'account.welcome:'||new.user_id::text,'account.welcome','info',
@@ -250,9 +307,9 @@ begin
     );
     return new;
   end if;
-  perform member_private.enqueue_owner_event(
-    'account.deleted:'||old.user_id::text,'accounts','account.deleted','important',
-    'Compte 3B supprimé','Un compte membre a été supprimé.',null,'member',old.user_id::text,'{}'::jsonb
+  perform member_private.bump_owner_counter_event(
+    'account.deletions:'||to_char(now() at time zone 'UTC','YYYYMMDD'),
+    'accounts','account.deletions.daily','Comptes 3B supprimés',null,'deletions'
   );
   return old;
 end
