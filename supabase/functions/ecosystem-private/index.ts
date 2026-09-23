@@ -246,7 +246,16 @@ Deno.serve(async req=>{
   if(action==='generate'){
    if(!capability().image)throw new Failure(503,'La génération IA n’est pas encore activée. Ton configurateur reste disponible.');
    const prompt=textilePrompt(validateDesign(body.design),text(body.idea||'',0,2000));await rate(uid,'ai-image',3,86400);await rate('global','ai-image',20,86400);
-   const moderation=await providerFetch('https://api.openai.com/v1/moderations',{Authorization:'Bearer '+env('OPENAI_API_KEY')},{model:'omni-moderation-latest',input:prompt});if(moderation.results?.[0]?.flagged)throw new Failure(400,'Cette description ne peut pas être utilisée pour générer un visuel. Modifie ton idée.');
+   const moderation=await providerFetch('https://api.openai.com/v1/moderations',{Authorization:'Bearer '+env('OPENAI_API_KEY')},{model:'omni-moderation-latest',input:prompt});
+   if(moderation.results?.[0]?.flagged){
+    const categories=Object.entries(moderation.results[0].categories||{}).filter(([,value])=>value===true).map(([key])=>key).slice(0,12);
+    check(await admin.from('owner_inbox_events').upsert({
+     event_key:'ai.safety:'+uid+':'+new Date().toISOString().slice(0,10),category:'ai',event_type:'ai.prompt.flagged',severity:'important',
+     title:'Contenu IA refusé',summary:'Le système de sécurité IA a refusé au moins une demande de génération aujourd’hui.',
+     actor_user_id:uid,subject_type:'ai_generation',subject_ref:uid,payload:{categories}
+    },{onConflict:'event_key',ignoreDuplicates:true}));
+    throw new Failure(400,'Cette description ne peut pas être utilisée pour générer un visuel. Modifie ton idée.');
+   }
    const result=await providerFetch('https://api.openai.com/v1/images/generations',{Authorization:'Bearer '+env('OPENAI_API_KEY')},{model:env('OPENAI_IMAGE_MODEL'),prompt,n:1,size:'1024x1024',quality:'medium'},110000);
    const b64=result.data?.[0]?.b64_json;if(typeof b64!=='string'||b64.length>16777216)throw new Failure(503,'Aucun visuel exploitable reçu.');const bytes=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));const path=uid+'/'+crypto.randomUUID()+'.png';
    check(await admin.storage.from('studio-3b').upload(path,bytes,{contentType:'image/png',upsert:false}));check(await admin.from('studio_assets').insert({path,user_id:uid}));const signed=check(await admin.storage.from('studio-3b').createSignedUrl(path,3600));return reply({assetPath:path,imageUrl:signed.signedUrl});
