@@ -610,13 +610,14 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       x:event.clientX,
       y:event.clientY,
       t:performance.now(),
+      keeperBase:isKeeper ? Number(state.positions?.keeper?.y || 0) : 0,
       path:[{ x:event.clientX, y:event.clientY }],
     };
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
     event.currentTarget.style.setProperty('--gesture-opacity', '.92');
     if (isKeeper) {
-      controlRef.current.keeper = { position:0, direction:0, intensity:0, active:true };
+      controlRef.current.keeper = { position:rightGesture.current.keeperBase, direction:0, intensity:0, active:true };
     }
   }
 
@@ -636,7 +637,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
     }
     if (isKeeper) {
-      const position = Math.max(-1, Math.min(1, dx / 74));
+      const position = Math.max(-1, Math.min(1, Number(gesture.keeperBase || 0) + dx / 74));
       const direction = Math.sign(position) || 0;
       const intensity = Math.min(1, Math.abs(position));
       controlRef.current.keeper = { position, direction, intensity, active:true };
@@ -660,8 +661,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     rightGesture.current = null;
     resetRightPad();
     if (isKeeper) {
-      controlRef.current.keeper = { position:0, direction:0, intensity:0, active:false };
-      queueKeeper({ type:'keeper-track', position:0, direction:0, intensity:0, release:true });
+      const lastKeeperPosition = Number(controlRef.current.keeper?.position || gesture.keeperBase || 0);
+      controlRef.current.keeper = { position:lastKeeperPosition, direction:0, intensity:0, active:false };
     }
 
     const endedAt = performance.now();
