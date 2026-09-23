@@ -46,7 +46,7 @@ export default function WorldPortalCard({goTo}){
 
   <div className="world-portal-stage" aria-hidden="true">
    <div className="nexus-atmosphere"><i/><i/><i/></div>
-   <div className="nexus-authentic-circle">
+   <div className="nexus-authentic-circle nexus-ring-scene">
     <CircleArtwork id="home-nexus-circle" large doors={GATES.map(gate=>({code:gate.code,sealed:false,restored:false}))}/>
     <span className="nexus-circle-plinth"><b>3B</b><small>NEXUS</small></span>
    </div>
