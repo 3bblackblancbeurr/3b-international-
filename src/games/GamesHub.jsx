@@ -63,8 +63,10 @@ export default function GamesHub({goTo,goToGame}){
    })
    .catch(error=>{
     if(!live||error?.name==='AbortError')return;
+    // Connected modules are optional enrichment. The signed local library is
+    // complete on its own, so an unavailable endpoint must stay invisible.
     setRemoteGames([]);
-    setRemoteError('Les jeux connectés 3B sont momentanément indisponibles.');
+    setRemoteError('');
    });
   return()=>{live=false;controller.abort();};
  },[]);
