@@ -4,13 +4,14 @@ import {RouteLink} from './AppNavigation.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
 
 const GATES=[
- ['FR','Justice'],['DZ','Loyauté'],['ES','Passion'],['MA','Noblesse'],
- ['IT','Espoir'],['TN','Courage'],['TR','Foi'],['EE','Sagesse']
-];
-
-const BUILDINGS=[
- ['4%','10%','37%','cyan'],['14%','8%','55%','gold'],['23%','12%','43%','blue'],['35%','8%','68%','gold'],
- ['44%','13%','49%','cyan'],['58%','9%','72%','blue'],['68%','12%','46%','gold'],['81%','7%','61%','cyan'],['89%','8%','35%','blue']
+ {code:'FR',value:'Justice',x:50,y:7},
+ {code:'DZ',value:'Loyauté',x:72,y:16},
+ {code:'ES',value:'Passion',x:87,y:36},
+ {code:'MA',value:'Noblesse',x:84,y:65},
+ {code:'IT',value:'Espoir',x:66,y:80},
+ {code:'TN',value:'Courage',x:34,y:80},
+ {code:'TR',value:'Foi',x:16,y:65},
+ {code:'EE',value:'Sagesse',x:13,y:36},
 ];
 
 export default function WorldPortalCard({goTo}){
@@ -43,14 +44,24 @@ export default function WorldPortalCard({goTo}){
   </div>
 
   <div className="world-portal-stage" aria-hidden="true">
-   <div className="nexus-skyline">
-    {BUILDINGS.map(([left,width,height,tone],index)=><span className={'nexus-building nexus-building-'+tone} key={index} style={{'--left':left,'--width':width,'--height':height,'--delay':(-index*.65)+'s'}}><i/><i/></span>)}
+   <div className="nexus-atmosphere"><i/><i/><i/></div>
+   <div className="nexus-architectural-floor">
+    <div className="nexus-floor-ring nexus-floor-ring-a"/>
+    <div className="nexus-floor-ring nexus-floor-ring-b"/>
+    <div className="nexus-floor-ring nexus-floor-ring-c"/>
+    <div className="nexus-axis nexus-axis-x"/>
+    <div className="nexus-axis nexus-axis-y"/>
    </div>
-   <div className="nexus-ring-scene">
-    <div className="nexus-ring nexus-ring-outer"/>
-    <div className="nexus-ring nexus-ring-inner"/>
-    {GATES.map(([code,value],index)=><span className="nexus-gate-marker" key={code} style={{'--angle':(index*45)+'deg','--counter-angle':(-index*45)+'deg'}}><b>{code}</b><small>{value}</small></span>)}
-    <div className="nexus-core"><span>3B</span><small>NEXUS</small></div>
+   <div className="nexus-monument">
+    <span className="nexus-monument-crown"/>
+    <div className="nexus-monument-core"><strong>3B</strong><small>NEXUS</small></div>
+    <span className="nexus-monument-base"/>
+   </div>
+   <div className="nexus-gates">
+    {GATES.map((gate,index)=><span className="nexus-portal-pylon" key={gate.code} style={{'--x':gate.x+'%','--y':gate.y+'%','--i':index}}>
+      <i className="nexus-pylon-frame"/>
+      <b>{gate.code}</b><small>{gate.value}</small>
+     </span>)}
    </div>
    <div className="nexus-avenue"><i/><i/><i/></div>
   </div>
