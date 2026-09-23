@@ -26,6 +26,14 @@ function tokenKey(value){
   return moderationCanonical(value).replace(/[^a-z]/g,'');
 }
 
+function obfuscatedMatch(canonical,term){
+  if(term.length<4)return false;
+  const letters=[...term];
+  const pattern=new RegExp('(^|[^a-z])('+letters.join('[^a-z]*')+')(?=$|[^a-z])','i');
+  const match=canonical.match(pattern);
+  return !!(match&&/[^a-z]/i.test(match[2]));
+}
+
 function contentForms(value){
   const canonical=moderationCanonical(value);
   const words=canonical.split(/\s+/).filter(Boolean);
@@ -40,20 +48,8 @@ function contentForms(value){
   const compactHits=[];
   for(const [level,set] of [['severe',SEVERE],['abuse',ABUSE],['light',LIGHT]]){
     for(const term of set){
-      if(term.length<4||tokenHits.some(hit=>hit.term===term))continue;
-      const letters=[...term].map(char=>char.replace(/[.*+?^{}()|[\\]\\]/g,'\\  const compact=canonical.replace(/[^a-z]/g,'');
-  const compactHits=[];
-  for(const [level,set] of [['severe',SEVERE],['abuse',ABUSE],['light',LIGHT]]){
-    for(const term of set){
-      if(term.length>=4&&compact.includes(term)&&!tokenHits.some(hit=>hit.term===term)){
-        compactHits.push({term,level});
-      }
-    }
-  }
-  return{canonical,words,tokenHits,compactHits};'));
-      const pattern=new RegExp('(^|[^a-z])('+letters.join('[^a-z]*')+')(?=$|[^a-z])','i');
-      const match=canonical.match(pattern);
-      if(match&&/[^a-z]/i.test(match[2]))compactHits.push({term,level});
+      if(tokenHits.some(hit=>hit.term===term))continue;
+      if(obfuscatedMatch(canonical,term))compactHits.push({term,level});
     }
   }
   return{canonical,words,tokenHits,compactHits};
