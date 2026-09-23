@@ -44,6 +44,52 @@ alter table public.penalty_clubs
   add constraint penalty_clubs_owner_user_id_fkey
     foreign key(owner_user_id) references auth.users(id) on delete cascade;
 
+create or replace function public.prepare_account_deletion(p_user uuid) returns jsonb
+language plpgsql security definer set search_path=''
+as $account_delete$
+declare
+  v_club record;
+  v_successor uuid;
+  v_transferred integer:=0;
+  v_deleted integer:=0;
+begin
+  if p_user is null then raise exception 'invalid_user'; end if;
+
+  for v_club in
+    select id from public.penalty_clubs where owner_user_id=p_user for update
+  loop
+    select m.user_id into v_successor
+    from public.penalty_club_members m
+    where m.club_id=v_club.id and m.user_id<>p_user
+    order by (m.role='captain') desc,m.joined_at asc,m.user_id
+    limit 1;
+
+    if v_successor is null then
+      delete from public.penalty_clubs where id=v_club.id;
+      v_deleted:=v_deleted+1;
+    else
+      update public.penalty_club_members
+      set role=case when user_id=v_successor then 'owner' else role end
+      where club_id=v_club.id;
+
+      update public.penalty_clubs
+      set owner_user_id=v_successor,updated_at=now()
+      where id=v_club.id;
+
+      delete from public.penalty_club_members
+      where club_id=v_club.id and user_id=p_user;
+
+      v_transferred:=v_transferred+1;
+    end if;
+  end loop;
+
+  return jsonb_build_object('transferred_clubs',v_transferred,'deleted_clubs',v_deleted);
+end
+$account_delete$;
+
+revoke all on function public.prepare_account_deletion(uuid) from public,anon,authenticated;
+grant execute on function public.prepare_account_deletion(uuid) to service_role;
+
 create index if not exists member_notifications_user_unread_idx
   on public.member_notifications(user_id,created_at desc) where read_at is null;
 create index if not exists member_notifications_user_created_idx
