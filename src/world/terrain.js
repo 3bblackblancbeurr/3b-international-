@@ -8,7 +8,7 @@ import {parisSites} from './paris-layout.js';
 
 export const WORLD_RADIUS=260;
 export const BIOMES={
- hub:{seed:83,angle:0,scale:1.8,low:'#376b3d',high:'#72974d',rock:'#838a78',sky:'#9dbec5',haze:'#b8c8b2',amplitude:5.8,tree:'Tree',water:{x:-37,z:6,r:12}},
+ hub:{seed:83,angle:0,scale:1.8,low:'#29443f',high:'#61785c',rock:'#7c817a',sky:'#789bad',haze:'#aab9b3',amplitude:5.4,tree:'Tree',water:{x:-37,z:6,r:12}},
  france:{seed:13,angle:-.24,scale:1.6,low:'#385c43',high:'#70865b',rock:'#92988f',sky:'#7fa6bf',haze:'#bdc9c6',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
  italie:{seed:29,angle:.5,scale:1.65,low:'#697b44',high:'#adad72',rock:'#b6aa8d',sky:'#a8c3c7',haze:'#ded1b1',amplitude:7,tree:'Cypress',water:{x:47,z:32,r:10}},
  estonie:{seed:41,angle:-.62,scale:1.65,low:'#3b615c',high:'#77988c',rock:'#abb6af',sky:'#6c959f',haze:'#a6c2bd',amplitude:5.8,tree:'Pine',water:{x:-35,z:30,r:14}},
@@ -26,7 +26,13 @@ export function landscapeRoads(region){return settlementPlan(region).roads.map(r
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
 export function landmarkSightline(region){return{a:{x:0,z:5},b:toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z)};}
 export function buildingSites(region,anchors=[]){
- if(region==='hub')return COUNTRIES.map((c,i)=>{const p=toLandscape(region,...c.portal);return{id:c.id,x:p.x+13,z:p.z-13,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
+ if(region==='hub')return COUNTRIES.flatMap((c,i)=>{
+  const p=toLandscape(region,...c.portal),len=Math.hypot(p.x,p.z)||1,tx=-p.z/len,tz=p.x/len;
+  return [-1,1].map((side,j)=>{
+   const x=p.x*.82+tx*side*12.5,z=p.z*.82+tz*side*12.5,variant=i*2+j;
+   return{id:c.id,sector:c.id,x,z,rotation:Math.atan2(-x,-z),variant,...buildingDimensions(c.id,variant)};
+  });
+ });
  const sightline=landmarkSightline(region),roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
  const paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
  const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)})).filter(p=>!paris.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<Math.hypot(b.width,b.depth)/2+Math.hypot(p.width,p.depth)/2+3));
