@@ -1,0 +1,43 @@
+name: Verify owner notifications and moderation
+
+on:
+  pull_request:
+    paths:
+      - 'src/App.jsx'
+      - 'src/App.css'
+      - 'src/components/AppNavigation.jsx'
+      - 'src/components/AppErrorBoundary.jsx'
+      - 'src/community/**'
+      - 'src/notifications/**'
+      - 'src/owner/**'
+      - 'src/lib/ecosystem.js'
+      - 'src/world/save.js'
+      - 'src/arena/client.js'
+      - 'src/city/city3b-client.js'
+      - 'supabase/functions/_shared/moderation.js'
+      - 'supabase/functions/ecosystem-private/**'
+      - 'supabase/functions/notification-center/**'
+      - 'supabase/owner-notification-center-v1.sql'
+      - 'tests/community-moderation.test.js'
+      - 'tests/notification-center-contract.test.js'
+      - '.github/workflows/verify-owner-notifications.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Test moderation and notification security contracts
+        run: node --test tests/community-moderation.test.js tests/notification-center-contract.test.js
+      - name: Build application
+        run: npm run build
