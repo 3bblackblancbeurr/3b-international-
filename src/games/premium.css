@@ -60,3 +60,225 @@
 }
 @media(max-height:550px) and (orientation:landscape){.game-header{min-height:42px;padding:3px 10px}.game-header button{height:33px}.game-hud{padding:5px}.game-hud>div{flex-direction:row;gap:8px}.game-hud strong{font-size:14px}.game-footer{min-height:52px;padding:4px 14px}.game-action{min-height:44px}.game-mobile-help{font-size:12px}.game-dpad{display:none}.game-subpanel{max-height:32svh}.game-log{margin:3px}.game-door-choices button{min-height:65px}.game-overlay h2{font-size:24px;margin:5px}.premium-controls{padding:8px;margin:10px;font-size:13px}.game-overlay p{margin:6px}.game-overlay .arcade-primary{padding:9px;min-height:42px}.premium-intro-tip{display:none}}
 @media(prefers-reduced-motion:reduce){.premium-game-card,.game-action:before{transition:none}.premium-game-card:hover{transform:none}}
+
+
+/* =========================================================
+   CARTES JEUX 3B — IDENTITÉS VISUELLES DISTINCTES
+   Chaque jeu garde la même grille UX mais possède son propre
+   décor, sa matière, son symbole et son accent.
+========================================================= */
+
+.premium-game-card[data-game="penalty-rush"]{--accent:#83f0b8;background:linear-gradient(155deg,#0f2a20,#07130f)}
+.premium-game-card[data-game="penalty-rush"] .premium-card-art{
+  filter:none;
+  background:
+    linear-gradient(90deg,transparent 49.4%,#effff07a 49.5% 50.5%,transparent 50.6%),
+    linear-gradient(0deg,transparent 70%,#effff06b 70.5% 71.5%,transparent 72%),
+    repeating-linear-gradient(90deg,#154f35 0 18%,#103e2c 18% 36%);
+}
+.premium-game-card[data-game="penalty-rush"] .premium-card-art::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  bottom:9%;
+  width:52%;
+  height:57%;
+  transform:translateX(-50%);
+  border:2px solid #e7fff18c;
+  border-bottom:0;
+  box-shadow:0 0 18px #a6ffd52b,inset 0 0 16px #ffffff0b;
+}
+.premium-game-card[data-game="penalty-rush"] .premium-card-sprite{
+  width:66px;
+  height:66px;
+  left:calc(50% - 33px);
+  bottom:34px;
+  border:2px solid #d8e2df;
+  border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#fff 0 25%,#e6eceb 48%,#b7c0bd 73%,#68716e 100%);
+  filter:drop-shadow(0 10px 18px #0008);
+}
+.premium-game-card[data-game="penalty-rush"] .premium-card-sprite::before{
+  content:'';
+  position:absolute;
+  left:22px;
+  top:20px;
+  width:21px;
+  height:19px;
+  background:#111820;
+  clip-path:polygon(50% 0,100% 34%,81% 100%,19% 100%,0 34%);
+  box-shadow:20px 17px 0 -5px #111820,-20px 17px 0 -5px #111820;
+}
+
+.premium-game-card[data-game="arena"]{--accent:#70dfff;background:linear-gradient(155deg,#102738,#08121c)}
+.premium-game-card[data-game="arena"] .premium-card-art{
+  filter:none;
+  background:
+    linear-gradient(180deg,#03101c1f,#07111bd6),
+    radial-gradient(circle at 72% 36%,#00d5ff27,transparent 28%),
+    url('/games/night-plaza.webp') center 58%/cover;
+}
+.premium-game-card[data-game="arena"] .premium-card-sprite{
+  width:115px;
+  height:175px;
+  left:calc(50% - 57px);
+  bottom:-22px;
+  background:url('/games/kais-run.webp') 0 0/400% 200%;
+  filter:drop-shadow(0 0 26px #5bdcff73);
+}
+.premium-game-card[data-game="arena"] .premium-card-art::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at 72% 55%,#8cecff1c 0 2%,transparent 2.5%) 0 0/22px 22px;
+  opacity:.65;
+}
+
+.premium-game-card[data-game="tower"]{--accent:#d0a6ff;background:linear-gradient(155deg,#26162e,#0f0a16)}
+.premium-game-card[data-game="tower"] .premium-card-art{
+  filter:none;
+  background:
+    linear-gradient(180deg,#1206171c,#0b0711d9),
+    url('/games/forbidden-hall.webp') center 48%/cover;
+}
+.premium-game-card[data-game="tower"] .premium-card-sprite{
+  width:122px;
+  height:154px;
+  left:calc(50% - 61px);
+  bottom:-12px;
+  border-radius:48% 48% 10px 10px;
+  background:url('/games/forbidden-guardian.webp') center 34%/cover;
+  filter:drop-shadow(0 0 26px #a56be754);
+  -webkit-mask-image:linear-gradient(#000 0 78%,transparent 100%);
+  mask-image:linear-gradient(#000 0 78%,transparent 100%);
+}
+
+.premium-game-card[data-game="maze"]{--accent:#7ee6cf;background:linear-gradient(155deg,#102a27,#071513)}
+.premium-game-card[data-game="maze"] .premium-card-art{
+  filter:none;
+  background:
+    linear-gradient(180deg,#04151324,#071512d9),
+    url('/games/maze-ruins.webp') center 52%/cover;
+}
+.premium-game-card[data-game="maze"] .premium-card-sprite{
+  width:116px;
+  height:160px;
+  left:calc(50% - 58px);
+  bottom:-10px;
+  border-radius:50px 50px 12px 12px;
+  background:url('/games/kais-explorer.webp') center 32%/cover;
+  filter:drop-shadow(0 0 22px #64e7cf55);
+  -webkit-mask-image:linear-gradient(#000 0 82%,transparent 100%);
+  mask-image:linear-gradient(#000 0 82%,transparent 100%);
+}
+
+.premium-game-card[data-game="key-race"]{--accent:#f2d087;background:linear-gradient(155deg,#2a2011,#120d07)}
+.premium-game-card[data-game="key-race"] .premium-card-art{
+  filter:none;
+  background:
+    linear-gradient(90deg,#080808cb,#08080828),
+    url('/games/origins-cover.jpg') center 42%/cover;
+}
+.premium-game-card[data-game="key-race"] .premium-card-sprite{
+  width:86px;
+  height:132px;
+  left:calc(50% - 43px);
+  bottom:1px;
+  border:1px solid #f2d08760;
+  border-radius:44px 44px 12px 12px;
+  background:
+    radial-gradient(circle at 50% 25%,#f2d087 0 7%,transparent 8%),
+    linear-gradient(90deg,transparent 46%,#f2d087 47% 53%,transparent 54%) center 48%/100% 55% no-repeat,
+    radial-gradient(ellipse at 50% 80%,#e2bd672c,transparent 62%);
+  box-shadow:0 0 24px #e6bd6443,inset 0 0 22px #e6bd6417;
+}
+.premium-game-card[data-game="key-race"] .premium-card-sprite::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:33px;
+  width:32px;
+  height:32px;
+  transform:translateX(-50%);
+  border:4px solid #f0d28d;
+  border-radius:50%;
+  box-shadow:0 0 13px #e9c77966;
+}
+
+.premium-game-card[data-game="dada3b"]{--accent:#f0cc77;background:linear-gradient(155deg,#211b14,#0c0e12)}
+.premium-game-card[data-game="dada3b"] .premium-card-art{
+  filter:none;
+  background:
+    radial-gradient(circle at 50% 50%,#07131a 0 16%,transparent 17% 24%,#e8c67277 25% 27%,transparent 28%),
+    conic-gradient(from 22.5deg,#194a74 0 12.5%,#1a683f 12.5% 25%,#7d2025 25% 37.5%,#9a7020 37.5% 50%,#433080 50% 62.5%,#0b7780 62.5% 75%,#7b3c18 75% 87.5%,#42505d 87.5% 100%);
+}
+.premium-game-card[data-game="dada3b"] .premium-card-art::before{
+  content:'';
+  position:absolute;
+  inset:18px 28px;
+  border:1px solid #f0d48b88;
+  border-radius:18px;
+  background:
+    linear-gradient(45deg,transparent 48%,#fff1b61c 49% 51%,transparent 52%),
+    linear-gradient(-45deg,transparent 48%,#fff1b61c 49% 51%,transparent 52%);
+  box-shadow:inset 0 0 24px #0008,0 0 24px #e5be6040;
+}
+.premium-game-card[data-game="dada3b"] .premium-card-sprite{
+  display:grid;
+  place-items:center;
+  width:72px;
+  height:72px;
+  left:calc(50% - 36px);
+  bottom:40px;
+  border:5px solid #e5c36d;
+  border-radius:50%;
+  background:#081117;
+  color:#f6dfaa;
+  filter:drop-shadow(0 0 18px #f0c96855);
+  font:900 19px/1 system-ui;
+}
+.premium-game-card[data-game="dada3b"] .premium-card-sprite::before{content:'3B'}
+
+/* Remote / nouveaux jeux : thème déterminé par leur univers au lieu d'une vignette football clonée. */
+.premium-game-card[data-visual]{background:linear-gradient(155deg,#17202a,#091016)}
+.premium-game-card[data-visual] .premium-card-sprite{
+  display:grid;
+  place-items:center;
+  width:72px;
+  height:72px;
+  left:calc(50% - 36px);
+  bottom:34px;
+  border:1px solid var(--accent);
+  border-radius:22px;
+  background:#071117cc;
+  color:var(--accent);
+  filter:drop-shadow(0 0 20px color-mix(in srgb,var(--accent) 45%,transparent));
+}
+.premium-game-card[data-visual] .premium-card-sprite::before{
+  content:attr(data-symbol);
+  font:700 34px/1 system-ui;
+}
+.premium-game-card[data-visual="pitch"]{--accent:#83f0b8}
+.premium-game-card[data-visual="pitch"] .premium-card-art{background:repeating-linear-gradient(90deg,#154f35 0 18%,#103e2c 18% 36%)}
+.premium-game-card[data-visual="guardian"]{--accent:#ff9b8f}
+.premium-game-card[data-visual="guardian"] .premium-card-art{background:radial-gradient(circle at 70% 35%,#ff73532e,transparent 24%),linear-gradient(135deg,#321515,#0d0b12)}
+.premium-game-card[data-visual="runner"]{--accent:#72e8ff}
+.premium-game-card[data-visual="runner"] .premium-card-art{background:repeating-linear-gradient(105deg,#071722 0 26px,#0d2a38 27px 29px,#071722 30px 55px),linear-gradient(#06121a,#071722)}
+.premium-game-card[data-visual="underground"]{--accent:#c5a0ff}
+.premium-game-card[data-visual="underground"] .premium-card-art{background:radial-gradient(ellipse at 50% 100%,#7c50b62e,transparent 52%),repeating-linear-gradient(90deg,#151020 0 22px,#241636 23px 24px)}
+.premium-game-card[data-visual="district"]{--accent:#9de29d}
+.premium-game-card[data-visual="district"] .premium-card-art{background:linear-gradient(180deg,#17332244,#08110ddb),url('/games/city-sprites.webp') center/cover}
+.premium-game-card[data-visual="forge"]{--accent:#f0c778}
+.premium-game-card[data-visual="forge"] .premium-card-art{background:radial-gradient(circle at 50% 75%,#e09b3939,transparent 28%),linear-gradient(135deg,#2a1b0e,#0d0e12)}
+.premium-game-card[data-visual="portal"]{--accent:#7dcfff}
+.premium-game-card[data-visual="portal"] .premium-card-art{background:radial-gradient(circle at center,#07141d 0 16%,#7dcfff70 17% 19%,#07141d 20% 30%,#d8bc7770 31% 33%,#08111a 34%)}
+
+@media(max-width:600px){
+ .premium-game-card[data-game="penalty-rush"] .premium-card-sprite{width:58px;height:58px;left:25px;bottom:42px}
+ .premium-game-card[data-game="arena"] .premium-card-sprite,
+ .premium-game-card[data-game="tower"] .premium-card-sprite,
+ .premium-game-card[data-game="maze"] .premium-card-sprite{left:4px;transform:scale(.78);transform-origin:center bottom}
+ .premium-game-card[data-game="key-race"] .premium-card-sprite{left:12px;transform:scale(.8);transform-origin:center bottom}
+ .premium-game-card[data-game="dada3b"] .premium-card-sprite,
+ .premium-game-card[data-visual] .premium-card-sprite{left:20px;bottom:46px;transform:scale(.82)}
+}

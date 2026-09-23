@@ -1,8 +1,27 @@
 import { useState } from 'react';
 import { ArrowUpRight, Pause, Play } from 'lucide-react';
 
-export default function ComingSoon({secret=false,goTo}){
+export default function ComingSoon({secret=false,goTo,title,eyebrow,description}){
  const[paused,setPaused]=useState(false);
+
+ if(title){
+  return <section className="coming-page temporary-coming-page">
+   <p className="eyebrow">{eyebrow||'OUVERTURE PROCHAINE'}</p>
+   <h1>{title}</h1>
+   <div className="manga-preview-mark temporary-coming-mark" aria-hidden="true"><span>3B</span><small>BIENTÔT</small></div>
+   <p className="coming-label">ESPACE EN FINALISATION</p>
+   <p className="coming-copy">{description||'Cet espace est en cours de finalisation pour être proposé dans une version plus claire, plus stable et mieux adaptée au mobile.'}</p>
+   <div className="coming-status-grid" aria-label={'État de '+title}>
+    <article><span>État</span><strong>En préparation</strong></article>
+    <article><span>Accès</span><strong>Bientôt</strong></article>
+    <article><span>Expérience</span><strong>Mobile 3B</strong></article>
+   </div>
+   <div className="coming-actions">
+    {goTo&&<button className="surface-button" type="button" onClick={()=>goTo('home')}>Retour à l’accueil <ArrowUpRight size={16}/></button>}
+   </div>
+  </section>;
+ }
+
  return <section className={'coming-page '+(secret?'secret-page':'manga-preview-page')} data-paused={paused}>
   <p className="eyebrow">{secret?'TRANSMISSION 3B':'3B ORIGINS'}</p>
   <h1>{secret?'Secret 3B':'Le Cercle Brisé'}</h1>
