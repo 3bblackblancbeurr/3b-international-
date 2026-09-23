@@ -144,7 +144,7 @@ test('behind-goal keeper camera has a permanent unobstructed central corridor', 
 
 test('keeper tracking is absolute, immediate and server-authoritative', () => {
   assert.match(match, /type:'keeper-track'/);
-  assert.match(match, /const position = Math\.max\(-1, Math\.min\(1, dx \/ 74\)\)/);
+  assert.match(match, /const position = Math\.max\(-1, Math\.min\(1, Number\(gesture\.keeperBase \|\| 0\) \+ dx \/ 74\)\)/);
   assert.match(match, /keeperMoveThrottle\.current >= 45/);
   assert.match(server, /if \(type === 'keeper-track'\)/);
   assert.match(server, /state\.positions\.keeper\.y = clamp\(position, -\.95, \.95\)/);
