@@ -99,8 +99,10 @@ test('keeper camera computes enough distance to keep the complete goal in frame 
 });
 
 
-test('V3 prevents the goalkeeper camera from spawning inside the rear stand', () => {
-  assert.match(arena, /endStand\.position\.set\(0, 3\.4, GOAL_Z - 12\.8\)/);
+test('V4 keeps a permanent clear corridor behind the goal for the goalkeeper camera', () => {
+  assert.doesNotMatch(arena, /const endStand =/);
+  assert.match(arena, /rearLeft\.position\.set\(-7\.7, 3\.4, GOAL_Z - 13\.5\)/);
+  assert.match(arena, /rearRight\.position\.set\(7\.7, 3\.4, GOAL_Z - 13\.5\)/);
   assert.match(arena, /keeperGoalFramingDistance/);
 });
 
