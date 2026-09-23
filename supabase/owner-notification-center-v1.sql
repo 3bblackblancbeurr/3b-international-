@@ -190,7 +190,7 @@ create or replace function member_private.bump_owner_counter_event(
   p_event_key text,p_category text,p_event_type text,p_title text,p_actor uuid,p_counter text
 ) returns void
 language plpgsql security definer set search_path=''
-as $
+as $counter$
 begin
   insert into public.owner_inbox_events(
     event_key,category,event_type,severity,title,summary,actor_user_id,subject_type,subject_ref,payload
@@ -208,7 +208,7 @@ begin
       summary=(coalesce((public.owner_inbox_events.payload->>p_counter)::integer,0)+1)::text||' événements aujourd’hui.',
       updated_at=now();
 end
-$;
+$counter$;
 revoke all on function member_private.bump_owner_counter_event(text,text,text,text,uuid,text) from public,anon,authenticated;
 
 create or replace function member_private.sync_control_owner_staff() returns trigger
