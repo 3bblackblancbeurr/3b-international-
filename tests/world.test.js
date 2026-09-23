@@ -26,6 +26,8 @@ test('world save rejects forged cards, invalid equipment and non-character team 
 });
 test('every portal is distinct and traversable; interactions require proximity',()=>{
  const s=blankSave(),items=worldItems('hub',s);assert.equal(items.filter(i=>i.type==='portal').length,8);
+ assert.ok(items.every(i=>!['guardian','echo','patrol'].includes(i.type)),'The Nexus remains a safe zone with no hostile roaming encounters');
+ assert.match(items.find(i=>i.id==='final').name,/Cercle Brisé/);
  assert.equal(new Set(items.map(i=>[i.x,i.z].join(','))).size,items.length);
  for(const c of COUNTRIES){assert.ok(Math.hypot(...c.portal)<76);const gate=items.find(i=>i.id===c.id);assert.equal(nearestInteraction({x:gate.x,z:gate.z},[gate]),gate);assert.equal(nearestInteraction({x:gate.x+10,z:gate.z},[gate]),null);const region=worldItems(c.id,s);assert.ok(region.some(i=>i.type==='portal'&&i.id==='hub'));assert.equal(region.filter(i=>i.type==='beacon').length,3);}
 });
