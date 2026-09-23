@@ -105,7 +105,7 @@ test('V3 prevents the goalkeeper camera from spawning inside the rear stand', ()
 });
 
 test('V3 calibrates human and ball scale to football dimensions', () => {
-  assert.match(arena, /const targetHeight = index === 1 \? 1\.84 : 1\.8/);
+  assert.match(arena, /const targetHeight = 1\.82/);
   assert.match(arena, /actor\.object\.scale\.multiplyScalar\(targetHeight \/ size\.y\)/);
   assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
   assert.match(arena, /root\.scale\.setScalar\(\.56\)/);
@@ -114,8 +114,8 @@ test('V3 calibrates human and ball scale to football dimensions', () => {
 test('goalkeeper lateral movement is sent continuously while dragging and predicted instantly', () => {
   assert.match(match, /keeperMoveThrottle = useRef\(0\)/);
   assert.match(match, /queueKeeper\(\{/);
-  assert.match(match, /type:'hold'/);
-  assert.match(match, /now - keeperMoveThrottle\.current >= 70/);
+  assert.match(match, /type:'keeper-track'/);
+  assert.match(match, /now - keeperMoveThrottle\.current >= 45/);
   assert.match(arena, /desiredLocalX/);
   assert.match(arena, /expFollow\(selfKeeper \? 30 : 12/);
 });
