@@ -40,6 +40,17 @@ async function api(path:string,init:RequestInit={}){
  return data;
 }
 async function rpc(name:string,body:unknown){return api('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(body)});}
+
+async function countRows(path:string){
+ const response=await fetch(BASE+path,{
+  method:'GET',
+  headers:{...adminHeaders(false),Prefer:'count=exact',Range:'0-0'},
+  signal:AbortSignal.timeout(12000)
+ });
+ if(!response.ok)throw new Failure(response.status>=500?503:400,'Le Centre 3B est momentanément indisponible.');
+ const range=response.headers.get('content-range')||'0-0/0',match=range.match(/\/(\d+|\*)$/);
+ return match&&match[1]!=='*'?Number(match[1]):0;
+}
 function jwtPayload(token:string){try{const raw=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const padded=raw+'='.repeat((4-raw.length%4)%4);return JSON.parse(atob(padded));}catch{return null;}}
 async function sha256(value:string){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return[...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');}
 function enc(value:unknown){return encodeURIComponent(String(value??''));}
@@ -192,13 +203,13 @@ async function ownerList(body:any){
  const [events,requests,openReports,pendingSport,failedDelivery,riskReviews,rewardFailures,members,installs7d,moderationStates,moderationEvents]=await Promise.all([
   api(path),
   api('/rest/v1/threeb_requests?status=in.(new,in_progress)&select=id,user_id,category,subject,message,status,priority,owner_reply,created_at,updated_at&order=created_at.desc&limit=100'),
-  api('/rest/v1/community_reports?status=eq.open&select=id'),
-  api('/rest/v1/sport_challenge_entries?status=eq.submitted&select=user_id,challenge_id'),
-  api('/rest/v1/shop_notification_log?state=eq.failed&select=stripe_session_id'),
-  api('/rest/v1/threeb_economy_risk_profiles?review_required=eq.true&select=user_id'),
-  api('/rest/v1/threeb_reward_outbox?status=eq.rejected&select=id'),
-  api('/rest/v1/member_profiles?select=user_id'),
-  api('/rest/v1/app_installs?last_seen=gte.'+enc(new Date(Date.now()-7*86400000).toISOString())+'&select=install_id'),
+  countRows('/rest/v1/community_reports?status=eq.open&select=id'),
+  countRows('/rest/v1/sport_challenge_entries?status=eq.submitted&select=user_id'),
+  countRows('/rest/v1/shop_notification_log?state=eq.failed&select=stripe_session_id'),
+  countRows('/rest/v1/threeb_economy_risk_profiles?review_required=eq.true&select=user_id'),
+  countRows('/rest/v1/threeb_reward_outbox?status=eq.rejected&select=id'),
+  countRows('/rest/v1/member_profiles?select=user_id'),
+  countRows('/rest/v1/app_installs?last_seen=gte.'+enc(new Date(Date.now()-7*86400000).toISOString())+'&select=install_id'),
   api('/rest/v1/community_moderation_state?restricted_until=gt.'+enc(now)+'&select=user_id,strike_score,restricted_until,last_violation_at,updated_at&order=restricted_until.desc&limit=100'),
   api('/rest/v1/community_moderation_events?select=id,user_id,source_kind,source_id,decision,severity,reasons,excerpt,resolved_at,resolved_by,created_at&order=created_at.desc&limit=100')
  ]);
@@ -209,14 +220,14 @@ async function ownerList(body:any){
   stats:{
    unread:(events||[]).filter((x:any)=>!x.read_at).length,
    urgent:(events||[]).filter((x:any)=>['urgent','critical'].includes(x.severity)&&['new','in_progress'].includes(x.status)).length,
-   openReports:openReports?.length||0,
-   pendingSport:pendingSport?.length||0,
-   failedDelivery:failedDelivery?.length||0,
-   riskReviews:riskReviews?.length||0,
-   rewardFailures:rewardFailures?.length||0,
+   openReports:Number(openReports||0),
+   pendingSport:Number(pendingSport||0),
+   failedDelivery:Number(failedDelivery||0),
+   riskReviews:Number(riskReviews||0),
+   rewardFailures:Number(rewardFailures||0),
    activeRestrictions:moderationStates?.length||0,
-   members:members?.length||0,
-   installs7d:installs7d?.length||0,
+   members:Number(members||0),
+   installs7d:Number(installs7d||0),
    openRequests:requests?.length||0
   }
  };
