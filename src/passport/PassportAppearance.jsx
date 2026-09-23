@@ -136,7 +136,7 @@ export function PassportPortrait({identity,animated=true,className=''}) {
    :mode==='digital'?<DigitalFace/>
    :<div className="passport-portrait-initials" aria-label={`Monogramme ${initials}`}>{initials}</div>}
   <span className="passport-portrait-scanbar" aria-hidden="true"/>
-  <small className="passport-portrait-kind">{mode==='photo'?'PHOTO':mode==='digital'?'BIO DIGITAL':'MONOGRAMME'}</small>
+  <small className="passport-portrait-kind">{mode==='photo'?'PHOTO':mode==='digital'?'DIGITAL':'MONOGRAMME'}</small>
  </div>;
 }
 
@@ -180,7 +180,7 @@ export default function PassportAppearanceSettings({identity,compact=false}){
 
   <div className="passport-appearance-modes" role="group" aria-label="Type de portrait du Passeport">
    <button type="button" aria-pressed={appearance.mode==='initials'} onClick={()=>chooseMode('initials')}><Type size={18}/><span><strong>Initiales</strong><small>2 à 4 caractères</small></span></button>
-   <button type="button" aria-pressed={appearance.mode==='digital'} onClick={()=>chooseMode('digital')}><ScanFace size={18}/><span><strong>Visage digital</strong><small>Animé bleu Matrix</small></span></button>
+   <button type="button" aria-pressed={appearance.mode==='digital'} onClick={()=>chooseMode('digital')}><ScanFace size={18}/><span><strong>Visage digital</strong><small>Avatar bleu animé · sans biométrie</small></span></button>
    <button type="button" aria-pressed={appearance.mode==='photo'} onClick={()=>chooseMode('photo')}><Camera size={18}/><span><strong>Ma photo</strong><small>Portrait personnel</small></span></button>
   </div>
 
@@ -196,7 +196,7 @@ export default function PassportAppearanceSettings({identity,compact=false}){
    {appearance.photo&&<button type="button" className="quiet-button" onClick={removePhoto}><Trash2 size={16}/>Retirer</button>}
   </div>}
 
-  <p className="passport-appearance-privacy">La photo est recadrée et compressée dans ton navigateur. Dans cette version, elle reste privée sur cet appareil et n’est pas envoyée automatiquement au serveur 3B.</p>
+  <p className="passport-appearance-privacy">La photo est recadrée et compressée dans ton navigateur. Dans cette version, elle reste privée sur cet appareil et n’est pas envoyée automatiquement au serveur 3B. Le visage digital est un avatar graphique : aucune donnée biométrique n’est analysée.</p>
   {message&&<p className="passport-appearance-message" role="status">{message}</p>}
  </section>;
 }
