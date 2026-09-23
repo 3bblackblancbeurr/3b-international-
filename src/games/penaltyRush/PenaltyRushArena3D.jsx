@@ -693,6 +693,14 @@ function makeCameraState() {
   };
 }
 
+function keeperGoalFramingDistance(aspect, verticalFov = 59) {
+  const vfov = THREE.MathUtils.degToRad(verticalFov);
+  const hfov = 2 * Math.atan(Math.tan(vfov / 2) * Math.max(.35, aspect || 1));
+  const horizontal = (GOAL_W / 2 + .62) / Math.tan(hfov / 2);
+  const vertical = (GOAL_H / 2 + .72) / Math.tan(vfov / 2);
+  return Math.max(5.35, horizontal, vertical) + .7;
+}
+
 export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRef }) {
   const hostRef = useRef(null);
   const liveRef = useRef({ room, profile, selfIndex });
@@ -955,17 +963,18 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
       if (selfKeeper) {
         runtime.camera.mode = 'keeper';
+        fov = 59;
+        const goalDistance = keeperGoalFramingDistance(camera.aspect, fov);
         desired.set(
           serverKeeper.x * .09,
           3.72,
-          GOAL_Z - 5.35,
+          GOAL_Z - goalDistance,
         );
         target.set(
           serverAttack.x * .2,
           1.18,
           mix(-6.4, -10.2, progress),
         );
-        fov = 59;
         goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .105, .16);
       } else {
         runtime.camera.mode = 'attack';
