@@ -1,50 +1,43 @@
-import {useState} from 'react';
-import {ArrowUpRight, Cpu, Globe2, ShieldCheck} from 'lucide-react';
+import {ArrowUpRight, CircleDot, Globe2, ShieldCheck} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
-import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
 
 const GATES=[
  ['FR','Justice'],['DZ','Loyauté'],['ES','Passion'],['MA','Noblesse'],
  ['IT','Espoir'],['TN','Courage'],['TR','Foi'],['EE','Sagesse']
 ];
 
-export default function WorldPortalCard({goTo,registered=false}){
- const[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+const BUILDINGS=[
+ ['4%','10%','37%','cyan'],['14%','8%','55%','gold'],['23%','12%','43%','blue'],['35%','8%','68%','gold'],
+ ['44%','13%','49%','cyan'],['58%','9%','72%','blue'],['68%','12%','46%','gold'],['81%','7%','61%','cyan'],['89%','8%','35%','blue']
+];
 
- async function openUnreal(){
-  if(!registered){goTo('passport');return;}
-  setBusy(true);setMessage('');
-  try{
-   await launchUnrealWorld();
-   setMessage('Passage vers le client Unreal demandé.');
-  }catch(error){
-   setMessage(error instanceof Error?error.message:'Le client Unreal 3B n’a pas pu être ouvert.');
-  }finally{setBusy(false);}
- }
-
+export default function WorldPortalCard({goTo}){
  return <section className="world-portal" aria-labelledby="world-portal-title">
   <div className="world-portal-copy">
-   <p className="eyebrow">MONDE DU 3B · NOUVELLE GÉNÉRATION</p>
+   <p className="eyebrow">LE MONDE DU 3B · NEXUS</p>
    <h2 id="world-portal-title">Une plateforme qui devient un <em>monde.</em></h2>
-   <p>Le web reste le cœur de ton écosystème. Le client Unreal Engine prend la relève pour l’exploration, les combats, les Gardiens, la ville vivante et les cinématiques.</p>
+   <p>Depuis ton téléphone, le Nexus relie les huit Portes, les quartiers, les Gardiens, les missions et ta progression. Un seul Passeport 3B accompagne toute ton aventure.</p>
    <div className="world-portal-meta">
-    <span><Globe2 size={16}/>8 territoires liés</span>
+    <span><Globe2 size={16}/>8 Portes reliées</span>
+    <span><CircleDot size={16}/>Nexus central</span>
     <span><ShieldCheck size={16}/>Même Passeport 3B</span>
-    <span><Cpu size={16}/>UE 5.8 foundation</span>
    </div>
    <div className="world-portal-actions">
-    <RouteLink page="world3b" goTo={goTo} className="surface-button">Entrer dans le Monde actuel <ArrowUpRight size={16}/></RouteLink>
-    {UNREAL_LAUNCH_ENABLED&&<button type="button" className="quiet-button" onClick={openUnreal} disabled={busy}>{busy?'Ouverture…':registered?'Ouvrir le client Unreal':'Passeport requis'}</button>}
+    <RouteLink page="world3b" goTo={goTo} className="surface-button">Entrer dans le Monde du 3B <ArrowUpRight size={16}/></RouteLink>
    </div>
-   {message&&<p className="world-portal-message" role="status">{message}</p>}
   </div>
+
   <div className="world-portal-stage" aria-hidden="true">
-   <div className="world-portal-horizon"/>
-   <div className="world-portal-ring">
-    {GATES.map(([code,value],index)=><div className="world-gate" key={code} style={{'--gate':index}}><b>{code}</b><small>{value}</small></div>)}
-    <div className="world-portal-core"><span>3B</span><small>NEXUS</small></div>
+   <div className="nexus-skyline">
+    {BUILDINGS.map(([left,width,height,tone],index)=><span className={'nexus-building nexus-building-'+tone} key={index} style={{'--left':left,'--width':width,'--height':height,'--delay':(-index*.65)+'s'}}><i/><i/></span>)}
    </div>
-   <div className="world-portal-floor"><i/><i/><i/><i/><i/></div>
+   <div className="nexus-ring-scene">
+    <div className="nexus-ring nexus-ring-outer"/>
+    <div className="nexus-ring nexus-ring-inner"/>
+    {GATES.map(([code,value],index)=><span className="nexus-gate-marker" key={code} style={{'--angle':(index*45)+'deg','--counter-angle':(-index*45)+'deg'}}><b>{code}</b><small>{value}</small></span>)}
+    <div className="nexus-core"><span>3B</span><small>NEXUS</small></div>
+   </div>
+   <div className="nexus-avenue"><i/><i/><i/></div>
   </div>
  </section>;
 }
