@@ -187,6 +187,28 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     if (!response.ok) throw new ShopError(503, "La confirmation prend un peu de temps. Ne repaie pas ; réessaie la vérification dans un instant.");
   }
 
+  async function ownerShopEvent(eventKey,eventType,severity,title,summary,subjectRef,payload={}) {
+    try {
+      const base=safeUrl(env.SUPABASE_URL),key=env.SUPABASE_SERVICE_ROLE_KEY||"";
+      if(!base||!key)return;
+      const url=new URL("/rest/v1/owner_inbox_events",base);
+      url.searchParams.set("on_conflict","event_key");
+      await fetcher(url,{
+        method:"POST",signal:AbortSignal.timeout(8000),
+        headers:{apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json",Prefer:"resolution=ignore-duplicates,return=minimal"},
+        body:JSON.stringify({event_key:eventKey,category:"shop",event_type:eventType,severity,title,summary,subject_type:"stripe_payment",subject_ref:subjectRef,payload})
+      });
+    } catch { /* Observability must never break Stripe processing. */ }
+  }
+
+  async function integrationPaymentIntent(id) {
+    try {
+      if(!id)return null;
+      const intent=typeof id==="string"?await stripe().paymentIntents.retrieve(id):id;
+      return intent?.metadata?.integration===INTEGRATION?intent:null;
+    } catch { return null; }
+  }
+
   async function savePaidOrder(session) {
     if (session.metadata?.integration !== INTEGRATION || session.mode !== "payment"
       || session.status !== "complete" || session.payment_status !== "paid") return false;
@@ -300,10 +322,48 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
           await savePaidOrder(session);
         }
       }
+      if (event.type === "payment_intent.payment_failed") {
+        const intent=event.data.object;
+        if(intent?.metadata?.integration===INTEGRATION) {
+          await ownerShopEvent(
+            "stripe.failed:"+event.id,"shop.payment.failed","urgent","Paiement 3B échoué",
+            "Stripe a signalé un échec de paiement pour une tentative 3B.",intent.id,
+            {stripe_event:event.id,code:intent.last_payment_error?.code||null,amount:intent.amount||null,currency:intent.currency||null}
+          );
+        }
+      }
+      if (event.type === "checkout.session.async_payment_failed") {
+        const session=event.data.object;
+        if(session?.metadata?.integration===INTEGRATION) {
+          await ownerShopEvent(
+            "stripe.async_failed:"+event.id,"shop.payment.failed","urgent","Paiement différé 3B échoué",
+            "Un paiement différé Stripe n’a pas abouti.",session.payment_intent||session.id,
+            {stripe_event:event.id,session_id:session.id,amount_total:session.amount_total||null,currency:session.currency||null}
+          );
+        }
+      }
       if(event.type === "charge.refunded") {
         const incoming=event.data.object;
         const charge=await stripe().charges.retrieve(incoming.id);
         await loyalty.refund(charge);
+        const intent=await integrationPaymentIntent(charge.payment_intent);
+        if(intent) await ownerShopEvent(
+          "stripe.refund:"+event.id,"shop.payment.refunded","important","Remboursement Stripe 3B",
+          "Un paiement 3B a été remboursé.",intent.id,
+          {stripe_event:event.id,charge_id:charge.id,amount_refunded:charge.amount_refunded||null,currency:charge.currency||null}
+        );
+      }
+      if (event.type === "charge.dispute.created" || event.type === "charge.dispute.updated" || event.type === "charge.dispute.closed") {
+        const dispute=event.data.object,intent=await integrationPaymentIntent(dispute.payment_intent);
+        if(intent) await ownerShopEvent(
+          "stripe.dispute:"+event.id,
+          event.type==="charge.dispute.closed"?"shop.dispute.closed":"shop.dispute.open",
+          event.type==="charge.dispute.closed"?"important":"critical",
+          event.type==="charge.dispute.closed"?"Litige Stripe 3B clôturé":"Litige Stripe 3B",
+          event.type==="charge.dispute.closed"?"Un litige lié à un paiement 3B a été clôturé.":"Un paiement 3B fait l’objet d’un litige.",
+          intent.id,
+          {stripe_event:event.id,dispute_id:dispute.id,status:dispute.status||null,reason:dispute.reason||null,amount:dispute.amount||null,currency:dispute.currency||null}
+        );
       }
       return json({ received: true });
     }),
