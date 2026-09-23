@@ -1,4 +1,5 @@
-import CompactCard from './CompactCard.jsx';
-import {BookOpen} from 'lucide-react';
-export default function ReligionPage(){return <section className="editorial-page"><div className="editorial-heading"><p className="eyebrow">COMPRENDRE & RESPECTER</p><h1>Religion</h1><p>Un espace de découverte des croyances, des cultures et des traditions.</p></div><div className="religion-grid">{[['Découvrir','Des présentations documentées des grandes traditions et de leurs histoires.'],['Comprendre','Un futur glossaire pour éclairer les mots, les pratiques et les fêtes.'],['Dialoguer','Des échanges respectueux, sans prosélytisme imposé ni jugement sur les convictions de chacun.']].map(([title,text])=><CompactCard as="article" key={title} title={title} description={text} eyebrow="En préparation" icon={<BookOpen/>} action="Bientôt"/>)}</div><p className="muted-copy">Les premiers contenus seront publiés après vérification de leurs sources. Aucune préférence religieuse n’est demandée dans ton profil.</p></section>;}
-
+import { useEffect } from 'react';
+export default function ReligionPage() {
+  useEffect(() => { window.location.replace('/religion/index.html#home'); }, []);
+  return <section className="editorial-page"><h1>Religion</h1><p>Ouverture de la bibliothèque…</p><a href="/religion/index.html#home">Ouvrir Religion</a></section>;
+}
