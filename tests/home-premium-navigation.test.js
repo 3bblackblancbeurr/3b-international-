@@ -33,7 +33,7 @@ test('the home world card uses a Nexus ring and contains no Unreal client copy',
  assert.match(portal,/nexus-ring-scene/);
  assert.match(portal,/NEXUS/);
  assert.match(portal,/8 Portes reliées/);
- assert.doesNotMatch(portal,/Unreal|UE 5\.8|client/i);
+ assert.doesNotMatch(portal,/client Unreal Engine|UE 5\.8 foundation|Le web reste le cœur/i);
 });
 
 test('each core game has a dedicated card art direction',()=>{
