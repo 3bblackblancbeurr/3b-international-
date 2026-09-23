@@ -3,6 +3,10 @@ const ADMIN = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC = Deno.env.get('SUPABASE_ANON_KEY')!;
 const ORIGINS = new Set([
   'https://3b-international.vercel.app',
+  'https://localhost',
+  'capacitor://localhost',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5174',
 ]);
