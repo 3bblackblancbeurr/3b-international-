@@ -134,3 +134,27 @@ test('V4 local prediction prioritizes instant control then reconciles softly', (
   assert.match(arena, /const speed = 6\.4 \+ intensity \* 2\.6/);
   assert.match(arena, /input\?\.active \? \.9 : 11\.5/);
 });
+
+
+test('V5 goalkeeper camera stays centered behind the whole goal', () => {
+  assert.match(arena, /fov = 63/);
+  assert.match(arena, /desired\.set\(\s*0,\s*2\.42,\s*GOAL_Z - goalDistance/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.028/);
+  assert.match(arena, /clamp\(serverAttack\.x \* \.12, -1\.15, 1\.15\)/);
+});
+
+test('V5 goalkeeper follows horizontal finger travel almost directly', () => {
+  assert.match(match, /const horizontal = Math\.abs\(dx\)/);
+  assert.match(match, /const intensity = Math\.min\(1, horizontal \/ 82\)/);
+  assert.match(arena, /const desiredX = direction \* \(GOAL_W \/ 2 - \.28\)/);
+  assert.match(arena, /expFollow\(34, dt\)/);
+});
+
+test('V5 prioritizes local control and tighter ball touches', () => {
+  assert.match(arena, /const lateralSpeed = 5\.4 \+ intensity \* 1\.8/);
+  assert.match(arena, /const forwardSpeed = \(6\.8 \+ intensity \* 4\.4\)/);
+  assert.match(arena, /input\?\.active \? \.55 : 10\.5/);
+  assert.match(arena, /index === snapshot\.selfIndex \? 32 : 10/);
+  assert.match(arena, /normalBall\.x \+= touchPhase \* \(\.055 \+ inputIntensity \* \.045\)/);
+  assert.match(arena, /normalBall\.z \+= inputY \* \(\.06 \+ inputIntensity \* \.12\)/);
+});
