@@ -113,7 +113,7 @@ test('V4 keeper camera is physically behind the goal without an opaque end stand
   assert.match(arena, /2\.42/);
   assert.match(arena, /fov = 63/);
   assert.doesNotMatch(arena, /const endStand = new THREE\.Mesh/);
-  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.065/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.028/);
 });
 
 test('V4 streams keeper movement while dragging and keeps the server authoritative', () => {
