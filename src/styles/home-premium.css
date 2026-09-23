@@ -683,6 +683,7 @@
   .app3b .world-portal{
     display:flex;
     flex-direction:column;
+    align-items:stretch;
     min-height:0;
     margin:8px 0 34px;
     border-radius:20px;
