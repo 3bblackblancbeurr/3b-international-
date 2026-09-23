@@ -40,7 +40,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   try{if(screen.orientation?.lock)await screen.orientation.lock('landscape');}
   catch{setImmersiveError('Le téléphone ne permet pas de verrouiller l’orientation ici. Tourne-le simplement à l’horizontale.');}
  }
- const Icon=near?.type==='portal'?DoorOpen:near?.type==='story'||near?.type==='echo'?MessageCircle:near?.type==='guardian'||near?.type==='patrol'?Swords:Sparkles;
+ const Icon=near?.type==='portal'?DoorOpen:['story','echo','kais'].includes(near?.type)?MessageCircle:['guardian','patrol','training'].includes(near?.type)?Swords:['passport','archives'].includes(near?.type)?BookOpen:near?.type==='transit'?Map:Sparkles;
  const name=near?.type==='story'?near.name.split(' · ')[0]:near?.id==='hub'?'Nexus':near?.type==='beacon'?(near.done?'Souvenir retrouvé':'Recueillir'):near?.type==='guardian'?'Défier le gardien':near?.name;
  const bearing=snapshot.waypoint?Math.atan2(snapshot.waypoint.x-snapshot.position.x,snapshot.position.z-snapshot.waypoint.z)*180/Math.PI-compassHeading(snapshot.camera?.yaw):0;
  return <>
