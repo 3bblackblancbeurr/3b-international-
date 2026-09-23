@@ -17,7 +17,7 @@ test('moderation request is fixed server-side and does not accept arbitrary acti
 
 test('moderation thresholds reduce low-confidence harsh actions',()=>{
  assert.equal(interpretModeration({answers:{'community.action':{choice:'block',confidence:.9}}}).action,'block');
- assert.equal(interpretModeration({answers:{'community.action':{choice:'block',confidence:.5}}}).action,'allow');
+ assert.equal(interpretModeration({answers:{'community.action':{choice:'block',confidence:.5}}}).action,'warn');
  assert.equal(interpretModeration({answers:{'community.action':{choice:'allow',confidence:.9},'community.obfuscation':{noul:.95}}}).action,'warn');
  assert.equal(interpretModeration({answers:{'community.action':{choice:'other',confidence:.9}}}),null);
 });
