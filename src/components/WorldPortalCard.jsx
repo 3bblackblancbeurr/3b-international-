@@ -1,5 +1,7 @@
+import {useState} from 'react';
 import {ArrowUpRight, CircleDot, Globe2, ShieldCheck} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
+import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
 
 const GATES=[
  ['FR','Justice'],['DZ','Loyauté'],['ES','Passion'],['MA','Noblesse'],
@@ -12,6 +14,17 @@ const BUILDINGS=[
 ];
 
 export default function WorldPortalCard({goTo}){
+ const[busy,setBusy]=useState(false);
+ const[message,setMessage]=useState('');
+
+ const openNativeWorld=async()=>{
+  if(busy)return;
+  setBusy(true);setMessage('');
+  try{await launchUnrealWorld();}
+  catch{setMessage('L’expérience native 3B est momentanément indisponible. Le Monde du 3B reste accessible dans l’application.');}
+  finally{setBusy(false);}
+ };
+
  return <section className="world-portal" aria-labelledby="world-portal-title">
   <div className="world-portal-copy">
    <p className="eyebrow">LE MONDE DU 3B · NEXUS</p>
@@ -24,7 +37,9 @@ export default function WorldPortalCard({goTo}){
    </div>
    <div className="world-portal-actions">
     <RouteLink page="world3b" goTo={goTo} className="surface-button">Entrer dans le Monde du 3B <ArrowUpRight size={16}/></RouteLink>
+    {UNREAL_LAUNCH_ENABLED&&<button type="button" className="quiet-button world-native-button" onClick={openNativeWorld} disabled={busy}>{busy?'Ouverture…':'Lancer l’expérience native'}</button>}
    </div>
+   {message&&<p className="world-portal-message" role="status">{message}</p>}
   </div>
 
   <div className="world-portal-stage" aria-hidden="true">
