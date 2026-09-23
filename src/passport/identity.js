@@ -62,7 +62,7 @@ export function passportInitials(identity) {
   }
 
   return words
-    .slice(0, 4)
+    .slice(0, 2)
     .map(word => [...word.replace(/[^\p{L}\p{N}]+/gu, '')][0] || '')
     .join('')
     .slice(0, 4)
