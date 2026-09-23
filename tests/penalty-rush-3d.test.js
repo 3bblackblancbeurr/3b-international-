@@ -19,7 +19,7 @@ test('3D arena contains a pitch, goal, ball, humanoid players and dynamic camera
   assert.match(arena, /function createHumanoid/);
   assert.match(arena, /function createPitch/);
   assert.match(arena, /function createGoal/);
-  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
+  assert.match(arena, /new THREE\.SphereGeometry\(\.23/);
   assert.match(arena, /new THREE\.PerspectiveCamera/);
   assert.match(arena, /camera\.position\.lerp/);
   assert.match(arena, /posePlayer/);
@@ -32,7 +32,7 @@ test('mobile movement is locally predicted and server requests are coalesced', (
   assert.match(match, /controlRef = useRef/);
   assert.match(match, /moveInFlight = useRef/);
   assert.match(match, /pendingMove = useRef/);
-  assert.match(match, /now - moveThrottle\.current < 50/);
+  assert.match(match, /now - moveThrottle\.current < 45/);
   assert.match(match, /queueMove\(\{ type:'move'/);
 });
 
@@ -53,7 +53,7 @@ test('V3 deepens the pitch and guarantees a dedicated behind-goal goalkeeper cam
   assert.match(arena, /const GOAL_Z = -19\.75/);
   assert.match(arena, /keeperGoalFramingDistance/);
   assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /fov = 61/);
+  assert.match(arena, /fov = 59/);
   assert.match(arena, /goal\.userData\.netMat\.opacity/);
 });
 
@@ -68,8 +68,8 @@ test('V3 reuses the real skinned 3B human pipeline with procedural fallback', ()
 test('V3 adds local prediction for attacker and goalkeeper while server remains authoritative', () => {
   assert.match(arena, /predictLocalAttacker/);
   assert.match(arena, /controlRef\?\.current\?\.keeper/);
-  assert.match(arena, /predictLocalKeeper/);
-  assert.match(match, /moveThrottle\.current < 50/);
+  assert.match(arena, /renderKeeper\.x \+=/);
+  assert.match(match, /moveThrottle\.current < 60/);
   assert.match(match, /keeper:\{ direction:0, intensity:0, active:false \}/);
 });
 
@@ -99,38 +99,58 @@ test('keeper camera computes enough distance to keep the complete goal in frame 
 });
 
 
-test('V4 normalizes player and ball dimensions to real football scale', () => {
+test('V3 prevents the goalkeeper camera from spawning inside the rear stand', () => {
+  assert.match(arena, /endStand\.position\.set\(0, 3\.4, GOAL_Z - 12\.8\)/);
+  assert.match(arena, /keeperGoalFramingDistance/);
+});
+
+test('V3 calibrates human and ball scale to football dimensions', () => {
+  assert.match(arena, /const targetHeight = index === 1 \? 1\.84 : 1\.8/);
+  assert.match(arena, /actor\.object\.scale\.multiplyScalar\(targetHeight \/ size\.y\)/);
+  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
+  assert.match(arena, /root\.scale\.setScalar\(\.56\)/);
+});
+
+test('goalkeeper lateral movement is sent continuously while dragging and predicted instantly', () => {
+  assert.match(match, /keeperMoveThrottle = useRef\(0\)/);
+  assert.match(match, /queueKeeper\(\{/);
+  assert.match(match, /type:'hold'/);
+  assert.match(match, /now - keeperMoveThrottle\.current >= 70/);
+  assert.match(arena, /desiredLocalX/);
+  assert.match(arena, /expFollow\(selfKeeper \? 30 : 12/);
+});
+
+test('local attacker prediction prioritizes immediate input over server correction while input is held', () => {
+  assert.match(arena, /const lateralSpeed = 4\.6 \+ intensity \* 1\.4/);
+  assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 2\.1\)/);
+  assert.match(arena, /input\?\.active \? \.9 : 8\.5/);
+  assert.match(arena, /index === snapshot\.selfIndex \? 28 : 11/);
+});
+
+
+test('V3 uses official football proportions for goal and ball', () => {
   assert.match(arena, /const GOAL_W = 7\.32/);
   assert.match(arena, /const GOAL_H = 2\.44/);
   assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
   assert.match(arena, /const targetHeight = 1\.82/);
-  assert.match(arena, /targetHeight \/ height/);
-  assert.match(arena, /root\.scale\.setScalar\(\.56\)/);
 });
 
-test('V4 keeper camera is physically behind the goal without an opaque end stand', () => {
-  assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /2\.68/);
-  assert.match(arena, /fov = 61/);
-  assert.doesNotMatch(arena, /const endStand = new THREE\.Mesh/);
-  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.065/);
+test('behind-goal keeper camera has a permanent unobstructed central corridor', () => {
+  assert.doesNotMatch(arena, /const endStand =/);
+  assert.match(arena, /rearLeft\.position\.set\(-7\.7/);
+  assert.match(arena, /rearRight\.position\.set\(7\.7/);
+  assert.match(arena, /desired\.set\(\s*0,\s*2\.82,\s*GOAL_Z - goalDistance/);
 });
 
-test('V4 streams keeper movement while dragging and keeps the server authoritative', () => {
-  assert.match(match, /keeperMoveThrottle/);
-  assert.match(match, /pendingKeeperMove/);
-  assert.match(match, /keeperFinalAction/);
-  assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, intensity \}\)/);
-  assert.match(match, /queueKeeperFinal\(parsed\)/);
-  assert.match(server, /state\.lastKeeperMoveAt = at/);
-  assert.match(server, /const lateralSpeed = 1\.65 \+ intensity \* 1\.35/);
-  assert.match(server, /direction \* lateralSpeed \* dt/);
+test('keeper tracking is absolute, immediate and server-authoritative', () => {
+  assert.match(match, /type:'keeper-track'/);
+  assert.match(match, /const position = Math\.max\(-1, Math\.min\(1, dx \/ 74\)\)/);
+  assert.match(match, /keeperMoveThrottle\.current >= 45/);
+  assert.match(server, /if \(type === 'keeper-track'\)/);
+  assert.match(server, /state\.positions\.keeper\.y = clamp\(position, -\.95, \.95\)/);
 });
 
-test('V4 local prediction prioritizes instant control then reconciles softly', () => {
-  assert.match(arena, /const lateralSpeed = 4\.6 \+ intensity \* 1\.4/);
-  assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 3\.8\)/);
-  assert.match(arena, /input\?\.active \? 1\.15 : 9\.5/);
-  assert.match(arena, /const speed = 6\.4 \+ intensity \* 2\.6/);
-  assert.match(arena, /input\?\.active \? \.9 : 11\.5/);
+test('server movement tuning supports competitive responsiveness', () => {
+  assert.match(server, /const speed = \(\.17 \+ intensity \* \.16\)/);
+  assert.match(server, /ix \* \(\.26 \+ intensity\*\.18\)/);
 });
