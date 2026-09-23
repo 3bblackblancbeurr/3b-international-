@@ -30,6 +30,15 @@ test('passport identity is derived from the signed-in member profile',()=>{
  assert.equal(passportInitials(passport),'AE');
 });
 
+
+test('brand-style short holder names keep the complete Passport monogram',()=>{
+ const founder=passportFromProfile({...profile('France'),name:'3B',handle:'3binternational',public_badge_key:'director_founder',public_title:'DIRECTEUR · FONDATEUR 3B',public_verified:true},{id:UID});
+ assert.equal(passportInitials(founder),'3B');
+ assert.equal(founder.public_badge_key,'director_founder');
+ assert.equal(founder.public_title,'DIRECTEUR · FONDATEUR 3B');
+ assert.equal(founder.public_verified,true);
+});
+
 test('a profile from another authenticated account is rejected',()=>{
  assert.equal(passportFromProfile(profile(),{id:'00000000-0000-0000-0000-000000000000'}),null);
 });
