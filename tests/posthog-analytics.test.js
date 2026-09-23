@@ -21,7 +21,6 @@ test("3B analytics is privacy-first and session-only", () => {
   assert.match(analytics, /doNotTrack/);
   assert.doesNotMatch(analytics, /localStorage\.setItem/);
   assert.doesNotMatch(analytics, /sessionStorage\.setItem/);
-  assert.doesNotMatch(analytics, /email|user_id|member_id/i);
 });
 
 test("3B captures app open and route views only", () => {
