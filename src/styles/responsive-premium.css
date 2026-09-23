@@ -6,7 +6,7 @@
 
 html{overflow-x:hidden}
 .app3b,.app3b main,.app3b section,.app3b article,.app3b div{min-width:0}
-.app3b img,.app3b video,.app3b canvas,.app3b svg{max-width:100%}
+.app3b img,.app3b video{max-width:100%}
 .passport-phone-card{display:none}
 .passport-official-badge{margin-top:.9cqw;max-width:100%}
 
