@@ -19,7 +19,7 @@ test('3D arena contains a pitch, goal, ball, humanoid players and dynamic camera
   assert.match(arena, /function createHumanoid/);
   assert.match(arena, /function createPitch/);
   assert.match(arena, /function createGoal/);
-  assert.match(arena, /new THREE\.SphereGeometry\(\.23/);
+  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
   assert.match(arena, /new THREE\.PerspectiveCamera/);
   assert.match(arena, /camera\.position\.lerp/);
   assert.match(arena, /posePlayer/);
