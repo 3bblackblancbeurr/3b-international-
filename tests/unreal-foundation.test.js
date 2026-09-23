@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,statSync} from 'node:fs';
 import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const root=new URL('../',import.meta.url);
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
 function filesUnder(relative){
- const base=new URL('../'+relative,import.meta.url).pathname;
+ const base=fileURLToPath(new URL('../'+relative,import.meta.url));
  const out=[];
  const walk=dir=>{
   for(const name of readdirSync(dir)){

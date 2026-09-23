@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2, Truck, BadgeCheck } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2, Truck, BadgeCheck, Maximize2, X } from "lucide-react";
 import { CART_KEY, PENDING_KEY, readStored, writeStored, sanitizeCart, subtractPurchased } from "./cart.js";
 import "./shop.css";
 import {useLoyalty} from "../loyalty/LoyaltyContext.jsx";
 import {checkoutAuth} from "../loyalty/client.js";
 import {discountFor} from "../../shared/loyalty.js";
 import { MyOrdersPanel, SellerOrdersPanel } from "./OrderPanels.jsx";
+import { mountNexusDialog } from "../passport/nexus-dialog.js";
 
 const money = (amount, currency = "eur") => new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount / 100);
 const variantLabel = item => [item.color, item.logoCountry, item.size && item.size !== "Taille unique" ? item.size : ""].filter(Boolean).join(" · ");
@@ -27,11 +29,25 @@ async function requestJson(url, options = {}) {
 
 function ProductGallery() {
   const [active, setActive] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
+  const dialogRef = useRef(null);
+  const openerRef = useRef(null);
+
+  useEffect(() => {
+    if (!zoomed || !dialogRef.current) return undefined;
+    const unmount = mountNexusDialog(dialogRef.current, () => setZoomed(false));
+    return () => {
+      unmount();
+      if (openerRef.current?.isConnected) openerRef.current.focus({ preventScroll: true });
+    };
+  }, [zoomed]);
+
   return (
     <div className="shop-gallery">
-      <div className="shop-gallery-main">
+      <button ref={openerRef} type="button" className="shop-gallery-main" onClick={() => setZoomed(true)} aria-label="Voir la photo du produit en grand">
         <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} loading={active ? "lazy" : "eager"} />
-      </div>
+        <span className="shop-gallery-zoom"><Maximize2 size={16} /> Voir en grand</span>
+      </button>
       <div className="shop-gallery-thumbs" aria-label="Photos du Pull 3B International">
         {SHOP_MEDIA.map((media, index) => (
           <button key={media.src} type="button" className={active === index ? "is-active" : ""}
@@ -40,6 +56,16 @@ function ProductGallery() {
           </button>
         ))}
       </div>
+
+      {zoomed && createPortal(<dialog ref={dialogRef} className="shop-image-viewer" aria-modal="true" tabIndex={-1} aria-label="Photo du Pull 3B International en grand" onClick={event => { if (event.target === event.currentTarget) setZoomed(false); }}>
+        <button type="button" className="shop-image-viewer-close" onClick={() => setZoomed(false)} aria-label="Fermer la photo"><X size={22}/></button>
+        <div className="shop-image-viewer-stage" onClick={event => event.stopPropagation()}>
+          <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} />
+          <div className="shop-image-viewer-thumbs">
+            {SHOP_MEDIA.map((media,index)=><button type="button" key={media.src} aria-label={`Afficher la photo ${index + 1}`} aria-pressed={active===index} className={active===index?"is-active":""} onClick={()=>setActive(index)}><img src={media.src} alt=""/></button>)}
+          </div>
+        </div>
+      </dialog>, document.body)}
     </div>
   );
 }

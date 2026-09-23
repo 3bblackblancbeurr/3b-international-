@@ -282,3 +282,149 @@
  .premium-game-card[data-game="dada3b"] .premium-card-sprite,
  .premium-game-card[data-visual] .premium-card-sprite{left:20px;bottom:46px;transform:scale(.82)}
 }
+
+
+/* =========================================================
+   JEUX 3B — GOLD MASTER LIBRARY
+   Final cover treatment: desktop and phone intentionally use
+   different compositions instead of shrinking the desktop cards.
+========================================================= */
+.premium-library{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+  margin:26px 0 34px;
+}
+.premium-game-card,
+.premium-game-card:nth-child(n){
+  grid-column:auto;
+  display:grid;
+  grid-template-rows:clamp(220px,20vw,285px) minmax(0,1fr);
+  min-height:470px;
+  border-radius:20px;
+  border-color:#a7c8d52e;
+  background:linear-gradient(155deg,#142330,#080f15);
+  box-shadow:0 26px 70px #0006,inset 0 1px #ffffff0c;
+}
+.premium-game-card:nth-child(n) .premium-card-art{height:auto;min-height:0}
+.premium-card-art::after{background:linear-gradient(0deg,#101c29 0%,#101c29d9 6%,transparent 48%),linear-gradient(90deg,#0003,transparent 36%,#0002)}
+.premium-card-copy{padding:18px 24px 23px;gap:10px}
+.premium-card-copy>strong{min-height:0;font-size:clamp(23px,2.1vw,30px);line-height:1.13}
+.premium-card-description{font-size:14px;line-height:1.62;color:#b7c8d4}
+.premium-card-genre{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.premium-card-number{left:18px;top:17px;padding:5px 8px;border:1px solid color-mix(in srgb,var(--accent) 42%,transparent);border-radius:999px;background:#04090dbd;backdrop-filter:blur(8px);font-weight:800}
+.premium-card-bottom{padding-top:13px;border-top:1px solid #ffffff12}
+.premium-card-play{min-height:42px;padding:9px 14px;border-radius:10px;background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 15%,#0b141b),#0b141b);border-color:color-mix(in srgb,var(--accent) 38%,transparent);font-weight:750}
+@media(hover:hover) and (pointer:fine){
+ .premium-game-card:hover{transform:translateY(-5px);box-shadow:0 34px 84px #0008,0 0 34px color-mix(in srgb,var(--accent) 10%,transparent),inset 0 1px #ffffff11}
+}
+
+/* Penalty Rush — a full stadium poster rather than a flat green tile. */
+.premium-game-card[data-game="penalty-rush"] .premium-card-art{
+ background:
+  radial-gradient(ellipse at 50% -5%,#d8fff17a 0 1%,transparent 20%),
+  radial-gradient(ellipse at 18% 3%,#eafff083 0 1%,transparent 16%),
+  radial-gradient(ellipse at 82% 3%,#eafff083 0 1%,transparent 16%),
+  linear-gradient(180deg,#061d27 0 32%,transparent 33%),
+  repeating-linear-gradient(90deg,#155138 0 14%,#103e2d 14% 28%);
+}
+.premium-game-card[data-game="penalty-rush"] .premium-card-art::before{
+ left:50%;bottom:7%;width:62%;height:62%;transform:translateX(-50%);border:3px solid #f0fff1b0;border-bottom:0;border-radius:3px 3px 0 0;box-shadow:0 0 22px #9fffd331,inset 0 0 18px #ffffff0d;
+ background:repeating-linear-gradient(90deg,transparent 0 24px,#f2fff21a 25px 26px),repeating-linear-gradient(0deg,transparent 0 20px,#f2fff21a 21px 22px);
+}
+.premium-game-card[data-game="penalty-rush"] .premium-card-sprite{
+ width:78px;height:78px;left:calc(50% - 39px);bottom:42px;border-width:2px;
+ box-shadow:0 20px 25px #0009,0 0 0 9px #ffffff05;
+}
+
+/* Arena / Tower / Maze use the production artwork at true cover scale. */
+.premium-game-card[data-game="arena"] .premium-card-art,
+.premium-game-card[data-game="tower"] .premium-card-art,
+.premium-game-card[data-game="maze"] .premium-card-art{background-size:cover;background-position:center}
+.premium-game-card[data-game="arena"] .premium-card-sprite{width:150px;height:225px;left:calc(50% - 75px);bottom:-28px}
+.premium-game-card[data-game="tower"] .premium-card-sprite{width:178px;height:220px;left:calc(50% - 89px);bottom:-18px}
+.premium-game-card[data-game="maze"] .premium-card-sprite{width:170px;height:224px;left:calc(50% - 85px);bottom:-18px}
+
+/* Course des clés — cover art + luminous key path, not a placeholder icon. */
+.premium-game-card[data-game="key-race"] .premium-card-art{
+ background:
+  linear-gradient(180deg,#05060820,#050608d2),
+  radial-gradient(circle at 50% 76%,#efc76d30,transparent 25%),
+  url('/games/origins-cover.jpg') center 36%/cover;
+}
+.premium-game-card[data-game="key-race"] .premium-card-art::before{
+ content:"";position:absolute;left:16%;right:16%;bottom:14%;height:3px;border:0;border-radius:999px;
+ background:linear-gradient(90deg,transparent,#f1d58c,#fff5c4,#f1d58c,transparent);
+ box-shadow:0 0 18px #f1ca6d88;transform:none;
+}
+.premium-game-card[data-game="key-race"] .premium-card-sprite{
+ width:96px;height:150px;left:calc(50% - 48px);bottom:12px;border:0;background:transparent;box-shadow:none;
+}
+.premium-game-card[data-game="key-race"] .premium-card-sprite::before{
+ left:50%;top:22px;width:38px;height:38px;border:5px solid #f2d68d;border-radius:50%;background:#07101655;box-shadow:0 0 19px #e9c77985;
+}
+.premium-game-card[data-game="key-race"] .premium-card-sprite::after{
+ content:"";position:absolute;left:calc(50% - 4px);top:64px;width:8px;height:68px;border-radius:6px;background:linear-gradient(#f4d88d,#b88935);box-shadow:0 0 15px #e9c77955,17px 37px 0 -2px #d6b057;
+}
+
+/* DADA 3B — premium board photographed in perspective. */
+.premium-game-card[data-game="dada3b"] .premium-card-art{
+ background:
+  radial-gradient(ellipse at 50% 18%,#d9b95b2d,transparent 28%),
+  linear-gradient(180deg,#17232b,#070a0e 78%);
+ perspective:700px;
+}
+.premium-game-card[data-game="dada3b"] .premium-card-art::before{
+ content:"";position:absolute;left:50%;top:51%;width:min(72%,360px);aspect-ratio:1;transform:translate(-50%,-50%) rotateX(58deg) rotateZ(45deg);
+ border:2px solid #f0d18592;border-radius:24px;
+ background:
+  radial-gradient(circle at 50% 50%,#07131a 0 13%,#f2d27b 14% 16%,#0b171d 17% 23%,transparent 24%),
+  conic-gradient(from 22.5deg,#174f80 0 12.5%,#1b7447 12.5% 25%,#922b32 25% 37.5%,#a57a27 37.5% 50%,#513894 50% 62.5%,#108590 62.5% 75%,#985222 75% 87.5%,#596775 87.5% 100%);
+ box-shadow:0 40px 45px #000b,inset 0 0 0 10px #05090c66,inset 0 0 35px #0008,0 0 28px #e4bd5a22;
+}
+.premium-game-card[data-game="dada3b"] .premium-card-art::after{
+ content:"";position:absolute;inset:0;background:
+  radial-gradient(circle at 50% 64%,#f5d982 0 3px,transparent 4px),
+  radial-gradient(circle at 43% 61%,#79dfff 0 3px,transparent 4px),
+  radial-gradient(circle at 57% 61%,#71e0a2 0 3px,transparent 4px),
+  linear-gradient(0deg,#101c29 0%,transparent 48%);
+ filter:drop-shadow(0 0 7px #fff6b0);
+}
+.premium-game-card[data-game="dada3b"] .premium-card-sprite{display:none}
+
+/* Connected games receive a cinematic scene treatment; no boxed emoji/symbol tile. */
+.premium-game-card[data-visual] .premium-card-sprite{
+ width:190px;height:190px;left:calc(50% - 95px);bottom:-34px;border:0;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 26%,transparent),transparent 66%);opacity:.65;filter:drop-shadow(0 0 24px color-mix(in srgb,var(--accent) 36%,transparent));
+}
+.premium-game-card[data-visual] .premium-card-sprite::before{font-size:74px;font-weight:300;opacity:.62;text-shadow:0 0 24px currentColor}
+.premium-game-card[data-visual="pitch"] .premium-card-art{background:linear-gradient(180deg,#061d27 0 28%,transparent 45%),repeating-linear-gradient(90deg,#155138 0 14%,#103e2d 14% 28%)}
+.premium-game-card[data-visual="guardian"] .premium-card-art{background:radial-gradient(circle at 50% 45%,#ff73534b,transparent 24%),linear-gradient(145deg,#39191a,#090b10 68%)}
+.premium-game-card[data-visual="runner"] .premium-card-art{background:linear-gradient(110deg,transparent 0 42%,#5ee8ff52 43% 44%,transparent 45%),repeating-linear-gradient(105deg,#071722 0 38px,#0d2a38 39px 41px,#071722 42px 80px)}
+.premium-game-card[data-visual="underground"] .premium-card-art{background:linear-gradient(90deg,#05070caa,transparent,#05070caa),repeating-linear-gradient(90deg,#151020 0 40px,#2b1742 41px 43px)}
+.premium-game-card[data-visual="district"] .premium-card-art{background:linear-gradient(180deg,#142d1b18,#08110ddb),url('/games/city-sprites.webp') center/cover}
+.premium-game-card[data-visual="forge"] .premium-card-art{background:radial-gradient(ellipse at 50% 88%,#f2a43f66,transparent 34%),linear-gradient(135deg,#301c0b,#0b0d11 70%)}
+.premium-game-card[data-visual="portal"] .premium-card-art{background:radial-gradient(circle at center,#07141d 0 19%,#7dcfff9b 20% 21%,#07141d 22% 31%,#d8bc7791 32% 33%,#08111a 34%)}
+
+/* Phone gold master: full poster, never a tiny left thumbnail. */
+@media(max-width:720px){
+ .premium-library{grid-template-columns:1fr;gap:15px;margin:18px 0 28px}
+ .premium-game-card,
+ .premium-game-card:nth-child(n){display:grid;grid-template-columns:1fr;grid-template-rows:min(56vw,230px) auto;min-height:0;border-radius:16px}
+ .premium-game-card:nth-child(n) .premium-card-art{height:auto;min-height:0}
+ .premium-card-copy{padding:15px 16px 17px;gap:8px}
+ .premium-card-copy>strong{font-size:22px}
+ .premium-card-description{font-size:12px;line-height:1.52}
+ .premium-card-bottom{font-size:10px;padding-top:10px}
+ .premium-card-play{padding:8px 11px;font-size:12px;min-height:38px}
+ .premium-card-number{left:12px;top:12px}
+ .premium-game-card[data-game] .premium-card-sprite{left:50%}
+ .premium-game-card[data-game="penalty-rush"] .premium-card-sprite{left:calc(50% - 34px);width:68px;height:68px;bottom:36px}
+ .premium-game-card[data-game="arena"] .premium-card-sprite{left:calc(50% - 58px);width:116px;height:178px;transform:none}
+ .premium-game-card[data-game="tower"] .premium-card-sprite{left:calc(50% - 68px);width:136px;height:172px;transform:none}
+ .premium-game-card[data-game="maze"] .premium-card-sprite{left:calc(50% - 66px);width:132px;height:176px;transform:none}
+ .premium-game-card[data-game="key-race"] .premium-card-sprite{left:calc(50% - 38px);width:76px;height:125px;transform:none}
+ .premium-game-card[data-visual] .premium-card-sprite{left:calc(50% - 74px);width:148px;height:148px;bottom:-24px;transform:none}
+}
+@media(min-width:721px) and (max-width:980px){
+ .premium-library{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+ .premium-game-card,.premium-game-card:nth-child(n){grid-template-rows:200px 1fr;min-height:430px}
+}

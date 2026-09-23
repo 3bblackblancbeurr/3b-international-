@@ -41,11 +41,30 @@ export function passportFromProfile(profile, user = null) {
     points: safeNumber(profile.points),
     theme: cleanText(profile.theme, 32),
     createdAt: profile.created_at || null,
+    public_badge_key: cleanText(profile.public_badge_key, 48),
+    public_title: cleanText(profile.public_title, 80),
+    public_verified: profile.public_verified === true,
   });
 }
 
 export function passportInitials(identity) {
-  const words = cleanText(identity?.name, 80).split(/\s+/).filter(Boolean);
-  if (!words.length) return '3B';
-  return words.slice(0, 2).map(word => word[0]?.toLocaleUpperCase('fr-FR') || '').join('') || '3B';
+  const label = cleanText(identity?.name || identity?.handle, 80)
+    .replace(/[^\p{L}\p{N}\s._-]+/gu, ' ')
+    .trim();
+  if (!label) return '3B';
+
+  const words = label.split(/\s+/).filter(Boolean);
+  if (words.length === 1) {
+    const token = words[0].replace(/[^\p{L}\p{N}]+/gu, '');
+    if (!token) return '3B';
+    if (token.length <= 4) return token.toLocaleUpperCase('fr-FR');
+    return [...token].slice(0, 3).join('').toLocaleUpperCase('fr-FR');
+  }
+
+  return words
+    .slice(0, 2)
+    .map(word => [...word.replace(/[^\p{L}\p{N}]+/gu, '')][0] || '')
+    .join('')
+    .slice(0, 4)
+    .toLocaleUpperCase('fr-FR') || '3B';
 }

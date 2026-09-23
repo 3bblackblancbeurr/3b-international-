@@ -6,6 +6,7 @@ const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
 import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
 import { ecosystemPublic } from "./lib/ecosystem.js";
+import useViewportProfile from "./lib/useViewportProfile.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
@@ -15,6 +16,7 @@ import AppLoadingState from "./components/AppLoadingState.jsx";
 import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
+import PassportAppearanceSettings from "./passport/PassportAppearance.jsx";
 import { hasPassportAccess } from "./passport/access.js";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
@@ -29,6 +31,7 @@ import "./styles/refinement.css";
 import "./styles/compact.css";
 import "./styles/dimension.css";
 import "./styles/home-premium.css";
+import "./styles/responsive-premium.css";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
@@ -143,6 +146,7 @@ const MEMBER_MENU_ITEM = {
 };
 
 export default function App() {
+  useViewportProfile();
   const installation = useAppInstallation();
   const [route, setRoute] = useState(readLocation);
   const { page, gameSlug } = route;
@@ -505,6 +509,8 @@ function PassportPage({ identity, syncing, goTo, options, hasPassport = false })
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
+
+      {identity && <PassportAppearanceSettings identity={identity} />}
 
       <div className="info-grid">
         <article className="premium-panel">
