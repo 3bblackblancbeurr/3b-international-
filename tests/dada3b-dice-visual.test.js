@@ -53,11 +53,13 @@ test('premium die remains responsive and honors reduced motion',()=>{
   assert.match(css,/animation:none!important/);
 });
 
-test('premium die keeps fallback visible until WebGL has actually rendered',()=>{
-  assert.match(shell,/webglReady/);
-  assert.match(shell,/data-webgl=\{webglReady&&!webglFailed\}/);
-  assert.match(shell,/onReady=\{\(\)=>setWebglReady\(true\)\}/);
-  assert.match(shell,/setWebglReady\(false\);setWebglFailed\(true\)/);
+test('premium die keeps fallback visible until the current WebGL renderer has actually rendered',()=>{
+  assert.match(shell,/rendererKey=/);
+  assert.match(shell,/webglReadyKey===rendererKey&&!webglFailed/);
+  assert.match(shell,/data-webgl=\{webglReady\}/);
+  assert.match(shell,/key=\{rendererKey\}/);
+  assert.match(shell,/setWebglReadyKey\(rendererKey\)/);
+  assert.match(shell,/setWebglReadyKey\(null\);setWebglFailed\(true\)/);
 });
 
 test('WebGL die uses shared face geometry and exact final locking',()=>{
