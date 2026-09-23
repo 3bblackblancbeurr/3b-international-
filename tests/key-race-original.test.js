@@ -5,16 +5,20 @@ import {existsSync,readFileSync} from 'node:fs';
 const catalog=readFileSync(new URL('../src/games/catalog.js',import.meta.url),'utf8');
 const hub=readFileSync(new URL('../src/games/GamesHub.jsx',import.meta.url),'utf8');
 const app=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
+const original=readFileSync(new URL('../src/games/KeyRaceOriginal.jsx',import.meta.url),'utf8');
 
-test('La Course des clés pointe vers le jeu historique exact',()=>{
+test('La Course des clés conserve le jeu historique exact dans une coque interne 3B',()=>{
  assert.match(catalog,/https:\/\/troisb-course-des-cles-demo\.stetienne86pp\.chatgpt\.site\//);
  assert.match(catalog,/href:KEY_RACE_URL/);
- assert.match(hub,/target\s*:\s*['_"]_blank['_"]/);
+ assert.match(hub,/isOriginalKeyRace=g\.id==='key-race'/);
+ assert.match(hub,/goToGame\?\.\(g\.id\)/);
+ assert.match(app,/gameSlug === "key-race"/);
+ assert.match(original,/src=\{KEY_RACE_URL\}/);
+ assert.match(original,/<iframe/);
 });
 
-test('le faux KeyRace3B recréé n’est plus branché',()=>{
+test('le faux KeyRace3B recréé reste absent',()=>{
  assert.doesNotMatch(app,/KeyRace3B/);
- assert.doesNotMatch(app,/course-des-8-cles/);
  assert.equal(existsSync(new URL('../src/games/KeyRace3B.jsx',import.meta.url)),false);
  assert.equal(existsSync(new URL('../src/games/key-race.css',import.meta.url)),false);
 });
