@@ -189,7 +189,7 @@ async function ownerList(body:any){
  const status=body.status&&OWNER_STATUSES.has(body.status)?body.status:null;
  const severity=body.severity&&OWNER_SEVERITIES.has(body.severity)?body.severity:null;
  const category=body.category&&OWNER_CATEGORIES.has(body.category)?body.category:null;
- let path='/rest/v1/owner_inbox_events?select=id,event_key,category,event_type,severity,title,summary,actor_user_id,subject_type,subject_ref,payload,status,read_at,assigned_to,created_at,updated_at&order=created_at.desc&limit=150';
+ let path='/rest/v1/owner_inbox_events?select=id,category,event_type,severity,title,summary,actor_user_id,subject_type,subject_ref,payload,status,read_at,assigned_to,created_at,updated_at&order=created_at.desc&limit=150';
  if(status)path+='&status=eq.'+enc(status);
  if(severity)path+='&severity=eq.'+enc(severity);
  if(category)path+='&category=eq.'+enc(category);
