@@ -41,3 +41,15 @@ test("privacy policy documents the anonymous analytics behavior", () => {
   assert.match(privacy, /Do Not Track/);
   assert.match(privacy, /Global Privacy Control/);
 });
+
+test("analytics event allowlist blocks accidental expansion of tracking", () => {
+  assert.match(analytics, /ALLOWED_EVENTS = new Set\(\["3b_app_open", "3b_route_view"\]\)/);
+  assert.match(analytics, /!ALLOWED_EVENTS\.has\(normalizedEvent\)/);
+});
+
+test("analytics strips sensitive property names defensively", () => {
+  assert.match(analytics, /SENSITIVE_PROPERTY_PATTERN/);
+  for (const sensitive of ["email", "user_id", "member_id", "password", "token", "phone", "address"]) {
+    assert.match(analytics, new RegExp(sensitive));
+  }
+});
