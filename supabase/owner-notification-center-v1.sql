@@ -1,0 +1,444 @@
+-- 3B International — Owner inbox + member notifications foundation.
+-- Additive staging SQL. This file is intentionally outside migrations until rollout is approved.
+begin;
+
+create table if not exists public.member_notifications(
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  event_key text unique,
+  kind text not null check(kind ~ '^[a-z0-9_.:-]{3,64}$'),
+  severity text not null default 'info' check(severity in ('info','important','urgent','critical')),
+  title text not null check(length(title) between 2 and 160),
+  body text not null default '' check(length(body)<=1500),
+  route text check(route is null or length(route)<=80),
+  metadata jsonb not null default '{}'::jsonb
+    check(jsonb_typeof(metadata)='object' and octet_length(metadata::text)<=8192),
+  read_at timestamptz,
+  expires_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists member_notifications_user_unread_idx
+  on public.member_notifications(user_id,created_at desc) where read_at is null;
+create index if not exists member_notifications_user_created_idx
+  on public.member_notifications(user_id,created_at desc);
+
+create table if not exists public.owner_inbox_events(
+  id bigint generated always as identity primary key,
+  event_key text unique,
+  category text not null check(category in (
+    'accounts','community','moderation','sport','shop','requests','security',
+    'secret3b','games','world','ai','system','privacy','marketplace'
+  )),
+  event_type text not null check(event_type ~ '^[a-z0-9_.:-]{3,80}$'),
+  severity text not null default 'info' check(severity in ('info','important','urgent','critical')),
+  title text not null check(length(title) between 2 and 180),
+  summary text not null default '' check(length(summary)<=2000),
+  actor_user_id uuid references auth.users(id) on delete set null,
+  subject_type text check(subject_type is null or length(subject_type)<=60),
+  subject_ref text check(subject_ref is null or length(subject_ref)<=180),
+  payload jsonb not null default '{}'::jsonb
+    check(jsonb_typeof(payload)='object' and octet_length(payload::text)<=16384),
+  status text not null default 'new' check(status in ('new','in_progress','done','archived')),
+  read_at timestamptz,
+  assigned_to uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists owner_inbox_status_priority_idx
+  on public.owner_inbox_events(status,severity,created_at desc);
+create index if not exists owner_inbox_unread_idx
+  on public.owner_inbox_events(created_at desc) where read_at is null;
+create index if not exists owner_inbox_category_idx
+  on public.owner_inbox_events(category,created_at desc);
+
+create table if not exists public.owner_action_log(
+  id bigint generated always as identity primary key,
+  owner_user_id uuid references auth.users(id) on delete set null,
+  action text not null check(action ~ '^[a-z0-9_.:-]{3,80}$'),
+  target_type text check(target_type is null or length(target_type)<=60),
+  target_ref text check(target_ref is null or length(target_ref)<=180),
+  before_state jsonb not null default '{}'::jsonb check(jsonb_typeof(before_state)='object'),
+  after_state jsonb not null default '{}'::jsonb check(jsonb_typeof(after_state)='object'),
+  detail jsonb not null default '{}'::jsonb
+    check(jsonb_typeof(detail)='object' and octet_length(detail::text)<=16384),
+  created_at timestamptz not null default now()
+);
+create index if not exists owner_action_log_created_idx on public.owner_action_log(created_at desc);
+
+create table if not exists public.threeb_requests(
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  category text not null check(category in (
+    'account','sport','shop','creator','partnership','event','press','technical','privacy','other'
+  )),
+  subject text not null check(length(subject) between 3 and 140),
+  message text not null check(length(message) between 10 and 4000),
+  status text not null default 'new' check(status in ('new','in_progress','answered','closed')),
+  priority text not null default 'normal' check(priority in ('normal','important','urgent')),
+  owner_reply text check(owner_reply is null or length(owner_reply)<=4000),
+  answered_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists threeb_requests_user_created_idx on public.threeb_requests(user_id,created_at desc);
+create index if not exists threeb_requests_status_idx on public.threeb_requests(status,priority,created_at);
+
+create table if not exists public.community_moderation_events(
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  source_kind text not null check(source_kind in ('chat','post','profile','request')),
+  source_id text,
+  decision text not null check(decision in ('mask','block','escalate','restriction','manual_clear')),
+  severity smallint not null check(severity between 1 and 4),
+  reasons text[] not null default '{}',
+  excerpt text not null default '' check(length(excerpt)<=500),
+  detail jsonb not null default '{}'::jsonb
+    check(jsonb_typeof(detail)='object' and octet_length(detail::text)<=8192),
+  resolved_at timestamptz,
+  resolved_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+create index if not exists community_moderation_user_idx
+  on public.community_moderation_events(user_id,created_at desc);
+create index if not exists community_moderation_open_idx
+  on public.community_moderation_events(severity,created_at desc) where resolved_at is null;
+
+create table if not exists public.community_moderation_state(
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  strike_score integer not null default 0 check(strike_score between 0 and 1000),
+  restricted_until timestamptz,
+  last_violation_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.member_notifications enable row level security;
+alter table public.owner_inbox_events enable row level security;
+alter table public.owner_action_log enable row level security;
+alter table public.threeb_requests enable row level security;
+alter table public.community_moderation_events enable row level security;
+alter table public.community_moderation_state enable row level security;
+
+revoke all on public.member_notifications,public.owner_inbox_events,public.owner_action_log,
+  public.threeb_requests,public.community_moderation_events,public.community_moderation_state
+  from public,anon,authenticated;
+
+grant select on public.member_notifications to authenticated;
+grant update(read_at) on public.member_notifications to authenticated;
+grant select on public.threeb_requests to authenticated;
+
+grant all on public.member_notifications,public.owner_inbox_events,public.owner_action_log,
+  public.threeb_requests,public.community_moderation_events,public.community_moderation_state
+  to service_role;
+
+grant usage,select on sequence public.member_notifications_id_seq to service_role;
+grant usage,select on sequence public.owner_inbox_events_id_seq to service_role;
+grant usage,select on sequence public.owner_action_log_id_seq to service_role;
+grant usage,select on sequence public.community_moderation_events_id_seq to service_role;
+
+drop policy if exists member_notifications_read_own on public.member_notifications;
+create policy member_notifications_read_own on public.member_notifications
+  for select to authenticated
+  using((select auth.uid())=user_id and (select member_private.session_active()));
+
+drop policy if exists member_notifications_mark_own on public.member_notifications;
+create policy member_notifications_mark_own on public.member_notifications
+  for update to authenticated
+  using((select auth.uid())=user_id and (select member_private.session_active()))
+  with check((select auth.uid())=user_id and (select member_private.session_active()));
+
+drop policy if exists threeb_requests_read_own on public.threeb_requests;
+create policy threeb_requests_read_own on public.threeb_requests
+  for select to authenticated
+  using((select auth.uid())=user_id and (select member_private.session_active()));
+
+create or replace function member_private.enqueue_member_notification(
+  p_user uuid,p_event_key text,p_kind text,p_severity text,p_title text,p_body text,p_route text,p_metadata jsonb
+) returns void
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if p_user is null then return; end if;
+  insert into public.member_notifications(user_id,event_key,kind,severity,title,body,route,metadata)
+  values(p_user,nullif(p_event_key,''),p_kind,p_severity,left(p_title,160),left(coalesce(p_body,''),1500),p_route,coalesce(p_metadata,'{}'::jsonb))
+  on conflict(event_key) do nothing;
+end
+$$;
+
+create or replace function member_private.enqueue_owner_event(
+  p_event_key text,p_category text,p_event_type text,p_severity text,p_title text,p_summary text,
+  p_actor uuid,p_subject_type text,p_subject_ref text,p_payload jsonb
+) returns void
+language plpgsql security definer set search_path=''
+as $$
+begin
+  insert into public.owner_inbox_events(
+    event_key,category,event_type,severity,title,summary,actor_user_id,subject_type,subject_ref,payload
+  ) values(
+    nullif(p_event_key,''),p_category,p_event_type,p_severity,left(p_title,180),left(coalesce(p_summary,''),2000),
+    p_actor,p_subject_type,p_subject_ref,coalesce(p_payload,'{}'::jsonb)
+  )
+  on conflict(event_key) do nothing;
+end
+$$;
+
+revoke all on function member_private.enqueue_member_notification(uuid,text,text,text,text,text,text,jsonb) from public,anon,authenticated;
+revoke all on function member_private.enqueue_owner_event(text,text,text,text,text,text,uuid,text,text,jsonb) from public,anon,authenticated;
+
+create or replace function member_private.sync_control_owner_staff() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if new.owner_user_id is not null then
+    insert into public.community_staff(user_id) values(new.owner_user_id) on conflict do nothing;
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.sync_control_owner_staff() from public,anon,authenticated;
+
+drop trigger if exists sync_control_owner_staff on public.control_center_settings;
+create trigger sync_control_owner_staff
+after insert or update of owner_user_id on public.control_center_settings
+for each row execute function member_private.sync_control_owner_staff();
+
+insert into public.community_staff(user_id)
+select owner_user_id from public.control_center_settings
+where singleton=true and owner_user_id is not null
+on conflict do nothing;
+
+create or replace function member_private.notify_member_profile_change() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if tg_op='INSERT' then
+    perform member_private.enqueue_owner_event(
+      'account.registered:'||new.user_id::text,'accounts','account.registered','info',
+      'Nouvelle inscription 3B','Un nouveau compte membre a été créé.',new.user_id,'member',new.user_id::text,
+      jsonb_build_object('country',new.country,'handle',new.handle)
+    );
+    return new;
+  end if;
+  perform member_private.enqueue_owner_event(
+    'account.deleted:'||old.user_id::text,'accounts','account.deleted','important',
+    'Compte 3B supprimé','Un compte membre a été supprimé.',null,'member',old.user_id::text,'{}'::jsonb
+  );
+  return old;
+end
+$$;
+revoke all on function member_private.notify_member_profile_change() from public,anon,authenticated;
+drop trigger if exists owner_member_profile_events on public.member_profiles;
+create trigger owner_member_profile_events
+after insert or delete on public.member_profiles
+for each row execute function member_private.notify_member_profile_change();
+
+create or replace function member_private.notify_community_post() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if new.category in ('challenge','collaboration') then
+    perform member_private.enqueue_owner_event(
+      'community.post:'||new.id::text,'community','community.'||new.category,'important',
+      case when new.category='challenge' then 'Nouveau défi proposé' else 'Nouvelle collaboration proposée' end,
+      left(new.title,180),new.author_id,'community_post',new.id::text,
+      jsonb_build_object('category',new.category,'title',new.title)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_community_post() from public,anon,authenticated;
+drop trigger if exists owner_community_post_events on public.community_posts;
+create trigger owner_community_post_events
+after insert on public.community_posts
+for each row execute function member_private.notify_community_post();
+
+create or replace function member_private.notify_community_report() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  perform member_private.enqueue_owner_event(
+    'community.report:'||new.id::text,'moderation','community.reported','urgent',
+    'Nouveau signalement','Un membre a signalé un contenu.',new.user_id,new.kind,new.target_id::text,
+    jsonb_build_object('report_id',new.id,'kind',new.kind,'reason',left(new.reason,500))
+  );
+  return new;
+end
+$$;
+revoke all on function member_private.notify_community_report() from public,anon,authenticated;
+drop trigger if exists owner_community_report_events on public.community_reports;
+create trigger owner_community_report_events
+after insert on public.community_reports
+for each row execute function member_private.notify_community_report();
+
+create or replace function member_private.notify_sport_entry() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_title text;
+begin
+  if new.status=old.status then return new; end if;
+  select title into v_title from public.sport_challenges where id=new.challenge_id;
+  if new.status='submitted' then
+    perform member_private.enqueue_owner_event(
+      'sport.submitted:'||new.user_id::text||':'||new.challenge_id||':'||coalesce(extract(epoch from new.submitted_at)::bigint::text,'0'),
+      'sport','sport.challenge.submitted','important','Défi sportif à valider',
+      coalesce(v_title,new.challenge_id),new.user_id,'sport_challenge',new.challenge_id,
+      jsonb_build_object('user_id',new.user_id,'progress',new.progress)
+    );
+  elsif new.status='verified' then
+    perform member_private.enqueue_member_notification(
+      new.user_id,'sport.verified:'||new.challenge_id,'sport.challenge.verified','important',
+      'Défi 3B validé',coalesce(v_title,new.challenge_id)||' a été validé.','sport',
+      jsonb_build_object('challenge_id',new.challenge_id)
+    );
+  elsif old.status='submitted' and new.status='eligible' then
+    perform member_private.enqueue_member_notification(
+      new.user_id,'sport.rejected:'||new.challenge_id||':'||extract(epoch from new.updated_at)::bigint::text,
+      'sport.challenge.review','important','Défi à compléter',
+      coalesce(new.moderator_note,'La validation demande une précision supplémentaire.'),'sport',
+      jsonb_build_object('challenge_id',new.challenge_id)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_sport_entry() from public,anon,authenticated;
+drop trigger if exists notification_sport_entry_events on public.sport_challenge_entries;
+create trigger notification_sport_entry_events
+after update of status on public.sport_challenge_entries
+for each row execute function member_private.notify_sport_entry();
+
+create or replace function member_private.notify_shop_order() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if tg_op='INSERT' then
+    perform member_private.enqueue_owner_event(
+      'shop.order:'||new.stripe_session_id,'shop','shop.order.paid','important',
+      'Nouvelle commande payée','Une nouvelle commande boutique est prête à être traitée.',
+      new.loyalty_user_id,'shop_order',new.stripe_session_id,
+      jsonb_build_object('amount_total',new.amount_total,'currency',new.currency,'fulfillment_status',new.fulfillment_status)
+    );
+    if new.loyalty_user_id is not null then
+      perform member_private.enqueue_member_notification(
+        new.loyalty_user_id,'shop.paid:'||new.stripe_session_id,'shop.order.paid','important',
+        'Paiement confirmé','Ta commande 3B a bien été enregistrée.','shop',
+        jsonb_build_object('session_id',new.stripe_session_id)
+      );
+    end if;
+  elsif new.fulfillment_status is distinct from old.fulfillment_status then
+    perform member_private.enqueue_owner_event(
+      'shop.status:'||new.stripe_session_id||':'||new.fulfillment_status,'shop','shop.order.'||new.fulfillment_status,
+      case when new.fulfillment_status in ('cancelled','refunded') then 'urgent' else 'info' end,
+      'Commande · '||new.fulfillment_status,'Le statut d’une commande a changé.',
+      new.loyalty_user_id,'shop_order',new.stripe_session_id,
+      jsonb_build_object('from',old.fulfillment_status,'to',new.fulfillment_status)
+    );
+    if new.loyalty_user_id is not null then
+      perform member_private.enqueue_member_notification(
+        new.loyalty_user_id,'shop.status:'||new.stripe_session_id||':'||new.fulfillment_status,
+        'shop.order.'||new.fulfillment_status,
+        case when new.fulfillment_status in ('cancelled','refunded') then 'important' else 'info' end,
+        'Commande 3B mise à jour','Nouveau statut : '||new.fulfillment_status||'.','shop',
+        jsonb_build_object('session_id',new.stripe_session_id,'status',new.fulfillment_status)
+      );
+    end if;
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_shop_order() from public,anon,authenticated;
+drop trigger if exists notification_shop_order_events on public.shop_orders;
+create trigger notification_shop_order_events
+after insert or update of fulfillment_status on public.shop_orders
+for each row execute function member_private.notify_shop_order();
+
+create or replace function member_private.notify_shop_delivery_failure() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if new.state='failed' and (tg_op='INSERT' or old.state is distinct from new.state) then
+    perform member_private.enqueue_owner_event(
+      'shop.notification.failed:'||new.stripe_session_id||':'||new.event||':'||new.channel,
+      'shop','shop.notification.failed','urgent','Notification boutique échouée',
+      'Une notification '||new.channel||' n’a pas pu être envoyée.',null,'shop_order',new.stripe_session_id,
+      jsonb_build_object('event',new.event,'channel',new.channel,'attempts',new.attempts)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_shop_delivery_failure() from public,anon,authenticated;
+drop trigger if exists owner_shop_notification_failures on public.shop_notification_log;
+create trigger owner_shop_notification_failures
+after insert or update of state on public.shop_notification_log
+for each row execute function member_private.notify_shop_delivery_failure();
+
+create or replace function member_private.notify_trade_offer() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if tg_op='INSERT' and new.status='pending' and new.recipient_id is not null then
+    perform member_private.enqueue_member_notification(
+      new.recipient_id,'trade.received:'||new.id::text,'marketplace.trade.received','important',
+      'Nouvelle proposition d’échange','Un membre 3B te propose un échange.','member',
+      jsonb_build_object('trade_id',new.id)
+    );
+  elsif tg_op='UPDATE' and new.status is distinct from old.status then
+    if new.proposer_id is not null then
+      perform member_private.enqueue_member_notification(
+        new.proposer_id,'trade.status:'||new.id::text||':'||new.status,'marketplace.trade.'||new.status,'info',
+        'Échange 3B mis à jour','Statut : '||new.status||'.','member',jsonb_build_object('trade_id',new.id)
+      );
+    end if;
+    if new.recipient_id is not null then
+      perform member_private.enqueue_member_notification(
+        new.recipient_id,'trade.status-recipient:'||new.id::text||':'||new.status,'marketplace.trade.'||new.status,'info',
+        'Échange 3B mis à jour','Statut : '||new.status||'.','member',jsonb_build_object('trade_id',new.id)
+      );
+    end if;
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_trade_offer() from public,anon,authenticated;
+drop trigger if exists notification_trade_offer_events on public.trade_offers;
+create trigger notification_trade_offer_events
+after insert or update of status on public.trade_offers
+for each row execute function member_private.notify_trade_offer();
+
+create or replace function member_private.notify_secret_winner() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if tg_op='INSERT' then
+    perform member_private.enqueue_owner_event(
+      'secret3b.winner:'||new.attempt_id::text,'secret3b','secret3b.winner','important',
+      'Nouveau gagnant Secret 3B','Un gagnant a été enregistré. Rang '||new.winner_rank::text||'.',
+      null,'secret3b_winner',new.attempt_id::text,jsonb_build_object('rank',new.winner_rank)
+    );
+  elsif new.claimed_at is not null and old.claimed_at is null then
+    perform member_private.enqueue_owner_event(
+      'secret3b.claimed:'||new.attempt_id::text,'secret3b','secret3b.prize_claimed','important',
+      'Lot Secret 3B réclamé','Un gagnant a transmis ses informations de remise.',
+      new.claimed_by,'secret3b_winner',new.attempt_id::text,jsonb_build_object('rank',new.winner_rank)
+    );
+    if new.claimed_by is not null then
+      perform member_private.enqueue_member_notification(
+        new.claimed_by,'secret3b.claimed:'||new.attempt_id::text,'secret3b.prize_claimed','important',
+        'Réclamation enregistrée','Ta demande de lot Secret 3B a bien été enregistrée.','secret',
+        jsonb_build_object('rank',new.winner_rank)
+      );
+    end if;
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_secret_winner() from public,anon,authenticated;
+drop trigger if exists notification_secret_winner_events on public.secret3b_phone_winners;
+create trigger notification_secret_winner_events
+after insert or update of claimed_at on public.secret3b_phone_winners
+for each row execute function member_private.notify_secret_winner();
+
+commit;
