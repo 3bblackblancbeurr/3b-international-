@@ -123,16 +123,16 @@ test('V4 streams keeper movement while dragging and keeps the server authoritati
   assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, intensity \}\)/);
   assert.match(match, /queueKeeperFinal\(parsed\)/);
   assert.match(server, /state\.lastKeeperMoveAt = at/);
-  assert.match(server, /const lateralSpeed = 1\.65 \+ intensity \* 1\.35/);
+  assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
   assert.match(server, /direction \* lateralSpeed \* dt/);
 });
 
 test('V4 local prediction prioritizes instant control then reconciles softly', () => {
-  assert.match(arena, /const lateralSpeed = 4\.6 \+ intensity \* 1\.4/);
-  assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 3\.8\)/);
-  assert.match(arena, /input\?\.active \? 1\.15 : 9\.5/);
-  assert.match(arena, /const speed = 6\.4 \+ intensity \* 2\.6/);
-  assert.match(arena, /input\?\.active \? \.9 : 11\.5/);
+  assert.match(arena, /const lateralSpeed = 7\.4 \+ intensity \* 2\.8/);
+  assert.match(arena, /const forwardSpeed = \(7\.8 \+ intensity \* 4\.4\)/);
+  assert.match(arena, /input\?\.active \? \.35 : 12\.5/);
+  assert.match(arena, /const speed = 11\.5 \+ intensity \* 5\.5/);
+  assert.match(arena, /input\?\.active \? \.25 : 15/);
 });
 
 
