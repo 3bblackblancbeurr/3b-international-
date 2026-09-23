@@ -2,31 +2,37 @@
 
 Branche : `chatgpt-core6-hardening-20260923` (base `main`).
 
+## Règle canonique Passeport
+
+Il existe **un seul Passeport 3B**.
+
+- sans Passeport : accès limité à l’accueil, à l’activation du Passeport et au compte ;
+- avec Passeport 3B actif : accès à l’écosystème 3B, y compris **Le Monde du 3B** et l’Arène ;
+- aucun « Passeport 1 » / « Passeport 2 » ;
+- aucun objet d’inventaire n’est utilisé pour créer un second niveau d’accès.
+
 ## Ce qui est durci ici
 
-- **Application 3B** : texte d’entrée réduit à « Un écosystème premium. » et phrase vocale exacte rétablie au clic sur COMMENCER.
-- **Passeport 3B** : niveau 1 requis pour les sections applicatives ; niveau 2 requis pour Monde du 3B et Arène.
-- **Niveau 2** : seul l’objet existant `PASSPORT_FOUNDER_GOLD` est reconnu pour l’instant. Aucun nouveau produit fictif n’est inventé.
-- **Snapshot membre** : remonte uniquement les `item_code` et quantités positives appartenant au membre, afin de calculer l’accès côté UI sans exposer de secret.
-- **DADA 3B** : aucun changement moteur ou visuel dans cette branche. Le correctif de capture de #233 reste l’autorité.
-- **Penalty Rush** : aucun remplacement. La réintégration locale fusionnée par #240 reste l’autorité.
-- **Monde du 3B** : le Hub V4 / 8 portails fusionné par #234 reste l’autorité. Le nouveau verrou exige le Passeport 2 pour y entrer.
-- **Course des 8 Clés** : pas de faux portage interne. Le vrai code source historique n’étant toujours pas présent dans ce dépôt, l’état externe restauré par #238 est conservé jusqu’à récupération de la vraie source.
+- **Application 3B** : texte d’entrée « Un écosystème premium. » et phrase vocale exacte au clic sur COMMENCER.
+- **Passeport 3B** : un seul verrou d’accès basé sur l’identité Passeport du compte connecté.
+- **DADA 3B** : aucun changement moteur ou visuel. Le correctif de capture de #233 reste l’autorité.
+- **Penalty Rush** : la réintégration locale fusionnée par #240 reste l’autorité.
+- **Monde du 3B** : Hub V4 / 8 portails #234 conservé et accessible avec le même Passeport 3B.
+- **Course des 8 Clés** : aucun faux portage interne ; la vraie source historique manque toujours dans ce dépôt.
 
 ## Vérifications production déjà faites
 
 - projet Supabase canonique actif et sain : `ttvhcezucsbbmnafrotq` ;
 - RLS activé sur les tables membres/économie/inventaire/Nexus/DADA/Penalty examinées ;
 - Edge Functions `dada3b` et `penalty-rush` actives avec JWT ;
-- table `app_games_catalog` présente ;
-- objet `PASSPORT_FOUNDER_GOLD` présent dans le catalogue d’inventaire.
+- table `app_games_catalog` présente.
 
 ## Blocages réels restants
 
 1. **Course des 8 Clés** : récupérer la vraie source avant intégration interne.
-2. **Unreal France** : les validations UE5.8 réelles (PIE, HLOD, navigation, profiling, packaging) restent nécessaires ; les scripts GitHub ne remplacent pas l’éditeur.
-3. **Passeport 2 grand public** : définir plus tard le produit/règle officielle qui accordera le niveau 2 aux membres non-Fondateur.
-4. **Sécurité Supabase** : les advisors signalent notamment deux fonctions de télémétrie `SECURITY DEFINER` exécutables par `anon`. Elles sont rate-limit et servent à l’installation/présence ; ne pas changer leurs droits sans tester les parcours PWA anonymes.
+2. **Unreal France** : validations UE5.8 réelles (PIE, HLOD, navigation, profiling, packaging).
+3. **Tests physiques** : Samsung + iPhone après validation de la branche.
+4. **Sécurité Supabase** : deux fonctions de télémétrie `SECURITY DEFINER` sont exécutables par `anon`; ne pas modifier sans tester les parcours PWA anonymes.
 
 ## Hors périmètre volontaire
 
