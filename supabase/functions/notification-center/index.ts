@@ -1,3 +1,4 @@
+import {moderateCommunityText,moderationRestriction,moderationStrikeWeight} from '../_shared/moderation.js';
 const BASE=Deno.env.get('SUPABASE_URL')||'';
 
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
@@ -90,6 +91,66 @@ async function memberNotify(userId:string,eventKey:string,kind:string,severity:s
 async function ownerEvent(eventKey:string,category:string,eventType:string,severity:string,title:string,summary:string,actor:string|null,subjectType:string|null,subjectRef:string|null,payload:any={}){
  await insert('owner_inbox_events',{event_key:eventKey,category,event_type:eventType,severity,title,summary,actor_user_id:actor,subject_type:subjectType,subject_ref:subjectRef,payload}).catch(()=>{});
 }
+
+async function moderationGuard(uid:string){
+ const rows=await api('/rest/v1/community_moderation_state?user_id=eq.'+enc(uid)+'&select=strike_score,restricted_until,last_violation_at&limit=1');
+ const state=rows?.[0];
+ if(state?.restricted_until&&Date.parse(state.restricted_until)>Date.now()){
+  throw new Failure(403,'Ton accès aux messages est temporairement limité. Réessaie après la fin de la restriction.');
+ }
+ return state||null;
+}
+async function recordModeration(uid:string,result:any,sourceKind:string,sourceId:string|null,original:string){
+ const previous=await moderationGuard(uid);
+ const reset=!previous?.last_violation_at||Date.now()-Date.parse(previous.last_violation_at)>30*86400000;
+ const base=reset?0:Number(previous?.strike_score||0);
+ const score=Math.min(1000,base+moderationStrikeWeight(result));
+ const restrictedUntil=moderationRestriction(score,result.severity);
+ const now=new Date().toISOString();
+ await api('/rest/v1/community_moderation_state?on_conflict=user_id',{
+  method:'POST',
+  headers:{Prefer:'resolution=merge-duplicates,return=representation'},
+  body:JSON.stringify({user_id:uid,strike_score:score,restricted_until:restrictedUntil,last_violation_at:now,updated_at:now})
+ });
+ const rows=await insert('community_moderation_events',{
+  user_id:uid,source_kind:sourceKind,source_id:sourceId,decision:result.action,severity:result.severity,
+  reasons:result.reasons||[],excerpt:String(original||'').slice(0,500),
+  detail:{context:result.context||sourceKind,restricted_until:restrictedUntil,strike_score:score}
+ });
+ const event=rows?.[0];
+ if(result.severity>=3||restrictedUntil){
+  await ownerEvent(
+   'moderation:'+String(event?.id||crypto.randomUUID()),'moderation',
+   restrictedUntil?'moderation.restricted':'moderation.blocked',
+   result.severity>=4?'critical':'urgent',
+   restrictedUntil?'Restriction automatique':'Contenu bloqué par la modération',
+   (result.reasons||[]).join(', ')||'Contenu à vérifier.',uid,sourceKind,sourceId,
+   {severity:result.severity,reasons:result.reasons||[],strike_score:score,restricted_until:restrictedUntil}
+  );
+ }
+ if(restrictedUntil){
+  await memberNotify(uid,'moderation.restricted:'+now,'moderation.restricted','urgent','Participation temporairement limitée',
+   'Des infractions répétées ont déclenché une restriction temporaire des messages.','notifications',
+   {restricted_until:restrictedUntil,strike_score:score});
+ }
+ return{score,restrictedUntil};
+}
+async function moderateRequest(uid:string,subject:string,message:string){
+ await moderationGuard(uid);
+ const subjectResult=moderateCommunityText(subject,{context:'request'});
+ const messageResult=moderateCommunityText(message,{context:'request'});
+ const worst=[subjectResult,messageResult].sort((a,b)=>b.severity-a.severity)[0];
+ if(worst.action!=='allow')await recordModeration(uid,worst,'request',null,subject+'\n'+message);
+ if(['block','escalate'].includes(subjectResult.action)||['block','escalate'].includes(messageResult.action)){
+  const blocked=['block','escalate'].includes(subjectResult.action)?subjectResult:messageResult;
+  throw new Failure(400,blocked.message);
+ }
+ return{
+  subject:subjectResult.action==='mask'?subjectResult.text:subject,
+  message:messageResult.action==='mask'?messageResult.text:message,
+  moderation:worst.action==='allow'?null:{action:worst.action,severity:worst.severity,message:worst.message}
+ };
+}
 async function bootstrap(user:any){
  const [memberUnread,owner]=await Promise.all([
   api('/rest/v1/member_notifications?user_id=eq.'+enc(user.id)+'&read_at=is.null&select=id'),
@@ -179,11 +240,12 @@ Deno.serve(async(req:Request)=>{
    await rate(uid,'request-submit',6,3600);
    const category=String(body.category||'');if(!REQUEST_CATEGORIES.has(category))throw new Failure(400,'Catégorie invalide.');
    const subject=text(body.subject,3,140,'Objet'),message=text(body.message,10,4000,'Message');
-   const rows=await insert('threeb_requests',{user_id:uid,category,subject,message});
+   const moderated=await moderateRequest(uid,subject,message);
+   const rows=await insert('threeb_requests',{user_id:uid,category,subject:moderated.subject,message:moderated.message});
    const request=rows?.[0];if(!request?.id)throw new Failure(503,'La demande n’a pas pu être enregistrée.');
    await ownerEvent('request:'+request.id,'requests','request.created',category==='privacy'?'urgent':'important','Nouvelle demande 3B',subject,uid,'request',request.id,{category});
    await memberNotify(uid,'request.confirmed:'+request.id,'request.confirmed','info','Demande envoyée','Ta demande a bien été transmise à 3B.','notifications',{request_id:request.id});
-   return reply({ok:true,request:{id:request.id,status:request.status||'new'}},201);
+   return reply({ok:true,request:{id:request.id,status:request.status||'new'},moderation:moderated.moderation},201);
   }
 
   await requireOwner(user);
