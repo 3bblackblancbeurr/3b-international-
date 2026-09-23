@@ -36,6 +36,16 @@ html{overflow-x:hidden}
   margin-inline:0;
  }
 
+ html[data-viewport="phone"] .app3b[data-page="world3b"],
+ html[data-viewport="phone"] .app3b[data-page="arena"],
+ html[data-viewport="phone"] .app3b[data-page="game"]{
+  padding:0!important;
+  min-height:100dvh;
+ }
+ html[data-viewport="phone"] .app3b[data-page="world3b"]>main,
+ html[data-viewport="phone"] .app3b[data-page="arena"]>main,
+ html[data-viewport="phone"] .app3b[data-page="game"]>main{width:100%;min-height:100dvh}
+
  html[data-viewport="phone"] .app3b .home-dashboard{padding-bottom:28px}
  html[data-viewport="phone"] .app3b .home-dashboard .welcome-hero{padding-top:12px}
  html[data-viewport="phone"] .app3b .home-dashboard .welcome-copy h1{font-size:clamp(34px,12.5vw,50px)}
