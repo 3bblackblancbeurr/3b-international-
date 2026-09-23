@@ -857,9 +857,9 @@ async function processInput(room:Room, uid:string, input:any) {
     const sprinting = at < number(state.sprintUntil);
     const style = STYLE_TUNING[room.players[playerIndex]?.styleId] || STYLE_TUNING.technicien;
     const forward = clamp(-iy, 0, 1);
-    const speed = (.12 + intensity * .13) * (sprinting ? 1.34 : 1) * style.burst;
+    const speed = (.17 + intensity * .16) * (sprinting ? 1.34 : 1) * style.burst;
     state.positions.attacker.x = clamp(number(state.positions.attacker.x) + forward * speed * dt, 0, 1);
-    state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.16 + intensity*.12) * dt, -.92, .92);
+    state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.26 + intensity*.18) * dt, -.92, .92);
     state.ballLead = ballTouchDistance(intensity * (sprinting ? 1 : .78), style.control);
     if (!sprinting && intensity < .42) {
       state.energy[playerIndex] = recoverEnergy(number(state.energy[playerIndex],100), dt, false);
@@ -867,6 +867,21 @@ async function processInput(room:Room, uid:string, input:any) {
     state.lastMoveAt = at;
     state.lastEvent = { type:'move', text:sprinting ? 'Accélération contrôlée.' : intensity < .42 ? 'Tempo · énergie récupérée.' : 'Lecture et placement.' };
     return await commitRoom(room, {state}, uid, 'move', {x:state.positions.attacker.x,y:state.positions.attacker.y});
+  }
+
+  if (type === 'keeper-track') {
+    if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut se déplacer dans sa cage.');
+    const position = safeDirection(input?.position);
+    const direction = safeDirection(input?.direction);
+    const intensity = safeIntensity(input?.intensity);
+    state.positions.keeper.y = clamp(position, -.95, .95);
+    state.keeperIntent = { type:'hold', direction, intensity, at };
+    state.lastEvent = {
+      type:'keeper-track',
+      text:'Placement gardien.',
+      visual:{ at, type:'keeper-track', position, direction, intensity },
+    };
+    return await commitRoom(room, {state}, uid, 'keeper-track', {position});
   }
 
   if (['dive','high-claim','close-angle','hold'].includes(type)) {
@@ -878,7 +893,7 @@ async function processInput(room:Room, uid:string, input:any) {
       at,
     };
     state.positions.keeper.y = clamp(
-      number(state.positions.keeper.y) + safeDirection(input?.direction) * (.12 + safeIntensity(input?.intensity)*.18),
+      number(state.positions.keeper.y) + safeDirection(input?.direction) * (.05 + safeIntensity(input?.intensity)*.1),
       -.95, .95,
     );
     state.lastEvent = {
