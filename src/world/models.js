@@ -54,6 +54,7 @@ export function createKais(asset){
  actions.Idle?.play();
  return {object,
   setColor(color){for(const m of personal.values()){if(/brushed champagne/.test(m.name))m.color.set(color);if(/graphite panels/.test(m.name))m.color.set(color).multiplyScalar(.28);}},
+  face(dx,dz,dt){const wanted=Math.atan2(dx,dz),delta=Math.atan2(Math.sin(wanted-heading),Math.cos(wanted-heading));heading+=delta*(1-Math.exp(-dt*12));object.rotation.y=heading;},
   update(dt,dx,dz,travelled){
    const speed=dt?travelled/dt:0,next=speed>.08?(speed>9?'Run':'Walk'):'Idle';
    if(next!==current){actions[next]?.reset().setEffectiveWeight(1).play();actions[current]?.crossFadeTo(actions[next],.18,false);current=next;}
