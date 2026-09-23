@@ -7,10 +7,12 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#030405",
   "theme_color": "#030405",
   "prefer_related_applications": false,
+  "categories": ["lifestyle", "entertainment"],
   "icons": [
     {
       "src": "/icons/3b-icon-20260912-192.png",
