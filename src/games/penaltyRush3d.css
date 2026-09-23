@@ -75,3 +75,56 @@
 @media(prefers-reduced-motion:reduce){
   .penalty-arena3d-canvas{filter:none}
 }
+
+
+.penalty-pitch-3d::after{
+  content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.28),transparent 18%,transparent 72%,rgba(0,0,0,.24)),
+    radial-gradient(ellipse at 50% 46%,transparent 34%,rgba(0,0,0,.2) 100%);
+  mix-blend-mode:multiply
+}
+.penalty-impact-word{
+  position:absolute;z-index:31;left:50%;top:50%;display:flex;min-width:min(72vw,440px);
+  flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  transform:translate(-50%,-50%) scale(.72);
+  padding:18px 24px;border:1px solid #ffffff24;border-radius:22px;
+  background:linear-gradient(135deg,#030707d9,#0d1618d4);
+  box-shadow:0 26px 80px #000b,inset 0 0 50px #ffffff05;
+  backdrop-filter:blur(8px);opacity:0;pointer-events:none;
+  animation:penaltyImpactBurst 1.3s cubic-bezier(.2,.78,.2,1) both
+}
+.penalty-impact-word strong{
+  font-size:clamp(38px,8vw,82px);line-height:.9;letter-spacing:-.055em
+}
+.penalty-impact-word span{font-size:8px;font-weight:900;letter-spacing:.18em;color:#a8bdc0}
+.penalty-impact-word[data-type="goal"]{
+  border-color:#e2c36c8c;background:radial-gradient(circle at 50% 50%,#5f481d88,#080c0dcf 62%);
+  box-shadow:0 0 110px #d6b65348,0 28px 80px #000b,inset 0 0 60px #e4c66d16
+}
+.penalty-impact-word[data-type="goal"] strong{color:#f2d47d;text-shadow:0 0 28px #d8b85a99}
+.penalty-impact-word[data-type="save"]{
+  border-color:#68d0ef72;background:radial-gradient(circle at 50% 50%,#14495a77,#071013d3 66%)
+}
+.penalty-impact-word[data-type="save"] strong{color:#79daf4;text-shadow:0 0 25px #57c9eb88}
+.penalty-impact-word[data-type="frame"] strong{color:#eef4f3;text-shadow:0 0 20px #ffffff66}
+@keyframes penaltyImpactBurst{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.58)}
+  12%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}
+  25%{transform:translate(-50%,-50%) scale(.98)}
+  68%{opacity:.96}
+  100%{opacity:0;transform:translate(-50%,-54%) scale(.94)}
+}
+.penalty-match[data-role="keeper"] .penalty-pitch-3d::before{
+  content:"CAGE ENTIÈRE · CAMÉRA GARDIEN";display:block;position:absolute;z-index:25;left:50%;top:86px;
+  transform:translateX(-50%);padding:5px 9px;border:1px solid #71d6ef35;border-radius:99px;
+  background:#031015a8;color:#82d8ef;font-size:6px;font-weight:900;letter-spacing:.13em;pointer-events:none
+}
+@media(max-width:720px){
+  .penalty-impact-word{min-width:min(78vw,360px);padding:14px 18px}
+  .penalty-impact-word span{font-size:7px}
+  .penalty-match[data-role="keeper"] .penalty-pitch-3d::before{top:72px}
+}
+@media(prefers-reduced-motion:reduce){
+  .penalty-impact-word{animation-duration:.35s}
+}
