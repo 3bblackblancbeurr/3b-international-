@@ -1084,7 +1084,6 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       let keeperAction = null;
       let eventT = 0;
       let eventDirection = 0;
-      const keeperPreview = selfKeeper ? controlRef?.current?.keeper : null;
       if (keeperPreview?.active && clamp(keeperPreview.intensity, 0, 1) > .35) {
         keeperAction = 'keeper-preview';
         eventDirection = clamp(keeperPreview.direction, -1, 1) || 1;
