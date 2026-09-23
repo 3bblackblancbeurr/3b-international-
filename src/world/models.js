@@ -21,10 +21,11 @@ export async function loadWorldModels(){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary();
  // Only gameplay-critical assets block entry. The authored place pack is ~1 MB
  // and is requested lazily by Hub/Maroc after the world can already start.
- const [hero,kit,atlas]=await Promise.all([
+ const [hero,kit,atlas,kais]=await Promise.all([
   living.load('/world/living/traveller-0.glb'),
   loader.loadAsync('/world/models/chapter-kit.glb'),
-  optionalTexture('/world/guardians-atlas.webp')
+  optionalTexture('/world/guardians-atlas.webp'),
+  optionalScene(loader,'/world/models/kais-3d.glb')
  ]);
  kit.living=living;prepareStaticScene(kit.scene);atlas.colorSpace=THREE.SRGBColorSpace;
  let dead=false,placesAsset=null,placesPromise=null;
@@ -35,8 +36,9 @@ export async function loadWorldModels(){
   });
   return placesPromise;
  }
- return {hero,kit,atlas,living,getPlaces,dispose(){
-  if(dead)return;dead=true;living.dispose();disposeScene(kit.scene);if(placesAsset)disposeScene(placesAsset.scene);else placesPromise?.then(asset=>disposeScene(asset.scene)).catch(()=>{});atlas.dispose();
+ prepareStaticScene(kais.scene);
+ return {hero,kit,atlas,kais,living,getPlaces,dispose(){
+  if(dead)return;dead=true;living.dispose();disposeScene(kit.scene);disposeScene(kais.scene);if(placesAsset)disposeScene(placesAsset.scene);else placesPromise?.then(asset=>disposeScene(asset.scene)).catch(()=>{});atlas.dispose();
  }};
 }
 
