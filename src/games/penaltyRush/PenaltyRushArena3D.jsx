@@ -951,8 +951,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const sprinting = Date.now() < Number(state?.sprintUntil || 0);
       if (input?.active) {
         const intensity = clamp(input.intensity, 0, 1);
-        const lateralSpeed = 4.6 + intensity * 1.4;
-        const forwardSpeed = (6.2 + intensity * 3.8) * (sprinting ? 1.28 : 1);
+        const lateralSpeed = 5.4 + intensity * 1.8;
+        const forwardSpeed = (6.8 + intensity * 4.4) * (sprinting ? 1.3 : 1);
         runtime.localAttack.x += clamp(input.x, -1, 1) * lateralSpeed * dt;
         runtime.localAttack.z += clamp(input.y, -1, 1) * forwardSpeed * dt;
         clampAttackerWorld(runtime.localAttack);
@@ -960,8 +960,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
       const error = server.clone().sub(runtime.localAttack);
       const distance = error.length();
-      if (distance > 3.6) runtime.localAttack.lerp(server, .34);
-      else runtime.localAttack.addScaledVector(error, expFollow(input?.active ? 1.15 : 9.5, dt));
+      if (distance > 4.4) runtime.localAttack.lerp(server, .22);
+      else runtime.localAttack.addScaledVector(error, expFollow(input?.active ? .55 : 10.5, dt));
 
       return runtime.localAttack;
     }
@@ -971,14 +971,16 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       if (!selfKeeper) return server;
       const input = controlRef?.current?.keeper || null;
       if (input?.active) {
+        const direction = clamp(input.direction, -1, 1);
         const intensity = clamp(input.intensity, 0, 1);
-        const speed = 6.4 + intensity * 2.6;
-        runtime.localKeeper.x += clamp(input.direction, -1, 1) * speed * dt;
-        runtime.localKeeper.x = clamp(runtime.localKeeper.x, -GOAL_W / 2 + .16, GOAL_W / 2 - .16);
+        const desiredX = direction * (GOAL_W / 2 - .28) * Math.pow(intensity, .78);
+        runtime.localKeeper.x = mix(runtime.localKeeper.x, desiredX, expFollow(34, dt));
+      } else {
+        const error = server.x - runtime.localKeeper.x;
+        if (Math.abs(error) > 1.4) runtime.localKeeper.x = mix(runtime.localKeeper.x, server.x, .42);
+        else runtime.localKeeper.x += error * expFollow(12.5, dt);
       }
-      const error = server.x - runtime.localKeeper.x;
-      if (Math.abs(error) > 1.7) runtime.localKeeper.x = mix(runtime.localKeeper.x, server.x, .28);
-      else runtime.localKeeper.x += error * expFollow(input?.active ? .9 : 11.5, dt);
+      runtime.localKeeper.x = clamp(runtime.localKeeper.x, -GOAL_W / 2 + .15, GOAL_W / 2 - .15);
       runtime.localKeeper.z = KEEPER_Z;
       runtime.localKeeper.y = 0;
       return runtime.localKeeper;
@@ -992,19 +994,19 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
       if (selfKeeper) {
         runtime.camera.mode = 'keeper';
-        fov = 61;
+        fov = 63;
         const goalDistance = keeperGoalFramingDistance(camera.aspect, fov);
         desired.set(
-          serverKeeper.x * .09,
-          2.68,
+          0,
+          2.42,
           GOAL_Z - goalDistance,
         );
         target.set(
-          serverAttack.x * .2,
-          1.18,
-          mix(-6.4, -10.2, progress),
+          clamp(serverAttack.x * .12, -1.15, 1.15),
+          1.08,
+          mix(-5.6, -10.6, progress),
         );
-        goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .065, .18);
+        goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .028, .24);
       } else {
         runtime.camera.mode = 'attack';
         desired.set(
@@ -1037,8 +1039,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         desired.y += Math.cos(performance.now() * .051) * jitter * .55;
       }
 
-      camera.position.lerp(desired, expFollow(selfKeeper ? 6.8 : 5.4, dt));
-      runtime.cameraTarget.lerp(target, expFollow(selfKeeper ? 8.4 : 6.5, dt));
+      camera.position.lerp(desired, expFollow(selfKeeper ? 11.5 : 7.2, dt));
+      runtime.cameraTarget.lerp(target, expFollow(selfKeeper ? 12.5 : 8.2, dt));
       camera.lookAt(runtime.cameraTarget);
       camera.fov = mix(camera.fov, fov, expFollow(5.5, dt));
       camera.updateProjectionMatrix();
@@ -1069,12 +1071,12 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const renderKeeper = predictLocalKeeper(dt, selfKeeper);
 
       runtime.playerTargets[attacker].copy(renderAttack);
-      runtime.playerTargets[keeper].lerp(renderKeeper, expFollow(selfKeeper ? 22 : 11, dt));
+      runtime.playerTargets[keeper].lerp(renderKeeper, expFollow(selfKeeper ? 36 : 11, dt));
 
       players.forEach((model, index) => {
         const target = runtime.playerTargets[index];
         const before = model.position.clone();
-        const follow = expFollow(index === snapshot.selfIndex ? 17 : 10, dt);
+        const follow = expFollow(index === snapshot.selfIndex ? 32 : 10, dt);
         model.position.x = mix(model.position.x, target.x, follow);
         model.position.z = mix(model.position.z, target.z, follow);
 
@@ -1118,10 +1120,14 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
       const normalBall = renderAttack.clone();
       const touchPhase = Math.sin(now * .014);
-      const inputSide = selfAttacker ? clamp(controlRef?.current?.x, -1, 1) : 0;
-      normalBall.x += touchPhase * .12 + inputSide * .08;
-      normalBall.y = .11 + Math.abs(Math.sin(now * .018)) * runtime.speeds[attacker] * .045;
-      normalBall.z -= .34 + clamp(state.ballLead, 0, .75) * .42;
+      const localInput = selfAttacker ? controlRef?.current || null : null;
+      const inputX = clamp(localInput?.x, -1, 1);
+      const inputY = clamp(localInput?.y, -1, 1);
+      const inputIntensity = clamp(localInput?.intensity, 0, 1);
+      normalBall.x += touchPhase * (.055 + inputIntensity * .045) + inputX * (.08 + inputIntensity * .12);
+      normalBall.y = .11 + Math.abs(Math.sin(now * .018)) * runtime.speeds[attacker] * .028;
+      normalBall.z += inputY * (.06 + inputIntensity * .12);
+      normalBall.z -= .28 + clamp(state.ballLead, 0, .75) * .34;
       runtime.ballTarget.copy(normalBall);
 
       let shooting = false;
