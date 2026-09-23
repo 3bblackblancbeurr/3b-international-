@@ -103,17 +103,17 @@ test('V4 normalizes player and ball dimensions to real football scale', () => {
   assert.match(arena, /const GOAL_W = 7\.32/);
   assert.match(arena, /const GOAL_H = 2\.44/);
   assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
-  assert.match(arena, /const targetHeight = 1\.82/);
+  assert.match(arena, /targetHeight = index === clamp\(\(liveRef\.current\.room\?\.state \|\| \{\}\)\.keeper, 0, 1\) \? 1\.86 : 1\.76/);
   assert.match(arena, /targetHeight \/ height/);
   assert.match(arena, /root\.scale\.setScalar\(\.56\)/);
 });
 
-test('V4 keeper camera is physically behind the goal without an opaque end stand', () => {
+test('V4 keeper camera is physically behind the goal with the complete goal visible', () => {
   assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /2\.68/);
-  assert.match(arena, /fov = 61/);
-  assert.doesNotMatch(arena, /const endStand = new THREE\.Mesh/);
-  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.065/);
+  assert.match(arena, /2\.45/);
+  assert.match(arena, /fov = 72/);
+  assert.match(arena, /keeperApron/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.12/);
 });
 
 test('V4 streams keeper movement while dragging and keeps the server authoritative', () => {
