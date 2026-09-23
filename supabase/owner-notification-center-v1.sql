@@ -549,4 +549,104 @@ create trigger notification_reward_outbox_events
 after insert or update of status,attempts on public.threeb_reward_outbox
 for each row execute function member_private.notify_reward_outbox();
 
+
+create or replace function member_private.notify_community_like() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_author uuid; v_title text;
+begin
+  select author_id,title into v_author,v_title from public.community_posts where id=new.post_id;
+  if v_author is null or v_author=new.user_id then return new; end if;
+  perform member_private.enqueue_member_notification(
+    v_author,
+    'community.like:'||new.post_id::text||':'||to_char(now() at time zone 'UTC','YYYYMMDD'),
+    'community.post.votes','info','Ta publication reçoit des votes',
+    left(coalesce(v_title,'Une publication')||' reçoit de nouveaux votes aujourd’hui.',1500),
+    'community',jsonb_build_object('post_id',new.post_id)
+  );
+  return new;
+end
+$$;
+revoke all on function member_private.notify_community_like() from public,anon,authenticated;
+drop trigger if exists notification_community_like_events on public.community_likes;
+create trigger notification_community_like_events
+after insert on public.community_likes
+for each row execute function member_private.notify_community_like();
+
+create or replace function member_private.notify_community_follow() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_handle text;
+begin
+  select handle into v_handle from public.member_profiles where user_id=new.user_id;
+  perform member_private.enqueue_member_notification(
+    new.target_id,'community.follow:'||new.target_id::text||':'||new.user_id::text,
+    'community.follow','info','Nouveau suivi dans le collectif',
+    '@'||coalesce(v_handle,'membre-3b')||' suit maintenant ton profil.','community',
+    jsonb_build_object('follower_id',new.user_id)
+  );
+  return new;
+end
+$$;
+revoke all on function member_private.notify_community_follow() from public,anon,authenticated;
+drop trigger if exists notification_community_follow_events on public.community_follows;
+create trigger notification_community_follow_events
+after insert on public.community_follows
+for each row execute function member_private.notify_community_follow();
+
+create or replace function member_private.notify_hidden_community_content() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_id uuid; v_author uuid; v_kind text;
+begin
+  if new.status is not distinct from old.status or new.status<>'hidden' then return new; end if;
+  if tg_table_name='community_posts' then
+    v_id:=new.id;v_author:=new.author_id;v_kind:='publication';
+  else
+    v_id:=new.id;v_author:=new.author_id;v_kind:='message';
+  end if;
+  perform member_private.enqueue_member_notification(
+    v_author,'community.hidden:'||v_id::text,'moderation.content_hidden','important',
+    'Contenu masqué par la modération',
+    'Un '||v_kind||' a été masqué après vérification. Consulte les règles du collectif avant de republier.',
+    'community',jsonb_build_object('content_id',v_id,'kind',v_kind)
+  );
+  return new;
+end
+$$;
+revoke all on function member_private.notify_hidden_community_content() from public,anon,authenticated;
+drop trigger if exists notification_hidden_post_events on public.community_posts;
+create trigger notification_hidden_post_events
+after update of status on public.community_posts
+for each row execute function member_private.notify_hidden_community_content();
+drop trigger if exists notification_hidden_chat_events on public.community_chat;
+create trigger notification_hidden_chat_events
+after update of status on public.community_chat
+for each row execute function member_private.notify_hidden_community_content();
+
+create or replace function member_private.notify_repeated_blocks() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_count integer;
+begin
+  select count(*) into v_count from public.community_blocks where target_id=new.target_id;
+  if v_count in (3,5,10) then
+    perform member_private.enqueue_owner_event(
+      'community.blocks:'||new.target_id::text||':'||v_count::text,
+      'moderation','community.member.repeated_blocks',
+      case when v_count>=10 then 'urgent' else 'important' end,
+      'Membre bloqué à plusieurs reprises',
+      v_count::text||' membres bloquent actuellement ce profil.',
+      new.target_id,'member',new.target_id::text,jsonb_build_object('block_count',v_count)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_repeated_blocks() from public,anon,authenticated;
+drop trigger if exists owner_repeated_block_events on public.community_blocks;
+create trigger owner_repeated_block_events
+after insert on public.community_blocks
+for each row execute function member_private.notify_repeated_blocks();
+
 commit;
