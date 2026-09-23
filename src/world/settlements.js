@@ -16,7 +16,20 @@ export const REGIONS={
  espagne:{city:'Les patios de Séville',craft:'La place des azulejos',rural:'Les oliviers d’Andalousie',crop:'olive',paving:'#d0b591',earth:'#b79f70',source:'https://www.spain.info/en/region/andalusia/'},
 };
 export const DISTRICT_SPOTS=[{key:'city',x:-18,z:-12,r:35},{key:'craft',x:-18,z:17,r:14},{key:'rural',x:48,z:28,r:23}];
-export function districtAt(region,position,transform){if(region==='hub')return REGIONS.hub.city;const config=REGIONS[region]||REGIONS.hub;let closest='Les chemins du pays',best=Infinity;const outer=[{x:-101,z:-8,name:config.city+' · quartier ancien'},{x:-40,z:-96,name:config.craft+' · faubourg'},{x:88,z:66,name:config.rural+' · village'}];for(const d of outer){const p=transform(d.x,d.z);if(Math.hypot(p.x-position.x,p.z-position.z)<62)return d.name;}for(const d of DISTRICT_SPOTS){const p=transform(d.x,d.z),distance=Math.hypot(p.x-position.x,p.z-position.z);if(distance<d.r*1.6&&distance<best){closest=config[d.key];best=distance;}}return closest;}
+export function districtAt(region,position,transform){if(region==='hub'){
+ const points=[
+  {name:'Cercle Brisé · Nexus',x:0,z:-3,r:23},
+  {name:'Archives du Cercle · niveau inférieur',x:-15,z:-12,r:13},
+  {name:'Arène d’entraînement',x:19,z:17,r:13},
+  {name:'Maison du Passeport 3B',x:18,z:-13,r:13},
+  {name:'Cercle des artisans',x:-18,z:17,r:13},
+  {name:'Relais des huit Portes',x:0,z:29,r:12},
+  ...COUNTRIES.map(country=>({name:'Secteur '+country.name,x:country.portal[0],z:country.portal[1],r:14}))
+ ];
+ let best=null,bestDistance=Infinity;
+ for(const point of points){const p=transform(point.x,point.z),d=Math.hypot(position.x-p.x,position.z-p.z);if(d<point.r*1.8&&d<bestDistance){best=point.name;bestDistance=d;}}
+ return best||REGIONS.hub.city;
+ }const config=REGIONS[region]||REGIONS.hub;let closest='Les chemins du pays',best=Infinity;const outer=[{x:-101,z:-8,name:config.city+' · quartier ancien'},{x:-40,z:-96,name:config.craft+' · faubourg'},{x:88,z:66,name:config.rural+' · village'}];for(const d of outer){const p=transform(d.x,d.z);if(Math.hypot(p.x-position.x,p.z-position.z)<62)return d.name;}for(const d of DISTRICT_SPOTS){const p=transform(d.x,d.z),distance=Math.hypot(p.x-position.x,p.z-position.z);if(distance<d.r*1.6&&distance<best){closest=config[d.key];best=distance;}}return closest;}
 // Rounded corners are shared by rendering, footprints and the mini-map.
 function roundLane(points){
  const result=[points[0]];
