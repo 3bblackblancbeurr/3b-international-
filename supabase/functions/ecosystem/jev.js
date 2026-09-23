@@ -22,9 +22,10 @@ export function interpretModeration(r){
  if(!obj(a)||!['allow','warn','block','escalate'].includes(a.choice))return null;
  const confidence=prob(a.confidence)?a.confidence:0,o=r.answers['community.obfuscation'];
  let action=a.choice;const obfuscated=obj(o)&&prob(o.noul)&&o.noul>=.82;
- if(action==='escalate'&&confidence<.78)action='block';
- if(action==='block'&&confidence<.72)action='warn';
- if(action==='warn'&&confidence<.60)action='allow';
+ const initial=action;
+ if(initial==='escalate'&&confidence<.78)action='block';
+ else if(initial==='block'&&confidence<.72)action='warn';
+ else if(initial==='warn'&&confidence<.60)action='allow';
  if(action==='allow'&&obfuscated)action='warn';
  return{action,confidence,obfuscated};
 }
