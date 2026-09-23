@@ -42,6 +42,11 @@ export default function OwnerInboxPage({goTo,onChange}){
   try{const result=await notificationRequest('owner-update',{id:item.id,...change},uid);onChange?.(result);await load();}
   catch(e){setError(e.message);}finally{setBusy(false);}
  }
+ async function clearRestriction(user){
+  if(busy)return;setBusy(true);
+  try{await notificationRequest('owner-clear-restriction',{user},uid);await load();onChange?.();}
+  catch(e){setError(e.message);}finally{setBusy(false);}
+ }
  async function answerRequest(event){
   event.preventDefault();if(!selectedRequest||busy)return;setBusy(true);
   try{
@@ -61,7 +66,8 @@ export default function OwnerInboxPage({goTo,onChange}){
   ['Demandes',Number(stats.openRequests||0),Inbox],
   ['Envois échoués',Number(stats.failedDelivery||0),Clock3],
   ['Risques économie',Number(stats.riskReviews||0),ShieldAlert],
-  ['Récompenses bloquées',Number(stats.rewardFailures||0),AlertTriangle]
+  ['Récompenses bloquées',Number(stats.rewardFailures||0),AlertTriangle],
+  ['Restrictions actives',Number(stats.activeRestrictions||0),ShieldAlert]
  ],[stats]);
 
  return <section className="owner-page editorial-page">
@@ -70,7 +76,7 @@ export default function OwnerInboxPage({goTo,onChange}){
   {error&&<p className="surface-notice owner-error" role="alert">{error}</p>}
   {data&&<div className="owner-stat-grid">{summary.map(([label,value,Icon])=><article key={label} className="owner-stat"><Icon size={19}/><strong>{value}</strong><span>{label}</span></article>)}</div>}
 
-  <div className="surface-tabs owner-tabs"><button aria-pressed={tab==='inbox'} onClick={()=>setTab('inbox')}>Boîte de réception</button><button aria-pressed={tab==='requests'} onClick={()=>setTab('requests')}>Demandes membres</button></div>
+  <div className="surface-tabs owner-tabs"><button aria-pressed={tab==='inbox'} onClick={()=>setTab('inbox')}>Boîte de réception</button><button aria-pressed={tab==='requests'} onClick={()=>setTab('requests')}>Demandes membres</button><button aria-pressed={tab==='moderation'} onClick={()=>setTab('moderation')}>Modération</button></div>
 
   {tab==='inbox'&&<>
    <div className="owner-filters surface-panel">
@@ -99,6 +105,21 @@ export default function OwnerInboxPage({goTo,onChange}){
    })}
    {!events.length&&!busy&&<div className="surface-panel owner-empty"><CheckCircle2/><h2>Aucun élément dans ce filtre.</h2><p>Les nouveaux événements importants apparaîtront ici automatiquement.</p></div>}</div>
   </>}
+
+  {tab==='moderation'&&<div className="owner-moderation-layout">
+   <section className="surface-panel"><p className="eyebrow">RESTRICTIONS ACTIVES</p><h2>Participation limitée.</h2>
+    <div className="owner-moderation-list">{(data?.moderationStates||[]).map(state=>{
+     const p=profileFor(data?.profiles,state.user_id);
+     return <article key={state.user_id}><div><strong>{p?p.name:'Membre 3B'}</strong><span>{p?'@'+p.handle:state.user_id.slice(0,8)}</span></div><p>Score {state.strike_score} · jusqu’au {when(state.restricted_until)}</p><button className="quiet-button" disabled={busy} onClick={()=>clearRestriction(state.user_id)}>Lever la restriction</button></article>;
+    })}{!(data?.moderationStates||[]).length&&<p className="muted-copy">Aucune restriction active.</p>}</div>
+   </section>
+   <section className="surface-panel"><p className="eyebrow">HISTORIQUE RÉCENT</p><h2>Décisions automatiques.</h2>
+    <div className="owner-moderation-history">{(data?.moderationEvents||[]).map(event=>{
+     const p=profileFor(data?.profiles,event.user_id);
+     return <article key={event.id} data-severity={event.severity}><header><strong>{event.decision}</strong><time>{when(event.created_at)}</time></header><p>{p?p.name+' · @'+p.handle:'Membre 3B'} · {event.source_kind}</p><small>{(event.reasons||[]).join(' · ')||'Motif non renseigné'}</small>{event.excerpt&&<blockquote>{event.excerpt}</blockquote>}</article>;
+    })}{!(data?.moderationEvents||[]).length&&<p className="muted-copy">Aucun événement de modération.</p>}</div>
+   </section>
+  </div>}
 
   {tab==='requests'&&<div className="owner-request-layout">
    <div className="owner-request-list">{requests.map(request=>{
