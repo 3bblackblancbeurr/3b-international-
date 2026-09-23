@@ -5,6 +5,7 @@ const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
 import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
+import { captureRouteView } from "./lib/analytics.js";
 import { ecosystemPublic } from "./lib/ecosystem.js";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
@@ -203,6 +204,10 @@ export default function App() {
       window.removeEventListener("hashchange", syncLocation);
     };
   }, []);
+
+  useEffect(() => {
+    captureRouteView({ page, gameSlug });
+  }, [page, gameSlug]);
 
   useEffect(() => {
     document.title = page === "intro" ? "3B International — Application Black Blanc Beur" : `${currentPageTitle} — 3B`;
