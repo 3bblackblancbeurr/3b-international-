@@ -118,6 +118,7 @@ export function createLandscape(models,region,save,onError=console.error){
    const group=new THREE.Group(),workshop=new THREE.Group(),garden=new THREE.Group();root.add(group);group.add(workshop,garden);
    asset('Market',p.x+10,p.z+6,.9,0,workshop);asset('Lantern',p.x+8,p.z+2,1.2,0,workshop);
    asset('Planter',p.x-9,p.z+4,1.65,0,garden);asset(BIOMES[countryConfig.id].tree,p.x+9,p.z+6,.9,0,garden);
+   resident(p.x+4.5,p.z+8,countryConfig.color,group,index%2?'traveler':'woman');
    batch(workshop);batch(garden);stages.push({group,country:countryConfig.id,workshop,garden});
   }
   // The Hub services are physical places in the 3D city, not detached menu buttons.
