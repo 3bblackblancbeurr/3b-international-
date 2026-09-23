@@ -947,8 +947,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const sprinting = Date.now() < Number(state?.sprintUntil || 0);
       if (input?.active) {
         const intensity = clamp(input.intensity, 0, 1);
-        const lateralSpeed = 2.2 + intensity * .65;
-        const forwardSpeed = (4.3 + intensity * 2.75) * (sprinting ? 1.28 : 1);
+        const lateralSpeed = 4.6 + intensity * 1.4;
+        const forwardSpeed = (6.2 + intensity * 2.1) * (sprinting ? 1.24 : 1);
         runtime.localAttack.x += clamp(input.x, -1, 1) * lateralSpeed * dt;
         runtime.localAttack.z += clamp(input.y, -1, 1) * forwardSpeed * dt;
         clampAttackerWorld(runtime.localAttack);
@@ -957,7 +957,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const error = server.clone().sub(runtime.localAttack);
       const distance = error.length();
       if (distance > 2.2) runtime.localAttack.lerp(server, .48);
-      else runtime.localAttack.addScaledVector(error, expFollow(input?.active ? 3.1 : 7.5, dt));
+      else runtime.localAttack.addScaledVector(error, expFollow(input?.active ? .9 : 8.5, dt));
 
       return runtime.localAttack;
     }
@@ -1046,17 +1046,20 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const keeperPreview = selfKeeper ? controlRef?.current?.keeper : null;
       const renderKeeper = runtime.serverKeeper.clone();
       if (keeperPreview?.active) {
-        renderKeeper.x += clamp(keeperPreview.direction, -1, 1) * (.28 + clamp(keeperPreview.intensity, 0, 1) * .42);
-        renderKeeper.x = clamp(renderKeeper.x, -GOAL_W / 2, GOAL_W / 2);
+        const direction = clamp(keeperPreview.direction, -1, 1);
+        const intensity = clamp(keeperPreview.intensity, 0, 1);
+        const desiredLocalX = direction * (GOAL_W / 2 - .35) * intensity;
+        renderKeeper.x = mix(runtime.serverKeeper.x, desiredLocalX, .92);
+        renderKeeper.x = clamp(renderKeeper.x, -GOAL_W / 2 + .15, GOAL_W / 2 - .15);
       }
 
       runtime.playerTargets[attacker].copy(renderAttack);
-      runtime.playerTargets[keeper].lerp(renderKeeper, expFollow(selfKeeper ? 16 : 11, dt));
+      runtime.playerTargets[keeper].lerp(renderKeeper, expFollow(selfKeeper ? 30 : 12, dt));
 
       players.forEach((model, index) => {
         const target = runtime.playerTargets[index];
         const before = model.position.clone();
-        const follow = expFollow(index === snapshot.selfIndex ? 17 : 10, dt);
+        const follow = expFollow(index === snapshot.selfIndex ? 28 : 11, dt);
         model.position.x = mix(model.position.x, target.x, follow);
         model.position.z = mix(model.position.z, target.z, follow);
 
