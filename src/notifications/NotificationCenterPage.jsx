@@ -34,9 +34,9 @@ export default function NotificationCenterPage({goTo,onChange}){
  async function submit(event){
   event.preventDefault();if(busy)return;setBusy(true);setNotice('');setError('');
   try{
-   await notificationRequest('request-submit',form,uid);
+   const result=await notificationRequest('request-submit',form,uid);
    setForm({category:form.category,subject:'',message:''});
-   setNotice('Ta demande a été transmise à 3B.');
+   setNotice(result?.moderation?.message||'Ta demande a été transmise à 3B.');
    setView('requests');await load();onChange?.();
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
