@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from "react";
 import { Pause, Play, Sparkles } from "lucide-react";
 import PassportNexus from "./PassportNexus.jsx";
-import { passportInitials } from "../passport/identity.js";
+import PublicIdentityBadge from "./PublicIdentityBadge.jsx";
+import { PassportPortrait } from "../passport/PassportAppearance.jsx";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   left: `${(column + 0.25) * 100 / 58}%`,
@@ -46,7 +47,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
 
   return <div className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
-    <div className="passport-card-stage">
+    <div className="passport-card-stage passport-card-desktop">
       <div className="passport-card-base" aria-hidden="true">
         <span className="passport-card-halo passport-card-halo-blue" />
         <span className="passport-card-halo passport-card-halo-gold" />
@@ -82,6 +83,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
           <span className="passport-data-label">TITULAIRE</span>
           <h2>{syncing ? "Chargement du profil…" : active ? identity.name : "TON IDENTITÉ 3B"}</h2>
           <p>{active && identity.handle ? `@${identity.handle}` : active ? "Membre 3B" : "Crée ton compte pour personnaliser ce passeport."}</p>
+          {active && <PublicIdentityBadge profile={identity} compact className="passport-official-badge"/>}
         </div>
 
         <div className="passport-country-block">
@@ -93,10 +95,9 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
           </div>
         </div>
 
-        <div className="passport-avatar-panel" aria-hidden="true">
-          <div className="passport-avatar-rings"><i /><i /><i /></div>
-          <div className="passport-avatar-monogram">{active ? passportInitials(identity) : "3B"}</div>
-          <span>{active ? identity.countryCode : "ID"}</span>
+        <div className="passport-avatar-panel">
+          <PassportPortrait identity={active ? identity : null} animated={animated}/>
+          <span className="passport-avatar-country" aria-hidden="true">{active ? identity.countryCode : "ID"}</span>
         </div>
 
         <div className="passport-id-block">
@@ -119,6 +120,35 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
         <small>{active ? "MA VILLE" : "ACTIVER"}</small>
       </button>
     </div>
+
+    <section className="passport-phone-card" aria-label={active ? `Passeport mobile 3B de ${identity.name}` : "Passeport mobile 3B non activé"}>
+      <div className="passport-phone-matrix" aria-hidden="true"/>
+      <header className="passport-phone-brand">
+        <div className="passport-phone-logo">3B</div>
+        <div><strong>INTERNATIONAL</strong><span>PASSEPORT DIGITAL</span></div>
+        <small>{active ? "VIVANT" : "À ACTIVER"}</small>
+      </header>
+      <div className="passport-phone-identity">
+        <div className="passport-phone-portrait"><PassportPortrait identity={active ? identity : null} animated={animated}/></div>
+        <div className="passport-phone-person">
+          <span className="passport-data-label">TITULAIRE</span>
+          <h2>{syncing ? "Synchronisation…" : active ? identity.name : "TON IDENTITÉ 3B"}</h2>
+          <p>{active && identity.handle ? `@${identity.handle}` : "Passeport personnel"}</p>
+          {active && <PublicIdentityBadge profile={identity} className="passport-phone-official"/>}
+        </div>
+      </div>
+      <div className="passport-phone-origin">
+        <span className="passport-country-flag" aria-hidden="true">{active ? identity.flag : "3B"}</span>
+        <div><small>PAYS D’ORIGINE</small><strong>{active ? identity.country : "NON DÉFINI"}</strong><span>{active ? `${identity.countryCode} · ${identity.value}` : "8 pays · 8 valeurs"}</span></div>
+      </div>
+      <div className="passport-phone-stats">
+        <span><small>XP 3B</small><b>{active ? formatNumber(identity.xp) : "0"}</b></span>
+        <span><small>FIDÉLITÉ</small><b>{active ? formatNumber(identity.points) : "0"}</b></span>
+        <span><small>STATUT</small><b>{active ? "ACTIF" : "INVITÉ"}</b></span>
+      </div>
+      <div className="passport-phone-id"><small>IDENTIFIANT PASSEPORT</small><code>{active ? identity.passportId : "3B-PASS-À-ACTIVER"}</code></div>
+      <button type="button" className="passport-phone-entry" onClick={openPassport}><Sparkles size={16}/>{active ? "Entrer dans ma Ville 3B" : "Activer mon Passeport"}</button>
+    </section>
 
     <div className="passport-animation-toolbar">
       <span><i className={animated ? "digital-status is-live" : "digital-status"} aria-hidden="true" />{syncing ? "Synchronisation de ton identité…" : animated ? "Carte digitale animée" : "Carte en mode calme"}</span>
