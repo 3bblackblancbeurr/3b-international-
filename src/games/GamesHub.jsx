@@ -19,7 +19,7 @@ import {createGameAudio} from './audio.js';
 import './games.css';
 import './premium.css';
 import './labyrinth.css';
-import {GAME_CATALOG} from './catalog.js';
+import {GAME_CATALOG,KEY_RACE_URL} from './catalog.js';
 import {MazeCampaign,MazeResult} from './MazeCampaign.jsx';
 import Dada3B from './Dada3B.jsx';
 import {unlockedMazeLevel} from './maze-campaign.js';
@@ -30,6 +30,23 @@ export default function GamesHub({goTo,goToGame}){
  const[active,setActive]=useState(null),[selection,setSelection]=useState('arena');
  const[remoteGames,setRemoteGames]=useState([]),[remoteError,setRemoteError]=useState('');
  const[progress,setProgress]=useState(freshProgress),[loading,setLoading]=useState(true),[saveMessage,setSaveMessage]=useState('Chargement de la progression…'),dataRef=useRef(progress),fileRef=useRef();
+ useEffect(()=>{
+  const owned=[];
+  try{
+   const origin=new URL(KEY_RACE_URL).origin;
+   for(const rel of ['preconnect','dns-prefetch']){
+    if(document.head.querySelector(`link[data-threeb-key-race-prewarm="${rel}"]`))continue;
+    const link=document.createElement('link');
+    link.rel=rel;
+    link.href=origin;
+    if(rel==='preconnect')link.crossOrigin='anonymous';
+    link.dataset.threebKeyRacePrewarm=rel;
+    document.head.appendChild(link);
+    owned.push(link);
+   }
+  }catch{}
+  return()=>owned.forEach(link=>link.remove());
+ },[]);
  useEffect(()=>{
   let live=true;
   const controller=new AbortController();
