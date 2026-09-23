@@ -15,6 +15,7 @@ import {
 import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
+import {PointerGesture} from './touchControls.js';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
 
@@ -496,8 +497,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const isAttacker = selfIndex === attackerIndex;
   const isKeeper = selfIndex === keeperIndex;
   const remaining = remainingPossessionSeconds(state, Date.now());
-  const leftGesture = useRef(null);
-  const rightGesture = useRef(null);
+  const leftGesture = useRef(new PointerGesture());
+  const rightGesture = useRef(new PointerGesture());
   const rightLastTap = useRef(0);
   const moveThrottle = useRef(0);
   const keeperMoveThrottle = useRef(0);
@@ -593,15 +594,15 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function leftStart(event) {
-    if (!isAttacker || state.status === 'finished') return;
-    leftGesture.current = { pointer:event.pointerId, x:event.clientX, y:event.clientY };
+    if (!isAttacker || state.status === 'finished' || event.button !== 0) return;
+    if (!leftGesture.current.begin(event.pointerId, { x:event.clientX, y:event.clientY })) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
   }
 
   function leftMove(event) {
-    const start = leftGesture.current;
-    if (!start || start.pointer !== event.pointerId || !isAttacker) return;
+    const start = leftGesture.current.get(event.pointerId);
+    if (!start || !isAttacker) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     const length = Math.hypot(dx, dy) || 1;
@@ -624,21 +625,19 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function leftEnd(event) {
-    if (!leftGesture.current || leftGesture.current.pointer !== event.pointerId) return;
-    leftGesture.current = null;
+    if (!leftGesture.current.end(event.pointerId)) return;
     resetLeftPad();
     queueMove({ type:'move', x:0, y:0, intensity:0 });
   }
 
   function rightStart(event) {
-    if (!isAttacker && !isKeeper) return;
-    rightGesture.current = {
-      pointer:event.pointerId,
+    if ((!isAttacker && !isKeeper) || state.status === 'finished' || event.button !== 0) return;
+    if (!rightGesture.current.begin(event.pointerId, {
       x:event.clientX,
       y:event.clientY,
       t:performance.now(),
       path:[{ x:event.clientX, y:event.clientY }],
-    };
+    })) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
     event.currentTarget.style.setProperty('--gesture-opacity', '.92');
@@ -650,8 +649,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function rightMove(event) {
-    const gesture = rightGesture.current;
-    if (!gesture || gesture.pointer !== event.pointerId) return;
+    const gesture = rightGesture.current.get(event.pointerId);
+    if (!gesture) return;
     gesture.path.push({ x:event.clientX, y:event.clientY });
     if (gesture.path.length > 24) gesture.path.shift();
 
@@ -677,9 +676,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function rightEnd(event) {
-    const gesture = rightGesture.current;
-    if (!gesture || gesture.pointer !== event.pointerId) return;
-    rightGesture.current = null;
+    const gesture = rightGesture.current.end(event.pointerId);
+    if (!gesture) return;
     resetRightPad();
     if (isKeeper) {
       controlRef.current.keeper = { direction:0, intensity:0, active:false };
@@ -710,6 +708,17 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       queueKeeperFinal(parsed);
     } else {
       request('input', { room:room.id, revision:revisionRef.current, input:parsed }, { silent:true }).catch(() => {});
+    }
+  }
+
+  function rightCancel(event) {
+    if (!rightGesture.current.cancel(event.pointerId)) return;
+    resetRightPad();
+    rightLastTap.current = 0;
+    if (isKeeper) {
+      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      pendingKeeperMove.current = null;
+      queueKeeperFinal({ type:'hold', direction:0, intensity:0 });
     }
   }
 
@@ -748,8 +757,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
-        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd}><span /></div>}
-        <div ref={rightPadRef} className="penalty-touch-right" data-active="false" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightEnd}><span>{isAttacker ? 'FEINTE · CROCHET · MAINTIENS POUR FRAPPER' : 'GLISSE POUR PLONGER · FERME L’ANGLE'}</span></div>
+        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
+        <div ref={rightPadRef} className="penalty-touch-right" data-active="false" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightCancel} onLostPointerCapture={rightCancel}><span>{isAttacker ? 'FEINTE · CROCHET · MAINTIENS POUR FRAPPER' : 'GLISSE POUR PLONGER · FERME L’ANGLE'}</span></div>
 
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
         {impactType && <div key={String(state.lastEvent?.visual?.at || room.revision)} className="penalty-impact-word" data-type={impactType} aria-hidden="true"><strong>{impactLabel}</strong><span>{impactType === 'goal' ? '3B PENALTY RUSH' : impactType === 'save' ? 'RÉFLEXE GARDIEN' : 'À QUELQUES CENTIMÈTRES'}</span></div>}

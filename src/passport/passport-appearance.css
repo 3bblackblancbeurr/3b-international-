@@ -1,6 +1,7 @@
 .passport-portrait{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 38%,#0d60805c,transparent 58%),linear-gradient(155deg,#031a2a,#031018);color:#f5d681}
 .passport-portrait::before{content:"";position:absolute;inset:8%;border:1px solid #40dfff2c;border-radius:50%;box-shadow:0 0 24px #00d5ff15,inset 0 0 22px #00d5ff10}
 .passport-portrait-initials{position:relative;z-index:3;font-weight:1000;font-size:clamp(24px,6.3cqw,68px);line-height:1;letter-spacing:-.08em;text-shadow:0 0 1.8cqw #00cfff55}
+.passport-portrait-first-name{position:relative;z-index:3;width:86%;font-weight:800;font-size:clamp(15px,3.6cqw,34px);line-height:1.2;text-align:center;overflow-wrap:anywhere;text-shadow:0 0 18px #00cfff55}
 .passport-portrait-photo{position:absolute;z-index:2;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.9) contrast(1.06)}
 .passport-portrait-photo::selection{background:transparent}
 .passport-digital-face{position:relative;z-index:2;width:88%;height:88%;filter:drop-shadow(0 0 9px #21dfff66)}
@@ -21,6 +22,7 @@
 .passport-appearance-heading p:not(.eyebrow){margin:0;color:#9cafb8;font-size:12px;line-height:1.65}
 .passport-appearance-preview{position:relative;width:112px;height:122px;border:1px solid #35dfff66;border-radius:14px;justify-self:end;box-shadow:inset 0 0 24px #00d5ff15,0 12px 26px #0006}
 .passport-appearance-preview .passport-portrait-initials{font-size:35px}
+.passport-appearance-preview .passport-portrait-first-name{font-size:18px}
 .passport-appearance-preview .passport-portrait-kind{font-size:6px}
 .passport-appearance-modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:20px}
 .passport-appearance-modes button{display:flex;align-items:center;gap:10px;min-height:66px;padding:12px 14px;border:1px solid #77909d45;border-radius:11px;background:#0b151c;color:#c7d3d8;text-align:left}
@@ -30,6 +32,9 @@
 .passport-initials-field{display:grid;grid-template-columns:minmax(150px,260px) 1fr;gap:7px 14px;align-items:center;margin-top:18px;color:#c9d4d8;font-size:12px}
 .passport-initials-field input{grid-row:2;width:100%;min-height:46px;padding:10px 12px;border:1px solid #668190;border-radius:8px;background:#0d1b24;color:#f3d78f;font:800 18px system-ui;letter-spacing:.12em;text-transform:uppercase}
 .passport-initials-field small{grid-column:2;grid-row:2;color:#8398a3;font-size:10px;line-height:1.5}
+.passport-name-options{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.passport-name-options button{min-height:44px;padding:10px 14px;border:1px solid #668190;border-radius:8px;background:#0d1b24;color:#c9d4d8}
+.passport-name-options button[aria-pressed="true"]{border-color:#e2c376;color:#f0d493}
 .passport-photo-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}.passport-photo-input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 .passport-appearance-privacy{margin:16px 0 0;color:#728791;font-size:10px;line-height:1.6}
 .passport-appearance-message{margin:10px 0 0;color:#bde7dc;font-size:11px}

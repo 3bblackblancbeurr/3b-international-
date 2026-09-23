@@ -1,59 +1,43 @@
 import React,{useEffect,useRef,useState} from 'react';
+import {createTurnstileLoader} from './turnstile-loader.js';
 
 const SITE_KEY=String(import.meta.env.VITE_TURNSTILE_SITE_KEY||'').trim();
-const SCRIPT_ID='threeb-turnstile-script';
-
-function loadTurnstile(){
- if(window.turnstile)return Promise.resolve(window.turnstile);
- return new Promise((resolve,reject)=>{
-  let script=document.getElementById(SCRIPT_ID);
-  const ready=()=>window.turnstile?resolve(window.turnstile):reject(new Error('Turnstile indisponible.'));
-  if(script){
-   script.addEventListener('load',ready,{once:true});
-   script.addEventListener('error',()=>reject(new Error('Turnstile indisponible.')),{once:true});
-   return;
-  }
-  script=document.createElement('script');
-  script.id=SCRIPT_ID;
-  script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-  script.async=true;
-  script.defer=true;
-  script.addEventListener('load',ready,{once:true});
-  script.addEventListener('error',()=>reject(new Error('Turnstile indisponible.')),{once:true});
-  document.head.appendChild(script);
- });
-}
+const loadTurnstile=createTurnstileLoader({window,document});
 
 export default function TurnstileField({onToken}){
- const host=useRef(null),widget=useRef(null);
+ const host=useRef(null),onTokenRef=useRef(onToken);
+ onTokenRef.current=onToken;
  const[failed,setFailed]=useState(false);
+ const[attempt,setAttempt]=useState(0);
 
  useEffect(()=>{
   if(!SITE_KEY||!host.current)return;
-  let active=true;
-  loadTurnstile().then(api=>{
+  let active=true,widget=null,api=null;
+  setFailed(false);
+  loadTurnstile().then(loaded=>{
    if(!active||!host.current)return;
-   widget.current=api.render(host.current,{
+   api=loaded;
+   widget=api.render(host.current,{
     sitekey:SITE_KEY,
     theme:'dark',
     size:'flexible',
-    callback:token=>onToken?.(token),
-    'expired-callback':()=>onToken?.(''),
-    'error-callback':()=>{onToken?.('');setFailed(true);}
+    callback:token=>{if(active){onTokenRef.current?.(token);setFailed(false);}},
+    'expired-callback':()=>{if(active)onTokenRef.current?.('');},
+    'error-callback':()=>{if(active){onTokenRef.current?.('');setFailed(true);}}
    });
-  }).catch(()=>setFailed(true));
+  }).catch(()=>{if(active)setFailed(true);});
   return()=>{
    active=false;
-   onToken?.('');
-   if(widget.current!=null&&window.turnstile){
-    try{window.turnstile.remove(widget.current);}catch{}
+   onTokenRef.current?.('');
+   if(widget!=null&&api){
+    try{api.remove(widget);}catch{}
    }
   };
- },[onToken]);
+ },[attempt]);
 
  if(!SITE_KEY)return null;
  return <div className="account-turnstile" aria-label="Protection anti-robot">
   <div ref={host}/>
-  {failed&&<small>La vérification anti-robot n’a pas chargé. Recharge la page avant de réessayer.</small>}
+  {failed&&<div role="status"><small>La vérification anti-robot n’a pas chargé. Tu peux réessayer sans perdre ton formulaire.</small><button type="button" onClick={()=>setAttempt(value=>value+1)}>Réessayer la vérification</button></div>}
  </div>;
 }

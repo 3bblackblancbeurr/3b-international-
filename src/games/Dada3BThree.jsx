@@ -1,6 +1,7 @@
 import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {TapControl} from './touchControls.js';
 import {
   COUNTRIES_3B,FINISH_STEP,HOME_LENGTH,SANCTUARY_CELLS,STABLE,TRACK_LENGTH,
   blockadeOwnerAt,countryFor,globalCellFor,homeIndexFor,previewMove,
@@ -361,21 +362,25 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();
   };
   resize();const ro=new ResizeObserver(resize);ro.observe(host);
-  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();let down=null;
+  const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),tap=new TapControl();
   const eventPoint=e=>{const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;};
-  const pointerDown=e=>{down={x:e.clientX,y:e.clientY};};
+  const pointerDown=e=>{if(e.button===0)tap.begin(e.pointerId,e.clientX,e.clientY);};
   const pointerMove=e=>{
+   tap.move(e.pointerId,e.clientX,e.clientY);
+   if(e.pointerType==='touch')return;
    eventPoint(e);raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects([...runtime.pieceMap.values()],true).map(i=>findPieceRoot(i.object)).find(Boolean);
    renderer.domElement.style.cursor=hit?.userData.legal?'pointer':'grab';
   };
   const pointerUp=e=>{
-   if(!down)return;const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(moved>8)return;
+   if(!tap.end(e.pointerId,e.clientX,e.clientY))return;
    eventPoint(e);raycaster.setFromCamera(pointer,camera);
    const hit=raycaster.intersectObjects([...runtime.pieceMap.values()],true).map(i=>findPieceRoot(i.object)).find(root=>root?.userData.legal);
    if(hit)onPieceRef.current?.(hit.userData.pieceIndex);
   };
+  const pointerCancel=e=>tap.cancel(e.pointerId);
+  const cancelTaps=()=>tap.reset();
   const contextLost=e=>{
-   e.preventDefault();runtime.contextLost=true;
+   e.preventDefault();runtime.contextLost=true;cancelTaps();
    if(runtime.contextLossTimer)clearTimeout(runtime.contextLossTimer);
    runtime.contextLossTimer=setTimeout(()=>{if(runtime.contextLost&&!runtime.disposed)onUnsupported?.(new Error('Contexte WebGL indisponible.'));},1800);
   };
@@ -386,6 +391,7 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   renderer.domElement.addEventListener('webglcontextlost',contextLost,false);
   renderer.domElement.addEventListener('webglcontextrestored',contextRestored,false);
   renderer.domElement.addEventListener('pointerdown',pointerDown,{passive:true});renderer.domElement.addEventListener('pointermove',pointerMove,{passive:true});renderer.domElement.addEventListener('pointerup',pointerUp,{passive:true});
+  renderer.domElement.addEventListener('pointercancel',pointerCancel);renderer.domElement.addEventListener('lostpointercapture',pointerCancel);window.addEventListener('blur',cancelTaps);
   let frame=0;const clock=new THREE.Clock();
   const animate=()=>{
    if(runtime.disposed)return;frame=requestAnimationFrame(animate);const t=clock.getElapsedTime(),now=performance.now(),focus=now<runtime.focusUntil;
@@ -432,6 +438,7 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    runtime.disposed=true;cancelAnimationFrame(frame);ro.disconnect();controls.dispose();
    if(runtime.contextLossTimer)clearTimeout(runtime.contextLossTimer);
    renderer.domElement.removeEventListener('webglcontextlost',contextLost);renderer.domElement.removeEventListener('webglcontextrestored',contextRestored);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointerup',pointerUp);
+   renderer.domElement.removeEventListener('pointercancel',pointerCancel);renderer.domElement.removeEventListener('lostpointercapture',pointerCancel);window.removeEventListener('blur',cancelTaps);cancelTaps();
    disposeTree(scene);renderer.dispose();renderer.forceContextLoss?.();renderer.domElement.remove();runtimeRef.current=null;
   };
  },[]);

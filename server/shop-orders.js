@@ -1,4 +1,5 @@
 const DAY = 86400000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 class OrderError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -39,7 +40,14 @@ async function authUser(request, env, fetcher) {
   const response = await fetcher(new URL("/auth/v1/user", base), { signal:AbortSignal.timeout(10000), headers:{ apikey:key, Authorization:auth } });
   if (!response.ok) throw new OrderError(401, "Reconnecte-toi à ton compte 3B.");
   const user = await response.json().catch(() => null);
-  if (!user?.id) throw new OrderError(401, "Reconnecte-toi à ton compte 3B.");
+  if (!UUID.test(user?.id || "")) throw new OrderError(401, "Reconnecte-toi à ton compte 3B.");
+  let sessionId;
+  try { sessionId = JSON.parse(Buffer.from(auth.slice(7).split(".")[1], "base64url")).session_id; } catch { /* Invalid tokens have no active session. */ }
+  if (!UUID.test(sessionId || "")) throw new OrderError(401, "Reconnecte-toi à ton compte 3B.");
+  const active = await serviceFetch(env, fetcher, "/rest/v1/rpc/loyalty_session_valid", {
+    method:"POST", body:{ p_user:user.id, p_session:sessionId },
+  });
+  if (active !== true) throw new OrderError(401, "Reconnecte-toi à ton compte 3B.");
   return user;
 }
 
@@ -84,7 +92,7 @@ async function updateSellerOrder(request, env, fetcher) {
   if (!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(sessionId)) throw new OrderError(400, "Commande invalide.");
   if (!["accept","ship"].includes(body?.action)) throw new OrderError(400, "Action invalide.");
   const select = "stripe_session_id,fulfillment_status,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at,amount_total,currency,items";
-  const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?select=${encodeURIComponent(select)}&stripe_session_id=eq.${encodeURIComponent(sessionId)}&limit=1`);
+  const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?select=${encodeURIComponent(select)}&stripe_session_id=eq.${encodeURIComponent(sessionId)}&payment_status=eq.paid&limit=1`);
   const order = rows?.[0]; if (!order) throw new OrderError(404, "Commande introuvable.");
   const current = normalizedStatus(order.fulfillment_status);
   const now = new Date(); let patch;
@@ -95,7 +103,9 @@ async function updateSellerOrder(request, env, fetcher) {
     if (current !== "processing") throw new OrderError(409, "Cette commande doit d’abord être prise en charge.");
     patch = { fulfillment_status:"shipped", shipped_at:now.toISOString(), updated_at:now.toISOString() };
   }
-  await serviceFetch(env, fetcher, `/rest/v1/shop_orders?stripe_session_id=eq.${encodeURIComponent(sessionId)}`, { method:"PATCH", body:patch, prefer:"return=minimal" });
+  // Compare the stored status in the write itself so a stale request cannot undo a later transition.
+  const updated = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?stripe_session_id=eq.${encodeURIComponent(sessionId)}&fulfillment_status=eq.${encodeURIComponent(order.fulfillment_status)}&payment_status=eq.paid&select=stripe_session_id`, { method:"PATCH", body:patch, prefer:"return=representation" });
+  if (!Array.isArray(updated) || updated.length !== 1) throw new OrderError(409, "Cette commande a changé. Actualise le suivi avant de réessayer.");
   return json({ ok:true, fulfillmentStatus:patch.fulfillment_status });
 }
 
@@ -103,10 +113,12 @@ async function listMyOrders(request, env, fetcher) {
   const user = await authUser(request, env, fetcher);
   const rewards = await serviceFetch(env, fetcher, `/rest/v1/member_purchase_rewards?select=session_id&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=30`);
   const ids = [...new Set((rewards || []).map(row => row.session_id).filter(id => /^cs_(test_|live_)?[A-Za-z0-9]+$/.test(id)))];
-  if (!ids.length) return json({ orders:[] });
-  const inList = `(${ids.join(",")})`;
   const select = "stripe_session_id,fulfillment_status,amount_total,currency,items,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at";
-  const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?select=${encodeURIComponent(select)}&stripe_session_id=in.${encodeURIComponent(inList)}&order=created_at.desc`);
+  // New purchases belong to the member before loyalty settlement finishes. Keep reward-backed access for legacy orders.
+  const ownerFilter = ids.length
+    ? `or=${encodeURIComponent(`(loyalty_user_id.eq.${user.id},stripe_session_id.in.(${ids.join(",")}))`)}`
+    : `loyalty_user_id=eq.${encodeURIComponent(user.id)}`;
+  const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?select=${encodeURIComponent(select)}&${ownerFilter}&payment_status=eq.paid&order=created_at.desc&limit=30`);
   return json({ orders:(rows || []).map(row => publicOrder(row, false)) });
 }
 

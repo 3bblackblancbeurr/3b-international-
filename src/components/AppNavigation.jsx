@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
-import { PAGE_HASHES } from "../lib/navigation.js";
+import { getPageHref } from "../lib/navigation.js";
 import CompactCard from './CompactCard.jsx';
 
 const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
@@ -12,13 +12,13 @@ export function SectionIcon({ page, ...props }) {
 export const NAV_GROUPS = [
   { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
   { title: "Univers & jeux", ids: ["world3b", "games", "manga", "secret"] },
-  { title: "Services & avantages", ids: ["shop", "sport"] },
+  { title: "Services & avantages", ids: ["shop", "sport", "control"] },
   { title: "En préparation", ids: ["community", "ia", "religion"] },
   { title: "Comprendre 3B", ids: ["guide"] },
 ];
 
 export function RouteLink({ page, goTo, children, ...props }) {
-  return <a href={`#${PAGE_HASHES[page]}`} onClick={(event) => {
+  return <a href={getPageHref(page)} onClick={(event) => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     goTo(page);

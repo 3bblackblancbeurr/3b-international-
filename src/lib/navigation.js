@@ -31,14 +31,19 @@ function cleanTransientParams(url) {
   url.searchParams.delete("reset");
 }
 
-export function navigateTo(page) {
+export function getPageHref(page, location = window.location) {
   const target = Object.hasOwn(PAGE_HASHES, page) ? page : "home";
-  const url = new URL(window.location.href);
+  const url = new URL(location.href);
   cleanTransientParams(url);
   if (url.pathname.startsWith("/jeux/")) url.pathname = "/";
   url.hash = PAGE_HASHES[target];
-  if (url.href !== window.location.href) {
-    window.history.pushState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function navigateTo(page) {
+  const href = getPageHref(page);
+  if (new URL(href, window.location.href).href !== window.location.href) {
+    window.history.pushState(null, "", href);
   }
 }
 

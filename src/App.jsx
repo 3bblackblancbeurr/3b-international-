@@ -179,16 +179,17 @@ export default function App() {
   }, [loyalty.user?.id]);
 
   const menuItems = useMemo(() => {
-    if (member.isRegistered) {
-      return [
-        ...BASE_MENU_ITEMS.slice(0, 2),
-        MEMBER_MENU_ITEM,
-        ...(controlAvailable ? [CONTROL_MENU_ITEM] : []),
-        ...BASE_MENU_ITEMS.slice(2),
-      ];
-    }
-
-    return BASE_MENU_ITEMS;
+    const accountItem = member.isRegistered ? MEMBER_MENU_ITEM : {
+      ...MEMBER_MENU_ITEM,
+      label: "Connexion / Inscription",
+      description: "Retrouver son compte ou activer son Passeport 3B.",
+    };
+    return [
+      ...BASE_MENU_ITEMS.slice(0, 2),
+      accountItem,
+      ...(member.isRegistered && controlAvailable ? [CONTROL_MENU_ITEM] : []),
+      ...BASE_MENU_ITEMS.slice(2),
+    ];
   }, [member.isRegistered, controlAvailable]);
 
   const currentPageTitle = useMemo(() => {
@@ -223,10 +224,16 @@ export default function App() {
         : menuItems.find(item => item.id === (page.startsWith("ia-") ? "ia" : page))?.description;
     const description = document.querySelector('meta[name="description"]');
     if (description && routeDescription) description.setAttribute("content", `3B International — ${routeDescription}`);
-    const heading = document.querySelector("main h1");
-    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
-    window.scrollTo({ top: 0, behavior: "auto" });
   }, [page, currentPageTitle, menuItems]);
+
+  useEffect(() => {
+    // The main landmark is available even while a lazy route is loading.
+    // Profile synchronization must not steal focus from a form or an open menu.
+    const heading = document.querySelector("main h1");
+    const target = heading?.getClientRects().length ? heading : document.querySelector("main");
+    if (target) { target.tabIndex = -1; target.focus({ preventScroll: true }); }
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [page, gameSlug]);
 
   useEffect(() => {
     document.documentElement.dataset.motion = options.reducedMotion || !options.animations ? "reduced" : "full";
@@ -286,7 +293,7 @@ export default function App() {
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
-    return <PassportAccessGate goTo={goTo} />;
+    return <PassportAccessGate goTo={goTo} options={options} />;
   }
 
   return (
@@ -446,13 +453,11 @@ function RemoteGamePage({ slug, onBack }) {
         >
           <div style={{ width: "min(100%, 520px)", textAlign: "center" }}>
             <p className="eyebrow">JEUX 3B</p>
-            <h1>{status === "error" ? "Jeu 3B indisponible" : "Ouverture de Penalty Rush…"}</h1>
+            <h1>{status === "error" ? "Jeu 3B indisponible" : "Ouverture du jeu 3B…"}</h1>
             <p>{status === "error" ? error : "Connexion au terrain 3B et à ton compte."}</p>
-            {status === "error" && (
-              <button type="button" className="primary-button" onClick={() => onBackRef.current?.()}>
-                ← Retour Jeux 3B
-              </button>
-            )}
+            <button type="button" className="primary-button" onClick={() => onBackRef.current?.()}>
+              ← Retour Jeux 3B
+            </button>
           </div>
         </div>
       )}
@@ -461,17 +466,18 @@ function RemoteGamePage({ slug, onBack }) {
 }
 
 
-function PassportAccessGate({ goTo }) {
+function PassportAccessGate({ goTo, options }) {
   return (
-    <main className="intro3b" data-glow="true" data-matrix="true">
+    <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="intro3b-background" aria-hidden="true" />
-      <div className="intro3b-matrix active" aria-hidden="true" />
+      <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
       <section className="intro3b-card" aria-labelledby="passport-access-title">
         <p className="eyebrow">ACCÈS 3B</p>
         <h1 id="passport-access-title">Passeport 3B requis</h1>
         <p>Un seul Passeport 3B donne accès à l’écosystème 3B, y compris au Monde du 3B.</p>
         <button type="button" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</button>
         <button type="button" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</button>
+        <button type="button" className="ghost-button" onClick={() => goTo("home")}>Retour à l’accueil</button>
       </section>
     </main>
   );
