@@ -665,8 +665,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
     }
     if (isKeeper) {
-      const direction = Math.max(-1, Math.min(1, dx / Math.max(28, Math.abs(dx))));
-      const intensity = Math.min(1, distance / 72);
+      const horizontal = Math.abs(dx);
+      const direction = horizontal < 3 ? 0 : Math.sign(dx);
+      const intensity = Math.min(1, horizontal / 82);
       controlRef.current.keeper = { direction, intensity, active:true };
       const now = performance.now();
       if (now - keeperMoveThrottle.current >= 50) {
