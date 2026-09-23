@@ -188,7 +188,8 @@ async function ownerList(body:any){
   const safe=search.replace(/[,%()*]/g,' ');
   path+='&or=(title.ilike.*'+enc(safe)+'*,summary.ilike.*'+enc(safe)+'*)';
  }
- const [events,requests,openReports,pendingSport,failedDelivery,riskReviews,rewardFailures,members,installs7d]=await Promise.all([
+ const now=new Date().toISOString();
+ const [events,requests,openReports,pendingSport,failedDelivery,riskReviews,rewardFailures,members,installs7d,moderationStates,moderationEvents]=await Promise.all([
   api(path),
   api('/rest/v1/threeb_requests?status=in.(new,in_progress)&select=id,user_id,category,subject,message,status,priority,owner_reply,created_at,updated_at&order=created_at.desc&limit=100'),
   api('/rest/v1/community_reports?status=eq.open&select=id'),
@@ -197,12 +198,14 @@ async function ownerList(body:any){
   api('/rest/v1/threeb_economy_risk_profiles?review_required=eq.true&select=user_id'),
   api('/rest/v1/threeb_reward_outbox?status=eq.rejected&select=id'),
   api('/rest/v1/member_profiles?select=user_id'),
-  api('/rest/v1/app_installs?last_seen=gte.'+enc(new Date(Date.now()-7*86400000).toISOString())+'&select=install_id')
+  api('/rest/v1/app_installs?last_seen=gte.'+enc(new Date(Date.now()-7*86400000).toISOString())+'&select=install_id'),
+  api('/rest/v1/community_moderation_state?restricted_until=gt.'+enc(now)+'&select=user_id,strike_score,restricted_until,last_violation_at,updated_at&order=restricted_until.desc&limit=100'),
+  api('/rest/v1/community_moderation_events?select=id,user_id,source_kind,source_id,decision,severity,reasons,excerpt,resolved_at,resolved_by,created_at&order=created_at.desc&limit=100')
  ]);
- const actorIds=[...new Set([...(events||[]).map((x:any)=>x.actor_user_id),...(requests||[]).map((x:any)=>x.user_id)].filter(Boolean))];
+ const actorIds=[...new Set([...(events||[]).map((x:any)=>x.actor_user_id),...(requests||[]).map((x:any)=>x.user_id),...(moderationStates||[]).map((x:any)=>x.user_id),...(moderationEvents||[]).map((x:any)=>x.user_id)].filter(Boolean))];
  const profiles=actorIds.length?await api('/rest/v1/member_profiles?user_id=in.('+actorIds.join(',')+')&select=user_id,handle,name,country'):[];
  return{
-  events:events||[],requests:requests||[],profiles:profiles||[],
+  events:events||[],requests:requests||[],profiles:profiles||[],moderationStates:moderationStates||[],moderationEvents:moderationEvents||[],
   stats:{
    unread:(events||[]).filter((x:any)=>!x.read_at).length,
    urgent:(events||[]).filter((x:any)=>['urgent','critical'].includes(x.severity)&&['new','in_progress'].includes(x.status)).length,
@@ -211,6 +214,7 @@ async function ownerList(body:any){
    failedDelivery:failedDelivery?.length||0,
    riskReviews:riskReviews?.length||0,
    rewardFailures:rewardFailures?.length||0,
+   activeRestrictions:moderationStates?.length||0,
    members:members?.length||0,
    installs7d:installs7d?.length||0,
    openRequests:requests?.length||0
