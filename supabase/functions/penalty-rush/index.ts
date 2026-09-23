@@ -675,7 +675,6 @@ function resetPossession(state:any, at:number) {
   state.keeperEffect = null;
   state.sprintUntil = 0;
   state.lastMoveAt = at;
-  state.lastKeeperMoveAt = at;
   state.previousAction = state.previousAction || [null,null];
   state.keeperEnergy = Array.isArray(state.keeperEnergy) ? state.keeperEnergy : [100,100];
   state.keeperEnergy[state.keeper] = clamp(number(state.keeperEnergy[state.keeper], 100) + 25, 0, 100);
@@ -693,7 +692,6 @@ function createServerMatch(players:Player[]) {
   state.previousAction = [null,null];
   state.sprintUntil = 0;
   state.lastMoveAt = at;
-  state.lastKeeperMoveAt = at;
   state.matchStats = [
     { shots:0, goals:0, saves:0, flowTotal:0, flowSamples:0, goldenGoals:0 },
     { shots:0, goals:0, saves:0, flowTotal:0, flowSamples:0, goldenGoals:0 },
@@ -859,9 +857,9 @@ async function processInput(room:Room, uid:string, input:any) {
     const sprinting = at < number(state.sprintUntil);
     const style = STYLE_TUNING[room.players[playerIndex]?.styleId] || STYLE_TUNING.technicien;
     const forward = clamp(-iy, 0, 1);
-    const speed = (.12 + intensity * .13) * (sprinting ? 1.34 : 1) * style.burst;
+    const speed = (.17 + intensity * .16) * (sprinting ? 1.34 : 1) * style.burst;
     state.positions.attacker.x = clamp(number(state.positions.attacker.x) + forward * speed * dt, 0, 1);
-    state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.16 + intensity*.12) * dt, -.92, .92);
+    state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.26 + intensity*.18) * dt, -.92, .92);
     state.ballLead = ballTouchDistance(intensity * (sprinting ? 1 : .78), style.control);
     if (!sprinting && intensity < .42) {
       state.energy[playerIndex] = recoverEnergy(number(state.energy[playerIndex],100), dt, false);
@@ -871,33 +869,39 @@ async function processInput(room:Room, uid:string, input:any) {
     return await commitRoom(room, {state}, uid, 'move', {x:state.positions.attacker.x,y:state.positions.attacker.y});
   }
 
-  if (['dive','high-claim','close-angle','hold'].includes(type)) {
-    if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut déclencher ce geste.');
+  if (type === 'keeper-track') {
+    if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut se déplacer dans sa cage.');
+    const position = safeDirection(input?.position);
     const direction = safeDirection(input?.direction);
     const intensity = safeIntensity(input?.intensity);
-    const dt = clamp((at - number(state.lastKeeperMoveAt, at)) / 1000, 0, .12);
-    state.keeperIntent = { type, direction, intensity, at };
+    state.positions.keeper.y = clamp(position, -.95, .95);
+    state.keeperIntent = { type:'hold', direction, intensity, at };
+    state.lastEvent = {
+      type:'keeper-track',
+      text:'Placement gardien.',
+      visual:{ at, type:'keeper-track', position, direction, intensity },
+    };
+    return await commitRoom(room, {state}, uid, 'keeper-track', {position});
+  }
 
-    if (type === 'hold') {
-      const lateralSpeed = 1.65 + intensity * 1.35;
-      state.positions.keeper.y = clamp(
-        number(state.positions.keeper.y) + direction * lateralSpeed * dt,
-        -.95, .95,
-      );
-    } else {
-      state.positions.keeper.y = clamp(
-        number(state.positions.keeper.y) + direction * (.035 + intensity * .055),
-        -.95, .95,
-      );
-    }
-
-    state.lastKeeperMoveAt = at;
+  if (['dive','high-claim','close-angle','hold'].includes(type)) {
+    if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut déclencher ce geste.');
+    state.keeperIntent = {
+      type,
+      direction:safeDirection(input?.direction),
+      intensity:safeIntensity(input?.intensity),
+      at,
+    };
+    state.positions.keeper.y = clamp(
+      number(state.positions.keeper.y) + safeDirection(input?.direction) * (.05 + safeIntensity(input?.intensity)*.1),
+      -.95, .95,
+    );
     state.lastEvent = {
       type:'keeper',
-      text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en déplacement.',
-      visual:{ at, type, direction, intensity },
+      text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en attente.',
+      visual:{ at, type, direction:safeDirection(input?.direction), intensity:safeIntensity(input?.intensity) },
     };
-    return await commitRoom(room, {state}, uid, 'keeper', {type, y:state.positions.keeper.y});
+    return await commitRoom(room, {state}, uid, 'keeper', {type});
   }
 
   if (type === 'power') {
