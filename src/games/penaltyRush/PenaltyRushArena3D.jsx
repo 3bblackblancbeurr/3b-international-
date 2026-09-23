@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { createLivingLibrary, createLivingActor } from '../../world/living.js';
 
 const FIELD_W = 22;
 const FIELD_L = 44;
@@ -43,6 +44,36 @@ function appearanceFor(player, profile, self = false) {
     skin: ['#9a6748', '#b87b58', '#80563f', '#c18b68'][seed % 4],
     hair: ['#111315', '#2a1b13', '#0b0d0f'][seed % 3],
     number: clamp(self ? profile?.shirtNumber : player?.shirtNumber, 1, 99) || 10,
+  };
+}
+
+function footballAvatar(appearance, seed = 0) {
+  return {
+    body:'homme',
+    style:'voyageur',
+    hair:seed % 5,
+    color:0,
+    fabricColor:appearance.shirt,
+    accentColor:appearance.trim,
+    trouserColor:appearance.shorts,
+    bootColor:appearance.boots,
+    skinColor:appearance.skin,
+    hairColor:appearance.hair,
+    headwear:'none',
+    outer:'none',
+    bag:false,
+    shape:'elance',
+    height:1,
+    build:1.02,
+    shoulders:.18,
+    chest:.08,
+    waist:-.08,
+    hips:-.04,
+    arms:.08,
+    legs:.12,
+    pattern:'uni',
+    fabric:'satin',
+    boots:0,
   };
 }
 
@@ -734,12 +765,33 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     const trail = createBallTrail(scene);
     const impactFx = createImpactFx(scene);
 
-    const players = [0, 1].map((index) => {
+    const playerAppearance = [0, 1].map((index) => {
       const snapshot = liveRef.current;
       const entry = snapshot.room?.players?.[index] || {};
-      const model = createHumanoid(appearanceFor(entry, snapshot.profile, index === snapshot.selfIndex));
+      return appearanceFor(entry, snapshot.profile, index === snapshot.selfIndex);
+    });
+    const players = playerAppearance.map((appearance) => {
+      const model = createHumanoid(appearance);
       scene.add(model);
       return model;
+    });
+
+    const livingLibrary = createLivingLibrary();
+    const livingActors = playerAppearance.map((appearance, index) => {
+      let actor;
+      actor = createLivingActor(livingLibrary, {
+        avatar:footballAvatar(appearance, index + appearance.number),
+        scale:1.82,
+        onLoad:() => {
+          players[index].userData.rig.visible = false;
+          actor.object.position.copy(players[index].position);
+        },
+        onError:() => {
+          players[index].userData.rig.visible = true;
+        },
+      });
+      scene.add(actor.object);
+      return actor;
     });
 
     const initialState = liveRef.current.room?.state || {};
@@ -785,6 +837,19 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         direction:Number(event?.visual?.direction || state?.keeperIntent?.direction || 0),
         triggered:false,
       };
+
+      const attackerIndex = clamp(state?.attacker, 0, 1);
+      const keeperIndex = clamp(state?.keeper, 0, 1);
+      if (['goal','save','frame'].includes(event.type)) {
+        livingActors[attackerIndex]?.action?.('Attack', .55);
+        if (event.type === 'goal') livingActors[keeperIndex]?.action?.('Hit', .42);
+        if (event.type === 'save') livingActors[keeperIndex]?.action?.('Cast', .58);
+        try {
+          if ('vibrate' in navigator) navigator.vibrate(event.type === 'goal' ? [18,26,42] : event.type === 'save' ? 22 : 14);
+        } catch {}
+      } else if (event.type === 'keeper' && event.visual?.type === 'dive') {
+        livingActors[keeperIndex]?.action?.('Hit', .36);
+      }
     }
 
     function shotBallPosition(event, now, fallbackStart) {
@@ -979,7 +1044,9 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         model.position.x = mix(model.position.x, target.x, follow);
         model.position.z = mix(model.position.z, target.z, follow);
 
-        const moved = before.distanceTo(model.position);
+        const dx = model.position.x - before.x;
+        const dz = model.position.z - before.z;
+        const moved = Math.hypot(dx, dz);
         runtime.speeds[index] = mix(
           runtime.speeds[index],
           Math.min(1, moved / Math.max(.001, dt) / 6.3),
@@ -987,6 +1054,20 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         );
 
         model.rotation.y = index === keeper ? Math.PI : 0;
+
+        const actor = livingActors[index];
+        if (actor?.ready) {
+          actor.object.position.copy(model.position);
+          const travelled = moved;
+          actor.update(dt, dx, dz, travelled);
+          if (index === keeper) {
+            actor.face(
+              runtime.playerTargets[attacker].x - actor.object.position.x,
+              runtime.playerTargets[attacker].z - actor.object.position.z,
+              dt,
+            );
+          }
+        }
       });
 
       const activeEvent = runtime.event;
@@ -1065,6 +1146,22 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
           eventT,
           direction:eventDirection || 1,
         });
+
+        const actor = livingActors[index];
+        if (actor?.ready) {
+          actor.object.position.y = 0;
+          actor.object.rotation.z *= .7;
+          if (action === 'keeper-preview') {
+            actor.object.rotation.z = -(eventDirection || 1) * clamp(eventT, 0, 1) * .12;
+          } else if (action === 'dive') {
+            const dive = Math.sin(clamp(eventT, 0, 1) * Math.PI / 2);
+            actor.object.rotation.z = -(eventDirection || 1) * dive * .92;
+            actor.object.position.x += (eventDirection || 1) * dive * .58;
+            actor.object.position.y = dive * .38;
+          } else if (action === 'celebrate') {
+            actor.object.position.y = Math.sin(clamp(eventT, 0, 1) * Math.PI) * .24;
+          }
+        }
       });
 
       setCamera(
@@ -1094,6 +1191,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       renderer.setAnimationLoop(null);
       observer.disconnect();
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+      livingActors.forEach((actor) => actor?.dispose?.());
+      livingLibrary.dispose();
       dispose(scene);
       renderer.dispose();
       renderer.domElement.remove();
