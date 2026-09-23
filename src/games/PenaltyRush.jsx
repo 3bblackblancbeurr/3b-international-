@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Copy, Globe2, Play, RefreshCw, Shield, Shirt, Trophy, UserRound, Users, Wifi, X, Zap,
 } from 'lucide-react';
@@ -16,6 +16,9 @@ import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
 import './penaltyRush.css';
+import './penaltyRush3d.css';
+
+const PenaltyRushArena3D = lazy(() => import('./penaltyRush/PenaltyRushArena3D.jsx'));
 
 const NAV = [
   ['play', Play, 'Jouer'],
@@ -497,74 +500,162 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const rightGesture = useRef(null);
   const rightLastTap = useRef(0);
   const moveThrottle = useRef(0);
+  const moveInFlight = useRef(false);
+  const pendingMove = useRef(null);
+  const revisionRef = useRef(room.revision);
+  const controlRef = useRef({ x:0, y:0, intensity:0, active:false });
+  const leftPadRef = useRef(null);
+  const rightPadRef = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
+  revisionRef.current = room.revision;
+
+  function flushMove() {
+    if (moveInFlight.current || !pendingMove.current) return;
+    const input = pendingMove.current;
+    pendingMove.current = null;
+    moveInFlight.current = true;
+    request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
+      .catch(() => {})
+      .finally(() => {
+        moveInFlight.current = false;
+        if (pendingMove.current) flushMove();
+      });
+  }
+
+  function queueMove(input) {
+    pendingMove.current = input;
+    flushMove();
+  }
+
+  function resetLeftPad() {
+    controlRef.current = { x:0, y:0, intensity:0, active:false };
+    const pad = leftPadRef.current;
+    if (!pad) return;
+    pad.dataset.active = 'false';
+    pad.style.setProperty('--stick-x', '0px');
+    pad.style.setProperty('--stick-y', '0px');
+  }
+
+  function resetRightPad() {
+    const pad = rightPadRef.current;
+    if (!pad) return;
+    pad.dataset.active = 'false';
+    pad.style.setProperty('--gesture-power', '.18');
+    pad.style.setProperty('--gesture-opacity', '.28');
+  }
 
   function leftStart(event) {
     if (!isAttacker || state.status === 'finished') return;
-    leftGesture.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY };
+    leftGesture.current = { pointer:event.pointerId, x:event.clientX, y:event.clientY };
     event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.dataset.active = 'true';
   }
+
   function leftMove(event) {
     const start = leftGesture.current;
     if (!start || start.pointer !== event.pointerId || !isAttacker) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     const length = Math.hypot(dx, dy) || 1;
+    const x = dx / length;
+    const y = dy / length;
+    const intensity = Math.min(1, length / 70);
+    controlRef.current = { x, y, intensity, active:true };
+
+    const pad = leftPadRef.current;
+    if (pad) {
+      const visualRadius = Math.min(43, length);
+      pad.style.setProperty('--stick-x', (x * visualRadius).toFixed(1) + 'px');
+      pad.style.setProperty('--stick-y', (y * visualRadius).toFixed(1) + 'px');
+    }
+
     const now = performance.now();
-    if (now - moveThrottle.current < 120) return;
+    if (now - moveThrottle.current < 80) return;
     moveThrottle.current = now;
-    request('input', { room: room.id, revision: room.revision, input: { type: 'move', x: dx / length, y: dy / length, intensity: Math.min(1, length / 70) } }, { silent: true }).catch(() => {});
+    queueMove({ type:'move', x, y, intensity });
   }
+
   function leftEnd(event) {
     if (!leftGesture.current || leftGesture.current.pointer !== event.pointerId) return;
     leftGesture.current = null;
-    request('input', { room: room.id, revision: room.revision, input: { type: 'move', x: 0, y: 0, intensity: 0 } }, { silent: true }).catch(() => {});
+    resetLeftPad();
+    queueMove({ type:'move', x:0, y:0, intensity:0 });
   }
+
   function rightStart(event) {
     if (!isAttacker && !isKeeper) return;
-    rightGesture.current = { pointer: event.pointerId, x: event.clientX, y: event.clientY, t: performance.now(), path: [{ x: event.clientX, y: event.clientY }] };
+    rightGesture.current = {
+      pointer:event.pointerId,
+      x:event.clientX,
+      y:event.clientY,
+      t:performance.now(),
+      path:[{ x:event.clientX, y:event.clientY }],
+    };
     event.currentTarget.setPointerCapture(event.pointerId);
+    event.currentTarget.dataset.active = 'true';
+    event.currentTarget.style.setProperty('--gesture-opacity', '.92');
   }
+
   function rightMove(event) {
     const gesture = rightGesture.current;
     if (!gesture || gesture.pointer !== event.pointerId) return;
-    gesture.path.push({ x: event.clientX, y: event.clientY });
+    gesture.path.push({ x:event.clientX, y:event.clientY });
     if (gesture.path.length > 24) gesture.path.shift();
+
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+    const distance = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+    const pad = rightPadRef.current;
+    if (pad) {
+      pad.style.setProperty('--gesture-angle', angle.toFixed(1) + 'deg');
+      pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
+    }
   }
+
   function rightEnd(event) {
     const gesture = rightGesture.current;
     if (!gesture || gesture.pointer !== event.pointerId) return;
     rightGesture.current = null;
+    resetRightPad();
+
     const endedAt = performance.now();
     const dx = event.clientX - gesture.x;
     const dy = event.clientY - gesture.y;
     const durationMs = endedAt - gesture.t;
     const distance = Math.hypot(dx, dy);
     let taps = 0;
+
     if (isAttacker && distance < 22 && durationMs < 220) {
       taps = endedAt - rightLastTap.current <= 320 ? 2 : 1;
       rightLastTap.current = endedAt;
       if (taps === 1) return;
     }
+
     const curve = gesture.path.length > 2
       ? Math.max(-1, Math.min(1, (gesture.path[Math.floor(gesture.path.length / 2)].x - (gesture.x + dx / 2)) / 45))
       : 0;
     const parsed = isAttacker
-      ? interpretAttackGesture({ dx, dy, durationMs, heldMs: durationMs, curve, taps })
+      ? interpretAttackGesture({ dx, dy, durationMs, heldMs:durationMs, curve, taps })
       : interpretKeeperGesture({ dx, dy, durationMs });
-    request('input', { room: room.id, revision: room.revision, input: parsed }, { silent: true }).catch(() => {});
+
+    request('input', { room:room.id, revision:revisionRef.current, input:parsed }, { silent:true }).catch(() => {});
   }
+
   function activatePower(powerId) {
     if (!isKeeper || busy) return;
-    request('input', { room: room.id, revision: room.revision, input: { type: 'power', powerId } }, { silent: true }).catch(() => {});
+    request('input', {
+      room:room.id,
+      revision:revisionRef.current,
+      input:{ type:'power', powerId },
+    }, { silent:true }).catch(() => {});
   }
 
   const score = state.score || [0, 0];
-  const positions = state.positions || { attacker: { x: 0.15, y: 0 }, keeper: { y: 0 } };
   const powerIds = room.players?.[selfIndex]?.keeperPowers || profile.keeperPowers;
 
   return (
-    <main className="penalty-match">
+    <main className="penalty-match" data-role={isAttacker ? 'attacker' : isKeeper ? 'keeper' : 'spectator'}>
       <div className="penalty-match-hud">
         <div className="penalty-hud-player"><b>{room.players?.[0]?.name || 'Joueur A'}</b><small>{room.players?.[0]?.countryId ? countryById(room.players[0].countryId).flag : ''}</small></div>
         <div className="penalty-score"><span>{score[0] || 0}</span><div><small>{phaseLabel(state.phase)}</small><b>{remaining.toString().padStart(2, '0')}s</b></div><span>{score[1] || 0}</span></div>
@@ -572,21 +663,20 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       </div>
 
       <div className="penalty-meter-line">
-        <div><span>ÉNERGIE</span><i><b style={{ width: `${state.energy?.[selfIndex] ?? 100}%` }} /></i></div>
+        <div><span>ÉNERGIE</span><i><b style={{ width:`${state.energy?.[selfIndex] ?? 100}%` }} /></i></div>
         <strong>{isAttacker ? 'ATTAQUE' : isKeeper ? 'GARDIEN' : 'SPECTATEUR'}</strong>
-        <div><span>FLOW</span><i><b style={{ width: `${state.flow?.[selfIndex] ?? 0}%` }} /></i></div>
+        <div><span>FLOW</span><i><b style={{ width:`${state.flow?.[selfIndex] ?? 0}%` }} /></i></div>
       </div>
 
-      <section className="penalty-pitch">
-        <div className="penalty-goal-visual"><span /></div>
-        <div className="penalty-keeper-avatar" style={{ left: `${50 + (positions.keeper?.y || 0) * 30}%` }}>GK</div>
-        <div className="penalty-ball-avatar" style={{ left: `${50 + (positions.attacker?.y || 0) * 28}%`, bottom: `${18 + (positions.attacker?.x || .15) * 50 + Math.min(4, Number(state.ballLead || 0) * 6)}%` }}>3B</div>
-        <div className="penalty-attacker-avatar" style={{ left: `${50 + (positions.attacker?.y || 0) * 28}%`, bottom: `${10 + (positions.attacker?.x || .15) * 50}%` }}>10</div>
+      <section className="penalty-pitch penalty-pitch-3d">
+        <Suspense fallback={<div className="penalty-arena3d-fallback"><b>Terrain 3B</b><span>Chargement du match 3D…</span></div>}>
+          <PenaltyRushArena3D room={room} profile={profile} selfIndex={selfIndex} controlRef={controlRef} />
+        </Suspense>
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
-        {isAttacker && <div className="penalty-touch-left" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd}><span /></div>}
-        <div className="penalty-touch-right" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightEnd}><span>{isAttacker ? 'GESTES · MAINTIENS POUR FRAPPER' : 'GLISSE · PLONGE'}</span></div>
+        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd}><span /></div>}
+        <div ref={rightPadRef} className="penalty-touch-right" data-active="false" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightEnd}><span>{isAttacker ? 'FEINTE · CROCHET · MAINTIENS POUR FRAPPER' : 'GLISSE POUR PLONGER · FERME L’ANGLE'}</span></div>
 
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
       </section>

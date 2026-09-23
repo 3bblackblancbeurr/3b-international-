@@ -545,6 +545,10 @@ function playerEntry(uid:string, profile:any, ready=true):Player {
     countryId: profile.country_id,
     styleId: profile.style_id,
     keeperPowers: profile.keeper_powers,
+    shirtNumber: clamp(Math.trunc(number(profile.shirt_number, 10)), 1, 99),
+    kit: sanitizeKit(profile.kit),
+    boots: sanitizeBoots(profile.boots),
+    celebration: String(profile.celebration || 'calme').slice(0, 24),
     ready,
     joinedAt: nowIso(),
     lastSeen: nowIso(),
@@ -586,6 +590,10 @@ function publicRoom(room:Room, uid:string) {
     countryId:player.countryId,
     styleId:player.styleId,
     keeperPowers:player.keeperPowers,
+    shirtNumber:clamp(Math.trunc(number(player.shirtNumber, 10)), 1, 99),
+    kit:sanitizeKit(player.kit),
+    boots:sanitizeBoots(player.boots),
+    celebration:String(player.celebration || 'calme').slice(0, 24),
     ready:Boolean(player.ready),
     isSelf:player.uid === uid,
   }));
@@ -873,7 +881,11 @@ async function processInput(room:Room, uid:string, input:any) {
       number(state.positions.keeper.y) + safeDirection(input?.direction) * (.12 + safeIntensity(input?.intensity)*.18),
       -.95, .95,
     );
-    state.lastEvent = { type:'keeper', text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en attente.' };
+    state.lastEvent = {
+      type:'keeper',
+      text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en attente.',
+      visual:{ at, type, direction:safeDirection(input?.direction), intensity:safeIntensity(input?.intensity) },
+    };
     return await commitRoom(room, {state}, uid, 'keeper', {type});
   }
 
@@ -899,7 +911,11 @@ async function processInput(room:Room, uid:string, input:any) {
       const direction = safeDirection(input?.direction?.x);
       state.positions.attacker.y = clamp(number(state.positions.attacker.y) + direction * (type === 'cut' ? .12 : .07), -.95, .95);
     }
-    state.lastEvent = { type, text:type === 'accelerate' ? 'Changement de rythme.' : type === 'feint' ? 'Feinte.' : type === 'cut' ? 'Crochet.' : 'Tempo.' };
+    state.lastEvent = {
+      type,
+      text:type === 'accelerate' ? 'Changement de rythme.' : type === 'feint' ? 'Feinte.' : type === 'cut' ? 'Crochet.' : 'Tempo.',
+      visual:{ at, direction:safeDirection(input?.direction?.x), intensity:safeIntensity(input?.intensity) },
+    };
     return await commitRoom(room, {state}, uid, type, {});
   }
 
@@ -920,6 +936,15 @@ async function processInput(room:Room, uid:string, input:any) {
       keeperEffect,
       attackerFlow:flowBeforeShot,
     });
+    const visual = {
+      at,
+      attacker:{ ...state.positions.attacker },
+      keeper:{ ...state.positions.keeper },
+      shot:{ ...shot },
+      result:{ ...result },
+      keeperIntent:{ ...intent },
+      direction:Math.sign(number(result.target) - number(result.keeperCenter)) || 1,
+    };
     updateFlowState(state, playerIndex, type, result.goal, room.players[playerIndex]?.styleId);
     const keeperIndex = state.keeper;
     const statsA = state.matchStats[playerIndex];
@@ -938,6 +963,7 @@ async function processInput(room:Room, uid:string, input:any) {
       type:result.goal ? 'goal' : result.frame ? 'frame' : 'save',
       text:result.goal ? 'BUT · lecture parfaite.' : result.frame ? 'Le cadre repousse la frappe.' : 'ARRÊT · le gardien avait lu le duel.',
       result,
+      visual,
     };
     if (state.status === 'playing') resetPossession(state, at);
     const finished = state.status === 'finished';
