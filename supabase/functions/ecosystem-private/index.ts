@@ -1,3 +1,4 @@
+import {moderateCommunityText,moderationRestriction,moderationStrikeWeight} from '../_shared/moderation.js';
 import {availableProviders,normalizeConversation,automaticReply} from './ai-router.js';
 import {createClient} from 'npm:@supabase/supabase-js@2.116.0';
 import {fetchSports} from './sports.js';
@@ -54,13 +55,13 @@ function challengeCheck(result:any){
 }
 async function sportChallengeSnapshot(uid:string){
  await rate(uid,'sport-challenge-read',90,60);
- const [catalogResult,entriesResult,checkinsResult,staffResult]=await Promise.all([
+ const [catalogResult,entriesResult,checkinsResult,moderator]=await Promise.all([
   admin.from('sport_challenges').select('*').eq('active',true).order('sort_order'),
   admin.from('sport_challenge_entries').select('*').eq('user_id',uid).order('updated_at',{ascending:false}),
   admin.from('sport_challenge_checkins').select('challenge_id,challenge_day,value,note,created_at,updated_at').eq('user_id',uid).order('challenge_day',{ascending:false}).limit(80),
-  admin.from('community_staff').select('user_id').eq('user_id',uid).maybeSingle()
+  staffOrOwner(uid)
  ]);
- const catalog=check(catalogResult),entries=check(entriesResult),checkins=check(checkinsResult),moderator=!!check(staffResult);
+ const catalog=check(catalogResult),entries=check(entriesResult),checkins=check(checkinsResult);
  let pending:any[]=[];
  if(moderator){
   const rows=check(await admin.from('sport_challenge_entries').select('user_id,challenge_id,status,progress,proof_note,submitted_at,updated_at').eq('status','submitted').order('submitted_at',{ascending:true}).limit(60));
@@ -73,6 +74,64 @@ async function sportChallengeSnapshot(uid:string){
 async function signAssets(posts:any[]){return await Promise.all(posts.map(async p=>{if(!p.asset_path)return p;const{data}=await admin.storage.from('studio-3b').createSignedUrl(p.asset_path,600);return{...p,imageUrl:data?.signedUrl||null};}));}
 async function participating(uid:string){const p=check(await admin.from('community_profiles').select('*').eq('user_id',uid).maybeSingle());if(!p?.listed||p.rules_version!==RULES_VERSION||!p.rules_accepted_at)throw new Failure(403,'Active ton profil et accepte les règles du collectif pour participer.');return p;}
 async function visiblePost(client:any,id:string){const p=check(await client.from('community_posts').select('id,author_id').eq('id',id).maybeSingle());if(!p)throw new Failure(404,'Cette publication n’est plus disponible.');return p;}
+
+async function staffOrOwner(uid:string){
+ const staff=check(await admin.from('community_staff').select('user_id').eq('user_id',uid).maybeSingle());
+ if(staff)return true;
+ const owner=check(await admin.from('control_center_settings').select('owner_user_id').eq('singleton',true).maybeSingle());
+ return owner?.owner_user_id===uid;
+}
+async function moderationGuard(uid:string){
+ const state=check(await admin.from('community_moderation_state').select('strike_score,restricted_until,last_violation_at').eq('user_id',uid).maybeSingle());
+ if(state?.restricted_until&&Date.parse(state.restricted_until)>Date.now())throw new Failure(403,'Ton accès aux messages est temporairement limité. Réessaie après la fin de la restriction.');
+ return state||null;
+}
+async function recordModeration(uid:string,result:any,sourceKind:string,sourceId:string|null,original:string){
+ const previous=await moderationGuard(uid);
+ const reset=!previous?.last_violation_at||Date.now()-Date.parse(previous.last_violation_at)>30*86400000;
+ const base=reset?0:Number(previous?.strike_score||0),score=Math.min(1000,base+moderationStrikeWeight(result));
+ const restrictedUntil=moderationRestriction(score,result.severity),now=new Date().toISOString();
+ check(await admin.from('community_moderation_state').upsert({
+  user_id:uid,strike_score:score,restricted_until:restrictedUntil,last_violation_at:now,updated_at:now
+ },{onConflict:'user_id'}));
+ const event=check(await admin.from('community_moderation_events').insert({
+  user_id:uid,source_kind:sourceKind,source_id:sourceId,decision:result.action,severity:result.severity,
+  reasons:result.reasons||[],excerpt:String(original||'').slice(0,500),
+  detail:{context:result.context||sourceKind,restricted_until:restrictedUntil,strike_score:score}
+ }).select('id').single());
+ if(result.severity>=3||restrictedUntil){
+  check(await admin.from('owner_inbox_events').insert({
+   event_key:'moderation:'+event.id,category:'moderation',
+   event_type:restrictedUntil?'moderation.restricted':'moderation.blocked',
+   severity:result.severity>=4?'critical':'urgent',
+   title:restrictedUntil?'Restriction automatique':'Contenu bloqué par la modération',
+   summary:(result.reasons||[]).join(', ')||'Contenu à vérifier.',
+   actor_user_id:uid,subject_type:sourceKind,subject_ref:sourceId,
+   payload:{severity:result.severity,reasons:result.reasons||[],strike_score:score,restricted_until:restrictedUntil}
+  }));
+ }
+ if(restrictedUntil){
+  check(await admin.from('member_notifications').insert({
+   user_id:uid,event_key:'moderation.restricted:'+now,kind:'moderation.restricted',severity:'urgent',
+   title:'Participation temporairement limitée',
+   body:'Des infractions répétées ont déclenché une restriction temporaire des messages.',
+   route:'notifications',metadata:{restricted_until:restrictedUntil,strike_score:score}
+  }));
+ }
+ return{score,restrictedUntil};
+}
+async function moderateFields(uid:string,sourceKind:string,sourceId:string|null,fields:{name:string,value:string,context?:string}[]){
+ await moderationGuard(uid);
+ const results=fields.map(field=>({...field,result:moderateCommunityText(field.value,{context:field.context||sourceKind})}));
+ const worst=results.reduce((current,item)=>item.result.severity>current.result.severity?item:current,results[0]);
+ if(worst&&worst.result.action!=='allow')await recordModeration(uid,worst.result,sourceKind,sourceId,fields.map(f=>f.value).join('\n'));
+ const blocked=results.find(item=>item.result.action==='escalate')||results.find(item=>item.result.action==='block');
+ if(blocked)throw new Failure(400,blocked.result.message);
+ return{
+  values:Object.fromEntries(results.map(item=>[item.name,item.result.action==='mask'?item.result.text:item.value])),
+  moderation:worst&&worst.result.action!=='allow'?{action:worst.result.action,severity:worst.result.severity,message:worst.result.message}:null
+ };
+}
 async function providerFetch(url:string,headers:Record<string,string>,body:unknown,timeout=35000){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});if(!r.ok)throw new Failure(503,'Le fournisseur IA est momentanément indisponible.');return await r.json();}
 async function aiReply(provider:string,messages:any[]){
  const instruction='Tu es l’assistant créatif de 3B International. Réponds en français, de façon claire et utile. Ne prétends jamais avoir exécuté une action externe ni consulté des données en direct sans outil.';
@@ -125,19 +184,20 @@ Deno.serve(async req=>{
   if(action==='snapshot'){
    await rate(uid,'read',120);const sort=body.sort==='votes'?'votes':'created_at';const category=['discussion','creation','challenge','collaboration'].includes(body.category)?body.category:null;
    let query=client.from('community_ranked_posts').select('*').order(sort,{ascending:false}).order('id').limit(60);if(category)query=query.eq('category',category);
-   const [postResult,profileResult,mineResult,followResult,blockResult,staffResult]=await Promise.all([query,client.from('community_profiles').select('*').eq('listed',true).order('created_at',{ascending:false}).limit(100),client.from('community_profiles').select('*').eq('user_id',uid).maybeSingle(),client.from('community_follows').select('target_id'),client.from('community_blocks').select('target_id'),admin.from('community_staff').select('user_id').eq('user_id',uid).maybeSingle()]);
+   const [postResult,profileResult,mineResult,followResult,blockResult,moderator]=await Promise.all([query,client.from('community_profiles').select('*').eq('listed',true).order('created_at',{ascending:false}).limit(100),client.from('community_profiles').select('*').eq('user_id',uid).maybeSingle(),client.from('community_follows').select('target_id'),client.from('community_blocks').select('target_id'),staffOrOwner(uid)]);
    const posts=check(postResult);const ids=posts.map((p:any)=>p.id);const likes=ids.length?check(await client.from('community_likes').select('post_id').eq('user_id',uid).in('post_id',ids)):[];
    const authors=[...new Set(posts.map((p:any)=>p.author_id))];const postAuthors=authors.length?check(await client.from('community_profiles').select('user_id,name,handle,kind,public_badge_key,public_title,public_verified').in('user_id',authors)):[];
-   return reply({posts:await signAssets(posts),profiles:check(profileResult),postAuthors,mine:check(mineResult),follows:check(followResult),blocks:check(blockResult),likes,moderator:!!check(staffResult)});
+   return reply({posts:await signAssets(posts),profiles:check(profileResult),postAuthors,mine:check(mineResult),follows:check(followResult),blocks:check(blockResult),likes,moderator});
   }
   if(action==='profile'){
    await rate(uid,'profile',6);const member=check(await admin.from('member_profiles').select('handle,name,public_badge_key,public_title,public_verified').eq('user_id',uid).single());
    const kind=body.kind==='creator'?'creator':'member',bio=text(body.bio||'',0,500),listed=body.listed===true;
+   const moderatedBio=bio?await moderateFields(uid,'profile',uid,[{name:'bio',value:bio,context:'profile'}]):{values:{bio},moderation:null};
    const previous=check(await admin.from('community_profiles').select('rules_version,rules_accepted_at').eq('user_id',uid).maybeSingle());
    const accepted=previous?.rules_version===RULES_VERSION&&!!previous?.rules_accepted_at;
    if(listed&&!accepted&&body.acceptRules!==true)throw new Failure(400,'Accepte les règles du collectif pour activer ton profil.');
    const consent=body.acceptRules===true&&!accepted?{rules_version:RULES_VERSION,rules_accepted_at:new Date().toISOString()}:{};
-   check(await admin.from('community_profiles').upsert({user_id:uid,handle:member.handle,name:member.name,bio,kind,listed,public_badge_key:member.public_badge_key,public_title:member.public_title,public_verified:member.public_verified===true,...consent}));return reply({ok:true});
+   check(await admin.from('community_profiles').upsert({user_id:uid,handle:member.handle,name:member.name,bio:moderatedBio.values.bio,kind,listed,public_badge_key:member.public_badge_key,public_title:member.public_title,public_verified:member.public_verified===true,...consent}));return reply({ok:true,moderation:moderatedBio.moderation});
   }
   if(action==='chat-list'){
    await participating(uid);await rate(uid,'read',120);if(!rooms.includes(body.room))throw new Failure(400,'Salon invalide.');
@@ -147,11 +207,15 @@ Deno.serve(async req=>{
   }
   if(action==='post'){
    await participating(uid);await rate(uid,'post',5,3600);const category=['discussion','creation','challenge','collaboration'].includes(body.category)?body.category:null;if(!category)throw new Failure(400,'Catégorie invalide.');
+   const postId=uuid(body.id),rawTitle=text(body.title,3,120),rawBody=text(body.body,1,3000);
+   const moderated=await moderateFields(uid,'post',postId,[{name:'title',value:rawTitle,context:'post'},{name:'body',value:rawBody,context:'post'}]);
    const design=body.design?validateDesign(body.design):null;let asset_path=null;if(body.assetPath){asset_path=text(body.assetPath,10,180);const asset=check(await admin.from('studio_assets').select('path').eq('path',asset_path).eq('user_id',uid).maybeSingle());if(!asset)throw new Failure(403,'Ce visuel ne t’appartient pas.');}
-   check(await admin.from('community_posts').insert({id:uuid(body.id),author_id:uid,title:text(body.title,3,120),body:text(body.body,1,3000),category,design,asset_path}));return reply({ok:true});
+   check(await admin.from('community_posts').insert({id:postId,author_id:uid,title:moderated.values.title,body:moderated.values.body,category,design,asset_path}));return reply({ok:true,moderation:moderated.moderation});
   }
   if(action==='chat-send'){
-   await participating(uid);await rate(uid,'chat',15);if(!rooms.includes(body.room))throw new Failure(400,'Salon invalide.');check(await admin.from('community_chat').insert({id:uuid(body.id),author_id:uid,room:body.room,body:text(body.text,1,1500)}));return reply({ok:true});
+   await participating(uid);await rate(uid,'chat',15);if(!rooms.includes(body.room))throw new Failure(400,'Salon invalide.');
+   const messageId=uuid(body.id),rawMessage=text(body.text,1,1500),moderated=await moderateFields(uid,'chat',messageId,[{name:'body',value:rawMessage,context:'chat'}]);
+   check(await admin.from('community_chat').insert({id:messageId,author_id:uid,room:body.room,body:moderated.values.body}));return reply({ok:true,moderation:moderated.moderation});
   }
   if(action==='like'){
    await participating(uid);await rate(uid,'like',30);const post=await visiblePost(client,uuid(body.id));if(post.author_id===uid)throw new Failure(400,'Les créateurs ne votent pas pour leur propre création.');
@@ -169,7 +233,7 @@ Deno.serve(async req=>{
    else check(await admin.from('community_reports').upsert({user_id:uid,target_id:id,kind,reason:text(body.reason,3,500)},{onConflict:'user_id,target_id,kind',ignoreDuplicates:true}));return reply({ok:true});
   }
   if(action==='reports'||action==='moderate'){
-   const staff=check(await admin.from('community_staff').select('user_id').eq('user_id',uid).maybeSingle());if(!staff)throw new Failure(403,'Accès réservé à la modération.');await rate(uid,'moderation',30);
+   if(!await staffOrOwner(uid))throw new Failure(403,'Accès réservé à la modération.');await rate(uid,'moderation',30);
    if(action==='reports'){const reports=check(await admin.from('community_reports').select('*').eq('status','open').order('created_at').limit(100));const entries=await Promise.all(reports.map(async(r:any)=>({...r,content:check(await admin.from(r.kind==='chat'?'community_chat':'community_posts').select('*').eq('id',r.target_id).maybeSingle())})));return reply({reports:entries});}
    const report=check(await admin.from('community_reports').select('*').eq('id',uuid(body.id)).single());if(body.hide===true)check(await admin.from(report.kind==='chat'?'community_chat':'community_posts').update({status:'hidden'}).eq('id',report.target_id));check(await admin.from('community_reports').update({status:'resolved'}).eq('id',report.id));return reply({ok:true});
   }
