@@ -861,7 +861,7 @@ async function processInput(room:Room, uid:string, input:any) {
     const forward = clamp(-iy, 0, 1);
     const speed = (.12 + intensity * .13) * (sprinting ? 1.34 : 1) * style.burst;
     state.positions.attacker.x = clamp(number(state.positions.attacker.x) + forward * speed * dt, 0, 1);
-    state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.16 + intensity*.12) * dt, -.92, .92);
+    state.positions.attacker.y = clamp(number(state.positions.attacker.y) + ix * (.34 + intensity*.2) * dt, -.92, .92);
     state.ballLead = ballTouchDistance(intensity * (sprinting ? 1 : .78), style.control);
     if (!sprinting && intensity < .42) {
       state.energy[playerIndex] = recoverEnergy(number(state.energy[playerIndex],100), dt, false);
@@ -879,7 +879,7 @@ async function processInput(room:Room, uid:string, input:any) {
     state.keeperIntent = { type, direction, intensity, at };
 
     if (type === 'hold') {
-      const lateralSpeed = 1.65 + intensity * 1.35;
+      const lateralSpeed = 2.6 + intensity * 2.1;
       state.positions.keeper.y = clamp(
         number(state.positions.keeper.y) + direction * lateralSpeed * dt,
         -.95, .95,

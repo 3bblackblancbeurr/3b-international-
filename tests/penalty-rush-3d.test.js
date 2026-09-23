@@ -53,7 +53,7 @@ test('V3 deepens the pitch and guarantees a dedicated behind-goal goalkeeper cam
   assert.match(arena, /const GOAL_Z = -19\.75/);
   assert.match(arena, /keeperGoalFramingDistance/);
   assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /fov = 61/);
+  assert.match(arena, /fov = 72/);
   assert.match(arena, /goal\.userData\.netMat\.opacity/);
 });
 
@@ -103,17 +103,17 @@ test('V4 normalizes player and ball dimensions to real football scale', () => {
   assert.match(arena, /const GOAL_W = 7\.32/);
   assert.match(arena, /const GOAL_H = 2\.44/);
   assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
-  assert.match(arena, /const targetHeight = 1\.82/);
+  assert.match(arena, /targetHeight = index === clamp\(\(liveRef\.current\.room\?\.state \|\| \{\}\)\.keeper, 0, 1\) \? 1\.86 : 1\.76/);
   assert.match(arena, /targetHeight \/ height/);
   assert.match(arena, /root\.scale\.setScalar\(\.56\)/);
 });
 
-test('V4 keeper camera is physically behind the goal without an opaque end stand', () => {
+test('V4 keeper camera is physically behind the goal with the complete goal visible', () => {
   assert.match(arena, /GOAL_Z - goalDistance/);
-  assert.match(arena, /2\.68/);
-  assert.match(arena, /fov = 61/);
-  assert.doesNotMatch(arena, /const endStand = new THREE\.Mesh/);
-  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.065/);
+  assert.match(arena, /2\.45/);
+  assert.match(arena, /fov = 72/);
+  assert.match(arena, /keeperApron/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.12/);
 });
 
 test('V4 streams keeper movement while dragging and keeps the server authoritative', () => {
@@ -123,14 +123,43 @@ test('V4 streams keeper movement while dragging and keeps the server authoritati
   assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, intensity \}\)/);
   assert.match(match, /queueKeeperFinal\(parsed\)/);
   assert.match(server, /state\.lastKeeperMoveAt = at/);
-  assert.match(server, /const lateralSpeed = 1\.65 \+ intensity \* 1\.35/);
+  assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
   assert.match(server, /direction \* lateralSpeed \* dt/);
 });
 
 test('V4 local prediction prioritizes instant control then reconciles softly', () => {
-  assert.match(arena, /const lateralSpeed = 4\.6 \+ intensity \* 1\.4/);
-  assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 3\.8\)/);
-  assert.match(arena, /input\?\.active \? 1\.15 : 9\.5/);
-  assert.match(arena, /const speed = 6\.4 \+ intensity \* 2\.6/);
-  assert.match(arena, /input\?\.active \? \.9 : 11\.5/);
+  assert.match(arena, /const lateralSpeed = 7\.4 \+ intensity \* 2\.8/);
+  assert.match(arena, /const forwardSpeed = \(7\.8 \+ intensity \* 4\.4\)/);
+  assert.match(arena, /input\?\.active \? \.35 : 12\.5/);
+  assert.match(arena, /const speed = 11\.5 \+ intensity \* 5\.5/);
+  assert.match(arena, /input\?\.active \? \.25 : 15/);
+});
+
+
+test('V4 goalkeeper view is a true behind-goal camera with visible turf behind the net', () => {
+  assert.match(arena, /new THREE\.PlaneGeometry\(FIELD_W \+ 4, 10\)/);
+  assert.match(arena, /keeperApron\.position\.set\(0, -\.002, GOAL_Z - 5\)/);
+  assert.match(arena, /fov = 72/);
+  assert.match(arena, /desired\.set\(\s*0,\s*2\.45,\s*GOAL_Z - goalDistance/s);
+  assert.match(arena, /GOAL_Z \+ 7\.4/);
+});
+
+test('V4 uses football-scale player and ball dimensions', () => {
+  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
+  assert.match(arena, /targetHeight = index === clamp\(\(liveRef\.current\.room\?\.state \|\| \{\}\)\.keeper, 0, 1\) \? 1\.86 : 1\.76/);
+  assert.match(arena, /model\.scale\.setScalar\(\.56\)/);
+  assert.match(arena, /const GOAL_H = 2\.44/);
+});
+
+test('V4 local movement is tuned for immediate football-game response', () => {
+  assert.match(arena, /const lateralSpeed = 7\.4 \+ intensity \* 2\.8/);
+  assert.match(arena, /const speed = 11\.5 \+ intensity \* 5\.5/);
+  assert.match(arena, /snapshot\.selfIndex \? 30 : 12/);
+  assert.match(arena, /selfKeeper \? 34 : 12/);
+  assert.match(arena, /selfKeeper \? 18 : 8\.5/);
+});
+
+test('V4 server movement supports responsive lateral attack and keeper positioning', () => {
+  assert.match(server, /ix \* \(\.34 \+ intensity\*\.2\) \* dt/);
+  assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
 });
