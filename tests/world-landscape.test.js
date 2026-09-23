@@ -24,7 +24,12 @@ test('all eight authored country layouts preserve routes to every objective and 
   const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.65,z:i.z,r:1.25}))),...objectives.filter(i=>i.type==='survey').map(i=>({x:i.x,z:i.z,r:.65}))];
   for(const item of objectives){
    const label=country.id+' '+item.id;
-   assert.ok(Math.abs(world.height(item.x,item.z))<.05,'Dry level interaction: '+label);
+   const interactionY=world.height(item.x,item.z);
+   if(country.id==='hub'){
+    assert.ok(Number.isFinite(interactionY)&&interactionY>-3.1&&interactionY<4,'Bounded Hub interaction level: '+label);
+    const local=[world.height(item.x+.6,item.z),world.height(item.x-.6,item.z),world.height(item.x,item.z+.6),world.height(item.x,item.z-.6)];
+    assert.ok(local.every(y=>Math.abs(y-interactionY)<.55),'Walkable Hub interaction terrace: '+label);
+   }else assert.ok(Math.abs(interactionY)<.05,'Dry level interaction: '+label);
    const path=findInteractionPath({x:0,z:5},item,obstacles,WORLD_RADIUS);assert.ok(path.length,label);
    let state={position:{x:0,z:5},target:path.shift(),route:path};
    for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,WORLD_RADIUS);
