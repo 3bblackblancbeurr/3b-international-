@@ -32,7 +32,7 @@ test('mobile movement is locally predicted and server requests are coalesced', (
   assert.match(match, /controlRef = useRef/);
   assert.match(match, /moveInFlight = useRef/);
   assert.match(match, /pendingMove = useRef/);
-  assert.match(match, /now - moveThrottle\.current < 80/);
+  assert.match(match, /now - moveThrottle\.current < 60/);
   assert.match(match, /queueMove\(\{ type:'move'/);
 });
 
