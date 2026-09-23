@@ -186,6 +186,31 @@ $$;
 revoke all on function member_private.enqueue_member_notification(uuid,text,text,text,text,text,text,jsonb) from public,anon,authenticated;
 revoke all on function member_private.enqueue_owner_event(text,text,text,text,text,text,uuid,text,text,jsonb) from public,anon,authenticated;
 
+create or replace function member_private.bump_owner_counter_event(
+  p_event_key text,p_category text,p_event_type text,p_title text,p_actor uuid,p_counter text
+) returns void
+language plpgsql security definer set search_path=''
+as $
+begin
+  insert into public.owner_inbox_events(
+    event_key,category,event_type,severity,title,summary,actor_user_id,subject_type,subject_ref,payload
+  ) values(
+    p_event_key,p_category,p_event_type,'info',p_title,'1 événement aujourd’hui.',p_actor,
+    'daily_summary',p_event_key,jsonb_build_object(p_counter,1)
+  )
+  on conflict(event_key) do update
+  set payload=jsonb_set(
+        public.owner_inbox_events.payload,
+        array[p_counter],
+        to_jsonb(coalesce((public.owner_inbox_events.payload->>p_counter)::integer,0)+1),
+        true
+      ),
+      summary=(coalesce((public.owner_inbox_events.payload->>p_counter)::integer,0)+1)::text||' événements aujourd’hui.',
+      updated_at=now();
+end
+$;
+revoke all on function member_private.bump_owner_counter_event(text,text,text,text,uuid,text) from public,anon,authenticated;
+
 create or replace function member_private.sync_control_owner_staff() returns trigger
 language plpgsql security definer set search_path=''
 as $$
@@ -213,10 +238,9 @@ language plpgsql security definer set search_path=''
 as $$
 begin
   if tg_op='INSERT' then
-    perform member_private.enqueue_owner_event(
-      'account.registered:'||new.user_id::text,'accounts','account.registered','info',
-      'Nouvelle inscription 3B','Un nouveau compte membre a été créé.',new.user_id,'member',new.user_id::text,
-      jsonb_build_object('country',new.country,'handle',new.handle)
+    perform member_private.bump_owner_counter_event(
+      'account.registrations:'||to_char(now() at time zone 'UTC','YYYYMMDD'),
+      'accounts','account.registrations.daily','Nouvelles inscriptions 3B',new.user_id,'registrations'
     );
     perform member_private.enqueue_member_notification(
       new.user_id,'account.welcome:'||new.user_id::text,'account.welcome','info',
