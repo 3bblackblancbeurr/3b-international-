@@ -68,9 +68,10 @@ test('V3 reuses the real skinned 3B human pipeline with procedural fallback', ()
 test('V3 adds local prediction for attacker and goalkeeper while server remains authoritative', () => {
   assert.match(arena, /predictLocalAttacker/);
   assert.match(arena, /controlRef\?\.current\?\.keeper/);
-  assert.match(arena, /renderKeeper\.x \+=/);
-  assert.match(match, /moveThrottle\.current < 60/);
-  assert.match(match, /keeper:\{ direction:0, intensity:0, active:false \}/);
+  assert.match(arena, /const desiredLocalX = position \* \(GOAL_W \/ 2 - \.28\)/);
+  assert.match(arena, /renderKeeper\.x = mix\(renderKeeper\.x, desiredLocalX, \.98\)/);
+  assert.match(match, /moveThrottle\.current < 45/);
+  assert.match(match, /keeper:\{ position:0, direction:0, intensity:0, active:false \}/);
 });
 
 test('V3 adds cinematic goal feedback without heavy post-processing', () => {
