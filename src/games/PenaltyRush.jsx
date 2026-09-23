@@ -506,7 +506,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const pendingKeeper = useRef(null);
   const keeperMoveThrottle = useRef(0);
   const revisionRef = useRef(room.revision);
-  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
+  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ position:0, direction:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
   const rightPadRef = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
@@ -591,7 +591,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     }
 
     const now = performance.now();
-    if (now - moveThrottle.current < 60) return;
+    if (now - moveThrottle.current < 45) return;
     moveThrottle.current = now;
     queueMove({ type:'move', x, y, intensity });
   }
@@ -616,7 +616,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     event.currentTarget.dataset.active = 'true';
     event.currentTarget.style.setProperty('--gesture-opacity', '.92');
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:true };
+      controlRef.current.keeper = { position:0, direction:0, intensity:0, active:true };
     }
   }
 
@@ -636,15 +636,17 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
     }
     if (isKeeper) {
-      const direction = Math.max(-1, Math.min(1, dx / Math.max(30, Math.abs(dx))));
-      const intensity = Math.min(1, distance / 72);
-      controlRef.current.keeper = { direction, intensity, active:true };
+      const position = Math.max(-1, Math.min(1, dx / 74));
+      const direction = Math.sign(position) || 0;
+      const intensity = Math.min(1, Math.abs(position));
+      controlRef.current.keeper = { position, direction, intensity, active:true };
 
       const now = performance.now();
-      if (now - keeperMoveThrottle.current >= 70) {
+      if (now - keeperMoveThrottle.current >= 45) {
         keeperMoveThrottle.current = now;
         queueKeeper({
-          type:'hold',
+          type:'keeper-track',
+          position,
           direction,
           intensity,
         });
@@ -658,8 +660,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     rightGesture.current = null;
     resetRightPad();
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:false };
-      queueKeeper({ type:'hold', direction:0, intensity:0 });
+      controlRef.current.keeper = { position:0, direction:0, intensity:0, active:false };
+      queueKeeper({ type:'keeper-track', position:0, direction:0, intensity:0, release:true });
     }
 
     const endedAt = performance.now();
