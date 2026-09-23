@@ -1,5 +1,5 @@
 import React,{useMemo,useState} from 'react';
-import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,KeyRound,LogOut,Mail,ShieldCheck} from 'lucide-react';
+import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeEmail,passwordRequirements,
  validateRegistration,validateStrongPassword
@@ -8,6 +8,7 @@ import {authClient,memberRequest} from './client.js';
 import {useLoyalty} from './LoyaltyContext.jsx';
 import BoutiqueCard from './BoutiqueCard.jsx';
 import PublicIdentityBadge from '../components/PublicIdentityBadge.jsx';
+import PassportAppearanceSettings from '../passport/PassportAppearance.jsx';
 import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
@@ -191,6 +192,21 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <button className="account-logout" onClick={logout}><LogOut size={16}/> Se déconnecter</button>
     </article>
    </div>
+
+   <section className="account-command-center" aria-labelledby="member-center-title">
+    <div className="account-command-heading">
+     <div><span className="loyalty-eyebrow">MON ESPACE 3B</span><h2 id="member-center-title">Tout ce qui appartient à ton compte.</h2></div>
+     <p>Passeport, progression, Monde du 3B et fidélité restent reliés à la même identité.</p>
+    </div>
+    <div className="account-command-grid">
+     <button type="button" onClick={()=>goTo('passport')}><Fingerprint size={21}/><span><strong>Mon Passeport</strong><small>Identité, origine et portrait</small></span><ArrowUpRight size={16}/></button>
+     <button type="button" onClick={()=>goTo('world3b')}><Globe2 size={21}/><span><strong>Monde du 3B</strong><small>Portes, missions et progression</small></span><ArrowUpRight size={16}/></button>
+     <button type="button" onClick={()=>goTo('games')}><Gamepad2 size={21}/><span><strong>Mes jeux 3B</strong><small>Jouer et faire progresser le compte</small></span><ArrowUpRight size={16}/></button>
+     <button type="button" onClick={()=>goTo('loyalty')}><WalletCards size={21}/><span><strong>Cartes & avantages</strong><small>Fidélité, XP et récompenses</small></span><ArrowUpRight size={16}/></button>
+    </div>
+   </section>
+
+   {account.passport&&<PassportAppearanceSettings identity={account.passport} compact/>}
   </>
   :<div className="account-entry">
    <div className="account-form-panel">
