@@ -15,6 +15,7 @@ import AppLoadingState from "./components/AppLoadingState.jsx";
 import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
+import { hasPassportAccess } from "./passport/access.js";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
@@ -112,6 +113,22 @@ const CONTROL_MENU_ITEM = {
   description: "Piloter ton PC, Unreal et les outils 3B depuis tes appareils.",
 };
 
+const WELCOME_MESSAGE = "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout le temps partout.";
+
+function speakWelcome() {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  const utterance = new SpeechSynthesisUtterance(WELCOME_MESSAGE);
+  utterance.lang = "fr-FR";
+  utterance.rate = 0.92;
+  utterance.pitch = 0.9;
+  const voices = window.speechSynthesis.getVoices?.() || [];
+  utterance.voice = voices.find((voice) => /^fr(?:-|_)/i.test(voice.lang) && /thomas|henri|paul|google|microsoft/i.test(voice.name))
+    || voices.find((voice) => /^fr(?:-|_)/i.test(voice.lang))
+    || null;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
+}
+
 const MEMBER_MENU_ITEM = {
   id: "member",
   label: "Espace membre 3B",
@@ -134,6 +151,7 @@ export default function App() {
   );
 
   const member = loyalty.profile ? remoteMember(loyalty.profile) : createTestMember();
+  const hasPassport = hasPassportAccess(loyalty.passport);
   const [options, setOptions] = useState(() =>
     normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
@@ -239,15 +257,12 @@ export default function App() {
           <p className="eyebrow">3B International</p>
           <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
           <h1>De zéro à l’international</h1>
-          <p>
-            Un écosystème premium pour ton passeport, tes cartes, tes jeux, ton
-            manga, ton monde 3B et ton héritage.
-          </p>
+          <p>Un écosystème premium.</p>
 
           <button
             type="button"
             className="primary-button"
-            onClick={() => goTo("home")}
+            onClick={() => { speakWelcome(); goTo("home"); }}
           >
             COMMENCER
           </button>
@@ -255,6 +270,13 @@ export default function App() {
         </section>
       </main>
     );
+  }
+
+  const passportAllowed = new Set(["home", "passport", "member"]);
+  const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
+
+  if (needsPassport) {
+    return <PassportAccessGate goTo={goTo} />;
   }
 
   return (
@@ -278,6 +300,7 @@ export default function App() {
           identity={loyalty.passport}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
+          hasPassport={hasPassport}
           goTo={goTo}
         />
       )}
@@ -427,6 +450,23 @@ function RemoteGamePage({ slug, onBack }) {
   );
 }
 
+
+function PassportAccessGate({ goTo }) {
+  return (
+    <main className="intro3b" data-glow="true" data-matrix="true">
+      <div className="intro3b-background" aria-hidden="true" />
+      <div className="intro3b-matrix active" aria-hidden="true" />
+      <section className="intro3b-card" aria-labelledby="passport-access-title">
+        <p className="eyebrow">ACCÈS 3B</p>
+        <h1 id="passport-access-title">Passeport 3B requis</h1>
+        <p>Un seul Passeport 3B donne accès à l’écosystème 3B, y compris au Monde du 3B.</p>
+        <button type="button" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</button>
+        <button type="button" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</button>
+      </section>
+    </main>
+  );
+}
+
 function PageHeader({ title, subtitle, goTo }) {
   return (
     <section className="page-header">
@@ -443,7 +483,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ identity, syncing, goTo, options }) {
+function PassportPage({ identity, syncing, goTo, options, hasPassport = false }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -481,6 +521,14 @@ function PassportPage({ identity, syncing, goTo, options }) {
               Activer mon passeport 3B
             </button>
           )}
+        </article>
+
+        <article className="premium-panel">
+          <p className="eyebrow">Accès 3B</p>
+          <h2>{hasPassport ? "Passeport 3B actif" : "Passeport requis"}</h2>
+          <p>{hasPassport
+            ? "Ton Passeport 3B donne accès à l’application et au Monde du 3B."
+            : "Active ton identité 3B pour obtenir ton Passeport unique."}</p>
         </article>
       </div>
     </section>
