@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "canonicalId": "character.kais",
+      "displayName": "Kaïs",
+      "type": "character",
+      "status": "planned",
+      "units": "meter",
+      "pivot": "ground-center",
+      "collision": "separate",
+      "lods": ["LOD0", "LOD1", "LOD2"],
+      "materials": { "pbr": true },
+      "textureMax": 2048,
+      "rig": { "canonical": true, "name": "3B_Humanoid_v1" },
+      "animations": ["idle", "walk", "turn", "look", "interact", "dialogue"]
+    },
+    {
+      "canonicalId": "portal.france",
+      "displayName": "Porte France",
+      "type": "portal",
+      "status": "planned",
+      "units": "meter",
+      "pivot": "hinge",
+      "collision": "separate",
+      "lods": ["LOD0", "LOD1"],
+      "materials": { "pbr": true },
+      "textureMax": 2048,
+      "realSize": { "width": 1.0, "height": 2.0, "depth": 0.18 }
+    },
+    {
+      "canonicalId": "fragment.justice",
+      "displayName": "Fragment Justice",
+      "type": "fragment",
+      "status": "planned",
+      "units": "meter",
+      "pivot": "center-of-mass",
+      "collision": "separate",
+      "lods": ["LOD0", "LOD1"],
+      "materials": { "pbr": true },
+      "textureMax": 1024
+    }
+  ]
+}
