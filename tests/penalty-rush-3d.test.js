@@ -127,12 +127,12 @@ test('V4 streams keeper movement while dragging and keeps the server authoritati
   assert.match(server, /direction \* lateralSpeed \* dt/);
 });
 
-test('V4 local prediction prioritizes instant control then reconciles softly', () => {
-  assert.match(arena, /const lateralSpeed = 4\.6 \+ intensity \* 1\.4/);
-  assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 3\.8\)/);
-  assert.match(arena, /input\?\.active \? 1\.15 : 9\.5/);
-  assert.match(arena, /const speed = 6\.4 \+ intensity \* 2\.6/);
-  assert.match(arena, /input\?\.active \? \.9 : 11\.5/);
+test('V4+ local prediction prioritizes instant control then reconciles softly', () => {
+  assert.match(arena, /const lateralSpeed = 5\.4 \+ intensity \* 1\.8/);
+  assert.match(arena, /const forwardSpeed = \(6\.8 \+ intensity \* 4\.4\)/);
+  assert.match(arena, /input\?\.active \? \.55 : 10\.5/);
+  assert.match(arena, /const desiredX = direction \* \(GOAL_W \/ 2 - \.28\)/);
+  assert.match(arena, /expFollow\(34, dt\)/);
 });
 
 
