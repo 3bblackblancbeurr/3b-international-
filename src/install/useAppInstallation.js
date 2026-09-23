@@ -24,6 +24,7 @@ export function useAppInstallation() {
       prompt.current = null;
       setAvailable(false);
       setInstalled(true);
+      setMessage('3B International est installée sur cet appareil.');
     }
     function displayChanged() {
       setInstalled(display.matches || window.navigator.standalone === true);
@@ -47,14 +48,12 @@ export function useAppInstallation() {
     setBusy(true);
     setMessage('');
     try {
-      // Call within the button gesture; the browser still asks for confirmation.
-      await request.prompt();
-      const choice = await request.userChoice;
+      const choice = await request.prompt();
       setMessage(choice?.outcome === 'accepted'
-        ? 'Installation demandée. Termine les étapes affichées par ton navigateur.'
-        : 'Installation annulée. Tu peux continuer à utiliser 3B ici.');
+        ? 'Installation acceptée. L’icône 3B va apparaître avec tes applications.'
+        : 'Installation annulée. Tu peux réessayer quand tu veux.');
     } catch {
-      setMessage('La fenêtre d’installation n’a pas pu s’ouvrir. Utilise l’aide ci-dessous ou le menu de ton navigateur.');
+      setMessage('La validation système n’a pas pu s’ouvrir. Utilise la page d’installation 3B.');
     } finally {
       pending.current = false;
       setBusy(false);
