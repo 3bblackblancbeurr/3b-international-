@@ -666,6 +666,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
   const score = state.score || [0, 0];
   const powerIds = room.players?.[selfIndex]?.keeperPowers || profile.keeperPowers;
+  const impactType = ['goal','save','frame'].includes(state.lastEvent?.type) ? state.lastEvent.type : null;
+  const impactLabel = impactType === 'goal' ? 'BUT' : impactType === 'save' ? 'ARRÊT' : impactType === 'frame' ? 'CADRE' : '';
 
   return (
     <main className="penalty-match" data-role={isAttacker ? 'attacker' : isKeeper ? 'keeper' : 'spectator'}>
@@ -692,6 +694,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
         <div ref={rightPadRef} className="penalty-touch-right" data-active="false" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightEnd}><span>{isAttacker ? 'FEINTE · CROCHET · MAINTIENS POUR FRAPPER' : 'GLISSE POUR PLONGER · FERME L’ANGLE'}</span></div>
 
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
+        {impactType && <div key={String(state.lastEvent?.visual?.at || room.revision)} className="penalty-impact-word" data-type={impactType} aria-hidden="true"><strong>{impactLabel}</strong><span>{impactType === 'goal' ? '3B PENALTY RUSH' : impactType === 'save' ? 'RÉFLEXE GARDIEN' : 'À QUELQUES CENTIMÈTRES'}</span></div>}
       </section>
 
       {state.phase === 'second-half' && state.possession === 1 && <div className="penalty-phase-banner">MI-TEMPS · INVERSION DES RÔLES</div>}
