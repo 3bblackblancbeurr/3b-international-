@@ -87,3 +87,12 @@ test('V3 uses adaptive mobile resolution and the renderer animation loop', () =>
   assert.match(arena, /renderer\.setAnimationLoop\(animate\)/);
   assert.match(arena, /renderer\.setAnimationLoop\(null\)/);
 });
+
+
+test('keeper camera computes enough distance to keep the complete goal in frame on different aspect ratios', () => {
+  assert.match(arena, /function keeperGoalFramingDistance/);
+  assert.match(arena, /const hfov = 2 \* Math\.atan/);
+  assert.match(arena, /GOAL_W \/ 2 \+ \.62/);
+  assert.match(arena, /GOAL_H \/ 2 \+ \.72/);
+  assert.match(arena, /GOAL_Z - goalDistance/);
+});
