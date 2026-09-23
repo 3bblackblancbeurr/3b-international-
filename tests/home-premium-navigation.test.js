@@ -22,8 +22,8 @@ test('mobile navigation prioritizes games instead of the shop',()=>{
  assert.match(nav,/Services & avantages/);
 });
 
-test('community, textile AI and religion are explicitly staged as coming soon',()=>{
- for(const label of ['Religion','Communauté','Espace textile & IA']){
+test('community and textile AI remain explicitly staged as coming soon',()=>{
+ for(const label of ['Communauté','Espace textile & IA']){
   assert.match(app,new RegExp('label: "'+label+'"[\\s\\S]{0,90}status: "soon"'));
  }
  assert.match(nav,/item\.status === "soon"/);

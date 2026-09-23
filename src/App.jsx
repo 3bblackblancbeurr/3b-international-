@@ -77,7 +77,6 @@ const BASE_MENU_ITEMS = [
     id: "religion",
     label: "Religion",
     icon: "✧",
-    status: "soon",
     description: "Croyances, cultures et traditions.",
   },
   {
@@ -289,7 +288,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -327,7 +326,7 @@ export default function App() {
       {page === "game" && (gameSlug === "penalty-rush"
         ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />
         : <RemoteGamePage slug={gameSlug} onBack={() => goTo("games")} />)}
-      {page === "religion" && <ComingSoon goTo={goTo} eyebrow="RELIGION · 3B" title="Religion" description="Cet espace consacré aux croyances, cultures et traditions est en cours de finalisation avant son ouverture dans l’application." />}
+      {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
       {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}

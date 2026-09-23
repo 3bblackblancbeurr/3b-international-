@@ -66,7 +66,7 @@ test('a script that loaded without the API rejects and can be retried', async ()
 
 test('deployment policy allows the anti-bot script and frame without relaxing other script origins', () => {
   const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
-  const policy = config.headers.find(rule => rule.source === '/(.*)').headers.find(header => header.key === 'Content-Security-Policy').value;
+  const policy = config.headers.find(rule => rule.source === '/:path((?!religion(?:/|$)).*)').headers.find(header => header.key === 'Content-Security-Policy').value;
   const directives = new Map(policy.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
   assert.ok(directives.get('script-src').includes('https://challenges.cloudflare.com'));
   assert.deepEqual(directives.get('frame-src'), ['https://challenges.cloudflare.com']);
