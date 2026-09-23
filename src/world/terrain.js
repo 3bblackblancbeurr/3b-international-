@@ -49,16 +49,28 @@ export function createTerrainField(region,save){
   if(Math.hypot(p.x,p.z)+p.r>118||roadDistance(p.x,p.z,roads)<p.r+9||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
   lake=p;found=true;break;
  }
+ const archives=region==='hub'?anchors.find(a=>a.type==='archives'):null;
+ const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a||1)));return t*t*(3-2*t);};
+ function hubStructureHeight(x,z){
+  if(region!=='hub')return 0;
+  const r=Math.hypot(x,z),fade=1-smooth(112,155,r);
+  // Two broad inhabited terraces make the eight thresholds read as a city,
+  // while remaining continuous ground so touch navigation never needs stairs logic.
+  let lift=(smooth(17,34,r)*1.15+smooth(42,72,r)*1.75)*fade;
+  // The Archives are a genuine sunken court. The approach is a long soft ramp,
+  // so the player really descends below the main Nexus level.
+  if(archives){const d=Math.hypot(x-archives.x,z-archives.z);lift-=(1-smooth(5.5,17,d))*3.35;}
+  return lift;
+ }
  function height(x,z){
   const f=biome.seed*.017;
   let y=(Math.sin(x*.032+f)*Math.cos(z*.027-f)+.36*Math.sin(x*.079+z*.053+f))*biome.amplitude;
-  // A continuous landscape extends into distant ridges, with gentle clearings
-  // around interactions. There are no radial paths or raised navigation decks.
+  // A continuous landscape extends into distant ridges, with gentle clearings.
   const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-WORLD_RADIUS)/140));y+=edge*edge*(3-2*edge)*(24+18*Math.sin(x*.011+z*.009)+7*Math.cos(z*.023-x*.007));
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
   const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
   if(region!=='hub'){const corridor=landmarkSightline(region),t=Math.max(0,Math.min(1,(segmentDistance(x,z,corridor.a,corridor.b)-20)/12));flatten=Math.min(flatten,t*t*(3-2*t));}
-  y*=flatten;
+  y=y*flatten+hubStructureHeight(x,z);
   const d=Math.hypot(x-lake.x,z-lake.z),blend=Math.max(0,Math.min(1,(lake.r+6-d)/7));
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
