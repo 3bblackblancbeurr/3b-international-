@@ -55,7 +55,7 @@ const BASE_MENU_ITEMS = [
     id: "manga",
     label: "Manga 3B",
     icon: "📖",
-    status: "soon",
+    status: "preview",
     description: "Le manga de l’univers 3B.",
   },
   {
@@ -88,7 +88,7 @@ const BASE_MENU_ITEMS = [
     id: "secret",
     label: "Secret 3B",
     icon: "🔐",
-    status: "soon",
+    status: "preview",
     description: "Le prochain chapitre se prépare.",
   },
   {
