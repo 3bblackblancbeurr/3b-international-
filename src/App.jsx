@@ -218,6 +218,7 @@ export default function App() {
   if (!hasStarted) {
     return (
       <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
+        <FirstLaunchWelcome />
         <div className="intro3b-background" aria-hidden="true" />
         <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
 
@@ -245,6 +246,7 @@ export default function App() {
 
   return (
     <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
+      <FirstLaunchWelcome />
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
