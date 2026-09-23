@@ -441,4 +441,112 @@ create trigger notification_secret_winner_events
 after insert or update of claimed_at on public.secret3b_phone_winners
 for each row execute function member_private.notify_secret_winner();
 
+
+create or replace function member_private.notify_auth_security() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_failures integer;
+begin
+  if new.success then
+    if new.user_id is not null and new.event_type in ('recover.success','recovery.success','reset.password.success','password.changed') then
+      perform member_private.enqueue_member_notification(
+        new.user_id,'security.auth:'||new.id::text,'security.account_change','important',
+        'Sécurité du compte mise à jour','Une opération sensible de récupération ou de mot de passe a été effectuée sur ton compte.','notifications',
+        jsonb_build_object('event_type',new.event_type)
+      );
+    end if;
+    return new;
+  end if;
+
+  if new.ip_hash is null then return new; end if;
+  select count(*) into v_failures
+  from public.member_auth_events
+  where ip_hash=new.ip_hash and success=false and created_at>=now()-interval '15 minutes';
+
+  if v_failures in (5,10,20) then
+    perform member_private.enqueue_owner_event(
+      'security.auth_failures:'||new.ip_hash||':'||to_char(now() at time zone 'UTC','YYYYMMDDHH24MI'),
+      'security','security.auth.repeated_failures',
+      case when v_failures>=20 then 'critical' when v_failures>=10 then 'urgent' else 'important' end,
+      'Échecs d’authentification répétés',
+      v_failures::text||' échecs ont été observés sur une fenêtre de 15 minutes.',
+      new.user_id,'auth_event',new.id::text,
+      jsonb_build_object('count',v_failures,'event_type',new.event_type)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_auth_security() from public,anon,authenticated;
+drop trigger if exists owner_auth_security_events on public.member_auth_events;
+create trigger owner_auth_security_events
+after insert on public.member_auth_events
+for each row execute function member_private.notify_auth_security();
+
+create or replace function member_private.notify_economy_risk() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+declare v_tier text; v_old smallint:=0;
+begin
+  if not new.review_required then return new; end if;
+  if tg_op='UPDATE' then v_old:=coalesce(old.risk_score,0); end if;
+  v_tier:=case when new.risk_score>=90 then 'critical' when new.risk_score>=75 then 'high' when new.risk_score>=50 then 'medium' else 'review' end;
+  if tg_op='INSERT' or (tg_op='UPDATE' and (
+    old.review_required=false or
+    (v_old<50 and new.risk_score>=50) or
+    (v_old<75 and new.risk_score>=75) or
+    (v_old<90 and new.risk_score>=90)
+  )) then
+    perform member_private.enqueue_owner_event(
+      'economy.risk:'||new.user_id::text||':'||v_tier||':'||to_char(now() at time zone 'UTC','YYYYMMDD'),
+      'security','economy.risk.review',
+      case when new.risk_score>=90 then 'critical' when new.risk_score>=75 then 'urgent' else 'important' end,
+      'Anomalie économique à vérifier',
+      'Le profil de risque d’un membre demande une revue.',
+      new.user_id,'economy_risk',new.user_id::text,
+      jsonb_build_object('risk_score',new.risk_score,'signal',new.last_signal,'tier',v_tier)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_economy_risk() from public,anon,authenticated;
+drop trigger if exists owner_economy_risk_events on public.threeb_economy_risk_profiles;
+create trigger owner_economy_risk_events
+after insert or update of risk_score,review_required on public.threeb_economy_risk_profiles
+for each row execute function member_private.notify_economy_risk();
+
+create or replace function member_private.notify_reward_outbox() returns trigger
+language plpgsql security definer set search_path=''
+as $$
+begin
+  if new.status='rejected' and (tg_op='INSERT' or old.status is distinct from new.status) then
+    perform member_private.enqueue_owner_event(
+      'reward.rejected:'||new.id::text,'system','reward.delivery.rejected','urgent',
+      'Récompense 3B non distribuée','Une récompense n’a pas pu être créditée.',
+      new.user_id,'reward_outbox',new.id::text,
+      jsonb_build_object('reward_code',new.reward_code,'source',new.source,'attempts',new.attempts)
+    );
+    perform member_private.enqueue_member_notification(
+      new.user_id,'reward.rejected:'||new.id::text,'reward.delivery.rejected','important',
+      'Récompense en vérification','Une récompense 3B n’a pas pu être créditée automatiquement et nécessite une vérification.','notifications',
+      jsonb_build_object('reward_code',new.reward_code)
+    );
+  elsif new.status='pending' and new.attempts>=5 and (tg_op='INSERT' or coalesce(old.attempts,0)<5) then
+    perform member_private.enqueue_owner_event(
+      'reward.retry:'||new.id::text,'system','reward.delivery.retries','important',
+      'Récompense en attente','Une récompense reste en attente après plusieurs tentatives.',
+      new.user_id,'reward_outbox',new.id::text,
+      jsonb_build_object('reward_code',new.reward_code,'source',new.source,'attempts',new.attempts)
+    );
+  end if;
+  return new;
+end
+$$;
+revoke all on function member_private.notify_reward_outbox() from public,anon,authenticated;
+drop trigger if exists notification_reward_outbox_events on public.threeb_reward_outbox;
+create trigger notification_reward_outbox_events
+after insert or update of status,attempts on public.threeb_reward_outbox
+for each row execute function member_private.notify_reward_outbox();
+
 commit;
