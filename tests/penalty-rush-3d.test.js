@@ -46,3 +46,44 @@ test('server exposes cosmetic appearance and visual shot trajectory without chan
   assert.match(server, /result:\{ \.\.\.result \}/);
   assert.match(server, /visual,/);
 });
+
+
+test('V3 deepens the pitch and guarantees a dedicated behind-goal goalkeeper camera', () => {
+  assert.match(arena, /const FIELD_L = 44/);
+  assert.match(arena, /const GOAL_Z = -19\.75/);
+  assert.match(arena, /GOAL_Z - 5\.35/);
+  assert.match(arena, /fov = 59/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity/);
+});
+
+test('V3 reuses the real skinned 3B human pipeline with procedural fallback', () => {
+  assert.match(arena, /createLivingLibrary/);
+  assert.match(arena, /createLivingActor/);
+  assert.match(arena, /footballAvatar/);
+  assert.match(arena, /players\[index\]\.userData\.rig\.visible = false/);
+  assert.match(arena, /actor\.update\(dt, dx, dz, travelled\)/);
+});
+
+test('V3 adds local prediction for attacker and goalkeeper while server remains authoritative', () => {
+  assert.match(arena, /predictLocalAttacker/);
+  assert.match(arena, /controlRef\?\.current\?\.keeper/);
+  assert.match(arena, /renderKeeper\.x \+=/);
+  assert.match(match, /moveThrottle\.current < 60/);
+  assert.match(match, /keeper:\{ direction:0, intensity:0, active:false \}/);
+});
+
+test('V3 adds cinematic goal feedback without heavy post-processing', () => {
+  assert.match(arena, /createBallTrail/);
+  assert.match(arena, /createImpactFx/);
+  assert.match(arena, /triggerImpactFx/);
+  assert.match(arena, /goal\.userData\.flash\.material\.opacity/);
+  assert.match(arena, /navigator\.vibrate/);
+  assert.match(match, /penalty-impact-word/);
+});
+
+test('V3 uses adaptive mobile resolution and the renderer animation loop', () => {
+  assert.match(arena, /ratioCap = mobile \? 1\.22 : 1\.5/);
+  assert.match(arena, /updateAdaptiveResolution/);
+  assert.match(arena, /renderer\.setAnimationLoop\(animate\)/);
+  assert.match(arena, /renderer\.setAnimationLoop\(null\)/);
+});
