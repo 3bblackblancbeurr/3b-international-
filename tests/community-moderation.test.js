@@ -32,6 +32,7 @@ test('directed insults are blocked',()=>{
 test('leet speak, spacing and repeated letters do not bypass the filter',()=>{
  assert.equal(moderateCommunityText('tu es un c0nnard').action,'block');
  assert.equal(moderateCommunityText('p u t a i n').action,'block');
+ assert.equal(moderateCommunityText('pu tain').action,'block');
  assert.equal(moderateCommunityText('tu es un connnnard').action,'block');
  assert.equal(moderationCanonical('c0nnnnard'),'connard');
 });
@@ -44,7 +45,7 @@ test('credible direct threats escalate for owner review',()=>{
 });
 
 test('innocent words are not matched by loose substrings',()=>{
- for(const message of ['Je vais à Puteaux demain.','Le débile moteur est réparé'.replace('débile','débit'),'On se retrouve au bord de la route.']){
+ for(const message of ['Je vais à Puteaux demain.','Le débile moteur est réparé'.replace('débile','débit'),'On se retrouve au bord de la route.','Le Monténégro joue ce soir.']){
   assert.equal(moderateCommunityText(message).action,'allow');
  }
 });
