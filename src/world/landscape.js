@@ -75,20 +75,59 @@ export function createLandscape(models,region,save,onError=console.error){
  const waterMat=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:{time:{value:0},color:{value:new THREE.Color(region==='estonie'?'#3b7d89':'#4d9697')}},vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 p;uniform float time;uniform vec3 color;void main(){float waves=sin(p.x*2.4+p.y*.8+time*.8)*sin(p.y*3.1-time*.55);float light=pow(max(0.,waves),12.);gl_FragColor=vec4(color+vec3(.12,.17,.14)*waves*.18+light*.13,1.);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'});owned.push(waterMat);
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,64)),waterMat,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
  for(let i=0;i<20;i++){const a=rng()*Math.PI*2,r=lake.r+3+rng()*2,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;shape(ball,mat(biome.rock),x,height(x,z)-.1,z,.7+rng(),.4+rng()*.6,.7+rng());}
- for(let i=0;i<380;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
- for(let i=0;i<48;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
+ const treeBudget=hub?260:380,stoneBudget=hub?32:48;
+ for(let i=0;i<treeBudget;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
+ for(let i=0;i<stoneBudget;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
  const meadow=addMeadow(field,root,owned,region),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  addTownGardens(field,root,owned,region,flora);
  if(hub){
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
-  const core=toLandscape(region,0,-3);shape(cylinder,mat('#d9ceb0'),core.x,.18,core.z,3,.36,3);const orb=shape(ball,mat('#76bac0',{emissive:'#5a979e',emissiveIntensity:.3,metalness:.4}),core.x,3.5,core.z,1.1);decorations.push({orb});
-  for(let i=0;i<8;i++){const a=i*Math.PI/4,x=core.x+Math.cos(a)*18,z=core.z+Math.sin(a)*18;asset('Bench',x,z,.95,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.2);}
-  for(const radius of [4.2,7,21]){const ring=geo(new THREE.TorusGeometry(radius,.07,4,96));ring.rotateX(-Math.PI/2);const rim=shape(ring,mat('#dbbb76',{metalness:.45,roughness:.48}),core.x,.1,core.z);rim.castShadow=false;}
-  for(let i=0;i<3;i++){const ring=shape(geo(new THREE.TorusGeometry(1.9,.065,8,64)),mat('#d8bd80',{metalness:.5}),core.x,3.5,core.z);ring.rotation.set(Math.PI/3+i*.7,i*Math.PI/3,.4);}
-  for(const [index,c] of COUNTRIES.entries()){
-   const p=toLandscape(region,...c.portal),site=field.buildings[index];house(site.id,site.x,site.z,site.rotation,site.variant);tree(p.x-10,p.z-7,.95,BIOMES[c.id].tree);
-   const group=new THREE.Group();root.add(group);const workshop=new THREE.Group(),garden=new THREE.Group();group.add(workshop,garden);asset('Market',p.x+10,p.z+6,.85,0,workshop);asset('Planter',p.x-9,p.z+4,1.6,0,garden);asset('Tree',p.x+9,p.z+6,.85,0,garden);batch(workshop);batch(garden);stages.push({group,country:c.id,workshop,garden});resident(p.x+7,p.z+5,c.color,group,index%2?'artisan':'woman');
+  const core=toLandscape(region,0,-3),coreY=height(core.x,core.z),nexus=new THREE.Group();root.add(nexus);
+  // Nexus: broad readable plaza + a real eight-piece Broken Circle landmark.
+  shape(cylinder,mat('#cfc6aa',{metalness:.12,roughness:.72}),core.x,coreY+.22,core.z,7.8,.44,7.8,nexus);
+  shape(cylinder,mat('#253b43',{metalness:.42,roughness:.46}),core.x,coreY+.50,core.z,5.1,.28,5.1,nexus);
+  const orb=shape(ball,mat('#78d9ff',{emissive:'#53c9ff',emissiveIntensity:.72,metalness:.22,roughness:.28}),core.x,coreY+6.35,core.z,.72,1.05,.72,nexus);decorations.push({orb,baseY:coreY+6.35});
+  for(const radius of [8.8,13.8,22]){
+   const ring=geo(new THREE.TorusGeometry(radius,.085,5,96));ring.rotateX(-Math.PI/2);
+   const rim=shape(ring,mat(radius===13.8?'#4db6d0':'#d8bd80',{metalness:.55,roughness:.38,emissive:radius===13.8?'#276f84':'#6b5427',emissiveIntensity:.18}),core.x,coreY+.11,core.z,1,1,1,nexus);rim.castShadow=false;
   }
+  for(const [index,countryConfig] of COUNTRIES.entries()){
+   const segmentMat=new THREE.MeshStandardMaterial({color:'#30424a',emissive:countryConfig.color,emissiveIntensity:.13,metalness:.72,roughness:.3});owned.push(segmentMat);
+   const arc=geo(new THREE.TorusGeometry(5.45,.24,8,28,.58)),fragment=shape(arc,segmentMat,core.x,coreY+6.35,core.z,1,1,1,nexus);
+   fragment.rotation.z=index*Math.PI/4+.105;fragment.castShadow=true;decorations.push({fragment,country:countryConfig.id,material:segmentMat});
+   const a=index*Math.PI/4,x=core.x+Math.cos(a)*12.1,z=core.z+Math.sin(a)*12.1,y=height(x,z);
+   shape(cylinder,mat('#2c3f45',{metalness:.48}),x,y+1.15,z,.22,2.3,.22,nexus);
+   shape(ball,mat(countryConfig.color,{emissive:countryConfig.color,emissiveIntensity:.58,metalness:.32}),x,y+2.45,z,.22,.36,.22,nexus);
+  }
+  for(let i=0;i<8;i++){
+   const a=i*Math.PI/4,x=core.x+Math.cos(a)*18,z=core.z+Math.sin(a)*18;
+   asset('Bench',x,z,1.05,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.25);
+  }
+  // Each kingdom gets a readable plaza before the threshold and two real building masses.
+  for(const [index,countryConfig] of COUNTRIES.entries()){
+   const p=toLandscape(region,...countryConfig.portal),sectorY=height(p.x,p.z),sites=field.buildings.filter(site=>site.id===countryConfig.id);
+   for(const site of sites)house(site.id,site.x,site.z,site.rotation,site.variant);
+   tree(p.x-10,p.z-7,1.05,BIOMES[countryConfig.id].tree);tree(p.x+11,p.z-6,.9,BIOMES[countryConfig.id].tree);
+   const plazaRing=geo(new THREE.TorusGeometry(7.7,.1,5,72));plazaRing.rotateX(-Math.PI/2);
+   const rim=shape(plazaRing,mat(countryConfig.color,{metalness:.42,roughness:.44,emissive:countryConfig.color,emissiveIntensity:.2}),p.x,sectorY+.1,p.z);rim.castShadow=false;
+   const sector=new THREE.Group();root.add(sector);
+   asset('Bench',p.x-7,p.z+5,1.05,index*Math.PI/4,sector);asset('Lantern',p.x+6,p.z+5,1.25,0,sector);asset('Planter',p.x-8,p.z-4,1.25,0,sector);
+   resident(p.x+7,p.z+5,countryConfig.color,sector,index%2?'artisan':'woman');resident(p.x-6,p.z+6,'#b8a68b',sector,index%3?'traveler':'elder');
+   batch(sector);
+   const group=new THREE.Group();root.add(group),workshop=new THREE.Group(),garden=new THREE.Group();group.add(workshop,garden);
+   asset('Market',p.x+10,p.z+6,.9,0,workshop);asset('Lantern',p.x+8,p.z+2,1.2,0,workshop);
+   asset('Planter',p.x-9,p.z+4,1.65,0,garden);asset(BIOMES[countryConfig.id].tree,p.x+9,p.z+6,.9,0,garden);
+   batch(workshop);batch(garden);stages.push({group,country:countryConfig.id,workshop,garden});
+  }
+  // Low-cost distant skyline: large masses provide depth instead of a platform ending in empty space.
+  const skyline=new THREE.Group();root.add(skyline);
+  for(let i=0;i<24;i++){
+   const a=i/24*Math.PI*2,r=138+(i%4)*12,x=Math.cos(a)*r,z=Math.sin(a)*r,y=height(x,z),h=15+(i%5)*5,w=5+(i%3)*1.6;
+   const tower=shape(box,mat(i%3===0?'#415057':'#59615f',{metalness:.08,roughness:.86}),x,y+h/2,z,w,h,w*.78,skyline);tower.rotation.y=-a+.18;
+   if(i%3===0)shape(box,mat('#d0b574',{emissive:'#7b622b',emissiveIntensity:.25,metalness:.45}),x,y+h*.64,z+Math.sin(a)*.45,w*.55,.16,.12,skyline);
+   collisions.push({x,z,width:w,depth:w*.78,rotation:tower.rotation.y});
+  }
+  batch(skyline);
  }else{
   for(const p of field.buildings)house(region,p.x,p.z,p.rotation,p.variant,genericBuildings,p.urban);
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
@@ -156,7 +195,7 @@ export function createLandscape(models,region,save,onError=console.error){
  // Batch only static descendants. Keep visibility stages separate.
  const dynamic=[genericBuildings,regional.group,sharedCamp,paris.group,...(heritage?[heritage.root]:[]),...frontierGroups.map(p=>p.group),...resourceGroups.map(p=>p.group),...authored.groups,...stages.map(s=>s.group),...decorations.flatMap(d=>[d.landmark,d.ruin,d.garden,d.workshop,d.grove].filter(Boolean)),...residents.filter(r=>r.parent===root).map(r=>r.hero.object)];
  for(const g of dynamic)g.removeFromParent();batch(root);for(const g of dynamic)if(!g.parent)root.add(g);
- function update(next){save=next;paris.update(save);const home=frontierState(save,region);for(const p of frontierGroups){p.group.visible=home[p.kind]>=(p.rank||1);if(p.collision)p.collision.enabled=p.group.visible;}for(const p of resourceGroups)p.group.visible=!home.harvest.includes(p.id);authored.update(save);const s=chapterState(save,region);heritage?.update(s.restored);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
+ function update(next){save=next;paris.update(save);const home=frontierState(save,region);for(const p of frontierGroups){p.group.visible=home[p.kind]>=(p.rank||1);if(p.collision)p.collision.enabled=p.group.visible;}for(const p of resourceGroups)p.group.visible=!home.harvest.includes(p.id);authored.update(save);const s=chapterState(save,region);heritage?.update(s.restored);for(const stage of stages){stage.group.visible=stage.country?chapterState(save,stage.country).restored===3:s.restored>=stage.stage;if(stage.workshop){stage.workshop.visible=save.adventure.nexusStyle==='workshop';stage.garden.visible=!stage.workshop.visible;}}for(const d of decorations){if(d.fragment){const active=save.seals.includes(d.country)||chapterState(save,d.country).restored===3,accent=countryById[d.country]?.color||'#58d1ff';d.material.color.set(active?'#d8bd80':'#30424a');d.material.emissive.set(active?accent:'#315c6f');d.material.emissiveIntensity=active?.82:.13;d.fragment.scale.setScalar(active?1.045:1);}if(d.landmark){d.landmark.visible=s.restored===3;d.ruin.visible=s.restored<3;}if(d.grove)d.grove.visible=s.powers.length===3;if(d.garden){d.garden.visible=s.restored>=2&&s.choice==='garden';d.workshop.visible=s.restored>=2&&s.choice==='workshop';}}}
  addBuildingContact(field,root,owned);flora.finish();update(save);
- return{root,setParty,get architectureDiagnostics(){return regional.diagnostics;},ready:Promise.all([paris.ready,regional.ready]),get interior(){return paris.interior;},updateDistrict(camera,position){paris.tick(camera,position);regional.tick(camera,position);},cinematicFocus(x,z,action='Talk',time=0){let best=null,dist=Infinity;for(const r of residents){const d=Math.hypot(r.hero.object.position.x-x,r.hero.object.position.z-z);if(d<dist){dist=d;best=r;}}if(best&&dist<18){best.hero.object.visible=true;best.hero.action?.(action);best.nextGesture=time+4;return true;}return false;},ground:terrain,collisions,height,field,update,setQuality:meadow.setQuality,updateCamera:occlusion.update,tick(time,dt,position){meadow.tick(reduceWind?0:time);flora.tick(reduceWind?0:time);waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&(r.route?Math.min(...r.route.points.map(p=>Math.hypot(position.x-p.x,position.z-p.z)))<38:Math.hypot(position.x-r.x,position.z-r.z)<46);if(r.hero.object.visible){if(r.route){const activity=residentSchedule(r.route,time,r.kind),x=activity.position.x,z=activity.position.z,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));if(activity.activity&&time>r.nextGesture){r.hero.action?.(activity.activity);r.nextGesture=time+3.5;}}else{r.hero.update(dt);if(time>r.nextGesture){r.hero.action?.(r.kind==='artisan'?'Work':'Talk');r.nextGesture=time+3+(r.phase%4);}if(Math.hypot(position.x-r.x,position.z-r.z)<7)r.hero.face?.(position.x-r.x,position.z-r.z,dt);}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=3.5+Math.sin(time)*.15;}},dispose(){regional.dispose();paris.dispose();heritage?.dispose();flora.dispose();authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
+ return{root,setParty,get architectureDiagnostics(){return regional.diagnostics;},ready:Promise.all([paris.ready,regional.ready]),get interior(){return paris.interior;},updateDistrict(camera,position){paris.tick(camera,position);regional.tick(camera,position);},cinematicFocus(x,z,action='Talk',time=0){let best=null,dist=Infinity;for(const r of residents){const d=Math.hypot(r.hero.object.position.x-x,r.hero.object.position.z-z);if(d<dist){dist=d;best=r;}}if(best&&dist<18){best.hero.object.visible=true;best.hero.action?.(action);best.nextGesture=time+4;return true;}return false;},ground:terrain,collisions,height,field,update,setQuality:meadow.setQuality,updateCamera:occlusion.update,tick(time,dt,position){meadow.tick(reduceWind?0:time);flora.tick(reduceWind?0:time);waterMat.uniforms.time.value=time;for(const r of residents){r.hero.object.visible=r.parent.visible&&(r.route?Math.min(...r.route.points.map(p=>Math.hypot(position.x-p.x,position.z-p.z)))<38:Math.hypot(position.x-r.x,position.z-r.z)<46);if(r.hero.object.visible){if(r.route){const activity=residentSchedule(r.route,time,r.kind),x=activity.position.x,z=activity.position.z,dx=x-r.hero.object.position.x,dz=z-r.hero.object.position.z;r.hero.object.position.set(x,height(x,z),z);r.hero.update(dt,dx,dz,Math.hypot(dx,dz));if(activity.activity&&time>r.nextGesture){r.hero.action?.(activity.activity);r.nextGesture=time+3.5;}}else{r.hero.update(dt);if(time>r.nextGesture){r.hero.action?.(r.kind==='artisan'?'Work':'Talk');r.nextGesture=time+3+(r.phase%4);}if(Math.hypot(position.x-r.x,position.z-r.z)<7)r.hero.face?.(position.x-r.x,position.z-r.z,dt);}}}for(const d of decorations)if(d.orb){d.orb.rotation.y=time*.2;d.orb.position.y=(d.baseY??3.5)+Math.sin(time)*.15;}},dispose(){regional.dispose();paris.dispose();heritage?.dispose();flora.dispose();authored.dispose();residents.forEach(r=>r.hero.dispose());architecture.dispose();owned.forEach(r=>r.dispose());}};
 }
