@@ -1,16 +1,9 @@
 import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import {DICE_FACE_LAYOUT,diceFaceLayout,normalizeDiceValue} from './dada3b/dice.js';
 
 const PIPS=Object.freeze({1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]});
-const ORIENTATIONS=Object.freeze({
-  1:[0,0,0],
-  2:[0,-Math.PI/2,0],
-  3:[0,Math.PI,0],
-  4:[0,Math.PI/2,0],
-  5:[-Math.PI/2,0,0],
-  6:[Math.PI/2,0,0],
-});
 
 function makeFaceTexture(value,{champagne=false,country='#5bd9ef'}={}){
   const canvas=document.createElement('canvas');canvas.width=256;canvas.height=256;
@@ -43,13 +36,13 @@ function disposeObject(root){
 }
 
 function setTargetQuaternion(runtime,value){
-  const e=ORIENTATIONS[value]||ORIENTATIONS[1];
+  const e=diceFaceLayout(value).targetRotation;
   const base=new THREE.Quaternion().setFromEuler(new THREE.Euler(-.18,.28,.03,'XYZ'));
   const face=new THREE.Quaternion().setFromEuler(new THREE.Euler(e[0],e[1],e[2],'XYZ'));
-  runtime.target.copy(base).multiply(face);
+  runtime.target.copy(base).multiply(face).normalize();
 }
 
-export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',country='#5bd9ef',onUnsupported}){
+export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',country='#5bd9ef',onReady,onUnsupported}){
   const hostRef=useRef(null),runtimeRef=useRef(null);
   const propsRef=useRef({value,rolling,skin,country});propsRef.current={value,rolling,skin,country};
 
@@ -85,15 +78,10 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
     const edgeMaterial=new THREE.LineBasicMaterial({color:new THREE.Color(champagne?'#f4ce7b':'#9cecf5'),transparent:true,opacity:.74});
     const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new RoundedBoxGeometry(1.6,1.6,1.6,4,.18)),edgeMaterial);root.add(edges);
 
-    const faceSpecs=[
-      [1,[0,0,.806],[0,0,0]],[2,[.806,0,0],[0,Math.PI/2,0]],[3,[0,0,-.806],[0,Math.PI,0]],
-      [4,[-.806,0,0],[0,-Math.PI/2,0]],[5,[0,.806,0],[-Math.PI/2,0,0]],[6,[0,-.806,0],[Math.PI/2,0,0]],
-    ];
-    const facePlanes=[];
-    for(const [n,pos,rot] of faceSpecs){
-      const texture=makeFaceTexture(n,{champagne,country:propsRef.current.country});
+    for(const spec of DICE_FACE_LAYOUT){
+      const texture=makeFaceTexture(spec.value,{champagne,country:propsRef.current.country});
       const mat=new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1});
-      const plane=new THREE.Mesh(new THREE.PlaneGeometry(1.34,1.34),mat);plane.position.set(...pos);plane.rotation.set(...rot);root.add(plane);facePlanes.push(plane);
+      const plane=new THREE.Mesh(new THREE.PlaneGeometry(1.34,1.34),mat);plane.position.set(...spec.position);plane.rotation.set(...spec.planeRotation);root.add(plane);
     }
 
     const pedestalMat=new THREE.MeshPhysicalMaterial({color:new THREE.Color('#111819'),metalness:.9,roughness:.2,clearcoat:.9,emissive:new THREE.Color(champagne?'#8a6526':'#164b54'),emissiveIntensity:.16});
@@ -106,8 +94,8 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
     const sparkMat=new THREE.PointsMaterial({color:new THREE.Color(champagne?'#f2c665':propsRef.current.country),size:.055,transparent:true,opacity:.16,depthWrite:false,blending:THREE.AdditiveBlending});
     const sparks=new THREE.Points(sparkGeo,sparkMat);scene.add(sparks);
 
-    const runtime={renderer,scene,camera,root,bodyMaterial,edgeMaterial,ring,ringMat,sparks,sparkMat,cyan,gold,target:new THREE.Quaternion(),lastRolling:false,lastValue:propsRef.current.value||1,spin:new THREE.Vector3(4.4,6.2,3.7),disposed:false};
-    runtimeRef.current=runtime;setTargetQuaternion(runtime,runtime.lastValue);root.quaternion.copy(runtime.target);
+    const runtime={renderer,scene,camera,root,bodyMaterial,edgeMaterial,ring,ringMat,sparks,sparkMat,cyan,gold,target:new THREE.Quaternion(),settleFrom:new THREE.Quaternion(),settleStartedAt:0,settling:false,lastRolling:false,lastValue:normalizeDiceValue(propsRef.current.value),spin:new THREE.Vector3(4.4,6.2,3.7),contextLost:false,contextLossTimer:null,readySent:false,disposed:false};
+    runtimeRef.current=runtime;setTargetQuaternion(runtime,runtime.lastValue);root.quaternion.copy(runtime.target);runtime.settleFrom.copy(runtime.target);
 
     const resize=()=>{
       const rect=host.getBoundingClientRect(),w=Math.max(1,rect.width),h=Math.max(1,rect.height);
@@ -115,12 +103,22 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
     };
     resize();const ro=new ResizeObserver(resize);ro.observe(host);
 
-    const contextLost=e=>{e.preventDefault();onUnsupported?.(new Error('Contexte WebGL du dé perdu.'));};
+    const contextLost=e=>{
+      e.preventDefault();runtime.contextLost=true;
+      if(runtime.contextLossTimer)clearTimeout(runtime.contextLossTimer);
+      runtime.contextLossTimer=setTimeout(()=>{if(runtime.contextLost&&!runtime.disposed)onUnsupported?.(new Error('Contexte WebGL du dé indisponible.'));},1200);
+    };
+    const contextRestored=()=>{
+      runtime.contextLost=false;
+      if(runtime.contextLossTimer){clearTimeout(runtime.contextLossTimer);runtime.contextLossTimer=null;}
+      runtime.lastValue=normalizeDiceValue(propsRef.current.value);setTargetQuaternion(runtime,runtime.lastValue);runtime.root.quaternion.copy(runtime.target);runtime.settling=false;
+    };
     renderer.domElement.addEventListener('webglcontextlost',contextLost,false);
+    renderer.domElement.addEventListener('webglcontextrestored',contextRestored,false);
     const clock=new THREE.Clock();let frame=0;
     const animate=()=>{
       if(runtime.disposed)return;frame=requestAnimationFrame(animate);
-      const dt=Math.min(clock.getDelta(),.033),t=clock.elapsedTime,p=propsRef.current,currentValue=p.value||1;
+      const dt=Math.min(clock.getDelta(),.033),t=clock.elapsedTime,p=propsRef.current,currentValue=normalizeDiceValue(p.value),now=performance.now();
       const champagneNow=p.skin==='DADA_DICE_CHAMPAGNE';
       runtime.cyan.color.set(p.country||'#5bd9ef');runtime.cyan.intensity=9+Math.sin(t*3.2)*2.3;
       runtime.gold.intensity=champagneNow?11:7;
@@ -134,22 +132,30 @@ export default function DadaDice3D({value=1,rolling=false,skin='DADA_DICE_CORE',
       runtime.edgeMaterial.color.set(champagneNow?'#f4ce7b':'#9cecf5');
 
       if(p.rolling){
+        runtime.settling=false;
         runtime.root.rotation.x+=runtime.spin.x*dt;runtime.root.rotation.y+=runtime.spin.y*dt;runtime.root.rotation.z+=runtime.spin.z*dt;
         runtime.root.position.y=.06+Math.abs(Math.sin(t*10))*.25;
         runtime.root.scale.setScalar(1+Math.sin(t*13)*.025);
       }else{
-        if(runtime.lastRolling||runtime.lastValue!==currentValue){runtime.lastValue=currentValue;setTargetQuaternion(runtime,currentValue);}
-        runtime.root.quaternion.slerp(runtime.target,1-Math.pow(.0008,dt));
-        runtime.root.position.y=THREE.MathUtils.lerp(runtime.root.position.y,.06,1-Math.pow(.002,dt));
+        if(runtime.lastRolling||runtime.lastValue!==currentValue){
+          runtime.lastValue=currentValue;runtime.settleFrom.copy(runtime.root.quaternion);setTargetQuaternion(runtime,currentValue);runtime.settleStartedAt=now;runtime.settling=true;
+        }
+        let settleLift=0;
+        if(runtime.settling){
+          const progress=Math.min(1,(now-runtime.settleStartedAt)/320),eased=1-Math.pow(1-progress,3);
+          runtime.root.quaternion.slerpQuaternions(runtime.settleFrom,runtime.target,eased);settleLift=Math.sin(Math.PI*progress)*.10;
+          if(progress>=1){runtime.root.quaternion.copy(runtime.target);runtime.settling=false;settleLift=0;}
+        }else runtime.root.quaternion.copy(runtime.target);
+        runtime.root.position.y=THREE.MathUtils.lerp(runtime.root.position.y,.06+settleLift,1-Math.pow(.002,dt));
         const pulse=1+Math.sin(t*3.3)*.008;runtime.root.scale.setScalar(pulse);
       }
       runtime.lastRolling=p.rolling;
-      renderer.render(scene,camera);
+      if(!runtime.contextLost){renderer.render(scene,camera);if(!runtime.readySent){runtime.readySent=true;onReady?.();}}
     };
     animate();
 
     return()=>{
-      runtime.disposed=true;cancelAnimationFrame(frame);ro.disconnect();renderer.domElement.removeEventListener('webglcontextlost',contextLost);
+      runtime.disposed=true;cancelAnimationFrame(frame);ro.disconnect();if(runtime.contextLossTimer)clearTimeout(runtime.contextLossTimer);renderer.domElement.removeEventListener('webglcontextlost',contextLost);renderer.domElement.removeEventListener('webglcontextrestored',contextRestored);
       disposeObject(scene);renderer.dispose();renderer.forceContextLoss?.();renderer.domElement.remove();runtimeRef.current=null;
     };
   },[]);
