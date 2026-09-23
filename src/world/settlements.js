@@ -76,7 +76,23 @@ export function districtDestinations(region){const c=REGIONS[region];if(!c)retur
  {key:'faubourg',x:-45,z:-99,name:c.craft+' · faubourg'},
  {key:'village',x:95,z:95,name:c.rural+' · village'},
  ].map(p=>({...p,id:region+':vista:'+p.key,type:'vista',range:5,color:'#b9cea7'}));}
-export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5}];return[
+export function kaisHubSpot(save){
+ const next=COUNTRIES.find(country=>!save?.seals?.includes(country.id));
+ if(!next)return{x:0,z:-8};
+ const [x,z]=next.portal;
+ return{x:x*.46,z:z*.46};
+}
+export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub'){
+ const kais=kaisHubSpot(save);
+ return[
+  {id:'hub:kais',type:'kais',name:'Kaïs · Guide du Cercle',...kais,color:'#e5c990',range:7},
+  {id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5},
+  {id:'hub:training',type:'training',name:'Arène d’entraînement · simulation sûre',x:19,z:17,color:'#74d8f4',range:6},
+  {id:'hub:passport',type:'passport',name:'Maison du Passeport 3B',x:18,z:-13,color:'#e5c990',range:6},
+  {id:'hub:archives',type:'archives',name:'Archives souterraines du Cercle',x:-15,z:-12,color:'#86cddd',range:6},
+  {id:'hub:transit',type:'transit',name:'Relais des huit Portes',x:0,z:29,color:'#c9b27b',range:6},
+ ];
+ }return[
  ...(region==='france'?[{id:'france:cafe',type:'cafe',name:'Café des Liens',x:-6.84,z:-2.53,color:'#dfc18c',range:4}]:[]),
  {id:region+':landmark',type:'landmark',name:HERITAGE[region].name,...LANDMARK_APPROACH,color:'#d6bb7e',range:6},
  {id:region+':cooperation',type:'cooperation',name:'Notre refuge commun',x:-65,z:42,color:'#9be0cd',range:7},
