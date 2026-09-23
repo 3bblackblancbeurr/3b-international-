@@ -198,6 +198,7 @@ function makeLeg(skinMat, socksMat, bootMat, side) {
 
 function createHumanoid(appearance) {
   const root = new THREE.Group();
+  root.scale.setScalar(.56);
   const rig = new THREE.Group();
   root.add(rig);
 
@@ -423,7 +424,7 @@ function createStadium(scene) {
   scene.add(standL, standR);
 
   const endStand = new THREE.Mesh(new THREE.BoxGeometry(FIELD_W + 7, 7.2, 3.8), standMat);
-  endStand.position.set(0, 3.4, GOAL_Z - 6.5);
+  endStand.position.set(0, 3.4, GOAL_Z - 12.8);
   scene.add(endStand);
 
   const ledGeo = new THREE.BoxGeometry(.18, .62, 3.4);
@@ -760,11 +761,11 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     createStadium(scene);
 
     const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(.23, 18, 14),
+      new THREE.SphereGeometry(.11, 18, 14),
       new THREE.MeshStandardMaterial({ color:'#f4f3ed', roughness:.42, metalness:.03 }),
     );
     const ballWire = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(.234, 1),
+      new THREE.IcosahedronGeometry(.112, 1),
       new THREE.MeshBasicMaterial({ color:'#1b252b', wireframe:true, transparent:true, opacity:.5 }),
     );
     ball.add(ballWire);
@@ -789,8 +790,14 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       let actor;
       actor = createLivingActor(livingLibrary, {
         avatar:footballAvatar(appearance, index + appearance.number),
-        scale:1.82,
+        scale:1,
         onLoad:() => {
+          const bounds = new THREE.Box3().setFromObject(actor.object);
+          const size = bounds.getSize(new THREE.Vector3());
+          const targetHeight = index === 1 ? 1.84 : 1.8;
+          if (Number.isFinite(size.y) && size.y > .2) {
+            actor.object.scale.multiplyScalar(targetHeight / size.y);
+          }
           players[index].userData.rig.visible = false;
           actor.object.position.copy(players[index].position);
         },
@@ -866,7 +873,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const t = clamp(elapsed / duration, 0, 1);
       const visual = event.visual || {};
       const startState = { positions:{ attacker:visual.attacker || liveRef.current.room?.state?.positions?.attacker } };
-      const start = attackerPosition(startState).add(new THREE.Vector3(0, .26, -.55));
+      const start = attackerPosition(startState).add(new THREE.Vector3(0, .13, -.34));
       if (!Number.isFinite(start.x)) start.copy(fallbackStart);
 
       const result = visual.result || {};
@@ -1091,9 +1098,9 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       }
 
       const normalBall = renderAttack.clone();
-      normalBall.y = .23;
-      normalBall.z -= .62 + clamp(state.ballLead, 0, .75) * .78;
-      normalBall.y += Math.abs(Math.sin(now * .014)) * runtime.speeds[attacker] * .075;
+      normalBall.y = .115;
+      normalBall.z -= .32 + clamp(state.ballLead, 0, .75) * .46;
+      normalBall.y += Math.abs(Math.sin(now * .014)) * runtime.speeds[attacker] * .035;
       runtime.ballTarget.copy(normalBall);
 
       let shooting = false;
