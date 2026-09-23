@@ -165,25 +165,26 @@ async function moderateRequest(uid:string,subject:string,message:string){
 }
 async function bootstrap(user:any){
  const [memberUnread,owner]=await Promise.all([
-  api('/rest/v1/member_notifications?user_id=eq.'+enc(user.id)+'&read_at=is.null&select=id'),
+  countRows('/rest/v1/member_notifications?user_id=eq.'+enc(user.id)+'&read_at=is.null&select=id'),
   ownerAccess(user)
  ]);
  let ownerUnread=0,ownerUrgent=0;
  if(owner){
-  const [unread,urgent]=await Promise.all([
-   api('/rest/v1/owner_inbox_events?read_at=is.null&status=not.eq.archived&severity=in.(important,urgent,critical)&select=id'),
-   api('/rest/v1/owner_inbox_events?severity=in.(urgent,critical)&status=in.(new,in_progress)&select=id')
+  [ownerUnread,ownerUrgent]=await Promise.all([
+   countRows('/rest/v1/owner_inbox_events?read_at=is.null&status=not.eq.archived&severity=in.(important,urgent,critical)&select=id'),
+   countRows('/rest/v1/owner_inbox_events?severity=in.(urgent,critical)&status=in.(new,in_progress)&select=id')
   ]);
-  ownerUnread=unread?.length||0;ownerUrgent=urgent?.length||0;
  }
- return{memberUnread:memberUnread?.length||0,ownerAccess:owner,ownerUnread,ownerUrgent};
+ return{memberUnread:Number(memberUnread||0),ownerAccess:owner,ownerUnread:Number(ownerUnread||0),ownerUrgent:Number(ownerUrgent||0)};
 }
 async function memberList(uid:string){
- const [notifications,requests]=await Promise.all([
+ const [notifications,requests,preferenceRows]=await Promise.all([
   api('/rest/v1/member_notifications?user_id=eq.'+enc(uid)+'&select=id,kind,severity,title,body,route,metadata,read_at,created_at&order=created_at.desc&limit=100'),
-  api('/rest/v1/threeb_requests?user_id=eq.'+enc(uid)+'&select=id,category,subject,message,status,priority,owner_reply,answered_at,created_at,updated_at&order=created_at.desc&limit=50')
+  api('/rest/v1/threeb_requests?user_id=eq.'+enc(uid)+'&select=id,category,subject,message,status,priority,owner_reply,answered_at,created_at,updated_at&order=created_at.desc&limit=50'),
+  api('/rest/v1/member_notification_preferences?user_id=eq.'+enc(uid)+'&select=community_enabled,sport_enabled,marketplace_enabled,rewards_enabled&limit=1')
  ]);
- return{notifications:notifications||[],requests:requests||[]};
+ const preferences=preferenceRows?.[0]||{community_enabled:true,sport_enabled:true,marketplace_enabled:true,rewards_enabled:true};
+ return{notifications:notifications||[],requests:requests||[],preferences};
 }
 async function ownerList(body:any){
  const status=body.status&&OWNER_STATUSES.has(body.status)?body.status:null;
@@ -253,6 +254,21 @@ Deno.serve(async(req:Request)=>{
 
   if(action==='bootstrap'){await rate(uid,'bootstrap',90);return reply(await bootstrap(user));}
   if(action==='member-list'){await rate(uid,'member-list',60);return reply(await memberList(uid));}
+  if(action==='member-preferences'){
+   await rate(uid,'member-preferences',20,3600);
+   const keys=['community_enabled','sport_enabled','marketplace_enabled','rewards_enabled'];
+   const row:any={user_id:uid,updated_at:new Date().toISOString()};
+   for(const key of keys){
+    if(typeof body[key]!=='boolean')throw new Failure(400,'Préférences invalides.');
+    row[key]=body[key];
+   }
+   await api('/rest/v1/member_notification_preferences?on_conflict=user_id',{
+    method:'POST',
+    headers:{Prefer:'resolution=merge-duplicates,return=representation'},
+    body:JSON.stringify(row)
+   });
+   return reply({ok:true,preferences:Object.fromEntries(keys.map(key=>[key,row[key]]))});
+  }
   if(action==='member-read'){
    await rate(uid,'member-read',60);
    const now=new Date().toISOString();
@@ -306,9 +322,10 @@ Deno.serve(async(req:Request)=>{
    const id=uuid(body.id),replyText=text(body.reply,2,4000,'Réponse');
    const rows=await api('/rest/v1/threeb_requests?id=eq.'+enc(id)+'&select=*');const before=rows?.[0];
    if(!before)throw new Failure(404,'Demande introuvable.');
-   const afterRows=await patch('threeb_requests?id=eq.'+enc(id),{owner_reply:replyText,status:'answered',answered_at:new Date().toISOString(),updated_at:new Date().toISOString()});
-   const after=afterRows?.[0]||{...before,owner_reply:replyText,status:'answered'};
-   await memberNotify(before.user_id,'request.answered:'+id+':'+Date.now(),'request.answered','important','Réponse de 3B',replyText,'notifications',{request_id:id});
+   const answeredAt=new Date().toISOString();
+   const afterRows=await patch('threeb_requests?id=eq.'+enc(id),{owner_reply:replyText,status:'answered',answered_at:answeredAt,updated_at:answeredAt});
+   const after=afterRows?.[0]||{...before,owner_reply:replyText,status:'answered',answered_at:answeredAt};
+   await memberNotify(before.user_id,'request.answered:'+id+':'+answeredAt,'request.answered','important','Réponse de 3B',replyText,'notifications',{request_id:id});
    await audit(uid,'owner.request.reply','request',id,before,after,{});
    return reply({ok:true,request:after});
   }
