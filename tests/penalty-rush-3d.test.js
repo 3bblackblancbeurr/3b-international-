@@ -97,3 +97,32 @@ test('keeper camera computes enough distance to keep the complete goal in frame 
   assert.match(arena, /GOAL_H \/ 2 \+ \.72/);
   assert.match(arena, /GOAL_Z - goalDistance/);
 });
+
+
+test('V3 prevents the goalkeeper camera from spawning inside the rear stand', () => {
+  assert.match(arena, /endStand\.position\.set\(0, 3\.4, GOAL_Z - 12\.8\)/);
+  assert.match(arena, /keeperGoalFramingDistance/);
+});
+
+test('V3 calibrates human and ball scale to football dimensions', () => {
+  assert.match(arena, /const targetHeight = index === 1 \? 1\.84 : 1\.8/);
+  assert.match(arena, /actor\.object\.scale\.multiplyScalar\(targetHeight \/ size\.y\)/);
+  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
+  assert.match(arena, /root\.scale\.setScalar\(\.56\)/);
+});
+
+test('goalkeeper lateral movement is sent continuously while dragging and predicted instantly', () => {
+  assert.match(match, /keeperMoveThrottle = useRef\(0\)/);
+  assert.match(match, /queueKeeper\(\{/);
+  assert.match(match, /type:'hold'/);
+  assert.match(match, /now - keeperMoveThrottle\.current >= 70/);
+  assert.match(arena, /desiredLocalX/);
+  assert.match(arena, /expFollow\(selfKeeper \? 30 : 12/);
+});
+
+test('local attacker prediction prioritizes immediate input over server correction while input is held', () => {
+  assert.match(arena, /const lateralSpeed = 4\.6 \+ intensity \* 1\.4/);
+  assert.match(arena, /const forwardSpeed = \(6\.2 \+ intensity \* 2\.1\)/);
+  assert.match(arena, /input\?\.active \? \.9 : 8\.5/);
+  assert.match(arena, /index === snapshot\.selfIndex \? 28 : 11/);
+});
