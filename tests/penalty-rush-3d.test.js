@@ -51,7 +51,8 @@ test('server exposes cosmetic appearance and visual shot trajectory without chan
 test('V3 deepens the pitch and guarantees a dedicated behind-goal goalkeeper camera', () => {
   assert.match(arena, /const FIELD_L = 44/);
   assert.match(arena, /const GOAL_Z = -19\.75/);
-  assert.match(arena, /GOAL_Z - 5\.35/);
+  assert.match(arena, /keeperGoalFramingDistance/);
+  assert.match(arena, /GOAL_Z - goalDistance/);
   assert.match(arena, /fov = 59/);
   assert.match(arena, /goal\.userData\.netMat\.opacity/);
 });
