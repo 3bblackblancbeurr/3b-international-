@@ -7,6 +7,13 @@ on:
       - 'ios/**'
       - 'src/native/**'
       - 'src/arena/client.js'
+      - 'src/loyalty/client.js'
+      - 'src/lib/ecosystem.js'
+      - 'supabase/functions/member-auth/**'
+      - 'supabase/functions/member-api/**'
+      - 'supabase/functions/ecosystem-public/**'
+      - 'supabase/functions/ecosystem-private/**'
+      - 'supabase/functions/world-engine/**'
       - 'api/card-arena-proxy.js'
       - 'server/card-arena-proxy.js'
       - 'tests/native-arena-proxy.test.js'
@@ -35,21 +42,31 @@ jobs:
         run: |
           set -euo pipefail
           project='ttvhcezucsbbmnafrotq'
-          functions=(member-hub ecosystem world-engine)
+          endpoints=(
+            'member-auth:POST'
+            'member-api:POST'
+            'ecosystem-public:GET'
+            'ecosystem-private:POST'
+            'world-engine:POST'
+          )
           native_origins=('https://localhost' 'capacitor://localhost')
-          for fn in "${functions[@]}"; do
+          for entry in "${endpoints[@]}"; do
+            fn="${entry%%:*}"
+            method="${entry##*:}"
             url="https://${project}.supabase.co/functions/v1/${fn}"
             for origin in "${native_origins[@]}"; do
               headers="$(curl --fail-with-body --silent --show-error --dump-header - --output /dev/null --request OPTIONS "$url" \
                 --header "Origin: $origin" \
-                --header 'Access-Control-Request-Method: POST' \
+                --header "Access-Control-Request-Method: $method" \
                 --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info')"
               printf '%s\n' "$headers"
-              printf '%s\n' "$headers" | tr -d '\r' | grep -Fqi "access-control-allow-origin: $origin"
+              clean="$(printf '%s\n' "$headers" | tr -d '\r')"
+              printf '%s\n' "$clean" | grep -Fqi "access-control-allow-origin: $origin"
+              printf '%s\n' "$clean" | grep -Eqi "access-control-allow-methods:.*(^|[,[:space:]])${method}([,[:space:]]|$)"
             done
             foreign="$(curl --fail-with-body --silent --show-error --dump-header - --output /dev/null --request OPTIONS "$url" \
               --header 'Origin: https://example.invalid' \
-              --header 'Access-Control-Request-Method: POST' \
+              --header "Access-Control-Request-Method: $method" \
               --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info')"
             if printf '%s\n' "$foreign" | tr -d '\r' | grep -qi '^access-control-allow-origin:'; then
               echo "Foreign origin was unexpectedly allowed for $fn" >&2
