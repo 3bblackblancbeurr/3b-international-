@@ -134,3 +134,32 @@ test('V4 local prediction prioritizes instant control then reconciles softly', (
   assert.match(arena, /const speed = 6\.4 \+ intensity \* 2\.6/);
   assert.match(arena, /input\?\.active \? \.9 : 11\.5/);
 });
+
+
+test('V4 goalkeeper view is a true behind-goal camera with visible turf behind the net', () => {
+  assert.match(arena, /new THREE\.PlaneGeometry\(FIELD_W \+ 4, 10\)/);
+  assert.match(arena, /keeperApron\.position\.set\(0, -\.002, GOAL_Z - 5\)/);
+  assert.match(arena, /fov = 72/);
+  assert.match(arena, /desired\.set\(\s*0,\s*2\.45,\s*GOAL_Z - goalDistance/s);
+  assert.match(arena, /GOAL_Z \+ 7\.4/);
+});
+
+test('V4 uses football-scale player and ball dimensions', () => {
+  assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
+  assert.match(arena, /targetHeight = index === clamp\(\(liveRef\.current\.room\?\.state \|\| \{\}\)\.keeper, 0, 1\) \? 1\.86 : 1\.76/);
+  assert.match(arena, /model\.scale\.setScalar\(\.56\)/);
+  assert.match(arena, /const GOAL_H = 2\.44/);
+});
+
+test('V4 local movement is tuned for immediate football-game response', () => {
+  assert.match(arena, /const lateralSpeed = 7\.4 \+ intensity \* 2\.8/);
+  assert.match(arena, /const speed = 11\.5 \+ intensity \* 5\.5/);
+  assert.match(arena, /snapshot\.selfIndex \? 30 : 12/);
+  assert.match(arena, /selfKeeper \? 34 : 12/);
+  assert.match(arena, /selfKeeper \? 18 : 8\.5/);
+});
+
+test('V4 server movement supports responsive lateral attack and keeper positioning', () => {
+  assert.match(server, /ix \* \(\.34 \+ intensity\*\.2\) \* dt/);
+  assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
+});
