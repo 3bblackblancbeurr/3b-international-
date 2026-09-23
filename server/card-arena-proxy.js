@@ -28,9 +28,23 @@ function json(data, status, origin) {
 async function readBody(request, maxBytes = 65536) {
   const declared = Number(request.headers.get("content-length") || 0);
   if (declared > maxBytes) throw new Error("too_large");
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > maxBytes) throw new Error("too_large");
-  return text;
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const chunks = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel().catch(() => {});
+        throw new Error("too_large");
+      }
+      chunks.push(value);
+    }
+  } finally { reader.releaseLock(); }
+  return Buffer.concat(chunks, size).toString("utf8");
 }
 
 export function createCardArenaProxy({ fetcher = fetch } = {}) {
@@ -83,7 +97,9 @@ export function createCardArenaProxy({ fetcher = fetch } = {}) {
       return json({ error: "Connexion à l’Arène momentanément indisponible." }, 503, origin);
     }
 
-    const responseText = await upstream.text();
+    let responseText;
+    try { responseText = await upstream.text(); }
+    catch { return json({ error: "Connexion à l’Arène momentanément indisponible." }, 503, origin); }
     return new Response(responseText, {
       status: upstream.status,
       headers: {

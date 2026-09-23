@@ -21,3 +21,36 @@ export class DragControl {
   cancel(){this.pointerId=null;this.origin=null;this.point=null;this.input={x:0,y:0};}
   visual(){return this.origin?{x:this.origin.x,y:this.origin.y,dx:this.point.x-this.origin.x,dy:this.point.y-this.origin.y}:null;}
 }
+
+// Each pad owns one pointer; the other thumb can keep using a different pad.
+export class PointerGesture {
+  constructor(){this.current=null;}
+  begin(id,sample){
+    if(this.current)return false;
+    this.current={...sample,pointer:id};return true;
+  }
+  get(id){return this.current?.pointer===id?this.current:null;}
+  end(id){const gesture=this.get(id);if(gesture)this.current=null;return gesture;}
+  cancel(id){return this.end(id)!==null;}
+}
+
+// A tap must stay within its threshold for the whole gesture, with only one finger.
+export class TapControl {
+  constructor(threshold=8){this.threshold=threshold;this.reset();}
+  reset(){this.pointers=new Set();this.tap=null;}
+  begin(id,x,y){
+    if(this.pointers.has(id))return;
+    this.pointers.add(id);
+    this.tap=this.pointers.size===1?{id,x,y}:null;
+  }
+  move(id,x,y){
+    if(this.tap?.id===id&&Math.hypot(x-this.tap.x,y-this.tap.y)>this.threshold)this.tap=null;
+  }
+  end(id,x,y){
+    this.move(id,x,y);
+    const tapped=this.tap?.id===id;
+    this.cancel(id);
+    return tapped;
+  }
+  cancel(id){this.pointers.delete(id);if(this.tap?.id===id)this.tap=null;}
+}

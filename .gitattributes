@@ -1,0 +1,3 @@
+# Preserve committed bytes: migration checksums include original line endings.
+# Source-contract tests must also read the same bytes on Windows and Linux.
+* -text

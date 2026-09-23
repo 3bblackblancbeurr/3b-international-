@@ -48,3 +48,27 @@ test('proxy rejects unauthenticated, malformed and oversized client requests bef
  assert.equal((await handler(tooLarge)).status,413);
  assert.equal(called,0);
 });
+
+test('proxy stops an oversized streaming request without buffering the remaining body',async()=>{
+ let cancelled=false, reads=0, called=false;
+ const body=new ReadableStream({
+  pull(controller){ reads++; controller.enqueue(new Uint8Array(32769)); if(reads===5)controller.close(); },
+  cancel(){ cancelled=true; },
+ },{highWaterMark:0});
+ const handler=createCardArenaProxy({fetcher:async()=>{called=true;return new Response('{}')}});
+ const incoming=new Request(URL,{method:'POST',duplex:'half',headers:{Origin:ORIGIN,'Content-Type':'application/json',Authorization:'Bearer x'},body});
+ assert.equal((await handler(incoming)).status,413);
+ assert.equal(cancelled,true);
+ assert.equal(reads,2);
+ assert.equal(called,false);
+});
+
+test('a dropped upstream response returns the recoverable arena error with native CORS',async()=>{
+ const handler=createCardArenaProxy({fetcher:async()=>new Response(new ReadableStream({
+  start(controller){controller.error(new Error('connection interrupted'));},
+ }))});
+ const result=await handler(request());
+ assert.equal(result.status,503);
+ assert.equal(result.headers.get('access-control-allow-origin'),ORIGIN);
+ assert.match((await result.json()).error,/momentanément indisponible/);
+});

@@ -18,7 +18,7 @@ const STATUS = {
 async function api(url, options = {}) {
   const response = await fetch(url, { credentials: "same-origin", ...options, headers: { ...(options.headers || {}), ...await checkoutAuth() } });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Service commandes indisponible.");
+  if (!response.ok) throw Object.assign(new Error(data.error || "Service commandes indisponible."), { status:response.status });
   return data;
 }
 
@@ -74,6 +74,7 @@ export function SellerOrdersPanel({ enabled }) {
   const [orders, setOrders] = useState([]);
   const [state, setState] = useState("idle");
   const [busy, setBusy] = useState("");
+  const [actionError, setActionError] = useState("");
   const [newCount, setNewCount] = useState(0);
   const [deviceAlerts, setDeviceAlerts] = useState(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const seenRef = useRef(null);
@@ -125,14 +126,18 @@ export function SellerOrdersPanel({ enabled }) {
 
   async function action(sessionId, next) {
     setBusy(sessionId + next);
+    setActionError("");
     try {
       await api("/api/shop-admin-orders", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ sessionId, action:next }) });
       await load(true);
+    } catch (error) {
+      setActionError(error.status ? error.message : "La connexion a été interrompue. Réessaie dans un instant.");
+      if (error.status === 409) await load();
     } finally { setBusy(""); }
   }
   if (!enabled) return null;
   return <section className="order-panel seller-panel" aria-labelledby="seller-orders-title">
-    <div className="order-panel-heading"><div><p className="eyebrow">Vendeur 3B</p><h2 id="seller-orders-title">Commandes à traiter {newCount > 0 && <span className="order-count-badge">{newCount}</span>}</h2></div><button type="button" onClick={() => load()}>Actualiser</button></div>
+    <div className="order-panel-heading"><div><p className="eyebrow">Vendeur 3B</p><h2 id="seller-orders-title">Commandes à traiter {newCount > 0 && <span className="order-count-badge">{newCount}</span>}</h2></div><button type="button" onClick={() => { setActionError(""); load(); }}>Actualiser</button></div>
     <p className="seller-help">Après paiement, une commande reste en attente jusqu’à ta validation. Tu dois la prendre en charge sous 5 jours maximum. Après validation, l’envoi est prévu sous 2 jours.</p>
     <div className="seller-alert-settings">
       <Bell size={19} aria-hidden="true" />
@@ -143,6 +148,7 @@ export function SellerOrdersPanel({ enabled }) {
     </div>
     {state === "loading" && <p>Chargement…</p>}
     {state === "error" && <p>Accès vendeur indisponible ou non autorisé.</p>}
+    {actionError && <p role="alert">{actionError}</p>}
     {state === "done" && !orders.length && <p>Aucune commande payée à traiter.</p>}
     <div className="order-list">{orders.map(order => <article key={order.sessionId} className={["new", "awaiting_seller"].includes(order.fulfillmentStatus) ? "order-needs-action" : ""}>
       <div className="order-card-head"><strong>{order.reference}</strong><span>{money(order.amount, order.currency)}</span></div>

@@ -2,15 +2,32 @@ import React,{createContext,useContext,useEffect,useRef,useState} from 'react';
 import {authClient,memberRequest} from './client.js';
 import {EXPLORATIONS,tierFor} from '../../shared/loyalty.js';
 import {passportFromProfile} from '../passport/identity.js';
+import {createSnapshotGate,watchSession} from './session-state.js';
 const Context=createContext(null);
 export const useLoyalty=()=>useContext(Context);
 export function LoyaltyProvider({children}){
  const[session,setSession]=useState(null),[loading,setLoading]=useState(true),[data,setData]=useState(null),[error,setError]=useState('');
- const current=useRef(null);
- useEffect(()=>{let live=true;const apply=s=>{if(!live)return;current.current=s?.user.id||null;setSession(s);setLoading(false);};authClient.auth.getSession().then(({data})=>apply(data.session));const {data:{subscription}}=authClient.auth.onAuthStateChange((_event,s)=>apply(s));return()=>{live=false;subscription.unsubscribe();};},[]);
- const accept=result=>{if(result?.profile?.user_id===current.current){setData(result);setError('');}return result;};
- const refresh=async()=>{const uid=current.current;if(!uid)return;try{return accept(await memberRequest('snapshot',{},uid));}catch(e){if(current.current===uid)setError(e.message);}};
- useEffect(()=>{setData(null);setError('');if(session?.user.id)refresh();},[session?.user.id]);
+ const gate=useRef(null),sessionWatch=useRef(null),sessionFailed=useRef(false);
+ if(!gate.current)gate.current=createSnapshotGate();
+ useEffect(()=>{
+  const watcher=watchSession(authClient.auth,s=>{gate.current.setUser(s?.user?.id||null);if(sessionFailed.current)setError('');sessionFailed.current=false;setSession(s);setLoading(false);},e=>{sessionFailed.current=true;setError(e?.message||'La connexion n’a pas pu être vérifiée. Réessaie.');setLoading(false);});
+  sessionWatch.current=watcher;
+  return()=>{watcher.stop();sessionWatch.current=null;gate.current.invalidate();};
+ },[]);
+ const owner=gate.current.accountTicket();
+ const accept=result=>{if(gate.current.accept(result,owner)){setData(result);setError('');}return result;};
+ const refresh=async()=>{
+  const ticket=gate.current.begin();
+  if(!ticket.userId){
+   if(sessionFailed.current&&sessionWatch.current){setLoading(true);setError('');return sessionWatch.current.refresh();}
+   return;
+  }
+  try{
+   const result=await memberRequest('snapshot',{},ticket.userId);
+   if(gate.current.isCurrent(ticket)&&gate.current.accept(result,ticket)){setData(result);setError('');return result;}
+  }catch(e){if(gate.current.isCurrent(ticket))setError(e?.message||'La synchronisation a échoué. Réessaie.');}
+ };
+ useEffect(()=>{setData(null);if(!sessionFailed.current)setError('');if(session?.user.id)refresh();},[session?.user.id]);
  useEffect(()=>{const focus=()=>{if(!document.hidden)refresh();};document.addEventListener('visibilitychange',focus);return()=>document.removeEventListener('visibilitychange',focus);},[]);
  const owned=data?.profile?.user_id===session?.user?.id?data:null;
  const passport=passportFromProfile(owned?.profile,session?.user);

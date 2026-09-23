@@ -1,9 +1,9 @@
-import CompactCard from './CompactCard.jsx';
+import SectionCard from './SectionCard.jsx';
 import {useState} from 'react';
 import {TIERS,SHOP_TIERS} from '../../shared/loyalty.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {memberRequest} from '../loyalty/client.js';
-import {RouteLink,SectionIcon} from './AppNavigation.jsx';
+import {RouteLink} from './AppNavigation.jsx';
 const fmt=n=>new Intl.NumberFormat('fr-FR').format(n);
 export default function GuidePage({goTo,menuItems}){
  const account=useLoyalty();const[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
@@ -19,6 +19,6 @@ export default function GuidePage({goTo,menuItems}){
  <p className="muted-copy">Les likes, messages, publications et créations IA ne rapportent pas d’XP actuellement. Les scores invités ne sont pas convertis. Les gains sont validés par le serveur.</p>
  <h2>Les huit niveaux de la collection XP</h2><div className="guide-levels">{TIERS.map(t=><article key={t.id} style={{'--card-accent':t.color}}><span>{t.name}</span><strong>{fmt(t.xp)} XP</strong><p>{t.benefit}</p></article>)}</div>
  <h2>Les quatre cartes de fidélité boutique</h2><div className="guide-levels">{SHOP_TIERS.map(d=><article key={d.id}><span>Carte {d.name}</span><strong>{d.percent?'−'+d.percent+' %':'Offerte'}</strong><p>{d.points?'À partir de '+fmt(d.points)+' points.':'Dès l’inscription.'} Vêtements et accessoires. Le meilleur taux s’applique aux articles éligibles, sans cumul et hors livraison.</p></article>)}</div>
- <h2>À quoi sert chaque rubrique ?</h2><div className="guide-directory">{menuItems.filter(i=>i.id!=='guide').map(i=><CompactCard as={RouteLink} key={i.id} page={i.id} goTo={goTo} icon={<SectionIcon page={i.id}/>} title={i.label} description={i.description}/>)}</div>
+ <h2>À quoi sert chaque rubrique ?</h2><div className="guide-directory">{menuItems.filter(i=>i.id!=='guide').map(i=><SectionCard key={i.id} item={i} goTo={goTo}/>)}</div>
  <details className="guide-faq"><summary>Où retrouver mes gains et mes réglages ?</summary><p>L’historique des gains se trouve dans Cartes de fidélité. Ton compte et les réglages d’animation se trouvent dans Mon espace, accessible par la navigation.</p></details></section>;
 }

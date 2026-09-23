@@ -7,9 +7,16 @@ on:
       - 'ios/**'
       - 'src/native/**'
       - 'src/arena/client.js'
+      - 'src/lib/ecosystem.js'
       - 'api/card-arena-proxy.js'
       - 'server/card-arena-proxy.js'
       - 'tests/native-arena-proxy.test.js'
+      - 'tests/native-cors.test.js'
+      - 'supabase/functions/ecosystem/**'
+      - 'supabase/functions/ecosystem-public/**'
+      - 'supabase/functions/ecosystem-private/**'
+      - 'supabase/functions/member-hub/**'
+      - 'supabase/functions/world-engine/**'
       - 'capacitor.config.json'
       - '.github/workflows/verify-native-cors.yml'
   workflow_dispatch:
@@ -28,29 +35,36 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Test native Arena proxy
-        run: node --test tests/native-arena-proxy.test.js tests/native-navigation.test.js
+      - name: Test native Arena proxy and CORS contracts
+        run: node --test tests/native-arena-proxy.test.js tests/native-navigation.test.js tests/native-cors.test.js
       - name: Verify native origins on direct Supabase functions
         shell: bash
         run: |
           set -euo pipefail
           project='ttvhcezucsbbmnafrotq'
-          functions=(member-hub ecosystem world-engine)
+          functions=(member-hub ecosystem ecosystem-public ecosystem-private world-engine)
           native_origins=('https://localhost' 'capacitor://localhost')
           for fn in "${functions[@]}"; do
             url="https://${project}.supabase.co/functions/v1/${fn}"
+            method='POST'
+            request_headers='authorization,apikey,content-type,x-client-info'
+            if [[ "$fn" == 'ecosystem-public' ]]; then
+              method='GET'
+              request_headers='apikey,x-client-info'
+            fi
             for origin in "${native_origins[@]}"; do
               headers="$(curl --fail-with-body --silent --show-error --dump-header - --output /dev/null --request OPTIONS "$url" \
                 --header "Origin: $origin" \
-                --header 'Access-Control-Request-Method: POST' \
-                --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info')"
+                --header "Access-Control-Request-Method: $method" \
+                --header "Access-Control-Request-Headers: $request_headers")"
               printf '%s\n' "$headers"
               printf '%s\n' "$headers" | tr -d '\r' | grep -Fqi "access-control-allow-origin: $origin"
+              printf '%s\n' "$headers" | tr -d '\r' | grep -Ei '^access-control-allow-methods:' | grep -Eq "(^|[[:space:],])${method}([[:space:],]|$)"
             done
             foreign="$(curl --fail-with-body --silent --show-error --dump-header - --output /dev/null --request OPTIONS "$url" \
               --header 'Origin: https://example.invalid' \
-              --header 'Access-Control-Request-Method: POST' \
-              --header 'Access-Control-Request-Headers: authorization,apikey,content-type,x-client-info')"
+              --header "Access-Control-Request-Method: $method" \
+              --header "Access-Control-Request-Headers: $request_headers")"
             if printf '%s\n' "$foreign" | tr -d '\r' | grep -qi '^access-control-allow-origin:'; then
               echo "Foreign origin was unexpectedly allowed for $fn" >&2
               exit 1

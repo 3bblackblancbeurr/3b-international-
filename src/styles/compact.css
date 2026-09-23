@@ -44,6 +44,9 @@
 .app3b .surface-panel,.app3b .guide-distinction article,.app3b .guide-levels article,.app3b .guide-faq,.app3b .premium-panel,.app3b .loyalty-card-detail,.app3b .account-summary{border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;padding:20px;box-shadow:none}
 .app3b .surface-panel h2{font-size:22px}
 .app3b .guide-directory{border:0;background:none;padding:0;display:grid;gap:9px}
+.app3b .guide-directory>.compact-card{white-space:normal;margin:0;border:1px solid #d9bc7333}
+.app3b .guide-faq summary{min-height:44px;padding-block:12px}
+.app3b .universe-card-soon .compact-card-action svg{display:none}
 .app3b .religion-grid,.app3b .sport-community{display:grid;grid-template-columns:1fr;gap:9px}
 .app3b .sport-news-grid{grid-template-columns:1fr;gap:9px}
 .app3b .sport-article{padding:16px 20px;min-height:0;border-radius:8px;background:#0f1822;border-color:#d9bc7333;display:grid;grid-template-columns:1fr auto;gap:7px 20px}
@@ -208,4 +211,3 @@
  .app3b .community-controls .surface-tabs{flex-wrap:nowrap;overflow-x:auto;width:100%;padding-bottom:5px}
  .app3b .community-controls .surface-tabs button{white-space:nowrap;flex-shrink:0}
 }
-

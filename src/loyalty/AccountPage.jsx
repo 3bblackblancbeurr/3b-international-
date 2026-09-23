@@ -1,4 +1,4 @@
-import React,{useMemo,useState} from 'react';
+import React,{useMemo,useReducer,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeEmail,passwordRequirements,
@@ -13,6 +13,7 @@ import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
 import TurnstileField from './TurnstileField.jsx';
+import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
 
 function initialMode(){
@@ -32,7 +33,10 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  });
  const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const[prestigeBusy,setPrestigeBusy]=useState(false),[recovery,setRecovery]=useState('');
- const[pendingEmail,setPendingEmail]=useState(''),[captchaToken,setCaptchaToken]=useState('');
+ const[pendingEmail,setPendingEmail]=useState('');
+ const[{attempt:captchaAttempt,token:captchaToken},dispatchCaptcha]=useReducer(captchaChallengeReducer,{attempt:0,token:''});
+ const setCaptchaToken=token=>dispatchCaptcha({type:'token',attempt:captchaAttempt,token});
+ const resetCaptcha=()=>dispatchCaptcha({type:'reset'});
  const[showPassword,setShowPassword]=useState(false);
 
  const field=(key,value)=>{setFields(f=>({...f,[key]:value}));setError('');setNotice('');};
@@ -95,7 +99,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     setFields(f=>({...f,password:'',passwordConfirm:''}));
    }
   }catch(e){setError(e.message||'Connexion indisponible. Réessaie.');}
-  finally{setBusy(false);setCaptchaToken('');}
+  finally{setBusy(false);resetCaptcha();}
  };
 
  const resendConfirmation=async()=>{
@@ -105,7 +109,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    const result=await memberRequest('resend-confirmation',{email:pendingEmail,captchaToken});
    setNotice(result.message);
   }catch(e){setError(e.message||'Impossible de renvoyer le message.');}
-  finally{setBusy(false);setCaptchaToken('');}
+  finally{setBusy(false);resetCaptcha();}
  };
 
  const downloadRecovery=()=>{
@@ -131,7 +135,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   finally{setPrestigeBusy(false);}
  };
 
- const switchMode=next=>{setMode(next);setError('');setNotice('');setCaptchaToken('');};
+ const switchMode=next=>{setMode(next);setError('');setNotice('');resetCaptcha();};
 
  return <section className="loyalty-page account-page">
   <header className="loyalty-intro">
@@ -294,7 +298,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
       <label className="account-check optional"><input type="checkbox" checked={fields.marketingOptIn} onChange={e=>field('marketingOptIn',e.target.checked)}/><span>Je souhaite recevoir les nouveautés 3B. Facultatif.</span></label>
      </div>}
 
-     <TurnstileField onToken={setCaptchaToken}/>
+     <TurnstileField key={captchaAttempt} onToken={setCaptchaToken}/>
 
      <button type="submit" className="loyalty-primary" disabled={busy}>{
       busy?'Validation en cours…':
@@ -320,8 +324,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     <p><strong>Deux voies de récupération.</strong> E-mail pour les nouveaux comptes et clé de secours indépendante à conserver hors ligne.</p>
     <p><strong>Protection anti-abus.</strong> Limites de tentatives côté serveur, CAPTCHA activable, journal sécurité minimal et sessions Supabase.</p>
     {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}
-    <p>Les jeux restent accessibles sans connexion. Le compte sert à synchroniser progression, Passeport, récompenses et Monde du 3B.</p>
-    <button onClick={()=>goTo('games')}>Continuer à jouer librement</button>
+    <p>Un Passeport actif donne accès aux jeux et au Monde du 3B. Ton compte garde ta progression et tes récompenses au même endroit.</p>
+    <button onClick={()=>goTo('passport')}>Découvrir mon Passeport</button>
    </div>
   </div>}
 
