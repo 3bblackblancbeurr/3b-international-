@@ -20,3 +20,13 @@ export async function notificationRequest(action,body={},expectedUser){
  if(!response.ok)throw Error(data.error||'Le Centre 3B est momentanément indisponible.');
  return data;
 }
+
+export function reportClientIncident(kind,message,route='',component=''){
+ if(typeof navigator!=='undefined'&&!navigator.onLine)return Promise.resolve(null);
+ return notificationRequest('client-incident',{
+  kind,
+  message:String(message||'Incident').slice(0,300),
+  route:String(route||'').slice(0,80),
+  component:String(component||'').slice(0,1200)
+ }).catch(()=>null);
+}
