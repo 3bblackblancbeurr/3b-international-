@@ -114,7 +114,7 @@ export function createLandscape(models,region,save,onError=console.error){
    asset('Bench',p.x-7,p.z+5,1.05,index*Math.PI/4,sector);asset('Lantern',p.x+6,p.z+5,1.25,0,sector);asset('Planter',p.x-8,p.z-4,1.25,0,sector);
    resident(p.x+7,p.z+5,countryConfig.color,sector,index%2?'artisan':'woman');resident(p.x-6,p.z+6,'#b8a68b',sector,index%3?'traveler':'elder');
    batch(sector);
-   const group=new THREE.Group();root.add(group),workshop=new THREE.Group(),garden=new THREE.Group();group.add(workshop,garden);
+   const group=new THREE.Group(),workshop=new THREE.Group(),garden=new THREE.Group();root.add(group);group.add(workshop,garden);
    asset('Market',p.x+10,p.z+6,.9,0,workshop);asset('Lantern',p.x+8,p.z+2,1.2,0,workshop);
    asset('Planter',p.x-9,p.z+4,1.65,0,garden);asset(BIOMES[countryConfig.id].tree,p.x+9,p.z+6,.9,0,garden);
    batch(workshop);batch(garden);stages.push({group,country:countryConfig.id,workshop,garden});
