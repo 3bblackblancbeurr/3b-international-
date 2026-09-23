@@ -423,9 +423,12 @@ function createStadium(scene) {
   standR.position.set(14.1, 3, 0);
   scene.add(standL, standR);
 
-  const endStand = new THREE.Mesh(new THREE.BoxGeometry(FIELD_W + 7, 7.2, 3.8), standMat);
-  endStand.position.set(0, 3.4, GOAL_Z - 12.8);
-  scene.add(endStand);
+  const rearStandGeo = new THREE.BoxGeometry(8.4, 7.2, 4.8);
+  const rearLeft = new THREE.Mesh(rearStandGeo, standMat);
+  const rearRight = rearLeft.clone();
+  rearLeft.position.set(-7.7, 3.4, GOAL_Z - 13.5);
+  rearRight.position.set(7.7, 3.4, GOAL_Z - 13.5);
+  scene.add(rearLeft, rearRight);
 
   const ledGeo = new THREE.BoxGeometry(.18, .62, 3.4);
   for (let side = -1; side <= 1; side += 2) {
@@ -794,7 +797,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         onLoad:() => {
           const bounds = new THREE.Box3().setFromObject(actor.object);
           const size = bounds.getSize(new THREE.Vector3());
-          const targetHeight = index === 1 ? 1.84 : 1.8;
+          const targetHeight = 1.82;
           if (Number.isFinite(size.y) && size.y > .2) {
             actor.object.scale.multiplyScalar(targetHeight / size.y);
           }
@@ -973,14 +976,14 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         fov = 59;
         const goalDistance = keeperGoalFramingDistance(camera.aspect, fov);
         desired.set(
-          serverKeeper.x * .09,
-          3.72,
+          0,
+          2.82,
           GOAL_Z - goalDistance,
         );
         target.set(
-          serverAttack.x * .2,
-          1.18,
-          mix(-6.4, -10.2, progress),
+          mix(serverKeeper.x * .16, serverAttack.x * .28, .72),
+          1.02,
+          mix(-5.8, -10.6, progress),
         );
         goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .105, .16);
       } else {
@@ -1046,11 +1049,10 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const keeperPreview = selfKeeper ? controlRef?.current?.keeper : null;
       const renderKeeper = runtime.serverKeeper.clone();
       if (keeperPreview?.active) {
-        const direction = clamp(keeperPreview.direction, -1, 1);
-        const intensity = clamp(keeperPreview.intensity, 0, 1);
-        const desiredLocalX = direction * (GOAL_W / 2 - .35) * intensity;
-        renderKeeper.x = mix(runtime.serverKeeper.x, desiredLocalX, .92);
-        renderKeeper.x = clamp(renderKeeper.x, -GOAL_W / 2 + .15, GOAL_W / 2 - .15);
+        const position = clamp(keeperPreview.position ?? keeperPreview.direction, -1, 1);
+        const desiredLocalX = position * (GOAL_W / 2 - .28);
+        renderKeeper.x = mix(renderKeeper.x, desiredLocalX, .98);
+        renderKeeper.x = clamp(renderKeeper.x, -GOAL_W / 2 + .12, GOAL_W / 2 - .12);
       }
 
       runtime.playerTargets[attacker].copy(renderAttack);
