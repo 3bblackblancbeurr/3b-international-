@@ -37,13 +37,23 @@ function contentForms(value){
     else if(ABUSE.has(key))tokenHits.push({term:key,level:'abuse'});
     else if(LIGHT.has(key))tokenHits.push({term:key,level:'light'});
   }
-  const compact=canonical.replace(/[^a-z]/g,'');
+  const compactHits=[];
+  for(const [level,set] of [['severe',SEVERE],['abuse',ABUSE],['light',LIGHT]]){
+    for(const term of set){
+      if(term.length<4||tokenHits.some(hit=>hit.term===term))continue;
+      const letters=[...term].map(char=>char.replace(/[.*+?^{}()|[\\]\\]/g,'\\  const compact=canonical.replace(/[^a-z]/g,'');
   const compactHits=[];
   for(const [level,set] of [['severe',SEVERE],['abuse',ABUSE],['light',LIGHT]]){
     for(const term of set){
       if(term.length>=4&&compact.includes(term)&&!tokenHits.some(hit=>hit.term===term)){
         compactHits.push({term,level});
       }
+    }
+  }
+  return{canonical,words,tokenHits,compactHits};'));
+      const pattern=new RegExp('(^|[^a-z])('+letters.join('[^a-z]*')+')(?=$|[^a-z])','i');
+      const match=canonical.match(pattern);
+      if(match&&/[^a-z]/i.test(match[2]))compactHits.push({term,level});
     }
   }
   return{canonical,words,tokenHits,compactHits};
