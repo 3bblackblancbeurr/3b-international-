@@ -144,3 +144,35 @@ test('Matrix keeps existing photos when changing modes and applies the same loca
   assert.deepEqual(normalizeAppearance({mode:'matrix',photo:invalid},director),{mode:'matrix',initials:'3B',photo:''});
  }
 });
+
+test('a pending photo import cannot overwrite a mode chosen in another editor',()=>{
+ const {store,appearance,storage}=fixture();
+ store.update(director,{mode:'matrix'});
+ const beforeImport=appearance(director);
+ store.update(director,{mode:'name'});
+ storage.setItem=()=>assert.fail('A superseded import must not write');
+ store.subscribe(director,()=>assert.fail('A superseded import must not notify'));
+ assert.equal(store.update(director,{photo},beforeImport),null);
+ assert.deepEqual(appearance(director),{mode:'name',initials:'3B',photo:''});
+});
+
+test('a pending import cannot replace a more recently saved photo in the same mode',()=>{
+ const {store,appearance,storage}=fixture();
+ store.update(director,{mode:'matrix',photo});
+ const beforeImport=appearance(director),newerPhoto='data:image/png;base64,ZGVm';
+ store.update(director,{photo:newerPhoto});
+ storage.setItem=()=>assert.fail('A superseded photo must not write');
+ assert.equal(store.update(director,{photo:'data:image/jpeg;base64,Z2hp'},beforeImport),null);
+ assert.equal(appearance(director).photo,newerPhoto);
+});
+
+test('an unchanged portrait accepts its import while preserving mode and other current preferences',()=>{
+ for(const [identity,mode] of [[alice,'photo'],[director,'photo'],[director,'matrix']]){
+  const {store,appearance}=fixture();
+  store.update(identity,{mode});
+  const beforeImport=appearance(identity);
+  store.update(identity,{initials:'NEW'});
+  assert.equal(store.update(identity,{photo},beforeImport),true);
+  assert.deepEqual(appearance(identity),{mode,initials:'NEW',photo});
+ }
+});

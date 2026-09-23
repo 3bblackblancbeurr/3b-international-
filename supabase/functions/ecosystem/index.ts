@@ -6,7 +6,7 @@ const BASE=Deno.env.get('SUPABASE_URL')!;
 const SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
 const admin=createClient(BASE,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});
-const ORIGINS=new Set(['https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174']);
+const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5174','http://127.0.0.1:5174']);
 const rooms=['general','atelier','sport'];
 const RULES_VERSION='2026-09-v1';
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}

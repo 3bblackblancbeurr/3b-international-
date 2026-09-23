@@ -46,9 +46,10 @@
     },
     {
       "slug": "ecosystem",
-      "version": 7,
+      "version": 9,
       "verify_jwt": false,
-      "status": "ACTIVE"
+      "status": "ACTIVE",
+      "deployment_note": "Version 9 deployed from the live version 8 five-file bundle with only https://localhost and capacitor://localhost added to the exact CORS origin allowlist. Authentication and dependency files were unchanged. This records deployment metadata, not full source parity with the local ecosystem directory."
     },
     {
       "slug": "ecosystem-private",

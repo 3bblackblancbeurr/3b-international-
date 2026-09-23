@@ -61,10 +61,13 @@ export function createAppearanceStore({ getStorage = () => globalThis.localStora
       events?.removeEventListener('storage', sync);
     };
   };
-  const update = (identity, change) => {
+  const update = (identity, change, expectedAppearance = null) => {
     const key = storageKey(identity);
     if (!key) return false;
     const current = appearanceFromSnapshot(readSnapshot(identity), identity);
+    // An async import must not overwrite a mode/photo selected in another tab.
+    // null distinguishes a superseded import from a failed storage write.
+    if (expectedAppearance && (current.mode !== expectedAppearance.mode || current.photo !== expectedAppearance.photo)) return null;
     const candidate = normalizeAppearance(typeof change === 'function' ? change(current) : { ...current, ...change }, identity);
     try {
       const storage = getStorage();

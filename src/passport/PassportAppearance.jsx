@@ -20,9 +20,9 @@ export function usePassportAppearance(identity){
  const getSnapshot=useCallback(()=>appearanceStore.readSnapshot(identity),[identityKey]);
  const snapshot=useSyncExternalStore(subscribe,getSnapshot,serverSnapshot);
  const appearance=useMemo(()=>appearanceFromSnapshot(snapshot,identity),[snapshot,identityKey,identity?.name,identity?.handle,director]);
- const update=useCallback(change=>{
+ const update=useCallback((change,expectedAppearance)=>{
   if(!active.current||owner.current!==ownerKey)return false;
-  return appearanceStore.update(identity,change);
+  return appearanceStore.update(identity,change,expectedAppearance);
  },[ownerKey,identity?.name,identity?.handle]);
 
  return [appearance,update];
@@ -113,6 +113,7 @@ function AppearanceSettings({identity,compact}){
  const headingId=useId();
  const fallback=useMemo(()=>fallbackFor(identity),[identity?.userId,identity?.name,identity?.handle]);
  useEffect(()=>()=>{uploadVersion.current+=1;},[]);
+ useEffect(()=>{uploadVersion.current+=1;setBusy(false);},[appearance.mode,appearance.photo]);
 
  const chooseMode=mode=>{
   uploadVersion.current+=1;setBusy(false);
@@ -129,7 +130,8 @@ function AppearanceSettings({identity,compact}){
   try{
    const photo=await preparePhoto(file);
    if(version!==uploadVersion.current)return;
-   const saved=setAppearance(current=>({...current,mode:appearance.mode==='matrix'?'matrix':'photo',photo}));
+   const saved=setAppearance({photo},appearance);
+   if(saved===null)return;
    setMessage(saved?appearance.mode==='matrix'?'Photo enregistrée pour composer ton visage en caractères Matrix bleus. Elle reste sur cet appareil.':'Photo prête. Elle reste stockée uniquement sur cet appareil.':STORAGE_ERROR);
   }catch(error){if(version===uploadVersion.current)setMessage(error.message||'La photo n’a pas pu être préparée.');}
   finally{if(version===uploadVersion.current)setBusy(false);}
