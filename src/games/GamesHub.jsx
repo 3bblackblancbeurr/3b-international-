@@ -25,6 +25,25 @@ import Dada3B from './Dada3B.jsx';
 import {unlockedMazeLevel} from './maze-campaign.js';
 import './maze-campaign.css';
 export const GAME_LIST=GAME_CATALOG.map(g=>({...g,create:{arena:()=>new Arena(),maze:(saved,level)=>new Maze(undefined,saved,level)}[g.id]}));
+
+const REMOTE_CARD_THEMES=[
+ {id:'portal',symbol:'◎'},
+ {id:'runner',symbol:'↗'},
+ {id:'guardian',symbol:'◆'},
+ {id:'underground',symbol:'⌁'},
+ {id:'district',symbol:'▥'},
+ {id:'forge',symbol:'✦'},
+];
+
+function remoteCardVisual(game,index){
+ const key=((game?.slug||'')+' '+(game?.title||'')+' '+(game?.category||'')).toLowerCase();
+ if(/penalty|football|\bfoot\b/.test(key))return{id:'pitch',symbol:'●'};
+ if(/guardian|gardien|combat|arena|arène/.test(key))return{id:'guardian',symbol:'◆'};
+ if(/runner|course|ligne|race/.test(key))return{id:'runner',symbol:'↗'};
+ if(/underground|souterrain|metro|métro/.test(key))return{id:'underground',symbol:'⌁'};
+ if(/ville|city|district|quartier/.test(key))return{id:'district',symbol:'▥'};
+ return REMOTE_CARD_THEMES[index%REMOTE_CARD_THEMES.length];
+}
 export default function GamesHub({goTo,goToGame}){
  const account=useLoyalty(),user=account.user;
  const[active,setActive]=useState(null),[selection,setSelection]=useState('arena');
@@ -75,14 +94,16 @@ export default function GamesHub({goTo,goToGame}){
    })}
    {remoteGames.map((g,index)=>{
     const number=String(GAME_LIST.length+index+1).padStart(2,'0');
+    const visual=remoteCardVisual(g,index);
     return <button
      type="button"
      className="premium-game-card"
      data-game={g.slug}
+     data-visual={visual.id}
      key={'remote-'+g.slug}
      onClick={()=>goToGame?.(g.slug)}
     >
-     <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{number}</span><span className="premium-card-sprite">⚽</span></span>
+     <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{number}</span><span className="premium-card-sprite" data-symbol={visual.symbol}/></span>
      <span className="premium-card-copy">
       <span className="premium-card-genre">{g.category||'JEU 3B'} · {g.badge||'EN LIGNE'}</span>
       <strong>{g.title}</strong>
