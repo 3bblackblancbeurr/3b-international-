@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
 import CompactCard from './CompactCard.jsx';
+import SecretClock from "../secret/SecretClock.jsx";
 
 const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
@@ -33,7 +34,7 @@ const QUICK_LINKS = [
   { id: "games", label: "Jeux" },
 ];
 
-export default function AppNavigation({ page, title, menuItems, goTo }) {
+export default function AppNavigation({ page, title, menuItems, goTo, secret }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -94,7 +95,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <div className="header-actions"><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></button></div>
+      <div className="header-actions"><SecretClock secret={secret} goTo={goTo} compact /><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></button></div>
     </header>
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">
@@ -116,6 +117,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
     }}>
       <div className="dialog-heading"><div><p className="eyebrow">Tout commence ici</p><h2 id="menu-title">L’univers 3B</h2></div><button className="icon-button" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={23} aria-hidden="true" /></button></div>
       <div className="menu-search"><Search size={19} aria-hidden="true" /><input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher une rubrique…  /" value={query} onChange={event => setQuery(event.target.value)} /></div>
+      <div className="menu-secret-clock"><SecretClock secret={secret} goTo={navigate} /></div>
       <div className="dialog-scroll">
         {NAV_GROUPS.map(group => {
           const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
