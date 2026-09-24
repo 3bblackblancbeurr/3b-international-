@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-24",
-  "count": 134,
+  "count": 135,
   "migrations": [
     {
       "version": "20260910020445",
@@ -673,6 +673,11 @@
       "version": "20260924184806",
       "name": "harden_pwa_quickkit_access_and_rate_limits",
       "sha256": "add44d95fd885852170dccf6fe4ed239829baa45cd90b1f35be2d9cd84045dfb"
+    },
+    {
+      "version": "20260924190757",
+      "name": "revenue_funnel_events_v1",
+      "sha256": "8b3788fc03e3584275b4985e8f18e2b592df18a6d8847aeabde88bdfc370f9be"
     }
   ]
 }
