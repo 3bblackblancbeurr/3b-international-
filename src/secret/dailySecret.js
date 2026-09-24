@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authClient } from "../loyalty/client.js";
 
+// Five-second visible polling keeps the hidden daily trigger server-owned while the UI switches automatically.
 const POLL_MS = 5000;
 
 function parseServerTime(value) {
