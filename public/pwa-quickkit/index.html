@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#05070c">
+  <meta name="description" content="PWA QuickKit audite l’installabilité, le mobile, la sécurité et les performances d’un site en quelques secondes.">
+  <title>PWA QuickKit — Audit PWA premium</title>
+  <link rel="stylesheet" href="/pwa-quickkit/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="logo">Q</span><span>PWA QuickKit</span></div>
+      <span class="badge">Audit privacy-first · aucune URL stockée</span>
+    </header>
+  </div>
+
+  <main>
+    <section class="hero shell">
+      <div class="kicker">PWA Quality Engine</div>
+      <h1>Ton site est-il vraiment <span class="gradient">installable ?</span></h1>
+      <p>Un audit technique lisible en quelques secondes : manifest, service worker, icônes, mobile, sécurité, performance et correctifs prioritaires.</p>
+      <form class="audit-box" id="auditForm">
+        <input id="urlInput" type="text" inputmode="url" autocomplete="url" placeholder="https://ton-site.com" aria-label="Adresse du site à auditer" required>
+        <button class="primary" id="auditButton" type="submit">Analyser le site</button>
+      </form>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div class="trust"><span>Pas de compte requis</span><span>Analyse serveur protégée</span><span>Rapport exportable</span></div>
+    </section>
+
+    <section class="results shell" id="results" aria-live="polite">
+      <div class="grid">
+        <aside class="card score-card">
+          <div class="score-ring" id="scoreRing" style="--score:0">
+            <div class="score-inner"><div class="score-value" id="scoreValue">0</div><div class="score-label">sur 100</div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px"><strong id="auditedHost">—</strong><span class="grade" id="grade">—</span></div>
+          <div class="score-meta"><span>Contrôles réussis</span><strong id="passed">0</strong></div>
+          <div class="score-meta"><span>À corriger</span><strong id="failed">0</strong></div>
+          <div class="score-meta"><span>Temps réponse</span><strong id="responseMs">—</strong></div>
+          <div class="actions">
+            <button class="secondary" id="copyButton" type="button">Copier le résumé</button>
+            <button class="secondary" id="jsonButton" type="button">Exporter JSON</button>
+          </div>
+        </aside>
+
+        <div class="card main-card">
+          <div class="section-head"><div><h2>Diagnostic technique</h2><p id="auditDate">Analyse détaillée</p></div></div>
+          <div class="category-grid" id="categoryGrid"></div>
+          <div class="checks" id="checks"></div>
+          <div class="section-head" style="margin-top:28px"><div><h2>Plan de correction</h2><p>Les points les plus importants sont placés en premier.</p></div></div>
+          <div class="recommendations" id="recommendations"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing shell">
+      <h2>Simple à comprendre. Simple à vendre.</h2>
+      <div class="plans">
+        <div class="card plan">
+          <span class="badge">FREE</span><div class="price">0 €</div>
+          <p class="plan-note">Audit public complet de base pour vérifier rapidement un site.</p>
+          <ul class="features"><li>Score 0–100</li><li>Contrôles PWA/mobile</li><li>Sécurité & performance</li><li>Export JSON</li></ul>
+        </div>
+        <div class="card plan pro">
+          <span class="badge">PRO · PRÉPARÉ</span><div class="price">9,90 € <small>/ mois</small></div>
+          <p class="plan-note">Le plan Pro ajoute le suivi multi-sites, les rapports premium et l’assistance de correction. Le paiement live reste volontairement verrouillé tant que les droits d’accès et les informations légales ne sont pas validés.</p>
+          <ul class="features"><li>Rapports premium téléchargeables</li><li>Suivi multi-sites</li><li>Correctifs manifest/headers guidés</li><li>Checklist Android + iPhone</li></ul>
+          <button class="secondary" id="proCheckout" type="button">Activer Pro</button>
+          <p class="plan-note" id="proCheckoutNote">Checkout Stripe test préparé. Aucun paiement réel n’est activé.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer shell"><span>© 2026 PWA QuickKit</span><span>Outil indépendant · aucune garantie de validation App Store/Play Store</span></footer>
+  <script type="module" src="/pwa-quickkit/app.js"></script>
+</body>
+</html>

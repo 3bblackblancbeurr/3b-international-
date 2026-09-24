@@ -1,0 +1,25 @@
+name: "PWA QuickKit Audit"
+description: "Audit a public website for PWA installability, mobile readiness, security and performance."
+author: "3B International"
+branding:
+  icon: "smartphone"
+  color: "blue"
+inputs:
+  url:
+    description: "Public HTTP(S) URL to audit"
+    required: true
+outputs:
+  score:
+    description: "PWA QuickKit score from 0 to 100"
+    value: ${{ steps.audit.outputs.score }}
+  grade:
+    description: "Letter grade"
+    value: ${{ steps.audit.outputs.grade }}
+runs:
+  using: "composite"
+  steps:
+    - id: audit
+      shell: bash
+      env:
+        PWA_QUICKKIT_URL: ${{ inputs.url }}
+      run: node "$GITHUB_ACTION_PATH/index.mjs"
