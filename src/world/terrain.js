@@ -43,7 +43,7 @@ export function createTerrainField(region,save){
  const civic=civicSites(anchors),paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
  const clearings=[...paris.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+3})),...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='cooperation'?29:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
  // Find a dry margin around every interaction and building before carving water.
- let lake={...biome.water},found=false;
+ let lake=region==='hub'?{x:0,z:310,r:3}:{...biome.water},found=region==='hub';
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
   const a=i/32*Math.PI*2,p={x:biome.water.x+Math.cos(a)*ring*5,z:biome.water.z+Math.sin(a)*ring*5,r:biome.water.r};
   if(Math.hypot(p.x,p.z)+p.r>118||roadDistance(p.x,p.z,roads)<p.r+9||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
@@ -53,13 +53,16 @@ export function createTerrainField(region,save){
  const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a||1)));return t*t*(3-2*t);};
  function hubStructureHeight(x,z){
   if(region!=='hub')return 0;
-  const r=Math.hypot(x,z),fade=1-smooth(112,155,r);
-  // Two broad inhabited terraces make the eight thresholds read as a city,
-  // while remaining continuous ground so touch navigation never needs stairs logic.
-  let lift=(smooth(17,34,r)*1.15+smooth(42,72,r)*1.75)*fade;
-  // The Archives are a genuine sunken court. The approach is a long soft ramp,
-  // so the player really descends below the main Nexus level.
-  if(archives){const d=Math.hypot(x-archives.x,z-archives.z);lift-=(1-smooth(5.5,17,d))*3.35;}
+  const r=Math.hypot(x,z),edge=1-smooth(186,238,r);
+  // Architectural datum levels: generous flat bands separated by long,
+  // walkable transitions. This gives the Hub real volume without requiring
+  // stairs logic for the main accessible routes.
+  let lift=(1.35+smooth(43,66,r)*.95+smooth(96,126,r)*1.35+smooth(154,181,r)*.8)*edge;
+  // The Archives remain a true lower court, but the depression is wide enough
+  // to read as a deliberate urban level instead of a terrain dent.
+  if(archives){const d=Math.hypot(x-archives.x,z-archives.z);lift-=(1-smooth(8,26,d))*4.4;}
+  // Docks descend towards the water edge with a broad accessible ramp.
+  const dockD=Math.hypot(x+38,z-112);lift-=(1-smooth(16,42,dockD))*2.8;
   return lift;
  }
  function height(x,z){
@@ -70,7 +73,8 @@ export function createTerrainField(region,save){
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
   const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
   if(region!=='hub'){const corridor=landmarkSightline(region),t=Math.max(0,Math.min(1,(segmentDistance(x,z,corridor.a,corridor.b)-20)/12));flatten=Math.min(flatten,t*t*(3-2*t));}
-  y=y*flatten+hubStructureHeight(x,z);
+  const cityBlend=region==='hub'?smooth(178,244,Math.hypot(x,z)):1;
+  y=y*flatten*cityBlend+hubStructureHeight(x,z);
   const d=Math.hypot(x-lake.x,z-lake.z),blend=Math.max(0,Math.min(1,(lake.r+6-d)/7));
   return y*(1-blend)+(-2.7+Math.min(1,d/lake.r)*.6)*blend;
  }
