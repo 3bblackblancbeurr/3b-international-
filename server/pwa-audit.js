@@ -12,6 +12,9 @@ const PRIVATE_V4 = [
   /^169\.254\./,
   /^192\.168\./,
   /^172\.(1[6-9]|2\d|3[0-1])\./,
+  /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./,
+  /^192\.0\.0\./,
+  /^198\.(18|19)\./,
   /^0\./,
   /^224\./,
   /^240\./,
@@ -48,6 +51,8 @@ export function normalizeAuditUrl(input) {
   const candidate = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(raw) ? raw : `https://${raw}`;
   const url = new URL(candidate);
   if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Seuls HTTP et HTTPS sont acceptés.');
+  url.username = '';
+  url.password = '';
   url.hash = '';
   return url;
 }
