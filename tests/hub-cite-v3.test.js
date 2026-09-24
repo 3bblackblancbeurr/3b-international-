@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {buildMetropolisRuntimeItems,hubCountryGatePosition} from '../src/world/hub/metropolis.js';
+import {worldRuntimeItems} from '../src/world/runtime-items.js';
+import {blankSave} from '../src/world/rules.js';
 
 const plan=JSON.parse(readFileSync(new URL('../src/world/hub/data/hub-master-plan-v2.json',import.meta.url),'utf8'));
 const scene=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
@@ -93,4 +95,14 @@ test('Hub Atlas exposes the canonical Cité plan instead of an abstract menu onl
  assert.match(worldPage,/cite-huit-heritages-canon-v3\.svg/);
  assert.match(worldPage,/10 quartiers · 8 Portes/);
  assert.match(worldCss,/\.hub-atlas-canon/);
+});
+
+
+test('the Hub remains a safe zone with no free-roaming hostile encounter types',()=>{
+ const save=blankSave();
+ const items=worldRuntimeItems('hub',save,{weather:'clear'});
+ const hostile=items.filter(item=>['patrol','echo','guardian'].includes(item.type));
+ assert.deepEqual(hostile,[]);
+ assert.ok(items.some(item=>item.type==='portal'));
+ assert.ok(items.some(item=>item.type==='hubBuilding'));
 });
