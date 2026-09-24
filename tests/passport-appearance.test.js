@@ -194,7 +194,8 @@ test('photo import is mobile-tolerant and commits the selected photo in one pass
  assert.match(passportAppearance,/createImageBitmap/);
  assert.match(passportAppearance,/file\.size>16\*1024\*1024/);
  assert.match(passportAppearance,/inputRef\.current\.value=''/);
- assert.match(passportAppearance,/setAppearance\(current=>\(\{\.\.\.current,mode:targetMode,photo\}\)\)/);
+ assert.match(passportAppearance,/setAppearance\(current=>\(\{\.\.\.current,mode:targetMode,photo\}\),appearance\)/);
+ assert.match(passportAppearance,/\[appearance\.mode\]\);/);
  assert.match(passportAppearance,/passport-face-shell/);
  assert.match(passportAppearance,/passport-face-geometry/);
  assert.doesNotMatch(passportAppearance,/M80 181c20 13 40 13 60 0/);
