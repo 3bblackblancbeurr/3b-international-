@@ -37,6 +37,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Verify generated Hub canonical mirrors
+        run: |
+          npm run hub:export-unreal
+          git diff --exit-code -- \
+            unreal/ThreeBWorld/Data/Canonical/hub-master-plan-v2.json \
+            unreal/ThreeBWorld/Data/Production/world-layout-unreal.json \
+            unreal/ThreeBWorld/Data/Production/transport-network-unreal.json
       - name: Verify canonical France and Unreal contracts
         run: >-
           node --test
