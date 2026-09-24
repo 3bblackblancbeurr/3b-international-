@@ -128,7 +128,3 @@
   .brand-glow-badge::before, .passport-visual *, .passport-visual *::before { animation: none !important; }
   .brand-glow-badge::before { display: none; }
 }
-
-
-/* Card-only Passport chrome. The visual card itself is intentionally unchanged. */
-.passport-animation-toolbar.passport-animation-toolbar-compact{justify-content:flex-end}
