@@ -1157,8 +1157,9 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         const intensity = clamp(input.intensity, 0, 1);
         const lateralSpeed = 4.4 + intensity * 2.2;
         const forwardSpeed = (5.4 + intensity * 2.8) * (sprinting ? 1.22 : 1);
-        runtime.localAttack.x += clamp(input.x, -1, 1) * lateralSpeed * dt;
-        runtime.localAttack.z += clamp(input.y, -1, 1) * forwardSpeed * dt;
+        const drive = .24 + intensity * .76;
+        runtime.localAttack.x += clamp(input.x, -1, 1) * lateralSpeed * drive * dt;
+        runtime.localAttack.z += clamp(input.y, -1, 1) * forwardSpeed * drive * dt;
         clampAttackerWorld(runtime.localAttack);
       }
 
@@ -1177,7 +1178,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       if (input?.active) {
         const intensity = clamp(input.intensity, 0, 1);
         const speed = 6.8 + intensity * 3.2;
-        runtime.localKeeper.x += clamp(input.direction, -1, 1) * speed * dt;
+        const drive = .22 + intensity * .78;
+        runtime.localKeeper.x += clamp(input.direction, -1, 1) * speed * drive * dt;
         runtime.localKeeper.x = clamp(runtime.localKeeper.x, -GOAL_W / 2 + .16, GOAL_W / 2 - .16);
       }
       const error = server.x - runtime.localKeeper.x;
