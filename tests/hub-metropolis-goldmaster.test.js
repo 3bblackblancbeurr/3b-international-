@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
+import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubCountryGatePosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
 import {HUB_MISSION_ACTION_PLANS} from '../src/world/hub/mission-actions.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
@@ -53,12 +53,12 @@ test('all 16 canonical secrets have a live unlock contract',()=>{
  for(const secret of secrets)assert.ok(HUB_SECRET_IMPLEMENTED.has(secret.id),secret.id);
 });
 
-test('the eight country gates sit on the outer metropolitan ring',()=>{
- const catalog=readFileSync(new URL('../src/world/catalog.js',import.meta.url),'utf8');
- const portals=[[-22,-24],[14,-40],[43,-24],[42,13],[24,42],[-9,47],[-42,25],[-48,-8]].map(hubPortalPosition);
+test('the eight country gates use the canonical dispersed Cité anchors',()=>{
+ const portals=plan.countries.map(country=>hubCountryGatePosition(plan,country.id));
  assert.equal(portals.length,8);
- assert.ok(portals.every(p=>Math.hypot(p.x,p.z)>300&&Math.hypot(p.x,p.z)<HUB_METROPOLIS.radius));
- assert.match(catalog,/portal:\[-22,-24\]/);
+ assert.ok(portals.every(Boolean));
+ assert.equal(new Set(portals.map(point=>Math.round(point.x)+':'+Math.round(point.z))).size,8);
+ assert.ok(portals.every(point=>Math.hypot(point.x,point.z)>250&&Math.hypot(point.x,point.z)<HUB_METROPOLIS.radius));
 });
 
 test('large-map pathfinding stays bounded and finds a simple long route',()=>{
@@ -87,4 +87,33 @@ test('human-scale pedestrian shortcuts break the hub ring-and-spoke pattern',()=
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
  const trafficRoutes=new Set(runtime.items.filter(i=>i.type==='hubTraffic').map(i=>i.routeId));
  assert.ok(lanes.every(lane=>!trafficRoutes.has(lane.id)));
+});
+
+
+test('Cité V3 runtime materializes platforms waterways bridges skyline and eight gate sectors',()=>{
+ const mobile=buildMetropolisRuntimeItems(plan,'mobileMedium');
+ assert.equal(mobile.meta.platforms,10);
+ assert.equal(mobile.meta.waterways,5);
+ assert.equal(mobile.meta.bridges,8);
+ assert.equal(mobile.meta.gateSectors,8);
+ assert.ok(mobile.meta.skyline>=14);
+ assert.equal(mobile.items.filter(item=>item.type==='hubPlatform').length,10);
+ assert.equal(mobile.items.filter(item=>item.type==='hubWaterway').length,5);
+ assert.equal(mobile.items.filter(item=>item.type==='hubBridge').length,8);
+ assert.equal(mobile.items.filter(item=>item.type==='hubGateSector').length,8);
+});
+
+test('restored countries visibly drive persistent Hub evolution',()=>{
+ const evolved=buildMetropolisRuntimeItems(plan,'mobileHigh',{
+  seals:['france','algerie','espagne'],
+  restoredRegions:['france','algerie','espagne'],
+  restoredCount:3,
+ });
+ assert.equal(evolved.meta.restoredCount,3);
+ const gates=evolved.items.filter(item=>item.type==='hubGateSector');
+ assert.equal(gates.filter(item=>item.restored).length,3);
+ assert.equal(evolved.items.filter(item=>item.type==='hubEvolution').length,3);
+ const core=evolved.items.find(item=>item.type==='hubEvolutionCore');
+ assert.equal(core.restoredCount,3);
+ assert.equal(core.name,'Mémoire partagée');
 });
