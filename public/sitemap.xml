@@ -17,4 +17,6 @@
   <url><loc>https://3b-international.vercel.app/legal-notice.html</loc><lastmod>2026-09-16</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://3b-international.vercel.app/privacy-policy.html</loc><lastmod>2026-09-12</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://3b-international.vercel.app/delete-account.html</loc><lastmod>2026-09-16</lastmod><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>https://3b-international.vercel.app/pwa-quickkit/</loc><lastmod>2026-09-24</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://3b-international.vercel.app/outils-ia/</loc><lastmod>2026-09-24</lastmod><changefreq>weekly</changefreq><priority>0.7</priority></url>
 </urlset>
