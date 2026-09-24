@@ -18,6 +18,8 @@ const secrets = read('secrets-v1.json');
 test('Hub runtime exposes every canonical district and mission', () => {
   const runtime = buildHubRuntimeItems({ plan, npcs, missions, events, secrets, profile: 'desktop' });
   assert.equal(runtime.meta.districts, 10);
+  assert.equal(runtime.meta.gates, 8);
+  assert.equal(runtime.meta.restoredGates, 0);
   assert.equal(runtime.meta.missions, 20);
   assert.equal(runtime.meta.trainStops, 10);
   assert.equal(runtime.meta.boatStops, 5);
@@ -48,4 +50,16 @@ test('Canonical first playable slice districts resolve to positions', () => {
   for (const district of plan.firstPlayableSlice.districts) {
     assert.ok(hubDistrictPosition(plan, district), district);
   }
+});
+
+
+test('Hub runtime emits exactly the eight canonical outer gates with no central duplicate wheel',()=>{
+  const runtime=buildHubRuntimeItems({plan,npcs,missions,events,secrets,profile:'desktop',restoredRegions:['france']});
+  const gates=runtime.items.filter(item=>item.type==='portal');
+  assert.equal(gates.length,8);
+  assert.equal(new Set(gates.map(gate=>gate.id)).size,8);
+  assert.equal(gates.find(gate=>gate.id==='france').restored,true);
+  assert.equal(runtime.meta.restoredGates,1);
+  assert.ok(gates.every(gate=>gate.hubGate===true));
+  assert.ok(gates.every(gate=>Math.hypot(gate.x,gate.z)>500));
 });
