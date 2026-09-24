@@ -1,5 +1,6 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {
   HUB_METROPOLIS,
   buildMetropolisRuntimeItems,
@@ -7,7 +8,7 @@ import {
   hubCountryGatePosition,
 } from '../src/world/hub/metropolis.js';
 
-const root=resolve(new URL('..',import.meta.url).pathname);
+const root=resolve(fileURLToPath(new URL('..',import.meta.url)));
 const readJson=path=>JSON.parse(readFileSync(resolve(root,path),'utf8'));
 const writeJson=(path,value)=>writeFileSync(resolve(root,path),JSON.stringify(value,null,2)+'\n');
 const planPath='src/world/hub/data/hub-master-plan-v2.json';
