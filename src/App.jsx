@@ -1,7 +1,8 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
-const AiPage = lazy(() => import("./ai/AiPage.jsx"));\nconst PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
+const AiPage = lazy(() => import("./ai/AiPage.jsx"));
+const PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
 import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
