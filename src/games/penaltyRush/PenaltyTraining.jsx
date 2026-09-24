@@ -181,10 +181,11 @@ export default function PenaltyTraining({ role, profile, onExit }) {
     pad.style.setProperty('--gesture-power',String(Math.max(.18,Math.min(1,distance/105))));
 
     if(role==='keeper'){
-      const direction=clamp(dx/105,-1,1);
-      const intensity=clamp(distance/95,0,1);
+      const effectiveDistance=Math.max(0,distance-9);
+      const direction=effectiveDistance?clamp(dx/115,-1,1):0;
+      const intensity=clamp(effectiveDistance/95,0,1);
       keeperIntent.current=direction;
-      controlRef.current.keeper={direction,intensity,active:true};
+      controlRef.current.keeper={direction,intensity,active:effectiveDistance>0};
       pad.style.setProperty('--charge',intensity.toFixed(3));
     }
   }
