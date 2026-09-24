@@ -26,6 +26,17 @@ export function hubPortalPosition(portal){
   return {x:portal[0]*HUB_METROPOLIS.portalScale,z:portal[1]*HUB_METROPOLIS.portalScale};
 }
 
+export function hubCountryGatePosition(plan,countryId){
+  const key=String(countryId||'').toLowerCase();
+  const country=(plan.countries||[]).find(entry=>String(entry.id||'').toLowerCase()===key||String(entry.code||'').toLowerCase()===key||String(entry.country||'').toLowerCase()===key);
+  if(!country?.gateAnchor)return null;
+  const [u,v]=country.gateAnchor;
+  return {
+    x:(u-.5)*HUB_METROPOLIS.width,
+    z:(v-.5)*HUB_METROPOLIS.depth,
+  };
+}
+
 const BUILDING_SHAPES={
   tower_circle:[42,42,118],
   heritage_welcome:[34,24,18],
@@ -211,18 +222,155 @@ export function metropolisTrafficItems(plan,profile){
   });
 }
 
-export function buildMetropolisRuntimeItems(plan,profile='mobileMedium'){
+function segmentItem(type,id,from,to,extra={}){
+  const dx=to.x-from.x,dz=to.z-from.z,length=Math.hypot(dx,dz);
+  return {
+    id:`hub:${type}:${id}`,
+    type,
+    x:(from.x+to.x)/2,
+    z:(from.z+to.z)/2,
+    from,to,length,
+    heading:Math.atan2(dx,dz),
+    ...extra,
+  };
+}
+
+function platformItems(plan){
+  return plan.districts.map((district,index)=>{
+    const center=hubDistrictPosition(plan,district.id);
+    return {
+      id:`hub:platform:${district.id}`,
+      type:'hubPlatform',
+      district:district.id,
+      name:district.name,
+      x:center.x,
+      z:center.z,
+      radius:Number(district.platformRadius)||72,
+      level:Number(district.level)||0,
+      tier:district.tier||0,
+      kind:district.kind,
+      signature:district.signature||district.purpose,
+      index,
+    };
+  });
+}
+
+function waterwayItems(plan){
+  return (plan.waterways||[]).map(row=>segmentItem(
+    'hubWaterway',
+    row.id,
+    hubDistrictPosition(plan,row.from),
+    hubDistrictPosition(plan,row.to),
+    {kind:row.kind||'canal',width:Number(row.width)||22,fromDistrict:row.from,toDistrict:row.to},
+  ));
+}
+
+function bridgeItems(plan){
+  return (plan.elevatedLinks||[]).map(row=>segmentItem(
+    'hubBridge',
+    row.id,
+    hubDistrictPosition(plan,row.from),
+    hubDistrictPosition(plan,row.to),
+    {kind:row.kind||'bridge',width:Number(row.width)||8,level:Number(row.level)||1,fromDistrict:row.from,toDistrict:row.to},
+  ));
+}
+
+function gateSectorItems(plan,progress={}){
+  const restored=new Set([...(progress.restoredRegions||[]),...(progress.seals||[])].map(String));
+  return (plan.countries||[]).map((country,index)=>{
+    const point=hubCountryGatePosition(plan,country.id||country.code);
+    return {
+      id:`hub:gate-sector:${country.id||country.code}`,
+      type:'hubGateSector',
+      countryId:country.id,
+      code:country.code,
+      country:country.country,
+      guardian:country.guardian,
+      value:country.value,
+      sector:country.sector,
+      district:country.gateDistrict,
+      visualIdentity:country.visualIdentity,
+      restored:restored.has(country.id)||restored.has(country.country)||restored.has(country.code),
+      x:point.x,
+      z:point.z,
+      index,
+    };
+  });
+}
+
+function skylineItems(plan,profile){
+  const count=profile==='desktop'?28:profile==='mobileHigh'?20:14;
+  return Array.from({length:count},(_,index)=>{
+    const h=hash(`hub:skyline:${index}`),angle=index/count*Math.PI*2+(((h>>>4)%100)/100-.5)*.08;
+    const radius=575+((h>>>9)%46),width=13+(h%18),depth=12+((h>>>5)%18),height=42+((h>>>12)%88);
+    return {
+      id:`hub:skyline:${index}`,
+      type:'hubSkyline',
+      x:Math.cos(angle)*radius,
+      z:Math.sin(angle)*radius,
+      width,depth,height,
+      heading:-angle,
+      accent:index%3,
+    };
+  });
+}
+
+function evolutionItems(plan,progress={}){
+  const order=(plan.countries||[]).map(country=>country.id);
+  const restored=new Set([...(progress.restoredRegions||[]),...(progress.seals||[])].map(String));
+  const count=Math.min(8,Math.max(Number(progress.restoredCount)||0,order.filter(id=>restored.has(id)).length));
+  const center=hubDistrictPosition(plan,'heritage_square')||{x:0,z:0};
+  const items=order.flatMap((id,index)=>{
+    if(!restored.has(id))return[];
+    const angle=-Math.PI/2+index/8*Math.PI*2;
+    return [{
+      id:`hub:evolution:${id}`,
+      type:'hubEvolution',
+      countryId:id,
+      stage:index+1,
+      restoredCount:count,
+      x:center.x+Math.cos(angle)*118,
+      z:center.z+Math.sin(angle)*118,
+      angle,
+    }];
+  });
+  items.push({
+    id:'hub:evolution:circle',
+    type:'hubEvolutionCore',
+    stage:count,
+    restoredCount:count,
+    name:(plan.evolution||[]).find(row=>row.stage===count)?.name||'Cité blessée',
+    x:center.x,
+    z:center.z,
+  });
+  return items;
+}
+
+export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress={}){
   const buildings=plan.buildings.map((building,index)=>buildingItem(plan,building,index));
   const structures=fillerItems(plan,profile);
   const roads=metropolisRoadItems(plan);
   const traffic=metropolisTrafficItems(plan,profile);
+  const platforms=platformItems(plan);
+  const waterways=waterwayItems(plan);
+  const bridges=bridgeItems(plan);
+  const gates=gateSectorItems(plan,progress);
+  const skyline=skylineItems(plan,profile);
+  const evolution=evolutionItems(plan,progress);
   return {
-    items:[...roads,...structures,...buildings,...traffic],
+    items:[...waterways,...platforms,...bridges,...roads,...structures,...buildings,...gates,...skyline,...evolution,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
       roads:roads.length,
       traffic:traffic.length,
+      platforms:platforms.length,
+      waterways:waterways.length,
+      bridges:bridges.length,
+      gateSectors:gates.length,
+      skyline:skyline.length,
+      evolution:evolution.length,
+      restoredCount:evolution.at(-1)?.restoredCount||0,
       width:HUB_METROPOLIS.width,
       depth:HUB_METROPOLIS.depth,
       radius:HUB_METROPOLIS.radius,
