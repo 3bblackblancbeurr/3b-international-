@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { NAV_GROUPS, RouteLink } from './AppNavigation.jsx';
 import SectionCard from './SectionCard.jsx';
 import WorldPortalCard from './WorldPortalCard.jsx';
+import CompactCard from './CompactCard.jsx';
+import PassportNexus from './PassportNexus.jsx';
+import { Building2 } from 'lucide-react';
 
 const PRIMARY_IDS = ['passport', 'world3b', 'games'];
 const GUIDE_ID = 'guide';
 
 export default function HomePage({goTo,menuItems,member}){
+ const [cityOpen,setCityOpen]=useState(false);
  const registered=member?.isRegistered===true;
  const nextPage=registered?'world3b':'passport';
  const nextLabel=registered?'Entrer dans le Monde du 3B':'Activer mon Passeport 3B';
@@ -35,8 +40,8 @@ export default function HomePage({goTo,menuItems,member}){
   <WorldPortalCard goTo={goTo}/>
 
   <section className="universe-directory home-primary-directory" aria-labelledby="journey-title">
-   <div className="section-heading"><h2 id="journey-title">L’essentiel</h2><span>Passeport → Monde du 3B → Jeux 3B</span></div>
-   <div className="universe-grid">{primary.map(item=><SectionCard key={item.id} item={item} goTo={goTo}/>)}</div>
+   <div className="section-heading"><h2 id="journey-title">L’essentiel</h2><span>Passeport → Ma Ville → Monde du 3B → Jeux 3B</span></div>
+   <div className="universe-grid">{primary.flatMap(item => item.id === 'passport' ? [<SectionCard key={item.id} item={item} goTo={goTo}/>,<CompactCard key="city" as="button" type="button" onClick={()=>setCityOpen(true)} className="universe-card city-essential-card" eyebrow="NEXUS 3B" title="Créer ma ville" description="Ouvre le portail de ta cité personnelle." action="Entrer" icon={<Building2 size={22}/>}/>] : [<SectionCard key={item.id} item={item} goTo={goTo}/>])}</div>
   </section>
 
   <section className="universe-directory" aria-labelledby="directory-title">
@@ -53,5 +58,6 @@ export default function HomePage({goTo,menuItems,member}){
   </section>
 
   <footer className="dashboard-footer"><strong>3B INTERNATIONAL</strong><span>BLACK · BLANC · BEUR</span><RouteLink page="intro" goTo={goTo}>Revoir l’introduction</RouteLink></footer>
+  <PassportNexus open={cityOpen} onClose={()=>setCityOpen(false)} reducedMotion={window.matchMedia('(prefers-reduced-motion: reduce)').matches}/>
  </section>;
 }

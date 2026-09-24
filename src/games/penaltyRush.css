@@ -53,6 +53,8 @@
 }
 .penalty-primary{border:1px solid #e3c271;background:linear-gradient(180deg,#efcf80,#c9a451);color:#101211;box-shadow:0 8px 28px #c89e2d1b}
 .penalty-primary:hover{filter:brightness(1.07)}
+.penalty-training-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:12px}
+.penalty-training .penalty-meter-line{justify-content:center}
 .penalty-secondary{border:1px solid #ffffff18;background:#101617;color:#dfe4df}.penalty-danger{border:1px solid #df707046;background:#3b1116;color:#f0a3aa}
 .penalty-link,.penalty-copy{min-height:36px;border:0;background:transparent;color:#8fa0a5;font-size:11px}
 .penalty-kicker{display:block;color:#61c9e8;font-size:9px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}

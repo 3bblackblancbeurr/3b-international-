@@ -87,6 +87,39 @@ html{overflow-x:hidden}
  .passport-visual .passport-entry-hint{font-size:11px!important}
 }
 
+/* Passport: one phone layout, with a stable text column even for the director badge. */
+.passport-phone-identity{align-items:start}
+.passport-phone-person{min-width:0;overflow-wrap:anywhere}
+.passport-phone-person h2{font-size:clamp(21px,6.5vw,34px);line-height:1.12}
+.passport-phone-origin{min-width:0}
+.passport-phone-origin>div{min-width:0;overflow-wrap:anywhere}
+.passport-phone-origin .passport-country-flag{display:grid;place-items:center;flex:0 0 50px;position:relative;inset:auto;line-height:1}
+.passport-phone-official{max-width:100%;overflow-wrap:anywhere}
+.passport-phone-profile{display:grid;gap:6px;min-width:0}
+.passport-nexus-entry{pointer-events:auto;display:flex;align-items:center;justify-content:center;min-height:35px;width:100%;padding:5px 7px;border:1px solid #5adfff;border-radius:9px;background:linear-gradient(115deg,#092d48,#075075 55%,#143544);box-shadow:inset 0 0 15px #53e2ff45,0 0 14px #03caff48;color:#e8fcff;font-weight:850;font-size:10px;line-height:1.25;text-align:center;text-shadow:0 0 6px #3de4ff}
+.passport-nexus-entry:focus-visible{outline:2px solid #f4d488;outline-offset:3px}
+.passport-visual[data-launching="true"] .passport-nexus-entry{animation:nexus-entry-pulse .32s ease-out both}
+@keyframes nexus-entry-pulse{50%{transform:scale(1.08);box-shadow:0 0 28px 9px #35ddffaa,inset 0 0 19px #b4f5ff}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.passport-visual[data-launching="true"] .passport-nexus-entry{animation:none}}
+.passport-nexus-entry-desktop{position:absolute;z-index:8;right:7.3%;top:66%;width:23%;font-size:clamp(8px,1.25cqw,13px)}
+@media(max-width:390px){
+ .passport-phone-identity{grid-template-columns:88px minmax(0,1fr);gap:10px}
+ .passport-phone-portrait{width:88px;height:108px}
+ .passport-nexus-entry{font-size:9px;padding-inline:3px}
+ .passport-phone-brand{gap:6px}
+ .passport-phone-brand strong{font-size:9px;letter-spacing:.08em}
+}
+
+.traffic-menu-count{margin:0 16px 12px;padding:10px 12px;border:1px solid #d7ba7950;border-radius:12px;color:#e0d5be;font-size:13px;line-height:1.5}
+.traffic-menu-count strong{color:#f6d684;font-variant-numeric:tabular-nums}
+.director-traffic{margin:26px 0;padding:20px;border:1px solid #d7ba7950;border-radius:18px;background:#091923;color:#e8e3d6}
+.director-traffic h2{margin:0 0 8px}
+.director-traffic p{color:#b9cbd0;line-height:1.5}
+.director-traffic-totals{display:flex;flex-wrap:wrap;gap:10px}
+.director-traffic-totals span{display:grid;gap:5px;flex:1 1 150px;padding:14px;border:1px solid #65b7ca55;border-radius:12px}
+.director-traffic-totals strong{font-size:24px;color:#f4d488}
+.director-traffic-pages p{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #ffffff21;padding:8px 0}
+
 /* Member command center */
 .account-command-center{margin-top:34px;padding-top:28px;border-top:1px solid #78909d32}
 .account-command-heading{display:flex;align-items:end;justify-content:space-between;gap:28px;margin-bottom:16px}
