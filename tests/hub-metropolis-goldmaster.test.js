@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
+import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubCountryGatePosition,hubEvolutionForDistrict,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
 import {HUB_MISSION_ACTION_PLANS} from '../src/world/hub/mission-actions.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
@@ -13,7 +13,7 @@ const plan=JSON.parse(readFileSync(new URL('../src/world/hub/data/hub-master-pla
 test('Cité des Huit Héritages keeps the canonical premium scale',()=>{
  assert.equal(HUB_METROPOLIS.width,1800);
  assert.equal(HUB_METROPOLIS.depth,1400);
- assert.equal(HUB_METROPOLIS.radius,650);
+ assert.equal(HUB_METROPOLIS.radius,820);
  assert.equal(HUB_METROPOLIS.cellSize,150);
 });
 
@@ -22,9 +22,9 @@ test('metropolis runtime exposes the 19 canonical buildings plus adaptive city f
  const desktop=buildMetropolisRuntimeItems(plan,'desktop');
  assert.equal(mobile.meta.buildings,19);
  assert.equal(HUB_BUILDING_IDS.length,19);
- assert.ok(mobile.meta.structures>=40);
+ assert.ok(mobile.meta.structures>=60);
  assert.ok(desktop.meta.structures>mobile.meta.structures);
- assert.ok(mobile.meta.roads>=19);
+ assert.ok(mobile.meta.roads>=27);
  assert.ok(mobile.meta.traffic>=5);
  for(const building of mobile.items.filter(i=>i.type==='hubBuilding')){
   assert.ok(Number.isFinite(building.x)&&Number.isFinite(building.z));
@@ -53,12 +53,12 @@ test('all 16 canonical secrets have a live unlock contract',()=>{
  for(const secret of secrets)assert.ok(HUB_SECRET_IMPLEMENTED.has(secret.id),secret.id);
 });
 
-test('the eight country gates sit on the outer metropolitan ring',()=>{
- const catalog=readFileSync(new URL('../src/world/catalog.js',import.meta.url),'utf8');
- const portals=[[-22,-24],[14,-40],[43,-24],[42,13],[24,42],[-9,47],[-42,25],[-48,-8]].map(hubPortalPosition);
+test('the eight country gates follow the approved dispersed city map',()=>{
+ const portals=plan.countries.map(country=>hubCountryGatePosition(plan,country.region));
  assert.equal(portals.length,8);
- assert.ok(portals.every(p=>Math.hypot(p.x,p.z)>300&&Math.hypot(p.x,p.z)<HUB_METROPOLIS.radius));
- assert.match(catalog,/portal:\[-22,-24\]/);
+ assert.ok(portals.every(Boolean));
+ assert.ok(portals.every(p=>Math.hypot(p.x,p.z)>500&&Math.hypot(p.x,p.z)<HUB_METROPOLIS.radius));
+ assert.equal(new Set(portals.map(p=>p.x+':'+p.z)).size,8);
 });
 
 test('large-map pathfinding stays bounded and finds a simple long route',()=>{
@@ -87,4 +87,17 @@ test('human-scale pedestrian shortcuts break the hub ring-and-spoke pattern',()=
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
  const trafficRoutes=new Set(runtime.items.filter(i=>i.type==='hubTraffic').map(i=>i.routeId));
  assert.ok(lanes.every(lane=>!trafficRoutes.has(lane.id)));
+});
+
+
+test('district restoration propagates into canonical buildings and the city center',()=>{
+ const quiet=buildMetropolisRuntimeItems(plan,'mobileMedium',{restoredRegions:[]});
+ const restored=buildMetropolisRuntimeItems(plan,'mobileMedium',{restoredRegions:['france','algerie','espagne','maroc']});
+ assert.equal(quiet.meta.restoredRegions,0);
+ assert.equal(restored.meta.restoredRegions,4);
+ const centerQuiet=quiet.items.find(item=>item.type==='hubBuilding'&&item.district==='broken_circle_tower');
+ const centerRestored=restored.items.find(item=>item.type==='hubBuilding'&&item.district==='broken_circle_tower');
+ assert.equal(centerQuiet.evolution,0);
+ assert.ok(centerRestored.evolution>=2);
+ assert.equal(hubEvolutionForDistrict(plan,'archives',['france']),3);
 });
