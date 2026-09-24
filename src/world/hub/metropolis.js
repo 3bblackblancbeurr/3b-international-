@@ -201,6 +201,10 @@ export function metropolisRoadItems(plan){
     if(district.id==='heritage_square')continue;
     roads.push(road(heritage,hubDistrictPosition(plan,district.id),`spoke:heritage_square:${district.id}`,'avenue'));
   }
+  for(const country of plan.countries||[]){
+    const gate=hubCountryGatePosition(plan,country.region||country.code),district=hubDistrictPosition(plan,country.gateDistrict);
+    if(gate&&district)roads.push(road(gate,district,`gate:${country.code}:${country.gateDistrict}`,'avenue'));
+  }
 
   // Human-scale shortcuts use safe district-edge anchors and deterministic
   // bends chosen for maximum clearance from canonical building footprints.
