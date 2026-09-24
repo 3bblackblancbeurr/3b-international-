@@ -1,0 +1,83 @@
+{
+  "version": "5.0.0",
+  "status": "goldmaster-metropolis-blockout",
+  "title": "La Cité des Huit Héritages — Hub 3B V5",
+  "map_asset": "/Game/3binternational/Maps/Hub3B_Main_V05",
+  "required_map_name": "Hub3B_Main_V05",
+  "generated_tag": "3B_HUB_V5",
+  "source_layout": "Data/Production/world-layout-unreal.json",
+  "source_canon": "Data/Canonical/hub-master-plan-v2.json",
+  "visual_reference": "CANON_USER_REFERENCE_2026-09-24_CITE_HUIT_HERITAGES",
+  "palette": {
+    "black": "#05070b",
+    "matrix_blue": "#00a8ff",
+    "champagne_gold": "#d6b46a"
+  },
+  "design": {
+    "width_cm": 180000,
+    "depth_cm": 140000,
+    "radius_cm": 82000,
+    "world_partition_cell_cm": 15000,
+    "central_rule": "Place de l’Héritage + Tour du Cercle Brisé; aucune roue de huit Portes au centre",
+    "outer_gate_rule": "8 Portes monumentales physiques dispersées sur la périphérie et reliées à leurs quartiers",
+    "safe_zone": true,
+    "hostile_monsters": false,
+    "wild_pvp": false
+  },
+  "gate_arch": {
+    "opening_width_cm": 1100,
+    "opening_height_cm": 1500,
+    "pillar_width_cm": 220,
+    "depth_cm": 360,
+    "beam_height_cm": 220,
+    "energy_depth_cm": 28,
+    "approach_length_cm": 2600
+  },
+  "water_zones": [
+    {
+      "id": "canal_west",
+      "center_cm": [
+        -26000,
+        25000,
+        -130
+      ],
+      "size_cm": [
+        34000,
+        16000,
+        180
+      ]
+    },
+    {
+      "id": "canal_east",
+      "center_cm": [
+        32000,
+        12000,
+        -130
+      ],
+      "size_cm": [
+        30000,
+        14000,
+        180
+      ]
+    }
+  ],
+  "central_landmarks": [
+    {
+      "id": "heritage_square",
+      "label": "Place de l’Héritage"
+    },
+    {
+      "id": "broken_circle_tower",
+      "label": "Tour du Cercle Brisé"
+    }
+  ],
+  "validation": {
+    "districts": 10,
+    "buildings": 19,
+    "gates": 8,
+    "roads": 37,
+    "min_outer_gate_radius_cm": 50000,
+    "max_outer_gate_radius_cm": 82000,
+    "forbid_central_gate_wheel": true
+  }
+}
