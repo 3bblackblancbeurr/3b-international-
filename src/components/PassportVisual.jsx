@@ -31,18 +31,8 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   const visual = useRef(null);
   const [paused, setPaused] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
-  const [launching, setLaunching] = useState(false);
   const [visible, setVisible] = useState(() => !document.hidden);
-  const [phone, setPhone] = useState(() => window.matchMedia("(max-width: 720px)").matches);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  const view = phone ? "details" : "card";
-  useEffect(() => {
-    const screen = window.matchMedia("(max-width: 720px)");
-    const update = () => setPhone(screen.matches);
-    update();
-    screen.addEventListener("change", update);
-    return () => screen.removeEventListener("change", update);
-  }, []);
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setSystemReducedMotion(preference.matches);
@@ -70,17 +60,9 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   const animated = motionAllowed && !paused && visible && !portalOpen;
   const active = !!identity?.userId;
   const status = syncing ? "SYNCHRONISATION" : active ? "IDENTITÉ VÉRIFIÉE" : "À ACTIVER";
-  const openPassport = () => {
-    if (!active) { goTo?.('member'); return; }
-    if (launching) return;
-    if (!motionAllowed) { setPortalOpen(true); return; }
-    setLaunching(true);
-    window.setTimeout(() => { setLaunching(false); setPortalOpen(true); }, 320);
-  };
-
-  return <div ref={visual} className="passport-visual" data-view={view} data-animated={animated} data-matrix={options.matrix} data-active={active} data-launching={launching}>
-    {view === "card" && <div className="passport-horizontal-view">
-    <div className="passport-card-viewport">
+  const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
+  return <div ref={visual} className="passport-visual" data-view="card" data-animated={animated} data-matrix={options.matrix} data-active={active}>
+    <div className="passport-horizontal-view">
     <div className="passport-card-stage passport-card-desktop">
       <div className="passport-card-base" aria-hidden="true">
         <span className="passport-card-halo passport-card-halo-blue" />
@@ -133,7 +115,6 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
           <PassportPortrait identity={active ? identity : null} animated={animated}/>
           <span className="passport-avatar-country" aria-hidden="true">{active ? identity.countryCode : "ID"}</span>
         </div>
-        <button type="button" className="passport-nexus-entry passport-nexus-entry-desktop" onClick={openPassport}>{active ? 'Entrer dans ma Ville 3B' : 'Activer mon Passeport'}</button>
 
         <div className="passport-id-block">
           <span className="passport-data-label">IDENTIFIANT PASSEPORT</span>
@@ -149,40 +130,13 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
 
       <div className="passport-security-edge" aria-hidden="true" />
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> {active ? "PASSEPORT VIVANT" : "IDENTITÉ PERSONNELLE"}</div>
+      <button type="button" className="passport-portal-trigger" onClick={openPassport} aria-label={active ? "Ouvrir ma Ville 3B" : "Créer mon identité 3B"}>
+        <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
+        <b>3B</b>
+        <small>{active ? "NEXUS" : "ACTIVER"}</small>
+      </button>
     </div>
     </div>
-    </div>}
-
-    {view === "details" && <section className="passport-phone-card" aria-label={active ? `Passeport 3B de ${identity.name}` : "Passeport 3B non activé"}>
-      <div className="passport-phone-matrix" aria-hidden="true"/>
-      {options.matrix && <div className="passport-phone-rain" aria-hidden="true">
-        {STREAMS.filter((_, index) => index % (phone ? 4 : 2) === 0).map((stream, index) => <span key={index} className="passport-matrix-stream" style={{ left: stream.left, "--fall-delay": stream.delay, "--fall-duration": stream.duration, "--stream-opacity": stream.opacity }}>{stream.digits}<b>1</b></span>)}
-      </div>}
-      <header className="passport-phone-brand">
-        <div className="passport-phone-logo">3B</div>
-        <div><strong>INTERNATIONAL</strong><span>PASSEPORT DIGITAL</span></div>
-        <small>{syncing ? "SYNCHRO" : active ? "ACTIF" : "À ACTIVER"}</small>
-      </header>
-      <div className="passport-phone-identity">
-        <div className="passport-phone-profile"><div className="passport-phone-portrait"><PassportPortrait identity={active ? identity : null} animated={animated}/></div><button type="button" className="passport-nexus-entry" onClick={openPassport}>{active ? 'Ma Ville 3B ↗' : 'Activer ↗'}</button></div>
-        <div className="passport-phone-person">
-          <span className="passport-data-label">TITULAIRE</span>
-          <h2>{syncing ? "Synchronisation…" : active ? identity.name : "TON IDENTITÉ 3B"}</h2>
-          <p>{active && identity.handle ? `@${identity.handle}` : "Passeport personnel"}</p>
-          {active && <PublicIdentityBadge profile={identity} className="passport-phone-official"/>}
-        </div>
-      </div>
-      <div className="passport-phone-origin">
-        <span className="passport-country-flag" aria-hidden="true">{active ? identity.flag : "3B"}</span>
-        <div><small>PAYS D’ORIGINE</small><strong>{active ? identity.country : "NON DÉFINI"}</strong><span>{active ? `${identity.countryCode} · ${identity.value}` : "8 pays · 8 valeurs"}</span></div>
-      </div>
-      <div className="passport-phone-stats">
-        <span><small>XP 3B</small><b>{active ? formatNumber(identity.xp) : "0"}</b></span>
-        <span><small>FIDÉLITÉ</small><b>{active ? formatNumber(identity.points) : "0"}</b></span>
-        <span><small>STATUT</small><b>{active ? "ACTIF" : "INVITÉ"}</b></span>
-      </div>
-      <div className="passport-phone-id"><small>IDENTIFIANT PASSEPORT</small><code>{active ? identity.passportId : "3B-PASS-À-ACTIVER"}</code></div>
-    </section>}
 
     <div className="passport-animation-toolbar">
       <span><i className={animated ? "digital-status is-live" : "digital-status"} aria-hidden="true" />{syncing ? "Synchronisation de ton identité…" : animated ? "Carte digitale animée" : "Carte en mode calme"}</span>
@@ -190,6 +144,11 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
         {animated ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
         {motionAllowed ? (paused ? "Reprendre l’animation" : "Mettre en pause") : "Mouvements réduits"}
       </button>
+    </div>
+
+    <div className="passport-entry-hint">
+      <Sparkles size={15} aria-hidden="true" />
+      <span>{active ? <>Ce passeport appartient à <strong>{identity.name}</strong>. Son identité suit le compte dans tout l’écosystème 3B.</> : "Active ton compte pour générer ton passeport personnel."}</span>
     </div>
 
     {active && <PassportNexus key={identity.userId} open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />}

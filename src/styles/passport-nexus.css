@@ -5,6 +5,7 @@
 .passport-live-badge{position:absolute;z-index:9;left:4.5%;top:5.5%;display:inline-flex;align-items:center;gap:.5em;padding:.55em .8em;border:1px solid #8dcde44d;border-radius:4px;color:#def5ff;background:#041420d9;font-size:clamp(6px,1.05cqw,12px);font-weight:650;letter-spacing:.14em;pointer-events:none}
 .passport-portal-trigger{position:absolute;z-index:12;left:61%;bottom:7.5%;width:clamp(60px,10.8cqw,112px);aspect-ratio:1;display:grid;place-items:center;isolation:isolate;border:1px solid #a2dcf4a6;border-radius:50%;color:#e1f3ff;background:radial-gradient(circle at 45% 35%,#246285b3,#071522 70%);box-shadow:0 0 20px #138cce52,inset 0 0 22px #4797b833;cursor:pointer;transition:transform .25s,box-shadow .25s}
 .passport-portal-trigger:hover{transform:scale(1.045);box-shadow:0 0 32px #42b5ef66,inset 0 0 22px #4797b833}
+.passport-portal-trigger:active{animation:nexus-press .46s ease-out;box-shadow:0 0 44px #8cddffcc,inset 0 0 30px #9ce9ff99}
 .passport-portal-trigger:focus-visible{outline:3px solid #e2cca0;outline-offset:7px}
 .passport-portal-trigger>b{position:relative;z-index:2;margin-top:-.12em;font-size:clamp(16px,2.4cqw,27px);line-height:1;letter-spacing:-.045em}
 .passport-portal-trigger>small{position:absolute;bottom:20%;font-size:clamp(6px,.65cqw,8px);letter-spacing:.18em}
@@ -109,6 +110,7 @@ dialog.nexus-experience{--nexus-ink:#eaf0f3;--nexus-muted:#acbcc8;--nexus-gold:#
 .nexus-fallback-seal{position:absolute;left:calc(50% - 75px);top:calc(48% - 75px);width:150px;height:150px;display:grid;place-items:center;border:8px dashed #bea983ab;border-radius:50%;background:radial-gradient(circle,#214665ba,transparent 75%);box-shadow:0 0 50px #2b6a9529;color:#e2efff;font-size:34px;letter-spacing:-.07em}
 
 @keyframes nexus-orbit{to{transform:rotate(360deg)}}
+@keyframes nexus-press{0%{transform:scale(1)}35%{transform:scale(.91);filter:brightness(1.7)}100%{transform:scale(1.08);filter:brightness(1)}}
 @keyframes nexus-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes nexus-reveal{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
