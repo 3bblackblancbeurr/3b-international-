@@ -118,6 +118,12 @@ html{overflow-x:hidden}
 .director-traffic-totals span{display:grid;gap:5px;flex:1 1 150px;padding:14px;border:1px solid #65b7ca55;border-radius:12px}
 .director-traffic-totals strong{font-size:24px;color:#f4d488}
 .director-traffic-pages p{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;border-bottom:1px solid #ffffff21;padding:8px 0}
+.director-traffic-chart{margin-top:24px;padding-top:18px;border-top:1px solid #ffffff1f}
+.director-traffic-chart h3{margin:0 0 12px;font-size:14px;color:#e8d6aa}
+.director-traffic-bars{display:flex;align-items:end;gap:7px;min-height:152px;overflow-x:auto;padding:8px 2px 0}
+.director-traffic-bars>div{display:grid;grid-template-rows:1fr auto auto;align-items:end;gap:5px;min-width:34px;flex:1;text-align:center;color:#9db9c2;font-size:8px}
+.director-traffic-bars i{display:block;width:100%;min-height:5px;border-radius:7px 7px 2px 2px;background:linear-gradient(180deg,#89e9ff,#2a86b0);box-shadow:0 0 13px #40bce94d}
+.director-traffic-bars b{color:#f4d488;font-size:10px}
 
 /* Member command center */
 .account-command-center{margin-top:34px;padding-top:28px;border-top:1px solid #78909d32}
