@@ -45,19 +45,20 @@ function normalizeMetadata(value){
   return out;
 }
 
-async function db(env,fetcher,path,{method="POST",body}={}){
+async function db(env,fetcher,path,{method="POST",body,prefer=true}={}){
   const base=safeHttps(env.SUPABASE_URL);
   if(!base||!env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("UNCONFIGURED");
   const url=new URL(path,base);
+  const headers={
+    apikey:env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    "Content-Type":"application/json",
+  };
+  if(prefer) headers.Prefer="return=minimal";
   const response=await fetcher(url,{
     method,
     signal:AbortSignal.timeout(8000),
-    headers:{
-      apikey:env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type":"application/json",
-      Prefer:"return=minimal",
-    },
+    headers,
     ...(body?{body:JSON.stringify(body)}:{}),
   });
   if(!response.ok) throw new Error("DB_FAILED");
@@ -89,6 +90,7 @@ export function createRevenueFunnel({env=process.env,fetcher=fetch}={}){
           .update(`revenue-funnel:${ip}`).digest("hex");
         const response=await db(env,fetcher,"/rest/v1/rpc/pwa_quickkit_consume_rate_limit",{
           body:{p_key:key,p_limit:200,p_window_minutes:1440},
+          prefer:false,
         });
         const allowed=Boolean(await response.json().catch(()=>false));
         if(!allowed) return json({ok:true,limited:true});
