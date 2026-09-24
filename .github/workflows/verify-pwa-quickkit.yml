@@ -5,7 +5,11 @@ on:
     paths:
       - 'api/pwa-*.js'
       - 'server/pwa-*.js'
+      - 'server/revenue-funnel.js'
+      - 'api/revenue-event.js'
+      - 'public/revenue-tracker.js'
       - 'public/pwa-quickkit/**'
+      - 'public/pwa-tools/**'
       - 'public/outils-ia/**'
       - 'tests/pwa*.test.js'
       - 'supabase/migrations/*pwa_quickkit*.sql'
@@ -26,7 +30,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Test PWA QuickKit
-        run: node --test tests/pwa*.test.js
+      - name: Test PWA QuickKit and funnel
+        run: node --test tests/pwa*.test.js tests/revenue-funnel.test.js
+      - name: Syntax-check browser scripts
+        run: node --check public/pwa-quickkit/app.js && node --check public/revenue-tracker.js
       - name: Build application
         run: npm run build
