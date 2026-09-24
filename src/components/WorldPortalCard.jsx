@@ -1,19 +1,17 @@
 import {useState} from 'react';
 import {ArrowUpRight, CircleDot, Globe2, ShieldCheck} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
-import {CircleArtwork} from './NexusArtwork.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
+import hubPlan from '../world/hub/data/hub-master-plan-v2.json' with { type: 'json' };
 
-const GATES=[
- {code:'FR',value:'Justice',x:50,y:4},
- {code:'DZ',value:'Loyauté',x:78,y:15},
- {code:'ES',value:'Passion',x:95,y:42},
- {code:'MA',value:'Noblesse',x:85,y:72},
- {code:'IT',value:'Espoir',x:63,y:91},
- {code:'TN',value:'Courage',x:37,y:91},
- {code:'TR',value:'Foi',x:15,y:72},
- {code:'EE',value:'Sagesse',x:5,y:42},
-];
+const DISTRICTS=hubPlan.districts.map(district=>({
+ id:district.id,name:district.name,x:district.center[0]*100,y:district.center[1]*100,kind:district.kind,
+}));
+const DISTRICT_BY_ID=Object.fromEntries(DISTRICTS.map(district=>[district.id,district]));
+const GATES=hubPlan.countries.map(country=>({
+ code:country.code,value:country.value,country:country.country,x:country.gateMap[0]*100,y:country.gateMap[1]*100,district:country.gateDistrict,color:country.color,
+}));
+
 
 export default function WorldPortalCard({goTo}){
  const[busy,setBusy]=useState(false);
@@ -44,19 +42,22 @@ export default function WorldPortalCard({goTo}){
    {message&&<p className="world-portal-message" role="status">{message}</p>}
   </div>
 
-  <div className="world-portal-stage" aria-hidden="true">
+  <div className="world-portal-stage world-heritage-city-preview" aria-hidden="true">
    <div className="nexus-atmosphere"><i/><i/><i/></div>
-   <div className="nexus-authentic-circle nexus-ring-scene">
-    <CircleArtwork id="home-nexus-circle" large doors={GATES.map(gate=>({code:gate.code,sealed:false,restored:false}))}/>
-    <div className="nexus-gates">
-     {GATES.map((gate,index)=><span className="nexus-portal-pylon" key={gate.code} style={{'--x':gate.x+'%','--y':gate.y+'%','--i':index}}>
-       <i className="nexus-pylon-frame"/>
-       <b>{gate.code}</b><small>{gate.value}</small>
-      </span>)}
-    </div>
-    <span className="nexus-circle-plinth"><b>3B</b><small>NEXUS</small></span>
+   <svg className="heritage-city-network" viewBox="0 0 100 100" preserveAspectRatio="none">
+    {DISTRICTS.filter(district=>district.id!=='heritage_square').map(district=><line key={'d-'+district.id} x1="50" y1="53" x2={district.x} y2={district.y}/>)}
+    {GATES.map(gate=>{const district=DISTRICT_BY_ID[gate.district];return district?<line key={'g-'+gate.code} className="heritage-gate-link" x1={gate.x} y1={gate.y} x2={district.x} y2={district.y}/>:null;})}
+    <polyline className="heritage-train-loop" points={hubPlan.transport.train.stations.map(id=>{const district=DISTRICT_BY_ID[id];return district?district.x+','+district.y:'';}).filter(Boolean).concat([(()=>{const d=DISTRICT_BY_ID[hubPlan.transport.train.stations[0]];return d?d.x+','+d.y:'';})()]).join(' ')}/>
+   </svg>
+   <div className="heritage-city-core"><b>3B</b><span>TOUR DU CERCLE BRISÉ</span><small>PLACE DE L’HÉRITAGE</small></div>
+   <div className="heritage-city-districts">
+    {DISTRICTS.map(district=><span className={'heritage-district heritage-district-'+district.kind} key={district.id} style={{'--x':district.x+'%','--y':district.y+'%'}}><i/><small>{district.name}</small></span>)}
    </div>
-   <div className="nexus-avenue"><i/><i/><i/></div>
+   <div className="heritage-city-gates">
+    {GATES.map(gate=><span className="heritage-country-gate" key={gate.code} style={{'--x':gate.x+'%','--y':gate.y+'%','--gate-color':gate.color}}><b>{gate.code}</b><small>{gate.value}</small></span>)}
+   </div>
+   <div className="heritage-city-water heritage-city-water-a"/><div className="heritage-city-water heritage-city-water-b"/>
+   <div className="heritage-city-caption"><strong>LA CITÉ DES HUIT HÉRITAGES</strong><span>10 quartiers · 8 Portes dispersées · une ville vivante</span></div>
   </div>
  </section>;
 }
