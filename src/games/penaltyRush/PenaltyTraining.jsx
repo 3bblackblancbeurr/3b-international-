@@ -206,6 +206,10 @@ export default function PenaltyTraining({ role, profile, onExit }) {
       return;
     }
 
+    if(heldMs<300){
+      setMessage('Maintiens la gâchette pour charger ta frappe.');
+      return;
+    }
     const curve=gesture.path.length>2
       ? clamp((gesture.path[Math.floor(gesture.path.length/2)].x-(gesture.x+dx/2))/48,-1,1)
       : 0;
