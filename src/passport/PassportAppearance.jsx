@@ -33,50 +33,84 @@ function imageElement(file){
  return new Promise((resolve,reject)=>{
   const url=URL.createObjectURL(file);
   const image=new Image();
-  image.onload=()=>{URL.revokeObjectURL(url);resolve(image);};
-  image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Cette image ne peut pas être ouverte.'));};
+  image.decoding='async';
+  image.onload=()=>{URL.revokeObjectURL(url);resolve({drawable:image,width:image.naturalWidth,height:image.naturalHeight,close:()=>{}});};
+  image.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Cette image ne peut pas être ouverte sur cet appareil.'));};
   image.src=url;
  });
 }
 
-async function preparePhoto(file){
- if(!['image/jpeg','image/png','image/webp'].includes(file?.type))throw new Error('Choisis une photo JPG, PNG ou WebP.');
- if(file.size>8*1024*1024)throw new Error('La photo dépasse 8 Mo.');
- const image=await imageElement(file);
- const targetWidth=560,targetHeight=604,targetRatio=targetWidth/targetHeight;
- const sourceRatio=image.naturalWidth/image.naturalHeight;
- let sx=0,sy=0,sw=image.naturalWidth,sh=image.naturalHeight;
- if(sourceRatio>targetRatio){
-  sw=image.naturalHeight*targetRatio;
-  sx=(image.naturalWidth-sw)/2;
- }else{
-  sh=image.naturalWidth/targetRatio;
-  sy=(image.naturalHeight-sh)/2;
+async function decodePhoto(file){
+ if(typeof createImageBitmap==='function'){
+  try{
+   const bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});
+   return {drawable:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()};
+  }catch{
+   try{
+    const bitmap=await createImageBitmap(file);
+    return {drawable:bitmap,width:bitmap.width,height:bitmap.height,close:()=>bitmap.close?.()};
+   }catch{}
+  }
  }
- const canvas=document.createElement('canvas');
- canvas.width=targetWidth;canvas.height=targetHeight;
- const context=canvas.getContext('2d',{alpha:false});
- if(!context)throw new Error('Le traitement de la photo est indisponible sur cet appareil.');
- context.drawImage(image,sx,sy,sw,sh,0,0,targetWidth,targetHeight);
- return canvas.toDataURL('image/jpeg',.84);
+ return imageElement(file);
+}
+
+async function preparePhoto(file){
+ const looksLikeImage=String(file?.type||'').startsWith('image/')||/\.(?:jpe?g|png|webp|avif)$/iu.test(String(file?.name||''));
+ if(!file||!looksLikeImage)throw new Error('Choisis une photo compatible depuis ton téléphone.');
+ if(file.size>16*1024*1024)throw new Error('La photo dépasse 16 Mo. Choisis une version plus légère.');
+ const image=await decodePhoto(file);
+ try{
+  const targetWidth=560,targetHeight=604,targetRatio=targetWidth/targetHeight;
+  const sourceRatio=image.width/image.height;
+  let sx=0,sy=0,sw=image.width,sh=image.height;
+  if(sourceRatio>targetRatio){
+   sw=image.height*targetRatio;
+   sx=(image.width-sw)/2;
+  }else{
+   sh=image.width/targetRatio;
+   sy=(image.height-sh)/2;
+  }
+  const canvas=document.createElement('canvas');
+  canvas.width=targetWidth;canvas.height=targetHeight;
+  const context=canvas.getContext('2d',{alpha:false,desynchronized:true});
+  if(!context)throw new Error('Le traitement de la photo est indisponible sur cet appareil.');
+  context.fillStyle='#06141d';
+  context.fillRect(0,0,targetWidth,targetHeight);
+  context.drawImage(image.drawable,sx,sy,sw,sh,0,0,targetWidth,targetHeight);
+  return canvas.toDataURL('image/jpeg',.82);
+ }finally{image.close();}
 }
 
 function DigitalFace(){
  return <svg className="passport-digital-face" viewBox="0 0 220 238" aria-hidden="true" focusable="false">
   <g className="passport-face-grid">
-   <path d="M26 40H194M20 72H200M17 104H203M17 136H203M20 168H200M27 200H193"/>
-   <path d="M44 22V216M77 16V222M110 13V225M143 16V222M176 22V216"/>
+   <path d="M35 42H185M26 76H194M21 112H199M23 148H197M32 184H188"/>
+   <path d="M53 28V205M82 20V218M110 16V224M138 20V218M167 28V205"/>
   </g>
-  <g className="passport-face-outline">
-   <path d="M110 26c-43 0-68 31-65 79 2 32 11 67 29 89 11 14 23 21 36 21s25-7 36-21c18-22 27-57 29-89 3-48-22-79-65-79Z"/>
-   <path d="M61 96c12-12 28-17 46-14M159 96c-12-12-28-17-46-14M110 88v62l-15 14 15 6 15-6"/>
-   <path d="M80 181c20 13 40 13 60 0"/>
+  <g className="passport-face-shell">
+   <path d="M110 18C72 18 47 39 41 75l-5 45 13 58 25 33 36 14 36-14 25-33 13-58-5-45c-6-36-31-57-69-57Z"/>
+   <path d="M42 91 26 104l4 42 19 17M178 91l16 13-4 42-19 17"/>
   </g>
-  <g className="passport-face-eyes"><path d="M68 111c13-8 26-8 39 0-11 9-26 9-39 0ZM152 111c-13-8-26-8-39 0 11 9 26 9 39 0Z"/></g>
+  <g className="passport-face-geometry">
+   <path d="m50 75 31-27 29-9 29 9 31 27-18 23-42-12-42 12Z"/>
+   <path d="m49 113 29-17 32 9 32-9 29 17-14 46-47 21-47-21Z"/>
+   <path d="m63 159 47 21 47-21-15 39-32 17-32-17Z"/>
+   <path d="M78 96 66 119l28 5M142 96l12 23-28 5M110 86v70l-12 13 12 6 12-6-12-13"/>
+  </g>
+  <g className="passport-face-optics">
+   <path d="M62 112c12-9 27-11 43-4l-8 10-25 1ZM158 112c-12-9-27-11-43-4l8 10 25 1Z"/>
+   <circle cx="88" cy="114" r="2.6"/><circle cx="132" cy="114" r="2.6"/>
+  </g>
+  <g className="passport-face-core">
+   <path d="M88 190h44M96 196h28"/>
+   <path d="M110 31v18M52 79l17 8M168 79l-17 8M55 171l18-6M165 171l-18-6"/>
+  </g>
   <g className="passport-face-nodes">
-   <circle cx="49" cy="72" r="3"/><circle cx="171" cy="70" r="3"/><circle cx="60" cy="177" r="3"/><circle cx="160" cy="177" r="3"/><circle cx="110" cy="43" r="3"/>
+   <circle cx="110" cy="31" r="2.7"/><circle cx="52" cy="79" r="2.7"/><circle cx="168" cy="79" r="2.7"/>
+   <circle cx="55" cy="171" r="2.7"/><circle cx="165" cy="171" r="2.7"/><circle cx="110" cy="214" r="2.7"/>
   </g>
-  <path className="passport-face-scanline" d="M30 118H190"/>
+  <path className="passport-face-scanline" d="M29 120H191"/>
  </svg>;
 }
 
@@ -89,7 +123,7 @@ export function PassportPortrait({identity,animated=true,className=''}) {
  const firstName=String(identity?.name||identity?.handle||fallback).trim().split(/\s+/u)[0];
 
  return <div className={['passport-portrait','passport-portrait-'+mode,className].filter(Boolean).join(' ')} data-animated={animated} data-portrait-mode={mode}>
-  {mode==='photo'?<img className="passport-portrait-photo" src={appearance.photo} alt={identity?.name?`Photo de ${identity.name}`:'Photo du titulaire'}/>
+  {mode==='photo'?<img className="passport-portrait-photo" src={appearance.photo} decoding="async" alt={identity?.name?`Photo de ${identity.name}`:'Photo du titulaire'}/>
    :mode==='matrix'?<DirectorMatrixPortrait photo={matrixPortraitSource(identity,appearance)} name={identity?.name} animated={animated}/>
    :mode==='digital'?<DigitalFace/>
    :mode==='name'?<div className="passport-portrait-first-name" aria-label={`Prénom ${firstName}`}>{firstName}</div>
