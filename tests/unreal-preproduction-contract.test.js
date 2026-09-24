@@ -90,12 +90,15 @@ test('canonical production layout preserves scale and complete topology',()=>{
  const layout=readJson('../unreal/ThreeBWorld/Data/Production/world-layout-unreal.json');
  assert.equal(layout.world.width_cm,180000);
  assert.equal(layout.world.depth_cm,140000);
- assert.equal(layout.world.radius_cm,65000);
+ assert.equal(layout.world.radius_cm,82000);
  assert.equal(layout.world.cell_target_cm,15000);
  assert.equal(layout.districts.length,10);
  assert.equal(layout.buildings.length,19);
  assert.equal(layout.gates.length,8);
- assert.equal(layout.roads.length,19);
+ assert.equal(layout.roads.length,37);
+ assert.equal(layout.world.safe_hub,true);
+ assert.ok(layout.gates.every(gate=>Math.hypot(gate.location_cm.x,gate.location_cm.y)>50000));
+ assert.equal(new Set(layout.gates.map(gate=>gate.location_cm.x+':'+gate.location_cm.y)).size,8);
 });
 
 test('transport and crowd exports preserve canonical budgets',()=>{
@@ -145,4 +148,24 @@ test('native launch bridge uses an ephemeral client instance id instead of hardw
  assert.match(source,/FGuid::NewGuid\(\)/);
  assert.match(source,/ClientInstanceId/);
  assert.match(source,/user_id is the player identity/i);
+});
+
+
+test('Unreal Hub launcher and builder target the V5 metropolitan Gold Master, not the obsolete V4 wheel',()=>{
+ const init=readText('../unreal/ThreeBWorld/Content/Python/init_unreal.py');
+ const launcher=readText('../scripts/windows/Launch-Hub3B.ps1');
+ const builder=readText('../unreal/ThreeBWorld/Scripts/build_hub3b_main_v5.py');
+ const manifest=readJson('../unreal/ThreeBWorld/Data/Production/hub3b-main-v5.json');
+ assert.match(init,/-3BHubV5AutoBuild/);
+ assert.match(init,/build_hub3b_main_v5\.py/);
+ assert.doesNotMatch(init,/V4AutoBuild|build_hub3b_main_v4/);
+ assert.match(launcher,/-3BHubV5AutoBuild/);
+ assert.match(launcher,/build_hub3b_main_v5\.py/);
+ assert.equal(manifest.required_map_name,'Hub3B_Main_V05');
+ assert.equal(manifest.validation.gates,8);
+ assert.equal(manifest.validation.roads,37);
+ assert.equal(manifest.validation.forbid_central_gate_wheel,true);
+ assert.match(builder,/world-layout-unreal\.json/);
+ assert.match(builder,/HUB_V5_GATE_/);
+ assert.doesNotMatch(builder,/spawn_spoke|spawn_petals_and_pad|angle_deg.*45/);
 });
