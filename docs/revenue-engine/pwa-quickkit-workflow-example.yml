@@ -7,7 +7,7 @@ jobs:
   pwa:
     runs-on: ubuntu-latest
     steps:
-      - uses: 3bblackblancbeurr/3b-international-/.github/actions/pwa-quickkit@chatgpt-improvements-revenue-engine-20260924
+      - uses: 3bblackblancbeurr/3b-international-/.github/actions/pwa-quickkit@main
         id: audit
         with:
           url: https://example.com
