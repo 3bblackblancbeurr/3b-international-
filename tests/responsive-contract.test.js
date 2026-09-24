@@ -17,12 +17,14 @@ test('the app has one explicit phone tablet desktop responsive contract',()=>{
  assert.match(css,/data-viewport="tablet"/);
 });
 
-test('phone home puts the World 3B copy before its cinematic Nexus stage',()=>{
+test('phone home keeps the canonical Cité map responsive instead of restoring the old Nexus ring',()=>{
  const css=read('../src/styles/home-premium.css');
- const goldMaster=css.slice(css.lastIndexOf('Nexus architectural gold master'));
- assert.match(goldMaster,/world-portal-copy\{order:1/);
- assert.match(goldMaster,/world-portal-stage\{order:2/);
- assert.match(goldMaster,/nexus-authentic-circle/);
+ const portal=read('../src/components/WorldPortalCard.jsx');
+ assert.match(css,/world-portal-city-stage/);
+ assert.match(css,/hub-city-canon-map/);
+ assert.match(css,/@media\(max-width:720px\)[\s\S]*hub-city-canon-map/);
+ assert.match(portal,/cite-huit-heritages-canon-v3\.svg/);
+ assert.doesNotMatch(portal,/CircleArtwork|nexus-authentic-circle|nexus-ring-scene/);
 });
 
 test('Passport keeps one original responsive card and never restores the removed Details/zoom UI',()=>{
