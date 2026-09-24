@@ -73,9 +73,27 @@ export function addHeritagePlatform({root,shape,geo,mat,height,owned,center}){
  const halo=shape(ring(2.0,.045,72),glass,center.x,y+5.45,center.z,1,1,1,dynamicRoot);halo.rotation.x=Math.PI/2;
  const crown=shape(ring(3.05,.035,72),blue,center.x,y+5.45,center.z,1,1,1,dynamicRoot);crown.rotation.y=Math.PI/2;
 
+ // Eight recessed fragment lights record progression without pretending that
+ // the country gates are located on the central platform.
+ const fragmentOff=physical({color:'#18232b',roughness:.40,metalness:.42,emissive:'#06131c',emissiveIntensity:.08});
+ const fragmentOn=physical({color:'#d6b46a',roughness:.20,metalness:.78,emissive:'#00a8ff',emissiveIntensity:.72,clearcoat:.35});
+ const fragmentLights=[];
+ for(let i=0;i<8;i++){
+  const a=i/8*Math.PI*2,px=center.x+Math.sin(a)*8.3,pz=center.z+Math.cos(a)*8.3;
+  const node=shape(fineCylinder,fragmentOff,px,y+.38,pz,.20,.16,.20,dynamicRoot);node.castShadow=false;fragmentLights.push(node);
+ }
+ let progress=0;
+ const setProgress=count=>{
+  progress=Math.max(0,Math.min(8,Math.floor(Number(count)||0)));
+  fragmentLights.forEach((node,index)=>{node.material=index<progress?fragmentOn:fragmentOff;});
+  blue.emissiveIntensity=.70+progress*.07;
+  glass.opacity=.84+progress*.015;
+ };
+
  return{
   staticRoot,
   dynamicRoot,
+  setProgress,
   tick(time){
    core.rotation.y=time*.24;core.rotation.x=.18+Math.sin(time*.32)*.05;
    core.position.y=y+5.45+Math.sin(time*.8)*.13;
