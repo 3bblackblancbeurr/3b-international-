@@ -68,7 +68,7 @@ if (-not $editor) {
 Write-Host "Projet : $project" -ForegroundColor Cyan
 Write-Host "Unreal : $editor" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Unreal va s'ouvrir. Le Hub 3B V5 avec les 8 portails sera construit automatiquement." -ForegroundColor Green
+Write-Host "Unreal va s'ouvrir. La Cité des Huit Héritages V5 avec 10 quartiers et 8 Portes dispersées sera construite automatiquement." -ForegroundColor Green
 Write-Host "Ne clique sur rien pendant le chargement initial." -ForegroundColor Yellow
 Write-Host ""
 
