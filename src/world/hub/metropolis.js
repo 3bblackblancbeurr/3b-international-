@@ -4,7 +4,7 @@ const GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
 export const HUB_METROPOLIS=Object.freeze({
   width:1800,
   depth:1400,
-  radius:650,
+  radius:820,
   portalScale:10,
   roadWidth:12,
   cellSize:150,
@@ -24,6 +24,30 @@ export function hubDistrictPosition(plan,districtId){
 
 export function hubPortalPosition(portal){
   return {x:portal[0]*HUB_METROPOLIS.portalScale,z:portal[1]*HUB_METROPOLIS.portalScale};
+}
+
+export function hubCountryGatePosition(plan,regionOrCode){
+  const key=String(regionOrCode||'').toLowerCase();
+  const country=plan?.countries?.find(entry=>String(entry.region||'').toLowerCase()===key||String(entry.code||'').toLowerCase()===key);
+  if(country&&Array.isArray(country.gateWorld)&&country.gateWorld.length===2){
+    return {x:Number(country.gateWorld[0])||0,z:Number(country.gateWorld[1])||0};
+  }
+  return null;
+}
+
+export function hubEvolutionForDistrict(plan,districtId,restoredRegions=[]){
+  const restored=new Set(Array.isArray(restoredRegions)?restoredRegions:[]);
+  const restoredCount=restored.size;
+  if(districtId==='heritage_square'||districtId==='broken_circle_tower'){
+    if(restoredCount>=8)return 3;
+    if(restoredCount>=4)return 2;
+    return restoredCount>0?1:0;
+  }
+  const linked=(plan?.countries||[]).filter(country=>country.gateDistrict===districtId);
+  if(linked.some(country=>restored.has(country.region)))return 3;
+  if(restoredCount>=6)return 2;
+  if(restoredCount>=2)return 1;
+  return 0;
 }
 
 const BUILDING_SHAPES={
@@ -54,7 +78,7 @@ function buildingOffset(id,index){
   return {x:Math.cos(angle)*radius,z:Math.sin(angle)*radius,angle};
 }
 
-function buildingItem(plan,building,index){
+function buildingItem(plan,building,index,restoredRegions=[]){
   const center=hubDistrictPosition(plan,building.district),offset=buildingOffset(building.id,index);
   const [width,depth,height]=BUILDING_SHAPES[building.id]||[42,30,22+building.tier*8];
   const buildingX=center.x+offset.x,buildingZ=center.z+offset.z,entranceDistance=Math.max(width,depth)/2+8;
@@ -67,6 +91,8 @@ function buildingItem(plan,building,index){
     functions:building.functions||[],
     interior:building.interior||'none',
     tier:building.tier||0,
+    evolution:hubEvolutionForDistrict(plan,building.district,restoredRegions),
+    restoredCountries:(plan.countries||[]).filter(country=>country.gateDistrict===building.district&&restoredRegions.includes(country.region)).map(country=>country.region),
     x:buildingX+Math.cos(offset.angle)*entranceDistance,
     z:buildingZ+Math.sin(offset.angle)*entranceDistance,
     buildingX,buildingZ,
@@ -75,8 +101,8 @@ function buildingItem(plan,building,index){
   };
 }
 
-function fillerItems(plan,profile){
-  const perDistrict=profile==='desktop'?8:profile==='mobileHigh'?6:4;
+function fillerItems(plan,profile,restoredRegions=[]){
+  const perDistrict=profile==='desktop'?12:profile==='mobileHigh'?9:6;
   return plan.districts.flatMap((district)=>{
     const center=hubDistrictPosition(plan,district.id),districtSeed=hash(`${district.id}:layout`),baseRotation=(districtSeed%6283)/1000;
     const stretchX=.84+((districtSeed>>>7)%25)/100,stretchZ=.84+((districtSeed>>>13)%25)/100;
@@ -95,6 +121,7 @@ function fillerItems(plan,profile){
         z:center.z+Math.sin(angle)*ring*stretchZ,
         width,depth,height,
         tier:district.tier||0,
+        evolution:hubEvolutionForDistrict(plan,district.id,restoredRegions),
       };
     });
   });
@@ -211,15 +238,17 @@ export function metropolisTrafficItems(plan,profile){
   });
 }
 
-export function buildMetropolisRuntimeItems(plan,profile='mobileMedium'){
-  const buildings=plan.buildings.map((building,index)=>buildingItem(plan,building,index));
-  const structures=fillerItems(plan,profile);
+export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',context={}){
+  const restoredRegions=Array.isArray(context.restoredRegions)?context.restoredRegions:[];
+  const buildings=plan.buildings.map((building,index)=>buildingItem(plan,building,index,restoredRegions));
+  const structures=fillerItems(plan,profile,restoredRegions);
   const roads=metropolisRoadItems(plan);
   const traffic=metropolisTrafficItems(plan,profile);
   return {
     items:[...roads,...structures,...buildings,...traffic],
     meta:{
       buildings:buildings.length,
+      restoredRegions:restoredRegions.length,
       structures:structures.length,
       roads:roads.length,
       traffic:traffic.length,
