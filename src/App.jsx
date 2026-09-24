@@ -29,6 +29,7 @@ const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldPage.jsx'));
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
+const OriginsTvPage = lazy(() => import("./tv/OriginsTvPage.jsx"));
 
 const BASE_MENU_ITEMS = [
   { id: "guide", label: "Guide & XP", description: "Tous les menus, les gains et les niveaux expliqués." },
@@ -49,6 +50,12 @@ const BASE_MENU_ITEMS = [
     label: "Manga 3B",
     icon: "📖",
     description: "Le manga de l’univers 3B.",
+  },
+  {
+    id: "origins-tv",
+    label: "3B ORIGINS TV",
+    icon: "📺",
+    description: "La chaîne du Monde du 3B : diffusion programmée et direct synchronisé.",
   },
   {
     id: "world3b",
@@ -275,6 +282,7 @@ export default function App() {
       {page === "religion" && <ReligionPage />}
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon />}
+      {page === "origins-tv" && <OriginsTvPage />}
       {page === "community" && <CommunityPage goTo={goTo} key={loyalty.user?.id || "guest"} />}
       {page === "secret" && <ComingSoon secret />}
       {page === "world3b" && <Suspense fallback={<div className="page-section">Ouverture du Monde 3B…</div>}><WorldExperience goTo={goTo}/></Suspense>}
