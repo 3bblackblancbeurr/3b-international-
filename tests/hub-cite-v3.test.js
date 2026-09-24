@@ -8,6 +8,7 @@ const scene=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8'
 const visuals=readFileSync(new URL('../src/world/premium-hub-visuals.js',import.meta.url),'utf8');
 const cartography=readFileSync(new URL('../src/world/Cartography.jsx',import.meta.url),'utf8');
 const home=readFileSync(new URL('../src/components/WorldPortalCard.jsx',import.meta.url),'utf8');
+const hud=readFileSync(new URL('../src/world/WorldHUD.jsx',import.meta.url),'utf8');
 
 test('Cité V3 is a multi-district metropolis and never a small eight-button ring',()=>{
  assert.equal(plan.districts.length,10);
@@ -74,4 +75,12 @@ test('city progression creates persistent visible return signals for restored co
  const core=runtime.items.find(item=>item.type==='hubEvolutionCore');
  assert.equal(core.restoredCount,4);
  assert.equal(core.name,'Cité en mouvement');
+});
+
+
+test('Hub HUD makes the safe zone and eight-step evolution explicit',()=>{
+ assert.match(hud,/world-hub-state/);
+ assert.match(hud,/ZONE SÛRE/);
+ assert.match(hud,/HÉRITAGES RELIÉS/);
+ assert.match(hud,/nexusLevel\(save\)/);
 });
