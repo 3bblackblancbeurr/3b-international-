@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Pause, Play, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import PassportNexus from "./PassportNexus.jsx";
 import PublicIdentityBadge from "./PublicIdentityBadge.jsx";
 import { PassportPortrait } from "../passport/PassportAppearance.jsx";
@@ -29,7 +29,6 @@ const formatNumber = value => new Intl.NumberFormat("fr-FR").format(Number(value
 export default function PassportVisual({ options, identity, goTo, syncing = false }) {
   const id = useId().replaceAll(":", "");
   const visual = useRef(null);
-  const [paused, setPaused] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
   const [visible, setVisible] = useState(() => !document.hidden);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -57,7 +56,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   }, []);
 
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
-  const animated = motionAllowed && !paused && visible && !portalOpen;
+  const animated = motionAllowed && visible && !portalOpen;
   const active = !!identity?.userId;
   const status = syncing ? "SYNCHRONISATION" : active ? "IDENTITÉ VÉRIFIÉE" : "À ACTIVER";
   const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
@@ -141,12 +140,6 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
     </div>
     </div>
 
-    <div className="passport-animation-toolbar passport-animation-toolbar-compact">
-      <button type="button" className="passport-animation-toggle" disabled={!motionAllowed} aria-pressed={paused} onClick={() => setPaused(value => !value)}>
-        {animated ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
-        {motionAllowed ? (paused ? "Reprendre" : "Pause") : "Mouvements réduits"}
-      </button>
-    </div>
 
     {active && <PassportNexus key={identity.userId} open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />}
   </div>;
