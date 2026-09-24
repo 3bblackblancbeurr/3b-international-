@@ -6,7 +6,7 @@ import {buildingDimensions} from './building-scale.js';
 import {obstacleDistance} from './collision.js';
 import {parisSites} from './paris-layout.js';
 import hubPlan from './hub/data/hub-master-plan-v2.json' with { type: 'json' };
-import {HUB_METROPOLIS,hubPortalPosition,metropolisRoadItems,buildMetropolisRuntimeItems} from './hub/metropolis.js';
+import {HUB_METROPOLIS,hubCountryGatePosition,metropolisRoadItems,buildMetropolisRuntimeItems} from './hub/metropolis.js';
 
 export const WORLD_RADIUS=260;
 export const HUB_WORLD_RADIUS=HUB_METROPOLIS.radius;
@@ -25,7 +25,7 @@ export const BIOMES={
 export function randomFor(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 export function toLandscape(region,x,z){const b=BIOMES[region]||BIOMES.hub,c=Math.cos(b.angle),s=Math.sin(b.angle);return{x:(x*c-z*s)*b.scale,z:(x*s+z*c)*b.scale};}
 export function landscapeItems(region,save){return [...worldItems(region,save),...serviceItems(region,save),...districtDestinations(region)].map(item=>{
- if(region==='hub'&&item.type==='portal'){const country=COUNTRIES.find(c=>c.id===item.id);return country?{...item,...hubPortalPosition(country.portal)}:{...item,...toLandscape(region,item.x,item.z)};}
+ if(region==='hub'&&item.type==='portal'){const position=hubCountryGatePosition(hubPlan,item.id);return position?{...item,...position}:{...item,...toLandscape(region,item.x,item.z)};}
  return {...item,...toLandscape(region,item.x,item.z)};
 });}
 export function segmentDistance(x,z,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-a.x-t*dx,z-a.z-t*dz);}
@@ -36,7 +36,7 @@ export function landscapeRoads(region){
 export function roadDistance(x,z,roads){return Math.min(Infinity,...roads.flatMap(r=>r.points.slice(1).map((b,i)=>segmentDistance(x,z,r.points[i],b)-r.width/2)));}
 export function landmarkSightline(region){return{a:{x:0,z:5},b:toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z)};}
 export function buildingSites(region,anchors=[]){
- if(region==='hub')return COUNTRIES.map((c,i)=>{const p=hubPortalPosition(c.portal);return{id:c.id,x:p.x+18,z:p.z-18,rotation:-.18+i*.2,variant:i,...buildingDimensions(c.id,i)};});
+ if(region==='hub')return COUNTRIES.map((c,i)=>{const p=hubCountryGatePosition(hubPlan,c.id)||toLandscape(region,...c.portal);const towardCenter=Math.atan2(-p.x,-p.z);return{id:c.id,x:p.x+Math.sin(towardCenter)*24,z:p.z+Math.cos(towardCenter)*24,rotation:towardCenter,variant:i,...buildingDimensions(c.id,i)};});
  const sightline=landmarkSightline(region),roads=landscapeRoads(region),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),civic=civicSites(anchors);
  const paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
  const sites=settlementPlan(region).plots.map(p=>({...p,id:region,...toLandscape(region,p.x,p.z),rotation:-BIOMES[region].angle+p.rotation,...buildingDimensions(region,p.variant,p.urban)})).filter(p=>!paris.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<Math.hypot(b.width,b.depth)/2+Math.hypot(p.width,p.depth)/2+3));
