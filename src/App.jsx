@@ -1,7 +1,7 @@
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
-const AiPage = lazy(() => import("./ai/AiPage.jsx"));
+const AiPage = lazy(() => import("./ai/AiPage.jsx"));\nconst PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
 import { controlCenterRequest } from "./control/client.js";
 import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
@@ -90,10 +90,9 @@ const BASE_MENU_ITEMS = [
   },
   {
     id: "secret",
-    label: "Secret 3B",
-    icon: "🔐",
-    status: "preview",
-    description: "Le prochain chapitre se prépare.",
+    label: "L’Heure du Premier Secret",
+    icon: "◷",
+    description: "Le Nexus, le Veilleur et cinq épreuves liées dans un parcours qui change chaque jour.",
   },
   {
     id: "sport",
@@ -333,7 +332,7 @@ export default function App() {
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
       {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}
-      {page === "secret" && <ComingSoon secret goTo={goTo} />}
+      {page === "secret" && <PremierSecretPage goTo={goTo} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
