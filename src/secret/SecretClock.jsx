@@ -1,5 +1,5 @@
 import { Clock3, LockKeyhole, Radio, Sparkles } from "lucide-react";
-import { RouteLink } from "../components/AppNavigation.jsx";
+import { getPageHref } from "../lib/navigation.js";
 
 export default function SecretClock({ secret, goTo, compact = false }) {
   const phase = secret?.phase || "loading";
@@ -19,15 +19,19 @@ export default function SecretClock({ secret, goTo, compact = false }) {
 
   if (secret?.actionable) {
     return (
-      <RouteLink
-        page="secret"
-        goTo={goTo}
+      <a
+        href={getPageHref("secret")}
+        onClick={(event) => {
+          if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          goTo?.("secret");
+        }}
         className={`secret-clock secret-clock-${secret.tone} ${compact ? "is-compact" : ""}`}
         data-phase={phase}
         aria-label={isLive ? `Secret 3B actif, ${secret.countdown} restantes` : "Voir l’état du Secret 3B"}
       >
         {content}
-      </RouteLink>
+      </a>
     );
   }
 
