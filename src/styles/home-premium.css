@@ -956,3 +956,81 @@
   }
   .app3b .nexus-authentic-circle>.nexus-gates .nexus-portal-pylon b{font-size:7px}
 }
+
+
+/* ===== 2026-09-24 · Cité des Huit Héritages Gold Master preview =====
+   The app preview mirrors the approved metropolitan map: ten useful districts
+   and eight physical country gates dispersed on the outer city, never a wheel. */
+.app3b .world-heritage-city-preview{
+  background:
+    radial-gradient(circle at 50% 54%,#00d5ff22 0 8%,transparent 25%),
+    radial-gradient(ellipse at 50% 66%,#0c4a6228 0 22%,transparent 48%),
+    linear-gradient(180deg,#07111a 0%,#08141a 50%,#030708 100%);
+}
+.app3b .world-heritage-city-preview::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 54%,transparent 0 13%,#e4c46d13 13.2% 13.7%,transparent 14%),
+    repeating-radial-gradient(ellipse at 50% 58%,transparent 0 42px,#64ddf008 43px 44px,transparent 45px 82px);
+  opacity:.95;
+}
+.app3b .heritage-city-network{position:absolute;z-index:3;inset:4%;width:92%;height:92%;overflow:visible}
+.app3b .heritage-city-network line{stroke:#d6b46a55;stroke-width:.55;vector-effect:non-scaling-stroke}
+.app3b .heritage-city-network .heritage-gate-link{stroke:#6de1ff6e;stroke-width:.9;stroke-dasharray:2.5 1.4}
+.app3b .heritage-city-network .heritage-train-loop{fill:none;stroke:#e0be6f;stroke-width:1.15;stroke-opacity:.8;stroke-dasharray:3 1.4;vector-effect:non-scaling-stroke}
+.app3b .heritage-city-core{
+ position:absolute;z-index:8;left:50%;top:53%;width:118px;height:118px;transform:translate(-50%,-50%);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+ border:1px solid #e1c36f9e;border-radius:50%;
+ background:radial-gradient(circle at 40% 32%,#144861,#071016 62%);
+ box-shadow:0 0 0 11px #071219c9,0 0 0 12px #5be0ff35,0 0 38px #00d5ff46,inset 0 0 28px #00d5ff25;
+}
+.app3b .heritage-city-core b{color:#f2d994;font-size:34px;line-height:.9;letter-spacing:-.08em}
+.app3b .heritage-city-core span{margin-top:9px;color:#94ecff;font-size:6px;font-weight:900;letter-spacing:.12em}
+.app3b .heritage-city-core small{margin-top:5px;color:#d8c18e;font-size:5.5px;letter-spacing:.1em}
+.app3b .heritage-city-districts,.app3b .heritage-city-gates{position:absolute;z-index:7;inset:0}
+.app3b .heritage-district{
+ position:absolute;left:var(--x);top:var(--y);width:15px;height:15px;transform:translate(-50%,-50%);
+ border:1px solid #9fd9e068;border-radius:50%;background:#08151bd9;box-shadow:0 0 10px #00d5ff24;
+}
+.app3b .heritage-district i{position:absolute;inset:3px;border-radius:50%;background:#d6b46a;box-shadow:0 0 7px #d6b46a66}
+.app3b .heritage-district small{
+ position:absolute;left:50%;top:17px;min-width:86px;transform:translateX(-50%);padding:2px 5px;
+ color:#afc1c9;background:#050b0ed1;border-radius:4px;font-size:6px;line-height:1.25;text-align:center;white-space:normal;
+}
+.app3b .heritage-district-arrival i,.app3b .heritage-district-narrative i{background:#f0d082}
+.app3b .heritage-district-technology i{background:#5be4ff}.app3b .heritage-district-nature i{background:#79c988}
+.app3b .heritage-district-mobility i{background:#68cdec}.app3b .heritage-district-city i{background:#b58cff}
+.app3b .heritage-country-gate{
+ position:absolute;left:var(--x);top:var(--y);display:grid;place-items:center;min-width:42px;min-height:32px;
+ transform:translate(-50%,-50%);padding:5px 7px;border:1px solid color-mix(in srgb,var(--gate-color),#e9ca7a 42%);
+ border-radius:7px;background:linear-gradient(145deg,#0d1e27ed,#050b10f5);
+ box-shadow:0 9px 18px #0009,0 0 13px color-mix(in srgb,var(--gate-color),transparent 70%);
+}
+.app3b .heritage-country-gate::before{
+ content:"";position:absolute;inset:3px;border:1px solid color-mix(in srgb,var(--gate-color),transparent 62%);border-radius:5px;pointer-events:none
+}
+.app3b .heritage-country-gate b{position:relative;z-index:1;color:#f3d99a;font-size:8px;letter-spacing:.08em}
+.app3b .heritage-country-gate small{position:relative;z-index:1;margin-top:1px;color:#96cbd8;font-size:5px;letter-spacing:.02em}
+.app3b .heritage-city-water{position:absolute;z-index:1;border:1px solid #6be3ff24;border-radius:50%;background:radial-gradient(ellipse,#0a55747a,#061a2d54 55%,transparent 72%);filter:blur(.2px)}
+.app3b .heritage-city-water-a{left:8%;right:48%;top:54%;bottom:5%;transform:rotate(-18deg)}
+.app3b .heritage-city-water-b{left:56%;right:5%;top:20%;bottom:45%;transform:rotate(20deg)}
+.app3b .heritage-city-caption{
+ position:absolute;z-index:9;left:18px;right:18px;bottom:14px;display:flex;align-items:end;justify-content:space-between;gap:12px;
+ padding-top:9px;border-top:1px solid #d8bd7950;
+}
+.app3b .heritage-city-caption strong{color:#ead39b;font-size:8px;letter-spacing:.14em}
+.app3b .heritage-city-caption span{color:#86aeb8;font-size:6px;letter-spacing:.06em;text-align:right}
+
+@media(max-width:720px){
+ .app3b .world-heritage-city-preview{min-height:390px!important}
+ .app3b .heritage-city-core{width:92px;height:92px}
+ .app3b .heritage-city-core b{font-size:27px}
+ .app3b .heritage-city-core span{font-size:5px}
+ .app3b .heritage-district{width:12px;height:12px}
+ .app3b .heritage-district small{display:none}
+ .app3b .heritage-country-gate{min-width:34px;min-height:27px;padding:4px 5px;border-radius:6px}
+ .app3b .heritage-country-gate b{font-size:7px}.app3b .heritage-country-gate small{display:none}
+ .app3b .heritage-city-caption{left:12px;right:12px;bottom:10px}
+ .app3b .heritage-city-caption strong{font-size:6px}.app3b .heritage-city-caption span{font-size:5px}
+}
