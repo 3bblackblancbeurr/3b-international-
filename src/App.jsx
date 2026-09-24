@@ -151,7 +151,7 @@ export default function App() {
   const installation = useAppInstallation();
   const [route, setRoute] = useState(readLocation);
   const { page, gameSlug } = route;
-  const traffic = useTraffic(page);
+  useTraffic(page);
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
   const [controlAvailable, setControlAvailable] = useState(false);
@@ -303,7 +303,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} traffic={traffic} />}
+      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
@@ -319,7 +319,6 @@ export default function App() {
           identity={loyalty.passport}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
-          traffic={traffic}
           hasPassport={hasPassport}
           goTo={goTo}
         />
@@ -502,7 +501,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ identity, syncing, goTo, options, traffic }) {
+function PassportPage({ identity, syncing, goTo, options }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -512,7 +511,7 @@ function PassportPage({ identity, syncing, goTo, options, traffic }) {
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
-      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <DirectorTraffic traffic={traffic} />}
+      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <DirectorTraffic />}
 
       {identity && <PassportAppearanceSettings identity={identity} />}
 
