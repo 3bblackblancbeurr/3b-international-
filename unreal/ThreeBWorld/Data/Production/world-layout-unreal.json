@@ -1,12 +1,14 @@
 {
-  "version": "1.0.0",
+  "version": "3.0.0",
   "coordinate_system": "Unreal centimeters; X/Y horizontal, Z vertical",
-  "source": "Cité des Huit Héritages metropolis V1",
+  "source": "La Cité des Huit Héritages · Gold Master 2026-09-24",
+  "visual_reference": "CANON_USER_REFERENCE_2026-09-24_CITE_HUIT_HERITAGES",
   "world": {
     "width_cm": 180000,
     "depth_cm": 140000,
-    "radius_cm": 65000,
-    "cell_target_cm": 15000
+    "radius_cm": 82000,
+    "cell_target_cm": 15000,
+    "safe_hub": true
   },
   "districts": [
     {
@@ -18,7 +20,8 @@
         "z": 0
       },
       "tier": 0,
-      "kind": "arrival"
+      "kind": "arrival",
+      "purpose": "arrivée, orientation, événements publics et premières missions"
     },
     {
       "id": "broken_circle_tower",
@@ -29,7 +32,8 @@
         "z": 0
       },
       "tier": 0,
-      "kind": "narrative"
+      "kind": "narrative",
+      "purpose": "histoire centrale, fragments, carte des huit pays et progression"
     },
     {
       "id": "archives",
@@ -40,7 +44,8 @@
         "z": 0
       },
       "tier": 0,
-      "kind": "lore"
+      "kind": "lore",
+      "purpose": "souvenirs, manga, énigmes, personnages et collection"
     },
     {
       "id": "arena",
@@ -51,7 +56,8 @@
         "z": 0
       },
       "tier": 1,
-      "kind": "gameplay"
+      "kind": "gameplay",
+      "purpose": "combat, mobilité, défis, entraînement et événements"
     },
     {
       "id": "commerce",
@@ -62,7 +68,8 @@
         "z": 0
       },
       "tier": 1,
-      "kind": "economy"
+      "kind": "economy",
+      "purpose": "boutique, craft, garage, personnalisation et contrats"
     },
     {
       "id": "community",
@@ -73,7 +80,8 @@
         "z": 0
       },
       "tier": 1,
-      "kind": "social"
+      "kind": "social",
+      "purpose": "groupes, coopération, événements et expositions"
     },
     {
       "id": "innovation",
@@ -84,7 +92,8 @@
         "z": 0
       },
       "tier": 2,
-      "kind": "technology"
+      "kind": "technology",
+      "purpose": "IA Textile, Mode 3 IA, avatar, prototypes et puzzles Matrix"
     },
     {
       "id": "docks",
@@ -95,7 +104,8 @@
         "z": 0
       },
       "tier": 0,
-      "kind": "mobility"
+      "kind": "mobility",
+      "purpose": "bateaux, train, navettes, fret, sauvetage et exploration aquatique"
     },
     {
       "id": "city3b_portal",
@@ -106,7 +116,8 @@
         "z": 0
       },
       "tier": 0,
-      "kind": "city"
+      "kind": "city",
+      "purpose": "construction, sauvegarde, visites, trophées et habitants invités"
     },
     {
       "id": "gardens",
@@ -117,7 +128,8 @@
         "z": 0
       },
       "tier": 1,
-      "kind": "nature"
+      "kind": "nature",
+      "purpose": "nature, mémorial, animaux, secrets calmes et contemplation"
     }
   ],
   "buildings": [
@@ -131,14 +143,14 @@
         "z": 0
       },
       "entrance_cm": {
-        "x": 3566,
-        "y": -12766,
+        "x": 3676,
+        "y": -12599,
         "z": 0
       },
       "footprint_cm": {
-        "x": 3800,
-        "y": 3800,
-        "z": 9200
+        "x": 4200,
+        "y": 4200,
+        "z": 11800
       },
       "tier": 0,
       "interior": "separate_cell",
@@ -645,72 +657,112 @@
     {
       "id": "france",
       "name": "France",
+      "code": "FR",
+      "value": "Justice",
+      "guardian": "Céliane",
+      "district": "archives",
+      "color": "#7bbdff",
       "location_cm": {
-        "x": -22000,
-        "y": -24000,
-        "z": 0
-      }
-    },
-    {
-      "id": "italie",
-      "name": "Italie",
-      "location_cm": {
-        "x": 14000,
-        "y": -40000,
-        "z": 0
-      }
-    },
-    {
-      "id": "estonie",
-      "name": "Estonie",
-      "location_cm": {
-        "x": 43000,
-        "y": -24000,
-        "z": 0
-      }
-    },
-    {
-      "id": "turquie",
-      "name": "Turquie",
-      "location_cm": {
-        "x": 42000,
-        "y": 13000,
+        "x": -65000,
+        "y": -33000,
         "z": 0
       }
     },
     {
       "id": "algerie",
       "name": "Algérie",
+      "code": "DZ",
+      "value": "Loyauté",
+      "guardian": "Yliane",
+      "district": "docks",
+      "color": "#b8dda2",
       "location_cm": {
-        "x": 24000,
-        "y": 42000,
-        "z": 0
-      }
-    },
-    {
-      "id": "tunisie",
-      "name": "Tunisie",
-      "location_cm": {
-        "x": -9000,
-        "y": 47000,
+        "x": 50000,
+        "y": 52000,
         "z": 0
       }
     },
     {
       "id": "maroc",
       "name": "Maroc",
+      "code": "MA",
+      "value": "Noblesse",
+      "guardian": "Naël",
+      "district": "gardens",
+      "color": "#f7c77e",
       "location_cm": {
-        "x": -42000,
-        "y": 25000,
+        "x": -70000,
+        "y": 30000,
+        "z": 0
+      }
+    },
+    {
+      "id": "tunisie",
+      "name": "Tunisie",
+      "code": "TN",
+      "value": "Courage",
+      "guardian": "Soraya",
+      "district": "city3b_portal",
+      "color": "#ffb3a4",
+      "location_cm": {
+        "x": 62000,
+        "y": 30000,
         "z": 0
       }
     },
     {
       "id": "espagne",
       "name": "Espagne",
+      "code": "ES",
+      "value": "Passion",
+      "guardian": "Diego",
+      "district": "community",
+      "color": "#ff9e86",
       "location_cm": {
-        "x": -48000,
+        "x": -73500,
+        "y": -3000,
+        "z": 0
+      }
+    },
+    {
+      "id": "italie",
+      "name": "Italie",
+      "code": "IT",
+      "value": "Espoir",
+      "guardian": "Alessio",
+      "district": "commerce",
+      "color": "#95e4b6",
+      "location_cm": {
+        "x": 70500,
         "y": -8000,
+        "z": 0
+      }
+    },
+    {
+      "id": "turquie",
+      "name": "Turquie",
+      "code": "TR",
+      "value": "Foi",
+      "guardian": "Émir",
+      "district": "innovation",
+      "color": "#e9a4e8",
+      "location_cm": {
+        "x": 59000,
+        "y": -46000,
+        "z": 0
+      }
+    },
+    {
+      "id": "estonie",
+      "name": "Estonie",
+      "code": "EE",
+      "value": "Sagesse",
+      "guardian": "Eira",
+      "district": "innovation",
+      "color": "#9ce8f4",
+      "location_cm": {
+        "x": -16000,
+        "y": -54000,
         "z": 0
       }
     }
@@ -719,6 +771,7 @@
     {
       "id": "ring:heritage_square:archives",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -733,6 +786,7 @@
     {
       "id": "ring:archives:community",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": -27000,
         "y": -28000,
@@ -747,6 +801,7 @@
     {
       "id": "ring:community:gardens",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": -28800,
         "y": -8400,
@@ -761,6 +816,7 @@
     {
       "id": "ring:gardens:docks",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": -48600,
         "y": 25200,
@@ -775,6 +831,7 @@
     {
       "id": "ring:docks:city3b_portal",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": -19800,
         "y": 32200,
@@ -789,6 +846,7 @@
     {
       "id": "ring:city3b_portal:commerce",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": 18000,
         "y": 32200,
@@ -803,6 +861,7 @@
     {
       "id": "ring:commerce:arena",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": 21600,
         "y": 0,
@@ -817,6 +876,7 @@
     {
       "id": "ring:arena:innovation",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": 19800,
         "y": -18200,
@@ -831,6 +891,7 @@
     {
       "id": "ring:innovation:broken_circle_tower",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": 14400,
         "y": -35000,
@@ -845,6 +906,7 @@
     {
       "id": "ring:broken_circle_tower:heritage_square",
       "kind": "express",
+      "width_cm": 1700,
       "from_cm": {
         "x": 0,
         "y": -18200,
@@ -859,6 +921,7 @@
     {
       "id": "spoke:heritage_square:broken_circle_tower",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -873,6 +936,7 @@
     {
       "id": "spoke:heritage_square:archives",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -887,6 +951,7 @@
     {
       "id": "spoke:heritage_square:arena",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -901,6 +966,7 @@
     {
       "id": "spoke:heritage_square:commerce",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -915,6 +981,7 @@
     {
       "id": "spoke:heritage_square:community",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -929,6 +996,7 @@
     {
       "id": "spoke:heritage_square:innovation",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -943,6 +1011,7 @@
     {
       "id": "spoke:heritage_square:docks",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -957,6 +1026,7 @@
     {
       "id": "spoke:heritage_square:city3b_portal",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -971,6 +1041,7 @@
     {
       "id": "spoke:heritage_square:gardens",
       "kind": "avenue",
+      "width_cm": 1200,
       "from_cm": {
         "x": 0,
         "y": 4200,
@@ -981,6 +1052,283 @@
         "y": 25200,
         "z": 0
       }
+    },
+    {
+      "id": "gate:FR:archives",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": -65000,
+        "y": -33000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -27000,
+        "y": -28000,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:DZ:docks",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": 50000,
+        "y": 52000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -19800,
+        "y": 32200,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:MA:gardens",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": -70000,
+        "y": 30000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -48600,
+        "y": 25200,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:TN:city3b_portal",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": 62000,
+        "y": 30000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 18000,
+        "y": 32200,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:ES:community",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": -73500,
+        "y": -3000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -28800,
+        "y": -8400,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:IT:commerce",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": 70500,
+        "y": -8000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 21600,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:TR:innovation",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": 59000,
+        "y": -46000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 14400,
+        "y": -35000,
+        "z": 0
+      }
+    },
+    {
+      "id": "gate:EE:innovation",
+      "kind": "avenue",
+      "width_cm": 1200,
+      "from_cm": {
+        "x": -16000,
+        "y": -54000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 14400,
+        "y": -35000,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:archives:innovation:a",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -14678,
+        "y": -26608,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -6368,
+        "y": -36133,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:archives:innovation:b",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -6368,
+        "y": -36133,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 2943,
+        "y": -39743,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:community:commerce:a",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -28730,
+        "y": 4000,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -8201,
+        "y": -7897,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:community:commerce:b",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -8201,
+        "y": -7897,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 9369,
+        "y": -2039,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:gardens:city3b_portal:a",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -38840,
+        "y": 32849,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -12537,
+        "y": 13080,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:gardens:city3b_portal:b",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -12537,
+        "y": 13080,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 10734,
+        "y": 22152,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:docks:commerce:a",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -25638,
+        "y": 21261,
+        "z": 0
+      },
+      "to_cm": {
+        "x": -942,
+        "y": 13732,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:docks:commerce:b",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": -942,
+        "y": 13732,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 27438,
+        "y": 10939,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:arena:broken_circle_tower:a",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": 7883,
+        "y": -21627,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 4638,
+        "y": -23954,
+        "z": 0
+      }
+    },
+    {
+      "id": "lane:arena:broken_circle_tower:b",
+      "kind": "lane",
+      "width_cm": 650,
+      "from_cm": {
+        "x": 4638,
+        "y": -23954,
+        "z": 0
+      },
+      "to_cm": {
+        "x": 1394,
+        "y": -26281,
+        "z": 0
+      }
     }
-  ]
+  ],
+  "validation": {
+    "districts": 10,
+    "buildings": 19,
+    "gates": 8,
+    "roads": 37,
+    "minimum_outer_gate_radius_cm": 50000
+  }
 }
