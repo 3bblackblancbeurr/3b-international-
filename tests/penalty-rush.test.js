@@ -45,6 +45,12 @@ test('attacker gestures map to acceleration, feints and a single expressive shot
   const panenka = shotFromGesture({ dx: 5, dy: -38, durationMs: 250, heldMs: 250, curve: 0 });
   assert.equal(panenka.type, 'panenka');
   assert.ok(panenka.power < 1);
+
+  const charged = interpretAttackGesture({ dx: 0, dy: 0, durationMs: 850, heldMs: 850, curve: 0 });
+  assert.equal(charged.type, 'shot');
+  assert.ok(charged.shot.power > .7);
+  assert.equal(charged.shot.targetX, 0);
+  assert.equal(charged.shot.targetY, .38);
 });
 
 test('keeper gestures remain contextual instead of becoming a button grid', () => {
