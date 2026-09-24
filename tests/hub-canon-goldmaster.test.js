@@ -6,6 +6,8 @@ import {STORY_CANON} from '../src/world/story-canon.js';
 
 const platform=readFileSync(new URL('../src/world/heritage-platform.js',import.meta.url),'utf8');
 const runtimeItems=readFileSync(new URL('../src/world/runtime-items.js',import.meta.url),'utf8');
+const cartography=readFileSync(new URL('../src/world/Cartography.jsx',import.meta.url),'utf8');
+const worldPortal=readFileSync(new URL('../src/components/WorldPortalCard.jsx',import.meta.url),'utf8');
 
 test('Cité des Huit Héritages canon keeps the safe Hub and ten useful districts',()=>{
  assert.equal(HUB_CANON_LAWS.safeZone.unique,true);
@@ -44,4 +46,16 @@ test('canon explicitly preserves the 16-weapon arsenal and visible city evolutio
  assert.equal(HUB_CANON_LAWS.progression.visibleEvolution,true);
  assert.equal(HUB_CANON_LAWS.progression.npcMemory,true);
  assert.match(HUB_CANON_LAWS.story.loop,/Gardien/);
+});
+
+
+test('both the home preview and in-game map use the metropolitan district layout',()=>{
+ assert.match(worldPortal,/heritage-city-districts/);
+ assert.match(worldPortal,/heritage-city-gates/);
+ assert.match(worldPortal,/hubPlan\.transport\.train\.stations/);
+ assert.doesNotMatch(worldPortal,/CircleArtwork|nexus-authentic-circle/);
+ assert.match(cartography,/function HubPlanOverlay/);
+ assert.match(cartography,/hubPlan\.countries\.map/);
+ assert.match(cartography,/LA CITÉ DES HUIT HÉRITAGES/);
+ assert.match(cartography,/10 QUARTIERS · 8 PORTES DISPERSÉES · HUB SÛR/);
 });
