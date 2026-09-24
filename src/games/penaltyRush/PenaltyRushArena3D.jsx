@@ -112,6 +112,64 @@ function makeNumberTexture(number, color) {
   return texture;
 }
 
+function makeWorldPanelTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 1024, 512);
+  gradient.addColorStop(0, '#06141d');
+  gradient.addColorStop(.52, '#0b2632');
+  gradient.addColorStop(1, '#120f0a');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 1024, 512);
+  ctx.strokeStyle = 'rgba(84,220,255,.24)';
+  ctx.lineWidth = 2;
+  for (let x = 60; x < 1024; x += 86) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - 120, 512); ctx.stroke();
+  }
+  ctx.textAlign = 'center';
+  ctx.shadowBlur = 28;
+  ctx.shadowColor = '#49dfff';
+  ctx.fillStyle = '#f3dda0';
+  ctx.font = '900 190px Arial, sans-serif';
+  ctx.fillText('3B', 512, 245);
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = '#e6c66d';
+  ctx.fillStyle = '#76e8ff';
+  ctx.font = '800 54px Arial, sans-serif';
+  ctx.fillText('MONDE DU 3B · NEXUS', 512, 334);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(237,226,198,.82)';
+  ctx.font = '700 29px Arial, sans-serif';
+  ctx.fillText('8 PORTES · 8 VALEURS · UN MÊME HÉRITAGE', 512, 396);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function makeGateLabelTexture(code) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 160;
+  canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(4,13,18,.9)';
+  ctx.fillRect(0, 0, 160, 80);
+  ctx.strokeStyle = 'rgba(228,198,112,.62)';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(4, 4, 152, 72);
+  ctx.fillStyle = '#f1d78f';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '900 38px Arial, sans-serif';
+  ctx.fillText(code, 80, 40);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 function makeContactShadow() {
   const canvas = document.createElement('canvas');
   canvas.width = 96;
@@ -477,6 +535,137 @@ function createStadium(scene) {
   scene.add(tunnel);
 }
 
+function createThreeBGoalWorld(scene, mobile = false) {
+  const root = new THREE.Group();
+  root.name = '3B_WORLD_BEHIND_GOAL';
+  const cyan = makeMaterial('#153d49', .38, .3, '#58d9f4', .78);
+  const gold = makeMaterial('#493b1c', .34, .42, '#e4c267', .7);
+  const dark = makeMaterial('#071014', .72, .18, '#163442', .16);
+
+  const skyline = new THREE.Group();
+  const rand = seeded(3181818);
+  const towerCount = mobile ? 10 : 16;
+  for (let i = 0; i < towerCount; i += 1) {
+    const side = i < towerCount / 2 ? -1 : 1;
+    const lane = i % Math.ceil(towerCount / 2);
+    const x = side * (5.3 + lane * 1.35 + rand() * .45);
+    const height = 3.8 + rand() * 6.3;
+    const width = .75 + rand() * .9;
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(width, height, 1.2 + rand() * .7), dark.clone());
+    tower.position.set(x, height / 2 - .15, GOAL_Z - 7.8 - rand() * 2.8);
+    tower.material.emissiveIntensity = .08 + rand() * .2;
+    skyline.add(tower);
+
+    const crown = new THREE.Mesh(new THREE.BoxGeometry(width * .72, .08, 1.28), i % 3 === 0 ? gold : cyan);
+    crown.position.set(x, height + .02, tower.position.z);
+    skyline.add(crown);
+  }
+  root.add(skyline);
+
+  const ringBack = new THREE.Mesh(
+    new THREE.TorusGeometry(5.15, .055, 7, mobile ? 54 : 96),
+    makeMaterial('#143a48', .24, .46, '#4edaf5', .95),
+  );
+  ringBack.position.set(0, 4.55, GOAL_Z - 7.05);
+  root.add(ringBack);
+
+  const ringGold = new THREE.Mesh(
+    new THREE.TorusGeometry(4.35, .035, 6, mobile ? 48 : 84),
+    makeMaterial('#3f3216', .2, .5, '#e6c66e', .88),
+  );
+  ringGold.position.set(0, 4.55, GOAL_Z - 6.98);
+  root.add(ringGold);
+
+  const panelTexture = makeWorldPanelTexture();
+  const panel = new THREE.Mesh(
+    new THREE.PlaneGeometry(6.8, 3.4),
+    new THREE.MeshBasicMaterial({ map:panelTexture, transparent:true, opacity:.94, depthWrite:false }),
+  );
+  panel.position.set(0, 5.0, GOAL_Z - 7.32);
+  panel.userData.numberTexture = panelTexture;
+  root.add(panel);
+
+  const gateCodes = ['EE','TR','TN','IT','FR','DZ','ES','MA'];
+  const gateGroup = new THREE.Group();
+  const gateSpacing = 2.75;
+  gateCodes.forEach((code, index) => {
+    const x = (index - 3.5) * gateSpacing;
+    const z = GOAL_Z - 5.35 - Math.abs(index - 3.5) * .5;
+    const material = index % 2 ? cyan : gold;
+    const gate = new THREE.Group();
+
+    const postGeo = new THREE.BoxGeometry(.12, 2.15, .18);
+    const left = new THREE.Mesh(postGeo, material);
+    const right = left.clone();
+    left.position.set(-.62, 1.08, 0);
+    right.position.set(.62, 1.08, 0);
+    gate.add(left, right);
+
+    const top = new THREE.Mesh(new THREE.BoxGeometry(1.36, .12, .18), material);
+    top.position.set(0, 2.08, 0);
+    gate.add(top);
+
+    const inner = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.14, 1.82),
+      new THREE.MeshBasicMaterial({ color:index % 2 ? '#46d8f3' : '#e3bf62', transparent:true, opacity:.055, side:THREE.DoubleSide, depthWrite:false }),
+    );
+    inner.position.set(0, 1.05, -.02);
+    gate.add(inner);
+
+    const labelTexture = makeGateLabelTexture(code);
+    const label = new THREE.Mesh(
+      new THREE.PlaneGeometry(.78, .39),
+      new THREE.MeshBasicMaterial({ map:labelTexture, transparent:true, depthWrite:false }),
+    );
+    label.position.set(0, 1.68, .11);
+    label.userData.numberTexture = labelTexture;
+    gate.add(label);
+
+    gate.position.set(x, 0, z);
+    gate.rotation.y = -x * .018;
+    gateGroup.add(gate);
+  });
+  root.add(gateGroup);
+
+  const pylons = [];
+  for (const side of [-1, 1]) {
+    for (let level = 0; level < 3; level += 1) {
+      const pylon = new THREE.Mesh(
+        new THREE.CylinderGeometry(.08, .13, 3.3 + level * 1.15, 6),
+        level % 2 ? gold : cyan,
+      );
+      pylon.position.set(side * (4.9 + level * 2.6), 1.8 + level * .55, GOAL_Z - 5.7 - level);
+      root.add(pylon);
+      pylons.push(pylon);
+    }
+  }
+
+  const dustCount = mobile ? 45 : 90;
+  const dustPositions = [];
+  for (let i = 0; i < dustCount; i += 1) {
+    dustPositions.push(
+      -12 + rand() * 24,
+      1.2 + rand() * 9,
+      GOAL_Z - 5.2 - rand() * 7.5,
+    );
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustPositions, 3));
+  const dust = new THREE.Points(
+    dustGeo,
+    new THREE.PointsMaterial({ color:'#79ddf4', size:.045, transparent:true, opacity:.42, depthWrite:false }),
+  );
+  root.add(dust);
+
+  const worldLight = new THREE.PointLight('#5bdcf5', mobile ? 1.3 : 2.0, 17, 2);
+  worldLight.position.set(0, 5.1, GOAL_Z - 5.8);
+  root.add(worldLight);
+
+  root.userData = { ringBack, ringGold, panel, worldLight, pylons };
+  scene.add(root);
+  return root;
+}
+
 function createBallTrail(scene) {
   const count = 18;
   const positions = new Float32Array(count * 3);
@@ -590,6 +779,7 @@ function dispose(root) {
     if (Array.isArray(obj.material)) obj.material.forEach((mat) => mat.dispose?.());
     else obj.material?.dispose?.();
     if (obj.userData?.numberTexture) obj.userData.numberTexture.dispose?.();
+    obj.material?.map?.dispose?.();
   });
 }
 
@@ -763,6 +953,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     createPitch(scene);
     const goal = createGoal(scene);
     createStadium(scene);
+    const goalWorld = createThreeBGoalWorld(scene, mobile);
 
     const ball = new THREE.Mesh(
       new THREE.SphereGeometry(.11, 18, 14),
@@ -893,7 +1084,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const shot = visual.shot || {};
       const targetX = clamp(result.target ?? shot.targetX, -1, 1) * (GOAL_W / 2 - .16);
       const targetY = .28 + clamp(shot.targetY, .04, 1) * (GOAL_H - .38);
-      const endZ = event.type === 'save' ? KEEPER_Z - .06 : GOAL_Z - .28;
+      const endZ = event.type === 'goal' ? GOAL_Z - 1.42 : event.type === 'frame' ? GOAL_Z - .06 : KEEPER_Z - .06;
       const end = new THREE.Vector3(targetX, targetY, endZ);
       const control = start.clone().lerp(end, .53);
       control.y += 1.18 + clamp(shot.power, 0, 1) * .92;
@@ -912,6 +1103,10 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         out.y = mix(out.y, .22, bounce);
         out.z += bounce * 2.1;
         out.x += Math.sign(targetX || 1) * bounce * .75;
+      } else if (event.type === 'goal' && t > .76) {
+        const catchT = (t - .76) / .24;
+        out.z -= Math.sin(catchT * Math.PI) * .16;
+        out.y = mix(out.y, Math.max(.2, targetY * .74), catchT * .34);
       } else if (event.type === 'frame' && t > .76) {
         const bounce = (t - .76) / .24;
         out.y = Math.max(.2, out.y - bounce * 1.15);
@@ -960,8 +1155,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const sprinting = Date.now() < Number(state?.sprintUntil || 0);
       if (input?.active) {
         const intensity = clamp(input.intensity, 0, 1);
-        const lateralSpeed = 7.4 + intensity * 2.8;
-        const forwardSpeed = (7.8 + intensity * 4.4) * (sprinting ? 1.3 : 1);
+        const lateralSpeed = 4.4 + intensity * 2.2;
+        const forwardSpeed = (5.4 + intensity * 2.8) * (sprinting ? 1.22 : 1);
         runtime.localAttack.x += clamp(input.x, -1, 1) * lateralSpeed * dt;
         runtime.localAttack.z += clamp(input.y, -1, 1) * forwardSpeed * dt;
         clampAttackerWorld(runtime.localAttack);
@@ -981,7 +1176,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const input = controlRef?.current?.keeper || null;
       if (input?.active) {
         const intensity = clamp(input.intensity, 0, 1);
-        const speed = 11.5 + intensity * 5.5;
+        const speed = 6.8 + intensity * 3.2;
         runtime.localKeeper.x += clamp(input.direction, -1, 1) * speed * dt;
         runtime.localKeeper.x = clamp(runtime.localKeeper.x, -GOAL_W / 2 + .16, GOAL_W / 2 - .16);
       }
@@ -1061,6 +1256,14 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const dt = Math.min(.05, Math.max(.001, (now - runtime.last) / 1000));
       runtime.last = now;
       updateAdaptiveResolution(dt);
+
+      if (goalWorld?.userData) {
+        const pulse = .72 + Math.sin(now * .0014) * .16;
+        goalWorld.userData.ringBack.material.emissiveIntensity = .78 + pulse * .28;
+        goalWorld.userData.ringGold.material.emissiveIntensity = .66 + (1 - pulse) * .34;
+        goalWorld.userData.panel.material.opacity = .88 + Math.sin(now * .0011) * .05;
+        goalWorld.userData.worldLight.intensity = (mobile ? 1.2 : 1.85) + pulse * .36;
+      }
 
       const snapshot = liveRef.current;
       const state = snapshot.room?.state || {};
