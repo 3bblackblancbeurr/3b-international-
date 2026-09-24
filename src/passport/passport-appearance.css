@@ -4,12 +4,14 @@
 .passport-portrait-first-name{position:relative;z-index:3;width:86%;font-weight:800;font-size:clamp(15px,3.6cqw,34px);line-height:1.2;text-align:center;overflow-wrap:anywhere;text-shadow:0 0 18px #00cfff55}
 .passport-portrait-photo{position:absolute;z-index:2;inset:0;width:100%;height:100%;object-fit:cover;filter:saturate(.9) contrast(1.06)}
 .passport-portrait-photo::selection{background:transparent}
-.passport-digital-face{position:relative;z-index:2;width:88%;height:88%;filter:drop-shadow(0 0 9px #21dfff66)}
-.passport-face-grid path{fill:none;stroke:#38dfff22;stroke-width:1}
-.passport-face-outline path{fill:none;stroke:#9cf8ff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.passport-face-eyes{fill:#e9cf82;filter:drop-shadow(0 0 5px #43edff)}
-.passport-face-nodes{fill:#d9c17b;filter:drop-shadow(0 0 4px #66f1ff)}
-.passport-face-scanline{fill:none;stroke:#e9ffff;stroke-width:2;filter:drop-shadow(0 0 4px #52eaff);animation:passportDigitalScan 3.6s ease-in-out infinite}
+.passport-digital-face{position:relative;z-index:2;width:91%;height:91%;filter:drop-shadow(0 0 12px #21dfff55)}
+.passport-face-grid path{fill:none;stroke:#48dfff18;stroke-width:.8}
+.passport-face-shell path{fill:#071c29b8;stroke:#b6f7ff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px #28dfff45)}
+.passport-face-geometry path{fill:#0c38503d;stroke:#53dfffa3;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
+.passport-face-optics path{fill:#0c9bc680;stroke:#d8fbff;stroke-width:1.2}.passport-face-optics circle{fill:#f2d58a;filter:drop-shadow(0 0 5px #50ebff)}
+.passport-face-core path{fill:none;stroke:#d8c684a8;stroke-width:1.2;stroke-linecap:round}
+.passport-face-nodes{fill:#ecd58e;filter:drop-shadow(0 0 5px #66f1ff)}
+.passport-face-scanline{fill:none;stroke:#e9ffff;stroke-width:1.7;filter:drop-shadow(0 0 5px #52eaff);animation:passportDigitalScan 3.9s ease-in-out infinite}
 .passport-portrait-scanbar{position:absolute;z-index:5;left:0;right:0;top:-13%;height:13%;background:linear-gradient(transparent,#18bfff24 65%,#b7ffffaa);mix-blend-mode:screen;animation:passportPortraitScan 5.2s linear infinite}
 .passport-portrait-kind{position:absolute;z-index:6;left:7%;bottom:6%;padding:3px 5px;border-radius:4px;color:#8fefff;background:#00121dcc;font:800 clamp(5px,.75cqw,8px)/1 system-ui;letter-spacing:.13em}
 .passport-portrait[data-animated="false"] :is(.passport-portrait-scanbar,.passport-face-scanline){animation:none}
@@ -51,3 +53,15 @@
  .passport-photo-actions>*{flex:1}
 }
 @media(prefers-reduced-motion:reduce){.passport-portrait-scanbar,.passport-face-scanline{animation:none!important}}
+
+
+/* Premium card-only Passport: the card artwork stays untouched; only redundant
+   surrounding controls are collapsed. */
+.passport-animation-toolbar-compact{
+  justify-content:flex-end;
+  margin-top:10px;
+}
+.passport-animation-toolbar-compact .passport-animation-toggle{
+  min-width:0;
+  padding-inline:12px;
+}
