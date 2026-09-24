@@ -22,7 +22,8 @@ test('phone home puts the World 3B copy before its cinematic Nexus stage',()=>{
  const goldMaster=css.slice(css.lastIndexOf('Nexus architectural gold master'));
  assert.match(goldMaster,/world-portal-copy\{order:1/);
  assert.match(goldMaster,/world-portal-stage\{order:2/);
- assert.match(goldMaster,/nexus-authentic-circle/);
+ assert.match(css,/world-heritage-city-preview/);
+ assert.match(css,/heritage-city-gates/);
 });
 
 test('Passport keeps one original responsive card and never restores the removed Details/zoom UI',()=>{
