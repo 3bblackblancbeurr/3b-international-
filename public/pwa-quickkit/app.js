@@ -66,3 +66,38 @@ $('jsonButton').addEventListener('click', () => {
   const a=document.createElement('a'); a.href=url; a.download=`pwa-quickkit-${new URL(lastResult.finalUrl).hostname}.json`; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),500);
 });
+
+
+const proCheckout = document.getElementById('proCheckout');
+if (proCheckout) {
+  proCheckout.addEventListener('click', async () => {
+    const note = document.getElementById('proCheckoutNote');
+    const original = proCheckout.textContent;
+    proCheckout.disabled = true;
+    proCheckout.textContent = 'Préparation…';
+    try {
+      const response = await fetch('/api/pwa-quickkit-checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      if (note) note.textContent = data.message || 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
+    } catch {
+      if (note) note.textContent = 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
+    } finally {
+      proCheckout.disabled = false;
+      proCheckout.textContent = original;
+    }
+  });
+}
+
+const checkoutState = new URLSearchParams(location.search).get('checkout');
+if (checkoutState === 'success') {
+  const note = document.getElementById('proCheckoutNote');
+  if (note) note.textContent = 'Paiement test reçu. Les droits Pro restent verrouillés tant que le système d’accès n’est pas branché.';
+}
