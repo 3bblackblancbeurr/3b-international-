@@ -84,13 +84,15 @@ export default function PremierSecretPage({ goTo }) {
     }
     if (stage >= 4) {
       entries.push("Fragment transmission : " + config.transmission.join(" · ") + ".");
-      entries.push("Cible des anneaux : " + config.ringTargets.map((value) => RING_MARKS[value]).join(" / ") + ".");
+      entries.push("Clé des anneaux : ☽=I · △=III · ☀=V · ◇=VII ; avance ensuite chaque marque de " + config.ringShift + " cran(s).");
     }
     if (stage >= 5) {
       entries.push(...config.archiveClues);
     }
     if (stage >= 6) {
-      entries.push("Chambre de l’Heure : aiguille " + config.chamberNumber + " · valeur " + config.chamberValue + ".");
+      entries.push("Anneaux stabilisés : " + config.ringTargets.map((value) => RING_MARKS[value]).join(" / ") + ".");
+      entries.push("Archive stabilisée : " + config.archiveOrder.map((value, index) => SLOT_NAMES[index] + "=" + value).join(" · ") + ".");
+      entries.push("Chambre : additionne les trois valeurs des anneaux puis ramène le résultat sur 8 ; lis ensuite la trace placée au " + SLOT_NAMES[config.chamberSlot] + ".");
     }
     if (stage >= 7) {
       entries.push("Sceau final : ce qui relie garde ce qui fut, pour ouvrir ce qui vient.");
@@ -276,7 +278,11 @@ export default function PremierSecretPage({ goTo }) {
   }, [config]);
 
   return (
-    <section className="premier-secret" aria-labelledby="premier-secret-title">
+    <section
+      className="premier-secret"
+      aria-labelledby="premier-secret-title"
+      style={{ "--ps-signal": config.signalColor.hex }}
+    >
       <div className="ps-atmosphere" aria-hidden="true">
         <span />
         <span />
@@ -339,7 +345,7 @@ export default function PremierSecretPage({ goTo }) {
               <p className="ps-kicker">LE SIGNAL EST OUVERT</p>
               <h2>Une minute. Une porte.</h2>
               <p>
-                Le signal est <b>bleu</b>. Son glyphe est <b className="ps-big-glyph">{config.country.glyph}</b>.
+                Le signal est <b>{config.signalColor.label}</b>. Son glyphe est <b className="ps-big-glyph">{config.country.glyph}</b>.
                 Il pulse <b>{config.country.pulses} fois</b>. Mémorise ces marques.
               </p>
               <div className="ps-timer"><strong>{String(secondsLeft).padStart(2, "0")}</strong><span>secondes</span></div>
@@ -403,11 +409,17 @@ export default function PremierSecretPage({ goTo }) {
           <section className="ps-stage ps-puzzle-stage">
             <PuzzleHeader country={config.country.name} step="2" title="Les Anneaux couplés" />
             <div className="ps-puzzle-panel">
-              <p>Trois anneaux sont liés. Tourner un anneau entraîne celui qui le suit. Le carnet contient la cible révélée par la transmission.</p>
-              <div className="ps-ring-targets">
-                <span>CIBLE</span>
-                {config.ringTargets.map((value, index) => <strong key={index}>{RING_MARKS[value]}</strong>)}
+              <p>Trois anneaux sont liés. Tourner un anneau entraîne celui qui le suit. La cible doit être déduite de la transmission précédente.</p>
+              <div className="ps-ring-code">
+                <span>CLÉ DE CONVERSION</span>
+                <strong>☽ = I</strong>
+                <strong>△ = III</strong>
+                <strong>☀ = V</strong>
+                <strong>◇ = VII</strong>
               </div>
+              <p className="ps-instruction">
+                Prends les trois premiers fragments de ta transmission, convertis-les, puis avance chaque marque de <b>{config.ringShift} cran{config.ringShift > 1 ? "s" : ""}</b> sur un cadran de huit positions.
+              </p>
               <div className="ps-rings">
                 {rings.map((value, index) => (
                   <div className="ps-ring-control" key={index}>
@@ -454,7 +466,11 @@ export default function PremierSecretPage({ goTo }) {
           <section className="ps-stage ps-puzzle-stage">
             <PuzzleHeader country={config.country.name} step="4" title="La Chambre de l’Heure" />
             <div className="ps-puzzle-panel">
-              <p>Le mécanisme attend deux éléments déjà rencontrés. Aucun nouvel indice n’apparaîtra ici.</p>
+              <p>Le mécanisme attend deux résultats issus des salles précédentes. Aucun nombre final ni aucune valeur finale ne sont donnés directement.</p>
+              <div className="ps-chamber-clues">
+                <p><strong>Aiguille :</strong> additionne les valeurs I–VIII de tes trois anneaux stabilisés, puis ramène le total sur un cadran de huit positions.</p>
+                <p><strong>Valeur :</strong> utilise la trace que tu avais placée au <b>{SLOT_NAMES[config.chamberSlot]}</b> dans l’Archive.</p>
+              </div>
               <div className="ps-chamber">
                 <label>
                   <span>Aiguille du royaume</span>
