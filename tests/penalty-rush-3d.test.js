@@ -176,6 +176,8 @@ test('V5 touch controls add dead zones, absolute training drag and a hold-to-cha
  assert.match(match,/data-charging/);
  assert.match(training,/deadX \/ 420/);
  assert.match(training,/MAINTIENS · VISE · RELÂCHE/);
+ assert.match(training,/heldMs<300/);
+ assert.match(training,/Maintiens la gâchette pour charger ta frappe/);
  assert.match(training,/penalty-shot-charge/);
  assert.match(controls,/PUISSANCE/);
  assert.match(controls,/RÉACTION/);
