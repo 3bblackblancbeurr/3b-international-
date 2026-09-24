@@ -14,9 +14,15 @@
 - Manga 3B — Le Cercle Brisé : https://3b-international.vercel.app/manga-3b-le-cercle-brise.html
 - Passeport 3B : https://3b-international.vercel.app/passeport-3b.html
 - Installation Android : https://3b-international.vercel.app/install-android.html
+- PWA QuickKit : https://3b-international.vercel.app/pwa-quickkit/
+- PWA Toolkit : https://3b-international.vercel.app/pwa-tools/
 
 ## Univers 3B
 
 L’univers narratif est construit autour de Kaïs, du Cercle Brisé, de huit portes, huit gardiens, huit clés et huit valeurs. Les huit pays sont la France, l’Algérie, le Maroc, la Tunisie, l’Espagne, l’Italie, la Turquie et l’Estonie.
 
 Ce dépôt contient le développement de l’application 3B International.
+
+## Outil développeur public
+
+Le dépôt contient également l'action composite **PWA QuickKit Audit**, utilisable depuis GitHub Actions pour contrôler une URL publique et produire un score PWA. Documentation : `docs/revenue-engine/GITHUB-ACTION.md`.
