@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-09-21",
-  "count": 132,
+  "generated_at": "2026-09-24",
+  "count": 134,
   "migrations": [
     {
       "version": "20260910020445",
@@ -663,6 +663,16 @@
       "version": "20260924173412",
       "name": "secret3b_daily_hour_event_v1",
       "sha256": "7f091f02a72b44a21f34a66cf45c69d6d2da83d7abf015f9ee8d294f18544dd8"
+    },
+    {
+      "version": "20260924184548",
+      "name": "create_pwa_quickkit_entitlements",
+      "sha256": "439d0cb5aa4a1cb84af29aa912af41f851f8a5c875a265169c3c8f27c12e642e"
+    },
+    {
+      "version": "20260924184806",
+      "name": "harden_pwa_quickkit_access_and_rate_limits",
+      "sha256": "add44d95fd885852170dccf6fe4ed239829baa45cd90b1f35be2d9cd84045dfb"
     }
   ]
 }
