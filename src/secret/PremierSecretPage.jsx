@@ -9,6 +9,7 @@ import {
   parisDayKey,
   sameArray,
 } from "./premierSecretEngine.js";
+import { completeDailySecretAttempt, startDailySecretAttempt } from "./dailySecret.js";
 import "./premier-secret.css";
 
 const STORAGE_KEY = "3b_premier_secret_v2";
@@ -52,14 +53,14 @@ function VeilleurFigure() {
   );
 }
 
-export default function PremierSecretPage({ goTo }) {
+export default function PremierSecretPage({ goTo, dailySecret }) {
   const dayKey = useMemo(() => parisDayKey(), []);
   const config = useMemo(() => makePremierSecretConfig(dayKey), [dayKey]);
   const saved = useMemo(() => safeRead(dayKey), [dayKey]);
 
   const [stage, setStage] = useState(() => {
     const value = Number(saved?.stage || 0);
-    return value === 1 ? 0 : Math.max(0, Math.min(9, value));
+    return value === 1 ? 0 : Math.max(0, Math.min(8, value));
   });
   const [soundOn, setSoundOn] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
@@ -73,6 +74,8 @@ export default function PremierSecretPage({ goTo }) {
   const [chamberNumber, setChamberNumber] = useState("");
   const [chamberValue, setChamberValue] = useState("");
   const [sealPick, setSealPick] = useState([]);
+  const [serverMessage, setServerMessage] = useState("");
+  const [starting, setStarting] = useState(false);
   const sequenceTimer = useRef(null);
 
   const journalEntries = useMemo(() => {
@@ -109,6 +112,27 @@ export default function PremierSecretPage({ goTo }) {
   }, []);
 
   useEffect(() => {
+    const phase = dailySecret?.phase;
+    if (!phase || phase === "loading") return;
+    if (phase === "completed") {
+      setStage(8);
+      return;
+    }
+    if (["waiting", "missed", "expired", "disabled"].includes(phase)) {
+      setStage(0);
+      return;
+    }
+    if (phase === "open" && stage > 0) {
+      setStage(0);
+      return;
+    }
+    if (phase === "attempt" && stage === 0) {
+      const restored = Number(safeRead(dayKey)?.stage || 1);
+      setStage(Math.max(1, Math.min(7, restored)));
+    }
+  }, [dailySecret?.phase, dayKey]);
+
+  useEffect(() => {
     if (stage !== 1 || !deadline) return undefined;
     const tick = () => {
       const next = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -143,12 +167,28 @@ export default function PremierSecretPage({ goTo }) {
     oscillator.addEventListener("ended", () => ctx.close());
   }
 
-  function startSignal() {
-    setAttempts(3);
-    setSecondsLeft(60);
-    setDeadline(Date.now() + 60_000);
-    setStage(1);
-    ping(520);
+  async function startSignal() {
+    if (starting || dailySecret?.phase !== "open") return;
+    try {
+      setStarting(true);
+      setServerMessage("");
+      const result = await startDailySecretAttempt();
+      if (!result?.ok) {
+        setServerMessage(result?.reason === "expired" ? "Le temps est déjà écoulé pour aujourd’hui." : "Le signal vient de se refermer.");
+        await dailySecret?.refresh?.();
+        return;
+      }
+      await dailySecret?.refresh?.();
+      setAttempts(3);
+      setSecondsLeft(60);
+      setDeadline(Date.now() + 60_000);
+      setStage(1);
+      ping(520);
+    } catch (error) {
+      setServerMessage(error instanceof Error ? error.message : "Impossible d’ouvrir le Nexus.");
+    } finally {
+      setStarting(false);
+    }
   }
 
   function chooseCountry(index) {
@@ -249,14 +289,26 @@ export default function PremierSecretPage({ goTo }) {
     ping(480 + next.length * 80);
   }
 
-  function validateSeal() {
+  async function validateSeal() {
     if (!sameArray(sealPick, config.finalSeal)) {
       setSealPick([]);
       ping(170);
       return;
     }
-    setStage(8);
-    ping(920);
+    try {
+      const result = await completeDailySecretAttempt();
+      if (!result?.ok) {
+        setServerMessage("Le temps du Veilleur est terminé. Reviens demain.");
+        await dailySecret?.refresh?.();
+        setStage(0);
+        return;
+      }
+      setStage(8);
+      await dailySecret?.refresh?.();
+      ping(920);
+    } catch (error) {
+      setServerMessage(error instanceof Error ? error.message : "Validation serveur impossible.");
+    }
   }
 
   function resetExperience() {
@@ -304,24 +356,43 @@ export default function PremierSecretPage({ goTo }) {
           <button type="button" onClick={() => setJournalOpen(true)}>
             CARNET <b>{String(journalEntries.length).padStart(2, "0")}</b>
           </button>
-          <button type="button" className="ps-clock-button" onClick={stage === 0 ? startSignal : undefined} aria-label="Horloge du Secret">
+          <div className="ps-attempt-clock" data-phase={dailySecret?.phase || "loading"}>
+            <span>{dailySecret?.parisClock || "--:--:--"}</span>
+            <strong>{dailySecret?.phase === "open" || dailySecret?.phase === "attempt" ? dailySecret.countdown : "PARIS"}</strong>
+          </div>
+          <button type="button" className="ps-clock-button" aria-label="Horloge officielle du Secret" disabled>
             ◷
           </button>
         </div>
       </header>
 
       <main className="ps-shell">
+        {dailySecret?.phase === "attempt" && (
+          <div className="ps-global-deadline" role="status">
+            <span>TEMPS TOTAL DE TA TENTATIVE</span>
+            <strong>{dailySecret.countdown}</strong>
+            <small>Quand ce compteur atteint 00:00, le Secret se verrouille jusqu’à demain.</small>
+          </div>
+        )}
         {stage === 0 && (
           <section className="ps-landing ps-stage">
             <div className="ps-landing-copy">
               <p className="ps-kicker">CHAPITRE 01 / LE VEILLEUR DU NEXUS</p>
               <h1 id="premier-secret-title">L’Heure du <em>Premier Secret.</em></h1>
               <p className="ps-lead">Huit royaumes. Une heure qui se dérobe.<br />Et quelque chose qui attend, de l’autre côté.</p>
+              <div className={`ps-hour-status ps-hour-${dailySecret?.phase || "loading"}`}>
+                <span>HEURE OFFICIELLE · PARIS</span>
+                <strong>{dailySecret?.parisClock || "--:--:--"}</strong>
+                <p>{dailySecret?.status?.message || "Synchronisation avec le Nexus…"}</p>
+                {(dailySecret?.phase === "open" || dailySecret?.phase === "attempt") && <b>{dailySecret.countdown}</b>}
+              </div>
               <div className="ps-actions">
-                <button type="button" className="ps-primary" onClick={startSignal}>Éveiller le Nexus <span>↗</span></button>
+                {dailySecret?.phase === "open" && <button type="button" className="ps-primary ps-live-entry" onClick={startSignal} disabled={starting}>{starting ? "Ouverture…" : "Le signal est actif — Entrer maintenant"} <span>↗</span></button>}
+                {dailySecret?.phase === "attempt" && <button type="button" className="ps-primary ps-live-entry" onClick={() => setStage(Math.max(1, Number(safeRead(dayKey)?.stage || 1)))}>Reprendre ma tentative · {dailySecret.countdown} <span>↗</span></button>}
                 <button type="button" className="ps-secondary" onClick={() => setJournalOpen(true)}>Les règles du Secret</button>
               </div>
-              <p className="ps-meta">Épisode 01 · Parcours de réflexion · Carnet de traces<br />Le parcours change avec la journée.</p>
+              {serverMessage && <p className="ps-server-message" role="status">{serverMessage}</p>}
+              <p className="ps-meta">Épisode 01 · 30 minutes d’ouverture · 15 minutes maximum par tentative<br />Une seule occasion par jour. Demain, l’heure sera différente.</p>
               <div className="ps-oath">CE QUI EST BRISÉ PEUT ENCORE NOUS RELIER</div>
             </div>
 
@@ -334,7 +405,7 @@ export default function PremierSecretPage({ goTo }) {
                 <div><strong>Relier.</strong><span>Cinq épreuves interdépendantes.</span></div>
                 <div><strong>Révéler.</strong><span>Un premier secret au bout du cercle.</span></div>
               </div>
-              <p className="ps-demo-note">Version jouable publique · récompense et validation réelle non activées.</p>
+              <p className="ps-demo-note">Horloge et durée contrôlées par le serveur 3B. Modifier l’heure du téléphone ne change pas l’ouverture.</p>
             </div>
           </section>
         )}
@@ -522,45 +593,17 @@ export default function PremierSecretPage({ goTo }) {
               <p className="ps-kicker">LE COFFRE DU PREMIER SECRET</p>
               <h2>Tu as réuni les fragments.</h2>
               <p className="ps-final-words">Unité. Mémoire. Avenir.</p>
-              <div className="ps-validation-banner">PARCOURS TERMINÉ — VALIDATION DE DÉMONSTRATION</div>
-              <p>Le parcours est terminé sur cet appareil. Aucun lot réel n’est attribué dans cette version publique.</p>
+              <div className="ps-validation-banner">PARCOURS TERMINÉ — VALIDATION SERVEUR 3B</div>
+              <p>Ta tentative du jour est validée. Le Nexus ne se rouvrira pour toi que lors du prochain signal quotidien.</p>
               <div className="ps-actions">
-                <button type="button" className="ps-primary" onClick={() => setStage(9)}>Voir l’alerte côté Directeur ↗</button>
-                <button type="button" className="ps-secondary" onClick={resetExperience}>Rejouer le chapitre</button>
+                <button type="button" className="ps-primary" onClick={() => goTo?.("home")}>Retour à l’accueil 3B</button>
+                <button type="button" className="ps-secondary" onClick={() => setJournalOpen(true)}>Relire mon carnet</button>
               </div>
             </div>
           </section>
         )}
 
-        {stage === 9 && (
-          <section className="ps-stage ps-director-stage">
-            <div className="ps-director-card">
-              <p className="ps-kicker">ESPACE DIRECTEUR / DÉMONSTRATION</p>
-              <h2>Un secret vient d’être découvert.</h2>
-              <p>Identité fictive et décisions de démonstration. Aucune notification, récompense ou validation serveur n’est déclenchée.</p>
-              <div className="ps-director-id">
-                <span>IDENTITÉ 3B · COMPTE FICTIF</span>
-                <strong>Explorateur_Démo</strong>
-                <span>PASSEPORT 3B</span>
-                <strong>3B-DEMO-0001</strong>
-              </div>
-              <div className="ps-checks">
-                {[
-                  "Porte du Nexus ouverte",
-                  "La Transmission perdue : validée",
-                  "Les Anneaux couplés : validés",
-                  "L’Archive du royaume : validée",
-                  "La Chambre de l’Heure : validée",
-                  "La question du Veilleur : validée",
-                ].map((line) => <div key={line}>✓ {line}</div>)}
-              </div>
-              <div className="ps-actions">
-                <button type="button" className="ps-primary" onClick={resetExperience}>Retour au Nexus</button>
-                <button type="button" className="ps-secondary" onClick={() => goTo?.("home")}>Accueil 3B</button>
-              </div>
-            </div>
-          </section>
-        )}
+
       </main>
 
       <footer className="ps-footer">
