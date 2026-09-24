@@ -6,7 +6,7 @@ import {hubNpcSchedule} from './npc-schedule.js';
 import {hubMissionActionTargets,hasHubMissionActionPlan} from './mission-actions.js';
 import {guardianHubPresence} from '../guardian-values.js';
 import {hubNpcMemory,hubNpcMemorySummary} from './npc-memory.js';
-import {buildMetropolisRuntimeItems,hubDistrictPosition} from './metropolis.js';
+import {buildMetropolisRuntimeItems,hubDistrictPosition,hubCountryGatePosition,hubEvolutionForDistrict} from './metropolis.js';
 export {hubDistrictPosition};
 
 function hash(input) {
@@ -42,15 +42,39 @@ export function buildHubRuntimeItems({
   seals = [],
   restoredRegions = [],
 }) {
-  const metropolis=buildMetropolisRuntimeItems(plan,profile);
+  const metropolis=buildMetropolisRuntimeItems(plan,profile,{restoredRegions});
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
     type: 'hubDistrict',
     district: district.id,
     name: district.name,
     purpose: district.purpose,
+    evolution:hubEvolutionForDistrict(plan,district.id,restoredRegions),
     ...hubDistrictPosition(plan, district.id),
   }));
+
+  const restoredSet=new Set(restoredRegions);
+  const gateItems=(plan.countries||[]).map((country,index)=>{
+    const position=hubCountryGatePosition(plan,country.region||country.code);
+    return {
+      id:country.region,
+      type:'portal',
+      hubGate:true,
+      gateIndex:index,
+      countryCode:country.code,
+      country:country.country,
+      guardian:country.guardian,
+      value:country.value,
+      district:country.gateDistrict,
+      restored:restoredSet.has(country.region),
+      evolution:restoredSet.has(country.region)?3:hubEvolutionForDistrict(plan,country.gateDistrict,restoredRegions),
+      name:`${country.country} · Porte de ${country.value}`,
+      color:country.color||'#d6b46a',
+      x:position?.x||0,
+      z:position?.z||0,
+      range:9,
+    };
+  });
 
   const maxNpcs = selectNpcBudget(plan, profile),memorySave={hub:hubState||{},seals:[...seals]};
   const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
@@ -198,9 +222,11 @@ export function buildHubRuntimeItems({
   });
 
   return {
-    items: [...metropolis.items, ...districtItems, ...npcItems, ...missionItems, ...missionActionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...metropolis.items, ...gateItems, ...districtItems, ...npcItems, ...missionItems, ...missionActionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
+      gates:gateItems.length,
+      restoredGates:gateItems.filter(gate=>gate.restored).length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
