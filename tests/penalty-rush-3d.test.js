@@ -134,6 +134,8 @@ test('V4 local prediction prioritizes instant control then reconciles softly', (
   assert.match(arena, /const forwardSpeed = \(5\.4 \+ intensity \* 2\.8\)/);
   assert.match(arena, /input\?\.active \? \.35 : 12\.5/);
   assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
+ assert.match(arena, /const drive = \.24 \+ intensity \* \.76/);
+ assert.match(arena, /const drive = \.22 \+ intensity \* \.78/);
   assert.match(arena, /input\?\.active \? \.25 : 15/);
 });
 
@@ -169,6 +171,7 @@ test('V4 server movement supports responsive lateral attack and keeper positioni
 
 test('V5 touch controls add dead zones, absolute training drag and a hold-to-charge trigger',()=>{
  assert.match(match,/const deadZone = 10/);
+ assert.match(match,/const keeperDeadZone = 9/);
  assert.match(match,/penalty-shot-charge/);
  assert.match(match,/data-charging/);
  assert.match(training,/deadX \/ 420/);
