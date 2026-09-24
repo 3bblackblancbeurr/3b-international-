@@ -32,42 +32,91 @@ export function pointerStick(dx,dy){
 
 export const QUALITY_MODES=['auto','fluid','detail'];
 
-// Conservative capability hint only: FPS remains the source of truth. Browsers
-// may omit deviceMemory, so the fallback deliberately lands on balanced.
+// Capability is only the starting point. Sustained frame time remains the
+// source of truth because thermal throttling can make a powerful phone behave
+// like a low-end device after several minutes.
 export function detectDeviceProfile(){
  if(typeof navigator==='undefined')return 'balanced';
  const memory=Number(navigator.deviceMemory)||4,cores=Number(navigator.hardwareConcurrency)||4;
- if(memory<=3||cores<=4)return 'performance';
- if(memory>=8&&cores>=8)return 'ultra';
+ const saveData=!!navigator.connection?.saveData;
+ const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||'');
+ if(saveData||memory<=3||cores<=4)return 'performance';
+ if(!mobile&&memory>=8&&cores>=8)return 'ultra';
+ if(memory>=8&&cores>=8)return 'high';
  return 'balanced';
 }
 
 export function createQualityController(mode='auto'){
  const profile=detectDeviceProfile();
- let value=profile==='performance'?.86:1,slow=0,fast=0;
+ const initial=profile==='performance'?.82:profile==='balanced'?.94:1;
+ let value=initial,slow=0,fast=0,critical=0,stable=0;
  const autoConfig={
-  performance:{cap:1,pixels:950000,slowFps:31,fastFps:42,min:.58,down:.1,up:.04,recover:18},
-  balanced:{cap:1.25,pixels:1500000,slowFps:45,fastFps:57,min:.6,down:.12,up:.05,recover:14},
-  ultra:{cap:1.4,pixels:1950000,slowFps:52,fastFps:59,min:.66,down:.1,up:.04,recover:16},
+  performance:{cap:.92,pixels:780000,slowFps:30,fastFps:45,min:.50,down:.12,up:.035,recover:24},
+  balanced:{cap:1.08,pixels:1180000,slowFps:40,fastFps:54,min:.54,down:.11,up:.04,recover:22},
+  high:{cap:1.24,pixels:1580000,slowFps:48,fastFps:58,min:.60,down:.10,up:.035,recover:20},
+  ultra:{cap:1.38,pixels:1950000,slowFps:52,fastFps:59,min:.66,down:.09,up:.035,recover:18},
+ };
+ const config=()=>autoConfig[profile]||autoConfig.balanced;
+ const tier=()=>{
+  if(mode==='fluid')return 'critical';
+  if(mode==='detail')return 'ultra';
+  if(value<=.60)return 'critical';
+  if(value<=.76)return 'low';
+  if(value<=.90||profile==='performance')return 'balanced';
+  return profile==='ultra'?'ultra':'high';
+ };
+ const effective=()=>{
+  if(mode!=='auto')return mode;
+  const t=tier();
+  return t==='critical'?'fluid':t==='low'?'fluid':'auto';
+ };
+ const shadowBudget=()=>{
+  const t=tier();
+  if(mode==='fluid'||t==='critical')return{enabled:false,mapSize:512,interval:260};
+  if(t==='low')return{enabled:true,mapSize:512,interval:180};
+  if(t==='balanced')return{enabled:true,mapSize:768,interval:120};
+  if(t==='high')return{enabled:true,mapSize:1024,interval:80};
+  return{enabled:true,mapSize:1536,interval:65};
  };
  return {
-  setMode(next){mode=QUALITY_MODES.includes(next)?next:'auto';value=mode==='auto'&&profile==='performance'?.86:1;slow=fast=0;},
-  ratio(width,height,dpr=1){
-   if(mode==='detail')return Math.max(.5,Math.min(dpr,1.5,Math.sqrt(2600000/Math.max(1,width*height))));
-   if(mode==='fluid')return Math.max(.5,Math.min(dpr,1,Math.sqrt(850000/Math.max(1,width*height))));
-   const config=autoConfig[profile];
-   return Math.max(.5,Math.min(dpr,config.cap,Math.sqrt(config.pixels/Math.max(1,width*height)))*value);
+  setMode(next){
+   mode=QUALITY_MODES.includes(next)?next:'auto';
+   value=mode==='auto'?initial:1;slow=fast=critical=stable=0;
   },
-  sample(fps,seconds){
+  ratio(width,height,dpr=1){
+   if(mode==='detail')return Math.max(.5,Math.min(dpr,1.45,Math.sqrt(2200000/Math.max(1,width*height))));
+   if(mode==='fluid')return Math.max(.5,Math.min(dpr,.90,Math.sqrt(680000/Math.max(1,width*height))));
+   const cfg=config();
+   return Math.max(.5,Math.min(dpr,cfg.cap,Math.sqrt(cfg.pixels/Math.max(1,width*height)))*value);
+  },
+  sample(fps,seconds,{longFrameRatio=0}={}){
    if(mode!=='auto')return false;
-   const config=autoConfig[profile];
-   slow=fps<config.slowFps?slow+seconds:Math.max(0,slow-seconds*1.5);
-   fast=fps>config.fastFps?fast+seconds:Math.max(0,fast-seconds*2);
-   if(slow>=2&&value>config.min){value=Math.max(config.min,value-config.down);slow=fast=0;return true;}
-   if(fast>=config.recover&&value<1){value=Math.min(1,value+config.up);slow=fast=0;return true;}
-   return false;
+   const cfg=config(),before=tier(),dt=Math.max(.05,Math.min(2,seconds||1));
+   const severe=fps<Math.min(24,cfg.slowFps-8)||longFrameRatio>.28;
+   critical=severe?critical+dt:Math.max(0,critical-dt*1.7);
+   slow=fps<cfg.slowFps||longFrameRatio>.12?slow+dt:Math.max(0,slow-dt*1.35);
+   fast=fps>cfg.fastFps&&longFrameRatio<.05?fast+dt:Math.max(0,fast-dt*2.2);
+   stable=slow===0&&critical===0?stable+dt:0;
+   let changed=false;
+   if(critical>=1.25&&value>cfg.min){
+    value=Math.max(cfg.min,value-cfg.down*1.55);critical=slow=fast=0;changed=true;
+   }else if(slow>=2.2&&value>cfg.min){
+    value=Math.max(cfg.min,value-cfg.down);slow=fast=0;changed=true;
+   }else if(fast>=cfg.recover&&stable>=cfg.recover*.75&&value<1){
+    value=Math.min(1,value+cfg.up);slow=fast=0;changed=true;
+   }
+   return changed||before!==tier();
   },
   get profile(){return profile;},
   get scale(){return value;},
+  get tier(){return tier();},
+  get effectiveMode(){return effective();},
+  get shadow(){return shadowBudget();},
+  get particleScale(){
+   return ({critical:.28,low:.45,balanced:.68,high:.86,ultra:1})[tier()]||.68;
+  },
+  get crowdScale(){
+   return ({critical:.42,low:.56,balanced:.72,high:.88,ultra:1})[tier()]||.72;
+  },
  };
 }
