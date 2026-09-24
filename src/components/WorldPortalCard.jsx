@@ -27,13 +27,13 @@ export default function WorldPortalCard({goTo}){
 
  return <section className="world-portal" aria-labelledby="world-portal-title">
   <div className="world-portal-copy">
-   <p className="eyebrow">LE MONDE DU 3B · NEXUS</p>
-   <h2 id="world-portal-title">Une plateforme qui devient un <em>monde.</em></h2>
-   <p>Depuis ton téléphone, le Nexus relie les huit Portes, les quartiers, les Gardiens, les missions et ta progression. Un seul Passeport 3B accompagne toute ton aventure.</p>
+   <p className="eyebrow">LE MONDE DU 3B · LA CITÉ DES HUIT HÉRITAGES</p>
+   <h2 id="world-portal-title">Une cité qui évolue avec ton <em>histoire.</em></h2>
+   <p>Le Hub central réunit dix quartiers utiles, des bâtiments vivants, les transports 3B et huit Portes physiques dispersées dans la Cité. Chaque Gardien libéré transforme réellement le monde à ton retour.</p>
    <div className="world-portal-meta">
-    <span><Globe2 size={16}/>8 Portes reliées</span>
-    <span><CircleDot size={16}/>Nexus central</span>
-    <span><ShieldCheck size={16}/>Même Passeport 3B</span>
+    <span><Globe2 size={16}/>8 Portes dispersées</span>
+    <span><CircleDot size={16}/>10 quartiers vivants</span>
+    <span><ShieldCheck size={16}/>Hub central · zone sûre</span>
    </div>
    <div className="world-portal-actions">
     <RouteLink page="world3b" goTo={goTo} className="surface-button">Entrer dans le Monde du 3B <ArrowUpRight size={16}/></RouteLink>
