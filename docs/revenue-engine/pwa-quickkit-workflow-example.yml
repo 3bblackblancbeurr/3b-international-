@@ -1,0 +1,14 @@
+name: PWA quality gate
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pwa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: 3bblackblancbeurr/3b-international-/.github/actions/pwa-quickkit@chatgpt-improvements-revenue-engine-20260924
+        id: audit
+        with:
+          url: https://example.com
+      - run: echo "Score ${{ steps.audit.outputs.score }} / Grade ${{ steps.audit.outputs.grade }}"
