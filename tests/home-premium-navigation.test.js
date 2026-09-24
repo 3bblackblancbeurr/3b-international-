@@ -30,12 +30,13 @@ test('community and textile AI remain explicitly staged as coming soon',()=>{
  assert.match(nav,/item\.status === "soon"/);
 });
 
-test('the home world card uses a Nexus ring and contains no Unreal client copy',()=>{
- assert.match(portal,/nexus-ring-scene/);
- assert.match(portal,/NEXUS/);
+test('the home world card uses the canonical Cité des Huit Héritages instead of a small Nexus ring',()=>{
+ assert.match(portal,/CITÉ DES HUIT HÉRITAGES/);
+ assert.match(portal,/10 quartiers utiles/);
  assert.match(portal,/8 Portes reliées/);
- assert.match(portal,/nexus-authentic-circle[\s\S]*nexus-gates/);
- for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE'])assert.match(portal,new RegExp("code:'"+code+"'"));
+ assert.match(portal,/cite-huit-heritages-canon-v3\.svg/);
+ assert.match(portal,/hub-city-canon-map/);
+ assert.doesNotMatch(portal,/CircleArtwork|nexus-authentic-circle|nexus-ring-scene|nexus-gates/);
  assert.doesNotMatch(portal,/client Unreal Engine|UE 5\.8 foundation|Le web reste le cœur/i);
 });
 
