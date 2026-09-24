@@ -60,45 +60,49 @@ jobs:
           unreal/ThreeBWorld/Scripts/france_goldmaster_gate.py
           unreal/ThreeBWorld/Scripts/build_hub3b_void_blockout_v3.py
           unreal/ThreeBWorld/Scripts/build_hub3b_main_v4.py
+          unreal/ThreeBWorld/Scripts/build_hub3b_main_v5.py
           unreal/ThreeBWorld/Content/Python/init_unreal.py
       - name: Validate Hub 3B one-click manifest and launcher contract
         run: |
           python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-void-blockout-v3.json >/dev/null
           python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json >/dev/null
+          python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-main-v5.json >/dev/null
+          python -m json.tool unreal/ThreeBWorld/Data/Production/world-layout-unreal.json >/dev/null
           test -f LANCER_HUB_3B.bat
           test -f scripts/windows/Launch-Hub3B.ps1
-          grep -q -- "-3BHubV4AutoBuild" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
-          grep -q "build_hub3b_main_v4.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+          grep -q -- "-3BHubV5AutoBuild" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+          grep -q "build_hub3b_main_v5.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
 
-      - name: Validate Hub 3B V4 spatial canon
+      - name: Validate Hub 3B V5 metropolitan canon
         run: |
           python - <<'PY'
           import json
+          import math
           from pathlib import Path
 
-          path = Path("unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json")
-          data = json.loads(path.read_text(encoding="utf-8"))
+          manifest = json.loads(Path("unreal/ThreeBWorld/Data/Production/hub3b-main-v5.json").read_text(encoding="utf-8"))
+          layout = json.loads(Path("unreal/ThreeBWorld/Data/Production/world-layout-unreal.json").read_text(encoding="utf-8"))
+          legacy = json.loads(Path("unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json").read_text(encoding="utf-8"))
 
-          portals = data["portals"]
-          assert len(portals) == 8, len(portals)
-          codes = [p["code"] for p in portals]
-          assert len(set(codes)) == 8, codes
-          assert set(codes) == {"EE","FR","ES","MA","DZ","TN","IT","TR"}, codes
+          assert manifest["required_map_name"] == "Hub3B_Main_V05"
+          assert manifest["validation"]["forbid_central_gate_wheel"] is True
+          assert layout["world"]["radius_cm"] == 82000
+          assert layout["world"]["safe_hub"] is True
+          assert len(layout["districts"]) == 10
+          assert len(layout["buildings"]) == 19
+          assert len(layout["gates"]) == 8
+          assert len(layout["roads"]) == 37
 
-          angles = sorted(float(p["angle_deg"]) % 360 for p in portals)
-          diffs = [((angles[(i+1) % 8] - angles[i]) % 360) for i in range(8)]
-          assert all(abs(d - 45.0) < 0.001 for d in diffs), diffs
+          coords = set()
+          for gate in layout["gates"]:
+              p = gate["location_cm"]
+              radius = math.hypot(p["x"], p["y"])
+              assert radius > 50000, (gate["code"], radius)
+              assert radius < 82000, (gate["code"], radius)
+              coords.add((p["x"], p["y"]))
+          assert len(coords) == 8
 
-          assert data["validation"]["required_map_name"] == "Hub3B_Main_V04"
-          assert data["core"]["diameter_cm"] == 2600
-          assert data["ring"]["segment_count"] == 24
-          assert data["ring"]["radius_cm"] > data["core"]["diameter_cm"] / 2
-          assert data["design"]["clear_void_below_cm"] >= 2500
-          assert data["design"]["deep_cloud_start_cm"] <= -7000
-
-          for p in portals:
-              assert p["arch_radius_cm"] > p["terrace_radius_cm"] > data["ring"]["radius_cm"]
-              assert p["state"] == "prepared"
-
-          print("Hub 3B V4 spatial canon: OK")
+          assert legacy.get("deprecated") is True
+          assert legacy.get("superseded_by") == "hub3b-main-v5.json"
+          print("Hub 3B V5 metropolitan canon: OK")
           PY
