@@ -706,9 +706,11 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       }
     }
     if (isKeeper) {
-      const direction = Math.max(-1, Math.min(1, dx / Math.max(34, Math.abs(dx))));
-      const intensity = Math.min(1, distance / 92);
-      controlRef.current.keeper = { direction, intensity, active:true };
+      const keeperDeadZone = 9;
+      const effectiveDistance = Math.max(0, distance - keeperDeadZone);
+      const direction = effectiveDistance ? Math.max(-1, Math.min(1, dx / Math.max(38, Math.abs(dx)))) : 0;
+      const intensity = Math.min(1, effectiveDistance / 92);
+      controlRef.current.keeper = { direction, intensity, active:effectiveDistance > 0 };
       const now = performance.now();
       if (now - keeperMoveThrottle.current >= 50) {
         keeperMoveThrottle.current = now;
