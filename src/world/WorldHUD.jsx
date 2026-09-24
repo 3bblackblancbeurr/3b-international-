@@ -8,12 +8,13 @@ import {worldRuntimeItems} from './runtime-items.js';
 import {WEATHER_LABELS} from './world-weather.js';
 import {frontierState} from './frontier.js';
 import {levelFor} from './rules.js';
+import {nexusLevel} from './chapters.js';
 import {compassHeading} from './settlements.js';
 import {contextActions} from './interaction-system.js';
 import {controlLabel} from './control-bindings.js';
 
 export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls}){
- const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
+ const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region),hubStage=snapshot.region==='hub'?nexusLevel(save):0;
  const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]);
  const [arrival,setArrival]=useState(false),[actionMenu,setActionMenu]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
@@ -29,6 +30,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   {country&&<button className="play-supplies" aria-label={home.wood+' bois, '+home.stone+' pierre, '+home.food+' provisions. Ouvrir mon refuge'} title="Provisions et refuge" onClick={()=>onPanel('camp')}><span><Trees size={15}/>{home.wood}</span><span><Mountain size={15}/>{home.stone}</span><span><Wheat size={15}/>{home.food}</span></button>}
   <Compass heading={snapshot.heading} waypoint={snapshot.waypoint} position={snapshot.position}/>
   <div className="world-district">{snapshot.district||country?.name||'Cité des Huit Héritages'}{snapshot.time&&<small> · {snapshot.time.phase} · {String(Math.floor(snapshot.time.hour)).padStart(2,'0')}:{String(Math.floor((snapshot.time.hour%1)*60)).padStart(2,'0')}{snapshot.weather?' · '+(WEATHER_LABELS[snapshot.weather]||snapshot.weather):''}</small>}</div>
+  {!country&&<div className="world-hub-state" aria-label={'Cité des Huit Héritages, '+hubStage+' héritages restaurés sur 8'}><span>ZONE SÛRE</span><b>{hubStage} / 8</b><small>HÉRITAGES RELIÉS</small></div>}
   <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} onOpen={()=>onPanel('atlas')}/>
   {arrival&&loaded&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Cité des Huit Héritages'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
   <button className="play-profile" aria-label={(save.adventure.avatar.name||'Voyageur')+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" onClick={()=>onPanel('team')}><span>{(save.adventure.avatar.name||'V').slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></button>
