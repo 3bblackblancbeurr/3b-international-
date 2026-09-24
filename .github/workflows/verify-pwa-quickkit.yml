@@ -1,0 +1,32 @@
+name: Verify PWA QuickKit
+
+on:
+  pull_request:
+    paths:
+      - 'api/pwa-*.js'
+      - 'server/pwa-*.js'
+      - 'public/pwa-quickkit/**'
+      - 'public/outils-ia/**'
+      - 'tests/pwa*.test.js'
+      - 'supabase/migrations/*pwa_quickkit*.sql'
+      - '.env.example'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-pwa-quickkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Test PWA QuickKit
+        run: node --test tests/pwa*.test.js
+      - name: Build application
+        run: npm run build
