@@ -42,7 +42,16 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 @keyframes platformSpin{to{transform:rotate(360deg)}}
 @media(max-width:900px){.home-journey-status{grid-template-columns:repeat(2,minmax(0,1fr))}.network-status{display:none}.network-status.is-offline{display:inline-flex}}
 @media(max-width:720px){
- html{scrollbar-gutter:auto}
+ html{scrollbar-gutter:auto;scroll-behavior:auto}
+ /* Keep the document as the sole vertical scroller in mobile WebViews. */
+ body{overflow-x:clip;overscroll-behavior-y:auto}
+ .app3b{overflow-x:clip;overflow-y:visible;background:linear-gradient(180deg,#06090bd6,#06090b 700px),url('/background.png') center top / 100% auto no-repeat #06090b}
+ /* Full-viewport animated layers and blur force expensive repaints on scroll. */
+ .app3b-background,.matrix-layer{display:none!important}
+ .app3b::before,.app3b::after{display:none}
+ .mobile-navigation{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ .app3b .compact-card{transform:none!important;will-change:auto!important}
+ .app3b :is(.editorial-page,.loyalty-page,.shop3b,.community-page,.sport-page){perspective:none}
  .app3b #main-content{min-height:calc(100dvh - 150px)}
  .app3b::before{animation:none!important;transform:none!important}
  .site-header{position:relative;top:auto;background:#090e11f2;box-shadow:none}
