@@ -10,6 +10,25 @@ function clearStatus(){ $('status').className='status'; $('status').textContent=
 function esc(value){ return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function labelForCategory(name){ return name; }
 
+function buildQuickFixMailto(data){
+  const url = data?.finalUrl || '';
+  const score = Number.isFinite(data?.score) ? `${data.score}/100` : 'non renseigné';
+  const priorities = (data?.recommendations || []).slice(0,5).map((r,i)=>`${i+1}. ${r.title}`).join('\n');
+  const subject = `PWA QuickKit - Correction Express - ${url ? new URL(url).hostname : 'mon site'}`;
+  const body = [
+    'Bonjour,',
+    '',
+    'Je souhaite une Correction Express PWA QuickKit.',
+    `Site : ${url}`,
+    `Score QuickKit : ${score}`,
+    '',
+    priorities ? `Priorités détectées :\n${priorities}` : 'Priorités détectées : à confirmer',
+    '',
+    'Merci de me confirmer le périmètre et le prix avant toute facturation.'
+  ].join('\n');
+  return `mailto:3bblackblancbeurr@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 function render(data){
   lastResult = data;
   $('results').classList.add('show');
@@ -27,6 +46,12 @@ function render(data){
     <div class="check"><div class="dot ${c.pass?'pass':'fail'}">${c.pass?'✓':'!'}</div><div><div class="check-title">${esc(c.label)}</div><div class="detail">${esc(c.detail)}</div></div><span class="pill">${esc(c.category)}</span></div>`).join('');
   $('recommendations').innerHTML = data.recommendations.length ? data.recommendations.map(r => `
     <div class="rec"><div class="rec-top"><span class="priority ${esc(r.priority)}">${esc(r.priority)}</span><strong>${esc(r.title)}</strong></div><p>${esc(r.fix)}</p></div>`).join('') : '<div class="rec"><strong>Excellent.</strong><p>Aucune correction prioritaire détectée dans cet audit statique.</p></div>';
+
+  const quickFix = $('quickFixCta');
+  if (quickFix) quickFix.href = buildQuickFixMailto(data);
+  const quickFixOffer = $('quickFixOffer');
+  if (quickFixOffer) quickFixOffer.href = buildQuickFixMailto(data);
+
   $('results').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -48,7 +73,7 @@ $('auditForm').addEventListener('submit', async event => {
     showStatus(error.message || 'Audit impossible.', 'error');
   }finally{
     button.disabled = false;
-    button.textContent = 'Analyser le site';
+    button.textContent = 'Analyser gratuitement';
   }
 });
 
@@ -66,7 +91,6 @@ $('jsonButton').addEventListener('click', () => {
   const a=document.createElement('a'); a.href=url; a.download=`pwa-quickkit-${new URL(lastResult.finalUrl).hostname}.json`; a.click();
   setTimeout(()=>URL.revokeObjectURL(url),500);
 });
-
 
 const PRO_TOKEN_KEY = 'pwa_quickkit_pro_token_v1';
 const proCheckout = document.getElementById('proCheckout');
@@ -131,7 +155,7 @@ if (proCheckout) {
   proCheckout.addEventListener('click', async () => {
     const original = proCheckout.textContent;
     proCheckout.disabled = true;
-    proCheckout.textContent = 'Préparation…';
+    proCheckout.textContent = 'Vérification…';
     try {
       const response = await fetch('/api/pwa-quickkit-checkout', {
         method: 'POST',
@@ -143,9 +167,9 @@ if (proCheckout) {
         window.location.assign(data.url);
         return;
       }
-      if (proNote) proNote.textContent = data.error || 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
+      if (proNote) proNote.textContent = 'Pro n’est pas encore ouvert. La Correction Express est disponible dès maintenant à partir de 49 €.';
     } catch {
-      if (proNote) proNote.textContent = 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
+      if (proNote) proNote.textContent = 'Pro n’est pas encore ouvert. La Correction Express est disponible dès maintenant à partir de 49 €.';
     } finally {
       proCheckout.disabled = false;
       proCheckout.textContent = original;
