@@ -5,14 +5,14 @@ import {CircleArtwork} from './NexusArtwork.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
 
 const GATES=[
- {code:'FR',value:'Justice',x:50,y:7},
- {code:'DZ',value:'Loyauté',x:72,y:16},
- {code:'ES',value:'Passion',x:87,y:36},
- {code:'MA',value:'Noblesse',x:84,y:65},
- {code:'IT',value:'Espoir',x:66,y:80},
- {code:'TN',value:'Courage',x:34,y:80},
- {code:'TR',value:'Foi',x:16,y:65},
- {code:'EE',value:'Sagesse',x:13,y:36},
+ {code:'FR',value:'Justice',x:50,y:4},
+ {code:'DZ',value:'Loyauté',x:78,y:15},
+ {code:'ES',value:'Passion',x:95,y:42},
+ {code:'MA',value:'Noblesse',x:85,y:72},
+ {code:'IT',value:'Espoir',x:63,y:91},
+ {code:'TN',value:'Courage',x:37,y:91},
+ {code:'TR',value:'Foi',x:15,y:72},
+ {code:'EE',value:'Sagesse',x:5,y:42},
 ];
 
 export default function WorldPortalCard({goTo}){
@@ -48,13 +48,13 @@ export default function WorldPortalCard({goTo}){
    <div className="nexus-atmosphere"><i/><i/><i/></div>
    <div className="nexus-authentic-circle nexus-ring-scene">
     <CircleArtwork id="home-nexus-circle" large doors={GATES.map(gate=>({code:gate.code,sealed:false,restored:false}))}/>
+    <div className="nexus-gates">
+     {GATES.map((gate,index)=><span className="nexus-portal-pylon" key={gate.code} style={{'--x':gate.x+'%','--y':gate.y+'%','--i':index}}>
+       <i className="nexus-pylon-frame"/>
+       <b>{gate.code}</b><small>{gate.value}</small>
+      </span>)}
+    </div>
     <span className="nexus-circle-plinth"><b>3B</b><small>NEXUS</small></span>
-   </div>
-   <div className="nexus-gates">
-    {GATES.map((gate,index)=><span className="nexus-portal-pylon" key={gate.code} style={{'--x':gate.x+'%','--y':gate.y+'%','--i':index}}>
-      <i className="nexus-pylon-frame"/>
-      <b>{gate.code}</b><small>{gate.value}</small>
-     </span>)}
    </div>
    <div className="nexus-avenue"><i/><i/><i/></div>
   </div>
