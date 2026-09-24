@@ -246,7 +246,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',context=
   const restoredRegions=Array.isArray(context.restoredRegions)?context.restoredRegions:[];
   const buildings=plan.buildings.map((building,index)=>buildingItem(plan,building,index,restoredRegions));
   const structures=fillerItems(plan,profile,restoredRegions);
-  const roads=metropolisRoadItems(plan);
+  const roads=metropolisRoadItems(plan).map(route=>({...route,evolution:Math.min(3,Math.floor((restoredRegions.length+1)/3))}));
   const traffic=metropolisTrafficItems(plan,profile);
   return {
     items:[...roads,...structures,...buildings,...traffic],
