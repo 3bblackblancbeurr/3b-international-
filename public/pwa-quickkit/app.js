@@ -68,27 +68,84 @@ $('jsonButton').addEventListener('click', () => {
 });
 
 
+const PRO_TOKEN_KEY = 'pwa_quickkit_pro_token_v1';
 const proCheckout = document.getElementById('proCheckout');
+const proNote = document.getElementById('proCheckoutNote');
+
+function showProActive(data = {}) {
+  if (proCheckout) {
+    proCheckout.textContent = 'Pro actif ✓';
+    proCheckout.disabled = true;
+  }
+  if (proNote) {
+    const end = data.currentPeriodEnd ? new Date(data.currentPeriodEnd).toLocaleDateString('fr-FR') : null;
+    proNote.textContent = data.cancelAtPeriodEnd
+      ? `Pro actif jusqu’au ${end || 'terme de la période'} puis résiliation.`
+      : `Pro actif${end ? ` · prochaine échéance autour du ${end}` : ''}.`;
+  }
+}
+
+async function refreshProStatus() {
+  const token = localStorage.getItem(PRO_TOKEN_KEY);
+  if (!token) return false;
+  try {
+    const response = await fetch('/api/pwa-quickkit-status', {
+      headers: { authorization: `Bearer ${token}`, accept: 'application/json' },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (response.ok && data.active) {
+      showProActive(data);
+      return true;
+    }
+    localStorage.removeItem(PRO_TOKEN_KEY);
+  } catch { /* A temporary network error must not erase the local token. */ }
+  return false;
+}
+
+async function activateCheckoutReturn() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('checkout') !== 'success') return false;
+  const sessionId = params.get('session_id') || '';
+  if (!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(sessionId)) return false;
+
+  if (proNote) proNote.textContent = 'Activation sécurisée de ton accès Pro…';
+  try {
+    const response = await fetch('/api/pwa-quickkit-activate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.active || !data.token) throw new Error(data.error || 'Activation impossible.');
+    localStorage.setItem(PRO_TOKEN_KEY, data.token);
+    showProActive(data);
+    history.replaceState(null, '', location.pathname + location.hash);
+    return true;
+  } catch (error) {
+    if (proNote) proNote.textContent = error.message || 'Le paiement est confirmé mais l’activation doit être réessayée.';
+    return false;
+  }
+}
+
 if (proCheckout) {
   proCheckout.addEventListener('click', async () => {
-    const note = document.getElementById('proCheckoutNote');
     const original = proCheckout.textContent;
     proCheckout.disabled = true;
     proCheckout.textContent = 'Préparation…';
     try {
       const response = await fetch('/api/pwa-quickkit-checkout', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: '{}',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ attemptId: crypto.randomUUID() }),
       });
       const data = await response.json().catch(() => ({}));
       if (response.ok && data.url) {
         window.location.assign(data.url);
         return;
       }
-      if (note) note.textContent = data.message || 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
+      if (proNote) proNote.textContent = data.error || 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
     } catch {
-      if (note) note.textContent = 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
+      if (proNote) proNote.textContent = 'Le checkout Pro live n’est pas encore activé. Aucun paiement réel n’a été lancé.';
     } finally {
       proCheckout.disabled = false;
       proCheckout.textContent = original;
@@ -96,8 +153,7 @@ if (proCheckout) {
   });
 }
 
-const checkoutState = new URLSearchParams(location.search).get('checkout');
-if (checkoutState === 'success') {
-  const note = document.getElementById('proCheckoutNote');
-  if (note) note.textContent = 'Paiement test reçu. Les droits Pro restent verrouillés tant que le système d’accès n’est pas branché.';
-}
+(async () => {
+  const activated = await activateCheckoutReturn();
+  if (!activated) await refreshProStatus();
+})();
