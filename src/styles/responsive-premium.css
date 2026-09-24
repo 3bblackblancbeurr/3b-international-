@@ -81,8 +81,7 @@ html{overflow-x:hidden}
  .passport-view-caption{font-size:11px;margin-bottom:16px}
  .passport-card-zoom{display:inline-flex}
  .passport-card-viewport[data-zoomed="true"] .passport-card-stage{width:max(100%,720px)}
- .passport-horizontal-view .passport-portal-trigger{display:none}
- .passport-horizontal-view .passport-card-entry{display:flex}
+ .passport-horizontal-view .passport-portal-trigger{display:grid}
  .passport-card-zoom-hint{display:block;margin:10px 0;color:#92adb9;font-size:11px;line-height:1.6}
  .passport-visual .passport-entry-hint{font-size:11px!important}
 }
