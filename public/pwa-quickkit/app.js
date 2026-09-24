@@ -10,6 +10,8 @@ function clearStatus(){ $('status').className='status'; $('status').textContent=
 function esc(value){ return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function labelForCategory(name){ return name; }
 
+window.RevenueTracker?.track('quickkit_page_view');
+
 function render(data){
   lastResult = data;
   $('results').classList.add('show');
@@ -38,12 +40,14 @@ $('auditForm').addEventListener('submit', async event => {
   button.disabled = true;
   button.textContent = 'Analyse…';
   showStatus('Connexion sécurisée au site et vérification des critères…');
+  window.RevenueTracker?.track('quickkit_audit_started');
   try{
     const response = await fetch(`/api/pwa-audit?url=${encodeURIComponent(target)}`, {headers:{accept:'application/json'}});
     const data = await response.json().catch(()=>({error:'Réponse serveur invalide.'}));
     if(!response.ok) throw new Error(data.error || 'Audit impossible.');
     clearStatus();
     render(data);
+    window.RevenueTracker?.track('quickkit_audit_completed',{score:data.score,grade:data.grade});
   }catch(error){
     showStatus(error.message || 'Audit impossible.', 'error');
   }finally{
@@ -129,6 +133,7 @@ async function activateCheckoutReturn() {
 
 if (proCheckout) {
   proCheckout.addEventListener('click', async () => {
+    window.RevenueTracker?.track('quickkit_pro_click');
     const original = proCheckout.textContent;
     proCheckout.disabled = true;
     proCheckout.textContent = 'Préparation…';
