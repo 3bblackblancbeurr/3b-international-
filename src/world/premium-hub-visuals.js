@@ -13,7 +13,8 @@ export function buildPremiumHubRoad(item,{mesh,material,groundY}){
  const asphalt=material(item.kind==='express'?'#11171d':item.kind==='lane'?'#2c3133':'#171d22',{roughness:item.kind==='lane'?.88:.97,metalness:.03});
  const paving=material('#4d5457',{roughness:.9,metalness:.04});
  const curbMat=material('#8e8a7b',{roughness:.78,metalness:.08});
- const marking=material(item.kind==='express'?'#d6b46a':'#d7d8d0',{roughness:.52,metalness:.15,emissive:item.kind==='express'?'#805d16':'#2d3537',emissiveIntensity:.08});
+ const evolution=clamp(Number(item.evolution)||0,0,3);
+ const marking=material(item.kind==='express'?'#d6b46a':'#d7d8d0',{roughness:.52,metalness:.15,emissive:item.kind==='express'?'#805d16':'#2d3537',emissiveIntensity:.08+evolution*.07});
  const road=mesh('box',asphalt,item.x,y+.045,item.z,item.width,.09,item.length);road.rotation.y=heading;road.castShadow=false;visuals.push(road);
 
  const sideX=Math.cos(heading),sideZ=-Math.sin(heading),forwardX=Math.sin(heading),forwardZ=Math.cos(heading);
@@ -31,7 +32,7 @@ export function buildPremiumHubRoad(item,{mesh,material,groundY}){
  if(item.kind==='express')for(const side of [-1,1]){
   const lane=mesh('box',marking,item.x+sideX*(item.width*.24)*side,y+.102,item.z+sideZ*(item.width*.24)*side,.10,.016,item.length*.96);lane.rotation.y=heading;lane.castShadow=false;visuals.push(lane);
  }
- const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:item.kind==='lane'?.18:.42,roughness:.25,metalness:.62}),roadSeed=hash(item.id||'hub-road');
+ const streetMetal=material('#222a2f',{roughness:.48,metalness:.52}),streetGlow=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:(item.kind==='lane'?.18:.42)+evolution*.10,roughness:.25,metalness:.62}),roadSeed=hash(item.id||'hub-road');
  const lampFractions=item.kind==='lane'?[.04]:[-.34+((roadSeed>>>4)%9)/100,.26+((roadSeed>>>9)%11)/100];
  lampFractions.forEach((fraction,station)=>{for(const side of item.kind==='lane'?[roadSeed%2?1:-1]:[-1,1]){
   const stagger=side*((((roadSeed>>>(station*3+13))%7)-3)/100),along=item.length*(fraction+stagger),offset=item.width/2+2.65,x=item.x+forwardX*along+sideX*offset*side,z=item.z+forwardZ*along+sideZ*offset*side;
@@ -64,6 +65,24 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
  }
  const canopy=mesh('box',trim,bx,y+3.2,bz+depth*.57,width*.26,.26,depth*.18);visuals.push(canopy);
  const light=mesh('box',glass,bx,y+2.7,bz+depth*.665,width*.18,.18,.08);light.castShadow=false;visuals.push(light);
+
+ const evolution=clamp(Number(item.evolution)||0,0,3);
+ if(evolution>0){
+  const activeGlass=material('#0b5875',{emissive:'#00a8ff',emissiveIntensity:.24+evolution*.16,roughness:.15,metalness:.18,clearcoat:.35});
+  const activeGold=material('#d6b46a',{emissive:'#9e762c',emissiveIntensity:.10+evolution*.09,roughness:.22,metalness:.90});
+  for(let band=0;band<evolution;band++){
+   const lift=y+height*(.24+band*.19);
+   const strip=mesh('box',band===evolution-1?activeGold:activeGlass,bx,lift,bz+depth*.518,width*(.42+band*.09),.12,.07);
+   strip.castShadow=false;visuals.push(strip);
+  }
+  if(evolution>=2){
+   const beacon=mesh('cylinder',activeGold,bx,y+height+2.4,bz,.18,4.8,.18);beacon.castShadow=false;visuals.push(beacon);
+   const cap=mesh('sphere',activeGlass,bx,y+height+4.95,bz,.34,.52,.34);cap.castShadow=false;visuals.push(cap);
+  }
+  if(evolution>=3){
+   const crownGlow=mesh('ring',activeGold,bx,y+height*.76,bz,width*.56,width*.56,width*.56);crownGlow.rotation.x=Math.PI/2;crownGlow.castShadow=false;visuals.push(crownGlow);
+  }
+ }
 
  if(!canonical)return visuals;
  switch(item.buildingId){
