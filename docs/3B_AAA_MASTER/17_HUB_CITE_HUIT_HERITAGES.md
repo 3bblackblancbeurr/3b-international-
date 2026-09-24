@@ -2,9 +2,26 @@
 
 ## Statut
 
-Conception canonique V2 prête pour blockout, développement piloté par données et production 3D.
+**Canon V3 de production.** Le plan V2 est désormais consolidé dans une Cité réellement multi-quartiers, avec infrastructures, Portes dispersées et évolution visible liée à la progression.
 
 L’image validée de la Cité des Huit Héritages fixe la composition visuelle, l’échelle perçue, la verticalité, les ponts, l’eau, les grands quartiers, la Tour du Cercle Brisé et la dispersion des huit portes. Les textes générés visibles dans l’image sont illustratifs : le canon officiel reste celui du projet, avec Céliane/Justice, Yliane/Loyauté, Diego/Passion, Naël/Noblesse, Alessio/Espoir, Soraya/Courage, Émir/Foi et Eira/Sagesse.
+
+## Mise à jour V3 — référence maîtresse
+
+La **Carte futuriste de la Cité des Huit Héritages** est désormais la référence spatiale maîtresse. Sa traduction embarquée dans l’application est `/world/hub/cite-huit-heritages-canon-v3.svg`.
+
+Le contrat V3 interdit explicitement le retour à un petit Nexus circulaire entouré de huit boutons. Le Cercle Brisé est le cœur de la métropole, mais la métropole elle-même s’étend autour de dix quartiers fonctionnels et huit Portes territoriales dispersées.
+
+La V3 ajoute au runtime :
+- 10 plateformes / places de quartier ;
+- 5 canaux, bassins ou axes d’eau ;
+- 8 passerelles et ponts surélevés ;
+- 8 secteurs de Portes avec identité propre ;
+- une skyline périphérique adaptative ;
+- une évolution visuelle du Cercle et des Portes pilotée par les pays restaurés ;
+- une cartographie qui affiche les infrastructures réelles plutôt qu’un simple anneau.
+
+Les lois non négociables sont documentées dans `22_LOIS_CITE_HUIT_HERITAGES_V3.md`.
 
 ## Vision
 
