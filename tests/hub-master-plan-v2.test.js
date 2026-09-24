@@ -14,7 +14,24 @@ const events = read('events-v1.json');
 const secrets = read('secrets-v1.json');
 const unique = (rows, key = 'id') => new Set(rows.map((row) => row[key])).size === rows.length;
 
-test('Hub V2 preserves eight countries, guardians and canonical values', () => {
+test('Hub V3 locks the Cité des Huit Héritages visual law',()=>{
+ assert.equal(plan.version,'3.0.0');
+ assert.equal(plan.status,'production-canonical-v3');
+ assert.match(plan.visualReference,/cite-huit-heritages-canon-v3\.svg$/);
+ assert.equal(plan.visualLaw.safeZone,true);
+ assert.match(plan.visualLaw.rule,/métropole multi-quartiers/i);
+ assert.match(plan.visualLaw.rule,/jamais.*petit cercle/i);
+ assert.equal(plan.countries.filter(country=>Array.isArray(country.gateAnchor)&&country.gateAnchor.length===2).length,8);
+ assert.equal(new Set(plan.countries.map(country=>country.sector)).size,8);
+ assert.equal(plan.cityLayers.length,5);
+ assert.equal(plan.waterways.length,5);
+ assert.equal(plan.elevatedLinks.length,8);
+ assert.equal(plan.evolution.length,9);
+ assert.deepEqual(plan.evolution.map(stage=>stage.stage),[0,1,2,3,4,5,6,7,8]);
+});
+
+
+test('Hub V3 preserves eight countries, guardians and canonical values', () => {
   assert.equal(plan.countries.length, 8);
   assert.ok(unique(plan.countries, 'code'));
   assert.ok(unique(plan.countries, 'guardian'));
@@ -34,7 +51,7 @@ test('Hub V2 preserves eight countries, guardians and canonical values', () => {
   );
 });
 
-test('Hub V2 districts, buildings and transport references are consistent', () => {
+test('Hub V3 districts, buildings and transport references are consistent', () => {
   assert.equal(plan.districts.length, 10);
   assert.ok(unique(plan.districts));
   assert.ok(unique(plan.buildings));
