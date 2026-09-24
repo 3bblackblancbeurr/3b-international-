@@ -50,6 +50,7 @@ test('opening cinematic uses non-linear dolly rise and gameplay return',()=>{
  assert.match(source,/cinematicRiseProgress\(age,\{waterReveal\}\)/);
  assert.match(source,/cinematicDollyProgress\(age,\{waterReveal\}\)/);
  assert.match(source,/cinematicReturnBlend\(age,\{waterReveal\}\)/);
- assert.match(source,/fovStart=68;fovEnd=60/);
+ assert.match(source,/fovStart=70;fovEnd=58/);
+ assert.match(source,/cityReveal:true/);
  assert.doesNotMatch(source,/Math\.max\(0,\(ease-\.72\)\/\.28\)/);
 });
