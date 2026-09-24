@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import {COUNTRIES} from './catalog.js';
-
 /**
  * Premium ceremonial heart for the Cité des Huit Héritages.
  *
@@ -35,30 +33,28 @@ export function addHeritagePlatform({root,shape,geo,mat,height,owned,center}){
   const rim=shape(ring(radius,tube),champagne,center.x,y+lift,center.z,1,1,1,staticRoot);rim.rotation.x=Math.PI/2;rim.castShadow=false;
  }
 
- // Eight radial heritage axes. A dark-glass ribbon and a thin Matrix pulse
- // visually connect every country plinth to the broken circle.
- for(let i=0;i<8;i++){
-  const a=i*Math.PI/4,dirX=Math.sin(a),dirZ=Math.cos(a),mid=16.4;
-  const ribbon=shape(box,glass,center.x+dirX*mid,y+.205,center.z+dirZ*mid,1.16,.028,11.7,staticRoot);ribbon.rotation.y=a;
-  const pulse=shape(box,blue,center.x+dirX*mid,y+.235,center.z+dirZ*mid,.075,.018,11.1,staticRoot);pulse.rotation.y=a;pulse.castShadow=false;
-  const country=COUNTRIES[i],px=center.x+dirX*25.6,pz=center.z+dirZ*25.6;
-  const plinth=shape(cylinder,obsidian,px,y+.35,pz,2.15,.55,2.15,staticRoot);plinth.rotation.y=Math.PI/8;
-  const accent=physical({color:country.color,roughness:.24,metalness:.42,emissive:country.color,emissiveIntensity:.45,clearcoat:.38});
-  shape(cylinder,accent,px,y+.655,pz,1.38,.065,1.38,staticRoot).rotation.y=Math.PI/8;
-  const blade=shape(box,champagne,px,y+1.75,pz,.11,2.15,.42,staticRoot);blade.rotation.y=-a;
-  blade.castShadow=true;
+ // The heart is civic, not a wheel of country gates. The actual eight
+ // country Portes live on the outer metropolis ring. Here we keep only six
+ // broad city axes linking the Place de l’Héritage to useful districts.
+ for(let i=0;i<6;i++){
+  const a=i*Math.PI/3,dirX=Math.sin(a),dirZ=Math.cos(a),mid=17.1;
+  const ribbon=shape(box,glass,center.x+dirX*mid,y+.205,center.z+dirZ*mid,1.55,.028,13.2,staticRoot);ribbon.rotation.y=a;
+  const pulse=shape(box,blue,center.x+dirX*mid,y+.235,center.z+dirZ*mid,.065,.018,12.7,staticRoot);pulse.rotation.y=a;pulse.castShadow=false;
+  const px=center.x+dirX*28.4,pz=center.z+dirZ*28.4;
+  const landing=shape(cylinder,obsidian,px,y+.20,pz,2.5,.26,2.5,staticRoot);landing.rotation.y=Math.PI/8;
+  const rim=shape(cylinder,champagne,px,y+.36,pz,2.05,.045,2.05,staticRoot);rim.rotation.y=Math.PI/8;rim.castShadow=false;
  }
 
- // Low architectural thresholds mark the eight approaches without becoming
- // invisible collision walls.
- for(let i=0;i<8;i++){
-  const a=i*Math.PI/4,dirX=Math.sin(a),dirZ=Math.cos(a),sideX=Math.cos(a),sideZ=-Math.sin(a);
-  const px=center.x+dirX*34,pz=center.z+dirZ*34;
-  const apron=shape(box,obsidian,px,y+.055,pz,5.8,.07,5.5,staticRoot);apron.rotation.y=a;
+ // Four monumental civic thresholds frame the Place without pretending that
+ // the countries are here. They are orientation landmarks toward the wider city.
+ for(let i=0;i<4;i++){
+  const a=i*Math.PI/2,dirX=Math.sin(a),dirZ=Math.cos(a),sideX=Math.cos(a),sideZ=-Math.sin(a);
+  const px=center.x+dirX*35,pz=center.z+dirZ*35;
+  const apron=shape(box,obsidian,px,y+.055,pz,7.2,.07,6.2,staticRoot);apron.rotation.y=a;
   for(const side of [-1,1]){
-   const bx=px+sideX*side*2.55,bz=pz+sideZ*side*2.55;
-   shape(fineCylinder,champagne,bx,y+.72,bz,.10,1.35,.10,staticRoot);
-   const cap=shape(fineCylinder,blue,bx,y+1.45,bz,.16,.12,.16,staticRoot);cap.castShadow=false;
+   const bx=px+sideX*side*3.0,bz=pz+sideZ*side*3.0;
+   shape(fineCylinder,champagne,bx,y+1.05,bz,.12,2.0,.12,staticRoot);
+   const cap=shape(fineCylinder,blue,bx,y+2.12,bz,.19,.14,.19,staticRoot);cap.castShadow=false;
   }
  }
 
