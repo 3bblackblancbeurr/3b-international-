@@ -205,6 +205,111 @@ export function createPremiumHubMarker(item,{root,geometry,material,groundY,kind
 }
 
 
+
+const HUB_GATE_COLORS={
+ france:'#6bbcff',algerie:'#6fd3a0',espagne:'#f0a05d',maroc:'#e4bd68',
+ italie:'#9bd1a2',tunisie:'#76d9df',turquie:'#b9a4ef',estonie:'#96dff2',
+};
+
+export function createPremiumHubPlatform(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Hub-Platform-'+item.district;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const radius=Math.max(36,Number(item.radius)||70),segments=item.kind==='arrival'?8:12;
+ const stone=material('#151d23',{roughness:.76,metalness:.16});
+ const rim=material('#d6b46a',{emissive:'#75571d',emissiveIntensity:.16,roughness:.28,metalness:.82});
+ const blue=material('#0b3850',{emissive:'#00a8ff',emissiveIntensity:.18,roughness:.26,metalness:.32});
+ child(group,geometry.cylinder,stone,{y:.10,sx:radius,sy:.18,sz:radius});
+ child(group,geometry.cylinder,rim,{y:.24,sx:radius*.91,sy:.035,sz:radius*.91,cast:false});
+ child(group,geometry.cylinder,stone,{y:.29,sx:radius*.84,sy:.09,sz:radius*.84});
+ child(group,geometry.ring,blue,{y:.42,sx:radius*.54,sy:radius*.54,sz:radius*.54,rx:Math.PI/2,cast:false});
+ for(let i=0;i<segments;i++){
+  const a=i/segments*Math.PI*2,r=radius*.76;
+  child(group,geometry.box,i%3===0?rim:blue,{x:Math.cos(a)*r,y:.44,z:Math.sin(a)*r,sx:.16,sy:.08,sz:3.2,ry:-a,cast:false});
+ }
+ return group;
+}
+
+export function createPremiumHubWaterway(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Hub-Waterway-'+item.kind;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y+.04,item.z);group.rotation.y=item.heading||0;
+ const water=material('#07557a',{emissive:'#00a8ff',emissiveIntensity:.22,roughness:.12,metalness:.08,transparent:true,opacity:.62,transmission:.16,ior:1.34,thickness:.08});
+ const bank=material('#2b3338',{roughness:.82,metalness:.08});
+ const gold=material('#d6b46a',{emissive:'#694e18',emissiveIntensity:.12,roughness:.32,metalness:.78});
+ child(group,geometry.box,water,{y:.03,sx:item.width,sy:.05,sz:item.length,cast:false});
+ for(const side of [-1,1]){
+  child(group,geometry.box,bank,{x:side*(item.width/2+1.2),y:.17,sx:1.7,sy:.28,sz:item.length,cast:false});
+  child(group,geometry.box,gold,{x:side*(item.width/2+.3),y:.29,sx:.08,sy:.06,sz:item.length*.94,cast:false});
+ }
+ if(item.kind==='cascade'){
+  for(const t of [-.32,0,.32])child(group,geometry.box,water,{x:t*item.width,y:.28,z:item.length*.46,sx:item.width*.22,sy:.55,sz:1.2,rx:.12,cast:false});
+ }
+ return group;
+}
+
+export function createPremiumHubBridge(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Hub-Bridge-'+item.kind;root.add(group);
+ const baseY=groundY(item.x,item.z),deckY=3.6+Math.max(0,item.level||1)*2.1;group.position.set(item.x,baseY,item.z);group.rotation.y=item.heading||0;
+ const deck=material('#1b242a',{roughness:.66,metalness:.34}),gold=material('#d6b46a',{emissive:'#806022',emissiveIntensity:.18,metalness:.84,roughness:.24}),blue=material('#0d445f',{emissive:'#00a8ff',emissiveIntensity:.3,metalness:.38,roughness:.18});
+ child(group,geometry.box,deck,{y:deckY,sx:item.width,sy:.55,sz:item.length});
+ for(const side of [-1,1]){
+  child(group,geometry.box,gold,{x:side*(item.width/2-.28),y:deckY+1.0,sx:.12,sy:.12,sz:item.length*.97,cast:false});
+  for(const t of [-.38,0,.38])child(group,geometry.box,blue,{x:side*(item.width/2-.28),y:deckY+.62,z:t*item.length*.78,sx:.10,sy:1.25,sz:.10,cast:false});
+ }
+ for(const t of [-.34,.34])child(group,geometry.box,deck,{y:deckY/2,z:t*item.length*.82,sx:item.width*.52,sy:deckY,sz:.55});
+ return group;
+}
+
+export function createPremiumHubSkyline(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Hub-Skyline';root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
+ const dark=material(item.accent===1?'#101c24':'#151a20',{roughness:.62,metalness:.38});
+ const glow=material(item.accent===2?'#d6b46a':'#124c68',{emissive:item.accent===2?'#d6b46a':'#00a8ff',emissiveIntensity:.22,metalness:.52,roughness:.22});
+ child(group,geometry.box,dark,{y:item.height/2,sx:item.width,sy:item.height,sz:item.depth});
+ for(const level of [.24,.46,.68,.86])child(group,geometry.box,glow,{y:item.height*level,z:item.depth*.505,sx:item.width*.58,sy:.22,sz:.08,cast:false});
+ child(group,geometry.box,glow,{y:item.height+.35,sx:item.width*.46,sy:.6,sz:item.depth*.46,cast:false});
+ if(item.height>95)child(group,geometry.cylinder,glow,{y:item.height+6,sx:.22,sy:11,sz:.22,cast:false});
+ return group;
+}
+
+export function createPremiumHubGateSector(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Hub-Gate-'+item.countryId;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const accent=HUB_GATE_COLORS[item.countryId]||'#00a8ff';
+ const stone=material('#151b20',{roughness:.68,metalness:.24}),gold=material('#d6b46a',{emissive:'#72551e',emissiveIntensity:item.restored?.18:.07,metalness:.86,roughness:.25}),glow=material(accent,{emissive:accent,emissiveIntensity:item.restored?.72:.24,metalness:.44,roughness:.18});
+ child(group,geometry.cylinder,stone,{y:.10,sx:28,sy:.20,sz:28});
+ child(group,geometry.ring,gold,{y:.36,sx:22,sy:22,sz:22,rx:Math.PI/2,cast:false});
+ for(const side of [-1,1]){
+  child(group,geometry.box,stone,{x:side*12,y:7.5,sx:2.8,sy:15,sz:4.2});
+  child(group,geometry.box,gold,{x:side*12,y:15.4,sx:3.4,sy:.45,sz:4.8,cast:false});
+  child(group,geometry.box,glow,{x:side*12,y:10.1,z:2.15,sx:.38,sy:7.6,sz:.08,cast:false});
+ }
+ child(group,geometry.box,gold,{y:16.8,sx:25.6,sy:.5,sz:3.6});
+ child(group,geometry.box,glow,{y:4.4,z:2.3,sx:12,sy:6.4,sz:.10,cast:false});
+ return group;
+}
+
+export function createPremiumHubEvolution(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Hub-Evolution';root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const gold=material('#d6b46a',{emissive:'#d6b46a',emissiveIntensity:.46,metalness:.72,roughness:.20}),blue=material('#00a8ff',{emissive:'#00a8ff',emissiveIntensity:.62,metalness:.36,roughness:.16,transparent:true,opacity:.82});
+ if(item.type==='hubEvolutionCore'){
+  const stage=Math.max(0,Math.min(8,item.restoredCount||0));
+  child(group,geometry.cylinder,material('#101820',{roughness:.58,metalness:.46}),{y:.18,sx:15,sy:.36,sz:15});
+  for(let ring=0;ring<3;ring++)child(group,geometry.ring,ring===1?gold:blue,{y:.52+ring*.08,sx:7.5+ring*3.1,sy:7.5+ring*3.1,sz:7.5+ring*3.1,rx:Math.PI/2,cast:false});
+  for(let i=0;i<8;i++){
+   const a=i/8*Math.PI*2,r=12.5,active=i<stage;
+   child(group,geometry.box,active?gold:material('#273139',{roughness:.7,metalness:.25}),{x:Math.cos(a)*r,y:.72,z:Math.sin(a)*r,sx:.75,sy:active?2.4:.65,sz:.75,cast:false});
+  }
+  if(stage===8)child(group,geometry.cylinder,blue,{y:7.4,sx:.42,sy:14,sz:.42,cast:false});
+ }else{
+  const accent=material(HUB_GATE_COLORS[item.countryId]||'#00a8ff',{emissive:HUB_GATE_COLORS[item.countryId]||'#00a8ff',emissiveIntensity:.72,metalness:.3,roughness:.2});
+  child(group,geometry.cylinder,gold,{y:.18,sx:1.8,sy:.36,sz:1.8});
+  child(group,geometry.cylinder,accent,{y:2.9,sx:.18,sy:5.5,sz:.18,cast:false});
+  child(group,geometry.sphere,accent,{y:5.9,sx:.52,sy:.75,sz:.52,cast:false});
+ }
+ return group;
+}
+
 export function createPremiumTransitVehicle(spec,start,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Moving-'+spec.transport;root.add(group);
  const dark=material('#11171c',{roughness:.42,metalness:.52});
