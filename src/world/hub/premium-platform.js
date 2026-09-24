@@ -74,9 +74,9 @@ export function createPremiumHubPlatform({
     const g=geo(new THREE.RingGeometry(inner,outer,segments));g.rotateX(-Math.PI/2);
     const m=shape(g,material,0,y,0,1,1,1,parent);m.receiveShadow=true;m.castShadow=false;return m;
   };
-  const torus=(radius,tube,y,material,parent=detailGroup)=>{
+  const torus=(radius,tube,y,material,parent=detailGroup,x=0,z=0)=>{
     const g=geo(new THREE.TorusGeometry(radius,tube,6,128));g.rotateX(-Math.PI/2);
-    const m=shape(g,material,0,y,0,1,1,1,parent);m.castShadow=false;return m;
+    const m=shape(g,material,x,y,z,1,1,1,parent);m.castShadow=false;return m;
   };
   const slab=(x,z,w,d,y,thickness=1.2,material=materials.stone,parent=staticGroup)=>{
     const m=shape(box,material,x,y-thickness/2,z,w,thickness,d,parent);m.receiveShadow=true;return m;
@@ -141,7 +141,9 @@ export function createPremiumHubPlatform({
   // Central light well.
   shape(cylinder,materials.dark,0,plazaY-.6,plazaZ,6.8,1.2,6.8,staticGroup);
   shape(cylinder,materials.water,0,plazaY-.02,plazaZ,5.3,.18,5.3,waterGroup);
-  const lightCore=shape(cylinder,materials.blue,0,plazaY+2.8,plazaZ,.35,5.6,.35,detailGroup);
+  const pulseMaterial=new THREE.MeshStandardMaterial({color:BLUE,metalness:.34,roughness:.34,emissive:'#149dc5',emissiveIntensity:.46});
+  owned.push(pulseMaterial);
+  const lightCore=shape(cylinder,pulseMaterial,0,plazaY+2.8,plazaZ,.35,5.6,.35,detailGroup);
   lightCore.userData.hubPulse=true;
   for(let i=0;i<12;i++){
     const a=i/12*TAU,r=28,x=Math.cos(a)*r,z=plazaZ+Math.sin(a)*r;
@@ -160,7 +162,7 @@ export function createPremiumHubPlatform({
     const fin=shape(box,i%3===0?materials.gold:materials.stone2,Math.cos(a)*13.4,61,Math.sin(a)*13.4,i%3===0?.55:.85,116,1.25,tower);
     fin.rotation.y=-a;
   }
-  for(const y of [16,34,52,70,88,106,122])torus.call(null,13.2,.12,towerY+y,materials.gold,detailGroup);
+  for(const y of [16,34,52,70,88,106,122])torus(13.2,.12,towerY+y,materials.gold,detailGroup,0,towerZ);
   const crown=shape(cylinder,materials.gold,0,137,0,6.8,2.2,6.8,tower);
   shape(cylinder,materials.blue,0,152,0,1.15,28,1.15,tower);
   shape(ball,materials.gold,0,168,0,1.2,1.8,1.2,tower);
@@ -187,7 +189,7 @@ export function createPremiumHubPlatform({
         asset(j%3===0?'Tree':'Planter',x,z,j%3===0?.78:1.0,a,detailGroup);
       }
       const pond=geo(new THREE.CircleGeometry(8,48));const pm=shape(pond,materials.water,d.x,y+.34,d.z,1,1,1,waterGroup);pm.rotation.x=-Math.PI/2;
-      torus(8.4,.09,y+.46,materials.gold,detailGroup);
+      torus(8.4,.09,y+.46,materials.gold,detailGroup,d.x,d.z);
       collisions.push({x:d.x,z:d.z,r:4.5});
       return;
     }else if(d.kind==='docks'){
@@ -251,10 +253,6 @@ export function createPremiumHubPlatform({
     }
     const t=.52,mid={x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t},n={x:-dz/len,z:dx/len};
     bridge({x:mid.x+n.x*13,z:mid.z+n.z*13},{x:mid.x-n.x*13,z:mid.z-n.z*13},10);
-    if(index<2)for(let j=0;j<3;j++){
-      const wz=b.x+dx/len*j*3,wx=b.z+dz/len*j*3;
-      void wz;void wx;
-    }
   }
 
   // Distant skyline is deliberately non-interactive. It gives the same "city continues forever" feeling as the reference.
