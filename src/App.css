@@ -67,7 +67,7 @@ body {
     radial-gradient(circle at 85% 20%, rgba(230, 189, 100, 0.12), transparent 26%),
     radial-gradient(circle at 50% 100%, rgba(0, 213, 255, 0.08), transparent 32%),
     #030405;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 button,

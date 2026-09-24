@@ -101,6 +101,8 @@ html{overflow-x:hidden}
 /* Dedicated phone Passport: readable without zoom or horizontal scrolling. */
 @media(max-width:720px){
  html[data-viewport="phone"] .app3b{
+  overflow-x:clip;
+  overflow-y:visible;
   padding-top:max(8px,env(safe-area-inset-top));
   padding-left:max(10px,env(safe-area-inset-left));
   padding-right:max(10px,env(safe-area-inset-right));

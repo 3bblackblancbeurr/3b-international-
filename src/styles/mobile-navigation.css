@@ -1,5 +1,5 @@
 /* Shared 3B shell, grouped home and responsive navigation. */
-.app3b { overflow: clip; padding: 0 32px 36px; background: #080a0c; }
+.app3b { overflow-x: clip; overflow-y: visible; padding: 0 32px 36px; background: #080a0c; }
 .app3b-background { opacity: .14; }
 .matrix-layer.active { opacity: .2; }
 .app3b #main-content { position: relative; z-index: 1; outline: none; }

@@ -63,18 +63,19 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
     window.addEventListener('keydown', shortcut);
     return () => window.removeEventListener('keydown', shortcut);
   }, []);
-  useEffect(() => {
-    if (!isOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previous; };
-  }, [isOpen]);
+  // The native modal makes the background inert. Avoid an additional body
+  // overflow lock: on mobile it can survive a route change or another modal
+  // closing and leave the entire application unable to scroll.
 
   function openMenu() {
     setQuery("");
     if (!dialog.current?.open) dialog.current?.showModal();
     setIsOpen(true);
-    requestAnimationFrame(() => searchInput.current?.focus());
+    // Focusing search on a phone opens the keyboard over the menu and shrinks
+    // its scroll area before the user has chosen to search.
+    if (!window.matchMedia("(max-width: 720px)").matches) {
+      requestAnimationFrame(() => searchInput.current?.focus({ preventScroll: true }));
+    }
   }
   function navigate(nextPage) {
     dialog.current.close();
