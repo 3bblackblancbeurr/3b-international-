@@ -1,6 +1,6 @@
 {
   "version": "4.0.0",
-  "status": "canonical-architecture-blockout",
+  "status": "legacy-frozen-obsolete-wheel",
   "title": "Hub principal 3B — Sanctuaire des Huit Portes",
   "map_asset": "/Game/3binternational/Maps/Hub3B_Main_V04",
   "generated_tag": "3B_HUB_V4",
@@ -18,14 +18,26 @@
     "target_void_ratio": 0.54
   },
   "core": {
-    "center_cm": [0, 0],
+    "center_cm": [
+      0,
+      0
+    ],
     "surface_z_cm": 240,
     "diameter_cm": 2600,
     "thickness_cm": 180,
     "underside_tiers": [
-      {"diameter_cm": 2500, "depth_cm": 700},
-      {"diameter_cm": 1850, "depth_cm": 900},
-      {"diameter_cm": 1150, "depth_cm": 1000}
+      {
+        "diameter_cm": 2500,
+        "depth_cm": 700
+      },
+      {
+        "diameter_cm": 1850,
+        "depth_cm": 900
+      },
+      {
+        "diameter_cm": 1150,
+        "depth_cm": 1000
+      }
     ]
   },
   "ring": {
@@ -45,9 +57,16 @@
   "petals": {
     "start_radius_cm": 3650,
     "segment_length_cm": 650,
-    "segment_widths_cm": [1700, 1500, 1300],
+    "segment_widths_cm": [
+      1700,
+      1500,
+      1300
+    ],
     "thickness_cm": 150,
-    "portal_pad_size_cm": [1400, 1050]
+    "portal_pad_size_cm": [
+      1400,
+      1050
+    ]
   },
   "portal_arch": {
     "opening_width_cm": 650,
@@ -151,14 +170,102 @@
     }
   ],
   "fragments": [
-    {"id":"F01","angle_deg":18,"radius_cm":6500,"z_cm":-1800,"size_cm":[520,320,240],"yaw_deg":22},
-    {"id":"F02","angle_deg":62,"radius_cm":7100,"z_cm":-2200,"size_cm":[680,360,280],"yaw_deg":-18},
-    {"id":"F03","angle_deg":108,"radius_cm":6600,"z_cm":-2600,"size_cm":[760,420,300],"yaw_deg":31},
-    {"id":"F04","angle_deg":151,"radius_cm":7300,"z_cm":-3000,"size_cm":[840,450,320],"yaw_deg":-11},
-    {"id":"F05","angle_deg":198,"radius_cm":6800,"z_cm":-2400,"size_cm":[620,370,270],"yaw_deg":17},
-    {"id":"F06","angle_deg":244,"radius_cm":7200,"z_cm":-3200,"size_cm":[900,500,350],"yaw_deg":-25},
-    {"id":"F07","angle_deg":289,"radius_cm":6750,"z_cm":-2700,"size_cm":[700,390,290],"yaw_deg":14},
-    {"id":"F08","angle_deg":334,"radius_cm":7350,"z_cm":-2100,"size_cm":[560,340,250],"yaw_deg":-33}
+    {
+      "id": "F01",
+      "angle_deg": 18,
+      "radius_cm": 6500,
+      "z_cm": -1800,
+      "size_cm": [
+        520,
+        320,
+        240
+      ],
+      "yaw_deg": 22
+    },
+    {
+      "id": "F02",
+      "angle_deg": 62,
+      "radius_cm": 7100,
+      "z_cm": -2200,
+      "size_cm": [
+        680,
+        360,
+        280
+      ],
+      "yaw_deg": -18
+    },
+    {
+      "id": "F03",
+      "angle_deg": 108,
+      "radius_cm": 6600,
+      "z_cm": -2600,
+      "size_cm": [
+        760,
+        420,
+        300
+      ],
+      "yaw_deg": 31
+    },
+    {
+      "id": "F04",
+      "angle_deg": 151,
+      "radius_cm": 7300,
+      "z_cm": -3000,
+      "size_cm": [
+        840,
+        450,
+        320
+      ],
+      "yaw_deg": -11
+    },
+    {
+      "id": "F05",
+      "angle_deg": 198,
+      "radius_cm": 6800,
+      "z_cm": -2400,
+      "size_cm": [
+        620,
+        370,
+        270
+      ],
+      "yaw_deg": 17
+    },
+    {
+      "id": "F06",
+      "angle_deg": 244,
+      "radius_cm": 7200,
+      "z_cm": -3200,
+      "size_cm": [
+        900,
+        500,
+        350
+      ],
+      "yaw_deg": -25
+    },
+    {
+      "id": "F07",
+      "angle_deg": 289,
+      "radius_cm": 6750,
+      "z_cm": -2700,
+      "size_cm": [
+        700,
+        390,
+        290
+      ],
+      "yaw_deg": 14
+    },
+    {
+      "id": "F08",
+      "angle_deg": 334,
+      "radius_cm": 7350,
+      "z_cm": -2100,
+      "size_cm": [
+        560,
+        340,
+        250
+      ],
+      "yaw_deg": -33
+    }
   ],
   "validation": {
     "required_portal_count": 8,
@@ -167,5 +274,8 @@
     "required_petal_segments": 24,
     "forbid_landscape": true,
     "required_map_name": "Hub3B_Main_V04"
-  }
+  },
+  "deprecated": true,
+  "superseded_by": "hub3b-main-v5.json",
+  "deprecation_reason": "La V4 disposait les huit Portes sur un petit anneau central. Le canon Gold Master impose désormais la Cité des Huit Héritages métropolitaine et huit Portes physiques dispersées."
 }
