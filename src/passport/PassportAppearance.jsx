@@ -149,7 +149,7 @@ function AppearanceSettings({identity,compact}){
  const headingId=useId();
  const fallback=useMemo(()=>fallbackFor(identity),[identity?.userId,identity?.name,identity?.handle]);
  useEffect(()=>()=>{uploadVersion.current+=1;},[]);
- useEffect(()=>{uploadVersion.current+=1;setBusy(false);},[appearance.mode,appearance.photo]);
+ useEffect(()=>{uploadVersion.current+=1;setBusy(false);},[appearance.mode]);
 
  const chooseMode=mode=>{
   uploadVersion.current+=1;setBusy(false);
@@ -166,9 +166,13 @@ function AppearanceSettings({identity,compact}){
   try{
    const photo=await preparePhoto(file);
    if(version!==uploadVersion.current)return;
-   const saved=setAppearance({photo},appearance);
-   if(saved===null)return;
-   setMessage(saved?appearance.mode==='matrix'?'Photo enregistrée pour composer ton visage en caractères Matrix bleus. Elle reste sur cet appareil.':'Photo prête. Elle reste stockée uniquement sur cet appareil.':STORAGE_ERROR);
+   const targetMode=appearance.mode==='matrix'?'matrix':'photo';
+   const saved=setAppearance(current=>({...current,mode:targetMode,photo}),appearance);
+   if(saved===null){
+    setMessage('Le choix du portrait a changé pendant l’import. Relance simplement la photo si tu veux l’utiliser.');
+    return;
+   }
+   setMessage(saved?targetMode==='matrix'?'Photo enregistrée pour composer ton visage en caractères Matrix bleus. Elle reste sur cet appareil.':'Photo prête et affichée sur ton Passeport.':STORAGE_ERROR);
   }catch(error){if(version===uploadVersion.current)setMessage(error.message||'La photo n’a pas pu être préparée.');}
   finally{if(version===uploadVersion.current)setBusy(false);}
  };
@@ -203,8 +207,8 @@ function AppearanceSettings({identity,compact}){
 
   {appearance.mode==='matrix'&&!appearance.photo&&<p className="passport-appearance-message">{hasOfficialPortrait?'Ton portrait Matrix officiel est disponible sur tous tes appareils. Tu peux choisir une autre photo uniquement pour cet appareil.':'Ajoute ta photo pour composer ton vrai visage en caractères Matrix. En attendant, ton avatar numérique exclusif est affiché.'}</p>}
   {(appearance.mode==='photo'||appearance.mode==='matrix')&&<div className="passport-photo-actions">
-   <input ref={inputRef} className="passport-photo-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Photo du Passeport" onChange={upload}/>
-   <button type="button" className="surface-button" disabled={busy} onClick={()=>inputRef.current?.click()}><ImagePlus size={17}/>{busy?'Préparation…':appearance.photo?'Changer ma photo':appearance.mode==='matrix'&&hasOfficialPortrait?'Choisir une autre photo':'Ajouter ma photo'}</button>
+   <input ref={inputRef} className="passport-photo-input" type="file" accept="image/*" aria-label="Photo du Passeport" onChange={upload}/>
+   <button type="button" className="surface-button" disabled={busy} onClick={()=>{if(inputRef.current){inputRef.current.value='';inputRef.current.click();}}}><ImagePlus size={17}/>{busy?'Préparation…':appearance.photo?'Changer ma photo':appearance.mode==='matrix'&&hasOfficialPortrait?'Choisir une autre photo':'Ajouter ma photo'}</button>
    {appearance.photo&&<button type="button" className="quiet-button" onClick={removePhoto}><Trash2 size={16}/>{appearance.mode==='matrix'&&hasOfficialPortrait?'Revenir au portrait officiel':'Retirer'}</button>}
   </div>}
 
