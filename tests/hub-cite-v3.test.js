@@ -9,6 +9,8 @@ const visuals=readFileSync(new URL('../src/world/premium-hub-visuals.js',import.
 const cartography=readFileSync(new URL('../src/world/Cartography.jsx',import.meta.url),'utf8');
 const home=readFileSync(new URL('../src/components/WorldPortalCard.jsx',import.meta.url),'utf8');
 const hud=readFileSync(new URL('../src/world/WorldHUD.jsx',import.meta.url),'utf8');
+const worldPage=readFileSync(new URL('../src/world/WorldPage.jsx',import.meta.url),'utf8');
+const worldCss=readFileSync(new URL('../src/world/world.css',import.meta.url),'utf8');
 
 test('Cité V3 is a multi-district metropolis and never a small eight-button ring',()=>{
  assert.equal(plan.districts.length,10);
@@ -83,4 +85,12 @@ test('Hub HUD makes the safe zone and eight-step evolution explicit',()=>{
  assert.match(hud,/ZONE SÛRE/);
  assert.match(hud,/HÉRITAGES RELIÉS/);
  assert.match(hud,/nexusLevel\(save\)/);
+});
+
+
+test('Hub Atlas exposes the canonical Cité plan instead of an abstract menu only',()=>{
+ assert.match(worldPage,/hub-atlas-canon/);
+ assert.match(worldPage,/cite-huit-heritages-canon-v3\.svg/);
+ assert.match(worldPage,/10 quartiers · 8 Portes/);
+ assert.match(worldCss,/\.hub-atlas-canon/);
 });
