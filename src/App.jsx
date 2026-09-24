@@ -10,6 +10,8 @@ import { ecosystemPublic } from "./lib/ecosystem.js";
 import useViewportProfile from "./lib/useViewportProfile.js";
 import { useTraffic } from "./lib/useTraffic.js";
 import DirectorTraffic from "./components/DirectorTraffic.jsx";
+import { useDailySecret } from "./secret/dailySecret.js";
+import SecretDirectorPanel from "./secret/SecretDirectorPanel.jsx";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
@@ -149,6 +151,7 @@ const MEMBER_MENU_ITEM = {
 export default function App() {
   useViewportProfile();
   const installation = useAppInstallation();
+  const secret = useDailySecret();
   const [route, setRoute] = useState(readLocation);
   const { page, gameSlug } = route;
   useTraffic(page);
@@ -186,13 +189,32 @@ export default function App() {
       label: "Connexion / Inscription",
       description: "Retrouver son compte ou activer son Passeport 3B.",
     };
+    const liveBaseItems = BASE_MENU_ITEMS.map((item) => {
+      if (item.id !== "secret") return item;
+      const description = secret.phase === "open"
+        ? `Le signal est actif maintenant · ${secret.countdown} pour entrer.`
+        : secret.phase === "attempt"
+          ? `Ta tentative est en cours · ${secret.countdown} restantes.`
+          : secret.phase === "missed" || secret.phase === "expired"
+            ? "Le signal est passé. Une nouvelle chance viendra demain à une autre heure."
+            : secret.phase === "completed"
+              ? "Secret accompli aujourd’hui. Le Nexus changera demain."
+              : "Observe l’horloge 3B. Le signal peut apparaître à une heure différente chaque jour.";
+      return {
+        ...item,
+        description,
+        secretPhase: secret.phase,
+        secretLabel: secret.label,
+        secretCountdown: secret.countdown,
+      };
+    });
     return [
-      ...BASE_MENU_ITEMS.slice(0, 2),
+      ...liveBaseItems.slice(0, 2),
       accountItem,
       ...(member.isRegistered && controlAvailable ? [CONTROL_MENU_ITEM] : []),
-      ...BASE_MENU_ITEMS.slice(2),
+      ...liveBaseItems.slice(2),
     ];
-  }, [member.isRegistered, controlAvailable]);
+  }, [member.isRegistered, controlAvailable, secret.phase, secret.label, secret.countdown]);
 
   const currentPageTitle = useMemo(() => {
     if (page === "member") {
@@ -303,7 +325,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
+      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
@@ -311,7 +333,7 @@ export default function App() {
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
-        <HomePage goTo={goTo} menuItems={menuItems} member={member} />
+        <HomePage goTo={goTo} menuItems={menuItems} member={member} secret={secret} />
       )}
 
       {page === "passport" && (
@@ -333,7 +355,7 @@ export default function App() {
       {page === "guide" && <GuidePage goTo={goTo} menuItems={[...BASE_MENU_ITEMS, MEMBER_MENU_ITEM]} />}
       {page === "manga" && <ComingSoon goTo={goTo} />}
       {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}
-      {page === "secret" && <PremierSecretPage goTo={goTo} />}
+      {page === "secret" && <PremierSecretPage goTo={goTo} dailySecret={secret} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
@@ -511,7 +533,7 @@ function PassportPage({ identity, syncing, goTo, options }) {
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
-      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <DirectorTraffic />}
+      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <><DirectorTraffic /><SecretDirectorPanel /></>}
 
       {identity && <PassportAppearanceSettings identity={identity} />}
 
