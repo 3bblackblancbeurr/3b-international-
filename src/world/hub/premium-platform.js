@@ -32,7 +32,7 @@ export const HUB_PREMIUM_METRICS=Object.freeze({
   targetLandmarkVisibility:160,
 });
 
-const DISTRICTS=Object.freeze([
+export const HUB_PREMIUM_DISTRICTS=Object.freeze([
   {id:'archives',name:'Archives de la Mémoire',x:-74,z:-62,w:40,d:30,h:28,kind:'archive'},
   {id:'community',name:'Quartier Communauté',x:-82,z:-4,w:44,d:32,h:25,kind:'community'},
   {id:'innovation',name:'Innovation & IA',x:64,z:-98,w:46,d:30,h:42,kind:'innovation'},
@@ -42,6 +42,7 @@ const DISTRICTS=Object.freeze([
   {id:'docks',name:'Docks & Transports',x:-38,z:112,w:64,d:34,h:21,kind:'docks'},
   {id:'city3b',name:'Portail Ville 3B',x:62,z:108,w:54,d:34,h:30,kind:'city3b'},
 ]);
+const DISTRICTS=HUB_PREMIUM_DISTRICTS;
 
 function seeded(index){
   let x=(index+1)*1103515245+12345;
