@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#05070c">
-  <meta name="description" content="PWA QuickKit audite l’installabilité, le mobile, la sécurité et les performances d’un site en quelques secondes.">
+  <meta name="description" content="PWA QuickKit audite l’installabilité, le mobile, la sécurité et les performances d’un site en quelques secondes, puis fournit un plan de correction priorisé.">
   <title>PWA QuickKit — Audit PWA premium</title>
   <link rel="stylesheet" href="/pwa-quickkit/styles.css">
 </head>
@@ -23,7 +23,7 @@
       <p>Un audit technique lisible en quelques secondes : manifest, service worker, icônes, mobile, sécurité, performance et correctifs prioritaires.</p>
       <form class="audit-box" id="auditForm">
         <input id="urlInput" type="text" inputmode="url" autocomplete="url" placeholder="https://ton-site.com" aria-label="Adresse du site à auditer" required>
-        <button class="primary" id="auditButton" type="submit">Analyser le site</button>
+        <button class="primary" id="auditButton" type="submit">Analyser gratuitement</button>
       </form>
       <div id="status" class="status" role="status" aria-live="polite"></div>
       <div class="trust"><span>Pas de compte requis</span><span>Analyse serveur protégée</span><span>Rapport exportable</span></div>
@@ -42,7 +42,9 @@
           <div class="actions">
             <button class="secondary" id="copyButton" type="button">Copier le résumé</button>
             <button class="secondary" id="jsonButton" type="button">Exporter JSON</button>
+            <a class="secondary service-cta" id="quickFixCta" href="mailto:3bblackblancbeurr@gmail.com?subject=PWA%20QuickKit%20-%20Correction%20Express">Corriger ce site · dès 49 €</a>
           </div>
+          <p class="micro-note">Le lien prépare un e-mail avec le site et le score audité. Le périmètre est confirmé avant toute facturation.</p>
         </aside>
 
         <div class="card main-card">
@@ -56,7 +58,11 @@
     </section>
 
     <section class="pricing shell">
-      <h2>Simple à comprendre. Simple à vendre.</h2>
+      <div class="section-intro">
+        <span class="kicker">Deux chemins</span>
+        <h2>Commence gratuitement. Fais corriger quand tu veux.</h2>
+        <p>Le produit logiciel reste accessible gratuitement pour l’audit. Si tu veux aller plus vite, une correction ponctuelle peut être demandée sans abonnement.</p>
+      </div>
       <div class="plans">
         <div class="card plan">
           <span class="badge">FREE</span><div class="price">0 €</div>
@@ -64,13 +70,38 @@
           <ul class="features"><li>Score 0–100</li><li>Contrôles PWA/mobile</li><li>Sécurité & performance</li><li>Export JSON</li></ul>
         </div>
         <div class="card plan pro">
-          <span class="badge">PRO · PRÉPARÉ</span><div class="price">9,90 € <small>/ mois</small></div>
-          <p class="plan-note">Le plan Pro ajoute le suivi multi-sites, les rapports premium et l’assistance de correction. Le paiement live reste volontairement verrouillé tant que les droits d’accès et les informations légales ne sont pas validés.</p>
+          <span class="badge">PRO</span><div class="price">9,90 € <small>/ mois</small></div>
+          <p class="plan-note">Suivi multi-sites, rapports premium et assistance de correction. L’ouverture commerciale se fera dès que le paiement en production sera entièrement validé.</p>
           <ul class="features"><li>Rapports premium téléchargeables</li><li>Suivi multi-sites</li><li>Correctifs manifest/headers guidés</li><li>Checklist Android + iPhone</li></ul>
-          <button class="secondary" id="proCheckout" type="button">Activer Pro</button>
-          <p class="plan-note" id="proCheckoutNote">Checkout Stripe test préparé. Aucun paiement réel n’est activé.</p>
+          <button class="secondary" id="proCheckout" type="button">Vérifier la disponibilité Pro</button>
+          <p class="plan-note" id="proCheckoutNote">Si Pro n’est pas encore ouvert, la Correction Express reste disponible dès maintenant.</p>
         </div>
       </div>
+    </section>
+
+    <section class="services shell">
+      <div class="section-intro">
+        <span class="kicker">Service express</span>
+        <h2>Transformer l’audit en correction facturable.</h2>
+        <p>Pour les propriétaires de site qui veulent un résultat concret sans apprendre toute la PWA.</p>
+      </div>
+      <div class="service-grid">
+        <article class="card service-card">
+          <span class="badge">QUICK FIX</span>
+          <div class="price">dès 49 €</div>
+          <p>Analyse du rapport + correctifs prêts à intégrer pour un site : manifest, icônes, headers et checklist d’installation.</p>
+          <ul class="features"><li>Priorités triées</li><li>Snippets prêts à copier</li><li>Contrôle après correction</li><li>Livraison par e-mail</li></ul>
+          <a class="primary link-button" id="quickFixOffer" href="mailto:3bblackblancbeurr@gmail.com?subject=PWA%20QuickKit%20-%20Quick%20Fix">Demander Quick Fix</a>
+        </article>
+        <article class="card service-card">
+          <span class="badge">FIX + INTÉGRATION</span>
+          <div class="price">dès 99 €</div>
+          <p>Quand le client fournit l’accès à son dépôt GitHub : préparation des changements, branche dédiée, tests et proposition de Pull Request.</p>
+          <ul class="features"><li>Patch GitHub propre</li><li>Tests avant/après</li><li>Aucune modification sauvage de production</li><li>Périmètre confirmé avant facturation</li></ul>
+          <a class="secondary service-cta" href="mailto:3bblackblancbeurr@gmail.com?subject=PWA%20QuickKit%20-%20Fix%20%2B%20Integration">Demander une intégration</a>
+        </article>
+      </div>
+      <p class="legal-note">Les prix « dès » correspondent à un périmètre simple sur un site. Les besoins complexes, migrations ou refontes sont chiffrés séparément avant intervention.</p>
     </section>
   </main>
 
