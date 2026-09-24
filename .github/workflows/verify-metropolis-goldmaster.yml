@@ -27,6 +27,8 @@ jobs:
       - name: Metropolis gameplay and compatibility tests
         run: >
           node --test
+          tests/hub-canon-goldmaster.test.js
+          tests/hub-master-plan-v2.test.js
           tests/hub-metropolis-goldmaster.test.js
           tests/hub-runtime.test.js
           tests/hub-mission-signals.test.js
