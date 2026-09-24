@@ -491,11 +491,11 @@ function hubNpcAvatar(item){
    let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16,focusItemId=null,endCamera=null,endTarget=null,fovStart=null,fovEnd=null;
    if(kind==='world-opening'){
     if(region==='hub'){
-     const water=BIOMES.hub.water;
-     focus={x:0,z:-145};radius=camera.aspect<.85?470:540;height=18;focusY=54;arc=.18;dolly=.52;
-     angle=Math.atan2(water.x-focus.x,water.z-focus.z);
-     fovStart=68;fovEnd=60;
-     context={...context,waterReveal:true};
+     const water=BIOMES.hub.water,tower=items.find(item=>item.type==='hubBuilding'&&item.buildingId==='tower_circle'),arrival=items.find(item=>item.type==='hubPlatform'&&item.district==='heritage_square');
+     focus={x:tower?.buildingX??0,z:tower?.buildingZ??-145};radius=camera.aspect<.85?520:590;height=camera.aspect<.85?62:78;focusY=58;arc=.20;dolly=.48;
+     const origin=arrival||water;angle=Math.atan2(origin.x-focus.x,origin.z-focus.z);
+     fovStart=70;fovEnd=58;
+     context={...context,waterReveal:true,cityReveal:true};
     }else{
      focus={...position};radius=camera.aspect<.85?78:112;height=camera.aspect<.85?50:64;focusY=5.5;arc=.58;dolly=.08;angle=orbit.yaw-.58;fovStart=72;fovEnd=60;
     }
