@@ -4,6 +4,7 @@ import {hubRuntime} from './hub/runtime-data.js';
 export function worldRuntimeItems(region,save,context={}){
  const base=landscapeItems(region,save);
  if(region!=='hub')return base;
+ const baseWithoutLegacyPortals=base.filter(item=>item.type!=='portal');
  const memory=typeof navigator!=='undefined'?Number(navigator.deviceMemory):0;
  const desktop=typeof window!=='undefined'&&window.innerWidth>=1100&&memory>=8;
  const high=memory>=8;
@@ -15,5 +16,5 @@ export function worldRuntimeItems(region,save,context={}){
   seals:save.seals||[],
   restoredRegions:Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id),
  }).items;
- return [...base,...hub];
+ return [...baseWithoutLegacyPortals,...hub];
 }
