@@ -1,5 +1,6 @@
 const $ = id => document.getElementById(id);
 let lastResult = null;
+let proActive = false;
 
 function showStatus(message, type = 'info') {
   const el = $('status');
@@ -14,6 +15,12 @@ window.RevenueTracker?.track('quickkit_page_view');
 
 function render(data){
   lastResult = data;
+  if (proActive) {
+    saveProAudit(data);
+    renderProSites();
+    const reportButton = $('downloadProReport');
+    if (reportButton) reportButton.disabled = false;
+  }
   $('results').classList.add('show');
   $('scoreRing').style.setProperty('--score', data.score);
   $('scoreValue').textContent = data.score;
@@ -73,10 +80,175 @@ $('jsonButton').addEventListener('click', () => {
 
 
 const PRO_TOKEN_KEY = 'pwa_quickkit_pro_token_v1';
+const PRO_SITES_KEY = 'pwa_quickkit_pro_sites_v1';
 const proCheckout = document.getElementById('proCheckout');
+const proWorkspace = document.getElementById('proWorkspace');
+const downloadProReport = document.getElementById('downloadProReport');
+
+function readProSites() {
+  try {
+    const value = JSON.parse(localStorage.getItem(PRO_SITES_KEY) || '[]');
+    return Array.isArray(value) ? value.slice(0, 10) : [];
+  } catch { return []; }
+}
+
+function saveProAudit(data) {
+  if (!proActive || !data?.finalUrl) return;
+  const sites = readProSites().filter(item => item?.url !== data.finalUrl);
+  sites.unshift({
+    url: data.finalUrl,
+    score: data.score,
+    grade: data.grade,
+    auditedAt: data.auditedAt,
+  });
+  localStorage.setItem(PRO_SITES_KEY, JSON.stringify(sites.slice(0, 10)));
+}
+
+function renderProSites() {
+  const container = $('proSites');
+  if (!container) return;
+  const sites = readProSites();
+  if (!sites.length) {
+    container.innerHTML = '<p class="plan-note">Lance un audit pour ajouter ton premier site.</p>';
+    return;
+  }
+  container.innerHTML = sites.map(site => {
+    const date = site.auditedAt ? new Date(site.auditedAt).toLocaleDateString('fr-FR') : '—';
+    return `<div class="pro-site"><div class="pro-site-main"><div class="pro-site-url">${esc(site.url)}</div><div class="pro-site-meta">Score ${Number(site.score) || 0}/100 · ${esc(site.grade || '—')} · ${date}</div></div><button type="button" data-url="${esc(site.url)}">Réauditer</button></div>`;
+  }).join('');
+  container.querySelectorAll('button[data-url]').forEach(button => {
+    button.addEventListener('click', () => {
+      $('urlInput').value = button.dataset.url || '';
+      $('auditForm').requestSubmit();
+    });
+  });
+}
+
+function proReportText(data) {
+  const failed = new Set((data.checks || []).filter(item => !item.pass).map(item => item.id));
+  const lines = [
+    '# PWA QuickKit Pro — rapport',
+    '',
+    `URL : ${data.finalUrl}`,
+    `Score : ${data.score}/100 (${data.grade})`,
+    `Audit : ${new Date(data.auditedAt).toLocaleString('fr-FR')}`,
+    '',
+    '## Scores par catégorie',
+    ...Object.entries(data.categories || {}).map(([name, score]) => `- ${name} : ${score}%`),
+    '',
+    '## Correctifs prioritaires',
+    ...(data.recommendations?.length ? data.recommendations.map((item, index) => `${index + 1}. [${item.priority}] ${item.title} — ${item.fix}`) : ['Aucun correctif prioritaire détecté.']),
+    '',
+  ];
+
+  if (['manifest','manifest-valid','manifest-core','display','icons','theme'].some(id => failed.has(id))) {
+    lines.push(
+      '## Manifest conseillé',
+      '~~~json',
+      JSON.stringify({
+        name: 'Mon Application',
+        short_name: 'MonApp',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        theme_color: '#0b1220',
+        background_color: '#07090d',
+        icons: [
+          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ]
+      }, null, 2),
+      '~~~',
+      ''
+    );
+  }
+
+  if (['viewport','theme','apple-icon','description','canonical'].some(id => failed.has(id))) {
+    lines.push(
+      '## HTML mobile / PWA',
+      '~~~html',
+      '<meta name="viewport" content="width=device-width,initial-scale=1">',
+      '<meta name="theme-color" content="#0b1220">',
+      '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">',
+      '<link rel="manifest" href="/manifest.webmanifest">',
+      '<link rel="canonical" href="https://exemple.com/">',
+      '~~~',
+      ''
+    );
+  }
+
+  if (failed.has('service-worker')) {
+    lines.push(
+      '## Enregistrement Service Worker',
+      '~~~js',
+      "if ('serviceWorker' in navigator) {",
+      "  addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));",
+      "}",
+      '~~~',
+      ''
+    );
+  }
+
+  if (['hsts','csp','nosniff','referrer','permissions'].some(id => failed.has(id))) {
+    lines.push(
+      '## Base d’en-têtes sécurité',
+      '~~~text',
+      'Strict-Transport-Security: max-age=31536000; includeSubDomains',
+      "Content-Security-Policy: default-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+      'X-Content-Type-Options: nosniff',
+      'Referrer-Policy: strict-origin-when-cross-origin',
+      'Permissions-Policy: camera=(), microphone=(), geolocation=()',
+      '~~~',
+      '',
+      '> Adapte la CSP aux domaines réellement utilisés par ton application.',
+      ''
+    );
+  }
+
+  lines.push(
+    '## Checklist Android',
+    '- Manifest servi en HTTPS et relié dans le HTML.',
+    '- Icônes 192×192 et 512×512 accessibles.',
+    '- display standalone/fullscreen/minimal-ui.',
+    '- Service Worker réellement enregistré et contrôlant la page.',
+    '- Test d’installation sur Chrome Android.',
+    '',
+    '## Checklist iPhone / iPad',
+    '- apple-touch-icon présente.',
+    '- viewport et theme-color présents.',
+    '- Test Ajouter à l’écran d’accueil depuis Safari.',
+    '- Vérifier navigation, safe areas et comportement standalone.',
+    '',
+    '## Limites',
+    '- Ce rapport combine l’audit statique QuickKit et des correctifs génériques.',
+    '- Une validation navigateur réelle reste nécessaire pour les comportements exécutés uniquement côté client.',
+    ''
+  );
+  return lines.join('\n');
+}
+
+function downloadReport() {
+  if (!proActive || !lastResult) return;
+  const text = proReportText(lastResult);
+  const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const host = new URL(lastResult.finalUrl).hostname.replace(/[^a-z0-9.-]/gi, '-');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pwa-quickkit-pro-${host}.md`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+if (downloadProReport) downloadProReport.addEventListener('click', downloadReport);
+
 const proNote = document.getElementById('proCheckoutNote');
 
 function showProActive(data = {}) {
+  proActive = true;
+  if (proWorkspace) proWorkspace.hidden = false;
+  renderProSites();
+  if (downloadProReport) downloadProReport.disabled = !lastResult;
   if (proCheckout) {
     proCheckout.textContent = 'Pro actif ✓';
     proCheckout.disabled = true;
@@ -102,6 +274,8 @@ async function refreshProStatus() {
       return true;
     }
     localStorage.removeItem(PRO_TOKEN_KEY);
+    proActive = false;
+    if (proWorkspace) proWorkspace.hidden = true;
   } catch { /* A temporary network error must not erase the local token. */ }
   return false;
 }
