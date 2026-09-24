@@ -7,6 +7,8 @@ import { controlCenterRequest } from "./control/client.js";
 import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
 import { ecosystemPublic } from "./lib/ecosystem.js";
 import useViewportProfile from "./lib/useViewportProfile.js";
+import { useTraffic } from "./lib/useTraffic.js";
+import DirectorTraffic from "./components/DirectorTraffic.jsx";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
@@ -149,6 +151,7 @@ export default function App() {
   const installation = useAppInstallation();
   const [route, setRoute] = useState(readLocation);
   const { page, gameSlug } = route;
+  const traffic = useTraffic(page);
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
   const [controlAvailable, setControlAvailable] = useState(false);
@@ -300,7 +303,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} />}
+      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} traffic={traffic} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>
@@ -316,6 +319,7 @@ export default function App() {
           identity={loyalty.passport}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
+          traffic={traffic}
           hasPassport={hasPassport}
           goTo={goTo}
         />
@@ -492,62 +496,26 @@ function PageHeader({ title, subtitle, goTo }) {
       <div>
         <p className="eyebrow">3B International</p>
         <h1>{title}</h1>
-        <p>{subtitle}</p>
+        {subtitle && <p>{subtitle}</p>}
       </div>
     </section>
   );
 }
 
-function PassportPage({ identity, syncing, goTo, options, hasPassport = false }) {
+function PassportPage({ identity, syncing, goTo, options, traffic }) {
   return (
     <section className="page-section">
       <PageHeader
         title="Passeport 3B"
-        subtitle={
-          syncing
-            ? "Synchronisation sécurisée de ton identité 3B."
-            : identity
-              ? `Passeport personnel de ${identity.name} · ${identity.country}.`
-              : "Crée ton compte pour générer ton passeport 3B personnel."
-        }
+        subtitle={syncing ? "Synchronisation…" : undefined}
         goTo={goTo}
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
+      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <DirectorTraffic traffic={traffic} />}
 
       {identity && <PassportAppearanceSettings identity={identity} />}
 
-      <div className="info-grid">
-        <article className="premium-panel">
-          <p className="eyebrow">Identité unique 3B</p>
-          <h2>{syncing ? "Synchronisation…" : identity ? identity.passportId : "Non activé"}</h2>
-          <p>
-            Le passeport lit uniquement le profil du compte connecté. Jeux, Monde 3B, Ville 3B, fidélité et boutique utilisent le même identifiant utilisateur.
-          </p>
-        </article>
-
-        <article className="premium-panel">
-          <p className="eyebrow">Origine du titulaire</p>
-          <h2>{identity ? `${identity.flag} ${identity.country}` : "À définir à l’inscription"}</h2>
-          <p>
-            Le pays enregistré dans ton compte devient l’origine de référence de ton passeport et des expériences 3B qui utilisent cette identité.
-          </p>
-
-          {!identity && !syncing && (
-            <button type="button" className="primary-button" onClick={() => goTo("member")}>
-              Activer mon passeport 3B
-            </button>
-          )}
-        </article>
-
-        <article className="premium-panel">
-          <p className="eyebrow">Accès 3B</p>
-          <h2>{hasPassport ? "Passeport 3B actif" : "Passeport requis"}</h2>
-          <p>{hasPassport
-            ? "Ton Passeport 3B donne accès à l’application et au Monde du 3B."
-            : "Active ton identité 3B pour obtenir ton Passeport unique."}</p>
-        </article>
-      </div>
     </section>
   );
 }

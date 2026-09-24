@@ -20,6 +20,7 @@ import './penaltyRush.css';
 import './penaltyRush3d.css';
 
 const PenaltyRushArena3D = lazy(() => import('./penaltyRush/PenaltyRushArena3D.jsx'));
+const PenaltyTraining = lazy(() => import('./penaltyRush/PenaltyTraining.jsx'));
 
 const NAV = [
   ['play', Play, 'Jouer'],
@@ -55,6 +56,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
   const [notice, setNotice] = useState('');
   const [connection, setConnection] = useState('sync');
   const [privateCode, setPrivateCode] = useState('');
+  const [training, setTraining] = useState(null);
   const pollRef = useRef(null);
 
   const user = account.user;
@@ -132,18 +134,20 @@ export default function PenaltyRush({ onClose, onAccount }) {
     };
   }, [room?.id]);
 
+  if (!user && training) return <div className="penalty-shell" role="dialog" aria-modal="true" aria-label="Entraînement Penalty Rush"><header className="penalty-topbar"><strong>3B PENALTY RUSH · ENTRAÎNEMENT</strong><button className="penalty-icon" onClick={onClose} aria-label="Fermer"><X size={20}/></button></header><Suspense fallback={<p>Chargement du terrain…</p>}><PenaltyTraining key={training} role={training} profile={profile} onExit={() => setTraining(null)}/></Suspense></div>;
   if (!user) {
     return (
       <div className="penalty-shell" role="dialog" aria-modal="true" aria-label="3B Penalty Rush">
         <header className="penalty-topbar">
-          <div><small>JEUX 3B · MULTIJOUEUR UNIQUEMENT</small><strong>3B PENALTY RUSH</strong></div>
+          <div><small>JEUX 3B · ENTRAÎNEMENT</small><strong>3B PENALTY RUSH</strong></div>
           <button className="penalty-icon" onClick={onClose} aria-label="Fermer"><X size={20} /></button>
         </header>
         <main className="penalty-login">
           <div className="penalty-crown">3B</div>
           <span>DUEL FOOT · 1V1 · ONLINE</span>
           <h1>Ton joueur. Ton club. Ton pays.</h1>
-          <p>Penalty Rush est entièrement multijoueur. Le même compte 3B porte ton identité, ton classement, ton club, ta carrière et tes convocations internationales.</p>
+          <p>Entraîne-toi seul contre l’IA. Connecte-toi pour les matchs en ligne, le classement et la carrière.</p>
+          <div className="penalty-training-actions"><button className="penalty-primary" onClick={() => setTraining('attacker')}>Attaquant contre IA</button><button className="penalty-secondary" onClick={() => setTraining('keeper')}>Gardien contre IA</button></div>
           <button className="penalty-primary" onClick={onAccount}>Connexion / inscription</button>
           <button className="penalty-secondary" onClick={onClose}>Retour aux Jeux 3B</button>
         </main>
@@ -155,7 +159,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
     <div className="penalty-shell" role="dialog" aria-modal="true" aria-label="3B Penalty Rush">
       <header className="penalty-topbar">
         <div>
-          <small>JEUX 3B · 100 % MULTIJOUEUR</small>
+          <small>JEUX 3B · ENTRAÎNEMENT ET MULTIJOUEUR</small>
           <strong>3B PENALTY RUSH</strong>
         </div>
         <div className="penalty-top-actions">
@@ -167,7 +171,8 @@ export default function PenaltyRush({ onClose, onAccount }) {
 
       {notice && <div className="penalty-notice" role="status">{notice}</div>}
 
-      {room?.status === 'active' || room?.status === 'finished'
+      {training && !room ? <Suspense fallback={<p>Chargement du terrain…</p>}><PenaltyTraining key={training} role={training} profile={profile} onExit={() => setTraining(null)} /></Suspense>
+      : room?.status === 'active' || room?.status === 'finished'
         ? <MatchRoom room={room} profile={profile} busy={busy} request={request} onLeave={async () => {
             const id = room.id;
             try {
@@ -188,7 +193,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
               {room?.status === 'waiting'
                 ? <Lobby room={room} busy={busy} request={request} onBack={() => request('leave', { room: room.id }).catch(() => {})} />
                 : tab === 'play'
-                  ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} code={privateCode} setCode={setPrivateCode} request={request} />
+                  ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} code={privateCode} setCode={setPrivateCode} request={request} onTraining={setTraining} />
                   : tab === 'player'
                     ? <PlayerStudio profile={profile} rating={rating} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
                     : tab === 'club'
@@ -203,7 +208,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
   );
 }
 
-function PlayHome({ busy, profile, rating, tier, code, setCode, request }) {
+function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTraining }) {
   const country = countryById(profile.countryId);
   return (
     <div className="penalty-play-home">
@@ -224,6 +229,12 @@ function PlayHome({ busy, profile, rating, tier, code, setCode, request }) {
       </section>
 
       <section className="penalty-mode-grid">
+        <article>
+          <span className="penalty-kicker">ENTRAÎNEMENT · SOLO</span>
+          <h2>Jouer contre l’IA</h2>
+          <p>Travaille ta frappe contre un gardien IA ou protège toute la cage face à un tireur IA. Sans classement et sans attente.</p>
+          <div className="penalty-training-actions"><button className="penalty-primary" onClick={() => onTraining('attacker')}>Jouer attaquant</button><button className="penalty-secondary" onClick={() => onTraining('keeper')}>Jouer gardien</button></div>
+        </article>
         <article>
           <span className="penalty-kicker">RAPIDE · 1V1</span>
           <h2>Match immédiat</h2>

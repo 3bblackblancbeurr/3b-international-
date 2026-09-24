@@ -33,7 +33,7 @@ const QUICK_LINKS = [
   { id: "games", label: "Jeux" },
 ];
 
-export default function AppNavigation({ page, title, menuItems, goTo }) {
+export default function AppNavigation({ page, title, menuItems, goTo, traffic }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -115,6 +115,7 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current.close();
     }}>
       <div className="dialog-heading"><div><p className="eyebrow">Tout commence ici</p><h2 id="menu-title">L’univers 3B</h2></div><button className="icon-button" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={23} aria-hidden="true" /></button></div>
+      <div className="traffic-menu-count" role="status">En ce moment · Application <strong>{traffic ? traffic.app_online : '—'}</strong> · Site <strong>{traffic ? traffic.site_online : '—'}</strong></div>
       <div className="menu-search"><Search size={19} aria-hidden="true" /><input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher une rubrique…  /" value={query} onChange={event => setQuery(event.target.value)} /></div>
       <div className="dialog-scroll">
         {NAV_GROUPS.map(group => {
