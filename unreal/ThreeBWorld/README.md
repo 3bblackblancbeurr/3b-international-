@@ -21,6 +21,7 @@ This folder is the high-end game client for the Monde du 3B. The existing React/
 - The long-lived Unreal API remains read-only candidate code until the dedicated-server authority contract is validated.
 - Canonical mirrors, schemas and production manifests now live under `Data/`.
 - Preproduction tooling lives under `Scripts/`.
+- The canonical Hub builder is `Scripts/build_hub3b_main_v5.py`, targeting `Hub3B_Main_V05` and the metropolitan **Cité des Huit Héritages** layout; V4 circular Hub files are legacy/frozen.
 - Historical production planning documents are preserved under `Docs/Production/` and `Docs/Legacy/`.
 
 ## Security boundary
