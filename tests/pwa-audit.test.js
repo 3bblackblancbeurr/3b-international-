@@ -10,6 +10,10 @@ test('normalizeAuditUrl conserve https et retire le fragment', () => {
   assert.equal(normalizeAuditUrl('https://example.com/app#test').toString(), 'https://example.com/app');
 });
 
+test('normalizeAuditUrl retire les identifiants intégrés', () => {
+  assert.equal(normalizeAuditUrl('https://user:pass@example.com/path').toString(), 'https://example.com/path');
+});
+
 test('normalizeAuditUrl refuse les protocoles non web', () => {
   assert.throws(() => normalizeAuditUrl('file:///etc/passwd'), /HTTP/);
 });
