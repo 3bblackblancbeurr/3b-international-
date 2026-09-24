@@ -13,6 +13,20 @@ export const TRANSMISSION_TOKENS = ["☽", "△", "☀", "◇"];
 export const ARCHIVE_VALUES = ["Mémoire", "Courage", "Transmission", "Unité"];
 export const SLOT_NAMES = ["Nord", "Est", "Sud", "Ouest"];
 
+export const SIGNAL_COLORS = [
+  { label: "bleu Nexus", hex: "#46b8ff" },
+  { label: "or ancien", hex: "#e7c46b" },
+  { label: "cyan spectral", hex: "#55f1ff" },
+  { label: "ambre", hex: "#ffb85c" },
+];
+
+const TOKEN_RING_BASE = {
+  "☽": 0,
+  "△": 2,
+  "☀": 4,
+  "◇": 6,
+};
+
 function rotate(items, offset) {
   const safe = ((offset % items.length) + items.length) % items.length;
   return [...items.slice(safe), ...items.slice(0, safe)];
@@ -42,17 +56,17 @@ export function makePremierSecretConfig(dayKey = parisDayKey()) {
   const seed = fnv1a("3B-PREMIER-SECRET-" + dayKey);
   const signalIndex = seed % COUNTRIES.length;
   const country = COUNTRIES[signalIndex];
+  const signalColor = SIGNAL_COLORS[(seed >>> 2) % SIGNAL_COLORS.length];
 
   let transmission = rotate(TRANSMISSION_TOKENS, (seed >>> 4) % TRANSMISSION_TOKENS.length);
   if ((seed >>> 9) & 1) {
     transmission = [transmission[0], transmission[2], transmission[1], transmission[3]];
   }
 
-  const ringTargets = [
-    (seed >>> 3) % 8,
-    (seed >>> 8) % 8,
-    (seed >>> 13) % 8,
-  ];
+  const ringShift = country.pulses;
+  const ringTargets = transmission
+    .slice(0, 3)
+    .map((token) => (TOKEN_RING_BASE[token] + ringShift) % 8);
   const ringStart = ringTargets.map((value, index) => (value + 3 + index) % 8);
 
   let archiveOrder = rotate(ARCHIVE_VALUES, (seed >>> 18) % ARCHIVE_VALUES.length);
@@ -65,14 +79,18 @@ export function makePremierSecretConfig(dayKey = parisDayKey()) {
   const courageSlot = archiveOrder.indexOf("Courage");
   const transmissionSlot = archiveOrder.indexOf("Transmission");
 
-  const chamberValue = archiveOrder[(seed >>> 26) % archiveOrder.length];
+  const chamberNumber = (ringTargets.reduce((sum, value) => sum + value + 1, 0) % 8) || 8;
+  const chamberSlot = (signalIndex + country.pulses) % SLOT_NAMES.length;
+  const chamberValue = archiveOrder[chamberSlot];
 
   return {
     dayKey,
     seed,
     signalIndex,
     country,
+    signalColor,
     transmission,
+    ringShift,
     ringTargets,
     ringStart,
     archiveOrder,
@@ -82,7 +100,8 @@ export function makePremierSecretConfig(dayKey = parisDayKey()) {
       "Le Courage se trouve " + relation(courageSlot, memorySlot) + " de la Mémoire.",
       "La Transmission ferme le cercle au " + SLOT_NAMES[transmissionSlot] + ".",
     ],
-    chamberNumber: signalIndex + 1,
+    chamberNumber,
+    chamberSlot,
     chamberValue,
     finalSeal: ["Unité", "Mémoire", "Avenir"],
   };
