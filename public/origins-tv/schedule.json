@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "updatedAt": null,
+  "channel": {
+    "id": "3b-origins-tv",
+    "name": "3B ORIGINS TV",
+    "tagline": "La chaîne du Monde du 3B.",
+    "timezone": "Europe/Paris",
+    "mode": "scheduled",
+    "status": "prelaunch"
+  },
+  "programs": []
+}
