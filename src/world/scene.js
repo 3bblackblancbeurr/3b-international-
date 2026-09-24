@@ -142,7 +142,7 @@ function hubNpcAvatar(item){
   const film=mesh(filmGeo,filmMat,item.x+forwardX*(hubGate?.12:0),y+(hubGate?5.2:4),item.z+forwardZ*(hubGate?.12:.1),hubGate?4.05:2.95,hubGate?4.75:3.45,1);film.rotation.y=heading;portalMaterials.push(filmMat);
   if(region==='hub'){
    const restored=!!item.restored,evolution=Math.max(0,Math.min(3,Number(item.evolution)||0));
-   const accentMat=material(item.color,{emissive:item.color,emissiveIntensity:restored?.68:.34,metalness:.58,roughness:.26}),champagne=material('#d6b46a',{emissive:'#7b5d24',emissiveIntensity:restored?.28:.12,metalness:.78,roughness:.28}),dark=material('#0c1218',{roughness:.48,metalness:.42});
+   const accentMat=material(item.color,{emissive:item.color,emissiveIntensity:restored ? .68 : .34,metalness:.58,roughness:.26}),champagne=material('#d6b46a',{emissive:'#7b5d24',emissiveIntensity:restored ? .28 : .12,metalness:.78,roughness:.28}),dark=material('#0c1218',{roughness:.48,metalness:.42});
    const haloGeo=register(new THREE.TorusGeometry(1,.045,8,96)),halo=mesh(haloGeo,accentMat,item.x-forwardX*.72,y+(hubGate?5.65:4.4),item.z-forwardZ*.72,hubGate?6.6:4.9,hubGate?7.4:5.65,1);halo.rotation.y=heading;halo.castShadow=false;
    const gateHalf=hubGate?7.8:5.9,pylonHeight=hubGate?12.6:8.5;
    for(const side of [-1,1]){
