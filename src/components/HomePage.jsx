@@ -34,7 +34,6 @@ export default function HomePage({goTo,menuItems,member}){
     </div>
     <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MONDE DU 3B</span><span>03 / JEUX 3B</span></div>
    </div>
-   <div className="heritage-poster"><img src="/background.png" alt="Affiche officielle 3B International : un héritage, de zéro à l’international"/><span>DE ZÉRO À L’INTERNATIONAL</span></div>
   </div>
 
   <WorldPortalCard goTo={goTo}/>
