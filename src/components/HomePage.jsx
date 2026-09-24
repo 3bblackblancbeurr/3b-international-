@@ -24,7 +24,7 @@ export default function HomePage({goTo,menuItems,member}){
  })).filter(group=>group.items.length>0);
 
  return <section className="home-dashboard">
-  <div className="welcome-hero">
+  <div className="welcome-hero welcome-hero-single">
    <div className="welcome-copy">
     <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
     <h1>Un héritage.<br/><em>Ton univers.</em></h1>
