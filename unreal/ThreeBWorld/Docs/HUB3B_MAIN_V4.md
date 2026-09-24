@@ -1,3 +1,7 @@
+# ARCHIVE / LEGACY — Hub principal 3B V4
+
+> **OBSOLETE depuis le 24/09/2026.** Cette version en anneau de huit Portes est conservée uniquement pour historique technique. Ne plus l’utiliser comme référence de construction. Le canon actuel est **Hub3B_Main_V05 — La Cité des Huit Héritages**, construit avec `Scripts/build_hub3b_main_v5.py` et `Data/Production/hub3b-main-v5.json`.
+
 # Hub principal 3B V4 — Sanctuaire des Huit Portes
 
 ## Objectif
