@@ -1,5 +1,6 @@
 import { Clock3, LockKeyhole, Radio, Sparkles } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
+import "./daily-secret.css";
 
 export default function SecretClock({ secret, goTo, compact = false }) {
   const phase = secret?.phase || "loading";
