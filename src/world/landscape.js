@@ -77,11 +77,11 @@ export function createLandscape(models,region,save,onError=console.error){
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,64)),waterMat,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
  for(let i=0;i<20;i++){const a=rng()*Math.PI*2,r=lake.r+3+rng()*2,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;shape(ball,mat(biome.rock),x,height(x,z)-.1,z,.7+rng(),.4+rng()*.6,.7+rng());}
  const constrained=typeof navigator!=='undefined'&&((Number(navigator.deviceMemory)||4)<=3||(Number(navigator.hardwareConcurrency)||4)<=4);
- const treeBudget=hub?(constrained?170:240):380,stoneBudget=hub?(constrained?22:32):48;
- for(let i=0;i<treeBudget;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
- for(let i=0;i<stoneBudget;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
- const meadow=addMeadow(field,root,owned,region),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- addTownGardens(field,root,owned,region,flora);
+ const treeBudget=hub?(constrained?28:44):380,stoneBudget=hub?(constrained?10:16):48;
+ for(let i=0;i<treeBudget;i++){const a=rng()*Math.PI*2,r=hub?154+Math.sqrt(rng())*84:23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
+ for(let i=0;i<stoneBudget;i++){const a=rng()*Math.PI*2,r=hub?170+Math.sqrt(rng())*66:rng()*176,x=hub?Math.cos(a)*r:(rng()-.5)*250,z=hub?Math.sin(a)*r:(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
+ const meadow=hub?{tick(){},setQuality(){}}:addMeadow(field,root,owned,region),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(!hub)addTownGardens(field,root,owned,region,flora);
  if(hub){
   premiumHub=createPremiumHubPlatform({
    root,shape,box,cylinder,ball,geo,mat,asset,resident,height,collisions,owned,
