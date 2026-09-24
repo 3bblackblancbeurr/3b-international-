@@ -9,6 +9,7 @@ import { readLocation, navigateTo, navigateToGame } from "./lib/navigation.js";
 import { ecosystemPublic } from "./lib/ecosystem.js";
 import useViewportProfile from "./lib/useViewportProfile.js";
 import { useTraffic } from "./lib/useTraffic.js";
+import { captureRouteView } from "./lib/analytics.js";
 import DirectorTraffic from "./components/DirectorTraffic.jsx";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
@@ -152,6 +153,9 @@ export default function App() {
   const [route, setRoute] = useState(readLocation);
   const { page, gameSlug } = route;
   useTraffic(page);
+  useEffect(() => {
+    captureRouteView({ page, gameSlug });
+  }, [page, gameSlug]);
   const hasStarted = page !== "intro";
   const [storageNotice, setStorageNotice] = useState("");
   const [controlAvailable, setControlAvailable] = useState(false);
