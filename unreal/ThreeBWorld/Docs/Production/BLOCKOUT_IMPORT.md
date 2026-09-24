@@ -8,7 +8,31 @@ Utiliser uniquement :
 
 Le dossier legacy `unreal/3BWorld` ne doit plus recevoir de nouveau travail.
 
-## Hub principal — vides et plateformes
+## Hub principal Gold Master — Cité des Huit Héritages V5
+
+Le constructeur canonique actuel est :
+
+`Scripts/build_hub3b_main_v5.py`
+
+Il lit :
+
+- `Data/Production/hub3b-main-v5.json`
+- `Data/Production/world-layout-unreal.json`
+- `Data/Canonical/hub-master-plan-v2.json`
+
+Il crée/recharge :
+
+`/Game/3binternational/Maps/Hub3B_Main_V05`
+
+La V5 génère la métropole complète de blockout : dix quartiers, dix-neuf bâtiments, trente-sept axes et huit Portes dispersées. **Ne plus utiliser la V4 en anneau pour représenter le Hub canonique.**
+
+Lancement recommandé : `LANCER_HUB_3B.bat`.
+
+Résultat attendu : `VALIDATION HUB V5 OK`.
+
+---
+
+## Prototype technique — vides et plateformes
 
 Le nouveau constructeur premium du hub est :
 
