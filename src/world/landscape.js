@@ -104,7 +104,7 @@ export function createLandscape(models,region,save,onError=console.error){
  if(hub){
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
   const core=toLandscape(region,0,-3);premiumPlatform=addHeritagePlatform({root,shape,geo,mat,height,owned,center:core});
-  for(let i=0;i<8;i++){const a=i*Math.PI/4,x=core.x+Math.cos(a)*38,z=core.z+Math.sin(a)*38;asset('Bench',x,z,.95,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.2);}
+  for(let i=0;i<6;i++){const a=i*Math.PI/3,x=core.x+Math.cos(a)*38,z=core.z+Math.sin(a)*38;asset('Bench',x,z,.95,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.2);}
   for(const [index,c] of COUNTRIES.entries()){
    const p=hubCountryGatePosition(hubPlan,c.id)||toLandscape(region,...c.portal),site=field.buildings[index];house(site.id,site.x,site.z,site.rotation,site.variant);tree(p.x-10,p.z-7,.95,BIOMES[c.id].tree);
    const group=new THREE.Group();root.add(group);const workshop=new THREE.Group(),garden=new THREE.Group();group.add(workshop,garden);asset('Market',p.x+10,p.z+6,.85,0,workshop);asset('Planter',p.x-9,p.z+4,1.6,0,garden);asset('Tree',p.x+9,p.z+6,.85,0,garden);batch(workshop);batch(garden);stages.push({group,country:c.id,workshop,garden});resident(p.x+7,p.z+5,c.color,group,index%2?'artisan':'woman');
