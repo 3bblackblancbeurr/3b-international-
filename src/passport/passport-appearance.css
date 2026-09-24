@@ -53,15 +53,3 @@
  .passport-photo-actions>*{flex:1}
 }
 @media(prefers-reduced-motion:reduce){.passport-portrait-scanbar,.passport-face-scanline{animation:none!important}}
-
-
-/* Premium card-only Passport: the card artwork stays untouched; only redundant
-   surrounding controls are collapsed. */
-.passport-animation-toolbar-compact{
-  justify-content:flex-end;
-  margin-top:10px;
-}
-.passport-animation-toolbar-compact .passport-animation-toggle{
-  min-width:0;
-  padding-inline:12px;
-}
