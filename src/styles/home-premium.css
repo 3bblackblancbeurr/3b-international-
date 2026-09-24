@@ -956,3 +956,61 @@
   }
   .app3b .nexus-authentic-circle>.nexus-gates .nexus-portal-pylon b{font-size:7px}
 }
+
+
+/* 2026-09-25 — Cité des Huit Héritages is the canonical Hub visual.
+   Never fall back to a small 8-door ring for this card. */
+.app3b .world-portal-city-stage{
+  display:grid;
+  place-items:stretch;
+  background:
+    radial-gradient(circle at 50% 52%,#00a8ff1f,transparent 48%),
+    linear-gradient(180deg,#03080d,#061018 56%,#020507);
+}
+.app3b .world-portal-city-stage::before{
+  z-index:2;
+  background:
+    linear-gradient(90deg,#05090de0 0%,transparent 22%,transparent 78%,#05090d82 100%),
+    linear-gradient(180deg,#02050736 0%,transparent 62%,#020507d9 100%);
+}
+.app3b .hub-city-canon-map{
+  position:absolute;
+  z-index:1;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:50% 52%;
+  filter:saturate(1.06) contrast(1.03) brightness(.92);
+  transform:scale(1.02);
+}
+.app3b .hub-city-stage-badge{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  bottom:20px;
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+  transform:translateX(-50%);
+  padding:8px 12px;
+  border:1px solid #d8bd7a66;
+  border-radius:999px;
+  background:#040a10dd;
+  box-shadow:0 12px 26px #0008,0 0 18px #00a8ff24;
+  color:#f2d798;
+  backdrop-filter:blur(8px);
+  white-space:nowrap;
+}
+.app3b .hub-city-stage-badge b{font-size:15px;letter-spacing:-.06em}
+.app3b .hub-city-stage-badge small{color:#86e7ff;font-size:7px;letter-spacing:.18em}
+@media(max-width:720px){
+  .app3b .world-portal-city-stage{min-height:390px}
+  .app3b .hub-city-canon-map{object-fit:cover;object-position:50% 50%;transform:scale(1.08)}
+  .app3b .hub-city-stage-badge{bottom:15px;padding:7px 10px}
+  .app3b .hub-city-stage-badge b{font-size:13px}
+  .app3b .hub-city-stage-badge small{font-size:6px}
+}
+@media(prefers-reduced-motion:reduce){
+  .app3b .hub-city-canon-map{transform:none}
+}
