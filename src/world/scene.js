@@ -134,21 +134,30 @@ function hubNpcAvatar(item){
  }
  function glowTexture(){const cv=document.createElement('canvas');cv.width=cv.height=64;const ctx=cv.getContext('2d'),gradient=ctx.createRadialGradient(32,32,0,32,32,32);gradient.addColorStop(0,'rgba(255,255,255,1)');gradient.addColorStop(.2,'rgba(255,255,255,.7)');gradient.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gradient;ctx.fillRect(0,0,64,64);return register(new THREE.CanvasTexture(cv));}
  function portal(item){
-  const index=Math.max(0,COUNTRIES.findIndex(c=>c.id===item.id)),y=groundY(item.x,item.z);
-  const frame=createPortalFrame(countryById[item.id]?item.id:region,item.color);register(frame);frame.group.position.set(item.x,y,item.z);root.add(frame.group);for(const side of [-1,1])obstacles.push({x:item.x+side*3.65,z:item.z,r:1.25});
+  const index=Math.max(0,COUNTRIES.findIndex(c=>c.id===item.id)),y=groundY(item.x,item.z),hubGate=region==='hub'&&item.hubGate;
+  const heading=hubGate?Math.atan2(-item.x,-item.z):0,sideX=Math.cos(heading),sideZ=-Math.sin(heading),forwardX=Math.sin(heading),forwardZ=Math.cos(heading);
+  const frame=createPortalFrame(countryById[item.id]?item.id:region,item.color);register(frame);frame.group.position.set(item.x,y,item.z);frame.group.rotation.y=heading;if(hubGate)frame.group.scale.setScalar(1.42);root.add(frame.group);for(const side of [-1,1])obstacles.push({x:item.x+sideX*side*(hubGate?5.2:3.65),z:item.z+sideZ*side*(hubGate?5.2:0),r:hubGate?1.6:1.25});
   const filmGeo=register(new THREE.CircleGeometry(1,40));
   const filmMat=register(new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{time:{value:0},daylight:{value:worldTime.daylight},tint:{value:new THREE.Color(item.color)},art:{value:models.atlas},tile:{value:new THREE.Vector2(index%4*.25,index<4?.5:0)}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv; uniform float time,daylight; uniform vec3 tint; uniform sampler2D art; uniform vec2 tile; void main(){vec2 p=vUv-.5;float r=length(p)*2.;float ripple=sin(r*24.-time*1.7)*.5+.5;vec2 uv=vUv+sin(vUv.yx*10.+time*.4)*.005;vec3 c=texture2D(art,uv*vec2(.25,.5)+tile).rgb;float pulse=mix(.075,.026,daylight);float rim=mix(.58,.42,daylight);vec3 color=mix(c,tint,pow(r,5.)*rim+ripple*pulse);float alpha=mix(.95,.87,daylight);gl_FragColor=vec4(color,alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
-  mesh(filmGeo,filmMat,item.x,y+4,item.z+.1,2.95,3.45,1);portalMaterials.push(filmMat);
+  const film=mesh(filmGeo,filmMat,item.x+forwardX*(hubGate?.12:0),y+(hubGate?5.2:4),item.z+forwardZ*(hubGate?.12:.1),hubGate?4.05:2.95,hubGate?4.75:3.45,1);film.rotation.y=heading;portalMaterials.push(filmMat);
   if(region==='hub'){
-   const accentMat=material(item.color,{emissive:item.color,emissiveIntensity:.34,metalness:.58,roughness:.26}),champagne=material('#d6b46a',{emissive:'#7b5d24',emissiveIntensity:.12,metalness:.78,roughness:.28}),dark=material('#0c1218',{roughness:.48,metalness:.42});
-   const haloGeo=register(new THREE.TorusGeometry(1,.045,8,96)),halo=mesh(haloGeo,accentMat,item.x,y+4.4,item.z-.72,4.9,5.65,1);halo.castShadow=false;
+   const restored=!!item.restored,evolution=Math.max(0,Math.min(3,Number(item.evolution)||0));
+   const accentMat=material(item.color,{emissive:item.color,emissiveIntensity:restored?.68:.34,metalness:.58,roughness:.26}),champagne=material('#d6b46a',{emissive:'#7b5d24',emissiveIntensity:restored?.28:.12,metalness:.78,roughness:.28}),dark=material('#0c1218',{roughness:.48,metalness:.42});
+   const haloGeo=register(new THREE.TorusGeometry(1,.045,8,96)),halo=mesh(haloGeo,accentMat,item.x-forwardX*.72,y+(hubGate?5.65:4.4),item.z-forwardZ*.72,hubGate?6.6:4.9,hubGate?7.4:5.65,1);halo.rotation.y=heading;halo.castShadow=false;
+   const gateHalf=hubGate?7.8:5.9,pylonHeight=hubGate?12.6:8.5;
    for(const side of [-1,1]){
-    const px=item.x+side*5.9;
-    const pylon=mesh('box',dark,px,y+4.25,item.z-.15,.52,8.5,.72),fin=mesh('box',champagne,px,y+7.95,item.z+.28,.72,.18,.38),beacon=mesh('sphere',accentMat,px,y+8.55,item.z+.05,.28,.42,.28);
-    pylon.castShadow=true;fin.castShadow=beacon.castShadow=false;obstacles.push({x:px,z:item.z,r:.72});
-    for(let stripe=0;stripe<3;stripe++){const light=mesh('box',accentMat,px,y+2.4+stripe*1.7,item.z+.58,.12,.55,.06);light.castShadow=false;}
+    const px=item.x+sideX*side*gateHalf,pz=item.z+sideZ*side*gateHalf;
+    const pylon=mesh('box',dark,px,y+pylonHeight/2,pz,.78,pylonHeight,1.05),fin=mesh('box',champagne,px,y+pylonHeight-.55,pz,.98,.22,.58),beacon=mesh('sphere',accentMat,px,y+pylonHeight+.35,pz,.36,.52,.36);
+    pylon.rotation.y=fin.rotation.y=heading;pylon.castShadow=true;fin.castShadow=beacon.castShadow=false;obstacles.push({x:px,z:pz,r:1.05});
+    for(let stripe=0;stripe<4;stripe++){const light=mesh('box',accentMat,px+forwardX*.6,y+2.5+stripe*2.35,pz+forwardZ*.6,.14,.72,.07);light.rotation.y=heading;light.castShadow=false;}
    }
-   const crown=mesh('box',champagne,item.x,y+9.55,item.z-.22,2.2,.18,.42);crown.castShadow=false;
+   const crown=mesh('box',champagne,item.x,y+(hubGate?13.0:9.55),item.z,hubGate?3.4:2.2,.22,.55);crown.rotation.y=heading;crown.castShadow=false;
+   if(hubGate){
+    const apron=mesh('box',dark,item.x+forwardX*10,y+.10,item.z+forwardZ*10,11,.18,22);apron.rotation.y=heading;apron.castShadow=false;
+    const line=mesh('box',accentMat,item.x+forwardX*10,y+.205,item.z+forwardZ*10,.18,.025,20);line.rotation.y=heading;line.castShadow=false;
+    const districtBeacon=mesh('cylinder',champagne,item.x-forwardX*4.8,y+1.05,item.z-forwardZ*4.8,1.1,2.1,1.1);districtBeacon.castShadow=false;
+    if(restored||evolution>=2){const restoredHalo=mesh(haloGeo,champagne,item.x,y+5.8,item.z,7.7,8.6,1);restoredHalo.rotation.y=heading;restoredHalo.castShadow=false;}
+   }
   }
  }
  function makeActor(item){
