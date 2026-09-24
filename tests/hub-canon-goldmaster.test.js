@@ -8,6 +8,7 @@ const platform=readFileSync(new URL('../src/world/heritage-platform.js',import.m
 const runtimeItems=readFileSync(new URL('../src/world/runtime-items.js',import.meta.url),'utf8');
 const cartography=readFileSync(new URL('../src/world/Cartography.jsx',import.meta.url),'utf8');
 const worldPortal=readFileSync(new URL('../src/components/WorldPortalCard.jsx',import.meta.url),'utf8');
+const sceneSource=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
 
 test('Cité des Huit Héritages canon keeps the safe Hub and ten useful districts',()=>{
  assert.equal(HUB_CANON_LAWS.safeZone.unique,true);
@@ -58,4 +59,11 @@ test('both the home preview and in-game map use the metropolitan district layout
  assert.match(cartography,/hubPlan\.countries\.map/);
  assert.match(cartography,/LA CITÉ DES HUIT HÉRITAGES/);
  assert.match(cartography,/10 QUARTIERS · 8 PORTES DISPERSÉES · HUB SÛR/);
+});
+
+
+test('returning with a newly restored Guardian rebuilds the Hub so evolution is immediately visible',()=>{
+ assert.match(sceneSource,/const hubRestorationChanged=region==='hub'/);
+ assert.match(sceneSource,/restoredKey\(save\)!==restoredKey\(value\)/);
+ assert.match(sceneSource,/hubMissionChanged\|\|hubRestorationChanged\|\|countryContractChanged/);
 });
