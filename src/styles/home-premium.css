@@ -926,3 +926,33 @@
  .app3b .nexus-portal-pylon{width:42px;height:27px;border-radius:6px}
  .app3b .nexus-portal-pylon b{font-size:7px}.app3b .nexus-portal-pylon small{display:none}
 }
+
+
+/* 2026-09-24 — Home simplification + canonical Nexus labels.
+   Country plaques are children of the authentic circle so they can never drift
+   outside the same coordinate system on phone/desktop. */
+.app3b .welcome-hero.welcome-hero-single{
+  grid-template-columns:minmax(0,1fr);
+}
+.app3b .welcome-hero.welcome-hero-single .welcome-copy{
+  max-width:min(760px,100%);
+}
+.app3b .nexus-authentic-circle>.nexus-gates{
+  position:absolute;
+  z-index:8;
+  inset:0;
+  pointer-events:none;
+}
+.app3b .nexus-authentic-circle>.nexus-gates .nexus-portal-pylon{
+  left:var(--x);
+  top:var(--y);
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+@media(max-width:720px){
+  .app3b .nexus-authentic-circle>.nexus-gates .nexus-portal-pylon{
+    width:38px;
+    height:24px;
+  }
+  .app3b .nexus-authentic-circle>.nexus-gates .nexus-portal-pylon b{font-size:7px}
+}

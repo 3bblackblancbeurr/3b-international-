@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 const match = readFileSync(new URL('../src/games/PenaltyRush.jsx', import.meta.url), 'utf8');
 const arena = readFileSync(new URL('../src/games/penaltyRush/PenaltyRushArena3D.jsx', import.meta.url), 'utf8');
 const server = readFileSync(new URL('../supabase/functions/penalty-rush/index.ts', import.meta.url), 'utf8');
+const training = readFileSync(new URL('../src/games/penaltyRush/PenaltyTraining.jsx', import.meta.url), 'utf8');
+const controls = readFileSync(new URL('../src/games/penaltyRush3d.css', import.meta.url), 'utf8');
 
 test('Penalty Rush match no longer renders placeholder 10 / GK / 3B avatars', () => {
   assert.match(match, /PenaltyRushArena3D/);
@@ -128,10 +130,12 @@ test('V4 streams keeper movement while dragging and keeps the server authoritati
 });
 
 test('V4 local prediction prioritizes instant control then reconciles softly', () => {
-  assert.match(arena, /const lateralSpeed = 7\.4 \+ intensity \* 2\.8/);
-  assert.match(arena, /const forwardSpeed = \(7\.8 \+ intensity \* 4\.4\)/);
+  assert.match(arena, /const lateralSpeed = 4\.4 \+ intensity \* 2\.2/);
+  assert.match(arena, /const forwardSpeed = \(5\.4 \+ intensity \* 2\.8\)/);
   assert.match(arena, /input\?\.active \? \.35 : 12\.5/);
-  assert.match(arena, /const speed = 11\.5 \+ intensity \* 5\.5/);
+  assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
+ assert.match(arena, /const drive = \.24 \+ intensity \* \.76/);
+ assert.match(arena, /const drive = \.22 \+ intensity \* \.78/);
   assert.match(arena, /input\?\.active \? \.25 : 15/);
 });
 
@@ -152,8 +156,8 @@ test('V4 uses football-scale player and ball dimensions', () => {
 });
 
 test('V4 local movement is tuned for immediate football-game response', () => {
-  assert.match(arena, /const lateralSpeed = 7\.4 \+ intensity \* 2\.8/);
-  assert.match(arena, /const speed = 11\.5 \+ intensity \* 5\.5/);
+  assert.match(arena, /const lateralSpeed = 4\.4 \+ intensity \* 2\.2/);
+  assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
   assert.match(arena, /snapshot\.selfIndex \? 30 : 12/);
   assert.match(arena, /selfKeeper \? 34 : 12/);
   assert.match(arena, /selfKeeper \? 18 : 8\.5/);
@@ -162,4 +166,28 @@ test('V4 local movement is tuned for immediate football-game response', () => {
 test('V4 server movement supports responsive lateral attack and keeper positioning', () => {
   assert.match(server, /ix \* \(\.34 \+ intensity\*\.2\) \* dt/);
   assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
+});
+
+
+test('V5 touch controls add dead zones, absolute training drag and a hold-to-charge trigger',()=>{
+ assert.match(match,/const deadZone = 10/);
+ assert.match(match,/const keeperDeadZone = 9/);
+ assert.match(match,/penalty-shot-charge/);
+ assert.match(match,/data-charging/);
+ assert.match(training,/deadX \/ 420/);
+ assert.match(training,/MAINTIENS · VISE · RELÂCHE/);
+ assert.match(training,/heldMs<300/);
+ assert.match(training,/Maintiens la gâchette pour charger ta frappe/);
+ assert.match(training,/penalty-shot-charge/);
+ assert.match(controls,/PUISSANCE/);
+ assert.match(controls,/RÉACTION/);
+});
+
+test('V5 sends goals physically inside the net and builds a 3B world behind the cage',()=>{
+ assert.match(arena,/function createThreeBGoalWorld/);
+ assert.match(arena,/3B_WORLD_BEHIND_GOAL/);
+ assert.match(arena,/MONDE DU 3B · NEXUS/);
+ assert.match(arena,/GOAL_Z - 1\.42/);
+ assert.match(arena,/event\.type === 'goal' && t > \.76/);
+ assert.match(arena,/createThreeBGoalWorld\(scene, mobile\)/);
 });

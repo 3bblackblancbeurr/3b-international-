@@ -10,6 +10,7 @@ const games=readFileSync(new URL('../src/games/premium.css',import.meta.url),'ut
 
 test('home hides technical status cards and keeps the ecosystem guide at the bottom',()=>{
  assert.doesNotMatch(home,/home-journey-status|home-status-item/);
+ assert.doesNotMatch(home,/heritage-poster|background\.png/);
  assert.match(home,/const PRIMARY_IDS = \['passport', 'world3b', 'games'\]/);
  const guide=home.lastIndexOf('Comprendre l’écosystème 3B');
  assert.ok(guide>home.indexOf('Explorer 3B'));
@@ -33,6 +34,8 @@ test('the home world card uses a Nexus ring and contains no Unreal client copy',
  assert.match(portal,/nexus-ring-scene/);
  assert.match(portal,/NEXUS/);
  assert.match(portal,/8 Portes reliées/);
+ assert.match(portal,/nexus-authentic-circle[\s\S]*nexus-gates/);
+ for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE'])assert.match(portal,new RegExp("code:'"+code+"'"));
  assert.doesNotMatch(portal,/client Unreal Engine|UE 5\.8 foundation|Le web reste le cœur/i);
 });
 

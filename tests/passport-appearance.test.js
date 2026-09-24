@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {appearanceFromSnapshot,cleanInitials,createAppearanceStore,isDirectorPortraitIdentity,normalizeAppearance} from '../src/passport/appearance-store.js';
+
+const passportVisual=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
+const passportAppearance=readFileSync(new URL('../src/passport/PassportAppearance.jsx',import.meta.url),'utf8');
 
 const alice={userId:'alice',name:'Alice Martin'},bob={userId:'bob',name:'Benoît Petit'};
 const director={userId:'director',name:'3B',public_verified:true,public_badge_key:'director_founder'};
@@ -175,4 +179,24 @@ test('an unchanged portrait accepts its import while preserving mode and other c
   assert.equal(store.update(identity,{photo},beforeImport),true);
   assert.deepEqual(appearance(identity),{mode,initials:'NEW',photo});
  }
+});
+
+
+test('Passport UI permanently keeps the original card without Details, zoom or duplicate phone card',()=>{
+ assert.doesNotMatch(passportVisual,/passport-view-switch|passport-phone-card|passport-card-zoom|Agrandir|Détails/);
+ assert.doesNotMatch(passportVisual,/passport-animation-toolbar|passport-entry-hint/);
+ assert.match(passportVisual,/passport-card-stage passport-card-desktop/);
+ assert.match(passportVisual,/MA VILLE/);
+ assert.match(passportVisual,/PassportPortrait/);
+});
+
+test('photo import is mobile-tolerant and commits the selected photo in one pass',()=>{
+ assert.match(passportAppearance,/createImageBitmap/);
+ assert.match(passportAppearance,/file\.size>16\*1024\*1024/);
+ assert.match(passportAppearance,/inputRef\.current\.value=''/);
+ assert.match(passportAppearance,/setAppearance\(current=>\(\{\.\.\.current,mode:targetMode,photo\}\),appearance\)/);
+ assert.match(passportAppearance,/\[appearance\.mode\]\);/);
+ assert.match(passportAppearance,/passport-face-shell/);
+ assert.match(passportAppearance,/passport-face-geometry/);
+ assert.doesNotMatch(passportAppearance,/M80 181c20 13 40 13 60 0/);
 });

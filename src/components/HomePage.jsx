@@ -24,7 +24,7 @@ export default function HomePage({goTo,menuItems,member}){
  })).filter(group=>group.items.length>0);
 
  return <section className="home-dashboard">
-  <div className="welcome-hero">
+  <div className="welcome-hero welcome-hero-single">
    <div className="welcome-copy">
     <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
     <h1>Un héritage.<br/><em>Ton univers.</em></h1>
@@ -34,7 +34,6 @@ export default function HomePage({goTo,menuItems,member}){
     </div>
     <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MONDE DU 3B</span><span>03 / JEUX 3B</span></div>
    </div>
-   <div className="heritage-poster"><img src="/background.png" alt="Affiche officielle 3B International : un héritage, de zéro à l’international"/><span>DE ZÉRO À L’INTERNATIONAL</span></div>
   </div>
 
   <WorldPortalCard goTo={goTo}/>

@@ -30,7 +30,7 @@ export function interpretAttackGesture(sample = {}) {
     return { type: 'accelerate', intensity: clamp(0.62 + speed * 0.55, 0.62, 1) };
   }
 
-  if (heldMs >= 320 && distance >= 18) {
+  if (heldMs >= 320) {
     const shot = shotFromGesture({ dx, dy, durationMs, heldMs, curve });
     return { type: shot.type, shot };
   }
@@ -65,11 +65,11 @@ export function shotFromGesture(sample = {}) {
   const heldMs = clamp(Number(sample.heldMs) || 0, 0, 1800);
   const curve = clamp(Number(sample.curve) || 0, -1, 1);
   const directional = normalizeVector(dx, dy);
-  const charge = clamp(heldMs / 900, 0.12, 1);
-  const travel = clamp(distance / 150, 0.15, 1);
-  const power = clamp(charge * 0.68 + travel * 0.32, 0.12, 1);
-  const targetX = clamp(dx / 115, -1, 1);
-  const targetY = clamp(-dy / 125, 0.04, 1);
+  const charge = clamp(heldMs / 950, 0.1, 1);
+  const travel = clamp(distance / 160, 0.1, 1);
+  const power = clamp(charge * 0.84 + travel * 0.16, 0.1, 1);
+  const targetX = distance < 12 ? 0 : clamp(dx / 125, -1, 1);
+  const targetY = distance < 12 ? 0.38 : clamp(-dy / 135, 0.06, 1);
   const upwardShort = dy < -10 && distance <= 62 && heldMs <= 420;
   const type = upwardShort ? 'panenka' : Math.abs(curve) >= 0.22 ? 'curved-shot' : 'shot';
   const precision = clamp(1 - Math.max(0, power - 0.72) * 0.72 - Math.abs(curve) * 0.08, 0.58, 1);

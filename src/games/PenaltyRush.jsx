@@ -511,6 +511,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const leftGesture = useRef(new PointerGesture());
   const rightGesture = useRef(new PointerGesture());
   const rightLastTap = useRef(0);
+  const chargeFrame = useRef(0);
   const moveThrottle = useRef(0);
   const keeperMoveThrottle = useRef(0);
   const moveInFlight = useRef(false);
@@ -524,6 +525,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const rightPadRef = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
   revisionRef.current = room.revision;
+  useEffect(() => () => cancelAnimationFrame(chargeFrame.current), []);
 
   function flushMove() {
     if (moveInFlight.current || !pendingMove.current) return;
@@ -597,9 +599,13 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function resetRightPad() {
+    cancelAnimationFrame(chargeFrame.current);
+    chargeFrame.current = 0;
     const pad = rightPadRef.current;
     if (!pad) return;
     pad.dataset.active = 'false';
+    pad.dataset.charging = 'false';
+    pad.style.setProperty('--charge', '0');
     pad.style.setProperty('--gesture-power', '.18');
     pad.style.setProperty('--gesture-opacity', '.28');
   }
@@ -614,17 +620,23 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   function leftMove(event) {
     const start = leftGesture.current.get(event.pointerId);
     if (!start || !isAttacker) return;
-    const dx = event.clientX - start.x;
-    const dy = event.clientY - start.y;
-    const length = Math.hypot(dx, dy) || 1;
-    const x = dx / length;
-    const y = dy / length;
-    const intensity = Math.min(1, length / 70);
-    controlRef.current = { ...controlRef.current, x, y, intensity, active:true };
+    const rawDx = event.clientX - start.x;
+    const rawDy = event.clientY - start.y;
+    const rawLength = Math.hypot(rawDx, rawDy);
+    const deadZone = 10;
+    const activeLength = Math.max(0, rawLength - deadZone);
+    const scale = rawLength > 0 ? activeLength / rawLength : 0;
+    const dx = rawDx * scale;
+    const dy = rawDy * scale;
+    const length = Math.hypot(dx, dy);
+    const x = length ? dx / length : 0;
+    const y = length ? dy / length : 0;
+    const intensity = Math.min(1, length / 88);
+    controlRef.current = { ...controlRef.current, x, y, intensity, active:activeLength > 0 };
 
     const pad = leftPadRef.current;
     if (pad) {
-      const visualRadius = Math.min(43, length);
+      const visualRadius = Math.min(39, length);
       pad.style.setProperty('--stick-x', (x * visualRadius).toFixed(1) + 'px');
       pad.style.setProperty('--stick-y', (y * visualRadius).toFixed(1) + 'px');
     }
@@ -652,9 +664,24 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
     event.currentTarget.style.setProperty('--gesture-opacity', '.92');
+    if (isAttacker) {
+      const pad = event.currentTarget;
+      pad.dataset.charging = 'true';
+      pad.style.setProperty('--charge', '.1');
+      const tick = now => {
+        const gesture = rightGesture.current.get(event.pointerId);
+        if (!gesture) return;
+        const charge = Math.max(.1, Math.min(1, (now - gesture.t) / 950));
+        pad.style.setProperty('--charge', charge.toFixed(3));
+        pad.style.setProperty('--gesture-power', String(Math.max(.18, charge)));
+        chargeFrame.current = requestAnimationFrame(tick);
+      };
+      chargeFrame.current = requestAnimationFrame(tick);
+    }
     if (isKeeper) {
       keeperFinalAction.current = null;
       pendingKeeperMove.current = null;
+      event.currentTarget.style.setProperty('--charge', '0');
       controlRef.current.keeper = { direction:0, intensity:0, active:true };
     }
   }
@@ -672,12 +699,18 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     const pad = rightPadRef.current;
     if (pad) {
       pad.style.setProperty('--gesture-angle', angle.toFixed(1) + 'deg');
-      pad.style.setProperty('--gesture-power', String(Math.max(.18, Math.min(1, distance / 82))));
+      if (isKeeper) {
+        const preview = Math.min(1, distance / 92);
+        pad.style.setProperty('--gesture-power', String(Math.max(.18, preview)));
+        pad.style.setProperty('--charge', preview.toFixed(3));
+      }
     }
     if (isKeeper) {
-      const direction = Math.max(-1, Math.min(1, dx / Math.max(28, Math.abs(dx))));
-      const intensity = Math.min(1, distance / 72);
-      controlRef.current.keeper = { direction, intensity, active:true };
+      const keeperDeadZone = 9;
+      const effectiveDistance = Math.max(0, distance - keeperDeadZone);
+      const direction = effectiveDistance ? Math.max(-1, Math.min(1, dx / Math.max(38, Math.abs(dx)))) : 0;
+      const intensity = Math.min(1, effectiveDistance / 92);
+      controlRef.current.keeper = { direction, intensity, active:effectiveDistance > 0 };
       const now = performance.now();
       if (now - keeperMoveThrottle.current >= 50) {
         keeperMoveThrottle.current = now;
@@ -768,8 +801,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
-        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
-        <div ref={rightPadRef} className="penalty-touch-right" data-active="false" onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightCancel} onLostPointerCapture={rightCancel}><span>{isAttacker ? 'FEINTE · CROCHET · MAINTIENS POUR FRAPPER' : 'GLISSE POUR PLONGER · FERME L’ANGLE'}</span></div>
+        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" aria-label="Déplacement de l’attaquant" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
+        <div ref={rightPadRef} className="penalty-touch-right" data-active="false" data-charging="false" aria-label={isAttacker ? 'Tir avec jauge de puissance' : 'Plongeon et fermeture d’angle'} onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightCancel} onLostPointerCapture={rightCancel}><i className="penalty-shot-charge" aria-hidden="true"><b /></i><span>{isAttacker ? 'MAINTIENS · VISE · RELÂCHE' : 'VISE · GLISSE · PLONGE'}</span></div>
 
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
         {impactType && <div key={String(state.lastEvent?.visual?.at || room.revision)} className="penalty-impact-word" data-type={impactType} aria-hidden="true"><strong>{impactLabel}</strong><span>{impactType === 'goal' ? '3B PENALTY RUSH' : impactType === 'save' ? 'RÉFLEXE GARDIEN' : 'À QUELQUES CENTIMÈTRES'}</span></div>}
