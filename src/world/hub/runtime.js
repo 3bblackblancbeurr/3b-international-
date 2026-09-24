@@ -42,7 +42,11 @@ export function buildHubRuntimeItems({
   seals = [],
   restoredRegions = [],
 }) {
-  const metropolis=buildMetropolisRuntimeItems(plan,profile);
+  const metropolis=buildMetropolisRuntimeItems(plan,profile,{
+    seals,
+    restoredRegions,
+    restoredCount:Math.max(seals.length,restoredRegions.length),
+  });
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
     type: 'hubDistrict',
