@@ -175,3 +175,19 @@ test('all eight country facilities are live interaction points next to their esp
  assert.equal(names.DZ,'Maison des Alliances');
  assert.equal(names.EE,'Tour des Données');
 });
+
+
+test('Hub premium street furniture is rendered but never becomes an interaction target or map marker',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const street=runtime.items.filter(item=>item.type==='hubStreetFurniture');
+ assert.equal(street.length,80);
+ assert.ok(street.every(item=>item.range===-1));
+ assert.equal(new Set(street.map(item=>item.kind)).size,6);
+ const scene=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
+ const visuals=readFileSync(new URL('../src/world/premium-hub-visuals.js',import.meta.url),'utf8');
+ const cartography=readFileSync(new URL('../src/world/Cartography.jsx',import.meta.url),'utf8');
+ assert.match(scene,/item\.type==='hubStreetFurniture'/);
+ assert.match(scene,/createPremiumStreetFurniture/);
+ assert.match(visuals,/export function createPremiumStreetFurniture/);
+ assert.match(cartography,/hubStreetFurniture/);
+});
