@@ -32,7 +32,7 @@ import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './stream
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
 import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {worldVisualCapabilities} from './device-capabilities.js';
-import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge} from './premium-hub-visuals.js';
+import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge,createPremiumCivicPlaza,createPremiumDistrictLandmark,createPremiumWaterFeature,createPremiumTransitLink} from './premium-hub-visuals.js';
 import {loadControlBindings,normalizeControlBindings,controlMatches,actionHeld} from './control-bindings.js';
 import {actionFeedback} from './interaction-system.js';
 import {obstacleDistance} from './collision.js';
@@ -193,6 +193,19 @@ function hubNpcAvatar(item){
     const body=mesh('box',material(palette,{roughness:construction?.84:canonical?.58:.76,metalness:construction?.06:canonical?.22:.08}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
     const visuals=[body,...decorateHubBuilding(item,{mesh,material,groundY,canonical})];
     obstacles.push({x:bx,z:bz,width:item.width+.8,depth:item.depth+.8,rotation:0});itemVisuals.set(item.id,visuals);continue;
+   }
+   if(item.type==='hubWaterFeature'){
+    const water=createPremiumWaterFeature(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[water]);continue;
+   }
+   if(item.type==='hubTransitLink'){
+    const link=createPremiumTransitLink(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[link]);continue;
+   }
+   if(item.type==='hubCivicPlaza'){
+    const plaza=createPremiumCivicPlaza(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[plaza]);continue;
+   }
+   if(item.type==='hubDistrictLandmark'){
+    const landmark=createPremiumDistrictLandmark(item,{root,geometry,material,groundY});
+    obstacles.push({x:item.x,z:item.z,width:9,depth:9,rotation:0});itemVisuals.set(item.id,[landmark]);continue;
    }
    if(item.type==='hubSkybridge'){
     const bridge=createPremiumSkybridge(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[bridge]);continue;
@@ -457,6 +470,8 @@ function hubNpcAvatar(item){
    const hubEvolution=hubPlatforms.length?{
     stage:hubPlatforms[0].evolutionStage||0,
     label:hubPlatforms[0].evolutionLabel||'Fondations vivantes',
+    milestone:hubPlatforms[0].milestone||null,
+    nextMilestone:hubPlatforms[0].nextMilestone||null,
     liberated:hubPlatforms.filter(item=>item.liberated).length,
     restored:hubPlatforms.filter(item=>item.restored).length,
     total:hubPlatforms.length,
