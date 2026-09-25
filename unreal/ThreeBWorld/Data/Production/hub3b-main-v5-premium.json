@@ -1003,7 +1003,16 @@
     ],
     "density_rule": "No large decorative void. Every major frontage reads as housing, food, workshop, school, clinic, shop, guild room or public service.",
     "building_rule": "Every major visible building has a real gameplay, narrative, service, transport or progression function.",
-    "portal_rule": "Eight portals are dispersed at their metropolitan coordinates and integrated into neighbourhood architecture."
+    "portal_rule": "Eight portals are dispersed at their metropolitan coordinates and integrated into neighbourhood architecture.",
+    "release": "V05 Premium canonical",
+    "release_gate": [
+      "same metropolis on mobile and desktop",
+      "eight dispersed heritage portals",
+      "ten distinct districts",
+      "useful Cité Origine frontages",
+      "water, vertical links and transit are structural",
+      "no legacy radial ring/spokes/petals model"
+    ]
   },
   "validation": {
     "required_district_count": 10,
@@ -1025,5 +1034,31 @@
     "eight portals equally spaced at 45 degrees",
     "ring/spokes/petals architecture",
     "large empty voids between portal arms"
-  ]
+  ],
+  "performance": {
+    "mobileMedium": {
+      "target_fps": 30,
+      "civic_frontages_per_district": 8,
+      "street_furniture_per_district": 4,
+      "traffic_budget": "adaptive",
+      "shadow_budget": "reduced",
+      "water_reflections": "adaptive"
+    },
+    "mobileHigh": {
+      "target_fps": 60,
+      "civic_frontages_per_district": 10,
+      "street_furniture_per_district": 6,
+      "traffic_budget": "medium",
+      "shadow_budget": "medium",
+      "water_reflections": "adaptive"
+    },
+    "desktop": {
+      "target_fps": 60,
+      "civic_frontages_per_district": 13,
+      "street_furniture_per_district": 8,
+      "traffic_budget": "high",
+      "shadow_budget": "high",
+      "water_reflections": "premium"
+    }
+  }
 }

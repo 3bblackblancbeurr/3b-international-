@@ -126,3 +126,15 @@ test('V05 native builder differentiates all civic functions and all eight herita
  assert.match(builder,/heritage_identity/);
  assert.match(builder,/civic_identity/);
 });
+
+
+test('V05 premium manifest defines device budgets without changing the city',()=>{
+ assert.equal(manifest.premium.release,'V05 Premium canonical');
+ assert.equal(manifest.premium.same_city_mobile_desktop,true);
+ assert.equal(manifest.performance.mobileMedium.target_fps,30);
+ assert.equal(manifest.performance.mobileHigh.target_fps,60);
+ assert.equal(manifest.performance.desktop.target_fps,60);
+ assert.ok(manifest.performance.desktop.civic_frontages_per_district>manifest.performance.mobileMedium.civic_frontages_per_district);
+ assert.ok(manifest.performance.desktop.street_furniture_per_district>manifest.performance.mobileMedium.street_furniture_per_district);
+ assert.ok(manifest.premium.release_gate.includes('no legacy radial ring/spokes/petals model'));
+});
