@@ -71,7 +71,10 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
   const frontageZ=bz+depth*.535;
   switch(item.civicUse){
    case 'housing':
-    for(const level of [.32,.56,.78])for(const side of [-1,1])child(group??{add:m=>visuals.push(m)},geometry.box,civicAccent,{x:bx+side*width*.22,y:y+height*level,z:frontageZ,sx:width*.16,sy:.10,sz:.08,cast:false});
+    for(const level of [.32,.56,.78])for(const side of [-1,1]){
+     const balcony=mesh('box',civicAccent,bx+side*width*.22,y+height*level,frontageZ,width*.16,.10,.08);
+     balcony.castShadow=false;visuals.push(balcony);
+    }
     break;
    case 'food':
     {const awning=mesh('box',civicAccent,bx,y+3.8,frontageZ+.45,width*.52,.18,1.15);awning.castShadow=false;visuals.push(awning);}
