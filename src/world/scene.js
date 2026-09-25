@@ -32,7 +32,7 @@ import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './stream
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
 import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {worldVisualCapabilities} from './device-capabilities.js';
-import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle} from './premium-hub-visuals.js';
+import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge} from './premium-hub-visuals.js';
 import {loadControlBindings,normalizeControlBindings,controlMatches,actionHeld} from './control-bindings.js';
 import {actionFeedback} from './interaction-system.js';
 import {obstacleDistance} from './collision.js';
@@ -187,11 +187,17 @@ function hubNpcAvatar(item){
     const visuals=buildPremiumHubRoad(item,{mesh,material,groundY});itemVisuals.set(item.id,visuals);continue;
    }
    if(item.type==='hubBuilding'||item.type==='hubStructure'){
-    const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0;
-    const palette=canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
-    const body=mesh('box',material(palette,{roughness:canonical?.58:.76,metalness:canonical?.22:.08}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
+    const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0,construction=item.buildStatus==='construction';
+    const palette=construction?'#15191c':canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
+    const body=mesh('box',material(palette,{roughness:construction?.84:canonical?.58:.76,metalness:construction?.06:canonical?.22:.08}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
     const visuals=[body,...decorateHubBuilding(item,{mesh,material,groundY,canonical})];
     obstacles.push({x:bx,z:bz,width:item.width+.8,depth:item.depth+.8,rotation:0});itemVisuals.set(item.id,visuals);continue;
+   }
+   if(item.type==='hubSkybridge'){
+    const bridge=createPremiumSkybridge(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[bridge]);continue;
+   }
+   if(item.type==='hubHeritagePlatform'){
+    const platform=createPremiumHeritagePlatform(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[platform]);continue;
    }
    if(item.type==='hubTraffic'){
     const car=createPremiumTrafficVehicle(item,{root,geometry,material,groundY});
