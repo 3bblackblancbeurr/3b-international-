@@ -203,6 +203,9 @@ function hubNpcAvatar(item){
    if(item.type==='hubCivicPlaza'){
     const plaza=createPremiumCivicPlaza(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[plaza]);continue;
    }
+   if(item.type==='hubStreetFurniture'){
+    const street=createPremiumStreetFurniture(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[street]);continue;
+   }
    if(item.type==='hubDistrictLandmark'){
     const landmark=createPremiumDistrictLandmark(item,{root,geometry,material,groundY});
     obstacles.push({x:item.x,z:item.z,width:9,depth:9,rotation:0});itemVisuals.set(item.id,[landmark]);continue;
