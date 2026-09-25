@@ -1,8 +1,10 @@
-# Hub principal 3B V4 — Sanctuaire des Huit Portes
+# LEGACY — Hub principal 3B V4 — Sanctuaire radial historique
 
-## Objectif
+## Statut
 
-La V4 remplace le simple test de vide par la vraie architecture de base du hub principal.
+**Obsolète comme référence du Monde du 3B.** La map canonique est désormais `Hub3B_Main_V05`, basée sur la Cité des Huit Héritages validée par l’utilisateur.
+
+La V4 est conservée uniquement comme prototype technique historique de plateforme radiale.
 
 Map dédiée :
 `/Game/3binternational/Maps/Hub3B_Main_V04`
@@ -71,3 +73,6 @@ Il vérifie :
 Résultat attendu dans le Journal de sortie :
 
 `VALIDATION HUB 3B V4: OK`
+
+
+> Ne plus utiliser cette V4 comme direction artistique ou spatiale. Voir `HUB3B_MAIN_V05_PREMIUM.md`.
