@@ -16,7 +16,7 @@ import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
 import {PointerGesture} from './touchControls.js';
-import { unlockPenaltyAudio } from './penaltyRush/audio.js';
+import { stopPenaltyAudio, unlockPenaltyAudio } from './penaltyRush/audio.js';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
 
@@ -64,6 +64,8 @@ export default function PenaltyRush({ onClose, onAccount }) {
   const user = account.user;
   const rating = snapshot?.rating || { rating: 1000, games: 0, wins: 0, losses: 0 };
   const tier = careerTierFor(snapshot?.career?.reputation || 0);
+
+  useEffect(() => () => stopPenaltyAudio(), []);
 
   async function request(action, body = {}, options = {}) {
     if (!user) throw new Error('Compte 3B requis.');

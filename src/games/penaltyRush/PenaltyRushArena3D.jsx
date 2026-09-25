@@ -1049,6 +1049,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     const livingActors = [null, null];
     let livingLibrary = null;
     let premiumActorsTimer = 0;
+    let premiumActorsIdle = 0;
+    let premiumActorsAttempts = 0;
 
     const initialState = liveRef.current.room?.state || {};
     const runtime = {
@@ -1116,13 +1118,31 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       }
     }
 
-    if (!mobile) {
+    function schedulePremiumActors(delay = 2800) {
+      if (mobile || runtime.disposed || livingLibrary || premiumActorsAttempts >= 4) return;
       premiumActorsTimer = window.setTimeout(() => {
-        const launch = () => loadPremiumActors();
-        if ('requestIdleCallback' in window) window.requestIdleCallback(launch, { timeout:2200 });
-        else launch();
-      }, 900);
+        const launch = () => {
+          if (runtime.disposed || livingLibrary) return;
+          const samples = runtime.frameSamples;
+          const avgFrame = samples.length
+            ? samples.reduce((sum, value) => sum + value, 0) / samples.length
+            : 0;
+          if (document.hidden || (samples.length >= 30 && avgFrame > 1 / 48)) {
+            premiumActorsAttempts += 1;
+            schedulePremiumActors(1800);
+            return;
+          }
+          loadPremiumActors();
+        };
+        if ('requestIdleCallback' in window) {
+          premiumActorsIdle = window.requestIdleCallback(launch, { timeout:6000 });
+        } else {
+          launch();
+        }
+      }, delay);
     }
+
+    if (!mobile) schedulePremiumActors();
 
     function registerEvent(state, revision) {
       if (revision === runtime.lastRevision) return;
@@ -1549,6 +1569,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       observer.disconnect();
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
       clearTimeout(premiumActorsTimer);
+      if (premiumActorsIdle && 'cancelIdleCallback' in window) window.cancelIdleCallback(premiumActorsIdle);
       livingActors.forEach((actor) => actor?.dispose?.());
       livingLibrary?.dispose?.();
       dispose(scene);
