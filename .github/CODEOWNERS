@@ -1,0 +1,6 @@
+# Security-sensitive ownership. Enforcement requires a GitHub ruleset/branch protection.
+/.github/ @3bblackblancbeurr
+/supabase/ @3bblackblancbeurr
+/docs/3B_SECURITY/ @3bblackblancbeurr
+/src/passport/ @3bblackblancbeurr
+/src/world/ @3bblackblancbeurr

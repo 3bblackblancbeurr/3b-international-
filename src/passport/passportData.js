@@ -1,73 +1,52 @@
+// Legacy presentation fixture only.
+// Never use this file as an identity, authentication or wallet source of truth.
+// Real passport identity must come from the authenticated member profile.
+
 const passportData = {
   stats: {
-    connectedCountries: 196,
-    globalAccess: "24/7",
+    connectedCountries: 8,
+    globalAccess: "APPLICATION 3B",
   },
 
   member: {
-    name: "Zakaria",
-    email: "3bblackblancbeurre@gmail.com",
-    status: "Membre 3B",
-    joinDate: "24/05/2026",
-    memberId: "3B-MEM-88421",
-    passNumber: "3B-PASS-2177",
+    name: "Membre 3B",
+    email: "",
+    status: "Exemple",
+    joinDate: "",
+    memberId: "3B-MEM-EXAMPLE",
+    passNumber: "3B-PASS-EXAMPLE",
     originCountry: "France",
-    residenceCountry: "France",
-    city: "Paris",
-    issueDate: "24/05/2026",
+    residenceCountry: "",
+    city: "",
+    issueDate: "",
   },
 
   security: [
-    { label: "Passeport numérique", value: "VÉRIFIÉ" },
-    { label: "Clé publique", value: "VÉRIFIÉ" },
-    { label: "Niveau de sécurité", value: "ULTRA" },
-    { label: "Biométrie", value: "ACTIVE" },
-    { label: "Chiffrement", value: "AES-256" },
-    { label: "Intégrité des données", value: "100%" },
+    { label: "Passeport numérique", value: "NON CONFIGURÉ" },
+    { label: "Clé publique", value: "NON CONFIGURÉE" },
+    { label: "Niveau de sécurité", value: "NON ÉVALUÉ" },
+    { label: "Biométrie", value: "NON CONFIGURÉE" },
+    { label: "Chiffrement", value: "NON CONFIGURÉ" },
+    { label: "Intégrité des données", value: "NON ÉVALUÉE" },
   ],
 
-  securityId: "3B-ID-9F7A-2C4B-6E21",
+  securityId: "",
 
   bonus: {
-    title: "Patrimoine France 3B",
-    effect: "+2 XP sur missions identité, luxe et héritage",
-    detail:
-      "Bonus lié à l’origine française, au patrimoine, au textile premium et à l’image officielle 3B.",
+    title: "Patrimoine 3B",
+    effect: "Exemple de présentation uniquement",
+    detail: "Les bonus réels doivent venir de l'état serveur authentifié.",
   },
 
   countries: [
-    {
-      name: "France",
-      position: { top: "30%", left: "22%" },
-    },
-    {
-      name: "Espagne",
-      position: { top: "46%", left: "15%" },
-    },
-    {
-      name: "Italie",
-      position: { top: "28%", left: "52%" },
-    },
-    {
-      name: "Estonie",
-      position: { top: "14%", left: "64%" },
-    },
-    {
-      name: "Turquie",
-      position: { top: "48%", left: "76%" },
-    },
-    {
-      name: "Algérie",
-      position: { top: "60%", left: "36%" },
-    },
-    {
-      name: "Tunisie",
-      position: { top: "58%", left: "58%" },
-    },
-    {
-      name: "Maroc",
-      position: { top: "70%", left: "10%" },
-    },
+    { name: "France", position: { top: "30%", left: "22%" } },
+    { name: "Espagne", position: { top: "46%", left: "15%" } },
+    { name: "Italie", position: { top: "28%", left: "52%" } },
+    { name: "Estonie", position: { top: "14%", left: "64%" } },
+    { name: "Turquie", position: { top: "48%", left: "76%" } },
+    { name: "Algérie", position: { top: "60%", left: "36%" } },
+    { name: "Tunisie", position: { top: "58%", left: "58%" } },
+    { name: "Maroc", position: { top: "70%", left: "10%" } },
   ],
 };
 

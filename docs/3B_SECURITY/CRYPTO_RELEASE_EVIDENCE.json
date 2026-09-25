@@ -1,0 +1,16 @@
+{
+  "gate_version": "2026.1",
+  "state": "blocked",
+  "approvals": {
+    "wallet_model_approved": {"approved": false, "evidence_refs": []},
+    "vault_strategy_approved": {"approved": false, "evidence_refs": []},
+    "vault_recovery_tested": {"approved": false, "evidence_refs": []},
+    "crypto_suite_reviewed": {"approved": false, "evidence_refs": []},
+    "testnet_authorized": {"approved": false, "evidence_refs": []},
+    "protocol_security_reviewed": {"approved": false, "evidence_refs": []},
+    "external_audit_approved": {"approved": false, "evidence_refs": []},
+    "red_team_approved": {"approved": false, "evidence_refs": []},
+    "legal_mica_approved": {"approved": false, "evidence_refs": []},
+    "mainnet_authorized": {"approved": false, "evidence_refs": []}
+  }
+}
