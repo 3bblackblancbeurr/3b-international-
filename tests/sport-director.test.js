@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {
- canConfirmEventFinished,eventState,matchEventToTitle,sanitizeEvent,
+ canConfirmEventFinished,eventState,matchEventToTitle,sanitizeEvent,sourceIdForBroadcaster,
 } from '../shared/sport-director.js';
 import {
  handleSportDirectorRequest,loadLiveSources,resetSportDirectorForTests,
@@ -127,4 +128,60 @@ test('same-origin preview deployments and native app origins are accepted safely
  }),{fetchImpl:mockFetch,now:Date.parse('2026-09-25T19:00:00Z')});
  assert.equal(native.status,200);
  assert.equal(native.headers.get('access-control-allow-origin'),'https://localhost');
+});
+
+
+test('official broadcaster names map to a fixed allowlisted source',()=>{
+ assert.equal(sourceIdForBroadcaster('Sport en France'),'sef-youtube');
+ assert.equal(sourceIdForBroadcaster('France 2'),'ftv-youtube');
+ assert.equal(sourceIdForBroadcaster('unknown pirate channel'),'');
+});
+
+test('a scheduled official broadcaster can recommend a source without exposing an arbitrary URL',async()=>{
+ const fetchImpl=url=>{
+  const target=String(url);
+  if(target.includes('eventsday.php'))return Promise.resolve(response({events:[rawEvent]}));
+  if(target.includes('eventstv.php'))return Promise.resolve(response({tvevents:[{idEvent:'900001',strChannel:'Sport en France'}]}));
+  throw new Error('unexpected-upstream:'+target);
+ };
+ resetSportDirectorForTests();
+ const result=await handleSportDirectorRequest(new Request('https://3b-international.vercel.app/api/sport-director',{
+  headers:{origin:'https://3b-international.vercel.app','sec-fetch-site':'same-origin','x-forwarded-for':'198.51.100.44'},
+ }),{fetchImpl,now:Date.parse('2026-09-25T19:50:00Z')});
+ const body=await result.json();
+ assert.equal(body.recommendedSourceId,'sef-youtube');
+ assert.equal(body.events[0].sourceId,'sef-youtube');
+ assert.ok(!JSON.stringify(body).includes('http://evil'));
+});
+
+
+test('Twitch client secret is sent in the POST body and never in the URL',async()=>{
+ process.env.TWITCH_CLIENT_ID='client_identifier_12345';
+ process.env.TWITCH_CLIENT_SECRET='S'.repeat(40);
+ resetSportDirectorForTests();
+ let tokenChecked=false;
+ const fetchImpl=(url,options={})=>{
+  const target=String(url);
+  if(target.includes('id.twitch.tv')){
+   assert.ok(!target.includes('client_secret'));
+   const body=String(options.body||'');
+   assert.match(body,/client_secret=/);
+   assert.ok(body.includes(encodeURIComponent(process.env.TWITCH_CLIENT_SECRET)));
+   tokenChecked=true;
+   return Promise.resolve(response({access_token:'T'.repeat(40),expires_in:3600}));
+  }
+  if(target.includes('api.twitch.tv'))return Promise.resolve(response({data:[]}));
+  throw new Error('unexpected-upstream:'+target);
+ };
+ await loadLiveSources({fetchImpl,events:[]});
+ assert.equal(tokenChecked,true);
+ delete process.env.TWITCH_CLIENT_ID;
+ delete process.env.TWITCH_CLIENT_SECRET;
+});
+
+test('server cache is explicitly bounded against untrusted event-id churn',()=>{
+ const source=readFileSync('server/sport-director.js','utf8');
+ assert.match(source,/MAX_CACHE_ENTRIES=300/);
+ assert.match(source,/function pruneCache/);
+ assert.match(source,/pruneCache\(now\)/);
 });

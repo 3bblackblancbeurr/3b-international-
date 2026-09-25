@@ -13,6 +13,13 @@ export const SPORT_HUBS=Object.freeze([
  {label:'Olympics',href:'https://www.olympics.com/fr/evenements-sportifs/'},
 ]);
 
+const BROADCASTER_SOURCE_RULES=Object.freeze([
+ {sourceId:'sef-youtube',patterns:['sport en france']},
+ {sourceId:'ftv-youtube',patterns:['france tv sport','france televisions','france 2','france 3','france 4','france.tv']},
+ {sourceId:'euroleague-youtube',patterns:['euroleague tv','euroleague']},
+ {sourceId:'rugby-world',patterns:['world rugby']},
+]);
+
 export const SCHEDULE_SPORTS=Object.freeze([
  'Soccer','Basketball','Rugby','Tennis','Motorsport','Handball','Ice Hockey','Volleyball',
 ]);
@@ -42,6 +49,13 @@ export function normalizeText(value){
 
 export function textTokens(value){
  return new Set(normalizeText(value).split(' ').filter(token=>token.length>1&&!STOP_WORDS.has(token)));
+}
+
+export function sourceIdForBroadcaster(value){
+ const normalized=normalizeText(value);
+ if(!normalized)return '';
+ const rule=BROADCASTER_SOURCE_RULES.find(item=>item.patterns.some(pattern=>normalized.includes(normalizeText(pattern))));
+ return rule?.sourceId||'';
 }
 
 export function parseEventTimestamp(value){
@@ -76,6 +90,8 @@ export function sanitizeEvent(raw){
   homeScore:cleanText(raw.intHomeScore??raw.homeScore,8),
   awayScore:cleanText(raw.intAwayScore??raw.awayScore,8),
   status:cleanText(raw.strStatus||raw.status,30),
+  broadcaster:cleanText(raw.broadcaster||raw.strTVStation,80),
+  sourceId:sourceIdForBroadcaster(raw.broadcaster||raw.strTVStation),
   state,start,
  };
 }

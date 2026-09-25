@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {canConfirmEventFinished,matchEventToTitle} from '../../shared/sport-director.js';
+import {canConfirmEventFinished,isEventCurrent,matchEventToTitle} from '../../shared/sport-director.js';
 
 const SCHEDULE_REFRESH=120000;
 const EVENT_REFRESH=75000;
@@ -70,11 +70,22 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
 
  const sourceLive=useMemo(()=>liveForSource(snapshot,sourceId),[snapshot,sourceId]);
  const effectiveTitle=playerMeta?.title||sourceLive?.title||'';
- const match=useMemo(
+ const titleMatch=useMemo(
   ()=>matchEventToTitle(effectiveTitle,snapshot?.events||[]),
   [effectiveTitle,snapshot?.events],
  );
- const matchedEvent=match?.confidence>=0.58?match.event:null;
+ const liveMatchedEvent=useMemo(()=>{
+  const eventId=sourceLive?.match?.eventId;
+  return eventId?(snapshot?.events||[]).find(event=>event.id===eventId)||null:null;
+ },[snapshot?.events,sourceLive?.match?.eventId]);
+ const sourceEvent=useMemo(()=>(snapshot?.events||[])
+  .filter(event=>event.sourceId===sourceId&&isEventCurrent(event))
+  .sort((a,b)=>(b.state==='live')-(a.state==='live')||Date.parse(a.start)-Date.parse(b.start))[0]||null,
+ [snapshot?.events,sourceId]);
+ const titleMatched=titleMatch?.confidence>=0.58?titleMatch.event:null;
+ const matchedEvent=titleMatched||liveMatchedEvent||sourceEvent;
+ const matchBasis=titleMatched?'title':sourceLive?.match?.basis||(sourceEvent?'broadcaster':'');
+ const matchConfidence=titleMatched?titleMatch.confidence:(sourceLive?.match?.confidence||(sourceEvent?0.82:0));
  const currentEvent=matchedEvent||snapshot?.currentMatch||snapshot?.current?.[0]||null;
  const nextEvent=(snapshot?.upcoming||[]).find(event=>event.id!==currentEvent?.id)||null;
  const videoId=sourceLive?.platform==='youtube'?sourceLive.videoId:'';
@@ -93,7 +104,9 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
    try{
     const data=await readJson(apiEndpoint(`?event=${encodeURIComponent(matchedEvent.id)}`),controller.signal);
     const event=data?.event;
-    const stillMatches=matchEventToTitle(effectiveTitle,event?[event]:[])?.confidence>=0.58;
+    const stillMatches=matchBasis==='broadcaster'
+     ?event?.id===matchedEvent.id
+     :matchEventToTitle(effectiveTitle,event?[event]:[])?.confidence>=0.58;
     if(stillMatches&&canConfirmEventFinished(event))finalCountRef.current+=1;
     else finalCountRef.current=0;
     if(finalCountRef.current>=2&&finishedEventRef.current!==event.id){
@@ -116,11 +129,11 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
    active=false;controller?.abort();clearTimeout(timer);
    document.removeEventListener('visibilitychange',visible);
   };
- },[effectiveTitle,matchedEvent,mediaConsent]);
+ },[effectiveTitle,matchBasis,matchedEvent,mediaConsent,sourceId]);
 
  return {
   snapshot,error,checking,
-  currentEvent,nextEvent,matchedEvent,matchConfidence:match?.confidence||0,
+  currentEvent,nextEvent,matchedEvent,matchConfidence,matchBasis,
   recommendedSourceId:snapshot?.recommendedSourceId||'',
   sourceLive,videoId,
   refresh:()=>refresh(new AbortController().signal),

@@ -1,6 +1,6 @@
 import {
- SCHEDULE_SPORTS,SPORT_STREAMS,cleanText,matchEventToTitle,
- sanitizeEvent,summarizeSchedule,
+ SCHEDULE_SPORTS,SPORT_STREAMS,cleanText,isEventCurrent,matchEventToTitle,
+ sanitizeEvent,sourceIdForBroadcaster,summarizeSchedule,
 } from '../shared/sport-director.js';
 
 const SPORTS_DB_ORIGIN='https://www.thesportsdb.com';
@@ -13,9 +13,23 @@ const MAX_UPSTREAM_BYTES=2_000_000;
 const SCHEDULE_TTL=5*60*1000;
 const LIVE_TTL=90*1000;
 const EVENT_TTL=60*1000;
+const MAX_CACHE_ENTRIES=300;
 const cache=new Map();
 const rateBuckets=new Map();
 let twitchToken=null;
+
+function pruneCache(now=Date.now()){
+ for(const [key,item] of cache){
+  const staleUntil=Number(item?.staleUntil||item?.expires||0);
+  if(!item?.promise&&staleUntil<=now)cache.delete(key);
+ }
+ if(cache.size<MAX_CACHE_ENTRIES)return;
+ for(const [key,item] of cache){
+  if(item?.promise)continue;
+  cache.delete(key);
+  if(cache.size<MAX_CACHE_ENTRIES)break;
+ }
+}
 
 function json(data,status=200,cacheControl='no-store',extra={}){
  return new Response(JSON.stringify(data),{
@@ -103,6 +117,7 @@ async function fetchJson(url,options={}){
 
 async function cached(key,ttl,loader){
  const now=Date.now();
+ pruneCache(now);
  const existing=cache.get(key);
  if(existing?.value&&existing.expires>now)return existing.value;
  if(existing?.promise)return existing.promise;
@@ -178,7 +193,8 @@ export async function loadSchedule({fetchImpl=fetch,now=Date.now()}={}){
    if(!event)continue;
    const start=Date.parse(event.start);
    if(start<now-10*3600000||start>now+52*3600000)continue;
-   deduped.set(event.id,{...event,broadcaster:tv.get(event.id)||''});
+   const broadcaster=tv.get(event.id)||event.broadcaster||'';
+   deduped.set(event.id,{...event,broadcaster,sourceId:sourceIdForBroadcaster(broadcaster)});
   }
   const events=[...deduped.values()].sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
   const summary=summarizeSchedule(events,now,14);
@@ -265,12 +281,14 @@ async function twitchAccessToken(fetchImpl){
  if(!credentials)return null;
  if(twitchToken?.value&&twitchToken.expires>Date.now()+60000)return twitchToken.value;
  const url=new URL(`${TWITCH_AUTH_ORIGIN}/oauth2/token`);
- url.searchParams.set('client_id',credentials.clientId);
- url.searchParams.set('client_secret',credentials.secret);
- url.searchParams.set('grant_type','client_credentials');
+ const body=new URLSearchParams({
+  client_id:credentials.clientId,
+  client_secret:credentials.secret,
+  grant_type:'client_credentials',
+ });
  const data=await fetchJson(url,{
   fetchImpl,
-  options:{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'}},
+  options:{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body},
  });
  const value=cleanText(data?.access_token,500);
  const expiresIn=Math.max(300,Math.min(86400,Number(data?.expires_in)||3600));
@@ -311,9 +329,16 @@ export async function loadLiveSources({fetchImpl=fetch,events=[]}={}){
    discoverYoutubeLives(fetchImpl),discoverTwitchLives(fetchImpl),
   ]);
   const results=[youtube,twitch].map(result=>result.status==='fulfilled'?result.value:{configured:true,items:[],degraded:true});
+  const now=Date.now();
   const items=results.flatMap(result=>result.items||[]).map(item=>{
-   const match=matchEventToTitle(item.title,events);
-   return {...item,match:match?{eventId:match.event.id,confidence:match.confidence}:null};
+   const titleMatch=matchEventToTitle(item.title,events,now);
+   const sourceMatch=!titleMatch?[...events]
+    .filter(event=>event?.sourceId===item.sourceId&&isEventCurrent(event,now))
+    .sort((a,b)=>(b.state==='live')-(a.state==='live')||Date.parse(a.start)-Date.parse(b.start))[0]:null;
+   const match=titleMatch
+    ?{eventId:titleMatch.event.id,confidence:titleMatch.confidence,basis:'title'}
+    :sourceMatch?{eventId:sourceMatch.id,confidence:0.82,basis:'broadcaster'}:null;
+   return {...item,match};
   });
   const ranked=[...items].sort((a,b)=>{
    const aSource=SPORT_STREAMS.find(source=>source.id===a.sourceId);
@@ -352,7 +377,11 @@ function publicLiveItem(item){
   gameName:cleanText(item?.gameName,80),
   live:Boolean(item?.live),upcoming:Boolean(item?.upcoming),
   startedAt:parseOptionalDate(item?.startedAt),scheduledAt:parseOptionalDate(item?.scheduledAt),
-  match:item?.match&&/^\d{3,16}$/.test(item.match.eventId)?item.match:null,
+  match:item?.match&&/^\d{3,16}$/.test(item.match.eventId)?{
+   eventId:item.match.eventId,
+   confidence:Math.max(0,Math.min(1,Number(item.match.confidence)||0)),
+   basis:item.match.basis==='broadcaster'?'broadcaster':'title',
+  }:null,
  };
 }
 
@@ -384,15 +413,20 @@ export async function handleSportDirectorRequest(request,{fetchImpl=fetch,now=Da
   try{live=await loadLiveSources({fetchImpl,events:schedule.events});}
   catch{live={...live,degraded:true};}
   const liveItems=(live.items||[]).map(publicLiveItem);
+  const scheduledSource=schedule.current.find(event=>event.sourceId)?.sourceId
+   ||schedule.upcoming.find(event=>event.sourceId&&Date.parse(event.start)<=now+45*60000)?.sourceId||'';
+  const recommendedSourceId=live.recommendedSourceId||scheduledSource;
   const matchedIds=new Set(liveItems.map(item=>item.match?.eventId).filter(Boolean));
-  const currentMatch=schedule.events.find(event=>matchedIds.has(event.id))||schedule.current[0]||null;
+  const currentMatch=schedule.events.find(event=>matchedIds.has(event.id))
+   ||schedule.current.find(event=>event.sourceId===recommendedSourceId)
+   ||schedule.current[0]||null;
   const response={
    version:1,
    generatedAt:new Date(now).toISOString(),
    provider:schedule.provider,
    degraded:Boolean(schedule.degraded||live.degraded),
    discovery:live.configured,
-   recommendedSourceId:cleanText(live.recommendedSourceId,80),
+   recommendedSourceId:cleanText(recommendedSourceId,80),
    liveSources:liveItems,
    currentMatch,
    current:schedule.current.slice(0,3),

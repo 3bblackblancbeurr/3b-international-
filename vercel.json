@@ -99,6 +99,22 @@
   ],
   "rewrites": [
     {
+      "source": "/api/pwa-quickkit-activate",
+      "destination": "/api/pwa-quickkit?action=activate"
+    },
+    {
+      "source": "/api/pwa-quickkit-checkout",
+      "destination": "/api/pwa-quickkit?action=checkout"
+    },
+    {
+      "source": "/api/pwa-quickkit-status",
+      "destination": "/api/pwa-quickkit?action=status"
+    },
+    {
+      "source": "/api/pwa-quickkit-webhook",
+      "destination": "/api/pwa-quickkit?action=webhook"
+    },
+    {
       "source": "/jeux/:slug",
       "destination": "/index.html"
     }
