@@ -434,13 +434,13 @@ export function createPremiumDistrictTerrace(item,{root,geometry,material,ground
  const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.10,roughness:.28,metalness:.76});
  const accent=material(item.accent||'#00a8ff',{emissive:item.accent||'#00a8ff',emissiveIntensity:.16+.04*(item.evolutionStage||0),roughness:.22,metalness:.36});
  const r=Math.max(18,item.radius||24),level=Math.max(0,item.level||0),steps=Math.max(2,item.steps||3);
- child(group,geometry.cylinder,dark,{y:.08,sx:r*1.08,sy:.16,sz:r*1.08,cast:false});
- child(group,geometry.cylinder,stone,{y:.18,sx:r,sy:.20,sz:r,cast:false});
- child(group,geometry.ring,accent,{y:.31,sx:r*.82,sy:r*.82,sz:r*.82,rx:Math.PI/2,cast:false});
- if(item.evolutionStage>=2)child(group,geometry.ring,gold,{y:.34,sx:r*.58,sy:r*.58,sz:r*.58,rx:Math.PI/2,cast:false});
+ child(group,geometry.cylinder,dark,{y:-.12,sx:r*1.08,sy:.18,sz:r*1.08,cast:false});
+ child(group,geometry.cylinder,stone,{y:-.02,sx:r,sy:.16,sz:r,cast:false});
+ child(group,geometry.ring,accent,{y:.07,sx:r*.82,sy:r*.82,sz:r*.82,rx:Math.PI/2,cast:false});
+ if(item.evolutionStage>=2)child(group,geometry.ring,gold,{y:.085,sx:r*.58,sy:r*.58,sz:r*.58,rx:Math.PI/2,cast:false});
  for(let i=0;i<steps;i++){
   const width=5.2+i*1.4,depth=2.2,dist=r*.84+i*2.6;
-  child(group,geometry.box,stone,{y:.28+i*.12,z:dist,sx:width,sy:.22,sz:depth,cast:false});
+  child(group,geometry.box,stone,{y:.05+i*.05,z:dist,sx:width,sy:.10,sz:depth,cast:false});
  }
  if(level>0){
   for(const side of [-1,1]){
