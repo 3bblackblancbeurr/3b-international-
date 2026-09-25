@@ -1,0 +1,297 @@
+{
+  "schema_version": "1.0.0",
+  "proof_type": "source_art_validation",
+  "gold_master_proof": false,
+  "mesh_count": 16,
+  "pass_count": 16,
+  "results": [
+    {
+      "name": "SM_FR_Cliff_Master_A",
+      "status": "PASS",
+      "vertices": 1737,
+      "faces": 1280,
+      "uv_layers": 1,
+      "dimensions_m": [
+        27.729,
+        15.804,
+        38.198
+      ],
+      "files": {
+        "blend": 138807,
+        "fbx": 61580,
+        "glb": 64508
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Cliff_Master_B",
+      "status": "PASS",
+      "vertices": 1697,
+      "faces": 1280,
+      "uv_layers": 1,
+      "dimensions_m": [
+        25.052,
+        20.547,
+        32.66
+      ],
+      "files": {
+        "blend": 138548,
+        "fbx": 61468,
+        "glb": 63236
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Underside_Rib_A",
+      "status": "PASS",
+      "vertices": 1256,
+      "faces": 1280,
+      "uv_layers": 1,
+      "dimensions_m": [
+        10.828,
+        9.932,
+        28.291
+      ],
+      "files": {
+        "blend": 136029,
+        "fbx": 57676,
+        "glb": 49124
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Underside_Rib_B",
+      "status": "PASS",
+      "vertices": 1347,
+      "faces": 1280,
+      "uv_layers": 1,
+      "dimensions_m": [
+        8.942,
+        13.637,
+        25.307
+      ],
+      "files": {
+        "blend": 136539,
+        "fbx": 58540,
+        "glb": 52032
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Island_Rock_A",
+      "status": "PASS",
+      "vertices": 1011,
+      "faces": 960,
+      "uv_layers": 1,
+      "dimensions_m": [
+        33.297,
+        24.678,
+        14.753
+      ],
+      "files": {
+        "blend": 126868,
+        "fbx": 47836,
+        "glb": 39360
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Island_Rock_B",
+      "status": "PASS",
+      "vertices": 1006,
+      "faces": 960,
+      "uv_layers": 1,
+      "dimensions_m": [
+        24.359,
+        28.793,
+        16.197
+      ],
+      "files": {
+        "blend": 126848,
+        "fbx": 47852,
+        "glb": 39204
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Cave_Module_A",
+      "status": "PASS",
+      "vertices": 461,
+      "faces": 720,
+      "uv_layers": 1,
+      "dimensions_m": [
+        13.498,
+        24.0,
+        12.313
+      ],
+      "files": {
+        "blend": 109974,
+        "fbx": 33676,
+        "glb": 20292
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Cave_Module_B",
+      "status": "PASS",
+      "vertices": 506,
+      "faces": 720,
+      "uv_layers": 1,
+      "dimensions_m": [
+        15.148,
+        20.0,
+        12.732
+      ],
+      "files": {
+        "blend": 110269,
+        "fbx": 34124,
+        "glb": 21732
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Cave_Entrance_A",
+      "status": "PASS",
+      "vertices": 543,
+      "faces": 720,
+      "uv_layers": 1,
+      "dimensions_m": [
+        18.048,
+        12.0,
+        15.759
+      ],
+      "files": {
+        "blend": 110435,
+        "fbx": 34380,
+        "glb": 22916
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Facade_Paris_A",
+      "status": "PASS",
+      "vertices": 11880,
+      "faces": 5940,
+      "uv_layers": 1,
+      "dimensions_m": [
+        15.12,
+        3.53,
+        18.79
+      ],
+      "files": {
+        "blend": 196752,
+        "fbx": 117068,
+        "glb": 418880
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Facade_Worker_A",
+      "status": "PASS",
+      "vertices": 3888,
+      "faces": 1944,
+      "uv_layers": 1,
+      "dimensions_m": [
+        12.0,
+        2.748,
+        13.15
+      ],
+      "files": {
+        "blend": 131095,
+        "fbx": 49996,
+        "glb": 139120
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_JusticeTribunal",
+      "status": "PASS",
+      "vertices": 1680,
+      "faces": 920,
+      "uv_layers": 1,
+      "dimensions_m": [
+        22.0,
+        16.5,
+        13.0
+      ],
+      "files": {
+        "blend": 114228,
+        "fbx": 33244,
+        "glb": 61372
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_StreetKit_A",
+      "status": "PASS",
+      "vertices": 1008,
+      "faces": 520,
+      "uv_layers": 1,
+      "dimensions_m": [
+        9.05,
+        0.94,
+        4.63
+      ],
+      "files": {
+        "blend": 109206,
+        "fbx": 27820,
+        "glb": 38488
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Tree_A",
+      "status": "PASS",
+      "vertices": 1764,
+      "faces": 612,
+      "uv_layers": 1,
+      "dimensions_m": [
+        7.623,
+        6.229,
+        11.537
+      ],
+      "files": {
+        "blend": 118109,
+        "fbx": 38876,
+        "glb": 62308
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Tree_B",
+      "status": "PASS",
+      "vertices": 1764,
+      "faces": 612,
+      "uv_layers": 1,
+      "dimensions_m": [
+        8.088,
+        7.663,
+        10.03
+      ],
+      "files": {
+        "blend": 118087,
+        "fbx": 38556,
+        "glb": 62308
+      },
+      "errors": []
+    },
+    {
+      "name": "SM_FR_Shrub_A",
+      "status": "PASS",
+      "vertices": 1200,
+      "faces": 400,
+      "uv_layers": 1,
+      "dimensions_m": [
+        3.73,
+        3.231,
+        1.737
+      ],
+      "files": {
+        "blend": 111982,
+        "fbx": 27980,
+        "glb": 42100
+      },
+      "errors": []
+    }
+  ]
+}
