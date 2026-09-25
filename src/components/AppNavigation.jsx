@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, 
 import { PAGE_HASHES } from "../lib/navigation.js";
 import CompactCard from './CompactCard.jsx';
 
-const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, "origins-tv": Tv, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, "origins-tv": Tv, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound, "warzone-16-18": Gamepad2, fifa: Trophy };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
@@ -14,6 +14,7 @@ export const NAV_GROUPS = [
   { title: "Explorer 3B", ids: ["world3b", "games", "manga", "origins-tv", "secret", "religion"] },
   { title: "Créer & partager", ids: ["ia", "community", "sport", "shop"] },
   { title: "Comprendre & progresser", ids: ["guide"] },
+  { title: "À venir", ids: ["warzone-16-18", "fifa"] },
 ];
 
 export function RouteLink({ page, goTo, children, ...props }) {
@@ -96,7 +97,9 @@ export default function AppNavigation({ page, title, menuItems, goTo }) {
       <div className="dialog-scroll">
         {NAV_GROUPS.map(group => {
           const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
-          return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}</section>;
+          return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => item.locked
+            ? <CompactCard as="article" key={item.id} className="dialog-route" aria-disabled="true" locked action="Verrouillé" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>} />
+            : <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>} />)}</section>;
         })}
         {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « manga » ou « boutique ».</p>}
       </div>
