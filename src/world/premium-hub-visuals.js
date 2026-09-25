@@ -315,14 +315,13 @@ export function createPremiumHeritagePlatform(item,{root,geometry,material,groun
   child(group,geometry.cylinder,i%2?gold:energy,{x,y:.92,z,sx:.10,sy:1.55,sz:.10,cast:false});
  }
 
- // Each country esplanade has its own architectural signature and a
- // functional annex so the eight portals read as real neighbourhoods.
- const annex=material('#151c22',{roughness:.62,metalness:.30});
+ // Each country esplanade keeps a distinct architectural signature.
+ // The functional building is now rendered by createPremiumHeritageFacility,
+ // so the platform no longer fakes a duplicate generic annex.
  const localAccent=material(accent,{emissive:accent,emissiveIntensity:.22+.25*(item.glow||0),roughness:.26,metalness:.48});
  if(item.facility){
-  child(group,geometry.box,annex,{x:0,y:1.25,z:4.8,sx:5.2,sy:2.2,sz:2.4});
-  child(group,geometry.box,gold,{x:0,y:2.48,z:4.8,sx:4.4,sy:.12,sz:2.0,cast:false});
-  child(group,geometry.box,localAccent,{x:0,y:1.25,z:3.55,sx:2.8,sy:.10,sz:.08,cast:false});
+  child(group,geometry.box,gold,{y:.48,z:4.65,sx:4.6,sy:.10,sz:1.2,cast:false});
+  child(group,geometry.box,localAccent,{y:.62,z:4.65,sx:3.5,sy:.05,sz:.82,cast:false});
  }
  switch(item.code){
   case 'FR':
