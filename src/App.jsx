@@ -102,7 +102,7 @@ const BASE_MENU_ITEMS = [
     id: "sport",
     label: "Espace sport 3B",
     icon: "🏆",
-    description: "Actualités multisports, défis et collaborations.",
+    description: "Direct sport continu, actualités multisports, défis et collaborations.",
   },
   {
     id: "ia",
