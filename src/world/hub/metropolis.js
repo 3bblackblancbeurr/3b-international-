@@ -27,6 +27,24 @@ export function hubPortalPosition(portal){
   return {x:portal[0]*HUB_METROPOLIS.portalScale,z:portal[1]*HUB_METROPOLIS.portalScale};
 }
 
+export function hubHeritageSectorPosition(plan,platform,index=0){
+  const district=hubDistrictPosition(plan,platform.district);
+  if(!district)return null;
+  const radius=Math.hypot(district.x,district.z)||1;
+  const outwardX=district.x/radius,outwardZ=district.z/radius;
+  const tangentX=-outwardZ,tangentZ=outwardX;
+  const siblings=(plan.heritagePlatforms||[]).filter(entry=>entry.district===platform.district);
+  const siblingIndex=Math.max(0,siblings.findIndex(entry=>entry.code===platform.code));
+  const spread=siblings.length>1?(siblingIndex-(siblings.length-1)/2)*74:0;
+  const targetRadius=Math.min(585,Math.max(340,radius+92));
+  const radialPush=targetRadius-radius;
+  const drift=((hash(platform.code||String(index))%31)-15)*1.4;
+  return {
+    x:district.x+outwardX*radialPush+tangentX*(spread+drift),
+    z:district.z+outwardZ*radialPush+tangentZ*(spread+drift),
+  };
+}
+
 export function hubEvolutionState(plan,{seals=[],restoredRegions=[]}={}){
   const fragments=Math.max(new Set(seals).size,new Set(restoredRegions).size);
   const stages=plan.evolution?.stages||[{stage:0,id:'foundations',label:'Fondations vivantes',minFragments:0,activeBuildingTiers:[0],densityBonus:0,trafficBonus:0,activeSkybridges:0,platformGlow:.18}];
@@ -41,7 +59,7 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
   const byRegion=new Map(COUNTRIES.map(country=>[country.id,country]));
   return (plan.heritagePlatforms||[]).flatMap((platform,index)=>{
     const country=byRegion.get(platform.regionId);if(!country?.portal)return[];
-    const position=hubPortalPosition(country.portal),liberated=seals.includes(platform.regionId),restored=restoredRegions.includes(platform.regionId);
+    const position=hubHeritageSectorPosition(plan,platform,index)||hubPortalPosition(country.portal),gatePosition=hubPortalPosition(country.portal),liberated=seals.includes(platform.regionId),restored=restoredRegions.includes(platform.regionId);
     return [{
       id:`hub:heritage-platform:${platform.code}`,
       type:'hubHeritagePlatform',
@@ -58,6 +76,8 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
       symbol:country.symbol,
       x:position.x,
       z:position.z,
+      gateX:gatePosition.x,
+      gateZ:gatePosition.z,
       index,
       liberated,
       restored,
