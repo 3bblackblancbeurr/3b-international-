@@ -6,7 +6,7 @@ import unreal
 
 MANIFEST_REL = os.path.join("Data", "Production", "hub3b-main-v5-premium.json")
 LAYOUT_REL = os.path.join("Data", "Production", "world-layout-unreal.json")
-CANON_REL = os.path.join("..", "..", "src", "world", "hub", "data", "hub-master-plan-v2.json")
+CANON_REL = os.path.join("src", "world", "hub", "data", "hub-master-plan-v2.json")
 
 CUBE_PATH = "/Engine/BasicShapes/Cube.Cube"
 CYLINDER_PATH = "/Engine/BasicShapes/Cylinder.Cylinder"
