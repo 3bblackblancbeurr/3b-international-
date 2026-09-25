@@ -353,7 +353,7 @@ function WorldSession({uid,goTo}){
    {panel==='paris'&&<ParisJournal save={save} act={act} onNavigate={navigateTo} onPanel={setPanel}/>}
    {panel==='camp'&&<FrontierPanel save={save} act={act} onNavigate={navigateTo}/>}
    {panel==='arena'&&<ArenaPage onExit={closePanel} onAccount={()=>goTo('member')}/>}
-   {panel==='avatar'&&<AvatarPanel save={save} act={act} onDone={finishAvatarReveal}/>} 
+   {panel==='avatar'&&<AvatarPanel key={uid||'guest'} uid={uid||null} save={save} act={act} onDone={finishAvatarReveal}/>} 
    {panel==='collection'&&<Companions save={save} act={act}/>}
    {panel==='encounter'&&<AdventureEncounter save={save} act={act} onClose={finishEncounter} Art={Art}/>}
    {panel==='story'&&<StoryPanel save={save} act={act} onNavigate={navigateTo} onClose={closePanel}/>}

@@ -1,5 +1,5 @@
 import {AvatarCinematic} from './AvatarCinematic.jsx';
-import React,{useState} from 'react';
+import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {LOOKS,TRAVEL_GEAR} from './wardrobe.js';
 import {COUNTRIES} from './catalog.js';
@@ -7,14 +7,24 @@ import {normalizeAvatar,SKINS,OUTFITS,AVATAR_PATHS} from './avatar-rules.js';
 import {AVATAR_ASSET_SLOTS,AVATAR_SLOT_LABELS} from './avatar-assets.js';
 import {BODY_CAPABILITIES,FACE_CAPABILITIES} from './avatar-capabilities.js';
 import Armory from './origins/Armory.jsx';
+import {clearAvatarDraft,readAvatarDraft,writeAvatarDraft} from './avatar-draft-store.js';
 import '../arena/arena.css';
 import './origins/creator.css';
-export function AvatarPanel({save,act,onDone}){
- const [draft,setDraft]=useState(()=>normalizeAvatar(save.adventure.avatar)),[message,setMessage]=useState(''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created),[section,setSection]=useState('appearance');
+export function AvatarPanel({save,act,onDone,uid=null}){
+ const savedAvatar=useMemo(()=>normalizeAvatar(save.adventure.avatar),[save.adventure.avatar]);
+ const recovered=useMemo(()=>readAvatarDraft(uid,savedAvatar),[uid,savedAvatar]);
+ const committed=useRef(false);
+ const [draft,setDraft]=useState(()=>recovered.avatar),[message,setMessage]=useState(()=>recovered.recovered?'Brouillon personnel restauré pour ce compte.':''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created),[section,setSection]=useState('appearance');
+ useEffect(()=>{
+  if(!uid||committed.current)return undefined;
+  if(JSON.stringify(draft)===JSON.stringify(savedAvatar)){clearAvatarDraft(uid);return undefined;}
+  const timer=setTimeout(()=>{if(!committed.current)writeAvatarDraft(uid,draft);},320);
+  return()=>clearTimeout(timer);
+ },[uid,draft,savedAvatar]);
  const set=(key,value)=>setDraft(d=>({...d,[key]:value}));
  const merge=values=>setDraft(d=>({...d,...values}));
  if(reveal)return <AvatarCinematic avatar={reveal} onDone={()=>onDone?.({firstCreation:!initiallyCreated,avatar:reveal})}/>;
- return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><div className="avatar-workbench"><nav className="avatar-tabs" aria-label="Personnalisation du personnage"><button type="button" aria-pressed={section==='appearance'} onClick={()=>setSection('appearance')}>Apparence</button><button type="button" aria-pressed={section==='armory'} onClick={()=>setSection('armory')}>Armurerie</button></nav><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
+ return <div className="avatar-editor"><div className="avatar-preview"><ArenaStage avatar={draft}/><span>Glisse pour tourner</span></div><div className="avatar-workbench"><nav className="avatar-tabs" aria-label="Personnalisation du personnage"><button type="button" aria-pressed={section==='appearance'} onClick={()=>setSection('appearance')}>Apparence</button><button type="button" aria-pressed={section==='armory'} onClick={()=>setSection('armory')}>Armurerie</button></nav><form className="avatar-fields" onSubmit={e=>{e.preventDefault();const result=act({type:'avatar',avatar:draft});if(result){committed.current=true;clearAvatarDraft(uid);setMessage('Ton personnage est enregistré.');setReveal(normalizeAvatar(result.adventure?.avatar||{...draft,created:true}));}}}>
   {section==='appearance'?<>
   <label>Nom du personnage<input maxLength={20} required value={draft.name} onChange={e=>set('name',e.target.value)}/></label>
   <fieldset><legend>Silhouette</legend><div className="world-actions">{['homme','femme'].map(body=><button type="button" key={body} aria-pressed={draft.body===body} onClick={()=>set('body',body)}>{body==='homme'?'Homme':'Femme'}</button>)}</div></fieldset>

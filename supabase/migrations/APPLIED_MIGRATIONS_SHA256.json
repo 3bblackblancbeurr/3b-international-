@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-24",
-  "count": 134,
+  "count": 144,
   "migrations": [
     {
       "version": "20260910020445",
@@ -660,6 +660,51 @@
       "sha256": "941298285d2117d3677da79faa7c3c76068372ff4e32f6b4bf180653c91ff169"
     },
     {
+      "version": "20260921234026",
+      "name": "dada3b_competitive_hardening_v3",
+      "sha256": "ef53152009741bd1559049f252fd025e9eadb248230ba212c3a5effe5cf27f24"
+    },
+    {
+      "version": "20260922134838",
+      "name": "penalty_rush_rewards_realtime_v2",
+      "sha256": "c324954e1b2ea55d7d03210ccfbbc2d9c616b3fe252053fd07b0aa61cd8e7f67"
+    },
+    {
+      "version": "20260922135146",
+      "name": "penalty_rush_realtime_membership_v3",
+      "sha256": "8e2eea2e2e94cb98c94469f04ccb64cc45657c91ca2f7023e9db0a6eb875fbdb"
+    },
+    {
+      "version": "20260922135357",
+      "name": "penalty_rush_pair_antifarming_v4",
+      "sha256": "74862f9ba3221e8347043c101cd61596b505cc5069f730c64fccf9648800502d"
+    },
+    {
+      "version": "20260922135504",
+      "name": "penalty_rush_pair_antifarming_modes_v5",
+      "sha256": "5bb6017ce7e4dcef94b65fc577163140f672753670680d5b6d0ceab1382d5f1b"
+    },
+    {
+      "version": "20260922141232",
+      "name": "register_penalty_rush_global_game_v1",
+      "sha256": "1e7ba6ebc88f764c5c34dfbd93a9b0053963eea42ff73f140541ae48f48893bb"
+    },
+    {
+      "version": "20260922141333",
+      "name": "app_games_catalog_penalty_rush_v1",
+      "sha256": "3fdf4d104d5302616015dcbc74e889bd17486ab93dfec6eff30d585fb91a3122"
+    },
+    {
+      "version": "20260922165519",
+      "name": "penalty_rush_shell_contract_v1",
+      "sha256": "6fcf5e6081d4dc054c95d9d698dea9b27c82dbdcbe071e8219a9769f588c5cb6"
+    },
+    {
+      "version": "20260924005902",
+      "name": "app_traffic_summary_20260924",
+      "sha256": "f25dd2350aaf9e146a106f05b46bcc53a1a857bd0b6677010c10fd485a0121f9"
+    },
+    {
       "version": "20260924173412",
       "name": "secret3b_daily_hour_event_v1",
       "sha256": "7f091f02a72b44a21f34a66cf45c69d6d2da83d7abf015f9ee8d294f18544dd8"
@@ -673,6 +718,11 @@
       "version": "20260924184806",
       "name": "harden_pwa_quickkit_access_and_rate_limits",
       "sha256": "add44d95fd885852170dccf6fe4ed239829baa45cd90b1f35be2d9cd84045dfb"
+    },
+    {
+      "version": "20260924190757",
+      "name": "revenue_funnel_events_v1",
+      "sha256": "8b3788fc03e3584275b4985e8f18e2b592df18a6d8847aeabde88bdfc370f9be"
     }
   ]
 }
