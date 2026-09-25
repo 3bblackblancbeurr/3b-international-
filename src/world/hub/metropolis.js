@@ -70,6 +70,30 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
   });
 }
 
+function heritageFacilityItems(platforms){
+  return platforms.flatMap((platform)=>{
+    if(!platform.facility)return[];
+    const radius=Math.hypot(platform.x,platform.z)||1,inset=5.4;
+    return [{
+      id:`hub:heritage-facility:${platform.code}`,
+      type:'hubHeritageFacility',
+      code:platform.code,
+      regionId:platform.regionId,
+      district:platform.district,
+      name:platform.facility.name,
+      purpose:platform.facility.purpose,
+      services:platform.facility.services||[],
+      color:platform.color,
+      x:platform.x-platform.x/radius*inset,
+      z:platform.z-platform.z/radius*inset,
+      range:7,
+      restored:platform.restored,
+      liberated:platform.liberated,
+      evolutionStage:platform.evolutionStage,
+    }];
+  });
+}
+
 function skybridgeItems(plan,evolution){
   const links=(plan.verticalLinks||[]).slice(0,Math.max(0,Number(evolution.activeSkybridges||0)));
   return links.flatMap((link,index)=>{
@@ -416,6 +440,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const roads=metropolisRoadItems(plan);
   const traffic=metropolisTrafficItems(plan,profile,evolution);
   const platforms=heritagePlatformItems(plan,evolution,progress);
+  const facilities=heritageFacilityItems(platforms);
   const skybridges=skybridgeItems(plan,evolution);
   const plazas=civicPlazaItems(plan,evolution);
   const landmarks=districtLandmarkItems(plan,evolution);
@@ -424,13 +449,14 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const milestoneStories=milestoneStoryItems(plan,evolution);
   for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges])item.renderProfile=profile;
   return {
-    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...milestoneStories,...traffic],
+    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
       roads:roads.length,
       traffic:traffic.length,
       heritagePlatforms:platforms.length,
+      heritageFacilities:facilities.length,
       skybridges:skybridges.length,
       civicPlazas:plazas.length,
       districtLandmarks:landmarks.length,
