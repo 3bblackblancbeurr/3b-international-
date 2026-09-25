@@ -444,7 +444,18 @@ function hubNpcAvatar(item){
   effect.visible=!lastCombat&&age<.65;if(effect.visible){effect.position.set(avatar.position.x,avatar.position.y+.15,avatar.position.z);effect.scale.setScalar(1+age*6);effect.material.opacity=Math.max(0,1-age/.65)*.7;effect.material.color.set(feedbackAction==='guard'?'#a2dff0':'#ffe0a0');}
   if(renderer.shadowMap.enabled&&(needsRender||now-shadowAt>=50)){renderer.shadowMap.needsUpdate=true;shadowAt=now;}
   sky.update(camera,reducedMotion?0:elapsed);landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);report-=dt;
-  if(report<=0||needsRender){report=(moving||held?.drag)?.1:.4;onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:districtAt(region,position,(x,z)=>toLandscape(region,x,z)),position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});}
+  if(report<=0||needsRender){
+   report=(moving||held?.drag)?.1:.4;
+   const hubPlatforms=region==='hub'?items.filter(item=>item.type==='hubHeritagePlatform'):[];
+   const hubEvolution=hubPlatforms.length?{
+    stage:hubPlatforms[0].evolutionStage||0,
+    label:hubPlatforms[0].evolutionLabel||'Fondations vivantes',
+    liberated:hubPlatforms.filter(item=>item.liberated).length,
+    restored:hubPlatforms.filter(item=>item.restored).length,
+    total:hubPlatforms.length,
+   }:null;
+   onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
+  }
   needsRender=false;
  }
  onLoadState?.(true);
