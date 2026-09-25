@@ -2,8 +2,11 @@ import os
 import traceback
 import unreal
 
-_FLAG = "-3BHubV4AutoBuild"
-_STATE = {"elapsed": 0.0, "handle": None, "started": False}
+_FLAGS = {
+    "-3BHubV5AutoBuild": "build_hub3b_main_v5.py",
+    "-3BHubV4AutoBuild": "build_hub3b_main_v4.py",
+}
+_STATE = {"elapsed": 0.0, "handle": None, "started": False, "builder": None}
 
 
 def _log(message):
@@ -14,19 +17,30 @@ def _log_error(message):
     unreal.log_error(f"[3B AUTO] {message}")
 
 
-def _has_flag():
+def _selected_builder():
     try:
-        command_line = unreal.SystemLibrary.get_command_line()
+        command_line = str(unreal.SystemLibrary.get_command_line())
     except Exception:
         command_line = ""
-    return _FLAG.lower() in str(command_line).lower()
+    lowered = command_line.lower()
+    for flag, builder in _FLAGS.items():
+        if flag.lower() in lowered:
+            return builder
+    return None
+
+
+def _has_flag():
+    builder = _selected_builder()
+    _STATE["builder"] = builder
+    return builder is not None
 
 
 def _builder_path():
+    builder = _STATE.get("builder") or _selected_builder() or "build_hub3b_main_v5.py"
     return os.path.join(
         unreal.Paths.project_dir(),
         "Scripts",
-        "build_hub3b_main_v4.py",
+        builder,
     )
 
 
