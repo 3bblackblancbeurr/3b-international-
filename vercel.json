@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "chatgpt-sport-director-20260925": true,
+      "chatgpt-vercel-probe-noapi": true,
       "main": true,
       "*": false
     }
