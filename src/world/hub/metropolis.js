@@ -403,6 +403,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const landmarks=districtLandmarkItems(plan,evolution);
   const water=waterFeatureItems(plan,evolution);
   const transitLinks=transitLinkItems(plan,evolution);
+  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges])item.renderProfile=profile;
   return {
     items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...traffic],
     meta:{
