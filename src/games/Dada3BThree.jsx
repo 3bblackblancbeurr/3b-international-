@@ -288,23 +288,37 @@ function createPiece(country,pieceIndex,shadows){
  const hitboxMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
  const hitbox=mesh(new THREE.CylinderGeometry(.72,.82,1.78,12),hitboxMat,false,false);hitbox.position.y=.74;group.add(hitbox);
  const rig=new THREE.Group();rig.position.y=.12;group.add(rig);
+ const pelvis=mesh(new THREE.CylinderGeometry(.22,.26,.16,10),darkMat,shadows,shadows);pelvis.position.y=.43;rig.add(pelvis);
  const leg=(x)=>{
-  const pivot=new THREE.Group();pivot.position.set(x,.40,0);
-  const boot=mesh(new THREE.CylinderGeometry(.08,.10,.40,8),darkMat,shadows,shadows);boot.position.y=-.16;pivot.add(boot);
-  const foot=mesh(new THREE.BoxGeometry(.18,.09,.28),darkMat,shadows,shadows);foot.position.set(0,-.37,.055);pivot.add(foot);rig.add(pivot);return pivot;
+  const hip=new THREE.Group();hip.position.set(x,.43,0);
+  const thigh=mesh(new THREE.CylinderGeometry(.075,.09,.29,9),bodyMat,shadows,shadows);thigh.position.y=-.14;hip.add(thigh);
+  const knee=new THREE.Group();knee.position.y=-.29;hip.add(knee);
+  const kneeCap=mesh(new THREE.SphereGeometry(.082,10,8),goldMat,shadows,shadows);knee.add(kneeCap);
+  const shin=mesh(new THREE.CylinderGeometry(.065,.078,.28,9),darkMat,shadows,shadows);shin.position.y=-.14;knee.add(shin);
+  const ankle=mesh(new THREE.CylinderGeometry(.072,.08,.10,8),goldMat,shadows,shadows);ankle.position.y=-.31;knee.add(ankle);
+  const boot=mesh(new THREE.BoxGeometry(.18,.12,.24),darkMat,shadows,shadows);boot.position.set(0,-.39,.04);knee.add(boot);
+  const foot=mesh(new THREE.BoxGeometry(.19,.09,.30),darkMat,shadows,shadows);foot.position.set(0,-.45,.09);knee.add(foot);
+  hip.userData.knee=knee;rig.add(hip);return hip;
  };
- const leftLeg=leg(-.13),rightLeg=leg(.13);
- const torso=mesh(new THREE.BoxGeometry(.46,.48,.30),bodyMat,shadows,shadows);torso.position.y=.70;rig.add(torso);
- const chest=mesh(new THREE.BoxGeometry(.50,.19,.34),goldMat,shadows,shadows);chest.position.set(0,.80,.015);rig.add(chest);
- const belt=mesh(new THREE.BoxGeometry(.44,.08,.31),darkMat,shadows,shadows);belt.position.y=.48;rig.add(belt);
- const head=mesh(new THREE.SphereGeometry(.17,12,9),skinMat,shadows,shadows);head.position.y=1.07;rig.add(head);
- const helmet=mesh(country.shape==='star'?new THREE.ConeGeometry(.23,.25,5):new THREE.ConeGeometry(.22,.24,Math.max(6,segments)),goldMat,shadows,shadows);helmet.position.y=1.24;rig.add(helmet);
- const eye=mesh(new THREE.BoxGeometry(.18,.035,.025),coreMat,false,false);eye.position.set(0,1.08,.17);rig.add(eye);
+ const leftLeg=leg(-.13),rightLeg=leg(.13),leftKnee=leftLeg.userData.knee,rightKnee=rightLeg.userData.knee;
+ const torso=mesh(new THREE.CylinderGeometry(.23,.29,.50,8),bodyMat,shadows,shadows);torso.position.y=.72;rig.add(torso);
+ const chest=mesh(new RoundedBoxGeometry(.54,.22,.36,4,.06),goldMat,shadows,shadows);chest.position.set(0,.82,.015);rig.add(chest);
+ const belt=mesh(new THREE.CylinderGeometry(.235,.245,.085,10),darkMat,shadows,shadows);belt.position.y=.48;rig.add(belt);
+ const neck=mesh(new THREE.CylinderGeometry(.07,.075,.11,9),skinMat,shadows,shadows);neck.position.y=1.01;rig.add(neck);
+ const head=mesh(new THREE.SphereGeometry(.17,14,10),skinMat,shadows,shadows);head.position.y=1.12;rig.add(head);
+ const helmet=mesh(country.shape==='star'?new THREE.ConeGeometry(.23,.25,5):new THREE.ConeGeometry(.22,.24,Math.max(6,segments)),goldMat,shadows,shadows);helmet.position.y=1.29;rig.add(helmet);
+ const eye=mesh(new THREE.BoxGeometry(.18,.035,.025),coreMat,false,false);eye.position.set(0,1.13,.17);rig.add(eye);
  const makeArm=(x)=>{
-  const pivot=new THREE.Group();pivot.position.set(x,.86,0);
-  const arm=mesh(new THREE.CylinderGeometry(.055,.07,.40,8),bodyMat,shadows,shadows);arm.position.y=-.16;pivot.add(arm);rig.add(pivot);return pivot;
+  const shoulder=new THREE.Group();shoulder.position.set(x,.90,0);
+  const pauldron=mesh(new THREE.SphereGeometry(.12,10,7),goldMat,shadows,shadows);pauldron.scale.set(1.12,.72,1);shoulder.add(pauldron);
+  const upper=mesh(new THREE.CylinderGeometry(.055,.068,.26,8),bodyMat,shadows,shadows);upper.position.y=-.16;shoulder.add(upper);
+  const elbow=new THREE.Group();elbow.position.y=-.29;shoulder.add(elbow);
+  const elbowCap=mesh(new THREE.SphereGeometry(.06,8,6),goldMat,shadows,shadows);elbow.add(elbowCap);
+  const forearm=mesh(new THREE.CylinderGeometry(.048,.06,.24,8),bodyMat,shadows,shadows);forearm.position.y=-.13;elbow.add(forearm);
+  const hand=mesh(new THREE.SphereGeometry(.055,8,6),skinMat,shadows,shadows);hand.position.y=-.27;elbow.add(hand);
+  shoulder.userData.elbow=elbow;rig.add(shoulder);return shoulder;
  };
- const leftArm=makeArm(-.31),rightArm=makeArm(.31),weaponPivot=new THREE.Group();weaponPivot.position.set(.38,.73,.06);rig.add(weaponPivot);
+ const leftArm=makeArm(-.32),rightArm=makeArm(.32),leftElbow=leftArm.userData.elbow,rightElbow=rightArm.userData.elbow,weaponPivot=new THREE.Group();weaponPivot.position.set(.40,.72,.06);rig.add(weaponPivot);
  let shieldPivot=null;
  if(archetype==='axe'){
   const handle=mesh(new THREE.CylinderGeometry(.026,.026,.72,7),darkMat,shadows,shadows);handle.position.y=.08;weaponPivot.add(handle);
@@ -328,7 +342,7 @@ function createPiece(country,pieceIndex,shadows){
  const rim=mesh(new THREE.CylinderGeometry(.34,.46,1.14,segments),rimMat,false,false);rim.position.y=.68;rim.scale.setScalar(1.05);group.add(rim);
  const badge=spriteLabel(country.crest,'#f4d895','',.30,.30);badge.position.set(0,.78,.19);rig.add(badge);
  group.userData.bodyMat=bodyMat;group.userData.coreMat=coreMat;group.userData.haloMat=haloMat;group.userData.rimMat=rimMat;group.userData.model=rig;group.userData.crown=helmet;
- group.userData.rig=rig;group.userData.leftLeg=leftLeg;group.userData.rightLeg=rightLeg;group.userData.leftArm=leftArm;group.userData.rightArm=rightArm;group.userData.weaponPivot=weaponPivot;group.userData.shieldPivot=shieldPivot;
+ group.userData.rig=rig;group.userData.leftLeg=leftLeg;group.userData.rightLeg=rightLeg;group.userData.leftKnee=leftKnee;group.userData.rightKnee=rightKnee;group.userData.leftArm=leftArm;group.userData.rightArm=rightArm;group.userData.leftElbow=leftElbow;group.userData.rightElbow=rightElbow;group.userData.weaponPivot=weaponPivot;group.userData.shieldPivot=shieldPivot;
  group.traverse(o=>{o.userData.pieceRoot=group;});
  return group;
 }
@@ -368,6 +382,16 @@ function syncLegalFx(runtime,match,legal=[]){
   runtime.scene.add(group);runtime.legalFx.push({group,ring,ringMat,marker,markerMat,pieceIndex});
  });
 }
+function focusSelectedPiece(runtime,match,selectedPiece){
+ if(!Number.isInteger(selectedPiece))return;
+ const player=match?.players?.[match.turn],country=countryFor(player?.countryId),group=country?runtime.pieceMap.get(country.id+':'+selectedPiece):null;
+ const move=previewMove(match,selectedPiece,match.pendingRoll,match.turn);if(!country||!group||!move)return;
+ const destination=pieceWorldPosition(country,move.to,selectedPiece),mid=group.position.clone().add(destination).multiplyScalar(.5);
+ runtime.baseTarget.copy(mid).setY(Math.max(.55,mid.y+.18));
+ const radial=group.position.clone();radial.y=0;if(radial.lengthSq()<.001)radial.set(0,0,1);radial.normalize();
+ runtime.desiredCameraPosition.copy(mid).add(radial.multiplyScalar(runtime.mobile?10.8:12.4)).setY(runtime.mobile?12.9:14.8);
+ runtime.cameraFollowUntil=performance.now()+820;
+}
 function updateBoardState(runtime,match,loadout=null,legal=[]){
  const theme=countryFor(match.rules?.boardTheme),themeColor=theme?.accent||'#45dff6';
  if(runtime.themeLight){runtime.themeLight.color.set(themeColor);runtime.themeLight.intensity=loadout?.board_skin==='DADA_BOARD_EIGHT_VALUES'?22:18;}
@@ -380,7 +404,7 @@ function updateBoardState(runtime,match,loadout=null,legal=[]){
  syncBarrierFx(runtime,match);
  syncLegalFx(runtime,match,legal);
 }
-function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout=null){
+function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout=null,selectedPiece=null){
  const live=new Set(),captureEvent=match?.lastEvent?.captured?.length?match.lastEvent:null;
  const captureKey=captureEvent?(captureEvent.id??[match.sequence,captureEvent.countryId,captureEvent.pieceIndex,captureEvent.landing].join(':')):null;
  const isNewCapture=Boolean(captureEvent&&captureKey!==runtime.lastCaptureEventKey);
@@ -405,7 +429,7 @@ function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout
    if(!group){group=createPiece(country,pieceIndex,runtime.shadows);runtime.pieces.add(group);runtime.pieceMap.set(key,group);created=true;}
    const shown=motion?.countryId===country.id&&motion.pieceIndex===pieceIndex?motion.step:piece.steps;
    group.userData.target.copy(pieceWorldPosition(country,shown,pieceIndex));if(created)group.position.copy(group.userData.target);
-   group.userData.legal=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion;
+   group.userData.legal=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion;group.userData.selected=playerIndex===match.turn&&selectedPiece===pieceIndex;
    const movingNow=motion?.countryId===country.id&&motion.pieceIndex===pieceIndex,wasMoving=group.userData.isMoving;
    group.userData.isMoving=movingNow;if(wasMoving&&!movingNow)group.userData.landingUntil=performance.now()+320;
    const playerLoadout=cosmeticsByCountry?.[country.id]||loadout||{},trail=playerLoadout.trail||'';
@@ -425,7 +449,7 @@ function findPieceRoot(object){
  return null;
 }
 
-export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEvent,onUnsupported,loadout=null,cosmeticsByCountry=null}){
+export default function Dada3BThree({match,legal=[],selectedPiece=null,motion,blast,onPiece,focusEvent,onUnsupported,loadout=null,cosmeticsByCountry=null}){
  const hostRef=useRef(null),runtimeRef=useRef(null),onPieceRef=useRef(onPiece);
  useEffect(()=>{onPieceRef.current=onPiece;},[onPiece]);
  useEffect(()=>{
@@ -459,7 +483,7 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   runtimeRef.current=runtime;
   addBoardFoundation(scene,runtime);addTrackCells(scene,match,runtime);
   COUNTRIES_3B.forEach(c=>addGate(scene,c,match.players.some(p=>p.countryId===c.id),runtime));
-  addNexus(scene,runtime);addAtmosphere(scene,runtime);createTurnAnchor(scene,runtime);updateTurnAnchor(runtime,match);updateBoardState(runtime,match,loadout,legal);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);
+  addNexus(scene,runtime);addAtmosphere(scene,runtime);createTurnAnchor(scene,runtime);updateTurnAnchor(runtime,match);updateBoardState(runtime,match,loadout,legal);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout,selectedPiece);
   const resize=()=>{
    const rect=host.getBoundingClientRect();if(!rect.width||!rect.height)return;
    renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();
@@ -532,15 +556,20 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
      const dx=target.x-group.position.x,dz=target.z-group.position.z;
      if(data.isMoving&&Math.hypot(dx,dz)>.025)group.rotation.y=THREE.MathUtils.lerp(group.rotation.y,Math.atan2(dx,dz),.24);
      group.position.x=THREE.MathUtils.lerp(group.position.x,target.x,.23);group.position.z=THREE.MathUtils.lerp(group.position.z,target.z,.23);group.position.y=THREE.MathUtils.lerp(group.position.y,target.y+bob,.25);
-     const pulse=data.legal?1+Math.sin(t*5.5)*.035:landingLeft>0?1.04:1;group.scale.setScalar(pulse);
+     const pulse=data.selected?1.16+Math.sin(t*5.5)*.035:data.legal?1+Math.sin(t*5.5)*.035:landingLeft>0?1.04:1;group.scale.setScalar(pulse);
     }
     const walk=data.isMoving?Math.sin(t*13+data.pieceIndex)*.52:Math.sin(t*1.8+data.pieceIndex)*.035;
     const attacking=now<data.attackUntil,attackDuration=Math.max(1,data.attackUntil-data.attackStartedAt),attackT=attacking?Math.max(0,Math.min(1,(now-data.attackStartedAt)/attackDuration)):0,strike=Math.sin(Math.PI*attackT);
     const hit=now<data.hitUntil,hitJolt=hit?Math.sin((data.hitUntil-now)*.045)*.18:0;
     if(data.leftLeg)data.leftLeg.rotation.x=THREE.MathUtils.lerp(data.leftLeg.rotation.x,walk,.28);
     if(data.rightLeg)data.rightLeg.rotation.x=THREE.MathUtils.lerp(data.rightLeg.rotation.x,-walk,.28);
+    const leftKneeBend=data.isMoving?Math.max(0,-walk)*.78:.08,rightKneeBend=data.isMoving?Math.max(0,walk)*.78:.08;
+    if(data.leftKnee)data.leftKnee.rotation.x=THREE.MathUtils.lerp(data.leftKnee.rotation.x,leftKneeBend,.30);
+    if(data.rightKnee)data.rightKnee.rotation.x=THREE.MathUtils.lerp(data.rightKnee.rotation.x,rightKneeBend,.30);
     if(data.leftArm)data.leftArm.rotation.x=THREE.MathUtils.lerp(data.leftArm.rotation.x,-walk*.55,.24);
     if(data.rightArm)data.rightArm.rotation.x=THREE.MathUtils.lerp(data.rightArm.rotation.x,walk*.55-strike*.75,.24);
+    if(data.leftElbow)data.leftElbow.rotation.x=THREE.MathUtils.lerp(data.leftElbow.rotation.x,.10+Math.max(0,walk)*.35,.24);
+    if(data.rightElbow)data.rightElbow.rotation.x=THREE.MathUtils.lerp(data.rightElbow.rotation.x,.10+strike*.72+Math.max(0,-walk)*.28,.24);
     if(data.weaponPivot){
      const idle=Math.sin(t*2.2+data.pieceIndex)*.06;
      const weaponZ=data.archetype==='axe'?-0.34-strike*1.55:data.archetype==='sword'?-0.12-strike*1.18:data.archetype==='shield'?-0.05-strike*.82:-0.18-strike*.44;
@@ -556,8 +585,8 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
      data.rig.position.z=THREE.MathUtils.lerp(data.rig.position.z,attacking?-.14:0,.22);
      data.rig.rotation.z=THREE.MathUtils.lerp(data.rig.rotation.z,hitJolt,.30);
     }
-    data.haloMat.opacity=THREE.MathUtils.lerp(data.haloMat.opacity,data.legal ? .92 : .08,.14);
-    data.rimMat.opacity=THREE.MathUtils.lerp(data.rimMat.opacity,data.legal ? .46 : .10,.14);
+    data.haloMat.opacity=THREE.MathUtils.lerp(data.haloMat.opacity,data.selected ? 1 : data.legal ? .92 : .08,.14);
+    data.rimMat.opacity=THREE.MathUtils.lerp(data.rimMat.opacity,data.selected ? .68 : data.legal ? .46 : .10,.14);
    }
    runtime.captureCinematics=runtime.captureCinematics.filter(fx=>{
     if(now<fx.startedAt)return true;
@@ -591,7 +620,8 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   };
  },[]);
  useEffect(()=>{const runtime=runtimeRef.current;if(runtime){updateTurnAnchor(runtime,match);updateBoardState(runtime,match,loadout,legal);}},[match,legal,loadout]);
- useEffect(()=>{const runtime=runtimeRef.current;if(runtime)updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);},[match,motion,legal,cosmeticsByCountry,loadout]);
+ useEffect(()=>{const runtime=runtimeRef.current;if(runtime)updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout,selectedPiece);},[match,motion,legal,cosmeticsByCountry,loadout,selectedPiece]);
+ useEffect(()=>{const runtime=runtimeRef.current;if(!runtime)return;if(Number.isInteger(selectedPiece))focusSelectedPiece(runtime,match,selectedPiece);else updateTurnAnchor(runtime,match);},[selectedPiece,match?.turn,match?.pendingRoll]);
  useEffect(()=>{
   const runtime=runtimeRef.current;if(!runtime||!focusEvent)return;
   runtime.focusType=focusEvent;runtime.focusUntil=performance.now()+(focusEvent==='victory'?1700:focusEvent==='capture'?2050:820);

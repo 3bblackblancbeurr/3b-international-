@@ -32,7 +32,7 @@ test('capture rendering uses a bounded return-to-stable animation',()=>{
 
 test('board effects are no longer rebuilt on every motion frame',()=>{
   assert.match(three,/updateTurnAnchor\(runtime,match\);updateBoardState\(runtime,match,loadout,legal\);\}\},\[match,legal,loadout\]\)/);
-  assert.match(three,/updatePieces\(runtime,match,legal,motion,cosmeticsByCountry,loadout\);\},\[match,motion,legal,cosmeticsByCountry,loadout\]\)/);
+  assert.match(three,/updatePieces\(runtime,match,legal,motion,cosmeticsByCountry,loadout,selectedPiece\);\},\[match,motion,legal,cosmeticsByCountry,loadout,selectedPiece\]\)/);
 });
 
 test('temporary WebGL loss does not immediately downgrade to 2.5D',()=>{

@@ -1555,8 +1555,27 @@
 .dada3b-piece-picker button em{font-size:7px;font-style:normal;color:#8fdfea}
 .dada3b-board-wrap[data-phase="selectingPiece"] .dada3b-three-canvas{cursor:pointer}
 .dada3b-board-wrap[data-phase="selectingPiece"] .dada3b-player-dice{opacity:.48}
+.dada3b-piece-picker button[aria-pressed="true"]{
+  border-color:color-mix(in srgb,var(--country) 68%,#fff 20%);background:linear-gradient(145deg,color-mix(in srgb,var(--country) 34%,#31565a),#16383e);
+  box-shadow:inset 0 1px 0 #ffffff2b,0 0 18px color-mix(in srgb,var(--country) 34%,transparent);transform:translateY(-2px)
+}
+.dada3b-piece-picker[data-preview="true"]{bottom:3.8%;border-color:color-mix(in srgb,var(--country) 64%,#fff 16%)}
+.dada3b-piece-picker footer{display:grid;grid-template-columns:.7fr 1.5fr;gap:6px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(188,235,239,.12)}
+.dada3b-piece-picker footer button{display:flex;justify-content:center;min-height:38px;font-size:8px;font-weight:950;letter-spacing:.08em}
+.dada3b-preview-change{background:#13292f!important;color:#a9c8c9!important}
+.dada3b-preview-confirm{
+  border-color:#e7c66f88!important;background:linear-gradient(145deg,#8b7135,#46391c)!important;color:#fff1c2!important;
+  box-shadow:0 0 18px #e0b95c28,inset 0 1px 0 #fff3!important
+}
+.dada3b-board-wrap[data-phase="previewPiece"] .dada3b-player-dice{opacity:.30}
+.dada3b-board-wrap[data-phase="previewPiece"]::before{
+  content:"APERÇU DU DÉPLACEMENT";position:absolute;left:50%;top:7%;z-index:26;transform:translateX(-50%);
+  padding:5px 10px;border:1px solid color-mix(in srgb,var(--country,#6fe7f8) 38%,#fff 12%);border-radius:999px;
+  background:#0c2227d9;color:#dffaff;font-size:7px;font-weight:950;letter-spacing:.13em;pointer-events:none
+}
 @media(max-width:560px){
   .dada3b-piece-picker{bottom:3%;min-width:94%;padding:6px}
   .dada3b-piece-picker>div{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
   .dada3b-piece-picker button{min-height:42px}
+  .dada3b-piece-picker footer{grid-template-columns:1fr 1.45fr}
 }

@@ -96,3 +96,22 @@ test('V10 uses premium rounded cells, player-follow camera, spatial dice and cap
   assert.match(css,/DADA 3B V11/);
   assert.match(css,/touch-action:manipulation/);
 });
+
+test('V12 previews a warrior before movement and upgrades articulated anatomy',()=>{
+  assert.match(shell,/previewPiece/);
+  assert.match(shell,/confirmPreview/);
+  assert.match(shell,/VALIDER LE DÉPLACEMENT/);
+  assert.match(shell,/selectedPiece=\{selectedPiece\}/);
+  assert.match(shell,/const piece=automated\?selectBotMove/);
+  assert.doesNotMatch(shell,/moves\.length===1\|\|allStable/);
+  assert.match(three,/focusSelectedPiece/);
+  assert.match(three,/group\.userData\.selected/);
+  assert.match(three,/leftKnee/);
+  assert.match(three,/rightKnee/);
+  assert.match(three,/leftElbow/);
+  assert.match(three,/rightElbow/);
+  assert.match(three,/CylinderGeometry\(\.075,\.09,\.29,9\)/);
+  assert.match(three,/SphereGeometry\(\.082,10,8\)/);
+  assert.match(css,/APERÇU DU DÉPLACEMENT/);
+  assert.match(css,/dada3b-preview-confirm/);
+});
