@@ -4,7 +4,11 @@
 .app3b .compact-card:focus-visible{outline:2px solid #94dcec;outline-offset:3px}
 .app3b .compact-card[aria-pressed=true],.app3b .compact-card[aria-current=page]{border-color:#d9bc73;background:#17212b}
 .app3b .compact-card:disabled{opacity:.55;cursor:default}
+.app3b .compact-card.is-locked{opacity:.52;cursor:not-allowed;background:#0c131c;border-color:#d9bc7326;filter:saturate(.65)}
+.app3b .compact-card.is-locked:hover{background:#0c131c;border-color:#d9bc7326}
+.app3b .compact-card.is-locked .compact-card-action{color:#9b8b68}
 .app3b article.compact-card{cursor:default}
+.app3b article.compact-card.is-locked{cursor:not-allowed}
 .compact-card-icon{display:grid;place-items:center;flex:0 0 32px;color:#d8bd82}
 .compact-card-copy{min-width:0;flex:1;display:grid;gap:4px}
 .app3b .compact-card-copy>strong{margin:0;color:#ead8ac;font:600 16px/1.35 system-ui;letter-spacing:0}
