@@ -17,6 +17,7 @@ import {
 } from './penaltyRush/online.js';
 import {PointerGesture} from './touchControls.js';
 import { stopPenaltyAudio, unlockPenaltyAudio } from './penaltyRush/audio.js';
+import { createTechniqueTracker, detectJoystickTechnique, shapeJoystick } from './penaltyRush/joystick.js';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
 
@@ -522,9 +523,12 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const rightLastTap = useRef(0);
   const chargeFrame = useRef(0);
   const moveThrottle = useRef(0);
+  const techniqueTracker = useRef(createTechniqueTracker());
   const keeperMoveThrottle = useRef(0);
   const moveInFlight = useRef(false);
   const pendingMove = useRef(null);
+  const attackerActionInFlight = useRef(false);
+  const pendingAttackerAction = useRef(null);
   const keeperMoveInFlight = useRef(false);
   const pendingKeeperMove = useRef(null);
   const keeperFinalAction = useRef(null);
@@ -542,16 +546,38 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }, []);
 
   function flushMove() {
-    if (moveInFlight.current || !pendingMove.current) return;
+    if (moveInFlight.current || attackerActionInFlight.current || !pendingMove.current) return;
     const input = pendingMove.current;
     pendingMove.current = null;
     moveInFlight.current = true;
     request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
+      .then((data) => { if (data?.room?.revision != null) revisionRef.current = data.room.revision; })
       .catch(() => {})
       .finally(() => {
         moveInFlight.current = false;
-        if (pendingMove.current) flushMove();
+        if (pendingAttackerAction.current) flushAttackerAction();
+        else if (pendingMove.current) flushMove();
       });
+  }
+
+  function flushAttackerAction() {
+    if (attackerActionInFlight.current || moveInFlight.current || !pendingAttackerAction.current) return;
+    const input = pendingAttackerAction.current;
+    pendingAttackerAction.current = null;
+    attackerActionInFlight.current = true;
+    request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
+      .then((data) => { if (data?.room?.revision != null) revisionRef.current = data.room.revision; })
+      .catch(() => {})
+      .finally(() => {
+        attackerActionInFlight.current = false;
+        if (pendingAttackerAction.current) flushAttackerAction();
+        else if (pendingMove.current) flushMove();
+      });
+  }
+
+  function queueAttackerAction(input) {
+    pendingAttackerAction.current = input;
+    flushAttackerAction();
   }
 
   function queueMove(input) {
@@ -605,6 +631,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
   function resetLeftPad() {
     controlRef.current = { ...controlRef.current, x:0, y:0, intensity:0, active:false };
+    techniqueTracker.current = createTechniqueTracker();
     const pad = leftPadRef.current;
     if (!pad) return;
     pad.dataset.active = 'false';
@@ -634,31 +661,33 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   function leftMove(event) {
     const start = leftGesture.current.get(event.pointerId);
     if (!start || !isAttacker) return;
-    const rawDx = event.clientX - start.x;
-    const rawDy = event.clientY - start.y;
-    const rawLength = Math.hypot(rawDx, rawDy);
-    const deadZone = 10;
-    const activeLength = Math.max(0, rawLength - deadZone);
-    const scale = rawLength > 0 ? activeLength / rawLength : 0;
-    const dx = rawDx * scale;
-    const dy = rawDy * scale;
-    const length = Math.hypot(dx, dy);
-    const x = length ? dx / length : 0;
-    const y = length ? dy / length : 0;
-    const intensity = Math.min(1, length / 88);
-    controlRef.current = { ...controlRef.current, x, y, intensity, active:activeLength > 0 };
+    const input = shapeJoystick(event.clientX - start.x, event.clientY - start.y);
+    controlRef.current = {
+      ...controlRef.current,
+      x:input.x,
+      y:input.y,
+      intensity:input.intensity,
+      active:input.active,
+    };
 
     const pad = leftPadRef.current;
     if (pad) {
-      const visualRadius = Math.min(39, length);
-      pad.style.setProperty('--stick-x', (x * visualRadius).toFixed(1) + 'px');
-      pad.style.setProperty('--stick-y', (y * visualRadius).toFixed(1) + 'px');
+      pad.style.setProperty('--stick-x', (input.x * input.visual).toFixed(1) + 'px');
+      pad.style.setProperty('--stick-y', (input.y * input.visual).toFixed(1) + 'px');
+      pad.style.setProperty('--stick-power', input.intensity.toFixed(3));
     }
 
     const now = performance.now();
-    if (now - moveThrottle.current < 50) return;
+    const technique = detectJoystickTechnique(techniqueTracker.current, input, now);
+    if (technique) {
+      pad?.setAttribute('data-technique', technique.label);
+      window.setTimeout(() => pad?.removeAttribute('data-technique'), 420);
+      sendAttackerFace(technique.type, technique.direction, technique.intensity);
+    }
+
+    if (now - moveThrottle.current < 42) return;
     moveThrottle.current = now;
-    queueMove({ type:'move', x, y, intensity });
+    queueMove({ type:'move', x:input.x, y:input.y, intensity:input.intensity });
   }
 
   function leftEnd(event) {
@@ -789,9 +818,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     if (type === 'feint' || type === 'cut' || type === 'rhythm') {
       input.direction = { x:directionX, y:0, length:Math.abs(directionX) };
     }
-    request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
-      .then((data) => { if (data?.room?.revision != null) revisionRef.current = data.room.revision; })
-      .catch(() => {});
+    queueAttackerAction(input);
   }
 
   function keeperFaceStart(direction, event) {

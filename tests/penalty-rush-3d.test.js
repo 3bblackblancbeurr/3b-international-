@@ -7,6 +7,7 @@ const arena = readFileSync(new URL('../src/games/penaltyRush/PenaltyRushArena3D.
 const server = readFileSync(new URL('../supabase/functions/penalty-rush/index.ts', import.meta.url), 'utf8');
 const training = readFileSync(new URL('../src/games/penaltyRush/PenaltyTraining.jsx', import.meta.url), 'utf8');
 const controls = readFileSync(new URL('../src/games/penaltyRush3d.css', import.meta.url), 'utf8');
+const joystick = readFileSync(new URL('../src/games/penaltyRush/joystick.js', import.meta.url), 'utf8');
 
 test('Penalty Rush match no longer renders placeholder 10 / GK / 3B avatars', () => {
   assert.match(match, /PenaltyRushArena3D/);
@@ -34,7 +35,7 @@ test('mobile movement is locally predicted and server requests are coalesced', (
   assert.match(match, /controlRef = useRef/);
   assert.match(match, /moveInFlight = useRef/);
   assert.match(match, /pendingMove = useRef/);
-  assert.match(match, /now - moveThrottle\.current < 50/);
+  assert.match(match, /now - moveThrottle\.current < 42/);
   assert.match(match, /queueMove\(\{ type:'move'/);
 });
 
@@ -71,7 +72,7 @@ test('V3 adds local prediction for attacker and goalkeeper while server remains 
   assert.match(arena, /predictLocalAttacker/);
   assert.match(arena, /controlRef\?\.current\?\.keeper/);
   assert.match(arena, /predictLocalKeeper/);
-  assert.match(match, /moveThrottle\.current < 50/);
+  assert.match(match, /moveThrottle\.current < 42/);
   assert.match(match, /keeper:\{ direction:0, intensity:0, active:false \}/);
 });
 
@@ -130,12 +131,13 @@ test('V4 streams keeper movement while dragging and keeps the server authoritati
 });
 
 test('V4 local prediction prioritizes instant control then reconciles softly', () => {
-  assert.match(arena, /const lateralSpeed = 4\.4 \+ intensity \* 2\.2/);
-  assert.match(arena, /const forwardSpeed = \(5\.4 \+ intensity \* 2\.8\)/);
+  assert.match(arena, /inputSmooth/);
+  assert.match(arena, /const lateralSpeed = 4\.15 \+ intensity \* 2\.35/);
+  assert.match(arena, /const forwardSpeed = \(5\.15 \+ intensity \* 3\.05\)/);
+  assert.match(arena, /const drive = \.2 \+ intensity \* \.8/);
   assert.match(arena, /input\?\.active \? \.35 : 12\.5/);
   assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
- assert.match(arena, /const drive = \.24 \+ intensity \* \.76/);
- assert.match(arena, /const drive = \.22 \+ intensity \* \.78/);
+  assert.match(arena, /const drive = \.22 \+ intensity \* \.78/);
   assert.match(arena, /input\?\.active \? \.25 : 15/);
 });
 
@@ -156,7 +158,7 @@ test('V4 uses football-scale player and ball dimensions', () => {
 });
 
 test('V4 local movement is tuned for immediate football-game response', () => {
-  assert.match(arena, /const lateralSpeed = 4\.4 \+ intensity \* 2\.2/);
+  assert.match(arena, /const lateralSpeed = 4\.15 \+ intensity \* 2\.35/);
   assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
   assert.match(arena, /snapshot\.selfIndex \? 30 : 12/);
   assert.match(arena, /selfKeeper \? 34 : 12/);
@@ -170,11 +172,14 @@ test('V4 server movement supports responsive lateral attack and keeper positioni
 
 
 test('V5 touch controls add dead zones, absolute training drag and a hold-to-charge trigger',()=>{
- assert.match(match,/const deadZone = 10/);
+ assert.match(joystick,/deadZone=9/);
+ assert.match(joystick,/Math\.pow\(normalized,1\.28\)/);
  assert.match(match,/const keeperDeadZone = 9/);
+ assert.match(match,/shapeJoystick/);
+ assert.match(match,/detectJoystickTechnique/);
  assert.match(match,/penalty-shot-charge/);
  assert.match(match,/data-charging/);
- assert.match(training,/deadX \/ 420/);
+ assert.match(training,/shapeJoystick/);
  assert.match(training,/penalty-face-cluster/);
  assert.match(training,/data-tone="black"/);
  assert.match(training,/data-tone="white"/);
@@ -193,4 +198,16 @@ test('V5 sends goals physically inside the net and builds a 3B world behind the 
  assert.match(arena,/GOAL_Z - 1\.42/);
  assert.match(arena,/event\.type === 'goal' && t > \.76/);
  assert.match(arena,/createThreeBGoalWorld\(scene, mobile\)/);
+});
+
+test('V6 premium street-foot movement keeps direction, roulette, camera lead and richer players',()=>{
+ assert.match(arena,/followAngle/);
+ assert.match(arena,/action === 'rhythm'/);
+ assert.match(arena,/Math\.PI \* 1\.72/);
+ assert.match(arena,/new THREE\.TorusGeometry\(\.15/);
+ assert.match(arena,/const eyeMat = makeMaterial/);
+ assert.match(arena,/inputSmooth/);
+ assert.match(arena,/fov = 48\.5 \+ pace \* 2\.15/);
+ assert.match(controls,/data-technique/);
+ assert.match(controls,/--stick-power/);
 });
