@@ -8,7 +8,7 @@
   position:absolute;inset:0;z-index:1;overflow:hidden;background:#061014;
   touch-action:none;pointer-events:none
 }
-.penalty-arena3d-canvas{display:block;width:100%;height:100%;filter:saturate(1.04) contrast(1.025)}
+.penalty-arena3d-canvas{display:block;width:100%;height:100%;filter:brightness(1.08) saturate(1.08) contrast(1.015)}
 .penalty-arena3d-fallback{
   position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:5px;background:radial-gradient(circle at 50% 24%,#164558,#071315 54%,#030708);
@@ -62,7 +62,7 @@
 .penalty-match[data-role="keeper"] .penalty-meter-line>strong{color:#e5c779}
 
 @media(max-width:720px){
-  .penalty-arena3d-canvas{filter:saturate(1.03) contrast(1.02)}
+  .penalty-arena3d-canvas{filter:brightness(1.06) saturate(1.06) contrast(1.01)}
   .penalty-pitch-3d .penalty-touch-left,
   .penalty-pitch-3d .penalty-touch-right{width:min(38vw,170px)}
   .penalty-pitch-3d .penalty-last-event{bottom:20%;max-width:84%;font-size:8px}
@@ -80,9 +80,9 @@
 .penalty-pitch-3d::after{
   content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   background:
-    linear-gradient(180deg,rgba(0,0,0,.28),transparent 18%,transparent 72%,rgba(0,0,0,.24)),
-    radial-gradient(ellipse at 50% 46%,transparent 34%,rgba(0,0,0,.2) 100%);
-  mix-blend-mode:multiply
+    linear-gradient(180deg,rgba(4,13,18,.12),transparent 20%,transparent 78%,rgba(2,8,10,.12)),
+    radial-gradient(ellipse at 50% 46%,transparent 50%,rgba(0,0,0,.08) 100%);
+  mix-blend-mode:normal
 }
 .penalty-impact-word{
   position:absolute;z-index:31;left:50%;top:50%;display:flex;min-width:min(72vw,440px);
@@ -223,4 +223,49 @@
   .penalty-pitch-3d .penalty-touch-right>span{top:23%;font-size:6px}
   .penalty-shot-charge{bottom:23%;height:6px}
   .penalty-shot-charge::after{top:10px;font-size:5px}
+}
+
+/* 2026-09-25 — commandes premium 3B type manette tactile */
+.penalty-face-cluster{
+  position:absolute;z-index:29;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));
+  width:228px;height:228px;pointer-events:auto;touch-action:none;filter:drop-shadow(0 18px 38px #0009)
+}
+.penalty-face{
+  position:absolute;display:flex;width:78px;height:78px;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;border:1px solid #ffffff22;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;
+  box-shadow:inset 0 2px 0 #ffffff16,inset 0 -9px 18px #0007,0 8px 18px #0007;
+  transition:transform .08s ease,box-shadow .08s ease,border-color .08s ease
+}
+.penalty-face:active,.penalty-face[data-active="true"]{transform:scale(.93);box-shadow:inset 0 3px 14px #0009,0 3px 8px #0008}
+.penalty-face b{font-size:20px;line-height:1;font-weight:950;letter-spacing:-.04em}
+.penalty-face small{font-size:6px;font-weight:950;letter-spacing:.12em;opacity:.78}
+.penalty-face-top{left:75px;top:0}.penalty-face-left{left:0;top:75px}.penalty-face-right{right:0;top:75px}.penalty-face-bottom{left:75px;bottom:0}
+.penalty-face[data-tone="3b"]{border-color:#64d7f28c;background:radial-gradient(circle at 34% 24%,#2786a6,#0a2633 58%,#061218);color:#e9faff;box-shadow:inset 0 2px #ffffff24,0 0 24px #54d5f13d,0 10px 20px #0008}
+.penalty-face[data-tone="black"]{border-color:#77858d7a;background:radial-gradient(circle at 32% 22%,#30363a,#111416 58%,#050607);color:#f3f3ef}
+.penalty-face[data-tone="white"]{border-color:#ffffffaa;background:radial-gradient(circle at 32% 22%,#fff,#deded8 58%,#aaa);color:#111416}
+.penalty-face[data-tone="beur"]{border-color:#f1d27eaa;background:radial-gradient(circle at 30% 20%,#f7dc91,#c49a43 55%,#624816);color:#161008;box-shadow:inset 0 2px #fff6c8,0 0 28px #d8b35e45,0 10px 20px #0008}
+.penalty-face-shot{cursor:crosshair}
+.penalty-face-shot .penalty-shot-charge{
+  left:16%;right:16%;bottom:11%;height:6px;border-color:#4a350f88;background:#2a1d08c9;box-shadow:inset 0 0 5px #0009
+}
+.penalty-face-shot .penalty-shot-charge>b{background:linear-gradient(90deg,#0d1113,#f7f5ea 50%,#fff0a2);box-shadow:0 0 10px #fff2ab88}
+.penalty-face-cluster[data-role="keeper"] .penalty-face-bottom{cursor:pointer}
+.penalty-face-cluster::before{
+  content:"3B CONTROL";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:grid;width:55px;height:55px;place-items:center;border:1px solid #ffffff10;border-radius:50%;
+  background:#061014b8;color:#66858c;font-size:6px;font-weight:950;letter-spacing:.11em;pointer-events:none
+}
+.penalty-face:focus-visible{outline:3px solid #70daf2;outline-offset:3px}
+@media(max-width:720px){
+  .penalty-face-cluster{width:190px;height:190px;right:max(8px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom))}
+  .penalty-face{width:66px;height:66px}.penalty-face b{font-size:17px}.penalty-face small{font-size:5px}
+  .penalty-face-top{left:62px}.penalty-face-left{top:62px}.penalty-face-right{top:62px}.penalty-face-bottom{left:62px}
+  .penalty-face-cluster::before{width:44px;height:44px;font-size:5px}
+  .penalty-pitch-3d .penalty-touch-left{width:min(28vw,132px)}
+}
+@media(orientation:landscape) and (max-height:560px){
+  .penalty-face-cluster{width:156px;height:156px;right:8px;bottom:6px}
+  .penalty-face{width:54px;height:54px}.penalty-face b{font-size:14px}.penalty-face small{font-size:4px}
+  .penalty-face-top{left:51px}.penalty-face-left{top:51px}.penalty-face-right{top:51px}.penalty-face-bottom{left:51px}
+  .penalty-face-cluster::before{width:36px;height:36px;font-size:4px}
 }
