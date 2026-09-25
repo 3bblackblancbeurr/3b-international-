@@ -358,12 +358,12 @@ export function createPremiumCivicPlaza(item,{root,geometry,material,groundY}){
  const stone=material('#2a3034',{roughness:.86,metalness:.08});
  const gold=material('#d6b46a',{emissive:'#70521f',emissiveIntensity:.12,roughness:.28,metalness:.72});
  const blue=material('#133d52',{emissive:'#00a8ff',emissiveIntensity:.18,roughness:.24,metalness:.30});
- const r=Math.max(12,item.radius||20);
+ const r=Math.max(12,item.radius||20),compact=item.renderProfile==='mobileMedium',seatCount=compact?3:6;
  child(group,geometry.cylinder,stone,{y:.06,sx:r,sy:.12,sz:r,cast:false});
  child(group,geometry.ring,gold,{y:.14,sx:r*.78,sy:r*.78,sz:r*.78,rx:Math.PI/2,cast:false});
- child(group,geometry.ring,blue,{y:.16,sx:r*.44,sy:r*.44,sz:r*.44,rx:Math.PI/2,cast:false});
- for(let i=0;i<6;i++){
-  const a=i*Math.PI/3,x=Math.cos(a)*r*.68,z=Math.sin(a)*r*.68;
+ if(!compact)child(group,geometry.ring,blue,{y:.16,sx:r*.44,sy:r*.44,sz:r*.44,rx:Math.PI/2,cast:false});
+ for(let i=0;i<seatCount;i++){
+  const a=i*Math.PI*2/seatCount,x=Math.cos(a)*r*.68,z=Math.sin(a)*r*.68;
   child(group,geometry.box,stone,{x,y:.34,z,sx:2.8,sy:.55,sz:.7,ry:-a,cast:false});
  }
  return group;
@@ -376,7 +376,7 @@ export function createPremiumDistrictLandmark(item,{root,geometry,material,groun
  const stone=material('#353b3e',{roughness:.74,metalness:.12});
  const accent=material(item.accent||'#d6b46a',{emissive:item.accent||'#d6b46a',emissiveIntensity:.32+(item.prestige?.22:0),roughness:.20,metalness:.62});
  const gold=material('#d6b46a',{emissive:'#7f6125',emissiveIntensity:.18,roughness:.24,metalness:.86});
- const h=Math.max(28,item.height||48);
+ const h=Math.max(28,item.height||48),compact=item.renderProfile==='mobileMedium';
  child(group,geometry.cylinder,dark,{y:.18,sx:5.8,sy:.35,sz:5.8});
  switch(item.archetype){
   case 'gateway':
@@ -386,11 +386,11 @@ export function createPremiumDistrictLandmark(item,{root,geometry,material,groun
    break;
   case 'tree':
    child(group,geometry.cylinder,stone,{y:h*.28,sx:.75,sy:h*.55,sz:.75});
-   for(let i=0;i<7;i++){const a=i*Math.PI*2/7;child(group,geometry.sphere,accent,{x:Math.cos(a)*3.0,y:h*.62+Math.sin(i)*1.2,z:Math.sin(a)*3.0,sx:2.2,sy:1.5,sz:2.2,cast:false});}
+   {const crowns=compact?4:7;for(let i=0;i<crowns;i++){const a=i*Math.PI*2/crowns;child(group,geometry.sphere,accent,{x:Math.cos(a)*3.0,y:h*.62+Math.sin(i)*1.2,z:Math.sin(a)*3.0,sx:2.2,sy:1.5,sz:2.2,cast:false});}}
    break;
   case 'arena':
    child(group,geometry.cylinder,stone,{y:h*.18,sx:5.4,sy:h*.28,sz:5.4});
-   for(let i=0;i<8;i++){const a=i*Math.PI/4;child(group,geometry.box,i%2?accent:gold,{x:Math.cos(a)*4.1,y:h*.48,z:Math.sin(a)*4.1,sx:.24,sy:h*.56,sz:.24,ry:-a,cast:false});}
+   {const ribs=compact?4:8;for(let i=0;i<ribs;i++){const a=i*Math.PI*2/ribs;child(group,geometry.box,i%2?accent:gold,{x:Math.cos(a)*4.1,y:h*.48,z:Math.sin(a)*4.1,sx:.24,sy:h*.56,sz:.24,ry:-a,cast:false});}}
    break;
   case 'archive':
    for(const side of [-1,1])child(group,geometry.box,stone,{x:side*2.7,y:h*.34,sx:1.2,sy:h*.62,sz:2.0});
@@ -454,10 +454,10 @@ export function createPremiumTransitLink(item,{root,geometry,material,groundY}){
  const dark=material('#181f24',{roughness:.52,metalness:.48});
  const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.16,roughness:.24,metalness:.82});
  const blue=material('#1b607b',{emissive:'#00a8ff',emissiveIntensity:.18,roughness:.18,metalness:.32});
- const length=Math.max(8,item.length||12),h=item.height||0;
+ const length=Math.max(8,item.length||12),h=item.height||0,compact=item.renderProfile==='mobileMedium';
  if(item.transport==='train'){
   for(const side of [-1,1])child(group,geometry.box,gold,{x:side*.82,y:h+.10,sx:.12,sy:.08,sz:length,cast:false});
-  const sleepers=Math.min(10,Math.max(3,Math.floor(length/45)));
+  const sleepers=compact?Math.min(4,Math.max(2,Math.floor(length/90))):Math.min(10,Math.max(3,Math.floor(length/45)));
   for(let i=0;i<sleepers;i++){const z=-length/2+(i+.5)*length/sleepers;child(group,geometry.box,dark,{y:h,z,sx:2.25,sy:.08,sz:.24,cast:false});}
  }else{
   const cable=item.transport==='telepheric'?blue:gold;
