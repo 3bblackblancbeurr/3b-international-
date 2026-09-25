@@ -32,7 +32,7 @@ import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './stream
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
 import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {worldVisualCapabilities} from './device-capabilities.js';
-import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle} from './premium-hub-visuals.js';
+import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge,createPremiumCivicPlaza,createPremiumDistrictLandmark,createPremiumWaterFeature,createPremiumTransitLink} from './premium-hub-visuals.js';
 import {loadControlBindings,normalizeControlBindings,controlMatches,actionHeld} from './control-bindings.js';
 import {actionFeedback} from './interaction-system.js';
 import {obstacleDistance} from './collision.js';
@@ -56,7 +56,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],hubNpcActors=[],hubVehicles=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null,hubLodState=new Map();
- let escort=null,escortId=null,trail=[],shot=null,daylight=null,retaliationPlayed=true;
+ let escort=null,escortId=null,trail=[],shot=null,daylight=null,retaliationPlayed=true,hubArrivalShown=false;
  let partyActors=null,latestPeers=[],partyState=null;
  const peerInteractionItems=()=>latestPeers.filter(peer=>peer.region===region&&peer.lifeState==='downed'&&Number.isFinite(peer.x)&&Number.isFinite(peer.z)).map(peer=>({
   id:'party:downed:'+peer.id,type:'downedPlayer',userId:peer.id,name:(peer.avatar?.name||'Voyageur')+' · à terre',x:peer.x,z:peer.z,range:6,color:'#ff8f7f',
@@ -166,6 +166,7 @@ function hubNpcAvatar(item){
  function refreshHubScheduleState(){if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;actor.item.homeX=next.x;actor.item.homeZ=next.z;actor.item.district=next.district;actor.item.activity=next.activity;actor.item.shelter=next.shelter;actor.item.social=next.social;}needsRender=true;}
  function cancelContextTraversal(){if(!contextTraversal)return;const resolve=contextTraversal.resolve;contextTraversal=null;traversalLift=0;try{resolve(false);}catch{}needsRender=true;}
  function rebuild(nextRegion){cancelContextTraversal();
+  const previousRegion=region;
   onLoadState?.(true);
   partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];hubLodState.clear();transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
@@ -187,11 +188,30 @@ function hubNpcAvatar(item){
     const visuals=buildPremiumHubRoad(item,{mesh,material,groundY});itemVisuals.set(item.id,visuals);continue;
    }
    if(item.type==='hubBuilding'||item.type==='hubStructure'){
-    const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0;
-    const palette=canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
-    const body=mesh('box',material(palette,{roughness:canonical?.58:.76,metalness:canonical?.22:.08}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
+    const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0,construction=item.buildStatus==='construction';
+    const palette=construction?'#15191c':canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
+    const body=mesh('box',material(palette,{roughness:construction?.84:canonical?.58:.76,metalness:construction?.06:canonical?.22:.08}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
     const visuals=[body,...decorateHubBuilding(item,{mesh,material,groundY,canonical})];
     obstacles.push({x:bx,z:bz,width:item.width+.8,depth:item.depth+.8,rotation:0});itemVisuals.set(item.id,visuals);continue;
+   }
+   if(item.type==='hubWaterFeature'){
+    const water=createPremiumWaterFeature(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[water]);continue;
+   }
+   if(item.type==='hubTransitLink'){
+    const link=createPremiumTransitLink(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[link]);continue;
+   }
+   if(item.type==='hubCivicPlaza'){
+    const plaza=createPremiumCivicPlaza(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[plaza]);continue;
+   }
+   if(item.type==='hubDistrictLandmark'){
+    const landmark=createPremiumDistrictLandmark(item,{root,geometry,material,groundY});
+    obstacles.push({x:item.x,z:item.z,width:9,depth:9,rotation:0});itemVisuals.set(item.id,[landmark]);continue;
+   }
+   if(item.type==='hubSkybridge'){
+    const bridge=createPremiumSkybridge(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[bridge]);continue;
+   }
+   if(item.type==='hubHeritagePlatform'){
+    const platform=createPremiumHeritagePlatform(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[platform]);continue;
    }
    if(item.type==='hubTraffic'){
     const car=createPremiumTrafficVehicle(item,{root,geometry,material,groundY});
@@ -199,6 +219,9 @@ function hubNpcAvatar(item){
    }
    if(item.type==='hubGuardian'){
     itemVisuals.set(item.id,[makeActor(item)]);continue;
+   }
+   if(item.type==='hubMilestone'){
+    const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'event'});itemVisuals.set(item.id,[marker]);continue;
    }
    if(item.type==='hubMission'){
     const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'mission'});itemVisuals.set(item.id,[marker]);continue;
@@ -268,7 +291,13 @@ function hubNpcAvatar(item){
   if(encounter&&!encounter.field){const opponent=encounter.final?items.find(i=>i.type==='final'):encounter.patrol?items.find(i=>i.type==='patrol'):items.find(i=>i.card===encounter.card);if(opponent){const approach=findInteractionPath(position,opponent,obstacles,worldRadius).at(-1);if(approach)position={...approach};battleTarget=opponent;}}
   // Frame the country's own landmark on arrival, while keeping chosen zoom.
   if(cameraFollow){const vista=region==='hub'?{x:0,z:-8}:toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);orbit={...orbit,yaw:Math.atan2(position.x-vista.x,position.z-vista.z)};heading=((-orbit.yaw*180/Math.PI)%360+360)%360;avatar.rotation.y=orbit.yaw+Math.PI;}
-  const view=orbitView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);camera.position.copy(view.position);cameraTarget.copy(view.target);camera.lookAt(cameraTarget);report=0;needsRender=true;batchStatic();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
+  const view=orbitView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);camera.position.copy(view.position);cameraTarget.copy(view.target);camera.lookAt(cameraTarget);
+  if(region==='hub'&&!encounter&&(previousRegion!=='hub'||!hubArrivalShown)){
+   const platform=items.find(item=>item.type==='hubHeritagePlatform'),tower=items.find(item=>item.type==='hubDistrictLandmark'&&item.landmarkId==='broken_circle_spire'),duration=reducedMotion?2600:6200;
+   shot={x:tower?.x??0,z:tower?.z??0,kind:'hub-arrival',angle:orbit.yaw-.42,duration,until:performance.now()+duration,heritage:true,radius:camera.aspect<.85?195:270,height:camera.aspect<.85?92:124,focusY:tower?42:15,arc:reducedMotion?0:.36,dolly:.12,title:'La Cité des Huit Héritages',detail:platform?.milestone?.label||platform?.evolutionLabel||'Fondations vivantes'};
+   hubArrivalShown=true;
+  }
+  report=0;needsRender=true;batchStatic();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
  }
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
@@ -438,7 +467,20 @@ function hubNpcAvatar(item){
   effect.visible=!lastCombat&&age<.65;if(effect.visible){effect.position.set(avatar.position.x,avatar.position.y+.15,avatar.position.z);effect.scale.setScalar(1+age*6);effect.material.opacity=Math.max(0,1-age/.65)*.7;effect.material.color.set(feedbackAction==='guard'?'#a2dff0':'#ffe0a0');}
   if(renderer.shadowMap.enabled&&(needsRender||now-shadowAt>=50)){renderer.shadowMap.needsUpdate=true;shadowAt=now;}
   sky.update(camera,reducedMotion?0:elapsed);landscape?.renderWaterReflection?.(renderer,scene,camera,elapsed);renderer.info.reset();post.render(dt);report-=dt;
-  if(report<=0||needsRender){report=(moving||held?.drag)?.1:.4;onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:districtAt(region,position,(x,z)=>toLandscape(region,x,z)),position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});}
+  if(report<=0||needsRender){
+   report=(moving||held?.drag)?.1:.4;
+   const hubPlatforms=region==='hub'?items.filter(item=>item.type==='hubHeritagePlatform'):[];
+   const hubEvolution=hubPlatforms.length?{
+    stage:hubPlatforms[0].evolutionStage||0,
+    label:hubPlatforms[0].evolutionLabel||'Fondations vivantes',
+    milestone:hubPlatforms[0].milestone||null,
+    nextMilestone:hubPlatforms[0].nextMilestone||null,
+    liberated:hubPlatforms.filter(item=>item.liberated).length,
+    restored:hubPlatforms.filter(item=>item.restored).length,
+    total:hubPlatforms.length,
+   }:null;
+   onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
+  }
   needsRender=false;
  }
  onLoadState?.(true);
@@ -518,7 +560,7 @@ function hubNpcAvatar(item){
   setCameraFollow(value){cameraFollow=!!value;if(!cameraFollow)orbit={...orbit,yaw:viewBearing(camera.position,cameraTarget)};rememberCamera();try{localStorage.setItem('3b-world-camera-follow',String(cameraFollow));}catch{}needsRender=true;},
   setControls(value){controls=normalizeControlBindings(value);clearInput();},
   setQuality(mode){qualityMode=mode;quality.setMode(mode);const capabilities=visualCapabilities(mode);landscape?.setQuality(mode,capabilities);renderer.shadowMap.enabled=mode!=='fluid';const size=capabilities.shadowMapSize;if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}resize();},
-  setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||countryContractChanged)&&models&&!newField){rebuild(region);needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}hero?.setColor(save.adventure.cosmetic!=='voyageur'?COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color:null);
+  setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),hubProgressChanged=region==='hub'&&(JSON.stringify(save.seals||[])!==JSON.stringify(value.seals||[])||JSON.stringify(Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))!==JSON.stringify(Object.entries(value.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||hubProgressChanged||countryContractChanged)&&models&&!newField){if(hubProgressChanged)hubArrivalShown=false;rebuild(region);needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}hero?.setColor(save.adventure.cosmetic!=='voyageur'?COSMETICS.find(c=>c.id===save.adventure.cosmetic)?.color:null);
   const nextItems=worldRuntimeItems(region,save,{weather});
   if(region==='hub'&&hubNpcActors.length){
    const liveNpcs=new Map(hubNpcActors.map(actor=>[actor.item.id,actor.item]));

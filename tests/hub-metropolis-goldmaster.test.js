@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
+import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance,hubEvolutionState} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
 import {HUB_MISSION_ACTION_PLANS} from '../src/world/hub/mission-actions.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
@@ -87,4 +87,88 @@ test('human-scale pedestrian shortcuts break the hub ring-and-spoke pattern',()=
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
  const trafficRoutes=new Set(runtime.items.filter(i=>i.type==='hubTraffic').map(i=>i.routeId));
  assert.ok(lanes.every(lane=>!trafficRoutes.has(lane.id)));
+});
+
+
+test('the eight heritage esplanades are dispersed at the real country portals',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const platforms=runtime.items.filter(item=>item.type==='hubHeritagePlatform');
+ assert.equal(platforms.length,8);
+ assert.equal(runtime.meta.heritagePlatforms,8);
+ assert.ok(platforms.every(item=>Math.hypot(item.x,item.z)>300&&Math.hypot(item.x,item.z)<HUB_METROPOLIS.radius));
+ assert.equal(new Set(platforms.map(item=>item.regionId)).size,8);
+ assert.ok(platforms.every(item=>item.evolutionStage===0));
+});
+
+test('restoring heritage visibly grows city density, transport life and vertical links',()=>{
+ const stage0=buildMetropolisRuntimeItems(plan,'mobileMedium');
+ const stage2=buildMetropolisRuntimeItems(plan,'mobileMedium',{seals:['france','algerie','espagne']});
+ const final=buildMetropolisRuntimeItems(plan,'mobileMedium',{seals:['france','algerie','espagne','maroc','italie','tunisie','turquie','estonie'],restoredRegions:['france','algerie','espagne','maroc','italie','tunisie','turquie','estonie']});
+ assert.equal(hubEvolutionState(plan,{seals:[]}).stage,0);
+ assert.equal(stage2.meta.evolutionStage,2);
+ assert.equal(final.meta.evolutionStage,4);
+ assert.ok(stage2.meta.structures>stage0.meta.structures);
+ assert.ok(stage2.meta.traffic>stage0.meta.traffic);
+ assert.ok(stage2.meta.skybridges>stage0.meta.skybridges);
+ assert.equal(final.meta.skybridges,8);
+ assert.equal(final.items.filter(item=>item.type==='hubHeritagePlatform'&&item.restored).length,8);
+ assert.ok(final.items.filter(item=>item.type==='hubBuilding').every(item=>item.buildStatus==='active'));
+});
+
+
+test('Hub V4 runtime materializes plazas, landmarks, water and physical transit lines',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ assert.equal(runtime.meta.civicPlazas,10);
+ assert.equal(runtime.meta.districtLandmarks,10);
+ assert.ok(runtime.meta.waterFeatures>=5);
+ assert.ok(runtime.meta.transitLinks>=19);
+ assert.equal(runtime.items.filter(item=>item.type==='hubCivicPlaza').length,10);
+ assert.equal(runtime.items.filter(item=>item.type==='hubDistrictLandmark').length,10);
+ assert.ok(runtime.items.filter(item=>item.type==='hubWaterFeature').length>=5);
+ assert.ok(runtime.items.filter(item=>item.type==='hubTransitLink').length>=19);
+});
+
+test('Hub V4 decorative infrastructure never steals the player interaction focus',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const decorative=new Set(['hubRoad','hubStructure','hubTraffic','hubSkybridge','hubHeritagePlatform','hubCivicPlaza','hubDistrictLandmark','hubWaterFeature','hubTransitLink']);
+ const rows=runtime.items.filter(item=>decorative.has(item.type));
+ assert.ok(rows.length>100);
+ assert.ok(rows.every(item=>item.range===-1));
+ assert.ok(runtime.items.filter(item=>item.type==='hubStructure').every(item=>item.civicUse&&item.usefulFrontage===true));
+});
+
+test('Hub V4 exposes the exact story milestone attached to city evolution',()=>{
+ const four=hubEvolutionState(plan,{seals:['france','algerie','espagne','maroc']});
+ const seven=hubEvolutionState(plan,{seals:['france','algerie','espagne','maroc','italie','tunisie','turquie']});
+ const eight=hubEvolutionState(plan,{seals:['france','algerie','espagne','maroc','italie','tunisie','turquie','estonie']});
+ assert.equal(four.milestone.id,'tower_transformation');
+ assert.equal(seven.milestone.id,'beyond_the_guardians');
+ assert.equal(eight.milestone.id,'circle_restored');
+ assert.equal(eight.nextMilestone,null);
+});
+
+
+test('Hub V4 puts the current city story milestone physically at the Broken Circle Tower',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'mobileMedium',{seals:['france','algerie','espagne','maroc']});
+ const stories=runtime.items.filter(item=>item.type==='hubMilestone');
+ assert.equal(runtime.meta.milestoneStories,1);
+ assert.equal(stories.length,1);
+ assert.equal(stories[0].name,'La Tour se transforme');
+ assert.equal(stories[0].fragments,4);
+ assert.ok(stories[0].detail.includes('Tour'));
+ assert.ok(stories[0].range>5);
+});
+
+
+test('all eight country facilities are live interaction points next to their esplanades',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const facilities=runtime.items.filter(item=>item.type==='hubHeritageFacility');
+ assert.equal(runtime.meta.heritageFacilities,8);
+ assert.equal(facilities.length,8);
+ assert.equal(new Set(facilities.map(item=>item.code)).size,8);
+ assert.ok(facilities.every(item=>item.range===7&&item.purpose&&item.services.length>=3));
+ const names=Object.fromEntries(facilities.map(item=>[item.code,item.name]));
+ assert.equal(names.FR,'Tribunal 3B');
+ assert.equal(names.DZ,'Maison des Alliances');
+ assert.equal(names.EE,'Tour des Données');
 });

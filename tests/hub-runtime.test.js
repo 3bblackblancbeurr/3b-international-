@@ -25,6 +25,9 @@ test('Hub runtime exposes every canonical district and mission', () => {
   assert.equal(runtime.meta.ziplineStarts, 6);
   assert.equal(runtime.meta.events, 10);
   assert.equal(runtime.meta.secrets, 16);
+  assert.equal(runtime.meta.heritagePlatforms, 8);
+  assert.equal(runtime.meta.evolutionStage, 0);
+  assert.ok(runtime.meta.skybridges >= 2);
   assert.equal(new Set(runtime.items.map((item) => item.id)).size, runtime.items.length);
 });
 
@@ -48,4 +51,15 @@ test('Canonical first playable slice districts resolve to positions', () => {
   for (const district of plan.firstPlayableSlice.districts) {
     assert.ok(hubDistrictPosition(plan, district), district);
   }
+});
+
+
+test('Hub runtime carries restored country progression into the metropolis',()=>{
+  const seals=['france','algerie','espagne','maroc','italie'];
+  const runtime=buildHubRuntimeItems({plan,npcs,missions,events,secrets,profile:'desktop',seals,restoredRegions:[...seals]});
+  assert.equal(runtime.meta.evolutionStage,3);
+  assert.equal(runtime.meta.heritagePlatforms,8);
+  assert.equal(runtime.meta.skybridges,8);
+  const platforms=runtime.items.filter(item=>item.type==='hubHeritagePlatform');
+  assert.equal(platforms.filter(item=>item.restored).length,5);
 });

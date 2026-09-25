@@ -47,8 +47,9 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
  const gold=material('#d6b46a',{emissive:'#8b6b2e',emissiveIntensity:.08,roughness:.24,metalness:.92,clearcoat:.18,clearcoatRoughness:.14});
  const trim=material('#10161b',{roughness:.46,metalness:.58,clearcoat:.08,clearcoatRoughness:.24});
  const stone=material('#30383d',{roughness:.78,metalness:.10});
+ const evolutionStage=Math.max(0,Number(item.evolutionStage||0)),construction=item.buildStatus==='construction',prestige=!!item.prestige;
 
- const base=mesh('box',stone,bx,y+.45,bz,width*1.06,.9,depth*1.06);base.castShadow=true;visuals.push(base);
+ const base=mesh('box',construction?trim:stone,bx,y+.45,bz,width*1.06,.9,depth*1.06);base.castShadow=true;visuals.push(base);
  const rhythmSeed=hash(item.buildingId||item.id||'hub-building'),glassMode=rhythmSeed%3,levels=clamp(Math.floor(height/9),2,7);
  for(let level=1;level<levels;level++){
   const phase=(level+glassMode)%3,bandWidth=width*(phase===0?.68:phase===1?.82:.74),bandHeight=phase===0?.72:phase===1?.95:.82,wy=y+height*(level/(levels+.1));
@@ -140,6 +141,28 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
   }
   default:break;
  }
+
+ // The Hub visibly grows with the player's restored heritage. Buildings never
+ // pop out of existence: future services first read as construction shells,
+ // then gain light, rooftop beacons and finally a prestige crown.
+ if(construction){
+  const scaffold=material('#6d674f',{roughness:.62,metalness:.46});
+  for(const side of [-1,1])for(const zside of [-1,1]){
+   const beam=mesh('box',scaffold,bx+side*width*.55,y+Math.min(height*.48,10),bz+zside*depth*.55,.16,Math.min(height*.82,20),.16);beam.castShadow=false;visuals.push(beam);
+  }
+  const upper=mesh('box',scaffold,bx,y+Math.min(height*.82,16),bz,width*1.14,.12,depth*1.14);upper.castShadow=false;visuals.push(upper);
+ }else{
+  const entryGlow=mesh('box',glass,bx,y+1.15,bz+depth*.57,width*.42,.10,.08);entryGlow.castShadow=false;visuals.push(entryGlow);
+  if(evolutionStage>=2){
+   const roofGlow=mesh('box',glass,bx,y+height+.24,bz,width*.52,.08,depth*.52);roofGlow.castShadow=false;visuals.push(roofGlow);
+  }
+  if(evolutionStage>=3){
+   const beacon=mesh('cylinder',gold,bx,y+height+1.55,bz,.10,2.8,.10);beacon.castShadow=false;visuals.push(beacon);
+  }
+  if(prestige){
+   const crown=mesh('ring',gold,bx,y+height+3.15,bz,Math.max(2.4,Math.min(width,depth)*.24),Math.max(2.4,Math.min(width,depth)*.24),Math.max(2.4,Math.min(width,depth)*.24));crown.rotation.x=Math.PI/2;crown.castShadow=false;visuals.push(crown);
+  }
+ }
  return visuals;
 }
 
@@ -226,4 +249,220 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
   for(const x of [-.9,.9])child(group,geometry.cylinder,dark,{x,y:1.22,sx:.16,sy:.18,sz:.16,rz:Math.PI/2});
  }
  group.position.set(start.x,groundY(start.x,start.z)+spec.height,start.z);return group;
+}
+
+
+export function createPremiumHeritagePlatform(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Heritage-Platform-'+item.code;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const accent=item.color||'#00a8ff',dark=material('#080d12',{roughness:.54,metalness:.46});
+ const stone=material('#252e34',{roughness:.76,metalness:.14});
+ const gold=material('#d6b46a',{emissive:'#8e6c2c',emissiveIntensity:.16+.12*(item.glow||0),roughness:.22,metalness:.88});
+ const energy=material(accent,{emissive:accent,emissiveIntensity:.28+.72*(item.glow||0),roughness:.18,metalness:.34,transparent:true,opacity:.72,depthWrite:false});
+ const dormant=material('#303840',{emissive:'#122530',emissiveIntensity:.08,roughness:.58,metalness:.28});
+
+ child(group,geometry.cylinder,stone,{y:.14,sx:8.6,sy:.28,sz:8.6});
+ child(group,geometry.cylinder,dark,{y:.32,sx:7.45,sy:.18,sz:7.45});
+ child(group,geometry.cylinder,item.restored?energy:item.liberated?gold:dormant,{y:.44,sx:5.95,sy:.055,sz:5.95,cast:false});
+
+ const toCenter=Math.atan2(-item.x,-item.z);group.rotation.y=toCenter;
+ for(const side of [-1,1]){
+  child(group,geometry.box,gold,{x:side*5.5,y:2.4,z:-.8,sx:.24,sy:4.4,sz:.34});
+  child(group,geometry.box,energy,{x:side*5.5,y:4.7,z:-.8,sx:.48,sy:.18,sz:.48,cast:false});
+  child(group,geometry.box,dark,{x:side*3.15,y:.62,z:1.4,sx:1.15,sy:.75,sz:2.4});
+ }
+ child(group,geometry.box,gold,{y:5.0,z:-.8,sx:11.2,sy:.22,sz:.38});
+ child(group,geometry.box,energy,{y:4.65,z:-.55,sx:8.7,sy:.10,sz:.10,cast:false});
+
+ const core=child(group,geometry.box,item.restored?gold:energy,{y:1.45,z:.15,sx:1.2,sy:1.2,sz:1.2,ry:Math.PI/4,cast:false});core.rotation.z=Math.PI/4;
+ for(let i=0;i<4;i++){
+  const a=i*Math.PI/2,x=Math.cos(a)*7.35,z=Math.sin(a)*7.35;
+  child(group,geometry.cylinder,i%2?gold:energy,{x,y:.92,z,sx:.10,sy:1.55,sz:.10,cast:false});
+ }
+
+ // Each country esplanade has its own architectural signature and a
+ // functional annex so the eight portals read as real neighbourhoods.
+ const annex=material('#151c22',{roughness:.62,metalness:.30});
+ const localAccent=material(accent,{emissive:accent,emissiveIntensity:.22+.25*(item.glow||0),roughness:.26,metalness:.48});
+ if(item.facility){
+  child(group,geometry.box,annex,{x:0,y:1.25,z:4.8,sx:5.2,sy:2.2,sz:2.4});
+  child(group,geometry.box,gold,{x:0,y:2.48,z:4.8,sx:4.4,sy:.12,sz:2.0,cast:false});
+  child(group,geometry.box,localAccent,{x:0,y:1.25,z:3.55,sx:2.8,sy:.10,sz:.08,cast:false});
+ }
+ switch(item.code){
+  case 'FR':
+   for(const side of [-1,1])child(group,geometry.box,localAccent,{x:side*3.7,y:3.2,z:-2.0,sx:.18,sy:5.4,sz:.22,cast:false});
+   child(group,geometry.box,gold,{y:5.65,z:-2.0,sx:7.8,sy:.18,sz:.25,cast:false});
+   break;
+  case 'DZ':
+   for(const side of [-1,1]){child(group,geometry.cylinder,localAccent,{x:side*3.5,y:2.6,z:-2.2,sx:.28,sy:4.8,sz:.28});child(group,geometry.sphere,gold,{x:side*3.5,y:5.2,z:-2.2,sx:.55,sy:.34,sz:.55,cast:false});}
+   break;
+  case 'ES':
+   for(const side of [-1,0,1]){const blade=child(group,geometry.box,side===0?gold:localAccent,{x:side*2.7,y:3.4,z:-2.4,sx:.20,sy:5.8+Math.abs(side)*1.2,sz:.25,rz:side*.16,cast:false});blade.rotation.y=side*.12;}
+   break;
+  case 'MA':
+   for(const side of [-1,1])for(const z of [-2.9,-1.2])child(group,geometry.box,side===z/Math.abs(z)?gold:localAccent,{x:side*3.7,y:2.65,z,sx:.22,sy:4.8,sz:.22,cast:false});
+   child(group,geometry.box,gold,{y:5.1,z:-2.05,sx:7.8,sy:.16,sz:2.1,cast:false});
+   break;
+  case 'IT':
+   child(group,geometry.cylinder,localAccent,{y:.75,z:-2.6,sx:2.2,sy:.22,sz:2.2,cast:false});
+   for(const side of [-1,1])child(group,geometry.box,gold,{x:side*3.1,y:2.8,z:-2.6,sx:.20,sy:4.6,sz:.20,cast:false});
+   break;
+  case 'TN':
+   for(const side of [-1,1]){child(group,geometry.box,material('#d9dde0',{roughness:.74}),{x:side*3.4,y:2.5,z:-2.0,sx:.48,sy:4.5,sz:.48});child(group,geometry.box,localAccent,{x:side*3.4,y:4.85,z:-2.0,sx:.62,sy:.12,sz:.62,cast:false});}
+   break;
+  case 'TR':
+   child(group,geometry.sphere,localAccent,{y:3.9,z:-2.4,sx:2.1,sy:1.0,sz:2.1,cast:false});
+   for(const side of [-1,1])child(group,geometry.cylinder,gold,{x:side*3.4,y:3.1,z:-2.4,sx:.16,sy:5.6,sz:.16,cast:false});
+   break;
+  case 'EE':
+   for(const side of [-1,0,1]){const crystal=child(group,geometry.box,side===0?gold:localAccent,{x:side*2.6,y:3.2+Math.abs(side)*.5,z:-2.2,sx:.42,sy:5.4,sz:.42,ry:Math.PI/4,cast:false});crystal.rotation.z=side*.08;}
+   break;
+  default:break;
+ }
+
+ // Restored platforms become unmistakable civic landmarks without changing
+ // portal authority or gameplay collision.
+ if(item.restored){
+  child(group,geometry.cylinder,energy,{y:3.5,z:.2,sx:.13,sy:6.5,sz:.13,cast:false});
+  for(const side of [-1,1])child(group,geometry.box,gold,{x:side*2.2,y:1.2,z:-3.0,sx:.12,sy:2.2,sz:.12,cast:false});
+ }
+ return group;
+}
+
+export function createPremiumSkybridge(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Skybridge-'+item.bridgeId;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
+ const dark=material('#111820',{roughness:.48,metalness:.52});
+ const gold=material('#d6b46a',{emissive:'#72551c',emissiveIntensity:.20,roughness:.26,metalness:.80});
+ const glass=material('#123e56',{emissive:'#00a8ff',emissiveIntensity:.30,roughness:.16,metalness:.28,transparent:true,opacity:.82});
+ const h=item.height||10,w=item.width||5,length=Math.max(12,item.length||24);
+
+ child(group,geometry.box,dark,{y:h,sx:w,sy:.42,sz:length});
+ child(group,geometry.box,glass,{y:h+.26,sx:w*.82,sy:.05,sz:length*.96,cast:false});
+ for(const side of [-1,1]){
+  child(group,geometry.box,gold,{x:side*w*.48,y:h+.72,sx:.10,sy:1.15,sz:length*.98,cast:false});
+  child(group,geometry.box,glass,{x:side*w*.45,y:h+1.18,sx:.05,sy:.09,sz:length*.94,cast:false});
+ }
+ for(const z of [-length*.32,length*.32]){
+  child(group,geometry.box,dark,{y:h*.5,z,sx:.44,sy:h,sz:.44});
+  child(group,geometry.box,gold,{y:h-.45,z,sx:.62,sy:.10,sz:.62,cast:false});
+ }
+ return group;
+}
+
+
+export function createPremiumCivicPlaza(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Civic-Plaza-'+item.district;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const stone=material('#2a3034',{roughness:.86,metalness:.08});
+ const gold=material('#d6b46a',{emissive:'#70521f',emissiveIntensity:.12,roughness:.28,metalness:.72});
+ const blue=material('#133d52',{emissive:'#00a8ff',emissiveIntensity:.18,roughness:.24,metalness:.30});
+ const r=Math.max(12,item.radius||20),compact=item.renderProfile==='mobileMedium',seatCount=compact?3:6;
+ child(group,geometry.cylinder,stone,{y:.06,sx:r,sy:.12,sz:r,cast:false});
+ child(group,geometry.ring,gold,{y:.14,sx:r*.78,sy:r*.78,sz:r*.78,rx:Math.PI/2,cast:false});
+ if(!compact)child(group,geometry.ring,blue,{y:.16,sx:r*.44,sy:r*.44,sz:r*.44,rx:Math.PI/2,cast:false});
+ for(let i=0;i<seatCount;i++){
+  const a=i*Math.PI*2/seatCount,x=Math.cos(a)*r*.68,z=Math.sin(a)*r*.68;
+  child(group,geometry.box,stone,{x,y:.34,z,sx:2.8,sy:.55,sz:.7,ry:-a,cast:false});
+ }
+ return group;
+}
+
+export function createPremiumDistrictLandmark(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-District-Landmark-'+item.landmarkId;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const dark=material('#11181d',{roughness:.48,metalness:.46});
+ const stone=material('#353b3e',{roughness:.74,metalness:.12});
+ const accent=material(item.accent||'#d6b46a',{emissive:item.accent||'#d6b46a',emissiveIntensity:.32+(item.prestige?.22:0),roughness:.20,metalness:.62});
+ const gold=material('#d6b46a',{emissive:'#7f6125',emissiveIntensity:.18,roughness:.24,metalness:.86});
+ const h=Math.max(28,item.height||48),compact=item.renderProfile==='mobileMedium';
+ child(group,geometry.cylinder,dark,{y:.18,sx:5.8,sy:.35,sz:5.8});
+ switch(item.archetype){
+  case 'gateway':
+   for(const side of [-1,1])child(group,geometry.box,stone,{x:side*3.7,y:h*.34,sx:.9,sy:h*.66,sz:1.1});
+   child(group,geometry.box,gold,{y:h*.68,sx:8.4,sy:.55,sz:1.35});
+   child(group,geometry.box,accent,{y:h*.48,sx:5.5,sy:.18,sz:.20,cast:false});
+   break;
+  case 'tree':
+   child(group,geometry.cylinder,stone,{y:h*.28,sx:.75,sy:h*.55,sz:.75});
+   {const crowns=compact?4:7;for(let i=0;i<crowns;i++){const a=i*Math.PI*2/crowns;child(group,geometry.sphere,accent,{x:Math.cos(a)*3.0,y:h*.62+Math.sin(i)*1.2,z:Math.sin(a)*3.0,sx:2.2,sy:1.5,sz:2.2,cast:false});}}
+   break;
+  case 'arena':
+   child(group,geometry.cylinder,stone,{y:h*.18,sx:5.4,sy:h*.28,sz:5.4});
+   {const ribs=compact?4:8;for(let i=0;i<ribs;i++){const a=i*Math.PI*2/ribs;child(group,geometry.box,i%2?accent:gold,{x:Math.cos(a)*4.1,y:h*.48,z:Math.sin(a)*4.1,sx:.24,sy:h*.56,sz:.24,ry:-a,cast:false});}}
+   break;
+  case 'archive':
+   for(const side of [-1,1])child(group,geometry.box,stone,{x:side*2.7,y:h*.34,sx:1.2,sy:h*.62,sz:2.0});
+   child(group,geometry.ring,accent,{y:h*.72,sx:4.3,sy:4.3,sz:4.3,rx:Math.PI/2,cast:false});
+   break;
+  case 'market':
+  case 'hall':
+   child(group,geometry.box,stone,{y:h*.28,sx:6.2,sy:h*.48,sz:5.4});
+   child(group,geometry.box,accent,{y:h*.56,z:2.8,sx:5.0,sy:.18,sz:.12,cast:false});
+   for(const side of [-1,1])child(group,geometry.cylinder,gold,{x:side*3.3,y:h*.43,z:2.6,sx:.20,sy:h*.54,sz:.20,cast:false});
+   break;
+  case 'harbor':
+   child(group,geometry.cylinder,stone,{y:h*.34,sx:1.5,sy:h*.65,sz:1.5});
+   for(const side of [-1,1])child(group,geometry.box,accent,{x:side*2.0,y:h*.62,sx:3.4,sy:.18,sz:.32,rz:side*.32,cast:false});
+   break;
+  case 'matrix':
+   child(group,geometry.box,dark,{y:h*.38,sx:3.2,sy:h*.70,sz:3.2,ry:Math.PI/4});
+   for(const side of [-1,1])child(group,geometry.box,accent,{x:side*2.6,y:h*.52,sx:.12,sy:h*.55,sz:.12,cast:false});
+   child(group,geometry.sphere,accent,{y:h*.82,sx:1.2,sy:1.2,sz:1.2,cast:false});
+   break;
+  case 'spire':
+  case 'obelisk':
+  default:
+   child(group,geometry.box,stone,{y:h*.34,sx:3.2,sy:h*.64,sz:3.2});
+   child(group,geometry.cylinder,gold,{y:h*.75,sx:.28,sy:h*.34,sz:.28,cast:false});
+   child(group,geometry.sphere,accent,{y:h*.94,sx:.85,sy:.85,sz:.85,cast:false});
+   break;
+ }
+ if(item.prestige)child(group,geometry.ring,gold,{y:h+2.5,sx:3.8,sy:3.8,sz:3.8,rx:Math.PI/2,cast:false});
+ return group;
+}
+
+export function createPremiumWaterFeature(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Water-'+item.waterId;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
+ const water=material('#1e7896',{emissive:'#00a8ff',emissiveIntensity:.10+.22*(item.shimmer||0),roughness:.10,metalness:.06,transparent:true,opacity:.68,depthWrite:false});
+ const foam=material('#9fe9ff',{emissive:'#54d8ff',emissiveIntensity:.25,roughness:.18,metalness:.02,transparent:true,opacity:.48,depthWrite:false});
+ const edge=material('#2a3034',{roughness:.82,metalness:.10});
+ if(item.kind==='basin'){
+  child(group,geometry.cylinder,edge,{y:.02,sx:item.width*.54,sy:.10,sz:item.depth*.54,cast:false});
+  child(group,geometry.cylinder,water,{y:.10,sx:item.width*.48,sy:.035,sz:item.depth*.48,cast:false});
+  child(group,geometry.ring,foam,{y:.15,sx:Math.min(item.width,item.depth)*.34,sy:Math.min(item.width,item.depth)*.34,sz:Math.min(item.width,item.depth)*.34,rx:Math.PI/2,cast:false});
+ }else if(item.kind==='cascade'){
+  const drop=Math.max(8,item.drop||12),width=Math.max(8,item.width||14),depth=Math.max(12,item.depth||item.length*.28||24);
+  child(group,geometry.box,edge,{y:.08,z:depth*.18,sx:width*1.35,sy:.16,sz:depth*.82,cast:false});
+  child(group,geometry.box,water,{y:.18,z:depth*.18,sx:width,sy:.04,sz:depth*.80,cast:false});
+  child(group,geometry.box,water,{y:drop*.48,z:-depth*.28,sx:width,sy:drop,sz:.18,cast:false});
+  child(group,geometry.box,foam,{y:.20,z:-depth*.36,sx:width*1.15,sy:.08,sz:2.8,cast:false});
+ }else{
+  const length=Math.max(20,item.length||item.depth||40),width=Math.max(8,item.width||14);
+  child(group,geometry.box,edge,{y:.02,sx:width*1.18,sy:.10,sz:length,cast:false});
+  child(group,geometry.box,water,{y:.10,sx:width,sy:.035,sz:length*.98,cast:false});
+  for(const side of [-1,1])child(group,geometry.box,foam,{x:side*width*.51,y:.13,sx:.08,sy:.04,sz:length*.96,cast:false});
+ }
+ return group;
+}
+
+export function createPremiumTransitLink(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Transit-Link-'+item.transport;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
+ const dark=material('#181f24',{roughness:.52,metalness:.48});
+ const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.16,roughness:.24,metalness:.82});
+ const blue=material('#1b607b',{emissive:'#00a8ff',emissiveIntensity:.18,roughness:.18,metalness:.32});
+ const length=Math.max(8,item.length||12),h=item.height||0,compact=item.renderProfile==='mobileMedium';
+ if(item.transport==='train'){
+  for(const side of [-1,1])child(group,geometry.box,gold,{x:side*.82,y:h+.10,sx:.12,sy:.08,sz:length,cast:false});
+  const sleepers=compact?Math.min(4,Math.max(2,Math.floor(length/90))):Math.min(10,Math.max(3,Math.floor(length/45)));
+  for(let i=0;i<sleepers;i++){const z=-length/2+(i+.5)*length/sleepers;child(group,geometry.box,dark,{y:h,z,sx:2.25,sy:.08,sz:.24,cast:false});}
+ }else{
+  const cable=item.transport==='telepheric'?blue:gold;
+  child(group,geometry.box,cable,{y:h,sx:Math.max(.06,item.width||.1),sy:.06,sz:length,cast:false});
+  for(const z of [-length*.46,length*.46])child(group,geometry.cylinder,dark,{y:h*.5,z,sx:.14,sy:Math.max(2,h),sz:.14,cast:false});
+ }
+ return group;
 }

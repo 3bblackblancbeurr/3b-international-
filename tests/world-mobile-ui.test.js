@@ -38,3 +38,55 @@ test('pause menu exposes character and weapons together', () => {
   const page = read('src/world/WorldPage.jsx');
   assert.match(page, /Personnage & armes/);
 });
+
+
+test('Hub HUD exposes the visible evolution of the Cité des Huit Héritages',()=>{
+  const hud=read('src/world/WorldHUD.jsx');
+  const scene=read('src/world/scene.js');
+  const css=read('src/world/immersion.css');
+  assert.match(scene,/hubEvolution/);
+  assert.match(scene,/hubHeritagePlatform/);
+  assert.match(hud,/hub-evolution-chip/);
+  assert.match(hud,/héritages restaurés/);
+  assert.match(css,/\.hub-evolution-chip/);
+});
+
+
+test('Hub arrival reveals the metropolis and refreshes after heritage progression',()=>{
+  const scene=read('src/world/scene.js');
+  assert.match(scene,/kind:'hub-arrival'/);
+  assert.match(scene,/La Cité des Huit Héritages/);
+  assert.match(scene,/hubProgressChanged/);
+  assert.match(scene,/previousRegion!=='hub'\|\|!hubArrivalShown/);
+});
+
+
+test('Hub V4 live scene renders the full city layers instead of a circular menu substitute',()=>{
+ const scene=read('src/world/scene.js');
+ const visuals=read('src/world/premium-hub-visuals.js');
+ const hud=read('src/world/WorldHUD.jsx');
+ for(const type of ['hubWaterFeature','hubTransitLink','hubCivicPlaza','hubDistrictLandmark'])assert.match(scene,new RegExp(type));
+ for(const fn of ['createPremiumWaterFeature','createPremiumTransitLink','createPremiumCivicPlaza','createPremiumDistrictLandmark'])assert.match(visuals,new RegExp('export function '+fn));
+ assert.match(visuals,/case 'FR'/);
+ assert.match(visuals,/case 'DZ'/);
+ assert.match(visuals,/case 'TR'/);
+ assert.match(visuals,/case 'EE'/);
+ assert.match(hud,/hubEvolution\.milestone/);
+ assert.match(hud,/prochain palier/);
+});
+
+
+test('Hub V4 country facilities route into real gameplay surfaces',()=>{
+ const page=read('src/world/WorldPage.jsx');
+ const interactions=read('src/world/interaction-system.js');
+ const map=read('src/world/Cartography.jsx');
+ assert.match(interactions,/hubHeritageFacility:\['enter','inspect'\]/);
+ assert.match(page,/item\.type==='hubHeritageFacility'/);
+ assert.match(page,/tactical_training/);
+ assert.match(page,/textile_upgrade/);
+ assert.match(page,/exploration_tools/);
+ assert.match(page,/setPanel\('arena'\)/);
+ assert.match(page,/setPanel\('avatar'\)/);
+ assert.match(page,/setPanel\('atlas'\)/);
+ assert.match(map,/hubHeritageFacility'\?'▣'/);
+});
