@@ -105,6 +105,20 @@ const BASE_MENU_ITEMS = [
     icon: "🛍️",
     description: "Drops, produits premium et certificats.",
   },
+  {
+    id: "warzone-16-18",
+    label: "Warzone 16-18",
+    icon: "🎮",
+    description: "Accès verrouillé. Bientôt disponible.",
+    locked: true,
+  },
+  {
+    id: "fifa",
+    label: "FIFA",
+    icon: "⚽",
+    description: "Accès verrouillé. Bientôt disponible.",
+    locked: true,
+  },
 ];
 
 const MEMBER_MENU_ITEM = {
