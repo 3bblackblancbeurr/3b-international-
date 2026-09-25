@@ -47,8 +47,9 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
  const gold=material('#d6b46a',{emissive:'#8b6b2e',emissiveIntensity:.08,roughness:.24,metalness:.92,clearcoat:.18,clearcoatRoughness:.14});
  const trim=material('#10161b',{roughness:.46,metalness:.58,clearcoat:.08,clearcoatRoughness:.24});
  const stone=material('#30383d',{roughness:.78,metalness:.10});
+ const evolutionStage=Math.max(0,Number(item.evolutionStage||0)),construction=item.buildStatus==='construction',prestige=!!item.prestige;
 
- const base=mesh('box',stone,bx,y+.45,bz,width*1.06,.9,depth*1.06);base.castShadow=true;visuals.push(base);
+ const base=mesh('box',construction?trim:stone,bx,y+.45,bz,width*1.06,.9,depth*1.06);base.castShadow=true;visuals.push(base);
  const rhythmSeed=hash(item.buildingId||item.id||'hub-building'),glassMode=rhythmSeed%3,levels=clamp(Math.floor(height/9),2,7);
  for(let level=1;level<levels;level++){
   const phase=(level+glassMode)%3,bandWidth=width*(phase===0?.68:phase===1?.82:.74),bandHeight=phase===0?.72:phase===1?.95:.82,wy=y+height*(level/(levels+.1));
@@ -140,6 +141,28 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
   }
   default:break;
  }
+
+ // The Hub visibly grows with the player's restored heritage. Buildings never
+ // pop out of existence: future services first read as construction shells,
+ // then gain light, rooftop beacons and finally a prestige crown.
+ if(construction){
+  const scaffold=material('#6d674f',{roughness:.62,metalness:.46});
+  for(const side of [-1,1])for(const zside of [-1,1]){
+   const beam=mesh('box',scaffold,bx+side*width*.55,y+Math.min(height*.48,10),bz+zside*depth*.55,.16,Math.min(height*.82,20),.16);beam.castShadow=false;visuals.push(beam);
+  }
+  const upper=mesh('box',scaffold,bx,y+Math.min(height*.82,16),bz,width*1.14,.12,depth*1.14);upper.castShadow=false;visuals.push(upper);
+ }else{
+  const entryGlow=mesh('box',glass,bx,y+1.15,bz+depth*.57,width*.42,.10,.08);entryGlow.castShadow=false;visuals.push(entryGlow);
+  if(evolutionStage>=2){
+   const roofGlow=mesh('box',glass,bx,y+height+.24,bz,width*.52,.08,depth*.52);roofGlow.castShadow=false;visuals.push(roofGlow);
+  }
+  if(evolutionStage>=3){
+   const beacon=mesh('cylinder',gold,bx,y+height+1.55,bz,.10,2.8,.10);beacon.castShadow=false;visuals.push(beacon);
+  }
+  if(prestige){
+   const crown=mesh('ring',gold,bx,y+height+3.15,bz,Math.max(2.4,Math.min(width,depth)*.24),Math.max(2.4,Math.min(width,depth)*.24),Math.max(2.4,Math.min(width,depth)*.24));crown.rotation.x=Math.PI/2;crown.castShadow=false;visuals.push(crown);
+  }
+ }
  return visuals;
 }
 
@@ -226,4 +249,63 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
   for(const x of [-.9,.9])child(group,geometry.cylinder,dark,{x,y:1.22,sx:.16,sy:.18,sz:.16,rz:Math.PI/2});
  }
  group.position.set(start.x,groundY(start.x,start.z)+spec.height,start.z);return group;
+}
+
+
+export function createPremiumHeritagePlatform(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Heritage-Platform-'+item.code;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);
+ const accent=item.color||'#00a8ff',dark=material('#080d12',{roughness:.54,metalness:.46});
+ const stone=material('#252e34',{roughness:.76,metalness:.14});
+ const gold=material('#d6b46a',{emissive:'#8e6c2c',emissiveIntensity:.16+.12*(item.glow||0),roughness:.22,metalness:.88});
+ const energy=material(accent,{emissive:accent,emissiveIntensity:.28+.72*(item.glow||0),roughness:.18,metalness:.34,transparent:true,opacity:.72,depthWrite:false});
+ const dormant=material('#303840',{emissive:'#122530',emissiveIntensity:.08,roughness:.58,metalness:.28});
+
+ child(group,geometry.cylinder,stone,{y:.14,sx:8.6,sy:.28,sz:8.6});
+ child(group,geometry.cylinder,dark,{y:.32,sx:7.45,sy:.18,sz:7.45});
+ child(group,geometry.cylinder,item.restored?energy:item.liberated?gold:dormant,{y:.44,sx:5.95,sy:.055,sz:5.95,cast:false});
+
+ const toCenter=Math.atan2(-item.x,-item.z);group.rotation.y=toCenter;
+ for(const side of [-1,1]){
+  child(group,geometry.box,gold,{x:side*5.5,y:2.4,z:-.8,sx:.24,sy:4.4,sz:.34});
+  child(group,geometry.box,energy,{x:side*5.5,y:4.7,z:-.8,sx:.48,sy:.18,sz:.48,cast:false});
+  child(group,geometry.box,dark,{x:side*3.15,y:.62,z:1.4,sx:1.15,sy:.75,sz:2.4});
+ }
+ child(group,geometry.box,gold,{y:5.0,z:-.8,sx:11.2,sy:.22,sz:.38});
+ child(group,geometry.box,energy,{y:4.65,z:-.55,sx:8.7,sy:.10,sz:.10,cast:false});
+
+ const core=child(group,geometry.box,item.restored?gold:energy,{y:1.45,z:.15,sx:1.2,sy:1.2,sz:1.2,ry:Math.PI/4,cast:false});core.rotation.z=Math.PI/4;
+ for(let i=0;i<4;i++){
+  const a=i*Math.PI/2,x=Math.cos(a)*7.35,z=Math.sin(a)*7.35;
+  child(group,geometry.cylinder,i%2?gold:energy,{x,y:.92,z,sx:.10,sy:1.55,sz:.10,cast:false});
+ }
+
+ // Restored platforms become unmistakable civic landmarks without changing
+ // portal authority or gameplay collision.
+ if(item.restored){
+  child(group,geometry.cylinder,energy,{y:3.5,z:.2,sx:.13,sy:6.5,sz:.13,cast:false});
+  for(const side of [-1,1])child(group,geometry.box,gold,{x:side*2.2,y:1.2,z:-3.0,sx:.12,sy:2.2,sz:.12,cast:false});
+ }
+ return group;
+}
+
+export function createPremiumSkybridge(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Skybridge-'+item.bridgeId;root.add(group);
+ const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
+ const dark=material('#111820',{roughness:.48,metalness:.52});
+ const gold=material('#d6b46a',{emissive:'#72551c',emissiveIntensity:.20,roughness:.26,metalness:.80});
+ const glass=material('#123e56',{emissive:'#00a8ff',emissiveIntensity:.30,roughness:.16,metalness:.28,transparent:true,opacity:.82});
+ const h=item.height||10,w=item.width||5,length=Math.max(12,item.length||24);
+
+ child(group,geometry.box,dark,{y:h,sx:w,sy:.42,sz:length});
+ child(group,geometry.box,glass,{y:h+.26,sx:w*.82,sy:.05,sz:length*.96,cast:false});
+ for(const side of [-1,1]){
+  child(group,geometry.box,gold,{x:side*w*.48,y:h+.72,sx:.10,sy:1.15,sz:length*.98,cast:false});
+  child(group,geometry.box,glass,{x:side*w*.45,y:h+1.18,sx:.05,sy:.09,sz:length*.94,cast:false});
+ }
+ for(const z of [-length*.32,length*.32]){
+  child(group,geometry.box,dark,{y:h*.5,z,sx:.44,sy:h,sz:.44});
+  child(group,geometry.box,gold,{y:h-.45,z,sx:.62,sy:.10,sz:.62,cast:false});
+ }
+ return group;
 }
