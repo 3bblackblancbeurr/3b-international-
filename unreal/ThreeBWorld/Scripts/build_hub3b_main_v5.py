@@ -558,6 +558,83 @@ def spawn_civic_fabric(manifest, layout, canon, tag, materials):
                 materials["gold"] if index % 3 == 0 else materials["blue"],
             )
 
+            # Make the Cité Origine readable at street level: civic use changes
+            # the facade silhouette instead of leaving generic decorative boxes.
+            facing = math.degrees(angle) + 90.0
+            if civic_use == "housing":
+                for floor in (0.34, 0.58, 0.78):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_BALCONY_{int(floor*100)}",
+                        [x, y + depth * .52, z + height * floor],
+                        [width * .42, 90, 80],
+                        facing, tag, folder + "/IDENTITY", materials["blue"],
+                    )
+            elif civic_use == "food":
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_AWNING",
+                    [x, y + depth * .56, z + 380],
+                    [width * .58, 180, 120],
+                    facing, tag, folder + "/IDENTITY", materials["gold"],
+                )
+            elif civic_use == "workshop":
+                for side in (-1, 0, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_WORKSHOP_{side+1}",
+                        [x + side * width * .24, y + depth * .51, z + 260],
+                        [width * .18, 110, 520],
+                        facing, tag, folder + "/IDENTITY", materials["black"],
+                    )
+            elif civic_use == "school":
+                for side in (-1, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_SCHOOL_PILLAR_{side}",
+                        [x + side * width * .30, y + depth * .52, z + 420],
+                        [120, 120, 760],
+                        facing, tag, folder + "/IDENTITY", materials["stone"],
+                    )
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_SCHOOL_LINTEL",
+                    [x, y + depth * .53, z + 820],
+                    [width * .68, 120, 120],
+                    facing, tag, folder + "/IDENTITY", materials["blue"],
+                )
+            elif civic_use == "clinic":
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_CLINIC_H",
+                    [x, y + depth * .53, z + 520],
+                    [width * .28, 100, 120],
+                    facing, tag, folder + "/IDENTITY", materials["blue"],
+                )
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_CLINIC_V",
+                    [x, y + depth * .535, z + 520],
+                    [120, 100, width * .28],
+                    facing, tag, folder + "/IDENTITY", materials["blue"],
+                )
+            elif civic_use == "small_shop":
+                for side in (-1, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_SHOP_WINDOW_{side}",
+                        [x + side * width * .22, y + depth * .52, z + 300],
+                        [width * .18, 90, 440],
+                        facing, tag, folder + "/IDENTITY", materials["glass"],
+                    )
+            elif civic_use == "guild_room":
+                for side in (-1, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_GUILD_BANNER_{side}",
+                        [x + side * width * .31, y + depth * .525, z + height * .60],
+                        [160, 80, height * .38],
+                        facing, tag, folder + "/IDENTITY", materials["gold"],
+                    )
+            elif civic_use == "public_service":
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_CIVIC_CANOPY",
+                    [x, y + depth * .57, z + 410],
+                    [width * .62, 160, 140],
+                    facing, tag, folder + "/IDENTITY", materials["gold"],
+                )
+
 
 def spawn_landmarks(manifest, layout, canon, tag, materials):
     districts = district_lookup(layout)
