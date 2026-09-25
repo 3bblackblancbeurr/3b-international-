@@ -31,7 +31,10 @@ export function hubEvolutionState(plan,{seals=[],restoredRegions=[]}={}){
   const fragments=Math.max(new Set(seals).size,new Set(restoredRegions).size);
   const stages=plan.evolution?.stages||[{stage:0,id:'foundations',label:'Fondations vivantes',minFragments:0,activeBuildingTiers:[0],densityBonus:0,trafficBonus:0,activeSkybridges:0,platformGlow:.18}];
   const stage=[...stages].filter(entry=>fragments>=Number(entry.minFragments||0)).sort((a,b)=>a.stage-b.stage).at(-1)||stages[0];
-  return {...stage,fragmentCount:fragments,restoredCount:new Set(restoredRegions).size,liberatedCount:new Set(seals).size};
+  const milestones=[...(plan.fragmentMilestones||[])].sort((a,b)=>a.fragments-b.fragments);
+  const milestone=[...milestones].filter(entry=>fragments>=Number(entry.fragments||0)).at(-1)||null;
+  const nextMilestone=milestones.find(entry=>Number(entry.fragments||0)>fragments)||null;
+  return {...stage,fragmentCount:fragments,restoredCount:new Set(restoredRegions).size,liberatedCount:new Set(seals).size,milestone,nextMilestone};
 }
 
 function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
@@ -48,6 +51,7 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
       value:platform.value,
       district:platform.district,
       services:platform.services||[],
+      facility:platform.facility||null,
       visual:platform.visual||'',
       color:country.color,
       symbol:country.symbol,
@@ -58,6 +62,8 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
       restored,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,
+      milestone:evolution.milestone||null,
+      nextMilestone:evolution.nextMilestone||null,
       glow:Math.min(1,Number(evolution.platformGlow||.18)+(restored?.22:liberated?.12:0)),
     }];
   });
@@ -153,10 +159,14 @@ function fillerItems(plan,profile,evolution){
       let height=tierRoll<58?14+((h>>>17)%18):tierRoll<90?30+((h>>>17)%28):60+((h>>>17)%24);
       if(protectedVista&&height>52)height=34+((h>>>19)%18);
       if(district.id==='broken_circle_tower')height=Math.min(height,44);
+      const civicUses=plan.civicFabric?.uses||['housing','food','workshop','school','clinic','small_shop'];
+      const civicUse=civicUses[(h>>>21)%civicUses.length];
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
         district:district.id,
+        civicUse,
+        usefulFrontage:true,
         x:center.x+Math.cos(angle)*ring*stretchX,
         z:center.z+Math.sin(angle)*ring*stretchZ,
         width,depth,height,
@@ -165,6 +175,100 @@ function fillerItems(plan,profile,evolution){
       };
     });
   });
+}
+
+function civicPlazaItems(plan,evolution){
+  return plan.districts.map((district,index)=>{
+    const center=hubDistrictPosition(plan,district.id),seed=hash('plaza:'+district.id);
+    return {
+      id:`hub:civic-plaza:${district.id}`,
+      type:'hubCivicPlaza',
+      district:district.id,
+      name:`${district.name} · place de quartier`,
+      purpose:district.purpose,
+      x:center.x,
+      z:center.z,
+      radius:18+(seed%9)+(district.id==='heritage_square'?12:0),
+      accent:index%2?'#00a8ff':'#d6b46a',
+      evolutionStage:evolution.stage,
+    };
+  });
+}
+
+function districtLandmarkItems(plan,evolution){
+  return (plan.districtLandmarks||[]).flatMap((landmark,index)=>{
+    const center=hubDistrictPosition(plan,landmark.district);if(!center)return[];
+    const seed=hash('landmark:'+landmark.id),angle=((seed%628)/100),distance=landmark.district==='broken_circle_tower'?0:14+((seed>>>8)%16);
+    return [{
+      id:`hub:district-landmark:${landmark.id}`,
+      type:'hubDistrictLandmark',
+      landmarkId:landmark.id,
+      district:landmark.district,
+      name:landmark.name,
+      archetype:landmark.archetype||'spire',
+      role:landmark.role||'repère',
+      accent:landmark.accent||'#d6b46a',
+      x:center.x+Math.cos(angle)*distance,
+      z:center.z+Math.sin(angle)*distance,
+      height:Number(landmark.height||48),
+      evolutionStage:evolution.stage,
+      prestige:evolution.stage>=4,
+      index,
+    }];
+  });
+}
+
+function waterFeatureItems(plan,evolution){
+  const features=plan.waterNetwork?.features||[];
+  return features.flatMap((feature,index)=>{
+    let from=null,to=null,x=0,z=0,length=0,heading=0;
+    if(feature.fromDistrict&&feature.toDistrict){
+      from=hubDistrictPosition(plan,feature.fromDistrict);to=hubDistrictPosition(plan,feature.toDistrict);
+      if(!from||!to)return[];
+      const dx=to.x-from.x,dz=to.z-from.z;length=Math.hypot(dx,dz);heading=Math.atan2(dx,dz);x=(from.x+to.x)/2;z=(from.z+to.z)/2;
+    }else{
+      const center=hubDistrictPosition(plan,feature.district);if(!center)return[];
+      const offset=feature.offset||[0,0];x=center.x+Number(offset[0]||0);z=center.z+Number(offset[1]||0);
+      length=Number(feature.depth||feature.width||24);
+    }
+    return [{
+      id:`hub:water:${feature.id}`,
+      type:'hubWaterFeature',
+      waterId:feature.id,
+      kind:feature.kind||'basin',
+      name:feature.label||feature.id,
+      x,z,from,to,length,heading,
+      width:Number(feature.width||18),
+      depth:Number(feature.depth||Math.max(18,length)),
+      drop:Number(feature.drop||0),
+      level:Number(feature.level||0),
+      evolutionStage:evolution.stage,
+      shimmer:.34+evolution.stage*.12,
+      index,
+    }];
+  });
+}
+
+function transitLink(from,to,id,transport,height=0,width=1){
+  const dx=to.x-from.x,dz=to.z-from.z,length=Math.hypot(dx,dz);
+  return {id:`hub:transit-link:${id}`,type:'hubTransitLink',transport,x:(from.x+to.x)/2,z:(from.z+to.z)/2,from,to,length,heading:Math.atan2(dx,dz),height,width};
+}
+
+function transitLinkItems(plan,evolution){
+  const links=[];
+  const stations=plan.transport?.train?.stations||[];
+  stations.forEach((district,index)=>{
+    const next=stations[(index+1)%stations.length],from=hubDistrictPosition(plan,district),to=hubDistrictPosition(plan,next);
+    if(from&&to)links.push(transitLink(from,to,`train:${district}:${next}`,'train',2.4,1.2));
+  });
+  for(const line of plan.transport?.telepherics?.lines||[]){
+    const from=hubDistrictPosition(plan,line.from),to=hubDistrictPosition(plan,line.to);if(from&&to)links.push(transitLink(from,to,`telepheric:${line.id}`,'telepheric',34,0.18));
+  }
+  for(const line of plan.transport?.ziplines?.lines||[]){
+    const from=hubDistrictPosition(plan,line.from),to=hubDistrictPosition(plan,line.to);if(from&&to)links.push(transitLink(from,to,`zipline:${line.id}`,'zipline',18,0.10));
+  }
+  for(const link of links)link.evolutionStage=evolution.stage;
+  return links;
 }
 
 function road(from,to,id,kind='avenue'){
@@ -287,8 +391,12 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const traffic=metropolisTrafficItems(plan,profile,evolution);
   const platforms=heritagePlatformItems(plan,evolution,progress);
   const skybridges=skybridgeItems(plan,evolution);
+  const plazas=civicPlazaItems(plan,evolution);
+  const landmarks=districtLandmarkItems(plan,evolution);
+  const water=waterFeatureItems(plan,evolution);
+  const transitLinks=transitLinkItems(plan,evolution);
   return {
-    items:[...roads,...skybridges,...structures,...buildings,...platforms,...traffic],
+    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
@@ -296,9 +404,15 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
       traffic:traffic.length,
       heritagePlatforms:platforms.length,
       skybridges:skybridges.length,
+      civicPlazas:plazas.length,
+      districtLandmarks:landmarks.length,
+      waterFeatures:water.length,
+      transitLinks:transitLinks.length,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,
       fragmentCount:evolution.fragmentCount,
+      milestone:evolution.milestone,
+      nextMilestone:evolution.nextMilestone,
       width:HUB_METROPOLIS.width,
       depth:HUB_METROPOLIS.depth,
       radius:HUB_METROPOLIS.radius,
