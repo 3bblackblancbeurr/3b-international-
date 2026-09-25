@@ -62,9 +62,9 @@ test('Hub arrival reveals the metropolis and refreshes after heritage progressio
 
 
 test('Hub V4 live scene renders the full city layers instead of a circular menu substitute',()=>{
- const scene=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
- const visuals=readFileSync(new URL('../src/world/premium-hub-visuals.js',import.meta.url),'utf8');
- const hud=readFileSync(new URL('../src/world/WorldHUD.jsx',import.meta.url),'utf8');
+ const scene=read('src/world/scene.js');
+ const visuals=read('src/world/premium-hub-visuals.js');
+ const hud=read('src/world/WorldHUD.jsx');
  for(const type of ['hubWaterFeature','hubTransitLink','hubCivicPlaza','hubDistrictLandmark'])assert.match(scene,new RegExp(type));
  for(const fn of ['createPremiumWaterFeature','createPremiumTransitLink','createPremiumCivicPlaza','createPremiumDistrictLandmark'])assert.match(visuals,new RegExp('export function '+fn));
  assert.match(visuals,/case 'FR'/);
