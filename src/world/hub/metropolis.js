@@ -45,6 +45,7 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
     return [{
       id:`hub:heritage-platform:${platform.code}`,
       type:'hubHeritagePlatform',
+      range:-1,
       code:platform.code,
       regionId:platform.regionId,
       name:platform.name,
@@ -77,6 +78,7 @@ function skybridgeItems(plan,evolution){
     return [{
       id:`hub:skybridge:${link.id}`,
       type:'hubSkybridge',
+      range:-1,
       bridgeId:link.id,
       fromDistrict:link.from,
       toDistrict:link.to,
@@ -164,6 +166,7 @@ function fillerItems(plan,profile,evolution){
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
+        range:-1,
         district:district.id,
         civicUse,
         usefulFrontage:true,
@@ -183,6 +186,7 @@ function civicPlazaItems(plan,evolution){
     return {
       id:`hub:civic-plaza:${district.id}`,
       type:'hubCivicPlaza',
+      range:-1,
       district:district.id,
       name:`${district.name} · place de quartier`,
       purpose:district.purpose,
@@ -202,6 +206,7 @@ function districtLandmarkItems(plan,evolution){
     return [{
       id:`hub:district-landmark:${landmark.id}`,
       type:'hubDistrictLandmark',
+      range:-1,
       landmarkId:landmark.id,
       district:landmark.district,
       name:landmark.name,
@@ -234,6 +239,7 @@ function waterFeatureItems(plan,evolution){
     return [{
       id:`hub:water:${feature.id}`,
       type:'hubWaterFeature',
+      range:-1,
       waterId:feature.id,
       kind:feature.kind||'basin',
       name:feature.label||feature.id,
@@ -251,7 +257,7 @@ function waterFeatureItems(plan,evolution){
 
 function transitLink(from,to,id,transport,height=0,width=1){
   const dx=to.x-from.x,dz=to.z-from.z,length=Math.hypot(dx,dz);
-  return {id:`hub:transit-link:${id}`,type:'hubTransitLink',transport,x:(from.x+to.x)/2,z:(from.z+to.z)/2,from,to,length,heading:Math.atan2(dx,dz),height,width};
+  return {id:`hub:transit-link:${id}`,type:'hubTransitLink',range:-1,transport,x:(from.x+to.x)/2,z:(from.z+to.z)/2,from,to,length,heading:Math.atan2(dx,dz),height,width};
 }
 
 function transitLinkItems(plan,evolution){
@@ -276,6 +282,7 @@ function road(from,to,id,kind='avenue'){
   return {
     id:`hub:road:${id}`,
     type:'hubRoad',
+    range:-1,
     kind,
     x:(from.x+to.x)/2,
     z:(from.z+to.z)/2,
@@ -371,6 +378,7 @@ export function metropolisTrafficItems(plan,profile,evolution={trafficBonus:0,st
     return {
       id:`hub:traffic:${index}`,
       type:'hubTraffic',
+      range:-1,
       routeId:route.id,
       from:route.from,
       to:route.to,
