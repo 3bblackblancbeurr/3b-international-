@@ -84,3 +84,32 @@ test('First playable slice remains scoped, useful and measurable', () => {
   assert.ok(plan.firstPlayableSlice.transports.includes('train'));
   assert.ok(plan.firstPlayableSlice.transports.includes('boats'));
 });
+
+
+test('Hub V3 canon defines eight dispersed heritage esplanades and vertical links',()=>{
+  assert.equal(plan.heritagePlatforms.length,8);
+  assert.ok(unique(plan.heritagePlatforms,'code'));
+  assert.ok(unique(plan.heritagePlatforms,'regionId'));
+  assert.deepEqual(plan.heritagePlatforms.map(row=>row.code).sort(),['DZ','EE','ES','FR','IT','MA','TN','TR']);
+  const districts=new Set(plan.districts.map(row=>row.id));
+  for(const platform of plan.heritagePlatforms){
+    assert.ok(districts.has(platform.district),platform.code);
+    assert.ok(platform.services.includes('country_access'),platform.code);
+    assert.ok(platform.services.includes('fast_travel'),platform.code);
+  }
+  assert.equal(plan.verticalLinks.length,8);
+  for(const link of plan.verticalLinks){
+    assert.ok(districts.has(link.from),link.id+':from');
+    assert.ok(districts.has(link.to),link.id+':to');
+    assert.ok(link.level>=1&&link.level<=3,link.id);
+  }
+});
+
+test('Hub evolution has five visible stages driven by restored heritage',()=>{
+  assert.equal(plan.evolution.source,'seals_and_restored_regions');
+  assert.equal(plan.evolution.stages.length,5);
+  assert.deepEqual(plan.evolution.stages.map(stage=>stage.stage),[0,1,2,3,4]);
+  assert.deepEqual(plan.evolution.stages.map(stage=>stage.minFragments),[0,1,3,5,8]);
+  assert.equal(plan.evolution.stages.at(-1).activeSkybridges,8);
+  assert.equal(plan.evolution.stages.at(-1).platformGlow,1);
+});
