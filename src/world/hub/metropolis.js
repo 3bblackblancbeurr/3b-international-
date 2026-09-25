@@ -180,6 +180,24 @@ function fillerItems(plan,profile,evolution){
   });
 }
 
+function milestoneStoryItems(plan,evolution){
+  if(!evolution.milestone)return[];
+  const center=hubDistrictPosition(plan,'broken_circle_tower');if(!center)return[];
+  return [{
+    id:`hub:milestone:${evolution.milestone.id}`,
+    type:'hubMilestone',
+    name:evolution.milestone.label,
+    detail:evolution.milestone.effect,
+    fragments:Number(evolution.milestone.fragments||0),
+    district:'broken_circle_tower',
+    color:'#d6b46a',
+    x:center.x+11,
+    z:center.z+9,
+    range:6.5,
+    evolutionStage:evolution.stage,
+  }];
+}
+
 function civicPlazaItems(plan,evolution){
   return plan.districts.map((district,index)=>{
     const center=hubDistrictPosition(plan,district.id),seed=hash('plaza:'+district.id);
@@ -403,9 +421,10 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const landmarks=districtLandmarkItems(plan,evolution);
   const water=waterFeatureItems(plan,evolution);
   const transitLinks=transitLinkItems(plan,evolution);
+  const milestoneStories=milestoneStoryItems(plan,evolution);
   for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges])item.renderProfile=profile;
   return {
-    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...traffic],
+    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...milestoneStories,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
@@ -417,6 +436,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
       districtLandmarks:landmarks.length,
       waterFeatures:water.length,
       transitLinks:transitLinks.length,
+      milestoneStories:milestoneStories.length,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,
       fragmentCount:evolution.fragmentCount,
