@@ -146,3 +146,15 @@ test('Hub V4 exposes the exact story milestone attached to city evolution',()=>{
  assert.equal(eight.milestone.id,'circle_restored');
  assert.equal(eight.nextMilestone,null);
 });
+
+
+test('Hub V4 puts the current city story milestone physically at the Broken Circle Tower',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'mobileMedium',{seals:['france','algerie','espagne','maroc']});
+ const stories=runtime.items.filter(item=>item.type==='hubMilestone');
+ assert.equal(runtime.meta.milestoneStories,1);
+ assert.equal(stories.length,1);
+ assert.equal(stories[0].name,'La Tour se transforme');
+ assert.equal(stories[0].fragments,4);
+ assert.ok(stories[0].detail.includes('Tour'));
+ assert.ok(stories[0].range>5);
+});
