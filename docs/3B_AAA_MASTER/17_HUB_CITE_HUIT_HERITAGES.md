@@ -2,7 +2,7 @@
 
 ## Statut
 
-Conception canonique V2 prête pour blockout, développement piloté par données et production 3D.
+Conception canonique V3 en implémentation : métropole pilotée par données, huit esplanades dispersées, verticalité et évolution visible.
 
 L’image validée de la Cité des Huit Héritages fixe la composition visuelle, l’échelle perçue, la verticalité, les ponts, l’eau, les grands quartiers, la Tour du Cercle Brisé et la dispersion des huit portes. Les textes générés visibles dans l’image sont illustratifs : le canon officiel reste celui du projet, avec Céliane/Justice, Yliane/Loyauté, Diego/Passion, Naël/Noblesse, Alessio/Espoir, Soraya/Courage, Émir/Foi et Eira/Sagesse.
 
@@ -95,3 +95,8 @@ Le dossier `src/world/hub/data/` contient :
 - `secrets-v1.json`.
 
 Ces fichiers ne signifient pas que les systèmes sont déjà implémentés. Ils constituent la source de vérité exploitable pour les prochains lots de code.
+
+
+## Évolution V3
+
+La ville possède désormais cinq stades visuels pilotés par les héritages libérés/restaurés. Les bâtiments futurs restent présents sous forme de structures en veille ou en chantier, puis s'activent, gagnent des lumières, des balises et des couronnes de prestige. Les huit esplanades de pays restent dispersées à leurs positions métropolitaines et les passerelles hautes s'ouvrent progressivement. Voir `22_HUB_EVOLUTION_V3.md`.
