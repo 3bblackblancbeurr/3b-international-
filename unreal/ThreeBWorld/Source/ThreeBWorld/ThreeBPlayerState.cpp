@@ -5,7 +5,7 @@
 
 AThreeBPlayerState::AThreeBPlayerState()
 {
-    NetUpdateFrequency = 60.0f;
+    SetNetUpdateFrequency(60.0f);
 
     AbilitySystem = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystem"));
     AbilitySystem->SetIsReplicated(true);
