@@ -123,17 +123,19 @@ test('Hub V4 runtime materializes plazas, landmarks, water and physical transit 
  assert.ok(runtime.meta.waterFeatures>=5);
  assert.ok(runtime.meta.transitLinks>=19);
  assert.equal(runtime.meta.streetFurniture,80);
+ assert.equal(runtime.meta.districtTerraces,10);
  assert.equal(runtime.items.filter(item=>item.type==='hubCivicPlaza').length,10);
  assert.equal(runtime.items.filter(item=>item.type==='hubDistrictLandmark').length,10);
  assert.ok(runtime.items.filter(item=>item.type==='hubWaterFeature').length>=5);
  assert.ok(runtime.items.filter(item=>item.type==='hubTransitLink').length>=19);
  assert.equal(runtime.items.filter(item=>item.type==='hubStreetFurniture').length,80);
+ assert.equal(runtime.items.filter(item=>item.type==='hubDistrictTerrace').length,10);
  assert.equal(new Set(runtime.items.filter(item=>item.type==='hubStreetFurniture').map(item=>item.district)).size,10);
 });
 
 test('Hub V4 decorative infrastructure never steals the player interaction focus',()=>{
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
- const decorative=new Set(['hubRoad','hubStructure','hubTraffic','hubSkybridge','hubHeritagePlatform','hubCivicPlaza','hubDistrictLandmark','hubWaterFeature','hubTransitLink','hubStreetFurniture']);
+ const decorative=new Set(['hubRoad','hubStructure','hubTraffic','hubSkybridge','hubHeritagePlatform','hubCivicPlaza','hubDistrictLandmark','hubWaterFeature','hubTransitLink','hubStreetFurniture','hubDistrictTerrace']);
  const rows=runtime.items.filter(item=>decorative.has(item.type));
  assert.ok(rows.length>100);
  assert.ok(rows.every(item=>item.range===-1));
@@ -170,6 +172,7 @@ test('all eight country facilities are live interaction points next to their esp
  assert.equal(facilities.length,8);
  assert.equal(new Set(facilities.map(item=>item.code)).size,8);
  assert.ok(facilities.every(item=>item.range===7&&item.purpose&&item.services.length>=3));
+ assert.ok(facilities.every(item=>Number.isFinite(item.heading)&&item.width===11&&item.depth===8&&item.visual));
  const names=Object.fromEntries(facilities.map(item=>[item.code,item.name]));
  assert.equal(names.FR,'Tribunal 3B');
  assert.equal(names.DZ,'Maison des Alliances');
@@ -207,4 +210,27 @@ test('Cité Origine premium frontages keep useful civic identities and district 
   assert.ok(visuals.includes("case '"+civicUse+"'"),civicUse);
  }
  assert.doesNotMatch(visuals,/child\(group\?\?/);
+});
+
+
+test('premium Hub renders the eight useful country facilities and ten layered district terraces',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const facilities=runtime.items.filter(item=>item.type==='hubHeritageFacility');
+ const terraces=runtime.items.filter(item=>item.type==='hubDistrictTerrace');
+ assert.equal(facilities.length,8);
+ assert.equal(terraces.length,10);
+ assert.equal(new Set(terraces.map(item=>item.district)).size,10);
+ assert.ok(terraces.every(item=>item.range===-1&&item.radius>=18&&item.steps>=2));
+ assert.ok(new Set(terraces.map(item=>item.level)).size>=6);
+ const scene=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
+ const visuals=readFileSync(new URL('../src/world/premium-hub-visuals.js',import.meta.url),'utf8');
+ const cartography=readFileSync(new URL('../src/world/Cartography.jsx',import.meta.url),'utf8');
+ assert.match(scene,/item\.type==='hubHeritageFacility'/);
+ assert.match(scene,/createPremiumHeritageFacility/);
+ assert.match(scene,/item\.type==='hubDistrictTerrace'/);
+ assert.match(scene,/createPremiumDistrictTerrace/);
+ assert.match(visuals,/export function createPremiumHeritageFacility/);
+ assert.match(visuals,/export function createPremiumDistrictTerrace/);
+ for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE'])assert.ok(visuals.includes("case '"+code+"'"),code);
+ assert.match(cartography,/hubDistrictTerrace/);
 });
