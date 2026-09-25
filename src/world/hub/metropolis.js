@@ -241,6 +241,44 @@ function civicPlazaItems(plan,evolution){
   });
 }
 
+const DISTRICT_PREMIUM_ACCENTS=Object.freeze({
+  heritage_square:'#d6b46a',
+  broken_circle_tower:'#00a8ff',
+  archives:'#88c9ff',
+  arena:'#f29a6b',
+  commerce:'#e5bd67',
+  community:'#7edbb7',
+  innovation:'#36d9ff',
+  docks:'#4dd0e1',
+  city3b_portal:'#d8bc79',
+  gardens:'#9ad39a',
+});
+
+function streetFurnitureItems(plan,profile,evolution){
+  const perDistrict=profile==='desktop'?8:profile==='mobileHigh'?6:4;
+  const kinds=['planter','bench','kiosk','lamp','sign','canopy'];
+  return plan.districts.flatMap((district,districtIndex)=>{
+    const center=hubDistrictPosition(plan,district.id),accent=DISTRICT_PREMIUM_ACCENTS[district.id]||'#d6b46a';
+    return Array.from({length:perDistrict},(_,index)=>{
+      const h=hash(`street:${district.id}:${index}`),angle=((h%6283)/1000)+index*GOLDEN_ANGLE;
+      const ring=26+(index%3)*12+((h>>>9)%9);
+      return {
+        id:`hub:street-furniture:${district.id}:${index}`,
+        type:'hubStreetFurniture',
+        range:-1,
+        district:district.id,
+        kind:kinds[(index+districtIndex)%kinds.length],
+        accent,
+        x:center.x+Math.cos(angle)*ring,
+        z:center.z+Math.sin(angle)*ring,
+        heading:angle+Math.PI/2,
+        evolutionStage:evolution.stage,
+        renderProfile:profile,
+      };
+    });
+  });
+}
+
 function districtLandmarkItems(plan,evolution){
   return (plan.districtLandmarks||[]).flatMap((landmark,index)=>{
     const center=hubDistrictPosition(plan,landmark.district);if(!center)return[];
@@ -446,10 +484,11 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const landmarks=districtLandmarkItems(plan,evolution);
   const water=waterFeatureItems(plan,evolution);
   const transitLinks=transitLinkItems(plan,evolution);
+  const streetFurniture=streetFurnitureItems(plan,profile,evolution);
   const milestoneStories=milestoneStoryItems(plan,evolution);
-  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges])item.renderProfile=profile;
+  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture])item.renderProfile=profile;
   return {
-    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
+    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
@@ -462,6 +501,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
       districtLandmarks:landmarks.length,
       waterFeatures:water.length,
       transitLinks:transitLinks.length,
+      streetFurniture:streetFurniture.length,
       milestoneStories:milestoneStories.length,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,
