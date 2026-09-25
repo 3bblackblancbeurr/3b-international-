@@ -1,3 +1,4 @@
+import {COUNTRIES} from '../catalog.js';
 const hash=input=>{let h=2166136261;for(let i=0;i<input.length;i+=1){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
 const GOLDEN_ANGLE=Math.PI*(3-Math.sqrt(5));
 
@@ -24,6 +25,68 @@ export function hubDistrictPosition(plan,districtId){
 
 export function hubPortalPosition(portal){
   return {x:portal[0]*HUB_METROPOLIS.portalScale,z:portal[1]*HUB_METROPOLIS.portalScale};
+}
+
+export function hubEvolutionState(plan,{seals=[],restoredRegions=[]}={}){
+  const fragments=Math.max(new Set(seals).size,new Set(restoredRegions).size);
+  const stages=plan.evolution?.stages||[{stage:0,id:'foundations',label:'Fondations vivantes',minFragments:0,activeBuildingTiers:[0],densityBonus:0,trafficBonus:0,activeSkybridges:0,platformGlow:.18}];
+  const stage=[...stages].filter(entry=>fragments>=Number(entry.minFragments||0)).sort((a,b)=>a.stage-b.stage).at(-1)||stages[0];
+  return {...stage,fragmentCount:fragments,restoredCount:new Set(restoredRegions).size,liberatedCount:new Set(seals).size};
+}
+
+function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
+  const byRegion=new Map(COUNTRIES.map(country=>[country.id,country]));
+  return (plan.heritagePlatforms||[]).flatMap((platform,index)=>{
+    const country=byRegion.get(platform.regionId);if(!country?.portal)return[];
+    const position=hubPortalPosition(country.portal),liberated=seals.includes(platform.regionId),restored=restoredRegions.includes(platform.regionId);
+    return [{
+      id:`hub:heritage-platform:${platform.code}`,
+      type:'hubHeritagePlatform',
+      code:platform.code,
+      regionId:platform.regionId,
+      name:platform.name,
+      value:platform.value,
+      district:platform.district,
+      services:platform.services||[],
+      visual:platform.visual||'',
+      color:country.color,
+      symbol:country.symbol,
+      x:position.x,
+      z:position.z,
+      range:9,
+      index,
+      liberated,
+      restored,
+      evolutionStage:evolution.stage,
+      glow:Math.min(1,Number(evolution.platformGlow||.18)+(restored?.22:liberated?.12:0)),
+    }];
+  });
+}
+
+function skybridgeItems(plan,evolution){
+  const links=(plan.verticalLinks||[]).slice(0,Math.max(0,Number(evolution.activeSkybridges||0)));
+  return links.flatMap((link,index)=>{
+    const from=hubDistrictPosition(plan,link.from),to=hubDistrictPosition(plan,link.to);if(!from||!to)return[];
+    const dx=to.x-from.x,dz=to.z-from.z,length=Math.hypot(dx,dz);
+    return [{
+      id:`hub:skybridge:${link.id}`,
+      type:'hubSkybridge',
+      bridgeId:link.id,
+      fromDistrict:link.from,
+      toDistrict:link.to,
+      role:link.role,
+      level:link.level||1,
+      x:(from.x+to.x)/2,
+      z:(from.z+to.z)/2,
+      from,to,
+      length,
+      width:4.8+(link.level||1)*.35,
+      height:7+(link.level||1)*6,
+      heading:Math.atan2(dx,dz),
+      evolutionStage:evolution.stage,
+      index,
+    }];
+  });
 }
 
 const BUILDING_SHAPES={
@@ -54,7 +117,7 @@ function buildingOffset(id,index){
   return {x:Math.cos(angle)*radius,z:Math.sin(angle)*radius,angle};
 }
 
-function buildingItem(plan,building,index){
+function buildingItem(plan,building,index,evolution){
   const center=hubDistrictPosition(plan,building.district),offset=buildingOffset(building.id,index);
   const [width,depth,height]=BUILDING_SHAPES[building.id]||[42,30,22+building.tier*8];
   const buildingX=center.x+offset.x,buildingZ=center.z+offset.z,entranceDistance=Math.max(width,depth)/2+8;
@@ -67,6 +130,9 @@ function buildingItem(plan,building,index){
     functions:building.functions||[],
     interior:building.interior||'none',
     tier:building.tier||0,
+    evolutionStage:evolution.stage,
+    buildStatus:(evolution.activeBuildingTiers||[0]).includes(building.tier||0)?'active':'construction',
+    prestige:evolution.stage>=4,
     x:buildingX+Math.cos(offset.angle)*entranceDistance,
     z:buildingZ+Math.sin(offset.angle)*entranceDistance,
     buildingX,buildingZ,
@@ -75,8 +141,8 @@ function buildingItem(plan,building,index){
   };
 }
 
-function fillerItems(plan,profile){
-  const perDistrict=profile==='desktop'?8:profile==='mobileHigh'?6:4;
+function fillerItems(plan,profile,evolution){
+  const base=profile==='desktop'?8:profile==='mobileHigh'?6:4,perDistrict=Math.min(profile==='desktop'?13:profile==='mobileHigh'?10:8,base+Math.max(0,Number(evolution.densityBonus||0)));
   return plan.districts.flatMap((district)=>{
     const center=hubDistrictPosition(plan,district.id),districtSeed=hash(`${district.id}:layout`),baseRotation=(districtSeed%6283)/1000;
     const stretchX=.84+((districtSeed>>>7)%25)/100,stretchZ=.84+((districtSeed>>>13)%25)/100;
@@ -95,6 +161,7 @@ function fillerItems(plan,profile){
         z:center.z+Math.sin(angle)*ring*stretchZ,
         width,depth,height,
         tier:district.tier||0,
+        evolutionStage:evolution.stage,
       };
     });
   });
@@ -191,9 +258,9 @@ export function metropolisRoadItems(plan){
   return roads;
 }
 
-export function metropolisTrafficItems(plan,profile){
+export function metropolisTrafficItems(plan,profile,evolution={trafficBonus:0,stage:0}){
   const roads=metropolisRoadItems(plan).filter(route=>route.kind!=='lane').filter((_,index)=>index%2===0);
-  const count=profile==='desktop'?12:profile==='mobileHigh'?8:5;
+  const base=profile==='desktop'?12:profile==='mobileHigh'?8:5,count=Math.min(profile==='desktop'?20:profile==='mobileHigh'?14:10,base+Math.max(0,Number(evolution.trafficBonus||0)));
   return Array.from({length:count},(_,index)=>{
     const route=roads[index%roads.length],h=hash(`${route.id}:traffic:${index}`);
     const basePhase=(index+.5)/count,jitter=(((h>>>5)%100)/100-.5)*.62/count,phase=Math.max(.04,Math.min(.96,basePhase+jitter));
@@ -205,24 +272,33 @@ export function metropolisTrafficItems(plan,profile){
       to:route.to,
       phase,
       speed:9+((h>>>12)%76)/10,
+      evolutionStage:evolution.stage||0,
       x:route.from.x+(route.to.x-route.from.x)*phase,
       z:route.from.z+(route.to.z-route.from.z)*phase,
     };
   });
 }
 
-export function buildMetropolisRuntimeItems(plan,profile='mobileMedium'){
-  const buildings=plan.buildings.map((building,index)=>buildingItem(plan,building,index));
-  const structures=fillerItems(plan,profile);
+export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress={}){
+  const evolution=hubEvolutionState(plan,progress);
+  const buildings=plan.buildings.map((building,index)=>buildingItem(plan,building,index,evolution));
+  const structures=fillerItems(plan,profile,evolution);
   const roads=metropolisRoadItems(plan);
-  const traffic=metropolisTrafficItems(plan,profile);
+  const traffic=metropolisTrafficItems(plan,profile,evolution);
+  const platforms=heritagePlatformItems(plan,evolution,progress);
+  const skybridges=skybridgeItems(plan,evolution);
   return {
-    items:[...roads,...structures,...buildings,...traffic],
+    items:[...roads,...skybridges,...structures,...buildings,...platforms,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
       roads:roads.length,
       traffic:traffic.length,
+      heritagePlatforms:platforms.length,
+      skybridges:skybridges.length,
+      evolutionStage:evolution.stage,
+      evolutionLabel:evolution.label,
+      fragmentCount:evolution.fragmentCount,
       width:HUB_METROPOLIS.width,
       depth:HUB_METROPOLIS.depth,
       radius:HUB_METROPOLIS.radius,
