@@ -50,3 +50,12 @@ test('Hub HUD exposes the visible evolution of the Cité des Huit Héritages',()
   assert.match(hud,/héritages restaurés/);
   assert.match(css,/\.hub-evolution-chip/);
 });
+
+
+test('Hub arrival reveals the metropolis and refreshes after heritage progression',()=>{
+  const scene=read('src/world/scene.js');
+  assert.match(scene,/kind:'hub-arrival'/);
+  assert.match(scene,/La Cité des Huit Héritages/);
+  assert.match(scene,/hubProgressChanged/);
+  assert.match(scene,/previousRegion!=='hub'\|\|!hubArrivalShown/);
+});
