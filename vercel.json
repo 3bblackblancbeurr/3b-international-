@@ -1,5 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "chatgpt-vercel-probe-clean": true,
+      "main": true,
+      "*": false
+    }
+  },
   "functions": {
     "api/*.js": {
       "maxDuration": 60
