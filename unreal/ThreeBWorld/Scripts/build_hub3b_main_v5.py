@@ -392,6 +392,37 @@ def spawn_city_floor(manifest, layout, tag, materials):
             materials["gold"] if district_id in ("heritage_square","broken_circle_tower","commerce","city3b_portal") else materials["blue"],
         )
 
+        # Premium stepped district base: visible vertical layers without turning the Hub
+        # into a flat lobby. The road ramps remain the playable links between levels.
+        spawn_cylinder(
+            f"HUB_V5_DISTRICT_RETENTION_{district_id.upper()}",
+            [p["x"], p["y"], z - 170],
+            diameter * 1.10,
+            190,
+            tag,
+            f"HUB_3B_V5/DISTRICTS/{district_id}/TERRACE",
+            materials["black"],
+        )
+        spawn_cylinder(
+            f"HUB_V5_DISTRICT_RING_{district_id.upper()}",
+            [p["x"], p["y"], z - 28],
+            diameter * .86,
+            34,
+            tag,
+            f"HUB_3B_V5/DISTRICTS/{district_id}/TERRACE",
+            materials["blue"] if district_id in ("innovation","archives","docks") else materials["gold"],
+        )
+        for step_index in range(3):
+            spawn_box(
+                f"HUB_V5_DISTRICT_STEP_{district_id.upper()}_{step_index+1}",
+                [p["x"], p["y"] + diameter * .42 + step_index * 220, z + 18 + step_index * 12],
+                [900 + step_index * 180, 360, 90],
+                0,
+                tag,
+                f"HUB_3B_V5/DISTRICTS/{district_id}/TERRACE/STEPS",
+                materials["stone"],
+            )
+
 
 def spawn_roads(manifest, layout, tag, materials):
     districts = district_lookup(layout)
