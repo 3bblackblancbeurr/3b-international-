@@ -151,3 +151,25 @@ test('Hub V4 has a structural water network and useful Cité Origine fabric',()=
   assert.ok(plan.civicFabric.uses.includes('clinic'));
   assert.ok(plan.civicFabric.minimumUsefulFrontagesPerDistrict>=6);
 });
+
+
+test('Hub V4 canon stores the story, laws, safe-zone and frozen 16-weapon base',()=>{
+  assert.equal(plan.visualReference,'user-master://La Cité des Huit Héritages');
+  assert.match(plan.repositorySchematic,/cite-huit-heritages-schematic-v2\.svg$/);
+  assert.equal(plan.safeZone.hubIsOnlyMajorSafeZone,true);
+  assert.equal(plan.safeZone.monsters,false);
+  assert.equal(plan.safeZone.hostileDamage,false);
+  assert.equal(plan.safeZone.wildPvp,false);
+  assert.ok(plan.laws.length>=12);
+  assert.ok(plan.laws.some(rule=>rule.includes('Portes restent dispersées')));
+  assert.ok(plan.laws.some(rule=>rule.includes('Kaïs reste le héros central')));
+  assert.equal(plan.arsenal.canonicalWeapons,16);
+  assert.equal(plan.arsenal.frozenBase,true);
+  assert.match(plan.story.finalThreat,/Monstre de l’Oubli/);
+  assert.match(plan.story.playerRole,/propre personnage/);
+  assert.deepEqual(plan.gameLoop.slice(0,4),['connexion','hub','préparation','quartier_utile']);
+  assert.equal(plan.gameLoop.at(-1),'porte_suivante');
+  assert.equal(plan.npcMemory.persistent,true);
+  assert.ok(plan.npcMemory.affects.includes('dialogue'));
+  assert.ok(plan.npcMemory.affects.includes('quêtes'));
+});
