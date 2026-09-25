@@ -56,3 +56,21 @@ test('V8 remains responsive and reduced-motion safe',()=>{
   assert.match(css,/dada3b-online-tabs/);
   assert.match(css,/dada3b-board-turn-chip/);
 });
+
+test('V9 moves stables away from the track and turns the four pieces into animated warriors',()=>{
+  assert.match(three,/STABLE_RING_FACTOR=1\.255/);
+  assert.match(three,/WARRIOR_ARCHETYPES=Object\.freeze\(\['axe','sword','shield','bow'\]\)/);
+  assert.match(three,/archetype==='axe'/);
+  assert.match(three,/archetype==='sword'/);
+  assert.match(three,/archetype==='shield'/);
+  assert.match(three,/attackUntil=actionAt\+560/);
+  assert.match(shell,/data-warrior=\{archetype\}/);
+  assert.match(shell,/WARRIOR_LABELS/);
+  assert.match(css,/dada3b-warrior-icon/);
+  assert.match(css,/DADA 3B V9/);
+  assert.match(three,/bridgeLength=Math\.max\(\.8/);
+  assert.match(three,/BoxGeometry\(\.72,\.12,bridgeLength\)/);
+  assert.match(three,/CylinderGeometry\(\.56,\.64,1\.55,10\)/);
+  assert.match(shell,/factor=1\.20/);
+  assert.match(shell,/Choisis un guerrier/);
+});

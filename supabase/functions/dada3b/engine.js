@@ -343,7 +343,7 @@ export function rollTurn(match, forcedRoll = secureRoll(), options = {}) {
       roll: forcedRoll,
       text: forcedRoll === 6
         ? `${countryFor(player.countryId).name} obtient 6 mais aucun mouvement n’est possible · relance conservée.`
-        : `${countryFor(player.countryId).name} ne peut déplacer aucun totem.`,
+        : `${countryFor(player.countryId).name} ne peut déplacer aucun guerrier.`,
     });
     if (forcedRoll !== 6) advanceTurn(next);
     return { match: next, roll: forcedRoll, legal: [], penalty: false, autoPass: true };
@@ -363,9 +363,9 @@ export function rollTurn(match, forcedRoll = secureRoll(), options = {}) {
 function applyMove(match, pieceIndex) {
   if (!match || match.status !== 'playing') throw new Error('La partie est terminée.');
   const roll = match.pendingRoll;
-  if (!Number.isInteger(roll)) throw new Error('Lance le dé avant de déplacer un totem.');
+  if (!Number.isInteger(roll)) throw new Error('Lance le dé avant de déplacer un guerrier.');
   const info = previewMove(match, pieceIndex, roll);
-  if (!info) throw new Error('Ce totem ne peut pas avancer avec ce dé.');
+  if (!info) throw new Error('Ce guerrier ne peut pas avancer avec ce dé.');
 
   const next = structuredClone(match);
   const playerIndex = next.turn;
@@ -402,13 +402,13 @@ function applyMove(match, pieceIndex) {
     sanctuary: info.sanctuary,
     formsBarricade: info.formsBarricade,
     text: info.captures.length
-      ? `${country.name} déclenche Fracture Matrix · ${info.captures.length} totem${info.captures.length > 1 ? 's' : ''} renvoyé${info.captures.length > 1 ? 's' : ''} à l’écurie.`
+      ? `${country.name} déclenche Fracture Matrix · ${info.captures.length} guerrier${info.captures.length > 1 ? 's' : ''} renvoyé${info.captures.length > 1 ? 's' : ''} à l’écurie.`
       : info.finishes
-        ? `${country.name} transforme un totem en fragment lumineux dans le Nexus.`
+        ? `${country.name} transforme un guerrier en fragment lumineux dans le Nexus.`
         : info.exitsStable
-          ? `${country.name} ouvre son écurie et libère un totem.`
+          ? `${country.name} ouvre son écurie et libère un guerrier.`
           : info.entersHome
-            ? `Porte ${country.name} ouverte · ${country.guardian} guide le totem vers le Nexus.`
+            ? `Porte ${country.name} ouverte · ${country.guardian} guide le guerrier vers le Nexus.`
           : info.formsBarricade
             ? `${country.name} forme un Bouclier 3B.`
             : info.sanctuary
@@ -426,7 +426,7 @@ function applyMove(match, pieceIndex) {
     next.endedAt = Date.now();
     next.endedReason = 'nexus';
     event.type = 'victory';
-    event.text = next.winnerTeam ? `Équipe ${TEAM_LABELS[next.winnerTeam]} · les deux nations ont complété le Nexus 3B.` : `${country.name} rassemble tous ses totems · Nexus 3B complété.`;
+    event.text = next.winnerTeam ? `Équipe ${TEAM_LABELS[next.winnerTeam]} · les deux nations ont complété le Nexus 3B.` : `${country.name} rassemble tous ses guerriers · Nexus 3B complété.`;
   } else {
     const keepTurn = roll === 6 || (info.captures.length > 0 && next.rules.bonusOnCapture);
     if (!keepTurn) advanceTurn(next);
@@ -592,9 +592,9 @@ export function achievementsFor(match, countryId) {
   if (!player) return [];
   const achievements = [];
   if (player.stats.captures >= 1) achievements.push({ id: 'first-capture', title: 'Première capture', detail: 'Déclencher Fracture Matrix une première fois.' });
-  if (player.pieces.every((piece) => piece.steps === FINISH_STEP)) achievements.push({ id: 'four-nexus', title: 'Tous au Nexus', detail: 'Réunir tous ses Totems dans le Nexus.' });
+  if (player.pieces.every((piece) => piece.steps === FINISH_STEP)) achievements.push({ id: 'four-nexus', title: 'Tous au Nexus', detail: 'Réunir tous ses guerriers dans le Nexus.' });
   const wonSide = match.rules?.teamMode ? Boolean(player.team && match.winnerTeam === player.team) : match.winner === countryId;
-  if (wonSide && player.stats.timesCaptured === 0) achievements.push({ id: 'untouchable', title: 'Aucun pion capturé', detail: 'Gagner sans retour forcé à l’écurie.' });
+  if (wonSide && player.stats.timesCaptured === 0) achievements.push({ id: 'untouchable', title: 'Aucun guerrier capturé', detail: 'Gagner sans retour forcé à l’écurie.' });
   if (match.winner === countryId && match.players.length === 8) achievements.push({ id: 'eight-nations', title: '8 nations', detail: 'Gagner une partie complète à huit pays.' });
   if (player.stats.barricadesFormed >= 2) achievements.push({ id: 'shield-master', title: 'Bouclier 3B', detail: 'Former deux barricades dans la même partie.' });
   if (match.rules?.teamMode && wonSide) achievements.push({ id: 'alliance-2v2', title: 'Alliance 2v2', detail: 'Compléter le Nexus avec son partenaire.' });

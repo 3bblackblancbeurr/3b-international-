@@ -17,8 +17,8 @@ test('V7 brightens the board and reduces dark fog',()=>{
 test('V7 path is no longer a uniform ring of identical cylinders',()=>{
   assert.match(three,/function trackElevation/);
   assert.match(three,/function cellGeometryFor/);
-  assert.match(three,/BoxGeometry\(\.96,\.21,\.38\)/);
-  assert.match(three,/CylinderGeometry\(\.43,\.36,\.24,6\)/);
+  assert.match(three,/BoxGeometry\(1\.02,\.25,\.47\)/);
+  assert.match(three,/CylinderGeometry\(\.50,\.43,\.27,6\)/);
   assert.match(three,/tangentAngle/);
   assert.match(three,/trackElevation\(cell\)\+\.39/);
 });

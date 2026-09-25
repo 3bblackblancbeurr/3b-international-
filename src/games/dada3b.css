@@ -1435,3 +1435,40 @@
   .dada3b-track-cell[data-legal-target="true"],
   .dada3b-home-cell[data-legal-target="true"]{animation:none!important}
 }
+
+/* ---- DADA 3B V9 · guerriers, écuries reculées et piste premium ---- */
+.dada3b-shell-v8 .dada3b-track-cell{
+  width:4.02%;border-color:#eefcff52;background:linear-gradient(145deg,#1c3438e8,#10272de8);
+  box-shadow:0 3px 10px #0009,inset 0 0 10px #bdefff16,0 0 7px color-mix(in srgb,var(--cell-color) 20%,transparent);
+  color:#c9d8d6;font-weight:900;
+}
+.dada3b-shell-v8 .dada3b-track-cell[data-start="true"]{
+  border-width:2px;box-shadow:0 0 16px color-mix(in srgb,var(--cell-color) 58%,transparent),inset 0 0 10px #fff2;
+}
+.dada3b-shell-v8 .dada3b-home-cell{width:4.55%;box-shadow:0 0 12px color-mix(in srgb,var(--cell-color) 30%,transparent)}
+.dada3b-shell-v8 .dada3b-stable{
+  width:10.6%;border-width:2px;background:radial-gradient(circle at 50% 34%,color-mix(in srgb,var(--country) 25%,#18353a),#081416 72%);
+  box-shadow:0 10px 24px #000b,0 0 18px color-mix(in srgb,var(--country) 28%,transparent);z-index:4;
+}
+.dada3b-shell-v8 .dada3b-stable strong{font-size:clamp(6px,.82vw,9px)}
+.dada3b-warrior-icon{
+  position:absolute;left:50%;top:17%;z-index:7;transform:translateX(-50%);font-size:clamp(8px,1.25vw,14px);line-height:1;
+  filter:drop-shadow(0 2px 2px #000) drop-shadow(0 0 5px color-mix(in srgb,var(--country) 55%,transparent));
+}
+.dada3b-piece[data-warrior="axe"] .dada3b-totem-model{border-radius:34% 34% 18% 18%}
+.dada3b-piece[data-warrior="sword"] .dada3b-totem-model{border-radius:46% 46% 20% 20%}
+.dada3b-piece[data-warrior="shield"] .dada3b-totem-model{border-radius:50% 50% 38% 38%}
+.dada3b-piece[data-warrior="bow"] .dada3b-totem-model{border-radius:52% 52% 18% 18%;transform:scaleX(.91)}
+@keyframes dadaWarriorReady{0%,100%{translate:0 0;rotate:-2deg}50%{translate:0 -2px;rotate:2deg}}
+.dada3b-piece[data-legal="true"] .dada3b-warrior-icon{animation:dadaWarriorReady .68s ease-in-out infinite;filter:drop-shadow(0 0 7px #fff) drop-shadow(0 0 10px var(--country))}
+.dada3b-piece[data-warrior="axe"][data-legal="true"] .dada3b-warrior-icon{rotate:-10deg}
+.dada3b-piece[data-warrior="sword"][data-legal="true"] .dada3b-warrior-icon{rotate:8deg}
+.dada3b-piece[data-warrior="shield"] .dada3b-warrior-icon{font-size:clamp(9px,1.4vw,16px)}
+.dada3b-piece[data-warrior="bow"] .dada3b-warrior-icon{rotate:-8deg}
+@media(max-width:560px){
+  .dada3b-shell-v8 .dada3b-track-cell{width:4.38%;font-size:6px}
+  .dada3b-shell-v8 .dada3b-home-cell{width:5.05%}
+  .dada3b-shell-v8 .dada3b-stable{width:10.2%}
+  .dada3b-warrior-icon{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){.dada3b-piece[data-legal="true"] .dada3b-warrior-icon{animation:none!important}}
