@@ -1,0 +1,32 @@
+{
+  "version":"1.0.0",
+  "hub":"Hub3B_Main_V05",
+  "status_rule":"No Hub asset is final until its Unreal target exists and visual/mobile evidence passes.",
+  "core":[
+    {"id":"broken_circle","path":"/Game/3B/World/Hub/Landmarks/SM_HUB_BrokenCircleTower","role":"nexus_monument"},
+    {"id":"archives","path":"/Game/3B/World/Hub/Landmarks/SM_HUB_MemoryArchives","role":"memory_archives"},
+    {"id":"express_station","path":"/Game/3B/World/Hub/Transport/SM_HUB_ExpressStation","role":"train_station"},
+    {"id":"central_marina","path":"/Game/3B/World/Hub/Transport/SM_HUB_CentralMarina","role":"marina"},
+    {"id":"arena","path":"/Game/3B/World/Hub/Landmarks/SM_HUB_Arena3B","role":"arena"}
+  ],
+  "heritage":[
+    {"region":"france","path":"/Game/3B/World/Hub/Heritage/SM_HUB_FR_JusticeTribunal","value":"Justice"},
+    {"region":"algerie","path":"/Game/3B/World/Hub/Heritage/SM_HUB_DZ_AllianceHouse","value":"Loyauté"},
+    {"region":"espagne","path":"/Game/3B/World/Hub/Heritage/SM_HUB_ES_PassionStage","value":"Passion"},
+    {"region":"maroc","path":"/Game/3B/World/Hub/Heritage/SM_HUB_MA_CraftHouse","value":"Noblesse"},
+    {"region":"italie","path":"/Game/3B/World/Hub/Heritage/SM_HUB_IT_RebuildHouse","value":"Espoir"},
+    {"region":"tunisie","path":"/Game/3B/World/Hub/Heritage/SM_HUB_TN_RescuePost","value":"Courage"},
+    {"region":"turquie","path":"/Game/3B/World/Hub/Heritage/SM_HUB_TR_LinksObservatory","value":"Foi"},
+    {"region":"estonie","path":"/Game/3B/World/Hub/Heritage/SM_HUB_EE_DataTower","value":"Sagesse"}
+  ],
+  "evidence":[
+    "hub_core_landmarks_final",
+    "eight_heritage_buildings_distinct",
+    "water_and_transport_links_visible",
+    "fragment_states_0_to_8_visual",
+    "hub_safe_zone_no_hostile_damage",
+    "mobile_30fps_reference",
+    "desktop_60fps_reference",
+    "samsung_real_device_pass"
+  ]
+}
