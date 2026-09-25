@@ -1,6 +1,6 @@
 {
-  "version": "4.0",
-  "status": "Hub3B_Main_V05 · Cité des Huit Héritages · V4 jouable",
+  "version": "5.0.0",
+  "status": "Hub3B_Main_V05 · Cité des Huit Héritages · Premium canonique",
   "title": "La Cité des Huit Héritages",
   "visualReference": "user-master://La Cité des Huit Héritages",
   "palette": {
@@ -1246,5 +1246,63 @@
     "canonicalWeapons": 16,
     "frozenBase": true,
     "rule": "enrichir maîtrise, combos, esquives, parades, finishers et pouvoirs avant d’ajouter une nouvelle arme"
+  },
+  "premium": {
+    "release": "V05 Premium",
+    "visualReference": "La Cité des Huit Héritages",
+    "cityScale": "1.8 km × 1.4 km",
+    "sameCityAllDevices": true,
+    "districtIdentity": true,
+    "usefulFrontages": true,
+    "dispersedHeritagePlatforms": true,
+    "verticalCity": true,
+    "waterAsStructure": true,
+    "livingCity": true,
+    "streetLife": true,
+    "dayNight": true,
+    "weather": true,
+    "accessibility": true,
+    "performanceProfiles": [
+      "mobileMedium",
+      "mobileHigh",
+      "desktop"
+    ],
+    "nonNegotiable": [
+      "Le Cercle Brisé est un monument central, jamais toute la ville.",
+      "Les huit Portes restent dispersées dans la métropole.",
+      "Aucun grand bâtiment visible sans fonction.",
+      "Aucun grand vide décoratif inutile.",
+      "La Cité Origine doit sembler habitée et utile.",
+      "La progression des fragments transforme physiquement la ville."
+    ]
+  },
+  "releaseAcceptance": {
+    "visual": [
+      "10 quartiers identifiables",
+      "8 Portes dispersées",
+      "10 landmarks",
+      "réseau d’eau visible",
+      "mobilier urbain premium",
+      "façades différenciées par fonction"
+    ],
+    "gameplay": [
+      "19 bâtiments canoniques utiles",
+      "20 missions pilotées par actions",
+      "16 secrets avec contrat live",
+      "transports physiques",
+      "8 services d’Héritage"
+    ],
+    "continuity": [
+      "progression 0→8 fragments",
+      "PNJ majeurs à mémoire persistante",
+      "Hub seule grande zone sûre",
+      "16 armes canoniques figées"
+    ],
+    "performance": [
+      "30 FPS cible mobileMedium",
+      "60 FPS cible mobileHigh",
+      "60 FPS cible desktop",
+      "LOD adaptatif sans changer la géographie"
+    ]
   }
 }
