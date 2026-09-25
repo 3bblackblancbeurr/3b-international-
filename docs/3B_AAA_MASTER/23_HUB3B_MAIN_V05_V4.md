@@ -1,4 +1,4 @@
-# Hub3B_Main_V05 — V4 · Cité des Huit Héritages jouable
+# Hub3B_Main_V05 — V6 Premium · Cité des Huit Héritages
 
 ## Référence maîtresse
 
@@ -84,7 +84,7 @@ Connexion → Hub → préparation → quartier utile → Porte → royaume → 
 - Mobile et desktop montrent la même ville ; seuls densité, LOD, trafic et effets s’adaptent.
 - Les Portes ne donnent jamais directement de récompense : l’autorité reste dans le moteur de jeu et la sauvegarde.
 
-## Implémentation V4
+## Implémentation V6 Premium
 
 Sources principales :
 - `src/world/hub/data/hub-master-plan-v2.json`
@@ -92,7 +92,7 @@ Sources principales :
 - `src/world/premium-hub-visuals.js`
 - `src/world/scene.js`
 
-La V4 ajoute notamment :
+La V6 Premium consolide et pousse notamment :
 - 10 places civiques ;
 - 10 landmarks de quartier ;
 - 5 éléments du réseau d’eau ;
@@ -102,4 +102,13 @@ La V4 ajoute notamment :
 - paliers narratifs exacts de 0 à 8 fragments ;
 - panorama automatique de la Cité quand une progression d’héritage transforme le Hub.
 
-Cette V4 constitue la base de **Hub3B_Main_V05**.
+Cette V6 Premium constitue la base canonique actuelle de **Hub3B_Main_V05**.
+
+Ajouts premium supplémentaires :
+- 10 terrasses de quartier en plusieurs niveaux ;
+- 8 bâtiments d’Héritage rendus physiquement et interactifs dans le monde web ;
+- silhouettes propres au Tribunal 3B, Maison des Alliances, Scène de la Passion, Atelier des Savoir-Faire, Maison de la Reconstruction, Poste de Sauvetage Maritime, Observatoire des Liens et Tour des Données ;
+- mobilier urbain premium dans tous les quartiers ;
+- façades différenciées par fonction : logement, restauration, atelier, école, clinique, boutique, guilde et service public ;
+- validation Unreal renforcée contre tout retour à l’ancien modèle radial ;
+- même logique spatiale entre la version web 3D et le constructeur Unreal `Hub3B_Main_V05`.

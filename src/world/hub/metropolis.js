@@ -84,6 +84,11 @@ function heritageFacilityItems(platforms){
       purpose:platform.facility.purpose,
       services:platform.facility.services||[],
       color:platform.color,
+      value:platform.value,
+      visual:platform.visual||'',
+      heading:Math.atan2(-platform.x,-platform.z),
+      width:11,
+      depth:8,
       x:platform.x-platform.x/radius*inset,
       z:platform.z-platform.z/radius*inset,
       range:7,
@@ -277,6 +282,41 @@ function streetFurnitureItems(plan,profile,evolution){
         renderProfile:profile,
       };
     });
+  });
+}
+
+const DISTRICT_TERRACE_LEVELS=Object.freeze({
+  heritage_square:0,
+  broken_circle_tower:1.8,
+  archives:2.4,
+  arena:3.0,
+  commerce:1.4,
+  community:1.8,
+  innovation:4.5,
+  docks:.4,
+  city3b_portal:1.6,
+  gardens:2.2,
+});
+
+function districtTerraceItems(plan,evolution,profile){
+  return plan.districts.map((district,index)=>{
+    const center=hubDistrictPosition(plan,district.id),seed=hash('terrace:'+district.id);
+    return {
+      id:`hub:district-terrace:${district.id}`,
+      type:'hubDistrictTerrace',
+      range:-1,
+      district:district.id,
+      name:district.name,
+      x:center.x,
+      z:center.z,
+      radius:district.id==='heritage_square'?34:district.id==='broken_circle_tower'?31:24+(seed%7),
+      level:DISTRICT_TERRACE_LEVELS[district.id]||0,
+      accent:DISTRICT_PREMIUM_ACCENTS[district.id]||'#d6b46a',
+      steps:profile==='mobileMedium'?2:3,
+      evolutionStage:evolution.stage,
+      renderProfile:profile,
+      index,
+    };
   });
 }
 
@@ -486,10 +526,11 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const water=waterFeatureItems(plan,evolution);
   const transitLinks=transitLinkItems(plan,evolution);
   const streetFurniture=streetFurnitureItems(plan,profile,evolution);
+  const terraces=districtTerraceItems(plan,evolution,profile);
   const milestoneStories=milestoneStoryItems(plan,evolution);
-  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture])item.renderProfile=profile;
+  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture,...terraces])item.renderProfile=profile;
   return {
-    items:[...water,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
+    items:[...water,...terraces,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
@@ -503,6 +544,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
       waterFeatures:water.length,
       transitLinks:transitLinks.length,
       streetFurniture:streetFurniture.length,
+      districtTerraces:terraces.length,
       milestoneStories:milestoneStories.length,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,

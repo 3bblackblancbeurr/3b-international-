@@ -315,14 +315,13 @@ export function createPremiumHeritagePlatform(item,{root,geometry,material,groun
   child(group,geometry.cylinder,i%2?gold:energy,{x,y:.92,z,sx:.10,sy:1.55,sz:.10,cast:false});
  }
 
- // Each country esplanade has its own architectural signature and a
- // functional annex so the eight portals read as real neighbourhoods.
- const annex=material('#151c22',{roughness:.62,metalness:.30});
+ // Each country esplanade keeps a distinct architectural signature.
+ // The functional building is now rendered by createPremiumHeritageFacility,
+ // so the platform no longer fakes a duplicate generic annex.
  const localAccent=material(accent,{emissive:accent,emissiveIntensity:.22+.25*(item.glow||0),roughness:.26,metalness:.48});
  if(item.facility){
-  child(group,geometry.box,annex,{x:0,y:1.25,z:4.8,sx:5.2,sy:2.2,sz:2.4});
-  child(group,geometry.box,gold,{x:0,y:2.48,z:4.8,sx:4.4,sy:.12,sz:2.0,cast:false});
-  child(group,geometry.box,localAccent,{x:0,y:1.25,z:3.55,sx:2.8,sy:.10,sz:.08,cast:false});
+  child(group,geometry.box,gold,{y:.48,z:4.65,sx:4.6,sy:.10,sz:1.2,cast:false});
+  child(group,geometry.box,localAccent,{y:.62,z:4.65,sx:3.5,sy:.05,sz:.82,cast:false});
  }
  switch(item.code){
   case 'FR':
@@ -364,6 +363,94 @@ export function createPremiumHeritagePlatform(item,{root,geometry,material,groun
  }
  return group;
 }
+
+export function createPremiumHeritageFacility(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Heritage-Facility-'+item.code;root.add(group);
+ group.position.set(item.x,groundY(item.x,item.z),item.z);group.rotation.y=item.heading||0;
+ const accent=item.color||'#00a8ff';
+ const dark=material('#10161b',{roughness:.52,metalness:.48});
+ const stone=material('#343b3f',{roughness:.76,metalness:.12});
+ const gold=material('#d6b46a',{emissive:'#76591f',emissiveIntensity:.16,roughness:.24,metalness:.84});
+ const glow=material(accent,{emissive:accent,emissiveIntensity:item.restored?.58:item.liberated?.36:.22,roughness:.18,metalness:.42});
+ const glass=material('#123b50',{emissive:accent,emissiveIntensity:.12,roughness:.14,metalness:.24,transparent:true,opacity:.86});
+ const w=item.width||11,d=item.depth||8;
+ child(group,geometry.box,stone,{y:.32,sx:w*1.06,sy:.55,sz:d*1.06});
+ child(group,geometry.box,dark,{y:2.75,sx:w,sy:4.8,sz:d});
+ child(group,geometry.box,gold,{y:5.28,sx:w*.86,sy:.20,sz:d*.86,cast:false});
+ child(group,geometry.box,glass,{y:2.7,z:d*.51,sx:w*.48,sy:2.8,sz:.10,cast:false});
+ child(group,geometry.box,glow,{y:1.45,z:d*.565,sx:w*.28,sy:.10,sz:.06,cast:false});
+
+ switch(item.code){
+  case 'FR':
+   for(const side of [-1,1])child(group,geometry.box,gold,{x:side*w*.34,y:3.0,z:d*.54,sx:.38,sy:5.4,sz:.34});
+   child(group,geometry.box,glow,{y:5.8,z:d*.54,sx:w*.76,sy:.16,sz:.20,cast:false});
+   break;
+  case 'DZ':
+   for(const side of [-1,1]){
+    child(group,geometry.cylinder,stone,{x:side*w*.32,y:3.0,z:d*.49,sx:.50,sy:5.4,sz:.50});
+    child(group,geometry.sphere,glow,{x:side*w*.32,y:5.95,z:d*.49,sx:.75,sy:.40,sz:.75,cast:false});
+   }
+   break;
+  case 'ES':
+   for(const side of [-1,0,1])child(group,geometry.box,side===0?gold:glow,{x:side*w*.24,y:3.5,z:d*.53,sx:.22,sy:6.2+Math.abs(side)*.8,sz:.24,rz:side*.15,cast:false});
+   break;
+  case 'MA':
+   for(const side of [-1,1])for(const back of [0,1])child(group,geometry.box,back?gold:glow,{x:side*w*.32,y:3.0,z:d*(.48-.20*back),sx:.24,sy:5.2,sz:.24,cast:false});
+   child(group,geometry.box,gold,{y:5.65,z:d*.36,sx:w*.76,sy:.16,sz:d*.34,cast:false});
+   break;
+  case 'IT':
+   for(const side of [-1,0,1]){
+    const x=side*w*.26;
+    child(group,geometry.box,stone,{x,y:2.2,z:d*.55,sx:w*.18,sy:3.7,sz:.42});
+    child(group,geometry.sphere,glow,{x,y:4.3,z:d*.55,sx:w*.09,sy:.44,sz:.44,cast:false});
+   }
+   break;
+  case 'TN':
+   child(group,geometry.cylinder,gold,{x:w*.30,y:4.4,z:d*.18,sx:.16,sy:7.8,sz:.16});
+   child(group,geometry.box,glow,{x:w*.30,y:8.2,z:d*.18,sx:.50,sy:.24,sz:.50,cast:false});
+   break;
+  case 'TR':
+   child(group,geometry.sphere,glow,{y:5.8,z:-d*.12,sx:2.4,sy:1.1,sz:2.4,cast:false});
+   for(const side of [-1,1])child(group,geometry.cylinder,gold,{x:side*w*.34,y:4.4,z:-d*.12,sx:.14,sy:8.0,sz:.14});
+   break;
+  case 'EE':
+   for(const side of [-1,0,1]){
+    const crystal=child(group,geometry.box,side===0?gold:glow,{x:side*w*.25,y:4.1+Math.abs(side)*.5,z:d*.45,sx:.48,sy:6.5,sz:.48,ry:Math.PI/4,cast:false});
+    crystal.rotation.z=side*.08;
+   }
+   break;
+  default:break;
+ }
+ if(item.restored)child(group,geometry.ring,gold,{y:6.6,sx:3.2,sy:3.2,sz:3.2,rx:Math.PI/2,cast:false});
+ return group;
+}
+
+
+export function createPremiumDistrictTerrace(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-District-Terrace-'+item.district;root.add(group);
+ group.position.set(item.x,groundY(item.x,item.z),item.z);
+ const stone=material('#272f34',{roughness:.84,metalness:.10});
+ const dark=material('#11171c',{roughness:.58,metalness:.38});
+ const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.10,roughness:.28,metalness:.76});
+ const accent=material(item.accent||'#00a8ff',{emissive:item.accent||'#00a8ff',emissiveIntensity:.16+.04*(item.evolutionStage||0),roughness:.22,metalness:.36});
+ const r=Math.max(18,item.radius||24),level=Math.max(0,item.level||0),steps=Math.max(2,item.steps||3);
+ child(group,geometry.cylinder,dark,{y:-.12,sx:r*1.08,sy:.18,sz:r*1.08,cast:false});
+ child(group,geometry.cylinder,stone,{y:-.02,sx:r,sy:.16,sz:r,cast:false});
+ child(group,geometry.ring,accent,{y:.07,sx:r*.82,sy:r*.82,sz:r*.82,rx:Math.PI/2,cast:false});
+ if(item.evolutionStage>=2)child(group,geometry.ring,gold,{y:.085,sx:r*.58,sy:r*.58,sz:r*.58,rx:Math.PI/2,cast:false});
+ for(let i=0;i<steps;i++){
+  const width=5.2+i*1.4,depth=2.2,dist=r*.84+i*2.6;
+  child(group,geometry.box,stone,{y:.05+i*.05,z:dist,sx:width,sy:.10,sz:depth,cast:false});
+ }
+ if(level>0){
+  for(const side of [-1,1]){
+   child(group,geometry.box,dark,{x:side*r*.88,y:level*.42,z:0,sx:.40,sy:Math.max(.9,level*.82),sz:r*.54,cast:false});
+   child(group,geometry.box,accent,{x:side*r*.88,y:level*.84,z:0,sx:.10,sy:.08,sz:r*.50,cast:false});
+  }
+ }
+ return group;
+}
+
 
 export function createPremiumSkybridge(item,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Skybridge-'+item.bridgeId;root.add(group);

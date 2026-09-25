@@ -392,6 +392,37 @@ def spawn_city_floor(manifest, layout, tag, materials):
             materials["gold"] if district_id in ("heritage_square","broken_circle_tower","commerce","city3b_portal") else materials["blue"],
         )
 
+        # Premium stepped district base: visible vertical layers without turning the Hub
+        # into a flat lobby. The road ramps remain the playable links between levels.
+        spawn_cylinder(
+            f"HUB_V5_DISTRICT_RETENTION_{district_id.upper()}",
+            [p["x"], p["y"], z - 170],
+            diameter * 1.10,
+            190,
+            tag,
+            f"HUB_3B_V5/DISTRICTS/{district_id}/TERRACE",
+            materials["black"],
+        )
+        spawn_cylinder(
+            f"HUB_V5_DISTRICT_RING_{district_id.upper()}",
+            [p["x"], p["y"], z - 28],
+            diameter * .86,
+            34,
+            tag,
+            f"HUB_3B_V5/DISTRICTS/{district_id}/TERRACE",
+            materials["blue"] if district_id in ("innovation","archives","docks") else materials["gold"],
+        )
+        for step_index in range(3):
+            spawn_box(
+                f"HUB_V5_DISTRICT_STEP_{district_id.upper()}_{step_index+1}",
+                [p["x"], p["y"] + diameter * .42 + step_index * 220, z + 18 + step_index * 12],
+                [900 + step_index * 180, 360, 90],
+                0,
+                tag,
+                f"HUB_3B_V5/DISTRICTS/{district_id}/TERRACE/STEPS",
+                materials["stone"],
+            )
+
 
 def spawn_roads(manifest, layout, tag, materials):
     districts = district_lookup(layout)
@@ -527,6 +558,83 @@ def spawn_civic_fabric(manifest, layout, canon, tag, materials):
                 materials["gold"] if index % 3 == 0 else materials["blue"],
             )
 
+            # Make the Cité Origine readable at street level: civic use changes
+            # the facade silhouette instead of leaving generic decorative boxes.
+            facing = math.degrees(angle) + 90.0
+            if civic_use == "housing":
+                for floor in (0.34, 0.58, 0.78):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_BALCONY_{int(floor*100)}",
+                        [x, y + depth * .52, z + height * floor],
+                        [width * .42, 90, 80],
+                        facing, tag, folder + "/IDENTITY", materials["blue"],
+                    )
+            elif civic_use == "food":
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_AWNING",
+                    [x, y + depth * .56, z + 380],
+                    [width * .58, 180, 120],
+                    facing, tag, folder + "/IDENTITY", materials["gold"],
+                )
+            elif civic_use == "workshop":
+                for side in (-1, 0, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_WORKSHOP_{side+1}",
+                        [x + side * width * .24, y + depth * .51, z + 260],
+                        [width * .18, 110, 520],
+                        facing, tag, folder + "/IDENTITY", materials["black"],
+                    )
+            elif civic_use == "school":
+                for side in (-1, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_SCHOOL_PILLAR_{side}",
+                        [x + side * width * .30, y + depth * .52, z + 420],
+                        [120, 120, 760],
+                        facing, tag, folder + "/IDENTITY", materials["stone"],
+                    )
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_SCHOOL_LINTEL",
+                    [x, y + depth * .53, z + 820],
+                    [width * .68, 120, 120],
+                    facing, tag, folder + "/IDENTITY", materials["blue"],
+                )
+            elif civic_use == "clinic":
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_CLINIC_H",
+                    [x, y + depth * .53, z + 520],
+                    [width * .28, 100, 120],
+                    facing, tag, folder + "/IDENTITY", materials["blue"],
+                )
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_CLINIC_V",
+                    [x, y + depth * .535, z + 520],
+                    [120, 100, width * .28],
+                    facing, tag, folder + "/IDENTITY", materials["blue"],
+                )
+            elif civic_use == "small_shop":
+                for side in (-1, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_SHOP_WINDOW_{side}",
+                        [x + side * width * .22, y + depth * .52, z + 300],
+                        [width * .18, 90, 440],
+                        facing, tag, folder + "/IDENTITY", materials["glass"],
+                    )
+            elif civic_use == "guild_room":
+                for side in (-1, 1):
+                    spawn_box(
+                        f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_GUILD_BANNER_{side}",
+                        [x + side * width * .31, y + depth * .525, z + height * .60],
+                        [160, 80, height * .38],
+                        facing, tag, folder + "/IDENTITY", materials["gold"],
+                    )
+            elif civic_use == "public_service":
+                spawn_box(
+                    f"HUB_V5_CIVIC_{district_id.upper()}_{index:02d}_CIVIC_CANOPY",
+                    [x, y + depth * .57, z + 410],
+                    [width * .62, 160, 140],
+                    facing, tag, folder + "/IDENTITY", materials["gold"],
+                )
+
 
 def spawn_landmarks(manifest, layout, canon, tag, materials):
     districts = district_lookup(layout)
@@ -655,6 +763,95 @@ def spawn_portals(manifest, tag, materials):
             f"HUB_3B_V5/PORTALS/{code}/FACILITY",
             accent,
         )
+
+        # Country-specific functional architecture. These details make each
+        # heritage facility readable from a distance while preserving one 3B language.
+        if code == "FR":
+            for side_sign in (-1, 1):
+                spawn_box(
+                    f"HUB_V5_PORTAL_FR_TRIBUNAL_COLUMN_{side_sign}",
+                    [fx + side[0] * 650 * side_sign, fy + side[1] * 650 * side_sign, z + 520],
+                    [140, 140, 920], yaw, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["gold"],
+                )
+            spawn_box(
+                "HUB_V5_PORTAL_FR_TRIBUNAL_LINTEL",
+                [fx, fy, z + 1010], [1650, 180, 150], yaw, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", accent,
+            )
+        elif code == "DZ":
+            for tier in range(3):
+                spawn_box(
+                    f"HUB_V5_PORTAL_DZ_ALLIANCE_TERRACE_{tier}",
+                    [fx + inward[0] * tier * 280, fy + inward[1] * tier * 280, z + 230 + tier * 150],
+                    [1900 - tier * 260, 1250 - tier * 120, 160], yaw, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["jade"],
+                )
+        elif code == "ES":
+            for side_sign in (-1, 0, 1):
+                spawn_box(
+                    f"HUB_V5_PORTAL_ES_STAGE_RIB_{side_sign+1}",
+                    [fx + side[0] * 520 * side_sign, fy + side[1] * 520 * side_sign, z + 670],
+                    [120, 160, 1050 + abs(side_sign) * 240], yaw + side_sign * 7, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY",
+                    materials["copper"] if side_sign else accent,
+                )
+        elif code == "MA":
+            for side_sign in (-1, 1):
+                for back in (0, 1):
+                    spawn_box(
+                        f"HUB_V5_PORTAL_MA_CRAFT_TOWER_{side_sign}_{back}",
+                        [fx + side[0] * 620 * side_sign + inward[0] * back * 380,
+                         fy + side[1] * 620 * side_sign + inward[1] * back * 380,
+                         z + 560],
+                        [160, 160, 980], yaw, tag,
+                        f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY",
+                        materials["gold"] if back else accent,
+                    )
+        elif code == "IT":
+            for side_sign in (-1, 0, 1):
+                spawn_cylinder(
+                    f"HUB_V5_PORTAL_IT_REBUILD_COLUMN_{side_sign+1}",
+                    [fx + side[0] * 520 * side_sign, fy + side[1] * 520 * side_sign, z + 520],
+                    210, 900, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["white"],
+                )
+        elif code == "TN":
+            spawn_cylinder(
+                "HUB_V5_PORTAL_TN_RESCUE_MAST",
+                [fx + side[0] * 580, fy + side[1] * 580, z + 780],
+                120, 1500, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["gold"],
+            )
+            spawn_box(
+                "HUB_V5_PORTAL_TN_RESCUE_LIGHT",
+                [fx + side[0] * 580, fy + side[1] * 580, z + 1570],
+                [360, 360, 160], yaw, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", accent,
+            )
+        elif code == "TR":
+            spawn_sphere(
+                "HUB_V5_PORTAL_TR_OBSERVATORY_DOME",
+                [fx, fy, z + 1180], 1250, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["violet"],
+            )
+            for side_sign in (-1, 1):
+                spawn_cylinder(
+                    f"HUB_V5_PORTAL_TR_OBSERVATORY_MAST_{side_sign}",
+                    [fx + side[0] * 720 * side_sign, fy + side[1] * 720 * side_sign, z + 720],
+                    110, 1320, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["gold"],
+                )
+        elif code == "EE":
+            for side_sign in (-1, 0, 1):
+                height = 1200 + abs(side_sign) * 260
+                spawn_box(
+                    f"HUB_V5_PORTAL_EE_DATA_CRYSTAL_{side_sign+1}",
+                    [fx + side[0] * 520 * side_sign, fy + side[1] * 520 * side_sign, z + height * .5 + 260],
+                    [280, 280, height], yaw + 45.0, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY",
+                    materials["gold"] if side_sign == 0 else accent,
+                )
         spawn_target(
             f"HUB_V5_TRAVEL_ANCHOR_{code}",
             [p["x"] + inward[0] * 420, p["y"] + inward[1] * 420, z + 120],
@@ -832,12 +1029,29 @@ def validate(manifest):
     def count(prefix):
         return sum(1 for label in labels if label.startswith(prefix))
 
+    civic_identity_tokens = (
+        "_BALCONY_", "_AWNING", "_WORKSHOP_", "_SCHOOL_", "_CLINIC_",
+        "_SHOP_WINDOW_", "_GUILD_BANNER_", "_CIVIC_CANOPY",
+    )
+    heritage_identity_tokens = (
+        "FR_TRIBUNAL", "DZ_ALLIANCE", "ES_STAGE", "MA_CRAFT",
+        "IT_REBUILD", "TN_RESCUE", "TR_OBSERVATORY", "EE_DATA",
+    )
+
     checks = {
         "map": current_level_name() == manifest["required_map_name"],
-        "districts": count("HUB_V5_DISTRICT_") == manifest["validation"]["required_district_count"],
+        "districts": sum(
+            1 for label in labels
+            if label.startswith("HUB_V5_DISTRICT_")
+            and not any(token in label for token in ("RETENTION_", "RING_", "STEP_"))
+        ) == manifest["validation"]["required_district_count"],
+        "district_terraces": count("HUB_V5_DISTRICT_RETENTION_") == manifest["validation"]["required_district_count"],
         "buildings": count("HUB_V5_BUILDING_") >= manifest["validation"]["required_building_count"],
         "portals": count("HUB_V5_PORTAL_") >= manifest["validation"]["required_portal_count"] * 5,
+        "heritage_facilities": sum(1 for label in labels if label.endswith("_FACILITY")) >= manifest["validation"]["required_portal_count"],
+        "heritage_identity": all(any(token in label for label in labels) for token in heritage_identity_tokens),
         "civic": count("HUB_V5_CIVIC_") >= manifest["validation"]["minimum_civic_structures"],
+        "civic_identity": all(any(token in label for label in labels) for token in civic_identity_tokens),
         "water": count("HUB_V5_WATER_") >= manifest["validation"]["minimum_water_features"],
         "landmarks": count("HUB_V5_LANDMARK_") >= manifest["validation"]["minimum_landmarks"],
         "skybridges": count("HUB_V5_SKYBRIDGE_") >= manifest["validation"]["minimum_skybridges"],
