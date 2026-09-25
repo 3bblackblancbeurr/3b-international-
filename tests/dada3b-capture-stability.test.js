@@ -24,7 +24,7 @@ test('capture sends the eaten piece back to the stable in the rules engine',()=>
 
 test('capture rendering uses a bounded return-to-stable animation',()=>{
   assert.match(three,/duration:CINEMATIC_CAPTURE_MS/);
-  assert.match(three,/createCaptureCinematic\(runtime,group,country,target,actionAt\+110\)/);
+  assert.match(three,/createCaptureCinematic\(runtime,group,country,target,actionAt\+260\)/);
   assert.match(three,/runtime\.captureCinematics=runtime\.captureCinematics\.filter/);
   assert.match(three,/data\.captureReturn=null/);
   assert.match(three,/pieceWorldPosition\(country,STABLE,captured\.pieceIndex\)/);

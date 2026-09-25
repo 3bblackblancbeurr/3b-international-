@@ -63,14 +63,14 @@ test('V9 moves stables away from the track and turns the four pieces into animat
   assert.match(three,/archetype==='axe'/);
   assert.match(three,/archetype==='sword'/);
   assert.match(three,/archetype==='shield'/);
-  assert.match(three,/attackUntil=actionAt\+560/);
+  assert.match(three,/attackUntil=actionAt\+780/);
   assert.match(shell,/data-warrior=\{archetype\}/);
   assert.match(shell,/WARRIOR_LABELS/);
   assert.match(css,/dada3b-warrior-icon/);
   assert.match(css,/DADA 3B V9/);
   assert.match(three,/bridgeLength=Math\.max\(\.8/);
   assert.match(three,/BoxGeometry\(\.72,\.12,bridgeLength\)/);
-  assert.match(three,/CylinderGeometry\(\.56,\.64,1\.55,10\)/);
+  assert.match(three,/CylinderGeometry\(\.72,\.82,1\.78,12\)/);
   assert.match(shell,/factor=1\.20/);
   assert.match(shell,/Choisis un guerrier/);
 });
@@ -81,7 +81,7 @@ test('V10 uses premium rounded cells, player-follow camera, spatial dice and cap
   assert.match(three,/desiredCameraPosition/);
   assert.match(three,/cameraFollowUntil/);
   assert.match(three,/function createCaptureCinematic/);
-  assert.match(three,/CINEMATIC_CAPTURE_MS=1180/);
+  assert.match(three,/CINEMATIC_CAPTURE_MS=1850/);
   assert.match(three,/runtime\.captureCinematics/);
   assert.match(three,/function createTurnAnchor/);
   assert.match(shell,/TURN_PHASE_LABELS/);
@@ -90,4 +90,9 @@ test('V10 uses premium rounded cells, player-follow camera, spatial dice and cap
   assert.match(css,/DADA 3B V10/);
   assert.match(css,/dadaDiceOrbitV10/);
   assert.match(css,/FRACTURE MATRIX/);
+  assert.match(three,/controls\.enabled=false/);
+  assert.match(three,/runtime\.cameraFollowUntil=0/);
+  assert.match(shell,/dada3b-piece-picker/);
+  assert.match(css,/DADA 3B V11/);
+  assert.match(css,/touch-action:manipulation/);
 });

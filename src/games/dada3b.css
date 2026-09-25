@@ -1533,3 +1533,30 @@
 @media(prefers-reduced-motion:reduce){
   .dada3b-player-dice,.dada3b-player-dice::before,.dada3b-board-wrap[data-phase="resolvingCapture"]::after{transition:none!important;animation:none!important}
 }
+
+/* ---- DADA 3B V11 · selection-safe camera + premium warrior picker ---- */
+.dada3b-piece-picker{
+  position:absolute;left:50%;bottom:4.5%;z-index:29;transform:translateX(-50%);min-width:min(92%,420px);
+  padding:8px 10px 9px;border:1px solid color-mix(in srgb,var(--country) 48%,#fff 12%);border-radius:18px;
+  background:linear-gradient(180deg,rgba(17,42,48,.96),rgba(7,22,27,.97));
+  box-shadow:0 14px 34px #0009,inset 0 1px 0 #ffffff1c,0 0 24px color-mix(in srgb,var(--country) 22%,transparent);
+  backdrop-filter:blur(12px)
+}
+.dada3b-piece-picker>small{display:block;text-align:center;margin-bottom:6px;color:#f6dda1;font-size:7px;font-weight:950;letter-spacing:.16em}
+.dada3b-piece-picker>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.dada3b-piece-picker button{
+  min-height:48px;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:5px;padding:7px 8px;
+  border:1px solid rgba(169,231,238,.16);border-radius:12px;background:linear-gradient(145deg,#26484d,#153239);
+  color:#e8f7f4;box-shadow:inset 0 1px 0 #ffffff12;touch-action:manipulation
+}
+.dada3b-piece-picker button:not(:disabled):active{transform:translateY(1px) scale(.985)}
+.dada3b-piece-picker button span{font-size:18px;filter:drop-shadow(0 0 7px color-mix(in srgb,var(--country) 58%,transparent))}
+.dada3b-piece-picker button b{font-size:9px;text-align:left;color:#fff0c8}
+.dada3b-piece-picker button em{font-size:7px;font-style:normal;color:#8fdfea}
+.dada3b-board-wrap[data-phase="selectingPiece"] .dada3b-three-canvas{cursor:pointer}
+.dada3b-board-wrap[data-phase="selectingPiece"] .dada3b-player-dice{opacity:.48}
+@media(max-width:560px){
+  .dada3b-piece-picker{bottom:3%;min-width:94%;padding:6px}
+  .dada3b-piece-picker>div{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+  .dada3b-piece-picker button{min-height:42px}
+}
