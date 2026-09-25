@@ -194,6 +194,7 @@ function fillerItems(plan,profile,evolution){
         district:district.id,
         civicUse,
         usefulFrontage:true,
+        districtAccent:DISTRICT_PREMIUM_ACCENTS[district.id]||'#d6b46a',
         x:center.x+Math.cos(angle)*ring*stretchX,
         z:center.z+Math.sin(angle)*ring*stretchZ,
         width,depth,height,
