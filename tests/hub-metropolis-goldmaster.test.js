@@ -158,3 +158,17 @@ test('Hub V4 puts the current city story milestone physically at the Broken Circ
  assert.ok(stories[0].detail.includes('Tour'));
  assert.ok(stories[0].range>5);
 });
+
+
+test('all eight country facilities are live interaction points next to their esplanades',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const facilities=runtime.items.filter(item=>item.type==='hubHeritageFacility');
+ assert.equal(runtime.meta.heritageFacilities,8);
+ assert.equal(facilities.length,8);
+ assert.equal(new Set(facilities.map(item=>item.code)).size,8);
+ assert.ok(facilities.every(item=>item.range===7&&item.purpose&&item.services.length>=3));
+ const names=Object.fromEntries(facilities.map(item=>[item.code,item.name]));
+ assert.equal(names.FR,'Tribunal 3B');
+ assert.equal(names.DZ,'Maison des Alliances');
+ assert.equal(names.EE,'Tour des Données');
+});
