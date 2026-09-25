@@ -1029,12 +1029,25 @@ def validate(manifest):
     def count(prefix):
         return sum(1 for label in labels if label.startswith(prefix))
 
+    civic_identity_tokens = (
+        "_BALCONY_", "_AWNING", "_WORKSHOP_", "_SCHOOL_", "_CLINIC_",
+        "_SHOP_WINDOW_", "_GUILD_BANNER_", "_CIVIC_CANOPY",
+    )
+    heritage_identity_tokens = (
+        "FR_TRIBUNAL", "DZ_ALLIANCE", "ES_STAGE", "MA_CRAFT",
+        "IT_REBUILD", "TN_RESCUE", "TR_OBSERVATORY", "EE_DATA",
+    )
+
     checks = {
         "map": current_level_name() == manifest["required_map_name"],
         "districts": count("HUB_V5_DISTRICT_") == manifest["validation"]["required_district_count"],
+        "district_terraces": count("HUB_V5_DISTRICT_RETENTION_") == manifest["validation"]["required_district_count"],
         "buildings": count("HUB_V5_BUILDING_") >= manifest["validation"]["required_building_count"],
         "portals": count("HUB_V5_PORTAL_") >= manifest["validation"]["required_portal_count"] * 5,
+        "heritage_facilities": sum(1 for label in labels if label.endswith("_FACILITY")) >= manifest["validation"]["required_portal_count"],
+        "heritage_identity": all(any(token in label for label in labels) for token in heritage_identity_tokens),
         "civic": count("HUB_V5_CIVIC_") >= manifest["validation"]["minimum_civic_structures"],
+        "civic_identity": all(any(token in label for label in labels) for token in civic_identity_tokens),
         "water": count("HUB_V5_WATER_") >= manifest["validation"]["minimum_water_features"],
         "landmarks": count("HUB_V5_LANDMARK_") >= manifest["validation"]["minimum_landmarks"],
         "skybridges": count("HUB_V5_SKYBRIDGE_") >= manifest["validation"]["minimum_skybridges"],
