@@ -93,13 +93,17 @@ def _tick(delta_seconds):
 
     try:
         _run_builder()
-        _log("Construction automatique V4 terminee. La map Hub3B_Main_V04 doit etre ouverte.")
+        builder = _STATE.get("builder") or ""
+        if "v5" in builder.lower():
+            _log("Construction automatique V05 terminée. La map Hub3B_Main_V05 doit être ouverte.")
+        else:
+            _log("Construction automatique V4 historique terminée.")
     except Exception:
         _log_error("La construction automatique a echoue:\n" + traceback.format_exc())
 
 
 if _has_flag():
-    _log("Mode lancement automatique Hub 3B V4 detecte. Attente de l'initialisation de l'editeur...")
+    _log("Mode lancement automatique Hub 3B détecté. Attente de l'initialisation de l'éditeur...")
     try:
         _STATE["handle"] = unreal.register_slate_post_tick_callback(_tick)
     except Exception:
