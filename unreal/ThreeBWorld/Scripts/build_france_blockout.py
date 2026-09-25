@@ -94,6 +94,30 @@ def spawn_marker(label, location, tags=()):
     return mark(actor, label, tags)
 
 
+def disable_collision(actor):
+    try:
+        actor.static_mesh_component.set_collision_enabled(unreal.CollisionEnabled.NO_COLLISION)
+    except Exception as exc:
+        unreal.log_warning(f"3B France: collision non désactivée sur {actor.get_actor_label()}: {exc}")
+    return actor
+
+
+def spawn_cavity_frame(cavity):
+    p, s = cavity["location_cm"], cavity["size_cm"]
+    x, y, z = float(p["x"]), float(p["y"]), float(p["z"])
+    sx, sy, sz = float(s["x"]), float(s["y"]), float(s["z"])
+    wall = max(120.0, min(sx, sy) * 0.035)
+    tag = f"3B_CAVITY_{cavity['kind'].upper()}"
+    actors = [
+        spawn_cube(f"3B_FR_CAVITY_{cavity['id']}_W", x-sx*.5, y, z, wall, sy, sz, tags=("3B_CAVITY_SHELL", tag)),
+        spawn_cube(f"3B_FR_CAVITY_{cavity['id']}_E", x+sx*.5, y, z, wall, sy, sz, tags=("3B_CAVITY_SHELL", tag)),
+        spawn_cube(f"3B_FR_CAVITY_{cavity['id']}_N", x, y+sy*.5, z, sx, wall, sz, tags=("3B_CAVITY_SHELL", tag)),
+        spawn_cube(f"3B_FR_CAVITY_{cavity['id']}_S", x, y-sy*.5, z, sx, wall, sz, tags=("3B_CAVITY_SHELL", tag)),
+        spawn_cube(f"3B_FR_CAVITY_{cavity['id']}_CEILING", x, y, z+sz*.5, sx, sy, wall, tags=("3B_CAVITY_SHELL", tag)),
+    ]
+    return actors
+
+
 def segment_transform(a, b):
     dx = float(b["x"] - a["x"])
     dy = float(b["y"] - a["y"])
@@ -186,13 +210,15 @@ def build():
             tags=("3B_BUILDING_MASS", f"3B_SCALE_{mass['category'].upper()}"),
         )
 
-    # 5) Underworld/cavity targets remain markers until real subtractive/mesh work in Editor.
+    # 5) Underworld/cavity blockout now has visible hollow shells plus semantic markers.
+    # Final subtractive/Nanite cave art is still an Editor/final-art task.
     for cavity in manifest.get("cavities", []):
         spawn_marker(
             f"3B_FR_CAVITY_{cavity['id']}",
             cavity["location_cm"],
             ("3B_CAVITY", f"3B_CAVITY_{cavity['kind'].upper()}"),
         )
+        spawn_cavity_frame(cavity)
 
     # 6) Floating islands visibly extend the playable/readable world below France.
     for island in manifest.get("floating_islands", []):
@@ -244,7 +270,34 @@ def build():
             ("3B_WATER", "3B_WATERFALL"),
         )
 
-    # 8) Directed vista anchors define the required anti-flat review positions.
+    # 8) Void depth preview: cloud ocean + fall/recovery proof anchors.
+    void_system = manifest.get("void_system", {})
+    cloud = void_system.get("cloud_ocean")
+    if cloud:
+        p, s = cloud["center_cm"], cloud["size_cm"]
+        cloud_actor = spawn_cube(
+            "3B_FR_VOID_CLOUD_OCEAN",
+            p["x"], p["y"], p["z"],
+            s["x"], s["y"], s["z"],
+            tags=("3B_VOID", "3B_CLOUD_OCEAN", "3B_PRESENTATION_ONLY"),
+        )
+        if cloud.get("collision") is False:
+            disable_collision(cloud_actor)
+
+    recovery = void_system.get("fall_recovery", {})
+    if recovery:
+        spawn_marker(
+            "3B_FR_VOID_SOFT_RECOVERY",
+            {"x": 0, "y": 0, "z": recovery["soft_recovery_z_cm"]},
+            ("3B_VOID", "3B_SOFT_RECOVERY"),
+        )
+        spawn_marker(
+            "3B_FR_VOID_HARD_FAIL",
+            {"x": 0, "y": 0, "z": recovery["hard_fail_z_cm"]},
+            ("3B_VOID", "3B_HARD_FAIL"),
+        )
+
+    # 9) Directed vista anchors define the required anti-flat review positions.
     for vista in manifest.get("vistas", []):
         spawn_marker(
             f"3B_FR_VISTA_{vista['id']}",

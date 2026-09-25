@@ -55,6 +55,18 @@ test('France has real thickness, underside, cavities and floating islands in the
   assert.equal(layout.qa_gates.side_view_must_show_thickness,true);
 });
 
+test('France void system defines a non-colliding cloud ocean and authoritative fall recovery',()=>{
+  assert.ok(layout.void_system);
+  assert.equal(layout.void_system.cloud_ocean.collision,false);
+  assert.equal(layout.void_system.cloud_ocean.render_only,true);
+  assert.ok(layout.void_system.cloud_ocean.size_cm.x>=60000);
+  assert.ok(layout.void_system.cloud_ocean.center_cm.z<-20000);
+  assert.ok(layout.void_system.fall_recovery.soft_recovery_z_cm>layout.void_system.fall_recovery.hard_fail_z_cm);
+  assert.equal(layout.void_system.fall_recovery.server_authority,true);
+  assert.ok(layout.void_system.island_rules.minimum_count>=5);
+  assert.equal(layout.void_system.island_rules.require_visible_underside,true);
+});
+
 test('building program covers small medium large and iconic scales',()=>{
   const categories=new Set(layout.masses.map(x=>x.category));
   for(const category of ['small','medium','large','iconic'])assert.ok(categories.has(category),category);
@@ -133,7 +145,7 @@ test('Editor manifest and execution plan cover system layers and vertical Gold M
 
 test('blockout generator consumes the canonical vertical contract instead of a second architecture',()=>{
   const script=read('unreal/ThreeBWorld/Scripts/build_france_blockout.py');
-  for(const token of ['world_masses','districts','vertical_links','floating_islands','hydrology','vistas']){
+  for(const token of ['world_masses','districts','vertical_links','floating_islands','hydrology','void_system','vistas']){
     assert.match(script,new RegExp(token),token);
   }
   assert.match(script,/segment_transform/);

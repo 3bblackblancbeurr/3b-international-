@@ -1098,6 +1098,32 @@
       }
     ]
   },
+  "void_system": {
+    "cloud_ocean": {
+      "center_cm": {"x": 0, "y": 0, "z": -24500},
+      "size_cm": {"x": 65000, "y": 52000, "z": 220},
+      "render_only": true,
+      "collision": false,
+      "purpose": "visual depth layer below underside and floating islands"
+    },
+    "fall_recovery": {
+      "soft_recovery_z_cm": -27000,
+      "hard_fail_z_cm": -32000,
+      "respawn_anchor": "france_peripherie",
+      "server_authority": true
+    },
+    "edge_wind": {
+      "start_distance_cm": 1800,
+      "peak_distance_cm": 600,
+      "presentation_only": true
+    },
+    "island_rules": {
+      "minimum_count": 5,
+      "minimum_vertical_clearance_cm": 2500,
+      "require_visible_underside": true,
+      "require_non_rectangular_final_silhouette": true
+    }
+  },
   "vistas": [
     {
       "id": "arrival_reveal",
