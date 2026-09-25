@@ -80,7 +80,10 @@
       "name": "Place de l’Héritage",
       "kind": "arrival",
       "purpose": "arrivée, orientation, événements publics et premières missions",
-      "center": [0.5, 0.53],
+      "center": [
+        0.5,
+        0.53
+      ],
       "tier": 0
     },
     {
@@ -88,7 +91,10 @@
       "name": "Tour du Cercle Brisé",
       "kind": "narrative",
       "purpose": "histoire centrale, fragments, carte des huit pays et progression",
-      "center": [0.5, 0.37],
+      "center": [
+        0.5,
+        0.37
+      ],
       "tier": 0
     },
     {
@@ -96,7 +102,10 @@
       "name": "Archives de la Mémoire",
       "kind": "lore",
       "purpose": "souvenirs, manga, énigmes, personnages et collection",
-      "center": [0.35, 0.3],
+      "center": [
+        0.35,
+        0.3
+      ],
       "tier": 0
     },
     {
@@ -104,7 +113,10 @@
       "name": "Arène 3B",
       "kind": "gameplay",
       "purpose": "combat, mobilité, défis, entraînement et événements",
-      "center": [0.61, 0.37],
+      "center": [
+        0.61,
+        0.37
+      ],
       "tier": 1
     },
     {
@@ -112,7 +124,10 @@
       "name": "Quartier Commerce",
       "kind": "economy",
       "purpose": "boutique, craft, garage, personnalisation et contrats",
-      "center": [0.62, 0.5],
+      "center": [
+        0.62,
+        0.5
+      ],
       "tier": 1
     },
     {
@@ -120,7 +135,10 @@
       "name": "Quartier Communauté",
       "kind": "social",
       "purpose": "groupes, coopération, événements et expositions",
-      "center": [0.34, 0.44],
+      "center": [
+        0.34,
+        0.44
+      ],
       "tier": 1
     },
     {
@@ -128,7 +146,10 @@
       "name": "Quartier Innovation et IA",
       "kind": "technology",
       "purpose": "IA Textile, Mode 3 IA, avatar, prototypes et puzzles Matrix",
-      "center": [0.58, 0.25],
+      "center": [
+        0.58,
+        0.25
+      ],
       "tier": 2
     },
     {
@@ -136,7 +157,10 @@
       "name": "Docks et Transports",
       "kind": "mobility",
       "purpose": "bateaux, train, navettes, fret, sauvetage et exploration aquatique",
-      "center": [0.39, 0.73],
+      "center": [
+        0.39,
+        0.73
+      ],
       "tier": 0
     },
     {
@@ -144,7 +168,10 @@
       "name": "Portail Ville 3B",
       "kind": "city",
       "purpose": "construction, sauvegarde, visites, trophées et habitants invités",
-      "center": [0.6, 0.73],
+      "center": [
+        0.6,
+        0.73
+      ],
       "tier": 0
     },
     {
@@ -152,7 +179,10 @@
       "name": "Jardins de l’Unité",
       "kind": "nature",
       "purpose": "nature, mémorial, animaux, secrets calmes et contemplation",
-      "center": [0.23, 0.68],
+      "center": [
+        0.23,
+        0.68
+      ],
       "tier": 1
     }
   ],
@@ -162,7 +192,12 @@
       "name": "Tour du Cercle Brisé",
       "district": "broken_circle_tower",
       "tier": 0,
-      "functions": ["story", "fragments", "world_map", "fast_travel"],
+      "functions": [
+        "story",
+        "fragments",
+        "world_map",
+        "fast_travel"
+      ],
       "interior": "separate_cell"
     },
     {
@@ -170,7 +205,11 @@
       "name": "Maison de l’Accueil",
       "district": "heritage_square",
       "tier": 0,
-      "functions": ["tutorial", "accessibility", "orientation"],
+      "functions": [
+        "tutorial",
+        "accessibility",
+        "orientation"
+      ],
       "interior": "small"
     },
     {
@@ -178,7 +217,11 @@
       "name": "Hôtel des Missions",
       "district": "heritage_square",
       "tier": 1,
-      "functions": ["public_missions", "district_contracts", "events"],
+      "functions": [
+        "public_missions",
+        "district_contracts",
+        "events"
+      ],
       "interior": "small"
     },
     {
@@ -186,7 +229,12 @@
       "name": "Archives de la Mémoire",
       "district": "archives",
       "tier": 0,
-      "functions": ["lore", "memory_restoration", "collection", "secrets"],
+      "functions": [
+        "lore",
+        "memory_restoration",
+        "collection",
+        "secrets"
+      ],
       "interior": "separate_cell"
     },
     {
@@ -194,7 +242,11 @@
       "name": "Chambre des Cartes Vivantes",
       "district": "archives",
       "tier": 1,
-      "functions": ["character_collection", "relationships", "city_invites"],
+      "functions": [
+        "character_collection",
+        "relationships",
+        "city_invites"
+      ],
       "interior": "small"
     },
     {
@@ -202,7 +254,12 @@
       "name": "Arène 3B",
       "district": "arena",
       "tier": 1,
-      "functions": ["combat", "training", "boss_simulation", "rankings"],
+      "functions": [
+        "combat",
+        "training",
+        "boss_simulation",
+        "rankings"
+      ],
       "interior": "open"
     },
     {
@@ -210,7 +267,11 @@
       "name": "Centre de Mobilité",
       "district": "arena",
       "tier": 1,
-      "functions": ["movement_training", "zipline_challenges", "time_trials"],
+      "functions": [
+        "movement_training",
+        "zipline_challenges",
+        "time_trials"
+      ],
       "interior": "open"
     },
     {
@@ -218,7 +279,11 @@
       "name": "Maison 3B",
       "district": "commerce",
       "tier": 1,
-      "functions": ["shop", "brand_lore", "collections"],
+      "functions": [
+        "shop",
+        "brand_lore",
+        "collections"
+      ],
       "interior": "small"
     },
     {
@@ -226,7 +291,11 @@
       "name": "Garage 3B",
       "district": "commerce",
       "tier": 1,
-      "functions": ["vehicles", "customization", "delivery_missions"],
+      "functions": [
+        "vehicles",
+        "customization",
+        "delivery_missions"
+      ],
       "interior": "separate_cell"
     },
     {
@@ -234,7 +303,12 @@
       "name": "Maison de la Communauté",
       "district": "community",
       "tier": 1,
-      "functions": ["groups", "friends", "coop", "announcements"],
+      "functions": [
+        "groups",
+        "friends",
+        "coop",
+        "announcements"
+      ],
       "interior": "small"
     },
     {
@@ -242,7 +316,11 @@
       "name": "Laboratoire IA Textile",
       "district": "innovation",
       "tier": 2,
-      "functions": ["textile_ai", "materials", "prototype_missions"],
+      "functions": [
+        "textile_ai",
+        "materials",
+        "prototype_missions"
+      ],
       "interior": "separate_cell"
     },
     {
@@ -250,7 +328,11 @@
       "name": "Studio Mode 3 IA",
       "district": "innovation",
       "tier": 2,
-      "functions": ["styling", "avatar", "outfit_previews"],
+      "functions": [
+        "styling",
+        "avatar",
+        "outfit_previews"
+      ],
       "interior": "small"
     },
     {
@@ -258,7 +340,12 @@
       "name": "Gare Maritime Centrale",
       "district": "docks",
       "tier": 0,
-      "functions": ["boat_taxi", "routes", "tickets", "weather"],
+      "functions": [
+        "boat_taxi",
+        "routes",
+        "tickets",
+        "weather"
+      ],
       "interior": "small"
     },
     {
@@ -266,7 +353,11 @@
       "name": "Chantier Naval 3B",
       "district": "docks",
       "tier": 1,
-      "functions": ["boat_repair", "boat_customization", "maritime_missions"],
+      "functions": [
+        "boat_repair",
+        "boat_customization",
+        "maritime_missions"
+      ],
       "interior": "open"
     },
     {
@@ -274,7 +365,11 @@
       "name": "Gare du 3B Express",
       "district": "docks",
       "tier": 0,
-      "functions": ["circular_train", "panoramic_tour", "train_missions"],
+      "functions": [
+        "circular_train",
+        "panoramic_tour",
+        "train_missions"
+      ],
       "interior": "small"
     },
     {
@@ -282,7 +377,11 @@
       "name": "Mémorial des Ouvriers",
       "district": "gardens",
       "tier": 1,
-      "functions": ["heritage", "emotional_missions", "memory"],
+      "functions": [
+        "heritage",
+        "emotional_missions",
+        "memory"
+      ],
       "interior": "open"
     },
     {
@@ -290,7 +389,11 @@
       "name": "Refuge Animalier",
       "district": "gardens",
       "tier": 2,
-      "functions": ["animals", "care_missions", "observation_collection"],
+      "functions": [
+        "animals",
+        "care_missions",
+        "observation_collection"
+      ],
       "interior": "open"
     },
     {
@@ -298,7 +401,12 @@
       "name": "Bureau d’Urbanisme",
       "district": "city3b_portal",
       "tier": 0,
-      "functions": ["place_building", "move_building", "roads", "undo_redo"],
+      "functions": [
+        "place_building",
+        "move_building",
+        "roads",
+        "undo_redo"
+      ],
       "interior": "small"
     },
     {
@@ -306,7 +414,11 @@
       "name": "Galerie des Villes 3B",
       "district": "city3b_portal",
       "tier": 1,
-      "functions": ["visit_cities", "favorites", "rankings"],
+      "functions": [
+        "visit_cities",
+        "favorites",
+        "rankings"
+      ],
       "interior": "small"
     }
   ],
@@ -325,43 +437,423 @@
     "train": {
       "name": "3B Express",
       "type": "circular",
-      "stations": ["heritage_square", "archives", "community", "gardens", "docks", "city3b_portal", "commerce", "arena", "innovation", "broken_circle_tower"],
-      "options": ["destination_directe", "tour_complet", "archives_audio", "wagon_mission", "wagon_secret"]
+      "stations": [
+        "heritage_square",
+        "archives",
+        "community",
+        "gardens",
+        "docks",
+        "city3b_portal",
+        "commerce",
+        "arena",
+        "innovation",
+        "broken_circle_tower"
+      ],
+      "options": [
+        "destination_directe",
+        "tour_complet",
+        "archives_audio",
+        "wagon_mission",
+        "wagon_secret"
+      ]
     },
     "boats": {
       "role": "mobilité aquatique, missions et îlots",
-      "stops": ["docks", "gardens", "city3b_portal", "commerce", "heritage_square"],
-      "types": ["bateau_taxi", "navette_maritime", "bateau_personnel", "bateau_mission", "bateau_panoramique"]
+      "stops": [
+        "docks",
+        "gardens",
+        "city3b_portal",
+        "commerce",
+        "heritage_square"
+      ],
+      "types": [
+        "bateau_taxi",
+        "navette_maritime",
+        "bateau_personnel",
+        "bateau_mission",
+        "bateau_panoramique"
+      ]
     },
     "telepherics": {
       "lines": [
-        {"id": "T1", "from": "docks", "to": "broken_circle_tower", "role": "liaison verticale principale"},
-        {"id": "T2", "from": "gardens", "to": "archives", "role": "panorama et accès calme"},
-        {"id": "T3", "from": "commerce", "to": "innovation", "role": "liaison commerciale et technologique"}
+        {
+          "id": "T1",
+          "from": "docks",
+          "to": "broken_circle_tower",
+          "role": "liaison verticale principale"
+        },
+        {
+          "id": "T2",
+          "from": "gardens",
+          "to": "archives",
+          "role": "panorama et accès calme"
+        },
+        {
+          "id": "T3",
+          "from": "commerce",
+          "to": "innovation",
+          "role": "liaison commerciale et technologique"
+        }
       ]
     },
     "ziplines": {
       "lines": [
-        {"id": "Z1", "from": "broken_circle_tower", "to": "heritage_square"},
-        {"id": "Z2", "from": "archives", "to": "community"},
-        {"id": "Z3", "from": "arena", "to": "commerce"},
-        {"id": "Z4", "from": "innovation", "to": "arena"},
-        {"id": "Z5", "from": "gardens", "to": "docks"},
-        {"id": "Z6", "from": "city3b_portal", "to": "docks"}
+        {
+          "id": "Z1",
+          "from": "broken_circle_tower",
+          "to": "heritage_square"
+        },
+        {
+          "id": "Z2",
+          "from": "archives",
+          "to": "community"
+        },
+        {
+          "id": "Z3",
+          "from": "arena",
+          "to": "commerce"
+        },
+        {
+          "id": "Z4",
+          "from": "innovation",
+          "to": "arena"
+        },
+        {
+          "id": "Z5",
+          "from": "gardens",
+          "to": "docks"
+        },
+        {
+          "id": "Z6",
+          "from": "city3b_portal",
+          "to": "docks"
+        }
       ]
     }
   },
   "performance": {
-    "mobileMedium": {"targetFps": 30, "activeCells": 3, "activeNpcNear": [10,18], "distantNpc": [20,35]},
-    "mobileHigh": {"targetFps": 60, "activeCells": 4, "activeNpcNear": [18,30], "distantNpc": [35,60]},
-    "desktop": {"targetFps": 60, "activeCells": 6, "activeNpcNear": [30,50], "distantNpc": [60,100]},
-    "cellSizeMeters": [120,160]
+    "mobileMedium": {
+      "targetFps": 30,
+      "activeCells": 3,
+      "activeNpcNear": [
+        10,
+        18
+      ],
+      "distantNpc": [
+        20,
+        35
+      ]
+    },
+    "mobileHigh": {
+      "targetFps": 60,
+      "activeCells": 4,
+      "activeNpcNear": [
+        18,
+        30
+      ],
+      "distantNpc": [
+        35,
+        60
+      ]
+    },
+    "desktop": {
+      "targetFps": 60,
+      "activeCells": 6,
+      "activeNpcNear": [
+        30,
+        50
+      ],
+      "distantNpc": [
+        60,
+        100
+      ]
+    },
+    "cellSizeMeters": [
+      120,
+      160
+    ]
   },
   "firstPlayableSlice": {
-    "districts": ["heritage_square", "broken_circle_tower", "archives", "docks", "city3b_portal"],
-    "gates": ["FR", "DZ"],
-    "missions": ["first_steps", "first_echo", "rooftops_circle", "boat_without_flag"],
-    "transports": ["pedestrian", "train", "boats", "ziplines"],
-    "targetMinutes": [15,25]
+    "districts": [
+      "heritage_square",
+      "broken_circle_tower",
+      "archives",
+      "docks",
+      "city3b_portal"
+    ],
+    "gates": [
+      "FR",
+      "DZ"
+    ],
+    "missions": [
+      "first_steps",
+      "first_echo",
+      "rooftops_circle",
+      "boat_without_flag"
+    ],
+    "transports": [
+      "pedestrian",
+      "train",
+      "boats",
+      "ziplines"
+    ],
+    "targetMinutes": [
+      15,
+      25
+    ]
+  },
+  "heritagePlatforms": [
+    {
+      "code": "FR",
+      "regionId": "france",
+      "name": "Esplanade France",
+      "value": "Justice",
+      "district": "archives",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "memory_preview",
+        "fast_travel"
+      ],
+      "visual": "pierre bleutée, héritage urbain et ouvrier, verrière de pluie"
+    },
+    {
+      "code": "DZ",
+      "regionId": "algerie",
+      "name": "Esplanade Algérie",
+      "value": "Loyauté",
+      "district": "docks",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "maritime_link",
+        "fast_travel"
+      ],
+      "visual": "terrasses minérales, arc méditerranéen, eau, lumière jade"
+    },
+    {
+      "code": "ES",
+      "regionId": "espagne",
+      "name": "Esplanade Espagne",
+      "value": "Passion",
+      "district": "arena",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "challenge_preview",
+        "fast_travel"
+      ],
+      "visual": "grande place expressive, cuivre, pierre chaude et mouvement"
+    },
+    {
+      "code": "MA",
+      "regionId": "maroc",
+      "name": "Esplanade Maroc",
+      "value": "Noblesse",
+      "district": "commerce",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "craft_preview",
+        "fast_travel"
+      ],
+      "visual": "zellige numérique, lanternes, médina verticale et patios"
+    },
+    {
+      "code": "IT",
+      "regionId": "italie",
+      "name": "Esplanade Italie",
+      "value": "Espoir",
+      "district": "gardens",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "restoration_preview",
+        "fast_travel"
+      ],
+      "visual": "travertin, jardins, arcades, eau et lumière d’aube"
+    },
+    {
+      "code": "TN",
+      "regionId": "tunisie",
+      "name": "Esplanade Tunisie",
+      "value": "Courage",
+      "district": "docks",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "coast_preview",
+        "fast_travel"
+      ],
+      "visual": "architecture blanche, céramique bleue, rivage et énergie solaire"
+    },
+    {
+      "code": "TR",
+      "regionId": "turquie",
+      "name": "Esplanade Turquie",
+      "value": "Foi",
+      "district": "innovation",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "observatory_preview",
+        "fast_travel"
+      ],
+      "visual": "dômes, ponts, astrolabes, obsidienne et lumière violette"
+    },
+    {
+      "code": "EE",
+      "regionId": "estonie",
+      "name": "Esplanade Estonie",
+      "value": "Sagesse",
+      "district": "gardens",
+      "services": [
+        "country_access",
+        "guardian_progress",
+        "forest_preview",
+        "fast_travel"
+      ],
+      "visual": "bois sombre, forêt numérique, brume, cristal et aurore"
+    }
+  ],
+  "verticalLinks": [
+    {
+      "id": "B1",
+      "from": "heritage_square",
+      "to": "broken_circle_tower",
+      "level": 1,
+      "role": "axe cérémoniel principal"
+    },
+    {
+      "id": "B2",
+      "from": "archives",
+      "to": "community",
+      "level": 2,
+      "role": "passerelle mémoire et rencontres"
+    },
+    {
+      "id": "B3",
+      "from": "community",
+      "to": "commerce",
+      "level": 1,
+      "role": "liaison sociale et économique"
+    },
+    {
+      "id": "B4",
+      "from": "commerce",
+      "to": "arena",
+      "level": 2,
+      "role": "passerelle défis et équipement"
+    },
+    {
+      "id": "B5",
+      "from": "arena",
+      "to": "innovation",
+      "level": 2,
+      "role": "liaison entraînement et technologie"
+    },
+    {
+      "id": "B6",
+      "from": "innovation",
+      "to": "broken_circle_tower",
+      "level": 3,
+      "role": "passerelle haute de la Tour"
+    },
+    {
+      "id": "B7",
+      "from": "gardens",
+      "to": "archives",
+      "level": 2,
+      "role": "promenade panoramique"
+    },
+    {
+      "id": "B8",
+      "from": "docks",
+      "to": "city3b_portal",
+      "level": 1,
+      "role": "pont des Horizons"
+    }
+  ],
+  "evolution": {
+    "source": "seals_and_restored_regions",
+    "rule": "la Cité change visiblement au retour du joueur ; les bâtiments restent présents mais passent de veille à actifs puis à prestige",
+    "stages": [
+      {
+        "stage": 0,
+        "id": "foundations",
+        "label": "Fondations vivantes",
+        "minFragments": 0,
+        "activeBuildingTiers": [
+          0
+        ],
+        "densityBonus": 0,
+        "trafficBonus": 0,
+        "activeSkybridges": 2,
+        "platformGlow": 0.18,
+        "description": "Le cœur, les transports essentiels et les services Tier 0 fonctionnent. Les autres bâtiments sont visibles en veille ou en chantier."
+      },
+      {
+        "stage": 1,
+        "id": "first_links",
+        "label": "Premiers liens",
+        "minFragments": 1,
+        "activeBuildingTiers": [
+          0,
+          1
+        ],
+        "densityBonus": 1,
+        "trafficBonus": 1,
+        "activeSkybridges": 3,
+        "platformGlow": 0.34,
+        "description": "Un premier héritage libéré réactive les quartiers Tier 1, les enseignes et de nouveaux flux."
+      },
+      {
+        "stage": 2,
+        "id": "living_network",
+        "label": "Réseau vivant",
+        "minFragments": 3,
+        "activeBuildingTiers": [
+          0,
+          1
+        ],
+        "densityBonus": 2,
+        "trafficBonus": 2,
+        "activeSkybridges": 5,
+        "platformGlow": 0.52,
+        "description": "Trois héritages rétablissent les connexions hautes, densifient les quartiers et renforcent les transports."
+      },
+      {
+        "stage": 3,
+        "id": "heritage_city",
+        "label": "Cité des Héritages",
+        "minFragments": 5,
+        "activeBuildingTiers": [
+          0,
+          1,
+          2
+        ],
+        "densityBonus": 3,
+        "trafficBonus": 4,
+        "activeSkybridges": 8,
+        "platformGlow": 0.72,
+        "description": "Cinq héritages ouvrent les fonctions avancées, Innovation, faune, culture et vie de quartier complète."
+      },
+      {
+        "stage": 4,
+        "id": "united_legacy",
+        "label": "Héritage uni",
+        "minFragments": 8,
+        "activeBuildingTiers": [
+          0,
+          1,
+          2
+        ],
+        "densityBonus": 4,
+        "trafficBonus": 6,
+        "activeSkybridges": 8,
+        "platformGlow": 1,
+        "description": "Les huit héritages illuminent la métropole entière ; toutes les esplanades sont restaurées et la Tour devient le phare du monde."
+      }
+    ]
   }
 }
