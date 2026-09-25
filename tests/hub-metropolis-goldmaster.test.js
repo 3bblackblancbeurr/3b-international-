@@ -114,3 +114,35 @@ test('restoring heritage visibly grows city density, transport life and vertical
  assert.equal(final.items.filter(item=>item.type==='hubHeritagePlatform'&&item.restored).length,8);
  assert.ok(final.items.filter(item=>item.type==='hubBuilding').every(item=>item.buildStatus==='active'));
 });
+
+
+test('Hub V4 runtime materializes plazas, landmarks, water and physical transit lines',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ assert.equal(runtime.meta.civicPlazas,10);
+ assert.equal(runtime.meta.districtLandmarks,10);
+ assert.ok(runtime.meta.waterFeatures>=5);
+ assert.ok(runtime.meta.transitLinks>=19);
+ assert.equal(runtime.items.filter(item=>item.type==='hubCivicPlaza').length,10);
+ assert.equal(runtime.items.filter(item=>item.type==='hubDistrictLandmark').length,10);
+ assert.ok(runtime.items.filter(item=>item.type==='hubWaterFeature').length>=5);
+ assert.ok(runtime.items.filter(item=>item.type==='hubTransitLink').length>=19);
+});
+
+test('Hub V4 decorative infrastructure never steals the player interaction focus',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const decorative=new Set(['hubRoad','hubStructure','hubTraffic','hubSkybridge','hubHeritagePlatform','hubCivicPlaza','hubDistrictLandmark','hubWaterFeature','hubTransitLink']);
+ const rows=runtime.items.filter(item=>decorative.has(item.type));
+ assert.ok(rows.length>100);
+ assert.ok(rows.every(item=>item.range===-1));
+ assert.ok(runtime.items.filter(item=>item.type==='hubStructure').every(item=>item.civicUse&&item.usefulFrontage===true));
+});
+
+test('Hub V4 exposes the exact story milestone attached to city evolution',()=>{
+ const four=hubEvolutionState(plan,{seals:['france','algerie','espagne','maroc']});
+ const seven=hubEvolutionState(plan,{seals:['france','algerie','espagne','maroc','italie','tunisie','turquie']});
+ const eight=hubEvolutionState(plan,{seals:['france','algerie','espagne','maroc','italie','tunisie','turquie','estonie']});
+ assert.equal(four.milestone.id,'tower_transformation');
+ assert.equal(seven.milestone.id,'beyond_the_guardians');
+ assert.equal(eight.milestone.id,'circle_restored');
+ assert.equal(eight.nextMilestone,null);
+});
