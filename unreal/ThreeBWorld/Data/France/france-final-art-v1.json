@@ -1,0 +1,125 @@
+{
+  "version": "1.0.0",
+  "slice_id": "france_justice_v1",
+  "engine": "5.8",
+  "purpose": "Concrete final-art production targets for France Gold Master. Paths are targets, never proof of existence.",
+  "status_rule": "A target is not complete until the Unreal asset exists and its mapped evidence gate is PASS.",
+  "groups": [
+    {
+      "id": "geometry",
+      "gate": "final_nanite_geometry",
+      "targets": [
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Cliff_Master_A", "kind": "StaticMesh", "role": "primary_cliff", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Cliff_Master_B", "kind": "StaticMesh", "role": "secondary_cliff", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Island_Rock_A", "kind": "StaticMesh", "role": "floating_island", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Island_Rock_B", "kind": "StaticMesh", "role": "floating_island_variant", "critical": true}
+      ]
+    },
+    {
+      "id": "underside_caverns",
+      "gate": "final_underside_caverns",
+      "targets": [
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Underside_Rib_A", "kind": "StaticMesh", "role": "underside_structure", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Underside_Rib_B", "kind": "StaticMesh", "role": "underside_structure_variant", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Cave_Module_A", "kind": "StaticMesh", "role": "cave_shell", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Cave_Module_B", "kind": "StaticMesh", "role": "cave_shell_variant", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Geometry/SM_FR_Cave_Entrance_A", "kind": "StaticMesh", "role": "cave_entrance", "critical": true}
+      ]
+    },
+    {
+      "id": "materials",
+      "gate": "final_nanite_geometry",
+      "targets": [
+        {"path": "/Game/3B/World/France/Environment/Materials/M_FR_Rock_Master", "kind": "Material", "role": "rock_master", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Materials/MI_FR_Rock_Dry", "kind": "MaterialInstanceConstant", "role": "rock_dry", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Materials/MI_FR_Rock_Wet", "kind": "MaterialInstanceConstant", "role": "rock_wet", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Materials/MI_FR_Cave_Wet", "kind": "MaterialInstanceConstant", "role": "cave_wet", "critical": true}
+      ]
+    },
+    {
+      "id": "architecture",
+      "gate": "final_architecture_facades_furniture",
+      "targets": [
+        {"path": "/Game/3B/World/France/Environment/Architecture/SM_FR_Facade_Paris_A", "kind": "StaticMesh", "role": "facade_primary", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Architecture/SM_FR_Facade_Worker_A", "kind": "StaticMesh", "role": "worker_facade", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Architecture/SM_FR_JusticeTribunal", "kind": "StaticMesh", "role": "justice_landmark", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Architecture/SM_FR_StreetKit_A", "kind": "StaticMesh", "role": "street_furniture", "critical": true}
+      ]
+    },
+    {
+      "id": "vegetation",
+      "gate": "final_vegetation",
+      "targets": [
+        {"path": "/Game/3B/World/France/Environment/Vegetation/SM_FR_Tree_A", "kind": "StaticMesh", "role": "tree_primary", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Vegetation/SM_FR_Tree_B", "kind": "StaticMesh", "role": "tree_variant", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Vegetation/SM_FR_Shrub_A", "kind": "StaticMesh", "role": "shrub", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Vegetation/PCG_FR_Vegetation", "kind": "PCGGraph", "role": "vegetation_distribution", "critical": true}
+      ]
+    },
+    {
+      "id": "water",
+      "gate": "water_system_and_waterfall_materials",
+      "targets": [
+        {"path": "/Game/3B/World/France/Environment/Water/BP_FR_Waterfall_Master", "kind": "Blueprint", "role": "waterfall_actor", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Water/M_FR_Waterfall_Master", "kind": "Material", "role": "waterfall_material", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Water/BP_FR_JusticeBasin", "kind": "Blueprint", "role": "justice_basin", "critical": true},
+        {"path": "/Game/3B/World/France/Environment/Water/BP_FR_LowerBasin", "kind": "Blueprint", "role": "lower_basin", "critical": true}
+      ]
+    },
+    {
+      "id": "niagara",
+      "gate": "niagara_weather_vfx",
+      "targets": [
+        {"path": "/Game/3B/World/France/VFX/NS_FR_Waterfall_Mist", "kind": "NiagaraSystem", "role": "waterfall_mist", "critical": true},
+        {"path": "/Game/3B/World/France/VFX/NS_FR_Waterfall_Spray", "kind": "NiagaraSystem", "role": "waterfall_spray", "critical": true},
+        {"path": "/Game/3B/World/France/VFX/NS_FR_Rain", "kind": "NiagaraSystem", "role": "rain", "critical": true},
+        {"path": "/Game/3B/World/France/VFX/NS_FR_CloudOcean", "kind": "NiagaraSystem", "role": "cloud_ocean", "critical": true}
+      ]
+    },
+    {
+      "id": "celiane",
+      "gate": "celiane_final",
+      "targets": [
+        {"path": "/Game/3B/Characters/Celiane/SK_Celiane", "kind": "SkeletalMesh", "role": "final_mesh", "critical": true},
+        {"path": "/Game/3B/Characters/Celiane/SKEL_Celiane", "kind": "Skeleton", "role": "skeleton", "critical": true},
+        {"path": "/Game/3B/Characters/Celiane/ABP_Celiane", "kind": "AnimBlueprint", "role": "animation_blueprint", "critical": true},
+        {"path": "/Game/3B/Characters/Celiane/Animations/AM_Celiane_Locomotion", "kind": "AnimMontage", "role": "locomotion", "critical": true},
+        {"path": "/Game/3B/Characters/Celiane/Animations/AM_Celiane_JusticeTrial", "kind": "AnimMontage", "role": "justice_trial", "critical": true},
+        {"path": "/Game/3B/Characters/Celiane/Animations/AM_Celiane_Liberation", "kind": "AnimMontage", "role": "liberation", "critical": true}
+      ]
+    },
+    {
+      "id": "audio",
+      "gate": "spatial_audio_final",
+      "targets": [
+        {"path": "/Game/3B/World/France/Audio/MS_FR_CityBed", "kind": "MetaSoundSource", "role": "city_bed", "critical": true},
+        {"path": "/Game/3B/World/France/Audio/MS_FR_Waterfall", "kind": "MetaSoundSource", "role": "waterfall_distance", "critical": true},
+        {"path": "/Game/3B/World/France/Audio/MS_FR_VoidWind", "kind": "MetaSoundSource", "role": "void_wind", "critical": true},
+        {"path": "/Game/3B/World/France/Audio/MS_FR_CaveReverb", "kind": "MetaSoundSource", "role": "cave_reverb", "critical": true},
+        {"path": "/Game/3B/Characters/Celiane/Audio/MS_Celiane_Presence", "kind": "MetaSoundSource", "role": "celiane_presence", "critical": true}
+      ]
+    },
+    {
+      "id": "cinematics",
+      "gate": "cinematics_final",
+      "targets": [
+        {"path": "/Game/3B/World/France/Cinematics/LS_FR_Arrival", "kind": "LevelSequence", "role": "arrival", "critical": true},
+        {"path": "/Game/3B/World/France/Cinematics/LS_FR_WaterfallReveal", "kind": "LevelSequence", "role": "waterfall_reveal", "critical": true},
+        {"path": "/Game/3B/World/France/Cinematics/LS_FR_CelianeIntro", "kind": "LevelSequence", "role": "celiane_intro", "critical": true},
+        {"path": "/Game/3B/World/France/Cinematics/LS_FR_CelianeLiberation", "kind": "LevelSequence", "role": "celiane_liberation", "critical": true},
+        {"path": "/Game/3B/World/France/Cinematics/LS_FR_ReturnNexus", "kind": "LevelSequence", "role": "return_nexus", "critical": true}
+      ]
+    }
+  ],
+  "evidence_requirements": {
+    "final_nanite_geometry": ["nanite_enabled_on_major_rock_assets", "five_vistas_no_blockout_cube_read", "island_silhouettes_are_final"],
+    "final_underside_caverns": ["underside_has_final_surface", "caves_are_hollow_and_traversable", "collision_matches_visible_rock"],
+    "final_architecture_facades_furniture": ["eight_districts_have_authored_facades", "tribunal_is_final", "street_furniture_breaks_repetition"],
+    "final_vegetation": ["pcg_distribution_reviewed", "wind_response_visible", "critical_vistas_remain_clear"],
+    "water_system_and_waterfall_materials": ["water_origin_visible", "waterfall_has_source", "lower_basin_receives_flow", "cloud_fall_visible"],
+    "niagara_weather_vfx": ["rain", "waterfall_mist", "waterfall_spray", "cloud_ocean_motion"],
+    "celiane_final": ["final_mesh", "anim_blueprint", "justice_trial_animation", "liberation_animation", "state_tree_runtime"],
+    "spatial_audio_final": ["waterfall_distance", "void_wind", "cave_reverb", "celiane_presence"],
+    "cinematics_final": ["arrival", "waterfall_reveal", "celiane_intro", "celiane_liberation", "return_nexus"]
+  }
+}
