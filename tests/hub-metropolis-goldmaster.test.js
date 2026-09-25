@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance} from '../src/world/hub/metropolis.js';
+import {buildMetropolisRuntimeItems,HUB_METROPOLIS,hubDistrictPosition,hubPortalPosition,metropolisRoadItems,pedestrianLaneMinimumClearance,hubEvolutionState} from '../src/world/hub/metropolis.js';
 import {HUB_MISSION_SIGNAL_RULES} from '../src/world/hub/mission-signals.js';
 import {HUB_MISSION_ACTION_PLANS} from '../src/world/hub/mission-actions.js';
 import {HUB_SECRET_IMPLEMENTED} from '../src/world/hub/secret-runtime.js';
@@ -87,4 +87,30 @@ test('human-scale pedestrian shortcuts break the hub ring-and-spoke pattern',()=
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
  const trafficRoutes=new Set(runtime.items.filter(i=>i.type==='hubTraffic').map(i=>i.routeId));
  assert.ok(lanes.every(lane=>!trafficRoutes.has(lane.id)));
+});
+
+
+test('the eight heritage esplanades are dispersed at the real country portals',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const platforms=runtime.items.filter(item=>item.type==='hubHeritagePlatform');
+ assert.equal(platforms.length,8);
+ assert.equal(runtime.meta.heritagePlatforms,8);
+ assert.ok(platforms.every(item=>Math.hypot(item.x,item.z)>300&&Math.hypot(item.x,item.z)<HUB_METROPOLIS.radius));
+ assert.equal(new Set(platforms.map(item=>item.regionId)).size,8);
+ assert.ok(platforms.every(item=>item.evolutionStage===0));
+});
+
+test('restoring heritage visibly grows city density, transport life and vertical links',()=>{
+ const stage0=buildMetropolisRuntimeItems(plan,'mobileMedium');
+ const stage2=buildMetropolisRuntimeItems(plan,'mobileMedium',{seals:['france','algerie','espagne']});
+ const final=buildMetropolisRuntimeItems(plan,'mobileMedium',{seals:['france','algerie','espagne','maroc','italie','tunisie','turquie','estonie'],restoredRegions:['france','algerie','espagne','maroc','italie','tunisie','turquie','estonie']});
+ assert.equal(hubEvolutionState(plan,{seals:[]}).stage,0);
+ assert.equal(stage2.meta.evolutionStage,2);
+ assert.equal(final.meta.evolutionStage,4);
+ assert.ok(stage2.meta.structures>stage0.meta.structures);
+ assert.ok(stage2.meta.traffic>stage0.meta.traffic);
+ assert.ok(stage2.meta.skybridges>stage0.meta.skybridges);
+ assert.equal(final.meta.skybridges,8);
+ assert.equal(final.items.filter(item=>item.type==='hubHeritagePlatform'&&item.restored).length,8);
+ assert.ok(final.items.filter(item=>item.type==='hubBuilding').every(item=>item.buildStatus==='active'));
 });
