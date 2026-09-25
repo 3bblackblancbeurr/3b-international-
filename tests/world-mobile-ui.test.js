@@ -38,3 +38,15 @@ test('pause menu exposes character and weapons together', () => {
   const page = read('src/world/WorldPage.jsx');
   assert.match(page, /Personnage & armes/);
 });
+
+
+test('Hub HUD exposes the visible evolution of the Cité des Huit Héritages',()=>{
+  const hud=read('src/world/WorldHUD.jsx');
+  const scene=read('src/world/scene.js');
+  const css=read('src/world/immersion.css');
+  assert.match(scene,/hubEvolution/);
+  assert.match(scene,/hubHeritagePlatform/);
+  assert.match(hud,/hub-evolution-chip/);
+  assert.match(hud,/héritages restaurés/);
+  assert.match(css,/\.hub-evolution-chip/);
+});
