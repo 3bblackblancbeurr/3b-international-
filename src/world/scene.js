@@ -220,6 +220,9 @@ function hubNpcAvatar(item){
    if(item.type==='hubGuardian'){
     itemVisuals.set(item.id,[makeActor(item)]);continue;
    }
+   if(item.type==='hubMilestone'){
+    const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'event'});itemVisuals.set(item.id,[marker]);continue;
+   }
    if(item.type==='hubMission'){
     const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'mission'});itemVisuals.set(item.id,[marker]);continue;
    }
