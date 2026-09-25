@@ -66,7 +66,42 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
  const canopy=mesh('box',trim,bx,y+3.2,bz+depth*.57,width*.26,.26,depth*.18);visuals.push(canopy);
  const light=mesh('box',glass,bx,y+2.7,bz+depth*.665,width*.18,.18,.08);light.castShadow=false;visuals.push(light);
 
- if(!canonical)return visuals;
+ if(!canonical){
+  const civicAccent=material(item.districtAccent||'#00a8ff',{emissive:item.districtAccent||'#00a8ff',emissiveIntensity:.16,roughness:.26,metalness:.42});
+  const frontageZ=bz+depth*.535;
+  switch(item.civicUse){
+   case 'housing':
+    for(const level of [.32,.56,.78])for(const side of [-1,1]){
+     const balcony=mesh('box',civicAccent,bx+side*width*.22,y+height*level,frontageZ,width*.16,.10,.08);
+     balcony.castShadow=false;visuals.push(balcony);
+    }
+    break;
+   case 'food':
+    {const awning=mesh('box',civicAccent,bx,y+3.8,frontageZ+.45,width*.52,.18,1.15);awning.castShadow=false;visuals.push(awning);}
+    break;
+   case 'workshop':
+    for(const side of [-1,0,1]){const door=mesh('box',trim,bx+side*width*.22,y+2.3,frontageZ,width*.16,4.1,.15);visuals.push(door);}
+    break;
+   case 'school':
+    for(const side of [-1,1]){const pillar=mesh('box',stone,bx+side*width*.28,y+3.5,frontageZ,.42,6.2,.42);visuals.push(pillar);}
+    {const lintel=mesh('box',civicAccent,bx,y+6.55,frontageZ,width*.64,.14,.20);lintel.castShadow=false;visuals.push(lintel);}
+    break;
+   case 'clinic':
+    {const barA=mesh('box',civicAccent,bx,y+4.6,frontageZ,width*.22,.18,.12),barB=mesh('box',civicAccent,bx,y+4.6,frontageZ,.18,width*.22,.12);barA.castShadow=barB.castShadow=false;visuals.push(barA,barB);}
+    break;
+   case 'small_shop':
+    for(const side of [-1,1]){const display=mesh('box',glass,bx+side*width*.22,y+2.65,frontageZ,width*.18,3.6,.10);display.castShadow=false;visuals.push(display);}
+    break;
+   case 'guild_room':
+    for(const side of [-1,1]){const banner=mesh('box',civicAccent,bx+side*width*.31,y+height*.60,frontageZ,.22,height*.42,.10);banner.castShadow=false;visuals.push(banner);}
+    break;
+   case 'public_service':
+    {const civicCanopy=mesh('box',gold,bx,y+4.2,frontageZ+.55,width*.58,.20,1.3);visuals.push(civicCanopy);}
+    break;
+   default:break;
+  }
+  return visuals;
+ }
  switch(item.buildingId){
   case 'tower_circle':{
    for(const lift of [height*.63,height*.78,height*.91]){
@@ -447,6 +482,45 @@ export function createPremiumWaterFeature(item,{root,geometry,material,groundY})
  }
  return group;
 }
+
+export function createPremiumStreetFurniture(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Street-'+item.district+'-'+item.kind;root.add(group);
+ group.position.set(item.x,groundY(item.x,item.z),item.z);group.rotation.y=item.heading||0;
+ const dark=material('#141b20',{roughness:.62,metalness:.34});
+ const stone=material('#3a4042',{roughness:.82,metalness:.08});
+ const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.14,roughness:.28,metalness:.78});
+ const accent=material(item.accent||'#00a8ff',{emissive:item.accent||'#00a8ff',emissiveIntensity:.22,roughness:.22,metalness:.40});
+ const green=material('#315a3d',{roughness:.86,metalness:.02});
+ const compact=item.renderProfile==='mobileMedium';
+ if(item.kind==='planter'){
+  child(group,geometry.cylinder,stone,{y:.26,sx:1.05,sy:.52,sz:1.05});
+  child(group,geometry.sphere,green,{y:1.05,sx:1.25,sy:.85,sz:1.25,cast:false});
+  child(group,geometry.ring,accent,{y:.56,sx:1.12,sy:1.12,sz:1.12,rx:Math.PI/2,cast:false});
+ }else if(item.kind==='bench'){
+  child(group,geometry.box,stone,{y:.32,sx:2.4,sy:.28,sz:.62});
+  child(group,geometry.box,dark,{y:.82,z:.42,sx:2.4,sy:.78,sz:.12});
+  child(group,geometry.box,gold,{y:.48,sx:2.15,sy:.06,sz:.68,cast:false});
+ }else if(item.kind==='kiosk'){
+  child(group,geometry.box,dark,{y:1.45,sx:2.1,sy:2.7,sz:1.65});
+  child(group,geometry.box,accent,{y:2.2,z:.87,sx:1.55,sy:.65,sz:.08,cast:false});
+  child(group,geometry.box,gold,{y:2.92,sx:2.35,sy:.14,sz:1.9,cast:false});
+  if(!compact)for(const side of [-1,1])child(group,geometry.cylinder,gold,{x:side*.88,y:1.45,z:.8,sx:.08,sy:2.45,sz:.08,cast:false});
+ }else if(item.kind==='lamp'){
+  child(group,geometry.cylinder,dark,{y:1.95,sx:.10,sy:3.8,sz:.10});
+  child(group,geometry.box,accent,{y:3.98,sx:.42,sy:.16,sz:.42,cast:false});
+  child(group,geometry.box,gold,{y:.16,sx:.62,sy:.12,sz:.62,cast:false});
+ }else if(item.kind==='sign'){
+  child(group,geometry.cylinder,dark,{y:1.1,sx:.09,sy:2.1,sz:.09});
+  child(group,geometry.box,accent,{y:2.25,sx:1.55,sy:.72,sz:.10,cast:false});
+  child(group,geometry.box,gold,{y:2.25,z:.065,sx:1.2,sy:.08,sz:.025,cast:false});
+ }else{
+  for(const side of [-1,1])child(group,geometry.cylinder,dark,{x:side*1.35,y:1.55,sx:.10,sy:3.0,sz:.10});
+  child(group,geometry.box,gold,{y:3.08,sx:3.1,sy:.14,sz:1.5,cast:false});
+  child(group,geometry.box,accent,{y:2.96,sx:2.65,sy:.06,sz:1.15,cast:false});
+ }
+ return group;
+}
+
 
 export function createPremiumTransitLink(item,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Transit-Link-'+item.transport;root.add(group);

@@ -12,6 +12,7 @@ on:
       - 'scripts/threeb-unreal-bridge.mjs'
       - 'src/world/hub/data/**'
       - 'tests/unreal-preproduction-contract.test.js'
+      - 'tests/hub-unreal-v5-premium.test.js'
       - 'tests/france-unreal-contract.test.js'
       - 'tests/france-preproduction-depth.test.js'
       - 'tests/france-handoff-coop-editor.test.js'
@@ -48,6 +49,7 @@ jobs:
           tests/france-vertical-world.test.js
           tests/france-goldmaster-gate.test.js
           tests/world-unreal-story-state-contract.test.js
+          tests/hub-unreal-v5-premium.test.js
       - run: node --test tests/ai-council-unreal-bridge.test.js
       - name: Validate canonical Unreal editor Python syntax
         run: >-
@@ -60,45 +62,53 @@ jobs:
           unreal/ThreeBWorld/Scripts/france_goldmaster_gate.py
           unreal/ThreeBWorld/Scripts/build_hub3b_void_blockout_v3.py
           unreal/ThreeBWorld/Scripts/build_hub3b_main_v4.py
+          unreal/ThreeBWorld/Scripts/build_hub3b_main_v5.py
           unreal/ThreeBWorld/Content/Python/init_unreal.py
-      - name: Validate Hub 3B one-click manifest and launcher contract
+      - name: Validate Hub 3B V05 one-click manifest and launcher contract
         run: |
-          python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-void-blockout-v3.json >/dev/null
-          python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json >/dev/null
+          python -m json.tool unreal/ThreeBWorld/Data/Production/hub3b-main-v5-premium.json >/dev/null
+          python -m json.tool unreal/ThreeBWorld/Data/Production/world-layout-unreal.json >/dev/null
           test -f LANCER_HUB_3B.bat
           test -f scripts/windows/Launch-Hub3B.ps1
-          grep -q -- "-3BHubV4AutoBuild" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
-          grep -q "build_hub3b_main_v4.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+          grep -q -- "-3BHubV5AutoBuild" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
+          grep -q "build_hub3b_main_v5.py" scripts/windows/Launch-Hub3B.ps1 unreal/ThreeBWorld/Content/Python/init_unreal.py
 
-      - name: Validate Hub 3B V4 spatial canon
+      - name: Validate Hub 3B V05 metropolitan canon
         run: |
           python - <<'PY'
-          import json
+          import json, math
           from pathlib import Path
 
-          path = Path("unreal/ThreeBWorld/Data/Production/hub3b-main-v4.json")
-          data = json.loads(path.read_text(encoding="utf-8"))
+          data = json.loads(Path("unreal/ThreeBWorld/Data/Production/hub3b-main-v5-premium.json").read_text(encoding="utf-8"))
+          layout = json.loads(Path("unreal/ThreeBWorld/Data/Production/world-layout-unreal.json").read_text(encoding="utf-8"))
 
-          portals = data["portals"]
-          assert len(portals) == 8, len(portals)
-          codes = [p["code"] for p in portals]
-          assert len(set(codes)) == 8, codes
-          assert set(codes) == {"EE","FR","ES","MA","DZ","TN","IT","TR"}, codes
+          assert data["required_map_name"] == "Hub3B_Main_V05"
+          assert data["visual_reference"] == "user-master://La Cité des Huit Héritages"
+          assert data["world"]["district_count"] == 10
+          assert data["world"]["canonical_building_count"] == 19
+          assert data["world"]["portal_count"] == 8
+          assert len(data["portals"]) == 8
+          assert len(data["vertical_links"]) == 8
+          assert len(data["water_network"]["features"]) >= 5
+          assert len(data["landmarks"]) >= 10
+          assert data["safe_zone"]["hubIsOnlyMajorSafeZone"] is True
+          assert data["safe_zone"]["monsters"] is False
+          assert data["validation"]["forbid_even_45_degree_portal_ring"] is True
+          assert data["validation"]["forbid_legacy_ring_spokes_petals"] is True
 
-          angles = sorted(float(p["angle_deg"]) % 360 for p in portals)
-          diffs = [((angles[(i+1) % 8] - angles[i]) % 360) for i in range(8)]
-          assert all(abs(d - 45.0) < 0.001 for d in diffs), diffs
+          gates = {g["id"]: g["location_cm"] for g in layout["gates"]}
+          region_for = {p["code"]: p["region_id"] for p in data["portals"]}
+          for portal in data["portals"]:
+              assert portal["location_cm"] == gates[region_for[portal["code"]]]
+              assert portal["state"] == "prepared-dispersed"
 
-          assert data["validation"]["required_map_name"] == "Hub3B_Main_V04"
-          assert data["core"]["diameter_cm"] == 2600
-          assert data["ring"]["segment_count"] == 24
-          assert data["ring"]["radius_cm"] > data["core"]["diameter_cm"] / 2
-          assert data["design"]["clear_void_below_cm"] >= 2500
-          assert data["design"]["deep_cloud_start_cm"] <= -7000
+          angles = sorted((math.degrees(math.atan2(p["location_cm"]["y"], p["location_cm"]["x"])) + 360) % 360 for p in data["portals"])
+          diffs = [((angles[(i+1)%8]-angles[i])%360) for i in range(8)]
+          assert any(abs(d-45.0) > 2.0 for d in diffs), diffs
 
-          for p in portals:
-              assert p["arch_radius_cm"] > p["terrace_radius_cm"] > data["ring"]["radius_cm"]
-              assert p["state"] == "prepared"
+          raw = json.dumps(data)
+          for forbidden in ['"ring"', '"spokes"', '"petals"']:
+              assert forbidden not in raw, forbidden
 
-          print("Hub 3B V4 spatial canon: OK")
+          print("Hub 3B V05 metropolitan canon: OK")
           PY
