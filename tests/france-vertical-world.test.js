@@ -65,6 +65,11 @@ test('France void system defines a non-colliding cloud ocean and authoritative f
   assert.equal(layout.void_system.fall_recovery.server_authority,true);
   assert.ok(layout.void_system.island_rules.minimum_count>=5);
   assert.equal(layout.void_system.island_rules.require_visible_underside,true);
+  assert.equal(layout.void_system.cloud_ocean.layers.length,3);
+  assert.equal(layout.void_system.island_routes.length,5);
+  assert.ok(layout.void_system.island_routes.some(x=>x.kind==='suspended_bridge'));
+  assert.ok(layout.void_system.island_routes.some(x=>x.kind==='zipline_anchor'));
+  assert.equal(layout.void_system.vista_capture_rules.required_vistas,5);
 });
 
 test('building program covers small medium large and iconic scales',()=>{

@@ -220,15 +220,50 @@ def build():
         )
         spawn_cavity_frame(cavity)
 
-    # 6) Floating islands visibly extend the playable/readable world below France.
-    for island in manifest.get("floating_islands", []):
+    # 6) Floating islands use layered blockout masses to avoid a single-box silhouette.
+    islands = {entry["id"]: entry for entry in manifest.get("floating_islands", [])}
+    for island in islands.values():
         p = island["location_cm"]
         s = island["size_cm"]
-        spawn_cube(
-            f"3B_FR_ISLAND_{island['id']}",
-            p["x"], p["y"], p["z"],
-            s["x"], s["y"], s["z"],
-            tags=("3B_FLOATING_ISLAND", f"3B_ISLAND_{island['purpose'].upper()}"),
+        sx, sy, sz = float(s["x"]), float(s["y"]), float(s["z"])
+        layers = (
+            (0.00, 0.00, 0.00, 1.00, 1.00, .42),
+            (.08, -.05, -.32, .82, .76, .34),
+            (-.10, .07, -.62, .58, .52, .28),
+        )
+        for layer_index, (ox, oy, oz, scale_x, scale_y, scale_z) in enumerate(layers):
+            spawn_cube(
+                f"3B_FR_ISLAND_{island['id']}_L{layer_index+1}",
+                p["x"] + sx * ox,
+                p["y"] + sy * oy,
+                p["z"] + sz * oz,
+                sx * scale_x,
+                sy * scale_y,
+                max(220.0, sz * scale_z),
+                yaw=(layer_index * 13.0 + len(island["id"]) * 7.0) % 31.0 - 15.0,
+                tags=("3B_FLOATING_ISLAND", "3B_LAYERED_ISLAND", f"3B_ISLAND_{island['purpose'].upper()}"),
+            )
+
+    # Physical blockout routes make the lower world readable and reviewable.
+    zone_locations = {key: value["location_cm"] for key, value in zones.items()}
+    district_locations = {entry["id"]: entry["location_cm"] for entry in manifest.get("districts", [])}
+    for route in manifest.get("void_system", {}).get("island_routes", []):
+        start = zone_locations.get(route.get("from")) or district_locations.get(route.get("from"))
+        if route.get("from_island") in islands:
+            start = islands[route["from_island"]]["location_cm"]
+        end = zone_locations.get(route.get("to")) or district_locations.get(route.get("to"))
+        if route.get("to_island") in islands:
+            end = islands[route["to_island"]]["location_cm"]
+        if not start or not end:
+            unreal.log_warning(f"3B France: route vide non résolue {route['id']}")
+            continue
+        spawn_segment(
+            f"3B_FR_VOID_ROUTE_{route['id']}",
+            start,
+            end,
+            manifest.get("void_system", {}).get("island_rules", {}).get("route_width_cm", 500),
+            35.0,
+            ("3B_VOID_ROUTE", f"3B_ROUTE_{route['kind'].upper()}"),
         )
 
     # 7) Hydrology blockout: logical source -> river -> basin -> waterfall -> lower basin.

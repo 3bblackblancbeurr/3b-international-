@@ -1102,6 +1102,11 @@
     "cloud_ocean": {
       "center_cm": {"x": 0, "y": 0, "z": -24500},
       "size_cm": {"x": 65000, "y": 52000, "z": 220},
+      "layers": [
+        {"z_cm": -24200, "opacity": 0.42, "drift": 0.18},
+        {"z_cm": -24750, "opacity": 0.31, "drift": -0.11},
+        {"z_cm": -25350, "opacity": 0.22, "drift": 0.07}
+      ],
       "render_only": true,
       "collision": false,
       "purpose": "visual depth layer below underside and floating islands"
@@ -1110,18 +1115,37 @@
       "soft_recovery_z_cm": -27000,
       "hard_fail_z_cm": -32000,
       "respawn_anchor": "france_peripherie",
-      "server_authority": true
+      "server_authority": true,
+      "camera_fade_seconds": 0.45,
+      "preserve_progress": true
     },
     "edge_wind": {
       "start_distance_cm": 1800,
       "peak_distance_cm": 600,
-      "presentation_only": true
+      "presentation_only": true,
+      "max_audio_gain": 0.9,
+      "max_particle_density": 1.0
     },
     "island_rules": {
       "minimum_count": 5,
       "minimum_vertical_clearance_cm": 2500,
       "require_visible_underside": true,
-      "require_non_rectangular_final_silhouette": true
+      "require_non_rectangular_final_silhouette": true,
+      "route_width_cm": 500
+    },
+    "island_routes": [
+      {"id": "route_memory", "from": "under_france_exit", "to_island": "island_memory", "kind": "suspended_bridge"},
+      {"id": "route_water", "from_island": "island_memory", "to_island": "island_water", "kind": "broken_bridge"},
+      {"id": "route_justice_view", "from": "france_monumental", "to_island": "island_justice_view", "kind": "cliff_path"},
+      {"id": "route_underpass", "from": "france_culture", "to_island": "island_underpass", "kind": "suspended_bridge"},
+      {"id": "route_fragment", "from_island": "island_underpass", "to_island": "island_fragment", "kind": "zipline_anchor"}
+    ],
+    "vista_capture_rules": {
+      "required_vistas": 5,
+      "must_show_cloud_ocean": 2,
+      "must_show_underside": 2,
+      "must_show_floating_island": 2,
+      "must_show_waterfall": 2
     }
   },
   "vistas": [
