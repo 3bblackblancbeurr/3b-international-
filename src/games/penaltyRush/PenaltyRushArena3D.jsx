@@ -17,6 +17,8 @@ const KEEPER_Z = -18.35;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
 const mix = (a, b, t) => a + (b - a) * t;
 const expFollow = (rate, dt) => 1 - Math.exp(-rate * dt);
+const wrapAngle = (value) => Math.atan2(Math.sin(value), Math.cos(value));
+const followAngle = (current, target, rate, dt) => current + wrapAngle(target - current) * expFollow(rate, dt);
 const validHex = (value, fallback) => /^#[0-9a-f]{6}$/i.test(String(value || '')) ? String(value) : fallback;
 
 const COUNTRY_KITS = {
@@ -272,14 +274,25 @@ function createHumanoid(appearance) {
   pelvis.position.y = 1.42;
   rig.add(pelvis);
 
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(.41, .49, 1.12, 8), shirtMat);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(.4, .48, 1.12, 12), shirtMat);
   torso.scale.z = .58;
   torso.position.y = 2.1;
   rig.add(torso);
 
-  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.04, .18, .47), shirtMat);
-  shoulders.position.y = 2.55;
+  const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.02, .16, .45), shirtMat);
+  shoulders.position.y = 2.54;
   rig.add(shoulders);
+  for (const side of [-1, 1]) {
+    const shoulderCap = new THREE.Mesh(new THREE.SphereGeometry(.19, 8, 6), shirtMat);
+    shoulderCap.scale.set(1.08, .78, 1);
+    shoulderCap.position.set(side * .49, 2.52, 0);
+    rig.add(shoulderCap);
+  }
+
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(.15, .025, 6, 16), trimMat);
+  collar.rotation.x = Math.PI / 2;
+  collar.position.set(0, 2.69, -.015);
+  rig.add(collar);
 
   const trim = new THREE.Mesh(new THREE.BoxGeometry(.15, .56, .025), trimMat);
   trim.position.set(0, 2.11, -.292);
@@ -303,10 +316,18 @@ function createHumanoid(appearance) {
   head.position.y = 3.04;
   rig.add(head);
 
-  const nose = new THREE.Mesh(new THREE.ConeGeometry(.055, .13, 6), skinMat);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(.052, .125, 6), skinMat);
   nose.rotation.x = -Math.PI / 2;
   nose.position.set(0, 3.03, -.265);
   rig.add(nose);
+
+  const eyeMat = makeMaterial('#151719', .76);
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(.025, 6, 5), eyeMat);
+    eye.position.set(side * .09, 3.075, -.265);
+    eye.scale.z = .55;
+    rig.add(eye);
+  }
 
   const hair = new THREE.Mesh(new THREE.SphereGeometry(.3, 10, 7, 0, Math.PI * 2, 0, Math.PI * .47), hairMat);
   hair.position.y = 3.11;
@@ -320,6 +341,11 @@ function createHumanoid(appearance) {
 
   const legL = makeLeg(skinMat, socksMat, bootMat, -1);
   const legR = makeLeg(skinMat, socksMat, bootMat, 1);
+  for (const side of [-1, 1]) {
+    const shortCuff = new THREE.Mesh(new THREE.CylinderGeometry(.18, .16, .3, 10), shortsMat);
+    shortCuff.position.set(side * .23, 1.19, 0);
+    rig.add(shortCuff);
+  }
   legL.hip.position.y = 1.25;
   legR.hip.position.y = 1.25;
   rig.add(legL.hip, legR.hip);
@@ -825,7 +851,7 @@ function dispose(root) {
   });
 }
 
-function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null, eventT = 0, direction = 0 }) {
+function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null, eventT = 0, direction = 0, lean = 0, sprint = false }) {
   const { rig, torso, armL, armR, legL, legR, shadow } = model.userData;
   setKeeper(model, keeper);
 
@@ -834,15 +860,15 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
 
   rig.position.set(0, 0, 0);
   rig.rotation.set(0, 0, 0);
-  torso.rotation.set(0, 0, 0);
+  torso.rotation.set(sprint ? -.08 : 0, 0, -lean * .085);
 
   legL.hip.rotation.set(stride, 0, 0);
   legR.hip.rotation.set(-stride, 0, 0);
   legL.shinPivot.rotation.set(Math.max(0, -stride) * .62 + bend, 0, 0);
   legR.shinPivot.rotation.set(Math.max(0, stride) * .62 + bend, 0, 0);
 
-  armL.shoulder.rotation.set(-stride * .55, 0, -.12);
-  armR.shoulder.rotation.set(stride * .55, 0, .12);
+  armL.shoulder.rotation.set(-stride * (sprint ? .68 : .55), 0, -.12 - lean * .04);
+  armR.shoulder.rotation.set(stride * (sprint ? .68 : .55), 0, .12 - lean * .04);
   armL.elbow.rotation.set(-.08 - Math.max(0, stride) * .24, 0, 0);
   armR.elbow.rotation.set(-.08 - Math.max(0, -stride) * .24, 0, 0);
 
@@ -869,10 +895,22 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
 
   if (action === 'feint' || action === 'cut') {
     const wave = Math.sin(eventT * Math.PI);
-    torso.rotation.z = wave * .22 * (direction || 1);
-    rig.rotation.y = wave * .34 * (direction || 1);
-    legL.hip.rotation.z = -wave * .12;
-    legR.hip.rotation.z = wave * .12;
+    const snap = action === 'cut' ? 1.18 : .86;
+    torso.rotation.z = wave * .22 * snap * (direction || 1);
+    rig.rotation.y = wave * .34 * snap * (direction || 1);
+    rig.position.x = wave * .08 * snap * (direction || 1);
+    legL.hip.rotation.z = -wave * .14;
+    legR.hip.rotation.z = wave * .14;
+  }
+
+  if (action === 'rhythm') {
+    const spin = clamp(eventT, 0, 1);
+    const ease = spin * spin * (3 - 2 * spin);
+    rig.rotation.y = (direction || 1) * ease * Math.PI * 1.72;
+    rig.position.y = Math.sin(spin * Math.PI) * .055;
+    torso.rotation.x = -.09;
+    armL.shoulder.rotation.z = -.52;
+    armR.shoulder.rotation.z = .52;
   }
 
   if (action === 'shot') {
@@ -1060,6 +1098,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       event:null,
       playerTargets:[attackerPosition(initialState), keeperPosition(initialState)],
       speeds:[0, 0],
+      yaws:[0, Math.PI],
+      inputSmooth:{ x:0, y:0, intensity:0 },
       ballTarget:new THREE.Vector3(),
       cameraTarget:new THREE.Vector3(),
       cameraDesired:new THREE.Vector3(),
@@ -1276,13 +1316,18 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
       const input = controlRef?.current || null;
       const sprinting = Date.now() < Number(state?.sprintUntil || 0);
-      if (input?.active) {
-        const intensity = clamp(input.intensity, 0, 1);
-        const lateralSpeed = 4.4 + intensity * 2.2;
-        const forwardSpeed = (5.4 + intensity * 2.8) * (sprinting ? 1.22 : 1);
-        const drive = .24 + intensity * .76;
-        runtime.localAttack.x += clamp(input.x, -1, 1) * lateralSpeed * drive * dt;
-        runtime.localAttack.z += clamp(input.y, -1, 1) * forwardSpeed * drive * dt;
+      const active = Boolean(input?.active);
+      const follow = expFollow(active ? 30 : 38, dt);
+      runtime.inputSmooth.x = mix(runtime.inputSmooth.x, active ? clamp(input.x, -1, 1) : 0, follow);
+      runtime.inputSmooth.y = mix(runtime.inputSmooth.y, active ? clamp(input.y, -1, 1) : 0, follow);
+      runtime.inputSmooth.intensity = mix(runtime.inputSmooth.intensity, active ? clamp(input.intensity, 0, 1) : 0, expFollow(active ? 24 : 34, dt));
+      if (active || runtime.inputSmooth.intensity > .025) {
+        const intensity = runtime.inputSmooth.intensity;
+        const lateralSpeed = 4.15 + intensity * 2.35;
+        const forwardSpeed = (5.15 + intensity * 3.05) * (sprinting ? 1.22 : 1);
+        const drive = .2 + intensity * .8;
+        runtime.localAttack.x += runtime.inputSmooth.x * lateralSpeed * drive * dt;
+        runtime.localAttack.z += runtime.inputSmooth.y * forwardSpeed * drive * dt;
         clampAttackerWorld(runtime.localAttack);
       }
 
@@ -1319,6 +1364,10 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const target = runtime.cameraLook;
       let fov;
 
+      const attackerIndex = clamp(state?.attacker, 0, 1);
+      const pace = runtime.speeds[attackerIndex] || 0;
+      const leadX = selfKeeper ? 0 : runtime.inputSmooth.x * pace;
+
       if (selfKeeper) {
         runtime.camera.mode = 'keeper';
         fov = 72;
@@ -1338,16 +1387,16 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       } else {
         runtime.camera.mode = 'attack';
         desired.set(
-          serverAttack.x * .2,
-          5.55 - progress * .62,
-          19.7 - progress * 5.9,
+          serverAttack.x * .2 + leadX * .32,
+          5.55 - progress * .62 + pace * .08,
+          19.7 - progress * 5.9 + pace * .18,
         );
         target.set(
-          serverAttack.x * .15,
+          serverAttack.x * .15 + leadX * .48,
           1.18,
-          mix(-9.6, -12.8, progress),
+          mix(-9.6, -12.8, progress) - pace * .18,
         );
-        fov = 48.5;
+        fov = 48.5 + pace * 2.15;
         goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .21, .16);
       }
 
@@ -1425,7 +1474,13 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
           expFollow(10, dt),
         );
 
-        model.rotation.y = index === keeper ? Math.PI : 0;
+        if (index === keeper) {
+          runtime.yaws[index] = followAngle(runtime.yaws[index], Math.PI, 14, dt);
+        } else if (moved > .00025) {
+          const desiredYaw = Math.atan2(-dx, -dz);
+          runtime.yaws[index] = followAngle(runtime.yaws[index], desiredYaw, index === snapshot.selfIndex ? 18 : 10, dt);
+        }
+        model.rotation.y = runtime.yaws[index];
 
         const actor = livingActors[index];
         if (actor?.ready) {
@@ -1439,6 +1494,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
               runtime.playerTargets[attacker].z - actor.object.position.z,
               dt,
             );
+          } else if (moved > .00025) {
+            actor.face(dx, dz, dt);
           }
         }
       });
@@ -1455,11 +1512,12 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       }
 
       const normalBall = runtime.normalBall.copy(renderAttack);
-      const touchPhase = Math.sin(now * .014);
-      const inputSide = selfAttacker ? clamp(controlRef?.current?.x, -1, 1) : 0;
-      normalBall.x += touchPhase * .12 + inputSide * .08;
-      normalBall.y = .11 + Math.abs(Math.sin(now * .018)) * runtime.speeds[attacker] * .045;
-      normalBall.z -= .34 + clamp(state.ballLead, 0, .75) * .42;
+      const attackSpeed = runtime.speeds[attacker];
+      const touchPhase = Math.sin(now * (.012 + attackSpeed * .006));
+      const inputSide = selfAttacker ? runtime.inputSmooth.x : 0;
+      normalBall.x += touchPhase * (.035 + attackSpeed * .055) + inputSide * .045;
+      normalBall.y = .11 + Math.abs(Math.sin(now * .016)) * attackSpeed * .032;
+      normalBall.z -= .27 + clamp(state.ballLead, 0, .75) * .52 + attackSpeed * .055;
       runtime.ballTarget.copy(normalBall);
 
       let shooting = false;
@@ -1522,6 +1580,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
           action,
           eventT,
           direction:eventDirection || 1,
+          lean:index === attacker ? clamp((selfAttacker ? runtime.inputSmooth.x : 0) * runtime.speeds[index], -1, 1) : 0,
+          sprint:index === attacker && Date.now() < Number(state?.sprintUntil || 0),
         });
 
         const actor = livingActors[index];

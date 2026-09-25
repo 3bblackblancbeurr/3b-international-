@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { shotFromGesture } from './core.js';
 import { createAdaptiveAiShot, createTrainingMemory, predictTrainingKeeper, rememberKeeperMove, rememberTrainingShot } from './training-ai.js';
 import { unlockPenaltyAudio } from './audio.js';
+import { createTechniqueTracker, detectJoystickTechnique, shapeJoystick } from './joystick.js';
 
 const Arena = lazy(() => import('./PenaltyRushArena3D.jsx'));
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -77,6 +78,7 @@ export default function PenaltyTraining({ role, profile, onExit }) {
   }, [role, attempts]);
 
   const moveTouch = useRef(null);
+  const trainingTechnique = useRef(createTechniqueTracker());
   const actionTouch = useRef(null);
   const chargeFrame = useRef(0);
 
@@ -110,29 +112,35 @@ export default function PenaltyTraining({ role, profile, onExit }) {
   function moveDrag(event) {
     const gesture = moveTouch.current;
     if (!gesture || gesture.id !== event.pointerId || busy.current) return;
-    const dx = event.clientX - gesture.x;
-    const dy = event.clientY - gesture.y;
-    const deadX = Math.abs(dx) < 8 ? 0 : dx - Math.sign(dx) * 8;
-    const deadY = Math.abs(dy) < 8 ? 0 : dy - Math.sign(dy) * 8;
-    const lateral = clamp(gesture.lateral + deadX / 420, -.95, .95);
-    const progress = clamp(gesture.progress - deadY / 360, .08, .94);
-    const length = Math.hypot(deadX, deadY);
-    const xx = length ? deadX / length : 0;
-    const yy = length ? -deadY / length : 0;
-    controlRef.current = { ...controlRef.current, x:xx, y:yy, intensity:clamp(length / 120, 0, 1), active:false };
+    const input = shapeJoystick(event.clientX - gesture.x, event.clientY - gesture.y);
+    let lateral = clamp(gesture.lateral + input.x * input.intensity * .32, -.95, .95);
+    let progress = clamp(gesture.progress - input.y * input.intensity * .3, .08, .94);
+    const technique = detectJoystickTechnique(trainingTechnique.current, input, performance.now());
+    if (technique?.type === 'cut' || technique?.type === 'feint') {
+      lateral = clamp(lateral + technique.direction * .08, -.95, .95);
+      setMessage(technique.type === 'cut' ? 'CROCHET · changement d’appui.' : 'FEINTE · puis repars vers le but.');
+    } else if (technique?.type === 'rhythm') {
+      setMessage('ROULETTE · garde le ballon près du pied.');
+    }
+    controlRef.current = { ...controlRef.current, x:input.x, y:input.y, intensity:input.intensity, active:input.active };
     setState(previous => ({ ...previous, positions:{ ...previous.positions, attacker:{ x:progress, y:lateral } } }));
     setRound(n => n + 1);
 
     const pad=event.currentTarget;
-    const visualX=clamp(deadX, -44, 44),visualY=clamp(deadY, -44, 44);
-    pad.style.setProperty('--stick-x', visualX.toFixed(1)+'px');
-    pad.style.setProperty('--stick-y', visualY.toFixed(1)+'px');
+    pad.style.setProperty('--stick-x', (input.x * input.visual).toFixed(1)+'px');
+    pad.style.setProperty('--stick-y', (input.y * input.visual).toFixed(1)+'px');
+    pad.style.setProperty('--stick-power', input.intensity.toFixed(3));
+    if (technique) {
+      pad.setAttribute('data-technique', technique.label);
+      window.setTimeout(() => pad.removeAttribute('data-technique'), 420);
+    }
   }
 
   function moveEnd(event) {
     const gesture=moveTouch.current;
     if (!gesture || gesture.id !== event.pointerId) return;
     moveTouch.current=null;
+    trainingTechnique.current=createTechniqueTracker();
     controlRef.current={...controlRef.current,x:0,y:0,intensity:0,active:false};
     const pad=event.currentTarget;
     pad.dataset.active='false';

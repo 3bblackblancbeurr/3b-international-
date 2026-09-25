@@ -269,3 +269,52 @@
   .penalty-face-top{left:51px}.penalty-face-left{top:51px}.penalty-face-right{top:51px}.penalty-face-bottom{left:51px}
   .penalty-face-cluster::before{width:36px;height:36px;font-size:4px}
 }
+
+/* 2026-09-25 — joystick 3B V6: précision proche du centre, puissance en bordure,
+   halo dynamique et feedback des gestes techniques. */
+.penalty-pitch-3d .penalty-touch-left{
+  --stick-power:0;
+  border-color:#7bdcf050;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(100,218,242,calc(.05 + var(--stick-power)*.12)) 0 34%,transparent 35%),
+    radial-gradient(circle at 50% 50%,#0b2028b8 0 56%,#061116cf 57% 72%,transparent 73%);
+  box-shadow:
+    inset 0 0 0 1px #ffffff08,
+    inset 0 0 24px rgba(90,210,240,calc(.03 + var(--stick-power)*.09)),
+    0 14px 38px #0009;
+  backdrop-filter:blur(4px)
+}
+.penalty-pitch-3d .penalty-touch-left[data-active="true"]{
+  border-color:#75def4b3;
+  transform:scale(1.015);
+}
+.penalty-pitch-3d .penalty-touch-left span{
+  width:35%;
+  border:1px solid #b7edf58a;
+  background:radial-gradient(circle at 34% 28%,#d8f7ff,#68cae2 34%,#173844 72%,#09151a);
+  box-shadow:
+    inset 0 2px 5px #ffffff52,
+    0 0 calc(12px + var(--stick-power)*18px) #59d5ef55,
+    0 8px 18px #0008;
+  transition:transform .022s linear,box-shadow .08s ease
+}
+.penalty-pitch-3d .penalty-touch-left[data-technique]::after{
+  content:attr(data-technique);
+  bottom:-20px;
+  padding:4px 8px;
+  border:1px solid #e7c96c65;
+  border-radius:999px;
+  background:#081012dc;
+  color:#f3d982;
+  box-shadow:0 0 20px #d7b75835;
+  animation:penaltyTechniqueFlash .42s ease-out both
+}
+@keyframes penaltyTechniqueFlash{
+  0%{opacity:0;transform:translateX(-50%) translateY(5px) scale(.88)}
+  25%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.04)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-3px) scale(.96)}
+}
+@media(prefers-reduced-motion:reduce){
+  .penalty-pitch-3d .penalty-touch-left span{transition:none}
+  .penalty-pitch-3d .penalty-touch-left[data-technique]::after{animation:none;opacity:1}
+}
