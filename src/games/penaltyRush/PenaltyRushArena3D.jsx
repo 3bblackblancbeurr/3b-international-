@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { createLivingLibrary, createLivingActor } from '../../world/living.js';
+import * as THREE from './three-lite.js';
+import { penaltySfx } from './audio.js';
 
 const FIELD_W = 22;
 const FIELD_L = 44;
@@ -357,9 +357,10 @@ function lineBox(scene, x, z, w, d, opacity = .72) {
 function createPitch(scene) {
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(FIELD_W, FIELD_L),
-    new THREE.MeshStandardMaterial({ color:'#123a27', roughness:.92, metalness:0 }),
+    new THREE.MeshStandardMaterial({ color:'#1d6842', roughness:.88, metalness:0 }),
   );
   ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
   scene.add(ground);
 
   const stripeDepth = FIELD_L / 12;
@@ -367,9 +368,9 @@ function createPitch(scene) {
     const stripe = new THREE.Mesh(
       new THREE.PlaneGeometry(FIELD_W, stripeDepth + .03),
       new THREE.MeshBasicMaterial({
-        color:i % 2 ? '#0d3020' : '#1a4930',
+        color:i % 2 ? '#19593a' : '#27764b',
         transparent:true,
-        opacity:.34,
+        opacity:.42,
         depthWrite:false,
       }),
     );
@@ -427,7 +428,7 @@ function createPitch(scene) {
 
   const keeperApron = new THREE.Mesh(
     new THREE.PlaneGeometry(FIELD_W + 4, 10),
-    new THREE.MeshStandardMaterial({ color:'#0f3323', roughness:.95, metalness:0 }),
+    new THREE.MeshStandardMaterial({ color:'#19583a', roughness:.92, metalness:0 }),
   );
   keeperApron.rotation.x = -Math.PI / 2;
   keeperApron.position.set(0, -.002, GOAL_Z - 5);
@@ -481,57 +482,95 @@ function createGoal(scene) {
   return group;
 }
 
-function createStadium(scene) {
-  const standMat = makeMaterial('#071012', .78, .08, '#0c2a34', .07);
-  const standL = new THREE.Mesh(new THREE.BoxGeometry(5.2, 6.4, FIELD_L + 3), standMat);
-  const standR = standL.clone();
-  standL.position.set(-14.1, 3, 0);
-  standR.position.set(14.1, 3, 0);
-  scene.add(standL, standR);
+function createStadium(scene, mobile = false) {
+  const concrete = makeMaterial('#18252a', .82, .1, '#17333d', .08);
+  const seatDark = makeMaterial('#123441', .74, .05, '#1a5364', .12);
+  const seatGold = makeMaterial('#5b4821', .68, .12, '#e0bf68', .28);
+  const fascia = makeMaterial('#102229', .5, .24, '#52cce9', .24);
+  const roofMat = makeMaterial('#1a2428', .48, .42, '#33464c', .1);
 
-  const ledGeo = new THREE.BoxGeometry(.18, .62, 3.4);
+  for (const side of [-1, 1]) {
+    for (let tier = 0; tier < 4; tier += 1) {
+      const width = 3.2 + tier * .72;
+      const height = 1.18;
+      const depth = FIELD_L + 1.8 - tier * .7;
+      const stand = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), concrete);
+      stand.position.set(side * (12.25 + tier * .72), .58 + tier * 1.02, -.15);
+      scene.add(stand);
+
+      const seats = new THREE.Mesh(
+        new THREE.BoxGeometry(.24, .22, depth - .7),
+        tier % 2 ? seatGold : seatDark,
+      );
+      seats.position.set(side * (10.72 + tier * .84), 1.08 + tier * 1.02, -.15);
+      scene.add(seats);
+    }
+
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(6.1, .22, FIELD_L + 4.2), roofMat);
+    roof.position.set(side * 14.25, 5.95, -.2);
+    roof.rotation.z = side * -.055;
+    scene.add(roof);
+
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(.12, .78, FIELD_L - 2.2), fascia);
+    rail.position.set(side * 10.55, .54, .15);
+    scene.add(rail);
+  }
+
+  const ledGeo = new THREE.BoxGeometry(.14, .7, 3.45);
   for (let side = -1; side <= 1; side += 2) {
-    for (let i = 0; i < 10; i += 1) {
-      const gold = i % 2 === 0;
+    for (let i = 0; i < 11; i += 1) {
+      const gold = i % 3 === 0;
       const led = new THREE.Mesh(
         ledGeo,
-        makeMaterial(gold ? '#3f3214' : '#0d3542', .45, .22, gold ? '#d9b55f' : '#54c8ef', .58),
+        makeMaterial(gold ? '#55451e' : '#164a59', .38, .24, gold ? '#efca6e' : '#65d9f2', .82),
       );
-      led.position.set(side * 10.65, .42, -18 + i * 4.05);
+      led.position.set(side * 10.45, .46, -19.4 + i * 3.88);
       scene.add(led);
     }
   }
 
   const rand = seeded(31818);
   const positions = [];
-  for (let i = 0; i < 560; i += 1) {
+  const crowdCount = mobile ? 520 : 980;
+  for (let i = 0; i < crowdCount; i += 1) {
     const side = i % 2 ? -1 : 1;
+    const tier = Math.floor(rand() * 4);
     positions.push(
-      side * (11.5 + rand() * 4.1),
-      2.1 + rand() * 5.2,
-      -21 + rand() * 42,
-    );
-  }
-  for (let i = 0; i < 120; i += 1) {
-    positions.push(
-      -11 + rand() * 22,
-      2.3 + rand() * 4,
-      GOAL_Z - 5.3 - rand() * 2.1,
+      side * (10.9 + tier * 1.08 + rand() * .82),
+      1.45 + tier * 1.02 + rand() * .72,
+      -21.2 + rand() * 42.4,
     );
   }
   const crowdGeo = new THREE.BufferGeometry();
   crowdGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  const crowd = new THREE.Points(
+  scene.add(new THREE.Points(
     crowdGeo,
-    new THREE.PointsMaterial({ color:'#b4c9cb', size:.07, transparent:true, opacity:.48 }),
-  );
-  scene.add(crowd);
+    new THREE.PointsMaterial({ color:'#d7e8e8', size:.075, transparent:true, opacity:.66 }),
+  ));
+
+  for (const side of [-1, 1]) {
+    for (const z of (mobile ? [-16] : [-16, 15])) {
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(.11, .17, 10.5, 8), roofMat);
+      mast.position.set(side * 15.2, 5.2, z);
+      scene.add(mast);
+      const lamp = new THREE.PointLight('#eaf7ff', 1.6, 31, 2);
+      lamp.position.set(side * 14.6, 9.7, z);
+      scene.add(lamp);
+      const bank = new THREE.Mesh(
+        new THREE.BoxGeometry(1.7, .46, .24),
+        makeMaterial('#d7e8ea', .28, .35, '#eefcff', .62),
+      );
+      bank.position.copy(lamp.position);
+      bank.rotation.y = side > 0 ? -.28 : .28;
+      scene.add(bank);
+    }
+  }
 
   const tunnel = new THREE.Mesh(
-    new THREE.BoxGeometry(4.4, 2.8, 1.6),
-    makeMaterial('#030506', .9, 0, '#1f667d', .05),
+    new THREE.BoxGeometry(4.8, 2.9, 1.8),
+    makeMaterial('#101a1e', .76, .06, '#4ebcd7', .14),
   );
-  tunnel.position.set(0, 1.35, FIELD_HALF_L + 1.2);
+  tunnel.position.set(0, 1.42, FIELD_HALF_L + 1.28);
   scene.add(tunnel);
 }
 
@@ -675,20 +714,23 @@ function createBallTrail(scene) {
   const line = new THREE.Line(geo, mat);
   line.frustumCulled = false;
   scene.add(line);
-  return { line, geo, mat, positions, history:[] };
+  return { line, geo, mat, positions, history:Array.from({ length:count }, () => new THREE.Vector3()), historyCount:0 };
 }
 
 function updateBallTrail(trail, position, shooting) {
   if (!shooting) {
-    trail.history.length = 0;
+    trail.historyCount = 0;
     trail.mat.opacity = mix(trail.mat.opacity, 0, .28);
     return;
   }
-  trail.history.unshift(position.clone());
-  if (trail.history.length > trail.positions.length / 3) trail.history.length = trail.positions.length / 3;
-  const last = trail.history.at(-1) || position;
-  for (let i = 0; i < trail.positions.length / 3; i += 1) {
-    const p = trail.history[i] || last;
+  const count = trail.history.length;
+  const active = Math.min(count, trail.historyCount + 1);
+  for (let i = active - 1; i > 0; i -= 1) trail.history[i].copy(trail.history[i - 1]);
+  trail.history[0].copy(position);
+  trail.historyCount = active;
+  const last = trail.history[Math.max(0, active - 1)] || position;
+  for (let i = 0; i < count; i += 1) {
+    const p = i < active ? trail.history[i] : last;
     trail.positions[i * 3] = p.x;
     trail.positions[i * 3 + 1] = p.y;
     trail.positions[i * 3 + 2] = p.z;
@@ -754,17 +796,17 @@ function updateImpactFx(fx, dt) {
   if (fade <= 0) fx.active = false;
 }
 
-function attackerPosition(state) {
+function attackerPosition(state, target = new THREE.Vector3()) {
   const p = state?.positions?.attacker || {};
-  return new THREE.Vector3(
+  return target.set(
     clamp(p.y, -.95, .95) * LATERAL,
     0,
     mix(START_Z, ATTACK_END_Z, clamp(p.x, 0, 1)),
   );
 }
 
-function keeperPosition(state) {
-  return new THREE.Vector3(clamp(state?.positions?.keeper?.y, -.95, .95) * (GOAL_W / 2), 0, KEEPER_Z);
+function keeperPosition(state, target = new THREE.Vector3()) {
+  return target.set(clamp(state?.positions?.keeper?.y, -.95, .95) * (GOAL_W / 2), 0, KEEPER_Z);
 }
 
 function clampAttackerWorld(position) {
@@ -836,11 +878,14 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
   if (action === 'shot') {
     const wind = clamp(eventT * 2.1, 0, 1);
     const strike = Math.sin(clamp(eventT * 1.18, 0, 1) * Math.PI);
-    torso.rotation.x = -.16;
+    torso.rotation.x = -.16 + strike * .08;
     torso.rotation.y = -.14 * (direction || 1);
-    legR.hip.rotation.x = -.72 * wind + 1.35 * strike;
-    legR.shinPivot.rotation.x = -.68 * strike;
+    rig.rotation.y = strike * .08 * (direction || 1);
+    legR.hip.rotation.x = -.82 * wind + 1.48 * strike;
+    legR.shinPivot.rotation.x = -.74 * strike;
     legL.hip.rotation.x = .22;
+    legL.shinPivot.rotation.x = .18 * strike;
+    rig.position.y = Math.sin(strike * Math.PI) * .035;
     armL.shoulder.rotation.z = -.72;
     armR.shoulder.rotation.z = .68;
   }
@@ -857,9 +902,11 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
 
   if (action === 'dive') {
     const dive = Math.sin(clamp(eventT, 0, 1) * Math.PI / 2);
-    rig.rotation.z = -direction * dive * 1.12;
-    rig.position.x = direction * dive * .72;
-    rig.position.y = .18 + dive * .58;
+    const reach = Math.sin(clamp(eventT, 0, 1) * Math.PI * .72);
+    rig.rotation.z = -direction * dive * 1.18;
+    rig.rotation.x = -.08 * reach;
+    rig.position.x = direction * dive * .82;
+    rig.position.y = .16 + reach * .66;
     armL.shoulder.rotation.z = -1.55;
     armR.shoulder.rotation.z = 1.55;
     armL.elbow.rotation.x = 0;
@@ -923,17 +970,19 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     }
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#061014');
-    scene.fog = new THREE.Fog('#061014', 34, 62);
+    scene.background = new THREE.Color('#0b1b22');
+    scene.fog = new THREE.Fog('#0b1b22', 44, 76);
 
     const camera = new THREE.PerspectiveCamera(50, 1, .1, 100);
     camera.position.set(0, 5.1, 19);
 
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.04;
+    renderer.toneMappingExposure = 1.3;
 
     const mobile = window.matchMedia('(max-width: 760px), (pointer: coarse)').matches;
+    renderer.shadowMap.enabled = !mobile;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     const ratioCap = mobile ? 1.22 : 1.5;
     let renderScale = Math.min(window.devicePixelRatio || 1, ratioCap);
     renderer.setPixelRatio(renderScale);
@@ -942,17 +991,31 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     renderer.domElement.setAttribute('aria-hidden', 'true');
     host.appendChild(renderer.domElement);
 
-    scene.add(new THREE.HemisphereLight('#a5dfff', '#102316', 1.5));
-    const key = new THREE.DirectionalLight('#fff0c4', 2.15);
-    key.position.set(-8, 14, 9);
+    scene.add(new THREE.HemisphereLight('#c8ebff', '#1f4b31', 2.05));
+    const key = new THREE.DirectionalLight('#fff2cf', 3.05);
+    key.position.set(-9, 16, 11);
+    key.castShadow = !mobile;
+    if (!mobile) {
+      key.shadow.mapSize.set(1024, 1024);
+      key.shadow.camera.left = -16;
+      key.shadow.camera.right = 16;
+      key.shadow.camera.top = 18;
+      key.shadow.camera.bottom = -10;
+      key.shadow.camera.near = 1;
+      key.shadow.camera.far = 58;
+      key.shadow.bias = -0.00035;
+    }
     scene.add(key);
-    const rim = new THREE.DirectionalLight('#55cffa', 1.15);
-    rim.position.set(9, 8, -12);
+    const fill = new THREE.DirectionalLight('#c6e7ff', 1.18);
+    fill.position.set(10, 10, 16);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight('#66d8ff', 1.55);
+    rim.position.set(9, 10, -12);
     scene.add(rim);
 
     createPitch(scene);
     const goal = createGoal(scene);
-    createStadium(scene);
+    createStadium(scene, mobile);
     const goalWorld = createThreeBGoalWorld(scene, mobile);
 
     const ball = new THREE.Mesh(
@@ -964,6 +1027,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       new THREE.MeshBasicMaterial({ color:'#1b252b', wireframe:true, transparent:true, opacity:.5 }),
     );
     ball.add(ballWire);
+    ball.castShadow = !mobile;
     scene.add(ball);
 
     const trail = createBallTrail(scene);
@@ -977,35 +1041,14 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     const players = playerAppearance.map((appearance) => {
       const model = createHumanoid(appearance);
       model.scale.setScalar(.56);
+      model.traverse((node) => { if (node.isMesh) node.castShadow = !mobile; });
       scene.add(model);
       return model;
     });
 
-    const livingLibrary = createLivingLibrary();
-    const livingActors = playerAppearance.map((appearance, index) => {
-      let actor;
-      actor = createLivingActor(livingLibrary, {
-        avatar:footballAvatar(appearance, index + appearance.number),
-        scale:1,
-        onLoad:() => {
-          const box = new THREE.Box3().setFromObject(actor.object);
-          const height = Math.max(.1, box.max.y - box.min.y);
-          const targetHeight = index === clamp((liveRef.current.room?.state || {}).keeper, 0, 1) ? 1.86 : 1.76;
-          actor.object.scale.multiplyScalar(targetHeight / height);
-          actor.object.updateMatrixWorld(true);
-          const fitted = new THREE.Box3().setFromObject(actor.object);
-          actor.object.userData.groundOffset = -fitted.min.y;
-          players[index].userData.rig.visible = false;
-          actor.object.position.copy(players[index].position);
-          actor.object.position.y = actor.object.userData.groundOffset || 0;
-        },
-        onError:() => {
-          players[index].userData.rig.visible = true;
-        },
-      });
-      scene.add(actor.object);
-      return actor;
-    });
+    const livingActors = [null, null];
+    let livingLibrary = null;
+    let premiumActorsTimer = 0;
 
     const initialState = liveRef.current.room?.state || {};
     const runtime = {
@@ -1017,6 +1060,14 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       speeds:[0, 0],
       ballTarget:new THREE.Vector3(),
       cameraTarget:new THREE.Vector3(),
+      cameraDesired:new THREE.Vector3(),
+      cameraLook:new THREE.Vector3(),
+      normalBall:new THREE.Vector3(),
+      error:new THREE.Vector3(),
+      playerBefore:[new THREE.Vector3(), new THREE.Vector3()],
+      shotStart:new THREE.Vector3(),
+      shotControl:new THREE.Vector3(),
+      shotResult:{ position:new THREE.Vector3(), target:new THREE.Vector3(), t:0, done:false },
       localAttack:attackerPosition(initialState),
       localKeeper:keeperPosition(initialState),
       localReady:false,
@@ -1028,12 +1079,57 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       adaptiveClock:0,
     };
 
+    async function loadPremiumActors() {
+      if (mobile || runtime.disposed || livingLibrary) return;
+      try {
+        const { createLivingLibrary, createLivingActor } = await import('../../world/living.js');
+        if (runtime.disposed) return;
+        livingLibrary = createLivingLibrary();
+        playerAppearance.forEach((appearance, index) => {
+          let actor;
+          actor = createLivingActor(livingLibrary, {
+            avatar:footballAvatar(appearance, index + appearance.number),
+            scale:1,
+            onLoad:() => {
+              if (runtime.disposed || !actor?.object) return;
+              const box = new THREE.Box3().setFromObject(actor.object);
+              const height = Math.max(.1, box.max.y - box.min.y);
+              const targetHeight = index === clamp((liveRef.current.room?.state || {}).keeper, 0, 1) ? 1.86 : 1.76;
+              actor.object.scale.multiplyScalar(targetHeight / height);
+              actor.object.updateMatrixWorld(true);
+              const fitted = new THREE.Box3().setFromObject(actor.object);
+              actor.object.userData.groundOffset = -fitted.min.y;
+              actor.object.traverse((node) => { if (node.isMesh) node.castShadow = !mobile; });
+              players[index].userData.rig.visible = false;
+              actor.object.position.copy(players[index].position);
+              actor.object.position.y = actor.object.userData.groundOffset || 0;
+            },
+            onError:() => {
+              players[index].userData.rig.visible = true;
+            },
+          });
+          livingActors[index] = actor;
+          scene.add(actor.object);
+        });
+      } catch {
+        players.forEach((player) => { player.userData.rig.visible = true; });
+      }
+    }
+
+    if (!mobile) {
+      premiumActorsTimer = window.setTimeout(() => {
+        const launch = () => loadPremiumActors();
+        if ('requestIdleCallback' in window) window.requestIdleCallback(launch, { timeout:2200 });
+        else launch();
+      }, 900);
+    }
+
     function registerEvent(state, revision) {
       if (revision === runtime.lastRevision) return;
       runtime.lastRevision = revision;
 
-      runtime.serverAttack.copy(attackerPosition(state));
-      runtime.serverKeeper.copy(keeperPosition(state));
+      attackerPosition(state, runtime.serverAttack);
+      keeperPosition(state, runtime.serverKeeper);
       if (!runtime.localReady) {
         runtime.localAttack.copy(runtime.serverAttack);
         runtime.localReady = true;
@@ -1060,6 +1156,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const attackerIndex = clamp(state?.attacker, 0, 1);
       const keeperIndex = clamp(state?.keeper, 0, 1);
       if (['goal','save','frame'].includes(event.type)) {
+        penaltySfx('kick', event?.visual?.shot?.power || .7);
         livingActors[attackerIndex]?.action?.('Attack', .55);
         if (event.type === 'goal') livingActors[keeperIndex]?.action?.('Hit', .42);
         if (event.type === 'save') livingActors[keeperIndex]?.action?.('Cast', .58);
@@ -1077,7 +1174,9 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const t = clamp(elapsed / duration, 0, 1);
       const visual = event.visual || {};
       const startState = { positions:{ attacker:visual.attacker || liveRef.current.room?.state?.positions?.attacker } };
-      const start = attackerPosition(startState).add(new THREE.Vector3(0, .26, -.55));
+      const start = attackerPosition(startState, runtime.shotStart);
+      start.y += .26;
+      start.z -= .55;
       if (!Number.isFinite(start.x)) start.copy(fallbackStart);
 
       const result = visual.result || {};
@@ -1085,15 +1184,17 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const targetX = clamp(result.target ?? shot.targetX, -1, 1) * (GOAL_W / 2 - .16);
       const targetY = .28 + clamp(shot.targetY, .04, 1) * (GOAL_H - .38);
       const endZ = event.type === 'goal' ? GOAL_Z - 1.42 : event.type === 'frame' ? GOAL_Z - .06 : KEEPER_Z - .06;
-      const end = new THREE.Vector3(targetX, targetY, endZ);
-      const control = start.clone().lerp(end, .53);
+      const end = runtime.shotResult.target.set(targetX, targetY, endZ);
+      const control = runtime.shotControl.copy(start).lerp(end, .53);
       control.y += 1.18 + clamp(shot.power, 0, 1) * .92;
 
       const a = (1 - t) * (1 - t);
       const b = 2 * (1 - t) * t;
       const cc = t * t;
-      const out = new THREE.Vector3(
-        a * start.x + b * control.x + cc * end.x,
+      const curve = clamp(shot.curve, -1, 1);
+      const lateralBend = Math.sin(t * Math.PI) * curve * (1.05 + clamp(shot.power, 0, 1) * .75);
+      const out = runtime.shotResult.position.set(
+        a * start.x + b * control.x + cc * end.x + lateralBend,
         a * start.y + b * control.y + cc * end.y,
         a * start.z + b * control.z + cc * end.z,
       );
@@ -1113,7 +1214,9 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         out.x += Math.sign(targetX || 1) * bounce * 1.35;
         out.z += bounce * 1.2;
       }
-      return { position:out, t, done:t >= 1, target:end };
+      runtime.shotResult.t = t;
+      runtime.shotResult.done = t >= 1;
+      return runtime.shotResult;
     }
 
     function resize() {
@@ -1163,7 +1266,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         clampAttackerWorld(runtime.localAttack);
       }
 
-      const error = server.clone().sub(runtime.localAttack);
+      const error = runtime.error.copy(server).sub(runtime.localAttack);
       const distance = error.length();
       if (distance > 4.4) runtime.localAttack.lerp(server, .26);
       else runtime.localAttack.addScaledVector(error, expFollow(input?.active ? .35 : 12.5, dt));
@@ -1192,8 +1295,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
     function setCamera(state, selfKeeper, serverAttack, serverKeeper, eventT, eventDirection, activeEvent, dt) {
       const progress = clamp(state?.positions?.attacker?.x, 0, 1);
-      const desired = new THREE.Vector3();
-      const target = new THREE.Vector3();
+      const desired = runtime.cameraDesired;
+      const target = runtime.cameraLook;
       let fov;
 
       if (selfKeeper) {
@@ -1276,8 +1379,8 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const selfAttacker = snapshot.selfIndex === attacker;
       const selfKeeper = snapshot.selfIndex === keeper;
 
-      runtime.serverAttack.copy(attackerPosition(state));
-      runtime.serverKeeper.copy(keeperPosition(state));
+      attackerPosition(state, runtime.serverAttack);
+      keeperPosition(state, runtime.serverKeeper);
 
       const renderAttack = predictLocalAttacker(state, dt, selfAttacker);
       const keeperPreview = selfKeeper ? controlRef?.current?.keeper : null;
@@ -1288,7 +1391,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
 
       players.forEach((model, index) => {
         const target = runtime.playerTargets[index];
-        const before = model.position.clone();
+        const before = runtime.playerBefore[index].copy(model.position);
         const follow = expFollow(index === snapshot.selfIndex ? 30 : 12, dt);
         model.position.x = mix(model.position.x, target.x, follow);
         model.position.z = mix(model.position.z, target.z, follow);
@@ -1331,7 +1434,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         eventT = clamp(keeperPreview.intensity, 0, 1);
       }
 
-      const normalBall = renderAttack.clone();
+      const normalBall = runtime.normalBall.copy(renderAttack);
       const touchPhase = Math.sin(now * .014);
       const inputSide = selfAttacker ? clamp(controlRef?.current?.x, -1, 1) : 0;
       normalBall.x += touchPhase * .12 + inputSide * .08;
@@ -1357,6 +1460,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
           if (!activeEvent.triggered && shot.t > .69) {
             activeEvent.triggered = true;
             triggerImpactFx(impactFx, activeEvent.type, shot.position, eventDirection);
+            penaltySfx(activeEvent.type, activeEvent.visual?.shot?.power || .7);
           }
 
           const netWave = activeEvent.type === 'goal' ? Math.sin(clamp((shot.t - .66) / .34, 0, 1) * Math.PI) : 0;
@@ -1381,8 +1485,10 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       }
 
       ball.position.lerp(runtime.ballTarget, shooting ? expFollow(22, dt) : expFollow(13, dt));
+      const spinCurve = shooting ? clamp(activeEvent?.visual?.shot?.curve, -1, 1) : 0;
       ball.rotation.x += dt * (5 + runtime.speeds[attacker] * 10);
-      ball.rotation.z += dt * 2.8;
+      ball.rotation.y += dt * spinCurve * 16;
+      ball.rotation.z += dt * (2.8 + Math.abs(spinCurve) * 7);
       updateBallTrail(trail, ball.position, shooting);
       updateImpactFx(impactFx, dt);
 
@@ -1442,8 +1548,9 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       renderer.setAnimationLoop(null);
       observer.disconnect();
       renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+      clearTimeout(premiumActorsTimer);
       livingActors.forEach((actor) => actor?.dispose?.());
-      livingLibrary.dispose();
+      livingLibrary?.dispose?.();
       dispose(scene);
       renderer.dispose();
       renderer.domElement.remove();

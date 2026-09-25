@@ -175,12 +175,15 @@ test('V5 touch controls add dead zones, absolute training drag and a hold-to-cha
  assert.match(match,/penalty-shot-charge/);
  assert.match(match,/data-charging/);
  assert.match(training,/deadX \/ 420/);
- assert.match(training,/MAINTIENS · VISE · RELÂCHE/);
+ assert.match(training,/penalty-face-cluster/);
+ assert.match(training,/data-tone="black"/);
+ assert.match(training,/data-tone="white"/);
+ assert.match(training,/data-tone="beur"/);
+ assert.match(training,/>3B<\/b>/);
  assert.match(training,/heldMs<300/);
- assert.match(training,/Maintiens la gâchette pour charger ta frappe/);
  assert.match(training,/penalty-shot-charge/);
- assert.match(controls,/PUISSANCE/);
- assert.match(controls,/RÉACTION/);
+ assert.match(controls,/penalty-face-cluster/);
+ assert.match(controls,/3B CONTROL/);
 });
 
 test('V5 sends goals physically inside the net and builds a 3B world behind the cage',()=>{

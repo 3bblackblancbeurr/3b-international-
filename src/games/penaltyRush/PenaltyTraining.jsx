@@ -1,5 +1,7 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { shotFromGesture } from './core.js';
+import { createAdaptiveAiShot, createTrainingMemory, predictTrainingKeeper, rememberKeeperMove, rememberTrainingShot } from './training-ai.js';
+import { unlockPenaltyAudio } from './audio.js';
 
 const Arena = lazy(() => import('./PenaltyRushArena3D.jsx'));
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -16,6 +18,7 @@ export default function PenaltyTraining({ role, profile, onExit }) {
   const controlRef = useRef({ x: 0, y: 0, intensity: 0, active: false, keeper: { direction: 0, intensity: 0, active: false } });
   const stateRef = useRef(state);
   const keeperIntent = useRef(0);
+  const aiMemory = useRef(createTrainingMemory());
   const busy = useRef(false);
   const timers = useRef([]);
   const room = { revision: round, state, players: [
@@ -40,11 +43,12 @@ export default function PenaltyTraining({ role, profile, onExit }) {
     busy.current = true;
     const current = stateRef.current;
     const target = clamp(shot.targetX, -1, 1);
-    const keeper = ai ? keeperIntent.current : clamp(target * .7 + (Math.random() - .5) * .6, -.9, .9);
+    const keeper = ai ? keeperIntent.current : predictTrainingKeeper(aiMemory.current, shot, attempts);
     const isFrame = Math.abs(target) > .95 && shot.power > .77 || shot.targetY > .95;
     const saved = !isFrame && Math.abs(target - keeper) < (ai ? .31 : .25);
     const type = isFrame ? 'frame' : saved ? 'save' : 'goal';
     const text = type === 'goal' ? 'BUT !' : type === 'save' ? 'ARRÊT !' : 'HORS CADRE';
+    aiMemory.current = rememberTrainingShot(aiMemory.current, shot, type);
     setAttempts(n => n + 1);
     setMessage(text);
     setState(previous => ({ ...previous,
@@ -67,10 +71,10 @@ export default function PenaltyTraining({ role, profile, onExit }) {
     if (role !== 'keeper') return;
     const timer = setInterval(() => {
       if (document.hidden || busy.current) return;
-      resolveShot({ type: 'shot', power: .5 + Math.random() * .35, targetX: (Math.random() - .5) * 1.75, targetY: .25 + Math.random() * .55 }, true);
+      resolveShot(createAdaptiveAiShot(aiMemory.current, attempts), true);
     }, 3400);
     return () => clearInterval(timer);
-  }, [role]);
+  }, [role, attempts]);
 
   const moveTouch = useRef(null);
   const actionTouch = useRef(null);
@@ -139,6 +143,7 @@ export default function PenaltyTraining({ role, profile, onExit }) {
   function dive(direction, intensity = 1) {
     if (role !== 'keeper' || busy.current) return;
     keeperIntent.current = clamp(direction, -1, 1);
+    aiMemory.current = rememberKeeperMove(aiMemory.current, keeperIntent.current);
     controlRef.current.keeper = { direction:keeperIntent.current, intensity:clamp(intensity, .25, 1), active:true };
     setState(previous => ({ ...previous, positions:{ ...previous.positions, keeper:{ y:keeperIntent.current } } }));
     setRound(n => n + 1);
@@ -146,6 +151,7 @@ export default function PenaltyTraining({ role, profile, onExit }) {
 
   function actionStart(event) {
     if (busy.current || event.button !== 0) return;
+    unlockPenaltyAudio().catch(() => {});
     actionTouch.current={id:event.pointerId,x:event.clientX,y:event.clientY,at:performance.now(),path:[{x:event.clientX,y:event.clientY}]};
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active='true';
@@ -223,12 +229,44 @@ export default function PenaltyTraining({ role, profile, onExit }) {
     controlRef.current.keeper={direction:0,intensity:0,active:false};
   }
 
+  function trainingFace(type){
+    unlockPenaltyAudio().catch(()=>{});
+    try{navigator.vibrate?.(8);}catch{}
+    if(role==='keeper'){
+      if(type==='left')return dive(-1,.92);
+      if(type==='right')return dive(1,.92);
+      if(type==='top'){
+        controlRef.current.keeper={direction:0,intensity:.9,active:true};
+        setMessage('SORTIE HAUTE · garde le centre de la cage.');
+        return;
+      }
+      setMessage('FERMETURE D’ANGLE · reste prêt à plonger.');
+      return;
+    }
+    if(type==='top'){
+      setState(previous=>({...previous,positions:{...previous.positions,attacker:{...previous.positions.attacker,x:clamp(previous.positions.attacker.x+.12,.08,.94)}}}));
+      setMessage('BOOST 3B · changement de rythme.');
+      setRound(n=>n+1);return;
+    }
+    const lateral=type==='left'?-0.18:0.18;
+    setState(previous=>({...previous,positions:{...previous.positions,attacker:{...previous.positions.attacker,y:clamp(previous.positions.attacker.y+lateral,-.95,.95)}}}));
+    setMessage(type==='left'?'FEINTE NOIRE · décale le gardien.':'CROCHET BLANC · ouvre l’angle.');
+    setRound(n=>n+1);
+  }
+
   return <main className="penalty-match penalty-training" data-role={role}>
     <div className="penalty-match-hud"><div className="penalty-hud-player"><b>{room.players[0].name}</b></div><div className="penalty-score"><span>{state.score[0]}</span><div><small>ENTRAÎNEMENT</small><b>{attempts} tirs</b></div><span>{state.score[1]}</span></div><div className="penalty-hud-player right"><b>{room.players[1].name}</b></div></div>
     <div className="penalty-meter-line"><strong>{role === 'keeper' ? 'GARDIEN CONTRE TIREUR IA' : 'ATTAQUANT CONTRE GARDIEN IA'}</strong></div>
     <section className="penalty-pitch penalty-pitch-3d"><Suspense fallback={<div className="penalty-arena3d-fallback">Chargement du terrain…</div>}><Arena room={room} profile={profile} selfIndex={role === 'attacker' ? 0 : 1} controlRef={controlRef}/></Suspense>
       {role === 'attacker' && <div className="penalty-touch-left" data-active="false" aria-label="Déplacement de l’attaquant" onPointerDown={moveStart} onPointerMove={moveDrag} onPointerUp={moveEnd} onPointerCancel={moveEnd} onLostPointerCapture={moveEnd}><span /></div>}
-      <div className="penalty-touch-right" data-active="false" data-charging="false" aria-label={role === 'keeper' ? 'Commande de plongeon du gardien' : 'Commande de tir avec jauge de puissance'} onPointerDown={actionStart} onPointerMove={actionMove} onPointerUp={actionEnd} onPointerCancel={actionCancel} onLostPointerCapture={actionCancel}><i className="penalty-shot-charge" aria-hidden="true"><b /></i><span>{role === 'keeper' ? 'VISE · GLISSE · PLONGE' : 'MAINTIENS · VISE · RELÂCHE'}</span></div>
+      <div className="penalty-face-cluster" data-role={role} aria-label="Commandes d’entraînement 3B">
+        <button className="penalty-face penalty-face-top" data-tone="3b" onPointerDown={()=>trainingFace('top')}><b>3B</b><small>{role==='keeper'?'HAUT':'BOOST'}</small></button>
+        <button className="penalty-face penalty-face-left" data-tone="black" onPointerDown={()=>trainingFace('left')}><b>N</b><small>{role==='keeper'?'GAUCHE':'FEINTE'}</small></button>
+        <button className="penalty-face penalty-face-right" data-tone="white" onPointerDown={()=>trainingFace('right')}><b>B</b><small>{role==='keeper'?'DROITE':'CROCHET'}</small></button>
+        {role==='attacker'
+          ? <div className="penalty-face penalty-face-bottom penalty-face-shot" data-tone="beur" data-active="false" data-charging="false" aria-label="Frappe Beur or" onPointerDown={actionStart} onPointerMove={actionMove} onPointerUp={actionEnd} onPointerCancel={actionCancel} onLostPointerCapture={actionCancel}><b>OR</b><small>FRAPPE</small><i className="penalty-shot-charge" aria-hidden="true"><b /></i></div>
+          : <button className="penalty-face penalty-face-bottom" data-tone="beur" onPointerDown={()=>trainingFace('bottom')}><b>O</b><small>ANGLE</small></button>}
+      </div>
       <div className="penalty-last-event" role="status">{message}</div>
     </section>
     <div className="penalty-training-actions"><button className="penalty-secondary" onClick={reset}>Recommencer</button><button className="penalty-secondary" onClick={onExit}>Quitter l’entraînement</button></div>

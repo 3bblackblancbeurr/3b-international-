@@ -16,6 +16,7 @@ import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
 import {PointerGesture} from './touchControls.js';
+import { unlockPenaltyAudio } from './penaltyRush/audio.js';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
 
@@ -58,6 +59,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
   const [privateCode, setPrivateCode] = useState('');
   const [training, setTraining] = useState(null);
   const pollRef = useRef(null);
+  const tickInFlight = useRef(false);
 
   const user = account.user;
   const rating = snapshot?.rating || { rating: 1000, games: 0, wins: 0, losses: 0 };
@@ -125,12 +127,17 @@ export default function PenaltyRush({ onClose, onAccount }) {
       (status) => setConnection(status === 'SUBSCRIBED' ? 'online' : status === 'CHANNEL_ERROR' ? 'error' : 'sync'),
     );
     pollRef.current = window.setInterval(() => {
-      if (!document.hidden) request('tick', { room: room.id }, { silent: true }).catch(() => {});
+      if (document.hidden || tickInFlight.current) return;
+      tickInFlight.current = true;
+      request('tick', { room: room.id }, { silent: true })
+        .catch(() => {})
+        .finally(() => { tickInFlight.current = false; });
     }, 1000);
     return () => {
       unsubscribe();
       clearInterval(pollRef.current);
       pollRef.current = null;
+      tickInFlight.current = false;
     };
   }, [room?.id]);
 
@@ -519,13 +526,18 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const keeperMoveInFlight = useRef(false);
   const pendingKeeperMove = useRef(null);
   const keeperFinalAction = useRef(null);
+  const keeperFaceTimer = useRef(0);
+  const keeperFaceActive = useRef(0);
   const revisionRef = useRef(room.revision);
   const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
   const rightPadRef = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
   revisionRef.current = room.revision;
-  useEffect(() => () => cancelAnimationFrame(chargeFrame.current), []);
+  useEffect(() => () => {
+    cancelAnimationFrame(chargeFrame.current);
+    clearInterval(keeperFaceTimer.current);
+  }, []);
 
   function flushMove() {
     if (moveInFlight.current || !pendingMove.current) return;
@@ -655,6 +667,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
   function rightStart(event) {
     if ((!isAttacker && !isKeeper) || state.status === 'finished' || event.button !== 0) return;
+    unlockPenaltyAudio().catch(() => {});
     if (!rightGesture.current.begin(event.pointerId, {
       x:event.clientX,
       y:event.clientY,
@@ -731,27 +744,23 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     const dx = event.clientX - gesture.x;
     const dy = event.clientY - gesture.y;
     const durationMs = endedAt - gesture.t;
-    const distance = Math.hypot(dx, dy);
-    let taps = 0;
-
-    if (isAttacker && distance < 22 && durationMs < 220) {
-      taps = endedAt - rightLastTap.current <= 320 ? 2 : 1;
-      rightLastTap.current = endedAt;
-      if (taps === 1) return;
-    }
+    const effectiveHeldMs = isAttacker ? Math.max(340, durationMs) : durationMs;
+    const taps = 0;
 
     const curve = gesture.path.length > 2
       ? Math.max(-1, Math.min(1, (gesture.path[Math.floor(gesture.path.length / 2)].x - (gesture.x + dx / 2)) / 45))
       : 0;
     const parsed = isAttacker
-      ? interpretAttackGesture({ dx, dy, durationMs, heldMs:durationMs, curve, taps })
+      ? interpretAttackGesture({ dx, dy, durationMs:effectiveHeldMs, heldMs:effectiveHeldMs, curve, taps })
       : interpretKeeperGesture({ dx, dy, durationMs });
 
     if (isKeeper) {
       pendingKeeperMove.current = null;
       queueKeeperFinal(parsed);
     } else {
-      request('input', { room:room.id, revision:revisionRef.current, input:parsed }, { silent:true }).catch(() => {});
+      request('input', { room:room.id, revision:revisionRef.current, input:parsed }, { silent:true })
+        .then((data) => { if (data?.room?.revision != null) revisionRef.current = data.room.revision; })
+        .catch(() => {});
     }
   }
 
@@ -766,13 +775,67 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     }
   }
 
+  function vibrateFace(pattern = 8) {
+    try { if ('vibrate' in navigator) navigator.vibrate(pattern); } catch {}
+  }
+
+  function sendAttackerFace(type, directionX = 0, intensity = .82) {
+    if (!isAttacker || busy || state.status === 'finished') return;
+    unlockPenaltyAudio().catch(() => {});
+    vibrateFace();
+    const input = { type, intensity };
+    if (type === 'feint' || type === 'cut' || type === 'rhythm') {
+      input.direction = { x:directionX, y:0, length:Math.abs(directionX) };
+    }
+    request('input', { room:room.id, revision:revisionRef.current, input }, { silent:true })
+      .then((data) => { if (data?.room?.revision != null) revisionRef.current = data.room.revision; })
+      .catch(() => {});
+  }
+
+  function keeperFaceStart(direction, event) {
+    if (!isKeeper || busy || state.status === 'finished') return;
+    unlockPenaltyAudio().catch(() => {});
+    vibrateFace(6);
+    clearInterval(keeperFaceTimer.current);
+    keeperFaceActive.current = direction;
+    event?.currentTarget?.setPointerCapture?.(event.pointerId);
+    const stream = () => {
+      controlRef.current.keeper = { direction, intensity:.72, active:true };
+      queueKeeperMove({ type:'hold', direction, intensity:.72 });
+    };
+    stream();
+    keeperFaceTimer.current = window.setInterval(stream, 70);
+  }
+
+  function keeperFaceEnd(direction) {
+    if (!isKeeper || keeperFaceActive.current !== direction) return;
+    keeperFaceActive.current = 0;
+    clearInterval(keeperFaceTimer.current);
+    keeperFaceTimer.current = 0;
+    controlRef.current.keeper = { direction:0, intensity:0, active:false };
+    pendingKeeperMove.current = null;
+    vibrateFace([8, 18, 12]);
+    queueKeeperFinal({ type:'dive', direction, intensity:.92 });
+  }
+
+  function keeperFaceAction(type) {
+    if (!isKeeper || busy || state.status === 'finished') return;
+    unlockPenaltyAudio().catch(() => {});
+    vibrateFace(type === 'high-claim' ? [8, 14, 8] : 10);
+    const direction = Math.abs(controlRef.current?.keeper?.direction || 0) > .08
+      ? controlRef.current.keeper.direction : 0;
+    queueKeeperFinal({ type, direction, intensity:type === 'high-claim' ? .9 : .74 });
+  }
+
   function activatePower(powerId) {
     if (!isKeeper || busy) return;
     request('input', {
       room:room.id,
       revision:revisionRef.current,
       input:{ type:'power', powerId },
-    }, { silent:true }).catch(() => {});
+    }, { silent:true })
+      .then((data) => { if (data?.room?.revision != null) revisionRef.current = data.room.revision; })
+      .catch(() => {});
   }
 
   const score = state.score || [0, 0];
@@ -802,7 +865,15 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
         {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" aria-label="Déplacement de l’attaquant" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
-        <div ref={rightPadRef} className="penalty-touch-right" data-active="false" data-charging="false" aria-label={isAttacker ? 'Tir avec jauge de puissance' : 'Plongeon et fermeture d’angle'} onPointerDown={rightStart} onPointerMove={rightMove} onPointerUp={rightEnd} onPointerCancel={rightCancel} onLostPointerCapture={rightCancel}><i className="penalty-shot-charge" aria-hidden="true"><b /></i><span>{isAttacker ? 'MAINTIENS · VISE · RELÂCHE' : 'VISE · GLISSE · PLONGE'}</span></div>
+        {(isAttacker || isKeeper) && <div className="penalty-face-cluster" data-role={isAttacker ? 'attacker' : 'keeper'} aria-label="Commandes d’action 3B">
+          <button className="penalty-face penalty-face-top" data-tone="3b" aria-label={isAttacker ? 'Accélération 3B' : 'Sortie haute 3B'} onPointerDown={() => isAttacker ? sendAttackerFace('accelerate', 0, .95) : keeperFaceAction('high-claim')}><b>3B</b><small>{isAttacker ? 'BOOST' : 'HAUT'}</small></button>
+          <button className="penalty-face penalty-face-left" data-tone="black" aria-label={isAttacker ? 'Feinte noire gauche' : 'Plongeon gauche'} onPointerDown={(e) => isAttacker ? sendAttackerFace('feint', -.86, .82) : keeperFaceStart(-1, e)} onPointerUp={() => isKeeper && keeperFaceEnd(-1)} onPointerCancel={() => isKeeper && keeperFaceEnd(-1)} onLostPointerCapture={() => isKeeper && keeperFaceEnd(-1)}><b>N</b><small>{isAttacker ? 'FEINTE' : 'GAUCHE'}</small></button>
+          <button className="penalty-face penalty-face-right" data-tone="white" aria-label={isAttacker ? 'Crochet blanc droite' : 'Plongeon droite'} onPointerDown={(e) => isAttacker ? sendAttackerFace('cut', .86, .9) : keeperFaceStart(1, e)} onPointerUp={() => isKeeper && keeperFaceEnd(1)} onPointerCancel={() => isKeeper && keeperFaceEnd(1)} onLostPointerCapture={() => isKeeper && keeperFaceEnd(1)}><b>B</b><small>{isAttacker ? 'CROCHET' : 'DROITE'}</small></button>
+          <div ref={rightPadRef} className="penalty-face penalty-face-bottom penalty-face-shot" data-tone="beur" data-active="false" data-charging="false" aria-label={isAttacker ? 'Frappe Beur or avec puissance et effet' : 'Fermeture d’angle Beur or'} onPointerDown={isAttacker ? rightStart : () => keeperFaceAction('close-angle')} onPointerMove={isAttacker ? rightMove : undefined} onPointerUp={isAttacker ? rightEnd : undefined} onPointerCancel={isAttacker ? rightCancel : undefined} onLostPointerCapture={isAttacker ? rightCancel : undefined}>
+            <b>{isAttacker ? 'OR' : 'O'}</b><small>{isAttacker ? 'FRAPPE' : 'ANGLE'}</small>
+            {isAttacker && <i className="penalty-shot-charge" aria-hidden="true"><b /></i>}
+          </div>
+        </div>}
 
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
         {impactType && <div key={String(state.lastEvent?.visual?.at || room.revision)} className="penalty-impact-word" data-type={impactType} aria-hidden="true"><strong>{impactLabel}</strong><span>{impactType === 'goal' ? '3B PENALTY RUSH' : impactType === 'save' ? 'RÉFLEXE GARDIEN' : 'À QUELQUES CENTIMÈTRES'}</span></div>}
