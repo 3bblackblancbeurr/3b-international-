@@ -340,6 +340,30 @@ function districtTerraceItems(plan,evolution,profile){
   });
 }
 
+function verticalConnectorItems(plan,evolution,profile){
+  return plan.districts.flatMap((district,index)=>{
+    const level=DISTRICT_TERRACE_LEVELS[district.id]||0;if(level<=.2)return[];
+    const center=hubDistrictPosition(plan,district.id),seed=hash('vertical:'+district.id),angle=((seed%6283)/1000);
+    const offset=31+((seed>>>8)%8),x=center.x+Math.cos(angle)*offset,z=center.z+Math.sin(angle)*offset;
+    const compact=profile==='mobileMedium';
+    return [{
+      id:`hub:vertical-connector:${district.id}`,
+      type:'hubVerticalConnector',
+      range:-1,
+      district:district.id,
+      connector:index%3===0?'ramp':index%3===1?'stairs':'lift-bridge',
+      x,z,
+      heading:angle+Math.PI/2,
+      rise:Math.max(1.2,level*2.1),
+      length:compact?10:14,
+      width:compact?3.2:4.2,
+      accent:DISTRICT_PREMIUM_ACCENTS[district.id]||'#d6b46a',
+      evolutionStage:evolution.stage,
+      renderProfile:profile,
+    }];
+  });
+}
+
 function districtLandmarkItems(plan,evolution){
   return (plan.districtLandmarks||[]).flatMap((landmark,index)=>{
     const center=hubDistrictPosition(plan,landmark.district);if(!center)return[];
@@ -550,10 +574,11 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const transitLinks=transitLinkItems(plan,evolution);
   const streetFurniture=streetFurnitureItems(plan,profile,evolution);
   const terraces=districtTerraceItems(plan,evolution,profile);
+  const verticalConnectors=verticalConnectorItems(plan,evolution,profile);
   const milestoneStories=milestoneStoryItems(plan,evolution);
-  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture,...terraces])item.renderProfile=profile;
+  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture,...terraces,...verticalConnectors])item.renderProfile=profile;
   return {
-    items:[...water,...terraces,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
+    items:[...water,...terraces,...verticalConnectors,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
@@ -568,6 +593,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
       transitLinks:transitLinks.length,
       streetFurniture:streetFurniture.length,
       districtTerraces:terraces.length,
+      verticalConnectors:verticalConnectors.length,
       milestoneStories:milestoneStories.length,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,

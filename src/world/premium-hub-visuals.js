@@ -452,6 +452,34 @@ export function createPremiumDistrictTerrace(item,{root,geometry,material,ground
 }
 
 
+export function createPremiumVerticalConnector(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Vertical-'+item.district+'-'+item.connector;root.add(group);
+ group.position.set(item.x,groundY(item.x,item.z),item.z);group.rotation.y=item.heading||0;
+ const stone=material('#30373a',{roughness:.84,metalness:.08});
+ const dark=material('#11171c',{roughness:.56,metalness:.38});
+ const accent=material(item.accent||'#00a8ff',{emissive:item.accent||'#00a8ff',emissiveIntensity:.18,roughness:.24,metalness:.34});
+ const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.12,roughness:.28,metalness:.76});
+ const rise=Math.max(1,item.rise||2),length=Math.max(8,item.length||12),width=Math.max(2.8,item.width||3.6);
+ if(item.connector==='stairs'){
+  const count=item.renderProfile==='mobileMedium'?5:8;
+  for(let i=0;i<count;i++){
+   const t=(i+.5)/count;
+   child(group,geometry.box,stone,{y:rise*t*.5,z:(t-.5)*length,sx:width,sy:Math.max(.16,rise/count*.45),sz:length/count*.9,cast:false});
+  }
+  for(const side of [-1,1])child(group,geometry.box,gold,{x:side*width*.48,y:rise*.31,z:0,sx:.08,sy:.10,sz:length*.96,rz:-rise/length,cast:false});
+ }else if(item.connector==='ramp'){
+  const ramp=child(group,geometry.box,stone,{y:rise*.26,z:0,sx:width,sy:.24,sz:length,rx:-Math.atan2(rise,length),cast:false});
+  ramp.position.y+=rise*.05;
+  for(const side of [-1,1])child(group,geometry.box,accent,{x:side*width*.48,y:rise*.48,z:0,sx:.08,sy:.10,sz:length*.92,rx:-Math.atan2(rise,length),cast:false});
+ }else{
+  child(group,geometry.box,dark,{y:rise*.52,sx:width*.88,sy:rise,sz:1.8});
+  child(group,geometry.box,accent,{y:rise*.58,z:.95,sx:width*.58,sy:rise*.56,sz:.08,cast:false});
+  child(group,geometry.box,stone,{y:rise,z:-length*.28,sx:width,sy:.24,sz:length*.58,cast:false});
+  child(group,geometry.box,gold,{y:rise+.18,z:-length*.28,sx:width*.86,sy:.06,sz:length*.54,cast:false});
+ }
+ return group;
+}
+
 export function createPremiumSkybridge(item,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Skybridge-'+item.bridgeId;root.add(group);
  const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
