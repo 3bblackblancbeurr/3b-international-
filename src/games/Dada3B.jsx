@@ -24,7 +24,7 @@ const DICE=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 const DICE_PIPS=Object.freeze({1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]});
 function DiceFace({value}){return <span className="dada3b-die-face-pips" aria-hidden="true">{DICE_PIPS[value].map(slot=><i key={slot} data-slot={slot}/>)}</span>;}
 function PremiumDice({value,rolling,disabled,onClick,skin,country,pending,adverse}){
- const shown=value||1,status=pending?'Choisis un Totem':adverse?'Tour adverse':'Lancer le dé',rendererKey=(skin||'core')+':'+(country||'neutral'),[webglFailed,setWebglFailed]=useState(false),[webglReadyKey,setWebglReadyKey]=useState(null),webglReady=webglReadyKey===rendererKey&&!webglFailed;
+ const shown=value||1,status=pending?'Choisis un guerrier':adverse?'Tour adverse':'Lancer le dé',rendererKey=(skin||'core')+':'+(country||'neutral'),[webglFailed,setWebglFailed]=useState(false),[webglReadyKey,setWebglReadyKey]=useState(null),webglReady=webglReadyKey===rendererKey&&!webglFailed;
  const fallback=<span className="dada3b-dice-stage" aria-hidden="true"><span className="dada3b-die-cube">
   <span className="dada3b-die-face dada3b-die-front"><DiceFace value={1}/></span><span className="dada3b-die-face dada3b-die-right"><DiceFace value={2}/></span>
   <span className="dada3b-die-face dada3b-die-back"><DiceFace value={3}/></span><span className="dada3b-die-face dada3b-die-left"><DiceFace value={4}/></span>
@@ -37,25 +37,28 @@ function PremiumDice({value,rolling,disabled,onClick,skin,country,pending,advers
 }
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const initialSeats=()=>COUNTRIES_3B.map((country,index)=>({countryId:country.id,type:index<2?'human':index===2?'bot':'off',aiLevel:'tactique',team:null}));
-const COSMETIC_SLOT_LABELS={totem_skin:'Totem',trail:'Trace',dice_skin:'Dé',board_skin:'Plateau',capture_fx:'Capture',intro_fx:'Introduction'};
+const COSMETIC_SLOT_LABELS={totem_skin:'Guerrier',trail:'Trace',dice_skin:'Dé',board_skin:'Plateau',capture_fx:'Capture',intro_fx:'Introduction'};
 const COUNTRY_SKIN_PREFIX={fr:'DADA_TOTEM_FR_',dz:'DADA_TOTEM_DZ_',es:'DADA_TOTEM_ES_',ma:'DADA_TOTEM_MA_',it:'DADA_TOTEM_IT_',tn:'DADA_TOTEM_TN_',tr:'DADA_TOTEM_TR_',ee:'DADA_TOTEM_EE_'};
 function skinForCountry(code,countryId){if(!code||code==='DADA_TOTEM_CORE')return'DADA_TOTEM_CORE';return code.startsWith(COUNTRY_SKIN_PREFIX[countryId]||'__')?code:'DADA_TOTEM_CORE';}
 const tutorialSteps=[
   ['1 · Sortir','Fais 6 pour ouvrir ton écurie. Un 6 te laisse rejouer.'],
-  ['2 · Avancer','Le dé fixe la distance. Si plusieurs Totems peuvent bouger, choisis celui qui brille.'],
-  ['3 · Défendre','Les Portes de départ sont des Sanctuaires. Deux Totems alliés peuvent former un Bouclier 3B.'],
+  ['2 · Avancer','Le dé fixe la distance. Si plusieurs guerriers peuvent bouger, choisis celui qui brille.'],
+  ['3 · Défendre','Les Portes de départ sont des Sanctuaires. Deux guerriers alliés peuvent former un Bouclier 3B.'],
   ['4 · Gagner','Fais le tour, traverse les six cases de ta Porte et entre dans le Nexus avec le compte exact.'],
 ];
 const POWER_EVENT_LABELS=Object.freeze({
-  capture:'FRACTURE MATRIX',barricade:'BOUCLIER 3B',sanctuary:'SANCTUAIRE',door:'PORTE DU NEXUS',finish:'FRAGMENT NEXUS',exit:'LIBÉRATION TOTEM','triple-six':'SURCHARGE MATRIX',victory:'NEXUS COMPLET',
+  capture:'FRACTURE MATRIX',barricade:'BOUCLIER 3B',sanctuary:'SANCTUAIRE',door:'PORTE DU NEXUS',finish:'FRAGMENT NEXUS',exit:'LIBÉRATION GUERRIER','triple-six':'SURCHARGE MATRIX',victory:'NEXUS COMPLET',
 });
 const POWER_CARDS=Object.freeze([
-  {id:'capture',sigil:'✦',name:'Fracture Matrix',detail:'Capture un Totem adverse et fracture sa progression.'},
+  {id:'capture',sigil:'✦',name:'Fracture Matrix',detail:'Capture un guerrier adverse et fracture sa progression.'},
   {id:'sanctuary',sigil:'◇',name:'Sanctuaire',detail:'Les 8 Portes deviennent des zones protégées.'},
-  {id:'barricade',sigil:'⬢',name:'Bouclier 3B',detail:'Deux Totems alliés verrouillent le passage.'},
+  {id:'barricade',sigil:'⬢',name:'Bouclier 3B',detail:'Deux guerriers alliés verrouillent le passage.'},
   {id:'door',sigil:'⌁',name:'Porte du Nexus',detail:'Le dernier corridor conduit au cœur du plateau.'},
   {id:'triple-six',sigil:'Ⅵ',name:'Surcharge Matrix',detail:'Trois 6 consécutifs déclenchent la surcharge.'},
 ]);
+const WARRIOR_ARCHETYPES=Object.freeze(['axe','sword','shield','bow']);
+const WARRIOR_LABELS=Object.freeze({axe:'Hache',sword:'Épée',shield:'Bouclier',bow:'Arc'});
+const WARRIOR_SIGILS=Object.freeze({axe:'🪓',sword:'⚔',shield:'🛡',bow:'🏹'});
 
 function polar(angleDeg,radius){const a=angleDeg*Math.PI/180;return{left:50+Math.cos(a)*radius,top:50+Math.sin(a)*radius};}
 const TRACK_ANCHORS=Object.freeze([[50,8],[81,17],[92,47],[82,80],[49,92],[18,82],[8,53],[17,19]]);
@@ -72,7 +75,7 @@ function homePosition(country,index){
  return{left:50+(gate.left-50)*factor,top:50+(gate.top-50)*factor};
 }
 function stableCenter(country){
- const gate=trackPosition(country.start),factor=1.085;
+ const gate=trackPosition(country.start),factor=1.20;
  return{left:50+(gate.left-50)*factor,top:50+(gate.top-50)*factor};
 }
 function finishedPosition(country,pieceIndex){return polar(-90+country.start*360/TRACK_LENGTH+pieceIndex*5-7.5,6.1+(pieceIndex%2)*1.15);}
@@ -90,7 +93,7 @@ function eventFeedback(event,sound,haptic,voice){
  dadaTone(mapped,sound);dadaHaptic(mapped,haptic);
  if(type==='capture')dadaSpeak('Fracture Matrix',voice);
  if(type==='door')dadaSpeak('Porte ouverte',voice);
- if(type==='finish')dadaSpeak('Totem dans le Nexus',voice);
+ if(type==='finish')dadaSpeak('Guerrier dans le Nexus',voice);
  if(type==='victory')dadaSpeak('Nexus complété',voice);
 }
 function CountryPicker({value,onChange,label='Pays'}){return <label className="dada3b-field"><span>{label}</span><select value={value} onChange={e=>onChange(e.target.value)}>{COUNTRIES_3B.map(c=><option value={c.id} key={c.id}>{c.flag} {c.name} · {c.guardian}</option>)}</select></label>;}
@@ -136,7 +139,7 @@ function Board({match,legal=[],motion,blast,onPiece,focusEvent,loadout=null,cosm
   {COUNTRIES_3B.flatMap(c=>Array.from({length:HOME_LENGTH},(_,index)=>{const p=homePosition(c,index),target=c.id===currentCountry?.id&&legalHomeTargets.has(TRACK_LENGTH+index);return <span key={c.id+index} className="dada3b-home-cell" data-home-index={index} data-legal-target={target} style={{left:p.left+'%',top:p.top+'%','--cell-color':c.accent}}><i/></span>;}))}
   <div className="dada3b-nexus"><div><i className="dada3b-nexus-halo"/><strong>3B</strong><small>NEXUS</small><em>8 PORTES · 8 VALEURS</em><span className="dada3b-nexus-fragments">{finished.slice(0,12).map((x,i)=><i key={i} style={{'--fragment':x.c.accent}}/>)}</span></div></div>
   {COUNTRIES_3B.map(c=>{const p=stableCenter(c),active=match.players.some(player=>player.countryId===c.id),guardian=guardianAssetFor(c.id);return <div key={'s'+c.id} className="dada3b-stable" data-active={active} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}}><i className="dada3b-gate-aura"/>{guardian?.portrait?<img src={guardian.portrait} alt="" aria-hidden="true"/>:<span>{c.crest}</span>}<strong>{c.guardian}</strong><small>{c.value} · {c.code}</small></div>;})}
-  {match.players.flatMap((player,playerIndex)=>{const c=countryFor(player.countryId),playerLoadout=cosmeticsByCountry?.[player.countryId]||loadout||{},skin=skinForCountry(playerLoadout.totem_skin,c.id);return player.pieces.map((piece,pieceIndex)=>{const shown=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex?motion.step:piece.steps,p=positionForPiece(c,shown,pieceIndex),can=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion,isMoving=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex;return <button type="button" key={c.id+pieceIndex} className="dada3b-piece dada3b-totem" data-shape={c.shape} data-legal={can} data-totem-skin={skin} data-trail={isMoving?(playerLoadout.trail||loadout?.trail||''):''} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}} disabled={!can} onClick={()=>onPiece(pieceIndex)} aria-label={c.name+' Totem '+(pieceIndex+1)+(can?' jouable':'')}><i className="dada3b-totem-shadow"/><i className="dada3b-totem-aura"/><span className="dada3b-totem-model"><i className="dada3b-totem-crown"/><b>{c.crest}</b><i className="dada3b-totem-core"/><i className="dada3b-totem-base"/></span><small>{pieceIndex+1}</small></button>;});})}
+  {match.players.flatMap((player,playerIndex)=>{const c=countryFor(player.countryId),playerLoadout=cosmeticsByCountry?.[player.countryId]||loadout||{},skin=skinForCountry(playerLoadout.totem_skin,c.id);return player.pieces.map((piece,pieceIndex)=>{const shown=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex?motion.step:piece.steps,p=positionForPiece(c,shown,pieceIndex),can=playerIndex===match.turn&&legal.includes(pieceIndex)&&!motion,isMoving=motion?.countryId===player.countryId&&motion.pieceIndex===pieceIndex,archetype=WARRIOR_ARCHETYPES[pieceIndex%WARRIOR_ARCHETYPES.length];return <button type="button" key={c.id+pieceIndex} className="dada3b-piece dada3b-totem" data-shape={c.shape} data-warrior={archetype} data-legal={can} data-totem-skin={skin} data-trail={isMoving?(playerLoadout.trail||loadout?.trail||''):''} style={{left:p.left+'%',top:p.top+'%','--country':c.accent}} disabled={!can} onClick={()=>onPiece(pieceIndex)} aria-label={c.name+' · guerrier '+WARRIOR_LABELS[archetype]+' '+(pieceIndex+1)+(can?' jouable':'')}><i className="dada3b-totem-shadow"/><i className="dada3b-totem-aura"/><span className="dada3b-totem-model"><i className="dada3b-totem-crown"/><i className="dada3b-warrior-icon" aria-hidden="true">{WARRIOR_SIGILS[archetype]}</i><b>{c.crest}</b><i className="dada3b-totem-core"/><i className="dada3b-totem-base"/></span><small>{pieceIndex+1}</small></button>;});})}
   {blast&&<span key={blast.key} className="dada3b-burst" data-fx={blast.fx||loadout?.capture_fx||'DADA_CAPTURE_FRACTURE'} style={{left:blast.left+'%',top:blast.top+'%'}}/>}
  </div>;
 }
@@ -223,7 +226,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   const moves=rolled.match.pendingMoves,active=rolled.match.players[rolled.match.turn],allStable=finalRoll===6&&moves.length&&moves.every(i=>active.pieces[i].steps===STABLE);
   const piece=automated?selectBotMove(rolled.match,finalRoll,rolled.match.turn,player.aiLevel||rules.aiLevel):(moves.length===1||allStable?moves[0]:null);
   if(piece!==null){await wait(180);await animateLocal(rolled.match,piece);return;}
-  setLegal(moves);setBusy(false);setNotice('Choisis un Totem illuminé.');
+  setLegal(moves);setBusy(false);setNotice('Choisis un guerrier illuminé.');
  }
  function chooseLocal(pieceIndex){if(!match||busy||!match.pendingMoves?.includes(pieceIndex))return;setBusy(true);animateLocal(match,pieceIndex);}
 
@@ -298,7 +301,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   <header className="dada3b-topbar"><div><small>Jeux 3B</small><strong>DADA 3B — Le Cercle des 8 Portes</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup dada3b-menu-setup"><section className="dada3b-setup-card dada3b-home-menu dada3b-home-menu-v8">
    <div className="dada3b-menu-hero dada3b-menu-hero-v8">
-    <div className="dada3b-menu-copy"><span className="dada3b-kicker">APEX CLARTÉ</span><h2>Choisis. Lance. Joue.</h2><p>Le plateau t’indique directement le Totem actif, les déplacements possibles, les protections et les impacts.</p></div>
+    <div className="dada3b-menu-copy"><span className="dada3b-kicker">APEX CLARTÉ</span><h2>Choisis. Lance. Joue.</h2><p>Le plateau t’indique directement le guerrier actif, les déplacements possibles, les protections et les impacts.</p></div>
     <div className="dada3b-door-intro dada3b-door-intro-v8" data-intro={cosmeticLoadout?.intro_fx||'DADA_INTRO_EIGHT_DOORS'} aria-hidden="true">{COUNTRIES_3B.map(c=><i key={c.id} style={{'--door':c.accent}}><span>{c.crest}</span></i>)}</div>
    </div>
    <div className="dada3b-menu-primary dada3b-menu-primary-v8">
@@ -310,7 +313,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
    <details className="dada3b-menu-more dada3b-menu-more-v8"><summary>Plus d’options</summary><div>
     <button onClick={()=>enterOnline('join')}><strong>Rejoindre</strong><small>Entrer un code de salon</small></button>
     <button onClick={()=>enterOnline('spectate')}><strong>Spectateur</strong><small>Observer une partie</small></button>
-    <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection</strong><small>Totems · dés · traces</small></button>
+    <button onClick={()=>{setView('cosmetics');loadCosmetics();}}><strong>Collection</strong><small>Guerriers · dés · traces</small></button>
     <div className="dada3b-feedback-options"><button aria-pressed={sound} onClick={()=>setSound(!sound)}>Son {sound?'ON':'OFF'}</button><button aria-pressed={haptic} onClick={()=>setHaptic(!haptic)}>Vibration {haptic?'ON':'OFF'}</button><button aria-pressed={voice} onClick={()=>setVoice(!voice)}>Voix {voice?'ON':'OFF'}</button></div>
    </div></details>
   </section></main>
@@ -320,7 +323,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
   <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Inventaire 3B · DADA</small><strong>Collection & loadout</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup"><section className="dada3b-setup-card dada3b-cosmetics">
    <span className="dada3b-kicker">COSMÉTIQUE UNIQUEMENT · 0 AVANTAGE GAMEPLAY</span><h2>Personnalise ton Cercle.</h2>
-   <p>Les objets débloqués restent dans ton inventaire 3B. Les Totems nationaux ne s’affichent que lorsque tu joues le pays correspondant.</p>
+   <p>Les objets débloqués restent dans ton inventaire 3B. Les guerriers nationaux ne s’affichent que lorsque tu joues le pays correspondant.</p>
    {!account.user?<div className="dada3b-event"><b>Compte 3B requis</b><br/>La collection permanente est liée à ton compte.</div>:
    !cosmetics?<button className="dada3b-primary" onClick={loadCosmetics}>Charger ma collection</button>:
    <>{cosmetics.season&&<section className="dada3b-season-card" data-status={cosmetics.season.status}><span className="dada3b-kicker">{cosmetics.season.status==='active'?'SAISON ACTIVE':'SAISON EN PRÉPARATION'}</span><h3>{cosmetics.season.label}</h3><p>{cosmetics.season.status==='draft'?'Aucune date n’est publiée. Les règles compétitives restent identiques.':'Rotation visuelle des huit nations en cours.'}</p><div>{cosmetics.season.rotation.map(stop=>{const country=countryFor(stop.country);return <span key={stop.country}>{country?.flag} {country?.name} · {stop.value}</span>;})}</div></section>}<div className="dada3b-cosmetic-groups">{Object.entries(COSMETIC_SLOT_LABELS).map(([slot,label])=><section key={slot}><h3>{label}</h3><div className="dada3b-cosmetic-grid">{cosmetics.catalog.filter(item=>item.slot===slot).map(item=>{const equipped=cosmetics.loadout?.[slot]===item.code,canClaim=!item.owned&&item.ruleCode&&currentXp>=item.xpRequired;return <article key={item.code} data-rarity={item.rarity} data-owned={item.owned}><div><b>{item.name}</b><small>{item.collection} · {item.rarity}{item.value?' · '+item.value:''}</small></div><p>{item.description}</p><footer>{item.owned?<button className={equipped?'dada3b-secondary':'dada3b-primary'} disabled={equipped} onClick={()=>equipCosmetic(slot,item.code)}>{equipped?'Équipé':'Équiper'}</button>:item.ruleCode?<button className="dada3b-secondary" disabled={!canClaim} onClick={()=>claimCosmetic(item.ruleCode)}>{canClaim?'Réclamer':item.xpRequired.toLocaleString('fr-FR')+' XP requis'}</button>:<span>Verrouillé</span>}</footer></article>;})}</div></section>)}</div></>}
@@ -331,17 +334,17 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  if(view==='local-setup')return <div className="dada3b-shell" role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><button className="dada3b-icon-button" onClick={()=>setView('menu')}><ArrowLeft size={19}/></button><div><small>Configuration locale</small><strong>2 à 8 joueurs · humains + IA</strong></div><button className="dada3b-icon-button" onClick={onClose}><X size={20}/></button></header>
   <main className="dada3b-setup"><section className="dada3b-setup-card">
-   <span className="dada3b-kicker">TOTEMS 3B</span><h2>Compose ton Cercle.</h2>
+   <span className="dada3b-kicker">GUERRIERS 3B</span><h2>Compose ton Cercle.</h2>
    <div className="dada3b-country-grid">{COUNTRIES_3B.map(c=><SeatCard key={c.id} country={c} seat={seats.find(s=>s.countryId===c.id)} teamMode={rules.teamMode} onChange={next=>updateSeat(c.id,next)}/>)}</div>
    <details className="dada3b-settings dada3b-settings-collapsed"><summary><span>Règles avancées</span><small>Sanctuaires · Bouclier · timer · plateau</small></summary><div className="dada3b-rule-grid">
-    <RuleToggle checked={rules.safeCells} onChange={v=>updateRule('safeCells',v)} label="Sanctuaires" detail="Les huit Portes de départ protègent les Totems."/>
-    <RuleToggle checked={rules.barricades} onChange={v=>updateRule('barricades',v)} label="Bouclier 3B" detail="Deux Totems alliés forment une barricade."/>
+    <RuleToggle checked={rules.safeCells} onChange={v=>updateRule('safeCells',v)} label="Sanctuaires" detail="Les huit Portes de départ protègent les guerriers."/>
+    <RuleToggle checked={rules.barricades} onChange={v=>updateRule('barricades',v)} label="Bouclier 3B" detail="Deux guerriers alliés forment une barricade."/>
     <RuleToggle checked={rules.captureRequired} onChange={v=>updateRule('captureRequired',v)} label="Capture obligatoire" detail="Une capture disponible doit être jouée."/>
     <RuleToggle checked={rules.bonusOnCapture} onChange={v=>updateRule('bonusOnCapture',v)} label="Bonus capture" detail="Une capture donne un nouveau tour."/>
     <RuleToggle checked={rules.tripleSixPenalty} onChange={v=>updateRule('tripleSixPenalty',v)} label="Trois 6" detail="Le troisième 6 consécutif déclenche la surcharge Matrix."/>
     <RuleToggle checked={rules.teamMode} onChange={setTeamMode} label="2v2 local" detail="Deux équipes de deux pays. Les alliés ne peuvent pas se capturer."/>
    </div><div className="dada3b-select-grid">
-    <label className="dada3b-field"><span>Totems</span><select value={rules.piecesPerPlayer} onChange={e=>updateRule('piecesPerPlayer',Number(e.target.value))}>{[2,3,4].map(v=><option key={v}>{v}</option>)}</select></label>
+    <label className="dada3b-field"><span>Guerriers</span><select value={rules.piecesPerPlayer} onChange={e=>updateRule('piecesPerPlayer',Number(e.target.value))}>{[2,3,4].map(v=><option key={v}>{v}</option>)}</select></label>
     <label className="dada3b-field"><span>Timer</span><select value={rules.timerSeconds} onChange={e=>updateRule('timerSeconds',Number(e.target.value))}>{[0,20,30,45].map(v=><option key={v} value={v}>{v?v+' s':'Libre'}</option>)}</select></label>
     <label className="dada3b-field"><span>Durée max</span><select value={rules.maxDurationMinutes} onChange={e=>updateRule('maxDurationMinutes',Number(e.target.value))}>{[0,10,20,30,45,60].map(v=><option key={v} value={v}>{v?v+' min':'Libre'}</option>)}</select></label>
     <label className="dada3b-field"><span>Plateau</span><select value={rules.boardTheme} onChange={e=>updateRule('boardTheme',e.target.value)}>{BOARD_THEMES.map(v=><option key={v} value={v}>{v==='nexus'?'Nexus 3B':countryFor(v)?.name||v}</option>)}</select></label>
