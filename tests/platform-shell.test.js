@@ -30,7 +30,8 @@ test('home exposes a clear next step without technical journey status cards',()=
  assert.doesNotMatch(home,/Ouvert · 8 héritages|Web · installable/);
  assert.match(home,/Activer mon Passeport 3B/);
  assert.match(home,/Entrer dans le Monde du 3B/);
- assert.match(home,/03 \/ JEUX 3B/);
+ assert.match(home,/03 \/ MONDE DU 3B/);
+ assert.match(home,/04 \/ NOSBLOC/);
  assert.match(home,/home-guide-zone/);
  assert.ok(home.indexOf('home-guide-zone')>home.indexOf('Explorer 3B'));
 });

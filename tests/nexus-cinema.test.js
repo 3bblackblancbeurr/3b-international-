@@ -37,13 +37,14 @@ test('Passport opens the active City 3B gateway and permanent server-backed city
   const entry=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');
   const gateway=readFileSync(new URL('../src/components/NexusCityGateway.jsx',import.meta.url),'utf8');
   const city=readFileSync(new URL('../src/components/City3BPortal.jsx',import.meta.url),'utf8');
-  const source=gateway+'\n'+city;
+  const builder=readFileSync(new URL('../src/city/City3BBuilder.jsx',import.meta.url),'utf8');
+  const source=gateway+'\n'+city+'\n'+builder;
   assert.match(entry,/NexusCityGateway/);
   assert.match(gateway,/City3BPortal/);
   assert.match(source,/city3bRequest/);
   assert.match(source,/CRÉE TA VILLE/);
   assert.match(source,/Fonder ma ville/);
-  assert.match(source,/call\('place'/);
+  assert.match(builder,/call\("place"/);
   assert.match(source,/Collection permanente/);
   assert.match(source,/Découvrir les villes 3B/);
   assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);
