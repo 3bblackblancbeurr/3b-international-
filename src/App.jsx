@@ -298,20 +298,32 @@ export default function App() {
         <div className="intro3b-background" aria-hidden="true" />
         <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
 
-        <section className="intro3b-card">
-          <p className="eyebrow">3B International</p>
-          <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
-          <h1>De zéro à l’international</h1>
-          <p>Un écosystème premium.</p>
+        <section className="intro3b-card intro3b-portal">
+          <div className="intro3b-copy">
+            <p className="eyebrow">3B International</p>
+            <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
+            <h1><span>De zéro à</span><span>L’international</span></h1>
+            <p className="intro3b-lead">Entrez dans la Cité des Huit Héritages.</p>
+            <p className="intro3b-legacy">Ce n’est pas une marque. C’est un héritage.</p>
 
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => { speakWelcome(); goTo("home"); }}
-          >
-            COMMENCER
-          </button>
-          <InstallApp installation={installation} />
+            <button
+              type="button"
+              className="primary-button intro3b-enter"
+              onClick={() => { speakWelcome(); goTo("home"); }}
+            >
+              ENTRER DANS L’UNIVERS 3B
+            </button>
+
+            <div className="intro3b-path" aria-label="Parcours 3B">
+              <span>Passeport 3B</span><i aria-hidden="true" />
+              <span>Cité des Huit Héritages</span><i aria-hidden="true" />
+              <span>8 Portes</span><i aria-hidden="true" />
+              <span>Monde du 3B</span>
+            </div>
+          </div>
+          <div className="intro3b-install">
+            <InstallApp installation={installation} />
+          </div>
         </section>
       </main>
     );
