@@ -763,6 +763,95 @@ def spawn_portals(manifest, tag, materials):
             f"HUB_3B_V5/PORTALS/{code}/FACILITY",
             accent,
         )
+
+        # Country-specific functional architecture. These details make each
+        # heritage facility readable from a distance while preserving one 3B language.
+        if code == "FR":
+            for side_sign in (-1, 1):
+                spawn_box(
+                    f"HUB_V5_PORTAL_FR_TRIBUNAL_COLUMN_{side_sign}",
+                    [fx + side[0] * 650 * side_sign, fy + side[1] * 650 * side_sign, z + 520],
+                    [140, 140, 920], yaw, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["gold"],
+                )
+            spawn_box(
+                "HUB_V5_PORTAL_FR_TRIBUNAL_LINTEL",
+                [fx, fy, z + 1010], [1650, 180, 150], yaw, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", accent,
+            )
+        elif code == "DZ":
+            for tier in range(3):
+                spawn_box(
+                    f"HUB_V5_PORTAL_DZ_ALLIANCE_TERRACE_{tier}",
+                    [fx + inward[0] * tier * 280, fy + inward[1] * tier * 280, z + 230 + tier * 150],
+                    [1900 - tier * 260, 1250 - tier * 120, 160], yaw, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["jade"],
+                )
+        elif code == "ES":
+            for side_sign in (-1, 0, 1):
+                spawn_box(
+                    f"HUB_V5_PORTAL_ES_STAGE_RIB_{side_sign+1}",
+                    [fx + side[0] * 520 * side_sign, fy + side[1] * 520 * side_sign, z + 670],
+                    [120, 160, 1050 + abs(side_sign) * 240], yaw + side_sign * 7, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY",
+                    materials["copper"] if side_sign else accent,
+                )
+        elif code == "MA":
+            for side_sign in (-1, 1):
+                for back in (0, 1):
+                    spawn_box(
+                        f"HUB_V5_PORTAL_MA_CRAFT_TOWER_{side_sign}_{back}",
+                        [fx + side[0] * 620 * side_sign + inward[0] * back * 380,
+                         fy + side[1] * 620 * side_sign + inward[1] * back * 380,
+                         z + 560],
+                        [160, 160, 980], yaw, tag,
+                        f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY",
+                        materials["gold"] if back else accent,
+                    )
+        elif code == "IT":
+            for side_sign in (-1, 0, 1):
+                spawn_cylinder(
+                    f"HUB_V5_PORTAL_IT_REBUILD_COLUMN_{side_sign+1}",
+                    [fx + side[0] * 520 * side_sign, fy + side[1] * 520 * side_sign, z + 520],
+                    210, 900, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["white"],
+                )
+        elif code == "TN":
+            spawn_cylinder(
+                "HUB_V5_PORTAL_TN_RESCUE_MAST",
+                [fx + side[0] * 580, fy + side[1] * 580, z + 780],
+                120, 1500, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["gold"],
+            )
+            spawn_box(
+                "HUB_V5_PORTAL_TN_RESCUE_LIGHT",
+                [fx + side[0] * 580, fy + side[1] * 580, z + 1570],
+                [360, 360, 160], yaw, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", accent,
+            )
+        elif code == "TR":
+            spawn_sphere(
+                "HUB_V5_PORTAL_TR_OBSERVATORY_DOME",
+                [fx, fy, z + 1180], 1250, tag,
+                f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["violet"],
+            )
+            for side_sign in (-1, 1):
+                spawn_cylinder(
+                    f"HUB_V5_PORTAL_TR_OBSERVATORY_MAST_{side_sign}",
+                    [fx + side[0] * 720 * side_sign, fy + side[1] * 720 * side_sign, z + 720],
+                    110, 1320, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY", materials["gold"],
+                )
+        elif code == "EE":
+            for side_sign in (-1, 0, 1):
+                height = 1200 + abs(side_sign) * 260
+                spawn_box(
+                    f"HUB_V5_PORTAL_EE_DATA_CRYSTAL_{side_sign+1}",
+                    [fx + side[0] * 520 * side_sign, fy + side[1] * 520 * side_sign, z + height * .5 + 260],
+                    [280, 280, height], yaw + 45.0, tag,
+                    f"HUB_3B_V5/PORTALS/{code}/FACILITY/IDENTITY",
+                    materials["gold"] if side_sign == 0 else accent,
+                )
         spawn_target(
             f"HUB_V5_TRAVEL_ANCHOR_{code}",
             [p["x"] + inward[0] * 420, p["y"] + inward[1] * 420, z + 120],
