@@ -116,7 +116,7 @@ test('Hub evolution has five visible stages driven by restored heritage',()=>{
 
 
 test('Hub V4 locks the exact 0→8 physical story milestones',()=>{
-  assert.equal(plan.status,'Hub3B_Main_V05 · Cité des Huit Héritages · V4 jouable');
+  assert.equal(plan.status,'Hub3B_Main_V05 · Cité des Huit Héritages · Premium canonique');
   assert.equal(plan.fragmentMilestones.length,9);
   assert.deepEqual(plan.fragmentMilestones.map(row=>row.fragments),[0,1,2,3,4,5,6,7,8]);
   assert.equal(plan.fragmentMilestones[1].id,'circle_heartbeat');
@@ -172,4 +172,20 @@ test('Hub V4 canon stores the story, laws, safe-zone and frozen 16-weapon base',
   assert.equal(plan.npcMemory.persistent,true);
   assert.ok(plan.npcMemory.affects.includes('dialogue'));
   assert.ok(plan.npcMemory.affects.includes('quêtes'));
+});
+
+
+test('Hub V05 premium release acceptance is explicit and device-safe',()=>{
+  assert.equal(plan.version,'5.0.0');
+  assert.equal(plan.premium.release,'V05 Premium');
+  assert.equal(plan.premium.visualReference,'La Cité des Huit Héritages');
+  assert.equal(plan.premium.sameCityAllDevices,true);
+  assert.equal(plan.premium.dispersedHeritagePlatforms,true);
+  assert.equal(plan.premium.verticalCity,true);
+  assert.equal(plan.premium.livingCity,true);
+  assert.equal(plan.releaseAcceptance.visual.length,6);
+  assert.equal(plan.releaseAcceptance.gameplay.length,5);
+  assert.equal(plan.releaseAcceptance.continuity.length,4);
+  assert.ok(plan.releaseAcceptance.performance.includes('30 FPS cible mobileMedium'));
+  assert.ok(plan.releaseAcceptance.performance.includes('60 FPS cible desktop'));
 });
