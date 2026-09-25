@@ -186,7 +186,7 @@ function fillerItems(plan,profile,evolution){
       if(protectedVista&&height>52)height=34+((h>>>19)%18);
       if(district.id==='broken_circle_tower')height=Math.min(height,44);
       const civicUses=plan.civicFabric?.uses||['housing','food','workshop','school','clinic','small_shop'];
-      const civicUse=civicUses[(h>>>21)%civicUses.length];
+      const civicUse=civicUses[(index+((districtSeed>>>21)%civicUses.length))%civicUses.length];
       return {
         id:`hub:structure:${district.id}:${index}`,
         type:'hubStructure',
