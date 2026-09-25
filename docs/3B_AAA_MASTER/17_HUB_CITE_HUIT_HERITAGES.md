@@ -2,7 +2,7 @@
 
 ## Statut
 
-Conception canonique V3 en implémentation : métropole pilotée par données, huit esplanades dispersées, verticalité et évolution visible.
+Hub3B_Main_V05 V4 en implémentation jouable : métropole pilotée par données, huit esplanades dispersées, verticalité, eau, transports physiques, landmarks de skyline et évolution visible 0→8 fragments.
 
 L’image validée de la Cité des Huit Héritages fixe la composition visuelle, l’échelle perçue, la verticalité, les ponts, l’eau, les grands quartiers, la Tour du Cercle Brisé et la dispersion des huit portes. Les textes générés visibles dans l’image sont illustratifs : le canon officiel reste celui du projet, avec Céliane/Justice, Yliane/Loyauté, Diego/Passion, Naël/Noblesse, Alessio/Espoir, Soraya/Courage, Émir/Foi et Eira/Sagesse.
 
@@ -100,3 +100,19 @@ Ces fichiers ne signifient pas que les systèmes sont déjà implémentés. Ils 
 ## Évolution V3
 
 La ville possède désormais cinq stades visuels pilotés par les héritages libérés/restaurés. Les bâtiments futurs restent présents sous forme de structures en veille ou en chantier, puis s'activent, gagnent des lumières, des balises et des couronnes de prestige. Les huit esplanades de pays restent dispersées à leurs positions métropolitaines et les passerelles hautes s'ouvrent progressivement. Voir `22_HUB_EVOLUTION_V3.md`.
+
+
+## Évolution V4
+
+La V4 ne change pas le canon V3 : elle matérialise davantage la ville demandée dans la référence maîtresse.
+
+- 10 places civiques structurent les quartiers ;
+- 10 landmarks visibles servent de repères de skyline ;
+- les canaux, bassins et cascades deviennent des éléments physiques de la scène ;
+- les rails/câbles des transports sont visibles entre les stations ;
+- le tissu urbain de remplissage représente désormais des usages de Cité Origine (logements, école, clinique, ateliers, commerces et services) ;
+- chaque esplanade de pays possède un service local fonctionnel et une signature architecturale distincte ;
+- les huit étapes de fragments disposent de paliers narratifs explicites ;
+- toute progression d’héritage force un nouveau panorama de la métropole pour rendre sa transformation visible.
+
+Le détail complet est dans `23_HUB3B_MAIN_V05_V4.md`.
