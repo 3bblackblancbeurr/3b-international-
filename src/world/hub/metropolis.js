@@ -53,11 +53,11 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
       symbol:country.symbol,
       x:position.x,
       z:position.z,
-      range:9,
       index,
       liberated,
       restored,
       evolutionStage:evolution.stage,
+      evolutionLabel:evolution.label,
       glow:Math.min(1,Number(evolution.platformGlow||.18)+(restored?.22:liberated?.12:0)),
     }];
   });
