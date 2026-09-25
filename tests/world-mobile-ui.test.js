@@ -74,3 +74,19 @@ test('Hub V4 live scene renders the full city layers instead of a circular menu 
  assert.match(hud,/hubEvolution\.milestone/);
  assert.match(hud,/prochain palier/);
 });
+
+
+test('Hub V4 country facilities route into real gameplay surfaces',()=>{
+ const page=read('src/world/WorldPage.jsx');
+ const interactions=read('src/world/interaction-system.js');
+ const map=read('src/world/Cartography.jsx');
+ assert.match(interactions,/hubHeritageFacility:\['enter','inspect'\]/);
+ assert.match(page,/item\.type==='hubHeritageFacility'/);
+ assert.match(page,/tactical_training/);
+ assert.match(page,/textile_upgrade/);
+ assert.match(page,/exploration_tools/);
+ assert.match(page,/setPanel\('arena'\)/);
+ assert.match(page,/setPanel\('avatar'\)/);
+ assert.match(page,/setPanel\('atlas'\)/);
+ assert.match(map,/hubHeritageFacility'\?'▣'/);
+});
