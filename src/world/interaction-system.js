@@ -48,6 +48,7 @@ const TYPE_ACTIONS=Object.freeze({
  hubMission:['inspect'],
  hubTransport:['ride'],
  hubBuilding:['enter','inspect'],
+ hubHeritageFacility:['enter','inspect'],
  hubMilestone:['inspect'],
  hubEvent:['inspect'],
  hubSecret:['inspect'],
