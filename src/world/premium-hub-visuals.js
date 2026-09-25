@@ -448,6 +448,45 @@ export function createPremiumWaterFeature(item,{root,geometry,material,groundY})
  return group;
 }
 
+export function createPremiumStreetFurniture(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Street-'+item.district+'-'+item.kind;root.add(group);
+ group.position.set(item.x,groundY(item.x,item.z),item.z);group.rotation.y=item.heading||0;
+ const dark=material('#141b20',{roughness:.62,metalness:.34});
+ const stone=material('#3a4042',{roughness:.82,metalness:.08});
+ const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.14,roughness:.28,metalness:.78});
+ const accent=material(item.accent||'#00a8ff',{emissive:item.accent||'#00a8ff',emissiveIntensity:.22,roughness:.22,metalness:.40});
+ const green=material('#315a3d',{roughness:.86,metalness:.02});
+ const compact=item.renderProfile==='mobileMedium';
+ if(item.kind==='planter'){
+  child(group,geometry.cylinder,stone,{y:.26,sx:1.05,sy:.52,sz:1.05});
+  child(group,geometry.sphere,green,{y:1.05,sx:1.25,sy:.85,sz:1.25,cast:false});
+  child(group,geometry.ring,accent,{y:.56,sx:1.12,sy:1.12,sz:1.12,rx:Math.PI/2,cast:false});
+ }else if(item.kind==='bench'){
+  child(group,geometry.box,stone,{y:.32,sx:2.4,sy:.28,sz:.62});
+  child(group,geometry.box,dark,{y:.82,z:.42,sx:2.4,sy:.78,sz:.12});
+  child(group,geometry.box,gold,{y:.48,sx:2.15,sy:.06,sz:.68,cast:false});
+ }else if(item.kind==='kiosk'){
+  child(group,geometry.box,dark,{y:1.45,sx:2.1,sy:2.7,sz:1.65});
+  child(group,geometry.box,accent,{y:2.2,z:.87,sx:1.55,sy:.65,sz:.08,cast:false});
+  child(group,geometry.box,gold,{y:2.92,sx:2.35,sy:.14,sz:1.9,cast:false});
+  if(!compact)for(const side of [-1,1])child(group,geometry.cylinder,gold,{x:side*.88,y:1.45,z:.8,sx:.08,sy:2.45,sz:.08,cast:false});
+ }else if(item.kind==='lamp'){
+  child(group,geometry.cylinder,dark,{y:1.95,sx:.10,sy:3.8,sz:.10});
+  child(group,geometry.box,accent,{y:3.98,sx:.42,sy:.16,sz:.42,cast:false});
+  child(group,geometry.box,gold,{y:.16,sx:.62,sy:.12,sz:.62,cast:false});
+ }else if(item.kind==='sign'){
+  child(group,geometry.cylinder,dark,{y:1.1,sx:.09,sy:2.1,sz:.09});
+  child(group,geometry.box,accent,{y:2.25,sx:1.55,sy:.72,sz:.10,cast:false});
+  child(group,geometry.box,gold,{y:2.25,z:.065,sx:1.2,sy:.08,sz:.025,cast:false});
+ }else{
+  for(const side of [-1,1])child(group,geometry.cylinder,dark,{x:side*1.35,y:1.55,sx:.10,sy:3.0,sz:.10});
+  child(group,geometry.box,gold,{y:3.08,sx:3.1,sy:.14,sz:1.5,cast:false});
+  child(group,geometry.box,accent,{y:2.96,sx:2.65,sy:.06,sz:1.15,cast:false});
+ }
+ return group;
+}
+
+
 export function createPremiumTransitLink(item,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Transit-Link-'+item.transport;root.add(group);
  const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
