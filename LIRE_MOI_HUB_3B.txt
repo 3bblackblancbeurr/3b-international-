@@ -1,4 +1,4 @@
-3B INTERNATIONAL — HUB PRINCIPAL V4
+3B INTERNATIONAL — HUB3B_MAIN_V05 PREMIUM
 
 CE QUE TU DOIS FAIRE
 
@@ -7,37 +7,62 @@ CE QUE TU DOIS FAIRE
 
    LANCER_HUB_3B.bat
 
-3. Attends.
+3. Attends la fin de la construction automatique.
 
-Le lanceur ouvre automatiquement le vrai projet ThreeBWorld dans Unreal Engine 5.8.
-Il crée une NOUVELLE map séparée :
+Le lanceur ouvre le projet ThreeBWorld dans Unreal Engine 5.8 et construit la map canonique :
 
-Hub3B_Main_V04
+Hub3B_Main_V05
 
-Il ne modifie pas l'ancien Hub3B_Blockout_V01.
+RÉFÉRENCE MAÎTRESSE
 
-La V4 construit automatiquement :
-- un cœur central 3B ;
-- un anneau principal de circulation ;
-- 8 accès intégrés ;
-- 8 vraies arches-portails visibles :
-  ESTONIE / FRANCE / ESPAGNE / MAROC / ALGÉRIE / TUNISIE / ITALIE / TURQUIE ;
-- de vrais vides entre les avancées ;
-- les dessous du hub ;
-- les nervures sous les 8 accès ;
-- les fragments de profondeur ;
-- les guides Matrix ;
-- les accents noir / or / bleu Matrix ;
-- les ancres de voyage futures pour les 8 mondes ;
-- le ciel, le brouillard et les nuages de base.
+La Cité des Huit Héritages validée par l'utilisateur.
 
-IMPORTANT :
-les portails sont présents et positionnés pour les autres mondes.
-Les mondes eux-mêmes ne sont pas encore branchés : le constructeur place leurs ancres de voyage sans ouvrir une destination vide.
+La ville n'est PAS un petit Nexus circulaire. Le Cercle Brisé est seulement le monument central d'une vraie métropole dense et verticale.
 
-SI UNE ERREUR APPARAÎT :
-ne sauvegarde pas une autre map.
-Prends une photo du message ou du Journal de sortie.
+LA V05 CONSTRUIT AUTOMATIQUEMENT
 
-Le fichier Hub3B_Blockout_V01 reste seulement un ancien test technique.
-Le travail principal continue désormais dans Hub3B_Main_V04.
+- 10 quartiers / pôles fonctionnels ;
+- 19 bâtiments canoniques utiles ;
+- au moins 8 façades urbaines utiles par quartier pour la Cité Origine ;
+- la Tour du Cercle Brisé et le monument central ;
+- 10 grands landmarks de skyline ;
+- 8 Portes réellement dispersées dans la métropole ;
+- une esplanade et un bâtiment fonctionnel propres à chaque pays ;
+- France / Justice / Tribunal 3B ;
+- Algérie / Loyauté / Maison des Alliances ;
+- Espagne / Passion / Scène de la Passion ;
+- Maroc / Noblesse / Atelier des Savoir-Faire ;
+- Italie / Espoir / Maison de la Reconstruction ;
+- Tunisie / Courage / Poste de Sauvetage Maritime ;
+- Turquie / Foi / Observatoire des Liens ;
+- Estonie / Sagesse / Tour des Données ;
+- routes et rues métropolitaines ;
+- 8 passerelles hautes ;
+- rails du 3B Express ;
+- téléphériques et tyroliennes ;
+- Bassin de l'Héritage, canaux et cascades ;
+- Jardins de l'Unité et végétation de base ;
+- accents noir profond / or champagne / bleu Matrix ;
+- point d'arrivée sécurisé ;
+- ancres de voyage préparées pour les huit royaumes.
+
+LOIS CANONIQUES
+
+- Le Hub est la seule grande zone totalement sûre.
+- Aucun monstre hostile, dégât, mort normale ou PvP sauvage dans le Hub.
+- Les huit Portes sont dispersées dans la ville, jamais placées à 45° autour d'un petit anneau.
+- Aucun grand bâtiment sans fonction.
+- Aucun grand vide décoratif inutile.
+- Le joueur incarne son propre personnage ; Kaïs reste le héros central.
+- L'arsenal canonique reste fixé aux 16 armes validées.
+- La progression des 8 fragments transforme physiquement la ville.
+
+L'ANCIENNE V4
+
+Hub3B_Main_V04 et son architecture anneau / spokes / pétales restent uniquement un prototype historique.
+Ils ne sont plus la référence du Monde du 3B.
+
+SI UNE ERREUR APPARAÎT
+
+Ne sauvegarde pas une autre map par-dessus la V05.
+Prends une photo du Journal de sortie ou du message d'erreur.
