@@ -66,7 +66,39 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
  const canopy=mesh('box',trim,bx,y+3.2,bz+depth*.57,width*.26,.26,depth*.18);visuals.push(canopy);
  const light=mesh('box',glass,bx,y+2.7,bz+depth*.665,width*.18,.18,.08);light.castShadow=false;visuals.push(light);
 
- if(!canonical)return visuals;
+ if(!canonical){
+  const civicAccent=material(item.districtAccent||'#00a8ff',{emissive:item.districtAccent||'#00a8ff',emissiveIntensity:.16,roughness:.26,metalness:.42});
+  const frontageZ=bz+depth*.535;
+  switch(item.civicUse){
+   case 'housing':
+    for(const level of [.32,.56,.78])for(const side of [-1,1])child(group??{add:m=>visuals.push(m)},geometry.box,civicAccent,{x:bx+side*width*.22,y:y+height*level,z:frontageZ,sx:width*.16,sy:.10,sz:.08,cast:false});
+    break;
+   case 'food':
+    {const awning=mesh('box',civicAccent,bx,y+3.8,frontageZ+.45,width*.52,.18,1.15);awning.castShadow=false;visuals.push(awning);}
+    break;
+   case 'workshop':
+    for(const side of [-1,0,1]){const door=mesh('box',trim,bx+side*width*.22,y+2.3,frontageZ,width*.16,4.1,.15);visuals.push(door);}
+    break;
+   case 'school':
+    for(const side of [-1,1]){const pillar=mesh('box',stone,bx+side*width*.28,y+3.5,frontageZ,.42,6.2,.42);visuals.push(pillar);}
+    {const lintel=mesh('box',civicAccent,bx,y+6.55,frontageZ,width*.64,.14,.20);lintel.castShadow=false;visuals.push(lintel);}
+    break;
+   case 'clinic':
+    {const barA=mesh('box',civicAccent,bx,y+4.6,frontageZ,width*.22,.18,.12),barB=mesh('box',civicAccent,bx,y+4.6,frontageZ,.18,width*.22,.12);barA.castShadow=barB.castShadow=false;visuals.push(barA,barB);}
+    break;
+   case 'small_shop':
+    for(const side of [-1,1]){const display=mesh('box',glass,bx+side*width*.22,y+2.65,frontageZ,width*.18,3.6,.10);display.castShadow=false;visuals.push(display);}
+    break;
+   case 'guild_room':
+    for(const side of [-1,1]){const banner=mesh('box',civicAccent,bx+side*width*.31,y+height*.60,frontageZ,.22,height*.42,.10);banner.castShadow=false;visuals.push(banner);}
+    break;
+   case 'public_service':
+    {const civicCanopy=mesh('box',gold,bx,y+4.2,frontageZ+.55,width*.58,.20,1.3);visuals.push(civicCanopy);}
+    break;
+   default:break;
+  }
+  return visuals;
+ }
  switch(item.buildingId){
   case 'tower_circle':{
    for(const lift of [height*.63,height*.78,height*.91]){
