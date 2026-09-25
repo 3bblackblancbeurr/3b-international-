@@ -180,6 +180,16 @@ function WorldSession({uid,goTo}){
    const next=act({type:'hubSecretStep',id:item.secretId,step:item.step});if(next){const count=next.hub.stats.secretProgress[item.secretId]?.length||0;announce(item.name+' · indice '+count+' enregistré');chime();}return;
   }
   if(item.type==='hubSecret'){const before=saveRef.current.hub?.secrets?.includes(item.secretId),next=act({type:'hubSecretUnlock',id:item.secretId,evidence:item.evidence||{}});if(next){announce(before?'Secret déjà découvert':item.reward+' · secret découvert');if(!before)chime();}return;}
+  if(item.type==='hubHeritageFacility'){
+   act({type:'hubDistrictVisit',id:item.district});
+   const services=item.services||[];
+   announce(item.name+' · '+item.purpose);
+   if(services.some(id=>['tactical_training','timed_challenges','sport','public_events'].includes(id))){setPanel('arena');return;}
+   if(services.some(id=>['craft','forge','textile_upgrade'].includes(id))){setPanel('avatar');return;}
+   if(services.some(id=>['navigation','coast_missions','data','mapping','exploration_tools'].includes(id))){setPanel('atlas');return;}
+   if(services.some(id=>['healing','restoration'].includes(id))){setPanel('team');return;}
+   setPanel('journal');return;
+  }
   if(item.type==='hubBuilding'){
    act({type:'hubDistrictVisit',id:item.district});const next=act({type:'hubBuildingVisit',id:item.buildingId});if(!next)return;
    const functions=item.functions||[];
