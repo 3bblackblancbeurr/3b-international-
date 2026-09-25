@@ -191,3 +191,20 @@ test('Hub premium street furniture is rendered but never becomes an interaction 
  assert.match(visuals,/export function createPremiumStreetFurniture/);
  assert.match(cartography,/hubStreetFurniture/);
 });
+
+
+test('Cité Origine premium frontages keep useful civic identities and district accents',()=>{
+ const runtime=buildMetropolisRuntimeItems(plan,'desktop');
+ const structures=runtime.items.filter(item=>item.type==='hubStructure');
+ assert.ok(structures.length>=80);
+ assert.ok(structures.every(item=>item.usefulFrontage===true));
+ assert.ok(structures.every(item=>typeof item.civicUse==='string'&&item.civicUse.length>0));
+ assert.ok(structures.every(item=>/^#[0-9a-f]{6}$/i.test(item.districtAccent)));
+ assert.equal(new Set(structures.map(item=>item.district)).size,10);
+ assert.ok(new Set(structures.map(item=>item.civicUse)).size>=6);
+ const visuals=readFileSync(new URL('../src/world/premium-hub-visuals.js',import.meta.url),'utf8');
+ for(const civicUse of ['housing','food','workshop','school','clinic','small_shop','guild_room','public_service']){
+  assert.ok(visuals.includes("case '"+civicUse+"'"),civicUse);
+ }
+ assert.doesNotMatch(visuals,/child\(group\?\?/);
+});
