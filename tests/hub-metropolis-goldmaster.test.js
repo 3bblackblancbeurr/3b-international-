@@ -122,15 +122,18 @@ test('Hub V4 runtime materializes plazas, landmarks, water and physical transit 
  assert.equal(runtime.meta.districtLandmarks,10);
  assert.ok(runtime.meta.waterFeatures>=5);
  assert.ok(runtime.meta.transitLinks>=19);
+ assert.equal(runtime.meta.streetFurniture,80);
  assert.equal(runtime.items.filter(item=>item.type==='hubCivicPlaza').length,10);
  assert.equal(runtime.items.filter(item=>item.type==='hubDistrictLandmark').length,10);
  assert.ok(runtime.items.filter(item=>item.type==='hubWaterFeature').length>=5);
  assert.ok(runtime.items.filter(item=>item.type==='hubTransitLink').length>=19);
+ assert.equal(runtime.items.filter(item=>item.type==='hubStreetFurniture').length,80);
+ assert.equal(new Set(runtime.items.filter(item=>item.type==='hubStreetFurniture').map(item=>item.district)).size,10);
 });
 
 test('Hub V4 decorative infrastructure never steals the player interaction focus',()=>{
  const runtime=buildMetropolisRuntimeItems(plan,'desktop');
- const decorative=new Set(['hubRoad','hubStructure','hubTraffic','hubSkybridge','hubHeritagePlatform','hubCivicPlaza','hubDistrictLandmark','hubWaterFeature','hubTransitLink']);
+ const decorative=new Set(['hubRoad','hubStructure','hubTraffic','hubSkybridge','hubHeritagePlatform','hubCivicPlaza','hubDistrictLandmark','hubWaterFeature','hubTransitLink','hubStreetFurniture']);
  const rows=runtime.items.filter(item=>decorative.has(item.type));
  assert.ok(rows.length>100);
  assert.ok(rows.every(item=>item.range===-1));
