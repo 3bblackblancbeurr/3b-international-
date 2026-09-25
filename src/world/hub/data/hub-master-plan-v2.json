@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "status": "preproduction-canonical",
+  "version": "4.0",
+  "status": "Hub3B_Main_V05 · Cité des Huit Héritages · V4 jouable",
   "title": "La Cité des Huit Héritages",
   "visualReference": "assets/CITE_HUIT_HERITAGES_CANON_V1.webp",
   "palette": {
@@ -613,9 +613,21 @@
         "country_access",
         "guardian_progress",
         "memory_preview",
-        "fast_travel"
+        "fast_travel",
+        "investigation",
+        "justice_cases",
+        "tactical_training"
       ],
-      "visual": "pierre bleutée, héritage urbain et ouvrier, verrière de pluie"
+      "visual": "pierre bleutée, héritage urbain et ouvrier, verrière de pluie",
+      "facility": {
+        "name": "Tribunal 3B",
+        "purpose": "enquêtes, arbitrages, archives de Justice et entraînement tactique",
+        "services": [
+          "investigation",
+          "justice_cases",
+          "tactical_training"
+        ]
+      }
     },
     {
       "code": "DZ",
@@ -627,9 +639,21 @@
         "country_access",
         "guardian_progress",
         "maritime_link",
-        "fast_travel"
+        "fast_travel",
+        "alliances",
+        "protection",
+        "trust_missions"
       ],
-      "visual": "terrasses minérales, arc méditerranéen, eau, lumière jade"
+      "visual": "terrasses minérales, arc méditerranéen, eau, lumière jade",
+      "facility": {
+        "name": "Maison des Alliances",
+        "purpose": "serments, protection, médiation et missions de Loyauté",
+        "services": [
+          "alliances",
+          "protection",
+          "trust_missions"
+        ]
+      }
     },
     {
       "code": "ES",
@@ -641,9 +665,21 @@
         "country_access",
         "guardian_progress",
         "challenge_preview",
-        "fast_travel"
+        "fast_travel",
+        "timed_challenges",
+        "sport",
+        "public_events"
       ],
-      "visual": "grande place expressive, cuivre, pierre chaude et mouvement"
+      "visual": "grande place expressive, cuivre, pierre chaude et mouvement",
+      "facility": {
+        "name": "Scène de la Passion",
+        "purpose": "défis, sport, performances et événements de foule",
+        "services": [
+          "timed_challenges",
+          "sport",
+          "public_events"
+        ]
+      }
     },
     {
       "code": "MA",
@@ -655,9 +691,21 @@
         "country_access",
         "guardian_progress",
         "craft_preview",
-        "fast_travel"
+        "fast_travel",
+        "craft",
+        "forge",
+        "textile_upgrade"
       ],
-      "visual": "zellige numérique, lanternes, médina verticale et patios"
+      "visual": "zellige numérique, lanternes, médina verticale et patios",
+      "facility": {
+        "name": "Atelier des Savoir-Faire",
+        "purpose": "artisanat premium, forge, textile et amélioration d’équipement",
+        "services": [
+          "craft",
+          "forge",
+          "textile_upgrade"
+        ]
+      }
     },
     {
       "code": "IT",
@@ -669,9 +717,21 @@
         "country_access",
         "guardian_progress",
         "restoration_preview",
-        "fast_travel"
+        "fast_travel",
+        "engineering",
+        "healing",
+        "restoration"
       ],
-      "visual": "travertin, jardins, arcades, eau et lumière d’aube"
+      "visual": "travertin, jardins, arcades, eau et lumière d’aube",
+      "facility": {
+        "name": "Maison de la Reconstruction",
+        "purpose": "ingénierie, soins, restauration et projets d’Espoir",
+        "services": [
+          "engineering",
+          "healing",
+          "restoration"
+        ]
+      }
     },
     {
       "code": "TN",
@@ -683,9 +743,21 @@
         "country_access",
         "guardian_progress",
         "coast_preview",
-        "fast_travel"
+        "fast_travel",
+        "rescue",
+        "navigation",
+        "coast_missions"
       ],
-      "visual": "architecture blanche, céramique bleue, rivage et énergie solaire"
+      "visual": "architecture blanche, céramique bleue, rivage et énergie solaire",
+      "facility": {
+        "name": "Poste de Sauvetage Maritime",
+        "purpose": "sauvetage, navigation, missions côtières et Courage",
+        "services": [
+          "rescue",
+          "navigation",
+          "coast_missions"
+        ]
+      }
     },
     {
       "code": "TR",
@@ -697,9 +769,21 @@
         "country_access",
         "guardian_progress",
         "observatory_preview",
-        "fast_travel"
+        "fast_travel",
+        "observatory",
+        "history",
+        "puzzles"
       ],
-      "visual": "dômes, ponts, astrolabes, obsidienne et lumière violette"
+      "visual": "dômes, ponts, astrolabes, obsidienne et lumière violette",
+      "facility": {
+        "name": "Observatoire des Liens",
+        "purpose": "histoire, énigmes, passages anciens et lecture des constellations",
+        "services": [
+          "observatory",
+          "history",
+          "puzzles"
+        ]
+      }
     },
     {
       "code": "EE",
@@ -711,9 +795,21 @@
         "country_access",
         "guardian_progress",
         "forest_preview",
-        "fast_travel"
+        "fast_travel",
+        "data",
+        "mapping",
+        "exploration_tools"
       ],
-      "visual": "bois sombre, forêt numérique, brume, cristal et aurore"
+      "visual": "bois sombre, forêt numérique, brume, cristal et aurore",
+      "facility": {
+        "name": "Tour des Données",
+        "purpose": "cartographie, données, IA et outils d’exploration",
+        "services": [
+          "data",
+          "mapping",
+          "exploration_tools"
+        ]
+      }
     }
   ],
   "verticalLinks": [
@@ -855,5 +951,227 @@
         "description": "Les huit héritages illuminent la métropole entière ; toutes les esplanades sont restaurées et la Tour devient le phare du monde."
       }
     ]
+  },
+  "fragmentMilestones": [
+    {
+      "fragments": 0,
+      "id": "city_wounded",
+      "label": "Cité blessée",
+      "effect": "Le Cercle Brisé est presque éteint ; les grands services futurs restent visibles en veille."
+    },
+    {
+      "fragments": 1,
+      "id": "circle_heartbeat",
+      "label": "Le cœur se rallume",
+      "effect": "Le noyau du Cercle Brisé reprend vie et la Place de l’Héritage gagne sa première pulsation lumineuse."
+    },
+    {
+      "fragments": 2,
+      "id": "first_fast_route",
+      "label": "Premier axe restauré",
+      "effect": "Une première liaison rapide permanente relie les quartiers bas au cœur de la Cité."
+    },
+    {
+      "fragments": 3,
+      "id": "lower_city_restored",
+      "label": "Quartiers bas restaurés",
+      "effect": "Les quais, ateliers et rues basses reprennent vie ; davantage d’habitants et de commerces apparaissent."
+    },
+    {
+      "fragments": 4,
+      "id": "tower_transformation",
+      "label": "La Tour se transforme",
+      "effect": "La Tour du Cercle Brisé change de silhouette, ouvre un niveau supérieur et devient visible depuis toute la métropole."
+    },
+    {
+      "fragments": 5,
+      "id": "services_and_companions",
+      "label": "Nouveaux services et compagnons",
+      "effect": "Les bâtiments avancés, recrutements et activités de groupe s’ouvrent."
+    },
+    {
+      "fragments": 6,
+      "id": "city_event",
+      "label": "La Cité réagit",
+      "effect": "Un événement majeur touche tous les quartiers ; circulation, dialogues et rassemblements changent."
+    },
+    {
+      "fragments": 7,
+      "id": "beyond_the_guardians",
+      "label": "Au-delà des Gardiens",
+      "effect": "La ville révèle qu’une menace plus ancienne se cache derrière les huit royaumes."
+    },
+    {
+      "fragments": 8,
+      "id": "circle_restored",
+      "label": "Cercle restauré",
+      "effect": "Les huit héritages unissent la Cité, la Tour devient un phare et l’acte final lié au Monstre de l’Oubli se déclenche."
+    }
+  ],
+  "districtLandmarks": [
+    {
+      "id": "heritage_beacon",
+      "district": "heritage_square",
+      "name": "Phare de l’Héritage",
+      "archetype": "obelisk",
+      "height": 46,
+      "role": "orientation et cérémonies",
+      "accent": "#d6b46a"
+    },
+    {
+      "id": "broken_circle_spire",
+      "district": "broken_circle_tower",
+      "name": "Flèche du Cercle Brisé",
+      "archetype": "spire",
+      "height": 156,
+      "role": "repère principal et progression des fragments",
+      "accent": "#00a8ff"
+    },
+    {
+      "id": "archives_crown",
+      "district": "archives",
+      "name": "Couronne des Archives",
+      "archetype": "archive",
+      "height": 66,
+      "role": "mémoire et chronologie",
+      "accent": "#88c9ff"
+    },
+    {
+      "id": "arena_beacon",
+      "district": "arena",
+      "name": "Balise de l’Arène",
+      "archetype": "arena",
+      "height": 58,
+      "role": "défis et rassemblements",
+      "accent": "#f29a6b"
+    },
+    {
+      "id": "commerce_tower",
+      "district": "commerce",
+      "name": "Tour des Échanges",
+      "archetype": "market",
+      "height": 72,
+      "role": "commerce, craft et contrats",
+      "accent": "#e5bd67"
+    },
+    {
+      "id": "community_hall",
+      "district": "community",
+      "name": "Maison Haute de l’Unité",
+      "archetype": "hall",
+      "height": 54,
+      "role": "coopération et événements sociaux",
+      "accent": "#7edbb7"
+    },
+    {
+      "id": "matrix_spire",
+      "district": "innovation",
+      "name": "Flèche Matrix",
+      "archetype": "matrix",
+      "height": 98,
+      "role": "technologie, IA et observation",
+      "accent": "#36d9ff"
+    },
+    {
+      "id": "harbor_tower",
+      "district": "docks",
+      "name": "Tour des Docks",
+      "archetype": "harbor",
+      "height": 64,
+      "role": "navigation et transports",
+      "accent": "#4dd0e1"
+    },
+    {
+      "id": "city_gateway",
+      "district": "city3b_portal",
+      "name": "Grand Portail des Villes",
+      "archetype": "gateway",
+      "height": 86,
+      "role": "accès à la Ville 3B personnelle",
+      "accent": "#d8bc79"
+    },
+    {
+      "id": "unity_tree",
+      "district": "gardens",
+      "name": "Arbre de l’Unité",
+      "archetype": "tree",
+      "height": 50,
+      "role": "mémorial, nature et contemplation",
+      "accent": "#9ad39a"
+    }
+  ],
+  "waterNetwork": {
+    "rule": "l’eau structure la lecture de la Cité ; canaux, bassins et cascades relient visuellement les niveaux sans bloquer les axes jouables",
+    "features": [
+      {
+        "id": "heritage_basin",
+        "kind": "basin",
+        "district": "heritage_square",
+        "offset": [
+          0,
+          20
+        ],
+        "width": 92,
+        "depth": 62,
+        "level": 0,
+        "label": "Bassin de l’Héritage"
+      },
+      {
+        "id": "circle_falls",
+        "kind": "cascade",
+        "fromDistrict": "broken_circle_tower",
+        "toDistrict": "heritage_square",
+        "width": 20,
+        "drop": 18,
+        "level": 1,
+        "label": "Cascade du Cercle"
+      },
+      {
+        "id": "docks_canal",
+        "kind": "canal",
+        "fromDistrict": "docks",
+        "toDistrict": "heritage_square",
+        "width": 24,
+        "level": 0,
+        "label": "Canal des Docks"
+      },
+      {
+        "id": "gardens_falls",
+        "kind": "cascade",
+        "district": "gardens",
+        "offset": [
+          -34,
+          18
+        ],
+        "width": 16,
+        "depth": 34,
+        "drop": 14,
+        "level": 1,
+        "label": "Chutes de l’Unité"
+      },
+      {
+        "id": "city_channel",
+        "kind": "canal",
+        "fromDistrict": "city3b_portal",
+        "toDistrict": "docks",
+        "width": 18,
+        "level": 0,
+        "label": "Canal des Horizons"
+      }
+    ]
+  },
+  "civicFabric": {
+    "rule": "les bâtiments de remplissage ne sont pas décoratifs : ils représentent la Cité Origine et portent un usage urbain identifiable",
+    "uses": [
+      "housing",
+      "food",
+      "workshop",
+      "school",
+      "clinic",
+      "small_shop",
+      "guild_room",
+      "public_service"
+    ],
+    "minimumUsefulFrontagesPerDistrict": 6
   }
 }
