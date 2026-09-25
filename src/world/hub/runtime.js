@@ -42,7 +42,7 @@ export function buildHubRuntimeItems({
   seals = [],
   restoredRegions = [],
 }) {
-  const metropolis=buildMetropolisRuntimeItems(plan,profile);
+  const metropolis=buildMetropolisRuntimeItems(plan,profile,{seals,restoredRegions,hubState});
   const districtItems = plan.districts.map((district) => ({
     id: `hub:district:${district.id}`,
     type: 'hubDistrict',
@@ -216,6 +216,10 @@ export function buildHubRuntimeItems({
       activeSecrets: secretItems.length,
       secretSteps: secretStepItems.length,
       profile,
+      evolutionStage:metropolis.meta.evolutionStage,
+      evolutionLabel:metropolis.meta.evolutionLabel,
+      heritagePlatforms:metropolis.meta.heritagePlatforms,
+      skybridges:metropolis.meta.skybridges,
       metropolis:metropolis.meta,
     },
   };
