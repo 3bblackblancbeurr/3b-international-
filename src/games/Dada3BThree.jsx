@@ -1,6 +1,7 @@
 import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
+import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {TapControl} from './touchControls.js';
 import {
   COUNTRIES_3B,FINISH_STEP,HOME_LENGTH,SANCTUARY_CELLS,STABLE,TRACK_LENGTH,
@@ -15,8 +16,9 @@ const WARRIOR_ARCHETYPES=Object.freeze(['axe','sword','shield','bow']);
 const COUNTRY_SEGMENTS={shield:8,diamond:4,sun:10,hex:6,arch:12,round:18,star:5,rune:4};
 const POWER_LABELS={
  capture:'FRACTURE MATRIX',barricade:'BOUCLIER 3B',sanctuary:'SANCTUAIRE',door:'PORTE DU NEXUS',
- finish:'FRAGMENT NEXUS',exit:'LIBÉRATION TOTEM','triple-six':'SURCHARGE MATRIX',victory:'NEXUS COMPLET',
+ finish:'FRAGMENT NEXUS',exit:'LIBÉRATION GUERRIER','triple-six':'SURCHARGE MATRIX',victory:'NEXUS COMPLET',
 };
+const CINEMATIC_CAPTURE_MS=1180;
 const smoothStep=t=>t*t*(3-2*t);
 function trackPosition(index){
  const normalized=((index%TRACK_LENGTH)+TRACK_LENGTH)%TRACK_LENGTH,sector=Math.floor(normalized/TRACK_SECTOR),t=(normalized%TRACK_SECTOR)/TRACK_SECTOR;
@@ -118,12 +120,18 @@ function addBoardFoundation(scene,runtime){
 }
 function cellGeometryFor(index,country){
  const local=index%TRACK_SECTOR;
- if(country)return new THREE.CylinderGeometry(.58,.52,.31,8);
- if(local===1||local===6)return new THREE.BoxGeometry(.88,.23,.58);
- if(local===3)return new THREE.BoxGeometry(1.02,.25,.47);
- if(local===4)return new THREE.CylinderGeometry(.50,.43,.27,6);
- if(local===5)return new THREE.CylinderGeometry(.47,.40,.25,4);
- return new THREE.CylinderGeometry(.47,.40,.24,8);
+ if(country)return new RoundedBoxGeometry(1.10,.30,.86,4,.12);
+ if(local===3)return new RoundedBoxGeometry(1.08,.25,.58,4,.10);
+ if(local===4)return new RoundedBoxGeometry(.96,.27,.72,4,.12);
+ if(local===1||local===6)return new RoundedBoxGeometry(.92,.24,.68,4,.10);
+ return new RoundedBoxGeometry(.86,.23,.68,4,.10);
+}
+function cellTypeFor(index,country,sanctuary,barrier){
+ if(country)return'start';
+ if(sanctuary)return'sanctuary';
+ if(barrier)return'barrier';
+ const local=index%TRACK_SECTOR;
+ return local===3?'power':local===4?'turn':'normal';
 }
 function addSanctuaryFx(scene,cell,color,runtime){
  const group=new THREE.Group();group.position.copy(cell.position);group.position.y+=.05;
@@ -139,9 +147,13 @@ function addTrackCells(scene,match,runtime){
   const country=startMap.get(i),sanctuary=SANCTUARY_CELLS.includes(i)&&match.rules?.safeCells,barrier=blockadeOwnerAt(match,i)!==null,local=i%TRACK_SECTOR;
   const color=country?.accent||(sanctuary?'#f0cf78':barrier?'#78eafa':local===3?'#c1a366':local===4?'#3c7f89':'#587176');
   const mat=makeMaterial(color,{metal:.78,rough:.20,emissive:color,emissiveIntensity:country ? .72 : sanctuary ? 1.0 : barrier ? .9 : local===3 ? .34 : .26});
-  const cell=mesh(cellGeometryFor(i,country),mat,true,true),elevation=trackElevation(i);
+  const cell=mesh(cellGeometryFor(i,country),mat,true,true),elevation=trackElevation(i),cellType=cellTypeFor(i,country,sanctuary,barrier);
   const p=worldFromPercent(trackPosition(i),elevation);cell.position.copy(p);cell.rotation.y=tangentAngle(i);
-  cell.userData={kind:'cell',index:i,material:mat,sanctuary,barrier,baseColor:new THREE.Color(color),baseEmissive:country ? .72 : sanctuary ? 1.0 : barrier ? .9 : local===3 ? .34 : .26};scene.add(cell);runtime.trackCells.push(cell);
+  cell.userData={kind:'cell',index:i,cellType,material:mat,sanctuary,barrier,baseColor:new THREE.Color(color),baseEmissive:country ? .72 : sanctuary ? 1.0 : barrier ? .9 : local===3 ? .34 : .26};scene.add(cell);runtime.trackCells.push(cell);
+  const underMat=new THREE.MeshBasicMaterial({color:new THREE.Color(country?.accent||color),transparent:true,opacity:country ? .12 : sanctuary ? .11 : .045,depthWrite:false,blending:THREE.AdditiveBlending});
+  const under=mesh(new RoundedBoxGeometry(country ? 1.23 : .98,.055,country ? .98 : .80,3,.08),underMat,false,false);under.position.copy(p);under.position.y-=.19;under.rotation.y=cell.rotation.y;scene.add(under);
+  const edgeMat=new THREE.MeshBasicMaterial({color:new THREE.Color(country?.accent||(sanctuary ? '#f4d88b' : '#7bddea')),transparent:true,opacity:country ? .55 : sanctuary ? .42 : .15,depthWrite:false});
+  const edge=mesh(new THREE.RingGeometry(country ? .48 : .36,country ? .54 : .405,8),edgeMat,false,false);edge.position.copy(p);edge.position.y+=.17;edge.rotation.x=-Math.PI/2;edge.rotation.z=-cell.rotation.y;scene.add(edge);
   if((local===3||local===4)&&!runtime.mobile){
    const supportMat=makeMaterial('#111718',{metal:.86,rough:.3,emissive:'#16343a',emissiveIntensity:.12});
    const support=mesh(new THREE.CylinderGeometry(.11,.18,Math.max(.32,elevation+1.18),8),supportMat,true,true);support.position.set(p.x,(elevation-1.28)/2,p.z);scene.add(support);
@@ -220,6 +232,42 @@ function addAtmosphere(scene,runtime){
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
  const mat=new THREE.PointsMaterial({color:0x86e7f1,size:.035,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending});
  const stars=new THREE.Points(geo,mat);scene.add(stars);runtime.stars=stars;
+}
+function cameraPoseForCountry(country,mobile=false){
+ const stable=worldFromPercent(stableCenter(country),.55),radial=stable.clone();radial.y=0;
+ if(radial.lengthSq()<.001)radial.set(0,0,1);radial.normalize();
+ const side=new THREE.Vector3(-radial.z,0,radial.x);
+ return{
+  target:stable.clone().multiplyScalar(.56).setY(.48),
+  position:stable.clone().add(radial.multiplyScalar(mobile?13.4:14.8)).add(side.multiplyScalar(2.1)).setY(mobile?17.2:18.6),
+ };
+}
+function createTurnAnchor(scene,runtime){
+ const group=new THREE.Group(),ringMat=new THREE.MeshBasicMaterial({color:0x6ee7f7,transparent:true,opacity:.36,blending:THREE.AdditiveBlending,depthWrite:false});
+ const ring=mesh(new THREE.TorusGeometry(1.52,.045,8,64),ringMat,false,false);ring.rotation.x=Math.PI/2;group.add(ring);
+ const ring2=mesh(new THREE.TorusGeometry(1.18,.025,6,48),ringMat,false,false);ring2.rotation.x=Math.PI/2;ring2.rotation.z=Math.PI/8;group.add(ring2);
+ const beamMat=new THREE.MeshBasicMaterial({color:0x7eeaff,transparent:true,opacity:.08,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+ const beam=mesh(new THREE.CylinderGeometry(.28,.82,3.8,18,1,true),beamMat,false,false);beam.position.y=1.8;group.add(beam);
+ const light=new THREE.PointLight(0x74e7f7,9,7,2);light.position.y=1.2;group.add(light);
+ scene.add(group);runtime.turnAnchor={group,ring,ring2,ringMat,beamMat,light,countryId:null};
+}
+function updateTurnAnchor(runtime,match){
+ const player=match?.players?.[match.turn],country=countryFor(player?.countryId);if(!country||!runtime.turnAnchor)return;
+ const p=worldFromPercent(stableCenter(country),.30);runtime.turnAnchor.group.position.copy(p);runtime.turnAnchor.ringMat.color.set(country.accent);runtime.turnAnchor.beamMat.color.set(country.accent);runtime.turnAnchor.light.color.set(country.accent);
+ if(runtime.turnAnchor.countryId!==country.id){
+  runtime.turnAnchor.countryId=country.id;
+  const pose=cameraPoseForCountry(country,runtime.mobile);runtime.baseTarget.copy(pose.target);runtime.desiredCameraPosition.copy(pose.position);runtime.cameraFollowUntil=performance.now()+980;
+ }
+}
+function createCaptureCinematic(runtime,victim,country,target,startedAt){
+ const group=new THREE.Group();group.position.copy(victim.position);
+ const glow=new THREE.MeshBasicMaterial({color:new THREE.Color(country.accent),transparent:true,opacity:.82,blending:THREE.AdditiveBlending,depthWrite:false});
+ const upper=mesh(new RoundedBoxGeometry(.56,.55,.38,4,.08),glow,false,false);upper.position.y=.86;group.add(upper);
+ const lower=mesh(new RoundedBoxGeometry(.50,.50,.34,4,.08),glow,false,false);lower.position.y=.31;group.add(lower);
+ const cut=mesh(new THREE.TorusGeometry(.34,.035,6,40),glow,false,false);cut.rotation.x=Math.PI/2;cut.position.y=.59;group.add(cut);
+ const shards=[];for(let i=0;i<8;i++){const shard=mesh(new THREE.OctahedronGeometry(.055,0),glow,false,false),a=i/8*Math.PI*2;shard.position.set(Math.cos(a)*.32,.60,Math.sin(a)*.32);group.add(shard);shards.push(shard);}
+ runtime.scene.add(group);victim.userData.rig.visible=false;victim.userData.rimMat.opacity=0;victim.userData.haloMat.opacity=0;
+ runtime.captureCinematics.push({group,upper,lower,cut,shards,material:glow,victim,target:target.clone(),origin:victim.position.clone(),startedAt,duration:CINEMATIC_CAPTURE_MS});
 }
 function createPiece(country,pieceIndex,shadows){
  const archetype=WARRIOR_ARCHETYPES[pieceIndex%WARRIOR_ARCHETYPES.length],group=new THREE.Group();
@@ -338,7 +386,8 @@ function updatePieces(runtime,match,legal,motion,cosmeticsByCountry=null,loadout
    if(!group||!country)continue;
    const target=pieceWorldPosition(country,STABLE,captured.pieceIndex);
    group.userData.hitUntil=actionAt+420;
-   group.userData.captureReturn={from:group.position.clone(),to:target.clone(),startedAt:actionAt+120,duration:520};
+   group.userData.captureReturn={from:group.position.clone(),to:target.clone(),startedAt:actionAt+160,duration:CINEMATIC_CAPTURE_MS};
+   createCaptureCinematic(runtime,group,country,target,actionAt+110);
   }
   runtime.lastCaptureEventKey=captureKey;
  }
@@ -400,11 +449,11 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   const rim=new THREE.PointLight(0x8cebf5,9,28,2);rim.position.set(0,6,-15);scene.add(rim);
   const ground=mesh(new THREE.CircleGeometry(38,64),makeMaterial('#0d1c21',{metal:.08,rough:.9,emissive:'#123842',emissiveIntensity:.16}),false,true);ground.rotation.x=-Math.PI/2;ground.position.y=-1.38;scene.add(ground);
   const pieces=new THREE.Group();scene.add(pieces);
-  const runtime={renderer,scene,camera,controls,pieces,pieceMap:new Map(),trackCells:[],barrierFx:new Map(),sanctuaryFx:[],legalFx:[],shadows,mobile,themeLight:blue,energyRail:null,nexusRings:[],nexusCore:null,nexusLight:null,nexusBeam:null,nexusBeamMat:null,stars:null,gateHalos:[],beacons:[],effects:[],focusUntil:0,focusType:'',focusTarget:new THREE.Vector3(0,.35,0),baseTarget:new THREE.Vector3(0,.35,0),cameraShakeUntil:0,lastCaptureEventKey:null,contextLost:false,contextLossTimer:null,disposed:false};
+  const runtime={renderer,scene,camera,controls,pieces,pieceMap:new Map(),trackCells:[],barrierFx:new Map(),sanctuaryFx:[],legalFx:[],shadows,mobile,themeLight:blue,energyRail:null,nexusRings:[],nexusCore:null,nexusLight:null,nexusBeam:null,nexusBeamMat:null,stars:null,gateHalos:[],beacons:[],effects:[],captureCinematics:[],focusUntil:0,focusType:'',focusTarget:new THREE.Vector3(0,.35,0),baseTarget:new THREE.Vector3(0,.35,0),desiredCameraPosition:new THREE.Vector3(0,18.9,16.5),cameraFollowUntil:0,cameraShakeUntil:0,lastCaptureEventKey:null,contextLost:false,contextLossTimer:null,disposed:false};
   runtimeRef.current=runtime;
   addBoardFoundation(scene,runtime);addTrackCells(scene,match,runtime);
   COUNTRIES_3B.forEach(c=>addGate(scene,c,match.players.some(p=>p.countryId===c.id),runtime));
-  addNexus(scene,runtime);addAtmosphere(scene,runtime);updateBoardState(runtime,match,loadout,legal);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);
+  addNexus(scene,runtime);addAtmosphere(scene,runtime);createTurnAnchor(scene,runtime);updateTurnAnchor(runtime,match);updateBoardState(runtime,match,loadout,legal);updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);
   const resize=()=>{
    const rect=host.getBoundingClientRect();if(!rect.width||!rect.height)return;
    renderer.setSize(rect.width,rect.height,false);camera.aspect=rect.width/rect.height;camera.updateProjectionMatrix();
@@ -444,7 +493,9 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
   const animate=()=>{
    if(runtime.disposed)return;frame=requestAnimationFrame(animate);const t=clock.getElapsedTime(),now=performance.now(),focus=now<runtime.focusUntil;
    controls.autoRotate=focus&&runtime.focusType==='victory';controls.autoRotateSpeed=.8;
-   const desiredTarget=focus?runtime.focusTarget:runtime.baseTarget;controls.target.lerp(desiredTarget,.065);controls.update();
+   const desiredTarget=focus?runtime.focusTarget:runtime.baseTarget;controls.target.lerp(desiredTarget,.075);
+   if(now<runtime.cameraFollowUntil)camera.position.lerp(runtime.desiredCameraPosition,.065);
+   controls.update();
    renderer.toneMappingExposure=THREE.MathUtils.lerp(renderer.toneMappingExposure,focus?1.62:1.52,.06);
    camera.fov=THREE.MathUtils.lerp(camera.fov,focus ? (runtime.focusType==='victory' ? 31 : 34) : 38,.055);camera.updateProjectionMatrix();
    runtime.energyRail.material.opacity=.32+Math.sin(t*2.2)*.12;
@@ -455,16 +506,16 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    if(runtime.stars)runtime.stars.rotation.y=t*.006;
    runtime.gateHalos.forEach((halo,i)=>{halo.rotation.z=t*(.14+i*.005);halo.material.opacity=.24+Math.sin(t*1.5+i)*.09;});
    runtime.beacons.forEach((beacon,i)=>{beacon.material.opacity=.18+Math.sin(t*1.7+i*.4)*.06;});
+   if(runtime.turnAnchor){runtime.turnAnchor.ring.rotation.z=t*.32;runtime.turnAnchor.ring2.rotation.z=-t*.24;runtime.turnAnchor.ringMat.opacity=.28+Math.sin(t*3.1)*.13;runtime.turnAnchor.beamMat.opacity=.055+Math.sin(t*2.3)*.025;runtime.turnAnchor.light.intensity=8+Math.sin(t*2.8)*2;}
    runtime.legalFx.forEach((fx,i)=>{fx.ring.rotation.z+=.018;fx.ringMat.opacity=.62+Math.sin(t*5+i)*.22;fx.marker.position.y=.52+Math.sin(t*5.5+i)*.08;});
    runtime.sanctuaryFx.forEach((fx,i)=>{fx.ring.rotation.z+=.004+i*.0002;fx.ringMat.opacity=.48+Math.sin(t*2.4+i)*.18;fx.beamMat.opacity=.09+Math.sin(t*1.8+i)*.045;});
    for(const fx of runtime.barrierFx.values()){fx.ring.rotation.z-=.012;fx.shieldMat.opacity=.14+Math.sin(t*3)*.07;fx.ringMat.opacity=.48+Math.sin(t*4)*.16;}
    for(const group of runtime.pieceMap.values()){
     const data=group.userData,captureReturn=data.captureReturn,target=data.target;
     if(captureReturn){
-     const raw=Math.max(0,Math.min(1,(now-captureReturn.startedAt)/captureReturn.duration)),k=raw*raw*(3-2*raw),arc=Math.sin(Math.PI*k)*.68;
-     group.position.lerpVectors(captureReturn.from,captureReturn.to,k);group.position.y+=arc;
-     group.scale.setScalar(1-Math.sin(Math.PI*k)*.12);
-     if(raw>=1){group.position.copy(captureReturn.to);group.scale.setScalar(1);data.captureReturn=null;}
+     const raw=Math.max(0,Math.min(1,(now-captureReturn.startedAt)/captureReturn.duration)),k=raw*raw*(3-2*raw);
+     group.position.lerpVectors(captureReturn.from,captureReturn.to,k);group.scale.setScalar(.92+Math.sin(Math.PI*k)*.04);
+     if(raw>=1){group.position.copy(captureReturn.to);group.scale.setScalar(1);data.captureReturn=null;data.rig.visible=true;}
     }else{
      const landingLeft=Math.max(0,data.landingUntil-now),landing=landingLeft>0?Math.sin((1-landingLeft/320)*Math.PI)*.17:0;
      const bob=data.legal?Math.sin(t*4.6+data.pieceIndex)*.085:data.isMoving?Math.abs(Math.sin(t*11))*0.15:landing;
@@ -498,6 +549,17 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
     data.haloMat.opacity=THREE.MathUtils.lerp(data.haloMat.opacity,data.legal ? .92 : .08,.14);
     data.rimMat.opacity=THREE.MathUtils.lerp(data.rimMat.opacity,data.legal ? .46 : .10,.14);
    }
+   runtime.captureCinematics=runtime.captureCinematics.filter(fx=>{
+    const raw=Math.max(0,Math.min(1,(now-fx.startedAt)/fx.duration)),split=Math.min(1,raw/.28),travel=Math.max(0,Math.min(1,(raw-.28)/.47)),rebuild=Math.max(0,Math.min(1,(raw-.75)/.25));
+    const spread=Math.sin(Math.PI*Math.min(1,split))*.36*(1-travel);
+    fx.upper.position.x=spread;fx.upper.rotation.z=-spread*.9;fx.lower.position.x=-spread;fx.lower.rotation.z=spread*.7;
+    fx.cut.scale.setScalar(1+split*1.7);fx.material.opacity=.82*(1-rebuild);
+    fx.shards.forEach((shard,i)=>{const a=i/fx.shards.length*Math.PI*2;shard.position.x=Math.cos(a)*(.32+split*.42)*(1-travel);shard.position.z=Math.sin(a)*(.32+split*.42)*(1-travel);shard.position.y=.60+Math.sin(raw*Math.PI*2+i)*.10;});
+    if(travel>0){const k=travel*travel*(3-2*travel);fx.group.position.lerpVectors(fx.origin,fx.target,k);fx.group.position.y+=Math.sin(Math.PI*k)*.82;}
+    if(rebuild>0){fx.upper.position.x=THREE.MathUtils.lerp(fx.upper.position.x,0,rebuild);fx.lower.position.x=THREE.MathUtils.lerp(fx.lower.position.x,0,rebuild);fx.group.scale.setScalar(.78+rebuild*.22);}
+    if(raw>=1){fx.victim.position.copy(fx.target);fx.victim.userData.rig.visible=true;runtime.scene.remove(fx.group);disposeTree(fx.group);return false;}
+    return true;
+   });
    runtime.effects=runtime.effects.filter(fx=>{
     const age=(now-fx.birth)/1000;if(age>.68){scene.remove(fx.group);disposeTree(fx.group);return false;}
     const k=age/.68;fx.group.scale.setScalar(.35+k*4.5);fx.material.opacity=(1-k)*.92;return true;
@@ -513,13 +575,14 @@ export default function Dada3BThree({match,legal=[],motion,blast,onPiece,focusEv
    disposeTree(scene);renderer.dispose();renderer.forceContextLoss?.();renderer.domElement.remove();runtimeRef.current=null;
   };
  },[]);
- useEffect(()=>{const runtime=runtimeRef.current;if(runtime)updateBoardState(runtime,match,loadout,legal);},[match,legal,loadout]);
+ useEffect(()=>{const runtime=runtimeRef.current;if(runtime){updateTurnAnchor(runtime,match);updateBoardState(runtime,match,loadout,legal);}},[match,legal,loadout]);
  useEffect(()=>{const runtime=runtimeRef.current;if(runtime)updatePieces(runtime,match,legal,motion,cosmeticsByCountry,loadout);},[match,motion,legal,cosmeticsByCountry,loadout]);
  useEffect(()=>{
   const runtime=runtimeRef.current;if(!runtime||!focusEvent)return;
   runtime.focusType=focusEvent;runtime.focusUntil=performance.now()+(focusEvent==='victory'?1700:focusEvent==='capture'?950:820);
   runtime.focusTarget.copy(runtime.baseTarget);
   if(focusEvent==='victory')runtime.focusTarget.set(0,1.1,0);
+  if(focusEvent==='capture'&&match.lastEvent?.landing!==null){const cp=worldFromPercent(trackPosition(match.lastEvent.landing),1.0);runtime.focusTarget.copy(cp);runtime.desiredCameraPosition.set(cp.x+4.8,9.4,cp.z+7.2);runtime.cameraFollowUntil=performance.now()+1150;}
   if(runtime.nexusLight)runtime.nexusLight.intensity=focusEvent==='capture'?27:focusEvent==='victory'?34:22;
  },[focusEvent,match.lastEvent?.id]);
  useEffect(()=>{

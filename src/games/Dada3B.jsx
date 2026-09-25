@@ -59,6 +59,7 @@ const POWER_CARDS=Object.freeze([
 const WARRIOR_ARCHETYPES=Object.freeze(['axe','sword','shield','bow']);
 const WARRIOR_LABELS=Object.freeze({axe:'Hache',sword:'Épée',shield:'Bouclier',bow:'Arc'});
 const WARRIOR_SIGILS=Object.freeze({axe:'🪓',sword:'⚔',shield:'🛡',bow:'🏹'});
+const TURN_PHASE_LABELS=Object.freeze({idle:'PRÊT',rolling:'LANCER',selectingPiece:'CHOIX',movingPiece:'MOUVEMENT',resolvingCapture:'DUEL',cinematic:'CINÉMATIQUE',checkingWin:'NEXUS',extraTurn:'REJOUE',nextTurn:'TOUR SUIVANT'});
 
 function polar(angleDeg,radius){const a=angleDeg*Math.PI/180;return{left:50+Math.cos(a)*radius,top:50+Math.sin(a)*radius};}
 const TRACK_ANCHORS=Object.freeze([[50,8],[81,17],[92,47],[82,80],[49,92],[18,82],[8,53],[17,19]]);
@@ -158,6 +159,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const restored=useMemo(()=>{try{return readMatchSnapshot(saved);}catch{return null;}},[saved]);
  const[view,setView]=useState('menu'),[seats,setSeats]=useState(initialSeats),[rules,setRules]=useState(()=>normalizeRules(DEFAULT_RULES));
  const[match,setMatch]=useState(null),[lastSeats,setLastSeats]=useState(null),[dice,setDice]=useState(null),[legal,setLegal]=useState([]),[busy,setBusy]=useState(false),[motion,setMotion]=useState(null),[blast,setBlast]=useState(null),[notice,setNotice]=useState('Le Cercle attend.');
+ const[turnPhase,setTurnPhase]=useState('idle');
  const[sound,setSound]=useState(true),[haptic,setHaptic]=useState(true),[voice,setVoice]=useState(false),[tutorial,setTutorial]=useState(false),[tutorialStep,setTutorialStep]=useState(0),[localDeadline,setLocalDeadline]=useState(null),[clock,setClock]=useState(Date.now());
  const[threeD,setThreeD]=useState(true),[threeFailed,setThreeFailed]=useState(false);
  const[onlineRoom,setOnlineRoom]=useState(null),[onlineMode,setOnlineMode]=useState('private'),[onlineCountry,setOnlineCountry]=useState('fr'),[roomCode,setRoomCode]=useState(''),[onlineBusy,setOnlineBusy]=useState(false),[onlineStatus,setOnlineStatus]=useState(''),[maxPlayers,setMaxPlayers]=useState(4),[leaderboard,setLeaderboard]=useState([]);
@@ -200,35 +202,47 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
    if(activeSeats.length!==4||activeSeats.filter(s=>s.team==='A').length!==2||activeSeats.filter(s=>s.team==='B').length!==2){setNotice('Le 2v2 demande exactement 4 pays : 2 OR et 2 MATRIX.');return;}
   }else if(activeSeats.length<2){setNotice('Active au moins deux pays.');return;}
   const config=activeSeats.map(s=>({countryId:s.countryId,type:s.type,aiLevel:s.aiLevel,team:s.team,name:countryFor(s.countryId).name}));
-  const next=createMatch(config,rules);recorded.current=false;setLastSeats(config);setView('local');adoptLocal(next);setTutorial(true);setTutorialStep(0);
+  const next=createMatch(config,rules);recorded.current=false;setLastSeats(config);setView('local');setTurnPhase('idle');adoptLocal(next);setTutorial(true);setTutorialStep(0);
  }
- function resumeLocal(){if(!restored||restored.status!=='playing')return;recorded.current=false;setView('local');setRules(restored.rules);adoptLocal(restored);setNotice('Partie restaurée depuis ta sauvegarde 3B.');}
- function replay(){if(!lastSeats)return;recorded.current=false;adoptLocal(createMatch(lastSeats,rules));}
+ function resumeLocal(){if(!restored||restored.status!=='playing')return;recorded.current=false;setView('local');setRules(restored.rules);setTurnPhase(restored.pendingRoll!==null?'selectingPiece':'idle');adoptLocal(restored);setNotice('Partie restaurée depuis ta sauvegarde 3B.');}
+ function replay(){if(!lastSeats)return;recorded.current=false;setTurnPhase('idle');adoptLocal(createMatch(lastSeats,rules));}
 
  async function animateLocal(source,pieceIndex){
   const id=++sequence.current,info=previewMove(source,pieceIndex);
-  if(!info){setBusy(false);return;}
-  const result=movePiece(source,pieceIndex),countryId=source.players[source.turn].countryId;
+  if(!info){setBusy(false);setTurnPhase('idle');return;}
+  const result=movePiece(source,pieceIndex),countryId=source.players[source.turn].countryId,reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTurnPhase('movingPiece');
   const steps=info.from===STABLE?[0]:Array.from({length:Math.max(0,info.to-info.from)},(_,i)=>info.from+i+1);
-  for(const step of steps){if(id!==sequence.current)return;setMotion({countryId,pieceIndex,step});await wait(window.matchMedia('(prefers-reduced-motion: reduce)').matches?10:90);}
+  for(const step of steps){if(id!==sequence.current)return;setMotion({countryId,pieceIndex,step});await wait(reduced?10:82);}
   if(id!==sequence.current)return;setMotion(null);
-  if(result.event?.captured?.length&&result.event.landing!==null){const p=trackPosition(result.event.landing);setBlast({...p,key:Date.now(),fx:cosmeticLoadout?.capture_fx});setTimeout(()=>setBlast(null),720);}
-  setBusy(false);setDice(null);adoptLocal(result.match,result.match.status==='finished'&&!recorded.current);
-  if(result.match.status==='finished')recorded.current=true;
+  const captured=Boolean(result.event?.captured?.length&&result.event.landing!==null);
+  if(captured){
+   const p=trackPosition(result.event.landing);setBlast({...p,key:Date.now(),fx:cosmeticLoadout?.capture_fx});setTimeout(()=>setBlast(null),900);
+   setTurnPhase('resolvingCapture');adoptLocal(result.match,result.match.status==='finished'&&!recorded.current);
+   await wait(reduced?80:1180);
+  }else{
+   setTurnPhase('checkingWin');adoptLocal(result.match,result.match.status==='finished'&&!recorded.current);
+   await wait(reduced?10:90);
+  }
+  if(id!==sequence.current)return;
+  setBusy(false);setDice(null);
+  if(result.match.status==='finished'){recorded.current=true;setTurnPhase('cinematic');}
+  else if(result.event?.roll===6||(captured&&result.match.rules.bonusOnCapture))setTurnPhase('extraTurn');
+  else setTurnPhase('nextTurn');
  }
  async function rollLocal(automated=false){
   if(!match||match.status!=='playing'||busy||match.pendingRoll!==null)return;
   const player=currentPlayer(match);if(!player||(!automated&&player.type==='bot'))return;
-  setBusy(true);setLegal([]);setNotice(countryFor(player.countryId).name+' lance le dé…');dadaTone('roll',sound);dadaHaptic('roll',haptic);
+  setBusy(true);setTurnPhase('rolling');setLegal([]);setNotice(countryFor(player.countryId).name+' lance le dé…');dadaTone('roll',sound);dadaHaptic('roll',haptic);
   const finalRoll=secureRoll();for(let i=0;i<6;i++){setDice(i===5?finalRoll:secureRoll());await wait(48);}
   const rolled=rollTurn(match,finalRoll);setDice(finalRoll);adoptLocal(rolled.match);
-  if(rolled.match.status!=='playing'||rolled.autoPass||rolled.match.pendingRoll===null){setBusy(false);await wait(260);setDice(null);return;}
+  if(rolled.match.status!=='playing'||rolled.autoPass||rolled.match.pendingRoll===null){setTurnPhase(rolled.match.status==='finished'?'cinematic':'nextTurn');setBusy(false);await wait(260);setDice(null);return;}
   const moves=rolled.match.pendingMoves,active=rolled.match.players[rolled.match.turn],allStable=finalRoll===6&&moves.length&&moves.every(i=>active.pieces[i].steps===STABLE);
   const piece=automated?selectBotMove(rolled.match,finalRoll,rolled.match.turn,player.aiLevel||rules.aiLevel):(moves.length===1||allStable?moves[0]:null);
   if(piece!==null){await wait(180);await animateLocal(rolled.match,piece);return;}
-  setLegal(moves);setBusy(false);setNotice('Choisis un guerrier illuminé.');
+  setLegal(moves);setTurnPhase('selectingPiece');setBusy(false);setNotice('Choisis un guerrier illuminé.');
  }
- function chooseLocal(pieceIndex){if(!match||busy||!match.pendingMoves?.includes(pieceIndex))return;setBusy(true);animateLocal(match,pieceIndex);}
+ function chooseLocal(pieceIndex){if(!match||busy||turnPhase==='resolvingCapture'||!match.pendingMoves?.includes(pieceIndex))return;setTurnPhase('movingPiece');setBusy(true);animateLocal(match,pieceIndex);}
 
  useEffect(()=>{
   if(view!=='local'||!match||match.status!=='playing'||busy)return;
@@ -245,7 +259,7 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  useEffect(()=>{const t=setInterval(()=>setClock(Date.now()),500);return()=>clearInterval(t);},[]);
  useEffect(()=>{
   if(!localDeadline||!match||match.status!=='playing'||busy||clock<localDeadline)return;
-  setBusy(true);const result=resolveTimeout(match,secureRoll());setBusy(false);adoptLocal(result.match);setNotice('Temps écoulé · l’IA Gardien a sécurisé le tour.');
+  setBusy(true);setTurnPhase('nextTurn');const result=resolveTimeout(match,secureRoll());setBusy(false);adoptLocal(result.match);setNotice('Temps écoulé · l’IA Gardien a sécurisé le tour.');
  },[clock,localDeadline]);
  useEffect(()=>{
   if(view!=='local'||!match||match.status!=='playing'||!match.rules.maxDurationMinutes)return;
@@ -385,11 +399,16 @@ export default function Dada3B({saved,onClose,onCheckpoint}){
  const fallbackBoard=<Board match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry}/>;
  const ownsTurn=isOnline?selfTurn:turnPlayer?.type!=='bot';
  const turnLabel=turnPlayer?.type==='bot'?'IA':ownsTurn?'À TOI':'ADVERSE';
+ const phase=isOnline?(onlineBusy?'rolling':renderMatch.pendingRoll!==null?'selectingPiece':'idle'):turnPhase;
+ const diceBase=turnCountry?stableCenter(turnCountry):{left:50,top:50};
+ const diceAnchor={left:50+(diceBase.left-50)*.82,top:50+(diceBase.top-50)*.82};
+ const diceDisabled=busy||onlineBusy||renderMatch.status!=='playing'||renderMatch.pendingRoll!==null||(isOnline?!selfTurn:turnPlayer?.type==='bot')||phase==='resolvingCapture'||phase==='cinematic';
+ const diceAction=()=>isOnline?onlineAction('roll',{room:onlineRoom.id,revision:onlineRoom.revision}):rollLocal(false);
+
  return <div className="dada3b-shell dada3b-shell-v8" data-theme={renderMatch.rules?.boardTheme||'nexus'} role="dialog" aria-modal="true">
   <header className="dada3b-topbar"><div><small>{isOnline?(onlineRoom.mode==='ranked'?'CLASSÉ':onlineRoom.mode.toUpperCase()):'LOCAL'} · Manche {renderMatch.round}</small><strong>DADA 3B · {turnCountry?.name||''}</strong></div><div className="dada3b-top-actions"><button className="dada3b-render-toggle" aria-pressed={threeD&&!threeFailed} onClick={()=>{if(threeFailed){setThreeFailed(false);setThreeD(true);}else setThreeD(v=>!v);}}>{threeD&&!threeFailed?'3D APEX':'2,5D'}</button>{timeLeft!==null&&<span className="dada3b-timer" data-low={timeLeft<=7}>{timeLeft}s</span>}{isOnline&&<span className="dada3b-live"><Wifi size={14}/> LIVE</span>}<button className="dada3b-icon-button" onClick={()=>isOnline?leaveOnline():setView('menu')}><X size={20}/></button></div></header>
-  <div className="dada3b-arena"><div className="dada3b-board-wrap">{threeD&&!threeFailed?<Dada3DErrorBoundary fallback={fallbackBoard} onFail={()=>setThreeFailed(true)}><React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense></Dada3DErrorBoundary>:fallbackBoard}<div className="dada3b-board-turn-chip" style={{'--country':turnCountry?.accent||'#6fe7f8'}}><span>TOUR</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><em data-own={ownsTurn}>{turnLabel}</em></div></div>
+  <div className="dada3b-arena"><div className="dada3b-board-wrap" data-phase={phase}>{threeD&&!threeFailed?<Dada3DErrorBoundary fallback={fallbackBoard} onFail={()=>setThreeFailed(true)}><React.Suspense fallback={fallbackBoard}><Dada3BThree match={renderMatch} legal={currentLegal} motion={motion} blast={blast} onPiece={boardPieceAction} focusEvent={focus} loadout={cosmeticLoadout} cosmeticsByCountry={cosmeticsByCountry} onUnsupported={()=>setThreeFailed(true)}/></React.Suspense></Dada3DErrorBoundary>:fallbackBoard}<div className="dada3b-board-turn-chip" style={{'--country':turnCountry?.accent||'#6fe7f8'}}><span>TOUR</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><em data-own={ownsTurn}>{turnLabel}</em><i>{TURN_PHASE_LABELS[phase]||phase}</i></div><div className="dada3b-player-dice" data-phase={phase} style={{left:diceAnchor.left+'%',top:diceAnchor.top+'%','--country':turnCountry?.accent||'#6fe7f8'}}><span className="dada3b-player-dice-label">{turnCountry?.flag} {turnCountry?.code}</span><PremiumDice value={shownDice} rolling={(busy||onlineBusy)&&renderMatch.pendingRoll===null} skin={cosmeticLoadout?.dice_skin||'DADA_DICE_CORE'} country={turnCountry?.accent} pending={Boolean(renderMatch.pendingRoll)} adverse={Boolean(isOnline&&!selfTurn)} onClick={diceAction} disabled={diceDisabled}/></div></div>
    <aside className="dada3b-sidebar"><section className="dada3b-turn-card" style={{'--country':turnCountry?.accent||'#c7a66a'}}><div className="dada3b-turn-line"><div><span className="dada3b-kicker">Tour actuel</span><strong>{turnCountry?.flag} {turnCountry?.name}</strong><small>{turnCountry?.guardian} · {turnCountry?.value}{turnPlayer?.type==='bot'?' · IA '+(turnPlayer.aiLevel||''):''}</small></div></div>
-    <PremiumDice value={shownDice} rolling={(busy||onlineBusy)&&renderMatch.pendingRoll===null} skin={cosmeticLoadout?.dice_skin||'DADA_DICE_CORE'} country={turnCountry?.accent} pending={Boolean(renderMatch.pendingRoll)} adverse={Boolean(isOnline&&!selfTurn)} onClick={()=>isOnline?onlineAction('roll',{room:onlineRoom.id,revision:onlineRoom.revision}):rollLocal(false)} disabled={busy||onlineBusy||renderMatch.status!=='playing'||renderMatch.pendingRoll!==null||(isOnline?!selfTurn:turnPlayer?.type==='bot')}/>
     {isOnline&&selfOnline?.botTakeover&&<button className="dada3b-secondary" onClick={()=>onlineAction('reconnect',{room:onlineRoom.id})}>Reprendre ma place</button>}
    </section>
    <section className="dada3b-event" aria-live="polite"><b>Transmission 3B</b><br/>{isOnline?(renderMatch.lastEvent?.text||onlineStatus):notice}</section>

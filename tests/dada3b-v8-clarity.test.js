@@ -74,3 +74,20 @@ test('V9 moves stables away from the track and turns the four pieces into animat
   assert.match(shell,/factor=1\.20/);
   assert.match(shell,/Choisis un guerrier/);
 });
+
+test('V10 uses premium rounded cells, player-follow camera, spatial dice and capture reconstruction',()=>{
+  assert.match(three,/RoundedBoxGeometry/);
+  assert.match(three,/function cameraPoseForCountry/);
+  assert.match(three,/desiredCameraPosition/);
+  assert.match(three,/cameraFollowUntil/);
+  assert.match(three,/function createCaptureCinematic/);
+  assert.match(three,/CINEMATIC_CAPTURE_MS=1180/);
+  assert.match(three,/runtime\.captureCinematics/);
+  assert.match(three,/function createTurnAnchor/);
+  assert.match(shell,/TURN_PHASE_LABELS/);
+  assert.match(shell,/dada3b-player-dice/);
+  assert.match(shell,/data-phase=\{phase\}/);
+  assert.match(css,/DADA 3B V10/);
+  assert.match(css,/dadaDiceOrbitV10/);
+  assert.match(css,/FRACTURE MATRIX/);
+});

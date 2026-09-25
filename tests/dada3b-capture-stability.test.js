@@ -23,14 +23,15 @@ test('capture sends the eaten piece back to the stable in the rules engine',()=>
 });
 
 test('capture rendering uses a bounded return-to-stable animation',()=>{
-  assert.match(three,/group\.userData\.captureReturn=\{from:group\.position\.clone\(\),to:target\.clone\(\),startedAt:actionAt\+120,duration:520\}/);
-  assert.match(three,/group\.position\.lerpVectors\(captureReturn\.from,captureReturn\.to,k\)/);
+  assert.match(three,/duration:CINEMATIC_CAPTURE_MS/);
+  assert.match(three,/createCaptureCinematic\(runtime,group,country,target,actionAt\+110\)/);
+  assert.match(three,/runtime\.captureCinematics=runtime\.captureCinematics\.filter/);
   assert.match(three,/data\.captureReturn=null/);
   assert.match(three,/pieceWorldPosition\(country,STABLE,captured\.pieceIndex\)/);
 });
 
 test('board effects are no longer rebuilt on every motion frame',()=>{
-  assert.match(three,/updateBoardState\(runtime,match,loadout,legal\);\},\[match,legal,loadout\]\)/);
+  assert.match(three,/updateTurnAnchor\(runtime,match\);updateBoardState\(runtime,match,loadout,legal\);\}\},\[match,legal,loadout\]\)/);
   assert.match(three,/updatePieces\(runtime,match,legal,motion,cosmeticsByCountry,loadout\);\},\[match,motion,legal,cosmeticsByCountry,loadout\]\)/);
 });
 

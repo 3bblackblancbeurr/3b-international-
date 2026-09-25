@@ -1472,3 +1472,64 @@
   .dada3b-warrior-icon{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.dada3b-piece[data-legal="true"] .dada3b-warrior-icon{animation:none!important}}
+
+/* ---- DADA 3B V10 · cinematic board / player-follow dice / premium cells ---- */
+.dada3b-board-wrap{position:relative;isolation:isolate}
+.dada3b-board-turn-chip>i{
+  display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:4px 7px;
+  border:1px solid color-mix(in srgb,var(--country) 46%,#fff 12%);border-radius:999px;
+  background:color-mix(in srgb,var(--country) 13%,#10282d);color:#dffbff;font-size:6px;font-style:normal;font-weight:900;letter-spacing:.10em
+}
+.dada3b-player-dice{
+  position:absolute;z-index:24;width:clamp(92px,13vw,142px);transform:translate(-50%,-50%);
+  transition:left .72s cubic-bezier(.2,.75,.2,1),top .72s cubic-bezier(.2,.75,.2,1),filter .25s ease;
+  pointer-events:none;filter:drop-shadow(0 12px 20px rgba(0,0,0,.34))
+}
+.dada3b-player-dice::before{
+  content:"";position:absolute;inset:8% -8% -12%;border:1px solid color-mix(in srgb,var(--country) 50%,#fff 15%);
+  border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--country) 14%,transparent),transparent 67%);
+  box-shadow:0 0 28px color-mix(in srgb,var(--country) 28%,transparent);animation:dadaDiceOrbitV10 3.2s linear infinite
+}
+.dada3b-player-dice .dada3b-dice{pointer-events:auto;width:100%;min-height:100px;margin:0;transform:scale(.82);transform-origin:center}
+.dada3b-player-dice-label{
+  position:absolute;left:50%;top:-2px;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border-radius:999px;
+  border:1px solid color-mix(in srgb,var(--country) 45%,#fff 10%);background:#10272dec;color:#fff3d1;font-size:7px;font-weight:950;letter-spacing:.12em;white-space:nowrap
+}
+.dada3b-player-dice[data-phase="rolling"]{filter:brightness(1.18) drop-shadow(0 0 22px color-mix(in srgb,var(--country) 55%,transparent))}
+.dada3b-player-dice[data-phase="resolvingCapture"]{opacity:.35;filter:blur(.4px) saturate(.6)}
+@keyframes dadaDiceOrbitV10{to{rotate:360deg}}
+.dada3b-shell-v8 .dada3b-track-cell,
+.dada3b-shell-v8 .dada3b-home-cell{
+  border-radius:22%!important;border-width:1.5px!important;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.18),transparent 22%),
+    linear-gradient(180deg,#24484d 0%,#17373c 52%,#10272c 100%)!important;
+  box-shadow:0 4px 0 #0a2327,0 7px 10px #0007,inset 0 1px 0 #ffffff26,0 0 8px color-mix(in srgb,var(--cell-color) 18%,transparent)!important
+}
+.dada3b-shell-v8 .dada3b-track-cell::after,
+.dada3b-shell-v8 .dada3b-home-cell::after{
+  content:"";position:absolute;inset:14%;border-radius:24%;border:1px solid rgba(189,241,246,.20);pointer-events:none
+}
+.dada3b-shell-v8 .dada3b-track-cell[data-start="true"]{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--cell-color) 47%,#34575a),color-mix(in srgb,var(--cell-color) 26%,#11282d))!important;
+  box-shadow:0 4px 0 color-mix(in srgb,var(--cell-color) 32%,#071416),0 0 19px color-mix(in srgb,var(--cell-color) 58%,transparent)!important
+}
+.dada3b-shell-v8 .dada3b-track-cell[data-sanctuary="true"]{
+  outline:1px solid #f6d98f88;outline-offset:2px;background:linear-gradient(180deg,#7b693d,#40391f)!important
+}
+.dada3b-board-wrap[data-phase="resolvingCapture"] .dada3b-board-turn-chip{filter:brightness(1.22)}
+.dada3b-board-wrap[data-phase="resolvingCapture"]::after{
+  content:"FRACTURE MATRIX";position:absolute;left:50%;top:10%;z-index:25;transform:translateX(-50%);
+  padding:7px 13px;border:1px solid #e5c16c77;border-radius:999px;background:#10242de8;color:#ffe7ac;font-size:8px;font-weight:950;letter-spacing:.16em;
+  box-shadow:0 0 30px #e5bd6044;animation:dadaCinematicTagV10 1.18s ease both;pointer-events:none
+}
+@keyframes dadaCinematicTagV10{0%{opacity:0;transform:translate(-50%,-5px) scale(.9)}18%,72%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,4px) scale(1.04)}}
+@media(max-width:700px){
+  .dada3b-player-dice{width:84px}
+  .dada3b-player-dice .dada3b-dice{min-height:78px;transform:scale(.72)}
+  .dada3b-player-dice-label{font-size:6px;padding:3px 6px}
+  .dada3b-board-turn-chip>i{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .dada3b-player-dice,.dada3b-player-dice::before,.dada3b-board-wrap[data-phase="resolvingCapture"]::after{transition:none!important;animation:none!important}
+}
