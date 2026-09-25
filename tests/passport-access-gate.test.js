@@ -27,6 +27,7 @@ test('Passport access does not depend on inventory', () => {
 });
 
 test('Premium intro and exact spoken welcome are pinned', () => {
-  assert.match(app, /<p>Un écosystème premium\.<\/p>/);
+  assert.match(app, /Entrez dans la Cité des Huit Héritages\./);
+  assert.match(app, /Ce n’est pas une marque\. C’est un héritage\./);
   assert.match(app, /Bienvenue dans l'univers 3B\. L'héritage commence maintenant\. Reste attentif tout le temps partout\./);
 });
