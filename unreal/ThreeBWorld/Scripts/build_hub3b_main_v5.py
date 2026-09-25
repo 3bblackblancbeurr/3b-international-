@@ -1040,7 +1040,11 @@ def validate(manifest):
 
     checks = {
         "map": current_level_name() == manifest["required_map_name"],
-        "districts": count("HUB_V5_DISTRICT_") == manifest["validation"]["required_district_count"],
+        "districts": sum(
+            1 for label in labels
+            if label.startswith("HUB_V5_DISTRICT_")
+            and not any(token in label for token in ("RETENTION_", "RING_", "STEP_"))
+        ) == manifest["validation"]["required_district_count"],
         "district_terraces": count("HUB_V5_DISTRICT_RETENTION_") == manifest["validation"]["required_district_count"],
         "buildings": count("HUB_V5_BUILDING_") >= manifest["validation"]["required_building_count"],
         "portals": count("HUB_V5_PORTAL_") >= manifest["validation"]["required_portal_count"] * 5,
