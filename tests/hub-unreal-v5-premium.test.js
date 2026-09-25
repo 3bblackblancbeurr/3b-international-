@@ -110,3 +110,19 @@ test('one-click launch now builds Hub3B Main V05 premium while V4 remains only l
  assert.match(readme,/Cité des Huit Héritages/);
  assert.match(readme,/ne sont plus la référence/i);
 });
+
+
+test('V05 native builder differentiates all civic functions and all eight heritage facilities',()=>{
+ for(const token of [
+  '_BALCONY_','_AWNING','_WORKSHOP_','_SCHOOL_','_CLINIC_',
+  '_SHOP_WINDOW_','_GUILD_BANNER_','_CIVIC_CANOPY'
+ ])assert.match(builder,new RegExp(token));
+ for(const token of [
+  'FR_TRIBUNAL','DZ_ALLIANCE','ES_STAGE','MA_CRAFT',
+  'IT_REBUILD','TN_RESCUE','TR_OBSERVATORY','EE_DATA'
+ ])assert.match(builder,new RegExp(token));
+ assert.match(builder,/HUB_V5_DISTRICT_RETENTION_/);
+ assert.match(builder,/district_terraces/);
+ assert.match(builder,/heritage_identity/);
+ assert.match(builder,/civic_identity/);
+});
