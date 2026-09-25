@@ -32,7 +32,7 @@ import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './stream
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
 import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {worldVisualCapabilities} from './device-capabilities.js';
-import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge,createPremiumCivicPlaza,createPremiumDistrictLandmark,createPremiumWaterFeature,createPremiumTransitLink} from './premium-hub-visuals.js';
+import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge,createPremiumCivicPlaza,createPremiumDistrictLandmark,createPremiumWaterFeature,createPremiumTransitLink,createPremiumStreetFurniture} from './premium-hub-visuals.js';
 import {loadControlBindings,normalizeControlBindings,controlMatches,actionHeld} from './control-bindings.js';
 import {actionFeedback} from './interaction-system.js';
 import {obstacleDistance} from './collision.js';
