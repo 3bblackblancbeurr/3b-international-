@@ -90,7 +90,7 @@ jobs:
         run: |
           STATE=failure; test "$RESULT" = success && STATE=success
           gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-browser -f description="Desktop and touch: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: world-onboarding-browser
@@ -124,7 +124,7 @@ jobs:
         run: |
           STATE=failure; test "$RESULT" = success && STATE=success
           gh api "repos/$GITHUB_REPOSITORY/statuses/$CANDIDATE" -f state="$STATE" -f context=threeb/release-verify -f description="Full regression and build: $RESULT" -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: world-onboarding-verify
