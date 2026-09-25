@@ -534,6 +534,40 @@ export function createPremiumDistrictLandmark(item,{root,geometry,material,groun
    child(group,geometry.sphere,accent,{y:h*.82,sx:1.2,sy:1.2,sz:1.2,cast:false});
    break;
   case 'spire':
+   if(item.landmarkId==='broken_circle_spire'){
+    const fragments=clamp(Number(item.fragmentCount||0),0,8),coreRadius=11.5;
+    child(group,geometry.cylinder,dark,{y:.65,sx:15.8,sy:1.15,sz:15.8});
+    child(group,geometry.cylinder,stone,{y:2.0,sx:12.8,sy:1.2,sz:12.8});
+    child(group,geometry.ring,gold,{y:3.35,sx:10.6,sy:10.6,sz:10.6,rx:Math.PI/2,cast:false});
+    child(group,geometry.ring,accent,{y:3.48,sx:7.7,sy:7.7,sz:7.7,rx:Math.PI/2,cast:false});
+    for(let i=0;i<8;i++){
+     const a=-Math.PI/2+i*Math.PI/4,active=i<fragments;
+     const fragmentMat=active?gold:dark;
+     const fx=Math.cos(a)*coreRadius,fz=Math.sin(a)*coreRadius,fy=8.4+(i%2)*1.4;
+     const fragment=child(group,geometry.box,fragmentMat,{x:fx,y:fy,z:fz,sx:2.35,sy:7.6,sz:1.15,ry:-a+.28});
+     fragment.rotation.z=(i%2?-.12:.12);
+     if(active){
+      child(group,geometry.box,accent,{x:fx,y:fy+5.7,z:fz,sx:1.55,sy:.18,sz:.34,ry:-a+.28,cast:false});
+      child(group,geometry.sphere,accent,{x:fx,y:fy+8.3,z:fz,sx:.42,sy:.42,sz:.42,cast:false});
+     }
+    }
+    child(group,geometry.cylinder,stone,{y:h*.28,sx:3.8,sy:h*.50,sz:3.8});
+    child(group,geometry.cylinder,dark,{y:h*.56,sx:2.4,sy:h*.20,sz:2.4});
+    child(group,geometry.ring,accent,{y:h*.72,sx:5.4,sy:5.4,sz:5.4,rx:Math.PI/2,cast:false});
+    child(group,geometry.cylinder,gold,{y:h*.84,sx:.30,sy:h*.22,sz:.30,cast:false});
+    child(group,geometry.sphere,accent,{y:h*.98,sx:1.15,sy:1.15,sz:1.15,cast:false});
+    for(const side of [-1,1]){
+     child(group,geometry.box,stone,{x:side*8.4,y:5.1,z:0,sx:5.8,sy:.55,sz:2.3,rz:side*.06});
+     child(group,geometry.box,gold,{x:side*8.4,y:5.68,z:0,sx:5.1,sy:.08,sz:1.7,cast:false});
+    }
+    child(group,geometry.box,dark,{y:-1.15,z:7.8,sx:6.2,sy:2.2,sz:5.8});
+    child(group,geometry.box,accent,{y:.10,z:10.55,sx:3.8,sy:.15,sz:.28,cast:false});
+   }else{
+    child(group,geometry.box,stone,{y:h*.34,sx:3.2,sy:h*.64,sz:3.2});
+    child(group,geometry.cylinder,gold,{y:h*.75,sx:.28,sy:h*.34,sz:.28,cast:false});
+    child(group,geometry.sphere,accent,{y:h*.94,sx:.85,sy:.85,sz:.85,cast:false});
+   }
+   break;
   case 'obelisk':
   default:
    child(group,geometry.box,stone,{y:h*.34,sx:3.2,sy:h*.64,sz:3.2});

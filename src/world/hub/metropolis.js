@@ -358,6 +358,9 @@ function districtLandmarkItems(plan,evolution){
       z:center.z+Math.sin(angle)*distance,
       height:Number(landmark.height||48),
       evolutionStage:evolution.stage,
+      fragmentCount:Number(evolution.fragmentCount||0),
+      milestone:evolution.milestone||null,
+      nextMilestone:evolution.nextMilestone||null,
       prestige:evolution.stage>=4,
       index,
     }];
