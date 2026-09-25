@@ -24,6 +24,7 @@ test('France Gold Master gates are exhaustive unique and conservative',()=>{
     'compile_editor_client_server',
     'final_nanite_geometry',
     'final_underside_caverns',
+    'void_vertical_capture',
     'water_system_and_waterfall_materials',
     'niagara_weather_vfx',
     'population_models_animations_statetrees',
