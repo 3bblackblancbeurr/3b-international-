@@ -2,7 +2,7 @@
   "version": "4.0",
   "status": "Hub3B_Main_V05 · Cité des Huit Héritages · V4 jouable",
   "title": "La Cité des Huit Héritages",
-  "visualReference": "assets/CITE_HUIT_HERITAGES_CANON_V1.webp",
+  "visualReference": "user-master://La Cité des Huit Héritages",
   "palette": {
     "black": "#05070b",
     "matrixBlue": "#00a8ff",
@@ -1173,5 +1173,78 @@
       "public_service"
     ],
     "minimumUsefulFrontagesPerDistrict": 6
+  },
+  "repositorySchematic": "docs/3B_AAA_MASTER/assets/cite-huit-heritages-schematic-v2.svg",
+  "safeZone": {
+    "hubIsOnlyMajorSafeZone": true,
+    "monsters": false,
+    "hostileDamage": false,
+    "normalDeath": false,
+    "wildPvp": false,
+    "rule": "Le Hub principal est la seule grande zone totalement sûre. Les royaumes, expéditions et arènes suivent leurs propres règles."
+  },
+  "gameLoop": [
+    "connexion",
+    "hub",
+    "préparation",
+    "quartier_utile",
+    "porte",
+    "royaume",
+    "missions_secrets_arènes",
+    "gardien",
+    "fragment",
+    "retour_hub",
+    "transformation_visible",
+    "nouveaux_services_et_liaisons",
+    "porte_suivante"
+  ],
+  "story": {
+    "title": "Le Cercle Brisé",
+    "premise": "Le joueur arrive dans une Cité qui a perdu une partie de sa mémoire. Kaïs découvre que le Cercle Brisé ne peut pas être restauré seul.",
+    "playerRole": "Le joueur incarne son propre personnage. Il aide Kaïs, construit ses relations, choisit ses compagnons et vit les conséquences de ses actes.",
+    "kaisRole": "Kaïs reste le héros central de l’histoire, guide narratif et allié majeur ; il n’est pas l’avatar imposé au joueur.",
+    "eightKingdoms": "Chaque Porte mène à un royaume où une valeur a été déformée. Le Gardien protège un fragment et doit être compris puis vaincu ou libéré selon la logique du chapitre.",
+    "cityRestoration": "Chaque fragment rendu à la Tour restaure à la fois le Cercle, la ville, ses habitants, leurs souvenirs, leurs services et leurs liaisons.",
+    "finalThreat": "Les huit fragments révèlent que les Gardiens n’étaient pas la menace finale. Le Monstre de l’Oubli est lié à l’effacement des valeurs, des liens et de la mémoire.",
+    "endingTrigger": "Le huitième fragment restaure le Cercle et ouvre l’acte final."
+  },
+  "laws": [
+    "Le Hub principal est la seule grande zone totalement sûre.",
+    "Aucun monstre hostile, dégât, mort normale ou PvP sauvage dans le Hub.",
+    "Les huit Portes restent dispersées dans la métropole et ne sont jamais réduites à huit boutons autour d’un petit cercle.",
+    "Le Cercle Brisé est un monument central de la ville, pas la ville entière.",
+    "Chaque grand bâtiment visible possède une fonction réelle de gameplay, de narration, de service, de transport ou de progression.",
+    "Aucun grand vide décoratif sans fonction ; la densité doit rester lisible et crédible.",
+    "Toute grande distance possède une alternative à la marche : train, bateau, téléphérique, tyrolienne, passerelle ou voyage rapide.",
+    "La progression des fragments transforme physiquement la Cité au retour du joueur.",
+    "Les PNJ importants possèdent une mémoire persistante et réagissent aux aides, trahisons, dettes, promesses, réputation et événements marquants.",
+    "Le joueur incarne son propre personnage ; Kaïs reste le héros central.",
+    "L’arsenal canonique reste limité aux 16 armes déjà validées ; aucune arme arbitraire n’est ajoutée.",
+    "Mobile et desktop montrent la même Cité ; seules densité, LOD, trafic, ombres et effets s’adaptent."
+  ],
+  "npcMemory": {
+    "persistent": true,
+    "remembers": [
+      "aide",
+      "trahison",
+      "dette",
+      "promesse",
+      "réputation",
+      "dernière_rencontre",
+      "événement_marquant"
+    ],
+    "affects": [
+      "dialogue",
+      "confiance",
+      "prix",
+      "quêtes",
+      "informations",
+      "alliances"
+    ]
+  },
+  "arsenal": {
+    "canonicalWeapons": 16,
+    "frozenBase": true,
+    "rule": "enrichir maîtrise, combos, esquives, parades, finishers et pouvoirs avant d’ajouter une nouvelle arme"
   }
 }
