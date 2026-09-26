@@ -19,6 +19,8 @@ test('Command OS stays mobile-first while remaining responsive for the owner on 
  assert.match(page,/control-dock/);
  assert.match(page,/NAVIGATION_COMMANDS/);
  assert.match(page,/Recherche et Command Palette 3B/);
+ assert.match(page,/aria-keyshortcuts="Control\+K Meta\+K"/);
+ assert.match(page,/commandInputRef/);
  assert.match(page,/is-desktop/);
  assert.match(css,/@keyframes controlOrbit/);
  assert.match(css,/prefers-reduced-motion/);
