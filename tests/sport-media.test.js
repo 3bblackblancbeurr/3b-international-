@@ -11,6 +11,7 @@ const css=fs.readFileSync(new URL('../src/sport/sport.css',import.meta.url),'utf
 const shell=fs.readFileSync(new URL('../public/sport-player-shell.html',import.meta.url),'utf8');
 const shellJs=fs.readFileSync(new URL('../public/sport-player-shell.js',import.meta.url),'utf8');
 const vercel=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+const liveApi=fs.readFileSync(new URL('../api/sport-live.js',import.meta.url),'utf8');
 
 test('Sport keeps H24 and Finals as protected top-level sections',()=>{
  assert.match(page,/id:'h24'/);
@@ -19,27 +20,41 @@ test('Sport keeps H24 and Finals as protected top-level sections',()=>{
  assert.match(page,/SportMediaPlayer/);
 });
 
-test('every H24 channel has redundant official full-match sources',()=>{
- assert.ok(H24_CHANNELS.length>=4);
+test('H24 profiles are live-only and never contain historical replay sources',()=>{
+ assert.ok(H24_CHANNELS.length>=6);
  for(const channel of H24_CHANNELS){
-  const sources=mediaSources(channel);
-  assert.ok(sources.length>=2,channel.id+' must have at least two independent sources');
-  for(const source of sources){
-   assert.equal(source.mode,'full');
-   assert.equal(isTrustedSportEmbed(source.embedUrl),true);
-   const url=new URL(source.embedUrl);
-   assert.equal(url.searchParams.get('enablejsapi'),'1');
-   assert.equal(url.searchParams.get('autoplay'),'1');
-   assert.equal(url.searchParams.get('mute'),'1');
-   assert.equal(url.searchParams.get('fs'),'0');
-   assert.equal(url.searchParams.get('controls'),'1');
-   assert.equal(url.searchParams.has('modestbranding'),false);
-  }
+  assert.equal(channel.badge,'H24');
+  assert.match(channel.liveProfile,/^h24-/);
+  assert.deepEqual(mediaSources(channel),[]);
  }
+ assert.match(page,/fetch\('\/api\/sport-live'/);
+ assert.match(page,/source\?\.mode==='live'/);
+ assert.match(page,/Aucun replay ni ancienne finale ne peut entrer dans H24/);
+});
+
+test('live discovery requires a real ongoing embeddable sports broadcast with bounded search quota',()=>{
+ assert.match(liveApi,/eventType:'live'/);
+ assert.match(liveApi,/videoEmbeddable:'true'/);
+ assert.match(liveApi,/videoSyndicated:'true'/);
+ assert.match(liveApi,/videoCategoryId:'17'/);
+ assert.match(liveApi,/maxResults:'50'/);
+ assert.match(liveApi,/q:'football\\|soccer\\|basketball/);
+ assert.match(liveApi,/order:'viewCount'/);
+ assert.match(liveApi,/liveBroadcastContent==='live'/);
+ assert.match(liveApi,/status\?\.embeddable===true/);
+ assert.match(liveApi,/actualStartTime/);
+ assert.match(liveApi,/actualEndTime/);
+ assert.match(liveApi,/mode:'live'/);
+ assert.match(liveApi,/YOUTUBE_API_KEY/);
+ assert.match(liveApi,/s-maxage=1200/);
+ assert.match(liveApi,/single-global-live-search/);
+ assert.match(liveApi,/unexpected_query_parameters/);
+ assert.match(liveApi,/Object\.keys\(req\.query\|\|\{\}\)\.length/);
+ assert.doesNotMatch(liveApi,/PROFILE_QUERIES|GF-WteOINCc|nELaL14ms7A|Pbyn08kfhXY/);
 });
 
 test('Finals keep full official matches and official fallback where available',()=>{
- assert.ok(SPORT_FINALS.length>=6);
+ assert.ok(SPORT_FINALS.length>=27);
  for(const final of SPORT_FINALS){
   const sources=mediaSources(final);
   assert.ok(sources.length>=1);
@@ -50,11 +65,46 @@ test('Finals keep full official matches and official fallback where available',(
  assert.ok(resilient.length>=4);
 });
 
+test('1998 France World Cup final is available as a resilient official FIFA archive',()=>{
+ const final1998=SPORT_FINALS.find(final=>final.id==='final-foot-1998');
+ assert.ok(final1998);
+ assert.equal(final1998.sport,'Football');
+ assert.equal(final1998.year,'1998');
+ assert.match(final1998.title,/France/);
+ const sources=mediaSources(final1998);
+ assert.equal(sources.length,2);
+ assert.ok(sources.every(source=>source.provider==='FIFA'&&source.mode==='full'));
+});
+
+test('Finals cover a broad official multisport archive',()=>{
+ const sports=new Set(SPORT_FINALS.map(final=>final.sport));
+ assert.ok(sports.size>=13);
+ for(const required of ['Football','Rugby','Basket','Volley','Badminton','Beach-volley','Tennis de table','Tir à l’arc','Hockey sur glace','Lutte','Hockey sur gazon','Athlétisme','Judo']){
+  assert.ok(sports.has(required),'missing '+required);
+ }
+ assert.ok(SPORT_FINALS.filter(final=>final.sport==='Football').length>=5);
+ assert.ok(SPORT_FINALS.filter(final=>final.sport==='Badminton').length>=4);
+ assert.ok(SPORT_FINALS.filter(final=>final.sport==='Beach-volley').length>=2);
+});
+
+test('H24 sport tabs filter one shared verified live pool instead of multiplying searches',()=>{
+ assert.match(page,/const allLiveSources=livePools\.global\|\|\[\]/);
+ assert.match(page,/allLiveSources\.filter\(source=>source\.sport===profileSport\)/);
+ assert.doesNotMatch(page,/api\/sport-live\?profile=/);
+ assert.match(page,/\[section,liveReload\]/);
+});
+
+test('Finals can be filtered by sport without touching H24',()=>{
+ assert.match(page,/const\[finalSport,setFinalSport\]=useState\('Tous'\)/);
+ assert.match(page,/SPORT_FINALS\.filter\(item=>item\.sport===finalSport\)/);
+ assert.match(page,/Filtrer les finales par sport/);
+});
+
 test('playback is routed through the HTTPS 3B shell instead of direct YouTube in the app',()=>{
  assert.equal(SPORT_PLAYER_SHELL_URL,'https://3b-international.vercel.app/sport-player-shell.html');
  assert.equal(isTrustedSportShellOrigin('https://3b-international.vercel.app'),true);
  assert.equal(isTrustedSportShellOrigin('https://evil.example'),false);
- const sample=mediaSources(H24_CHANNELS[0])[0];
+ const sample=mediaSources(SPORT_FINALS[0])[0];
  const url=new URL(sportPlayerShellUrl(sample,{autoplay:true,muted:true,start:123,token:'abcdefgh1234'}));
  assert.equal(url.origin,'https://3b-international.vercel.app');
  assert.equal(url.pathname,'/sport-player-shell.html');

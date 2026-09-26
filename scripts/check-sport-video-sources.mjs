@@ -1,10 +1,10 @@
 import fs from 'node:fs';
-import {H24_CHANNELS,SPORT_FINALS,mediaSources} from '../src/sport/media-catalog.js';
+import {SPORT_FINALS,mediaSources} from '../src/sport/media-catalog.js';
 import {nextHealthEntry} from '../src/sport/source-health.js';
 
 const MANIFEST_URL=new URL('../public/sport-source-health.json',import.meta.url);
 const previous=JSON.parse(fs.readFileSync(MANIFEST_URL,'utf8'));
-const allItems=[...H24_CHANNELS,...SPORT_FINALS];
+const allItems=[...SPORT_FINALS];
 const uniqueSources=[...new Map(
  allItems.flatMap(item=>mediaSources(item)).filter(source=>source.videoId).map(source=>[source.videoId,source])
 ).values()];
@@ -45,7 +45,8 @@ if(before!==after){
 }
 
 let hardOutage=false;
-for(const [kind,items] of [['H24',H24_CHANNELS],['FINAL',SPORT_FINALS]]){
+console.log('H24 uses dynamic verified-live discovery via /api/sport-live; static watchdog covers replay finals only.');
+for(const [kind,items] of [['FINAL',SPORT_FINALS]]){
  for(const item of items){
   const sources=mediaSources(item);
   const usable=sources.filter(source=>nextSources[source.videoId]?.disabled!==true);
