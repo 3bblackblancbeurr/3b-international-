@@ -3,6 +3,7 @@ import {createPortal} from 'react-dom';
 import {ArrowLeft,Play,Pause,Volume2,VolumeX,Maximize,RotateCcw,X,ArrowUp,ArrowDown,ArrowRight,Download,Upload} from 'lucide-react';
 import {Arena} from './arena.js';
 import DoorPlayer from './DoorPlayer.jsx';
+import Power3B from './power3b/Power3B.jsx';
 import {doorUnlocked} from './door-campaign.js';
 import {Maze} from './maze.js';
 import {recordGame,freshProgress,validateProgress} from './save.js';
@@ -121,7 +122,7 @@ export default function GamesHub({goTo,goToGame}){
   {remoteError&&<p className="arcade-small" role="status">{remoteError}</p>}
   <details className="game-progress"><summary>Sauvegarde et progression</summary><p role="status">{saveMessage}</p><div><button onClick={exportSave}><Download size={15}/> Exporter la sauvegarde</button> <button onClick={()=>fileRef.current.click()} disabled={loading}><Upload size={15}/> Importer</button><input hidden ref={fileRef} type="file" accept=".json,application/json" onChange={importSave} aria-label="Importer une sauvegarde Jeux 3B"/></div></details>
   <p className="arcade-small">Les huit pays : {COUNTRIES.join(' · ')}.</p>
-  {active&&createPortal(active.id==='dada3b'?<Dada3B key={active.id} saved={progress.dada3b} onCheckpoint={checkpoint} onClose={()=>setActive(null)}/>:React.createElement(active.id==='tower'?DoorPlayer:GamePlayer, {key:active.id,config:active,saved:progress[active.id],onCheckpoint:checkpoint,saveMessage,onClose:()=>setActive(null),onBenefits:()=>{setActive(null);goTo(user?'loyalty':'member');}}),document.body)}
+  {active&&createPortal(active.id==='dada3b'?<Dada3B key={active.id} saved={progress.dada3b} onCheckpoint={checkpoint} onClose={()=>setActive(null)}/>:active.id==='power3b'?<Power3B key={active.id} saved={progress.power3b} onCheckpoint={checkpoint} onClose={()=>setActive(null)}/>:React.createElement(active.id==='tower'?DoorPlayer:GamePlayer, {key:active.id,config:active,saved:progress[active.id],onCheckpoint:checkpoint,saveMessage,onClose:()=>setActive(null),onBenefits:()=>{setActive(null);goTo(user?'loyalty':'member');}}),document.body)}
  </section>;
 }
 function GamePlayer({config,onClose,onBenefits,saved,onCheckpoint,saveMessage}){
