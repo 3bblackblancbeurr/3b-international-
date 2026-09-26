@@ -14,7 +14,7 @@ export function renderPowerBoard(ctx,state,ui={}){
  ctx.clearRect(0,0,BOARD_W,BOARD_H);
  const bg=ctx.createRadialGradient(800,480,100,800,500,880);bg.addColorStop(0,'#173047');bg.addColorStop(.48,'#0b1826');bg.addColorStop(1,'#05080d');ctx.fillStyle=bg;ctx.fillRect(0,0,BOARD_W,BOARD_H);
  ctx.save();ctx.globalAlpha=.13;ctx.strokeStyle='#86b6d0';ctx.lineWidth=1;for(let x=0;x<=BOARD_W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,BOARD_H);ctx.stroke();}for(let y=0;y<=BOARD_H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(BOARD_W,y);ctx.stroke();}ctx.restore();
- const by=new Map(SECTORS.map(s=>[s.id,s])),drawn=new Set();for(const s of SECTORS)for(const id of neighbors(s.id)){const key=[s.id,id].sort().join(':');if(drawn.has(key))continue;drawn.add(key);line(ctx,s,by.get(id),s.type===by.get(id).type?.2:.11);}
+ const by=new Map(SECTORS.map(s=>[s.id,s])),drawn=new Set();for(const s of SECTORS)for(const id of neighbors(s.id)){const key=[s.id,id].sort().join(':');if(drawn.has(key))continue;drawn.add(key);line(ctx,s,by.get(id),s.type===by.get(id).type?0.2:0.11);}
  ctx.save();ctx.translate(800,500);ctx.strokeStyle='rgba(229,199,129,.33)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,116,0,Math.PI*2);ctx.stroke();ctx.fillStyle='rgba(5,17,29,.76)';ctx.fill();ctx.fillStyle='#d9c18b';ctx.font='600 18px system-ui';ctx.textAlign='center';ctx.fillText('NEXUS STRATÉGIQUE',0,-7);ctx.fillStyle='#8aaec1';ctx.font='12px system-ui';ctx.fillText('TERRE · MER · AIR',0,16);ctx.restore();
  for(const s of SECTORS){
   const owner=state.owners[s.id],nation=Number.isInteger(owner)?NATIONS[owner]:null,selected=ui.sectorId===s.id,legal=ui.legalTargets?.includes(s.id);
