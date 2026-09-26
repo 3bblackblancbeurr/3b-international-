@@ -22,8 +22,9 @@ function fromBoolean(value,{ok='connected',bad='degraded',pending='checking'}={}
 }
 
 function DomainCard({domain,onJump}){
+ const Icon=domain.Icon;
  const body=<>
-  <span className="control-nexus-domain-icon"><domain.Icon size={17}/></span>
+  <span className="control-nexus-domain-icon"><Icon size={17}/></span>
   <div className="control-nexus-domain-copy">
    <strong>{domain.label}</strong>
    <small>{domain.detail}</small>
