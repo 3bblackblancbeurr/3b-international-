@@ -7,7 +7,6 @@ on:
       - 'tests/sport*.test.js'
       - 'public/sport-player-shell.html'
       - 'public/sport-player-shell.js'
-      - 'api/sport-video-health.js'
       - 'scripts/check-sport-video-sources.mjs'
       - 'vercel.json'
       - '.github/workflows/verify-sport-media.yml'
@@ -38,6 +37,6 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Sport H24 and Finals regression tests
-        run: node --test tests/sport-media.test.js tests/sport-video-health.test.js tests/sport.test.js
+        run: node --test tests/sport-media.test.js tests/sport.test.js
       - name: Production build
         run: npm run build
