@@ -400,6 +400,12 @@ export default function ControlCenterPage({goTo}){
     <BellRing size={17}/><div><strong>{alerts.length} point{alerts.length>1?'s':''} à surveiller</strong><span>{alerts[0].title}</span></div><ChevronRight size={17}/>
    </section>}
 
+   {focus&&<section className="control-focus-panel" aria-label="Mode Focus">
+    <div><span>OBJECTIF ACTUEL</span><strong>{alerts[0]?.title||'Aucune urgence détectée.'}</strong></div>
+    <div><span>PROCHAINE ACTION</span><strong>{primaryDevice&&!primaryOnline?'Rétablir la liaison avec le PC':alerts.length?'Vérifier le point prioritaire':'Aucune action urgente'}</strong></div>
+    <div><span>TEMPS DISPONIBLE</span><strong>Agenda non connecté</strong></div>
+   </section>}
+
    <section className="control-status-grid" aria-label="État réel des services">
     <StatusCard Icon={Cloud} label="PRODUCTION" value={pulse.production===true?'En ligne':pulse.production===false?'Indisponible':'Contrôle…'} detail="3b-international.vercel.app" state={productionState}/>
     <StatusCard Icon={Server} label="SUPABASE" value={data&&!error?'Connecté':error?'Erreur':'Synchro…'} detail={latency?latency+' ms API':'Control Center'} state={apiState}/>
