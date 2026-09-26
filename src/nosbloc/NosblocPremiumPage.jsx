@@ -1013,7 +1013,7 @@ function VersionsPro({ project, restoreVersion }) {
   return <section className="nb2-pro-card"><SectionTitle eyebrow="HISTORIQUE" title="Versions immuables"/>{!versions.length ? <EmptyState icon={History} title="Aucune version figée." text="Un test privé ou une soumission crée automatiquement une version."/> : <div className="nb2-version-list">{versions.map(v => <article key={v.id}><span>v{v.versionNo}</span><div><b>{v.note}</b><small>{v.stage} · {new Date(v.createdAt).toLocaleString("fr-FR")}</small><code>{v.fingerprint}</code></div><button onClick={() => restoreVersion(project,v.id)}><RotateCcw size={15}/> Restaurer</button></article>)}</div>}</section>;
 }
 
-function TeamPro({ project, updateProject, setNotice }) {
+function TeamPro({ project, updateProject, inviteTeamMember, revokeTeamInvite, removeTeamMember, setNotice }) {
   const validation = validateSplits(project.splits);
   const preview = allocateTeamRevenue(70000, project.splits);
   const patchSplit = (id, patch) => updateProject(project.id, {
@@ -1021,13 +1021,17 @@ function TeamPro({ project, updateProject, setNotice }) {
     status: "draft", visibility: "private", reviewVersionId: null,
   });
   const add = () => updateProject(project.id, {
-    splits: [...project.splits, { id: globalThis.crypto?.randomUUID?.() || String(Date.now()), name: "Nouveau membre", role: "Création", contact: "", shareBps: 0, status: "draft" }],
+    splits: [...project.splits, {
+      id: globalThis.crypto?.randomUUID?.() || String(Date.now()),
+      name: "Nouveau membre",
+      role: "Création",
+      contact: "",
+      shareBps: 0,
+      status: "draft",
+      invitationId: "",
+    }],
     status: "draft", visibility: "private", reviewVersionId: null,
   }, "Membre ajouté au brouillon d’équipe.");
-  const remove = id => updateProject(project.id, {
-    splits: project.splits.filter(row => row.id !== id),
-    status: "draft", visibility: "private", reviewVersionId: null,
-  });
   const equalize = () => {
     const count = project.splits.length;
     if (!count) return;
@@ -1040,39 +1044,57 @@ function TeamPro({ project, updateProject, setNotice }) {
     });
     updateProject(project.id, { splits, status: "draft", visibility: "private", reviewVersionId: null }, "Parts réparties automatiquement à 100 %.");
   };
-  const prepareInvite = row => {
-    try {
-      updateProject(project.id, prepareTeamInvitation(project, row.id, row.contact), "Invitation locale préparée. L’acceptation réelle reste contrôlée par le serveur.");
-    } catch (error) { setNotice(error?.message || "Invitation impossible."); }
+  const invite = async row => {
+    if (!String(row.contact || "").trim()) {
+      setNotice("Ajoute l’identifiant Passeport 3B du membre avant l’invitation.");
+      return;
+    }
+    await inviteTeamMember(project,row);
   };
-  const revokeInvite = row => {
-    updateProject(project.id, revokeTeamInvitation(project, row.id), "Invitation locale révoquée.");
+  const revoke = async row => revokeTeamInvite(project,row);
+  const remove = async row => {
+    if (row.status === "owner") return;
+    await removeTeamMember(project,row);
   };
-  const copyInvite = async row => {
-    try {
-      await navigator.clipboard.writeText(row.inviteCode);
-      setNotice("Code d’invitation copié.");
-    } catch { setNotice("Code d’invitation : " + row.inviteCode); }
-  };
+  const statusLabel = row => row.status === "accepted" ? "Accepté"
+    : row.status === "invited" ? "Invitation envoyée"
+    : row.status === "declined" ? "Refusé"
+    : row.status === "owner" ? "Propriétaire"
+    : "Brouillon";
+
   return <div className="nb2-pro-grid">
     <section className="nb2-pro-card">
       <SectionTitle eyebrow="ÉQUIPE" title="Accès et partage"/>
-      <div className="nb2-team-toolbar"><span data-ok={validation.valid}>{validation.totalBps / 100} % attribué</span><button onClick={equalize}>Répartir à 100 %</button><button onClick={add}><Plus size={15}/> Membre</button></div>
+      <p className="nb2-muted">Les invitations passent par le Passeport 3B et le serveur. Aucun code d’invitation local n’accorde de droit réel.</p>
+      <div className="nb2-team-toolbar">
+        <span data-ok={validation.valid}>{validation.totalBps / 100} % attribué</span>
+        <button onClick={equalize}>Répartir à 100 %</button>
+        <button onClick={add}><Plus size={15}/> Membre</button>
+      </div>
       <div className="nb2-team-editor">{project.splits.map(row => <article key={row.id}>
         <div className="nb2-team-avatar"><UserRound size={17}/></div>
         <div className="nb2-team-fields">
           <input aria-label="Nom du membre" value={row.name} maxLength={50} onChange={e => patchSplit(row.id,{name:e.target.value})}/>
           <input aria-label="Rôle du membre" value={row.role} maxLength={50} onChange={e => patchSplit(row.id,{role:e.target.value})}/>
-          {row.status !== "owner" && <input aria-label="Contact du membre" value={row.contact || ""} maxLength={120} placeholder="email ou identifiant 3B" onChange={e => patchSplit(row.id,{contact:e.target.value})}/>}
+          {row.status !== "owner" && row.status !== "accepted" && <input
+            aria-label="Identifiant Passeport 3B du membre"
+            value={row.contact || ""}
+            maxLength={120}
+            placeholder="@identifiant3b"
+            onChange={e => patchSplit(row.id,{contact:e.target.value})}
+          />}
+          <small className="nb2-team-state" data-state={row.status || "draft"}>{statusLabel(row)}</small>
         </div>
         <label className="nb2-share"><input type="number" min="0" max="100" step=".01" value={Number(row.shareBps || 0) / 100} onChange={e => patchSplit(row.id,{shareBps:Math.max(0,Math.min(10000,Math.round(Number(e.target.value || 0)*100)))})}/><span>%</span></label>
         <div className="nb2-team-actions">
-          {row.status !== "owner" && !row.inviteCode && <button onClick={() => prepareInvite(row)} title="Préparer l’invitation"><Mail size={15}/></button>}
-          {row.inviteCode && <><button onClick={() => copyInvite(row)} title="Copier le code"><Copy size={15}/></button><button onClick={() => revokeInvite(row)} title="Révoquer l’invitation"><X size={15}/></button></>}
-          {row.status !== "owner" && <button onClick={() => remove(row.id)} title="Retirer le membre"><X size={15}/></button>}
+          {row.status !== "owner" && !["invited","accepted"].includes(row.status) && <button onClick={() => invite(row)} title="Envoyer l’invitation Passeport 3B"><Mail size={15}/></button>}
+          {row.status === "invited" && <button onClick={() => revoke(row)} title="Révoquer l’invitation"><X size={15}/></button>}
+          {row.status === "accepted" && <span title="Invitation acceptée"><CheckCircle2 size={17}/></span>}
+          {row.status !== "owner" && <button onClick={() => remove(row)} title="Retirer le membre"><X size={15}/></button>}
         </div>
       </article>)}</div>
       {!validation.valid && <p className="nb2-team-warning">Le partage doit totaliser exactement 100 % avant révision ou revenu.</p>}
+      {validation.valid && project.splits.some(row => !["owner","accepted"].includes(row.status)) && <p className="nb2-team-warning">Le partage est à 100 %, mais tous les membres doivent accepter avant publication.</p>}
     </section>
     <section className="nb2-pro-card">
       <SectionTitle eyebrow="APERÇU" title="Exemple sur 700 € créateur"/>
