@@ -24,6 +24,8 @@ function media(entry){
 }
 
 const FULL={
+ fifa1998a:{id:'fifa-1998-bra-fr-a',label:'Brésil · France 1998',videoId:'Pbyn08kfhXY',provider:'FIFA'},
+ fifa1998b:{id:'fifa-1998-bra-fr-b',label:'Brésil · France 1998 · archive FIFA',videoId:'8R7ojiXL2VA',provider:'FIFA'},
  fifa2018:{id:'fifa-2018-fr-cro',label:'France · Croatie 2018',videoId:'GF-WteOINCc',provider:'FIFA'},
  fifa2006:{id:'fifa-2006-it-fr',label:'Italie · France 2006',videoId:'nELaL14ms7A',provider:'FIFA'},
  rugby2023:{id:'rugby-2023-nz-rsa',label:'Nouvelle-Zélande · Afrique du Sud 2023',videoId:'V0UKtnwL7Ss',provider:'World Rugby'},
@@ -32,36 +34,48 @@ const FULL={
  fibaU17W:{id:'fiba-u17w-2026-usa-esp',label:'USA · Espagne U17F 2026',videoId:'Sc8jX2B0olE',provider:'FIBA Basketball'}
 };
 
-const h24Source=item=>source(item.id,item.label,item.videoId,{provider:item.provider,autoplay:true,muted:true});
-
 export const H24_CHANNELS=[
  media({
-  id:'h24-multisport',sport:'Multisports',badge:'H24',title:'3B Sport H24',
-  description:'Rotation automatique de matchs complets officiels. Si une source tombe, 3B bascule sans quitter l’application.',
-  provider:'FIFA · World Rugby · FIBA',
-  sources:[FULL.fifa2018,FULL.rugby2023,FULL.fibaU17,FULL.fifa2006,FULL.rugby2019,FULL.fibaU17W].map(h24Source)
+  id:'h24-auto',liveProfile:'h24-auto',sport:'Tous sports',badge:'H24',title:'Direct 3B Auto',
+  description:'Uniquement du direct réel : football France en priorité, puis Europe, puis autres sports et monde.',
+  provider:'Live 3B vérifié',sources:[]
  }),
  media({
-  id:'h24-foot',sport:'Football',badge:'H24',title:'Football H24',
-  description:'Finales FIFA complètes en rotation continue avec secours automatique.',
-  provider:'FIFA',
-  sources:[FULL.fifa2018,FULL.fifa2006].map(h24Source)
+  id:'h24-foot',liveProfile:'h24-foot',sport:'Football',badge:'H24',title:'Football en direct',
+  description:'Match de football réellement en cours, France d’abord, puis Europe, puis monde.',
+  provider:'Live 3B vérifié',sources:[]
  }),
  media({
-  id:'h24-rugby',sport:'Rugby',badge:'H24',title:'Rugby H24',
-  description:'Finales de Coupe du monde World Rugby en rotation continue avec secours automatique.',
-  provider:'World Rugby',
-  sources:[FULL.rugby2023,FULL.rugby2019].map(h24Source)
+  id:'h24-basket',liveProfile:'h24-basket',sport:'Basket',badge:'H24',title:'Basket en direct',
+  description:'Match de basket réellement en cours, avec bascule automatique vers une autre source live.',
+  provider:'Live 3B vérifié',sources:[]
  }),
  media({
-  id:'h24-basket',sport:'Basket',badge:'H24',title:'Basket H24',
-  description:'Finales FIBA complètes en rotation continue avec secours automatique.',
-  provider:'FIBA Basketball',
-  sources:[FULL.fibaU17,FULL.fibaU17W].map(h24Source)
+  id:'h24-rugby',liveProfile:'h24-rugby',sport:'Rugby',badge:'H24',title:'Rugby en direct',
+  description:'Match de rugby réellement en cours, sans replay et sans sortie de 3B.',
+  provider:'Live 3B vérifié',sources:[]
+ }),
+ media({
+  id:'h24-tennis',liveProfile:'h24-tennis',sport:'Tennis',badge:'H24',title:'Tennis en direct',
+  description:'Match de tennis réellement en cours, avec vérification live côté serveur.',
+  provider:'Live 3B vérifié',sources:[]
+ }),
+ media({
+  id:'h24-world',liveProfile:'h24-world',sport:'Monde',badge:'H24',title:'Secours monde',
+  description:'Dernier filet de sécurité : n’importe quel sport, pays ou langue, mais toujours du direct réel.',
+  provider:'Live 3B vérifié',sources:[]
  })
 ];
 
 export const SPORT_FINALS=[
+ media({
+  id:'final-foot-1998',sport:'Football',year:'1998',title:'Brésil · France',
+  subtitle:'Finale Coupe du monde 1998 · match complet',provider:'FIFA',
+  sources:[
+   source('fifa-1998-full-new','Match complet FIFA',FULL.fifa1998a.videoId,{provider:'FIFA',mode:'full'}),
+   source('fifa-1998-full-archive','Archive complète FIFA de secours',FULL.fifa1998b.videoId,{provider:'FIFA',mode:'full'})
+  ]
+ }),
  media({
   id:'final-foot-2018',sport:'Football',year:'2018',title:'France · Croatie',
   subtitle:'Finale Coupe du monde 2018 · match complet',provider:'FIFA',
