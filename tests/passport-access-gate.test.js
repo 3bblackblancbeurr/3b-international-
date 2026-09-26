@@ -9,7 +9,17 @@ const memberApi = readFileSync(new URL('../supabase/functions/member-api/index.t
 
 test('one 3B Passport unlocks the ecosystem', () => {
   assert.equal(hasPassportAccess(null), false);
-  assert.equal(hasPassportAccess({ userId: 'member-1' }), true);
+  assert.equal(hasPassportAccess({ userId: 'member-1' }), false);
+  assert.equal(hasPassportAccess({
+    userId: 'member-1',
+    passportPublicId: '4f87d51c-62ab-4d10-8f11-9270c1a2b3c4',
+    passportState: 'active',
+  }), true);
+  assert.equal(hasPassportAccess({
+    userId: 'member-1',
+    passportPublicId: '4f87d51c-62ab-4d10-8f11-9270c1a2b3c4',
+    passportState: 'suspended',
+  }), false);
 });
 
 test('App uses one Passport gate with no Passport 2 rule', () => {
