@@ -307,40 +307,71 @@ function PlayHome({ busy, profile, rating, tier, snapshot, code, setCode, reques
 }
 
 function PlayerStudio({ profile, rating, snapshot, setProfile, busy, onSave }) {
-  const country = countryById(profile.countryId);
-  function patch(key, value) { setProfile((current) => ({ ...current, [key]: value })); }
-  function patchNested(key, child, value) {
-    setProfile((current) => ({ ...current, [key]: { ...current[key], [child]: value } }));
-  }
-  function togglePower(id) {
-    setProfile((current) => {
-      const has = current.keeperPowers.includes(id);
-      const next = has ? current.keeperPowers.filter((power) => power !== id) : [...current.keeperPowers, id].slice(-2);
-      return { ...current, keeperPowers: next.length ? next : current.keeperPowers };
+  const country=countryById(profile.countryId);
+  const completion=profileCompletion(profile);
+  const passport=snapshot?.passport||{};
+  const optionMap=key=>new Map((APPEARANCE_OPTIONS[key]||[]).map(item=>[item[0],item]));
+  const skinMap=optionMap('skinTones');
+  const hairColorMap=optionMap('hairColors');
+  function patch(key,value){setProfile(current=>({...current,[key]:value}));}
+  function patchNested(key,child,value){setProfile(current=>({...current,[key]:{...current[key],[child]:value}}));}
+  function patchAppearance(child,value){setProfile(current=>({...current,appearance:{...current.appearance,[child]:value}}));}
+  function togglePower(id){
+    setProfile(current=>{
+      const has=current.keeperPowers.includes(id);
+      const next=has?current.keeperPowers.filter(power=>power!==id):[...current.keeperPowers,id].slice(-2);
+      return {...current,keeperPowers:next.length?next:current.keeperPowers};
     });
   }
+  const skin=skinMap.get(profile.appearance?.skinTone)?.[2]||'#ad7655';
+  const hair=hairColorMap.get(profile.appearance?.hairColor)?.[2]||'#2a1b13';
   return (
-    <div className="penalty-studio">
-      <section className="penalty-player-card" style={{ '--shirt': profile.kit.shirtPrimary, '--trim': profile.kit.shirtSecondary }}>
-        <div className="penalty-avatar-shirt"><span>3B</span><strong>{profile.shirtNumber}</strong><small>{profile.shirtName || '3B'}</small></div>
-        <div><span>{country.flag}</span><h2>{profile.displayName}</h2><p>{PLAYER_STYLES[profile.styleId]?.name} · {profile.clubName || 'Sans club'}</p></div>
+    <div className="penalty-studio penalty-studio-v8">
+      <section className="penalty-player-card penalty-player-card-v8" style={{'--shirt':profile.kit.shirtPrimary,'--trim':profile.kit.shirtSecondary,'--skin':skin,'--hair':hair}}>
+        <div className="penalty-avatar-preview" data-build={profile.appearance?.build||'athletic'} data-hair={profile.appearance?.hairStyle||'short'} aria-hidden="true">
+          <i className="penalty-avatar-hair"/><i className="penalty-avatar-head"/><i className="penalty-avatar-body"/><b>{profile.shirtNumber}</b>
+        </div>
+        <div>
+          <span>{country.flag} {profile.passportLabel||passport.label||'Passeport 3B'}</span>
+          <h2>{profile.displayName}</h2>
+          <p>{PLAYER_STYLES[profile.styleId]?.name} · {profile.preferredRole==='keeper'?'Gardien':profile.preferredRole==='attacker'?'Attaquant':'Polyvalent'} · niveau archétype {profile.archetypeLevel||1}</p>
+          <small>{profile.clubName||'Sans club'} · identité {profile.identityStatus==='review'?'en revue':'validée'}</small>
+        </div>
       </section>
 
-      <section className="penalty-form-grid">
-        <article>
-          <span className="penalty-kicker">IDENTITÉ</span><h3>Ton joueur</h3>
-          <label>Prénom / pseudo<input value={profile.displayName} maxLength={24} onChange={(e) => patch('displayName', e.target.value)} /></label>
-          <label>Nom sur le maillot<input value={profile.shirtName} maxLength={14} onChange={(e) => patch('shirtName', e.target.value.toUpperCase())} /></label>
-          <label>Numéro<input type="number" min="1" max="99" value={profile.shirtNumber} onChange={(e) => patch('shirtNumber', e.target.value)} /></label>
-          <label>Pays<select value={profile.countryId} disabled={(rating?.games || 0) > 0} onChange={(e) => patch('countryId', e.target.value)}>{PENALTY_COUNTRIES.map((c) => <option value={c.id} key={c.id}>{c.flag} {c.name}</option>)}</select></label>
-          {(rating?.games || 0) > 0 && <small className="penalty-field-note">Pays de carrière verrouillé après ton premier duel officiel.</small>}
-          <label>Club<span className="penalty-readonly-field">{profile.clubName || 'Sans club · rejoins-en un dans l’onglet Club'}</span></label>
+      <section className="penalty-form-grid penalty-form-grid-v8">
+        <article className="penalty-form-feature">
+          <span className="penalty-kicker">PASSEPORT 3B · IDENTITÉ SPORTIVE</span><h3>Ce qui te suit partout</h3>
+          <label>Identité officielle<span className="penalty-readonly-field">{profile.displayName}</span></label>
+          <label>Pays / sélection<span className="penalty-readonly-field">{country.flag} {country.name} · {country.value}</span></label>
+          <label>Passeport<span className="penalty-readonly-field">{profile.passportLabel||passport.label||'Passeport 3B'}</span></label>
+          <div className="penalty-identity-state" data-state={profile.identityStatus==='review'?'review':'ready'}>
+            <Shield size={17}/><div><b>{profile.identityStatus==='review'?'REVUE D’IDENTITÉ REQUISE':'IDENTITÉ RENFORCÉE'}</b><small>{profile.identityStatus==='review'?'Le classé et les sélections sont suspendus jusqu’à réalignement.':'Le pays et le nom officiel viennent du Passeport. Aucun UUID de connexion n’est affiché.'}</small></div>
+          </div>
+          <label>Nom sur le maillot<input value={profile.shirtName} maxLength={14} onChange={e=>patch('shirtName',e.target.value.toUpperCase())}/></label>
+          <label>Numéro<input type="number" min="1" max="99" value={profile.shirtNumber} onChange={e=>patch('shirtNumber',e.target.value)}/></label>
+          <label>Rôle préféré<select value={profile.preferredRole||'versatile'} onChange={e=>patch('preferredRole',e.target.value)}>{APPEARANCE_OPTIONS.roles.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Pied fort<select value={profile.dominantFoot||'right'} onChange={e=>patch('dominantFoot',e.target.value)}>{APPEARANCE_OPTIONS.feet.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Club<span className="penalty-readonly-field">{profile.clubName||'Sans club · recrutement dans l’onglet Club'}</span></label>
         </article>
 
-        <article>
-          <span className="penalty-kicker">STYLE DE JEU</span><h3>Un profil, aucun pay-to-win</h3>
-          <div className="penalty-style-list">{Object.values(PLAYER_STYLES).map((style) => (
-            <button type="button" key={style.id} aria-pressed={profile.styleId === style.id} onClick={() => patch('styleId', style.id)}>
+        <article className="penalty-form-feature">
+          <span className="penalty-kicker">APPARENCE</span><h3>Construis ton joueur</h3>
+          <div className="penalty-appearance-swatches"><span>Teinte de peau</span><div>{APPEARANCE_OPTIONS.skinTones.map(([id,label,color])=><button type="button" key={id} title={label} aria-label={label} aria-pressed={profile.appearance?.skinTone===id} style={{'--swatch':color}} onClick={()=>patchAppearance('skinTone',id)}/>)}</div></div>
+          <label>Coiffure<select value={profile.appearance?.hairStyle||'short'} onChange={e=>patchAppearance('hairStyle',e.target.value)}>{APPEARANCE_OPTIONS.hairStyles.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <div className="penalty-appearance-swatches"><span>Cheveux</span><div>{APPEARANCE_OPTIONS.hairColors.map(([id,label,color])=><button type="button" key={id} title={label} aria-label={label} aria-pressed={profile.appearance?.hairColor===id} style={{'--swatch':color}} onClick={()=>patchAppearance('hairColor',id)}/>)}</div></div>
+          <label>Forme du visage<select value={profile.appearance?.faceShape||'balanced'} onChange={e=>patchAppearance('faceShape',e.target.value)}>{APPEARANCE_OPTIONS.faceShapes.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Barbe<select value={profile.appearance?.facialHair||'none'} onChange={e=>patchAppearance('facialHair',e.target.value)}>{APPEARANCE_OPTIONS.facialHair.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Taille visuelle <b>{profile.appearance?.heightCm||178} cm</b><input type="range" min="165" max="198" step="1" value={profile.appearance?.heightCm||178} onChange={e=>patchAppearance('heightCm',Number(e.target.value))}/></label>
+          <label>Silhouette<select value={profile.appearance?.build||'athletic'} onChange={e=>patchAppearance('build',e.target.value)}>{APPEARANCE_OPTIONS.builds.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <small className="penalty-field-note">Taille, silhouette, peau, cheveux, visage et barbe sont purement visuels. La hitbox, la vitesse, la portée et le tir restent identiques en compétition.</small>
+        </article>
+
+        <article className="penalty-form-feature">
+          <span className="penalty-kicker">ARCHÉTYPE · NIVEAU {profile.archetypeLevel||1}/50</span><h3>Ton identité de jeu</h3>
+          <p className="penalty-form-copy">L’archétype définit de petites nuances équilibrées. La progression d’archétype débloquera surtout prestige et personnalisation, jamais un achat de puissance.</p>
+          <div className="penalty-style-list">{Object.values(PLAYER_STYLES).map(style=>(
+            <button type="button" key={style.id} aria-pressed={profile.styleId===style.id} onClick={()=>patch('styleId',style.id)}>
               <b>{style.name}</b><small>{style.description}</small>
             </button>
           ))}</div>
@@ -348,44 +379,31 @@ function PlayerStudio({ profile, rating, snapshot, setProfile, busy, onSave }) {
 
         <article>
           <span className="penalty-kicker">TENUE</span><h3>Couleurs & textile</h3>
-          {[
-            ['shirtPrimary', 'Maillot'],
-            ['shirtSecondary', 'Détails'],
-            ['shorts', 'Short'],
-            ['socks', 'Chaussettes'],
-          ].map(([key, label]) => <div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={label + ' ' + color} aria-pressed={profile.kit[key] === color} style={{ '--swatch': color }} onClick={() => patchNested('kit', key, color)} />)}</div></div>)}
-          <label>Motif du maillot<select value={profile.kit.pattern} onChange={(e) => patchNested('kit', 'pattern', e.target.value)}>
-            <option value="clean">Épuré</option><option value="stripe">Bandes</option><option value="split">Bicolore</option><option value="gradient">Dégradé</option><option value="matrix">Matrix discret</option>
-          </select></label>
-          <label>Manches<select value={profile.kit.sleeves || 'short'} onChange={(e) => patchNested('kit', 'sleeves', e.target.value)}>{KIT_SLEEVES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Col<select value={profile.kit.collar || 'v'} onChange={(e) => patchNested('kit', 'collar', e.target.value)}>{KIT_COLLARS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Coupe du short<select value={profile.kit.shortsCut || 'classic'} onChange={(e) => patchNested('kit', 'shortsCut', e.target.value)}>{SHORTS_CUTS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Hauteur des chaussettes<select value={profile.kit.socksStyle || 'high'} onChange={(e) => patchNested('kit', 'socksStyle', e.target.value)}>{SOCKS_STYLES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Chaussures<select value={profile.boots.preset} onChange={(e) => patchNested('boots', 'preset', e.target.value)}>{BOOT_PRESETS.map((boot) => <option value={boot.id} key={boot.id}>{boot.name}</option>)}</select></label>
-          <label>Matière<select value={profile.boots.material || 'synthetic'} onChange={(e) => patchNested('boots', 'material', e.target.value)}>{BOOT_MATERIALS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Type de crampons<select value={profile.boots.studs || 'mixed'} onChange={(e) => patchNested('boots', 'studs', e.target.value)}>{BOOT_STUDS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Signature sur la chaussure<input value={profile.boots.signature || ''} maxLength={8} placeholder="NOM / 3B" onChange={(e) => patchNested('boots', 'signature', e.target.value.toUpperCase())} /></label>
-          {[
-            ['upper', 'Chaussure'],
-            ['sole', 'Semelle'],
-            ['laces', 'Lacets'],
-          ].map(([key, label]) => <div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={label + ' ' + color} aria-pressed={profile.boots[key] === color} style={{ '--swatch': color }} onClick={() => patchNested('boots', key, color)} />)}</div></div>)}
-          <label>Célébration<select value={profile.celebration} onChange={(e) => patch('celebration', e.target.value)}>
-            <option value="calme">Calme</option><option value="crown">Couronne 3B</option><option value="respect">Respect</option><option value="matrix">Matrix</option>
-          </select></label>
-          <small className="penalty-field-note">Toutes ces options sont visuelles : aucune tenue, chaussure, matière ou signature ne donne un bonus de gameplay.</small>
+          {[['shirtPrimary','Maillot'],['shirtSecondary','Détails'],['shorts','Short'],['socks','Chaussettes']].map(([key,label])=><div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={label+' '+color} aria-pressed={profile.kit[key]===color} style={{'--swatch':color}} onClick={()=>patchNested('kit',key,color)}/>)}</div></div>)}
+          <label>Motif du maillot<select value={profile.kit.pattern} onChange={e=>patchNested('kit','pattern',e.target.value)}><option value="clean">Épuré</option><option value="stripe">Bandes</option><option value="split">Bicolore</option><option value="gradient">Dégradé</option><option value="matrix">Matrix discret</option></select></label>
+          <label>Manches<select value={profile.kit.sleeves||'short'} onChange={e=>patchNested('kit','sleeves',e.target.value)}>{KIT_SLEEVES.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Col<select value={profile.kit.collar||'v'} onChange={e=>patchNested('kit','collar',e.target.value)}>{KIT_COLLARS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Coupe du short<select value={profile.kit.shortsCut||'classic'} onChange={e=>patchNested('kit','shortsCut',e.target.value)}>{SHORTS_CUTS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Hauteur des chaussettes<select value={profile.kit.socksStyle||'high'} onChange={e=>patchNested('kit','socksStyle',e.target.value)}>{SOCKS_STYLES.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Chaussures<select value={profile.boots.preset} onChange={e=>patchNested('boots','preset',e.target.value)}>{BOOT_PRESETS.map(boot=><option value={boot.id} key={boot.id}>{boot.name}</option>)}</select></label>
+          <label>Matière<select value={profile.boots.material||'synthetic'} onChange={e=>patchNested('boots','material',e.target.value)}>{BOOT_MATERIALS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Type de crampons<select value={profile.boots.studs||'mixed'} onChange={e=>patchNested('boots','studs',e.target.value)}>{BOOT_STUDS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Signature sur la chaussure<input value={profile.boots.signature||''} maxLength={8} placeholder="NOM / 3B" onChange={e=>patchNested('boots','signature',e.target.value.toUpperCase())}/></label>
+          {[['upper','Chaussure'],['sole','Semelle'],['laces','Lacets']].map(([key,label])=><div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={label+' '+color} aria-pressed={profile.boots[key]===color} style={{'--swatch':color}} onClick={()=>patchNested('boots',key,color)}/>)}</div></div>)}
+          <label>Célébration<select value={profile.celebration} onChange={e=>patch('celebration',e.target.value)}><option value="calme">Calme</option><option value="crown">Couronne 3B</option><option value="respect">Respect</option><option value="matrix">Matrix</option></select></label>
         </article>
 
         <article>
           <span className="penalty-kicker">GARDIEN</span><h3>Deux pouvoirs maximum</h3>
-          <div className="penalty-power-list">{Object.values(KEEPER_POWERS).map((power) => (
-            <button type="button" key={power.id} aria-pressed={profile.keeperPowers.includes(power.id)} onClick={() => togglePower(power.id)}>
+          <div className="penalty-power-list">{Object.values(KEEPER_POWERS).map(power=>(
+            <button type="button" key={power.id} aria-pressed={profile.keeperPowers.includes(power.id)} onClick={()=>togglePower(power.id)}>
               <i>{powerIcon(power.id)}</i><span><b>{power.name}</b><small>{power.description}</small><em>{power.drawback}</em></span>
             </button>
           ))}</div>
         </article>
       </section>
-      <button className="penalty-primary penalty-save" disabled={busy || profile.keeperPowers.length !== 2} onClick={onSave}>Enregistrer mon joueur</button>
+      {!completion.ready&&<div className="penalty-notice">Profil incomplet : {completion.missing.join(', ')}.</div>}
+      <button className="penalty-primary penalty-save" disabled={busy||profile.keeperPowers.length!==2||!completion.ready||profile.identityStatus==='review'} onClick={onSave}>Enregistrer mon joueur</button>
     </div>
   );
 }
