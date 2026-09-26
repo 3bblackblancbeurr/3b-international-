@@ -200,6 +200,13 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     return result;
   }, [refresh]);
 
+  const refreshFinance = useCallback(async () => {
+    if (!userId || !online) return null;
+    const result = await fetchNosblocFinance();
+    setFinance(result);
+    return result;
+  }, [online, userId]);
+
   const moderateProduct = useCallback(async (productId, approve, reason = "") => {
     const result = await moderateNosblocProduct(productId, approve, reason);
     await Promise.all([refresh(), refreshFinance().catch(() => null)]);
@@ -219,13 +226,6 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     await refresh();
     return result;
   }, [ensureProject, refresh]);
-
-  const refreshFinance = useCallback(async () => {
-    if (!userId || !online) return null;
-    const result = await fetchNosblocFinance();
-    setFinance(result);
-    return result;
-  }, [online, userId]);
 
   const money = useMemo(() => {
     const coins = Number(state?.profile?.coins || 0);
