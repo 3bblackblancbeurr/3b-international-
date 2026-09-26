@@ -71,6 +71,9 @@ export function scoutingLabel(value){
   return {
     selection:'Sélection confirmée',
     preselection:'Convocation',
+    accepted:'Convocation acceptée',
+    released:'Non retenu dans la liste finale',
+    declined:'Convocation déclinée',
     observe:'Observé',
     radar:'Radar national',
     club:'Carrière club',
