@@ -8,7 +8,8 @@ test('Command OS stays mobile-first while remaining responsive for the owner on 
  const page=read('src/control/ControlCenterPage.jsx');
  const css=read('src/control/control-center.css');
  const app=read('src/App.jsx');
- assert.match(page,/3B COMMAND OS/);
+ assert.match(page,/COMMAND OS/);
+ assert.match(page,/control-brand/);
  assert.match(page,/isPhoneClient/);
  assert.match(page,/OWNER · MOBILE FIRST/);
  assert.match(page,/OWNER · DESKTOP/);
