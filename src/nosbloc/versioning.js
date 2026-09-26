@@ -2,7 +2,7 @@ import { NOSBLOC_STORAGE_VERSION, normalizeSplits, normalizeState } from "./mode
 
 export const NOSBLOC_EXPORT_FORMAT = "nosbloc-3b-backup";
 export const NOSBLOC_VERSION_LIMIT = 20;
-const VERSION_STAGES = new Set(["checkpoint", "review", "approved", "published"]);
+const VERSION_STAGES = new Set(["checkpoint", "private_test", "review", "approved", "published"]);
 
 const nowIso = () => new Date().toISOString();
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -62,7 +62,7 @@ export function createProjectVersion(project = {}, options = {}) {
     id: String(options.id || `version-${fingerprint({ entropy, versionNo, createdAt })}`),
     versionNo,
     stage,
-    note: String(options.note || (stage === "review" ? "Version envoyée en révision" : "Point de reprise")).trim().slice(0, 160),
+    note: String(options.note || (stage === "review" ? "Version envoyée en révision" : stage === "private_test" ? "Version de test privé" : "Point de reprise")).trim().slice(0, 160),
     createdAt,
     sourceUpdatedAt: String(project.updatedAt || createdAt),
     fingerprint: fingerprint(snapshot),

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, ArrowLeft, ArrowRight, BarChart3, Boxes, Check, CheckCircle2,
-  ChevronRight, CircleDollarSign, Cloud, CloudOff, Code2, Coins, Compass, Copy,
+  ChevronRight, CircleDollarSign, Cloud, CloudOff, Code2, Coins, Compass,
   Download, Eye, FolderKanban, Gauge, History, Home, Layers3, LockKeyhole, Mail,
   Menu, Package, Plus, Rocket, RotateCcw, Search, Settings2, ShieldCheck, Sparkles,
   Store, TestTube2, Upload, UserRound, Users, WalletCards, WandSparkles, X
@@ -14,9 +14,10 @@ import {
   projectReadiness, simulateRevenue, validateSplits
 } from "./model.js";
 import {
-  appendProjectVersion, parseStateExport, prepareTeamInvitation, restoreProjectVersion,
-  revokeTeamInvitation, serializeStateExport
+  appendProjectVersion, fingerprint, parseStateExport, restoreProjectVersion,
+  serializeStateExport
 } from "./versioning.js";
+import { useNosblocServer } from "./useNosblocServer.js";
 import "./nosbloc-premium.css";
 
 const PRIMARY_NAV = [
@@ -72,13 +73,15 @@ function activityEntry(type, title, detail) {
   };
 }
 
-function moneyState(account) {
+function moneyState(account, serverMoney) {
   const coins = Number(account.economy?.points ?? account.profile?.points ?? 0);
   return {
-    availableCents: 0,
-    pendingCents: 0,
-    payoutCents: 0,
+    availableCents: Math.max(0, Number(serverMoney?.availableCents) || 0),
+    pendingCents: Math.max(0, Number(serverMoney?.pendingCents) || 0),
+    payoutCents: Math.max(0, Number(serverMoney?.payoutCents) || 0),
     coins: Number.isFinite(coins) ? Math.max(0, coins) : 0,
+    runtime: serverMoney?.runtime || { paymentsEnabled:false, payoutsEnabled:false, discoverEnabled:false },
+    payoutAccount: serverMoney?.payoutAccount || null,
   };
 }
 
@@ -97,6 +100,15 @@ export default function NosblocPremiumPage({ goTo }) {
   const [loaded, setLoaded] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
+  const nosblocServer = useNosblocServer({
+    userId: account.user?.id || "",
+    loaded,
+    online,
+    state,
+    setState,
+    storageKey,
+  });
+  const money = moneyState(account, nosblocServer.money);
 
   useEffect(() => {
     const profile = { studioName: "Studio de " + ownerName };
@@ -127,7 +139,7 @@ export default function NosblocPremiumPage({ goTo }) {
     [state.projects, selectedId],
   );
 
-  const commit = (updater, message, entry) => {
+  const commit = (updater, message, entry, dirtyProjectId) => {
     setState(previous => {
       const changed = typeof updater === "function" ? updater(previous) : updater;
       const next = normalizeState({
@@ -141,6 +153,7 @@ export default function NosblocPremiumPage({ goTo }) {
       } catch {}
       return next;
     });
+    if (dirtyProjectId) nosblocServer.markDirty(dirtyProjectId);
     if (message) setNotice(message);
   };
 
@@ -152,7 +165,7 @@ export default function NosblocPremiumPage({ goTo }) {
         const delta = typeof patch === "function" ? patch(project) : patch;
         return { ...project, ...delta, updatedAt: nowIso() };
       }),
-    }), message, entry);
+    }), message, entry, id);
   };
 
   const exportArchive = () => {
@@ -178,9 +191,40 @@ export default function NosblocPremiumPage({ goTo }) {
       commit(() => imported, "Archive vérifiée et restaurée. L’état précédent reste dans la reprise de secours.", activityEntry("restore", "Archive restaurée", file.name));
       setSelectedId(imported.projects?.[0]?.id || "");
       setView("home");
+      setTimeout(() => nosblocServer.markAllDirty(), 0);
     } catch (error) {
       setNotice(error?.message || "Import impossible.");
     }
+  };
+
+  const mergeVersionsFromServer = (projectId, rows) => {
+    if (!Array.isArray(rows) || !rows.length) return;
+    setState(previous => {
+      const next = {
+        ...previous,
+        projects: previous.projects.map(project => {
+          if (project.id !== projectId) return project;
+          const byId = new Map((project.versions || []).map(version => [version.id, version]));
+          for (const row of rows) {
+            if (!row?.id || !row?.snapshot) continue;
+            byId.set(row.id, {
+              id: row.id,
+              versionNo: Number(row.versionNo) || 1,
+              stage: row.stage || "checkpoint",
+              note: row.note || "Version serveur",
+              createdAt: row.createdAt || nowIso(),
+              sourceUpdatedAt: row.snapshot?.updatedAt || row.createdAt || nowIso(),
+              fingerprint: fingerprint(row.snapshot),
+              serverFingerprint: row.fingerprint || "",
+              snapshot: row.snapshot,
+            });
+          }
+          return { ...project, versions: [...byId.values()].sort((a,b) => Number(a.versionNo) - Number(b.versionNo)).slice(-20) };
+        }),
+      };
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
   };
 
   const openStudio = id => {
@@ -189,43 +233,71 @@ export default function NosblocPremiumPage({ goTo }) {
     setStudioMode("simple");
     setProTab("build");
     setNotice("");
+    const project = state.projects.find(row => row.id === id);
+    if (project && online && account.user?.id) {
+      nosblocServer.loadVersions(project).then(rows => mergeVersionsFromServer(id, rows)).catch(() => {});
+    }
   };
 
-  const startPrivateTest = project => {
+  const startPrivateTest = async project => {
     if (!project) return;
-    const result = appendProjectVersion(project, {
-      stage: "checkpoint",
-      note: "Version de test privé",
-    });
-    updateProject(
-      project.id,
-      { ...result.project, status: "private_test", visibility: "private" },
-      "Test privé préparé. La version publique reste inchangée.",
-      activityEntry("test", "Test privé créé", project.title),
-    );
+    try {
+      let remote = null;
+      if (online && account.user?.id) {
+        remote = await nosblocServer.createVersion(project, "private_test", "Version de test privé");
+      }
+      const result = appendProjectVersion(project, {
+        id: remote?.versionId,
+        stage: "private_test",
+        note: "Version de test privé",
+      });
+      updateProject(
+        project.id,
+        { ...result.project, status: "private_test", visibility: "private" },
+        remote ? "Test privé figé côté serveur. La version publique reste inchangée." : "Test privé enregistré hors ligne. Il sera resynchronisé avec le projet.",
+        activityEntry("test", "Test privé créé", project.title),
+      );
+    } catch (error) {
+      setNotice(error?.message || "Test privé impossible.");
+    }
   };
 
-  const requestReview = project => {
+  const requestReview = async project => {
     if (!project) return;
     const ready = projectReadiness(project);
     if (!ready.readyForReview) {
       setNotice("Publication bloquée : complète la checklist. Score actuel " + ready.score + " %.");
       return;
     }
-    const result = appendProjectVersion(project, {
-      stage: "review",
-      note: "Soumission à la vérification Nosbloc",
-    });
-    updateProject(
-      project.id,
-      result.project,
-      "Version figée envoyée en vérification. Aucun paiement ou publication automatique n’a été déclenché.",
-      activityEntry("review", "Projet envoyé en vérification", project.title),
-    );
+    if (!online || !account.user?.id) {
+      setNotice("Une connexion est requise pour envoyer un projet à la modération.");
+      return;
+    }
+    try {
+      const remote = await nosblocServer.createVersion(project, "review", "Soumission à la vérification Nosbloc");
+      const result = appendProjectVersion(project, {
+        id: remote?.versionId,
+        stage: "review",
+        note: "Soumission à la vérification Nosbloc",
+      });
+      updateProject(
+        project.id,
+        { ...result.project, status:"review", visibility:"private", server:{ ...(project.server || {}), projectId:remote?.projectId || project.server?.projectId } },
+        "Version figée côté serveur et envoyée en vérification. Aucun paiement n’a été déclenché.",
+        activityEntry("review", "Projet envoyé en vérification", project.title),
+      );
+      await nosblocServer.refresh();
+    } catch (error) {
+      setNotice(error?.message || "Envoi en vérification impossible.");
+    }
   };
 
-  const restoreVersion = (project, versionId) => {
+  const restoreVersion = async (project, versionId) => {
     try {
+      const serverVersion = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(versionId || ""));
+      if (serverVersion && online && account.user?.id && project.server?.projectId) {
+        await nosblocServer.restoreVersion(project, versionId);
+      }
       const restored = restoreProjectVersion(project, versionId);
       updateProject(
         project.id,
@@ -234,8 +306,94 @@ export default function NosblocPremiumPage({ goTo }) {
         activityEntry("restore", "Version restaurée", project.title),
       );
       setStudioMode("simple");
+      if (online && account.user?.id) await nosblocServer.syncProjectNow(restored);
     } catch (error) {
       setNotice(error?.message || "Restauration impossible.");
+    }
+  };
+
+  const publishProject = async project => {
+    try {
+      await nosblocServer.publishProject(project);
+      setNotice("Projet publié dans Nosbloc. La version approuvée est maintenant publique.");
+    } catch (error) {
+      setNotice(error?.message || "Publication impossible.");
+    }
+  };
+
+  const archiveProject = async project => {
+    try {
+      if (online && account.user?.id) await nosblocServer.archiveProject(project);
+      updateProject(project.id,{status:"archived",visibility:"private"},"Projet archivé.",activityEntry("archive","Projet archivé",project.title));
+    } catch (error) {
+      setNotice(error?.message || "Archivage impossible.");
+    }
+  };
+
+  const inviteTeamMember = async (project,row) => {
+    try {
+      const result = await nosblocServer.inviteMember(project,row);
+      updateProject(project.id,{
+        splits: project.splits.map(member => member.id === row.id
+          ? { ...member, status:"invited", invitationId:result?.invitationId || "", invitedAt:nowIso(), inviteCode:"" }
+          : member),
+      },"Invitation serveur envoyée au Passeport 3B du membre.");
+    } catch (error) {
+      setNotice(error?.message || "Invitation impossible.");
+    }
+  };
+
+  const revokeTeamInvite = async (project,row) => {
+    try {
+      if (row.invitationId) await nosblocServer.revokeInvitation(row.invitationId);
+      updateProject(project.id,{
+        splits: project.splits.map(member => member.id === row.id
+          ? { ...member, status:"draft", invitationId:"", invitedAt:"", acceptedAt:"", inviteCode:"" }
+          : member),
+      },"Invitation révoquée.");
+    } catch (error) {
+      setNotice(error?.message || "Révocation impossible.");
+    }
+  };
+
+  const removeTeamMember = async (project,row) => {
+    try {
+      if (online && account.user?.id && (row.status !== "draft" || row.invitationId)) {
+        await nosblocServer.removeMember(project,row);
+      }
+      updateProject(project.id,{
+        splits: project.splits.filter(member => member.id !== row.id),
+        status:"draft",visibility:"private",reviewVersionId:null,
+      },"Membre retiré du projet.");
+    } catch (error) {
+      setNotice(error?.message || "Suppression du membre impossible.");
+    }
+  };
+
+  const decideInvitation = async (invitationId, accept) => {
+    try {
+      await nosblocServer.decideInvitation(invitationId, accept);
+      setNotice(accept ? "Invitation acceptée. Le projet apparaît maintenant dans ton espace." : "Invitation refusée.");
+    } catch (error) {
+      setNotice(error?.message || "Réponse à l’invitation impossible.");
+    }
+  };
+
+  const moderateCase = async (caseId, decision) => {
+    try {
+      await nosblocServer.moderateCase(caseId, decision, decision === "approved" ? "Validation Nosbloc" : "Corrections requises");
+      setNotice(decision === "approved" ? "Projet approuvé. Le propriétaire peut maintenant le publier." : "Projet renvoyé au créateur pour correction.");
+    } catch (error) {
+      setNotice(error?.message || "Modération impossible.");
+    }
+  };
+
+  const moderateProduct = async (productId, approve) => {
+    try {
+      await nosblocServer.moderateProduct(productId, approve, approve ? "Produit validé" : "Corrections requises");
+      setNotice(approve ? "Produit approuvé. Il restera invisible tant que la Boutique publique est fermée." : "Produit renvoyé au créateur.");
+    } catch (error) {
+      setNotice(error?.message || "Modération du produit impossible.");
     }
   };
 
@@ -250,6 +408,7 @@ export default function NosblocPremiumPage({ goTo }) {
           view={view}
           selected={selected}
           online={online}
+          serverStatus={nosblocServer.serverStatus}
           onBack={() => view === "studio" ? setView("home") : goTo?.("home")}
           onCreate={() => setView("create")}
         />
@@ -263,10 +422,30 @@ export default function NosblocPremiumPage({ goTo }) {
           setCityOpen={setCityOpen}
           goTo={goTo}
         />}
-        {view === "explore" && <ExploreView projects={state.projects} marketplace={state.marketplace || []} openStudio={openStudio} />}
+        {view === "explore" && <ExploreView
+          projects={state.projects}
+          remoteProjects={nosblocServer.discover.projects}
+          marketplace={nosblocServer.discover.products}
+          discoverEnabled={nosblocServer.discover.enabled}
+          openStudio={openStudio}
+        />}
         {view === "create" && <CreateView ownerName={ownerName} state={state} commit={commit} openStudio={openStudio} />}
-        {view === "activity" && <ActivityView state={state} />}
-        {view === "me" && <ProfileView state={state} account={account} setCityOpen={setCityOpen} onExport={exportArchive} onImport={() => importRef.current?.click()} />}
+        {view === "activity" && <ActivityView
+          state={state}
+          serverSnapshot={nosblocServer.snapshot}
+          finance={nosblocServer.finance}
+          onInvitationDecision={decideInvitation}
+          onModerate={moderateCase}
+          onModerateProduct={moderateProduct}
+        />}
+        {view === "me" && <ProfileView
+          state={state}
+          money={money}
+          serverStatus={nosblocServer.serverStatus}
+          setCityOpen={setCityOpen}
+          onExport={exportArchive}
+          onImport={() => importRef.current?.click()}
+        />}
         {view === "studio" && <StudioView
           project={selected}
           mode={studioMode}
@@ -276,9 +455,16 @@ export default function NosblocPremiumPage({ goTo }) {
           updateProject={updateProject}
           startPrivateTest={startPrivateTest}
           requestReview={requestReview}
+          publishProject={publishProject}
+          archiveProject={archiveProject}
           restoreVersion={restoreVersion}
+          inviteTeamMember={inviteTeamMember}
+          revokeTeamInvite={revokeTeamInvite}
+          removeTeamMember={removeTeamMember}
           setView={setView}
-          account={account}
+          money={money}
+          finance={nosblocServer.finance}
+          economyActions={nosblocServer}
           setNotice={setNotice}
         />}
       </main>
@@ -307,14 +493,16 @@ function MobileNav({ view, setView }) {
   </nav>;
 }
 
-function TopBar({ view, selected, online, onBack, onCreate }) {
+function TopBar({ view, selected, online, serverStatus, onBack, onCreate }) {
   const title = view === "studio" ? selected?.title || "Studio" : {
     home: "Nosbloc 3B", explore: "Explorer", create: "Créer", activity: "Activité", me: "Mon espace",
   }[view] || "Nosbloc 3B";
+  const serverOnline = online && serverStatus?.state === "online";
+  const label = !online ? "Hors ligne" : serverStatus?.state === "connecting" ? "Synchronisation…" : serverOnline ? "Synchronisé" : "Mode local";
   return <header className="nb2-topbar">
     <button className="nb2-back" onClick={onBack} aria-label="Retour"><ArrowLeft size={19}/></button>
     <div><small>NOSBLOC DU 3B</small><strong>{title}</strong></div>
-    <span className="nb2-network" data-online={online}>{online ? <Cloud size={15}/> : <CloudOff size={15}/>} {online ? "En ligne" : "Hors ligne"}</span>
+    <span className="nb2-network" data-online={serverOnline}>{serverOnline ? <Cloud size={15}/> : <CloudOff size={15}/>} {label}</span>
     {view !== "create" && view !== "studio" && <button className="nb2-top-create" onClick={onCreate}><Plus size={17}/> Créer</button>}
   </header>;
 }
@@ -402,24 +590,53 @@ function ProjectHero({ project, onOpen }) {
   </article>;
 }
 
-function ExploreView({ projects, marketplace = [], openStudio }) {
+function ExploreView({ projects, remoteProjects = [], marketplace = [], discoverEnabled, openStudio }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [section, setSection] = useState("projects");
   const [previewId, setPreviewId] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase("fr");
-  const rows = useMemo(() => projects
+
+  const localRows = useMemo(() => (projects || []).map(project => ({ ...project, _owned:true })), [projects]);
+  const remoteRows = useMemo(() => {
+    const localClientIds = new Set((projects || []).map(project => project.id));
+    const localServerIds = new Set((projects || []).map(project => project.server?.projectId).filter(Boolean));
+    return (remoteProjects || [])
+      .filter(row => !localClientIds.has(row.clientProjectId) && !localServerIds.has(row.projectId))
+      .map(row => ({
+        id: "public:" + row.projectId,
+        serverProjectId: row.projectId,
+        clientProjectId: row.clientProjectId,
+        title: row.title,
+        type: row.type,
+        template: row.template,
+        description: row.description,
+        audience: row.audience,
+        status: "published",
+        visibility: "public",
+        updatedAt: row.updatedAt,
+        creator: row.creator || "Créateur 3B",
+        publicReadiness: Number(row.readinessScore || 0),
+        stats: { trustScore:Number(row.trustScore || 100) },
+        _owned:false,
+      }));
+  }, [projects, remoteProjects]);
+  const sourceProjects = useMemo(() => [...localRows, ...remoteRows], [localRows, remoteRows]);
+
+  const rows = useMemo(() => sourceProjects
     .filter(project => type === "all" || project.type === type)
-    .filter(project => (project.title + " " + project.description).toLocaleLowerCase("fr").includes(normalizedQuery))
-    .sort((a,b) => discoveryScore(b) - discoveryScore(a)), [projects, normalizedQuery, type]);
-  const shopRows = useMemo(() => marketplace
-    .filter(item => !normalizedQuery || (String(item.name || item.title || "") + " " + String(item.category || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
+    .filter(project => (String(project.title || "") + " " + String(project.description || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
+    .sort((a,b) => a._owned === b._owned ? discoveryScore(b) - discoveryScore(a) : Number(b._owned) - Number(a._owned)), [sourceProjects, normalizedQuery, type]);
+
+  const shopRows = useMemo(() => (marketplace || [])
+    .filter(item => !normalizedQuery || (String(item.title || item.name || "") + " " + String(item.category || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
     .slice(0, 80), [marketplace, normalizedQuery]);
+
   const creators = useMemo(() => {
     const byName = new Map();
-    for (const project of projects) {
+    for (const project of sourceProjects) {
       const owner = (project.splits || []).find(row => row.status === "owner") || project.splits?.[0];
-      const name = String(owner?.name || "Créateur 3B").trim();
+      const name = String(project.creator || owner?.name || "Créateur 3B").trim();
       const key = name.toLocaleLowerCase("fr");
       const current = byName.get(key) || { name, projects: 0, published: 0 };
       current.projects += 1;
@@ -429,13 +646,14 @@ function ExploreView({ projects, marketplace = [], openStudio }) {
     return [...byName.values()]
       .filter(row => !normalizedQuery || row.name.toLocaleLowerCase("fr").includes(normalizedQuery))
       .sort((a,b) => b.projects - a.projects);
-  }, [projects, normalizedQuery]);
-  const preview = projects.find(project => project.id === previewId) || null;
+  }, [sourceProjects, normalizedQuery]);
 
-  if (preview) return <ProjectPublicView project={preview} onBack={() => setPreviewId("")} onOpenStudio={() => openStudio(preview.id)} />;
+  const preview = sourceProjects.find(project => project.id === previewId) || null;
+  if (preview) return <ProjectPublicView project={preview} onBack={() => setPreviewId("")} onOpenStudio={preview._owned ? () => openStudio(preview.id) : null} />;
 
   return <div className="nb2-view">
     <section className="nb2-page-head"><p className="nb2-kicker">EXPLORER</p><h1>Trouve sans chercher partout.</h1><p>Une recherche unique pour les créations, la Boutique et les créateurs Nosbloc.</p></section>
+    {!discoverEnabled && <div className="nb2-lock-banner"><LockKeyhole size={17}/> Discover public reste fermé pendant la recette. Tes propres projets restent accessibles normalement.</div>}
     <div className="nb2-explore-sections" role="tablist" aria-label="Explorer Nosbloc">
       <button role="tab" aria-selected={section === "projects"} data-active={section === "projects"} onClick={() => setSection("projects")}><Compass size={16}/> Créations</button>
       <button role="tab" aria-selected={section === "shop"} data-active={section === "shop"} onClick={() => setSection("shop")}><Store size={16}/> Boutique</button>
@@ -454,9 +672,9 @@ function ExploreView({ projects, marketplace = [], openStudio }) {
 
     {section === "shop" && (!shopRows.length
       ? <EmptyState icon={Store} title="La Boutique créateur est prête, mais aucune offre publique n’est activée." text="Les paiements restent verrouillés tant que l’environnement réel, le KYC et la fiscalité ne sont pas validés."/>
-      : <div className="nb2-card-grid">{shopRows.map((item,index) => <article className="nb2-card" key={item.id || item.asset_id || index}>
+      : <div className="nb2-card-grid">{shopRows.map((item,index) => <article className="nb2-card" key={item.id || index}>
           <div className="nb2-card-cover"><Package size={25}/><small>{item.category || "Asset Nosbloc"}</small></div>
-          <div className="nb2-card-body"><span className="nb2-status" data-tone="gold">Boutique</span><h3>{item.name || item.title || "Création 3B"}</h3><p>{item.creator || item.license || "Ressource créateur"}</p><button disabled title="Paiements réels verrouillés">Paiement verrouillé <LockKeyhole size={14}/></button></div>
+          <div className="nb2-card-body"><span className="nb2-status" data-tone="gold">Boutique</span><h3>{item.title || "Création 3B"}</h3><p>{item.description || "Ressource créateur"}</p><strong>{formatEuros(Number(item.priceCents || 0))}</strong><button disabled title="Paiements réels verrouillés">Paiement verrouillé <LockKeyhole size={14}/></button></div>
         </article>)}</div>
     )}
 
@@ -466,9 +684,8 @@ function ExploreView({ projects, marketplace = [], openStudio }) {
     )}
   </div>;
 }
-
 function ProjectPublicView({ project, onBack, onOpenStudio }) {
-  const ready = projectReadiness(project);
+  const ready = { ...projectReadiness(project), score: Number.isFinite(project.publicReadiness) ? project.publicReadiness : projectReadiness(project).score };
   const status = STATUS[project.status] || [project.status, "neutral"];
   const owner = (project.splits || []).find(row => row.status === "owner") || project.splits?.[0];
   return <div className="nb2-view">
@@ -479,19 +696,20 @@ function ProjectPublicView({ project, onBack, onOpenStudio }) {
         <span className="nb2-status" data-tone={status[1]}>{status[0]}</span>
         <h1>{project.title}</h1>
         <p>{project.description || "Création Nosbloc 3B."}</p>
-        <div className="nb2-public-by"><UserRound size={16}/> Créé par <b>{owner?.name || "Créateur 3B"}</b></div>
+        <div className="nb2-public-by"><UserRound size={16}/> Créé par <b>{project.creator || owner?.name || "Créateur 3B"}</b></div>
         <div className="nb2-progress"><i style={{width: ready.score + "%"}}/></div>
         <small>{ready.score} % de préparation · {PROJECT_TYPES.find(x => x.id === project.type)?.label}</small>
         <div className="nb2-public-actions">
-          <button className="primary" onClick={onOpenStudio}><FolderKanban size={17}/> Ouvrir mon Studio</button>
-          <button disabled><Eye size={17}/> Aperçu public après validation</button>
+          {onOpenStudio ? <button className="primary" onClick={onOpenStudio}><FolderKanban size={17}/> Ouvrir mon Studio</button> : <button className="primary" disabled><Eye size={17}/> Expérience publiée</button>}
+          {onOpenStudio && <button disabled><Eye size={17}/> Aperçu public après validation</button>}
         </div>
       </div>
     </section>
   </div>;
 }
 function ProjectCard({ project, onOpen }) {
-  const ready = projectReadiness(project);
+  const localReady = projectReadiness(project);
+  const ready = { ...localReady, score: Number.isFinite(project.publicReadiness) ? project.publicReadiness : localReady.score };
   const status = STATUS[project.status] || [project.status, "neutral"];
   return <article className="nb2-card">
     <div className="nb2-card-cover"><Sparkles size={25}/><small>{project.template}</small></div>
@@ -517,7 +735,7 @@ function CreateView({ ownerName, state, commit, openStudio }) {
     }, ownerName);
     if (form.start === "ai" && form.description.trim()) project.plan = generateBuildPlan(form.description, form.type);
     const next = { ...state, projects: [project, ...state.projects] };
-    commit(next, "Projet créé et sauvegardé.", activityEntry("create", "Projet créé", project.title));
+    commit(next, "Projet créé et sauvegardé.", activityEntry("create", "Projet créé", project.title), project.id);
     openStudio(project.id);
   };
 
@@ -558,23 +776,100 @@ function WizardActions({ back, next, nextLabel = "Continuer", disabled }) {
   return <div className="nb2-wizard-actions">{back && <button className="secondary" onClick={back}><ArrowLeft size={16}/> Retour</button>}<button className="primary" disabled={disabled} onClick={next}>{nextLabel}<ArrowRight size={16}/></button></div>;
 }
 
-function ActivityView({ state }) {
-  const rows = state.activity || [];
-  return <div className="nb2-view"><section className="nb2-page-head"><p className="nb2-kicker">ACTIVITÉ</p><h1>Tout au même endroit.</h1><p>Projets, sécurité, ventes, paiements et modération utilisent une seule boîte.</p></section>
-    <div className="nb2-filter-row"><button data-active>Tout</button><button>Projets</button><button>Ventes</button><button>Sécurité</button><button>Modération</button></div>
-    {!rows.length ? <EmptyState icon={Activity} title="Aucune activité récente." text="Tes actions importantes apparaîtront ici."/> :
-      <div className="nb2-activity-list">{rows.map(row => <article key={row.id}><span><Activity size={17}/></span><div><b>{row.title}</b><p>{row.detail}</p><small>{new Date(row.createdAt).toLocaleString("fr-FR")}</small></div></article>)}</div>}
+function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, onModerate, onModerateProduct }) {
+  const [filter, setFilter] = useState("all");
+  const filters = [["all","Tout"],["projects","Projets"],["sales","Ventes"],["security","Sécurité"],["moderation","Modération"]];
+  const localRows = (state.activity || []).map(row => ({
+    ...row,
+    source:"local",
+    category: row.type === "review" ? "moderation" : row.type === "security" ? "security" : "projects",
+  }));
+  const serverRows = (serverSnapshot?.activity || []).map(row => {
+    const type = String(row.type || "");
+    const category = type.includes("moderation") ? "moderation"
+      : type.includes("product") || type.includes("payout") || type.includes("refund") ? "sales"
+      : type.includes("security") ? "security" : "projects";
+    return {
+      id:"server-" + row.id,
+      type,
+      title:type.replaceAll("_"," ").replace(/\b\w/g, letter => letter.toUpperCase()),
+      detail:row.detail || "Événement serveur Nosbloc",
+      createdAt:row.createdAt,
+      category,
+      source:"server",
+    };
+  });
+  const financeRows = [
+    ...(finance?.sales || []).map(row => ({
+      id:"sale-" + row.id, type:"sale", title:"Vente Nosbloc", detail:formatEuros(row.grossAmountCents) + " · " + row.status,
+      createdAt:row.createdAt, category:"sales", source:"server",
+    })),
+    ...(finance?.refunds || []).map(row => ({
+      id:"refund-" + row.id, type:"refund", title:"Remboursement", detail:formatEuros(row.amountCents) + " · " + row.status,
+      createdAt:row.createdAt, category:"sales", source:"server",
+    })),
+    ...(finance?.payoutRequests || []).map(row => ({
+      id:"payout-" + row.id, type:"payout", title:"Versement créateur", detail:formatEuros(row.amountCents) + " · " + row.status,
+      createdAt:row.requestedAt, category:"sales", source:"server",
+    })),
+  ];
+  const rows = [...localRows,...serverRows,...financeRows]
+    .filter(row => filter === "all" || row.category === filter)
+    .sort((a,b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .slice(0,120);
+  const invitations = serverSnapshot?.incomingInvitations || [];
+  const moderation = serverSnapshot?.moderationQueue || [];
+  const productModeration = serverSnapshot?.productModeration || [];
+
+  return <div className="nb2-view">
+    <section className="nb2-page-head"><p className="nb2-kicker">ACTIVITÉ</p><h1>Tout au même endroit.</h1><p>Projets, sécurité, ventes, paiements et modération utilisent une seule boîte.</p></section>
+    <div className="nb2-filter-row">{filters.map(([id,label]) => <button key={id} data-active={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div>
+
+    {(filter === "all" || filter === "projects") && invitations.length > 0 && <section className="nb2-section">
+      <SectionTitle eyebrow="INVITATIONS" title="Projets qui t’attendent"/>
+      <div className="nb2-activity-list">{invitations.map(invite => <article key={invite.invitationId}>
+        <span><Mail size={17}/></span>
+        <div><b>{invite.projectTitle}</b><p>{invite.role} · {Number(invite.shareBps || 0) / 100} %</p><small>Expire le {new Date(invite.expiresAt).toLocaleDateString("fr-FR")}</small></div>
+        <div className="nb2-activity-actions"><button onClick={() => onInvitationDecision(invite.invitationId,true)}><Check size={15}/> Accepter</button><button onClick={() => onInvitationDecision(invite.invitationId,false)}><X size={15}/> Refuser</button></div>
+      </article>)}</div>
+    </section>}
+
+    {(filter === "all" || filter === "moderation") && serverSnapshot?.isModerator && moderation.length > 0 && <section className="nb2-section">
+      <SectionTitle eyebrow="MODÉRATION" title="Validation humaine requise"/>
+      <div className="nb2-activity-list">{moderation.map(item => <article key={item.caseId}>
+        <span><ShieldCheck size={17}/></span>
+        <div><b>{item.projectTitle}</b><p>Version soumise à la vérification Nosbloc.</p><small>{new Date(item.createdAt).toLocaleString("fr-FR")}</small></div>
+        <div className="nb2-activity-actions"><button onClick={() => onModerate(item.caseId,"approved")}><Check size={15}/> Approuver</button><button onClick={() => onModerate(item.caseId,"rejected")}><X size={15}/> Corriger</button></div>
+      </article>)}</div>
+    </section>}
+
+    {(filter === "all" || filter === "moderation") && serverSnapshot?.isModerator && productModeration.length > 0 && <section className="nb2-section">
+      <SectionTitle eyebrow="BOUTIQUE" title="Produits à vérifier"/>
+      <div className="nb2-activity-list">{productModeration.map(item => <article key={item.productId}>
+        <span><Store size={17}/></span>
+        <div><b>{item.title}</b><p>{item.type} · {formatEuros(item.priceCents)} · droits {item.rightsConfirmed ? "confirmés" : "manquants"}</p><small>{new Date(item.createdAt).toLocaleString("fr-FR")}</small></div>
+        <div className="nb2-activity-actions"><button disabled={!item.rightsConfirmed} onClick={() => onModerateProduct(item.productId,true)}><Check size={15}/> Approuver</button><button onClick={() => onModerateProduct(item.productId,false)}><X size={15}/> Refuser</button></div>
+      </article>)}</div>
+    </section>}
+
+    {!rows.length && !invitations.length && !moderation.length && !productModeration.length
+      ? <EmptyState icon={Activity} title="Aucune activité récente." text="Tes actions importantes apparaîtront ici."/>
+      : <div className="nb2-activity-list">{rows.map(row => <article key={row.id}><span><Activity size={17}/></span><div><b>{row.title}</b><p>{row.detail}</p><small>{row.createdAt ? new Date(row.createdAt).toLocaleString("fr-FR") : "Maintenant"} · {row.source === "server" ? "serveur" : "local"}</small></div></article>)}</div>}
   </div>;
 }
-
-function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
-  const money = moneyState(account);
+function ProfileView({ state, money, serverStatus, setCityOpen, onExport, onImport }) {
+  const payout = money?.payoutAccount;
+  const syncLabel = serverStatus?.state === "online" ? "Synchronisé" : serverStatus?.state === "connecting" ? "Synchronisation…" : "Sauvegarde locale active";
+  const kycLabel = payout?.kyc_status === "verified" ? "Identité vérifiée" : payout?.kyc_status === "pending" ? "Vérification en cours" : "KYC à compléter";
+  const taxLabel = payout?.tax_status === "complete" ? "Fiscalité complète" : "Fiscalité à compléter";
   return <div className="nb2-view">
     <section className="nb2-page-head"><p className="nb2-kicker">MON ESPACE</p><h1>{state.profile?.studioName || "Mon Studio 3B"}</h1><p>Passeport, sécurité et revenus séparés clairement.</p></section>
     <div className="nb2-wallets">
-      <article className="nb2-wallet real"><small>€ ARGENT RÉEL</small><strong>{formatEuros(money.availableCents)}</strong><p>Disponible</p><dl><div><dt>En attente</dt><dd>{formatEuros(money.pendingCents)}</dd></div><div><dt>Versement</dt><dd>{formatEuros(money.payoutCents)}</dd></div></dl><span><LockKeyhole size={14}/> Versements verrouillés jusqu’à vérification serveur/KYC</span></article>
-      <article className="nb2-wallet coins"><small>◉ COINS 3B</small><strong>{money.coins.toLocaleString("fr-FR")}</strong><p>Solde plateforme</p><span><Coins size={14}/> Jamais mélangé avec les euros</span></article>
+      <article className="nb2-wallet real"><small>€ ARGENT RÉEL</small><strong>{formatEuros(money?.availableCents || 0)}</strong><p>Disponible</p><dl><div><dt>En attente</dt><dd>{formatEuros(money?.pendingCents || 0)}</dd></div><div><dt>Versement</dt><dd>{formatEuros(money?.payoutCents || 0)}</dd></div></dl><span><LockKeyhole size={14}/> {money?.runtime?.payoutsEnabled ? "Versements contrôlés côté serveur" : "Versements verrouillés jusqu’à vérification serveur/KYC"}</span></article>
+      <article className="nb2-wallet coins"><small>◉ COINS 3B</small><strong>{Number(money?.coins || 0).toLocaleString("fr-FR")}</strong><p>Solde plateforme</p><span><Coins size={14}/> Jamais mélangé avec les euros</span></article>
     </div>
+    <section className="nb2-settings-card"><div><Cloud size={24}/><span><b>{syncLabel}</b><small>{serverStatus?.error || "Local + serveur avec reprise hors connexion."}</small></span></div><strong>{serverStatus?.state === "online" ? "✓" : "LOCAL"}</strong></section>
+    <section className="nb2-settings-card"><div><ShieldCheck size={24}/><span><b>Créateur & paiements</b><small>{kycLabel} · {taxLabel}</small></span></div><strong>{payout?.payouts_enabled ? "ACTIF" : "VERROUILLÉ"}</strong></section>
     <section className="nb2-settings-card"><div><ShieldCheck size={24}/><span><b>3B Trust</b><small>Rôles, versions, droits et journalisation.</small></span></div><strong>{state.profile?.trustScore ?? 100}/100</strong></section>
     <button className="nb2-settings-card action" onClick={() => setCityOpen(true)}><div><Boxes size={24}/><span><b>3B MA VILLE</b><small>Premier bloc officiel lié au Passeport.</small></span></div><ChevronRight size={20}/></button>
     <section className="nb2-backup-card">
@@ -583,8 +878,7 @@ function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
     </section>
   </div>;
 }
-
-function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account, setNotice }) {
+function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, publishProject, archiveProject, restoreVersion, inviteTeamMember, revokeTeamInvite, removeTeamMember, setView, money, finance, economyActions, setNotice }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   if (!project) return <div className="nb2-view"><EmptyState icon={FolderKanban} title="Aucun projet sélectionné." text="Crée ou ouvre un projet."/><button className="nb2-primary-inline" onClick={() => setView("create")}>Créer un projet</button></div>;
   const ready = projectReadiness(project);
@@ -596,17 +890,17 @@ function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, 
       <div className="nb2-mode"><button data-active={mode === "simple"} onClick={() => setMode("simple")}>Simple</button><button data-active={mode === "pro"} onClick={() => setMode("pro")}><Code2 size={15}/> Pro</button></div>
     </section>
 
-    {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview}/> :
-      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} account={account} setNotice={setNotice}/>}
+    {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview} publishProject={publishProject}/> :
+      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} removeTeamMember={removeTeamMember} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>}
 
     <section className="nb2-danger-zone">
       <button onClick={() => setConfirmArchive(!confirmArchive)}><Settings2 size={16}/> Zone avancée</button>
-      {confirmArchive && <div><p>Archiver retire le projet des parcours actifs sans effacer son historique.</p><button className="danger" onClick={() => updateProject(project.id,{status:"archived",visibility:"private"},"Projet archivé.",activityEntry("archive","Projet archivé",project.title))}>Archiver le projet</button></div>}
+      {confirmArchive && <div><p>Archiver retire le projet des parcours actifs sans effacer son historique.</p><button className="danger" onClick={() => archiveProject(project)}>Archiver le projet</button></div>}
     </section>
   </div>;
 }
 
-function SimpleStudio({ project, ready, setField, updateProject, startPrivateTest, requestReview }) {
+function SimpleStudio({ project, ready, setField, updateProject, startPrivateTest, requestReview, publishProject }) {
   const plan = Array.isArray(project.plan) ? project.plan : [];
   const togglePlan = id => updateProject(project.id, { plan: plan.map(row => row.id === id ? {...row,done:!row.done} : row) });
   const generate = () => updateProject(project.id, { plan: generateBuildPlan(project.description, project.type) }, "Plan de production généré.");
@@ -630,7 +924,13 @@ function SimpleStudio({ project, ready, setField, updateProject, startPrivateTes
     <section className="nb2-simple-card">
       <div className="nb2-card-title"><span>4</span><div><b>Publier</b><small>Nosbloc vérifie d’abord les prérequis.</small></div></div>
       <ReadinessChecklist ready={ready}/>
-      <button className="nb2-publish" disabled={!ready.readyForReview} onClick={() => requestReview(project)}><Rocket size={18}/>{ready.readyForReview ? "Envoyer en vérification" : "Complète la checklist pour publier"}</button>
+      {project.status === "approved"
+        ? <button className="nb2-publish" onClick={() => publishProject(project)}><Rocket size={18}/> Publier maintenant</button>
+        : project.status === "review"
+          ? <button className="nb2-publish" disabled><ShieldCheck size={18}/> En vérification humaine</button>
+          : project.status === "published"
+            ? <button className="nb2-publish" disabled><CheckCircle2 size={18}/> Projet publié</button>
+            : <button className="nb2-publish" disabled={!ready.readyForReview} onClick={() => requestReview(project)}><Rocket size={18}/>{ready.readyForReview ? "Envoyer en vérification" : "Complète la checklist pour publier"}</button>}
     </section>
   </div>;
 }
@@ -639,7 +939,7 @@ function ReadinessChecklist({ ready }) {
   return <div className="nb2-checklist">{ready.checks.map(check => <div key={check.id} data-ok={check.ok}><span>{check.ok ? <Check size={14}/> : null}</span><b>{check.label}</b><small>{check.weight} pts</small></div>)}</div>;
 }
 
-function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, account, setNotice }) {
+function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, inviteTeamMember, revokeTeamInvite, removeTeamMember, money, finance, economyActions, setNotice }) {
   return <div className="nb2-pro">
     <nav className="nb2-pro-tabs">{PRO_TABS.map(([id,label,Icon]) => <button key={id} data-active={proTab === id} onClick={() => setProTab(id)}><Icon size={16}/>{label}</button>)}</nav>
     {proTab === "build" && <BuildPro project={project} ready={ready} updateProject={updateProject}/>}
@@ -647,8 +947,8 @@ function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVe
     {proTab === "scripts" && <ScriptsPro project={project} updateProject={updateProject}/>}
     {proTab === "ai" && <AIPro project={project} updateProject={updateProject}/>}
     {proTab === "versions" && <VersionsPro project={project} restoreVersion={restoreVersion}/>}
-    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} setNotice={setNotice}/>}
-    {proTab === "economy" && <EconomyPro project={project} account={account}/>}
+    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} removeTeamMember={removeTeamMember} setNotice={setNotice}/>}
+    {proTab === "economy" && <EconomyPro project={project} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>} 
     {proTab === "analytics" && <AnalyticsPro project={project}/>}
   </div>;
 }
@@ -723,7 +1023,7 @@ function VersionsPro({ project, restoreVersion }) {
   return <section className="nb2-pro-card"><SectionTitle eyebrow="HISTORIQUE" title="Versions immuables"/>{!versions.length ? <EmptyState icon={History} title="Aucune version figée." text="Un test privé ou une soumission crée automatiquement une version."/> : <div className="nb2-version-list">{versions.map(v => <article key={v.id}><span>v{v.versionNo}</span><div><b>{v.note}</b><small>{v.stage} · {new Date(v.createdAt).toLocaleString("fr-FR")}</small><code>{v.fingerprint}</code></div><button onClick={() => restoreVersion(project,v.id)}><RotateCcw size={15}/> Restaurer</button></article>)}</div>}</section>;
 }
 
-function TeamPro({ project, updateProject, setNotice }) {
+function TeamPro({ project, updateProject, inviteTeamMember, revokeTeamInvite, removeTeamMember, setNotice }) {
   const validation = validateSplits(project.splits);
   const preview = allocateTeamRevenue(70000, project.splits);
   const patchSplit = (id, patch) => updateProject(project.id, {
@@ -731,13 +1031,17 @@ function TeamPro({ project, updateProject, setNotice }) {
     status: "draft", visibility: "private", reviewVersionId: null,
   });
   const add = () => updateProject(project.id, {
-    splits: [...project.splits, { id: globalThis.crypto?.randomUUID?.() || String(Date.now()), name: "Nouveau membre", role: "Création", contact: "", shareBps: 0, status: "draft" }],
+    splits: [...project.splits, {
+      id: globalThis.crypto?.randomUUID?.() || String(Date.now()),
+      name: "Nouveau membre",
+      role: "Création",
+      contact: "",
+      shareBps: 0,
+      status: "draft",
+      invitationId: "",
+    }],
     status: "draft", visibility: "private", reviewVersionId: null,
   }, "Membre ajouté au brouillon d’équipe.");
-  const remove = id => updateProject(project.id, {
-    splits: project.splits.filter(row => row.id !== id),
-    status: "draft", visibility: "private", reviewVersionId: null,
-  });
   const equalize = () => {
     const count = project.splits.length;
     if (!count) return;
@@ -750,39 +1054,57 @@ function TeamPro({ project, updateProject, setNotice }) {
     });
     updateProject(project.id, { splits, status: "draft", visibility: "private", reviewVersionId: null }, "Parts réparties automatiquement à 100 %.");
   };
-  const prepareInvite = row => {
-    try {
-      updateProject(project.id, prepareTeamInvitation(project, row.id, row.contact), "Invitation locale préparée. L’acceptation réelle reste contrôlée par le serveur.");
-    } catch (error) { setNotice(error?.message || "Invitation impossible."); }
+  const invite = async row => {
+    if (!String(row.contact || "").trim()) {
+      setNotice("Ajoute l’identifiant Passeport 3B du membre avant l’invitation.");
+      return;
+    }
+    await inviteTeamMember(project,row);
   };
-  const revokeInvite = row => {
-    updateProject(project.id, revokeTeamInvitation(project, row.id), "Invitation locale révoquée.");
+  const revoke = async row => revokeTeamInvite(project,row);
+  const remove = async row => {
+    if (row.status === "owner") return;
+    await removeTeamMember(project,row);
   };
-  const copyInvite = async row => {
-    try {
-      await navigator.clipboard.writeText(row.inviteCode);
-      setNotice("Code d’invitation copié.");
-    } catch { setNotice("Code d’invitation : " + row.inviteCode); }
-  };
+  const statusLabel = row => row.status === "accepted" ? "Accepté"
+    : row.status === "invited" ? "Invitation envoyée"
+    : row.status === "declined" ? "Refusé"
+    : row.status === "owner" ? "Propriétaire"
+    : "Brouillon";
+
   return <div className="nb2-pro-grid">
     <section className="nb2-pro-card">
       <SectionTitle eyebrow="ÉQUIPE" title="Accès et partage"/>
-      <div className="nb2-team-toolbar"><span data-ok={validation.valid}>{validation.totalBps / 100} % attribué</span><button onClick={equalize}>Répartir à 100 %</button><button onClick={add}><Plus size={15}/> Membre</button></div>
+      <p className="nb2-muted">Les invitations passent par le Passeport 3B et le serveur. Aucun code d’invitation local n’accorde de droit réel.</p>
+      <div className="nb2-team-toolbar">
+        <span data-ok={validation.valid}>{validation.totalBps / 100} % attribué</span>
+        <button onClick={equalize}>Répartir à 100 %</button>
+        <button onClick={add}><Plus size={15}/> Membre</button>
+      </div>
       <div className="nb2-team-editor">{project.splits.map(row => <article key={row.id}>
         <div className="nb2-team-avatar"><UserRound size={17}/></div>
         <div className="nb2-team-fields">
           <input aria-label="Nom du membre" value={row.name} maxLength={50} onChange={e => patchSplit(row.id,{name:e.target.value})}/>
           <input aria-label="Rôle du membre" value={row.role} maxLength={50} onChange={e => patchSplit(row.id,{role:e.target.value})}/>
-          {row.status !== "owner" && <input aria-label="Contact du membre" value={row.contact || ""} maxLength={120} placeholder="email ou identifiant 3B" onChange={e => patchSplit(row.id,{contact:e.target.value})}/>}
+          {row.status !== "owner" && row.status !== "accepted" && <input
+            aria-label="Identifiant Passeport 3B du membre"
+            value={row.contact || ""}
+            maxLength={120}
+            placeholder="@identifiant3b"
+            onChange={e => patchSplit(row.id,{contact:e.target.value})}
+          />}
+          <small className="nb2-team-state" data-state={row.status || "draft"}>{statusLabel(row)}</small>
         </div>
         <label className="nb2-share"><input type="number" min="0" max="100" step=".01" value={Number(row.shareBps || 0) / 100} onChange={e => patchSplit(row.id,{shareBps:Math.max(0,Math.min(10000,Math.round(Number(e.target.value || 0)*100)))})}/><span>%</span></label>
         <div className="nb2-team-actions">
-          {row.status !== "owner" && !row.inviteCode && <button onClick={() => prepareInvite(row)} title="Préparer l’invitation"><Mail size={15}/></button>}
-          {row.inviteCode && <><button onClick={() => copyInvite(row)} title="Copier le code"><Copy size={15}/></button><button onClick={() => revokeInvite(row)} title="Révoquer l’invitation"><X size={15}/></button></>}
-          {row.status !== "owner" && <button onClick={() => remove(row.id)} title="Retirer le membre"><X size={15}/></button>}
+          {row.status !== "owner" && !["invited","accepted"].includes(row.status) && <button onClick={() => invite(row)} title="Envoyer l’invitation Passeport 3B"><Mail size={15}/></button>}
+          {row.status === "invited" && <button onClick={() => revoke(row)} title="Révoquer l’invitation"><X size={15}/></button>}
+          {row.status === "accepted" && <span title="Invitation acceptée"><CheckCircle2 size={17}/></span>}
+          {row.status !== "owner" && <button onClick={() => remove(row)} title="Retirer le membre"><X size={15}/></button>}
         </div>
       </article>)}</div>
       {!validation.valid && <p className="nb2-team-warning">Le partage doit totaliser exactement 100 % avant révision ou revenu.</p>}
+      {validation.valid && project.splits.some(row => !["owner","accepted"].includes(row.status)) && <p className="nb2-team-warning">Le partage est à 100 %, mais tous les membres doivent accepter avant publication.</p>}
     </section>
     <section className="nb2-pro-card">
       <SectionTitle eyebrow="APERÇU" title="Exemple sur 700 € créateur"/>
@@ -791,15 +1113,126 @@ function TeamPro({ project, updateProject, setNotice }) {
     </section>
   </div>;
 }
-function EconomyPro({ project, account }) {
+function EconomyPro({ project, money, finance, economyActions, setNotice }) {
   const example = simulateRevenue({grossEuros:100,taxRate:20,storeRate:10,refundRate:2});
-  const money = moneyState(account);
+  const [form,setForm] = useState({ title:"", type:"access", description:"", priceEuros:"4.99", rights:false });
+  const [payoutEuros,setPayoutEuros] = useState("100");
+  const [busy,setBusy] = useState(false);
+  const products = Array.isArray(finance?.products) ? finance.products.filter(row => !row.projectId || row.projectId === project.server?.projectId) : [];
+  const sales = Array.isArray(finance?.sales) ? finance.sales.filter(row => !row.projectId || row.projectId === project.server?.projectId) : [];
+  const refunds = Array.isArray(finance?.refunds) ? finance.refunds : [];
+  const payout = money?.payoutAccount;
+  const paymentsEnabled = !!money?.runtime?.paymentsEnabled;
+  const payoutsEnabled = !!money?.runtime?.payoutsEnabled;
+  const payoutReady = payoutsEnabled && payout?.payouts_enabled && payout?.kyc_status === "verified" && payout?.tax_status === "complete";
+
+  const createProduct = async () => {
+    const title = form.title.trim();
+    const priceCents = Math.max(0,Math.round(Number(String(form.priceEuros).replace(",",".")) * 100));
+    if (title.length < 3) return setNotice("Donne un nom au produit.");
+    if (!Number.isFinite(priceCents)) return setNotice("Prix invalide.");
+    setBusy(true);
+    try {
+      const synced = project.server?.projectId ? { projectId:project.server.projectId } : await economyActions.syncProjectNow(project);
+      const created = await economyActions.createProduct({
+        projectId:synced?.projectId || null,
+        title,
+        type:form.type,
+        description:form.description,
+        priceCents,
+      });
+      if (form.rights && created?.productId) {
+        await economyActions.updateProduct(created.productId,{
+          title,description:form.description,priceCents,rightsConfirmed:true,
+        });
+      }
+      await economyActions.refreshFinance();
+      setForm({ title:"",type:"access",description:"",priceEuros:"4.99",rights:false });
+      setNotice("Produit créé côté serveur. Il reste privé tant qu’il n’est pas validé.");
+    } catch (error) {
+      setNotice(error?.message || "Création du produit impossible.");
+    } finally { setBusy(false); }
+  };
+
+  const submitProduct = async product => {
+    setBusy(true);
+    try {
+      await economyActions.submitProduct(product.id);
+      await economyActions.refreshFinance();
+      setNotice("Produit envoyé en vérification humaine.");
+    } catch (error) {
+      setNotice(error?.message || "Soumission impossible.");
+    } finally { setBusy(false); }
+  };
+
+  const requestPayout = async () => {
+    const amountCents = Math.round(Number(String(payoutEuros).replace(",",".")) * 100);
+    if (!Number.isFinite(amountCents) || amountCents <= 0) return setNotice("Montant de versement invalide.");
+    setBusy(true);
+    try {
+      await economyActions.requestPayout(amountCents);
+      await economyActions.refreshFinance();
+      setNotice("Demande de versement créée et envoyée au contrôle serveur.");
+    } catch (error) {
+      setNotice(error?.message || "Versement impossible.");
+    } finally { setBusy(false); }
+  };
+
   return <div className="nb2-pro-grid">
-    <section className="nb2-pro-card"><SectionTitle eyebrow="€ ARGENT RÉEL" title={formatEuros(money.availableCents)}/><p className="nb2-muted">Solde réel affiché séparément des Coins. Les écritures financières doivent venir du ledger serveur, jamais du navigateur.</p><div className="nb2-lock-banner"><LockKeyhole size={17}/> Paiements et versements restent verrouillés tant que KYC, fiscalité et configuration serveur ne sont pas validés.</div></section>
-    <section className="nb2-pro-card"><SectionTitle eyebrow="SIMULATION" title="Exemple transparent sur 100 €"/><dl className="nb2-receipt"><div><dt>Vente brute</dt><dd>{formatEuros(example.gross)}</dd></div><div><dt>Taxes</dt><dd>-{formatEuros(example.taxes)}</dd></div><div><dt>Frais</dt><dd>-{formatEuros(example.storeFees)}</dd></div><div><dt>Remboursements estimés</dt><dd>-{formatEuros(example.refunds)}</dd></div><div className="total"><dt>Part créateur simulée</dt><dd>{formatEuros(example.creatorDirect)}</dd></div></dl><small>Simulation uniquement · aucun solde réel n’est créé.</small></section>
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="€ ARGENT RÉEL" title={formatEuros(money?.availableCents || 0)}/>
+      <div className="nb2-money-grid">
+        <div><small>Disponible</small><strong>{formatEuros(money?.availableCents || 0)}</strong></div>
+        <div><small>En attente</small><strong>{formatEuros(money?.pendingCents || 0)}</strong></div>
+        <div><small>Versements en cours</small><strong>{formatEuros(money?.payoutCents || 0)}</strong></div>
+      </div>
+      <p className="nb2-muted">Le navigateur ne calcule pas le solde : ces montants viennent du ledger EUR serveur immuable.</p>
+      <div className="nb2-lock-banner"><LockKeyhole size={17}/> {paymentsEnabled ? "Paiements serveur activés." : "Paiements réels verrouillés pendant la recette."} {payoutsEnabled ? "" : " Versements verrouillés."}</div>
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="PRODUITS" title="Vendre sans mélanger les fonctions"/>
+      <div className="nb2-form">
+        <label>Nom<input value={form.title} maxLength={120} onChange={e => setForm({...form,title:e.target.value})} placeholder="Ex. Accès Monde France"/></label>
+        <label>Type<select value={form.type} onChange={e => setForm({...form,type:e.target.value})}><option value="access">Accès</option><option value="asset">Asset</option><option value="cosmetic">Cosmétique</option><option value="expansion">Extension</option><option value="service">Service</option></select></label>
+        <label>Description<textarea value={form.description} rows={3} maxLength={1000} onChange={e => setForm({...form,description:e.target.value})}/></label>
+        <label>Prix en €<input inputMode="decimal" value={form.priceEuros} onChange={e => setForm({...form,priceEuros:e.target.value})}/></label>
+        <label className="nb2-switch"><input type="checkbox" checked={form.rights} onChange={e => setForm({...form,rights:e.target.checked})}/><span/><b>Je confirme disposer des droits nécessaires</b></label>
+      </div>
+      <button className="nb2-add-tool" disabled={busy || form.title.trim().length < 3} onClick={createProduct}><Plus size={16}/> Créer le produit</button>
+      {!products.length ? <EmptyState icon={Store} title="Aucun produit pour ce projet." text="Crée une offre puis fais-la vérifier avant toute ouverture publique."/> :
+        <div className="nb2-product-list">{products.map(product => <article key={product.id}>
+          <div><b>{product.title}</b><small>{product.productType} · {formatEuros(product.priceCents)} · {product.status}</small></div>
+          <span className="nb2-status" data-tone={product.status === "active" ? "green" : product.status === "review" ? "gold" : "neutral"}>{product.status}</span>
+          {product.status === "draft" && product.rightsConfirmed && <button disabled={busy || project.status !== "published"} onClick={() => submitProduct(product)}><ShieldCheck size={15}/> Vérifier</button>}
+        </article>)}</div>}
+      {project.status !== "published" && <small className="nb2-muted">La vente ne peut être soumise qu’après publication du projet.</small>}
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="VERSEMENTS" title={payoutReady ? "Compte prêt" : "Compte verrouillé"}/>
+      <div className="nb2-kyc-grid">
+        <div><small>Identité</small><b>{payout?.kyc_status === "verified" ? "Vérifiée" : payout?.kyc_status || "Non commencée"}</b></div>
+        <div><small>Fiscalité</small><b>{payout?.tax_status === "complete" ? "Complète" : payout?.tax_status || "Incomplète"}</b></div>
+      </div>
+      <div className="nb2-inline-form"><input inputMode="decimal" value={payoutEuros} onChange={e => setPayoutEuros(e.target.value)} aria-label="Montant du versement en euros"/><button disabled={busy || !payoutReady} onClick={requestPayout}><CircleDollarSign size={16}/> Demander le versement</button></div>
+      {!payoutReady && <div className="nb2-lock-banner"><LockKeyhole size={17}/> Il faut KYC vérifié, fiscalité complète et ouverture serveur des versements.</div>}
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="VENTES & REMBOURSEMENTS" title={sales.length + " vente" + (sales.length > 1 ? "s" : "")}/>
+      {!sales.length ? <EmptyState icon={WalletCards} title="Aucune vente réelle." text="Aucune donnée fictive n’est ajoutée à tes revenus."/> :
+        <div className="nb2-ledger-list">{sales.slice(0,20).map(row => <div key={row.id}><span><b>{formatEuros(row.grossAmountCents)}</b><small>{row.status}</small></span><time>{new Date(row.createdAt).toLocaleDateString("fr-FR")}</time></div>)}</div>}
+      {!!refunds.length && <p className="nb2-muted">{refunds.length} demande{refunds.length > 1 ? "s" : ""} de remboursement visible{refunds.length > 1 ? "s" : ""} dans Activité.</p>}
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="SIMULATION" title="Exemple transparent sur 100 €"/>
+      <dl className="nb2-receipt"><div><dt>Vente brute</dt><dd>{formatEuros(example.gross)}</dd></div><div><dt>Taxes</dt><dd>-{formatEuros(example.taxes)}</dd></div><div><dt>Frais</dt><dd>-{formatEuros(example.storeFees)}</dd></div><div><dt>Remboursements estimés</dt><dd>-{formatEuros(example.refunds)}</dd></div><div className="total"><dt>Part créateur simulée</dt><dd>{formatEuros(example.creatorDirect)}</dd></div></dl>
+      <small>Simulation uniquement · elle ne touche jamais au ledger réel.</small>
+    </section>
   </div>;
 }
-
 function AnalyticsPro({ project }) {
   const stats = project.stats || {};
   return <section className="nb2-pro-card"><SectionTitle eyebrow="ANALYTICS" title="Les chiffres utiles d’abord"/><div className="nb2-analytics"><Summary icon={Users} value={Number(stats.players||0).toLocaleString("fr-FR")} label="joueurs"/><Summary icon={RotateCcw} value={Number(stats.retention7||0) + " %"} label="retour J+7"/><Summary icon={Gauge} value={Number(stats.sessionMinutes||0) + " min"} label="session"/><Summary icon={ShieldCheck} value={Number(stats.trustScore||100) + "/100"} label="confiance"/></div></section>;
