@@ -1,0 +1,53 @@
+name: Nosbloc Staging
+
+on:
+  push:
+    branches:
+      - chatgpt-nosbloc-staging-v1-20260926
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nosbloc-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_NOSBLOC_STAGING_SYNC: "true"
+      VITE_SUPABASE_URL: https://zykdfgahzqqanlyxjtbe.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_QlKdVNoyK-N1xh-sDkvO3g_23XPHpPB
+      VITE_NOSBLOC_STAGING_URL: https://zykdfgahzqqanlyxjtbe.supabase.co/functions/v1/nosbloc-staging
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run Nosbloc and City contracts
+        run: >-
+          node --test
+          tests/nosbloc-staging.test.js
+          tests/nosbloc.test.js
+          tests/city3b.test.js
+          tests/platform-shell.test.js
+
+      - name: Build staging application
+        run: npm run build
+
+      - name: Verify production deployment registry remains unchanged
+        run: >-
+          node -e "const m=require('./supabase/functions/DEPLOYED_FUNCTIONS_SNAPSHOT.json');
+          if(m.functions.some(x=>x.slug==='nosbloc-staging')) process.exit(1);
+          console.log('Production function registry unchanged.');"
