@@ -1,3 +1,10 @@
+import {
+  PASSPORT_CONTRACT_VERSION,
+  PASSPORT_STATES,
+  formatPassportCode,
+  normalizePassportPublicId,
+} from './contract.js';
+
 export const PASSPORT_COUNTRIES = Object.freeze({
   France: Object.freeze({ code: 'FR', flag: '🇫🇷', value: 'Justice' }),
   Algérie: Object.freeze({ code: 'DZ', flag: '🇩🇿', value: 'Loyauté' }),
@@ -14,23 +21,39 @@ const safeNumber = value => {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : 0;
 };
+const safeVersion = value => {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number >= 2 && number <= 20
+    ? number
+    : PASSPORT_CONTRACT_VERSION;
+};
 
 export function passportFromProfile(profile, user = null) {
   if (!profile || typeof profile !== 'object' || !profile.user_id) return null;
   if (user?.id && profile.user_id !== user.id) return null;
-
   if (!Object.hasOwn(PASSPORT_COUNTRIES, profile.country)) return null;
+
+  const passportPublicId = normalizePassportPublicId(profile.passport_public_id);
+  if (!passportPublicId) return null;
+
+  const passportState = PASSPORT_STATES.includes(profile.passport_state)
+    ? profile.passport_state
+    : 'revoked';
+
   const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
-  const canonicalId = userId.toUpperCase();
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
 
   return Object.freeze({
     userId,
-    passportId: `3B-PASS-${canonicalId}`,
-    memberId: `3B-MEM-${canonicalId}`,
+    passportPublicId,
+    passportId: formatPassportCode(passportPublicId, 'PASS'),
+    memberId: formatPassportCode(passportPublicId, 'MEM'),
+    passportVersion: safeVersion(profile.passport_version),
+    passportState,
+    issuedAt: profile.passport_issued_at || profile.created_at || null,
     name,
     handle,
     country,
