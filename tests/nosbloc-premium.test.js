@@ -85,3 +85,14 @@ test("Studio Pro exposes assets scripts and AI and keeps them versioned", () => 
   assert.match(page, /Les scripts sont stockés avec les versions/);
   assert.match(page, /ne publie rien, ne dépense rien/);
 });
+
+
+test("V2 preserves verified archive import export and full team contract tools", () => {
+  assert.match(page, /serializeStateExport/);
+  assert.match(page, /parseStateExport/);
+  assert.match(page, /Archive Nosbloc exportée avec empreinte de contrôle/);
+  assert.match(page, /prepareTeamInvitation/);
+  assert.match(page, /revokeTeamInvitation/);
+  assert.match(page, /Répartir à 100 %/);
+  assert.match(page, /allocateTeamRevenue/);
+});
