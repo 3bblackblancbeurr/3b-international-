@@ -40,15 +40,15 @@ export function queueMegaMissile(state,nation,targetId){
 export function cancelOrder(state,nation,orderId){const i=state.orders.findIndex(o=>o.id===orderId&&o.nation===nation);if(i>=0)state.orders.splice(i,1);return state;}
 function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function aiOrders(state,nation){
- const random=rng(state.seed+state.round*97+nation*997),orders=[],me=state.nations[nation];if(!me.active)return orders;
+ const random=rng(state.seed+state.round*97+nation*997),orders=[],me=state.nations[nation],limit=state.difficulty==='normal'?3:state.difficulty==='elite'?5:4;if(!me.active)return orders;
  if(me.power>=100&&random()>.35){const targets=SECTORS.filter(s=>s.hq!==null&&s.hq!==nation&&state.nations[s.hq].active).sort((a,b)=>sectorStrength(state,b.id,b.hq)-sectorStrength(state,a.id,a.hq));if(targets[0])orders.push({id:'ai-mega-'+nation,type:'mega',nation,unitIds:[],target:targets[0].id,cost:100});}
  const available=state.units.filter(u=>u.nation===nation&&!['flag'].includes(u.type));
- for(const u of available){if(orders.length>=MAX_ORDERS)break;if(orders.some(o=>o.unitIds?.includes(u.id)))continue;const targets=legalTargets(state,u.id);if(!targets.length)continue;
+ for(const u of available){if(orders.length>=limit)break;if(orders.some(o=>o.unitIds?.includes(u.id)))continue;const targets=legalTargets(state,u.id);if(!targets.length)continue;
   const hostile=targets.filter(id=>unitsIn(state,id).some(x=>x.nation!==nation)||(SECTOR_BY_ID.get(id).hq!==null&&SECTOR_BY_ID.get(id).hq!==nation));
   const pool=hostile.length?hostile:targets,target=pool[Math.floor(random()*pool.length)];if(target)orders.push({id:'ai-'+nation+'-'+orders.length,type:'move',nation,unitIds:[u.id],from:u.sectorId,target});
  }
- if(orders.length<MAX_ORDERS&&me.power>=UNIT_TYPES.infantry.cost&&me.reserve.infantry>0&&random()>.45)orders.push({id:'ai-r-'+nation,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:'infantry',cost:UNIT_TYPES.infantry.cost});
- return orders.slice(0,MAX_ORDERS);
+ if(orders.length<limit&&me.power>=UNIT_TYPES.infantry.cost&&me.reserve.infantry>0&&random()>.45)orders.push({id:'ai-r-'+nation,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:'infantry',cost:UNIT_TYPES.infantry.cost});
+ return orders.slice(0,limit);
 }
 function captureFlag(state,winner,victim,sectorId,events){
  const flag=state.units.find(u=>u.type==='flag'&&u.nation===victim&&u.sectorId===sectorId);if(!flag)return;
@@ -74,6 +74,7 @@ export function resolveTurn(source,options={}){
  for(const o of orders.filter(x=>x.type==='move'))for(const id of o.unitIds){const u=unitAt(state,id);if(u&&u.nation===o.nation&&legalTargets(state,u.id).includes(o.target))u.sectorId=o.target;}
  for(const o of orders.filter(x=>x.type==='mega')){const me=state.nations[o.nation];if(!me.active||me.power<100)continue;me.power-=100;for(const u of [...unitsIn(state,o.target)])if(u.type!=='flag')removeUnit(state,u.id);events.push({type:'mega',sectorId:o.target,nation:o.nation,title:'MÉGA-MISSILE',detail:'Toutes les unités du secteur sont détruites. Le missile est consommé.'});}
  for(const s of SECTORS)resolveBattle(state,s.id,origins,events);
+ for(const s of SECTORS){const present=[...new Set(unitsIn(state,s.id).filter(u=>u.type!=='flag'&&state.nations[u.nation].active).map(u=>u.nation))];if(present.length===1&&state.owners[s.id]!==present[0]){state.owners[s.id]=present[0];state.nations[present[0]].power=cap(state.nations[present[0]].power+10,0,9999);events.push({type:'territory',sectorId:s.id,winner:present[0],title:'TERRITOIRE CONQUIS',detail:NATIONS[present[0]].name+' gagne 10 Power.'});}}
  for(const s of SECTORS){if(s.hq===null)continue;for(const n of [...new Set(unitsIn(state,s.id).filter(u=>u.type!=='flag').map(u=>u.nation))])if(n!==s.hq&&state.nations[n].active)captureFlag(state,n,s.hq,s.id,events);}
  const active=state.nations.filter(n=>n.active);if(active.length===1){state.winner=active[0].id;events.push({type:'victory',winner:state.winner,title:'PUISSANCE TOTALE',detail:NATIONS[state.winner].name+' reste la dernière puissance active.'});}
  state.lastResolution={round:state.round,events:events.slice(-24)};state.history.push(state.lastResolution);state.history=state.history.slice(-20);state.round++;state.orders=[];state.phase=state.winner===null?'planning':'ended';state.seed=(state.seed*1664525+1013904223)>>>0;return state;
