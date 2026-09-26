@@ -1,0 +1,29 @@
+{
+  "environment": "staging",
+  "project_name": "3B Nosbloc Staging",
+  "project_ref": "zykdfgahzqqanlyxjtbe",
+  "project_url": "https://zykdfgahzqqanlyxjtbe.supabase.co",
+  "production_project_ref": "ttvhcezucsbbmnafrotq",
+  "production_modified": false,
+  "edge_function": {
+    "slug": "nosbloc-staging",
+    "id": "33b67809-4b0b-4ea0-8c8b-ff0fdffd5c10",
+    "version": 1,
+    "verify_jwt": true,
+    "status": "ACTIVE"
+  },
+  "migrations": [
+    "nosbloc_staging_prerequisites",
+    "nosbloc_server_staging_v1",
+    "nosbloc_staging_authenticated_api",
+    "nosbloc_staging_advisor_hardening",
+    "nosbloc_staging_fk_indexes"
+  ],
+  "locks": {
+    "publication": true,
+    "discover": true,
+    "payments": true,
+    "payouts": true
+  },
+  "deployed_on": "2026-09-26"
+}
