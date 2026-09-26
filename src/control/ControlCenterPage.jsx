@@ -315,16 +315,20 @@ export default function ControlCenterPage({goTo}){
 
  const recentFailures=commands.filter(command=>command.status==='failed'&&Date.now()-new Date(command.completed_at||command.issued_at).getTime()<3600000);
  const alerts=useMemo(()=>{
-  const rows=[];
-  if(error)rows.push({level:'bad',title:error});
-  if(!pulse.network)rows.push({level:'bad',title:'Cet appareil est hors ligne.'});
-  if(pulse.production===false)rows.push({level:'bad',title:'La production 3B ne répond pas au contrôle.'});
-  if(['failure','timed_out','cancelled'].includes(pulse.ci))rows.push({level:'bad',title:'Le dernier workflow GitHub demande une vérification.'});
-  if(primaryDevice&&!primaryOnline)rows.push({level:'warn',title:'Le PC appairé est actuellement hors ligne.'});
-  if(primaryOnline&&primaryDevice?.capabilities?.autostart!==true)rows.push({level:'warn',title:'Démarrage automatique du 3B Control Agent à activer sur le PC.'});
-  if(recentFailures.length)rows.push({level:'warn',title:recentFailures.length+' commande'+(recentFailures.length>1?'s':'')+' en échec sur la dernière heure.'});
-  if(data&&lastSync&&clock.getTime()-lastSync>60000)rows.push({level:'warn',title:'Les données du Control Center n’ont pas été actualisées depuis plus d’une minute.'});
-  return rows;
+  const rows=new Map();
+  const add=(key,level,title,score)=>{
+   const current=rows.get(key);
+   if(!current||score>current.score)rows.set(key,{key,level,title,score});
+  };
+  if(error)add('control-api','bad',error,100);
+  if(!pulse.network)add('device-network','bad','Cet appareil est hors ligne.',98);
+  if(pulse.production===false)add('production','bad','La production 3B ne répond pas au contrôle.',95);
+  if(['failure','timed_out','cancelled'].includes(pulse.ci))add('github-ci','bad','Le dernier workflow GitHub demande une vérification.',92);
+  if(primaryDevice&&!primaryOnline)add('pc-offline','warn','Le PC appairé est actuellement hors ligne.',82);
+  if(recentFailures.length)add('commands-failed','warn',recentFailures.length+' commande'+(recentFailures.length>1?'s':'')+' en échec sur la dernière heure.',78);
+  if(primaryOnline&&primaryDevice?.capabilities?.autostart!==true)add('pc-autostart','warn','Démarrage automatique du 3B Control Agent à activer sur le PC.',65);
+  if(data&&lastSync&&clock.getTime()-lastSync>60000)add('stale-control','warn','Les données du Control Center n’ont pas été actualisées depuis plus d’une minute.',60);
+  return[...rows.values()].sort((a,b)=>b.score-a.score);
  },[error,pulse.network,pulse.production,pulse.ci,primaryDevice,primaryOnline,recentFailures.length,data,lastSync,clock]);
 
  const health=useMemo(()=>{
