@@ -7,10 +7,13 @@ import {
 import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {SPORTS} from '../../supabase/functions/ecosystem/sports.js';
+import {H24_CHANNELS,SPORT_FINALS,isTrustedSportEmbed} from './media-catalog.js';
 import './sport.css';
 
 const SECTIONS=[
- {id:'news',label:'Actualités',icon:Globe2},
+ {id:'h24',label:'Chaînes H24',icon:Globe2},
+ {id:'finals',label:'Finales',icon:Trophy},
+ {id:'news',label:'Actualités',icon:Languages},
  {id:'challenges',label:'Défis 3B',icon:Flame},
  {id:'collabs',label:'Collaborations',icon:Handshake}
 ];
@@ -63,13 +66,51 @@ function progressLabel(challenge,entry){
  return numberLabel(progress)+' / '+numberLabel(target)+' '+challenge.unit;
 }
 
+
+function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
+ if(!item)return null;
+ const trusted=isTrustedSportEmbed(item.embedUrl);
+ return <div className={'sport-media-theater sport-media-auto-landscape'+(cinema?' is-cinema':'')}>
+  <div className="sport-media-stage">
+   {consent&&trusted?<iframe
+    key={item.id}
+    src={item.embedUrl}
+    title={item.title}
+    loading="eager"
+    referrerPolicy="strict-origin-when-cross-origin"
+    sandbox="allow-scripts allow-same-origin allow-presentation"
+    allow="autoplay; encrypted-media; picture-in-picture"
+   />:<div className="sport-media-consent">
+    <ShieldCheck size={38}/>
+    <div>
+     <p className="eyebrow">LECTEUR INTERNE 3B</p>
+     <h2>{trusted?'Activer la vidéo officielle.':'Source vidéo bloquée.'}</h2>
+     <p>{trusted?'La vidéo reste affichée dans 3B. Le lecteur externe n’est chargé qu’après ton accord et aucune ouverture vers un autre site n’est nécessaire.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
+    </div>
+    {trusted&&<button type="button" className="surface-button" onClick={onConsent}>Activer le lecteur</button>}
+   </div>}
+  </div>
+  <div className="sport-media-controls">
+   <div>
+    <span>{item.badge||item.sport}</span>
+    <strong>{item.title}</strong>
+    <small>{item.provider}</small>
+   </div>
+   <div className="sport-media-control-actions">
+    <button type="button" className="quiet-button" onClick={onNext}>Source suivante</button>
+    <button type="button" className="surface-button" onClick={()=>onCinema(!cinema)}>{cinema?'Réduire':'Mode cinéma 3B'}</button>
+   </div>
+  </div>
+ </div>;
+}
+
 export default function SportPage({goTo}){
  const account=useLoyalty();
  const[data,setData]=useState(null);
  const[error,setError]=useState('');
  const[busy,setBusy]=useState(false);
  const[reload,setReload]=useState(0);
- const[section,setSection]=useState('news');
+ const[section,setSection]=useState('h24');
  const[sport,setSport]=useState('Tous');
  const[language,setLanguage]=useState('priority');
  const[visibleCount,setVisibleCount]=useState(9);
@@ -81,6 +122,10 @@ export default function SportPage({goTo}){
  const[stepsInput,setStepsInput]=useState({});
  const[proofs,setProofs]=useState({});
  const[reviewNotes,setReviewNotes]=useState({});
+ const[mediaConsent,setMediaConsent]=useState(()=>{try{return localStorage.getItem('3b-sport-media-consent')==='accepted';}catch{return false;}});
+ const[h24Id,setH24Id]=useState(H24_CHANNELS[0]?.id||'');
+ const[finalId,setFinalId]=useState(SPORT_FINALS[0]?.id||'');
+ const[cinema,setCinema]=useState(false);
 
  useEffect(()=>{
   const controller=new AbortController();
@@ -123,6 +168,20 @@ export default function SportPage({goTo}){
 
  useEffect(()=>setVisibleCount(9),[sport,language]);
 
+ useEffect(()=>{
+  setCinema(false);
+ },[section]);
+
+ useEffect(()=>{
+  if(!cinema)return;
+  const root=document.documentElement;
+  const previous=root.style.overflow;
+  root.style.overflow='hidden';
+  const onKey=event=>{if(event.key==='Escape')setCinema(false);};
+  window.addEventListener('keydown',onKey);
+  return()=>{root.style.overflow=previous;window.removeEventListener('keydown',onKey);};
+ },[cinema]);
+
  const categoryArticles=useMemo(()=>(
   (data?.articles||[])
    .filter(article=>sport==='Tous'||article.category===sport)
@@ -145,6 +204,25 @@ export default function SportPage({goTo}){
  const entryFor=id=>entries.find(entry=>entry.challenge_id===id);
  const activeChallenges=entries.filter(entry=>['joined','eligible','submitted'].includes(entry.status)).length;
  const verifiedChallenges=entries.filter(entry=>entry.status==='verified').length;
+ const mediaList=section==='h24'?H24_CHANNELS:SPORT_FINALS;
+ const mediaId=section==='h24'?h24Id:finalId;
+ const activeMedia=mediaList.find(item=>item.id===mediaId)||mediaList[0];
+
+ function acceptSportMedia(){
+  setMediaConsent(true);
+  try{localStorage.setItem('3b-sport-media-consent','accepted');}catch{}
+ }
+
+ function selectMedia(id){
+  if(section==='h24')setH24Id(id);
+  else setFinalId(id);
+ }
+
+ function nextMedia(){
+  if(!mediaList.length)return;
+  const index=Math.max(0,mediaList.findIndex(item=>item.id===activeMedia?.id));
+  selectMedia(mediaList[(index+1)%mediaList.length].id);
+ }
 
  function openCommunityIntent(intent){
   try{sessionStorage.setItem('3b-community-intent',intent);}catch{}
@@ -195,7 +273,7 @@ export default function SportPage({goTo}){
    <div className="editorial-heading">
     <p className="eyebrow">LE SPORT, AU QUOTIDIEN</p>
     <h1>La passion<br/><em>n’a pas de frontières.</em></h1>
-    <p>L’actualité multisports, les idées de défis et les collaborations du collectif 3B.</p>
+    <p>Chaînes H24, grandes finales à revoir dans 3B, actualités multisports, défis et collaborations.</p>
    </div>
    <div className="sport-orbit" aria-hidden="true">
     <span>3B</span><Trophy size={62} strokeWidth={.8}/>
@@ -210,6 +288,47 @@ export default function SportPage({goTo}){
     </button>;
    })}
   </nav>
+
+  {(section==='h24'||section==='finals')&&<div className="sport-section-view sport-media-view">
+   <header className="sport-view-heading sport-media-heading">
+    <div>
+     <p className="eyebrow">{section==='h24'?'CHAÎNES SPORT H24':'FINALES À REVOIR'}</p>
+     <h2>{section==='h24'?'Le sport tourne en continu dans 3B.':'Les grandes finales restent dans l’application.'}</h2>
+     <p>{section==='h24'?'Choisis une chaîne 3B. Les flux utilisent uniquement des vidéos publiées par des ayants droit ou fédérations officielles et tournent en lecture continue.':'Choisis une finale puis regarde-la dans le lecteur interne 3B, sans ouvrir une autre page.'}</p>
+    </div>
+    <Trophy size={58} strokeWidth={1}/>
+   </header>
+
+   <SportMediaPlayer
+    item={activeMedia}
+    consent={mediaConsent}
+    onConsent={acceptSportMedia}
+    cinema={cinema}
+    onCinema={setCinema}
+    onNext={nextMedia}
+   />
+
+   <div className="sport-media-grid" role="list" aria-label={section==='h24'?'Chaînes sport H24':'Finales disponibles'}>
+    {mediaList.map(item=><button
+     type="button"
+     role="listitem"
+     key={item.id}
+     className={'sport-media-card'+(activeMedia?.id===item.id?' active':'')}
+     aria-pressed={activeMedia?.id===item.id}
+     onClick={()=>selectMedia(item.id)}
+    >
+     <span className="sport-media-card-tag">{item.badge||item.year} · {item.sport}</span>
+     <strong>{item.title}</strong>
+     <p>{item.description||item.subtitle}</p>
+     <small>{item.provider} · lecture interne 3B</small>
+    </button>)}
+   </div>
+
+   <div className="sport-media-safety">
+    <ShieldCheck size={20}/>
+    <p><strong>Verrou anti-sortie :</strong> les cartes H24 et Finales ne contiennent aucun lien externe. Sur téléphone en paysage, le lecteur passe automatiquement en grand écran 3B et revient dans la page quand tu remets le téléphone en portrait.</p>
+   </div>
+  </div>}
 
   {section==='news'&&<>
    <div className="sport-command-bar">
