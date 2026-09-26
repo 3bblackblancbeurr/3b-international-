@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {PASSPORT_COUNTRIES,passportFromProfile,passportInitials} from '../src/passport/identity.js';
 
 const UID='123e4567-e89b-12d3-a456-426614174000';
+const PUBLIC_ID='89abcdef-1234-4abc-9def-0123456789ab';
 const profile=(country='Maroc')=>({
   user_id:UID,
   handle:'amina3b',
@@ -13,6 +14,10 @@ const profile=(country='Maroc')=>({
   points:1250,
   theme:'explorer',
   created_at:'2026-09-20T00:00:00.000Z',
+  passport_public_id:PUBLIC_ID,
+  passport_state:'active',
+  passport_version:2,
+  passport_issued_at:'2026-09-26T00:00:00.000Z',
 });
 
 test('passport identity is derived from the signed-in member profile',()=>{
@@ -25,8 +30,11 @@ test('passport identity is derived from the signed-in member profile',()=>{
  assert.equal(passport.flag,'🇲🇦');
  assert.equal(passport.xp,840);
  assert.equal(passport.points,1250);
- assert.equal(passport.passportId,'3B-PASS-123E4567-E89B-12D3-A456-426614174000');
- assert.equal(passport.memberId,'3B-MEM-123E4567-E89B-12D3-A456-426614174000');
+ assert.equal(passport.publicId,PUBLIC_ID);
+ assert.equal(passport.passportId,'3B-PASS-89AB-CDEF-1234');
+ assert.equal(passport.memberId,'3B-MEM-89AB-CDEF');
+ assert.equal(passport.state,'active');
+ assert.equal(passport.version,2);
  assert.equal(passportInitials(passport),'AE');
 });
 
@@ -104,4 +112,12 @@ test('registration and account switching cannot reuse another member passport',(
  assert.match(context,/data\?\.profile\?\.user_id===session\?\.user\?\.id\?data:null/);
  assert.match(context,/passportFromProfile\(owned\?\.profile,session\?\.user\)/);
  assert.match(app,/identity=\{loyalty\.passport\}/);
+});
+
+
+test('public Passport identity never derives its display number from auth user id',()=> {
+ const source=readFileSync(new URL('../src/passport/identity.js',import.meta.url),'utf8');
+ assert.match(source,/profile\.passport_public_id/);
+ assert.match(source,/shortPublicId/);
+ assert.doesNotMatch(source,/passportId: `3B-PASS-\$\{canonicalId\}`/);
 });
