@@ -62,7 +62,7 @@ export async function passportVerificationRequest(expectedUser){
  return data;
 }
 
-export const PASSKEYS_ENABLED = import.meta.env.VITE_3B_PASSKEYS_ENABLED === 'true';
+export const PASSKEYS_ENABLED = import.meta.env?.VITE_3B_PASSKEYS_ENABLED === 'true';
 
 export async function register3BPasskey(){
  if(!PASSKEYS_ENABLED)throw Error('Les passkeys 3B ne sont pas encore activées.');
