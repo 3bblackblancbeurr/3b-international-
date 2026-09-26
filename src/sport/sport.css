@@ -286,3 +286,30 @@
  .sport-media-theater.sport-media-auto-landscape .sport-media-controls{padding:8px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
  .sport-media-theater.sport-media-auto-landscape .sport-media-controls small{display:none}
 }
+
+
+/* Sport media reliability v2 */
+.sport-media-stage{isolation:isolate}
+.sport-media-health{position:absolute;z-index:4;top:12px;left:12px;display:flex;align-items:center;gap:7px;max-width:calc(100% - 24px);padding:7px 10px;border:1px solid #ffffff1a;border-radius:999px;background:#05090bd9;backdrop-filter:blur(10px);box-shadow:0 8px 25px #0007;color:#c8d5d7;pointer-events:none}
+.sport-media-health-dot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#d5b66d;box-shadow:0 0 12px #d5b66d77}
+.sport-media-health strong{color:#e5d3a7;font-size:8px;letter-spacing:.12em}
+.sport-media-health small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8ea5ab;font-size:8px}
+.sport-media-health.state-playing{border-color:#5da17d55;background:#07110ddb}
+.sport-media-health.state-playing .sport-media-health-dot{background:#73d29e;box-shadow:0 0 12px #73d29e99}
+.sport-media-health.state-buffering,.sport-media-health.state-loading,.sport-media-health.state-recovering{border-color:#d0ad6355}
+.sport-media-health.state-buffering .sport-media-health-dot,.sport-media-health.state-loading .sport-media-health-dot,.sport-media-health.state-recovering .sport-media-health-dot{animation:sport-health-pulse 1s ease-in-out infinite}
+.sport-media-health.state-offline,.sport-media-health.state-unavailable{border-color:#bf765b66;background:#160b08df}
+.sport-media-health.state-offline .sport-media-health-dot,.sport-media-health.state-unavailable .sport-media-health-dot{background:#e58d70;box-shadow:0 0 12px #e58d7099}
+@keyframes sport-health-pulse{50%{opacity:.35;transform:scale(.72)}}
+.sport-media-recovery{background:radial-gradient(circle at 50% 20%,#18303a55,transparent 50%),#050809}
+.sport-media-control-actions{flex-wrap:wrap;justify-content:flex-end}
+.sport-media-control-actions .quiet-button,.sport-media-control-actions .surface-button{min-height:40px}
+@media(max-width:720px){
+ .sport-media-health{top:8px;left:8px;max-width:calc(100% - 16px);padding:6px 8px}
+ .sport-media-control-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+ .sport-media-control-actions .surface-button{grid-column:1/-1}
+}
+@media(orientation:landscape) and (max-height:620px){
+ .sport-media-health{top:max(7px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left))}
+ .sport-media-control-actions .quiet-button,.sport-media-control-actions .surface-button{min-height:34px;padding-block:5px}
+}
