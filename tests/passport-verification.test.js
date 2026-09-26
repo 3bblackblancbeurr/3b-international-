@@ -22,7 +22,7 @@ test('Passport QR issuer uses a random short-lived server ticket and stores only
  assert.match(issuer,/token_hash:await hash\(token\)/);
  assert.match(issuer,/Date\.now\(\)\+5\*60\*1000/);
  assert.match(issuer,/scopes:\['identity\.basic'\]/);
- assert.match(issuer,/passport-verify\.html\?ticket=/);
+ assert.match(issuer,/passport-verify\.html#ticket=/);
  assert.match(issuer,/revoked_at:issuedAt/);
  assert.doesNotMatch(issuer,/verifyUrl=.*user_id/);
  assert.doesNotMatch(issuer,/qrDataUrl.*wallet/i);
@@ -41,6 +41,7 @@ test('public verifier consumes a ticket once and returns only minimal public Pas
 });
 
 test('verification page removes the ticket from the browser address and never persists it',()=>{
+ assert.match(page,/location\.hash\.slice\(1\)/);
  assert.match(page,/history\.replaceState\(null,'',location\.pathname\)/);
  assert.match(page,/cache:'no-store'/);
  assert.match(page,/referrerPolicy:'no-referrer'/);
