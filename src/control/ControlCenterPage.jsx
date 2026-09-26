@@ -359,7 +359,7 @@ export default function ControlCenterPage({goTo}){
  </section>;
 
  if(error&&error.includes('réservé au propriétaire'))return <section className="control-page control-device-gate">
-  <div className="control-device-gate-card"><ShieldCheck/><h1>Centre privé</h1><p>Cette zone est réservée au propriétaire 3B.</p><button onClick={()=>goTo('home')}>Retour</button></div>
+  <div className="control-device-gate-card"><ShieldCheck/><h1>Centre de commande privé</h1><p>Cette zone est réservée au propriétaire 3B. Pas de terminal distant libre : seules les actions 3B autorisées peuvent être envoyées.</p><button onClick={()=>goTo('home')}>Retour</button></div>
  </section>;
 
  const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:'Tout est sous contrôle';
