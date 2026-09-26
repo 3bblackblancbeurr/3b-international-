@@ -16,8 +16,8 @@ export function legalTargets(state,unitId){
  }).map(s=>s.id);
 }
 export function queueMove(state,nation,unitIds,targetId){
- assertPlanning(state,nation);assertNation(state,nation);const ids=[...new Set(unitIds)].slice(0,12);
- if(!ids.length)throw Error('Sélectionne au moins une unité.');const us=ids.map(id=>unitAt(state,id));
+ assertPlanning(state,nation);assertNation(state,nation);const ids=[...new Set(unitIds)];
+ if(!ids.length)throw Error('Sélectionne une unité.');if(ids.length!==1)throw Error('Un ordre de déplacement concerne une seule pièce.');const us=ids.map(id=>unitAt(state,id));
  if(us.some(u=>!u||u.nation!==nation||isOrdered(state,u.id)))throw Error('Une unité ne peut recevoir qu’un ordre par manche.');
  const from=us[0].sectorId;if(us.some(u=>u.sectorId!==from))throw Error('Les unités d’un ordre doivent partir du même secteur.');
  if(!SECTOR_BY_ID.has(targetId)||us.some(u=>!legalTargets(state,u.id).includes(targetId)))throw Error('Destination hors de portée.');
@@ -26,12 +26,12 @@ export function queueMove(state,nation,unitIds,targetId){
 export function queueExchange(state,nation,sectorId,toType){
  assertPlanning(state,nation);assertNation(state,nation);const rule=EXCHANGES.find(r=>r.to===toType);if(!rule)throw Error('Échange inconnu.');
  const candidates=unitsIn(state,sectorId,nation).filter(u=>u.type===rule.from&&!isOrdered(state,u.id)).slice(0,rule.count);
- if(candidates.length<rule.count)throw Error('Pas assez de pièces pour cet échange.');
+ if(candidates.length<rule.count)throw Error('Pas assez de pièces pour cet échange.');if((state.nations[nation].reserve[toType]||0)<1)throw Error('Cette grande unité n’est plus disponible en réserve.');
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'exchange',nation,unitIds:candidates.map(u=>u.id),sectorId,fromType:rule.from,toType});return state;
 }
 export function queueReinforcement(state,nation,type){
  assertPlanning(state,nation);assertNation(state,nation);const spec=UNIT_TYPES[type];
- if(!spec||['flag'].includes(type))throw Error('Renfort invalide.');if(state.nations[nation].reserve[type]-reservedReinforcements(state,nation,type)<1)throw Error('Réserve épuisée.');if(state.nations[nation].power-committedPower(state,nation)<spec.cost)throw Error('Power insuffisant.');
+ if(!spec||spec.tier!=='small')throw Error('Seules les petites unités peuvent être achetées avec des Power.');if(state.nations[nation].reserve[type]-reservedReinforcements(state,nation,type)<1)throw Error('Réserve épuisée.');if(state.nations[nation].power-committedPower(state,nation)<spec.cost)throw Error('Power insuffisant.');
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:type,cost:spec.cost});return state;
 }
 export function queueMegaMissile(state,nation,targetId){
@@ -55,8 +55,8 @@ function aiOrders(state,nation){
 function captureFlag(state,winner,victim,sectorId,events){
  const flag=state.units.find(u=>u.type==='flag'&&u.nation===victim&&u.sectorId===sectorId);if(!flag)return;
  if(!unitsIn(state,sectorId,winner).some(u=>['infantry','regiment'].includes(u.type)))return;
- removeUnit(state,flag.id);state.nations[victim].active=false;state.nations[winner].flagsCaptured++;state.nations[winner].power=cap(state.nations[winner].power+25,0,9999);
- state.units=state.units.filter(u=>u.nation!==victim);events.push({type:'flag',sectorId,winner,victim,title:'QG CONQUIS',detail:NATIONS[winner].name+' capture le drapeau '+NATIONS[victim].name+'.'});
+ removeUnit(state,flag.id);const victor=state.nations[winner],loser=state.nations[victim];loser.active=false;victor.flagsCaptured++;
+ for(const u of state.units.filter(u=>u.nation===victim)){if(victor.reserve[u.type]!==undefined)victor.reserve[u.type]=cap(victor.reserve[u.type]+1,0,99);}victor.power=cap(victor.power+loser.power,0,9999);loser.power=0;state.units=state.units.filter(u=>u.nation!==victim);events.push({type:'flag',sectorId,winner,victim,title:'QG CONQUIS',detail:NATIONS[winner].name+' capture le drapeau '+NATIONS[victim].name+' et récupère sa réserve de campagne.'});
 }
 function resolveBattle(state,sectorId,origins,events){
  const contenders=[...new Set(unitsIn(state,sectorId).filter(u=>u.type!=='flag').map(u=>u.nation))].filter(n=>state.nations[n].active);if(contenders.length<2)return;
