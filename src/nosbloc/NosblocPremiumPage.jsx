@@ -1103,15 +1103,126 @@ function TeamPro({ project, updateProject, inviteTeamMember, revokeTeamInvite, r
     </section>
   </div>;
 }
-function EconomyPro({ project, account }) {
+function EconomyPro({ project, money, finance, economyActions, setNotice }) {
   const example = simulateRevenue({grossEuros:100,taxRate:20,storeRate:10,refundRate:2});
-  const money = moneyState(account);
+  const [form,setForm] = useState({ title:"", type:"access", description:"", priceEuros:"4.99", rights:false });
+  const [payoutEuros,setPayoutEuros] = useState("100");
+  const [busy,setBusy] = useState(false);
+  const products = Array.isArray(finance?.products) ? finance.products.filter(row => !row.projectId || row.projectId === project.server?.projectId) : [];
+  const sales = Array.isArray(finance?.sales) ? finance.sales.filter(row => !row.projectId || row.projectId === project.server?.projectId) : [];
+  const refunds = Array.isArray(finance?.refunds) ? finance.refunds : [];
+  const payout = money?.payoutAccount;
+  const paymentsEnabled = !!money?.runtime?.paymentsEnabled;
+  const payoutsEnabled = !!money?.runtime?.payoutsEnabled;
+  const payoutReady = payoutsEnabled && payout?.payouts_enabled && payout?.kyc_status === "verified" && payout?.tax_status === "complete";
+
+  const createProduct = async () => {
+    const title = form.title.trim();
+    const priceCents = Math.max(0,Math.round(Number(String(form.priceEuros).replace(",",".")) * 100));
+    if (title.length < 3) return setNotice("Donne un nom au produit.");
+    if (!Number.isFinite(priceCents)) return setNotice("Prix invalide.");
+    setBusy(true);
+    try {
+      const synced = project.server?.projectId ? { projectId:project.server.projectId } : await economyActions.syncProjectNow(project);
+      const created = await economyActions.createProduct({
+        projectId:synced?.projectId || null,
+        title,
+        type:form.type,
+        description:form.description,
+        priceCents,
+      });
+      if (form.rights && created?.productId) {
+        await economyActions.updateProduct(created.productId,{
+          title,description:form.description,priceCents,rightsConfirmed:true,
+        });
+      }
+      await economyActions.refreshFinance();
+      setForm({ title:"",type:"access",description:"",priceEuros:"4.99",rights:false });
+      setNotice("Produit créé côté serveur. Il reste privé tant qu’il n’est pas validé.");
+    } catch (error) {
+      setNotice(error?.message || "Création du produit impossible.");
+    } finally { setBusy(false); }
+  };
+
+  const submitProduct = async product => {
+    setBusy(true);
+    try {
+      await economyActions.submitProduct(product.id);
+      await economyActions.refreshFinance();
+      setNotice("Produit envoyé en vérification humaine.");
+    } catch (error) {
+      setNotice(error?.message || "Soumission impossible.");
+    } finally { setBusy(false); }
+  };
+
+  const requestPayout = async () => {
+    const amountCents = Math.round(Number(String(payoutEuros).replace(",",".")) * 100);
+    if (!Number.isFinite(amountCents) || amountCents <= 0) return setNotice("Montant de versement invalide.");
+    setBusy(true);
+    try {
+      await economyActions.requestPayout(amountCents);
+      await economyActions.refreshFinance();
+      setNotice("Demande de versement créée et envoyée au contrôle serveur.");
+    } catch (error) {
+      setNotice(error?.message || "Versement impossible.");
+    } finally { setBusy(false); }
+  };
+
   return <div className="nb2-pro-grid">
-    <section className="nb2-pro-card"><SectionTitle eyebrow="€ ARGENT RÉEL" title={formatEuros(money.availableCents)}/><p className="nb2-muted">Solde réel affiché séparément des Coins. Les écritures financières doivent venir du ledger serveur, jamais du navigateur.</p><div className="nb2-lock-banner"><LockKeyhole size={17}/> Paiements et versements restent verrouillés tant que KYC, fiscalité et configuration serveur ne sont pas validés.</div></section>
-    <section className="nb2-pro-card"><SectionTitle eyebrow="SIMULATION" title="Exemple transparent sur 100 €"/><dl className="nb2-receipt"><div><dt>Vente brute</dt><dd>{formatEuros(example.gross)}</dd></div><div><dt>Taxes</dt><dd>-{formatEuros(example.taxes)}</dd></div><div><dt>Frais</dt><dd>-{formatEuros(example.storeFees)}</dd></div><div><dt>Remboursements estimés</dt><dd>-{formatEuros(example.refunds)}</dd></div><div className="total"><dt>Part créateur simulée</dt><dd>{formatEuros(example.creatorDirect)}</dd></div></dl><small>Simulation uniquement · aucun solde réel n’est créé.</small></section>
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="€ ARGENT RÉEL" title={formatEuros(money?.availableCents || 0)}/>
+      <div className="nb2-money-grid">
+        <div><small>Disponible</small><strong>{formatEuros(money?.availableCents || 0)}</strong></div>
+        <div><small>En attente</small><strong>{formatEuros(money?.pendingCents || 0)}</strong></div>
+        <div><small>Versements en cours</small><strong>{formatEuros(money?.payoutCents || 0)}</strong></div>
+      </div>
+      <p className="nb2-muted">Le navigateur ne calcule pas le solde : ces montants viennent du ledger EUR serveur immuable.</p>
+      <div className="nb2-lock-banner"><LockKeyhole size={17}/> {paymentsEnabled ? "Paiements serveur activés." : "Paiements réels verrouillés pendant la recette."} {payoutsEnabled ? "" : " Versements verrouillés."}</div>
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="PRODUITS" title="Vendre sans mélanger les fonctions"/>
+      <div className="nb2-form">
+        <label>Nom<input value={form.title} maxLength={120} onChange={e => setForm({...form,title:e.target.value})} placeholder="Ex. Accès Monde France"/></label>
+        <label>Type<select value={form.type} onChange={e => setForm({...form,type:e.target.value})}><option value="access">Accès</option><option value="asset">Asset</option><option value="cosmetic">Cosmétique</option><option value="expansion">Extension</option><option value="service">Service</option></select></label>
+        <label>Description<textarea value={form.description} rows={3} maxLength={1000} onChange={e => setForm({...form,description:e.target.value})}/></label>
+        <label>Prix en €<input inputMode="decimal" value={form.priceEuros} onChange={e => setForm({...form,priceEuros:e.target.value})}/></label>
+        <label className="nb2-switch"><input type="checkbox" checked={form.rights} onChange={e => setForm({...form,rights:e.target.checked})}/><span/><b>Je confirme disposer des droits nécessaires</b></label>
+      </div>
+      <button className="nb2-add-tool" disabled={busy || form.title.trim().length < 3} onClick={createProduct}><Plus size={16}/> Créer le produit</button>
+      {!products.length ? <EmptyState icon={Store} title="Aucun produit pour ce projet." text="Crée une offre puis fais-la vérifier avant toute ouverture publique."/> :
+        <div className="nb2-product-list">{products.map(product => <article key={product.id}>
+          <div><b>{product.title}</b><small>{product.productType} · {formatEuros(product.priceCents)} · {product.status}</small></div>
+          <span className="nb2-status" data-tone={product.status === "active" ? "green" : product.status === "review" ? "gold" : "neutral"}>{product.status}</span>
+          {product.status === "draft" && product.rightsConfirmed && <button disabled={busy || project.status !== "published"} onClick={() => submitProduct(product)}><ShieldCheck size={15}/> Vérifier</button>}
+        </article>)}</div>}
+      {project.status !== "published" && <small className="nb2-muted">La vente ne peut être soumise qu’après publication du projet.</small>}
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="VERSEMENTS" title={payoutReady ? "Compte prêt" : "Compte verrouillé"}/>
+      <div className="nb2-kyc-grid">
+        <div><small>Identité</small><b>{payout?.kyc_status === "verified" ? "Vérifiée" : payout?.kyc_status || "Non commencée"}</b></div>
+        <div><small>Fiscalité</small><b>{payout?.tax_status === "complete" ? "Complète" : payout?.tax_status || "Incomplète"}</b></div>
+      </div>
+      <div className="nb2-inline-form"><input inputMode="decimal" value={payoutEuros} onChange={e => setPayoutEuros(e.target.value)} aria-label="Montant du versement en euros"/><button disabled={busy || !payoutReady} onClick={requestPayout}><CircleDollarSign size={16}/> Demander le versement</button></div>
+      {!payoutReady && <div className="nb2-lock-banner"><LockKeyhole size={17}/> Il faut KYC vérifié, fiscalité complète et ouverture serveur des versements.</div>}
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="VENTES & REMBOURSEMENTS" title={sales.length + " vente" + (sales.length > 1 ? "s" : "")}/>
+      {!sales.length ? <EmptyState icon={WalletCards} title="Aucune vente réelle." text="Aucune donnée fictive n’est ajoutée à tes revenus."/> :
+        <div className="nb2-ledger-list">{sales.slice(0,20).map(row => <div key={row.id}><span><b>{formatEuros(row.grossAmountCents)}</b><small>{row.status}</small></span><time>{new Date(row.createdAt).toLocaleDateString("fr-FR")}</time></div>)}</div>}
+      {!!refunds.length && <p className="nb2-muted">{refunds.length} demande{refunds.length > 1 ? "s" : ""} de remboursement visible{refunds.length > 1 ? "s" : ""} dans Activité.</p>}
+    </section>
+
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="SIMULATION" title="Exemple transparent sur 100 €"/>
+      <dl className="nb2-receipt"><div><dt>Vente brute</dt><dd>{formatEuros(example.gross)}</dd></div><div><dt>Taxes</dt><dd>-{formatEuros(example.taxes)}</dd></div><div><dt>Frais</dt><dd>-{formatEuros(example.storeFees)}</dd></div><div><dt>Remboursements estimés</dt><dd>-{formatEuros(example.refunds)}</dd></div><div className="total"><dt>Part créateur simulée</dt><dd>{formatEuros(example.creatorDirect)}</dd></div></dl>
+      <small>Simulation uniquement · elle ne touche jamais au ledger réel.</small>
+    </section>
   </div>;
 }
-
 function AnalyticsPro({ project }) {
   const stats = project.stats || {};
   return <section className="nb2-pro-card"><SectionTitle eyebrow="ANALYTICS" title="Les chiffres utiles d’abord"/><div className="nb2-analytics"><Summary icon={Users} value={Number(stats.players||0).toLocaleString("fr-FR")} label="joueurs"/><Summary icon={RotateCcw} value={Number(stats.retention7||0) + " %"} label="retour J+7"/><Summary icon={Gauge} value={Number(stats.sessionMinutes||0) + " min"} label="session"/><Summary icon={ShieldCheck} value={Number(stats.trustScore||100) + "/100"} label="confiance"/></div></section>;
