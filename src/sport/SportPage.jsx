@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {
  ArrowUpRight,RefreshCw,Trophy,Globe2,Flame,Handshake,Users,Dumbbell,
  Sparkles,Languages,MapPin,ShieldCheck,ChevronDown,Clock3,CheckCircle2,
@@ -7,7 +7,7 @@ import {
 import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {SPORTS} from '../../supabase/functions/ecosystem/sports.js';
-import {H24_CHANNELS,SPORT_FINALS,isTrustedSportEmbed} from './media-catalog.js';
+import {H24_CHANNELS,SPORT_FINALS,isTrustedSportEmbed,isTrustedSportPlayerOrigin,mediaSources} from './media-catalog.js';
 import './sport.css';
 
 const SECTIONS=[
@@ -67,37 +67,234 @@ function progressLabel(challenge,entry){
 }
 
 
+const SPORT_PLAYER_READY_TIMEOUT=18000;
+const SPORT_SOURCE_COOLDOWN=5*60*1000;
+const SPORT_RETRY_ALL=20000;
+
 function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
+ const iframeRef=useRef(null);
+ const failureRef=useRef(new Map());
+ const lastAdvanceRef=useRef(0);
+ const channelFailoverRef=useRef(0);
+ const sources=useMemo(()=>mediaSources(item),[item]);
+ const[sourceIndex,setSourceIndex]=useState(0);
+ const[epoch,setEpoch]=useState(0);
+ const[playerState,setPlayerState]=useState('idle');
+ const[statusMessage,setStatusMessage]=useState('');
+ const[online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine!==false);
+ const source=sources[sourceIndex]||sources[0]||null;
+ const trusted=!!source&&isTrustedSportEmbed(source.embedUrl);
+ const isH24=item?.badge==='H24';
+
+ useEffect(()=>{
+  let index=0;
+  if(isH24){
+   try{
+    const saved=localStorage.getItem('3b-sport-good-source:'+item?.id);
+    const found=sources.findIndex(candidate=>candidate.id===saved);
+    if(found>=0)index=found;
+   }catch{}
+  }
+  setSourceIndex(index);
+  setEpoch(value=>value+1);
+  setPlayerState('idle');
+  setStatusMessage('');
+ },[item?.id,isH24,sources]);
+
+ useEffect(()=>{
+  const goOnline=()=>{
+   setOnline(true);
+   setStatusMessage('Connexion retrouvée · reprise automatique.');
+   setPlayerState('recovering');
+   setEpoch(value=>value+1);
+  };
+  const goOffline=()=>{
+   setOnline(false);
+   setPlayerState('offline');
+   setStatusMessage('Connexion perdue · 3B reprendra automatiquement ici.');
+  };
+  window.addEventListener('online',goOnline);
+  window.addEventListener('offline',goOffline);
+  return()=>{window.removeEventListener('online',goOnline);window.removeEventListener('offline',goOffline);};
+ },[]);
+
+ function saveGoodSource(){
+  if(!source)return;
+  failureRef.current.delete(item.id+':'+source.id);
+  channelFailoverRef.current=0;
+  if(isH24){
+   try{localStorage.setItem('3b-sport-good-source:'+item.id,source.id);}catch{}
+  }
+ }
+
+ function advanceSource({markFailure=false,reason='Bascule automatique',fromEnd=false}={}){
+  const now=Date.now();
+  if(now-lastAdvanceRef.current<900)return;
+  lastAdvanceRef.current=now;
+  if(source&&markFailure)failureRef.current.set(item.id+':'+source.id,now+SPORT_SOURCE_COOLDOWN);
+
+  if(sources.length>1){
+   for(let step=1;step<=sources.length;step+=1){
+    const candidateIndex=(sourceIndex+step)%sources.length;
+    const candidate=sources[candidateIndex];
+    const blockedUntil=failureRef.current.get(item.id+':'+candidate.id)||0;
+    if(blockedUntil<=now){
+     setSourceIndex(candidateIndex);
+     setEpoch(value=>value+1);
+     setPlayerState(fromEnd?'loading':'recovering');
+     setStatusMessage(reason+' · source '+(candidateIndex+1)+'/'+sources.length+'.');
+     return;
+    }
+   }
+  }else if(!markFailure){
+   setEpoch(value=>value+1);
+   setPlayerState('recovering');
+   setStatusMessage('Nouvelle tentative sur la source officielle.');
+   return;
+  }
+
+  if(isH24&&channelFailoverRef.current<3){
+   channelFailoverRef.current+=1;
+   setPlayerState('recovering');
+   setStatusMessage('Toutes les sources de cette chaîne répondent mal · passage à la chaîne suivante.');
+   onNext();
+   return;
+  }
+
+  setPlayerState('unavailable');
+  setStatusMessage('Sources momentanément indisponibles · nouvelle tentative automatique dans quelques secondes.');
+ }
+
+ useEffect(()=>{
+  if(playerState!=='unavailable'||!online)return;
+  const timer=setTimeout(()=>{
+   failureRef.current.clear();
+   channelFailoverRef.current=0;
+   setSourceIndex(0);
+   setEpoch(value=>value+1);
+   setPlayerState('recovering');
+   setStatusMessage('Nouvelle tentative automatique en cours.');
+  },SPORT_RETRY_ALL);
+  return()=>clearTimeout(timer);
+ },[playerState,online,item?.id]);
+
+ useEffect(()=>{
+  if(!consent||!trusted||!online||playerState==='unavailable')return;
+  let ready=false;
+  let lastState=null;
+  const post=payload=>{
+   const target=iframeRef.current?.contentWindow;
+   if(!target)return;
+   try{target.postMessage(JSON.stringify(payload),'https://www.youtube-nocookie.com');}catch{}
+  };
+  const listen=()=>{
+   post({event:'listening',id:'3b-sport-player'});
+   for(const eventName of ['onReady','onStateChange','onError']){
+    post({event:'command',func:'addEventListener',args:[eventName]});
+   }
+  };
+  const applyState=value=>{
+   const state=Number(value);
+   if(!Number.isFinite(state)||state===lastState)return;
+   lastState=state;
+   if(state===1){
+    ready=true;
+    saveGoodSource();
+    setPlayerState('playing');
+    setStatusMessage(source?.mode==='fallback'?'Mode secours officiel actif.':'Lecture stable dans 3B.');
+   }else if(state===3){
+    setPlayerState('buffering');
+    setStatusMessage('Mise en mémoire du match…');
+   }else if(state===2){
+    setPlayerState('paused');
+    setStatusMessage('Lecture en pause.');
+   }else if(state===0&&isH24){
+    advanceSource({reason:'Match terminé · suivant automatique',fromEnd:true});
+   }
+  };
+  const onMessage=event=>{
+   if(event.source!==iframeRef.current?.contentWindow||!isTrustedSportPlayerOrigin(event.origin))return;
+   let data=event.data;
+   if(typeof data==='string'){
+    try{data=JSON.parse(data);}catch{return;}
+   }
+   if(!data||typeof data!=='object')return;
+   if(data.event==='onReady'){
+    ready=true;
+    setPlayerState('ready');
+    setStatusMessage('Lecteur officiel prêt.');
+    listen();
+   }else if(data.event==='onStateChange'){
+    applyState(data.info);
+   }else if(data.event==='onError'){
+    advanceSource({markFailure:true,reason:'Source refusée ou indisponible · secours automatique'});
+   }else if(data.event==='infoDelivery'&&data.info&&'playerState' in data.info){
+    applyState(data.info.playerState);
+   }
+  };
+
+  setPlayerState('loading');
+  setStatusMessage('Connexion à la source officielle…');
+  window.addEventListener('message',onMessage);
+  const handshake=setInterval(listen,1100);
+  const watchdog=setTimeout(()=>{
+   if(!ready&&online)advanceSource({markFailure:true,reason:'Chargement trop long · secours automatique'});
+  },SPORT_PLAYER_READY_TIMEOUT);
+  listen();
+  return()=>{
+   window.removeEventListener('message',onMessage);
+   clearInterval(handshake);
+   clearTimeout(watchdog);
+  };
+ },[consent,trusted,online,item?.id,sourceIndex,epoch]);
+
  if(!item)return null;
- const trusted=isTrustedSportEmbed(item.embedUrl);
+ const stateLabels={
+  idle:'PRÊT',loading:'CONNEXION',ready:'PRÊT',playing:'STABLE',buffering:'MÉMOIRE',
+  paused:'PAUSE',recovering:'SECOURS',offline:'HORS LIGNE',unavailable:'RÉESSAI AUTO'
+ };
+ const sourceCount=sources.length;
+ const sourceLabel=source?.mode==='fallback'?'SECOURS OFFICIEL':source?.label||'SOURCE OFFICIELLE';
+ const showFrame=consent&&trusted&&online&&playerState!=='unavailable';
+
  return <div className={'sport-media-theater sport-media-auto-landscape'+(cinema?' is-cinema':'')}>
   <div className="sport-media-stage">
-   {consent&&trusted?<iframe
-    key={item.id}
-    src={item.embedUrl}
-    title={item.title}
+   {showFrame?<iframe
+    ref={iframeRef}
+    key={item.id+':'+source?.id+':'+epoch}
+    src={source.embedUrl}
+    title={item.title+' · '+sourceLabel}
     loading="eager"
     referrerPolicy="strict-origin-when-cross-origin"
     sandbox="allow-scripts allow-same-origin allow-presentation"
-    allow="autoplay; encrypted-media; picture-in-picture"
-   />:<div className="sport-media-consent">
+    allow="autoplay; encrypted-media"
+   />:<div className="sport-media-consent sport-media-recovery">
     <ShieldCheck size={38}/>
     <div>
      <p className="eyebrow">LECTEUR INTERNE 3B</p>
-     <h2>{trusted?'Activer la vidéo officielle.':'Source vidéo bloquée.'}</h2>
-     <p>{trusted?'La vidéo reste affichée dans 3B. Le lecteur externe n’est chargé qu’après ton accord et aucune ouverture vers un autre site n’est nécessaire.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
+     <h2>{!online?'Connexion interrompue.':playerState==='unavailable'?'3B protège la lecture.':trusted?'Activer la vidéo officielle.':'Source vidéo bloquée.'}</h2>
+     <p>{!online?'Reste sur cet écran : dès que le réseau revient, le match reprend automatiquement dans 3B.':playerState==='unavailable'?statusMessage:trusted?'La vidéo reste dans 3B. Aucun popup, aucune navigation externe et aucune ouverture automatique vers YouTube.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
     </div>
-    {trusted&&<button type="button" className="surface-button" onClick={onConsent}>Activer le lecteur</button>}
+    {trusted&&!consent&&online&&<button type="button" className="surface-button" onClick={onConsent}>Activer le lecteur</button>}
+    {consent&&online&&playerState==='unavailable'&&<button type="button" className="surface-button" onClick={()=>advanceSource({reason:'Réessai manuel'})}>Réessayer maintenant</button>}
+   </div>}
+
+   {consent&&trusted&&<div className={'sport-media-health state-'+playerState} aria-live="polite">
+    <span className="sport-media-health-dot"/>
+    <strong>{stateLabels[playerState]||'3B'}</strong>
+    <small>{sourceLabel} · {Math.min(sourceIndex+1,Math.max(sourceCount,1))}/{Math.max(sourceCount,1)}</small>
    </div>}
   </div>
+
   <div className="sport-media-controls">
    <div>
     <span>{item.badge||item.sport}</span>
     <strong>{item.title}</strong>
-    <small>{item.provider}</small>
+    <small>{statusMessage||source?.provider||item.provider}</small>
    </div>
    <div className="sport-media-control-actions">
-    <button type="button" className="quiet-button" onClick={onNext}>Source suivante</button>
+    <button type="button" className="quiet-button" onClick={()=>advanceSource({reason:'Source de secours sélectionnée'})}>{sourceCount>1?'Source de secours':'Réparer la lecture'}</button>
+    <button type="button" className="quiet-button" onClick={onNext}>{isH24?'Chaîne suivante':'Finale suivante'}</button>
     <button type="button" className="surface-button" onClick={()=>onCinema(!cinema)}>{cinema?'Réduire':'Mode cinéma 3B'}</button>
    </div>
   </div>
@@ -320,13 +517,13 @@ export default function SportPage({goTo}){
      <span className="sport-media-card-tag">{item.badge||item.year} · {item.sport}</span>
      <strong>{item.title}</strong>
      <p>{item.description||item.subtitle}</p>
-     <small>{item.provider} · lecture interne 3B</small>
+     <small>{item.provider} · {mediaSources(item).length} source{mediaSources(item).length>1?'s':''} sécurisée{mediaSources(item).length>1?'s':''} · lecture interne 3B</small>
     </button>)}
    </div>
 
    <div className="sport-media-safety">
     <ShieldCheck size={20}/>
-    <p><strong>Verrou anti-sortie :</strong> les cartes H24 et Finales ne contiennent aucun lien externe. Sur téléphone en paysage, le lecteur passe automatiquement en grand écran 3B et revient dans la page quand tu remets le téléphone en portrait.</p>
+    <p><strong>Verrou anti-sortie + secours automatique :</strong> H24 et Finales restent dans 3B. En cas d’erreur, de vidéo retirée ou de coupure réseau, le lecteur tente une source officielle de secours, mémorise la dernière source H24 stable et reprend automatiquement sans ouvrir d’autre application.</p>
    </div>
   </div>}
 
