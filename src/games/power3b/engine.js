@@ -7,6 +7,7 @@ function assertNation(state,nation){if(!Number.isInteger(nation)||nation<0||nati
 function assertPlanning(state,nation){if(state.phase!=='planning'||state.winner!==null)throw Error('La phase de planification est fermée.');if(state.orders.filter(o=>o.nation===nation).length>=MAX_ORDERS)throw Error('Maximum de 5 ordres par manche.');}
 function committedPower(state,nation){return state.orders.filter(o=>o.nation===nation).reduce((sum,o)=>sum+(o.cost||0),0);}
 function reservedReinforcements(state,nation,type){return state.orders.filter(o=>o.nation===nation&&o.type==='reinforce'&&o.unitType===type).length;}
+function reservedDeployments(state,nation,type){return state.orders.filter(o=>o.nation===nation&&o.type==='deploy'&&o.unitType===type).length;}
 function isOrdered(state,id){return state.orders.some(o=>o.unitIds?.includes(id));}
 export function legalTargets(state,unitId){
  const u=unitAt(state,unitId),spec=UNIT_TYPES[u?.type];if(!u||!spec||['fixed','special'].includes(spec.domain))return[];
@@ -34,6 +35,9 @@ export function queueReinforcement(state,nation,type){
  if(!spec||spec.tier!=='small')throw Error('Seules les petites unités peuvent être achetées avec des Power.');if(state.nations[nation].reserve[type]-reservedReinforcements(state,nation,type)<1)throw Error('Réserve épuisée.');if(state.nations[nation].power-committedPower(state,nation)<spec.cost)throw Error('Power insuffisant.');
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:type,cost:spec.cost});return state;
 }
+export function queueDeploy(state,nation,type){
+ assertPlanning(state,nation);assertNation(state,nation);if(!UNIT_TYPES[type]||type==='flag')throw Error('Pièce capturée invalide.');if((state.nations[nation].spoils?.[type]||0)-reservedDeployments(state,nation,type)<1)throw Error('Aucune pièce capturée de ce type en réserve.');state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'deploy',nation,unitIds:[],sectorId:'hq'+nation,unitType:type});return state;
+}
 export function queueMegaMissile(state,nation,targetId){
  assertPlanning(state,nation);assertNation(state,nation);if(!SECTOR_BY_ID.has(targetId))throw Error('Cible invalide.');if(state.nations[nation].power-committedPower(state,nation)<100)throw Error('Il faut 100 Power disponible pour construire le Méga-missile.');
  if(state.orders.some(o=>o.nation===nation&&o.type==='mega'))throw Error('Un seul Méga-missile par manche.');
@@ -55,6 +59,7 @@ function aiOrders(state,nation){
  if(me.power>=100&&orders.length<limit&&random()>(difficulty==='normal'?.72:.38)){const targets=SECTORS.filter(s=>s.hq!==null&&s.hq!==nation&&state.nations[s.hq].active).sort((a,b)=>sectorStrength(state,b.id,b.hq)-sectorStrength(state,a.id,a.hq));if(targets[0])orders.push({id:'ai-mega-'+nation,type:'mega',nation,unitIds:[],target:targets[0].id,cost:100});}
  const available=state.units.filter(u=>u.nation===nation&&u.type!=='flag'&&!used.has(u.id)).sort((a,b)=>UNIT_TYPES[b.type].strength-UNIT_TYPES[a.type].strength);
  for(const u of available){if(orders.length>=limit)break;if(orders.some(o=>o.unitIds?.includes(u.id)))continue;const targets=legalTargets(state,u.id);if(!targets.length)continue;const ranked=targets.map(id=>({id,score:targetScore(state,nation,u,id,random,difficulty)})).sort((a,b)=>b.score-a.score);const target=ranked[0]?.id;if(target)orders.push({id:'ai-'+nation+'-'+orders.length,type:'move',nation,unitIds:[u.id],from:u.sectorId,target});}
+ const spoilType=Object.keys(me.spoils||{}).filter(type=>me.spoils[type]>0).sort((a,b)=>UNIT_TYPES[b].strength-UNIT_TYPES[a].strength)[0];if(orders.length<limit&&spoilType)orders.push({id:'ai-d-'+nation,type:'deploy',nation,unitIds:[],sectorId:'hq'+nation,unitType:spoilType});
  const spent=orders.reduce((sum,o)=>sum+(o.cost||0),0),budget=me.power-spent;
  if(orders.length<limit&&budget>=2){const choices=['destroyer','fighter','tank','infantry'].filter(type=>me.reserve[type]>0&&UNIT_TYPES[type].cost<=budget);if(choices.length){const type=choices.find(t=>UNIT_TYPES[t].cost<=budget)||'infantry';orders.push({id:'ai-r-'+nation,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:type,cost:UNIT_TYPES[type].cost});}}
  return orders.slice(0,limit);
@@ -63,14 +68,14 @@ function captureFlag(state,winner,victim,sectorId,events){
  const flag=state.units.find(u=>u.type==='flag'&&u.nation===victim&&u.sectorId===sectorId);if(!flag)return;
  if(!unitsIn(state,sectorId,winner).some(u=>['infantry','regiment'].includes(u.type)))return;
  removeUnit(state,flag.id);const victor=state.nations[winner],loser=state.nations[victim];loser.active=false;victor.flagsCaptured++;
- for(const u of state.units.filter(u=>u.nation===victim)){if(victor.reserve[u.type]!==undefined)victor.reserve[u.type]=cap(victor.reserve[u.type]+1,0,99);}victor.power=cap(victor.power+loser.power,0,9999);loser.power=0;state.units=state.units.filter(u=>u.nation!==victim);events.push({type:'flag',sectorId,winner,victim,title:'QG CONQUIS',detail:NATIONS[winner].name+' capture le drapeau '+NATIONS[victim].name+' et récupère sa réserve de campagne.'});
+ for(const u of state.units.filter(u=>u.nation===victim)){if(victor.spoils?.[u.type]!==undefined)victor.spoils[u.type]=cap(victor.spoils[u.type]+1,0,99);}for(const type of Object.keys(victor.spoils||{})){victor.spoils[type]=cap(victor.spoils[type]+(loser.spoils?.[type]||0),0,99);if(loser.spoils)loser.spoils[type]=0;}victor.power=cap(victor.power+loser.power,0,9999);loser.power=0;state.units=state.units.filter(u=>u.nation!==victim);events.push({type:'flag',sectorId,winner,victim,title:'QG CONQUIS',detail:NATIONS[winner].name+' capture le drapeau '+NATIONS[victim].name+' et récupère sa réserve de campagne.'});
 }
 function resolveBattle(state,sectorId,origins,events){
  const contenders=[...new Set(unitsIn(state,sectorId).filter(u=>u.type!=='flag').map(u=>u.nation))].filter(n=>state.nations[n].active);if(contenders.length<2)return;
  const powers=contenders.map(n=>[n,sectorStrength(state,sectorId,n)]).sort((a,b)=>b[1]-a[1]),top=powers[0][1],tied=powers.filter(x=>x[1]===top).map(x=>x[0]);
  if(tied.length>1){for(const n of tied)for(const u of [...unitsIn(state,sectorId,n)]){const home=origins.get(u.id);if(home&&home!==sectorId)u.sectorId=home;}events.push({type:'stalemate',sectorId,title:'ÉGALITÉ DE PUISSANCE',detail:'Les unités engagées reviennent à leur position initiale.'});return;}
  const winner=powers[0][0],losers=contenders.filter(n=>n!==winner);
- for(const victim of losers)for(const u of [...unitsIn(state,sectorId,victim)]){if(u.type==='flag')continue;removeUnit(state,u.id);if(state.nations[winner].reserve[u.type]!==undefined)state.nations[winner].reserve[u.type]=cap(state.nations[winner].reserve[u.type]+1,0,99);}
+ for(const victim of losers)for(const u of [...unitsIn(state,sectorId,victim)]){if(u.type==='flag')continue;removeUnit(state,u.id);if(state.nations[winner].spoils?.[u.type]!==undefined)state.nations[winner].spoils[u.type]=cap(state.nations[winner].spoils[u.type]+1,0,99);}
  state.owners[sectorId]=winner;
  events.push({type:'battle',sectorId,winner,title:'SECTEUR REMPORTÉ',detail:NATIONS[winner].name+' domine avec '+top+' de puissance.'});
 }
@@ -81,6 +86,7 @@ export function resolveTurn(source,options={}){
  if(options.penalty!==false)applyNoCommandPenalty(state,state.humanNation,events);const orders=state.orders.filter(o=>o.nation===state.humanNation).slice(0,MAX_ORDERS);if(options.ai!==false)for(let n=0;n<8;n++)if(n!==state.humanNation&&state.nations[n].active)orders.push(...aiOrders(state,n));
  for(const o of orders.filter(x=>x.type==='exchange')){const live=o.unitIds.map(id=>unitAt(state,id)).filter(Boolean),me=state.nations[o.nation];if(live.length!==o.unitIds.length||(me.reserve[o.toType]||0)<1)continue;for(const u of live)removeUnit(state,u.id);me.reserve[o.fromType]=cap((me.reserve[o.fromType]||0)+live.length,0,99);me.reserve[o.toType]--;addUnit(state,o.toType,o.nation,o.sectorId);events.push({type:'exchange',sectorId:o.sectorId,nation:o.nation,title:'MONTÉE EN PUISSANCE',detail:UNIT_TYPES[o.toType].name+' déployé.'});}
  for(const o of orders.filter(x=>x.type==='reinforce')){const me=state.nations[o.nation],spec=UNIT_TYPES[o.unitType];if(!me.active||!spec||me.reserve[o.unitType]<1||me.power<o.cost)continue;me.power-=o.cost;me.reserve[o.unitType]--;addUnit(state,o.unitType,o.nation,'hq'+o.nation);events.push({type:'reinforce',sectorId:'hq'+o.nation,nation:o.nation,title:'RENFORT',detail:spec.name+' entre en jeu.'});}
+ for(const o of orders.filter(x=>x.type==='deploy')){const me=state.nations[o.nation],spec=UNIT_TYPES[o.unitType];if(!me.active||!spec||(me.spoils?.[o.unitType]||0)<1)continue;me.spoils[o.unitType]--;addUnit(state,o.unitType,o.nation,'hq'+o.nation);events.push({type:'deploy',sectorId:'hq'+o.nation,nation:o.nation,title:'PRISE REDÉPLOYÉE',detail:spec.name+' capturé rejoint le QG.'});}
  for(const o of orders.filter(x=>x.type==='move'))for(const id of o.unitIds){const u=unitAt(state,id);if(u&&u.nation===o.nation&&legalTargets(state,u.id).includes(o.target))u.sectorId=o.target;}
  for(const o of orders.filter(x=>x.type==='mega')){const me=state.nations[o.nation];if(!me.active||me.power<100)continue;me.power-=100;for(const u of [...unitsIn(state,o.target)])if(u.type!=='flag')removeUnit(state,u.id);events.push({type:'mega',sectorId:o.target,nation:o.nation,title:'MÉGA-MISSILE',detail:'Toutes les unités du secteur sont détruites. Le missile est consommé.'});}
  for(const s of SECTORS)resolveBattle(state,s.id,origins,events);
