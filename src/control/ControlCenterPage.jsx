@@ -14,6 +14,9 @@ import ModuleBoundary from './ModuleBoundary.jsx';
 import AlertCenterPanel from './AlertCenterPanel.jsx';
 import ProjectsCenterPanel from './ProjectsCenterPanel.jsx';
 import CommandSettingsPanel from './CommandSettingsPanel.jsx';
+import DailyBriefPanel from './DailyBriefPanel.jsx';
+import IntegrationCenterPanel from './IntegrationCenterPanel.jsx';
+import CommandSearchResults from './CommandSearchResults.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -42,6 +45,8 @@ const NATURAL_COMMANDS=[
 const NAVIGATION_COMMANDS=[
  {re:/\b(radar|trafic|fréquentation|frequentation|visites?)\b/i,target:'cc-traffic',feedback:'Radar 3B ouvert.'},
  {re:/\b(nexus|services?|connexions?)\b/i,target:'cc-nexus',feedback:'Nexus 3B ouvert.'},
+ {re:/\b(brief|résumé|resume|journée|journee|aujourd'hui|aujourdhui)\b/i,target:'cc-brief',feedback:'Brief du jour ouvert.'},
+ {re:/\b(intégrations?|integrations?|connecteurs?|oauth|gmail|vercel api)\b/i,target:'cc-integrations',feedback:'Centre d’intégrations ouvert.'},
  {re:/\b(dev|développement|developpement|commit|ci|pull request|pr ouvertes?|déploiement|deploiement)\b/i,target:'cc-dev',feedback:'Dev Center ouvert.'},
  {re:/\b(projets?|passeport|monde du 3b|origins|nosbloc|guardians|stylcam|boutique|sport 3b)\b/i,target:'cc-projects',feedback:'Projects Center ouvert.'},
  {re:/\b(réglages?|reglages?|paramètres?|parametres?|compact|mouvements?|personnalisation)\b/i,target:'cc-settings',feedback:'Réglages Command OS ouverts.'},
@@ -148,6 +153,12 @@ export default function ControlCenterPage({goTo}){
  const[reducedLocal,setReducedLocal]=useState(()=>{
   try{return localStorage.getItem('3b-command-reduced')==='1';}catch{return false;}
  });
+ const[hapticsEnabled,setHapticsEnabled]=useState(()=>{
+  try{return localStorage.getItem('3b-command-haptics')!=='0';}catch{return true;}
+ });
+ const[hiddenModules,setHiddenModules]=useState(()=>{
+  try{return JSON.parse(localStorage.getItem('3b-command-hidden')||'{}')||{};}catch{return {};}
+ });
  const commandInputRef=useRef(null);
  const[commandText,setCommandText]=useState('');
  const[commandFeedback,setCommandFeedback]=useState('');
@@ -201,11 +212,23 @@ export default function ControlCenterPage({goTo}){
  },[reducedLocal]);
 
  useEffect(()=>{
+  try{localStorage.setItem('3b-command-haptics',hapticsEnabled?'1':'0');}catch{}
+ },[hapticsEnabled]);
+
+ useEffect(()=>{
+  try{localStorage.setItem('3b-command-hidden',JSON.stringify(hiddenModules));}catch{}
+ },[hiddenModules]);
+
+ const buzz=useCallback(pattern=>{
+  if(hapticsEnabled)navigator.vibrate?.(pattern);
+ },[hapticsEnabled]);
+
+ useEffect(()=>{
   const keydown=event=>{
    if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
     event.preventDefault();
     commandInputRef.current?.focus();
-    navigator.vibrate?.(5);
+    buzz(5);
    }
    if(event.key==='Escape'&&document.activeElement===commandInputRef.current){
     commandInputRef.current?.blur();
@@ -214,7 +237,7 @@ export default function ControlCenterPage({goTo}){
   };
   window.addEventListener('keydown',keydown);
   return()=>window.removeEventListener('keydown',keydown);
- },[]);
+ },[buzz]);
 
  const refresh=useCallback(async()=>{
   if(typeof navigator!=='undefined'&&navigator.onLine===false){
@@ -404,7 +427,7 @@ export default function ControlCenterPage({goTo}){
   try{
    const next=await controlCenterRequest('create-pairing');
    setPairing(next);
-   navigator.vibrate?.(18);
+   buzz(18);
    await refresh();
   }catch(e){setError(e.message);}
   finally{setBusy('');}
@@ -419,7 +442,7 @@ export default function ControlCenterPage({goTo}){
   setBusy(command);setError('');setCommandFeedback('');
   try{
    await controlCenterRequest('issue',{device_id:target,command_type:command});
-   navigator.vibrate?.(12);
+   buzz(12);
    setCommandFeedback((COMMAND_LABELS[command]||command)+' · commande envoyée');
    await refresh();
   }catch(e){setError(e.message);}
@@ -432,7 +455,7 @@ export default function ControlCenterPage({goTo}){
   try{
    await controlCenterRequest('revoke-device',{device_id:deviceId});
    setPairing(null);
-   navigator.vibrate?.([20,30,20]);
+   buzz([20,30,20]);
    await refresh();
   }catch(e){setError(e.message);}
   finally{setBusy('');}
@@ -442,7 +465,7 @@ export default function ControlCenterPage({goTo}){
   setBusy('cancel'+commandId);setError('');
   try{
    await controlCenterRequest('cancel',{command_id:commandId});
-   navigator.vibrate?.(8);
+   buzz(8);
    setCommandFeedback('Commande en attente annulée.');
    await refresh();
   }catch(e){setError(e.message);}
@@ -477,8 +500,11 @@ export default function ControlCenterPage({goTo}){
 
  const jumpTo=id=>{
   document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
-  navigator.vibrate?.(6);
+  buzz(6);
  };
+ const isVisible=id=>!hiddenModules?.[id];
+ const toggleModule=id=>setHiddenModules(current=>({...current,[id]:!current?.[id]}));
+ const resetModules=()=>setHiddenModules({});
 
  if(error&&error.includes('réservé au propriétaire'))return <section className="control-page control-device-gate">
   <div className="control-device-gate-card"><ShieldCheck/><h1>Centre de commande privé</h1><p>Cette zone est réservée au propriétaire 3B. Pas de terminal distant libre : seules les actions 3B autorisées peuvent être envoyées.</p><button onClick={()=>goTo('home')}>Retour</button></div>
@@ -500,6 +526,8 @@ export default function ControlCenterPage({goTo}){
     <div><strong>{formatClock(clock)}</strong><small>{pulse.network?'EN LIGNE':'HORS LIGNE'}</small></div>
    </div>
   </header>
+
+  {!pulse.network&&<div className="control-offline-banner" role="status"><WifiOff size={15}/><div><strong>Mode hors ligne</strong><small>Dernières données valides conservées{lastSync?' · synchro '+relativeTime(lastSync):''}.</small></div></div>}
 
   <main className="control-os-main">
    <section className="control-stage" id="cc-now">
@@ -545,9 +573,11 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
-   <ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary>
+   {isVisible('brief')&&<ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary>}
 
-   <ModuleBoundary label="Nexus 3B momentanément indisponible">
+   {isVisible('alerts')&&<ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary>}
+
+   {isVisible('nexus')&&<ModuleBoundary label="Nexus 3B momentanément indisponible">
     <CommandNexus
      pulse={pulse}
      dataAvailable={Boolean(data)}
@@ -557,33 +587,40 @@ export default function ControlCenterPage({goTo}){
      alerts={alerts}
      lastSync={lastSync}
      privacyMode={privacyMode}
-     onPrivacyChange={value=>{setPrivacyMode(value);navigator.vibrate?.(7);}}
+     onPrivacyChange={value=>{setPrivacyMode(value);buzz(7);}}
      onJump={jumpTo}
     />
-   </ModuleBoundary>
+   </ModuleBoundary>}
 
-   <ModuleBoundary label="Radar 3B momentanément indisponible"><DirectorTraffic /></ModuleBoundary>
+   {isVisible('integrations')&&<ModuleBoundary label="Centre d’intégrations momentanément indisponible"><IntegrationCenterPanel pulse={pulse} dataAvailable={Boolean(data)} primaryDevice={primaryDevice} primaryOnline={primaryOnline}/></ModuleBoundary>}
 
-   <ModuleBoundary label="Dev Center momentanément indisponible"><DevCenterPanel pulse={pulse}/></ModuleBoundary>
+   {isVisible('traffic')&&<ModuleBoundary label="Radar 3B momentanément indisponible"><DirectorTraffic /></ModuleBoundary>}
 
-   <ModuleBoundary label="App Health momentanément indisponible"><AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/></ModuleBoundary>
+   {isVisible('dev')&&<ModuleBoundary label="Dev Center momentanément indisponible"><DevCenterPanel pulse={pulse}/></ModuleBoundary>}
 
-   <ModuleBoundary label="Security Center momentanément indisponible">
+   {isVisible('health')&&<ModuleBoundary label="App Health momentanément indisponible"><AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/></ModuleBoundary>}
+
+   {isVisible('security')&&<ModuleBoundary label="Security Center momentanément indisponible">
     <SecurityCenterPanel dataAvailable={Boolean(data)} error={error} devices={devices} commands={commands} events={events} allowedCommands={data?.allowed_commands}/>
-   </ModuleBoundary>
+   </ModuleBoundary>}
 
-   <ModuleBoundary label="Projects Center momentanément indisponible"><ProjectsCenterPanel pulse={pulse}/></ModuleBoundary>
+   {isVisible('projects')&&<ModuleBoundary label="Projects Center momentanément indisponible"><ProjectsCenterPanel pulse={pulse}/></ModuleBoundary>}
 
    <ModuleBoundary label="Réglages Command OS momentanément indisponibles">
     <CommandSettingsPanel
      privacyMode={privacyMode}
-     onPrivacyChange={value=>{setPrivacyMode(value);navigator.vibrate?.(7);}}
+     onPrivacyChange={value=>{setPrivacyMode(value);buzz(7);}}
      focus={focus}
-     onFocusChange={value=>{setFocus(value);navigator.vibrate?.(7);}}
+     onFocusChange={value=>{setFocus(value);buzz(7);}}
      compact={compactMode}
-     onCompactChange={value=>{setCompactMode(value);navigator.vibrate?.(7);}}
+     onCompactChange={value=>{setCompactMode(value);buzz(7);}}
      reduced={reducedLocal}
-     onReducedChange={value=>{setReducedLocal(value);navigator.vibrate?.(7);}}
+     onReducedChange={value=>{setReducedLocal(value);buzz(7);}}
+     haptics={hapticsEnabled}
+     onHapticsChange={setHapticsEnabled}
+     hiddenModules={hiddenModules}
+     onModuleToggle={id=>{toggleModule(id);buzz(6);}}
+     onResetModules={()=>{resetModules();buzz(10);}}
     />
    </ModuleBoundary>
 
@@ -595,6 +632,7 @@ export default function ControlCenterPage({goTo}){
      <input ref={commandInputRef} value={commandText} onChange={event=>setCommandText(event.target.value)} placeholder="Rechercher ou commander : radar, GitHub, agenda…" aria-label="Recherche et Command Palette 3B" aria-keyshortcuts="Control+K Meta+K"/>
      <button type="submit" disabled={!!busy}>GO</button>
     </form>
+    <CommandSearchResults query={commandText} commands={commands} events={events} onNavigate={id=>{jumpTo(id);setCommandText('');}}/>
     {commandFeedback&&<p className="control-command-feedback" aria-live="polite">{commandFeedback}</p>}
 
     <div className="control-actions">
