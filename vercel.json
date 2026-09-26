@@ -115,6 +115,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/command-integrations",
+      "destination": "/api/catalog?__3b_route=command-integrations"
+    },
+    {
       "source": "/api/sport-live",
       "destination": "/api/catalog?__3b_route=sport-live"
     },

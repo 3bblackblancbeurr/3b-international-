@@ -13,6 +13,7 @@ const MODULES=[
  ['alerts','Centre d’attention'],
  ['nexus','Nexus 3B'],
  ['integrations','Intégrations'],
+ ['ai','3B IA Command'],
  ['traffic','Radar 3B'],
  ['dev','Dev Center'],
  ['health','App Health'],

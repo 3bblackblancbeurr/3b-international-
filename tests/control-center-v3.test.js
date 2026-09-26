@@ -14,10 +14,14 @@ test('Command OS V3 adds factual daily brief and explicit integration contracts'
  assert.match(brief,/events/);
  assert.match(brief,/commands/);
  assert.match(brief,/Une source non connectée n’est jamais estimée/);
- assert.match(integrations,/Aucun compte mail applicatif/);
- assert.match(integrations,/Aucune source bancaire ou financière/);
- assert.match(integrations,/API Vercel complète/);
- assert.match(integrations,/Aucun connecteur futur ne doit placer de secret dans le frontend/);
+ assert.match(integrations,/commandIntegrationsStatus/);
+ assert.match(integrations,/Gmail/);
+ assert.match(integrations,/Google Agenda/);
+ assert.match(integrations,/Réseaux sociaux · Metricool/);
+ assert.match(integrations,/Finances · Stripe/);
+ assert.match(integrations,/Vercel/);
+ assert.match(integrations,/3B IA Command/);
+ assert.match(integrations,/ne sont jamais envoyés au navigateur/);
 });
 
 test('Command OS V3 search exposes modules and only loaded audit data',()=>{
@@ -53,13 +57,14 @@ test('Command OS V3 keeps explicit offline truth and last valid data wording',()
  assert.doesNotMatch(page,/network:false,production:false/);
 });
 
-test('V3 integrations do not embed secrets or pretend disconnected services are live',()=>{
+test('V3 integration surface delegates external truth to the owner-only V4 backend',()=>{
  const source=read('src/control/IntegrationCenterPanel.jsx');
+ const client=read('src/control/integrations-client.js');
  assert.doesNotMatch(source,/sk-[A-Za-z0-9]/);
- assert.doesNotMatch(source,/Bearer\s+[A-Za-z0-9._-]+/);
- assert.match(source,/label:'E-mail'.*state:'disconnected'/s);
- assert.match(source,/label:'Réseaux sociaux'.*state:'disconnected'/s);
- assert.match(source,/label:'Finances'.*state:'disconnected'/s);
- assert.match(source,/label:'Agenda'.*state:'disconnected'/s);
- assert.match(source,/label:'3B IA Command'.*state:'disconnected'/s);
+ assert.doesNotMatch(source,/Bearer\\s+[A-Za-z0-9._-]+/);
+ assert.match(source,/commandIntegrationsStatus/);
+ assert.match(source,/setup_required/);
+ assert.match(source,/Stripe/);
+ assert.match(source,/Metricool/);
+ assert.match(client,/Authorization:'Bearer '\+session\.access_token/);
 });

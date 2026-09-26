@@ -40,11 +40,10 @@ test('Command OS V2 exposes a truthful Nexus, privacy mode and fact-only brief',
  assert.doesNotMatch(page,/État global.*pour cent/);
  assert.match(nexus,/COMMAND BRIEF/);
  assert.match(nexus,/Nexus 3B/);
- assert.match(nexus,/Non connecté/);
- assert.match(nexus,/Aucune source financière connectée/);
- assert.match(nexus,/Aucun compte e-mail connecté/);
- assert.match(nexus,/Aucune donnée simulée/);
- assert.match(nexus,/API Vercel non connectée/);
+ assert.match(nexus,/Intégrations externes/);
+ assert.match(nexus,/cc-integrations/);
+ assert.match(nexus,/Gmail, Agenda, réseaux, Stripe, Vercel et IA vérifiés côté serveur/);
+ assert.match(nexus,/état détaillé des services externes vient du Centre d’intégrations propriétaire/);
 });
 
 test('Control Center status exposes audited live events',()=>{

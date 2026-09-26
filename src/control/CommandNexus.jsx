@@ -1,8 +1,7 @@
 import {useMemo,useState} from 'react';
 import {
- Activity,AppWindow,BrainCircuit,CalendarDays,ChevronDown,ChevronRight,ChevronUp,
- CircleOff,Database,Eye,EyeOff,Github,Mail,Monitor,Radar,Share2,ShieldCheck,
- WalletCards,Workflow
+ Activity,AppWindow,ChevronDown,ChevronRight,ChevronUp,
+ CircleOff,Database,Eye,EyeOff,Github,Monitor,Radar,ShieldCheck,Workflow
 } from 'lucide-react';
 
 const stateLabel={
@@ -63,13 +62,8 @@ export default function CommandNexus({
    {id:'github',label:'GitHub / CI',Icon:Github,state:githubState,detail:pulse?.github===true?(pulse?.workflow||'Dépôt public et Actions joignables'):pulse?.github===false?'GitHub indisponible au dernier contrôle':'Vérification en cours',anchor:'cc-log'},
    {id:'pc',label:'PC autorisé',Icon:Monitor,state:pcState,detail:primaryDevice?(primaryOnline?'Agent connecté':'Appareil connu · agent hors ligne'):'Aucun appareil appairé',anchor:'cc-devices'},
    {id:'security',label:'Sécurité',Icon:ShieldCheck,state:dataAvailable?'available':coreState,detail:'Accès propriétaire serveur · allowlist · journal d’audit',anchor:'cc-log'},
-   {id:'deploy',label:'Vercel',Icon:Workflow,state:pulse?.production===null?'checking':'partial',detail:'Santé production disponible · API Vercel non connectée'},
-   {id:'projects',label:'Projets 3B',Icon:Activity,state:pulse?.github===true?'partial':'disconnected',detail:pulse?.github===true?'Activité GitHub disponible · jalons dédiés non connectés':'Source projets dédiée non connectée'},
-   {id:'email',label:'Emails',Icon:Mail,state:'disconnected',detail:'Aucun compte e-mail connecté à Command OS'},
-   {id:'social',label:'Réseaux sociaux',Icon:Share2,state:'disconnected',detail:'TikTok / YouTube / Instagram non connectés'},
-   {id:'finance',label:'Finances',Icon:WalletCards,state:'disconnected',detail:'Aucune source financière connectée'},
-   {id:'calendar',label:'Agenda',Icon:CalendarDays,state:'disconnected',detail:'Aucun calendrier connecté à Command OS'},
-   {id:'ai',label:'3B IA Command',Icon:BrainCircuit,state:'disconnected',detail:'Assistant de synthèse dédié non connecté'}
+   {id:'integrations',label:'Intégrations externes',Icon:Workflow,state:'available',detail:'Gmail, Agenda, réseaux, Stripe, Vercel et IA vérifiés côté serveur',anchor:'cc-integrations'},
+   {id:'projects',label:'Projets 3B',Icon:Activity,state:pulse?.github===true?'partial':'disconnected',detail:pulse?.github===true?'Activité GitHub disponible · jalons dédiés non connectés':'Source projets dédiée non connectée',anchor:'cc-projects'}
   ];
  },[dataAvailable,error,primaryDevice,primaryOnline,pulse]);
 
@@ -147,7 +141,7 @@ export default function CommandNexus({
 
   <p className="control-nexus-truth">
    <ShieldCheck size={14}/>
-   <span>Aucune donnée simulée : une source absente reste affichée « Non connecté » jusqu’à une intégration réelle et autorisée.</span>
+   <span>Aucune donnée simulée : l’état détaillé des services externes vient du Centre d’intégrations propriétaire et reste « À connecter » tant qu’un secret applicatif valide manque.</span>
   </p>
  </section>;
 }
