@@ -100,7 +100,7 @@ export default function CommandNexus({
  const connected=domains.filter(domain=>['connected','available','partial'].includes(domain.state)).length;
  const disconnected=domains.filter(domain=>domain.state==='disconnected').length;
 
- return <section className="control-section control-nexus" id="cc-nexus" aria-label="Nexus 3B et état des connexions">
+ return <section className="control-section control-nexus control-hide-in-focus" id="cc-nexus" aria-label="Nexus 3B et état des connexions">
   <header className="control-section-heading control-nexus-heading">
    <div>
     <p className="control-kicker"><Activity size={13}/> NEXUS · SOURCES RÉELLES</p>
