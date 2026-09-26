@@ -66,8 +66,15 @@ test('a script that loaded without the API rejects and can be retried', async ()
 
 test('deployment policy allows the anti-bot script and frame without relaxing other script origins', () => {
   const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
-  const policy = config.headers.find(rule => rule.source === '/:path((?!religion(?:/|$)).*)').headers.find(header => header.key === 'Content-Security-Policy').value;
-  const directives = new Map(policy.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
+  const policyHeader = config.headers
+    .flatMap(rule => rule.headers || [])
+    .find(header =>
+      header.key === 'Content-Security-Policy' &&
+      header.value.includes('https://challenges.cloudflare.com') &&
+      header.value.includes('https://www.youtube-nocookie.com')
+    );
+  assert.ok(policyHeader, 'global CSP with Turnstile and privacy-enhanced YouTube must exist');
+  const directives = new Map(policyHeader.value.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
   assert.ok(directives.get('script-src').includes('https://challenges.cloudflare.com'));
   assert.deepEqual(directives.get('frame-src'), ['https://challenges.cloudflare.com', 'https://www.youtube-nocookie.com']);
   assert.ok(!directives.get('script-src').includes("'unsafe-inline'"));
