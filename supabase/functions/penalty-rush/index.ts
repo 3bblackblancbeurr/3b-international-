@@ -905,29 +905,28 @@ async function commitRoom(room:Room, patch:Record<string,any>, actor:string|null
   return rows[0];
 }
 
-async function insertRoom(uid:string, profile:any, mode:string) {
-  for (let attempt=0; attempt<6; attempt++) {
-    const code = randomCode();
-    try {
-      const rows = await admin('/rest/v1/penalty_rooms?select=*', {
+async function insertRoom(uid:string, profile:any, mode:string, context:any={}) {
+  for(let attempt=0;attempt<6;attempt++){
+    const code=randomCode();
+    try{
+      const rows=await admin('/rest/v1/penalty_rooms?select=*',{
         method:'POST',
         body:{
-          code,
-          mode,
-          host_user_id:uid,
-          status:'waiting',
-          players:[playerEntry(uid, profile, true)],
+          code,mode,host_user_id:uid,status:'waiting',
+          players:[playerEntry(uid,profile,true,context)],
           member_ids:[uid],
-          expires_at:plusMs(mode === 'private' ? 30*60_000 : 6*60_000),
+          ranked_season_id:context?.rankedSeasonId||null,
+          international_window_id:context?.internationalWindowId||null,
+          expires_at:plusMs(mode==='private'?30*60_000:8*60_000),
         },
         prefer:'return=representation',
       });
-      if (Array.isArray(rows) && rows[0]) return rows[0];
-    } catch (error) {
-      if (!(error instanceof Failure) || !/duplicate|unique/i.test(error.message)) throw error;
+      if(Array.isArray(rows)&&rows[0])return rows[0];
+    }catch(error){
+      if(!(error instanceof Failure)||!/duplicate|unique/i.test(error.message))throw error;
     }
   }
-  throw new Failure(503, 'Impossible de créer le duel. Réessaie.');
+  throw new Failure(503,'Impossible de créer le duel. Réessaie.');
 }
 
 function resetPossession(state:any, at:number) {
@@ -1006,30 +1005,84 @@ async function startRoom(room:Room, actor:string) {
   }, actor, 'start', { mode:room.mode });
 }
 
-async function queueRoom(uid:string, profile:any, mode:string) {
-  if (!['quick','ranked'].includes(mode)) throw new Failure(400, 'File de jeu inconnue.');
-  const candidates = await admin(
-    '/rest/v1/penalty_rooms?mode=eq.' + encodeURIComponent(mode) +
-    '&status=eq.waiting&expires_at=gt.' + encodeURIComponent(nowIso()) +
-    '&order=created_at.asc&limit=16&select=*'
-  );
-  let room = (Array.isArray(candidates) ? candidates : []).find((candidate:any) =>
-    (candidate.players || []).length === 1 && !(candidate.member_ids || []).includes(uid)
-  );
-  if (!room) return await insertRoom(uid, profile, mode);
+async function recentOpponentIds(uid:string,mode:string,minutes=20) {
+  const since=new Date(Date.now()-minutes*60_000).toISOString();
+  const rows=await admin(
+    '/rest/v1/penalty_match_history?mode=eq.'+encodeURIComponent(mode)+
+    '&created_at=gte.'+encodeURIComponent(since)+
+    '&or=(player_a.eq.'+encodeURIComponent(uid)+',player_b.eq.'+encodeURIComponent(uid)+')'+
+    '&select=player_a,player_b&limit=40'
+  ).catch(()=>[]);
+  const ids=new Set<string>();
+  for(const row of Array.isArray(rows)?rows:[]){
+    const other=row.player_a===uid?row.player_b:row.player_a;
+    if(UUID.test(String(other||'')))ids.add(String(other));
+  }
+  return ids;
+}
 
-  const players = [...room.players.map((player:any) => ({...player,ready:true})), playerEntry(uid, profile, true)];
-  try {
-    room = await commitRoom(room, {
-      players,
-      member_ids:players.map((player:any) => player.uid),
-      expires_at:plusMs(8*60_000),
-    }, uid, 'matchmaking_join', { mode });
-  } catch (error) {
-    if (error instanceof Failure && error.status === 409) return await insertRoom(uid, profile, mode);
+async function queueRoom(uid:string,profile:any,mode:string) {
+  if(!['quick','ranked','international'].includes(mode))throw new Failure(400,'File de jeu inconnue.');
+  let context:any={rankedRating:1000,divisionId:'placement'};
+  let extraFilter='';
+
+  if(mode==='ranked'){
+    assertCompetitiveIdentity(profile);
+    const rankedState=await rankedStatsFor(uid,profile.country_id);
+    if(!rankedState.season)throw new Failure(409,'Aucune saison classée active.');
+    const division=divisionFor(number(rankedState.stats.rating,1000),number(rankedState.stats.games),number(rankedState.season.placement_matches,5));
+    context={rankedRating:number(rankedState.stats.rating,1000),divisionId:division.id,rankedSeasonId:rankedState.season.id};
+    extraFilter='&ranked_season_id=eq.'+encodeURIComponent(rankedState.season.id);
+  }
+
+  if(mode==='international'){
+    assertCompetitiveIdentity(profile);
+    const window=await activeInternationalWindow(['active']);
+    if(!window)throw new Failure(409,'Aucune fenêtre de matchs internationaux n’est ouverte.');
+    const selection=await selectionForWindow(uid,window.id);
+    if(!selection||selection.status!=='selected'||selection.country_id!==profile.country_id){
+      throw new Failure(403,'Une sélection nationale confirmée est requise pour jouer ce match.');
+    }
+    context={rankedRating:1000,divisionId:'international',internationalWindowId:window.id};
+    extraFilter='&international_window_id=eq.'+encodeURIComponent(window.id);
+  }
+
+  const candidates=await admin(
+    '/rest/v1/penalty_rooms?mode=eq.'+encodeURIComponent(mode)+extraFilter+
+    '&status=eq.waiting&expires_at=gt.'+encodeURIComponent(nowIso())+
+    '&order=created_at.asc&limit=24&select=*'
+  );
+  const recent=await recentOpponentIds(uid,mode,20);
+  let pool=(Array.isArray(candidates)?candidates:[]).filter((candidate:any)=>{
+    if((candidate.players||[]).length!==1||(candidate.member_ids||[]).includes(uid))return false;
+    const host=candidate.players?.[0];
+    if(!host?.uid)return false;
+    if(mode==='international'&&host.countryId===profile.country_id)return false;
+    if(mode==='ranked'&&Math.abs(number(host.rankedRating,1000)-number(context.rankedRating,1000))>320)return false;
+    return true;
+  });
+  pool.sort((a:any,b:any)=>{
+    const aRecent=recent.has(String(a.players?.[0]?.uid||''))?1:0;
+    const bRecent=recent.has(String(b.players?.[0]?.uid||''))?1:0;
+    if(aRecent!==bRecent)return aRecent-bRecent;
+    if(mode==='ranked'){
+      const ag=Math.abs(number(a.players?.[0]?.rankedRating,1000)-number(context.rankedRating,1000));
+      const bg=Math.abs(number(b.players?.[0]?.rankedRating,1000)-number(context.rankedRating,1000));
+      if(ag!==bg)return ag-bg;
+    }
+    return String(a.created_at||'').localeCompare(String(b.created_at||''));
+  });
+  let room=pool[0]||null;
+  if(!room)return await insertRoom(uid,profile,mode,context);
+
+  const players=[...room.players.map((player:any)=>({...player,ready:true})),playerEntry(uid,profile,true,context)];
+  try{
+    room=await commitRoom(room,{players,member_ids:players.map((player:any)=>player.uid),expires_at:plusMs(8*60_000)},uid,'matchmaking_join',{mode});
+  }catch(error){
+    if(error instanceof Failure&&error.status===409)return await insertRoom(uid,profile,mode,context);
     throw error;
   }
-  return await startRoom(room, uid);
+  return await startRoom(room,uid);
 }
 
 async function joinPrivate(uid:string, profile:any, codeInput:unknown) {
