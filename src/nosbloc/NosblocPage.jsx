@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useLoyalty } from "../loyalty/LoyaltyContext.jsx";
 import City3BPortal from "../components/City3BPortal.jsx";
+import NosblocServerPanel from "./NosblocServerPanel.jsx";
 import {
   ECONOMY_RULES,
   NOSBLOC_STORAGE_KEY,
@@ -308,6 +309,7 @@ export default function NosblocPage({ goTo }) {
         {tab === "discovery" && <Discovery projects={state.projects} selected={selected} updateProject={updateProject} openProject={openProject} />}
       </div>
       <input ref={importRef} className="nosbloc-hidden-input" type="file" accept="application/json,.json" onChange={importArchive} />
+      <NosblocServerPanel account={account} selected={selected} updateProject={updateProject} setNotice={setNotice} />
       <City3BPortal open={cityOpen} onClose={() => setCityOpen(false)} />
     </section>
   );
