@@ -20,3 +20,17 @@
 @media(prefers-reduced-motion:reduce){.power3b-nations button,.power3b-cinematic,.power3b-cine-lines,.power3b-shockwave{animation:none!important;transition:none!important}}
 
 .power3b-shell[data-resolving="true"] .power3b-main,.power3b-shell[data-resolving="true"] .power3b-orders{pointer-events:none}.power3b-shell[data-resolving="true"] .power3b-board-hint{color:#efd89e}.power3b-shell[data-resolving="true"] .power3b-board-hint:before{content:'RÉSOLUTION EN COURS · ';letter-spacing:.08em;color:#f1c86e}
+
+.power3b-cine-core:before,.power3b-cine-core:after{content:'';position:absolute;left:50%;top:50%;pointer-events:none;z-index:-1}
+.power3b-cine-core:before{width:min(62vw,520px);aspect-ratio:1;border:1px solid #e9ce8b45;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 90px #7bc6ff17,inset 0 0 70px #d7bb7420;animation:powerCinePulse 1.8s ease-in-out infinite}
+.power3b-cinematic.battle .power3b-cine-core:after{width:min(58vw,500px);height:4px;background:linear-gradient(90deg,transparent,#fff2c8,#e1a452,transparent);transform:translate(-50%,-50%) rotate(-18deg);box-shadow:0 0 28px #ffbd67;animation:powerSlash .7s cubic-bezier(.2,.7,.2,1) infinite alternate}
+.power3b-cinematic.stalemate{background:radial-gradient(circle,#29333be8,#040609f7 72%)}
+.power3b-cinematic.stalemate .power3b-cine-core:before{border-style:dashed;animation:powerSpin 5s linear infinite}
+.power3b-cinematic.flag .power3b-cine-core:before,.power3b-cinematic.victory .power3b-cine-core:before{border-width:3px;border-color:#f1d08588;box-shadow:0 0 110px #d8ad4670,inset 0 0 70px #d7bb7438}
+.power3b-cinematic.victory{background:radial-gradient(circle,#5a451cdb,#05070bf7 70%)}
+.power3b-cinematic.penalty{background:radial-gradient(circle,#552126df,#05070bf7 72%)}
+.power3b-cinematic.power .power3b-cine-core h2{color:#ffe6a8}
+@keyframes powerCinePulse{50%{transform:translate(-50%,-50%) scale(1.08);opacity:.58}}
+@keyframes powerSlash{from{transform:translate(-50%,-50%) rotate(-18deg) scaleX(.65);opacity:.55}to{transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.12);opacity:1}}
+@keyframes powerSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.power3b-cine-core:before,.power3b-cine-core:after{animation:none!important}}
