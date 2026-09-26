@@ -467,14 +467,16 @@ function MobileNav({ view, setView }) {
   </nav>;
 }
 
-function TopBar({ view, selected, online, onBack, onCreate }) {
+function TopBar({ view, selected, online, serverStatus, onBack, onCreate }) {
   const title = view === "studio" ? selected?.title || "Studio" : {
     home: "Nosbloc 3B", explore: "Explorer", create: "Créer", activity: "Activité", me: "Mon espace",
   }[view] || "Nosbloc 3B";
+  const serverOnline = online && serverStatus?.state === "online";
+  const label = !online ? "Hors ligne" : serverStatus?.state === "connecting" ? "Synchronisation…" : serverOnline ? "Synchronisé" : "Mode local";
   return <header className="nb2-topbar">
     <button className="nb2-back" onClick={onBack} aria-label="Retour"><ArrowLeft size={19}/></button>
     <div><small>NOSBLOC DU 3B</small><strong>{title}</strong></div>
-    <span className="nb2-network" data-online={online}>{online ? <Cloud size={15}/> : <CloudOff size={15}/>} {online ? "En ligne" : "Hors ligne"}</span>
+    <span className="nb2-network" data-online={serverOnline}>{serverOnline ? <Cloud size={15}/> : <CloudOff size={15}/>} {label}</span>
     {view !== "create" && view !== "studio" && <button className="nb2-top-create" onClick={onCreate}><Plus size={17}/> Créer</button>}
   </header>;
 }
@@ -562,24 +564,53 @@ function ProjectHero({ project, onOpen }) {
   </article>;
 }
 
-function ExploreView({ projects, marketplace = [], openStudio }) {
+function ExploreView({ projects, remoteProjects = [], marketplace = [], discoverEnabled, openStudio }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [section, setSection] = useState("projects");
   const [previewId, setPreviewId] = useState("");
   const normalizedQuery = query.trim().toLocaleLowerCase("fr");
-  const rows = useMemo(() => projects
+
+  const localRows = useMemo(() => (projects || []).map(project => ({ ...project, _owned:true })), [projects]);
+  const remoteRows = useMemo(() => {
+    const localClientIds = new Set((projects || []).map(project => project.id));
+    const localServerIds = new Set((projects || []).map(project => project.server?.projectId).filter(Boolean));
+    return (remoteProjects || [])
+      .filter(row => !localClientIds.has(row.clientProjectId) && !localServerIds.has(row.projectId))
+      .map(row => ({
+        id: "public:" + row.projectId,
+        serverProjectId: row.projectId,
+        clientProjectId: row.clientProjectId,
+        title: row.title,
+        type: row.type,
+        template: row.template,
+        description: row.description,
+        audience: row.audience,
+        status: "published",
+        visibility: "public",
+        updatedAt: row.updatedAt,
+        creator: row.creator || "Créateur 3B",
+        publicReadiness: Number(row.readinessScore || 0),
+        stats: { trustScore:Number(row.trustScore || 100) },
+        _owned:false,
+      }));
+  }, [projects, remoteProjects]);
+  const sourceProjects = useMemo(() => [...localRows, ...remoteRows], [localRows, remoteRows]);
+
+  const rows = useMemo(() => sourceProjects
     .filter(project => type === "all" || project.type === type)
-    .filter(project => (project.title + " " + project.description).toLocaleLowerCase("fr").includes(normalizedQuery))
-    .sort((a,b) => discoveryScore(b) - discoveryScore(a)), [projects, normalizedQuery, type]);
-  const shopRows = useMemo(() => marketplace
-    .filter(item => !normalizedQuery || (String(item.name || item.title || "") + " " + String(item.category || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
+    .filter(project => (String(project.title || "") + " " + String(project.description || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
+    .sort((a,b) => a._owned === b._owned ? discoveryScore(b) - discoveryScore(a) : Number(b._owned) - Number(a._owned)), [sourceProjects, normalizedQuery, type]);
+
+  const shopRows = useMemo(() => (marketplace || [])
+    .filter(item => !normalizedQuery || (String(item.title || item.name || "") + " " + String(item.category || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
     .slice(0, 80), [marketplace, normalizedQuery]);
+
   const creators = useMemo(() => {
     const byName = new Map();
-    for (const project of projects) {
+    for (const project of sourceProjects) {
       const owner = (project.splits || []).find(row => row.status === "owner") || project.splits?.[0];
-      const name = String(owner?.name || "Créateur 3B").trim();
+      const name = String(project.creator || owner?.name || "Créateur 3B").trim();
       const key = name.toLocaleLowerCase("fr");
       const current = byName.get(key) || { name, projects: 0, published: 0 };
       current.projects += 1;
@@ -589,13 +620,14 @@ function ExploreView({ projects, marketplace = [], openStudio }) {
     return [...byName.values()]
       .filter(row => !normalizedQuery || row.name.toLocaleLowerCase("fr").includes(normalizedQuery))
       .sort((a,b) => b.projects - a.projects);
-  }, [projects, normalizedQuery]);
-  const preview = projects.find(project => project.id === previewId) || null;
+  }, [sourceProjects, normalizedQuery]);
 
-  if (preview) return <ProjectPublicView project={preview} onBack={() => setPreviewId("")} onOpenStudio={() => openStudio(preview.id)} />;
+  const preview = sourceProjects.find(project => project.id === previewId) || null;
+  if (preview) return <ProjectPublicView project={preview} onBack={() => setPreviewId("")} onOpenStudio={preview._owned ? () => openStudio(preview.id) : null} />;
 
   return <div className="nb2-view">
     <section className="nb2-page-head"><p className="nb2-kicker">EXPLORER</p><h1>Trouve sans chercher partout.</h1><p>Une recherche unique pour les créations, la Boutique et les créateurs Nosbloc.</p></section>
+    {!discoverEnabled && <div className="nb2-lock-banner"><LockKeyhole size={17}/> Discover public reste fermé pendant la recette. Tes propres projets restent accessibles normalement.</div>}
     <div className="nb2-explore-sections" role="tablist" aria-label="Explorer Nosbloc">
       <button role="tab" aria-selected={section === "projects"} data-active={section === "projects"} onClick={() => setSection("projects")}><Compass size={16}/> Créations</button>
       <button role="tab" aria-selected={section === "shop"} data-active={section === "shop"} onClick={() => setSection("shop")}><Store size={16}/> Boutique</button>
@@ -614,9 +646,9 @@ function ExploreView({ projects, marketplace = [], openStudio }) {
 
     {section === "shop" && (!shopRows.length
       ? <EmptyState icon={Store} title="La Boutique créateur est prête, mais aucune offre publique n’est activée." text="Les paiements restent verrouillés tant que l’environnement réel, le KYC et la fiscalité ne sont pas validés."/>
-      : <div className="nb2-card-grid">{shopRows.map((item,index) => <article className="nb2-card" key={item.id || item.asset_id || index}>
+      : <div className="nb2-card-grid">{shopRows.map((item,index) => <article className="nb2-card" key={item.id || index}>
           <div className="nb2-card-cover"><Package size={25}/><small>{item.category || "Asset Nosbloc"}</small></div>
-          <div className="nb2-card-body"><span className="nb2-status" data-tone="gold">Boutique</span><h3>{item.name || item.title || "Création 3B"}</h3><p>{item.creator || item.license || "Ressource créateur"}</p><button disabled title="Paiements réels verrouillés">Paiement verrouillé <LockKeyhole size={14}/></button></div>
+          <div className="nb2-card-body"><span className="nb2-status" data-tone="gold">Boutique</span><h3>{item.title || "Création 3B"}</h3><p>{item.description || "Ressource créateur"}</p><strong>{formatEuros(Number(item.priceCents || 0))}</strong><button disabled title="Paiements réels verrouillés">Paiement verrouillé <LockKeyhole size={14}/></button></div>
         </article>)}</div>
     )}
 
@@ -626,9 +658,8 @@ function ExploreView({ projects, marketplace = [], openStudio }) {
     )}
   </div>;
 }
-
 function ProjectPublicView({ project, onBack, onOpenStudio }) {
-  const ready = projectReadiness(project);
+  const ready = { ...projectReadiness(project), score: Number.isFinite(project.publicReadiness) ? project.publicReadiness : projectReadiness(project).score };
   const status = STATUS[project.status] || [project.status, "neutral"];
   const owner = (project.splits || []).find(row => row.status === "owner") || project.splits?.[0];
   return <div className="nb2-view">
@@ -639,19 +670,20 @@ function ProjectPublicView({ project, onBack, onOpenStudio }) {
         <span className="nb2-status" data-tone={status[1]}>{status[0]}</span>
         <h1>{project.title}</h1>
         <p>{project.description || "Création Nosbloc 3B."}</p>
-        <div className="nb2-public-by"><UserRound size={16}/> Créé par <b>{owner?.name || "Créateur 3B"}</b></div>
+        <div className="nb2-public-by"><UserRound size={16}/> Créé par <b>{project.creator || owner?.name || "Créateur 3B"}</b></div>
         <div className="nb2-progress"><i style={{width: ready.score + "%"}}/></div>
         <small>{ready.score} % de préparation · {PROJECT_TYPES.find(x => x.id === project.type)?.label}</small>
         <div className="nb2-public-actions">
-          <button className="primary" onClick={onOpenStudio}><FolderKanban size={17}/> Ouvrir mon Studio</button>
-          <button disabled><Eye size={17}/> Aperçu public après validation</button>
+          {onOpenStudio ? <button className="primary" onClick={onOpenStudio}><FolderKanban size={17}/> Ouvrir mon Studio</button> : <button className="primary" disabled><Eye size={17}/> Expérience publiée</button>}
+          {onOpenStudio && <button disabled><Eye size={17}/> Aperçu public après validation</button>}
         </div>
       </div>
     </section>
   </div>;
 }
 function ProjectCard({ project, onOpen }) {
-  const ready = projectReadiness(project);
+  const localReady = projectReadiness(project);
+  const ready = { ...localReady, score: Number.isFinite(project.publicReadiness) ? project.publicReadiness : localReady.score };
   const status = STATUS[project.status] || [project.status, "neutral"];
   return <article className="nb2-card">
     <div className="nb2-card-cover"><Sparkles size={25}/><small>{project.template}</small></div>
