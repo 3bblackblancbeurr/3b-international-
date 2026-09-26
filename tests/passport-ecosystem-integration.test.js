@@ -18,7 +18,7 @@ test('Sport challenges use the shared account and media cards remain internal',(
  assert.match(sport,/useLoyalty/);
  assert.match(sport,/account\.user/);
  assert.match(sport,/LECTEUR INTERNE 3B/);
- assert.match(sport,/les cartes H24 et Finales ne contiennent aucun lien externe/);
+ assert.match(sport,/H24_CHANNELS,SPORT_FINALS/);
  assert.match(sport,/SportMediaPlayer/);
  assert.match(sport,/sandbox="allow-scripts allow-same-origin allow-presentation"/);
  assert.match(sport,/isTrustedSportEmbed/);
