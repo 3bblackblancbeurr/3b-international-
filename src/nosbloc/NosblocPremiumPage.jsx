@@ -710,7 +710,7 @@ function CreateView({ ownerName, state, commit, openStudio }) {
     }, ownerName);
     if (form.start === "ai" && form.description.trim()) project.plan = generateBuildPlan(form.description, form.type);
     const next = { ...state, projects: [project, ...state.projects] };
-    commit(next, "Projet créé et sauvegardé.", activityEntry("create", "Projet créé", project.title));
+    commit(next, "Projet créé et sauvegardé.", activityEntry("create", "Projet créé", project.title), project.id);
     openStudio(project.id);
   };
 
@@ -843,7 +843,7 @@ function ProfileView({ state, money, serverStatus, setCityOpen, onExport, onImpo
     </section>
   </div>;
 }
-function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account, setNotice }) {
+function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, publishProject, archiveProject, restoreVersion, inviteTeamMember, revokeTeamInvite, setView, money, finance, economyActions, setNotice }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   if (!project) return <div className="nb2-view"><EmptyState icon={FolderKanban} title="Aucun projet sélectionné." text="Crée ou ouvre un projet."/><button className="nb2-primary-inline" onClick={() => setView("create")}>Créer un projet</button></div>;
   const ready = projectReadiness(project);
@@ -865,7 +865,7 @@ function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, 
   </div>;
 }
 
-function SimpleStudio({ project, ready, setField, updateProject, startPrivateTest, requestReview }) {
+function SimpleStudio({ project, ready, setField, updateProject, startPrivateTest, requestReview, publishProject }) {
   const plan = Array.isArray(project.plan) ? project.plan : [];
   const togglePlan = id => updateProject(project.id, { plan: plan.map(row => row.id === id ? {...row,done:!row.done} : row) });
   const generate = () => updateProject(project.id, { plan: generateBuildPlan(project.description, project.type) }, "Plan de production généré.");
@@ -898,7 +898,7 @@ function ReadinessChecklist({ ready }) {
   return <div className="nb2-checklist">{ready.checks.map(check => <div key={check.id} data-ok={check.ok}><span>{check.ok ? <Check size={14}/> : null}</span><b>{check.label}</b><small>{check.weight} pts</small></div>)}</div>;
 }
 
-function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, account, setNotice }) {
+function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, inviteTeamMember, revokeTeamInvite, money, finance, economyActions, setNotice }) {
   return <div className="nb2-pro">
     <nav className="nb2-pro-tabs">{PRO_TABS.map(([id,label,Icon]) => <button key={id} data-active={proTab === id} onClick={() => setProTab(id)}><Icon size={16}/>{label}</button>)}</nav>
     {proTab === "build" && <BuildPro project={project} ready={ready} updateProject={updateProject}/>}
