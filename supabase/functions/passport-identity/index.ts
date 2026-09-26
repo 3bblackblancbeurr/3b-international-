@@ -45,6 +45,9 @@ Deno.serve(async req=>{
   if(!profile?.passport_public_id)throw new Failure(409,'Ton Passeport 3B est encore en préparation.');
   if(profile.passport_state!=='active')throw new Failure(403,'Ce Passeport 3B ne peut pas être présenté.');
 
+  const issuedAt=new Date().toISOString();
+  await api('/rest/v1/passport_verification_tickets?user_id=eq.'+uid+'&consumed_at=is.null&revoked_at=is.null',{revoked_at:issuedAt},'PATCH');
+
   const token=secret();
   const expiresAt=new Date(Date.now()+5*60*1000).toISOString();
   await api('/rest/v1/passport_verification_tickets',{
