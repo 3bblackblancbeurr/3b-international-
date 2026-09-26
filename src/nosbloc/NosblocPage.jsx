@@ -20,6 +20,7 @@ import {
 import {
   NOSBLOC_SERVER_ENABLED, NOSBLOC_SERVER_ENV, NOSBLOC_SERVER_ENV_VALID, nosblocServer
 } from "./server-client.js";
+import { nosblocCommerce } from "./commerce-client.js";
 import "./nosbloc.css";
 
 const STATUS_LABELS = {
@@ -101,6 +102,11 @@ export default function NosblocPage({ goTo }) {
   const [online, setOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const [cityOpen, setCityOpen] = useState(false);
   const [serverState, setServerState] = useState({ connected: false, busy: false, error: "", lastSync: "" });
+  const [commerceState, setCommerceState] = useState({
+    loading: false, available: false, real: null, creator: null,
+    connectEnabled: false, payoutsEnabled: false, testMode: true,
+    countries: [], platformFeeBps: 0, error: "",
+  });
 
   useEffect(() => {
     const loadedState = loadState(storageKey, recoveryKey, { studioName: `Studio de ${ownerName}` });
@@ -139,6 +145,56 @@ export default function NosblocPage({ goTo }) {
     return () => { active = false; };
   }, [account.user?.id]);
 
+  async function refreshCommerce() {
+    if (!account.user?.id) return;
+    setCommerceState(previous => ({ ...previous, loading: true, error: "" }));
+    try {
+      const [config, wallet] = await Promise.all([
+        nosblocCommerce.config(),
+        nosblocCommerce.wallet(),
+      ]);
+      setCommerceState({
+        loading: false,
+        available: true,
+        real: wallet.real || null,
+        creator: wallet.creator || config.creator || null,
+        connectEnabled: Boolean(wallet.connectEnabled ?? config.connectEnabled),
+        payoutsEnabled: Boolean(wallet.payoutsEnabled ?? config.payoutsEnabled),
+        testMode: Boolean(wallet.testMode ?? config.testMode ?? true),
+        countries: Array.isArray(config.connectCountries) ? config.connectCountries : [],
+        platformFeeBps: Number(config.platformFeeBps || 0),
+        error: "",
+      });
+    } catch (error) {
+      setCommerceState(previous => ({
+        ...previous,
+        loading: false,
+        available: false,
+        error: error instanceof Error ? error.message : "Commerce créateur indisponible.",
+      }));
+    }
+  }
+
+  useEffect(() => {
+    if (!account.user?.id) return undefined;
+    let active = true;
+    Promise.resolve().then(() => active && refreshCommerce());
+    return () => { active = false; };
+  }, [account.user?.id]);
+
+  async function startCreatorVerification(country) {
+    try {
+      setCommerceState(previous => ({ ...previous, loading: true, error: "" }));
+      const result = await nosblocCommerce.connect(country);
+      if (!/^https:\/\/([a-z0-9-]+\.)*stripe\.com\//i.test(result.url || "")) throw new Error("Lien Stripe invalide.");
+      window.location.assign(result.url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Vérification créateur indisponible.";
+      setCommerceState(previous => ({ ...previous, loading: false, error: message }));
+      setNotice(message);
+    }
+  }
+
   const selected = useMemo(
     () => state.projects.find(project => project.id === selectedId) || null,
     [state.projects, selectedId],
@@ -150,6 +206,12 @@ export default function NosblocPage({ goTo }) {
   );
   const unread = state.activity.filter(item => !item.read).length;
   const coinsBalance = Number(account.profile?.points ?? state.wallet.coins.balance ?? 0);
+  const realWallet = commerceState.real ? {
+    availableCents: Number(commerceState.real.availableCents || 0),
+    pendingCents: Number(commerceState.real.pendingCents || 0),
+    payoutCents: Number(commerceState.real.paidOutCents || 0),
+    currency: "EUR",
+  } : state.wallet.real;
 
   function persist(next, previous) {
     try {
@@ -380,7 +442,7 @@ export default function NosblocPage({ goTo }) {
         {notice && <div className="nb2-notice" role="status"><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Fermer"><X size={17} /></button></div>}
 
         <main className="nb2-content">
-          {view === "home" && <HomeView ownerName={ownerName} projects={activeProjects} latestProject={latestProject} wallet={state.wallet} coinsBalance={coinsBalance} onNavigate={setView} onOpenProject={openProject} onOpenCity={() => setCityOpen(true)} />}
+          {view === "home" && <HomeView ownerName={ownerName} projects={activeProjects} latestProject={latestProject} wallet={{ ...state.wallet, real: realWallet }} coinsBalance={coinsBalance} onNavigate={setView} onOpenProject={openProject} onOpenCity={() => setCityOpen(true)} />}
           {view === "explore" && <ExploreView projects={activeProjects} onOpenProject={openProject} onOpenCity={() => setCityOpen(true)} />}
           {view === "create" && <CreateView ownerName={ownerName} onCreate={project => {
             commit(previous => ({ ...previous, projects: [project, ...previous.projects] }), {
@@ -390,9 +452,9 @@ export default function NosblocPage({ goTo }) {
             setView("studio");
           }} />}
           {view === "activity" && <ActivityView items={state.activity} onReadAll={markActivitiesRead} />}
-          {view === "me" && <ProfileView ownerName={ownerName} profile={state.profile} wallet={state.wallet} coinsBalance={coinsBalance} projects={activeProjects} onProjects={() => setView("projects")} onExport={exportArchive} onImport={() => importRef.current?.click()} />}
+          {view === "me" && <ProfileView ownerName={ownerName} profile={state.profile} wallet={{ ...state.wallet, real: realWallet }} coinsBalance={coinsBalance} projects={activeProjects} commerce={commerceState} onRefreshCommerce={refreshCommerce} onVerifyCreator={startCreatorVerification} onProjects={() => setView("projects")} onExport={exportArchive} onImport={() => importRef.current?.click()} />}
           {view === "projects" && <ProjectsView projects={state.projects} onOpen={openProject} onCreate={() => setView("create")} onArchive={archiveProject} />}
-          {view === "studio" && selected && <StudioView project={selected} profile={state.profile} wallet={state.wallet} coinsBalance={coinsBalance} serverBusy={serverState.busy} serverConnected={serverState.connected} onBack={() => setView("projects")} updateProject={updateProject} onTest={runPrivateTest} onReview={requestReview} onRestore={restoreVersion} />}
+          {view === "studio" && selected && <StudioView project={selected} profile={state.profile} wallet={{ ...state.wallet, real: realWallet }} coinsBalance={coinsBalance} commerce={commerceState} onRefreshCommerce={refreshCommerce} onVerifyCreator={startCreatorVerification} serverBusy={serverState.busy} serverConnected={serverState.connected} onBack={() => setView("projects")} updateProject={updateProject} onTest={runPrivateTest} onReview={requestReview} onRestore={restoreVersion} />}
           {view === "studio" && !selected && <EmptyState title="Aucun projet ouvert" text="Crée ton premier projet pour ouvrir le Studio." action="Créer" onAction={() => setView("create")} />}
         </main>
       </div>
@@ -569,7 +631,7 @@ function ActivityView({ items, onReadAll }) {
   </div>;
 }
 
-function ProfileView({ ownerName, profile, wallet, coinsBalance, projects, onProjects, onExport, onImport }) {
+function ProfileView({ ownerName, profile, wallet, coinsBalance, projects, commerce, onRefreshCommerce, onVerifyCreator, onProjects, onExport, onImport }) {
   return <div className="nb2-stack">
     <section className="nb2-profile-hero">
       <div className="nb2-profile-avatar">{String(ownerName).trim().charAt(0).toUpperCase() || "3"}</div>
@@ -586,8 +648,8 @@ function ProfileView({ ownerName, profile, wallet, coinsBalance, projects, onPro
     <section className="nb2-section">
       <div className="nb2-settings-list">
         <button type="button" onClick={onProjects}><FolderKanban size={20} /><span><strong>Mes créations</strong><small>{projects.length} projet{projects.length > 1 ? "s" : ""} actif{projects.length > 1 ? "s" : ""}</small></span><ArrowRight size={17} /></button>
-        <div className="nb2-setting-row"><ShieldCheck size={20} /><span><strong>Vérification créateur</strong><small>{profile.verification === "verifie" ? "Compte vérifié" : "Vérification non terminée"}</small></span><StatusText good={profile.verification === "verifie"}>{profile.verification === "verifie" ? "Vérifié" : "À faire"}</StatusText></div>
-        <div className="nb2-setting-row"><WalletCards size={20} /><span><strong>Versements</strong><small>État du compte de paiement</small></span><StatusText good={profile.payoutStatus === "actif"}>{profile.payoutStatus === "actif" ? "Actifs" : "Verrouillés"}</StatusText></div>
+        <CreatorVerificationRow commerce={commerce} onRefresh={onRefreshCommerce} onVerify={onVerifyCreator} />
+        <div className="nb2-setting-row"><WalletCards size={20} /><span><strong>Versements</strong><small>{commerce?.testMode ? "Environnement de test · " : ""}État du compte de paiement</small></span><StatusText good={commerce?.payoutsEnabled && commerce?.creator?.payoutsEnabled}>{commerce?.payoutsEnabled && commerce?.creator?.payoutsEnabled ? "Actifs" : "Verrouillés"}</StatusText></div>
         <button type="button" onClick={onExport}><Download size={20} /><span><strong>Exporter Nosbloc</strong><small>Sauvegarde complète vérifiable</small></span><ArrowRight size={17} /></button>
         <button type="button" onClick={onImport}><Upload size={20} /><span><strong>Restaurer une archive</strong><small>L’ancien état reste récupérable</small></span><ArrowRight size={17} /></button>
       </div>
@@ -618,7 +680,7 @@ function ProjectProgress({ project }) {
   return <div className="nb2-progress-wrap"><div className="nb2-progress"><i style={{ width: `${readiness.score}%` }} /></div><small>{readiness.score} % prêt</small></div>;
 }
 
-function StudioView({ project, profile, wallet, coinsBalance, serverBusy, serverConnected, onBack, updateProject, onTest, onReview, onRestore }) {
+function StudioView({ project, profile, wallet, coinsBalance, commerce, onRefreshCommerce, onVerifyCreator, serverBusy, serverConnected, onBack, updateProject, onTest, onReview, onRestore }) {
   const [mode, setMode] = useState(profile.studioMode === "pro" ? "pro" : "simple");
   const [proTab, setProTab] = useState("project");
   const readiness = projectReadiness(project);
@@ -660,7 +722,7 @@ function StudioView({ project, profile, wallet, coinsBalance, serverBusy, server
         {proTab === "project" && <ProjectProPanel project={project} patch={patch} />}
         {proTab === "versions" && <VersionsPanel project={project} onTest={() => onTest(project)} onRestore={versionId => onRestore(project, versionId)} />}
         {proTab === "team" && <TeamPanel project={project} patch={patch} />}
-        {proTab === "economy" && <EconomyPanel project={project} wallet={wallet} coinsBalance={coinsBalance} />}
+        {proTab === "economy" && <EconomyPanel project={project} wallet={wallet} coinsBalance={coinsBalance} commerce={commerce} onRefresh={onRefreshCommerce} onVerify={onVerifyCreator} />}
         {proTab === "analytics" && <AnalyticsPanel project={project} />}
         {proTab === "security" && <SecurityPanel project={project} patch={patch} />}
       </section>
@@ -709,15 +771,56 @@ function TeamPanel({ project, patch }) {
   </div>;
 }
 
-function EconomyPanel({ project, wallet, coinsBalance }) {
+function EconomyPanel({ project, wallet, coinsBalance, commerce, onRefresh, onVerify }) {
   return <div className="nb2-stack">
     <PageIntro kicker="ÉCONOMIE" title="L’argent réel n’est jamais un Coin 3B." text="Deux portefeuilles, deux historiques et aucune conversion implicite." />
     <div className="nb2-wallet-grid">
       <article><span><WalletCards size={22} /> ARGENT RÉEL</span><strong>{formatEuros(wallet.real.availableCents)}</strong><dl><div><dt>En attente</dt><dd>{formatEuros(wallet.real.pendingCents)}</dd></div><div><dt>Versement</dt><dd>{formatEuros(wallet.real.payoutCents)}</dd></div></dl></article>
       <article><span><Coins size={22} /> COINS 3B</span><strong>{Number(coinsBalance).toLocaleString("fr-FR")}</strong><p>Économie interne 3B. Aucun retrait bancaire direct depuis ce solde.</p></article>
     </div>
+    <CreatorCommercePanel commerce={commerce} onRefresh={onRefresh} onVerify={onVerify} />
     <Panel title="Projet" icon={<Store size={20} />}><dl className="nb2-finance-lines"><div><dt>Revenus attribués</dt><dd>{formatEuros(project.stats?.revenueCents || 0)}</dd></div><div><dt>État publication</dt><dd>{STATUS_LABELS[project.status] || project.status}</dd></div><div><dt>Partage équipe</dt><dd>{(project.splits || []).reduce((sum, row) => sum + Number(row.shareBps || 0), 0) / 100} %</dd></div></dl></Panel>
   </div>;
+}
+
+function CreatorVerificationRow({ commerce, onRefresh, onVerify }) {
+  const [country, setCountry] = useState(commerce?.countries?.[0] || "FR");
+  useEffect(() => {
+    if (commerce?.countries?.length && !commerce.countries.includes(country)) setCountry(commerce.countries[0]);
+  }, [commerce?.countries, country]);
+  const verified = commerce?.creator?.status === "verified";
+  return <div className="nb2-setting-row nb2-setting-action">
+    <ShieldCheck size={20} />
+    <span><strong>Vérification créateur</strong><small>{commerce?.testMode ? "Stripe test · " : ""}{verified ? "Identité et transferts vérifiés" : commerce?.creator?.status === "pending" ? "Informations Stripe à compléter" : "Nécessaire avant de vendre"}</small></span>
+    {verified
+      ? <button type="button" className="nb2-mini-action" onClick={onRefresh}>Actualiser</button>
+      : commerce?.connectEnabled
+        ? <div className="nb2-inline-verify"><select value={country} onChange={event => setCountry(event.target.value)} aria-label="Pays créateur">{(commerce.countries || ["FR"]).map(code => <option key={code} value={code}>{code}</option>)}</select><button type="button" className="nb2-mini-action" disabled={commerce.loading} onClick={() => onVerify(country)}>{commerce.loading ? "…" : "Vérifier"}</button></div>
+        : <StatusText good={false}>Verrouillé</StatusText>}
+  </div>;
+}
+
+function CreatorCommercePanel({ commerce, onRefresh, onVerify }) {
+  const [country, setCountry] = useState(commerce?.countries?.[0] || "FR");
+  useEffect(() => {
+    if (commerce?.countries?.length && !commerce.countries.includes(country)) setCountry(commerce.countries[0]);
+  }, [commerce?.countries, country]);
+  const creator = commerce?.creator;
+  const verified = creator?.status === "verified";
+  return <Panel title="Compte créateur" icon={<ShieldCheck size={20} />}>
+    <div className="nb2-commerce-status">
+      <span><small>ENVIRONNEMENT</small><strong>{commerce?.testMode ? "TEST" : "PRODUCTION"}</strong></span>
+      <span><small>KYC</small><strong>{verified ? "Vérifié" : creator?.status === "pending" ? "En cours" : "Non vérifié"}</strong></span>
+      <span><small>TRANSFERTS</small><strong>{creator?.transfersEnabled ? "Prêts" : "Bloqués"}</strong></span>
+    </div>
+    {commerce?.error && <p className="nb2-commerce-error">{commerce.error}</p>}
+    {!verified && commerce?.connectEnabled && <div className="nb2-commerce-verify">
+      <label>Pays de versement<select value={country} onChange={event => setCountry(event.target.value)}>{(commerce.countries || ["FR"]).map(code => <option key={code} value={code}>{code}</option>)}</select></label>
+      <button type="button" className="nb2-secondary compact" disabled={commerce.loading} onClick={() => onVerify(country)}><ShieldCheck size={16} /> {commerce.loading ? "Connexion…" : "Vérifier avec Stripe"}</button>
+    </div>}
+    <button type="button" className="nb2-text-btn" onClick={onRefresh} disabled={commerce?.loading}>Actualiser l’état du compte</button>
+    <p>Les Coins 3B ne sont jamais convertis en euros. Les ventes réelles suivent un ledger serveur séparé.</p>
+  </Panel>;
 }
 
 function AnalyticsPanel({ project }) {
