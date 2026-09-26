@@ -17,6 +17,7 @@ import {
   requestNosblocPayout,
   requestNosblocRefund,
   restoreNosblocVersion,
+  revokeNosblocInvitation,
   submitNosblocProduct,
   syncNosblocProject,
   updateNosblocProduct,
@@ -172,6 +173,12 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     return inviteNosblocMember(synced?.projectId, row);
   }, [ensureProject]);
 
+  const revokeInvitation = useCallback(async invitationId => {
+    const result = await revokeNosblocInvitation(invitationId);
+    await refresh();
+    return result;
+  }, [refresh]);
+
   const decideInvitation = useCallback(async (invitationId, accept) => {
     const result = await decideNosblocInvitation(invitationId, accept);
     await refresh();
@@ -225,6 +232,7 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     loadVersions,
     restoreVersion,
     inviteMember,
+    revokeInvitation,
     decideInvitation,
     moderateCase,
     publishProject,
