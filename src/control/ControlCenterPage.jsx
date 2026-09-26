@@ -12,6 +12,8 @@ import AppHealthPanel from './AppHealthPanel.jsx';
 import SecurityCenterPanel from './SecurityCenterPanel.jsx';
 import ModuleBoundary from './ModuleBoundary.jsx';
 import AlertCenterPanel from './AlertCenterPanel.jsx';
+import ProjectsCenterPanel from './ProjectsCenterPanel.jsx';
+import CommandSettingsPanel from './CommandSettingsPanel.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -41,6 +43,8 @@ const NAVIGATION_COMMANDS=[
  {re:/\b(radar|trafic|fréquentation|frequentation|visites?)\b/i,target:'cc-traffic',feedback:'Radar 3B ouvert.'},
  {re:/\b(nexus|services?|connexions?)\b/i,target:'cc-nexus',feedback:'Nexus 3B ouvert.'},
  {re:/\b(dev|développement|developpement|commit|ci|pull request|pr ouvertes?|déploiement|deploiement)\b/i,target:'cc-dev',feedback:'Dev Center ouvert.'},
+ {re:/\b(projets?|passeport|monde du 3b|origins|nosbloc|guardians|stylcam|boutique|sport 3b)\b/i,target:'cc-projects',feedback:'Projects Center ouvert.'},
+ {re:/\b(réglages?|reglages?|paramètres?|parametres?|compact|mouvements?|personnalisation)\b/i,target:'cc-settings',feedback:'Réglages Command OS ouverts.'},
  {re:/\b(app health|santé app|sante app|pwa|service worker|stockage|réseau app|reseau app)\b/i,target:'cc-health',feedback:'App Health ouvert.'},
  {re:/\b(appareils?|pc appairé|pc appaire|liaison pc)\b/i,target:'cc-devices',feedback:'Centre des appareils ouvert.'},
  {re:/\b(alertes?|notifications?|attention|urgent)\b/i,target:'cc-alerts',feedback:'Centre d’attention ouvert.'},
@@ -138,6 +142,12 @@ export default function ControlCenterPage({goTo}){
  const[privacyMode,setPrivacyMode]=useState(()=>{
   try{return sessionStorage.getItem('3b-command-privacy')==='1';}catch{return false;}
  });
+ const[compactMode,setCompactMode]=useState(()=>{
+  try{return localStorage.getItem('3b-command-compact')==='1';}catch{return false;}
+ });
+ const[reducedLocal,setReducedLocal]=useState(()=>{
+  try{return localStorage.getItem('3b-command-reduced')==='1';}catch{return false;}
+ });
  const[commandText,setCommandText]=useState('');
  const[commandFeedback,setCommandFeedback]=useState('');
  const[pulse,setPulse]=useState(()=>({
@@ -180,6 +190,14 @@ export default function ControlCenterPage({goTo}){
  useEffect(()=>{
   try{sessionStorage.setItem('3b-command-privacy',privacyMode?'1':'0');}catch{}
  },[privacyMode]);
+
+ useEffect(()=>{
+  try{localStorage.setItem('3b-command-compact',compactMode?'1':'0');}catch{}
+ },[compactMode]);
+
+ useEffect(()=>{
+  try{localStorage.setItem('3b-command-reduced',reducedLocal?'1':'0');}catch{}
+ },[reducedLocal]);
 
  const refresh=useCallback(async()=>{
   if(typeof navigator!=='undefined'&&navigator.onLine===false){
@@ -454,7 +472,7 @@ export default function ControlCenterPage({goTo}){
  const apiState=data&&!error?'good':error?'bad':'warn';
  const pcState=primaryOnline?'good':primaryDevice?'warn':'idle';
 
- return <section className={'control-page'+(phone?' is-phone':' is-desktop')+(focus?' is-focus':'')} aria-label="3B Command OS">
+ return <section className={'control-page'+(phone?' is-phone':' is-desktop')+(focus?' is-focus':'')+(compactMode?' is-compact':'')+(reducedLocal?' is-local-reduced':'')} aria-label="3B Command OS">
   <div className="control-ambient" aria-hidden="true"><i/><i/><i/></div>
 
   <header className="control-topbar">
@@ -535,6 +553,21 @@ export default function ControlCenterPage({goTo}){
 
    <ModuleBoundary label="Security Center momentanément indisponible">
     <SecurityCenterPanel dataAvailable={Boolean(data)} error={error} devices={devices} commands={commands} events={events} allowedCommands={data?.allowed_commands}/>
+   </ModuleBoundary>
+
+   <ModuleBoundary label="Projects Center momentanément indisponible"><ProjectsCenterPanel pulse={pulse}/></ModuleBoundary>
+
+   <ModuleBoundary label="Réglages Command OS momentanément indisponibles">
+    <CommandSettingsPanel
+     privacyMode={privacyMode}
+     onPrivacyChange={value=>{setPrivacyMode(value);navigator.vibrate?.(7);}}
+     focus={focus}
+     onFocusChange={value=>{setFocus(value);navigator.vibrate?.(7);}}
+     compact={compactMode}
+     onCompactChange={value=>{setCompactMode(value);navigator.vibrate?.(7);}}
+     reduced={reducedLocal}
+     onReducedChange={value=>{setReducedLocal(value);navigator.vibrate?.(7);}}
+    />
    </ModuleBoundary>
 
    <section className="control-section" id="cc-actions">
