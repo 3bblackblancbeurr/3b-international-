@@ -74,9 +74,6 @@ export function validateProjectPayload(source){
   const totalBps=payload.splits.reduce((sum,row)=>sum+row.shareBps,0);
   if(!/^[A-Za-z0-9._:-]{3,100}$/.test(payload.id))errors.push("client_project_id");
   if(payload.title.length<3)errors.push("title");
-  if(payload.description.length<40)errors.push("description");
-  if(!payload.template)errors.push("template");
-  if(!payload.safety.moderation)errors.push("moderation");
   if(payload.splits.length<1||totalBps!==10000)errors.push("splits");
   return {valid:errors.length===0,errors,totalBps,payload};
 }
