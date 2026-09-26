@@ -505,6 +505,7 @@ function InternationalPanel({ snapshot, profile, busy, request }) {
   const international=snapshot?.international||{};
   const ranked=snapshot?.ranked||{};
   const hasCallup=international.selectionStatus==='preselected'&&international.selectionId;
+  const accepted=international.selectionStatus==='accepted';
   const selected=international.selectionStatus==='selected';
   const neededRoleLabel=international.neededRole==='pression'
     ? 'Spécialiste des Duels d’Or'
@@ -545,6 +546,14 @@ function InternationalPanel({ snapshot, profile, busy, request }) {
             <button className="penalty-primary" disabled={busy} onClick={()=>request('international.respond',{selectionId:international.selectionId,decision:'accept'}).catch(()=>{})}>Accepter</button>
             <button className="penalty-secondary" disabled={busy} onClick={()=>request('international.respond',{selectionId:international.selectionId,decision:'decline'}).catch(()=>{})}>Décliner</button>
           </div>
+        </div>
+      </div>}
+
+      {accepted&&<div className="penalty-callup" data-state="accepted">
+        <Globe2 size={34}/><div>
+          <span className="penalty-kicker">CONVOCATION ACCEPTÉE</span>
+          <b>TA CANDIDATURE EST DANS LA LISTE FINALE</b>
+          <p>À la fermeture des convocations, le serveur classera les joueurs acceptés selon leur score sportif. Les {country.name} retiendront l’effectif prévu sans avantage au premier qui a répondu.</p>
         </div>
       </div>}
 
