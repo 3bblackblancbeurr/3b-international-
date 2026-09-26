@@ -96,7 +96,7 @@ function cachedSportSourceHealth(){
  }
 }
 
-function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
+function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext,onRefresh}){
  const iframeRef=useRef(null);
  const failureRef=useRef(new Map());
  const retryRef=useRef(new Map());
@@ -116,6 +116,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
  const source=sources[sourceIndex]||sources[0]||null;
  const trusted=!!source&&isTrustedSportEmbed(source.embedUrl)&&!!source.videoId;
  const isH24=item?.badge==='H24';
+ const waitingForLive=isH24&&!source;
  const playerToken=useMemo(()=>sportToken(),[item?.id,source?.id,epoch]);
 
  function resumeKey(candidate=source){return candidate?'3b-sport-resume:'+candidate.id:'';}
@@ -340,7 +341,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
     readyRef.current=true;
     saveGoodSource();
     setPlayerState('playing');
-    setStatusMessage(source?.mode==='fallback'?'Mode secours officiel actif.':'Lecture stable dans 3B.');
+    setStatusMessage(source?.mode==='live'?'DIRECT vérifié · match en cours.':source?.mode==='fallback'?'Mode secours officiel actif.':'Lecture stable dans 3B.');
    }else if(state===3){
     setPlayerState('buffering');
     setStatusMessage('Mise en mémoire du match…');
@@ -350,7 +351,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
     setStatusMessage('Lecture en pause.');
    }else if(state===0){
     clearResume(source);
-    if(isH24)advanceSource({reason:'Match terminé · suivant automatique',fromEnd:true});
+    if(isH24)advanceSource({markFailureSource:true,errorCode:410,reason:'Direct terminé · direct suivant automatique',fromEnd:true});
     else{
      setPlayerState('ready');
      setStatusMessage('Finale terminée.');
@@ -441,7 +442,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
   paused:'PAUSE',recovering:'SECOURS',offline:'HORS LIGNE',unavailable:'RÉESSAI AUTO'
  };
  const sourceCount=sources.length;
- const sourceLabel=source?.mode==='fallback'?'SECOURS OFFICIEL':source?.label||'SOURCE OFFICIELLE';
+ const sourceLabel=source?.mode==='live'?'DIRECT RÉEL':source?.mode==='fallback'?'SECOURS OFFICIEL':source?.label||'SOURCE OFFICIELLE';
  const showFrame=consent&&trusted&&online&&playerState!=='unavailable';
 
  return <div className={'sport-media-theater sport-media-auto-landscape'+(cinema?' is-cinema':'')}>
@@ -459,10 +460,11 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
     <ShieldCheck size={38}/>
     <div>
      <p className="eyebrow">LECTEUR INTERNE 3B</p>
-     <h2>{!online?'Connexion interrompue.':playerState==='unavailable'?'3B protège la lecture.':trusted?'Activer la vidéo officielle.':'Source vidéo bloquée.'}</h2>
-     <p>{!online?'Reste ici : 3B garde la position et reprend automatiquement quand le réseau revient.':playerState==='unavailable'?statusMessage:trusted?'Le lecteur passe par le pont HTTPS sécurisé 3B : aucun popup, aucune navigation externe et aucune ouverture automatique vers YouTube.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
+     <h2>{!online?'Connexion interrompue.':waitingForLive?'Recherche d’un match en direct…':playerState==='unavailable'?'3B protège la lecture.':trusted?'Activer la vidéo officielle.':'Source vidéo bloquée.'}</h2>
+     <p>{!online?'Reste ici : 3B garde la position et reprend automatiquement quand le réseau revient.':waitingForLive?(item?.liveMessage||'3B cherche uniquement un match réellement en cours. Aucun replay ne sera utilisé dans H24.'):playerState==='unavailable'?statusMessage:trusted?'Le lecteur passe par le pont HTTPS sécurisé 3B : aucun popup, aucune navigation externe et aucune ouverture automatique vers YouTube.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
     </div>
     {trusted&&!consent&&online&&<button type="button" className="surface-button" onClick={onConsent}>Activer le lecteur</button>}
+    {waitingForLive&&online&&<button type="button" className="surface-button" onClick={onRefresh}>Relancer la recherche live</button>}
     {consent&&online&&playerState==='unavailable'&&<button type="button" className="surface-button" onClick={()=>advanceSource({reason:'Réessai manuel'})}>Réessayer maintenant</button>}
    </div>}
   </div>
@@ -508,6 +510,10 @@ export default function SportPage({goTo}){
  const[mediaConsent,setMediaConsent]=useState(()=>{try{return localStorage.getItem('3b-sport-media-consent')==='accepted';}catch{return false;}});
  const[h24Id,setH24Id]=useState(H24_CHANNELS[0]?.id||'');
  const[finalId,setFinalId]=useState(SPORT_FINALS[0]?.id||'');
+ const[finalSport,setFinalSport]=useState('Tous');
+ const[livePools,setLivePools]=useState({});
+ const[liveMeta,setLiveMeta]=useState({loading:false,error:'',checkedAt:'',failures:[]});
+ const[liveReload,setLiveReload]=useState(0);
  const[cinema,setCinema]=useState(false);
 
  useEffect(()=>{
@@ -537,6 +543,64 @@ export default function SportPage({goTo}){
    document.removeEventListener('visibilitychange',load);
   };
  },[reload]);
+
+ useEffect(()=>{
+  if(section!=='h24'||!h24Id)return;
+  const controller=new AbortController();
+  let active=true;
+  let retryTimer=0;
+
+  const load=async()=>{
+   if(!active||document.hidden)return;
+   setLiveMeta(previous=>({...previous,loading:true,error:''}));
+   try{
+    const response=await fetch('/api/sport-live?profile='+encodeURIComponent(h24Id)+'&r='+liveReload,{
+     cache:'no-store',
+     signal:controller.signal,
+     headers:{accept:'application/json'}
+    });
+    const payload=await response.json().catch(()=>({}));
+    if(!active)return;
+    if(!response.ok)throw new Error(payload?.error||('live_http_'+response.status));
+    const sources=(Array.isArray(payload.sources)?payload.sources:[]).filter(source=>
+     source?.mode==='live'&&source?.videoId&&isTrustedSportEmbed(source.embedUrl)
+    );
+    setLivePools(previous=>({...previous,[h24Id]:sources}));
+    setLiveMeta({
+     loading:false,
+     error:'',
+     checkedAt:payload.checkedAt||new Date().toISOString(),
+     failures:Array.isArray(payload.failures)?payload.failures:[]
+    });
+    const delay=sources.length?90000:35000;
+    retryTimer=window.setTimeout(load,delay);
+   }catch(error){
+    if(!active||error?.name==='AbortError')return;
+    setLivePools(previous=>({...previous,[h24Id]:[]}));
+    const code=String(error?.message||'live_unavailable');
+    setLiveMeta(previous=>({
+     ...previous,
+     loading:false,
+     error:code,
+     checkedAt:new Date().toISOString()
+    }));
+    retryTimer=window.setTimeout(load,35000);
+   }
+  };
+
+  const onVisible=()=>{if(document.visibilityState==='visible'){clearTimeout(retryTimer);load();}};
+  const onOnline=()=>{clearTimeout(retryTimer);load();};
+  load();
+  document.addEventListener('visibilitychange',onVisible);
+  window.addEventListener('online',onOnline);
+  return()=>{
+   active=false;
+   controller.abort();
+   clearTimeout(retryTimer);
+   document.removeEventListener('visibilitychange',onVisible);
+   window.removeEventListener('online',onOnline);
+  };
+ },[section,h24Id,liveReload]);
 
  useEffect(()=>{
   if(section!=='challenges'||!account.user){setChallengeData(null);setChallengeError('');return;}
@@ -587,14 +651,30 @@ export default function SportPage({goTo}){
  const entryFor=id=>entries.find(entry=>entry.challenge_id===id);
  const activeChallenges=entries.filter(entry=>['joined','eligible','submitted'].includes(entry.status)).length;
  const verifiedChallenges=entries.filter(entry=>entry.status==='verified').length;
- const mediaList=section==='h24'?H24_CHANNELS:SPORT_FINALS;
+ const finalSports=useMemo(()=>['Tous',...new Set(SPORT_FINALS.map(item=>item.sport))],[]);
+ const filteredFinals=useMemo(()=>finalSport==='Tous'?SPORT_FINALS:SPORT_FINALS.filter(item=>item.sport===finalSport),[finalSport]);
+ const mediaList=section==='h24'?H24_CHANNELS:filteredFinals;
  const mediaId=section==='h24'?h24Id:finalId;
- const activeMedia=mediaList.find(item=>item.id===mediaId)||mediaList[0];
+ const selectedProfile=H24_CHANNELS.find(item=>item.id===h24Id)||H24_CHANNELS[0];
+ const liveSources=livePools[h24Id]||[];
+ const liveMessage=liveMeta.error==='live_discovery_not_configured'
+  ?'Le moteur de direct est prêt, mais sa clé serveur YouTube n’est pas encore configurée.'
+  :liveMeta.loading?'Recherche mondiale d’un match réellement en cours…'
+  :liveSources.length?'Direct vérifié disponible.'
+  :'Aucun direct officiel intégrable trouvé à cet instant. Nouvelle recherche automatique en cours.';
+ const activeMedia=section==='h24'
+  ?{...selectedProfile,sources:liveSources,liveMessage}
+  :(filteredFinals.find(item=>item.id===finalId)||filteredFinals[0]||SPORT_FINALS[0]);
 
  function acceptSportMedia(){
   setMediaConsent(true);
   try{localStorage.setItem('3b-sport-media-consent','accepted');}catch{}
  }
+
+ useEffect(()=>{
+  if(section!=='finals'||!filteredFinals.length)return;
+  if(!filteredFinals.some(item=>item.id===finalId))setFinalId(filteredFinals[0].id);
+ },[section,finalSport,filteredFinals,finalId]);
 
  function selectMedia(id){
   if(section==='h24')setH24Id(id);
@@ -603,8 +683,13 @@ export default function SportPage({goTo}){
 
  function nextMedia(){
   if(!mediaList.length)return;
-  const index=Math.max(0,mediaList.findIndex(item=>item.id===activeMedia?.id));
+  const targetId=section==='h24'?h24Id:activeMedia?.id;
+  const index=Math.max(0,mediaList.findIndex(item=>item.id===targetId));
   selectMedia(mediaList[(index+1)%mediaList.length].id);
+ }
+
+ function refreshLive(){
+  setLiveReload(value=>value+1);
  }
 
  function openCommunityIntent(intent){
@@ -677,10 +762,28 @@ export default function SportPage({goTo}){
     <div>
      <p className="eyebrow">{section==='h24'?'CHAÎNES SPORT H24':'FINALES À REVOIR'}</p>
      <h2>{section==='h24'?'Le sport tourne en continu dans 3B.':'Les grandes finales restent dans l’application.'}</h2>
-     <p>{section==='h24'?'Choisis une chaîne 3B. Les flux utilisent uniquement des vidéos publiées par des ayants droit ou fédérations officielles et tournent en lecture continue.':'Choisis une finale puis regarde-la dans le lecteur interne 3B, sans ouvrir une autre page.'}</p>
+     <p>{section==='h24'?'Uniquement du direct réel en cours : France et football d’abord, puis Europe, puis tous sports et monde. Aucun replay ni ancienne finale ne peut entrer dans H24.':'Choisis un sport puis une grande finale historique. Tout reste dans le lecteur interne 3B, sans ouvrir une autre page.'}</p>
     </div>
     <Trophy size={58} strokeWidth={1}/>
    </header>
+
+   {section==='h24'?<div className="sport-command-bar sport-live-command">
+    <div className="sport-live-state">
+     <span className="sport-live-dot" aria-hidden="true"/>
+     <div>
+      <strong>{liveSources.length?'DIRECT RÉEL DISPONIBLE':liveMeta.loading?'RECHERCHE LIVE…':'VEILLE H24 ACTIVE'}</strong>
+      <small>{liveSources.length+' source'+(liveSources.length>1?'s':'')+' live vérifiée'+(liveSources.length>1?'s':'')}{liveMeta.checkedAt?' · '+dateLabel(liveMeta.checkedAt):''}</small>
+     </div>
+    </div>
+    <button className="sport-refresh" type="button" disabled={liveMeta.loading} onClick={refreshLive}><RefreshCw size={16} className={liveMeta.loading?'is-spinning':''}/>Chercher maintenant</button>
+   </div>:<div className="sport-filter-panel sport-final-filter">
+    <div className="sport-filter-heading">
+     <div><p className="eyebrow">ARCHIVES · GRANDES FINALES</p><h2>Choisis un sport.</h2></div>
+    </div>
+    <div className="sport-category-scroll" role="group" aria-label="Filtrer les finales par sport">
+     {finalSports.map(name=><button type="button" key={name} aria-pressed={finalSport===name} onClick={()=>setFinalSport(name)}>{name}</button>)}
+    </div>
+   </div>}
 
    <SportMediaPlayer
     item={activeMedia}
@@ -689,6 +792,7 @@ export default function SportPage({goTo}){
     cinema={cinema}
     onCinema={setCinema}
     onNext={nextMedia}
+    onRefresh={refreshLive}
    />
 
    <div className="sport-media-grid" role="list" aria-label={section==='h24'?'Chaînes sport H24':'Finales disponibles'}>
@@ -709,7 +813,7 @@ export default function SportPage({goTo}){
 
    <div className="sport-media-safety">
     <ShieldCheck size={20}/>
-    <p><strong>Verrou anti-sortie + secours automatique :</strong> H24 et Finales restent dans 3B. En cas d’erreur, de vidéo retirée ou de coupure réseau, le lecteur tente une source officielle de secours, mémorise la dernière source H24 stable et reprend automatiquement sans ouvrir d’autre application.</p>
+    <p><strong>Deux systèmes séparés + verrou anti-sortie :</strong> H24 accepte uniquement des diffusions vérifiées comme réellement en direct. Les Finales utilisent uniquement la bibliothèque d’archives. En cas d’erreur ou de coupure réseau, 3B bascule sur une autre source du même type et ne quitte jamais l’application.</p>
    </div>
   </div>}
 
