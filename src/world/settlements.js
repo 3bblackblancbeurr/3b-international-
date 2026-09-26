@@ -98,10 +98,13 @@ export function settlementPlan(region){
  return {roads,plots,squares:[...(region==='france'?[{x:10,z:1,r:11},{x:-30,z:4,r:4}]:[]),{x:-18,z:17,r:8},{x:9,z:-4,r:7},{x:49,z:26,r:7}],fields:[{x:46,z:40,w:19,h:12,kind:c.crop},{x:48,z:8,w:16,h:10,kind:c.crop},{x:76,z:71,w:24,h:16,kind:c.crop},{x:-70,z:-67,w:18,h:13,kind:c.crop}]};
 }
 export function districtDestinations(region){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[
- {id:'hub:vista:maison',type:'vista',name:'La Maison des mondes · belvédère nord',x:0,z:-70,color:'#d6bb7e',range:7},
- {id:'hub:vista:heritage',type:'vista',name:'Terrasses de l’Héritage · écuries et événements',x:-58,z:48,color:'#d8bd80',range:7},
- {id:'hub:vista:creators',type:'vista',name:'Archipel des créateurs · studios',x:61,z:44,color:'#66cfe9',range:7},
- {id:'hub:vista:my-city',type:'vista',name:'3B Ma Ville · plateforme extérieure',x:0,z:76,color:'#b9cea7',range:7},
+ {id:'hub:vista:oubli',type:'vista',name:'La Plaine de l’Oubli · mémoire effacée',x:0,z:-26,color:'#5ebbd3',range:8},
+ {id:'hub:vista:absents',type:'vista',name:'Le Jardin des Absents · héritage',x:-23,z:11,color:'#d8bd80',range:8},
+ {id:'hub:vista:values',type:'vista',name:'Le Passage des Huit Valeurs',x:22,z:13,color:'#78d9ff',range:8},
+ {id:'hub:vista:outer:maison',type:'vista',name:'La Maison des mondes · belvédère nord',x:0,z:-70,color:'#d6bb7e',range:7},
+ {id:'hub:vista:outer:heritage',type:'vista',name:'Terrasses de l’Héritage · écuries et événements',x:-58,z:48,color:'#d8bd80',range:7},
+ {id:'hub:vista:outer:creators',type:'vista',name:'Archipel des créateurs · studios',x:61,z:44,color:'#66cfe9',range:7},
+ {id:'hub:vista:outer:my-city',type:'vista',name:'3B Ma Ville · plateforme extérieure',x:0,z:76,color:'#b9cea7',range:7},
  ];return[
  {key:'ancien',x:-103,z:-35,name:c.city+' · quartier ancien'},
  {key:'faubourg',x:-45,z:-99,name:c.craft+' · faubourg'},
