@@ -452,6 +452,34 @@ export function createPremiumDistrictTerrace(item,{root,geometry,material,ground
 }
 
 
+export function createPremiumVerticalConnector(item,{root,geometry,material,groundY}){
+ const group=new THREE.Group();group.name='3B-Vertical-'+item.district+'-'+item.connector;root.add(group);
+ group.position.set(item.x,groundY(item.x,item.z),item.z);group.rotation.y=item.heading||0;
+ const stone=material('#30373a',{roughness:.84,metalness:.08});
+ const dark=material('#11171c',{roughness:.56,metalness:.38});
+ const accent=material(item.accent||'#00a8ff',{emissive:item.accent||'#00a8ff',emissiveIntensity:.18,roughness:.24,metalness:.34});
+ const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.12,roughness:.28,metalness:.76});
+ const rise=Math.max(1,item.rise||2),length=Math.max(8,item.length||12),width=Math.max(2.8,item.width||3.6);
+ if(item.connector==='stairs'){
+  const count=item.renderProfile==='mobileMedium'?5:8;
+  for(let i=0;i<count;i++){
+   const t=(i+.5)/count;
+   child(group,geometry.box,stone,{y:rise*t*.5,z:(t-.5)*length,sx:width,sy:Math.max(.16,rise/count*.45),sz:length/count*.9,cast:false});
+  }
+  for(const side of [-1,1])child(group,geometry.box,gold,{x:side*width*.48,y:rise*.31,z:0,sx:.08,sy:.10,sz:length*.96,rz:-rise/length,cast:false});
+ }else if(item.connector==='ramp'){
+  const ramp=child(group,geometry.box,stone,{y:rise*.26,z:0,sx:width,sy:.24,sz:length,rx:-Math.atan2(rise,length),cast:false});
+  ramp.position.y+=rise*.05;
+  for(const side of [-1,1])child(group,geometry.box,accent,{x:side*width*.48,y:rise*.48,z:0,sx:.08,sy:.10,sz:length*.92,rx:-Math.atan2(rise,length),cast:false});
+ }else{
+  child(group,geometry.box,dark,{y:rise*.52,sx:width*.88,sy:rise,sz:1.8});
+  child(group,geometry.box,accent,{y:rise*.58,z:.95,sx:width*.58,sy:rise*.56,sz:.08,cast:false});
+  child(group,geometry.box,stone,{y:rise,z:-length*.28,sx:width,sy:.24,sz:length*.58,cast:false});
+  child(group,geometry.box,gold,{y:rise+.18,z:-length*.28,sx:width*.86,sy:.06,sz:length*.54,cast:false});
+ }
+ return group;
+}
+
 export function createPremiumSkybridge(item,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Skybridge-'+item.bridgeId;root.add(group);
  const y=groundY(item.x,item.z);group.position.set(item.x,y,item.z);group.rotation.y=item.heading||0;
@@ -534,6 +562,40 @@ export function createPremiumDistrictLandmark(item,{root,geometry,material,groun
    child(group,geometry.sphere,accent,{y:h*.82,sx:1.2,sy:1.2,sz:1.2,cast:false});
    break;
   case 'spire':
+   if(item.landmarkId==='broken_circle_spire'){
+    const fragments=clamp(Number(item.fragmentCount||0),0,8),coreRadius=11.5;
+    child(group,geometry.cylinder,dark,{y:.65,sx:15.8,sy:1.15,sz:15.8});
+    child(group,geometry.cylinder,stone,{y:2.0,sx:12.8,sy:1.2,sz:12.8});
+    child(group,geometry.ring,gold,{y:3.35,sx:10.6,sy:10.6,sz:10.6,rx:Math.PI/2,cast:false});
+    child(group,geometry.ring,accent,{y:3.48,sx:7.7,sy:7.7,sz:7.7,rx:Math.PI/2,cast:false});
+    for(let i=0;i<8;i++){
+     const a=-Math.PI/2+i*Math.PI/4,active=i<fragments;
+     const fragmentMat=active?gold:dark;
+     const fx=Math.cos(a)*coreRadius,fz=Math.sin(a)*coreRadius,fy=8.4+(i%2)*1.4;
+     const fragment=child(group,geometry.box,fragmentMat,{x:fx,y:fy,z:fz,sx:2.35,sy:7.6,sz:1.15,ry:-a+.28});
+     fragment.rotation.z=(i%2?-.12:.12);
+     if(active){
+      child(group,geometry.box,accent,{x:fx,y:fy+5.7,z:fz,sx:1.55,sy:.18,sz:.34,ry:-a+.28,cast:false});
+      child(group,geometry.sphere,accent,{x:fx,y:fy+8.3,z:fz,sx:.42,sy:.42,sz:.42,cast:false});
+     }
+    }
+    child(group,geometry.cylinder,stone,{y:h*.28,sx:3.8,sy:h*.50,sz:3.8});
+    child(group,geometry.cylinder,dark,{y:h*.56,sx:2.4,sy:h*.20,sz:2.4});
+    child(group,geometry.ring,accent,{y:h*.72,sx:5.4,sy:5.4,sz:5.4,rx:Math.PI/2,cast:false});
+    child(group,geometry.cylinder,gold,{y:h*.84,sx:.30,sy:h*.22,sz:.30,cast:false});
+    child(group,geometry.sphere,accent,{y:h*.98,sx:1.15,sy:1.15,sz:1.15,cast:false});
+    for(const side of [-1,1]){
+     child(group,geometry.box,stone,{x:side*8.4,y:5.1,z:0,sx:5.8,sy:.55,sz:2.3,rz:side*.06});
+     child(group,geometry.box,gold,{x:side*8.4,y:5.68,z:0,sx:5.1,sy:.08,sz:1.7,cast:false});
+    }
+    child(group,geometry.box,dark,{y:-1.15,z:7.8,sx:6.2,sy:2.2,sz:5.8});
+    child(group,geometry.box,accent,{y:.10,z:10.55,sx:3.8,sy:.15,sz:.28,cast:false});
+   }else{
+    child(group,geometry.box,stone,{y:h*.34,sx:3.2,sy:h*.64,sz:3.2});
+    child(group,geometry.cylinder,gold,{y:h*.75,sx:.28,sy:h*.34,sz:.28,cast:false});
+    child(group,geometry.sphere,accent,{y:h*.94,sx:.85,sy:.85,sz:.85,cast:false});
+   }
+   break;
   case 'obelisk':
   default:
    child(group,geometry.box,stone,{y:h*.34,sx:3.2,sy:h*.64,sz:3.2});

@@ -27,6 +27,24 @@ export function hubPortalPosition(portal){
   return {x:portal[0]*HUB_METROPOLIS.portalScale,z:portal[1]*HUB_METROPOLIS.portalScale};
 }
 
+export function hubHeritageSectorPosition(plan,platform,index=0){
+  const district=hubDistrictPosition(plan,platform.district);
+  if(!district)return null;
+  const radius=Math.hypot(district.x,district.z)||1;
+  const outwardX=district.x/radius,outwardZ=district.z/radius;
+  const tangentX=-outwardZ,tangentZ=outwardX;
+  const siblings=(plan.heritagePlatforms||[]).filter(entry=>entry.district===platform.district);
+  const siblingIndex=Math.max(0,siblings.findIndex(entry=>entry.code===platform.code));
+  const spread=siblings.length>1?(siblingIndex-(siblings.length-1)/2)*74:0;
+  const targetRadius=Math.min(585,Math.max(340,radius+92));
+  const radialPush=targetRadius-radius;
+  const drift=((hash(platform.code||String(index))%31)-15)*1.4;
+  return {
+    x:district.x+outwardX*radialPush+tangentX*(spread+drift),
+    z:district.z+outwardZ*radialPush+tangentZ*(spread+drift),
+  };
+}
+
 export function hubEvolutionState(plan,{seals=[],restoredRegions=[]}={}){
   const fragments=Math.max(new Set(seals).size,new Set(restoredRegions).size);
   const stages=plan.evolution?.stages||[{stage:0,id:'foundations',label:'Fondations vivantes',minFragments:0,activeBuildingTiers:[0],densityBonus:0,trafficBonus:0,activeSkybridges:0,platformGlow:.18}];
@@ -41,7 +59,7 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
   const byRegion=new Map(COUNTRIES.map(country=>[country.id,country]));
   return (plan.heritagePlatforms||[]).flatMap((platform,index)=>{
     const country=byRegion.get(platform.regionId);if(!country?.portal)return[];
-    const position=hubPortalPosition(country.portal),liberated=seals.includes(platform.regionId),restored=restoredRegions.includes(platform.regionId);
+    const position=hubHeritageSectorPosition(plan,platform,index)||hubPortalPosition(country.portal),gatePosition=hubPortalPosition(country.portal),liberated=seals.includes(platform.regionId),restored=restoredRegions.includes(platform.regionId);
     return [{
       id:`hub:heritage-platform:${platform.code}`,
       type:'hubHeritagePlatform',
@@ -58,6 +76,8 @@ function heritagePlatformItems(plan,evolution,{seals=[],restoredRegions=[]}={}){
       symbol:country.symbol,
       x:position.x,
       z:position.z,
+      gateX:gatePosition.x,
+      gateZ:gatePosition.z,
       index,
       liberated,
       restored,
@@ -320,6 +340,30 @@ function districtTerraceItems(plan,evolution,profile){
   });
 }
 
+function verticalConnectorItems(plan,evolution,profile){
+  return plan.districts.flatMap((district,index)=>{
+    const level=DISTRICT_TERRACE_LEVELS[district.id]||0;if(level<=.2)return[];
+    const center=hubDistrictPosition(plan,district.id),seed=hash('vertical:'+district.id),angle=((seed%6283)/1000);
+    const offset=31+((seed>>>8)%8),x=center.x+Math.cos(angle)*offset,z=center.z+Math.sin(angle)*offset;
+    const compact=profile==='mobileMedium';
+    return [{
+      id:`hub:vertical-connector:${district.id}`,
+      type:'hubVerticalConnector',
+      range:-1,
+      district:district.id,
+      connector:index%3===0?'ramp':index%3===1?'stairs':'lift-bridge',
+      x,z,
+      heading:angle+Math.PI/2,
+      rise:Math.max(1.2,level*2.1),
+      length:compact?10:14,
+      width:compact?3.2:4.2,
+      accent:DISTRICT_PREMIUM_ACCENTS[district.id]||'#d6b46a',
+      evolutionStage:evolution.stage,
+      renderProfile:profile,
+    }];
+  });
+}
+
 function districtLandmarkItems(plan,evolution){
   return (plan.districtLandmarks||[]).flatMap((landmark,index)=>{
     const center=hubDistrictPosition(plan,landmark.district);if(!center)return[];
@@ -338,6 +382,9 @@ function districtLandmarkItems(plan,evolution){
       z:center.z+Math.sin(angle)*distance,
       height:Number(landmark.height||48),
       evolutionStage:evolution.stage,
+      fragmentCount:Number(evolution.fragmentCount||0),
+      milestone:evolution.milestone||null,
+      nextMilestone:evolution.nextMilestone||null,
       prestige:evolution.stage>=4,
       index,
     }];
@@ -527,10 +574,11 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
   const transitLinks=transitLinkItems(plan,evolution);
   const streetFurniture=streetFurnitureItems(plan,profile,evolution);
   const terraces=districtTerraceItems(plan,evolution,profile);
+  const verticalConnectors=verticalConnectorItems(plan,evolution,profile);
   const milestoneStories=milestoneStoryItems(plan,evolution);
-  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture,...terraces])item.renderProfile=profile;
+  for(const item of [...plazas,...landmarks,...water,...transitLinks,...platforms,...skybridges,...streetFurniture,...terraces,...verticalConnectors])item.renderProfile=profile;
   return {
-    items:[...water,...terraces,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
+    items:[...water,...terraces,...verticalConnectors,...roads,...transitLinks,...skybridges,...plazas,...streetFurniture,...structures,...buildings,...landmarks,...platforms,...facilities,...milestoneStories,...traffic],
     meta:{
       buildings:buildings.length,
       structures:structures.length,
@@ -545,6 +593,7 @@ export function buildMetropolisRuntimeItems(plan,profile='mobileMedium',progress
       transitLinks:transitLinks.length,
       streetFurniture:streetFurniture.length,
       districtTerraces:terraces.length,
+      verticalConnectors:verticalConnectors.length,
       milestoneStories:milestoneStories.length,
       evolutionStage:evolution.stage,
       evolutionLabel:evolution.label,

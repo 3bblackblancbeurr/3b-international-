@@ -32,7 +32,7 @@ import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './stream
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
 import {wetnessForWeather,advanceWetness} from './wetness.js';
 import {worldVisualCapabilities} from './device-capabilities.js';
-import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge,createPremiumCivicPlaza,createPremiumDistrictLandmark,createPremiumWaterFeature,createPremiumTransitLink,createPremiumStreetFurniture,createPremiumHeritageFacility,createPremiumDistrictTerrace} from './premium-hub-visuals.js';
+import {buildPremiumHubRoad,decorateHubBuilding,createPremiumTrafficVehicle,createPremiumTransportVisual,createPremiumHubMarker,createPremiumTransitVehicle,createPremiumHeritagePlatform,createPremiumSkybridge,createPremiumCivicPlaza,createPremiumDistrictLandmark,createPremiumWaterFeature,createPremiumTransitLink,createPremiumStreetFurniture,createPremiumHeritageFacility,createPremiumDistrictTerrace,createPremiumVerticalConnector} from './premium-hub-visuals.js';
 import {loadControlBindings,normalizeControlBindings,controlMatches,actionHeld} from './control-bindings.js';
 import {actionFeedback} from './interaction-system.js';
 import {obstacleDistance} from './collision.js';
@@ -205,6 +205,9 @@ function hubNpcAvatar(item){
    }
    if(item.type==='hubDistrictTerrace'){
     const terrace=createPremiumDistrictTerrace(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[terrace]);continue;
+   }
+   if(item.type==='hubVerticalConnector'){
+    const connector=createPremiumVerticalConnector(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[connector]);continue;
    }
    if(item.type==='hubStreetFurniture'){
     const street=createPremiumStreetFurniture(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[street]);continue;
