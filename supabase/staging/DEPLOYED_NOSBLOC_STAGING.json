@@ -50,5 +50,16 @@
     "synthetic_users_rolled_back": true,
     "project_rolled_back": true
   },
+  "authenticated_rpc_smoke_test": {
+    "owner_derived_from_auth_uid": true,
+    "invitation_bound_to_exact_user": true,
+    "outsider_invitation_blocked": true,
+    "member_accepted": true,
+    "outsider_moderation_blocked": true,
+    "moderator_recorded": true,
+    "project_remained_private": true,
+    "synthetic_users_rolled_back": true,
+    "project_rolled_back": true
+  },
   "deployed_on": "2026-09-26"
 }
