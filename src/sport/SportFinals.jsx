@@ -35,10 +35,6 @@ export default function SportFinals(){
  const expanded=fullscreen||appFullscreen;
 
  useEffect(()=>{
-  if(!filtered.some(item=>item.id===selectedId))setSelectedId(filtered[0]?.id||WORLD_FINALS[0].id);
- },[filtered,selectedId]);
-
- useEffect(()=>{
   const sync=()=>{
    const active=mediaConsent&&window.innerWidth<=1000&&window.innerWidth>window.innerHeight;
    setLandscape(active);
