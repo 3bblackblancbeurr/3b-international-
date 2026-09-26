@@ -17,6 +17,9 @@ import {
   appendProjectVersion, parseStateExport, restoreProjectVersion,
   serializeStateExport
 } from "./versioning.js";
+import {
+  NOSBLOC_SERVER_ENABLED, NOSBLOC_SERVER_ENV, NOSBLOC_SERVER_ENV_VALID, nosblocServer
+} from "./server-client.js";
 import "./nosbloc.css";
 
 const STATUS_LABELS = {
@@ -97,6 +100,7 @@ export default function NosblocPage({ goTo }) {
   const [loaded, setLoaded] = useState(false);
   const [online, setOnline] = useState(() => typeof navigator === "undefined" ? true : navigator.onLine);
   const [cityOpen, setCityOpen] = useState(false);
+  const [serverState, setServerState] = useState({ connected: false, busy: false, error: "", lastSync: "" });
 
   useEffect(() => {
     const loadedState = loadState(storageKey, recoveryKey, { studioName: `Studio de ${ownerName}` });
@@ -115,6 +119,25 @@ export default function NosblocPage({ goTo }) {
       removeEventListener("offline", sync);
     };
   }, []);
+
+  useEffect(() => {
+    if (!NOSBLOC_SERVER_ENABLED || !NOSBLOC_SERVER_ENV_VALID || !account.user?.id) return undefined;
+    let active = true;
+    setServerState(previous => ({ ...previous, busy: true, error: "" }));
+    nosblocServer.snapshot(account.user.id)
+      .then(() => {
+        if (active) setServerState({ connected: true, busy: false, error: "", lastSync: nowIso() });
+      })
+      .catch(error => {
+        if (active) setServerState(previous => ({
+          ...previous,
+          connected: false,
+          busy: false,
+          error: error instanceof Error ? error.message : "Serveur Nosbloc indisponible.",
+        }));
+      });
+    return () => { active = false; };
+  }, [account.user?.id]);
 
   const selected = useMemo(
     () => state.projects.find(project => project.id === selectedId) || null,
@@ -180,27 +203,84 @@ export default function NosblocPage({ goTo }) {
     setNotice("Projet archivé. Rien n’a été supprimé définitivement.");
   }
 
-  function runPrivateTest(project) {
-    if (!project) return;
-    const result = appendProjectVersion(project, { stage: "private_test", note: "Test privé Nosbloc V2" });
-    updateProject(project.id, result.project, {
-      type: "project",
-      title: `Test privé · ${project.title}`,
-      detail: `Version ${result.version.versionNo} figée pour test.`,
-    });
-    setNotice(`Version ${result.version.versionNo} créée. Test privé prêt.`);
+  async function syncServerProject(project) {
+    if (!NOSBLOC_SERVER_ENABLED) return null;
+    if (!NOSBLOC_SERVER_ENV_VALID) throw new Error("Configuration serveur Nosbloc invalide.");
+    setServerState(previous => ({ ...previous, busy: true, error: "" }));
+    try {
+      const synced = await nosblocServer.syncProject(project, account.user?.id);
+      updateProject(project.id, {
+        serverProjectId: synced.projectId,
+        serverRevision: synced.revision,
+        serverEnvironment: NOSBLOC_SERVER_ENV,
+      });
+      setServerState({ connected: true, busy: false, error: "", lastSync: nowIso() });
+      return synced;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Synchronisation serveur impossible.";
+      setServerState(previous => ({ ...previous, connected: false, busy: false, error: message }));
+      throw error;
+    }
   }
 
-  function requestReview(project) {
-    if (!project) return;
+  async function runPrivateTest(project) {
+    if (!project || serverState.busy) return;
+    let serverMeta = {};
+    if (NOSBLOC_SERVER_ENABLED) {
+      try {
+        const synced = await syncServerProject(project);
+        const remote = await nosblocServer.privateTest(synced.projectId, project, account.user?.id);
+        serverMeta = {
+          serverProjectId: synced.projectId,
+          serverRevision: synced.revision,
+          serverVersionId: remote.versionId,
+          serverVersionNo: remote.versionNo,
+          serverEnvironment: NOSBLOC_SERVER_ENV,
+        };
+        setServerState({ connected: true, busy: false, error: "", lastSync: nowIso() });
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : "Le test serveur n’a pas abouti.");
+        return;
+      }
+    }
+    const result = appendProjectVersion(project, { stage: "private_test", note: "Test privé Nosbloc V2" });
+    updateProject(project.id, { ...result.project, ...serverMeta }, {
+      type: "project",
+      title: `Test privé · ${project.title}`,
+      detail: `Version ${result.version.versionNo} figée pour test${NOSBLOC_SERVER_ENABLED ? " et enregistrée côté serveur" : ""}.`,
+    });
+    setNotice(`Version ${result.version.versionNo} créée. Test privé prêt${NOSBLOC_SERVER_ENABLED ? " et synchronisé" : ""}.`);
+  }
+
+  async function requestReview(project) {
+    if (!project || serverState.busy) return;
     const readiness = projectReadiness(project);
     if (!readiness.readyForReview) {
       const missing = readiness.checks.filter(check => !check.ok).map(check => check.label).slice(0, 3).join(" · ");
       setNotice(`Encore ${100 - readiness.score} % à sécuriser avant vérification${missing ? ` : ${missing}` : ""}.`);
       return;
     }
+    let serverMeta = {};
+    if (NOSBLOC_SERVER_ENABLED) {
+      try {
+        const synced = await syncServerProject(project);
+        const remote = await nosblocServer.submitReview(synced.projectId, project, account.user?.id);
+        serverMeta = {
+          serverProjectId: synced.projectId,
+          serverRevision: synced.revision,
+          serverVersionId: remote.versionId,
+          serverVersionNo: remote.versionNo,
+          serverModerationCaseId: remote.caseId || null,
+          serverEnvironment: NOSBLOC_SERVER_ENV,
+        };
+        setServerState({ connected: true, busy: false, error: "", lastSync: nowIso() });
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : "La vérification serveur n’a pas abouti.");
+        return;
+      }
+    }
     const result = appendProjectVersion(project, { stage: "review", note: "Demande de publication Nosbloc V2" });
-    updateProject(project.id, result.project, {
+    updateProject(project.id, { ...result.project, ...serverMeta }, {
       type: "moderation",
       title: `${project.title} envoyé en vérification`,
       detail: `Version ${result.version.versionNo}. La version est maintenant figée.`,
@@ -281,7 +361,13 @@ export default function NosblocPage({ goTo }) {
         <header className="nb2-topbar">
           <div>
             <p>{view === "studio" && selected ? selected.title : "NOSBLOC 3B"}</p>
-            <span>{online ? "Sauvegarde automatique active" : "Modifications conservées sur cet appareil"}</span>
+            <span>{NOSBLOC_SERVER_ENABLED
+              ? serverState.connected
+                ? `Serveur ${NOSBLOC_SERVER_ENV} synchronisé`
+                : serverState.error
+                  ? "Serveur indisponible · copie locale conservée"
+                  : "Connexion serveur…"
+              : online ? "Sauvegarde automatique locale active" : "Modifications conservées sur cet appareil"}</span>
           </div>
           <div className="nb2-top-actions">
             <button type="button" className="nb2-icon-btn" onClick={() => { setView("activity"); markActivitiesRead(); }} aria-label="Activité">
@@ -306,7 +392,7 @@ export default function NosblocPage({ goTo }) {
           {view === "activity" && <ActivityView items={state.activity} onReadAll={markActivitiesRead} />}
           {view === "me" && <ProfileView ownerName={ownerName} profile={state.profile} wallet={state.wallet} coinsBalance={coinsBalance} projects={activeProjects} onProjects={() => setView("projects")} onExport={exportArchive} onImport={() => importRef.current?.click()} />}
           {view === "projects" && <ProjectsView projects={state.projects} onOpen={openProject} onCreate={() => setView("create")} onArchive={archiveProject} />}
-          {view === "studio" && selected && <StudioView project={selected} profile={state.profile} wallet={state.wallet} coinsBalance={coinsBalance} onBack={() => setView("projects")} updateProject={updateProject} onTest={runPrivateTest} onReview={requestReview} onRestore={restoreVersion} />}
+          {view === "studio" && selected && <StudioView project={selected} profile={state.profile} wallet={state.wallet} coinsBalance={coinsBalance} serverBusy={serverState.busy} serverConnected={serverState.connected} onBack={() => setView("projects")} updateProject={updateProject} onTest={runPrivateTest} onReview={requestReview} onRestore={restoreVersion} />}
           {view === "studio" && !selected && <EmptyState title="Aucun projet ouvert" text="Crée ton premier projet pour ouvrir le Studio." action="Créer" onAction={() => setView("create")} />}
         </main>
       </div>
@@ -532,7 +618,7 @@ function ProjectProgress({ project }) {
   return <div className="nb2-progress-wrap"><div className="nb2-progress"><i style={{ width: `${readiness.score}%` }} /></div><small>{readiness.score} % prêt</small></div>;
 }
 
-function StudioView({ project, profile, wallet, coinsBalance, onBack, updateProject, onTest, onReview, onRestore }) {
+function StudioView({ project, profile, wallet, coinsBalance, serverBusy, serverConnected, onBack, updateProject, onTest, onReview, onRestore }) {
   const [mode, setMode] = useState(profile.studioMode === "pro" ? "pro" : "simple");
   const [proTab, setProTab] = useState("project");
   const readiness = projectReadiness(project);
@@ -565,8 +651,8 @@ function StudioView({ project, profile, wallet, coinsBalance, onBack, updateProj
 
       <aside className="nb2-studio-aside">
         <div className="nb2-readiness-card"><div className="nb2-score"><strong>{readiness.score}</strong><span>%</span></div><h3>Prêt pour vérification</h3><div className="nb2-check-list">{readiness.checks.map(check => <span key={check.id} className={check.ok ? "ok" : ""}>{check.ok ? <CheckCircle2 size={15} /> : <Circle size={15} />}{check.label}</span>)}</div></div>
-        <div className="nb2-studio-actions"><button type="button" className="nb2-secondary" onClick={() => onTest(project)}><Eye size={17} /> Test privé</button><button type="button" className="nb2-primary" disabled={!readiness.readyForReview} onClick={() => onReview(project)}><Rocket size={17} /> Envoyer en vérification</button></div>
-        <p className="nb2-safety-note"><LockKeyhole size={15} /> Une version envoyée en vérification est figée. Ton brouillon reste séparé.</p>
+        <div className="nb2-studio-actions"><button type="button" className="nb2-secondary" disabled={serverBusy} onClick={() => onTest(project)}><Eye size={17} /> {serverBusy ? "Synchronisation…" : "Test privé"}</button><button type="button" className="nb2-primary" disabled={!readiness.readyForReview || serverBusy} onClick={() => onReview(project)}><Rocket size={17} /> Envoyer en vérification</button></div>
+        <p className="nb2-safety-note"><LockKeyhole size={15} /> Une version envoyée en vérification est figée. Ton brouillon reste séparé.{NOSBLOC_SERVER_ENABLED ? ` Serveur : ${serverConnected ? "connecté" : "non synchronisé"}.` : ""}</p>
       </aside>
     </div> : <div className="nb2-pro-shell">
       <nav className="nb2-pro-tabs">{PRO_TABS.map(([id, label, Icon]) => <button type="button" key={id} className={proTab === id ? "active" : ""} onClick={() => setProTab(id)}><Icon size={17} />{label}</button>)}</nav>
