@@ -49,7 +49,11 @@ test('live discovery requires a real ongoing embeddable sports broadcast with bo
  assert.match(liveApi,/s-maxage=1200/);
  assert.match(liveApi,/single-global-live-search/);
  assert.match(liveApi,/unexpected_query_parameters/);
- assert.match(liveApi,/Object\.keys\(req\.query\|\|\{\}\)\.length/);
+ assert.match(liveApi,/export default\{/);
+ assert.match(liveApi,/fetch:async request/);
+ assert.match(liveApi,/new URL\(request\.url\)/);
+ assert.match(liveApi,/requestUrl\.search/);
+ assert.doesNotMatch(liveApi,/Object\.keys\(req\.query/);
  assert.doesNotMatch(liveApi,/PROFILE_QUERIES|GF-WteOINCc|nELaL14ms7A|Pbyn08kfhXY/);
 });
 
