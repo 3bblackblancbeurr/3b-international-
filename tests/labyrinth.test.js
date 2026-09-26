@@ -5,11 +5,12 @@ import {Maze,paths,lineOfSight,DIRS} from '../src/games/maze.js';
 import {GAME_CATALOG,KEY_RACE_URL} from '../src/games/catalog.js';
 import {createStepper} from '../src/games/runtime.js';
 
-test('the library keeps Penalty Rush visible and preserves the existing Jeux 3B cards',()=>{
- assert.deepEqual(GAME_CATALOG.map(g=>g.id),['penalty-rush','arena','tower','maze','key-race','dada3b']);
+test('the library keeps Penalty Rush, DADA 3B and Power 3B visible while preserving the original key race',()=>{
+ assert.deepEqual(GAME_CATALOG.map(g=>g.id),['penalty-rush','arena','tower','maze','key-race','dada3b','power3b']);
  assert.equal(GAME_CATALOG[0].title,'PENALTY RUSH');
- assert.equal(GAME_CATALOG[4].href,KEY_RACE_URL);
- assert.equal(GAME_CATALOG[5].title,'DADA 3B — Le Cercle des 8 Portes');
+ assert.equal(GAME_CATALOG.find(g=>g.id==='key-race').href,KEY_RACE_URL);
+ assert.equal(GAME_CATALOG.find(g=>g.id==='dada3b').title,'DADA 3B — Le Cercle des 8 Portes');
+ assert.equal(GAME_CATALOG.find(g=>g.id==='power3b').title,'Power 3B');
  assert.equal(KEY_RACE_URL,'https://troisb-course-des-cles-demo.stetienne86pp.chatgpt.site/');
 });
 test('200 ruins have distinct reachable supplies, three shrines, safe borders and alternate routes',()=>{
