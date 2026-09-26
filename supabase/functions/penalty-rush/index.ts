@@ -798,20 +798,26 @@ function randomCode() {
   return Array.from(bytes, (value) => CODE_ALPHABET[value % CODE_ALPHABET.length]).join('');
 }
 
-function playerEntry(uid:string, profile:any, ready=true):Player {
+function playerEntry(uid:string, profile:any, ready=true, competitive:any={}):Player {
   return {
     uid,
-    name: profile.display_name,
-    countryId: profile.country_id,
-    styleId: profile.style_id,
-    keeperPowers: profile.keeper_powers,
-    shirtNumber: clamp(Math.trunc(number(profile.shirt_number, 10)), 1, 99),
-    kit: sanitizeKit(profile.kit),
-    boots: sanitizeBoots(profile.boots),
-    celebration: String(profile.celebration || 'calme').slice(0, 24),
+    name:profile.display_name,
+    passportLabel:passportLabel(profile.passport_public_id),
+    countryId:profile.country_id,
+    styleId:profile.style_id,
+    preferredRole:profile.preferred_role||'versatile',
+    dominantFoot:profile.dominant_foot||'right',
+    appearance:sanitizeAppearance(profile.appearance),
+    keeperPowers:profile.keeper_powers,
+    shirtNumber:clamp(Math.trunc(number(profile.shirt_number,10)),1,99),
+    kit:sanitizeKit(profile.kit),
+    boots:sanitizeBoots(profile.boots),
+    celebration:String(profile.celebration||'calme').slice(0,24),
+    rankedRating:number(competitive?.rankedRating,1000),
+    divisionId:String(competitive?.divisionId||'placement'),
     ready,
-    joinedAt: nowIso(),
-    lastSeen: nowIso(),
+    joinedAt:nowIso(),
+    lastSeen:nowIso(),
   };
 }
 
@@ -845,33 +851,29 @@ function assertMember(room:Room, uid:string) {
 }
 
 function publicRoom(room:Room, uid:string) {
-  const players = (room.players || []).map((player:any) => ({
+  const players=(room.players||[]).map((player:any)=>({
     name:player.name,
+    passportLabel:String(player.passportLabel||'PASSEPORT 3B').slice(0,32),
     countryId:player.countryId,
     styleId:player.styleId,
+    preferredRole:player.preferredRole||'versatile',
+    dominantFoot:player.dominantFoot||'right',
+    appearance:sanitizeAppearance(player.appearance),
     keeperPowers:player.keeperPowers,
-    shirtNumber:clamp(Math.trunc(number(player.shirtNumber, 10)), 1, 99),
+    shirtNumber:clamp(Math.trunc(number(player.shirtNumber,10)),1,99),
     kit:sanitizeKit(player.kit),
     boots:sanitizeBoots(player.boots),
-    celebration:String(player.celebration || 'calme').slice(0, 24),
+    celebration:String(player.celebration||'calme').slice(0,24),
+    rankedRating:number(player.rankedRating,1000),
+    divisionId:String(player.divisionId||'placement'),
     ready:Boolean(player.ready),
-    isSelf:player.uid === uid,
+    isSelf:player.uid===uid,
   }));
   return {
-    id:room.id,
-    code:room.code,
-    mode:room.mode,
-    status:room.status,
-    players,
-    state:room.state,
-    revision:room.revision,
-    isHost:room.host_user_id === uid,
-    startedAt:room.started_at,
-    finishedAt:room.finished_at,
-    settled:Boolean(room.settled_at),
-    realtimeTopic:'penalty:' + room.id,
-    apiVersion:2,
-    serverNow:nowMs(),
+    id:room.id,code:room.code,mode:room.mode,status:room.status,players,state:room.state,revision:room.revision,
+    rankedSeasonId:room.ranked_season_id||null,internationalWindowId:room.international_window_id||null,
+    isHost:room.host_user_id===uid,startedAt:room.started_at,finishedAt:room.finished_at,settled:Boolean(room.settled_at),
+    realtimeTopic:'penalty:'+room.id,apiVersion:3,serverNow:nowMs(),
   };
 }
 
