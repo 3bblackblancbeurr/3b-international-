@@ -34,3 +34,6 @@
 @keyframes powerSlash{from{transform:translate(-50%,-50%) rotate(-18deg) scaleX(.65);opacity:.55}to{transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.12);opacity:1}}
 @keyframes powerSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.power3b-cine-core:before,.power3b-cine-core:after{animation:none!important}}
+
+.power3b-reference{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:20px;padding-top:16px;border-top:1px solid #d4bb7c33}.power3b-reference>div{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:8px 10px;border:1px solid #91aabd2b;border-radius:8px;background:#0a1420}.power3b-reference b{font-size:12px;color:#e7edf1}.power3b-reference span{font-size:10px;color:#d9bf7d;white-space:nowrap}
+@media(max-width:560px){.power3b-reference{grid-template-columns:1fr 1fr}}
