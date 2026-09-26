@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, ArrowLeft, ArrowRight, BarChart3, Boxes, Check, CheckCircle2,
-  ChevronRight, CircleDollarSign, Cloud, CloudOff, Code2, Coins, Compass, Copy,
+  ChevronRight, CircleDollarSign, Cloud, CloudOff, Code2, Coins, Compass,
   Download, Eye, FolderKanban, Gauge, History, Home, Layers3, LockKeyhole, Mail,
   Menu, Package, Plus, Rocket, RotateCcw, Search, Settings2, ShieldCheck, Sparkles,
   Store, TestTube2, Upload, UserRound, Users, WalletCards, WandSparkles, X
@@ -14,8 +14,8 @@ import {
   projectReadiness, simulateRevenue, validateSplits
 } from "./model.js";
 import {
-  appendProjectVersion, fingerprint, parseStateExport, prepareTeamInvitation, restoreProjectVersion,
-  revokeTeamInvitation, serializeStateExport
+  appendProjectVersion, fingerprint, parseStateExport, restoreProjectVersion,
+  serializeStateExport
 } from "./versioning.js";
 import { useNosblocServer } from "./useNosblocServer.js";
 import "./nosbloc-premium.css";
@@ -819,6 +819,7 @@ function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, on
     .slice(0,120);
   const invitations = serverSnapshot?.incomingInvitations || [];
   const moderation = serverSnapshot?.moderationQueue || [];
+  const productModeration = serverSnapshot?.productModeration || [];
 
   return <div className="nb2-view">
     <section className="nb2-page-head"><p className="nb2-kicker">ACTIVITÉ</p><h1>Tout au même endroit.</h1><p>Projets, sécurité, ventes, paiements et modération utilisent une seule boîte.</p></section>
@@ -842,7 +843,16 @@ function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, on
       </article>)}</div>
     </section>}
 
-    {!rows.length && !invitations.length && !moderation.length
+    {(filter === "all" || filter === "moderation") && serverSnapshot?.isModerator && productModeration.length > 0 && <section className="nb2-section">
+      <SectionTitle eyebrow="BOUTIQUE" title="Produits à vérifier"/>
+      <div className="nb2-activity-list">{productModeration.map(item => <article key={item.productId}>
+        <span><Store size={17}/></span>
+        <div><b>{item.title}</b><p>{item.type} · {formatEuros(item.priceCents)} · droits {item.rightsConfirmed ? "confirmés" : "manquants"}</p><small>{new Date(item.createdAt).toLocaleString("fr-FR")}</small></div>
+        <div className="nb2-activity-actions"><button disabled={!item.rightsConfirmed} onClick={() => onModerateProduct(item.productId,true)}><Check size={15}/> Approuver</button><button onClick={() => onModerateProduct(item.productId,false)}><X size={15}/> Refuser</button></div>
+      </article>)}</div>
+    </section>}
+
+    {!rows.length && !invitations.length && !moderation.length && !productModeration.length
       ? <EmptyState icon={Activity} title="Aucune activité récente." text="Tes actions importantes apparaîtront ici."/>
       : <div className="nb2-activity-list">{rows.map(row => <article key={row.id}><span><Activity size={17}/></span><div><b>{row.title}</b><p>{row.detail}</p><small>{row.createdAt ? new Date(row.createdAt).toLocaleString("fr-FR") : "Maintenant"} · {row.source === "server" ? "serveur" : "local"}</small></div></article>)}</div>}
   </div>;
