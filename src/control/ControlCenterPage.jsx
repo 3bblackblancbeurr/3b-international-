@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useMemo,useState} from 'react';
 import {
  Activity,ArrowLeft,BellRing,CheckCircle2,ChevronRight,Cloud,Cpu,GitBranch,Gauge,
- KeyRound,Laptop,RefreshCw,Rocket,Server,ShieldCheck,Smartphone,Sparkles,
+ KeyRound,Laptop,RefreshCw,Rocket,Server,ShieldCheck,Sparkles,
  TerminalSquare,Unplug,Wifi,WifiOff,Zap
 } from 'lucide-react';
 import {controlCenterRequest} from './client.js';
@@ -269,7 +269,7 @@ export default function ControlCenterPage({goTo}){
  const alerts=useMemo(()=>{
   const rows=[];
   if(error)rows.push({level:'bad',title:error});
-  if(!pulse.network)rows.push({level:'bad',title:'Le téléphone est hors ligne.'});
+  if(!pulse.network)rows.push({level:'bad',title:'Cet appareil est hors ligne.'});
   if(pulse.production===false)rows.push({level:'bad',title:'La production 3B ne répond pas au contrôle.'});
   if(['failure','timed_out','cancelled'].includes(pulse.ci))rows.push({level:'bad',title:'Le dernier workflow GitHub demande une vérification.'});
   if(primaryDevice&&!primaryOnline)rows.push({level:'warn',title:'Le PC appairé est actuellement hors ligne.'});
@@ -473,7 +473,7 @@ export default function ControlCenterPage({goTo}){
     </div>}
 
     <div className="control-device-list">
-     {activeDevices.length===0?<div className="control-empty-inline"><Laptop/><span>Aucun PC appairé. Crée un code depuis ce téléphone.</span></div>:activeDevices.map(device=>{
+     {activeDevices.length===0?<div className="control-empty-inline"><Laptop/><span>Aucun PC appairé. Crée un code depuis cet appareil.</span></div>:activeDevices.map(device=>{
       const online=onlineDevices.some(item=>item.id===device.id);
       return <article className="control-device-card" key={device.id}>
        <div className={online?'control-device-orb online':'control-device-orb'}><Laptop size={18}/></div>
