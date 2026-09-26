@@ -5,7 +5,7 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const VERSION='1.0.0';
+const VERSION='1.1.0';
 const SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
 const PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
 const ENDPOINT=SUPABASE_URL+'/functions/v1/control-center-agent';
@@ -115,7 +115,7 @@ async function heartbeat(config){
  return await request({
   action:'heartbeat',
   agent_version:VERSION,
-  capabilities:CAPABILITIES
+  capabilities:{...CAPABILITIES,_runtime:systemStatus()}
  },config.device_token);
 }
 async function complete(config,command,ok,result={},error=''){
