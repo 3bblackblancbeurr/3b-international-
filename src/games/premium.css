@@ -60,3 +60,8 @@
 }
 @media(max-height:550px) and (orientation:landscape){.game-header{min-height:42px;padding:3px 10px}.game-header button{height:33px}.game-hud{padding:5px}.game-hud>div{flex-direction:row;gap:8px}.game-hud strong{font-size:14px}.game-footer{min-height:52px;padding:4px 14px}.game-action{min-height:44px}.game-mobile-help{font-size:12px}.game-dpad{display:none}.game-subpanel{max-height:32svh}.game-log{margin:3px}.game-door-choices button{min-height:65px}.game-overlay h2{font-size:24px;margin:5px}.premium-controls{padding:8px;margin:10px;font-size:13px}.game-overlay p{margin:6px}.game-overlay .arcade-primary{padding:9px;min-height:42px}.premium-intro-tip{display:none}}
 @media(prefers-reduced-motion:reduce){.premium-game-card,.game-action:before{transition:none}.premium-game-card:hover{transform:none}}
+
+.premium-game-card[data-game=power3b]{--accent:#e3c476}
+[data-game=power3b] .premium-card-art{background:radial-gradient(circle at 50% 48%,#173652 0 14%,transparent 15%),conic-gradient(from 22.5deg,#0d1b29,#253948,#101c29,#3b3020,#0d1b29);filter:none}
+[data-game=power3b] .premium-card-art:before{content:'8';position:absolute;left:50%;top:50%;z-index:1;transform:translate(-50%,-50%);width:78px;height:78px;display:grid;place-items:center;border:2px solid #e3c476;border-radius:50%;background:#07111ddd;color:#f4dfa8;font:800 36px system-ui;box-shadow:0 0 0 9px #d8bb6d13,0 0 35px #6bc7ff2c}
+[data-game=power3b] .premium-card-sprite{display:none}
