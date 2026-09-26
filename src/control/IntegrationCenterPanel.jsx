@@ -101,7 +101,7 @@ export default function IntegrationCenterPanel({pulse,dataAvailable,primaryDevic
  const external=[
   {
    Icon:Mail,label:'Gmail',state:gmail?.state||google?.state||'checking',
-   detail:gmail?.state==='live'?`${gmail.unread||0} message${gmail.unread===1?'':'s'} non lu${gmail.unread===1?'':'s'} dans la boîte de réception · hors promotions`:google?.detail||'Vérification serveur…',
+   detail:gmail?.state==='live'?`${gmail.unread||0} message${gmail.unread===1?'':'s'} non lu${gmail.unread===1?'':'s'} dans INBOX`:google?.detail||'Vérification serveur…',
    next:google?.state==='setup_required'?'Autorisation Google Workspace serveur requise.':null
   },
   {
