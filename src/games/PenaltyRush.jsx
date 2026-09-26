@@ -409,40 +409,92 @@ function PlayerStudio({ profile, rating, snapshot, setProfile, busy, onSave }) {
 }
 
 function ClubPanel({ snapshot, profile, busy, request }) {
-  const club = snapshot?.club;
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [colors, setColors] = useState({ primary:'#08090b', secondary:'#d8b35e' });
+  const club=snapshot?.club;
+  const invites=snapshot?.clubInvites||[];
+  const [name,setName]=useState('');
+  const [code,setCode]=useState('');
+  const [recruitPassport,setRecruitPassport]=useState('');
+  const [colors,setColors]=useState({primary:'#08090b',secondary:'#d8b35e'});
+  const canRecruit=club&&['owner','captain'].includes(club.role);
   return (
-    <section className="penalty-panel-page">
-      <span className="penalty-kicker">CARRIÈRE CLUB</span><h1>Gagner seul. Construire ensemble.</h1>
-      <p>Les matchs restent 1v1, mais les clubs réunissent plusieurs résultats dans des rencontres collectives. Cinq duels peuvent composer une confrontation de club.</p>
+    <section className="penalty-panel-page penalty-club-page">
+      <span className="penalty-kicker">CLUBS 3B · RECRUTEMENT</span><h1>Un effectif construit autour de vraies identités.</h1>
+      <p>Les clubs regroupent les carrières individuelles. Le recrutement passe par le Passeport public 3B : aucune adresse e-mail ni identifiant de connexion n’est partagé.</p>
+
       {club ? (
-        <div className="penalty-big-card" style={{ '--club-primary':club.colors?.primary || '#08090b', '--club-secondary':club.colors?.secondary || '#d8b35e' }}>
-          <span className="penalty-club-crest">3B</span>
-          <div className="penalty-club-summary">
-            <h2>{club.name}</h2><p>{club.role} · {club.members || 1} membre(s) · code {club.code}</p><small>Couleurs officielles du club</small>
-            <div className="penalty-club-manage">
-              <button className="penalty-copy" type="button" onClick={() => navigator.clipboard?.writeText(club.code).catch(() => {})}><Copy size={13}/> Copier le code</button>
-              {club.role === 'owner'
-                ? <button className="penalty-danger" type="button" disabled={busy} onClick={() => { if (window.confirm('Dissoudre définitivement ce club ?')) request('club.disband', {}).catch(() => {}); }}>Dissoudre</button>
-                : <button className="penalty-secondary" type="button" disabled={busy} onClick={() => { if (window.confirm('Quitter ce club ?')) request('club.leave', {}).catch(() => {}); }}>Quitter</button>}
+        <>
+          <div className="penalty-big-card penalty-club-hero" style={{'--club-primary':club.colors?.primary||'#08090b','--club-secondary':club.colors?.secondary||'#d8b35e'}}>
+            <span className="penalty-club-crest">3B</span>
+            <div className="penalty-club-summary">
+              <span className="penalty-kicker">{club.role==='owner'?'FONDATEUR':club.role==='captain'?'CAPITAINE':'MEMBRE'}</span>
+              <h2>{club.name}</h2>
+              <p>{club.members||1} membre(s) · code privé {club.code}</p>
+              <div className="penalty-club-manage">
+                <button className="penalty-copy" type="button" onClick={()=>navigator.clipboard?.writeText(club.code).catch(()=>{})}><Copy size={13}/> Copier le code</button>
+                {club.role==='owner'
+                  ? <button className="penalty-danger" type="button" disabled={busy} onClick={()=>{if(window.confirm('Dissoudre définitivement ce club ?'))request('club.disband',{}).catch(()=>{});}}>Dissoudre</button>
+                  : <button className="penalty-secondary" type="button" disabled={busy} onClick={()=>{if(window.confirm('Quitter ce club ?'))request('club.leave',{}).catch(()=>{});}}>Quitter</button>}
+              </div>
             </div>
           </div>
-        </div>
+
+          {canRecruit&&<article className="penalty-recruit-box">
+            <span className="penalty-kicker">CELLULE DE RECRUTEMENT</span><h3>Inviter par Passeport 3B</h3>
+            <p>Entre l’identifiant public du joueur. L’invitation expire automatiquement après 72 heures et le joueur doit l’accepter.</p>
+            <div className="penalty-inline-actions">
+              <input value={recruitPassport} placeholder="UUID public du Passeport" aria-label="Identifiant Passeport public" onChange={e=>setRecruitPassport(e.target.value.trim())}/>
+              <button className="penalty-primary" disabled={busy||recruitPassport.length<32} onClick={()=>request('club.invite',{passportPublicId:recruitPassport}).then(()=>setRecruitPassport('')).catch(()=>{})}>Envoyer l’invitation</button>
+            </div>
+          </article>}
+
+          <div className="penalty-roster">
+            <div className="penalty-section-title"><div><span className="penalty-kicker">EFFECTIF</span><h2>Vestiaire du club</h2></div><b>{club.roster?.length||0} joueurs</b></div>
+            {(club.roster||[]).map((member,index)=>(
+              <article key={member.passportPublicId||index} className="penalty-roster-row" data-self={member.isSelf}>
+                <div className="penalty-roster-number">{String(member.shirtNumber||10).padStart(2,'0')}</div>
+                <div className="penalty-roster-main">
+                  <b>{member.displayName}{member.isSelf?' · toi':''}</b>
+                  <span>{countryById(member.countryId).flag} {member.shirtName} · {PLAYER_STYLES[member.styleId]?.name||'Technicien'} · {member.preferredRole==='keeper'?'Gardien':member.preferredRole==='attacker'?'Attaquant':'Polyvalent'}</span>
+                  <small>{member.passportLabel||'Passeport 3B'} · {member.role==='owner'?'Fondateur':member.role==='captain'?'Capitaine':'Membre'}</small>
+                </div>
+                {!member.isSelf&&<div className="penalty-roster-actions">
+                  {club.role==='owner'&&member.role!=='owner'&&<button className="penalty-secondary" disabled={busy} onClick={()=>request('club.member.role',{passportPublicId:member.passportPublicId,role:member.role==='captain'?'member':'captain'}).catch(()=>{})}>{member.role==='captain'?'Retirer capitaine':'Nommer capitaine'}</button>}
+                  {canRecruit&&member.role!=='owner'&&<button className="penalty-danger" disabled={busy} onClick={()=>{if(window.confirm('Retirer ce joueur du club ?'))request('club.kick',{passportPublicId:member.passportPublicId}).catch(()=>{});}}>Retirer</button>}
+                </div>}
+              </article>
+            ))}
+          </div>
+        </>
       ) : (
-        <div className="penalty-club-actions">
-          <article>
-            <h3>Créer un club</h3>
-            <input value={name} maxLength={40} placeholder="Nom du club" onChange={(e) => setName(e.target.value)} />
-            <div className="penalty-color-row"><span>Principale</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={'Couleur principale ' + color} aria-pressed={colors.primary === color} style={{ '--swatch':color }} onClick={() => setColors((current) => ({ ...current, primary:color }))} />)}</div></div>
-            <div className="penalty-color-row"><span>Secondaire</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={'Couleur secondaire ' + color} aria-pressed={colors.secondary === color} style={{ '--swatch':color }} onClick={() => setColors((current) => ({ ...current, secondary:color }))} />)}</div></div>
-            <button className="penalty-primary" disabled={busy || name.trim().length < 3 || colors.primary === colors.secondary} onClick={() => request('club.create', { name, colors }).catch(() => {})}>Créer mon club</button>
-          </article>
-          <article><h3>Rejoindre un club</h3><input value={code} maxLength={6} placeholder="CODE" onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, '').slice(0, 6))} /><button className="penalty-secondary" disabled={busy || code.trim().length !== 6} onClick={() => request('club.join', { code }).catch(() => {})}>Rejoindre</button></article>
-        </div>
+        <>
+          {invites.length>0&&<div className="penalty-invite-list">
+            <span className="penalty-kicker">INVITATIONS REÇUES</span>
+            {invites.map(invite=><article key={invite.id}>
+              <div><b>{invite.club?.name||'Club 3B'}</b><small>Expire {invite.expiresAt?new Date(invite.expiresAt).toLocaleString('fr-FR'):'bientôt'}</small></div>
+              <div className="penalty-inline-actions">
+                <button className="penalty-primary" disabled={busy} onClick={()=>request('club.invite.respond',{inviteId:invite.id,decision:'accept'}).catch(()=>{})}>Accepter</button>
+                <button className="penalty-secondary" disabled={busy} onClick={()=>request('club.invite.respond',{inviteId:invite.id,decision:'decline'}).catch(()=>{})}>Refuser</button>
+              </div>
+            </article>)}
+          </div>}
+          <div className="penalty-club-actions">
+            <article>
+              <span className="penalty-kicker">FONDER</span><h3>Créer un club</h3>
+              <input value={name} maxLength={40} placeholder="Nom du club" onChange={e=>setName(e.target.value)}/>
+              <div className="penalty-color-row"><span>Principale</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={'Couleur principale '+color} aria-pressed={colors.primary===color} style={{'--swatch':color}} onClick={()=>setColors(current=>({...current,primary:color}))}/>)}</div></div>
+              <div className="penalty-color-row"><span>Secondaire</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={'Couleur secondaire '+color} aria-pressed={colors.secondary===color} style={{'--swatch':color}} onClick={()=>setColors(current=>({...current,secondary:color}))}/>)}</div></div>
+              <button className="penalty-primary" disabled={busy||name.trim().length<3||colors.primary===colors.secondary} onClick={()=>request('club.create',{name,colors}).catch(()=>{})}>Créer mon club</button>
+            </article>
+            <article>
+              <span className="penalty-kicker">CODE PRIVÉ</span><h3>Rejoindre directement</h3>
+              <p>Le code reste une solution rapide entre amis. Le recrutement officiel utilise une invitation Passeport.</p>
+              <input value={code} maxLength={6} placeholder="CODE" onChange={e=>setCode(e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'').slice(0,6))}/>
+              <button className="penalty-secondary" disabled={busy||code.trim().length!==6} onClick={()=>request('club.join',{code}).catch(()=>{})}>Rejoindre</button>
+            </article>
+          </div>
+        </>
       )}
-      <div className="penalty-rule-note">Les couleurs du club identifient l’équipe. Les vêtements, chaussures et cosmétiques ne modifient jamais vitesse, portée, puissance ou précision.</div>
+      <div className="penalty-rule-note"><b>Hiérarchie sécurisée :</b> fondateur → capitaine → membre. Les capitaines peuvent recruter et gérer des membres, mais seul le fondateur contrôle les capitaines et la dissolution.</div>
     </section>
   );
 }
