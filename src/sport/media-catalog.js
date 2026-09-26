@@ -160,6 +160,27 @@ export const SPORT_FINALS=[
   ]
  }),
  media({
+  id:'final-badminton-mixed-olympics-2016',sport:'Badminton',year:'2016',title:'Finale double mixte',
+  subtitle:'Finale olympique double mixte Rio 2016 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-badminton-mixed-2016-full','Replay officiel','EcENXl4bU4s',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-beach-volley-men-olympics-2016',sport:'Beach-volley',year:'2016',title:'Brésil · Italie',
+  subtitle:'Finale olympique hommes Rio 2016 · replay complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-beach-volley-men-2016-full','Replay complet officiel','k4ux0jau_ws',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-beach-volley-women-olympics-2016',sport:'Beach-volley',year:'2016',title:'Finale olympique femmes',
+  subtitle:'Finale olympique femmes Rio 2016 · replay complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-beach-volley-women-2016-full','Replay complet officiel','-6TVvxs5sow',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
   id:'final-table-tennis-olympics-2016',sport:'Tennis de table',year:'2016',title:'Ma Long · Zhang Jike',
   subtitle:'Finale olympique simple hommes Rio 2016 · match complet',provider:'Olympic Games',
   sources:[
