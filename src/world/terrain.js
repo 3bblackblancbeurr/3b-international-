@@ -10,7 +10,7 @@ export const WORLD_RADIUS=260;
 export const HUB_WORLD_RADIUS=520;
 export const worldRadiusFor=region=>region==='hub'?HUB_WORLD_RADIUS:WORLD_RADIUS;
 export const BIOMES={
- hub:{seed:83,angle:0,scale:4.2,low:'#172c2b',high:'#52685a',rock:'#686f6c',sky:'#688797',haze:'#9dacaa',amplitude:8.2,tree:'Tree',water:{x:-165,z:72,r:28}},
+ hub:{seed:83,angle:0,scale:6.2,low:'#172c2b',high:'#52685a',rock:'#686f6c',sky:'#688797',haze:'#9dacaa',amplitude:8.2,tree:'Tree',water:{x:-165,z:72,r:28}},
  france:{seed:13,angle:-.24,scale:1.6,low:'#385c43',high:'#70865b',rock:'#92988f',sky:'#7fa6bf',haze:'#bdc9c6',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
  italie:{seed:29,angle:.5,scale:1.65,low:'#697b44',high:'#adad72',rock:'#b6aa8d',sky:'#a8c3c7',haze:'#ded1b1',amplitude:7,tree:'Cypress',water:{x:47,z:32,r:10}},
  estonie:{seed:41,angle:-.62,scale:1.65,low:'#3b615c',high:'#77988c',rock:'#abb6af',sky:'#6c959f',haze:'#a6c2bd',amplitude:5.8,tree:'Pine',water:{x:-35,z:30,r:14}},
