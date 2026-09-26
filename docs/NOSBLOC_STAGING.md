@@ -8,7 +8,14 @@ L’environnement isolé est actif dans un projet Supabase séparé :
 Nom : 3B Nosbloc Staging
 Project ref : zykdfgahzqqanlyxjtbe
 URL : https://zykdfgahzqqanlyxjtbe.supabase.co
-Edge Function : nosbloc-staging · ACTIVE · verify_jwt=true
+API : nosbloc-staging · ACTIVE · verify_jwt=true
+Console : nosbloc-staging-console · ACTIVE · page publique sans données
+```
+
+Console de test :
+
+```text
+https://zykdfgahzqqanlyxjtbe.supabase.co/functions/v1/nosbloc-staging-console
 ```
 
 Le projet de production `ttvhcezucsbbmnafrotq` n’a reçu aucune table, fonction ni donnée Nosbloc staging. Les fichiers restent dans `supabase/staging/` et ne sont pas ajoutés au manifeste des migrations de production.
@@ -18,8 +25,10 @@ Le projet de production `ttvhcezucsbbmnafrotq` n’a reçu aucune table, fonctio
 - Auth Supabase propre au staging, avec stockage de session navigateur séparé de la production.
 - Passeport de test créé automatiquement à partir des métadonnées Auth : identifiant, nom et pays.
 - Client refusant toute URL autre que le projet `zykdfgahzqqanlyxjtbe`.
-- Edge Function protégée par JWT et épinglée au même project ref.
-- Aucun `service_role` embarqué dans le navigateur ou dans le code de la fonction.
+- API Edge protégée par JWT et épinglée au même project ref.
+- Console statique `noindex`, sans donnée privée et sans clé privilégiée.
+- Les opérations de la console exigent un JWT utilisateur puis sont transmises à l’API protégée.
+- Aucun `service_role` embarqué dans le navigateur ou dans le code des fonctions.
 - Accès aux données uniquement par des RPC authentifiés qui dérivent l’identité de `auth.uid()`.
 - Tables directement interdites à `anon` et `authenticated` par droits SQL, RLS et politiques restrictives.
 - Invitations résolues par identifiant staging puis acceptées uniquement par le véritable `user_id` invité.
@@ -47,9 +56,11 @@ supabase/staging/20260926032000_nosbloc_staging_authenticated_api.sql
 supabase/staging/20260926033000_nosbloc_staging_advisor_hardening.sql
 supabase/staging/20260926034000_nosbloc_staging_fk_indexes.sql
 supabase/staging/DEPLOYED_NOSBLOC_STAGING.json
+supabase/functions/nosbloc-staging/
+supabase/functions/nosbloc-staging-console/
 ```
 
-## Configuration de la prévisualisation
+## Configuration de la prévisualisation 3B complète
 
 Ces variables doivent exister uniquement dans une prévisualisation ou un `.env.local` staging :
 
@@ -62,18 +73,35 @@ VITE_NOSBLOC_STAGING_URL=https://zykdfgahzqqanlyxjtbe.supabase.co/functions/v1/n
 
 En production, `VITE_NOSBLOC_STAGING_SYNC` reste `false` et les trois autres variables restent absentes.
 
-## Parcours de test
+## Parcours de test depuis la console
 
-1. Ouvrir Nosbloc dans la prévisualisation staging.
+1. Ouvrir l’URL de la console.
 2. Créer un Passeport de test ou se connecter.
-3. Créer un projet Nosbloc et confirmer droits, public et modération.
-4. Synchroniser le projet vers le serveur.
-5. Créer un second compte staging avec un autre identifiant.
-6. Inviter ce compte depuis le premier projet.
-7. Se connecter avec le second compte et accepter l’invitation.
-8. Revenir au propriétaire, créer un point serveur puis envoyer une version en modération.
-9. Attribuer le badge `director_founder` à un compte staging autorisé avant de tester la décision humaine.
-10. Vérifier que toute décision reste privée et ne déverrouille aucune fonction publique ou financière.
+3. Créer un projet Nosbloc et le synchroniser.
+4. Créer un second compte staging avec un autre identifiant.
+5. Ajouter cet identifiant comme collaborateur dans le premier projet puis envoyer l’invitation.
+6. Se connecter avec le second compte et accepter l’invitation.
+7. Revenir au propriétaire, créer un point serveur puis envoyer une version en modération.
+8. Attribuer le badge `director_founder` à un compte staging autorisé avant de tester une décision humaine.
+9. Vérifier que toute décision reste privée et ne déverrouille aucune fonction publique ou financière.
+
+## Smoke test transactionnel exécuté
+
+Un scénario complet a été exécuté avec quatre identités synthétiques dans une sous-transaction, puis intégralement annulé :
+
+```text
+Projet créé : OK
+Invitation ciblée vers le vrai membre : OK
+Tentative d’acceptation par un imposteur : BLOQUÉE
+Acceptation par le membre invité : OK
+Version en révision : OK
+Tentative de modification de la version : BLOQUÉE
+Tentative de modération non autorisée : BLOQUÉE
+Approbation par le modérateur staging : PRIVÉE ET VERROUILLÉE
+Événements d’audit écrits : 5
+Utilisateurs synthétiques après test : 0
+Projets synthétiques après test : 0
+```
 
 ## Vérifications de sécurité
 
