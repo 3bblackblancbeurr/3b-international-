@@ -30,9 +30,10 @@ const CODE = /^[A-HJ-NP-Z2-9]{6}$/;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACTIONS = new Set([
   'status', 'profile.save', 'create', 'join', 'queue', 'room', 'ready', 'start',
-  'input', 'tick', 'leave', 'leaderboard', 'club.create', 'club.join', 'club.leave', 'club.disband', 'international.respond',
+  'input', 'tick', 'leave', 'leaderboard', 'club.create', 'club.join', 'club.leave', 'club.disband',
+  'club.invite', 'club.invite.respond', 'club.member.role', 'club.kick', 'international.respond',
 ]);
-const MODES = new Set(['private', 'quick', 'ranked']);
+const MODES = new Set(['private', 'quick', 'ranked', 'international']);
 const COUNTRY_IDS = new Set(['fr', 'dz', 'ma', 'tn', 'tr', 'it', 'es', 'ee']);
 const COUNTRY_FROM_NAME: Record<string,string> = {
   France: 'fr', 'Algérie': 'dz', Maroc: 'ma', Tunisie: 'tn', Turquie: 'tr',
@@ -55,6 +56,18 @@ const PHASE_LABEL: Record<string,string> = {
   'golden-duel': 'Duel d’Or',
 };
 const HEX = /^#[0-9a-f]{6}$/i;
+const SKIN_TONES:Record<string,string> = {
+  tone1:'#f1c7a5', tone2:'#dfad86', tone3:'#c88d63', tone4:'#ad7655',
+  tone5:'#8d5d45', tone6:'#714735', tone7:'#553528', tone8:'#39251e',
+};
+const HAIR_STYLES = new Set(['short','fade','buzz','curls','afro','braids','long','shaved']);
+const HAIR_COLORS:Record<string,string> = {
+  black:'#111315','dark-brown':'#2a1b13',brown:'#5c3825',auburn:'#7a3426',blond:'#caa86a',platinum:'#ddd0aa',
+};
+const FACE_SHAPES = new Set(['balanced','oval','square','round','angular','long']);
+const FACIAL_HAIR = new Set(['none','stubble','goatee','beard']);
+const BUILDS = new Set(['slim','athletic','strong']);
+const ROLES = new Set(['attacker','keeper','versatile']);
 
 class Failure extends Error {
   status: number;
@@ -154,9 +167,13 @@ async function userFor(req:Request) {
 }
 
 async function memberProfile(uid:string) {
-  const rows = await admin('/rest/v1/member_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=user_id,handle,name,country&limit=1');
-  if (!Array.isArray(rows) || !rows[0]) throw new Failure(403, 'Active ton profil 3B avant de jouer.');
-  return rows[0];
+  const rows = await admin('/rest/v1/member_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=user_id,handle,name,country,passport_public_id,passport_state,passport_version,passport_issued_at&limit=1');
+  if (!Array.isArray(rows) || !rows[0]) throw new Failure(403, 'Active ton Passeport 3B avant de jouer.');
+  const member=rows[0];
+  if (!UUID.test(String(member.passport_public_id || '')) || member.passport_state !== 'active') {
+    throw new Failure(403, 'Ton Passeport 3B doit être actif pour accéder à la carrière football.');
+  }
+  return member;
 }
 
 function sanitizeColor(value:unknown, fallback:string) {
@@ -197,13 +214,43 @@ function sanitizeBoots(value:any={}) {
   };
 }
 
+function sanitizeAppearance(value:any={}) {
+  const skinTone=Object.hasOwn(SKIN_TONES,String(value?.skinTone))?String(value.skinTone):'tone4';
+  const hairColor=Object.hasOwn(HAIR_COLORS,String(value?.hairColor))?String(value.hairColor):'dark-brown';
+  return {
+    skinTone,
+    skinColor:SKIN_TONES[skinTone],
+    hairStyle:HAIR_STYLES.has(String(value?.hairStyle))?String(value.hairStyle):'short',
+    hairColor,
+    hairHex:HAIR_COLORS[hairColor],
+    faceShape:FACE_SHAPES.has(String(value?.faceShape))?String(value.faceShape):'balanced',
+    facialHair:FACIAL_HAIR.has(String(value?.facialHair))?String(value.facialHair):'none',
+    heightCm:clamp(Math.trunc(number(value?.heightCm,178)),165,198),
+    build:BUILDS.has(String(value?.build))?String(value.build):'athletic',
+  };
+}
+
+function passportLabel(value:unknown) {
+  const raw=String(value||'').replace(/-/g,'').toUpperCase();
+  return raw.length>=12 ? '3B-PASS-'+raw.slice(0,4)+'-'+raw.slice(4,8)+'-'+raw.slice(8,12) : 'PASSEPORT 3B';
+}
+
 function publicProfile(row:any, clubName='') {
   return {
     displayName: row.display_name,
+    passportPublicId: row.passport_public_id,
+    passportLabel: passportLabel(row.passport_public_id),
+    identityStatus: row.identity_status || 'passport',
     shirtName: row.shirt_name,
     shirtNumber: row.shirt_number,
     countryId: row.country_id,
     styleId: row.style_id,
+    preferredRole: row.preferred_role || 'versatile',
+    dominantFoot: row.dominant_foot || 'right',
+    appearance: sanitizeAppearance(row.appearance),
+    archetypeXp:number(row.archetype_xp),
+    archetypeLevel:clamp(Math.trunc(number(row.archetype_level,1)),1,50),
+    profileCompletedAt:row.profile_completed_at || null,
     keeperPowers: row.keeper_powers,
     clubName,
     kit: row.kit,
@@ -213,19 +260,47 @@ function publicProfile(row:any, clubName='') {
 }
 
 async function ensureProfile(uid:string) {
-  let rows = await admin('/rest/v1/penalty_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=*&limit=1');
-  if (Array.isArray(rows) && rows[0]) return rows[0];
-
   const member = await memberProfile(uid);
+  const expectedCountry = COUNTRY_FROM_NAME[String(member.country)] || 'fr';
   const displayName = String(member.name || member.handle || 'Joueur 3B').trim().slice(0, 24) || 'Joueur 3B';
-  const countryId = COUNTRY_FROM_NAME[String(member.country)] || 'fr';
+  let rows = await admin('/rest/v1/penalty_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=*&limit=1');
+  if (Array.isArray(rows) && rows[0]) {
+    let current=rows[0];
+    const patch:any={};
+    if (current.passport_public_id !== member.passport_public_id) patch.passport_public_id=member.passport_public_id;
+    if (current.display_name !== displayName) patch.display_name=displayName;
+    if (!current.profile_completed_at) patch.profile_completed_at=nowIso();
+    if (current.country_id !== expectedCountry) {
+      const ratingRows=await admin('/rest/v1/penalty_ratings?user_id=eq.'+encodeURIComponent(uid)+'&select=games&limit=1').catch(()=>[]);
+      const officialGames=number(ratingRows?.[0]?.games);
+      if (officialGames>0 || number(current.international_caps)>0) patch.identity_status='review';
+      else { patch.country_id=expectedCountry; patch.identity_status='passport'; }
+    } else if (current.identity_status !== 'passport') {
+      patch.identity_status='passport';
+    }
+    if (Object.keys(patch).length) {
+      patch.updated_at=nowIso();
+      const updated=await admin('/rest/v1/penalty_profiles?user_id=eq.'+encodeURIComponent(uid)+'&select=*',{
+        method:'PATCH',body:patch,prefer:'return=representation',
+      });
+      current=updated?.[0]||current;
+    }
+    return current;
+  }
+
   const body = {
     user_id: uid,
+    passport_public_id: member.passport_public_id,
+    identity_status:'passport',
     display_name: displayName,
     shirt_name: displayName.toUpperCase().slice(0, 14),
     shirt_number: 10,
-    country_id: countryId,
+    country_id: expectedCountry,
     style_id: 'technicien',
+    preferred_role:'versatile',
+    dominant_foot:'right',
+    appearance:sanitizeAppearance(),
+    profile_completed_at:nowIso(),
     keeper_powers: ['read','anchor'],
     kit: sanitizeKit(),
     boots: sanitizeBoots(),
@@ -238,26 +313,32 @@ async function ensureProfile(uid:string) {
 
 async function saveProfile(uid:string, input:any) {
   const current = await ensureProfile(uid);
-  const displayName = String(input?.displayName || current.display_name).trim().slice(0, 24);
-  if (displayName.length < 2) throw new Failure(400, 'Le prénom ou pseudo doit contenir au moins 2 caractères.');
-  const countryId = COUNTRY_IDS.has(String(input?.countryId)) ? String(input.countryId) : current.country_id;
-  if (countryId !== current.country_id) {
-    const ratingRows = await admin('/rest/v1/penalty_ratings?user_id=eq.' + encodeURIComponent(uid) + '&select=games&limit=1');
-    const games = Array.isArray(ratingRows) && ratingRows[0] ? number(ratingRows[0].games) : 0;
-    if (games > 0 || number(current.international_caps) > 0) {
-      throw new Failure(409, 'Ton pays de carrière est verrouillé après ton premier duel officiel.');
-    }
+  const member = await memberProfile(uid);
+  const expectedCountry=COUNTRY_FROM_NAME[String(member.country)]||current.country_id;
+  if (current.identity_status === 'review') {
+    throw new Failure(409, 'Ton identité sportive doit être revue avant de modifier ta carrière officielle.');
+  }
+  if (expectedCountry !== current.country_id) {
+    throw new Failure(409, 'Le pays sportif doit rester aligné avec ton Passeport 3B.');
   }
   const styleId = STYLES.has(String(input?.styleId)) ? String(input.styleId) : current.style_id;
-  const shirtName = String(input?.shirtName || current.shirt_name).trim().toUpperCase().slice(0, 14);
+  const shirtName = String(input?.shirtName || current.shirt_name).trim().toUpperCase().replace(/[^A-Z0-9À-ÖØ-Ý .'-]/g,'').slice(0, 14);
   const shirtNumber = clamp(Math.trunc(number(input?.shirtNumber, current.shirt_number)), 1, 99);
   const powers = sanitizePowers(input?.keeperPowers);
+  const preferredRole=ROLES.has(String(input?.preferredRole))?String(input.preferredRole):current.preferred_role||'versatile';
+  const dominantFoot=String(input?.dominantFoot)==='left'?'left':'right';
   const patch = {
-    display_name: displayName,
+    display_name:String(member.name||member.handle||current.display_name).trim().slice(0,24),
+    passport_public_id:member.passport_public_id,
     shirt_name: shirtName || '3B',
     shirt_number: shirtNumber,
-    country_id: countryId,
+    country_id: expectedCountry,
+    identity_status:'passport',
     style_id: styleId,
+    preferred_role:preferredRole,
+    dominant_foot:dominantFoot,
+    appearance:sanitizeAppearance(input?.appearance),
+    profile_completed_at:current.profile_completed_at||nowIso(),
     keeper_powers: powers,
     kit: sanitizeKit(input?.kit),
     boots: sanitizeBoots(input?.boots),
@@ -269,6 +350,13 @@ async function saveProfile(uid:string, input:any) {
   });
   if (!Array.isArray(rows) || !rows[0]) throw new Failure(409, 'Le profil a changé. Réessaie.');
   return rows[0];
+}
+
+function assertCompetitiveIdentity(profile:any) {
+  if (profile?.identity_status !== 'passport' || !UUID.test(String(profile?.passport_public_id||''))) {
+    throw new Failure(409, 'Ton identité Passeport 3B doit être validée avant le classé ou les sélections.');
+  }
+  if (!profile?.profile_completed_at) throw new Failure(409, 'Termine la personnalisation de ton joueur avant le classé.');
 }
 
 async function ensureRating(uid:string, countryId:string) {
