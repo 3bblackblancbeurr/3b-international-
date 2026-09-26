@@ -5,13 +5,25 @@
   "project_url": "https://zykdfgahzqqanlyxjtbe.supabase.co",
   "production_project_ref": "ttvhcezucsbbmnafrotq",
   "production_modified": false,
-  "edge_function": {
-    "slug": "nosbloc-staging",
-    "id": "33b67809-4b0b-4ea0-8c8b-ff0fdffd5c10",
-    "version": 1,
-    "verify_jwt": true,
-    "status": "ACTIVE"
-  },
+  "edge_functions": [
+    {
+      "slug": "nosbloc-staging",
+      "id": "33b67809-4b0b-4ea0-8c8b-ff0fdffd5c10",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "purpose": "Authenticated Nosbloc staging API"
+    },
+    {
+      "slug": "nosbloc-staging-console",
+      "id": "fd266cc3-47d7-4efe-b72c-6806abb6af87",
+      "version": 1,
+      "verify_jwt": false,
+      "status": "ACTIVE",
+      "purpose": "Static noindex test console; mutations proxy only valid user JWTs"
+    }
+  ],
+  "console_url": "https://zykdfgahzqqanlyxjtbe.supabase.co/functions/v1/nosbloc-staging-console",
   "migrations": [
     "nosbloc_staging_prerequisites",
     "nosbloc_server_staging_v1",
@@ -24,6 +36,19 @@
     "discover": true,
     "payments": true,
     "payouts": true
+  },
+  "security_advisor_findings": 0,
+  "transactional_smoke_test": {
+    "project_created": true,
+    "invitation_target_verified": true,
+    "outsider_invitation_blocked": true,
+    "member_accepted": true,
+    "version_immutable": true,
+    "outsider_moderation_blocked": true,
+    "moderation_remained_private": true,
+    "audit_events": 5,
+    "synthetic_users_rolled_back": true,
+    "project_rolled_back": true
   },
   "deployed_on": "2026-09-26"
 }
