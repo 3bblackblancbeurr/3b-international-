@@ -14,9 +14,10 @@ import {
   projectReadiness, simulateRevenue, validateSplits
 } from "./model.js";
 import {
-  appendProjectVersion, parseStateExport, prepareTeamInvitation, restoreProjectVersion,
+  appendProjectVersion, fingerprint, parseStateExport, prepareTeamInvitation, restoreProjectVersion,
   revokeTeamInvitation, serializeStateExport
 } from "./versioning.js";
+import { useNosblocServer } from "./useNosblocServer.js";
 import "./nosbloc-premium.css";
 
 const PRIMARY_NAV = [
@@ -72,13 +73,15 @@ function activityEntry(type, title, detail) {
   };
 }
 
-function moneyState(account) {
+function moneyState(account, serverMoney) {
   const coins = Number(account.economy?.points ?? account.profile?.points ?? 0);
   return {
-    availableCents: 0,
-    pendingCents: 0,
-    payoutCents: 0,
+    availableCents: Math.max(0, Number(serverMoney?.availableCents) || 0),
+    pendingCents: Math.max(0, Number(serverMoney?.pendingCents) || 0),
+    payoutCents: Math.max(0, Number(serverMoney?.payoutCents) || 0),
     coins: Number.isFinite(coins) ? Math.max(0, coins) : 0,
+    runtime: serverMoney?.runtime || { paymentsEnabled:false, payoutsEnabled:false, discoverEnabled:false },
+    payoutAccount: serverMoney?.payoutAccount || null,
   };
 }
 
@@ -97,6 +100,15 @@ export default function NosblocPremiumPage({ goTo }) {
   const [loaded, setLoaded] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
+  const nosblocServer = useNosblocServer({
+    userId: account.user?.id || "",
+    loaded,
+    online,
+    state,
+    setState,
+    storageKey,
+  });
+  const money = moneyState(account, nosblocServer.money);
 
   useEffect(() => {
     const profile = { studioName: "Studio de " + ownerName };
@@ -127,7 +139,7 @@ export default function NosblocPremiumPage({ goTo }) {
     [state.projects, selectedId],
   );
 
-  const commit = (updater, message, entry) => {
+  const commit = (updater, message, entry, dirtyProjectId) => {
     setState(previous => {
       const changed = typeof updater === "function" ? updater(previous) : updater;
       const next = normalizeState({
@@ -141,6 +153,7 @@ export default function NosblocPremiumPage({ goTo }) {
       } catch {}
       return next;
     });
+    if (dirtyProjectId) nosblocServer.markDirty(dirtyProjectId);
     if (message) setNotice(message);
   };
 
@@ -152,7 +165,7 @@ export default function NosblocPremiumPage({ goTo }) {
         const delta = typeof patch === "function" ? patch(project) : patch;
         return { ...project, ...delta, updatedAt: nowIso() };
       }),
-    }), message, entry);
+    }), message, entry, id);
   };
 
   const exportArchive = () => {
