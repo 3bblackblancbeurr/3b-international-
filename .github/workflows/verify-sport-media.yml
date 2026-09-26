@@ -5,6 +5,8 @@ on:
     paths:
       - 'src/sport/**'
       - 'tests/sport*.test.js'
+      - 'public/sport-player-shell.html'
+      - 'public/sport-player-shell.js'
       - 'vercel.json'
       - '.github/workflows/verify-sport-media.yml'
   push:
