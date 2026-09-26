@@ -855,12 +855,12 @@ function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, 
       <div className="nb2-mode"><button data-active={mode === "simple"} onClick={() => setMode("simple")}>Simple</button><button data-active={mode === "pro"} onClick={() => setMode("pro")}><Code2 size={15}/> Pro</button></div>
     </section>
 
-    {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview}/> :
-      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} account={account} setNotice={setNotice}/>}
+    {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview} publishProject={publishProject}/> :
+      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>}
 
     <section className="nb2-danger-zone">
       <button onClick={() => setConfirmArchive(!confirmArchive)}><Settings2 size={16}/> Zone avancée</button>
-      {confirmArchive && <div><p>Archiver retire le projet des parcours actifs sans effacer son historique.</p><button className="danger" onClick={() => updateProject(project.id,{status:"archived",visibility:"private"},"Projet archivé.",activityEntry("archive","Projet archivé",project.title))}>Archiver le projet</button></div>}
+      {confirmArchive && <div><p>Archiver retire le projet des parcours actifs sans effacer son historique.</p><button className="danger" onClick={() => archiveProject(project)}>Archiver le projet</button></div>}
     </section>
   </div>;
 }
@@ -889,7 +889,13 @@ function SimpleStudio({ project, ready, setField, updateProject, startPrivateTes
     <section className="nb2-simple-card">
       <div className="nb2-card-title"><span>4</span><div><b>Publier</b><small>Nosbloc vérifie d’abord les prérequis.</small></div></div>
       <ReadinessChecklist ready={ready}/>
-      <button className="nb2-publish" disabled={!ready.readyForReview} onClick={() => requestReview(project)}><Rocket size={18}/>{ready.readyForReview ? "Envoyer en vérification" : "Complète la checklist pour publier"}</button>
+      {project.status === "approved"
+        ? <button className="nb2-publish" onClick={() => publishProject(project)}><Rocket size={18}/> Publier maintenant</button>
+        : project.status === "review"
+          ? <button className="nb2-publish" disabled><ShieldCheck size={18}/> En vérification humaine</button>
+          : project.status === "published"
+            ? <button className="nb2-publish" disabled><CheckCircle2 size={18}/> Projet publié</button>
+            : <button className="nb2-publish" disabled={!ready.readyForReview} onClick={() => requestReview(project)}><Rocket size={18}/>{ready.readyForReview ? "Envoyer en vérification" : "Complète la checklist pour publier"}</button>}
     </section>
   </div>;
 }
@@ -906,8 +912,8 @@ function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVe
     {proTab === "scripts" && <ScriptsPro project={project} updateProject={updateProject}/>}
     {proTab === "ai" && <AIPro project={project} updateProject={updateProject}/>}
     {proTab === "versions" && <VersionsPro project={project} restoreVersion={restoreVersion}/>}
-    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} setNotice={setNotice}/>}
-    {proTab === "economy" && <EconomyPro project={project} account={account}/>}
+    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} setNotice={setNotice}/>}
+    {proTab === "economy" && <EconomyPro project={project} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>} 
     {proTab === "analytics" && <AnalyticsPro project={project}/>}
   </div>;
 }
