@@ -76,3 +76,12 @@ test("Explorer includes creations, Boutique and creator profiles without enablin
   assert.match(page, /Paiement verrouillé/);
   assert.match(page, /Aperçu public après validation/);
 });
+
+
+test("Studio Pro exposes assets scripts and AI and keeps them versioned", () => {
+  assert.match(page, /"assets", "Assets"/);
+  assert.match(page, /"scripts", "Scripts"/);
+  assert.match(page, /"ai", "IA"/);
+  assert.match(page, /Les scripts sont stockés avec les versions/);
+  assert.match(page, /ne publie rien, ne dépense rien/);
+});
