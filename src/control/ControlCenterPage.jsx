@@ -273,6 +273,7 @@ export default function ControlCenterPage({goTo}){
   if(pulse.production===false)rows.push({level:'bad',title:'La production 3B ne répond pas au contrôle.'});
   if(['failure','timed_out','cancelled'].includes(pulse.ci))rows.push({level:'bad',title:'Le dernier workflow GitHub demande une vérification.'});
   if(primaryDevice&&!primaryOnline)rows.push({level:'warn',title:'Le PC appairé est actuellement hors ligne.'});
+  if(primaryOnline&&primaryDevice?.capabilities?.autostart!==true)rows.push({level:'warn',title:'Démarrage automatique du 3B Control Agent à activer sur le PC.'});
   if(recentFailures.length)rows.push({level:'warn',title:recentFailures.length+' commande'+(recentFailures.length>1?'s':'')+' en échec sur la dernière heure.'});
   return rows;
  },[error,pulse.network,pulse.production,pulse.ci,primaryDevice,primaryOnline,recentFailures.length]);
