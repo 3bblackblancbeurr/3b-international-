@@ -19,11 +19,11 @@ export const DISTRICT_SPOTS=[{key:'city',x:-18,z:-12,r:35},{key:'craft',x:-18,z:
 export function districtAt(region,position,transform){if(region==='hub'){
  const points=[
   {name:'Cercle Brisé · Nexus',x:0,z:-3,r:23},
-  {name:'Archives du Cercle · niveau inférieur',x:-15,z:-12,r:13},
-  {name:'Arène d’entraînement',x:19,z:17,r:13},
-  {name:'Maison du Passeport 3B',x:18,z:-13,r:13},
-  {name:'Cercle des artisans',x:-18,z:17,r:13},
-  {name:'Relais des huit Portes',x:0,z:29,r:12},
+  {name:'Archives du Cercle · niveau inférieur',x:-23,z:-20,r:12},
+  {name:'Arène d’entraînement',x:25,z:22,r:12},
+  {name:'Maison du Passeport 3B',x:24,z:-20,r:12},
+  {name:'Cercle des artisans',x:-25,z:22,r:12},
+  {name:'Relais des huit Portes',x:0,z:31,r:12},
   ...COUNTRIES.map(country=>({name:'Secteur '+country.name,x:country.portal[0],z:country.portal[1],r:14}))
  ];
  let best=null,bestDistance=Infinity;
@@ -43,14 +43,27 @@ function roundLane(points){
 export function settlementPlan(region){
  const c=REGIONS[region]||REGIONS.hub;if(region==='hub'){
   const spokes=COUNTRIES.map((country,index)=>{
-   const [x,z]=country.portal,len=Math.hypot(x,z)||1,nx=-z/len,nz=x/len,sway=(index%2?1:-1)*2.6;
-   return {kind:'street',width:5.6,points:roundLane([[0,-3],[x*.34+nx*sway,z*.34+nz*sway],[x*.66-nx*sway*.25,z*.66-nz*sway*.25],[x*.90,z*.90]])};
+   const [x,z]=country.portal,len=Math.hypot(x,z)||1,nx=-z/len,nz=x/len,sway=(index%2?1:-1)*2.9;
+   return {kind:'boulevard',width:2.15,points:roundLane([[0,-3],[x*.28+nx*sway,z*.28+nz*sway],[x*.58-nx*sway*.42,z*.58-nz*sway*.42],[x*.94,z*.94]])};
   });
-  const ringPoints=COUNTRIES.map(country=>[country.portal[0]*.58,country.portal[1]*.58]);ringPoints.push(ringPoints[0]);
+  const ring=(factor,width,phase=0)=>{
+   const points=COUNTRIES.map((country,index)=>{
+    const [x,z]=country.portal,len=Math.hypot(x,z)||1,nx=-z/len,nz=x/len,offset=Math.sin(index*1.73+phase)*1.6;
+    return [x*factor+nx*offset,z*factor+nz*offset];
+   });points.push(points[0]);return{kind:'ring',width,points:roundLane(points)};
+  };
+  const shortcuts=[[0,2],[2,4],[4,6],[6,0]].map(([a,b],index)=>{
+   const ca=COUNTRIES[a],cb=COUNTRIES[b],pa=[ca.portal[0]*.64,ca.portal[1]*.64],pb=[cb.portal[0]*.64,cb.portal[1]*.64];
+   return{kind:'link',width:1.65,points:roundLane([pa,[Math.sin(index*.9)*4,Math.cos(index*.8)*4],pb])};
+  });
   return{
-   roads:[...spokes,{kind:'street',width:4.2,points:roundLane(ringPoints)}],
+   roads:[...spokes,ring(.34,1.75,.3),ring(.58,1.95,.9),ring(.81,2.15,1.4),...shortcuts],
    plots:[],
-   squares:[{x:0,z:-3,r:17},{x:-18,z:17,r:8},{x:0,z:-56,r:12},...COUNTRIES.map(country=>({x:country.portal[0]*.9,z:country.portal[1]*.9,r:7.5}))],
+   squares:[
+    {x:0,z:-3,r:10.5},
+    {x:-25,z:22,r:5.2},{x:25,z:22,r:5.2},{x:24,z:-20,r:5.2},{x:-23,z:-20,r:5.2},{x:0,z:31,r:5.2},
+    ...COUNTRIES.map((country,index)=>({x:country.portal[0]*.92,z:country.portal[1]*.92,r:5.8+(index%3)*.35}))
+   ],
    fields:[]
   };
  }
@@ -84,7 +97,12 @@ export function settlementPlan(region){
  for(const [i,[x,z]] of [[34,34],[60,11],[60,40],[35,51],[23,40],[56,-9]].entries())plots.push({x,z,rotation:i*.8,variant:60+i,urban:false});
  return {roads,plots,squares:[...(region==='france'?[{x:10,z:1,r:11},{x:-30,z:4,r:4}]:[]),{x:-18,z:17,r:8},{x:9,z:-4,r:7},{x:49,z:26,r:7}],fields:[{x:46,z:40,w:19,h:12,kind:c.crop},{x:48,z:8,w:16,h:10,kind:c.crop},{x:76,z:71,w:24,h:16,kind:c.crop},{x:-70,z:-67,w:18,h:13,kind:c.crop}]};
 }
-export function districtDestinations(region){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:vista:maison',type:'vista',name:'La Maison des mondes',x:0,z:-56,color:'#d6bb7e',range:6}];return[
+export function districtDestinations(region){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[
+ {id:'hub:vista:maison',type:'vista',name:'La Maison des mondes · belvédère nord',x:0,z:-70,color:'#d6bb7e',range:7},
+ {id:'hub:vista:heritage',type:'vista',name:'Terrasses de l’Héritage · écuries et événements',x:-58,z:48,color:'#d8bd80',range:7},
+ {id:'hub:vista:creators',type:'vista',name:'Archipel des créateurs · studios',x:61,z:44,color:'#66cfe9',range:7},
+ {id:'hub:vista:my-city',type:'vista',name:'3B Ma Ville · plateforme extérieure',x:0,z:76,color:'#b9cea7',range:7},
+ ];return[
  {key:'ancien',x:-103,z:-35,name:c.city+' · quartier ancien'},
  {key:'faubourg',x:-45,z:-99,name:c.craft+' · faubourg'},
  {key:'village',x:95,z:95,name:c.rural+' · village'},
@@ -99,11 +117,11 @@ export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[]
  const kais=kaisHubSpot(save);
  return[
   {id:'hub:kais',type:'kais',name:'Kaïs · Guide du Cercle',...kais,color:'#e5c990',range:7},
-  {id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5},
-  {id:'hub:training',type:'training',name:'Arène d’entraînement · simulation sûre',x:19,z:17,color:'#74d8f4',range:6},
-  {id:'hub:passport',type:'passport',name:'Maison du Passeport 3B',x:18,z:-13,color:'#e5c990',range:6},
-  {id:'hub:archives',type:'archives',name:'Archives souterraines du Cercle',x:-15,z:-12,color:'#86cddd',range:6},
-  {id:'hub:transit',type:'transit',name:'Relais des huit Portes',x:0,z:29,color:'#c9b27b',range:6},
+  {id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-25,z:22,color:'#efbd72',range:6},
+  {id:'hub:training',type:'training',name:'Arène d’entraînement · simulation sûre',x:25,z:22,color:'#74d8f4',range:7},
+  {id:'hub:passport',type:'passport',name:'Maison du Passeport 3B',x:24,z:-20,color:'#e5c990',range:7},
+  {id:'hub:archives',type:'archives',name:'Archives souterraines du Cercle',x:-23,z:-20,color:'#86cddd',range:7},
+  {id:'hub:transit',type:'transit',name:'Relais des huit Portes',x:0,z:31,color:'#c9b27b',range:7},
  ];
  }return[
  ...(region==='france'?[{id:'france:cafe',type:'cafe',name:'Café des Liens',x:-6.84,z:-2.53,color:'#dfc18c',range:4}]:[]),
