@@ -27,23 +27,27 @@ test('H24 profiles are live-only and never contain historical replay sources',()
   assert.match(channel.liveProfile,/^h24-/);
   assert.deepEqual(mediaSources(channel),[]);
  }
- assert.match(page,/\/api\/sport-live\?profile=/);
+ assert.match(page,/fetch\('\/api\/sport-live'/);
  assert.match(page,/source\?\.mode==='live'/);
  assert.match(page,/Aucun replay ni ancienne finale ne peut entrer dans H24/);
 });
 
-test('live discovery requires a real ongoing embeddable sports broadcast',()=>{
+test('live discovery requires a real ongoing embeddable sports broadcast with bounded search quota',()=>{
  assert.match(liveApi,/eventType:'live'/);
  assert.match(liveApi,/videoEmbeddable:'true'/);
  assert.match(liveApi,/videoSyndicated:'true'/);
  assert.match(liveApi,/videoCategoryId:'17'/);
+ assert.match(liveApi,/maxResults:'50'/);
+ assert.match(liveApi,/order:'viewCount'/);
  assert.match(liveApi,/liveBroadcastContent==='live'/);
  assert.match(liveApi,/status\?\.embeddable===true/);
  assert.match(liveApi,/actualStartTime/);
  assert.match(liveApi,/actualEndTime/);
  assert.match(liveApi,/mode:'live'/);
  assert.match(liveApi,/YOUTUBE_API_KEY/);
- assert.doesNotMatch(liveApi,/GF-WteOINCc|nELaL14ms7A|Pbyn08kfhXY/);
+ assert.match(liveApi,/s-maxage=1200/);
+ assert.match(liveApi,/single-global-live-search/);
+ assert.doesNotMatch(liveApi,/PROFILE_QUERIES|GF-WteOINCc|nELaL14ms7A|Pbyn08kfhXY/);
 });
 
 test('Finals keep full official matches and official fallback where available',()=>{
@@ -78,6 +82,13 @@ test('Finals cover a broad official multisport archive',()=>{
  assert.ok(SPORT_FINALS.filter(final=>final.sport==='Football').length>=5);
  assert.ok(SPORT_FINALS.filter(final=>final.sport==='Badminton').length>=2);
  assert.ok(SPORT_FINALS.filter(final=>final.sport==='Beach-volley').length>=2);
+});
+
+test('H24 sport tabs filter one shared verified live pool instead of multiplying searches',()=>{
+ assert.match(page,/const allLiveSources=livePools\.global\|\|\[\]/);
+ assert.match(page,/allLiveSources\.filter\(source=>source\.sport===profileSport\)/);
+ assert.doesNotMatch(page,/api\/sport-live\?profile=/);
+ assert.match(page,/\[section,liveReload\]/);
 });
 
 test('Finals can be filtered by sport without touching H24',()=>{
