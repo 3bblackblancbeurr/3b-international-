@@ -11,6 +11,7 @@ import DevCenterPanel from './DevCenterPanel.jsx';
 import AppHealthPanel from './AppHealthPanel.jsx';
 import SecurityCenterPanel from './SecurityCenterPanel.jsx';
 import ModuleBoundary from './ModuleBoundary.jsx';
+import AlertCenterPanel from './AlertCenterPanel.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -42,6 +43,7 @@ const NAVIGATION_COMMANDS=[
  {re:/\b(dev|développement|developpement|commit|ci|pull request|pr ouvertes?|déploiement|deploiement)\b/i,target:'cc-dev',feedback:'Dev Center ouvert.'},
  {re:/\b(app health|santé app|sante app|pwa|service worker|stockage|réseau app|reseau app)\b/i,target:'cc-health',feedback:'App Health ouvert.'},
  {re:/\b(appareils?|pc appairé|pc appaire|liaison pc)\b/i,target:'cc-devices',feedback:'Centre des appareils ouvert.'},
+ {re:/\b(alertes?|notifications?|attention|urgent)\b/i,target:'cc-alerts',feedback:'Centre d’attention ouvert.'},
  {re:/\b(sécurité|securite|permissions?|allowlist|propriétaire|proprietaire)\b/i,target:'cc-security',feedback:'Security Center ouvert.'},
  {re:/\b(journal|historique|audit)\b/i,target:'cc-log',feedback:'Journal de contrôle ouvert.'},
  {re:/\b(accueil|état général|etat general|maintenant)\b/i,target:'cc-now',feedback:'État général ouvert.'},
@@ -401,6 +403,17 @@ export default function ControlCenterPage({goTo}){
   finally{setBusy('');}
  };
 
+ const cancelCommand=async commandId=>{
+  setBusy('cancel'+commandId);setError('');
+  try{
+   await controlCenterRequest('cancel',{command_id:commandId});
+   navigator.vibrate?.(8);
+   setCommandFeedback('Commande en attente annulée.');
+   await refresh();
+  }catch(e){setError(e.message);}
+  finally{setBusy('');}
+ };
+
  const submitNaturalCommand=async event=>{
   event.preventDefault();
   const value=commandText.trim();
@@ -497,6 +510,8 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
+   <ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary>
+
    <ModuleBoundary label="Nexus 3B momentanément indisponible">
     <CommandNexus
      pulse={pulse}
@@ -507,7 +522,7 @@ export default function ControlCenterPage({goTo}){
      alerts={alerts}
      lastSync={lastSync}
      privacyMode={privacyMode}
-     onPrivacyChange={setPrivacyMode}
+     onPrivacyChange={value=>{setPrivacyMode(value);navigator.vibrate?.(7);}}
      onJump={jumpTo}
     />
    </ModuleBoundary>
@@ -590,7 +605,7 @@ export default function ControlCenterPage({goTo}){
      {commands.length===0?<div className="control-empty-inline"><TerminalSquare/><span>Aucune commande envoyée.</span></div>:commands.slice(0,15).map(command=><div key={command.id}>
       <span className="control-history-icon"><TerminalSquare size={15}/></span>
       <div><strong>{COMMAND_LABELS[command.command_type]||command.command_type}</strong><small>{new Date(command.issued_at).toLocaleString('fr-FR')}</small>{command.error_message&&<em>{command.error_message}</em>}</div>
-      <b data-status={command.status}>{statusLabel(command.status)}</b>
+      {command.status==='pending'?<button type="button" className="control-cancel-command" disabled={!!busy} onClick={()=>cancelCommand(command.id)}>Annuler</button>:<b data-status={command.status}>{statusLabel(command.status)}</b>}
      </div>)}
     </div>
    </section>
