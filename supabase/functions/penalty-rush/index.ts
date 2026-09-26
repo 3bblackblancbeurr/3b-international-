@@ -669,97 +669,124 @@ async function respondInternationalSelection(uid:string, selectionId:unknown, de
 }
 
 async function snapshotFor(uid:string, profile:any) {
-  const club = await clubFor(uid);
-  const rating = await ensureRating(uid, profile.country_id);
-  const rank = await nationalRank(profile, rating);
-  const pressure = rating.games ? clamp(number(rating.duel_gold_wins) / Math.max(1, number(rating.duel_gold_played)), 0, 1) : 0;
-  const internationalState = await refreshInternationalSelection(uid, profile, rating, rank, pressure);
-  const selection = internationalState.selection;
-  const window = internationalState.window;
-  const history = await admin(
-    '/rest/v1/penalty_match_history?or=(player_a.eq.' + encodeURIComponent(uid) + ',player_b.eq.' + encodeURIComponent(uid) + ')' +
-    '&select=id,mode,player_a,player_b,winner_user_id,score_a,score_b,created_at&order=created_at.desc&limit=12'
+  const clubInternal=await clubFor(uid);
+  const [rating,rankedState,invites]=await Promise.all([
+    ensureRating(uid,profile.country_id),
+    rankedStatsFor(uid,profile.country_id),
+    clubInvitesFor(uid),
+  ]);
+  const season=rankedState.season;
+  const ranked=rankedState.stats;
+  const placementMatches=number(season?.placement_matches,5);
+  const rank=await nationalRank(profile,ranked,season);
+  const pressure=number(rating.duel_gold_played)
+    ?clamp(number(rating.duel_gold_wins)/Math.max(1,number(rating.duel_gold_played)),0,1):0;
+  const form=await recentRankedForm(uid,season?.id||null);
+  const internationalState=await refreshInternationalSelection(uid,profile,ranked,rank,pressure,form);
+  const selection=internationalState.selection;
+  const window=internationalState.window;
+  const history=await admin(
+    '/rest/v1/penalty_match_history?or=(player_a.eq.'+encodeURIComponent(uid)+',player_b.eq.'+encodeURIComponent(uid)+')'+
+    '&select=id,mode,player_a,player_b,winner_user_id,score_a,score_b,created_at,ranked_season_id,international_window_id&order=created_at.desc&limit=20'
   );
-  await rpc('threeb_process_reward_outbox_server', { p_user:uid, p_limit:8 }).catch(() => null);
-  const wallet = await rpc('threeb_wallet_snapshot_server', { p_user:uid }).catch(() => null);
+  await rpc('threeb_process_reward_outbox_server',{p_user:uid,p_limit:8}).catch(()=>null);
+  const wallet=await rpc('threeb_wallet_snapshot_server',{p_user:uid}).catch(()=>null);
   return {
     wallet,
+    passport:{
+      publicId:profile.passport_public_id,
+      label:passportLabel(profile.passport_public_id),
+      identityStatus:profile.identity_status||'passport',
+      competitiveReady:profile.identity_status==='passport'&&Boolean(profile.profile_completed_at),
+    },
     rating,
-    club,
-    career: {
-      reputation: number(profile.reputation),
-      goals: number(rating.goals_for),
-      saves: number(rating.saves),
-      duelGoldWins: number(rating.duel_gold_wins),
+    ranked:{
+      season:season?{id:season.id,code:season.code,name:season.name,status:season.status,startsAt:season.starts_at,endsAt:season.ends_at,placementMatches}:null,
+      rating:number(ranked.rating,1000),
+      games:number(ranked.games),wins:number(ranked.wins),losses:number(ranked.losses),streak:number(ranked.streak),
+      bestRating:number(ranked.best_rating,1000),forfeits:number(ranked.forfeits),
+      division:divisionFor(number(ranked.rating,1000),number(ranked.games),placementMatches),
+      placementsRemaining:Math.max(0,placementMatches-number(ranked.games)),
+      form,
     },
-    international: {
-      nationalRank: rank,
-      scouting: internationalState.scouting,
-      caps: number(profile.international_caps),
-      goals: number(profile.international_goals),
-      pressureScore: pressure,
-      neededRole: internationalState.neededRole || null,
-      needMatched: Boolean(internationalState.needMatched),
-      selectionId: selection?.id || null,
-      selectionStatus: selection?.status || null,
-      roleProfile: selection?.role_profile || null,
-      windowId: window?.id || null,
-      windowName: window?.name || null,
-      competition: window?.competition || null,
-      windowStartsAt: window?.starts_at || null,
-      windowEndsAt: window?.ends_at || null,
-      windowLabel: window ? window.name : 'Hors fenêtre internationale',
+    club:publicClub(clubInternal,uid),
+    clubInvites:invites,
+    career:{
+      reputation:number(profile.reputation),
+      goals:number(rating.goals_for),
+      saves:number(rating.saves),
+      duelGoldWins:number(rating.duel_gold_wins),
+      archetypeXp:number(profile.archetype_xp),
+      archetypeLevel:clamp(Math.trunc(number(profile.archetype_level,1)),1,50),
+      preferredRole:profile.preferred_role||'versatile',
     },
-    history: Array.isArray(history) ? history.map((item:any) => ({
+    international:{
+      nationalRank:rank,
+      scouting:internationalState.scouting,
+      selectionScore:number(internationalState.score),
+      scoreBreakdown:internationalState.breakdown||{},
+      caps:number(profile.international_caps),
+      goals:number(profile.international_goals),
+      pressureScore:pressure,
+      recentForm:form,
+      neededRole:internationalState.neededRole||null,
+      needMatched:Boolean(internationalState.needMatched),
+      selectionId:selection?.id||null,
+      selectionStatus:selection?.status||null,
+      roleProfile:selection?.role_profile||null,
+      windowId:window?.id||null,
+      windowName:window?.name||null,
+      competition:window?.competition||null,
+      windowStatus:window?.status||null,
+      matchOpen:Boolean(internationalState.matchOpen),
+      windowStartsAt:window?.starts_at||null,
+      windowEndsAt:window?.ends_at||null,
+      windowLabel:window?window.name:'Hors fenêtre internationale',
+    },
+    history:Array.isArray(history)?history.map((item:any)=>({
       id:item.id,
-      result:item.winner_user_id === uid ? 'Victoire' : item.winner_user_id ? 'Défaite' : 'Égalité',
-      label:`${item.mode === 'ranked' ? 'Classé' : item.mode === 'quick' ? 'Rapide' : 'Privé'} · ${item.score_a}–${item.score_b}`,
+      result:item.winner_user_id===uid?'Victoire':item.winner_user_id?'Défaite':'Égalité',
+      label:`${item.mode==='ranked'?'Classé':item.mode==='quick'?'Rapide':item.mode==='international'?'International':'Privé'} · ${item.score_a}–${item.score_b}`,
+      mode:item.mode,
       createdAt:item.created_at,
-    })) : [],
+    })):[],
   };
 }
 
 async function leaderboardFor(countryInput:unknown) {
-  const requested = String(countryInput || '').trim().toLowerCase();
-  const countryId = COUNTRY_IDS.has(requested) ? requested : null;
-  const countryFilter = countryId ? 'country_id=eq.' + encodeURIComponent(countryId) + '&' : '';
-  const ratings = await admin(
-    '/rest/v1/penalty_ratings?' + countryFilter +
-    'select=user_id,country_id,rating,games,wins,losses,goals_for,goals_against,saves,duel_gold_wins,duel_gold_played' +
-    '&order=rating.desc,games.desc,wins.desc&limit=100'
+  const requested=String(countryInput||'').trim().toLowerCase();
+  const countryId=COUNTRY_IDS.has(requested)?requested:null;
+  const season=await activeRankedSeason();
+  if(!season)return {scope:countryId||'global',season:null,entries:[]};
+  const placementMatches=number(season.placement_matches,5);
+  const countryFilter=countryId?'country_id=eq.'+encodeURIComponent(countryId)+'&':'';
+  const ratings=await admin(
+    '/rest/v1/penalty_ranked_stats?season_id=eq.'+encodeURIComponent(season.id)+'&'+countryFilter+
+    'games=gte.'+encodeURIComponent(String(placementMatches))+
+    '&select=user_id,country_id,rating,games,wins,losses,streak,best_rating,forfeits'+
+    '&order=rating.desc,wins.desc,games.asc&limit=100'
   );
-  const rows = Array.isArray(ratings) ? ratings : [];
-  if (!rows.length) return { scope:countryId || 'global', entries:[] };
-
-  const ids = rows.map((row:any) => String(row.user_id || '')).filter((id:string) => UUID.test(id));
-  const profiles = ids.length
-    ? await admin(
-        '/rest/v1/penalty_profiles?user_id=in.(' + ids.map(encodeURIComponent).join(',') + ')' +
-        '&select=user_id,display_name,shirt_name,shirt_number,country_id,style_id,reputation'
-      ).catch(() => [])
-    : [];
-  const byId = new Map((Array.isArray(profiles) ? profiles : []).map((profile:any) => [profile.user_id, profile]));
-
+  const rows=Array.isArray(ratings)?ratings:[];
+  if(!rows.length)return {scope:countryId||'global',season:{id:season.id,name:season.name,code:season.code},entries:[]};
+  const ids=rows.map((row:any)=>String(row.user_id||'')).filter((id:string)=>UUID.test(id));
+  const profiles=ids.length?await admin(
+    '/rest/v1/penalty_profiles?user_id=in.('+ids.map(encodeURIComponent).join(',')+')'+
+    '&select=user_id,passport_public_id,display_name,shirt_name,shirt_number,country_id,style_id,preferred_role,reputation'
+  ).catch(()=>[]):[];
+  const byId=new Map((Array.isArray(profiles)?profiles:[]).map((profile:any)=>[profile.user_id,profile]));
   return {
-    scope:countryId || 'global',
-    entries:rows.map((row:any,index:number) => {
-      const profile:any = byId.get(row.user_id) || {};
+    scope:countryId||'global',
+    season:{id:season.id,name:season.name,code:season.code},
+    entries:rows.map((row:any,index:number)=>{
+      const profile:any=byId.get(row.user_id)||{};
       return {
-        rank:index + 1,
-        displayName:String(profile.display_name || 'Joueur 3B').slice(0,24),
-        shirtName:String(profile.shirt_name || '3B').slice(0,14),
-        shirtNumber:clamp(Math.trunc(number(profile.shirt_number,10)),1,99),
-        countryId:String(row.country_id || profile.country_id || 'fr'),
-        styleId:String(profile.style_id || 'technicien'),
-        rating:number(row.rating,1000),
-        games:number(row.games),
-        wins:number(row.wins),
-        losses:number(row.losses),
-        goalsFor:number(row.goals_for),
-        goalsAgainst:number(row.goals_against),
-        saves:number(row.saves),
-        duelGoldWins:number(row.duel_gold_wins),
-        duelGoldPlayed:number(row.duel_gold_played),
+        rank:index+1,passportLabel:passportLabel(profile.passport_public_id),
+        displayName:String(profile.display_name||'Joueur 3B').slice(0,24),
+        shirtName:String(profile.shirt_name||'3B').slice(0,14),shirtNumber:clamp(Math.trunc(number(profile.shirt_number,10)),1,99),
+        countryId:String(row.country_id||profile.country_id||'fr'),styleId:String(profile.style_id||'technicien'),
+        preferredRole:String(profile.preferred_role||'versatile'),rating:number(row.rating,1000),games:number(row.games),
+        wins:number(row.wins),losses:number(row.losses),streak:number(row.streak),bestRating:number(row.best_rating,1000),
+        forfeits:number(row.forfeits),division:divisionFor(number(row.rating,1000),number(row.games),placementMatches),
         reputation:number(profile.reputation),
       };
     }),
