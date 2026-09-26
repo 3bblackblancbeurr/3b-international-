@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 
 const gateway=readFileSync(new URL('../src/components/NexusCityGateway.jsx',import.meta.url),'utf8');
 const portal=readFileSync(new URL('../src/components/City3BPortal.jsx',import.meta.url),'utf8');
-const component=gateway+'\n'+portal;
+const builder=readFileSync(new URL('../src/city/City3BBuilder.jsx',import.meta.url),'utf8');
+const component=gateway+'\n'+portal+'\n'+builder;
 const visual=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
 const client=readFileSync(new URL('../src/city/city3b-client.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/city-3b.css',import.meta.url),'utf8');
@@ -37,10 +38,11 @@ test('City API calls are authenticated and target only the city Edge Function',(
 });
 
 test('construction uses an idempotency request and explicit parcel coordinates',()=>{
-  assert.match(component,/request:reqId\(\)/);
-  assert.match(component,/building:selected\.code/);
-  assert.match(component,/rotation:Number\(rotation\)/);
-  assert.match(component,/Le serveur contrôle niveau, quartier, collisions et Coins/);
+  assert.match(builder,/requestId\(\)/);
+  assert.match(builder,/building: activeDefinition\.code/);
+  assert.match(builder,/normalizeRotation\(draft\.rotation\)/);
+  assert.match(builder,/collisionState/);
+  assert.match(builder,/Coins/);
 });
 
 test('signed-out members get an explicit Passport requirement instead of an endless loader',()=>{
@@ -53,4 +55,16 @@ test('City UI includes responsive mobile navigation and premium 3B styling',()=>
   assert.match(css,/@media\(max-width:620px\)/);
   assert.match(css,/#d7bc78|#e4c879/);
   assert.match(css,/#63d9ff|#35cdfa/);
+});
+
+
+test('premium city editor supports visual move, recovery, history and private preview',()=>{
+  assert.match(builder,/Plan interactif de construction Ville 3B/);
+  assert.match(builder,/call\("move"/);
+  assert.match(builder,/call\("store"/);
+  assert.match(builder,/threeb:city-editor:v1/);
+  assert.match(builder,/Annuler/);
+  assert.match(builder,/Rétablir/);
+  assert.match(builder,/APERÇU PRIVÉ/);
+  assert.match(portal,/City3BPrivatePreview/);
 });
