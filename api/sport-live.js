@@ -142,38 +142,44 @@ function asSource(video,index){
  };
 }
 
-function send(res,status,payload){
- res.statusCode=status;
- res.setHeader('Content-Type','application/json; charset=utf-8');
- res.setHeader('Cache-Control',status===200?'public, s-maxage=1200, stale-while-revalidate=300':'no-store');
- res.setHeader('X-Content-Type-Options','nosniff');
- res.end(JSON.stringify(payload));
+function json(payload,status=200){
+ return new Response(JSON.stringify(payload),{
+  status,
+  headers:{
+   'content-type':'application/json; charset=utf-8',
+   'cache-control':status===200?'public, s-maxage=1200, stale-while-revalidate=300':'no-store',
+   'x-content-type-options':'nosniff'
+  }
+ });
 }
 
-export default async function handler(req,res){
- if(req.method!=='GET')return send(res,405,{ok:false,error:'method_not_allowed'});
- if(Object.keys(req.query||{}).length)return send(res,400,{ok:false,error:'unexpected_query_parameters'});
- const key=process.env.YOUTUBE_API_KEY;
- if(!key)return send(res,503,{ok:false,error:'live_discovery_not_configured',sources:[]});
+export default{
+ fetch:async request=>{
+  if(request.method!=='GET')return json({ok:false,error:'method_not_allowed'},405);
+  const requestUrl=new URL(request.url);
+  if(requestUrl.search)return json({ok:false,error:'unexpected_query_parameters'},400);
+  const key=process.env.YOUTUBE_API_KEY;
+  if(!key)return json({ok:false,error:'live_discovery_not_configured',sources:[]},503);
 
- try{
-  const ids=await discoverIds(key);
-  const verified=await verifyLive(key,ids);
-  const sources=verified
-   .map((video,index)=>asSource(video,index))
-   .sort((a,b)=>b.score-a.score||b.viewers-a.viewers)
-   .slice(0,24)
-   .map((source,index)=>({...source,priority:index}));
-  return send(res,200,{
-   ok:true,
-   live:true,
-   checkedAt:new Date().toISOString(),
-   sources,
-   searchPolicy:'single-global-live-search',
-   cacheSeconds:1200
-  });
- }catch(error){
-  console.warn('[sport-live] discovery failed',error?.message||'unknown');
-  return send(res,502,{ok:false,error:'live_discovery_failed',sources:[]});
+  try{
+   const ids=await discoverIds(key);
+   const verified=await verifyLive(key,ids);
+   const sources=verified
+    .map((video,index)=>asSource(video,index))
+    .sort((a,b)=>b.score-a.score||b.viewers-a.viewers)
+    .slice(0,24)
+    .map((source,index)=>({...source,priority:index}));
+   return json({
+    ok:true,
+    live:true,
+    checkedAt:new Date().toISOString(),
+    sources,
+    searchPolicy:'single-global-live-search',
+    cacheSeconds:1200
+   });
+  }catch(error){
+   console.warn('[sport-live] discovery failed',error?.message||'unknown');
+   return json({ok:false,error:'live_discovery_failed',sources:[]},502);
+  }
  }
-}
+};
