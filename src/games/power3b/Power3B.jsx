@@ -37,7 +37,7 @@ export default function Power3B({saved,onCheckpoint,onClose}){
   setSectorId(target.id);setUnitIds([]);
  };
  const toggleUnit=id=>{const u=game.units.find(x=>x.id===id);if(!u||u.nation!==human||u.type==='flag'||game.orders.some(o=>o.unitIds?.includes(id)))return;setUnitIds(ids=>ids.includes(id)?[]:[id]);setMode('move');};
- const exchangeOptions=EXCHANGES.filter(r=>mySectorUnits.filter(u=>u.type===r.from&&!game.orders.some(o=>o.unitIds?.includes(u.id))).length>=r.count);
+ const exchangeOptions=EXCHANGES.filter(r=>(me.reserve[r.to]||0)>0&&mySectorUnits.filter(u=>u.type===r.from&&!game.orders.some(o=>o.unitIds?.includes(u.id))).length>=r.count);
  const resume=()=>{setPlanSeconds(180);setStarted(true);setSectorId('hq'+human);setNotice('Partie restaurée. Nouveau chrono de planification : 3 minutes.');};
  const reset=()=>{setStarted(false);setNation(human);setNotice('Nouvelle campagne prête à être configurée.');};
  return <div className="power3b-shell" data-resolving={moveFrom?'true':'false'} role="dialog" aria-modal="true" aria-label="Power 3B">
