@@ -1,0 +1,39 @@
+name: Verify Sport H24 and Finals
+
+on:
+  pull_request:
+    paths:
+      - 'src/sport/**'
+      - 'tests/sport*.test.js'
+      - 'vercel.json'
+      - '.github/workflows/verify-sport-media.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/sport/**'
+      - 'tests/sport*.test.js'
+      - 'vercel.json'
+      - '.github/workflows/verify-sport-media.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-sport-media-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sport-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Sport H24 and Finals regression tests
+        run: node --test tests/sport-media.test.js tests/sport.test.js
+      - name: Production build
+        run: npm run build
