@@ -14,7 +14,7 @@ export default function Power3B({saved,onCheckpoint,onClose}){
  const[started,setStarted]=useState(false),[nation,setNation]=useState(game.humanNation),[difficulty,setDifficulty]=useState(game.difficulty||'veteran');
  const[sectorId,setSectorId]=useState('hq'+game.humanNation),[unitIds,setUnitIds]=useState([]),[mode,setMode]=useState('move'),[notice,setNotice]=useState('');
  const[cinematic,setCinematic]=useState(null),[rules,setRules]=useState(false);
- const human=game.humanNation,me=game.nations[human],myOrders=game.orders.filter(o=>o.nation===human);
+ const human=game.humanNation,me=game.nations[human],myOrders=game.orders.filter(o=>o.nation===human),committedPower=game.orders.filter(o=>o.nation===human).reduce((sum,o)=>sum+(o.cost||0),0),availablePower=Math.max(0,me.power-committedPower);
  const selectedUnits=unitIds.map(id=>game.units.find(u=>u.id===id)).filter(Boolean);
  const legal=useMemo(()=>selectedUnits.length?SECTORS.map(s=>s.id).filter(id=>selectedUnits.every(u=>legalTargets(game,u.id).includes(id))):[],[game,unitIds]);
  const sectorUnits=unitsIn(game,sectorId),mySectorUnits=sectorUnits.filter(u=>u.nation===human&&u.type!=='flag');
@@ -46,7 +46,7 @@ export default function Power3B({saved,onCheckpoint,onClose}){
    <button className="power3b-primary" onClick={saved?resume:newGame}><Play size={19}/>{saved?'Reprendre la campagne':'Lancer Power 3B'}</button>
    {saved&&<button className="power3b-text" onClick={newGame}>Commencer une nouvelle campagne avec ces réglages</button>}
   </div></div>}
-  {started&&<><div className="power3b-status"><div><span>Nation</span><strong style={{color:NATIONS[human].primary}}>{NATIONS[human].name} · {NATIONS[human].value}</strong></div><div><span>Manche</span><strong>{game.round}</strong></div><div><span>Power</span><strong>{me.power}</strong></div><div><span>Ordres</span><strong>{myOrders.length} / {MAX_ORDERS}</strong></div><div><span>QG capturés</span><strong>{me.flagsCaptured} / 7</strong></div></div>
+  {started&&<><div className="power3b-status"><div><span>Nation</span><strong style={{color:NATIONS[human].primary}}>{NATIONS[human].name} · {NATIONS[human].value}</strong></div><div><span>Manche</span><strong>{game.round}</strong></div><div><span>Power disponible</span><strong>{availablePower} / {me.power}</strong></div><div><span>Ordres</span><strong>{myOrders.length} / {MAX_ORDERS}</strong></div><div><span>QG capturés</span><strong>{me.flagsCaptured} / 7</strong></div></div>
    <div className="power3b-main">
     <section className="power3b-board-panel"><div className="power3b-board-scroll" ref={scrollRef}><canvas ref={canvas} width={BOARD_W} height={BOARD_H} onClick={canvasTap} aria-label="Plateau stratégique Power 3B"/></div><p className="power3b-board-hint">{mode==='mega'?'CIBLAGE MÉGA-MISSILE · touche un secteur':unitIds.length?'UNITÉS SÉLECTIONNÉES · touche un secteur lumineux pour programmer le déplacement':'Touche un secteur pour inspecter ses unités.'}</p></section>
     <aside className="power3b-command">
@@ -54,8 +54,8 @@ export default function Power3B({saved,onCheckpoint,onClose}){
      <div className="power3b-units">{sectorUnits.length?sectorUnits.map(u=><button key={u.id} disabled={u.nation!==human||u.type==='flag'||game.orders.some(o=>o.unitIds?.includes(u.id))} className={unitIds.includes(u.id)?'selected':''} onClick={()=>toggleUnit(u.id)}><i style={{'--nation':NATIONS[u.nation].primary}}>{UNIT_TYPES[u.type].icon}</i><span><strong>{UNIT_TYPES[u.type].name}</strong><small>{NATIONS[u.nation].code} · puissance {UNIT_TYPES[u.type].strength}</small></span></button>):<p>Aucune unité dans ce secteur.</p>}</div>
      <div className="power3b-actions"><h3>ORDRES SPÉCIAUX</h3>
       {exchangeOptions.map(r=><button key={r.to} disabled={myOrders.length>=5} onClick={()=>commit(next=>queueExchange(next,human,sectorId,r.to))}>Échanger {r.count} {UNIT_TYPES[r.from].name} → {UNIT_TYPES[r.to].name}</button>)}
-      <div className="power3b-reinforce">{['infantry','tank','fighter','destroyer'].map(type=><button key={type} disabled={myOrders.length>=5||me.power<UNIT_TYPES[type].cost||me.reserve[type]<1} onClick={()=>commit(next=>queueReinforcement(next,human,type))}>+ {UNIT_TYPES[type].name}<small>{UNIT_TYPES[type].cost} Power</small></button>)}</div>
-      <button className={mode==='mega'?'armed':''} disabled={myOrders.length>=5||me.power<100} onClick={()=>setMode(mode==='mega'?'move':'mega')}><Target size={18}/> Méga-missile <small>100 Power · usage unique</small></button>
+      <div className="power3b-reinforce">{['infantry','tank','fighter','destroyer'].map(type=><button key={type} disabled={myOrders.length>=5||availablePower<UNIT_TYPES[type].cost||me.reserve[type]-myOrders.filter(o=>o.type==='reinforce'&&o.unitType===type).length<1} onClick={()=>commit(next=>queueReinforcement(next,human,type))}>+ {UNIT_TYPES[type].name}<small>{UNIT_TYPES[type].cost} Power</small></button>)}</div>
+      <button className={mode==='mega'?'armed':''} disabled={myOrders.length>=5||availablePower<100} onClick={()=>setMode(mode==='mega'?'move':'mega')}><Target size={18}/> Méga-missile <small>100 Power · usage unique</small></button>
      </div>
     </aside>
    </div>
