@@ -4,7 +4,9 @@ import {addUnit,unitAt,unitsIn,sectorStrength,removeUnit} from './state.js';
 const cap=(n,a,b)=>Math.max(a,Math.min(b,n));
 const clone=v=>structuredClone(v);
 function assertNation(state,nation){if(!Number.isInteger(nation)||nation<0||nation>7||!state.nations[nation].active)throw Error('Nation invalide.');}
-function assertPlanning(state){if(state.phase!=='planning'||state.winner!==null)throw Error('La phase de planification est fermée.');if(state.orders.filter(o=>o.nation===state.humanNation).length>=MAX_ORDERS)throw Error('Maximum de 5 ordres par manche.');}
+function assertPlanning(state,nation){if(state.phase!=='planning'||state.winner!==null)throw Error('La phase de planification est fermée.');if(state.orders.filter(o=>o.nation===nation).length>=MAX_ORDERS)throw Error('Maximum de 5 ordres par manche.');}
+function committedPower(state,nation){return state.orders.filter(o=>o.nation===nation).reduce((sum,o)=>sum+(o.cost||0),0);}
+function reservedReinforcements(state,nation,type){return state.orders.filter(o=>o.nation===nation&&o.type==='reinforce'&&o.unitType===type).length;}
 function isOrdered(state,id){return state.orders.some(o=>o.unitIds?.includes(id));}
 export function legalTargets(state,unitId){
  const u=unitAt(state,unitId),spec=UNIT_TYPES[u?.type];if(!u||!spec||['fixed','special'].includes(spec.domain))return[];
@@ -14,7 +16,7 @@ export function legalTargets(state,unitId){
  }).map(s=>s.id);
 }
 export function queueMove(state,nation,unitIds,targetId){
- assertPlanning(state);assertNation(state,nation);const ids=[...new Set(unitIds)].slice(0,12);
+ assertPlanning(state,nation);assertNation(state,nation);const ids=[...new Set(unitIds)].slice(0,12);
  if(!ids.length)throw Error('Sélectionne au moins une unité.');const us=ids.map(id=>unitAt(state,id));
  if(us.some(u=>!u||u.nation!==nation||isOrdered(state,u.id)))throw Error('Une unité ne peut recevoir qu’un ordre par manche.');
  const from=us[0].sectorId;if(us.some(u=>u.sectorId!==from))throw Error('Les unités d’un ordre doivent partir du même secteur.');
@@ -22,18 +24,18 @@ export function queueMove(state,nation,unitIds,targetId){
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'move',nation,unitIds:ids,from,target:targetId});return state;
 }
 export function queueExchange(state,nation,sectorId,toType){
- assertPlanning(state);assertNation(state,nation);const rule=EXCHANGES.find(r=>r.to===toType);if(!rule)throw Error('Échange inconnu.');
+ assertPlanning(state,nation);assertNation(state,nation);const rule=EXCHANGES.find(r=>r.to===toType);if(!rule)throw Error('Échange inconnu.');
  const candidates=unitsIn(state,sectorId,nation).filter(u=>u.type===rule.from&&!isOrdered(state,u.id)).slice(0,rule.count);
  if(candidates.length<rule.count)throw Error('Pas assez de pièces pour cet échange.');
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'exchange',nation,unitIds:candidates.map(u=>u.id),sectorId,fromType:rule.from,toType});return state;
 }
 export function queueReinforcement(state,nation,type){
- assertPlanning(state);assertNation(state,nation);const spec=UNIT_TYPES[type];
- if(!spec||['flag'].includes(type))throw Error('Renfort invalide.');if(state.nations[nation].reserve[type]<1)throw Error('Réserve épuisée.');if(state.nations[nation].power<spec.cost)throw Error('Power insuffisant.');
+ assertPlanning(state,nation);assertNation(state,nation);const spec=UNIT_TYPES[type];
+ if(!spec||['flag'].includes(type))throw Error('Renfort invalide.');if(state.nations[nation].reserve[type]-reservedReinforcements(state,nation,type)<1)throw Error('Réserve épuisée.');if(state.nations[nation].power-committedPower(state,nation)<spec.cost)throw Error('Power insuffisant.');
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:type,cost:spec.cost});return state;
 }
 export function queueMegaMissile(state,nation,targetId){
- assertPlanning(state);assertNation(state,nation);if(!SECTOR_BY_ID.has(targetId))throw Error('Cible invalide.');if(state.nations[nation].power<100)throw Error('Il faut 100 Power pour construire le Méga-missile.');
+ assertPlanning(state,nation);assertNation(state,nation);if(!SECTOR_BY_ID.has(targetId))throw Error('Cible invalide.');if(state.nations[nation].power-committedPower(state,nation)<100)throw Error('Il faut 100 Power disponible pour construire le Méga-missile.');
  if(state.orders.some(o=>o.nation===nation&&o.type==='mega'))throw Error('Un seul Méga-missile par manche.');
  state.orders.push({id:'o'+state.round+'-'+state.orders.length,type:'mega',nation,unitIds:[],target:targetId,cost:100});return state;
 }
