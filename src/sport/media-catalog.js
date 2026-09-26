@@ -77,6 +77,20 @@ export const SPORT_FINALS=[
   ]
  }),
  media({
+  id:'final-foot-2010',sport:'Football',year:'2010',title:'Pays-Bas · Espagne',
+  subtitle:'Finale Coupe du monde 2010 · match complet',provider:'FIFA',
+  sources:[
+   source('fifa-2010-full','Match complet FIFA','7fOG8j_ncWY',{provider:'FIFA',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-foot-1986',sport:'Football',year:'1986',title:'Argentine · Allemagne de l’Ouest',
+  subtitle:'Finale Coupe du monde 1986 · match complet',provider:'FIFA',
+  sources:[
+   source('fifa-1986-full','Match complet FIFA','zXVMBHmw-60',{provider:'FIFA',mode:'full'})
+  ]
+ }),
+ media({
   id:'final-foot-2018',sport:'Football',year:'2018',title:'France · Croatie',
   subtitle:'Finale Coupe du monde 2018 · match complet',provider:'FIFA',
   sources:[
@@ -122,6 +136,48 @@ export const SPORT_FINALS=[
   sources:[
    source('fiba-u17w-full','Match complet',FULL.fibaU17W.videoId,{provider:'FIBA Basketball',mode:'full'}),
    source('fiba-u17w-highlights','Highlights officiels de secours','8LxnM5GiWwA',{provider:'FIBA Basketball',mode:'fallback'})
+  ]
+ }),
+ media({
+  id:'final-basket-olympics-2024',sport:'Basket',year:'2024',title:'USA · France',
+  subtitle:'Finale olympique hommes Paris 2024 · replay complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-basket-2024-full','Replay complet officiel','uJs693eNfuQ',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-volley-olympics-2024',sport:'Volley',year:'2024',title:'USA · Italie',
+  subtitle:'Finale olympique femmes Paris 2024 · replay complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-volley-2024-full','Replay complet officiel','0ErDRrg9tM8',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-badminton-olympics-2016',sport:'Badminton',year:'2016',title:'Chen Long · Lee Chong Wei',
+  subtitle:'Finale olympique simple hommes Rio 2016 · match complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-badminton-2016-full','Replay complet officiel','ceJuAyf6Gng',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-table-tennis-olympics-2016',sport:'Tennis de table',year:'2016',title:'Ma Long · Zhang Jike',
+  subtitle:'Finale olympique simple hommes Rio 2016 · match complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-table-tennis-2016-full','Replay complet officiel','F5H-Eq_Kcxw',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-archery-olympics-2016',sport:'Tir à l’arc',year:'2016',title:'Finale individuelle hommes',
+  subtitle:'Finale olympique Rio 2016 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-archery-2016-full','Replay officiel','rzj4FFi7wt8',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-ice-hockey-olympics-2002',sport:'Hockey sur glace',year:'2002',title:'Canada · USA',
+  subtitle:'Finale olympique hommes Salt Lake City 2002 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-ice-hockey-2002-full','Replay officiel','g2QdHGLGBVA',{provider:'Olympic Games',mode:'full'})
   ]
  })
 ];
