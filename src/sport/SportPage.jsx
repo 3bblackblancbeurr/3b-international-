@@ -554,8 +554,7 @@ export default function SportPage({goTo}){
    if(!active||document.hidden)return;
    setLiveMeta(previous=>({...previous,loading:true,error:''}));
    try{
-    const response=await fetch('/api/sport-live?profile='+encodeURIComponent(h24Id)+'&r='+liveReload,{
-     cache:'no-store',
+    const response=await fetch('/api/sport-live',{
      signal:controller.signal,
      headers:{accept:'application/json'}
     });
@@ -566,9 +565,9 @@ export default function SportPage({goTo}){
      source?.mode==='live'&&source?.videoId&&isTrustedSportEmbed(source.embedUrl)
     );
     setLivePools(previous=>{
-     const current=previous[h24Id]||[];
+     const current=previous.global||[];
      const unchanged=current.length===sources.length&&current.every((source,index)=>source.id===sources[index]?.id);
-     return unchanged?previous:{...previous,[h24Id]:sources};
+     return unchanged?previous:{...previous,global:sources};
     });
     setLiveMeta({
      loading:false,
@@ -603,7 +602,7 @@ export default function SportPage({goTo}){
    document.removeEventListener('visibilitychange',onVisible);
    window.removeEventListener('online',onOnline);
   };
- },[section,h24Id,liveReload]);
+ },[section,liveReload]);
 
  useEffect(()=>{
   if(section!=='challenges'||!account.user){setChallengeData(null);setChallengeError('');return;}
@@ -659,7 +658,14 @@ export default function SportPage({goTo}){
  const mediaList=section==='h24'?H24_CHANNELS:filteredFinals;
  const mediaId=section==='h24'?h24Id:finalId;
  const selectedProfile=H24_CHANNELS.find(item=>item.id===h24Id)||H24_CHANNELS[0];
- const liveSources=livePools[h24Id]||[];
+ const allLiveSources=livePools.global||[];
+ const profileSport={
+  'h24-foot':'Football',
+  'h24-basket':'Basket',
+  'h24-rugby':'Rugby',
+  'h24-tennis':'Tennis'
+ }[h24Id]||'';
+ const liveSources=profileSport?allLiveSources.filter(source=>source.sport===profileSport):allLiveSources;
  const liveMessage=liveMeta.error==='live_discovery_not_configured'
   ?'Le moteur de direct est prêt, mais sa clé serveur YouTube n’est pas encore configurée.'
   :liveMeta.loading?'Recherche mondiale d’un match réellement en cours…'
@@ -775,10 +781,10 @@ export default function SportPage({goTo}){
      <span className="sport-live-dot" aria-hidden="true"/>
      <div>
       <strong>{liveSources.length?'DIRECT RÉEL DISPONIBLE':liveMeta.loading?'RECHERCHE LIVE…':'VEILLE H24 ACTIVE'}</strong>
-      <small>{liveSources.length+' source'+(liveSources.length>1?'s':'')+' live vérifiée'+(liveSources.length>1?'s':'')}{liveMeta.checkedAt?' · '+dateLabel(liveMeta.checkedAt):''}</small>
+      <small>{liveSources.length+' direct'+(liveSources.length>1?'s':'')+' pour ce filtre · '+allLiveSources.length+' vérifié'+(allLiveSources.length>1?'s':'')+' au total'}{liveMeta.checkedAt?' · '+dateLabel(liveMeta.checkedAt):''}</small>
      </div>
     </div>
-    <button className="sport-refresh" type="button" disabled={liveMeta.loading} onClick={refreshLive}><RefreshCw size={16} className={liveMeta.loading?'is-spinning':''}/>Chercher maintenant</button>
+    <button className="sport-refresh" type="button" disabled={liveMeta.loading} onClick={refreshLive}><RefreshCw size={16} className={liveMeta.loading?'is-spinning':''}/>Vérifier maintenant</button>
    </div>:<div className="sport-filter-panel sport-final-filter">
     <div className="sport-filter-heading">
      <div><p className="eyebrow">ARCHIVES · GRANDES FINALES</p><h2>Choisis un sport.</h2></div>
