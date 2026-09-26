@@ -3,7 +3,7 @@ import {X,Play,RotateCcw,Target,Shield,Trash2,ChevronRight,BookOpen} from 'lucid
 import {NATIONS,UNIT_TYPES,EXCHANGES,MAX_ORDERS} from './constants.js';
 import {SECTORS} from './board.js';
 import {createPowerGame,unitsIn,gameScore,snapshotPowerGame} from './state.js';
-import {queueMove,queueExchange,queueReinforcement,queueMegaMissile,cancelOrder,legalTargets,resolveTurn} from './engine.js';
+import {queueMove,queueExchange,queueReinforcement,queueDeploy,queueMegaMissile,cancelOrder,legalTargets,resolveTurn} from './engine.js';
 import {BOARD_W,BOARD_H,renderPowerBoard} from './render.js';
 import './power3b.css';
 
@@ -17,7 +17,7 @@ export default function Power3B({saved,onCheckpoint,onClose}){
  const human=game.humanNation,me=game.nations[human],myOrders=game.orders.filter(o=>o.nation===human),committedPower=game.orders.filter(o=>o.nation===human).reduce((sum,o)=>sum+(o.cost||0),0),availablePower=Math.max(0,me.power-committedPower);
  const selectedUnits=unitIds.map(id=>game.units.find(u=>u.id===id)).filter(Boolean);
  const legal=useMemo(()=>selectedUnits.length?SECTORS.map(s=>s.id).filter(id=>selectedUnits.every(u=>legalTargets(game,u.id).includes(id))):[],[game,unitIds]);
- const sectorUnits=unitsIn(game,sectorId),mySectorUnits=sectorUnits.filter(u=>u.nation===human&&u.type!=='flag');
+ const sectorUnits=unitsIn(game,sectorId),mySectorUnits=sectorUnits.filter(u=>u.nation===human&&u.type!=='flag'),spoilTypes=Object.entries(me.spoils||{}).filter(([,count])=>count>0).sort((a,b)=>UNIT_TYPES[b[0]].strength-UNIT_TYPES[a[0]].strength);
  const commit=(fn,message='Ordre enregistré.')=>{try{const next=structuredClone(game);fn(next);setGame(next);setNotice(message);}catch(error){setNotice(error.message||'Ordre impossible.');}};
  const checkpoint=(g,record=false)=>onCheckpoint?.({score:gameScore(g),won:g.winner===human,snapshot:()=>snapshotPowerGame(g)},'power3b',record);
  const newGame=()=>{const next=createPowerGame({nation,difficulty,seed:196});setGame(next);setSectorId('hq'+nation);setUnitIds([]);setMode('move');setPlanSeconds(180);setStarted(true);setNotice('Commandement actif. Tu as 3 minutes pour programmer jusqu’à 5 ordres.');};
@@ -57,6 +57,7 @@ export default function Power3B({saved,onCheckpoint,onClose}){
      <div className="power3b-actions"><h3>ORDRES SPÉCIAUX</h3>
       {exchangeOptions.map(r=><button key={r.to} disabled={myOrders.length>=5} onClick={()=>commit(next=>queueExchange(next,human,sectorId,r.to))}>Échanger {r.count} {UNIT_TYPES[r.from].name} → {UNIT_TYPES[r.to].name}</button>)}
       <div className="power3b-reinforce">{['infantry','tank','fighter','destroyer'].map(type=><button key={type} disabled={myOrders.length>=5||availablePower<UNIT_TYPES[type].cost||me.reserve[type]-myOrders.filter(o=>o.type==='reinforce'&&o.unitType===type).length<1} onClick={()=>commit(next=>queueReinforcement(next,human,type))}>+ {UNIT_TYPES[type].name}<small>{UNIT_TYPES[type].cost} Power</small></button>)}</div>
+      {spoilTypes.length>0&&<div className="power3b-spoils"><h3>PRISES EN RÉSERVE</h3>{spoilTypes.map(([type,count])=><button key={type} disabled={myOrders.length>=5||count-myOrders.filter(o=>o.type==='deploy'&&o.unitType===type).length<1} onClick={()=>commit(next=>queueDeploy(next,human,type),'Prise programmée pour redéploiement au QG.')}><span>{UNIT_TYPES[type].name}</span><small>x{count} · P {UNIT_TYPES[type].strength}</small></button>)}</div>}
       <button className={mode==='mega'?'armed':''} disabled={myOrders.length>=5||availablePower<100} onClick={()=>setMode(mode==='mega'?'move':'mega')}><Target size={18}/> Méga-missile <small>100 Power · usage unique</small></button>
      </div>
     </aside>
@@ -71,5 +72,5 @@ export default function Power3B({saved,onCheckpoint,onClose}){
   {started&&game.winner!==null&&!cinematic&&<div className="power3b-end"><div><span>FIN DE CAMPAGNE</span><h2>{game.winner===human?'Victoire de '+NATIONS[human].name:NATIONS[game.winner].name+' prend le contrôle'}</h2><p>Score stratégique : {gameScore(game)} · {me.flagsCaptured} QG capturés.</p><button className="power3b-primary" onClick={reset}><RotateCcw/>Nouvelle campagne</button><button className="power3b-text" onClick={close}>Retour aux Jeux 3B</button></div></div>}
  </div>;
 }
-function orderTitle(o){if(o.type==='move')return'Déplacement';if(o.type==='exchange')return'Échange';if(o.type==='reinforce')return'Renfort';return'Méga-missile';}
-function orderDetail(o){if(o.type==='move')return o.from+' → '+o.target+' · '+o.unitIds.length+' unité(s)';if(o.type==='exchange')return UNIT_TYPES[o.fromType].name+' → '+UNIT_TYPES[o.toType].name;if(o.type==='reinforce')return UNIT_TYPES[o.unitType].name+' au '+o.sectorId;return'Cible : '+o.target;}
+function orderTitle(o){if(o.type==='move')return'Déplacement';if(o.type==='exchange')return'Échange';if(o.type==='reinforce')return'Renfort';if(o.type==='deploy')return'Redéploiement';return'Méga-missile';}
+function orderDetail(o){if(o.type==='move')return o.from+' → '+o.target+' · '+o.unitIds.length+' unité(s)';if(o.type==='exchange')return UNIT_TYPES[o.fromType].name+' → '+UNIT_TYPES[o.toType].name;if(o.type==='reinforce')return UNIT_TYPES[o.unitType].name+' au '+o.sectorId;if(o.type==='deploy')return UNIT_TYPES[o.unitType].name+' capturé → '+o.sectorId;return'Cible : '+o.target;}
