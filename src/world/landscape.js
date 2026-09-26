@@ -105,6 +105,30 @@ export function createLandscape(models,region,save,onError=console.error){
    const a=i*Math.PI/2+Math.PI/4,x=core.x+Math.cos(a)*82,z=core.z+Math.sin(a)*82;
    asset('Bench',x,z,1.05,-a+Math.PI/2);
   }
+  // Narrative voids: deliberately sparse spaces where silence, framing and memory
+  // do the work instead of extra buildings.
+  const narrative=new THREE.Group();root.add(narrative);
+  const oubli=toLandscape(region,0,-26),oubliY=height(oubli.x,oubli.z);
+  shape(cylinder,mat('#13262c',{metalness:.34,roughness:.42}),oubli.x,oubliY+.08,oubli.z,15,.16,15,narrative);
+  const oubliRing=geo(new THREE.TorusGeometry(11.8,.08,5,64));oubliRing.rotateX(-Math.PI/2);
+  shape(oubliRing,mat('#4d9fb5',{emissive:'#397f95',emissiveIntensity:.18,metalness:.45}),oubli.x,oubliY+.18,oubli.z,1,1,1,narrative);
+  for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.35,x=oubli.x+Math.cos(a)*(8+i%2*3),z=oubli.z+Math.sin(a)*(8+i%2*3),h=2.2+(i%3)*1.5;const monolith=shape(box,mat('#3a494b',{roughness:.86}),x,height(x,z)+h/2,z,1.1,h,.85,narrative);monolith.rotation.y=-a+(i%2?.22:-.18);}
+
+  const absents=toLandscape(region,-23,11),absentsY=height(absents.x,absents.z);
+  const memoryRing=geo(new THREE.TorusGeometry(10.5,.09,5,72));memoryRing.rotateX(-Math.PI/2);
+  shape(memoryRing,mat('#d1b671',{emissive:'#74591f',emissiveIntensity:.16,metalness:.5}),absents.x,absentsY+.13,absents.z,1,1,1,narrative);
+  for(let i=0;i<5;i++){const a=i/5*Math.PI*2+.2,x=absents.x+Math.cos(a)*12,z=absents.z+Math.sin(a)*12;flora.plant(i%2?'Tree':'Shrub',x,height(x,z),z,i%2?.8:1.05,-a,narrative);}
+  shape(ball,mat('#d8bd80',{emissive:'#7c612b',emissiveIntensity:.22,metalness:.42}),absents.x,absentsY+1.7,absents.z,.42,.68,.42,narrative);
+
+  const values=toLandscape(region,22,13),valuesY=height(values.x,values.z);
+  for(const [index,countryConfig] of COUNTRIES.entries()){
+   const a=index/8*Math.PI*2,x=values.x+Math.cos(a)*10.8,z=values.z+Math.sin(a)*10.8,y=height(x,z);
+   shape(cylinder,mat('#273a40',{metalness:.42,roughness:.56}),x,y+1.65,z,.24,3.3,.24,narrative);
+   shape(ball,mat(countryConfig.color,{emissive:countryConfig.color,emissiveIntensity:.32,metalness:.34}),x,y+3.55,z,.25,.42,.25,narrative);
+  }
+  const valuesLine=geo(new THREE.TorusGeometry(7.1,.07,5,64));valuesLine.rotateX(-Math.PI/2);shape(valuesLine,mat('#65cfe8',{emissive:'#3b91a7',emissiveIntensity:.2,metalness:.4}),values.x,valuesY+.15,values.z,1,1,1,narrative);
+  batch(narrative);
+
   // Each kingdom gets a readable plaza before the threshold and two real building masses.
   for(const [index,countryConfig] of COUNTRIES.entries()){
    const p=toLandscape(region,...countryConfig.portal),sectorY=height(p.x,p.z),sites=field.buildings.filter(site=>site.id===countryConfig.id);
