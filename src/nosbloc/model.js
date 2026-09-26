@@ -1,4 +1,4 @@
-export const NOSBLOC_STORAGE_VERSION = 2;
+export const NOSBLOC_STORAGE_VERSION = 3;
 export const NOSBLOC_STORAGE_KEY = "threeb:nosbloc:v1";
 
 export const PROJECT_TYPES = Object.freeze([
@@ -19,6 +19,8 @@ export const PROJECT_TEMPLATES = Object.freeze({
   shop: ["Boutique de créateur", "Galerie", "Billetterie", "Service"],
 });
 
+export const PROJECT_STATUSES = Object.freeze(["draft", "private_test", "review", "approved", "published", "restricted", "suspended", "archived"]);
+
 export const ECONOMY_RULES = Object.freeze({
   creatorShareBps: 7000,
   platformOperationsBps: 2000,
@@ -38,13 +40,7 @@ export function formatEuros(cents) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format((Number(cents) || 0) / 100);
 }
 
-export function simulateRevenue({
-  grossEuros = 100,
-  taxRate = 20,
-  storeRate = 0,
-  refundRate = 2,
-  engagementRewardEuros = 0,
-} = {}) {
+export function simulateRevenue({ grossEuros = 100, taxRate = 20, storeRate = 0, refundRate = 2, engagementRewardEuros = 0 } = {}) {
   const gross = toCents(grossEuros);
   const taxes = round(gross * clamp(taxRate, 0, 80) / 100);
   const afterTaxes = Math.max(0, gross - taxes);
@@ -56,41 +52,26 @@ export function simulateRevenue({
   const creatorPool = round(eligible * ECONOMY_RULES.creatorPoolBps / 10000);
   const protectionGrowth = Math.max(0, eligible - creatorDirect - operations - creatorPool);
   const engagementReward = toCents(engagementRewardEuros);
-
-  return {
-    gross,
-    taxes,
-    storeFees,
-    refunds,
-    eligible,
-    creatorDirect,
-    engagementReward,
-    creatorTotal: creatorDirect + engagementReward,
-    operations,
-    creatorPool,
-    protectionGrowth,
-  };
+  return { gross, taxes, storeFees, refunds, eligible, creatorDirect, engagementReward, creatorTotal: creatorDirect + engagementReward, operations, creatorPool, protectionGrowth };
 }
 
 export function normalizeSplits(rows = []) {
   const clean = Array.isArray(rows) ? rows : [];
   const allowedStatuses = new Set(["owner", "draft", "invited", "accepted", "declined", "revoked"]);
-  return clean
-    .map((row, index) => {
-      const status = allowedStatuses.has(row?.status) ? row.status : "draft";
-      return {
-        id: String(row?.id || `member-${index + 1}`),
-        name: String(row?.name || "").trim().slice(0, 50),
-        role: String(row?.role || "Création").trim().slice(0, 50),
-        contact: String(row?.contact || "").trim().slice(0, 120),
-        shareBps: Math.max(0, Math.min(10000, round(row?.shareBps))),
-        status,
-        inviteCode: status === "invited" ? String(row?.inviteCode || "").trim().slice(0, 32) : "",
-        invitedAt: status === "invited" ? String(row?.invitedAt || "") : "",
-        acceptedAt: status === "accepted" ? String(row?.acceptedAt || "") : "",
-      };
-    })
-    .filter(row => row.name);
+  return clean.map((row, index) => {
+    const status = allowedStatuses.has(row?.status) ? row.status : "draft";
+    return {
+      id: String(row?.id || `member-${index + 1}`),
+      name: String(row?.name || "").trim().slice(0, 50),
+      role: String(row?.role || "Création").trim().slice(0, 50),
+      contact: String(row?.contact || "").trim().slice(0, 120),
+      shareBps: Math.max(0, Math.min(10000, round(row?.shareBps))),
+      status,
+      inviteCode: status === "invited" ? String(row?.inviteCode || "").trim().slice(0, 32) : "",
+      invitedAt: status === "invited" ? String(row?.invitedAt || "") : "",
+      acceptedAt: status === "accepted" ? String(row?.acceptedAt || "") : "",
+    };
+  }).filter(row => row.name);
 }
 
 export function teamAgreementReady(rows = []) {
@@ -108,29 +89,19 @@ export function validateSplits(rows = []) {
     if (seen.has(key)) duplicateNames.add(row.name);
     seen.add(key);
   }
-  return {
-    valid: splits.length > 0 && totalBps === 10000 && duplicateNames.size === 0,
-    totalBps,
-    totalPercent: totalBps / 100,
-    duplicateNames: [...duplicateNames],
-    splits,
-  };
+  return { valid: splits.length > 0 && totalBps === 10000 && duplicateNames.size === 0, totalBps, totalPercent: totalBps / 100, duplicateNames: [...duplicateNames], splits };
 }
 
 export function allocateTeamRevenue(amountCents, rows = []) {
   const validation = validateSplits(rows);
   if (!validation.valid) return { valid: false, allocations: [], unallocated: Math.max(0, round(amountCents)), ...validation };
-
   const amount = Math.max(0, round(amountCents));
   let assigned = 0;
   const allocations = validation.splits.map((row, index) => {
-    const value = index === validation.splits.length - 1
-      ? amount - assigned
-      : Math.floor(amount * row.shareBps / 10000);
+    const value = index === validation.splits.length - 1 ? amount - assigned : Math.floor(amount * row.shareBps / 10000);
     assigned += value;
     return { ...row, amountCents: value };
   });
-
   return { valid: true, allocations, unallocated: 0, ...validation };
 }
 
@@ -147,6 +118,7 @@ export function createProject(input = {}, ownerName = "Fondateur 3B", id) {
     audience: String(input.audience || "Tout public").slice(0, 60),
     status: "draft",
     visibility: "private",
+    creationMode: ["ai", "template", "blank", "import"].includes(input.creationMode) ? input.creationMode : "template",
     createdAt,
     updatedAt: createdAt,
     platforms: { mobile: true, web: true, pc: false },
@@ -157,17 +129,18 @@ export function createProject(input = {}, ownerName = "Fondateur 3B", id) {
     licensedAssets: [],
     versions: [],
     reviewVersionId: null,
+    productionVersionId: null,
     restoredFromVersionId: null,
-    stats: { players: 0, retention7: 0, sessionMinutes: 0, trustScore: 100 },
+    lastTestedAt: null,
+    lastPublishedAt: null,
+    stats: { players: 0, retention7: 0, sessionMinutes: 0, trustScore: 100, revenueCents: 0 },
   };
 }
 
 export function projectReadiness(project = {}) {
   const split = validateSplits(project.splits);
   const teamReady = teamAgreementReady(project.splits);
-  const rightsReady = project.rights?.coreOwned === true
-    && project.rights?.thirdPartyLicensed === true
-    && project.rights?.ageRatingReviewed === true;
+  const rightsReady = project.rights?.coreOwned === true && project.rights?.thirdPartyLicensed === true && project.rights?.ageRatingReviewed === true;
   const checks = [
     { id: "identity", label: "Nom du projet", weight: 10, ok: String(project.title || "").trim().length >= 3 },
     { id: "brief", label: "Description claire", weight: 15, ok: String(project.description || "").trim().length >= 40 },
@@ -178,16 +151,11 @@ export function projectReadiness(project = {}) {
     { id: "rights", label: "Droits et classification attestés", weight: 15, ok: rightsReady },
     { id: "splits", label: "Partage à 100 %", weight: 10, ok: split.valid },
     { id: "team", label: "Accords d’équipe acceptés", weight: 5, ok: teamReady },
-    { id: "plan", label: "Plan de production", weight: 15, ok: Array.isArray(project.plan) && project.plan.length >= 4 },
+    { id: "plan", label: "Plan de production", weight: 10, ok: Array.isArray(project.plan) && project.plan.length >= 4 },
+    { id: "test", label: "Test privé effectué", weight: 5, ok: Boolean(project.lastTestedAt) },
   ];
   const score = checks.reduce((sum, check) => sum + (check.ok ? check.weight : 0), 0);
-  return {
-    score,
-    checks,
-    rightsReady,
-    teamReady,
-    readyForReview: score >= 80 && split.valid && rightsReady && teamReady,
-  };
+  return { score, checks, rightsReady, teamReady, readyForReview: score >= 85 && split.valid && rightsReady && teamReady && Boolean(project.lastTestedAt) };
 }
 
 export function discoveryScore(project = {}) {
@@ -195,7 +163,7 @@ export function discoveryScore(project = {}) {
   const retention = clamp(project.stats?.retention7, 0, 100);
   const session = clamp(project.stats?.sessionMinutes, 0, 60) / 60 * 100;
   const trust = clamp(project.stats?.trustScore ?? 100, 0, 100);
-  return Math.round(readiness * 0.4 + retention * 0.25 + session * 0.15 + trust * 0.2);
+  return Math.round(readiness * 0.35 + retention * 0.25 + session * 0.15 + trust * 0.25);
 }
 
 export function generateBuildPlan(prompt = "", type = "world") {
@@ -208,16 +176,19 @@ export function generateBuildPlan(prompt = "", type = "world") {
     music: "scène, synchronisation audio, public, droits et diffusion",
     shop: "catalogue, parcours, confiance, paiement et service après-vente",
   }[type] || "expérience, progression et qualité mobile";
-
   const seed = brief || "Construire une expérience Nosbloc claire, mobile et communautaire.";
   return [
     { id: "vision", category: "Vision", title: "Définir la promesse jouable", detail: `${seed} Priorité : ${focus}.`, priority: "P0", done: false },
     { id: "prototype", category: "Prototype", title: "Livrer une boucle de 5 minutes", detail: "Un joueur comprend, agit, reçoit un retour et peut recommencer sans tutoriel interminable.", priority: "P0", done: false },
     { id: "mobile", category: "Mobile", title: "Valider tactile et performances", detail: "Contrôles au pouce, texte lisible, chargement progressif et budget graphique mesuré.", priority: "P0", done: false },
     { id: "safety", category: "Confiance", title: "Activer 3B Trust", detail: "Permissions minimales, signalement, anti-bot, modération et journal des changements.", priority: "P0", done: false },
-    { id: "economy", category: "Économie", title: "Monétiser sans pay-to-win", detail: "Cosmétiques, extensions utiles et prix visibles. Chaque revenu garde sa trace comptable.", priority: "P1", done: false },
+    { id: "economy", category: "Économie", title: "Monétiser sans pay-to-win", detail: "Prix visibles, droits clairs et trace comptable de chaque revenu.", priority: "P1", done: false },
     { id: "measure", category: "Qualité", title: "Mesurer la vraie valeur", detail: "Temps actif, retour J+1/J+7, stabilité, invitations qualifiées et satisfaction.", priority: "P1", done: false },
   ];
+}
+
+export function createActivity(type, title, detail = "", metadata = {}) {
+  return { id: globalThis.crypto?.randomUUID?.() || `activity-${Date.now()}-${Math.random()}`, type, title: String(title).slice(0, 120), detail: String(detail).slice(0, 240), metadata, createdAt: nowIso(), read: false };
 }
 
 export function createEmptyState(profile = {}) {
@@ -229,9 +200,12 @@ export function createEmptyState(profile = {}) {
       verification: "non_demandee",
       payoutStatus: "verrouille",
       trustScore: 100,
+      studioMode: "simple",
     },
     projects: [],
     marketplace: [],
+    activity: [],
+    wallet: { real: { availableCents: 0, pendingCents: 0, payoutCents: 0, currency: "EUR" }, coins: { balance: 0 } },
     updatedAt: nowIso(),
   };
 }
@@ -239,31 +213,35 @@ export function createEmptyState(profile = {}) {
 export function normalizeState(input, profile = {}) {
   const fallback = createEmptyState(profile);
   if (!input || typeof input !== "object") return fallback;
-  const projects = Array.isArray(input.projects)
-    ? input.projects
-      .filter(project => project && typeof project === "object")
-      .slice(0, 40)
-      .map(project => ({
-        ...project,
-        rights: {
-          coreOwned: false,
-          thirdPartyLicensed: false,
-          ageRatingReviewed: false,
-          ...(project.rights || {}),
-        },
-        splits: normalizeSplits(project.splits),
-        versions: Array.isArray(project.versions) ? project.versions.slice(-20) : [],
-        reviewVersionId: project.reviewVersionId || null,
-        restoredFromVersionId: project.restoredFromVersionId || null,
-      }))
-    : [];
+  const projects = Array.isArray(input.projects) ? input.projects.filter(project => project && typeof project === "object").slice(0, 80).map(project => ({
+    ...project,
+    status: PROJECT_STATUSES.includes(project.status) ? project.status : "draft",
+    visibility: project.visibility === "public" ? "public" : "private",
+    creationMode: ["ai", "template", "blank", "import"].includes(project.creationMode) ? project.creationMode : "template",
+    rights: { coreOwned: false, thirdPartyLicensed: false, ageRatingReviewed: false, ...(project.rights || {}) },
+    safety: { moderation: true, cosmeticFirst: true, ageGate: "Tout public", ...(project.safety || {}) },
+    platforms: { mobile: true, web: true, pc: false, ...(project.platforms || {}) },
+    splits: normalizeSplits(project.splits),
+    versions: Array.isArray(project.versions) ? project.versions.slice(-40) : [],
+    reviewVersionId: project.reviewVersionId || null,
+    productionVersionId: project.productionVersionId || null,
+    restoredFromVersionId: project.restoredFromVersionId || null,
+    lastTestedAt: project.lastTestedAt || null,
+    lastPublishedAt: project.lastPublishedAt || null,
+    stats: { players: 0, retention7: 0, sessionMinutes: 0, trustScore: 100, revenueCents: 0, ...(project.stats || {}) },
+  })) : [];
   return {
     ...fallback,
     ...input,
     version: NOSBLOC_STORAGE_VERSION,
     profile: { ...fallback.profile, ...(input.profile || {}) },
     projects,
-    marketplace: Array.isArray(input.marketplace) ? input.marketplace.slice(0, 200) : [],
+    marketplace: Array.isArray(input.marketplace) ? input.marketplace.slice(0, 500) : [],
+    activity: Array.isArray(input.activity) ? input.activity.slice(-250) : [],
+    wallet: {
+      real: { ...fallback.wallet.real, ...(input.wallet?.real || {}) },
+      coins: { ...fallback.wallet.coins, ...(input.wallet?.coins || {}) },
+    },
     updatedAt: String(input.updatedAt || nowIso()),
   };
 }
