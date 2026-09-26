@@ -8,6 +8,7 @@ import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {SPORTS} from '../../supabase/functions/ecosystem/sports.js';
 import {H24_CHANNELS,SPORT_FINALS,isTrustedSportEmbed,isTrustedSportShellOrigin,mediaSources,sportPlayerShellUrl} from './media-catalog.js';
+import {SPORT_SOURCE_HEALTH_URL,sourceHealthIsFresh,sourceIsWatchdogDisabled} from './source-health.js';
 import './sport.css';
 
 const SECTIONS=[
@@ -86,6 +87,15 @@ function sportToken(){
  return('3b'+Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g,'');
 }
 
+function cachedSportSourceHealth(){
+ try{
+  const value=JSON.parse(localStorage.getItem('3b-sport-source-health')||'null');
+  return sourceHealthIsFresh(value)?value:null;
+ }catch{
+  return null;
+ }
+}
+
 function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
  const iframeRef=useRef(null);
  const failureRef=useRef(new Map());
@@ -100,6 +110,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
  const[epoch,setEpoch]=useState(0);
  const[playerState,setPlayerState]=useState('idle');
  const[statusMessage,setStatusMessage]=useState('');
+ const[sourceHealth,setSourceHealth]=useState(cachedSportSourceHealth);
  const[online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine!==false);
  const[visible,setVisible]=useState(()=>typeof document==='undefined'||document.visibilityState!=='hidden');
  const source=sources[sourceIndex]||sources[0]||null;
@@ -116,8 +127,10 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
   if(!candidate)return;
   try{sessionStorage.removeItem(resumeKey(candidate));}catch{}
  }
+ function remotelyDisabled(candidate){return sourceIsWatchdogDisabled(sourceHealth,candidate);}
  function blockedUntil(candidate){
   if(!candidate)return 0;
+  if(remotelyDisabled(candidate))return Number.MAX_SAFE_INTEGER;
   const key=item.id+':'+candidate.id;
   let until=failureRef.current.get(key)||0;
   try{until=Math.max(until,Number(sessionStorage.getItem('3b-sport-block:'+key))||0);}catch{}
@@ -168,6 +181,43 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
   setStatusMessage('');
   readyRef.current=false;
  },[item?.id,isH24,sources]);
+
+ useEffect(()=>{
+  if(!online)return;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),4500);
+  fetch(SPORT_SOURCE_HEALTH_URL,{cache:'no-store',signal:controller.signal})
+   .then(response=>response.ok?response.json():Promise.reject(new Error('health')))
+   .then(manifest=>{
+    if(!sourceHealthIsFresh(manifest))return;
+    setSourceHealth(manifest);
+    try{localStorage.setItem('3b-sport-source-health',JSON.stringify(manifest));}catch{}
+   })
+   .catch(()=>{})
+   .finally(()=>clearTimeout(timer));
+  return()=>{clearTimeout(timer);controller.abort();};
+ },[online]);
+
+ useEffect(()=>{
+  if(!sourceHealth||!source||!remotelyDisabled(source))return;
+  const now=Date.now();
+  const replacement=sources.findIndex((candidate,index)=>index!==sourceIndex&&!remotelyDisabled(candidate)&&blockedUntil(candidate)<=now);
+  if(replacement>=0){
+   setSourceIndex(replacement);
+   readyRef.current=false;
+   setEpoch(value=>value+1);
+   setPlayerState('recovering');
+   setStatusMessage('Watchdog 3B · source retirée remplacée automatiquement.');
+   return;
+  }
+  if(isH24){
+   setStatusMessage('Watchdog 3B · chaîne suivante sélectionnée automatiquement.');
+   onNext();
+  }else{
+   setPlayerState('unavailable');
+   setStatusMessage('Watchdog 3B · aucune source validée disponible pour cette finale.');
+  }
+ },[sourceHealth,item?.id,sourceIndex]);
 
  useEffect(()=>{
   const goOnline=()=>{
