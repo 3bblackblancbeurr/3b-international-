@@ -37,6 +37,6 @@ test('package exposes install status and removal commands for autostart',()=>{
 test('mobile Command OS surfaces whether the paired PC starts automatically',()=>{
  const page=read('src/control/ControlCenterPage.jsx');
  assert.match(page,/capabilities\?\.autostart/);
- assert.match(page,/démarrage automatique du 3B Control Agent à activer/i);
+ assert.match(page,/3B Control Agent à activer sur le PC/);
  assert.match(page,/démarrage auto/);
 });
