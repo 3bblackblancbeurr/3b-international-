@@ -127,3 +127,46 @@ Gates avant fusion :
 9. vérification compte propriétaire vs compte non propriétaire.
 
 Tant que les gates réelles ne sont pas validées, la V2 ne doit pas être déclarée « finie à 100 % ».
+
+
+## Extension premium finalisée dans la PR #323
+
+La même branche a ensuite été durcie sans ajouter de source fictive :
+
+- Command Palette utilisable même lorsque le PC est hors ligne ;
+- raccourci desktop `Ctrl/Cmd + K` ;
+- polling Control Center avec backoff progressif jusqu’à 60 s en cas d’échec ;
+- réveil immédiat à la reconnexion réseau ;
+- conservation du dernier état production connu lorsque le client local perd Internet ;
+- requêtes GitHub secondaires isolées pour qu’un endpoint optionnel en panne ne casse pas tout le Dev Center ;
+- fréquence GitHub portée à 10 minutes pour limiter la consommation API ;
+- Dev Center réel : main, dernier commit, CI, nombre réel de PR ouvertes et déploiement GitHub public lorsqu’il existe ;
+- App Health réel : réseau, latence Control API, PWA/standalone, Service Worker, quota/usage de stockage et persistance lorsque le navigateur les expose ;
+- Security Center : autorisation serveur, taille de l’allowlist réellement chargée, événements d’audit et appareils actifs ;
+- Centre d’attention : alertes dédupliquées, priorisées et regroupées par urgence ;
+- annulation des commandes PC encore en attente ;
+- Projects Center : registre des projets sans faux pourcentage ; les jalons non connectés restent explicitement indiqués comme tels ;
+- réglages locaux : Privacy Mode, Focus, vue compacte et réduction locale des mouvements ;
+- préférences non sensibles conservées localement ; aucune permission serveur n’en dépend ;
+- Error Boundary par gros module : une panne d’un panneau ne fait pas tomber tout Command OS ;
+- Radar tactile : toucher une barre affiche sa valeur exacte, sans dépendre du survol ;
+- cible tactile minimale renforcée sur appareils à pointeur grossier ;
+- Command OS reste lazy-loaded depuis `App.jsx`.
+
+### Sources toujours non connectées
+
+Les domaines suivants restent volontairement sans données applicatives simulées :
+
+- Gmail / e-mail ;
+- Instagram, TikTok, YouTube et autres réseaux ;
+- banque / finances ;
+- Google Agenda / calendrier ;
+- API Vercel complète ;
+- 3B IA Command avec modèle réellement connecté ;
+- jalons projet individuels mesurés automatiquement.
+
+Leur présence dans le Nexus sert à montrer l’état d’intégration, pas à fabriquer un tableau de bord fictif.
+
+### Règle de vérité offline
+
+Une coupure Internet du téléphone ou de l’ordinateur client ne transforme plus automatiquement la production 3B en « panne ». Le cockpit conserve le dernier signal serveur valide et distingue la panne locale de l’indisponibilité réellement observée d’un service distant.
