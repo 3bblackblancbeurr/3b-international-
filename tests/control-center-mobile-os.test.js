@@ -4,20 +4,42 @@ import {readFileSync} from 'node:fs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
-test('Command OS is phone-first and keeps the owner-only command surface',()=>{
+test('Command OS stays mobile-first while remaining responsive for the owner on desktop',()=>{
  const page=read('src/control/ControlCenterPage.jsx');
  const css=read('src/control/control-center.css');
  const app=read('src/App.jsx');
  assert.match(page,/3B COMMAND OS/);
- assert.match(page,/Version téléphone uniquement/);
  assert.match(page,/isPhoneClient/);
+ assert.match(page,/OWNER · MOBILE FIRST/);
+ assert.match(page,/OWNER · DESKTOP/);
+ assert.doesNotMatch(page,/Version téléphone uniquement/);
  assert.match(page,/controlCenterRequest\('status'\)/);
  assert.match(page,/api\.github\.com\/repos\/3bblackblancbeurr\/3b-international-/);
  assert.match(page,/control-dock/);
+ assert.match(page,/is-desktop/);
  assert.match(css,/@keyframes controlOrbit/);
  assert.match(css,/prefers-reduced-motion/);
+ assert.match(css,/\.control-page\.is-desktop/);
+ assert.match(css,/@media \(pointer:coarse\)/);
  assert.match(app,/\['world3b','arena','game','control'\]/);
  assert.match(app,/passportAllowed = new Set\(\["home", "passport", "member", "religion", "control"\]\)/);
+});
+
+test('Command OS V2 exposes a truthful Nexus, privacy mode and fact-only brief',()=>{
+ const page=read('src/control/ControlCenterPage.jsx');
+ const nexus=read('src/control/CommandNexus.jsx');
+ assert.match(page,/import CommandNexus/);
+ assert.match(page,/<CommandNexus/);
+ assert.match(page,/privacyMode/);
+ assert.match(page,/healthy.*known/s);
+ assert.doesNotMatch(page,/État global.*pour cent/);
+ assert.match(nexus,/COMMAND BRIEF/);
+ assert.match(nexus,/Nexus 3B/);
+ assert.match(nexus,/Non connecté/);
+ assert.match(nexus,/Aucune source financière connectée/);
+ assert.match(nexus,/Aucun compte e-mail connecté/);
+ assert.match(nexus,/Aucune donnée simulée/);
+ assert.match(nexus,/API Vercel non connectée/);
 });
 
 test('Control Center status exposes audited live events',()=>{
@@ -35,8 +57,7 @@ test('PC agent publishes runtime telemetry without arbitrary shell execution',()
  assert.doesNotMatch(agent,/shell\s*:\s*true/);
 });
 
-
-test('traffic intelligence is removed from Passport and lives in owner mobile Command OS',()=>{
+test('traffic intelligence is removed from Passport and lives in owner Command OS',()=>{
  const app=read('src/App.jsx');
  const page=read('src/control/ControlCenterPage.jsx');
  const traffic=read('src/components/DirectorTraffic.jsx');
