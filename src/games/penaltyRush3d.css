@@ -115,15 +115,9 @@
   68%{opacity:.96}
   100%{opacity:0;transform:translate(-50%,-54%) scale(.94)}
 }
-.penalty-match[data-role="keeper"] .penalty-pitch-3d::before{
-  content:"CAGE ENTIÈRE · CAMÉRA GARDIEN";display:block;position:absolute;z-index:25;left:50%;top:86px;
-  transform:translateX(-50%);padding:5px 9px;border:1px solid #71d6ef35;border-radius:99px;
-  background:#031015a8;color:#82d8ef;font-size:6px;font-weight:900;letter-spacing:.13em;pointer-events:none
-}
 @media(max-width:720px){
   .penalty-impact-word{min-width:min(78vw,360px);padding:14px 18px}
   .penalty-impact-word span{font-size:7px}
-  .penalty-match[data-role="keeper"] .penalty-pitch-3d::before{top:72px}
 }
 @media(prefers-reduced-motion:reduce){
   .penalty-impact-word{animation-duration:.35s}
@@ -317,4 +311,32 @@
 @media(prefers-reduced-motion:reduce){
   .penalty-pitch-3d .penalty-touch-left span{transition:none}
   .penalty-pitch-3d .penalty-touch-left[data-technique]::after{animation:none;opacity:1}
+}
+
+
+/* 2026-09-26 — V7 desktop natif + vue gardien sans filtre artificiel */
+.penalty-match[data-role="keeper"] .penalty-pitch-3d::after{display:none}
+.penalty-pitch-3d[data-input="desktop"]{cursor:crosshair}
+.penalty-pc-reticle{
+  position:absolute;z-index:27;left:var(--pc-aim-x,50%);top:var(--pc-aim-y,45%);
+  width:24px;height:24px;transform:translate(-50%,-50%);border:1px solid #f2d47dcc;border-radius:50%;
+  box-shadow:0 0 18px #e1c26b55,inset 0 0 10px #63d8f233;pointer-events:none
+}
+.penalty-pc-reticle::before,.penalty-pc-reticle::after{
+  content:"";position:absolute;left:50%;top:50%;background:#dff7fbcc;transform:translate(-50%,-50%);box-shadow:0 0 7px #66d8f2
+}
+.penalty-pc-reticle::before{width:34px;height:1px}.penalty-pc-reticle::after{width:1px;height:34px}
+.penalty-pitch-3d[data-pc-charging="true"] .penalty-pc-reticle{
+  transform:translate(-50%,-50%) scale(1.16);border-color:#fff0a8;box-shadow:0 0 28px #e8c96f88,inset 0 0 14px #5dd8f244
+}
+.penalty-pc-controls{
+  position:absolute;z-index:29;left:50%;bottom:14px;transform:translateX(-50%);max-width:min(92%,820px);
+  padding:7px 12px;border:1px solid #ffffff16;border-radius:999px;background:#020708c9;backdrop-filter:blur(8px);
+  color:#aac6cc;font-size:7px;font-weight:900;letter-spacing:.08em;text-align:center;pointer-events:none;white-space:nowrap
+}
+@media(pointer:coarse){
+  .penalty-pc-reticle,.penalty-pc-controls{display:none}
+}
+@media(max-width:900px){
+  .penalty-pc-controls{white-space:normal}
 }

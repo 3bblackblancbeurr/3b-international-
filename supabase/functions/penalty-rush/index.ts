@@ -670,7 +670,7 @@ async function insertRoom(uid:string, profile:any, mode:string) {
 
 function resetPossession(state:any, at:number) {
   if (!state || state.status !== 'playing') return state;
-  state.positions = { attacker:{x:0,y:0}, keeper:{y:0} };
+  state.positions = { attacker:{x:0,y:0}, keeper:{x:0,y:0} };
   state.keeperIntent = { type:'hold', direction:0, intensity:0, at };
   state.keeperEffect = null;
   state.sprintUntil = 0;
@@ -686,7 +686,7 @@ function resetPossession(state:any, at:number) {
 function createServerMatch(players:Player[]) {
   const at = nowMs();
   const state:any = createPenaltyMatch(players.map((player) => ({ id:player.uid, name:player.name })), at);
-  state.positions = { attacker:{x:0,y:0}, keeper:{y:0} };
+  state.positions = { attacker:{x:0,y:0}, keeper:{x:0,y:0} };
   state.keeperIntent = { type:'hold', direction:0, intensity:0, at };
   state.keeperEffect = null;
   state.keeperEnergy = [100,100];
@@ -874,21 +874,32 @@ async function processInput(room:Room, uid:string, input:any) {
   if (['dive','high-claim','close-angle','hold'].includes(type)) {
     if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut déclencher ce geste.');
     const direction = safeDirection(input?.direction);
+    const forward = safeDirection(input?.forward);
     const intensity = safeIntensity(input?.intensity);
     const dt = clamp((at - number(state.lastKeeperMoveAt, at)) / 1000, 0, .12);
-    state.keeperIntent = { type, direction, intensity, at };
+    state.keeperIntent = { type, direction, forward, intensity, at };
 
     if (type === 'hold') {
-      const lateralSpeed = 2.6 + intensity * 2.1;
+      const lateralSpeed = 2.15 + intensity * .9;
+      const depthSpeed = .72 + intensity * .78;
       state.positions.keeper.y = clamp(
         number(state.positions.keeper.y) + direction * lateralSpeed * dt,
         -.95, .95,
+      );
+      state.positions.keeper.x = clamp(
+        number(state.positions.keeper.x) + forward * depthSpeed * dt,
+        0, .82,
       );
     } else {
       state.positions.keeper.y = clamp(
         number(state.positions.keeper.y) + direction * (.035 + intensity * .055),
         -.95, .95,
       );
+      if (type === 'close-angle') {
+        state.positions.keeper.x = clamp(number(state.positions.keeper.x) + .08 + intensity * .08, 0, .82);
+      } else if (type === 'high-claim') {
+        state.positions.keeper.x = clamp(number(state.positions.keeper.x) + intensity * .045, 0, .82);
+      }
     }
 
     state.lastKeeperMoveAt = at;
@@ -897,7 +908,7 @@ async function processInput(room:Room, uid:string, input:any) {
       text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en déplacement.',
       visual:{ at, type, direction, intensity },
     };
-    return await commitRoom(room, {state}, uid, 'keeper', {type, y:state.positions.keeper.y});
+    return await commitRoom(room, {state}, uid, 'keeper', {type, x:state.positions.keeper.x, y:state.positions.keeper.y});
   }
 
   if (type === 'power') {
@@ -943,6 +954,7 @@ async function processInput(room:Room, uid:string, input:any) {
     const result = resolveShot({
       shot,
       keeperX:number(state.positions?.keeper?.y),
+      keeperDepth:number(state.positions?.keeper?.x),
       keeperGesture:intent,
       keeperEffect,
       attackerFlow:flowBeforeShot,
