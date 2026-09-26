@@ -16,6 +16,7 @@ import ProjectsCenterPanel from './ProjectsCenterPanel.jsx';
 import CommandSettingsPanel from './CommandSettingsPanel.jsx';
 import DailyBriefPanel from './DailyBriefPanel.jsx';
 import IntegrationCenterPanel from './IntegrationCenterPanel.jsx';
+import AICommandPanel from './AICommandPanel.jsx';
 import CommandSearchResults from './CommandSearchResults.jsx';
 import './control-center.css';
 
@@ -47,6 +48,7 @@ const NAVIGATION_COMMANDS=[
  {re:/\b(nexus|services?|connexions?)\b/i,target:'cc-nexus',feedback:'Nexus 3B ouvert.'},
  {re:/\b(brief|résumé|resume|journée|journee|aujourd'hui|aujourdhui)\b/i,target:'cc-brief',feedback:'Brief du jour ouvert.'},
  {re:/\b(intégrations?|integrations?|connecteurs?|oauth|gmail|vercel api)\b/i,target:'cc-integrations',feedback:'Centre d’intégrations ouvert.'},
+ {re:/\b(ia command|3b ia|assistant ia|intelligence artificielle)\b/i,target:'cc-ai',feedback:'3B IA Command ouvert.'},
  {re:/\b(dev|développement|developpement|commit|ci|pull request|pr ouvertes?|déploiement|deploiement)\b/i,target:'cc-dev',feedback:'Dev Center ouvert.'},
  {re:/\b(projets?|passeport|monde du 3b|origins|nosbloc|guardians|stylcam|boutique|sport 3b)\b/i,target:'cc-projects',feedback:'Projects Center ouvert.'},
  {re:/\b(réglages?|reglages?|paramètres?|parametres?|compact|mouvements?|personnalisation)\b/i,target:'cc-settings',feedback:'Réglages Command OS ouverts.'},
@@ -592,7 +594,9 @@ export default function ControlCenterPage({goTo}){
     />
    </ModuleBoundary>}
 
-   {isVisible('integrations')&&<ModuleBoundary label="Centre d’intégrations momentanément indisponible"><IntegrationCenterPanel pulse={pulse} dataAvailable={Boolean(data)} primaryDevice={primaryDevice} primaryOnline={primaryOnline}/></ModuleBoundary>}
+   {isVisible('integrations')&&<ModuleBoundary label="Centre d’intégrations momentanément indisponible"><IntegrationCenterPanel pulse={pulse} dataAvailable={Boolean(data)} primaryDevice={primaryDevice} primaryOnline={primaryOnline} privacyMode={privacyMode}/></ModuleBoundary>}
+
+   {isVisible('ai')&&<ModuleBoundary label="3B IA Command momentanément indisponible"><AICommandPanel /></ModuleBoundary>}
 
    {isVisible('traffic')&&<ModuleBoundary label="Radar 3B momentanément indisponible"><DirectorTraffic /></ModuleBoundary>}
 
