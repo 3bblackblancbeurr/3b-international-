@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {createCommandIntegrations} from '../server/command-integrations.js';
 
 const UID='11111111-1111-4111-8111-111111111111';
@@ -144,4 +144,15 @@ test('frontend integrations keep secret-bearing values server-side',()=>{
  assert.match(server,/store:false/);
  assert.match(server,/Command OS réservé au propriétaire 3B/);
  assert.doesNotMatch(server,/Access-Control-Allow-Origin":"\*"/);
+});
+
+
+test('V4 reuses the existing Vercel catalog function and stays under the Hobby function cap',()=>{
+ const catalog=readFileSync(new URL('../api/catalog.js',import.meta.url),'utf8');
+ const vercel=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
+ const count=readdirSync(new URL('../api/',import.meta.url)).filter(name=>name.endsWith('.js')).length;
+ assert.ok(count<=12,'direct Vercel functions must stay at 12 or fewer');
+ assert.match(catalog,/createCommandIntegrations/);
+ assert.match(catalog,/route === "command-integrations"/);
+ assert.equal(vercel.rewrites.some(rule=>rule.source==='/api/command-integrations'&&rule.destination==='/api/catalog?__3b_route=command-integrations'),true);
 });
