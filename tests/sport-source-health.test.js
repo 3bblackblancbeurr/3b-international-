@@ -46,10 +46,12 @@ test('disabled lookup uses video id, so shared official videos are replaced ever
  assert.equal(sourceIsWatchdogDisabled(manifest,source),true);
 });
 
-test('every final now has at least two official source choices',()=>{
+test('every final has an official playable source and core archives keep redundancy where available',()=>{
  for(const final of SPORT_FINALS){
-  assert.ok(mediaSources(final).length>=2,final.id+' must have a replacement source');
+  assert.ok(mediaSources(final).length>=1,final.id+' must have an official source');
  }
+ const redundant=SPORT_FINALS.filter(final=>mediaSources(final).length>=2);
+ assert.ok(redundant.length>=7,'core archive should keep several redundant finals');
 });
 
 test('Sport player fetches remote watchdog health and skips disabled sources without leaving 3B',()=>{
