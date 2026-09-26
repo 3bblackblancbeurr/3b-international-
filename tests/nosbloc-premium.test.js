@@ -66,3 +66,13 @@ test("premium V2 automatically migrates the existing Nosbloc local workspace", (
   assert.match(page, /projets Nosbloc existants ont été repris automatiquement/);
   assert.match(page, /localStorage\.getItem\(legacyKey\)/);
 });
+
+
+test("Explorer includes creations, Boutique and creator profiles without enabling real payments", () => {
+  assert.match(page, /Créations/);
+  assert.match(page, /Boutique/);
+  assert.match(page, /Créateurs/);
+  assert.match(page, /ProjectPublicView/);
+  assert.match(page, /Paiement verrouillé/);
+  assert.match(page, /Aperçu public après validation/);
+});
