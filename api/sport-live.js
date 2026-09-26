@@ -91,6 +91,7 @@ async function discoverIds(key){
   videoSyndicated:'true',
   videoCategoryId:'17',
   safeSearch:'strict',
+  q:'football|soccer|basketball|rugby|tennis|handball|volleyball|hockey|badminton|boxing|judo|wrestling|cycling|athletics|swimming',
   order:'viewCount',
   maxResults:'50',
   regionCode:'FR',
