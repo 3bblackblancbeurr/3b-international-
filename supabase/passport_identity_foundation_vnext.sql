@@ -20,7 +20,7 @@ drop policy if exists passport_identity_read_own on public.passport_identities;
 create policy passport_identity_read_own
 on public.passport_identities for select
 to authenticated
-using (auth.uid() = user_id);
+using ((select auth.uid()) = user_id);
 
 create table if not exists public.passport_relying_parties (
   relying_party_id uuid primary key default gen_random_uuid(),
@@ -35,6 +35,15 @@ create table if not exists public.passport_relying_parties (
 
 alter table public.passport_relying_parties enable row level security;
 
+drop policy if exists passport_relying_parties_deny_client on public.passport_relying_parties;
+create policy passport_relying_parties_deny_client
+on public.passport_relying_parties
+as restrictive
+for all
+to authenticated
+using (false)
+with check (false);
+
 create table if not exists public.passport_identity_events (
   event_id bigint generated always as identity primary key,
   user_id uuid references auth.users(id) on delete set null,
@@ -46,6 +55,15 @@ create table if not exists public.passport_identity_events (
 );
 
 alter table public.passport_identity_events enable row level security;
+
+drop policy if exists passport_identity_events_read_own on public.passport_identity_events;
+create policy passport_identity_events_read_own
+on public.passport_identity_events for select
+to authenticated
+using ((select auth.uid()) = user_id);
+
+create index if not exists passport_identity_events_user_id_idx
+  on public.passport_identity_events(user_id, created_at desc);
 
 create index if not exists passport_identity_events_public_id_idx
   on public.passport_identity_events(passport_public_id, created_at desc);
