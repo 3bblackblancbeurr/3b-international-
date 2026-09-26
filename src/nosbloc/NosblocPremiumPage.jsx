@@ -345,7 +345,7 @@ export default function NosblocPremiumPage({ goTo }) {
 
   const revokeTeamInvite = async (project,row) => {
     try {
-      if (row.invitationId) await nosblocServer.revokeInvitation?.(row.invitationId);
+      if (row.invitationId) await nosblocServer.revokeInvitation(row.invitationId);
       updateProject(project.id,{
         splits: project.splits.map(member => member.id === row.id
           ? { ...member, status:"draft", invitationId:"", invitedAt:"", acceptedAt:"", inviteCode:"" }
@@ -353,6 +353,24 @@ export default function NosblocPremiumPage({ goTo }) {
       },"Invitation révoquée.");
     } catch (error) {
       setNotice(error?.message || "Révocation impossible.");
+    }
+  };
+
+  const decideInvitation = async (invitationId, accept) => {
+    try {
+      await nosblocServer.decideInvitation(invitationId, accept);
+      setNotice(accept ? "Invitation acceptée. Le projet apparaît maintenant dans ton espace." : "Invitation refusée.");
+    } catch (error) {
+      setNotice(error?.message || "Réponse à l’invitation impossible.");
+    }
+  };
+
+  const moderateCase = async (caseId, decision) => {
+    try {
+      await nosblocServer.moderateCase(caseId, decision, decision === "approved" ? "Validation Nosbloc" : "Corrections requises");
+      setNotice(decision === "approved" ? "Projet approuvé. Le propriétaire peut maintenant le publier." : "Projet renvoyé au créateur pour correction.");
+    } catch (error) {
+      setNotice(error?.message || "Modération impossible.");
     }
   };
 
@@ -367,6 +385,7 @@ export default function NosblocPremiumPage({ goTo }) {
           view={view}
           selected={selected}
           online={online}
+          serverStatus={nosblocServer.serverStatus}
           onBack={() => view === "studio" ? setView("home") : goTo?.("home")}
           onCreate={() => setView("create")}
         />
@@ -380,10 +399,28 @@ export default function NosblocPremiumPage({ goTo }) {
           setCityOpen={setCityOpen}
           goTo={goTo}
         />}
-        {view === "explore" && <ExploreView projects={state.projects} marketplace={state.marketplace || []} openStudio={openStudio} />}
+        {view === "explore" && <ExploreView
+          projects={state.projects}
+          remoteProjects={nosblocServer.discover.projects}
+          marketplace={nosblocServer.discover.products}
+          discoverEnabled={nosblocServer.discover.enabled}
+          openStudio={openStudio}
+        />}
         {view === "create" && <CreateView ownerName={ownerName} state={state} commit={commit} openStudio={openStudio} />}
-        {view === "activity" && <ActivityView state={state} />}
-        {view === "me" && <ProfileView state={state} account={account} setCityOpen={setCityOpen} onExport={exportArchive} onImport={() => importRef.current?.click()} />}
+        {view === "activity" && <ActivityView
+          state={state}
+          serverSnapshot={nosblocServer.snapshot}
+          onInvitationDecision={decideInvitation}
+          onModerate={moderateCase}
+        />}
+        {view === "me" && <ProfileView
+          state={state}
+          money={money}
+          serverStatus={nosblocServer.serverStatus}
+          setCityOpen={setCityOpen}
+          onExport={exportArchive}
+          onImport={() => importRef.current?.click()}
+        />}
         {view === "studio" && <StudioView
           project={selected}
           mode={studioMode}
@@ -393,9 +430,15 @@ export default function NosblocPremiumPage({ goTo }) {
           updateProject={updateProject}
           startPrivateTest={startPrivateTest}
           requestReview={requestReview}
+          publishProject={publishProject}
+          archiveProject={archiveProject}
           restoreVersion={restoreVersion}
+          inviteTeamMember={inviteTeamMember}
+          revokeTeamInvite={revokeTeamInvite}
           setView={setView}
-          account={account}
+          money={money}
+          finance={nosblocServer.finance}
+          economyActions={nosblocServer}
           setNotice={setNotice}
         />}
       </main>
