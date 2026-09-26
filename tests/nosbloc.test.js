@@ -22,6 +22,7 @@ import {
   restoreProjectVersion,
   serializeStateExport,
 } from '../src/nosbloc/versioning.js';
+import {normalizeProjectPayload, normalizeVersionStage as normalizeServerStage} from '../src/nosbloc/server-contract.js';
 
 const read = relative => readFileSync(new URL(relative, import.meta.url), 'utf8');
 const app = read('../src/App.jsx');
@@ -31,6 +32,8 @@ const home = read('../src/components/HomePage.jsx');
 const passport = read('../src/components/PassportVisual.jsx');
 const nosbloc = read('../src/nosbloc/NosblocPage.jsx');
 const css = read('../src/nosbloc/nosbloc.css');
+const serverClient = read('../src/nosbloc/server-client.js');
+const envExample = read('../.env.example');
 const sql = read('../supabase/pending/20260926011500_nosbloc_creator_economy_v1.sql');
 
 test('Nosbloc is an official routed 3B space', () => {
@@ -58,6 +61,33 @@ test('premium v2 exposes the simple five-entry mobile journey and Simple/Pro stu
   assert.match(nosbloc, /Mes créations/);
   assert.match(css, /nb2-mobile-nav/);
   assert.match(css, /max-width:820px/);
+});
+
+test('authoritative server client is gated, authenticated and environment-bound', () => {
+  assert.match(serverClient, /authClient/);
+  assert.match(serverClient, /NOSBLOC_SERVER_ENV_VALID/);
+  assert.match(serverClient, /version_private_test/);
+  assert.match(serverClient, /review_submit/);
+  assert.match(serverClient, /VITE_NOSBLOC_SERVER_SYNC/);
+  assert.doesNotMatch(serverClient, /SERVICE_ROLE|service_role/);
+  assert.match(envExample, /VITE_NOSBLOC_SERVER_SYNC=false/);
+  assert.match(envExample, /NOSBLOC_COMMERCE_ENABLED=false/);
+  assert.match(envExample, /NOSBLOC_CONNECT_ENABLED=false/);
+  assert.match(envExample, /NOSBLOC_PAYOUTS_ENABLED=false/);
+});
+
+test('server contract maps v3 rights and accepts private-test stage', () => {
+  const project = createProject({
+    title: 'Contrat serveur',
+    description: 'Projet assez détaillé pour contrôler le contrat serveur de la nouvelle version Nosbloc V2.',
+  });
+  project.rights = {coreOwned: true, thirdPartyLicensed: true, ageRatingReviewed: true};
+  const payload = normalizeProjectPayload(project);
+  assert.equal(payload.rights.contentOwned, true);
+  assert.equal(payload.rights.thirdPartyLicensed, true);
+  assert.equal(payload.rights.audienceReviewed, true);
+  assert.equal(normalizeServerStage('private_test'), 'private_test');
+  assert.throws(() => normalizeServerStage('published'));
 });
 
 test('v2 keeps real money and 3B Coins explicitly separated', () => {
