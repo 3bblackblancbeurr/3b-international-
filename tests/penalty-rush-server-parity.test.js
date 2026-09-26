@@ -30,7 +30,8 @@ test('Penalty Rush client and server engines keep the same deterministic rules',
   const context = {
     shot,
     keeperX:.1,
-    keeperGesture:{type:'dive',direction:1,intensity:.7},
+    keeperDepth:.66,
+    keeperGesture:{type:'close-angle',direction:1,intensity:.7},
     keeperEffect:{id:'anchor',reach:1.18},
     attackerFlow:62,
   };
@@ -63,8 +64,15 @@ test('Penalty Rush Edge service keeps authority and service credentials server-s
   assert.match(source,/colorsInput/);
   assert.match(source,/status=eq\.preselected/);
   assert.match(source,/countryNeededRole/);
-  assert.match(source,/needQualified/);
+  assert.match(source,/selectionScore/);
+  assert.match(source,/disciplinePenalty/);
+  assert.match(source,/recentRankedForm/);
   assert.match(source,/role_profile/);
+  assert.match(source,/passport_public_id/);
+  assert.match(source,/penalty_ranked_stats/);
+  assert.match(source,/club\.invite/);
+  assert.match(source,/internationalPhase/);
+  assert.match(source,/rankedSeasonId/);
   assert.match(source,/sleeves:/);
   assert.match(source,/socksStyle:/);
   assert.match(source,/material:/);
@@ -79,4 +87,11 @@ test('online-only client talks only to the authenticated Penalty Rush Edge endpo
   assert.match(source,/Authorization:\s*'Bearer '\s*\+\s*session\.access_token/);
   assert.match(source,/postgres_changes/);
   assert.match(source,/table\s*:\s*'penalty_rooms'/);
+});
+
+
+test('Penalty Rush server engine source stays byte-identical to client deterministic engine',()=>{
+  const clientSource=fs.readFileSync(new URL('../src/games/penaltyRush/core.js',import.meta.url),'utf8');
+  const serverSource=fs.readFileSync(new URL('../supabase/functions/penalty-rush/engine.js',import.meta.url),'utf8');
+  assert.equal(serverSource,clientSource);
 });

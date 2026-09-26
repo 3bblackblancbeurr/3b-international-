@@ -16,8 +16,12 @@ import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
 import {PointerGesture} from './touchControls.js';
+import { APPEARANCE_OPTIONS, profileCompletion, scoutingLabel } from './penaltyRush/career.js';
 import { stopPenaltyAudio, unlockPenaltyAudio } from './penaltyRush/audio.js';
-import { createTechniqueTracker, detectJoystickTechnique, shapeJoystick } from './penaltyRush/joystick.js';
+import {
+  coalescedPointerSample, createTechniqueTracker, detectJoystickTechnique, keyboardVector,
+  penaltyInputMode, pointerAim, shapeJoystick,
+} from './penaltyRush/joystick.js';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
 
@@ -203,9 +207,9 @@ export default function PenaltyRush({ onClose, onAccount }) {
               {room?.status === 'waiting'
                 ? <Lobby room={room} busy={busy} request={request} onBack={() => request('leave', { room: room.id }).catch(() => {})} />
                 : tab === 'play'
-                  ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} code={privateCode} setCode={setPrivateCode} request={request} onTraining={setTraining} />
+                  ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} snapshot={snapshot} code={privateCode} setCode={setPrivateCode} request={request} onTraining={setTraining} />
                   : tab === 'player'
-                    ? <PlayerStudio profile={profile} rating={rating} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
+                    ? <PlayerStudio profile={profile} rating={rating} snapshot={snapshot} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
                     : tab === 'club'
                       ? <ClubPanel snapshot={snapshot} profile={profile} busy={busy} request={request} />
                       : tab === 'international'
@@ -218,101 +222,157 @@ export default function PenaltyRush({ onClose, onAccount }) {
   );
 }
 
-function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTraining }) {
-  const country = countryById(profile.countryId);
+function PlayHome({ busy, profile, rating, tier, snapshot, code, setCode, request, onTraining }) {
+  const country=countryById(profile.countryId);
+  const ranked=snapshot?.ranked||{};
+  const division=ranked.division||{label:'Placement',remaining:5,progress:0};
+  const passport=snapshot?.passport||{};
+  const international=snapshot?.international||{};
+  const competitiveReady=passport.competitiveReady!==false&&profile.identityStatus!=='review';
   return (
     <div className="penalty-play-home">
-      <section className="penalty-hero">
+      <section className="penalty-hero penalty-hero-v8">
         <div className="penalty-hero-copy">
-          <span className="penalty-kicker">PLACEMENT → RYTHME → LECTURE → FEINTE → FRAPPE</span>
-          <h1>Un duel de football pensé pour deux pouces.</h1>
-          <p>15 secondes par possession. Trois attaques chacun. Puis inversion des rôles. En cas d’égalité, Duel d’Or.</p>
+          <span className="penalty-kicker">PASSEPORT → JOUEUR → CLUB → CLASSÉ → SÉLECTION</span>
+          <h1>Ta carrière 3B commence avec une seule identité.</h1>
+          <p>Entraînement libre, duels rapides, saison classée et sélection nationale partagent le même joueur, sans doublon de compte.</p>
           <div className="penalty-profile-line">
-            <span>{country.flag}</span><b>{profile.displayName}</b><small>{tier.label} · {rating.rating} Elo</small>
+            <span>{country.flag}</span><b>{profile.displayName}</b>
+            <small>{division.label} · {ranked.rating || 1000} · {tier.label}</small>
+          </div>
+          <div className="penalty-passport-chip" data-state={competitiveReady?'ready':'review'}>
+            <Shield size={14}/><span>{profile.passportLabel || snapshot?.passport?.label || 'Passeport 3B'}</span>
+            <b>{competitiveReady?'IDENTITÉ VALIDÉE':'REVUE REQUISE'}</b>
           </div>
         </div>
         <div className="penalty-hero-pitch" aria-hidden="true">
-          <span className="penalty-player-dot">10</span>
+          <span className="penalty-player-dot">{profile.shirtNumber}</span>
           <span className="penalty-ball-dot">3B</span>
           <span className="penalty-goal"><i /></span>
         </div>
       </section>
 
-      <section className="penalty-mode-grid">
+      <section className="penalty-mode-grid penalty-mode-grid-v8">
         <article>
           <span className="penalty-kicker">ENTRAÎNEMENT · SOLO</span>
-          <h2>Jouer contre l’IA</h2>
-          <p>Travaille ta frappe contre un gardien IA ou protège toute la cage face à un tireur IA. Sans classement et sans attente.</p>
-          <div className="penalty-training-actions"><button className="penalty-primary" onClick={() => onTraining('attacker')}>Jouer attaquant</button><button className="penalty-secondary" onClick={() => onTraining('keeper')}>Jouer gardien</button></div>
+          <h2>Centre d’entraînement</h2>
+          <p>Travaille attaquant et gardien contre l’IA sans toucher au classement, à la réputation ou aux sélections.</p>
+          <div className="penalty-training-actions"><button className="penalty-primary" onClick={()=>onTraining('attacker')}>Attaquant</button><button className="penalty-secondary" onClick={()=>onTraining('keeper')}>Gardien</button></div>
         </article>
         <article>
           <span className="penalty-kicker">RAPIDE · 1V1</span>
           <h2>Match immédiat</h2>
-          <p>Matchmaking sans enjeu de classement. Même gameplay, même carrière, idéal pour apprendre un adversaire réel.</p>
-          <button className="penalty-primary" disabled={busy} onClick={() => request('queue', { mode: 'quick' }).catch(() => {})}><Play size={17} /> Trouver un joueur</button>
+          <p>Un duel réel sans enjeu de division. Idéal pour tester un archétype, une technique ou un nouveau réglage.</p>
+          <button className="penalty-primary" disabled={busy} onClick={()=>request('queue',{mode:'quick'}).catch(()=>{})}><Play size={17}/> Trouver un joueur</button>
         </article>
-        <article>
-          <span className="penalty-kicker">CLASSÉ · SAISON</span>
-          <h2>Gravir le classement</h2>
-          <p>Elo, forme récente, pression et résultats alimentent ton classement national et le radar des sélections.</p>
-          <button className="penalty-primary" disabled={busy} onClick={() => request('queue', { mode: 'ranked' }).catch(() => {})}><Trophy size={17} /> Jouer classé</button>
+        <article className="penalty-ranked-card" data-ready={competitiveReady}>
+          <span className="penalty-kicker">CLASSÉ · {ranked.season?.name || 'SAISON'}</span>
+          <h2>{division.label}</h2>
+          <p>{division.id==='placement'
+            ? `${ranked.placementsRemaining ?? division.remaining ?? 5} match(s) de placement avant le rang officiel.`
+            : `${ranked.rating || 1000} points · série ${ranked.streak || 0} · meilleur ${ranked.bestRating || ranked.rating || 1000}.`}</p>
+          <div className="penalty-rank-progress" aria-hidden="true"><i style={{width:`${Math.round((division.progress ?? 0)*100)}%`}}/></div>
+          <button className="penalty-primary" disabled={busy||!competitiveReady} onClick={()=>request('queue',{mode:'ranked'}).catch(()=>{})}><Trophy size={17}/> Jouer classé</button>
+          {!competitiveReady&&<small>Le Passeport et le profil joueur doivent être validés.</small>}
         </article>
         <article>
           <span className="penalty-kicker">SALON PRIVÉ</span>
           <h2>Défier un ami</h2>
-          <p>Crée un code à six caractères, partage-le, puis joue avec les mêmes règles compétitives.</p>
+          <p>Code à six caractères. Aucun impact sur la division et aucun farm de récompenses classées.</p>
           <div className="penalty-inline-actions">
-            <button className="penalty-secondary" disabled={busy} onClick={() => request('create', {}).catch(() => {})}>Créer</button>
-            <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, '').slice(0, 6))} placeholder="CODE 3B" aria-label="Code de salon" />
-            <button className="penalty-secondary" disabled={busy || code.length !== 6} onClick={() => request('join', { code }).catch(() => {})}>Rejoindre</button>
+            <button className="penalty-secondary" disabled={busy} onClick={()=>request('create',{}).catch(()=>{})}>Créer</button>
+            <input value={code} onChange={(event)=>setCode(event.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'').slice(0,6))} placeholder="CODE 3B" aria-label="Code de salon"/>
+            <button className="penalty-secondary" disabled={busy||code.length!==6} onClick={()=>request('join',{code}).catch(()=>{})}>Rejoindre</button>
           </div>
+        </article>
+        <article className="penalty-national-card" data-selected={international.selectionStatus==='selected'}>
+          <span className="penalty-kicker">ÉQUIPE NATIONALE · {country.flag}</span>
+          <h2>{international.selectionStatus==='selected'?'Tu représentes '+country.name:'Objectif sélection'}</h2>
+          <p>{international.matchOpen
+            ? 'La fenêtre internationale est ouverte : trouve un joueur sélectionné d’un autre pays.'
+            : international.selectionStatus==='selected'
+              ? 'Convocation acceptée. Les matchs s’ouvriront pendant la fenêtre internationale active.'
+              : `Score sélection : ${Math.round(international.selectionScore || 0)} · statut ${scoutingLabel(international.scouting)}.`}</p>
+          <button className="penalty-primary" disabled={busy||!international.matchOpen} onClick={()=>request('queue',{mode:'international'}).catch(()=>{})}><Globe2 size={17}/> Jouer pour mon pays</button>
         </article>
       </section>
 
       <section className="penalty-control-principle">
-        <div><b>POUCE GAUCHE</b><span>Déplacement · changement de rythme · ralentissement naturel</span></div>
-        <div><b>POUCE DROIT</b><span>Gestes contextuels · feinte · crochet · frappe · plongeon</span></div>
-        <strong>Pas de rangée de boutons. Le terrain reste lisible.</strong>
+        <div><b>IDENTITÉ UNIQUE</b><span>Passeport 3B → joueur → club → sélection</span></div>
+        <div><b>COMPÉTITION SERVEUR</b><span>Division, résultats, recrutement et convocations validés côté serveur</span></div>
+        <strong>Les cosmétiques personnalisent ton joueur. Ils n’achètent jamais de performance.</strong>
       </section>
     </div>
   );
 }
 
-function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
-  const country = countryById(profile.countryId);
-  function patch(key, value) { setProfile((current) => ({ ...current, [key]: value })); }
-  function patchNested(key, child, value) {
-    setProfile((current) => ({ ...current, [key]: { ...current[key], [child]: value } }));
-  }
-  function togglePower(id) {
-    setProfile((current) => {
-      const has = current.keeperPowers.includes(id);
-      const next = has ? current.keeperPowers.filter((power) => power !== id) : [...current.keeperPowers, id].slice(-2);
-      return { ...current, keeperPowers: next.length ? next : current.keeperPowers };
+function PlayerStudio({ profile, rating, snapshot, setProfile, busy, onSave }) {
+  const country=countryById(profile.countryId);
+  const completion=profileCompletion(profile);
+  const passport=snapshot?.passport||{};
+  const optionMap=key=>new Map((APPEARANCE_OPTIONS[key]||[]).map(item=>[item[0],item]));
+  const skinMap=optionMap('skinTones');
+  const hairColorMap=optionMap('hairColors');
+  function patch(key,value){setProfile(current=>({...current,[key]:value}));}
+  function patchNested(key,child,value){setProfile(current=>({...current,[key]:{...current[key],[child]:value}}));}
+  function patchAppearance(child,value){setProfile(current=>({...current,appearance:{...current.appearance,[child]:value}}));}
+  function togglePower(id){
+    setProfile(current=>{
+      const has=current.keeperPowers.includes(id);
+      const next=has?current.keeperPowers.filter(power=>power!==id):[...current.keeperPowers,id].slice(-2);
+      return {...current,keeperPowers:next.length?next:current.keeperPowers};
     });
   }
+  const skin=skinMap.get(profile.appearance?.skinTone)?.[2]||'#ad7655';
+  const hair=hairColorMap.get(profile.appearance?.hairColor)?.[2]||'#2a1b13';
   return (
-    <div className="penalty-studio">
-      <section className="penalty-player-card" style={{ '--shirt': profile.kit.shirtPrimary, '--trim': profile.kit.shirtSecondary }}>
-        <div className="penalty-avatar-shirt"><span>3B</span><strong>{profile.shirtNumber}</strong><small>{profile.shirtName || '3B'}</small></div>
-        <div><span>{country.flag}</span><h2>{profile.displayName}</h2><p>{PLAYER_STYLES[profile.styleId]?.name} · {profile.clubName || 'Sans club'}</p></div>
+    <div className="penalty-studio penalty-studio-v8">
+      <section className="penalty-player-card penalty-player-card-v8" style={{'--shirt':profile.kit.shirtPrimary,'--trim':profile.kit.shirtSecondary,'--skin':skin,'--hair':hair}}>
+        <div className="penalty-avatar-preview" data-build={profile.appearance?.build||'athletic'} data-hair={profile.appearance?.hairStyle||'short'} aria-hidden="true">
+          <i className="penalty-avatar-hair"/><i className="penalty-avatar-head"/><i className="penalty-avatar-body"/><b>{profile.shirtNumber}</b>
+        </div>
+        <div>
+          <span>{country.flag} {profile.passportLabel||passport.label||'Passeport 3B'}</span>
+          <h2>{profile.displayName}</h2>
+          <p>{PLAYER_STYLES[profile.styleId]?.name} · {profile.preferredRole==='keeper'?'Gardien':profile.preferredRole==='attacker'?'Attaquant':'Polyvalent'} · niveau archétype {profile.archetypeLevel||1}</p>
+          <small>{profile.clubName||'Sans club'} · identité {profile.identityStatus==='review'?'en revue':'validée'}</small>
+        </div>
       </section>
 
-      <section className="penalty-form-grid">
-        <article>
-          <span className="penalty-kicker">IDENTITÉ</span><h3>Ton joueur</h3>
-          <label>Prénom / pseudo<input value={profile.displayName} maxLength={24} onChange={(e) => patch('displayName', e.target.value)} /></label>
-          <label>Nom sur le maillot<input value={profile.shirtName} maxLength={14} onChange={(e) => patch('shirtName', e.target.value.toUpperCase())} /></label>
-          <label>Numéro<input type="number" min="1" max="99" value={profile.shirtNumber} onChange={(e) => patch('shirtNumber', e.target.value)} /></label>
-          <label>Pays<select value={profile.countryId} disabled={(rating?.games || 0) > 0} onChange={(e) => patch('countryId', e.target.value)}>{PENALTY_COUNTRIES.map((c) => <option value={c.id} key={c.id}>{c.flag} {c.name}</option>)}</select></label>
-          {(rating?.games || 0) > 0 && <small className="penalty-field-note">Pays de carrière verrouillé après ton premier duel officiel.</small>}
-          <label>Club<span className="penalty-readonly-field">{profile.clubName || 'Sans club · rejoins-en un dans l’onglet Club'}</span></label>
+      <section className="penalty-form-grid penalty-form-grid-v8">
+        <article className="penalty-form-feature">
+          <span className="penalty-kicker">PASSEPORT 3B · IDENTITÉ SPORTIVE</span><h3>Ce qui te suit partout</h3>
+          <label>Identité officielle<span className="penalty-readonly-field">{profile.displayName}</span></label>
+          <label>Pays / sélection<span className="penalty-readonly-field">{country.flag} {country.name} · {country.value}</span></label>
+          <label>Passeport<span className="penalty-readonly-field">{profile.passportLabel||passport.label||'Passeport 3B'}</span></label>
+          <button className="penalty-copy penalty-copy-passport" type="button" disabled={!profile.passportPublicId} onClick={()=>navigator.clipboard?.writeText(profile.passportPublicId||'').catch(()=>{})}><Copy size={13}/> Copier mon ID public de recrutement</button>
+          <div className="penalty-identity-state" data-state={profile.identityStatus==='review'?'review':'ready'}>
+            <Shield size={17}/><div><b>{profile.identityStatus==='review'?'REVUE D’IDENTITÉ REQUISE':'IDENTITÉ RENFORCÉE'}</b><small>{profile.identityStatus==='review'?'Le classé et les sélections sont suspendus jusqu’à réalignement.':'Le pays et le nom officiel viennent du Passeport. Aucun UUID de connexion n’est affiché.'}</small></div>
+          </div>
+          <label>Nom sur le maillot<input value={profile.shirtName} maxLength={14} onChange={e=>patch('shirtName',e.target.value.toUpperCase())}/></label>
+          <label>Numéro<input type="number" min="1" max="99" value={profile.shirtNumber} onChange={e=>patch('shirtNumber',e.target.value)}/></label>
+          <label>Rôle préféré<select value={profile.preferredRole||'versatile'} onChange={e=>patch('preferredRole',e.target.value)}>{APPEARANCE_OPTIONS.roles.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Pied fort<select value={profile.dominantFoot||'right'} onChange={e=>patch('dominantFoot',e.target.value)}>{APPEARANCE_OPTIONS.feet.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Club<span className="penalty-readonly-field">{profile.clubName||'Sans club · recrutement dans l’onglet Club'}</span></label>
         </article>
 
-        <article>
-          <span className="penalty-kicker">STYLE DE JEU</span><h3>Un profil, aucun pay-to-win</h3>
-          <div className="penalty-style-list">{Object.values(PLAYER_STYLES).map((style) => (
-            <button type="button" key={style.id} aria-pressed={profile.styleId === style.id} onClick={() => patch('styleId', style.id)}>
+        <article className="penalty-form-feature">
+          <span className="penalty-kicker">APPARENCE</span><h3>Construis ton joueur</h3>
+          <div className="penalty-appearance-swatches"><span>Teinte de peau</span><div>{APPEARANCE_OPTIONS.skinTones.map(([id,label,color])=><button type="button" key={id} title={label} aria-label={label} aria-pressed={profile.appearance?.skinTone===id} style={{'--swatch':color}} onClick={()=>patchAppearance('skinTone',id)}/>)}</div></div>
+          <label>Coiffure<select value={profile.appearance?.hairStyle||'short'} onChange={e=>patchAppearance('hairStyle',e.target.value)}>{APPEARANCE_OPTIONS.hairStyles.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <div className="penalty-appearance-swatches"><span>Cheveux</span><div>{APPEARANCE_OPTIONS.hairColors.map(([id,label,color])=><button type="button" key={id} title={label} aria-label={label} aria-pressed={profile.appearance?.hairColor===id} style={{'--swatch':color}} onClick={()=>patchAppearance('hairColor',id)}/>)}</div></div>
+          <label>Forme du visage<select value={profile.appearance?.faceShape||'balanced'} onChange={e=>patchAppearance('faceShape',e.target.value)}>{APPEARANCE_OPTIONS.faceShapes.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Barbe<select value={profile.appearance?.facialHair||'none'} onChange={e=>patchAppearance('facialHair',e.target.value)}>{APPEARANCE_OPTIONS.facialHair.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <label>Taille visuelle <b>{profile.appearance?.heightCm||178} cm</b><input type="range" min="165" max="198" step="1" value={profile.appearance?.heightCm||178} onChange={e=>patchAppearance('heightCm',Number(e.target.value))}/></label>
+          <label>Silhouette<select value={profile.appearance?.build||'athletic'} onChange={e=>patchAppearance('build',e.target.value)}>{APPEARANCE_OPTIONS.builds.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>
+          <small className="penalty-field-note">Taille, silhouette, peau, cheveux, visage et barbe sont purement visuels. La hitbox, la vitesse, la portée et le tir restent identiques en compétition.</small>
+        </article>
+
+        <article className="penalty-form-feature">
+          <span className="penalty-kicker">ARCHÉTYPE · NIVEAU {profile.archetypeLevel||1}/50</span><h3>Ton identité de jeu</h3>
+          <p className="penalty-form-copy">L’archétype définit de petites nuances équilibrées. La progression d’archétype débloquera surtout prestige et personnalisation, jamais un achat de puissance.</p>
+          <div className="penalty-style-list">{Object.values(PLAYER_STYLES).map(style=>(
+            <button type="button" key={style.id} aria-pressed={profile.styleId===style.id} onClick={()=>patch('styleId',style.id)}>
               <b>{style.name}</b><small>{style.description}</small>
             </button>
           ))}</div>
@@ -320,174 +380,260 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
 
         <article>
           <span className="penalty-kicker">TENUE</span><h3>Couleurs & textile</h3>
-          {[
-            ['shirtPrimary', 'Maillot'],
-            ['shirtSecondary', 'Détails'],
-            ['shorts', 'Short'],
-            ['socks', 'Chaussettes'],
-          ].map(([key, label]) => <div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={label + ' ' + color} aria-pressed={profile.kit[key] === color} style={{ '--swatch': color }} onClick={() => patchNested('kit', key, color)} />)}</div></div>)}
-          <label>Motif du maillot<select value={profile.kit.pattern} onChange={(e) => patchNested('kit', 'pattern', e.target.value)}>
-            <option value="clean">Épuré</option><option value="stripe">Bandes</option><option value="split">Bicolore</option><option value="gradient">Dégradé</option><option value="matrix">Matrix discret</option>
-          </select></label>
-          <label>Manches<select value={profile.kit.sleeves || 'short'} onChange={(e) => patchNested('kit', 'sleeves', e.target.value)}>{KIT_SLEEVES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Col<select value={profile.kit.collar || 'v'} onChange={(e) => patchNested('kit', 'collar', e.target.value)}>{KIT_COLLARS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Coupe du short<select value={profile.kit.shortsCut || 'classic'} onChange={(e) => patchNested('kit', 'shortsCut', e.target.value)}>{SHORTS_CUTS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Hauteur des chaussettes<select value={profile.kit.socksStyle || 'high'} onChange={(e) => patchNested('kit', 'socksStyle', e.target.value)}>{SOCKS_STYLES.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Chaussures<select value={profile.boots.preset} onChange={(e) => patchNested('boots', 'preset', e.target.value)}>{BOOT_PRESETS.map((boot) => <option value={boot.id} key={boot.id}>{boot.name}</option>)}</select></label>
-          <label>Matière<select value={profile.boots.material || 'synthetic'} onChange={(e) => patchNested('boots', 'material', e.target.value)}>{BOOT_MATERIALS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Type de crampons<select value={profile.boots.studs || 'mixed'} onChange={(e) => patchNested('boots', 'studs', e.target.value)}>{BOOT_STUDS.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
-          <label>Signature sur la chaussure<input value={profile.boots.signature || ''} maxLength={8} placeholder="NOM / 3B" onChange={(e) => patchNested('boots', 'signature', e.target.value.toUpperCase())} /></label>
-          {[
-            ['upper', 'Chaussure'],
-            ['sole', 'Semelle'],
-            ['laces', 'Lacets'],
-          ].map(([key, label]) => <div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={label + ' ' + color} aria-pressed={profile.boots[key] === color} style={{ '--swatch': color }} onClick={() => patchNested('boots', key, color)} />)}</div></div>)}
-          <label>Célébration<select value={profile.celebration} onChange={(e) => patch('celebration', e.target.value)}>
-            <option value="calme">Calme</option><option value="crown">Couronne 3B</option><option value="respect">Respect</option><option value="matrix">Matrix</option>
-          </select></label>
-          <small className="penalty-field-note">Toutes ces options sont visuelles : aucune tenue, chaussure, matière ou signature ne donne un bonus de gameplay.</small>
+          {[['shirtPrimary','Maillot'],['shirtSecondary','Détails'],['shorts','Short'],['socks','Chaussettes']].map(([key,label])=><div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={label+' '+color} aria-pressed={profile.kit[key]===color} style={{'--swatch':color}} onClick={()=>patchNested('kit',key,color)}/>)}</div></div>)}
+          <label>Motif du maillot<select value={profile.kit.pattern} onChange={e=>patchNested('kit','pattern',e.target.value)}><option value="clean">Épuré</option><option value="stripe">Bandes</option><option value="split">Bicolore</option><option value="gradient">Dégradé</option><option value="matrix">Matrix discret</option></select></label>
+          <label>Manches<select value={profile.kit.sleeves||'short'} onChange={e=>patchNested('kit','sleeves',e.target.value)}>{KIT_SLEEVES.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Col<select value={profile.kit.collar||'v'} onChange={e=>patchNested('kit','collar',e.target.value)}>{KIT_COLLARS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Coupe du short<select value={profile.kit.shortsCut||'classic'} onChange={e=>patchNested('kit','shortsCut',e.target.value)}>{SHORTS_CUTS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Hauteur des chaussettes<select value={profile.kit.socksStyle||'high'} onChange={e=>patchNested('kit','socksStyle',e.target.value)}>{SOCKS_STYLES.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Chaussures<select value={profile.boots.preset} onChange={e=>patchNested('boots','preset',e.target.value)}>{BOOT_PRESETS.map(boot=><option value={boot.id} key={boot.id}>{boot.name}</option>)}</select></label>
+          <label>Matière<select value={profile.boots.material||'synthetic'} onChange={e=>patchNested('boots','material',e.target.value)}>{BOOT_MATERIALS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Type de crampons<select value={profile.boots.studs||'mixed'} onChange={e=>patchNested('boots','studs',e.target.value)}>{BOOT_STUDS.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
+          <label>Signature sur la chaussure<input value={profile.boots.signature||''} maxLength={8} placeholder="NOM / 3B" onChange={e=>patchNested('boots','signature',e.target.value.toUpperCase())}/></label>
+          {[['upper','Chaussure'],['sole','Semelle'],['laces','Lacets']].map(([key,label])=><div className="penalty-color-row" key={key}><span>{label}</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={label+' '+color} aria-pressed={profile.boots[key]===color} style={{'--swatch':color}} onClick={()=>patchNested('boots',key,color)}/>)}</div></div>)}
+          <label>Célébration<select value={profile.celebration} onChange={e=>patch('celebration',e.target.value)}><option value="calme">Calme</option><option value="crown">Couronne 3B</option><option value="respect">Respect</option><option value="matrix">Matrix</option></select></label>
         </article>
 
         <article>
           <span className="penalty-kicker">GARDIEN</span><h3>Deux pouvoirs maximum</h3>
-          <div className="penalty-power-list">{Object.values(KEEPER_POWERS).map((power) => (
-            <button type="button" key={power.id} aria-pressed={profile.keeperPowers.includes(power.id)} onClick={() => togglePower(power.id)}>
+          <div className="penalty-power-list">{Object.values(KEEPER_POWERS).map(power=>(
+            <button type="button" key={power.id} aria-pressed={profile.keeperPowers.includes(power.id)} onClick={()=>togglePower(power.id)}>
               <i>{powerIcon(power.id)}</i><span><b>{power.name}</b><small>{power.description}</small><em>{power.drawback}</em></span>
             </button>
           ))}</div>
         </article>
       </section>
-      <button className="penalty-primary penalty-save" disabled={busy || profile.keeperPowers.length !== 2} onClick={onSave}>Enregistrer mon joueur</button>
+      {!completion.ready&&<div className="penalty-notice">Profil incomplet : {completion.missing.join(', ')}.</div>}
+      <button className="penalty-primary penalty-save" disabled={busy||profile.keeperPowers.length!==2||!completion.ready||profile.identityStatus==='review'} onClick={onSave}>Enregistrer mon joueur</button>
     </div>
   );
 }
 
 function ClubPanel({ snapshot, profile, busy, request }) {
-  const club = snapshot?.club;
-  const [name, setName] = useState('');
-  const [code, setCode] = useState('');
-  const [colors, setColors] = useState({ primary:'#08090b', secondary:'#d8b35e' });
+  const club=snapshot?.club;
+  const invites=snapshot?.clubInvites||[];
+  const [name,setName]=useState('');
+  const [code,setCode]=useState('');
+  const [recruitPassport,setRecruitPassport]=useState('');
+  const [colors,setColors]=useState({primary:'#08090b',secondary:'#d8b35e'});
+  const canRecruit=club&&['owner','captain'].includes(club.role);
   return (
-    <section className="penalty-panel-page">
-      <span className="penalty-kicker">CARRIÈRE CLUB</span><h1>Gagner seul. Construire ensemble.</h1>
-      <p>Les matchs restent 1v1, mais les clubs réunissent plusieurs résultats dans des rencontres collectives. Cinq duels peuvent composer une confrontation de club.</p>
+    <section className="penalty-panel-page penalty-club-page">
+      <span className="penalty-kicker">CLUBS 3B · RECRUTEMENT</span><h1>Un effectif construit autour de vraies identités.</h1>
+      <p>Les clubs regroupent les carrières individuelles. Le recrutement passe par le Passeport public 3B : aucune adresse e-mail ni identifiant de connexion n’est partagé.</p>
+
       {club ? (
-        <div className="penalty-big-card" style={{ '--club-primary':club.colors?.primary || '#08090b', '--club-secondary':club.colors?.secondary || '#d8b35e' }}>
-          <span className="penalty-club-crest">3B</span>
-          <div className="penalty-club-summary">
-            <h2>{club.name}</h2><p>{club.role} · {club.members || 1} membre(s) · code {club.code}</p><small>Couleurs officielles du club</small>
-            <div className="penalty-club-manage">
-              <button className="penalty-copy" type="button" onClick={() => navigator.clipboard?.writeText(club.code).catch(() => {})}><Copy size={13}/> Copier le code</button>
-              {club.role === 'owner'
-                ? <button className="penalty-danger" type="button" disabled={busy} onClick={() => { if (window.confirm('Dissoudre définitivement ce club ?')) request('club.disband', {}).catch(() => {}); }}>Dissoudre</button>
-                : <button className="penalty-secondary" type="button" disabled={busy} onClick={() => { if (window.confirm('Quitter ce club ?')) request('club.leave', {}).catch(() => {}); }}>Quitter</button>}
+        <>
+          <div className="penalty-big-card penalty-club-hero" style={{'--club-primary':club.colors?.primary||'#08090b','--club-secondary':club.colors?.secondary||'#d8b35e'}}>
+            <span className="penalty-club-crest">3B</span>
+            <div className="penalty-club-summary">
+              <span className="penalty-kicker">{club.role==='owner'?'FONDATEUR':club.role==='captain'?'CAPITAINE':'MEMBRE'}</span>
+              <h2>{club.name}</h2>
+              <p>{club.members||1} membre(s) · code privé {club.code}</p>
+              <div className="penalty-club-manage">
+                <button className="penalty-copy" type="button" onClick={()=>navigator.clipboard?.writeText(club.code).catch(()=>{})}><Copy size={13}/> Copier le code</button>
+                {club.role==='owner'
+                  ? <button className="penalty-danger" type="button" disabled={busy} onClick={()=>{if(window.confirm('Dissoudre définitivement ce club ?'))request('club.disband',{}).catch(()=>{});}}>Dissoudre</button>
+                  : <button className="penalty-secondary" type="button" disabled={busy} onClick={()=>{if(window.confirm('Quitter ce club ?'))request('club.leave',{}).catch(()=>{});}}>Quitter</button>}
+              </div>
             </div>
           </div>
-        </div>
+
+          {canRecruit&&<article className="penalty-recruit-box">
+            <span className="penalty-kicker">CELLULE DE RECRUTEMENT</span><h3>Inviter par Passeport 3B</h3>
+            <p>Entre l’identifiant public du joueur. L’invitation expire automatiquement après 72 heures et le joueur doit l’accepter.</p>
+            <div className="penalty-inline-actions">
+              <input value={recruitPassport} placeholder="UUID public du Passeport" aria-label="Identifiant Passeport public" onChange={e=>setRecruitPassport(e.target.value.trim())}/>
+              <button className="penalty-primary" disabled={busy||recruitPassport.length<32} onClick={()=>request('club.invite',{passportPublicId:recruitPassport}).then(()=>setRecruitPassport('')).catch(()=>{})}>Envoyer l’invitation</button>
+            </div>
+          </article>}
+
+          <div className="penalty-roster">
+            <div className="penalty-section-title"><div><span className="penalty-kicker">EFFECTIF</span><h2>Vestiaire du club</h2></div><b>{club.roster?.length||0} joueurs</b></div>
+            {(club.roster||[]).map((member,index)=>(
+              <article key={member.passportPublicId||index} className="penalty-roster-row" data-self={member.isSelf}>
+                <div className="penalty-roster-number">{String(member.shirtNumber||10).padStart(2,'0')}</div>
+                <div className="penalty-roster-main">
+                  <b>{member.displayName}{member.isSelf?' · toi':''}</b>
+                  <span>{countryById(member.countryId).flag} {member.shirtName} · {PLAYER_STYLES[member.styleId]?.name||'Technicien'} · {member.preferredRole==='keeper'?'Gardien':member.preferredRole==='attacker'?'Attaquant':'Polyvalent'}</span>
+                  <small>{member.passportLabel||'Passeport 3B'} · {member.role==='owner'?'Fondateur':member.role==='captain'?'Capitaine':'Membre'}</small>
+                </div>
+                {!member.isSelf&&<div className="penalty-roster-actions">
+                  {club.role==='owner'&&member.role!=='owner'&&<button className="penalty-secondary" disabled={busy} onClick={()=>request('club.member.role',{passportPublicId:member.passportPublicId,role:member.role==='captain'?'member':'captain'}).catch(()=>{})}>{member.role==='captain'?'Retirer capitaine':'Nommer capitaine'}</button>}
+                  {canRecruit&&member.role!=='owner'&&<button className="penalty-danger" disabled={busy} onClick={()=>{if(window.confirm('Retirer ce joueur du club ?'))request('club.kick',{passportPublicId:member.passportPublicId}).catch(()=>{});}}>Retirer</button>}
+                </div>}
+              </article>
+            ))}
+          </div>
+        </>
       ) : (
-        <div className="penalty-club-actions">
-          <article>
-            <h3>Créer un club</h3>
-            <input value={name} maxLength={40} placeholder="Nom du club" onChange={(e) => setName(e.target.value)} />
-            <div className="penalty-color-row"><span>Principale</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={'Couleur principale ' + color} aria-pressed={colors.primary === color} style={{ '--swatch':color }} onClick={() => setColors((current) => ({ ...current, primary:color }))} />)}</div></div>
-            <div className="penalty-color-row"><span>Secondaire</span><div>{SHIRT_COLORS.map((color) => <button key={color} type="button" aria-label={'Couleur secondaire ' + color} aria-pressed={colors.secondary === color} style={{ '--swatch':color }} onClick={() => setColors((current) => ({ ...current, secondary:color }))} />)}</div></div>
-            <button className="penalty-primary" disabled={busy || name.trim().length < 3 || colors.primary === colors.secondary} onClick={() => request('club.create', { name, colors }).catch(() => {})}>Créer mon club</button>
-          </article>
-          <article><h3>Rejoindre un club</h3><input value={code} maxLength={6} placeholder="CODE" onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, '').slice(0, 6))} /><button className="penalty-secondary" disabled={busy || code.trim().length !== 6} onClick={() => request('club.join', { code }).catch(() => {})}>Rejoindre</button></article>
-        </div>
+        <>
+          {invites.length>0&&<div className="penalty-invite-list">
+            <span className="penalty-kicker">INVITATIONS REÇUES</span>
+            {invites.map(invite=><article key={invite.id}>
+              <div><b>{invite.club?.name||'Club 3B'}</b><small>Expire {invite.expiresAt?new Date(invite.expiresAt).toLocaleString('fr-FR'):'bientôt'}</small></div>
+              <div className="penalty-inline-actions">
+                <button className="penalty-primary" disabled={busy} onClick={()=>request('club.invite.respond',{inviteId:invite.id,decision:'accept'}).catch(()=>{})}>Accepter</button>
+                <button className="penalty-secondary" disabled={busy} onClick={()=>request('club.invite.respond',{inviteId:invite.id,decision:'decline'}).catch(()=>{})}>Refuser</button>
+              </div>
+            </article>)}
+          </div>}
+          <div className="penalty-club-actions">
+            <article>
+              <span className="penalty-kicker">FONDER</span><h3>Créer un club</h3>
+              <input value={name} maxLength={40} placeholder="Nom du club" onChange={e=>setName(e.target.value)}/>
+              <div className="penalty-color-row"><span>Principale</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={'Couleur principale '+color} aria-pressed={colors.primary===color} style={{'--swatch':color}} onClick={()=>setColors(current=>({...current,primary:color}))}/>)}</div></div>
+              <div className="penalty-color-row"><span>Secondaire</span><div>{SHIRT_COLORS.map(color=><button key={color} type="button" aria-label={'Couleur secondaire '+color} aria-pressed={colors.secondary===color} style={{'--swatch':color}} onClick={()=>setColors(current=>({...current,secondary:color}))}/>)}</div></div>
+              <button className="penalty-primary" disabled={busy||name.trim().length<3||colors.primary===colors.secondary} onClick={()=>request('club.create',{name,colors}).catch(()=>{})}>Créer mon club</button>
+            </article>
+            <article>
+              <span className="penalty-kicker">CODE PRIVÉ</span><h3>Rejoindre directement</h3>
+              <p>Le code reste une solution rapide entre amis. Le recrutement officiel utilise une invitation Passeport.</p>
+              <input value={code} maxLength={6} placeholder="CODE" onChange={e=>setCode(e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'').slice(0,6))}/>
+              <button className="penalty-secondary" disabled={busy||code.trim().length!==6} onClick={()=>request('club.join',{code}).catch(()=>{})}>Rejoindre</button>
+            </article>
+          </div>
+        </>
       )}
-      <div className="penalty-rule-note">Les couleurs du club identifient l’équipe. Les vêtements, chaussures et cosmétiques ne modifient jamais vitesse, portée, puissance ou précision.</div>
+      <div className="penalty-rule-note"><b>Hiérarchie sécurisée :</b> fondateur → capitaine → membre. Les capitaines peuvent recruter et gérer des membres, mais seul le fondateur contrôle les capitaines et la dissolution.</div>
     </section>
   );
 }
 
 function InternationalPanel({ snapshot, profile, busy, request }) {
-  const country = countryById(profile.countryId);
-  const international = snapshot?.international || {};
-  const statusText = {
-    selection: 'Sélection confirmée',
-    preselection: 'Présélection',
-    declined: 'Convocation déclinée',
-    observe: 'Observé',
-    radar: 'Radar national',
-    club: 'Carrière club',
-    'non-classe': '10 matchs requis',
-  }[international.scouting] || 'Radar national';
-
-  const hasCallup = international.selectionStatus === 'preselected' && international.selectionId;
-  const selected = international.selectionStatus === 'selected';
-  const neededRoleLabel = international.neededRole === 'pression'
+  const country=countryById(profile.countryId);
+  const international=snapshot?.international||{};
+  const ranked=snapshot?.ranked||{};
+  const hasCallup=international.selectionStatus==='preselected'&&international.selectionId;
+  const accepted=international.selectionStatus==='accepted';
+  const selected=international.selectionStatus==='selected';
+  const neededRoleLabel=international.neededRole==='pression'
     ? 'Spécialiste des Duels d’Or'
-    : PLAYER_STYLES[international.neededRole]?.name || null;
-
+    : PLAYER_STYLES[international.neededRole]?.name||null;
+  const breakdown=international.scoreBreakdown||{};
+  const phaseLabel={
+    selection:'Sélection en cours',locked:'Liste verrouillée',active:'Matchs internationaux ouverts',
+    closed:'Fenêtre fermée',planned:'À venir',
+  }[international.windowStatus]||'Hors fenêtre';
   return (
-    <section className="penalty-panel-page">
-      <span className="penalty-kicker">INTERNATIONAL</span><h1>{country.flag} {country.name} peut avoir besoin de toi.</h1>
-      <p>La sélection regarde ton classement national, ta forme, tes performances sous pression et le profil recherché. Le classement seul ne garantit jamais une place.</p>
+    <section className="penalty-panel-page penalty-international-page">
+      <span className="penalty-kicker">ÉQUIPE NATIONALE · {country.flag} {country.name}</span>
+      <h1>La sélection se gagne sur des preuves, pas sur un bouton.</h1>
+      <p>Le serveur combine ta saison classée, ton rang national, ta forme récente, ta réputation, les Duels d’Or, le besoin du groupe et ta discipline. Les achats et cosmétiques ne comptent jamais.</p>
 
-      {hasCallup && (
-        <div className="penalty-callup" data-state="urgent">
-          <Globe2 size={32}/>
-          <div>
-            <b>LE PAYS A BESOIN DE TOI</b>
-            <p>{country.name} t’a présélectionné{international.windowName ? ' pour ' + international.windowName : ''}. Profil recherché : {international.roleProfile || PLAYER_STYLES[profile.styleId]?.name || 'polyvalent'}.</p>
-            <div className="penalty-inline-actions">
-              <button className="penalty-primary" disabled={busy} onClick={() => request('international.respond', { selectionId: international.selectionId, decision: 'accept' }).catch(() => {})}>Accepter la convocation</button>
-              <button className="penalty-secondary" disabled={busy} onClick={() => request('international.respond', { selectionId: international.selectionId, decision: 'decline' }).catch(() => {})}>Décliner</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selected && (
-        <div className="penalty-callup" data-state="selected">
-          <Globe2 size={32}/>
-          <div>
-            <b>{country.flag} SÉLECTION CONFIRMÉE</b>
-            <p>Tu représenteras {country.name}{international.windowName ? ' pendant ' + international.windowName : ''}. Le maillot de sélection remplace automatiquement la tenue club pendant les rencontres internationales, sans modifier tes chaussures ni ton identité.</p>
-          </div>
-        </div>
-      )}
-
-      <div className="penalty-international-grid">
-        <article><small>RANG NATIONAL</small><strong>{international.nationalRank ? '#' + international.nationalRank : '—'}</strong><span>{country.name}</span></article>
-        <article><small>STATUT</small><strong>{statusText}</strong><span>{international.windowLabel || 'Hors fenêtre internationale'}</span></article>
-        <article><small>PRESSION</small><strong>{Math.round((international.pressureScore || 0) * 100)} %</strong><span>Duels d’Or gagnés</span></article>
-        <article><small>SÉLECTIONS</small><strong>{international.caps || 0}</strong><span>{international.goals || 0} but(s) international(aux)</span></article>
+      <div className="penalty-selection-path" aria-label="Parcours de sélection">
+        {[
+          ['01','Placements','Terminer les matchs de placement classé.'],
+          ['02','Radar','Entrer dans les joueurs suivis du pays.'],
+          ['03','Observation','Confirmer ta forme sur plusieurs matchs.'],
+          ['04','Convocation','Recevoir une place dans la limite de l’effectif.'],
+          ['05','Sélection','Accepter la convocation pendant la fenêtre.'],
+          ['06','International','Jouer contre une autre sélection quand les matchs ouvrent.'],
+        ].map(([step,title,text])=><article key={step} data-active={
+          title==='Placements'?(ranked.placementsRemaining||0)>0:
+          title==='Convocation'?hasCallup:
+          title==='Sélection'?selected:
+          title==='International'?international.matchOpen:false
+        }><b>{step}</b><div><strong>{title}</strong><small>{text}</small></div></article>)}
       </div>
 
-      <div className="penalty-rule-note">{neededRoleLabel ? <><b>Besoin actuel de la sélection : {neededRoleLabel}.</b> {' '}Le besoin est recalculé selon les profils déjà retenus. </> : null}Parcours : radar national → observé → présélection → convocation → sélection. Une place internationale se gagne en multijoueur et ne peut pas être achetée.</div>
-
-      <h2>Compétitions 3B</h2>
-      <div className="penalty-competition-list">{COMPETITIONS.map((competition) => <article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
-
-      {!hasCallup && !selected && (
-        <div className="penalty-callup">
-          <Globe2 size={28}/><div><b>Le pays a besoin de toi</b><p>Lors d’une fenêtre officielle, le serveur peut te présélectionner selon ton rang, ta réputation, ta résistance à la pression et le profil dont la sélection a besoin.</p></div>
+      {hasCallup&&<div className="penalty-callup" data-state="urgent">
+        <Globe2 size={34}/><div>
+          <span className="penalty-kicker">CONVOCATION OFFICIELLE</span>
+          <b>LE PAYS A BESOIN DE TOI</b>
+          <p>{country.name} t’a présélectionné{international.windowName?' pour '+international.windowName:''}. Profil recherché : {international.roleProfile||PLAYER_STYLES[profile.styleId]?.name||'polyvalent'}.</p>
+          <div className="penalty-inline-actions">
+            <button className="penalty-primary" disabled={busy} onClick={()=>request('international.respond',{selectionId:international.selectionId,decision:'accept'}).catch(()=>{})}>Accepter</button>
+            <button className="penalty-secondary" disabled={busy} onClick={()=>request('international.respond',{selectionId:international.selectionId,decision:'decline'}).catch(()=>{})}>Décliner</button>
+          </div>
         </div>
-      )}
+      </div>}
+
+      {accepted&&<div className="penalty-callup" data-state="accepted">
+        <Globe2 size={34}/><div>
+          <span className="penalty-kicker">CONVOCATION ACCEPTÉE</span>
+          <b>TA CANDIDATURE EST DANS LA LISTE FINALE</b>
+          <p>À la fermeture des convocations, le serveur classera les joueurs acceptés selon leur score sportif. Les {country.name} retiendront l’effectif prévu sans avantage au premier qui a répondu.</p>
+        </div>
+      </div>}
+
+      {selected&&<div className="penalty-callup" data-state="selected">
+        <Globe2 size={34}/><div>
+          <span className="penalty-kicker">SÉLECTION CONFIRMÉE</span>
+          <b>{country.flag} TU REPRÉSENTES {country.name.toUpperCase()}</b>
+          <p>{international.matchOpen?'La fenêtre de matchs est ouverte. Tu peux entrer dans la file internationale.':`Ta place est enregistrée. Phase actuelle : ${phaseLabel}.`}</p>
+          <button className="penalty-primary" disabled={busy||!international.matchOpen} onClick={()=>request('queue',{mode:'international'}).catch(()=>{})}><Globe2 size={17}/> Jouer pour {country.name}</button>
+        </div>
+      </div>}
+
+      <div className="penalty-international-grid penalty-international-grid-v8">
+        <article><small>RANG NATIONAL</small><strong>{international.nationalRank?'#'+international.nationalRank:'—'}</strong><span>{ranked.placementsRemaining?ranked.placementsRemaining+' placement(s) restant(s)':country.name}</span></article>
+        <article><small>SCORE SÉLECTION</small><strong>{Math.round(international.selectionScore||0)}</strong><span>/ 100 · {scoutingLabel(international.scouting)}</span></article>
+        <article><small>FORME · 10 DERNIERS</small><strong>{Math.round((international.recentForm?.winRate||0)*100)}%</strong><span>{international.recentForm?.wins||0} victoire(s) / {international.recentForm?.matches||0}</span></article>
+        <article><small>PRESSION</small><strong>{Math.round((international.pressureScore||0)*100)}%</strong><span>Duels d’Or</span></article>
+        <article><small>SÉLECTIONS</small><strong>{international.caps||0}</strong><span>{international.goals||0} but(s) international(aux)</span></article>
+        <article><small>FENÊTRE</small><strong>{phaseLabel}</strong><span>{international.windowName||'Aucune fenêtre active'}</span></article>
+      </div>
+
+      <div className="penalty-scouting-breakdown">
+        <div className="penalty-section-title"><div><span className="penalty-kicker">POURQUOI CE SCORE ?</span><h2>Lecture du sélectionneur serveur</h2></div><b>{neededRoleLabel?'Besoin : '+neededRoleLabel:'Besoin variable'}</b></div>
+        <div className="penalty-scouting-bars">
+          {[['Niveau classé',breakdown.rating,38],['Rang national',breakdown.rank,22],['Forme',breakdown.form,14],['Réputation',breakdown.reputation,10],['Pression',breakdown.pressure,10],['Profil recherché',breakdown.role,6]].map(([label,value,max])=><div key={label}><span>{label}</span><i><b style={{width:`${Math.max(0,Math.min(100,(Number(value||0)/Number(max))*100))}%`}}/></i><strong>{Number(value||0).toFixed(1)}</strong></div>)}
+          {Number(breakdown.discipline||0)<0&&<div data-penalty="true"><span>Discipline / abandons</span><i><b style={{width:`${Math.min(100,Math.abs(Number(breakdown.discipline))*6.25)}%`}}/></i><strong>{Number(breakdown.discipline).toFixed(1)}</strong></div>}
+        </div>
+      </div>
+
+      <div className="penalty-rule-note"><b>Règle nationale :</b> le classement seul ne garantit jamais une convocation. Il faut assez de matchs, une identité Passeport valide, une place disponible dans l’effectif et un dossier sportif cohérent.</div>
+      <h2>Compétitions 3B</h2>
+      <div className="penalty-competition-list">{COMPETITIONS.map(competition=><article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
     </section>
   );
 }
+
 function CareerPanel({ snapshot, rating, tier, profile }) {
-  const career = snapshot?.career || {};
-  const history = snapshot?.history || [];
-  const country = countryById(profile.countryId);
+  const career=snapshot?.career||{};
+  const ranked=snapshot?.ranked||{};
+  const history=snapshot?.history||[];
+  const international=snapshot?.international||{};
+  const country=countryById(profile.countryId);
+  const division=ranked.division||{label:'Placement'};
+  const total=Number(ranked.wins||0)+Number(ranked.losses||0);
+  const winRate=total?Math.round(Number(ranked.wins||0)/total*100):0;
   return (
-    <section className="penalty-panel-page">
-      <span className="penalty-kicker">BIOGRAPHIE SPORTIVE</span><h1>{profile.displayName} · {tier.label}</h1>
-      <div className="penalty-career-stats">
-        <article><small>MATCHS</small><strong>{rating.games || 0}</strong></article>
-        <article><small>VICTOIRES</small><strong>{rating.wins || 0}</strong></article>
-        <article><small>ELO</small><strong>{rating.rating || 1000}</strong></article>
-        <article><small>RÉPUTATION</small><strong>{career.reputation || 0}</strong></article>
-        <article><small>BUTS</small><strong>{career.goals || 0}</strong></article>
-        <article><small>ARRÊTS</small><strong>{career.saves || 0}</strong></article>
+    <section className="penalty-panel-page penalty-career-page">
+      <span className="penalty-kicker">BIOGRAPHIE SPORTIVE · {ranked.season?.name||'CARRIÈRE'}</span>
+      <h1>{profile.displayName} · {division.label}</h1>
+      <p>{country.flag} {country.name} · {PLAYER_STYLES[profile.styleId]?.name} · {profile.clubName||'Sans club'} · archétype niveau {career.archetypeLevel||profile.archetypeLevel||1}/50.</p>
+
+      <div className="penalty-career-stats penalty-career-stats-v8">
+        <article><small>NOTE SAISON</small><strong>{ranked.rating||1000}</strong><span>{division.label}</span></article>
+        <article><small>MATCHS CLASSÉS</small><strong>{ranked.games||0}</strong><span>{ranked.placementsRemaining?ranked.placementsRemaining+' placement(s) restant(s)':'Rang officiel'}</span></article>
+        <article><small>VICTOIRES</small><strong>{ranked.wins||0}</strong><span>{winRate}% de victoire</span></article>
+        <article><small>SÉRIE</small><strong>{ranked.streak||0}</strong><span>meilleure note {ranked.bestRating||ranked.rating||1000}</span></article>
+        <article><small>RÉPUTATION</small><strong>{career.reputation||0}</strong><span>{tier.label}</span></article>
+        <article><small>ARCHÉTYPE</small><strong>{career.archetypeLevel||1}</strong><span>{career.archetypeXp||0} AXP</span></article>
+        <article><small>RANG NATIONAL</small><strong>{international.nationalRank?'#'+international.nationalRank:'—'}</strong><span>{scoutingLabel(international.scouting)}</span></article>
+        <article><small>ABANDONS</small><strong>{ranked.forfeits||0}</strong><span>impactent la sélection</span></article>
+        <article><small>BUTS CARRIÈRE</small><strong>{career.goals||0}</strong><span>tous duels officiels</span></article>
+        <article><small>ARRÊTS</small><strong>{career.saves||0}</strong><span>gardien</span></article>
       </div>
+
+      <div className="penalty-career-roadmap">
+        <span className="penalty-kicker">PROGRESSION</span>
+        <div>{[
+          ['Passeport',snapshot?.passport?.competitiveReady?'validé':'à vérifier'],
+          ['Saison',ranked.placementsRemaining?'placements':'classé'],
+          ['Club',profile.clubName||'libre'],
+          ['National',scoutingLabel(international.scouting)],
+          ['International',(international.caps||0)+' sélection(s)'],
+        ].map(([label,value])=><article key={label}><small>{label}</small><b>{value}</b></article>)}</div>
+      </div>
+
       <div className="penalty-biography">
-        <h2>Chronologie</h2>
-        {history.length ? history.slice(0, 12).map((event, index) => <div key={event.id || index}><span>{event.label || event.result || 'Match 3B'}</span><small>{event.createdAt ? new Date(event.createdAt).toLocaleDateString('fr-FR') : country.name}</small></div>) : <p>Ta première ligne s’écrira après ton premier duel multijoueur.</p>}
+        <div className="penalty-section-title"><div><span className="penalty-kicker">CHRONOLOGIE</span><h2>Mes derniers matchs</h2></div><b>{history.length} événement(s)</b></div>
+        {history.length?history.slice(0,20).map((event,index)=><div key={event.id||index} data-result={event.result}><span>{event.label||event.result||'Match 3B'}</span><small>{event.result} · {event.createdAt?new Date(event.createdAt).toLocaleString('fr-FR'):country.name}</small></div>):<p>Ta première ligne s’écrira après ton premier duel multijoueur.</p>}
       </div>
+      <div className="penalty-rule-note"><b>Progression propre :</b> AXP, réputation, division et sélection viennent de matchs réglés côté serveur. La progression d’archétype débloque du prestige ; elle ne transforme pas le joueur en pay-to-win.</div>
     </section>
   );
 }
@@ -517,6 +663,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const keeperIndex = Number.isInteger(state.keeper) ? state.keeper : 1;
   const isAttacker = selfIndex === attackerIndex;
   const isKeeper = selfIndex === keeperIndex;
+  const inputMode = useMemo(() => penaltyInputMode(), []);
+  const desktop = inputMode === 'desktop';
   const remaining = remainingPossessionSeconds(state, Date.now());
   const leftGesture = useRef(new PointerGesture());
   const rightGesture = useRef(new PointerGesture());
@@ -535,15 +683,86 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const keeperFaceTimer = useRef(0);
   const keeperFaceActive = useRef(0);
   const revisionRef = useRef(room.revision);
-  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
+  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, forward:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
   const rightPadRef = useRef(null);
+  const pitchRef = useRef(null);
+  const desktopKeys = useRef(new Set());
+  const desktopFrame = useRef(0);
+  const desktopMoving = useRef(false);
+  const desktopKeeperMoving = useRef(false);
+  const desktopAim = useRef({ x:0, y:.42 });
+  const desktopShot = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
   revisionRef.current = room.revision;
   useEffect(() => () => {
     cancelAnimationFrame(chargeFrame.current);
+    cancelAnimationFrame(desktopFrame.current);
     clearInterval(keeperFaceTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (!desktop || state.status === 'finished') return undefined;
+    const gameplayCodes = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','Space','ShiftLeft','ShiftRight']);
+    const editable = target => target instanceof HTMLElement && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName));
+    const onKeyDown = event => {
+      if (editable(event.target)) return;
+      if (gameplayCodes.has(event.code)) event.preventDefault();
+      desktopKeys.current.add(event.code);
+      if (event.repeat) return;
+      if (isAttacker) {
+        if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') sendAttackerFace('accelerate', 0, .96);
+        else if (event.code === 'KeyQ') sendAttackerFace('feint', -.9, .86);
+        else if (event.code === 'KeyE') sendAttackerFace('cut', .9, .92);
+        else if (event.code === 'Space') sendAttackerFace('rhythm', desktopAim.current.x || 1, .86);
+      } else if (isKeeper) {
+        if (event.code === 'Space') keeperFaceAction('high-claim');
+        else if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') keeperFaceAction('close-angle');
+      }
+    };
+    const onKeyUp = event => desktopKeys.current.delete(event.code);
+    const clearKeys = () => desktopKeys.current.clear();
+    window.addEventListener('keydown', onKeyDown, { passive:false });
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearKeys);
+
+    const tick = () => {
+      const input = keyboardVector(desktopKeys.current);
+      const now = performance.now();
+      if (isAttacker) {
+        controlRef.current = { ...controlRef.current, x:input.x, y:input.y, intensity:input.intensity, active:input.active };
+        if (input.active && now - moveThrottle.current >= 45) {
+          moveThrottle.current = now;
+          queueMove({ type:'move', x:input.x, y:input.y, intensity:input.intensity });
+        } else if (!input.active && desktopMoving.current) {
+          queueMove({ type:'move', x:0, y:0, intensity:0 });
+        }
+        desktopMoving.current = input.active;
+      } else if (isKeeper) {
+        const forward = -input.y;
+        controlRef.current.keeper = { direction:input.x, forward, intensity:input.intensity, active:input.active };
+        if (input.active && now - keeperMoveThrottle.current >= 45) {
+          keeperMoveThrottle.current = now;
+          queueKeeperMove({ type:'hold', direction:input.x, forward, intensity:input.intensity });
+        } else if (!input.active && desktopKeeperMoving.current) {
+          queueKeeperMove({ type:'hold', direction:0, forward:0, intensity:0 });
+        }
+        desktopKeeperMoving.current = input.active;
+      }
+      desktopFrame.current = requestAnimationFrame(tick);
+    };
+    desktopFrame.current = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(desktopFrame.current);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearKeys);
+      desktopKeys.current.clear();
+      desktopMoving.current = false;
+      desktopKeeperMoving.current = false;
+      controlRef.current = { ...controlRef.current, x:0, y:0, intensity:0, active:false, keeper:{ direction:0, forward:0, intensity:0, active:false } };
+    };
+  }, [desktop, isAttacker, isKeeper, state.status, room.id]);
 
   function flushMove() {
     if (moveInFlight.current || attackerActionInFlight.current || !pendingMove.current) return;
@@ -630,7 +849,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function resetLeftPad() {
-    controlRef.current = { ...controlRef.current, x:0, y:0, intensity:0, active:false };
+    controlRef.current = isKeeper
+      ? { ...controlRef.current, keeper:{ direction:0, forward:0, intensity:0, active:false } }
+      : { ...controlRef.current, x:0, y:0, intensity:0, active:false };
     techniqueTracker.current = createTechniqueTracker();
     const pad = leftPadRef.current;
     if (!pad) return;
@@ -652,7 +873,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function leftStart(event) {
-    if (!isAttacker || state.status === 'finished' || event.button !== 0) return;
+    if ((!isAttacker && !isKeeper) || state.status === 'finished' || event.button !== 0) return;
     if (!leftGesture.current.begin(event.pointerId, { x:event.clientX, y:event.clientY })) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
@@ -660,16 +881,10 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
   function leftMove(event) {
     const start = leftGesture.current.get(event.pointerId);
-    if (!start || !isAttacker) return;
-    const input = shapeJoystick(event.clientX - start.x, event.clientY - start.y);
-    controlRef.current = {
-      ...controlRef.current,
-      x:input.x,
-      y:input.y,
-      intensity:input.intensity,
-      active:input.active,
-    };
-
+    if (!start || (!isAttacker && !isKeeper)) return;
+    const sample = coalescedPointerSample(event) || event;
+    const radius = Math.max(68, Math.min(96, (leftPadRef.current?.clientWidth || 176) * .52));
+    const input = shapeJoystick(sample.clientX - start.x, sample.clientY - start.y, { deadZone:7, radius });
     const pad = leftPadRef.current;
     if (pad) {
       pad.style.setProperty('--stick-x', (input.x * input.visual).toFixed(1) + 'px');
@@ -678,6 +893,23 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     }
 
     const now = performance.now();
+    if (isKeeper) {
+      const forward = -input.y;
+      controlRef.current.keeper = { direction:input.x, forward, intensity:input.intensity, active:input.active };
+      if (now - keeperMoveThrottle.current >= 45) {
+        keeperMoveThrottle.current = now;
+        queueKeeperMove({ type:'hold', direction:input.x, forward, intensity:input.intensity });
+      }
+      return;
+    }
+
+    controlRef.current = {
+      ...controlRef.current,
+      x:input.x,
+      y:input.y,
+      intensity:input.intensity,
+      active:input.active,
+    };
     const technique = detectJoystickTechnique(techniqueTracker.current, input, now);
     if (technique) {
       pad?.setAttribute('data-technique', technique.label);
@@ -693,7 +925,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   function leftEnd(event) {
     if (!leftGesture.current.end(event.pointerId)) return;
     resetLeftPad();
-    queueMove({ type:'move', x:0, y:0, intensity:0 });
+    if (isKeeper) queueKeeperMove({ type:'hold', direction:0, forward:0, intensity:0 });
+    else queueMove({ type:'move', x:0, y:0, intensity:0 });
   }
 
   function rightStart(event) {
@@ -726,18 +959,19 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       keeperFinalAction.current = null;
       pendingKeeperMove.current = null;
       event.currentTarget.style.setProperty('--charge', '0');
-      controlRef.current.keeper = { direction:0, intensity:0, active:true };
+      controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:true };
     }
   }
 
   function rightMove(event) {
     const gesture = rightGesture.current.get(event.pointerId);
     if (!gesture) return;
-    gesture.path.push({ x:event.clientX, y:event.clientY });
+    const sample = coalescedPointerSample(event) || event;
+    gesture.path.push({ x:sample.clientX, y:sample.clientY });
     if (gesture.path.length > 24) gesture.path.shift();
 
-    const dx = event.clientX - gesture.x;
-    const dy = event.clientY - gesture.y;
+    const dx = sample.clientX - gesture.x;
+    const dy = sample.clientY - gesture.y;
     const distance = Math.hypot(dx, dy);
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     const pad = rightPadRef.current;
@@ -754,11 +988,12 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       const effectiveDistance = Math.max(0, distance - keeperDeadZone);
       const direction = effectiveDistance ? Math.max(-1, Math.min(1, dx / Math.max(38, Math.abs(dx)))) : 0;
       const intensity = Math.min(1, effectiveDistance / 92);
-      controlRef.current.keeper = { direction, intensity, active:effectiveDistance > 0 };
+      const forward = Math.max(-1, Math.min(1, -dy / 115));
+      controlRef.current.keeper = { direction, forward, intensity, active:effectiveDistance > 0 };
       const now = performance.now();
       if (now - keeperMoveThrottle.current >= 50) {
         keeperMoveThrottle.current = now;
-        queueKeeperMove({ type:'hold', direction, intensity });
+        queueKeeperMove({ type:'hold', direction, forward, intensity });
       }
     }
   }
@@ -768,7 +1003,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     if (!gesture) return;
     resetRightPad();
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:false };
     }
 
     const endedAt = performance.now();
@@ -800,9 +1035,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     resetRightPad();
     rightLastTap.current = 0;
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:false };
       pendingKeeperMove.current = null;
-      queueKeeperFinal({ type:'hold', direction:0, intensity:0 });
+      queueKeeperFinal({ type:'hold', direction:0, forward:0, intensity:0 });
     }
   }
 
@@ -829,8 +1064,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     keeperFaceActive.current = direction;
     event?.currentTarget?.setPointerCapture?.(event.pointerId);
     const stream = () => {
-      controlRef.current.keeper = { direction, intensity:.72, active:true };
-      queueKeeperMove({ type:'hold', direction, intensity:.72 });
+      controlRef.current.keeper = { direction, forward:0, intensity:.78, active:true };
+      queueKeeperMove({ type:'hold', direction, forward:0, intensity:.78 });
     };
     stream();
     keeperFaceTimer.current = window.setInterval(stream, 70);
@@ -841,7 +1076,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     keeperFaceActive.current = 0;
     clearInterval(keeperFaceTimer.current);
     keeperFaceTimer.current = 0;
-    controlRef.current.keeper = { direction:0, intensity:0, active:false };
+    controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:false };
     pendingKeeperMove.current = null;
     vibrateFace([8, 18, 12]);
     queueKeeperFinal({ type:'dive', direction, intensity:.92 });
@@ -854,6 +1089,66 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     const direction = Math.abs(controlRef.current?.keeper?.direction || 0) > .08
       ? controlRef.current.keeper.direction : 0;
     queueKeeperFinal({ type, direction, intensity:type === 'high-claim' ? .9 : .74 });
+  }
+
+  function updateDesktopAim(event) {
+    if (!desktop || !pitchRef.current) return;
+    const sample = coalescedPointerSample(event) || event;
+    desktopAim.current = pointerAim(sample, pitchRef.current);
+    pitchRef.current.style.setProperty('--pc-aim-x', ((desktopAim.current.x + 1) * 50).toFixed(2) + '%');
+    pitchRef.current.style.setProperty('--pc-aim-y', ((1 - desktopAim.current.y) * 72 + 8).toFixed(2) + '%');
+  }
+
+  function desktopPointerDown(event) {
+    if (!desktop || state.status === 'finished') return;
+    if (event.target instanceof Element && event.target.closest('button, a, input, select, textarea')) return;
+    updateDesktopAim(event);
+    if (event.button === 2) {
+      event.preventDefault();
+      if (isAttacker) {
+        const dir = desktopAim.current.x < 0 ? -1 : 1;
+        sendAttackerFace(Math.abs(desktopAim.current.x) > .42 ? 'cut' : 'feint', dir, .88);
+      } else if (isKeeper) keeperFaceAction('close-angle');
+      return;
+    }
+    if (event.button !== 0) return;
+    unlockPenaltyAudio().catch(() => {});
+    if (isAttacker) {
+      desktopShot.current = { at:performance.now(), x:event.clientX };
+      event.currentTarget.dataset.pcCharging = 'true';
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } else if (isKeeper) {
+      const aim = desktopAim.current;
+      const type = aim.y > .76 ? 'high-claim' : Math.abs(aim.x) < .16 ? 'close-angle' : 'dive';
+      queueKeeperFinal({ type, direction:aim.x, intensity:.94 });
+    }
+  }
+
+  function desktopPointerUp(event) {
+    if (!desktop || !isAttacker || event.button !== 0 || !desktopShot.current) return;
+    updateDesktopAim(event);
+    const shotStart = desktopShot.current;
+    desktopShot.current = null;
+    event.currentTarget.dataset.pcCharging = 'false';
+    const heldMs = Math.max(330, Math.min(1200, performance.now() - shotStart.at));
+    const aim = desktopAim.current;
+    const rect = pitchRef.current?.getBoundingClientRect?.();
+    const curve = rect ? Math.max(-.62, Math.min(.62, (event.clientX - shotStart.x) / Math.max(80, rect.width * .34))) : 0;
+    const parsed = interpretAttackGesture({
+      dx:aim.x * 125,
+      dy:-aim.y * 135,
+      durationMs:heldMs,
+      heldMs,
+      curve,
+      taps:0,
+    });
+    queueAttackerAction(parsed);
+  }
+
+  function desktopPointerCancel(event) {
+    if (!desktopShot.current) return;
+    desktopShot.current = null;
+    if (event.currentTarget) event.currentTarget.dataset.pcCharging = 'false';
   }
 
   function activatePower(powerId) {
@@ -886,15 +1181,20 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
         <div><span>FLOW</span><i><b style={{ width:`${state.flow?.[selfIndex] ?? 0}%` }} /></i></div>
       </div>
 
-      <section className="penalty-pitch penalty-pitch-3d">
+      <section ref={pitchRef} className="penalty-pitch penalty-pitch-3d" data-input={inputMode} data-pc-charging="false"
+        onPointerMove={desktop ? updateDesktopAim : undefined}
+        onPointerDown={desktop ? desktopPointerDown : undefined}
+        onPointerUp={desktop ? desktopPointerUp : undefined}
+        onPointerCancel={desktop ? desktopPointerCancel : undefined}
+        onContextMenu={desktop ? (event) => event.preventDefault() : undefined}>
         <Suspense fallback={<div className="penalty-arena3d-fallback"><b>Terrain 3B</b><span>Chargement du match 3D…</span></div>}>
           <PenaltyRushArena3D room={room} profile={profile} selfIndex={selfIndex} controlRef={controlRef} />
         </Suspense>
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
-        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" aria-label="Déplacement de l’attaquant" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
-        {(isAttacker || isKeeper) && <div className="penalty-face-cluster" data-role={isAttacker ? 'attacker' : 'keeper'} aria-label="Commandes d’action 3B">
+        {!desktop && (isAttacker || isKeeper) && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" aria-label={isKeeper ? 'Déplacement libre du gardien' : 'Déplacement de l’attaquant'} onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
+        {!desktop && (isAttacker || isKeeper) && <div className="penalty-face-cluster" data-role={isAttacker ? 'attacker' : 'keeper'} aria-label="Commandes d’action 3B">
           <button className="penalty-face penalty-face-top" data-tone="3b" aria-label={isAttacker ? 'Accélération 3B' : 'Sortie haute 3B'} onPointerDown={() => isAttacker ? sendAttackerFace('accelerate', 0, .95) : keeperFaceAction('high-claim')}><b>3B</b><small>{isAttacker ? 'BOOST' : 'HAUT'}</small></button>
           <button className="penalty-face penalty-face-left" data-tone="black" aria-label={isAttacker ? 'Feinte noire gauche' : 'Plongeon gauche'} onPointerDown={(e) => isAttacker ? sendAttackerFace('feint', -.86, .82) : keeperFaceStart(-1, e)} onPointerUp={() => isKeeper && keeperFaceEnd(-1)} onPointerCancel={() => isKeeper && keeperFaceEnd(-1)} onLostPointerCapture={() => isKeeper && keeperFaceEnd(-1)}><b>N</b><small>{isAttacker ? 'FEINTE' : 'GAUCHE'}</small></button>
           <button className="penalty-face penalty-face-right" data-tone="white" aria-label={isAttacker ? 'Crochet blanc droite' : 'Plongeon droite'} onPointerDown={(e) => isAttacker ? sendAttackerFace('cut', .86, .9) : keeperFaceStart(1, e)} onPointerUp={() => isKeeper && keeperFaceEnd(1)} onPointerCancel={() => isKeeper && keeperFaceEnd(1)} onLostPointerCapture={() => isKeeper && keeperFaceEnd(1)}><b>B</b><small>{isAttacker ? 'CROCHET' : 'DROITE'}</small></button>
@@ -904,6 +1204,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
           </div>
         </div>}
 
+        {desktop && (isAttacker || isKeeper) && <><span className="penalty-pc-reticle" aria-hidden="true" /><div className="penalty-pc-controls" aria-hidden="true">{isAttacker ? 'FLÈCHES / WASD · SHIFT BOOST · Q FEINTE · E CROCHET · ESPACE ROULETTE · CLIC MAINTENU = TIR' : 'FLÈCHES / WASD = DÉPLACEMENT LIBRE · CLIC = PLONGEON · ESPACE = SORTIE HAUTE · SHIFT = FERMER L’ANGLE'}</div></>}
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
         {impactType && <div key={String(state.lastEvent?.visual?.at || room.revision)} className="penalty-impact-word" data-type={impactType} aria-hidden="true"><strong>{impactLabel}</strong><span>{impactType === 'goal' ? '3B PENALTY RUSH' : impactType === 'save' ? 'RÉFLEXE GARDIEN' : 'À QUELQUES CENTIMÈTRES'}</span></div>}
       </section>

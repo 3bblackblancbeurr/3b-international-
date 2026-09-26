@@ -23,14 +23,20 @@ export function passportFromProfile(profile, user = null) {
   const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
-  const canonicalId = userId.toUpperCase();
+  const publicId = cleanText(profile.passport_public_id, 36).toLowerCase();
+  if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(publicId)) return null;
+  const shortPublicId = publicId.replace(/-/g, '').slice(0, 12).toUpperCase();
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
 
   return Object.freeze({
     userId,
-    passportId: `3B-PASS-${canonicalId}`,
-    memberId: `3B-MEM-${canonicalId}`,
+    publicId,
+    passportId: `3B-PASS-${shortPublicId.slice(0,4)}-${shortPublicId.slice(4,8)}-${shortPublicId.slice(8,12)}`,
+    memberId: `3B-MEM-${shortPublicId.slice(0,4)}-${shortPublicId.slice(4,8)}`,
+    state: cleanText(profile.passport_state || 'active', 16),
+    version: Math.max(2, Number(profile.passport_version) || 2),
+    issuedAt: profile.passport_issued_at || null,
     name,
     handle,
     country,

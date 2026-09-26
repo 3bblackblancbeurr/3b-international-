@@ -13,6 +13,7 @@ const START_Z = 15.8;
 const ATTACK_END_Z = -12.1;
 const LATERAL = 7.7;
 const KEEPER_Z = -18.35;
+const KEEPER_FORWARD_Z = GOAL_Z + 4.25;
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value) || 0));
 const mix = (a, b, t) => a + (b - a) * t;
@@ -36,6 +37,7 @@ function appearanceFor(player, profile, self = false) {
   const fallback = COUNTRY_KITS[player?.countryId] || ['#08090b', '#d8b35e'];
   const kit = self ? profile?.kit || {} : player?.kit || {};
   const boots = self ? profile?.boots || {} : player?.boots || {};
+  const visual = self ? profile?.appearance || {} : player?.appearance || {};
   const seed = Math.abs(String(player?.countryId || '').split('').reduce((n, c) => n + c.charCodeAt(0), 0));
   return {
     shirt: validHex(kit.shirtPrimary, fallback[0]),
@@ -43,17 +45,30 @@ function appearanceFor(player, profile, self = false) {
     shorts: validHex(kit.shorts, '#08090b'),
     socks: validHex(kit.socks, fallback[0]),
     boots: validHex(boots.upper, '#08090b'),
-    skin: ['#9a6748', '#b87b58', '#80563f', '#c18b68'][seed % 4],
-    hair: ['#111315', '#2a1b13', '#0b0d0f'][seed % 3],
+    skin: validHex(visual.skinColor, ['#ad7655','#c88d63','#8d5d45','#714735'][seed % 4]),
+    hair: validHex(visual.hairHex, ['#111315','#2a1b13','#5c3825'][seed % 3]),
+    hairStyle: String(visual.hairStyle || 'short'),
+    faceShape: String(visual.faceShape || 'balanced'),
+    facialHair: String(visual.facialHair || 'none'),
+    build: String(visual.build || 'athletic'),
+    heightCm: clamp(visual.heightCm || 178, 165, 198),
+    dominantFoot: String(self ? profile?.dominantFoot : player?.dominantFoot || 'right'),
     number: clamp(self ? profile?.shirtNumber : player?.shirtNumber, 1, 99) || 10,
   };
 }
 
 function footballAvatar(appearance, seed = 0) {
+  const hairIndex={shaved:0,buzz:0,short:1,fade:2,curls:3,long:3,afro:4,braids:4}[appearance.hairStyle] ?? seed % 5;
+  const shape=appearance.build==='strong'?'solide':appearance.build==='slim'?'elance':'equilibre';
+  const build=appearance.build==='strong'?1.05:appearance.build==='slim'?.96:1;
+  const faceTuning={
+    square:{face:.24,jaw:.38,nose:.04},round:{face:.3,jaw:-.18,nose:0},angular:{face:-.16,jaw:.32,nose:.08},
+    long:{face:-.25,jaw:.04,nose:.1},oval:{face:-.08,jaw:-.08,nose:0},balanced:{face:0,jaw:0,nose:0},
+  }[appearance.faceShape]||{face:0,jaw:0,nose:0};
   return {
     body:'homme',
     style:'voyageur',
-    hair:seed % 5,
+    hair:hairIndex,
     color:0,
     fabricColor:appearance.shirt,
     accentColor:appearance.trim,
@@ -64,15 +79,21 @@ function footballAvatar(appearance, seed = 0) {
     headwear:'none',
     outer:'none',
     bag:false,
-    shape:'elance',
-    height:1,
-    build:1.02,
-    shoulders:.18,
-    chest:.08,
-    waist:-.08,
+    shape,
+    height:clamp((appearance.heightCm||178)/178,.93,1.08),
+    build,
+    shoulders:appearance.build==='strong'?.24:appearance.build==='slim'?.08:.16,
+    chest:appearance.build==='strong'?.18:appearance.build==='slim'?.02:.09,
+    waist:appearance.build==='slim'?-.16:-.06,
     hips:-.04,
-    arms:.08,
-    legs:.12,
+    arms:appearance.build==='strong'?.16:.07,
+    legs:appearance.build==='strong'?.13:.08,
+    face:faceTuning.face,
+    jaw:faceTuning.jaw,
+    nose:faceTuning.nose,
+    beard:appearance.facialHair==='beard'?.9:appearance.facialHair==='goatee'?.55:appearance.facialHair==='stubble'?.24:0,
+    mustache:appearance.facialHair==='goatee'?.36:appearance.facialHair==='beard'?.45:0,
+    hairLength:appearance.hairStyle==='long'?.95:appearance.hairStyle==='braids'?.82:appearance.hairStyle==='afro'?.68:.35,
     pattern:'uni',
     fabric:'satin',
     boots:0,
@@ -275,7 +296,8 @@ function createHumanoid(appearance) {
   rig.add(pelvis);
 
   const torso = new THREE.Mesh(new THREE.CylinderGeometry(.4, .48, 1.12, 12), shirtMat);
-  torso.scale.z = .58;
+  const buildScale = appearance.build === 'strong' ? 1.1 : appearance.build === 'slim' ? .93 : 1;
+  torso.scale.set(buildScale,1,.58*buildScale);
   torso.position.y = 2.1;
   rig.add(torso);
 
@@ -312,7 +334,11 @@ function createHumanoid(appearance) {
   rig.add(neck);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(.29, 12, 9), skinMat);
-  head.scale.set(.9, 1.08, .88);
+  const faceScale = {
+    oval:[.88,1.12,.86], square:[.98,1.03,.93], round:[.98,1.02,.96],
+    angular:[.91,1.08,.84], long:[.86,1.18,.84], balanced:[.9,1.08,.88],
+  }[appearance.faceShape] || [.9,1.08,.88];
+  head.scale.set(...faceScale);
   head.position.y = 3.04;
   rig.add(head);
 
@@ -331,7 +357,30 @@ function createHumanoid(appearance) {
 
   const hair = new THREE.Mesh(new THREE.SphereGeometry(.3, 10, 7, 0, Math.PI * 2, 0, Math.PI * .47), hairMat);
   hair.position.y = 3.11;
+  const hairStyle = appearance.hairStyle || 'short';
+  if (hairStyle === 'shaved') hair.scale.set(1,.18,1);
+  if (hairStyle === 'buzz') hair.scale.set(1.01,.45,1.01);
+  if (hairStyle === 'fade') hair.scale.set(.94,.72,.94);
+  if (hairStyle === 'curls') hair.scale.set(1.08,1.02,1.08);
+  if (hairStyle === 'afro') hair.scale.set(1.34,1.38,1.34);
+  if (hairStyle === 'long') hair.scale.set(1.04,1.18,1.08);
   rig.add(hair);
+  if (hairStyle === 'braids' || hairStyle === 'long') {
+    const strands = hairStyle === 'braids' ? 6 : 4;
+    for (let i = 0; i < strands; i += 1) {
+      const side = i % 2 ? -1 : 1;
+      const strand = new THREE.Mesh(new THREE.CylinderGeometry(.028,.042,hairStyle === 'braids' ? .55 : .72,6),hairMat);
+      strand.position.set(side*(.13+(i%3)*.055),2.83,-.12+(i%3)*.06);
+      strand.rotation.z=side*.08;
+      rig.add(strand);
+    }
+  }
+  if (appearance.facialHair && appearance.facialHair !== 'none') {
+    const beard = new THREE.Mesh(new THREE.SphereGeometry(.2,8,6,0,Math.PI*2,Math.PI*.48,Math.PI*.42),hairMat);
+    beard.scale.set(appearance.facialHair === 'beard' ? 1.08 : .72, appearance.facialHair === 'stubble' ? .42 : .72, .82);
+    beard.position.set(0,2.94,-.19);
+    rig.add(beard);
+  }
 
   const armL = makeArm(shirtMat, skinMat, gloveMat, -1);
   const armR = makeArm(shirtMat, skinMat, gloveMat, 1);
@@ -600,6 +649,44 @@ function createStadium(scene, mobile = false) {
   scene.add(tunnel);
 }
 
+function createPremiumMatchDecor(scene, mobile = false) {
+  const cyan = makeMaterial('#173b46', .42, .28, '#59d6ef', .58);
+  const gold = makeMaterial('#48391a', .4, .32, '#e5c56c', .52);
+  const dark = makeMaterial('#0a1519', .82, .08, '#18343b', .12);
+  const boardGeo = new THREE.BoxGeometry(2.25, .34, .1);
+  const posts = mobile ? 5 : 8;
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < posts; i += 1) {
+      const z = -16.6 + i * (33.2 / Math.max(1, posts - 1));
+      const board = new THREE.Mesh(boardGeo, i % 3 === 0 ? gold : cyan);
+      board.position.set(side * 10.18, .38, z);
+      board.rotation.y = Math.PI / 2;
+      scene.add(board);
+    }
+  }
+  for (const side of [-1, 1]) {
+    const arch = new THREE.Group();
+    const upright = new THREE.BoxGeometry(.13, 3.5, .13);
+    const left = new THREE.Mesh(upright, dark);
+    const right = left.clone();
+    left.position.set(-1.65, 1.75, 0);
+    right.position.set(1.65, 1.75, 0);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(3.42, .13, .13), side < 0 ? cyan : gold);
+    top.position.y = 3.45;
+    arch.add(left, right, top);
+    arch.position.set(side * 7.4, 0, FIELD_HALF_L + .72);
+    arch.rotation.y = side * .04;
+    scene.add(arch);
+  }
+  if (!mobile) {
+    for (const side of [-1, 1]) {
+      const glow = new THREE.PointLight(side < 0 ? '#55d7f2' : '#e6c66d', .78, 9, 2);
+      glow.position.set(side * 8.7, 2.15, 8);
+      scene.add(glow);
+    }
+  }
+}
+
 function createThreeBGoalWorld(scene, mobile = false) {
   const root = new THREE.Group();
   root.name = '3B_WORLD_BEHIND_GOAL';
@@ -832,7 +919,12 @@ function attackerPosition(state, target = new THREE.Vector3()) {
 }
 
 function keeperPosition(state, target = new THREE.Vector3()) {
-  return target.set(clamp(state?.positions?.keeper?.y, -.95, .95) * (GOAL_W / 2), 0, KEEPER_Z);
+  const keeper = state?.positions?.keeper || {};
+  return target.set(
+    clamp(keeper.y, -.95, .95) * (GOAL_W / 2),
+    0,
+    mix(KEEPER_Z, KEEPER_FORWARD_Z, clamp(keeper.x, 0, .82) / .82),
+  );
 }
 
 function clampAttackerWorld(position) {
@@ -876,14 +968,18 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
   shadow.scale.set(1 + speed * .08, 1 + speed * .04, 1);
 
   if (keeper) {
-    rig.position.y = -.06;
+    const keeperStep = Math.sin(time * (8.4 + speed * 9.2)) * Math.min(.36, speed * .64);
+    rig.position.y = -.06 + Math.abs(keeperStep) * .018;
     torso.rotation.x = -.1;
-    legL.hip.rotation.x = .15;
-    legR.hip.rotation.x = .15;
+    torso.rotation.z = -lean * .11;
+    legL.hip.rotation.x = .13 + keeperStep;
+    legR.hip.rotation.x = .13 - keeperStep;
     legL.hip.rotation.z = -.12;
     legR.hip.rotation.z = .12;
-    armL.shoulder.rotation.z = -1.05;
-    armR.shoulder.rotation.z = 1.05;
+    legL.shinPivot.rotation.x = Math.max(0, -keeperStep) * .38;
+    legR.shinPivot.rotation.x = Math.max(0, keeperStep) * .38;
+    armL.shoulder.rotation.z = -1.05 - keeperStep * .12;
+    armR.shoulder.rotation.z = 1.05 - keeperStep * .12;
     armL.elbow.rotation.x = -.24;
     armR.elbow.rotation.x = -.24;
   }
@@ -895,12 +991,23 @@ function posePlayer(model, { speed = 0, keeper = false, time = 0, action = null,
 
   if (action === 'feint' || action === 'cut') {
     const wave = Math.sin(eventT * Math.PI);
-    const snap = action === 'cut' ? 1.18 : .86;
+    const snap = action === 'cut' ? 1.18 : .9;
     torso.rotation.z = wave * .22 * snap * (direction || 1);
     rig.rotation.y = wave * .34 * snap * (direction || 1);
     rig.position.x = wave * .08 * snap * (direction || 1);
     legL.hip.rotation.z = -wave * .14;
     legR.hip.rotation.z = wave * .14;
+    if (action === 'feint') {
+      const step = Math.sin(clamp(eventT, 0, 1) * Math.PI * 2);
+      legR.hip.rotation.x += Math.max(0, step) * .72;
+      legR.hip.rotation.z += (direction || 1) * wave * .28;
+      legR.shinPivot.rotation.x += Math.abs(step) * .34;
+      rig.position.y += Math.abs(step) * .025;
+    } else {
+      legL.hip.rotation.x -= wave * .2;
+      legR.hip.rotation.x += wave * .32;
+      torso.rotation.x = -.08 - wave * .07;
+    }
   }
 
   if (action === 'rhythm') {
@@ -1054,6 +1161,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     createPitch(scene);
     const goal = createGoal(scene);
     createStadium(scene, mobile);
+    createPremiumMatchDecor(scene, mobile);
     const goalWorld = createThreeBGoalWorld(scene, mobile);
 
     const ball = new THREE.Mesh(
@@ -1078,7 +1186,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     });
     const players = playerAppearance.map((appearance) => {
       const model = createHumanoid(appearance);
-      model.scale.setScalar(.56);
+      model.scale.setScalar(.56 * (appearance.heightCm / 178));
       model.traverse((node) => { if (node.isMesh) node.castShadow = !mobile; });
       scene.add(model);
       return model;
@@ -1136,7 +1244,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
               if (runtime.disposed || !actor?.object) return;
               const box = new THREE.Box3().setFromObject(actor.object);
               const height = Math.max(.1, box.max.y - box.min.y);
-              const targetHeight = index === clamp((liveRef.current.room?.state || {}).keeper, 0, 1) ? 1.86 : 1.76;
+              const targetHeight = clamp((playerAppearance[index]?.heightCm || 178) / 100, 1.65, 1.98);
               actor.object.scale.multiplyScalar(targetHeight / height);
               actor.object.updateMatrixWorld(true);
               const fitted = new THREE.Box3().setFromObject(actor.object);
@@ -1345,15 +1453,22 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
       const input = controlRef?.current?.keeper || null;
       if (input?.active) {
         const intensity = clamp(input.intensity, 0, 1);
-        const speed = 6.8 + intensity * 3.2;
+        const lateralSpeed = 7.35 + intensity * 3.45;
+        const depthSpeed = 3.5 + intensity * 2.35;
         const drive = .22 + intensity * .78;
-        runtime.localKeeper.x += clamp(input.direction, -1, 1) * speed * drive * dt;
+        runtime.localKeeper.x += clamp(input.direction, -1, 1) * lateralSpeed * drive * dt;
+        runtime.localKeeper.z += clamp(input.forward, -1, 1) * depthSpeed * drive * dt;
         runtime.localKeeper.x = clamp(runtime.localKeeper.x, -GOAL_W / 2 + .16, GOAL_W / 2 - .16);
+        runtime.localKeeper.z = clamp(runtime.localKeeper.z, KEEPER_Z, KEEPER_FORWARD_Z);
       }
-      const error = server.x - runtime.localKeeper.x;
-      if (Math.abs(error) > 2.4) runtime.localKeeper.x = mix(runtime.localKeeper.x, server.x, .2);
-      else runtime.localKeeper.x += error * expFollow(input?.active ? .25 : 15, dt);
-      runtime.localKeeper.z = KEEPER_Z;
+      const errorX = server.x - runtime.localKeeper.x;
+      const errorZ = server.z - runtime.localKeeper.z;
+      if (Math.hypot(errorX, errorZ) > 2.65) runtime.localKeeper.lerp(server, .22);
+      else {
+        const reconcile = expFollow(input?.active ? .2 : 16, dt);
+        runtime.localKeeper.x += errorX * reconcile;
+        runtime.localKeeper.z += errorZ * reconcile;
+      }
       runtime.localKeeper.y = 0;
       return runtime.localKeeper;
     }
@@ -1372,17 +1487,18 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         runtime.camera.mode = 'keeper';
         fov = 72;
         const goalDistance = keeperGoalFramingDistance(camera.aspect, fov);
+        const keeperDepth = clamp((serverKeeper.z - KEEPER_Z) / Math.max(.01, KEEPER_FORWARD_Z - KEEPER_Z), 0, 1);
         desired.set(
-          0,
-          2.45,
-          GOAL_Z - goalDistance,
+          serverKeeper.x * .56,
+          2.18 + keeperDepth * .08,
+          GOAL_Z - goalDistance - keeperDepth * .22,
         );
         target.set(
-          mix(serverKeeper.x * .08, serverAttack.x * .18, .68),
-          1.08,
-          mix(GOAL_Z + 7.4, GOAL_Z + 10.8, 1 - progress),
+          mix(serverKeeper.x * .52, serverAttack.x * .34, .7),
+          1.04,
+          mix(GOAL_Z + 6.5, GOAL_Z + 10.4, 1 - progress),
         );
-        goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .12, .28);
+        goal.userData.netMat.opacity = mix(goal.userData.netMat.opacity, .075, .32);
         goal.userData.frameMat.emissiveIntensity = Math.max(goal.userData.frameMat.emissiveIntensity, .18);
       } else {
         runtime.camera.mode = 'attack';
@@ -1605,7 +1721,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
         state,
         selfKeeper,
         renderAttack,
-        runtime.serverKeeper,
+        renderKeeper,
         eventT,
         eventDirection,
         activeEvent,

@@ -73,7 +73,7 @@ test('V3 adds local prediction for attacker and goalkeeper while server remains 
   assert.match(arena, /controlRef\?\.current\?\.keeper/);
   assert.match(arena, /predictLocalKeeper/);
   assert.match(match, /moveThrottle\.current < 42/);
-  assert.match(match, /keeper:\{ direction:0, intensity:0, active:false \}/);
+  assert.match(match, /keeper:\{ direction:0, forward:0, intensity:0, active:false \}/);
 });
 
 test('V3 adds cinematic goal feedback without heavy post-processing', () => {
@@ -116,17 +116,17 @@ test('V4 keeper camera is physically behind the goal with the complete goal visi
   assert.match(arena, /2\.45/);
   assert.match(arena, /fov = 72/);
   assert.match(arena, /keeperApron/);
-  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.12/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.075/);
 });
 
 test('V4 streams keeper movement while dragging and keeps the server authoritative', () => {
   assert.match(match, /keeperMoveThrottle/);
   assert.match(match, /pendingKeeperMove/);
   assert.match(match, /keeperFinalAction/);
-  assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, intensity \}\)/);
+  assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, forward, intensity \}\)/);
   assert.match(match, /queueKeeperFinal\(parsed\)/);
   assert.match(server, /state\.lastKeeperMoveAt = at/);
-  assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
+  assert.match(server, /const lateralSpeed = 2\.15 \+ intensity \* \.9/);
   assert.match(server, /direction \* lateralSpeed \* dt/);
 });
 
@@ -136,7 +136,7 @@ test('V4 local prediction prioritizes instant control then reconciles softly', (
   assert.match(arena, /const forwardSpeed = \(5\.15 \+ intensity \* 3\.05\)/);
   assert.match(arena, /const drive = \.2 \+ intensity \* \.8/);
   assert.match(arena, /input\?\.active \? \.35 : 12\.5/);
-  assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
+  assert.match(arena, /const lateralSpeed = 7\.35 \+ intensity \* 3\.45/);
   assert.match(arena, /const drive = \.22 \+ intensity \* \.78/);
   assert.match(arena, /input\?\.active \? \.25 : 15/);
 });
@@ -146,20 +146,22 @@ test('V4 goalkeeper view is a true behind-goal camera with visible turf behind t
   assert.match(arena, /new THREE\.PlaneGeometry\(FIELD_W \+ 4, 10\)/);
   assert.match(arena, /keeperApron\.position\.set\(0, -\.002, GOAL_Z - 5\)/);
   assert.match(arena, /fov = 72/);
-  assert.match(arena, /desired\.set\(\s*0,\s*2\.45,\s*GOAL_Z - goalDistance/s);
-  assert.match(arena, /GOAL_Z \+ 7\.4/);
+  assert.match(arena, /serverKeeper\.x \* \.56/);
+  assert.match(arena, /2\.18 \+ keeperDepth \* \.08/);
+  assert.match(arena, /GOAL_Z - goalDistance - keeperDepth \* \.22/);
+  assert.match(arena, /mix\(GOAL_Z \+ 6\.5, GOAL_Z \+ 10\.4/);
 });
 
 test('V4 uses football-scale player and ball dimensions', () => {
   assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
   assert.match(arena, /targetHeight = index === clamp\(\(liveRef\.current\.room\?\.state \|\| \{\}\)\.keeper, 0, 1\) \? 1\.86 : 1\.76/);
-  assert.match(arena, /model\.scale\.setScalar\(\.56\)/);
+  assert.match(arena, /model\.scale\.setScalar\(\.56 \* \(appearance\.heightCm \/ 178\)\)/);
   assert.match(arena, /const GOAL_H = 2\.44/);
 });
 
 test('V4 local movement is tuned for immediate football-game response', () => {
   assert.match(arena, /const lateralSpeed = 4\.15 \+ intensity \* 2\.35/);
-  assert.match(arena, /const speed = 6\.8 \+ intensity \* 3\.2/);
+  assert.match(arena, /const lateralSpeed = 7\.35 \+ intensity \* 3\.45/);
   assert.match(arena, /snapshot\.selfIndex \? 30 : 12/);
   assert.match(arena, /selfKeeper \? 34 : 12/);
   assert.match(arena, /selfKeeper \? 18 : 8\.5/);
@@ -167,7 +169,7 @@ test('V4 local movement is tuned for immediate football-game response', () => {
 
 test('V4 server movement supports responsive lateral attack and keeper positioning', () => {
   assert.match(server, /ix \* \(\.34 \+ intensity\*\.2\) \* dt/);
-  assert.match(server, /const lateralSpeed = 2\.6 \+ intensity \* 2\.1/);
+  assert.match(server, /const lateralSpeed = 2\.15 \+ intensity \* \.9/);
 });
 
 
@@ -210,4 +212,57 @@ test('V6 premium street-foot movement keeps direction, roulette, camera lead and
  assert.match(arena,/fov = 48\.5 \+ pace \* 2\.15/);
  assert.match(controls,/data-technique/);
  assert.match(controls,/--stick-power/);
+});
+
+
+test('V7 separates desktop keyboard-mouse from high precision touch controls', () => {
+  assert.match(match, /penaltyInputMode/);
+  assert.match(match, /keyboardVector\(desktopKeys\.current\)/);
+  assert.match(match, /coalescedPointerSample/);
+  assert.match(match, /pointerAim/);
+  assert.match(match, /data-input=\{inputMode\}/);
+  assert.match(match, /FLÈCHES \/ WASD/);
+  assert.match(match, /CLIC MAINTENU = TIR/);
+  assert.match(joystick, /export function penaltyInputMode/);
+  assert.match(joystick, /getCoalescedEvents/);
+  assert.match(joystick, /export function keyboardVector/);
+});
+
+test('V7 gives the goalkeeper true lateral and depth mobility with camera follow', () => {
+  assert.match(server, /keeper:\{x:0,y:0\}/);
+  assert.match(server, /const forward = safeDirection\(input\?\.forward\)/);
+  assert.match(server, /const depthSpeed = \.72 \+ intensity \* \.78/);
+  assert.match(server, /state\.positions\.keeper\.x = clamp/);
+  assert.match(server, /keeperDepth:number\(state\.positions\?\.keeper\?\.x\)/);
+  assert.match(arena, /const KEEPER_FORWARD_Z = GOAL_Z \+ 4\.25/);
+  assert.match(arena, /clamp\(input\.forward, -1, 1\) \* depthSpeed/);
+  assert.match(arena, /serverKeeper\.x \* \.56/);
+  assert.match(arena, /renderKeeper,/);
+});
+
+test('V7 removes the goalkeeper overlay/filter and adds lightweight match decor', () => {
+  assert.doesNotMatch(controls, /CAGE ENTIÈRE · CAMÉRA GARDIEN/);
+  assert.match(controls, /penalty-match\[data-role="keeper"\] \.penalty-pitch-3d::after\{display:none\}/);
+  assert.match(arena, /function createPremiumMatchDecor/);
+  assert.match(arena, /createPremiumMatchDecor\(scene, mobile\)/);
+});
+
+test('V7 keeps street football skill motions visual and immediate', () => {
+  assert.match(arena, /action === 'feint'/);
+  assert.match(arena, /legR\.hip\.rotation\.x \+= Math\.max\(0, step\) \* \.72/);
+  assert.match(arena, /action === 'cut'/);
+  assert.match(arena, /action === 'rhythm'/);
+});
+
+
+test('V9 renders cosmetic football identity without feeding competitive physics', () => {
+  assert.match(arena, /visual = self \? profile\?\.appearance/);
+  assert.match(arena, /skin: validHex\(visual\.skinColor/);
+  assert.match(arena, /hairStyle: String\(visual\.hairStyle/);
+  assert.match(arena, /appearance\.heightCm \/ 178/);
+  assert.match(arena, /appearance\.faceShape/);
+  assert.match(arena, /appearance\.facialHair/);
+  assert.match(server, /function sanitizeAppearance/);
+  assert.match(server, /appearance:sanitizeAppearance/);
+  assert.doesNotMatch(server, /appearance.*STYLE_TUNING/);
 });
