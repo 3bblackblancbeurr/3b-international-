@@ -77,7 +77,7 @@ const BASE_MENU_ITEMS = [
     id: "games",
     label: "Jeux 3B",
     icon: "🎮",
-    description: "Kaïs, les Portes, le Labyrinthe, la course des clés et DADA 3B réunis dans l’univers 3B.",
+    description: "Kaïs, les Portes, le Labyrinthe, la course des clés, DADA 3B et Power 3B réunis dans l’univers 3B.",
   },
   {
     id: "religion",
