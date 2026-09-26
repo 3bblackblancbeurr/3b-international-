@@ -18,7 +18,10 @@
     "control:agent": "node scripts/threeb-control-agent.mjs run",
     "control:once": "node scripts/threeb-control-agent.mjs once",
     "control:status": "node scripts/threeb-control-agent.mjs status",
-    "ios:distribution": "node scripts/set-ios-distribution.mjs"
+    "ios:distribution": "node scripts/set-ios-distribution.mjs",
+    "control:auto-start": "node scripts/threeb-control-autostart.mjs install",
+    "control:auto-status": "node scripts/threeb-control-autostart.mjs status",
+    "control:auto-remove": "node scripts/threeb-control-autostart.mjs remove"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
