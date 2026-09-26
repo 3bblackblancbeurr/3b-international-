@@ -184,7 +184,10 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    if (!loyalty.user?.id) {
+    const nativePhone = Boolean(window.Capacitor?.isNativePlatform?.());
+    const mobilePhone = navigator.userAgentData?.mobile === true || /android|iphone|ipod|mobile/i.test(navigator.userAgent || "");
+    const touchPhone = window.matchMedia("(max-width: 820px) and (pointer: coarse)").matches;
+    if (!loyalty.user?.id || !(nativePhone || mobilePhone || touchPhone)) {
       setControlAvailable(false);
       return () => { active = false; };
     }
