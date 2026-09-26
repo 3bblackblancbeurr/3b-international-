@@ -292,19 +292,15 @@ begin
   where order_id=v_order.order_id
     and transfer_status<>'reversed';
 
-  insert into public.nosbloc_real_money_ledger(
-    creator_id,order_id,allocation_id,entry_type,bucket,amount_cents,
-    currency,idempotency_key,stripe_object_id,metadata
-  )
-  select
-    creator_id,v_order.order_id,allocation_id,'dispute','pending',-1,
-    'eur','dispute:'||p_event_id||':'||allocation_id::text,p_intent,
-    jsonb_build_object('marker',true,'status',left(coalesce(p_status,''),40))
-  from public.nosbloc_order_allocations
-  where order_id=v_order.order_id
-  on conflict(idempotency_key) do nothing;
-
-  return jsonb_build_object('ok',true,'orderId',v_order.order_id,'blocked',true);
+  -- A dispute is a risk state, not an invented monetary movement.
+  -- The signed Stripe event and blocked allocation preserve the evidence.
+  -- Real losses/refunds are recorded only when Stripe reports an actual amount.
+  return jsonb_build_object(
+    'ok',true,
+    'orderId',v_order.order_id,
+    'blocked',true,
+    'disputeStatus',left(coalesce(p_status,''),40)
+  );
 end
 $$;
 
