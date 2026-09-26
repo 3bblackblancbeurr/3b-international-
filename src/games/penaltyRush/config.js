@@ -1,3 +1,5 @@
+import { APPEARANCE_OPTIONS } from './career.js';
+
 export const PENALTY_COUNTRIES = [
   { id: 'fr', name: 'France', flag: '🇫🇷', value: 'Justice' },
   { id: 'dz', name: 'Algérie', flag: '🇩🇿', value: 'Loyauté' },
@@ -179,12 +181,28 @@ export function createDefaultPenaltyProfile(account) {
   const name = String(passport?.name || account?.profile?.name || account?.profile?.handle || 'Joueur 3B').trim().slice(0, 24);
   return {
     displayName: name || 'Joueur 3B',
+    passportPublicId: account?.profile?.passport_public_id || passport?.publicId || '',
+    passportState: account?.profile?.passport_state || passport?.state || 'active',
+    identityStatus: 'passport',
     shirtName: (name || '3B').toUpperCase().slice(0, 14),
     shirtNumber: 10,
     countryId: country.id,
     styleId: 'technicien',
+    preferredRole: 'versatile',
+    dominantFoot: 'right',
+    archetypeXp: 0,
+    archetypeLevel: 1,
     keeperPowers: ['read', 'anchor'],
     clubName: '',
+    appearance: {
+      skinTone:'tone4',
+      hairStyle:'short',
+      hairColor:'dark-brown',
+      faceShape:'balanced',
+      facialHair:'none',
+      heightCm:178,
+      build:'athletic',
+    },
     kit: {
       shirtPrimary: '#08090b',
       shirtSecondary: '#d8b35e',
@@ -218,14 +236,33 @@ export function normalizePenaltyProfile(value, account) {
   const powers = Array.isArray(input.keeperPowers)
     ? [...new Set(input.keeperPowers.filter((id) => Object.hasOwn(KEEPER_POWERS, id)))].slice(0, 2)
     : base.keeperPowers;
+  const optionIds = key => new Set((APPEARANCE_OPTIONS[key] || []).map(item => item[0]));
+  const appearanceInput = input.appearance && typeof input.appearance === 'object' ? input.appearance : {};
+  const appearance = {
+    skinTone: optionIds('skinTones').has(appearanceInput.skinTone) ? appearanceInput.skinTone : base.appearance.skinTone,
+    hairStyle: optionIds('hairStyles').has(appearanceInput.hairStyle) ? appearanceInput.hairStyle : base.appearance.hairStyle,
+    hairColor: optionIds('hairColors').has(appearanceInput.hairColor) ? appearanceInput.hairColor : base.appearance.hairColor,
+    faceShape: optionIds('faceShapes').has(appearanceInput.faceShape) ? appearanceInput.faceShape : base.appearance.faceShape,
+    facialHair: optionIds('facialHair').has(appearanceInput.facialHair) ? appearanceInput.facialHair : base.appearance.facialHair,
+    heightCm: Math.max(165, Math.min(198, Number.parseInt(appearanceInput.heightCm, 10) || base.appearance.heightCm)),
+    build: optionIds('builds').has(appearanceInput.build) ? appearanceInput.build : base.appearance.build,
+  };
   return {
     ...base,
     ...input,
     displayName: String(input.displayName || base.displayName).trim().slice(0, 24),
+    passportPublicId: String(input.passportPublicId || base.passportPublicId || ''),
+    passportState: String(input.passportState || base.passportState || 'active'),
+    identityStatus: input.identityStatus === 'review' ? 'review' : 'passport',
     shirtName: String(input.shirtName || base.shirtName).trim().toUpperCase().slice(0, 14),
     shirtNumber: Math.max(1, Math.min(99, Number.parseInt(input.shirtNumber, 10) || base.shirtNumber)),
     countryId,
     styleId,
+    preferredRole: ['attacker','keeper','versatile'].includes(input.preferredRole) ? input.preferredRole : base.preferredRole,
+    dominantFoot: input.dominantFoot === 'left' ? 'left' : 'right',
+    archetypeXp: Math.max(0, Number(input.archetypeXp) || 0),
+    archetypeLevel: Math.max(1, Math.min(50, Number(input.archetypeLevel) || 1)),
+    appearance,
     keeperPowers: powers.length === 2 ? powers : base.keeperPowers,
     clubName: String(input.clubName || '').trim().slice(0, 40),
     kit: { ...base.kit, ...(input.kit || {}) },
