@@ -36,6 +36,9 @@ const STATUS = {
 
 const PRO_TABS = [
   ["build", "Construction", Layers3],
+  ["assets", "Assets", Package],
+  ["scripts", "Scripts", Code2],
+  ["ai", "IA", WandSparkles],
   ["versions", "Versions", History],
   ["team", "Équipe", Users],
   ["economy", "Économie", WalletCards],
@@ -602,6 +605,9 @@ function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVe
   return <div className="nb2-pro">
     <nav className="nb2-pro-tabs">{PRO_TABS.map(([id,label,Icon]) => <button key={id} data-active={proTab === id} onClick={() => setProTab(id)}><Icon size={16}/>{label}</button>)}</nav>
     {proTab === "build" && <BuildPro project={project} ready={ready} updateProject={updateProject}/>}
+    {proTab === "assets" && <AssetsPro project={project} updateProject={updateProject}/>}
+    {proTab === "scripts" && <ScriptsPro project={project} updateProject={updateProject}/>}
+    {proTab === "ai" && <AIPro project={project} updateProject={updateProject}/>}
     {proTab === "versions" && <VersionsPro project={project} restoreVersion={restoreVersion}/>}
     {proTab === "team" && <TeamPro project={project}/>}
     {proTab === "economy" && <EconomyPro project={project} account={account}/>}
@@ -615,6 +621,63 @@ function BuildPro({ project, ready, updateProject }) {
     <section className="nb2-pro-card"><SectionTitle eyebrow="PRÉPARATION" title={ready.score + " % prêt"}/><ReadinessChecklist ready={ready}/></section>
     <section className="nb2-pro-card"><SectionTitle eyebrow="DROITS & CLASSIFICATION" title="Avant publication"/><label className="nb2-switch"><input type="checkbox" checked={!!project.rights?.coreOwned} onChange={() => toggleRight("coreOwned")}/><span/><b>Contenu principal détenu ou autorisé</b></label><label className="nb2-switch"><input type="checkbox" checked={!!project.rights?.thirdPartyLicensed} onChange={() => toggleRight("thirdPartyLicensed")}/><span/><b>Licences tierces vérifiées</b></label><label className="nb2-switch"><input type="checkbox" checked={!!project.rights?.ageRatingReviewed} onChange={() => toggleRight("ageRatingReviewed")}/><span/><b>Classification d’âge contrôlée</b></label></section>
   </div>;
+}
+
+
+function AssetsPro({ project, updateProject }) {
+  const [name, setName] = useState("");
+  const assets = Array.isArray(project.licensedAssets) ? project.licensedAssets : [];
+  const add = () => {
+    const value = name.trim().slice(0, 100);
+    if (!value || assets.includes(value)) return;
+    updateProject(project.id, { licensedAssets: [...assets, value].slice(0, 100) }, "Asset ajouté au registre du projet.");
+    setName("");
+  };
+  const remove = value => updateProject(project.id, { licensedAssets: assets.filter(asset => asset !== value) });
+  return <section className="nb2-pro-card">
+    <SectionTitle eyebrow="ASSETS" title="Bibliothèque du projet"/>
+    <p className="nb2-muted">Ajoute uniquement des ressources que tu détiens ou pour lesquelles tu as une licence. Nosbloc conserve cette liste avec chaque version.</p>
+    <div className="nb2-inline-form"><input value={name} onChange={e => setName(e.target.value)} maxLength={100} placeholder="Nom ou référence de l’asset"/><button onClick={add} disabled={!name.trim()}><Plus size={16}/> Ajouter</button></div>
+    {!assets.length ? <EmptyState icon={Package} title="Aucun asset enregistré." text="Le projet peut fonctionner sans asset externe."/> :
+      <div className="nb2-asset-list">{assets.map(asset => <article key={asset}><Package size={17}/><span>{asset}</span><button onClick={() => remove(asset)} aria-label={"Retirer " + asset}><X size={15}/></button></article>)}</div>}
+  </section>;
+}
+
+function ScriptsPro({ project, updateProject }) {
+  const scripts = Array.isArray(project.scripts) ? project.scripts : [];
+  const add = () => {
+    const id = globalThis.crypto?.randomUUID?.() || "script-" + Date.now();
+    updateProject(project.id, { scripts: [...scripts, { id, name: "Nouveau script", language: "javascript", source: "// Logique Nosbloc\n", enabled: true }].slice(0, 40) }, "Script ajouté au projet.");
+  };
+  const patch = (id, delta) => updateProject(project.id, { scripts: scripts.map(script => script.id === id ? { ...script, ...delta } : script) });
+  const remove = id => updateProject(project.id, { scripts: scripts.filter(script => script.id !== id) });
+  return <section className="nb2-pro-card">
+    <SectionTitle eyebrow="SCRIPTS" title="Logique avancée"/>
+    <div className="nb2-lock-banner"><ShieldCheck size={17}/> Les scripts sont stockés avec les versions mais ne s’exécutent jamais directement dans l’interface Nosbloc. Un runtime isolé sera requis avant exécution publique.</div>
+    <button className="nb2-add-tool" onClick={add}><Plus size={16}/> Nouveau script</button>
+    {!scripts.length ? <EmptyState icon={Code2} title="Aucun script." text="Utilise les outils simples tant que tu n’as pas besoin de logique personnalisée."/> :
+      <div className="nb2-script-list">{scripts.map(script => <article key={script.id}>
+        <div className="nb2-script-head"><input value={script.name} maxLength={80} onChange={e => patch(script.id,{name:e.target.value})}/><label><input type="checkbox" checked={script.enabled !== false} onChange={e => patch(script.id,{enabled:e.target.checked})}/> Actif</label><button onClick={() => remove(script.id)} aria-label="Supprimer le script"><X size={15}/></button></div>
+        <textarea spellCheck="false" value={script.source} maxLength={20000} onChange={e => patch(script.id,{source:e.target.value})}/>
+      </article>)}</div>}
+  </section>;
+}
+
+function AIPro({ project, updateProject }) {
+  const [brief, setBrief] = useState(project.aiBrief || project.description || "");
+  const apply = () => {
+    const clean = brief.trim().slice(0, 2000);
+    if (!clean) return;
+    updateProject(project.id, {
+      aiBrief: clean,
+      plan: generateBuildPlan(clean, project.type),
+    }, "Le brief IA a restructuré le plan de production.");
+  };
+  return <section className="nb2-pro-card">
+    <SectionTitle eyebrow="IA NOSBLOC" title="Transformer une idée en plan"/>
+    <p className="nb2-muted">Cette IA de structuration prépare le travail et les étapes. Elle ne publie rien, ne dépense rien et ne modifie jamais l’argent réel.</p>
+    <div className="nb2-ai-box"><Sparkles size={23}/><textarea value={brief} onChange={e => setBrief(e.target.value)} rows={7} maxLength={2000} placeholder="Décris ce que tu veux construire, améliorer ou corriger…"/><button onClick={apply} disabled={!brief.trim()}><WandSparkles size={17}/> Structurer le projet</button></div>
+  </section>;
 }
 
 function VersionsPro({ project, restoreVersion }) {
