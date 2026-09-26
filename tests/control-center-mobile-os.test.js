@@ -34,3 +34,20 @@ test('PC agent publishes runtime telemetry without arbitrary shell execution',()
  assert.doesNotMatch(agent,/child_process\.exec/);
  assert.doesNotMatch(agent,/shell\s*:\s*true/);
 });
+
+
+test('traffic intelligence is removed from Passport and lives in owner mobile Command OS',()=>{
+ const app=read('src/App.jsx');
+ const page=read('src/control/ControlCenterPage.jsx');
+ const traffic=read('src/components/DirectorTraffic.jsx');
+ assert.doesNotMatch(app,/import DirectorTraffic/);
+ assert.doesNotMatch(app,/<DirectorTraffic\s*\/>/);
+ assert.match(page,/import DirectorTraffic/);
+ assert.match(page,/<DirectorTraffic\s*\/>/);
+ assert.match(page,/jumpTo\('cc-traffic'\)/);
+ assert.match(traffic,/id="cc-traffic"/);
+ assert.match(traffic,/app_director_traffic_summary/);
+ assert.match(traffic,/app_director_traffic_timeline/);
+ assert.match(traffic,/INTELLIGENCE · FRÉQUENTATION/);
+ assert.match(traffic,/mise à jour auto · 30 s/);
+});
