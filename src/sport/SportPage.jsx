@@ -70,7 +70,6 @@ function progressLabel(challenge,entry){
 const SPORT_SOURCE_COOLDOWN=5*60*1000;
 const SPORT_PERMANENT_COOLDOWN=6*60*60*1000;
 const SPORT_RETRY_ALL=20000;
-const SPORT_HEALTH_API='https://3b-international.vercel.app/api/sport-video-health';
 
 function sportNetworkTimeout(base=18000){
  if(typeof navigator==='undefined')return base;
@@ -101,7 +100,6 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
  const[epoch,setEpoch]=useState(0);
  const[playerState,setPlayerState]=useState('idle');
  const[statusMessage,setStatusMessage]=useState('');
- const[preflightStatus,setPreflightStatus]=useState('idle');
  const[online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine!==false);
  const[visible,setVisible]=useState(()=>typeof document==='undefined'||document.visibilityState!=='hidden');
  const source=sources[sourceIndex]||sources[0]||null;
@@ -168,7 +166,6 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
   setEpoch(value=>value+1);
   setPlayerState('idle');
   setStatusMessage('');
-  setPreflightStatus('idle');
   readyRef.current=false;
  },[item?.id,isH24,sources]);
 
@@ -256,34 +253,6 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
   setPlayerState('unavailable');
   setStatusMessage('Sources momentanément indisponibles · nouvelle tentative automatique dans quelques secondes.');
  }
-
- useEffect(()=>{
-  if(!consent||!source?.videoId||!online||!visible)return;
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),5000);
-  let active=true;
-  setPreflightStatus('checking');
-  fetch(SPORT_HEALTH_API+'?video='+encodeURIComponent(source.videoId),{signal:controller.signal})
-   .then(response=>response.ok?response.json():Promise.reject(new Error('health')))
-   .then(result=>{
-    if(!active)return;
-    if(result?.available===false){
-     setPreflightStatus('unavailable');
-     advanceSource({
-      markFailureSource:true,
-      errorCode:100,
-      reason:'Source retirée détectée avant lecture · secours automatique'
-     });
-    }else if(result?.available===true){
-     setPreflightStatus('available');
-    }else{
-     setPreflightStatus('unknown');
-    }
-   })
-   .catch(()=>{if(active)setPreflightStatus('unknown');})
-   .finally(()=>clearTimeout(timer));
-  return()=>{active=false;clearTimeout(timer);controller.abort();};
- },[consent,source?.id,source?.videoId,online,visible,item?.id]);
 
  useEffect(()=>{
   if(playerState!=='unavailable'||!online||!visible)return;
@@ -452,7 +421,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
    <div className="sport-media-details">
     <span>{item.badge||item.sport}</span>
     <strong>{item.title}</strong>
-    <small>{statusMessage||source?.provider||item.provider}{preflightStatus==='available'?' · source vérifiée':''}</small>
+    <small>{statusMessage||source?.provider||item.provider}</small>
     {consent&&trusted&&<div className={'sport-media-health state-'+playerState} aria-live="polite">
      <span className="sport-media-health-dot"/>
      <strong>{stateLabels[playerState]||'3B'}</strong>
