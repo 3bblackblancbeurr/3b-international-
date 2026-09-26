@@ -61,3 +61,37 @@ export async function passportVerificationRequest(expectedUser){
  if(!response.ok)throw Error(data.error||'Impossible de générer la preuve du Passeport.');
  return data;
 }
+
+export const PASSKEYS_ENABLED = import.meta.env.VITE_3B_PASSKEYS_ENABLED === 'true';
+
+export async function register3BPasskey(){
+ if(!PASSKEYS_ENABLED)throw Error('Les passkeys 3B ne sont pas encore activées.');
+ const {data:{session}}=await authClient.auth.getSession();
+ if(!session?.user)throw Error('Connecte-toi avant d’ajouter une passkey.');
+ const {data,error}=await authClient.auth.registerPasskey();
+ if(error)throw error;
+ return data;
+}
+
+export async function signInWith3BPasskey(){
+ if(!PASSKEYS_ENABLED)throw Error('Les passkeys 3B ne sont pas encore activées.');
+ const {data,error}=await authClient.auth.signInWithPasskey();
+ if(error)throw error;
+ return data;
+}
+
+export async function list3BPasskeys(){
+ if(!PASSKEYS_ENABLED)return [];
+ const {data,error}=await authClient.auth.passkey.list();
+ if(error)throw error;
+ return Array.isArray(data)?data:[];
+}
+
+export async function delete3BPasskey(passkeyId){
+ if(!PASSKEYS_ENABLED)throw Error('Les passkeys 3B ne sont pas encore activées.');
+ if(!/^[0-9a-f-]{36}$/i.test(String(passkeyId||'')))throw Error('Passkey invalide.');
+ const {error}=await authClient.auth.passkey.delete({passkeyId});
+ if(error)throw error;
+ return true;
+}
+
