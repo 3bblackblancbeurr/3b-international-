@@ -63,8 +63,15 @@ test('Penalty Rush Edge service keeps authority and service credentials server-s
   assert.match(source,/colorsInput/);
   assert.match(source,/status=eq\.preselected/);
   assert.match(source,/countryNeededRole/);
-  assert.match(source,/needQualified/);
+  assert.match(source,/selectionScore/);
+  assert.match(source,/disciplinePenalty/);
+  assert.match(source,/recentRankedForm/);
   assert.match(source,/role_profile/);
+  assert.match(source,/passport_public_id/);
+  assert.match(source,/penalty_ranked_stats/);
+  assert.match(source,/club\.invite/);
+  assert.match(source,/internationalPhase/);
+  assert.match(source,/rankedSeasonId/);
   assert.match(source,/sleeves:/);
   assert.match(source,/socksStyle:/);
   assert.match(source,/material:/);
