@@ -152,6 +152,7 @@ function send(res,status,payload){
 
 export default async function handler(req,res){
  if(req.method!=='GET')return send(res,405,{ok:false,error:'method_not_allowed'});
+ if(Object.keys(req.query||{}).length)return send(res,400,{ok:false,error:'unexpected_query_parameters'});
  const key=process.env.YOUTUBE_API_KEY;
  if(!key)return send(res,503,{ok:false,error:'live_discovery_not_configured',sources:[]});
 
@@ -172,11 +173,7 @@ export default async function handler(req,res){
    cacheSeconds:1200
   });
  }catch(error){
-  return send(res,502,{
-   ok:false,
-   error:'live_discovery_failed',
-   message:error?.message||'YouTube live discovery failed',
-   sources:[]
-  });
+  console.warn('[sport-live] discovery failed',error?.message||'unknown');
+  return send(res,502,{ok:false,error:'live_discovery_failed',sources:[]});
  }
 }
