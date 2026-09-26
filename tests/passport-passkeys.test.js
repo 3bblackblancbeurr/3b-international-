@@ -12,6 +12,7 @@ test('passkeys stay disabled by default until the permanent RP domain is chosen'
 });
 
 test('passkey operations use Supabase WebAuthn APIs and require an authenticated user for enrollment',()=>{
+ assert.match(client,/experimental:\{passkey:true\}/);
  assert.match(client,/auth\.registerPasskey\(\)/);
  assert.match(client,/auth\.signInWithPasskey\(\)/);
  assert.match(client,/auth\.passkey\.list\(\)/);
