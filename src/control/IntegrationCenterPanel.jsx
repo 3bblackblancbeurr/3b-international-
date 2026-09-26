@@ -101,12 +101,12 @@ export default function IntegrationCenterPanel({pulse,dataAvailable,primaryDevic
  const external=[
   {
    Icon:Mail,label:'Gmail',state:gmail?.state||google?.state||'checking',
-   detail:gmail?.state==='live'?`${gmail.unread||0} message${gmail.unread===1?'':'s'} non lu${gmail.unread===1?'':'s'} prioritaire${gmail.unread===1?'':'s'}`:google?.detail||'Vérification serveur…',
+   detail:gmail?.state==='live'?`${gmail.unread||0} message${gmail.unread===1?'':'s'} non lu${gmail.unread===1?'':'s'} dans la boîte de réception · hors promotions`:google?.detail||'Vérification serveur…',
    next:google?.state==='setup_required'?'Autorisation Google Workspace serveur requise.':null
   },
   {
    Icon:CalendarDays,label:'Google Agenda',state:calendar?.state||google?.state||'checking',
-   detail:calendar?.state==='live'?`${calendar.upcoming||0} événement${calendar.upcoming===1?'':'s'} à venir`:google?.detail||'Vérification serveur…',
+   detail:calendar?.state==='live'?`${calendar.upcoming||0} prochain${calendar.upcoming===1?'':'s'} événement${calendar.upcoming===1?'':'s'} chargé${calendar.upcoming===1?'':'s'}`:google?.detail||'Vérification serveur…',
    next:nextEvent?(privacyMode?'Prochain événement masqué':`${nextEvent.title||'Événement'} · ${nextEvent.start?new Date(nextEvent.start).toLocaleString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'date inconnue'}`):null
   },
   {
