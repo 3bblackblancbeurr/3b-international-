@@ -1,0 +1,2 @@
+create index if not exists passport_verification_tickets_passport_public_id_idx
+  on public.passport_verification_tickets(passport_public_id);
