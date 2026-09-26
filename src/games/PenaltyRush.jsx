@@ -345,6 +345,7 @@ function PlayerStudio({ profile, rating, snapshot, setProfile, busy, onSave }) {
           <label>Identité officielle<span className="penalty-readonly-field">{profile.displayName}</span></label>
           <label>Pays / sélection<span className="penalty-readonly-field">{country.flag} {country.name} · {country.value}</span></label>
           <label>Passeport<span className="penalty-readonly-field">{profile.passportLabel||passport.label||'Passeport 3B'}</span></label>
+          <button className="penalty-copy penalty-copy-passport" type="button" disabled={!profile.passportPublicId} onClick={()=>navigator.clipboard?.writeText(profile.passportPublicId||'').catch(()=>{})}><Copy size={13}/> Copier mon ID public de recrutement</button>
           <div className="penalty-identity-state" data-state={profile.identityStatus==='review'?'review':'ready'}>
             <Shield size={17}/><div><b>{profile.identityStatus==='review'?'REVUE D’IDENTITÉ REQUISE':'IDENTITÉ RENFORCÉE'}</b><small>{profile.identityStatus==='review'?'Le classé et les sélections sont suspendus jusqu’à réalignement.':'Le pays et le nom officiel viennent du Passeport. Aucun UUID de connexion n’est affiché.'}</small></div>
           </div>
