@@ -1802,3 +1802,46 @@ button.control-nexus-domain:active{transform:scale(.988)}
 @media (pointer:coarse){
  .control-setting-toggle{min-height:72px}
 }
+
+
+/* ===== Radar tactile values ===== */
+.control-traffic-chart-interactive{display:grid;gap:8px}
+button.control-traffic-bar{
+ padding:0;
+ border:0!important;
+ color:inherit;
+ background:transparent!important;
+ -webkit-tap-highlight-color:transparent;
+}
+button.control-traffic-bar:focus-visible{
+ outline:2px solid var(--cc-gold);
+ outline-offset:2px;
+ border-radius:8px;
+}
+.control-traffic-bar.is-selected .control-traffic-bar-track{
+ box-shadow:inset 0 0 0 1px rgba(231,197,125,.45),0 0 18px rgba(231,197,125,.08);
+}
+.control-traffic-bar.is-selected .control-traffic-bar-track i{
+ filter:brightness(1.18);
+}
+.control-traffic-bar.is-selected span,
+.control-traffic-bar.is-selected b{color:#efd79e}
+.control-traffic-exact{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ gap:7px;
+ min-height:28px;
+ padding:5px 8px;
+ border:1px solid rgba(255,255,255,.045);
+ border-radius:10px;
+ color:#617985;
+ background:rgba(255,255,255,.014);
+ font-size:7px;
+}
+.control-traffic-exact strong{color:#d9c48f;font-size:8px}
+.control-traffic-exact span{color:#728a96}
+@media (pointer:coarse){
+ button.control-traffic-bar{min-height:112px}
+ .control-traffic-bars.is-compact button.control-traffic-bar{min-height:128px}
+}
