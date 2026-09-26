@@ -1,3 +1,4 @@
 export function hasPassportAccess(passport) {
-  return Boolean(passport?.userId);
+  if (!passport?.userId) return false;
+  return (passport.passportState || 'active') === 'active';
 }
