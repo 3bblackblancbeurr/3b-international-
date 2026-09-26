@@ -44,14 +44,16 @@ const PRO_TABS = [
 
 const nowIso = () => new Date().toISOString();
 
-function loadLocal(storageKey, profile) {
+function loadLocal(storageKey, legacyKey, profile) {
   try {
     const raw = localStorage.getItem(storageKey);
-    if (!raw) return createEmptyState(profile);
-    return normalizeState(JSON.parse(raw), profile);
-  } catch {
-    return createEmptyState(profile);
-  }
+    if (raw) return { state: normalizeState(JSON.parse(raw), profile), migrated: false };
+  } catch {}
+  try {
+    const legacy = localStorage.getItem(legacyKey);
+    if (legacy) return { state: normalizeState(JSON.parse(legacy), profile), migrated: true };
+  } catch {}
+  return { state: createEmptyState(profile), migrated: false };
 }
 
 function activityEntry(type, title, detail) {
@@ -91,9 +93,14 @@ export default function NosblocPremiumPage({ goTo }) {
 
   useEffect(() => {
     const profile = { studioName: "Studio de " + ownerName };
-    const loadedState = loadLocal(storageKey, profile);
-    setState(loadedState);
-    setSelectedId(loadedState.projects?.[0]?.id || "");
+    const legacyKey = NOSBLOC_STORAGE_KEY + ":" + (account.user?.id || "device");
+    const loadedState = loadLocal(storageKey, legacyKey, profile);
+    setState(loadedState.state);
+    setSelectedId(loadedState.state.projects?.[0]?.id || "");
+    if (loadedState.migrated) {
+      try { localStorage.setItem(storageKey, JSON.stringify(loadedState.state)); } catch {}
+      setNotice("Tes projets Nosbloc existants ont été repris automatiquement dans la nouvelle interface.");
+    }
     setLoaded(true);
   }, [storageKey, ownerName]);
 
