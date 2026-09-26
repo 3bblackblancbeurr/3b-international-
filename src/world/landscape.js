@@ -67,7 +67,7 @@ export function createLandscape(models,region,save,onError=console.error){
   flora.plant(type,x,height(x,z),z,size,rng()*Math.PI*2,root);collisions.push({x,z,r:.65});
  }
  // One continuous surface, with no radial paths or raised navigation decks.
- const ground=geo(new THREE.PlaneGeometry(1000,1000,220,220));ground.rotateX(-Math.PI/2);
+ const groundSize=hub?1500:1000,groundSegments=hub?240:220;const ground=geo(new THREE.PlaneGeometry(groundSize,groundSize,groundSegments,groundSegments));ground.rotateX(-Math.PI/2);
  const positions=ground.getAttribute('position'),colors=new Float32Array(positions.count*3),low=new THREE.Color(biome.low),high=new THREE.Color(biome.high),rock=new THREE.Color(biome.rock),color=new THREE.Color();
  for(let i=0;i<positions.count;i++){const x=positions.getX(i),z=positions.getZ(i),y=height(x,z);positions.setY(i,y);const mottling=.48+.12*Math.sin(x*.17)*Math.cos(z*.19)+.06*Math.sin(x*1.37-z*.82),slope=Math.abs(height(x+.7,z)-y)+Math.abs(height(x,z+.7)-y);color.copy(low).lerp(high,Math.max(0,Math.min(1,mottling))).lerp(rock,Math.min(.8,slope*.55));colors.set(color.toArray(),i*3);}
  ground.setAttribute('color',new THREE.BufferAttribute(colors,3));ground.computeVertexNormals();const soil=createNaturalGround(region);owned.push(soil.material);if(soil.texture)owned.push(soil.texture);const terrain=shape(ground,soil.material,0,0,0);terrain.castShadow=false;
@@ -76,49 +76,50 @@ export function createLandscape(models,region,save,onError=console.error){
  const water=shape(geo(new THREE.CircleGeometry(lake.r+2,64)),waterMat,lake.x,-1.5,lake.z);water.rotation.x=-Math.PI/2;water.castShadow=false;
  for(let i=0;i<20;i++){const a=rng()*Math.PI*2,r=lake.r+3+rng()*2,x=lake.x+Math.cos(a)*r,z=lake.z+Math.sin(a)*r;shape(ball,mat(biome.rock),x,height(x,z)-.1,z,.7+rng(),.4+rng()*.6,.7+rng());}
  const constrained=typeof navigator!=='undefined'&&((Number(navigator.deviceMemory)||4)<=3||(Number(navigator.hardwareConcurrency)||4)<=4);
- const treeBudget=hub?(constrained?170:240):380,stoneBudget=hub?(constrained?22:32):48;
- for(let i=0;i<treeBudget;i++){const a=rng()*Math.PI*2,r=23+Math.sqrt(rng())*222,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>13)continue;tree(x,z,.85+rng()*.65);}
- for(let i=0;i<stoneBudget;i++){const x=(rng()-.5)*250,z=(rng()-.5)*250;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
+ const treeBudget=hub?(constrained?145:220):380,stoneBudget=hub?(constrained?18:28):48,treeMin=hub?72:23,treeSpread=hub?360:222;
+ for(let i=0;i<treeBudget;i++){const a=rng()*Math.PI*2,r=treeMin+Math.sqrt(rng())*treeSpread,x=Math.cos(a)*r,z=Math.sin(a)*r;if(field.protectedPoint(x,z,3)||Math.abs(height(x,z))>18)continue;tree(x,z,.85+rng()*.65);}
+ const stoneScatter=hub?760:250;
+ for(let i=0;i<stoneBudget;i++){const x=(rng()-.5)*stoneScatter,z=(rng()-.5)*stoneScatter;if(field.protectedPoint(x,z,4))continue;const size=1.2+rng()*2.3;const stone=shape(ball,mat(biome.rock),x,height(x,z)+size*.2,z,size,size*.6,size*.8);stone.rotation.set(rng(),rng()*6,rng()*.2);collisions.push({x,z,r:size*.7});}
  const meadow=addMeadow(field,root,owned,region),reduceWind=typeof window!=='undefined'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  addTownGardens(field,root,owned,region,flora);
  if(hub){
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
   const core=toLandscape(region,0,-3),coreY=height(core.x,core.z),nexus=new THREE.Group();root.add(nexus);
   // Nexus: broad readable plaza + a real eight-piece Broken Circle landmark.
-  shape(cylinder,mat('#cfc6aa',{metalness:.12,roughness:.72}),core.x,coreY+.22,core.z,7.8,.44,7.8,nexus);
-  shape(cylinder,mat('#253b43',{metalness:.42,roughness:.46}),core.x,coreY+.50,core.z,5.1,.28,5.1,nexus);
-  const orb=shape(ball,mat('#78d9ff',{emissive:'#53c9ff',emissiveIntensity:.72,metalness:.22,roughness:.28}),core.x,coreY+6.35,core.z,.72,1.05,.72,nexus);decorations.push({orb,baseY:coreY+6.35});
-  for(const radius of [8.8,13.8,22]){
+  shape(cylinder,mat('#cfc6aa',{metalness:.12,roughness:.72}),core.x,coreY+.28,core.z,32,.56,32,nexus);
+  shape(cylinder,mat('#172a31',{metalness:.5,roughness:.42}),core.x,coreY+.66,core.z,22,.34,22,nexus);
+  const orb=shape(ball,mat('#78d9ff',{emissive:'#53c9ff',emissiveIntensity:.78,metalness:.22,roughness:.24}),core.x,coreY+69,core.z,1.7,2.2,1.7,nexus);decorations.push({orb,baseY:coreY+69});
+  for(const radius of [70,94,122]){
    const ring=geo(new THREE.TorusGeometry(radius,.085,5,96));ring.rotateX(-Math.PI/2);
    const rim=shape(ring,mat(radius===13.8?'#4db6d0':'#d8bd80',{metalness:.55,roughness:.38,emissive:radius===13.8?'#276f84':'#6b5427',emissiveIntensity:.18}),core.x,coreY+.11,core.z,1,1,1,nexus);rim.castShadow=false;
   }
   for(const [index,countryConfig] of COUNTRIES.entries()){
    const segmentMat=new THREE.MeshStandardMaterial({color:'#30424a',emissive:countryConfig.color,emissiveIntensity:.13,metalness:.72,roughness:.3});owned.push(segmentMat);
-   const arc=geo(new THREE.TorusGeometry(5.45,.24,8,28,.58)),fragment=shape(arc,segmentMat,core.x,coreY+6.35,core.z,1,1,1,nexus);
+   const arc=geo(new THREE.TorusGeometry(52,1.15,10,34,.58)),fragment=shape(arc,segmentMat,core.x,coreY+68,core.z,1,1,1,nexus);
    fragment.rotation.z=index*Math.PI/4+.105;fragment.castShadow=true;decorations.push({fragment,country:countryConfig.id,material:segmentMat});
-   const a=index*Math.PI/4,x=core.x+Math.cos(a)*12.1,z=core.z+Math.sin(a)*12.1,y=height(x,z);
-   shape(cylinder,mat('#2c3f45',{metalness:.48}),x,y+1.15,z,.22,2.3,.22,nexus);
-   shape(ball,mat(countryConfig.color,{emissive:countryConfig.color,emissiveIntensity:.58,metalness:.32}),x,y+2.45,z,.22,.36,.22,nexus);
+   const a=index*Math.PI/4,x=core.x+Math.cos(a)*72,z=core.z+Math.sin(a)*72,y=height(x,z);
+   shape(cylinder,mat('#2c3f45',{metalness:.48}),x,y+2.6,z,.42,5.2,.42,nexus);
+   shape(ball,mat(countryConfig.color,{emissive:countryConfig.color,emissiveIntensity:.58,metalness:.32}),x,y+5.55,z,.48,.72,.48,nexus);
   }
-  for(let i=0;i<8;i++){
-   const a=i*Math.PI/4,x=core.x+Math.cos(a)*18,z=core.z+Math.sin(a)*18;
-   asset('Bench',x,z,1.05,-a+Math.PI/2);asset('Planter',x+Math.sin(a)*3,z-Math.cos(a)*3,1.25);
+  for(let i=0;i<4;i++){
+   const a=i*Math.PI/2+Math.PI/4,x=core.x+Math.cos(a)*82,z=core.z+Math.sin(a)*82;
+   asset('Bench',x,z,1.05,-a+Math.PI/2);
   }
   // Each kingdom gets a readable plaza before the threshold and two real building masses.
   for(const [index,countryConfig] of COUNTRIES.entries()){
    const p=toLandscape(region,...countryConfig.portal),sectorY=height(p.x,p.z),sites=field.buildings.filter(site=>site.id===countryConfig.id);
    for(const site of sites)house(site.id,site.x,site.z,site.rotation,site.variant);
-   tree(p.x-10,p.z-7,1.05,BIOMES[countryConfig.id].tree);tree(p.x+11,p.z-6,.9,BIOMES[countryConfig.id].tree);
-   const plazaRing=geo(new THREE.TorusGeometry(7.7,.1,5,72));plazaRing.rotateX(-Math.PI/2);
+   tree(p.x-24,p.z-16,1.15,BIOMES[countryConfig.id].tree);tree(p.x+25,p.z-14,1.05,BIOMES[countryConfig.id].tree);
+   const plazaRing=geo(new THREE.TorusGeometry(19,.14,5,72));plazaRing.rotateX(-Math.PI/2);
    const rim=shape(plazaRing,mat(countryConfig.color,{metalness:.42,roughness:.44,emissive:countryConfig.color,emissiveIntensity:.2}),p.x,sectorY+.1,p.z);rim.castShadow=false;
    const sector=new THREE.Group();root.add(sector);
-   asset('Bench',p.x-7,p.z+5,1.05,index*Math.PI/4,sector);asset('Lantern',p.x+6,p.z+5,1.25,0,sector);asset('Planter',p.x-8,p.z-4,1.25,0,sector);
-   resident(p.x+7,p.z+5,countryConfig.color,sector,index%2?'artisan':'woman');resident(p.x-6,p.z+6,'#b8a68b',sector,index%3?'traveler':'elder');
+   asset('Bench',p.x-15,p.z+11,1.05,index*Math.PI/4,sector);asset('Lantern',p.x+14,p.z+10,1.25,0,sector);asset('Planter',p.x-17,p.z-9,1.35,0,sector);
+   resident(p.x+14,p.z+12,countryConfig.color,sector,index%2?'artisan':'woman');resident(p.x-13,p.z+13,'#b8a68b',sector,index%3?'traveler':'elder');
    batch(sector);
    const group=new THREE.Group(),workshop=new THREE.Group(),garden=new THREE.Group();root.add(group);group.add(workshop,garden);
-   asset('Market',p.x+10,p.z+6,.9,0,workshop);asset('Lantern',p.x+8,p.z+2,1.2,0,workshop);
-   asset('Planter',p.x-9,p.z+4,1.65,0,garden);asset(BIOMES[countryConfig.id].tree,p.x+9,p.z+6,.9,0,garden);
-   resident(p.x+4.5,p.z+8,countryConfig.color,group,index%2?'traveler':'woman');
+   asset('Market',p.x+23,p.z+14,1.05,0,workshop);asset('Lantern',p.x+19,p.z+7,1.2,0,workshop);
+   asset('Planter',p.x-21,p.z+10,1.75,0,garden);asset(BIOMES[countryConfig.id].tree,p.x+22,p.z+15,1.0,0,garden);
+   resident(p.x+10,p.z+18,countryConfig.color,group,index%2?'traveler':'woman');
    batch(workshop);batch(garden);stages.push({group,country:countryConfig.id,workshop,garden});
   }
   // The Hub services are physical places in the 3D city, not detached menu buttons.
@@ -164,18 +165,38 @@ export function createLandscape(models,region,save,onError=console.error){
   }
   // Retaining lights on the higher promenade make the new terrain levels legible at a glance.
   const promenade=new THREE.Group();root.add(promenade);qualityGroups.push(promenade);
-  for(let i=0;i<16;i++){const a=i/16*Math.PI*2,r=35,x=core.x+Math.cos(a)*r,z=core.z+Math.sin(a)*r,y=height(x,z);if(i%2===0)asset('Lantern',x,z,1.05,-a,promenade);else shape(cylinder,mat('#ad9663',{metalness:.42}),x,y+.45,z,.06,.9,.06,promenade);}
+  for(let i=0;i<20;i++){const a=i/20*Math.PI*2,r=132,x=core.x+Math.cos(a)*r,z=core.z+Math.sin(a)*r,y=height(x,z);if(i%2===0)asset('Lantern',x,z,1.05,-a,promenade);else shape(cylinder,mat('#ad9663',{metalness:.42}),x,y+.45,z,.06,.9,.06,promenade);}
   batch(promenade);
 
-  // Low-cost distant skyline: large masses provide depth instead of a platform ending in empty space.
-  const skyline=new THREE.Group();root.add(skyline);
-  for(let i=0;i<24;i++){
-   const a=i/24*Math.PI*2,r=138+(i%4)*12,x=Math.cos(a)*r,z=Math.sin(a)*r,y=height(x,z),h=15+(i%5)*5,w=5+(i%3)*1.6;
-   const tower=shape(box,mat(i%3===0?'#415057':'#59615f',{metalness:.08,roughness:.86}),x,y+h/2,z,w,h,w*.78,skyline);tower.rotation.y=-a+.18;
-   if(i%3===0)shape(box,mat('#d0b574',{emissive:'#7b622b',emissiveIntensity:.25,metalness:.45}),x,y+h*.64,z+Math.sin(a)*.45,w*.55,.16,.12,skyline);
-   collisions.push({x,z,width:w,depth:w*.78,rotation:tower.rotation.y});
+  // Distant metropolitan silhouette: large, sparse masses preserve depth without
+  // filling the breathing belt. This reads as a capital rather than a game board.
+  const skyline=new THREE.Group();root.add(skyline);qualityGroups.push(skyline);
+  for(let i=0;i<20;i++){
+   const a=i/20*Math.PI*2+.08*Math.sin(i*1.7),r=342+(i%5)*23,x=Math.cos(a)*r,z=Math.sin(a)*r,y=height(x,z),h=28+(i%6)*7,w=8+(i%4)*2.2;
+   const tower=shape(box,mat(i%3===0?'#26363d':'#46514f',{metalness:.09,roughness:.87}),x,y+h/2,z,w,h,w*.72,skyline);tower.rotation.y=-a+.16;
+   if(i%4===0)shape(box,mat('#d0b574',{emissive:'#7b622b',emissiveIntensity:.22,metalness:.45}),x,y+h*.66,z+Math.sin(a)*.65,w*.52,.2,.16,skyline);
+   collisions.push({x,z,width:w,depth:w*.72,rotation:tower.rotation.y});
   }
   batch(skyline);
+
+  // Exterior archipelago. These platforms sit beyond the normal walking radius:
+  // visible landmarks now, reserved for stables, creator studios, events and future extensions.
+  const archipelago=new THREE.Group();root.add(archipelago);qualityGroups.push(archipelago);
+  const outerSites=[
+   {a:2.55,r:590,size:31,accent:'#d8bd80'},
+   {a:.62,r:610,size:28,accent:'#66cfe9'},
+   {a:1.55,r:575,size:34,accent:'#b9cea7'},
+   {a:-.58,r:625,size:26,accent:'#d8bd80'},
+   {a:-2.18,r:605,size:24,accent:'#66cfe9'}
+  ];
+  for(const [i,site] of outerSites.entries()){
+   const x=Math.cos(site.a)*site.r,z=Math.sin(site.a)*site.r,y=height(x,z),g=new THREE.Group();archipelago.add(g);
+   shape(cylinder,mat('#18282d',{metalness:.36,roughness:.62}),x,y+2.4,z,site.size,4.8,site.size,g);
+   const ring=geo(new THREE.TorusGeometry(site.size*.74,.18,6,64));ring.rotateX(-Math.PI/2);shape(ring,mat(site.accent,{emissive:site.accent,emissiveIntensity:.2,metalness:.5}),x,y+4.86,z,1,1,1,g);
+   for(let j=0;j<3;j++){const a=site.a+j*Math.PI*2/3,px=x+Math.cos(a)*site.size*.48,pz=z+Math.sin(a)*site.size*.48;shape(cylinder,mat('#31454b',{metalness:.32}),px,y+8,pz,.38,6.5+j*2,.38,g);shape(ball,mat(site.accent,{emissive:site.accent,emissiveIntensity:.52}),px,y+12+j*1.7,pz,.42,.6,.42,g);}
+   if(i===0){shape(box,mat('#26383e',{metalness:.18,roughness:.74}),x,y+8.2,z,13,7.2,8,g);shape(box,mat('#b99c62',{metalness:.55}),x,y+12.2,z+4.1,9,.25,.18,g);}
+   batch(g);
+  }
  }else{
   for(const p of field.buildings)house(region,p.x,p.z,p.rotation,p.variant,genericBuildings,p.urban);
   addSettlement({region,field,root,shape,box,cylinder,ball,geo,mat,asset,resident,owned});
