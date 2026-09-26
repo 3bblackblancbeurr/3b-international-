@@ -45,6 +45,7 @@ const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
+const NosblocPage=lazy(()=>import('./nosbloc/NosblocPage.jsx'));
 
 const BASE_MENU_ITEMS = [
   { id: "guide", label: "Guide & XP", description: "Tous les menus, les gains et les niveaux expliqués." },
@@ -72,6 +73,12 @@ const BASE_MENU_ITEMS = [
     label: "Le Monde du 3B",
     icon: "🌍",
     description: "Huit pays vivants, des personnages et créatures à rencontrer, des lieux à reconstruire.",
+  },
+  {
+    id: "nosbloc",
+    label: "Nosbloc du 3B",
+    icon: "▦",
+    description: "Crée ton Bloc, développe ton univers et prépare tes futures expériences dans l’écosystème 3B.",
   },
   {
     id: "games",
@@ -363,6 +370,7 @@ export default function App() {
       )}
 
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
+      {page === "nosbloc" && <NosblocPage goTo={goTo} />}
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
       {page === "game" && (gameSlug === "penalty-rush"
         ? <PenaltyRush onClose={() => goTo("games")} onAccount={() => goTo("member")} />

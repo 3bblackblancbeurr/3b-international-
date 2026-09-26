@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, BookOpen, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
 import CompactCard from './CompactCard.jsx';
 import SecretClock from "../secret/SecretClock.jsx";
 
-const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
+const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
   const Icon = ICONS[page] || Globe2;
   return <Icon size={22} strokeWidth={1.65} aria-hidden="true" {...props} />;
@@ -12,7 +12,7 @@ export function SectionIcon({ page, ...props }) {
 
 export const NAV_GROUPS = [
   { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
-  { title: "Univers & jeux", ids: ["world3b", "games", "manga", "secret"] },
+  { title: "Univers & création", ids: ["world3b", "nosbloc", "games", "manga", "secret"] },
   { title: "Religions & spiritualité", ids: ["religion"] },
   { title: "Services & avantages", ids: ["shop", "sport", "control"] },
   { title: "En préparation", ids: ["community", "ia"] },
