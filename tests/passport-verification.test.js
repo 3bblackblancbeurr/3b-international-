@@ -34,6 +34,8 @@ test('public verifier consumes a ticket once and returns only minimal public Pas
  assert.match(verifier,/expires_at=gt\./);
  assert.match(verifier,/\{consumed_at:now\},'PATCH'/);
  assert.match(verifier,/p_limit:30,p_window:60/);
+ assert.match(verifier,/ticket\.purpose!==['"]verify['"]/);
+ assert.match(verifier,/ticket\.scopes\.includes\(['"]identity\.basic['"]\)/);
  assert.match(verifier,/displayName:/);
  assert.match(verifier,/country:/);
  assert.doesNotMatch(verifier,/wallet|coins|inventory|recovery_hash/i);
