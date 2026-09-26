@@ -142,7 +142,7 @@ export default function DirectorTraffic(){
  const appSessions=rows.filter(row=>row.platform==='app').reduce((total,row)=>total+n(row.visits),0);
  const appShare=rowTotal?Math.round(appSessions/rowTotal*100):0;
 
- return <section className="control-section control-traffic" id="cc-traffic" aria-label="Fréquentation 3B privée">
+ return <section className="control-section control-traffic control-hide-in-focus" id="cc-traffic" aria-label="Fréquentation 3B privée">
   <header className="control-section-heading control-traffic-heading">
    <div>
     <p className="control-kicker"><Radar size={13}/> INTELLIGENCE · FRÉQUENTATION</p>
