@@ -3,13 +3,14 @@ import {SECTORS,SECTOR_BY_ID} from './board.js';
 const clone=v=>structuredClone(v);
 const cap=(n,a,b)=>Math.max(a,Math.min(b,n));
 const makeReserve=()=>({infantry:7,tank:3,fighter:3,destroyer:2,regiment:3,heavyTank:3,bomber:3,cruiser:2});
+const makeSpoils=()=>({infantry:0,tank:0,fighter:0,destroyer:0,regiment:0,heavyTank:0,bomber:0,cruiser:0});
 export function addUnit(state,type,nation,sectorId){
  const unit={id:'u'+state.nextUnitId++,type,nation,sectorId};state.units.push(unit);return unit;
 }
 export function createPowerGame(options={}){
  if(options.snapshot)return validatePowerSnapshot(options.snapshot);
  const nation=Number.isInteger(options.nation)?cap(options.nation,0,7):0;
- const state={version:1,seed:Number.isInteger(options.seed)?options.seed:196,round:1,phase:'planning',humanNation:nation,difficulty:['normal','veteran','elite'].includes(options.difficulty)?options.difficulty:'veteran',nextUnitId:1,winner:null,units:[],orders:[],owners:{},nations:NATIONS.map((x,i)=>({id:i,active:true,power:0,flagsCaptured:0,reserve:makeReserve()})),history:[],lastResolution:null};
+ const state={version:1,seed:Number.isInteger(options.seed)?options.seed:196,round:1,phase:'planning',humanNation:nation,difficulty:['normal','veteran','elite'].includes(options.difficulty)?options.difficulty:'veteran',nextUnitId:1,winner:null,units:[],orders:[],owners:{},nations:NATIONS.map((x,i)=>({id:i,active:true,power:0,flagsCaptured:0,reserve:makeReserve(),spoils:makeSpoils()})),history:[],lastResolution:null};
  for(const s of SECTORS)state.owners[s.id]=s.hq??null;
  for(let n=0;n<8;n++){
   addUnit(state,'flag',n,'hq'+n);addUnit(state,'infantry',n,'hq'+n);addUnit(state,'infantry',n,'hq'+n);addUnit(state,'tank',n,'hq'+n);addUnit(state,'tank',n,'hq'+n);addUnit(state,'fighter',n,'hq'+n);addUnit(state,'fighter',n,'hq'+n);addUnit(state,'destroyer',n,'hq'+n);addUnit(state,'destroyer',n,'hq'+n);
@@ -23,7 +24,7 @@ export function removeUnit(state,id){const i=state.units.findIndex(u=>u.id===id)
 export function gameScore(state,nation=state.humanNation){
  const me=state.nations[nation],territory=Object.values(state.owners).filter(x=>x===nation).length;
  const force=state.units.filter(u=>u.nation===nation).reduce((a,u)=>a+(UNIT_TYPES[u.type]?.strength||0),0);
- return me.flagsCaptured*500+territory*25+force*10+me.power;
+ const reserveForce=Object.entries(me.spoils||{}).reduce((sum,[type,count])=>sum+(UNIT_TYPES[type]?.strength||0)*count,0);return me.flagsCaptured*500+territory*25+(force+reserveForce)*10+me.power;
 }
 export function snapshotPowerGame(state){const out=clone(state);out.orders=[];out.lastResolution=null;return out;}
 export function validatePowerSnapshot(value){
@@ -35,9 +36,9 @@ export function validatePowerSnapshot(value){
  state.winner=Number.isInteger(value.winner)&&value.winner>=0&&value.winner<8?value.winner:null;
  state.phase=state.winner===null?'planning':'ended';state.units=[];state.nextUnitId=1;
  if(Array.isArray(value.nations)&&value.nations.length===8)state.nations=state.nations.map((base,i)=>{
-  const src=value.nations[i]||{},reserve={...base.reserve};
-  for(const key of Object.keys(reserve))reserve[key]=cap(Number.isFinite(src.reserve?.[key])?Math.trunc(src.reserve[key]):reserve[key],0,99);
-  return{...base,active:src.active!==false,power:cap(Number.isFinite(src.power)?Math.trunc(src.power):0,0,9999),flagsCaptured:cap(Number.isFinite(src.flagsCaptured)?Math.trunc(src.flagsCaptured):0,0,7),reserve};
+  const src=value.nations[i]||{},reserve={...base.reserve},spoils={...base.spoils};
+  for(const key of Object.keys(reserve))reserve[key]=cap(Number.isFinite(src.reserve?.[key])?Math.trunc(src.reserve[key]):reserve[key],0,99);for(const key of Object.keys(spoils))spoils[key]=cap(Number.isFinite(src.spoils?.[key])?Math.trunc(src.spoils[key]):0,0,99);
+  return{...base,active:src.active!==false,power:cap(Number.isFinite(src.power)?Math.trunc(src.power):0,0,9999),flagsCaptured:cap(Number.isFinite(src.flagsCaptured)?Math.trunc(src.flagsCaptured):0,0,7),reserve,spoils};
  });
  const seen=new Set();
  for(const raw of Array.isArray(value.units)?value.units.slice(0,320):[]){
