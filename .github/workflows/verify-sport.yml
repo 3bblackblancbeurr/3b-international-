@@ -1,0 +1,76 @@
+name: Verify Sport 3B
+
+on:
+  push:
+    branches:
+      - chatgpt-sport-director-20260925
+      - main
+    paths:
+      - 'src/sport/**'
+      - 'shared/sport-*.js'
+      - 'server/sport-director.js'
+      - 'api/sport-director.js'
+      - 'supabase/functions/ecosystem/sports.js'
+      - 'tests/sport-*.test.js'
+      - 'tests/api-function-budget.test.js'
+      - 'index.html'
+      - 'vercel.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/verify-sport.yml'
+  pull_request:
+    paths:
+      - 'src/sport/**'
+      - 'shared/sport-*.js'
+      - 'server/sport-director.js'
+      - 'api/sport-director.js'
+      - 'supabase/functions/ecosystem/sports.js'
+      - 'tests/sport-*.test.js'
+      - 'tests/api-function-budget.test.js'
+      - 'index.html'
+      - 'vercel.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/verify-sport.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-sport-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-sport:
+    name: Sport security, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Allow only the audited esbuild install script
+        run: npm rebuild esbuild
+
+      - name: Sport unit and security tests
+        run: npm run test:sport
+
+      - name: Sport lint
+        run: npm run lint:sport
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Production build
+        run: npm run build
