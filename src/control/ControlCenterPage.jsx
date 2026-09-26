@@ -262,7 +262,7 @@ export default function ControlCenterPage({goTo}){
    const connection=navigator.connection?.effectiveType||'';
    setPulse(current=>({...current,network,connection}));
    if(!network){
-    setPulse(current=>({...current,network:false,production:false}));
+    setPulse(current=>({...current,network:false}));
     return;
    }
 
@@ -365,7 +365,7 @@ export default function ControlCenterPage({goTo}){
    const current=rows.get(key);
    if(!current||score>current.score)rows.set(key,{key,level,title,score});
   };
-  if(error)add('control-api','bad',error,100);
+  if(error&&!/^Réseau indisponible/i.test(error))add('control-api','bad',error,100);
   if(!pulse.network)add('device-network','bad','Cet appareil est hors ligne.',98);
   if(pulse.production===false)add('production','bad','La production 3B ne répond pas au contrôle.',95);
   if(['failure','timed_out','cancelled'].includes(pulse.ci))add('github-ci','bad','Le dernier workflow GitHub demande une vérification.',92);
