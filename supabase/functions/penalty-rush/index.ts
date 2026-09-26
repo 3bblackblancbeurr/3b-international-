@@ -380,11 +380,121 @@ async function clubFor(uid:string) {
   const memberships = await admin('/rest/v1/penalty_club_members?user_id=eq.' + encodeURIComponent(uid) + '&select=club_id,role,joined_at&limit=1');
   const membership = Array.isArray(memberships) ? memberships[0] : null;
   if (!membership) return null;
-  const clubs = await admin('/rest/v1/penalty_clubs?id=eq.' + encodeURIComponent(membership.club_id) + '&select=id,code,name,colors,created_at&limit=1');
+  const clubs = await admin('/rest/v1/penalty_clubs?id=eq.' + encodeURIComponent(membership.club_id) + '&select=id,code,name,colors,owner_user_id,created_at&limit=1');
   const club = Array.isArray(clubs) ? clubs[0] : null;
   if (!club) return null;
-  const members = await admin('/rest/v1/penalty_club_members?club_id=eq.' + encodeURIComponent(club.id) + '&select=user_id');
-  return { ...club, role:membership.role, members:Array.isArray(members) ? members.length : 1 };
+  const members = await admin('/rest/v1/penalty_club_members?club_id=eq.' + encodeURIComponent(club.id) + '&select=user_id,role,joined_at&order=joined_at.asc');
+  const memberRows=Array.isArray(members)?members:[];
+  const ids=memberRows.map((m:any)=>String(m.user_id||'')).filter((id:string)=>UUID.test(id));
+  const profiles=ids.length?await admin(
+    '/rest/v1/penalty_profiles?user_id=in.('+ids.map(encodeURIComponent).join(',')+')&select=user_id,passport_public_id,display_name,shirt_name,shirt_number,country_id,style_id,preferred_role'
+  ).catch(()=>[]):[];
+  const byId=new Map((Array.isArray(profiles)?profiles:[]).map((p:any)=>[p.user_id,p]));
+  const roster=memberRows.map((m:any)=>{
+    const p:any=byId.get(m.user_id)||{};
+    return {userId:m.user_id,role:m.role,joinedAt:m.joined_at,passportPublicId:p.passport_public_id||null,
+      displayName:p.display_name||'Joueur 3B',shirtName:p.shirt_name||'3B',shirtNumber:number(p.shirt_number,10),
+      countryId:p.country_id||'fr',styleId:p.style_id||'technicien',preferredRole:p.preferred_role||'versatile'};
+  });
+  return { ...club, role:membership.role, members:roster.length, roster };
+}
+
+function publicClub(club:any, uid:string) {
+  if (!club) return null;
+  return {
+    id:club.id,code:club.code,name:club.name,colors:club.colors,role:club.role,members:club.members,createdAt:club.created_at,
+    roster:(club.roster||[]).map((member:any)=>({
+      passportPublicId:member.passportPublicId,
+      passportLabel:passportLabel(member.passportPublicId),
+      displayName:member.displayName,shirtName:member.shirtName,shirtNumber:member.shirtNumber,
+      countryId:member.countryId,styleId:member.styleId,preferredRole:member.preferredRole,
+      role:member.role,joinedAt:member.joinedAt,isSelf:member.userId===uid,
+    })),
+  };
+}
+
+async function clubInvitesFor(uid:string) {
+  const incoming=await admin(
+    '/rest/v1/penalty_club_invites?target_user_id=eq.'+encodeURIComponent(uid)+
+    '&status=eq.pending&expires_at=gt.'+encodeURIComponent(nowIso())+'&select=id,club_id,created_at,expires_at&order=created_at.desc&limit=20'
+  ).catch(()=>[]);
+  const list=Array.isArray(incoming)?incoming:[];
+  const clubIds=[...new Set(list.map((i:any)=>String(i.club_id||'')).filter((id:string)=>UUID.test(id)))];
+  const clubs=clubIds.length?await admin('/rest/v1/penalty_clubs?id=in.('+clubIds.map(encodeURIComponent).join(',')+')&select=id,name,code,colors').catch(()=>[]):[];
+  const byId=new Map((Array.isArray(clubs)?clubs:[]).map((club:any)=>[club.id,club]));
+  return list.map((invite:any)=>({id:invite.id,club:byId.get(invite.club_id)||null,createdAt:invite.created_at,expiresAt:invite.expires_at}));
+}
+
+async function inviteClubMember(uid:string, passportInput:unknown) {
+  const club=await clubFor(uid);
+  if(!club)throw new Failure(404,'Crée ou rejoins un club avant de recruter.');
+  if(!['owner','captain'].includes(club.role))throw new Failure(403,'Seuls le fondateur et les capitaines peuvent recruter.');
+  const passportId=String(passportInput||'').trim().toLowerCase();
+  if(!UUID.test(passportId))throw new Failure(400,'Identifiant Passeport public invalide.');
+  const members=await admin('/rest/v1/member_profiles?passport_public_id=eq.'+encodeURIComponent(passportId)+'&select=user_id,name,handle&limit=1');
+  const target=Array.isArray(members)?members[0]:null;
+  if(!target)throw new Failure(404,'Aucun Passeport 3B correspondant.');
+  if(target.user_id===uid)throw new Failure(400,'Tu es déjà dans ton propre club.');
+  if(await clubFor(target.user_id))throw new Failure(409,'Ce joueur appartient déjà à un club.');
+  await admin('/rest/v1/penalty_club_invites?club_id=eq.'+encodeURIComponent(club.id)+'&target_user_id=eq.'+encodeURIComponent(target.user_id)+'&status=eq.pending',{
+    method:'PATCH',body:{status:'expired',responded_at:nowIso()},prefer:'return=minimal',
+  }).catch(()=>null);
+  const rows=await admin('/rest/v1/penalty_club_invites?select=*',{
+    method:'POST',body:{club_id:club.id,target_user_id:target.user_id,invited_by:uid,status:'pending',expires_at:plusMs(72*60*60_000)},prefer:'return=representation',
+  });
+  return {invite:rows?.[0]||null,targetName:String(target.name||target.handle||'Joueur 3B').slice(0,40)};
+}
+
+async function respondClubInvite(uid:string, inviteInput:unknown, decisionInput:unknown) {
+  const inviteId=String(inviteInput||'');
+  const decision=String(decisionInput||'');
+  if(!UUID.test(inviteId)||!['accept','decline'].includes(decision))throw new Failure(400,'Invitation club invalide.');
+  const rows=await admin('/rest/v1/penalty_club_invites?id=eq.'+encodeURIComponent(inviteId)+'&target_user_id=eq.'+encodeURIComponent(uid)+'&status=eq.pending&select=*&limit=1');
+  const invite=rows?.[0];
+  if(!invite)throw new Failure(404,'Invitation introuvable ou déjà traitée.');
+  if(Date.parse(invite.expires_at)<=Date.now()){
+    await admin('/rest/v1/penalty_club_invites?id=eq.'+encodeURIComponent(invite.id),{method:'PATCH',body:{status:'expired',responded_at:nowIso()},prefer:'return=minimal'});
+    throw new Failure(409,'Cette invitation a expiré.');
+  }
+  if(decision==='accept'){
+    if(await clubFor(uid))throw new Failure(409,'Tu appartiens déjà à un club.');
+    await admin('/rest/v1/penalty_club_members',{method:'POST',body:{club_id:invite.club_id,user_id:uid,role:'member'},prefer:'return=minimal'});
+  }
+  await admin('/rest/v1/penalty_club_invites?id=eq.'+encodeURIComponent(invite.id),{
+    method:'PATCH',body:{status:decision==='accept'?'accepted':'declined',responded_at:nowIso()},prefer:'return=minimal',
+  });
+  return decision;
+}
+
+async function changeClubMemberRole(uid:string, passportInput:unknown, roleInput:unknown) {
+  const club=await clubFor(uid);
+  if(!club||club.role!=='owner')throw new Failure(403,'Seul le fondateur peut nommer un capitaine.');
+  const role=String(roleInput||'');
+  if(!['captain','member'].includes(role))throw new Failure(400,'Rôle club invalide.');
+  const passportId=String(passportInput||'').trim().toLowerCase();
+  const profileRows=await admin('/rest/v1/penalty_profiles?passport_public_id=eq.'+encodeURIComponent(passportId)+'&select=user_id&limit=1');
+  const target=profileRows?.[0];
+  if(!target||target.user_id===club.owner_user_id)throw new Failure(400,'Membre club invalide.');
+  const updated=await admin('/rest/v1/penalty_club_members?club_id=eq.'+encodeURIComponent(club.id)+'&user_id=eq.'+encodeURIComponent(target.user_id),{
+    method:'PATCH',body:{role},prefer:'return=representation',
+  });
+  if(!updated?.[0])throw new Failure(404,'Ce joueur ne fait pas partie du club.');
+  return role;
+}
+
+async function kickClubMember(uid:string, passportInput:unknown) {
+  const club=await clubFor(uid);
+  if(!club||!['owner','captain'].includes(club.role))throw new Failure(403,'Tu ne peux pas retirer ce joueur.');
+  const passportId=String(passportInput||'').trim().toLowerCase();
+  const profileRows=await admin('/rest/v1/penalty_profiles?passport_public_id=eq.'+encodeURIComponent(passportId)+'&select=user_id&limit=1');
+  const target=profileRows?.[0];
+  if(!target||target.user_id===club.owner_user_id||target.user_id===uid)throw new Failure(400,'Ce membre ne peut pas être retiré.');
+  const memberRows=await admin('/rest/v1/penalty_club_members?club_id=eq.'+encodeURIComponent(club.id)+'&user_id=eq.'+encodeURIComponent(target.user_id)+'&select=role&limit=1');
+  const targetMember=memberRows?.[0];
+  if(!targetMember)throw new Failure(404,'Ce joueur ne fait pas partie du club.');
+  if(club.role==='captain'&&targetMember.role!=='member')throw new Failure(403,'Un capitaine ne peut retirer qu’un membre.');
+  await admin('/rest/v1/penalty_club_members?club_id=eq.'+encodeURIComponent(club.id)+'&user_id=eq.'+encodeURIComponent(target.user_id),{method:'DELETE',prefer:'return=minimal'});
+  return true;
 }
 
 async function nationalRank(profile:any, rating:any) {
@@ -1125,7 +1235,7 @@ async function createClub(uid:string, nameInput:unknown, colorsInput:any={}) {
     try {
       const rows = await admin('/rest/v1/penalty_clubs?select=*', {
         method:'POST',
-        body:{code,name,owner_user_id:uid,colors:{primary:'#08090b',secondary:'#d8b35e'}},
+        body:{code,name,owner_user_id:uid,colors},
         prefer:'return=representation',
       });
       const club = rows?.[0];
