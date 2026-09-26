@@ -73,13 +73,37 @@ function activityEntry(type, title, detail) {
   };
 }
 
-function moneyState(account) {
+function moneyState(account, finance) {
   const coins = Number(account.economy?.points ?? account.profile?.points ?? 0);
+  const wallet = finance?.wallet || {};
   return {
-    availableCents: 0,
-    pendingCents: 0,
-    payoutCents: 0,
+    availableCents: Math.max(0, Number(wallet.availableCents || 0)),
+    pendingCents: Math.max(0, Number(wallet.pendingCents || 0)),
+    payoutCents: Array.isArray(finance?.payoutRequests)
+      ? finance.payoutRequests.filter(row => ["requested","review","approved","processing"].includes(row.status)).reduce((sum,row) => sum + Math.max(0, Number(row.amountCents || 0)), 0)
+      : 0,
     coins: Number.isFinite(coins) ? Math.max(0, coins) : 0,
+  };
+}
+
+function cloudProjectPayload(project) {
+  const ready = projectReadiness(project);
+  return {
+    id: String(project.id || ""),
+    title: project.title,
+    type: project.type,
+    template: project.template,
+    description: project.description,
+    audience: project.audience,
+    platforms: project.platforms || {},
+    safety: project.safety || {},
+    rights: project.rights || {},
+    splits: Array.isArray(project.splits) ? project.splits : [],
+    plan: Array.isArray(project.plan) ? project.plan : [],
+    licensedAssets: Array.isArray(project.licensedAssets) ? project.licensedAssets : [],
+    scripts: Array.isArray(project.scripts) ? project.scripts : [],
+    aiBrief: project.aiBrief || "",
+    server: { readiness: ready.score },
   };
 }
 
@@ -99,6 +123,7 @@ export default function NosblocPremiumPage({ goTo }) {
   const [cityOpen, setCityOpen] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [cloudReady, setCloudReady] = useState(false);
+  const [cloudFinance, setCloudFinance] = useState(null);
 
   useEffect(() => {
     const profile = { studioName: "Studio de " + ownerName };
@@ -140,35 +165,47 @@ export default function NosblocPremiumPage({ goTo }) {
     if (!loaded || !online || !cloudReady || !account.user?.id) return;
     const timer = setTimeout(async () => {
       try {
-        await nosblocRequest("ensure-profile", { studioName: state.profile?.studioName || "Mon studio 3B" }, account.user.id);
+        const links = new Map();
         for (const project of (state.projects || []).slice(0, 40)) {
-          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(project.id || ""))) continue;
-          const ready = projectReadiness(project);
-          await nosblocRequest("save-project", {
-            project: {
-              project_id: project.id,
-              title: project.title,
-              project_type: project.type,
-              template_key: project.template,
-              description: project.description,
-              audience: project.audience,
-              readiness_score: ready.score,
-              metadata: {
-                platforms: project.platforms || {},
-                safety: project.safety || {},
-                rights: project.rights || {},
-                plan: Array.isArray(project.plan) ? project.plan.slice(0, 30) : [],
-                updatedAt: project.updatedAt || null,
-              },
-            },
+          const result = await nosblocRequest("project_sync", {
+            project: cloudProjectPayload(project),
+            idempotency: globalThis.crypto?.randomUUID?.(),
           }, account.user.id);
+          if (result?.projectId) links.set(project.id, result.projectId);
+        }
+        if (links.size) {
+          setState(previous => {
+            let changed = false;
+            const projects = previous.projects.map(project => {
+              const cloudProjectId = links.get(project.id);
+              if (!cloudProjectId || project.cloudProjectId === cloudProjectId) return project;
+              changed = true;
+              return { ...project, cloudProjectId };
+            });
+            if (!changed) return previous;
+            const next = normalizeState({ ...previous, projects, updatedAt: nowIso() }, previous.profile);
+            try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+            return next;
+          });
         }
       } catch {
         if (online) setCloudReady(false);
       }
     }, 1400);
     return () => clearTimeout(timer);
-  }, [loaded, online, cloudReady, account.user?.id, state.projects, state.profile?.studioName]);
+  }, [loaded, online, cloudReady, account.user?.id, state.projects, storageKey]);
+
+  useEffect(() => {
+    let active = true;
+    if (!online || !cloudReady || !account.user?.id) {
+      setCloudFinance(null);
+      return () => { active = false; };
+    }
+    nosblocRequest("finance_snapshot", {}, account.user.id)
+      .then(result => { if (active) setCloudFinance(result); })
+      .catch(() => { if (active) setCloudFinance(null); });
+    return () => { active = false; };
+  }, [online, cloudReady, account.user?.id]);
 
   const selected = useMemo(
     () => state.projects.find(project => project.id === selectedId) || state.projects[0] || null,
@@ -239,7 +276,7 @@ export default function NosblocPremiumPage({ goTo }) {
     setNotice("");
   };
 
-  const startPrivateTest = project => {
+  const startPrivateTest = async project => {
     if (!project) return;
     const result = appendProjectVersion(project, {
       stage: "checkpoint",
@@ -251,9 +288,37 @@ export default function NosblocPremiumPage({ goTo }) {
       "Test privé préparé. La version publique reste inchangée.",
       activityEntry("test", "Test privé créé", project.title),
     );
+    if (!cloudReady || !account.user?.id) return;
+    try {
+      let cloudProjectId = project.cloudProjectId;
+      if (!cloudProjectId) {
+        const synced = await nosblocRequest("project_sync", {
+          project: cloudProjectPayload(project),
+          idempotency: globalThis.crypto?.randomUUID?.(),
+        }, account.user.id);
+        cloudProjectId = synced?.projectId;
+        if (cloudProjectId) updateProject(project.id, { cloudProjectId });
+      }
+      if (!cloudProjectId) throw new Error("Projet Cloud introuvable.");
+      const cloudVersion = await nosblocRequest("version_private_test", {
+        projectId: cloudProjectId,
+        project: cloudProjectPayload(project),
+        note: "Version de test privé",
+        idempotency: globalThis.crypto?.randomUUID?.(),
+      }, account.user.id);
+      if (cloudVersion?.versionId) {
+        updateProject(project.id, current => ({
+          versions: (current.versions || []).map(version => version.id === result.version.id
+            ? { ...version, cloudVersionId: cloudVersion.versionId }
+            : version),
+        }), "Test privé sauvegardé aussi dans Nosbloc Cloud.");
+      }
+    } catch (error) {
+      setNotice((error?.message || "Synchronisation Cloud impossible.") + " Le test local reste conservé.");
+    }
   };
 
-  const requestReview = project => {
+  const requestReview = async project => {
     if (!project) return;
     const ready = projectReadiness(project);
     if (!ready.readyForReview) {
@@ -270,10 +335,39 @@ export default function NosblocPremiumPage({ goTo }) {
       "Version figée envoyée en vérification. Aucun paiement ou publication automatique n’a été déclenché.",
       activityEntry("review", "Projet envoyé en vérification", project.title),
     );
+    if (!cloudReady || !account.user?.id) return;
+    try {
+      let cloudProjectId = project.cloudProjectId;
+      if (!cloudProjectId) {
+        const synced = await nosblocRequest("project_sync", {
+          project: cloudProjectPayload(project),
+          idempotency: globalThis.crypto?.randomUUID?.(),
+        }, account.user.id);
+        cloudProjectId = synced?.projectId;
+        if (cloudProjectId) updateProject(project.id, { cloudProjectId });
+      }
+      if (!cloudProjectId) throw new Error("Projet Cloud introuvable.");
+      const cloudVersion = await nosblocRequest("review_submit", {
+        projectId: cloudProjectId,
+        project: cloudProjectPayload(project),
+        note: "Soumission à la vérification Nosbloc",
+        idempotency: globalThis.crypto?.randomUUID?.(),
+      }, account.user.id);
+      if (cloudVersion?.versionId) {
+        updateProject(project.id, current => ({
+          versions: (current.versions || []).map(version => version.id === result.version.id
+            ? { ...version, cloudVersionId: cloudVersion.versionId }
+            : version),
+        }), "Version figée et envoyée au serveur de modération Nosbloc.");
+      }
+    } catch (error) {
+      setNotice(error?.message || "La révision serveur a refusé cette version.");
+    }
   };
 
-  const restoreVersion = (project, versionId) => {
+  const restoreVersion = async (project, versionId) => {
     try {
+      const localVersion = (project.versions || []).find(version => version.id === versionId);
       const restored = restoreProjectVersion(project, versionId);
       updateProject(
         project.id,
@@ -282,6 +376,14 @@ export default function NosblocPremiumPage({ goTo }) {
         activityEntry("restore", "Version restaurée", project.title),
       );
       setStudioMode("simple");
+      if (cloudReady && account.user?.id && project.cloudProjectId && localVersion?.cloudVersionId) {
+        await nosblocRequest("version_restore", {
+          projectId: project.cloudProjectId,
+          versionId: localVersion.cloudVersionId,
+          idempotency: globalThis.crypto?.randomUUID?.(),
+        }, account.user.id);
+        setNotice("Version restaurée localement et dans Nosbloc Cloud.");
+      }
     } catch (error) {
       setNotice(error?.message || "Restauration impossible.");
     }
@@ -329,6 +431,7 @@ export default function NosblocPremiumPage({ goTo }) {
           setView={setView}
           account={account}
           setNotice={setNotice}
+          cloudFinance={cloudFinance}
         />}
       </main>
       <MobileNav view={view} setView={setView} />
@@ -633,7 +736,7 @@ function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
   </div>;
 }
 
-function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account, setNotice }) {
+function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account, setNotice, cloudFinance }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   if (!project) return <div className="nb2-view"><EmptyState icon={FolderKanban} title="Aucun projet sélectionné." text="Crée ou ouvre un projet."/><button className="nb2-primary-inline" onClick={() => setView("create")}>Créer un projet</button></div>;
   const ready = projectReadiness(project);
@@ -646,7 +749,7 @@ function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, 
     </section>
 
     {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview}/> :
-      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} account={account} setNotice={setNotice}/>}
+      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} account={account} setNotice={setNotice} cloudFinance={cloudFinance}/>}
 
     <section className="nb2-danger-zone">
       <button onClick={() => setConfirmArchive(!confirmArchive)}><Settings2 size={16}/> Zone avancée</button>
@@ -688,7 +791,7 @@ function ReadinessChecklist({ ready }) {
   return <div className="nb2-checklist">{ready.checks.map(check => <div key={check.id} data-ok={check.ok}><span>{check.ok ? <Check size={14}/> : null}</span><b>{check.label}</b><small>{check.weight} pts</small></div>)}</div>;
 }
 
-function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, account, setNotice }) {
+function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, account, setNotice, cloudFinance }) {
   return <div className="nb2-pro">
     <nav className="nb2-pro-tabs">{PRO_TABS.map(([id,label,Icon]) => <button key={id} data-active={proTab === id} onClick={() => setProTab(id)}><Icon size={16}/>{label}</button>)}</nav>
     {proTab === "build" && <BuildPro project={project} ready={ready} updateProject={updateProject}/>}
@@ -697,7 +800,7 @@ function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVe
     {proTab === "ai" && <AIPro project={project} updateProject={updateProject}/>}
     {proTab === "versions" && <VersionsPro project={project} restoreVersion={restoreVersion}/>}
     {proTab === "team" && <TeamPro project={project} updateProject={updateProject} setNotice={setNotice}/>}
-    {proTab === "economy" && <EconomyPro project={project} account={account}/>}
+    {proTab === "economy" && <EconomyPro project={project} account={account} cloudFinance={cloudFinance}/>} 
     {proTab === "analytics" && <AnalyticsPro project={project}/>}
   </div>;
 }
@@ -840,11 +943,11 @@ function TeamPro({ project, updateProject, setNotice }) {
     </section>
   </div>;
 }
-function EconomyPro({ project, account }) {
+function EconomyPro({ project, account, cloudFinance }) {
   const example = simulateRevenue({grossEuros:100,taxRate:20,storeRate:10,refundRate:2});
-  const money = moneyState(account);
+  const money = moneyState(account, cloudFinance);
   return <div className="nb2-pro-grid">
-    <section className="nb2-pro-card"><SectionTitle eyebrow="€ ARGENT RÉEL" title={formatEuros(money.availableCents)}/><p className="nb2-muted">Solde réel affiché séparément des Coins. Les écritures financières doivent venir du ledger serveur, jamais du navigateur.</p><div className="nb2-lock-banner"><LockKeyhole size={17}/> Paiements et versements restent verrouillés tant que KYC, fiscalité et configuration serveur ne sont pas validés.</div></section>
+    <section className="nb2-pro-card"><SectionTitle eyebrow="€ ARGENT RÉEL" title={formatEuros(money.availableCents)}/><p className="nb2-muted">Disponible · {formatEuros(money.availableCents)} · En attente · {formatEuros(money.pendingCents)} · Versements en cours · {formatEuros(money.payoutCents)}. Le ledger serveur reste la seule source de vérité.</p><div className="nb2-lock-banner"><LockKeyhole size={17}/> {cloudFinance?.runtime?.payoutsEnabled ? "Versements ouverts uniquement pour les comptes KYC/fiscaux vérifiés." : "Paiements et versements restent verrouillés tant que KYC, fiscalité et configuration Stripe ne sont pas validés."}</div></section>
     <section className="nb2-pro-card"><SectionTitle eyebrow="SIMULATION" title="Exemple transparent sur 100 €"/><dl className="nb2-receipt"><div><dt>Vente brute</dt><dd>{formatEuros(example.gross)}</dd></div><div><dt>Taxes</dt><dd>-{formatEuros(example.taxes)}</dd></div><div><dt>Frais</dt><dd>-{formatEuros(example.storeFees)}</dd></div><div><dt>Remboursements estimés</dt><dd>-{formatEuros(example.refunds)}</dd></div><div className="total"><dt>Part créateur simulée</dt><dd>{formatEuros(example.creatorDirect)}</dd></div></dl><small>Simulation uniquement · aucun solde réel n’est créé.</small></section>
   </div>;
 }
