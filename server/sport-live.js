@@ -153,11 +153,11 @@ function json(payload,status=200){
  });
 }
 
-export default{
- fetch:async request=>{
+export async function handleSportLive(request){
   if(request.method!=='GET')return json({ok:false,error:'method_not_allowed'},405);
   const requestUrl=new URL(request.url);
-  if(requestUrl.search)return json({ok:false,error:'unexpected_query_parameters'},400);
+  const externalParams=[...requestUrl.searchParams.keys()].filter(key=>key!=='__3b_route');
+  if(externalParams.length)return json({ok:false,error:'unexpected_query_parameters'},400);
   const key=process.env.YOUTUBE_API_KEY;
   if(!key)return json({ok:false,error:'live_discovery_not_configured',sources:[]},503);
 
@@ -181,5 +181,4 @@ export default{
    console.warn('[sport-live] discovery failed',error?.message||'unknown');
    return json({ok:false,error:'live_discovery_failed',sources:[]},502);
   }
- }
-};
+}

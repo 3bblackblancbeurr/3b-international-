@@ -4,7 +4,8 @@ on:
   pull_request:
     paths:
       - 'src/sport/**'
-      - 'api/sport-live.js'
+      - 'server/sport-live.js'
+      - 'api/catalog.js'
       - 'tests/sport*.test.js'
       - 'public/sport-player-shell.html'
       - 'public/sport-player-shell.js'
@@ -18,7 +19,8 @@ on:
     branches: [main]
     paths:
       - 'src/sport/**'
-      - 'api/sport-live.js'
+      - 'server/sport-live.js'
+      - 'api/catalog.js'
       - 'tests/sport*.test.js'
       - 'vercel.json'
       - '.github/workflows/verify-sport-media.yml'

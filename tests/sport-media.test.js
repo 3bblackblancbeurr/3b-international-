@@ -11,7 +11,9 @@ const css=fs.readFileSync(new URL('../src/sport/sport.css',import.meta.url),'utf
 const shell=fs.readFileSync(new URL('../public/sport-player-shell.html',import.meta.url),'utf8');
 const shellJs=fs.readFileSync(new URL('../public/sport-player-shell.js',import.meta.url),'utf8');
 const vercel=JSON.parse(fs.readFileSync(new URL('../vercel.json',import.meta.url),'utf8'));
-const liveApi=fs.readFileSync(new URL('../api/sport-live.js',import.meta.url),'utf8');
+const liveApi=fs.readFileSync(new URL('../server/sport-live.js',import.meta.url),'utf8');
+const catalogApi=fs.readFileSync(new URL('../api/catalog.js',import.meta.url),'utf8');
+const apiFunctionCount=fs.readdirSync(new URL('../api/',import.meta.url)).filter(name=>name.endsWith('.js')).length;
 
 test('Sport keeps H24 and Finals as protected top-level sections',()=>{
  assert.match(page,/id:'h24'/);
@@ -49,12 +51,18 @@ test('live discovery requires a real ongoing embeddable sports broadcast with bo
  assert.match(liveApi,/s-maxage=1200/);
  assert.match(liveApi,/single-global-live-search/);
  assert.match(liveApi,/unexpected_query_parameters/);
- assert.match(liveApi,/export default\{/);
- assert.match(liveApi,/fetch:async request/);
+ assert.match(liveApi,/export async function handleSportLive/);
  assert.match(liveApi,/new URL\(request\.url\)/);
- assert.match(liveApi,/requestUrl\.search/);
+ assert.match(liveApi,/externalParams/);
+ assert.match(catalogApi,/handleSportLive/);
+ assert.match(catalogApi,/__3b_route/);
  assert.doesNotMatch(liveApi,/Object\.keys\(req\.query/);
  assert.doesNotMatch(liveApi,/PROFILE_QUERIES|GF-WteOINCc|nELaL14ms7A|Pbyn08kfhXY/);
+});
+
+test('Sport live stays within the Vercel Hobby direct-function limit',()=>{
+ assert.ok(apiFunctionCount<=12,'direct Vercel functions must stay at 12 or fewer');
+ assert.equal(vercel.rewrites.some(rule=>rule.source==='/api/sport-live'&&rule.destination==='/api/catalog?__3b_route=sport-live'),true);
 });
 
 test('Finals keep full official matches and official fallback where available',()=>{

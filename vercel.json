@@ -115,6 +115,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/sport-live",
+      "destination": "/api/catalog?__3b_route=sport-live"
+    },
+    {
       "source": "/jeux/:slug",
       "destination": "/index.html"
     }
