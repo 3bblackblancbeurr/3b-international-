@@ -23,6 +23,7 @@ test('Passport QR issuer uses a random short-lived server ticket and stores only
  assert.match(issuer,/Date\.now\(\)\+5\*60\*1000/);
  assert.match(issuer,/scopes:\['identity\.basic'\]/);
  assert.match(issuer,/passport-verify\.html\?ticket=/);
+ assert.match(issuer,/revoked_at:issuedAt/);
  assert.doesNotMatch(issuer,/verifyUrl=.*user_id/);
  assert.doesNotMatch(issuer,/qrDataUrl.*wallet/i);
 });
@@ -32,6 +33,7 @@ test('public verifier consumes a ticket once and returns only minimal public Pas
  assert.match(verifier,/revoked_at=is\.null/);
  assert.match(verifier,/expires_at=gt\./);
  assert.match(verifier,/\{consumed_at:now\},'PATCH'/);
+ assert.match(verifier,/p_limit:30,p_window:60/);
  assert.match(verifier,/displayName:/);
  assert.match(verifier,/country:/);
  assert.doesNotMatch(verifier,/wallet|coins|inventory|recovery_hash/i);
