@@ -1,0 +1,76 @@
+{
+  "environment": "staging",
+  "project_name": "3B Nosbloc Staging",
+  "project_ref": "zykdfgahzqqanlyxjtbe",
+  "project_url": "https://zykdfgahzqqanlyxjtbe.supabase.co",
+  "production_project_ref": "ttvhcezucsbbmnafrotq",
+  "production_modified": false,
+  "edge_functions": [
+    {
+      "slug": "nosbloc-staging",
+      "id": "33b67809-4b0b-4ea0-8c8b-ff0fdffd5c10",
+      "version": 1,
+      "verify_jwt": true,
+      "status": "ACTIVE",
+      "purpose": "Authenticated Nosbloc staging API"
+    },
+    {
+      "slug": "nosbloc-staging-console",
+      "id": "fd266cc3-47d7-4efe-b72c-6806abb6af87",
+      "version": 2,
+      "verify_jwt": false,
+      "status": "ACTIVE",
+      "purpose": "Static noindex invite-only test console; mutations proxy only valid user JWTs"
+    }
+  ],
+  "console_url": "https://zykdfgahzqqanlyxjtbe.supabase.co/functions/v1/nosbloc-staging-console",
+  "migrations": [
+    "nosbloc_staging_prerequisites",
+    "nosbloc_server_staging_v1",
+    "nosbloc_staging_authenticated_api",
+    "nosbloc_staging_advisor_hardening",
+    "nosbloc_staging_fk_indexes",
+    "nosbloc_staging_invite_only_signup",
+    "nosbloc_staging_moderator_invite_role"
+  ],
+  "signup_gate": {
+    "invite_only": true,
+    "seeded_codes": 3,
+    "max_uses_each": 1,
+    "expires_days": 30,
+    "raw_code_persisted": false,
+    "moderator_from_private_label": true,
+    "plaintext_codes_committed": false
+  },
+  "locks": {
+    "publication": true,
+    "discover": true,
+    "payments": true,
+    "payouts": true
+  },
+  "security_advisor_findings": 0,
+  "transactional_smoke_test": {
+    "project_created": true,
+    "invitation_target_verified": true,
+    "outsider_invitation_blocked": true,
+    "member_accepted": true,
+    "version_immutable": true,
+    "outsider_moderation_blocked": true,
+    "moderation_remained_private": true,
+    "audit_events": 5,
+    "synthetic_users_rolled_back": true,
+    "project_rolled_back": true
+  },
+  "authenticated_rpc_smoke_test": {
+    "owner_derived_from_auth_uid": true,
+    "invitation_bound_to_exact_user": true,
+    "outsider_invitation_blocked": true,
+    "member_accepted": true,
+    "outsider_moderation_blocked": true,
+    "moderator_recorded": true,
+    "project_remained_private": true,
+    "synthetic_users_rolled_back": true,
+    "project_rolled_back": true
+  },
+  "deployed_on": "2026-09-26"
+}
