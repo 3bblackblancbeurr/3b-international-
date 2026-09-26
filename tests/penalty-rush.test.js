@@ -167,6 +167,9 @@ test('player customization is cosmetic and normalizes identity safely', () => {
     countryId: 'xx',
     styleId: 'cheat-mode',
     keeperPowers: ['read', 'read', 'unknown'],
+    preferredRole:'invalid-role',
+    dominantFoot:'left',
+    appearance:{skinTone:'invalid',hairStyle:'afro',hairColor:'blond',faceShape:'square',facialHair:'beard',heightCm:220,build:'strong'},
     kit: { shirtPrimary: '#ff00ff' },
     boots: { preset: 'future' },
   }, account);
@@ -176,6 +179,15 @@ test('player customization is cosmetic and normalizes identity safely', () => {
   assert.equal(normalized.countryId, 'fr');
   assert.equal(normalized.styleId, 'technicien');
   assert.deepEqual(normalized.keeperPowers, ['read', 'anchor']);
+  assert.equal(normalized.preferredRole,'versatile');
+  assert.equal(normalized.dominantFoot,'left');
+  assert.equal(normalized.appearance.skinTone,'tone4');
+  assert.equal(normalized.appearance.hairStyle,'afro');
+  assert.equal(normalized.appearance.hairColor,'blond');
+  assert.equal(normalized.appearance.faceShape,'square');
+  assert.equal(normalized.appearance.facialHair,'beard');
+  assert.equal(normalized.appearance.heightCm,198);
+  assert.equal(normalized.appearance.build,'strong');
   assert.equal(normalized.kit.shirtPrimary, '#ff00ff');
   assert.equal(normalized.kit.sleeves, 'short');
   assert.equal(normalized.kit.collar, 'v');
