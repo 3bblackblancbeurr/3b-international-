@@ -25,6 +25,7 @@ test('sport live has bounded failure recovery instead of an endless fast loop',(
  assert.match(live,/status[^\n]*waiting|setStatus\('waiting'\)/);
  assert.match(live,/failedUntilRef/);
 });
+
 test('deployment CSP permits only the required official player origins',()=>{
  assert.ok(directives.get('script-src').includes('https://www.youtube.com'));
  assert.ok(directives.get('script-src').includes('https://player.twitch.tv'));
@@ -47,6 +48,7 @@ test('screen wake lock is optional and only requested during playback',()=>{
  assert.match(live,/status!==['"]playing['"]/);
  assert.match(live,/aria-pressed=\{keepAwake\}/);
 });
+
 test('Twitch is skipped when its documented minimum viewport cannot fit',()=>{
  assert.match(live,/function sourceFitsViewport/);
  assert.match(live,/window\.innerWidth>=400&&window\.innerHeight>=300/);
@@ -59,6 +61,7 @@ test('player identity and outbound links are hardened',()=>{
  assert.match(live,/rel="noopener noreferrer"/);
  assert.doesNotMatch(live,/dangerouslySetInnerHTML/);
 });
+
 test('third-party players wait for explicit, revocable media activation',()=>{
  assert.match(live,/MEDIA_CONSENT_KEY/);
  assert.match(live,/!mediaConsent\?<div className="sport-live-consent"/);
@@ -72,17 +75,20 @@ test('the weighted catalog contains France, Europe and world fallbacks',()=>{
  assert.match(shared,/zone:'EUROPE'/);
  assert.match(shared,/zone:'MONDE'/);
 });
+
 test('media activation links to the updated privacy disclosure',()=>{
  const privacy=readFileSync('public/privacy-policy.html','utf8');
  assert.match(live,/href="\/privacy-policy\.html"/);
  assert.match(privacy,/Lecteurs et programme sportifs externes/);
  assert.match(privacy,/ne sont pas chargés avant votre activation explicite/);
 });
+
 test('background suspension cannot falsely rotate away from a match',()=>{
  assert.match(live,/document\.visibilityState==='visible'\)unavailable\('stalled'\)/);
  assert.match(live,/visibilitychange/);
  assert.match(live,/clearTimeout\(visibilityTimerRef\.current\)/);
 });
+
 test('the bundled mobile shell keeps a local CSP when Vercel headers are absent',()=>{
  const index=readFileSync('index.html','utf8');
  assert.match(index,/http-equiv="Content-Security-Policy"/);
@@ -90,11 +96,13 @@ test('the bundled mobile shell keeps a local CSP when Vercel headers are absent'
  assert.match(index,/object-src 'none'/);
  assert.match(index,/connect-src[^\"]*https:\/\/ttvhcezucsbbmnafrotq\.supabase\.co/);
 });
+
 test('rotating to an undersized Twitch viewport moves to a compatible source',()=>{
  assert.match(live,/!sourceFitsViewport\(stream\)/);
  assert.match(live,/window\.screen\?\.orientation\?\.addEventListener/);
  assert.match(live,/setStatus\('switching'\)/);
 });
+
 test('the mobile shell can reach the secured production director API',()=>{
  const index=readFileSync('index.html','utf8');
  assert.match(index,/connect-src[^\"]*https:\/\/3b-international\.vercel\.app/);
@@ -109,6 +117,21 @@ test('match completion needs server status and two confirmations',()=>{
  assert.doesNotMatch(directorClient,/estimatedEventEnd[^\n]*onConfirmedFinished/);
 });
 
+test('director polling is deduplicated and visibility-aware',()=>{
+ assert.match(directorClient,/snapshotRequestRef/);
+ assert.match(directorClient,/if\(snapshotRequestRef\.current\)return snapshotRequestRef\.current/);
+ assert.match(directorClient,/clearTimeout\(timer\)/);
+ assert.match(directorClient,/document\.visibilityState==='visible'/);
+ assert.match(directorClient,/running=false/);
+ assert.match(directorClient,/if\(!active\|\|running\|\|finished/);
+});
+
+test('the client exposes whether real live discovery is configured',()=>{
+ assert.match(directorClient,/liveDetectionReady/);
+ assert.match(directorClient,/snapshot\?\.discovery\?\.youtube/);
+ assert.match(directorClient,/snapshot\?\.discovery\?\.twitch/);
+});
+
 test('sport director never accepts an arbitrary upstream URL',()=>{
  assert.match(server,/upstreamAllowed/);
  assert.match(server,/Paramètre non autorisé/);
@@ -117,6 +140,8 @@ test('sport director never accepts an arbitrary upstream URL',()=>{
 });
 
 test('sport live falls back to official replay content instead of an empty screen',()=>{
- assert.match(live,/playbackVideoId/); assert.match(live,/REPLAY OFFICIEL/);
- assert.match(live,/advanceFallback/); assert.match(live,/Du sport sans écran vide/);
+ assert.match(live,/playbackVideoId/);
+ assert.match(live,/REPLAY OFFICIEL/);
+ assert.match(live,/advanceFallback/);
+ assert.match(live,/Du sport sans écran vide/);
 });
