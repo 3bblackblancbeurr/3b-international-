@@ -57,9 +57,9 @@ test('V3 integrations do not embed secrets or pretend disconnected services are 
  const source=read('src/control/IntegrationCenterPanel.jsx');
  assert.doesNotMatch(source,/sk-[A-Za-z0-9]/);
  assert.doesNotMatch(source,/Bearer\s+[A-Za-z0-9._-]+/);
- assert.match(source,/state:'disconnected'.*E-mail/s);
- assert.match(source,/state:'disconnected'.*Réseaux sociaux/s);
- assert.match(source,/state:'disconnected'.*Finances/s);
- assert.match(source,/state:'disconnected'.*Agenda/s);
- assert.match(source,/state:'disconnected'.*3B IA Command/s);
+ assert.match(source,/label:'E-mail'.*state:'disconnected'/s);
+ assert.match(source,/label:'Réseaux sociaux'.*state:'disconnected'/s);
+ assert.match(source,/label:'Finances'.*state:'disconnected'/s);
+ assert.match(source,/label:'Agenda'.*state:'disconnected'/s);
+ assert.match(source,/label:'3B IA Command'.*state:'disconnected'/s);
 });
