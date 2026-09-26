@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-24",
-  "count": 146,
+  "count": 147,
   "migrations": [
     {
       "version": "20260910020445",
@@ -733,6 +733,11 @@
       "version": "20260926145825",
       "name": "passport_identity_v2_public_id",
       "sha256": "f80045ebb7a018504ceb3690ce9ec1ec3c37f5a99be0d7359c01837d87c58bf1"
+    },
+    {
+      "version": "20260926150431",
+      "name": "passport_verification_ticket_foundation",
+      "sha256": "f0cd83010e44c3445175e04ccc189a896cb8a02a9ca94096de95626cf7a942bf"
     }
   ]
 }
