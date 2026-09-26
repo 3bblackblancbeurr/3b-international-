@@ -7,6 +7,8 @@ import {
 import {controlCenterRequest} from './client.js';
 import DirectorTraffic from '../components/DirectorTraffic.jsx';
 import CommandNexus from './CommandNexus.jsx';
+import DevCenterPanel from './DevCenterPanel.jsx';
+import AppHealthPanel from './AppHealthPanel.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -35,6 +37,8 @@ const NATURAL_COMMANDS=[
 const NAVIGATION_COMMANDS=[
  {re:/\b(radar|trafic|fréquentation|frequentation|visites?)\b/i,target:'cc-traffic',feedback:'Radar 3B ouvert.'},
  {re:/\b(nexus|services?|connexions?)\b/i,target:'cc-nexus',feedback:'Nexus 3B ouvert.'},
+ {re:/\b(dev|développement|developpement|commit|ci|pull request|pr ouvertes?|déploiement|deploiement)\b/i,target:'cc-dev',feedback:'Dev Center ouvert.'},
+ {re:/\b(app health|santé app|sante app|pwa|service worker|stockage|réseau app|reseau app)\b/i,target:'cc-health',feedback:'App Health ouvert.'},
  {re:/\b(appareils?|pc appairé|pc appaire|liaison pc)\b/i,target:'cc-devices',feedback:'Centre des appareils ouvert.'},
  {re:/\b(journal|historique|audit|sécurité|securite)\b/i,target:'cc-log',feedback:'Journal de contrôle ouvert.'},
  {re:/\b(accueil|état général|etat general|maintenant)\b/i,target:'cc-now',feedback:'État général ouvert.'},
@@ -122,7 +126,9 @@ export default function ControlCenterPage({goTo}){
  const[latency,setLatency]=useState(null);
  const[clock,setClock]=useState(()=>new Date());
  const[focus,setFocus]=useState(false);
- const[privacyMode,setPrivacyMode]=useState(false);
+ const[privacyMode,setPrivacyMode]=useState(()=>{
+  try{return sessionStorage.getItem('3b-command-privacy')==='1';}catch{return false;}
+ });
  const[commandText,setCommandText]=useState('');
  const[commandFeedback,setCommandFeedback]=useState('');
  const[pulse,setPulse]=useState(()=>({
@@ -134,6 +140,11 @@ export default function ControlCenterPage({goTo}){
   commit:null,
   commitSha:'',
   workflow:'',
+  openPrCount:null,
+  deploymentEnvironment:'',
+  deploymentStatus:'',
+  deploymentAt:'',
+  deploymentSha:'',
   checkedAt:0
  }));
 
@@ -156,6 +167,10 @@ export default function ControlCenterPage({goTo}){
   const timer=window.setInterval(()=>setClock(new Date()),1000);
   return()=>window.clearInterval(timer);
  },[]);
+
+ useEffect(()=>{
+  try{sessionStorage.setItem('3b-command-privacy',privacyMode?'1':'0');}catch{}
+ },[privacyMode]);
 
  const refresh=useCallback(async()=>{
   const started=performance.now();
@@ -213,13 +228,15 @@ export default function ControlCenterPage({goTo}){
     if(active)setPulse(current=>({...current,production:false}));
    }
 
-   if(!forceGithub&&Date.now()-lastGithub<240000)return;
+   if(!forceGithub&&Date.now()-lastGithub<600000)return;
    lastGithub=Date.now();
    try{
     const headers={Accept:'application/vnd.github+json'};
-    const [commitResponse,runsResponse]=await Promise.all([
+    const [commitResponse,runsResponse,prsResponse,deploymentsResponse]=await Promise.all([
      timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/commits/main',{headers,cache:'no-store'},9000),
-     timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/actions/runs?branch=main&per_page=3',{headers,cache:'no-store'},9000)
+     timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/actions/runs?branch=main&per_page=3',{headers,cache:'no-store'},9000),
+     timedFetch('https://api.github.com/search/issues?q=repo%3A3bblackblancbeurr%2F3b-international-%20is%3Apr%20is%3Aopen&per_page=1',{headers,cache:'no-store'},9000),
+     timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/deployments?per_page=3',{headers,cache:'no-store'},9000)
     ]);
     if(!active)return;
     const next={github:commitResponse.ok&&runsResponse.ok,checkedAt:Date.now()};
@@ -236,6 +253,28 @@ export default function ControlCenterPage({goTo}){
      next.ci=running?'running':latest?.conclusion||latest?.status||null;
      next.workflow=latest?.name||'';
     }
+    if(prsResponse.ok){
+     const payload=await prsResponse.json();
+     next.openPrCount=Number.isFinite(Number(payload?.total_count))?Number(payload.total_count):null;
+    }
+    if(deploymentsResponse.ok){
+     const deployments=await deploymentsResponse.json();
+     const latestDeployment=Array.isArray(deployments)?deployments[0]:null;
+     if(latestDeployment){
+      next.deploymentEnvironment=String(latestDeployment.environment||'');
+      next.deploymentAt=latestDeployment.updated_at||latestDeployment.created_at||'';
+      next.deploymentSha=String(latestDeployment.sha||'').slice(0,7);
+      if(latestDeployment.statuses_url){
+       try{
+        const statusResponse=await timedFetch(latestDeployment.statuses_url,{headers,cache:'no-store'},7000);
+        if(statusResponse.ok){
+         const statuses=await statusResponse.json();
+         next.deploymentStatus=Array.isArray(statuses)?String(statuses[0]?.state||''):'';
+        }
+       }catch{}
+      }
+     }
+    }
     setPulse(current=>({...current,...next}));
    }catch{
     if(active)setPulse(current=>({...current,github:false,checkedAt:Date.now()}));
@@ -244,7 +283,7 @@ export default function ControlCenterPage({goTo}){
 
   const online=()=>update(true);
   const fast=window.setInterval(()=>update(false),30000);
-  const slow=window.setInterval(()=>update(true),300000);
+  const slow=window.setInterval(()=>update(true),600000);
   window.addEventListener('online',online);
   window.addEventListener('offline',online);
   update(true);
@@ -443,6 +482,10 @@ export default function ControlCenterPage({goTo}){
    />
 
    <DirectorTraffic />
+
+   <DevCenterPanel pulse={pulse}/>
+
+   <AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/>
 
    <section className="control-section" id="cc-actions">
     <header className="control-section-heading"><div><p className="control-kicker">ACTION IMMÉDIATE</p><h2>Pilote ton PC</h2></div><TerminalSquare size={20}/></header>
