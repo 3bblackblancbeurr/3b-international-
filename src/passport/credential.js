@@ -15,9 +15,9 @@ export function passportNumberFromPublicId(value) {
   return `${PUBLIC_PREFIX}-${id.replaceAll('-', '').slice(0, 16).toUpperCase()}`;
 }
 
-export function createPassportCredentialSubject(identity, registry) {
+export function createPassportCredentialSubject(identity) {
   if (!identity?.userId || !identity?.countryCode) return null;
-  const publicId = normalizePassportPublicId(registry?.passport_public_id);
+  const publicId = normalizePassportPublicId(identity.passportPublicId);
   if (!publicId) return null;
 
   return Object.freeze({
@@ -27,9 +27,10 @@ export function createPassportCredentialSubject(identity, registry) {
     displayName: clean(identity.name, 80),
     countryCode: clean(identity.countryCode, 3),
     heritageValue: clean(identity.value, 32),
-    assurance: clean(registry.assurance_level || 'member', 32),
-    status: clean(registry.status || 'active', 24),
-    credentialVersion: Number(registry.credential_version) || 1,
+    assurance: identity.public_verified === true ? 'verified' : 'member',
+    status: clean(identity.passportState || 'active', 24),
+    credentialVersion: Math.max(2, Number(identity.passportVersion) || 2),
+    issuedAt: identity.passportIssuedAt || null,
   });
 }
 
@@ -38,7 +39,7 @@ export function canPresentPassportCredential(subject) {
     subject?.id &&
     subject?.passportNumber &&
     subject?.status === 'active' &&
-    ['member', 'verified', 'high_assurance'].includes(subject?.assurance)
+    ['member', 'verified'].includes(subject?.assurance)
   );
 }
 
