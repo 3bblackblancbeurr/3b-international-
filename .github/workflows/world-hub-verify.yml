@@ -1,0 +1,34 @@
+name: Verify 3B World Hub
+
+on:
+  push:
+    branches:
+      - chatgpt-improvements
+    paths:
+      - 'src/world/**'
+      - 'tests/**'
+      - 'scripts/verify-world.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/world-hub-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: world-hub-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
