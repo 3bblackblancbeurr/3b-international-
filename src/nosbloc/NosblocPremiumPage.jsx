@@ -822,14 +822,19 @@ function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, on
       : <div className="nb2-activity-list">{rows.map(row => <article key={row.id}><span><Activity size={17}/></span><div><b>{row.title}</b><p>{row.detail}</p><small>{row.createdAt ? new Date(row.createdAt).toLocaleString("fr-FR") : "Maintenant"} · {row.source === "server" ? "serveur" : "local"}</small></div></article>)}</div>}
   </div>;
 }
-function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
-  const money = moneyState(account);
+function ProfileView({ state, money, serverStatus, setCityOpen, onExport, onImport }) {
+  const payout = money?.payoutAccount;
+  const syncLabel = serverStatus?.state === "online" ? "Synchronisé" : serverStatus?.state === "connecting" ? "Synchronisation…" : "Sauvegarde locale active";
+  const kycLabel = payout?.kyc_status === "verified" ? "Identité vérifiée" : payout?.kyc_status === "pending" ? "Vérification en cours" : "KYC à compléter";
+  const taxLabel = payout?.tax_status === "complete" ? "Fiscalité complète" : "Fiscalité à compléter";
   return <div className="nb2-view">
     <section className="nb2-page-head"><p className="nb2-kicker">MON ESPACE</p><h1>{state.profile?.studioName || "Mon Studio 3B"}</h1><p>Passeport, sécurité et revenus séparés clairement.</p></section>
     <div className="nb2-wallets">
-      <article className="nb2-wallet real"><small>€ ARGENT RÉEL</small><strong>{formatEuros(money.availableCents)}</strong><p>Disponible</p><dl><div><dt>En attente</dt><dd>{formatEuros(money.pendingCents)}</dd></div><div><dt>Versement</dt><dd>{formatEuros(money.payoutCents)}</dd></div></dl><span><LockKeyhole size={14}/> Versements verrouillés jusqu’à vérification serveur/KYC</span></article>
-      <article className="nb2-wallet coins"><small>◉ COINS 3B</small><strong>{money.coins.toLocaleString("fr-FR")}</strong><p>Solde plateforme</p><span><Coins size={14}/> Jamais mélangé avec les euros</span></article>
+      <article className="nb2-wallet real"><small>€ ARGENT RÉEL</small><strong>{formatEuros(money?.availableCents || 0)}</strong><p>Disponible</p><dl><div><dt>En attente</dt><dd>{formatEuros(money?.pendingCents || 0)}</dd></div><div><dt>Versement</dt><dd>{formatEuros(money?.payoutCents || 0)}</dd></div></dl><span><LockKeyhole size={14}/> {money?.runtime?.payoutsEnabled ? "Versements contrôlés côté serveur" : "Versements verrouillés jusqu’à vérification serveur/KYC"}</span></article>
+      <article className="nb2-wallet coins"><small>◉ COINS 3B</small><strong>{Number(money?.coins || 0).toLocaleString("fr-FR")}</strong><p>Solde plateforme</p><span><Coins size={14}/> Jamais mélangé avec les euros</span></article>
     </div>
+    <section className="nb2-settings-card"><div><Cloud size={24}/><span><b>{syncLabel}</b><small>{serverStatus?.error || "Local + serveur avec reprise hors connexion."}</small></span></div><strong>{serverStatus?.state === "online" ? "✓" : "LOCAL"}</strong></section>
+    <section className="nb2-settings-card"><div><ShieldCheck size={24}/><span><b>Créateur & paiements</b><small>{kycLabel} · {taxLabel}</small></span></div><strong>{payout?.payouts_enabled ? "ACTIF" : "VERROUILLÉ"}</strong></section>
     <section className="nb2-settings-card"><div><ShieldCheck size={24}/><span><b>3B Trust</b><small>Rôles, versions, droits et journalisation.</small></span></div><strong>{state.profile?.trustScore ?? 100}/100</strong></section>
     <button className="nb2-settings-card action" onClick={() => setCityOpen(true)}><div><Boxes size={24}/><span><b>3B MA VILLE</b><small>Premier bloc officiel lié au Passeport.</small></span></div><ChevronRight size={20}/></button>
     <section className="nb2-backup-card">
@@ -838,7 +843,6 @@ function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
     </section>
   </div>;
 }
-
 function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account, setNotice }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   if (!project) return <div className="nb2-view"><EmptyState icon={FolderKanban} title="Aucun projet sélectionné." text="Crée ou ouvre un projet."/><button className="nb2-primary-inline" onClick={() => setView("create")}>Créer un projet</button></div>;
