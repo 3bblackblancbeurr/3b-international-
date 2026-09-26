@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import {controlCenterRequest} from './client.js';
 import DirectorTraffic from '../components/DirectorTraffic.jsx';
+import CommandNexus from './CommandNexus.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -112,6 +113,7 @@ export default function ControlCenterPage({goTo}){
  const[latency,setLatency]=useState(null);
  const[clock,setClock]=useState(()=>new Date());
  const[focus,setFocus]=useState(false);
+ const[privacyMode,setPrivacyMode]=useState(false);
  const[commandText,setCommandText]=useState('');
  const[commandFeedback,setCommandFeedback]=useState('');
  const[pulse,setPulse]=useState(()=>({
@@ -147,7 +149,6 @@ export default function ControlCenterPage({goTo}){
  },[]);
 
  const refresh=useCallback(async()=>{
-  if(!phone)return;
   const started=performance.now();
   setSyncing(true);
   try{
@@ -161,10 +162,9 @@ export default function ControlCenterPage({goTo}){
   }finally{
    setSyncing(false);
   }
- },[phone]);
+ },[]);
 
  useEffect(()=>{
-  if(!phone)return;
   let stopped=false;
   let timer=0;
   const tick=async()=>{
@@ -182,10 +182,9 @@ export default function ControlCenterPage({goTo}){
    window.clearTimeout(timer);
    document.removeEventListener('visibilitychange',wake);
   };
- },[phone,refresh]);
+ },[refresh]);
 
  useEffect(()=>{
-  if(!phone)return;
   let active=true;
   let lastGithub=0;
 
@@ -248,7 +247,7 @@ export default function ControlCenterPage({goTo}){
    window.removeEventListener('online',online);
    window.removeEventListener('offline',online);
   };
- },[phone]);
+ },[]);
 
  const devices=useMemo(()=>data?.devices||[],[data]);
  const commands=useMemo(()=>data?.commands||[],[data]);
@@ -276,14 +275,14 @@ export default function ControlCenterPage({goTo}){
   if(primaryDevice&&!primaryOnline)rows.push({level:'warn',title:'Le PC appairé est actuellement hors ligne.'});
   if(primaryOnline&&primaryDevice?.capabilities?.autostart!==true)rows.push({level:'warn',title:'Démarrage automatique du 3B Control Agent à activer sur le PC.'});
   if(recentFailures.length)rows.push({level:'warn',title:recentFailures.length+' commande'+(recentFailures.length>1?'s':'')+' en échec sur la dernière heure.'});
+  if(data&&lastSync&&clock.getTime()-lastSync>60000)rows.push({level:'warn',title:'Les données du Control Center n’ont pas été actualisées depuis plus d’une minute.'});
   return rows;
- },[error,pulse.network,pulse.production,pulse.ci,primaryDevice,primaryOnline,recentFailures.length]);
+ },[error,pulse.network,pulse.production,pulse.ci,primaryDevice,primaryOnline,recentFailures.length,data,lastSync,clock]);
 
- const score=useMemo(()=>{
+ const health=useMemo(()=>{
   const ciHealthy=pulse.ci?(!['failure','timed_out','cancelled'].includes(pulse.ci)):null;
   const values=[pulse.network,pulse.production,data?true:null,pulse.github,ciHealthy].filter(value=>typeof value==='boolean');
-  if(!values.length)return 0;
-  return Math.round(values.filter(Boolean).length/values.length*100);
+  return{healthy:values.filter(Boolean).length,known:values.length};
  },[pulse.network,pulse.production,pulse.github,pulse.ci,data]);
 
  const createPairing=async()=>{
@@ -349,32 +348,21 @@ export default function ControlCenterPage({goTo}){
   navigator.vibrate?.(6);
  };
 
- if(!phone)return <section className="control-page control-device-gate">
-  <div className="control-device-gate-card">
-   <div className="control-gate-mark">3B</div>
-   <Smartphone/>
-   <p className="control-kicker">3B COMMAND OS</p>
-   <h1>Version téléphone uniquement</h1>
-   <p>Le cockpit propriétaire premium est volontairement réservé à ton téléphone. Le PC reste l’agent exécutant, pas l’interface de pilotage.</p>
-   <button onClick={()=>goTo('home')}><ArrowLeft size={17}/> Retour à 3B</button>
-  </div>
- </section>;
-
  if(error&&error.includes('réservé au propriétaire'))return <section className="control-page control-device-gate">
   <div className="control-device-gate-card"><ShieldCheck/><h1>Centre de commande privé</h1><p>Cette zone est réservée au propriétaire 3B. Pas de terminal distant libre : seules les actions 3B autorisées peuvent être envoyées.</p><button onClick={()=>goTo('home')}>Retour</button></div>
  </section>;
 
- const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:'Tout est sous contrôle';
+ const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:'Tout est opérationnel.';
  const productionState=pulse.production===true?'good':pulse.production===false?'bad':'idle';
  const apiState=data&&!error?'good':error?'bad':'warn';
  const pcState=primaryOnline?'good':primaryDevice?'warn':'idle';
 
- return <section className={'control-page'+(focus?' is-focus':'')} aria-label="3B Command OS">
+ return <section className={'control-page'+(phone?' is-phone':' is-desktop')+(focus?' is-focus':'')} aria-label="3B Command OS">
   <div className="control-ambient" aria-hidden="true"><i/><i/><i/></div>
 
   <header className="control-topbar">
    <button className="control-icon-button" onClick={()=>goTo('home')} aria-label="Retour à 3B"><ArrowLeft size={19}/></button>
-   <div className="control-brand"><span>3B</span><div><strong>COMMAND OS</strong><small>OWNER · MOBILE</small></div></div>
+   <div className="control-brand"><span>3B</span><div><strong>COMMAND OS</strong><small>{phone?'OWNER · MOBILE FIRST':'OWNER · DESKTOP'}</small></div></div>
    <div className="control-top-status">
     <span className={pulse.network?'control-live-dot':'control-live-dot offline'}/>
     <div><strong>{formatClock(clock)}</strong><small>{pulse.network?'EN LIGNE':'HORS LIGNE'}</small></div>
@@ -393,12 +381,12 @@ export default function ControlCenterPage({goTo}){
      </div>
     </div>
 
-    <div className="control-core-shell" aria-label={'État global '+score+' pour cent'}>
+    <div className="control-core-shell" aria-label={health.known?health.healthy+' signaux sur '+health.known+' au vert':'État en cours de vérification'}>
      <div className="control-orbit orbit-a"/><div className="control-orbit orbit-b"/><div className="control-orbit orbit-c"/>
      <div className="control-core">
       <span>3B</span>
-      <strong>{score}%</strong>
-      <small>SYSTÈME</small>
+      <strong>{health.known?health.healthy+'/'+health.known:'—'}</strong>
+      <small>SIGNAUX</small>
      </div>
     </div>
 
@@ -416,8 +404,21 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cloud} label="PRODUCTION" value={pulse.production===true?'En ligne':pulse.production===false?'Indisponible':'Contrôle…'} detail="3b-international.vercel.app" state={productionState}/>
     <StatusCard Icon={Server} label="SUPABASE" value={data&&!error?'Connecté':error?'Erreur':'Synchro…'} detail={latency?latency+' ms API':'Control Center'} state={apiState}/>
     <StatusCard Icon={GitBranch} label="GITHUB ACTIONS" value={ciText(pulse.ci)} detail={pulse.workflow||pulse.commit||'main'} state={ciState(pulse.ci)}/>
-    <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?(primaryDevice.name+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
+    <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
+
+   <CommandNexus
+    pulse={pulse}
+    dataAvailable={Boolean(data)}
+    error={error}
+    primaryDevice={primaryDevice}
+    primaryOnline={primaryOnline}
+    alerts={alerts}
+    lastSync={lastSync}
+    privacyMode={privacyMode}
+    onPrivacyChange={setPrivacyMode}
+    onJump={jumpTo}
+   />
 
    <DirectorTraffic />
 
@@ -441,7 +442,7 @@ export default function ControlCenterPage({goTo}){
     </div>
 
     {runtime&&<div className="control-runtime">
-     <div><span>PC</span><strong>{runtime.hostname||primaryDevice?.name||'3B'}</strong><small>{runtime.platform||primaryDevice?.platform||'système'}</small></div>
+     <div><span>PC</span><strong>{privacyMode?'••••••':runtime.hostname||primaryDevice?.name||'3B'}</strong><small>{runtime.platform||primaryDevice?.platform||'système'}</small></div>
      <div><span>MÉMOIRE</span><strong>{memoryUsed===null?'—':memoryUsed+'%'}</strong><small>{runtime.memory_free_gb!==undefined?runtime.memory_free_gb+' Go libres':'télémétrie live'}</small></div>
      <div><span>UPTIME</span><strong>{runtime.uptime_seconds?Math.floor(runtime.uptime_seconds/3600)+' h':'—'}</strong><small>agent {runtime.agent_version||primaryDevice?.agent_version||'—'}</small></div>
     </div>}
@@ -467,7 +468,7 @@ export default function ControlCenterPage({goTo}){
     <header className="control-section-heading"><div><p className="control-kicker">LIAISON SÉCURISÉE</p><h2>Appareils</h2></div><button className="control-mini-action" onClick={createPairing} disabled={!!busy}><KeyRound size={15}/>{busy==='pair'?'Création…':'Appairer'}</button></header>
 
     {pairing&&<div className="control-pairing">
-     <span>CODE TEMPORAIRE</span><strong>{pairing.code}</strong>
+     <span>CODE TEMPORAIRE</span><strong>{privacyMode?'••••••••••':pairing.code}</strong>
      <small>Sur le PC : lance <b>scripts/pair-3b-control-agent.cmd</b>, saisis le code, puis démarre <b>start-3b-control-agent.cmd</b>.</small>
     </div>}
 
@@ -476,8 +477,8 @@ export default function ControlCenterPage({goTo}){
       const online=onlineDevices.some(item=>item.id===device.id);
       return <article className="control-device-card" key={device.id}>
        <div className={online?'control-device-orb online':'control-device-orb'}><Laptop size={18}/></div>
-       <div><strong>{device.name}</strong><span>{device.platform} · agent {device.agent_version} · {device.capabilities?.autostart===true?'démarrage auto':'démarrage manuel'}</span><small>{online?'Actif '+relativeTime(device.last_seen_at):'Dernière liaison '+relativeTime(device.last_seen_at)}</small></div>
-       <button onClick={()=>revoke(device.id)} disabled={!!busy} aria-label={'Révoquer '+device.name}><Unplug size={16}/></button>
+       <div><strong>{privacyMode?'Appareil masqué':device.name}</strong><span>{device.platform} · agent {device.agent_version} · {device.capabilities?.autostart===true?'démarrage auto':'démarrage manuel'}</span><small>{online?'Actif '+relativeTime(device.last_seen_at):'Dernière liaison '+relativeTime(device.last_seen_at)}</small></div>
+       <button onClick={()=>revoke(device.id)} disabled={!!busy} aria-label={privacyMode?'Révoquer appareil':'Révoquer '+device.name}><Unplug size={16}/></button>
       </article>;
      })}
     </div>
