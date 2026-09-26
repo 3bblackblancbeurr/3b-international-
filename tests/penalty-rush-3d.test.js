@@ -126,7 +126,7 @@ test('V4 streams keeper movement while dragging and keeps the server authoritati
   assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, intensity \}\)/);
   assert.match(match, /queueKeeperFinal\(parsed\)/);
   assert.match(server, /state\.lastKeeperMoveAt = at/);
-  assert.match(server, /const lateralSpeed = 3\.35 \+ intensity \* 2\.55/);
+  assert.match(server, /const lateralSpeed = 2\.15 \+ intensity \* \.9/);
   assert.match(server, /direction \* lateralSpeed \* dt/);
 });
 
@@ -169,7 +169,7 @@ test('V4 local movement is tuned for immediate football-game response', () => {
 
 test('V4 server movement supports responsive lateral attack and keeper positioning', () => {
   assert.match(server, /ix \* \(\.34 \+ intensity\*\.2\) \* dt/);
-  assert.match(server, /const lateralSpeed = 3\.35 \+ intensity \* 2\.55/);
+  assert.match(server, /const lateralSpeed = 2\.15 \+ intensity \* \.9/);
 });
 
 
