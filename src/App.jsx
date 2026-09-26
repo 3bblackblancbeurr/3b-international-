@@ -44,7 +44,7 @@ const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
-const NosblocPage=lazy(()=>import('./nosbloc/NosblocPage.jsx'));
+const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
 const BASE_MENU_ITEMS = [
   { id: "guide", label: "Guide & XP", description: "Tous les menus, les gains et les niveaux expliqués." },

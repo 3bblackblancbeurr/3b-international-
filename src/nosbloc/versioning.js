@@ -46,6 +46,8 @@ export function projectSnapshot(project = {}) {
     splits: privateFreeSplits(project.splits),
     plan: clone(Array.isArray(project.plan) ? project.plan : []),
     licensedAssets: [...new Set(Array.isArray(project.licensedAssets) ? project.licensedAssets : [])],
+    scripts: clone(Array.isArray(project.scripts) ? project.scripts.slice(0, 40) : []),
+    aiBrief: String(project.aiBrief || "").slice(0, 2000),
   };
 }
 
