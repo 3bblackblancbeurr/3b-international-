@@ -16,6 +16,8 @@ test('Command OS stays mobile-first while remaining responsive for the owner on 
  assert.match(page,/controlCenterRequest\('status'\)/);
  assert.match(page,/api\.github\.com\/repos\/3bblackblancbeurr\/3b-international-/);
  assert.match(page,/control-dock/);
+ assert.match(page,/NAVIGATION_COMMANDS/);
+ assert.match(page,/Recherche et Command Palette 3B/);
  assert.match(page,/is-desktop/);
  assert.match(css,/@keyframes controlOrbit/);
  assert.match(css,/prefers-reduced-motion/);
