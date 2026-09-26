@@ -10,5 +10,21 @@ export const NATIONS=[
  {id:6,code:'TR',name:'Turquie',value:'Foi',primary:'#c42f37'},
  {id:7,code:'EE',name:'Estonie',value:'Sagesse',primary:'#2b6d91'}
 ];
-export const UNIT_TYPES={infantry:{name:'Infanterie',domain:'land',strength:1,move:1,cost:8,icon:'◆'},regiment:{name:'Régiment',domain:'land',strength:3,move:1,cost:18,icon:'⬢'},tank:{name:'Char',domain:'land',strength:5,move:2,cost:28,icon:'▰'},fighter:{name:'Chasseur',domain:'air',strength:4,move:3,cost:24,icon:'✦'},bomber:{name:'Bombardier',domain:'air',strength:7,move:2,cost:38,icon:'✶'},destroyer:{name:'Destroyer',domain:'sea',strength:5,move:2,cost:30,icon:'▲'},cruiser:{name:'Croiseur',domain:'sea',strength:8,move:1,cost:46,icon:'⬟'},flag:{name:'Drapeau',domain:'fixed',strength:0,move:0,cost:0,icon:'⚑'}};
-export const EXCHANGES=[{from:'infantry',count:3,to:'regiment'},{from:'regiment',count:2,to:'tank'},{from:'fighter',count:2,to:'bomber'},{from:'destroyer',count:2,to:'cruiser'}];
+// Valeurs et déplacements de la table de référence du POWER original.
+export const UNIT_TYPES={
+ infantry:{name:'Infanterie',domain:'land',strength:2,move:2,cost:2,icon:'◆',tier:'small'},
+ tank:{name:'Tank',domain:'land',strength:3,move:3,cost:3,icon:'▰',tier:'small'},
+ fighter:{name:'Chasseur',domain:'air',strength:5,move:5,cost:5,icon:'✦',tier:'small'},
+ destroyer:{name:'Destroyer',domain:'sea',strength:10,move:1,cost:10,icon:'▲',tier:'small'},
+ regiment:{name:'Régiment',domain:'land',strength:20,move:2,cost:20,icon:'⬢',tier:'large'},
+ heavyTank:{name:'Char lourd',domain:'land',strength:30,move:3,cost:30,icon:'▣',tier:'large'},
+ bomber:{name:'Bombardier',domain:'air',strength:25,move:5,cost:25,icon:'✶',tier:'large'},
+ cruiser:{name:'Croiseur',domain:'sea',strength:50,move:1,cost:50,icon:'⬟',tier:'large'},
+ flag:{name:'Drapeau',domain:'fixed',strength:0,move:0,cost:0,icon:'⚑',tier:'fixed'}
+};
+export const EXCHANGES=[
+ {from:'infantry',count:3,to:'regiment'},
+ {from:'tank',count:3,to:'heavyTank'},
+ {from:'fighter',count:3,to:'bomber'},
+ {from:'destroyer',count:3,to:'cruiser'}
+];
