@@ -450,7 +450,7 @@ export default function ControlCenterPage({goTo}){
     <form className="control-command-bar" onSubmit={submitNaturalCommand}>
      <Zap size={18}/>
      <input value={commandText} onChange={event=>setCommandText(event.target.value)} placeholder="Rechercher ou commander : radar, GitHub, agenda…" aria-label="Recherche et Command Palette 3B"/>
-     <button type="submit" disabled={!primaryOnline||!!busy}>GO</button>
+     <button type="submit" disabled={!!busy}>GO</button>
     </form>
     {commandFeedback&&<p className="control-command-feedback" aria-live="polite">{commandFeedback}</p>}
 
