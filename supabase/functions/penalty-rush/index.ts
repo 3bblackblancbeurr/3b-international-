@@ -880,7 +880,7 @@ async function processInput(room:Room, uid:string, input:any) {
     state.keeperIntent = { type, direction, forward, intensity, at };
 
     if (type === 'hold') {
-      const lateralSpeed = 3.35 + intensity * 2.55;
+      const lateralSpeed = 2.15 + intensity * .9;
       const depthSpeed = .72 + intensity * .78;
       state.positions.keeper.y = clamp(
         number(state.positions.keeper.y) + direction * lateralSpeed * dt,
