@@ -48,17 +48,33 @@ function fillMonths(rows){
 }
 
 function TrafficBars({rows,label,compact=false}){
+ const[selected,setSelected]=useState(null);
  const max=Math.max(1,...rows.map(row=>n(row.sessions)));
- return <div className={'control-traffic-bars'+(compact?' is-compact':'')} role="img" aria-label={label}>
-  {rows.map((row,index)=>{
-   const value=n(row.sessions);
-   const height=value?Math.max(8,Math.round(value/max*100)):3;
-   return <div className="control-traffic-bar" key={row.bucket} title={row.label+' · '+numberFormat.format(value)+' sessions'}>
-    <div className="control-traffic-bar-track"><i style={{height:height+'%'}}/></div>
-    <span>{row.label}</span>
-    {(!compact||index===rows.length-1)&&<b>{numberFormat.format(value)}</b>}
-   </div>;
-  })}
+ const selectedRow=selected===null?null:rows[selected]||null;
+ return <div className="control-traffic-chart-interactive">
+  <div className={'control-traffic-bars'+(compact?' is-compact':'')} role="group" aria-label={label}>
+   {rows.map((row,index)=>{
+    const value=n(row.sessions);
+    const height=value?Math.max(8,Math.round(value/max*100)):3;
+    const active=selected===index;
+    return <button
+     type="button"
+     className={'control-traffic-bar'+(active?' is-selected':'')}
+     key={row.bucket}
+     title={row.label+' · '+numberFormat.format(value)+' sessions'}
+     aria-label={row.label+' : '+numberFormat.format(value)+' sessions'}
+     aria-pressed={active}
+     onClick={()=>setSelected(active?null:index)}
+    >
+     <div className="control-traffic-bar-track"><i style={{height:height+'%'}}/></div>
+     <span>{row.label}</span>
+     {(!compact||index===rows.length-1)&&<b>{numberFormat.format(value)}</b>}
+    </button>;
+   })}
+  </div>
+  <div className="control-traffic-exact" aria-live="polite">
+   {selectedRow?<><strong>{selectedRow.label}</strong><span>{numberFormat.format(n(selectedRow.sessions))} sessions</span></>:<span>Touche une barre pour afficher sa valeur exacte.</span>}
+  </div>
  </div>;
 }
 
@@ -75,7 +91,7 @@ export default function DirectorTraffic(){
  const load=useCallback(async({silent=false}={})=>{
   if(typeof document!=='undefined'&&document.hidden&&silent)return;
   if(typeof navigator!=='undefined'&&!navigator.onLine){
-   setError('Téléphone hors ligne · dernière mesure conservée.');
+   setError('Appareil hors ligne · dernière mesure conservée.');
    return;
   }
   if(!silent)setRefreshing(true);
@@ -142,7 +158,7 @@ export default function DirectorTraffic(){
  const appSessions=rows.filter(row=>row.platform==='app').reduce((total,row)=>total+n(row.visits),0);
  const appShare=rowTotal?Math.round(appSessions/rowTotal*100):0;
 
- return <section className="control-section control-traffic" id="cc-traffic" aria-label="Fréquentation 3B privée">
+ return <section className="control-section control-traffic control-hide-in-focus" id="cc-traffic" aria-label="Fréquentation 3B privée">
   <header className="control-section-heading control-traffic-heading">
    <div>
     <p className="control-kicker"><Radar size={13}/> INTELLIGENCE · FRÉQUENTATION</p>
