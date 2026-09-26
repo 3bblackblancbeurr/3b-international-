@@ -7,8 +7,10 @@ import {obstacleDistance} from './collision.js';
 import {parisSites} from './paris-layout.js';
 
 export const WORLD_RADIUS=260;
+export const HUB_WORLD_RADIUS=520;
+export const worldRadiusFor=region=>region==='hub'?HUB_WORLD_RADIUS:WORLD_RADIUS;
 export const BIOMES={
- hub:{seed:83,angle:0,scale:1.8,low:'#29443f',high:'#61785c',rock:'#7c817a',sky:'#789bad',haze:'#aab9b3',amplitude:5.4,tree:'Tree',water:{x:-37,z:6,r:12}},
+ hub:{seed:83,angle:0,scale:4.2,low:'#172c2b',high:'#52685a',rock:'#686f6c',sky:'#688797',haze:'#9dacaa',amplitude:8.2,tree:'Tree',water:{x:-165,z:72,r:28}},
  france:{seed:13,angle:-.24,scale:1.6,low:'#385c43',high:'#70865b',rock:'#92988f',sky:'#7fa6bf',haze:'#bdc9c6',amplitude:4.3,tree:'Tree',water:{x:-42,z:26,r:11}},
  italie:{seed:29,angle:.5,scale:1.65,low:'#697b44',high:'#adad72',rock:'#b6aa8d',sky:'#a8c3c7',haze:'#ded1b1',amplitude:7,tree:'Cypress',water:{x:47,z:32,r:10}},
  estonie:{seed:41,angle:-.62,scale:1.65,low:'#3b615c',high:'#77988c',rock:'#abb6af',sky:'#6c959f',haze:'#a6c2bd',amplitude:5.8,tree:'Pine',water:{x:-35,z:30,r:14}},
@@ -29,7 +31,7 @@ export function buildingSites(region,anchors=[]){
  if(region==='hub')return COUNTRIES.flatMap((c,i)=>{
   const p=toLandscape(region,...c.portal),len=Math.hypot(p.x,p.z)||1,tx=-p.z/len,tz=p.x/len;
   return [-1,1].map((side,j)=>{
-   const x=p.x*.82+tx*side*12.5,z=p.z*.82+tz*side*12.5,variant=i*2+j;
+   const x=p.x*.88+tx*side*24,z=p.z*.88+tz*side*24,variant=i*2+j;
    return{id:c.id,sector:c.id,x,z,rotation:Math.atan2(-x,-z),variant,...buildingDimensions(c.id,variant)};
   });
  });
@@ -39,34 +41,43 @@ export function buildingSites(region,anchors=[]){
  return sites.filter(p=>segmentDistance(p.x,p.z,sightline.a,sightline.b)>Math.hypot(p.width,p.depth)/2+4&&Math.hypot(p.x,p.z)<WORLD_RADIUS-18&&obstacleDistance(landmark,p)>LANDMARK_SITE.clearing&&!civic.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<Math.hypot(p.width,p.depth)/2+Math.hypot(c.width,c.depth)/2+1)&&obstacleDistance({x:0,z:5},p)>10&&roadDistance(p.x,p.z,roads)>5.8&&!anchors.some(a=>obstacleDistance(a,p)<(a.type==='portal'?9:a.type==='guardian'?10:a.type==='cooperation'?28:a.type==='camp'?22:a.type==='atelier'?13:6))).reduce((accepted,p)=>{if(!accepted.some(b=>Math.hypot(p.x-b.x,p.z-b.z)<11))accepted.push(p);return accepted;},[]);
 }
 export function createTerrainField(region,save){
- const biome=BIOMES[region]||BIOMES.hub,anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
+ const biome=BIOMES[region]||BIOMES.hub,worldRadius=worldRadiusFor(region),anchors=landscapeItems(region,save),buildings=buildingSites(region,anchors),roads=landscapeRoads(region),plan=settlementPlan(region),squares=[...plan.squares,...(region==='hub'?[]:[{x:LANDMARK_SITE.x,z:LANDMARK_SITE.z,r:LANDMARK_SITE.clearing/biome.scale}])].map(p=>({...p,...toLandscape(region,p.x,p.z),r:p.r*biome.scale})),fields=plan.fields.map(p=>({...p,...toLandscape(region,p.x,p.z),w:p.w*biome.scale,h:p.h*biome.scale,rotation:-biome.angle}));
  const civic=civicSites(anchors),paris=parisSites(region,(x,z)=>toLandscape(region,x,z));
  const clearings=[...paris.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+3})),...civic.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),{x:0,z:5,r:13},...anchors.map(p=>({...p,r:p.type==='cooperation'?29:p.type==='camp'?25:p.type==='portal'?9:p.type==='guardian'?12:7})),...squares,...buildings.map(p=>({...p,r:Math.hypot(p.width,p.depth)/2+1})),...fields.map(p=>({...p,r:Math.hypot(p.w,p.h)/2})),...(region==='hub'?[]:[{...toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),r:LANDMARK_SITE.clearing}])];
  // Find a dry margin around every interaction and building before carving water.
  let lake={...biome.water},found=false;
+ const lakeLimit=region==='hub'?Math.min(worldRadius-72,330):118;
  for(let ring=0;ring<25&&!found;ring++)for(let i=0;i<32;i++){
   const a=i/32*Math.PI*2,p={x:biome.water.x+Math.cos(a)*ring*5,z:biome.water.z+Math.sin(a)*ring*5,r:biome.water.r};
-  if(Math.hypot(p.x,p.z)+p.r>118||roadDistance(p.x,p.z,roads)<p.r+9||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
+  if(Math.hypot(p.x,p.z)+p.r>lakeLimit||roadDistance(p.x,p.z,roads)<p.r+9||clearings.some(c=>Math.hypot(p.x-c.x,p.z-c.z)<p.r+c.r+7))continue;
   lake=p;found=true;break;
  }
  const archives=region==='hub'?anchors.find(a=>a.type==='archives'):null;
  const smooth=(a,b,value)=>{const t=Math.max(0,Math.min(1,(value-a)/(b-a||1)));return t*t*(3-2*t);};
  function hubStructureHeight(x,z){
   if(region!=='hub')return 0;
-  const r=Math.hypot(x,z),fade=1-smooth(112,155,r);
-  // Two broad inhabited terraces make the eight thresholds read as a city,
-  // while remaining continuous ground so touch navigation never needs stairs logic.
-  let lift=(smooth(17,34,r)*1.15+smooth(42,72,r)*1.75)*fade;
-  // The Archives are a genuine sunken court. The approach is a long soft ramp,
-  // so the player really descends below the main Nexus level.
-  if(archives){const d=Math.hypot(x-archives.x,z-archives.z);lift-=(1-smooth(5.5,17,d))*3.35;}
+  const r=Math.hypot(x,z),angle=Math.atan2(z,x),roadGap=roadDistance(x,z,roads);
+  // Six readable bands: monumental core, civic terrace, breathing belt,
+  // eight district terraces, outer crown and deliberately cut radial voids.
+  const core=(1-smooth(0,72,r))*.35;
+  const civic=smooth(72,108,r)*(1-smooth(145,178,r))*2.2;
+  const roadBridge=smooth(6,18,roadGap);
+  const breathing=smooth(154,178,r)*(1-smooth(218,246,r))*(-2.8*(.32+.68*roadBridge));
+  const district=smooth(214,252,r)*(1-smooth(350,397,r))*4.8;
+  const crown=smooth(365,414,r)*(1-smooth(478,516,r))*1.65;
+  // sin(angle*4) creates eight widening separators. Streets remain raised so
+  // every district stays connected while the negative space reads from afar.
+  const seam=Math.abs(Math.sin(angle*4));
+  const divider=(1-smooth(.08,.34,seam))*smooth(188,232,r)*(1-smooth(382,430,r))*-5.4*roadBridge;
+  let lift=core+civic+breathing+district+crown+divider;
+  if(archives){const d=Math.hypot(x-archives.x,z-archives.z);lift-=(1-smooth(8,22,d))*4.1;}
   return lift;
  }
  function height(x,z){
   const f=biome.seed*.017;
   let y=(Math.sin(x*.032+f)*Math.cos(z*.027-f)+.36*Math.sin(x*.079+z*.053+f))*biome.amplitude;
   // A continuous landscape extends into distant ridges, with gentle clearings.
-  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-WORLD_RADIUS)/140));y+=edge*edge*(3-2*edge)*(24+18*Math.sin(x*.011+z*.009)+7*Math.cos(z*.023-x*.007));
+  const edge=Math.max(0,Math.min(1,(Math.hypot(x,z)-worldRadius)/160));y+=edge*edge*(3-2*edge)*(24+18*Math.sin(x*.011+z*.009)+7*Math.cos(z*.023-x*.007));
   let flatten=1;for(const p of clearings){const d=Math.hypot(x-p.x,z-p.z);if(d<p.r+11){const t=Math.max(0,Math.min(1,(d-p.r)/11));flatten=Math.min(flatten,t*t*(3-2*t));}}
   const roadMargin=Math.max(0,Math.min(1,(roadDistance(x,z,roads)-4)/10));flatten=Math.min(flatten,roadMargin*roadMargin*(3-2*roadMargin));
   if(region!=='hub'){const corridor=landmarkSightline(region),t=Math.max(0,Math.min(1,(segmentDistance(x,z,corridor.a,corridor.b)-20)/12));flatten=Math.min(flatten,t*t*(3-2*t));}
@@ -76,5 +87,5 @@ export function createTerrainField(region,save){
  }
  const sightline=landmarkSightline(region);
  const protectedPoint=(x,z,pad=0)=>(region!=='hub'&&segmentDistance(x,z,sightline.a,sightline.b)<6+pad)||clearings.some(p=>Math.hypot(x-p.x,z-p.z)<p.r+pad)||Math.hypot(x-lake.x,z-lake.z)<lake.r+4+pad||roadDistance(x,z,roads)<pad+1;
- return {radius:WORLD_RADIUS,biome,anchors,buildings,civic,paris,roads,squares,fields,lake,height,protectedPoint};
+ return {radius:worldRadius,biome,anchors,buildings,civic,paris,roads,squares,fields,lake,height,protectedPoint};
 }
