@@ -561,15 +561,28 @@ function selectionScore(profile:any, ranked:any, rank:number|null, pressure:numb
   return {score,band,breakdown:{rating:Math.round(ratingScore*10)/10,rank:Math.round(rankScore*10)/10,form:Math.round(formScore*10)/10,reputation:Math.round(reputationScore*10)/10,pressure:Math.round(pressureScore*10)/10,role:roleScore,discipline:-disciplinePenalty}};
 }
 
-async function activeInternationalWindow(statuses=['selection']) {
+function internationalPhase(window:any, at=Date.now()) {
+  if(!window)return 'closed';
+  const starts=Date.parse(window.starts_at);
+  const selectionClose=Date.parse(window.selection_closes_at||window.ends_at);
+  const matchStart=Date.parse(window.matches_start_at||window.ends_at);
+  const matchEnd=Date.parse(window.matches_end_at||window.ends_at);
+  if(at<starts)return 'planned';
+  if(at<=selectionClose)return 'selection';
+  if(at<matchStart)return 'locked';
+  if(at<=matchEnd)return 'active';
+  return 'closed';
+}
+
+async function currentInternationalWindow() {
   const at=nowIso();
-  const filter=statuses.map(String).filter(Boolean).join(',');
   const rows=await admin(
-    '/rest/v1/penalty_international_windows?status=in.('+encodeURIComponent(filter)+')'+
-    '&starts_at=lte.'+encodeURIComponent(at)+'&ends_at=gte.'+encodeURIComponent(at)+
-    '&order=starts_at.asc&limit=1&select=*'
+    '/rest/v1/penalty_international_windows?starts_at=lte.'+encodeURIComponent(at)+
+    '&matches_end_at=gte.'+encodeURIComponent(at)+
+    '&order=starts_at.desc&limit=1&select=*'
   ).catch(()=>[]);
-  return Array.isArray(rows)?rows[0]||null:null;
+  const window=Array.isArray(rows)?rows[0]||null:null;
+  return window?{...window,phase:internationalPhase(window)}:null;
 }
 
 async function selectionForWindow(uid:string, windowId:string) {
@@ -595,10 +608,10 @@ async function countryNeededRole(windowId:string, countryId:string) {
 }
 
 async function refreshInternationalSelection(uid:string, profile:any, ranked:any, rank:number|null, pressure:number, form:any) {
-  const window=await activeInternationalWindow(['selection','active']);
+  const window=await currentInternationalWindow();
   if(!window){
     const base=selectionScore(profile,ranked,rank,pressure,form,false,5);
-    return {scouting:base.band,selection:null,window:null,neededRole:null,needMatched:false,score:base.score,breakdown:base.breakdown,matchOpen:false};
+    return {scouting:base.band,selection:null,window:null,phase:'closed',neededRole:null,needMatched:false,score:base.score,breakdown:base.breakdown,matchOpen:false};
   }
   const neededRole=await countryNeededRole(window.id,profile.country_id);
   const playerStyle=STYLES.has(String(profile.style_id))?String(profile.style_id):'technicien';
@@ -606,12 +619,12 @@ async function refreshInternationalSelection(uid:string, profile:any, ranked:any
   const assessment=selectionScore(profile,ranked,rank,pressure,form,needMatched,5);
   let selection=await selectionForWindow(uid,window.id);
 
-  if(!selection && window.status==='selection' && assessment.band==='preselection'){
+  if(!selection && window.phase==='selection' && assessment.band==='preselection'){
     const existing=await admin(
       '/rest/v1/penalty_international_selections?window_id=eq.'+encodeURIComponent(window.id)+
       '&country_id=eq.'+encodeURIComponent(profile.country_id)+'&status=in.(preselected,selected)&select=id&limit=20'
     ).catch(()=>[]);
-    if((Array.isArray(existing)?existing.length:0)<12){
+    if((Array.isArray(existing)?existing.length:0)<Math.max(4,number(window.squad_size,12))){
       const roleProfile=needMatched?neededRole:pressure>=.62?'pression':playerStyle;
       const created=await admin('/rest/v1/penalty_international_selections?select=*',{
         method:'POST',body:{window_id:window.id,user_id:uid,country_id:profile.country_id,status:'preselected',role_profile:roleProfile},prefer:'return=representation',
@@ -623,7 +636,7 @@ async function refreshInternationalSelection(uid:string, profile:any, ranked:any
   const visible=selection?.status==='selected'?'selection'
     :selection?.status==='preselected'?'preselection'
       :selection?.status==='declined'?'declined':assessment.band;
-  return {scouting:visible,selection,window,neededRole,needMatched,score:assessment.score,breakdown:assessment.breakdown,matchOpen:window.status==='active'&&selection?.status==='selected'};
+  return {scouting:visible,selection,window,phase:window.phase,neededRole,needMatched,score:assessment.score,breakdown:assessment.breakdown,matchOpen:window.phase==='active'&&selection?.status==='selected'};
 }
 
 async function respondInternationalSelection(uid:string, selectionId:unknown, decision:unknown) {
@@ -649,8 +662,7 @@ async function respondInternationalSelection(uid:string, selectionId:unknown, de
     '&select=*&limit=1'
   );
   const window = Array.isArray(windows) ? windows[0] : null;
-  const at = Date.now();
-  if (!window || window.status !== 'selection' || Date.parse(window.starts_at) > at || Date.parse(window.ends_at) < at) {
+  if (!window || internationalPhase(window) !== 'selection') {
     throw new Failure(409, 'La fenêtre de sélection est terminée.');
   }
 
@@ -737,7 +749,7 @@ async function snapshotFor(uid:string, profile:any) {
       windowId:window?.id||null,
       windowName:window?.name||null,
       competition:window?.competition||null,
-      windowStatus:window?.status||null,
+      windowStatus:internationalState.phase||window?.status||null,
       matchOpen:Boolean(internationalState.matchOpen),
       windowStartsAt:window?.starts_at||null,
       windowEndsAt:window?.ends_at||null,
@@ -1037,8 +1049,8 @@ async function queueRoom(uid:string,profile:any,mode:string) {
 
   if(mode==='international'){
     assertCompetitiveIdentity(profile);
-    const window=await activeInternationalWindow(['active']);
-    if(!window)throw new Failure(409,'Aucune fenêtre de matchs internationaux n’est ouverte.');
+    const window=await currentInternationalWindow();
+    if(!window||window.phase!=='active')throw new Failure(409,'Aucune fenêtre de matchs internationaux n’est ouverte.');
     const selection=await selectionForWindow(uid,window.id);
     if(!selection||selection.status!=='selected'||selection.country_id!==profile.country_id){
       throw new Failure(403,'Une sélection nationale confirmée est requise pour jouer ce match.');
