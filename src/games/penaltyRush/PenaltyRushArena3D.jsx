@@ -58,10 +58,17 @@ function appearanceFor(player, profile, self = false) {
 }
 
 function footballAvatar(appearance, seed = 0) {
+  const hairIndex={shaved:0,buzz:0,short:1,fade:2,curls:3,long:3,afro:4,braids:4}[appearance.hairStyle] ?? seed % 5;
+  const shape=appearance.build==='strong'?'solide':appearance.build==='slim'?'elance':'equilibre';
+  const build=appearance.build==='strong'?1.05:appearance.build==='slim'?.96:1;
+  const faceTuning={
+    square:{face:.24,jaw:.38,nose:.04},round:{face:.3,jaw:-.18,nose:0},angular:{face:-.16,jaw:.32,nose:.08},
+    long:{face:-.25,jaw:.04,nose:.1},oval:{face:-.08,jaw:-.08,nose:0},balanced:{face:0,jaw:0,nose:0},
+  }[appearance.faceShape]||{face:0,jaw:0,nose:0};
   return {
     body:'homme',
     style:'voyageur',
-    hair:seed % 5,
+    hair:hairIndex,
     color:0,
     fabricColor:appearance.shirt,
     accentColor:appearance.trim,
@@ -72,15 +79,21 @@ function footballAvatar(appearance, seed = 0) {
     headwear:'none',
     outer:'none',
     bag:false,
-    shape:'elance',
-    height:1,
-    build:1.02,
-    shoulders:.18,
-    chest:.08,
-    waist:-.08,
+    shape,
+    height:clamp((appearance.heightCm||178)/178,.93,1.08),
+    build,
+    shoulders:appearance.build==='strong'?.24:appearance.build==='slim'?.08:.16,
+    chest:appearance.build==='strong'?.18:appearance.build==='slim'?.02:.09,
+    waist:appearance.build==='slim'?-.16:-.06,
     hips:-.04,
-    arms:.08,
-    legs:.12,
+    arms:appearance.build==='strong'?.16:.07,
+    legs:appearance.build==='strong'?.13:.08,
+    face:faceTuning.face,
+    jaw:faceTuning.jaw,
+    nose:faceTuning.nose,
+    beard:appearance.facialHair==='beard'?.9:appearance.facialHair==='goatee'?.55:appearance.facialHair==='stubble'?.24:0,
+    mustache:appearance.facialHair==='goatee'?.36:appearance.facialHair==='beard'?.45:0,
+    hairLength:appearance.hairStyle==='long'?.95:appearance.hairStyle==='braids'?.82:appearance.hairStyle==='afro'?.68:.35,
     pattern:'uni',
     fabric:'satin',
     boots:0,
@@ -1231,7 +1244,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
               if (runtime.disposed || !actor?.object) return;
               const box = new THREE.Box3().setFromObject(actor.object);
               const height = Math.max(.1, box.max.y - box.min.y);
-              const targetHeight = index === clamp((liveRef.current.room?.state || {}).keeper, 0, 1) ? 1.86 : 1.76;
+              const targetHeight = clamp((playerAppearance[index]?.heightCm || 178) / 100, 1.65, 1.98);
               actor.object.scale.multiplyScalar(targetHeight / height);
               actor.object.updateMatrixWorld(true);
               const fitted = new THREE.Box3().setFromObject(actor.object);
