@@ -24,9 +24,12 @@ test('the Nexus masterplan preserves monumental breathing room and an exterior a
  assert.equal(services.length,5);
  assert.ok(services.every(item=>radial(item)>175),'Civic services must not crowd the monument.');
 
- const vistas=items.filter(item=>item.type==='vista');
- assert.ok(vistas.length>=4);
- assert.ok(vistas.every(item=>radial(item)>400&&radial(item)<field.radius),'Exterior destinations belong to the outer crown.');
+ const narrativeIds=['hub:vista:oubli','hub:vista:absents','hub:vista:values'];
+ for(const id of narrativeIds){const item=items.find(candidate=>candidate.id===id);assert.ok(item&&radial(item)>140&&radial(item)<190,id+' must live in the calm narrative belt.');}
+
+ const exterior=items.filter(item=>item.id?.startsWith('hub:vista:outer:'));
+ assert.equal(exterior.length,4);
+ assert.ok(exterior.every(item=>radial(item)>400&&radial(item)<field.radius),'Exterior destinations belong to the outer crown.');
 
  const plan=settlementPlan('hub');
  assert.equal(plan.roads.filter(road=>road.kind==='ring').length,3);
