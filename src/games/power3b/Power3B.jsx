@@ -21,7 +21,7 @@ export default function Power3B({saved,onCheckpoint,onClose}){
  const commit=(fn,message='Ordre enregistré.')=>{try{const next=structuredClone(game);fn(next);setGame(next);setNotice(message);}catch(error){setNotice(error.message||'Ordre impossible.');}};
  const checkpoint=(g,record=false)=>onCheckpoint?.({score:gameScore(g),won:g.winner===human,snapshot:()=>snapshotPowerGame(g)},'power3b',record);
  const newGame=()=>{const next=createPowerGame({nation,difficulty,seed:196});setGame(next);setSectorId('hq'+nation);setUnitIds([]);setMode('move');setStarted(true);setNotice('Commandement actif. Programme jusqu’à 5 ordres.');};
- const close=()=>{checkpoint(game,game.winner!==null);onClose();};
+ const close=()=>{checkpoint(game,false);onClose();};
  const resolve=()=>{if(cinematic)return;const next=resolveTurn(game);setGame(next);setUnitIds([]);setMode('move');setSectorId('hq'+human);checkpoint(next,next.winner!==null);
   const best=[...(next.lastResolution?.events||[])].sort((a,b)=>(eventWeight[b.type]||0)-(eventWeight[a.type]||0))[0];if(best)setCinematic(best);else setNotice('Aucun conflit cette manche. Les positions sont maintenues.');
  };
