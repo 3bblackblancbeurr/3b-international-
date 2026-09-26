@@ -115,3 +115,8 @@ test('sport director never accepts an arbitrary upstream URL',()=>{
  assert.match(server,/redirect:'error'/);
  assert.doesNotMatch(server,/searchParams\.get\(['"]url['"]\)/);
 });
+
+test('sport live falls back to official replay content instead of an empty screen',()=>{
+ assert.match(live,/playbackVideoId/); assert.match(live,/REPLAY OFFICIEL/);
+ assert.match(live,/advanceFallback/); assert.match(live,/Du sport sans écran vide/);
+});

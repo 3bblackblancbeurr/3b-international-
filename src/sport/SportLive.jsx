@@ -226,6 +226,7 @@ export default function SportLive(){
  const[keepAwake,setKeepAwake]=useState(true);
  const[awake,setAwake]=useState(false);
  const[playerMeta,setPlayerMeta]=useState({title:'',videoId:'',author:''});
+ const replayFailuresRef=useRef(0);
  const shellRef=useRef(null);
  const recommendedSourceRef=useRef('');
  const failedUntilRef=useRef(new Map());
@@ -285,6 +286,7 @@ export default function SportLive(){
   clearTimeout(retryTimerRef.current);
   clearTimeout(stallTimerRef.current);
   failureCountRef.current=0;
+  replayFailuresRef.current=0;
   failedUntilRef.current.delete(stream.id);
   setLoaded(true);
   setStatus('playing');
@@ -319,6 +321,28 @@ export default function SportLive(){
  useEffect(()=>{
   recommendedSourceRef.current=director.recommendedSourceId;
  },[director.recommendedSourceId]);
+
+ const directorPlaybackMode=director.playbackMode;
+ const directorFallbackCount=director.fallbackVideos.length;
+ const advanceDirectorFallback=director.advanceFallback;
+ const handlePlaybackUnavailable=useCallback(reason=>{
+  if(directorPlaybackMode==='replay'){
+   if(reason==='ended'){
+    replayFailuresRef.current=0;
+    setLoaded(false);setStatus('searching');
+    advanceDirectorFallback();setNonce(value=>value+1);
+    return;
+   }
+   replayFailuresRef.current+=1;
+   if(replayFailuresRef.current<Math.max(1,directorFallbackCount)){
+    setLoaded(false);setStatus('searching');
+    advanceDirectorFallback();setNonce(value=>value+1);
+    return;
+   }
+   replayFailuresRef.current=0;
+  }
+  unavailable(reason);
+ },[advanceDirectorFallback,directorFallbackCount,directorPlaybackMode,unavailable]);
 
  useEffect(()=>{
   const recommended=director.recommendedSourceId;
@@ -463,34 +487,43 @@ export default function SportLive(){
  function manualNext(){
   clearTimeout(retryTimerRef.current);
   failureCountRef.current=0;
+  if(director.playbackMode==='replay'&&director.fallbackVideos.length){
+   replayFailuresRef.current=0;
+   setLoaded(false);setStatus('searching');
+   director.advanceFallback();setNonce(value=>value+1);
+   return;
+  }
   switchLockRef.current=true;
   setLoaded(false);
   setStatus('switching');
   moveNext();
  }
 
+ const isReplay=director.playbackMode==='replay';
+ const isLiveMode=director.playbackMode==='live'||director.playbackMode==='scheduled';
  const visibleStatus=mediaConsent?status:'consent';
+ const playerStatus=mediaConsent&&isReplay&&status==='playing'?'REPLAY OFFICIEL':STATUS_LABELS[visibleStatus]||visibleStatus;
  const shellClass=['sport-live-player-shell',landscape?'is-landscape':'',fullscreen?'is-fullscreen':''].filter(Boolean).join(' ');
 
  return <div className="sport-live-view">
   <header className="sport-live-hero">
    <div>
-    <p className="eyebrow">DIRECT SPORT · CONTINU</p>
-    <h2>Le match entier, sans coupure programmée.</h2>
-    <p>Le même direct reste affiché tant qu’il fonctionne. À sa fin seulement, 3B cherche automatiquement un autre direct officiel, avec priorité à la France puis à l’Europe et au monde.</p>
+    <p className="eyebrow">SPORT 3B · CONTINU</p>
+    <h2>Du sport sans écran vide.</h2>
+    <p>Un direct officiel est prioritaire dès qu’il existe. Entre deux directs, 3B lance automatiquement un replay, un résumé ou des temps forts officiels, puis revient au direct dès qu’il est confirmé.</p>
    </div>
-   <div className="sport-live-badge"><Radio size={19}/><span>RÉGIE 3B</span><strong>{mediaConsent?'ACTIVE':'À ACTIVER'}</strong></div>
+   <div className="sport-live-badge"><Radio size={19}/><span>RÉGIE 3B</span><strong>{!mediaConsent?'À ACTIVER':isReplay?'REPLAY':isLiveMode?'DIRECT':'RECHERCHE'}</strong></div>
   </header>
 
   <section className="sport-director-board" aria-label="Régie sportive 3B">
-   <div className="sport-director-event is-current">
+   <div className={'sport-director-event is-current '+(isReplay?'is-replay':'')}>
     <CalendarClock size={22}/>
     <div>
-     <span>{director.matchedEvent?'MATCH RECONNU SUR LE DIRECT':'PROGRAMME SPORTIF EN COURS'}</span>
-     <strong>{director.currentEvent?.name||'Synchronisation du programme…'}</strong>
-     <small>{director.currentEvent?[director.currentEvent.sport,director.currentEvent.league].filter(Boolean).join(' · '):'France et Europe en priorité'}</small>
+     <span>{isReplay?'REPLAY OFFICIEL EN COURS':director.matchedEvent?'MATCH RECONNU SUR LE DIRECT':'PROGRAMME SPORTIF EN COURS'}</span>
+     <strong>{isReplay?(director.fallbackVideo?.title||'Sélection sportive officielle'):director.currentEvent?.name||'Synchronisation du programme…'}</strong>
+     <small>{isReplay?[director.fallbackVideo?.sourceName,'Le direct reprend automatiquement dès qu’il est confirmé'].filter(Boolean).join(' · '):director.currentEvent?[director.currentEvent.sport,director.currentEvent.league].filter(Boolean).join(' · '):'France et Europe en priorité'}</small>
     </div>
-    {director.currentEvent&&<div className="sport-director-event-state">
+    {isReplay?<div className="sport-director-event-state"><b>SPORT CONTINU</b><em>source officielle</em></div>:director.currentEvent&&<div className="sport-director-event-state">
      <b>{eventScoreLabel(director.currentEvent)||eventStateLabel(director.currentEvent)}</b>
      {director.matchedEvent&&<em>{Math.round(director.matchConfidence*100)}% reconnu</em>}
     </div>}
@@ -508,17 +541,17 @@ export default function SportLive(){
   <div ref={shellRef} className={shellClass}>
    <div className="sport-live-player-top">
     <div className="sport-live-channel">
-     <span className={'sport-live-pulse '+(mediaConsent&&status==='playing'?'is-playing':'')}/>
+     <span className={'sport-live-pulse '+(mediaConsent&&status==='playing'?(isReplay?'is-replay':'is-playing'):'')}/>
      <strong>{stream.name}</strong>
      <small>{stream.zone} · {stream.sport}</small>
-     <span className="sport-live-status" aria-live="polite">{STATUS_LABELS[visibleStatus]||visibleStatus}</span>
+     <span className="sport-live-status" aria-live="polite">{playerStatus}</span>
     </div>
     <div className="sport-live-actions">
      <button type="button" onClick={toggleFullscreen} disabled={!mediaConsent} aria-label={fullscreen?'Quitter le plein écran':'Plein écran'}>
       {fullscreen?<Minimize2 size={16}/>:<Maximize2 size={16}/>}<span>{fullscreen?'Réduire':'Plein écran'}</span>
      </button>
      <button type="button" onClick={reload} disabled={!mediaConsent} aria-label="Relancer le direct"><RefreshCw size={16}/><span>Relancer</span></button>
-     <button type="button" onClick={manualNext} disabled={!mediaConsent} aria-label="Choisir un autre direct"><SkipForward size={16}/><span>Autre direct</span></button>
+     <button type="button" onClick={manualNext} disabled={!mediaConsent} aria-label="Choisir un autre direct"><SkipForward size={16}/><span>Autre sport</span></button>
     </div>
    </div>
 
@@ -531,18 +564,18 @@ export default function SportLive(){
      <button type="button" onClick={activateMedia}>Activer le direct sport</button>
     </div>:<>
      {!loaded&&<div className="sport-live-loading">
-      <Tv2 size={34}/><strong>{STATUS_LABELS[status]}</strong>
-      <span>Le système vérifie les sources officielles et conserve le direct jusqu’à sa fin.</span>
+      <Tv2 size={34}/><strong>{isReplay?'Chargement du sport officiel…':STATUS_LABELS[status]}</strong>
+      <span>{isReplay?'Préparation du prochain replay ou résumé officiel.':'Le système vérifie les sources officielles et conserve le direct jusqu’à sa fin.'}</span>
      </div>}
      {!['switching','waiting'].includes(status)&&<LivePlayer
-      key={stream.id+'-'+nonce+'-'+(director.videoId||'channel')}
+      key={stream.id+'-'+nonce+'-'+(director.playbackVideoId||'channel')}
       stream={stream}
       nonce={nonce}
-      videoId={director.videoId}
+      videoId={director.playbackVideoId}
       onReady={handleReady}
       onPlaying={handlePlaying}
       onState={handleState}
-      onUnavailable={unavailable}
+      onUnavailable={handlePlaybackUnavailable}
       onBlocked={handleBlocked}
       onMetadata={handleMetadata}
      />}
@@ -550,8 +583,8 @@ export default function SportLive(){
    </div>
    <div className="sport-live-player-bottom">
     {mediaConsent?<>
-     <span className="sport-live-monitor"><Radio size={15}/>{director.matchedEvent?'Match identifié et suivi':'Chaîne officielle surveillée'}</span>
-     <span>{director.matchedEvent?'Deux confirmations serveur sont exigées avant de passer au match suivant.':'Aucun changement programmé · bascule seulement si le lecteur se termine ou devient indisponible.'}</span>
+     <span className="sport-live-monitor"><Radio size={15}/>{isReplay?'Replay officiel en cours':director.matchedEvent?'Match identifié et suivi':'Chaîne officielle surveillée'}</span>
+     <span>{isReplay?'Aucun écran vide : le prochain contenu officiel démarre à la fin. La régie continue de rechercher un direct.':director.matchedEvent?'Deux confirmations serveur sont exigées avant de passer au match suivant.':'Aucun changement programmé · bascule seulement si le lecteur se termine ou devient indisponible.'}</span>
      <button type="button" className={'sport-live-awake '+(keepAwake?'is-on':'')} aria-pressed={keepAwake} onClick={()=>setKeepAwake(value=>!value)}>
       {keepAwake?(awake?'Écran maintenu allumé':'Maintien d’écran demandé'):'Veille autorisée'}
      </button>
@@ -565,8 +598,8 @@ export default function SportLive(){
   </div>
 
   <div className="sport-live-strip">
-   <div><Globe2 size={20}/><span><strong>France → Europe → monde</strong><small>Le bouton « Autre direct » reste disponible pour changer immédiatement sans attendre la fin.</small></span></div>
-   <button type="button" onClick={manualNext} disabled={!mediaConsent}><SkipForward size={17}/>Autre direct</button>
+   <div><Globe2 size={20}/><span><strong>Direct prioritaire · replay automatique</strong><small>France d’abord, puis Europe et monde. « Autre sport » passe immédiatement au contenu officiel suivant.</small></span></div>
+   <button type="button" onClick={manualNext} disabled={!mediaConsent}><SkipForward size={17}/>Autre sport</button>
   </div>
 
   <div className="sport-live-hubs">
@@ -576,6 +609,6 @@ export default function SportLive(){
    </div>
   </div>
 
-  <p className="muted-copy sport-live-rights">Les droits de diffusion dépendent du pays et du diffuseur. Si toutes les sources officielles sont momentanément hors ligne, 3B continue de les rechercher ; aucun flux piraté n’est utilisé.</p>
+  <p className="muted-copy sport-live-rights">Les droits de diffusion dépendent du pays et du diffuseur. Quand aucun direct intégrable n’est disponible, 3B enchaîne uniquement des vidéos officielles ; aucun flux piraté n’est utilisé.</p>
  </div>;
 }

@@ -387,3 +387,8 @@ html.sport-live-landscape-open .sport-live-player-shell.is-landscape .sport-live
 html.sport-live-landscape-open .sport-director-board,
 html.sport-live-landscape-open .sport-live-hero,
 html.sport-live-landscape-open .sport-director-error{display:none!important}
+
+/* Continuité Sport : direct prioritaire, replay officiel de secours */
+.sport-live-pulse.is-replay{background:#d5b76d;box-shadow:0 0 0 5px #d5b76d18,0 0 20px #d5b76d80}
+.sport-director-event.is-replay{border-color:#d5b76d45;background:linear-gradient(135deg,#8c6b2629,#102025)}
+.sport-director-event.is-replay>svg,.sport-director-event.is-replay .sport-director-event-state b{color:#f0d28d}

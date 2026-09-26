@@ -5,7 +5,7 @@ import {
  canConfirmEventFinished,eventState,matchEventToTitle,sanitizeEvent,sourceIdForBroadcaster,
 } from '../shared/sport-director.js';
 import {
- handleSportDirectorRequest,loadLiveSources,resetSportDirectorForTests,
+ handleSportDirectorRequest,loadLiveSources,loadOfficialVideos,resetSportDirectorForTests,
 } from '../server/sport-director.js';
 
 process.env.APP_URL='https://3b-international.vercel.app';
@@ -184,4 +184,24 @@ test('server cache is explicitly bounded against untrusted event-id churn',()=>{
  assert.match(source,/MAX_CACHE_ENTRIES=300/);
  assert.match(source,/function pruneCache/);
  assert.match(source,/pruneCache\(now\)/);
+});
+
+test('official YouTube feeds provide a replay fallback without API credentials',async()=>{
+ delete process.env.YOUTUBE_DATA_API_KEY; resetSportDirectorForTests();
+ const xml='<feed><entry><yt:videoId>sport123456</yt:videoId><title>France - Espagne : résumé officiel</title><published>2026-09-25T20:00:00Z</published></entry></feed>';
+ const fetchImpl=url=>String(url).includes('/feeds/videos.xml')?Promise.resolve(new Response(xml,{status:200,headers:{'content-length':String(xml.length)}})):Promise.reject(new Error('unexpected-upstream'));
+ const result=await loadOfficialVideos({fetchImpl});
+ assert.ok(result.items.length>=1);
+ assert.equal(result.items[0].videoId,'sport123456');
+ assert.equal(result.items[0].sourceId,'sef-youtube');
+});
+
+test('main director response remains useful with official replay media when no live exists',async()=>{
+ delete process.env.YOUTUBE_DATA_API_KEY; resetSportDirectorForTests();
+ const xml='<feed><entry><yt:videoId>sport987654</yt:videoId><title>Temps forts officiels</title><published>2026-09-25T21:00:00Z</published></entry></feed>';
+ const fetchImpl=url=>{const target=String(url); if(target.includes('/feeds/videos.xml'))return Promise.resolve(new Response(xml,{status:200,headers:{'content-length':String(xml.length)}})); if(target.includes('eventsday.php'))return Promise.resolve(response({events:[]})); if(target.includes('eventstv.php'))return Promise.resolve(response({tvevents:[]})); throw new Error('unexpected-upstream:'+target);};
+ const result=await handleSportDirectorRequest(new Request('https://3b-international.vercel.app/api/sport-director',{headers:{origin:'https://3b-international.vercel.app','sec-fetch-site':'same-origin','x-forwarded-for':'198.51.100.91'}}),{fetchImpl,now:Date.parse('2026-09-25T22:00:00Z')});
+ const body=await result.json();
+ assert.equal(result.status,200); assert.equal(body.playbackMode,'replay');
+ assert.ok(body.fallbackVideos.length>=1); assert.equal(body.recommendedSourceId,'sef-youtube');
 });

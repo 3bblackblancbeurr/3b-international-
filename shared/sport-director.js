@@ -8,8 +8,9 @@ export const SPORT_STREAMS=Object.freeze([
 
 export const SPORT_HUBS=Object.freeze([
  {label:'France.tv Sport',href:'https://www.france.tv/sport/'},
- {label:"L'Équipe Live",href:'https://www.lequipe.fr/Lachainelequipe/Live/'},
- {label:'European Athletics TV',href:'https://athletics.eurovisionsports.tv/'},
+ {label:"L'Équipe TV",href:'https://www.lequipe.fr/tv/'},
+ {label:'Eurovision Sport',href:'https://eurovisionsport.com/fr/'},
+ {label:'TF1+ Sport',href:'https://www.tf1.fr/programmes-tv/sport'},
  {label:'Olympics',href:'https://www.olympics.com/fr/evenements-sportifs/'},
 ]);
 

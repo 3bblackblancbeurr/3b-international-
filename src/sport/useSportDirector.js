@@ -32,6 +32,7 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
  const[snapshot,setSnapshot]=useState(null);
  const[error,setError]=useState('');
  const[checking,setChecking]=useState(false);
+ const[fallbackCursor,setFallbackCursor]=useState(0);
  const finalCountRef=useRef(0);
  const finishedEventRef=useRef('');
  const callbackRef=useRef(onConfirmedFinished);
@@ -69,7 +70,19 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
  },[refresh]);
 
  const sourceLive=useMemo(()=>liveForSource(snapshot,sourceId),[snapshot,sourceId]);
- const effectiveTitle=playerMeta?.title||sourceLive?.title||'';
+ const sourceEvent=useMemo(()=>(snapshot?.events||[])
+  .filter(event=>event.sourceId===sourceId&&isEventCurrent(event))
+  .sort((a,b)=>(b.state==='live')-(a.state==='live')||Date.parse(a.start)-Date.parse(b.start))[0]||null,
+ [snapshot?.events,sourceId]);
+ const sourceFallbacks=useMemo(()=>{
+  const all=Array.isArray(snapshot?.fallbackVideos)?snapshot.fallbackVideos:[];
+  const matching=all.filter(item=>item.sourceId===sourceId);
+  return matching.length?matching:all;
+ },[snapshot?.fallbackVideos,sourceId]);
+ const fallbackVideo=sourceFallbacks.length?sourceFallbacks[fallbackCursor%sourceFallbacks.length]:null;
+ const confirmedLive=Boolean(sourceLive?.live);
+ const playbackMode=confirmedLive?'live':sourceEvent?'scheduled':fallbackVideo?'replay':'channel';
+ const effectiveTitle=confirmedLive?(playerMeta?.title||sourceLive?.title||''):'';
  const titleMatch=useMemo(
   ()=>matchEventToTitle(effectiveTitle,snapshot?.events||[]),
   [effectiveTitle,snapshot?.events],
@@ -78,17 +91,15 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
   const eventId=sourceLive?.match?.eventId;
   return eventId?(snapshot?.events||[]).find(event=>event.id===eventId)||null:null;
  },[snapshot?.events,sourceLive?.match?.eventId]);
- const sourceEvent=useMemo(()=>(snapshot?.events||[])
-  .filter(event=>event.sourceId===sourceId&&isEventCurrent(event))
-  .sort((a,b)=>(b.state==='live')-(a.state==='live')||Date.parse(a.start)-Date.parse(b.start))[0]||null,
- [snapshot?.events,sourceId]);
  const titleMatched=titleMatch?.confidence>=0.58?titleMatch.event:null;
- const matchedEvent=titleMatched||liveMatchedEvent||sourceEvent;
- const matchBasis=titleMatched?'title':sourceLive?.match?.basis||(sourceEvent?'broadcaster':'');
- const matchConfidence=titleMatched?titleMatch.confidence:(sourceLive?.match?.confidence||(sourceEvent?0.82:0));
+ const matchedEvent=titleMatched||liveMatchedEvent||(playbackMode==='scheduled'?sourceEvent:null);
+ const matchBasis=titleMatched?'title':sourceLive?.match?.basis||(playbackMode==='scheduled'?'broadcaster':'');
+ const matchConfidence=titleMatched?titleMatch.confidence:(sourceLive?.match?.confidence||(playbackMode==='scheduled'?0.82:0));
  const currentEvent=matchedEvent||snapshot?.currentMatch||snapshot?.current?.[0]||null;
  const nextEvent=(snapshot?.upcoming||[]).find(event=>event.id!==currentEvent?.id)||null;
- const videoId=sourceLive?.platform==='youtube'?sourceLive.videoId:'';
+ const liveVideoId=confirmedLive&&sourceLive?.platform==='youtube'?sourceLive.videoId:'';
+ const playbackVideoId=liveVideoId||(playbackMode==='replay'?fallbackVideo?.videoId||'':'');
+ const advanceFallback=useCallback(()=>setFallbackCursor(value=>value+1),[]);
  useEffect(()=>{
   finalCountRef.current=0;
   finishedEventRef.current='';
@@ -135,7 +146,8 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
   snapshot,error,checking,
   currentEvent,nextEvent,matchedEvent,matchConfidence,matchBasis,
   recommendedSourceId:snapshot?.recommendedSourceId||'',
-  sourceLive,videoId,
+  sourceLive,playbackVideoId,playbackMode,
+  fallbackVideos:sourceFallbacks,fallbackVideo,advanceFallback,
   refresh:()=>refresh(new AbortController().signal),
  };
 }

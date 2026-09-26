@@ -12,6 +12,7 @@ const TWITCH_API_ORIGIN='https://api.twitch.tv';
 const MAX_UPSTREAM_BYTES=2_000_000;
 const SCHEDULE_TTL=5*60*1000;
 const LIVE_TTL=90*1000;
+const OFFICIAL_VIDEO_TTL=10*60*1000;
 const EVENT_TTL=60*1000;
 const MAX_CACHE_ENTRIES=300;
 const cache=new Map();
@@ -218,12 +219,67 @@ function youtubeApiKey(){
  return /^[A-Za-z0-9_-]{20,180}$/.test(key)?key:'';
 }
 
+function safeCodePoint(value){
+ return Number.isInteger(value)&&value>=32&&value<=0x10ffff?String.fromCodePoint(value):' ';
+}
+function decodeXml(value,max=180){
+ const decoded=String(value||'')
+  .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1')
+  .replace(/&#x([0-9a-f]+);/gi,(_,hex)=>safeCodePoint(Number.parseInt(hex,16)))
+  .replace(/&#(\d+);/g,(_,decimal)=>safeCodePoint(Number.parseInt(decimal,10)))
+  .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+  .replace(/&quot;/g,'"').replace(/&apos;/g,"'");
+ return cleanText(decoded,max);
+}
+
+function youtubeFeedEntries(xml,source){
+ const entries=String(xml||'').match(/<entry>[\s\S]*?<\/entry>/g)||[];
+ return entries.slice(0,12).flatMap(entry=>{
+  const videoId=entry.match(/<yt:videoId>([A-Za-z0-9_-]{6,20})<\/yt:videoId>/)?.[1]||'';
+  const title=decodeXml(entry.match(/<title>([\s\S]*?)<\/title>/)?.[1]||'');
+  const published=parseOptionalDate(entry.match(/<published>([^<]+)<\/published>/)?.[1]);
+  if(!videoId||!title||!published)return [];
+  return [{sourceId:source.id,platform:'youtube',videoId,title,publishedAt:published,
+   sourceName:source.name,zone:source.zone,sport:source.sport}];
+ });
+}
+
 function youtubeIdsFromFeed(xml){
  const ids=[];
  const pattern=/<yt:videoId>([A-Za-z0-9_-]{6,20})<\/yt:videoId>/g;
  let match;
  while((match=pattern.exec(xml))&&ids.length<12)ids.push(match[1]);
  return ids;
+}
+
+export async function loadOfficialVideos({fetchImpl=fetch}={}){
+ return cached('official-videos',OFFICIAL_VIDEO_TTL,async()=>{
+  const sources=SPORT_STREAMS.filter(source=>source.kind==='youtube')
+   .sort((a,b)=>b.weight-a.weight);
+  const results=await Promise.allSettled(sources.map(async source=>{
+   const url=`${YOUTUBE_FEED_ORIGIN}/feeds/videos.xml?channel_id=${encodeURIComponent(source.channel)}`;
+   const xml=await fetchText(url,{fetchImpl,timeout:7000});
+   return {source,items:youtubeFeedEntries(xml,source)};
+  }));
+  const bySource=new Map();
+  for(const result of results){
+   if(result.status==='fulfilled')bySource.set(result.value.source.id,result.value.items);
+  }
+  const interleaved=[];
+  for(let round=0;round<8;round+=1){
+   for(const source of sources){
+    const item=bySource.get(source.id)?.[round];
+    if(item)interleaved.push(item);
+   }
+  }
+  const seen=new Set();
+  const items=interleaved.filter(item=>{
+   if(seen.has(item.videoId))return false;
+   seen.add(item.videoId);
+   return true;
+  }).slice(0,24);
+  return {items,degraded:results.some(result=>result.status==='rejected'),provider:'YouTube official feeds'};
+ });
 }
 
 async function discoverYoutubeLives(fetchImpl){
@@ -385,6 +441,18 @@ function publicLiveItem(item){
  };
 }
 
+function publicOfficialVideo(item){
+ const source=SPORT_STREAMS.find(candidate=>candidate.id===item?.sourceId&&candidate.kind==='youtube');
+ const videoId=/^[A-Za-z0-9_-]{6,20}$/.test(item?.videoId||'')?item.videoId:'';
+ if(!source||!videoId)return null;
+ return {
+  sourceId:source.id,platform:'youtube',videoId,
+  title:cleanText(item?.title,180)||'Sport officiel',
+  sourceName:source.name,zone:source.zone,sport:source.sport,
+  publishedAt:parseOptionalDate(item?.publishedAt),
+ };
+}
+
 function cleanupRateBuckets(now=Date.now()){
  if(rateBuckets.size<1200)return;
  const threshold=Math.floor(now/60000)*60000-2*60000;
@@ -408,26 +476,36 @@ export async function handleSportDirectorRequest(request,{fetchImpl=fetch,now=Da
    const result=await loadEvent(eventId,{fetchImpl});
    return reply(result,200,'public, max-age=20, s-maxage=60, stale-while-revalidate=180');
   }
-  const schedule=await loadSchedule({fetchImpl,now});
-  let live={items:[],recommendedSourceId:'',configured:{youtube:false,twitch:false},degraded:false};
-  try{live=await loadLiveSources({fetchImpl,events:schedule.events});}
-  catch{live={...live,degraded:true};}
+  let schedule={events:[],current:[],upcoming:[],provider:'TheSportsDB',degraded:true};
+  let calendarAvailable=true;
+  try{schedule=await loadSchedule({fetchImpl,now});}
+  catch{calendarAvailable=false;}
+  const [liveResult,officialResult]=await Promise.allSettled([
+   loadLiveSources({fetchImpl,events:schedule.events}),
+   loadOfficialVideos({fetchImpl}),
+  ]);
+  const live=liveResult.status==='fulfilled'?liveResult.value:{items:[],recommendedSourceId:'',configured:{youtube:false,twitch:false},degraded:true};
+  const official=officialResult.status==='fulfilled'?officialResult.value:{items:[],degraded:true};
   const liveItems=(live.items||[]).map(publicLiveItem);
+  const fallbackVideos=(official.items||[]).map(publicOfficialVideo).filter(Boolean).slice(0,24);
   const scheduledSource=schedule.current.find(event=>event.sourceId)?.sourceId
    ||schedule.upcoming.find(event=>event.sourceId&&Date.parse(event.start)<=now+45*60000)?.sourceId||'';
-  const recommendedSourceId=live.recommendedSourceId||scheduledSource;
+  const recommendedSourceId=live.recommendedSourceId||scheduledSource||fallbackVideos[0]?.sourceId||'';
   const matchedIds=new Set(liveItems.map(item=>item.match?.eventId).filter(Boolean));
   const currentMatch=schedule.events.find(event=>matchedIds.has(event.id))
    ||schedule.current.find(event=>event.sourceId===recommendedSourceId)
    ||schedule.current[0]||null;
   const response={
-   version:1,
+   version:2,
    generatedAt:new Date(now).toISOString(),
    provider:schedule.provider,
-   degraded:Boolean(schedule.degraded||live.degraded),
+   calendarAvailable,
+   degraded:Boolean(!calendarAvailable||schedule.degraded||live.degraded||official.degraded),
    discovery:live.configured,
+   playbackMode:liveItems.some(item=>item.live)?'live':fallbackVideos.length?'replay':'searching',
    recommendedSourceId:cleanText(recommendedSourceId,80),
    liveSources:liveItems,
+   fallbackVideos,
    currentMatch,
    current:schedule.current.slice(0,3),
    upcoming:schedule.upcoming.slice(0,12),
