@@ -19,7 +19,7 @@ import {createGameAudio} from './audio.js';
 import './games.css';
 import './premium.css';
 import './labyrinth.css';
-import {GAME_CATALOG} from './catalog.js';
+import {GAME_CATALOG,KEY_RACE_URL} from './catalog.js';
 import {MazeCampaign,MazeResult} from './MazeCampaign.jsx';
 import Dada3B from './Dada3B.jsx';
 import {unlockedMazeLevel} from './maze-campaign.js';
@@ -49,6 +49,23 @@ export default function GamesHub({goTo,goToGame}){
  const[active,setActive]=useState(null),[selection,setSelection]=useState('arena');
  const[remoteGames,setRemoteGames]=useState([]),[remoteError,setRemoteError]=useState('');
  const[progress,setProgress]=useState(freshProgress),[loading,setLoading]=useState(true),[saveMessage,setSaveMessage]=useState('Chargement de la progression…'),dataRef=useRef(progress),fileRef=useRef();
+ useEffect(()=>{
+  const owned=[];
+  try{
+   const origin=new URL(KEY_RACE_URL).origin;
+   for(const rel of ['preconnect','dns-prefetch']){
+    if(document.head.querySelector(`link[data-threeb-key-race-prewarm="${rel}"]`))continue;
+    const link=document.createElement('link');
+    link.rel=rel;
+    link.href=origin;
+    if(rel==='preconnect')link.crossOrigin='anonymous';
+    link.dataset.threebKeyRacePrewarm=rel;
+    document.head.appendChild(link);
+    owned.push(link);
+   }
+  }catch{}
+  return()=>owned.forEach(link=>link.remove());
+ },[]);
  useEffect(()=>{
   let live=true;
   const controller=new AbortController();
@@ -80,15 +97,17 @@ export default function GamesHub({goTo,goToGame}){
   {progress.records[selection]&&<p className="arcade-stats">Record : {progress.records[selection].best} points · {progress.records[selection].wins} victoire(s)</p>}
   <div className="premium-library" aria-label="Choisir un jeu">
    {GAME_LIST.map(g=>{
-    const Card=g.href?'a':'button';
-    return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(g.href?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{if(g.id==='penalty-rush'){goToGame?.('penalty-rush');return;}setSelection(g.id);setActive(g);}})}>
+    const isOriginalKeyRace=g.id==='key-race';
+    const isExternal=Boolean(g.href&&!isOriginalKeyRace);
+    const Card=isExternal?'a':'button';
+    return <Card className="premium-game-card" data-game={g.id} key={g.id} {...(isExternal?{href:g.href,target:'_blank',rel:'noopener noreferrer'}:{disabled:loading,onClick:()=>{if(g.id==='penalty-rush'||isOriginalKeyRace){goToGame?.(g.id);return;}setSelection(g.id);setActive(g);}})}>
      <span className="premium-card-art" aria-hidden="true"><span className="premium-card-number">{g.number}</span><span className="premium-card-sprite"/></span>
      <span className="premium-card-copy">
       <span className="premium-card-genre">{g.genre} · {g.time}</span>
       <strong>{g.title}</strong>
       <span className="premium-card-description">{g.text}</span>
       <span className="premium-card-bottom">
-       <span>{g.href?'S’ouvre dans un nouvel onglet':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span>
+       <span>{isExternal?'S’ouvre dans un nouvel onglet':isOriginalKeyRace?'Jeu original · Intégré 3B':g.id==='tower'?'Niveau '+(progress.tower?doorUnlocked(progress.tower):1)+' / 100':g.id==='maze'?'Niveau '+(progress.maze?unlockedMazeLevel(progress.maze):1)+' / 100':progress.records[g.id]?'Record · '+progress.records[g.id].best+' pts':'À découvrir'}</span>
        <span className="premium-card-play"><Play size={15}/>Jouer</span>
       </span>
      </span>
