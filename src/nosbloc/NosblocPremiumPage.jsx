@@ -7,6 +7,7 @@ import {
   Store, TestTube2, Upload, UserRound, Users, WalletCards, WandSparkles, X
 } from "lucide-react";
 import { useLoyalty } from "../loyalty/LoyaltyContext.jsx";
+import { nosblocCloudAvailable, nosblocRequest } from "./client.js";
 import City3BPortal from "../components/City3BPortal.jsx";
 import {
   NOSBLOC_STORAGE_KEY, PROJECT_TYPES, PROJECT_TEMPLATES, createEmptyState,
@@ -97,6 +98,7 @@ export default function NosblocPremiumPage({ goTo }) {
   const [loaded, setLoaded] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
+  const [cloudReady, setCloudReady] = useState(false);
 
   useEffect(() => {
     const profile = { studioName: "Studio de " + ownerName };
@@ -121,6 +123,52 @@ export default function NosblocPremiumPage({ goTo }) {
       window.removeEventListener("offline", off);
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (!loaded || !online || !account.user?.id) {
+      setCloudReady(false);
+      return () => { active = false; };
+    }
+    nosblocCloudAvailable(account.user.id).then(ready => {
+      if (active) setCloudReady(ready);
+    });
+    return () => { active = false; };
+  }, [loaded, online, account.user?.id]);
+
+  useEffect(() => {
+    if (!loaded || !online || !cloudReady || !account.user?.id) return;
+    const timer = setTimeout(async () => {
+      try {
+        await nosblocRequest("ensure-profile", { studioName: state.profile?.studioName || "Mon studio 3B" }, account.user.id);
+        for (const project of (state.projects || []).slice(0, 40)) {
+          if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(project.id || ""))) continue;
+          const ready = projectReadiness(project);
+          await nosblocRequest("save-project", {
+            project: {
+              project_id: project.id,
+              title: project.title,
+              project_type: project.type,
+              template_key: project.template,
+              description: project.description,
+              audience: project.audience,
+              readiness_score: ready.score,
+              metadata: {
+                platforms: project.platforms || {},
+                safety: project.safety || {},
+                rights: project.rights || {},
+                plan: Array.isArray(project.plan) ? project.plan.slice(0, 30) : [],
+                updatedAt: project.updatedAt || null,
+              },
+            },
+          }, account.user.id);
+        }
+      } catch {
+        if (online) setCloudReady(false);
+      }
+    }, 1400);
+    return () => clearTimeout(timer);
+  }, [loaded, online, cloudReady, account.user?.id, state.projects, state.profile?.studioName]);
 
   const selected = useMemo(
     () => state.projects.find(project => project.id === selectedId) || state.projects[0] || null,
@@ -250,6 +298,7 @@ export default function NosblocPremiumPage({ goTo }) {
           view={view}
           selected={selected}
           online={online}
+          cloudReady={cloudReady}
           onBack={() => view === "studio" ? setView("home") : goTo?.("home")}
           onCreate={() => setView("create")}
         />
@@ -307,14 +356,14 @@ function MobileNav({ view, setView }) {
   </nav>;
 }
 
-function TopBar({ view, selected, online, onBack, onCreate }) {
+function TopBar({ view, selected, online, cloudReady, onBack, onCreate }) {
   const title = view === "studio" ? selected?.title || "Studio" : {
     home: "Nosbloc 3B", explore: "Explorer", create: "Créer", activity: "Activité", me: "Mon espace",
   }[view] || "Nosbloc 3B";
   return <header className="nb2-topbar">
     <button className="nb2-back" onClick={onBack} aria-label="Retour"><ArrowLeft size={19}/></button>
     <div><small>NOSBLOC DU 3B</small><strong>{title}</strong></div>
-    <span className="nb2-network" data-online={online}>{online ? <Cloud size={15}/> : <CloudOff size={15}/>} {online ? "En ligne" : "Hors ligne"}</span>
+    <span className="nb2-network" data-online={online && cloudReady}>{online ? <Cloud size={15}/> : <CloudOff size={15}/>} {online ? (cloudReady ? "Cloud sécurisé" : "Local sécurisé") : "Hors ligne"}</span>
     {view !== "create" && view !== "studio" && <button className="nb2-top-create" onClick={onCreate}><Plus size={17}/> Créer</button>}
   </header>;
 }
