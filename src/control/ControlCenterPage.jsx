@@ -32,6 +32,15 @@ const NATURAL_COMMANDS=[
  {id:'ping',re:/\b(ping|liaison|connexion pc)\b/i}
 ];
 
+const NAVIGATION_COMMANDS=[
+ {re:/\b(radar|trafic|fréquentation|frequentation|visites?)\b/i,target:'cc-traffic',feedback:'Radar 3B ouvert.'},
+ {re:/\b(nexus|services?|connexions?)\b/i,target:'cc-nexus',feedback:'Nexus 3B ouvert.'},
+ {re:/\b(appareils?|pc appairé|pc appaire|liaison pc)\b/i,target:'cc-devices',feedback:'Centre des appareils ouvert.'},
+ {re:/\b(journal|historique|audit|sécurité|securite)\b/i,target:'cc-log',feedback:'Journal de contrôle ouvert.'},
+ {re:/\b(accueil|état général|etat general|maintenant)\b/i,target:'cc-now',feedback:'État général ouvert.'},
+ {re:/\b(email|e-mail|mail|réseaux sociaux|reseaux sociaux|tiktok|youtube|instagram|finance|banque|agenda|calendrier)\b/i,target:'cc-nexus',feedback:'Cette source apparaît dans le Nexus avec son état réel de connexion.'}
+];
+
 const EVENT_LABELS={
  'pairing.created':'Code d’appairage créé',
  'device.paired':'Nouveau PC appairé',
@@ -334,9 +343,16 @@ export default function ControlCenterPage({goTo}){
    await refresh();
    return;
   }
+  const navigation=NAVIGATION_COMMANDS.find(item=>item.re.test(value));
+  if(navigation){
+   setCommandText('');
+   jumpTo(navigation.target);
+   setCommandFeedback(navigation.feedback);
+   return;
+  }
   const match=NATURAL_COMMANDS.find(item=>item.re.test(value));
   if(!match){
-   setCommandFeedback('Commande non reconnue. Essaie « état du PC », « ouvre GitHub » ou « vérifie Unreal ».');
+   setCommandFeedback('Commande non reconnue. Essaie « radar », « nexus », « état du PC » ou « ouvre GitHub ».');
    return;
   }
   setCommandText('');
@@ -433,7 +449,7 @@ export default function ControlCenterPage({goTo}){
 
     <form className="control-command-bar" onSubmit={submitNaturalCommand}>
      <Zap size={18}/>
-     <input value={commandText} onChange={event=>setCommandText(event.target.value)} placeholder="Ex. ouvre GitHub, état du PC…" aria-label="Commande rapide 3B"/>
+     <input value={commandText} onChange={event=>setCommandText(event.target.value)} placeholder="Rechercher ou commander : radar, GitHub, agenda…" aria-label="Recherche et Command Palette 3B"/>
      <button type="submit" disabled={!primaryOnline||!!busy}>GO</button>
     </form>
     {commandFeedback&&<p className="control-command-feedback" aria-live="polite">{commandFeedback}</p>}
