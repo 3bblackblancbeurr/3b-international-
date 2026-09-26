@@ -59,3 +59,10 @@ test("responsive design supports reduced motion and touch-first mobile layout", 
   assert.match(css, /prefers-reduced-motion:reduce/);
   assert.match(css, /min-height:56px/);
 });
+
+
+test("premium V2 automatically migrates the existing Nosbloc local workspace", () => {
+  assert.match(page, /legacyKey/);
+  assert.match(page, /projets Nosbloc existants ont été repris automatiquement/);
+  assert.match(page, /localStorage\.getItem\(legacyKey\)/);
+});
