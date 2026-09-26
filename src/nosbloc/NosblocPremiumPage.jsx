@@ -356,6 +356,20 @@ export default function NosblocPremiumPage({ goTo }) {
     }
   };
 
+  const removeTeamMember = async (project,row) => {
+    try {
+      if (online && account.user?.id && (row.status !== "draft" || row.invitationId)) {
+        await nosblocServer.removeMember(project,row);
+      }
+      updateProject(project.id,{
+        splits: project.splits.filter(member => member.id !== row.id),
+        status:"draft",visibility:"private",reviewVersionId:null,
+      },"Membre retiré du projet.");
+    } catch (error) {
+      setNotice(error?.message || "Suppression du membre impossible.");
+    }
+  };
+
   const decideInvitation = async (invitationId, accept) => {
     try {
       await nosblocServer.decideInvitation(invitationId, accept);
@@ -371,6 +385,15 @@ export default function NosblocPremiumPage({ goTo }) {
       setNotice(decision === "approved" ? "Projet approuvé. Le propriétaire peut maintenant le publier." : "Projet renvoyé au créateur pour correction.");
     } catch (error) {
       setNotice(error?.message || "Modération impossible.");
+    }
+  };
+
+  const moderateProduct = async (productId, approve) => {
+    try {
+      await nosblocServer.moderateProduct(productId, approve, approve ? "Produit validé" : "Corrections requises");
+      setNotice(approve ? "Produit approuvé. Il restera invisible tant que la Boutique publique est fermée." : "Produit renvoyé au créateur.");
+    } catch (error) {
+      setNotice(error?.message || "Modération du produit impossible.");
     }
   };
 
@@ -413,6 +436,7 @@ export default function NosblocPremiumPage({ goTo }) {
           finance={nosblocServer.finance}
           onInvitationDecision={decideInvitation}
           onModerate={moderateCase}
+          onModerateProduct={moderateProduct}
         />}
         {view === "me" && <ProfileView
           state={state}
@@ -436,6 +460,7 @@ export default function NosblocPremiumPage({ goTo }) {
           restoreVersion={restoreVersion}
           inviteTeamMember={inviteTeamMember}
           revokeTeamInvite={revokeTeamInvite}
+          removeTeamMember={removeTeamMember}
           setView={setView}
           money={money}
           finance={nosblocServer.finance}
@@ -751,7 +776,7 @@ function WizardActions({ back, next, nextLabel = "Continuer", disabled }) {
   return <div className="nb2-wizard-actions">{back && <button className="secondary" onClick={back}><ArrowLeft size={16}/> Retour</button>}<button className="primary" disabled={disabled} onClick={next}>{nextLabel}<ArrowRight size={16}/></button></div>;
 }
 
-function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, onModerate }) {
+function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, onModerate, onModerateProduct }) {
   const [filter, setFilter] = useState("all");
   const filters = [["all","Tout"],["projects","Projets"],["sales","Ventes"],["security","Sécurité"],["moderation","Modération"]];
   const localRows = (state.activity || []).map(row => ({
@@ -843,7 +868,7 @@ function ProfileView({ state, money, serverStatus, setCityOpen, onExport, onImpo
     </section>
   </div>;
 }
-function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, publishProject, archiveProject, restoreVersion, inviteTeamMember, revokeTeamInvite, setView, money, finance, economyActions, setNotice }) {
+function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, publishProject, archiveProject, restoreVersion, inviteTeamMember, revokeTeamInvite, removeTeamMember, setView, money, finance, economyActions, setNotice }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   if (!project) return <div className="nb2-view"><EmptyState icon={FolderKanban} title="Aucun projet sélectionné." text="Crée ou ouvre un projet."/><button className="nb2-primary-inline" onClick={() => setView("create")}>Créer un projet</button></div>;
   const ready = projectReadiness(project);
@@ -856,7 +881,7 @@ function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, 
     </section>
 
     {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview} publishProject={publishProject}/> :
-      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>}
+      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} removeTeamMember={removeTeamMember} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>}
 
     <section className="nb2-danger-zone">
       <button onClick={() => setConfirmArchive(!confirmArchive)}><Settings2 size={16}/> Zone avancée</button>
@@ -904,7 +929,7 @@ function ReadinessChecklist({ ready }) {
   return <div className="nb2-checklist">{ready.checks.map(check => <div key={check.id} data-ok={check.ok}><span>{check.ok ? <Check size={14}/> : null}</span><b>{check.label}</b><small>{check.weight} pts</small></div>)}</div>;
 }
 
-function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, inviteTeamMember, revokeTeamInvite, money, finance, economyActions, setNotice }) {
+function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, inviteTeamMember, revokeTeamInvite, removeTeamMember, money, finance, economyActions, setNotice }) {
   return <div className="nb2-pro">
     <nav className="nb2-pro-tabs">{PRO_TABS.map(([id,label,Icon]) => <button key={id} data-active={proTab === id} onClick={() => setProTab(id)}><Icon size={16}/>{label}</button>)}</nav>
     {proTab === "build" && <BuildPro project={project} ready={ready} updateProject={updateProject}/>}
@@ -912,7 +937,7 @@ function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVe
     {proTab === "scripts" && <ScriptsPro project={project} updateProject={updateProject}/>}
     {proTab === "ai" && <AIPro project={project} updateProject={updateProject}/>}
     {proTab === "versions" && <VersionsPro project={project} restoreVersion={restoreVersion}/>}
-    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} setNotice={setNotice}/>}
+    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} inviteTeamMember={inviteTeamMember} revokeTeamInvite={revokeTeamInvite} removeTeamMember={removeTeamMember} setNotice={setNotice}/>}
     {proTab === "economy" && <EconomyPro project={project} money={money} finance={finance} economyActions={economyActions} setNotice={setNotice}/>} 
     {proTab === "analytics" && <AnalyticsPro project={project}/>}
   </div>;
