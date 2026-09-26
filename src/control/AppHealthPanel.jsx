@@ -45,7 +45,7 @@ export default function AppHealthPanel({pulse,latency,lastSync,dataAvailable,err
   return()=>{live=false;window.clearInterval(timer);};
  },[]);
 
- const connection=navigator.connection?.effectiveType||pulse?.connection||'inconnue';
+ const connection=(typeof navigator!=='undefined'?navigator.connection?.effectiveType:'')||pulse?.connection||'inconnue';
  const used=local.storage?.usage;
  const quota=local.storage?.quota;
  const storageDetail=Number.isFinite(used)&&Number.isFinite(quota)?fmtBytes(used)+' / '+fmtBytes(quota):'Quota non exposé';
