@@ -54,8 +54,13 @@ async function rpc(name, args = {}) {
 
 function cleanProjectPayload(project, readinessScore = 0) {
   const { server, versions, ...payload } = project || {};
+  const splits = Array.isArray(payload.splits) ? payload.splits.map(row => {
+    const { contact, inviteCode, invitationId, invitedAt, acceptedAt, ...publicRow } = row || {};
+    return publicRow;
+  }) : [];
   return {
     ...payload,
+    splits,
     server: {
       readiness: Math.max(0, Math.min(100, Number(readinessScore) || 0)),
       client: "nosbloc-premium-v2",
@@ -151,6 +156,14 @@ export async function revokeNosblocInvitation(invitationId) {
   });
 }
 
+export async function removeNosblocMember(serverProjectId, memberKey) {
+  return rpc("nosbloc_remove_member_api", {
+    p_project: serverProjectId,
+    p_member_key: String(memberKey || ""),
+    p_idempotency: randomUuid(),
+  });
+}
+
 export async function decideNosblocInvitation(invitationId, accept) {
   return rpc("nosbloc_decide_invitation_api", {
     p_invitation: invitationId,
@@ -163,6 +176,15 @@ export async function moderateNosblocCase(caseId, decision, reason = "") {
   return rpc("nosbloc_moderate_api", {
     p_case: caseId,
     p_decision: decision,
+    p_reason: String(reason || "").slice(0, 300),
+    p_idempotency: randomUuid(),
+  });
+}
+
+export async function moderateNosblocProduct(productId, approve, reason = "") {
+  return rpc("nosbloc_moderate_product_api", {
+    p_product: productId,
+    p_approve: !!approve,
     p_reason: String(reason || "").slice(0, 300),
     p_idempotency: randomUuid(),
   });
@@ -244,9 +266,27 @@ export function mergeNosblocServerSnapshot(localState, snapshot) {
     const localTime = Date.parse(local?.updatedAt || "") || 0;
     const remoteTime = Date.parse(remote?.updatedAt || row?.updatedAt || "") || 0;
     const base = local && localTime > remoteTime && !serverLocked ? local : remote;
+    const localSplits = new Map((base.splits || []).map(member => [String(member.id), member]));
+    for (const member of row.members || []) {
+      const key = String(member.memberKey || "");
+      if (!key) continue;
+      const previous = localSplits.get(key) || {};
+      localSplits.set(key, {
+        ...previous,
+        id:key,
+        name:member.name || previous.name || "Membre 3B",
+        role:member.role || previous.role || "Création",
+        shareBps:Number(member.shareBps || 0),
+        status:member.status || previous.status || "draft",
+        invitationId:member.invitationId || previous.invitationId || "",
+        invitedAt:member.invitedAt || previous.invitedAt || "",
+        acceptedAt:member.acceptedAt || previous.acceptedAt || "",
+      });
+    }
     merged.push({
       ...base,
       id,
+      splits:[...localSplits.values()],
       status: serverStatus,
       visibility: row.visibility || base.visibility || "private",
       reviewVersionId: row.reviewVersionId || base.reviewVersionId || null,
@@ -257,6 +297,7 @@ export function mergeNosblocServerSnapshot(localState, snapshot) {
         publicationLocked: !!row.publicationLocked,
         discoverLocked: !!row.discoverLocked,
         monetizationLocked: row.monetizationLocked !== false,
+        isOwner: row.isOwner !== false,
         syncedAt: new Date().toISOString(),
       },
     });
