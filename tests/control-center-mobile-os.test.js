@@ -75,3 +75,59 @@ test('traffic intelligence is removed from Passport and lives in owner Command O
  assert.match(traffic,/INTELLIGENCE · FRÉQUENTATION/);
  assert.match(traffic,/mise à jour auto · 30 s/);
 });
+
+
+test('Command OS keeps navigation alive offline and preserves last-known production truth',()=>{
+ const page=read('src/control/ControlCenterPage.jsx');
+ assert.match(page,/safeTimedFetch/);
+ assert.match(page,/Réseau indisponible · dernières données valides conservées/);
+ assert.match(page,/disabled=\{!!busy\}>GO/);
+ assert.doesNotMatch(page,/disabled=\{!primaryOnline\|\|!!busy\}>GO/);
+ assert.doesNotMatch(page,/network:false,production:false/);
+ assert.match(page,/600000/);
+});
+
+test('large owner modules are isolated and use only truthful real-source states',()=>{
+ const page=read('src/control/ControlCenterPage.jsx');
+ const boundary=read('src/control/ModuleBoundary.jsx');
+ const dev=read('src/control/DevCenterPanel.jsx');
+ const health=read('src/control/AppHealthPanel.jsx');
+ const security=read('src/control/SecurityCenterPanel.jsx');
+ const alerts=read('src/control/AlertCenterPanel.jsx');
+ const projects=read('src/control/ProjectsCenterPanel.jsx');
+ assert.match(page,/ModuleBoundary/);
+ assert.match(boundary,/Les autres fonctions de Command OS continuent de fonctionner/);
+ assert.match(dev,/Comptage GitHub réel/);
+ assert.match(dev,/API Vercel complète reste distincte/);
+ assert.match(health,/navigator\.storage/);
+ assert.match(health,/serviceWorker/);
+ assert.match(health,/Aucune mesure CPU\/GPU du téléphone n’est inventée/);
+ assert.match(security,/allowCount/);
+ assert.match(security,/Session propriétaire contrôlée côté serveur/);
+ assert.match(alerts,/URGENT/);
+ assert.match(alerts,/Tout est calme/);
+ assert.match(projects,/Aucun pourcentage d’avancement/);
+ assert.match(projects,/Suivi de jalons dédié non connecté/);
+});
+
+test('privacy personalization and pending-command controls stay local and explicit',()=>{
+ const page=read('src/control/ControlCenterPage.jsx');
+ const settings=read('src/control/CommandSettingsPanel.jsx');
+ assert.match(page,/sessionStorage\.setItem\('3b-command-privacy'/);
+ assert.match(page,/localStorage\.setItem\('3b-command-compact'/);
+ assert.match(page,/localStorage\.setItem\('3b-command-reduced'/);
+ assert.match(page,/controlCenterRequest\('cancel'/);
+ assert.match(page,/control-cancel-command/);
+ assert.match(settings,/Ces préférences restent locales à cet appareil/);
+ assert.match(settings,/Réduire mouvements/);
+});
+
+test('Radar charts expose exact values on touch instead of relying on hover titles',()=>{
+ const traffic=read('src/components/DirectorTraffic.jsx');
+ const css=read('src/control/control-center.css');
+ assert.match(traffic,/aria-pressed=\{active\}/);
+ assert.match(traffic,/Touche une barre pour afficher sa valeur exacte/);
+ assert.match(traffic,/onClick=\{\(\)=>setSelected/);
+ assert.match(css,/control-traffic-exact/);
+ assert.match(css,/button\.control-traffic-bar/);
+});
