@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="theme-color" content="#05070b" />
+  <title>Vérifier un Passeport 3B</title>
+  <link rel="stylesheet" href="/passport-verify.css" />
+</head>
+<body>
+  <main class="verify-shell" aria-live="polite">
+    <section class="verify-card" id="verify-card">
+      <div class="brand"><span>3B</span><div><strong>INTERNATIONAL</strong><small>VÉRIFICATION PASSEPORT</small></div></div>
+      <div class="status-ring" id="status-ring" aria-hidden="true"><i></i><b>3B</b></div>
+      <p class="eyebrow">IDENTITÉ NUMÉRIQUE PRIVÉE 3B</p>
+      <h1 id="verify-title">Vérification en cours…</h1>
+      <p id="verify-message">Le code est contrôlé par le serveur 3B.</p>
+      <dl id="passport-data" hidden>
+        <div><dt>Titulaire</dt><dd id="holder"></dd></div>
+        <div><dt>Passeport</dt><dd id="number"></dd></div>
+        <div><dt>Pays 3B</dt><dd id="country"></dd></div>
+        <div><dt>Émis</dt><dd id="issued"></dd></div>
+        <div><dt>Version</dt><dd id="version"></dd></div>
+      </dl>
+      <p class="official-note" id="official-note" hidden></p>
+      <footer>Ce Passeport prouve une identité de membre 3B. Ce n’est pas un titre d’identité gouvernemental ni un document de voyage.</footer>
+    </section>
+  </main>
+  <script type="module" src="/passport-verify.js"></script>
+</body>
+</html>
