@@ -9,6 +9,8 @@ import DirectorTraffic from '../components/DirectorTraffic.jsx';
 import CommandNexus from './CommandNexus.jsx';
 import DevCenterPanel from './DevCenterPanel.jsx';
 import AppHealthPanel from './AppHealthPanel.jsx';
+import SecurityCenterPanel from './SecurityCenterPanel.jsx';
+import ModuleBoundary from './ModuleBoundary.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -40,7 +42,8 @@ const NAVIGATION_COMMANDS=[
  {re:/\b(dev|développement|developpement|commit|ci|pull request|pr ouvertes?|déploiement|deploiement)\b/i,target:'cc-dev',feedback:'Dev Center ouvert.'},
  {re:/\b(app health|santé app|sante app|pwa|service worker|stockage|réseau app|reseau app)\b/i,target:'cc-health',feedback:'App Health ouvert.'},
  {re:/\b(appareils?|pc appairé|pc appaire|liaison pc)\b/i,target:'cc-devices',feedback:'Centre des appareils ouvert.'},
- {re:/\b(journal|historique|audit|sécurité|securite)\b/i,target:'cc-log',feedback:'Journal de contrôle ouvert.'},
+ {re:/\b(sécurité|securite|permissions?|allowlist|propriétaire|proprietaire)\b/i,target:'cc-security',feedback:'Security Center ouvert.'},
+ {re:/\b(journal|historique|audit)\b/i,target:'cc-log',feedback:'Journal de contrôle ouvert.'},
  {re:/\b(accueil|état général|etat general|maintenant)\b/i,target:'cc-now',feedback:'État général ouvert.'},
  {re:/\b(email|e-mail|mail|réseaux sociaux|reseaux sociaux|tiktok|youtube|instagram|finance|banque|agenda|calendrier)\b/i,target:'cc-nexus',feedback:'Cette source apparaît dans le Nexus avec son état réel de connexion.'}
 ];
@@ -115,6 +118,10 @@ async function timedFetch(url,options={},timeout=8000){
  finally{window.clearTimeout(timer);}
 }
 
+async function safeTimedFetch(url,options={},timeout=8000){
+ try{return await timedFetch(url,options,timeout);}catch{return null;}
+}
+
 export default function ControlCenterPage({goTo}){
  const[phone,setPhone]=useState(isPhoneClient);
  const[data,setData]=useState(null);
@@ -173,6 +180,10 @@ export default function ControlCenterPage({goTo}){
  },[privacyMode]);
 
  const refresh=useCallback(async()=>{
+  if(typeof navigator!=='undefined'&&navigator.onLine===false){
+   setError('Réseau indisponible · dernières données valides conservées.');
+   return false;
+  }
   const started=performance.now();
   setSyncing(true);
   try{
@@ -181,8 +192,10 @@ export default function ControlCenterPage({goTo}){
    setError('');
    setLatency(Math.max(1,Math.round(performance.now()-started)));
    setLastSync(Date.now());
+   return true;
   }catch(e){
    setError(e.message||'Centre de commande indisponible.');
+   return false;
   }finally{
    setSyncing(false);
   }
@@ -191,20 +204,32 @@ export default function ControlCenterPage({goTo}){
  useEffect(()=>{
   let stopped=false;
   let timer=0;
+  let failures=0;
+  let running=false;
   const tick=async()=>{
-   await refresh();
-   if(!stopped)timer=window.setTimeout(tick,document.visibilityState==='visible'?4000:15000);
+   if(stopped||running)return;
+   running=true;
+   const ok=await refresh();
+   running=false;
+   failures=ok?0:Math.min(5,failures+1);
+   if(stopped)return;
+   const visible=document.visibilityState==='visible';
+   const delay=visible?(ok?4000:Math.min(60000,4000*(2**failures))):15000;
+   timer=window.setTimeout(tick,delay);
   };
   const wake=()=>{
+   failures=0;
    window.clearTimeout(timer);
-   if(!stopped)tick();
+   if(!stopped&&!running)tick();
   };
   tick();
   document.addEventListener('visibilitychange',wake);
+  window.addEventListener('online',wake);
   return()=>{
    stopped=true;
    window.clearTimeout(timer);
    document.removeEventListener('visibilitychange',wake);
+   window.removeEventListener('online',wake);
   };
  },[refresh]);
 
@@ -233,19 +258,19 @@ export default function ControlCenterPage({goTo}){
    try{
     const headers={Accept:'application/vnd.github+json'};
     const [commitResponse,runsResponse,prsResponse,deploymentsResponse]=await Promise.all([
-     timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/commits/main',{headers,cache:'no-store'},9000),
-     timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/actions/runs?branch=main&per_page=3',{headers,cache:'no-store'},9000),
-     timedFetch('https://api.github.com/search/issues?q=repo%3A3bblackblancbeurr%2F3b-international-%20is%3Apr%20is%3Aopen&per_page=1',{headers,cache:'no-store'},9000),
-     timedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/deployments?per_page=3',{headers,cache:'no-store'},9000)
+     safeTimedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/commits/main',{headers,cache:'no-store'},9000),
+     safeTimedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/actions/runs?branch=main&per_page=3',{headers,cache:'no-store'},9000),
+     safeTimedFetch('https://api.github.com/search/issues?q=repo%3A3bblackblancbeurr%2F3b-international-%20is%3Apr%20is%3Aopen&per_page=1',{headers,cache:'no-store'},9000),
+     safeTimedFetch('https://api.github.com/repos/3bblackblancbeurr/3b-international-/deployments?per_page=3',{headers,cache:'no-store'},9000)
     ]);
     if(!active)return;
-    const next={github:commitResponse.ok&&runsResponse.ok,checkedAt:Date.now()};
-    if(commitResponse.ok){
+    const next={github:Boolean(commitResponse?.ok&&runsResponse?.ok),checkedAt:Date.now()};
+    if(commitResponse?.ok){
      const commit=await commitResponse.json();
      next.commit=String(commit?.commit?.message||'').split('\n')[0]||'Commit main';
      next.commitSha=String(commit?.sha||'').slice(0,7);
     }
-    if(runsResponse.ok){
+    if(runsResponse?.ok){
      const payload=await runsResponse.json();
      const runs=Array.isArray(payload?.workflow_runs)?payload.workflow_runs:[];
      const running=runs.find(run=>!run.conclusion&&['queued','in_progress','waiting','requested','pending'].includes(run.status));
@@ -253,11 +278,11 @@ export default function ControlCenterPage({goTo}){
      next.ci=running?'running':latest?.conclusion||latest?.status||null;
      next.workflow=latest?.name||'';
     }
-    if(prsResponse.ok){
+    if(prsResponse?.ok){
      const payload=await prsResponse.json();
      next.openPrCount=Number.isFinite(Number(payload?.total_count))?Number(payload.total_count):null;
     }
-    if(deploymentsResponse.ok){
+    if(deploymentsResponse?.ok){
      const deployments=await deploymentsResponse.json();
      const latestDeployment=Array.isArray(deployments)?deployments[0]:null;
      if(latestDeployment){
@@ -266,8 +291,8 @@ export default function ControlCenterPage({goTo}){
       next.deploymentSha=String(latestDeployment.sha||'').slice(0,7);
       if(latestDeployment.statuses_url){
        try{
-        const statusResponse=await timedFetch(latestDeployment.statuses_url,{headers,cache:'no-store'},7000);
-        if(statusResponse.ok){
+        const statusResponse=await safeTimedFetch(latestDeployment.statuses_url,{headers,cache:'no-store'},7000);
+        if(statusResponse?.ok){
          const statuses=await statusResponse.json();
          next.deploymentStatus=Array.isArray(statuses)?String(statuses[0]?.state||''):'';
         }
@@ -472,24 +497,30 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
-   <CommandNexus
-    pulse={pulse}
-    dataAvailable={Boolean(data)}
-    error={error}
-    primaryDevice={primaryDevice}
-    primaryOnline={primaryOnline}
-    alerts={alerts}
-    lastSync={lastSync}
-    privacyMode={privacyMode}
-    onPrivacyChange={setPrivacyMode}
-    onJump={jumpTo}
-   />
+   <ModuleBoundary label="Nexus 3B momentanément indisponible">
+    <CommandNexus
+     pulse={pulse}
+     dataAvailable={Boolean(data)}
+     error={error}
+     primaryDevice={primaryDevice}
+     primaryOnline={primaryOnline}
+     alerts={alerts}
+     lastSync={lastSync}
+     privacyMode={privacyMode}
+     onPrivacyChange={setPrivacyMode}
+     onJump={jumpTo}
+    />
+   </ModuleBoundary>
 
-   <DirectorTraffic />
+   <ModuleBoundary label="Radar 3B momentanément indisponible"><DirectorTraffic /></ModuleBoundary>
 
-   <DevCenterPanel pulse={pulse}/>
+   <ModuleBoundary label="Dev Center momentanément indisponible"><DevCenterPanel pulse={pulse}/></ModuleBoundary>
 
-   <AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/>
+   <ModuleBoundary label="App Health momentanément indisponible"><AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/></ModuleBoundary>
+
+   <ModuleBoundary label="Security Center momentanément indisponible">
+    <SecurityCenterPanel dataAvailable={Boolean(data)} error={error} devices={devices} commands={commands} events={events} allowedCommands={data?.allowed_commands}/>
+   </ModuleBoundary>
 
    <section className="control-section" id="cc-actions">
     <header className="control-section-heading"><div><p className="control-kicker">ACTION IMMÉDIATE</p><h2>Pilote ton PC</h2></div><TerminalSquare size={20}/></header>
