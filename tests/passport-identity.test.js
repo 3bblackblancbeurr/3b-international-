@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {PASSPORT_COUNTRIES,passportFromProfile,passportInitials} from '../src/passport/identity.js';
 
 const UID='123e4567-e89b-12d3-a456-426614174000';
+const PUBLIC_ID='123e4567-e89b-42d3-a456-426614174000';
 const profile=(country='Maroc')=>({
   user_id:UID,
   handle:'amina3b',
@@ -13,6 +14,10 @@ const profile=(country='Maroc')=>({
   points:1250,
   theme:'explorer',
   created_at:'2026-09-20T00:00:00.000Z',
+  passport_public_id:PUBLIC_ID,
+  passport_issued_at:'2026-09-26T14:58:25.000Z',
+  passport_version:2,
+  passport_state:'active',
 });
 
 test('passport identity is derived from the signed-in member profile',()=>{
@@ -25,8 +30,12 @@ test('passport identity is derived from the signed-in member profile',()=>{
  assert.equal(passport.flag,'🇲🇦');
  assert.equal(passport.xp,840);
  assert.equal(passport.points,1250);
- assert.equal(passport.passportId,'3B-PASS-123E4567-E89B-12D3-A456-426614174000');
- assert.equal(passport.memberId,'3B-MEM-123E4567-E89B-12D3-A456-426614174000');
+ assert.equal(passport.passportPublicId,PUBLIC_ID);
+ assert.equal(passport.passportId,'3B-PASS-123E4567E89B42D3');
+ assert.equal(passport.memberId,'3B-MEM-123E4567E89B');
+ assert.equal(passport.passportState,'active');
+ assert.equal(passport.passportVersion,2);
+ assert.equal(passport.passportIssuedAt,'2026-09-26T14:58:25.000Z');
  assert.equal(passportInitials(passport),'AE');
 });
 
@@ -104,4 +113,19 @@ test('registration and account switching cannot reuse another member passport',(
  assert.match(context,/data\?\.profile\?\.user_id===session\?\.user\?\.id\?data:null/);
  assert.match(context,/passportFromProfile\(owned\?\.profile,session\?\.user\)/);
  assert.match(app,/identity=\{loyalty\.passport\}/);
+});
+
+
+test('missing public Passport id never falls back to the private auth UUID',()=>{
+ const passport=passportFromProfile({...profile(),passport_public_id:null},{id:UID});
+ assert.equal(passport.passportPublicId,null);
+ assert.equal(passport.passportId,'3B-PASS-PENDING');
+ assert.equal(passport.memberId,'3B-MEM-PENDING');
+ assert.doesNotMatch(passport.passportId,/123E4567-E89B-12D3/);
+});
+
+test('account UI never displays profile.user_id as the public member number',()=>{
+ const source=readFileSync(new URL('../src/loyalty/AccountPage.jsx',import.meta.url),'utf8');
+ assert.doesNotMatch(source,/N° membre\s*:\s*\{profile\.user_id/i);
+ assert.match(source,/account\.passport\?\.memberId/);
 });
