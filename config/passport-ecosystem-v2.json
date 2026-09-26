@@ -1,0 +1,64 @@
+{
+  "contract_version": 2,
+  "identity_root": "Supabase Auth account -> member_profiles -> Passport 3B",
+  "internal_subject": "auth.users.id",
+  "public_subject": "member_profiles.passport_public_id",
+  "external_default_scopes": [
+    "identity.basic"
+  ],
+  "modules": {
+    "passport": [
+      "identity.basic",
+      "identity.profile",
+      "identity.origin"
+    ],
+    "world3b": [
+      "identity.basic",
+      "identity.origin",
+      "progress.read",
+      "inventory.read",
+      "world.play"
+    ],
+    "city3b": [
+      "identity.basic",
+      "identity.origin",
+      "progress.read",
+      "wallet.read",
+      "inventory.read",
+      "city.manage"
+    ],
+    "nosbloc": [
+      "identity.basic",
+      "identity.profile",
+      "nosbloc.create"
+    ],
+    "games": [
+      "identity.basic",
+      "progress.read",
+      "games.play"
+    ],
+    "shop": [
+      "identity.basic",
+      "progress.read",
+      "shop.member"
+    ],
+    "community": [
+      "identity.basic",
+      "identity.profile",
+      "community.member"
+    ],
+    "sport": [
+      "identity.basic",
+      "identity.profile",
+      "sport.member"
+    ]
+  },
+  "invariants": [
+    "Never expose auth.users.id as a Passport number.",
+    "Never use display badges or user_metadata for authorization.",
+    "A third-party integration receives only explicitly consented scopes.",
+    "Offline Passport data is display/cache only; privileged actions require server validation.",
+    "Revoked or suspended Passports cannot unlock protected 3B modules.",
+    "QR verification must use short-lived, single-use server tickets and must not embed PII."
+  ]
+}
