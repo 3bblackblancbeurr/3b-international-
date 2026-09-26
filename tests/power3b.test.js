@@ -17,12 +17,12 @@ test('planning is capped at five orders and a unit cannot receive two orders',()
  const h=createPowerGame({nation:0,seed:3}),u=h.units.find(x=>x.nation===0&&x.type==='infantry'&&x.sectorId==='hq0');u.sectorId='front0';
  queueMove(h,0,[u.id],'front1');assert.throws(()=>queueMove(h,0,[u.id],'hq1'),/un ordre/);
 });
-test('strongest force captures a contested sector and converts captured pieces into reserve',()=>{
+test('strongest force captures a contested sector and stores captured pieces as redeployable spoils',()=>{
  const g=createPowerGame({nation:0,seed:4}),target='front1';
  g.units=g.units.filter(u=>!(u.sectorId===target&&u.nation===1));const enemy=g.units.find(u=>u.nation===1&&u.type==='infantry'&&u.sectorId==='hq1');enemy.sectorId=target;
- const tank=g.units.find(u=>u.nation===0&&u.type==='tank'&&u.sectorId==='hq0');tank.sectorId='front0';const before=g.nations[0].reserve.infantry;
+ const tank=g.units.find(u=>u.nation===0&&u.type==='tank'&&u.sectorId==='hq0');tank.sectorId='front0';const before=g.nations[0].spoils.infantry;
  queueMove(g,0,[tank.id],target);const out=resolveTurn(g,{ai:false,penalty:false});
- assert.equal(unitsIn(out,target,1).filter(u=>u.type!=='flag').length,0);assert.equal(out.owners[target],0);assert.ok(out.nations[0].reserve.infantry>before);
+ assert.equal(unitsIn(out,target,1).filter(u=>u.type!=='flag').length,0);assert.equal(out.owners[target],0);assert.ok(out.nations[0].spoils.infantry>before);
 });
 test('equal power sends moved attackers back to their origin',()=>{
  const g=createPowerGame({nation:0,seed:5}),target='front1';
