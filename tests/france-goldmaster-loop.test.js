@@ -4,6 +4,7 @@ import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {chapterState} from '../src/world/chapters.js';
 import {GUARDIAN_VALUES,guardianHubPresence} from '../src/world/guardian-values.js';
+import {hubRuntime} from '../src/world/hub/runtime-data.js';
 
 test('France Gold Master progression closes the Justice/Céliane loop back to the hub',()=>{
   let s=blankSave();
@@ -41,4 +42,19 @@ test('France Gold Master progression closes the Justice/Céliane loop back to th
   const returned=guardianHubPresence(s.seals,['france']).find(g=>g.region==='france');
   assert.equal(returned.name,'Céliane');
   assert.equal(returned.value,'Justice');
+
+  const restoredRegions=Object.entries(s.adventure.chapters).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id);
+  const hub=hubRuntime('desktop',{seals:s.seals,restoredRegions,storyProgress:true,hubState:s.hub,weather:'clear',hour:14,day:2,dateKey:'2026-09-25'});
+  assert.equal(hub.meta.fragmentCount,1);
+  assert.equal(hub.meta.evolutionStage,1);
+  assert.equal(hub.meta.milestone.id,'circle_heartbeat');
+
+  const francePlatform=hub.items.find(item=>item.type==='hubHeritagePlatform'&&item.regionId==='france');
+  assert.equal(francePlatform.restored,true);
+  assert.equal(francePlatform.liberated,true);
+  assert.ok(francePlatform.glow>0.5);
+
+  const celiane=hub.items.find(item=>item.type==='hubGuardian'&&item.region==='france');
+  assert.equal(celiane.name,'Céliane');
+  assert.equal(celiane.value,'Justice');
 });

@@ -15,6 +15,7 @@
     {"id":"compile_editor_client_server","required":true,"proof_type":"compile_log","evidence_file":"compile.json","engine":"5.8"},
     {"id":"final_nanite_geometry","required":true,"proof_type":"editor_capture_and_asset_audit","evidence_file":"final_nanite_geometry.json","engine":"5.8"},
     {"id":"final_underside_caverns","required":true,"proof_type":"editor_capture_and_collision_audit","evidence_file":"final_underside_caverns.json","engine":"5.8"},
+    {"id":"void_vertical_capture","required":true,"proof_type":"anti_flat_capture_set","evidence_file":"void_vertical_capture.json","engine":"5.8"},
     {"id":"final_architecture_facades_furniture","required":true,"proof_type":"editor_capture_and_asset_audit","evidence_file":"final_architecture.json","engine":"5.8"},
     {"id":"final_vegetation","required":true,"proof_type":"editor_capture_and_asset_audit","evidence_file":"final_vegetation.json","engine":"5.8"},
     {"id":"water_system_and_waterfall_materials","required":true,"proof_type":"editor_runtime_capture","evidence_file":"water_system.json","engine":"5.8"},
