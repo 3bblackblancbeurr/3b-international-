@@ -11,7 +11,7 @@ function isOrdered(state,id){return state.orders.some(o=>o.unitIds?.includes(id)
 export function legalTargets(state,unitId){
  const u=unitAt(state,unitId),spec=UNIT_TYPES[u?.type];if(!u||!spec||['fixed','special'].includes(spec.domain))return[];
  return SECTORS.filter(s=>{
-  if(spec.domain==='land'&&s.type!=='land')return false;if(spec.domain==='sea'&&s.type!=='sea')return false;
+  if(spec.domain==='land'&&!['land','coast'].includes(s.type))return false;if(spec.domain==='sea'&&!['sea','coast'].includes(s.type))return false;
   return pathDistance(u.sectorId,s.id,spec.domain,spec.move)<=spec.move&&s.id!==u.sectorId;
  }).map(s=>s.id);
 }
