@@ -36,35 +36,62 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
  const finalCountRef=useRef(0);
  const finishedEventRef=useRef('');
  const callbackRef=useRef(onConfirmedFinished);
+ const snapshotRequestRef=useRef(null);
+ const snapshotSequenceRef=useRef(0);
+ const mountedRef=useRef(true);
+
  useEffect(()=>{callbackRef.current=onConfirmedFinished;},[onConfirmedFinished]);
- const refresh=useCallback(async signal=>{
-  const data=await readJson(apiEndpoint(),signal);
-  setSnapshot(data);
-  setError('');
-  return data;
+ useEffect(()=>()=>{mountedRef.current=false;},[]);
+
+ const refresh=useCallback(signal=>{
+  if(snapshotRequestRef.current)return snapshotRequestRef.current;
+  const sequence=++snapshotSequenceRef.current;
+  if(mountedRef.current)setChecking(true);
+  const request=readJson(apiEndpoint(),signal)
+   .then(data=>{
+    if(mountedRef.current&&sequence===snapshotSequenceRef.current){
+     setSnapshot(data);
+     setError('');
+    }
+    return data;
+   })
+   .catch(reason=>{
+    if(reason?.name!=='AbortError'&&mountedRef.current&&sequence===snapshotSequenceRef.current)setError(reason.message);
+    throw reason;
+   })
+   .finally(()=>{
+    if(snapshotRequestRef.current===request)snapshotRequestRef.current=null;
+    if(mountedRef.current&&sequence===snapshotSequenceRef.current)setChecking(false);
+   });
+  snapshotRequestRef.current=request;
+  return request;
  },[]);
 
  useEffect(()=>{
   let active=true,timer=null,controller=null;
+  const schedule=()=>{
+   clearTimeout(timer);
+   if(active&&document.visibilityState==='visible')timer=setTimeout(run,SCHEDULE_REFRESH);
+  };
   const run=async()=>{
    if(!active||document.visibilityState!=='visible')return;
    controller?.abort();
    controller=new AbortController();
-   setChecking(true);
    try{await refresh(controller.signal);}
-   catch(reason){if(active)setError(reason.message);}
-   finally{
-    if(active){setChecking(false);timer=setTimeout(run,SCHEDULE_REFRESH);}
-   }
+   catch(reason){if(reason?.name!=='AbortError'&&active)setError(current=>current||reason.message);}
+   finally{if(active)schedule();}
   };
   const visible=()=>{
+   clearTimeout(timer);
    if(document.visibilityState==='visible')run();
-   else{controller?.abort();clearTimeout(timer);}
+   else controller?.abort();
   };
   run();
   document.addEventListener('visibilitychange',visible);
   return()=>{
-   active=false;controller?.abort();clearTimeout(timer);
+   active=false;
+   controller?.abort();
+   clearTimeout(timer);
    document.removeEventListener('visibilitychange',visible);
   };
  },[refresh]);
@@ -100,6 +127,8 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
  const liveVideoId=confirmedLive&&sourceLive?.platform==='youtube'?sourceLive.videoId:'';
  const playbackVideoId=liveVideoId||(playbackMode==='replay'?fallbackVideo?.videoId||'':'');
  const advanceFallback=useCallback(()=>setFallbackCursor(value=>value+1),[]);
+ const liveDetectionReady=Boolean(snapshot?.discovery?.youtube||snapshot?.discovery?.twitch);
+
  useEffect(()=>{
   finalCountRef.current=0;
   finishedEventRef.current='';
@@ -107,9 +136,14 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
 
  useEffect(()=>{
   if(!mediaConsent||!matchedEvent?.id)return undefined;
-  let active=true,timer=null,controller=null;
+  let active=true,timer=null,controller=null,running=false,finished=false;
+  const schedule=()=>{
+   clearTimeout(timer);
+   if(active&&!finished&&document.visibilityState==='visible')timer=setTimeout(check,EVENT_REFRESH);
+  };
   const check=async()=>{
-   if(!active||document.visibilityState!=='visible')return;
+   if(!active||running||finished||document.visibilityState!=='visible')return;
+   running=true;
    controller?.abort();
    controller=new AbortController();
    try{
@@ -122,22 +156,27 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
     else finalCountRef.current=0;
     if(finalCountRef.current>=2&&finishedEventRef.current!==event.id){
      finishedEventRef.current=event.id;
+     finished=true;
      callbackRef.current?.({event,reason:'match-finished'});
-     return;
     }
    }catch(reason){
     if(reason?.name!=='AbortError'&&active)setError(current=>current||reason.message);
+   }finally{
+    running=false;
+    if(active&&!finished)schedule();
    }
-   if(active)timer=setTimeout(check,EVENT_REFRESH);
   };
   const visible=()=>{
+   clearTimeout(timer);
    if(document.visibilityState==='visible')check();
-   else{controller?.abort();clearTimeout(timer);}
+   else controller?.abort();
   };
   check();
   document.addEventListener('visibilitychange',visible);
   return()=>{
-   active=false;controller?.abort();clearTimeout(timer);
+   active=false;
+   controller?.abort();
+   clearTimeout(timer);
    document.removeEventListener('visibilitychange',visible);
   };
  },[effectiveTitle,matchBasis,matchedEvent,mediaConsent,sourceId]);
@@ -146,7 +185,7 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
   snapshot,error,checking,
   currentEvent,nextEvent,matchedEvent,matchConfidence,matchBasis,
   recommendedSourceId:snapshot?.recommendedSourceId||'',
-  sourceLive,playbackVideoId,playbackMode,
+  sourceLive,playbackVideoId,playbackMode,liveDetectionReady,
   fallbackVideos:sourceFallbacks,fallbackVideo,advanceFallback,
   refresh:()=>refresh(new AbortController().signal),
  };
