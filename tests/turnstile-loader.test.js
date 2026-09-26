@@ -69,7 +69,7 @@ test('deployment policy allows the anti-bot script and frame without relaxing ot
   const policy = config.headers.find(rule => rule.source === '/:path((?!religion(?:/|$)).*)').headers.find(header => header.key === 'Content-Security-Policy').value;
   const directives = new Map(policy.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
   assert.ok(directives.get('script-src').includes('https://challenges.cloudflare.com'));
-  assert.deepEqual(directives.get('frame-src'), ['https://challenges.cloudflare.com']);
+  assert.deepEqual(directives.get('frame-src'), ['https://challenges.cloudflare.com', 'https://www.youtube-nocookie.com']);
   assert.ok(!directives.get('script-src').includes("'unsafe-inline'"));
   assert.ok(!directives.get('script-src').includes('*'));
   assert.deepEqual(directives.get('object-src'), ["'none'"]);
