@@ -489,7 +489,9 @@ export function createNosblocCommerce({env=process.env,stripe:suppliedStripe,fet
   processTransfers:async(limit=20)=>{
    const runtime=await runtimeConfig();
    if(!runtime.payouts)throw new NosblocCommerceError(503,"Versements Nosbloc verrouillés.");
-   const rows=await db(`/rest/v1/nosbloc_order_allocations?transfer_status=eq.ready&select=allocation_id,order_id,creator_id,creator_net_cents&limit=${Math.max(1,Math.min(100,Number(limit)||20))}`);
+   const batch=Math.max(1,Math.min(100,Number(limit)||20));
+   await rpc("nosbloc_release_eligible_allocations_server",{p_limit:batch});
+   const rows=await db(`/rest/v1/nosbloc_order_allocations?transfer_status=eq.ready&select=allocation_id,order_id,creator_id,creator_net_cents&limit=${batch}`);
    const results=[];
    for(const allocation of rows||[]){
     const connected=await connectedRow(allocation.creator_id);
