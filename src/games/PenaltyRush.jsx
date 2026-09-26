@@ -16,6 +16,7 @@ import {
   penaltyRequest, rememberPenaltyRoom, rememberedPenaltyRoom, subscribePenaltyRoom,
 } from './penaltyRush/online.js';
 import {PointerGesture} from './touchControls.js';
+import { APPEARANCE_OPTIONS, profileCompletion, scoutingLabel } from './penaltyRush/career.js';
 import { stopPenaltyAudio, unlockPenaltyAudio } from './penaltyRush/audio.js';
 import {
   coalescedPointerSample, createTechniqueTracker, detectJoystickTechnique, keyboardVector,
@@ -206,9 +207,9 @@ export default function PenaltyRush({ onClose, onAccount }) {
               {room?.status === 'waiting'
                 ? <Lobby room={room} busy={busy} request={request} onBack={() => request('leave', { room: room.id }).catch(() => {})} />
                 : tab === 'play'
-                  ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} code={privateCode} setCode={setPrivateCode} request={request} onTraining={setTraining} />
+                  ? <PlayHome busy={busy} profile={profile} rating={rating} tier={tier} snapshot={snapshot} code={privateCode} setCode={setPrivateCode} request={request} onTraining={setTraining} />
                   : tab === 'player'
-                    ? <PlayerStudio profile={profile} rating={rating} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
+                    ? <PlayerStudio profile={profile} rating={rating} snapshot={snapshot} setProfile={setProfile} busy={busy} onSave={() => request('profile.save', { profile }).catch(() => {})} />
                     : tab === 'club'
                       ? <ClubPanel snapshot={snapshot} profile={profile} busy={busy} request={request} />
                       : tab === 'international'
@@ -221,7 +222,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
   );
 }
 
-function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTraining }) {
+function PlayHome({ busy, profile, rating, tier, snapshot, code, setCode, request, onTraining }) {
   const country = countryById(profile.countryId);
   return (
     <div className="penalty-play-home">
@@ -281,7 +282,7 @@ function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTrain
   );
 }
 
-function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
+function PlayerStudio({ profile, rating, snapshot, setProfile, busy, onSave }) {
   const country = countryById(profile.countryId);
   function patch(key, value) { setProfile((current) => ({ ...current, [key]: value })); }
   function patchNested(key, child, value) {
