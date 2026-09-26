@@ -545,7 +545,7 @@ export default function SportPage({goTo}){
  },[reload]);
 
  useEffect(()=>{
-  if(section!=='h24'||!h24Id)return;
+  if(section!=='h24')return;
   const controller=new AbortController();
   let active=true;
   let retryTimer=0;
