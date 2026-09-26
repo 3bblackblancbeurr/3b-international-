@@ -32,6 +32,15 @@ export async function memberRequest(action,body={},expectedUser){
  });
  const data=await response.json().catch(()=>({}));
  if(!response.ok)throw Error(data.error||'Connexion momentanément indisponible. Réessaie.');
+
+ if(!isPublic&&data?.profile&&!data.profile.passport_public_id){
+  const {data:rows,error}=await authClient.rpc('passport_identity_snapshot');
+  if(error)throw Error('Ton Passeport 3B n’a pas pu être vérifié. Réessaie.');
+  const identity=Array.isArray(rows)?rows[0]:rows;
+  if(!identity?.passport_public_id)throw Error('Ton Passeport 3B est en cours de préparation. Réessaie.');
+  data.profile={...data.profile,...identity};
+ }
+
  return data;
 }
 
