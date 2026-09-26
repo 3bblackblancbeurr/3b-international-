@@ -20,6 +20,6 @@ export function neighbors(id){
 }
 export function pathDistance(from,to,domain,max=9){
  if(from===to)return 0;const q=[[from,0]],seen=new Set([from]);
- while(q.length){const[cur,d]=q.shift();if(d>=max)continue;for(const n of neighbors(cur)){if(seen.has(n))continue;const s=SECTOR_BY_ID.get(n);if(domain==='land'&&!['land','coast'].includes(s.type))continue;if(domain==='sea'&&!['sea','coast'].includes(s.type))continue;if(domain==='air'&&s.type==='sea')continue;if(n===to)return d+1;seen.add(n);q.push([n,d+1]);}}
+ while(q.length){const[cur,d]=q.shift();if(d>=max)continue;const current=SECTOR_BY_ID.get(cur);if(cur!==from&&['land','air'].includes(domain)&&current?.hq!==null)continue;for(const n of neighbors(cur)){if(seen.has(n))continue;const s=SECTOR_BY_ID.get(n);if(domain==='land'&&!['land','coast'].includes(s.type))continue;if(domain==='sea'&&!['sea','coast'].includes(s.type))continue;if(domain==='air'&&s.type==='sea')continue;if(n===to)return d+1;seen.add(n);q.push([n,d+1]);}}
  return Infinity;
 }
