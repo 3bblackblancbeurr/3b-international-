@@ -1475,7 +1475,7 @@ async function route(req:Request) {
     const existing = await openRoomFor(uid);
     if (existing) return { room:publicRoom(existing, uid), message:existing.status === 'active' ? 'Duel en cours retrouvé.' : 'Recherche déjà active…' };
     const room = await queueRoom(uid, profile, mode);
-    return { room:publicRoom(room, uid), message:room.status === 'active' ? 'Adversaire trouvé.' : 'Recherche d’un adversaire…' };
+    return { room:publicRoom(room, uid), message:room.status === 'active' ? (mode === 'international' ? 'Adversaire international trouvé.' : 'Adversaire trouvé.') : 'Recherche d’un adversaire…' };
   }
 
   if (action === 'leaderboard') {
@@ -1511,6 +1511,30 @@ async function route(req:Request) {
     await disbandClub(uid);
     const fresh = await ensureProfile(uid);
     return { profile:publicProfile(fresh, ''), snapshot:await snapshotFor(uid, fresh), message:'Club dissous.' };
+  }
+
+  if (action === 'club.invite') {
+    const result=await inviteClubMember(uid,body.passportPublicId);
+    const fresh=await ensureProfile(uid);
+    return {profile:publicProfile(fresh,(await clubFor(uid))?.name||''),snapshot:await snapshotFor(uid,fresh),message:`Invitation envoyée à ${result.targetName}.`};
+  }
+
+  if (action === 'club.invite.respond') {
+    const decision=await respondClubInvite(uid,body.inviteId,body.decision);
+    const fresh=await ensureProfile(uid);
+    return {profile:publicProfile(fresh,(await clubFor(uid))?.name||''),snapshot:await snapshotFor(uid,fresh),message:decision==='accept'?'Club rejoint.':'Invitation déclinée.'};
+  }
+
+  if (action === 'club.member.role') {
+    const role=await changeClubMemberRole(uid,body.passportPublicId,body.role);
+    const fresh=await ensureProfile(uid);
+    return {profile:publicProfile(fresh,(await clubFor(uid))?.name||''),snapshot:await snapshotFor(uid,fresh),message:role==='captain'?'Capitaine nommé.':'Rôle membre rétabli.'};
+  }
+
+  if (action === 'club.kick') {
+    await kickClubMember(uid,body.passportPublicId);
+    const fresh=await ensureProfile(uid);
+    return {profile:publicProfile(fresh,(await clubFor(uid))?.name||''),snapshot:await snapshotFor(uid,fresh),message:'Joueur retiré du club.'};
   }
 
   if (action === 'international.respond') {
