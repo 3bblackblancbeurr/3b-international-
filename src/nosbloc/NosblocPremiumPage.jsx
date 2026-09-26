@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, ArrowLeft, ArrowRight, BarChart3, Boxes, Check, CheckCircle2,
-  ChevronRight, CircleDollarSign, Cloud, CloudOff, Code2, Coins, Compass,
-  Eye, FolderKanban, Gauge, History, Home, Layers3, LockKeyhole, Menu,
-  Package, Plus, Rocket, RotateCcw, Search, Settings2, ShieldCheck, Sparkles,
-  Store, TestTube2, UserRound, Users, WalletCards, WandSparkles, X
+  ChevronRight, CircleDollarSign, Cloud, CloudOff, Code2, Coins, Compass, Copy,
+  Download, Eye, FolderKanban, Gauge, History, Home, Layers3, LockKeyhole, Mail,
+  Menu, Package, Plus, Rocket, RotateCcw, Search, Settings2, ShieldCheck, Sparkles,
+  Store, TestTube2, Upload, UserRound, Users, WalletCards, WandSparkles, X
 } from "lucide-react";
 import { useLoyalty } from "../loyalty/LoyaltyContext.jsx";
 import City3BPortal from "../components/City3BPortal.jsx";
 import {
   NOSBLOC_STORAGE_KEY, PROJECT_TYPES, PROJECT_TEMPLATES, createEmptyState,
-  createProject, discoveryScore, formatEuros, generateBuildPlan, normalizeState,
-  projectReadiness, simulateRevenue
+  allocateTeamRevenue, createProject, discoveryScore, formatEuros, generateBuildPlan, normalizeState,
+  projectReadiness, simulateRevenue, validateSplits
 } from "./model.js";
-import { appendProjectVersion, restoreProjectVersion } from "./versioning.js";
+import {
+  appendProjectVersion, parseStateExport, prepareTeamInvitation, restoreProjectVersion,
+  revokeTeamInvitation, serializeStateExport
+} from "./versioning.js";
 import "./nosbloc-premium.css";
 
 const PRIMARY_NAV = [
@@ -84,6 +87,7 @@ export default function NosblocPremiumPage({ goTo }) {
   const ownerName = account.profile?.name || account.passport?.name || "Créateur 3B";
   const storageKey = NOSBLOC_STORAGE_KEY + ":premium:" + (account.user?.id || "device");
   const recoveryKey = storageKey + ":last-good";
+  const importRef = useRef(null);
   const [state, setState] = useState(() => createEmptyState({ studioName: "Studio de " + ownerName }));
   const [view, setView] = useState("home");
   const [selectedId, setSelectedId] = useState("");
@@ -149,6 +153,34 @@ export default function NosblocPremiumPage({ goTo }) {
         return { ...project, ...delta, updatedAt: nowIso() };
       }),
     }), message, entry);
+  };
+
+  const exportArchive = () => {
+    const blob = new Blob([serializeStateExport(state)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "nosbloc-3b-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setNotice("Archive Nosbloc exportée avec empreinte de contrôle.");
+  };
+
+  const importArchive = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      if (file.size > 2_000_000) throw new Error("Archive trop volumineuse.");
+      const imported = parseStateExport(await file.text(), { studioName: "Studio de " + ownerName });
+      commit(() => imported, "Archive vérifiée et restaurée. L’état précédent reste dans la reprise de secours.", activityEntry("restore", "Archive restaurée", file.name));
+      setSelectedId(imported.projects?.[0]?.id || "");
+      setView("home");
+    } catch (error) {
+      setNotice(error?.message || "Import impossible.");
+    }
   };
 
   const openStudio = id => {
@@ -234,7 +266,7 @@ export default function NosblocPremiumPage({ goTo }) {
         {view === "explore" && <ExploreView projects={state.projects} marketplace={state.marketplace || []} openStudio={openStudio} />}
         {view === "create" && <CreateView ownerName={ownerName} state={state} commit={commit} openStudio={openStudio} />}
         {view === "activity" && <ActivityView state={state} />}
-        {view === "me" && <ProfileView state={state} account={account} setCityOpen={setCityOpen} />}
+        {view === "me" && <ProfileView state={state} account={account} setCityOpen={setCityOpen} onExport={exportArchive} onImport={() => importRef.current?.click()} />}
         {view === "studio" && <StudioView
           project={selected}
           mode={studioMode}
@@ -247,9 +279,11 @@ export default function NosblocPremiumPage({ goTo }) {
           restoreVersion={restoreVersion}
           setView={setView}
           account={account}
+          setNotice={setNotice}
         />}
       </main>
       <MobileNav view={view} setView={setView} />
+      <input ref={importRef} className="nb2-hidden-input" type="file" accept="application/json,.json" onChange={importArchive} />
       <City3BPortal open={cityOpen} onClose={() => setCityOpen(false)} />
     </section>
   );
@@ -533,7 +567,7 @@ function ActivityView({ state }) {
   </div>;
 }
 
-function ProfileView({ state, account, setCityOpen }) {
+function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
   const money = moneyState(account);
   return <div className="nb2-view">
     <section className="nb2-page-head"><p className="nb2-kicker">MON ESPACE</p><h1>{state.profile?.studioName || "Mon Studio 3B"}</h1><p>Passeport, sécurité et revenus séparés clairement.</p></section>
@@ -543,10 +577,14 @@ function ProfileView({ state, account, setCityOpen }) {
     </div>
     <section className="nb2-settings-card"><div><ShieldCheck size={24}/><span><b>3B Trust</b><small>Rôles, versions, droits et journalisation.</small></span></div><strong>{state.profile?.trustScore ?? 100}/100</strong></section>
     <button className="nb2-settings-card action" onClick={() => setCityOpen(true)}><div><Boxes size={24}/><span><b>3B MA VILLE</b><small>Premier bloc officiel lié au Passeport.</small></span></div><ChevronRight size={20}/></button>
+    <section className="nb2-backup-card">
+      <div><ShieldCheck size={23}/><span><b>Sauvegarde portable</b><small>Archive signée par empreinte, import limité à 2 Mo et reprise locale conservée.</small></span></div>
+      <div className="nb2-backup-actions"><button onClick={onExport}><Download size={16}/> Exporter</button><button onClick={onImport}><Upload size={16}/> Importer</button></div>
+    </section>
   </div>;
 }
 
-function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account }) {
+function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, startPrivateTest, requestReview, restoreVersion, setView, account, setNotice }) {
   const [confirmArchive, setConfirmArchive] = useState(false);
   if (!project) return <div className="nb2-view"><EmptyState icon={FolderKanban} title="Aucun projet sélectionné." text="Crée ou ouvre un projet."/><button className="nb2-primary-inline" onClick={() => setView("create")}>Créer un projet</button></div>;
   const ready = projectReadiness(project);
@@ -559,7 +597,7 @@ function StudioView({ project, mode, setMode, proTab, setProTab, updateProject, 
     </section>
 
     {mode === "simple" ? <SimpleStudio project={project} ready={ready} setField={setField} updateProject={updateProject} startPrivateTest={startPrivateTest} requestReview={requestReview}/> :
-      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} account={account}/>}
+      <ProStudio project={project} ready={ready} proTab={proTab} setProTab={setProTab} updateProject={updateProject} restoreVersion={restoreVersion} account={account} setNotice={setNotice}/>}
 
     <section className="nb2-danger-zone">
       <button onClick={() => setConfirmArchive(!confirmArchive)}><Settings2 size={16}/> Zone avancée</button>
@@ -601,7 +639,7 @@ function ReadinessChecklist({ ready }) {
   return <div className="nb2-checklist">{ready.checks.map(check => <div key={check.id} data-ok={check.ok}><span>{check.ok ? <Check size={14}/> : null}</span><b>{check.label}</b><small>{check.weight} pts</small></div>)}</div>;
 }
 
-function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, account }) {
+function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVersion, account, setNotice }) {
   return <div className="nb2-pro">
     <nav className="nb2-pro-tabs">{PRO_TABS.map(([id,label,Icon]) => <button key={id} data-active={proTab === id} onClick={() => setProTab(id)}><Icon size={16}/>{label}</button>)}</nav>
     {proTab === "build" && <BuildPro project={project} ready={ready} updateProject={updateProject}/>}
@@ -609,7 +647,7 @@ function ProStudio({ project, ready, proTab, setProTab, updateProject, restoreVe
     {proTab === "scripts" && <ScriptsPro project={project} updateProject={updateProject}/>}
     {proTab === "ai" && <AIPro project={project} updateProject={updateProject}/>}
     {proTab === "versions" && <VersionsPro project={project} restoreVersion={restoreVersion}/>}
-    {proTab === "team" && <TeamPro project={project}/>}
+    {proTab === "team" && <TeamPro project={project} updateProject={updateProject} setNotice={setNotice}/>}
     {proTab === "economy" && <EconomyPro project={project} account={account}/>}
     {proTab === "analytics" && <AnalyticsPro project={project}/>}
   </div>;
@@ -685,10 +723,74 @@ function VersionsPro({ project, restoreVersion }) {
   return <section className="nb2-pro-card"><SectionTitle eyebrow="HISTORIQUE" title="Versions immuables"/>{!versions.length ? <EmptyState icon={History} title="Aucune version figée." text="Un test privé ou une soumission crée automatiquement une version."/> : <div className="nb2-version-list">{versions.map(v => <article key={v.id}><span>v{v.versionNo}</span><div><b>{v.note}</b><small>{v.stage} · {new Date(v.createdAt).toLocaleString("fr-FR")}</small><code>{v.fingerprint}</code></div><button onClick={() => restoreVersion(project,v.id)}><RotateCcw size={15}/> Restaurer</button></article>)}</div>}</section>;
 }
 
-function TeamPro({ project }) {
-  return <section className="nb2-pro-card"><SectionTitle eyebrow="ÉQUIPE" title="Accès et partage"/><p className="nb2-muted">Les droits serveur restent la source de vérité. Une invitation locale ne donne jamais d’accès réel tant qu’elle n’est pas acceptée côté serveur.</p><div className="nb2-team-list">{(project.splits || []).map(member => <article key={member.id}><span><UserRound size={17}/></span><div><b>{member.name}</b><small>{member.role} · {member.status}</small></div><strong>{(Number(member.shareBps||0)/100).toLocaleString("fr-FR")}%</strong></article>)}</div></section>;
+function TeamPro({ project, updateProject, setNotice }) {
+  const validation = validateSplits(project.splits);
+  const preview = allocateTeamRevenue(70000, project.splits);
+  const patchSplit = (id, patch) => updateProject(project.id, {
+    splits: project.splits.map(row => row.id === id ? { ...row, ...patch } : row),
+    status: "draft", visibility: "private", reviewVersionId: null,
+  });
+  const add = () => updateProject(project.id, {
+    splits: [...project.splits, { id: globalThis.crypto?.randomUUID?.() || String(Date.now()), name: "Nouveau membre", role: "Création", contact: "", shareBps: 0, status: "draft" }],
+    status: "draft", visibility: "private", reviewVersionId: null,
+  }, "Membre ajouté au brouillon d’équipe.");
+  const remove = id => updateProject(project.id, {
+    splits: project.splits.filter(row => row.id !== id),
+    status: "draft", visibility: "private", reviewVersionId: null,
+  });
+  const equalize = () => {
+    const count = project.splits.length;
+    if (!count) return;
+    const base = Math.floor(10000 / count);
+    let assigned = 0;
+    const splits = project.splits.map((row, index) => {
+      const shareBps = index === count - 1 ? 10000 - assigned : base;
+      assigned += shareBps;
+      return { ...row, shareBps };
+    });
+    updateProject(project.id, { splits, status: "draft", visibility: "private", reviewVersionId: null }, "Parts réparties automatiquement à 100 %.");
+  };
+  const prepareInvite = row => {
+    try {
+      updateProject(project.id, prepareTeamInvitation(project, row.id, row.contact), "Invitation locale préparée. L’acceptation réelle reste contrôlée par le serveur.");
+    } catch (error) { setNotice(error?.message || "Invitation impossible."); }
+  };
+  const revokeInvite = row => {
+    updateProject(project.id, revokeTeamInvitation(project, row.id), "Invitation locale révoquée.");
+  };
+  const copyInvite = async row => {
+    try {
+      await navigator.clipboard.writeText(row.inviteCode);
+      setNotice("Code d’invitation copié.");
+    } catch { setNotice("Code d’invitation : " + row.inviteCode); }
+  };
+  return <div className="nb2-pro-grid">
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="ÉQUIPE" title="Accès et partage"/>
+      <div className="nb2-team-toolbar"><span data-ok={validation.valid}>{validation.totalBps / 100} % attribué</span><button onClick={equalize}>Répartir à 100 %</button><button onClick={add}><Plus size={15}/> Membre</button></div>
+      <div className="nb2-team-editor">{project.splits.map(row => <article key={row.id}>
+        <div className="nb2-team-avatar"><UserRound size={17}/></div>
+        <div className="nb2-team-fields">
+          <input aria-label="Nom du membre" value={row.name} maxLength={50} onChange={e => patchSplit(row.id,{name:e.target.value})}/>
+          <input aria-label="Rôle du membre" value={row.role} maxLength={50} onChange={e => patchSplit(row.id,{role:e.target.value})}/>
+          {row.status !== "owner" && <input aria-label="Contact du membre" value={row.contact || ""} maxLength={120} placeholder="email ou identifiant 3B" onChange={e => patchSplit(row.id,{contact:e.target.value})}/>}
+        </div>
+        <label className="nb2-share"><input type="number" min="0" max="100" step=".01" value={Number(row.shareBps || 0) / 100} onChange={e => patchSplit(row.id,{shareBps:Math.max(0,Math.min(10000,Math.round(Number(e.target.value || 0)*100)))})}/><span>%</span></label>
+        <div className="nb2-team-actions">
+          {row.status !== "owner" && !row.inviteCode && <button onClick={() => prepareInvite(row)} title="Préparer l’invitation"><Mail size={15}/></button>}
+          {row.inviteCode && <><button onClick={() => copyInvite(row)} title="Copier le code"><Copy size={15}/></button><button onClick={() => revokeInvite(row)} title="Révoquer l’invitation"><X size={15}/></button></>}
+          {row.status !== "owner" && <button onClick={() => remove(row.id)} title="Retirer le membre"><X size={15}/></button>}
+        </div>
+      </article>)}</div>
+      {!validation.valid && <p className="nb2-team-warning">Le partage doit totaliser exactement 100 % avant révision ou revenu.</p>}
+    </section>
+    <section className="nb2-pro-card">
+      <SectionTitle eyebrow="APERÇU" title="Exemple sur 700 € créateur"/>
+      <p className="nb2-muted">Aucun virement n’est déclenché. Ce calcul vérifie seulement la répartition au centime.</p>
+      {preview.valid ? <div className="nb2-allocation-list">{preview.allocations.map(row => <div key={row.id}><span><b>{row.name}</b><small>{(Number(row.shareBps||0)/100).toLocaleString("fr-FR")} %</small></span><strong>{formatEuros(row.amountCents)}</strong></div>)}</div> : <div className="nb2-lock-banner"><LockKeyhole size={17}/> Corrige le partage pour afficher la répartition.</div>}
+    </section>
+  </div>;
 }
-
 function EconomyPro({ project, account }) {
   const example = simulateRevenue({grossEuros:100,taxRate:20,storeRate:10,refundRate:2});
   const money = moneyState(account);
