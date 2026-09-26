@@ -113,7 +113,8 @@
         "/Game/3B/Characters/Celiane/AI/ST_Celiane"
       ],
       "source_contracts": [
-        "celiane-state-tree-spec.json"
+        "celiane-state-tree-spec.json",
+        "france-final-art-v1.json"
       ],
       "evidence": [
         "asset_validator_output",
@@ -164,7 +165,8 @@
       "editor_required": true,
       "source_contracts": [
         "france-blockout-layout.json",
-        "france-district-content-v1.json"
+        "france-district-content-v1.json",
+        "france-final-art-v1.json"
       ],
       "goals": [
         "run_build_france_blockout_py",
@@ -192,7 +194,8 @@
       "editor_required": true,
       "source_contracts": [
         "france-blockout-layout.json",
-        "france-presentation-v1.json"
+        "france-presentation-v1.json",
+        "france-final-art-v1.json"
       ],
       "goals": [
         "author_water_source_river_basin_waterfall_chain",
@@ -255,7 +258,8 @@
         "check_critical_route",
         "profile_ai_budget",
         "profile_volumetrics",
-        "profile_niagara_waterfall"
+        "profile_niagara_waterfall",
+        "validate_final_art_target_groups_against_evidence"
       ],
       "evidence": [
         "profiling_capture"

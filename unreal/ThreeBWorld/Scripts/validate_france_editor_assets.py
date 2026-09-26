@@ -14,6 +14,7 @@ import unreal
 FRANCE_DATA = Path(__file__).resolve().parents[1] / "Data" / "France"
 MANIFEST = FRANCE_DATA / "france-editor-asset-manifest.json"
 LAYOUT = FRANCE_DATA / "france-blockout-layout.json"
+FINAL_ART = FRANCE_DATA / "france-final-art-v1.json"
 CONTRACT_FILES = (
     "france-justice-v1.json",
     "france-blockout-layout.json",
@@ -26,6 +27,7 @@ CONTRACT_FILES = (
     "france-coop-session-v1.json",
     "celiane-state-tree-spec.json",
     "france-editor-execution-plan-v1.json",
+    "france-final-art-v1.json",
 )
 
 
@@ -97,6 +99,7 @@ def _validate_layout(layout: dict) -> list[str]:
 def main() -> None:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     layout = json.loads(LAYOUT.read_text(encoding="utf-8"))
+    final_art = json.loads(FINAL_ART.read_text(encoding="utf-8"))
 
     missing_contracts: list[str] = []
     mismatched_contracts: list[str] = []
@@ -115,6 +118,8 @@ def main() -> None:
     contract_errors.extend(_validate_layout(layout))
 
     missing_assets: list[str] = []
+    missing_final_art_assets: list[str] = []
+    duplicate_final_art_paths: list[str] = []
     missing_dirs: list[str] = []
 
     for entry in data["required_assets"]:
@@ -122,12 +127,23 @@ def main() -> None:
         if not unreal.EditorAssetLibrary.does_asset_exist(path):
             missing_assets.append(path)
 
+    final_paths: set[str] = set()
+    for group in final_art.get("groups", []):
+        for entry in group.get("targets", []):
+            path = str(entry.get("path", ""))
+            if path in final_paths:
+                duplicate_final_art_paths.append(path)
+            final_paths.add(path)
+            if not unreal.EditorAssetLibrary.does_asset_exist(path):
+                missing_final_art_assets.append(path)
+
     for path in data["directories"]:
         if not unreal.EditorAssetLibrary.does_directory_exist(path):
             missing_dirs.append(path)
 
     unreal.log(f"[3B France] contract={data['slice_id']} engine-target={data['engine']}")
     unreal.log(f"[3B France] required assets={len(data['required_assets'])}")
+    unreal.log(f"[3B France] final-art targets={len(final_paths)}")
     unreal.log(f"[3B France] versioned contracts={len(CONTRACT_FILES)}")
     unreal.log(
         "[3B France] vertical contract="
@@ -147,14 +163,20 @@ def main() -> None:
         unreal.log_warning(f"[3B France] missing directory: {path}")
     for path in missing_assets:
         unreal.log_error(f"[3B France] missing asset: {path}")
+    for path in missing_final_art_assets:
+        unreal.log_error(f"[3B France] missing final-art asset: {path}")
+    for path in duplicate_final_art_paths:
+        unreal.log_error(f"[3B France] duplicate final-art target: {path}")
 
-    if missing_contracts or mismatched_contracts or contract_errors or missing_assets or missing_dirs:
+    if missing_contracts or mismatched_contracts or contract_errors or missing_assets or missing_final_art_assets or duplicate_final_art_paths or missing_dirs:
         raise RuntimeError(
             "France Gold Master incomplete: "
             f"{len(missing_contracts)} missing contracts, "
             f"{len(mismatched_contracts)} mismatched contracts, "
             f"{len(contract_errors)} vertical contract errors, "
             f"{len(missing_assets)} missing assets, "
+            f"{len(missing_final_art_assets)} missing final-art assets, "
+            f"{len(duplicate_final_art_paths)} duplicate final-art targets, "
             f"{len(missing_dirs)} missing directories."
         )
 
