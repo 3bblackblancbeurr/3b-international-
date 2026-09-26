@@ -1,0 +1,33 @@
+/* Finales 3B : lecteur totalement contenu dans l'application */
+.sport-finals-player-shell{position:relative}
+.sport-finals-head-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.sport-finals-local-only{display:inline-flex;align-items:center;min-height:26px;padding:4px 8px;border:1px solid #86aaaF38;border-radius:999px;background:#102027;color:#9fc0c8;font-size:8px;font-weight:800;letter-spacing:.1em;white-space:nowrap}
+.sport-finals-stay-local{color:#9fc0c8!important;font-weight:650}
+.sport-finals-privacy-toggle{min-height:30px!important;margin:0!important;padding:0 10px!important;border:1px solid #78949d40!important;background:#0e1b20!important;color:#a8c6ce!important;font-size:9px!important}
+.sport-finals-privacy-panel{max-width:620px;padding:11px 13px;border:1px solid #78949d35;border-radius:9px;background:#0a1519;color:#95abb1;font-size:9px;line-height:1.6}
+
+.sport-finals-player-shell.is-fullscreen{display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:100vw;height:100dvh;border:0;border-radius:0;background:#020405}
+.sport-finals-player-shell.is-fullscreen .sport-finals-frame{height:100%;min-height:0;aspect-ratio:auto}
+.sport-finals-player-shell.is-fullscreen .sport-finals-player-head,.sport-finals-player-shell.is-fullscreen .sport-finals-player-foot{padding-right:max(14px,env(safe-area-inset-right));padding-left:max(14px,env(safe-area-inset-left))}
+
+html.sport-finals-landscape-open,html.sport-finals-landscape-open body{overflow:hidden!important;background:#020405}
+html.sport-finals-landscape-open .sport-finals-player-shell.is-landscape{position:fixed;inset:0;z-index:2147483000;display:grid;grid-template-rows:auto minmax(0,1fr) auto;width:100vw;height:100dvh;border:0;border-radius:0;background:#020405;box-shadow:none}
+html.sport-finals-landscape-open .sport-finals-player-shell.is-landscape .sport-finals-frame{height:100%;min-height:0;aspect-ratio:auto}
+html.sport-finals-landscape-open .sport-finals-player-shell.is-landscape .sport-finals-player-head{padding-top:max(8px,env(safe-area-inset-top));padding-right:max(12px,env(safe-area-inset-right));padding-left:max(12px,env(safe-area-inset-left))}
+html.sport-finals-landscape-open .sport-finals-player-shell.is-landscape .sport-finals-player-foot{padding-right:max(12px,env(safe-area-inset-right));padding-bottom:max(8px,env(safe-area-inset-bottom));padding-left:max(12px,env(safe-area-inset-left))}
+
+@media(max-width:620px){
+ .sport-finals-head-actions{width:100%;justify-content:space-between}
+ .sport-finals-head-actions button{width:auto!important;min-width:130px}
+ .sport-finals-local-only{min-height:32px}
+}
+
+@media(max-height:620px) and (orientation:landscape){
+ html.sport-finals-landscape-open .sport-finals-player-head,html.sport-finals-landscape-open .sport-finals-player-foot{padding-block:7px;gap:8px}
+ html.sport-finals-landscape-open .sport-finals-player-head small{display:none}
+ html.sport-finals-landscape-open .sport-finals-player-head strong{font-size:15px}
+ html.sport-finals-landscape-open .sport-finals-player-foot>span:not(:first-child){display:none}
+ html.sport-finals-landscape-open .sport-finals-head-actions button span{display:none}
+ html.sport-finals-landscape-open .sport-finals-head-actions button{width:38px!important;min-width:38px;padding:0;justify-content:center}
+ html.sport-finals-landscape-open .sport-finals-local-only{display:none}
+}
