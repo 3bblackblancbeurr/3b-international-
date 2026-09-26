@@ -313,3 +313,15 @@
  .sport-media-health{top:max(7px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left))}
  .sport-media-control-actions .quiet-button,.sport-media-control-actions .surface-button{min-height:34px;padding-block:5px}
 }
+
+
+/* Sport resilience v3: health status stays outside the third-party player */
+.sport-media-details{display:grid;gap:3px;min-width:0}
+.sport-media-health{position:static;z-index:auto;top:auto;left:auto;display:inline-flex;width:max-content;max-width:100%;margin-top:6px;padding:5px 8px;box-shadow:none;pointer-events:none}
+.sport-media-controls>div:first-child.sport-media-details{display:grid}
+@media(max-width:720px){
+ .sport-media-health{position:static;top:auto;left:auto;max-width:100%}
+}
+@media(orientation:landscape) and (max-height:620px){
+ .sport-media-health{position:static;top:auto;left:auto}
+}

@@ -1,10 +1,12 @@
 const YOUTUBE_NOCOOKIE='https://www.youtube-nocookie.com/embed/';
+export const SPORT_PLAYER_SHELL_URL='https://3b-international.vercel.app/sport-player-shell.html';
 
 function youtubeEmbed(videoId,{autoplay=false,muted=false}={}){
  const params=new URLSearchParams({
   rel:'0',
   playsinline:'1',
-  modestbranding:'1',
+  controls:'1',
+  fs:'0',
   enablejsapi:'1',
   iv_load_policy:'3'
  });
@@ -14,10 +16,7 @@ function youtubeEmbed(videoId,{autoplay=false,muted=false}={}){
 }
 
 function source(id,label,videoId,{provider,mode='full',autoplay=false,muted=false}={}){
- return{
-  id,label,videoId,provider,mode,
-  embedUrl:youtubeEmbed(videoId,{autoplay,muted})
- };
+ return{id,label,videoId,provider,mode,embedUrl:youtubeEmbed(videoId,{autoplay,muted})};
 }
 
 function media(entry){
@@ -109,7 +108,18 @@ export const SPORT_FINALS=[
 
 export function mediaSources(item){
  if(Array.isArray(item?.sources)&&item.sources.length)return item.sources;
- return item?.embedUrl?[{id:item.id+'-legacy',label:'Source principale',provider:item.provider,mode:'full',embedUrl:item.embedUrl}]:[];
+ return item?.embedUrl?[{id:item.id+'-legacy',label:'Source principale',provider:item.provider,mode:'full',embedUrl:item.embedUrl,videoId:''}]:[];
+}
+
+export function sportPlayerShellUrl(source,{autoplay=false,muted=false,start=0,token=''}={}){
+ if(!source?.videoId||!/^[A-Za-z0-9_-]{11}$/.test(source.videoId))return'';
+ const url=new URL(SPORT_PLAYER_SHELL_URL);
+ url.searchParams.set('video',source.videoId);
+ url.searchParams.set('token',token);
+ if(autoplay)url.searchParams.set('autoplay','1');
+ if(muted)url.searchParams.set('mute','1');
+ if(Number(start)>=2)url.searchParams.set('start',String(Math.floor(Number(start))));
+ return url.toString();
 }
 
 export function isTrustedSportEmbed(value){
@@ -121,10 +131,9 @@ export function isTrustedSportEmbed(value){
  }
 }
 
-export function isTrustedSportPlayerOrigin(value){
+export function isTrustedSportShellOrigin(value){
  try{
-  const url=new URL(value);
-  return url.protocol==='https:'&&(url.hostname==='www.youtube-nocookie.com'||url.hostname==='www.youtube.com');
+  return new URL(value).origin==='https://3b-international.vercel.app';
  }catch{
   return false;
  }

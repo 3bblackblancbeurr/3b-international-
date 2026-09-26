@@ -7,7 +7,7 @@ import {
 import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {SPORTS} from '../../supabase/functions/ecosystem/sports.js';
-import {H24_CHANNELS,SPORT_FINALS,isTrustedSportEmbed,isTrustedSportPlayerOrigin,mediaSources} from './media-catalog.js';
+import {H24_CHANNELS,SPORT_FINALS,isTrustedSportEmbed,isTrustedSportShellOrigin,mediaSources,sportPlayerShellUrl} from './media-catalog.js';
 import './sport.css';
 
 const SECTIONS=[
@@ -67,38 +67,106 @@ function progressLabel(challenge,entry){
 }
 
 
-const SPORT_PLAYER_READY_TIMEOUT=18000;
 const SPORT_SOURCE_COOLDOWN=5*60*1000;
+const SPORT_PERMANENT_COOLDOWN=6*60*60*1000;
 const SPORT_RETRY_ALL=20000;
+
+function sportNetworkTimeout(base=18000){
+ if(typeof navigator==='undefined')return base;
+ const connection=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+ if(!connection)return base;
+ if(connection.saveData)return Math.round(base*2.5);
+ if(connection.effectiveType==='slow-2g'||connection.effectiveType==='2g')return Math.round(base*2.5);
+ if(connection.effectiveType==='3g')return Math.round(base*1.7);
+ return base;
+}
+
+function sportToken(){
+ try{return crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g,'');}catch{}
+ return('3b'+Date.now().toString(36)+Math.random().toString(36).slice(2)).replace(/[^A-Za-z0-9_-]/g,'');
+}
 
 function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
  const iframeRef=useRef(null);
  const failureRef=useRef(new Map());
+ const retryRef=useRef(new Map());
  const lastAdvanceRef=useRef(0);
  const channelFailoverRef=useRef(0);
+ const readyRef=useRef(false);
+ const signalAtRef=useRef(0);
+ const resumeWriteAtRef=useRef(0);
  const sources=useMemo(()=>mediaSources(item),[item]);
  const[sourceIndex,setSourceIndex]=useState(0);
  const[epoch,setEpoch]=useState(0);
  const[playerState,setPlayerState]=useState('idle');
  const[statusMessage,setStatusMessage]=useState('');
  const[online,setOnline]=useState(()=>typeof navigator==='undefined'||navigator.onLine!==false);
+ const[visible,setVisible]=useState(()=>typeof document==='undefined'||document.visibilityState!=='hidden');
  const source=sources[sourceIndex]||sources[0]||null;
- const trusted=!!source&&isTrustedSportEmbed(source.embedUrl);
+ const trusted=!!source&&isTrustedSportEmbed(source.embedUrl)&&!!source.videoId;
  const isH24=item?.badge==='H24';
+ const playerToken=useMemo(()=>sportToken(),[item?.id,source?.id,epoch]);
+
+ function resumeKey(candidate=source){return candidate?'3b-sport-resume:'+candidate.id:'';}
+ function readResume(candidate=source){
+  if(!candidate)return 0;
+  try{return Math.max(0,Number(sessionStorage.getItem(resumeKey(candidate)))||0);}catch{return 0;}
+ }
+ function clearResume(candidate=source){
+  if(!candidate)return;
+  try{sessionStorage.removeItem(resumeKey(candidate));}catch{}
+ }
+ function blockedUntil(candidate){
+  if(!candidate)return 0;
+  const key=item.id+':'+candidate.id;
+  let until=failureRef.current.get(key)||0;
+  try{until=Math.max(until,Number(sessionStorage.getItem('3b-sport-block:'+key))||0);}catch{}
+  return until;
+ }
+ function markFailure(candidate,code=0){
+  if(!candidate)return;
+  const key=item.id+':'+candidate.id;
+  const permanent=[2,100,101,150].includes(Number(code));
+  const ttl=permanent?SPORT_PERMANENT_COOLDOWN:SPORT_SOURCE_COOLDOWN;
+  const until=Date.now()+ttl;
+  failureRef.current.set(key,until);
+  try{sessionStorage.setItem('3b-sport-block:'+key,String(until));}catch{}
+ }
+ function clearFailure(candidate){
+  if(!candidate)return;
+  const key=item.id+':'+candidate.id;
+  failureRef.current.delete(key);
+  try{sessionStorage.removeItem('3b-sport-block:'+key);}catch{}
+ }
+
+ const frameSrc=useMemo(()=>{
+  if(!trusted)return'';
+  return sportPlayerShellUrl(source,{
+   autoplay:isH24,
+   muted:isH24,
+   start:readResume(source),
+   token:playerToken
+  });
+ },[trusted,source?.id,isH24,playerToken]);
 
  useEffect(()=>{
   let index=0;
   if(isH24){
    try{
     const saved=localStorage.getItem('3b-sport-good-source:'+item?.id);
-    const found=sources.findIndex(candidate=>candidate.id===saved);
+    const found=sources.findIndex(candidate=>candidate.id===saved&&blockedUntil(candidate)<=Date.now());
     if(found>=0)index=found;
    }catch{}
+  }
+  if(blockedUntil(sources[index])>Date.now()){
+   const available=sources.findIndex(candidate=>blockedUntil(candidate)<=Date.now());
+   if(available>=0)index=available;
   }
   setSourceIndex(index);
   setEpoch(value=>value+1);
   setPlayerState('idle');
   setStatusMessage('');
+  readyRef.current=false;
  },[item?.id,isH24,sources]);
 
  useEffect(()=>{
@@ -106,47 +174,68 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
    setOnline(true);
    setStatusMessage('Connexion retrouvée · reprise automatique.');
    setPlayerState('recovering');
+   readyRef.current=false;
    setEpoch(value=>value+1);
   };
   const goOffline=()=>{
    setOnline(false);
    setPlayerState('offline');
-   setStatusMessage('Connexion perdue · 3B reprendra automatiquement ici.');
+   setStatusMessage('Connexion perdue · 3B garde ta position et reprendra ici.');
   };
   window.addEventListener('online',goOnline);
   window.addEventListener('offline',goOffline);
   return()=>{window.removeEventListener('online',goOnline);window.removeEventListener('offline',goOffline);};
  },[]);
 
+ useEffect(()=>{
+  const change=()=>{
+   const next=document.visibilityState!=='hidden';
+   setVisible(next);
+   if(next&&online&&['loading','buffering','recovering'].includes(playerState)){
+    const staleFor=Date.now()-(signalAtRef.current||Date.now());
+    if(staleFor>sportNetworkTimeout(18000)*1.5){
+     readyRef.current=false;
+     setStatusMessage('Retour dans 3B · contrôle du lecteur en cours.');
+     setEpoch(value=>value+1);
+    }
+   }
+  };
+  document.addEventListener('visibilitychange',change);
+  return()=>document.removeEventListener('visibilitychange',change);
+ },[online,playerState]);
+
  function saveGoodSource(){
   if(!source)return;
-  failureRef.current.delete(item.id+':'+source.id);
+  clearFailure(source);
+  retryRef.current.delete(source.id+':5');
+  retryRef.current.delete(source.id+':153');
   channelFailoverRef.current=0;
   if(isH24){
    try{localStorage.setItem('3b-sport-good-source:'+item.id,source.id);}catch{}
   }
  }
 
- function advanceSource({markFailure=false,reason='Bascule automatique',fromEnd=false}={}){
+ function advanceSource({markFailureSource=false,errorCode=0,reason='Bascule automatique',fromEnd=false}={}){
   const now=Date.now();
   if(now-lastAdvanceRef.current<900)return;
   lastAdvanceRef.current=now;
-  if(source&&markFailure)failureRef.current.set(item.id+':'+source.id,now+SPORT_SOURCE_COOLDOWN);
+  if(source&&markFailureSource)markFailure(source,errorCode);
 
   if(sources.length>1){
    for(let step=1;step<=sources.length;step+=1){
     const candidateIndex=(sourceIndex+step)%sources.length;
     const candidate=sources[candidateIndex];
-    const blockedUntil=failureRef.current.get(item.id+':'+candidate.id)||0;
-    if(blockedUntil<=now){
+    if(blockedUntil(candidate)<=now){
      setSourceIndex(candidateIndex);
+     readyRef.current=false;
      setEpoch(value=>value+1);
      setPlayerState(fromEnd?'loading':'recovering');
      setStatusMessage(reason+' · source '+(candidateIndex+1)+'/'+sources.length+'.');
      return;
     }
    }
-  }else if(!markFailure){
+  }else if(!markFailureSource){
+   readyRef.current=false;
    setEpoch(value=>value+1);
    setPlayerState('recovering');
    setStatusMessage('Nouvelle tentative sur la source officielle.');
@@ -166,39 +255,39 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
  }
 
  useEffect(()=>{
-  if(playerState!=='unavailable'||!online)return;
+  if(playerState!=='unavailable'||!online||!visible)return;
   const timer=setTimeout(()=>{
    failureRef.current.clear();
    channelFailoverRef.current=0;
    setSourceIndex(0);
+   readyRef.current=false;
    setEpoch(value=>value+1);
    setPlayerState('recovering');
    setStatusMessage('Nouvelle tentative automatique en cours.');
   },SPORT_RETRY_ALL);
   return()=>clearTimeout(timer);
- },[playerState,online,item?.id]);
+ },[playerState,online,visible,item?.id]);
 
  useEffect(()=>{
-  if(!consent||!trusted||!online||playerState==='unavailable')return;
-  let ready=false;
-  let lastState=null;
-  const post=payload=>{
-   const target=iframeRef.current?.contentWindow;
-   if(!target)return;
-   try{target.postMessage(JSON.stringify(payload),'https://www.youtube-nocookie.com');}catch{}
-  };
-  const listen=()=>{
-   post({event:'listening',id:'3b-sport-player'});
-   for(const eventName of ['onReady','onStateChange','onError']){
-    post({event:'command',func:'addEventListener',args:[eventName]});
-   }
-  };
+  if(playerState!=='buffering'||!online||!visible)return;
+  const timer=setTimeout(()=>{
+   advanceSource({reason:'Buffer trop long · réparation automatique'});
+  },sportNetworkTimeout(26000));
+  return()=>clearTimeout(timer);
+ },[playerState,online,visible,sourceIndex,item?.id]);
+
+ useEffect(()=>{
+  if(!consent||!trusted||!frameSrc||!online||!visible||playerState==='unavailable')return;
+  readyRef.current=false;
+  signalAtRef.current=Date.now();
+  setPlayerState('loading');
+  setStatusMessage('Connexion sécurisée au lecteur 3B…');
+
   const applyState=value=>{
    const state=Number(value);
-   if(!Number.isFinite(state)||state===lastState)return;
-   lastState=state;
+   if(!Number.isFinite(state))return;
    if(state===1){
-    ready=true;
+    readyRef.current=true;
     saveGoodSource();
     setPlayerState('playing');
     setStatusMessage(source?.mode==='fallback'?'Mode secours officiel actif.':'Lecture stable dans 3B.');
@@ -206,47 +295,95 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
     setPlayerState('buffering');
     setStatusMessage('Mise en mémoire du match…');
    }else if(state===2){
+    readyRef.current=true;
     setPlayerState('paused');
     setStatusMessage('Lecture en pause.');
-   }else if(state===0&&isH24){
-    advanceSource({reason:'Match terminé · suivant automatique',fromEnd:true});
-   }
-  };
-  const onMessage=event=>{
-   if(event.source!==iframeRef.current?.contentWindow||!isTrustedSportPlayerOrigin(event.origin))return;
-   let data=event.data;
-   if(typeof data==='string'){
-    try{data=JSON.parse(data);}catch{return;}
-   }
-   if(!data||typeof data!=='object')return;
-   if(data.event==='onReady'){
-    ready=true;
-    setPlayerState('ready');
-    setStatusMessage('Lecteur officiel prêt.');
-    listen();
-   }else if(data.event==='onStateChange'){
-    applyState(data.info);
-   }else if(data.event==='onError'){
-    advanceSource({markFailure:true,reason:'Source refusée ou indisponible · secours automatique'});
-   }else if(data.event==='infoDelivery'&&data.info&&'playerState' in data.info){
-    applyState(data.info.playerState);
+   }else if(state===0){
+    clearResume(source);
+    if(isH24)advanceSource({reason:'Match terminé · suivant automatique',fromEnd:true});
+    else{
+     setPlayerState('ready');
+     setStatusMessage('Finale terminée.');
+    }
    }
   };
 
-  setPlayerState('loading');
-  setStatusMessage('Connexion à la source officielle…');
+  const onMessage=event=>{
+   if(event.source!==iframeRef.current?.contentWindow||!isTrustedSportShellOrigin(event.origin))return;
+   const data=event.data;
+   if(!data||data.type!=='3b-sport-player'||data.token!==playerToken)return;
+   signalAtRef.current=Date.now();
+
+   if(data.event==='shell-boot'||data.event==='shell-ready'){
+    setStatusMessage('Pont HTTPS 3B connecté · vérification de la vidéo…');
+    return;
+   }
+   if(data.event==='ready'){
+    readyRef.current=true;
+    setPlayerState('ready');
+    setStatusMessage('Lecteur officiel prêt.');
+    return;
+   }
+   if(data.event==='state'){
+    applyState(data.state);
+    return;
+   }
+   if(data.event==='time'){
+    const seconds=Number(data.currentTime);
+    if(Number.isFinite(seconds)&&seconds>=0&&Date.now()-resumeWriteAtRef.current>8000){
+     resumeWriteAtRef.current=Date.now();
+     try{sessionStorage.setItem(resumeKey(source),String(Math.floor(seconds)));}catch{}
+    }
+    if('state' in data)applyState(data.state);
+    return;
+   }
+   if(data.event==='error'){
+    const code=Number(data.code)||0;
+    const retryKey=source.id+':'+code;
+    const retried=retryRef.current.get(retryKey)||0;
+    if((code===5||code===153)&&retried<1){
+     retryRef.current.set(retryKey,retried+1);
+     readyRef.current=false;
+     setPlayerState('recovering');
+     setStatusMessage(code===153?'Identification du lecteur corrigée · nouvel essai.':'Erreur HTML5 transitoire · nouvel essai.');
+     setEpoch(value=>value+1);
+     return;
+    }
+    const labels={
+     100:'Vidéo retirée ou privée',
+     101:'Intégration refusée par l’ayant droit',
+     150:'Intégration refusée par l’ayant droit',
+     153:'Identité du lecteur refusée'
+    };
+    advanceSource({
+     markFailureSource:true,
+     errorCode:code,
+     reason:(labels[code]||'Source vidéo indisponible')+' · secours automatique'
+    });
+   }
+  };
+
   window.addEventListener('message',onMessage);
-  const handshake=setInterval(listen,1100);
   const watchdog=setTimeout(()=>{
-   if(!ready&&online)advanceSource({markFailure:true,reason:'Chargement trop long · secours automatique'});
-  },SPORT_PLAYER_READY_TIMEOUT);
-  listen();
+   if(!readyRef.current&&online&&visible){
+    const key=source.id+':watchdog';
+    const retried=retryRef.current.get(key)||0;
+    if(retried<1){
+     retryRef.current.set(key,retried+1);
+     readyRef.current=false;
+     setStatusMessage('Chargement lent · second essai sur la même source.');
+     setEpoch(value=>value+1);
+    }else{
+     advanceSource({markFailureSource:true,reason:'Chargement trop long · secours automatique'});
+    }
+   }
+  },sportNetworkTimeout(18000));
+
   return()=>{
    window.removeEventListener('message',onMessage);
-   clearInterval(handshake);
    clearTimeout(watchdog);
   };
- },[consent,trusted,online,item?.id,sourceIndex,epoch]);
+ },[consent,trusted,frameSrc,online,visible,item?.id,sourceIndex,epoch,playerToken]);
 
  if(!item)return null;
  const stateLabels={
@@ -262,7 +399,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
    {showFrame?<iframe
     ref={iframeRef}
     key={item.id+':'+source?.id+':'+epoch}
-    src={source.embedUrl}
+    src={frameSrc}
     title={item.title+' · '+sourceLabel}
     loading="eager"
     referrerPolicy="strict-origin-when-cross-origin"
@@ -273,24 +410,23 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext}){
     <div>
      <p className="eyebrow">LECTEUR INTERNE 3B</p>
      <h2>{!online?'Connexion interrompue.':playerState==='unavailable'?'3B protège la lecture.':trusted?'Activer la vidéo officielle.':'Source vidéo bloquée.'}</h2>
-     <p>{!online?'Reste sur cet écran : dès que le réseau revient, le match reprend automatiquement dans 3B.':playerState==='unavailable'?statusMessage:trusted?'La vidéo reste dans 3B. Aucun popup, aucune navigation externe et aucune ouverture automatique vers YouTube.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
+     <p>{!online?'Reste ici : 3B garde la position et reprend automatiquement quand le réseau revient.':playerState==='unavailable'?statusMessage:trusted?'Le lecteur passe par le pont HTTPS sécurisé 3B : aucun popup, aucune navigation externe et aucune ouverture automatique vers YouTube.':'Cette source ne fait pas partie de la liste vidéo autorisée par 3B.'}</p>
     </div>
     {trusted&&!consent&&online&&<button type="button" className="surface-button" onClick={onConsent}>Activer le lecteur</button>}
     {consent&&online&&playerState==='unavailable'&&<button type="button" className="surface-button" onClick={()=>advanceSource({reason:'Réessai manuel'})}>Réessayer maintenant</button>}
    </div>}
-
-   {consent&&trusted&&<div className={'sport-media-health state-'+playerState} aria-live="polite">
-    <span className="sport-media-health-dot"/>
-    <strong>{stateLabels[playerState]||'3B'}</strong>
-    <small>{sourceLabel} · {Math.min(sourceIndex+1,Math.max(sourceCount,1))}/{Math.max(sourceCount,1)}</small>
-   </div>}
   </div>
 
   <div className="sport-media-controls">
-   <div>
+   <div className="sport-media-details">
     <span>{item.badge||item.sport}</span>
     <strong>{item.title}</strong>
     <small>{statusMessage||source?.provider||item.provider}</small>
+    {consent&&trusted&&<div className={'sport-media-health state-'+playerState} aria-live="polite">
+     <span className="sport-media-health-dot"/>
+     <strong>{stateLabels[playerState]||'3B'}</strong>
+     <small>{sourceLabel} · {Math.min(sourceIndex+1,Math.max(sourceCount,1))}/{Math.max(sourceCount,1)}</small>
+    </div>}
    </div>
    <div className="sport-media-control-actions">
     <button type="button" className="quiet-button" onClick={()=>advanceSource({reason:'Source de secours sélectionnée'})}>{sourceCount>1?'Source de secours':'Réparer la lecture'}</button>
