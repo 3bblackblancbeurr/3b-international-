@@ -41,15 +41,22 @@ export function queueMegaMissile(state,nation,targetId){
 }
 export function cancelOrder(state,nation,orderId){const i=state.orders.findIndex(o=>o.id===orderId&&o.nation===nation);if(i>=0)state.orders.splice(i,1);return state;}
 function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function targetScore(state,nation,u,targetId,random,difficulty){
+ const s=SECTOR_BY_ID.get(targetId),enemy=unitsIn(state,targetId).filter(x=>x.nation!==nation&&x.type!=='flag'),enemyPower=enemy.reduce((sum,x)=>sum+UNIT_TYPES[x.type].strength,0);let score=0;
+ if(s.hq!==null&&s.hq!==nation&&state.nations[s.hq].active)score+=u.type==='infantry'||u.type==='regiment'?180:62;
+ if(enemy.length)score+=48+Math.min(35,enemyPower)-Math.max(0,enemyPower-UNIT_TYPES[u.type].strength)*1.2;
+ if(state.owners[targetId]!==nation)score+=22;if(s.type==='sea'&&UNIT_TYPES[u.type].domain==='sea')score+=8;
+ if(targetId==='hq'+nation)score-=35;const noise=difficulty==='elite'?0:difficulty==='veteran'?random()*12:random()*32;return score+noise;
+}
 function aiOrders(state,nation){
- const random=rng(state.seed+state.round*97+nation*997),orders=[],me=state.nations[nation],limit=state.difficulty==='normal'?3:state.difficulty==='elite'?5:4;if(!me.active)return orders;
- if(me.power>=100&&random()>.35){const targets=SECTORS.filter(s=>s.hq!==null&&s.hq!==nation&&state.nations[s.hq].active).sort((a,b)=>sectorStrength(state,b.id,b.hq)-sectorStrength(state,a.id,a.hq));if(targets[0])orders.push({id:'ai-mega-'+nation,type:'mega',nation,unitIds:[],target:targets[0].id,cost:100});}
- const available=state.units.filter(u=>u.nation===nation&&!['flag'].includes(u.type));
- for(const u of available){if(orders.length>=limit)break;if(orders.some(o=>o.unitIds?.includes(u.id)))continue;const targets=legalTargets(state,u.id);if(!targets.length)continue;
-  const hostile=targets.filter(id=>unitsIn(state,id).some(x=>x.nation!==nation)||(SECTOR_BY_ID.get(id).hq!==null&&SECTOR_BY_ID.get(id).hq!==nation));
-  const pool=hostile.length?hostile:targets,target=pool[Math.floor(random()*pool.length)];if(target)orders.push({id:'ai-'+nation+'-'+orders.length,type:'move',nation,unitIds:[u.id],from:u.sectorId,target});
- }
- if(orders.length<limit&&me.power>=UNIT_TYPES.infantry.cost&&me.reserve.infantry>0&&random()>.45)orders.push({id:'ai-r-'+nation,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:'infantry',cost:UNIT_TYPES.infantry.cost});
+ const random=rng(state.seed+state.round*97+nation*997),orders=[],me=state.nations[nation],difficulty=state.difficulty,limit=difficulty==='normal'?3:difficulty==='elite'?5:4;if(!me.active)return orders;
+ const used=new Set();
+ for(const rule of EXCHANGES){if(orders.length>=limit||(me.reserve[rule.to]||0)<1)break;for(const s of SECTORS){const candidates=unitsIn(state,s.id,nation).filter(u=>u.type===rule.from&&!used.has(u.id)).slice(0,rule.count);if(candidates.length<rule.count)continue;orders.push({id:'ai-x-'+nation+'-'+orders.length,type:'exchange',nation,unitIds:candidates.map(u=>u.id),sectorId:s.id,fromType:rule.from,toType:rule.to});candidates.forEach(u=>used.add(u.id));break;}}
+ if(me.power>=100&&orders.length<limit&&random()>(difficulty==='normal'?.72:.38)){const targets=SECTORS.filter(s=>s.hq!==null&&s.hq!==nation&&state.nations[s.hq].active).sort((a,b)=>sectorStrength(state,b.id,b.hq)-sectorStrength(state,a.id,a.hq));if(targets[0])orders.push({id:'ai-mega-'+nation,type:'mega',nation,unitIds:[],target:targets[0].id,cost:100});}
+ const available=state.units.filter(u=>u.nation===nation&&u.type!=='flag'&&!used.has(u.id)).sort((a,b)=>UNIT_TYPES[b.type].strength-UNIT_TYPES[a.type].strength);
+ for(const u of available){if(orders.length>=limit)break;if(orders.some(o=>o.unitIds?.includes(u.id)))continue;const targets=legalTargets(state,u.id);if(!targets.length)continue;const ranked=targets.map(id=>({id,score:targetScore(state,nation,u,id,random,difficulty)})).sort((a,b)=>b.score-a.score);const target=ranked[0]?.id;if(target)orders.push({id:'ai-'+nation+'-'+orders.length,type:'move',nation,unitIds:[u.id],from:u.sectorId,target});}
+ const spent=orders.reduce((sum,o)=>sum+(o.cost||0),0),budget=me.power-spent;
+ if(orders.length<limit&&budget>=2){const choices=['destroyer','fighter','tank','infantry'].filter(type=>me.reserve[type]>0&&UNIT_TYPES[type].cost<=budget);if(choices.length){const type=choices.find(t=>UNIT_TYPES[t].cost<=budget)||'infantry';orders.push({id:'ai-r-'+nation,type:'reinforce',nation,unitIds:[],sectorId:'hq'+nation,unitType:type,cost:UNIT_TYPES[type].cost});}}
  return orders.slice(0,limit);
 }
 function captureFlag(state,winner,victim,sectorId,events){
