@@ -31,7 +31,7 @@ function baseFetcher({ownerId=UID,providers=false}={}){
   }
   if(providers){
    if(url.hostname==='oauth2.googleapis.com')return response({access_token:'google-access-token'});
-   if(url.hostname==='gmail.googleapis.com')return response({messages:[{id:'m1'}],resultSizeEstimate:3});
+   if(url.hostname==='gmail.googleapis.com')return response({id:'INBOX',messagesUnread:3});
    if(url.hostname==='www.googleapis.com'&&url.pathname.includes('/calendar/'))return response({items:[{
     summary:'Rendez-vous 3B',start:{dateTime:'2026-09-27T10:00:00+02:00'},end:{dateTime:'2026-09-27T11:00:00+02:00'}
    }]});
