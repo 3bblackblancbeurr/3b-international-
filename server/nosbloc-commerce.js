@@ -46,8 +46,9 @@ export function nosblocCommerceConfig(env={}){
  const commerceEnabled=baseReady&&boolean(env.NOSBLOC_COMMERCE_ENABLED);
  const connectEnabled=commerceEnabled&&boolean(env.NOSBLOC_CONNECT_ENABLED);
  const payoutsEnabled=connectEnabled&&boolean(env.NOSBLOC_PAYOUTS_ENABLED);
+ const connectCountries=[...new Set(String(env.NOSBLOC_CONNECT_COUNTRIES||"FR,IT,ES,EE").split(",").map(value=>value.trim().toUpperCase()).filter(value=>COUNTRY.test(value)))];
  return{
-  origin,mode,livemode:mode==="live",baseReady,commerceEnabled,connectEnabled,payoutsEnabled,
+  origin,mode,livemode:mode==="live",baseReady,commerceEnabled,connectEnabled,payoutsEnabled,connectCountries,
   automaticTax:boolean(env.NOSBLOC_AUTOMATIC_TAX),
   defaultPlatformFeeBps:integer(env.NOSBLOC_PLATFORM_FEE_BPS,0,5000,1000),
  };
@@ -242,7 +243,7 @@ export function createNosblocCommerce({env=process.env,stripe:suppliedStripe,fet
 
  async function createConnected(userId,country){
   const normalized=String(country||"FR").trim().toUpperCase();
-  if(!COUNTRY.test(normalized))throw new NosblocCommerceError(400,"Pays créateur invalide.");
+  if(!COUNTRY.test(normalized)||!config.connectCountries.includes(normalized))throw new NosblocCommerceError(400,"Ce pays n’est pas encore ouvert aux versements Nosbloc.");
   const account=await stripe().v2.core.accounts.create({
    dashboard:"express",
    defaults:{responsibilities:{fees_collector:"application",losses_collector:"application"}},
@@ -375,7 +376,7 @@ export function createNosblocCommerce({env=process.env,stripe:suppliedStripe,fet
    const row=runtime.connect?await connectedRow(member.id):null;
    return json({
     commerceEnabled:runtime.commerce,connectEnabled:runtime.connect,payoutsEnabled:runtime.payouts,
-    testMode:!config.livemode,currency:"EUR",platformFeeBps:runtime.platformFeeBps,
+    testMode:!config.livemode,currency:"EUR",platformFeeBps:runtime.platformFeeBps,connectCountries:config.connectCountries,
     creator:row?{status:row.onboarding_status,transfersEnabled:row.transfers_enabled,payoutsEnabled:row.payouts_enabled,requirementsDue:row.requirements_due}:null,
    });
   }),
