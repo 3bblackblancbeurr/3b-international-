@@ -497,98 +497,133 @@ async function kickClubMember(uid:string, passportInput:unknown) {
   return true;
 }
 
-async function nationalRank(profile:any, rating:any) {
-  const stronger = await admin(
-    '/rest/v1/penalty_ratings?country_id=eq.' + encodeURIComponent(profile.country_id) +
-    '&rating=gt.' + encodeURIComponent(String(rating.rating)) +
+async function activeRankedSeason() {
+  const at=nowIso();
+  const rows=await admin('/rest/v1/penalty_ranked_seasons?status=eq.active&starts_at=lte.'+encodeURIComponent(at)+'&ends_at=gte.'+encodeURIComponent(at)+'&select=*&limit=1').catch(()=>[]);
+  return Array.isArray(rows)?rows[0]||null:null;
+}
+
+async function rankedStatsFor(uid:string, countryId:string) {
+  const season=await activeRankedSeason();
+  if(!season)return {season:null,stats:{rating:1000,games:0,wins:0,losses:0,streak:0,best_rating:1000,forfeits:0,country_id:countryId}};
+  const rows=await admin('/rest/v1/penalty_ranked_stats?season_id=eq.'+encodeURIComponent(season.id)+'&user_id=eq.'+encodeURIComponent(uid)+'&select=*&limit=1').catch(()=>[]);
+  return {season,stats:Array.isArray(rows)&&rows[0]?rows[0]:{season_id:season.id,user_id:uid,country_id:countryId,rating:1000,games:0,wins:0,losses:0,streak:0,best_rating:1000,forfeits:0}};
+}
+
+function divisionFor(rating:number,games:number,placements=5) {
+  if(games<placements)return {id:'placement',label:'Placement',remaining:placements-games,min:0,next:null};
+  const bands=[
+    ['division-8','Division 8',0,900],['division-7','Division 7',900,1000],['division-6','Division 6',1000,1100],
+    ['division-5','Division 5',1100,1200],['division-4','Division 4',1200,1325],['division-3','Division 3',1325,1450],
+    ['division-2','Division 2',1450,1600],['division-1','Division 1',1600,1800],['crown','Crown',1800,null],
+  ];
+  const row=[...bands].reverse().find((item:any)=>rating>=item[2])||bands[0];
+  return {id:row[0],label:row[1],min:row[2],next:row[3],remaining:0};
+}
+
+async function nationalRank(profile:any, ranked:any, season:any) {
+  if(!season || number(ranked.games)<number(season.placement_matches,5))return null;
+  const stronger=await admin(
+    '/rest/v1/penalty_ranked_stats?season_id=eq.'+encodeURIComponent(season.id)+
+    '&country_id=eq.'+encodeURIComponent(profile.country_id)+
+    '&games=gte.'+encodeURIComponent(String(number(season.placement_matches,5)))+
+    '&rating=gt.'+encodeURIComponent(String(number(ranked.rating,1000)))+
     '&select=user_id&limit=5000'
-  );
-  return (Array.isArray(stronger) ? stronger.length : 0) + 1;
+  ).catch(()=>[]);
+  return (Array.isArray(stronger)?stronger.length:0)+1;
 }
 
-function scoutingBand(rank:number, matches:number, reputation:number, pressure:number) {
-  if (matches < 10) return 'non-classe';
-  if (rank <= 12 && reputation >= 700) return pressure >= .65 ? 'selection' : 'preselection';
-  if (rank <= 30 && reputation >= 420) return 'observe';
-  if (rank <= 75) return 'radar';
-  return 'club';
+async function recentRankedForm(uid:string, seasonId:string|null) {
+  if(!seasonId)return {matches:0,wins:0,winRate:0};
+  const rows=await admin(
+    '/rest/v1/penalty_match_history?ranked_season_id=eq.'+encodeURIComponent(seasonId)+
+    '&or=(player_a.eq.'+encodeURIComponent(uid)+',player_b.eq.'+encodeURIComponent(uid)+')'+
+    '&select=winner_user_id&order=created_at.desc&limit=10'
+  ).catch(()=>[]);
+  const matches=Array.isArray(rows)?rows.length:0;
+  const wins=(Array.isArray(rows)?rows:[]).filter((row:any)=>row.winner_user_id===uid).length;
+  return {matches,wins,winRate:matches?wins/matches:0};
 }
 
-async function activeInternationalWindow() {
-  const at = nowIso();
-  const rows = await admin(
-    '/rest/v1/penalty_international_windows?status=eq.selection' +
-    '&starts_at=lte.' + encodeURIComponent(at) +
-    '&ends_at=gte.' + encodeURIComponent(at) +
+function selectionScore(profile:any, ranked:any, rank:number|null, pressure:number, form:any, needMatched:boolean, placementMatches=5) {
+  if(profile.identity_status!=='passport')return {score:0,band:'review',breakdown:{identity:0}};
+  const games=number(ranked.games);
+  if(games<placementMatches)return {score:0,band:'non-classe',breakdown:{placements:Math.max(0,placementMatches-games)}};
+  const ratingScore=clamp((number(ranked.rating,1000)-850)/900,0,1)*38;
+  const rankScore=rank==null?0:clamp(1-(rank-1)/24,0,1)*22;
+  const formScore=clamp(number(form?.winRate),0,1)*14;
+  const reputationScore=clamp(number(profile.reputation)/1800,0,1)*10;
+  const pressureScore=clamp(pressure,0,1)*10;
+  const roleScore=needMatched?6:0;
+  const disciplinePenalty=Math.min(16,number(ranked.forfeits)*4);
+  const score=Math.max(0,Math.round((ratingScore+rankScore+formScore+reputationScore+pressureScore+roleScore-disciplinePenalty)*10)/10);
+  const band=score>=58&&rank!=null&&rank<=16?'preselection':score>=44?'observe':score>=28?'radar':'club';
+  return {score,band,breakdown:{rating:Math.round(ratingScore*10)/10,rank:Math.round(rankScore*10)/10,form:Math.round(formScore*10)/10,reputation:Math.round(reputationScore*10)/10,pressure:Math.round(pressureScore*10)/10,role:roleScore,discipline:-disciplinePenalty}};
+}
+
+async function activeInternationalWindow(statuses=['selection']) {
+  const at=nowIso();
+  const filter=statuses.map(String).filter(Boolean).join(',');
+  const rows=await admin(
+    '/rest/v1/penalty_international_windows?status=in.('+encodeURIComponent(filter)+')'+
+    '&starts_at=lte.'+encodeURIComponent(at)+'&ends_at=gte.'+encodeURIComponent(at)+
     '&order=starts_at.asc&limit=1&select=*'
-  ).catch(() => []);
-  return Array.isArray(rows) ? rows[0] || null : null;
+  ).catch(()=>[]);
+  return Array.isArray(rows)?rows[0]||null:null;
 }
 
 async function selectionForWindow(uid:string, windowId:string) {
-  const rows = await admin(
-    '/rest/v1/penalty_international_selections?window_id=eq.' + encodeURIComponent(windowId) +
-    '&user_id=eq.' + encodeURIComponent(uid) +
-    '&select=*&limit=1'
-  ).catch(() => []);
-  return Array.isArray(rows) ? rows[0] || null : null;
+  const rows=await admin(
+    '/rest/v1/penalty_international_selections?window_id=eq.'+encodeURIComponent(windowId)+
+    '&user_id=eq.'+encodeURIComponent(uid)+'&select=*&limit=1'
+  ).catch(()=>[]);
+  return Array.isArray(rows)?rows[0]||null:null;
 }
 
 async function countryNeededRole(windowId:string, countryId:string) {
-  const rows = await admin(
-    '/rest/v1/penalty_international_selections?window_id=eq.' + encodeURIComponent(windowId) +
-    '&country_id=eq.' + encodeURIComponent(countryId) +
+  const rows=await admin(
+    '/rest/v1/penalty_international_selections?window_id=eq.'+encodeURIComponent(windowId)+
+    '&country_id=eq.'+encodeURIComponent(countryId)+
     '&status=in.(preselected,selected)&select=role_profile&limit=200'
-  ).catch(() => []);
-  const counts = Object.fromEntries(SELECTION_ROLES.map((role) => [role, 0]));
-  for (const row of Array.isArray(rows) ? rows : []) {
-    const role = String(row?.role_profile || '');
-    if (Object.hasOwn(counts, role)) counts[role] += 1;
+  ).catch(()=>[]);
+  const counts=Object.fromEntries(SELECTION_ROLES.map(role=>[role,0]));
+  for(const row of Array.isArray(rows)?rows:[]){
+    const role=String(row?.role_profile||'');
+    if(Object.hasOwn(counts,role))counts[role]+=1;
   }
-  const countrySeed = [...String(countryId)].reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const rotated = (role:string) => {
-    const length = SELECTION_ROLES.length;
-    return ((SELECTION_ROLES.indexOf(role) - countrySeed) % length + length) % length;
-  };
-  return [...SELECTION_ROLES]
-    .sort((a, b) => counts[a] - counts[b] || rotated(a) - rotated(b))[0];
+  return [...SELECTION_ROLES].sort((a,b)=>counts[a]-counts[b]||SELECTION_ROLES.indexOf(a)-SELECTION_ROLES.indexOf(b))[0];
 }
 
-async function refreshInternationalSelection(uid:string, profile:any, rating:any, rank:number, pressure:number) {
-  const matches = number(rating.games);
-  const reputation = number(profile.reputation);
-  const baseScouting = scoutingBand(rank, matches, reputation, pressure);
-  const window = await activeInternationalWindow();
-  if (!window) return { scouting:baseScouting, selection:null, window:null, neededRole:null, needMatched:false };
+async function refreshInternationalSelection(uid:string, profile:any, ranked:any, rank:number|null, pressure:number, form:any) {
+  const window=await activeInternationalWindow(['selection','active']);
+  if(!window){
+    const base=selectionScore(profile,ranked,rank,pressure,form,false,5);
+    return {scouting:base.band,selection:null,window:null,neededRole:null,needMatched:false,score:base.score,breakdown:base.breakdown,matchOpen:false};
+  }
+  const neededRole=await countryNeededRole(window.id,profile.country_id);
+  const playerStyle=STYLES.has(String(profile.style_id))?String(profile.style_id):'technicien';
+  const needMatched=neededRole===playerStyle||(neededRole==='pression'&&pressure>=.62);
+  const assessment=selectionScore(profile,ranked,rank,pressure,form,needMatched,5);
+  let selection=await selectionForWindow(uid,window.id);
 
-  const neededRole = await countryNeededRole(window.id, profile.country_id);
-  const playerStyle = STYLES.has(String(profile.style_id)) ? String(profile.style_id) : 'technicien';
-  const needMatched = neededRole === playerStyle || (neededRole === 'pression' && pressure >= .65);
-  const needQualified = matches >= 10 && rank <= 30 && reputation >= 420 && needMatched;
-
-  let selection = await selectionForWindow(uid, window.id);
-  if (!selection && (baseScouting === 'selection' || baseScouting === 'preselection' || needQualified)) {
-    const roleProfile = needMatched ? neededRole : pressure >= .65 ? 'pression' : playerStyle;
-    const created = await admin('/rest/v1/penalty_international_selections?select=*', {
-      method:'POST',
-      body:{
-        window_id:window.id,
-        user_id:uid,
-        country_id:profile.country_id,
-        status:'preselected',
-        role_profile:roleProfile,
-      },
-      prefer:'return=representation',
-    }).catch(() => []);
-    selection = Array.isArray(created) ? created[0] || null : null;
+  if(!selection && window.status==='selection' && assessment.band==='preselection'){
+    const existing=await admin(
+      '/rest/v1/penalty_international_selections?window_id=eq.'+encodeURIComponent(window.id)+
+      '&country_id=eq.'+encodeURIComponent(profile.country_id)+'&status=in.(preselected,selected)&select=id&limit=20'
+    ).catch(()=>[]);
+    if((Array.isArray(existing)?existing.length:0)<12){
+      const roleProfile=needMatched?neededRole:pressure>=.62?'pression':playerStyle;
+      const created=await admin('/rest/v1/penalty_international_selections?select=*',{
+        method:'POST',body:{window_id:window.id,user_id:uid,country_id:profile.country_id,status:'preselected',role_profile:roleProfile},prefer:'return=representation',
+      }).catch(()=>[]);
+      selection=Array.isArray(created)?created[0]||null:null;
+    }
   }
 
-  const visibleScouting =
-    selection?.status === 'selected' ? 'selection'
-      : selection?.status === 'preselected' ? 'preselection'
-        : selection?.status === 'declined' ? 'declined'
-          : baseScouting;
-  return { scouting:visibleScouting, selection, window, neededRole, needMatched };
+  const visible=selection?.status==='selected'?'selection'
+    :selection?.status==='preselected'?'preselection'
+      :selection?.status==='declined'?'declined':assessment.band;
+  return {scouting:visible,selection,window,neededRole,needMatched,score:assessment.score,breakdown:assessment.breakdown,matchOpen:window.status==='active'&&selection?.status==='selected'};
 }
 
 async function respondInternationalSelection(uid:string, selectionId:unknown, decision:unknown) {
