@@ -223,60 +223,84 @@ export default function PenaltyRush({ onClose, onAccount }) {
 }
 
 function PlayHome({ busy, profile, rating, tier, snapshot, code, setCode, request, onTraining }) {
-  const country = countryById(profile.countryId);
+  const country=countryById(profile.countryId);
+  const ranked=snapshot?.ranked||{};
+  const division=ranked.division||{label:'Placement',remaining:5,progress:0};
+  const passport=snapshot?.passport||{};
+  const international=snapshot?.international||{};
+  const competitiveReady=passport.competitiveReady!==false&&profile.identityStatus!=='review';
   return (
     <div className="penalty-play-home">
-      <section className="penalty-hero">
+      <section className="penalty-hero penalty-hero-v8">
         <div className="penalty-hero-copy">
-          <span className="penalty-kicker">PLACEMENT → RYTHME → LECTURE → FEINTE → FRAPPE</span>
-          <h1>Un duel de football pensé pour deux pouces.</h1>
-          <p>15 secondes par possession. Trois attaques chacun. Puis inversion des rôles. En cas d’égalité, Duel d’Or.</p>
+          <span className="penalty-kicker">PASSEPORT → JOUEUR → CLUB → CLASSÉ → SÉLECTION</span>
+          <h1>Ta carrière 3B commence avec une seule identité.</h1>
+          <p>Entraînement libre, duels rapides, saison classée et sélection nationale partagent le même joueur, sans doublon de compte.</p>
           <div className="penalty-profile-line">
-            <span>{country.flag}</span><b>{profile.displayName}</b><small>{tier.label} · {rating.rating} Elo</small>
+            <span>{country.flag}</span><b>{profile.displayName}</b>
+            <small>{division.label} · {ranked.rating || 1000} · {tier.label}</small>
+          </div>
+          <div className="penalty-passport-chip" data-state={competitiveReady?'ready':'review'}>
+            <Shield size={14}/><span>{profile.passportLabel || snapshot?.passport?.label || 'Passeport 3B'}</span>
+            <b>{competitiveReady?'IDENTITÉ VALIDÉE':'REVUE REQUISE'}</b>
           </div>
         </div>
         <div className="penalty-hero-pitch" aria-hidden="true">
-          <span className="penalty-player-dot">10</span>
+          <span className="penalty-player-dot">{profile.shirtNumber}</span>
           <span className="penalty-ball-dot">3B</span>
           <span className="penalty-goal"><i /></span>
         </div>
       </section>
 
-      <section className="penalty-mode-grid">
+      <section className="penalty-mode-grid penalty-mode-grid-v8">
         <article>
           <span className="penalty-kicker">ENTRAÎNEMENT · SOLO</span>
-          <h2>Jouer contre l’IA</h2>
-          <p>Travaille ta frappe contre un gardien IA ou protège toute la cage face à un tireur IA. Sans classement et sans attente.</p>
-          <div className="penalty-training-actions"><button className="penalty-primary" onClick={() => onTraining('attacker')}>Jouer attaquant</button><button className="penalty-secondary" onClick={() => onTraining('keeper')}>Jouer gardien</button></div>
+          <h2>Centre d’entraînement</h2>
+          <p>Travaille attaquant et gardien contre l’IA sans toucher au classement, à la réputation ou aux sélections.</p>
+          <div className="penalty-training-actions"><button className="penalty-primary" onClick={()=>onTraining('attacker')}>Attaquant</button><button className="penalty-secondary" onClick={()=>onTraining('keeper')}>Gardien</button></div>
         </article>
         <article>
           <span className="penalty-kicker">RAPIDE · 1V1</span>
           <h2>Match immédiat</h2>
-          <p>Matchmaking sans enjeu de classement. Même gameplay, même carrière, idéal pour apprendre un adversaire réel.</p>
-          <button className="penalty-primary" disabled={busy} onClick={() => request('queue', { mode: 'quick' }).catch(() => {})}><Play size={17} /> Trouver un joueur</button>
+          <p>Un duel réel sans enjeu de division. Idéal pour tester un archétype, une technique ou un nouveau réglage.</p>
+          <button className="penalty-primary" disabled={busy} onClick={()=>request('queue',{mode:'quick'}).catch(()=>{})}><Play size={17}/> Trouver un joueur</button>
         </article>
-        <article>
-          <span className="penalty-kicker">CLASSÉ · SAISON</span>
-          <h2>Gravir le classement</h2>
-          <p>Elo, forme récente, pression et résultats alimentent ton classement national et le radar des sélections.</p>
-          <button className="penalty-primary" disabled={busy} onClick={() => request('queue', { mode: 'ranked' }).catch(() => {})}><Trophy size={17} /> Jouer classé</button>
+        <article className="penalty-ranked-card" data-ready={competitiveReady}>
+          <span className="penalty-kicker">CLASSÉ · {ranked.season?.name || 'SAISON'}</span>
+          <h2>{division.label}</h2>
+          <p>{division.id==='placement'
+            ? `${ranked.placementsRemaining ?? division.remaining ?? 5} match(s) de placement avant le rang officiel.`
+            : `${ranked.rating || 1000} points · série ${ranked.streak || 0} · meilleur ${ranked.bestRating || ranked.rating || 1000}.`}</p>
+          <div className="penalty-rank-progress" aria-hidden="true"><i style={{width:`${Math.round((division.progress ?? 0)*100)}%`}}/></div>
+          <button className="penalty-primary" disabled={busy||!competitiveReady} onClick={()=>request('queue',{mode:'ranked'}).catch(()=>{})}><Trophy size={17}/> Jouer classé</button>
+          {!competitiveReady&&<small>Le Passeport et le profil joueur doivent être validés.</small>}
         </article>
         <article>
           <span className="penalty-kicker">SALON PRIVÉ</span>
           <h2>Défier un ami</h2>
-          <p>Crée un code à six caractères, partage-le, puis joue avec les mêmes règles compétitives.</p>
+          <p>Code à six caractères. Aucun impact sur la division et aucun farm de récompenses classées.</p>
           <div className="penalty-inline-actions">
-            <button className="penalty-secondary" disabled={busy} onClick={() => request('create', {}).catch(() => {})}>Créer</button>
-            <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, '').slice(0, 6))} placeholder="CODE 3B" aria-label="Code de salon" />
-            <button className="penalty-secondary" disabled={busy || code.length !== 6} onClick={() => request('join', { code }).catch(() => {})}>Rejoindre</button>
+            <button className="penalty-secondary" disabled={busy} onClick={()=>request('create',{}).catch(()=>{})}>Créer</button>
+            <input value={code} onChange={(event)=>setCode(event.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g,'').slice(0,6))} placeholder="CODE 3B" aria-label="Code de salon"/>
+            <button className="penalty-secondary" disabled={busy||code.length!==6} onClick={()=>request('join',{code}).catch(()=>{})}>Rejoindre</button>
           </div>
+        </article>
+        <article className="penalty-national-card" data-selected={international.selectionStatus==='selected'}>
+          <span className="penalty-kicker">ÉQUIPE NATIONALE · {country.flag}</span>
+          <h2>{international.selectionStatus==='selected'?'Tu représentes '+country.name:'Objectif sélection'}</h2>
+          <p>{international.matchOpen
+            ? 'La fenêtre internationale est ouverte : trouve un joueur sélectionné d’un autre pays.'
+            : international.selectionStatus==='selected'
+              ? 'Convocation acceptée. Les matchs s’ouvriront pendant la fenêtre internationale active.'
+              : `Score sélection : ${Math.round(international.selectionScore || 0)} · statut ${scoutingLabel(international.scouting)}.`}</p>
+          <button className="penalty-primary" disabled={busy||!international.matchOpen} onClick={()=>request('queue',{mode:'international'}).catch(()=>{})}><Globe2 size={17}/> Jouer pour mon pays</button>
         </article>
       </section>
 
       <section className="penalty-control-principle">
-        <div><b>POUCE GAUCHE</b><span>Déplacement · changement de rythme · ralentissement naturel</span></div>
-        <div><b>POUCE DROIT</b><span>Gestes contextuels · feinte · crochet · frappe · plongeon</span></div>
-        <strong>Pas de rangée de boutons. Le terrain reste lisible.</strong>
+        <div><b>IDENTITÉ UNIQUE</b><span>Passeport 3B → joueur → club → sélection</span></div>
+        <div><b>COMPÉTITION SERVEUR</b><span>Division, résultats, recrutement et convocations validés côté serveur</span></div>
+        <strong>Les cosmétiques personnalisent ton joueur. Ils n’achètent jamais de performance.</strong>
       </section>
     </div>
   );
