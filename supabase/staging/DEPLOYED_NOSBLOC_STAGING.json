@@ -17,10 +17,10 @@
     {
       "slug": "nosbloc-staging-console",
       "id": "fd266cc3-47d7-4efe-b72c-6806abb6af87",
-      "version": 1,
+      "version": 2,
       "verify_jwt": false,
       "status": "ACTIVE",
-      "purpose": "Static noindex test console; mutations proxy only valid user JWTs"
+      "purpose": "Static noindex invite-only test console; mutations proxy only valid user JWTs"
     }
   ],
   "console_url": "https://zykdfgahzqqanlyxjtbe.supabase.co/functions/v1/nosbloc-staging-console",
@@ -29,8 +29,19 @@
     "nosbloc_server_staging_v1",
     "nosbloc_staging_authenticated_api",
     "nosbloc_staging_advisor_hardening",
-    "nosbloc_staging_fk_indexes"
+    "nosbloc_staging_fk_indexes",
+    "nosbloc_staging_invite_only_signup",
+    "nosbloc_staging_moderator_invite_role"
   ],
+  "signup_gate": {
+    "invite_only": true,
+    "seeded_codes": 3,
+    "max_uses_each": 1,
+    "expires_days": 30,
+    "raw_code_persisted": false,
+    "moderator_from_private_label": true,
+    "plaintext_codes_committed": false
+  },
   "locks": {
     "publication": true,
     "discover": true,
