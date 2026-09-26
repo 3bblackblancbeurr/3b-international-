@@ -8,7 +8,7 @@ const note=document.getElementById('official-note');
 const text=(id,value)=>{document.getElementById(id).textContent=value||'—';};
 
 async function verify(){
- const ticket=new URLSearchParams(location.search).get('ticket')||'';
+ const ticket=new URLSearchParams(location.hash.slice(1)).get('ticket')||'';
  history.replaceState(null,'',location.pathname);
  if(!/^[0-9a-f]{64}$/i.test(ticket))throw new Error('Code absent, invalide ou déjà utilisé.');
  const response=await fetch(API,{
