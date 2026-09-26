@@ -17,6 +17,10 @@ Deno.serve(async req=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')return reply({valid:false,error:'Methode non autorisee.'},405);
  try{
+  const ip=(req.headers.get('x-forwarded-for')||'unknown').split(',')[0].trim().slice(0,80);
+  const allowed=await api('/rest/v1/rpc/loyalty_rate',{p_key:'passport-verify:'+await hash(ip),p_limit:30,p_window:60});
+  if(allowed!==true)throw new Failure(429,'Trop de verifications. Reessaie dans une minute.');
+
   const body=await req.json().catch(()=>null);
   const token=String(body?.ticket||'').trim().toLowerCase();
   if(!/^[0-9a-f]{64}$/.test(token))throw new Failure(400,'Code invalide ou expire.');
