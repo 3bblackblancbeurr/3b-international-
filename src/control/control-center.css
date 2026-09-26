@@ -1371,3 +1371,166 @@ button.control-nexus-domain:active{transform:scale(.988)}
  .control-page .control-privacy-toggle,
  .control-page .control-nexus-expand{min-height:44px}
 }
+
+
+/* ===== Command OS V2.1 · Dev, App Health, Security, module isolation ===== */
+.control-dev-badge,
+.control-health-badge,
+.control-security-badge{
+ display:inline-flex;
+ align-items:center;
+ justify-content:center;
+ min-height:28px;
+ padding:0 9px;
+ border:1px solid rgba(255,255,255,.07);
+ border-radius:999px;
+ color:#8296a0;
+ background:rgba(255,255,255,.025);
+ font-size:7px;
+ font-weight:850;
+ letter-spacing:.09em;
+}
+:is(.control-dev-badge,.control-health-badge,.control-security-badge).is-good{
+ color:var(--cc-green);
+ border-color:rgba(92,226,161,.16);
+ background:rgba(92,226,161,.045);
+}
+:is(.control-dev-badge,.control-health-badge,.control-security-badge).is-bad{
+ color:var(--cc-red);
+ border-color:rgba(255,125,130,.18);
+ background:rgba(255,125,130,.045);
+}
+
+.control-dev-grid,
+.control-health-grid,
+.control-security-grid{
+ position:relative;
+ z-index:2;
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+}
+:is(.control-dev-grid,.control-health-grid,.control-security-grid)>article{
+ display:grid;
+ grid-template-columns:30px minmax(0,1fr);
+ grid-template-rows:auto auto auto;
+ align-items:center;
+ gap:2px 8px;
+ min-height:92px;
+ padding:11px;
+ border:1px solid rgba(255,255,255,.055);
+ border-radius:16px;
+ background:rgba(255,255,255,.019);
+}
+:is(.control-dev-grid,.control-health-grid,.control-security-grid)>article>svg{
+ grid-row:1/4;
+ width:18px;
+ height:18px;
+ color:#75cde9;
+}
+:is(.control-dev-grid,.control-health-grid,.control-security-grid)>article>span{
+ color:#698594;
+ font-size:6px;
+ font-weight:780;
+ letter-spacing:.13em;
+}
+:is(.control-dev-grid,.control-health-grid,.control-security-grid)>article>strong{
+ margin-top:2px;
+ min-width:0;
+ color:#ecf8fd;
+ font-size:11px;
+ line-height:1.2;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+:is(.control-dev-grid,.control-health-grid,.control-security-grid)>article>small{
+ margin-top:2px;
+ min-width:0;
+ color:#607681;
+ font-size:7px;
+ line-height:1.35;
+ white-space:nowrap;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+
+.control-dev-release,
+.control-health-row,
+.control-security-guard{
+ position:relative;
+ z-index:2;
+ display:flex;
+ align-items:center;
+ gap:10px;
+ margin-top:9px;
+ padding:11px 12px;
+ border:1px solid rgba(255,255,255,.05);
+ border-radius:15px;
+ background:rgba(255,255,255,.018);
+}
+.control-dev-release{justify-content:space-between}
+.control-dev-release>div,
+.control-health-row>div,
+.control-security-guard>div{display:flex;flex-direction:column;min-width:0}
+.control-dev-release span{color:#6d8794;font-size:6px;letter-spacing:.12em}
+.control-dev-release strong{margin-top:4px;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.control-dev-release>small{color:#5d7380;font-size:7px;white-space:nowrap}
+.control-health-row>svg,
+.control-security-guard>svg{flex:none;color:#75cde9}
+.control-health-row strong,
+.control-security-guard strong{font-size:9px}
+.control-health-row small,
+.control-security-guard small{margin-top:3px;color:#617782;font-size:7px;line-height:1.4}
+
+.control-dev-truth,
+.control-health-truth{
+ position:relative;
+ z-index:2;
+ display:flex;
+ align-items:flex-start;
+ gap:8px;
+ margin:10px 2px 0;
+ color:#627985;
+ font-size:7px;
+ line-height:1.5;
+}
+.control-dev-truth svg,
+.control-health-truth svg{flex:none;margin-top:1px;color:#719486}
+
+.control-module-fallback{
+ display:grid;
+ grid-template-columns:34px minmax(0,1fr) auto;
+ gap:10px;
+ align-items:center;
+ min-height:80px;
+ border-color:rgba(231,197,125,.18);
+}
+.control-module-fallback>svg{color:var(--cc-gold)}
+.control-module-fallback>div{display:flex;flex-direction:column;min-width:0}
+.control-module-fallback strong{font-size:10px}
+.control-module-fallback small{margin-top:3px;color:#6b7f89;font-size:8px;line-height:1.4}
+.control-module-fallback button{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ min-height:38px;
+ padding:0 10px;
+ border:1px solid rgba(231,197,125,.16)!important;
+ border-radius:11px;
+ color:#dec58e!important;
+ background:rgba(231,197,125,.04)!important;
+ font-size:8px!important;
+ font-weight:750!important;
+}
+
+@media (min-width:821px){
+ .control-page.is-desktop :is(.control-dev-grid,.control-health-grid,.control-security-grid){grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:380px){
+ :is(.control-dev-grid,.control-health-grid,.control-security-grid){grid-template-columns:1fr}
+ .control-dev-release{align-items:flex-start;flex-direction:column}
+}
+@media (pointer:coarse){
+ .control-module-fallback button{min-height:44px}
+}
