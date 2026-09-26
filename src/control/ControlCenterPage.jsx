@@ -1,4 +1,4 @@
-import React,{useCallback,useEffect,useMemo,useState} from 'react';
+import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {
  Activity,ArrowLeft,BellRing,CheckCircle2,ChevronRight,Cloud,Cpu,GitBranch,Gauge,
  KeyRound,Laptop,RefreshCw,Rocket,Server,ShieldCheck,Sparkles,
@@ -148,6 +148,7 @@ export default function ControlCenterPage({goTo}){
  const[reducedLocal,setReducedLocal]=useState(()=>{
   try{return localStorage.getItem('3b-command-reduced')==='1';}catch{return false;}
  });
+ const commandInputRef=useRef(null);
  const[commandText,setCommandText]=useState('');
  const[commandFeedback,setCommandFeedback]=useState('');
  const[pulse,setPulse]=useState(()=>({
@@ -198,6 +199,22 @@ export default function ControlCenterPage({goTo}){
  useEffect(()=>{
   try{localStorage.setItem('3b-command-reduced',reducedLocal?'1':'0');}catch{}
  },[reducedLocal]);
+
+ useEffect(()=>{
+  const keydown=event=>{
+   if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
+    event.preventDefault();
+    commandInputRef.current?.focus();
+    navigator.vibrate?.(5);
+   }
+   if(event.key==='Escape'&&document.activeElement===commandInputRef.current){
+    commandInputRef.current?.blur();
+    setCommandText('');
+   }
+  };
+  window.addEventListener('keydown',keydown);
+  return()=>window.removeEventListener('keydown',keydown);
+ },[]);
 
  const refresh=useCallback(async()=>{
   if(typeof navigator!=='undefined'&&navigator.onLine===false){
@@ -575,7 +592,7 @@ export default function ControlCenterPage({goTo}){
 
     <form className="control-command-bar" onSubmit={submitNaturalCommand}>
      <Zap size={18}/>
-     <input value={commandText} onChange={event=>setCommandText(event.target.value)} placeholder="Rechercher ou commander : radar, GitHub, agenda…" aria-label="Recherche et Command Palette 3B"/>
+     <input ref={commandInputRef} value={commandText} onChange={event=>setCommandText(event.target.value)} placeholder="Rechercher ou commander : radar, GitHub, agenda…" aria-label="Recherche et Command Palette 3B" aria-keyshortcuts="Control+K Meta+K"/>
      <button type="submit" disabled={!!busy}>GO</button>
     </form>
     {commandFeedback&&<p className="control-command-feedback" aria-live="polite">{commandFeedback}</p>}
