@@ -10,7 +10,6 @@ import { ecosystemPublic } from "./lib/ecosystem.js";
 import useViewportProfile from "./lib/useViewportProfile.js";
 import { useTraffic } from "./lib/useTraffic.js";
 import { captureRouteView } from "./lib/analytics.js";
-import DirectorTraffic from "./components/DirectorTraffic.jsx";
 import { useDailySecret } from "./secret/dailySecret.js";
 import SecretDirectorPanel from "./secret/SecretDirectorPanel.jsx";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
@@ -560,7 +559,7 @@ function PassportPage({ identity, syncing, goTo, options }) {
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
-      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <><DirectorTraffic /><SecretDirectorPanel /></>}
+      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <SecretDirectorPanel />}
 
       {identity && <PassportAppearanceSettings identity={identity} />}
 
