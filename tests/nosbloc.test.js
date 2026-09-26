@@ -8,8 +8,17 @@ import {
   generateBuildPlan,
   projectReadiness,
   simulateRevenue,
+  teamAgreementReady,
   validateSplits,
 } from '../src/nosbloc/model.js';
+import {
+  appendProjectVersion,
+  createInvitationCode,
+  parseStateExport,
+  prepareTeamInvitation,
+  restoreProjectVersion,
+  serializeStateExport,
+} from '../src/nosbloc/versioning.js';
 
 const read = relative => readFileSync(new URL(relative, import.meta.url), 'utf8');
 const app = read('../src/App.jsx');
@@ -93,6 +102,7 @@ test('a complete project reaches review readiness but remains private by default
     audience: '12+',
   }, 'Zakaria', 'project-1');
   project.plan = generateBuildPlan(project.description, project.type).slice(0, 4);
+  project.rights = {coreOwned: true, thirdPartyLicensed: true, ageRatingReviewed: true};
   const readiness = projectReadiness(project);
   assert.equal(readiness.score, 100);
   assert.equal(readiness.readyForReview, true);
@@ -107,6 +117,7 @@ test('discovery score rewards readiness, retention, session quality and trust', 
     description: 'Une ville méditerranéenne sociale, lisible sur téléphone, avec quartiers, missions et lieux communautaires.',
   });
   project.plan = generateBuildPlan(project.description, project.type).slice(0, 4);
+  project.rights = {coreOwned: true, thirdPartyLicensed: true, ageRatingReviewed: true};
   project.stats = {retention7: 60, sessionMinutes: 30, trustScore: 95};
   assert.equal(discoveryScore(project), 82);
 });
@@ -118,10 +129,74 @@ test('pending server schema is locked, auditable and deliberately not deployed',
   assert.match(sql, /nosbloc_creator_profiles/i);
   assert.match(sql, /nosbloc_projects/i);
   assert.match(sql, /nosbloc_project_members/i);
+  assert.match(sql, /nosbloc_project_versions/i);
+  assert.match(sql, /nosbloc_project_invitations/i);
+  assert.match(sql, /invite_secret_hash/i);
   assert.match(sql, /nosbloc_ledger_entries/i);
   assert.match(sql, /nosbloc_payout_requests/i);
   assert.match(sql, /nosbloc_fraud_signals/i);
   assert.match(sql, /10000/);
   assert.match(sql, /KYC|kyc/);
   assert.doesNotMatch(sql, /create table[^;]*(?:token|crypto)/i);
+});
+
+
+test('review submission creates an immutable version and restoration returns a private draft', () => {
+  const project = createProject({
+    title: 'Bloc Ville test',
+    type: 'world',
+    description: 'Une ville test assez détaillée pour vérifier les versions immuables et la restauration privée.',
+  }, 'Zakaria', 'project-version');
+  project.plan = generateBuildPlan(project.description, project.type).slice(0, 4);
+  project.rights = {coreOwned: true, thirdPartyLicensed: true, ageRatingReviewed: true};
+  const submitted = appendProjectVersion(project, {stage: 'review', note: 'Révision 1', id: 'review-1', createdAt: '2026-09-26T00:00:00.000Z'});
+  assert.equal(submitted.project.status, 'review');
+  assert.equal(submitted.project.visibility, 'private');
+  assert.equal(submitted.project.reviewVersionId, 'review-1');
+  const immutableTitle = submitted.version.snapshot.title;
+  submitted.project.title = 'Brouillon modifié ensuite';
+  assert.equal(submitted.version.snapshot.title, immutableTitle);
+
+  const restored = restoreProjectVersion(submitted.project, 'review-1');
+  assert.equal(restored.title, 'Bloc Ville test');
+  assert.equal(restored.status, 'draft');
+  assert.equal(restored.visibility, 'private');
+  assert.equal(restored.reviewVersionId, null);
+  assert.equal(restored.versions.length, 1);
+});
+
+test('Nosbloc archive detects tampering and restores a verified state', () => {
+  const project = createProject({title: 'Archive fiable', description: 'Projet complet destiné à tester une archive locale signée par empreinte.'}, 'Zakaria', 'archive-project');
+  const state = {version: 2, profile: {studioName: 'Studio 3B'}, projects: [project], marketplace: [], updatedAt: '2026-09-26T00:00:00.000Z'};
+  const exported = serializeStateExport(state);
+  const restored = parseStateExport(exported, {studioName: 'Studio 3B'});
+  assert.equal(restored.projects[0].id, 'archive-project');
+  const tampered = exported.replace('Archive fiable', 'Archive falsifiée');
+  assert.throws(() => parseStateExport(tampered), /modifiée|endommagée/);
+});
+
+test('team invitations are local preparations and block review until server acceptance', () => {
+  const project = createProject({title: 'Équipe 3B', description: 'Projet de collaboration suffisamment détaillé pour tester les accords d’équipe.'}, 'Zakaria', 'team-project');
+  project.plan = generateBuildPlan(project.description, project.type).slice(0, 4);
+  project.rights = {coreOwned: true, thirdPartyLicensed: true, ageRatingReviewed: true};
+  project.splits = [
+    {...project.splits[0], shareBps: 6000},
+    {id: 'member-2', name: 'Lina', role: '3D', contact: '@lina', shareBps: 4000, status: 'draft'},
+  ];
+  const invited = prepareTeamInvitation(project, 'member-2', '@lina');
+  const row = invited.splits.find(member => member.id === 'member-2');
+  assert.match(row.inviteCode, /^NB3B-[0-9A-F]{4}-[0-9A-F]{4}$/);
+  assert.equal(row.status, 'invited');
+  assert.equal(teamAgreementReady(invited.splits), false);
+  assert.equal(projectReadiness(invited).readyForReview, false);
+  assert.match(createInvitationCode('p', 'm', 'fixed'), /^NB3B-/);
+});
+
+test('Nosbloc UI exposes recovery, immutable versions and prepared invitations without public approval', () => {
+  assert.match(nosbloc, /Exporter l’archive/);
+  assert.match(nosbloc, /last-good/);
+  assert.match(nosbloc, /VERSION FIGÉE/);
+  assert.match(nosbloc, /Restaurer comme brouillon/);
+  assert.match(nosbloc, /Invitation locale préparée/);
+  assert.doesNotMatch(nosbloc, /Approuver et publier|Publier maintenant/);
 });

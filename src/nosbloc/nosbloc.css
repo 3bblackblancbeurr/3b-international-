@@ -565,3 +565,26 @@
   .nosbloc-city-locks{display:grid}
   .nosbloc-city-locks span{width:100%}
 }
+
+
+/* NOSBLOC V2 · VERSIONING & RECOVERY */
+.nosbloc-hidden-input{position:fixed!important;left:-10000px!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important}
+.nosbloc-backup-panel{background:linear-gradient(145deg,rgba(18,31,43,.96),rgba(7,12,18,.98))!important;border-color:rgba(99,217,255,.24)!important}
+.nosbloc-backup-actions,.nosbloc-review-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.nosbloc-backup-actions button,.nosbloc-review-actions button{flex:1 1 190px;justify-content:center}
+.nosbloc-rights{border-color:rgba(216,184,111,.28)!important;background:rgba(216,184,111,.04)}
+.nosbloc-versions-layout{align-items:start}
+.nosbloc-version-list{display:grid;gap:12px;max-height:680px;overflow:auto;padding-right:4px}
+.nosbloc-version-list article{display:grid;gap:9px;padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:rgba(3,8,13,.66)}
+.nosbloc-version-list article[data-stage="review"]{border-color:rgba(99,217,255,.38);box-shadow:inset 0 0 28px rgba(45,186,255,.06)}
+.nosbloc-version-list article>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.nosbloc-version-list article>div:first-child span{display:grid;place-items:center;min-width:42px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--nb-gold-soft),var(--nb-gold));color:#061018;font-weight:900}
+.nosbloc-version-list article>div:first-child b{color:var(--nb-blue-soft,#9ae8ff);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}
+.nosbloc-version-list h3,.nosbloc-version-list p{margin:0}.nosbloc-version-list p{color:var(--nb-muted)}
+.nosbloc-version-list small{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#8fa7b8;word-break:break-word}
+.nosbloc-version-review{display:flex;align-items:center;gap:7px;color:#9cf3ca;font-size:.8rem}
+.nosbloc-split-identity{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.nosbloc-invite-actions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.nosbloc-invite-actions code{padding:7px 9px;border:1px solid rgba(99,217,255,.28);border-radius:8px;background:#050b11;color:#9ae8ff;font-size:.72rem;letter-spacing:.06em}
+.nosbloc-invite-actions>button:not(.nosbloc-secondary):not(.nosbloc-icon-danger){display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid rgba(255,255,255,.12);border-radius:9px;background:#111c27;color:#fff;cursor:pointer}
+@media(max-width:760px){.nosbloc-split-identity{grid-template-columns:1fr!important}.nosbloc-backup-actions,.nosbloc-review-actions{display:grid}.nosbloc-version-list{max-height:none}.nosbloc-invite-actions{justify-content:flex-start}}

@@ -85,3 +85,14 @@ Discover, r?compenses cr?ateurs, abonnements et paiements automatis?s avec contr
 - Aucun cr?ateur n?est pay? avant v?rification et acceptation du partage.
 - Aucun asset n?est public sans droits attest?s et r?vision.
 - Mobile, accessibilit?, stabilit? et s?curit? font partie de la d?finition de ? termin? ?.
+
+
+## Renforcement V2 local-first — 26 septembre 2026
+
+- Chaque écriture locale conserve désormais un état `last-good` séparé du brouillon principal.
+- Une archive JSON complète peut être exportée puis restaurée ; son empreinte refuse les fichiers modifiés ou endommagés.
+- Un projet peut créer jusqu’à vingt versions figées. Une restauration recrée toujours un brouillon privé sans altérer la version source.
+- Une demande de révision crée automatiquement une version immuable distincte du brouillon vivant.
+- La révision exige désormais les attestations de droits, la classification relue, un partage total de 100 % et tous les accords d’équipe acceptés.
+- Les invitations d’équipe locales peuvent être préparées, copiées et révoquées, mais elles ne valent jamais signature. L’acceptation restera serveur.
+- Le schéma serveur en attente prévoit des versions immuables et des invitations stockées uniquement sous forme de hachage ; il reste hors production et se termine toujours par `ROLLBACK`.

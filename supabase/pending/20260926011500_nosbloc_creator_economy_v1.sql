@@ -49,6 +49,47 @@ create table if not exists public.nosbloc_projects (
 create index if not exists nosbloc_projects_owner_status_idx
   on public.nosbloc_projects(owner_id,status,updated_at desc);
 
+create table if not exists public.nosbloc_project_versions (
+  version_id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.nosbloc_projects(project_id) on delete cascade,
+  version_no integer not null check (version_no > 0),
+  stage text not null check (stage in ('checkpoint','review','approved','published')),
+  snapshot jsonb not null check (jsonb_typeof(snapshot) = 'object' and pg_column_size(snapshot) <= 1048576),
+  snapshot_hash text not null check (char_length(snapshot_hash) between 16 and 128),
+  note text not null default '' check (char_length(note) <= 160),
+  created_by uuid not null references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  unique(project_id,version_no),
+  unique(project_id,snapshot_hash)
+);
+
+create index if not exists nosbloc_project_versions_project_idx
+  on public.nosbloc_project_versions(project_id,version_no desc);
+
+create table if not exists public.nosbloc_project_invitations (
+  invitation_id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references public.nosbloc_projects(project_id) on delete cascade,
+  invited_user_id uuid references auth.users(id) on delete cascade,
+  recipient_hint text check (char_length(recipient_hint) <= 120),
+  role_name text not null check (char_length(role_name) between 2 and 50),
+  share_bps integer not null check (share_bps between 0 and 10000),
+  invite_secret_hash text not null unique check (char_length(invite_secret_hash) between 32 and 128),
+  status text not null default 'invited' check (status in ('invited','accepted','declined','revoked','expired')),
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  revoked_at timestamptz,
+  created_by uuid not null references auth.users(id) on delete restrict,
+  created_at timestamptz not null default now(),
+  check (expires_at > created_at)
+);
+
+create index if not exists nosbloc_project_invitations_project_idx
+  on public.nosbloc_project_invitations(project_id,status,created_at desc);
+
+alter table public.nosbloc_project_versions enable row level security;
+alter table public.nosbloc_project_invitations enable row level security;
+revoke all on public.nosbloc_project_versions,public.nosbloc_project_invitations from anon,authenticated;
+
 create table if not exists public.nosbloc_project_members (
   project_id uuid not null references public.nosbloc_projects(project_id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete restrict,

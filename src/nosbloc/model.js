@@ -1,4 +1,4 @@
-export const NOSBLOC_STORAGE_VERSION = 1;
+export const NOSBLOC_STORAGE_VERSION = 2;
 export const NOSBLOC_STORAGE_KEY = "threeb:nosbloc:v1";
 
 export const PROJECT_TYPES = Object.freeze([
@@ -74,15 +74,28 @@ export function simulateRevenue({
 
 export function normalizeSplits(rows = []) {
   const clean = Array.isArray(rows) ? rows : [];
+  const allowedStatuses = new Set(["owner", "draft", "invited", "accepted", "declined", "revoked"]);
   return clean
-    .map((row, index) => ({
-      id: String(row?.id || `member-${index + 1}`),
-      name: String(row?.name || "").trim().slice(0, 50),
-      role: String(row?.role || "Création").trim().slice(0, 50),
-      shareBps: Math.max(0, Math.min(10000, round(row?.shareBps))),
-      status: ["owner", "draft", "accepted"].includes(row?.status) ? row.status : "draft",
-    }))
+    .map((row, index) => {
+      const status = allowedStatuses.has(row?.status) ? row.status : "draft";
+      return {
+        id: String(row?.id || `member-${index + 1}`),
+        name: String(row?.name || "").trim().slice(0, 50),
+        role: String(row?.role || "Création").trim().slice(0, 50),
+        contact: String(row?.contact || "").trim().slice(0, 120),
+        shareBps: Math.max(0, Math.min(10000, round(row?.shareBps))),
+        status,
+        inviteCode: status === "invited" ? String(row?.inviteCode || "").trim().slice(0, 32) : "",
+        invitedAt: status === "invited" ? String(row?.invitedAt || "") : "",
+        acceptedAt: status === "accepted" ? String(row?.acceptedAt || "") : "",
+      };
+    })
     .filter(row => row.name);
+}
+
+export function teamAgreementReady(rows = []) {
+  const splits = normalizeSplits(rows);
+  return splits.length > 0 && splits.every(row => row.status === "owner" || row.status === "accepted");
 }
 
 export function validateSplits(rows = []) {
@@ -138,27 +151,43 @@ export function createProject(input = {}, ownerName = "Fondateur 3B", id) {
     updatedAt: createdAt,
     platforms: { mobile: true, web: true, pc: false },
     safety: { moderation: true, cosmeticFirst: true, ageGate: "Tout public" },
-    splits: [{ id: "owner", name: ownerName, role: "Direction", shareBps: 10000, status: "owner" }],
+    rights: { coreOwned: false, thirdPartyLicensed: false, ageRatingReviewed: false },
+    splits: [{ id: "owner", name: ownerName, role: "Direction", contact: "", shareBps: 10000, status: "owner" }],
     plan: [],
     licensedAssets: [],
+    versions: [],
+    reviewVersionId: null,
+    restoredFromVersionId: null,
     stats: { players: 0, retention7: 0, sessionMinutes: 0, trustScore: 100 },
   };
 }
 
 export function projectReadiness(project = {}) {
   const split = validateSplits(project.splits);
+  const teamReady = teamAgreementReady(project.splits);
+  const rightsReady = project.rights?.coreOwned === true
+    && project.rights?.thirdPartyLicensed === true
+    && project.rights?.ageRatingReviewed === true;
   const checks = [
-    { id: "identity", label: "Nom du projet", weight: 15, ok: String(project.title || "").trim().length >= 3 },
+    { id: "identity", label: "Nom du projet", weight: 10, ok: String(project.title || "").trim().length >= 3 },
     { id: "brief", label: "Description claire", weight: 15, ok: String(project.description || "").trim().length >= 40 },
-    { id: "template", label: "Format choisi", weight: 10, ok: Boolean(project.template) },
-    { id: "audience", label: "Public défini", weight: 10, ok: Boolean(project.audience) },
+    { id: "template", label: "Format choisi", weight: 5, ok: Boolean(project.template) },
+    { id: "audience", label: "Public défini", weight: 5, ok: Boolean(project.audience) },
     { id: "mobile", label: "Mobile ou web activé", weight: 10, ok: Boolean(project.platforms?.mobile || project.platforms?.web) },
-    { id: "safety", label: "Modération activée", weight: 15, ok: project.safety?.moderation === true },
-    { id: "splits", label: "Partage à 100 %", weight: 15, ok: split.valid },
-    { id: "plan", label: "Plan de production", weight: 10, ok: Array.isArray(project.plan) && project.plan.length >= 4 },
+    { id: "safety", label: "Modération activée", weight: 10, ok: project.safety?.moderation === true },
+    { id: "rights", label: "Droits et classification attestés", weight: 15, ok: rightsReady },
+    { id: "splits", label: "Partage à 100 %", weight: 10, ok: split.valid },
+    { id: "team", label: "Accords d’équipe acceptés", weight: 5, ok: teamReady },
+    { id: "plan", label: "Plan de production", weight: 15, ok: Array.isArray(project.plan) && project.plan.length >= 4 },
   ];
   const score = checks.reduce((sum, check) => sum + (check.ok ? check.weight : 0), 0);
-  return { score, checks, readyForReview: score >= 80 && split.valid };
+  return {
+    score,
+    checks,
+    rightsReady,
+    teamReady,
+    readyForReview: score >= 80 && split.valid && rightsReady && teamReady,
+  };
 }
 
 export function discoveryScore(project = {}) {
@@ -211,7 +240,22 @@ export function normalizeState(input, profile = {}) {
   const fallback = createEmptyState(profile);
   if (!input || typeof input !== "object") return fallback;
   const projects = Array.isArray(input.projects)
-    ? input.projects.filter(project => project && typeof project === "object").slice(0, 40)
+    ? input.projects
+      .filter(project => project && typeof project === "object")
+      .slice(0, 40)
+      .map(project => ({
+        ...project,
+        rights: {
+          coreOwned: false,
+          thirdPartyLicensed: false,
+          ageRatingReviewed: false,
+          ...(project.rights || {}),
+        },
+        splits: normalizeSplits(project.splits),
+        versions: Array.isArray(project.versions) ? project.versions.slice(-20) : [],
+        reviewVersionId: project.reviewVersionId || null,
+        restoredFromVersionId: project.restoredFromVersionId || null,
+      }))
     : [];
   return {
     ...fallback,
