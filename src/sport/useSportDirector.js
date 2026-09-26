@@ -41,7 +41,10 @@ export default function useSportDirector({sourceId,playerMeta,mediaConsent,onCon
  const mountedRef=useRef(true);
 
  useEffect(()=>{callbackRef.current=onConfirmedFinished;},[onConfirmedFinished]);
- useEffect(()=>()=>{mountedRef.current=false;},[]);
+ useEffect(()=>{
+  mountedRef.current=true;
+  return()=>{mountedRef.current=false;};
+ },[]);
 
  const refresh=useCallback(signal=>{
   if(snapshotRequestRef.current)return snapshotRequestRef.current;
