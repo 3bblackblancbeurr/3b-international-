@@ -472,7 +472,7 @@ function SportMediaPlayer({item,consent,onConsent,cinema,onCinema,onNext,onRefre
   <div className="sport-media-controls">
    <div className="sport-media-details">
     <span>{item.badge||item.sport}</span>
-    <strong>{item.title}</strong>
+    <strong>{source?.mode==='live'&&source?.title?source.title:item.title}</strong>
     <small>{statusMessage||source?.provider||item.provider}</small>
     {consent&&trusted&&<div className={'sport-media-health state-'+playerState} aria-live="polite">
      <span className="sport-media-health-dot"/>
@@ -654,7 +654,7 @@ export default function SportPage({goTo}){
  const activeChallenges=entries.filter(entry=>['joined','eligible','submitted'].includes(entry.status)).length;
  const verifiedChallenges=entries.filter(entry=>entry.status==='verified').length;
  const finalSports=useMemo(()=>['Tous',...new Set(SPORT_FINALS.map(item=>item.sport))],[]);
- const filteredFinals=useMemo(()=>finalSport==='Tous'?SPORT_FINALS:SPORT_FINALS.filter(item=>item.sport===finalSport),[finalSport]);
+ const filteredFinals=useMemo(()=>[...(finalSport==='Tous'?SPORT_FINALS:SPORT_FINALS.filter(item=>item.sport===finalSport))].sort((a,b)=>Number(b.year)-Number(a.year)),[finalSport]);
  const mediaList=section==='h24'?H24_CHANNELS:filteredFinals;
  const mediaId=section==='h24'?h24Id:finalId;
  const selectedProfile=H24_CHANNELS.find(item=>item.id===h24Id)||H24_CHANNELS[0];
@@ -666,6 +666,15 @@ export default function SportPage({goTo}){
   'h24-tennis':'Tennis'
  }[h24Id]||'';
  const liveSources=profileSport?allLiveSources.filter(source=>source.sport===profileSport):allLiveSources;
+ const liveCountForProfile=id=>{
+  const target={
+   'h24-foot':'Football',
+   'h24-basket':'Basket',
+   'h24-rugby':'Rugby',
+   'h24-tennis':'Tennis'
+  }[id]||'';
+  return target?allLiveSources.filter(source=>source.sport===target).length:allLiveSources.length;
+ };
  const liveMessage=liveMeta.error==='live_discovery_not_configured'
   ?'Le moteur de direct est prêt, mais sa clé serveur YouTube n’est pas encore configurée.'
   :liveMeta.loading?'Recherche mondiale d’un match réellement en cours…'
@@ -816,7 +825,9 @@ export default function SportPage({goTo}){
      <span className="sport-media-card-tag">{item.badge||item.year} · {item.sport}</span>
      <strong>{item.title}</strong>
      <p>{item.description||item.subtitle}</p>
-     <small>{item.provider} · {mediaSources(item).length} source{mediaSources(item).length>1?'s':''} sécurisée{mediaSources(item).length>1?'s':''} · lecture interne 3B</small>
+     <small>{section==='h24'
+      ?item.provider+' · '+liveCountForProfile(item.id)+' direct'+(liveCountForProfile(item.id)>1?'s':'')+' vérifié'+(liveCountForProfile(item.id)>1?'s':'')+' · lecture interne 3B'
+      :item.provider+' · '+mediaSources(item).length+' source'+(mediaSources(item).length>1?'s':'')+' sécurisée'+(mediaSources(item).length>1?'s':'')+' · lecture interne 3B'}</small>
     </button>)}
    </div>
 
