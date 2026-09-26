@@ -1,0 +1,184 @@
+{
+  "version": "2026-09-26.1",
+  "principle": "One account, one Passport 3B, one authoritative server state per domain.",
+  "phases": [
+    {
+      "id": "P0",
+      "issue": 304,
+      "name": "Foundation",
+      "status": "in_progress",
+      "dependsOn": [],
+      "gates": [
+        "ci_green",
+        "migration_integrity",
+        "security_review",
+        "backup_restore",
+        "offline_safety",
+        "bundle_budget",
+        "release_rollback",
+        "samsung_real"
+      ]
+    },
+    {
+      "id": "P1",
+      "issue": 305,
+      "name": "Passport Identity",
+      "status": "in_progress",
+      "dependsOn": [
+        "P0"
+      ],
+      "gates": [
+        "opaque_public_id",
+        "qr_one_time",
+        "revocation",
+        "device_sessions",
+        "passkey_domain",
+        "passkeys_enabled",
+        "relying_party_sandbox",
+        "ab_account_isolation"
+      ]
+    },
+    {
+      "id": "P2",
+      "issue": 306,
+      "name": "Hub + France Gold Master",
+      "status": "in_progress",
+      "dependsOn": [
+        "P0",
+        "P1"
+      ],
+      "gates": [
+        "hub_void_mastery",
+        "final_assets",
+        "vfx_water_light",
+        "npc_audio",
+        "celiane",
+        "quest_combat",
+        "hub_france_fragment_return",
+        "mobile_runtime"
+      ]
+    },
+    {
+      "id": "P3",
+      "issue": 307,
+      "name": "Seven Realm Industrialization",
+      "status": "blocked_by_P2",
+      "dependsOn": [
+        "P2"
+      ],
+      "gates": [
+        "france_reference_green",
+        "seven_realm_parity"
+      ]
+    },
+    {
+      "id": "P4",
+      "issue": 315,
+      "name": "Ecosystem",
+      "status": "in_progress",
+      "dependsOn": [
+        "P0",
+        "P1"
+      ],
+      "gates": [
+        "nosbloc_rebase",
+        "city_server_save",
+        "games_shared_passport",
+        "shop_gate",
+        "sport_internal_media",
+        "religion_sources",
+        "community_moderation"
+      ]
+    },
+    {
+      "id": "P5",
+      "issue": 316,
+      "name": "Production",
+      "status": "blocked_by_physical_gates",
+      "dependsOn": [
+        "P0",
+        "P1",
+        "P2",
+        "P4"
+      ],
+      "gates": [
+        "permanent_domain",
+        "leaked_password_protection",
+        "samsung_real",
+        "network_transitions",
+        "pwa_android",
+        "monitoring",
+        "rollback_staging"
+      ]
+    }
+  ],
+  "identity": {
+    "canonicalTable": "public.member_profiles",
+    "publicId": "passport_public_id",
+    "authIdPrivate": true,
+    "externalDefaultScopes": [
+      "passport.basic",
+      "profile.public"
+    ],
+    "noGlobalScope": true
+  },
+  "domains": {
+    "progression": {
+      "authority": "server",
+      "includes": [
+        "XP",
+        "Coins",
+        "Inventory"
+      ]
+    },
+    "world": {
+      "authority": "server",
+      "includes": [
+        "Hub",
+        "8 Realms",
+        "MA VILLE"
+      ]
+    },
+    "creation": {
+      "authority": "Nosbloc server",
+      "includes": [
+        "Projects",
+        "Versions",
+        "Moderation"
+      ]
+    },
+    "games": {
+      "authority": "shared account + game server",
+      "includes": [
+        "Power 3B",
+        "DADA 3B",
+        "Penalty Rush",
+        "Course des clés"
+      ]
+    },
+    "business": {
+      "authority": "commerce backend",
+      "includes": [
+        "Boutique",
+        "Textile"
+      ]
+    },
+    "editorial": {
+      "authority": "3B application",
+      "includes": [
+        "Sport",
+        "Religion",
+        "Manga",
+        "Community"
+      ]
+    }
+  },
+  "hardBlockers": [
+    "Desktop Commander monthly quota / local PC unavailable for Unreal-Blender execution",
+    "Physical Samsung validation",
+    "Permanent 3B WebAuthn relying-party domain decision",
+    "Supabase leaked-password protection requires Auth configuration outside current connector",
+    "Two real staging accounts for A/B isolation",
+    "Nosbloc #314 conflicts/divergence must be resolved on current main"
+  ]
+}

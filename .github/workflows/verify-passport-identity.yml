@@ -1,0 +1,27 @@
+name: Verify Passport 3B Identity
+
+on:
+  pull_request:
+    paths:
+      - 'src/passport/**'
+      - 'tests/passport-*.test.js'
+      - 'supabase/migrations/**passport**'
+      - 'docs/PASSPORT_3B_IDENTITY_ARCHITECTURE_VNEXT.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  passport-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/passport-*.test.js
+      - run: npm run build

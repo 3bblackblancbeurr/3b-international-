@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import PassportNexus from "./PassportNexus.jsx";
 import PublicIdentityBadge from "./PublicIdentityBadge.jsx";
 import { PassportPortrait } from "../passport/PassportAppearance.jsx";
+import PassportVerification from "../passport/PassportVerification.jsx";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   left: `${(column + 0.25) * 100 / 58}%`,
@@ -25,6 +26,7 @@ const CIRCUITS = [
 ];
 
 const formatNumber = value => new Intl.NumberFormat("fr-FR").format(Number(value) || 0);
+const formatDate = value => value ? new Date(value).toLocaleDateString("fr-FR") : "—";
 
 export default function PassportVisual({ options, identity, goTo, syncing = false }) {
   const id = useId().replaceAll(":", "");
@@ -58,8 +60,11 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
   const animated = motionAllowed && visible && !portalOpen;
   const active = !!identity?.userId;
-  const status = syncing ? "SYNCHRONISATION" : active ? "IDENTITÉ VÉRIFIÉE" : "À ACTIVER";
-  const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
+  const passportState = identity?.passportState || (active ? "active" : "pending");
+  const presentable = active && passportState === "active";
+  const stateLabel = passportState === "revoked" ? "RÉVOQUÉ" : passportState === "suspended" ? "SUSPENDU" : presentable ? "ACTIF" : "À ACTIVER";
+  const status = syncing ? "SYNCHRONISATION" : presentable ? "PASSEPORT ACTIF" : stateLabel;
+  const openPassport = () => presentable ? setPortalOpen(true) : goTo?.("member");
 
   return <div ref={visual} className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
     <div className="passport-horizontal-view">
@@ -120,12 +125,13 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
         <div className="passport-id-block">
           <span className="passport-data-label">IDENTIFIANT PASSEPORT</span>
           <code>{active ? identity.passportId : "3B-PASS-À-ACTIVER"}</code>
+          {active && <small>Émis le {formatDate(identity.passportIssuedAt)} · v{identity.passportVersion || 2}</small>}
         </div>
 
         <div className="passport-progress-strip">
           <span><small>XP 3B</small><b>{active ? formatNumber(identity.xp) : "0"}</b></span>
           <span><small>FIDÉLITÉ</small><b>{active ? formatNumber(identity.points) : "0"}</b></span>
-          <span><small>STATUT</small><b>{active ? "ACTIF" : "INVITÉ"}</b></span>
+          <span><small>STATUT</small><b>{active ? stateLabel : "INVITÉ"}</b></span>
         </div>
       </section>
 
@@ -138,9 +144,10 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
       </button>
     </div>
     </div>
+    {active && <PassportVerification identity={identity}/>} 
     </div>
 
 
-    {active && <PassportNexus key={identity.userId} open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />}
+    {presentable && <PassportNexus key={identity.userId} open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />}
   </div>;
 }

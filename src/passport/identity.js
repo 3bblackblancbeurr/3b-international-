@@ -14,23 +14,46 @@ const safeNumber = value => {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : 0;
 };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function publicPassportNumber(publicId) {
+  const value = cleanText(publicId, 64).toLowerCase();
+  if (!UUID.test(value)) return '3B-PASS-PENDING';
+  return '3B-PASS-' + value.replaceAll('-', '').slice(0, 16).toUpperCase();
+}
+
+export function publicMemberNumber(publicId) {
+  const value = cleanText(publicId, 64).toLowerCase();
+  if (!UUID.test(value)) return '3B-MEM-PENDING';
+  return '3B-MEM-' + value.replaceAll('-', '').slice(0, 12).toUpperCase();
+}
 
 export function passportFromProfile(profile, user = null) {
   if (!profile || typeof profile !== 'object' || !profile.user_id) return null;
   if (user?.id && profile.user_id !== user.id) return null;
-
   if (!Object.hasOwn(PASSPORT_COUNTRIES, profile.country)) return null;
+
   const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
-  const canonicalId = userId.toUpperCase();
+  const publicId = UUID.test(cleanText(profile.passport_public_id, 64))
+    ? cleanText(profile.passport_public_id, 64).toLowerCase()
+    : null;
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
+  const passportState = ['active','suspended','revoked'].includes(profile.passport_state)
+    ? profile.passport_state
+    : 'active';
+  const passportVersion = Math.max(2, Math.min(20, Number(profile.passport_version) || 2));
 
   return Object.freeze({
     userId,
-    passportId: `3B-PASS-${canonicalId}`,
-    memberId: `3B-MEM-${canonicalId}`,
+    passportPublicId: publicId,
+    passportId: publicPassportNumber(publicId),
+    memberId: publicMemberNumber(publicId),
+    passportState,
+    passportVersion,
+    passportIssuedAt: profile.passport_issued_at || profile.created_at || null,
     name,
     handle,
     country,

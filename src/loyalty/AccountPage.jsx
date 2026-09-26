@@ -13,6 +13,7 @@ import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
 import TurnstileField from './TurnstileField.jsx';
+import AccountSecurityPanel from './AccountSecurityPanel.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
 
@@ -189,7 +190,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <p><ShieldCheck size={16}/> Compte synchronisé en ligne</p>
      <p>{realEmail?<>E-mail {emailVerified?'vérifié':'en attente'} · {realEmail}</>:<>Compte historique 3B · récupération par clé active</>}</p>
      <p>{profile.country} · Depuis le {new Date(profile.created_at).toLocaleDateString('fr-FR')}</p>
-     <p className="account-id">N° membre : {profile.user_id.toUpperCase()}</p>
+     <p className="account-id">N° membre : {account.passport?.memberId||'3B-MEM-PENDING'}</p>
      <button className="loyalty-primary" onClick={()=>goTo('loyalty')}>Mes cartes et avantages <ArrowUpRight size={16}/></button>
      <button onClick={()=>goTo('games')}>Jouer et gagner de l’XP</button>
      <button onClick={()=>goTo('passport')}>Voir mon passeport</button>
@@ -211,6 +212,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    </section>
 
    {account.passport&&<PassportAppearanceSettings identity={account.passport} compact/>}
+   <AccountSecurityPanel/>
   </>
   :<div className="account-entry">
    <div className="account-form-panel">
