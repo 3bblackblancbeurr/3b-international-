@@ -958,6 +958,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
   function desktopPointerDown(event) {
     if (!desktop || state.status === 'finished') return;
+    if (event.target instanceof Element && event.target.closest('button, a, input, select, textarea')) return;
     updateDesktopAim(event);
     if (event.button === 2) {
       event.preventDefault();
