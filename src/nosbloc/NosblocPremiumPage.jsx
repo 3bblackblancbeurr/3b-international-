@@ -410,6 +410,7 @@ export default function NosblocPremiumPage({ goTo }) {
         {view === "activity" && <ActivityView
           state={state}
           serverSnapshot={nosblocServer.snapshot}
+          finance={nosblocServer.finance}
           onInvitationDecision={decideInvitation}
           onModerate={moderateCase}
         />}
@@ -750,15 +751,77 @@ function WizardActions({ back, next, nextLabel = "Continuer", disabled }) {
   return <div className="nb2-wizard-actions">{back && <button className="secondary" onClick={back}><ArrowLeft size={16}/> Retour</button>}<button className="primary" disabled={disabled} onClick={next}>{nextLabel}<ArrowRight size={16}/></button></div>;
 }
 
-function ActivityView({ state }) {
-  const rows = state.activity || [];
-  return <div className="nb2-view"><section className="nb2-page-head"><p className="nb2-kicker">ACTIVITÉ</p><h1>Tout au même endroit.</h1><p>Projets, sécurité, ventes, paiements et modération utilisent une seule boîte.</p></section>
-    <div className="nb2-filter-row"><button data-active>Tout</button><button>Projets</button><button>Ventes</button><button>Sécurité</button><button>Modération</button></div>
-    {!rows.length ? <EmptyState icon={Activity} title="Aucune activité récente." text="Tes actions importantes apparaîtront ici."/> :
-      <div className="nb2-activity-list">{rows.map(row => <article key={row.id}><span><Activity size={17}/></span><div><b>{row.title}</b><p>{row.detail}</p><small>{new Date(row.createdAt).toLocaleString("fr-FR")}</small></div></article>)}</div>}
+function ActivityView({ state, serverSnapshot, finance, onInvitationDecision, onModerate }) {
+  const [filter, setFilter] = useState("all");
+  const filters = [["all","Tout"],["projects","Projets"],["sales","Ventes"],["security","Sécurité"],["moderation","Modération"]];
+  const localRows = (state.activity || []).map(row => ({
+    ...row,
+    source:"local",
+    category: row.type === "review" ? "moderation" : row.type === "security" ? "security" : "projects",
+  }));
+  const serverRows = (serverSnapshot?.activity || []).map(row => {
+    const type = String(row.type || "");
+    const category = type.includes("moderation") ? "moderation"
+      : type.includes("product") || type.includes("payout") || type.includes("refund") ? "sales"
+      : type.includes("security") ? "security" : "projects";
+    return {
+      id:"server-" + row.id,
+      type,
+      title:type.replaceAll("_"," ").replace(/\b\w/g, letter => letter.toUpperCase()),
+      detail:row.detail || "Événement serveur Nosbloc",
+      createdAt:row.createdAt,
+      category,
+      source:"server",
+    };
+  });
+  const financeRows = [
+    ...(finance?.sales || []).map(row => ({
+      id:"sale-" + row.id, type:"sale", title:"Vente Nosbloc", detail:formatEuros(row.grossAmountCents) + " · " + row.status,
+      createdAt:row.createdAt, category:"sales", source:"server",
+    })),
+    ...(finance?.refunds || []).map(row => ({
+      id:"refund-" + row.id, type:"refund", title:"Remboursement", detail:formatEuros(row.amountCents) + " · " + row.status,
+      createdAt:row.createdAt, category:"sales", source:"server",
+    })),
+    ...(finance?.payoutRequests || []).map(row => ({
+      id:"payout-" + row.id, type:"payout", title:"Versement créateur", detail:formatEuros(row.amountCents) + " · " + row.status,
+      createdAt:row.requestedAt, category:"sales", source:"server",
+    })),
+  ];
+  const rows = [...localRows,...serverRows,...financeRows]
+    .filter(row => filter === "all" || row.category === filter)
+    .sort((a,b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")))
+    .slice(0,120);
+  const invitations = serverSnapshot?.incomingInvitations || [];
+  const moderation = serverSnapshot?.moderationQueue || [];
+
+  return <div className="nb2-view">
+    <section className="nb2-page-head"><p className="nb2-kicker">ACTIVITÉ</p><h1>Tout au même endroit.</h1><p>Projets, sécurité, ventes, paiements et modération utilisent une seule boîte.</p></section>
+    <div className="nb2-filter-row">{filters.map(([id,label]) => <button key={id} data-active={filter === id} onClick={() => setFilter(id)}>{label}</button>)}</div>
+
+    {(filter === "all" || filter === "projects") && invitations.length > 0 && <section className="nb2-section">
+      <SectionTitle eyebrow="INVITATIONS" title="Projets qui t’attendent"/>
+      <div className="nb2-activity-list">{invitations.map(invite => <article key={invite.invitationId}>
+        <span><Mail size={17}/></span>
+        <div><b>{invite.projectTitle}</b><p>{invite.role} · {Number(invite.shareBps || 0) / 100} %</p><small>Expire le {new Date(invite.expiresAt).toLocaleDateString("fr-FR")}</small></div>
+        <div className="nb2-activity-actions"><button onClick={() => onInvitationDecision(invite.invitationId,true)}><Check size={15}/> Accepter</button><button onClick={() => onInvitationDecision(invite.invitationId,false)}><X size={15}/> Refuser</button></div>
+      </article>)}</div>
+    </section>}
+
+    {(filter === "all" || filter === "moderation") && serverSnapshot?.isModerator && moderation.length > 0 && <section className="nb2-section">
+      <SectionTitle eyebrow="MODÉRATION" title="Validation humaine requise"/>
+      <div className="nb2-activity-list">{moderation.map(item => <article key={item.caseId}>
+        <span><ShieldCheck size={17}/></span>
+        <div><b>{item.projectTitle}</b><p>Version soumise à la vérification Nosbloc.</p><small>{new Date(item.createdAt).toLocaleString("fr-FR")}</small></div>
+        <div className="nb2-activity-actions"><button onClick={() => onModerate(item.caseId,"approved")}><Check size={15}/> Approuver</button><button onClick={() => onModerate(item.caseId,"rejected")}><X size={15}/> Corriger</button></div>
+      </article>)}</div>
+    </section>}
+
+    {!rows.length && !invitations.length && !moderation.length
+      ? <EmptyState icon={Activity} title="Aucune activité récente." text="Tes actions importantes apparaîtront ici."/>
+      : <div className="nb2-activity-list">{rows.map(row => <article key={row.id}><span><Activity size={17}/></span><div><b>{row.title}</b><p>{row.detail}</p><small>{row.createdAt ? new Date(row.createdAt).toLocaleString("fr-FR") : "Maintenant"} · {row.source === "server" ? "serveur" : "local"}</small></div></article>)}</div>}
   </div>;
 }
-
 function ProfileView({ state, account, setCityOpen, onExport, onImport }) {
   const money = moneyState(account);
   return <div className="nb2-view">
