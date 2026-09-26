@@ -54,7 +54,7 @@ test('live discovery requires a real ongoing embeddable sports broadcast with bo
 });
 
 test('Finals keep full official matches and official fallback where available',()=>{
- assert.ok(SPORT_FINALS.length>=18);
+ assert.ok(SPORT_FINALS.length>=27);
  for(const final of SPORT_FINALS){
   const sources=mediaSources(final);
   assert.ok(sources.length>=1);
@@ -78,12 +78,12 @@ test('1998 France World Cup final is available as a resilient official FIFA arch
 
 test('Finals cover a broad official multisport archive',()=>{
  const sports=new Set(SPORT_FINALS.map(final=>final.sport));
- assert.ok(sports.size>=9);
- for(const required of ['Football','Rugby','Basket','Volley','Badminton','Beach-volley','Tennis de table','Tir à l’arc','Hockey sur glace']){
+ assert.ok(sports.size>=13);
+ for(const required of ['Football','Rugby','Basket','Volley','Badminton','Beach-volley','Tennis de table','Tir à l’arc','Hockey sur glace','Lutte','Hockey sur gazon','Athlétisme','Judo']){
   assert.ok(sports.has(required),'missing '+required);
  }
  assert.ok(SPORT_FINALS.filter(final=>final.sport==='Football').length>=5);
- assert.ok(SPORT_FINALS.filter(final=>final.sport==='Badminton').length>=2);
+ assert.ok(SPORT_FINALS.filter(final=>final.sport==='Badminton').length>=4);
  assert.ok(SPORT_FINALS.filter(final=>final.sport==='Beach-volley').length>=2);
 });
 
