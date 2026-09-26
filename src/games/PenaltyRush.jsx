@@ -823,11 +823,12 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   function rightMove(event) {
     const gesture = rightGesture.current.get(event.pointerId);
     if (!gesture) return;
-    gesture.path.push({ x:event.clientX, y:event.clientY });
+    const sample = coalescedPointerSample(event) || event;
+    gesture.path.push({ x:sample.clientX, y:sample.clientY });
     if (gesture.path.length > 24) gesture.path.shift();
 
-    const dx = event.clientX - gesture.x;
-    const dy = event.clientY - gesture.y;
+    const dx = sample.clientX - gesture.x;
+    const dy = sample.clientY - gesture.y;
     const distance = Math.hypot(dx, dy);
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     const pad = rightPadRef.current;
