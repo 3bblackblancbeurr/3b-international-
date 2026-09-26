@@ -23,5 +23,5 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node --test tests/passport-identity.test.js tests/passport-access-gate.test.js tests/passport-credential.test.js tests/passport-scopes.test.js
+      - run: node --test tests/passport-*.test.js
       - run: npm run build
