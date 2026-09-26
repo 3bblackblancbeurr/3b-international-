@@ -133,9 +133,7 @@ async function googleProvider(env,fetcher){
  if(access.missing)return setup(access.missing,"Autorisation Google Workspace requise côté serveur.");
  if(access.error)return failed("Autorisation Google à renouveler.");
  const headers={Authorization:`Bearer ${access.token}`};
- const gmailUrl=new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
- gmailUrl.searchParams.set("maxResults","1");
- gmailUrl.searchParams.set("q","is:unread in:inbox -category:promotions -in:spam -in:trash");
+ const gmailUrl=new URL("https://gmail.googleapis.com/gmail/v1/users/me/labels/INBOX");
  const calendarUrl=new URL("https://www.googleapis.com/calendar/v3/calendars/primary/events");
  calendarUrl.searchParams.set("timeMin",new Date().toISOString());
  calendarUrl.searchParams.set("maxResults","5");
@@ -148,7 +146,7 @@ async function googleProvider(env,fetcher){
  ]);
  const gmailData=gmail.status==="fulfilled"?{
   state:"live",
-  unread:Number.isFinite(Number(gmail.value?.resultSizeEstimate))?Number(gmail.value.resultSizeEstimate):0
+  unread:Number.isFinite(Number(gmail.value?.messagesUnread))?Number(gmail.value.messagesUnread):0
  }:{state:"error"};
  const items=calendar.status==="fulfilled"&&Array.isArray(calendar.value?.items)?calendar.value.items:[];
  const calendarData=calendar.status==="fulfilled"?{
@@ -185,7 +183,7 @@ async function metricoolProvider(env,fetcher){
  url.searchParams.set("blogId",env.COMMAND_METRICOOL_BLOG_ID);
  try{
   const payload=await readJson(fetcher,url,{headers:{"X-Mc-Auth":env.COMMAND_METRICOOL_TOKEN,"Content-Type":"application/json"}});
-  const rows=Array.isArray(payload)?payload:[];
+  const rows=Array.isArray(payload)?payload:Array.isArray(payload?.data)?payload.data:[];
   const wanted=String(env.COMMAND_METRICOOL_BLOG_ID);
   const profile=rows.find(row=>String(row?.id??row?.blogId??"")===wanted);
   if(!profile)return failed("Marque Metricool introuvable pour les identifiants configurés.");
