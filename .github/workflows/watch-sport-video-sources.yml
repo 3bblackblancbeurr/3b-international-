@@ -4,9 +4,16 @@ on:
   schedule:
     - cron: '17 */6 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/check-sport-video-sources.mjs'
+      - 'src/sport/source-health.js'
+      - 'public/sport-source-health.json'
+      - '.github/workflows/watch-sport-video-sources.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: sport-source-watch
@@ -14,14 +21,34 @@ concurrency:
 
 jobs:
   watch:
+    if: github.event_name != 'push' || !contains(github.event.head_commit.message, 'chore(sport): update source health manifest')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Verify H24 and Finals source availability
+        id: watch
+        continue-on-error: true
         run: node scripts/check-sport-video-sources.mjs
+      - name: Publish source health manifest when status changes
+        if: always()
+        run: |
+          if git diff --quiet -- public/sport-source-health.json; then
+            echo "Source health unchanged."
+            exit 0
+          fi
+          git config user.name "3B Sport Watchdog"
+          git config user.email "actions@users.noreply.github.com"
+          git add public/sport-source-health.json
+          git commit -m "chore(sport): update source health manifest"
+          git push origin HEAD:main
+      - name: Fail only on a confirmed hard outage
+        if: steps.watch.outcome == 'failure'
+        run: exit 1

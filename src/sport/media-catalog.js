@@ -97,12 +97,18 @@ export const SPORT_FINALS=[
  media({
   id:'final-basket-u17-2026',sport:'Basket',year:'2026',title:'USA · Serbie',
   subtitle:'Finale Coupe du monde U17 2026 · match complet',provider:'FIBA Basketball',
-  sources:[source('fiba-u17-full','Match complet',FULL.fibaU17.videoId,{provider:'FIBA Basketball',mode:'full'})]
+  sources:[
+   source('fiba-u17-full','Match complet',FULL.fibaU17.videoId,{provider:'FIBA Basketball',mode:'full'}),
+   source('fiba-u17-highlights','Highlights officiels de secours','8Nyj6BmqA5M',{provider:'FIBA Basketball',mode:'fallback'})
+  ]
  }),
  media({
   id:'final-basket-u17w-2026',sport:'Basket',year:'2026',title:'USA · Espagne',
   subtitle:'Finale Coupe du monde U17 féminine 2026 · match complet',provider:'FIBA Basketball',
-  sources:[source('fiba-u17w-full','Match complet',FULL.fibaU17W.videoId,{provider:'FIBA Basketball',mode:'full'})]
+  sources:[
+   source('fiba-u17w-full','Match complet',FULL.fibaU17W.videoId,{provider:'FIBA Basketball',mode:'full'}),
+   source('fiba-u17w-highlights','Highlights officiels de secours','8LxnM5GiWwA',{provider:'FIBA Basketball',mode:'fallback'})
+  ]
  })
 ];
 
