@@ -1,10 +1,15 @@
 import {createClient} from '@supabase/supabase-js';
 
-export const SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
-export const PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
+const DEFAULT_SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
+const DEFAULT_PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
+
+export const NOSBLOC_STAGING_APP=String(import.meta.env?.VITE_NOSBLOC_STAGING_SYNC||'').toLowerCase()==='true';
+export const SUPABASE_URL=String(import.meta.env?.VITE_SUPABASE_URL||DEFAULT_SUPABASE_URL).replace(/\/+$/,'');
+export const PUBLIC_KEY=String(import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY||DEFAULT_PUBLIC_KEY);
+
 export const authClient=createClient(SUPABASE_URL,PUBLIC_KEY,{
  auth:{
-  storageKey:'3b_member_auth_v1',
+  storageKey:NOSBLOC_STAGING_APP?'3b_nosbloc_staging_auth_v1':'3b_member_auth_v1',
   detectSessionInUrl:true,
   persistSession:true,
   autoRefreshToken:true
