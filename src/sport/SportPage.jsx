@@ -565,7 +565,11 @@ export default function SportPage({goTo}){
     const sources=(Array.isArray(payload.sources)?payload.sources:[]).filter(source=>
      source?.mode==='live'&&source?.videoId&&isTrustedSportEmbed(source.embedUrl)
     );
-    setLivePools(previous=>({...previous,[h24Id]:sources}));
+    setLivePools(previous=>{
+     const current=previous[h24Id]||[];
+     const unchanged=current.length===sources.length&&current.every((source,index)=>source.id===sources[index]?.id);
+     return unchanged?previous:{...previous,[h24Id]:sources};
+    });
     setLiveMeta({
      loading:false,
      error:'',
@@ -576,7 +580,6 @@ export default function SportPage({goTo}){
     retryTimer=window.setTimeout(load,delay);
    }catch(error){
     if(!active||error?.name==='AbortError')return;
-    setLivePools(previous=>({...previous,[h24Id]:[]}));
     const code=String(error?.message||'live_unavailable');
     setLiveMeta(previous=>({
      ...previous,
