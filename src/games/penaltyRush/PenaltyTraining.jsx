@@ -273,9 +273,10 @@ export default function PenaltyTraining({ role, profile, onExit }) {
   function actionMove(event) {
     const gesture=actionTouch.current;
     if(!gesture||gesture.id!==event.pointerId||busy.current)return;
-    gesture.path.push({x:event.clientX,y:event.clientY});
+    const sample=coalescedPointerSample(event)||event;
+    gesture.path.push({x:sample.clientX,y:sample.clientY});
     if(gesture.path.length>24)gesture.path.shift();
-    const dx=event.clientX-gesture.x,dy=event.clientY-gesture.y;
+    const dx=sample.clientX-gesture.x,dy=sample.clientY-gesture.y;
     const distance=Math.hypot(dx,dy);
     const pad=event.currentTarget;
     pad.style.setProperty('--gesture-angle',(Math.atan2(dy,dx)*180/Math.PI).toFixed(1)+'deg');
