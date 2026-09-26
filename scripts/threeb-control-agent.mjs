@@ -5,7 +5,7 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const VERSION='1.1.0';
+const VERSION='1.2.0';
 const SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
 const PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
 const ENDPOINT=SUPABASE_URL+'/functions/v1/control-center-agent';
@@ -14,6 +14,9 @@ const configDir=process.platform==='win32'
  ? path.join(process.env.LOCALAPPDATA||os.homedir(), '3BControl')
  : path.join(os.homedir(),'.config','3b-control');
 const configPath=path.join(configDir,'device.json');
+const lockPath=path.join(configDir,'agent.lock');
+const logPath=path.join(configDir,'agent.log');
+const autostartPath=path.join(configDir,'autostart.json');
 
 const CAPABILITIES={
  ping:true,
@@ -32,6 +35,57 @@ function loadConfig(){
 function saveConfig(value){
  fs.mkdirSync(configDir,{recursive:true});
  fs.writeFileSync(configPath,JSON.stringify(value,null,2),{encoding:'utf8',mode:0o600});
+}
+function autostartEnabled(){
+ try{
+  const meta=JSON.parse(fs.readFileSync(autostartPath,'utf8'));
+  return meta?.enabled===true&&typeof meta?.launcher_path==='string'&&fs.existsSync(meta.launcher_path);
+ }catch{return false;}
+}
+function rotateLog(){
+ try{
+  const stat=fs.statSync(logPath);
+  if(stat.size>1024*1024){
+   const backup=logPath+'.1';
+   try{fs.rmSync(backup,{force:true});}catch{}
+   fs.renameSync(logPath,backup);
+  }
+ }catch{}
+}
+function log(kind,...parts){
+ const line=new Date().toISOString()+' ['+kind+'] '+parts.map(part=>typeof part==='string'?part:JSON.stringify(part)).join(' ');
+ try{
+  fs.mkdirSync(configDir,{recursive:true});
+  rotateLog();
+  fs.appendFileSync(logPath,line+'\n','utf8');
+ }catch{}
+ if(kind==='ERROR')console.error(...parts);
+ else console.log(...parts);
+}
+function pidAlive(pid){
+ if(!Number.isInteger(pid)||pid<=0)return false;
+ try{process.kill(pid,0);return true;}catch(error){return error?.code==='EPERM';}
+}
+function acquireLock(){
+ fs.mkdirSync(configDir,{recursive:true});
+ try{
+  const current=JSON.parse(fs.readFileSync(lockPath,'utf8'));
+  if(current?.pid&&current.pid!==process.pid&&pidAlive(current.pid)){
+   throw new Error('Agent 3B déjà actif (PID '+current.pid+').');
+  }
+ }catch(error){
+  if(error instanceof Error&&error.message.startsWith('Agent 3B déjà actif'))throw error;
+ }
+ fs.writeFileSync(lockPath,JSON.stringify({pid:process.pid,started_at:new Date().toISOString()}),'utf8');
+ const release=()=>{
+  try{
+   const current=JSON.parse(fs.readFileSync(lockPath,'utf8'));
+   if(current?.pid===process.pid)fs.rmSync(lockPath,{force:true});
+  }catch{}
+ };
+ process.once('exit',release);
+ process.once('SIGINT',()=>{release();process.exit(0);});
+ process.once('SIGTERM',()=>{release();process.exit(0);});
 }
 function publicHeaders(extra={}){
  return{apikey:PUBLIC_KEY,'Content-Type':'application/json',...extra};
@@ -61,7 +115,8 @@ function systemStatus(){
   cpu_count:cpus.length,
   cpu_model:cpus[0]?.model||'unknown',
   load_average:os.loadavg().map(v=>Math.round(v*100)/100),
-  agent_version:VERSION
+  agent_version:VERSION,
+  autostart_enabled:autostartEnabled()
  };
 }
 function openTarget(target){
@@ -105,17 +160,17 @@ async function pair(code,name){
   device_name:name||os.hostname()||'PC 3B',
   platform:process.platform,
   agent_version:VERSION,
-  capabilities:CAPABILITIES
+  capabilities:{...CAPABILITIES,autostart:autostartEnabled()}
  });
  saveConfig({device_id:data.device_id,device_token:data.device_token,paired_at:new Date().toISOString()});
- console.log('PC appairé au Centre de commande 3B.');
- console.log('Device ID:',data.device_id);
+ log('INFO','PC appairé au Centre de commande 3B.');
+ log('INFO','Device ID:',data.device_id);
 }
 async function heartbeat(config){
  return await request({
   action:'heartbeat',
   agent_version:VERSION,
-  capabilities:{...CAPABILITIES,_runtime:systemStatus()}
+  capabilities:{...CAPABILITIES,autostart:autostartEnabled(),_runtime:systemStatus()}
  },config.device_token);
 }
 async function complete(config,command,ok,result={},error=''){
@@ -131,35 +186,50 @@ async function tick(config){
  const data=await heartbeat(config);
  const command=data.command;
  if(!command)return false;
- console.log(new Date().toLocaleTimeString(),'Commande:',command.command_type);
+ log('INFO',new Date().toLocaleTimeString(),'Commande:',command.command_type);
  try{
   const result=await execute(command);
   await complete(config,command,true,result,'');
-  console.log('✓ terminée');
+  log('INFO','✓ terminée');
  }catch(error){
   await complete(config,command,false,{},error instanceof Error?error.message:String(error));
-  console.error('✗',error instanceof Error?error.message:String(error));
+  log('ERROR','✗',error instanceof Error?error.message:String(error));
  }
  return true;
 }
 async function run(){
  const config=loadConfig();
  if(!config?.device_token)throw new Error('Ce PC n’est pas appairé. Crée un code dans l’application puis lance: npm run control:pair -- CODE');
- console.log('Agent 3B actif —',os.hostname(),'— Ctrl+C pour arrêter.');
+ acquireLock();
+ log('INFO','Agent 3B actif —',os.hostname(),'— version',VERSION,'— Ctrl+C pour arrêter.');
+ let delay=3000;
  while(true){
-  try{await tick(config);}catch(error){console.error('Connexion:',error instanceof Error?error.message:String(error));}
-  await new Promise(resolve=>setTimeout(resolve,3000));
+  try{
+   await tick(config);
+   delay=3000;
+  }catch(error){
+   log('ERROR','Connexion:',error instanceof Error?error.message:String(error),'— nouvelle tentative dans',Math.round(delay/1000)+' s');
+   delay=Math.min(Math.round(delay*1.6),30000);
+  }
+  await new Promise(resolve=>setTimeout(resolve,delay));
  }
 }
 async function once(){
  const config=loadConfig();
  if(!config?.device_token)throw new Error('PC non appairé.');
  const did=await tick(config);
- if(!did)console.log('Aucune commande en attente.');
+ if(!did)log('INFO','Aucune commande en attente.');
 }
 function localStatus(){
  const config=loadConfig();
- console.log(JSON.stringify({paired:!!config?.device_token,device_id:config?.device_id||null,config_path:configPath,...systemStatus()},null,2));
+ console.log(JSON.stringify({
+  paired:!!config?.device_token,
+  device_id:config?.device_id||null,
+  config_path:configPath,
+  log_path:logPath,
+  autostart_enabled:autostartEnabled(),
+  ...systemStatus()
+ },null,2));
 }
 
 const [command,arg1,...rest]=process.argv.slice(2);
@@ -174,6 +244,7 @@ try{
   console.log('  npm run control:agent');
   console.log('  npm run control:once');
   console.log('  npm run control:status');
+  console.log('  npm run control:auto-start');
  }
 }catch(error){
  console.error(error instanceof Error?error.message:String(error));

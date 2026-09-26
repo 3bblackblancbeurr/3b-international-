@@ -273,6 +273,7 @@ export default function ControlCenterPage({goTo}){
   if(pulse.production===false)rows.push({level:'bad',title:'La production 3B ne répond pas au contrôle.'});
   if(['failure','timed_out','cancelled'].includes(pulse.ci))rows.push({level:'bad',title:'Le dernier workflow GitHub demande une vérification.'});
   if(primaryDevice&&!primaryOnline)rows.push({level:'warn',title:'Le PC appairé est actuellement hors ligne.'});
+  if(primaryOnline&&primaryDevice?.capabilities?.autostart!==true)rows.push({level:'warn',title:'Démarrage automatique du 3B Control Agent à activer sur le PC.'});
   if(recentFailures.length)rows.push({level:'warn',title:recentFailures.length+' commande'+(recentFailures.length>1?'s':'')+' en échec sur la dernière heure.'});
   return rows;
  },[error,pulse.network,pulse.production,pulse.ci,primaryDevice,primaryOnline,recentFailures.length]);
@@ -414,7 +415,7 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cloud} label="PRODUCTION" value={pulse.production===true?'En ligne':pulse.production===false?'Indisponible':'Contrôle…'} detail="3b-international.vercel.app" state={productionState}/>
     <StatusCard Icon={Server} label="SUPABASE" value={data&&!error?'Connecté':error?'Erreur':'Synchro…'} detail={latency?latency+' ms API':'Control Center'} state={apiState}/>
     <StatusCard Icon={GitBranch} label="GITHUB ACTIONS" value={ciText(pulse.ci)} detail={pulse.workflow||pulse.commit||'main'} state={ciState(pulse.ci)}/>
-    <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?primaryDevice.name:'Aucun appareil'} state={pcState}/>
+    <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?(primaryDevice.name+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
    <section className="control-section" id="cc-actions">
@@ -472,7 +473,7 @@ export default function ControlCenterPage({goTo}){
       const online=onlineDevices.some(item=>item.id===device.id);
       return <article className="control-device-card" key={device.id}>
        <div className={online?'control-device-orb online':'control-device-orb'}><Laptop size={18}/></div>
-       <div><strong>{device.name}</strong><span>{device.platform} · agent {device.agent_version}</span><small>{online?'Actif '+relativeTime(device.last_seen_at):'Dernière liaison '+relativeTime(device.last_seen_at)}</small></div>
+       <div><strong>{device.name}</strong><span>{device.platform} · agent {device.agent_version} · {device.capabilities?.autostart===true?'démarrage auto':'démarrage manuel'}</span><small>{online?'Actif '+relativeTime(device.last_seen_at):'Dernière liaison '+relativeTime(device.last_seen_at)}</small></div>
        <button onClick={()=>revoke(device.id)} disabled={!!busy} aria-label={'Révoquer '+device.name}><Unplug size={16}/></button>
       </article>;
      })}
