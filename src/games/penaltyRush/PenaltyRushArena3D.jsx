@@ -37,6 +37,7 @@ function appearanceFor(player, profile, self = false) {
   const fallback = COUNTRY_KITS[player?.countryId] || ['#08090b', '#d8b35e'];
   const kit = self ? profile?.kit || {} : player?.kit || {};
   const boots = self ? profile?.boots || {} : player?.boots || {};
+  const visual = self ? profile?.appearance || {} : player?.appearance || {};
   const seed = Math.abs(String(player?.countryId || '').split('').reduce((n, c) => n + c.charCodeAt(0), 0));
   return {
     shirt: validHex(kit.shirtPrimary, fallback[0]),
@@ -44,8 +45,14 @@ function appearanceFor(player, profile, self = false) {
     shorts: validHex(kit.shorts, '#08090b'),
     socks: validHex(kit.socks, fallback[0]),
     boots: validHex(boots.upper, '#08090b'),
-    skin: ['#9a6748', '#b87b58', '#80563f', '#c18b68'][seed % 4],
-    hair: ['#111315', '#2a1b13', '#0b0d0f'][seed % 3],
+    skin: validHex(visual.skinColor, ['#ad7655','#c88d63','#8d5d45','#714735'][seed % 4]),
+    hair: validHex(visual.hairHex, ['#111315','#2a1b13','#5c3825'][seed % 3]),
+    hairStyle: String(visual.hairStyle || 'short'),
+    faceShape: String(visual.faceShape || 'balanced'),
+    facialHair: String(visual.facialHair || 'none'),
+    build: String(visual.build || 'athletic'),
+    heightCm: clamp(visual.heightCm || 178, 165, 198),
+    dominantFoot: String(self ? profile?.dominantFoot : player?.dominantFoot || 'right'),
     number: clamp(self ? profile?.shirtNumber : player?.shirtNumber, 1, 99) || 10,
   };
 }
@@ -276,7 +283,8 @@ function createHumanoid(appearance) {
   rig.add(pelvis);
 
   const torso = new THREE.Mesh(new THREE.CylinderGeometry(.4, .48, 1.12, 12), shirtMat);
-  torso.scale.z = .58;
+  const buildScale = appearance.build === 'strong' ? 1.1 : appearance.build === 'slim' ? .93 : 1;
+  torso.scale.set(buildScale,1,.58*buildScale);
   torso.position.y = 2.1;
   rig.add(torso);
 
@@ -313,7 +321,11 @@ function createHumanoid(appearance) {
   rig.add(neck);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(.29, 12, 9), skinMat);
-  head.scale.set(.9, 1.08, .88);
+  const faceScale = {
+    oval:[.88,1.12,.86], square:[.98,1.03,.93], round:[.98,1.02,.96],
+    angular:[.91,1.08,.84], long:[.86,1.18,.84], balanced:[.9,1.08,.88],
+  }[appearance.faceShape] || [.9,1.08,.88];
+  head.scale.set(...faceScale);
   head.position.y = 3.04;
   rig.add(head);
 
@@ -332,7 +344,30 @@ function createHumanoid(appearance) {
 
   const hair = new THREE.Mesh(new THREE.SphereGeometry(.3, 10, 7, 0, Math.PI * 2, 0, Math.PI * .47), hairMat);
   hair.position.y = 3.11;
+  const hairStyle = appearance.hairStyle || 'short';
+  if (hairStyle === 'shaved') hair.scale.set(1,.18,1);
+  if (hairStyle === 'buzz') hair.scale.set(1.01,.45,1.01);
+  if (hairStyle === 'fade') hair.scale.set(.94,.72,.94);
+  if (hairStyle === 'curls') hair.scale.set(1.08,1.02,1.08);
+  if (hairStyle === 'afro') hair.scale.set(1.34,1.38,1.34);
+  if (hairStyle === 'long') hair.scale.set(1.04,1.18,1.08);
   rig.add(hair);
+  if (hairStyle === 'braids' || hairStyle === 'long') {
+    const strands = hairStyle === 'braids' ? 6 : 4;
+    for (let i = 0; i < strands; i += 1) {
+      const side = i % 2 ? -1 : 1;
+      const strand = new THREE.Mesh(new THREE.CylinderGeometry(.028,.042,hairStyle === 'braids' ? .55 : .72,6),hairMat);
+      strand.position.set(side*(.13+(i%3)*.055),2.83,-.12+(i%3)*.06);
+      strand.rotation.z=side*.08;
+      rig.add(strand);
+    }
+  }
+  if (appearance.facialHair && appearance.facialHair !== 'none') {
+    const beard = new THREE.Mesh(new THREE.SphereGeometry(.2,8,6,0,Math.PI*2,Math.PI*.48,Math.PI*.42),hairMat);
+    beard.scale.set(appearance.facialHair === 'beard' ? 1.08 : .72, appearance.facialHair === 'stubble' ? .42 : .72, .82);
+    beard.position.set(0,2.94,-.19);
+    rig.add(beard);
+  }
 
   const armL = makeArm(shirtMat, skinMat, gloveMat, -1);
   const armR = makeArm(shirtMat, skinMat, gloveMat, 1);
@@ -1138,7 +1173,7 @@ export default function PenaltyRushArena3D({ room, profile, selfIndex, controlRe
     });
     const players = playerAppearance.map((appearance) => {
       const model = createHumanoid(appearance);
-      model.scale.setScalar(.56);
+      model.scale.setScalar(.56 * (appearance.heightCm / 178));
       model.traverse((node) => { if (node.isMesh) node.castShadow = !mobile; });
       scene.add(model);
       return model;
