@@ -128,9 +128,9 @@ const BASE_MENU_ITEMS = [
 
 const CONTROL_MENU_ITEM = {
   id: "control",
-  label: "Centre de commande 3B",
+  label: "3B Command OS",
   icon: "⌁",
-  description: "Piloter ton PC, Unreal et les outils 3B depuis tes appareils.",
+  description: "Cockpit privé propriétaire, temps réel et pilotage PC depuis ton téléphone.",
 };
 
 const WELCOME_MESSAGE = "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout le temps partout.";
@@ -184,7 +184,10 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    if (!loyalty.user?.id) {
+    const nativePhone = Boolean(window.Capacitor?.isNativePlatform?.());
+    const mobilePhone = navigator.userAgentData?.mobile === true || /android|iphone|ipod|mobile/i.test(navigator.userAgent || "");
+    const touchPhone = window.matchMedia("(max-width: 820px) and (pointer: coarse)").matches;
+    if (!loyalty.user?.id || !(nativePhone || mobilePhone || touchPhone)) {
       setControlAvailable(false);
       return () => { active = false; };
     }
@@ -336,7 +339,7 @@ export default function App() {
     );
   }
 
-  const passportAllowed = new Set(["home", "passport", "member", "religion"]);
+  const passportAllowed = new Set(["home", "passport", "member", "religion", "control"]);
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
@@ -348,7 +351,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      {!['world3b','arena','game'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} />}
+      {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>

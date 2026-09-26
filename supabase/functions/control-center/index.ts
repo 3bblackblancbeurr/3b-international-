@@ -130,14 +130,19 @@ Deno.serve(async(req:Request)=>{
   const action=String(body?.action||'status');
 
   if(action==='status'){
-   const devices=await adminApi('/rest/v1/control_center_devices?user_id=eq.'+encodeURIComponent(uid)+'&select=id,name,platform,agent_version,capabilities,paired_at,last_seen_at,revoked_at&order=created_at.desc');
-   const commands=await adminApi('/rest/v1/control_center_commands?user_id=eq.'+encodeURIComponent(uid)+'&select=id,device_id,command_type,status,issued_at,claimed_at,completed_at,result,error_message&order=issued_at.desc&limit=30');
+   const [devices,commands,events]=await Promise.all([
+    adminApi('/rest/v1/control_center_devices?user_id=eq.'+encodeURIComponent(uid)+'&select=id,name,platform,agent_version,capabilities,paired_at,last_seen_at,revoked_at&order=created_at.desc'),
+    adminApi('/rest/v1/control_center_commands?user_id=eq.'+encodeURIComponent(uid)+'&select=id,device_id,command_type,status,issued_at,claimed_at,completed_at,result,error_message&order=issued_at.desc&limit=30'),
+    adminApi('/rest/v1/control_center_events?user_id=eq.'+encodeURIComponent(uid)+'&select=id,device_id,event_type,detail,created_at&order=created_at.desc&limit=40')
+   ]);
    return reply({
     ok:true,
+    server_time:new Date().toISOString(),
     max_devices:settings.max_devices,
     pairing_ttl_seconds:settings.pairing_ttl_seconds,
     devices,
     commands,
+    events,
     allowed_commands:[...COMMANDS]
    });
   }
