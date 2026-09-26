@@ -13,6 +13,7 @@ import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
 import TurnstileField from './TurnstileField.jsx';
+import AccountSecurityPanel from './AccountSecurityPanel.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
 
@@ -211,6 +212,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    </section>
 
    {account.passport&&<PassportAppearanceSettings identity={account.passport} compact/>}
+   <AccountSecurityPanel/>
   </>
   :<div className="account-entry">
    <div className="account-form-panel">
