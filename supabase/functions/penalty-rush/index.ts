@@ -1577,8 +1577,8 @@ async function route(req:Request) {
     return {
       profile:publicProfile(fresh, club?.name || ''),
       snapshot:await snapshotFor(uid, fresh),
-      message:selection.status === 'selected'
-        ? 'Convocation acceptée · tu représenteras ton pays.'
+      message:selection.status === 'accepted'
+        ? 'Convocation acceptée · ta candidature entre dans la liste finale.'
         : 'Convocation déclinée.',
     };
   }
