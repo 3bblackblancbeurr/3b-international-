@@ -70,12 +70,17 @@ async function authenticateOwner(req:Request){
  });
  if(valid!==true)throw new Failure(401,'Session expirée.');
 
- const settings=await adminApi('/rest/v1/control_center_settings?singleton=eq.true&select=enabled,owner_email,max_devices,pairing_ttl_seconds&limit=1');
+ const settings=await adminApi('/rest/v1/control_center_settings?singleton=eq.true&select=enabled,owner_email,owner_user_id,max_devices,pairing_ttl_seconds&limit=1');
  const current=settings?.[0];
  if(!current?.enabled)throw new Failure(503,'Centre de commande désactivé.');
+ const ownerUserId=String(current.owner_user_id||'').trim();
  const ownerEmail=String(current.owner_email||'').trim().toLowerCase();
  const email=String(user.email||'').trim().toLowerCase();
- if(!ownerEmail||email!==ownerEmail)throw new Failure(403,'Centre de commande réservé au propriétaire 3B.');
+ if(ownerUserId){
+  if(user.id!==ownerUserId)throw new Failure(403,'Centre de commande réservé au propriétaire 3B.');
+ }else{
+  if(!ownerEmail||email!==ownerEmail)throw new Failure(403,'Centre de commande réservé au propriétaire 3B.');
+ }
  if(!user.email_confirmed_at)throw new Failure(403,'Confirme ton adresse e-mail avant d’utiliser le Centre de commande.');
  return{uid:user.id as string,settings:current};
 }
@@ -97,8 +102,26 @@ async function audit(uid:string,event_type:string,device_id:string|null=null,det
  }).catch(()=>{});
 }
 
+const ORIGINS=new Set([
+ 'https://3b-international.vercel.app',
+ 'capacitor://localhost',
+ 'https://localhost',
+ 'http://localhost:5173',
+ 'http://127.0.0.1:5173'
+]);
+
 Deno.serve(async(req:Request)=>{
- const reply=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
+ const origin=req.headers.get('origin')||'';
+ const cors={
+  ...(ORIGINS.has(origin)?{'Access-Control-Allow-Origin':origin}:{}),
+  'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info',
+  'Access-Control-Allow-Methods':'POST,OPTIONS',
+  'Cache-Control':'no-store',
+  'Vary':'Origin'
+ };
+ const reply=(body:unknown,status=200)=>Response.json(body,{status,headers:cors});
+ if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+ if(origin&&!ORIGINS.has(origin))return reply({error:'Origine non autorisée.'},403);
  if(req.method!=='POST')return reply({error:'Méthode non autorisée.'},405);
 
  try{
