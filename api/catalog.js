@@ -1,2 +1,10 @@
 import { createShop } from "../server/shop.js";
-export default { fetch: request => createShop().catalog(request) };
+import { handleSportLive } from "../server/sport-live.js";
+
+export default {
+  fetch: request => {
+    const url = new URL(request.url);
+    if (url.searchParams.get("__3b_route") === "sport-live") return handleSportLive(request);
+    return createShop().catalog(request);
+  },
+};
