@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {PASSPORT_COUNTRIES,passportFromProfile,passportInitials} from '../src/passport/identity.js';
 
 const UID='123e4567-e89b-12d3-a456-426614174000';
+const PUBLIC_ID='4f87d51c-62ab-4d10-8f11-9270c1a2b3c4';
 const profile=(country='Maroc')=>({
   user_id:UID,
   handle:'amina3b',
@@ -13,6 +14,10 @@ const profile=(country='Maroc')=>({
   points:1250,
   theme:'explorer',
   created_at:'2026-09-20T00:00:00.000Z',
+  passport_public_id:PUBLIC_ID,
+  passport_issued_at:'2026-09-20T00:00:00.000Z',
+  passport_version:2,
+  passport_state:'active',
 });
 
 test('passport identity is derived from the signed-in member profile',()=>{
@@ -47,6 +52,7 @@ test('missing or invalid profile cannot fabricate a passport or country',()=>{
  assert.equal(passportFromProfile(null,{id:UID}),null);
  assert.equal(passportFromProfile({}, {id:UID}),null);
  assert.equal(passportFromProfile({...profile(),country:'Unknown'}, {id:UID}),null);
+ assert.equal(passportFromProfile({...profile(),passport_public_id:null}, {id:UID}),null);
 });
 
 test('the eight canonical countries keep their 3B code and value',()=>{
