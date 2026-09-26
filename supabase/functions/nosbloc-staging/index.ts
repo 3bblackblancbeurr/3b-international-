@@ -3,8 +3,9 @@ import { normalizeMemberHandle, normalizeModerationDecision, normalizeProjectPay
 const BASE = Deno.env.get("SUPABASE_URL")!;
 const PUBLIC = Deno.env.get("SUPABASE_ANON_KEY")!;
 const STAGING_PROJECT_REF = "zykdfgahzqqanlyxjtbe";
+const STAGING_ORIGIN = `https://${STAGING_PROJECT_REF}.supabase.co`;
 const ENABLED = BASE.includes(`://${STAGING_PROJECT_REF}.supabase.co`) && Deno.env.get("NOSBLOC_STAGING_ENABLED") !== "false";
-const ORIGINS = new Set(["https://localhost","capacitor://localhost","https://3b-international.vercel.app","http://localhost:5173","http://127.0.0.1:5173"]);
+const ORIGINS = new Set([STAGING_ORIGIN,"https://localhost","capacitor://localhost","https://3b-international.vercel.app","http://localhost:5173","http://127.0.0.1:5173"]);
 const ACTIONS = new Set(["snapshot","project_sync","invite_create","invite_decide","version_checkpoint","review_submit","moderation_decide"]);
 class Failure extends Error { constructor(public status:number, message:string){ super(message); } }
 const hex = (bytes:Uint8Array) => Array.from(bytes, byte => byte.toString(16).padStart(2,"0")).join("");
