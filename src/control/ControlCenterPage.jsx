@@ -5,6 +5,7 @@ import {
  TerminalSquare,Unplug,Wifi,WifiOff,Zap
 } from 'lucide-react';
 import {controlCenterRequest} from './client.js';
+import DirectorTraffic from '../components/DirectorTraffic.jsx';
 import './control-center.css';
 
 const ACTIONS=[
@@ -418,6 +419,8 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?(primaryDevice.name+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
+   <DirectorTraffic />
+
    <section className="control-section" id="cc-actions">
     <header className="control-section-heading"><div><p className="control-kicker">ACTION IMMÉDIATE</p><h2>Pilote ton PC</h2></div><TerminalSquare size={20}/></header>
 
@@ -502,7 +505,7 @@ export default function ControlCenterPage({goTo}){
 
   <nav className="control-dock" aria-label="Navigation 3B Command OS">
    <button onClick={()=>jumpTo('cc-now')}><Gauge size={18}/><span>État</span></button>
-   <button onClick={()=>jumpTo('cc-live')} disabled={focus}><Activity size={18}/><span>Live</span></button>
+   <button onClick={()=>jumpTo('cc-traffic')}><Activity size={18}/><span>Trafic</span></button>
    <button className="is-main" onClick={()=>jumpTo('cc-actions')}><Zap size={20}/><span>Action</span></button>
    <button onClick={()=>jumpTo('cc-devices')} disabled={focus}><Laptop size={18}/><span>PC</span></button>
    <button onClick={()=>jumpTo('cc-log')} disabled={focus}>{pulse.network?<Wifi size={18}/>:<WifiOff size={18}/>}<span>Journal</span></button>
