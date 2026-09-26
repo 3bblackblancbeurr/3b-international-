@@ -59,7 +59,7 @@ Deno.serve(async req=>{
    expires_at:expiresAt
   });
 
-  const verifyUrl=APP+'/passport-verify.html?ticket='+token;
+  const verifyUrl=APP+'/passport-verify.html#ticket='+token;
   const qrDataUrl=encodeQR(verifyUrl,'data-url',{ecc:'quartile',scale:6,border:4});
   return reply({
    verifyUrl,
