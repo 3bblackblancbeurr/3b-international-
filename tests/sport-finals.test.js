@@ -34,6 +34,7 @@ test('requested sports are represented and video privacy is hardened',()=>{
  assert.match(component,/safeWorldFinalVideoId/);
  assert.match(component,/fs=0/);
  assert.match(component,/disablekb=1/);
+ assert.match(component,/referrerPolicy="no-referrer"/);
  assert.doesNotMatch(component,/dangerouslySetInnerHTML/);
 });
 
@@ -42,17 +43,29 @@ test('finals never offer an external exit from the 3B application',()=>{
  assert.doesNotMatch(component,/window\.open/);
  assert.doesNotMatch(component,/youtube\.com\/watch/);
  assert.doesNotMatch(component,/ExternalLink/);
- assert.match(component,/sandbox="allow-scripts allow-same-origin allow-presentation"/);
- assert.doesNotMatch(component,/allow-popups|allow-top-navigation/);
+ assert.match(component,/sandbox="allow-scripts allow-same-origin"/);
+ assert.doesNotMatch(component,/allow-popups|allow-top-navigation|allow-presentation/);
+ assert.doesNotMatch(component,/picture-in-picture/);
+ assert.doesNotMatch(component,/allowFullScreen/);
  assert.match(component,/aucune sortie de l’application/i);
 });
 
 test('turning the phone or using the button fills the app without leaving it',()=>{
  assert.match(component,/sport-finals-landscape-open/);
+ assert.match(component,/sport-finals-app-fullscreen-open/);
+ assert.match(component,/is-app-fullscreen/);
  assert.match(component,/requestFullscreen/);
  assert.match(component,/orientation\?\.lock\?\.\('landscape'\)/);
+ assert.match(component,/orientation\?\.unlock/);
  assert.match(component,/document\.fullscreenElement===shellRef\.current/);
  assert.match(styles,/position:fixed;inset:0/);
  assert.match(styles,/width:100vw;height:100dvh/);
  assert.match(styles,/z-index:2147483000/);
+ assert.match(styles,/sport-finals-app-fullscreen-open/);
+});
+
+test('the five Sport sections remain readable across screen sizes',()=>{
+ assert.match(styles,/sport-section-nav\{grid-template-columns:repeat\(5/);
+ assert.match(styles,/@media\(max-width:1000px\)\{\.sport-section-nav\{grid-template-columns:repeat\(3/);
+ assert.match(styles,/@media\(max-width:620px\)\{\.sport-section-nav\{grid-template-columns:repeat\(2/);
 });
