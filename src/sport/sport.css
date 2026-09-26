@@ -8,7 +8,7 @@
 .sport-orbit span{position:absolute;top:17px;font-size:9px;font-weight:800;letter-spacing:.18em;color:#9bbbc2}
 .sport-orbit svg{filter:drop-shadow(0 6px 18px #c9993c26)}
 
-.sport-section-nav{position:sticky;z-index:8;top:8px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0 0 26px;padding:7px;border:1px solid #d9bd7e34;border-radius:16px;background:#0a1011e8;backdrop-filter:blur(18px);box-shadow:0 16px 38px #0006}
+.sport-section-nav{position:sticky;z-index:8;top:8px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:0 0 26px;padding:7px;border:1px solid #d9bd7e34;border-radius:16px;background:#0a1011e8;backdrop-filter:blur(18px);box-shadow:0 16px 38px #0006}
 .sport-section-nav button{display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:10px 16px;border:1px solid transparent;border-radius:11px;background:transparent;color:#9fb1b6;font-size:12px;font-weight:650;letter-spacing:.02em}
 .sport-section-nav button:hover{color:#f1ddb3;background:#ffffff05}
 .sport-section-nav button.active{border-color:#d0ae6668;color:#f5ddb0;background:linear-gradient(135deg,#8b6d302e,#16262b80);box-shadow:inset 0 1px #ffffff0d}
@@ -392,3 +392,40 @@ html.sport-live-landscape-open .sport-director-error{display:none!important}
 .sport-live-pulse.is-replay{background:#d5b76d;box-shadow:0 0 0 5px #d5b76d18,0 0 20px #d5b76d80}
 .sport-director-event.is-replay{border-color:#d5b76d45;background:linear-gradient(135deg,#8c6b2629,#102025)}
 .sport-director-event.is-replay>svg,.sport-director-event.is-replay .sport-director-event-state b{color:#f0d28d}
+
+
+/* Grandes finales à la demande — séparées du H24 */
+.sport-finals-view{animation:sport-enter .22s ease-out;overflow-x:clip}
+.sport-finals-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:26px;padding:28px 4px 22px}
+.sport-finals-hero .eyebrow{margin:0 0 8px;color:#c3a86d;font-size:9px}
+.sport-finals-hero h2{margin:0;color:#f1e4c7;font:400 clamp(31px,4.5vw,48px)/1.04 Georgia,serif}
+.sport-finals-hero p:not(.eyebrow){max-width:760px;margin:12px 0 0;color:#91a8af;font-size:12px;line-height:1.75}
+.sport-finals-badge{display:grid;grid-template-columns:auto auto;align-items:center;gap:3px 8px;min-width:175px;padding:13px 15px;border:1px solid #d2b56d42;border-radius:13px;background:#151a17;color:#dfc37f}
+.sport-finals-badge svg{grid-row:1/3}.sport-finals-badge span{font-size:8px;letter-spacing:.13em}.sport-finals-badge strong{color:#f0ddaf;font-size:10px}
+.sport-finals-filter{display:flex;gap:8px;margin:0 0 15px;padding:4px;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#6f6141 transparent}
+.sport-finals-filter button{flex:0 0 auto;min-height:38px;padding:8px 13px;border:1px solid #78919a2b;border-radius:999px;background:#12212780;color:#9eb1b7;font-size:10px;white-space:nowrap}
+.sport-finals-filter button[aria-pressed=true]{border-color:#d7b86d88;color:#efd7a0;background:#8a713329}
+.sport-finals-player-shell{overflow:hidden;border:1px solid #d1b56c48;border-radius:19px;background:#060a0c;box-shadow:0 24px 70px #0008,0 0 38px #d0af5b0b}
+.sport-finals-player-head,.sport-finals-player-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 16px;background:linear-gradient(90deg,#121b1e,#171912)}
+.sport-finals-player-head>div{min-width:0}.sport-finals-player-head span,.sport-finals-player-head strong,.sport-finals-player-head small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sport-finals-player-head span{color:#b99f68;font-size:8px;letter-spacing:.1em}.sport-finals-player-head strong{margin-top:4px;color:#eee0c0;font:400 19px Georgia,serif}.sport-finals-player-head small{margin-top:4px;color:#718b93;font-size:8px}
+.sport-finals-player-head button{display:flex;align-items:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid #d1b46e45;border-radius:9px;background:#b58d3412;color:#e2c984;font-size:9px;white-space:nowrap}
+.sport-finals-player-head button:disabled{opacity:.4}
+.sport-finals-frame{position:relative;aspect-ratio:16/9;min-height:280px;background:radial-gradient(circle at 50% 30%,#17323a,#030607 72%)}
+.sport-finals-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#030607}
+.sport-finals-frame:fullscreen{width:100vw;height:100dvh;aspect-ratio:auto;background:#020405}.sport-finals-frame:fullscreen iframe{width:100%;height:100%}
+.sport-finals-consent{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:10px;padding:24px;color:#d9bd7c;text-align:center}
+.sport-finals-consent strong{color:#f0dfbb;font:400 clamp(22px,4vw,31px)/1.15 Georgia,serif}.sport-finals-consent p{max-width:600px;margin:0;color:#93a9af;font-size:11px;line-height:1.7}.sport-finals-consent a{color:#a8c6ce;font-size:9px;text-underline-offset:3px}
+.sport-finals-consent button{display:flex;align-items:center;gap:8px;min-height:44px;margin-top:4px;padding:0 18px;border:1px solid #d0b16b5e;border-radius:10px;background:#b68f3626;color:#ecd39a;font-weight:700}
+.sport-finals-player-foot{flex-wrap:wrap;color:#7f969d;font-size:9px}.sport-finals-player-foot>span:first-child{display:flex;align-items:center;gap:7px;color:#dcc17e;font-weight:650}.sport-finals-player-foot button{border:0;background:transparent;color:#81989f;font:inherit}.sport-finals-player-foot a{display:flex;align-items:center;gap:6px;color:#bfa667;text-decoration:none;white-space:nowrap}
+.sport-finals-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.sport-final-card{min-width:0;min-height:154px;padding:18px;border:1px solid #819ca22d;border-radius:14px;background:linear-gradient(145deg,#122026,#0e1518);color:inherit;text-align:left;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.sport-final-card:hover{transform:translateY(-2px);border-color:#d2b47569}.sport-final-card.is-active{border-color:#d5b76d82;background:radial-gradient(circle at 10% 20%,#99752c25,transparent 45%),linear-gradient(145deg,#17221f,#10191c)}
+.sport-final-card span,.sport-final-card strong,.sport-final-card small,.sport-final-card em{display:block}.sport-final-card span{color:#b79d66;font-size:8px;font-weight:750;letter-spacing:.1em;text-transform:uppercase}.sport-final-card strong{margin-top:11px;color:#eee0c1;font:400 21px/1.18 Georgia,serif}.sport-final-card small{margin-top:8px;color:#91a8af;font-size:10px;line-height:1.45}.sport-final-card em{margin-top:15px;color:#718b93;font-size:8px;font-style:normal}
+.sport-finals-note{margin-top:16px!important;font-size:9px!important}
+@media(max-width:900px){.sport-finals-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){
+ .sport-finals-hero{align-items:flex-start;flex-direction:column;padding:20px 2px 15px}.sport-finals-hero h2{font-size:34px}.sport-finals-badge{display:flex;min-width:0}
+ .sport-finals-player-shell{border-radius:15px}.sport-finals-player-head{align-items:flex-start;flex-direction:column}.sport-finals-player-head>div{width:100%}.sport-finals-player-head button{width:100%;justify-content:center}
+ .sport-finals-frame{min-height:0}.sport-finals-player-foot{align-items:flex-start;flex-direction:column}.sport-finals-grid{grid-template-columns:1fr}.sport-final-card{min-height:132px}
+}

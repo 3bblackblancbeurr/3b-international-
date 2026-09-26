@@ -8,10 +8,12 @@ import {ecosystem,ecosystemPublic} from '../lib/ecosystem.js';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {SPORTS} from '../../supabase/functions/ecosystem/sports.js';
 import SportLive from './SportLive.jsx';
+import SportFinals from './SportFinals.jsx';
 import './sport.css';
 
 const SECTIONS=[
  {id:'live',label:'Direct 24/7',icon:Radio},
+ {id:'finals',label:'Grandes finales',icon:Trophy},
  {id:'news',label:'Actualités',icon:Globe2},
  {id:'challenges',label:'Défis 3B',icon:Flame},
  {id:'collabs',label:'Collaborations',icon:Handshake}
@@ -214,6 +216,8 @@ export default function SportPage({goTo}){
   </nav>
 
   {section==='live'&&<SportLive/>}
+
+  {section==='finals'&&<SportFinals/>}
 
   {section==='news'&&<>
    <div className="sport-command-bar">
