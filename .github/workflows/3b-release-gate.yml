@@ -19,7 +19,7 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Critical Passport and session tests
-        run: node --test tests/passport-identity.test.js tests/passport-access-gate.test.js tests/passport-credential.test.js tests/passport-scopes.test.js tests/passport-verification.test.js tests/passport-passkeys.test.js tests/member-session-state.test.js tests/realm-gold-master.test.js tests/passport-games-integration.test.js
+        run: node --test tests/passport-identity.test.js tests/passport-access-gate.test.js tests/passport-credential.test.js tests/passport-scopes.test.js tests/passport-verification.test.js tests/passport-passkeys.test.js tests/member-session-state.test.js tests/realm-gold-master.test.js tests/passport-games-integration.test.js tests/passport-ecosystem-integration.test.js
       - name: Production build
         run: npm run build
       - name: Bundle budgets
