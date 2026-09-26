@@ -191,9 +191,40 @@ export default function NosblocPremiumPage({ goTo }) {
       commit(() => imported, "Archive vérifiée et restaurée. L’état précédent reste dans la reprise de secours.", activityEntry("restore", "Archive restaurée", file.name));
       setSelectedId(imported.projects?.[0]?.id || "");
       setView("home");
+      setTimeout(() => nosblocServer.markAllDirty(), 0);
     } catch (error) {
       setNotice(error?.message || "Import impossible.");
     }
+  };
+
+  const mergeVersionsFromServer = (projectId, rows) => {
+    if (!Array.isArray(rows) || !rows.length) return;
+    setState(previous => {
+      const next = {
+        ...previous,
+        projects: previous.projects.map(project => {
+          if (project.id !== projectId) return project;
+          const byId = new Map((project.versions || []).map(version => [version.id, version]));
+          for (const row of rows) {
+            if (!row?.id || !row?.snapshot) continue;
+            byId.set(row.id, {
+              id: row.id,
+              versionNo: Number(row.versionNo) || 1,
+              stage: row.stage || "checkpoint",
+              note: row.note || "Version serveur",
+              createdAt: row.createdAt || nowIso(),
+              sourceUpdatedAt: row.snapshot?.updatedAt || row.createdAt || nowIso(),
+              fingerprint: fingerprint(row.snapshot),
+              serverFingerprint: row.fingerprint || "",
+              snapshot: row.snapshot,
+            });
+          }
+          return { ...project, versions: [...byId.values()].sort((a,b) => Number(a.versionNo) - Number(b.versionNo)).slice(-20) };
+        }),
+      };
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
   };
 
   const openStudio = id => {
@@ -202,43 +233,71 @@ export default function NosblocPremiumPage({ goTo }) {
     setStudioMode("simple");
     setProTab("build");
     setNotice("");
+    const project = state.projects.find(row => row.id === id);
+    if (project && online && account.user?.id) {
+      nosblocServer.loadVersions(project).then(rows => mergeVersionsFromServer(id, rows)).catch(() => {});
+    }
   };
 
-  const startPrivateTest = project => {
+  const startPrivateTest = async project => {
     if (!project) return;
-    const result = appendProjectVersion(project, {
-      stage: "checkpoint",
-      note: "Version de test privé",
-    });
-    updateProject(
-      project.id,
-      { ...result.project, status: "private_test", visibility: "private" },
-      "Test privé préparé. La version publique reste inchangée.",
-      activityEntry("test", "Test privé créé", project.title),
-    );
+    try {
+      let remote = null;
+      if (online && account.user?.id) {
+        remote = await nosblocServer.createVersion(project, "private_test", "Version de test privé");
+      }
+      const result = appendProjectVersion(project, {
+        id: remote?.versionId,
+        stage: "private_test",
+        note: "Version de test privé",
+      });
+      updateProject(
+        project.id,
+        { ...result.project, status: "private_test", visibility: "private" },
+        remote ? "Test privé figé côté serveur. La version publique reste inchangée." : "Test privé enregistré hors ligne. Il sera resynchronisé avec le projet.",
+        activityEntry("test", "Test privé créé", project.title),
+      );
+    } catch (error) {
+      setNotice(error?.message || "Test privé impossible.");
+    }
   };
 
-  const requestReview = project => {
+  const requestReview = async project => {
     if (!project) return;
     const ready = projectReadiness(project);
     if (!ready.readyForReview) {
       setNotice("Publication bloquée : complète la checklist. Score actuel " + ready.score + " %.");
       return;
     }
-    const result = appendProjectVersion(project, {
-      stage: "review",
-      note: "Soumission à la vérification Nosbloc",
-    });
-    updateProject(
-      project.id,
-      result.project,
-      "Version figée envoyée en vérification. Aucun paiement ou publication automatique n’a été déclenché.",
-      activityEntry("review", "Projet envoyé en vérification", project.title),
-    );
+    if (!online || !account.user?.id) {
+      setNotice("Une connexion est requise pour envoyer un projet à la modération.");
+      return;
+    }
+    try {
+      const remote = await nosblocServer.createVersion(project, "review", "Soumission à la vérification Nosbloc");
+      const result = appendProjectVersion(project, {
+        id: remote?.versionId,
+        stage: "review",
+        note: "Soumission à la vérification Nosbloc",
+      });
+      updateProject(
+        project.id,
+        { ...result.project, status:"review", visibility:"private", server:{ ...(project.server || {}), projectId:remote?.projectId || project.server?.projectId } },
+        "Version figée côté serveur et envoyée en vérification. Aucun paiement n’a été déclenché.",
+        activityEntry("review", "Projet envoyé en vérification", project.title),
+      );
+      await nosblocServer.refresh();
+    } catch (error) {
+      setNotice(error?.message || "Envoi en vérification impossible.");
+    }
   };
 
-  const restoreVersion = (project, versionId) => {
+  const restoreVersion = async (project, versionId) => {
     try {
+      const serverVersion = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(versionId || ""));
+      if (serverVersion && online && account.user?.id && project.server?.projectId) {
+        await nosblocServer.restoreVersion(project, versionId);
+      }
       const restored = restoreProjectVersion(project, versionId);
       updateProject(
         project.id,
@@ -247,8 +306,53 @@ export default function NosblocPremiumPage({ goTo }) {
         activityEntry("restore", "Version restaurée", project.title),
       );
       setStudioMode("simple");
+      if (online && account.user?.id) await nosblocServer.syncProjectNow(restored);
     } catch (error) {
       setNotice(error?.message || "Restauration impossible.");
+    }
+  };
+
+  const publishProject = async project => {
+    try {
+      await nosblocServer.publishProject(project);
+      setNotice("Projet publié dans Nosbloc. La version approuvée est maintenant publique.");
+    } catch (error) {
+      setNotice(error?.message || "Publication impossible.");
+    }
+  };
+
+  const archiveProject = async project => {
+    try {
+      if (online && account.user?.id) await nosblocServer.archiveProject(project);
+      updateProject(project.id,{status:"archived",visibility:"private"},"Projet archivé.",activityEntry("archive","Projet archivé",project.title));
+    } catch (error) {
+      setNotice(error?.message || "Archivage impossible.");
+    }
+  };
+
+  const inviteTeamMember = async (project,row) => {
+    try {
+      const result = await nosblocServer.inviteMember(project,row);
+      updateProject(project.id,{
+        splits: project.splits.map(member => member.id === row.id
+          ? { ...member, status:"invited", invitationId:result?.invitationId || "", invitedAt:nowIso(), inviteCode:"" }
+          : member),
+      },"Invitation serveur envoyée au Passeport 3B du membre.");
+    } catch (error) {
+      setNotice(error?.message || "Invitation impossible.");
+    }
+  };
+
+  const revokeTeamInvite = async (project,row) => {
+    try {
+      if (row.invitationId) await nosblocServer.revokeInvitation?.(row.invitationId);
+      updateProject(project.id,{
+        splits: project.splits.map(member => member.id === row.id
+          ? { ...member, status:"draft", invitationId:"", invitedAt:"", acceptedAt:"", inviteCode:"" }
+          : member),
+      },"Invitation révoquée.");
+    } catch (error) {
+      setNotice(error?.message || "Révocation impossible.");
     }
   };
 
