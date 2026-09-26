@@ -228,7 +228,7 @@ export default function NosblocPremiumPage({ goTo }) {
           setCityOpen={setCityOpen}
           goTo={goTo}
         />}
-        {view === "explore" && <ExploreView projects={state.projects} openStudio={openStudio} />}
+        {view === "explore" && <ExploreView projects={state.projects} marketplace={state.marketplace || []} openStudio={openStudio} />}
         {view === "create" && <CreateView ownerName={ownerName} state={state} commit={commit} openStudio={openStudio} />}
         {view === "activity" && <ActivityView state={state} />}
         {view === "me" && <ProfileView state={state} account={account} setCityOpen={setCityOpen} />}
@@ -365,25 +365,94 @@ function ProjectHero({ project, onOpen }) {
   </article>;
 }
 
-function ExploreView({ projects, openStudio }) {
+function ExploreView({ projects, marketplace = [], openStudio }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
+  const [section, setSection] = useState("projects");
+  const [previewId, setPreviewId] = useState("");
+  const normalizedQuery = query.trim().toLocaleLowerCase("fr");
   const rows = useMemo(() => projects
     .filter(project => type === "all" || project.type === type)
-    .filter(project => (project.title + " " + project.description).toLowerCase().includes(query.toLowerCase()))
-    .sort((a,b) => discoveryScore(b) - discoveryScore(a)), [projects, query, type]);
+    .filter(project => (project.title + " " + project.description).toLocaleLowerCase("fr").includes(normalizedQuery))
+    .sort((a,b) => discoveryScore(b) - discoveryScore(a)), [projects, normalizedQuery, type]);
+  const shopRows = useMemo(() => marketplace
+    .filter(item => !normalizedQuery || (String(item.name || item.title || "") + " " + String(item.category || "")).toLocaleLowerCase("fr").includes(normalizedQuery))
+    .slice(0, 80), [marketplace, normalizedQuery]);
+  const creators = useMemo(() => {
+    const byName = new Map();
+    for (const project of projects) {
+      const owner = (project.splits || []).find(row => row.status === "owner") || project.splits?.[0];
+      const name = String(owner?.name || "Créateur 3B").trim();
+      const key = name.toLocaleLowerCase("fr");
+      const current = byName.get(key) || { name, projects: 0, published: 0 };
+      current.projects += 1;
+      if (project.status === "published") current.published += 1;
+      byName.set(key, current);
+    }
+    return [...byName.values()]
+      .filter(row => !normalizedQuery || row.name.toLocaleLowerCase("fr").includes(normalizedQuery))
+      .sort((a,b) => b.projects - a.projects);
+  }, [projects, normalizedQuery]);
+  const preview = projects.find(project => project.id === previewId) || null;
+
+  if (preview) return <ProjectPublicView project={preview} onBack={() => setPreviewId("")} onOpenStudio={() => openStudio(preview.id)} />;
+
   return <div className="nb2-view">
-    <section className="nb2-page-head"><p className="nb2-kicker">EXPLORER</p><h1>Trouve sans chercher partout.</h1><p>Une recherche unique pour les projets, mondes, jeux et créations Nosbloc.</p></section>
-    <div className="nb2-search"><Search size={18}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher dans Nosbloc…"/></div>
-    <div className="nb2-chips">
-      <button data-active={type === "all"} onClick={() => setType("all")}>Tout</button>
-      {PROJECT_TYPES.map(item => <button key={item.id} data-active={type === item.id} onClick={() => setType(item.id)}>{item.label}</button>)}
+    <section className="nb2-page-head"><p className="nb2-kicker">EXPLORER</p><h1>Trouve sans chercher partout.</h1><p>Une recherche unique pour les créations, la Boutique et les créateurs Nosbloc.</p></section>
+    <div className="nb2-explore-sections" role="tablist" aria-label="Explorer Nosbloc">
+      <button role="tab" aria-selected={section === "projects"} data-active={section === "projects"} onClick={() => setSection("projects")}><Compass size={16}/> Créations</button>
+      <button role="tab" aria-selected={section === "shop"} data-active={section === "shop"} onClick={() => setSection("shop")}><Store size={16}/> Boutique</button>
+      <button role="tab" aria-selected={section === "creators"} data-active={section === "creators"} onClick={() => setSection("creators")}><Users size={16}/> Créateurs</button>
     </div>
-    {!rows.length ? <EmptyState icon={Compass} title="Rien à afficher pour l’instant." text="Crée un premier projet ou change le filtre."/> :
-      <div className="nb2-card-grid">{rows.map(project => <ProjectCard key={project.id} project={project} onOpen={() => openStudio(project.id)}/>)}</div>}
+    <div className="nb2-search"><Search size={18}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher créations, objets, créateurs…"/></div>
+
+    {section === "projects" && <>
+      <div className="nb2-chips">
+        <button data-active={type === "all"} onClick={() => setType("all")}>Tout</button>
+        {PROJECT_TYPES.map(item => <button key={item.id} data-active={type === item.id} onClick={() => setType(item.id)}>{item.label}</button>)}
+      </div>
+      {!rows.length ? <EmptyState icon={Compass} title="Aucune création correspondante." text="Crée un premier projet ou change le filtre."/> :
+        <div className="nb2-card-grid">{rows.map(project => <ProjectCard key={project.id} project={project} onOpen={() => setPreviewId(project.id)}/>)}</div>}
+    </>}
+
+    {section === "shop" && (!shopRows.length
+      ? <EmptyState icon={Store} title="La Boutique créateur est prête, mais aucune offre publique n’est activée." text="Les paiements restent verrouillés tant que l’environnement réel, le KYC et la fiscalité ne sont pas validés."/>
+      : <div className="nb2-card-grid">{shopRows.map((item,index) => <article className="nb2-card" key={item.id || item.asset_id || index}>
+          <div className="nb2-card-cover"><Package size={25}/><small>{item.category || "Asset Nosbloc"}</small></div>
+          <div className="nb2-card-body"><span className="nb2-status" data-tone="gold">Boutique</span><h3>{item.name || item.title || "Création 3B"}</h3><p>{item.creator || item.license || "Ressource créateur"}</p><button disabled title="Paiements réels verrouillés">Paiement verrouillé <LockKeyhole size={14}/></button></div>
+        </article>)}</div>
+    )}
+
+    {section === "creators" && (!creators.length
+      ? <EmptyState icon={Users} title="Aucun créateur correspondant." text="Les profils apparaissent à partir des projets du studio."/>
+      : <div className="nb2-creator-grid">{creators.map(creator => <article key={creator.name}><span><UserRound size={21}/></span><div><b>{creator.name}</b><small>{creator.projects} projet{creator.projects > 1 ? "s" : ""} · {creator.published} publié{creator.published > 1 ? "s" : ""}</small></div><ShieldCheck size={17}/></article>)}</div>
+    )}
   </div>;
 }
 
+function ProjectPublicView({ project, onBack, onOpenStudio }) {
+  const ready = projectReadiness(project);
+  const status = STATUS[project.status] || [project.status, "neutral"];
+  const owner = (project.splits || []).find(row => row.status === "owner") || project.splits?.[0];
+  return <div className="nb2-view">
+    <button className="nb2-inline-back" onClick={onBack}><ArrowLeft size={16}/> Explorer</button>
+    <section className="nb2-public-project">
+      <div className="nb2-public-cover"><Sparkles size={38}/><small>{project.template}</small></div>
+      <div className="nb2-public-copy">
+        <span className="nb2-status" data-tone={status[1]}>{status[0]}</span>
+        <h1>{project.title}</h1>
+        <p>{project.description || "Création Nosbloc 3B."}</p>
+        <div className="nb2-public-by"><UserRound size={16}/> Créé par <b>{owner?.name || "Créateur 3B"}</b></div>
+        <div className="nb2-progress"><i style={{width: ready.score + "%"}}/></div>
+        <small>{ready.score} % de préparation · {PROJECT_TYPES.find(x => x.id === project.type)?.label}</small>
+        <div className="nb2-public-actions">
+          <button className="primary" onClick={onOpenStudio}><FolderKanban size={17}/> Ouvrir mon Studio</button>
+          <button disabled><Eye size={17}/> Aperçu public après validation</button>
+        </div>
+      </div>
+    </section>
+  </div>;
+}
 function ProjectCard({ project, onOpen }) {
   const ready = projectReadiness(project);
   const status = STATUS[project.status] || [project.status, "neutral"];
