@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - chatgpt-nosbloc-staging-v1-20260926
+  pull_request:
+    branches:
+      - chatgpt-improvements-nosbloc-v1-20260926
   workflow_dispatch:
 
 permissions:
@@ -49,5 +52,5 @@ jobs:
       - name: Verify production deployment registry remains unchanged
         run: >-
           node -e "const m=require('./supabase/functions/DEPLOYED_FUNCTIONS_SNAPSHOT.json');
-          if(m.functions.some(x=>x.slug==='nosbloc-staging')) process.exit(1);
+          if(m.functions.some(x=>['nosbloc-staging','nosbloc-staging-console'].includes(x.slug))) process.exit(1);
           console.log('Production function registry unchanged.');"
