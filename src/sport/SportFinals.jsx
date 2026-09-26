@@ -26,11 +26,13 @@ export default function SportFinals(){
  const[privacyOpen,setPrivacyOpen]=useState(false);
  const[landscape,setLandscape]=useState(false);
  const[fullscreen,setFullscreen]=useState(false);
+ const[appFullscreen,setAppFullscreen]=useState(false);
  const shellRef=useRef(null);
 
  const filtered=useMemo(()=>WORLD_FINALS.filter(item=>sport==='Tous'||item.sport===sport),[sport]);
  const selected=filtered.find(item=>item.id===selectedId)||filtered[0]||WORLD_FINALS[0];
  const src=mediaConsent?embedUrl(selected.videoId):'';
+ const expanded=fullscreen||appFullscreen;
 
  useEffect(()=>{
   if(!filtered.some(item=>item.id===selectedId))setSelectedId(filtered[0]?.id||WORLD_FINALS[0].id);
@@ -49,6 +51,7 @@ export default function SportFinals(){
    window.removeEventListener('resize',sync);
    window.screen?.orientation?.removeEventListener?.('change',sync);
    document.documentElement.classList.remove('sport-finals-landscape-open');
+   try{window.screen?.orientation?.unlock?.();}catch{/* Orientation locking is optional. */}
   };
  },[mediaConsent]);
 
@@ -56,6 +59,19 @@ export default function SportFinals(){
   const sync=()=>setFullscreen(document.fullscreenElement===shellRef.current);
   document.addEventListener('fullscreenchange',sync);
   return()=>document.removeEventListener('fullscreenchange',sync);
+ },[]);
+
+ useEffect(()=>{
+  document.documentElement.classList.toggle('sport-finals-app-fullscreen-open',appFullscreen);
+  return()=>document.documentElement.classList.remove('sport-finals-app-fullscreen-open');
+ },[appFullscreen]);
+
+ useEffect(()=>()=>{
+  document.documentElement.classList.remove('sport-finals-landscape-open','sport-finals-app-fullscreen-open');
+  try{window.screen?.orientation?.unlock?.();}catch{/* Orientation locking is optional. */}
+  if(document.fullscreenElement===shellRef.current){
+   try{document.exitFullscreen?.().catch?.(()=>{});}catch{/* Fullscreen may already be closed. */}
+  }
  },[]);
 
  function activate(){
@@ -68,19 +84,35 @@ export default function SportFinals(){
   if(document.fullscreenElement===shellRef.current){
    try{await document.exitFullscreen();}catch{/* Fullscreen may already be closed. */}
   }
+  setAppFullscreen(false);
+  setLandscape(false);
+  document.documentElement.classList.remove('sport-finals-landscape-open','sport-finals-app-fullscreen-open');
+  try{window.screen?.orientation?.unlock?.();}catch{/* Orientation locking is optional. */}
   setMediaConsent(false);
  }
 
  async function toggleFullscreen(){
-  try{
+  if(expanded){
    if(document.fullscreenElement===shellRef.current){
-    await document.exitFullscreen();
-    try{window.screen?.orientation?.unlock?.();}catch{/* Orientation locking is optional. */}
-   }else{
-    await shellRef.current?.requestFullscreen?.();
-    try{await window.screen?.orientation?.lock?.('landscape');}catch{/* Orientation locking is optional. */}
+    try{await document.exitFullscreen();}catch{/* Fullscreen may already be closed. */}
    }
-  }catch{/* Fullscreen can be denied by the browser or WebView. */}
+   setAppFullscreen(false);
+   document.documentElement.classList.remove('sport-finals-app-fullscreen-open');
+   try{window.screen?.orientation?.unlock?.();}catch{/* Orientation locking is optional. */}
+   return;
+  }
+
+  const request=shellRef.current?.requestFullscreen;
+  if(typeof request==='function'){
+   try{
+    await request.call(shellRef.current);
+    try{await window.screen?.orientation?.lock?.('landscape');}catch{/* Orientation locking is optional. */}
+    return;
+   }catch{/* The app-local fallback below works when native fullscreen is denied. */}
+  }
+
+  setAppFullscreen(true);
+  document.documentElement.classList.add('sport-finals-app-fullscreen-open');
  }
 
  function selectFinal(id){
@@ -88,7 +120,7 @@ export default function SportFinals(){
   window.setTimeout(()=>shellRef.current?.scrollIntoView?.({behavior:'smooth',block:'start'}),0);
  }
 
- const shellClass=['sport-finals-player-shell',landscape?'is-landscape':'',fullscreen?'is-fullscreen':''].filter(Boolean).join(' ');
+ const shellClass=['sport-finals-player-shell',landscape?'is-landscape':'',fullscreen?'is-fullscreen':'',appFullscreen?'is-app-fullscreen':''].filter(Boolean).join(' ');
 
  return <div className="sport-finals-view">
   <header className="sport-finals-hero">
@@ -105,13 +137,13 @@ export default function SportFinals(){
     <div><span>{selected.sport} · {selected.year}</span><strong>{selected.title}</strong><small>{selected.competition} · {selected.source}</small></div>
     <div className="sport-finals-head-actions">
      <span className="sport-finals-local-only">DANS 3B</span>
-     <button type="button" onClick={toggleFullscreen} disabled={!mediaConsent} aria-label={fullscreen?'Quitter le grand écran':'Afficher en grand écran'}>{fullscreen?<Minimize2 size={16}/>:<Maximize2 size={16}/>}<span>{fullscreen?'Réduire':'Grand écran'}</span></button>
+     <button type="button" onClick={toggleFullscreen} disabled={!mediaConsent} aria-label={expanded?'Quitter le grand écran':'Afficher en grand écran'}>{expanded?<Minimize2 size={16}/>:<Maximize2 size={16}/>}<span>{expanded?'Réduire':'Grand écran'}</span></button>
     </div>
    </div>
 
    <div className="sport-finals-frame">
-    {!mediaConsent?<div className="sport-finals-consent"><ShieldCheck size={38}/><strong>Activer le lecteur intégré</strong><p>La vidéo officielle est chargée à l’intérieur de 3B. Les ouvertures de fenêtre et les sorties vers YouTube sont bloquées dans ce lecteur.</p><button type="button" className="sport-finals-privacy-toggle" onClick={()=>setPrivacyOpen(value=>!value)}>Confidentialité</button>{privacyOpen&&<div className="sport-finals-privacy-panel" role="note">YouTube reçoit uniquement les données techniques nécessaires à la lecture après ton activation. Tu peux désactiver le lecteur à tout moment sous la vidéo.</div>}<button type="button" onClick={activate}><Play size={17}/>Activer et regarder ici</button></div>:
-     <iframe key={selected.videoId} src={src} title={`${selected.competition} · ${selected.title}`} allow="autoplay; encrypted-media; picture-in-picture" sandbox="allow-scripts allow-same-origin allow-presentation" loading="lazy" referrerPolicy="strict-origin-when-cross-origin"/>}
+    {!mediaConsent?<div className="sport-finals-consent"><ShieldCheck size={38}/><strong>Activer le lecteur intégré</strong><p>La vidéo officielle est chargée à l’intérieur de 3B. Les ouvertures de fenêtre, le mode image dans l’image et les sorties vers YouTube sont bloqués dans ce lecteur.</p><button type="button" className="sport-finals-privacy-toggle" onClick={()=>setPrivacyOpen(value=>!value)}>Confidentialité</button>{privacyOpen&&<div className="sport-finals-privacy-panel" role="note">YouTube reçoit uniquement les données techniques nécessaires à la lecture après ton activation. Tu peux désactiver le lecteur à tout moment sous la vidéo.</div>}<button type="button" onClick={activate}><Play size={17}/>Activer et regarder ici</button></div>:
+     <iframe key={selected.videoId} src={src} title={`${selected.competition} · ${selected.title}`} allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin" loading="lazy" referrerPolicy="no-referrer"/>}
    </div>
 
    <div className="sport-finals-player-foot">
@@ -128,6 +160,6 @@ export default function SportFinals(){
    </button>)}
   </div>
 
-  <p className="muted-copy sport-finals-note">Tout reste local dans l’interface 3B. Tourne le téléphone pour remplir automatiquement l’écran ; le bouton « Grand écran » fait la même chose sans ouvrir une autre application.</p>
+  <p className="muted-copy sport-finals-note">Tout reste local dans l’interface 3B. Tourne le téléphone pour remplir automatiquement l’écran ; le bouton « Grand écran » utilise le plein écran natif ou un grand écran interne de secours, sans ouvrir une autre application.</p>
  </div>;
 }
