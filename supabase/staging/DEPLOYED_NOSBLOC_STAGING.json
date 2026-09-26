@@ -72,5 +72,9 @@
     "synthetic_users_rolled_back": true,
     "project_rolled_back": true
   },
-  "deployed_on": "2026-09-26"
+  "deployed_on": "2026-09-26",
+  "shared_foundation_migrations": [
+    "passport_verification_ticket_public_id_fk_index"
+  ],
+  "performance_advisor_unindexed_foreign_keys": 0
 }
