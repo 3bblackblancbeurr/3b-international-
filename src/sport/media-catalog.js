@@ -200,6 +200,69 @@ export const SPORT_FINALS=[
   sources:[
    source('olympics-ice-hockey-2002-full','Replay officiel','g2QdHGLGBVA',{provider:'Olympic Games',mode:'full'})
   ]
+ }),
+ media({
+  id:'final-basket-tokyo-2020',sport:'Basket',year:'2020',title:'France · USA',
+  subtitle:'Finale olympique hommes Tokyo 2020 · match complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-basket-tokyo-2020-full','Replay complet officiel','8YSrNfcKvA0',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-volley-rio-men-2016',sport:'Volley',year:'2016',title:'Italie · Brésil',
+  subtitle:'Finale olympique hommes Rio 2016 · match complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-volley-rio-men-2016-full','Replay complet officiel','KLIa2UaE2KE',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-badminton-women-tokyo-2020',sport:'Badminton',year:'2020',title:'Chen Yufei · Tai Tzu-ying',
+  subtitle:'Finale olympique simple femmes Tokyo 2020 · match complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-badminton-women-tokyo-2020-full','Replay complet officiel','_O_7FAcc7fE',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-badminton-men-tokyo-2020',sport:'Badminton',year:'2020',title:'Viktor Axelsen · Chen Long',
+  subtitle:'Finale olympique simple hommes Tokyo 2020 · match complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-badminton-men-tokyo-2020-full','Replay complet officiel','uIj03RsGrJA',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-wrestling-greco-tokyo-2020',sport:'Lutte',year:'2020',title:'Mijaín López · Iakobi Kajaia',
+  subtitle:'Finale olympique gréco-romaine 130 kg Tokyo 2020 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-wrestling-greco-tokyo-2020-full','Replay officiel','IRHxI5EJ0u4',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-field-hockey-women-tokyo-2020',sport:'Hockey sur gazon',year:'2020',title:'Pays-Bas · Argentine',
+  subtitle:'Finale olympique femmes Tokyo 2020 · replay complet',provider:'Olympic Games',
+  sources:[
+   source('olympics-field-hockey-women-tokyo-2020-full','Replay complet officiel','3mZ2-aEDAzc',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-athletics-long-jump-rio-2016',sport:'Athlétisme',year:'2016',title:'Saut en longueur hommes',
+  subtitle:'Finale olympique Rio 2016 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-athletics-long-jump-rio-2016-full','Replay officiel','fXIbLmlUdOQ',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-athletics-triple-jump-rio-2016',sport:'Athlétisme',year:'2016',title:'Triple saut hommes',
+  subtitle:'Finale olympique Rio 2016 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-athletics-triple-jump-rio-2016-full','Replay officiel','Rmb48a2t008',{provider:'Olympic Games',mode:'full'})
+  ]
+ }),
+ media({
+  id:'final-judo-100-rio-2016',sport:'Judo',year:'2016',title:'Teddy Riner · Hisayoshi Harasawa',
+  subtitle:'Finale olympique +100 kg hommes Rio 2016 · replay officiel',provider:'Olympic Games',
+  sources:[
+   source('olympics-judo-100-rio-2016-full','Replay officiel','w84H1S2SPgw',{provider:'Olympic Games',mode:'full'})
+  ]
  })
 ];
 
