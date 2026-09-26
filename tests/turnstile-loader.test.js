@@ -64,20 +64,31 @@ test('a script that loaded without the API rejects and can be retried', async ()
   assert.equal(f.scripts.length, 0);
 });
 
-test('deployment policy allows the anti-bot script and frame without relaxing other script origins', () => {
+test('deployment policy isolates Turnstile and the privacy-enhanced Sport player without relaxing script origins', () => {
   const config = JSON.parse(readFileSync('vercel.json', 'utf8'));
-  const policyHeader = config.headers
-    .flatMap(rule => rule.headers || [])
-    .find(header =>
-      header.key === 'Content-Security-Policy' &&
-      header.value.includes('https://challenges.cloudflare.com') &&
-      header.value.includes('https://www.youtube-nocookie.com')
-    );
-  assert.ok(policyHeader, 'global CSP with Turnstile and privacy-enhanced YouTube must exist');
-  const directives = new Map(policyHeader.value.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
-  assert.ok(directives.get('script-src').includes('https://challenges.cloudflare.com'));
-  assert.deepEqual(directives.get('frame-src'), ['https://challenges.cloudflare.com', 'https://www.youtube-nocookie.com']);
-  assert.ok(!directives.get('script-src').includes("'unsafe-inline'"));
-  assert.ok(!directives.get('script-src').includes('*'));
-  assert.deepEqual(directives.get('object-src'), ["'none'"]);
+  const cspRules = config.headers
+    .map(rule => ({
+      source: rule.source,
+      header: (rule.headers || []).find(header => header.key === 'Content-Security-Policy'),
+    }))
+    .filter(rule => rule.header);
+
+  const appRule = cspRules.find(rule => rule.header.value.includes('https://challenges.cloudflare.com'));
+  assert.ok(appRule, 'application CSP with Turnstile must exist');
+  const appDirectives = new Map(appRule.header.value.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
+  assert.ok(appDirectives.get('script-src').includes('https://challenges.cloudflare.com'));
+  assert.ok(appDirectives.get('frame-src').includes('https://challenges.cloudflare.com'));
+  assert.ok(!appDirectives.get('script-src').includes("'unsafe-inline'"));
+  assert.ok(!appDirectives.get('script-src').includes('*'));
+  assert.deepEqual(appDirectives.get('object-src'), ["'none'"]);
+
+  const sportRule = cspRules.find(rule =>
+    rule.source === '/sport-player-shell.html' &&
+    rule.header.value.includes('https://www.youtube-nocookie.com')
+  );
+  assert.ok(sportRule, 'dedicated Sport player CSP with privacy-enhanced YouTube must exist');
+  const sportDirectives = new Map(sportRule.header.value.split(';').map(value => value.trim().split(/\s+/)).filter(parts => parts[0]).map(([name, ...values]) => [name, values]));
+  assert.deepEqual(sportDirectives.get('frame-src'), ['https://www.youtube-nocookie.com']);
+  assert.deepEqual(sportDirectives.get('object-src'), ["'none'"]);
+  assert.ok(!sportDirectives.get('script-src').includes('*'));
 });
