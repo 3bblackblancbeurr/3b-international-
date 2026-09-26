@@ -116,14 +116,14 @@ test('V4 keeper camera is physically behind the goal with the complete goal visi
   assert.match(arena, /2\.45/);
   assert.match(arena, /fov = 72/);
   assert.match(arena, /keeperApron/);
-  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.12/);
+  assert.match(arena, /goal\.userData\.netMat\.opacity = mix\(goal\.userData\.netMat\.opacity, \.075/);
 });
 
 test('V4 streams keeper movement while dragging and keeps the server authoritative', () => {
   assert.match(match, /keeperMoveThrottle/);
   assert.match(match, /pendingKeeperMove/);
   assert.match(match, /keeperFinalAction/);
-  assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, intensity \}\)/);
+  assert.match(match, /queueKeeperMove\(\{ type:'hold', direction, forward, intensity \}\)/);
   assert.match(match, /queueKeeperFinal\(parsed\)/);
   assert.match(server, /state\.lastKeeperMoveAt = at/);
   assert.match(server, /const lateralSpeed = 2\.15 \+ intensity \* \.9/);
@@ -149,13 +149,13 @@ test('V4 goalkeeper view is a true behind-goal camera with visible turf behind t
   assert.match(arena, /serverKeeper\.x \* \.56/);
   assert.match(arena, /2\.18 \+ keeperDepth \* \.08/);
   assert.match(arena, /GOAL_Z - goalDistance - keeperDepth \* \.22/);
-  assert.match(arena, /GOAL_Z \+ 7\.4/);
+  assert.match(arena, /mix\(GOAL_Z \+ 6\.5, GOAL_Z \+ 10\.4/);
 });
 
 test('V4 uses football-scale player and ball dimensions', () => {
   assert.match(arena, /new THREE\.SphereGeometry\(\.11/);
   assert.match(arena, /targetHeight = index === clamp\(\(liveRef\.current\.room\?\.state \|\| \{\}\)\.keeper, 0, 1\) \? 1\.86 : 1\.76/);
-  assert.match(arena, /model\.scale\.setScalar\(\.56\)/);
+  assert.match(arena, /model\.scale\.setScalar\(\.56 \* \(appearance\.heightCm \/ 178\)\)/);
   assert.match(arena, /const GOAL_H = 2\.44/);
 });
 
@@ -252,4 +252,17 @@ test('V7 keeps street football skill motions visual and immediate', () => {
   assert.match(arena, /legR\.hip\.rotation\.x \+= Math\.max\(0, step\) \* \.72/);
   assert.match(arena, /action === 'cut'/);
   assert.match(arena, /action === 'rhythm'/);
+});
+
+
+test('V9 renders cosmetic football identity without feeding competitive physics', () => {
+  assert.match(arena, /visual = self \? profile\?\.appearance/);
+  assert.match(arena, /skin: validHex\(visual\.skinColor/);
+  assert.match(arena, /hairStyle: String\(visual\.hairStyle/);
+  assert.match(arena, /appearance\.heightCm \/ 178/);
+  assert.match(arena, /appearance\.faceShape/);
+  assert.match(arena, /appearance\.facialHair/);
+  assert.match(server, /function sanitizeAppearance/);
+  assert.match(server, /appearance:sanitizeAppearance/);
+  assert.doesNotMatch(server, /appearance.*STYLE_TUNING/);
 });
