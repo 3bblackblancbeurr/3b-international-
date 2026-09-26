@@ -500,92 +500,130 @@ function ClubPanel({ snapshot, profile, busy, request }) {
 }
 
 function InternationalPanel({ snapshot, profile, busy, request }) {
-  const country = countryById(profile.countryId);
-  const international = snapshot?.international || {};
-  const statusText = {
-    selection: 'Sélection confirmée',
-    preselection: 'Présélection',
-    declined: 'Convocation déclinée',
-    observe: 'Observé',
-    radar: 'Radar national',
-    club: 'Carrière club',
-    'non-classe': '10 matchs requis',
-  }[international.scouting] || 'Radar national';
-
-  const hasCallup = international.selectionStatus === 'preselected' && international.selectionId;
-  const selected = international.selectionStatus === 'selected';
-  const neededRoleLabel = international.neededRole === 'pression'
+  const country=countryById(profile.countryId);
+  const international=snapshot?.international||{};
+  const ranked=snapshot?.ranked||{};
+  const hasCallup=international.selectionStatus==='preselected'&&international.selectionId;
+  const selected=international.selectionStatus==='selected';
+  const neededRoleLabel=international.neededRole==='pression'
     ? 'Spécialiste des Duels d’Or'
-    : PLAYER_STYLES[international.neededRole]?.name || null;
-
+    : PLAYER_STYLES[international.neededRole]?.name||null;
+  const breakdown=international.scoreBreakdown||{};
+  const phaseLabel={
+    selection:'Sélection en cours',locked:'Liste verrouillée',active:'Matchs internationaux ouverts',
+    closed:'Fenêtre fermée',planned:'À venir',
+  }[international.windowStatus]||'Hors fenêtre';
   return (
-    <section className="penalty-panel-page">
-      <span className="penalty-kicker">INTERNATIONAL</span><h1>{country.flag} {country.name} peut avoir besoin de toi.</h1>
-      <p>La sélection regarde ton classement national, ta forme, tes performances sous pression et le profil recherché. Le classement seul ne garantit jamais une place.</p>
+    <section className="penalty-panel-page penalty-international-page">
+      <span className="penalty-kicker">ÉQUIPE NATIONALE · {country.flag} {country.name}</span>
+      <h1>La sélection se gagne sur des preuves, pas sur un bouton.</h1>
+      <p>Le serveur combine ta saison classée, ton rang national, ta forme récente, ta réputation, les Duels d’Or, le besoin du groupe et ta discipline. Les achats et cosmétiques ne comptent jamais.</p>
 
-      {hasCallup && (
-        <div className="penalty-callup" data-state="urgent">
-          <Globe2 size={32}/>
-          <div>
-            <b>LE PAYS A BESOIN DE TOI</b>
-            <p>{country.name} t’a présélectionné{international.windowName ? ' pour ' + international.windowName : ''}. Profil recherché : {international.roleProfile || PLAYER_STYLES[profile.styleId]?.name || 'polyvalent'}.</p>
-            <div className="penalty-inline-actions">
-              <button className="penalty-primary" disabled={busy} onClick={() => request('international.respond', { selectionId: international.selectionId, decision: 'accept' }).catch(() => {})}>Accepter la convocation</button>
-              <button className="penalty-secondary" disabled={busy} onClick={() => request('international.respond', { selectionId: international.selectionId, decision: 'decline' }).catch(() => {})}>Décliner</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selected && (
-        <div className="penalty-callup" data-state="selected">
-          <Globe2 size={32}/>
-          <div>
-            <b>{country.flag} SÉLECTION CONFIRMÉE</b>
-            <p>Tu représenteras {country.name}{international.windowName ? ' pendant ' + international.windowName : ''}. Le maillot de sélection remplace automatiquement la tenue club pendant les rencontres internationales, sans modifier tes chaussures ni ton identité.</p>
-          </div>
-        </div>
-      )}
-
-      <div className="penalty-international-grid">
-        <article><small>RANG NATIONAL</small><strong>{international.nationalRank ? '#' + international.nationalRank : '—'}</strong><span>{country.name}</span></article>
-        <article><small>STATUT</small><strong>{statusText}</strong><span>{international.windowLabel || 'Hors fenêtre internationale'}</span></article>
-        <article><small>PRESSION</small><strong>{Math.round((international.pressureScore || 0) * 100)} %</strong><span>Duels d’Or gagnés</span></article>
-        <article><small>SÉLECTIONS</small><strong>{international.caps || 0}</strong><span>{international.goals || 0} but(s) international(aux)</span></article>
+      <div className="penalty-selection-path" aria-label="Parcours de sélection">
+        {[
+          ['01','Placements','Terminer les matchs de placement classé.'],
+          ['02','Radar','Entrer dans les joueurs suivis du pays.'],
+          ['03','Observation','Confirmer ta forme sur plusieurs matchs.'],
+          ['04','Convocation','Recevoir une place dans la limite de l’effectif.'],
+          ['05','Sélection','Accepter la convocation pendant la fenêtre.'],
+          ['06','International','Jouer contre une autre sélection quand les matchs ouvrent.'],
+        ].map(([step,title,text])=><article key={step} data-active={
+          title==='Placements'?(ranked.placementsRemaining||0)>0:
+          title==='Convocation'?hasCallup:
+          title==='Sélection'?selected:
+          title==='International'?international.matchOpen:false
+        }><b>{step}</b><div><strong>{title}</strong><small>{text}</small></div></article>)}
       </div>
 
-      <div className="penalty-rule-note">{neededRoleLabel ? <><b>Besoin actuel de la sélection : {neededRoleLabel}.</b> {' '}Le besoin est recalculé selon les profils déjà retenus. </> : null}Parcours : radar national → observé → présélection → convocation → sélection. Une place internationale se gagne en multijoueur et ne peut pas être achetée.</div>
-
-      <h2>Compétitions 3B</h2>
-      <div className="penalty-competition-list">{COMPETITIONS.map((competition) => <article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
-
-      {!hasCallup && !selected && (
-        <div className="penalty-callup">
-          <Globe2 size={28}/><div><b>Le pays a besoin de toi</b><p>Lors d’une fenêtre officielle, le serveur peut te présélectionner selon ton rang, ta réputation, ta résistance à la pression et le profil dont la sélection a besoin.</p></div>
+      {hasCallup&&<div className="penalty-callup" data-state="urgent">
+        <Globe2 size={34}/><div>
+          <span className="penalty-kicker">CONVOCATION OFFICIELLE</span>
+          <b>LE PAYS A BESOIN DE TOI</b>
+          <p>{country.name} t’a présélectionné{international.windowName?' pour '+international.windowName:''}. Profil recherché : {international.roleProfile||PLAYER_STYLES[profile.styleId]?.name||'polyvalent'}.</p>
+          <div className="penalty-inline-actions">
+            <button className="penalty-primary" disabled={busy} onClick={()=>request('international.respond',{selectionId:international.selectionId,decision:'accept'}).catch(()=>{})}>Accepter</button>
+            <button className="penalty-secondary" disabled={busy} onClick={()=>request('international.respond',{selectionId:international.selectionId,decision:'decline'}).catch(()=>{})}>Décliner</button>
+          </div>
         </div>
-      )}
+      </div>}
+
+      {selected&&<div className="penalty-callup" data-state="selected">
+        <Globe2 size={34}/><div>
+          <span className="penalty-kicker">SÉLECTION CONFIRMÉE</span>
+          <b>{country.flag} TU REPRÉSENTES {country.name.toUpperCase()}</b>
+          <p>{international.matchOpen?'La fenêtre de matchs est ouverte. Tu peux entrer dans la file internationale.':`Ta place est enregistrée. Phase actuelle : ${phaseLabel}.`}</p>
+          <button className="penalty-primary" disabled={busy||!international.matchOpen} onClick={()=>request('queue',{mode:'international'}).catch(()=>{})}><Globe2 size={17}/> Jouer pour {country.name}</button>
+        </div>
+      </div>}
+
+      <div className="penalty-international-grid penalty-international-grid-v8">
+        <article><small>RANG NATIONAL</small><strong>{international.nationalRank?'#'+international.nationalRank:'—'}</strong><span>{ranked.placementsRemaining?ranked.placementsRemaining+' placement(s) restant(s)':country.name}</span></article>
+        <article><small>SCORE SÉLECTION</small><strong>{Math.round(international.selectionScore||0)}</strong><span>/ 100 · {scoutingLabel(international.scouting)}</span></article>
+        <article><small>FORME · 10 DERNIERS</small><strong>{Math.round((international.recentForm?.winRate||0)*100)}%</strong><span>{international.recentForm?.wins||0} victoire(s) / {international.recentForm?.matches||0}</span></article>
+        <article><small>PRESSION</small><strong>{Math.round((international.pressureScore||0)*100)}%</strong><span>Duels d’Or</span></article>
+        <article><small>SÉLECTIONS</small><strong>{international.caps||0}</strong><span>{international.goals||0} but(s) international(aux)</span></article>
+        <article><small>FENÊTRE</small><strong>{phaseLabel}</strong><span>{international.windowName||'Aucune fenêtre active'}</span></article>
+      </div>
+
+      <div className="penalty-scouting-breakdown">
+        <div className="penalty-section-title"><div><span className="penalty-kicker">POURQUOI CE SCORE ?</span><h2>Lecture du sélectionneur serveur</h2></div><b>{neededRoleLabel?'Besoin : '+neededRoleLabel:'Besoin variable'}</b></div>
+        <div className="penalty-scouting-bars">
+          {[['Niveau classé',breakdown.rating,38],['Rang national',breakdown.rank,22],['Forme',breakdown.form,14],['Réputation',breakdown.reputation,10],['Pression',breakdown.pressure,10],['Profil recherché',breakdown.role,6]].map(([label,value,max])=><div key={label}><span>{label}</span><i><b style={{width:`${Math.max(0,Math.min(100,(Number(value||0)/Number(max))*100))}%`}}/></i><strong>{Number(value||0).toFixed(1)}</strong></div>)}
+          {Number(breakdown.discipline||0)<0&&<div data-penalty="true"><span>Discipline / abandons</span><i><b style={{width:`${Math.min(100,Math.abs(Number(breakdown.discipline))*6.25)}%`}}/></i><strong>{Number(breakdown.discipline).toFixed(1)}</strong></div>}
+        </div>
+      </div>
+
+      <div className="penalty-rule-note"><b>Règle nationale :</b> le classement seul ne garantit jamais une convocation. Il faut assez de matchs, une identité Passeport valide, une place disponible dans l’effectif et un dossier sportif cohérent.</div>
+      <h2>Compétitions 3B</h2>
+      <div className="penalty-competition-list">{COMPETITIONS.map(competition=><article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
     </section>
   );
 }
+
 function CareerPanel({ snapshot, rating, tier, profile }) {
-  const career = snapshot?.career || {};
-  const history = snapshot?.history || [];
-  const country = countryById(profile.countryId);
+  const career=snapshot?.career||{};
+  const ranked=snapshot?.ranked||{};
+  const history=snapshot?.history||[];
+  const international=snapshot?.international||{};
+  const country=countryById(profile.countryId);
+  const division=ranked.division||{label:'Placement'};
+  const total=Number(ranked.wins||0)+Number(ranked.losses||0);
+  const winRate=total?Math.round(Number(ranked.wins||0)/total*100):0;
   return (
-    <section className="penalty-panel-page">
-      <span className="penalty-kicker">BIOGRAPHIE SPORTIVE</span><h1>{profile.displayName} · {tier.label}</h1>
-      <div className="penalty-career-stats">
-        <article><small>MATCHS</small><strong>{rating.games || 0}</strong></article>
-        <article><small>VICTOIRES</small><strong>{rating.wins || 0}</strong></article>
-        <article><small>ELO</small><strong>{rating.rating || 1000}</strong></article>
-        <article><small>RÉPUTATION</small><strong>{career.reputation || 0}</strong></article>
-        <article><small>BUTS</small><strong>{career.goals || 0}</strong></article>
-        <article><small>ARRÊTS</small><strong>{career.saves || 0}</strong></article>
+    <section className="penalty-panel-page penalty-career-page">
+      <span className="penalty-kicker">BIOGRAPHIE SPORTIVE · {ranked.season?.name||'CARRIÈRE'}</span>
+      <h1>{profile.displayName} · {division.label}</h1>
+      <p>{country.flag} {country.name} · {PLAYER_STYLES[profile.styleId]?.name} · {profile.clubName||'Sans club'} · archétype niveau {career.archetypeLevel||profile.archetypeLevel||1}/50.</p>
+
+      <div className="penalty-career-stats penalty-career-stats-v8">
+        <article><small>NOTE SAISON</small><strong>{ranked.rating||1000}</strong><span>{division.label}</span></article>
+        <article><small>MATCHS CLASSÉS</small><strong>{ranked.games||0}</strong><span>{ranked.placementsRemaining?ranked.placementsRemaining+' placement(s) restant(s)':'Rang officiel'}</span></article>
+        <article><small>VICTOIRES</small><strong>{ranked.wins||0}</strong><span>{winRate}% de victoire</span></article>
+        <article><small>SÉRIE</small><strong>{ranked.streak||0}</strong><span>meilleure note {ranked.bestRating||ranked.rating||1000}</span></article>
+        <article><small>RÉPUTATION</small><strong>{career.reputation||0}</strong><span>{tier.label}</span></article>
+        <article><small>ARCHÉTYPE</small><strong>{career.archetypeLevel||1}</strong><span>{career.archetypeXp||0} AXP</span></article>
+        <article><small>RANG NATIONAL</small><strong>{international.nationalRank?'#'+international.nationalRank:'—'}</strong><span>{scoutingLabel(international.scouting)}</span></article>
+        <article><small>ABANDONS</small><strong>{ranked.forfeits||0}</strong><span>impactent la sélection</span></article>
+        <article><small>BUTS CARRIÈRE</small><strong>{career.goals||0}</strong><span>tous duels officiels</span></article>
+        <article><small>ARRÊTS</small><strong>{career.saves||0}</strong><span>gardien</span></article>
       </div>
+
+      <div className="penalty-career-roadmap">
+        <span className="penalty-kicker">PROGRESSION</span>
+        <div>{[
+          ['Passeport',snapshot?.passport?.competitiveReady?'validé':'à vérifier'],
+          ['Saison',ranked.placementsRemaining?'placements':'classé'],
+          ['Club',profile.clubName||'libre'],
+          ['National',scoutingLabel(international.scouting)],
+          ['International',(international.caps||0)+' sélection(s)'],
+        ].map(([label,value])=><article key={label}><small>{label}</small><b>{value}</b></article>)}</div>
+      </div>
+
       <div className="penalty-biography">
-        <h2>Chronologie</h2>
-        {history.length ? history.slice(0, 12).map((event, index) => <div key={event.id || index}><span>{event.label || event.result || 'Match 3B'}</span><small>{event.createdAt ? new Date(event.createdAt).toLocaleDateString('fr-FR') : country.name}</small></div>) : <p>Ta première ligne s’écrira après ton premier duel multijoueur.</p>}
+        <div className="penalty-section-title"><div><span className="penalty-kicker">CHRONOLOGIE</span><h2>Mes derniers matchs</h2></div><b>{history.length} événement(s)</b></div>
+        {history.length?history.slice(0,20).map((event,index)=><div key={event.id||index} data-result={event.result}><span>{event.label||event.result||'Match 3B'}</span><small>{event.result} · {event.createdAt?new Date(event.createdAt).toLocaleString('fr-FR'):country.name}</small></div>):<p>Ta première ligne s’écrira après ton premier duel multijoueur.</p>}
       </div>
+      <div className="penalty-rule-note"><b>Progression propre :</b> AXP, réputation, division et sélection viennent de matchs réglés côté serveur. La progression d’archétype débloque du prestige ; elle ne transforme pas le joueur en pay-to-win.</div>
     </section>
   );
 }
