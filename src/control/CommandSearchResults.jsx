@@ -6,6 +6,7 @@ const MODULES=[
  {id:'cc-alerts',label:'Centre d’attention',keywords:'alertes notifications urgent important',Icon:Activity},
  {id:'cc-nexus',label:'Nexus 3B',keywords:'services connexions sources',Icon:Workflow},
  {id:'cc-integrations',label:'Centre d’intégrations',keywords:'email réseaux finance agenda vercel api',Icon:Workflow},
+ {id:'cc-ai',label:'3B IA Command',keywords:'assistant ia intelligence synthèse priorités',Icon:Workflow},
  {id:'cc-traffic',label:'Radar 3B',keywords:'trafic fréquentation visites analytics',Icon:Activity},
  {id:'cc-dev',label:'Dev Center',keywords:'github ci commit pr déploiement',Icon:GitBranch},
  {id:'cc-security',label:'Security Center',keywords:'sécurité permissions allowlist audit',Icon:ShieldCheck},
