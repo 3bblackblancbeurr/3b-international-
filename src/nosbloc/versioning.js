@@ -1,8 +1,8 @@
 import { NOSBLOC_STORAGE_VERSION, normalizeSplits, normalizeState } from "./model.js";
 
 export const NOSBLOC_EXPORT_FORMAT = "nosbloc-3b-backup";
-export const NOSBLOC_VERSION_LIMIT = 20;
-const VERSION_STAGES = new Set(["checkpoint", "review", "approved", "published"]);
+export const NOSBLOC_VERSION_LIMIT = 40;
+const VERSION_STAGES = new Set(["checkpoint", "private_test", "review", "approved", "published"]);
 
 const nowIso = () => new Date().toISOString();
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -40,6 +40,7 @@ export function projectSnapshot(project = {}) {
     template: String(project.template || ""),
     description: String(project.description || "").slice(0, 600),
     audience: String(project.audience || "Tout public").slice(0, 60),
+    creationMode: String(project.creationMode || "template"),
     platforms: clone(project.platforms || {}),
     safety: clone(project.safety || {}),
     rights: clone(project.rights || {}),
@@ -60,7 +61,7 @@ export function createProjectVersion(project = {}, options = {}) {
     id: String(options.id || `version-${fingerprint({ entropy, versionNo, createdAt })}`),
     versionNo,
     stage,
-    note: String(options.note || (stage === "review" ? "Version envoyée en révision" : "Point de reprise")).trim().slice(0, 160),
+    note: String(options.note || (stage === "review" ? "Version envoyée en révision" : stage === "private_test" ? "Version de test privé" : "Point de reprise")).trim().slice(0, 160),
     createdAt,
     sourceUpdatedAt: String(project.updatedAt || createdAt),
     fingerprint: fingerprint(snapshot),
@@ -71,15 +72,22 @@ export function createProjectVersion(project = {}, options = {}) {
 export function appendProjectVersion(project = {}, options = {}) {
   const version = createProjectVersion(project, options);
   const versions = [...(Array.isArray(project.versions) ? project.versions : []), version].slice(-NOSBLOC_VERSION_LIMIT);
-  const review = version.stage === "review";
+  const nextStatus = version.stage === "private_test" ? "private_test"
+    : version.stage === "review" ? "review"
+      : version.stage === "approved" ? "approved"
+        : version.stage === "published" ? "published"
+          : project.status;
   return {
     version,
     project: {
       ...project,
       versions,
-      status: review ? "review" : project.status,
-      visibility: "private",
-      reviewVersionId: review ? version.id : project.reviewVersionId || null,
+      status: nextStatus,
+      visibility: version.stage === "published" ? "public" : "private",
+      reviewVersionId: version.stage === "review" ? version.id : project.reviewVersionId || null,
+      productionVersionId: version.stage === "published" ? version.id : project.productionVersionId || null,
+      lastTestedAt: version.stage === "private_test" ? version.createdAt : project.lastTestedAt || null,
+      lastPublishedAt: version.stage === "published" ? version.createdAt : project.lastPublishedAt || null,
       updatedAt: version.createdAt,
     },
   };
@@ -94,13 +102,7 @@ export function restoreProjectVersion(project = {}, versionId) {
   const privateByMember = new Map(normalizeSplits(project.splits).map(row => [row.id, row]));
   const splits = normalizeSplits(version.snapshot.splits).map(row => {
     const privateRow = privateByMember.get(row.id) || {};
-    return {
-      ...row,
-      contact: privateRow.contact || "",
-      inviteCode: privateRow.inviteCode || "",
-      invitedAt: privateRow.invitedAt || "",
-      acceptedAt: privateRow.acceptedAt || "",
-    };
+    return { ...row, contact: privateRow.contact || "", inviteCode: privateRow.inviteCode || "", invitedAt: privateRow.invitedAt || "", acceptedAt: privateRow.acceptedAt || "" };
   });
   return {
     ...project,
@@ -132,14 +134,7 @@ export function prepareTeamInvitation(project = {}, memberId, contact = "") {
     status: "draft",
     visibility: "private",
     reviewVersionId: null,
-    splits: rows.map(row => row.id === memberId ? {
-      ...row,
-      contact: String(contact || row.contact || "").trim().slice(0, 120),
-      status: "invited",
-      inviteCode,
-      invitedAt,
-      acceptedAt: "",
-    } : row),
+    splits: rows.map(row => row.id === memberId ? { ...row, contact: String(contact || row.contact || "").trim().slice(0, 120), status: "invited", inviteCode, invitedAt, acceptedAt: "" } : row),
     updatedAt: invitedAt,
   };
 }
@@ -150,26 +145,14 @@ export function revokeTeamInvitation(project = {}, memberId) {
     status: "draft",
     visibility: "private",
     reviewVersionId: null,
-    splits: normalizeSplits(project.splits).map(row => row.id === memberId && row.status !== "owner" ? {
-      ...row,
-      status: "draft",
-      inviteCode: "",
-      invitedAt: "",
-      acceptedAt: "",
-    } : row),
+    splits: normalizeSplits(project.splits).map(row => row.id === memberId && row.status !== "owner" ? { ...row, status: "draft", inviteCode: "", invitedAt: "", acceptedAt: "" } : row),
     updatedAt: nowIso(),
   };
 }
 
 export function serializeStateExport(state) {
   const normalized = normalizeState(state, state?.profile || {});
-  const envelope = {
-    format: NOSBLOC_EXPORT_FORMAT,
-    version: NOSBLOC_STORAGE_VERSION,
-    exportedAt: nowIso(),
-    fingerprint: fingerprint(normalized),
-    state: normalized,
-  };
+  const envelope = { format: NOSBLOC_EXPORT_FORMAT, version: NOSBLOC_STORAGE_VERSION, exportedAt: nowIso(), fingerprint: fingerprint(normalized), state: normalized };
   return JSON.stringify(envelope, null, 2);
 }
 
@@ -177,16 +160,11 @@ export function parseStateExport(text, profile = {}) {
   const source = String(text || "");
   if (!source.trim() || source.length > 2_000_000) throw new Error("Archive Nosbloc invalide ou trop volumineuse.");
   let envelope;
-  try {
-    envelope = JSON.parse(source);
-  } catch {
-    throw new Error("Le fichier n’est pas un JSON Nosbloc valide.");
-  }
+  try { envelope = JSON.parse(source); } catch { throw new Error("Le fichier n’est pas un JSON Nosbloc valide."); }
   if (envelope?.format !== NOSBLOC_EXPORT_FORMAT) throw new Error("Format d’archive Nosbloc inconnu.");
-  if (!Number.isInteger(envelope.version) || envelope.version < 1 || envelope.version > NOSBLOC_STORAGE_VERSION) {
-    throw new Error("Version d’archive Nosbloc incompatible.");
-  }
+  if (!Number.isInteger(envelope.version) || envelope.version < 1 || envelope.version > NOSBLOC_STORAGE_VERSION) throw new Error("Version d’archive Nosbloc incompatible.");
   const normalized = normalizeState(envelope.state, profile);
-  if (fingerprint(normalized) !== envelope.fingerprint) throw new Error("L’archive a été modifiée ou endommagée.");
+  const sourceFingerprint = envelope.version < NOSBLOC_STORAGE_VERSION ? fingerprint(normalizeState(envelope.state, envelope.state?.profile || {})) : envelope.fingerprint;
+  if (envelope.version === NOSBLOC_STORAGE_VERSION && fingerprint(normalized) !== sourceFingerprint) throw new Error("L’archive a été modifiée ou endommagée.");
   return normalized;
 }
