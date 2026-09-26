@@ -13,9 +13,11 @@ import {
   inviteNosblocMember,
   mergeNosblocServerSnapshot,
   moderateNosblocCase,
+  moderateNosblocProduct,
   publishNosblocProject,
   requestNosblocPayout,
   requestNosblocRefund,
+  removeNosblocMember,
   restoreNosblocVersion,
   revokeNosblocInvitation,
   submitNosblocProduct,
@@ -179,6 +181,13 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     return result;
   }, [refresh]);
 
+  const removeMember = useCallback(async (project, row) => {
+    const synced = await ensureProject(project);
+    const result = await removeNosblocMember(synced?.projectId, row?.id);
+    await refresh();
+    return result;
+  }, [ensureProject, refresh]);
+
   const decideInvitation = useCallback(async (invitationId, accept) => {
     const result = await decideNosblocInvitation(invitationId, accept);
     await refresh();
@@ -190,6 +199,12 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     await refresh();
     return result;
   }, [refresh]);
+
+  const moderateProduct = useCallback(async (productId, approve, reason = "") => {
+    const result = await moderateNosblocProduct(productId, approve, reason);
+    await Promise.all([refresh(), refreshFinance().catch(() => null)]);
+    return result;
+  }, [refresh, refreshFinance]);
 
   const publishProject = useCallback(async project => {
     const synced = await ensureProject(project);
@@ -233,8 +248,10 @@ export function useNosblocServer({ userId, loaded, online, state, setState, stor
     restoreVersion,
     inviteMember,
     revokeInvitation,
+    removeMember,
     decideInvitation,
     moderateCase,
+    moderateProduct,
     publishProject,
     archiveProject,
     createProduct:createNosblocProduct,
