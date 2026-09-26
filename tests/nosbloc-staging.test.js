@@ -9,6 +9,7 @@ const loyaltyClient=read("../src/loyalty/client.js");
 const loyaltyContext=read("../src/loyalty/LoyaltyContext.jsx");
 const panel=read("../src/nosbloc/NosblocServerPanel.jsx");
 const edge=read("../supabase/functions/nosbloc-staging/index.ts");
+const consoleEdge=read("../supabase/functions/nosbloc-staging-console/index.ts");
 const baseSql=read("../supabase/staging/20260926030000_nosbloc_server_staging_v1.sql");
 const prerequisiteSql=read("../supabase/staging/20260926031000_nosbloc_staging_prerequisites.sql");
 const apiSql=read("../supabase/staging/20260926032000_nosbloc_staging_authenticated_api.sql");
@@ -60,6 +61,16 @@ test("Edge function is exact-project pinned, JWT-only and has no privileged brow
  assert.doesNotMatch(edge,/"publish"|"payout"|"payment"|"discover"/);
 });
 
+test("public console is noindex and proxies only allowlisted JWT-authenticated actions",()=>{
+ assert.match(consoleEdge,/X-Robots-Tag":"noindex,nofollow,noarchive/);
+ assert.match(consoleEdge,/frame-ancestors 'none'/);
+ assert.match(consoleEdge,/payment=\(\)/);
+ assert.match(consoleEdge,/authorization\.startsWith\("Bearer "\)/);
+ assert.match(consoleEdge,/const ACTIONS=new Set/);
+ assert.match(consoleEdge,/nosbloc-staging`/);
+ assert.doesNotMatch(consoleEdge,/SUPABASE_SERVICE_ROLE_KEY|SERVICE_ROLE/);
+});
+
 test("staging prerequisites create Passport profiles only inside the isolated Auth project",()=>{
  assert.match(prerequisiteSql,/references auth\.users/);
  assert.match(prerequisiteSql,/nosbloc_stg_auth_profile/);
@@ -97,13 +108,22 @@ test("human moderation stays private and indexed for future volume",()=>{
  assert.match(indexSql,/nosbloc_stg_projects_review_version_idx/);
 });
 
-test("deployment manifest records staging while production manifest stays unchanged",()=>{
+test("deployment manifest records both staging functions and a fully rolled-back smoke test",()=>{
  assert.equal(stagingManifest.project_ref,"zykdfgahzqqanlyxjtbe");
  assert.equal(stagingManifest.production_project_ref,"ttvhcezucsbbmnafrotq");
  assert.equal(stagingManifest.production_modified,false);
- assert.equal(stagingManifest.edge_function.slug,"nosbloc-staging");
- assert.equal(stagingManifest.edge_function.verify_jwt,true);
+ const api=stagingManifest.edge_functions.find(row=>row.slug==="nosbloc-staging");
+ const consoleFn=stagingManifest.edge_functions.find(row=>row.slug==="nosbloc-staging-console");
+ assert.equal(api?.verify_jwt,true);
+ assert.equal(consoleFn?.verify_jwt,false);
+ assert.match(stagingManifest.console_url,/nosbloc-staging-console$/);
  assert.deepEqual(stagingManifest.locks,{publication:true,discover:true,payments:true,payouts:true});
- assert.equal(productionManifest.functions.some(row=>row.slug==="nosbloc-staging"),false);
+ assert.equal(stagingManifest.security_advisor_findings,0);
+ assert.equal(stagingManifest.transactional_smoke_test.outsider_invitation_blocked,true);
+ assert.equal(stagingManifest.transactional_smoke_test.version_immutable,true);
+ assert.equal(stagingManifest.transactional_smoke_test.moderation_remained_private,true);
+ assert.equal(stagingManifest.transactional_smoke_test.synthetic_users_rolled_back,true);
+ assert.equal(stagingManifest.transactional_smoke_test.project_rolled_back,true);
+ assert.equal(productionManifest.functions.some(row=>row.slug==="nosbloc-staging"||row.slug==="nosbloc-staging-console"),false);
  assert.equal(existsSync(new URL("../supabase/migrations/20260926030000_nosbloc_server_staging_v1.sql",import.meta.url)),false);
 });
