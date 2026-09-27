@@ -7,7 +7,7 @@ import {spawnSync} from 'node:child_process';
 
 const repoRoot=fileURLToPath(new URL('../',import.meta.url));
 const sourceDir=path.join(repoRoot,'runtime','albert_apex_v2');
-const PACKAGE_VERSION='2.0.0';
+const PACKAGE_VERSION='2.1.0';
 const HEAD_MARK='<!-- ALBERT_APEX_V2_HEAD -->';
 const BODY_MARK='<!-- ALBERT_APEX_V2_BODY -->';
 
@@ -27,6 +27,7 @@ function signature(root){
  if(!root)return{ok:false,reasons:['runtime_absent']};
  const python=path.join(root,'.venv','Scripts','python.exe');
  const launchers=[
+  path.join(root,'START_ALBERT_APEX_OS_V2.bat'),
   path.join(root,'START_ALBERT_APEX.bat'),
   path.join(root,'START_ALBERT_AND_MAX.bat'),
   path.join(root,'START_ALBERT_MAX.bat')
