@@ -1,4 +1,4 @@
-import {spaceActionValid,parseSpaceCommand} from './albert-spaces-model.js';
+import {spaceActionValid,parseSpaceCommand,parsePanelCommand} from './albert-spaces-model.js';
 export const ALBERT_MODULES=['brief','alerts','nexus','integrations','ai','traffic','dev','health','security','projects'];
 export const ALBERT_THEMES=['cyan','violet','gold'];
 // Shared server/client contract: no scripts, URLs, permissions or PC commands.
@@ -15,11 +15,12 @@ export function validateAlbertActions(value){
   if(a.type==='space_create')return {type:a.type,name:a.name,template:a.template};
   if(a.type==='panel_add')return {type:a.type,kind:a.kind};
   if(a.type==='panel_resize')return {type:a.type,id:a.id,width:a.width};
+  if(['panel_duplicate','panel_first'].includes(a.type))return {type:a.type,id:a.id};
   if(a.type==='task_add')return {type:a.type,text:a.text,due:a.due||''};
   return {type:a.type,value:a.value};
  });
 }
-export function parseAlbertLocal(text){
+export function parseAlbertLocal(text,workspace){
  const q=String(text).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
  const neg=/\b(non|ne|pas|sans|jamais)\b/.test(q);
  if(neg)return null;
@@ -33,6 +34,7 @@ export function parseAlbertLocal(text){
  if(q==='mode confortable')return [{type:'compact',value:false}];
  if(q==='reduis les animations')return [{type:'motion',value:false}];
  if(q==='active les animations')return [{type:'motion',value:true}];
+ const panel=parsePanelCommand(text,workspace);if(panel)return panel;
  const aliases={brief:'brief',alertes:'alerts',nexus:'nexus',integrations:'integrations',ia:'ai',radar:'traffic',developpement:'dev',sante:'health',securite:'security',projets:'projects'};
  const module=q.match(/^(affiche|masque|ouvre) (?:le |les |la |module )?(.+)$/);
  return module&&aliases[module[2]]?[{type:'module',id:aliases[module[2]],visible:module[1]!=='masque'}]:null;

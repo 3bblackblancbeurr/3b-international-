@@ -41,7 +41,7 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   const value=text.trim();if(!value||locked.current||!ready)return;
   setFailure(false);
   if(/^cin[eé]matique$/i.test(value)){setFilm(true);setPrompt('');return;}
-  const local=parseAlbertLocal(value);
+  let local;try{local=parseAlbertLocal(value,spaces.state);}catch(e){setFailure(true);setReply(e.message);return;}
   if(local){try{onActions(local);setReply('Interface mise à jour. Vous pouvez annuler cette modification.');setPrompt('');}catch(e){setFailure(true);setReply(e.message);}return;}
   recognition.current?.abort();window.speechSynthesis?.cancel();setSpeaking(false);
   locked.current=true;setBusy(true);setReply('Albert analyse votre demande…');const id=++requestId.current;abort.current=new AbortController();
@@ -84,6 +84,7 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
    </details>
   </div>
   <div className="albert-hints"><button disabled={!ready||busy} onClick={()=>run('mode focus')}>Mode focus</button><button disabled={!ready||busy} onClick={()=>run('affiche tout')}>Tous les modules</button><button disabled={!ready||busy} onClick={()=>run('ambiance violet')}>Ambiance violet</button><button disabled={!canUndo||busy} onClick={onUndo}>Annuler</button></div>
+  <p className="albert-disclosure">Sans attendre l’IA : « agrandis le planning », « réduis les notes », « duplique le budget », « mets en premier les documents ». Vous pouvez utiliser le titre exact de vos panneaux.</p>
   <p className="albert-disclosure">Commandes d’interface locales et IA propriétaire côté serveur. Les connexions manquantes sont signalées ; aucune action PC n’est exécutée par une réponse IA.</p>
   <dialog className={'albert-film'+(noMotion?' motion-off':'')+(!visible?' is-paused':'')} ref={dialog} onCancel={e=>{e.preventDefault();closeFilm();}}>
    <button className="albert-film-close" onClick={closeFilm}>Retour au cockpit ×</button>
