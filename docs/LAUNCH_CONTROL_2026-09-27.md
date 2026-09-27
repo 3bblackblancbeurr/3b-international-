@@ -23,7 +23,7 @@ Ce document sert de source de vérité pour préparer 3B à une bêta publique p
 - Le compte Stripe accessible est un environnement de test, pas Live.
 - Un webhook test est actif vers `https://3b-international.vercel.app/api/stripe-webhook`.
 - Aucun Checkout Session n'était présent lors du contrôle : aucun E2E réel n'est encore prouvé.
-- Le webhook est actuellement abonné aux succès Checkout ; il doit aussi recevoir les événements nécessaires au remboursement réellement utilisé par le backend.
+- Webhook test aligné pendant l’audit : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` et `charge.refunded`.
 - Le catalogue Stripe test visible ne correspond pas à l'ancienne checklist « 80 € / 16 variantes » : le Pull TEST visible est encore à 200 € et les variantes annoncées ne sont pas toutes présentes.
 - Aucun changement de prix n'est automatique : le prix final est une décision commerciale du fondateur.
 
