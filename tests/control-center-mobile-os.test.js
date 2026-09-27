@@ -132,3 +132,15 @@ test('Radar charts expose exact values on touch instead of relying on hover titl
  assert.match(css,/control-traffic-exact/);
  assert.match(css,/button\.control-traffic-bar/);
 });
+
+
+test('Command OS displays real PC GPU, VRAM and every reported Windows drive',()=>{
+ const page=read('src/control/ControlCenterPage.jsx');
+ assert.match(page,/gpu_name/);
+ assert.match(page,/gpu_memory_used_mb/);
+ assert.match(page,/STOCKAGE LIBRE/);
+ assert.match(page,/physical_disks/);
+ assert.match(page,/driveRows/);
+ assert.match(page,/DISQUES WINDOWS/);
+ assert.match(page,/NVMe \/ SATA/);
+});
