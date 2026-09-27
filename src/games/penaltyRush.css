@@ -204,3 +204,24 @@
 @media(prefers-reduced-motion:reduce){
   .penalty-shell *{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 }
+
+/* Studio navigation shares the existing gold/blue identity. */
+.penalty-studio-tabs{display:flex;gap:8px;overflow-x:auto;padding:14px 0;scrollbar-width:thin}
+.penalty-studio-tabs button{flex:0 0 auto;min-height:44px;border:1px solid #d9b55f35;border-radius:24px;padding:10px 18px;background:#0b1011;color:var(--pr-muted)}
+.penalty-studio-tabs button[aria-pressed="true"]{background:#d9b55f;color:#101719;border-color:#f0d99c}
+.penalty-studio .penalty-form-grid{grid-template-columns:minmax(0,1fr)}
+.penalty-studio [data-studio]{display:none}
+.penalty-studio[data-section="appearance"] [data-studio="appearance"],.penalty-studio[data-section="identity"] [data-studio="identity"],.penalty-studio[data-section="style"] [data-studio="style"],.penalty-studio[data-section="kit"] [data-studio="kit"],.penalty-studio[data-section="keeper"] [data-studio="keeper"]{display:block}
+.penalty-player-portrait{display:grid;justify-items:center;gap:4px}
+.penalty-portrait-head{width:50px;height:61px;border-radius:45% 45% 40% 40%;background:var(--skin);position:relative;box-shadow:inset -8px -2px 0 #0002}
+.penalty-portrait-head::before{content:'';position:absolute;inset:-3px -2px auto;height:20px;background:var(--hair);border-radius:60% 60% 25% 25%}
+.penalty-portrait-head[data-hair="bald"]::before{display:none}
+.penalty-portrait-head[data-hair="cropped"]::before{height:7px}
+.penalty-portrait-head[data-hair="long"]::before{height:65px;clip-path:polygon(0 0,100% 0,100% 100%,85% 100%,80% 25%,20% 25%,15% 100%,0 100%)}
+.penalty-portrait-head[data-hair="textured"]::before{height:26px;border-radius:45%}
+.penalty-shell :is(button,input,select):focus-visible{outline:2px solid var(--pr-blue);outline-offset:3px}
+.penalty-save{position:sticky;bottom:8px;z-index:3;box-shadow:0 6px 28px #0009;min-height:48px}
+@media(prefers-reduced-motion:reduce){.penalty-shell *{animation:none!important;transition:none!important}}
+
+.penalty-studio .penalty-color-row button{width:44px;height:44px;flex:0 0 44px}
+.penalty-portrait-head::after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;background:#292421;left:13px;top:28px;box-shadow:19px 0 #292421}

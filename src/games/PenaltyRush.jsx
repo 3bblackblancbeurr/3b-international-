@@ -1,3 +1,4 @@
+import {SKIN_TONES, HAIR_COLORS, HAIR_STYLES, rankedDivision} from './penaltyRush/profile-rules.js';
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft, Copy, Globe2, Play, RefreshCw, Shield, Shirt, Trophy, UserRound, Users, Wifi, X, Zap,
@@ -17,7 +18,10 @@ import {
 } from './penaltyRush/online.js';
 import {PointerGesture} from './touchControls.js';
 import { stopPenaltyAudio, unlockPenaltyAudio } from './penaltyRush/audio.js';
-import { createTechniqueTracker, detectJoystickTechnique, shapeJoystick } from './penaltyRush/joystick.js';
+import {
+  coalescedPointerSample, createTechniqueTracker, detectJoystickTechnique, keyboardVector,
+  penaltyInputMode, pointerAim, shapeJoystick,
+} from './penaltyRush/joystick.js';
 import './penaltyRush.css';
 import './penaltyRush3d.css';
 
@@ -61,6 +65,8 @@ export default function PenaltyRush({ onClose, onAccount }) {
   const [training, setTraining] = useState(null);
   const pollRef = useRef(null);
   const tickInFlight = useRef(false);
+  const accountIdRef = useRef(account.user?.id);
+  accountIdRef.current = account.user?.id;
 
   const user = account.user;
   const rating = snapshot?.rating || { rating: 1000, games: 0, wins: 0, losses: 0 };
@@ -70,13 +76,16 @@ export default function PenaltyRush({ onClose, onAccount }) {
 
   async function request(action, body = {}, options = {}) {
     if (!user) throw new Error('Compte 3B requis.');
+    const requestedUser = user.id;
     if (!options.silent) setBusy(true);
     try {
-      const data = await penaltyRequest(action, body);
+      const payload = action === 'input' ? {...body,possessionStartedAt:room?.state?.possessionStartedAt} : body;
+      const data = await penaltyRequest(action, payload);
+      if (accountIdRef.current !== requestedUser) return data;
       if (data.profile) setProfile(normalizePenaltyProfile(data.profile, account));
       if (data.snapshot) setSnapshot(data.snapshot);
       if (data.room !== undefined) {
-        setRoom(data.room);
+        setRoom(current => current?.id === data.room?.id && current.revision > data.room.revision ? current : data.room);
         rememberPenaltyRoom(data.room?.id || null);
       }
       if (data.message) setNotice(data.message);
@@ -101,6 +110,10 @@ export default function PenaltyRush({ onClose, onAccount }) {
   }
 
   useEffect(() => {
+    setProfile(createDefaultPenaltyProfile(account));
+    setSnapshot(null);
+    setRoom(null);
+    setNotice('');
     if (!user) return;
     let live = true;
     setBusy(true);
@@ -158,7 +171,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
           <h1>Ton joueur. Ton club. Ton pays.</h1>
           <p>Entraîne-toi seul contre l’IA. Connecte-toi pour les matchs en ligne, le classement et la carrière.</p>
           <div className="penalty-training-actions"><button className="penalty-primary" onClick={() => setTraining('attacker')}>Attaquant contre IA</button><button className="penalty-secondary" onClick={() => setTraining('keeper')}>Gardien contre IA</button></div>
-          <button className="penalty-primary" onClick={onAccount}>Connexion / inscription</button>
+          <button className="penalty-primary" onClick={onAccount}>Continuer avec mon Passeport 3B</button>
           <button className="penalty-secondary" onClick={onClose}>Retour aux Jeux 3B</button>
         </main>
       </div>
@@ -225,7 +238,7 @@ function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTrain
       <section className="penalty-hero">
         <div className="penalty-hero-copy">
           <span className="penalty-kicker">PLACEMENT → RYTHME → LECTURE → FEINTE → FRAPPE</span>
-          <h1>Un duel de football pensé pour deux pouces.</h1>
+          <h1>Ton duel. Ton style. Ta progression.</h1>
           <p>15 secondes par possession. Trois attaques chacun. Puis inversion des rôles. En cas d’égalité, Duel d’Or.</p>
           <div className="penalty-profile-line">
             <span>{country.flag}</span><b>{profile.displayName}</b><small>{tier.label} · {rating.rating} Elo</small>
@@ -248,7 +261,7 @@ function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTrain
         <article>
           <span className="penalty-kicker">RAPIDE · 1V1</span>
           <h2>Match immédiat</h2>
-          <p>Matchmaking sans enjeu de classement. Même gameplay, même carrière, idéal pour apprendre un adversaire réel.</p>
+          <p>Matchmaking sans enjeu de classement. Même gameplay, sans progression compétitive : idéal pour apprendre face à un adversaire réel.</p>
           <button className="penalty-primary" disabled={busy} onClick={() => request('queue', { mode: 'quick' }).catch(() => {})}><Play size={17} /> Trouver un joueur</button>
         </article>
         <article>
@@ -278,7 +291,8 @@ function PlayHome({ busy, profile, rating, tier, code, setCode, request, onTrain
   );
 }
 
-function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
+export function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
+  const [section,setSection] = useState('appearance');
   const country = countryById(profile.countryId);
   function patch(key, value) { setProfile((current) => ({ ...current, [key]: value })); }
   function patchNested(key, child, value) {
@@ -292,16 +306,24 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
     });
   }
   return (
-    <div className="penalty-studio">
+    <div className="penalty-studio" data-section={section}>
       <section className="penalty-player-card" style={{ '--shirt': profile.kit.shirtPrimary, '--trim': profile.kit.shirtSecondary }}>
-        <div className="penalty-avatar-shirt"><span>3B</span><strong>{profile.shirtNumber}</strong><small>{profile.shirtName || '3B'}</small></div>
+        <div className="penalty-player-portrait" style={{'--skin':profile.appearance.skin,'--hair':profile.appearance.hairColor}} aria-label="Aperçu des couleurs du joueur"><div className="penalty-portrait-head" data-hair={profile.appearance.hairStyle}/><div className="penalty-avatar-shirt"><span>3B</span><strong>{profile.shirtNumber}</strong><small>{profile.shirtName || '3B'}</small></div></div>
         <div><span>{country.flag}</span><h2>{profile.displayName}</h2><p>{PLAYER_STYLES[profile.styleId]?.name} · {profile.clubName || 'Sans club'}</p></div>
       </section>
 
+      <nav className="penalty-studio-tabs" aria-label="Personnaliser mon joueur">{[['appearance','Apparence'],['identity','Identité sportive'],['style','Style de jeu'],['kit','Équipement'],['keeper','Gardien']].map(([id,label])=><button key={id} type="button" aria-pressed={section===id} onClick={()=>setSection(id)}>{label}</button>)}</nav>
       <section className="penalty-form-grid">
-        <article>
+        <article data-studio="appearance">
+          <span className="penalty-kicker">APPARENCE LIBRE</span><h3>Ton visage sur le terrain</h3>
+          <p>Choisis librement ton apparence, indépendamment de ton pays. Aucun effet sur tes performances.</p>
+          {[['skin','Teint',SKIN_TONES],['hairColor','Cheveux',HAIR_COLORS]].map(([key,label,colors])=><div className="penalty-color-row" key={key}><span>{label}</span><div>{colors.map((color,index)=><button key={color} type="button" aria-label={label+' '+(index+1)} aria-pressed={profile.appearance[key]===color} style={{'--swatch':color}} onClick={()=>patchNested('appearance',key,color)}/>)}</div></div>)}
+          <label>Coiffure<select value={profile.appearance.hairStyle} onChange={e=>patchNested('appearance','hairStyle',e.target.value)}>{HAIR_STYLES.map((id,index)=><option key={id} value={id}>{['Courte','Rasée','Texturée','Longue','Sans cheveux'][index]}</option>)}</select></label>
+          <small className="penalty-field-note">Ton pseudo et ton apparence sont publics. Ne saisis aucune donnée de ton document d’identité.</small>
+        </article>
+        <article data-studio="identity">
           <span className="penalty-kicker">IDENTITÉ</span><h3>Ton joueur</h3>
-          <label>Prénom / pseudo<input value={profile.displayName} maxLength={24} onChange={(e) => patch('displayName', e.target.value)} /></label>
+          <label>Pseudo public<input value={profile.displayName} maxLength={24} onChange={(e) => patch('displayName', e.target.value)} /></label>
           <label>Nom sur le maillot<input value={profile.shirtName} maxLength={14} onChange={(e) => patch('shirtName', e.target.value.toUpperCase())} /></label>
           <label>Numéro<input type="number" min="1" max="99" value={profile.shirtNumber} onChange={(e) => patch('shirtNumber', e.target.value)} /></label>
           <label>Pays<select value={profile.countryId} disabled={(rating?.games || 0) > 0} onChange={(e) => patch('countryId', e.target.value)}>{PENALTY_COUNTRIES.map((c) => <option value={c.id} key={c.id}>{c.flag} {c.name}</option>)}</select></label>
@@ -309,7 +331,7 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
           <label>Club<span className="penalty-readonly-field">{profile.clubName || 'Sans club · rejoins-en un dans l’onglet Club'}</span></label>
         </article>
 
-        <article>
+        <article data-studio="style">
           <span className="penalty-kicker">STYLE DE JEU</span><h3>Un profil, aucun pay-to-win</h3>
           <div className="penalty-style-list">{Object.values(PLAYER_STYLES).map((style) => (
             <button type="button" key={style.id} aria-pressed={profile.styleId === style.id} onClick={() => patch('styleId', style.id)}>
@@ -318,7 +340,7 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
           ))}</div>
         </article>
 
-        <article>
+        <article data-studio="kit">
           <span className="penalty-kicker">TENUE</span><h3>Couleurs & textile</h3>
           {[
             ['shirtPrimary', 'Maillot'],
@@ -348,7 +370,7 @@ function PlayerStudio({ profile, rating, setProfile, busy, onSave }) {
           <small className="penalty-field-note">Toutes ces options sont visuelles : aucune tenue, chaussure, matière ou signature ne donne un bonus de gameplay.</small>
         </article>
 
-        <article>
+        <article data-studio="keeper">
           <span className="penalty-kicker">GARDIEN</span><h3>Deux pouvoirs maximum</h3>
           <div className="penalty-power-list">{Object.values(KEEPER_POWERS).map((power) => (
             <button type="button" key={power.id} aria-pressed={profile.keeperPowers.includes(power.id)} onClick={() => togglePower(power.id)}>
@@ -370,7 +392,7 @@ function ClubPanel({ snapshot, profile, busy, request }) {
   return (
     <section className="penalty-panel-page">
       <span className="penalty-kicker">CARRIÈRE CLUB</span><h1>Gagner seul. Construire ensemble.</h1>
-      <p>Les matchs restent 1v1, mais les clubs réunissent plusieurs résultats dans des rencontres collectives. Cinq duels peuvent composer une confrontation de club.</p>
+      <p>Rejoins un groupe avec son code d’invitation. Les duels actuels restent individuels ; les confrontations collectives ne sont pas encore ouvertes.</p>
       {club ? (
         <div className="penalty-big-card" style={{ '--club-primary':club.colors?.primary || '#08090b', '--club-secondary':club.colors?.secondary || '#d8b35e' }}>
           <span className="penalty-club-crest">3B</span>
@@ -444,7 +466,7 @@ function InternationalPanel({ snapshot, profile, busy, request }) {
           <Globe2 size={32}/>
           <div>
             <b>{country.flag} SÉLECTION CONFIRMÉE</b>
-            <p>Tu représenteras {country.name}{international.windowName ? ' pendant ' + international.windowName : ''}. Le maillot de sélection remplace automatiquement la tenue club pendant les rencontres internationales, sans modifier tes chaussures ni ton identité.</p>
+            <p>Tu représenteras {country.name}{international.windowName ? ' pendant ' + international.windowName : ''}. Ta place dans le groupe est confirmée. Les rencontres internationales sont ouvertes séparément par l’organisation.</p>
           </div>
         </div>
       )}
@@ -458,7 +480,7 @@ function InternationalPanel({ snapshot, profile, busy, request }) {
 
       <div className="penalty-rule-note">{neededRoleLabel ? <><b>Besoin actuel de la sélection : {neededRoleLabel}.</b> {' '}Le besoin est recalculé selon les profils déjà retenus. </> : null}Parcours : radar national → observé → présélection → convocation → sélection. Une place internationale se gagne en multijoueur et ne peut pas être achetée.</div>
 
-      <h2>Compétitions 3B</h2>
+      <h2>Programme des compétitions 3B</h2><p>Ces formats sont prévus au programme. Seule une fenêtre officiellement ouverte permet une convocation.</p>
       <div className="penalty-competition-list">{COMPETITIONS.map((competition) => <article key={competition.id}><b>{competition.name}</b><small>{competition.cadence}</small><p>{competition.description}</p></article>)}</div>
 
       {!hasCallup && !selected && (
@@ -476,10 +498,11 @@ function CareerPanel({ snapshot, rating, tier, profile }) {
   return (
     <section className="penalty-panel-page">
       <span className="penalty-kicker">BIOGRAPHIE SPORTIVE</span><h1>{profile.displayName} · {tier.label}</h1>
+      <div className="penalty-rule-note"><b>Saison {snapshot?.season?.id || 'en cours'} · {snapshot?.season?.division?.label || 'Placement'}</b><p>{snapshot?.season?.games || 0} matchs · {snapshot?.season?.rating ?? 1000} Elo de saison. Une saison dure un mois UTC. Le niveau de matchmaking permanent est conservé.</p><p>Dix matchs classés pour terminer le placement. Les trois premiers duels classés contre un même adversaire sur 24 heures comptent. Les matchs rapides et privés restent dans ton historique.</p></div>
       <div className="penalty-career-stats">
         <article><small>MATCHS</small><strong>{rating.games || 0}</strong></article>
         <article><small>VICTOIRES</small><strong>{rating.wins || 0}</strong></article>
-        <article><small>ELO</small><strong>{rating.rating || 1000}</strong></article>
+        <article><small>{rankedDivision(rating.rating,rating.games).label.toUpperCase()} · ELO</small><strong>{rating.rating || 1000}</strong></article>
         <article><small>RÉPUTATION</small><strong>{career.reputation || 0}</strong></article>
         <article><small>BUTS</small><strong>{career.goals || 0}</strong></article>
         <article><small>ARRÊTS</small><strong>{career.saves || 0}</strong></article>
@@ -517,6 +540,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const keeperIndex = Number.isInteger(state.keeper) ? state.keeper : 1;
   const isAttacker = selfIndex === attackerIndex;
   const isKeeper = selfIndex === keeperIndex;
+  const inputMode = useMemo(() => penaltyInputMode(), []);
+  const desktop = inputMode === 'desktop';
   const remaining = remainingPossessionSeconds(state, Date.now());
   const leftGesture = useRef(new PointerGesture());
   const rightGesture = useRef(new PointerGesture());
@@ -535,15 +560,86 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   const keeperFaceTimer = useRef(0);
   const keeperFaceActive = useRef(0);
   const revisionRef = useRef(room.revision);
-  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, intensity:0, active:false } });
+  const controlRef = useRef({ x:0, y:0, intensity:0, active:false, keeper:{ direction:0, forward:0, intensity:0, active:false } });
   const leftPadRef = useRef(null);
   const rightPadRef = useRef(null);
+  const pitchRef = useRef(null);
+  const desktopKeys = useRef(new Set());
+  const desktopFrame = useRef(0);
+  const desktopMoving = useRef(false);
+  const desktopKeeperMoving = useRef(false);
+  const desktopAim = useRef({ x:0, y:.42 });
+  const desktopShot = useRef(null);
   const opponent = room.players?.find((player) => !player.isSelf);
   revisionRef.current = room.revision;
   useEffect(() => () => {
     cancelAnimationFrame(chargeFrame.current);
+    cancelAnimationFrame(desktopFrame.current);
     clearInterval(keeperFaceTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (!desktop || state.status === 'finished') return undefined;
+    const gameplayCodes = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','Space','ShiftLeft','ShiftRight']);
+    const editable = target => target instanceof HTMLElement && (target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(target.tagName));
+    const onKeyDown = event => {
+      if (editable(event.target)) return;
+      if (gameplayCodes.has(event.code)) event.preventDefault();
+      desktopKeys.current.add(event.code);
+      if (event.repeat) return;
+      if (isAttacker) {
+        if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') sendAttackerFace('accelerate', 0, .96);
+        else if (event.code === 'KeyQ') sendAttackerFace('feint', -.9, .86);
+        else if (event.code === 'KeyE') sendAttackerFace('cut', .9, .92);
+        else if (event.code === 'Space') sendAttackerFace('rhythm', desktopAim.current.x || 1, .86);
+      } else if (isKeeper) {
+        if (event.code === 'Space') keeperFaceAction('high-claim');
+        else if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') keeperFaceAction('close-angle');
+      }
+    };
+    const onKeyUp = event => desktopKeys.current.delete(event.code);
+    const clearKeys = () => desktopKeys.current.clear();
+    window.addEventListener('keydown', onKeyDown, { passive:false });
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', clearKeys);
+
+    const tick = () => {
+      const input = keyboardVector(desktopKeys.current);
+      const now = performance.now();
+      if (isAttacker) {
+        controlRef.current = { ...controlRef.current, x:input.x, y:input.y, intensity:input.intensity, active:input.active };
+        if (input.active && now - moveThrottle.current >= 45) {
+          moveThrottle.current = now;
+          queueMove({ type:'move', x:input.x, y:input.y, intensity:input.intensity });
+        } else if (!input.active && desktopMoving.current) {
+          queueMove({ type:'move', x:0, y:0, intensity:0 });
+        }
+        desktopMoving.current = input.active;
+      } else if (isKeeper) {
+        const forward = -input.y;
+        controlRef.current.keeper = { direction:input.x, forward, intensity:input.intensity, active:input.active };
+        if (input.active && now - keeperMoveThrottle.current >= 45) {
+          keeperMoveThrottle.current = now;
+          queueKeeperMove({ type:'hold', direction:input.x, forward, intensity:input.intensity });
+        } else if (!input.active && desktopKeeperMoving.current) {
+          queueKeeperMove({ type:'hold', direction:0, forward:0, intensity:0 });
+        }
+        desktopKeeperMoving.current = input.active;
+      }
+      desktopFrame.current = requestAnimationFrame(tick);
+    };
+    desktopFrame.current = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(desktopFrame.current);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', clearKeys);
+      desktopKeys.current.clear();
+      desktopMoving.current = false;
+      desktopKeeperMoving.current = false;
+      controlRef.current = { ...controlRef.current, x:0, y:0, intensity:0, active:false, keeper:{ direction:0, forward:0, intensity:0, active:false } };
+    };
+  }, [desktop, isAttacker, isKeeper, state.status, room.id]);
 
   function flushMove() {
     if (moveInFlight.current || attackerActionInFlight.current || !pendingMove.current) return;
@@ -630,7 +726,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function resetLeftPad() {
-    controlRef.current = { ...controlRef.current, x:0, y:0, intensity:0, active:false };
+    controlRef.current = isKeeper
+      ? { ...controlRef.current, keeper:{ direction:0, forward:0, intensity:0, active:false } }
+      : { ...controlRef.current, x:0, y:0, intensity:0, active:false };
     techniqueTracker.current = createTechniqueTracker();
     const pad = leftPadRef.current;
     if (!pad) return;
@@ -652,7 +750,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   }
 
   function leftStart(event) {
-    if (!isAttacker || state.status === 'finished' || event.button !== 0) return;
+    if ((!isAttacker && !isKeeper) || state.status === 'finished' || event.button !== 0) return;
     if (!leftGesture.current.begin(event.pointerId, { x:event.clientX, y:event.clientY })) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     event.currentTarget.dataset.active = 'true';
@@ -660,16 +758,10 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
 
   function leftMove(event) {
     const start = leftGesture.current.get(event.pointerId);
-    if (!start || !isAttacker) return;
-    const input = shapeJoystick(event.clientX - start.x, event.clientY - start.y);
-    controlRef.current = {
-      ...controlRef.current,
-      x:input.x,
-      y:input.y,
-      intensity:input.intensity,
-      active:input.active,
-    };
-
+    if (!start || (!isAttacker && !isKeeper)) return;
+    const sample = coalescedPointerSample(event) || event;
+    const radius = Math.max(68, Math.min(96, (leftPadRef.current?.clientWidth || 176) * .52));
+    const input = shapeJoystick(sample.clientX - start.x, sample.clientY - start.y, { deadZone:7, radius });
     const pad = leftPadRef.current;
     if (pad) {
       pad.style.setProperty('--stick-x', (input.x * input.visual).toFixed(1) + 'px');
@@ -678,6 +770,23 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     }
 
     const now = performance.now();
+    if (isKeeper) {
+      const forward = -input.y;
+      controlRef.current.keeper = { direction:input.x, forward, intensity:input.intensity, active:input.active };
+      if (now - keeperMoveThrottle.current >= 45) {
+        keeperMoveThrottle.current = now;
+        queueKeeperMove({ type:'hold', direction:input.x, forward, intensity:input.intensity });
+      }
+      return;
+    }
+
+    controlRef.current = {
+      ...controlRef.current,
+      x:input.x,
+      y:input.y,
+      intensity:input.intensity,
+      active:input.active,
+    };
     const technique = detectJoystickTechnique(techniqueTracker.current, input, now);
     if (technique) {
       pad?.setAttribute('data-technique', technique.label);
@@ -693,7 +802,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
   function leftEnd(event) {
     if (!leftGesture.current.end(event.pointerId)) return;
     resetLeftPad();
-    queueMove({ type:'move', x:0, y:0, intensity:0 });
+    if (isKeeper) queueKeeperMove({ type:'hold', direction:0, forward:0, intensity:0 });
+    else queueMove({ type:'move', x:0, y:0, intensity:0 });
   }
 
   function rightStart(event) {
@@ -726,18 +836,19 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       keeperFinalAction.current = null;
       pendingKeeperMove.current = null;
       event.currentTarget.style.setProperty('--charge', '0');
-      controlRef.current.keeper = { direction:0, intensity:0, active:true };
+      controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:true };
     }
   }
 
   function rightMove(event) {
     const gesture = rightGesture.current.get(event.pointerId);
     if (!gesture) return;
-    gesture.path.push({ x:event.clientX, y:event.clientY });
+    const sample = coalescedPointerSample(event) || event;
+    gesture.path.push({ x:sample.clientX, y:sample.clientY });
     if (gesture.path.length > 24) gesture.path.shift();
 
-    const dx = event.clientX - gesture.x;
-    const dy = event.clientY - gesture.y;
+    const dx = sample.clientX - gesture.x;
+    const dy = sample.clientY - gesture.y;
     const distance = Math.hypot(dx, dy);
     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     const pad = rightPadRef.current;
@@ -754,11 +865,12 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
       const effectiveDistance = Math.max(0, distance - keeperDeadZone);
       const direction = effectiveDistance ? Math.max(-1, Math.min(1, dx / Math.max(38, Math.abs(dx)))) : 0;
       const intensity = Math.min(1, effectiveDistance / 92);
-      controlRef.current.keeper = { direction, intensity, active:effectiveDistance > 0 };
+      const forward = Math.max(-1, Math.min(1, -dy / 115));
+      controlRef.current.keeper = { direction, forward, intensity, active:effectiveDistance > 0 };
       const now = performance.now();
       if (now - keeperMoveThrottle.current >= 50) {
         keeperMoveThrottle.current = now;
-        queueKeeperMove({ type:'hold', direction, intensity });
+        queueKeeperMove({ type:'hold', direction, forward, intensity });
       }
     }
   }
@@ -768,7 +880,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     if (!gesture) return;
     resetRightPad();
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:false };
     }
 
     const endedAt = performance.now();
@@ -800,9 +912,9 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     resetRightPad();
     rightLastTap.current = 0;
     if (isKeeper) {
-      controlRef.current.keeper = { direction:0, intensity:0, active:false };
+      controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:false };
       pendingKeeperMove.current = null;
-      queueKeeperFinal({ type:'hold', direction:0, intensity:0 });
+      queueKeeperFinal({ type:'hold', direction:0, forward:0, intensity:0 });
     }
   }
 
@@ -829,8 +941,8 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     keeperFaceActive.current = direction;
     event?.currentTarget?.setPointerCapture?.(event.pointerId);
     const stream = () => {
-      controlRef.current.keeper = { direction, intensity:.72, active:true };
-      queueKeeperMove({ type:'hold', direction, intensity:.72 });
+      controlRef.current.keeper = { direction, forward:0, intensity:.78, active:true };
+      queueKeeperMove({ type:'hold', direction, forward:0, intensity:.78 });
     };
     stream();
     keeperFaceTimer.current = window.setInterval(stream, 70);
@@ -841,7 +953,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     keeperFaceActive.current = 0;
     clearInterval(keeperFaceTimer.current);
     keeperFaceTimer.current = 0;
-    controlRef.current.keeper = { direction:0, intensity:0, active:false };
+    controlRef.current.keeper = { direction:0, forward:0, intensity:0, active:false };
     pendingKeeperMove.current = null;
     vibrateFace([8, 18, 12]);
     queueKeeperFinal({ type:'dive', direction, intensity:.92 });
@@ -854,6 +966,66 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
     const direction = Math.abs(controlRef.current?.keeper?.direction || 0) > .08
       ? controlRef.current.keeper.direction : 0;
     queueKeeperFinal({ type, direction, intensity:type === 'high-claim' ? .9 : .74 });
+  }
+
+  function updateDesktopAim(event) {
+    if (!desktop || !pitchRef.current) return;
+    const sample = coalescedPointerSample(event) || event;
+    desktopAim.current = pointerAim(sample, pitchRef.current);
+    pitchRef.current.style.setProperty('--pc-aim-x', ((desktopAim.current.x + 1) * 50).toFixed(2) + '%');
+    pitchRef.current.style.setProperty('--pc-aim-y', ((1 - desktopAim.current.y) * 72 + 8).toFixed(2) + '%');
+  }
+
+  function desktopPointerDown(event) {
+    if (!desktop || state.status === 'finished') return;
+    if (event.target instanceof Element && event.target.closest('button, a, input, select, textarea')) return;
+    updateDesktopAim(event);
+    if (event.button === 2) {
+      event.preventDefault();
+      if (isAttacker) {
+        const dir = desktopAim.current.x < 0 ? -1 : 1;
+        sendAttackerFace(Math.abs(desktopAim.current.x) > .42 ? 'cut' : 'feint', dir, .88);
+      } else if (isKeeper) keeperFaceAction('close-angle');
+      return;
+    }
+    if (event.button !== 0) return;
+    unlockPenaltyAudio().catch(() => {});
+    if (isAttacker) {
+      desktopShot.current = { at:performance.now(), x:event.clientX };
+      event.currentTarget.dataset.pcCharging = 'true';
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } else if (isKeeper) {
+      const aim = desktopAim.current;
+      const type = aim.y > .76 ? 'high-claim' : Math.abs(aim.x) < .16 ? 'close-angle' : 'dive';
+      queueKeeperFinal({ type, direction:aim.x, intensity:.94 });
+    }
+  }
+
+  function desktopPointerUp(event) {
+    if (!desktop || !isAttacker || event.button !== 0 || !desktopShot.current) return;
+    updateDesktopAim(event);
+    const shotStart = desktopShot.current;
+    desktopShot.current = null;
+    event.currentTarget.dataset.pcCharging = 'false';
+    const heldMs = Math.max(330, Math.min(1200, performance.now() - shotStart.at));
+    const aim = desktopAim.current;
+    const rect = pitchRef.current?.getBoundingClientRect?.();
+    const curve = rect ? Math.max(-.62, Math.min(.62, (event.clientX - shotStart.x) / Math.max(80, rect.width * .34))) : 0;
+    const parsed = interpretAttackGesture({
+      dx:aim.x * 125,
+      dy:-aim.y * 135,
+      durationMs:heldMs,
+      heldMs,
+      curve,
+      taps:0,
+    });
+    queueAttackerAction(parsed);
+  }
+
+  function desktopPointerCancel(event) {
+    if (!desktopShot.current) return;
+    desktopShot.current = null;
+    if (event.currentTarget) event.currentTarget.dataset.pcCharging = 'false';
   }
 
   function activatePower(powerId) {
@@ -886,15 +1058,20 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
         <div><span>FLOW</span><i><b style={{ width:`${state.flow?.[selfIndex] ?? 0}%` }} /></i></div>
       </div>
 
-      <section className="penalty-pitch penalty-pitch-3d">
+      <section ref={pitchRef} className="penalty-pitch penalty-pitch-3d" data-input={inputMode} data-pc-charging="false"
+        onPointerMove={desktop ? updateDesktopAim : undefined}
+        onPointerDown={desktop ? desktopPointerDown : undefined}
+        onPointerUp={desktop ? desktopPointerUp : undefined}
+        onPointerCancel={desktop ? desktopPointerCancel : undefined}
+        onContextMenu={desktop ? (event) => event.preventDefault() : undefined}>
         <Suspense fallback={<div className="penalty-arena3d-fallback"><b>Terrain 3B</b><span>Chargement du match 3D…</span></div>}>
           <PenaltyRushArena3D room={room} profile={profile} selfIndex={selfIndex} controlRef={controlRef} />
         </Suspense>
 
         {isKeeper && <div className="penalty-power-dock">{powerIds.map((id) => <button key={id} disabled={(state.keeperEnergy?.[selfIndex] ?? 100) < (KEEPER_POWERS[id]?.cost || 100)} onClick={() => activatePower(id)}><i>{powerIcon(id)}</i><span>{KEEPER_POWERS[id]?.name}</span></button>)}</div>}
 
-        {isAttacker && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" aria-label="Déplacement de l’attaquant" onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
-        {(isAttacker || isKeeper) && <div className="penalty-face-cluster" data-role={isAttacker ? 'attacker' : 'keeper'} aria-label="Commandes d’action 3B">
+        {!desktop && (isAttacker || isKeeper) && <div ref={leftPadRef} className="penalty-touch-left" data-active="false" aria-label={isKeeper ? 'Déplacement libre du gardien' : 'Déplacement de l’attaquant'} onPointerDown={leftStart} onPointerMove={leftMove} onPointerUp={leftEnd} onPointerCancel={leftEnd} onLostPointerCapture={leftEnd}><span /></div>}
+        {!desktop && (isAttacker || isKeeper) && <div className="penalty-face-cluster" data-role={isAttacker ? 'attacker' : 'keeper'} aria-label="Commandes d’action 3B">
           <button className="penalty-face penalty-face-top" data-tone="3b" aria-label={isAttacker ? 'Accélération 3B' : 'Sortie haute 3B'} onPointerDown={() => isAttacker ? sendAttackerFace('accelerate', 0, .95) : keeperFaceAction('high-claim')}><b>3B</b><small>{isAttacker ? 'BOOST' : 'HAUT'}</small></button>
           <button className="penalty-face penalty-face-left" data-tone="black" aria-label={isAttacker ? 'Feinte noire gauche' : 'Plongeon gauche'} onPointerDown={(e) => isAttacker ? sendAttackerFace('feint', -.86, .82) : keeperFaceStart(-1, e)} onPointerUp={() => isKeeper && keeperFaceEnd(-1)} onPointerCancel={() => isKeeper && keeperFaceEnd(-1)} onLostPointerCapture={() => isKeeper && keeperFaceEnd(-1)}><b>N</b><small>{isAttacker ? 'FEINTE' : 'GAUCHE'}</small></button>
           <button className="penalty-face penalty-face-right" data-tone="white" aria-label={isAttacker ? 'Crochet blanc droite' : 'Plongeon droite'} onPointerDown={(e) => isAttacker ? sendAttackerFace('cut', .86, .9) : keeperFaceStart(1, e)} onPointerUp={() => isKeeper && keeperFaceEnd(1)} onPointerCancel={() => isKeeper && keeperFaceEnd(1)} onLostPointerCapture={() => isKeeper && keeperFaceEnd(1)}><b>B</b><small>{isAttacker ? 'CROCHET' : 'DROITE'}</small></button>
@@ -904,6 +1081,7 @@ function MatchRoom({ room, profile, busy, request, onLeave }) {
           </div>
         </div>}
 
+        {desktop && (isAttacker || isKeeper) && <><span className="penalty-pc-reticle" aria-hidden="true" /><div className="penalty-pc-controls" aria-hidden="true">{isAttacker ? 'FLÈCHES / WASD · SHIFT BOOST · Q FEINTE · E CROCHET · ESPACE ROULETTE · CLIC MAINTENU = TIR' : 'FLÈCHES / WASD = DÉPLACEMENT LIBRE · CLIC = PLONGEON · ESPACE = SORTIE HAUTE · SHIFT = FERMER L’ANGLE'}</div></>}
         <div className="penalty-last-event">{state.lastEvent?.text || (isAttacker ? 'Lis le gardien. Change de rythme.' : 'Lis la course. Ferme l’angle.')}</div>
         {impactType && <div key={String(state.lastEvent?.visual?.at || room.revision)} className="penalty-impact-word" data-type={impactType} aria-hidden="true"><strong>{impactLabel}</strong><span>{impactType === 'goal' ? '3B PENALTY RUSH' : impactType === 'save' ? 'RÉFLEXE GARDIEN' : 'À QUELQUES CENTIMÈTRES'}</span></div>}
       </section>

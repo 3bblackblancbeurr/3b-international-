@@ -1,6 +1,39 @@
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,Number(n)||0));
 const wrapAngle=a=>{let x=a;while(x>Math.PI)x-=Math.PI*2;while(x<-Math.PI)x+=Math.PI*2;return x;};
 
+export function penaltyInputMode(){
+  if(typeof window==='undefined')return 'desktop';
+  const fine=window.matchMedia?.('(hover: hover) and (pointer: fine)')?.matches;
+  const coarse=window.matchMedia?.('(pointer: coarse)')?.matches || (navigator.maxTouchPoints||0)>0;
+  return fine?'desktop':coarse?'touch':'desktop';
+}
+
+export function coalescedPointerSample(event){
+  if(!event)return null;
+  try{
+    const samples=typeof event.getCoalescedEvents==='function'?event.getCoalescedEvents():null;
+    if(samples?.length)return samples[samples.length-1];
+  }catch{}
+  return event;
+}
+
+export function keyboardVector(keys){
+  const has=k=>Boolean(keys?.has?.(k));
+  let x=(has('ArrowRight')||has('KeyD')?1:0)-(has('ArrowLeft')||has('KeyA')?1:0);
+  let y=(has('ArrowDown')||has('KeyS')?1:0)-(has('ArrowUp')||has('KeyW')?1:0);
+  const len=Math.hypot(x,y);
+  if(len>1){x/=len;y/=len;}
+  return {x,y,intensity:len?1:0,active:len>0};
+}
+
+export function pointerAim(event,element){
+  const rect=element?.getBoundingClientRect?.();
+  if(!rect||!event)return {x:0,y:.42};
+  const px=clamp((event.clientX-rect.left)/Math.max(1,rect.width),0,1);
+  const py=clamp((event.clientY-rect.top)/Math.max(1,rect.height),0,1);
+  return {x:clamp((px-.5)*2,-1,1),y:clamp((.64-py)*1.65+.34,.06,1)};
+}
+
 export function shapeJoystick(rawDx=0,rawDy=0,{deadZone=9,radius=88}={}){
   const rawLength=Math.hypot(rawDx,rawDy);
   if(rawLength<=deadZone)return{x:0,y:0,intensity:0,active:false,visual:0,angle:0};

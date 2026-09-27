@@ -1,0 +1,21 @@
+{
+  "status": "pending-not-deployed",
+  "count": 3,
+  "migrations": [
+    {
+      "version": "20260927103000",
+      "name": "penalty_appearance_v1",
+      "sha256": "0d3328a83ce5aecda3cfb48843364cb1e487119aea44f6ebc28704711b00c672"
+    },
+    {
+      "version": "20260927104000",
+      "name": "penalty_ranked_integrity_v1",
+      "sha256": "61da715f7e4f963870a5abadf66067ec4b28dd2fd1b4792ffdafa6372df051d9"
+    },
+    {
+      "version": "20260927105000",
+      "name": "penalty_selection_authority_v1",
+      "sha256": "24111a6459aceb540389bb036c9fc18a26f85ca44a52f1c2c604a3ece784d5c3"
+    }
+  ]
+}

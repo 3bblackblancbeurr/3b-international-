@@ -1,3 +1,4 @@
+import {normalizeAppearance} from './profile-rules.js';
 export const PENALTY_COUNTRIES = [
   { id: 'fr', name: 'France', flag: '🇫🇷', value: 'Justice' },
   { id: 'dz', name: 'Algérie', flag: '🇩🇿', value: 'Loyauté' },
@@ -176,8 +177,9 @@ export function careerTierFor(reputation = 0) {
 export function createDefaultPenaltyProfile(account) {
   const passport = account?.passport;
   const country = PENALTY_COUNTRIES.find((item) => item.name === passport?.country) || PENALTY_COUNTRIES[0];
-  const name = String(passport?.name || account?.profile?.name || account?.profile?.handle || 'Joueur 3B').trim().slice(0, 24);
+  const name = String(account?.profile?.handle || 'Joueur 3B').trim().slice(0, 24);
   return {
+    appearance: normalizeAppearance(),
     displayName: name || 'Joueur 3B',
     shirtName: (name || '3B').toUpperCase().slice(0, 14),
     shirtNumber: 10,
@@ -220,7 +222,7 @@ export function normalizePenaltyProfile(value, account) {
     : base.keeperPowers;
   return {
     ...base,
-    ...input,
+    appearance: normalizeAppearance(input.appearance),
     displayName: String(input.displayName || base.displayName).trim().slice(0, 24),
     shirtName: String(input.shirtName || base.shirtName).trim().toUpperCase().slice(0, 14),
     shirtNumber: Math.max(1, Math.min(99, Number.parseInt(input.shirtNumber, 10) || base.shirtNumber)),
@@ -228,6 +230,7 @@ export function normalizePenaltyProfile(value, account) {
     styleId,
     keeperPowers: powers.length === 2 ? powers : base.keeperPowers,
     clubName: String(input.clubName || '').trim().slice(0, 40),
+    celebration: ['calme','crown','respect','matrix'].includes(input.celebration) ? input.celebration : base.celebration,
     kit: { ...base.kit, ...(input.kit || {}) },
     boots: { ...base.boots, ...(input.boots || {}) },
   };

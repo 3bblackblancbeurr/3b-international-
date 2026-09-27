@@ -166,7 +166,7 @@ export function keeperPowerState(powerId, keeperEnergy = 100, now = Date.now()) 
   };
 }
 
-export function resolveShot({ shot, keeperX = 0, keeperGesture, keeperEffect, attackerFlow = 0 }) {
+export function resolveShot({ shot, keeperX = 0, keeperDepth = 0, keeperGesture, keeperEffect, attackerFlow = 0 }) {
   if (!shot) return { goal: false, saved: true, reason: 'invalid-shot', quality: 0 };
   const gesture = keeperGesture || { type: 'hold', direction: 0, intensity: 0 };
   const flowBonus = clamp(attackerFlow / 100, 0, 1) * 0.055;
@@ -179,8 +179,9 @@ export function resolveShot({ shot, keeperX = 0, keeperGesture, keeperEffect, at
   const shotHeight = clamp(shot.targetY, 0, 1);
 
   let center = clamp(keeperX, -1, 1);
-  let reach = 0.28;
-  let heightReach = 0.62;
+  const depth = clamp(keeperDepth, 0, 1);
+  let reach = 0.28 + depth * 0.045;
+  let heightReach = 0.62 + depth * 0.025;
 
   if (gesture.type === 'dive') {
     center = clamp(center + gesture.direction * (0.38 + gesture.intensity * 0.28), -1, 1);
@@ -188,12 +189,12 @@ export function resolveShot({ shot, keeperX = 0, keeperGesture, keeperEffect, at
     heightReach = 0.82;
   } else if (gesture.type === 'high-claim') {
     center = clamp(center + gesture.direction * 0.23, -1, 1);
-    reach = 0.34;
-    heightReach = 0.98;
+    reach = 0.34 + depth * 0.055;
+    heightReach = Math.min(1, 0.98 + depth * 0.02);
   } else if (gesture.type === 'close-angle') {
     center = clamp(center + gesture.direction * 0.16, -1, 1);
-    reach = 0.39;
-    heightReach = 0.76;
+    reach = 0.39 + depth * 0.12;
+    heightReach = 0.76 + depth * 0.035;
   }
 
   if (keeperEffect?.reach) reach *= keeperEffect.reach;

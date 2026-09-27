@@ -4,17 +4,21 @@ import {join} from 'node:path';
 
 const root=new URL('../supabase/migrations/',import.meta.url);
 const manifest=JSON.parse(readFileSync(new URL('../supabase/migrations/APPLIED_MIGRATIONS_SHA256.json',import.meta.url),'utf8'));
+const pending=JSON.parse(readFileSync(new URL('../supabase/migrations/PENDING_MIGRATIONS_SHA256.json',import.meta.url),'utf8'));
+if(pending.status!=='pending-not-deployed')throw new Error('Invalid pending migration status');
 const normalize=value=>value.trim();
 const sha256=value=>createHash('sha256').update(normalize(value),'utf8').digest('hex');
 
 const expected=new Map(
-  manifest.migrations.map(m=>[
+  [...manifest.migrations,...pending.migrations].map(m=>[
     `${m.version}_${m.name}.sql`,
     m.sha256
   ])
 );
 
 const problems=[];
+if(pending.count!==pending.migrations.length)problems.push({error:'pending_count_mismatch'});
+if(expected.size!==manifest.migrations.length+pending.migrations.length)problems.push({error:'duplicate_migration'});
 
 for(const [file,expectedHash] of expected){
   const url=new URL('../supabase/migrations/'+file,import.meta.url);
@@ -44,6 +48,7 @@ if(problems.length){
 
 console.log(JSON.stringify({
   ok:true,
-  appliedMigrations:expected.size,
+  appliedMigrations:manifest.count,
+  pendingMigrations:pending.count,
   repositorySqlFiles:sqlFiles.length
 },null,2));

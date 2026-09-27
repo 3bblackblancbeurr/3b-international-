@@ -61,7 +61,10 @@ test('Penalty Rush Edge service keeps authority and service credentials server-s
   assert.match(source,/club\.leave/);
   assert.match(source,/club\.disband/);
   assert.match(source,/colorsInput/);
-  assert.match(source,/status=eq\.preselected/);
+  assert.match(source,/penalty_respond_selection/);
+  const selectionSql=fs.readFileSync(new URL('../supabase/migrations/20260927105000_penalty_selection_authority_v1.sql',import.meta.url),'utf8');
+  assert.match(selectionSql,/v_selection.status<>'preselected'/);
+  assert.match(selectionSql,/for update of w/);
   assert.match(source,/countryNeededRole/);
   assert.match(source,/needQualified/);
   assert.match(source,/role_profile/);
@@ -79,4 +82,11 @@ test('online-only client talks only to the authenticated Penalty Rush Edge endpo
   assert.match(source,/Authorization:\s*'Bearer '\s*\+\s*session\.access_token/);
   assert.match(source,/postgres_changes/);
   assert.match(source,/table\s*:\s*'penalty_rooms'/);
+});
+
+test('keeper depth produces identical outcomes across client and authoritative server',()=>{
+ for(const keeperDepth of [0,.25,.5,1]) for(const type of ['hold','dive','high-claim','close-angle']) for(const targetX of [-.8,-.4,0,.4,.8]) {
+  const input={shot:{type:'shot',power:.7,precision:.8,curve:.1,targetX,targetY:.5},keeperDepth,keeperX:0,keeperGesture:{type,direction:1,intensity:.5}};
+  assert.deepEqual(server.resolveShot(input),client.resolveShot(input));
+ }
 });
