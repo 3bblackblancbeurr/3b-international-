@@ -26,7 +26,7 @@ import {AlbertSpacesProvider,useAlbertSpaces} from './AlbertSpacesContext.jsx';
 import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
 import {validateAlbertActions} from './albert-model.js';
 import {SPACE_ACTIONS} from './albert-spaces-model.js';
-import {Badge,Card,CardBody,Stat} from '../design-system/index.jsx';
+import {Badge,Button,Card,CardBody,Stat} from '../design-system/index.jsx';
 import CommandSearchResults from './CommandSearchResults.jsx';
 import './control-center.css';
 
@@ -804,7 +804,7 @@ function ControlCenterContent({goTo}){
 
   <nav className="control-dock" aria-label="Navigation 3B Command OS">
    <button onClick={()=>jumpTo('cc-now')}><Gauge size={18}/><span>État</span></button>
-   <button onClick={()=>jumpTo('cc-apex')}><Sparkles size={18}/><span>APEX</span></button>
+   <Button variant="ghost" size="sm" onClick={()=>jumpTo('cc-apex')}><Sparkles size={18}/><span>APEX</span></Button>
    <button onClick={()=>jumpTo('cc-traffic')}><Activity size={18}/><span>Trafic</span></button>
    <button className="is-main" onClick={()=>jumpTo('cc-actions')}><Zap size={20}/><span>Action</span></button>
    <button onClick={()=>jumpTo('cc-devices')} disabled={focus}><Laptop size={18}/><span>PC</span></button>
