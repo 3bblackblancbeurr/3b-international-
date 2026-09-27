@@ -37,8 +37,8 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
  const runtimeState=online?'connecté':'hors ligne';
  const vram=runtime&&Number.isFinite(Number(runtime.gpu_memory_total_mb))?Math.round(Number(runtime.gpu_memory_total_mb))+' Mo':'non reçue';
  const health=useMemo(()=>Object.entries(state.health),[state.health]);
- const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online}),[online]);
- const liveCapabilities=capabilities.filter(item=>['ready','live','available','browser'].includes(item.state)).length;
+ const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online,browserVoice:typeof window!=='undefined'&&Boolean(window.SpeechRecognition||window.webkitSpeechRecognition||window.speechSynthesis)}),[online]);
+ const liveCapabilities=capabilities.filter(item=>['ready','live','available'].includes(item.state)).length;
  const inbox=useMemo(()=>ambientInbox(state.events,{max:8}),[state.events]);
  return <section className={'albert-apex-panel'+(state.killSwitch?' is-killed':'')} aria-label="ALBERT APEX OS">
   <header className="apex-head">
