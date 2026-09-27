@@ -17,7 +17,7 @@ test('Windows autostart is user-level, hidden and requires an existing pairing',
 
 test('agent 1.3 self-heals network failures and prevents duplicate modern agents',()=>{
  const source=read('scripts/threeb-control-agent.mjs');
- assert.match(source,/VERSION='1\.2\.0'/);
+ assert.match(source,/VERSION='1\.3\.0'/);
  assert.match(source,/agent\.lock/);
  assert.match(source,/pidAlive/);
  assert.match(source,/delay=Math\.min\(Math\.round\(delay\*1\.6\),30000\)/);
