@@ -21,7 +21,8 @@ function authRequest(url, options={}) {
 
 test("included shipping can enable checkout without a Stripe shipping-rate id", () => {
   const common = {
-    SHOP_ENABLED:"true", APP_URL:ORIGIN, STRIPE_SECRET_KEY:"sk_test_fixture", STRIPE_WEBHOOK_SECRET:"whsec_fixture",
+    SHOP_ENABLED:"true", SHOP_RELEASE_APPROVED:"true", SHOP_CHECKOUT_COOKIE_SECRET:"fixture-cookie-secret-3b-at-least-32-chars",
+    APP_URL:ORIGIN, STRIPE_SECRET_KEY:"sk_test_fixture", STRIPE_WEBHOOK_SECRET:"whsec_fixture",
     STRIPE_CATALOG_MODE:"metadata", SHOP_SHIPPING_COUNTRIES:"FR", SHOP_AUTOMATIC_TAX:"false",
     SUPABASE_URL:"https://db.example.test", SUPABASE_SERVICE_ROLE_KEY:"service-key",
     SHOP_TERMS_URL:`${ORIGIN}/sales-terms.html`, SHOP_PRIVACY_URL:`${ORIGIN}/privacy-policy.html`,
