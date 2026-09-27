@@ -22,7 +22,7 @@
 - [ ] Le prix Stripe test doit être réaligné avec la décision commerciale finale. Le prix actif du Pull TEST visible au moment de l’audit est encore de 200 €, et non 80 €.
 - [ ] Les 16 variantes annoncées historiquement ne sont pas présentes dans le catalogue Stripe test actuellement visible.
 - [ ] Aucune Checkout Session n’est enregistrée dans le compte Stripe test au moment de l’audit : le paiement E2E n’est donc pas encore démontré.
-- [ ] Le webhook test doit aussi recevoir l’événement `charge.refunded` pour que la logique de remboursement déjà présente dans le code soit réellement déclenchée.
+- [x] Webhook test aligné le 27/09/2026 : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` et `charge.refunded`.
 - [ ] Les secrets/configurations boutique Vercel doivent être contrôlés sans jamais exposer leurs valeurs.
 - [ ] Le paiement test doit être exécuté de bout en bout depuis le déploiement public : création Checkout → paiement carte test → webhook → `shop_orders` → confirmation → remboursement test.
 - [ ] Les mentions légales vendeur définitives doivent remplacer l’état « pré-ouverture ».
