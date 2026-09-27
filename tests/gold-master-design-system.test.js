@@ -12,3 +12,7 @@ test("runtime imports Gold Master layer",()=>assert.ok(main.includes("styles/gol
 test("reduced motion is supported",()=>assert.ok(css.includes("prefers-reduced-motion")));
 
 test("shared primitives expose explicit Gold Master states",()=>{assert.ok(components.includes('state = "normal"'));assert.ok(components.includes("data-state"));assert.ok(components.includes("getStateClass"))});
+
+
+test("shared Tabs support keyboard navigation",()=>{for(const marker of["ArrowRight","ArrowLeft","Home","End","tabIndex={active ? 0 : -1}"])assert.ok(components.includes(marker),marker)});
+test("Modal traps and restores keyboard focus",()=>{for(const marker of["dialogRef","previousActiveElement","event.key !== \"Tab\"","tabIndex={-1}"])assert.ok(components.includes(marker),marker)});

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   goldMasterTokens,
@@ -122,6 +122,21 @@ export function Tabs({
   label = "Navigation",
   className = "",
 }) {
+  const moveFocus = (event, currentIndex) => {
+    const supported = ["ArrowRight", "ArrowLeft", "Home", "End"];
+    if (!supported.includes(event.key) || items.length === 0) return;
+    event.preventDefault();
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % items.length;
+    if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + items.length) % items.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = items.length - 1;
+    const tabs = event.currentTarget.parentElement?.querySelectorAll('[role="tab"]');
+    tabs?.[nextIndex]?.focus();
+    const nextItem = items[nextIndex];
+    onChange(typeof nextItem === "string" ? nextItem : nextItem.value);
+  };
+
   return (
     <div
       className={`gm-tabs ${getStateClass(state)} ${className}`.trim()}
@@ -129,7 +144,7 @@ export function Tabs({
       role="tablist"
       aria-label={label}
     >
-      {items.map((item) => {
+      {items.map((item, index) => {
         const itemValue = typeof item === "string" ? item : item.value;
         const itemLabel = typeof item === "string" ? item : item.label;
         const active = itemValue === value;
@@ -139,8 +154,10 @@ export function Tabs({
             type="button"
             role="tab"
             aria-selected={active}
+            tabIndex={active ? 0 : -1}
             className="gm-tab"
             onClick={() => onChange(itemValue)}
+            onKeyDown={(event) => moveFocus(event, index)}
           >
             {itemLabel}
           </button>
@@ -213,13 +230,46 @@ export function Modal({
   onClose,
   className = "",
 }) {
+  const dialogRef = useRef(null);
+
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || typeof document === "undefined") return undefined;
+    const previousActiveElement = document.activeElement;
+    const dialog = dialogRef.current;
+    const focusableSelector = 'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])';
+    const focusable = () => Array.from(dialog?.querySelectorAll(focusableSelector) || []);
+
     const onKeyDown = (event) => {
-      if (event.key === "Escape") onClose?.();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose?.();
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const nodes = focusable();
+      if (nodes.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
+
+    const initialTarget = focusable()[0] || dialog;
+    initialTarget?.focus();
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      previousActiveElement?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open || typeof document === "undefined") return null;
@@ -233,6 +283,8 @@ export function Modal({
       }}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         className={`gm-modal ${getStateClass(state)} ${className}`.trim()}
         data-state={state}
         role="dialog"
