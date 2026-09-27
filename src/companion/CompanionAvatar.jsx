@@ -93,6 +93,86 @@ export default function CompanionAvatar({ mode = "idle", size = 118, title = "Co
         <path d="M28 173l4 8 9 3-9 4-4 9-4-9-9-4 9-3z" fill="#f4c768" />
         <path d="M229 138l3 6 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#70d7ff" />
       </g>
+
+      {mode === "walk" && (
+        <g className="companion3b-mode-prop companion3b-walk-lines" aria-hidden="true" fill="none" stroke="#79d9ff" strokeLinecap="round">
+          <path d="M18 232h31" strokeWidth="4" opacity=".8" />
+          <path d="M8 246h38" strokeWidth="3" opacity=".5" />
+          <path d="M25 258h20" strokeWidth="2" opacity=".35" />
+        </g>
+      )}
+
+      {mode === "sleep" && (
+        <g className="companion3b-mode-prop companion3b-sleep-prop" aria-hidden="true" fill="#8fe8ff" filter="url(#c3bBlueGlow)">
+          <text x="197" y="58" fontSize="21" fontWeight="900">Z</text>
+          <text x="216" y="39" fontSize="15" fontWeight="900">Z</text>
+          <text x="229" y="24" fontSize="11" fontWeight="900">Z</text>
+        </g>
+      )}
+
+      {mode === "wake" && (
+        <g className="companion3b-mode-prop companion3b-sun" aria-hidden="true" filter="url(#c3bGoldGlow)">
+          <circle cx="222" cy="43" r="10" fill="#ffd77f" />
+          <g stroke="#ffd77f" strokeWidth="3" strokeLinecap="round">
+            <path d="M222 24v-8M222 70v-8M203 43h-8M249 43h-8M209 30l-6-6M241 62l-6-6M235 30l6-6M203 62l6-6" />
+          </g>
+        </g>
+      )}
+
+      {mode === "clock" && (
+        <g className="companion3b-mode-prop companion3b-clock" aria-hidden="true" filter="url(#c3bGoldGlow)">
+          <circle cx="34" cy="186" r="24" fill="#070a0f" stroke="url(#c3bGold)" strokeWidth="4" />
+          <path d="M34 172v15l11 7" fill="none" stroke="#f7d98f" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="34" cy="186" r="3" fill="#f7d98f" />
+        </g>
+      )}
+
+      {mode === "notification" && (
+        <g className="companion3b-mode-prop companion3b-alert" aria-hidden="true" filter="url(#c3bGoldGlow)">
+          <circle cx="222" cy="51" r="19" fill="#0b0f16" stroke="#e8bd64" strokeWidth="3" />
+          <text x="222" y="60" textAnchor="middle" fill="#ffe7a8" fontSize="26" fontWeight="900">!</text>
+        </g>
+      )}
+
+      {mode === "celebrate" && (
+        <g className="companion3b-mode-prop companion3b-confetti" aria-hidden="true">
+          <path d="M31 72l4 9 10 3-10 4-4 10-4-10-10-4 10-3z" fill="#ffd77f" />
+          <path d="M224 95l3 7 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#64d6ff" />
+          <path d="M41 138l10-7M218 157l12 6M48 112l-8-9M209 121l8-10" fill="none" stroke="#f2c770" strokeWidth="4" strokeLinecap="round" />
+        </g>
+      )}
+
+      {mode === "secret" && (
+        <g className="companion3b-mode-prop companion3b-secret-hood" aria-hidden="true">
+          <path d="M68 67c13-40 38-58 69-58 34 0 61 20 73 60-14-13-28-20-43-24-19-6-42-6-61 1-15 5-27 12-38 21z" fill="#020305" stroke="url(#c3bGold)" strokeWidth="3" opacity=".94" />
+          <path d="M79 71c9-34 29-51 58-51 30 0 51 17 62 52" fill="none" stroke="#171d27" strokeWidth="13" strokeLinecap="round" />
+          <text x="215" y="80" fill="#ffe19a" fontSize="25" fontWeight="900" filter="url(#c3bGoldGlow)">?</text>
+        </g>
+      )}
+
+      {mode === "reward" && (
+        <g className="companion3b-mode-prop companion3b-chest" aria-hidden="true" filter="url(#c3bGoldGlow)">
+          <path d="M18 218h56v39H18z" fill="#15100a" stroke="#d9a948" strokeWidth="4" />
+          <path d="M19 218c4-20 14-29 27-29s23 9 27 29z" fill="#0c0d10" stroke="#e8bd64" strokeWidth="4" />
+          <path d="M42 214h9v44h-9z" fill="#d6a74a" />
+          <rect x="37" y="227" width="19" height="15" rx="4" fill="#090b10" stroke="#fff0b6" strokeWidth="3" />
+          <circle cx="46.5" cy="234.5" r="3" fill="#fff0b6" />
+        </g>
+      )}
+
+      {mode === "guardian" && (
+        <g className="companion3b-mode-prop companion3b-shield" aria-hidden="true" filter="url(#c3bGoldGlow)">
+          <path d="M20 180l28-11 28 11v23c0 23-13 39-28 48-15-9-28-25-28-48z" fill="#070a0f" stroke="url(#c3bGold)" strokeWidth="4" />
+          <path d="M34 207l10 10 20-24" fill="none" stroke="#6fdaff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      )}
+
+      {mode === "support" && (
+        <g className="companion3b-mode-prop companion3b-heart" aria-hidden="true" filter="url(#c3bGoldGlow)">
+          <path d="M215 188c-10-14-34-6-34 11 0 18 34 38 34 38s34-20 34-38c0-17-24-25-34-11z" fill="#ffe8ae" stroke="#d6a64b" strokeWidth="3" />
+          <path d="M215 194c-7-8-20-3-20 7 0 9 20 22 20 22s20-13 20-22c0-10-13-15-20-7z" fill="#2aa8ff" opacity=".78" />
+        </g>
+      )}
     </svg>
   );
 }
