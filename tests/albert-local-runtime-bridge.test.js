@@ -15,7 +15,7 @@ test('local bridge detects the real ALBERT Windows runtime without arbitrary she
  assert.match(agent,/evaluation_200\.py/);
  assert.match(agent,/127\.0\.0\.1:8765/);
  assert.match(agent,/ollamaModels/);
- assert.match(agent,/ollama',['"]list['"]/);
+ assert.match(agent,/runFixed\('ollama',\['list'\],3500\)/);
  assert.match(agent,/albert_runtime_telemetry:true/);
  assert.match(agent,/_runtime:\{\.\.\.systemStatus\(\),albert\}/);
  assert.doesNotMatch(agent,/child_process\.exec/);
