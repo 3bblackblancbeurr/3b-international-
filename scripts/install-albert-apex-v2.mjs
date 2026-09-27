@@ -7,6 +7,8 @@ import {fileURLToPath} from 'node:url';
 const repoRoot=fileURLToPath(new URL('../',import.meta.url));
 const sourceDir=path.join(repoRoot,'runtime','albert_apex_v2');
 const PACKAGE_VERSION='2.0.0';
+const HEAD_MARK='<!-- ALBERT_APEX_V2_HEAD -->';
+const BODY_MARK='<!-- ALBERT_APEX_V2_BODY -->';
 
 function stamp(){
  return new Date().toISOString().replace(/[-:TZ.]/g,'').slice(0,14);
@@ -44,12 +46,51 @@ function findRuntime(){
  return{root,signature:signature(root)};
 }
 function assertSource(){
- for(const file of ['__init__.py','core.py','server.py','manifest.json']){
+ for(const file of ['__init__.py','core.py','server.py','manifest.json','web/apex-widget.js','web/apex-widget.css']){
   if(!fs.existsSync(path.join(sourceDir,file)))throw new Error('Paquet APEX incomplet: '+file);
  }
 }
 function backupPath(root,label='apex_v2'){
  return path.join(root,'backups',label+'_'+stamp());
+}
+function uiSignature(root){
+ const index=path.join(root,'static','index.html');
+ if(!fs.existsSync(index))return{ok:false,index,reasons:['static_index_missing']};
+ const html=fs.readFileSync(index,'utf8');
+ const identity=/ALBERT/i.test(html);
+ const navigation=/(Créer|Projets|Mémoire|Tâches|ALBERT)/i.test(html);
+ const structure=/<\/head>/i.test(html)&&/<\/body>/i.test(html);
+ const reasons=[];
+ if(!identity)reasons.push('albert_identity_missing');
+ if(!navigation)reasons.push('apex_navigation_signature_missing');
+ if(!structure)reasons.push('html_structure_missing');
+ return{ok:reasons.length===0,index,html,reasons};
+}
+function patchUi(root){
+ const ui=uiSignature(root);
+ if(!ui.ok)throw new Error('Injection UI refusée: signature interface ALBERT non reconnue ('+ui.reasons.join(', ')+').');
+ const staticTarget=path.join(root,'static','apex_v2');
+ fs.rmSync(staticTarget,{recursive:true,force:true});
+ fs.cpSync(path.join(sourceDir,'web'),staticTarget,{recursive:true,force:true});
+ if(ui.html.includes(HEAD_MARK)&&ui.html.includes(BODY_MARK))return{patched:false,backup:null};
+ const backup=backupPath(root,'index_before_apex_v2')+'.html';
+ fs.mkdirSync(path.dirname(backup),{recursive:true});
+ fs.copyFileSync(ui.index,backup);
+ let html=ui.html;
+ const head=HEAD_MARK+'\n<link rel="stylesheet" href="/apex_v2/apex-widget.css">';
+ const body=BODY_MARK+'\n<script defer src="/apex_v2/apex-widget.js"></script>';
+ html=html.replace(/<\/head>/i,head+'\n</head>').replace(/<\/body>/i,body+'\n</body>');
+ fs.writeFileSync(ui.index,html,'utf8');
+ return{patched:true,backup};
+}
+function restoreUi(root,installMeta={}){
+ const index=path.join(root,'static','index.html');
+ const backup=installMeta.ui_backup?path.resolve(root,installMeta.ui_backup):'';
+ if(backup&&fs.existsSync(backup)&&fs.existsSync(index)){
+  const current=fs.readFileSync(index,'utf8');
+  if(current.includes(HEAD_MARK)||current.includes(BODY_MARK))fs.copyFileSync(backup,index);
+ }
+ fs.rmSync(path.join(root,'static','apex_v2'),{recursive:true,force:true});
 }
 async function sidecarOnline(){
  try{
@@ -90,13 +131,16 @@ function install(){
   fs.renameSync(target,backup);
  }
  fs.cpSync(sourceDir,target,{recursive:true,errorOnExist:false,force:true});
+ const ui=patchUi(root);
  const data=path.join(root,'data','apex_v2');
  fs.mkdirSync(data,{recursive:true});
  fs.writeFileSync(path.join(data,'install.json'),JSON.stringify({
   installed_at:new Date().toISOString(),
   version:PACKAGE_VERSION,
   runtime_name:path.basename(root),
-  installer:'3b-international'
+  installer:'3b-international',
+  ui_injected:true,
+  ui_backup:ui.backup?path.relative(root,ui.backup):null
  },null,2),'utf8');
  const launcher=path.join(root,'START_ALBERT_APEX_OS_V2.bat');
  fs.writeFileSync(launcher,launcherContent(found.signature),'utf8');
@@ -107,13 +151,15 @@ function install(){
   target:path.basename(target),
   launcher:path.basename(launcher),
   existing_albert_launcher:Boolean(found.signature.launcher),
-  desktop_runtime:Boolean(found.signature.desktop)
+  desktop_runtime:Boolean(found.signature.desktop),
+  ui_injected:true
  };
 }
 async function status(){
  const found=findRuntime();
  const root=found.root;
  const installed=Boolean(root&&fs.existsSync(path.join(root,'apex_v2','manifest.json')));
+ const ui=root?uiSignature(root):{html:''};
  return{
   runtime_found:Boolean(root),
   runtime_name:root?path.basename(root):null,
@@ -122,6 +168,7 @@ async function status(){
   installed,
   version:installed?JSON.parse(fs.readFileSync(path.join(root,'apex_v2','manifest.json'),'utf8')).version:null,
   launcher_present:Boolean(root&&fs.existsSync(path.join(root,'START_ALBERT_APEX_OS_V2.bat'))),
+  ui_injected:Boolean(ui.html&&ui.html.includes(HEAD_MARK)&&ui.html.includes(BODY_MARK)),
   sidecar_online:await sidecarOnline()
  };
 }
@@ -131,6 +178,9 @@ async function remove(){
  if(await sidecarOnline())throw new Error('Suppression refusée: le service APEX local tourne encore. Ferme ALBERT APEX puis réessaie.');
  const root=found.root,target=path.join(root,'apex_v2');
  if(!fs.existsSync(target))return{removed:false,reason:'not_installed'};
+ const installPath=path.join(root,'data','apex_v2','install.json');
+ const installMeta=fs.existsSync(installPath)?JSON.parse(fs.readFileSync(installPath,'utf8')):{};
+ restoreUi(root,installMeta);
  const backup=backupPath(root,'apex_v2_removed');
  fs.mkdirSync(path.dirname(backup),{recursive:true});
  fs.renameSync(target,backup);
