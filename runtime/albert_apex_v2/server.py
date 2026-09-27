@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import signal
-import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict
@@ -151,7 +151,7 @@ def main() -> None:
     server.daemon_threads = True
 
     def stop_server(*_: Any) -> None:
-        server.shutdown()
+        threading.Thread(target=server.shutdown, daemon=True).start()
 
     if hasattr(signal, "SIGINT"):
         signal.signal(signal.SIGINT, stop_server)
