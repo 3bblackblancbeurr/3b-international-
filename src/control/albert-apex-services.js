@@ -1,4 +1,4 @@
-import {actionRisk,createAlbertEvent} from './albert-apex-core.js';
+import {actionRisk,createAlbertEvent,eventPriority} from './albert-apex-core.js';
 
 const clean=(value,max=1000)=>String(value??'').replace(/[\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max);
 const clone=value=>typeof structuredClone==='function'?structuredClone(value):JSON.parse(JSON.stringify(value));
@@ -70,10 +70,18 @@ export function capabilityRegistry(runtime={}){
  return rows.map(([id,label,state,group])=>({id,label,state,group}));
 }
 
+export function normalizeExternalEvent(raw={}){
+ const type=clean(raw.type||raw.event_type||raw.kind||'external.event',100)||'external.event';
+ const createdAt=raw.createdAt||raw.created_at||stamp();
+ const stable=clean(raw.id||raw.event_id||raw.command_id||raw.device_id||[type,createdAt,raw.status||'',raw.action||''].join(':'),300);
+ const payload=raw.payload&&typeof raw.payload==='object'?clone(raw.payload):clone(raw);
+ return{id:'external-'+stable,type,priority:raw.priority||eventPriority(type,payload),createdAt,payload};
+}
+
 export function ambientInbox(events,{max=60}={}){
  const seen=new Set(),result=[];
  for(const raw of Array.isArray(events)?events:[]){
-  const event=raw?.type?raw:createAlbertEvent(raw?.event_type||raw?.kind||'external.event',raw);
+  const event=raw?.type&&raw?.createdAt?raw:normalizeExternalEvent(raw);
   const key=clean(event.id||event.type+':'+JSON.stringify(event.payload),500);
   if(!key||seen.has(key))continue;
   seen.add(key);
