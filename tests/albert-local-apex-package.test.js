@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -77,6 +79,27 @@ test('local APEX API is localhost-only and exposes no arbitrary command executio
  assert.match(server,/\/skill\/qualify/);
  assert.match(server,/\/session\/distill/);
  assert.doesNotMatch(server,/subprocess|os\.system|shell=True|eval\(/);
+});
+
+
+test('local APEX JavaScript and Python sources are syntactically valid',()=>{
+ const installer=fileURLToPath(new URL('../scripts/install-albert-apex-v2.mjs',import.meta.url));
+ const node=spawnSync(process.execPath,['--check',installer],{encoding:'utf8',shell:false});
+ assert.equal(node.status,0,node.stderr||node.stdout);
+ const pythonFiles=[
+  fileURLToPath(new URL('../runtime/albert_apex_v2/__init__.py',import.meta.url)),
+  fileURLToPath(new URL('../runtime/albert_apex_v2/core.py',import.meta.url)),
+  fileURLToPath(new URL('../runtime/albert_apex_v2/server.py',import.meta.url))
+ ];
+ let checked=false,last='';
+ for(const executable of ['python3','python']){
+  const result=spawnSync(executable,['-m','py_compile',...pythonFiles],{encoding:'utf8',shell:false});
+  if(result.error?.code==='ENOENT'){last=String(result.error);continue;}
+  checked=true;
+  assert.equal(result.status,0,result.stderr||result.stdout);
+  break;
+ }
+ assert.equal(checked,true,'Python interpreter unavailable: '+last);
 });
 
 test('package exposes ALBERT APEX local install status and rollback commands',()=>{
