@@ -1,6 +1,7 @@
 export const ALBERT_OPERATION_MODES=Object.freeze(['AUTO','LOCAL','HYBRID','INTERNET']);
 export const ALBERT_RESOURCE_PROFILES=Object.freeze(['ECO','NORMAL','APEX']);
 export const ALBERT_TASK_STATUS=Object.freeze(['queued','running','waiting','review','verified','failed','cancelled']);
+export const ALBERT_PHASES=Object.freeze(['INTENT','ASSESS','PLAN','EXECUTE','REVIEW','VERIFY','EVIDENCE']);
 export const ALBERT_PERMISSION_LEVELS=Object.freeze({
  read:0,local_safe:1,write_local:2,external:3,critical:4
 });
@@ -109,7 +110,7 @@ export function compileAlbertTaskGraph(spec){
 
 export function runnableAlbertTasks(graph){
  const tasks=Array.isArray(graph?.tasks)?graph.tasks:[];
- const done=new Set(tasks.filter(t=>['verified','cancelled'].includes(t.status)).map(t=>t.id));
+ const done=new Set(tasks.filter(t=>t.status==='verified').map(t=>t.id));
  return tasks.filter(t=>t.status==='queued'&&t.deps.every(dep=>done.has(dep)));
 }
 
@@ -124,6 +125,36 @@ export function transitionAlbertTask(graph,taskId,status,{error='',evidence}={})
  target.status=status;
  target.error=text(error,1200);
  if(Array.isArray(evidence))target.evidence=evidence.slice(0,50).map(v=>text(v,1000)).filter(Boolean);
+ return next;
+}
+
+export function advanceAlbertGraph(graph,phase){
+ if(!ALBERT_PHASES.includes(phase))throw new Error('Phase APEX inconnue.');
+ const next=clone(graph),tasks=Array.isArray(next?.tasks)?next.tasks:[],index=tasks.findIndex(t=>t.phase===phase);
+ if(index<0)throw new Error('Phase absente du graphe.');
+ const target=tasks[index];
+ if(['failed','cancelled'].includes(target.status))return next;
+ if(target.status==='verified')return next;
+ if(index>0){
+  const previous=tasks[index-1];
+  if(previous.status==='running'){
+   previous.status='verified';previous.endedAt=now();
+  }
+  if(previous.status!=='verified')return next;
+ }
+ if(target.status==='queued'||target.status==='waiting'||target.status==='review'){
+  target.status='running';target.startedAt=target.startedAt||now();target.attempts=Math.min(99,(target.attempts||0)+1);
+ }
+ return next;
+}
+
+export function verifyAlbertGraphPhase(graph,phase,evidence=[]){
+ if(!ALBERT_PHASES.includes(phase))throw new Error('Phase APEX inconnue.');
+ const next=clone(graph),target=(next.tasks||[]).find(t=>t.phase===phase);
+ if(!target)throw new Error('Phase absente du graphe.');
+ if(target.status!=='running')return next;
+ target.status='verified';target.endedAt=now();
+ target.evidence=(Array.isArray(evidence)?evidence:[]).slice(0,50).map(v=>text(v,1000)).filter(Boolean);
  return next;
 }
 
@@ -195,7 +226,7 @@ export function inspectAlbertStrategy(history,prompt){
 export function evaluateCompletion({spec,graph,evidence={}}={}){
  const tasks=Array.isArray(graph?.tasks)?graph.tasks:[];
  const failed=tasks.some(t=>t.status==='failed');
- const pending=tasks.some(t=>!['verified','cancelled'].includes(t.status));
+ const pending=tasks.some(t=>t.status!=='verified');
  const checks={
   spec:Boolean(spec?.id&&spec?.intent),
   noFailure:!failed,
