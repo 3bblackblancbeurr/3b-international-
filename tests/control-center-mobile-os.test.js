@@ -142,5 +142,5 @@ test('Command OS displays real PC GPU, VRAM and every reported Windows drive',()
  assert.match(page,/physical_disks/);
  assert.match(page,/driveRows/);
  assert.match(page,/DISQUES WINDOWS/);
- assert.match(page,/NVMe \/ SATA/);
+ assert.match(page,/Volumes Windows montés/);
 });
