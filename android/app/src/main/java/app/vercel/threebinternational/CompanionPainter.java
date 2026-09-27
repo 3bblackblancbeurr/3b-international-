@@ -214,7 +214,7 @@ final class CompanionPainter {
 
         paint.setStyle(Paint.Style.FILL);
         paint.setShader(whiteGradient());
-        c.drawRoundRect(new RectF(62, 263, 122, 292), 13, 13, paint);
+        c.drawRoundRect(new RectF(right ? 73 : 62, 263, right ? 133 : 122, 292), 13, 13, paint);
         paint.setShader(null);
         c.restore();
     }
