@@ -24,6 +24,7 @@ import {AlbertSpacesProvider,useAlbertSpaces} from './AlbertSpacesContext.jsx';
 import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
 import {validateAlbertActions} from './albert-model.js';
 import {SPACE_ACTIONS} from './albert-spaces-model.js';
+import {Badge,Card,CardBody,Stat} from '../design-system/index.jsx';
 import CommandSearchResults from './CommandSearchResults.jsx';
 import './control-center.css';
 
@@ -129,6 +130,29 @@ function StatusCard({Icon,label,value,detail,state='idle'}){
   <div className="control-status-icon"><Icon size={18}/></div>
   <div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>
  </article>;
+}
+
+function CommandOverview({mode,message,pulse,data,error,primaryDevice,primaryOnline,lastSync,latency}){
+ const tone={NOMINAL:'success',ATTENTION:'warning',ACTION:'warning',CRITICAL:'danger'}[mode]||'neutral';
+ const production=pulse.production===true?'En ligne':pulse.production===false?'Indisponible':'Contrôle…';
+ const backend=data&&!error?'Opérationnel':error?'Erreur':'Synchronisation…';
+ const pc=primaryOnline?'Connecté':primaryDevice?'Hors ligne':'Non appairé';
+ const ci=ciText(pulse.ci);
+ return <Card hero state={mode==='NOMINAL'?'success':mode==='CRITICAL'?'error':'warning'} className="command-overview">
+  <CardBody>
+   <div className="command-overview-heading">
+    <div><Badge tone={tone}>{mode}</Badge><p>3B SYSTEM</p><h1>{message}</h1></div>
+    <span className="command-overview-clock">{lastSync?'Actualisé '+relativeTime(lastSync):'Première synchronisation'}</span>
+   </div>
+   <div className="command-overview-stats" aria-label="Résumé de l’état 3B">
+    <Stat label="APPLICATION" value={production} detail="Production publique"/>
+    <Stat label="BACKEND" value={backend} detail={latency?latency+' ms API':'Control Center'}/>
+    <Stat label="CI" value={ci} detail={pulse.workflow||'GitHub Actions'}/>
+    <Stat label="PC" value={pc} detail={primaryDevice?primaryDevice.name:'Aucun agent détecté'}/>
+   </div>
+   <p className="command-overview-note">Le statut global couvre uniquement les sources réellement contrôlées. Une sauvegarde ou intégration non branchée n’est jamais affichée comme « OK ».</p>
+  </CardBody>
+ </Card>;
 }
 
 async function timedFetch(url,options={},timeout=8000){
@@ -561,6 +585,15 @@ function ControlCenterContent({goTo}){
  </section>;
 
  const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:data?'Aucune alerte détectée dans les sources disponibles.':'État en attente de vérification.';
+ const hasCritical=alerts.some(alert=>['production','control-api'].includes(alert.key));
+ const hasAction=alerts.some(alert=>alert.level==='bad');
+ const commandMode=hasCritical?'CRITICAL':hasAction?'ACTION':alerts.length?'ATTENTION':data?'NOMINAL':'ATTENTION';
+ const commandMessage={
+  NOMINAL:'Tout fonctionne normalement.',
+  ATTENTION:syncing&&!data?'Vérification du système en cours.':'Un élément mérite surveillance.',
+  ACTION:'Une action est nécessaire.',
+  CRITICAL:'Une panne importante demande une intervention.'
+ }[commandMode];
  const productionState=pulse.production===true?'good':pulse.production===false?'bad':'idle';
  const apiState=data&&!error?'good':error?'bad':'warn';
  const pcState=primaryOnline?'good':primaryDevice?'warn':'idle';
@@ -580,9 +613,9 @@ function ControlCenterContent({goTo}){
   {!pulse.network&&<div className="control-offline-banner" role="status"><WifiOff size={15}/><div><strong>Mode hors ligne</strong><small>Dernières données valides conservées{lastSync?' · synchro '+relativeTime(lastSync):''}.</small></div></div>}
 
   <main className="control-os-main">
-   <div id="cc-now"><ModuleBoundary label="Albert momentanément indisponible">
-    <AlbertWorkspace onActions={applyAlbertActions} onUndo={undoAlbert} canUndo={albertHistory.length>0} online={primaryOnline} deviceKnown={Boolean(primaryDevice)} runtime={runtime} privacyMode={privacyMode} reduced={reducedLocal} ready={Boolean(data)&&!error} theme={albertTheme}/>
-   </ModuleBoundary></div>
+   <div id="cc-now">
+    <CommandOverview mode={commandMode} message={commandMessage} pulse={pulse} data={data} error={error} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync} latency={latency}/>
+   </div>
 
    {alerts.length>0&&<section className="control-alert-strip" aria-live="polite">
     <BellRing size={17}/><div><strong>{alerts.length} point{alerts.length>1?'s':''} à surveiller</strong><span>{alerts[0].title}</span></div><ChevronRight size={17}/>
@@ -600,6 +633,10 @@ function ControlCenterContent({goTo}){
     <StatusCard Icon={GitBranch} label="GITHUB ACTIONS" value={ciText(pulse.ci)} detail={pulse.workflow||pulse.commit||'main'} state={ciState(pulse.ci)}/>
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
+
+   <ModuleBoundary label="Albert momentanément indisponible">
+    <AlbertWorkspace onActions={applyAlbertActions} onUndo={undoAlbert} canUndo={albertHistory.length>0} online={primaryOnline} deviceKnown={Boolean(primaryDevice)} runtime={runtime} privacyMode={privacyMode} reduced={reducedLocal} ready={Boolean(data)&&!error} theme={albertTheme}/>
+   </ModuleBoundary>
 
    {data&&!error&&<ModuleBoundary label="Espaces momentanément indisponibles"><AlbertSpaces privacyMode={privacyMode} reduced={reducedLocal}/></ModuleBoundary>}
    {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
