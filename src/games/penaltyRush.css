@@ -32,6 +32,7 @@
 .penalty-connection{display:inline-flex;min-height:31px;align-items:center;gap:5px;padding:5px 8px;border:1px solid #ffffff16;border-radius:9px;color:#91a1a4;font-size:9px;text-transform:uppercase}
 .penalty-connection[data-state="online"]{border-color:#59d0a141;color:#79dcb4}
 .penalty-connection[data-state="error"]{border-color:#d85b6350;color:#ee8e95}
+.penalty-connection[data-state="offline"]{border-color:var(--3b-border);color:var(--3b-warning);background:rgba(230,168,75,.04)}
 .penalty-icon{display:grid;width:38px;height:38px;place-items:center;border:1px solid #ffffff17;border-radius:10px;background:#0d1213;color:#f2ead8}
 .penalty-icon:hover{border-color:#d5b36166;color:#f4d48a}
 .penalty-notice{position:relative;z-index:19;padding:8px 14px;border-bottom:1px solid #d5b36024;background:#d5b3600c;color:#e7d09a;font-size:11px;text-align:center}
