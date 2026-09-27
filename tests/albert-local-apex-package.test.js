@@ -21,6 +21,9 @@ test('local APEX installer is signature-gated, reversible and does not overwrite
  assert.match(source,/WScript\.Shell/);
  assert.match(source,/cscript\.exe/);
  assert.match(source,/ALBERT_shortcut_before_apex_v2/);
+ assert.match(source,/START_ALBERT_APEX_OS_V2\.vbs/);
+ assert.match(source,/wscript\.exe/);
+ assert.match(source,/shell\.Run command, 0, False/);
  assert.match(source,/shortcut_created/);
  assert.doesNotMatch(source,/shell\s*:\s*true/);
  assert.doesNotMatch(source,/powershell|cmd\.exe|RunAs|runas/i);
