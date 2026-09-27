@@ -23,6 +23,7 @@ import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 import PassportAppearanceSettings from "./passport/PassportAppearance.jsx";
 import { hasPassportAccess } from "./passport/access.js";
+import { Button } from "./design-system/index.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
 import LoyaltyPage from "./loyalty/LoyaltyPage.jsx";
@@ -535,9 +536,9 @@ function PassportAccessGate({ goTo, options }) {
         <p className="eyebrow">ACCÈS 3B</p>
         <h1 id="passport-access-title">Passeport 3B requis</h1>
         <p>Un seul Passeport 3B donne accès à l’écosystème 3B, y compris au Monde du 3B.</p>
-        <button type="button" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</button>
-        <button type="button" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</button>
-        <button type="button" className="ghost-button" onClick={() => goTo("home")}>Retour à l’accueil</button>
+        <Button variant="champagne" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</Button>
+        <Button variant="ghost" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</Button>
+        <Button variant="ghost" className="ghost-button" onClick={() => goTo("home")}>Retour à l’accueil</Button>
       </section>
     </main>
   );
@@ -546,9 +547,9 @@ function PassportAccessGate({ goTo, options }) {
 function PageHeader({ title, subtitle, goTo }) {
   return (
     <section className="page-header">
-      <button type="button" className="ghost-button" onClick={() => goTo("home")}>
+      <Button variant="ghost" className="ghost-button" onClick={() => goTo("home")}>
         ← Retour
-      </button>
+      </Button>
 
       <div>
         <p className="eyebrow">3B International</p>

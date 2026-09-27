@@ -7,6 +7,7 @@ const home = readFileSync("src/components/HomePage.jsx", "utf8");
 const world = readFileSync("src/components/WorldPortalCard.jsx", "utf8");
 const design = readFileSync("src/design-system/index.jsx", "utf8");
 const css = readFileSync("src/styles/gold-master.css", "utf8");
+const app = readFileSync("src/App.jsx", "utf8");
 
 test("CompactCard composes the shared Gold Master Card", () => {
   assert.ok(compact.includes("import {Card}"));
@@ -34,4 +35,11 @@ test("shell overrides consume canonical tokens", () => {
   for (const token of ["--3b-champagne", "--3b-matrix", "--3b-border", "--3b-radius-card", "--3b-radius-hero"]) {
     assert.ok(css.includes(`var(${token})`));
   }
+});
+
+
+test("Passport access and page header use the shared Gold Master Button", () => {
+  assert.ok(app.includes('import { Button } from "./design-system/index.jsx";'));
+  assert.ok(app.includes('<Button variant="champagne" className="primary-button"'));
+  assert.ok(app.includes('<Button variant="ghost" className="ghost-button"'));
 });
