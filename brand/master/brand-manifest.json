@@ -104,8 +104,9 @@
       "name": "passport-digital-v2",
       "path": "public/passport-digital-3bv2.png",
       "gitBlobSha1": "bd1662e40d1b980bb303f37285303d148ab355b6",
-      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "status": "locked"
+      "sha256": null,
+      "status": "pending-sha256-binary-source",
+      "note": "Connector did not expose binary bytes; do not treat the empty-content hash as authoritative."
     }
   ]
 }
