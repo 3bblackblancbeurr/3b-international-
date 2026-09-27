@@ -103,6 +103,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "skills": self.runtime.store.skills()})
             if path == "/session/distill":
                 return self._json({"ok": True, "distillation": self.runtime.distill_session()})
+            if path == "/session/current":
+                return self._json({"ok": True, "session": self.runtime.store.session_state()})
+            if path == "/doctor":
+                return self._json({"ok": True, "doctor": self.runtime.doctor()})
             return self._error(404, "Route inconnue.")
         except Exception as error:
             return self._error(500, str(error)[:500])
@@ -150,6 +154,16 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/skill/qualify":
                 skill = self.runtime.qualify_skill(str(body.get("skill_id", "")), int(body.get("passed", 0)), int(body.get("failed", 0)))
                 return self._json({"ok": True, "skill": skill})
+            if path == "/tool/result":
+                session = self.runtime.record_tool_result(
+                    str(body.get("task_id", "")),
+                    str(body.get("tool", "")),
+                    body.get("result", ""),
+                    body.get("ok") is True,
+                )
+                return self._json({"ok": True, "session": session})
+            if path == "/session/reset":
+                return self._json({"ok": True, "session": self.runtime.reset_session()})
             if path == "/core/stop":
                 return self._json({"ok": True, "settings": self.runtime.stop()})
             if path == "/core/resume":
