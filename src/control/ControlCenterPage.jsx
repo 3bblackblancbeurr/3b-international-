@@ -20,6 +20,8 @@ import AICommandPanel from './AICommandPanel.jsx';
 import AlbertWorkspace from './AlbertWorkspace.jsx';
 import AlbertDesk from './AlbertDesk.jsx';
 import AlbertSpaces from './AlbertSpaces.jsx';
+import AlbertApexPanel from './AlbertApexPanel.jsx';
+import {AlbertApexProvider} from './AlbertApexContext.jsx';
 import {AlbertSpacesProvider,useAlbertSpaces} from './AlbertSpacesContext.jsx';
 import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
 import {validateAlbertActions} from './albert-model.js';
@@ -166,7 +168,7 @@ async function safeTimedFetch(url,options={},timeout=8000){
  try{return await timedFetch(url,options,timeout);}catch{return null;}
 }
 
-export default function ControlCenterPage(props){return <AlbertSpacesProvider><ControlCenterContent {...props}/></AlbertSpacesProvider>;}
+export default function ControlCenterPage(props){return <AlbertSpacesProvider><AlbertApexProvider><ControlCenterContent {...props}/></AlbertApexProvider></AlbertSpacesProvider>;}
 function ControlCenterContent({goTo}){
  const composed=useAlbertSpaces();
  const[phone,setPhone]=useState(isPhoneClient);
@@ -641,6 +643,7 @@ function ControlCenterContent({goTo}){
    {data&&!error&&<ModuleBoundary label="Espaces momentanément indisponibles"><AlbertSpaces privacyMode={privacyMode} reduced={reducedLocal}/></ModuleBoundary>}
    {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
    <AlbertModules>
+   {isVisible('apex')&&<AlbertModule id="apex" label="ALBERT APEX OS"><ModuleBoundary label="APEX OS momentanément indisponible"><AlbertApexPanel online={primaryOnline} runtime={runtime} privacyMode={privacyMode}/></ModuleBoundary></AlbertModule>}
    {isVisible('brief')&&<AlbertModule id="brief" label="Brief"><ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary></AlbertModule>}
 
    {isVisible('alerts')&&<AlbertModule id="alerts" label="Attention"><ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary></AlbertModule>}
