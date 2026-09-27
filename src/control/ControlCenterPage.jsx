@@ -19,6 +19,8 @@ import IntegrationCenterPanel from './IntegrationCenterPanel.jsx';
 import AICommandPanel from './AICommandPanel.jsx';
 import AlbertWorkspace from './AlbertWorkspace.jsx';
 import AlbertDesk from './AlbertDesk.jsx';
+import AlbertSpaces from './AlbertSpaces.jsx';
+import {AlbertSpacesProvider,useAlbertSpaces} from './AlbertSpacesContext.jsx';
 import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
 import {validateAlbertActions} from './albert-model.js';
 import CommandSearchResults from './CommandSearchResults.jsx';
@@ -139,7 +141,9 @@ async function safeTimedFetch(url,options={},timeout=8000){
  try{return await timedFetch(url,options,timeout);}catch{return null;}
 }
 
-export default function ControlCenterPage({goTo}){
+export default function ControlCenterPage(props){return <AlbertSpacesProvider><ControlCenterContent {...props}/></AlbertSpacesProvider>;}
+function ControlCenterContent({goTo}){
+ const composed=useAlbertSpaces();
  const[phone,setPhone]=useState(isPhoneClient);
  const[data,setData]=useState(null);
  const[error,setError]=useState('');
@@ -167,10 +171,12 @@ export default function ControlCenterPage({goTo}){
  });
  const[albertTheme,setAlbertTheme]=useState(()=>{try{return localStorage.getItem('3b-albert-theme')||'cyan';}catch{return 'cyan';}});
  const[albertHistory,setAlbertHistory]=useState([]);
+ useEffect(()=>setAlbertHistory([]),[composed.owner]);
  const applyAlbertActions=actions=>{
   const accepted=validateAlbertActions(actions);
   if(!accepted.length)return;
-  setAlbertHistory(previous=>[...previous.slice(-19),{hiddenModules,focus,compactMode,reducedLocal,albertTheme}]);
+  if(accepted.some(a=>['space_create','panel_add','panel_resize','task_add'].includes(a.type)))composed.apply(accepted);
+  setAlbertHistory(previous=>[...previous.slice(-19),{hiddenModules,focus,compactMode,reducedLocal,albertTheme,spaces:accepted.some(a=>['space_create','panel_add','panel_resize','task_add'].includes(a.type))?composed.state:null}]);
   accepted.forEach(action=>{
    if(action.type==='module')setHiddenModules(current=>({...current,[action.id]:!action.visible}));
    if(action.type==='theme')setAlbertTheme(action.value);
@@ -182,6 +188,7 @@ export default function ControlCenterPage({goTo}){
  const undoAlbert=()=>{
   const previous=albertHistory.at(-1);if(!previous)return;
   setHiddenModules(previous.hiddenModules);setFocus(previous.focus);setCompactMode(previous.compactMode);setReducedLocal(previous.reducedLocal);setAlbertTheme(previous.albertTheme);
+  if(previous.spaces)composed.edit(s=>({...previous.spaces,messages:s.messages}),'Composition annulée');
   setAlbertHistory(history=>history.slice(0,-1));
  };
  useEffect(()=>{try{localStorage.setItem('3b-albert-theme',albertTheme);}catch{}},[albertTheme]);
@@ -593,6 +600,7 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
+   {data&&!error&&<ModuleBoundary label="Espaces momentanément indisponibles"><AlbertSpaces privacyMode={privacyMode} reduced={reducedLocal}/></ModuleBoundary>}
    {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
    <AlbertModules>
    {isVisible('brief')&&<AlbertModule id="brief" label="Brief"><ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary></AlbertModule>}
