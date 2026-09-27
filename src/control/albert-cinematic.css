@@ -1,0 +1,9 @@
+.albert-film .albert-avatar3d{inset:0 0 0 24%;opacity:.95}
+.albert-film .albert-avatar3d canvas{mask-image:radial-gradient(ellipse at 65% 50%,#000 35%,transparent 78%)}
+.albert-film-copy,.albert-film-close,.albert-film-footer{z-index:2}
+.albert-conversation-tools details{font-size:11px;color:#b1c4dd;max-width:650px}
+.albert-conversation-tools summary{cursor:pointer;padding:8px}
+.as-settings>label{display:inline-flex;gap:12px;align-items:center;margin:12px}
+.as-settings>label input{border:1px solid #9ebfff35;border-radius:7px;background:#0a1423;color:#dceaff;padding:9px}
+.as-dialog{--albert-accent:#8bdeff}
+@media(max-width:650px){.albert-film .albert-avatar3d{inset:0 -20% 0 -20%;opacity:.55}.as-task{flex-wrap:wrap}.as-task span{min-width:100px}.albert-scene-copy{pointer-events:none}.albert-scene-copy button{pointer-events:auto}}

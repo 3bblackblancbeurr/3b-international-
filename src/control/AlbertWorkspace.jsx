@@ -1,7 +1,10 @@
 import {useEffect,useRef,useState} from 'react';
-import {commandAIRequest} from './integrations-client.js';
+import {albertRequest} from './integrations-client.js';
+import {useAlbertSpaces} from './AlbertSpacesContext.jsx';
+import AlbertAvatar3D from './AlbertAvatar3D.jsx';
 import {parseAlbertLocal,validateAlbertActions} from './albert-model.js';
 import './albert-workspace.css';
+import './albert-cinematic.css';
 
 const CHAPTERS=[
  ['01 / ÉVEIL','Une idée. Tout un univers.','Votre espace, votre intention.'],
@@ -9,11 +12,28 @@ const CHAPTERS=[
  ['03 / ACTION','Votre prochain mouvement.','Revenez au cockpit et commencez.']
 ];
 export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceKnown,runtime,privacyMode,reduced,ready,theme}){
+ const spaces=useAlbertSpaces();
+ const[memory,setMemory]=useState(true),[listening,setListening]=useState(false),[speaking,setSpeaking]=useState(false);
+ const abort=useRef(null),recognition=useRef(null);
  const[prompt,setPrompt]=useState(''),[reply,setReply]=useState('Demandez une synthèse ou composez votre interface.'),[busy,setBusy]=useState(false),[failure,setFailure]=useState(false);
  const[film,setFilm]=useState(false),[chapter,setChapter]=useState(0),[replay,setReplay]=useState(0),[visible,setVisible]=useState(!document.hidden);
  const[systemReduced,setSystemReduced]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
  const dialog=useRef(null),trigger=useRef(null),requestId=useRef(0),locked=useRef(false);
  const noMotion=reduced||systemReduced;
+ function stop(){requestId.current++;abort.current?.abort();locked.current=false;setBusy(false);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false);setSpeaking(false);}
+ useEffect(()=>{stop();return()=>{requestId.current++;abort.current?.abort();recognition.current?.abort();window.speechSynthesis?.cancel();};},[spaces.owner,privacyMode]);
+ function dictate(){
+  if(listening){recognition.current?.stop();return;}
+  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;if(!Recognition)return;
+  const mic=new Recognition();recognition.current=mic;mic.lang='fr-FR';mic.interimResults=true;mic.continuous=false;
+  mic.onresult=e=>{if(recognition.current===mic)setPrompt(Array.from(e.results).map(r=>r[0].transcript).join(' ').slice(0,4000));};
+  mic.onend=()=>setListening(false);mic.onerror=()=>{setListening(false);setReply('Dictée indisponible ou permission refusée. Vous pouvez écrire votre demande.');};
+  window.speechSynthesis?.cancel();try{mic.start();setListening(true);}catch{setListening(false);}
+ }
+ function readReply(){
+  if(speaking){window.speechSynthesis?.cancel();setSpeaking(false);return;}
+  if(!window.speechSynthesis)return;const utterance=new SpeechSynthesisUtterance(reply);utterance.lang='fr-FR';utterance.onstart=()=>setSpeaking(true);utterance.onend=utterance.onerror=()=>setSpeaking(false);window.speechSynthesis.speak(utterance);
+ }
  useEffect(()=>{const media=window.matchMedia('(prefers-reduced-motion: reduce)'),change=()=>setSystemReduced(media.matches);media.addEventListener('change',change);const visibility=()=>setVisible(!document.hidden);document.addEventListener('visibilitychange',visibility);return()=>{media.removeEventListener('change',change);document.removeEventListener('visibilitychange',visibility);requestId.current++;};},[]);
  useEffect(()=>{if(film){dialog.current?.showModal();setChapter(noMotion?2:0);}else dialog.current?.close();},[film,noMotion,replay]);
  useEffect(()=>{if(!film||noMotion||!visible)return;const timer=setInterval(()=>setChapter(c=>Math.min(c+1,2)),6000);return()=>clearInterval(timer);},[film,noMotion,visible,replay]);
@@ -22,14 +42,17 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   setFailure(false);
   if(/^cin[eé]matique$/i.test(value)){setFilm(true);setPrompt('');return;}
   const local=parseAlbertLocal(value);
-  if(local){onActions(local);setReply('Interface mise à jour. Vous pouvez annuler cette modification.');setPrompt('');return;}
-  locked.current=true;setBusy(true);setReply('Albert analyse votre demande…');const id=++requestId.current;
+  if(local){try{onActions(local);setReply('Interface mise à jour. Vous pouvez annuler cette modification.');setPrompt('');}catch(e){setFailure(true);setReply(e.message);}return;}
+  recognition.current?.abort();window.speechSynthesis?.cancel();setSpeaking(false);
+  locked.current=true;setBusy(true);setReply('Albert analyse votre demande…');const id=++requestId.current;abort.current=new AbortController();
   try{
-   const result=await commandAIRequest(value,'albert');
+   const active=spaces.state.spaces.find(s=>s.id===spaces.state.active);
+   const result=await albertRequest({action:'albert',stream:true,prompt:value,messages:memory&&!privacyMode?spaces.state.messages:[],workspace:privacyMode?null:{active:active.id,spaces:[active]}},{signal:abort.current.signal,onText:text=>{if(id===requestId.current&&text)setReply(text);},onStatus:text=>{if(id===requestId.current)setReply(text);}});
    if(id!==requestId.current)return;
    const actions=validateAlbertActions(result.answer?.actions);
    if(actions.length)onActions(actions);
    setReply((result.answer?.text||'Aucune réponse.')+(actions.length?' · Modifications appliquées.':''));
+   if(memory&&!privacyMode)spaces.remember(value,result.answer?.text||'');
    setPrompt('');
   }catch(e){if(id===requestId.current){setFailure(true);setReply(e.message||'Albert est momentanément indisponible.');}}
   finally{if(id===requestId.current){locked.current=false;setBusy(false);}}
@@ -39,7 +62,7 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
  return <section className={'albert-workspace theme-'+theme+(noMotion?' motion-off':'')+(!visible?' is-paused':'')} aria-label="Albert, assistant personnel">
   <div className="albert-scene">
    <div className="albert-grid" aria-hidden="true"/>
-   <div className="albert-portrait" aria-hidden="true"><img src="/albert/command-center.png" alt=""/><i/></div>
+   <AlbertAvatar3D busy={busy} speaking={speaking} listening={listening} reduced={noMotion} paused={film||!visible}/>
    <div className="albert-orbit one" aria-hidden="true"/><div className="albert-orbit two" aria-hidden="true"/>
    <div className="albert-scene-copy"><p className="albert-eyebrow">ALBERT / VOTRE UNIVERS</p><h2>Une intention.<br/>Tout devient possible.</h2><p>Composez votre cockpit.<br/>Concentrez-vous sur ce qui compte.</p>
     <button ref={trigger} type="button" onClick={()=>setFilm(true)}>Découvrir l’expérience ↗</button>
@@ -52,11 +75,19 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   </div>
   <form className="albert-prompt" onSubmit={e=>{e.preventDefault();run();}}><label htmlFor="albert-input">✧ <span className="albert-sr">Demande à Albert</span></label><input id="albert-input" value={prompt} onChange={e=>setPrompt(e.target.value)} maxLength={4000} placeholder="Albert, affiche les projets et passe en violet…" disabled={busy||!ready}/><button type="submit" disabled={busy||!ready||!prompt.trim()}>{busy?'Analyse…':'Envoyer ↗'}</button></form>
   <p className={'albert-answer'+(failure?' error':'')} role="status" aria-live="polite">{ready?reply:'Connexion propriétaire requise pour utiliser Albert.'}</p>
+  <div className="albert-conversation-tools">
+   {busy&&<button onClick={()=>{stop();setReply('Demande interrompue. Aucune action de cette réponse appliquée.');}}>Interrompre</button>}
+   <label><input type="checkbox" checked={memory&&!privacyMode} disabled={busy||privacyMode} onChange={e=>setMemory(e.target.checked)}/> Mémoire de conversation</label>
+   <details><summary>Voix et confidentialité</summary><p className="albert-voice-note">La dictée dépend du navigateur et peut transmettre votre voix à son fournisseur. Le texte est à vérifier avant d’appuyer sur Envoyer. La mémoire activée transmet les derniers échanges à Albert ; l’espace actif est transmis hors mode privé.</p>
+    {(window.SpeechRecognition||window.webkitSpeechRecognition)?<button disabled={!ready||busy||privacyMode} onClick={dictate}>{listening?'Arrêter la dictée':'Dicter une demande'}</button>:<span>Dictée non disponible dans ce navigateur.</span>}
+    {!!window.speechSynthesis&&<button disabled={busy||privacyMode||!ready} onClick={readReply}>{speaking?'Arrêter la lecture':'Écouter la réponse'}</button>}
+   </details>
+  </div>
   <div className="albert-hints"><button disabled={!ready||busy} onClick={()=>run('mode focus')}>Mode focus</button><button disabled={!ready||busy} onClick={()=>run('affiche tout')}>Tous les modules</button><button disabled={!ready||busy} onClick={()=>run('ambiance violet')}>Ambiance violet</button><button disabled={!canUndo||busy} onClick={onUndo}>Annuler</button></div>
   <p className="albert-disclosure">Commandes d’interface locales et IA propriétaire côté serveur. Les connexions manquantes sont signalées ; aucune action PC n’est exécutée par une réponse IA.</p>
   <dialog className={'albert-film'+(noMotion?' motion-off':'')+(!visible?' is-paused':'')} ref={dialog} onCancel={e=>{e.preventDefault();closeFilm();}}>
    <button className="albert-film-close" onClick={closeFilm}>Retour au cockpit ×</button>
-   {film&&<><div className="albert-film-portrait" key={replay} aria-hidden="true"><img src="/albert/command-center.png" alt=""/></div><div className="albert-film-copy" key={'chapter'+chapter}><p className="albert-eyebrow">{CHAPTERS[chapter][0]}</p><h2>{CHAPTERS[chapter][1]}</h2><p>{CHAPTERS[chapter][2]}</p></div><div className="albert-film-footer"><span>ALBERT · EXPÉRIENCE VISUELLE</span><button onClick={()=>setReplay(v=>v+1)}>Rejouer ↻</button></div></>}
+   {film&&<><AlbertAvatar3D key={replay} cinematic reduced={noMotion} paused={!visible}/><div className="albert-film-copy" key={'chapter'+chapter}><p className="albert-eyebrow">{CHAPTERS[chapter][0]}</p><h2>{CHAPTERS[chapter][1]}</h2><p>{CHAPTERS[chapter][2]}</p></div><div className="albert-film-footer"><span>ALBERT · EXPÉRIENCE VISUELLE</span><button onClick={()=>setReplay(v=>v+1)}>Rejouer ↻</button></div></>}
   </dialog>
  </section>;
 }

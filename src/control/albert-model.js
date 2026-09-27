@@ -1,3 +1,4 @@
+import {spaceActionValid,parseSpaceCommand} from './albert-spaces-model.js';
 export const ALBERT_MODULES=['brief','alerts','nexus','integrations','ai','traffic','dev','health','security','projects'];
 export const ALBERT_THEMES=['cyan','violet','gold'];
 // Shared server/client contract: no scripts, URLs, permissions or PC commands.
@@ -8,13 +9,21 @@ export function validateAlbertActions(value){
   if(a.type==='module')return ALBERT_MODULES.includes(a.id)&&typeof a.visible==='boolean';
   if(a.type==='theme')return ALBERT_THEMES.includes(a.value);
   if(['focus','compact','motion'].includes(a.type))return typeof a.value==='boolean';
-  return false;
- }).map(a=>a.type==='module'?{type:a.type,id:a.id,visible:a.visible}:{type:a.type,value:a.value});
+  return spaceActionValid(a);
+ }).map(a=>{
+  if(a.type==='module')return {type:a.type,id:a.id,visible:a.visible};
+  if(a.type==='space_create')return {type:a.type,name:a.name,template:a.template};
+  if(a.type==='panel_add')return {type:a.type,kind:a.kind};
+  if(a.type==='panel_resize')return {type:a.type,id:a.id,width:a.width};
+  if(a.type==='task_add')return {type:a.type,text:a.text,due:a.due||''};
+  return {type:a.type,value:a.value};
+ });
 }
 export function parseAlbertLocal(text){
  const q=String(text).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
  const neg=/\b(non|ne|pas|sans|jamais)\b/.test(q);
  if(neg)return null;
+ const space=parseSpaceCommand(text);if(space)return space;
  if(/^(mode |active le mode |passe en mode )focus$/.test(q))return [{type:'focus',value:true}];
  if(/^(quitte|desactive) (le )?(mode )?focus$/.test(q))return [{type:'focus',value:false}];
  if(/^(affiche tout|restaure les modules)$/.test(q))return ALBERT_MODULES.map(id=>({type:'module',id,visible:true}));
