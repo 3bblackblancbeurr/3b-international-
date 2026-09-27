@@ -54,6 +54,7 @@ const NATURAL_COMMANDS=[
 ];
 
 const NAVIGATION_COMMANDS=[
+ {re:/\b(apex|albert apex|apex os|os albert|orchestrateur)\b/i,target:'cc-apex',feedback:'ALBERT APEX OS ouvert.'},
  {re:/\b(radar|trafic|fréquentation|frequentation|visites?)\b/i,target:'cc-traffic',feedback:'Radar 3B ouvert.'},
  {re:/\b(nexus|services?|connexions?)\b/i,target:'cc-nexus',feedback:'Nexus 3B ouvert.'},
  {re:/\b(brief|résumé|resume|journée|journee|aujourd'hui|aujourdhui)\b/i,target:'cc-brief',feedback:'Brief du jour ouvert.'},
@@ -643,7 +644,7 @@ function ControlCenterContent({goTo}){
    {data&&!error&&<ModuleBoundary label="Espaces momentanément indisponibles"><AlbertSpaces privacyMode={privacyMode} reduced={reducedLocal}/></ModuleBoundary>}
    {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
    <AlbertModules>
-   {isVisible('apex')&&<AlbertModule id="apex" label="ALBERT APEX OS"><ModuleBoundary label="APEX OS momentanément indisponible"><AlbertApexPanel online={primaryOnline} runtime={runtime} privacyMode={privacyMode} externalEvents={events}/></ModuleBoundary></AlbertModule>}
+   {isVisible('apex')&&<AlbertModule id="apex" label="ALBERT APEX OS"><div id="cc-apex"><ModuleBoundary label="APEX OS momentanément indisponible"><AlbertApexPanel online={primaryOnline} runtime={runtime} privacyMode={privacyMode} externalEvents={events}/></ModuleBoundary></div></AlbertModule>}
    {isVisible('brief')&&<AlbertModule id="brief" label="Brief"><ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary></AlbertModule>}
 
    {isVisible('alerts')&&<AlbertModule id="alerts" label="Attention"><ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary></AlbertModule>}
@@ -803,6 +804,7 @@ function ControlCenterContent({goTo}){
 
   <nav className="control-dock" aria-label="Navigation 3B Command OS">
    <button onClick={()=>jumpTo('cc-now')}><Gauge size={18}/><span>État</span></button>
+   <button onClick={()=>jumpTo('cc-apex')}><Sparkles size={18}/><span>APEX</span></button>
    <button onClick={()=>jumpTo('cc-traffic')}><Activity size={18}/><span>Trafic</span></button>
    <button className="is-main" onClick={()=>jumpTo('cc-actions')}><Zap size={20}/><span>Action</span></button>
    <button onClick={()=>jumpTo('cc-devices')} disabled={focus}><Laptop size={18}/><span>PC</span></button>
