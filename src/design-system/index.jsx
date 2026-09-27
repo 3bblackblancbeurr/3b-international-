@@ -19,6 +19,7 @@ function stateProps(state) {
 }
 
 export function Button({
+  as: Tag = "button",
   type = "button",
   variant = "champagne",
   size = "md",
@@ -30,29 +31,30 @@ export function Button({
   ...props
 }) {
   const visualState = loading ? "loading" : disabled ? "disabled" : state;
+  const nativeButton = Tag === "button";
   return (
-    <button
-      type={type}
+    <Tag
+      {...(nativeButton ? { type, disabled: disabled || loading } : {})}
       className={`gm-button gm-button--${variant} gm-button--${size} ${getStateClass(visualState)} ${className}`.trim()}
       data-state={visualState}
-      disabled={disabled || loading}
+      aria-disabled={!nativeButton && (disabled || loading) ? true : undefined}
       aria-busy={loading || undefined}
       {...props}
     >
       {loading ? "Chargement…" : children}
-    </button>
+    </Tag>
   );
 }
 
-export function Card({ hero = false, state = "normal", className = "", children, ...props }) {
+export function Card({ as: Tag = "section", hero = false, state = "normal", className = "", children, ...props }) {
   return (
-    <section
+    <Tag
       className={`gm-card ${hero ? "gm-card--hero" : ""} ${getStateClass(state)} ${className}`.trim()}
       data-state={state}
       {...props}
     >
       {children}
-    </section>
+    </Tag>
   );
 }
 

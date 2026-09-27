@@ -48,3 +48,220 @@ h1,h2,h3,.gm-display,.gm-heading{font-family:Sora,Inter,ui-sans-serif,system-ui,
 .gm-state--error{border-color:rgba(241,91,100,.55)!important}
 .gm-state--offline{opacity:.68;filter:saturate(.62)}
 .gm-state--empty{opacity:.76}
+
+
+/* Phase B — canonical application shell and home surfaces. */
+.app3b{
+  background:transparent;
+}
+.site-header{
+  border-bottom-color:rgba(255,255,255,.08);
+}
+.brand-wordmark{color:var(--3b-champagne)}
+.brand-name{color:var(--3b-text)}
+.desktop-navigation a{color:var(--3b-muted)}
+.desktop-navigation a[aria-current="page"]{
+  color:var(--3b-champagne-highlight);
+  border-color:var(--3b-champagne);
+}
+.desktop-navigation a:hover{color:var(--3b-text)}
+.menu-trigger,.icon-button{
+  border-color:rgba(255,255,255,.12);
+  border-radius:var(--3b-radius-field);
+  color:var(--3b-text);
+  background:rgba(255,255,255,.035);
+}
+.menu-trigger:hover,.icon-button:hover{
+  border-color:var(--3b-border-strong);
+  background:rgba(255,255,255,.06);
+}
+.page-breadcrumb{color:var(--3b-muted)}
+.page-breadcrumb a{color:var(--3b-champagne)}
+.universe-dialog{
+  border-color:var(--3b-border-strong);
+  border-radius:var(--3b-radius-hero);
+  color:var(--3b-text);
+  background:rgba(11,13,15,.98);
+  box-shadow:var(--3b-shadow-deep);
+}
+.menu-search{
+  border-color:rgba(255,255,255,.12);
+  border-radius:var(--3b-radius-field);
+  background:rgba(0,0,0,.20);
+  color:var(--3b-champagne);
+}
+.menu-search:focus-within{
+  outline-color:var(--3b-matrix);
+}
+.app3b .mobile-navigation{
+  border-top-color:var(--3b-border);
+  background:rgba(11,13,15,.96);
+  box-shadow:0 -10px 30px rgba(0,0,0,.22);
+}
+.app3b .mobile-navigation [aria-current="page"],
+.app3b .mobile-navigation .section-active{
+  color:var(--3b-champagne-highlight);
+  background:rgba(214,188,130,.06);
+}
+.app3b .mobile-navigation [aria-current="page"]::before{
+  background:var(--3b-champagne);
+}
+
+.app3b .compact-card.gm-card{
+  border-color:var(--3b-border);
+  border-radius:var(--3b-radius-sm);
+  background:var(--3b-carbon);
+  color:var(--3b-text);
+  box-shadow:none;
+  transition:
+    border-color var(--3b-motion-micro) var(--3b-ease-standard),
+    background var(--3b-motion-micro) var(--3b-ease-standard);
+}
+.app3b .compact-card.gm-card:hover{
+  border-color:var(--3b-border-strong);
+  background:rgba(214,188,130,.045);
+}
+.app3b .compact-card.gm-card:focus-visible{
+  outline-color:var(--3b-matrix);
+}
+.app3b .compact-card-icon{color:var(--3b-champagne)}
+.app3b .compact-card-copy>strong{color:var(--3b-text)}
+.app3b .compact-card-copy>small{color:var(--3b-muted)}
+.app3b .compact-card-copy>span{color:var(--3b-muted)}
+.app3b .compact-card-action{color:var(--3b-champagne-highlight)}
+
+.app3b .dashboard-cta.gm-button,
+.app3b .home-guide-button.gm-button,
+.app3b .world-portal-actions .surface-button.gm-button{
+  border:1px solid var(--3b-champagne-highlight);
+  border-radius:var(--3b-radius-field);
+  color:#18140d;
+  background:linear-gradient(135deg,var(--3b-champagne-highlight),var(--3b-champagne));
+  box-shadow:var(--3b-shadow-contact),inset 0 1px 0 rgba(255,255,255,.35);
+  transition:
+    transform var(--3b-motion-micro) var(--3b-ease-standard),
+    filter var(--3b-motion-micro) var(--3b-ease-standard);
+}
+.app3b .dashboard-cta.gm-button:hover,
+.app3b .home-guide-button.gm-button:hover,
+.app3b .world-portal-actions .surface-button.gm-button:hover{
+  transform:translateY(-1px);
+  filter:brightness(1.04);
+}
+.app3b .quiet-button.gm-button{
+  border-color:var(--3b-border);
+  border-radius:var(--3b-radius-field);
+  color:var(--3b-text);
+  background:rgba(255,255,255,.035);
+}
+
+.app3b .world-portal{
+  border-color:var(--3b-border);
+  border-radius:var(--3b-radius-hero);
+  background:
+    radial-gradient(circle at 14% 20%,rgba(59,167,255,.065),transparent 31%),
+    radial-gradient(circle at 88% 14%,rgba(214,188,130,.055),transparent 29%),
+    linear-gradient(135deg,rgba(11,13,15,.98),rgba(5,6,7,.98));
+  box-shadow:var(--3b-shadow-deep),inset 0 1px 0 rgba(240,221,175,.04);
+}
+.app3b .world-portal-copy h2{color:var(--3b-text)}
+.app3b .world-portal-copy h2 em{color:var(--3b-champagne)}
+.app3b .world-portal-copy>p:not(.eyebrow){color:var(--3b-muted)}
+.app3b .world-portal-meta span{
+  border-color:var(--3b-border-matrix);
+  color:var(--3b-text);
+  background:rgba(59,167,255,.045);
+}
+.app3b .world-portal-meta svg{color:var(--3b-champagne)}
+
+.app3b .home-guide-zone{
+  border-color:var(--3b-border-matrix);
+  border-radius:var(--3b-radius-card);
+  background:
+    radial-gradient(circle at 8% 50%,rgba(59,167,255,.07),transparent 30%),
+    var(--3b-carbon);
+  box-shadow:var(--3b-shadow-contact),inset 0 1px 0 rgba(255,255,255,.03);
+}
+.app3b .home-guide-zone h2{color:var(--3b-text)}
+.app3b .home-guide-zone p:not(.eyebrow){color:var(--3b-muted)}
+.app3b .home-guide-zone .eyebrow{color:var(--3b-matrix)}
+.app3b .dashboard-footer{
+  border-top-color:rgba(255,255,255,.08);
+  color:var(--3b-muted-soft);
+}
+.app3b .dashboard-footer strong{color:var(--3b-champagne)}
+.app3b .dashboard-footer a{color:var(--3b-muted)}
+
+
+/* Phase B — Passport signature keeps its geometry, but consumes one palette. */
+.brand-glow-badge,
+.welcome-copy .brand-glow-badge{
+  border-color:var(--3b-border-strong);
+  color:var(--3b-champagne-highlight);
+  background:
+    linear-gradient(135deg,rgba(214,188,130,.10),rgba(59,167,255,.055)),
+    rgba(5,6,7,.88);
+  text-shadow:0 0 10px rgba(214,188,130,.34),0 0 24px rgba(59,167,255,.14);
+  box-shadow:0 0 22px rgba(214,188,130,.10),inset 0 0 18px rgba(240,221,175,.05);
+}
+.brand-glow-badge::before{
+  background:linear-gradient(110deg,transparent,rgba(240,221,175,.72),transparent);
+}
+
+.app3b[data-page="passport"] .passport-card-stage{
+  background:var(--3b-obsidian);
+}
+.app3b[data-page="passport"] .passport-card-base{
+  background:
+    radial-gradient(circle at 78% 38%,rgba(59,167,255,.20) 0 12%,transparent 33%),
+    radial-gradient(circle at 17% 86%,rgba(214,188,130,.12) 0 9%,transparent 31%),
+    linear-gradient(135deg,var(--3b-obsidian) 0%,rgba(11,25,39,.98) 42%,var(--3b-obsidian) 76%,var(--3b-carbon) 100%);
+}
+.app3b[data-page="passport"] .passport-card-base::before{
+  border-color:var(--3b-border-strong);
+  box-shadow:inset 0 0 4cqw rgba(59,167,255,.08),0 0 2.4cqw rgba(0,0,0,.72);
+}
+.app3b[data-page="passport"] .passport-card-base::after{
+  color:rgba(214,188,130,.52);
+}
+.app3b[data-page="passport"] .passport-card-halo-blue{background:var(--3b-matrix)}
+.app3b[data-page="passport"] .passport-card-halo-gold{background:var(--3b-champagne)}
+.app3b[data-page="passport"] .passport-card-line{
+  background:linear-gradient(90deg,rgba(214,188,130,.58),rgba(59,167,255,.46),transparent);
+}
+.app3b[data-page="passport"] .passport-identity-layer{color:var(--3b-text)}
+.app3b[data-page="passport"] .passport-3b-mark{
+  color:var(--3b-champagne-highlight);
+  text-shadow:0 0 2.2cqw rgba(214,188,130,.18);
+}
+.app3b[data-page="passport"] .passport-card-brand span{color:rgba(159,214,255,.95)}
+.app3b[data-page="passport"] .passport-card-brand>small{
+  border-color:var(--3b-border-matrix);
+  color:rgba(190,229,255,.96);
+  background:rgba(7,18,28,.82);
+}
+.app3b[data-page="passport"] .passport-data-label{color:var(--3b-champagne)}
+.app3b[data-page="passport"] .passport-holder-block h2,
+.app3b[data-page="passport"] .passport-country-block strong{color:var(--3b-text)}
+.app3b[data-page="passport"] .passport-holder-block p,
+.app3b[data-page="passport"] .passport-country-block small{color:rgba(184,214,225,.82)}
+.app3b[data-page="passport"] .passport-country-flag{
+  border-color:var(--3b-border-strong);
+  color:var(--3b-champagne-highlight);
+  background:rgba(7,18,28,.82);
+  box-shadow:inset 0 0 1.5cqw rgba(59,167,255,.12);
+}
+.app3b[data-page="passport"] .passport-avatar-panel{
+  border-color:var(--3b-border-matrix);
+  background:radial-gradient(circle,rgba(59,167,255,.18),transparent 62%),rgba(7,18,28,.86);
+  box-shadow:inset 0 0 3cqw rgba(59,167,255,.12),0 0 2cqw rgba(59,167,255,.08);
+}
+.app3b[data-page="passport"] .passport-avatar-monogram{color:var(--3b-champagne-highlight)}
+.app3b[data-page="passport"] .passport-id-block code{color:rgba(190,229,255,.94)}
+.app3b[data-page="passport"] .passport-progress-strip small{color:rgba(159,214,255,.82)}
+.app3b[data-page="passport"] .passport-progress-strip b{color:var(--3b-champagne-highlight)}
+.app3b[data-page="passport"] .passport-matrix-stream{color:var(--3b-matrix)}
+.app3b[data-page="passport"] .passport-circuit-track{stroke:var(--3b-matrix)}
+.app3b[data-page="passport"] .passport-circuit-pulse,
+.app3b[data-page="passport"] .passport-circuit-perimeter{stroke:rgba(190,229,255,.96)}
+.app3b[data-page="passport"] .passport-chip-signal{stroke:var(--3b-champagne-highlight)}
