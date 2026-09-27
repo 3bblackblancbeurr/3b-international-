@@ -2,83 +2,108 @@ package app.vercel.threebinternational;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.os.PowerManager;
+import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 
 public class CompanionRenderView extends View {
     public interface MoveListener {
         void onMove(float dx, float dy);
+        void onTouchChanged(boolean touching);
     }
-
     private final CompanionPainter painter = new CompanionPainter();
+    private final Runnable frame = this::invalidate;
+    private final int touchSlop;
     private String mode = "idle";
-    private float lastX;
-    private float lastY;
+    private float lastX, lastY, downX, downY;
+    private boolean dragging, touching, active = true, motion = true, lowPower, reducedPresence;
     private MoveListener moveListener;
-    private final PowerManager powerManager;
 
     public CompanionRenderView(Context context) {
         super(context);
-        powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+        touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        setContentDescription("Compagnon 3B");
+        setContentDescription("Compagnon 3B · toucher pour ouvrir 3B, maintenir pour arrêter");
+        setClickable(true);
+        setLongClickable(true);
     }
-
     public void setMode(String nextMode) {
-        if (nextMode == null || nextMode.isEmpty()) nextMode = "idle";
-        mode = nextMode;
+        mode = CompanionPolicy.isMode(nextMode) ? nextMode : "idle";
+        removeCallbacks(frame);
         invalidate();
     }
-
-    public String getMode() {
-        return mode;
+    public String getMode() { return mode; }
+    public boolean isTouching() { return touching; }
+    public void setMoveListener(MoveListener listener) { moveListener = listener; }
+    public void setPolicy(boolean active, boolean motion, boolean lowPower, boolean reducedPresence) {
+        this.active = active;
+        this.motion = motion;
+        this.lowPower = lowPower;
+        this.reducedPresence = reducedPresence;
+        removeCallbacks(frame);
+        if (active) invalidate();
     }
-
-    public void setMoveListener(MoveListener listener) {
-        moveListener = listener;
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
+    @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        painter.draw(canvas, getWidth(), getHeight(), mode, android.os.SystemClock.uptimeMillis());
-        if (isShown()) {
-            long delay;
-            if (powerManager != null && !powerManager.isInteractive()) delay = 1500L;
-            else if ("sleep".equals(mode)) delay = 800L;
-            else if (powerManager != null && powerManager.isPowerSaveMode()) delay = 280L;
-            else if ("walk".equals(mode) || "celebrate".equals(mode) || "notification".equals(mode)) delay = 34L;
-            else delay = 110L;
-            postInvalidateDelayed(delay);
-        }
+        // Stable open-eyed pose without halo rotation or particles in reduced motion.
+        painter.draw(canvas, getWidth(), getHeight(), mode, motion && !lowPower ? SystemClock.uptimeMillis() : 1200L);
+        removeCallbacks(frame);
+        long delay = CompanionPolicy.frameDelay(active && isShown() && isAttachedToWindow(),
+                motion, lowPower, reducedPresence, mode);
+        if (delay >= 0) postDelayed(frame, delay);
     }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
+    @Override protected void onDetachedFromWindow() {
+        removeCallbacks(frame);
+        endTouch();
+        super.onDetachedFromWindow();
+    }
+    @Override protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        removeCallbacks(frame);
+        if (visibility == VISIBLE && active) invalidate();
+    }
+    @Override public boolean onTouchEvent(MotionEvent event) {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                lastX = event.getRawX();
-                lastY = event.getRawY();
-                return true;
+                downX = lastX = event.getRawX();
+                downY = lastY = event.getRawY();
+                dragging = false;
+                touching = true;
+                if (moveListener != null) moveListener.onTouchChanged(true);
+                return super.onTouchEvent(event);
             case MotionEvent.ACTION_MOVE:
-                float x = event.getRawX();
-                float y = event.getRawY();
-                if (moveListener != null) moveListener.onMove(x - lastX, y - lastY);
+                float x = event.getRawX(), y = event.getRawY();
+                if (!dragging && Math.hypot(x - downX, y - downY) > touchSlop) {
+                    dragging = true;
+                    cancelLongPress();
+                    setPressed(false);
+                }
+                if (dragging && moveListener != null) moveListener.onMove(x - lastX, y - lastY);
                 lastX = x;
                 lastY = y;
                 return true;
             case MotionEvent.ACTION_UP:
-                performClick();
+                if (dragging) {
+                    MotionEvent cancel = MotionEvent.obtain(event);
+                    cancel.setAction(MotionEvent.ACTION_CANCEL);
+                    super.onTouchEvent(cancel);
+                    cancel.recycle();
+                } else super.onTouchEvent(event);
+                endTouch();
                 return true;
+            case MotionEvent.ACTION_CANCEL:
+                endTouch();
+                return super.onTouchEvent(event);
             default:
                 return super.onTouchEvent(event);
         }
     }
-
-    @Override
-    public boolean performClick() {
-        super.performClick();
-        return true;
+    private void endTouch() {
+        if (!touching) return;
+        touching = false;
+        dragging = false;
+        if (moveListener != null) moveListener.onTouchChanged(false);
     }
+    @Override public boolean performClick() { return super.performClick(); }
 }

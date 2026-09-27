@@ -9,6 +9,7 @@ on:
       - 'public/**'
       - 'package*.json'
       - 'capacitor.config.json'
+      - 'tests/companion-ios*'
       - '.github/workflows/mobile-build.yml'
   push:
     branches: [codex/3b-store-preparation-20260912]
@@ -40,7 +41,7 @@ jobs:
       - run: npx --no-install cap sync android
       - name: Build Android test APK and unsigned bundle
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug bundleRelease
+        run: ./gradlew --no-daemon testDebugUnitTest assembleDebug bundleRelease
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: 3b-android-test-${{ github.sha }}
@@ -61,6 +62,10 @@ jobs:
           cache: npm
       - name: Select Xcode 26
         run: sudo xcode-select -s /Applications/Xcode_26.3.app/Contents/Developer
+      - name: Test Companion shared Swift model
+        run: |
+          swiftc --version
+          node --test tests/companion-ios.test.js
       - run: npm ci
       - run: npm run build
       - run: npx --no-install cap sync ios

@@ -18,9 +18,22 @@ final class CompanionPainter {
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
+    private final Shader gold = new LinearGradient(0, 0, 256, 300,
+            new int[]{0xFFFFF0B6, 0xFFE8BD64, 0xFF8F5F19, 0xFFFFE19A}, null, Shader.TileMode.CLAMP);
+    private final Shader pearl = new LinearGradient(40, 20, 220, 260,
+            new int[]{Color.WHITE, 0xFFD8DBE2, 0xFF777E8D}, null, Shader.TileMode.CLAMP);
+    private final Shader shadow = new RadialGradient(128, 283, 70,
+            new int[]{0x65000000, 0x00000000}, null, Shader.TileMode.CLAMP);
+    private final Shader body = new LinearGradient(70, 120, 199, 245,
+            new int[]{0xFF141821, BLACK, 0xFF0A0D12}, null, Shader.TileMode.CLAMP);
+    private final Shader visor = new RadialGradient(115, 58, 120,
+            new int[]{0xFF283848, 0xFF0A111B, 0xFF020305}, null, Shader.TileMode.CLAMP);
 
     void draw(Canvas canvas, int width, int height, String mode, long nowMs) {
         if (width <= 0 || height <= 0) return;
+        // Props use strokes and shadows; never carry those settings into the next frame.
+        paint.reset();
+        paint.setAntiAlias(true);
         float scale = Math.min(width / 256f, height / 300f);
         float ox = (width - 256f * scale) / 2f;
         float oy = (height - 300f * scale) / 2f;
@@ -48,14 +61,14 @@ final class CompanionPainter {
         drawCape(canvas);
         drawBody(canvas);
         drawHead(canvas, mode, nowMs);
-        drawLegs(canvas);
+        drawLegs(canvas, mode, nowMs);
         drawFx(canvas, mode, nowMs);
         drawModeProp(canvas, mode, nowMs);
         canvas.restore();
     }
 
     private void drawShadow(Canvas c) {
-        paint.setShader(new RadialGradient(128, 283, 70, new int[]{0x65000000, 0x00000000}, null, Shader.TileMode.CLAMP));
+        paint.setShader(shadow);
         c.drawOval(new RectF(62, 273, 194, 292), paint);
         paint.setShader(null);
     }
@@ -92,8 +105,7 @@ final class CompanionPainter {
 
     private void drawBody(Canvas c) {
         paint.setStyle(Paint.Style.FILL);
-        paint.setShader(new LinearGradient(70, 120, 199, 245,
-                new int[]{0xFF141821, BLACK, 0xFF0A0D12}, null, Shader.TileMode.CLAMP));
+        paint.setShader(body);
         RectF torso = new RectF(67, 112, 201, 250);
         c.drawRoundRect(torso, 56, 56, paint);
         paint.setShader(null);
@@ -135,8 +147,7 @@ final class CompanionPainter {
         c.drawRoundRect(new RectF(54, 14, 220, 146), 70, 70, paint);
 
         paint.setStyle(Paint.Style.FILL);
-        paint.setShader(new RadialGradient(115, 58, 120,
-                new int[]{0xFF283848, 0xFF0A111B, 0xFF020305}, null, Shader.TileMode.CLAMP));
+        paint.setShader(visor);
         c.drawRoundRect(new RectF(68, 30, 206, 129), 54, 54, paint);
         paint.setShader(null);
 
@@ -183,22 +194,29 @@ final class CompanionPainter {
         }
     }
 
-    private void drawLegs(Canvas c) {
+    private void drawLegs(Canvas c, String mode, long now) {
+        float stride = "walk".equals(mode) ? (float) Math.sin(now / 145.0) * 10f : 0f;
+        drawLeg(c, false, stride);
+        drawLeg(c, true, -stride);
+    }
+
+    private void drawLeg(Canvas c, boolean right, float stride) {
+        c.save();
+        c.translate(right ? 63f : 0f, stride < 0 ? stride * .25f : 0f);
+        c.rotate(stride, 101f, 223f);
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0xFF090B10);
         c.drawRoundRect(new RectF(76, 218, 126, 279), 17, 17, paint);
-        c.drawRoundRect(new RectF(139, 218, 189, 279), 17, 17, paint);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4);
         paint.setColor(GOLD);
         c.drawRoundRect(new RectF(76, 218, 126, 279), 17, 17, paint);
-        c.drawRoundRect(new RectF(139, 218, 189, 279), 17, 17, paint);
 
         paint.setStyle(Paint.Style.FILL);
         paint.setShader(whiteGradient());
-        c.drawRoundRect(new RectF(62, 263, 122, 292), 13, 13, paint);
-        c.drawRoundRect(new RectF(136, 263, 196, 292), 13, 13, paint);
+        c.drawRoundRect(new RectF(right ? 73 : 62, 263, right ? 133 : 122, 292), 13, 13, paint);
         paint.setShader(null);
+        c.restore();
     }
 
     private void drawFx(Canvas c, String mode, long now) {
@@ -351,14 +369,10 @@ final class CompanionPainter {
     }
 
     private Shader goldGradient() {
-        return new LinearGradient(0, 0, 256, 300,
-                new int[]{0xFFFFF0B6, 0xFFE8BD64, 0xFF8F5F19, 0xFFFFE19A},
-                null, Shader.TileMode.CLAMP);
+        return gold;
     }
 
     private Shader whiteGradient() {
-        return new LinearGradient(40, 20, 220, 260,
-                new int[]{Color.WHITE, 0xFFD8DBE2, 0xFF777E8D},
-                null, Shader.TileMode.CLAMP);
+        return pearl;
     }
 }
