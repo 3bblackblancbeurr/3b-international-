@@ -95,6 +95,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "status": self.runtime.status()})
             if path == "/events":
                 return self._json({"ok": True, "events": self.runtime.store.events()[-100:]})
+            if path == "/inbox":
+                return self._json({"ok": True, "events": self.runtime.ambient_inbox(100)})
+            if path == "/needs":
+                return self._json({"ok": True, "needs": [row for row in self.runtime.store.needs() if not row.get("resolved_at")]})
+            if path == "/skills":
+                return self._json({"ok": True, "skills": self.runtime.store.skills()})
+            if path == "/session/distill":
+                return self._json({"ok": True, "distillation": self.runtime.distill_session()})
             return self._error(404, "Route inconnue.")
         except Exception as error:
             return self._error(500, str(error)[:500])
@@ -125,6 +133,23 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/action/propose":
                 action = self.runtime.propose_action(str(body.get("action", "")), body.get("payload") if isinstance(body.get("payload"), dict) else {})
                 return self._json({"ok": True, "action": action})
+            if path == "/need/create":
+                need = self.runtime.need_you(str(body.get("title", "")), str(body.get("detail", "")), int(body.get("level", 3)))
+                return self._json({"ok": True, "need": need}, 201)
+            if path == "/need/resolve":
+                need = self.runtime.resolve_need(str(body.get("need_id", "")))
+                return self._json({"ok": True, "need": need})
+            if path == "/skill/create":
+                skill = self.runtime.create_skill(
+                    str(body.get("name", "")),
+                    str(body.get("version", "1.0.0")),
+                    body.get("actions") if isinstance(body.get("actions"), list) else [],
+                    body.get("tests") if isinstance(body.get("tests"), list) else [],
+                )
+                return self._json({"ok": True, "skill": skill}, 201)
+            if path == "/skill/qualify":
+                skill = self.runtime.qualify_skill(str(body.get("skill_id", "")), int(body.get("passed", 0)), int(body.get("failed", 0)))
+                return self._json({"ok": True, "skill": skill})
             if path == "/core/stop":
                 return self._json({"ok": True, "settings": self.runtime.stop()})
             if path == "/core/resume":
