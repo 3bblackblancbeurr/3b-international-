@@ -15,7 +15,7 @@ test('Windows autostart is user-level, hidden and requires an existing pairing',
  assert.doesNotMatch(source,/RunAs|Administrator|runas/i);
 });
 
-test('agent 1.2 self-heals network failures and prevents duplicate modern agents',()=>{
+test('agent 1.3 self-heals network failures and prevents duplicate modern agents',()=>{
  const source=read('scripts/threeb-control-agent.mjs');
  assert.match(source,/VERSION='1\.2\.0'/);
  assert.match(source,/agent\.lock/);
@@ -39,4 +39,17 @@ test('mobile Command OS surfaces whether the paired PC starts automatically',()=
  assert.match(page,/capabilities\?\.autostart/);
  assert.match(page,/3B Control Agent à activer sur le PC/);
  assert.match(page,/démarrage auto/);
+});
+
+
+test('agent 1.3 inventories Windows disks and NVIDIA hardware without arbitrary shell input',()=>{
+ const source=read('scripts/threeb-control-agent.mjs');
+ assert.match(source,/Win32_LogicalDisk/);
+ assert.match(source,/Get-PhysicalDisk/);
+ assert.match(source,/nvidia-smi/);
+ assert.match(source,/storage_inventory:true/);
+ assert.match(source,/gpu_telemetry:true/);
+ assert.match(source,/spawnSync/);
+ assert.match(source,/hardwareCache/);
+ assert.doesNotMatch(source,/shell\s*:\s*true/);
 });
