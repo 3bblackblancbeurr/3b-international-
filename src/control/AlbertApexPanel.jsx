@@ -1,5 +1,6 @@
-import {useMemo} from 'react';
+import {useEffect,useMemo} from 'react';
 import {useAlbertApex} from './AlbertApexContext.jsx';
+import {ambientInbox,capabilityRegistry} from './albert-apex-services.js';
 import './albert-apex.css';
 
 const MODE_COPY={
@@ -26,8 +27,9 @@ function age(value){
  return Math.round(seconds/3600)+' h';
 }
 
-export default function AlbertApexPanel({online=false,runtime=null,privacyMode=false}){
- const{state,setMode,setResourceProfile,resolveNeed,killAll,resume,resetSession}=useAlbertApex();
+export default function AlbertApexPanel({online=false,runtime=null,privacyMode=false,externalEvents=[]}){
+ const{state,setMode,setResourceProfile,ingestEvents,resolveNeed,killAll,resume,resetSession}=useAlbertApex();
+ useEffect(()=>{ingestEvents(externalEvents);},[externalEvents,ingestEvents]);
  const latest=state.tasks.slice(-8).reverse();
  const active=state.tasks.filter(t=>t.status==='running').length;
  const verified=state.tasks.filter(t=>t.status==='verified').length;
@@ -35,6 +37,9 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
  const runtimeState=online?'connecté':'hors ligne';
  const vram=runtime&&Number.isFinite(Number(runtime.gpu_memory_total_mb))?Math.round(Number(runtime.gpu_memory_total_mb))+' Mo':'non reçue';
  const health=useMemo(()=>Object.entries(state.health),[state.health]);
+ const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online}),[online]);
+ const liveCapabilities=capabilities.filter(item=>['ready','live','available','browser'].includes(item.state)).length;
+ const inbox=useMemo(()=>ambientInbox(state.events,{max:8}),[state.events]);
  return <section className={'albert-apex-panel'+(state.killSwitch?' is-killed':'')} aria-label="ALBERT APEX OS">
   <header className="apex-head">
    <div><p>ALBERT APEX / OPERATING SYSTEM</p><h3>Intention → Spec → Action → Preuve</h3><span>Le cockpit n’annonce « terminé » qu’après vérification.</span></div>
@@ -53,6 +58,7 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
    <Metric label="SESSION" value={state.session?.id?.slice(-8)||'—'} detail={'ouverte depuis '+age(state.session?.startedAt)} tone="good"/>
    <Metric label="TÂCHES" value={active+' actives'} detail={verified+' vérifiées · '+failed+' échecs'} tone={failed?'warn':'good'}/>
    <Metric label="RUNTIME LOCAL" value={runtimeState} detail={online?'VRAM '+vram:'aucune télémétrie fraîche'} tone={online?'good':'warn'}/>
+   <Metric label="CAPACITÉS" value={liveCapabilities+' / '+capabilities.length} detail="déclarées et vérifiables" tone="good"/>
    <Metric label="CONFIDENTIALITÉ" value={privacyMode?'STRICTE':'STANDARD'} detail={privacyMode?'contexte sensible masqué':'règles APEX actives'} tone={privacyMode?'good':'neutral'}/>
   </div>
 
@@ -66,6 +72,24 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
    <div className="apex-block">
     <div className="apex-block-title"><span>SANTÉ DU NOYAU</span><strong>{health.every(([,v])=>v==='ready'||v==='unknown')?'NOMINAL':'ATTENTION'}</strong></div>
     <div className="apex-health">{health.map(([key,value])=><div key={key}><span>{key}</span><b className={value==='ready'?'good':value==='unknown'?'idle':'warn'}>{value}</b></div>)}</div>
+   </div>
+  </div>
+
+  <div className="apex-columns">
+   <div className="apex-block">
+    <div className="apex-block-title"><span>AMBIENT INBOX</span><strong>{inbox.length}</strong></div>
+    <div className="apex-event-list">
+     {inbox.length?inbox.map(event=><article key={event.id} className={'is-'+event.priority}>
+      <div><strong>{event.type}</strong><span>{event.delivery}</span></div>
+      <small>{event.createdAt?new Date(event.createdAt).toLocaleString('fr-FR'):'événement audité'}</small>
+     </article>):<p className="apex-empty">Aucun événement APEX récent.</p>}
+    </div>
+   </div>
+   <div className="apex-block">
+    <div className="apex-block-title"><span>CAPABILITY REGISTRY</span><strong>{liveCapabilities}/{capabilities.length}</strong></div>
+    <div className="apex-capabilities">
+     {capabilities.map(item=><div key={item.id}><span>{item.label}</span><b data-state={item.state}>{item.state}</b></div>)}
+    </div>
    </div>
   </div>
 
