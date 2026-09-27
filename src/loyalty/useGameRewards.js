@@ -1,13 +1,14 @@
 import {useEffect,useRef,useState} from 'react';
 import {useLoyalty} from './LoyaltyContext.jsx';
 import {memberRequest} from './client.js';
+import {companionReward} from '../companion/events.js';
 const starts=new Map();
 export function useGameRewards(game,engine,paused,ready,activity){
  const account=useLoyalty(),latest=useRef(account);latest.current=account;
  const[message,setMessage]=useState('');
  useEffect(()=>{
   const uid=account.user?.id;if(!uid){setMessage('Partie libre · connecte-toi au compte 3B pour gagner des récompenses.');return;}
-  let live=true,run=null,busy=false,seq=0,totalXP=0,totalPoints=0;
+  let live=true,run=null,busy=false,seq=0,totalXP=0,totalPoints=0,rewardShown=false;
   setMessage('Connexion des récompenses…');
   // Serialize starts so a slow, abandoned game cannot invalidate a newer run.
   const pending=(starts.get(uid)||Promise.resolve()).catch(()=>{}).then(()=>live?memberRequest('start',{game},uid):null);
@@ -16,7 +17,7 @@ export function useGameRewards(game,engine,paused,ready,activity){
   const timer=setInterval(async()=>{
    if(!run||busy||!live||paused.current||!ready.current||document.hidden||engine.current.status!=='playing'||Date.now()-activity.current>20000)return;
    busy=true;
-   try{const result=await memberRequest('heartbeat',{run,seq:seq+1},uid);seq++;if(!live)return;totalXP+=result.gained.xp;totalPoints+=result.gained.points;latest.current.accept(result);setMessage(`Cette partie : +${totalXP} XP · +${totalPoints} point${totalPoints>1?'s':''} · sauvegardés sur ton compte`);}
+   try{const result=await memberRequest('heartbeat',{run,seq:seq+1},uid);seq++;if(!live)return;totalXP+=result.gained.xp;totalPoints+=result.gained.points;latest.current.accept(result);if(!rewardShown&&(result.gained?.xp>0||result.gained?.points>0)){rewardShown=true;companionReward({source:'game',game,xp:result.gained?.xp||0,points:result.gained?.points||0});}setMessage(`Cette partie : +${totalXP} XP · +${totalPoints} point${totalPoints>1?'s':''} · sauvegardés sur ton compte`);}
    catch{if(live)setMessage('Connexion interrompue · les gains reprendront au retour du réseau.');}
    finally{busy=false;}
   },15000);
