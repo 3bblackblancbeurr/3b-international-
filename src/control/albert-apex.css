@@ -73,3 +73,21 @@
  .albert-apex-panel{padding:16px;border-radius:22px}.apex-mode-grid,.apex-profile-row,.apex-metrics{grid-template-columns:1fr}.apex-actions{align-items:stretch;flex-direction:column}.apex-actions span{margin-left:0;text-align:left}
 }
 @media(prefers-reduced-motion:reduce){.apex-mode-grid button,.apex-profile-row button{transition:none}.apex-mode-grid button:hover,.apex-profile-row button:hover{transform:none}}
+
+.apex-event-list,.apex-capabilities{display:grid;gap:7px}
+.apex-event-list{max-height:270px;overflow:auto;padding-right:3px}
+.apex-event-list article{padding:10px 11px;border:1px solid rgba(255,255,255,.06);border-radius:13px;background:rgba(255,255,255,.02)}
+.apex-event-list article.is-critical{border-color:rgba(255,83,106,.28);background:rgba(255,83,106,.035)}
+.apex-event-list article.is-attention{border-color:rgba(255,192,85,.22);background:rgba(255,192,85,.025)}
+.apex-event-list article>div{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.apex-event-list strong{font-size:.73rem;color:#eaf5fa;overflow-wrap:anywhere}
+.apex-event-list span{font-size:.59rem;letter-spacing:.08em;color:#78dff3;text-transform:uppercase}
+.apex-event-list small{display:block;margin-top:5px;color:#657987;font-size:.65rem}
+.apex-capabilities{grid-template-columns:1fr 1fr}
+.apex-capabilities>div{display:flex;align-items:center;justify-content:space-between;gap:9px;padding:8px 9px;border-radius:11px;background:rgba(255,255,255,.025);font-size:.68rem}
+.apex-capabilities span{color:#93a7b5;overflow-wrap:anywhere}
+.apex-capabilities b{font-size:.58rem;text-transform:uppercase;letter-spacing:.06em;color:#8296a4}
+.apex-capabilities b[data-state="ready"],.apex-capabilities b[data-state="live"],.apex-capabilities b[data-state="available"],.apex-capabilities b[data-state="browser"]{color:#67e8b9}
+.apex-capabilities b[data-state="offline"]{color:#ff9aa8}
+.apex-capabilities b[data-state="setup_required"],.apex-capabilities b[data-state="unknown"]{color:#d7b36c}
+@media(max-width:560px){.apex-capabilities{grid-template-columns:1fr}}
