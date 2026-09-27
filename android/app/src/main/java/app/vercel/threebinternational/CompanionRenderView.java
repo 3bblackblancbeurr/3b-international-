@@ -40,7 +40,13 @@ public class CompanionRenderView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         painter.draw(canvas, getWidth(), getHeight(), mode, android.os.SystemClock.uptimeMillis());
-        if (isShown()) postInvalidateOnAnimation();
+        if (isShown()) {
+            long delay;
+            if ("sleep".equals(mode)) delay = 800L;
+            else if ("walk".equals(mode) || "celebrate".equals(mode) || "notification".equals(mode)) delay = 34L;
+            else delay = 110L;
+            postInvalidateDelayed(delay);
+        }
     }
 
     @Override
