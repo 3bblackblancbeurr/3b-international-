@@ -49,10 +49,14 @@ test("preferences only accept explicit boolean choices", () => {
     quiet: false,
     batterySaver: false,
     reducedPresence: true,
+    androidOverlayEnabled: true,
+    iosLiveActivityEnabled: true,
   }), {
     enabled: false,
     quiet: false,
     batterySaver: false,
     reducedPresence: true,
+    androidOverlayEnabled: true,
+    iosLiveActivityEnabled: true,
   });
 });
