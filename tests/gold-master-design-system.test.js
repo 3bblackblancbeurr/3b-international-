@@ -1,0 +1,14 @@
+import test from"node:test";
+import assert from"node:assert/strict";
+import{readFileSync}from"node:fs";
+const css=readFileSync("src/styles/gold-master.css","utf8");
+const tokens=readFileSync("src/design-system/tokens.js","utf8");
+const components=readFileSync("src/design-system/index.jsx","utf8");
+const main=readFileSync("src/main.jsx","utf8");
+test("Gold Master canonical colors are locked",()=>{for(const color of["#050607","#0B0D0F","#D6BC82","#F0DDAF","#3BA7FF"]){assert.ok(css.includes(color));assert.ok(tokens.includes(color))}});
+test("spacing, radii and motion contracts exist",()=>{for(const v of["4px","8px","12px","16px","24px","32px","48px","64px"])assert.ok(css.includes(v));for(const v of["160ms","250ms","380ms"])assert.ok(css.includes(v));for(const v of["control:8","field:12","card:16","hero:24"])assert.ok(tokens.includes(v))});
+test("shared component primitives exist",()=>{for(const name of["Button","Card","Modal","Toast","Tabs","VideoPlayer","Avatar","Badge","Progress","Stat"])assert.match(components,new RegExp(`export function ${name}\\b`))});
+test("runtime imports Gold Master layer",()=>assert.ok(main.includes("styles/gold-master.css")));
+test("reduced motion is supported",()=>assert.ok(css.includes("prefers-reduced-motion")));
+
+test("shared primitives expose explicit Gold Master states",()=>{assert.ok(components.includes('state = "normal"'));assert.ok(components.includes("data-state"));assert.ok(components.includes("getStateClass"))});
