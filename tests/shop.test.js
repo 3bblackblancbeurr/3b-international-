@@ -1,13 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import Stripe from "stripe";
-import { createShop, normalizeCart } from "../server/shop.js";
+import { configFrom, createShop, normalizeCart } from "../server/shop.js";
 import { sanitizeCart, subtractPurchased } from "../src/shop/cart.js";
 
 const ORIGIN = "https://shop.example.test";
 const ATTEMPT = "a640a1e9-3e68-4f8b-8b3a-9e7e8d8d4490";
 const env = {
-  SHOP_ENABLED: "true", APP_URL: ORIGIN, STRIPE_SECRET_KEY: "sk_test_fixture",
+  SHOP_ENABLED: "true", SHOP_RELEASE_APPROVED: "true",
+  SHOP_CHECKOUT_COOKIE_SECRET: "fixture-cookie-secret-3b-at-least-32-chars",
+  APP_URL: ORIGIN, STRIPE_SECRET_KEY: "sk_test_fixture",
   STRIPE_WEBHOOK_SECRET: "whsec_fixture", STRIPE_PRICE_IDS: "price_M,price_L",
   STRIPE_SHIPPING_RATE_ID: "shr_France", SUPABASE_URL: "https://db.example.test",
   SUPABASE_SERVICE_ROLE_KEY: "test_server_key", SHOP_TERMS_URL: `${ORIGIN}/terms`,
@@ -121,6 +123,19 @@ test("without credentials the store is closed and no prices are invented", async
   const data = await (await createShop({ env: {} }).catalog(new Request(`${ORIGIN}/api/catalog`))).json();
   assert.equal(data.enabled, false); assert.deepEqual(data.items, []);
   assert.equal((await createShop({ env: {} }).checkout(checkoutRequest())).status, 503);
+});
+test("store stays closed without explicit release approval or an independent cookie secret", async () => {
+  for (const key of ["SHOP_RELEASE_APPROVED", "SHOP_CHECKOUT_COOKIE_SECRET"]) {
+    const locked = { ...env }; delete locked[key];
+    assert.equal(configFrom(locked).enabled, false);
+    assert.equal((await createShop({ env: locked }).checkout(checkoutRequest())).status, 503);
+  }
+});
+test("automatic tax is fail-closed until tax registration is explicitly confirmed", () => {
+  assert.equal(configFrom({ ...env, SHOP_AUTOMATIC_TAX: "true" }).enabled, false);
+  const ready = configFrom({ ...env, SHOP_AUTOMATIC_TAX: "true", SHOP_TAX_REGISTRATION_CONFIRMED: "true" });
+  assert.equal(ready.enabled, true);
+  assert.equal(ready.automaticTax, true);
 });
 test("catalog returns only active one-time EUR inclusive prices and groups real variants", async () => {
   const f = fixture(); f.prices.price_L.type = "recurring";
