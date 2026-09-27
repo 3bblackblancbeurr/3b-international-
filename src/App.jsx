@@ -307,6 +307,7 @@ export default function App() {
       <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="intro3b-background" aria-hidden="true" />
         <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
+        <CompanionLayer page="intro" secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
         <section className="intro3b-card intro3b-portal">
           <div className="intro3b-copy">
@@ -343,7 +344,12 @@ export default function App() {
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
-    return <PassportAccessGate goTo={goTo} options={options} />;
+    return (
+      <>
+        <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+        <PassportAccessGate goTo={goTo} options={options} />
+      </>
+    );
   }
 
   return (
