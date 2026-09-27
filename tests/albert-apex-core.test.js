@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- ALBERT_OPERATION_MODES,ALBERT_RESOURCE_PROFILES,
+ ALBERT_OPERATION_MODES,ALBERT_RESOURCE_PROFILES,ALBERT_PHASES,
  createAlbertConstitution,compileAlbertSpec,compileAlbertTaskGraph,
- runnableAlbertTasks,transitionAlbertTask,actionRisk,permissionDecision,
+ runnableAlbertTasks,transitionAlbertTask,advanceAlbertGraph,verifyAlbertGraphPhase,actionRisk,permissionDecision,
  routeAlbertModel,resourcePolicy,inspectAlbertStrategy,evaluateCompletion,
  createEvidenceBundle,eventPriority,createApexState,normalizeApexState
 } from '../src/control/albert-apex-core.js';
@@ -11,6 +11,7 @@ import {
 test('APEX exposes the four execution modes and three resource profiles',()=>{
  assert.deepEqual(ALBERT_OPERATION_MODES,['AUTO','LOCAL','HYBRID','INTERNET']);
  assert.deepEqual(ALBERT_RESOURCE_PROFILES,['ECO','NORMAL','APEX']);
+ assert.deepEqual(ALBERT_PHASES,['INTENT','ASSESS','PLAN','EXECUTE','REVIEW','VERIFY','EVIDENCE']);
 });
 
 test('Constitution, spec and task graph create a deterministic execution spine',()=>{
@@ -24,6 +25,26 @@ test('Constitution, spec and task graph create a deterministic execution spine',
  assert.deepEqual(runnableAlbertTasks(graph).map(t=>t.key),['understand']);
  const first=transitionAlbertTask(graph,graph.tasks[0].id,'verified');
  assert.deepEqual(runnableAlbertTasks(first).map(t=>t.key),['assess']);
+});
+
+test('Cancelled or skipped phases never unlock the next APEX phase',()=>{
+ const spec=compileAlbertSpec('Prépare une action');
+ const graph=compileAlbertTaskGraph(spec);
+ const cancelled=transitionAlbertTask(graph,graph.tasks[0].id,'cancelled');
+ assert.deepEqual(runnableAlbertTasks(cancelled),[]);
+ const skipped=advanceAlbertGraph(graph,'EXECUTE');
+ assert.equal(skipped.tasks.find(t=>t.phase==='EXECUTE').status,'queued');
+});
+
+test('APEX phase progression is sequential and only evidence closes the graph',()=>{
+ const spec=compileAlbertSpec('Prépare une action');
+ let graph=compileAlbertTaskGraph(spec);
+ for(const phase of ALBERT_PHASES)graph=advanceAlbertGraph(graph,phase);
+ assert.equal(graph.tasks.slice(0,-1).every(t=>t.status==='verified'),true);
+ assert.equal(graph.tasks.at(-1).status,'running');
+ assert.equal(evaluateCompletion({spec,graph,evidence:{executed:true,tested:true,verified:true,reversible:true,documented:true}}).complete,false);
+ graph=verifyAlbertGraphPhase(graph,'EVIDENCE',['preuve']);
+ assert.equal(evaluateCompletion({spec,graph,evidence:{executed:true,tested:true,verified:true,reversible:true,documented:true}}).complete,true);
 });
 
 test('Permission broker fails safe for unknown and irreversible actions',()=>{
