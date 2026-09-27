@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.WindowManager;
 
@@ -42,6 +43,10 @@ public class CompanionOverlayService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        if (!Settings.canDrawOverlays(this)) {
+            stopSelf();
+            return;
+        }
         createChannel();
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.star_on)
