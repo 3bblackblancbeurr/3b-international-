@@ -18,8 +18,9 @@ public class CompanionWallpaperService extends WallpaperService {
         private boolean visible;
         private final Runnable drawFrame = new Runnable() {
             @Override public void run() {
-                draw();
-                if (visible) handler.postDelayed(this, 83);
+                String mode = currentMode();
+                draw(mode);
+                if (visible) handler.postDelayed(this, "sleep".equals(mode) ? 900L : 140L);
             }
         };
 
@@ -33,7 +34,7 @@ public class CompanionWallpaperService extends WallpaperService {
         @Override
         public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             super.onSurfaceChanged(holder, format, width, height);
-            draw();
+            draw(currentMode());
         }
 
         @Override
@@ -43,7 +44,12 @@ public class CompanionWallpaperService extends WallpaperService {
             super.onSurfaceDestroyed(holder);
         }
 
-        private void draw() {
+        private String currentMode() {
+            int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+            return (hour >= 1 && hour < 6) ? "sleep" : "idle";
+        }
+
+        private void draw(String mode) {
             SurfaceHolder holder = getSurfaceHolder();
             Canvas canvas = null;
             try {
@@ -53,8 +59,6 @@ public class CompanionWallpaperService extends WallpaperService {
                 int h = canvas.getHeight();
                 canvas.drawColor(0xFF030509);
                 long now = System.currentTimeMillis();
-                int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
-                String mode = (hour >= 1 && hour < 6) ? "sleep" : "idle";
                 int size = Math.max(170, Math.min(w / 2, h / 3));
                 canvas.save();
                 canvas.translate((w - size) / 2f, h - size * 1.28f);
