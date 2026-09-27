@@ -17,6 +17,10 @@ import CommandSettingsPanel from './CommandSettingsPanel.jsx';
 import DailyBriefPanel from './DailyBriefPanel.jsx';
 import IntegrationCenterPanel from './IntegrationCenterPanel.jsx';
 import AICommandPanel from './AICommandPanel.jsx';
+import AlbertWorkspace from './AlbertWorkspace.jsx';
+import AlbertDesk from './AlbertDesk.jsx';
+import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
+import {validateAlbertActions} from './albert-model.js';
 import CommandSearchResults from './CommandSearchResults.jsx';
 import './control-center.css';
 
@@ -161,6 +165,26 @@ export default function ControlCenterPage({goTo}){
  const[hiddenModules,setHiddenModules]=useState(()=>{
   try{return JSON.parse(localStorage.getItem('3b-command-hidden')||'{}')||{};}catch{return {};}
  });
+ const[albertTheme,setAlbertTheme]=useState(()=>{try{return localStorage.getItem('3b-albert-theme')||'cyan';}catch{return 'cyan';}});
+ const[albertHistory,setAlbertHistory]=useState([]);
+ const applyAlbertActions=actions=>{
+  const accepted=validateAlbertActions(actions);
+  if(!accepted.length)return;
+  setAlbertHistory(previous=>[...previous.slice(-19),{hiddenModules,focus,compactMode,reducedLocal,albertTheme}]);
+  accepted.forEach(action=>{
+   if(action.type==='module')setHiddenModules(current=>({...current,[action.id]:!action.visible}));
+   if(action.type==='theme')setAlbertTheme(action.value);
+   if(action.type==='focus')setFocus(action.value);
+   if(action.type==='compact')setCompactMode(action.value);
+   if(action.type==='motion')setReducedLocal(!action.value);
+  });
+ };
+ const undoAlbert=()=>{
+  const previous=albertHistory.at(-1);if(!previous)return;
+  setHiddenModules(previous.hiddenModules);setFocus(previous.focus);setCompactMode(previous.compactMode);setReducedLocal(previous.reducedLocal);setAlbertTheme(previous.albertTheme);
+  setAlbertHistory(history=>history.slice(0,-1));
+ };
+ useEffect(()=>{try{localStorage.setItem('3b-albert-theme',albertTheme);}catch{}},[albertTheme]);
  const commandInputRef=useRef(null);
  const[commandText,setCommandText]=useState('');
  const[commandFeedback,setCommandFeedback]=useState('');
@@ -528,12 +552,12 @@ export default function ControlCenterPage({goTo}){
   <div className="control-device-gate-card"><ShieldCheck/><h1>Centre de commande privé</h1><p>Cette zone est réservée au propriétaire 3B. Pas de terminal distant libre : seules les actions 3B autorisées peuvent être envoyées.</p><button onClick={()=>goTo('home')}>Retour</button></div>
  </section>;
 
- const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:'Tout est opérationnel.';
+ const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:data?'Aucune alerte détectée dans les sources disponibles.':'État en attente de vérification.';
  const productionState=pulse.production===true?'good':pulse.production===false?'bad':'idle';
  const apiState=data&&!error?'good':error?'bad':'warn';
  const pcState=primaryOnline?'good':primaryDevice?'warn':'idle';
 
- return <section className={'control-page'+(phone?' is-phone':' is-desktop')+(focus?' is-focus':'')+(compactMode?' is-compact':'')+(reducedLocal?' is-local-reduced':'')} aria-label="3B Command OS">
+ return <section className={'control-page albert-'+albertTheme+(phone?' is-phone':' is-desktop')+(focus?' is-focus':'')+(compactMode?' is-compact':'')+(reducedLocal?' is-local-reduced':'')} aria-label="3B Command OS">
   <div className="control-ambient" aria-hidden="true"><i/><i/><i/></div>
 
   <header className="control-topbar">
@@ -548,31 +572,9 @@ export default function ControlCenterPage({goTo}){
   {!pulse.network&&<div className="control-offline-banner" role="status"><WifiOff size={15}/><div><strong>Mode hors ligne</strong><small>Dernières données valides conservées{lastSync?' · synchro '+relativeTime(lastSync):''}.</small></div></div>}
 
   <main className="control-os-main">
-   <section className="control-stage" id="cc-now">
-    <div className="control-stage-copy">
-     <p className="control-kicker"><Sparkles size={13}/> POSTE DE COMMANDE PRIVÉ</p>
-     <h1>TON UNIVERS.<br/><span>SOUS CONTRÔLE.</span></h1>
-     <p className={'control-hero-status'+(alerts.length?' has-alert':'')}><span/>{heroStatus}</p>
-     <div className="control-stage-buttons">
-      <button onClick={refresh} disabled={syncing}><RefreshCw className={syncing?'is-spinning':''} size={17}/>{syncing?'Synchronisation…':'Actualiser'}</button>
-      <button className={focus?'is-active':''} onClick={()=>setFocus(value=>!value)}><Zap size={17}/>{focus?'Quitter Focus':'Mode Focus'}</button>
-     </div>
-    </div>
-
-    <div className="control-core-shell" aria-label={health.known?health.healthy+' signaux sur '+health.known+' au vert':'État en cours de vérification'}>
-     <div className="control-orbit orbit-a"/><div className="control-orbit orbit-b"/><div className="control-orbit orbit-c"/>
-     <div className="control-core">
-      <span>3B</span>
-      <strong>{health.known?health.healthy+'/'+health.known:'—'}</strong>
-      <small>SIGNAUX</small>
-     </div>
-    </div>
-
-    <div className="control-stage-foot">
-     <span>Synchro {lastSync?relativeTime(lastSync):'en cours'}</span>
-     <span>{latency?latency+' ms':'—'}</span>
-    </div>
-   </section>
+   <div id="cc-now"><ModuleBoundary label="Albert momentanément indisponible">
+    <AlbertWorkspace onActions={applyAlbertActions} onUndo={undoAlbert} canUndo={albertHistory.length>0} online={primaryOnline} deviceKnown={Boolean(primaryDevice)} runtime={runtime} privacyMode={privacyMode} reduced={reducedLocal} ready={Boolean(data)&&!error} theme={albertTheme}/>
+   </ModuleBoundary></div>
 
    {alerts.length>0&&<section className="control-alert-strip" aria-live="polite">
     <BellRing size={17}/><div><strong>{alerts.length} point{alerts.length>1?'s':''} à surveiller</strong><span>{alerts[0].title}</span></div><ChevronRight size={17}/>
@@ -591,11 +593,13 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
-   {isVisible('brief')&&<ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary>}
+   {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
+   <AlbertModules>
+   {isVisible('brief')&&<AlbertModule id="brief" label="Brief"><ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary></AlbertModule>}
 
-   {isVisible('alerts')&&<ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary>}
+   {isVisible('alerts')&&<AlbertModule id="alerts" label="Attention"><ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary></AlbertModule>}
 
-   {isVisible('nexus')&&<ModuleBoundary label="Nexus 3B momentanément indisponible">
+   {isVisible('nexus')&&<AlbertModule id="nexus" label="Connexions"><ModuleBoundary label="Nexus 3B momentanément indisponible">
     <CommandNexus
      pulse={pulse}
      dataAvailable={Boolean(data)}
@@ -608,24 +612,25 @@ export default function ControlCenterPage({goTo}){
      onPrivacyChange={value=>{setPrivacyMode(value);buzz(7);}}
      onJump={jumpTo}
     />
-   </ModuleBoundary>}
+   </ModuleBoundary></AlbertModule>}
 
-   {isVisible('integrations')&&<ModuleBoundary label="Centre d’intégrations momentanément indisponible"><IntegrationCenterPanel pulse={pulse} dataAvailable={Boolean(data)} primaryDevice={primaryDevice} primaryOnline={primaryOnline} privacyMode={privacyMode}/></ModuleBoundary>}
+   {isVisible('integrations')&&<AlbertModule id="integrations" label="Intégrations"><ModuleBoundary label="Centre d’intégrations momentanément indisponible"><IntegrationCenterPanel pulse={pulse} dataAvailable={Boolean(data)} primaryDevice={primaryDevice} primaryOnline={primaryOnline} privacyMode={privacyMode}/></ModuleBoundary></AlbertModule>}
 
-   {isVisible('ai')&&<ModuleBoundary label="3B IA Command momentanément indisponible"><AICommandPanel /></ModuleBoundary>}
+   {isVisible('ai')&&<AlbertModule id="ai" label="IA"><ModuleBoundary label="3B IA Command momentanément indisponible"><AICommandPanel /></ModuleBoundary></AlbertModule>}
 
-   {isVisible('traffic')&&<ModuleBoundary label="Radar 3B momentanément indisponible"><DirectorTraffic /></ModuleBoundary>}
+   {isVisible('traffic')&&<AlbertModule id="traffic" label="Radar"><ModuleBoundary label="Radar 3B momentanément indisponible"><DirectorTraffic /></ModuleBoundary></AlbertModule>}
 
-   {isVisible('dev')&&<ModuleBoundary label="Dev Center momentanément indisponible"><DevCenterPanel pulse={pulse}/></ModuleBoundary>}
+   {isVisible('dev')&&<AlbertModule id="dev" label="Développement"><ModuleBoundary label="Dev Center momentanément indisponible"><DevCenterPanel pulse={pulse}/></ModuleBoundary></AlbertModule>}
 
-   {isVisible('health')&&<ModuleBoundary label="App Health momentanément indisponible"><AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/></ModuleBoundary>}
+   {isVisible('health')&&<AlbertModule id="health" label="Santé"><ModuleBoundary label="App Health momentanément indisponible"><AppHealthPanel pulse={pulse} latency={latency} lastSync={lastSync} dataAvailable={Boolean(data)} error={error}/></ModuleBoundary></AlbertModule>}
 
-   {isVisible('security')&&<ModuleBoundary label="Security Center momentanément indisponible">
+   {isVisible('security')&&<AlbertModule id="security" label="Sécurité"><ModuleBoundary label="Security Center momentanément indisponible">
     <SecurityCenterPanel dataAvailable={Boolean(data)} error={error} devices={devices} commands={commands} events={events} allowedCommands={data?.allowed_commands}/>
-   </ModuleBoundary>}
+   </ModuleBoundary></AlbertModule>}
 
-   {isVisible('projects')&&<ModuleBoundary label="Projects Center momentanément indisponible"><ProjectsCenterPanel pulse={pulse}/></ModuleBoundary>}
+   {isVisible('projects')&&<AlbertModule id="projects" label="Projets"><ModuleBoundary label="Projects Center momentanément indisponible"><ProjectsCenterPanel pulse={pulse}/></ModuleBoundary></AlbertModule>}
 
+   </AlbertModules>
    <ModuleBoundary label="Réglages Command OS momentanément indisponibles">
     <CommandSettingsPanel
      privacyMode={privacyMode}
