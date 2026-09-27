@@ -156,8 +156,11 @@ async function userFor(req:Request) {
 }
 
 async function memberProfile(uid:string) {
-  const rows = await admin('/rest/v1/member_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=user_id,handle,country,passport_state&limit=1');
+  const rows = await admin('/rest/v1/member_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=user_id,handle,country,passport_state,passport_public_id&limit=1');
   if (!Array.isArray(rows) || !rows[0]) throw new Failure(403, 'Active ton profil 3B avant de jouer.');
+  if (rows[0].passport_state !== 'active' || !UUID.test(String(rows[0].passport_public_id || ''))) {
+    throw new Failure(403, 'Ton Passeport 3B doit être actif pour jouer.');
+  }
   return rows[0];
 }
 
@@ -224,6 +227,8 @@ async function ensureProfile(uid:string) {
   const countryId = COUNTRY_FROM_NAME[String(member.country)] || 'fr';
   const body = {
     user_id: uid,
+    passport_public_id: member.passport_public_id,
+    identity_status: 'passport',
     display_name: displayName,
     shirt_name: displayName.toUpperCase().slice(0, 14),
     shirt_number: 10,

@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-09-26",
-  "count": 152,
+  "generated_at": "2026-09-27",
+  "count": 155,
   "migrations": [
     {
       "version": "20260910020445",
@@ -763,6 +763,21 @@
       "version": "20260926215408",
       "name": "nosbloc_staging_creator_economy_fk_indexes",
       "sha256": "5964ba05030a16c82147203ff89f3dfc3a4ef9b0b83a880c3b756dc1f7a2e4d5"
+    },
+    {
+      "version": "20260927003738",
+      "name": "penalty_appearance_v1",
+      "sha256": "0d3328a83ce5aecda3cfb48843364cb1e487119aea44f6ebc28704711b00c672"
+    },
+    {
+      "version": "20260927003739",
+      "name": "penalty_ranked_integrity_v1",
+      "sha256": "61da715f7e4f963870a5abadf66067ec4b28dd2fd1b4792ffdafa6372df051d9"
+    },
+    {
+      "version": "20260927003740",
+      "name": "penalty_selection_authority_v1",
+      "sha256": "24111a6459aceb540389bb036c9fc18a26f85ca44a52f1c2c604a3ece784d5c3"
     }
   ]
 }

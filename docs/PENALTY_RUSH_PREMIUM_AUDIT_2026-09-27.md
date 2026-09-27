@@ -29,11 +29,19 @@ Candidat de travail pour la PR #322, pas une version finale certifiée. Aucun d�
 - Vérification visuelle du composant studio avec un profil fictif local en 1280×720 et 390×844 ; changement de couleurs et navigation testés. Terrain d’entraînement gardien chargé, aucune erreur console observée. Le format étroit conserve un pointeur de bureau : il ne simule pas un vrai écran tactile.
 - La route réelle sans compte affiche le contrôle Passeport requis. Les écrans connectés ont donc été inspectés dans une page de test locale ; aucune validation multijoueur authentifiée de bout en bout n’est revendiquée.
 
-## Déploiement préparé, non exécuté
-Trois nouvelles migrations figurent dans PENDING_MIGRATIONS_SHA256.json avec leur empreinte. Le registre des 152 migrations déjà appliquées est intact. La vérification couvre les deux registres et n’affirme pas que les nouvelles migrations sont en production. Appliquer et tester les migrations en staging avant de publier ensemble le serveur et le client (nouveau contexte de possession obligatoire).
+## Publication du 27 septembre 2026
+Publication autorisée par le propriétaire après les sept workflows réussis sur c73467f65e6462d729738869856d9305a8dddf55. PR #322 fusionnée dans main (e138a18f0cf3cd721434c50256b62ad1616bf046). Déploiement Vercel réussi.
+
+Les trois migrations ont été appliquées au projet de production ttvhcezucsbbmnafrotq sous les versions 20260927003738, 20260927003739 et 20260927003740. Leurs fichiers sont renommés avec ces versions et leurs empreintes transférées de PENDING vers APPLIED ; le contenu SQL et les 152 anciennes entrées restent inchangés.
+
+La fonction penalty-rush v17 est ACTIVE, avec vérification JWT maintenue. Les quatre fichiers déployés correspondent exactement aux sources ; les procédures de règlement, sélection, adhésion et rang sont réservées au rôle serveur. Aucune partie active au moment de la mise à jour.
+
+URL : https://3b-international.vercel.app/jeux/penalty-rush
+
+Les limites fonctionnelles et les essais réels encore nécessaires ci-dessous restent valables. Cette publication ne signifie pas que la refonte complète est terminée.
 
 ## Travaux restants avant une version finale
-- CI distante complète et builds Android/iOS sur le commit final ; revue sécurité indépendante ; essais à deux comptes, reconnexion, latence, concurrence et appareil tactile réel.
+- CI distante et builds Android/iOS réussis sur le commit final. Restent une revue sécurité indépendante et des essais à deux comptes, reconnexion, latence, concurrence et appareil tactile réel.
 - Le Passeport 3B actuel est une identité de compte, pas une preuve d’identité civile renforcée. Aucun justificatif, biométrie ou KYC n’a été inventé ou collecté. Une attestation d’identité renforcée et sa révocation doivent être raccordées à un service effectivement disponible avant d’en faire une condition certifiée.
 - Les compétitions nationales jouables, calendriers, rencontres collectives de clubs, contrats de recrutement et incrément des sélections internationales ne sont pas entièrement implémentés. Les menus distinguent désormais le programme prévu des fonctions actives.
 - La présélection reste recalculée lors de la consultation du profil ; un traitement planifié équitable de tous les candidats et une procédure de recours restent à définir.
@@ -45,4 +53,7 @@ Trois nouvelles migrations figurent dans PENDING_MIGRATIONS_SHA256.json avec leu
 - EA SPORTS FC 26, Clubs (31 juillet 2025) : archétypes, carte de joueur, progression expliquée et personnalisation. Principes retenus : choix de style lisibles, séparation visuelle des rubriques et progression compréhensible. Aucun achat de puissance ajouté. https://www.ea.com/fr/games/ea-sports-fc/fc-26/news/pitch-notes-fc26-clubs-deep-dive
 - Konami, eFootball v5.50 : matchmaking plus souvent à niveau comparable et progression entre phases. Principe retenu : rapprocher les niveaux et expliquer les saisons ; ce n’est pas une reproduction de leur algorithme. https://www.konami.com/efootball/en/page/v5/versioninfo_v5-50
 
-Ce bilan distingue volontairement ce qui est implémenté et testé de ce qui reste nécessaire. La PR doit rester non fusionnée tant que les validations et les points bloquants ne sont pas résolus.
+Ce bilan distingue volontairement ce qui est implémenté et testé de ce qui reste nécessaire. Les travaux restants ne sont pas couverts par cette publication.
+
+## Correctif constaté lors du contrôle en production
+La première inscription échouait car le schéma de production exige passport_public_id. Le serveur lit désormais cet identifiant depuis le Passeport actif du compte et le lie au nouveau profil, sans le publier dans le profil sportif. Deux tests exécutent la création avec un Passeport valide et le refus avant écriture en cas de Passeport absent ou révoqué. Le navigateur connecté affiche désormais ONLINE et le studio se charge sans cette erreur. Aucun duel à deux comptes ni essai sur appareil tactile réel n'est revendiqué.
