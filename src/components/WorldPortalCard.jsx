@@ -3,6 +3,7 @@ import {ArrowUpRight, CircleDot, Globe2, ShieldCheck} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import {CircleArtwork} from './NexusArtwork.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
+import {Button} from '../design-system/index.jsx';
 
 const GATES=[
  {code:'FR',value:'Justice',x:50,y:4},
@@ -38,8 +39,8 @@ export default function WorldPortalCard({goTo}){
     <span><ShieldCheck size={16}/>Même Passeport 3B</span>
    </div>
    <div className="world-portal-actions">
-    <RouteLink page="world3b" goTo={goTo} className="surface-button">Entrer dans le Monde du 3B <ArrowUpRight size={16}/></RouteLink>
-    {UNREAL_LAUNCH_ENABLED&&<button type="button" className="quiet-button world-native-button" onClick={openNativeWorld} disabled={busy}>{busy?'Ouverture…':'Lancer l’expérience native'}</button>}
+    <Button as={RouteLink} page="world3b" goTo={goTo} variant="champagne" className="surface-button">Entrer dans le Monde du 3B <ArrowUpRight size={16}/></Button>
+    {UNREAL_LAUNCH_ENABLED&&<Button variant="ghost" className="quiet-button world-native-button" onClick={openNativeWorld} disabled={busy} loading={busy}>{busy?'Ouverture…':'Lancer l’expérience native'}</Button>}
    </div>
    {message&&<p className="world-portal-message" role="status">{message}</p>}
   </div>

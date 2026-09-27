@@ -5,6 +5,7 @@ import WorldPortalCard from './WorldPortalCard.jsx';
 import CompactCard from './CompactCard.jsx';
 import PassportNexus from './PassportNexus.jsx';
 import { Building2 } from 'lucide-react';
+import {Button} from '../design-system/index.jsx';
 
 const PRIMARY_IDS = ['passport', 'world3b', 'nosbloc', 'games'];
 const GUIDE_ID = 'guide';
@@ -30,7 +31,7 @@ export default function HomePage({goTo,menuItems,member}){
     <h1>Un héritage.<br/><em>Ton univers.</em></h1>
     <p className="welcome-description">Ton Passeport ouvre l’univers. Construis ta Ville 3B, entre dans le Monde du 3B et développe tes créations avec Nosbloc.</p>
     <div className="home-hero-actions">
-     <RouteLink page={nextPage} goTo={goTo} className="dashboard-cta">{nextLabel}<span aria-hidden="true">→</span></RouteLink>
+     <Button as={RouteLink} page={nextPage} goTo={goTo} variant="champagne" className="dashboard-cta">{nextLabel}<span aria-hidden="true">→</span></Button>
     </div>
     <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MA VILLE</span><span>03 / MONDE DU 3B</span><span>04 / NOSBLOC</span></div>
    </div>
@@ -53,7 +54,7 @@ export default function HomePage({goTo,menuItems,member}){
 
   <section className="home-guide-zone" aria-labelledby="home-guide-title">
    <div><p className="eyebrow">REPÈRES & PROGRESSION</p><h2 id="home-guide-title">Besoin de comprendre l’écosystème 3B ?</h2><p>Retrouve le fonctionnement du Passeport, des espaces, des gains et de la progression dans un seul guide.</p></div>
-   <RouteLink page="guide" goTo={goTo} className="home-guide-button">Comprendre l’écosystème 3B <span aria-hidden="true">↗</span></RouteLink>
+   <Button as={RouteLink} page="guide" goTo={goTo} variant="champagne" className="home-guide-button">Comprendre l’écosystème 3B <span aria-hidden="true">↗</span></Button>
   </section>
 
   <footer className="dashboard-footer"><strong>3B INTERNATIONAL</strong><span>BLACK · BLANC · BEUR</span><RouteLink page="intro" goTo={goTo}>Revoir l’introduction</RouteLink></footer>
