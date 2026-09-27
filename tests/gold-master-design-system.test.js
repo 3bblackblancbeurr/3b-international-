@@ -10,3 +10,5 @@ test("spacing, radii and motion contracts exist",()=>{for(const v of["4px","8px"
 test("shared component primitives exist",()=>{for(const name of["Button","Card","Modal","Toast","Tabs","VideoPlayer","Avatar","Badge","Progress","Stat"])assert.match(components,new RegExp(`export function ${name}\\b`))});
 test("runtime imports Gold Master layer",()=>assert.ok(main.includes("styles/gold-master.css")));
 test("reduced motion is supported",()=>assert.ok(css.includes("prefers-reduced-motion")));
+
+test("shared primitives expose explicit Gold Master states",()=>{assert.ok(components.includes('state = "normal"'));assert.ok(components.includes("data-state"));assert.ok(components.includes("getStateClass"))});
