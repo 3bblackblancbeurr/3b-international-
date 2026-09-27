@@ -24,13 +24,13 @@ export async function commandIntegrationsStatus(){
  return data;
 }
 
-export async function commandAIRequest(prompt){
+export async function commandAIRequest(prompt,action='ai'){
  const{data:{session}}=await authClient.auth.getSession();
  if(!session)throw Error('Connecte-toi à ton compte 3B.');
  const response=await fetch(endpoint(),{
   method:'POST',
   headers:{Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},
-  body:JSON.stringify({action:'ai',prompt}),
+  body:JSON.stringify({action,prompt}),
   signal:AbortSignal.timeout(30000)
  });
  const data=await response.json().catch(()=>({}));
