@@ -677,7 +677,7 @@ export default function ControlCenterPage({goTo}){
       <article><span>STOCKAGE LIBRE</span><strong>{Number.isFinite(storageFree)?fmtMetric(storageFree)+' Go':'—'}</strong><small>{driveRows.length?driveRows.length+' volume'+(driveRows.length>1?'s':'')+' fixe'+(driveRows.length>1?'s':''):storageTotal>0?fmtMetric(storageTotal)+' Go au total':'inventaire non disponible'}</small></article>
      </div>
      {(physicalDisks.length>0||driveRows.length>0)&&<div className="control-drive-inventory">
-      <div className="control-drive-head"><span>DISQUES WINDOWS</span><small>NVMe / SATA et espace par volume</small></div>
+      <div className="control-drive-head"><span>DISQUES WINDOWS</span><small>Volumes Windows montés et espace réel</small></div>
       {physicalDisks.map((disk,index)=><article className="control-physical-disk" key={(disk.name||'disk')+'-'+index}>
        <div><b>{disk.name||'Disque '+(index+1)}</b><small>{disk.media_type||'Stockage'} · {disk.bus_type||'Bus inconnu'}</small></div>
        <strong>{fmtMetric(disk.total_gb)} Go</strong>
