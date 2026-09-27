@@ -10,7 +10,7 @@
 		A3B100010000000000000001 /* CompanionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000001 /* CompanionActivityAttributes.swift */; };
 		A3B100010000000000000002 /* ThreeBCompanionPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000002 /* ThreeBCompanionPlugin.swift */; };
 		A3B100010000000000000003 /* ThreeBBridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000003 /* ThreeBBridgeViewController.swift */; };
-		A3B100010000000000000004 /* CompanionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000005 /* CompanionActivityAttributes.swift */; };
+		A3B100010000000000000004 /* CompanionActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000001 /* CompanionActivityAttributes.swift */; };
 		A3B100010000000000000005 /* CompanionArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000006 /* CompanionArtwork.swift */; };
 		A3B100010000000000000006 /* CompanionLockWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000007 /* CompanionLockWidget.swift */; };
 		A3B100010000000000000007 /* CompanionLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B100020000000000000008 /* CompanionLiveActivity.swift */; };
@@ -56,7 +56,6 @@
 		A3B100020000000000000002 /* ThreeBCompanionPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeBCompanionPlugin.swift; sourceTree = "<group>"; };
 		A3B100020000000000000003 /* ThreeBBridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreeBBridgeViewController.swift; sourceTree = "<group>"; };
 		A3B100020000000000000004 /* CompanionWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CompanionWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		A3B100020000000000000005 /* CompanionActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionActivityAttributes.swift; sourceTree = "<group>"; };
 		A3B100020000000000000006 /* CompanionArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionArtwork.swift; sourceTree = "<group>"; };
 		A3B100020000000000000007 /* CompanionLockWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionLockWidget.swift; sourceTree = "<group>"; };
 		A3B100020000000000000008 /* CompanionLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionLiveActivity.swift; sourceTree = "<group>"; };
@@ -135,7 +134,6 @@
 		A3B100060000000000000001 /* CompanionWidget */ = {
 			isa = PBXGroup;
 			children = (
-				A3B100020000000000000005 /* CompanionActivityAttributes.swift */,
 				A3B100020000000000000006 /* CompanionArtwork.swift */,
 				A3B100020000000000000007 /* CompanionLockWidget.swift */,
 				A3B100020000000000000008 /* CompanionLiveActivity.swift */,
@@ -316,6 +314,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ../CompanionWidget/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = ../CompanionWidget/CompanionWidget.entitlements;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -340,6 +339,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ../CompanionWidget/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = ../CompanionWidget/CompanionWidget.entitlements;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -473,6 +473,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -495,6 +496,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = App/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
