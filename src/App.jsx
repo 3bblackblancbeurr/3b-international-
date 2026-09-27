@@ -37,6 +37,7 @@ import "./styles/compact.css";
 import "./styles/dimension.css";
 import "./styles/home-premium.css";
 import "./styles/responsive-premium.css";
+import "./styles/companion.css";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
@@ -349,6 +350,8 @@ export default function App() {
     <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
+
+      <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
       {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} />}
       <main id="main-content" tabIndex={-1}>
