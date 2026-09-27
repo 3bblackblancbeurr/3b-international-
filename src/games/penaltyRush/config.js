@@ -230,6 +230,7 @@ export function normalizePenaltyProfile(value, account) {
     styleId,
     keeperPowers: powers.length === 2 ? powers : base.keeperPowers,
     clubName: String(input.clubName || '').trim().slice(0, 40),
+    celebration: ['calme','crown','respect','matrix'].includes(input.celebration) ? input.celebration : base.celebration,
     kit: { ...base.kit, ...(input.kit || {}) },
     boots: { ...base.boots, ...(input.boots || {}) },
   };

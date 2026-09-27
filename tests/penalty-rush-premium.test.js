@@ -28,3 +28,8 @@ test('session and abuse controls fail closed and appearance rules stay identical
  assert.match(service,/member.passport_state !== 'active'/);
  assert.equal(readFileSync(new URL('../src/games/penaltyRush/profile-rules.js',import.meta.url),'utf8'),readFileSync(new URL('../supabase/functions/penalty-rush/profile-rules.js',import.meta.url),'utf8'));
 });
+
+test('profile normalization preserves each saved celebration and rejects unknown choices',()=>{
+ for(const celebration of ['calme','crown','respect','matrix'])assert.equal(normalizePenaltyProfile({celebration}).celebration,celebration);
+ assert.equal(normalizePenaltyProfile({celebration:'unknown'}).celebration,'calme');
+});
