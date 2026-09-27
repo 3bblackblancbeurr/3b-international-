@@ -5,7 +5,7 @@ import path from 'node:path';
 import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const VERSION='1.3.0';
+const VERSION='1.4.0';
 const SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
 const PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
 const ENDPOINT=SUPABASE_URL+'/functions/v1/control-center-agent';
@@ -23,6 +23,7 @@ const CAPABILITIES={
  system_status:true,
  storage_inventory:true,
  gpu_telemetry:true,
+ albert_runtime_telemetry:true,
  open_3b:true,
  open_repo:true,
  open_unreal:true,
@@ -105,6 +106,7 @@ async function request(body,token=''){
 }
 function roundGb(bytes){return Math.round(bytes/1024/1024/1024*10)/10;}
 let hardwareCache={at:0,value:{}};
+let albertCache={at:0,value:null,pending:null};
 
 function runFixed(command,args,timeout=3000){
  try{
@@ -186,6 +188,83 @@ function hardwareTelemetry(){
  hardwareCache={at:now,value};
  return value;
 }
+function processFlags(){
+ if(process.platform!=='win32')return{python:false,ollama:false,edge:false};
+ const raw=runFixed('tasklist',['/FO','CSV','/NH'],2500).toLowerCase();
+ return{
+  python:raw.includes('"python.exe"')||raw.includes('"pythonw.exe"'),
+  ollama:raw.includes('"ollama.exe"'),
+  edge:raw.includes('"msedge.exe"')
+ };
+}
+function ollamaModels(){
+ const raw=runFixed('ollama',['list'],3500);
+ if(!raw)return[];
+ return raw.split(/\r?\n/).slice(1).map(line=>line.trim().split(/\s+/)[0]).filter(Boolean).slice(0,24);
+}
+function firstExisting(paths){
+ return paths.find(value=>value&&fs.existsSync(value))||'';
+}
+async function probeAlbertApi(){
+ for(const url of ['http://127.0.0.1:8765/health','http://127.0.0.1:8765/']){
+  try{
+   const response=await fetch(url,{signal:AbortSignal.timeout(1200),cache:'no-store'});
+   if(response.ok)return{online:true,endpoint:url.endsWith('/health')?'health':'root'};
+  }catch{}
+ }
+ return{online:false,endpoint:null};
+}
+async function albertRuntimeTelemetry(){
+ const now=Date.now();
+ if(albertCache.value&&now-albertCache.at<15000)return albertCache.value;
+ if(albertCache.pending)return albertCache.pending;
+ albertCache.pending=(async()=>{
+  const candidates=process.platform==='win32'
+   ?[
+     process.env.LOCALAPPDATA?path.join(process.env.LOCALAPPDATA,'ALBERT_MAX_RUNTIME'):'',
+     path.join(os.homedir(),'Documents','ALBERT_Local')
+    ].filter(Boolean)
+   :[];
+  const runtimeRoot=firstExisting(candidates);
+  const installed=Boolean(runtimeRoot);
+  const launcher=installed?firstExisting([
+   path.join(runtimeRoot,'START_ALBERT_APEX.bat'),
+   path.join(runtimeRoot,'START_ALBERT_AND_MAX.bat'),
+   path.join(runtimeRoot,'START_ALBERT_MAX.bat')
+  ]):'';
+  const desktop=installed?firstExisting([
+   path.join(runtimeRoot,'desktop','albert_desktop_final.py'),
+   path.join(runtimeRoot,'desktop','albert_desktop.py')
+  ]):'';
+  const moduleNames=['memory_v4.py','packaging_v2.py','soak_lab.py','streaming_chat.py','evaluation_200.py'];
+  const moduleBases=installed?[runtimeRoot,path.join(runtimeRoot,'albert_max'),path.join(runtimeRoot,'modules'),path.join(runtimeRoot,'core')]:[];
+  const modules=moduleNames.filter(name=>moduleBases.some(base=>fs.existsSync(path.join(base,name))));
+  const api=installed?await probeAlbertApi():{online:false,endpoint:null};
+  const processes=processFlags();
+  const models=processes.ollama?ollamaModels():[];
+  const value={
+   installed,
+   runtime_name:installed?path.basename(runtimeRoot):null,
+   api_online:api.online,
+   api_port:8765,
+   api_probe:api.endpoint,
+   launcher_present:Boolean(launcher),
+   desktop_present:Boolean(desktop),
+   modules,
+   models,
+   model_count:models.length,
+   processes,
+   checked_at:new Date().toISOString()
+  };
+  albertCache={at:Date.now(),value,pending:null};
+  return value;
+ })().catch(error=>{
+  const value={installed:false,runtime_name:null,api_online:false,api_port:8765,api_probe:null,launcher_present:false,desktop_present:false,modules:[],models:[],model_count:0,processes:{python:false,ollama:false,edge:false},checked_at:new Date().toISOString(),error:String(error?.message||error).slice(0,160)};
+  albertCache={at:Date.now(),value,pending:null};
+  return value;
+ });
+ return albertCache.pending;
+}
 function systemStatus(){
  const cpus=os.cpus();
  return{
@@ -252,10 +331,11 @@ async function pair(code,name){
  log('INFO','Device ID:',data.device_id);
 }
 async function heartbeat(config){
+ const albert=await albertRuntimeTelemetry();
  return await request({
   action:'heartbeat',
   agent_version:VERSION,
-  capabilities:{...CAPABILITIES,autostart:autostartEnabled(),_runtime:systemStatus()}
+  capabilities:{...CAPABILITIES,autostart:autostartEnabled(),_runtime:{...systemStatus(),albert}}
  },config.device_token);
 }
 async function complete(config,command,ok,result={},error=''){
@@ -305,7 +385,7 @@ async function once(){
  const did=await tick(config);
  if(!did)log('INFO','Aucune commande en attente.');
 }
-function localStatus(){
+async function localStatus(){
  const config=loadConfig();
  console.log(JSON.stringify({
   paired:!!config?.device_token,
@@ -313,7 +393,8 @@ function localStatus(){
   config_path:configPath,
   log_path:logPath,
   autostart_enabled:autostartEnabled(),
-  ...systemStatus()
+  ...systemStatus(),
+  albert:await albertRuntimeTelemetry()
  },null,2));
 }
 
@@ -322,7 +403,7 @@ try{
  if(command==='pair')await pair(arg1,rest.join(' ').trim());
  else if(command==='run')await run();
  else if(command==='once')await once();
- else if(command==='status')localStatus();
+ else if(command==='status')await localStatus();
  else{
   console.log('3B Control Agent');
   console.log('  npm run control:pair -- CODE [Nom du PC]');

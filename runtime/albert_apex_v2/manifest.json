@@ -1,0 +1,29 @@
+{
+  "name": "ALBERT APEX OS V2",
+  "version": "2.0.0",
+  "bind": "127.0.0.1",
+  "port": 8766,
+  "policy": "fail-closed",
+  "features": [
+    "orchestrator",
+    "constitution",
+    "spec_compiler",
+    "task_graph",
+    "convergence",
+    "evidence_bundle",
+    "metacognitive_supervisor",
+    "strategy_switch",
+    "permission_broker",
+    "typed_actions",
+    "event_bus",
+    "ambient_inbox",
+    "need_you",
+    "session_snapshot",
+    "memory_distillation",
+    "skill_registry",
+    "model_registry",
+    "resource_governor",
+    "kill_switch",
+    "local_health_api"
+  ]
+}

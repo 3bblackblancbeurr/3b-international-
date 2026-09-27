@@ -15,9 +15,9 @@ test('Windows autostart is user-level, hidden and requires an existing pairing',
  assert.doesNotMatch(source,/RunAs|Administrator|runas/i);
 });
 
-test('agent 1.3 self-heals network failures and prevents duplicate modern agents',()=>{
+test('agent 1.4 self-heals network failures and prevents duplicate modern agents',()=>{
  const source=read('scripts/threeb-control-agent.mjs');
- assert.match(source,/VERSION='1\.3\.0'/);
+ assert.match(source,/VERSION='1\.4\.0'/);
  assert.match(source,/agent\.lock/);
  assert.match(source,/pidAlive/);
  assert.match(source,/delay=Math\.min\(Math\.round\(delay\*1\.6\),30000\)/);
@@ -42,13 +42,17 @@ test('mobile Command OS surfaces whether the paired PC starts automatically',()=
 });
 
 
-test('agent 1.3 inventories mounted Windows volumes and NVIDIA hardware without arbitrary shell input',()=>{
+test('agent 1.4 inventories mounted Windows volumes and NVIDIA hardware without arbitrary shell input',()=>{
  const source=read('scripts/threeb-control-agent.mjs');
  assert.match(source,/statfsSync/);
  assert.match(source,/String\.fromCharCode/);
  assert.match(source,/nvidia-smi/);
  assert.match(source,/storage_inventory:true/);
  assert.match(source,/gpu_telemetry:true/);
+ assert.match(source,/albert_runtime_telemetry:true/);
+ assert.match(source,/ALBERT_MAX_RUNTIME/);
+ assert.match(source,/127\.0\.0\.1:8765/);
+ assert.match(source,/ollama/);
  assert.match(source,/spawnSync/);
  assert.match(source,/hardwareCache/);
  assert.doesNotMatch(source,/shell\s*:\s*true/);

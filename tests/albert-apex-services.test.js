@@ -17,12 +17,18 @@ test('Typed actions have explicit permission and unknown actions fail closed',()
  assert.equal(APEX_TYPED_ACTIONS.payment.reversible,false);
 });
 
-test('Capability registry never promotes offline or unknown providers to live',()=>{
- const rows=capabilityRegistry({online:true,localRuntime:false,providers:{google:{state:'live'},stripe:{state:'setup_required'}}});
- assert.equal(rows.find(x=>x.id==='google').state,'live');
- assert.equal(rows.find(x=>x.id==='stripe').state,'setup_required');
- assert.equal(rows.find(x=>x.id==='localRuntime').state,'offline');
- assert.equal(rows.find(x=>x.id==='internet').state,'live');
+test('Capability registry separates PC connectivity from verified ALBERT runtime',()=>{
+ const offline=capabilityRegistry({online:true,localRuntime:false,albertRuntime:false,providers:{google:{state:'live'},stripe:{state:'setup_required'}}});
+ assert.equal(offline.find(x=>x.id==='google').state,'live');
+ assert.equal(offline.find(x=>x.id==='stripe').state,'setup_required');
+ assert.equal(offline.find(x=>x.id==='localRuntime').state,'offline');
+ assert.equal(offline.find(x=>x.id==='pcControl').state,'offline');
+ assert.equal(offline.find(x=>x.id==='internet').state,'live');
+ const pcOnly=capabilityRegistry({online:true,localRuntime:true,albertRuntime:false});
+ assert.equal(pcOnly.find(x=>x.id==='localRuntime').state,'unavailable');
+ assert.equal(pcOnly.find(x=>x.id==='pcControl').state,'available');
+ const verified=capabilityRegistry({online:true,localRuntime:true,albertRuntime:true});
+ assert.equal(verified.find(x=>x.id==='localRuntime').state,'live');
 });
 
 test('Ambient inbox deduplicates events and applies interruption policy',()=>{

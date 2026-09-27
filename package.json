@@ -25,7 +25,10 @@
     "test:gold-master": "node --test tests/gold-master-design-system.test.js tests/brand-vault.test.js tests/gold-master-drift-guard.test.js tests/gold-master-shell-migration.test.js tests/gold-master-command-os.test.js tests/gold-master-passport-public-id.test.js",
     "brand:verify": "node scripts/verify-brand-vault.mjs",
     "brand:lock": "node scripts/verify-brand-vault.mjs --write",
-    "gold-master:guard": "node scripts/verify-gold-master-diff.mjs"
+    "gold-master:guard": "node scripts/verify-gold-master-diff.mjs",
+    "albert:apex-install": "node scripts/install-albert-apex-v2.mjs install",
+    "albert:apex-status": "node scripts/install-albert-apex-v2.mjs status",
+    "albert:apex-remove": "node scripts/install-albert-apex-v2.mjs remove"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
