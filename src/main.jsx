@@ -5,6 +5,7 @@ import AppErrorBoundary from "./components/AppErrorBoundary.jsx";
 import {LoyaltyProvider} from './loyalty/LoyaltyContext.jsx';
 import "./index.css";
 import "./styles/platform-premium.css";
+import "./styles/gold-master.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
 
