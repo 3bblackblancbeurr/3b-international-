@@ -2,6 +2,7 @@ package app.vercel.threebinternational;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.os.PowerManager;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -15,9 +16,11 @@ public class CompanionRenderView extends View {
     private float lastX;
     private float lastY;
     private MoveListener moveListener;
+    private final PowerManager powerManager;
 
     public CompanionRenderView(Context context) {
         super(context);
+        powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         setContentDescription("Compagnon 3B");
     }
@@ -42,7 +45,9 @@ public class CompanionRenderView extends View {
         painter.draw(canvas, getWidth(), getHeight(), mode, android.os.SystemClock.uptimeMillis());
         if (isShown()) {
             long delay;
-            if ("sleep".equals(mode)) delay = 800L;
+            if (powerManager != null && !powerManager.isInteractive()) delay = 1500L;
+            else if ("sleep".equals(mode)) delay = 800L;
+            else if (powerManager != null && powerManager.isPowerSaveMode()) delay = 280L;
             else if ("walk".equals(mode) || "celebrate".equals(mode) || "notification".equals(mode)) delay = 34L;
             else delay = 110L;
             postInvalidateDelayed(delay);
