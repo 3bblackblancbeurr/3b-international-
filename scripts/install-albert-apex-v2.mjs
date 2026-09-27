@@ -58,7 +58,7 @@ function uiSignature(root){
  if(!fs.existsSync(index))return{ok:false,index,reasons:['static_index_missing']};
  const html=fs.readFileSync(index,'utf8');
  const identity=/ALBERT/i.test(html);
- const navigation=/(Créer|Projets|Mémoire|Tâches|ALBERT)/i.test(html);
+ const navigation=/(Créer|Projets|Mémoire|Tâches)/i.test(html);
  const structure=/<\/head>/i.test(html)&&/<\/body>/i.test(html);
  const reasons=[];
  if(!identity)reasons.push('albert_identity_missing');
@@ -85,7 +85,9 @@ function patchUi(root){
 }
 function restoreUi(root,installMeta={}){
  const index=path.join(root,'static','index.html');
- const backup=installMeta.ui_backup?path.resolve(root,installMeta.ui_backup):'';
+ const rootResolved=path.resolve(root)+path.sep;
+ const candidate=installMeta.ui_backup?path.resolve(root,installMeta.ui_backup):'';
+ const backup=candidate&&candidate.startsWith(rootResolved)?candidate:'';
  if(backup&&fs.existsSync(backup)&&fs.existsSync(index)){
   const current=fs.readFileSync(index,'utf8');
   if(current.includes(HEAD_MARK)||current.includes(BODY_MARK))fs.copyFileSync(backup,index);
@@ -124,6 +126,8 @@ function install(){
   throw new Error('Installation refusée: signature ALBERT non reconnue ('+found.signature.reasons.join(', ')+').');
  }
  const root=found.root;
+ const uiCheck=uiSignature(root);
+ if(!uiCheck.ok)throw new Error('Installation refusée: interface ALBERT non reconnue ('+uiCheck.reasons.join(', ')+').');
  const target=path.join(root,'apex_v2');
  if(fs.existsSync(target)){
   const backup=backupPath(root);
