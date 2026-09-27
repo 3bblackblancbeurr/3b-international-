@@ -48,6 +48,7 @@ export function typedAction(type,input={}){
 
 export function capabilityRegistry(runtime={}){
  const local=runtime.localRuntime===true;
+ const albert=runtime.albertRuntime===true;
  const online=runtime.online===true;
  const providers=runtime.providers&&typeof runtime.providers==='object'?runtime.providers:{};
  const providerState=name=>providers[name]?.state||'unknown';
@@ -58,7 +59,7 @@ export function capabilityRegistry(runtime={}){
   ['events','Event Bus + Ambient Inbox','ready','core'],
   ['evidence','Completion Contract + Evidence','ready','security'],
   ['voice','Voix navigateur',runtime.browserVoice===true?'available':'unavailable','voice'],
-  ['localRuntime','Runtime Windows ALBERT',local?'live':'offline','local'],
+  ['localRuntime','Runtime Windows ALBERT',albert?'live':local?'unavailable':'offline','local'],
   ['pcControl','Contrôle PC typé',local?'available':'offline','local'],
   ['google','Google Workspace',providerState('google'),'external'],
   ['metricool','Réseaux sociaux',providerState('metricool'),'external'],
