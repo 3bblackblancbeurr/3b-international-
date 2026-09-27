@@ -35,9 +35,10 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
  const verified=state.tasks.filter(t=>t.status==='verified').length;
  const failed=state.tasks.filter(t=>t.status==='failed').length;
  const runtimeState=online?'connecté':'hors ligne';
+ const localAlbert=runtime?.albert&&typeof runtime.albert==='object'?runtime.albert:null;
  const vram=runtime&&Number.isFinite(Number(runtime.gpu_memory_total_mb))?Math.round(Number(runtime.gpu_memory_total_mb))+' Mo':'non reçue';
  const health=useMemo(()=>Object.entries(state.health),[state.health]);
- const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online,browserVoice:typeof window!=='undefined'&&Boolean(window.SpeechRecognition||window.webkitSpeechRecognition||window.speechSynthesis)}),[online]);
+ const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online,albertRuntime:Boolean(localAlbert?.installed),browserVoice:typeof window!=='undefined'&&Boolean(window.SpeechRecognition||window.webkitSpeechRecognition||window.speechSynthesis)}),[online,localAlbert?.installed]);
  const liveCapabilities=capabilities.filter(item=>['ready','live','available'].includes(item.state)).length;
  const inbox=useMemo(()=>ambientInbox(state.events,{max:8}),[state.events]);
  return <section className={'albert-apex-panel'+(state.killSwitch?' is-killed':'')} aria-label="ALBERT APEX OS">
@@ -60,6 +61,28 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
    <Metric label="RUNTIME LOCAL" value={runtimeState} detail={online?'VRAM '+vram:'aucune télémétrie fraîche'} tone={online?'good':'warn'}/>
    <Metric label="CAPACITÉS" value={liveCapabilities+' / '+capabilities.length} detail="déclarées et vérifiables" tone="good"/>
    <Metric label="CONFIDENTIALITÉ" value={privacyMode?'STRICTE':'STANDARD'} detail={privacyMode?'contexte sensible masqué':'règles APEX actives'} tone={privacyMode?'good':'neutral'}/>
+  </div>
+
+  <div className="apex-columns">
+   <div className="apex-block">
+    <div className="apex-block-title"><span>ALBERT WINDOWS LOCAL</span><strong>{localAlbert?.installed?(localAlbert.api_online?'LIVE':'DÉTECTÉ'):online?'NON DÉTECTÉ':'HORS LIGNE'}</strong></div>
+    {localAlbert?<div className="apex-health">
+     <div><span>Installation</span><b className={localAlbert.installed?'good':'warn'}>{localAlbert.runtime_name||'absente'}</b></div>
+     <div><span>API locale :8765</span><b className={localAlbert.api_online?'good':'warn'}>{localAlbert.api_online?'online':'offline'}</b></div>
+     <div><span>Lanceur</span><b className={localAlbert.launcher_present?'good':'warn'}>{localAlbert.launcher_present?'présent':'non détecté'}</b></div>
+     <div><span>Desktop runtime</span><b className={localAlbert.desktop_present?'good':'warn'}>{localAlbert.desktop_present?'présent':'non détecté'}</b></div>
+     <div><span>Ollama</span><b className={localAlbert.processes?.ollama?'good':'idle'}>{localAlbert.processes?.ollama?'actif':'arrêté'}</b></div>
+     <div><span>Python</span><b className={localAlbert.processes?.python?'good':'idle'}>{localAlbert.processes?.python?'actif':'arrêté'}</b></div>
+     <div><span>Modèles locaux</span><b className={localAlbert.model_count?'good':'idle'}>{localAlbert.model_count||0}</b></div>
+     <div><span>Modules APEX locaux</span><b className={localAlbert.modules?.length?'good':'idle'}>{localAlbert.modules?.length||0}</b></div>
+    </div>:<p className="apex-empty">La télémétrie ALBERT locale apparaîtra dès que le 3B Control Agent sera connecté.</p>}
+    {!!localAlbert?.models?.length&&<p className="apex-runtime-detail"><strong>LLM :</strong> {localAlbert.models.slice(0,8).join(' · ')}</p>}
+    {!!localAlbert?.modules?.length&&<p className="apex-runtime-detail"><strong>Modules :</strong> {localAlbert.modules.join(' · ')}</p>}
+   </div>
+   <div className="apex-block">
+    <div className="apex-block-title"><span>PONT LOCAL</span><strong>{online?'AGENT CONNECTÉ':'AGENT OFFLINE'}</strong></div>
+    <p className="apex-empty">{online?'Le Control Agent peut maintenant certifier l’installation ALBERT locale, ses modèles et son API sans donner de terminal libre au modèle.':'Aucune modification Windows n’est revendiquée tant que le PC ne remonte pas sa télémétrie.'}</p>
+   </div>
   </div>
 
   <div className="apex-columns">
