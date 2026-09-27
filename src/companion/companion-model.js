@@ -29,6 +29,8 @@ export const DEFAULT_COMPANION_PREFS = Object.freeze({
   quiet: true,
   batterySaver: true,
   reducedPresence: false,
+  androidOverlayEnabled: false,
+  iosLiveActivityEnabled: false,
 });
 
 export function sanitizeCompanionPrefs(value = {}) {
@@ -37,6 +39,8 @@ export function sanitizeCompanionPrefs(value = {}) {
     quiet: value.quiet !== false,
     batterySaver: value.batterySaver !== false,
     reducedPresence: value.reducedPresence === true,
+    androidOverlayEnabled: value.androidOverlayEnabled === true,
+    iosLiveActivityEnabled: value.iosLiveActivityEnabled === true,
   };
 }
 
