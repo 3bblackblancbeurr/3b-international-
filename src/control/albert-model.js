@@ -1,5 +1,5 @@
 import {spaceActionValid,parseSpaceCommand,parsePanelCommand} from './albert-spaces-model.js';
-export const ALBERT_MODULES=['brief','alerts','nexus','integrations','ai','traffic','dev','health','security','projects'];
+export const ALBERT_MODULES=['apex','brief','alerts','nexus','integrations','ai','traffic','dev','health','security','projects'];
 export const ALBERT_THEMES=['cyan','violet','gold'];
 // Shared server/client contract: no scripts, URLs, permissions or PC commands.
 export function validateAlbertActions(value){
@@ -35,7 +35,7 @@ export function parseAlbertLocal(text,workspace){
  if(q==='reduis les animations')return [{type:'motion',value:false}];
  if(q==='active les animations')return [{type:'motion',value:true}];
  const panel=parsePanelCommand(text,workspace);if(panel)return panel;
- const aliases={brief:'brief',alertes:'alerts',nexus:'nexus',integrations:'integrations',ia:'ai',radar:'traffic',developpement:'dev',sante:'health',securite:'security',projets:'projects'};
+ const aliases={apex:'apex','apex os':'apex','albert apex':'apex',brief:'brief',alertes:'alerts',nexus:'nexus',integrations:'integrations',ia:'ai',radar:'traffic',developpement:'dev',sante:'health',securite:'security',projets:'projects'};
  const module=q.match(/^(affiche|masque|ouvre) (?:le |les |la |module )?(.+)$/);
  return module&&aliases[module[2]]?[{type:'module',id:aliases[module[2]],visible:module[1]!=='masque'}]:null;
 }
