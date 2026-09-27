@@ -36,11 +36,13 @@ for (const line of diff.split("\n")) {
     violations.push(`${file}: new hard-coded color; use a --3b-* token`);
   }
 
-  if (/\bborder-radius\s*:\s*(?!var\()/i.test(added)) {
+  const radiusMatch = added.match(/\bborder-radius\s*:\s*([^;}]+)/i);
+  if (radiusMatch && !radiusMatch[1].trim().startsWith("var(")) {
     violations.push(`${file}: new literal border-radius; use a Gold Master radius token`);
   }
 
-  if (/\bbox-shadow\s*:\s*(?!var\()/i.test(added)) {
+  const shadowMatch = added.match(/\bbox-shadow\s*:\s*([^;}]+)/i);
+  if (shadowMatch && !shadowMatch[1].trim().startsWith("var(")) {
     violations.push(`${file}: new literal box-shadow; use a Gold Master material/shadow token`);
   }
 
