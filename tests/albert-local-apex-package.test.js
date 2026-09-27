@@ -9,6 +9,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('local APEX installer is signature-gated, reversible and does not overwrite the legacy launcher',()=>{
  const source=read('scripts/install-albert-apex-v2.mjs');
  assert.match(source,/ALBERT_MAX_RUNTIME/);
+ assert.match(source,/PACKAGE_VERSION='2\.1\.0'/);
  assert.match(source,/python_venv_missing/);
  assert.match(source,/albert_launcher_signature_missing/);
  assert.match(source,/Installation refusée: signature ALBERT non reconnue/);
