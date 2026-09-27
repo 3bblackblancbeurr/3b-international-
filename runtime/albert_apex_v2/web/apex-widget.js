@@ -12,6 +12,10 @@
     <article><small>PROFIL</small><strong data-k="profile">—</strong></article>
     <article><small>GPU</small><strong data-k="gpu">—</strong></article>
     <article><small>MODÈLES</small><strong data-k="models">—</strong></article>
+    <article><small>INTENTION</small><strong data-k="intent">—</strong></article>
+    <article><small>ÉTAT TÂCHE</small><strong data-k="taskState">—</strong></article>
+    <article><small>DERNIER OUTIL</small><strong data-k="tool">—</strong></article>
+    <article><small>DOCTOR</small><strong data-k="doctor">—</strong></article>
    </div>
    <div class="aax-switches" data-group="mode">
     <button>AUTO</button><button>LOCAL</button><button>HYBRID</button><button>INTERNET</button>
@@ -25,11 +29,11 @@
    </div>
    <details><summary>Constitution APEX</summary><ol class="aax-constitution"></ol></details>
    <details><summary>Modèles locaux</summary><div class="aax-model-list">Aucun modèle détecté.</div></details>
-   <footer><button class="aax-stop" type="button">STOP ALBERT</button><span>Fail-closed · preuves avant succès</span></footer>
+   <footer><button class="aax-stop" type="button">STOP ALBERT</button><button class="aax-doctor" type="button">DOCTOR</button><button class="aax-session" type="button">NOUVELLE SESSION</button><span>Fail-closed · preuves avant succès</span></footer>
   </section>`;
  document.body.appendChild(root);
  const panel=root.querySelector('.aax-panel'),orb=root.querySelector('.aax-orb'),close=root.querySelector('.aax-close');
- const status=root.querySelector('.aax-status'),stop=root.querySelector('.aax-stop');
+ const status=root.querySelector('.aax-status'),stop=root.querySelector('.aax-stop'),doctorButton=root.querySelector('.aax-doctor'),sessionButton=root.querySelector('.aax-session');
  let last=null,timer=0;
  const json=async(path,body)=>{
   const response=await fetch(API+path,{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined,cache:'no-store'});
@@ -50,6 +54,9 @@
   set('models',Array.isArray(s.models)?String(s.models.length):'0');
   set('tasks',String(s.tasks?.running||0)+' actives');
   set('verified',String(s.tasks?.verified||0)+' vérifiées');
+  set('intent',s.session?.currentIntent?String(s.session.currentIntent).slice(0,42):'—');
+  set('taskState',s.session?.taskState||'idle');
+  set('tool',s.session?.lastTool||'—');
   active('mode',s.mode);active('profile',s.resource?.profile);
   const rules=root.querySelector('.aax-constitution');rules.innerHTML='';
   (s.constitution?.principles||[]).forEach(rule=>{const li=document.createElement('li');li.textContent=rule;rules.appendChild(li);});
@@ -60,7 +67,7 @@
  async function refresh(){
   try{render(await json('/status'));}catch{
    status.className='aax-status bad';status.querySelector('span').textContent='CORE LOCAL HORS LIGNE';
-   set('mode','—');set('profile','—');set('gpu','—');set('models','—');
+   set('mode','—');set('profile','—');set('gpu','—');set('models','—');set('intent','—');set('taskState','—');set('tool','—');set('doctor','—');
   }
  }
  orb.addEventListener('click',()=>{panel.hidden=false;orb.hidden=true;refresh();});
@@ -68,6 +75,8 @@
  root.querySelectorAll('[data-group="mode"] button').forEach(button=>button.addEventListener('click',async()=>{try{await json('/settings/mode',{mode:button.textContent});await refresh();}catch{}}));
  root.querySelectorAll('[data-group="profile"] button').forEach(button=>button.addEventListener('click',async()=>{try{await json('/settings/resource',{resource_profile:button.textContent});await refresh();}catch{}}));
  stop.addEventListener('click',async()=>{try{await json(last?.kill_switch?'/core/resume':'/core/stop',{});await refresh();}catch{}});
+ doctorButton.addEventListener('click',async()=>{try{const data=await json('/doctor');set('doctor',String(data.doctor?.state||'—').toUpperCase());}catch{set('doctor','ERREUR');}});
+ sessionButton.addEventListener('click',async()=>{try{await json('/session/reset',{});await refresh();}catch{}});
  timer=window.setInterval(()=>{if(!panel.hidden)refresh();},5000);
  window.addEventListener('beforeunload',()=>window.clearInterval(timer),{once:true});
 })();
