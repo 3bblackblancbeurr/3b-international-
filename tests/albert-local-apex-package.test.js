@@ -39,6 +39,10 @@ test('local APEX package implements sequential evidence-gated orchestration',()=
  assert.match(core,/class ModelRegistry/);
  assert.match(core,/class ResourceGovernor/);
  assert.match(core,/class ApexRuntime/);
+ assert.match(core,/def create_skill/);
+ assert.match(core,/def qualify_skill/);
+ assert.match(core,/def ambient_inbox/);
+ assert.match(core,/def distill_session/);
  assert.match(core,/Completion refusée: EVIDENCE non atteinte/);
  assert.match(core,/Completion refusée: preuve incomplète/);
  assert.match(core,/shell=False/);
@@ -67,6 +71,11 @@ test('local APEX API is localhost-only and exposes no arbitrary command executio
  assert.match(server,/\/action\/propose/);
  assert.match(server,/\/core\/stop/);
  assert.match(server,/\/core\/resume/);
+ assert.match(server,/\/inbox/);
+ assert.match(server,/\/needs/);
+ assert.match(server,/\/skill\/create/);
+ assert.match(server,/\/skill\/qualify/);
+ assert.match(server,/\/session\/distill/);
  assert.doesNotMatch(server,/subprocess|os\.system|shell=True|eval\(/);
 });
 
