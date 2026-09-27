@@ -42,10 +42,10 @@ test('mobile Command OS surfaces whether the paired PC starts automatically',()=
 });
 
 
-test('agent 1.3 inventories Windows disks and NVIDIA hardware without arbitrary shell input',()=>{
+test('agent 1.3 inventories mounted Windows volumes and NVIDIA hardware without arbitrary shell input',()=>{
  const source=read('scripts/threeb-control-agent.mjs');
- assert.match(source,/Win32_LogicalDisk/);
- assert.match(source,/Get-PhysicalDisk/);
+ assert.match(source,/statfsSync/);
+ assert.match(source,/String\.fromCharCode/);
  assert.match(source,/nvidia-smi/);
  assert.match(source,/storage_inventory:true/);
  assert.match(source,/gpu_telemetry:true/);
