@@ -127,6 +127,8 @@ function patchDesktopShortcut(root){
  fs.mkdirSync(data,{recursive:true});
  const temp=path.join(data,'shortcut_patch.vbs');
  const launcher=path.join(root,'START_ALBERT_APEX_OS_V2.bat');
+ const hiddenLauncher=path.join(root,'START_ALBERT_APEX_OS_V2.vbs');
+ const wscript=path.join(process.env.WINDIR||'C:\\Windows','System32','wscript.exe');
  const icon=firstExisting([
   path.join(root,'branding','ALBERT_MAX.ico'),
   path.join(root,'assets','albert-desktop.ico')
@@ -136,7 +138,8 @@ function patchDesktopShortcut(root){
   'Dim shell, link',
   'Set shell = CreateObject("WScript.Shell")',
   'Set link = shell.CreateShortcut("'+vbsString(shortcut)+'")',
-  'link.TargetPath = "'+vbsString(launcher)+'"',
+  'link.TargetPath = "'+vbsString(fs.existsSync(wscript)?wscript:hiddenLauncher)+'"',
+  ...(fs.existsSync(wscript)?['link.Arguments = "'+vbsString(hiddenLauncher)+'"']:[]),
   'link.WorkingDirectory = "'+vbsString(root)+'"',
   'link.Description = "ALBERT APEX OS V2"'
  ];
@@ -178,6 +181,16 @@ function launcherContent(sig){
   'endlocal'
  ].join('\r\n')+'\r\n';
 }
+function hiddenLauncherContent(root){
+ const batch=path.join(root,'START_ALBERT_APEX_OS_V2.bat');
+ return[
+  'Option Explicit',
+  'Dim shell, command',
+  'Set shell = CreateObject("WScript.Shell")',
+  'command = Chr(34) & "'+vbsString(batch)+'" & Chr(34)',
+  'shell.Run command, 0, False'
+ ].join('\r\n')+'\r\n';
+}
 function install(){
  assertSource();
  const found=findRuntime();
@@ -206,7 +219,9 @@ function install(){
   ui_backup:ui.backup?path.relative(root,ui.backup):null
  },null,2),'utf8');
  const launcher=path.join(root,'START_ALBERT_APEX_OS_V2.bat');
+ const hiddenLauncher=path.join(root,'START_ALBERT_APEX_OS_V2.vbs');
  fs.writeFileSync(launcher,launcherContent(found.signature),'utf8');
+ fs.writeFileSync(hiddenLauncher,hiddenLauncherContent(root),'utf8');
  const shortcut=patchDesktopShortcut(root);
  const installPath=path.join(data,'install.json');
  const installMeta=JSON.parse(fs.readFileSync(installPath,'utf8'));
@@ -239,6 +254,7 @@ async function status(){
   installed,
   version:installed?JSON.parse(fs.readFileSync(path.join(root,'apex_v2','manifest.json'),'utf8')).version:null,
   launcher_present:Boolean(root&&fs.existsSync(path.join(root,'START_ALBERT_APEX_OS_V2.bat'))),
+  hidden_launcher_present:Boolean(root&&fs.existsSync(path.join(root,'START_ALBERT_APEX_OS_V2.vbs'))),
   ui_injected:Boolean(ui.html&&ui.html.includes(HEAD_MARK)&&ui.html.includes(BODY_MARK)),
   shortcut_present:Boolean(shortcutCandidates().some(value=>fs.existsSync(value))),
   sidecar_online:await sidecarOnline()
@@ -258,6 +274,7 @@ async function remove(){
  fs.mkdirSync(path.dirname(backup),{recursive:true});
  fs.renameSync(target,backup);
  fs.rmSync(path.join(root,'START_ALBERT_APEX_OS_V2.bat'),{force:true});
+ fs.rmSync(path.join(root,'START_ALBERT_APEX_OS_V2.vbs'),{force:true});
  return{removed:true,backup:path.basename(backup)};
 }
 
