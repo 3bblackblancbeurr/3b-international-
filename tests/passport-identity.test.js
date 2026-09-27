@@ -5,7 +5,6 @@ import {PASSPORT_COUNTRIES,passportFromProfile,passportInitials} from '../src/pa
 
 const UID='123e4567-e89b-12d3-a456-426614174000';
 const PUBLIC_ID='8f501f17-07f0-4edc-9cf1-1be8bcb9d507';
-const PUBLIC_ID='8f501f17-07f0-4edc-9cf1-1be8bcb9d507';
 const profile=(country='Maroc')=>({
   user_id:UID,
   passport_public_id:PUBLIC_ID,
