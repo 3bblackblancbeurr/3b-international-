@@ -160,7 +160,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				A3B1000A0000000000000001 /* PBXTargetDependency */,
 			);
 			name = CompanionWidget;
 			productName = CompanionWidget;
@@ -179,6 +178,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				A3B1000A0000000000000001 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
