@@ -23,6 +23,7 @@ import AlbertSpaces from './AlbertSpaces.jsx';
 import {AlbertSpacesProvider,useAlbertSpaces} from './AlbertSpacesContext.jsx';
 import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
 import {validateAlbertActions} from './albert-model.js';
+import {SPACE_ACTIONS} from './albert-spaces-model.js';
 import CommandSearchResults from './CommandSearchResults.jsx';
 import './control-center.css';
 
@@ -175,8 +176,8 @@ function ControlCenterContent({goTo}){
  const applyAlbertActions=actions=>{
   const accepted=validateAlbertActions(actions);
   if(!accepted.length)return;
-  if(accepted.some(a=>['space_create','panel_add','panel_resize','task_add'].includes(a.type)))composed.apply(accepted);
-  setAlbertHistory(previous=>[...previous.slice(-19),{hiddenModules,focus,compactMode,reducedLocal,albertTheme,spaces:accepted.some(a=>['space_create','panel_add','panel_resize','task_add'].includes(a.type))?composed.state:null}]);
+  if(accepted.some(a=>SPACE_ACTIONS.includes(a.type)))composed.apply(accepted);
+  setAlbertHistory(previous=>[...previous.slice(-19),{hiddenModules,focus,compactMode,reducedLocal,albertTheme,spaces:accepted.some(a=>SPACE_ACTIONS.includes(a.type))?composed.state:null}]);
   accepted.forEach(action=>{
    if(action.type==='module')setHiddenModules(current=>({...current,[action.id]:!action.visible}));
    if(action.type==='theme')setAlbertTheme(action.value);

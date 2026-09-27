@@ -7,6 +7,7 @@
 - Grille 12 colonnes, largeur 3–12, hauteur 200–800 px, déplacement, duplication, isolation, panneau détaché dans une fenêtre modale accessible. Le détachement n'ouvre pas une fenêtre du système d'exploitation.
 - Une collection de tâches par espace : les vues planning et priorités partagent réellement leurs échéances.
 - Composition locale immédiate : « espace marque », « espace semaine », « espace recherche », « ajoute un budget », « ajoute une tâche : Préparer le lancement ».
+- Contrôle local contextuel sans appel IA : « agrandis le planning », « réduis les notes », « duplique le budget », « mets en premier les documents ». Les titres personnalisés sont reconnus ; en cas de doublon, Albert demande un titre distinct au lieu de deviner. Les budgets copiés sont indépendants, les vues de tâches restent reliées à la même liste.
 - Propositions IA validées côté serveur et client : création d'espace, ajout de panneau, changement de largeur, ajout de tâche, plus les commandes d'interface précédentes.
 - Réponse progressive via SSE. Les actions ne sont appliquées qu'après réception et validation de la réponse complète. Interruption et déconnexion annulent la demande côté client.
 - Mémoire limitée aux 12 derniers messages, activable/désactivable. Seul l'espace actif est envoyé à l'IA, hors mode privé.
