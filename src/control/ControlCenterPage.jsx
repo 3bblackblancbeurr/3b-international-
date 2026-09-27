@@ -643,7 +643,7 @@ function ControlCenterContent({goTo}){
    {data&&!error&&<ModuleBoundary label="Espaces momentanément indisponibles"><AlbertSpaces privacyMode={privacyMode} reduced={reducedLocal}/></ModuleBoundary>}
    {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
    <AlbertModules>
-   {isVisible('apex')&&<AlbertModule id="apex" label="ALBERT APEX OS"><ModuleBoundary label="APEX OS momentanément indisponible"><AlbertApexPanel online={primaryOnline} runtime={runtime} privacyMode={privacyMode}/></ModuleBoundary></AlbertModule>}
+   {isVisible('apex')&&<AlbertModule id="apex" label="ALBERT APEX OS"><ModuleBoundary label="APEX OS momentanément indisponible"><AlbertApexPanel online={primaryOnline} runtime={runtime} privacyMode={privacyMode} externalEvents={events}/></ModuleBoundary></AlbertModule>}
    {isVisible('brief')&&<AlbertModule id="brief" label="Brief"><ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary></AlbertModule>}
 
    {isVisible('alerts')&&<AlbertModule id="alerts" label="Attention"><ModuleBoundary label="Centre de notifications momentanément indisponible"><AlertCenterPanel alerts={alerts} events={events}/></ModuleBoundary></AlbertModule>}
