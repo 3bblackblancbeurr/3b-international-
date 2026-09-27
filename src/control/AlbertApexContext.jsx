@@ -2,7 +2,7 @@ import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} 
 import {
  ALBERT_OPERATION_MODES,ALBERT_RESOURCE_PROFILES,
  compileAlbertSpec,compileAlbertTaskGraph,createAlbertEvent,
- createApexState,normalizeApexState,inspectAlbertStrategy,
+ createApexState,normalizeApexState,inspectAlbertStrategy,assessAlbertIntentShift,supersedeAlbertForeground,
  evaluateCompletion,createEvidenceBundle,advanceAlbertGraph,verifyAlbertGraphPhase
 } from './albert-apex-core.js';
 import {ambientInbox} from './albert-apex-services.js';
@@ -81,13 +81,35 @@ export function AlbertApexProvider({children}){
    error:''
   };
   active.current.set(record.id,true);
-  setState(s=>({
-   ...s,
-   tasks:[...s.tasks,record].slice(-60),
-   history:[...s.history,{intent:record.intent,status:'running',at:record.startedAt}].slice(-80),
-   session:{...s.session,taskIds:[...new Set([...(s.session.taskIds||[]),record.id])]},
-   events:[...s.events,createAlbertEvent('task.started',{id:record.id,kind:spec.kind,strategy:strategy.state})].slice(-100)
-  }));
+  setState(s=>{
+   const previousIntent=s.session.currentIntent||'';
+   const intentShift=assessAlbertIntentShift(previousIntent,record.intent);
+   const previousTaskId=s.session.currentTaskId||null;
+   const previousTasks=supersedeAlbertForeground(s.tasks,previousTaskId,intentShift);
+   if(intentShift.changed&&previousTaskId)active.current.delete(previousTaskId);
+   const intentEvent=intentShift.changed
+    ?createAlbertEvent('intent.changed',{from:previousIntent.slice(0,240),to:record.intent.slice(0,240),confidence:intentShift.confidence},'attention')
+    :null;
+   return{
+    ...s,
+    tasks:[...previousTasks,record].slice(-60),
+    history:[...s.history,{intent:record.intent,status:'running',at:record.startedAt}].slice(-80),
+    session:{
+     ...s.session,
+     taskIds:[...new Set([...(s.session.taskIds||[]),record.id])],
+     currentTaskId:record.id,
+     previousIntent:previousIntent||s.session.previousIntent||'',
+     currentIntent:record.intent,
+     intentConfidence:intentShift.confidence,
+     taskState:'running'
+    },
+    events:[
+     ...s.events,
+     ...(intentEvent?[intentEvent]:[]),
+     createAlbertEvent('task.started',{id:record.id,kind:spec.kind,strategy:strategy.state})
+    ].slice(-100)
+   };
+  });
   return record.id;
  },[state.constitution,state.history]);
 
@@ -96,11 +118,30 @@ export function AlbertApexProvider({children}){
  },[]);
 
  const progressTask=useCallback((taskId,label,phase='EXECUTE')=>{
-  setState(s=>({...s,tasks:s.tasks.map(t=>{
-   if(t.id!==taskId)return t;
-   const graph=advanceAlbertGraph(t.graph,phase);
-   return {...t,graph,progress:{label:String(label||'En cours').slice(0,240),phase,at:new Date().toISOString()}};
-  })}));
+  setState(s=>({
+   ...s,
+   tasks:s.tasks.map(t=>{
+    if(t.id!==taskId)return t;
+    const graph=advanceAlbertGraph(t.graph,phase);
+    return {...t,graph,progress:{label:String(label||'En cours').slice(0,240),phase,at:new Date().toISOString()}};
+   }),
+   session:s.session.currentTaskId===taskId?{...s.session,taskState:'running:'+String(phase).toLowerCase()}:s.session
+  }));
+ },[]);
+
+ const recordToolResult=useCallback((taskId,{tool='',result='',ok=true}={})=>{
+  const safeTool=String(tool||'').slice(0,160);
+  const safeResult=String(result||'').slice(0,1200);
+  setState(s=>({
+   ...s,
+   session:s.session.currentTaskId===taskId?{
+    ...s.session,
+    lastTool:safeTool,
+    lastResult:safeResult,
+    taskState:ok?'running':'tool-error'
+   }:s.session,
+   events:[...s.events,createAlbertEvent(ok?'tool.completed':'tool.failed',{id:taskId,tool:safeTool,result:safeResult},ok?'quiet':'attention')].slice(-100)
+  }));
  },[]);
 
  const completeTask=useCallback((taskId,evidenceInput={})=>{
@@ -121,6 +162,11 @@ export function AlbertApexProvider({children}){
    return{
     ...s,tasks,
     history:[...s.history,{intent:current?.intent||taskId,status:current?.status||'review',at:new Date().toISOString()}].slice(-80),
+    session:s.session.currentTaskId===taskId?{
+     ...s.session,
+     taskState:current?.status||'review',
+     lastResult:current?.completion?.complete?'Vérification complète.':'Preuves incomplètes.'
+    }:s.session,
     events:[...s.events,createAlbertEvent(current?.status==='verified'?'task.verified':'task.review',{id:taskId})].slice(-100)
    };
   });
@@ -136,6 +182,7 @@ export function AlbertApexProvider({children}){
     return{...t,graph,status:'failed',endedAt:new Date().toISOString(),error:message,progress:{label:'Échec',phase:'FAILED',at:new Date().toISOString()}};
    }),
    history:[...s.history,{intent:s.tasks.find(t=>t.id===taskId)?.intent||taskId,status:'failed',at:new Date().toISOString()}].slice(-80),
+   session:s.session.currentTaskId===taskId?{...s.session,taskState:'failed',lastResult:message}:s.session,
    events:[...s.events,createAlbertEvent('task.failed',{id:taskId,error:message},'critical')].slice(-100)
   }));
  },[]);
@@ -146,7 +193,9 @@ export function AlbertApexProvider({children}){
    if(t.id!==taskId||!['running','review'].includes(t.status))return t;
    const graph={...t.graph,tasks:t.graph.tasks.map(node=>node.status==='running'?{...node,status:'cancelled',endedAt:new Date().toISOString(),error:String(reason).slice(0,500)}:node)};
    return{...t,graph,status:'cancelled',endedAt:new Date().toISOString(),error:String(reason).slice(0,500),progress:{label:'Annulé',phase:'CANCELLED',at:new Date().toISOString()}};
-  }),events:[...s.events,createAlbertEvent('task.cancelled',{id:taskId})].slice(-100)}));
+  }),
+  session:s.session.currentTaskId===taskId?{...s.session,taskState:'cancelled',lastResult:String(reason).slice(0,500)}:s.session,
+  events:[...s.events,createAlbertEvent('task.cancelled',{id:taskId})].slice(-100)}));
  },[]);
 
  const killAll=useCallback(()=>{
@@ -155,12 +204,27 @@ export function AlbertApexProvider({children}){
    if(!['running','review'].includes(t.status))return t;
    const graph={...t.graph,tasks:t.graph.tasks.map(node=>node.status==='running'?{...node,status:'cancelled',endedAt:new Date().toISOString(),error:'STOP ALBERT'}:node)};
    return{...t,graph,status:'cancelled',endedAt:new Date().toISOString(),error:'STOP ALBERT'};
-  }),events:[...s.events,createAlbertEvent('kill-switch.activated',{},'critical')].slice(-100)}));
+  }),
+  session:{...s.session,currentTaskId:null,taskState:'stopped',lastResult:'STOP ALBERT'},
+  events:[...s.events,createAlbertEvent('kill-switch.activated',{},'critical')].slice(-100)}));
  },[]);
- const resume=useCallback(()=>setState(s=>({...s,killSwitch:false,events:[...s.events,createAlbertEvent('kill-switch.released',{},'attention')].slice(-100)})),[]);
- const resetSession=useCallback(()=>setState(s=>({...s,session:{...s.session,id:'session-'+Date.now().toString(36),startedAt:new Date().toISOString(),endedAt:null,taskIds:[]},needYou:[],events:[...s.events,createAlbertEvent('session.started')].slice(-100)})),[]);
+ const resume=useCallback(()=>setState(s=>({...s,killSwitch:false,session:{...s.session,taskState:s.session.currentTaskId?'running':'idle'},events:[...s.events,createAlbertEvent('kill-switch.released',{},'attention')].slice(-100)})),[]);
+ const resetSession=useCallback(()=>setState(s=>({...s,session:{
+  ...s.session,
+  id:'session-'+Date.now().toString(36),
+  startedAt:new Date().toISOString(),
+  endedAt:null,
+  taskIds:[],
+  currentTaskId:null,
+  currentIntent:'',
+  previousIntent:'',
+  intentConfidence:0,
+  taskState:'idle',
+  lastTool:'',
+  lastResult:''
+ },needYou:[],events:[...s.events,createAlbertEvent('session.started')].slice(-100)})),[]);
 
- const value=useMemo(()=>({state,setMode,setResourceProfile,emit,ingestEvents,needUser,resolveNeed,beginTask,patchTask,progressTask,completeTask,failTask,cancelTask,killAll,resume,resetSession}),[state,setMode,setResourceProfile,emit,ingestEvents,needUser,resolveNeed,beginTask,patchTask,progressTask,completeTask,failTask,cancelTask,killAll,resume,resetSession]);
+ const value=useMemo(()=>({state,setMode,setResourceProfile,emit,ingestEvents,needUser,resolveNeed,beginTask,patchTask,progressTask,recordToolResult,completeTask,failTask,cancelTask,killAll,resume,resetSession}),[state,setMode,setResourceProfile,emit,ingestEvents,needUser,resolveNeed,beginTask,patchTask,progressTask,recordToolResult,completeTask,failTask,cancelTask,killAll,resume,resetSession]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
