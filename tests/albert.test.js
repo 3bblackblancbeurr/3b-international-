@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseAlbertLocal,validateAlbertActions} from '../src/control/albert-model.js';
-import {createCommandIntegrations} from '../server/command-integrations.js';
+import {buildAlbertTaskContext,createCommandIntegrations} from '../server/command-integrations.js';
 test('Albert local commands respect negation and require an exact intention',()=>{
  assert.equal(parseAlbertLocal('ne masque pas les projets'),null);
  assert.equal(parseAlbertLocal('comment activer le mode focus ?'),null);
@@ -36,6 +36,26 @@ test('Malformed AI output and unsafe mixed proposals fail closed',async()=>{
   const res=await fixture(output).handle(request());assert.equal(res.status,502);assert.equal((await res.json()).answer,undefined);
  }
 });
+test('Albert task state breaks stale intent when the owner changes subject',()=>{
+ const memory=[
+  {role:'user',text:'Envoie un message sur Facebook'},
+  {role:'assistant',text:'Facebook n’est pas configuré.'}
+ ];
+ const task=buildAlbertTaskContext('Télécharge les réseaux sociaux en toi',memory);
+ assert.equal(task.task_state,'new_intent');
+ assert.equal(task.current_intent,'Télécharge les réseaux sociaux en toi');
+ assert.equal(task.previous_intent,'Envoie un message sur Facebook');
+ assert.equal(task.last_result,'Facebook n’est pas configuré.');
+ assert.equal(task.last_tool,null);
+ assert.ok(task.intent_confidence>=0.9);
+});
+
+test('Albert task state allows explicit continuation without carrying it into unrelated prompts',()=>{
+ const memory=[{role:'user',text:'Affiche mes projets'},{role:'assistant',text:'Voici les projets.'}];
+ assert.equal(buildAlbertTaskContext('Continue et agrandis le planning',memory).task_state,'continuation');
+ assert.equal(buildAlbertTaskContext('Ouvre les intégrations',memory).task_state,'new_intent');
+});
+
 test('Albert retains server-side owner authentication',async()=>{
  const res=await fixture('{}','33333333-3333-4333-8333-333333333333').handle(request());assert.equal(res.status,403);
 });
