@@ -1,20 +1,40 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
+import {
+  goldMasterTokens,
+  GOLD_MASTER_STATES,
+  GOLD_MASTER_VERSION,
+} from "./tokens.js";
+
+function getStateClass(state) {
+  if (!GOLD_MASTER_STATES.includes(state) || state === "normal") return "";
+  return `gm-state--${state}`;
+}
+
+function stateProps(state) {
+  return {
+    "data-state": state,
+    className: getStateClass(state),
+  };
+}
 
 export function Button({
   type = "button",
   variant = "champagne",
   size = "md",
+  state = "normal",
   loading = false,
   disabled = false,
   className = "",
   children,
   ...props
 }) {
+  const visualState = loading ? "loading" : disabled ? "disabled" : state;
   return (
     <button
       type={type}
-      className={`gm-button gm-button--${variant} gm-button--${size} ${className}`.trim()}
+      className={`gm-button gm-button--${variant} gm-button--${size} ${getStateClass(visualState)} ${className}`.trim()}
+      data-state={visualState}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}
@@ -24,9 +44,13 @@ export function Button({
   );
 }
 
-export function Card({ hero = false, className = "", children, ...props }) {
+export function Card({ hero = false, state = "normal", className = "", children, ...props }) {
   return (
-    <section className={`gm-card ${hero ? "gm-card--hero" : ""} ${className}`.trim()} {...props}>
+    <section
+      className={`gm-card ${hero ? "gm-card--hero" : ""} ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
+      {...props}
+    >
       {children}
     </section>
   );
@@ -44,16 +68,28 @@ export function CardFooter({ className = "", ...props }) {
   return <div className={`gm-card__footer ${className}`.trim()} {...props} />;
 }
 
-export function Badge({ tone = "neutral", className = "", ...props }) {
-  return <span className={`gm-badge gm-badge--${tone} ${className}`.trim()} {...props} />;
+export function Badge({ tone = "neutral", state = "normal", className = "", ...props }) {
+  return (
+    <span
+      className={`gm-badge gm-badge--${tone} ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
+      {...props}
+    />
+  );
 }
 
-export function Progress({ value = 0, tone = "champagne", label = "Progression", className = "" }) {
+export function Progress({
+  value = 0,
+  tone = "champagne",
+  state = "normal",
+  label = "Progression",
+  className = "",
+}) {
   const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
-
   return (
     <div
-      className={`gm-progress gm-progress--${tone} ${className}`.trim()}
+      className={`gm-progress gm-progress--${tone} ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
       role="progressbar"
       aria-label={label}
       aria-valuemin="0"
@@ -66,9 +102,9 @@ export function Progress({ value = 0, tone = "champagne", label = "Progression",
   );
 }
 
-export function Stat({ label, value, detail, className = "" }) {
+export function Stat({ label, value, detail, state = "normal", className = "" }) {
   return (
-    <div className={`gm-stat ${className}`.trim()}>
+    <div className={`gm-stat ${getStateClass(state)} ${className}`.trim()} data-state={state}>
       {label ? <div className="gm-stat__label">{label}</div> : null}
       <div className="gm-stat__value">{value}</div>
       {detail ? <div className="gm-stat__detail">{detail}</div> : null}
@@ -76,14 +112,25 @@ export function Stat({ label, value, detail, className = "" }) {
   );
 }
 
-export function Tabs({ items = [], value, onChange = () => {}, label = "Navigation", className = "" }) {
+export function Tabs({
+  items = [],
+  value,
+  onChange = () => {},
+  state = "normal",
+  label = "Navigation",
+  className = "",
+}) {
   return (
-    <div className={`gm-tabs ${className}`.trim()} role="tablist" aria-label={label}>
+    <div
+      className={`gm-tabs ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
+      role="tablist"
+      aria-label={label}
+    >
       {items.map((item) => {
         const itemValue = typeof item === "string" ? item : item.value;
         const itemLabel = typeof item === "string" ? item : item.label;
         const active = itemValue === value;
-
         return (
           <button
             key={itemValue}
@@ -101,10 +148,17 @@ export function Tabs({ items = [], value, onChange = () => {}, label = "Navigati
   );
 }
 
-export function Toast({ tone = "neutral", role = "status", className = "", ...props }) {
+export function Toast({
+  tone = "neutral",
+  state = "normal",
+  role = "status",
+  className = "",
+  ...props
+}) {
   return (
     <div
-      className={`gm-toast gm-toast--${tone} ${className}`.trim()}
+      className={`gm-toast gm-toast--${tone} ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
       role={role}
       aria-live={role === "alert" ? "assertive" : "polite"}
       {...props}
@@ -112,26 +166,56 @@ export function Toast({ tone = "neutral", role = "status", className = "", ...pr
   );
 }
 
-export function Avatar({ src, alt = "", size = 48, fallback = "3B", className = "" }) {
+export function Avatar({
+  src,
+  alt = "",
+  size = 48,
+  fallback = "3B",
+  state = "normal",
+  className = "",
+}) {
   return (
-    <span className={`gm-avatar ${className}`.trim()} style={{ width: size, height: size }}>
+    <span
+      className={`gm-avatar ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
+      style={{ width: size, height: size }}
+    >
       {src ? <img src={src} alt={alt} /> : <span aria-hidden="true">{fallback}</span>}
     </span>
   );
 }
 
-export function VideoPlayer({ title = "Lecteur vidéo 3B", className = "", ...props }) {
-  return <video className={`gm-video ${className}`.trim()} aria-label={title} controls playsInline {...props} />;
+export function VideoPlayer({
+  title = "Lecteur vidéo 3B",
+  state = "normal",
+  className = "",
+  ...props
+}) {
+  return (
+    <video
+      className={`gm-video ${getStateClass(state)} ${className}`.trim()}
+      data-state={state}
+      aria-label={title}
+      controls
+      playsInline
+      {...props}
+    />
+  );
 }
 
-export function Modal({ open, title, children, onClose, className = "" }) {
+export function Modal({
+  open,
+  title,
+  state = "normal",
+  children,
+  onClose,
+  className = "",
+}) {
   useEffect(() => {
     if (!open) return undefined;
-
     const onKeyDown = (event) => {
       if (event.key === "Escape") onClose?.();
     };
-
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
@@ -147,7 +231,8 @@ export function Modal({ open, title, children, onClose, className = "" }) {
       }}
     >
       <section
-        className={`gm-modal ${className}`.trim()}
+        className={`gm-modal ${getStateClass(state)} ${className}`.trim()}
+        data-state={state}
         role="dialog"
         aria-modal="true"
         aria-label={title || "Fenêtre 3B"}
@@ -159,4 +244,4 @@ export function Modal({ open, title, children, onClose, className = "" }) {
   );
 }
 
-export { goldMasterTokens, GOLD_MASTER_STATES, GOLD_MASTER_VERSION } from "./tokens.js";
+export { goldMasterTokens, GOLD_MASTER_STATES, GOLD_MASTER_VERSION, getStateClass, stateProps };
