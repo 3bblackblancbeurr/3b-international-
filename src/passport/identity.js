@@ -15,7 +15,7 @@ const safeNumber = value => {
   return Number.isFinite(number) && number >= 0 ? number : 0;
 };
 const PUBLIC_PASSPORT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const publicPassportId = value => {
+const normalizePublicPassportId = value => {
   const id = cleanText(value, 36);
   return PUBLIC_PASSPORT_UUID.test(id) ? id.toUpperCase() : '';
 };
@@ -28,7 +28,7 @@ export function passportFromProfile(profile, user = null) {
   const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
-  const opaquePublicId = publicPassportId(profile.passport_public_id);
+  const opaquePublicId = normalizePublicPassportId(profile.passport_public_id);
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
   const version = Number(profile.passport_version);
