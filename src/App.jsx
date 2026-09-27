@@ -38,6 +38,7 @@ import "./styles/dimension.css";
 import "./styles/home-premium.css";
 import "./styles/responsive-premium.css";
 import "./styles/companion.css";
+import CompanionLayer from "./companion/CompanionLayer.jsx";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
