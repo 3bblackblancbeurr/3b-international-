@@ -13,6 +13,11 @@ test('local APEX installer is signature-gated, reversible and does not overwrite
  assert.match(source,/backups/);
  assert.match(source,/START_ALBERT_APEX_OS_V2\.bat/);
  assert.match(source,/apex_v2_removed/);
+ assert.match(source,/uiSignature/);
+ assert.match(source,/index_before_apex_v2/);
+ assert.match(source,/ALBERT_APEX_V2_HEAD/);
+ assert.match(source,/ALBERT_APEX_V2_BODY/);
+ assert.match(source,/candidate\.startsWith\(rootResolved\)/);
  assert.doesNotMatch(source,/shell\s*:\s*true/);
  assert.doesNotMatch(source,/powershell|cmd\.exe|RunAs|runas/i);
 });
@@ -30,6 +35,20 @@ test('local APEX package implements sequential evidence-gated orchestration',()=
  assert.match(core,/Completion refusée: EVIDENCE non atteinte/);
  assert.match(core,/Completion refusée: preuve incomplète/);
  assert.match(core,/shell=False/);
+});
+
+test('local APEX overlay stays inside the existing ALBERT UI and talks only to the localhost core',()=>{
+ const widget=read('runtime/albert_apex_v2/web/apex-widget.js');
+ const css=read('runtime/albert_apex_v2/web/apex-widget.css');
+ assert.match(widget,/127\.0\.0\.1:8766/);
+ assert.match(widget,/ALBERT APEX \/ LOCAL CORE/);
+ assert.match(widget,/\/settings\/mode/);
+ assert.match(widget,/\/settings\/resource/);
+ assert.match(widget,/\/core\/stop/);
+ assert.match(widget,/\/core\/resume/);
+ assert.match(css,/#albert-apex-v2-root/);
+ assert.match(css,/backdrop-filter/);
+ assert.match(css,/prefers-reduced-motion/);
 });
 
 test('local APEX API is localhost-only and exposes no arbitrary command execution route',()=>{
