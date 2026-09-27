@@ -151,7 +151,9 @@ public class ThreeBCompanionPlugin: CAPPlugin, CAPBridgedPlugin {
     @available(iOS 16.1, *)
     @MainActor private func runningActivities() -> [Activity<CompanionActivityAttributes>] {
         Activity<CompanionActivityAttributes>.activities.filter {
-            $0.activityState == .active || $0.activityState == .stale
+            if $0.activityState == .active { return true }
+            if #available(iOS 16.2, *) { return $0.activityState == .stale }
+            return false
         }.sorted { $0.id < $1.id }
     }
 

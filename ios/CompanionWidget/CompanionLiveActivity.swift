@@ -3,12 +3,18 @@ import WidgetKit
 import SwiftUI
 
 struct CompanionLiveActivity: Widget {
+    private func isStale(_ context: ActivityViewContext<CompanionActivityAttributes>) -> Bool {
+        if #available(iOS 16.2, *) { return context.isStale }
+        // The iOS 16.1 ActivityKit API has no stale-date presentation state.
+        return false
+    }
+
     private func mode(_ context: ActivityViewContext<CompanionActivityAttributes>) -> String {
-        context.isStale ? "idle" : CompanionSnapshot(mode: context.state.mode).mode
+        isStale(context) ? "idle" : CompanionSnapshot(mode: context.state.mode).mode
     }
 
     private func message(_ context: ActivityViewContext<CompanionActivityAttributes>) -> String {
-        context.isStale ? "Ouvrez 3B pour actualiser" : CompanionSnapshot.label(for: mode(context))
+        isStale(context) ? "Ouvrez 3B pour actualiser" : CompanionSnapshot.label(for: mode(context))
     }
 
     var body: some WidgetConfiguration {

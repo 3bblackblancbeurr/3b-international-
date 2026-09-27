@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCircle2, Clock3, PackageCheck, Truck } from "lucide-react";
 import { checkoutAuth } from "../loyalty/client.js";
+import { companionNotify } from "../companion/events.js";
+import { createCompanionArrivalTracker } from "../companion/progression.js";
 import "./order-panels.css";
 
 const money = (amount, currency = "eur") => new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format((amount || 0) / 100);
@@ -78,6 +80,9 @@ export function SellerOrdersPanel({ enabled }) {
   const [newCount, setNewCount] = useState(0);
   const [deviceAlerts, setDeviceAlerts] = useState(() => typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   const seenRef = useRef(null);
+  const companionArrivals = useRef(null);
+  const companionRequestGeneration = useRef(0);
+  if (!companionArrivals.current) companionArrivals.current = createCompanionArrivalTracker();
   if (seenRef.current === null && typeof window !== "undefined") seenRef.current = readSeenOrders();
 
   function signalNewOrders(nextOrders) {
@@ -85,8 +90,10 @@ export function SellerOrdersPanel({ enabled }) {
     setNewCount(pending.length);
     const seen = seenRef.current || new Set();
     const fresh = pending.filter(order => !seen.has(order.sessionId));
+    const arrivals = companionArrivals.current.observe(nextOrders.map(order => order.sessionId));
     for (const order of nextOrders) seen.add(order.sessionId);
     seenRef.current = seen; saveSeenOrders(seen);
+    if (fresh.some(order => arrivals.includes(order.sessionId))) companionNotify({ source: "seller-orders" });
     if (!fresh.length || typeof Notification === "undefined" || Notification.permission !== "granted") return;
     const first = fresh[0];
     const notification = new Notification(fresh.length === 1 ? "Nouvelle commande 3B" : `${fresh.length} nouvelles commandes 3B`, {
@@ -100,19 +107,22 @@ export function SellerOrdersPanel({ enabled }) {
 
   async function load(silent = false) {
     if (!enabled) return;
+    const generation = companionRequestGeneration.current;
     if (!silent) setState("loading");
     try {
       const data = await api("/api/shop-admin-orders");
+      if (generation !== companionRequestGeneration.current) return;
       const next = data.orders || [];
       setOrders(next); signalNewOrders(next); setState("done");
-    } catch { if (!silent) setState("error"); }
+    } catch { if (!silent && generation === companionRequestGeneration.current) setState("error"); }
   }
 
   useEffect(() => {
     if (!enabled) return;
+    companionArrivals.current = createCompanionArrivalTracker();
     load();
     const timer = window.setInterval(() => load(true), 60000);
-    return () => window.clearInterval(timer);
+    return () => { companionRequestGeneration.current += 1; window.clearInterval(timer); };
   }, [enabled]);
 
   async function enableDeviceNotifications() {

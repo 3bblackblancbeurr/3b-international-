@@ -3,20 +3,28 @@ import {authClient,memberRequest} from './client.js';
 import {EXPLORATIONS,tierFor} from '../../shared/loyalty.js';
 import {passportFromProfile} from '../passport/identity.js';
 import {createSnapshotGate,watchSession} from './session-state.js';
-import {companionReward} from '../companion/events.js';
+import {companionReward,companionCelebrate} from '../companion/events.js';
+import {createCompanionProgressionTracker} from '../companion/progression.js';
 const Context=createContext(null);
 export const useLoyalty=()=>useContext(Context);
 export function LoyaltyProvider({children}){
  const[session,setSession]=useState(null),[loading,setLoading]=useState(true),[data,setData]=useState(null),[error,setError]=useState('');
- const gate=useRef(null),sessionWatch=useRef(null),sessionFailed=useRef(false);
+ const gate=useRef(null),sessionWatch=useRef(null),sessionFailed=useRef(false),companionProgression=useRef(null);
  if(!gate.current)gate.current=createSnapshotGate();
+ if(!companionProgression.current)companionProgression.current=createCompanionProgressionTracker();
  useEffect(()=>{
   const watcher=watchSession(authClient.auth,s=>{gate.current.setUser(s?.user?.id||null);if(sessionFailed.current)setError('');sessionFailed.current=false;setSession(s);setLoading(false);},e=>{sessionFailed.current=true;setError(e?.message||'La connexion n’a pas pu être vérifiée. Réessaie.');setLoading(false);});
   sessionWatch.current=watcher;
   return()=>{watcher.stop();sessionWatch.current=null;gate.current.invalidate();};
  },[]);
  const owner=gate.current.accountTicket();
- const accept=result=>{if(gate.current.accept(result,owner)){setData(result);setError('');}return result;};
+ const applySnapshot=(result,ticket)=>{
+  const celebration=companionProgression.current.observe(result.profile,ticket);setData(result);setError('');
+  // Let the caller's earned-reward reaction enter first; the level celebration
+  // then joins the companion's bounded queue instead of being overwritten.
+  if(celebration)queueMicrotask(()=>{const current=gate.current.accountTicket();if(current.userId===ticket.userId&&current.generation===ticket.generation)companionCelebrate(celebration);});
+ };
+ const accept=result=>{if(gate.current.accept(result,owner))applySnapshot(result,owner);return result;};
  const refresh=async()=>{
   const ticket=gate.current.begin();
   if(!ticket.userId){
@@ -25,7 +33,7 @@ export function LoyaltyProvider({children}){
   }
   try{
    const result=await memberRequest('snapshot',{},ticket.userId);
-   if(gate.current.isCurrent(ticket)&&gate.current.accept(result,ticket)){setData(result);setError('');return result;}
+   if(gate.current.isCurrent(ticket)&&gate.current.accept(result,ticket)){applySnapshot(result,ticket);return result;}
   }catch(e){if(gate.current.isCurrent(ticket))setError(e?.message||'La synchronisation a échoué. Réessaie.');}
  };
  useEffect(()=>{setData(null);if(!sessionFailed.current)setError('');if(session?.user.id)refresh();},[session?.user.id]);
