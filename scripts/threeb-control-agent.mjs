@@ -118,40 +118,32 @@ function parseJson(raw){
  try{return JSON.parse(raw);}catch{return null;}
 }
 function windowsStorageInventory(){
- const script=[
-  "$ErrorActionPreference='Stop'",
-  "$volumes=@(Get-CimInstance Win32_LogicalDisk -Filter \"DriveType=3\" | ForEach-Object { [pscustomobject]@{ letter=$_.DeviceID; label=$_.VolumeName; size=[double]$_.Size; free=[double]$_.FreeSpace } })",
-  "$physical=@()",
-  "try { $physical=@(Get-PhysicalDisk | ForEach-Object { [pscustomobject]@{ name=$_.FriendlyName; media_type=[string]$_.MediaType; bus_type=[string]$_.BusType; size=[double]$_.Size; health=[string]$_.HealthStatus } }) } catch {}",
-  "[pscustomobject]@{volumes=$volumes;physical=$physical} | ConvertTo-Json -Compress -Depth 4"
- ].join('; ');
- const payload=parseJson(runFixed('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',script],3500));
- const rawVolumes=Array.isArray(payload?.volumes)?payload.volumes:(payload?.volumes?[payload.volumes]:[]);
- const rawPhysical=Array.isArray(payload?.physical)?payload.physical:(payload?.physical?[payload.physical]:[]);
- const drives=rawVolumes.map(volume=>{
-  const total=Number(volume?.size)||0;
-  const free=Number(volume?.free)||0;
-  return{
-   letter:String(volume?.letter||'').trim(),
-   label:String(volume?.label||'').trim(),
-   total_gb:roundGb(total),
-   free_gb:roundGb(free),
-   used_gb:roundGb(Math.max(0,total-free)),
-   free_percent:total>0?Math.round(free/total*100):0
-  };
- }).filter(volume=>volume.letter&&volume.total_gb>0);
- const physical_disks=rawPhysical.map(disk=>({
-  name:String(disk?.name||'').trim(),
-  media_type:String(disk?.media_type||'').trim()||'Unknown',
-  bus_type:String(disk?.bus_type||'').trim()||'Unknown',
-  total_gb:roundGb(Number(disk?.size)||0),
-  health:String(disk?.health||'').trim()||'Unknown'
- })).filter(disk=>disk.name||disk.total_gb>0);
+ const drives=[];
+ for(let code=67;code<=90;code+=1){
+  const letter=String.fromCharCode(code)+':';
+  const rootPath=letter+'\\\\';
+  try{
+   if(!fs.existsSync(rootPath))continue;
+   const stat=fs.statfsSync(rootPath);
+   const total=Number(stat.blocks)*Number(stat.bsize);
+   const free=Number(stat.bavail)*Number(stat.bsize);
+   if(!(total>0))continue;
+   drives.push({
+    letter,
+    label:'',
+    total_gb:roundGb(total),
+    free_gb:roundGb(free),
+    used_gb:roundGb(Math.max(0,total-free)),
+    free_percent:Math.round(free/total*100)
+   });
+  }catch{}
+ }
  return{
   drives,
-  physical_disks,
+  physical_disks:[],
   storage_total_gb:Math.round(drives.reduce((sum,drive)=>sum+Number(drive.total_gb||0),0)*10)/10,
-  storage_free_gb:Math.round(drives.reduce((sum,drive)=>sum+Number(drive.free_gb||0),0)*10)/10
+  storage_free_gb:Math.round(drives.reduce((sum,drive)=>sum+Number(drive.free_gb||0),0)*10)/10,
+  storage_inventory_source:'node-statfs'
  };
 }
 function fallbackStorageInventory(){
