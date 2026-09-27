@@ -4,7 +4,7 @@ import {
  ALBERT_OPERATION_MODES,ALBERT_RESOURCE_PROFILES,ALBERT_PHASES,
  createAlbertConstitution,compileAlbertSpec,compileAlbertTaskGraph,
  runnableAlbertTasks,transitionAlbertTask,advanceAlbertGraph,verifyAlbertGraphPhase,actionRisk,permissionDecision,
- routeAlbertModel,resourcePolicy,inspectAlbertStrategy,evaluateCompletion,
+ routeAlbertModel,resourcePolicy,inspectAlbertStrategy,assessAlbertIntentShift,supersedeAlbertForeground,evaluateCompletion,
  createEvidenceBundle,eventPriority,createApexState,normalizeApexState
 } from '../src/control/albert-apex-core.js';
 
@@ -80,6 +80,28 @@ test('Metacognitive supervisor detects repeated intentions and failure streaks',
  assert.equal(inspectAlbertStrategy(failures,'Autre tâche').state,'degraded');
 });
 
+test('Intent continuity distinguishes a real topic change from a close follow-up',()=>{
+ const same=assessAlbertIntentShift('Corrige le Passeport 3B','Corrige encore le Passeport 3B');
+ assert.equal(same.changed,false);
+ const changed=assessAlbertIntentShift('Corrige le Passeport 3B','Ouvre GitHub et vérifie la CI');
+ assert.equal(changed.changed,true);
+ assert.ok(changed.confidence>=0.5);
+});
+
+test('A clearly new intent cancels only the foreground task',()=>{
+ const spec=compileAlbertSpec('Corrige le Passeport 3B');
+ const graph=compileAlbertTaskGraph(spec);
+ const tasks=[
+  {id:'foreground',status:'running',graph},
+  {id:'background',status:'running',graph:compileAlbertTaskGraph(spec)}
+ ];
+ const shift=assessAlbertIntentShift('Corrige le Passeport 3B','Vérifie les e-mails importants');
+ const next=supersedeAlbertForeground(tasks,'foreground',shift);
+ assert.equal(next[0].status,'cancelled');
+ assert.equal(next[1].status,'running');
+ assert.equal(tasks[0].status,'running');
+});
+
 test('Completion contract refuses a success claim without complete evidence',()=>{
  const spec=compileAlbertSpec('Construis un module');
  let graph=compileAlbertTaskGraph(spec);
@@ -99,6 +121,19 @@ test('Event priority surfaces critical external changes without making all event
 
 test('Persisted APEX state is normalized and bounded',()=>{
  const base=createApexState();
+ assert.equal(base.version,3);
+ assert.deepEqual(
+  {
+   currentTaskId:base.session.currentTaskId,
+   currentIntent:base.session.currentIntent,
+   previousIntent:base.session.previousIntent,
+   intentConfidence:base.session.intentConfidence,
+   taskState:base.session.taskState,
+   lastTool:base.session.lastTool,
+   lastResult:base.session.lastResult
+  },
+  {currentTaskId:null,currentIntent:'',previousIntent:'',intentConfidence:0,taskState:'idle',lastTool:'',lastResult:''}
+ );
  const raw={...base,mode:'INVALID',resourceProfile:'APEX',tasks:Array(100).fill({id:'x'}),events:Array(150).fill({id:'e'}),needYou:Array(60).fill({id:'n'})};
  const clean=normalizeApexState(raw);
  assert.equal(clean.mode,'AUTO');

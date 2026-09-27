@@ -214,6 +214,42 @@ export function resourcePolicy(profile='NORMAL'){
 }
 
 const signature=value=>text(value,2000).toLowerCase().replace(/\s+/g,' ').replace(/[^a-z0-9à-ÿ ]/gi,'').slice(0,500);
+
+export function assessAlbertIntentShift(previous,current){
+ const prev=signature(previous),next=signature(current);
+ if(!next)return{changed:false,confidence:0,similarity:0,reason:'Aucune nouvelle intention exploitable.'};
+ if(!prev)return{changed:false,confidence:1,similarity:1,reason:'Première intention de la session.'};
+ if(prev===next)return{changed:false,confidence:1,similarity:1,reason:'Intention inchangée.'};
+ const tokens=value=>new Set(value.split(' ').filter(token=>token.length>1));
+ const a=tokens(prev),b=tokens(next);
+ const union=new Set([...a,...b]);
+ let intersection=0;
+ for(const token of a)if(b.has(token))intersection++;
+ const similarity=union.size?intersection/union.size:0;
+ const changed=similarity<0.35;
+ const confidence=Math.max(0,Math.min(1,changed?1-similarity:similarity));
+ return{
+  changed,
+  confidence:Number(confidence.toFixed(2)),
+  similarity:Number(similarity.toFixed(2)),
+  reason:changed?'Nouvelle intention suffisamment différente.':'Intention proche de la tâche en cours.'
+ };
+}
+
+export function supersedeAlbertForeground(tasks,currentTaskId,intentShift,reason='Nouvelle intention détectée'){
+ const list=Array.isArray(tasks)?clone(tasks):[];
+ if(!currentTaskId||!intentShift?.changed)return list;
+ const target=list.find(task=>task?.id===currentTaskId);
+ if(!target||!['running','review','waiting','queued'].includes(target.status))return list;
+ target.status='cancelled';
+ target.endedAt=now();
+ target.error=text(reason,500);
+ if(target.graph?.tasks){
+  target.graph={...target.graph,tasks:target.graph.tasks.map(node=>['running','queued','waiting','review'].includes(node.status)?{...node,status:'cancelled',endedAt:now(),error:text(reason,500)}:node)};
+ }
+ return list;
+}
+
 export function inspectAlbertStrategy(history,prompt){
  const sig=signature(prompt),recent=(Array.isArray(history)?history:[]).slice(-8);
  const same=recent.filter(item=>signature(item.intent||item.prompt||'')===sig).length;
@@ -255,13 +291,28 @@ export function createEvidenceBundle(input={}){
 }
 
 export function createAlbertSession({mode='AUTO',resourceProfile='NORMAL'}={}){
- return{id:id('session'),startedAt:now(),endedAt:null,mode:ALBERT_OPERATION_MODES.includes(mode)?mode:'AUTO',resourceProfile:ALBERT_RESOURCE_PROFILES.includes(resourceProfile)?resourceProfile:'NORMAL',summary:'',taskIds:[]};
+ return{
+  id:id('session'),
+  startedAt:now(),
+  endedAt:null,
+  mode:ALBERT_OPERATION_MODES.includes(mode)?mode:'AUTO',
+  resourceProfile:ALBERT_RESOURCE_PROFILES.includes(resourceProfile)?resourceProfile:'NORMAL',
+  summary:'',
+  taskIds:[],
+  currentTaskId:null,
+  currentIntent:'',
+  previousIntent:'',
+  intentConfidence:0,
+  taskState:'idle',
+  lastTool:'',
+  lastResult:''
+ };
 }
 
 export function createApexState(){
  const session=createAlbertSession();
  return{
-  version:2,
+  version:3,
   mode:'AUTO',
   resourceProfile:'NORMAL',
   killSwitch:false,
