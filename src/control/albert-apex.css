@@ -25,7 +25,7 @@
 .apex-mode-grid button:disabled,.apex-profile-row button:disabled{opacity:.4;cursor:not-allowed}
 .apex-mode-grid strong,.apex-profile-row strong{display:block;color:#fff;font-size:.78rem;letter-spacing:.1em;margin-bottom:6px}
 .apex-mode-grid span,.apex-profile-row span{display:block;color:#8ca0b0;font-size:.72rem;line-height:1.4}
-.apex-metrics{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.apex-metrics{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
 .apex-metric{min-height:92px;border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:14px;background:rgba(0,0,0,.2)}
 .apex-metric strong{display:block;margin:8px 0 3px;font-size:1.02rem;color:#fff}
 .apex-metric small{display:block;color:#8396a6;line-height:1.35}
