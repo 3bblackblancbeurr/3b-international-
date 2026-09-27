@@ -92,6 +92,8 @@ test('Streamed AI completes with validated proposals and limited memory',async()
  for await(const event of readEvents(response.body))received.push(event);
  assert.equal(received.at(-1).type,'complete');assert.deepEqual(received.at(-1).answer.actions,answer.actions);
  assert.equal(sent.store,false);assert.equal(sent.stream,true);assert.doesNotMatch(sent.input,/EVIL_SYSTEM/);assert.match(sent.input,/Mon projet/);
+ assert.match(sent.input,/"task_state":"new_intent"/);assert.match(sent.input,/"current_intent":"Prépare ma semaine"/);
+ assert.match(sent.instructions,/current_intent est toujours prioritaire/);assert.match(sent.instructions,/task_state vaut new_intent/);
 });
 test('Interrupted streams and unsafe completed proposals never publish complete actions',async()=>{
  const bad=JSON.stringify({text:'ok',actions:[{type:'exec',value:'evil'}]});
