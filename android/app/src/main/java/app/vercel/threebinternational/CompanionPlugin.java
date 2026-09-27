@@ -4,7 +4,6 @@ import android.app.WallpaperManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.Settings;
 
 import androidx.core.content.ContextCompat;
@@ -72,16 +71,19 @@ public class CompanionPlugin extends Plugin {
 
     @PluginMethod
     public void setMode(PluginCall call) {
+        JSObject result = new JSObject();
+        if (!Settings.canDrawOverlays(getContext())) {
+            result.put("updated", false);
+            result.put("reason", "overlay_permission_required");
+            call.resolve(result);
+            return;
+        }
+
         String mode = call.getString("mode", "idle");
         Intent intent = new Intent(getContext(), CompanionOverlayService.class);
         intent.setAction(CompanionOverlayService.ACTION_SET_MODE);
         intent.putExtra(CompanionOverlayService.EXTRA_MODE, mode);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && Settings.canDrawOverlays(getContext())) {
-            ContextCompat.startForegroundService(getContext(), intent);
-        } else {
-            getContext().startService(intent);
-        }
-        JSObject result = new JSObject();
+        ContextCompat.startForegroundService(getContext(), intent);
         result.put("updated", true);
         call.resolve(result);
     }
