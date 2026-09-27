@@ -55,9 +55,13 @@ test('Control Center status exposes audited live events',()=>{
 
 test('PC agent publishes runtime telemetry without arbitrary shell execution',()=>{
  const agent=read('scripts/threeb-control-agent.mjs');
- assert.match(agent,/VERSION='1\.3\.0'/);
- assert.match(agent,/_runtime:systemStatus\(\)/);
+ assert.match(agent,/VERSION='1\.4\.0'/);
+ assert.match(agent,/_runtime:\{\.\.\.systemStatus\(\),albert\}/);
  assert.doesNotMatch(agent,/child_process\.exec/);
+ assert.match(agent,/albertRuntimeTelemetry/);
+ assert.match(agent,/ALBERT_MAX_RUNTIME/);
+ assert.match(agent,/ollamaModels/);
+ assert.match(agent,/127\.0\.0\.1:8765/);
  assert.doesNotMatch(agent,/shell\s*:\s*true/);
 });
 
