@@ -1,3 +1,4 @@
+import {normalizeAppearance, rankedDivision, ratingWindow} from './profile-rules.js';
 import {
   ENERGY_MAX,
   ballTouchDistance,
@@ -146,15 +147,16 @@ async function userFor(req:Request) {
     const payload = JSON.parse(atob(auth.slice(7).split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
     sessionId = payload?.session_id || null;
   } catch {}
+  if (!sessionId || !UUID.test(sessionId)) throw new Failure(401, 'Reconnecte-toi à ton compte 3B.');
   if (sessionId) {
-    const valid = await rpc('loyalty_session_valid', { p_user:user.id, p_session:sessionId }).catch(() => true);
-    if (valid === false) throw new Failure(401, 'Ta session a expiré. Reconnecte-toi.');
+    const valid = await rpc('loyalty_session_valid', { p_user:user.id, p_session:sessionId });
+    if (valid !== true) throw new Failure(401, 'Ta session a expiré. Reconnecte-toi.');
   }
   return String(user.id);
 }
 
 async function memberProfile(uid:string) {
-  const rows = await admin('/rest/v1/member_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=user_id,handle,name,country&limit=1');
+  const rows = await admin('/rest/v1/member_profiles?user_id=eq.' + encodeURIComponent(uid) + '&select=user_id,handle,country,passport_state&limit=1');
   if (!Array.isArray(rows) || !rows[0]) throw new Failure(403, 'Active ton profil 3B avant de jouer.');
   return rows[0];
 }
@@ -199,6 +201,7 @@ function sanitizeBoots(value:any={}) {
 
 function publicProfile(row:any, clubName='') {
   return {
+    appearance: normalizeAppearance(row.appearance),
     displayName: row.display_name,
     shirtName: row.shirt_name,
     shirtNumber: row.shirt_number,
@@ -217,7 +220,7 @@ async function ensureProfile(uid:string) {
   if (Array.isArray(rows) && rows[0]) return rows[0];
 
   const member = await memberProfile(uid);
-  const displayName = String(member.name || member.handle || 'Joueur 3B').trim().slice(0, 24) || 'Joueur 3B';
+  const displayName = String(member.handle || 'Joueur 3B').trim().slice(0, 24) || 'Joueur 3B';
   const countryId = COUNTRY_FROM_NAME[String(member.country)] || 'fr';
   const body = {
     user_id: uid,
@@ -253,6 +256,7 @@ async function saveProfile(uid:string, input:any) {
   const shirtNumber = clamp(Math.trunc(number(input?.shirtNumber, current.shirt_number)), 1, 99);
   const powers = sanitizePowers(input?.keeperPowers);
   const patch = {
+    appearance: normalizeAppearance(input?.appearance),
     display_name: displayName,
     shirt_name: shirtName || '3B',
     shirt_number: shirtNumber,
@@ -300,17 +304,13 @@ async function clubFor(uid:string) {
 }
 
 async function nationalRank(profile:any, rating:any) {
-  const stronger = await admin(
-    '/rest/v1/penalty_ratings?country_id=eq.' + encodeURIComponent(profile.country_id) +
-    '&rating=gt.' + encodeURIComponent(String(rating.rating)) +
-    '&select=user_id&limit=5000'
-  );
-  return (Array.isArray(stronger) ? stronger.length : 0) + 1;
+  if (number(rating.games)<10) return 0;
+  return number(await rpc('penalty_national_rank', {p_user:profile.user_id}));
 }
 
 function scoutingBand(rank:number, matches:number, reputation:number, pressure:number) {
   if (matches < 10) return 'non-classe';
-  if (rank <= 12 && reputation >= 700) return pressure >= .65 ? 'selection' : 'preselection';
+  if (rank <= 12 && reputation >= 700) return 'preselection';
   if (rank <= 30 && reputation >= 420) return 'observe';
   if (rank <= 75) return 'radar';
   return 'club';
@@ -421,22 +421,14 @@ async function respondInternationalSelection(uid:string, selectionId:unknown, de
     throw new Failure(409, 'La fenêtre de sélection est terminée.');
   }
 
-  const updated = await admin(
-    '/rest/v1/penalty_international_selections?id=eq.' + encodeURIComponent(id) +
-    '&user_id=eq.' + encodeURIComponent(uid) +
-    '&status=eq.preselected&select=*',
-    {
-      method:'PATCH',
-      body:{status:expectedStatus,updated_at:nowIso()},
-      prefer:'return=representation',
-    },
-  );
-  if (!Array.isArray(updated) || !updated[0]) throw new Failure(409, 'La convocation a changé. Synchronise ton profil.');
-  return updated[0];
+  return await rpc('penalty_respond_selection', {p_user:uid,p_selection:id,p_accept:answer === 'accept'});
 }
 
 async function snapshotFor(uid:string, profile:any) {
   const club = await clubFor(uid);
+  const seasonId = new Date().toISOString().slice(0,7);
+  const seasons = await admin('/rest/v1/penalty_season_ratings?user_id=eq.' + encodeURIComponent(uid) + '&season_id=eq.' + seasonId + '&select=rating,games,wins,losses&limit=1');
+  const season = {id:seasonId,...(seasons?.[0] || {rating:1000,games:0,wins:0,losses:0})};
   const rating = await ensureRating(uid, profile.country_id);
   const rank = await nationalRank(profile, rating);
   const pressure = rating.games ? clamp(number(rating.duel_gold_wins) / Math.max(1, number(rating.duel_gold_played)), 0, 1) : 0;
@@ -451,7 +443,9 @@ async function snapshotFor(uid:string, profile:any) {
   const wallet = await rpc('threeb_wallet_snapshot_server', { p_user:uid }).catch(() => null);
   return {
     wallet,
+    season:{...season,division:rankedDivision(season.rating,season.games)},
     rating,
+    division:rankedDivision(rating.rating, rating.games),
     club,
     career: {
       reputation: number(profile.reputation),
@@ -480,7 +474,7 @@ async function snapshotFor(uid:string, profile:any) {
     history: Array.isArray(history) ? history.map((item:any) => ({
       id:item.id,
       result:item.winner_user_id === uid ? 'Victoire' : item.winner_user_id ? 'Défaite' : 'Égalité',
-      label:`${item.mode === 'ranked' ? 'Classé' : item.mode === 'quick' ? 'Rapide' : 'Privé'} · ${item.score_a}–${item.score_b}`,
+      label:`${item.mode === 'ranked' ? 'Classé' : item.mode === 'quick' ? 'Rapide' : 'Privé'} · ${item.player_a === uid ? item.score_a : item.score_b}–${item.player_a === uid ? item.score_b : item.score_a}`,
       createdAt:item.created_at,
     })) : [],
   };
@@ -493,7 +487,7 @@ async function leaderboardFor(countryInput:unknown) {
   const ratings = await admin(
     '/rest/v1/penalty_ratings?' + countryFilter +
     'select=user_id,country_id,rating,games,wins,losses,goals_for,goals_against,saves,duel_gold_wins,duel_gold_played' +
-    '&order=rating.desc,games.desc,wins.desc&limit=100'
+    '&games=gte.10&order=rating.desc,games.desc,wins.desc,user_id.asc&limit=100'
   );
   const rows = Array.isArray(ratings) ? ratings : [];
   if (!rows.length) return { scope:countryId || 'global', entries:[] };
@@ -541,6 +535,7 @@ function randomCode() {
 function playerEntry(uid:string, profile:any, ready=true):Player {
   return {
     uid,
+    appearance: normalizeAppearance(profile.appearance),
     name: profile.display_name,
     countryId: profile.country_id,
     styleId: profile.style_id,
@@ -586,6 +581,7 @@ function assertMember(room:Room, uid:string) {
 
 function publicRoom(room:Room, uid:string) {
   const players = (room.players || []).map((player:any) => ({
+    appearance:normalizeAppearance(player.appearance),
     name:player.name,
     countryId:player.countryId,
     styleId:player.styleId,
@@ -670,7 +666,7 @@ async function insertRoom(uid:string, profile:any, mode:string) {
 
 function resetPossession(state:any, at:number) {
   if (!state || state.status !== 'playing') return state;
-  state.positions = { attacker:{x:0,y:0}, keeper:{y:0} };
+  state.positions = { attacker:{x:0,y:0}, keeper:{x:0,y:0} };
   state.keeperIntent = { type:'hold', direction:0, intensity:0, at };
   state.keeperEffect = null;
   state.sprintUntil = 0;
@@ -686,7 +682,7 @@ function resetPossession(state:any, at:number) {
 function createServerMatch(players:Player[]) {
   const at = nowMs();
   const state:any = createPenaltyMatch(players.map((player) => ({ id:player.uid, name:player.name })), at);
-  state.positions = { attacker:{x:0,y:0}, keeper:{y:0} };
+  state.positions = { attacker:{x:0,y:0}, keeper:{x:0,y:0} };
   state.keeperIntent = { type:'hold', direction:0, intensity:0, at };
   state.keeperEffect = null;
   state.keeperEnergy = [100,100];
@@ -751,7 +747,19 @@ async function queueRoom(uid:string, profile:any, mode:string) {
     '&status=eq.waiting&expires_at=gt.' + encodeURIComponent(nowIso()) +
     '&order=created_at.asc&limit=16&select=*'
   );
-  let room = (Array.isArray(candidates) ? candidates : []).find((candidate:any) =>
+  const ownRating = mode === 'ranked' ? await ensureRating(uid, profile.country_id) : null;
+  const eligible = [];
+  for (const candidate of Array.isArray(candidates) ? candidates : []) {
+    if (mode === 'ranked') {
+      const opponentId = candidate.players?.[0]?.uid;
+      if (!opponentId || opponentId === uid) continue;
+      const rows = await admin('/rest/v1/penalty_ratings?user_id=eq.' + encodeURIComponent(opponentId) + '&select=rating&limit=1');
+      if (!rows?.[0]) continue;
+      if (Math.abs(number(rows[0].rating,1000)-number(ownRating.rating,1000)) > ratingWindow(Date.now()-Date.parse(candidate.created_at))) continue;
+    }
+    eligible.push(candidate);
+  }
+  let room = (Array.isArray(eligible) ? eligible : []).find((candidate:any) =>
     (candidate.players || []).length === 1 && !(candidate.member_ids || []).includes(uid)
   );
   if (!room) return await insertRoom(uid, profile, mode);
@@ -874,21 +882,34 @@ async function processInput(room:Room, uid:string, input:any) {
   if (['dive','high-claim','close-angle','hold'].includes(type)) {
     if (playerIndex !== state.keeper) throw new Failure(403, 'Seul le gardien peut déclencher ce geste.');
     const direction = safeDirection(input?.direction);
+    const forward = safeDirection(input?.forward);
     const intensity = safeIntensity(input?.intensity);
     const dt = clamp((at - number(state.lastKeeperMoveAt, at)) / 1000, 0, .12);
-    state.keeperIntent = { type, direction, intensity, at };
+    state.keeperIntent = { type, direction, forward, intensity, at };
 
+    if (type !== 'hold' && at - number(state.lastKeeperTechniqueAt) < 450) throw new Failure(409, 'Termine ton geste avant de recommencer.');
+    if (type !== 'hold') state.lastKeeperTechniqueAt = at;
     if (type === 'hold') {
-      const lateralSpeed = 2.6 + intensity * 2.1;
+      const lateralSpeed = 2.15 + intensity * .9;
+      const depthSpeed = .72 + intensity * .78;
       state.positions.keeper.y = clamp(
         number(state.positions.keeper.y) + direction * lateralSpeed * dt,
         -.95, .95,
+      );
+      state.positions.keeper.x = clamp(
+        number(state.positions.keeper.x) + forward * depthSpeed * dt,
+        0, .82,
       );
     } else {
       state.positions.keeper.y = clamp(
         number(state.positions.keeper.y) + direction * (.035 + intensity * .055),
         -.95, .95,
       );
+      if (type === 'close-angle') {
+        state.positions.keeper.x = clamp(number(state.positions.keeper.x) + .08 + intensity * .08, 0, .82);
+      } else if (type === 'high-claim') {
+        state.positions.keeper.x = clamp(number(state.positions.keeper.x) + intensity * .045, 0, .82);
+      }
     }
 
     state.lastKeeperMoveAt = at;
@@ -897,7 +918,7 @@ async function processInput(room:Room, uid:string, input:any) {
       text:type === 'dive' ? 'Le gardien engage son plongeon.' : type === 'high-claim' ? 'Sortie haute.' : type === 'close-angle' ? 'Angle fermé.' : 'Gardien en déplacement.',
       visual:{ at, type, direction, intensity },
     };
-    return await commitRoom(room, {state}, uid, 'keeper', {type, y:state.positions.keeper.y});
+    return await commitRoom(room, {state}, uid, 'keeper', {type, x:state.positions.keeper.x, y:state.positions.keeper.y});
   }
 
   if (type === 'power') {
@@ -916,6 +937,8 @@ async function processInput(room:Room, uid:string, input:any) {
   if (['accelerate','feint','cut','rhythm'].includes(type)) {
     if (playerIndex !== state.attacker) throw new Failure(403, 'Action attaquant uniquement.');
     if (number(state.energy[playerIndex],100) <= 2) throw new Failure(409, 'Ralentis : ton énergie est trop basse.');
+    if (at - number(state.lastAttackerTechniqueAt) < 280) throw new Failure(409, 'Termine ton geste avant de recommencer.');
+    state.lastAttackerTechniqueAt = at;
     updateFlowState(state, playerIndex, type, true, room.players[playerIndex]?.styleId);
     if (type === 'accelerate') state.sprintUntil = at + 850;
     if (type === 'feint' || type === 'cut') {
@@ -943,6 +966,7 @@ async function processInput(room:Room, uid:string, input:any) {
     const result = resolveShot({
       shot,
       keeperX:number(state.positions?.keeper?.y),
+      keeperDepth:number(state.positions?.keeper?.x),
       keeperGesture:intent,
       keeperEffect,
       attackerFlow:flowBeforeShot,
@@ -1025,7 +1049,7 @@ async function createClub(uid:string, nameInput:unknown, colorsInput:any={}) {
     try {
       const rows = await admin('/rest/v1/penalty_clubs?select=*', {
         method:'POST',
-        body:{code,name,owner_user_id:uid,colors:{primary:'#08090b',secondary:'#d8b35e'}},
+        body:{code,name,owner_user_id:uid,colors},
         prefer:'return=representation',
       });
       const club = rows?.[0];
@@ -1053,9 +1077,7 @@ async function joinClub(uid:string, codeInput:unknown) {
   const clubs = await admin('/rest/v1/penalty_clubs?code=eq.' + encodeURIComponent(code) + '&select=*&limit=1');
   const club = Array.isArray(clubs) ? clubs[0] : null;
   if (!club) throw new Failure(404, 'Club introuvable.');
-  await admin('/rest/v1/penalty_club_members', {
-    method:'POST', body:{club_id:club.id,user_id:uid,role:'member'}, prefer:'return=minimal',
-  });
+  await rpc('penalty_join_club', {p_user:uid,p_club:club.id});
   return club;
 }
 
@@ -1104,9 +1126,11 @@ async function route(req:Request) {
     p_key:'penalty:' + uid + ':' + action,
     p_limit:rate.limit,
     p_window:rate.window,
-  }).catch(() => true);
-  if (rateAllowed === false) throw new Failure(429, 'Trop d’actions en peu de temps. Réessaie dans un instant.');
+  });
+  if (rateAllowed !== true) throw new Failure(429, 'Trop d’actions en peu de temps. Réessaie dans un instant.');
 
+  const member = await memberProfile(uid);
+  if (member.passport_state !== 'active') throw new Failure(403, 'Active ton Passeport 3B pour jouer en ligne.');
   let profile = await ensureProfile(uid);
 
   if (action === 'profile.save') {
@@ -1227,6 +1251,7 @@ async function route(req:Request) {
   }
 
   if (action === 'input') {
+    if (body.possessionStartedAt !== room.state?.possessionStartedAt) throw new Failure(409, 'Cette action appartient à une possession terminée.');
     room = await processInput(room, uid, body.input);
     return { room:publicRoom(room, uid) };
   }
@@ -1272,7 +1297,7 @@ Deno.serve(async (req:Request) => {
     return json(req, 200, data);
   } catch (error) {
     const status = error instanceof Failure ? error.status : 500;
-    const message = error instanceof Error ? error.message : 'Erreur Penalty Rush.';
+    const message = status >= 500 ? 'Service Penalty Rush momentanément indisponible.' : error instanceof Error ? error.message : 'Erreur Penalty Rush.';
     if (status >= 500) console.error('penalty-rush', error);
     return json(req, status, {error:message});
   }

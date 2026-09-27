@@ -103,6 +103,14 @@ test('keeper impulse changes shot resolution without guaranteeing a save', () =>
   assert.ok(['goal', 'save', 'frame'].includes(powered.reason));
 });
 
+test('goalkeeper depth rewards a controlled close-angle without guaranteeing a save', () => {
+  const shot = { type:'shot', power:.72, precision:.92, curve:0, targetX:.48, targetY:.58 };
+  const onLine = resolveShot({ shot, keeperX:0, keeperDepth:0, keeperGesture:{type:'close-angle',direction:0,intensity:.8} });
+  const steppedOut = resolveShot({ shot, keeperX:0, keeperDepth:.8, keeperGesture:{type:'close-angle',direction:0,intensity:.8} });
+  assert.ok(steppedOut.saveThreshold > onLine.saveThreshold);
+  assert.ok(steppedOut.saveThreshold < 1);
+});
+
 test('three attacks switch the roles, then a tie opens Duel d’Or', () => {
   let match = createPenaltyMatch([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], 0);
   assert.equal(match.attacker, 0);
