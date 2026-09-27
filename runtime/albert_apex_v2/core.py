@@ -267,6 +267,7 @@ class ApexStore:
         self.events_path = self.data_root / "events.json"
         self.session_path = self.data_root / "session.json"
         self.skills_path = self.data_root / "skills.json"
+        self.needs_path = self.data_root / "need_you.json"
         self.settings_path = self.data_root / "settings.json"
         self._lock = threading.RLock()
         self.data_root.mkdir(parents=True, exist_ok=True)
@@ -301,6 +302,18 @@ class ApexStore:
 
     def events(self) -> List[Dict[str, Any]]:
         return read_json(self.events_path, [])
+
+    def skills(self) -> List[Dict[str, Any]]:
+        return read_json(self.skills_path, [])
+
+    def save_skills(self, skills: List[Dict[str, Any]]) -> None:
+        atomic_json(self.skills_path, skills[-250:])
+
+    def needs(self) -> List[Dict[str, Any]]:
+        return read_json(self.needs_path, [])
+
+    def save_needs(self, needs: List[Dict[str, Any]]) -> None:
+        atomic_json(self.needs_path, needs[-200:])
 
     def emit(self, event_type: str, payload: Optional[Dict[str, Any]] = None, priority: str = "normal") -> Dict[str, Any]:
         event = {
@@ -440,9 +453,102 @@ class ApexRuntime:
             "detail": clean_text(detail, 1000),
             "level": max(0, min(4, int(level))),
             "created_at": now_iso(),
+            "resolved_at": None,
         }
+        needs = self.store.needs()
+        needs.append(row)
+        self.store.save_needs(needs)
         self.store.emit("approval.required", row, "attention" if row["level"] < 4 else "critical")
         return row
+
+    def resolve_need(self, need_id: str) -> Dict[str, Any]:
+        with self.store._lock:
+            needs = self.store.needs()
+            index = next((i for i, row in enumerate(needs) if row.get("id") == need_id), -1)
+            if index < 0:
+                raise KeyError("Validation humaine introuvable.")
+            needs[index] = {**needs[index], "resolved_at": now_iso()}
+            self.store.save_needs(needs)
+            self.store.emit("approval.resolved", {"need_id": need_id}, "quiet")
+            return needs[index]
+
+    def ambient_inbox(self, limit: int = 50) -> List[Dict[str, Any]]:
+        rank = {"critical": 4, "attention": 3, "normal": 2, "quiet": 1}
+        rows = sorted(
+            self.store.events(),
+            key=lambda row: (rank.get(row.get("priority"), 0), row.get("created_at", "")),
+            reverse=True,
+        )[: max(1, min(200, int(limit)))]
+        result = []
+        for row in rows:
+            priority = row.get("priority", "quiet")
+            delivery = "voice+visual" if priority == "critical" else "visual+sound" if priority == "attention" else "visual" if priority == "normal" else "silent"
+            result.append({**row, "delivery": delivery})
+        return result
+
+    def create_skill(self, name: str, version: str = "1.0.0", actions: Optional[List[str]] = None, tests: Optional[List[str]] = None) -> Dict[str, Any]:
+        if not re.fullmatch(r"\d+\.\d+\.\d+", str(version or "")):
+            raise ValueError("Version de skill invalide.")
+        allowed = [action for action in list(actions or []) if action in ACTION_POLICY]
+        skill = {
+            "id": "skill-" + uuid.uuid4().hex[:16],
+            "name": clean_text(name, 160) or "Skill sans nom",
+            "version": version,
+            "actions": list(dict.fromkeys(allowed))[:40],
+            "tests": [clean_text(item, 300) for item in list(tests or []) if clean_text(item, 300)][:80],
+            "runs": 0,
+            "success_rate": 0.0,
+            "trust": "experimental",
+            "installed": False,
+            "created_at": now_iso(),
+            "updated_at": now_iso(),
+        }
+        skills = self.store.skills()
+        skills.append(skill)
+        self.store.save_skills(skills)
+        self.store.emit("skill.created", {"skill_id": skill["id"], "name": skill["name"]}, "quiet")
+        return skill
+
+    def qualify_skill(self, skill_id: str, passed: int, failed: int) -> Dict[str, Any]:
+        with self.store._lock:
+            skills = self.store.skills()
+            index = next((i for i, row in enumerate(skills) if row.get("id") == skill_id), -1)
+            if index < 0:
+                raise KeyError("Skill introuvable.")
+            passed = max(0, int(passed))
+            failed = max(0, int(failed))
+            total = passed + failed
+            rate = passed / total if total else 0.0
+            trust = "trusted" if total >= 100 and rate >= .99 else "qualified" if total >= 20 and rate >= .95 else "observed" if total >= 5 and rate >= .8 else "experimental"
+            skills[index] = {
+                **skills[index],
+                "runs": total,
+                "success_rate": rate,
+                "trust": trust,
+                "installed": trust != "experimental",
+                "updated_at": now_iso(),
+            }
+            self.store.save_skills(skills)
+            self.store.emit("skill.qualified", {"skill_id": skill_id, "trust": trust}, "normal")
+            return skills[index]
+
+    def distill_session(self) -> Dict[str, Any]:
+        tasks = self.store.tasks()
+        verified = [task for task in tasks if task.get("status") == "verified"][-20:]
+        failed = [task for task in tasks if task.get("status") == "failed"][-20:]
+        active = [task for task in tasks if task.get("status") == "running"][-20:]
+        return {
+            "created_at": now_iso(),
+            "summary": {
+                "verified": len(verified),
+                "failed": len(failed),
+                "active": len(active),
+                "need_you": len([row for row in self.store.needs() if not row.get("resolved_at")]),
+            },
+            "decisions": [{"intent": task.get("intent"), "evidence": (task.get("evidence") or {}).get("id")} for task in verified],
+            "failures": [{"intent": task.get("intent"), "error": task.get("error")} for task in failed],
+            "resume": [{"id": task.get("id"), "intent": task.get("intent"), "phase": task.get("phase")} for task in active],
+        }
 
     def snapshot_session(self) -> Dict[str, Any]:
         tasks = self.store.tasks()
@@ -481,6 +587,9 @@ class ApexRuntime:
                 "cancelled": sum(1 for task in tasks if task.get("status") == "cancelled"),
             },
             "events": self.store.events()[-20:],
+            "ambient_inbox": self.ambient_inbox(20),
+            "need_you": [row for row in self.store.needs() if not row.get("resolved_at")][-20:],
+            "skills": self.store.skills()[-20:],
             "checked_at": now_iso(),
         }
 
