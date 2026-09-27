@@ -62,6 +62,15 @@
 .companion3b-shell[data-mode="secret"] .companion3b-eyes{filter:url(#c3bBlueGlow) hue-rotate(180deg)}
 .companion3b-shell[data-mode="guardian"] .companion3b-avatar{animation:c3bGuardian 2.1s ease-in-out infinite}
 .companion3b-shell[data-mode="support"] .companion3b-avatar{animation:c3bBreath 2.7s ease-in-out infinite}
+.companion3b-mode-prop{transform-origin:center;animation:c3bProp .9s ease-in-out infinite alternate}
+.companion3b-walk-lines{animation:c3bMotionLines .55s linear infinite}
+.companion3b-confetti{animation:c3bConfetti .75s ease-in-out infinite alternate}
+.companion3b-secret-hood{animation:c3bSecret 2.2s ease-in-out infinite alternate}
+.companion3b-chest{animation:c3bChest 1.2s ease-in-out infinite alternate}
+.companion3b-heart{animation:c3bHeart 1.1s ease-in-out infinite alternate}
+.companion3b-shell[data-low-power="true"] .companion3b-halo,
+.companion3b-shell[data-low-power="true"] .companion3b-mode-prop{animation:none!important}
+.companion3b-shell[data-low-power="true"] .companion3b-avatar{animation-duration:6s!important}
 
 @keyframes c3bBreath{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @keyframes c3bWalk{from{transform:rotate(-2deg) translateY(0)}to{transform:rotate(2deg) translateY(-7px)}}
@@ -72,6 +81,12 @@
 @keyframes c3bGuardian{0%,100%{filter:drop-shadow(0 0 0 rgba(232,189,100,0))}50%{filter:drop-shadow(0 0 14px rgba(232,189,100,.45))}}
 @keyframes c3bHalo{to{transform:rotate(360deg)}}
 @keyframes c3bSpark{from{transform:scale(.85);opacity:.45}to{transform:scale(1.12);opacity:1}}
+@keyframes c3bProp{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+@keyframes c3bMotionLines{0%{transform:translateX(7px);opacity:.15}100%{transform:translateX(-7px);opacity:.9}}
+@keyframes c3bConfetti{from{transform:rotate(-2deg) scale(.95)}to{transform:rotate(2deg) scale(1.06)}}
+@keyframes c3bSecret{from{filter:brightness(.72)}to{filter:brightness(1.03) drop-shadow(0 0 9px rgba(232,189,100,.22))}}
+@keyframes c3bChest{from{transform:translateY(1px) scale(.98)}to{transform:translateY(-4px) scale(1.03)}}
+@keyframes c3bHeart{from{transform:scale(.94)}to{transform:scale(1.06)}}
 
 .companion3b-panel{
   position:fixed;
