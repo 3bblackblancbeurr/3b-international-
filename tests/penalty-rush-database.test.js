@@ -12,7 +12,7 @@ test('Postgres executes settlement, seasons, anti-farming and selection boundari
    create table public.member_profiles(user_id uuid primary key,passport_state text);
    create table public.threeb_reward_outbox(user_id uuid,reward_code text,event_id text,source text,unique(user_id,reward_code,event_id));`);
   await db.exec(sql('20260921194443_penalty_rush_multiplayer_v1.sql').replace('alter publication supabase_realtime add table public.penalty_rooms;',''));
-  for(const file of ['20260927103000_penalty_appearance_v1.sql','20260927104000_penalty_ranked_integrity_v1.sql','20260927105000_penalty_selection_authority_v1.sql'])await db.exec(sql(file));
+  for(const file of ['20260927003738_penalty_appearance_v1.sql','20260927003739_penalty_ranked_integrity_v1.sql','20260927003740_penalty_selection_authority_v1.sql'])await db.exec(sql(file));
   const a='00000000-0000-4000-8000-000000000001',b='00000000-0000-4000-8000-000000000002';
   for(const id of [a,b]) {
    await db.query('insert into auth.users values($1)',[id]);

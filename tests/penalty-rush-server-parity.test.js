@@ -62,7 +62,7 @@ test('Penalty Rush Edge service keeps authority and service credentials server-s
   assert.match(source,/club\.disband/);
   assert.match(source,/colorsInput/);
   assert.match(source,/penalty_respond_selection/);
-  const selectionSql=fs.readFileSync(new URL('../supabase/migrations/20260927105000_penalty_selection_authority_v1.sql',import.meta.url),'utf8');
+  const selectionSql=fs.readFileSync(new URL('../supabase/migrations/20260927003740_penalty_selection_authority_v1.sql',import.meta.url),'utf8');
   assert.match(selectionSql,/v_selection.status<>'preselected'/);
   assert.match(selectionSql,/for update of w/);
   assert.match(source,/countryNeededRole/);
