@@ -22,7 +22,7 @@
     "control:auto-start": "node scripts/threeb-control-autostart.mjs install",
     "control:auto-status": "node scripts/threeb-control-autostart.mjs status",
     "control:auto-remove": "node scripts/threeb-control-autostart.mjs remove",
-    "test:gold-master": "node --test tests/gold-master-design-system.test.js tests/brand-vault.test.js tests/gold-master-drift-guard.test.js tests/gold-master-shell-migration.test.js tests/gold-master-command-os.test.js",
+    "test:gold-master": "node --test tests/gold-master-design-system.test.js tests/brand-vault.test.js tests/gold-master-drift-guard.test.js tests/gold-master-shell-migration.test.js tests/gold-master-command-os.test.js tests/gold-master-passport-public-id.test.js",
     "brand:verify": "node scripts/verify-brand-vault.mjs",
     "brand:lock": "node scripts/verify-brand-vault.mjs --write",
     "gold-master:guard": "node scripts/verify-gold-master-diff.mjs"
