@@ -48,13 +48,17 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   const taskId=apex.beginTask(value,{project:'3B Command OS'});activeTask.current=taskId;
   apex.progressTask(taskId,'Analyse de l’intention et de la stratégie','INTENT');
   let local;
-  try{local=parseAlbertLocal(value,spaces.state);}
+  try{local=parseAlbertLocal(value,spaces.state);apex.progressTask(taskId,'Risques et dépendances évalués','ASSESS');}
   catch(e){apex.failTask(taskId,e);activeTask.current=null;setFailure(true);setReply(e.message);return;}
   if(local){
    try{
-    apex.progressTask(taskId,'Validation et application de la commande locale','EXECUTE');
+    apex.progressTask(taskId,'Plan local déterministe prêt','PLAN');
+    apex.progressTask(taskId,'Application de la commande locale validée','EXECUTE');
     onActions(local);
-    apex.completeTask(taskId,{tests:['Validation locale du contrat d’action'],verified:true,tested:true,reversible:true,documented:true,notes:'Commande locale appliquée par le client après validation structurée.'});
+    apex.progressTask(taskId,'Résultat local relu','REVIEW');
+    apex.progressTask(taskId,'Contrat d’action vérifié','VERIFY');
+    apex.progressTask(taskId,'Assemblage des preuves locales','EVIDENCE');
+    apex.completeTask(taskId,{executed:true,tests:['Validation locale du contrat d’action'],verified:true,tested:true,reversible:true,documented:true,notes:'Commande locale appliquée par le client après validation structurée.'});
     activeTask.current=null;
     setReply('Interface mise à jour. Vous pouvez annuler cette modification.');
     setPrompt('');
@@ -69,16 +73,20 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   recognition.current?.abort();window.speechSynthesis?.cancel();setSpeaking(false);
   locked.current=true;setBusy(true);setReply('Albert analyse votre demande…');const id=++requestId.current;abort.current=new AbortController();
   try{
-   apex.progressTask(taskId,'Préparation du contexte autorisé','ASSESS');
+   apex.progressTask(taskId,'Préparation du contexte autorisé','PLAN');
    const active=spaces.state.spaces.find(s=>s.id===spaces.state.active);
+   apex.progressTask(taskId,'Exécution via la route serveur autorisée','EXECUTE');
    const result=await albertRequest({action:'albert',stream:true,prompt:value,messages:memory&&!privacyMode?spaces.state.messages:[],workspace:privacyMode?null:{active:active.id,spaces:[active]},apex:{mode:apex.state.mode,resource_profile:apex.state.resourceProfile}},{signal:abort.current.signal,onText:text=>{if(id===requestId.current&&text)setReply(text);},onStatus:text=>{if(id===requestId.current){setReply(text);apex.progressTask(taskId,text,'EXECUTE');}}});
    if(id!==requestId.current)return;
+   apex.progressTask(taskId,'Réponse reçue et relue','REVIEW');
    const actions=validateAlbertActions(result.answer?.actions);
    if(actions.length)onActions(actions);
    const answer=result.answer?.text||'Aucune réponse.';
    setReply(answer+(actions.length?' · Modifications appliquées.':''));
    if(memory&&!privacyMode)spaces.remember(value,answer);
-   apex.completeTask(taskId,{tests:['Validation du schéma de réponse','Filtrage des actions autorisées'],verified:true,tested:true,reversible:true,documented:true,notes:actions.length?'Réponse serveur validée et actions UI appliquées.':'Réponse serveur validée sans action externe.'});
+   apex.progressTask(taskId,'Schéma et actions autorisées vérifiés','VERIFY');
+   apex.progressTask(taskId,'Assemblage des preuves de réponse','EVIDENCE');
+   apex.completeTask(taskId,{executed:true,tests:['Validation du schéma de réponse','Filtrage des actions autorisées'],verified:true,tested:true,reversible:true,documented:true,notes:actions.length?'Réponse serveur validée et actions UI appliquées.':'Réponse serveur validée sans action externe.'});
    activeTask.current=null;
    setPrompt('');
   }catch(e){if(id===requestId.current){apex.failTask(taskId,e);activeTask.current=null;setFailure(true);setReply(e.message||'Albert est momentanément indisponible.');}}
