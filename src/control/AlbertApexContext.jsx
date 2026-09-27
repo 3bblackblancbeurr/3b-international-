@@ -5,6 +5,7 @@ import {
  createApexState,normalizeApexState,inspectAlbertStrategy,
  evaluateCompletion,createEvidenceBundle,advanceAlbertGraph,verifyAlbertGraphPhase
 } from './albert-apex-core.js';
+import {ambientInbox} from './albert-apex-services.js';
 
 const Context=createContext(null);
 const STORAGE='3b-albert-apex-os-v2';
@@ -49,6 +50,16 @@ export function AlbertApexProvider({children}){
  },[]);
 
  const resolveNeed=useCallback(id=>setState(s=>({...s,needYou:s.needYou.filter(item=>item.id!==id)})),[]);
+ const ingestEvents=useCallback(rows=>{
+  const incoming=ambientInbox(rows,{max:50});
+  if(!incoming.length)return;
+  setState(s=>{
+   const known=new Set(s.events.map(event=>event.id));
+   const fresh=incoming.filter(event=>!known.has(event.id));
+   return fresh.length?{...s,events:[...fresh,...s.events].slice(0,100)}:s;
+  });
+ },[]);
+
 
  const beginTask=useCallback((intent,{project='ALBERT APEX',constraints=[],acceptance=[]}={})=>{
   let spec;
@@ -149,7 +160,7 @@ export function AlbertApexProvider({children}){
  const resume=useCallback(()=>setState(s=>({...s,killSwitch:false,events:[...s.events,createAlbertEvent('kill-switch.released',{},'attention')].slice(-100)})),[]);
  const resetSession=useCallback(()=>setState(s=>({...s,session:{...s.session,id:'session-'+Date.now().toString(36),startedAt:new Date().toISOString(),endedAt:null,taskIds:[]},needYou:[],events:[...s.events,createAlbertEvent('session.started')].slice(-100)})),[]);
 
- const value=useMemo(()=>({state,setMode,setResourceProfile,emit,needUser,resolveNeed,beginTask,patchTask,progressTask,completeTask,failTask,cancelTask,killAll,resume,resetSession}),[state,setMode,setResourceProfile,emit,needUser,resolveNeed,beginTask,patchTask,progressTask,completeTask,failTask,cancelTask,killAll,resume,resetSession]);
+ const value=useMemo(()=>({state,setMode,setResourceProfile,emit,ingestEvents,needUser,resolveNeed,beginTask,patchTask,progressTask,completeTask,failTask,cancelTask,killAll,resume,resetSession}),[state,setMode,setResourceProfile,emit,ingestEvents,needUser,resolveNeed,beginTask,patchTask,progressTask,completeTask,failTask,cancelTask,killAll,resume,resetSession]);
  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
