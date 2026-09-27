@@ -34,7 +34,7 @@ Publication autorisée par le propriétaire après les sept workflows réussis s
 
 Les trois migrations ont été appliquées au projet de production ttvhcezucsbbmnafrotq sous les versions 20260927003738, 20260927003739 et 20260927003740. Leurs fichiers sont renommés avec ces versions et leurs empreintes transférées de PENDING vers APPLIED ; le contenu SQL et les 152 anciennes entrées restent inchangés.
 
-La fonction penalty-rush v16 est ACTIVE, avec vérification JWT maintenue. Les quatre fichiers déployés correspondent exactement aux sources ; les procédures de règlement, sélection, adhésion et rang sont réservées au rôle serveur. Aucune partie active au moment de la mise à jour.
+La fonction penalty-rush v17 est ACTIVE, avec vérification JWT maintenue. Les quatre fichiers déployés correspondent exactement aux sources ; les procédures de règlement, sélection, adhésion et rang sont réservées au rôle serveur. Aucune partie active au moment de la mise à jour.
 
 URL : https://3b-international.vercel.app/jeux/penalty-rush
 
@@ -54,3 +54,6 @@ Les limites fonctionnelles et les essais réels encore nécessaires ci-dessous r
 - Konami, eFootball v5.50 : matchmaking plus souvent à niveau comparable et progression entre phases. Principe retenu : rapprocher les niveaux et expliquer les saisons ; ce n’est pas une reproduction de leur algorithme. https://www.konami.com/efootball/en/page/v5/versioninfo_v5-50
 
 Ce bilan distingue volontairement ce qui est implémenté et testé de ce qui reste nécessaire. Les travaux restants ne sont pas couverts par cette publication.
+
+## Correctif constaté lors du contrôle en production
+La première inscription échouait car le schéma de production exige passport_public_id. Le serveur lit désormais cet identifiant depuis le Passeport actif du compte et le lie au nouveau profil, sans le publier dans le profil sportif. Deux tests exécutent la création avec un Passeport valide et le refus avant écriture en cas de Passeport absent ou révoqué. Le navigateur connecté affiche désormais ONLINE et le studio se charge sans cette erreur. Aucun duel à deux comptes ni essai sur appareil tactile réel n'est revendiqué.
