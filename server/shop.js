@@ -48,13 +48,18 @@ export function configFrom(env) {
   const shippingIncluded = env.SHOP_SHIPPING_INCLUDED === "true";
   const shippingRateId = env.STRIPE_SHIPPING_RATE_ID || "";
   const shippingConfigured = shippingIncluded || /^shr_[A-Za-z0-9]+$/.test(shippingRateId);
-  const enabled = env.SHOP_ENABLED === "true" && !!origin && !!env.STRIPE_SECRET_KEY
+  const releaseApproved = env.SHOP_RELEASE_APPROVED === "true";
+  const cookieSecret = typeof env.SHOP_CHECKOUT_COOKIE_SECRET === "string" && env.SHOP_CHECKOUT_COOKIE_SECRET.length >= 32
+    ? env.SHOP_CHECKOUT_COOKIE_SECRET : "";
+  const automaticTaxRequested = env.SHOP_AUTOMATIC_TAX === "true";
+  const taxReady = !automaticTaxRequested || env.SHOP_TAX_REGISTRATION_CONFIRMED === "true";
+  const enabled = env.SHOP_ENABLED === "true" && releaseApproved && !!cookieSecret && !!origin && !!env.STRIPE_SECRET_KEY
     && !!env.STRIPE_WEBHOOK_SECRET && !!safeUrl(env.SUPABASE_URL) && !!env.SUPABASE_SERVICE_ROLE_KEY
     && !!termsUrl && !!privacyUrl && !!shippingUrl && !!returnsUrl && !!legalUrl
-    && shippingConfigured && catalogConfigured
+    && shippingConfigured && catalogConfigured && taxReady
     && countries.length > 0 && countries.every(c => /^(FR|IT|EE|TR|DZ|TN|MA|ES)$/.test(c));
-  return { origin, priceIds, catalogMode, countries, enabled, termsUrl, privacyUrl, shippingUrl, returnsUrl, legalUrl,
-    shippingRateId, shippingIncluded, automaticTax: env.SHOP_AUTOMATIC_TAX === "true" };
+  return { origin, priceIds, catalogMode, countries, enabled, releaseApproved, cookieSecret, termsUrl, privacyUrl, shippingUrl, returnsUrl, legalUrl,
+    shippingRateId, shippingIncluded, automaticTax: automaticTaxRequested && taxReady };
 }
 
 function publicPrice(price) {
@@ -272,13 +277,13 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       if (checkoutUrl.origin !== "https://checkout.stripe.com") throw new ShopError(503, "Le paiement n’a pas pu être ouvert.");
       const secure = config.origin.startsWith("https:") ? "; Secure" : "";
       return json({ url: session.url, sessionId: session.id }, 200, {
-        "Set-Cookie": `${cookieName(session.id)}=${cookieValue(session.id, env.STRIPE_SECRET_KEY)}; HttpOnly; SameSite=Lax; Path=/api; Max-Age=86400${secure}`,
+        "Set-Cookie": `${cookieName(session.id)}=${cookieValue(session.id, config.cookieSecret)}; HttpOnly; SameSite=Lax; Path=/api; Max-Age=86400${secure}`,
       });
     }),
 
     status: wrap("GET", async request => {
       const id = new URL(request.url).searchParams.get("session_id") || "";
-      if (!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(id) || !env.STRIPE_SECRET_KEY || !validCookie(request, id, env.STRIPE_SECRET_KEY))
+      if (!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(id) || !env.STRIPE_SECRET_KEY || !config.cookieSecret || !validCookie(request, id, config.cookieSecret))
         throw new ShopError(403, "Ouvre la confirmation dans le navigateur utilisé pour payer.");
       const session = await stripe().checkout.sessions.retrieve(id);
       if (session.metadata?.integration !== INTEGRATION) throw new ShopError(404, "Commande introuvable.");
