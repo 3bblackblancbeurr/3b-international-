@@ -450,6 +450,59 @@
 .control-runtime strong{margin-top:4px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .control-runtime small{margin-top:2px;color:#5b6f7b;font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+.control-hardware-grid{
+ position:relative;
+ z-index:2;
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:7px;
+ margin-top:8px;
+}
+.control-hardware-grid article{
+ min-width:0;
+ min-height:72px;
+ padding:10px;
+ border:1px solid rgba(85,216,255,.08);
+ border-radius:14px;
+ background:linear-gradient(145deg,rgba(7,20,28,.94),rgba(4,12,18,.88));
+}
+.control-hardware-grid span{display:block;color:#658494;font-size:6px;letter-spacing:.13em}
+.control-hardware-grid strong{display:block;margin-top:5px;font-size:10px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.control-hardware-grid small{display:block;margin-top:4px;color:#627884;font-size:7px;line-height:1.3}
+
+.control-drive-inventory{
+ position:relative;
+ z-index:2;
+ display:grid;
+ gap:6px;
+ margin-top:8px;
+ padding:9px;
+ border:1px solid rgba(231,197,125,.1);
+ border-radius:15px;
+ background:rgba(231,197,125,.018);
+}
+.control-drive-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:1px 2px 5px}
+.control-drive-head span{color:#d6bb7c;font-size:6px;font-weight:850;letter-spacing:.14em}
+.control-drive-head small{color:#6a7880;font-size:6px}
+.control-physical-disk,.control-drive-row{
+ display:grid;
+ grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;
+ gap:8px;
+ min-height:54px;
+ padding:8px 9px;
+ border:1px solid rgba(255,255,255,.045);
+ border-radius:12px;
+ background:rgba(3,12,17,.7);
+}
+.control-physical-disk>div,.control-drive-row>div{display:flex;flex-direction:column;min-width:0}
+.control-physical-disk b,.control-drive-row b{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.control-physical-disk small,.control-drive-row small{margin-top:3px;color:#637985;font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.control-physical-disk>strong,.control-drive-row>strong{color:#a9c8d3;font-size:8px;white-space:nowrap}
+.control-physical-disk>em{grid-column:1/3;color:#65806f;font-size:6px;font-style:normal}
+@media (min-width:620px){.control-hardware-grid{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:360px){.control-hardware-grid{grid-template-columns:1fr}.control-drive-head{align-items:flex-start;flex-direction:column}}
+
 .control-feed{position:relative;z-index:2;display:grid}
 .control-feed-row{
  display:grid;
