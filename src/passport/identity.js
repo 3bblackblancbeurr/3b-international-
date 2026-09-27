@@ -14,6 +14,11 @@ const safeNumber = value => {
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : 0;
 };
+const PUBLIC_PASSPORT_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const normalizePublicPassportId = value => {
+  const id = cleanText(value, 36);
+  return PUBLIC_PASSPORT_UUID.test(id) ? id.toUpperCase() : '';
+};
 
 export function passportFromProfile(profile, user = null) {
   if (!profile || typeof profile !== 'object' || !profile.user_id) return null;
@@ -23,14 +28,19 @@ export function passportFromProfile(profile, user = null) {
   const country = profile.country;
   const countryMeta = PASSPORT_COUNTRIES[country];
   const userId = cleanText(profile.user_id, 64);
-  const canonicalId = userId.toUpperCase();
+  const opaquePublicId = normalizePublicPassportId(profile.passport_public_id);
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
+  const version = Number(profile.passport_version);
 
   return Object.freeze({
     userId,
-    passportId: `3B-PASS-${canonicalId}`,
-    memberId: `3B-MEM-${canonicalId}`,
+    passportPublicId: opaquePublicId || null,
+    passportId: opaquePublicId ? `3B-PASS-${opaquePublicId}` : '3B-PASS-EN-ATTENTE',
+    memberId: opaquePublicId ? `3B-MEM-${opaquePublicId}` : '3B-MEM-EN-ATTENTE',
+    passportIssuedAt: profile.passport_issued_at || null,
+    passportVersion: Number.isInteger(version) && version > 0 ? version : null,
+    passportState: cleanText(profile.passport_state, 16) || null,
     name,
     handle,
     country,
