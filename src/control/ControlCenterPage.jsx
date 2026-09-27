@@ -18,6 +18,7 @@ import DailyBriefPanel from './DailyBriefPanel.jsx';
 import IntegrationCenterPanel from './IntegrationCenterPanel.jsx';
 import AICommandPanel from './AICommandPanel.jsx';
 import AlbertWorkspace from './AlbertWorkspace.jsx';
+import AlbertDesk from './AlbertDesk.jsx';
 import {AlbertModules,AlbertModule} from './AlbertModules.jsx';
 import {validateAlbertActions} from './albert-model.js';
 import CommandSearchResults from './CommandSearchResults.jsx';
@@ -592,6 +593,7 @@ export default function ControlCenterPage({goTo}){
     <StatusCard Icon={Cpu} label="PC AGENT" value={primaryOnline?'En ligne':primaryDevice?'Hors ligne':'Non appairé'} detail={primaryDevice?((privacyMode?'Appareil masqué':primaryDevice.name)+(primaryDevice.capabilities?.autostart===true?' · AUTO':' · MANUEL')):'Aucun appareil'} state={pcState}/>
    </section>
 
+   {data&&!error&&<ModuleBoundary label="Atelier personnel momentanément indisponible"><AlbertDesk privacyMode={privacyMode}/></ModuleBoundary>}
    <AlbertModules>
    {isVisible('brief')&&<AlbertModule id="brief" label="Brief"><ModuleBoundary label="Brief quotidien momentanément indisponible"><DailyBriefPanel pulse={pulse} alerts={alerts} events={events} commands={commands} primaryDevice={primaryDevice} primaryOnline={primaryOnline} lastSync={lastSync}/></ModuleBoundary></AlbertModule>}
 
