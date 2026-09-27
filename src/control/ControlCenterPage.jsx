@@ -399,6 +399,22 @@ export default function ControlCenterPage({goTo}){
  const memoryUsed=runtime?.memory_total_gb
   ?Math.max(0,Math.min(100,Math.round((1-Number(runtime.memory_free_gb||0)/Number(runtime.memory_total_gb))*100)))
   :null;
+ const memoryUsedGb=runtime?.memory_total_gb!==undefined
+  ?Math.max(0,Number(runtime.memory_total_gb||0)-Number(runtime.memory_free_gb||0))
+  :null;
+ const driveRows=Array.isArray(runtime?.drives)?runtime.drives:[];
+ const physicalDisks=Array.isArray(runtime?.physical_disks)?runtime.physical_disks:[];
+ const storageFree=runtime?.storage_free_gb!==undefined
+  ?Number(runtime.storage_free_gb)
+  :driveRows.reduce((sum,drive)=>sum+Number(drive?.free_gb||0),0);
+ const storageTotal=runtime?.storage_total_gb!==undefined
+  ?Number(runtime.storage_total_gb)
+  :driveRows.reduce((sum,drive)=>sum+Number(drive?.total_gb||0),0);
+ const fmtMetric=value=>{
+  const n=Number(value);
+  if(!Number.isFinite(n))return'—';
+  return(Math.round(n*10)/10).toLocaleString('fr-FR',{maximumFractionDigits:1});
+ };
 
  const recentFailures=commands.filter(command=>command.status==='failed'&&Date.now()-new Date(command.completed_at||command.issued_at).getTime()<3600000);
  const alerts=useMemo(()=>{
@@ -648,11 +664,31 @@ export default function ControlCenterPage({goTo}){
      </button>)}
     </div>
 
-    {runtime&&<div className="control-runtime">
-     <div><span>PC</span><strong>{privacyMode?'••••••':runtime.hostname||primaryDevice?.name||'3B'}</strong><small>{runtime.platform||primaryDevice?.platform||'système'}</small></div>
-     <div><span>MÉMOIRE</span><strong>{memoryUsed===null?'—':memoryUsed+'%'}</strong><small>{runtime.memory_free_gb!==undefined?runtime.memory_free_gb+' Go libres':'télémétrie live'}</small></div>
-     <div><span>UPTIME</span><strong>{runtime.uptime_seconds?Math.floor(runtime.uptime_seconds/3600)+' h':'—'}</strong><small>agent {runtime.agent_version||primaryDevice?.agent_version||'—'}</small></div>
-    </div>}
+    {runtime&&<>
+     <div className="control-runtime">
+      <div><span>PC</span><strong>{privacyMode?'••••••':runtime.hostname||primaryDevice?.name||'3B'}</strong><small>{runtime.platform||primaryDevice?.platform||'système'}</small></div>
+      <div><span>MÉMOIRE</span><strong>{memoryUsed===null?'—':memoryUsed+'%'}</strong><small>{runtime.memory_free_gb!==undefined?fmtMetric(runtime.memory_free_gb)+' Go libres':'télémétrie live'}</small></div>
+      <div><span>UPTIME</span><strong>{runtime.uptime_seconds?Math.floor(runtime.uptime_seconds/3600)+' h':'—'}</strong><small>agent {runtime.agent_version||primaryDevice?.agent_version||'—'}</small></div>
+     </div>
+     <div className="control-hardware-grid" aria-label="Matériel du PC">
+      <article><span>GPU</span><strong>{runtime.gpu_name||'Non détecté'}</strong><small>{runtime.gpu_temperature_c!==null&&runtime.gpu_temperature_c!==undefined?runtime.gpu_temperature_c+' °C':'NVIDIA live si disponible'}</small></article>
+      <article><span>VRAM</span><strong>{runtime.gpu_memory_used_mb!==null&&runtime.gpu_memory_used_mb!==undefined?runtime.gpu_memory_used_mb+' / '+runtime.gpu_memory_total_mb+' Mo':'—'}</strong><small>{runtime.gpu_utilization_percent!==null&&runtime.gpu_utilization_percent!==undefined?'GPU '+runtime.gpu_utilization_percent+' %':'utilisation non exposée'}</small></article>
+      <article><span>RAM</span><strong>{memoryUsedGb===null?'—':fmtMetric(memoryUsedGb)+' / '+fmtMetric(runtime.memory_total_gb)+' Go'}</strong><small>{memoryUsed===null?'télémétrie live':memoryUsed+' % utilisée'}</small></article>
+      <article><span>STOCKAGE LIBRE</span><strong>{Number.isFinite(storageFree)?fmtMetric(storageFree)+' Go':'—'}</strong><small>{driveRows.length?driveRows.length+' volume'+(driveRows.length>1?'s':'')+' fixe'+(driveRows.length>1?'s':''):storageTotal>0?fmtMetric(storageTotal)+' Go au total':'inventaire non disponible'}</small></article>
+     </div>
+     {(physicalDisks.length>0||driveRows.length>0)&&<div className="control-drive-inventory">
+      <div className="control-drive-head"><span>DISQUES WINDOWS</span><small>NVMe / SATA et espace par volume</small></div>
+      {physicalDisks.map((disk,index)=><article className="control-physical-disk" key={(disk.name||'disk')+'-'+index}>
+       <div><b>{disk.name||'Disque '+(index+1)}</b><small>{disk.media_type||'Stockage'} · {disk.bus_type||'Bus inconnu'}</small></div>
+       <strong>{fmtMetric(disk.total_gb)} Go</strong>
+       <em>{disk.health||'État inconnu'}</em>
+      </article>)}
+      {driveRows.map((drive,index)=><article className="control-drive-row" key={(drive.letter||'volume')+'-'+index}>
+       <div><b>{drive.letter||'Volume'}{drive.label?' · '+drive.label:''}</b><small>{fmtMetric(drive.free_gb)} Go libres sur {fmtMetric(drive.total_gb)} Go</small></div>
+       <strong>{Number.isFinite(Number(drive.free_percent))?drive.free_percent+' % libre':'—'}</strong>
+      </article>)}
+     </div>}
+    </>}
    </section>
 
    <section className="control-section control-hide-in-focus" id="cc-live">
