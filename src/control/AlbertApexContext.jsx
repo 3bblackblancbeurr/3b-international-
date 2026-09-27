@@ -3,7 +3,7 @@ import {
  ALBERT_OPERATION_MODES,ALBERT_RESOURCE_PROFILES,
  compileAlbertSpec,compileAlbertTaskGraph,createAlbertEvent,
  createApexState,normalizeApexState,inspectAlbertStrategy,
- evaluateCompletion,createEvidenceBundle
+ evaluateCompletion,createEvidenceBundle,advanceAlbertGraph,verifyAlbertGraphPhase
 } from './albert-apex-core.js';
 
 const Context=createContext(null);
@@ -85,7 +85,11 @@ export function AlbertApexProvider({children}){
  },[]);
 
  const progressTask=useCallback((taskId,label,phase='EXECUTE')=>{
-  setState(s=>({...s,tasks:s.tasks.map(t=>t.id===taskId?{...t,progress:{label:String(label||'En cours').slice(0,240),phase,at:new Date().toISOString()}}:t)}));
+  setState(s=>({...s,tasks:s.tasks.map(t=>{
+   if(t.id!==taskId)return t;
+   const graph=advanceAlbertGraph(t.graph,phase);
+   return {...t,graph,progress:{label:String(label||'En cours').slice(0,240),phase,at:new Date().toISOString()}};
+  })}));
  },[]);
 
  const completeTask=useCallback((taskId,evidenceInput={})=>{
@@ -93,9 +97,13 @@ export function AlbertApexProvider({children}){
   setState(s=>{
    const tasks=s.tasks.map(t=>{
     if(t.id!==taskId)return t;
-    const graph={...t.graph,tasks:t.graph.tasks.map(node=>({...node,status:'verified',startedAt:node.startedAt||t.startedAt,endedAt:new Date().toISOString(),attempts:Math.max(1,node.attempts||0)}))};
     const evidence=createEvidenceBundle(evidenceInput);
-    const completion=evaluateCompletion({spec:t.spec,graph,evidence:{executed:true,tested:evidenceInput.tested===true,verified:evidenceInput.verified===true,reversible:evidenceInput.reversible!==false,documented:evidenceInput.documented===true}});
+    const graph=verifyAlbertGraphPhase(t.graph,'EVIDENCE',[
+     ...evidence.tests,
+     ...evidence.files,
+     evidence.externalConfirmation
+    ].filter(Boolean));
+    const completion=evaluateCompletion({spec:t.spec,graph,evidence:{executed:evidenceInput.executed===true,tested:evidenceInput.tested===true,verified:evidenceInput.verified===true,reversible:evidenceInput.reversible!==false,documented:evidenceInput.documented===true}});
     return{...t,status:completion.complete?'verified':'review',endedAt:new Date().toISOString(),graph,evidence,completion,progress:{label:completion.complete?'Vérifié':'Preuves incomplètes',phase:'EVIDENCE',at:new Date().toISOString()}};
    });
    const current=tasks.find(t=>t.id===taskId);
@@ -111,7 +119,11 @@ export function AlbertApexProvider({children}){
   active.current.delete(taskId);
   const message=String(error?.message||error||'Échec').slice(0,1500);
   setState(s=>({...s,
-   tasks:s.tasks.map(t=>t.id===taskId?{...t,status:'failed',endedAt:new Date().toISOString(),error:message,progress:{label:'Échec',phase:'FAILED',at:new Date().toISOString()}}:t),
+   tasks:s.tasks.map(t=>{
+    if(t.id!==taskId)return t;
+    const graph={...t.graph,tasks:t.graph.tasks.map(node=>node.status==='running'?{...node,status:'failed',endedAt:new Date().toISOString(),error:message}:node)};
+    return{...t,graph,status:'failed',endedAt:new Date().toISOString(),error:message,progress:{label:'Échec',phase:'FAILED',at:new Date().toISOString()}};
+   }),
    history:[...s.history,{intent:s.tasks.find(t=>t.id===taskId)?.intent||taskId,status:'failed',at:new Date().toISOString()}].slice(-80),
    events:[...s.events,createAlbertEvent('task.failed',{id:taskId,error:message},'critical')].slice(-100)
   }));
@@ -119,12 +131,20 @@ export function AlbertApexProvider({children}){
 
  const cancelTask=useCallback((taskId,reason='Interrompu par l’utilisateur')=>{
   active.current.delete(taskId);
-  setState(s=>({...s,tasks:s.tasks.map(t=>t.id===taskId&&['running','review'].includes(t.status)?{...t,status:'cancelled',endedAt:new Date().toISOString(),error:String(reason).slice(0,500),progress:{label:'Annulé',phase:'CANCELLED',at:new Date().toISOString()}}:t),events:[...s.events,createAlbertEvent('task.cancelled',{id:taskId})].slice(-100)}));
+  setState(s=>({...s,tasks:s.tasks.map(t=>{
+   if(t.id!==taskId||!['running','review'].includes(t.status))return t;
+   const graph={...t.graph,tasks:t.graph.tasks.map(node=>node.status==='running'?{...node,status:'cancelled',endedAt:new Date().toISOString(),error:String(reason).slice(0,500)}:node)};
+   return{...t,graph,status:'cancelled',endedAt:new Date().toISOString(),error:String(reason).slice(0,500),progress:{label:'Annulé',phase:'CANCELLED',at:new Date().toISOString()}};
+  }),events:[...s.events,createAlbertEvent('task.cancelled',{id:taskId})].slice(-100)}));
  },[]);
 
  const killAll=useCallback(()=>{
   active.current.clear();
-  setState(s=>({...s,killSwitch:true,tasks:s.tasks.map(t=>['running','review'].includes(t.status)?{...t,status:'cancelled',endedAt:new Date().toISOString(),error:'STOP ALBERT'}:t),events:[...s.events,createAlbertEvent('kill-switch.activated',{},'critical')].slice(-100)}));
+  setState(s=>({...s,killSwitch:true,tasks:s.tasks.map(t=>{
+   if(!['running','review'].includes(t.status))return t;
+   const graph={...t.graph,tasks:t.graph.tasks.map(node=>node.status==='running'?{...node,status:'cancelled',endedAt:new Date().toISOString(),error:'STOP ALBERT'}:node)};
+   return{...t,graph,status:'cancelled',endedAt:new Date().toISOString(),error:'STOP ALBERT'};
+  }),events:[...s.events,createAlbertEvent('kill-switch.activated',{},'critical')].slice(-100)}));
  },[]);
  const resume=useCallback(()=>setState(s=>({...s,killSwitch:false,events:[...s.events,createAlbertEvent('kill-switch.released',{},'attention')].slice(-100)})),[]);
  const resetSession=useCallback(()=>setState(s=>({...s,session:{...s.session,id:'session-'+Date.now().toString(36),startedAt:new Date().toISOString(),endedAt:null,taskIds:[]},needYou:[],events:[...s.events,createAlbertEvent('session.started')].slice(-100)})),[]);
