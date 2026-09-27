@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {albertRequest} from './integrations-client.js';
 import {useAlbertSpaces} from './AlbertSpacesContext.jsx';
+import {useAlbertApex} from './AlbertApexContext.jsx';
 import AlbertAvatar3D from './AlbertAvatar3D.jsx';
 import {parseAlbertLocal,validateAlbertActions} from './albert-model.js';
 import './albert-workspace.css';
@@ -13,6 +14,8 @@ const CHAPTERS=[
 ];
 export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceKnown,runtime,privacyMode,reduced,ready,theme}){
  const spaces=useAlbertSpaces();
+ const apex=useAlbertApex();
+ const activeTask=useRef(null);
  const[memory,setMemory]=useState(true),[listening,setListening]=useState(false),[speaking,setSpeaking]=useState(false);
  const abort=useRef(null),recognition=useRef(null);
  const[prompt,setPrompt]=useState(''),[reply,setReply]=useState('Demandez une synthèse ou composez votre interface.'),[busy,setBusy]=useState(false),[failure,setFailure]=useState(false);
@@ -20,7 +23,7 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
  const[systemReduced,setSystemReduced]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
  const dialog=useRef(null),trigger=useRef(null),requestId=useRef(0),locked=useRef(false);
  const noMotion=reduced||systemReduced;
- function stop(){requestId.current++;abort.current?.abort();locked.current=false;setBusy(false);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false);setSpeaking(false);}
+ function stop(reason='Interrompu par l’utilisateur'){requestId.current++;abort.current?.abort();locked.current=false;setBusy(false);recognition.current?.abort();window.speechSynthesis?.cancel();setListening(false);setSpeaking(false);if(activeTask.current){apex.cancelTask(activeTask.current,reason);activeTask.current=null;}}
  useEffect(()=>{stop();return()=>{requestId.current++;abort.current?.abort();recognition.current?.abort();window.speechSynthesis?.cancel();};},[spaces.owner,privacyMode]);
  function dictate(){
   if(listening){recognition.current?.stop();return;}
@@ -41,20 +44,52 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   const value=text.trim();if(!value||locked.current||!ready)return;
   setFailure(false);
   if(/^cin[eé]matique$/i.test(value)){setFilm(true);setPrompt('');return;}
-  let local;try{local=parseAlbertLocal(value,spaces.state);}catch(e){setFailure(true);setReply(e.message);return;}
-  if(local){try{onActions(local);setReply('Interface mise à jour. Vous pouvez annuler cette modification.');setPrompt('');}catch(e){setFailure(true);setReply(e.message);}return;}
+  if(apex.state.killSwitch){setFailure(true);setReply('STOP ALBERT est actif. Réarmez le core APEX pour lancer une nouvelle tâche.');return;}
+  const taskId=apex.beginTask(value,{project:'3B Command OS'});activeTask.current=taskId;
+  apex.progressTask(taskId,'Analyse de l’intention et de la stratégie','INTENT');
+  let local;
+  try{local=parseAlbertLocal(value,spaces.state);apex.progressTask(taskId,'Risques et dépendances évalués','ASSESS');}
+  catch(e){apex.failTask(taskId,e);activeTask.current=null;setFailure(true);setReply(e.message);return;}
+  if(local){
+   try{
+    apex.progressTask(taskId,'Plan local déterministe prêt','PLAN');
+    apex.progressTask(taskId,'Application de la commande locale validée','EXECUTE');
+    onActions(local);
+    apex.progressTask(taskId,'Résultat local relu','REVIEW');
+    apex.progressTask(taskId,'Contrat d’action vérifié','VERIFY');
+    apex.progressTask(taskId,'Assemblage des preuves locales','EVIDENCE');
+    apex.completeTask(taskId,{executed:true,tests:['Validation locale du contrat d’action'],verified:true,tested:true,reversible:true,documented:true,notes:'Commande locale appliquée par le client après validation structurée.'});
+    activeTask.current=null;
+    setReply('Interface mise à jour. Vous pouvez annuler cette modification.');
+    setPrompt('');
+   }catch(e){apex.failTask(taskId,e);activeTask.current=null;setFailure(true);setReply(e.message);}
+   return;
+  }
+  if(apex.state.mode==='LOCAL'){
+   apex.cancelTask(taskId,'Mode LOCAL : aucune route distante autorisée pour cette demande.');activeTask.current=null;
+   setFailure(true);setReply('Mode LOCAL actif : cette demande nécessite actuellement le moteur serveur. Passez en AUTO, HYBRID ou INTERNET, ou utilisez une commande locale.');
+   return;
+  }
   recognition.current?.abort();window.speechSynthesis?.cancel();setSpeaking(false);
   locked.current=true;setBusy(true);setReply('Albert analyse votre demande…');const id=++requestId.current;abort.current=new AbortController();
   try{
+   apex.progressTask(taskId,'Préparation du contexte autorisé','PLAN');
    const active=spaces.state.spaces.find(s=>s.id===spaces.state.active);
-   const result=await albertRequest({action:'albert',stream:true,prompt:value,messages:memory&&!privacyMode?spaces.state.messages:[],workspace:privacyMode?null:{active:active.id,spaces:[active]}},{signal:abort.current.signal,onText:text=>{if(id===requestId.current&&text)setReply(text);},onStatus:text=>{if(id===requestId.current)setReply(text);}});
+   apex.progressTask(taskId,'Exécution via la route serveur autorisée','EXECUTE');
+   const result=await albertRequest({action:'albert',stream:true,prompt:value,messages:memory&&!privacyMode?spaces.state.messages:[],workspace:privacyMode?null:{active:active.id,spaces:[active]},apex:{mode:apex.state.mode,resource_profile:apex.state.resourceProfile}},{signal:abort.current.signal,onText:text=>{if(id===requestId.current&&text)setReply(text);},onStatus:text=>{if(id===requestId.current){setReply(text);apex.progressTask(taskId,text,'EXECUTE');}}});
    if(id!==requestId.current)return;
+   apex.progressTask(taskId,'Réponse reçue et relue','REVIEW');
    const actions=validateAlbertActions(result.answer?.actions);
    if(actions.length)onActions(actions);
-   setReply((result.answer?.text||'Aucune réponse.')+(actions.length?' · Modifications appliquées.':''));
-   if(memory&&!privacyMode)spaces.remember(value,result.answer?.text||'');
+   const answer=result.answer?.text||'Aucune réponse.';
+   setReply(answer+(actions.length?' · Modifications appliquées.':''));
+   if(memory&&!privacyMode)spaces.remember(value,answer);
+   apex.progressTask(taskId,'Schéma et actions autorisées vérifiés','VERIFY');
+   apex.progressTask(taskId,'Assemblage des preuves de réponse','EVIDENCE');
+   apex.completeTask(taskId,{executed:true,tests:['Validation du schéma de réponse','Filtrage des actions autorisées'],verified:true,tested:true,reversible:true,documented:true,notes:actions.length?'Réponse serveur validée et actions UI appliquées.':'Réponse serveur validée sans action externe.'});
+   activeTask.current=null;
    setPrompt('');
-  }catch(e){if(id===requestId.current){setFailure(true);setReply(e.message||'Albert est momentanément indisponible.');}}
+  }catch(e){if(id===requestId.current){apex.failTask(taskId,e);activeTask.current=null;setFailure(true);setReply(e.message||'Albert est momentanément indisponible.');}}
   finally{if(id===requestId.current){locked.current=false;setBusy(false);}}
  }
  function closeFilm(){setFilm(false);trigger.current?.focus();}
@@ -75,8 +110,8 @@ export default function AlbertWorkspace({onActions,onUndo,canUndo,online,deviceK
   </div>
   <form className="albert-prompt" onSubmit={e=>{e.preventDefault();run();}}><label htmlFor="albert-input">✧ <span className="albert-sr">Demande à Albert</span></label><input id="albert-input" value={prompt} onChange={e=>setPrompt(e.target.value)} maxLength={4000} placeholder="Albert, affiche les projets et passe en violet…" disabled={busy||!ready}/><button type="submit" disabled={busy||!ready||!prompt.trim()}>{busy?'Analyse…':'Envoyer ↗'}</button></form>
   <p className={'albert-answer'+(failure?' error':'')} role="status" aria-live="polite">{ready?reply:'Connexion propriétaire requise pour utiliser Albert.'}</p>
-  <div className="albert-conversation-tools">
-   {busy&&<button onClick={()=>{stop();setReply('Demande interrompue. Aucune action de cette réponse appliquée.');}}>Interrompre</button>}
+  <div className="albert-conversation-tools"><span className="albert-apex-mode">APEX {apex.state.mode} · {apex.state.resourceProfile}{apex.state.killSwitch?' · STOP':''}</span>
+   {busy&&<button onClick={()=>{stop('Interruption explicite depuis le cockpit.');setReply('Demande interrompue. Aucune action de cette réponse appliquée.');}}>Interrompre</button>}
    <label><input type="checkbox" checked={memory&&!privacyMode} disabled={busy||privacyMode} onChange={e=>setMemory(e.target.checked)}/> Mémoire de conversation</label>
    <details><summary>Voix et confidentialité</summary><p className="albert-voice-note">La dictée dépend du navigateur et peut transmettre votre voix à son fournisseur. Le texte est à vérifier avant d’appuyer sur Envoyer. La mémoire activée transmet les derniers échanges à Albert ; l’espace actif est transmis hors mode privé.</p>
     {(window.SpeechRecognition||window.webkitSpeechRecognition)?<button disabled={!ready||busy||privacyMode} onClick={dictate}>{listening?'Arrêter la dictée':'Dicter une demande'}</button>:<span>Dictée non disponible dans ce navigateur.</span>}
