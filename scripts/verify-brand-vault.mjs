@@ -11,6 +11,7 @@ for(const asset of manifest.lockedAssets||[]){
  if(!existsSync(absolute)){console.error(`[brand-vault] missing locked asset: ${asset.path}`);failures++;continue}
  const sha256=createHash("sha256").update(readFileSync(absolute)).digest("hex");
  if(writeMode){asset.sha256=sha256;asset.status="locked"}
+ else if(asset.status==="locked"&&!/^[0-9a-f]{64}$/i.test(asset.sha256||"")){console.error(`[brand-vault] locked asset lacks valid SHA-256: ${asset.path}`);failures++}
  else if(asset.sha256&&asset.sha256!==sha256){console.error(`[brand-vault] SHA-256 mismatch: ${asset.path}`);failures++}
 }
 const missing=(manifest.requiredOfficialLogos||[]).filter(entry=>!entry.path||!existsSync(path.join(root,entry.path)));
