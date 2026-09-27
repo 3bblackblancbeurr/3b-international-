@@ -57,7 +57,7 @@ export function capabilityRegistry(runtime={}){
   ['permissions','Permission Broker','ready','security'],
   ['events','Event Bus + Ambient Inbox','ready','core'],
   ['evidence','Completion Contract + Evidence','ready','security'],
-  ['voice','Voix navigateur','browser','voice'],
+  ['voice','Voix navigateur',runtime.browserVoice===true?'available':'unavailable','voice'],
   ['localRuntime','Runtime Windows ALBERT',local?'live':'offline','local'],
   ['pcControl','Contrôle PC typé',local?'available':'offline','local'],
   ['google','Google Workspace',providerState('google'),'external'],
