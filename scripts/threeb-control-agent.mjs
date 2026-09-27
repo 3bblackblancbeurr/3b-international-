@@ -2,10 +2,10 @@
 import os from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const VERSION='1.2.0';
+const VERSION='1.3.0';
 const SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
 const PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
 const ENDPOINT=SUPABASE_URL+'/functions/v1/control-center-agent';
@@ -21,6 +21,8 @@ const autostartPath=path.join(configDir,'autostart.json');
 const CAPABILITIES={
  ping:true,
  system_status:true,
+ storage_inventory:true,
+ gpu_telemetry:true,
  open_3b:true,
  open_repo:true,
  open_unreal:true,
@@ -102,6 +104,96 @@ async function request(body,token=''){
  return data;
 }
 function roundGb(bytes){return Math.round(bytes/1024/1024/1024*10)/10;}
+let hardwareCache={at:0,value:{}};
+
+function runFixed(command,args,timeout=3000){
+ try{
+  const result=spawnSync(command,args,{encoding:'utf8',windowsHide:true,timeout,maxBuffer:1024*1024});
+  if(result.error||result.status!==0)return'';
+  return String(result.stdout||'').trim();
+ }catch{return'';}
+}
+function parseJson(raw){
+ if(!raw)return null;
+ try{return JSON.parse(raw);}catch{return null;}
+}
+function windowsStorageInventory(){
+ const script=[
+  "$ErrorActionPreference='Stop'",
+  "$volumes=@(Get-CimInstance Win32_LogicalDisk -Filter \"DriveType=3\" | ForEach-Object { [pscustomobject]@{ letter=$_.DeviceID; label=$_.VolumeName; size=[double]$_.Size; free=[double]$_.FreeSpace } })",
+  "$physical=@()",
+  "try { $physical=@(Get-PhysicalDisk | ForEach-Object { [pscustomobject]@{ name=$_.FriendlyName; media_type=[string]$_.MediaType; bus_type=[string]$_.BusType; size=[double]$_.Size; health=[string]$_.HealthStatus } }) } catch {}",
+  "[pscustomobject]@{volumes=$volumes;physical=$physical} | ConvertTo-Json -Compress -Depth 4"
+ ].join('; ');
+ const payload=parseJson(runFixed('powershell.exe',['-NoLogo','-NoProfile','-NonInteractive','-Command',script],3500));
+ const rawVolumes=Array.isArray(payload?.volumes)?payload.volumes:(payload?.volumes?[payload.volumes]:[]);
+ const rawPhysical=Array.isArray(payload?.physical)?payload.physical:(payload?.physical?[payload.physical]:[]);
+ const drives=rawVolumes.map(volume=>{
+  const total=Number(volume?.size)||0;
+  const free=Number(volume?.free)||0;
+  return{
+   letter:String(volume?.letter||'').trim(),
+   label:String(volume?.label||'').trim(),
+   total_gb:roundGb(total),
+   free_gb:roundGb(free),
+   used_gb:roundGb(Math.max(0,total-free)),
+   free_percent:total>0?Math.round(free/total*100):0
+  };
+ }).filter(volume=>volume.letter&&volume.total_gb>0);
+ const physical_disks=rawPhysical.map(disk=>({
+  name:String(disk?.name||'').trim(),
+  media_type:String(disk?.media_type||'').trim()||'Unknown',
+  bus_type:String(disk?.bus_type||'').trim()||'Unknown',
+  total_gb:roundGb(Number(disk?.size)||0),
+  health:String(disk?.health||'').trim()||'Unknown'
+ })).filter(disk=>disk.name||disk.total_gb>0);
+ return{
+  drives,
+  physical_disks,
+  storage_total_gb:Math.round(drives.reduce((sum,drive)=>sum+Number(drive.total_gb||0),0)*10)/10,
+  storage_free_gb:Math.round(drives.reduce((sum,drive)=>sum+Number(drive.free_gb||0),0)*10)/10
+ };
+}
+function fallbackStorageInventory(){
+ try{
+  const rootPath=path.parse(process.cwd()).root||'/';
+  const stat=fs.statfsSync(rootPath);
+  const total=Number(stat.blocks)*Number(stat.bsize);
+  const free=Number(stat.bavail)*Number(stat.bsize);
+  return{
+   drives:[{letter:rootPath,label:'',total_gb:roundGb(total),free_gb:roundGb(free),used_gb:roundGb(Math.max(0,total-free)),free_percent:total>0?Math.round(free/total*100):0}],
+   physical_disks:[],
+   storage_total_gb:roundGb(total),
+   storage_free_gb:roundGb(free)
+  };
+ }catch{return{drives:[],physical_disks:[]};}
+}
+function nvidiaTelemetry(){
+ const raw=runFixed('nvidia-smi',[
+  '--query-gpu=name,memory.used,memory.total,temperature.gpu,utilization.gpu',
+  '--format=csv,noheader,nounits'
+ ],2500);
+ const first=raw.split(/\r?\n/).find(Boolean);
+ if(!first)return{};
+ const parts=first.split(',').map(value=>value.trim());
+ if(parts.length<3)return{};
+ const used=Number(parts[1]),total=Number(parts[2]),temperature=Number(parts[3]),utilization=Number(parts[4]);
+ return{
+  gpu_name:parts[0]||'NVIDIA',
+  gpu_memory_used_mb:Number.isFinite(used)?Math.round(used):null,
+  gpu_memory_total_mb:Number.isFinite(total)?Math.round(total):null,
+  gpu_temperature_c:Number.isFinite(temperature)?Math.round(temperature):null,
+  gpu_utilization_percent:Number.isFinite(utilization)?Math.round(utilization):null
+ };
+}
+function hardwareTelemetry(){
+ const now=Date.now();
+ if(now-hardwareCache.at<15000)return hardwareCache.value;
+ const storage=process.platform==='win32'?windowsStorageInventory():fallbackStorageInventory();
+ const value={...storage,...nvidiaTelemetry()};
+ hardwareCache={at:now,value};
+ return value;
+}
 function systemStatus(){
  const cpus=os.cpus();
  return{
@@ -115,6 +207,7 @@ function systemStatus(){
   cpu_count:cpus.length,
   cpu_model:cpus[0]?.model||'unknown',
   load_average:os.loadavg().map(v=>Math.round(v*100)/100),
+  ...hardwareTelemetry(),
   agent_version:VERSION,
   autostart_enabled:autostartEnabled()
  };
