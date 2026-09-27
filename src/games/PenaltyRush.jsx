@@ -52,6 +52,15 @@ function phaseLabel(phase) {
   }[phase] || 'EN LIGNE';
 }
 
+function connectionLabel(state) {
+  return {
+    online: 'En ligne',
+    sync: 'Synchronisation',
+    error: 'À reconnecter',
+    offline: 'Hors ligne',
+  }[state] || 'Connexion';
+}
+
 export default function PenaltyRush({ onClose, onAccount }) {
   const account = useLoyalty();
   const [tab, setTab] = useState('play');
@@ -65,6 +74,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
   const [training, setTraining] = useState(null);
   const pollRef = useRef(null);
   const tickInFlight = useRef(false);
+  const lifecycleSyncRef = useRef(false);
   const accountIdRef = useRef(account.user?.id);
   accountIdRef.current = account.user?.id;
 
@@ -136,19 +146,32 @@ export default function PenaltyRush({ onClose, onAccount }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!room?.id) return;
+    if (!room?.id) return undefined;
+
+    const handleRealtimeStatus = (status) => {
+      if (status === 'SUBSCRIBED') setConnection('online');
+      else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        setConnection(navigator.onLine === false ? 'offline' : 'error');
+      } else {
+        setConnection(navigator.onLine === false ? 'offline' : 'sync');
+      }
+    };
+
     const unsubscribe = subscribePenaltyRoom(
       room.id,
       () => syncRoom(room.id, true),
-      (status) => setConnection(status === 'SUBSCRIBED' ? 'online' : status === 'CHANNEL_ERROR' ? 'error' : 'sync'),
+      handleRealtimeStatus,
     );
+
     pollRef.current = window.setInterval(() => {
-      if (document.hidden || tickInFlight.current) return;
+      if (document.hidden || navigator.onLine === false || tickInFlight.current) return;
       tickInFlight.current = true;
       request('tick', { room: room.id }, { silent: true })
-        .catch(() => {})
+        .then(() => setConnection('online'))
+        .catch(() => setConnection(navigator.onLine === false ? 'offline' : 'error'))
         .finally(() => { tickInFlight.current = false; });
     }, 1000);
+
     return () => {
       unsubscribe();
       clearInterval(pollRef.current);
@@ -156,6 +179,62 @@ export default function PenaltyRush({ onClose, onAccount }) {
       tickInFlight.current = false;
     };
   }, [room?.id]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const restoreConnection = async () => {
+      if (navigator.onLine === false) {
+        setConnection('offline');
+        return;
+      }
+      if (lifecycleSyncRef.current) return;
+
+      lifecycleSyncRef.current = true;
+      setConnection('sync');
+      try {
+        const remembered = room?.id || rememberedPenaltyRoom();
+        if (remembered) {
+          await syncRoom(remembered, true);
+        } else {
+          const data = await penaltyRequest('status', { room: rememberedPenaltyRoom() });
+          if (accountIdRef.current !== user.id) return;
+          if (data.profile) setProfile(normalizePenaltyProfile(data.profile, account));
+          if (data.snapshot) setSnapshot(data.snapshot);
+          if (data.room) {
+            setRoom(data.room);
+            rememberPenaltyRoom(data.room.id);
+          }
+          setConnection('online');
+        }
+      } catch {
+        setConnection(navigator.onLine === false ? 'offline' : 'error');
+      } finally {
+        lifecycleSyncRef.current = false;
+      }
+    };
+
+    const handleOnline = () => { restoreConnection(); };
+    const handleOffline = () => { setConnection('offline'); };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') restoreConnection();
+    };
+    const handleFocus = () => { restoreConnection(); };
+
+    if (navigator.onLine === false) setConnection('offline');
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      lifecycleSyncRef.current = false;
+    };
+  }, [user?.id, room?.id]);
 
   if (!user && training) return <div className="penalty-shell" role="dialog" aria-modal="true" aria-label="Entraînement Penalty Rush"><header className="penalty-topbar"><strong>3B PENALTY RUSH · ENTRAÎNEMENT</strong><button className="penalty-icon" onClick={onClose} aria-label="Fermer"><X size={20}/></button></header><Suspense fallback={<p>Chargement du terrain…</p>}><PenaltyTraining key={training} role={training} profile={profile} onExit={() => setTraining(null)}/></Suspense></div>;
   if (!user) {
@@ -186,7 +265,7 @@ export default function PenaltyRush({ onClose, onAccount }) {
           <strong>3B PENALTY RUSH</strong>
         </div>
         <div className="penalty-top-actions">
-          <span className="penalty-connection" data-state={connection}><Wifi size={14} /> {connection}</span>
+          <span className="penalty-connection" data-state={connection} aria-live="polite"><Wifi size={14} /> {connectionLabel(connection)}</span>
           {room?.id && <button className="penalty-icon" onClick={() => syncRoom(room.id, false)} aria-label="Resynchroniser"><RefreshCw size={17} /></button>}
           <button className="penalty-icon" onClick={onClose} aria-label="Fermer"><X size={20} /></button>
         </div>
