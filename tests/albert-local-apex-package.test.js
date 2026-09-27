@@ -45,6 +45,11 @@ test('local APEX package implements sequential evidence-gated orchestration',()=
  assert.match(core,/def qualify_skill/);
  assert.match(core,/def ambient_inbox/);
  assert.match(core,/def distill_session/);
+ assert.match(core,/def assess_intent_shift/);
+ assert.match(core,/def record_tool_result/);
+ assert.match(core,/def reset_session/);
+ assert.match(core,/def doctor/);
+ assert.match(core,/VERSION = "2\.1\.0"/);
  assert.match(core,/Completion refusée: EVIDENCE non atteinte/);
  assert.match(core,/Completion refusée: preuve incomplète/);
  assert.match(core,/shell=False/);
@@ -59,6 +64,11 @@ test('local APEX overlay stays inside the existing ALBERT UI and talks only to t
  assert.match(widget,/\/settings\/resource/);
  assert.match(widget,/\/core\/stop/);
  assert.match(widget,/\/core\/resume/);
+ assert.match(widget,/data-k="intent"/);
+ assert.match(widget,/data-k="taskState"/);
+ assert.match(widget,/data-k="tool"/);
+ assert.match(widget,/\/doctor/);
+ assert.match(widget,/\/session\/reset/);
  assert.match(css,/#albert-apex-v2-root/);
  assert.match(css,/backdrop-filter/);
  assert.match(css,/prefers-reduced-motion/);
@@ -78,6 +88,10 @@ test('local APEX API is localhost-only and exposes no arbitrary command executio
  assert.match(server,/\/skill\/create/);
  assert.match(server,/\/skill\/qualify/);
  assert.match(server,/\/session\/distill/);
+ assert.match(server,/\/session\/current/);
+ assert.match(server,/\/session\/reset/);
+ assert.match(server,/\/tool\/result/);
+ assert.match(server,/\/doctor/);
  assert.doesNotMatch(server,/subprocess|os\.system|shell=True|eval\(/);
 });
 
