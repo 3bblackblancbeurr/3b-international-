@@ -4,6 +4,10 @@ on:
     paths:
       - 'brand/master/**'
       - 'src/design-system/**'
+      - 'src/passport/identity.js'
+      - 'supabase/functions/member-api/index.ts'
+      - 'tests/passport-identity.test.js'
+      - 'tests/gold-master-passport-public-id.test.js'
       - 'src/styles/gold-master.css'
       - 'src/main.jsx'
       - 'public/manifest.webmanifest'
