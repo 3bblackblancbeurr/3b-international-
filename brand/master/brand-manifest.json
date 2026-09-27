@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "brand": "3B International",
+  "status": "bootstrap",
+  "hashAlgorithm": "sha256",
+  "policy": {
+    "generatedIdentityAllowed": false,
+    "rule": "AI may generate scenes, never official 3B identity assets.",
+    "officialAssetsMustBeLocked": true
+  },
+  "requiredOfficialLogos": [
+    {
+      "id": "fr",
+      "label": "France",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "ma",
+      "label": "Maroc",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "tn",
+      "label": "Tunisie",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "tr",
+      "label": "Turquie",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "dz",
+      "label": "Algérie",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "es",
+      "label": "Espagne",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "it",
+      "label": "Italie",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "ee",
+      "label": "Estonie",
+      "path": null,
+      "status": "missing-from-repository"
+    },
+    {
+      "id": "international",
+      "label": "3B International",
+      "path": null,
+      "status": "missing-from-repository"
+    }
+  ],
+  "lockedAssets": [
+    {
+      "name": "favicon-3b",
+      "path": "public/favicon-3b.svg",
+      "gitBlobSha1": "ed71fb163e8ecb4f07aa0aa6eebe962335c0d124",
+      "sha256": null,
+      "status": "legacy-locked-pending-sha256"
+    },
+    {
+      "name": "app-icon-192",
+      "path": "public/icons/3b-icon-20260912-192.png",
+      "gitBlobSha1": "4f1fb4eaaf9fefb17c21202851e3e4009a3255ae",
+      "sha256": null,
+      "status": "legacy-locked-pending-sha256"
+    },
+    {
+      "name": "app-icon-512",
+      "path": "public/icons/3b-icon-20260912-512.png",
+      "gitBlobSha1": "02a2fbf969491dfdeac835cb1da080d1d494ff69",
+      "sha256": null,
+      "status": "legacy-locked-pending-sha256"
+    },
+    {
+      "name": "app-icon-maskable-192",
+      "path": "public/icons/3b-icon-20260912-maskable-192.png",
+      "gitBlobSha1": "4f1fb4eaaf9fefb17c21202851e3e4009a3255ae",
+      "sha256": null,
+      "status": "legacy-locked-pending-sha256"
+    },
+    {
+      "name": "app-icon-maskable-512",
+      "path": "public/icons/3b-icon-20260912-maskable-512.png",
+      "gitBlobSha1": "02a2fbf969491dfdeac835cb1da080d1d494ff69",
+      "sha256": null,
+      "status": "legacy-locked-pending-sha256"
+    },
+    {
+      "name": "passport-digital-v2",
+      "path": "public/passport-digital-3bv2.png",
+      "gitBlobSha1": "bd1662e40d1b980bb303f37285303d148ab355b6",
+      "sha256": null,
+      "status": "legacy-locked-pending-sha256"
+    }
+  ]
+}
