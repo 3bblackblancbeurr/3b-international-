@@ -4,4 +4,7 @@
     <string name="title_activity_main">3B International</string>
     <string name="package_name">app.vercel.threebinternational</string>
     <string name="custom_url_scheme">app.vercel.threebinternational</string>
+    <string name="companion_wallpaper_description">Compagnon 3B — présence animée premium</string>
+    <string name="companion_notification_title">Compagnon 3B</string>
+    <string name="companion_notification_text">Toujours avec vous</string>
 </resources>

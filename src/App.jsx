@@ -37,6 +37,8 @@ import "./styles/compact.css";
 import "./styles/dimension.css";
 import "./styles/home-premium.css";
 import "./styles/responsive-premium.css";
+import "./styles/companion.css";
+import CompanionLayer from "./companion/CompanionLayer.jsx";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
@@ -306,6 +308,7 @@ export default function App() {
       <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="intro3b-background" aria-hidden="true" />
         <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
+        <CompanionLayer page="intro" secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
         <section className="intro3b-card intro3b-portal">
           <div className="intro3b-copy">
@@ -342,13 +345,20 @@ export default function App() {
   const needsPassport = !loyalty.loading && !hasPassport && !passportAllowed.has(page);
 
   if (needsPassport) {
-    return <PassportAccessGate goTo={goTo} options={options} />;
+    return (
+      <>
+        <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+        <PassportAccessGate goTo={goTo} options={options} />
+      </>
+    );
   }
 
   return (
     <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
+
+      <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
       {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} />}
       <main id="main-content" tabIndex={-1}>

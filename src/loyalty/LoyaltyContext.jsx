@@ -3,6 +3,7 @@ import {authClient,memberRequest} from './client.js';
 import {EXPLORATIONS,tierFor} from '../../shared/loyalty.js';
 import {passportFromProfile} from '../passport/identity.js';
 import {createSnapshotGate,watchSession} from './session-state.js';
+import {companionReward} from '../companion/events.js';
 const Context=createContext(null);
 export const useLoyalty=()=>useContext(Context);
 export function LoyaltyProvider({children}){
@@ -40,6 +41,6 @@ export function remoteMember(profile){
 }
 export function ExplorationRewards({page}){
  const account=useLoyalty();const[notice,setNotice]=useState('');
- useEffect(()=>{setNotice('');if(!account.user||!Object.hasOwn(EXPLORATIONS,page))return;const uid=account.user.id;let live=true;const timer=setTimeout(()=>{if(document.hidden)return;memberRequest('explore',{page},uid).then(result=>{if(live){account.accept(result);if(result.awarded)setNotice('Découverte récompensée : +20 XP · +2 points');}}).catch(()=>{});},12000);return()=>{live=false;clearTimeout(timer);};},[page,account.user?.id]);
+ useEffect(()=>{setNotice('');if(!account.user||!Object.hasOwn(EXPLORATIONS,page))return;const uid=account.user.id;let live=true;const timer=setTimeout(()=>{if(document.hidden)return;memberRequest('explore',{page},uid).then(result=>{if(live){account.accept(result);if(result.awarded){setNotice('Découverte récompensée : +20 XP · +2 points');companionReward({source:'exploration',page,xp:20,points:2});}}}).catch(()=>{});},12000);return()=>{live=false;clearTimeout(timer);};},[page,account.user?.id]);
  return notice?<div className="member-toast" role="status">{notice}</div>:null;
 }
