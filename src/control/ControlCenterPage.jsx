@@ -556,7 +556,7 @@ function ControlCenterContent({goTo}){
  const resetModules=()=>setHiddenModules({});
 
  if(error&&error.includes('réservé au propriétaire'))return <section className="control-page control-device-gate">
-  <div className="control-device-gate-card"><ShieldCheck/><h1>Centre de commande privé</h1><p>Vous êtes connecté à 3B, mais ce compte n’a pas l’accès propriétaire à Albert. Ouvrez Mon compte pour vérifier votre identité et, si nécessaire, vous reconnecter avec votre compte propriétaire habituel.</p><p>Si c’est déjà le bon compte, son association doit être vérifiée côté serveur. Aucun accès supplémentaire n’est accordé automatiquement.</p><button onClick={()=>goTo('member')}>Ouvrir Mon compte</button><button onClick={()=>goTo('home')}>Retour à l’accueil</button></div>
+  <div className="control-device-gate-card"><ShieldCheck/><h1>Centre de commande privé</h1><p>Vous êtes connecté à 3B, mais ce compte n’a pas l’accès propriétaire à Albert. Ouvrez Mon compte pour vérifier votre identité et, si nécessaire, vous reconnecter avec votre compte propriétaire habituel.</p><p>Si c’est déjà le bon compte, son association doit être vérifiée côté serveur. Aucun accès supplémentaire n’est accordé automatiquement.</p><p>Pas de terminal distant libre : seules les actions 3B autorisées peuvent être envoyées.</p><button onClick={()=>goTo('member')}>Ouvrir Mon compte</button><button onClick={()=>goTo('home')}>Retour à l’accueil</button></div>
  </section>;
 
  const heroStatus=syncing&&!data?'Synchronisation du système…':alerts.length?alerts[0].title:data?'Aucune alerte détectée dans les sources disponibles.':'État en attente de vérification.';
