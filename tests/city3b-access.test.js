@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 const edge=readFileSync(new URL('../supabase/functions/city-3b/index.ts',import.meta.url),'utf8');
 const gateway=readFileSync(new URL('../src/components/NexusCityGateway.jsx',import.meta.url),'utf8');
 const world=readFileSync(new URL('../src/world/WorldPage.jsx',import.meta.url),'utf8');
-const createGate=readFileSync(new URL('../supabase/migrations/20260920012315_nexus_city_require_world_souvenir.sql',import.meta.url),'utf8');
+const migration=readFileSync(new URL('../supabase/migrations/20260928122225_separate_world_city_progression.sql',import.meta.url),'utf8');
 
 test('City API exposes a lightweight authenticated access check',()=>{
  assert.match(edge,/async function access\(uid:string\)/);
@@ -13,19 +13,26 @@ test('City API exposes a lightweight authenticated access check',()=>{
  assert.match(edge,/if\(action==='access'\)return reply\(await access\(uid\)\)/);
 });
 
-test('Nexus and World share one guided unlock contract',()=>{
- assert.match(gateway,/cityUnlockGuide/);
- assert.match(gateway,/city3bRequest\('access'/);
- assert.match(world,/cityUnlockGuideRequested/);
- assert.match(world,/world-city-unlock-guide/);
- assert.match(world,/followCityUnlock/);
+test('Passport and City no longer depend on World progression',()=>{
+ assert.match(gateway,/hasPassport/);
+ assert.match(gateway,/setCityOpen\(true\)/);
+ assert.doesNotMatch(gateway,/cityUnlockGuide|#monde-3b|premier Souvenir/i);
+ assert.doesNotMatch(world,/cityUnlockGuide|cityUnlockMission|hubCitySync|hubCityProof|Débloquer ma Ville 3B/);
+ assert.doesNotMatch(edge,/action==='sync_world'|nexus_city_sync_world|markWorldSync/);
 });
 
+test('new City 3B creation requires an active Passport, not a World Souvenir',()=>{
+ assert.match(migration,/passport_state is distinct from 'active'/);
+ assert.match(migration,/Passeport 3B inactif/);
+ assert.doesNotMatch(migration,/member_world_state|beacons|Éveille d’abord un Souvenir/);
+ assert.match(migration,/'progression','city_only'/);
+});
 
-test('new City 3B creation requires a server-owned World Souvenir but existing cities are returned first',()=>{
- const existingReturn=createGate.indexOf('if cid is not null then return cid');
- const souvenirGate=createGate.indexOf("jsonb_array_length(coalesce(data->'beacons','[]'::jsonb))>0");
- assert.ok(existingReturn>=0);
- assert.ok(souvenirGate>existingReturn,'existing city must bypass the new-city gate');
- assert.match(createGate,/Éveille d’abord un Souvenir dans le Monde du 3B/);
+test('City districts advance from City level only',()=>{
+ assert.match(migration,/buildings \* 250/);
+ assert.match(migration,/roads \* 120/);
+ assert.match(migration,/displays \* 120/);
+ assert.match(migration,/unlock_count := case/);
+ assert.match(migration,/ranked\.rn <= unlock_count/);
+ assert.doesNotMatch(migration,/member_profiles m where m\.user_id=p_user for update;threshold/);
 });
