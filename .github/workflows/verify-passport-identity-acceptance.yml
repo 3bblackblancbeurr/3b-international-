@@ -15,6 +15,7 @@ on:
       - 'supabase/functions/passport-identity/**'
       - 'supabase/functions/passport-verify/**'
       - 'supabase/migrations/**passport**'
+      - 'supabase/migrations/*identity*'
       - 'scripts/verify-passport-acceptance-readiness.mjs'
       - '.github/workflows/verify-passport-identity-acceptance.yml'
   push:
@@ -32,6 +33,7 @@ on:
       - 'supabase/functions/passport-identity/**'
       - 'supabase/functions/passport-verify/**'
       - 'supabase/migrations/**passport**'
+      - 'supabase/migrations/*identity*'
       - 'scripts/verify-passport-acceptance-readiness.mjs'
       - '.github/workflows/verify-passport-identity-acceptance.yml'
 
