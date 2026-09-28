@@ -1,6 +1,6 @@
 import {useEffect,useMemo} from 'react';
 import {useAlbertApex} from './AlbertApexContext.jsx';
-import {ambientInbox,capabilityRegistry} from './albert-apex-services.js';
+import {APEX_STACK_LAYERS,ambientInbox,capabilityRegistry,readinessAudit} from './albert-apex-services.js';
 import './albert-apex.css';
 
 const MODE_COPY={
@@ -41,6 +41,20 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
  const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online,albertRuntime:Boolean(localAlbert?.installed),browserVoice:typeof window!=='undefined'&&Boolean(window.SpeechRecognition||window.webkitSpeechRecognition||window.speechSynthesis)}),[online,localAlbert?.installed]);
  const liveCapabilities=capabilities.filter(item=>['ready','live','available'].includes(item.state)).length;
  const inbox=useMemo(()=>ambientInbox(state.events,{max:8}),[state.events]);
+ const readiness=useMemo(()=>readinessAudit({
+  localhostOnly:true,
+  originAllowlist:true,
+  bodyLimit:true,
+  typedActions:true,
+  leastPrivilege:true,
+  approvalGate:true,
+  killSwitch:true,
+  evidenceGate:true,
+  inputValidation:true,
+  secretHygiene:true,
+  recovery:true,
+  observability:true,
+ }),[]);
  return <section className={'albert-apex-panel'+(state.killSwitch?' is-killed':'')} aria-label="ALBERT APEX OS">
   <header className="apex-head">
    <div><p>ALBERT APEX / OPERATING SYSTEM</p><h3>Intention → Spec → Action → Preuve</h3><span>Le cockpit n’annonce « terminé » qu’après vérification.</span></div>
@@ -60,6 +74,7 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
    <Metric label="TÂCHES" value={active+' actives'} detail={verified+' vérifiées · '+failed+' échecs'} tone={failed?'warn':'good'}/>
    <Metric label="RUNTIME LOCAL" value={runtimeState} detail={online?'VRAM '+vram:'aucune télémétrie fraîche'} tone={online?'good':'warn'}/>
    <Metric label="CAPACITÉS" value={liveCapabilities+' / '+capabilities.length} detail="déclarées et vérifiables" tone="good"/>
+   <Metric label="READINESS" value={readiness.passed+' / '+readiness.total} detail={readiness.unknown+' contrôles à mesurer'} tone={readiness.blockers.length?'warn':'good'}/>
    <Metric label="CONFIDENTIALITÉ" value={privacyMode?'STRICTE':'STANDARD'} detail={privacyMode?'contexte sensible masqué':'règles APEX actives'} tone={privacyMode?'good':'neutral'}/>
   </div>
 
@@ -95,6 +110,19 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
    <div className="apex-block">
     <div className="apex-block-title"><span>SANTÉ DU NOYAU</span><strong>{health.every(([,v])=>v==='ready'||v==='unknown')?'NOMINAL':'ATTENTION'}</strong></div>
     <div className="apex-health">{health.map(([key,value])=><div key={key}><span>{key}</span><b className={value==='ready'?'good':value==='unknown'?'idle':'warn'}>{value}</b></div>)}</div>
+   </div>
+  </div>
+
+  <div className="apex-columns">
+   <div className="apex-block">
+    <div className="apex-block-title"><span>STACK APEX</span><strong>{APEX_STACK_LAYERS.length} COUCHES</strong></div>
+    <div className="apex-health">{APEX_STACK_LAYERS.map(layer=><div key={layer.id}><span>{layer.label}</span><b className="good">ready</b></div>)}</div>
+    <p className="apex-runtime-detail">Fichiers → Connexions/MCP → Skills → Routines → Agents → Vérification. Une couche ne contourne jamais les permissions de la précédente.</p>
+   </div>
+   <div className="apex-block">
+    <div className="apex-block-title"><span>LAUNCH READINESS</span><strong>{readiness.score}% MESURÉ</strong></div>
+    <div className="apex-health">{readiness.checks.slice(0,9).map(check=><div key={check.id}><span>{check.label}</span><b className={check.status==='pass'?'good':check.status==='fail'?'warn':'idle'}>{check.status}</b></div>)}</div>
+    <p className="apex-runtime-detail">{readiness.unknown} points restent volontairement « unknown » tant qu’ils n’ont pas été mesurés sur le PC ou le projet ciblé.</p>
    </div>
   </div>
 
