@@ -13,6 +13,7 @@ import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
 import TurnstileField from './TurnstileField.jsx';
+import {Button} from '../design-system/index.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
 
@@ -234,7 +235,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
       <input type="date" autoComplete="bday" required min="1900-01-01" max={new Date().toISOString().slice(0,10)} value={fields.birthDate} onChange={e=>field('birthDate',e.target.value)}/>
      </label>
      <label className="account-check"><input type="checkbox" checked={fields.identityConsent} onChange={e=>field('identityConsent',e.target.checked)}/><span>J’accepte le traitement privé de ces données afin de préparer la vérification de mon Passeport 3B.</span></label>
-     <button type="button" className="loyalty-primary" onClick={saveIdentityClaim} disabled={identityBusy}>{identityBusy?'Enregistrement sécurisé…':'Enregistrer mon identité privée'} <ArrowUpRight size={17}/></button>
+     <Button className="loyalty-primary" onClick={saveIdentityClaim} loading={identityBusy} disabled={identityBusy}>{'Enregistrer mon identité privée'} <ArrowUpRight size={17}/></Button>
     </div>
    </section>}
 
