@@ -5,6 +5,7 @@ on:
     paths:
       - '.env.example'
       - 'public/privacy-policy.html'
+      - 'public/account-terms.html'
       - 'public/delete-account.html'
       - 'docs/passport/**'
       - 'docs/legal/**'
@@ -23,6 +24,7 @@ on:
     paths:
       - '.env.example'
       - 'public/privacy-policy.html'
+      - 'public/account-terms.html'
       - 'public/delete-account.html'
       - 'docs/passport/**'
       - 'docs/legal/**'
