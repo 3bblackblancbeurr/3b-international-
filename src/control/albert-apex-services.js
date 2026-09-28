@@ -30,6 +30,99 @@ export const APEX_TYPED_ACTIONS=Object.freeze({
  production_migration:{description:'Modifier un schéma de production',permission:4,reversible:false}
 });
 
+export const APEX_STACK_LAYERS=Object.freeze([
+ {id:'filesystem',label:'File System',role:'Contexte local, projets, fichiers et preuves'},
+ {id:'connections',label:'Connections / MCP',role:'Connecteurs explicitement autorisés'},
+ {id:'skills',label:'Skills',role:'Compétences versionnées, testées et qualifiées'},
+ {id:'routines',label:'Routines',role:'Workflows répétables compilés'},
+ {id:'agents',label:'Agents',role:'Rôles spécialisés à périmètre limité'},
+ {id:'verification',label:'Verification',role:'Critique, tests, preuves et contrat de fin'}
+]);
+
+export const APEX_READINESS_CHECKS=Object.freeze([
+ ['localhostOnly','API locale uniquement','security',true],
+ ['originAllowlist','Origines réseau autorisées','security',true],
+ ['bodyLimit','Taille de requête bornée','security',true],
+ ['typedActions','Actions typées fail-closed','security',true],
+ ['leastPrivilege','Moindre privilège','security',true],
+ ['approvalGate','Validation humaine sensible','security',true],
+ ['killSwitch','STOP ALBERT','recovery',true],
+ ['evidenceGate','Aucun succès sans preuve','quality',true],
+ ['inputValidation','Validation des entrées','security',true],
+ ['secretHygiene','Secrets hors UI et journaux','security',true],
+ ['rateLimits','Limites d’usage','security',false],
+ ['dependencyAudit','Audit dépendances','supply-chain',false],
+ ['recovery','Sauvegarde et rollback','recovery',false],
+ ['emptyLoadingErrorStates','États vide/chargement/erreur','ux',false],
+ ['accessibility','Clavier, focus, contraste, mouvement','ux',false],
+ ['responsive','Formats compacts vérifiés','ux',false],
+ ['observability','Événements inspectables','operations',false],
+ ['antiSlopReview','Revue design anti-générique','quality',false]
+]);
+
+export function readinessAudit(signals={}){
+ const checks=APEX_READINESS_CHECKS.map(([id,label,category,critical])=>{
+  const value=signals[id],status=value===true?'pass':value===false?'fail':'unknown';
+  return{id,label,category,critical,status};
+ });
+ const passed=checks.filter(row=>row.status==='pass').length;
+ const failed=checks.filter(row=>row.status==='fail').length;
+ const unknown=checks.filter(row=>row.status==='unknown').length;
+ const blockers=checks.filter(row=>row.critical&&row.status!=='pass').map(row=>row.id);
+ return{
+  score:Math.round((passed/checks.length)*100),
+  coverage:Math.round(((passed+failed)/checks.length)*100),
+  passed,failed,unknown,total:checks.length,
+  ready:blockers.length===0&&failed===0,
+  blockers,checks
+ };
+}
+
+export function compileApexRoutine(input={}){
+ const trigger=['manual','event','hourly','daily'].includes(input.trigger)?input.trigger:'manual';
+ const rows=Array.isArray(input.steps)?input.steps.slice(0,24):[];
+ if(!rows.length)throw new Error('Une routine doit contenir au moins une étape.');
+ const steps=rows.map((row,index)=>{
+  if(!row||!APEX_TYPED_ACTIONS[row.action])throw new Error('Action de routine inconnue.');
+  const typed=typedAction(row.action,row.payload&&typeof row.payload==='object'?row.payload:{});
+  return{index,action:typed.type,permission:typed.permission,approvalRequired:typed.approvalRequired,reversible:typed.reversible,payload:typed.input};
+ });
+ return{
+  id:clean(input.id,120)||'routine-'+Date.now().toString(36),
+  name:clean(input.name,160)||'Routine sans nom',
+  trigger,steps,status:'compiled',autoExecute:false,createdAt:stamp()
+ };
+}
+
+export function compileResearchWorkflow(input={}){
+ const intent=clean(input.intent,4000);
+ if(!intent)throw new Error('Intention vide.');
+ const connections=[...new Set((Array.isArray(input.connections)?input.connections:[]).map(v=>clean(v,120)).filter(Boolean))].slice(0,20);
+ const research=/recherche|research|compare|vérifie|verifie|source|actualité|actualite/i.test(intent);
+ const external=/publie|envoie|mail|réseau|reseau|calendrier|deploy|déploie|deploie/i.test(intent);
+ const nodes=[
+  {id:'intent',role:'intake',dependsOn:[],gate:'none'},
+  {id:'spec',role:'specifier',dependsOn:['intent'],gate:'constitution'},
+  {id:'plan',role:'planner',dependsOn:['spec'],gate:'least-privilege'}
+ ];
+ let dependency='plan';
+ if(research){
+  nodes.push(
+   {id:'scout',role:'source-scout',dependsOn:['plan'],gate:'read-only'},
+   {id:'critic',role:'source-critic',dependsOn:['scout'],gate:'cross-check'},
+   {id:'synthesis',role:'synthesizer',dependsOn:['critic'],gate:'provenance'}
+  );
+  dependency='synthesis';
+ }
+ nodes.push(
+  {id:'execute',role:'executor',dependsOn:[dependency],gate:external?'permission-broker':'typed-action'},
+  {id:'review',role:'critic',dependsOn:['execute'],gate:'independent-review'},
+  {id:'verify',role:'verifier',dependsOn:['review'],gate:'tests'},
+  {id:'evidence',role:'evidence-keeper',dependsOn:['verify'],gate:'completion-contract'}
+ );
+ return{version:1,intent,researchMode:research,externalAction:external,connections,stack:APEX_STACK_LAYERS,nodes};
+}
+
 export function typedAction(type,input={}){
  const definition=APEX_TYPED_ACTIONS[type];
  if(!definition)throw new Error('Action APEX inconnue.');
@@ -58,6 +151,9 @@ export function capabilityRegistry(runtime={}){
   ['permissions','Permission Broker','ready','security'],
   ['events','Event Bus + Ambient Inbox','ready','core'],
   ['evidence','Completion Contract + Evidence','ready','security'],
+  ['readiness','Launch Readiness Audit','ready','quality'],
+  ['routines','Routine Compiler','ready','automation'],
+  ['research','Recherche multi-agent vérifiée','ready','research'],
   ['voice','Voix navigateur',runtime.browserVoice===true?'available':'unavailable','voice'],
   ['localRuntime','Runtime Windows ALBERT',albert?'live':local?'unavailable':'offline','local'],
   ['pcControl','Contrôle PC typé',local?'available':'offline','local'],
