@@ -8,6 +8,7 @@
 /* City 3B Master Map — city-builder readability before decorative effects */
 .city3b-builder-map-premium{
   min-height:min(68dvh,820px);
+  touch-action:none;
   background:
     radial-gradient(circle at 50% 45%,#1b2528 0 7%,transparent 26%),
     linear-gradient(180deg,#0b1519,#071014 72%,#06131a);
