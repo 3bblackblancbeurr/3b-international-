@@ -1,251 +1,120 @@
-# Monde 3B + Ville 3B — Master V2
+# Monde du 3B + Créer ma Ville — architecture officielle au 28 septembre 2026
 
 ## Décision produit
 
-Le joueur ne doit plus avoir l'impression d'utiliser plusieurs prototypes.
+Les deux expériences sont désormais **séparées**.
 
-Il existe désormais une seule expérience publique :
+**Passeport 3B**
+- ouvre **Monde du 3B** : aventure / open world ;
+- ouvre **Créer ma Ville** : city-builder / gestion.
 
-**Passeport 3B → Monde du 3B → premier Souvenir → Ville 3B → progression croisée Monde/Ville.**
+La progression de l'une ne commande plus l'autre. Elles partagent seulement le compte, l'identité 3B, les garde-fous serveur et l'inventaire commun quand cela a du sens.
 
-L'ancien runtime Origins reste dans le dépôt uniquement comme référence historique et filet de sécurité technique. Il n'est plus une destination publique.
+## Monde du 3B
 
----
+Le runtime public officiel est le Monde 3B actuel. L'ancien runtime Origins reste une référence technique dans le dépôt mais n'est plus une destination publique.
 
-## Ce qui existe réellement aujourd'hui
+Le Monde contient notamment :
+- Cité des Huit Héritages / Hub ;
+- huit pays et huit valeurs ;
+- Kaïs, Gardiens, Monstre de l'Oubli ;
+- missions, secrets, événements, journal ;
+- PNJ, dialogues et routines ;
+- transports, navigation, météo, jour/nuit ;
+- eau, végétation, éclairage et patrimoine ;
+- exploration, ressources, refuges, expéditions ;
+- combats, compagnons et progression ;
+- coopération et arène ;
+- sauvegarde compte + journal hors ligne ;
+- cinématiques persistantes pour entrées, histoire, restaurations, Gardiens, résultats importants et finale ;
+- boutique Premium 3B séparée du gameplay obligatoire.
+
+## Créer ma Ville
+
+Créer ma Ville est accessible directement depuis le Passeport actif.
+
+La progression Ville dépend uniquement de la Ville :
+- constructions ;
+- routes ;
+- objets exposés ;
+- fréquentation ;
+- niveau Ville ;
+- terrain ;
+- quartiers.
+
+La carte city-builder comprend :
+- Cœur 3B ;
+- huit quartiers ;
+- routes principales et routes créées par le joueur ;
+- eau / côte ;
+- espaces verts ;
+- bâtiments à empreinte réelle ;
+- placement, déplacement, rotation ;
+- collisions et zones réservées ;
+- sauvegarde serveur ;
+- brouillon local de reprise ;
+- annuler / rétablir ;
+- collection permanente ;
+- visites ;
+- boutique Premium Ville séparée.
+
+## Ce qui n'est plus vrai
+
+Les règles suivantes sont obsolètes et ne doivent plus être réintroduites :
+- « premier Souvenir requis pour créer sa Ville » ;
+- « synchroniser Monde → Ville pour débloquer les quartiers » ;
+- « les huit royaumes commandent la progression du city-builder » ;
+- « Origins est une seconde version publique du Monde ».
+
+## Niveau de finition réel
 
 ### Monde du 3B
 
-Le runtime officiel contient déjà :
+Le Monde est **jouable, déployé et fortement couvert par les tests**, mais il n'est pas encore déclaré « production artistique finale grand studio ».
 
-- un Hub / Cité des Huit Héritages ;
-- les huit pays et leurs valeurs ;
-- Kaïs, les Gardiens et le Monstre de l'Oubli ;
-- missions, journal, secrets et événements ;
-- PNJ, dialogues, routines et mémoire ;
-- transports et navigation ;
-- météo, cycle du jour, eau, végétation et éclairage ;
-- interactions contextuelles ;
-- exploration, ressources, refuges et expéditions ;
-- combat et progression ;
-- coopération ;
-- sauvegarde liée au compte ;
-- progression du Hub selon les héritages restaurés ;
-- pont serveur vers Ville 3B.
+Restent notamment à pousser :
+- davantage de variété de façades et matériaux ;
+- intérieurs visitables supplémentaires ;
+- animations haute fidélité propres aux créatures et compagnons ;
+- activités autonomes plus riches pour les habitants ;
+- événements persistants transformant réellement les quartiers ;
+- combat d'action libre complet si cette direction est conservée ;
+- coopération Internet libre et persistante ;
+- validation longue durée sur plusieurs téléphones physiques ;
+- passe final de direction artistique et de performance sur les huit pays.
 
-Le Hub officiel est dimensionné comme une métropole et non comme un petit menu 3D.
+### Créer ma Ville
 
-### Déblocage Ville 3B
+La fondation city-builder est opérationnelle, mais la simulation urbaine profonde reste à compléter :
+- habitants simulés ;
+- circulation ;
+- besoins ;
+- emplois ;
+- services ;
+- transport public ;
+- budget municipal détaillé ;
+- événements urbains ;
+- davantage de bâtiments et variations 3D.
 
-Ville 3B reste une récompense du Monde.
+## Définition du Gold Master Monde 3B
 
-Le déblocage officiel est lié au **premier Souvenir** :
+Le Monde pourra être appelé « fini » quand :
+1. un compte neuf peut terminer le parcours complet sans intervention manuelle ;
+2. les huit pays ont une passe art/animation homogène ;
+3. toutes les cinématiques critiques utilisent des cadrages, animations, audio et transitions validés ;
+4. les principaux PNJ/compagnons ont des animations cohérentes ;
+5. les performances sont mesurées sur téléphones réels bas/milieu/haut de gamme ;
+6. les sauvegardes/reconnexions ont été testées sur longues sessions ;
+7. l'histoire complète Kaïs → Oubli → finale → post-fin est jouable sans blocage ;
+8. sécurité, mobile, accessibilité et CI restent verts.
 
-1. traverser une Porte ;
-2. aider l'habitant du pays ;
-3. éveiller les trois pouvoirs ;
-4. résoudre le monument ;
-5. éveiller le premier Souvenir.
+## Sécurité
 
-Après cela, l'accès Ville 3B est permanent.
-
-### Ville 3B
-
-La fondation technique existe déjà :
-
-- une ville persistante par compte ;
-- huit quartiers ;
-- niveau de ville et niveau de terrain ;
-- Coins et XP serveur ;
-- catalogue de bâtiments ;
-- placement, déplacement et rangement ;
-- rotation ;
-- contrôle de collision ;
-- sauvegarde serveur ;
-- idempotence des mutations ;
-- brouillon local de reprise ;
-- annuler / rétablir ;
-- inventaire permanent ;
-- objets exposés ;
-- véhicules / tenues ;
-- visibilité privée / amis / publique ;
-- découverte et visite d'autres villes ;
-- synchronisation Monde → Ville.
-
----
-
-## Ce que Master V2 change
-
-### 1. Un seul Monde public
-
-WorldEntry ouvre toujours le Monde 3B actuel.
-
-Il n'existe plus de bascule publique vers une ancienne version du monde.
-
-### 2. Ville 3B devient map-first
-
-La première chose visible dans la ville est maintenant son **plan urbain**, pas un écran de statistiques.
-
-La carte possède :
-
-- le Cœur 3B central ;
-- huit quartiers identifiables ;
-- anneaux routiers ;
-- grands boulevards ;
-- axes radiaux ;
-- côte / eau ;
-- zones vertes ;
-- bâtiments positionnés avec leurs vraies empreintes serveur ;
-- catégories visuelles de bâtiments ;
-- quartiers verrouillés / ouverts ;
-- zoom, recentrage et déplacement de vue ;
-- placement sur la carte ;
-- aperçu privé basé sur la même carte.
-
-Les coordonnées, collisions, coûts et sauvegardes restent autoritaires côté serveur.
-
----
-
-## Boucle de jeu cible
-
-### Début
-
-**Passeport → Hub → Kaïs → Porte → première mission → premier Souvenir**
-
-### Fondation
-
-Le Souvenir débloque :
-
-**Fonder ma Ville 3B**
-
-Le joueur choisit son nom, puis arrive directement sur sa carte.
-
-### Boucle continue
-
-**Explorer le Monde**
-→ restaurer un héritage
-→ gagner progression / objets
-→ synchroniser Ville 3B
-→ débloquer ou améliorer un quartier
-→ construire / aménager
-→ revenir dans le Monde.
-
-La ville doit devenir le journal visuel des accomplissements du joueur.
-
----
-
-## Ville 3B — cible city-builder complète
-
-La carte actuelle est la fondation du city-builder. Les prochaines couches doivent être ajoutées dans cet ordre :
-
-1. **Voir et comprendre la ville**
-   - routes ;
-   - quartiers ;
-   - bâtiments ;
-   - terrains ;
-   - eau ;
-   - parcs ;
-   - points d'intérêt.
-
-2. **Construire**
-   - bâtiments ;
-   - déplacement / rotation ;
-   - bulldozer = rangement sécurisé ;
-   - placement tactile ;
-   - prévisualisation avant validation.
-
-3. **Urbanisme**
-   - routes éditables ;
-   - carrefours ;
-   - zonage résidentiel / commerce / services ;
-   - parcs ;
-   - transports ;
-   - parcelles et extensions.
-
-4. **Ville vivante**
-   - habitants ;
-   - circulation ;
-   - besoins ;
-   - emplois ;
-   - fréquentation ;
-   - commerces ;
-   - événements.
-
-5. **Économie**
-   - budget de construction ;
-   - coûts contrôlés serveur ;
-   - revenus internes équilibrés ;
-   - aucun paiement réel nécessaire pour progresser.
-
-6. **Identité 3B**
-   - les huit quartiers restent reliés aux huit héritages ;
-   - les récompenses du Monde ont des effets visibles ;
-   - les bâtiments 3B officiels restent des repères permanents.
-
----
-
-## Direction visuelle
-
-Le rendu doit être premium mais fonctionnel.
-
-À éviter :
-
-- écran générique « IA » ;
-- accumulation de néons sans hiérarchie ;
-- cartes décoratives qui remplacent la carte réelle ;
-- faux chiffres ou faux états ;
-- effets glassmorphism qui réduisent la lisibilité ;
-- design différent à chaque sous-page.
-
-À conserver :
-
-- noir profond ;
-- champagne ;
-- bleu Matrix comme accent ;
-- matériaux urbains ;
-- carte lisible ;
-- contraste mobile ;
-- profondeur et lumière au service du gameplay.
-
----
-
-## Qualité et sécurité
-
-Toute évolution Monde/Ville doit continuer à passer :
-
-- tests application ;
-- Fortress Security ;
-- build Android ;
-- build iOS ;
-- contrôle des secrets ;
-- audit dépendances ;
-- authentification réelle ;
-- mutations sensibles côté serveur ;
-- limitation de débit ;
-- validation des coordonnées / collisions / coûts côté serveur ;
-- accessibilité clavier et mobile quand le format le permet.
-
-Aucun visuel premium ne doit remplacer ces garde-fous.
-
----
-
-## Définition de « fini »
-
-Le Monde 3B n'est pas considéré fini parce qu'il possède beaucoup de modules.
-
-Il est fini lorsque le joueur peut :
-
-1. créer son Passeport ;
-2. entrer dans le Monde sans ancienne version concurrente ;
-3. comprendre Kaïs, le Cercle Brisé et son premier objectif ;
-4. accomplir une mission complète ;
-5. obtenir son premier Souvenir ;
-6. débloquer sa Ville ;
-7. voir immédiatement une vraie carte de ville ;
-8. construire et retrouver sa construction après reconnexion ;
-9. retourner dans le Monde ;
-10. constater que sa progression Monde modifie la Ville ;
-11. poursuivre les huit héritages jusqu'à la confrontation avec l'Oubli ;
-12. continuer à jouer après l'histoire principale.
-
-C'est ce parcours qui devient la référence de toutes les futures évolutions.
+Les règles non négociables restent :
+- économie et récompenses sensibles autoritaires côté serveur ;
+- pas de secret serveur dans le client ;
+- mutations idempotentes ;
+- achats numériques attribués seulement après vérification fournisseur ;
+- objets payants sans bonus de puissance ;
+- remboursements/contestations révoquent les droits concernés ;
+- Fortress Security et builds mobiles doivent rester verts.

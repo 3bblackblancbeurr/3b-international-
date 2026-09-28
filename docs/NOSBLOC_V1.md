@@ -1,98 +1,109 @@
-# Nosbloc du 3B ? Fondation priv?e V1
+# Nosbloc du 3B — état réel au 28 septembre 2026
 
 ## Vision
 
-Nosbloc du 3B est la plateforme de cr?ation communautaire de l??cosyst?me 3B. Son premier Bloc officiel est **3B MA VILLE** : la ville existante n?est ni supprim?e, ni renomm?e, ni migr?e vers un second syst?me. Nosbloc l?ouvre depuis une nouvelle coque cr?ateur tout en conservant le Passeport, les quartiers, les b?timents, les Coins et la progression serveur actuels.
+Nosbloc du 3B est la plateforme créateur de l'écosystème 3B.
 
-La V1 reste volontairement **priv?e, local-first pour les futurs projets et sans mouvement d?argent r?el**. Elle sert ? valider l??diteur mobile, la reprise apr?s fermeture et la s?curit? avant toute publication communautaire.
+Son premier Bloc officiel reste **3B MA VILLE**, sans renommer ni dupliquer la Ville 3B. Le Passeport 3B reste l'identité unique.
 
-## Ce qui est actif dans l?application
+## Ce qui existe réellement
 
-- Route et rubrique officielles `Nosbloc du 3B` dans l?accueil et le menu 3B.
-- Bouton **3B MA VILLE** du Passeport conserv?.
-- Pont direct Nosbloc ? Ville 3B existante, sans migration destructive.
-- ?diteur mobile sur plan avec catalogue, aper?u avant pose, rotation et d?placement.
-- Contr?le visuel des limites et collisions, puis validation autoritaire par le serveur.
-- Sauvegarde serveur de chaque action confirm?e.
-- Brouillon local s?par? par ville pour reprendre la s?lection, la parcelle et l?historique apr?s fermeture.
-- Annuler / r?tablir pour les placements, d?placements et rangements.
-- Aper?u priv? depuis le compte, sans publication publique.
-- Projets futurs, ?quipe, licences et r?gles ?conomiques disponibles comme prototype local de conception.
-- Interface responsive, contrast?e et compatible avec la r?duction des mouvements.
+Le code V2 Premium existe avec :
+- Accueil / Explorer / Créer / Activité / Moi ;
+- Studio Simple et Pro ;
+- projets, assets, scripts et brief IA ;
+- sauvegarde locale de secours ;
+- export/import avec empreinte de contrôle ;
+- versions figées ;
+- restauration vers nouveau brouillon privé ;
+- équipes, invitations et répartition à 100 % ;
+- droits et classification avant révision ;
+- tests privés ;
+- envoi en révision sans publication directe ;
+- intégration de 3B MA VILLE ;
+- interface mobile / touch / reduced motion.
 
-## Ce qui reste verrouill?
+Le backend production contient :
+- `nosbloc_projects` ;
+- `nosbloc_project_versions` ;
+- `nosbloc_project_members` ;
+- `nosbloc_invitations` ;
+- `nosbloc_products` ;
+- `nosbloc_orders` ;
+- `nosbloc_entitlements` ;
+- `nosbloc_ledger_entries` ;
+- `nosbloc_wallet_balances` ;
+- `nosbloc_refund_requests` ;
+- `nosbloc_payout_requests` ;
+- `nosbloc_moderation_queue` ;
+- `nosbloc_audit_log`.
 
-### Nosbloc Discover
+L'Edge Function `nosbloc-api` est déployée avec JWT obligatoire et des RPC autorisés côté serveur.
 
-Les Blocs ne sont pas publi?s publiquement dans cette V1. L?ouverture exige au minimum :
+## État public actuel
 
-1. test r?el Samsung et validation des performances mobiles ;
-2. classification des contenus ;
-3. signalement, blocage et proc?dure d?appel ;
-4. v?rification humaine avant publication ;
-5. versions publi?es immuables s?par?es des brouillons ;
-6. contr?le des droits sur les assets, images, sons et textes.
+**Nosbloc reste volontairement EN PRÉPARATION dans l'application publique.**
 
-### ?conomie r?elle
+La route est conservée mais bloquée avant rendu par le shell principal.
 
-Aucun paiement, retrait ou partage financier r?el n?est activ?. La formule 70/20/5/5 et les simulateurs pr?sents dans le prototype sont des outils de conception, pas un contrat commercial ni une balance utilisable.
+La configuration production actuelle garde :
+- serveur Nosbloc : actif ;
+- Discover public : désactivé ;
+- paiements : désactivés ;
+- retraits créateurs : désactivés.
 
-Aucun retrait ne doit ?tre activ? avant :
+Cela signifie que l'infrastructure cloud existe, mais que l'ouverture commerciale/communautaire n'est pas encore autorisée.
 
-1. validation juridique des conditions cr?ateurs et consommateurs ;
-2. KYC du b?n?ficiaire et contr?le d??ge ;
-3. identit? fiscale et r?gles de TVA par pays ;
-4. fournisseur de paiement et comptes connect?s ;
-5. journal comptable immuable et r?conciliation ;
-6. d?lai de r?serve pour remboursements et chargebacks ;
-7. d?tection anti-bot, multi-compte, AFK et fraude ;
-8. mod?ration des projets, assets et contenus ;
-9. proc?dure de contestation et d?appel ;
-10. test en staging puis audit de s?curit?.
+## Ce qui manque avant ouverture publique
 
-Le sch?ma exploratoire se trouve dans `supabase/pending/`. Il termine par `ROLLBACK` et reste hors du manifeste des migrations appliqu?es : il ne modifie donc pas la base de production.
+### Produit / création
+- test complet d'un compte neuf : créer → modifier → sauvegarder → fermer → reprendre ;
+- test cloud multi-appareils ;
+- test privé d'une version figée ;
+- restauration et conflits de versions ;
+- limites de taille pour assets/scripts réellement chargés ;
+- validation performance mobile sur téléphones physiques.
 
-## D?ploiement progressif
+### Discover
+- modération opérateur réellement exercée ;
+- signalement utilisateur ;
+- blocage / masquage ;
+- procédure d'appel ;
+- classification âge/contenu ;
+- contrôle des droits sur les assets ;
+- règles de classement anti-spam / anti-bot ;
+- beta sur invitation avant ouverture générale.
 
-### Phase 1 ? Bloc Ville priv?
+### Économie créateur
+- aucun paiement réel n'est autorisé aujourd'hui ;
+- aucun retrait réel n'est autorisé aujourd'hui ;
+- KYC/KYB, âge, fiscalité et TVA à finaliser ;
+- prestataire de paiement créateur à brancher ;
+- réserve remboursements/chargebacks ;
+- réconciliation comptable ;
+- procédure de litige ;
+- limites et détection antifraude ;
+- pilote manuel avant automatisation.
 
-?diteur mobile, sauvegarde serveur, historique, reprise locale et aper?u priv?.
+## Principe financier
 
-### Phase 2 ? Publication contr?l?e
+Les Coins 3B restent une monnaie fermée de plateforme. Ils ne sont pas une crypto.
 
-Versions immuables, b?ta sur invitation, profils cr?ateurs, signalements et mod?ration.
+Un solde euro ne doit jamais être modifié directement par le navigateur. Le ledger serveur est la source de vérité.
 
-### Phase 3 ? Market en bac ? sable
+## Définition de « fini »
 
-Assets gratuits ou simul?s, droits attest?s, licences et inventaire sans sortie d?argent.
+Nosbloc ne sera déclaré fini public que lorsque :
+1. la création et la reprise fonctionnent sur mobile réel ;
+2. les versions privées sont immuables ;
+3. Discover a modération, signalement et appel ;
+4. les droits d'assets sont contrôlés ;
+5. les équipes acceptent réellement leurs accords côté serveur ;
+6. les flux de paiement/remboursement/retrait sont audités ;
+7. KYC/fiscalité sont validés ;
+8. les tests sécurité, charge, mobile et récupération sont verts ;
+9. la beta invitation a confirmé que le système tient avec de vrais créateurs.
 
-### Phase 4 ? Pilote financier
+## Décision actuelle
 
-Petit groupe de cr?ateurs v?rifi?s, montants limit?s, r?serve de s?curit? et validation manuelle de chaque retrait.
-
-### Phase 5 ? Ouverture progressive
-
-Discover, r?compenses cr?ateurs, abonnements et paiements automatis?s avec contr?le continu.
-
-## Principes non n?gociables
-
-- Le Passeport 3B reste l?identit? unique.
-- **3B MA VILLE** reste le nom visible de la ville personnelle.
-- Aucune table Ville 3B existante n?est supprim?e ou renomm?e pour Nosbloc.
-- Les 3B Coins restent une monnaie ferm?e de plateforme, sans crypto.
-- Aucun solde financier n?est modifi? sans ?criture de journal correspondante.
-- Aucun projet n?est publi? automatiquement.
-- Aucun cr?ateur n?est pay? avant v?rification et acceptation du partage.
-- Aucun asset n?est public sans droits attest?s et r?vision.
-- Mobile, accessibilit?, stabilit? et s?curit? font partie de la d?finition de ? termin? ?.
-
-
-## Renforcement V2 local-first — 26 septembre 2026
-
-- Chaque écriture locale conserve désormais un état `last-good` séparé du brouillon principal.
-- Une archive JSON complète peut être exportée puis restaurée ; son empreinte refuse les fichiers modifiés ou endommagés.
-- Un projet peut créer jusqu’à vingt versions figées. Une restauration recrée toujours un brouillon privé sans altérer la version source.
-- Une demande de révision crée automatiquement une version immuable distincte du brouillon vivant.
-- La révision exige désormais les attestations de droits, la classification relue, un partage total de 100 % et tous les accords d’équipe acceptés.
-- Les invitations d’équipe locales peuvent être préparées, copiées et révoquées, mais elles ne valent jamais signature. L’acceptation restera serveur.
-- Le schéma serveur en attente prévoit des versions immuables et des invitations stockées uniquement sous forme de hachage ; il reste hors production et se termine toujours par `ROLLBACK`.
+Conserver Nosbloc verrouillé publiquement est volontaire et correct tant que les garde-fous ci-dessus ne sont pas terminés.
