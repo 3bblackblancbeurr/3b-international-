@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useMemo,useState} from "react";
+import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import {Check,LockKeyhole,RefreshCw,ShieldCheck,ShoppingBag,Sparkles} from "lucide-react";
 import {beginDigitalPurchase,confirmDigitalPurchase,digitalProviderLabel,digitalPurchasePlatform,loadDigitalStore} from "./digital-store-client.js";
 import "./digital-store.css";
@@ -8,11 +8,13 @@ const money=value=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR
 export default function DigitalStorePanel({scope="all",onStoreChange}){
   const [data,setData]=useState(null),[busy,setBusy]=useState(""),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const platform=useMemo(()=>digitalPurchasePlatform(),[]);
+  const onStoreChangeRef=useRef(onStoreChange);
+  useEffect(()=>{onStoreChangeRef.current=onStoreChange;},[onStoreChange]);
   const refresh=useCallback(async()=>{
     setError("");
-    try{const next=await loadDigitalStore(scope);setData(next);onStoreChange?.(next);}
+    try{const next=await loadDigitalStore(scope);setData(next);onStoreChangeRef.current?.(next);}
     catch(e){setError(e.message);}
-  },[scope,onStoreChange]);
+  },[scope]);
 
   useEffect(()=>{refresh();},[refresh]);
 
