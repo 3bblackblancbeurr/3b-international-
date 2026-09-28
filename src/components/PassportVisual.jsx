@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import PassportNexus from "./PassportNexus.jsx";
 import PublicIdentityBadge from "./PublicIdentityBadge.jsx";
 import { PassportPortrait } from "../passport/PassportAppearance.jsx";
+import { hasVerifiedIdentity } from "../passport/access.js";
 
 const STREAMS = Array.from({ length: 58 }, (_, column) => ({
   left: `${(column + 0.25) * 100 / 58}%`,
@@ -58,7 +59,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
   const animated = motionAllowed && visible && !portalOpen;
   const active = Boolean(identity?.userId && identity?.passportState === "active");
-  const identityVerified = identity?.identityVerificationStatus === "verified" && Number(identity?.identityAssuranceLevel) >= 1;
+  const identityVerified = hasVerifiedIdentity(identity);
   const status = syncing
     ? "SYNCHRONISATION"
     : !active
