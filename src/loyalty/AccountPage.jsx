@@ -1,7 +1,7 @@
 import React,{useMemo,useReducer,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
- ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeEmail,passwordRequirements,
+ ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeBirthDate,normalizeCivilName,normalizeEmail,passwordRequirements,
  validateRegistration,validateStrongPassword
 } from '../../shared/loyalty.js';
 import {authClient,memberRequest} from './client.js';
@@ -13,6 +13,7 @@ import './boutique-loyalty.css';
 import {RewardStats} from './LoyaltyPage.jsx';
 import {OPTION_LABELS} from '../lib/member.js';
 import TurnstileField from './TurnstileField.jsx';
+import {Button} from '../design-system/index.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
 
@@ -33,7 +34,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   termsAccepted:false,privacyAccepted:false,identityConsent:false,marketingOptIn:false,website:''
  });
  const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- const[prestigeBusy,setPrestigeBusy]=useState(false),[recovery,setRecovery]=useState('');
+ const[prestigeBusy,setPrestigeBusy]=useState(false),[identityBusy,setIdentityBusy]=useState(false),[recovery,setRecovery]=useState('');
  const[pendingEmail,setPendingEmail]=useState('');
  const[{attempt:captchaAttempt,token:captchaToken},dispatchCaptcha]=useReducer(captchaChallengeReducer,{attempt:0,token:''});
  const setCaptchaToken=token=>dispatchCaptcha({type:'token',attempt:captchaAttempt,token});
@@ -128,6 +129,24 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   if(logoutError)setError('La déconnexion a échoué. Réessaie.');else{setRecovery('');setPendingEmail('');}
  };
 
+ const saveIdentityClaim=async()=>{
+  if(identityBusy||account.identityClaimsComplete)return;
+  setIdentityBusy(true);setError('');setNotice('');
+  try{
+   const legalGivenNames=normalizeCivilName(fields.legalGivenNames,'ton ou tes prénoms officiels');
+   const legalFamilyName=normalizeCivilName(fields.legalFamilyName,'ton nom de famille officiel');
+   const birthDate=normalizeBirthDate(fields.birthDate);
+   if(fields.identityConsent!==true)throw Error('Accepte le traitement de tes informations d’identité pour continuer.');
+   const result=await memberRequest('identity-claim',{
+    legalGivenNames,legalFamilyName,birthDate,identityConsent:true
+   },account.user?.id);
+   account.accept(result);
+   setFields(f=>({...f,legalGivenNames:'',legalFamilyName:'',birthDate:'',identityConsent:false}));
+   setNotice('Tes informations civiles privées sont enregistrées. Elles ne sont pas encore une identité vérifiée.');
+  }catch(e){setError(e.message||'Impossible d’enregistrer ton identité pour le moment.');}
+  finally{setIdentityBusy(false);}
+ };
+
  const unlockPrestige=async()=>{
   if(prestigeBusy)return;
   setPrestigeBusy(true);setError('');
@@ -197,6 +216,35 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <button className="account-logout" onClick={logout}><LogOut size={16}/> Se déconnecter</button>
     </article>
    </div>
+
+   {!account.identityClaimsComplete&&<section className="account-command-center" aria-labelledby="identity-claim-title">
+    <div className="account-command-heading">
+     <div><span className="loyalty-eyebrow">PASSEPORT 3B / IDENTITÉ PRIVÉE</span><h2 id="identity-claim-title">Compléter mon identité civile</h2></div>
+     <p>Réservé aux anciens comptes qui n’ont pas encore fourni leurs données civiles. Ces informations restent privées et leur saisie ne signifie pas que l’identité est vérifiée.</p>
+    </div>
+    <div className="account-form-panel">
+     <div className="account-field-pair">
+      <label>Prénom(s) officiel(s)
+       <input autoComplete="given-name" required maxLength={120} placeholder="Comme sur ta pièce d’identité" value={fields.legalGivenNames} onChange={e=>field('legalGivenNames',e.target.value)}/>
+      </label>
+      <label>Nom de famille officiel
+       <input autoComplete="family-name" required maxLength={120} placeholder="Comme sur ta pièce d’identité" value={fields.legalFamilyName} onChange={e=>field('legalFamilyName',e.target.value)}/>
+      </label>
+     </div>
+     <label>Date de naissance
+      <input type="date" autoComplete="bday" required min="1900-01-01" max={new Date().toISOString().slice(0,10)} value={fields.birthDate} onChange={e=>field('birthDate',e.target.value)}/>
+     </label>
+     <label className="account-check"><input type="checkbox" checked={fields.identityConsent} onChange={e=>field('identityConsent',e.target.checked)}/><span>J’accepte le traitement privé de ces données afin de préparer la vérification de mon Passeport 3B.</span></label>
+     <Button className="loyalty-primary" onClick={saveIdentityClaim} loading={identityBusy} disabled={identityBusy}>{'Enregistrer mon identité privée'} <ArrowUpRight size={17}/></Button>
+    </div>
+   </section>}
+
+   {account.identityClaimsComplete&&<section className="account-command-center" aria-label="État du dossier identité">
+    <div className="account-command-heading">
+     <div><span className="loyalty-eyebrow">PASSEPORT 3B / DOSSIER IDENTITÉ</span><h2>Données civiles privées enregistrées</h2></div>
+     <p>{profile.identity_verification_state==='verified'?'Identité civile vérifiée.':profile.identity_verification_state==='pending'?'Vérification d’identité en cours.':'Dossier prêt pour une future vérification externe. Aucune identité civile n’est considérée vérifiée sans preuve externe.'}</p>
+    </div>
+   </section>}
 
    <section className="account-command-center" aria-labelledby="member-center-title">
     <div className="account-command-heading">
