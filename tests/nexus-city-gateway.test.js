@@ -41,24 +41,21 @@ test('mobile mode reduces expensive effects while keeping the scene usable', () 
   assert.match(premium, /nexus-boat-b\{display:none\}/);
 });
 
-test('existing cities stay accessible and locked members receive the real guided World mission', () => {
+test('Passport opens City 3B directly without a World mission', () => {
   assert.match(gateway, /city3bRequest\('access'/);
-  assert.match(gateway, /cityResult\.value\?\.hasCity === true/);
-  assert.match(gateway, /setAccessReason\('city'\)/);
-  assert.match(gateway, /MISSION VILLE · ÉTAPE/);
-  assert.match(gateway, /cityUnlockGuideStorage\(true\)/);
-  assert.match(gateway, /leaveTo\('#monde-3b', \{ cityGuide: true \}\)/);
+  assert.match(gateway, /hasPassport/);
   assert.match(gateway, /setCityOpen\(true\)/);
   assert.match(gateway, /<City3BPortal open/);
+  assert.match(gateway, /ACCÈS DIRECT À CRÉER MA VILLE/);
+  assert.doesNotMatch(gateway, /cityUnlockGuide|cityUnlockGuideStorage|#monde-3b|CONTINUER LA MISSION|premier Souvenir/i);
 });
 
-test('Ville 3B exposes the three canonical player states and actions', () => {
-  assert.match(gateway, /VILLE 3B — VERROUILLÉE/);
-  assert.match(gateway, /VILLE 3B DÉBLOQUÉE/);
+test('Ville 3B exposes Passport-required, create and enter states', () => {
+  assert.match(gateway, /PASSEPORT 3B REQUIS/);
+  assert.match(gateway, /VILLE 3B DISPONIBLE/);
   assert.match(gateway, /MA VILLE 3B/);
-  assert.match(gateway, /CONTINUER LA MISSION/);
   assert.match(gateway, /CRÉER MA VILLE/);
   assert.match(gateway, /ENTRER DANS MA VILLE/);
-  assert.match(gateway, /Obtiens ton premier Souvenir pour débloquer ta ville/);
-  assert.match(gateway, /aucune mission ou mise à jour ne peut la reverrouiller/);
+  assert.match(gateway, /sans mission, Souvenir ou progression dans le Monde du 3B/);
+  assert.match(gateway, /PROGRESSION VILLE INDÉPENDANTE/);
 });
