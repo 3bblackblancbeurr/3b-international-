@@ -63,3 +63,90 @@
  .city3b-map-legend{overflow-x:auto;flex-wrap:nowrap}
  .city3b-map-legend span{white-space:nowrap}
 }
+
+
+/* City-builder tools */
+.city3b-builder-commandbar button[aria-pressed="true"]{
+  border-color:#e4c879;
+  background:#2a2417;
+  color:#fff2c7;
+  box-shadow:inset 0 0 0 1px #e4c87922;
+}
+.city3b-map-road-custom{
+  stroke:#e4c879;
+  opacity:.9;
+  filter:drop-shadow(0 0 2px #e4c87955);
+}
+.city3b-road-start circle{
+  fill:#63d9ff;
+  stroke:#e9fbff;
+  stroke-width:.7;
+  vector-effect:non-scaling-stroke;
+}
+.city3b-road-start text{
+  fill:#e9fbff;
+  font-size:3px;
+  font-weight:900;
+  paint-order:stroke;
+  stroke:#061017;
+  stroke-width:1.2px;
+}
+.city3b-road-tool{
+  border-left-color:#63d9ff;
+  background:#63d9ff0d;
+}
+.city3b-road-tool>b{
+  margin-top:7px;
+  color:#e4c879;
+  font-size:12px;
+}
+.city3b-builder-map-shell[data-tool="road"] .city3b-builder-map{
+  cursor:crosshair;
+}
+.city3b-urban-health{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  padding:10px;
+  border:1px solid #d7bc7833;
+  border-radius:16px;
+  background:#070c12;
+}
+.city3b-urban-health>div{
+  min-height:92px;
+  display:grid;
+  align-content:center;
+  gap:4px;
+  padding:10px 12px;
+  border:1px solid #ffffff12;
+  border-radius:12px;
+  background:linear-gradient(160deg,#111a20,#081015);
+}
+.city3b-urban-health span{
+  color:#9fb0ba;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+.city3b-urban-health strong{
+  color:#f2d893;
+  font-size:24px;
+}
+.city3b-urban-health small{
+  color:#82939d;
+  font-size:10px;
+}
+.city3b-urban-health>div:first-child{
+  border-color:#d7bc7847;
+  background:linear-gradient(160deg,#221d13,#0a1116);
+}
+@media(max-width:980px){
+  .city3b-urban-health{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:620px){
+  .city3b-urban-health{grid-template-columns:1fr 1fr;padding:8px}
+  .city3b-urban-health>div{min-height:82px}
+  .city3b-builder-commandbar button:nth-child(3){grid-column:auto}
+  .city3b-builder-commandbar>span{grid-column:1/-1}
+}
