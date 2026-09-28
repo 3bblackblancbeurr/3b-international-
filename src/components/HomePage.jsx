@@ -7,7 +7,7 @@ import PassportNexus from './PassportNexus.jsx';
 import { Building2 } from 'lucide-react';
 import {Button} from '../design-system/index.jsx';
 
-const PRIMARY_IDS = ['passport', 'world3b', 'nosbloc', 'games'];
+const PRIMARY_IDS = ['passport', 'world3b'];
 const GUIDE_ID = 'guide';
 
 export default function HomePage({goTo,menuItems,member}){
@@ -29,18 +29,18 @@ export default function HomePage({goTo,menuItems,member}){
    <div className="welcome-copy">
     <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
     <h1>Un héritage.<br/><em>Ton univers.</em></h1>
-    <p className="welcome-description">Ton Passeport ouvre l’univers. Construis ta Ville 3B, entre dans le Monde du 3B et développe tes créations avec Nosbloc.</p>
+    <p className="welcome-description">Ton Passeport ouvre l’univers. Construis ta Ville 3B, entre dans le Monde du 3B et découvre les espaces actifs de l’écosystème.</p>
     <div className="home-hero-actions">
      <Button as={RouteLink} page={nextPage} goTo={goTo} variant="champagne" className="dashboard-cta">{nextLabel}<span aria-hidden="true">→</span></Button>
     </div>
-    <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MA VILLE</span><span>03 / MONDE DU 3B</span><span>04 / NOSBLOC</span></div>
+    <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MA VILLE</span><span>03 / MONDE DU 3B</span><span>04 / EXPLORER 3B</span></div>
    </div>
   </div>
 
   <WorldPortalCard goTo={goTo}/>
 
   <section className="universe-directory home-primary-directory" aria-labelledby="journey-title">
-   <div className="section-heading"><h2 id="journey-title">L’essentiel</h2><span>Passeport → Ma Ville → Monde du 3B → Nosbloc → Jeux 3B</span></div>
+   <div className="section-heading"><h2 id="journey-title">L’essentiel</h2><span>Passeport → Ma Ville → Monde du 3B</span></div>
    <div className="universe-grid">{primary.flatMap(item => item.id === 'passport' ? [<SectionCard key={item.id} item={item} goTo={goTo}/>,<CompactCard key="city" as="button" type="button" onClick={()=>setCityOpen(true)} className="universe-card city-essential-card" eyebrow="NEXUS 3B" title="Créer ma ville" description="Ouvre le portail de ta cité personnelle." action="Entrer" icon={<Building2 size={22}/>}/>] : [<SectionCard key={item.id} item={item} goTo={goTo}/>])}</div>
   </section>
 

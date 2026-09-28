@@ -12,10 +12,9 @@ export function SectionIcon({ page, ...props }) {
 
 export const NAV_GROUPS = [
   { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
-  { title: "Univers & création", ids: ["world3b", "nosbloc", "games", "manga", "secret"] },
-  { title: "Religions & spiritualité", ids: ["religion"] },
-  { title: "Services & avantages", ids: ["shop", "sport", "control"] },
-  { title: "En préparation", ids: ["community", "ia"] },
+  { title: "Univers 3B", ids: ["world3b", "secret"] },
+  { title: "Services & avantages", ids: ["shop", "control"] },
+  { title: "En préparation", ids: ["nosbloc", "games", "manga", "religion", "sport", "community", "ia"] },
   { title: "Comprendre 3B", ids: ["guide"] },
 ];
 
@@ -31,7 +30,7 @@ const QUICK_LINKS = [
   { id: "home", label: "Accueil" },
   { id: "passport", label: "Passeport" },
   { id: "world3b", label: "Monde 3B" },
-  { id: "games", label: "Jeux" },
+  { id: "shop", label: "Boutique" },
 ];
 
 export default function AppNavigation({ page, title, menuItems, goTo, secret }) {
@@ -122,7 +121,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret }) 
         {NAV_GROUPS.map(group => {
           const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
           return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => item.status === "soon"
-            ? <CompactCard as="article" key={item.id} className="dialog-route is-soon" eyebrow="Bientôt" action="Bientôt" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>
+            ? <CompactCard as="article" key={item.id} className="dialog-route is-soon" eyebrow="En préparation" action="En préparation" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>
             : <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} eyebrow={item.status === "preview" ? "Aperçu" : undefined} action={item.status === "preview" ? "Bientôt" : "Ouvrir"} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}</section>;
         })}
         {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « manga » ou « boutique ».</p>}

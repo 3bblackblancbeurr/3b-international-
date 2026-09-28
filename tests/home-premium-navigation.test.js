@@ -11,16 +11,26 @@ const games=readFileSync(new URL('../src/games/premium.css',import.meta.url),'ut
 test('home hides technical status cards and keeps the ecosystem guide at the bottom',()=>{
  assert.doesNotMatch(home,/home-journey-status|home-status-item/);
  assert.doesNotMatch(home,/heritage-poster|background\.png/);
- assert.match(home,/const PRIMARY_IDS = \['passport', 'world3b', 'nosbloc', 'games'\]/);
+ assert.match(home,/const PRIMARY_IDS = \['passport', 'world3b'\]/);
  const guide=home.lastIndexOf('Comprendre l’écosystème 3B');
  assert.ok(guide>home.indexOf('Explorer 3B'));
  assert.ok(home.lastIndexOf('dashboard-footer')>guide);
 });
 
-test('mobile navigation prioritizes games instead of the shop',()=>{
- assert.match(nav,/\{ id: "games", label: "Jeux" \}/);
- assert.doesNotMatch(nav,/\{ id: "shop", label: "Boutique" \},\n\];/);
+test('mobile navigation keeps an active destination instead of staged games',()=>{
+ assert.match(nav,/\{ id: "shop", label: "Boutique" \}/);
+ assert.doesNotMatch(nav,/\{ id: "games", label: "Jeux" \}/);
  assert.match(nav,/Services & avantages/);
+});
+
+test('sport religion manga games and nosbloc are locked in preparation without deleting their routes',()=>{
+ for(const id of ['nosbloc','games','religion','manga','sport']){
+  assert.match(app,new RegExp('id: "'+id+'"[\\s\\S]{0,120}status: "soon"'));
+ }
+ assert.match(app,/const PREPARATION_ROUTE_IDS = new Set\(\["nosbloc", "games", "religion", "manga", "sport"\]\)/);
+ assert.match(app,/PREPARATION_ROUTE_IDS\.has\(page\) \|\| page === "game"/);
+ assert.match(app,/EN PRÉPARATION · 3B/);
+ assert.match(nav,/En préparation"[\s\S]*"nosbloc", "games", "manga", "religion", "sport"/);
 });
 
 test('community and textile AI remain explicitly staged as coming soon',()=>{
