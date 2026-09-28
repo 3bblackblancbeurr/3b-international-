@@ -204,3 +204,93 @@ comment on table public.passport_recovery_codes is
   'Hashed one-time recovery codes. Raw codes must only be shown once to the user.';
 comment on table public.passport_partner_consents is
   'Explicit per-client scope consent foundation for future Sign in with Passport 3B / OIDC integration.';
+
+
+-- Atomic service-only outcome application. Future identity providers/webhooks must call this
+-- after verifying provider signatures and idempotency. It never accepts raw documents/biometrics.
+create or replace function public.passport_apply_identity_verification(
+  p_user uuid,
+  p_provider text,
+  p_provider_case_hash text,
+  p_status text,
+  p_assurance_level smallint,
+  p_checks jsonb default '{}'::jsonb,
+  p_evidence_digest text default null,
+  p_reason_code text default null,
+  p_expires_at timestamptz default null
+) returns uuid
+language plpgsql
+security invoker
+set search_path=''
+as $$
+declare
+  v_passport uuid;
+  v_id uuid;
+  v_verified_at timestamptz;
+begin
+  if p_provider !~ '^[a-z0-9._-]{2,64}$' then raise exception 'provider invalid'; end if;
+  if p_provider_case_hash !~ '^[0-9a-f]{64}$' then raise exception 'case hash invalid'; end if;
+  if p_status not in ('pending','verified','rejected','expired','cancelled') then raise exception 'status invalid'; end if;
+  if p_assurance_level < 0 or p_assurance_level > 3 then raise exception 'assurance invalid'; end if;
+  if p_status='verified' and p_assurance_level < 1 then raise exception 'verified identity requires assurance'; end if;
+  if p_evidence_digest is not null and p_evidence_digest !~ '^[0-9a-f]{64}$' then raise exception 'evidence digest invalid'; end if;
+
+  select passport_public_id into v_passport
+  from public.member_profiles
+  where user_id=p_user
+  for update;
+
+  if v_passport is null then raise exception 'passport not found'; end if;
+  v_verified_at=case when p_status='verified' then now() else null end;
+
+  insert into public.passport_identity_verifications(
+    user_id,passport_public_id,provider,provider_case_hash,status,
+    assurance_level,checks,evidence_digest,reason_code,updated_at,verified_at,expires_at
+  ) values (
+    p_user,v_passport,p_provider,p_provider_case_hash,p_status,
+    p_assurance_level,coalesce(p_checks,'{}'::jsonb),p_evidence_digest,p_reason_code,now(),v_verified_at,p_expires_at
+  )
+  on conflict(provider,provider_case_hash) do update set
+    status=excluded.status,
+    assurance_level=excluded.assurance_level,
+    checks=excluded.checks,
+    evidence_digest=excluded.evidence_digest,
+    reason_code=excluded.reason_code,
+    updated_at=now(),
+    verified_at=excluded.verified_at,
+    expires_at=excluded.expires_at
+  returning id into v_id;
+
+  update public.member_profiles set
+    identity_verification_status=case
+      when p_status='cancelled' then 'unverified'
+      else p_status
+    end,
+    identity_assurance_level=case when p_status='verified' then p_assurance_level else 0 end,
+    identity_verified_at=v_verified_at,
+    identity_verification_provider=p_provider,
+    identity_verification_reference_hash=p_provider_case_hash
+  where user_id=p_user;
+
+  insert into public.passport_security_events(
+    user_id,passport_public_id,event_type,success,risk_level,detail
+  ) values (
+    p_user,v_passport,'identity.verification.'||p_status,true,
+    case when p_status in ('rejected','expired') then 'medium' else 'info' end,
+    jsonb_build_object('provider',p_provider,'assurance_level',p_assurance_level)
+  );
+
+  return v_id;
+end;
+$$;
+
+revoke all on function public.passport_apply_identity_verification(
+  uuid,text,text,text,smallint,jsonb,text,text,timestamptz
+) from public,anon,authenticated;
+grant execute on function public.passport_apply_identity_verification(
+  uuid,text,text,text,smallint,jsonb,text,text,timestamptz
+) to service_role;
+
+comment on function public.passport_apply_identity_verification(
+  uuid,text,text,text,smallint,jsonb,text,text,timestamptz
+) is 'Service-only atomic identity verification outcome application. Provider signatures must be verified before calling this function.';
