@@ -87,15 +87,14 @@ test('City 3B public UI is map-first and no longer a bare technical grid', () =>
   assert.match(css, /City 3B Master Map/);
   assert.match(builder, /plan_roads/);
   assert.match(builder, /ÉQUILIBRE URBAIN/);
-  assert.doesNotMatch(portal, /unlock_district/);
+  assert.doesNotMatch(portal, /unlock_district|sync_world|Monde 3B synchronisé/);
 });
 
-test('Monde 3B exposes only the official runtime while retaining legacy source files separately', () => {
+test('Monde 3B is a single official runtime and has no City 3B gameplay dependency', () => {
   const entry = read('src/world/WorldEntry.jsx');
   const page = read('src/world/WorldPage.jsx');
   assert.match(entry, /CurrentWorld/);
   assert.doesNotMatch(entry, /OriginsPage|world-origins|useState\(/);
   assert.match(entry, /one official public runtime/);
-  assert.doesNotMatch(page, /Retrouver ma partie Origins|goTo\('world-origins'\)/);
-  assert.match(page, /Ma Ville 3B|Débloquer ma Ville 3B/);
+  assert.doesNotMatch(page, /Retrouver ma partie Origins|goTo\('world-origins'\)|City3BPanel|cityUnlockGuide|Débloquer ma Ville 3B|Ma Ville 3B/);
 });
