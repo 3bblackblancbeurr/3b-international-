@@ -1,9 +1,11 @@
-import {themeFor,GAMES,EXPLORATIONS} from './loyalty.js';
+import {themeFor,GAMES,EXPLORATIONS,IDENTITY_CONSENT_VERSION,validateIdentityClaim} from './loyalty.js';
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
 const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174','http://127.0.0.1:5186','http://127.0.0.1:5187']);
 class Failure extends Error {constructor(public status:number,message:string){super(message);}}
+const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
+function clientIp(req:Request){return(req.headers.get('cf-connecting-ip')||req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown').slice(0,128);}
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST',token=ADMIN){
  const response=await fetch(BASE+path,{method,headers:{apikey:token,Authorization:'Bearer '+token,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)});
  const data=await response.json().catch(()=>null);
@@ -12,13 +14,15 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
 }
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
 async function snapshot(uid:string){
- const [profiles,events,economy]=await Promise.all([
+ const [profiles,events,economy,claims]=await Promise.all([
  api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=user_id,handle,name,country,xp,points,theme,created_at,public_badge_key,public_title,public_verified,passport_public_id,passport_issued_at,passport_version,passport_state,identity_verification_state,identity_assurance_level,identity_verified_at'),
  api('/rest/v1/member_ledger?user_id=eq.'+uid+'&select=id,source,label,xp,points,created_at,event_key&order=created_at.desc&limit=80'),
- rpc('threeb_progress_snapshot_server',{p_user:uid})]);
+ rpc('threeb_progress_snapshot_server',{p_user:uid}),
+ api('/rest/v1/member_identity_claims?user_id=eq.'+uid+'&select=user_id&limit=1')
+ ]);
  if(!profiles?.[0])throw new Failure(404,'Ton compte est en cours de préparation. Réessaie.');
  const profile=profiles[0];profile.theme=themeFor(profile.theme,profile.xp).id;
- return{profile,events,economy};
+ return{profile,events,economy,identity_claims_complete:Array.isArray(claims)&&claims.length===1};
 }
 async function authenticate(req:Request){
  const header=req.headers.get('authorization')||'';if(!header.startsWith('Bearer '))throw new Failure(401,'Connecte-toi à ton compte 3B.');
@@ -57,6 +61,42 @@ Deno.serve(async req=>{
   await markAccountVerified(user);
   const uid=user.id;
   if(!await rpc('loyalty_rate',{p_key:uid+':requests',p_limit:100,p_window:60}))throw new Failure(429,'Patiente un instant puis réessaie.');
+  if(action==='identity-claim'){
+   const input=validateIdentityClaim(body);
+   const rows=await api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=identity_verification_state,identity_assurance_level&limit=1');
+   const profile=rows?.[0];
+   if(!profile)throw new Failure(404,'Ton compte est en cours de préparation.');
+   if(['pending','verified'].includes(String(profile.identity_verification_state)))
+    throw new Failure(409,'Ton identité ne peut pas être modifiée pendant ou après une vérification validée.');
+   if(profile.identity_verification_state==='revoked')
+    throw new Failure(403,'Ce dossier d’identité nécessite une vérification par le support 3B.');
+
+   const existing=await api('/rest/v1/member_identity_claims?user_id=eq.'+uid+'&select=user_id&limit=1');
+   const claim={
+    legal_given_names:input.legalGivenNames,
+    legal_family_name:input.legalFamilyName,
+    birth_date:input.birthDate,
+    updated_at:new Date().toISOString()
+   };
+   if(existing?.length)await api('/rest/v1/member_identity_claims?user_id=eq.'+uid,claim,'PATCH');
+   else await api('/rest/v1/member_identity_claims',{user_id:uid,...claim,claim_version:1});
+
+   if(['rejected','expired'].includes(String(profile.identity_verification_state))){
+    await api('/rest/v1/member_profiles?user_id=eq.'+uid,{
+     identity_verification_state:'unverified',
+     identity_verified_at:null,
+     identity_verification_provider:null,
+     identity_verification_ref_hash:null,
+     identity_assurance_level:profile.identity_assurance_level==='self_asserted'?'self_asserted':'account_verified'
+    },'PATCH');
+   }
+
+   await api('/rest/v1/member_consents',{
+    user_id:uid,kind:'identity',version:IDENTITY_CONSENT_VERSION,granted:true,
+    ip_hash:await hash('identity-claim:'+clientIp(req))
+   });
+   return reply(await snapshot(uid));
+  }
   if(action==='prestige'){
    if(!await rpc('loyalty_rate',{p_key:uid+':prestige',p_limit:5,p_window:3600}))throw new Failure(429,'Patiente avant de réessayer.');
    const current=await snapshot(uid);
@@ -88,5 +128,5 @@ Deno.serve(async req=>{
    await api('/rest/v1/member_profiles?user_id=eq.'+uid,{theme:theme.id},'PATCH');return reply(await snapshot(uid));
   }
   throw new Failure(400,'Action inconnue.');
- }catch(error){return reply({error:error instanceof Failure?error.message:error instanceof Error&&error.message.startsWith('Choisis')?error.message:'Service momentanément indisponible. Réessaie dans un instant.'},error instanceof Failure?error.status:400);}
+ }catch(error){return reply({error:error instanceof Failure?error.message:error instanceof Error&&/^(Choisis|Entre|Accepte)/.test(error.message)?error.message:'Service momentanément indisponible. Réessaie dans un instant.'},error instanceof Failure?error.status:400);}
 });
