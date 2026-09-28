@@ -17,6 +17,22 @@ const readiness=read('docs/passport/EXTERNAL_ACCEPTANCE_READINESS.md');
 
 check('privacy_policy_present',exists('public/privacy-policy.html'),'Public privacy policy exists');
 check('delete_account_present',exists('public/delete-account.html'),'Public account deletion flow exists');
+const deletionPage=read('public/delete-account.html');
+const deletionFunction=read('supabase/functions/delete-account/index.ts');
+check(
+  'delete_account_supports_v2_accounts',
+  /functions\/v1\/member-auth/.test(deletionPage)
+    && /identifier/.test(deletionPage)
+    && !/accounts\.3b\.invalid/.test(deletionPage),
+  'Public deletion authenticates through the current 3B member-auth flow'
+);
+check(
+  'delete_account_checks_live_session',
+  /loyalty_session_valid/.test(deletionFunction)
+    && /session_id/.test(deletionFunction)
+    && /delete-account/.test(deletionFunction),
+  'Deletion rejects revoked/invalid sessions and is rate-limited'
+);
 check('incident_response_present',exists('docs/security/INCIDENT_RESPONSE_3B.md'),'Incident response document exists');
 check('rgpd_register_present',exists('docs/legal/RGPD_REGISTER_DRAFT.md'),'RGPD working register exists');
 check('acceptance_dossier_present',readiness.includes('Dossier de préparation aux acceptations externes'),'External acceptance dossier exists');
