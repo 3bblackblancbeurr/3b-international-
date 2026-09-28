@@ -11,6 +11,7 @@ export const HUB_MISSION_GRAPH={
  passion_trial:{requires:['rooftops_circle'],next:[],optional:[]},
  blue_blackout:{requires:['first_steps'],next:['silent_cable'],optional:['event:power_flicker']},
  silent_cable:{requires:['blue_blackout'],next:[],optional:['transport:telepheric']},
+ horizons_mapping:{requires:['first_steps'],next:[],optional:['visit:city3b_portal','transport:train']},
  voices_square:{requires:['first_steps'],next:[],optional:['talk:amira_mansouri','talk:lucia_navaro','talk:soraya_najem']},
  garden_listens:{requires:['first_echo'],next:['lost_wolf_signal'],optional:['weather:fog']},
  lost_wolf_signal:{requires:['garden_listens'],next:[],optional:[]},
