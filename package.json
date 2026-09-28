@@ -28,7 +28,9 @@
     "gold-master:guard": "node scripts/verify-gold-master-diff.mjs",
     "albert:apex-install": "node scripts/install-albert-apex-v2.mjs install",
     "albert:apex-status": "node scripts/install-albert-apex-v2.mjs status",
-    "albert:apex-remove": "node scripts/install-albert-apex-v2.mjs remove"
+    "albert:apex-remove": "node scripts/install-albert-apex-v2.mjs remove",
+    "passport:readiness": "node scripts/verify-passport-acceptance-readiness.mjs",
+    "passport:activation-check": "node scripts/verify-passport-acceptance-readiness.mjs --activation"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
