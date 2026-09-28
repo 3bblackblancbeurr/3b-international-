@@ -1,3 +1,5 @@
+import {normalizeIdentityAssurance} from './assurance.js';
+
 export const PASSPORT_COUNTRIES = Object.freeze({
   France: Object.freeze({ code: 'FR', flag: '🇫🇷', value: 'Justice' }),
   Algérie: Object.freeze({ code: 'DZ', flag: '🇩🇿', value: 'Loyauté' }),
@@ -20,6 +22,16 @@ const normalizePublicPassportId = value => {
   return PUBLIC_PASSPORT_UUID.test(id) ? id.toUpperCase() : '';
 };
 
+export function publicPassportNumber(publicId) {
+  const opaquePublicId = normalizePublicPassportId(publicId);
+  return opaquePublicId ? '3B-PASS-' + opaquePublicId : '3B-PASS-EN-ATTENTE';
+}
+
+export function publicMemberNumber(publicId) {
+  const opaquePublicId = normalizePublicPassportId(publicId);
+  return opaquePublicId ? '3B-MEM-' + opaquePublicId : '3B-MEM-EN-ATTENTE';
+}
+
 export function passportFromProfile(profile, user = null) {
   if (!profile || typeof profile !== 'object' || !profile.user_id) return null;
   if (user?.id && profile.user_id !== user.id) return null;
@@ -32,15 +44,24 @@ export function passportFromProfile(profile, user = null) {
   const name = cleanText(profile.name || profile.handle || 'Membre 3B', 80);
   const handle = cleanText(profile.handle, 24);
   const version = Number(profile.passport_version);
+  const assurance = normalizeIdentityAssurance(profile);
 
   return Object.freeze({
     userId,
     passportPublicId: opaquePublicId || null,
-    passportId: opaquePublicId ? `3B-PASS-${opaquePublicId}` : '3B-PASS-EN-ATTENTE',
-    memberId: opaquePublicId ? `3B-MEM-${opaquePublicId}` : '3B-MEM-EN-ATTENTE',
+    passportId: publicPassportNumber(opaquePublicId),
+    memberId: publicMemberNumber(opaquePublicId),
     passportIssuedAt: profile.passport_issued_at || null,
     passportVersion: Number.isInteger(version) && version > 0 ? version : null,
     passportState: cleanText(profile.passport_state, 16) || null,
+    identityVerificationStatus: assurance.status,
+    identityAssuranceLevel: assurance.level,
+    civilIdentityVerified: assurance.civilIdentityVerified,
+    identityVerifiedAt: assurance.verifiedAt,
+    identityVerificationExpiresAt: assurance.expiresAt,
+    ageOver18: assurance.ageOver18,
+    identityDocumentVerified: assurance.documentVerified,
+    identityLivenessVerified: assurance.livenessVerified,
     name,
     handle,
     country,

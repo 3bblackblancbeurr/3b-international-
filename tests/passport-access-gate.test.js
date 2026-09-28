@@ -1,15 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { hasPassportAccess } from '../src/passport/access.js';
+import { hasPassportAccess,hasVerifiedPassportAccess } from '../src/passport/access.js';
 
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const loyalty = readFileSync(new URL('../src/loyalty/LoyaltyContext.jsx', import.meta.url), 'utf8');
 const memberApi = readFileSync(new URL('../supabase/functions/member-api/index.ts', import.meta.url), 'utf8');
 
-test('one 3B Passport unlocks the ecosystem', () => {
+test('only an explicitly active 3B Passport unlocks the ecosystem', () => {
   assert.equal(hasPassportAccess(null), false);
-  assert.equal(hasPassportAccess({ userId: 'member-1' }), true);
+  assert.equal(hasPassportAccess({ userId: 'member-1' }), false);
+  assert.equal(hasPassportAccess({ userId: 'member-1',passportState:'active' }), true);
+  assert.equal(hasPassportAccess({ userId: 'member-1',passportState:'suspended' }), false);
+  assert.equal(hasPassportAccess({ userId: 'member-1',passportState:'revoked' }), false);
+});
+
+test('sensitive future services require active Passport plus civil identity proof',()=>{
+  assert.equal(hasVerifiedPassportAccess({userId:'member-1',passportState:'active',civilIdentityVerified:true}),true);
+  assert.equal(hasVerifiedPassportAccess({userId:'member-1',passportState:'active',civilIdentityVerified:false}),false);
+  assert.equal(hasVerifiedPassportAccess({userId:'member-1',passportState:'revoked',civilIdentityVerified:true}),false);
 });
 
 test('App uses one Passport gate with no Passport 2 rule', () => {
