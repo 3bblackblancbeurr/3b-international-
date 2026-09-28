@@ -32,5 +32,6 @@ test('3D scene applies acting beats once per phase and keeps premium arrival cos
   assert.match(scene,/focusActor\?\.controller\?\.action/);
   assert.match(scene,/premiumArrival/);
   assert.match(scene,/duration=Math\.max\(duration,9200\)/);
-  assert.doesNotMatch(scene,/premiumArrival[^\n]{0,120}(damage|xp|reward|power)/i);
+  const effects=read('src/store/premium-effects.js');
+  assert.doesNotMatch(effects,/\b(damage|attackPower|speedBonus|xpBonus|rewardBonus)\b/i);
 });
