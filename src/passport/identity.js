@@ -41,6 +41,11 @@ export function passportFromProfile(profile, user = null) {
     passportIssuedAt: profile.passport_issued_at || null,
     passportVersion: Number.isInteger(version) && version > 0 ? version : null,
     passportState: cleanText(profile.passport_state, 16) || null,
+    identityVerificationStatus: cleanText(profile.identity_verification_status, 16) || 'unverified',
+    identityAssuranceLevel: Number.isInteger(Number(profile.identity_assurance_level))
+      ? Math.max(0, Math.min(3, Number(profile.identity_assurance_level)))
+      : 0,
+    identityVerifiedAt: profile.identity_verified_at || null,
     name,
     handle,
     country,
