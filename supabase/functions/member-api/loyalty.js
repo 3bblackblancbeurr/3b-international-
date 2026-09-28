@@ -33,3 +33,30 @@ export function purchaseRewards(cents){
  if(!Number.isSafeInteger(cents)||cents<0)throw Error('Montant invalide.');
  return{points:Math.floor(cents/10),xp:Math.floor(cents/10)};
 }
+
+
+export const IDENTITY_CONSENT_VERSION='2026-09-28';
+
+export function normalizeCivilName(value,label='identité'){
+ const name=String(value||'').trim().replace(/\s+/g,' ');
+ if(name.length<1||name.length>120||/[\u0000-\u001f\u007f]/u.test(name))throw Error('Entre '+label+' exactement comme sur ta pièce d’identité.');
+ return name;
+}
+
+export function normalizeBirthDate(value){
+ const birthDate=String(value||'').trim();
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(birthDate))throw Error('Entre une date de naissance valide.');
+ const parsed=new Date(birthDate+'T00:00:00.000Z');
+ if(Number.isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==birthDate)throw Error('Entre une date de naissance valide.');
+ const today=new Date().toISOString().slice(0,10);
+ if(birthDate<'1900-01-01'||birthDate>today)throw Error('Entre une date de naissance valide.');
+ return birthDate;
+}
+
+export function validateIdentityClaim(input){
+ const legalGivenNames=normalizeCivilName(input?.legalGivenNames,'ton ou tes prénoms officiels');
+ const legalFamilyName=normalizeCivilName(input?.legalFamilyName,'ton nom de famille officiel');
+ const birthDate=normalizeBirthDate(input?.birthDate);
+ if(input?.identityConsent!==true)throw Error('Accepte le traitement de tes informations d’identité pour continuer.');
+ return{legalGivenNames,legalFamilyName,birthDate};
+}
