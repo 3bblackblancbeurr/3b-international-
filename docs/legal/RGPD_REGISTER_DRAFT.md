@@ -25,7 +25,7 @@ Ce registre est une base technique issue du fonctionnement actuellement observé
 ## Informations qui manquent pour rendre le registre final
 
 - identité et coordonnées du responsable de traitement ;
-- point de contact vie privée ;
+- point de contact vie privée : contact public actuel `3bblackblancbeurr@gmail.com` ; adresse dédiée à formaliser si nécessaire ;
 - bases légales finales par traitement ;
 - durées de conservation chiffrées ou critères précis ;
 - liste contractuelle des sous-traitants ;

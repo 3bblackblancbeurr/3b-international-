@@ -181,3 +181,45 @@ Aucun label supérieur ne doit être affiché avant que la preuve correspondante
 ## Références de cadrage
 
 Pour la France, vérifier au moment de la contractualisation la liste et le statut actuels des prestataires PVID publiée par l’ANSSI ainsi que le référentiel PVID en vigueur. La présence d’un prestataire sur une liste ou l’obtention d’un niveau de garantie par celui-ci ne signifie pas que 3B est lui-même certifié ou qualifié.
+
+
+## 11. Contrôle automatique dans le dépôt
+
+Le dépôt fournit désormais :
+
+- `npm run passport:readiness` : vérifie les fondations techniques et documentaires pouvant être contrôlées sans fournisseur externe ;
+- `npm run passport:activation-check` : mode fail-closed destiné au jour où un prestataire est réellement sélectionné et configuré ;
+- workflow CI `Verify Passport Identity Acceptance` : empêche une régression silencieuse de la frontière de confiance.
+
+Le mode `activation-check` doit échouer tant que les secrets fournisseur, la signature webhook et l'anti-bot production ne sont pas réellement configurés. Un échec dans ce mode avant contractualisation est donc attendu et souhaité.
+
+## 12. Référence PVID à revérifier avant contrat
+
+Au 28 septembre 2026, le site de l'ANSSI publie le référentiel PVID v1.1 et distingue les niveaux de garantie `substantiel` et `élevé`.
+
+Avant toute signature, vérifier directement sur le site de l'ANSSI :
+
+- que le **service exact** du prestataire est toujours certifié ou dans le statut revendiqué ;
+- le niveau de garantie ;
+- le périmètre exact ;
+- les dates de validité ;
+- la décision de certification applicable.
+
+Ne jamais déduire qu'un prestataire, sa société entière ou 3B est certifié simplement parce qu'un de ses services a obtenu une certification.
+
+
+## 13. État de sécurité Auth vérifié le 28 septembre 2026
+
+Contrôle direct du projet Supabase :
+
+- les tables privées `member_identity_claims`, `passport_identity_verification_attempts` et `passport_partner_consents` ont RLS activée ;
+- les rôles `anon` et `authenticated` n'ont pas de droits directs sur ces tables ; le service serveur reste l'autorité ;
+- `allow_legacy_flows=false` en production ;
+- aucun profil existant n'est actuellement marqué identité civile `verified` sans preuve externe ;
+- la base rejette désormais les dates de naissance futures.
+
+Point restant avant activation d'un fournisseur d'identité :
+
+- activer et vérifier dans Supabase Auth la protection contre les mots de passe compromis (Leaked Password Protection). Le Security Advisor la signale actuellement désactivée.
+
+Le mode `passport:activation-check` exige désormais une attestation explicite que ce réglage ainsi que les validations juridique, conservation, mineurs et sandbox E2E ont réellement été terminés. Ces drapeaux ne constituent pas une certification : ils empêchent seulement une activation accidentelle incomplète.
