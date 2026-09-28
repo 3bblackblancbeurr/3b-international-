@@ -68,3 +68,9 @@ test('legacy UI no longer claims fake biometric or encryption guarantees',()=>{
   assert.doesNotMatch(source,/AES-256/i);
   assert.doesNotMatch(source,/Intégrité des données.*100%/i);
 });
+
+
+test('database rejects future birth dates for private civil claims',()=>{
+  const source=readFileSync(new URL('../supabase/migrations/20260928153842_member_identity_birth_date_guard_v1.sql',import.meta.url),'utf8');
+  assert.match(source,/birth_date <= current_date/);
+});
