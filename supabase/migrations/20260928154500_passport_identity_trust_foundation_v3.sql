@@ -2,6 +2,11 @@
 -- Privacy-first: proofs and metadata only. Never store biometric templates, raw ID scans,
 -- raw recovery codes, passkey private keys, or unhashed provider case identifiers here.
 
+alter table public.member_profiles drop constraint if exists member_profiles_passport_state_check;
+alter table public.member_profiles
+  add constraint member_profiles_passport_state_check
+  check (passport_state in ('active','suspended','revoked','expired'));
+
 alter table public.member_profiles
   add column if not exists identity_verification_status text not null default 'unverified',
   add column if not exists identity_assurance_level smallint not null default 0,
