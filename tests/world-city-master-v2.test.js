@@ -43,7 +43,7 @@ test('City 3B stores custom roads and protects locked districts, water and roads
   };
   assert.equal(cityMapCustomRoads(snapshot).length, 1);
   assert.equal(cityMapPlacementPolicy(snapshot, { x: 0, z: -30 }, { width: 2, height: 2 }).valid, false);
-  assert.equal(cityMapPlacementPolicy(snapshot, { x: 0, z: 124 }, { width: 2, height: 2 }).valid, false);
+  assert.equal(cityMapPlacementPolicy(snapshot, { x: 0, z: 130 }, { width: 2, height: 2 }).valid, false);
 });
 
 test('City 3B computes an urban balance from real placements instead of fake dashboard numbers', () => {
