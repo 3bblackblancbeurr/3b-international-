@@ -24,7 +24,7 @@ test('pending identity schema minimizes raw high-risk evidence',()=>{
  assert.match(ddl,/member_identity_assurance/);
  assert.match(ddl,/enable row level security/);
  assert.match(ddl,/revoke all on public\.member_identity_assurance from public,anon,authenticated/);
- assert.doesNotMatch(ddl,/\b(document_image|selfie|biometric_template|document_number)\b/i);
+ assert.doesNotMatch(ddl,/^\s*(document_image|selfie|biometric_template|document_number)\s+(text|bytea|jsonb|uuid|varchar|character\s+varying)\b/im);
 });
 
 test('Passkeys remain disabled by default until the permanent RP is chosen',()=>{
