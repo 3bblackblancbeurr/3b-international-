@@ -18,12 +18,10 @@ const passportData = {
   },
 
   security: [
-    { label: "Passeport numérique", value: "VÉRIFIÉ" },
-    { label: "Clé publique", value: "VÉRIFIÉ" },
-    { label: "Niveau de sécurité", value: "ULTRA" },
-    { label: "Biométrie", value: "ACTIVE" },
-    { label: "Chiffrement", value: "AES-256" },
-    { label: "Intégrité des données", value: "100%" },
+    { label: "Passeport numérique", value: "ÉTAT SERVEUR" },
+    { label: "Identité civile", value: "SELON VÉRIFICATION" },
+    { label: "Clé de sécurité", value: "PASSKEY À ACTIVER" },
+    { label: "QR de contrôle", value: "TEMPORAIRE · USAGE UNIQUE" },
   ],
 
   securityId: "3B-ID-9F7A-2C4B-6E21",
