@@ -72,6 +72,8 @@ function collisionState({ draft, size, half, placements, ignoreId }) {
 
 function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, onSelect, zoom, setZoom, center, setCenter, previewOnly = false }) {
   const svgRef = useRef(null);
+  const dragRef = useRef(null);
+  const draggedRef = useRef(false);
   const blueprint = useMemo(() => cityMapBlueprint(data), [data]);
   const roads = useMemo(() => cityMapRoads(blueprint), [blueprint]);
   const definitions = useMemo(() => new Map((data.buildings || []).map(row => [row.code, row])), [data.buildings]);
@@ -101,6 +103,35 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
     z: clamp(previous.z + dz * Math.max(4, Math.round(radius / 3)), -half, half),
   }));
 
+  const beginMapDrag = event => {
+    if (event.button !== undefined && event.button !== 0) return;
+    if (!previewOnly && event.target.closest?.("[data-placement]")) return;
+    dragRef.current = { id: event.pointerId, x: event.clientX, y: event.clientY, center: { ...center } };
+    draggedRef.current = false;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const moveMapDrag = event => {
+    const drag = dragRef.current;
+    const svg = svgRef.current;
+    if (!drag || drag.id !== event.pointerId || !svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dx = event.clientX - drag.x;
+    const dy = event.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 6) draggedRef.current = true;
+    setCenter({
+      x: clamp(drag.center.x - dx / rect.width * view.size, -half, half),
+      z: clamp(drag.center.z - dy / rect.height * view.size, -half, half),
+    });
+  };
+
+  const endMapDrag = event => {
+    if (dragRef.current?.id !== event.pointerId) return;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    dragRef.current = null;
+  };
+
   return <div className="city3b-builder-map-shell" data-preview={previewOnly}>
     <div className="city3b-builder-map-toolbar">
       <span><Crosshair size={15} /> PLAN VILLE · X {draft.x} · Z {draft.z}</span>
@@ -121,7 +152,12 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
       viewBox={view.x+" "+view.z+" "+view.size+" "+view.size}
       role="img"
       aria-label={previewOnly ? "Carte urbaine de la Ville 3B" : "Carte interactive de construction de la Ville 3B"}
+      onPointerDown={beginMapDrag}
+      onPointerMove={moveMapDrag}
+      onPointerUp={endMapDrag}
+      onPointerCancel={endMapDrag}
       onClick={event => {
+        if (draggedRef.current) { draggedRef.current = false; return; }
         if (previewOnly || event.target.closest?.("[data-placement]")) return;
         const point = pointFromEvent(event);
         if (point) onPoint?.(point);
