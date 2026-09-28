@@ -86,7 +86,8 @@ test('City 3B public UI is map-first and no longer a bare technical grid', () =>
   assert.match(panel, /<City3BPrivatePreview data=\{data\}\/>/);
   assert.match(css, /City 3B Master Map/);
   assert.match(builder, /plan_roads/);
-  assert.match(builder, /ÉQUILIBRE URBAIN/);
+  assert.match(builder, /Simulation urbaine/);
+  assert.match(builder, /VILLE VIVANTE/);
   assert.doesNotMatch(portal, /unlock_district/);
 });
 
