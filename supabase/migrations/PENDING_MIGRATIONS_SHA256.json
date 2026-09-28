@@ -1,11 +1,5 @@
 {
   "status": "pending-not-deployed",
-  "count": 1,
-  "migrations": [
-    {
-      "version": "20260928154500",
-      "name": "passport_identity_trust_foundation_v3",
-      "sha256": "c222dbc2a64269c3d5643187839885149b9609df86ac0b942796de34dda44405"
-    }
-  ]
+  "count": 0,
+  "migrations": []
 }
