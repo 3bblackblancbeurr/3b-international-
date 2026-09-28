@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react';
 import {Fingerprint,KeyRound,LogOut,RefreshCw,ShieldCheck,Trash2} from 'lucide-react';
 import {authClient,PASSKEYS_ENABLED,register3BPasskey,list3BPasskeys,delete3BPasskey} from './client.js';
+import {Button} from '../design-system/index.jsx';
 
 const date=value=>value?new Date(value).toLocaleString('fr-FR',{dateStyle:'medium',timeStyle:'short'}):'—';
 const verificationLabel=status=>({
@@ -69,19 +70,19 @@ export default function AccountSecurityPanel({passport,emailVerified=false}){
    {!passport?.civilIdentityVerified&&<p>Le nom du profil n’est pas une preuve d’identité. Le statut ne deviendra « Vérifiée » qu’après un contrôle d’identité réel par un service de vérification configuré.</p>}
   </div>
   <div className="member-actions">
-   <button type="button" className="surface-button" onClick={revokeOthers} disabled={!!busy}>
+   <Button variant="champagne" className="surface-button" onClick={revokeOthers} disabled={!!busy}>
     <LogOut size={17}/>{busy==='sessions'?'Révocation…':'Déconnecter les autres appareils'}
-   </button>
-   {PASSKEYS_ENABLED&&<button type="button" className="surface-button" onClick={addPasskey} disabled={!!busy}>
+   </Button>
+   {PASSKEYS_ENABLED&&<Button variant="ghost" className="surface-button" onClick={addPasskey} disabled={!!busy}>
     <Fingerprint size={17}/>{busy==='add'?'Création…':'Ajouter une passkey'}
-   </button>}
-   {PASSKEYS_ENABLED&&<button type="button" className="quiet-button" onClick={refresh} disabled={!!busy}><RefreshCw size={16}/>Actualiser</button>}
+   </Button>}
+   {PASSKEYS_ENABLED&&<Button variant="ghost" className="quiet-button" onClick={refresh} disabled={!!busy}><RefreshCw size={16}/>Actualiser</Button>}
   </div>
   {!PASSKEYS_ENABLED&&<p className="muted-copy"><KeyRound size={15}/> Les passkeys sont préparées mais désactivées tant que le domaine WebAuthn 3B permanent n’est pas verrouillé.</p>}
   {PASSKEYS_ENABLED&&<div className="account-passkey-list">
    {passkeys.length?passkeys.map(item=><article key={item.id}>
     <div><strong>{item.friendly_name||'Passkey 3B'}</strong><small>Créée {date(item.created_at)}{item.last_used_at?' · utilisée '+date(item.last_used_at):''}</small></div>
-    <button type="button" className="quiet-button" aria-label="Supprimer cette passkey" onClick={()=>removePasskey(item.id)} disabled={!!busy}><Trash2 size={16}/></button>
+    <Button variant="ghost" className="quiet-button" aria-label="Supprimer cette passkey" onClick={()=>removePasskey(item.id)} disabled={!!busy}><Trash2 size={16}/></Button>
    </article>):<p>Aucune passkey enregistrée.</p>}
   </div>}
   {notice&&<p className="account-success" role="status">{notice}</p>}
