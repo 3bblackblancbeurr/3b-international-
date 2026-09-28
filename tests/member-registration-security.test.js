@@ -55,6 +55,8 @@ test('member auth source uses public signup, generic login and service-only audi
  assert.match(source,/member_identity_claims/);
  assert.match(source,/kind:'identity'/);
  assert.match(source,/identity_assurance_level:'account_verified'/);
+ assert.match(source,/email_confirmed_at/);
+ assert.match(source,/phone_confirmed_at/);
  assert.match(source,/reset-request/);
  assert.match(source,/resend-confirmation/);
  assert.match(source,/gotrue_meta_security/);
