@@ -47,7 +47,7 @@ test('Passport gives direct City 3B access without a World mission', () => {
   assert.match(gateway, /ACTIVER MON PASSEPORT 3B/);
   assert.match(gateway, /setCityOpen\(true\)/);
   assert.match(gateway, /<City3BPortal open/);
-  assert.doesNotMatch(gateway, /cityUnlockGuide|cityGuide|#monde-3b|Souvenir|CONTINUER LA MISSION/);
+  assert.doesNotMatch(gateway, /cityUnlockGuide|cityGuide|#monde-3b|CONTINUER LA MISSION|Obtiens ton premier Souvenir|MISSION VILLE/);
 });
 
 test('Ville 3B clearly exposes direct create and existing-city actions', () => {
