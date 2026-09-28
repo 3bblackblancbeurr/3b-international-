@@ -34,7 +34,9 @@ test('Nosbloc is an official routed 3B space', () => {
   assert.match(app, /id: "nosbloc"/);
   assert.match(navigation, /nosbloc: "nosbloc"/);
   assert.match(menu, /nosbloc: Boxes/);
-  assert.match(home, /\['passport', 'world3b', 'nosbloc', 'games'\]/);
+  assert.match(app, /id: "nosbloc"[\s\S]{0,120}status: "soon"/);
+  assert.match(menu, /En préparation[\s\S]*nosbloc/);
+  assert.doesNotMatch(home, /const PRIMARY_IDS = \[[^\]]*'nosbloc'/);
 });
 
 test('3B MA VILLE identity is preserved as the first official Nosbloc block', () => {
