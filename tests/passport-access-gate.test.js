@@ -9,7 +9,8 @@ const memberApi = readFileSync(new URL('../supabase/functions/member-api/index.t
 
 test('one 3B Passport unlocks the ecosystem', () => {
   assert.equal(hasPassportAccess(null), false);
-  assert.equal(hasPassportAccess({ userId: 'member-1' }), true);
+  assert.equal(hasPassportAccess({ userId: 'member-1', passportState: 'active' }), true);
+  assert.equal(hasPassportAccess({ userId: 'member-1', passportState: 'suspended' }), false);
 });
 
 test('App uses one Passport gate with no Passport 2 rule', () => {
