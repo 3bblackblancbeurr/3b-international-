@@ -82,7 +82,7 @@ test('City 3B public UI is map-first and no longer a bare technical grid', () =>
   assert.match(builder, /city3b-map-district/);
   assert.match(builder, /city3b-map-water/);
   assert.match(portal, /\['city','Carte',MapIcon\]/);
-  assert.match(portal, /<City3BPrivatePreview data=\{data\}\/>/);
+  assert.match(portal, /<City3BPrivatePreview data=\{data\} premiumCodes=\{premiumCodes\}\/>/);
   assert.match(panel, /<City3BPrivatePreview data=\{data\}\/>/);
   assert.match(css, /City 3B Master Map/);
   assert.match(builder, /plan_roads/);
