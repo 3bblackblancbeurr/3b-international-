@@ -1,18 +1,29 @@
 import { createShop } from "../server/shop.js";
 import { notifySellerBySession } from "../server/shop-notification-hooks.js";
+import { createDigitalStore } from "../server/digital-store.js";
 
 export default {
   fetch: async request => {
-    const copy = request.clone();
-    const response = await createShop().webhook(request);
-    if (!response.ok) return response;
+    const shopCopy = request.clone();
+    const digitalCopy = request.clone();
+    const notificationCopy = request.clone();
+
+    const shopResponse = await createShop().webhook(shopCopy);
+    if (!shopResponse.ok) return shopResponse;
+
+    const digitalResponse = await createDigitalStore().webhook(digitalCopy);
+    if (!digitalResponse.ok) return digitalResponse;
+
     try {
-      const event = JSON.parse(await copy.text());
+      const event = JSON.parse(await notificationCopy.text());
       if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event?.type)) {
         const sessionId = event?.data?.object?.id;
-        if (sessionId) await notifySellerBySession(sessionId);
+        if (sessionId && event?.data?.object?.metadata?.integration !== "3b-digital-store-v1") {
+          await notifySellerBySession(sessionId);
+        }
       }
-    } catch { /* Notification is best-effort; payment recording remains authoritative. */ }
-    return response;
+    } catch { /* Notifications are best-effort; payment recording remains authoritative. */ }
+
+    return Response.json({received:true},{headers:{"Cache-Control":"no-store"}});
   },
 };
