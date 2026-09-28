@@ -12,11 +12,14 @@ import {
   RotateCw,
   Save,
   Search,
+  Sparkles,
   Undo2,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
 import { cityBuildingKind, cityMapBlueprint, cityMapCustomRoads, cityMapPlacementPolicy, cityMapRoads, cityMapSnap, cityMapUrbanScore } from "./city3b-map.js";
+import { citySimulationSnapshot, cityTrafficRoutes } from "./city3b-simulation.js";
+import { premiumEffectsFromCodes } from "../store/premium-effects.js";
 import "../styles/city-3b-builder.css";
 
 const requestId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -69,13 +72,18 @@ function collisionState({ draft, size, snapshot, placements, ignoreId }) {
   return hit ? { valid: false, reason: "Parcelle occupée" } : planning;
 }
 
-function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, onSelect, zoom, setZoom, center, setCenter, previewOnly = false, tool = "build", roadStart = null, onRoadPoint }) {
+function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, onSelect, zoom, setZoom, center, setCenter, previewOnly = false, tool = "build", roadStart = null, onRoadPoint, premiumCodes = new Set() }) {
   const svgRef = useRef(null);
   const dragRef = useRef(null);
   const draggedRef = useRef(false);
   const blueprint = useMemo(() => cityMapBlueprint(data), [data]);
   const roads = useMemo(() => cityMapRoads(blueprint), [blueprint]);
   const definitions = useMemo(() => new Map((data.buildings || []).map(row => [row.code, row])), [data.buildings]);
+  const itemDefinitions = useMemo(() => new Map((data.definitions || []).map(row => [row.code, row])), [data.definitions]);
+  const itemsById = useMemo(() => new Map((data.items || []).map(row => [row.id, row])), [data.items]);
+  const premium = useMemo(() => premiumEffectsFromCodes(premiumCodes), [premiumCodes]);
+  const simulation = useMemo(() => citySimulationSnapshot(data), [data]);
+  const traffic = useMemo(() => cityTrafficRoutes(data, simulation), [data, simulation]);
   const half = blueprint.half;
   const radius = Math.max(12, Math.round(half / zoom));
   const view = { x: center.x - radius, z: center.z - radius, size: radius * 2 };
@@ -131,7 +139,7 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
     dragRef.current = null;
   };
 
-  return <div className="city3b-builder-map-shell" data-preview={previewOnly} data-tool={tool}>
+  return <div className="city3b-builder-map-shell" data-preview={previewOnly} data-tool={tool} data-premium-roads={premium.matrixRoads||undefined} data-premium-architecture={premium.champagneArchitecture||undefined} data-premium-waterfront={premium.waterfront||undefined} data-premium-night={premium.nightLuxe||undefined}>
     <div className="city3b-builder-map-toolbar">
       <span><Crosshair size={15} /> {tool === "road" ? "TRACÉ ROUTE" : "PLAN VILLE"} · X {draft.x} · Z {draft.z}</span>
       <span className="city3b-map-progress">{blueprint.districts.filter(row => row.unlocked).length}/8 quartiers · Terrain {blueprint.landTier}/10</span>
@@ -191,6 +199,7 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
       {roads.boulevards.map(road => <line key={road.id} x1={road.x1} y1={road.z1} x2={road.x2} y2={road.z2} className="city3b-map-road city3b-map-boulevard" />)}
       {roads.radials.map(road => <line key={road.id} x1={road.x1} y1={road.z1} x2={road.x2} y2={road.z2} className="city3b-map-road city3b-map-radial" data-unlocked={road.unlocked} />)}
       {roads.custom.map(road => <line key={road.id} x1={road.x1} y1={road.z1} x2={road.x2} y2={road.z2} className="city3b-map-road city3b-map-road-custom" strokeWidth={road.width} />)}
+      <g className="city3b-traffic-layer" aria-hidden="true">{traffic.map(vehicle => <circle key={vehicle.id} r={vehicle.size} className="city3b-traffic-dot"><animateMotion dur={vehicle.duration+"s"} begin={vehicle.delay+"s"} repeatCount="indefinite" path={"M "+vehicle.x1+" "+vehicle.z1+" L "+vehicle.x2+" "+vehicle.z2} /></circle>)}</g>
       {!previewOnly && tool === "road" && roadStart && <g className="city3b-road-start"><circle cx={roadStart.x} cy={roadStart.z} r="2.8" /><text x={roadStart.x + 4} y={roadStart.z - 4}>Départ</text></g>}
 
       <g className="city3b-map-center">
@@ -204,6 +213,15 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
         <text x={district.x} y={district.z - district.rz * .58 + 5} textAnchor="middle" className="city3b-map-district-value">{district.unlocked ? district.value : "VERROUILLÉ"}</text>
       </g>)}
 
+      {(data.displays||[]).map(display => {
+        const item=itemsById.get(display.item_instance_id)||{};
+        const definition=itemDefinitions.get(item.item_code)||{};
+        const premiumMonument=item.item_code==="PREM_CITY_BROKEN_MONUMENT";
+        return <g key={"display-"+display.item_instance_id} className="city3b-map-display" data-premium={premiumMonument||undefined} transform={"translate("+display.x+" "+display.z+") rotate("+(display.rotation||0)+")"}>
+          {premiumMonument?<><circle r="5.8" className="city3b-display-ring"/><path d="M -4.5 3.5 A 5.8 5.8 0 0 1 3.4 -4.6 M 4.5 -3.5 A 5.8 5.8 0 0 1 -3.4 4.6" className="city3b-display-broken"/><text y="1.4" textAnchor="middle">3B</text></>:<><circle r="3.4"/><text y="1.2" textAnchor="middle">◆</text></>}
+          {zoom>=2.2&&<text y="8" textAnchor="middle" className="city3b-display-label">{String(definition.name||item.item_code||"Collection").slice(0,16)}</text>}
+        </g>;
+      })}
       {placements.map(row => {
         const selected = row.id === activePlacement?.id;
         const definition = definitions.get(row.building_code) || {};
@@ -236,7 +254,7 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
   </div>;
 }
 
-export default function City3BBuilder({ data, busy, call }) {
+export default function City3BBuilder({ data, busy, call, premiumCodes = new Set() }) {
   const city = data.city || {};
   const storageKey = `threeb:city-editor:v1:${city.city_id || "unknown"}`;
   const definitions = useMemo(() => new Map((data.buildings || []).map(row => [row.code, row])), [data.buildings]);
@@ -279,6 +297,8 @@ export default function City3BBuilder({ data, busy, call }) {
   const size = activeDefinition || selectedPlacement ? footprint(activeDefinition, draft.rotation, selectedPlacement) : null;
   const validation = size ? collisionState({ draft, size, snapshot: data, placements, ignoreId: selectedPlacement?.id }) : null;
   const urban = useMemo(() => cityMapUrbanScore(data), [data]);
+  const simulation = useMemo(() => citySimulationSnapshot(data), [data]);
+  const premium = useMemo(() => premiumEffectsFromCodes(premiumCodes), [premiumCodes]);
   const customRoads = useMemo(() => cityMapCustomRoads(data), [data]);
   const filteredBuildings = (data.buildings || []).filter(row => `${row.name} ${row.code} ${row.country || ""}`.toLocaleLowerCase("fr").includes(query.trim().toLocaleLowerCase("fr")));
 
@@ -403,7 +423,7 @@ export default function City3BBuilder({ data, busy, call }) {
 
   if (preview) return <section className="city3b-builder-preview">
     <header><div><p className="city3b-kicker">APERÇU PRIVÉ · NON PUBLIÉ</p><h2>{city.name}</h2><span>Visible uniquement depuis ton Passeport pendant cette validation.</span></div><button type="button" className="city3b-btn primary" onClick={() => setPreview(false)}>Retour à l’éditeur</button></header>
-    <BuildingMap data={data} draft={draft} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} previewOnly />
+    <BuildingMap data={data} draft={draft} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} previewOnly premiumCodes={premiumCodes} />
     <div className="city3b-preview-stats"><span>{placements.length} constructions</span><span>{data.districts?.filter(row => row.unlocked).length || 1}/8 quartiers</span><span>{city.day_mode} · {city.weather}</span></div>
   </section>;
 
@@ -427,7 +447,7 @@ export default function City3BBuilder({ data, busy, call }) {
 
     <div className="city3b-builder-layout">
       <div className="city3b-builder-canvas">
-        <BuildingMap data={data} draft={draft} activeDefinition={tool === "build" ? activeDefinition : null} activePlacement={tool === "build" ? selectedPlacement : null} onPoint={point => setDraft(previous => ({ ...previous, ...point }))} onSelect={selectPlacement} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} tool={tool} roadStart={roadStart} onRoadPoint={saveRoadPoint} />
+        <BuildingMap data={data} draft={draft} activeDefinition={tool === "build" ? activeDefinition : null} activePlacement={tool === "build" ? selectedPlacement : null} onPoint={point => setDraft(previous => ({ ...previous, ...point }))} onSelect={selectPlacement} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} tool={tool} roadStart={roadStart} onRoadPoint={saveRoadPoint} premiumCodes={premiumCodes} />
         {tool === "build" && <div className="city3b-builder-nudge">
           <button type="button" onClick={() => setDraft(value => ({ ...value, z: value.z - 1 }))}>Z -1</button>
           <button type="button" onClick={() => setDraft(value => ({ ...value, x: value.x - 1 }))}>X -1</button>
@@ -465,14 +485,17 @@ export default function City3BBuilder({ data, busy, call }) {
       </aside>
     </div>
 
-    <section className="city3b-urban-health" aria-label="Équilibre urbain">
-      <div><span>ÉQUILIBRE URBAIN</span><strong>{urban.score}%</strong><small>Lecture dynamique de ta ville actuelle.</small></div>
-      <div><span>Habitants</span><strong>{urban.residents}</strong><small>capacité estimée</small></div>
-      <div><span>Emplois</span><strong>{urban.jobs}</strong><small>activité estimée</small></div>
-      <div><span>Mobilité</span><strong>{urban.mobility}%</strong><small>{urban.customRoads} axes personnalisés</small></div>
-      <div><span>Services</span><strong>{urban.services}%</strong><small>équipements & commerces</small></div>
-      <div><span>Nature</span><strong>{urban.green}%</strong><small>parcs & espaces verts</small></div>
+    <section className="city3b-urban-health" aria-label="Simulation urbaine">
+      <div><span>VILLE VIVANTE</span><strong>{simulation.satisfaction}%</strong><small>{simulation.status} · croissance {simulation.growthPerCycle>=0?"+":""}{simulation.growthPerCycle}</small></div>
+      <div><span>Habitants</span><strong>{simulation.residents}</strong><small>{simulation.housingCapacity} places logement</small></div>
+      <div><span>Emplois</span><strong>{simulation.jobs}</strong><small>{simulation.unemployment}% chômage simulé</small></div>
+      <div><span>Trafic</span><strong>{simulation.congestion}%</strong><small>pression · transit {simulation.transit}%</small></div>
+      <div><span>Services</span><strong>{simulation.services}%</strong><small>demande {simulation.serviceDemand}%</small></div>
+      <div><span>Nature</span><strong>{simulation.green}%</strong><small>attractivité {simulation.attractiveness}%</small></div>
+      <div><span>Logements</span><strong>{simulation.residentialDemand}%</strong><small>demande résidentielle</small></div>
+      <div><span>Commerces</span><strong>{simulation.commercialDemand}%</strong><small>demande commerciale</small></div>
     </section>
+    {(premium.matrixRoads||premium.champagneArchitecture||premium.waterfront||premium.brokenCircleMonument||premium.nightLuxe)&&<section className="city3b-premium-active"><Sparkles size={17}/><span><strong>Premium actif dans la ville</strong><small>{[premium.matrixRoads&&"Routes Matrix",premium.champagneArchitecture&&"Architecture Champagne",premium.waterfront&&"Waterfront",premium.brokenCircleMonument&&"Monument Cercle Brisé",premium.nightLuxe&&"Nuit Luxe"].filter(Boolean).join(" · ")}</small></span></section>}
 
     <section className="city3b-builder-catalog">
       <div className="city3b-builder-catalog-head"><div><p className="city3b-kicker">CATALOGUE</p><h3>Bâtiments disponibles</h3></div><label><Search size={16} /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Rechercher…" /></label></div>
@@ -483,11 +506,11 @@ export default function City3BBuilder({ data, busy, call }) {
   </section>;
 }
 
-export function City3BPrivatePreview({ data }) {
+export function City3BPrivatePreview({ data, premiumCodes = new Set() }) {
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState({ x: 0, z: 0 });
   return <section className="city3b-builder-preview city3b-builder-preview-standalone">
     <header><div><p className="city3b-kicker">APERÇU PRIVÉ · PASSEPORT 3B</p><h2>{data.city?.name || "Ma Ville 3B"}</h2><span>Aucune publication publique n’est déclenchée.</span></div></header>
-    <BuildingMap data={data} draft={{ x: 0, z: 0, rotation: 0 }} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} previewOnly />
+    <BuildingMap data={data} draft={{ x: 0, z: 0, rotation: 0 }} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} previewOnly premiumCodes={premiumCodes} />
   </section>;
 }
