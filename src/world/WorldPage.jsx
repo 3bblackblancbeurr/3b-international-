@@ -45,6 +45,8 @@ import {cinematicSeenCommand} from './cinematic-persistence.js';
 import {storyCinematicPresentation} from './story-cinematic.js';
 import {CinematicOverlay} from './CinematicOverlay.jsx';
 import DigitalStorePanel from '../store/DigitalStorePanel.jsx';
+import {loadDigitalStore} from '../store/digital-store-client.js';
+import {ownedPremiumCodes} from '../store/premium-effects.js';
 import {contextActions,primaryContextAction,actionFeedback} from './interaction-system.js';
 import {isPhysicalTraversalAction} from './traversal-motion.js';
 import {guardianHubState} from './guardian-relations.js';
@@ -80,6 +82,7 @@ function WorldSession({uid,goTo}){
  const [worldRequested,setWorldRequested]=useState(false),[haptics,setHaptics]=useState(()=>{try{return localStorage.getItem('3b-world-haptics')!=='0';}catch{return true;}}),[soundCaptions,setSoundCaptions]=useState(()=>{try{return localStorage.getItem('3b-world-sound-captions')!=='0';}catch{return true;}}),[soundCaption,setSoundCaption]=useState(''),[controls,setControls]=useState(()=>loadControlBindings());
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
  const [audioMix,setAudioMix]=useState(()=>{try{return {...DEFAULT_AUDIO_MIX,...JSON.parse(localStorage.getItem('3b-world-audio-mix')||'{}')}}catch{return {...DEFAULT_AUDIO_MIX}}});
+ const [premiumCodes,setPremiumCodes]=useState(()=>new Set());
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
  const [combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null),[storyCinematic,setStoryCinematic]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
@@ -106,6 +109,13 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{audio.current?.listener(snapshot.position,snapshot.heading);},[snapshot.position?.x,snapshot.position?.z,snapshot.heading]);
  useEffect(()=>{audio.current?.state(storyCinematic?.audioState||(fieldCombat?'combat':panel==='valueTrial'||panel==='guardianHub'?'guardian':panel==='journal'||panel==='story'?'mission':'exploration'));},[fieldCombat,panel,storyCinematic]);
  useEffect(()=>{audio.current?.setMix(audioMix);},[audioMix]);
+ useEffect(()=>{
+  let live=true;
+  if(!uid){setPremiumCodes(new Set());return()=>{live=false;};}
+  loadDigitalStore('world').then(store=>{if(live)setPremiumCodes(ownedPremiumCodes(store));}).catch(()=>{if(live)setPremiumCodes(new Set());});
+  return()=>{live=false;};
+ },[uid]);
+ useEffect(()=>{scene.current?.setPremiumCodes?.(premiumCodes);},[premiumCodes]);
  useEffect(()=>{
   if(storyCinematic||!cinematicQueue.length||assetsLoading||!scene.current)return;
   const event=cinematicQueue[0],presentation=storyCinematicPresentation(event);setCinematicQueue(queue=>queue.slice(1));
@@ -259,7 +269,7 @@ function WorldSession({uid,goTo}){
  useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
   if(!loaded||!worldRequested)return;
-  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);scene.current.setControls?.(controls);ready.current=true;}
+  try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);scene.current.setControls?.(controls);scene.current.setPremiumCodes?.(premiumCodes);ready.current=true;}
   catch{setError('Le navigateur n’a pas pu ouvrir la 3D. Active l’accélération graphique ou essaie un autre navigateur. Ta sauvegarde est conservée.');}
   return()=>{ready.current=false;scene.current?.destroy();scene.current=null;};
  },[loaded,worldRequested]);
