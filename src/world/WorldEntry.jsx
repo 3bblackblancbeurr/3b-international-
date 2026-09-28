@@ -1,11 +1,11 @@
-import React,{Suspense,lazy,useState} from 'react';
+import React,{Suspense,lazy} from 'react';
 const CurrentWorld=lazy(()=>import('./WorldPage.jsx'));
-const Origins=lazy(()=>import('./origins/OriginsPage.jsx'));
-// The two engines keep their own account-scoped saves. Never reset or silently migrate them.
+
+// Monde 3B has one official public runtime.
+// The historical Origins engine remains in the repository as a reference/backup,
+// but users can no longer fall back into an older world version by navigation.
 export default function WorldEntry({goTo}){
- const [legacy,setLegacy]=useState(false);
- const navigate=id=>{if(id==='world-origins'){setLegacy(true);return;}if(id==='monde-3b'){setLegacy(false);return;}goTo(id);};
  return <Suspense fallback={<div className="world-loading">Ouverture du Monde 3B…</div>}>
-  {legacy?<Origins goTo={navigate} onPrevious={()=>setLegacy(false)}/>:<CurrentWorld goTo={navigate}/>}
+  <CurrentWorld goTo={goTo}/>
  </Suspense>;
 }

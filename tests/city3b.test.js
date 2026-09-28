@@ -59,7 +59,7 @@ test('City UI includes responsive mobile navigation and premium 3B styling',()=>
 
 
 test('premium city editor supports visual move, recovery, history and private preview',()=>{
-  assert.match(builder,/Plan interactif de construction Ville 3B/);
+  assert.match(builder,/Carte interactive de construction de la Ville 3B/);
   assert.match(builder,/call\("move"/);
   assert.match(builder,/call\("store"/);
   assert.match(builder,/threeb:city-editor:v1/);

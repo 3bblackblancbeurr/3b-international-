@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {city3bRequest,CITY_COUNTRIES} from './city3b-client.js';
 import {CITY3B_POIS,city3bVisualStage} from './city3b-world.js';
+import {City3BPrivatePreview} from './City3BBuilder.jsx';
 import '../styles/city-3b.css';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 
@@ -23,6 +24,7 @@ export function City3BPanel({uid,onLogin,onNotice,onWorldCitySync}){
    <div className="city3b-world-copy"><span className="city3b-kicker">VILLE 3B · NIVEAU {stage.level}</span><h3>{city.name}</h3><p>{city.origin_country||'3B International'} · {stage.unlocked}/8 quartiers internationaux actifs · {stage.placements} constructions placées.</p><div className="city3b-stats"><span className="city3b-chip">{Number(wallet.coins||0)} Coins</span><span className="city3b-chip">{Number(wallet.xp||0)} XP</span><span className="city3b-chip">{Number(city.visitors||0)} visites</span></div></div>
   </section>
   {error&&<p className="city3b-error">{error}</p>}
+  <City3BPrivatePreview data={data}/>
   <div className="city3b-actions"><button className="city3b-btn primary" disabled={!!busy} onClick={()=>action('sync_world')}>{busy==='sync_world'?'Synchronisation…':'Synchroniser avec le Monde 3B'}</button><button className="city3b-btn blue" disabled={!!busy} onClick={()=>action('recalculate')}>Recalculer la ville</button><button className="city3b-btn" disabled={!!busy} onClick={refresh}>Actualiser</button></div>
   <section className="city3b-panel"><h3>Les huit quartiers</h3><div className="city3b-country-grid">{CITY_COUNTRIES.map(name=>{const row=districts.find(d=>d.country===name);return <article key={name} data-unlocked={!!row&&row.unlocked!==false}><strong>{name}</strong><span>{row&&row.unlocked!==false?'Ouvert · niveau '+(row.level||1):'À débloquer'}</span></article>;})}</div></section>
   <section className="city3b-panel"><h3>Lieux centraux</h3><div className="city3b-poi-grid">{CITY3B_POIS.map(p=><article key={p.id}><small>{p.kind}</small><strong>{p.name}</strong><p>{p.detail}</p></article>)}</div></section>
