@@ -32,8 +32,8 @@ async function verify(){
  text('version','v'+(passport.version||2));
  data.hidden=false;
  if(passport.identityVerified){
-  const level=Number(passport.identityAssuranceLevel)||1;
-  note.textContent='Identité civile vérifiée · niveau 3B '+level+(passport.title?' · '+passport.title:'');
+  const assurance=passport.identityAssuranceLevel==='high_assurance'?'assurance renforcée':'identité vérifiée';
+  note.textContent='Identité civile vérifiée · '+assurance+(passport.title?' · '+passport.title:'');
   note.hidden=false;
  } else if(passport.publicBadgeVerified&&passport.title){
   note.textContent=passport.title+' · badge public 3B';

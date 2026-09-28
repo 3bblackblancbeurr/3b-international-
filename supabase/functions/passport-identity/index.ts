@@ -40,7 +40,7 @@ Deno.serve(async req=>{
   const recent=await api('/rest/v1/passport_verification_tickets?user_id=eq.'+uid+'&issued_at=gte.'+encodeURIComponent(since)+'&select=id&limit=6');
   if(Array.isArray(recent)&&recent.length>=6)throw new Failure(429,'Trop de codes générés. Réessaie dans quelques minutes.');
 
-  const profiles=await api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_status,identity_assurance_level,identity_verified_at&limit=1');
+  const profiles=await api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_state,identity_assurance_level,identity_verified_at&limit=1');
   const profile=profiles?.[0];
   if(!profile?.passport_public_id)throw new Failure(409,'Ton Passeport 3B est encore en préparation.');
   if(profile.passport_state!=='active')throw new Failure(403,'Ce Passeport 3B ne peut pas être présenté.');

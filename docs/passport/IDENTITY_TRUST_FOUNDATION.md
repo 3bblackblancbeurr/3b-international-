@@ -8,91 +8,143 @@ The trust chain is deliberately separated into:
 
 1. account authentication;
 2. Passport lifecycle;
-3. civil-identity proofing;
-4. cryptographic authentication;
-5. consented disclosure to services.
+3. self-declared private civil claims;
+4. external civil-identity proofing;
+5. cryptographic authentication;
+6. consented disclosure to services.
 
 A successful account registration is **not** civil-identity verification.
 
-## Current foundation
+## Production source of truth
 
-### Account authentication
+The production schema uses:
 
-- Supabase Auth remains the authentication authority.
-- v2 registration requires a real e-mail address and e-mail confirmation unless Supabase returns a confirmed session.
-- strong password validation, server-side rate limits, optional CAPTCHA, honeypot and security event logging already exist.
-- legacy registration is controlled by a server-side rollout gate.
+- `identity_verification_state`
+- `identity_assurance_level`
+- `identity_verified_at`
+- `identity_verification_provider`
+- `identity_verification_ref_hash`
 
-### Passport lifecycle
-
-Each member has an opaque `passport_public_id` distinct from `auth.users.id`.
-
-Passport states:
-
-- `active`
-- `suspended`
-- `revoked`
-- `expired`
-
-Only an active Passport may unlock Passport-gated application areas.
-
-### Civil identity proofing
-
-Civil-identity proofing is represented independently:
+Identity states:
 
 - `unverified`
 - `pending`
 - `verified`
 - `rejected`
-- `suspended`
-- `revoked`
 - `expired`
+- `revoked`
 
-Assurance is represented by level 0..3. Level 0 means that no civil-identity proof has been accepted.
+Assurance levels:
 
-The service-only `passport_apply_identity_verification` RPC is the only foundation supplied here for applying future provider outcomes atomically. A real provider integration must verify the provider webhook signature before calling it.
+- `self_asserted`
+- `account_verified`
+- `identity_verified`
+- `high_assurance`
 
-Do **not** mark a user verified from frontend input, a display name, an e-mail, a phone number, a public 3B badge or a client-controlled API call.
+`account_verified` means the 3B account has a confirmed authentication channel. It is **not** a verified civil identity.
 
-## Data minimisation rules
+The database constraint only allows a profile to be `verified` when a verification timestamp, provider, hashed external reference and an assurance of `identity_verified` or `high_assurance` are present.
 
-Never store in these tables:
+## Registration
 
-- fingerprint templates;
-- Face ID / device biometric data;
-- passkey private keys;
-- raw recovery codes;
-- raw identity-document images;
-- raw selfie/video captures;
-- raw provider case identifiers.
+New registration collects two separate identities:
 
-Provider case references and evidence references must be one-way hashed before persistence. Raw identity documents should remain with the contracted identity provider unless a separate legal requirement and retention policy explicitly justify storage.
+### Public 3B identity
 
-If 3B later needs verified civil claims (legal name, birth date, nationality), store them in a dedicated private data boundary with encryption/key management and a documented retention/legal basis. Do not put them in the public member profile.
+- public handle;
+- public display name;
+- 3B origin country.
+
+### Private civil claim
+
+Stored only in the service-only `member_identity_claims` table:
+
+- legal given name(s);
+- legal family name;
+- birth date;
+- claim version and timestamps.
+
+These fields are self-declared and must never cause the Passport to display “identity verified”.
+
+An explicit `identity` consent entry is recorded in `member_consents`. The civil-identity table is denied to `anon` and `authenticated`; only trusted service code has direct database access.
+
+## Account authentication
+
+- Supabase Auth is the authentication authority.
+- New accounts use a real e-mail address and confirmation.
+- strong password validation is enforced;
+- server-side rate limits exist;
+- CAPTCHA can be required;
+- a honeypot is present;
+- authentication security events are logged;
+- legacy register/recover flows are disabled in production.
+
+After an authentication channel is confirmed, a profile may move from `self_asserted` to `account_verified`. This never upgrades civil identity.
+
+## Passport lifecycle
+
+Each member has an opaque `passport_public_id` distinct from `auth.users.id`.
+
+Only a Passport whose server state is `active` may unlock Passport-gated application areas.
+
+Suspended, revoked or expired values must fail closed wherever supported by the Passport state constraint.
+
+## Identity verification provider
+
+`passport_identity_verification_attempts` stores only lifecycle metadata:
+
+- provider identifier;
+- hashed provider session reference;
+- attempt state;
+- requested assurance;
+- idempotency key;
+- timestamps;
+- bounded error code.
+
+Do not store raw document scans, selfies, biometric templates or complete provider payloads in 3B.
+
+A future provider integration must:
+
+1. verify its webhook signature;
+2. enforce idempotency;
+3. bind a provider case to one 3B account;
+4. validate the final provider result server-side;
+5. update the profile to `verified` only when the required evidence was accepted;
+6. store only a hashed external reference;
+7. write an auditable security event;
+8. support rejection, expiry and revocation.
 
 ## Passkeys / WebAuthn
 
-The database foundation contains:
+Supabase Auth supports Passkeys/WebAuthn, but the current API is experimental.
 
-- public authenticator credentials only;
-- hashed one-time challenges;
-- sign counters;
-- revocation timestamps.
+3B should use Supabase Auth passkeys rather than inventing a second private-key store.
 
-This does **not** mean Passkeys are operational yet. A complete implementation still needs server-side WebAuthn registration/authentication ceremonies, RP ID/origin validation, challenge consumption and platform testing. Device biometrics must remain on the user's device.
+Before enabling enrollment:
+
+- choose the final stable relying-party domain;
+- configure the RP ID and allowed origins in Supabase Auth;
+- test web, Android and iOS;
+- confirm recovery behavior;
+- add account security UI;
+- verify existing password/recovery flows;
+- document how users revoke lost devices.
+
+The private passkey key and device biometrics must remain with the authenticator/device. 3B should never receive fingerprint or Face ID templates.
+
+Do not enroll production passkeys on a temporary domain that is expected to change. Changing the WebAuthn RP ID invalidates existing passkeys.
 
 ## Recovery
 
-The database foundation supports hashed one-time recovery codes. Before production activation:
+The existing long recovery key is an account recovery mechanism and must remain independent from civil identity.
 
-- generate codes with a CSPRNG;
-- show raw codes once;
-- store hashes only;
-- require recent/step-up authentication for regeneration;
-- revoke prior codes during regeneration;
-- notify existing trusted channels after sensitive recovery changes.
+Sensitive recovery should eventually use:
 
-The pre-existing long recovery key remains a separate legacy/account recovery mechanism until a migration is completed.
+- reauthentication / step-up;
+- a second trusted authenticator where available;
+- revocation of other sessions after a successful reset;
+- security notifications;
+- stronger identity re-proofing when the user has lost every trusted factor.
 
 ## QR verification
 
@@ -102,52 +154,54 @@ Passport QR tickets must remain:
 - one-time;
 - stored as hashes;
 - revocable;
-- free of private account UUIDs and PII;
+- free of private account UUIDs and sensitive PII;
 - scope-limited.
 
-A public 3B badge is not a civil-identity verification. Public verification output now keeps those concepts separate.
+Public 3B badges and civil-identity verification are separate signals.
 
-## External identity provider — production gate
+## Partner consent and “Continue with Passport 3B”
 
-Production identity proofing must remain disabled until all of the following are complete:
+`passport_partner_consents` is the private 3B consent ledger.
+
+Supabase Auth now provides OAuth 2.1 / OpenID Connect server capabilities, so the preferred future direction is to build “Continue with Passport 3B” on top of that standards-based authorization server rather than implementing token issuance from scratch.
+
+Before external partners are enabled:
+
+- register each client and exact redirect URI;
+- require Authorization Code + PKCE;
+- use `state` and OIDC `nonce`;
+- show a clear 3B consent screen;
+- minimize scopes and claims;
+- use pairwise/pseudonymous identifiers where appropriate;
+- prevent OAuth scopes from being confused with database authorization;
+- use RLS for data access;
+- expose only claims that the user authorized;
+- provide grant revocation;
+- run interoperability and security tests.
+
+## Production provider gate
+
+Identity proofing remains disabled until all of the following are complete:
 
 - provider selected and contracted;
-- legal/privacy/DPIA review completed where required;
-- provider assurance/certification evaluated for the target use;
+- legal/privacy review completed;
+- assurance/certification evaluated for the intended use;
 - production API credentials stored server-side;
-- webhook signature verification implemented and tested;
+- webhook signature verification implemented;
 - retry/idempotency behavior tested;
 - retention/deletion process documented;
 - manual review and appeal path defined;
-- age/minor policy defined;
-- test identities exercised end-to-end;
+- minor/age policy defined;
+- test identities exercised end to end;
 - incident and revocation procedure documented.
 
-Environment variables intentionally default to disabled:
+Environment variables remain fail-closed:
 
 - `PASSPORT_IDENTITY_VERIFICATION_ENABLED=false`
 - `PASSPORT_IDENTITY_PROVIDER`
 - `PASSPORT_IDENTITY_PROVIDER_API_KEY`
 - `PASSPORT_IDENTITY_PROVIDER_WEBHOOK_SECRET`
 - `PASSPORT_IDENTITY_REFERENCE_SECRET`
-
-## Future “Continue with Passport 3B”
-
-The `passport_partner_consents` table is only a consent/scopes foundation. It is not an OAuth/OIDC server.
-
-Before external services may authenticate through Passport 3B, implement and independently review:
-
-- OAuth 2.0 / OpenID Connect authorization server behavior;
-- client registration and redirect URI validation;
-- PKCE;
-- nonce/state validation;
-- pairwise subject identifiers;
-- explicit scopes/claims;
-- consent and revocation;
-- signed tokens and key rotation;
-- discovery/JWKS;
-- security event monitoring;
-- conformance/interoperability tests.
 
 ## Release principle
 
@@ -158,5 +212,6 @@ Never upgrade a label in the UI before the underlying proof exists.
 - phone verified != identity verified
 - public badge verified != civil identity verified
 - Passport active != civil identity verified
-- database schema for Passkeys != Passkeys operational
-- partner-consent schema != OIDC operational
+- self-declared civil name != verified civil identity
+- OAuth schema/consent table != partner login enabled
+- Passkey-capable client != production Passkeys enabled

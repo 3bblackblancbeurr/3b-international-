@@ -1,5 +1,6 @@
 import {
   ACCOUNT_TERMS_VERSION,
+  IDENTITY_CONSENT_VERSION,
   accountEmail,
   normalizeEmail,
   validateAccount,
@@ -91,6 +92,14 @@ function captchaBody(token:string){
 }
 async function audit(event_type:string,success:boolean,ipHash:string,user_id:string|null=null,detail:Record<string,unknown>={}){
  await api('/rest/v1/member_auth_events',{event_type,success,ip_hash:ipHash,user_id,detail}).catch(()=>{});
+}
+async function markAccountVerified(user:any){
+ if(!user?.id||(!user.email_confirmed_at&&!user.phone_confirmed_at))return;
+ await api(
+  '/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(user.id)+'&identity_verification_state=eq.unverified&identity_assurance_level=eq.self_asserted',
+  {identity_assurance_level:'account_verified'},
+  'PATCH'
+ ).catch(()=>{});
 }
 async function readJson(req:Request){
  if(!req.headers.get('content-type')?.startsWith('application/json'))throw new Failure(415,'Format invalide.');
@@ -249,11 +258,20 @@ Deno.serve(async req=>{
      marketing_opt_in:input.marketingOptIn,
      last_login_at:signupSession?now:null
     });
+    await api('/rest/v1/member_identity_claims',{
+     user_id:user.id,
+     legal_given_names:input.legalGivenNames,
+     legal_family_name:input.legalFamilyName,
+     birth_date:input.birthDate,
+     claim_version:1
+    });
     await api('/rest/v1/member_consents',[
      {user_id:user.id,kind:'terms',version:ACCOUNT_TERMS_VERSION,granted:true,ip_hash:ipHash},
      {user_id:user.id,kind:'privacy',version:ACCOUNT_TERMS_VERSION,granted:true,ip_hash:ipHash},
+     {user_id:user.id,kind:'identity',version:IDENTITY_CONSENT_VERSION,granted:true,ip_hash:ipHash},
      {user_id:user.id,kind:'marketing',version:ACCOUNT_TERMS_VERSION,granted:input.marketingOptIn,ip_hash:ipHash}
     ]);
+    if(signupSession)await markAccountVerified(user);
    }catch(error){
     await api('/auth/v1/admin/users/'+user.id,undefined,'DELETE').catch(()=>{});
     throw error;
@@ -287,6 +305,7 @@ Deno.serve(async req=>{
     throw new Failure(401,'Identifiant/e-mail ou mot de passe incorrect.');
    }
    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(login.data.user.id),{last_login_at:new Date().toISOString()},'PATCH').catch(()=>{});
+   await markAccountVerified(login.data.user);
    await audit('login.success',true,ipHash,login.data.user.id,{});
    return reply({session:login.data});
   }
@@ -319,6 +338,7 @@ Deno.serve(async req=>{
     password_updated_at:new Date().toISOString(),
     last_login_at:new Date().toISOString()
    },'PATCH').catch(()=>{});
+   await markAccountVerified(user);
    await audit('recovery_key.success',true,ipHash,uid,{});
    return reply({recovery,session:login.data});
   }

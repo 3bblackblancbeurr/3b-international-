@@ -29,7 +29,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  const[fields,setFields]=useState({
   identifier:'',handle:'',email:'',emailConfirm:'',password:'',passwordConfirm:'',
   name:legacy?.name||'',country:legacy?.originCountry||'France',recovery:'',
-  termsAccepted:false,privacyAccepted:false,marketingOptIn:false,website:''
+  legalGivenNames:'',legalFamilyName:'',birthDate:'',
+  termsAccepted:false,privacyAccepted:false,identityConsent:false,marketingOptIn:false,website:''
  });
  const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const[prestigeBusy,setPrestigeBusy]=useState(false),[recovery,setRecovery]=useState('');
@@ -247,8 +248,21 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
         <input type="email" name="email-confirm" autoComplete="email" required maxLength={254} placeholder="Retape ton e-mail" value={fields.emailConfirm} onChange={e=>field('emailConfirm',e.target.value)}/>
        </label>
       </div>
-      <label>Nom sur ta carte
+      <label>Nom public sur ta carte
        <input name="nickname" autoComplete="nickname" required minLength={2} maxLength={80} placeholder="Ton nom affiché" value={fields.name} onChange={e=>field('name',e.target.value)}/>
+       <small>Ce nom est public dans l’univers 3B. Il peut être différent de ton identité civile.</small>
+      </label>
+      <div className="account-field-pair">
+       <label>Prénom(s) officiel(s)
+        <input name="given-name" autoComplete="given-name" required maxLength={120} placeholder="Comme sur ta pièce d’identité" value={fields.legalGivenNames} onChange={e=>field('legalGivenNames',e.target.value)}/>
+       </label>
+       <label>Nom de famille officiel
+        <input name="family-name" autoComplete="family-name" required maxLength={120} placeholder="Comme sur ta pièce d’identité" value={fields.legalFamilyName} onChange={e=>field('legalFamilyName',e.target.value)}/>
+       </label>
+      </div>
+      <label>Date de naissance
+       <input type="date" name="birth-date" autoComplete="bday" required min="1900-01-01" max={new Date().toISOString().slice(0,10)} value={fields.birthDate} onChange={e=>field('birthDate',e.target.value)}/>
+       <small>Donnée privée. Elle prépare la future vérification d’identité et n’apparaît pas sur ton profil public.</small>
       </label>
       <label>Pays d’origine
        <select value={fields.country} onChange={e=>field('country',e.target.value)}>{COUNTRIES.map(c=><option key={c}>{c}</option>)}</select>
@@ -295,6 +309,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      {mode==='register'&&<div className="account-consents">
       <label className="account-check"><input type="checkbox" checked={fields.termsAccepted} onChange={e=>field('termsAccepted',e.target.checked)}/><span>J’accepte les <a href="/account-terms.html" target="_blank" rel="noreferrer">conditions du compte 3B</a> (version {ACCOUNT_TERMS_VERSION}).</span></label>
       <label className="account-check"><input type="checkbox" checked={fields.privacyAccepted} onChange={e=>field('privacyAccepted',e.target.checked)}/><span>J’ai pris connaissance de la <a href="/privacy-policy.html" target="_blank" rel="noreferrer">politique de confidentialité</a>.</span></label>
+      <label className="account-check"><input type="checkbox" checked={fields.identityConsent} onChange={e=>field('identityConsent',e.target.checked)}/><span>Je demande la création de mon Passeport 3B et j’accepte le traitement de mes informations civiles privées pour préparer leur vérification. Une saisie de nom ou de date de naissance ne vaut pas identité vérifiée.</span></label>
       <label className="account-check optional"><input type="checkbox" checked={fields.marketingOptIn} onChange={e=>field('marketingOptIn',e.target.checked)}/><span>Je souhaite recevoir les nouveautés 3B. Facultatif.</span></label>
      </div>}
 
@@ -320,7 +335,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    <div className="account-promise">
     <BoutiqueCard/>
     <h2>Ton compte, ton identité 3B.</h2>
-    <p><strong>Vrai e-mail + identifiant 3B.</strong> Ton e-mail sert à confirmer et récupérer ton compte ; ton identifiant reste ton nom public dans l’univers 3B.</p>
+    <p><strong>Vrai e-mail + identité déclarée privée.</strong> Ton e-mail confirme le compte ; tes prénom(s), nom et date de naissance restent privés et serviront ensuite au contrôle d’identité.</p>
+    <p><strong>Déclaré ne veut pas dire vérifié.</strong> Le Passeport n’affichera “identité vérifiée” qu’après une vraie preuve externe acceptée.</p>
     <p><strong>Deux voies de récupération.</strong> E-mail pour les nouveaux comptes et clé de secours indépendante à conserver hors ligne.</p>
     <p><strong>Protection anti-abus.</strong> Limites de tentatives côté serveur, CAPTCHA activable, journal sécurité minimal et sessions Supabase.</p>
     {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}

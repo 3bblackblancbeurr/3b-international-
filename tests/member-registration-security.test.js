@@ -8,7 +8,9 @@ import {
 const valid={
  handle:'kais3b',email:'member@example.com',emailConfirm:'member@example.com',
  password:'Heritage3B!secure',passwordConfirm:'Heritage3B!secure',
- name:'Kaïs',country:'France',termsAccepted:true,privacyAccepted:true,
+ name:'Kaïs',country:'France',
+ legalGivenNames:'Kaïs Amir',legalFamilyName:'Benali',birthDate:'1990-04-12',
+ termsAccepted:true,privacyAccepted:true,identityConsent:true,
  marketingOptIn:false,website:''
 };
 
@@ -16,10 +18,16 @@ test('new registration requires real matching email, strong password and mandato
  const result=validateRegistration(valid);
  assert.equal(result.email,'member@example.com');
  assert.equal(result.handle,'kais3b');
+ assert.equal(result.legalGivenNames,'Kaïs Amir');
+ assert.equal(result.legalFamilyName,'Benali');
+ assert.equal(result.birthDate,'1990-04-12');
  assert.throws(()=>validateRegistration({...valid,emailConfirm:'other@example.com'}),/adresses e-mail/);
  assert.throws(()=>validateRegistration({...valid,password:'passwordpassword',passwordConfirm:'passwordpassword'}),/majuscule/);
  assert.throws(()=>validateRegistration({...valid,termsAccepted:false}),/conditions/);
  assert.throws(()=>validateRegistration({...valid,privacyAccepted:false}),/confidentialité/);
+ assert.throws(()=>validateRegistration({...valid,identityConsent:false}),/identité/);
+ assert.throws(()=>validateRegistration({...valid,birthDate:'2099-01-01'}),/date de naissance/);
+ assert.throws(()=>validateRegistration({...valid,legalFamilyName:''}),/nom de famille/);
  assert.throws(()=>validateRegistration({...valid,email:'u.kais3b@accounts.3b.invalid',emailConfirm:'u.kais3b@accounts.3b.invalid'}),/vraie adresse/);
 });
 
@@ -44,6 +52,11 @@ test('member auth source uses public signup, generic login and service-only audi
  assert.match(source,/\/auth\/v1\/token\?grant_type=password/);
  assert.match(source,/member_auth_events/);
  assert.match(source,/member_consents/);
+ assert.match(source,/member_identity_claims/);
+ assert.match(source,/kind:'identity'/);
+ assert.match(source,/identity_assurance_level:'account_verified'/);
+ assert.match(source,/email_confirmed_at/);
+ assert.match(source,/phone_confirmed_at/);
  assert.match(source,/reset-request/);
  assert.match(source,/resend-confirmation/);
  assert.match(source,/gotrue_meta_security/);
@@ -56,6 +69,10 @@ test('registration UI exposes email confirmation, two recovery paths and legal c
  const page=readFileSync('src/loyalty/AccountPage.jsx','utf8');
  assert.match(page,/Adresse e-mail/);
  assert.match(page,/Confirmer l’e-mail/);
+ assert.match(page,/Prénom\(s\) officiel\(s\)/);
+ assert.match(page,/Nom de famille officiel/);
+ assert.match(page,/Date de naissance/);
+ assert.match(page,/identityConsent/);
  assert.match(page,/J’ai une clé de secours/);
  assert.match(page,/Récupération par e-mail/);
  assert.match(page,/account-terms\.html/);
@@ -98,4 +115,19 @@ test('zero-downtime auth rollout gate is service-only and removable after v2 fro
  assert.equal(row?.sha256,'2b817049381abf7b537d28d9c14efc0dfa95d803bdd7968cb35e92778f72d093');
  assert.equal(manifest.count,manifest.migrations.length);
  assert.ok(manifest.count>=120);
+});
+
+
+test('production identity foundation is restored in the applied migration manifest',()=>{
+ const foundation=readFileSync('supabase/migrations/20260928125354_passport_identity_trust_foundation_v3.sql','utf8');
+ const consent=readFileSync('supabase/migrations/20260928125754_passport_identity_consent_v1.sql','utf8');
+ const cutoff=readFileSync('supabase/migrations/20260928130943_member_auth_disable_legacy_after_identity_v3.sql','utf8');
+ assert.match(foundation,/member_identity_claims/);
+ assert.match(foundation,/passport_identity_verification_attempts/);
+ assert.match(foundation,/identity_verified_proof_check/);
+ assert.match(consent,/kind in \('terms','privacy','marketing','identity'\)/);
+ assert.match(cutoff,/allow_legacy_flows=false/);
+ const manifest=JSON.parse(readFileSync('supabase/migrations/APPLIED_MIGRATIONS_SHA256.json','utf8'));
+ for(const version of ['20260928125354','20260928125754','20260928130943'])assert.ok(manifest.migrations.some(row=>row.version===version));
+ assert.equal(manifest.count,manifest.migrations.length);
 });
