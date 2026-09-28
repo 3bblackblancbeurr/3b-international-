@@ -38,8 +38,12 @@ test('local APEX package implements sequential evidence-gated orchestration',()=
  assert.match(core,/ACTION_POLICY/);
  assert.match(core,/class SpecCompiler/);
  assert.match(core,/class MetacognitiveSupervisor/);
+ assert.match(core,/class AgentRegistry/);
  assert.match(core,/class ModelRegistry/);
  assert.match(core,/class ResourceGovernor/);
+ assert.match(core,/class LocalDoctor/);
+ assert.match(core,/dynamic_policy/);
+ assert.match(core,/unique-temp\+retry/);
  assert.match(core,/class ApexRuntime/);
  assert.match(core,/def create_skill/);
  assert.match(core,/def qualify_skill/);
@@ -78,9 +82,28 @@ test('local APEX API is localhost-only and exposes no arbitrary command executio
  assert.match(server,/\/skill\/create/);
  assert.match(server,/\/skill\/qualify/);
  assert.match(server,/\/session\/distill/);
+ assert.match(server,/\/agents/);
+ assert.match(server,/\/doctor/);
+ assert.match(server,/\/model\/route/);
  assert.doesNotMatch(server,/subprocess|os\.system|shell=True|eval\(/);
 });
 
+
+
+test('APEX 2.1 routes specialized local models and protects VRAM headroom',()=>{
+ const core=read('runtime/albert_apex_v2/core.py');
+ assert.match(core,/VERSION = "2\.1\.0"/);
+ assert.match(core,/qwen3-vl/);
+ assert.match(core,/embedding/);
+ assert.match(core,/vram_pressure/);
+ assert.match(core,/thermal_guard/);
+ assert.match(core,/storage_recovery/);
+ const manifest=JSON.parse(read('runtime/albert_apex_v2/manifest.json'));
+ assert.equal(manifest.version,'2.1.0');
+ for(const feature of ['multi_model_router','agent_registry','dynamic_vram_scheduler','doctor','windows_atomic_storage_recovery']){
+  assert.ok(manifest.features.includes(feature),feature);
+ }
+});
 
 test('local APEX JavaScript and Python sources are syntactically valid',()=>{
  const installer=fileURLToPath(new URL('../scripts/install-albert-apex-v2.mjs',import.meta.url));
