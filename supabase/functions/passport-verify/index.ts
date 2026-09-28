@@ -32,7 +32,7 @@ Deno.serve(async req=>{
   if(!ticket?.passport_public_id)throw new Failure(400,'Code invalide ou expire.');
   if(ticket.purpose!=='verify'||!Array.isArray(ticket.scopes)||!ticket.scopes.includes('identity.basic'))throw new Failure(400,'Code invalide ou expire.');
 
-  const profiles=await api('/rest/v1/member_profiles?passport_public_id=eq.'+ticket.passport_public_id+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_status,identity_assurance_level,identity_verified_at&limit=1');
+  const profiles=await api('/rest/v1/member_profiles?passport_public_id=eq.'+ticket.passport_public_id+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_state,identity_assurance_level,identity_verified_at&limit=1');
   const profile=profiles?.[0];
   if(!profile||profile.passport_state!=='active')throw new Failure(400,'Code invalide ou expire.');
 
