@@ -8,8 +8,8 @@ import {
 const valid={
  handle:'kais3b',email:'member@example.com',emailConfirm:'member@example.com',
  password:'Heritage3B!secure',passwordConfirm:'Heritage3B!secure',
- name:'Kaïs',country:'France',termsAccepted:true,privacyAccepted:true,
- marketingOptIn:false,website:''
+ name:'Kaïs',country:'France',legalGivenNames:'Kaïs',legalFamilyName:'Benali',birthDate:'1990-05-14',
+ termsAccepted:true,privacyAccepted:true,identityDataAccepted:true,marketingOptIn:false,website:''
 };
 
 test('new registration requires real matching email, strong password and mandatory consents',()=>{
@@ -20,6 +20,9 @@ test('new registration requires real matching email, strong password and mandato
  assert.throws(()=>validateRegistration({...valid,password:'passwordpassword',passwordConfirm:'passwordpassword'}),/majuscule/);
  assert.throws(()=>validateRegistration({...valid,termsAccepted:false}),/conditions/);
  assert.throws(()=>validateRegistration({...valid,privacyAccepted:false}),/confidentialité/);
+ assert.throws(()=>validateRegistration({...valid,identityDataAccepted:false}),/données d’identité/);
+ assert.throws(()=>validateRegistration({...valid,birthDate:'2099-01-01'}),/date de naissance/);
+ assert.throws(()=>validateRegistration({...valid,legalFamilyName:''}),/nom/);
  assert.throws(()=>validateRegistration({...valid,email:'u.kais3b@accounts.3b.invalid',emailConfirm:'u.kais3b@accounts.3b.invalid'}),/vraie adresse/);
 });
 
@@ -44,6 +47,9 @@ test('member auth source uses public signup, generic login and service-only audi
  assert.match(source,/\/auth\/v1\/token\?grant_type=password/);
  assert.match(source,/member_auth_events/);
  assert.match(source,/member_consents/);
+ assert.match(source,/member_identity_claims/);
+ assert.match(source,/kind:'identity'/);
+ assert.match(source,/identity_verification_state:'unverified'/);
  assert.match(source,/reset-request/);
  assert.match(source,/resend-confirmation/);
  assert.match(source,/gotrue_meta_security/);
@@ -55,12 +61,19 @@ test('member auth source uses public signup, generic login and service-only audi
 test('registration UI exposes email confirmation, two recovery paths and legal consent',()=>{
  const page=readFileSync('src/loyalty/AccountPage.jsx','utf8');
  assert.match(page,/Adresse e-mail/);
+ assert.match(page,/Prénom\(s\) officiel\(s\)/);
+ assert.match(page,/Nom officiel/);
+ assert.match(page,/Date de naissance/);
+ assert.match(page,/identityDataAccepted/);
  assert.match(page,/Confirmer l’e-mail/);
  assert.match(page,/J’ai une clé de secours/);
  assert.match(page,/Récupération par e-mail/);
  assert.match(page,/account-terms\.html/);
  assert.match(page,/privacy-policy\.html/);
  assert.match(page,/TurnstileField/);
+ assert.match(page,/PASSKEY_ENABLED/);
+ assert.match(page,/signInWithPasskey/);
+ assert.match(page,/registerPasskey/);
  assert.match(page,/memberRequest\('register-v2'/);
  assert.match(page,/memberRequest\('recover-v2'/);
 });

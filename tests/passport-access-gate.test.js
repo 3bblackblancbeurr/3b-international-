@@ -7,9 +7,13 @@ const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const loyalty = readFileSync(new URL('../src/loyalty/LoyaltyContext.jsx', import.meta.url), 'utf8');
 const memberApi = readFileSync(new URL('../supabase/functions/member-api/index.ts', import.meta.url), 'utf8');
 
-test('one 3B Passport unlocks the ecosystem', () => {
+test('only an active server-backed 3B Passport unlocks the ecosystem', () => {
+  const active={userId:'member-1',passportPublicId:'8F501F17-07F0-4EDC-9CF1-1BE8BCB9D507',passportState:'active'};
   assert.equal(hasPassportAccess(null), false);
-  assert.equal(hasPassportAccess({ userId: 'member-1' }), true);
+  assert.equal(hasPassportAccess({userId:'member-1'}), false);
+  assert.equal(hasPassportAccess({...active,passportState:'suspended'}), false);
+  assert.equal(hasPassportAccess({...active,passportState:'revoked'}), false);
+  assert.equal(hasPassportAccess(active), true);
 });
 
 test('App uses one Passport gate with no Passport 2 rule', () => {

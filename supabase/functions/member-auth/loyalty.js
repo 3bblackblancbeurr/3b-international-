@@ -20,7 +20,7 @@ export const tierFor=xp=>TIERS.filter(t=>t.xp<=Math.max(0,Number(xp)||0)).at(-1)
 export const discountFor=points=>DISCOUNTS.filter(t=>t.points<=Math.max(0,Number(points)||0)).at(-1)?.percent||0;
 export const nextTier=xp=>TIERS.find(t=>t.xp>xp)||null;
 export const themeFor=(id,xp)=>TIERS.find(t=>t.id===id&&t.xp<=xp)||tierFor(xp);
-export const ACCOUNT_TERMS_VERSION='2026-09-21';
+export const ACCOUNT_TERMS_VERSION='2026-09-28';
 
 export function normalizeEmail(value){
  const email=String(value||'').trim().toLowerCase();
@@ -55,6 +55,22 @@ export function validateAccount(input){
  return{handle,password:input.password,name,country};
 }
 
+export function validateIdentityClaim(input){
+ const compact=value=>String(value||'').trim().replace(/\\s+/g,' ');
+ const legalGivenNames=compact(input?.legalGivenNames);
+ const legalFamilyName=compact(input?.legalFamilyName);
+ const birthDate=String(input?.birthDate||'').trim();
+ if(legalGivenNames.length<1||legalGivenNames.length>120)throw Error('Entre tes prénoms tels qu’ils figurent sur ton document d’identité.');
+ if(legalFamilyName.length<1||legalFamilyName.length>120)throw Error('Entre ton nom tel qu’il figure sur ton document d’identité.');
+ if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(birthDate))throw Error('Entre une date de naissance valide.');
+ const parsed=new Date(birthDate+'T00:00:00.000Z');
+ if(Number.isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==birthDate)throw Error('Entre une date de naissance valide.');
+ const today=new Date().toISOString().slice(0,10);
+ if(birthDate<'1900-01-01'||birthDate>today)throw Error('Entre une date de naissance valide.');
+ if(input?.identityDataAccepted!==true)throw Error('Confirme le traitement de tes données d’identité pour préparer la vérification du Passeport 3B.');
+ return{legalGivenNames,legalFamilyName,birthDate};
+}
+
 export function validateRegistration(input){
  const base=validateAccount(input);
  const email=normalizeEmail(input?.email);
@@ -65,7 +81,8 @@ export function validateRegistration(input){
  if(String(input?.website||'').trim())throw Error('Inscription refusée.');
  if(input?.termsAccepted!==true)throw Error('Accepte les conditions du compte 3B pour continuer.');
  if(input?.privacyAccepted!==true)throw Error('Confirme avoir pris connaissance de la politique de confidentialité pour continuer.');
- return{...base,email,marketingOptIn:input?.marketingOptIn===true};
+ const identity=validateIdentityClaim(input);
+ return{...base,email,...identity,marketingOptIn:input?.marketingOptIn===true};
 }
 
 export function validateLogin(input){

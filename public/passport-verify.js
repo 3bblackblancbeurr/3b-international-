@@ -24,14 +24,19 @@ async function verify(){
  const passport=result.passport||{};
  card.dataset.status='valid';
  title.textContent='Passeport 3B valide';
- message.textContent='Ce code à usage unique a été vérifié par le serveur 3B.';
+ message.textContent=passport.verified
+  ? 'Le Passeport et son statut d’identité vérifiée ont été confirmés par le serveur 3B.'
+  : 'Le Passeport est authentique, mais l’identité civile du titulaire n’est pas encore vérifiée par 3B.';
  text('holder',passport.displayName+(passport.handle?' · @'+passport.handle:''));
  text('number',passport.number);
  text('country',passport.country);
  text('issued',passport.issuedAt?new Date(passport.issuedAt).toLocaleDateString('fr-FR'):'—');
  text('version','v'+(passport.version||2));
  data.hidden=false;
- if(passport.verified&&passport.title){note.textContent=passport.title+' · identité 3B vérifiée';note.hidden=false;}
+ const notes=[];
+ if(passport.verified)notes.push('Identité civile vérifiée'+(passport.assurance?' · '+passport.assurance:''));
+ if(passport.publicTitle)notes.push(passport.publicTitle);
+ if(notes.length){note.textContent=notes.join(' · ');note.hidden=false;}
 }
 verify().catch(error=>{
  card.dataset.status='invalid';

@@ -12,6 +12,9 @@ const profile=overrides=>({
   passport_issued_at:'2026-09-26T14:58:25.000Z',
   passport_version:2,
   passport_state:'active',
+  identity_verification_state:'unverified',
+  identity_assurance_level:'account_verified',
+  identity_verification_version:1,
   handle:'amina3b',
   name:'Amina El Mansouri',
   country:'Maroc',
@@ -29,8 +32,8 @@ test('Gold Master member snapshot carries the opaque public Passport identity',(
 
 test('Gold Master public labels use the opaque Passport ID, not the private account ID',()=>{
   const passport=passportFromProfile(profile(),{id:AUTH_UID});
-  assert.equal(passport.passportId,'3B-PASS-'+PUBLIC_ID.toUpperCase());
-  assert.equal(passport.memberId,'3B-MEM-'+PUBLIC_ID.toUpperCase());
+  assert.equal(passport.passportId,'3B-PASS-8F501F1707F04EDC9CF11BE8BCB9D507');
+  assert.equal(passport.memberId,'3B-MEM-8F501F1707F04EDC9CF11BE8BCB9D507');
   assert.ok(!passport.passportId.toLowerCase().includes(AUTH_UID));
   assert.ok(!passport.memberId.toLowerCase().includes(AUTH_UID));
 });

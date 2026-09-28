@@ -11,6 +11,9 @@ const profile=(country='Maroc')=>({
   passport_issued_at:'2026-09-26T14:58:25.000Z',
   passport_version:2,
   passport_state:'active',
+  identity_verification_state:'unverified',
+  identity_assurance_level:'account_verified',
+  identity_verification_version:1,
   handle:'amina3b',
   name:'Amina El Mansouri',
   country,
@@ -31,10 +34,13 @@ test('passport identity is derived from the signed-in member profile',()=>{
  assert.equal(passport.xp,840);
  assert.equal(passport.points,1250);
  assert.equal(passport.passportPublicId,PUBLIC_ID.toUpperCase());
- assert.equal(passport.passportId,'3B-PASS-'+PUBLIC_ID.toUpperCase());
- assert.equal(passport.memberId,'3B-MEM-'+PUBLIC_ID.toUpperCase());
+ assert.equal(passport.passportId,'3B-PASS-8F501F1707F04EDC9CF11BE8BCB9D507');
+ assert.equal(passport.memberId,'3B-MEM-8F501F1707F04EDC9CF11BE8BCB9D507');
  assert.equal(passport.passportVersion,2);
  assert.equal(passport.passportState,'active');
+ assert.equal(passport.identityVerified,false);
+ assert.equal(passport.identityVerificationState,'unverified');
+ assert.equal(passport.identityAssuranceLevel,'account_verified');
  assert.ok(!passport.passportId.includes(UID.toUpperCase()));
  assert.ok(!passport.memberId.includes(UID.toUpperCase()));
  assert.equal(passportInitials(passport),'AE');

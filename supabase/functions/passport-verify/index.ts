@@ -2,7 +2,7 @@ const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
-const passportNumber=(id:string)=>'3B-PASS-'+id.replaceAll('-','').slice(0,16).toUpperCase();
+const passportNumber=(id:string)=>'3B-PASS-'+id.replaceAll('-','').toUpperCase();
 
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){
  const response=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)});
@@ -32,7 +32,7 @@ Deno.serve(async req=>{
   if(!ticket?.passport_public_id)throw new Failure(400,'Code invalide ou expire.');
   if(ticket.purpose!=='verify'||!Array.isArray(ticket.scopes)||!ticket.scopes.includes('identity.basic'))throw new Failure(400,'Code invalide ou expire.');
 
-  const profiles=await api('/rest/v1/member_profiles?passport_public_id=eq.'+ticket.passport_public_id+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title&limit=1');
+  const profiles=await api('/rest/v1/member_profiles?passport_public_id=eq.'+ticket.passport_public_id+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_state,identity_assurance_level,identity_verified_at,identity_verification_version&limit=1');
   const profile=profiles?.[0];
   if(!profile||profile.passport_state!=='active')throw new Failure(400,'Code invalide ou expire.');
 
@@ -46,8 +46,11 @@ Deno.serve(async req=>{
     state:'active',
     version:Number(profile.passport_version)||2,
     issuedAt:profile.passport_issued_at||null,
-    verified:profile.public_verified===true,
-    title:profile.public_verified===true?String(profile.public_title||'').slice(0,80):''
+    verified:profile.identity_verification_state==='verified',
+    identityState:String(profile.identity_verification_state||'unverified'),
+    assurance:String(profile.identity_assurance_level||'self_asserted'),
+    verifiedAt:profile.identity_verification_state==='verified'?profile.identity_verified_at||null:null,
+    publicTitle:profile.public_verified===true?String(profile.public_title||'').slice(0,80):''
    }
   });
  }catch(error){

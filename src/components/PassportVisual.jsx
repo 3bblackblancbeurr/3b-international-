@@ -57,8 +57,13 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
 
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
   const animated = motionAllowed && visible && !portalOpen;
-  const active = !!identity?.userId;
-  const status = syncing ? "SYNCHRONISATION" : active ? "IDENTITÉ VÉRIFIÉE" : "À ACTIVER";
+  const active = !!identity?.userId && !!identity?.passportPublicId && identity?.passportState === "active";
+  const civilVerified = active && identity?.identityVerificationState === "verified";
+  const status = syncing
+    ? "SYNCHRONISATION"
+    : active
+      ? civilVerified ? "IDENTITÉ VÉRIFIÉE" : "PASSEPORT ACTIF · IDENTITÉ À VÉRIFIER"
+      : "À ACTIVER";
   const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
 
   return <div ref={visual} className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
@@ -125,7 +130,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
         <div className="passport-progress-strip">
           <span><small>XP 3B</small><b>{active ? formatNumber(identity.xp) : "0"}</b></span>
           <span><small>FIDÉLITÉ</small><b>{active ? formatNumber(identity.points) : "0"}</b></span>
-          <span><small>STATUT</small><b>{active ? "ACTIF" : "INVITÉ"}</b></span>
+          <span><small>IDENTITÉ</small><b>{active ? civilVerified ? "VÉRIFIÉE" : "À VÉRIFIER" : "INVITÉ"}</b></span>
         </div>
       </section>
 

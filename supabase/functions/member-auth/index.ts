@@ -247,11 +247,21 @@ Deno.serve(async req=>{
      terms_accepted_at:now,
      privacy_accepted_at:now,
      marketing_opt_in:input.marketingOptIn,
-     last_login_at:signupSession?now:null
+     last_login_at:signupSession?now:null,
+     identity_verification_state:'unverified',
+     identity_assurance_level:signupSession?'account_verified':'self_asserted'
+    });
+    await api('/rest/v1/member_identity_claims',{
+     user_id:user.id,
+     legal_given_names:input.legalGivenNames,
+     legal_family_name:input.legalFamilyName,
+     birth_date:input.birthDate,
+     claim_version:1
     });
     await api('/rest/v1/member_consents',[
      {user_id:user.id,kind:'terms',version:ACCOUNT_TERMS_VERSION,granted:true,ip_hash:ipHash},
      {user_id:user.id,kind:'privacy',version:ACCOUNT_TERMS_VERSION,granted:true,ip_hash:ipHash},
+     {user_id:user.id,kind:'identity',version:ACCOUNT_TERMS_VERSION,granted:true,ip_hash:ipHash},
      {user_id:user.id,kind:'marketing',version:ACCOUNT_TERMS_VERSION,granted:input.marketingOptIn,ip_hash:ipHash}
     ]);
    }catch(error){
@@ -264,7 +274,8 @@ Deno.serve(async req=>{
     recovery,
     handle:input.handle,
     session:signupSession||null,
-    email_confirmation_required:!signupSession
+    email_confirmation_required:!signupSession,
+    identity_verification:{state:'unverified',assurance:signupSession?'account_verified':'self_asserted',required:true}
    },201);
   }
 
@@ -287,6 +298,13 @@ Deno.serve(async req=>{
     throw new Failure(401,'Identifiant/e-mail ou mot de passe incorrect.');
    }
    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(login.data.user.id),{last_login_at:new Date().toISOString()},'PATCH').catch(()=>{});
+   if(login.data.user.email_confirmed_at||login.data.user.phone_confirmed_at){
+    await api(
+     '/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(login.data.user.id)+'&identity_assurance_level=eq.self_asserted',
+     {identity_assurance_level:'account_verified'},
+     'PATCH'
+    ).catch(()=>{});
+   }
    await audit('login.success',true,ipHash,login.data.user.id,{});
    return reply({session:login.data});
   }
@@ -351,7 +369,7 @@ Deno.serve(async req=>{
 
  }catch(error){
   const message=error instanceof Failure?error.message:error instanceof Error?error.message:'Service momentanément indisponible.';
-  const safeValidation=/^(Choisis|Entre|Le mot de passe|Les deux|Accepte|Utilise|Inscription refusée)/.test(message);
+  const safeValidation=/^(Choisis|Entre|Le mot de passe|Les deux|Accepte|Confirme|Utilise|Inscription refusée)/.test(message);
   return reply(
    {error:error instanceof Failure?message:safeValidation?message:'Service momentanément indisponible. Réessaie dans un instant.'},
    error instanceof Failure?error.status:400

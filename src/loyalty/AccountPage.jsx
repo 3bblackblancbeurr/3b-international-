@@ -4,7 +4,7 @@ import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeEmail,passwordRequirements,
  validateRegistration,validateStrongPassword
 } from '../../shared/loyalty.js';
-import {authClient,memberRequest} from './client.js';
+import {PASSKEY_ENABLED,authClient,memberRequest,registerPasskey,signInWithPasskey} from './client.js';
 import {useLoyalty} from './LoyaltyContext.jsx';
 import BoutiqueCard from './BoutiqueCard.jsx';
 import PublicIdentityBadge from '../components/PublicIdentityBadge.jsx';
@@ -29,7 +29,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  const[fields,setFields]=useState({
   identifier:'',handle:'',email:'',emailConfirm:'',password:'',passwordConfirm:'',
   name:legacy?.name||'',country:legacy?.originCountry||'France',recovery:'',
-  termsAccepted:false,privacyAccepted:false,marketingOptIn:false,website:''
+  legalGivenNames:'',legalFamilyName:'',birthDate:'',
+  termsAccepted:false,privacyAccepted:false,identityDataAccepted:false,marketingOptIn:false,website:''
  });
  const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const[prestigeBusy,setPrestigeBusy]=useState(false),[recovery,setRecovery]=useState('');
@@ -112,6 +113,28 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   finally{setBusy(false);resetCaptcha();}
  };
 
+ const loginWithPasskey=async()=>{
+  if(busy)return;
+  setBusy(true);setError('');setNotice('');
+  try{
+   const result=await signInWithPasskey();
+   if(result?.session)await setSession(result.session);
+   setNotice('Connexion Passkey validée.');
+  }catch(e){setError(e?.message||'La connexion Passkey a échoué.');}
+  finally{setBusy(false);}
+ };
+
+ const addPasskey=async()=>{
+  if(busy)return;
+  if(!emailVerified){setError('Confirme d’abord ton adresse e-mail avant d’ajouter une Passkey.');return;}
+  setBusy(true);setError('');setNotice('');
+  try{
+   const result=await registerPasskey();
+   setNotice(`Passkey ajoutée${result?.friendly_name?' · '+result.friendly_name:''}.`);
+  }catch(e){setError(e?.message||'Impossible d’ajouter la Passkey.');}
+  finally{setBusy(false);}
+ };
+
  const downloadRecovery=()=>{
   const url=URL.createObjectURL(new Blob([
    'CLÉ DE SECOURS 3B — À CONSERVER EN PRIVÉ\nIdentifiant : '+(profile?.handle||fields.handle)+
@@ -188,8 +211,10 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      {economy?.next_level_xp!=null&&<p className="account-progress-next">Prochain niveau : {economy.next_level_xp} XP · Courbe {economy.xp_curve_version||'globale'}</p>}
      <p><ShieldCheck size={16}/> Compte synchronisé en ligne</p>
      <p>{realEmail?<>E-mail {emailVerified?'vérifié':'en attente'} · {realEmail}</>:<>Compte historique 3B · récupération par clé active</>}</p>
+     <p>Passeport : <strong>{account.passport?.passportState==='active'?'actif':'indisponible'}</strong> · identité civile : <strong>{account.passport?.identityVerified?'vérifiée':'à vérifier'}</strong></p>
      <p>{profile.country} · Depuis le {new Date(profile.created_at).toLocaleDateString('fr-FR')}</p>
-     <p className="account-id">N° membre : {profile.user_id.toUpperCase()}</p>
+     <p className="account-id">N° membre : {account.passport?.memberId||'EN ATTENTE'}</p>
+     {PASSKEY_ENABLED&&emailVerified&&<button type="button" onClick={addPasskey} disabled={busy}><KeyRound size={16}/> Ajouter une Passkey</button>}
      <button className="loyalty-primary" onClick={()=>goTo('loyalty')}>Mes cartes et avantages <ArrowUpRight size={16}/></button>
      <button onClick={()=>goTo('games')}>Jouer et gagner de l’XP</button>
      <button onClick={()=>goTo('passport')}>Voir mon passeport</button>
@@ -250,6 +275,21 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
       <label>Nom sur ta carte
        <input name="nickname" autoComplete="nickname" required minLength={2} maxLength={80} placeholder="Ton nom affiché" value={fields.name} onChange={e=>field('name',e.target.value)}/>
       </label>
+      <fieldset className="account-identity-fields">
+       <legend>Identité civile déclarée</legend>
+       <div className="account-field-pair">
+        <label>Prénom(s) officiel(s)
+         <input name="given-name" autoComplete="given-name" required maxLength={120} placeholder="Comme sur ton document d’identité" value={fields.legalGivenNames} onChange={e=>field('legalGivenNames',e.target.value)}/>
+        </label>
+        <label>Nom officiel
+         <input name="family-name" autoComplete="family-name" required maxLength={120} placeholder="Comme sur ton document d’identité" value={fields.legalFamilyName} onChange={e=>field('legalFamilyName',e.target.value)}/>
+        </label>
+       </div>
+       <label>Date de naissance
+        <input type="date" name="bday" autoComplete="bday" required min="1900-01-01" max={new Date().toISOString().slice(0,10)} value={fields.birthDate} onChange={e=>field('birthDate',e.target.value)}/>
+       </label>
+       <small>Ces informations sont déclarées à l’inscription. Elles ne deviennent « identité vérifiée » qu’après un contrôle d’identité séparé.</small>
+      </fieldset>
       <label>Pays d’origine
        <select value={fields.country} onChange={e=>field('country',e.target.value)}>{COUNTRIES.map(c=><option key={c}>{c}</option>)}</select>
       </label>
@@ -295,6 +335,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      {mode==='register'&&<div className="account-consents">
       <label className="account-check"><input type="checkbox" checked={fields.termsAccepted} onChange={e=>field('termsAccepted',e.target.checked)}/><span>J’accepte les <a href="/account-terms.html" target="_blank" rel="noreferrer">conditions du compte 3B</a> (version {ACCOUNT_TERMS_VERSION}).</span></label>
       <label className="account-check"><input type="checkbox" checked={fields.privacyAccepted} onChange={e=>field('privacyAccepted',e.target.checked)}/><span>J’ai pris connaissance de la <a href="/privacy-policy.html" target="_blank" rel="noreferrer">politique de confidentialité</a>.</span></label>
+      <label className="account-check"><input type="checkbox" checked={fields.identityDataAccepted} onChange={e=>field('identityDataAccepted',e.target.checked)}/><span>J’autorise le traitement de mes données d’identité déclarées pour préparer la vérification de mon Passeport 3B. Elles ne sont pas considérées comme vérifiées sans contrôle séparé.</span></label>
       <label className="account-check optional"><input type="checkbox" checked={fields.marketingOptIn} onChange={e=>field('marketingOptIn',e.target.checked)}/><span>Je souhaite recevoir les nouveautés 3B. Facultatif.</span></label>
      </div>}
 
@@ -310,6 +351,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      } <ArrowUpRight size={17}/></button>
     </form>
 
+    {mode==='login'&&PASSKEY_ENABLED&&<button type="button" className="account-recover" onClick={loginWithPasskey} disabled={busy}><KeyRound size={16}/> Se connecter avec une Passkey</button>}
+
     {mode==='login'&&<div className="account-recovery-actions">
      <button className="account-recover" onClick={()=>switchMode('reset-request')}>Mot de passe oublié ?</button>
      <button className="account-recover" onClick={()=>switchMode('recover')}>J’ai une clé de secours</button>
@@ -323,6 +366,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     <p><strong>Vrai e-mail + identifiant 3B.</strong> Ton e-mail sert à confirmer et récupérer ton compte ; ton identifiant reste ton nom public dans l’univers 3B.</p>
     <p><strong>Deux voies de récupération.</strong> E-mail pour les nouveaux comptes et clé de secours indépendante à conserver hors ligne.</p>
     <p><strong>Protection anti-abus.</strong> Limites de tentatives côté serveur, CAPTCHA activable, journal sécurité minimal et sessions Supabase.</p>
+    <p><strong>Identité civile séparée.</strong> Les nom, prénom(s) et date de naissance déclarés sont conservés dans une zone privée dédiée et restent « non vérifiés » tant qu’un vrai contrôle d’identité n’a pas abouti.</p>
+    <p><strong>Passkeys préparées.</strong> L’application utilise la voie WebAuthn/Supabase derrière un interrupteur de lancement, afin de ne pas créer de clés liées à un domaine provisoire.</p>
     {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}
     <p>Un Passeport actif donne accès aux jeux et au Monde du 3B. Ton compte garde ta progression et tes récompenses au même endroit.</p>
     <button onClick={()=>goTo('passport')}>Découvrir mon Passeport</button>

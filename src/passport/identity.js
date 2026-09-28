@@ -20,6 +20,16 @@ const normalizePublicPassportId = value => {
   return PUBLIC_PASSPORT_UUID.test(id) ? id.toUpperCase() : '';
 };
 
+export function passportNumberFromPublicId(value) {
+  const id = normalizePublicPassportId(value);
+  return id ? `3B-PASS-${id.replaceAll('-', '')}` : '3B-PASS-EN-ATTENTE';
+}
+
+export function memberNumberFromPublicId(value) {
+  const id = normalizePublicPassportId(value);
+  return id ? `3B-MEM-${id.replaceAll('-', '')}` : '3B-MEM-EN-ATTENTE';
+}
+
 export function passportFromProfile(profile, user = null) {
   if (!profile || typeof profile !== 'object' || !profile.user_id) return null;
   if (user?.id && profile.user_id !== user.id) return null;
@@ -36,11 +46,16 @@ export function passportFromProfile(profile, user = null) {
   return Object.freeze({
     userId,
     passportPublicId: opaquePublicId || null,
-    passportId: opaquePublicId ? `3B-PASS-${opaquePublicId}` : '3B-PASS-EN-ATTENTE',
-    memberId: opaquePublicId ? `3B-MEM-${opaquePublicId}` : '3B-MEM-EN-ATTENTE',
+    passportId: passportNumberFromPublicId(opaquePublicId),
+    memberId: memberNumberFromPublicId(opaquePublicId),
     passportIssuedAt: profile.passport_issued_at || null,
     passportVersion: Number.isInteger(version) && version > 0 ? version : null,
     passportState: cleanText(profile.passport_state, 16) || null,
+    identityVerificationState: cleanText(profile.identity_verification_state, 24) || 'unverified',
+    identityAssuranceLevel: cleanText(profile.identity_assurance_level, 24) || 'self_asserted',
+    identityVerifiedAt: profile.identity_verified_at || null,
+    identityVerificationVersion: Number.isInteger(Number(profile.identity_verification_version)) ? Number(profile.identity_verification_version) : 1,
+    identityVerified: profile.identity_verification_state === 'verified',
     name,
     handle,
     country,
