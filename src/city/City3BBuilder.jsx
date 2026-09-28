@@ -200,7 +200,7 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
       {roads.radials.map(road => <line key={road.id} x1={road.x1} y1={road.z1} x2={road.x2} y2={road.z2} className="city3b-map-road city3b-map-radial" data-unlocked={road.unlocked} />)}
       {roads.custom.map(road => <line key={road.id} x1={road.x1} y1={road.z1} x2={road.x2} y2={road.z2} className="city3b-map-road city3b-map-road-custom" strokeWidth={road.width} />)}
       <g className="city3b-traffic-layer" aria-hidden="true">{traffic.map(vehicle => <circle key={vehicle.id} r={vehicle.size} className="city3b-traffic-dot"><animateMotion dur={vehicle.duration+"s"} begin={vehicle.delay+"s"} repeatCount="indefinite" path={"M "+vehicle.x1+" "+vehicle.z1+" L "+vehicle.x2+" "+vehicle.z2} /></circle>)}</g>
-      {!previewOnly && tool === "road" && roadStart && <g className="city3b-road-start"><circle cx={roadStart.x} cy={roadStart.z} r="2.8" /><text x={roadStart.x + 4} y={roadStart.z - 4}>Départ</text></g>
+      {!previewOnly && tool === "road" && roadStart && <g className="city3b-road-start"><circle cx={roadStart.x} cy={roadStart.z} r="2.8" /><text x={roadStart.x + 4} y={roadStart.z - 4}>Départ</text></g>}
 
       <g className="city3b-map-center">
         <circle cx="0" cy="0" r={Math.max(7, half * .065)} />
