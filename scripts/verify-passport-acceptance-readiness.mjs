@@ -36,6 +36,12 @@ check(
 check('incident_response_present',exists('docs/security/INCIDENT_RESPONSE_3B.md'),'Incident response document exists');
 check('rgpd_register_present',exists('docs/legal/RGPD_REGISTER_DRAFT.md'),'RGPD working register exists');
 check('acceptance_dossier_present',readiness.includes('Dossier de préparation aux acceptations externes'),'External acceptance dossier exists');
+const birthGuardPath='supabase/migrations/20260928153842_member_identity_birth_date_guard_v1.sql';
+check(
+  'database_rejects_future_birth_dates',
+  exists(birthGuardPath) && /birth_date <= current_date/.test(read(birthGuardPath)),
+  'Database rejects future birth dates independently of client/server form validation'
+);
 
 check(
   'identity_provider_disabled_by_default',
