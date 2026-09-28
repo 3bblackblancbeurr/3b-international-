@@ -165,9 +165,9 @@
     },
     {
       "id": "city3b_portal",
-      "name": "Portail Ville 3B",
-      "kind": "city",
-      "purpose": "construction, sauvegarde, visites, trophées et habitants invités",
+      "name": "Quartier des Horizons",
+      "kind": "exploration",
+      "purpose": "cartographie, voyages, missions, mémoire et préparation des expéditions",
       "center": [
         0.6,
         0.73
@@ -398,26 +398,25 @@
     },
     {
       "id": "city_planning_office",
-      "name": "Bureau d’Urbanisme",
+      "name": "Maison des Cartographes",
       "district": "city3b_portal",
       "tier": 0,
       "functions": [
-        "place_building",
-        "move_building",
-        "roads",
-        "undo_redo"
+        "world_map",
+        "mapping",
+        "public_missions"
       ],
       "interior": "small"
     },
     {
       "id": "city_gallery",
-      "name": "Galerie des Villes 3B",
+      "name": "Galerie des Voyages",
       "district": "city3b_portal",
       "tier": 1,
       "functions": [
-        "visit_cities",
-        "favorites",
-        "rankings"
+        "collection",
+        "world_map",
+        "public_missions"
       ],
       "interior": "small"
     }
@@ -1084,10 +1083,10 @@
     {
       "id": "city_gateway",
       "district": "city3b_portal",
-      "name": "Grand Portail des Villes",
+      "name": "Portail des Horizons",
       "archetype": "gateway",
       "height": 86,
-      "role": "accès à la Ville 3B personnelle",
+      "role": "repère vers les expéditions et les huit héritages",
       "accent": "#d8bc79"
     },
     {
