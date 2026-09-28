@@ -16,6 +16,19 @@ const passportData=read('src/passport/passportData.js');
 const readiness=read('docs/passport/EXTERNAL_ACCEPTANCE_READINESS.md');
 
 check('privacy_policy_present',exists('public/privacy-policy.html'),'Public privacy policy exists');
+const privacyPolicy=read('public/privacy-policy.html');
+const accountTerms=read('public/account-terms.html');
+check(
+  'privacy_contact_published',
+  /mailto:3bblackblancbeurr@gmail\.com/.test(privacyPolicy),
+  'A current public privacy-rights contact is published'
+);
+check(
+  'account_terms_separate_declared_and_verified_identity',
+  /ne constituent pas une identité vérifiée/.test(accountTerms)
+    && /contrôle externe/.test(accountTerms),
+  'Account terms do not equate self-declared civil claims with verified identity'
+);
 check('delete_account_present',exists('public/delete-account.html'),'Public account deletion flow exists');
 const deletionPage=read('public/delete-account.html');
 const deletionFunction=read('supabase/functions/delete-account/index.ts');
