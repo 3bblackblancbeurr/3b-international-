@@ -34,7 +34,7 @@
     <div class="steps">
       <h2>Comment ça fonctionne ?</h2>
       <ol>
-        <li>Saisis l’identifiant 3B et le mot de passe du compte concerné.</li>
+        <li>Saisis l’identifiant 3B ou l’adresse e-mail et le mot de passe du compte concerné.</li>
         <li>Écris <strong>SUPPRIMER</strong> dans le champ de confirmation pour éviter une action accidentelle.</li>
         <li>Le site vérifie la session du compte, puis envoie la demande de suppression au service 3B prévu à cet effet.</li>
         <li>En cas de succès, la session locale 3B de ce navigateur est supprimée et un message de confirmation s’affiche.</li>
@@ -42,7 +42,7 @@
     </div>
     <div class="warning"><strong>Suppression définitive.</strong> La suppression entraîne la fermeture du compte et la suppression des données directement rattachées au compte. Cette opération ne peut pas être annulée.</div>
     <form id="delete-form">
-      <label for="handle">Identifiant 3B</label><input id="handle" name="handle" autocomplete="username" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9._\-]{2,23}" required placeholder="Exemple : kais3b" />
+      <label for="identifier">Identifiant 3B ou e-mail</label><input id="identifier" name="identifier" autocomplete="username" minlength="3" maxlength="254" required placeholder="kais3b ou nom@email.fr" />
       <label for="password">Mot de passe</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required />
       <label for="confirm">Confirmation</label><input id="confirm" name="confirm" autocomplete="off" required placeholder="Tapez SUPPRIMER" />
       <p class="small">Pour éviter une suppression accidentelle, saisissez exactement <strong>SUPPRIMER</strong>.</p>
@@ -62,15 +62,16 @@
   const show = (message, type = '') => { status.textContent = message; status.className = `status show ${type}`.trim(); };
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const handle = document.getElementById('handle').value.trim().toLowerCase();
+    const identifier = document.getElementById('identifier').value.trim().toLowerCase();
     const password = document.getElementById('password').value;
     const confirmation = document.getElementById('confirm').value.trim();
     if (confirmation !== 'SUPPRIMER') { show('Écris exactement SUPPRIMER pour confirmer.', 'error'); return; }
     button.disabled = true; show('Vérification de ton compte…');
     try {
-      const login = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: PUBLIC_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: `u.${handle}@accounts.3b.invalid`, password }) });
-      const session = await login.json().catch(() => ({}));
-      if (!login.ok || !session.access_token) throw new Error('Identifiant ou mot de passe incorrect.');
+      const login = await fetch(`${SUPABASE_URL}/functions/v1/member-auth`, { method: 'POST', headers: { apikey: PUBLIC_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', identifier, password }) });
+      const authResult = await login.json().catch(() => ({}));
+      const session = authResult.session || {};
+      if (!login.ok || !session.access_token) throw new Error(authResult.error || 'Identifiant/e-mail ou mot de passe incorrect.');
       show('Suppression du compte en cours…');
       const deletion = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, { method: 'POST', headers: { apikey: PUBLIC_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: '{}' });
       const result = await deletion.json().catch(() => ({}));
