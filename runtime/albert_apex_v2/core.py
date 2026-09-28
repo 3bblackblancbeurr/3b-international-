@@ -13,7 +13,9 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-VERSION = "2.0.0"
+from .readiness import APEX_STACK, readiness_audit, runtime_self_audit, workflow_blueprint
+
+VERSION = "2.1.0"
 PHASES = ("INTENT", "ASSESS", "PLAN", "EXECUTE", "REVIEW", "VERIFY", "EVIDENCE")
 
 CONSTITUTION = (
@@ -267,6 +269,7 @@ class ApexStore:
         self.events_path = self.data_root / "events.json"
         self.session_path = self.data_root / "session.json"
         self.skills_path = self.data_root / "skills.json"
+        self.routines_path = self.data_root / "routines.json"
         self.needs_path = self.data_root / "need_you.json"
         self.settings_path = self.data_root / "settings.json"
         self._lock = threading.RLock()
@@ -308,6 +311,12 @@ class ApexStore:
 
     def save_skills(self, skills: List[Dict[str, Any]]) -> None:
         atomic_json(self.skills_path, skills[-250:])
+
+    def routines(self) -> List[Dict[str, Any]]:
+        return read_json(self.routines_path, [])
+
+    def save_routines(self, routines: List[Dict[str, Any]]) -> None:
+        atomic_json(self.routines_path, routines[-250:])
 
     def needs(self) -> List[Dict[str, Any]]:
         return read_json(self.needs_path, [])
@@ -532,6 +541,53 @@ class ApexRuntime:
             self.store.emit("skill.qualified", {"skill_id": skill_id, "trust": trust}, "normal")
             return skills[index]
 
+    def create_routine(self, name: str, trigger: str = "manual", steps: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+        trigger = clean_text(trigger, 40).lower()
+        if trigger not in {"manual", "event", "hourly", "daily"}:
+            raise ValueError("Déclencheur de routine invalide.")
+        safe_steps: List[Dict[str, Any]] = []
+        for index, raw in enumerate(list(steps or [])[:24]):
+            if not isinstance(raw, dict):
+                raise ValueError("Étape de routine invalide.")
+            action = clean_text(raw.get("action"), 80)
+            if action not in ACTION_POLICY:
+                raise ValueError("Action de routine inconnue: refus fail-closed.")
+            payload = raw.get("payload") if isinstance(raw.get("payload"), dict) else {}
+            typed = TypedAction.build(action, payload)
+            safe_steps.append({
+                "index": index,
+                "action": typed.action,
+                "level": typed.level,
+                "approval_required": typed.approval_required,
+                "reversible": typed.reversible,
+                "payload": typed.payload,
+            })
+        if not safe_steps:
+            raise ValueError("Une routine doit contenir au moins une action typée.")
+        routine = {
+            "id": "routine-" + uuid.uuid4().hex[:16],
+            "name": clean_text(name, 160) or "Routine sans nom",
+            "trigger": trigger,
+            "steps": safe_steps,
+            "status": "compiled",
+            "auto_execute": False,
+            "created_at": now_iso(),
+            "updated_at": now_iso(),
+        }
+        rows = self.store.routines()
+        rows.append(routine)
+        self.store.save_routines(rows)
+        self.store.emit("routine.compiled", {"routine_id": routine["id"], "steps": len(safe_steps)}, "quiet")
+        return routine
+
+    def compile_workflow(self, intent: str, connections: Optional[List[str]] = None) -> Dict[str, Any]:
+        return workflow_blueprint(intent, connections or [])
+
+    def readiness(self, signals: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        if signals is None:
+            return runtime_self_audit()
+        return readiness_audit(signals)
+
     def distill_session(self) -> Dict[str, Any]:
         tasks = self.store.tasks()
         verified = [task for task in tasks if task.get("status") == "verified"][-20:]
@@ -590,6 +646,9 @@ class ApexRuntime:
             "ambient_inbox": self.ambient_inbox(20),
             "need_you": [row for row in self.store.needs() if not row.get("resolved_at")][-20:],
             "skills": self.store.skills()[-20:],
+            "routines": self.store.routines()[-20:],
+            "stack": list(APEX_STACK),
+            "readiness": runtime_self_audit(),
             "checked_at": now_iso(),
         }
 
