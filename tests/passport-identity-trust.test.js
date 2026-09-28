@@ -55,6 +55,13 @@ test('identity foundation migration never stores raw biometrics or raw document 
   assert.doesNotMatch(source,/face_embedding|fingerprint_template|raw_document|document_image|selfie_blob/i);
 });
 
+test('live Passport visual only claims civil identity verification from assurance state',()=>{
+  const source=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
+  assert.match(source,/identityVerificationStatus === "verified"/);
+  assert.match(source,/identityAssuranceLevel/);
+  assert.doesNotMatch(source,/active \? "IDENTITÉ VÉRIFIÉE"/);
+});
+
 test('legacy UI no longer claims fake biometric or encryption guarantees',()=>{
   const source=readFileSync(new URL('../src/passport/passportData.js',import.meta.url),'utf8');
   assert.doesNotMatch(source,/Biométrie.*ACTIVE/i);
