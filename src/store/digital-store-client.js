@@ -27,7 +27,7 @@ export function digitalProviderLabel(provider){
 }
 
 export async function loadDigitalStore(scope="all"){
-  return api("/api/digital-store-catalog?scope="+encodeURIComponent(scope));
+  return api("/api/catalog?__3b_route=digital-store-catalog&scope="+encodeURIComponent(scope));
 }
 
 export async function beginDigitalPurchase(product){
@@ -40,9 +40,9 @@ export async function beginDigitalPurchase(product){
   }
   const attemptId=globalThis.crypto?.randomUUID?.();
   if(!attemptId)throw Error("Impossible de sécuriser cette tentative d’achat.");
-  return api("/api/digital-store-checkout",{method:"POST",body:JSON.stringify({productCode:product.code,attemptId})});
+  return api("/api/catalog?__3b_route=digital-store-checkout",{method:"POST",body:JSON.stringify({productCode:product.code,attemptId})});
 }
 
 export async function confirmDigitalPurchase(sessionId){
-  return api("/api/digital-store-status?session_id="+encodeURIComponent(sessionId));
+  return api("/api/catalog?__3b_route=digital-store-status&session_id="+encodeURIComponent(sessionId));
 }
