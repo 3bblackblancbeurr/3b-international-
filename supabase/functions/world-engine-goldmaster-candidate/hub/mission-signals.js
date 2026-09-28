@@ -16,11 +16,6 @@ export const HUB_MISSION_SIGNAL_RULES={
   {type:'npc',id:'the_conductor'},
   {type:'building',id:'train_station'},
  ],
- first_foundation:[
-  {type:'city',id:'founded'},
-  {type:'city',id:'synced'},
-  {type:'city',id:'built'},
- ],
  three_reflections:[
   {type:'secretStep',id:'secret_rain_symbol',step:2},
   {type:'secret',id:'secret_rain_symbol'},
