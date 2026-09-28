@@ -103,6 +103,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "skills": self.runtime.store.skills()})
             if path == "/session/distill":
                 return self._json({"ok": True, "distillation": self.runtime.distill_session()})
+            if path == "/agents":
+                return self._json({"ok": True, "agents": self.runtime.agents("general")})
+            if path == "/doctor":
+                return self._json({"ok": True, "doctor": self.runtime.doctor()})
             return self._error(404, "Route inconnue.")
         except Exception as error:
             return self._error(500, str(error)[:500])
@@ -158,6 +162,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "settings": self.runtime.set_mode(str(body.get("mode", "")))})
             if path == "/settings/resource":
                 return self._json({"ok": True, "settings": self.runtime.set_resource_profile(str(body.get("resource_profile", "")))})
+            if path == "/model/route":
+                return self._json({"ok": True, "route": self.runtime.route_model(str(body.get("capability", "chat")))})
             return self._error(404, "Route inconnue.")
         except (ValueError, KeyError, RuntimeError) as error:
             return self._error(400, str(error)[:500])
