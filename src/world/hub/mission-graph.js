@@ -12,7 +12,6 @@ export const HUB_MISSION_GRAPH={
  blue_blackout:{requires:['first_steps'],next:['silent_cable'],optional:['event:power_flicker']},
  silent_cable:{requires:['blue_blackout'],next:[],optional:['transport:telepheric']},
  voices_square:{requires:['first_steps'],next:[],optional:['talk:amira_mansouri','talk:lucia_navaro','talk:soraya_najem']},
- first_foundation:{requires:['first_steps'],next:[],optional:[]},
  garden_listens:{requires:['first_echo'],next:['lost_wolf_signal'],optional:['weather:fog']},
  lost_wolf_signal:{requires:['garden_listens'],next:[],optional:[]},
  eight_seeds:{requires:['first_steps'],next:[],optional:[]},
