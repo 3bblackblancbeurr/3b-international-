@@ -206,3 +206,20 @@ Avant toute signature, vérifier directement sur le site de l'ANSSI :
 - la décision de certification applicable.
 
 Ne jamais déduire qu'un prestataire, sa société entière ou 3B est certifié simplement parce qu'un de ses services a obtenu une certification.
+
+
+## 13. État de sécurité Auth vérifié le 28 septembre 2026
+
+Contrôle direct du projet Supabase :
+
+- les tables privées `member_identity_claims`, `passport_identity_verification_attempts` et `passport_partner_consents` ont RLS activée ;
+- les rôles `anon` et `authenticated` n'ont pas de droits directs sur ces tables ; le service serveur reste l'autorité ;
+- `allow_legacy_flows=false` en production ;
+- aucun profil existant n'est actuellement marqué identité civile `verified` sans preuve externe ;
+- la base rejette désormais les dates de naissance futures.
+
+Point restant avant activation d'un fournisseur d'identité :
+
+- activer et vérifier dans Supabase Auth la protection contre les mots de passe compromis (Leaked Password Protection). Le Security Advisor la signale actuellement désactivée.
+
+Le mode `passport:activation-check` exige désormais une attestation explicite que ce réglage ainsi que les validations juridique, conservation, mineurs et sandbox E2E ont réellement été terminés. Ces drapeaux ne constituent pas une certification : ils empêchent seulement une activation accidentelle incomplète.
