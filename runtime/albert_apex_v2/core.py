@@ -5,6 +5,7 @@ import json
 import os
 import re
 import shutil
+import socket
 import subprocess
 import threading
 import time
@@ -13,7 +14,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 PHASES = ("INTENT", "ASSESS", "PLAN", "EXECUTE", "REVIEW", "VERIFY", "EVIDENCE")
 
 CONSTITUTION = (
@@ -62,10 +63,32 @@ def clean_text(value: Any, limit: int = 4000) -> str:
 
 
 def atomic_json(path: Path, value: Any) -> None:
+    """Atomic JSON write hardened for Windows file-lock races."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(path.suffix + ".tmp")
-    temp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(temp, path)
+    payload = json.dumps(value, ensure_ascii=False, indent=2)
+    last_error: Optional[OSError] = None
+    for attempt in range(6):
+        temp = path.with_name(
+            path.name + f".{os.getpid()}.{threading.get_ident()}.{uuid.uuid4().hex[:8]}.tmp"
+        )
+        try:
+            temp.write_text(payload, encoding="utf-8")
+            os.replace(temp, path)
+            return
+        except OSError as error:
+            last_error = error
+            winerror = getattr(error, "winerror", None)
+            retryable = isinstance(error, PermissionError) or winerror in {5, 32}
+            if not retryable or attempt >= 5:
+                raise
+            time.sleep(0.03 * (attempt + 1))
+        finally:
+            try:
+                temp.unlink(missing_ok=True)
+            except OSError:
+                pass
+    if last_error is not None:
+        raise last_error
 
 
 def read_json(path: Path, default: Any) -> Any:
@@ -158,6 +181,35 @@ class MetacognitiveSupervisor:
         }
 
 
+class AgentRegistry:
+    AGENTS: Dict[str, Dict[str, Any]] = {
+        "CORE": {"capability": "reasoning", "purpose": "raisonnement principal, plan et arbitrage"},
+        "FAST": {"capability": "fast", "purpose": "réponses simples, classement et micro-tâches"},
+        "CODE": {"capability": "code", "purpose": "code, tests, bugs et architecture logicielle"},
+        "VISION": {"capability": "vision", "purpose": "écran, photos, interfaces et contrôle visuel"},
+        "CREATIVE": {"capability": "creative", "purpose": "prompts, images, vidéo, narration et design"},
+        "MEMORY": {"capability": "embedding", "purpose": "RAG, recherche mémoire et rappel de contexte"},
+        "AGENT": {"capability": "reasoning", "purpose": "outils, tâches multi-étapes et exécution"},
+        "DOCTOR": {"capability": "reasoning", "purpose": "diagnostic, stabilité et récupération"},
+    }
+    KIND_FLOW = {
+        "bugfix": ("CORE", "CODE", "DOCTOR"),
+        "development": ("CORE", "CODE", "DOCTOR"),
+        "creative": ("CORE", "CREATIVE", "VISION"),
+        "operations": ("FAST", "AGENT", "CORE"),
+        "general": ("FAST", "CORE"),
+    }
+
+    @classmethod
+    def for_kind(cls, kind: str) -> List[Dict[str, Any]]:
+        names = cls.KIND_FLOW.get(clean_text(kind, 80).lower(), cls.KIND_FLOW["general"])
+        return [{"name": name, **cls.AGENTS[name]} for name in names]
+
+    @classmethod
+    def catalog(cls) -> List[Dict[str, Any]]:
+        return [{"name": name, **spec} for name, spec in cls.AGENTS.items()]
+
+
 class ModelRegistry:
     @staticmethod
     def _fixed(command: str, args: List[str], timeout: float = 4.0) -> str:
@@ -215,33 +267,97 @@ class ModelRegistry:
             "utilization_percent": number(row[4]),
         }
 
+    @staticmethod
+    def _size_b(model: str) -> Optional[float]:
+        match = re.search(r"(?::|[-_])(\d+(?:\.\d+)?)b(?:$|[-_:])", model.lower())
+        if not match:
+            match = re.search(r"(\d+(?:\.\d+)?)b", model.lower())
+        try:
+            return float(match.group(1)) if match else None
+        except Exception:
+            return None
+
     @classmethod
-    def choose(cls, capability: str, mode: str, models: Optional[List[str]] = None) -> Dict[str, Any]:
+    def _score(cls, model: str, capability: str, profile: str, free_mb: Optional[float]) -> Dict[str, Any]:
+        name = model.lower()
+        cap = capability if capability in {"chat", "reasoning", "code", "vision", "creative", "embedding", "fast"} else "chat"
+        hints = {
+            "vision": (("qwen3-vl", 140), ("qwen-vl", 120), ("vl", 80)),
+            "embedding": (("embedding", 180),),
+            "code": (("coder", 150), ("qwen3.5", 130), ("qwen3", 90), ("deepseek", 85)),
+            "reasoning": (("qwen3.5", 135), ("qwen3", 105), ("deepseek", 95)),
+            "creative": (("qwen3.5", 125), ("qwen3", 100), ("vl", 25)),
+            "fast": (("qwen3", 75), ("qwen3.5", 65)),
+            "chat": (("qwen3.5", 125), ("qwen3", 95)),
+        }
+        score = 0.0
+        reasons: List[str] = []
+        for hint, weight in hints[cap]:
+            if hint in name:
+                score += weight
+                reasons.append(hint)
+                break
+        if "embedding" in name and cap != "embedding":
+            score -= 220
+        if ("-vl" in name or "vl:" in name) and cap not in {"vision", "creative"}:
+            score -= 45
+        size = cls._size_b(model)
+        if size is not None:
+            if profile == "ECO":
+                score += max(-30.0, 35.0 - size * 6.0)
+            elif profile == "APEX":
+                score += min(24.0, size * 1.7)
+            else:
+                score += max(-12.0, 24.0 - abs(size - 9.0) * 3.0)
+            if cap == "fast":
+                score += max(-25.0, 32.0 - size * 5.0)
+            if cap in {"reasoning", "code"}:
+                score += min(20.0, size * 1.4)
+            if free_mb is not None:
+                estimated_mb = size * 720.0 + 900.0
+                reserve_mb = {"ECO": 3500.0, "NORMAL": 2200.0, "APEX": 1200.0}.get(profile, 2200.0)
+                if estimated_mb + reserve_mb > free_mb:
+                    score -= 95.0
+                    reasons.append("vram_pressure")
+        return {"model": model, "score": round(score, 2), "size_b": size, "reasons": reasons}
+
+    @classmethod
+    def choose(
+        cls,
+        capability: str,
+        mode: str,
+        models: Optional[List[str]] = None,
+        profile: str = "NORMAL",
+        gpu: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         available = list(models if models is not None else cls.ollama_models())
         cap = clean_text(capability, 80).lower() or "chat"
         mode = mode if mode in {"AUTO", "LOCAL", "HYBRID", "INTERNET"} else "AUTO"
-        preferences = {
-            "vision": ("qwen3-vl", "qwen-vl", "vl"),
-            "reasoning": ("qwen3.5", "qwen3", "deepseek"),
-            "code": ("qwen3.5", "qwen3", "coder"),
-            "chat": ("qwen3.5", "qwen3"),
-        }
-        chosen = None
-        for hint in preferences.get(cap, preferences["chat"]):
-            chosen = next((model for model in available if hint in model.lower()), None)
-            if chosen:
-                break
-        if not chosen and available:
-            chosen = available[0]
+        profile = profile if profile in {"ECO", "NORMAL", "APEX"} else "NORMAL"
+        gpu_value = gpu if isinstance(gpu, dict) else cls.gpu()
+        used = gpu_value.get("memory_used_mb")
+        total = gpu_value.get("memory_total_mb")
+        free_mb = None
+        if isinstance(used, (int, float)) and isinstance(total, (int, float)):
+            free_mb = max(0.0, float(total) - float(used))
+        ranked = sorted(
+            (cls._score(model, cap, profile, free_mb) for model in available),
+            key=lambda row: row["score"],
+            reverse=True,
+        )
+        chosen = ranked[0]["model"] if ranked and ranked[0]["score"] > -150 else None
         route = "local" if chosen and mode != "INTERNET" else "external"
         if mode == "LOCAL" and not chosen:
             route = "blocked"
         return {
             "capability": cap,
             "mode": mode,
+            "profile": profile,
             "route": route,
             "model": chosen,
             "available_models": available,
+            "free_vram_mb": free_mb,
+            "candidates": ranked[:5],
             "selected_at": now_iso(),
         }
 
@@ -257,6 +373,82 @@ class ResourceGovernor:
     def policy(cls, profile: str) -> Dict[str, Any]:
         profile = profile if profile in cls.PROFILES else "NORMAL"
         return {"profile": profile, **cls.PROFILES[profile]}
+
+    @classmethod
+    def dynamic_policy(cls, profile: str, gpu: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        value = cls.policy(profile)
+        gpu = gpu if isinstance(gpu, dict) else ModelRegistry.gpu()
+        used = gpu.get("memory_used_mb")
+        total = gpu.get("memory_total_mb")
+        temp = gpu.get("temperature_c")
+        util = gpu.get("utilization_percent")
+        free_mb = None
+        state = "ready"
+        if isinstance(used, (int, float)) and isinstance(total, (int, float)):
+            free_mb = max(0.0, float(total) - float(used))
+            if free_mb < value["gpu_headroom_mb"]:
+                value["max_heavy_tasks"] = 0
+                value["max_parallel_tasks"] = 1
+                state = "constrained"
+            elif free_mb < value["gpu_headroom_mb"] + 2200:
+                value["max_heavy_tasks"] = min(1, value["max_heavy_tasks"])
+                value["max_parallel_tasks"] = min(2, value["max_parallel_tasks"])
+                state = "guarded"
+        if isinstance(temp, (int, float)) and temp >= 82:
+            value["max_heavy_tasks"] = 0
+            value["max_parallel_tasks"] = 1
+            state = "thermal_guard"
+        value.update({
+            "state": state,
+            "free_vram_mb": free_mb,
+            "gpu_temperature_c": temp,
+            "gpu_utilization_percent": util,
+        })
+        return value
+
+
+class LocalDoctor:
+    @staticmethod
+    def _port(port: int) -> bool:
+        try:
+            with socket.create_connection(("127.0.0.1", int(port)), timeout=0.2):
+                return True
+        except OSError:
+            return False
+
+    @classmethod
+    def check(
+        cls,
+        runtime_root: Path,
+        models: Optional[List[str]] = None,
+        gpu: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        root = Path(runtime_root)
+        python_path = root / ".venv" / "Scripts" / "python.exe"
+        models = list(models if models is not None else ModelRegistry.ollama_models())
+        gpu = dict(gpu if isinstance(gpu, dict) else ModelRegistry.gpu())
+        services = {
+            "albert_api_8765": cls._port(8765),
+            "comfyui_8188": cls._port(8188),
+        }
+        checks = {
+            "runtime_root": root.exists(),
+            "python_venv": python_path.exists(),
+            "ollama_binary": bool(shutil.which("ollama")),
+            "ollama_models": bool(models),
+            "gpu_visible": bool(gpu.get("name")),
+            **services,
+        }
+        issues = [name for name, ok in checks.items() if not ok]
+        return {
+            "state": "healthy" if not issues else "degraded",
+            "checks": checks,
+            "issues": issues,
+            "models": models,
+            "gpu": gpu,
+            "storage_recovery": "unique-temp+retry",
+            "checked_at": now_iso(),
+        }
 
 
 class ApexStore:
@@ -338,6 +530,30 @@ class ApexRuntime:
 
     def constitution(self) -> Dict[str, Any]:
         return {"version": 2, "principles": list(CONSTITUTION)}
+
+    def agents(self, kind: str = "general") -> Dict[str, Any]:
+        return {
+            "kind": clean_text(kind, 80).lower() or "general",
+            "flow": AgentRegistry.for_kind(kind),
+            "catalog": AgentRegistry.catalog(),
+        }
+
+    def route_model(self, capability: str = "chat") -> Dict[str, Any]:
+        settings = self.store.settings()
+        models = ModelRegistry.ollama_models()
+        gpu = ModelRegistry.gpu()
+        return ModelRegistry.choose(
+            capability,
+            settings["mode"],
+            models,
+            settings["resource_profile"],
+            gpu,
+        )
+
+    def doctor(self) -> Dict[str, Any]:
+        models = ModelRegistry.ollama_models()
+        gpu = ModelRegistry.gpu()
+        return LocalDoctor.check(self.root, models=models, gpu=gpu)
 
     def begin_task(self, intent: str, project: str = "ALBERT") -> Dict[str, Any]:
         settings = self.store.settings()
@@ -568,17 +784,32 @@ class ApexRuntime:
         settings = self.store.settings()
         tasks = self.store.tasks()
         models = ModelRegistry.ollama_models()
+        gpu = ModelRegistry.gpu()
+        resource = ResourceGovernor.dynamic_policy(settings["resource_profile"], gpu)
+        routes = {
+            capability: ModelRegistry.choose(
+                capability,
+                settings["mode"],
+                models,
+                settings["resource_profile"],
+                gpu,
+            )
+            for capability in ("fast", "chat", "reasoning", "code", "vision", "creative", "embedding")
+        }
         return {
             "name": "ALBERT APEX OS V2",
             "version": VERSION,
             "runtime_root": str(self.root),
             "mode": settings["mode"],
-            "resource": ResourceGovernor.policy(settings["resource_profile"]),
+            "resource": resource,
             "kill_switch": settings["kill_switch"],
             "constitution": self.constitution(),
             "models": models,
-            "model_route": ModelRegistry.choose("chat", settings["mode"], models),
-            "gpu": ModelRegistry.gpu(),
+            "model_route": routes["chat"],
+            "model_routes": routes,
+            "agents": self.agents("general"),
+            "doctor": LocalDoctor.check(self.root, models=models, gpu=gpu),
+            "gpu": gpu,
             "tasks": {
                 "total": len(tasks),
                 "running": sum(1 for task in tasks if task.get("status") == "running"),
