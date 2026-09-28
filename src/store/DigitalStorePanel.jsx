@@ -5,14 +5,14 @@ import "./digital-store.css";
 
 const money=value=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format((Number(value)||0)/100);
 
-export default function DigitalStorePanel({scope="all"}){
+export default function DigitalStorePanel({scope="all",onStoreChange}){
   const [data,setData]=useState(null),[busy,setBusy]=useState(""),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const platform=useMemo(()=>digitalPurchasePlatform(),[]);
   const refresh=useCallback(async()=>{
     setError("");
-    try{setData(await loadDigitalStore(scope));}
+    try{const next=await loadDigitalStore(scope);setData(next);onStoreChange?.(next);}
     catch(e){setError(e.message);}
-  },[scope]);
+  },[scope,onStoreChange]);
 
   useEffect(()=>{refresh();},[refresh]);
 
