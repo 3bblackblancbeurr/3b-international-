@@ -7,6 +7,8 @@ Ce registre est une base technique issue du fonctionnement actuellement observé
 | --- | --- | --- | --- | --- | --- | --- |
 | Compte / authentification | email, identifiant interne, session, date création, données de récupération | créer et sécuriser le compte | exécution du service / contrat | Supabase Auth, backend 3B | À définir précisément | À compléter |
 | Passeport 3B | identifiant public opaque, nom affiché, pays 3B, état/version | identité 3B et progression | exécution du service | 3B / Supabase | À définir | Technique durci |
+| Identité civile déclarée | prénom(s) officiels, nom de famille officiel, date de naissance | préparer la vérification d’identité et distinguer identité publique / civile | consentement spécifique + exécution du service, à valider | 3B / Supabase | À définir précisément | Zone service-only préparée |
+| Vérification d’identité externe | résultat, niveau de garantie, état, dates, référence prestataire pseudonymisée | vérifier qu’une personne est bien titulaire d’une identité déclarée | base légale à confirmer selon usage / contrat | futur prestataire PVID/IDV + 3B | À définir avec le prestataire | DÉSACTIVÉ tant que fournisseur non contractualisé |
 | Progression / XP / Coins / inventaire | identifiant compte, XP, points/Coins, objets, événements | fournir les fonctions jeux/monde | exécution du service | 3B / Supabase | À définir | Actif |
 | Sauvegardes jeux/Monde | identifiant, snapshots, progression, préférences | reprise et continuité de jeu | exécution du service | 3B / Supabase | À définir | Actif selon module |
 | Communauté | profil, publications, interactions, abonnements, signalements, blocages | fonctionnalités sociales et modération | contrat + intérêt légitime à sécuriser, à valider | 3B / Supabase | À définir par type | À auditer module par module |
@@ -31,6 +33,9 @@ Ce registre est une base technique issue du fonctionnement actuellement observé
 - mesures de sécurité documentées par traitement ;
 - procédure de violation de données ;
 - matrice mineurs/consentements ;
+- analyse d’impact / DPIA à déterminer avant activation d’une vérification biométrique ou documentaire à distance ;
+- politique de conservation des données d’identité et des résultats de vérification ;
+- contrat et liste des sous-traitants du futur prestataire d’identité ;
 - traitements exacts activés en production le jour du lancement.
 
 ## Règles techniques déjà vérifiées le 27/09/2026
