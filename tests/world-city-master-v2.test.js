@@ -90,12 +90,11 @@ test('City 3B public UI is map-first and no longer a bare technical grid', () =>
   assert.doesNotMatch(portal, /unlock_district/);
 });
 
-test('Monde 3B exposes only the official runtime while retaining legacy source files separately', () => {
+test('Monde 3B is one official runtime and stays independent from City 3B', () => {
   const entry = read('src/world/WorldEntry.jsx');
   const page = read('src/world/WorldPage.jsx');
   assert.match(entry, /CurrentWorld/);
   assert.doesNotMatch(entry, /OriginsPage|world-origins|useState\(/);
   assert.match(entry, /one official public runtime/);
-  assert.doesNotMatch(page, /Retrouver ma partie Origins|goTo\('world-origins'\)/);
-  assert.match(page, /Ma Ville 3B|Débloquer ma Ville 3B/);
+  assert.doesNotMatch(page, /Retrouver ma partie Origins|goTo\('world-origins'\)|City3BPanel|cityUnlockGuide|hubCitySync|hubCityProof|Débloquer ma Ville 3B/);
 });
