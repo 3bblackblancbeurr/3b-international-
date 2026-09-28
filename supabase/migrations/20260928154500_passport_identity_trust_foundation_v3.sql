@@ -227,6 +227,7 @@ declare
   v_passport uuid;
   v_id uuid;
   v_verified_at timestamptz;
+  v_existing_user uuid;
 begin
   if p_provider !~ '^[a-z0-9._-]{2,64}$' then raise exception 'provider invalid'; end if;
   if p_provider_case_hash !~ '^[0-9a-f]{64}$' then raise exception 'case hash invalid'; end if;
@@ -241,6 +242,16 @@ begin
   for update;
 
   if v_passport is null then raise exception 'passport not found'; end if;
+
+  select user_id into v_existing_user
+  from public.passport_identity_verifications
+  where provider=p_provider and provider_case_hash=p_provider_case_hash
+  for update;
+
+  if v_existing_user is not null and v_existing_user<>p_user then
+    raise exception 'provider case already bound to another account';
+  end if;
+
   v_verified_at=case when p_status='verified' then now() else null end;
 
   insert into public.passport_identity_verifications(
