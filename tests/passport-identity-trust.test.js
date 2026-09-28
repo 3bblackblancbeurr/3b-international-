@@ -13,8 +13,8 @@ const profile=overrides=>({
   passport_issued_at:'2026-09-26T14:58:25.000Z',
   passport_version:2,
   passport_state:'active',
-  identity_verification_status:'verified',
-  identity_assurance_level:2,
+  identity_verification_state:'verified',
+  identity_assurance_level:'identity_verified',
   identity_verified_at:'2026-09-28T12:00:00.000Z',
   handle:'amina3b',
   name:'Amina El Mansouri',
@@ -32,33 +32,33 @@ test('Passport access requires an active server-backed Passport',()=>{
   assert.equal(hasPassportAccess({userId:'u',passportState:'expired'}),false);
 });
 
-test('civil identity verification is separate from Passport access',()=>{
-  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'verified',identityAssuranceLevel:1}),true);
-  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'pending',identityAssuranceLevel:2}),false);
-  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'verified',identityAssuranceLevel:0}),false);
+test('civil identity verification is separate from account verification',()=>{
+  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'verified',identityAssuranceLevel:'identity_verified'}),true);
+  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'verified',identityAssuranceLevel:'high_assurance'}),true);
+  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'pending',identityAssuranceLevel:'identity_verified'}),false);
+  assert.equal(hasVerifiedIdentity({identityVerificationStatus:'verified',identityAssuranceLevel:'account_verified'}),false);
 });
 
-test('identity metadata is mapped without exposing provider case identifiers',()=>{
+test('identity metadata is mapped without exposing provider references',()=>{
   const passport=passportFromProfile(profile(),{id:UID});
   assert.equal(passport.identityVerificationStatus,'verified');
-  assert.equal(passport.identityAssuranceLevel,2);
+  assert.equal(passport.identityAssuranceLevel,'identity_verified');
   assert.equal(passport.identityVerifiedAt,'2026-09-28T12:00:00.000Z');
-  assert.equal(Object.hasOwn(passport,'identity_verification_reference_hash'),false);
+  assert.equal(Object.hasOwn(passport,'identity_verification_ref_hash'),false);
 });
 
-test('identity foundation migration never stores raw biometrics or raw document scans',()=>{
-  const source=readFileSync(new URL('../supabase/migrations/20260928154500_passport_identity_trust_foundation_v3.sql',import.meta.url),'utf8');
-  assert.match(source,/passport_identity_verifications/);
-  assert.match(source,/passport_authenticators/);
-  assert.match(source,/passport_recovery_codes/);
+test('production identity foundation is privacy-first and service-only',()=>{
+  const source=readFileSync(new URL('../supabase/migrations/20260928125354_passport_identity_trust_foundation_v3.sql',import.meta.url),'utf8');
+  assert.match(source,/member_identity_claims/);
+  assert.match(source,/passport_identity_verification_attempts/);
   assert.match(source,/passport_partner_consents/);
+  assert.match(source,/revoke all on public\.member_identity_claims from public, anon, authenticated/);
   assert.doesNotMatch(source,/face_embedding|fingerprint_template|raw_document|document_image|selfie_blob/i);
 });
 
-test('live Passport visual only claims civil identity verification from assurance state',()=>{
+test('live Passport visual delegates civil verification to the trust policy',()=>{
   const source=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
-  assert.match(source,/identityVerificationStatus === "verified"/);
-  assert.match(source,/identityAssuranceLevel/);
+  assert.match(source,/hasVerifiedIdentity\(identity\)/);
   assert.doesNotMatch(source,/active \? "IDENTITÉ VÉRIFIÉE"/);
 });
 
