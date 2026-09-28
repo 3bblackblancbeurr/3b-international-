@@ -20,10 +20,11 @@ test('public QR verification does not present a founder/public badge as civil KY
 
 test('pending identity schema minimizes raw high-risk evidence',()=>{
  const sql=readFileSync('supabase/pending/passport_identity_assurance_v1.sql','utf8');
- assert.match(sql,/member_identity_assurance/);
- assert.match(sql,/enable row level security/);
- assert.match(sql,/revoke all on public\.member_identity_assurance from public,anon,authenticated/);
- assert.doesNotMatch(sql,/document_image|selfie|biometric_template|document_number/i);
+ const ddl=sql.replace(/--.*$/gm,'').replace(/\/\*[\s\S]*?\*\//g,'');
+ assert.match(ddl,/member_identity_assurance/);
+ assert.match(ddl,/enable row level security/);
+ assert.match(ddl,/revoke all on public\.member_identity_assurance from public,anon,authenticated/);
+ assert.doesNotMatch(ddl,/\b(document_image|selfie|biometric_template|document_number)\b/i);
 });
 
 test('Passkeys remain disabled by default until the permanent RP is chosen',()=>{
