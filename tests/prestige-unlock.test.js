@@ -6,7 +6,8 @@ const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 
 test('member-api Prestige unlock is authenticated, rate-limited and server-derived',()=>{
   const source=read('supabase/functions/member-api/index.ts');
-  assert.match(source,/const uid=await authenticate\(req\)/);
+  assert.match(source,/const user=await authenticate\(req\)/);
+  assert.match(source,/const uid=user\.id/);
   assert.match(source,/uid\+':prestige'/);
   assert.match(source,/prestige_eligible!==true/);
   assert.match(source,/next_prestige_level/);
