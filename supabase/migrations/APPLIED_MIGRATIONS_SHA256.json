@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-09-27",
-  "count": 156,
+  "generated_at": "2026-09-28",
+  "count": 157,
   "migrations": [
     {
       "version": "20260910020445",
@@ -783,6 +783,11 @@
       "version": "20260927160710",
       "name": "albert_spaces",
       "sha256": "c6d1aead362d9041f09c6db5c456cf0fb99fc7eee0420e8a5ec296ae493fafbc"
+    },
+    {
+      "version": "20260928114542",
+      "name": "city3b_independent_game_v1",
+      "sha256": "853b7a4289b530bfa85f510b87b60c97a5d102b6d1dc49a6c78fdc8c8d796981"
     }
   ]
 }
