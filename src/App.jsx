@@ -67,7 +67,7 @@ const BASE_MENU_ITEMS = [
     id: "manga",
     label: "Manga 3B",
     icon: "📖",
-    status: "preview",
+    status: "soon",
     description: "Le manga de l’univers 3B.",
   },
   {
@@ -80,18 +80,21 @@ const BASE_MENU_ITEMS = [
     id: "nosbloc",
     label: "Nosbloc du 3B",
     icon: "▦",
+    status: "soon",
     description: "Crée ton Bloc, développe ton univers et prépare tes futures expériences dans l’écosystème 3B.",
   },
   {
     id: "games",
     label: "Jeux 3B",
     icon: "🎮",
+    status: "soon",
     description: "Kaïs, les Portes, le Labyrinthe, la course des clés, DADA 3B et Power 3B réunis dans l’univers 3B.",
   },
   {
     id: "religion",
     label: "Religion",
     icon: "✧",
+    status: "soon",
     description: "Croyances, cultures et traditions.",
   },
   {
@@ -111,6 +114,7 @@ const BASE_MENU_ITEMS = [
     id: "sport",
     label: "Espace sport 3B",
     icon: "🏆",
+    status: "soon",
     description: "Actualités multisports, défis et collaborations.",
   },
   {
@@ -127,6 +131,8 @@ const BASE_MENU_ITEMS = [
     description: "Drops, produits premium et certificats.",
   },
 ];
+
+const PREPARATION_ROUTE_IDS = new Set(["nosbloc", "games", "religion", "manga", "sport"]);
 
 const CONTROL_MENU_ITEM = {
   id: "control",
@@ -339,6 +345,28 @@ export default function App() {
           </div>
         </section>
       </main>
+    );
+  }
+
+  const isPreparationRoute = PREPARATION_ROUTE_IDS.has(page) || page === "game";
+
+  if (isPreparationRoute) {
+    const preparationTitle = page === "game" ? "Jeux 3B" : currentPageTitle;
+    return (
+      <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
+        <div className="app3b-background" aria-hidden="true" />
+        <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
+        <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+        <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} />
+        <main id="main-content" tabIndex={-1}>
+          <ComingSoon
+            goTo={goTo}
+            eyebrow="EN PRÉPARATION · 3B"
+            title={preparationTitle}
+            description="Cet espace est conservé et continue d’être préparé en interne. Il rouvrira quand sa version publique sera suffisamment solide et cohérente avec l’expérience 3B."
+          />
+        </main>
+      </div>
     );
   }
 
