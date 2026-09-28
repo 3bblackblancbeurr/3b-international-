@@ -166,6 +166,23 @@
     ]
   },
   {
+    "id": "horizons_mapping",
+    "title": "La Route des Horizons",
+    "category": "exploration",
+    "district": "city3b_portal",
+    "importance": "normal",
+    "giver": "elio_romano",
+    "objectives": [
+      "relever les repères du Quartier des Horizons",
+      "relier le quartier aux Docks par l’itinéraire d’exploration",
+      "valider le panorama des huit héritages"
+    ],
+    "rewards": [
+      "map_archive",
+      "xp"
+    ]
+  },
+  {
     "id": "voices_square",
     "title": "Les Voix de la Place",
     "category": "community",
