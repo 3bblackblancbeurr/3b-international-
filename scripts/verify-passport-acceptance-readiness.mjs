@@ -129,6 +129,11 @@ if(mode==='activation'){
   const referenceSecret=(process.env.PASSPORT_IDENTITY_REFERENCE_SECRET||'').trim();
   const enabled=process.env.PASSPORT_IDENTITY_VERIFICATION_ENABLED==='true';
   const captcha=process.env.MEMBER_CAPTCHA_REQUIRED==='true';
+  const leakedPasswordProtection=process.env.PASSPORT_LEAKED_PASSWORD_PROTECTION_CONFIRMED==='true';
+  const legalReview=process.env.PASSPORT_IDENTITY_LEGAL_REVIEW_APPROVED==='true';
+  const retentionPolicy=process.env.PASSPORT_IDENTITY_RETENTION_POLICY_APPROVED==='true';
+  const minorsPolicy=process.env.PASSPORT_IDENTITY_MINORS_POLICY_APPROVED==='true';
+  const sandboxE2E=process.env.PASSPORT_IDENTITY_SANDBOX_E2E_APPROVED==='true';
 
   const activationChecks=[
     {id:'activation_explicitly_enabled',ok:enabled,detail:'PASSPORT_IDENTITY_VERIFICATION_ENABLED=true'},
@@ -136,7 +141,12 @@ if(mode==='activation'){
     {id:'provider_api_key_present',ok:apiKey.length>=16,detail:'Provider API key is configured server-side'},
     {id:'provider_webhook_secret_present',ok:webhook.length>=24,detail:'Webhook verification secret is configured'},
     {id:'reference_hash_secret_present',ok:referenceSecret.length>=32,detail:'Reference hashing secret is configured'},
-    {id:'captcha_required',ok:captcha,detail:'Anti-bot is required for production identity enrollment'}
+    {id:'captcha_required',ok:captcha,detail:'Anti-bot is required for production identity enrollment'},
+    {id:'leaked_password_protection_confirmed',ok:leakedPasswordProtection,detail:'Supabase leaked-password protection has been enabled and verified'},
+    {id:'legal_review_approved',ok:legalReview,detail:'Identity legal/privacy review is approved'},
+    {id:'retention_policy_approved',ok:retentionPolicy,detail:'Identity retention/deletion policy is approved'},
+    {id:'minors_policy_approved',ok:minorsPolicy,detail:'Minor/age policy is approved'},
+    {id:'sandbox_e2e_approved',ok:sandboxE2E,detail:'Provider sandbox E2E, replay, duplicate and revocation tests are approved'}
   ];
   checks.push(...activationChecks);
   failed.push(...activationChecks.filter(x=>!x.ok));
