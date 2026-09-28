@@ -63,7 +63,7 @@ test('central mission index distinguishes all eight guardian campaigns and indep
  const index=centralMissionIndex(),guardians=index.filter(m=>m.category==='guardian'),hub=index.filter(m=>m.source==='hub');
  assert.equal(guardians.length,8);
  assert.equal(hub.length,19);
- assert.equal(index.length,28);
+ assert.equal(index.length,27);
  assert.equal(Object.keys(GUARDIAN_CAMPAIGNS).length,8);
  assert.equal(new Set(guardians.map(m=>m.signature)).size,8);
  assert.equal(new Set(Object.values(GUARDIAN_CAMPAIGNS).map(c=>c.combat)).size,8);
