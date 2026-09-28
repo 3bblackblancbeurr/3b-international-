@@ -1,3 +1,10 @@
+export const IDENTITY_ASSURANCE_RANK = Object.freeze({
+  self_asserted: 0,
+  account_verified: 1,
+  identity_verified: 2,
+  high_assurance: 3,
+});
+
 export const PASSPORT_COUNTRIES = Object.freeze({
   France: Object.freeze({ code: 'FR', flag: '🇫🇷', value: 'Justice' }),
   Algérie: Object.freeze({ code: 'DZ', flag: '🇩🇿', value: 'Loyauté' }),
@@ -41,10 +48,10 @@ export function passportFromProfile(profile, user = null) {
     passportIssuedAt: profile.passport_issued_at || null,
     passportVersion: Number.isInteger(version) && version > 0 ? version : null,
     passportState: cleanText(profile.passport_state, 16) || null,
-    identityVerificationStatus: cleanText(profile.identity_verification_status, 16) || 'unverified',
-    identityAssuranceLevel: Number.isInteger(Number(profile.identity_assurance_level))
-      ? Math.max(0, Math.min(3, Number(profile.identity_assurance_level)))
-      : 0,
+    identityVerificationStatus: cleanText(profile.identity_verification_state, 16) || 'unverified',
+    identityAssuranceLevel: Object.hasOwn(IDENTITY_ASSURANCE_RANK, cleanText(profile.identity_assurance_level, 24))
+      ? cleanText(profile.identity_assurance_level, 24)
+      : 'self_asserted',
     identityVerifiedAt: profile.identity_verified_at || null,
     name,
     handle,
