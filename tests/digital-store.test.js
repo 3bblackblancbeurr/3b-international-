@@ -29,7 +29,7 @@ test("digital store never enables live payments without the explicit live gate",
 test("premium catalog is cosmetic, permanent and non-resellable",()=>{
   const sql=read("supabase/migrations/20260928140344_digital_store_v1.sql");
   assert.match(sql,/no_pay_to_win boolean not null default true check\(no_pay_to_win=true\)/);
-  assert.match(sql,/tradeable,false,false,true/);
+  assert.match(sql,/rarity,tradeable,marketable,permanent[\s\S]*'epic',false,false,true/);
   assert.match(sql,/PREM_WORLD_KAIS_JACKET/);
   assert.match(sql,/PREM_CITY_BROKEN_MONUMENT/);
   assert.match(sql,/digital_store_entitlements/);
@@ -56,7 +56,7 @@ test("native apps never fall back to Stripe web checkout for digital goods",()=>
   assert.match(client,/if\(platform==="google_play"\)/);
   assert.match(client,/if\(platform==="app_store"\)/);
   const googleIndex=client.indexOf('if(platform==="google_play")');
-  const webIndex=client.indexOf('api("\/api\/digital-store-checkout"');
+  const webIndex=client.indexOf('digital-store-checkout');
   assert.ok(googleIndex>=0&&webIndex>googleIndex);
 });
 
@@ -72,8 +72,12 @@ test("both games expose the shared Premium store without sharing progression",()
 
 test("shared Stripe webhook processes digital purchases separately from physical shop orders",()=>{
   const webhook=read("api/stripe-webhook.js");
+  const catalog=read("api/catalog.js");
   assert.match(webhook,/createDigitalStore/);
   assert.match(webhook,/3b-digital-store-v1/);
   assert.match(webhook,/createShop\(\)\.webhook/);
   assert.match(webhook,/createDigitalStore\(\)\.webhook/);
+  assert.match(catalog,/digital-store-catalog/);
+  assert.match(catalog,/digital-store-checkout/);
+  assert.match(catalog,/digital-store-status/);
 });
