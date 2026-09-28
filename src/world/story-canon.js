@@ -127,7 +127,7 @@ export const STORY_ACTS=Object.freeze([
  {id:'kais-truth',title:'La vérité sur Kaïs',purpose:'Révéler que son anneau est le connecteur du Cercle et qu’il est Porteur du Lien, pas neuvième Gardien.'},
  {id:'finale',title:'Dernière confrontation',purpose:'Affronter la manifestation centrale de l’Oubli pendant que les huit Gardiens réactivent leurs ancrages.'},
  {id:'restored-circle',title:'Le Cercle retrouvé',purpose:'Rendre les fragments à leurs héritages et restaurer la transmission entre les huit.'},
- {id:'epilogue',title:'Un héritage vivant',purpose:'Le monde reste ouvert : reconstruction, Ville 3B, missions, secrets, coopération et transmission continuent.'},
+ {id:'epilogue',title:'Un héritage vivant',purpose:'Le monde reste ouvert : reconstruction, missions, secrets, coopération, exploration et transmission continuent.'},
 ]);
 
 export const STORY_REVELATIONS=Object.freeze([
