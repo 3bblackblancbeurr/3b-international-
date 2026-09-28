@@ -38,6 +38,7 @@ import {actionFeedback} from './interaction-system.js';
 import {obstacleDistance} from './collision.js';
 import {isPhysicalTraversalAction,traversalPlan,traversalPose,shortenTraversalPlan} from './traversal-motion.js';
 import {premiumEffectsFromCodes} from '../store/premium-effects.js';
+import {cinematicActingBeat} from './cinematic-acting.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -487,7 +488,16 @@ function hubNpcAvatar(item){
   const wide=cameraMode===1,portrait=camera.aspect<.85;
   if(opponent&&!fieldCombat){const mx=(avatar.position.x+opponent.x)/2,mz=(avatar.position.z+opponent.z)/2,my=(avatar.position.y+groundY(opponent.x,opponent.z))/2;desiredTarget.set(mx,my+1.8,mz);desiredCamera.set(mx+(portrait?12:15),my+(portrait?14:11),mz+(portrait?20:18));}
   else{const view=orbitView(orbit,position,y,portrait,groundY);desiredTarget.copy(view.target);desiredCamera.copy(view.position);}
-  if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),ease=cinematicEase(age),waterReveal=shot.kind==='world-opening'&&region==='hub',rise=cinematicRiseProgress(age,{waterReveal}),dolly=cinematicDollyProgress(age,{waterReveal}),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+ease*arc,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*dolly)),focusLift=waterReveal?2.6+(shot.focusY-2.6)*rise:(shot.focusY??(shot.heritage?28:2)),cameraLift=waterReveal?4.2+((shot.height??18)-4.2)*rise:(shot.height??(shot.heritage?36:14));desiredTarget.set(shot.x,baseY+focusLift,shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+cameraLift,shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){const returnBlend=cinematicReturnBlend(age,{waterReveal});desiredCamera.lerp(shot.endCamera,returnBlend);desiredTarget.lerp(shot.endTarget,returnBlend);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
+  if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),ease=cinematicEase(age),waterReveal=shot.kind==='world-opening'&&region==='hub',rise=cinematicRiseProgress(age,{waterReveal}),dolly=cinematicDollyProgress(age,{waterReveal}),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+ease*arc,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*dolly)),focusLift=waterReveal?2.6+(shot.focusY-2.6)*rise:(shot.focusY??(shot.heritage?28:2)),cameraLift=waterReveal?4.2+((shot.height??18)-4.2)*rise:(shot.height??(shot.heritage?36:14));
+    if(shot.cinematic){
+     const acting=cinematicActingBeat(shot.kind,age);
+     if(shot.actingBeat!==acting.index){
+      shot.actingBeat=acting.index;hero?.action?.(acting.hero,acting.duration);
+      const focusActor=shot.focusItemId?actors.find(actor=>actor.itemId===shot.focusItemId):null;
+      focusActor?.controller?.action?.(acting.focus,acting.duration);
+      if(focusActor)hero?.face?.(focusActor.x-position.x,focusActor.z-position.z,.18);
+     }
+    }desiredTarget.set(shot.x,baseY+focusLift,shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+cameraLift,shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){const returnBlend=cinematicReturnBlend(age,{waterReveal});desiredCamera.lerp(shot.endCamera,returnBlend);desiredTarget.lerp(shot.endTarget,returnBlend);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
 
   const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
@@ -581,13 +591,16 @@ function hubNpcAvatar(item){
     if(fragment)focus={x:fragment.x,z:fragment.z};radius=7.8;height=5.1;focusY=1.1;arc=.46;dolly=.25;angle=orbit.yaw-.22;
    }else if(kind==='story-alliance'){
     const resident=items.find(i=>i.type==='story'||i.id===region+':story');
-    if(resident){focus={x:resident.x,z:resident.z};landscape?.cinematicFocus(focus.x,focus.z,'Talk',elapsed);}radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
+    if(resident){focus={x:resident.x,z:resident.z};focusItemId=resident.id;landscape?.cinematicFocus(focus.x,focus.z,'Talk',elapsed);}radius=10.5;height=6.4;focusY=1.85;arc=.34;dolly=.1;angle=orbit.yaw-.2;
+   }else if(kind==='companion-first-bond'){
+    const bonded=items.find(i=>i.card===context.card);
+    if(bonded){focus={x:bonded.x,z:bonded.z};focusItemId=bonded.id;}radius=9.8;height=6.2;focusY=1.9;arc=.38;dolly=.12;angle=orbit.yaw-.22;
    }else if(kind==='story-power'){hero?.action('Cast');radius=9.5;height=6.3;focusY=1.8;arc=.42;dolly=.2;}
    const premiumArrival=premium.eightDoorsArrival&&kind==='world-opening';
    if(premiumArrival){duration=Math.max(duration,9200);arc+=.18;dolly=Math.min(.68,dolly+.12);radius*=1.08;height*=1.08;}
    const profile=cinemaProfile(region),accent=premiumArrival?'#63d9ff':profile.accent,secondary=premiumArrival?'#e4c879':profile.secondary,micro=['memory-fragment','discovery','story-power'].includes(kind);
    post.setCinematic({active:true,intensity:major?1:micro?.72:.84,accent,secondary});
-   shot={...focus,kind,major,focusItemId,accent,secondary,angle,duration,until:now+duration,heritage,cinematic:true,radius,height,focusY,arc,dolly,endCamera,endTarget,fovStart,fovEnd,title:'',detail:''};clearInput();needsRender=true;
+   shot={...focus,kind,major,focusItemId,accent,secondary,angle,duration,until:now+duration,heritage,cinematic:true,actingBeat:-1,radius,height,focusY,arc,dolly,endCamera,endTarget,fovStart,fovEnd,title:'',detail:''};clearInput();needsRender=true;
   },
   inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),duration=6500,profile=cinemaProfile(region),accent=profile.accent,secondary=profile.secondary;post.setCinematic({active:true,intensity:.82,accent,secondary});shot={...p,kind:'heritage-inspection',major:false,accent,secondary,angle:-BIOMES[region].angle+.35,duration,until:performance.now()+duration,heritage:true,cinematic:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
   skipCinematic(){if(shot?.cinematic)post.setCinematic(null);if(Number.isFinite(shot?.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;needsRender=true;},
