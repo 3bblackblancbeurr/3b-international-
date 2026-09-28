@@ -5,14 +5,14 @@ import {City3BPrivatePreview} from './City3BBuilder.jsx';
 import '../styles/city-3b.css';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 
-export function City3BPanel({uid,onLogin,onNotice,onWorldCitySync}){
+export function City3BPanel({uid,onLogin,onNotice}){
  const[data,setData]=useState(null),[loading,setLoading]=useState(!!uid),[busy,setBusy]=useState(''),[error,setError]=useState('');
  const account=useLoyalty(),country=account.passport?.userId===uid?account.passport.country:'';
- const scope=useRef(uid);scope.current=uid;const worldSyncRef=useRef(onWorldCitySync);worldSyncRef.current=onWorldCitySync;const mounted=useRef(true);useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+ const scope=useRef(uid);scope.current=uid;const mounted=useRef(true);useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  const[name,setName]=useState('Ma Ville 3B');
- const refresh=useCallback(async()=>{if(!uid)return;setLoading(true);setError('');try{const next=await city3bRequest('snapshot',{},uid);if(mounted.current&&scope.current===uid){setData(next);if(next?.city)worldSyncRef.current?.();}}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setLoading(false);}},[uid]);
+ const refresh=useCallback(async()=>{if(!uid)return;setLoading(true);setError('');try{const next=await city3bRequest('snapshot',{},uid);if(mounted.current&&scope.current===uid){setData(next);}}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setLoading(false);}},[uid]);
  useEffect(()=>{setData(null);setBusy('');refresh();},[refresh]);
- async function action(kind,body={}){if(!uid||busy)return;setBusy(kind);setError('');try{const next=await city3bRequest(kind,body,uid);if(!mounted.current||scope.current!==uid)return;setData(next);onNotice?.(kind==='sync_world'?'Ville 3B synchronisée avec le Monde du 3B.':'Ville 3B mise à jour.');if(next?.city)await worldSyncRef.current?.();}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setBusy('');}}
+ async function action(kind,body={}){if(!uid||busy)return;setBusy(kind);setError('');try{const next=await city3bRequest(kind,body,uid);if(!mounted.current||scope.current!==uid)return;setData(next);onNotice?.('Ville 3B mise à jour.');}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setBusy('');}}
  const stage=useMemo(()=>city3bVisualStage(data),[data]);
  if(!uid)return <div className="city3b-world-panel"><span className="city3b-kicker">VILLE 3B · COMPTE REQUIS</span><h3>Ta ville appartient à ton Passeport 3B.</h3><p>Connecte ton compte pour charger ta ville, ses quartiers, ses placements et sa progression.</p><button className="city3b-btn primary" onClick={onLogin}>Ouvrir mon compte 3B</button></div>;
  if(loading&&!data)return <div className="city3b-loading">CHARGEMENT DE VILLE 3B…</div>;
@@ -25,7 +25,7 @@ export function City3BPanel({uid,onLogin,onNotice,onWorldCitySync}){
   </section>
   {error&&<p className="city3b-error">{error}</p>}
   <City3BPrivatePreview data={data}/>
-  <div className="city3b-actions"><button className="city3b-btn primary" disabled={!!busy} onClick={()=>action('sync_world')}>{busy==='sync_world'?'Synchronisation…':'Synchroniser avec le Monde 3B'}</button><button className="city3b-btn blue" disabled={!!busy} onClick={()=>action('recalculate')}>Recalculer la ville</button><button className="city3b-btn" disabled={!!busy} onClick={refresh}>Actualiser</button></div>
+  <div className="city3b-actions"><button className="city3b-btn primary" disabled={!!busy} onClick={()=>action('recalculate')}>{busy==='recalculate'?'Calcul…':'Recalculer ma progression'}</button><button className="city3b-btn" disabled={!!busy} onClick={refresh}>Actualiser</button></div>
   <section className="city3b-panel"><h3>Les huit quartiers</h3><div className="city3b-country-grid">{CITY_COUNTRIES.map(name=>{const row=districts.find(d=>d.country===name);return <article key={name} data-unlocked={!!row&&row.unlocked!==false}><strong>{name}</strong><span>{row&&row.unlocked!==false?'Ouvert · niveau '+(row.level||1):'À débloquer'}</span></article>;})}</div></section>
   <section className="city3b-panel"><h3>Lieux centraux</h3><div className="city3b-poi-grid">{CITY3B_POIS.map(p=><article key={p.id}><small>{p.kind}</small><strong>{p.name}</strong><p>{p.detail}</p></article>)}</div></section>
   <section className="city3b-panel"><h3>Construction réelle de ta ville</h3><p>{definitions.length} types de bâtiments disponibles · {placements.length} placements enregistrés côté serveur.</p><div className="city3b-building-strip">{definitions.slice(0,12).map((b,i)=><span key={b.building_code||b.code||b.id||i}>{b.name||b.building_code||b.code||'Bâtiment '+(i+1)}</span>)}</div></section>
