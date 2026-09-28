@@ -46,9 +46,9 @@ Deno.serve(async req=>{
     state:'active',
     version:Number(profile.passport_version)||2,
     issuedAt:profile.passport_issued_at||null,
-    identityVerified:profile.identity_verification_status==='verified'&&Number(profile.identity_assurance_level)>=1,
-    identityAssuranceLevel:profile.identity_verification_status==='verified'?Math.max(0,Math.min(3,Number(profile.identity_assurance_level)||0)):0,
-    identityVerifiedAt:profile.identity_verification_status==='verified'?profile.identity_verified_at||null:null,
+    identityVerified:profile.identity_verification_state==='verified'&&['identity_verified','high_assurance'].includes(String(profile.identity_assurance_level)),
+    identityAssuranceLevel:profile.identity_verification_state==='verified'?String(profile.identity_assurance_level||'identity_verified'):'self_asserted',
+    identityVerifiedAt:profile.identity_verification_state==='verified'?profile.identity_verified_at||null:null,
     publicBadgeVerified:profile.public_verified===true,
     title:profile.public_verified===true?String(profile.public_title||'').slice(0,80):''
    }
