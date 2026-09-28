@@ -9,7 +9,7 @@ const ORIGINS=new Set(['https://3b-international.vercel.app','capacitor://localh
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const secret=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
-const passportNumber=(id:string)=>'3B-PASS-'+id.replaceAll('-','').slice(0,16).toUpperCase();
+const passportNumber=(id:string)=>'3B-PASS-'+String(id).toUpperCase();
 
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){
  const response=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)});
