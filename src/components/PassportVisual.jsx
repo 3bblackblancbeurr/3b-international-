@@ -57,8 +57,15 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
 
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
   const animated = motionAllowed && visible && !portalOpen;
-  const active = !!identity?.userId;
-  const status = syncing ? "SYNCHRONISATION" : active ? "IDENTITÉ VÉRIFIÉE" : "À ACTIVER";
+  const active = Boolean(identity?.userId && identity?.passportState === "active");
+  const identityVerified = identity?.identityVerificationStatus === "verified" && Number(identity?.identityAssuranceLevel) >= 1;
+  const status = syncing
+    ? "SYNCHRONISATION"
+    : !active
+      ? "PASSEPORT INACTIF"
+      : identityVerified
+        ? "IDENTITÉ VÉRIFIÉE"
+        : "PASSEPORT ACTIF · IDENTITÉ À VÉRIFIER";
   const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
 
   return <div ref={visual} className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
