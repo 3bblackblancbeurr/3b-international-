@@ -9,6 +9,7 @@ const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('local APEX installer is signature-gated, reversible and does not overwrite the legacy launcher',()=>{
  const source=read('scripts/install-albert-apex-v2.mjs');
  assert.match(source,/ALBERT_MAX_RUNTIME/);
+ assert.match(source,/PACKAGE_VERSION='2\.2\.0'/);
  assert.match(source,/python_venv_missing/);
  assert.match(source,/albert_launcher_signature_missing/);
  assert.match(source,/Installation refusée: signature ALBERT non reconnue/);
@@ -48,6 +49,11 @@ test('local APEX package implements sequential evidence-gated orchestration',()=
  assert.match(core,/def create_routine/);
  assert.match(core,/def compile_workflow/);
  assert.match(core,/def readiness/);
+ assert.match(core,/def assess_intent_shift/);
+ assert.match(core,/def record_tool_result/);
+ assert.match(core,/def reset_session/);
+ assert.match(core,/def doctor/);
+ assert.match(core,/VERSION = "2\.2\.0"/);
  assert.match(core,/runtime_self_audit/);
  assert.match(core,/Completion refusée: EVIDENCE non atteinte/);
  assert.match(core,/Completion refusée: preuve incomplète/);
@@ -63,6 +69,11 @@ test('local APEX overlay stays inside the existing ALBERT UI and talks only to t
  assert.match(widget,/\/settings\/resource/);
  assert.match(widget,/\/core\/stop/);
  assert.match(widget,/\/core\/resume/);
+ assert.match(widget,/data-k="intent"/);
+ assert.match(widget,/data-k="taskState"/);
+ assert.match(widget,/data-k="tool"/);
+ assert.match(widget,/\/doctor/);
+ assert.match(widget,/\/session\/reset/);
  assert.match(css,/#albert-apex-v2-root/);
  assert.match(css,/backdrop-filter/);
  assert.match(css,/prefers-reduced-motion/);
@@ -86,6 +97,10 @@ test('local APEX API is localhost-only and exposes no arbitrary command executio
  assert.match(server,/\/readiness/);
  assert.match(server,/\/workflow\/compile/);
  assert.match(server,/\/audit\/readiness/);
+ assert.match(server,/\/session\/current/);
+ assert.match(server,/\/session\/reset/);
+ assert.match(server,/\/tool\/result/);
+ assert.match(server,/\/doctor/);
  assert.doesNotMatch(server,/subprocess|os\.system|shell=True|eval\(/);
 });
 

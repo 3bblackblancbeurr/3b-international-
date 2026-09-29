@@ -7,7 +7,7 @@ import {spawnSync} from 'node:child_process';
 
 const repoRoot=fileURLToPath(new URL('../',import.meta.url));
 const sourceDir=path.join(repoRoot,'runtime','albert_apex_v2');
-const PACKAGE_VERSION='2.0.0';
+const PACKAGE_VERSION='2.2.0';
 const HEAD_MARK='<!-- ALBERT_APEX_V2_HEAD -->';
 const BODY_MARK='<!-- ALBERT_APEX_V2_BODY -->';
 
