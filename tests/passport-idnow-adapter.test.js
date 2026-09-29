@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
 const edge=readFileSync(new URL('../supabase/functions/passport-idv/index.ts',import.meta.url),'utf8');
-const claim=readFileSync(new URL('../supabase/migrations/20260929055200_passport_identity_provider_event_retry_claim_v2.sql',import.meta.url),'utf8');
+const claim=readFileSync(new URL('../supabase/migrations/20260929164050_passport_identity_provider_event_retry_claim_v2.sql',import.meta.url),'utf8');
 const foundation=readFileSync(new URL('../supabase/migrations/20260928160636_passport_identity_provider_events_v1.sql',import.meta.url),'utf8');
 const docs=readFileSync(new URL('../docs/passport/IDNOW_INTEGRATION.md',import.meta.url),'utf8');
 
