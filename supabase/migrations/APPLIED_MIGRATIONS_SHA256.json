@@ -1,5 +1,5 @@
 {
-  "generated_from": "production migration history reconciled to repository SQL",
+  "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-29",
   "count": 176,
