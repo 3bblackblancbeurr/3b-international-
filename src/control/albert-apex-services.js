@@ -156,6 +156,7 @@ export function capabilityRegistry(runtime={}){
   ['research','Recherche multi-agent vérifiée','ready','research'],
   ['voice','Voix navigateur',runtime.browserVoice===true?'available':'unavailable','voice'],
   ['localRuntime','Runtime Windows ALBERT',albert?'live':local?'unavailable':'offline','local'],
+  ['apexLocalCore','Core APEX localhost',runtime.apexCore===true?'live':albert?'unavailable':local?'unavailable':'offline','local'],
   ['pcControl','Contrôle PC typé',local?'available':'offline','local'],
   ['google','Google Workspace',providerState('google'),'external'],
   ['metricool','Réseaux sociaux',providerState('metricool'),'external'],
