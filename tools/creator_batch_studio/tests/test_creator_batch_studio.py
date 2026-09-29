@@ -50,5 +50,39 @@ class CreatorBatchStudioTests(unittest.TestCase):
             saved = json.loads((output / "creator_batch_report.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["created_outputs"], 4)
 
+    def test_corrupt_image_is_reported_without_aborting_batch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            source = base / "source"
+            output = base / "output"
+            source.mkdir()
+            Image.new("RGB", (64, 64), "green").save(source / "valid.jpg")
+            (source / "broken.jpg").write_bytes(b"not-an-image")
+            report = cbs.process_batch(
+                [source],
+                output,
+                cbs.BatchOptions(output_format="png", prefix="QA", presets=("original",)),
+            )
+            self.assertEqual(report["input_files"], 2)
+            self.assertEqual(report["created_outputs"], 1)
+            self.assertEqual(report["failed_files"], 1)
+            self.assertEqual(len(report["errors"]), 1)
+
+    def test_existing_output_is_never_overwritten(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            source = base / "source"
+            output = base / "output"
+            source.mkdir()
+            Image.new("RGB", (80, 80), "purple").save(source / "same.jpg")
+            options = cbs.BatchOptions(output_format="webp", prefix="SAFE", presets=("original",))
+            first = cbs.process_batch([source], output, options)
+            second = cbs.process_batch([source], output, options)
+            first_path = Path(first["outputs"][0]["output"])
+            second_path = Path(second["outputs"][0]["output"])
+            self.assertTrue(first_path.exists())
+            self.assertTrue(second_path.exists())
+            self.assertNotEqual(first_path, second_path)
+
 if __name__ == "__main__":
     unittest.main()
