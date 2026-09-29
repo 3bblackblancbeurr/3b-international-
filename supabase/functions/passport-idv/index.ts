@@ -243,13 +243,16 @@ async function processWebhook(jwt:string){
   if(!/^[0-9a-f-]{16,80}$/i.test(eventId)||!/^session\.(created|completed|aborted|expired|error)$/.test(eventName)||!sessionId)
     throw new Failure(400,'Webhook IDnow invalide.');
 
-  const inserted=await api('/rest/v1/passport_identity_provider_events',{
-    provider:'idnow',event_id:eventId,event_name:eventName,event_version:eventVersion||null
-  }).catch(error=>{
-    if(error instanceof Failure&&error.status===400)return null;
-    throw error;
+  const claimRows=await api('/rest/v1/rpc/passport_identity_provider_event_claim',{
+    p_provider:'idnow',
+    p_event_id:eventId,
+    p_event_name:eventName,
+    p_event_version:eventVersion||null
   });
-  if(!inserted)return{ok:true,duplicate:true};
+  const claim=Array.isArray(claimRows)?claimRows[0]:claimRows;
+  if(claim?.already_processed===true)return{ok:true,duplicate:true};
+  if(claim?.in_progress===true)throw new Failure(503,'Événement webhook déjà en cours de traitement.');
+  if(claim?.claimed!==true)throw new Failure(503,'Événement webhook non réclamé.');
 
   const refHash=await hmac('idnow-session:'+sessionId);
   const attempts=await api('/rest/v1/passport_identity_verification_attempts?provider=eq.idnow&provider_session_ref_hash=eq.'+
@@ -257,7 +260,7 @@ async function processWebhook(jwt:string){
   const attempt=attempts?.[0];
   if(!attempt?.id){
     await api('/rest/v1/passport_identity_provider_events?provider=eq.idnow&event_id=eq.'+encodeURIComponent(eventId),
-      {processed_at:new Date().toISOString(),processing_result:'unknown_session'},'PATCH');
+      {processed_at:new Date().toISOString(),processing_started_at:null,processing_result:'unknown_session'},'PATCH');
     return{ok:true};
   }
 
@@ -319,7 +322,7 @@ async function processWebhook(jwt:string){
   }
 
   await api('/rest/v1/passport_identity_provider_events?provider=eq.idnow&event_id=eq.'+encodeURIComponent(eventId),{
-    processed_at:new Date().toISOString(),processing_result:resultCode
+    processed_at:new Date().toISOString(),processing_started_at:null,processing_result:resultCode
   },'PATCH');
 
   return{ok:true,state:nextState};
