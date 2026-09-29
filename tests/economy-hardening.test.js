@@ -80,6 +80,10 @@ test('member snapshot exposes authoritative economy progression',()=>{
  assert.match(account,/global_level/);
  assert.match(account,/next_level_xp/);
  assert.match(account,/COINS 3B/);
+ const member=read('../supabase/functions/member-api/index.ts');
+ assert.match(member,/authoritativeXp=Number\.isFinite\(Number\(economy\?\.xp\)\)/);
+ assert.match(member,/profile\.xp=Math\.max\(0,authoritativeXp\)/);
+ assert.match(member,/themeFor\(profile\.theme,profile\.xp\)/);
 });
 
 test('client no longer advertises a hard-coded game reward rate',()=>{
