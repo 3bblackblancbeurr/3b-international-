@@ -1,6 +1,6 @@
 {
   "name": "ALBERT APEX OS V2",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "bind": "127.0.0.1",
   "port": 8766,
   "policy": "fail-closed",
@@ -29,6 +29,10 @@
     "workflow_blueprint",
     "routine_compiler",
     "stack_registry",
-    "research_cross_check"
+    "research_cross_check",
+    "intent_continuity",
+    "tool_trace",
+    "local_doctor",
+    "session_reset"
   ]
 }
