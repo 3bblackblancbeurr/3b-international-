@@ -38,7 +38,7 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
  const localAlbert=runtime?.albert&&typeof runtime.albert==='object'?runtime.albert:null;
  const vram=runtime&&Number.isFinite(Number(runtime.gpu_memory_total_mb))?Math.round(Number(runtime.gpu_memory_total_mb))+' Mo':'non reçue';
  const health=useMemo(()=>Object.entries(state.health),[state.health]);
- const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online,albertRuntime:Boolean(localAlbert?.installed),browserVoice:typeof window!=='undefined'&&Boolean(window.SpeechRecognition||window.webkitSpeechRecognition||window.speechSynthesis)}),[online,localAlbert?.installed]);
+ const capabilities=useMemo(()=>capabilityRegistry({online:typeof navigator==='undefined'?online:navigator.onLine,localRuntime:online,albertRuntime:Boolean(localAlbert?.installed),apexCore:Boolean(localAlbert?.apex_core?.online),browserVoice:typeof window!=='undefined'&&Boolean(window.SpeechRecognition||window.webkitSpeechRecognition||window.speechSynthesis)}),[online,localAlbert?.installed,localAlbert?.apex_core?.online]);
  const liveCapabilities=capabilities.filter(item=>['ready','live','available'].includes(item.state)).length;
  const inbox=useMemo(()=>ambientInbox(state.events,{max:8}),[state.events]);
  const readiness=useMemo(()=>readinessAudit({
@@ -80,10 +80,12 @@ export default function AlbertApexPanel({online=false,runtime=null,privacyMode=f
 
   <div className="apex-columns">
    <div className="apex-block">
-    <div className="apex-block-title"><span>ALBERT WINDOWS LOCAL</span><strong>{localAlbert?.installed?(localAlbert.api_online?'LIVE':'DÉTECTÉ'):online?'NON DÉTECTÉ':'HORS LIGNE'}</strong></div>
+    <div className="apex-block-title"><span>ALBERT WINDOWS LOCAL</span><strong>{localAlbert?.installed?((localAlbert.api_online||localAlbert.apex_core?.online)?'LIVE':'DÉTECTÉ'):online?'NON DÉTECTÉ':'HORS LIGNE'}</strong></div>
     {localAlbert?<div className="apex-health">
      <div><span>Installation</span><b className={localAlbert.installed?'good':'warn'}>{localAlbert.runtime_name||'absente'}</b></div>
-     <div><span>API locale :8765</span><b className={localAlbert.api_online?'good':'warn'}>{localAlbert.api_online?'online':'offline'}</b></div>
+     <div><span>API ALBERT :8765</span><b className={localAlbert.api_online?'good':'warn'}>{localAlbert.api_online?'online':'offline'}</b></div>
+     <div><span>Core APEX :8766</span><b className={localAlbert.apex_core?.online?'good':'warn'}>{localAlbert.apex_core?.online?'online v'+(localAlbert.apex_core.version||'?'):'offline'}</b></div>
+     <div><span>Package APEX</span><b className={localAlbert.apex_package_present?'good':'warn'}>{localAlbert.apex_package_present?'présent':'non détecté'}</b></div>
      <div><span>Lanceur</span><b className={localAlbert.launcher_present?'good':'warn'}>{localAlbert.launcher_present?'présent':'non détecté'}</b></div>
      <div><span>Desktop runtime</span><b className={localAlbert.desktop_present?'good':'warn'}>{localAlbert.desktop_present?'présent':'non détecté'}</b></div>
      <div><span>Ollama</span><b className={localAlbert.processes?.ollama?'good':'idle'}>{localAlbert.processes?.ollama?'actif':'arrêté'}</b></div>
