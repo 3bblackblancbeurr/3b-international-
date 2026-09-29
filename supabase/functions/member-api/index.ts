@@ -21,7 +21,10 @@ async function snapshot(uid:string){
  api('/rest/v1/member_identity_claims?user_id=eq.'+uid+'&select=user_id&limit=1')
  ]);
  if(!profiles?.[0])throw new Failure(404,'Ton compte est en cours de préparation. Réessaie.');
- const profile=profiles[0];profile.theme=themeFor(profile.theme,profile.xp).id;
+ const profile=profiles[0];
+ const authoritativeXp=Number.isFinite(Number(economy?.xp))?Number(economy.xp):Number(profile.xp)||0;
+ profile.xp=Math.max(0,authoritativeXp);
+ profile.theme=themeFor(profile.theme,profile.xp).id;
  return{profile,events,economy,identity_claims_complete:Array.isArray(claims)&&claims.length===1};
 }
 async function authenticate(req:Request){
