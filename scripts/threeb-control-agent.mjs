@@ -5,7 +5,7 @@ import path from 'node:path';
 import {spawn,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const VERSION='1.4.0';
+const VERSION='1.5.0';
 const SUPABASE_URL='https://ttvhcezucsbbmnafrotq.supabase.co';
 const PUBLIC_KEY='sb_publishable_MQUCR8oNdpEgeO2iMKnLQw_wj5XdNC4';
 const ENDPOINT=SUPABASE_URL+'/functions/v1/control-center-agent';
@@ -24,6 +24,7 @@ const CAPABILITIES={
  storage_inventory:true,
  gpu_telemetry:true,
  albert_runtime_telemetry:true,
+ albert_apex_core_telemetry:true,
  open_3b:true,
  open_repo:true,
  open_unreal:true,
@@ -214,6 +215,20 @@ async function probeAlbertApi(){
  }
  return{online:false,endpoint:null};
 }
+async function probeAlbertApexCore(){
+ try{
+  const response=await fetch('http://127.0.0.1:8766/health',{signal:AbortSignal.timeout(1200),cache:'no-store'});
+  if(!response.ok)return{online:false,port:8766,version:null,kill_switch:null};
+  const data=await response.json().catch(()=>({}));
+  return{
+   online:true,
+   port:8766,
+   version:typeof data.version==='string'?data.version.slice(0,40):null,
+   kill_switch:data.kill_switch===true
+  };
+ }catch{return{online:false,port:8766,version:null,kill_switch:null};}
+}
+
 async function albertRuntimeTelemetry(){
  const now=Date.now();
  if(albertCache.value&&now-albertCache.at<15000)return albertCache.value;
@@ -228,6 +243,7 @@ async function albertRuntimeTelemetry(){
   const runtimeRoot=firstExisting(candidates);
   const installed=Boolean(runtimeRoot);
   const launcher=installed?firstExisting([
+   path.join(runtimeRoot,'START_ALBERT_APEX_OS_V2.bat'),
    path.join(runtimeRoot,'START_ALBERT_APEX.bat'),
    path.join(runtimeRoot,'START_ALBERT_AND_MAX.bat'),
    path.join(runtimeRoot,'START_ALBERT_MAX.bat')
@@ -239,7 +255,9 @@ async function albertRuntimeTelemetry(){
   const moduleNames=['memory_v4.py','packaging_v2.py','soak_lab.py','streaming_chat.py','evaluation_200.py'];
   const moduleBases=installed?[runtimeRoot,path.join(runtimeRoot,'albert_max'),path.join(runtimeRoot,'modules'),path.join(runtimeRoot,'core')]:[];
   const modules=moduleNames.filter(name=>moduleBases.some(base=>fs.existsSync(path.join(base,name))));
-  const api=installed?await probeAlbertApi():{online:false,endpoint:null};
+  const [api,apexCore]=installed
+   ?await Promise.all([probeAlbertApi(),probeAlbertApexCore()])
+   :[{online:false,endpoint:null},{online:false,port:8766,version:null,kill_switch:null}];
   const processes=processFlags();
   const models=processes.ollama?ollamaModels():[];
   const value={
@@ -248,6 +266,8 @@ async function albertRuntimeTelemetry(){
    api_online:api.online,
    api_port:8765,
    api_probe:api.endpoint,
+   apex_core:apexCore,
+   apex_package_present:Boolean(installed&&fs.existsSync(path.join(runtimeRoot,'apex_v2','core.py'))),
    launcher_present:Boolean(launcher),
    desktop_present:Boolean(desktop),
    modules,
@@ -259,7 +279,7 @@ async function albertRuntimeTelemetry(){
   albertCache={at:Date.now(),value,pending:null};
   return value;
  })().catch(error=>{
-  const value={installed:false,runtime_name:null,api_online:false,api_port:8765,api_probe:null,launcher_present:false,desktop_present:false,modules:[],models:[],model_count:0,processes:{python:false,ollama:false,edge:false},checked_at:new Date().toISOString(),error:String(error?.message||error).slice(0,160)};
+  const value={installed:false,runtime_name:null,api_online:false,api_port:8765,api_probe:null,apex_core:{online:false,port:8766,version:null,kill_switch:null},apex_package_present:false,launcher_present:false,desktop_present:false,modules:[],models:[],model_count:0,processes:{python:false,ollama:false,edge:false},checked_at:new Date().toISOString(),error:String(error?.message||error).slice(0,160)};
   albertCache={at:Date.now(),value,pending:null};
   return value;
  });
