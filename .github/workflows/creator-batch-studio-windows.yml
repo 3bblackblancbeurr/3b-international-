@@ -1,0 +1,59 @@
+name: Creator Batch Studio Windows
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "tools/creator_batch_studio/**"
+      - ".github/workflows/creator-batch-studio-windows.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "tools/creator_batch_studio/**"
+      - ".github/workflows/creator-batch-studio-windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: tools/creator_batch_studio/requirements.txt
+
+      - name: Install pinned dependencies
+        run: python -m pip install --disable-pip-version-check -r tools/creator_batch_studio/requirements.txt
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tools/creator_batch_studio/tests -v
+
+      - name: Build one-file Windows executable
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name CreatorBatchStudio tools/creator_batch_studio/creator_batch_studio.py
+
+      - name: Package distribution and SHA-256
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/CreatorBatchStudio.exe,tools/creator_batch_studio/README.md -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
+          $hash = (Get-FileHash dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  CreatorBatchStudio-Windows-x64-v1.0.0.zip" | Set-Content -Encoding ascii dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
+
+      - name: Upload Windows package
+        uses: actions/upload-artifact@v4
+        with:
+          name: CreatorBatchStudio-Windows-x64-v1.0.0
+          path: |
+            dist/CreatorBatchStudio.exe
+            dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip
+            dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
+          if-no-files-found: error
+          retention-days: 30
