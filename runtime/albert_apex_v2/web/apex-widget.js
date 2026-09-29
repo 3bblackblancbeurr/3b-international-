@@ -12,6 +12,8 @@
     <article><small>PROFIL</small><strong data-k="profile">—</strong></article>
     <article><small>GPU</small><strong data-k="gpu">—</strong></article>
     <article><small>MODÈLES</small><strong data-k="models">—</strong></article>
+    <article><small>READINESS</small><strong data-k="readiness">—</strong></article>
+    <article><small>ROUTINES</small><strong data-k="routines">—</strong></article>
    </div>
    <div class="aax-switches" data-group="mode">
     <button>AUTO</button><button>LOCAL</button><button>HYBRID</button><button>INTERNET</button>
@@ -48,6 +50,8 @@
   set('mode',s.mode||'—');set('profile',s.resource?.profile||'—');
   set('gpu',s.gpu?.name?s.gpu.name.replace(/^NVIDIA\s*/i,'').slice(0,24):'—');
   set('models',Array.isArray(s.models)?String(s.models.length):'0');
+  set('readiness',s.readiness?String(s.readiness.passed||0)+'/'+String(s.readiness.total||0):'—');
+  set('routines',Array.isArray(s.routines)?String(s.routines.length):'0');
   set('tasks',String(s.tasks?.running||0)+' actives');
   set('verified',String(s.tasks?.verified||0)+' vérifiées');
   active('mode',s.mode);active('profile',s.resource?.profile);
@@ -60,7 +64,7 @@
  async function refresh(){
   try{render(await json('/status'));}catch{
    status.className='aax-status bad';status.querySelector('span').textContent='CORE LOCAL HORS LIGNE';
-   set('mode','—');set('profile','—');set('gpu','—');set('models','—');
+   set('mode','—');set('profile','—');set('gpu','—');set('models','—');set('readiness','—');set('routines','—');
   }
  }
  orb.addEventListener('click',()=>{panel.hidden=false;orb.hidden=true;refresh();});

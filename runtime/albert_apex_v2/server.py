@@ -101,6 +101,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "needs": [row for row in self.runtime.store.needs() if not row.get("resolved_at")]})
             if path == "/skills":
                 return self._json({"ok": True, "skills": self.runtime.store.skills()})
+            if path == "/routines":
+                return self._json({"ok": True, "routines": self.runtime.store.routines()})
+            if path == "/readiness":
+                return self._json({"ok": True, "readiness": self.runtime.readiness()})
+            if path == "/stack":
+                return self._json({"ok": True, "stack": self.runtime.status().get("stack", [])})
             if path == "/session/distill":
                 return self._json({"ok": True, "distillation": self.runtime.distill_session()})
             return self._error(404, "Route inconnue.")
@@ -150,6 +156,22 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/skill/qualify":
                 skill = self.runtime.qualify_skill(str(body.get("skill_id", "")), int(body.get("passed", 0)), int(body.get("failed", 0)))
                 return self._json({"ok": True, "skill": skill})
+            if path == "/routine/create":
+                routine = self.runtime.create_routine(
+                    str(body.get("name", "")),
+                    str(body.get("trigger", "manual")),
+                    body.get("steps") if isinstance(body.get("steps"), list) else [],
+                )
+                return self._json({"ok": True, "routine": routine}, 201)
+            if path == "/workflow/compile":
+                workflow = self.runtime.compile_workflow(
+                    str(body.get("intent", "")),
+                    body.get("connections") if isinstance(body.get("connections"), list) else [],
+                )
+                return self._json({"ok": True, "workflow": workflow})
+            if path == "/audit/readiness":
+                readiness = self.runtime.readiness(body.get("signals") if isinstance(body.get("signals"), dict) else {})
+                return self._json({"ok": True, "readiness": readiness})
             if path == "/core/stop":
                 return self._json({"ok": True, "settings": self.runtime.stop()})
             if path == "/core/resume":

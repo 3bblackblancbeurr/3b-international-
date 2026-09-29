@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
  APEX_TYPED_ACTIONS,typedAction,capabilityRegistry,ambientInbox,deliveryFor,shouldInterrupt,
  createSkillManifest,qualifySkill,nextSkillVersion,sessionSnapshot,distillSession,
- assetProvenance,modelQualification,impactReport
+ assetProvenance,modelQualification,impactReport,
+ APEX_STACK_LAYERS,readinessAudit,compileApexRoutine,compileResearchWorkflow
 } from '../src/control/albert-apex-services.js';
 
 test('Typed actions have explicit permission and unknown actions fail closed',()=>{
@@ -78,4 +79,39 @@ test('Creative provenance, model qualification and impact reports stay inspectab
  const impact=impactReport({files:['a','b'],systems:['auth'],external:['publish'],production:true});
  assert.equal(impact.production,true);
  assert.equal(['medium','high'].includes(impact.level),true);
+});
+
+
+test('18-video readiness audit stays fail-closed and never treats unknown critical checks as passed',()=>{
+ const partial=readinessAudit({localhostOnly:true,originAllowlist:true});
+ assert.equal(partial.ready,false);
+ assert.ok(partial.blockers.includes('typedActions'));
+ const core=readinessAudit({
+  localhostOnly:true,originAllowlist:true,bodyLimit:true,typedActions:true,leastPrivilege:true,
+  approvalGate:true,killSwitch:true,evidenceGate:true,inputValidation:true,secretHygiene:true
+ });
+ assert.equal(core.blockers.length,0);
+ assert.equal(core.failed,0);
+ assert.equal(core.unknown>0,true);
+});
+
+test('APEX stack and routines implement filesystem connections skills routines agents verification without arbitrary actions',()=>{
+ assert.deepEqual(APEX_STACK_LAYERS.map(row=>row.id),['filesystem','connections','skills','routines','agents','verification']);
+ const routine=compileApexRoutine({name:'Brief quotidien',trigger:'daily',steps:[
+  {action:'read',payload:{source:'inbox'}},
+  {action:'generate_preview',payload:{kind:'brief'}}
+ ]});
+ assert.equal(routine.status,'compiled');
+ assert.equal(routine.autoExecute,false);
+ assert.equal(routine.steps.length,2);
+ assert.throws(()=>compileApexRoutine({steps:[{action:'shell_anything'}]}),/inconnue/);
+});
+
+test('research workflow adds independent source scouting criticism verification and evidence gates',()=>{
+ const workflow=compileResearchWorkflow({intent:'Recherche et compare plusieurs sources puis vérifie avant de répondre',connections:['web','github','web']});
+ assert.equal(workflow.researchMode,true);
+ assert.deepEqual(workflow.connections,['web','github']);
+ assert.ok(workflow.nodes.some(node=>node.role==='source-scout'));
+ assert.ok(workflow.nodes.some(node=>node.role==='source-critic'));
+ assert.equal(workflow.nodes.at(-1).gate,'completion-contract');
 });

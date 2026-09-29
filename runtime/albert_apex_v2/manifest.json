@@ -1,6 +1,6 @@
 {
   "name": "ALBERT APEX OS V2",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "bind": "127.0.0.1",
   "port": 8766,
   "policy": "fail-closed",
@@ -24,6 +24,11 @@
     "model_registry",
     "resource_governor",
     "kill_switch",
-    "local_health_api"
+    "local_health_api",
+    "readiness_audit",
+    "workflow_blueprint",
+    "routine_compiler",
+    "stack_registry",
+    "research_cross_check"
   ]
 }
