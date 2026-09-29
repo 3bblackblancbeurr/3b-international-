@@ -58,6 +58,7 @@ Le webhook :
 6. récupère le résultat final directement via l'API IDnow ;
 7. vérifie flowId + subjectId ;
 8. applique `verified` uniquement si outcome=accepted ET le flow a été explicitement approuvé.
+9. réclame chaque `eventId` via un lease atomique côté PostgreSQL ; un événement terminé reste idempotent et un traitement interrompu devient reprenable après deux minutes.
 
 Un résultat IDnow accepté ne suffit donc pas à lui seul si le mauvais flow a été configuré.
 
