@@ -15,7 +15,7 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from .readiness import APEX_STACK, readiness_audit, runtime_self_audit, workflow_blueprint
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 PHASES = ("INTENT", "ASSESS", "PLAN", "EXECUTE", "REVIEW", "VERIFY", "EVIDENCE")
 
 CONSTITUTION = (
@@ -75,6 +75,35 @@ def read_json(path: Path, default: Any) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return default
+
+
+def intent_signature(value: Any) -> str:
+    text = clean_text(value, 2000).lower()
+    text = re.sub(r"[^a-z0-9à-ÿ ]+", "", text, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", text).strip()[:500]
+
+
+def assess_intent_shift(previous: Any, current: Any) -> Dict[str, Any]:
+    prev = intent_signature(previous)
+    nxt = intent_signature(current)
+    if not nxt:
+        return {"changed": False, "confidence": 0.0, "similarity": 0.0, "reason": "Aucune nouvelle intention exploitable."}
+    if not prev:
+        return {"changed": False, "confidence": 1.0, "similarity": 1.0, "reason": "Première intention de la session."}
+    if prev == nxt:
+        return {"changed": False, "confidence": 1.0, "similarity": 1.0, "reason": "Intention inchangée."}
+    a = {token for token in prev.split(" ") if len(token) > 1}
+    b = {token for token in nxt.split(" ") if len(token) > 1}
+    union = a | b
+    similarity = (len(a & b) / len(union)) if union else 0.0
+    changed = similarity < 0.35
+    confidence = max(0.0, min(1.0, (1.0 - similarity) if changed else similarity))
+    return {
+        "changed": changed,
+        "confidence": round(confidence, 2),
+        "similarity": round(similarity, 2),
+        "reason": "Nouvelle intention suffisamment différente." if changed else "Intention proche de la tâche en cours.",
+    }
 
 
 def task_id() -> str:
@@ -268,6 +297,7 @@ class ApexStore:
         self.tasks_path = self.data_root / "tasks.json"
         self.events_path = self.data_root / "events.json"
         self.session_path = self.data_root / "session.json"
+        self.continuity_path = self.data_root / "continuity.json"
         self.skills_path = self.data_root / "skills.json"
         self.routines_path = self.data_root / "routines.json"
         self.needs_path = self.data_root / "need_you.json"
@@ -276,6 +306,54 @@ class ApexStore:
         self.data_root.mkdir(parents=True, exist_ok=True)
         if not self.settings_path.exists():
             atomic_json(self.settings_path, {"mode": "AUTO", "resource_profile": "NORMAL", "kill_switch": False})
+        if not self.continuity_path.exists():
+            atomic_json(self.continuity_path, self._new_session())
+
+    @staticmethod
+    def _new_session() -> Dict[str, Any]:
+        return {
+            "id": "session-" + uuid.uuid4().hex[:12],
+            "startedAt": now_iso(),
+            "currentTaskId": None,
+            "currentIntent": "",
+            "previousIntent": "",
+            "intentConfidence": 0.0,
+            "taskState": "idle",
+            "lastTool": "",
+            "lastResult": "",
+        }
+
+    def session_state(self) -> Dict[str, Any]:
+        base = self._new_session()
+        value = read_json(self.continuity_path, {})
+        if not isinstance(value, dict):
+            return base
+        return {
+            **base,
+            "id": clean_text(value.get("id"), 80) or base["id"],
+            "startedAt": clean_text(value.get("startedAt"), 80) or base["startedAt"],
+            "currentTaskId": clean_text(value.get("currentTaskId"), 100) or None,
+            "currentIntent": clean_text(value.get("currentIntent"), 4000),
+            "previousIntent": clean_text(value.get("previousIntent"), 4000),
+            "intentConfidence": max(0.0, min(1.0, float(value.get("intentConfidence", 0.0) or 0.0))),
+            "taskState": clean_text(value.get("taskState"), 120) or "idle",
+            "lastTool": clean_text(value.get("lastTool"), 160),
+            "lastResult": clean_text(value.get("lastResult"), 1200),
+        }
+
+    def save_session_state(self, value: Dict[str, Any]) -> Dict[str, Any]:
+        clean = {**self.session_state(), **dict(value or {})}
+        clean["id"] = clean_text(clean.get("id"), 80) or ("session-" + uuid.uuid4().hex[:12])
+        clean["startedAt"] = clean_text(clean.get("startedAt"), 80) or now_iso()
+        clean["currentTaskId"] = clean_text(clean.get("currentTaskId"), 100) or None
+        clean["currentIntent"] = clean_text(clean.get("currentIntent"), 4000)
+        clean["previousIntent"] = clean_text(clean.get("previousIntent"), 4000)
+        clean["intentConfidence"] = max(0.0, min(1.0, float(clean.get("intentConfidence", 0.0) or 0.0)))
+        clean["taskState"] = clean_text(clean.get("taskState"), 120) or "idle"
+        clean["lastTool"] = clean_text(clean.get("lastTool"), 160)
+        clean["lastResult"] = clean_text(clean.get("lastResult"), 1200)
+        atomic_json(self.continuity_path, clean)
+        return clean
 
     def settings(self) -> Dict[str, Any]:
         value = read_json(self.settings_path, {})
@@ -352,9 +430,27 @@ class ApexRuntime:
         settings = self.store.settings()
         if settings["kill_switch"]:
             raise RuntimeError("STOP ALBERT est actif.")
+        clean_intent = clean_text(intent, 4000)
+        session = self.store.session_state()
+        shift = assess_intent_shift(session.get("currentIntent"), clean_intent)
+        previous_task_id = session.get("currentTaskId")
+        if shift["changed"] and previous_task_id:
+            rows = self.store.tasks()
+            foreground = next((row for row in rows if row.get("id") == previous_task_id), None)
+            if foreground and foreground.get("status") == "running":
+                self.cancel(previous_task_id, "Nouvelle intention détectée")
+            self.store.emit(
+                "intent.changed",
+                {
+                    "from": clean_text(session.get("currentIntent"), 240),
+                    "to": clean_intent[:240],
+                    "confidence": shift["confidence"],
+                },
+                "attention",
+            )
         task = {
             "id": task_id(),
-            "intent": clean_text(intent, 4000),
+            "intent": clean_intent,
             "spec": SpecCompiler.compile(intent, project),
             "status": "running",
             "phase_index": 0,
@@ -368,6 +464,14 @@ class ApexRuntime:
         rows = self.store.tasks()
         rows.append(task)
         self.store.save_tasks(rows)
+        self.store.save_session_state({
+            **session,
+            "currentTaskId": task["id"],
+            "previousIntent": clean_text(session.get("currentIntent"), 4000) or clean_text(session.get("previousIntent"), 4000),
+            "currentIntent": clean_intent,
+            "intentConfidence": shift["confidence"],
+            "taskState": "running",
+        })
         self.store.emit("task.created", {"task_id": task["id"], "kind": task["spec"]["kind"]})
         return task
 
@@ -403,7 +507,11 @@ class ApexRuntime:
             if meta["strategy_switch"]:
                 task["strategy"] = {"switch_required": True, "reason": "boucle ou échecs répétés", "at": now_iso()}
             return task
-        return self._update(task_id_value, apply)
+        task = self._update(task_id_value, apply)
+        session = self.store.session_state()
+        if session.get("currentTaskId") == task_id_value:
+            self.store.save_session_state({**session, "taskState": "running:" + clean_text(phase, 40).lower()})
+        return task
 
     def fail(self, task_id_value: str, error: Any) -> Dict[str, Any]:
         def apply(task: Dict[str, Any]) -> Dict[str, Any]:
@@ -412,6 +520,9 @@ class ApexRuntime:
             task.setdefault("history", []).append({"phase": task.get("phase"), "label": task["error"], "status": "failed", "at": now_iso()})
             return task
         task = self._update(task_id_value, apply)
+        session = self.store.session_state()
+        if session.get("currentTaskId") == task_id_value:
+            self.store.save_session_state({**session, "taskState": "failed", "lastResult": clean_text(error, 1200)})
         self.store.emit("task.failed", {"task_id": task_id_value}, "attention")
         return task
 
@@ -421,6 +532,9 @@ class ApexRuntime:
             task["error"] = clean_text(reason, 800)
             return task
         task = self._update(task_id_value, apply)
+        session = self.store.session_state()
+        if session.get("currentTaskId") == task_id_value:
+            self.store.save_session_state({**session, "taskState": "cancelled", "lastResult": clean_text(reason, 800)})
         self.store.emit("task.cancelled", {"task_id": task_id_value}, "normal")
         return task
 
@@ -448,8 +562,60 @@ class ApexRuntime:
             task["status"] = "verified"
             return task
         task = self._update(task_id_value, apply)
+        session = self.store.session_state()
+        if session.get("currentTaskId") == task_id_value:
+            self.store.save_session_state({
+                **session,
+                "taskState": "verified",
+                "lastResult": "Vérification complète.",
+            })
         self.store.emit("task.verified", {"task_id": task_id_value, "evidence_id": task["evidence"]["id"]})
         return task
+
+    def record_tool_result(self, task_id_value: str, tool: str, result: Any = "", ok: bool = True) -> Dict[str, Any]:
+        session = self.store.session_state()
+        safe_tool = clean_text(tool, 160)
+        safe_result = clean_text(result, 1200)
+        if session.get("currentTaskId") == clean_text(task_id_value, 100):
+            session = self.store.save_session_state({
+                **session,
+                "lastTool": safe_tool,
+                "lastResult": safe_result,
+                "taskState": "running" if ok else "tool-error",
+            })
+        self.store.emit(
+            "tool.completed" if ok else "tool.failed",
+            {"task_id": clean_text(task_id_value, 100), "tool": safe_tool, "result": safe_result},
+            "quiet" if ok else "attention",
+        )
+        return session
+
+    def reset_session(self) -> Dict[str, Any]:
+        session = self.store._new_session()
+        self.store.save_session_state(session)
+        self.store.emit("session.started", {"session_id": session["id"]}, "quiet")
+        return session
+
+    def doctor(self) -> Dict[str, Any]:
+        models = ModelRegistry.ollama_models()
+        gpu = ModelRegistry.gpu()
+        checks = [
+            {"id": "runtime_root", "state": "ready" if self.root.exists() else "error", "detail": str(self.root)},
+            {"id": "data_root", "state": "ready" if self.store.data_root.exists() else "error", "detail": str(self.store.data_root)},
+            {"id": "settings", "state": "ready" if isinstance(read_json(self.store.settings_path, None), dict) else "error", "detail": str(self.store.settings_path)},
+            {"id": "continuity", "state": "ready" if isinstance(read_json(self.store.continuity_path, None), dict) else "error", "detail": str(self.store.continuity_path)},
+            {"id": "ollama", "state": "ready" if models else "unknown", "detail": f"{len(models)} modèle(s) détecté(s)"},
+            {"id": "gpu", "state": "ready" if gpu else "unknown", "detail": clean_text(gpu.get("name") if gpu else "GPU non détecté", 160)},
+        ]
+        has_error = any(check["state"] == "error" for check in checks)
+        return {
+            "state": "attention" if has_error else "nominal",
+            "checks": checks,
+            "models": models,
+            "gpu": gpu,
+            "session": self.store.session_state(),
+            "checked_at": now_iso(),
+        }
 
     def propose_action(self, action: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         typed = TypedAction.build(action, payload)
@@ -631,6 +797,7 @@ class ApexRuntime:
             "mode": settings["mode"],
             "resource": ResourceGovernor.policy(settings["resource_profile"]),
             "kill_switch": settings["kill_switch"],
+            "session": self.store.session_state(),
             "constitution": self.constitution(),
             "models": models,
             "model_route": ModelRegistry.choose("chat", settings["mode"], models),
