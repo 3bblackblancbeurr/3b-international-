@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://3b-international.vercel.app/schemas/passport/partner-claims-v1.schema.json",
+  "title": "Passeport 3B Partner Claims v1",
+  "description": "Draft minimal disclosure contract for future 3B partner presentations. This file is not an active credential issuer declaration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "subject", "passport_active"],
+  "properties": {
+    "version": {"const": 1},
+    "subject": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 160,
+      "description": "Pairwise/pseudonymous identifier scoped to the partner."
+    },
+    "passport_active": {"type": "boolean"},
+    "identity_verified": {"type": "boolean"},
+    "age_over_16": {"type": "boolean"},
+    "age_over_18": {"type": "boolean"},
+    "public_handle": {"type": "string", "minLength": 1, "maxLength": 32},
+    "creator_status": {
+      "type": "string",
+      "enum": ["none", "active", "suspended"]
+    },
+    "entitlements": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z0-9._:-]{2,80}$"}
+    },
+    "issued_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"}
+  }
+}
