@@ -1,0 +1,14 @@
+Creator Batch Studio v1.0
+Licence utilisateur final — version 2026-09-29
+
+Copyright © 2026. Tous droits réservés.
+
+Une licence achetée autorise l'acheteur à installer et utiliser Creator Batch Studio pour ses propres besoins personnels ou professionnels sur ses appareils.
+
+Il est interdit de revendre, redistribuer, publier, louer, sous-licencier, modifier pour redistribution ou mettre à disposition le logiciel, son exécutable ou son archive comme produit autonome sans autorisation écrite.
+
+Les images et autres contenus traités par le logiciel restent sous la responsabilité de l'utilisateur. L'utilisateur doit disposer des droits nécessaires sur les contenus qu'il traite.
+
+Le logiciel est fourni en l'état, sous réserve des garanties légales impératives applicables. Cette licence ne limite aucun droit auquel un consommateur ne peut légalement renoncer.
+
+La licence couvre la version 1.x acquise, sauf indication commerciale contraire.
