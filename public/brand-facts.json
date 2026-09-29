@@ -1,0 +1,31 @@
+{
+  "name": "3B International",
+  "distinctiveName": "3B International — Black • Blanc • Beur",
+  "slogan": "Ce n’est pas une marque, c’est un héritage.",
+  "canonical": "https://3b-international.vercel.app/",
+  "trademark": {
+    "jurisdiction": "France",
+    "office": "INPI",
+    "nationalNumber": "5258267",
+    "type": "figurative trademark",
+    "filingDate": "2026-05-14",
+    "classes": [
+      25,
+      35,
+      42
+    ],
+    "officialFactsPage": "https://3b-international.vercel.app/marque-3b-international.html"
+  },
+  "officialPages": {
+    "about": "https://3b-international.vercel.app/a-propos-3b-international.html",
+    "discover": "https://3b-international.vercel.app/decouvrir-3b.html",
+    "app": "https://3b-international.vercel.app/application-3b-international.html",
+    "press": "https://3b-international.vercel.app/presse-3b-international.html"
+  },
+  "sameAs": [
+    "https://www.instagram.com/3b.blackblancbeurr/",
+    "https://www.tiktok.com/@zakaria42adsr",
+    "https://www.youtube.com/channel/UCDvOKA7Hl54DOxtY_SPXrpg",
+    "https://github.com/3bblackblancbeurr/3b-international-"
+  ]
+}
