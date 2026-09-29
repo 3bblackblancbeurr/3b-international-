@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-29",
-  "count": 164,
+  "count": 176,
   "migrations": [
     {
       "version": "20260910020445",
@@ -755,14 +755,64 @@
       "sha256": "482728a1d6a254194288617c96c64c27526ddf922fde29f0bc0df05f52f8f128"
     },
     {
-      "version": "20260926215345",
-      "name": "nosbloc_staging_creator_economy_guarded",
-      "sha256": "81ac3299077e6c99a8519cfff2a2cbf5e69da2911fe63c380313fb785e89595c"
+      "version": "20260926205824",
+      "name": "penalty_rush_final_career_v8",
+      "sha256": "ff23035d87c09b22663632f157a73e9064ba7aa712164db43e74faae71bc5b91"
     },
     {
-      "version": "20260926215408",
-      "name": "nosbloc_staging_creator_economy_fk_indexes",
-      "sha256": "5964ba05030a16c82147203ff89f3dfc3a4ef9b0b83a880c3b756dc1f7a2e4d5"
+      "version": "20260926210949",
+      "name": "penalty_rush_progression_international_v9",
+      "sha256": "403b39b7fd8d4261d66fd4197352a8ebcf0c695568026af05bee8055255a21c1"
+    },
+    {
+      "version": "20260926211538",
+      "name": "penalty_rush_fk_indexes_v10",
+      "sha256": "ef57250722cbb40eb329f458fa4e988e9865ec2ed67a72ed51f648f4722b4512"
+    },
+    {
+      "version": "20260926212007",
+      "name": "penalty_rush_national_finalization_v11",
+      "sha256": "c8aec8462ebac8a09efa94e356bde2359c41996905ce28081501a69a83d509c7"
+    },
+    {
+      "version": "20260926212325",
+      "name": "penalty_rush_antifarm_competitive_v12",
+      "sha256": "d42ff0485b7d9b973b1d4f7e4d707d5e0f1484faecb81af6da59156fbf5b3e17"
+    },
+    {
+      "version": "20260926223347",
+      "name": "nosbloc_runtime_core_v1",
+      "sha256": "5e2e41e2529418d1f9820a2a068322aeadd7c6f099ac1bf50cab81904d897724"
+    },
+    {
+      "version": "20260926223413",
+      "name": "nosbloc_runtime_fk_indexes",
+      "sha256": "3c39547f5d2e0b46e2a9085a7ba67fd670594d92d52cd7421f6850d84d419028"
+    },
+    {
+      "version": "20260926223557",
+      "name": "nosbloc_creator_economy_guarded_v1",
+      "sha256": "48694b7e1f7da76b3dda512afa3d56c3c849a679b11173aa37d22f6b751c2e74"
+    },
+    {
+      "version": "20260926223807",
+      "name": "nosbloc_discover_privacy_hardening",
+      "sha256": "a9b6fc60d9bdd4d817f427c27f3c372a082cd0adedc19ecc0b4cfc046ebf87f0"
+    },
+    {
+      "version": "20260926224636",
+      "name": "nosbloc_team_snapshot_v2",
+      "sha256": "3dd34eabe379352745168ed4cb2b8964a04c32c0e98d7a9ae185b0009585b4f3"
+    },
+    {
+      "version": "20260926225107",
+      "name": "nosbloc_team_privacy_minimization",
+      "sha256": "538344f71b3e7cbd69a3588c8c7b6f7b20ed1e94ee8a493023d3ccc157e09cdd"
+    },
+    {
+      "version": "20260926232615",
+      "name": "command_provider_vault_v1",
+      "sha256": "dec52b84957a32f19d633768ca741898358b237f84fdc174093b29e58cdd614f"
     },
     {
       "version": "20260927003738",
@@ -783,6 +833,11 @@
       "version": "20260927160710",
       "name": "albert_spaces",
       "sha256": "c6d1aead362d9041f09c6db5c456cf0fb99fc7eee0420e8a5ec296ae493fafbc"
+    },
+    {
+      "version": "20260928114542",
+      "name": "city3b_independent_game_v1",
+      "sha256": "b7918614a35bf365d987c1702df715edc2cd6bcfaadbd5184e6d4c804a20d4ff"
     },
     {
       "version": "20260928122225",
@@ -823,6 +878,11 @@
       "version": "20260928160636",
       "name": "passport_identity_provider_events_v1",
       "sha256": "c23d2b4656224ef11d3bef6cc7119b7d81e0acb05b754fab2c07eb26a41d0574"
+    },
+    {
+      "version": "20260929164050",
+      "name": "passport_identity_provider_event_retry_claim_v2",
+      "sha256": "e3d31850a88892d8b3874228eabc408bf528673e79d8552bcbbe8a5560798216"
     }
   ]
 }
