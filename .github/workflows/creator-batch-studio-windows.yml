@@ -40,10 +40,23 @@ jobs:
       - name: Build one-file Windows executable
         run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name CreatorBatchStudio tools/creator_batch_studio/creator_batch_studio.py
 
+      - name: Smoke-test packaged Windows executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force smoke/input | Out-Null
+          New-Item -ItemType Directory -Force smoke/output | Out-Null
+          python -c "from PIL import Image; Image.new('RGB',(640,360),'navy').save('smoke/input/smoke.jpg')"
+          $exe = (Resolve-Path "dist/CreatorBatchStudio.exe").Path
+          $inputDir = (Resolve-Path "smoke/input").Path
+          $outputDir = (Resolve-Path "smoke/output").Path
+          $process = Start-Process -FilePath $exe -ArgumentList @("--input",$inputDir,"--output",$outputDir,"--format","webp","--quality","82","--prefix","SMOKE","--preset","instagram_square","--preset","youtube_thumbnail") -Wait -PassThru -NoNewWindow
+          if ($process.ExitCode -ne 0) { throw "Packaged EXE smoke test failed with exit code $($process.ExitCode)" }
+          python -c "import json; from pathlib import Path; from PIL import Image; p=Path('smoke/output'); r=json.loads((p/'creator_batch_report.json').read_text(encoding='utf-8')); assert r['created_outputs']==2 and r['failed_files']==0, r; sizes=sorted(Image.open(x['output']).size for x in r['outputs']); assert sizes==[(1080,1080),(1280,720)], sizes"
+
       - name: Package distribution and SHA-256
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/CreatorBatchStudio.exe,tools/creator_batch_studio/README.md -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
+          Compress-Archive -Path dist/CreatorBatchStudio.exe,tools/creator_batch_studio/README.md,tools/creator_batch_studio/QUICK_START.md,tools/creator_batch_studio/FAQ.md,tools/creator_batch_studio/LICENSE.txt -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
           $hash = (Get-FileHash dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Algorithm SHA256).Hash.ToLower()
           "$hash  CreatorBatchStudio-Windows-x64-v1.0.0.zip" | Set-Content -Encoding ascii dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
 
