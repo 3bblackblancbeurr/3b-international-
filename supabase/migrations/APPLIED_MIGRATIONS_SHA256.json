@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-09-29",
-  "count": 164,
+  "count": 176,
   "migrations": [
     {
       "version": "20260910020445",
@@ -755,14 +755,76 @@
       "sha256": "482728a1d6a254194288617c96c64c27526ddf922fde29f0bc0df05f52f8f128"
     },
     {
-      "version": "20260926215345",
-      "name": "nosbloc_staging_creator_economy_guarded",
-      "sha256": "81ac3299077e6c99a8519cfff2a2cbf5e69da2911fe63c380313fb785e89595c"
+      "version": "20260926205824",
+      "name": "penalty_rush_final_career_v8",
+      "sha256": "b858da0b235b6cc2886f0767952faab315f8d99efed7dea36613024a8d6865d9",
+      "provenance": "reconciled_repo_sql_from_production_history"
     },
     {
-      "version": "20260926215408",
-      "name": "nosbloc_staging_creator_economy_fk_indexes",
-      "sha256": "5964ba05030a16c82147203ff89f3dfc3a4ef9b0b83a880c3b756dc1f7a2e4d5"
+      "version": "20260926210949",
+      "name": "penalty_rush_progression_international_v9",
+      "sha256": "cb6045086539e452f5b73489fd8268570d02a9aa74c6d1e8130a2fc314de64aa",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926211538",
+      "name": "penalty_rush_fk_indexes_v10",
+      "sha256": "5ece8f18f6fde0bde9a146d62491317e4147f2e0bd8913fcf248fb3687325531",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926212007",
+      "name": "penalty_rush_national_finalization_v11",
+      "sha256": "52201d5df628033f9625cdb148d9d3e8a64c8a5dc836e2ee9ad0173e1b58a26d",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926212325",
+      "name": "penalty_rush_antifarm_competitive_v12",
+      "sha256": "f17420b2f661e7a525a51dbd0f925544462e65ef029566cef68977f4b4e9954d",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926223347",
+      "name": "nosbloc_runtime_core_v1",
+      "sha256": "ad7503702feeada5ffae33150aa31ef82c7c451b2c2f9c5178d8668bb37f61e6",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926223413",
+      "name": "nosbloc_runtime_fk_indexes",
+      "sha256": "acf3ece1f1c9ebda8df69f8e5a41a54de76d2ebfa1cae36e052ee3a587426dda",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926223557",
+      "name": "nosbloc_creator_economy_guarded_v1",
+      "sha256": "c6aba9b44b0e3b612954daf2fb672400bc3d66df0a885b39d56211e93c94e690",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926223807",
+      "name": "nosbloc_discover_privacy_hardening",
+      "sha256": "9ece6d9a33e3fc21a48d3183497d6103cdfe805219fad1612b897287ff41a30f",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926224636",
+      "name": "nosbloc_team_snapshot_v2",
+      "sha256": "d1a2be6ac00cff22ac73b3371598746b65d16b161191bd7cb955cfce90c5bd5f",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926225107",
+      "name": "nosbloc_team_privacy_minimization",
+      "sha256": "d7cc3291a3bd34af6533ac5efb3ff6bd54c07c1fcebded0de5a1f65cc276b98c",
+      "provenance": "reconciled_repo_sql_from_production_history"
+    },
+    {
+      "version": "20260926232615",
+      "name": "command_provider_vault_v1",
+      "sha256": "c5a291f8ecc1bd5005f05dd6620347c99c351c2cd22e5433c603d5542682c964",
+      "provenance": "reconciled_repo_sql_from_production_history"
     },
     {
       "version": "20260927003738",
@@ -783,6 +845,12 @@
       "version": "20260927160710",
       "name": "albert_spaces",
       "sha256": "c6d1aead362d9041f09c6db5c456cf0fb99fc7eee0420e8a5ec296ae493fafbc"
+    },
+    {
+      "version": "20260928114542",
+      "name": "city3b_independent_game_v1",
+      "sha256": "2f9a558d347b5fcc11c2d25896a94f70f591bc3f1d0a45887c1d750f6e0c33cc",
+      "provenance": "reconciled_repo_sql_from_production_history"
     },
     {
       "version": "20260928122225",
@@ -823,6 +891,30 @@
       "version": "20260928160636",
       "name": "passport_identity_provider_events_v1",
       "sha256": "c23d2b4656224ef11d3bef6cc7119b7d81e0acb05b754fab2c07eb26a41d0574"
+    },
+    {
+      "version": "20260929164050",
+      "name": "passport_identity_provider_event_retry_claim_v2",
+      "sha256": "e3d31850a88892d8b3874228eabc408bf528673e79d8552bcbbe8a5560798216"
     }
-  ]
+  ],
+  "reconciliation": {
+    "date": "2026-09-29",
+    "reason": "13 applied migrations were absent from Git; SQL was restored from Supabase migration history and locked to the restored repository bytes.",
+    "restored_versions": [
+      "20260926205824",
+      "20260926210949",
+      "20260926211538",
+      "20260926212007",
+      "20260926212325",
+      "20260926223347",
+      "20260926223413",
+      "20260926223557",
+      "20260926223807",
+      "20260926224636",
+      "20260926225107",
+      "20260926232615",
+      "20260928114542"
+    ]
+  }
 }
