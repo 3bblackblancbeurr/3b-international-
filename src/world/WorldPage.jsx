@@ -152,6 +152,11 @@ function WorldSession({uid,goTo}){
  function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
  function interactDefault(item){
   if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
+  if(item.type==='kais'){
+   const key='kais:'+saveRef.current.region,seen=saveRef.current.adventure.cinematicSeen?.includes(key);
+   if(seen){audio.current?.speak('Écoute les versions. Vérifie les preuves. La Justice commence par les faits.',{character:'narrator'});announce('Kaïs · La Justice commence par les faits.');return;}
+   enqueueCinematics([{kind:'kais-guidance',key,region:saveRef.current.region,context:{region:saveRef.current.region},priority:88}]);return;
+  }
   if(item.type==='portal'){travel(item.id);return;}
   if(item.type==='hubNpc'){
    const next=act({type:'hubNpcTalk',id:item.npcId});if(!next)return;
