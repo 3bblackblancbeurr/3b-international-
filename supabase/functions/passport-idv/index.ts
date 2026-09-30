@@ -32,7 +32,7 @@ const ORIGINS=new Set([
   'http://localhost:5174','http://127.0.0.1:5174'
 ]);
 
-class Failure extends Error{constructor(public status:number,message:string){super(message);}}
+class Failure extends Error{constructor(public status:number,message:string,public code?:string){super(message);}}
 
 const encoder=new TextEncoder();
 const hex=(bytes:ArrayBuffer)=>Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
@@ -60,7 +60,7 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
     signal:AbortSignal.timeout(12000)
   });
   const data=await response.json().catch(()=>null);
-  if(!response.ok)throw new Failure(response.status>=500?503:400,'La demande serveur n’a pas abouti.');
+  if(!response.ok)throw new Failure(response.status>=500?503:400,'La demande serveur n’a pas abouti.',typeof data?.code==='string'?data.code:undefined);
   return data;
 }
 
@@ -246,10 +246,19 @@ async function processWebhook(jwt:string){
   const inserted=await api('/rest/v1/passport_identity_provider_events',{
     provider:'idnow',event_id:eventId,event_name:eventName,event_version:eventVersion||null
   }).catch(error=>{
-    if(error instanceof Failure&&error.status===400)return null;
+    if(error instanceof Failure&&error.code==='23505')return null;
     throw error;
   });
-  if(!inserted)return{ok:true,duplicate:true};
+  if(!inserted){
+    const events=await api('/rest/v1/passport_identity_provider_events?provider=eq.idnow&event_id=eq.'+
+      encodeURIComponent(eventId)+'&select=event_name,event_version,processed_at&limit=1');
+    const previous=events?.[0];
+    if(!previous)throw new Failure(503,'Événement webhook introuvable. Réessaie plus tard.');
+    if(previous.event_name!==eventName||previous.event_version!==(eventVersion||null))
+      throw new Failure(409,'Référence événement IDnow incohérente.');
+    // Only completed processing is a duplicate. A failed delivery must resume.
+    if(previous.processed_at)return{ok:true,duplicate:true};
+  }
 
   const refHash=await hmac('idnow-session:'+sessionId);
   const attempts=await api('/rest/v1/passport_identity_verification_attempts?provider=eq.idnow&provider_session_ref_hash=eq.'+
