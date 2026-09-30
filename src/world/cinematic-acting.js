@@ -13,6 +13,12 @@ const PLANS=Object.freeze({
     Object.freeze({at:.58,hero:'Talk',focus:'Idle',duration:.9}),
     Object.freeze({at:.82,hero:'Idle',focus:'Idle',duration:1}),
   ]),
+  'kais-guidance':Object.freeze([
+    Object.freeze({at:0,hero:'Idle',focus:'Idle',duration:1.2}),
+    Object.freeze({at:.28,hero:'Idle',focus:'Talk',duration:1.2}),
+    Object.freeze({at:.58,hero:'Talk',focus:'Idle',duration:1.0}),
+    Object.freeze({at:.84,hero:'Idle',focus:'Idle',duration:.8}),
+  ]),
   'story-alliance':Object.freeze([
     Object.freeze({at:0,hero:'Idle',focus:'Talk',duration:1.2}),
     Object.freeze({at:.34,hero:'Talk',focus:'Idle',duration:1.1}),
