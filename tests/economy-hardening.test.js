@@ -84,8 +84,8 @@ test('member snapshot exposes authoritative economy progression',()=>{
  assert.match(member,/authoritativeXp=Number\.isFinite\(Number\(economy\?\.xp\)\)/);
  assert.match(member,/profile\.xp=Math\.max\(0,authoritativeXp\)/);
  assert.match(member,/themeFor\(profile\.theme,profile\.xp\)/);
- assert.match(member,/\/rest\/v1\/inventory\?user_id=eq\./);
- assert.match(member,/\/rest\/v1\/digital_store_entitlements\?user_id=eq\./);
+ assert.match(member,/optionalList\('\/rest\/v1\/inventory\?user_id=eq\.'/);
+ assert.match(member,/optionalList\('\/rest\/v1\/digital_store_entitlements\?user_id=eq\.'/);
  assert.match(member,/inventory:Array\.isArray\(inventory\)\?inventory:\[\]/);
  const loyalty=read('../src/loyalty/LoyaltyContext.jsx');
  assert.match(loyalty,/inventory:owned\?\.inventory\|\|\[\]/);
