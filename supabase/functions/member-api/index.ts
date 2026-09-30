@@ -13,16 +13,27 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
  return data;
 }
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
+const optionalList=(path:string)=>api(path).catch(()=>[]);
 async function snapshot(uid:string){
- const [profiles,events,economy,claims]=await Promise.all([
+ const [profiles,events,economy,claims,inventory,entitlements]=await Promise.all([
  api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=user_id,handle,name,country,xp,points,theme,created_at,public_badge_key,public_title,public_verified,passport_public_id,passport_issued_at,passport_version,passport_state,identity_verification_state,identity_assurance_level,identity_verified_at'),
  api('/rest/v1/member_ledger?user_id=eq.'+uid+'&select=id,source,label,xp,points,created_at,event_key&order=created_at.desc&limit=80'),
  rpc('threeb_progress_snapshot_server',{p_user:uid}),
- api('/rest/v1/member_identity_claims?user_id=eq.'+uid+'&select=user_id&limit=1')
+ api('/rest/v1/member_identity_claims?user_id=eq.'+uid+'&select=user_id&limit=1'),
+ optionalList('/rest/v1/inventory?user_id=eq.'+uid+'&select=item_code,quantity,acquired_at&order=acquired_at.desc&limit=250'),
+ optionalList('/rest/v1/digital_store_entitlements?user_id=eq.'+uid+'&status=eq.active&select=product_code,item_instance_id,granted_at&order=granted_at.desc&limit=250')
  ]);
  if(!profiles?.[0])throw new Failure(404,'Ton compte est en cours de préparation. Réessaie.');
- const profile=profiles[0];profile.theme=themeFor(profile.theme,profile.xp).id;
- return{profile,events,economy,identity_claims_complete:Array.isArray(claims)&&claims.length===1};
+ const profile=profiles[0];
+ const authoritativeXp=Number.isFinite(Number(economy?.xp))?Number(economy.xp):Number(profile.xp)||0;
+ profile.xp=Math.max(0,authoritativeXp);
+ profile.theme=themeFor(profile.theme,profile.xp).id;
+ return{
+  profile,events,economy,
+  inventory:Array.isArray(inventory)?inventory:[],
+  entitlements:Array.isArray(entitlements)?entitlements:[],
+  identity_claims_complete:Array.isArray(claims)&&claims.length===1
+ };
 }
 async function authenticate(req:Request){
  const header=req.headers.get('authorization')||'';if(!header.startsWith('Bearer '))throw new Failure(401,'Connecte-toi à ton compte 3B.');

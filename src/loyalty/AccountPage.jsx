@@ -25,7 +25,7 @@ function initialMode(){
 }
 
 export default function AccountPage({legacy,options,toggleOption,goTo}){
- const account=useLoyalty(),{profile}=account,economy=account.economy;
+ const account=useLoyalty(),{profile}=account,economy=account.economy,inventory=account.inventory||[],entitlements=account.entitlements||[];
  const[mode,setMode]=useState(initialMode);
  const[fields,setFields]=useState({
   identifier:'',handle:'',email:'',emailConfirm:'',password:'',passwordConfirm:'',
@@ -245,6 +245,20 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <p>{profile.identity_verification_state==='verified'?'Identité civile vérifiée.':profile.identity_verification_state==='pending'?'Vérification d’identité en cours.':'Dossier prêt pour une future vérification externe. Aucune identité civile n’est considérée vérifiée sans preuve externe.'}</p>
     </div>
    </section>}
+
+   <section className="account-command-center" aria-labelledby="inventory-center-title">
+    <div className="account-command-heading">
+     <div><span className="loyalty-eyebrow">INVENTAIRE 3B / COMPTE SERVEUR</span><h2 id="inventory-center-title">Tes objets suivent ton Passeport.</h2></div>
+     <p>Les quantités viennent du serveur 3B. Les achats numériques actifs sont reliés au même compte et ne sont jamais calculés depuis le navigateur.</p>
+    </div>
+    <div className="loyalty-numbers">
+     <div><span>OBJETS</span><strong>{inventory.reduce((sum,item)=>sum+Math.max(0,Number(item.quantity)||0),0)}</strong></div>
+     <div><span>RÉFÉRENCES</span><strong>{inventory.length}</strong></div>
+     <div><span>DROITS ACTIFS</span><strong>{entitlements.length}</strong></div>
+     <div><span>PASSEPORT</span><strong>{profile.passport_state==='active'?'ACTIF':'—'}</strong></div>
+    </div>
+    {inventory.length>0&&<p className="account-progress-next">Derniers objets : {inventory.slice(0,5).map(item=>item.item_code+' ×'+item.quantity).join(' · ')}</p>}
+   </section>
 
    <section className="account-command-center" aria-labelledby="member-center-title">
     <div className="account-command-heading">

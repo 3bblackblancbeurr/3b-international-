@@ -80,6 +80,19 @@ test('member snapshot exposes authoritative economy progression',()=>{
  assert.match(account,/global_level/);
  assert.match(account,/next_level_xp/);
  assert.match(account,/COINS 3B/);
+ const member=read('../supabase/functions/member-api/index.ts');
+ assert.match(member,/authoritativeXp=Number\.isFinite\(Number\(economy\?\.xp\)\)/);
+ assert.match(member,/profile\.xp=Math\.max\(0,authoritativeXp\)/);
+ assert.match(member,/themeFor\(profile\.theme,profile\.xp\)/);
+ assert.match(member,/optionalList\('\/rest\/v1\/inventory\?user_id=eq\.'/);
+ assert.match(member,/optionalList\('\/rest\/v1\/digital_store_entitlements\?user_id=eq\.'/);
+ assert.match(member,/inventory:Array\.isArray\(inventory\)\?inventory:\[\]/);
+ const loyalty=read('../src/loyalty/LoyaltyContext.jsx');
+ assert.match(loyalty,/inventory:owned\?\.inventory\|\|\[\]/);
+ assert.match(loyalty,/entitlements:owned\?\.entitlements\|\|\[\]/);
+ const accountPage=read('../src/loyalty/AccountPage.jsx');
+ assert.match(accountPage,/INVENTAIRE 3B \/ COMPTE SERVEUR/);
+ assert.match(accountPage,/inventory\.reduce/);
 });
 
 test('client no longer advertises a hard-coded game reward rate',()=>{

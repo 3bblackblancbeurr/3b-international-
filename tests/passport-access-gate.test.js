@@ -22,9 +22,12 @@ test('App uses one Passport gate with no Passport 2 rule', () => {
   assert.doesNotMatch(app, /passportLevel/);
 });
 
-test('Passport access does not depend on inventory', () => {
-  assert.doesNotMatch(memberApi, /inventory\?user_id/);
-  assert.doesNotMatch(loyalty, /inventory:Array/);
+test('Passport access does not depend on inventory availability', () => {
+  assert.match(memberApi, /const optionalList=.*\.catch\(\(\)=>\[\]\)/);
+  assert.match(memberApi, /optionalList\('\/rest\/v1\/inventory\?user_id=eq\.'/);
+  assert.match(memberApi, /optionalList\('\/rest\/v1\/digital_store_entitlements\?user_id=eq\.'/);
+  assert.doesNotMatch(app, /hasPassportAccess\([^)]*inventory/);
+  assert.match(loyalty, /const passport=passportFromProfile\(owned\?\.profile,session\?\.user\)/);
 });
 
 test('Premium intro and exact spoken welcome are pinned', () => {
