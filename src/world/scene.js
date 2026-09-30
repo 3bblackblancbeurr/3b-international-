@@ -9,7 +9,7 @@ import {combatCue,createCombatEffects} from './combat-effects.js';
 import {LANDMARK_SITE} from './heritage.js';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {loadWorldModels} from './models.js';
+import {loadWorldModels,createKais} from './models.js';
 import {createLivingActor} from './living.js';
 import {DEFAULT_ORBIT,restoreOrbit,rotateOrbit,zoomOrbit,orbitView} from './orbit.js';
 import {advanceMotion,pointerStick,joystickProfile,sprintIntent,createQualityController,createMotionSmoother} from './motion.js';
@@ -208,6 +208,9 @@ function hubNpcAvatar(item){
   const stone=material(c?.stone||'#cfc7ae'),gold=material(accent,{emissive:accent,emissiveIntensity:.22,metalness:.4});
   for(const item of items){
    if(item.type==='portal'){portal(item);continue;}
+   if(item.type==='kais'){
+    const controller=createKais(models.kais);controller.setColor?.(c?.color||'#e4cd94');controller.object.position.set(item.x,groundY(item.x,item.z),item.z);root.add(controller.object);actors.push({controller,itemId:item.id,creature:false,x:item.x,z:item.z});itemVisuals.set(item.id,[controller.object]);continue;
+   }
    if(item.type==='hubNpc'){
     item.homeX=item.x;item.homeZ=item.z;
     const controller=createLivingActor(models.living,{avatar:hubNpcAvatar(item),scale:1.9,onError});
@@ -578,6 +581,9 @@ function hubNpcAvatar(item){
     }
     const finalView=cinematicReturnView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);endCamera=finalView.position;endTarget=finalView.target;hero?.action('Idle');
    }else if(kind==='country-first-entry'&&region!=='hub'){focus=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);heritage=true;radius=camera.aspect<.85?104:94;height=34;focusY=27;arc=.32;dolly=.08;angle=-BIOMES[region].angle+.18;}
+   else if(kind==='kais-guidance'){
+    const guide=items.find(i=>i.type==='kais');if(guide){focus={x:guide.x,z:guide.z};focusItemId=guide.id;radius=10.5;height=6.8;focusY=1.9;arc=.38;dolly=.12;angle=orbit.yaw-.24;}
+   }
    else if(['guardian-intro','final-combat-intro','important-combat-result'].includes(kind)){
     const rival=battleTarget||items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===(context.card||encounter.card));
     if(rival){focus={x:rival.x,z:rival.z};focusItemId=rival.id;radius=kind==='final-combat-intro'?18:12;height=kind==='final-combat-intro'?11:7.5;focusY=2.2;arc=.52;dolly=.18;angle=orbit.yaw-.3;const actor=actors.find(a=>a.itemId===rival.id);actor?.controller.action(kind==='important-combat-result'?'Idle':'Cast');}
