@@ -6,16 +6,17 @@ import {createLivingLibrary,createLivingActor} from './living.js';
 
 export async function loadWorldModels(){
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),living=createLivingLibrary();
- const [hero,kit,atlas,places]=await Promise.all([
+ const [hero,kit,atlas,places,kais]=await Promise.all([
   living.load('/world/living/traveller-0.glb'),
   loader.loadAsync('/world/models/chapter-kit.glb'),
   new THREE.TextureLoader().loadAsync('/world/guardians-atlas.webp'),
-  loader.loadAsync('/world/places/living-places.glb')
+  loader.loadAsync('/world/places/living-places.glb'),
+  loader.loadAsync('/world/models/kais-3d.glb')
  ]);
- kit.living=living;const assets=[kit.scene,places.scene];
+ kit.living=living;const assets=[kit.scene,places.scene,kais.scene];
  assets.forEach(root=>root.traverse(o=>{if(!o.isMesh)return;o.receiveShadow=true;const name=o.material?.name||'';o.castShadow=!/lawn|travertine|island strata|slate inlay/i.test(name);}));
  atlas.colorSpace=THREE.SRGBColorSpace;
- return {hero,kit,atlas,places,living,dispose(){
+ return {hero,kit,atlas,places,kais,living,dispose(){
   living.dispose();
   const geometries=new Set(),materials=new Set(),textures=new Set();
   assets.forEach(root=>root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of [o.material].flat().filter(Boolean)){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}}));
@@ -35,6 +36,8 @@ export function createKais(asset){
  actions.Idle?.play();
  return {object,
   setColor(color){for(const m of personal.values()){if(/brushed champagne/.test(m.name))m.color.set(color);if(/graphite panels/.test(m.name))m.color.set(color).multiplyScalar(.28);}},
+  action(name='Idle'){const next=actions[name]||actions.Idle;if(!next)return;next.reset().setEffectiveWeight(1).play();if(actions[current]&&actions[current]!==next)actions[current].crossFadeTo(next,.18,false);current=actions[name]?name:'Idle';},
+  face(dx,dz){if(Math.hypot(dx,dz)>.001){heading=Math.atan2(dx,dz);object.rotation.y=heading;}},
   update(dt,dx,dz,travelled){
    const speed=dt?travelled/dt:0,next=speed>.08?(speed>9?'Run':'Walk'):'Idle';
    if(next!==current){actions[next]?.reset().setEffectiveWeight(1).play();actions[current]?.crossFadeTo(actions[next],.18,false);current=next;}
