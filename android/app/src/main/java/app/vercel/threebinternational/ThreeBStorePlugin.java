@@ -46,9 +46,12 @@ public class ThreeBStorePlugin extends Plugin implements PurchasesUpdatedListene
             call.reject("Un achat est déjà en cours.", "purchase_in_progress");
             return;
         }
+        pendingCall = call;
+        pendingProductId = productId;
         ensureConnected(call, () -> queryProduct(productId, details -> {
             Activity activity = getActivity();
             if (activity == null || activity.isFinishing()) {
+                clearPending();
                 call.reject("L’application doit être visible pour acheter.", "foreground_required");
                 return;
             }
@@ -62,8 +65,6 @@ public class ThreeBStorePlugin extends Plugin implements PurchasesUpdatedListene
                 .setProductDetailsParamsList(Collections.singletonList(productParams.build()))
                 .setObfuscatedAccountId(accountId)
                 .build();
-            pendingCall = call;
-            pendingProductId = productId;
             BillingResult result = billing.launchBillingFlow(activity, params);
             if (result.getResponseCode() != BillingClient.BillingResponseCode.OK) {
                 clearPending();
@@ -110,7 +111,7 @@ public class ThreeBStorePlugin extends Plugin implements PurchasesUpdatedListene
         billing.startConnection(new BillingClientStateListener() {
             @Override public void onBillingSetupFinished(BillingResult result) {
                 if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) ready.run();
-                else call.reject("Google Play Billing indisponible.", "billing_setup_" + result.getResponseCode());
+                else { if (pendingCall == call) clearPending(); call.reject("Google Play Billing indisponible.", "billing_setup_" + result.getResponseCode()); }
             }
             @Override public void onBillingServiceDisconnected() {
                 if (pendingCall == call) {
