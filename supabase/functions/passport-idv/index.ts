@@ -289,6 +289,9 @@ async function processWebhook(jwt:string){
       await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
         state:'error',completed_at:new Date().toISOString(),last_error_code:'flow_not_approved'
       },'PATCH');
+      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
+        identity_verification_state:'unverified'
+      },'PATCH');
     }else{
       nextState='rejected';resultCode='rejected';
       await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
@@ -318,6 +321,9 @@ async function processWebhook(jwt:string){
     nextState='error';
     await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
       state:'error',completed_at:new Date().toISOString(),last_error_code:'provider_error'
+    },'PATCH');
+    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
+      identity_verification_state:'unverified'
     },'PATCH');
   }
 
