@@ -1,19 +1,19 @@
 import assert from 'node:assert/strict';
 import {generateRegistrationOptions,verifyRegistrationResponse,generateAuthenticationOptions,verifyAuthenticationResponse} from '@simplewebauthn/server';
-import {isoCBOR} from 'npm:@simplewebauthn/server@14.0.3/helpers';
+import {isoCBOR} from 'npm:@simplewebauthn/server@13.3.3/helpers';
 import {encodeBase64url,sha256,validateWebAuthnClient} from '../_shared/passport-security.js';
 
 // Synthetic software authenticator: no account, device, network or civil data is used.
 const encoder=new TextEncoder(),origin='https://3b.example',rpID='3b.example';
 const join=(...parts:Uint8Array[])=>{const result=new Uint8Array(parts.reduce((n,p)=>n+p.length,0));let n=0;for(const part of parts){result.set(part,n);n+=part.length;}return result;};
-const hash=async(value:Uint8Array)=>new Uint8Array(await crypto.subtle.digest('SHA-256',value as Uint8Array<ArrayBuffer>));
+const hash=async(value:Uint8Array)=>new Uint8Array(await crypto.subtle.digest('SHA-256',value as BufferSource));
 function counter(value:number){const result=new Uint8Array(4);new DataView(result.buffer).setUint32(0,value);return result;}
 function der(signature:Uint8Array){
   const integer=(bytes:Uint8Array)=>{let n=0;while(n<bytes.length-1&&bytes[n]===0)n++;let value=bytes.slice(n);if(value[0]&128)value=join(new Uint8Array([0]),value);return join(new Uint8Array([2,value.length]),value);};
   const value=join(integer(signature.slice(0,32)),integer(signature.slice(32)));return join(new Uint8Array([0x30,value.length]),value);
 }
 
-Deno.test('real WebAuthn cryptographic verification with pinned SimpleWebAuthn 14.0.3',async t=>{
+Deno.test('real WebAuthn cryptographic verification with pinned SimpleWebAuthn 13.3.3',async t=>{
   const pair=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
   const publicKey=new Uint8Array(await crypto.subtle.exportKey('raw',pair.publicKey));
   const cose=isoCBOR.encode(new Map<number,number|Uint8Array>([[1,2],[3,-7],[-1,1],[-2,publicKey.slice(1,33)],[-3,publicKey.slice(33)]]));

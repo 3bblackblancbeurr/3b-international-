@@ -26,8 +26,9 @@ test('Hub dialogue exposes the current NPC activity without changing mission aut
   assert.equal(typeof hubNpcActivityLine(npc,{hour:10}),'string');
 });
 
-test('City simulation derives residents, traffic, services and demands from actual placements',()=>{
+test('City simulation displays the authoritative census and uses actual saved roads for bounded movement',()=>{
   const snapshot={
+    life:{available:true,population:30,housingCapacity:36,jobs:30,employed:18,workingPopulation:18,happiness:60,mobility:60,needs:[{code:'water',score:75},{code:'food',score:100}]},
     city:{city_level:4,land_tier:2},
     districts:[{country:'France',unlocked:true,level:2},{country:'Algérie',unlocked:true,level:1}],
     buildings:[

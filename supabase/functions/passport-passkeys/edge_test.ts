@@ -7,6 +7,7 @@ Deno.test('actual Edge handlers fail closed and check current session, origin an
   const env:Record<string,string>={SUPABASE_URL:'https://synthetic-supabase.example',SUPABASE_SERVICE_ROLE_KEY:'synthetic-admin',
     SUPABASE_ANON_KEY:'synthetic-public',APP_URL:'https://3b.example',PASSPORT_PASSKEY_STEPUP_ENABLED:'false',PASSPORT_PARTNER_PILOT_ENABLED:'false'};
   let handler:(req:Request)=>Promise<Response>,sessionValid=true,logoutOK=true;
+  let capability={enabled:false,everEnabled:false,qualifiedAt:null as string|null,rpId:'3b.example',origin:'https://3b.example'};
   try {
     Deno.env.get=(name:string)=>env[name];
     Deno.serve=((callback:any)=>{handler=callback;return {finished:Promise.resolve(),shutdown:()=>Promise.resolve()};}) as any;
@@ -17,6 +18,9 @@ Deno.test('actual Edge handlers fail closed and check current session, origin an
         {status:headers.get('authorization')==='Bearer '+token?200:401});
       if(url.endsWith('/rest/v1/rpc/loyalty_session_valid'))return Response.json(sessionValid);
       if(url.endsWith('/rest/v1/rpc/loyalty_rate'))return Response.json(true);
+      if(url.endsWith('/rest/v1/rpc/passport_auth_capability'))return Response.json(capability);
+      if(url.endsWith('/rest/v1/rpc/passport_card_list'))return Response.json([]);
+      if(url.endsWith('/rest/v1/rpc/passport_card_revoke'))return Response.json(true);
       if(url.endsWith('/auth/v1/logout?scope=others'))return new Response(null,{status:logoutOK?204:503});
       throw Error('Unexpected synthetic route: '+url);
     }) as typeof fetch;
@@ -48,6 +52,27 @@ Deno.test('actual Edge handlers fail closed and check current session, origin an
       const response=await call({action:'readiness'});assert.equal((await response.json()).enabled,false);
       assert.equal((await call({action:'create',clientId:'synthetic-partner',clientSecret:'a'.repeat(64)})).status,503);
       assert.equal((await call({action:'approve',consent:true,requestToken:'b'.repeat(64)})).status,503);
+    });
+    await import('../passport-card/index.ts');
+    await t.step('disabled card issuance/activation stays closed while authenticated list/revocation remain available',async()=>{
+      assert.equal((await (await call({action:'readiness'})).json()).enabled,false);
+      assert.equal((await call({action:'issue',kind:'physical'})).status,503);
+      assert.equal((await call({action:'activate',cardId:session,stepupToken:'a'.repeat(64)})).status,503);
+      assert.deepEqual((await (await call({action:'list'})).json()).cards,[]);
+      assert.equal((await (await call({action:'revoke',cardId:session})).json()).revoked,true);
+      sessionValid=false;assert.equal((await call({action:'revoke',cardId:session})).status,401);sessionValid=true;
+    });
+    await import('../passport-auth/index.ts');
+    await t.step('public initial-login readiness requires server flag plus dated exact hosted RP qualification',async()=>{
+      assert.equal((await (await call({action:'readiness'})).json()).enabled,false);
+      env.PASSPORT_INITIAL_PASSKEY_ENABLED='true';assert.equal((await (await call({action:'readiness'})).json()).enabled,false);
+      capability={...capability,enabled:true,everEnabled:true,qualifiedAt:'2026-09-30T00:00:00Z',rpId:'evil.example'};
+      assert.equal((await (await call({action:'readiness'})).json()).enabled,false);
+      capability.rpId='3b.example';assert.equal((await (await call({action:'readiness'})).json()).enabled,true);
+      assert.equal((await call({action:'sign-in'})).status,404); // Auth SDK alone issues sessions.
+    });
+    await t.step('malformed JSON receives a client error without any business action',async()=>{
+      assert.equal((await handler(new Request('https://edge.example',{method:'POST',headers:{'content-type':'application/json',origin:'https://3b.example'},body:'{broken'}))).status,400);
     });
   } finally {globalThis.fetch=savedFetch;Deno.serve=savedServe;Deno.env.get=savedEnvGet;}
 });

@@ -54,7 +54,7 @@ export function serve(handler:(req:Request,body:Record<string,unknown>)=>Promise
       for(;;) { const {done,value}=await reader.read(); if(done)break; size+=value.length;
         if(size>maxBody) {await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');} parts.push(value); }
       const bytes=new Uint8Array(size);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}
-      const body=JSON.parse(new TextDecoder().decode(bytes));
+      let body;try{body=JSON.parse(new TextDecoder().decode(bytes));}catch{throw new Failure(400,'Demande invalide.');}
       if(!body||Array.isArray(body)||typeof body!=='object') throw new Failure(400,'Demande invalide.');
       return reply(await handler(req,body));
     } catch(error) {

@@ -8,6 +8,8 @@
 
 Le pilote est codé mais reste fermé par défaut et non déployé à la date de ce dossier. Le candidat reçoit un identifiant distinct, une audience fixe, un secret de serveur, des scopes minimaux et une finalité approuvée. Les données civiles ne sont pas exportées. L’intégration et les limites techniques figurent dans [le protocole d’activation](PILOT_ACTIVATION_2026-09-30.md) et [le dossier de sécurité](PARTNER_PILOT_SECURITY_2026-09-30.md).
 
+Une carte numérique ou physique QR/NFC peut désormais orienter une demande vers le titulaire exact, avec activation et révocation serveur. Le parcours de connexion initiale par clés d’accès utilise le SDK officiel Supabase et reste fermé jusqu’à qualification. Ces éléments sont codés et testés localement ; la [fiche de recette](CARDS_AUTH_READINESS_2026-09-30.md) sépare les preuves locales des essais hébergés, physiques et accords externes encore nécessaires.
+
 ### Fiche à compléter avant l’ouverture d’un partenaire
 
 | Élément | Réponse attendue |

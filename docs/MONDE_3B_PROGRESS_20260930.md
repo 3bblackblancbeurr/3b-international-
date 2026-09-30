@@ -23,7 +23,7 @@ Ce replay ne constitue pas une preuve de service Supabase en ligne. Le serveur v
 
 ## Vérifications et limites
 
-La suite ciblée couvre le cycle France/Céliane/Justice, les huit héritages, les états Hub, la reprise de preuves, la Fondation locale, les créations, les dialogues, le budget mobile et le replay HTTP. Le test France isole la progression avec une victoire légale simulée : il ne certifie pas l’équilibrage complet du combat.
+La suite ciblée couvre le cycle France/Céliane/Justice, les huit héritages, les états Hub, la reprise de preuves, la Fondation locale, les créations, les dialogues, le budget mobile et le replay HTTP. Le test France utilise désormais le véritable moteur de combat, reprend au milieu du duel et vérifie le retour dans la Cité sans modifier les points de vie de l’ennemi. Il ne certifie pas l’équilibrage humain sur appareils réels. La passe visuelle et aventure suivante est détaillée dans `MONDE_3B_PREMIUM_ADVENTURE_20260930.md`.
 
 Les aménagements sont des volumes générés avec les géométries et matériaux réutilisés de la scène. Le jeu complet des vingt conséquences reste sous 250 maillages supplémentaires, sans lumières ni animations supplémentaires ; cela n’est pas une mesure des performances sur téléphone. Leur direction artistique demeure à améliorer.
 

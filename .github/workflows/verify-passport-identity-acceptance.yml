@@ -11,6 +11,10 @@ on:
       - 'docs/legal/**'
       - 'docs/security/**'
       - 'src/passport/**'
+      - 'src/loyalty/AccountPage.jsx'
+      - 'src/loyalty/client.js'
+      - 'package.json'
+      - 'package-lock.json'
       - 'supabase/functions/member-auth/**'
       - 'supabase/functions/delete-account/**'
       - 'supabase/functions/passport-identity/**'
@@ -18,6 +22,8 @@ on:
       - 'supabase/functions/passport-idv/**'
       - 'supabase/functions/passport-partner/**'
       - 'supabase/functions/passport-passkeys/**'
+      - 'supabase/functions/passport-card/**'
+      - 'supabase/functions/passport-auth/**'
       - 'supabase/functions/_shared/passport-*'
       - 'tests/passport-*.test.js'
       - 'supabase/migrations/**passport**'
@@ -35,6 +41,10 @@ on:
       - 'docs/legal/**'
       - 'docs/security/**'
       - 'src/passport/**'
+      - 'src/loyalty/AccountPage.jsx'
+      - 'src/loyalty/client.js'
+      - 'package.json'
+      - 'package-lock.json'
       - 'supabase/functions/member-auth/**'
       - 'supabase/functions/delete-account/**'
       - 'supabase/functions/passport-identity/**'
@@ -42,6 +52,8 @@ on:
       - 'supabase/functions/passport-idv/**'
       - 'supabase/functions/passport-partner/**'
       - 'supabase/functions/passport-passkeys/**'
+      - 'supabase/functions/passport-card/**'
+      - 'supabase/functions/passport-auth/**'
       - 'supabase/functions/_shared/passport-*'
       - 'tests/passport-*.test.js'
       - 'supabase/migrations/**passport**'
@@ -70,9 +82,11 @@ jobs:
         run: node --test tests/passport-*.test.js
       - name: Check identity provider function
         run: npm exec --yes --package=deno@2.9.6 -- deno check --frozen --config supabase/functions/passport-idv/deno.json supabase/functions/passport-idv/index.ts
-      - name: Check passkey function
-        run: npm exec --yes --package=deno@2.9.6 -- deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/index.ts
+      - name: Check passkey function on supported Supabase runtime baseline
+        run: npm exec --yes --package=deno@2.1.13 -- deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/index.ts
       - name: Verify real WebAuthn signatures and rejection cases
-        run: npm exec --yes --package=deno@2.9.6 -- deno test --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/
+        run: npm exec --yes --package=deno@2.1.13 -- deno test --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/
       - name: Check partner function
         run: npm exec --yes --package=deno@2.9.6 -- deno check --no-lock --config supabase/functions/passport-partner/deno.json supabase/functions/passport-partner/index.ts
+      - name: Check cards and official Auth readiness on supported runtime
+        run: npm exec --yes --package=deno@2.1.13 -- deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-card/index.ts supabase/functions/passport-auth/index.ts supabase/functions/passport-verify/index.ts supabase/functions/member-auth/index.ts

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createBrokenCircleCrown} from './hub/broken-circle-visuals.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const hash=input=>{let h=2166136261;for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
@@ -563,6 +564,7 @@ export function createPremiumDistrictLandmark(item,{root,geometry,material,groun
    break;
   case 'spire':
    if(item.landmarkId==='broken_circle_spire'){
+    const crown=createBrokenCircleCrown(item,{geometry,material});group.add(crown);group.dispose=()=>crown.dispose();
     const fragments=clamp(Number(item.fragmentCount||0),0,8),coreRadius=11.5;
     child(group,geometry.cylinder,dark,{y:.65,sx:15.8,sy:1.15,sz:15.8});
     child(group,geometry.cylinder,stone,{y:2.0,sx:12.8,sy:1.2,sz:12.8});
@@ -628,6 +630,19 @@ export function createPremiumWaterFeature(item,{root,geometry,material,groundY})
   child(group,geometry.box,edge,{y:.02,sx:width*1.18,sy:.10,sz:length,cast:false});
   child(group,geometry.box,water,{y:.10,sx:width,sy:.035,sz:length*.98,cast:false});
   for(const side of [-1,1])child(group,geometry.box,foam,{x:side*width*.51,y:.13,sx:.08,sy:.04,sz:length*.96,cast:false});
+  // Continuous promenades and spaced mooring piers make the canal read as a
+  // civic waterfront rather than a blue stripe. All use the shared primitives.
+  const gold=material('#d6b46a',{roughness:.32,metalness:.7,emissive:'#6f531d',emissiveIntensity:.13});
+  for(const side of [-1,1]){
+   child(group,geometry.box,edge,{x:side*(width*.5+1.65),y:.14,sx:3.1,sy:.22,sz:length,cast:false});
+   child(group,geometry.box,gold,{x:side*(width*.5+3.05),y:.28,sx:.12,sy:.08,sz:length*.98,cast:false});
+  }
+  const piers=item.renderProfile==='mobileMedium'?2:4;
+  for(let i=0;i<piers;i++){
+   const side=i%2?1:-1,z=-length*.36+i*length*.72/Math.max(1,piers-1);
+   child(group,geometry.box,edge,{x:side*(width*.5-.9),y:.24,z,sx:3.8,sy:.25,sz:5.2,cast:false});
+   for(const dz of [-1.5,1.5])child(group,geometry.cylinder,gold,{x:side*(width*.5-2.3),y:.55,z:z+dz,sx:.16,sy:.6,sz:.16,cast:false});
+  }
  }
  return group;
 }

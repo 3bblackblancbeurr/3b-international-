@@ -18,13 +18,15 @@ export function readLocation(location = window.location) {
   const checkout = params.get("checkout");
   const requestToken = params.get("passport_request");
   const passportRequest = /^[0-9a-f]{64}$/.test(requestToken || "") ? requestToken : null;
+  const scannedCard=params.get('passport_card');
+  const cardReference=/^[0-9a-f]{64}$/.test(scannedCard||'')?scannedCard:null;
   const authReturn = params.get("reset") === "1" || params.get("auth") === "confirmed";
   const page = authReturn ? "member"
-    : passportRequest ? "passport"
+    : passportRequest || cardReference ? "passport"
     : ["success", "cancel"].includes(checkout) ? "shop"
     : location.hash === "#musique" ? "religion" : Object.entries(PAGE_HASHES).find(([, hash]) => `#${hash}` === location.hash)?.[0] || "intro";
 
-  return { page, search, ...(passportRequest ? { requestToken: passportRequest } : {}) };
+  return { page, search, ...(passportRequest ? { requestToken: passportRequest } : {}),...(cardReference?{cardReference}:{}) };
 }
 
 function cleanTransientParams(url) {
@@ -33,6 +35,7 @@ function cleanTransientParams(url) {
   url.searchParams.delete("auth");
   url.searchParams.delete("reset");
   url.searchParams.delete("passport_request");
+  url.searchParams.delete("passport_card");
   url.searchParams.delete("page");
 }
 

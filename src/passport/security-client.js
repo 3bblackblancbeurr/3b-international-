@@ -34,5 +34,6 @@ export function credentialResponse(credential) {
   return result;
 }
 export function passkeySupported() {
-  return typeof window!=='undefined'&&window.isSecureContext&&!!window.PublicKeyCredential&&!!navigator.credentials;
+  return typeof window!=='undefined'&&window.isSecureContext&&!!window.PublicKeyCredential&&
+    typeof navigator.credentials?.create==='function'&&typeof navigator.credentials?.get==='function';
 }

@@ -1,10 +1,12 @@
 # Passeport 3B : pilote partenaires et confirmation par clés d’accès
 
-30 septembre 2026. Implémentation locale à relire et à qualifier. Les deux nouvelles migrations sont **PENDING**. Aucun déploiement, partenaire contacté ou certification obtenue dans ce travail.
+30 septembre 2026. Implémentation locale à relire et à qualifier. Les trois nouvelles migrations sont **PENDING**. Aucun déploiement, partenaire contacté ou certification obtenue dans ce travail.
 
 ## Comportement livré
 
 Le pilote en ligne transmet exclusivement deux informations optionnelles : `passport_active` et `identity_verified`. Chaque partenaire possède un identifiant, une audience HTTPS fixe, un secret aléatoire de 256 bits dont seul le SHA-256 est conservé, des scopes autorisés et une finalité relue. Il reste désactivé tant que la revue n’est pas enregistrée. Le secret du partenaire et le secret de pseudonymisation restent sur les serveurs ; jamais dans le navigateur.
+
+Le nouveau support QR/NFC fournit une référence opaque révocable, liée au titulaire et inactive jusqu’à confirmation. Le serveur partenaire peut lier sa demande à cette carte ; un autre compte ne peut accepter/refuser à sa place. La révocation, le remplacement et la récupération invalident les demandes ouvertes ; l’expiration de la carte est recontrôlée à la consommation. Le QR statique n’est jamais une preuve autonome. [Dossier cartes et connexion](CARDS_AUTH_READINESS_2026-09-30.md).
 
 Le partenaire crée une demande avec une nonce fraîche, aléatoire, d’au moins 32 caractères URL-safe. La nonce est unique pour ce partenaire. Le service retourne un lien `/?page=passport&passport_request=<64 caractères hexadécimaux>`, valable trois minutes. Ce lien contient un jeton opaque, pas des données civiles. La base conserve son hash. Le détenteur du lien ne peut pas récupérer de preuve sans le secret du partenaire, l’audience et la nonce exactes.
 
@@ -18,7 +20,7 @@ La réponse est une vérification **en ligne** par HTTPS à destination d’un s
 
 ## Passkeys : périmètre exact
 
-`passport-passkeys` fournit l’enrôlement, la vérification cryptographique, la liste et la révocation des clés. Elles confirment les consentements et les changements de clés **dans une session Supabase déjà connectée**. La connexion initiale et le renouvellement des sessions restent Supabase Auth. Aucune connexion sans mot de passe n’est revendiquée.
+`passport-passkeys` fournit l’enrôlement, la vérification cryptographique, la liste et la révocation des clés de confirmation. Elles confirment consentements, activation des cartes et changements de clés **dans une session Supabase déjà connectée**. Un parcours distinct de connexion initiale est désormais codé avec les méthodes officielles Supabase Auth `registerPasskey`, `signInWithPasskey`, `auth.passkey.list/delete` du SDK2.116.0, expérimental. Il reste fermé jusqu’à qualification du service hébergé et de sa récupération ; aucun JWT n’est fabriqué par 3B. [Documentation Supabase](https://supabase.com/docs/guides/auth/passkeys).
 
 Les défis expirent après trois minutes et sont consommés avant vérification. Origine HTTPS et RP ID sont fixes et vérifiés, `userVerification` est obligatoire ; cérémonies intégrées à une autre origine refusées. Le user handle est aléatoire et opaque. Le serveur vérifie aussi son association au compte lorsque l’authentificateur le renvoie. Les clés privées, codes PIN et données biométriques restent dans l’authentificateur. La base garde uniquement clé publique, identifiant, compteur et métadonnées de gestion.
 
@@ -43,5 +45,5 @@ Ces tests ne remplacent pas une recette sur appareils réels, un audit externe, 
 ## Sources de conception consultées le 30 septembre 2026
 
 - [WebAuthn niveau 3, recommandation W3C du 25 août 2026](https://www.w3.org/TR/webauthn-3/) : origine/RP ID, vérification locale, user handle opaque et contrôles du serveur. L’usage de cette API n’est pas une certification FIDO du produit 3B.
-- [SimpleWebAuthn serveur 14.0.x](https://simplewebauthn.dev/docs/packages/server) : bibliothèque de vérification fixée à 14.0.3. Documentation runtime Node 22+ ou Deno 2.4+. Vérifiée localement sous Deno 2.9.6 ; activation hébergée encore conditionnée au runtime réellement disponible.
+- [SimpleWebAuthn serveur13.3.3, README épinglé](https://github.com/MasterKale/SimpleWebAuthn/blob/v13.3.3/packages/server/README.md) : minimum Deno1.43+, correctif de sécurité13.3.2 inclus. Types et signatures réelles vérifiés sous Deno2.1.13, verrou format4 gelé ; recette hébergée encore requise.
 - [OpenID4VP 1.0 final](https://openid.net/specs/openid-4-verifiable-presentations-1_0-final.html) : destination et nonce fraîche sont des principes repris dans le pilote. L’implémentation complète des formats, du protocole et de la confiance interopérable reste une étape distincte.

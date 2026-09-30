@@ -4,14 +4,15 @@ Préparé le 30 septembre 2026. Aucune instruction de ce document n’a été ap
 
 ## Paquet et ordre de livraison
 
-Le code repose sur main `4f121e0efee8487c1e9a46760db9f3860030761f` et les fondations Passeport existantes. Deux migrations nouvelles doivent rester PENDING tant qu’un opérateur n’a pas constaté leur application :
+Le code repose sur main `4f121e0efee8487c1e9a46760db9f3860030761f`, PR392 et les fondations Passeport existantes. Trois migrations nouvelles doivent rester PENDING tant qu’un opérateur n’a pas constaté leur application :
 
 1. `20260930180000_passport_identity_atomic_lifecycle_v4.sql` : réservation/finalisation IDnow et provenance live des preuves.
 2. `20260930181000_passport_partner_passkeys_pilot_v1.sql` : registre, demandes, consentement atomique, passkeys, challenges, preuves courtes et révocation après récupération.
+3. `20260930203000_passport_cards_v1.sql` : cartes QR/NFC révocables liées au titulaire, qualification de la connexion Auth officielle et extension de la récupération.
 
-Le staging existant ne possède pas nécessairement les mêmes fondations que la production. Ne pas copier le ledger de migration production vers staging. Examiner les migrations nécessaires, les appliquer sur un staging dédié et vide, puis qualifier avec comptes synthétiques. Appliquer les fondations et les deux migrations avant de déployer les fonctions qui les appellent. Le raccord récupération de `member-auth` appelle obligatoirement `passport_recovery_revoke` : le déployer avant la migration ferait échouer la récupération de compte.
+Le staging existant ne possède pas nécessairement les mêmes fondations que la production. Ne pas copier le ledger de migration production vers staging. Examiner les migrations nécessaires, les appliquer sur un staging dédié et vide, puis qualifier avec comptes synthétiques. Appliquer les fondations et les trois migrations avant de déployer les fonctions qui les appellent. Le raccord récupération de `member-auth` appelle obligatoirement `passport_auth_capability` et `passport_recovery_revoke` : le déployer avant la migration ferait échouer la récupération de compte.
 
-Fonctions à livrer ensemble : `passport-idv`, `passport-passkeys`, `passport-partner`, leurs imports `_shared/passport-security.js` et `_shared/passport-server.ts`, puis le raccord `member-auth`. Les imports sont relatifs et le déploiement doit inclure leur graphe. `passport-passkeys/deno.json` fixe `npm:@simplewebauthn/server@14.0.3` et son `deno.lock` fixe les dépendances. `passport-idv` conserve `jose@6.1.0` et son verrou.
+Fonctions à livrer ensemble après les trois migrations : `passport-idv`, `passport-passkeys`, `passport-partner`, `passport-card`, `passport-auth`, `passport-identity`, `passport-verify`, leurs imports `_shared/passport-security.js`, `_shared/passport-server.ts`, `_shared/passport-auth-recovery.js`, puis le raccord `member-auth`. Les imports sont relatifs et le déploiement doit inclure leur graphe. `passport-passkeys/deno.json` fixe `npm:@simplewebauthn/server@13.3.3` et son `deno.lock` format4 fixe les dépendances. `passport-idv` conserve `jose@6.1.0` et son verrou.
 
 Pour ces nouveaux endpoints, configurer le gateway Edge en cohérence avec les publishable/secret keys Supabase : l’authentification effective est faite dans la fonction (`getUser` puis contrôle `auth.sessions`). Le partenaire et le webhook ne possèdent pas un JWT utilisateur Supabase. Si `verify_jwt=false` / `--no-verify-jwt` est nécessaire à cette plateforme, cela ne dispense pas de ces contrôles internes. Aucune fonction ne doit devenir une API de mutation libre. Les endpoints partenaires `create/redeem` vérifient le secret serveur enregistré ; les autres actions exigent une session membre.
 
@@ -26,12 +27,15 @@ Pour ces nouveaux endpoints, configurer le gateway Edge en cohérence avec les p
 | `PASSPORT_PASSKEY_STEPUP_ENABLED` | `false` par défaut ; `true` après recette |
 | `PASSPORT_WEBAUTHN_RP_ID` | Hostname de cette origine, par exemple `3b-international.vercel.app` |
 | `PASSPORT_PARTNER_PILOT_ENABLED` | `false` par défaut ; `true` après revue du protocole et du partenaire |
+| `PASSPORT_CARDS_ENABLED` | `false` par défaut ; émission/activation après recette ; liste et révocation restent possibles si désactivé ensuite |
+| `PASSPORT_INITIAL_PASSKEY_ENABLED` | `false` par défaut ; ouverture serveur après qualification Auth et récupération |
+| `VITE_PASSPORT_INITIAL_PASSKEY_ENABLED` | `false` par défaut ; porte UI indépendante, jamais un secret |
 | `PASSPORT_PARTNER_SUBJECT_SECRET` | Secret de pseudonymisation distinct, aléatoire, au moins 32 caractères ; ne pas changer sans plan de rotation des sujets |
 | Variables IDnow existantes | Produit/credentials/flow/audience/référence validés ; production + live + `IDNOW_PVID_FLOW_APPROVED=true` uniquement après approbation réelle |
 
-La documentation du runtime SimpleWebAuthn prévoit Node 22+ ou Deno 2.4+ ; vérification de types et tests effectués sous Deno 2.9.6. Un test local supplémentaire sous Deno 2.1.13, sans vérification de types et sans verrou, a passé les 2 tests / 15 étapes. Ce résultat ponctuel ne change pas le minimum officiellement pris en charge par le fournisseur. [Documentation SimpleWebAuthn](https://simplewebauthn.dev/docs/packages/server).
+La dépendance de confirmation est désormais **13.3.3**, dont le [README officiel épinglé](https://github.com/MasterKale/SimpleWebAuthn/blob/v13.3.3/packages/server/README.md) prévoit Deno1.43+. Le [changelog officiel](https://github.com/MasterKale/SimpleWebAuthn/blob/v13.3.3/CHANGELOG.md) inclut le correctif13.3.2 de GHSA-6hxq-p678-4hr2. Vérification des types et tests cryptographiques passent sous Deno2.1.13 avec verrou format4 et `--frozen`, sans désactiver la vérification des types.
 
-Supabase a publié une migration de ses runtimes régionaux vers une version compatible Deno 2.1 ; cette annonce ne prouve pas que le projet 3B exécute déjà Deno 2.4 ou supérieur. Le package 14.0.3 reste donc **fermé** tant que le runtime réellement hébergé, son build et un parcours complet n’ont pas été validés ; si le fournisseur n’offre pas le runtime requis, qualifier une dépendance prise en charge ou un service de vérification adapté avant activation. Les verrous ont été générés sous Deno 2.9.6 (format 5), à vérifier avec l’outil de publication retenu. [Annonce officielle Supabase](https://github.com/orgs/supabase/discussions/37941).
+Cette baseline correspond à l’[annonce officielle Supabase Deno2.1](https://github.com/orgs/supabase/discussions/37941). Elle lève le conflit de minimum fournisseur de la version14, tout en laissant la recette hébergée et sur appareils réels obligatoire. L’activation reste fermée par défaut ; aucun test local ne prouve le déploiement ou l’acceptation externe. La CI utilise Deno2.1.13 pour les confirmations et Deno2.9.6 pour l’adaptateur IDnow verrouillé.
 
 L’UI web autorise cette seule origine. Les webviews natives Capacitor, preview domains et un changement de domaine nécessitent une qualification distincte de WebAuthn/RP ID ; ils ne sont pas automatiquement autorisés.
 
@@ -56,15 +60,17 @@ Comparer audience/nonce/expiration aux valeurs de la transaction avant de l’ac
 ## Validation avant ouverture
 
 ```text
-node --test tests/passport-security-rules.test.js tests/passport-security-database.test.js
+node --test tests/passport-*.test.js
 deno check --frozen --config supabase/functions/passport-idv/deno.json supabase/functions/passport-idv/index.ts
 deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/index.ts
+deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-card/index.ts supabase/functions/passport-auth/index.ts supabase/functions/member-auth/index.ts
 deno check --config supabase/functions/passport-partner/deno.json supabase/functions/passport-partner/index.ts
 deno test --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/
 npm run build
 ```
 
 Les tests Deno ne demandent aucune permission ; les appels HTTP sont simulés et aucun compte réel n’est interrogé. Les tests PGlite exécutent les migrations nouvelles et fonctions, et utilisent la même définition de `loyalty_session_valid` que la migration main. Ils ne constituent pas un test de charge multiprocessus PostgreSQL ni une recette de production.
+Utiliser Deno2.1.13 pour les confirmations, cartes et tests cryptographiques gelés, et Deno2.9.6 pour le verrou IDnow format5. La [recette cartes et connexion](CARDS_AUTH_READINESS_2026-09-30.md) précise l’état de production, le QR effectivement décodé, les exceptions de récupération et les essais physiques encore nécessaires.
 
 Sur staging : terminer un flux IDnow sandbox et confirmer qu’il ne donne jamais une preuve civile live ; tester la reprise webhook et la révocation pendant traitement. Qualifier ensuite un flux production/live avec le prestataire dans son périmètre autorisé. Tester les passkeys sur appareils iOS/Android, navigateur bureau et clé physique avec UV ; refus sans clé, annulation, délai, mauvais compte, compte suspendu, récupération par clé de secours et échec de déconnexion. Valider le parcours du lien partenaire après connexion, disparition du jeton à la sortie, aucun consentement automatique, révocation et expiration. Puis réaliser une revue indépendante avant toute annonce d’acceptation externe.
 

@@ -44,7 +44,9 @@ serve(async(req,body)=>{
       let scopes:string[];
       try {scopes=normalizePilotScopes(body.scopes);} catch {throw new Failure(400,'Informations demandées non autorisées.');}
       const requestToken=randomToken();
-      await rpc('passport_partner_request_create',{p_client:clientId,p_secret:secretHash,p_audience:intendedAudience,p_nonce:nonce,p_scopes:scopes,p_request:await sha256(requestToken)});
+      const payload={p_client:clientId,p_secret:secretHash,p_audience:intendedAudience,p_nonce:nonce,p_scopes:scopes,p_request:await sha256(requestToken)};
+      if(body.cardReference!==undefined)await rpc('passport_partner_card_request_create',{...payload,p_reference:await tokenHash(body.cardReference)});
+      else await rpc('passport_partner_request_create',payload);
       return {requestToken,consentUrl:APP+'/?page=passport&passport_request='+requestToken,expiresIn:180};
     }
     return rpc('passport_partner_redeem',{p_client:clientId,p_secret:secretHash,p_audience:intendedAudience,p_nonce:nonce,p_request:await tokenHash(body.requestToken)});
@@ -53,6 +55,7 @@ serve(async(req,body)=>{
   await rate(userId+':passport-partner',30,300);
   if(action==='preview') {
     const pending=await request(await tokenHash(body.requestToken));
+    if(pending.requested_user_id&&pending.requested_user_id!==userId)throw new Failure(403,'Cette demande appartient au titulaire de la carte. Connecte-toi au bon compte.');
     return {partner:{name:pending.client.display_name,audience:pending.audience,purpose:pending.client.purpose},
       scopes:pending.scopes,expiresAt:pending.expires_at,requiresPasskey:true,
       disclosure:'Seuls l’état actif du Passeport et, si demandé, le résultat de vérification d’identité sont transmis. Aucun nom civil, date de naissance, e-mail ou solde.'};

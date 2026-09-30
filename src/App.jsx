@@ -40,6 +40,7 @@ import "./styles/dimension.css";
 import "./styles/home-premium.css";
 import "./styles/responsive-premium.css";
 import "./styles/companion.css";
+import "./styles/experience-premium.css";
 import CompanionLayer from "./companion/CompanionLayer.jsx";
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
@@ -195,6 +196,17 @@ export default function App() {
   const requestUser=loyalty.user?.id||null;
   const requestUserRef=useRef(requestUser);requestUserRef.current=requestUser;
   const requestToken=passportRequestResume.current.read(requestUser);
+  const [cardReference,setCardReference]=useState(route.cardReference||null);
+  useEffect(()=>{
+    if(!route.cardReference)return;
+    setCardReference(route.cardReference);
+    const url=new URL(window.location.href);
+    url.searchParams.delete('passport_card');
+    if(url.searchParams.get('page')==='passport')url.searchParams.delete('page');
+    if(route.page==='passport')url.hash='passeport';
+    window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash);
+    setRoute(readLocation());
+  },[route.cardReference]);
 
   useEffect(()=>{
     if(!route.requestToken)return;
@@ -437,7 +449,7 @@ export default function App() {
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
-        <HomePage goTo={goTo} menuItems={menuItems} member={member} secret={secret} />
+        <HomePage goTo={goTo} menuItems={menuItems} member={member} secret={secret} options={options} />
       )}
 
       {page === "passport" && (
@@ -445,6 +457,7 @@ export default function App() {
           identity={loyalty.passport}
           expectedUser={loyalty.user?.id || null}
           requestToken={requestToken}
+          cardReference={cardReference}
           onRequestHandled={handlePassportRequest}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
@@ -632,21 +645,21 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ identity, syncing, goTo, options, expectedUser, requestToken, onRequestHandled }) {
+function PassportPage({ identity, syncing, goTo, options, expectedUser, requestToken, cardReference, onRequestHandled }) {
   return (
-    <section className="page-section">
+    <section className="page-section passport-page">
       <PageHeader
         title="Passeport 3B"
-        subtitle={syncing ? "Synchronisation…" : undefined}
+        subtitle={syncing ? "Synchronisation de ton identité…" : "Ton identité. Tes preuves. Tes choix."}
         goTo={goTo}
       />
 
-      <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
+      <div className="passport-studio"><div className="passport-studio-heading"><p className="eyebrow">TON PASSEPORT PERSONNEL</p><span>3B INTERNATIONAL</span></div><PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} /></div>
       {!syncing && !hasPassportAccess(identity) && <div className="home-hero-actions"><Button variant="champagne" onClick={()=>goTo('member')}>Créer ou retrouver mon Passeport</Button></div>}
       {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <SecretDirectorPanel />}
 
       {identity && <PassportAppearanceSettings identity={identity} />}
-      <PassportSecurityPanel key={expectedUser || 'anonymous'} expectedUser={expectedUser} requestToken={requestToken} onAccount={()=>goTo('member')} onRequestHandled={onRequestHandled} />
+      <PassportSecurityPanel key={expectedUser || 'anonymous'} expectedUser={expectedUser} requestToken={requestToken} cardReference={cardReference} onAccount={()=>goTo('member')} onRequestHandled={onRequestHandled} />
 
     </section>
   );

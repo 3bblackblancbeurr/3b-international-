@@ -2,6 +2,7 @@ import test,{before,beforeEach,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
+import {createHash} from 'node:crypto';
 
 const U='123e4567-e89b-12d3-a456-426614174000',OTHER='123e4567-e89b-12d3-a456-426614174001';
 const S='123e4567-e89b-12d3-a456-426614174002',OS='123e4567-e89b-12d3-a456-426614174003';
@@ -14,10 +15,11 @@ before(async()=>{
   await db.exec(`create role anon; create role authenticated; create role service_role bypassrls;
     create schema auth; create table auth.users(id uuid primary key,email_confirmed_at timestamptz,phone_confirmed_at timestamptz);
     create table auth.sessions(id uuid primary key,user_id uuid references auth.users(id),created_at timestamptz default now());
+    create table public.passport_verification_tickets(id uuid primary key default gen_random_uuid(),user_id uuid references auth.users(id) on delete cascade,consumed_at timestamptz,revoked_at timestamptz);
     create table public.member_profiles(user_id uuid primary key references auth.users(id),passport_state text default 'active',passport_public_id uuid default gen_random_uuid(),created_at timestamptz default now());
     create function public.loyalty_session_valid(p_user uuid,p_session uuid) returns boolean language sql security invoker set search_path='' as
       $$select exists(select 1 from auth.sessions where id=p_session and user_id=p_user);$$;`);
-  for(const file of ['20260928125354_passport_identity_trust_foundation_v3.sql','20260930180000_passport_identity_atomic_lifecycle_v4.sql','20260930181000_passport_partner_passkeys_pilot_v1.sql'])
+  for(const file of ['20260928125354_passport_identity_trust_foundation_v3.sql','20260930180000_passport_identity_atomic_lifecycle_v4.sql','20260930181000_passport_partner_passkeys_pilot_v1.sql','20260930203000_passport_cards_v1.sql'])
     await db.exec(readFileSync(new URL('../supabase/migrations/'+file,import.meta.url),'utf8'));
 });
 beforeEach(async()=>{
@@ -32,6 +34,12 @@ beforeEach(async()=>{
 });
 after(async()=>{await db?.close();});
 
+const cardReference='9'.repeat(64),secondReference='8'.repeat(64);
+const cardIssue=()=>value('select passport_card_issue($1,$2,$3,$4,$5)',[U,S,cardReference,'physical','Synthetic card']);
+const cardContext=id=>createHash('sha256').update('card_activate:'+id).digest('hex');
+async function activeCard(){const id=await cardIssue();await stepup('credential_manage',cardContext(id));await value('select passport_card_activate($1,$2,$3,$4)',[U,S,id,PROOF]);await db.query('delete from passport_stepup_proofs where proof_hash=$1',[PROOF]);return id;}
+const cardRequest=()=>value(`select passport_partner_card_request_create('partner-one',$1,'https://partner.example/verify',$2,array['passport.basic','identity.verified'],$3,$4)`,[SECRET,'n'.repeat(32),HASH,cardReference]);
+
 const createRequest=()=>value(`select passport_partner_request_create('partner-one',$1,'https://partner.example/verify',$2,array['passport.basic','identity.verified'],$3)`,[SECRET,'n'.repeat(32),HASH]);
 async function stepup(purpose='partner_approve',context=HASH,proof=PROOF) {
   await db.query(`insert into passport_stepup_proofs(proof_hash,user_id,session_id,credential_id,purpose,context_hash) values($1,$2,$3,$4,$5,$6)`,[proof,U,S,KEY,purpose,context]);
@@ -40,7 +48,7 @@ const approve=()=>value(`select passport_partner_approve($1,$2,$3,array['passpor
 const redeem=(patch={})=>value(`select passport_partner_redeem($1,$2,$3,$4,$5)`,[patch.client||'partner-one',patch.secret||SECRET,HASH,patch.audience||'https://partner.example/verify',patch.nonce||'n'.repeat(32)]);
 
 test('migration compiles; every new table and RPC denies real anonymous/authenticated roles',async()=>{
-  const tables=['passport_partner_clients','passport_partner_requests','passport_passkey_accounts','passport_passkeys','passport_webauthn_challenges','passport_stepup_proofs'];
+  const tables=['passport_partner_clients','passport_partner_requests','passport_passkey_accounts','passport_passkeys','passport_webauthn_challenges','passport_stepup_proofs','passport_cards','passport_auth_capabilities'];
   for(const role of ['anon','authenticated']) {
     await db.exec('set role '+role);
     for(const table of tables)await assert.rejects(db.query('select * from '+table),/permission denied/);
@@ -52,6 +60,82 @@ test('migration compiles; every new table and RPC denies real anonymous/authenti
   const functions=(await db.query(`select p.oid::regprocedure::text as name,has_function_privilege('authenticated',p.oid,'execute') as allowed
     from pg_proc p where p.proname like 'passport_%' and p.pronamespace='public'::regnamespace`)).rows;
   assert.ok(functions.length>=13);assert.equal(functions.filter(row=>row.allowed).length,0);
+});
+
+test('printed reference is inactive by default; scan resolves only for its authenticated holder and leaks no reference hash',async()=>{
+ const id=await cardIssue();await assert.rejects(cardRequest(),/unavailable/);
+ const card=await value('select passport_card_resolve($1,$2,$3)',[U,S,cardReference]);assert.equal(card.id,id);assert.equal(card.state,'issued');
+ await assert.rejects(value('select passport_card_resolve($1,$2,$3)',[OTHER,OS,cardReference]),/unavailable/);
+ await assert.rejects(value('select passport_card_resolve($1,$2,$3)',[U,OS,cardReference]),/session expired/);
+ const cards=await value('select passport_card_list($1,$2)',[U,S]);assert.equal(cards.length,1);assert.ok(!JSON.stringify(cards).includes(cardReference));
+ assert.equal((await value('select passport_card_list($1,$2)',[OTHER,OS])).length,0);
+});
+test('activation needs holder, current session, exact card context and a one-use unexpired UV proof',async()=>{
+ const id=await cardIssue();await stepup('credential_manage',CTX);
+ await assert.rejects(value('select passport_card_activate($1,$2,$3,$4)',[U,S,id,PROOF]),/stepup invalid/);
+ await db.query('update passport_stepup_proofs set context_hash=$1 where proof_hash=$2',[cardContext(id),PROOF]);
+ await assert.rejects(value('select passport_card_activate($1,$2,$3,$4)',[OTHER,OS,id,PROOF]),/unavailable/);
+ await assert.rejects(value('select passport_card_activate($1,$2,$3,$4)',[U,OS,id,PROOF]),/session expired/);
+ assert.equal(await value('select passport_card_activate($1,$2,$3,$4)',[U,S,id,PROOF]),true);
+ await assert.rejects(value('select passport_card_activate($1,$2,$3,$4)',[U,S,id,PROOF]),/unavailable/);
+ const second=await value('select passport_card_issue($1,$2,$3,$4,$5)',[U,S,secondReference,'digital','Second']);
+ await assert.rejects(value('select passport_card_activate($1,$2,$3,$4)',[U,S,second,PROOF]),/stepup invalid/);
+});
+test('another logged-in account cannot approve or decline a card-bound request; failed approval is rolled back',async()=>{
+ await activeCard();await cardRequest();
+ await db.query(`insert into passport_passkeys(credential_id,user_id,public_key,counter,device_type,backed_up) values($1,$2,$3,0,'multiDevice',true)`,['other'.repeat(6),OTHER,'x'.repeat(32)]);
+ await db.query(`insert into passport_stepup_proofs(proof_hash,user_id,session_id,credential_id,purpose,context_hash) values($1,$2,$3,$4,'partner_approve',$5)`,[PROOF,OTHER,OS,'other'.repeat(6),HASH]);
+ await assert.rejects(value(`select passport_partner_approve($1,$2,$3,array['passport.basic','identity.verified'],$4,$5)`,[OTHER,OS,HASH,'3bp_'+'1'.repeat(64),PROOF]),/holder mismatch/);
+ assert.equal(await value('select count(*)::integer from passport_partner_consents where user_id=$1',[OTHER]),0);
+ assert.equal(await value('select consumed_at from passport_stepup_proofs where proof_hash=$1',[PROOF]),null);
+ await assert.rejects(value('select passport_partner_decline($1,$2,$3)',[OTHER,OS,HASH]),/holder mismatch/);
+ assert.equal(await value('select state from passport_partner_requests where request_hash=$1',[HASH]),'pending');
+});
+test('card-backed partner proof is minimal, single-use and records real presentation/control activity',async()=>{
+ const id=await activeCard();await cardRequest();await stepup();await approve();
+ const proof=await redeem();assert.equal(proof.passport_active,true);assert.equal(proof.identity_verified,false);
+ for(const hidden of [U,cardReference,id,'Synthetic'])assert.ok(!JSON.stringify(proof).includes(hidden));
+ await assert.rejects(redeem(),/unavailable/);
+ const card=await first('select last_presented_at,last_proof_at from passport_cards where id=$1',[id]);assert.ok(card.last_presented_at);assert.ok(card.last_proof_at);
+});
+test('card revocation invalidates pending and approved proofs and stays available after Passport suspension',async()=>{
+ const id=await activeCard();await cardRequest();await stepup();await approve();
+ assert.equal(await value('select passport_card_revoke($1,$2,$3)',[OTHER,OS,id]),false);
+ await db.query(`update member_profiles set passport_state='suspended' where user_id=$1`,[U]);
+ assert.equal(await value('select passport_card_revoke($1,$2,$3)',[U,S,id]),true);await assert.rejects(redeem(),/unavailable/);
+ assert.equal(await value('select state from passport_partner_requests where request_hash=$1',[HASH]),'revoked');
+});
+test('expired cards cannot authorize a request or redeem an already approved proof',async()=>{
+ const id=await activeCard();await cardRequest();await stepup();await approve();
+ await db.query(`update passport_cards set issued_at=now()-interval '3 days',expires_at=now()-interval '1 day' where id=$1`,[id]);
+ await assert.rejects(redeem(),/card unavailable/);await assert.rejects(cardRequest(),/card unavailable/);
+});
+test('replacement is atomic, invalidates the old reference and starts inactive; recovery revokes all cards and bound requests',async()=>{
+ const old=await activeCard();await cardRequest();
+ await db.query('insert into passport_verification_tickets(user_id) values($1)',[U]);
+ await assert.rejects(value('select passport_card_issue($1,$2,$3,$4,$5,$6)',[OTHER,OS,secondReference,'physical','Other',old]),/unavailable/);
+ const replacement=await value('select passport_card_issue($1,$2,$3,$4,$5,$6)',[U,S,secondReference,'physical','Replacement',old]);
+ assert.equal(await value('select state from passport_cards where id=$1',[old]),'revoked');assert.equal(await value('select state from passport_cards where id=$1',[replacement]),'issued');
+ assert.equal(await value('select state from passport_partner_requests where request_hash=$1',[HASH]),'revoked');await assert.rejects(cardRequest(),/unavailable/);
+ assert.equal(await value('select passport_recovery_revoke($1)',[U]),true);
+ assert.equal(await value(`select count(*)::integer from passport_cards where user_id=$1 and state<>'revoked'`,[U]),0);
+ assert.equal(await value('select count(*)::integer from passport_verification_tickets where user_id=$1 and revoked_at is null',[U]),0);
+});
+test('hosted-login qualification starts closed, cannot enable without evidence, and preserves its recovery marker after disabling',async()=>{
+ assert.equal((await value('select passport_auth_capability()')).enabled,false);
+ await assert.rejects(db.exec('update passport_auth_capabilities set initial_passkey_enabled=true'),/check constraint/);
+ await assert.rejects(db.exec("update passport_auth_capabilities set initial_passkey_enabled=true,rp_id='3b.example',rp_origin='https://3b.example',qualified_at=now(),qualification_evidence=null"),/check constraint/);
+ await db.query(`update passport_auth_capabilities set initial_passkey_enabled=true,rp_id='3b.example',rp_origin='https://3b.example',qualified_at=now(),qualification_evidence=$1`,['Synthetic hosted qualification and recovery evidence only for this test']);
+ assert.equal((await value('select passport_auth_capability()')).everEnabled,true);
+ await db.exec('update passport_auth_capabilities set initial_passkey_enabled=false,initial_passkey_ever_enabled=false');
+ const capability=await value('select passport_auth_capability()');assert.equal(capability.enabled,false);assert.equal(capability.everEnabled,true);
+});
+test('historical public verifier civil claim requires fresh live production evidence and a matching provider reference',async()=>{
+ await db.query(`update member_profiles set identity_verification_state='verified',identity_assurance_level='identity_verified',identity_verified_at=now(),identity_verification_provider='idnow',identity_verification_ref_hash=$1 where user_id=$2`,[REF,U]);
+ assert.equal(await value('select passport_identity_live_assertion($1,$2)',[U,REF]),false);
+ await db.query(`insert into passport_identity_verification_attempts(user_id,provider,state,provider_session_ref_hash,production_live_verified) values($1,'idnow','verified',$2,true)`,[U,REF]);
+ assert.equal(await value('select passport_identity_live_assertion($1,$2)',[U,REF]),true);assert.equal(await value('select passport_identity_live_assertion($1,$2)',[U,HASH]),false);
+ await db.query(`update member_profiles set identity_verified_at=now()-interval '366 days' where user_id=$1`,[U]);assert.equal(await value('select passport_identity_live_assertion($1,$2)',[U,REF]),false);
 });
 test('identity reservation prevents concurrent starts; accepted terminal transition is atomic/idempotent',async()=>{
   const id=await value('select passport_identity_attempt_begin($1)',[U]);

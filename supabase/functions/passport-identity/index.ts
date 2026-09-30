@@ -1,30 +1,24 @@
 import encodeQR from 'qr';
+import {authenticate,bundledKey,Failure,rate} from '../_shared/passport-server.ts';
 
 const BASE=Deno.env.get('SUPABASE_URL')!;
-const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')||Deno.env.get('SUPABASE_PUBLISHABLE_KEY')||'';
+const ADMIN=bundledKey('SUPABASE_SECRET_KEYS','SUPABASE_SERVICE_ROLE_KEY');
 const APP='https://3b-international.vercel.app';
 const ORIGINS=new Set(['https://3b-international.vercel.app','capacitor://localhost','https://localhost','http://localhost:5173','http://127.0.0.1:5173']);
 
-class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const secret=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
 const passportNumber=(id:string)=>'3B-PASS-'+String(id).toUpperCase();
 
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){
- const response=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)});
+ const response=await fetch(BASE+path,{method,headers:{apikey:ADMIN,...(ADMIN.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+ADMIN}),'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)});
  const data=await response.json().catch(()=>null);
  if(!response.ok)throw new Failure(response.status>=500?503:400,'Vérification momentanément indisponible.');
  return data;
 }
 
 async function userId(req:Request){
- const authorization=req.headers.get('authorization')||'';
- if(!authorization.startsWith('Bearer '))throw new Failure(401,'Connecte-toi à ton compte 3B.');
- const response=await fetch(BASE+'/auth/v1/user',{headers:{apikey:PUBLIC,Authorization:authorization},signal:AbortSignal.timeout(8000)});
- const user=await response.json().catch(()=>null);
- if(!response.ok||!user?.id)throw new Failure(401,'Ta session a expiré. Reconnecte-toi.');
- return String(user.id);
+ return (await authenticate(req)).userId;
 }
 
 Deno.serve(async req=>{
@@ -36,6 +30,7 @@ Deno.serve(async req=>{
  if(origin&&!ORIGINS.has(origin))return reply({error:'Origine non autorisée.'},403);
  try{
   const uid=await userId(req);
+  await rate(uid+':passport-identity',6,600);
   const since=new Date(Date.now()-10*60*1000).toISOString();
   const recent=await api('/rest/v1/passport_verification_tickets?user_id=eq.'+uid+'&issued_at=gte.'+encodeURIComponent(since)+'&select=id&limit=6');
   if(Array.isArray(recent)&&recent.length>=6)throw new Failure(429,'Trop de codes générés. Réessaie dans quelques minutes.');

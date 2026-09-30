@@ -14,6 +14,10 @@ const credentials=(user:string)=>api('/rest/v1/passport_passkeys?user_id=eq.'+us
 async function context(body:Record<string,unknown>) {
   if(body.purpose==='partner_approve')return tokenHash(body.requestToken);
   if(body.purpose==='credential_manage') {
+    if(body.cardId!==undefined) {
+      if(typeof body.cardId!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(body.cardId)||body.credentialId!==undefined)throw new Failure(400,'Carte invalide.');
+      return sha256('card_activate:'+body.cardId);
+    }
     const id=body.credentialId;
     if(id!==undefined&&(typeof id!=='string'||!/^[A-Za-z0-9_-]{16,1400}$/.test(id)))throw new Failure(400,'Clé invalide.');
     return sha256(id?'revoke:'+id:'credential_enroll');

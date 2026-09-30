@@ -7,7 +7,8 @@ export const authClient=createClient(SUPABASE_URL,PUBLIC_KEY,{
   storageKey:'3b_member_auth_v1',
   detectSessionInUrl:true,
   persistSession:true,
-  autoRefreshToken:true
+  autoRefreshToken:true,
+  experimental:{passkey:true}
  }
 });
 export const MEMBER_AUTH_URL=SUPABASE_URL+'/functions/v1/member-auth';

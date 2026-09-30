@@ -1,4 +1,4 @@
-import React,{useMemo,useReducer,useState} from 'react';
+import React,{useEffect,useMemo,useReducer,useRef,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeBirthDate,normalizeCivilName,normalizeEmail,passwordRequirements,
@@ -16,6 +16,7 @@ import TurnstileField from './TurnstileField.jsx';
 import {Button} from '../design-system/index.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
+import {initialPasskeys} from '../passport/login-passkey.js';
 
 function initialMode(){
  try{
@@ -40,6 +41,16 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  const setCaptchaToken=token=>dispatchCaptcha({type:'token',attempt:captchaAttempt,token});
  const resetCaptcha=()=>dispatchCaptcha({type:'reset'});
  const[showPassword,setShowPassword]=useState(false);
+ const[passkeyReady,setPasskeyReady]=useState(false);
+ const passkeyAbort=useRef(null);
+ useEffect(()=>{let live=true;initialPasskeys.readiness().then(status=>{if(live)setPasskeyReady(status.enabled===true);}).catch(()=>{if(live)setPasskeyReady(false);});return()=>{live=false;passkeyAbort.current?.abort();};},[]);
+ useEffect(()=>()=>{passkeyAbort.current?.abort();},[account.user?.id,mode]);
+ const passkeyLogin=async()=>{
+  if(busy)return;setBusy(true);setError('');setNotice('');passkeyAbort.current=new AbortController();
+  try{await initialPasskeys.signIn({captchaToken,signal:passkeyAbort.current.signal});setFields(f=>({...f,password:''}));}
+  catch(e){if(!passkeyAbort.current.signal.aborted)setError(e.message||'La connexion par clé a échoué.');}
+  finally{setBusy(false);resetCaptcha();}
+ };
 
  const field=(key,value)=>{setFields(f=>({...f,[key]:value}));setError('');setNotice('');};
  const passwordRules=useMemo(()=>passwordRequirements(fields.password),[fields.password]);
@@ -80,7 +91,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     });
     setRecovery(result.recovery||'');
     await setSession(result.session);
-    setNotice('Mot de passe remplacé. Les autres appareils, anciennes clés de confirmation et accords partenaires ont été révoqués. Une nouvelle clé de secours a été créée.');
+    setNotice('Mot de passe remplacé. Les autres appareils, anciennes clés d’accès, cartes QR/NFC et accords partenaires ont été révoqués. Une nouvelle clé de secours a été créée.');
     setFields(f=>({...f,password:'',passwordConfirm:'',recovery:''}));
    }else if(mode==='reset-request'){
     normalizeEmail(fields.email);
@@ -293,6 +304,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
 
     <form onSubmit={submit}>
      {mode==='login'&&<>
+      <button type="button" className="loyalty-primary account-passkey-login" onClick={passkeyLogin} disabled={busy||!passkeyReady}><Fingerprint size={18}/> Se connecter avec une clé d’accès</button>
+      {!passkeyReady&&<small>La connexion par clé d’accès attend sa validation sur le service hébergé. Ton identifiant et ton mot de passe restent disponibles.</small>}
       <label>Identifiant 3B ou e-mail
        <input name="username" autoComplete="username" required maxLength={254} autoCapitalize="none" spellCheck="false" placeholder="kais3b ou nom@email.fr" value={fields.identifier} onChange={e=>field('identifier',e.target.value.toLowerCase())}/>
       </label>

@@ -1,72 +1,23 @@
 import {cityBuildingKind,cityMapBlueprint,cityMapRoads,cityMapUrbanScore} from './city3b-map.js';
 
-const clamp=(value,min=0,max=100)=>Math.min(max,Math.max(min,Number(value)||0));
+const clamp=(value,min=0,max=100)=>Math.round(Math.min(max,Math.max(min,Number(value)||0)));
 const placedOnly=rows=>(Array.isArray(rows)?rows:[]).filter(row=>row?.placement_state!=='stored');
 
 export function citySimulationSnapshot(snapshot={}){
-  const urban=cityMapUrbanScore(snapshot);
-  const definitions=new Map((snapshot.buildings||[]).map(row=>[row.code,row]));
-  const placements=placedOnly(snapshot.placements);
-  const counts={housing:0,commerce:0,civic:0,mobility:0,green:0,landmark:0,mixed:0};
-  for(const row of placements)counts[cityBuildingKind(definitions.get(row.building_code)||row)]+=1;
-
-  const blueprint=cityMapBlueprint(snapshot);
-  const roads=cityMapRoads(blueprint);
-  const level=Math.max(1,Number(snapshot.city?.city_level||1));
-  const unlocked=blueprint.districts.filter(row=>row.unlocked).length;
-
-  const housingCapacity=Math.max(60,counts.housing*220+counts.mixed*110+level*75);
-  const jobs=Math.max(20,counts.commerce*95+counts.civic*60+counts.mobility*40+counts.mixed*45+level*22);
-  const serviceCapacity=counts.civic*260+counts.green*95+counts.commerce*30+unlocked*35;
-  const attractiveness=clamp(
-    36+urban.green*.24+urban.services*.23+urban.mobility*.18+urban.balance*.19+Math.min(16,counts.landmark*4)
-  );
-  const occupancy=clamp(42+attractiveness*.42+urban.services*.12+urban.mobility*.08,30,98)/100;
-  const residents=Math.max(25,Math.round(housingCapacity*occupancy));
-
-  const roadCapacity=Math.max(
-    180,
-    360+roads.custom.length*230+counts.mobility*420+unlocked*90+roads.radials.filter(row=>row.unlocked).length*45
-  );
-  const trafficDemand=residents*.38+jobs*.62;
-  const congestion=clamp(Math.round(trafficDemand/roadCapacity*100),0,100);
-  const unemployment=clamp(Math.round(Math.max(0,residents-jobs)/Math.max(1,residents)*100),0,100);
-  const services=clamp(Math.round(serviceCapacity/Math.max(1,residents)*100),0,100);
-  const transit=clamp(Math.round(18+roads.custom.length*7+counts.mobility*20+unlocked*4-congestion*.14),0,100);
-  const green=clamp(urban.green);
-  const satisfaction=clamp(Math.round(
-    38+services*.20+transit*.16+green*.16+urban.balance*.18+attractiveness*.16-congestion*.16-unemployment*.14
-  ),0,100);
-
-  const residentialDemand=clamp(Math.round(58+satisfaction*.28-Math.min(55,residents/housingCapacity*45)),0,100);
-  const commercialDemand=clamp(Math.round(42+residents/18-jobs/30+transit*.12),0,100);
-  const serviceDemand=clamp(Math.round(72-services*.55+residents/45),0,100);
-  const growthPerCycle=Math.round((satisfaction-50)*.36+(jobs-residents)*.015);
-
-  const status=satisfaction>=78?'Excellente':satisfaction>=62?'Solide':satisfaction>=45?'À équilibrer':'Sous pression';
-
-  return{
-    residents,
-    housingCapacity,
-    jobs,
-    serviceCapacity,
-    congestion,
-    unemployment,
-    services,
-    transit,
-    green,
-    satisfaction,
-    attractiveness,
-    residentialDemand,
-    commercialDemand,
-    serviceDemand,
-    growthPerCycle,
-    status,
-    counts,
-    roadCapacity,
-    trafficDemand:Math.round(trafficDemand),
-    customRoads:roads.custom.length,
-  };
+ const life=snapshot.life,available=life?.available===true;
+ const residents=available?Math.max(0,Number(life.population)||0):0;
+ const need=code=>(Array.isArray(life?.needs)?life.needs:[]).find(n=>n.code===code)?.score||0;
+ const jobs=available?Math.max(0,Number(life.jobs)||0):0,working=available?Math.max(0,Number(life.workingPopulation)||0):0,employed=available?Math.max(0,Number(life.employed)||0):0;
+ const satisfaction=available?clamp(life.happiness):0;
+ return {available,residents,housingCapacity:available?Number(life.housingCapacity)||0:0,jobs,employed,workingPopulation:working,
+  congestion:available?clamp(100-Number(life.mobility||0)):0,unemployment:working?Math.round((working-employed)/working*100):0,
+  services:available?Math.round(['water','energy','food','health','education'].reduce((sum,code)=>sum+need(code),0)/5):0,
+  transit:available?clamp(life.mobility):0,green:available?clamp(need('green')):0,satisfaction,attractiveness:satisfaction,
+  residentialDemand:available?clamp(residents/Math.max(1,Number(life.housingCapacity)||0)*100):0,
+  commercialDemand:working?clamp((working-employed)/working*100):0,serviceDemand:available?clamp(100-satisfaction):0,
+  growthPerCycle:available&&residents<Number(life.housingCapacity)?Math.max(1,Math.min(12,Math.ceil(Number(life.housingCapacity)*.08)+(life.policy==='industry'?1:0))):0,
+  status:!available?'Indisponible':satisfaction>=78?'Excellente':satisfaction>=62?'Solide':satisfaction>=45?'À équilibrer':'À développer',
+  customRoads:available?Number(life.roads)||0:0,trafficDemand:employed,counts:cityMapUrbanScore(snapshot).counts};
 }
 
 export function cityTrafficRoutes(snapshot={},simulation=citySimulationSnapshot(snapshot)){
@@ -78,7 +29,7 @@ export function cityTrafficRoutes(snapshot={},simulation=citySimulationSnapshot(
     ...roads.radials.filter(road=>road.unlocked).map(road=>({...road,kind:'radial'})),
   ].filter(road=>Number.isFinite(road.x1)&&Number.isFinite(road.z1)&&Number.isFinite(road.x2)&&Number.isFinite(road.z2));
 
-  const budget=Math.max(0,Math.min(24,Math.round((simulation.residents+simulation.jobs)/180)));
+  const budget=Math.max(0,Math.min(24,Math.round((simulation.residents+Number(simulation.employed||0))/8)));
   if(!budget||!candidates.length)return[];
 
   const result=[];
