@@ -54,6 +54,7 @@ const TYPE_ACTIONS=Object.freeze({
  hubSecret:['inspect'],
  hubSecretStep:['inspect'],
  story:['talk','inspect'],
+ kais:['talk','ask'],
  echo:['calm','observe','fight'],
  guardian:['fight','observe'],
  patrol:['fight','observe'],
@@ -106,6 +107,7 @@ export function contextActions(item,context={}){
   if(item.type==='beacon')overrides={label:item.done?'Souvenir retrouvé':'Recueillir le Souvenir'};
   if(item.type==='guardian')overrides={label:save.seals?.includes(item.region)?'Défier à nouveau':'Affronter le Gardien'};
   if(item.type==='hubGuardian'&&id==='talk')overrides={label:'Parler au Gardien'};
+  if(item.type==='kais'&&id==='talk')overrides={label:'Parler à Kaïs',caption:item.done?'Conseil déjà entendu':'Le porteur du lien'};
   const assisted=resonanceActionPresentation(save,item,id);if(assisted)overrides={...overrides,caption:assisted.caption};
   const action=cloneAction(id,overrides);if(action)actions.push(action);
  }
