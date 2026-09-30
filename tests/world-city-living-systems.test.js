@@ -18,9 +18,11 @@ test('Hub dialogue exposes the current NPC activity without changing mission aut
   const normal=hubDialogueScene(npc,{hour:10,weather:'clear',missionState:{},talks:0});
   assert.equal(normal.activity.id,'work');
   assert.match(normal.text,/Nora/);
-  const active=hubDialogueScene(npc,{hour:10,weather:'clear',missionState:{m1:{status:'active'}},talks:1});
+  const active=hubDialogueScene({...npc,missionIds:['first_echo']},{hour:10,weather:'clear',missionState:{first_echo:{status:'active',completedObjectives:0}},talks:1});
   assert.equal(active.id,'mission-active');
-  assert.match(active.text,/mission m1/);
+  assert.equal(active.activity.id,'mission');
+  assert.match(active.text,/Premier Écho/);
+  assert.match(active.text,/signal|scanner/);
   assert.equal(typeof hubNpcActivityLine(npc,{hour:10}),'string');
 });
 

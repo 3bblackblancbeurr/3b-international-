@@ -22,7 +22,7 @@ export function hubNpcNeeds(item,timeSeconds=0,{weather='clear'}={}){
   const cycle=(timeSeconds+(seed%900))/900;
   const wave=offset=>Math.sin((cycle+offset)*Math.PI*2)*.5+.5;
   const resting=item.activity==='repos';
-  const working=item.activity==='travail'||item.activity==='préparation';
+  const working=['travail','préparation','suivi de mission','entretien du lieu restauré'].includes(item.activity);
   const social=item.activity==='rencontre publique';
   return {
     rest:clamp01((resting?.2:working?.72:.48)+wave(.13)*.18),
@@ -47,7 +47,7 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
   else if(context.inConversation===true)state='Talk';
   else if(context.playerVisible===true&&distance<9)state='Observe';
   else if(item.activity==='repos')state='Idle';
-  else if(item.activity==='travail'||item.activity==='préparation')state='Work';
+  else if(['travail','préparation','suivi de mission','entretien du lieu restauré'].includes(item.activity))state='Work';
   else if(item.activity==='rencontre publique'||item.activity==='pause de midi')state='Talk';
   else if(item.activity==='abri météo')state='Idle';
   else if(item.activity==='promenade')state='Walk';

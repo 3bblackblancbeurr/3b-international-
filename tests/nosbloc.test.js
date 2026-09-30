@@ -39,9 +39,8 @@ test('Nosbloc is an official routed 3B space', () => {
   assert.doesNotMatch(home, /const PRIMARY_IDS = \[[^\]]*'nosbloc'/);
 });
 
-test('3B MA VILLE identity is preserved as the first official Nosbloc block', () => {
-  assert.match(passport, /Ouvrir ma Ville 3B/);
-  assert.match(passport, /MA VILLE/);
+test('3B MA VILLE remains a Nosbloc block without adding game access to the Passport', () => {
+  assert.doesNotMatch(passport, /Ouvrir ma Ville 3B|MA VILLE/);
   assert.match(nosbloc, /PREMIER BLOC OFFICIEL/);
   assert.match(nosbloc, /3B MA VILLE/);
   assert.match(nosbloc, /City3BPortal/);

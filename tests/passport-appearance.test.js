@@ -186,7 +186,7 @@ test('Passport UI permanently keeps the original card without Details, zoom or d
  assert.doesNotMatch(passportVisual,/passport-view-switch|passport-phone-card|passport-card-zoom|Agrandir|Détails/);
  assert.doesNotMatch(passportVisual,/passport-animation-toolbar|passport-entry-hint/);
  assert.match(passportVisual,/passport-card-stage passport-card-desktop/);
- assert.match(passportVisual,/MA VILLE/);
+ assert.doesNotMatch(passportVisual,/MA VILLE|PassportNexus|passport-portal-trigger/);
  assert.match(passportVisual,/PassportPortrait/);
 });
 

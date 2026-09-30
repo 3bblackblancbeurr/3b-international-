@@ -254,7 +254,7 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
   </div>;
 }
 
-export default function City3BBuilder({ data, busy, call, premiumCodes = new Set() }) {
+export default function City3BBuilder({ data, busy, call, premiumCodes = new Set(), focus }) {
   const city = data.city || {};
   const storageKey = `threeb:city-editor:v1:${city.city_id || "unknown"}`;
   const definitions = useMemo(() => new Map((data.buildings || []).map(row => [row.code, row])), [data.buildings]);
@@ -280,6 +280,23 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = new Set
     if (Array.isArray(saved.history)) setHistory(saved.history.slice(-30));
     if (Array.isArray(saved.future)) setFuture(saved.future.slice(-30));
   }, [storageKey]);
+
+  useEffect(() => {
+    if (!focus) return;
+    setPreview(false);
+    setRoadStart(null);
+    setSelectedPlacementId("");
+    setQuery("");
+    setTool(focus.tool === "road" ? "road" : "build");
+    if (focus.building && definitions.has(focus.building)) {
+      setSelectedCode(focus.building);
+      setDraft({ x: 0, z: 0, rotation: 0 });
+      setNotice(`${definitions.get(focus.building).name} : choisis une parcelle puis enregistre la construction.`);
+    } else if (focus.tool === "road") {
+      setSelectedCode("");
+      setNotice("Choisis deux points sur le plan pour tracer une route, puis enregistre le réseau.");
+    }
+  }, [focus, storageKey]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -506,11 +523,11 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = new Set
   </section>;
 }
 
-export function City3BPrivatePreview({ data, premiumCodes = new Set() }) {
+export function City3BPrivatePreview({ data, premiumCodes = new Set(), publicVisit = false }) {
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState({ x: 0, z: 0 });
   return <section className="city3b-builder-preview city3b-builder-preview-standalone">
-    <header><div><p className="city3b-kicker">APERÇU PRIVÉ · PASSEPORT 3B</p><h2>{data.city?.name || "Ma Ville 3B"}</h2><span>Aucune publication publique n’est déclenchée.</span></div></header>
+    <header><div><p className="city3b-kicker">{publicVisit?'VISITE · VILLE PUBLIQUE':'APERÇU PRIVÉ · PASSEPORT 3B'}</p><h2>{data.city?.name || "Ma Ville 3B"}</h2><span>{publicVisit?'Découvre le plan sauvegardé de cette ville.':'Aucune publication publique n’est déclenchée.'}</span></div></header>
     <BuildingMap data={data} draft={{ x: 0, z: 0, rotation: 0 }} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} previewOnly premiumCodes={premiumCodes} />
   </section>;
 }

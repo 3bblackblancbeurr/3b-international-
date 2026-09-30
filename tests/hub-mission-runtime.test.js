@@ -8,9 +8,9 @@ import { createHubMissionState, startHubMission, advanceHubMission, claimHubMiss
 const here=dirname(fileURLToPath(import.meta.url));
 const missions=JSON.parse(readFileSync(join(here,'..','src','world','hub','data','missions-v1.json'),'utf8'));
 
-test('Hub mission runtime creates all 19 World-only mission states',()=>{
+test('Hub mission runtime creates all 20 World-only mission states',()=>{
  const state=createHubMissionState(missions);
- assert.equal(Object.keys(state).length,19);
+ assert.equal(Object.keys(state).length,20);
  assert.ok(Object.values(state).every((row)=>row.status==='available'));
 });
 

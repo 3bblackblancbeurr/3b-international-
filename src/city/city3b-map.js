@@ -21,6 +21,8 @@ export function cityMapSnap(point, step = 2) {
 }
 
 export function cityBuildingKind(definition = {}) {
+  const role = definition.metadata?.city_role;
+  if (['green','mobility','landmark','commerce','housing','civic','mixed'].includes(role)) return role;
   const source = normalize(`${definition.name || ''} ${definition.code || ''} ${definition.category || ''} ${definition.kind || ''}`);
   if (/parc|jardin|square|plaza|nature|green|garden/.test(source)) return 'green';
   if (/gare|station|metro|train|garage|mobil|transport/.test(source)) return 'mobility';

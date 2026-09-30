@@ -80,7 +80,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     });
     setRecovery(result.recovery||'');
     await setSession(result.session);
-    setNotice('Mot de passe remplacé. Une nouvelle clé de secours a été créée.');
+    setNotice('Mot de passe remplacé. Les autres appareils, anciennes clés de confirmation et accords partenaires ont été révoqués. Une nouvelle clé de secours a été créée.');
     setFields(f=>({...f,password:'',passwordConfirm:'',recovery:''}));
    }else if(mode==='reset-request'){
     normalizeEmail(fields.email);
@@ -91,7 +91,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     if(fields.password!==fields.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
     const{error:updateError}=await authClient.auth.updateUser({password:fields.password});
     if(updateError)throw updateError;
-    await authClient.auth.signOut({scope:'others'}).catch(()=>{});
+    const{error:revokeError}=await authClient.auth.signOut({scope:'others'});
+    if(revokeError)throw Error('Ton mot de passe est enregistré, mais la déconnexion des autres appareils a échoué. Réessaie avant de considérer la récupération comme terminée.');
     setMode('login');
     try{
      const url=new URL(window.location.href);url.searchParams.delete('reset');

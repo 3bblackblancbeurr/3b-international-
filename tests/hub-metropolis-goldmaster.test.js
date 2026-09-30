@@ -34,14 +34,14 @@ test('metropolis runtime exposes the 19 canonical buildings plus adaptive city f
  }
 });
 
-test('all 19 World-only Hub missions are action-driven through signals or physical action plans',()=>{
+test('all 20 World-only Hub missions are action-driven through signals or physical action plans',()=>{
  assert.equal(plan.firstPlayableSlice.missions.length,4);
  const signalIds=Object.keys(HUB_MISSION_SIGNAL_RULES),actionIds=Object.keys(HUB_MISSION_ACTION_PLANS);
  const missionIds=JSON.parse(readFileSync(new URL('../src/world/hub/data/missions-v1.json',import.meta.url),'utf8')).map(m=>m.id).sort();
  const covered=[...new Set([...signalIds,...actionIds])].sort();
- assert.equal(covered.length,19);
+ assert.equal(covered.length,20);
  assert.deepEqual(covered,missionIds);
- assert.equal(signalIds.length+actionIds.length,19,'a mission must have one authoritative driver');
+ assert.equal(signalIds.length+actionIds.length,20,'a mission must have one authoritative driver');
  for(const rules of Object.values(HUB_MISSION_SIGNAL_RULES))assert.ok(rules.length>=2);
  for(const stages of Object.values(HUB_MISSION_ACTION_PLANS))assert.ok(stages.length>=1);
 });

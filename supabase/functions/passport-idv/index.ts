@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { idnowCompletion, idnowWebhookEvent } from '../_shared/passport-security.js';
 
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const APP_URL=(Deno.env.get('APP_URL')||'https://3b-international.vercel.app').replace(/\/$/,'');
@@ -160,7 +161,7 @@ async function startVerification(uid:string){
     '&select=passport_public_id,passport_state,identity_verification_state,identity_assurance_level&limit=1');
   const profile=profiles?.[0];
   if(!profile?.passport_public_id||profile.passport_state!=='active')throw new Failure(403,'Passeport 3B actif requis.');
-  if(profile.identity_verification_state==='verified')throw new Failure(409,'Cette identité est déjà vérifiée.');
+  // The atomic reservation distinguishes historical verification from a new live-bound proof.
 
   const claims=await api('/rest/v1/member_identity_claims?user_id=eq.'+encodeURIComponent(uid)+
     '&select=legal_given_names,legal_family_name,birth_date&limit=1');
@@ -168,6 +169,9 @@ async function startVerification(uid:string){
   if(!claim?.legal_given_names||!claim?.legal_family_name||!claim?.birth_date)
     throw new Failure(409,'Complète d’abord tes informations d’identité.');
 
+  // Reserve before contacting IDnow: a second tab cannot create a concurrent attempt.
+  const attemptId=await api('/rest/v1/rpc/passport_identity_attempt_begin',{p_user:uid});
+  try {
   const subjectId='3b_'+(await hmac('subject:'+uid)).slice(0,40);
   const session=await idnow(
     '/api/v1/flows/'+encodeURIComponent(FLOW_ID)+'/'+LOGICAL+'/sessions',
@@ -189,26 +193,22 @@ async function startVerification(uid:string){
   if(!sessionId||!playerUrl.startsWith('https://'))throw new Failure(503,'Session de vérification invalide.');
 
   const refHash=await hmac('idnow-session:'+sessionId);
-  const rows=await api('/rest/v1/passport_identity_verification_attempts',{
-    user_id:uid,
-    provider:'idnow',
-    provider_session_ref_hash:refHash,
-    state:'processing',
-    assurance_requested:'identity_verified'
+  const bound=await api('/rest/v1/rpc/passport_identity_attempt_bind',{
+    p_attempt:attemptId,p_ref_hash:refHash,p_expires:session?.expiresAt||null
   });
-  const attempt=Array.isArray(rows)?rows[0]:rows;
-
-  await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(uid)+
-    '&identity_verification_state=in.(unverified,rejected,expired)',
-    {identity_verification_state:'pending'},
-    'PATCH'
-  );
+  if(bound!==true)throw new Failure(409,'La demande de vérification a changé.');
 
   return{
-    attemptId:attempt?.id||null,
+    attemptId,
     playerUrl,
     environment:PHYSICAL+':'+LOGICAL
   };
+  } catch(error) {
+    await api('/rest/v1/rpc/passport_identity_attempt_finish',{
+      p_attempt:attemptId,p_state:'error',p_ref_hash:null,p_error:'provider_start_failed'
+    });
+    throw error;
+  }
 }
 
 async function oidcIssuer(){
@@ -224,7 +224,8 @@ async function verifyWebhook(token:string){
   const hosts=idnowHosts();
   const issuer=await oidcIssuer();
   const jwks=createRemoteJWKSet(new URL(hosts.jwks));
-  const verified=await jwtVerify(token,jwks,{issuer,audience:WEBHOOK_AUDIENCE});
+  const verified=await jwtVerify(token,jwks,{issuer,audience:WEBHOOK_AUDIENCE,
+    requiredClaims:['iss','aud','sub','exp','iat'],maxTokenAge:'65m',clockTolerance:30});
   return verified.payload as Record<string,unknown>;
 }
 
@@ -233,15 +234,10 @@ async function processWebhook(jwt:string){
   try{payload=await verifyWebhook(jwt);}
   catch{throw new Failure(401,'Signature webhook invalide.');}
 
-  const data=(payload.data&&typeof payload.data==='object'?payload.data:{}) as Record<string,unknown>;
-  const eventId=String(data.eventId||'');
-  const eventName=String(data.eventName||'');
-  const eventVersion=String(data.eventVersion||'');
-  const eventPayload=(data.payload&&typeof data.payload==='object'?data.payload:{}) as Record<string,unknown>;
-  const sessionId=String(eventPayload.sessionId||'');
-
-  if(!/^[0-9a-f-]{16,80}$/i.test(eventId)||!/^session\.(created|completed|aborted|expired|error)$/.test(eventName)||!sessionId)
-    throw new Failure(400,'Webhook IDnow invalide.');
+  let event;
+  try { event=idnowWebhookEvent(payload,{logical:LOGICAL,flowId:FLOW_ID}); }
+  catch {throw new Failure(400,'Webhook IDnow invalide.');}
+  const {eventId,eventName,eventVersion,sessionId}=event;
 
   const claimRows=await api('/rest/v1/rpc/passport_identity_provider_event_claim',{
     p_provider:'idnow',
@@ -259,6 +255,9 @@ async function processWebhook(jwt:string){
     refHash+'&select=id,user_id,state&limit=1');
   const attempt=attempts?.[0];
   if(!attempt?.id){
+    // The provider can emit a terminal webhook before the start response is bound locally.
+    // Retain the retryable event lease instead of permanently discarding that result.
+    if(eventName!=='session.created')throw new Failure(503,'Session de vérification pas encore enregistrée.');
     await api('/rest/v1/passport_identity_provider_events?provider=eq.idnow&event_id=eq.'+encodeURIComponent(eventId),
       {processed_at:new Date().toISOString(),processing_started_at:null,processing_result:'unknown_session'},'PATCH');
     return{ok:true};
@@ -271,56 +270,29 @@ async function processWebhook(jwt:string){
     if(String(result?.metadata?.subjectId||'')!==expected)throw new Failure(409,'Référence sujet IDnow incohérente.');
     if(String(result?.flowId||'')!==FLOW_ID)throw new Failure(409,'Flux IDnow incohérent.');
 
-    const outcome=String(result?.outcome||'');
-    if(outcome==='accepted'&&IDNOW_APPROVED){
-      nextState='verified';
-      await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'verified',completed_at:new Date().toISOString(),last_error_code:null
-      },'PATCH');
-      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id),{
-        identity_verification_state:'verified',
-        identity_assurance_level:'identity_verified',
-        identity_verified_at:new Date().toISOString(),
-        identity_verification_provider:'idnow',
-        identity_verification_ref_hash:refHash
-      },'PATCH');
-    }else if(outcome==='accepted'){
-      nextState='error';resultCode='flow_not_approved';
-      await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'error',completed_at:new Date().toISOString(),last_error_code:'flow_not_approved'
-      },'PATCH');
-    }else{
-      nextState='rejected';resultCode='rejected';
-      await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'rejected',completed_at:new Date().toISOString(),last_error_code:'provider_rejected'
-      },'PATCH');
-      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-        identity_verification_state:'rejected'
-      },'PATCH');
-    }
+    let completion;
+    try { completion=idnowCompletion(result,{sessionId,flowId:FLOW_ID,subjectId:expected,
+      logical:LOGICAL,physical:PHYSICAL,approved:IDNOW_APPROVED}); }
+    catch { throw new Failure(409,'Résultat IDnow incomplet ou incohérent.'); }
+    nextState=completion.state;resultCode=completion.code||'verified';
+    nextState=await api('/rest/v1/rpc/passport_identity_attempt_finish',{
+      p_attempt:attempt.id,p_state:nextState,p_ref_hash:refHash,p_error:completion.code
+    });
   }else if(eventName==='session.expired'){
     nextState='expired';
-    await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-      state:'expired',completed_at:new Date().toISOString(),last_error_code:'session_expired'
-    },'PATCH');
-    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-      identity_verification_state:'expired'
-    },'PATCH');
+    nextState=await api('/rest/v1/rpc/passport_identity_attempt_finish',{
+      p_attempt:attempt.id,p_state:nextState,p_ref_hash:refHash,p_error:'session_expired'});
   }else if(eventName==='session.aborted'){
     nextState='cancelled';
-    await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-      state:'cancelled',completed_at:new Date().toISOString(),last_error_code:'session_aborted'
-    },'PATCH');
-    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
-      identity_verification_state:'unverified'
-    },'PATCH');
+    nextState=await api('/rest/v1/rpc/passport_identity_attempt_finish',{
+      p_attempt:attempt.id,p_state:nextState,p_ref_hash:refHash,p_error:'session_aborted'});
   }else if(eventName==='session.error'){
     nextState='error';
-    await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-      state:'error',completed_at:new Date().toISOString(),last_error_code:'provider_error'
-    },'PATCH');
+    nextState=await api('/rest/v1/rpc/passport_identity_attempt_finish',{
+      p_attempt:attempt.id,p_state:nextState,p_ref_hash:refHash,p_error:'provider_error'});
   }
 
+  if(['stale_attempt','already_terminal'].includes(nextState))resultCode=nextState;
   await api('/rest/v1/passport_identity_provider_events?provider=eq.idnow&event_id=eq.'+encodeURIComponent(eventId),{
     processed_at:new Date().toISOString(),processing_started_at:null,processing_result:resultCode
   },'PATCH');
@@ -328,6 +300,13 @@ async function processWebhook(jwt:string){
   return{ok:true,state:nextState};
 }
 
+async function boundedText(req:Request,max:number){
+  const reader=req.body?.getReader();if(!reader)throw new Failure(400,'Demande vide.');
+  const decoder=new TextDecoder();let size=0,text='';
+  try {for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;
+    if(size>max){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}text+=decoder.decode(value,{stream:true});}
+    return text+decoder.decode();}finally{reader.releaseLock();}
+}
 Deno.serve(async req=>{
   const origin=req.headers.get('origin')||'';
   const cors={
@@ -344,14 +323,14 @@ Deno.serve(async req=>{
   try{
     const type=(req.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
     if(type==='application/jwt'){
-      const jwt=(await req.text()).trim();
+      const jwt=(await boundedText(req,30000)).trim();
       if(jwt.length<100||jwt.length>30000)throw new Failure(400,'Webhook invalide.');
       return reply(await processWebhook(jwt));
     }
 
     if(type!=='application/json')throw new Failure(415,'Format invalide.');
     const uid=await authenticate(req);
-    const body=await req.json().catch(()=>null);
+    let body;try{body=JSON.parse(await boundedText(req,8192));}catch(error){if(error instanceof Failure)throw error;throw new Failure(400,'Demande invalide.');}
     const action=String(body?.action||'');
     if(action==='readiness')return reply({
       enabled:configured(),

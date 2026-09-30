@@ -11,15 +11,21 @@ const seedOf=id=>[...id].reduce((sum,char)=>sum+char.charCodeAt(0),0);
 export function hubDayPart(hour){
  if(hour<6)return 'night';if(hour<9)return 'morning';if(hour<18)return 'day';if(hour<22)return 'evening';return 'night';
 }
-export function hubNpcSchedule(npcId,{hour=12,day=1,storyProgress=false,weather='clear'}={}){
+export function hubScheduleKey(date=new Date(),weather='clear'){
+ return [date.getFullYear(),date.getMonth(),date.getDate(),date.getHours(),weather].join(':');
+}
+export function hubNpcSchedule(npcId,{hour=12,day=1,storyProgress=false,weather='clear',missionState={},missionIds=[]}={}){
  const home=HOME[npcId]||'heritage_square',part=hubDayPart(hour),seed=seedOf(npcId);
  if(npcId==='the_conductor')return {district:part==='night'?'docks':'archives',activity:part==='night'?'dernier train':'archives du réseau',rare:part!=='night'};
  if(npcId==='noah_leroux')return {district:storyProgress?'broken_circle_tower':part==='evening'?'heritage_square':'broken_circle_tower',activity:storyProgress?'veille des fragments':'observation',rare:false};
+ const missions={arda_kaya:'blue_blackout',leyla_demir:'silent_cable',giulia_ferri:'eight_seeds',evelin_tamm:'lost_wolf_signal',amira_mansouri:'voices_square',elio_romano:'first_foundation'};
+ const associated=missionIds.length?missionIds:[missions[npcId]],mission=associated.map(id=>missionState?.[id]).find(row=>row?.status==='active')||associated.map(id=>missionState?.[id]).find(row=>row?.status==='completed');
+ if(mission?.status==='active')return {district:home,activity:'suivi de mission',shelter:['storm','heavy_rain','snow'].includes(weather),rare:false};
  if(part==='night')return {district:home,activity:'repos',rare:false};
- if((weather==='storm'||weather==='heavy_rain')&&part!=='night')return {district:home,activity:'abri météo',shelter:true,rare:false};
+ if(['storm','heavy_rain','snow'].includes(weather)&&part!=='night')return {district:home,activity:'abri météo',shelter:true,rare:false};
  if(part==='morning')return {district:home,activity:'préparation',rare:false};
  if(hour>=12&&hour<14)return {district:LUNCH[(seed+day)%LUNCH.length],activity:'pause de midi',social:true,rare:false};
  if(part==='evening'&&(day===5||day===6))return {district:SOCIAL[(seed+day)%SOCIAL.length],activity:'rencontre publique',social:true,rare:false};
  if(part==='evening'&&seed%3===0)return {district:SOCIAL[(seed+1)%SOCIAL.length],activity:'promenade',social:true,rare:false};
- return {district:home,activity:'travail',rare:false};
+ return {district:home,activity:mission?.status==='completed'?'entretien du lieu restauré':'travail',rare:false};
 }

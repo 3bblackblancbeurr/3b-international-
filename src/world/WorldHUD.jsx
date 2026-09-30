@@ -14,7 +14,7 @@ import {controlLabel} from './control-bindings.js';
 
 export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls}){
  const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
- const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]);
+ const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save,{weather:snapshot.weather}),[snapshot.region,save,snapshot.weather]);
  const [arrival,setArrival]=useState(false),[actionMenu,setActionMenu]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
  useEffect(()=>{if(!loaded)return;const timer=setTimeout(()=>{setHint(false);try{localStorage.setItem('3b-world-intro-seen','1');}catch{}},6500);return()=>clearTimeout(timer);},[loaded]);

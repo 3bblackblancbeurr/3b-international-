@@ -1,4 +1,8 @@
+import {HUB_NPC_LINES} from './npc-dialogue.js';
+import {HUB_DISTRICT_STORIES,hubNpcMissionContext,hubNpcMissionLine} from './npc-narrative.js';
+import {CANON_WORLDS,STORY_CANON,GUARDIAN_STORIES} from '../story-canon.js';
 import {hubNpcMemory} from './npc-memory.js';
+import {hubDistrictEffects} from './mission-effects.js';
 export const HUB_DIALOGUE_INTENTS=Object.freeze({
  identity:{label:'Qui es-tu ?'},
  district:{label:'Parle-moi de ce quartier'},
@@ -22,28 +26,30 @@ export function hubDialogueIntents(item,save,{hour=12,weather='clear'}={}){
  if(item.country||item.guardianRegion||item.guardian||item.value)options.push('guardian');
  if((save?.seals?.length||0)>0||item.npcId==='noah_leroux'||item.npcId==='the_conductor')options.push('oubli');
  if((save?.beacons?.length||0)>0||completed||memory.familiarityScore>=18)options.push('memory');
- if((save?.seals?.length||0)>0||weather!=='clear'||hour>=20||hour<6||memory.familiarityScore>=45)options.push('opinion');
+ if(completed||hubDistrictEffects(save?.hub,item.homeDistrict||item.district).length||(save?.seals?.length||0)>0||weather!=='clear'||hour>=20||hour<6||memory.familiarityScore>=45)options.push('opinion');
  options.push('goodbye');
  return [...new Set(options)].map(id=>({id,label:HUB_DIALOGUE_INTENTS[id].label}));
 }
 
 export function hubDialogueIntentResponse(item,intentId,save,{hour=12,weather='clear',guardianName=null,value=null,countryName=null,guardianLiberated=false}={}){
- const missions=save?.hub?.missions||{},active=activeMission(item,missions),completed=completedMission(item,missions),name=item.name||'Cette personne',district=item.district||'ce quartier',history=save?.hub?.stats?.dialogueHistory||[],memory=hubNpcMemory(item,save,{hour,weather}),asked=history.filter(row=>row.npcId===item.npcId&&row.sceneId==='intent'&&row.choiceId===intentId).length,liberated=guardianLiberated||memory.guardianLiberated;
+ const missions=save?.hub?.missions||{},memory=hubNpcMemory(item,save,{hour,weather});
+ const id=item.npcId||item.id,name=item.name||'Cet habitant',voice=HUB_NPC_LINES[id]||['Chaque habitant a une histoire à transmettre.','Prends le temps d’écouter.','Nous avons encore beaucoup à apprendre.'];
+ const district=HUB_DISTRICT_STORIES[item.district],mission=hubNpcMissionContext(item,missions),canon=CANON_WORLDS[memory.region],guardian=canon?.guardian||guardianName,guardianValue=canon?.value||value,liberated=guardianLiberated||memory.guardianLiberated;
  switch(intentId){
-  case 'identity':return {text:memory.familiarity==='trusted'?`${name}. On s’est assez parlé pour dépasser les présentations. Tu connais mon rôle ; ce qui m’intéresse maintenant, c’est ce que tes actes changent réellement dans la Cité.`:memory.familiarity==='familiar'?`${name}. Je te reconnais maintenant. ${item.role||'Habitant du Monde 3B'}. Nos conversations commencent à avoir une continuité.`:asked>1?`Tu connais déjà mon nom : ${name}. Si tu reviens me poser la question, c’est peut-être que tu cherches autre chose que mon métier.`:`${name}. ${item.role||'Habitant du Monde 3B'}. Je vis ici ; ce que je sais vient surtout de ce que j’ai vu, pas de ce que la ville raconte sur elle-même.`};
-  case 'district':return {text:memory.tension>=40?`Ici, ${district} est plus tendu que d’habitude. Les horaires ne suffisent pas à l’expliquer : une mission en cours, la météo ou ce qui n’a pas encore été réglé change réellement les comportements.`:`Ici, ${district} change selon l’heure, les habitants et ce qui a déjà été restauré. Regarde aussi les détails : tout ce qui compte n’a pas forcément un marqueur.`};
-  case 'mission':
-   return active?{text:`Tu m’aides déjà. Termine d’abord l’étape ${active[1].completedObjectives+1} sur ${active[1].totalObjectives}.`}:completed?{text:'Tu as déjà fait ce que je t’avais demandé. Regarde maintenant ce que cette action a changé autour de nous.'}:{text:(item.missionIds||[]).length?'Oui. Une mission est liée à ce lieu ; commence-la depuis son point dans la Cité.':'Pas pour l’instant. Mais les événements du quartier peuvent encore créer de nouvelles situations.'};
-  case 'guardian':return {text:guardianName?(liberated?`${guardianName} est revenu dans la Cité. Regarde ce qu’il fait maintenant : libérer un Gardien n’efface pas son conflit avec ${value||'sa valeur'}, cela lui donne une nouvelle manière de le vivre.`:`${guardianName} ne protège pas simplement ${value||'une valeur'}. Son épreuve vient de sa propre difficulté à vivre cette valeur. Si tu veux le comprendre, observe ce qu’il refuse de faire autant que ce qu’il fait.`):`Le Gardien lié à ${countryName||'ce territoire'} ne se résume pas à un combat. Les habitants, les Souvenirs et l’état du quartier te diront pourquoi il est devenu Gardien.`};
-  case 'oubli':return {text:'L’Oubli préfère les choses séparées : un souvenir sans contexte, une valeur sans personne, une histoire sans transmission. Quand tout devient isolé, il peut remplacer le sens par une version plus simple.'};
-  case 'clue':{
-   if(!active)return {text:'Je n’ai pas d’indice utile pour toi maintenant.'};
-   const n=Math.min(active[1].completedObjectives+1,active[1].totalObjectives);
-   return {text:`Pour l’étape ${n}, cherche une action réelle dans le monde. Si l’objectif parle de transport, de personne, de bâtiment ou de secret, le simple fait d’ouvrir le journal ne suffira pas.`};
+  case 'identity':return {text:`${memory.familiarity==='trusted'?'Heureux de te revoir. ':memory.familiarity==='familiar'?'Je te reconnais. ':''}Je suis ${name}, ${item.role||'habitant de la Cité'}. ${voice[0]}`};
+  case 'district':return {text:district?`${district.text} ${weather==='storm'||weather==='heavy_rain'?'Avec cette météo, reste attentif pendant tes déplacements.':hour>=20||hour<6?'La nuit, prends aussi le temps d’observer les lumières et les départs aux Docks.':''}`.trim():voice[1]};
+  case 'mission':return {text:hubNpcMissionLine(item,missions)};
+  case 'guardian':return {text:guardian?(liberated?`${guardian} est revenu dans la Cité. ${GUARDIAN_STORIES[memory.region]?.conflict||`Sa relation à ${guardianValue||'sa valeur'} continue d’évoluer.`}`:`${guardian} porte la valeur de ${guardianValue||'son héritage'}. ${GUARDIAN_STORIES[memory.region]?.temperament||'Les souvenirs de son pays permettent de mieux comprendre son histoire.'}`):`Les huit Gardiens protègent chacun une valeur et un héritage. ${STORY_CANON.hero.name} est le ${STORY_CANON.hero.role} ; il ne fait pas partie des huit Gardiens.`};
+  case 'oubli':return {text:id==='noah_leroux'?`${STORY_CANON.circle.purpose} ${STORY_CANON.oubli.nature}`:id==='the_conductor'?`Un voyage relie des lieux ; une histoire relie ceux qui y ont vécu. ${STORY_CANON.oubli.nature}`:`${STORY_CANON.oubli.nature} ${voice[0]}`};
+  case 'clue':return {text:mission?.row.status==='active'?`${mission.mission.title} — ${mission.hint}`:hubNpcMissionLine(item,missions)};
+  case 'memory':{
+   const finished=(item.missionIds||[]).find(missionId=>missions[missionId]?.status==='completed');
+   if(finished){const context=hubNpcMissionContext({...item,missionIds:[finished]},missions);return {text:`Je me souviens de ton aide pour « ${context.mission.title} ». ${voice[2]}`};}
+   const lastTopic=memory.lastIntent==='memory'?memory.previousIntent:memory.lastIntent;
+   return {text:memory.conversationTurns>=2&&lastTopic?`Tu m’as déjà parlé de « ${HUB_DIALOGUE_INTENTS[lastTopic]?.label||'la Cité'} ». ${voice[1]}`:`${voice[1]} Les souvenirs retrouvés aux Archives nous aident à remettre les choses dans leur contexte.`};
   }
-  case 'memory':return {text:memory.lastIntent&&memory.conversationTurns>=2?`Je me rappelle que notre dernier sujet était « ${HUB_DIALOGUE_INTENTS[memory.lastIntent]?.label||memory.lastIntent} ». Ce que je te dis maintenant doit rester cohérent avec ça, sauf si le monde a réellement changé depuis.`:(save?.beacons?.length||0)>0?'Depuis que les Souvenirs reviennent, certaines personnes se rappellent des détails différents. Ne cherche pas une seule version parfaite : compare ce qui revient chez plusieurs témoins.':'Avant, j’ai surtout des impressions : des lieux plus pleins, des noms mieux ancrés. Les vrais Souvenirs diront davantage que ma nostalgie.'};
-  case 'opinion':return {text:completed?`Depuis que tu as terminé ${completed[0]}, je vois des changements que je n’aurais pas remarqués avant. Les missions doivent laisser des traces, sinon elles n’ont servi qu’à remplir un journal.`:weather==='storm'||weather==='heavy_rain'?'La ville change sous cette météo. Certains restent à l’abri, d’autres sont appelés dehors : regarde qui bouge et qui disparaît.':hour>=20||hour<6?'La nuit révèle d’autres habitudes. Les transports, les secrets et même les conversations ne sont pas les mêmes.':liberated?`Depuis le retour du Gardien lié à mon pays, l’ambiance a changé. Ce n’est pas une fin heureuse automatique : on apprend surtout à vivre la valeur autrement.`:memory.familiarity==='trusted'?`Je te fais davantage confiance qu’au début, parce que je peux comparer ce que tu dis avec ce que tu as réellement fait ici.`:'Depuis les premières restaurations, la Cité paraît plus vivante. Mais ce sont surtout les comportements des habitants qui me le font sentir.'};
-  case 'goodbye':return {text:memory.familiarity==='trusted'?'À bientôt. Je me souviendrai de ce qu’on s’est dit ; reviens quand le monde aura vraiment changé.':'À bientôt. Reviens après avoir fait quelque chose dans le monde ; j’aurai peut-être autre chose à te dire.',close:true};
+  case 'opinion':{const changes=hubDistrictEffects(save?.hub,item.homeDistrict||item.district);return {text:changes.length?changes.slice(-2).map(effect=>effect.detail).join(' '):weather==='storm'||weather==='heavy_rain'?`Cette météo me rend vigilant. ${voice[1]}`:memory.familiarity==='trusted'?`À force de te voir revenir et d’échanger, j’ai appris à te faire confiance. ${voice[2]}`:voice[2]};}
+  case 'goodbye':return {text:memory.familiarity==='trusted'?'À bientôt. Merci d’avoir pris le temps de m’écouter.':'À bientôt. Tu sauras où me retrouver.',close:true};
   default:return {text:'Je n’ai rien de fiable à ajouter là-dessus.'};
  }
 }

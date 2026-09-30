@@ -166,6 +166,22 @@
     ]
   },
   {
+    "id": "first_foundation",
+    "title": "La Première Fondation",
+    "category": "urbanisme",
+    "district": "city3b_portal",
+    "importance": "minor",
+    "giver": "elio_romano",
+    "objectives": [
+      "relever le terrain du quartier",
+      "tracer une liaison piétonne",
+      "poser la première fondation du quartier"
+    ],
+    "rewards": [
+      "plan_du_quartier"
+    ]
+  },
+  {
     "id": "voices_square",
     "title": "Les Voix de la Place",
     "category": "community",

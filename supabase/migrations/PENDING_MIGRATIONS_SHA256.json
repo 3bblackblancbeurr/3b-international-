@@ -1,5 +1,21 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 3,
+  "migrations": [
+    {
+      "version": "20260930150000",
+      "name": "city3b_guided_campaign",
+      "sha256": "a687cb09efd545b29e51e6d709df7f4516f5c487dd0d7ddde7713eb7ea459671"
+    },
+    {
+      "version": "20260930180000",
+      "name": "passport_identity_atomic_lifecycle_v4",
+      "sha256": "65b4c5881ee6704dff5817abbb4fb6bc173de2d4bb698261f91517cabcafbe97"
+    },
+    {
+      "version": "20260930181000",
+      "name": "passport_partner_passkeys_pilot_v1",
+      "sha256": "c6b5cedb95bb1ac8a5048001cdc7d615fbb27b42fbc28ef9c740b02f3d3ddcdd"
+    }
+  ]
 }

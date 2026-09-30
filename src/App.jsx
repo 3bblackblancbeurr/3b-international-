@@ -23,6 +23,7 @@ import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 import PassportAppearanceSettings from "./passport/PassportAppearance.jsx";
 import { hasPassportAccess } from "./passport/access.js";
+import {createPassportRequestResume,removePassportRequestFromUrl} from './passport/request-resume.js';
 import { Button } from "./design-system/index.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
 const PenaltyRush = lazy(() => import("./games/PenaltyRush.jsx"));
@@ -46,6 +47,8 @@ import ReligionPage from "./components/ReligionPage.jsx";
 const CommunityPage = lazy(() => import("./community/CommunityPage.jsx"));
 import SportPage from "./sport/SportPage.jsx";
 const WorldExperience=lazy(()=>import('./world/WorldEntry.jsx'));
+const CityExperience=lazy(()=>import('./components/City3BPortal.jsx'));
+const PassportSecurityPanel=lazy(()=>import('./passport/PassportSecurityPanel.jsx'));
 const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
@@ -75,6 +78,12 @@ const BASE_MENU_ITEMS = [
     label: "Le Monde du 3B",
     icon: "🌍",
     description: "Huit pays vivants, des personnages et créatures à rencontrer, des lieux à reconstruire.",
+  },
+  {
+    id: "city3b",
+    label: "Créer ma Ville",
+    icon: "▦",
+    description: "Fonde ta ville, accueille ses habitants et développe ses quartiers avec une campagne de construction.",
   },
   {
     id: "nosbloc",
@@ -180,6 +189,36 @@ export default function App() {
 
 
   const loyalty = useLoyalty();
+  const passportRequestResume=useRef(null);
+  if(!passportRequestResume.current)passportRequestResume.current=createPassportRequestResume();
+  const [requestResumeVersion,setRequestResumeVersion]=useState(0);
+  const requestUser=loyalty.user?.id||null;
+  const requestUserRef=useRef(requestUser);requestUserRef.current=requestUser;
+  const requestToken=passportRequestResume.current.read(requestUser);
+
+  useEffect(()=>{
+    if(!route.requestToken)return;
+    if(passportRequestResume.current.capture(route.requestToken,requestUserRef.current))setRequestResumeVersion(value=>value+1);
+    const href=removePassportRequestFromUrl(window.location.href,route.page);
+    window.history.replaceState(window.history.state,'',href);
+    setRoute(readLocation());
+    // Only an incoming link can capture a request. An account change must not
+    // recapture the old token and bind it to another account.
+  },[route.requestToken]);
+  useEffect(()=>{
+    const result=passportRequestResume.current.sessionChanged(requestUser,{page,loading:loyalty.loading});
+    if(result.changed)setRequestResumeVersion(value=>value+1);
+    if(result.returnToPassport)goTo('passport');
+  },[requestUser,loyalty.loading,page,requestResumeVersion]);
+  useEffect(()=>{
+    const remaining=passportRequestResume.current.remaining();
+    if(!remaining)return;
+    const timer=setTimeout(()=>{passportRequestResume.current.clear();setRequestResumeVersion(value=>value+1);},remaining);
+    return()=>clearTimeout(timer);
+  },[requestResumeVersion,requestUser]);
+  function handlePassportRequest(token,owner){
+    if(passportRequestResume.current.handled(token,owner))setRequestResumeVersion(value=>value+1);
+  }
   const [localMember] = useState(() =>
     normalizeMember(loadJsonStorage(STORAGE_MEMBER_KEY, createTestMember()))
   );
@@ -291,6 +330,7 @@ export default function App() {
   }
 
   function goTo(nextPage) {
+    if(nextPage==='member')passportRequestResume.current.waitForLogin(requestUser);
     navigateTo(nextPage);
     setRoute(readLocation());
   }
@@ -403,6 +443,9 @@ export default function App() {
       {page === "passport" && (
         <PassportPage
           identity={loyalty.passport}
+          expectedUser={loyalty.user?.id || null}
+          requestToken={requestToken}
+          onRequestHandled={handlePassportRequest}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
           hasPassport={hasPassport}
@@ -422,6 +465,7 @@ export default function App() {
       {page === "community" && <ComingSoon goTo={goTo} eyebrow="COMMUNAUTÉ · 3B" title="Communauté 3B" description="Profils, échanges, défis et modération sont en cours de finalisation pour ouvrir la communauté dans une version plus solide et plus claire." />}
       {page === "secret" && <PremierSecretPage goTo={goTo} dailySecret={secret} />}
       {page === "world3b" && <Suspense fallback={<AppLoadingState label="Ouverture du Monde 3B…" />}><WorldExperience goTo={goTo}/></Suspense>}
+      {page === "city3b" && <CityExperience open onClose={()=>goTo('home')} />}
       {page === "arena" && <div className="arena-standalone"><Suspense fallback={<AppLoadingState label="Ouverture de l’arène 3B…" compact />}><ArenaExperience key={loyalty.user?.id||'guest'} onExit={()=>goTo('world3b')} onAccount={()=>goTo('member')}/></Suspense></div>}
 
       {page === "member" && (
@@ -563,7 +607,7 @@ function PassportAccessGate({ goTo, options }) {
       <section className="intro3b-card" aria-labelledby="passport-access-title">
         <p className="eyebrow">ACCÈS 3B</p>
         <h1 id="passport-access-title">Passeport 3B requis</h1>
-        <p>Un seul Passeport 3B donne accès à l’écosystème 3B, y compris au Monde du 3B.</p>
+        <p>Un seul Passeport 3B donne accès à l’écosystème 3B : Ma Ville, le Monde du 3B et tes avantages de membre.</p>
         <Button variant="champagne" className="primary-button" onClick={() => goTo("passport")}>Ouvrir mon Passeport 3B</Button>
         <Button variant="ghost" className="ghost-button" onClick={() => goTo("member")}>Compte / activation</Button>
         <Button variant="ghost" className="ghost-button" onClick={() => goTo("home")}>Retour à l’accueil</Button>
@@ -588,7 +632,7 @@ function PageHeader({ title, subtitle, goTo }) {
   );
 }
 
-function PassportPage({ identity, syncing, goTo, options }) {
+function PassportPage({ identity, syncing, goTo, options, expectedUser, requestToken, onRequestHandled }) {
   return (
     <section className="page-section">
       <PageHeader
@@ -598,9 +642,11 @@ function PassportPage({ identity, syncing, goTo, options }) {
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
+      {!syncing && !hasPassportAccess(identity) && <div className="home-hero-actions"><Button variant="champagne" onClick={()=>goTo('member')}>Créer ou retrouver mon Passeport</Button></div>}
       {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <SecretDirectorPanel />}
 
       {identity && <PassportAppearanceSettings identity={identity} />}
+      <PassportSecurityPanel key={expectedUser || 'anonymous'} expectedUser={expectedUser} requestToken={requestToken} onAccount={()=>goTo('member')} onRequestHandled={onRequestHandled} />
 
     </section>
   );
