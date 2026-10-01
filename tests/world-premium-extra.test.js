@@ -27,10 +27,10 @@ test('regional weather is deterministic and profiles constrain visibility',()=>{
  }
 });
 
-test('Hub journal exposes all 19 World-only missions with locks, optional metadata and summary',()=>{
+test('Hub journal exposes all 20 World-only missions with locks, optional metadata and summary',()=>{
  const save=blankSave(),rows=hubMissionJournal(save),summary=hubMissionSummary(save);
- assert.equal(rows.length,19);
- assert.equal(summary.total,19);
+ assert.equal(rows.length,20);
+ assert.equal(summary.total,20);
  assert.ok(rows.some(row=>row.locked));
  assert.ok(rows.some(row=>row.optional.length>0));
  assert.equal(rows.find(row=>row.id==='first_steps').locked,false);

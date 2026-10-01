@@ -1,4 +1,4 @@
-import React,{useMemo,useReducer,useState} from 'react';
+import React,{useEffect,useMemo,useReducer,useRef,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeBirthDate,normalizeCivilName,normalizeEmail,passwordRequirements,
@@ -16,6 +16,7 @@ import TurnstileField from './TurnstileField.jsx';
 import {Button} from '../design-system/index.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
 import './loyalty.css';
+import {initialPasskeys} from '../passport/login-passkey.js';
 
 function initialMode(){
  try{
@@ -40,6 +41,16 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  const setCaptchaToken=token=>dispatchCaptcha({type:'token',attempt:captchaAttempt,token});
  const resetCaptcha=()=>dispatchCaptcha({type:'reset'});
  const[showPassword,setShowPassword]=useState(false);
+ const[passkeyReady,setPasskeyReady]=useState(false);
+ const passkeyAbort=useRef(null);
+ useEffect(()=>{let live=true;initialPasskeys.readiness().then(status=>{if(live)setPasskeyReady(status.enabled===true);}).catch(()=>{if(live)setPasskeyReady(false);});return()=>{live=false;passkeyAbort.current?.abort();};},[]);
+ useEffect(()=>()=>{passkeyAbort.current?.abort();},[account.user?.id,mode]);
+ const passkeyLogin=async()=>{
+  if(busy)return;setBusy(true);setError('');setNotice('');passkeyAbort.current=new AbortController();
+  try{await initialPasskeys.signIn({captchaToken,signal:passkeyAbort.current.signal});setFields(f=>({...f,password:''}));}
+  catch(e){if(!passkeyAbort.current.signal.aborted)setError(e.message||'La connexion par clé a échoué.');}
+  finally{setBusy(false);resetCaptcha();}
+ };
 
  const field=(key,value)=>{setFields(f=>({...f,[key]:value}));setError('');setNotice('');};
  const passwordRules=useMemo(()=>passwordRequirements(fields.password),[fields.password]);
@@ -80,7 +91,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     });
     setRecovery(result.recovery||'');
     await setSession(result.session);
-    setNotice('Mot de passe remplacé. Une nouvelle clé de secours a été créée.');
+    setNotice('Mot de passe remplacé. Les autres appareils, anciennes clés d’accès, cartes QR/NFC et accords partenaires ont été révoqués. Une nouvelle clé de secours a été créée.');
     setFields(f=>({...f,password:'',passwordConfirm:'',recovery:''}));
    }else if(mode==='reset-request'){
     normalizeEmail(fields.email);
@@ -91,7 +102,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     if(fields.password!==fields.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
     const{error:updateError}=await authClient.auth.updateUser({password:fields.password});
     if(updateError)throw updateError;
-    await authClient.auth.signOut({scope:'others'}).catch(()=>{});
+    const{error:revokeError}=await authClient.auth.signOut({scope:'others'});
+    if(revokeError)throw Error('Ton mot de passe est enregistré, mais la déconnexion des autres appareils a échoué. Réessaie avant de considérer la récupération comme terminée.');
     setMode('login');
     try{
      const url=new URL(window.location.href);url.searchParams.delete('reset');
@@ -160,7 +172,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
  return <section className="loyalty-page account-page">
   <header className="loyalty-intro">
    <span className="loyalty-eyebrow">3B INTERNATIONAL / MON COMPTE</span>
-   <button onClick={()=>goTo('loyalty')}>Mes cartes <ArrowUpRight size={16}/></button>
+   <Button onClick={()=>goTo('loyalty')}>Mes cartes <ArrowUpRight size={16}/></Button>
   </header>
 
   <h1>{profile?'Bienvenue, '+profile.name+'.':'Entre dans le Cercle.'}</h1>
@@ -171,7 +183,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     <h2>Conserve ta clé de secours.</h2>
     <p>Elle reste ton deuxième moyen de récupération. Télécharge-la et garde-la hors ligne. Elle ne sera plus affichée après le rechargement.</p>
     <code>{recovery}</code>
-    <button className="loyalty-primary" onClick={downloadRecovery}><Download size={17}/> Télécharger ma clé</button>
+    <Button className="loyalty-primary" onClick={downloadRecovery}><Download size={17}/> Télécharger ma clé</Button>
    </div>
   </section>}
 
@@ -179,18 +191,18 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    <Mail/><div>
     <h2>Confirme ton e-mail.</h2>
     <p>Un message d’activation a été demandé pour <strong>{pendingEmail}</strong>. Après confirmation, reviens ici et connecte-toi.</p>
-    <button onClick={resendConfirmation} disabled={busy}>Renvoyer le message</button>
+    <Button onClick={resendConfirmation} disabled={busy}>Renvoyer le message</Button>
    </div>
   </section>}
 
-  {(error||account.error)&&<p className="loyalty-notice" role="alert">{error||account.error}{account.error&&<button onClick={account.refresh}>Réessayer</button>}</p>}
+  {(error||account.error)&&<p className="loyalty-notice" role="alert">{error||account.error}{account.error&&<Button onClick={account.refresh}>Réessayer</Button>}</p>}
   {notice&&<p className="account-success" role="status"><CheckCircle2 size={17}/>{notice}</p>}
 
   {account.loading?<p role="status">Ouverture de ton compte…</p>
-  :account.user&&!profile?<div className="loyalty-empty"><p>Synchronisation de ton compte…</p><button onClick={account.refresh}>Réessayer</button><button onClick={logout}>Se déconnecter</button></div>
+  :account.user&&!profile?<div className="loyalty-empty"><p>Synchronisation de ton compte…</p><Button onClick={account.refresh}>Réessayer</Button><Button onClick={logout}>Se déconnecter</Button></div>
   :profile&&mode!=='reset-password'?<>
    {(()=>{try{return sessionStorage.getItem('3b-community-intent')==='chat';}catch{return false;}})()&&
-    <button className="surface-button account-community-return" onClick={()=>{try{sessionStorage.removeItem('3b-auth-intent');}catch{}goTo('community');}}>Continuer vers la communauté <ArrowUpRight size={17}/></button>}
+    <Button className="surface-button account-community-return" onClick={()=>{try{sessionStorage.removeItem('3b-auth-intent');}catch{}goTo('community');}}>Continuer vers la communauté <ArrowUpRight size={17}/></Button>}
 
    <div className="account-dashboard">
     <div><BoutiqueCard profile={profile}/><p className="account-boutique-label">Ta carte de fidélité boutique · vêtements et accessoires</p><RewardStats profile={profile}/></div>
@@ -204,16 +216,16 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      </div>
      {economy?.title&&<p className="account-progress-title"><strong>{economy.title}</strong>{Number(economy.prestige_level)>0?<> · Prestige {['','I','II','III'][Math.min(3,Number(economy.prestige_level))]}</>:null}</p>}
      {economy?.season&&<p className="account-progress-season">Saison active : <strong>{economy.season.label}</strong></p>}
-     {economy?.prestige_eligible&&Number(economy?.prestige_level||0)<3&&<button className="loyalty-primary account-prestige-unlock" onClick={unlockPrestige} disabled={prestigeBusy}>{prestigeBusy?'Validation du Prestige…':'Débloquer Prestige '+['I','II','III'][Number(economy?.prestige_level||0)]}</button>}
+     {economy?.prestige_eligible&&Number(economy?.prestige_level||0)<3&&<Button className="loyalty-primary account-prestige-unlock" onClick={unlockPrestige} disabled={prestigeBusy}>{prestigeBusy?'Validation du Prestige…':'Débloquer Prestige '+['I','II','III'][Number(economy?.prestige_level||0)]}</Button>}
      {economy?.next_level_xp!=null&&<p className="account-progress-next">Prochain niveau : {economy.next_level_xp} XP · Courbe {economy.xp_curve_version||'globale'}</p>}
      <p><ShieldCheck size={16}/> Compte synchronisé en ligne</p>
      <p>{realEmail?<>E-mail {emailVerified?'vérifié':'en attente'} · {realEmail}</>:<>Compte historique 3B · récupération par clé active</>}</p>
      <p>{profile.country} · Depuis le {new Date(profile.created_at).toLocaleDateString('fr-FR')}</p>
      <p className="account-id">N° membre : {profile.user_id.toUpperCase()}</p>
-     <button className="loyalty-primary" onClick={()=>goTo('loyalty')}>Mes cartes et avantages <ArrowUpRight size={16}/></button>
-     <button onClick={()=>goTo('games')}>Jouer et gagner de l’XP</button>
-     <button onClick={()=>goTo('passport')}>Voir mon passeport</button>
-     <button className="account-logout" onClick={logout}><LogOut size={16}/> Se déconnecter</button>
+     <Button className="loyalty-primary" onClick={()=>goTo('loyalty')}>Mes cartes et avantages <ArrowUpRight size={16}/></Button>
+     <Button onClick={()=>goTo('games')}>Jouer et gagner de l’XP</Button>
+     <Button onClick={()=>goTo('passport')}>Voir mon passeport</Button>
+     <Button className="account-logout" onClick={logout}><LogOut size={16}/> Se déconnecter</Button>
     </article>
    </div>
 
@@ -266,10 +278,10 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <p>Passeport, progression, Monde du 3B et fidélité restent reliés à la même identité.</p>
     </div>
     <div className="account-command-grid">
-     <button type="button" onClick={()=>goTo('passport')}><Fingerprint size={21}/><span><strong>Mon Passeport</strong><small>Identité, origine et portrait</small></span><ArrowUpRight size={16}/></button>
-     <button type="button" onClick={()=>goTo('world3b')}><Globe2 size={21}/><span><strong>Monde du 3B</strong><small>Portes, missions et progression</small></span><ArrowUpRight size={16}/></button>
-     <button type="button" onClick={()=>goTo('games')}><Gamepad2 size={21}/><span><strong>Mes jeux 3B</strong><small>Jouer et faire progresser le compte</small></span><ArrowUpRight size={16}/></button>
-     <button type="button" onClick={()=>goTo('loyalty')}><WalletCards size={21}/><span><strong>Cartes & avantages</strong><small>Fidélité, XP et récompenses</small></span><ArrowUpRight size={16}/></button>
+     <Button type="button" onClick={()=>goTo('passport')}><Fingerprint size={21}/><span><strong>Mon Passeport</strong><small>Identité, origine et portrait</small></span><ArrowUpRight size={16}/></Button>
+     <Button type="button" onClick={()=>goTo('world3b')}><Globe2 size={21}/><span><strong>Monde du 3B</strong><small>Portes, missions et progression</small></span><ArrowUpRight size={16}/></Button>
+     <Button type="button" onClick={()=>goTo('games')}><Gamepad2 size={21}/><span><strong>Mes jeux 3B</strong><small>Jouer et faire progresser le compte</small></span><ArrowUpRight size={16}/></Button>
+     <Button type="button" onClick={()=>goTo('loyalty')}><WalletCards size={21}/><span><strong>Cartes & avantages</strong><small>Fidélité, XP et récompenses</small></span><ArrowUpRight size={16}/></Button>
     </div>
    </section>
 
@@ -278,8 +290,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   :<div className="account-entry">
    <div className="account-form-panel">
     {mode!=='reset-password'&&<div className="account-tabs" role="group" aria-label="Accéder au compte">
-     <button aria-pressed={mode==='login'} onClick={()=>switchMode('login')}>Connexion</button>
-     <button aria-pressed={mode==='register'} onClick={()=>switchMode('register')}>Créer un compte</button>
+     <Button aria-pressed={mode==='login'} onClick={()=>switchMode('login')}>Connexion</Button>
+     <Button aria-pressed={mode==='register'} onClick={()=>switchMode('register')}>Créer un compte</Button>
     </div>}
 
     <h2>{
@@ -292,6 +304,8 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
 
     <form onSubmit={submit}>
      {mode==='login'&&<>
+      <Button type="button" className="loyalty-primary account-passkey-login" onClick={passkeyLogin} disabled={busy||!passkeyReady}><Fingerprint size={18}/> Se connecter avec une clé d’accès</Button>
+      {!passkeyReady&&<small>La connexion par clé d’accès attend sa validation sur le service hébergé. Ton identifiant et ton mot de passe restent disponibles.</small>}
       <label>Identifiant 3B ou e-mail
        <input name="username" autoComplete="username" required maxLength={254} autoCapitalize="none" spellCheck="false" placeholder="kais3b ou nom@email.fr" value={fields.identifier} onChange={e=>field('identifier',e.target.value.toLowerCase())}/>
       </label>
@@ -351,7 +365,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      {['login','register','recover','reset-password'].includes(mode)&&<label>{mode==='login'?'Mot de passe':mode==='reset-password'||mode==='recover'?'Nouveau mot de passe':'Mot de passe'}
       <div className="account-password-wrap">
        <input type={showPassword?'text':'password'} name="password" autoComplete={mode==='login'?'current-password':'new-password'} required minLength={mode==='login'?1:12} maxLength={128} value={fields.password} onChange={e=>field('password',e.target.value)}/>
-       <button type="button" className="account-password-toggle" aria-label={showPassword?'Masquer le mot de passe':'Afficher le mot de passe'} onClick={()=>setShowPassword(v=>!v)}>{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button>
+       <Button type="button" className="account-password-toggle" aria-label={showPassword?'Masquer le mot de passe':'Afficher le mot de passe'} onClick={()=>setShowPassword(v=>!v)}>{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</Button>
       </div>
      </label>}
 
@@ -377,21 +391,21 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
 
      <TurnstileField key={captchaAttempt} onToken={setCaptchaToken}/>
 
-     <button type="submit" className="loyalty-primary" disabled={busy}>{
+     <Button type="submit" className="loyalty-primary" disabled={busy}>{
       busy?'Validation en cours…':
       mode==='register'?'Créer mon compte sécurisé':
       mode==='recover'?'Récupérer avec ma clé':
       mode==='reset-request'?'Envoyer le lien de récupération':
       mode==='reset-password'?'Enregistrer mon nouveau mot de passe':
       'Me connecter'
-     } <ArrowUpRight size={17}/></button>
+     } <ArrowUpRight size={17}/></Button>
     </form>
 
     {mode==='login'&&<div className="account-recovery-actions">
-     <button className="account-recover" onClick={()=>switchMode('reset-request')}>Mot de passe oublié ?</button>
-     <button className="account-recover" onClick={()=>switchMode('recover')}>J’ai une clé de secours</button>
+     <Button className="account-recover" onClick={()=>switchMode('reset-request')}>Mot de passe oublié ?</Button>
+     <Button className="account-recover" onClick={()=>switchMode('recover')}>J’ai une clé de secours</Button>
     </div>}
-    {!['login','register'].includes(mode)&&<button className="account-recover" onClick={()=>switchMode('login')}>← Retour à la connexion</button>}
+    {!['login','register'].includes(mode)&&<Button className="account-recover" onClick={()=>switchMode('login')}>← Retour à la connexion</Button>}
    </div>
 
    <div className="account-promise">
@@ -403,13 +417,13 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     <p><strong>Protection anti-abus.</strong> Limites de tentatives côté serveur, CAPTCHA activable, journal sécurité minimal et sessions Supabase.</p>
     {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}
     <p>Un Passeport actif donne accès aux jeux et au Monde du 3B. Ton compte garde ta progression et tes récompenses au même endroit.</p>
-    <button onClick={()=>goTo('passport')}>Découvrir mon Passeport</button>
+    <Button onClick={()=>goTo('passport')}>Découvrir mon Passeport</Button>
    </div>
   </div>}
 
   <section className="account-options">
    <h2>À ta façon.</h2><p>Réglages d’affichage sur cet appareil.</p>
-   <div>{Object.entries(options).map(([key,value])=><button key={key} aria-pressed={value} onClick={()=>toggleOption(key)}>{OPTION_LABELS[key]} <strong>{value?'Activé':'Désactivé'}</strong></button>)}</div>
+   <div>{Object.entries(options).map(([key,value])=><Button key={key} aria-pressed={value} onClick={()=>toggleOption(key)}>{OPTION_LABELS[key]} <strong>{value?'Activé':'Désactivé'}</strong></Button>)}</div>
   </section>
  </section>;
 }

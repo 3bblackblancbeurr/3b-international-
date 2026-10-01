@@ -18,14 +18,17 @@ test('Hub dialogue exposes the current NPC activity without changing mission aut
   const normal=hubDialogueScene(npc,{hour:10,weather:'clear',missionState:{},talks:0});
   assert.equal(normal.activity.id,'work');
   assert.match(normal.text,/Nora/);
-  const active=hubDialogueScene(npc,{hour:10,weather:'clear',missionState:{m1:{status:'active'}},talks:1});
+  const active=hubDialogueScene({...npc,missionIds:['first_echo']},{hour:10,weather:'clear',missionState:{first_echo:{status:'active',completedObjectives:0}},talks:1});
   assert.equal(active.id,'mission-active');
-  assert.match(active.text,/mission m1/);
+  assert.equal(active.activity.id,'mission');
+  assert.match(active.text,/Premier Écho/);
+  assert.match(active.text,/signal|scanner/);
   assert.equal(typeof hubNpcActivityLine(npc,{hour:10}),'string');
 });
 
-test('City simulation derives residents, traffic, services and demands from actual placements',()=>{
+test('City simulation displays the authoritative census and uses actual saved roads for bounded movement',()=>{
   const snapshot={
+    life:{available:true,population:30,housingCapacity:36,jobs:30,employed:18,workingPopulation:18,happiness:60,mobility:60,needs:[{code:'water',score:75},{code:'food',score:100}]},
     city:{city_level:4,land_tier:2},
     districts:[{country:'France',unlocked:true,level:2},{country:'Algérie',unlocked:true,level:1}],
     buildings:[

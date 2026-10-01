@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {idnowCompletion} from '../supabase/functions/_shared/passport-security.js';
 
 const edge=readFileSync(new URL('../supabase/functions/passport-idv/index.ts',import.meta.url),'utf8');
 const claim=readFileSync(new URL('../supabase/migrations/20260929164050_passport_identity_provider_event_retry_claim_v2.sql',import.meta.url),'utf8');
@@ -13,12 +14,22 @@ test('IDnow adapter stays fail-closed until every server-side gate is configured
   assert.match(edge,/IDNOW_PVID_FLOW_APPROVED/);
   assert.match(edge,/WEBHOOK_AUDIENCE\.startsWith\('https:\/\/'\)/);
   assert.match(edge,/REF_SECRET\.length>=32/);
-  assert.match(edge,/outcome==='accepted'&&IDNOW_APPROVED/);
+  assert.match(edge,/idnowCompletion\(result,\{sessionId,flowId:FLOW_ID,subjectId:expected,[\s\S]*logical:LOGICAL,physical:PHYSICAL,approved:IDNOW_APPROVED/);
+  assert.match(edge,/passport_identity_attempt_finish/);
+  const expected={sessionId:'synthetic-session',flowId:'synthetic-flow',subjectId:'synthetic-subject',physical:'production',logical:'live',approved:true};
+  const result={sessionId:expected.sessionId,flowId:expected.flowId,metadata:{subjectId:expected.subjectId},environment:'live',sessionStatus:'COMPLETED',outcome:'accepted'};
+  assert.equal(idnowCompletion(result,expected).state,'verified');
+  assert.equal(idnowCompletion(result,{...expected,approved:false}).state,'error');
+  assert.equal(idnowCompletion(result,{...expected,physical:'sandbox'}).state,'error');
+  assert.equal(idnowCompletion({...result,environment:'staging'},{...expected,logical:'staging'}).state,'error');
 });
 
 test('signed webhook is verified against issuer, audience and remote JWKS',()=>{
   assert.match(edge,/createRemoteJWKSet/);
-  assert.match(edge,/jwtVerify\(token,jwks,\{issuer,audience:WEBHOOK_AUDIENCE\}\)/);
+  assert.match(edge,/jwtVerify\(token,jwks,\{issuer,audience:WEBHOOK_AUDIENCE,/);
+  assert.match(edge,/requiredClaims:\['iss','aud','sub','exp','iat'\]/);
+  assert.match(edge,/maxTokenAge:'65m'/);
+  assert.match(edge,/idnowWebhookEvent\(payload,\{logical:LOGICAL,flowId:FLOW_ID\}\)/);
   assert.match(edge,/application\/jwt/);
   assert.match(edge,/Signature webhook invalide/);
 });

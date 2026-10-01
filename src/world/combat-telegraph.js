@@ -20,7 +20,7 @@ export function createCombatTelegraph({reducedMotion=false}={}){
  const outline=make(new THREE.RingGeometry(8.08,8.24,40,1,Math.PI*.19,Math.PI*.62),'#ffc49e',.85);
  const area=make(new THREE.RingGeometry(5.62,5.8,48),'#ef9c69',.7);
  const rune=make(new THREE.RingGeometry(1.05,1.18,6),'#ade2cd',.8);
- return{root,update(encounter,time,hero,enemy,busy=false){
+ return{root,setReducedMotion(value){reducedMotion=!!value;},update(encounter,time,hero,enemy,busy=false){
   const field=encounter?.field,kind=field?(['rituel','gel','éclipse','sable','vague'].includes(encounter.intent)?'area':'strike'):threatKind(encounter);root.visible=field?!encounter.result&&field.phase==='windup':!!kind&&!busy;if(!root.visible)return;
   const pulse=reducedMotion?1:.85+Math.sin(time*3)*.15;
   const aim=field?.aim||hero;root.position.set(field&&kind==='area'?aim.x:enemy.x,enemy.y+.12,field&&kind==='area'?aim.z:enemy.z);root.rotation.y=Math.atan2(aim.x-enemy.x,aim.z-enemy.z);

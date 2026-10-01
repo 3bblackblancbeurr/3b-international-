@@ -342,3 +342,32 @@ h1,h2,h3,.gm-display,.gm-heading{font-family:Sora,Inter,ui-sans-serif,system-ui,
   .command-overview .gm-card__body{padding:20px}
   .command-overview-stats{grid-template-columns:1fr}
 }
+
+/* Cinematic surfaces derive their colors from the canonical 3B palette. */
+:root{
+--3b-scene-blue-5:color-mix(in srgb,var(--3b-carbon) 95%,var(--3b-matrix));
+--3b-scene-blue-10:color-mix(in srgb,var(--3b-carbon) 90%,var(--3b-matrix));
+--3b-scene-blue-15:color-mix(in srgb,var(--3b-carbon) 85%,var(--3b-matrix));
+--3b-scene-blue-20:color-mix(in srgb,var(--3b-carbon) 80%,var(--3b-matrix));
+--3b-scene-blue-30:color-mix(in srgb,var(--3b-carbon) 70%,var(--3b-matrix));
+--3b-scene-blue-40:color-mix(in srgb,var(--3b-carbon) 60%,var(--3b-matrix));
+--3b-scene-blue-60:color-mix(in srgb,var(--3b-carbon) 40%,var(--3b-matrix));
+--3b-scene-blue-80:color-mix(in srgb,var(--3b-carbon) 20%,var(--3b-matrix));
+--3b-scene-gold-10:color-mix(in srgb,var(--3b-carbon) 90%,var(--3b-champagne));
+--3b-scene-gold-30:color-mix(in srgb,var(--3b-carbon) 70%,var(--3b-champagne));
+--3b-scene-gold-60:color-mix(in srgb,var(--3b-carbon) 40%,var(--3b-champagne));
+--3b-scene-gold-80:color-mix(in srgb,var(--3b-carbon) 20%,var(--3b-champagne));
+--3b-scene-green-20:color-mix(in srgb,var(--3b-carbon) 80%,var(--3b-success));
+--3b-scene-green-40:color-mix(in srgb,var(--3b-carbon) 60%,var(--3b-success));
+--3b-scene-green-60:color-mix(in srgb,var(--3b-carbon) 40%,var(--3b-success));
+--3b-scene-ink-50:color-mix(in srgb,var(--3b-obsidian) 50%,var(--3b-carbon));
+--3b-scene-muted-40:color-mix(in srgb,var(--3b-carbon) 60%,var(--3b-white));
+--3b-scene-muted-55:color-mix(in srgb,var(--3b-carbon) 45%,var(--3b-white));
+--3b-scene-muted-65:color-mix(in srgb,var(--3b-carbon) 35%,var(--3b-white));
+--3b-scene-muted-75:color-mix(in srgb,var(--3b-carbon) 25%,var(--3b-white));
+--3b-scene-muted-85:color-mix(in srgb,var(--3b-carbon) 15%,var(--3b-white));
+--3b-radius-round:999px;--3b-radius-orbit:50%;--3b-radius-inherit:inherit;
+--3b-radius-portal:240px 240px 18px 18px;--3b-radius-stage:180px 180px 16px 16px;
+--3b-radius-portal-mobile:140px 140px 16px 16px;--3b-radius-stage-mobile:140px 140px 14px 14px;
+--3b-shadow-none:none;--3b-shadow-scene-window:0 20px 70px rgba(0,0,0,.5),0 0 55px rgba(59,167,255,.09);
+}

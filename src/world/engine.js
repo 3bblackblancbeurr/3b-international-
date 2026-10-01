@@ -9,7 +9,8 @@ import {normalizeSave,gain,discover,beacon,recruit,seal,craft,equip,awardMission
 import {CHAPTERS,chapterState,chapterCards,puzzleStart,puzzleStep,puzzleSolved,nexusLevel,COSMETICS,cosmeticUnlocked} from './chapters.js';
 import {HUB_MISSION_BY_ID,hubMissionReward} from './hub/mission-catalog.js';
 import {startHubMission,advanceHubMission,claimHubMission} from './hub/mission-runtime.js';
-import {applyHubMissionSignal,isAutoHubMission} from './hub/mission-signals.js';
+import {applyHubMissionSignal,isAutoHubMission,reconcileHubMissionEvidence} from './hub/mission-signals.js';
+import {applyHubServiceAction,blankHubServices,hubTextileAvatarPatch} from './hub/services-state.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_BUILDING_SET,HUB_TRANSPORT_SET,HUB_SECRET_STEP_COUNTS,validHubTransportRide} from './hub/activity-catalog.js';
 import {hubSecretReady,hubSecretStepAllowed} from './hub/secret-runtime.js';
 import {hubMissionPrerequisitesMet} from './hub/mission-graph.js';
@@ -70,7 +71,7 @@ export function applyWorldAction(input,action){
  const peaceful=()=>requireThat(!e||!!e.result,'Termine ou quitte ta rencontre.');
  const home=frontierState(s,region),setHome=delta=>adventure(s,{frontier:{...s.adventure.frontier,[region]:{...frontierState(s,region),...delta}}});
  const activeResonance=()=>s.adventure.resonance&&s.seals.includes(s.adventure.resonance)?s.adventure.resonance:null;
- const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
+ const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal,state.hub);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
   case 'cinematicSeen':{
    requireThat(isWorldCinematicKey(action.key),'Cinématique inconnue.');
@@ -80,7 +81,7 @@ export function applyWorldAction(input,action){
   case 'hubMissionStart':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
    const current=s.hub.missions[action.id];requireThat(current&&!current.claimed&&current.status!=='completed','Cette mission est déjà terminée.');requireThat(hubMissionPrerequisitesMet(action.id,s.hub.missions),'Termine d’abord les missions liées.');
-   return gain(s,{hub:{...s.hub,missions:startHubMission(s.hub.missions,action.id)}});
+   return gain(s,{hub:{...s.hub,missions:reconcileHubMissionEvidence(startHubMission(s.hub.missions,action.id),s.hub)}});
   }
   case 'hubMissionStep':{
    peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');const mission=HUB_MISSION_BY_ID[action.id];requireThat(mission,'Mission Hub inconnue.');
@@ -159,6 +160,17 @@ export function applyWorldAction(input,action){
    let nightTrainDates=s.hub.stats.nightTrainDates;
    if(action.transport==='train'&&action.night===true&&/^\d{4}-\d{2}-\d{2}$/.test(action.dateKey||'')&&!nightTrainDates.includes(action.dateKey))nightTrainDates=[...nightTrainDates,action.dateKey].slice(-16);
    return hubSignal(gain(s,{hub:{...s.hub,stats:{...s.hub.stats,transportRides:rides,transportStops,nightTrainDates}}}),{type:'transport',id:action.transport,from:action.from,to:action.to});
+  }
+  case 'hubService':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   const services=applyHubServiceAction(s.hub.services,action,{wolfEncountered:s.hub.missions.lost_wolf_signal?.status==='completed'});
+   return gain(s,{hub:{...s.hub,services}});
+  }
+  case 'hubTextileWear':{
+   peaceful();requireThat(region==='hub','Retourne à la Cité des Huit Héritages.');
+   requireThat(s.adventure.avatar.created,'Crée d’abord ton personnage.');requireThat(action.design?.kind==='textile','Choisis une création textile.');
+   applyHubServiceAction(blankHubServices(),{type:'hubService',operation:'saveDesign',design:{...action.design,id:null}});
+   return adventure(s,{avatar:normalizeAvatar({...s.adventure.avatar,...hubTextileAvatarPatch(action.design)})});
   }
   case 'guardianValueChoice':{
    peaceful();inCountry();requireThat(cs.restored>=2,'Reconstruis d’abord le quartier avant l’épreuve du Gardien.');

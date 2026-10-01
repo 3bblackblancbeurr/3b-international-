@@ -27,3 +27,8 @@ export function cinematicDollyProgress(value,{waterReveal=false}={}){
 export function cinematicRiseProgress(value,{waterReveal=false}={}){
  return waterReveal?cinematicPhase(value,.14,.68):cinematicEase(value);
 }
+
+export function cinematicMotionFrame(value,{waterReveal=false,reducedMotion=false}={}){
+ if(reducedMotion)return {ease:1,rise:1,dolly:0,returnBlend:0};
+ return {ease:cinematicEase(value),rise:cinematicRiseProgress(value,{waterReveal}),dolly:cinematicDollyProgress(value,{waterReveal}),returnBlend:cinematicReturnBlend(value,{waterReveal})};
+}

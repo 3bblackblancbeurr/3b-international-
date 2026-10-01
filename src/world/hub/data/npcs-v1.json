@@ -150,7 +150,9 @@
     "rarity": "rare",
     "role": "urbaniste itinérant",
     "country": "Italie",
-    "missionIds": []
+    "missionIds": [
+      "first_foundation"
+    ]
   },
   {
     "id": "arda_kaya",

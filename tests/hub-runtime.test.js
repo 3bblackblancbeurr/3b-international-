@@ -18,7 +18,7 @@ const secrets = read('secrets-v1.json');
 test('Hub runtime exposes every canonical district and mission', () => {
   const runtime = buildHubRuntimeItems({ plan, npcs, missions, events, secrets, profile: 'desktop' });
   assert.equal(runtime.meta.districts, 10);
-  assert.equal(runtime.meta.missions, 19);
+  assert.equal(runtime.meta.missions, 20);
   assert.equal(runtime.meta.trainStops, 10);
   assert.equal(runtime.meta.boatStops, 5);
   assert.equal(runtime.meta.telephericStops, 6);

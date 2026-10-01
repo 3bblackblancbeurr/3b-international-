@@ -7,9 +7,12 @@ const catalog=readFileSync(new URL('../src/world/hub/mission-catalog.js',import.
 const engine=readFileSync(new URL('../src/world/engine.js',import.meta.url),'utf8');
 const worldEdge=readFileSync(new URL('../supabase/functions/world-engine/index.ts',import.meta.url),'utf8');
 
-test('World Hub no longer contains the City foundation mission',()=>{
- assert.equal(missions.some(row=>row.id==='first_foundation'),false);
- assert.doesNotMatch(catalog,/first_foundation/);
+test('World urbanism mission stays local and does not require creating Ma Ville',()=>{
+ const foundation=missions.find(row=>row.id==='first_foundation');
+ assert.equal(foundation.district,'city3b_portal');
+ assert.equal(foundation.objectives.length,3);
+ assert.match(catalog,/first_foundation/);
+ assert.doesNotMatch(foundation.objectives.join(' '),/synchroniser|fonder une ville|ta ville/);
 });
 
 test('World reducer has no City proof or synchronization actions',()=>{

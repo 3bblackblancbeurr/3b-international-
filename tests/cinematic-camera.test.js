@@ -47,9 +47,9 @@ test('cinematic phase curves are smooth bounded and preserve a low water opening
 
 test('opening cinematic uses non-linear dolly rise and gameplay return',()=>{
  const source=readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
- assert.match(source,/cinematicRiseProgress\(age,\{waterReveal\}\)/);
- assert.match(source,/cinematicDollyProgress\(age,\{waterReveal\}\)/);
- assert.match(source,/cinematicReturnBlend\(age,\{waterReveal\}\)/);
+ assert.match(source,/cinematicMotionFrame\(age,\{waterReveal,reducedMotion\}\)/);
+ assert.match(source,/\{ease,rise,dolly\}=motion/);
+ assert.match(source,/const returnBlend=motion\.returnBlend/);
  assert.match(source,/fovStart=68;fovEnd=60/);
  assert.doesNotMatch(source,/Math\.max\(0,\(ease-\.72\)\/\.28\)/);
 });

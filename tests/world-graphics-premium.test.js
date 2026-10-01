@@ -9,7 +9,7 @@ const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('premium Heritage platform is wired into the canonical landscape without a second navigation deck',()=>{
  const landscape=read('src/world/landscape.js'),terrain=read('src/world/terrain.js'),platform=read('src/world/heritage-platform.js');
  assert.match(landscape,/addHeritagePlatform/);
- assert.match(landscape,/premiumPlatform\.tick\(time\)/);
+ assert.match(landscape,/premiumPlatform\.tick\(reduceWind\?0:time\)/);
  assert.match(terrain,/region==='hub'\?38:13/);
  assert.match(platform,/Three shallow octagonal tiers/);
  assert.match(platform,/player remains on the canonical terrain\/collision plane/);
@@ -104,7 +104,8 @@ test('opening cinematic starts low over water before revealing the hub skyline',
  assert.match(scene,/focus=\{x:0,z:-145\}/);
  assert.match(scene,/cameraLift=waterReveal\?4\.2/);
  assert.match(scene,/focusLift=waterReveal\?2\.6/);
- assert.match(scene,/cinematicReturnBlend\(age,\{waterReveal\}\)/);
+ assert.match(scene,/cinematicMotionFrame\(age,\{waterReveal,reducedMotion\}\)/);
+ assert.match(scene,/returnBlend=motion\.returnBlend/);
  assert.match(camera,/waterReveal\?\.80:\.72/);
 });
 
@@ -304,7 +305,7 @@ test('ground facades puddles contacts and hub materials share the progressive we
  assert.match(landscape,/architecture\.setWetness\?\.\(wetnessState\)/);
  assert.match(landscape,/microDetails\.setWetness\?\.\(wetnessState\)/);
  assert.match(landscape,/buildingContact\.setWetness\?\.\(wetnessState\)/);
- assert.match(scene,/sceneWetness\.value=advanceWetness\(sceneWetness\.value,sceneWetnessTarget,dt\)/);
+ assert.match(scene,/sceneWetness\.value=advanceWetness\(sceneWetness\.value,hubInterior\?0:sceneWetnessTarget,dt\)/);
  for(const source of [ground,architecture,details,contact])assert.match(source,/setWetness/);
 });
 

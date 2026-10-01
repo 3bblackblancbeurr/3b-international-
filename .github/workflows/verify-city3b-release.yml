@@ -7,6 +7,8 @@ on:
       - release-city3b
     paths:
       - 'src/city/**'
+      - 'src/components/City3BPortal.jsx'
+      - 'supabase/migrations/*city3b*'
       - 'tests/nexus-city-gateway.test.js'
       - 'tests/city3b-access.test.js'
       - 'tests/city-unlock-guide.test.js'
@@ -26,6 +28,8 @@ on:
       - main
     paths:
       - 'src/city/**'
+      - 'src/components/City3BPortal.jsx'
+      - 'supabase/migrations/*city3b*'
       - 'src/components/NexusCityGateway.jsx'
       - 'src/world/city-unlock-guide.js'
       - 'src/world/WorldPage.jsx'

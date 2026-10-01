@@ -1,11 +1,12 @@
 const BASE=Deno.env.get('SUPABASE_URL')!;
-const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+import {bundledKey} from '../_shared/passport-server.ts';
+const ADMIN=bundledKey('SUPABASE_SECRET_KEYS','SUPABASE_SERVICE_ROLE_KEY');
 class Failure extends Error{constructor(public status:number,message:string){super(message);}}
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const passportNumber=(id:string)=>'3B-PASS-'+String(id).toUpperCase();
 
 async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){
- const response=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)});
+ const response=await fetch(BASE+path,{method,headers:{apikey:ADMIN,...(ADMIN.startsWith('sb_secret_')?{}:{Authorization:'Bearer '+ADMIN}),'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(10000)});
  const data=await response.json().catch(()=>null);
  if(!response.ok)throw new Failure(response.status>=500?503:400,'Verification impossible.');
  return data;
@@ -21,7 +22,11 @@ Deno.serve(async req=>{
   const allowed=await api('/rest/v1/rpc/loyalty_rate',{p_key:'passport-verify:'+await hash(ip),p_limit:30,p_window:60});
   if(allowed!==true)throw new Failure(429,'Trop de verifications. Reessaie dans une minute.');
 
-  const body=await req.json().catch(()=>null);
+  const reader=req.body?.getReader();if(!reader)throw new Failure(400,'Code invalide ou expire.');
+  let text='',size=0;const decoder=new TextDecoder();
+  for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;
+   if(size>4096){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}text+=decoder.decode(value,{stream:true});}
+  text+=decoder.decode();let body;try{body=JSON.parse(text);}catch{throw new Failure(400,'Code invalide ou expire.');}
   const token=String(body?.ticket||'').trim().toLowerCase();
   if(!/^[0-9a-f]{64}$/.test(token))throw new Failure(400,'Code invalide ou expire.');
 
@@ -32,9 +37,10 @@ Deno.serve(async req=>{
   if(!ticket?.passport_public_id)throw new Failure(400,'Code invalide ou expire.');
   if(ticket.purpose!=='verify'||!Array.isArray(ticket.scopes)||!ticket.scopes.includes('identity.basic'))throw new Failure(400,'Code invalide ou expire.');
 
-  const profiles=await api('/rest/v1/member_profiles?passport_public_id=eq.'+ticket.passport_public_id+'&select=passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_state,identity_assurance_level,identity_verified_at&limit=1');
+  const profiles=await api('/rest/v1/member_profiles?passport_public_id=eq.'+ticket.passport_public_id+'&select=user_id,passport_public_id,passport_state,passport_version,passport_issued_at,name,handle,country,public_verified,public_title,identity_verification_state,identity_assurance_level,identity_verified_at,identity_verification_ref_hash&limit=1');
   const profile=profiles?.[0];
   if(!profile||profile.passport_state!=='active')throw new Failure(400,'Code invalide ou expire.');
+  const liveVerified=await api('/rest/v1/rpc/passport_identity_live_assertion',{p_user:profile.user_id,p_reference:profile.identity_verification_ref_hash})===true;
 
   return reply({
    valid:true,
@@ -46,9 +52,9 @@ Deno.serve(async req=>{
     state:'active',
     version:Number(profile.passport_version)||2,
     issuedAt:profile.passport_issued_at||null,
-    identityVerified:profile.identity_verification_state==='verified'&&['identity_verified','high_assurance'].includes(String(profile.identity_assurance_level)),
-    identityAssuranceLevel:profile.identity_verification_state==='verified'?String(profile.identity_assurance_level||'identity_verified'):'self_asserted',
-    identityVerifiedAt:profile.identity_verification_state==='verified'?profile.identity_verified_at||null:null,
+    identityVerified:liveVerified,
+    identityAssuranceLevel:liveVerified?String(profile.identity_assurance_level):'self_asserted',
+    identityVerifiedAt:liveVerified?profile.identity_verified_at:null,
     publicBadgeVerified:profile.public_verified===true,
     title:profile.public_verified===true?String(profile.public_title||'').slice(0,80):''
    }

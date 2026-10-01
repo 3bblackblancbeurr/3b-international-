@@ -8,6 +8,7 @@ import {
   validateRegistration,
   validateStrongPassword
 } from './loyalty.js';
+import {revokeAuthPasskeys} from '../_shared/passport-auth-recovery.js';
 
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const APP_URL=(Deno.env.get('APP_URL')||'https://3b-international.vercel.app').replace(/\/$/,'');
@@ -173,9 +174,35 @@ async function legacyRecover(body:any,ipHash:string){
  const user=await api('/auth/v1/admin/users/'+uid);
  const login=await authApi('/auth/v1/token?grant_type=password',{email:user.email,password:input.password});
  if(!login.ok||!login.data?.access_token)throw new Failure(503,'Mot de passe remplacé. Reconnecte-toi.');
- await fetch(BASE+'/auth/v1/logout?scope=others',{method:'POST',headers:{apikey:PUBLIC,Authorization:'Bearer '+login.data.access_token}}).catch(()=>{});
+ try {
+  await finishRecoverySecurity(uid,login.data.access_token);
+ } catch(error) {
+  await rpc('loyalty_recovery',{p_handle:input.handle,p_old:newHash,p_new:oldHash});
+  throw error;
+ }
  await audit('recovery_key.legacy_success',true,ipHash,uid,{});
  return{recovery,session:login.data,legacy:true};
+}
+
+async function finishRecoverySecurity(uid:string,accessToken:string){
+ const logoutOthers=async()=>{
+  const response=await fetch(BASE+'/auth/v1/logout?scope=others',{method:'POST',headers:{apikey:PUBLIC,Authorization:'Bearer '+accessToken},signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw new Failure(503,'Mot de passe remplacé, mais la déconnexion des appareils a échoué. Réessaie avec ta clé de secours.');
+ };
+ await logoutOthers();
+ // Database marker survives disabling the UI or a rollback. A previously enabled login key must be revoked.
+ const capability=await rpc('passport_auth_capability',{});
+ if(!capability||typeof capability.everEnabled!=='boolean')throw new Failure(503,'La récupération doit être vérifiée avant de continuer.');
+ try {
+  await revokeAuthPasskeys({userId:uid,required:capability.everEnabled,request:async(path:string,method='GET')=>{
+   const response=await fetch(BASE+path,{method,headers:adminHeaders(),signal:AbortSignal.timeout(12000)});
+   return {ok:response.ok,status:response.status,data:await response.json().catch(()=>null)};
+  }});
+ }catch{throw new Failure(503,'Mot de passe remplacé, mais les anciennes clés de connexion n’ont pas toutes été révoquées. Réessaie avec ta clé de secours.');}
+ // A stolen login key could have issued a session during its revocation. Close that interval too.
+ await logoutOthers();
+ if(await rpc('passport_recovery_revoke',{p_user:uid})!==true)
+  throw new Failure(503,'Mot de passe remplacé, mais la révocation des anciennes protections a échoué. Réessaie avec ta clé de secours.');
 }
 
 Deno.serve(async req=>{
@@ -333,7 +360,12 @@ Deno.serve(async req=>{
    }
    const login=await authApi('/auth/v1/token?grant_type=password',{email:user.email,password:input.password,...captchaBody(cap)});
    if(!login.ok||!login.data?.access_token)throw new Failure(503,'Mot de passe remplacé. Reconnecte-toi.');
-   await fetch(BASE+'/auth/v1/logout?scope=others',{method:'POST',headers:{apikey:PUBLIC,Authorization:'Bearer '+login.data.access_token}}).catch(()=>{});
+   try {
+    await finishRecoverySecurity(uid,login.data.access_token);
+   } catch(error) {
+    await rpc('loyalty_recovery',{p_handle:input.handle,p_old:newHash,p_new:oldHash});
+    throw error;
+   }
    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(uid),{
     password_updated_at:new Date().toISOString(),
     last_login_at:new Date().toISOString()

@@ -13,7 +13,7 @@ function completeFirstSteps(){
 
 test('Hub mission state survives normalization and defaults safely',()=>{
  const save=blankSave();
- assert.equal(Object.keys(save.hub.missions).length,19);
+ assert.equal(Object.keys(save.hub.missions).length,20);
  const mutated={...save,hub:{...save.hub,missions:{...save.hub.missions,first_echo:{...save.hub.missions.first_echo,status:'active',completedObjectives:1}}}};
  const normalized=normalizeSave(mutated);
  assert.equal(normalized.hub.missions.first_echo.status,'active');

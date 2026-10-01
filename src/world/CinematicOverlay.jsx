@@ -1,20 +1,18 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {cinematicCssVars} from './cinematic-director.js';
+import {worldReducedMotion,watchWorldMotion} from './motion-preference.js';
 import './cinematic-director.css';
 
 const clamp=v=>Math.max(0,Math.min(1,v));
 export function CinematicOverlay({presentation,onDone,onSkip}){
  const [elapsed,setElapsed]=useState(0);
- const [reduced,setReduced]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+ const [reduced,setReduced]=useState(()=>worldReducedMotion());
  const finished=useRef(false),root=useRef(null),duration=presentation?.duration||5000;
  const progress=clamp(elapsed/duration);
  const phase=progress<.16?'ignite':progress<.72?'reveal':'handoff';
  const particles=useMemo(()=>Array.from({length:24},(_,i)=>i),[presentation?.key]);
  useEffect(()=>{setElapsed(0);finished.current=false;},[presentation?.key]);
- useEffect(()=>{
-  const media=window.matchMedia('(prefers-reduced-motion: reduce)'),change=()=>setReduced(media.matches);
-  media.addEventListener('change',change);return()=>media.removeEventListener('change',change);
- },[]);
+ useEffect(()=>watchWorldMotion(setReduced),[]);
  useEffect(()=>{
   if(!presentation||reduced||finished.current)return;
   let raf,last=performance.now(),bucket=0;

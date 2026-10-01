@@ -1,3 +1,6 @@
+import {hubNpcActivity,hubNpcActivityLine} from './npc-activity.js';
+import {hubNpcMissionContext,hubNpcMissionLine} from './npc-narrative.js';
+import {hubMissionEffect} from './mission-effects.js';
 export const HUB_DIALOGUE_CHOICES={
  justice:[
   {id:'ecouter',label:'Écouter avant de juger',value:'Justice'},
@@ -11,14 +14,16 @@ export const HUB_DIALOGUE_CHOICES={
 };
 export const HUB_DIALOGUE_CHOICE_SET=new Set(Object.values(HUB_DIALOGUE_CHOICES).flat().map(choice=>choice.id));
 
-export function hubDialogueScene(npc,{hour=12,missionState={},talks=0,afterCombat=null}={}){
+export function hubDialogueScene(npc,{hour=12,weather='clear',missionState={},talks=0,afterCombat=null}={}){
+ const activity=hubNpcActivity(npc,{hour,weather,missionState});
  const active=(npc.missionIds||[]).find(id=>missionState[id]?.status==='active');
  const completed=(npc.missionIds||[]).find(id=>missionState[id]?.status==='completed');
  if(afterCombat==='victory')return {id:'after-victory',text:'Tu es revenu debout. Maintenant, comprends ce que cette victoire change autour de toi.',choices:null};
  if(afterCombat==='defeat')return {id:'after-defeat',text:'Perdre un combat ne dit pas qui tu es. Ce que tu fais ensuite, oui.',choices:null};
- if(active)return {id:'mission-active',text:`Ta mission ${active} avance. Raconte-moi ce que tu as réellement vu, pas ce que tu espérais voir.`,choices:talks%3===0?HUB_DIALOGUE_CHOICES.justice:null};
- if(completed)return {id:'mission-complete',text:'Tu as terminé ce que tu avais commencé. La Cité gardera une trace de ce choix.',choices:null};
- if(hour>=20||hour<6)return {id:'night',text:'La ville est différente la nuit. Les mêmes lieux disent autre chose quand le bruit tombe.',choices:null};
- if(talks>=3)return {id:'familiar',text:'Je te reconnais maintenant. On peut aller au-delà des présentations.',choices:HUB_DIALOGUE_CHOICES.memory};
- return {id:'first',text:`${npc.name} · ${npc.role}. Ici, chaque quartier a une mémoire et chaque mémoire a un prix.`,choices:null};
+ const context=hubNpcMissionContext(npc,missionState);
+ if(active)return {id:'mission-active',text:hubNpcMissionLine(npc,missionState),choices:talks%3===0?HUB_DIALOGUE_CHOICES.justice:null,activity};
+ if(completed&&context?.row.status==='completed'){const effect=hubMissionEffect({missions:missionState},context.id);return {id:'mission-complete',text:hubNpcMissionLine(npc,missionState)+(effect?' '+effect.detail:''),choices:null,activity};}
+ if(activity.id==='night-watch'||activity.id==='rest')return {id:'night',text:hubNpcActivityLine(npc,{hour,weather,missionState}),choices:null,activity};
+ if(talks>=3)return {id:'familiar',text:hubNpcActivityLine(npc,{hour,weather,missionState}),choices:HUB_DIALOGUE_CHOICES.memory,activity};
+ return {id:'first',text:npc.name+' · '+npc.role+'. '+hubNpcActivityLine(npc,{hour,weather,missionState}),choices:null,activity};
 }

@@ -7,6 +7,8 @@ import {hubMissionActionTargets,hasHubMissionActionPlan} from './mission-actions
 import {guardianHubPresence} from '../guardian-values.js';
 import {hubNpcMemory,hubNpcMemorySummary} from './npc-memory.js';
 import {buildMetropolisRuntimeItems,hubDistrictPosition} from './metropolis.js';
+import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
+import {hubDistrictEffects,hubMissionEffectItems} from './mission-effects.js';
 export {hubDistrictPosition};
 
 function hash(input) {
@@ -53,10 +55,18 @@ export function buildHubRuntimeItems({
   }));
 
   const maxNpcs = selectNpcBudget(plan, profile),memorySave={hub:hubState||{},seals:[...seals]};
-  const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
+  const priorityNpcIds=new Set();
+  for(const [id,row] of Object.entries(hubState?.missions||{}))if(row.status==='active'){
+    const rule=HUB_MISSION_SIGNAL_RULES[id]?.[row.completedObjectives];
+    if(rule?.type==='npc')priorityNpcIds.add(rule.id);
+  }
+  const scheduledNpcs=npcs.map((npc,index)=>{
+    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather,missionState:hubState?.missions,missionIds:npc.missionIds});
+    const active=(npc.missionIds||[]).some(id=>hubState?.missions?.[id]?.status==='active');
+    return {npc,index,schedule,priority:priorityNpcIds.has(npc.id)?0:active?1:schedule.rare?3:2};
+  }).filter(entry=>!entry.schedule.rare).sort((a,b)=>a.priority-b.priority||a.index-b.index).slice(0,maxNpcs);
+  const npcItems = scheduledNpcs.map(({npc,schedule}) => {
     const memory=hubNpcMemory({...npc,npcId:npc.id},memorySave,{hour:eventContext.hour,weather:eventContext.weather});
-    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather});
-    if(schedule.rare)return [];
     const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
     const d = offset(npc.id, schedule.shelter?3.5:schedule.social?5.2:8);
     return {
@@ -66,10 +76,13 @@ export function buildHubRuntimeItems({
       district,
       homeDistrict:npc.district,
       activity:schedule.activity,
+      districtChanges:hubDistrictEffects(hubState,district).map(effect=>effect.label),
       shelter:!!schedule.shelter,
       social:!!schedule.social,
       name: npc.name,
       role: npc.role,
+      country:npc.country||null,
+      guardianRegion:memory.region,
       rarity: npc.rarity,
       missionIds: npc.missionIds || [],
       familiarity:memory.familiarity,
@@ -197,14 +210,16 @@ export function buildHubRuntimeItems({
     return {id:`hub:secret:${secret.id}`,type:'hubSecret',secretId:secret.id,district:secret.district,name:'Secret de la Cité',condition:secret.condition,reward:secret.reward,evidence,range:2.8,x:center.x+d.x,z:center.z+d.z};
   });
 
+  const restorationItems=hubMissionEffectItems(hubState,plan,metropolis.items.filter(item=>item.type==='hubBuilding'||item.type==='hubStructure'));
   return {
-    items: [...metropolis.items, ...districtItems, ...npcItems, ...missionItems, ...missionActionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
+    items: [...metropolis.items, ...restorationItems, ...districtItems, ...npcItems, ...missionItems, ...missionActionItems, ...stationItems, ...boatItems, ...telephericItems, ...ziplineItems, ...guardianItems, ...eventItems, ...secretStepItems, ...secretItems],
     meta: {
       districts: districtItems.length,
       npcsActive: npcItems.length,
       npcsTotal: npcs.length,
       missions: missionItems.length,
       missionActions:missionActionItems.length,
+      completedMissionChanges:restorationItems.length,
       guardians:guardianItems.length,
       trainStops: stationItems.length,
       boatStops: boatItems.length,

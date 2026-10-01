@@ -1,5 +1,6 @@
 import {advanceHubMission} from './mission-runtime.js';
 import {hasHubMissionActionPlan} from './mission-actions.js';
+import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 
 export const HUB_MISSION_SIGNAL_RULES={
  first_steps:[
@@ -44,14 +45,45 @@ function signalCheckpoint(signal){
  return `signal:${signal?.type??'unknown'}:${id}${route}${step}`.slice(0,80);
 }
 
-export function applyHubMissionSignal(missions,signal){
+function hasPermanentEvidence(rule,hub){
+ if(!hub||!rule)return false;
+ if(rule.type==='secret')return hub.secrets?.includes(rule.id)===true;
+ if(rule.type==='secretStep'){
+  if(hub.secrets?.includes(rule.id))return true;
+  const count=HUB_SECRET_STEP_COUNTS[rule.id],steps=new Set(hub.stats?.secretProgress?.[rule.id]||[]);
+  return Boolean(count)&&Array.from({length:count},(_,step)=>step).every(step=>steps.has(step));
+ }
+ return false;
+}
+
+// Secrets and their clues are one-shot discoveries. A mission accepted later must
+// acknowledge that evidence, while repeatable travel and visits stay sequential.
+export function reconcileHubMissionEvidence(missions,hub){
+ let next=missions;
+ for(const [id,rules] of Object.entries(HUB_MISSION_SIGNAL_RULES)){
+  while(next[id]?.status==='active'){
+   const rule=rules[next[id].completedObjectives];
+   if(!hasPermanentEvidence(rule,hub))break;
+   next=advanceHubMission(next,id,1,{checkpoint:`evidence:${rule.type}:${rule.id}`});
+  }
+ }
+ return next;
+}
+
+export function applyHubMissionSignal(missions,signal,hub=null){
  let next=missions,advanced=[];
  for(const [id,rules] of Object.entries(HUB_MISSION_SIGNAL_RULES)){
   const current=next[id];if(current?.status!=='active')continue;
-  const rule=rules[current.completedObjectives];if(!matches(rule,signal))continue;
+  const rule=rules[current.completedObjectives];
+  const matchesCurrent=rule?.type==='secretStep'&&hub
+   ?signal?.type==='secretStep'&&signal.id===rule.id&&hasPermanentEvidence(rule,hub)
+   :matches(rule,signal);
+  if(!matchesCurrent)continue;
   const checkpoint=signalCheckpoint(signal);
   if(current.checkpoint===checkpoint)continue;
   next=advanceHubMission(next,id,1,{checkpoint});advanced.push(id);
  }
- return {missions:next,advanced};
+ const reconciled=reconcileHubMissionEvidence(next,hub);
+ for(const id of Object.keys(HUB_MISSION_SIGNAL_RULES))if(reconciled[id]!==next[id]&&!advanced.includes(id))advanced.push(id);
+ return {missions:reconciled,advanced};
 }

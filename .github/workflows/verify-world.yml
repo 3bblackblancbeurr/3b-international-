@@ -20,3 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+      - name: Check complete world deployment package
+        run: npm exec --yes --package=deno@2.9.6 -- deno check --no-lock --config supabase/functions/world-engine-goldmaster-candidate/deno.json supabase/functions/world-engine-goldmaster-candidate/index.ts
+      - name: Check City endpoint
+        run: npm exec --yes --package=deno@2.9.6 -- deno check --no-lock supabase/functions/city-3b/index.ts

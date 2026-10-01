@@ -4,6 +4,11 @@ const a=(id,label,verb='use',requires=[])=>Object.freeze({id,label,verb,requires
 const stage=(...actions)=>Object.freeze(actions);
 
 export const HUB_MISSION_ACTION_PLANS=Object.freeze({
+ first_foundation:Object.freeze([
+  stage(a('site:survey','Relever le terrain du quartier','scan')),
+  stage(a('path:plan','Tracer la liaison piétonne','assemble')),
+  stage(a('foundation:place','Poser la première fondation du quartier','use')),
+ ]),
  first_echo:Object.freeze([
   stage(a('signal:locate','Localiser le signal','scan')),
   stage(a('memory:restore','Restaurer le Souvenir','memoryVision')),

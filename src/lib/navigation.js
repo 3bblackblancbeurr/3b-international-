@@ -1,6 +1,6 @@
 export const PAGE_HASHES = {
   intro: "", home: "accueil", passport: "passeport", loyalty: "cartes", member: "membre",
-  manga: "manga", world3b: "monde-3b", nosbloc: "nosbloc", arena: "arene", games: "jeux", religion: "religion", guide: "guide", community: "communaute",
+  manga: "manga", world3b: "monde-3b", city3b: "ma-ville", nosbloc: "nosbloc", arena: "arene", games: "jeux", religion: "religion", guide: "guide", community: "communaute",
   secret: "secret", sport: "sport", ia: "ia", "ia-textile": "ia-textile", "ia-trio": "mode-3-ia", control: "commande", shop: "boutique",
 };
 
@@ -16,12 +16,17 @@ export function readLocation(location = window.location) {
 
   const params = new URLSearchParams(search);
   const checkout = params.get("checkout");
+  const requestToken = params.get("passport_request");
+  const passportRequest = /^[0-9a-f]{64}$/.test(requestToken || "") ? requestToken : null;
+  const scannedCard=params.get('passport_card');
+  const cardReference=/^[0-9a-f]{64}$/.test(scannedCard||'')?scannedCard:null;
   const authReturn = params.get("reset") === "1" || params.get("auth") === "confirmed";
   const page = authReturn ? "member"
+    : passportRequest || cardReference ? "passport"
     : ["success", "cancel"].includes(checkout) ? "shop"
     : location.hash === "#musique" ? "religion" : Object.entries(PAGE_HASHES).find(([, hash]) => `#${hash}` === location.hash)?.[0] || "intro";
 
-  return { page, search };
+  return { page, search, ...(passportRequest ? { requestToken: passportRequest } : {}),...(cardReference?{cardReference}:{}) };
 }
 
 function cleanTransientParams(url) {
@@ -29,6 +34,9 @@ function cleanTransientParams(url) {
   url.searchParams.delete("session_id");
   url.searchParams.delete("auth");
   url.searchParams.delete("reset");
+  url.searchParams.delete("passport_request");
+  url.searchParams.delete("passport_card");
+  url.searchParams.delete("page");
 }
 
 export function getPageHref(page, location = window.location) {

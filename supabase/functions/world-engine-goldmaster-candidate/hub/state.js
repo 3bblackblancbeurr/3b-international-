@@ -2,9 +2,11 @@ import {HUB_MISSIONS,HUB_MISSION_BY_ID} from './mission-catalog.js';
 import {HUB_EVENT_SET,HUB_SECRET_SET,HUB_DISTRICT_SET,HUB_NPC_SET,HUB_BUILDING_SET,HUB_TRANSPORT_TYPES,HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 import {normalizeHubMissionRow} from './mission-runtime.js';
 import {HUB_MISSION_ACTION_IDS} from './mission-actions.js';
+import {blankHubServices,normalizeHubServices} from './services-state.js';
 
 export function blankHubState(){
   return {
+    services:blankHubServices(),
     missions:Object.fromEntries(HUB_MISSIONS.map((mission)=>[mission.id,normalizeHubMissionRow(mission,{} )])),
     secrets:[],
     events:[],
@@ -24,6 +26,7 @@ export function blankHubState(){
 
 export function normalizeHubState(input){
   const base=blankHubState(),source=input&&typeof input==='object'?input:{};
+  base.services=normalizeHubServices(source.services);
   for(const [id,current] of Object.entries(base.missions)){
     const raw=source.missions?.[id];
     if(!raw||!HUB_MISSION_BY_ID[id])continue;

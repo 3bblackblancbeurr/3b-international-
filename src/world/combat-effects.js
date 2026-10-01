@@ -43,5 +43,5 @@ export function createCombatEffects({reducedMotion=false}={}){
   enemyArc.visible=!!ef&&!ranged;enemyOrb.visible=!!ef&&ranged;enemyArc.material.opacity=ef*.7;enemyArc.rotation.set(.1,0,-1.3+et*2*motion);enemyArc.position.z=Math.min(length,length*et);enemyOrb.position.z=length*et;enemyOrb.scale.setScalar(cue.intent==='vague'?.7:.4);enemyOrb.material.opacity=ef*.7;
   if(cue.action==='trap')defence.position.copy(to);
  }
- return{root,start,update,clear,get state(){return{active:root.visible,cue,age:lastAge};},dispose(){beamCore.dispose();beamGlow.dispose();owned.forEach(v=>v.dispose());root.removeFromParent();}};
+ return{root,start,update,clear,setReducedMotion(value){reducedMotion=!!value;},get state(){return{active:root.visible,cue,age:lastAge};},dispose(){beamCore.dispose();beamGlow.dispose();owned.forEach(v=>v.dispose());root.removeFromParent();}};
 }

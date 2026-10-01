@@ -4,6 +4,7 @@ import {citySimulationSnapshot,cityTrafficRoutes} from '../src/city/city3b-simul
 
 function snapshot(){
   return {
+    life:{available:true,population:90,housingCapacity:108,jobs:80,employed:54,workingPopulation:54,mobility:70,happiness:75,needs:[{code:'water',score:100},{code:'energy',score:100},{code:'health',score:60},{code:'food',score:100},{code:'education',score:80},{code:'green',score:75}]},
     city:{city_level:6,land_tier:3,city:{roads:[
       {id:'r1',x1:-30,z1:10,x2:30,z2:10,width:4},
       {id:'r2',x1:0,z1:-30,x2:0,z2:30,width:4},
@@ -41,6 +42,7 @@ test('living-city simulation derives residents jobs services traffic and satisfa
   assert.ok(value.congestion>=0&&value.congestion<=100);
   assert.ok(value.satisfaction>=0&&value.satisfaction<=100);
   assert.ok(value.residentialDemand>=0&&value.residentialDemand<=100);
+  assert.equal(Number.isInteger(value.residentialDemand),true);
   assert.ok(value.commercialDemand>=0&&value.commercialDemand<=100);
   assert.ok(value.serviceDemand>=0&&value.serviceDemand<=100);
 });

@@ -11,10 +11,21 @@ on:
       - 'docs/legal/**'
       - 'docs/security/**'
       - 'src/passport/**'
+      - 'src/loyalty/AccountPage.jsx'
+      - 'src/loyalty/client.js'
+      - 'package.json'
+      - 'package-lock.json'
       - 'supabase/functions/member-auth/**'
       - 'supabase/functions/delete-account/**'
       - 'supabase/functions/passport-identity/**'
       - 'supabase/functions/passport-verify/**'
+      - 'supabase/functions/passport-idv/**'
+      - 'supabase/functions/passport-partner/**'
+      - 'supabase/functions/passport-passkeys/**'
+      - 'supabase/functions/passport-card/**'
+      - 'supabase/functions/passport-auth/**'
+      - 'supabase/functions/_shared/passport-*'
+      - 'tests/passport-*.test.js'
       - 'supabase/migrations/**passport**'
       - 'supabase/migrations/*identity*'
       - 'scripts/verify-passport-acceptance-readiness.mjs'
@@ -30,10 +41,21 @@ on:
       - 'docs/legal/**'
       - 'docs/security/**'
       - 'src/passport/**'
+      - 'src/loyalty/AccountPage.jsx'
+      - 'src/loyalty/client.js'
+      - 'package.json'
+      - 'package-lock.json'
       - 'supabase/functions/member-auth/**'
       - 'supabase/functions/delete-account/**'
       - 'supabase/functions/passport-identity/**'
       - 'supabase/functions/passport-verify/**'
+      - 'supabase/functions/passport-idv/**'
+      - 'supabase/functions/passport-partner/**'
+      - 'supabase/functions/passport-passkeys/**'
+      - 'supabase/functions/passport-card/**'
+      - 'supabase/functions/passport-auth/**'
+      - 'supabase/functions/_shared/passport-*'
+      - 'tests/passport-*.test.js'
       - 'supabase/migrations/**passport**'
       - 'supabase/migrations/*identity*'
       - 'scripts/verify-passport-acceptance-readiness.mjs'
@@ -45,13 +67,26 @@ permissions:
 jobs:
   passport-identity-foundation:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify Passport identity acceptance foundation
         run: node scripts/verify-passport-acceptance-readiness.mjs
       - name: Run Passport trust tests
-        run: node --test tests/passport-identity-trust.test.js tests/passport-access-gate.test.js tests/passport-identity.test.js
+        run: node --test tests/passport-*.test.js
+      - name: Check identity provider function
+        run: npm exec --yes --package=deno@2.9.6 -- deno check --frozen --config supabase/functions/passport-idv/deno.json supabase/functions/passport-idv/index.ts
+      - name: Check passkey function on supported Supabase runtime baseline
+        run: npm exec --yes --package=deno@2.1.13 -- deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/index.ts
+      - name: Verify real WebAuthn signatures and rejection cases
+        run: npm exec --yes --package=deno@2.1.13 -- deno test --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-passkeys/
+      - name: Check partner function
+        run: npm exec --yes --package=deno@2.9.6 -- deno check --no-lock --config supabase/functions/passport-partner/deno.json supabase/functions/passport-partner/index.ts
+      - name: Check cards and official Auth readiness on supported runtime
+        run: npm exec --yes --package=deno@2.1.13 -- deno check --frozen --config supabase/functions/passport-passkeys/deno.json supabase/functions/passport-card/index.ts supabase/functions/passport-auth/index.ts supabase/functions/passport-verify/index.ts supabase/functions/member-auth/index.ts

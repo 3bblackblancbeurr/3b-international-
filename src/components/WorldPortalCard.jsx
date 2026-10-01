@@ -30,9 +30,9 @@ export default function WorldPortalCard({goTo}){
 
  return <section className="world-portal" aria-labelledby="world-portal-title">
   <div className="world-portal-copy">
-   <p className="eyebrow">LE MONDE DU 3B · NEXUS</p>
-   <h2 id="world-portal-title">Une plateforme qui devient un <em>monde.</em></h2>
-   <p>Depuis ton téléphone, le Nexus relie les huit Portes, les quartiers, les Gardiens, les missions et ta progression. Un seul Passeport 3B accompagne toute ton aventure.</p>
+   <p className="eyebrow">LE MONDE DU 3B · CITÉ DES HUIT HÉRITAGES</p>
+   <h2 id="world-portal-title">Une Cité.<br/>Huit portes. <em>Ton aventure.</em></h2>
+   <p>Depuis la Cité des Huit Héritages, explore les huit royaumes, rencontre leurs Gardiens et restaure leur mémoire. La Cité évolue avec ton aventure. Ma Ville possède sa propre progression de construction.</p>
    <div className="world-portal-meta">
     <span><Globe2 size={16}/>8 Portes reliées</span>
     <span><CircleDot size={16}/>Nexus central</span>
