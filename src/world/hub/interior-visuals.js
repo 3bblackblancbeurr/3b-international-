@@ -4,10 +4,10 @@ import * as THREE from 'three';
 // shadow maps, particles or lights; the outdoor city is hidden while inside.
 export function createHubInteriorVisual(spec,{geometry,material}){
  const root=new THREE.Group();root.name='3B-Interior-'+spec.id;
- const stone=material('#222b32',{roughness:.68,metalness:.16}),black=material('#0c141e',{roughness:.36,metalness:.54});
- const gold=material('#d6b46a',{roughness:.28,metalness:.78,emissive:'#6b5024',emissiveIntensity:.18});
- const blue=material('#193f55',{roughness:.30,metalness:.34,emissive:'#00a8ff',emissiveIntensity:.38});
- const pale=material('#c0bbab',{roughness:.84,metalness:.04}),green=material('#43695b',{roughness:.85});
+ const stone=material('#222b32',{roughness:.68,metalness:.16}),black=material('#0c141e',{roughness:.36,metalness:.54}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
+ const gold=material('#d6b46a',{roughness:.28,metalness:.78,emissive:'#6b5024',emissiveIntensity:.18}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
+ const blue=material('#193f55',{roughness:.30,metalness:.34,emissive:'#00a8ff',emissiveIntensity:.38}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
+ const pale=material('#c0bbab',{roughness:.84,metalness:.04}),green=material('#43695b',{roughness:.85}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
  const add=(shape,mat,x,y,z,sx,sy,sz)=>{const m=new THREE.Mesh(geometry[shape],mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.receiveShadow=true;root.add(m);return m;};
  const {width:w,depth:d}=spec.bounds;
  const floor=add('box',stone,0,-.15,0,w,.3,d);floor.name='3B-Interior-Floor';

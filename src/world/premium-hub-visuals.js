@@ -632,7 +632,7 @@ export function createPremiumWaterFeature(item,{root,geometry,material,groundY})
   for(const side of [-1,1])child(group,geometry.box,foam,{x:side*width*.51,y:.13,sx:.08,sy:.04,sz:length*.96,cast:false});
   // Continuous promenades and spaced mooring piers make the canal read as a
   // civic waterfront rather than a blue stripe. All use the shared primitives.
-  const gold=material('#d6b46a',{roughness:.32,metalness:.7,emissive:'#6f531d',emissiveIntensity:.13});
+  const gold=material('#d6b46a',{roughness:.32,metalness:.7,emissive:'#6f531d',emissiveIntensity:.13}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
   for(const side of [-1,1]){
    child(group,geometry.box,edge,{x:side*(width*.5+1.65),y:.14,sx:3.1,sy:.22,sz:length,cast:false});
    child(group,geometry.box,gold,{x:side*(width*.5+3.05),y:.28,sx:.12,sy:.08,sz:length*.98,cast:false});

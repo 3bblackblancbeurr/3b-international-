@@ -40,7 +40,7 @@ export default function HomePage({goTo,menuItems,member,options}){
     <picture><source media="(max-width: 720px)" srcSet="/nexus/cinema-v1/hall-mobile.webp"/><img src="/nexus/cinema-v1/hall.webp" alt="Le Cercle Brisé au centre des huit portes du Monde du 3B" width="941" height="1116" fetchPriority="high" decoding="async"/></picture>
     <div className="cinematic-window-light" aria-hidden="true"/>
     <div className="cinematic-scene-caption"><span>LE MONDE DU 3B</span><strong>La mémoire nous relie.</strong><small>Cité des Huit Héritages</small></div>
-    <div className="cinematic-motion-control">{motion.allowed?<button type="button" onClick={motion.toggle} aria-pressed={motion.paused} aria-label={motion.paused?'Reprendre les animations':'Mettre les animations en pause'}>{motion.paused?<Play size={14}/>:<Pause size={14}/>}<span>{motion.paused?'Reprendre':'Pause'}</span></button>:<span>Animations réduites</span>}</div>
+    <div className="cinematic-motion-control">{motion.allowed?<Button variant="ghost" size="sm" onClick={motion.toggle} aria-pressed={motion.paused} aria-label={motion.paused?'Reprendre les animations':'Mettre les animations en pause'}>{motion.paused?<Play size={14}/>:<Pause size={14}/>}<span>{motion.paused?'Reprendre':'Pause'}</span></Button>:<span>Animations réduites</span>}</div>
    </div>
   </div>
 

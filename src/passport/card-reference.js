@@ -1,13 +1,14 @@
 import QRCode from 'qrcode';
 const APP='https://3b-international.vercel.app';
+const QR_MONOCHROME=Object.freeze({dark:'#000000ff',light:'#ffffffff'}); // gold-master-allow: standard print QR requires black/white contrast; decoded by passport-card-reference.test.js, never a UI palette.
 export function cardReferenceUrl(reference) {
  if(typeof reference!=='string'||!/^[0-9a-f]{64}$/.test(reference))throw Error('Référence de carte invalide.');
  return APP+'/?page=passport&passport_card='+reference;
 }
 export async function cardQr(reference) {
  const url=cardReferenceUrl(reference);
- return {url,png:await QRCode.toDataURL(url,{errorCorrectionLevel:'M',margin:4,width:420,color:{dark:'#07111fff',light:'#ffffffff'}}),
-  svg:await QRCode.toString(url,{type:'svg',errorCorrectionLevel:'M',margin:4,width:420,color:{dark:'#07111fff',light:'#ffffffff'}})};
+ return {url,png:await QRCode.toDataURL(url,{errorCorrectionLevel:'M',margin:4,width:420,color:QR_MONOCHROME}),
+  svg:await QRCode.toString(url,{type:'svg',errorCorrectionLevel:'M',margin:4,width:420,color:QR_MONOCHROME})};
 }
 export function nfcSupported(){return typeof window!=='undefined'&&window.isSecureContext&&typeof window.NDEFReader==='function';}
 export async function writeCardNfc(reference,{reader,signal}={}) {

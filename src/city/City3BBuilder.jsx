@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Building2,
@@ -160,15 +161,15 @@ function BuildingMap({ data, draft, activeDefinition, activePlacement, onPoint, 
     <div className="city3b-builder-map-toolbar">
       <span><Crosshair size={15} /> {tool === "road" ? "TRACÉ ROUTE" : "PLAN VILLE"} · X {draft.x} · Z {draft.z}</span>
       <span className="city3b-map-progress">{blueprint.districts.filter(row => row.unlocked).length}/8 quartiers · Terrain {blueprint.landTier}/10</span>
-      <button type="button" onClick={() => setZoom(value => Math.max(1, value / 1.5))} aria-label="Dézoomer"><ZoomOut size={17} /></button>
-      <button type="button" onClick={() => setZoom(value => Math.min(8, value * 1.5))} aria-label="Zoomer"><ZoomIn size={17} /></button>
-      <button type="button" onClick={() => setCenter({ x: 0, z: 0 })}>Centre-ville</button>
+      <Button variant="ghost" type="button" onClick={() => setZoom(value => Math.max(1, value / 1.5))} aria-label="Dézoomer"><ZoomOut size={17} /></Button>
+      <Button variant="ghost" type="button" onClick={() => setZoom(value => Math.min(8, value * 1.5))} aria-label="Zoomer"><ZoomIn size={17} /></Button>
+      <Button variant="ghost" type="button" onClick={() => setCenter({ x: 0, z: 0 })}>Centre-ville</Button>
     </div>
     <div className="city3b-builder-map-pan" aria-label="Déplacer la vue">
-      <button type="button" onClick={() => pan(0, -1)} aria-label="Vue vers le haut">↑</button>
-      <button type="button" onClick={() => pan(-1, 0)} aria-label="Vue vers la gauche">←</button>
-      <button type="button" onClick={() => pan(1, 0)} aria-label="Vue vers la droite">→</button>
-      <button type="button" onClick={() => pan(0, 1)} aria-label="Vue vers le bas">↓</button>
+      <Button variant="ghost" type="button" onClick={() => pan(0, -1)} aria-label="Vue vers le haut">↑</Button>
+      <Button variant="ghost" type="button" onClick={() => pan(-1, 0)} aria-label="Vue vers la gauche">←</Button>
+      <Button variant="ghost" type="button" onClick={() => pan(1, 0)} aria-label="Vue vers la droite">→</Button>
+      <Button variant="ghost" type="button" onClick={() => pan(0, 1)} aria-label="Vue vers le bas">↓</Button>
     </div>
     <svg
       ref={svgRef}
@@ -458,7 +459,7 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = new Set
   };
 
   if (preview) return <section className="city3b-builder-preview">
-    <header><div><p className="city3b-kicker">APERÇU PRIVÉ · NON PUBLIÉ</p><h2>{city.name}</h2><span>Visible uniquement depuis ton Passeport pendant cette validation.</span></div><button type="button" className="city3b-btn primary" onClick={() => setPreview(false)}>Retour à l’éditeur</button></header>
+    <header><div><p className="city3b-kicker">APERÇU PRIVÉ · NON PUBLIÉ</p><h2>{city.name}</h2><span>Visible uniquement depuis ton Passeport pendant cette validation.</span></div><Button variant="champagne" type="button" className="city3b-btn primary" onClick={() => setPreview(false)}>Retour à l’éditeur</Button></header>
     <BuildingMap data={data} draft={draft} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} previewOnly premiumCodes={premiumCodes} />
     <div className="city3b-preview-stats"><span>{placements.length} constructions</span><span>{data.districts?.filter(row => row.unlocked).length || 1}/8 quartiers</span><span>{city.day_mode} · {city.weather}</span></div>
   </section>;
@@ -470,25 +471,25 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = new Set
     </header>
 
     <div className="city3b-builder-commandbar">
-      <button type="button" disabled={!history.length || busy} onClick={undo}><Undo2 size={17} /> Annuler</button>
-      <button type="button" disabled={!future.length || busy} onClick={redo}><Redo2 size={17} /> Rétablir</button>
-      <button type="button" onClick={() => setPreview(true)}><Eye size={17} /> Aperçu privé</button>
-      <button type="button" aria-pressed={tool === "build"} onClick={() => { setTool("build"); setRoadStart(null); }}><Building2 size={17} /> Bâtiments</button>
-      <button type="button" aria-pressed={tool === "road"} onClick={() => { setTool("road"); setSelectedCode(""); setSelectedPlacementId(""); }}><Move size={17} /> Routes</button>
-      {tool === "road" && customRoads.length > 0 && <button type="button" disabled={busy} onClick={removeLastRoad}>Retirer dernier axe</button>}
+      <Button variant="ghost" type="button" disabled={!history.length || busy} onClick={undo}><Undo2 size={17} /> Annuler</Button>
+      <Button variant="ghost" type="button" disabled={!future.length || busy} onClick={redo}><Redo2 size={17} /> Rétablir</Button>
+      <Button variant="ghost" type="button" onClick={() => setPreview(true)}><Eye size={17} /> Aperçu privé</Button>
+      <Button variant="ghost" type="button" aria-pressed={tool === "build"} onClick={() => { setTool("build"); setRoadStart(null); }}><Building2 size={17} /> Bâtiments</Button>
+      <Button variant="ghost" type="button" aria-pressed={tool === "road"} onClick={() => { setTool("road"); setSelectedCode(""); setSelectedPlacementId(""); }}><Move size={17} /> Routes</Button>
+      {tool === "road" && customRoads.length > 0 && <Button variant="ghost" type="button" disabled={busy} onClick={removeLastRoad}>Retirer dernier axe</Button>}
       <span><HardDrive size={16} /> Brouillon local de reprise actif</span>
     </div>
 
-    {notice && <div className="city3b-builder-notice" role="status">{notice}<button type="button" onClick={() => setNotice("")} aria-label="Fermer">×</button></div>}
+    {notice && <div className="city3b-builder-notice" role="status">{notice}<Button variant="ghost" type="button" onClick={() => setNotice("")} aria-label="Fermer">×</Button></div>}
 
     <div className="city3b-builder-layout">
       <div className="city3b-builder-canvas">
         <BuildingMap data={data} draft={draft} activeDefinition={tool === "build" ? activeDefinition : null} activePlacement={tool === "build" ? selectedPlacement : null} onPoint={point => setDraft(previous => ({ ...previous, ...point }))} onSelect={selectPlacement} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} tool={tool} roadStart={roadStart} onRoadPoint={saveRoadPoint} premiumCodes={premiumCodes} />
         {tool === "build" && <div className="city3b-builder-nudge">
-          <button type="button" onClick={() => setDraft(value => ({ ...value, z: value.z - 1 }))}>Z -1</button>
-          <button type="button" onClick={() => setDraft(value => ({ ...value, x: value.x - 1 }))}>X -1</button>
-          <button type="button" onClick={() => setDraft(value => ({ ...value, x: value.x + 1 }))}>X +1</button>
-          <button type="button" onClick={() => setDraft(value => ({ ...value, z: value.z + 1 }))}>Z +1</button>
+          <Button variant="ghost" type="button" onClick={() => setDraft(value => ({ ...value, z: value.z - 1 }))}>Z -1</Button>
+          <Button variant="ghost" type="button" onClick={() => setDraft(value => ({ ...value, x: value.x - 1 }))}>X -1</Button>
+          <Button variant="ghost" type="button" onClick={() => setDraft(value => ({ ...value, x: value.x + 1 }))}>X +1</Button>
+          <Button variant="ghost" type="button" onClick={() => setDraft(value => ({ ...value, z: value.z + 1 }))}>Z +1</Button>
         </div>}
       </div>
 
@@ -510,12 +511,12 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = new Set
             <label>Z<input type="number" value={draft.z} onChange={event => setDraft(value => ({ ...value, z: Number(event.target.value) }))} /></label>
           </div>
           <div className="city3b-builder-rotate">
-            <button type="button" onClick={() => setDraft(value => ({ ...value, rotation: normalizeRotation(value.rotation - 90) }))}><RotateCcw size={17} /> -90°</button>
+            <Button variant="ghost" type="button" onClick={() => setDraft(value => ({ ...value, rotation: normalizeRotation(value.rotation - 90) }))}><RotateCcw size={17} /> -90°</Button>
             <b>{normalizeRotation(draft.rotation)}°</b>
-            <button type="button" onClick={() => setDraft(value => ({ ...value, rotation: normalizeRotation(value.rotation + 90) }))}><RotateCw size={17} /> +90°</button>
+            <Button variant="ghost" type="button" onClick={() => setDraft(value => ({ ...value, rotation: normalizeRotation(value.rotation + 90) }))}><RotateCw size={17} /> +90°</Button>
           </div>
-          <button type="button" className="city3b-btn primary city3b-builder-confirm" disabled={busy || !validation?.valid} onClick={save}><Move size={17} /> {selectedPlacement ? "Valider le déplacement" : "Construire et sauvegarder"}</button>
-          {selectedPlacement && <button type="button" className="city3b-btn danger" disabled={busy} onClick={() => storePlacement(selectedPlacement)}><PackageOpen size={17} /> Ranger le bâtiment</button>}
+          <Button variant="champagne" type="button" className="city3b-btn primary city3b-builder-confirm" disabled={busy || !validation?.valid} onClick={save}><Move size={17} /> {selectedPlacement ? "Valider le déplacement" : "Construire et sauvegarder"}</Button>
+          {selectedPlacement && <Button variant="danger" type="button" className="city3b-btn danger" disabled={busy} onClick={() => storePlacement(selectedPlacement)}><PackageOpen size={17} /> Ranger le bâtiment</Button>}
         </>}
         </>}
       </aside>
@@ -535,10 +536,10 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = new Set
 
     <section className="city3b-builder-catalog">
       <div className="city3b-builder-catalog-head"><div><p className="city3b-kicker">CATALOGUE</p><h3>Bâtiments disponibles</h3></div><label><Search size={16} /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Rechercher…" /></label></div>
-      <div className="city3b-builder-building-list">{filteredBuildings.map(row => <button type="button" key={row.code} aria-pressed={selectedCode === row.code} onClick={() => selectBuilding(row)}><span className="city3b-building-thumb"><Building2 size={24} /></span><strong>{row.name}</strong><small>{row.country || "3B International"}</small><b>{row.cost_coins || 0} Coins</b></button>)}</div>
+      <div className="city3b-builder-building-list">{filteredBuildings.map(row => <Button variant="ghost" type="button" key={row.code} aria-pressed={selectedCode === row.code} onClick={() => selectBuilding(row)}><span className="city3b-building-thumb"><Building2 size={24} /></span><strong>{row.name}</strong><small>{row.country || "3B International"}</small><b>{row.cost_coins || 0} Coins</b></Button>)}</div>
     </section>
 
-    {stored.length > 0 && <section className="city3b-builder-stored"><p className="city3b-kicker">INVENTAIRE DE CONSTRUCTION</p><h3>Bâtiments rangés</h3><div>{stored.map(row => <button type="button" key={row.id} onClick={() => selectPlacement(row)}><PackageOpen size={18} /><span><strong>{definitions.get(row.building_code)?.name || row.building_code}</strong><small>Toucher puis choisir une parcelle pour restaurer</small></span></button>)}</div></section>}
+    {stored.length > 0 && <section className="city3b-builder-stored"><p className="city3b-kicker">INVENTAIRE DE CONSTRUCTION</p><h3>Bâtiments rangés</h3><div>{stored.map(row => <Button variant="ghost" type="button" key={row.id} onClick={() => selectPlacement(row)}><PackageOpen size={18} /><span><strong>{definitions.get(row.building_code)?.name || row.building_code}</strong><small>Toucher puis choisir une parcelle pour restaurer</small></span></Button>)}</div></section>}
   </section>;
 }
 

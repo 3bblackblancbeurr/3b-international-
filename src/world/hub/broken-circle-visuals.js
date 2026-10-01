@@ -19,9 +19,9 @@ export function brokenCircleCrownLayout({fragmentCount=0,height=100,compact=fals
 export function createBrokenCircleCrown(item,{geometry,material}){
  const layout=brokenCircleCrownLayout({fragmentCount:item.fragmentCount,height:item.height,compact:item.renderProfile==='mobileMedium'});
  const root=new THREE.Group();root.name='3B-Monumental-Broken-Circle';root.userData.fragmentCount=layout.fragmentCount;
- const dark=material('#303b43',{roughness:.47,metalness:.65,emissive:'#12334a',emissiveIntensity:.2});
- const gold=material('#d6b46a',{roughness:.25,metalness:.84,emissive:'#916726',emissiveIntensity:.23});
- const blue=material('#268eb9',{roughness:.3,metalness:.45,emissive:'#00a8ff',emissiveIntensity:.5});
+ const dark=material('#303b43',{roughness:.47,metalness:.65,emissive:'#12334a',emissiveIntensity:.2}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
+ const gold=material('#d6b46a',{roughness:.25,metalness:.84,emissive:'#916726',emissiveIntensity:.23}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
+ const blue=material('#268eb9',{roughness:.3,metalness:.45,emissive:'#00a8ff',emissiveIntensity:.5}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
  const transform=new THREE.Object3D();
  for(const active of [false,true]){
   const pieces=layout.pieces.filter(piece=>piece.active===active);if(!pieces.length)continue;

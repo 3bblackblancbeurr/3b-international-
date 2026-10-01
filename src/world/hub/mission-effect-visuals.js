@@ -5,7 +5,7 @@ import * as THREE from 'three';
 export function createHubMissionEffectVisual(item,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Restoration-'+item.missionId;root.add(group);
  group.position.set(item.x,groundY(item.x,item.z),item.z);group.rotation.y=item.heading||0;
- const stone=material('#414947',{roughness:.86}),wood=material('#71513a',{roughness:.92}),green=material('#477450',{roughness:.94}),gold=material('#d2b06c',{roughness:.36,metalness:.45}),blue=material('#76c8d3',{roughness:.34,emissive:'#76c8d3',emissiveIntensity:.15});
+ const stone=material('#414947',{roughness:.86}),wood=material('#71513a',{roughness:.92}),green=material('#477450',{roughness:.94}),gold=material('#d2b06c',{roughness:.36,metalness:.45}),blue=material('#76c8d3',{roughness:.34,emissive:'#76c8d3',emissiveIntensity:.15}); // gold-master-allow: 3D material color; reviewed in docs/MONDE_3B_GOLD_MASTER_EXCEPTIONS_20260930.md
  const add=(shape,mat,x,y,z,sx,sy,sz)=>{const mesh=new THREE.Mesh(geometry[shape],mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=false;mesh.receiveShadow=true;group.add(mesh);return mesh;};
  add('cylinder',stone,0,.08,0,5,.16,5);
  if(item.kind==='garden'){

@@ -20,6 +20,8 @@ Exemple de création, exclusivement depuis le serveur du partenaire :
 
 L’export est un véritable QR PNG/SVG généré avec `qrcode@1.5.4`. Un test décode le PNG avec `jsqr@1.4.0` et `pngjs@7.0.0` et compare l’URL exacte. Un bouton permet de copier le lien à encoder par le fabricant. L’écriture NFC utilise uniquement WebNFC détecté et exige l’action/permission de l’utilisateur ; le bouton disparaît si l’API manque. Les puces contenant une URL sont copiables : cette puce sert d’orientation vers le contrôle en ligne, jamais de preuve d’identité, de possession exclusive ou d’autorisation hors ligne. La [documentation Chrome WebNFC](https://developer.chrome.com/docs/capabilities/nfc) décrit son périmètre Android et ses restrictions. Aucune puce physique ou imprimante n’a été utilisée pour la recette locale.
 
+La palette du panneau, ses formes et boutons suivent le design system Gold Master de l’application. L’unique exception de couleur se situe sur la constante `QR_MONOCHROME` dans `card-reference.js` : noir pur sur blanc opaque pour conserver le contraste du QR imprimé. Le marqueur `gold-master-allow` ne couvre que cette ligne, et le décodage du véritable PNG est testé. Cette exception ne s’applique à aucune couleur d’interface.
+
 Le QR temporaire historique conserve sa présentation de profil public pendant cinq minutes ; il doit rester distinct de la carte imprimée. Son émission vérifie maintenant la session serveur ; sa mention d’identité civile exige aussi une preuve production/live récente attestée. Aucun nom civil, date de naissance, résultat brut fournisseur ou donnée biométrique n’est transmis au partenaire.
 
 ## Connexion initiale officielle
