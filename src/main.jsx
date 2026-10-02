@@ -10,6 +10,7 @@ import "./styles/gold-master.css";
 import "./styles/luxury-v2.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
+import AppUpdateManager from "./update/AppUpdateManager.jsx";
 
 document.documentElement.classList.add('js-app-ready');
 const nativeSetup = setupNativeApp().catch(() => () => {});
@@ -17,7 +18,7 @@ if (import.meta.hot) import.meta.hot.dispose(() => { nativeSetup.then(dispose =>
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AppErrorBoundary><LoyaltyProvider><LuxuryProvider><App /></LuxuryProvider></LoyaltyProvider></AppErrorBoundary>
+    <AppErrorBoundary><AppUpdateManager /><LoyaltyProvider><LuxuryProvider><App /></LuxuryProvider></LoyaltyProvider></AppErrorBoundary>
   </React.StrictMode>
 );
 
