@@ -1,3 +1,4 @@
+import {franceDistrictState} from './france-life.js';
 import {DISTRICT_JOBS,applyDistrictJobAction,jobReadyToTurnIn,jobAvailableInContext} from './district-jobs.js';
 import {CARDS,COUNTRIES,cardById,countryById} from './catalog.js';
 import {normalizeAvatar} from './avatar-rules.js';
@@ -169,12 +170,13 @@ export function applyWorldAction(input,action){
    return nextValue.completed&&!current.completed?reward(s,60,15):s;
   }
   case 'jobAccept':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job,'Mission inconnue.');requireThat(jobAvailableInContext(job,region,s.seals),'Ce contrat n’est pas disponible dans ce pays ou à ce stade.');requireThat(!home.activeJob,'Termine d’abord ton contrat actuel.');requireThat(!home.jobs?.includes(action.id),'Ce contrat reviendra après une nouvelle expédition.');requireThat(home.food>=job.cost,'Il faut davantage de provisions pour accepter ce contrat.');return setHome({food:home.food-job.cost,activeJob:action.id,jobStage:0,jobProgress:[]});}
+  case 'jobAbandon':{peaceful();inCountry();requireThat(home.activeJob===action.id,'Aucun contrat actif à abandonner.');return setHome({activeJob:null,jobStage:0,jobProgress:[]});}
   case 'jobAction':{peaceful();inCountry();requireThat(home.activeJob===action.job,'Cette action n’appartient pas à ton contrat actif.');const result=applyDistrictJobAction(home,action.actionId);requireThat(result.ok,'Action de contrat invalide pour cette étape.');if(result.duplicate)return s;return setHome({jobStage:result.home.jobStage,jobProgress:result.home.jobProgress});}
-  case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucun contrat à remettre ici.');requireThat(jobReadyToTurnIn(home),'Termine toutes les étapes du contrat avant de revenir.');const delta={activeJob:null,jobStage:0,jobProgress:[],jobs:[...(home.jobs||[]),action.id]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,job.xp||20,job.shards||0);}
-  case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden:0)),harvest:[...home.harvest,site.id]});}
+  case 'jobDone':{peaceful();inCountry();const job=DISTRICT_JOBS[action.id];requireThat(job&&home.activeJob===action.id&&!home.jobs?.includes(action.id),'Aucun contrat à remettre ici.');requireThat(jobReadyToTurnIn(home),'Termine toutes les étapes du contrat avant de revenir.');const delta={activeJob:null,jobStage:0,jobProgress:[],jobs:[...(home.jobs||[]),action.id],completedJobs:[...new Set([...(home.completedJobs||[]),action.id])]};for(const [key,value] of Object.entries(job.reward))delta[key]=Math.min(key==='food'?99:9999,home[key]+value);s=setHome(delta);return reward(s,job.xp||20,job.shards||0);}
+  case 'gather':{peaceful();inCountry();const site=RESOURCE_SITES.find(p=>p.id===action.resource);requireThat(site,'Ressource inconnue.');requireThat(!home.harvest.includes(site.id),'Ce gisement reviendra après une expédition réussie.');return setHome({[site.id]:Math.min(site.id==='food'?99:9999,home[site.id]+site.amount+(site.id==='food'?home.garden+(region==='france'?franceDistrictState(home).foodHarvestBonus:0):0)),harvest:[...home.harvest,site.id]});}
   case 'build':{peaceful();inCountry();const cost=buildCost(home,action.building);requireThat(cost&&BUILDINGS[action.building],'Construction inconnue.');requireThat(home[action.building]<8,'Ce bâtiment est au rang maximal.');requireThat(home.wood>=cost.wood&&home.stone>=cost.stone,'Récolte le bois et la pierre nécessaires.');s=setHome({wood:home.wood-cost.wood,stone:home.stone-cost.stone,[action.building]:home[action.building]+1});return reward(s,40,0);}
   case 'recover':{peaceful();inCountry();requireThat(home.food===0,'Tu as déjà des provisions.');return setHome({food:1});}
-  case 'provisions':{peaceful();inCountry();requireThat(region==='france','Le café se trouve dans le quartier de Paris.');requireThat(s.shards>=6,'Il faut 6 éclats pour ce panier.');requireThat(home.food<=96,'Tes réserves sont pleines.');s=gain(s,{shards:s.shards-6});return setHome({food:home.food+3});}
+  case 'provisions':{peaceful();inCountry();requireThat(region==='france','Le café se trouve dans le quartier de Paris.');const price=franceDistrictState(home).basketPrice;requireThat(s.shards>=price,'Il faut '+price+' éclats pour ce panier.');requireThat(home.food<=96,'Tes réserves sont pleines.');s=gain(s,{shards:s.shards-price});return setHome({food:home.food+3});}
   case 'patrol':{
    peaceful();inCountry();requireThat(home.food>0,'Retourne au refuge pour préparer une provision.');
    const person=patrolOpponent(region,home.expedition);
@@ -278,3 +280,4 @@ export function applyWorldAction(input,action){
   default:fail('Action de jeu non autorisée.');
  }
 }
+
