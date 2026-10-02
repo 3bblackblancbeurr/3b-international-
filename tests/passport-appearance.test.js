@@ -5,6 +5,8 @@ import {appearanceFromSnapshot,cleanInitials,createAppearanceStore,isDirectorPor
 
 const passportVisual=readFileSync(new URL('../src/components/PassportVisual.jsx',import.meta.url),'utf8');
 const passportAppearance=readFileSync(new URL('../src/passport/PassportAppearance.jsx',import.meta.url),'utf8');
+const passportUi=readFileSync(new URL('../src/passport/PassportUI.jsx',import.meta.url),'utf8');
+const legacyPassportPage=readFileSync(new URL('../src/components/PassportPage.jsx',import.meta.url),'utf8');
 
 const alice={userId:'alice',name:'Alice Martin'},bob={userId:'bob',name:'Benoît Petit'};
 const director={userId:'director',name:'3B',public_verified:true,public_badge_key:'director_founder'};
@@ -188,6 +190,20 @@ test('Passport UI permanently keeps the original card without Details, zoom or d
  assert.match(passportVisual,/passport-card-stage passport-card-desktop/);
  assert.doesNotMatch(passportVisual,/<button\b|<Button\b|passport-portal-trigger/);
  assert.match(passportVisual,/PassportPortrait/);
+ assert.match(passportUi,/export \{default\} from '\.\.\/components\/PassportVisual\.jsx'/);
+ assert.doesNotMatch(passportUi,/<button\b|passportImage/);
+ assert.match(legacyPassportPage,/export \{default\} from '\.\/PassportVisual\.jsx'/);
+ assert.doesNotMatch(legacyPassportPage,/<button\b|passport-digital-3bv2/);
+});
+
+test('founder-only layout reserves a separate readable country row without changing other passports',()=>{
+ const effects=readFileSync(new URL('../src/styles/passport-effects.css',import.meta.url),'utf8');
+ assert.match(passportVisual,/public_verified === true && identity\?\.public_badge_key === "director_founder"/);
+ assert.match(passportVisual,/data-founder=\{founder\}/);
+ assert.match(effects,/\.passport-visual\[data-founder="true"\] \.passport-holder-block/);
+ assert.match(effects,/\.passport-visual\[data-founder="true"\] \.passport-country-block \{ top: 60%/);
+ assert.match(effects,/@container \(max-width: 520px\)/);
+ assert.doesNotMatch(effects,/\.passport-visual:not\(\[data-founder/);
 });
 
 test('photo import is mobile-tolerant and commits the selected photo in one pass',()=>{

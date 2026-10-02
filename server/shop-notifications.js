@@ -36,24 +36,25 @@ function addressText(shipping) {
 
 async function claim(env, fetcher, sessionId, event, channel) {
   const cfg = supabaseConfig(env); if (!cfg) return false;
-  const url = new URL("/rest/v1/shop_notification_log", cfg.base);
-  url.searchParams.set("on_conflict", "stripe_session_id,event,channel");
+  const url = new URL("/rest/v1/rpc/shop_claim_notification", cfg.base);
   const response = await fetcher(url, {
     method:"POST", signal:AbortSignal.timeout(10000),
-    headers:{ apikey:cfg.key, Authorization:`Bearer ${cfg.key}`, "Content-Type":"application/json", Prefer:"resolution=ignore-duplicates,return=representation" },
-    body:JSON.stringify({ stripe_session_id:sessionId, event, channel, state:"pending", attempts:1, updated_at:new Date().toISOString() }),
+    headers:{ apikey:cfg.key, Authorization:`Bearer ${cfg.key}`, "Content-Type":"application/json" },
+    body:JSON.stringify({ p_session_id:sessionId, p_event:event, p_channel:channel, p_max_attempts:5 }),
   });
   if (!response.ok) return false;
-  const rows = await response.json().catch(() => []);
-  return Array.isArray(rows) && rows.length > 0;
+  const attempt = await response.json().catch(() => 0);
+  return Number.isInteger(attempt) && attempt > 0 ? attempt : false;
 }
 
-async function finish(env, fetcher, sessionId, event, channel, state, providerId = null, error = null) {
+async function finish(env, fetcher, sessionId, event, channel, attempt, state, providerId = null, error = null) {
   const cfg = supabaseConfig(env); if (!cfg) return;
   const url = new URL("/rest/v1/shop_notification_log", cfg.base);
   url.searchParams.set("stripe_session_id", `eq.${sessionId}`);
   url.searchParams.set("event", `eq.${event}`);
   url.searchParams.set("channel", `eq.${channel}`);
+  url.searchParams.set("state", "eq.pending");
+  url.searchParams.set("attempts", `eq.${attempt}`);
   await fetcher(url, {
     method:"PATCH", signal:AbortSignal.timeout(10000),
     headers:{ apikey:cfg.key, Authorization:`Bearer ${cfg.key}`, "Content-Type":"application/json", Prefer:"return=minimal" },
@@ -94,16 +95,17 @@ async function sendTwilio(env, fetcher, { to, body }) {
 }
 
 async function runChannel(env, fetcher, sessionId, event, channel, sender) {
-  if (!await claim(env, fetcher, sessionId, event, channel)) return;
+  const attempt = await claim(env, fetcher, sessionId, event, channel);
+  if (!attempt) return;
   try {
     const result = await sender();
     if (result?.skipped) {
-      await finish(env, fetcher, sessionId, event, channel, "failed", null, "not_configured");
+      await finish(env, fetcher, sessionId, event, channel, attempt, "failed", null, "not_configured");
       return;
     }
-    await finish(env, fetcher, sessionId, event, channel, "sent", result?.id || null, null);
+    await finish(env, fetcher, sessionId, event, channel, attempt, "sent", result?.id || null, null);
   } catch (error) {
-    await finish(env, fetcher, sessionId, event, channel, "failed", null, error?.message || "provider_error");
+    await finish(env, fetcher, sessionId, event, channel, attempt, "failed", null, error?.message || "provider_error");
   }
 }
 

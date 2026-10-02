@@ -1,6 +1,9 @@
 name: 3B Fortress Security
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -38,6 +41,9 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Vercel deployment budget
+        run: node scripts/verify-vercel-budget.mjs
 
       - name: High/critical production dependency audit
         run: npm audit --omit=dev --audit-level=high

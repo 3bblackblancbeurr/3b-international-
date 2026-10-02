@@ -24,16 +24,26 @@ test('interactive app hides the static SEO fallback without removing no-JS disco
  assert.match(html,/3B International — Black • Blanc • Beur/);
 });
 
-test('home exposes a clear next step without technical journey status cards',()=>{
+test('home opens on the single Nexus story without the duplicated legacy hero',()=>{
  const home=read('src/components/HomePage.jsx');
+ const portal=read('src/components/WorldPortalCard.jsx');
  assert.doesNotMatch(home,/home-journey-status|home-status-item/);
  assert.doesNotMatch(home,/Ouvert · 8 héritages|Web · installable/);
- assert.match(home,/Activer mon Passeport 3B/);
- assert.match(home,/Entrer dans le Monde du 3B/);
- assert.match(home,/03 \/ MONDE DU 3B/);
- assert.match(home,/04 \/ EXPLORER 3B/);
+ assert.doesNotMatch(home,/Un héritage|Nos différences|Notre force|welcome-hero|luxury-manifesto-line/);
+ assert.match(portal,/Une plateforme qui devient un [\s\S]*monde/);
+ assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('L’essentiel'));
  assert.match(home,/home-guide-zone/);
  assert.ok(home.indexOf('home-guide-zone')>home.indexOf('Explorer 3B'));
+});
+
+test('historical entry waits for the unique COMMENCER action',()=>{
+ const app=read('src/App.jsx');
+ const experience=read('src/design-system/LuxuryExperience.jsx');
+ assert.match(app,/intro3b-background/);
+ assert.match(app,/intro3b-matrix active/);
+ assert.match(experience,/>COMMENCER<\/Button>/);
+ assert.doesNotMatch(experience,/Passer l.introduction|setTimeout\(finish|readIntroSeen/);
+ assert.equal((experience.match(/>COMMENCER<\/Button>/g)||[]).length,1);
 });
 
 test('navigation reports connectivity and supports slash search shortcut',()=>{

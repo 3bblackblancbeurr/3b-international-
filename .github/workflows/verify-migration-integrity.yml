@@ -1,10 +1,23 @@
 name: Verify Applied Migration Integrity
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/verify-applied-migration-integrity.mjs'
+      - 'scripts/verify-supabase-security.mjs'
+      - 'tests/supabase-migration-integrity.test.js'
+      - 'tests/supabase-security.test.js'
+      - '.github/workflows/verify-migration-integrity.yml'
   pull_request:
     paths:
       - 'supabase/migrations/**'
       - 'scripts/verify-applied-migration-integrity.mjs'
+      - 'scripts/verify-supabase-security.mjs'
+      - 'tests/supabase-migration-integrity.test.js'
+      - 'tests/supabase-security.test.js'
       - '.github/workflows/verify-migration-integrity.yml'
   workflow_dispatch:
 
@@ -20,4 +33,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '22'
-      - run: node scripts/verify-applied-migration-integrity.mjs
+      - name: Verify immutable migration manifests
+        run: node scripts/verify-applied-migration-integrity.mjs
+      - name: Verify RLS and privileged SQL boundaries
+        run: node scripts/verify-supabase-security.mjs
+      - name: Verify migration and security contracts
+        run: node --test tests/supabase-migration-integrity.test.js tests/supabase-security.test.js

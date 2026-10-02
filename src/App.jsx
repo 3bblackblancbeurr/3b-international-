@@ -191,8 +191,6 @@ export default function App() {
   );
 
   useLuxuryRuntime(options, page);
-  const introReplay = useRef(page !== "intro");
-
   useEffect(() => {
     let active = true;
     const nativePhone = Boolean(window.Capacitor?.isNativePlatform?.());
@@ -294,7 +292,6 @@ export default function App() {
   }
 
   function goTo(nextPage) {
-    if (nextPage === "intro") introReplay.current = true;
     navigateTo(nextPage);
     setRoute(readLocation());
   }
@@ -316,7 +313,9 @@ export default function App() {
 
   if (!hasStarted) {
     return <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
-      <LuxuryBoot replay={introReplay.current} onDone={manual => { if (manual && options.interfaceSound) speakWelcome(); goTo("home"); }} />
+      <div className="intro3b-background" aria-hidden="true" />
+      <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
+      <LuxuryBoot onDone={() => { if (options.interfaceSound) speakWelcome(); goTo("home"); }} />
     </main>;
   }
 

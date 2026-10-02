@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
 import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
-import { experiencePolicy, markIntroSeen, MOTION, readIntroSeen, surfaceTilt } from './experience-policy.js';
+import { experiencePolicy, markIntroSeen, MOTION, surfaceTilt } from './experience-policy.js';
 
 const ExperienceContext = createContext(null);
 const ACTIONS = 'button:not(:disabled), a[href], [role="button"]';
@@ -142,21 +142,21 @@ export function ExperienceControls({ options, toggleOption, page }) {
   </details>;
 }
 
-export function LuxuryBoot({ onDone, replay = false }) {
+export function LuxuryBoot({ onDone }) {
   const { policy } = useLuxury();
   const done = useRef(onDone); done.current = onDone;
   const finished = useRef(false);
-  const [seen] = useState(() => { try { return !replay && readIntroSeen(window.localStorage); } catch { return false; } });
-  const duration = policy.introDuration === 0 ? 0 : seen ? MOTION.return : MOTION.intro;
-  const finish = useCallback((manual = false) => { if (finished.current) return; finished.current = true; try { markIntroSeen(window.localStorage); } catch { /* Restricted storage. */ } done.current(manual === true); }, []);
-  useEffect(() => { const timer = setTimeout(finish, duration); return () => clearTimeout(timer); }, [finish, duration]);
-  return <div className="luxury-boot" data-returning={seen} style={{ '--luxury-boot-duration': `${duration}ms` }}>
+  const finish = useCallback(() => { if (finished.current) return; finished.current = true; try { markIntroSeen(window.localStorage); } catch { /* Restricted storage. */ } done.current(); }, []);
+  return <section className="intro3b-card intro3b-start-card" data-motion={policy.animate ? 'full' : 'reduced'} aria-labelledby="intro3b-title">
     <div className="luxury-boot-beam" aria-hidden="true"/>
     <div className="luxury-boot-particles" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} style={{ '--particle': index }}/>)}</div>
-    <h1 className="luxury-boot-heading">Entrez dans la Cité des Huit Héritages.</h1>
-    <div className="luxury-boot-mark"><span aria-hidden="true">3B</span><p>BLACK · BLANC · BEUR</p><small>Ce n’est pas une marque. C’est un héritage.</small></div>
-    <Button variant="ghost" className="luxury-boot-skip" onClick={() => finish(true)}>Passer l’introduction <span aria-hidden="true">→</span></Button>
-  </div>;
+    <p className="eyebrow">3B INTERNATIONAL</p>
+    <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
+    <h1 id="intro3b-title">De zéro à l’international</h1>
+    <p className="intro3b-lead">Entrez dans la Cité des Huit Héritages.</p>
+    <p className="intro3b-legacy">Ce n’est pas une marque. C’est un héritage.</p>
+    <Button variant="champagne" className="primary-button intro3b-enter" onClick={finish}>COMMENCER</Button>
+  </section>;
 }
 
 export function useSurfaceMotion(ref, enabled = true) {

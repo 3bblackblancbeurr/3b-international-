@@ -29,7 +29,9 @@
 ## P2 — France Gold Master
 
 - Corriger l'échelle perçue de la ville par cellules et streaming.
-- Ajouter le vertical slice de 10 à 20 minutes : arrivée, rue vivante, PNJ, intérieur, énigme, combat, récompense, sauvegarde et retour Ville 3B.
+- Le vertical slice fonctionnel couvre maintenant arrivée, Kaïs, aide de l'habitant, pouvoirs, énigme, Souvenirs, créature, épreuve de Justice, combat de Céliane, récompense, sauvegarde/reprise et retour au Hub évolué. La recette automatisée et ses limites sont consignées dans `FRANCE-VERTICAL-SLICE-CHAOS-QA.md`.
+- Concevoir puis implémenter le TOURNOI canonique : ce jalon demandé n'existe pas encore dans le moteur Monde 3B et n'est pas présenté comme terminé.
+- Transformer ce parcours fonctionnel en séquence jouable de 10 à 20 minutes avec intérieurs, mise en scène, rythme, audio et assets finaux réellement validés.
 - Mettre en place les budgets assets, LOD, KTX2, instancing et culling avant d'augmenter fortement la densité.
 
 ## P2 — Ville 3B
@@ -40,5 +42,6 @@
 
 ## Non considéré comme terminé
 
-- La PR 72 possède une preview Vercel réussie et tous les contrôles automatisés sont verts.
-- Elle reste volontairement en brouillon et n'est pas fusionnée dans `main` tant que le test physique Samsung en paysage n'a pas validé les commandes.
+- Les tests automatisés et le rendu web local ne prouvent pas un Gold Master Unreal/AAA.
+- Le statut d'une ancienne preview ou PR ne remplace jamais une recette du commit courant.
+- Une validation physique Samsung en paysage reste nécessaire pour les commandes et les performances réelles.

@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-09-29",
-  "count": 176,
+  "generated_at": "2026-10-02",
+  "count": 177,
   "migrations": [
     {
       "version": "20260910020445",
@@ -896,6 +896,11 @@
       "version": "20260929164050",
       "name": "passport_identity_provider_event_retry_claim_v2",
       "sha256": "e3d31850a88892d8b3874228eabc408bf528673e79d8552bcbbe8a5560798216"
+    },
+    {
+      "version": "20261002184542",
+      "name": "shop_checkout_hardening_v1",
+      "sha256": "b38fc651a6bbe171730738591b7c52dab56048160621e3df578206fe78c37399"
     }
   ],
   "reconciliation": {
