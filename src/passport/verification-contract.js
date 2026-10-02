@@ -24,7 +24,7 @@ export function safeHttpsUrl(value) {
 export function validateTicket(result, now = Date.now()) {
   const url = safeHttpsUrl(result?.verifyUrl);
   if (!url || !/^[0-9a-f]{64}$/i.test(new URLSearchParams(new URL(url).hash.slice(1)).get('ticket') || '') ||
-      !/^data:image\/(?:png|svg\+xml)[;,]/i.test(result?.qrDataUrl || '') ||
+      !/^data:image\/(?:png|gif|svg\+xml)[;,]/i.test(result?.qrDataUrl || '') ||
       remainingSeconds(result?.expiresAt, now) <= 0 || remainingSeconds(result?.expiresAt, now) > 301) {
     throw new PassportVerificationError('Le serveur a retourné un code de présentation incomplet. Réessaie.');
   }

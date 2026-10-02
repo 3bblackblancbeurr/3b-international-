@@ -36,6 +36,18 @@ test('ticket rendering accepts only complete short-lived server presentations', 
   }
 });
 
+test('ticket rendering accepts the GIF data URL emitted by the QR encoder and rejects other content types', () => {
+  // @paulmillr/qr@0.7.0 emits data:image/gif for its data-url output.
+  // This complete one-pixel GIF is a local format fixture, not a real ticket QR.
+  const qrDataUrl = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+  const ticket = { verifyUrl: 'https://3b-international.vercel.app/passport-verify.html#ticket=' + 'a'.repeat(64), qrDataUrl, expiresAt: expiry };
+  assert.equal(validateTicket(ticket, NOW), ticket);
+  for (const invalid of ['data:text/html;base64,PGh0bWw+', 'data:image/jpeg;base64,/9j/', 'data:image/gifx;base64,R0lGODlh', 'https://remote-qr.example/code.gif', '', null]) {
+    assert.throws(() => validateTicket({ ...ticket, qrDataUrl: invalid }, NOW), PassportVerificationError);
+  }
+  assert.throws(() => validateTicket(ticket, NOW + 300000), PassportVerificationError);
+});
+
 test('typed 3B proof is coherent with the response, with no unsigned or expired local fallback', async () => {
   // A real P-256 signature over a local test fixture, without a fabricated login.
   const material = await loadSigningKey(await generateSigningJWK());
