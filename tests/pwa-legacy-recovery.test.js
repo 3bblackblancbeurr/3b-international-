@@ -28,7 +28,7 @@ test("legacy PWA recovery preserves user storage and refreshes app assets", asyn
   assert.match(vite, /fileName: "pwa-sw\.js"/);
 
   const vercel = JSON.parse(vercelRaw);
-  for (const source of ["/service-worker.js", "/pwa-sw.js", "/mettre-a-jour-3b.html"]) {
+  for (const source of ["/service-worker.js", "/pwa-sw.js", "/mettre-a-jour-3b.html", "/recovery-3b.js"]) {
     const entry = vercel.headers.find((item) => item.source === source);
     assert.ok(entry, `${source} must have recovery headers`);
     assert.ok(entry.headers.some((header) =>
