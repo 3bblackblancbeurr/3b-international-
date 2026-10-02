@@ -1,0 +1,136 @@
+.threeb-update-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding:
+    max(var(--3b-space-4), env(safe-area-inset-top))
+    max(var(--3b-space-4), env(safe-area-inset-right))
+    max(var(--3b-space-4), env(safe-area-inset-bottom))
+    max(var(--3b-space-4), env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.threeb-update-shell.is-mandatory {
+  align-items: center;
+  background: var(--3b-obsidian);
+  backdrop-filter: blur(var(--3b-space-4));
+  pointer-events: auto;
+}
+
+.threeb-update-panel {
+  position: relative;
+  width: min(560px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--3b-border-matrix);
+  border-radius: var(--3b-radius-hero);
+  padding: var(--3b-space-6);
+  background: linear-gradient(145deg, var(--3b-carbon), var(--3b-obsidian));
+  box-shadow: var(--3b-shadow-deep);
+  color: var(--3b-text);
+  pointer-events: auto;
+}
+
+.threeb-update-glow {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: -100px;
+  right: -60px;
+  border-radius: var(--3b-radius-round);
+  background: var(--3b-matrix);
+  opacity: 0.12;
+  filter: blur(var(--3b-space-2));
+}
+
+.threeb-update-kicker {
+  position: relative;
+  margin: 0 0 var(--3b-space-2);
+  color: var(--3b-champagne);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.threeb-update-panel h2 {
+  position: relative;
+  margin: 0;
+  color: var(--3b-text);
+  font-size: clamp(1.35rem, 5vw, 1.8rem);
+  line-height: 1.1;
+}
+
+.threeb-update-copy,
+.threeb-update-required,
+.threeb-update-safe,
+.threeb-update-version {
+  position: relative;
+}
+
+.threeb-update-copy {
+  margin: var(--3b-space-3) 0 0;
+  color: var(--3b-text);
+  line-height: 1.55;
+}
+
+.threeb-update-version {
+  margin: var(--3b-space-3) 0 0;
+  color: var(--3b-muted);
+  font-size: 0.84rem;
+}
+
+.threeb-update-required {
+  margin: var(--3b-space-4) 0 0;
+  border-left: 2px solid var(--3b-champagne);
+  padding-left: var(--3b-space-3);
+  color: var(--3b-text);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.threeb-update-actions {
+  position: relative;
+  display: flex;
+  gap: var(--3b-space-3);
+  margin-top: var(--3b-space-6);
+}
+
+.threeb-update-primary.gm-button {
+  flex: 1;
+}
+
+.threeb-update-secondary.gm-button {
+  min-width: 128px;
+}
+
+.threeb-update-safe {
+  margin: var(--3b-space-4) 0 0;
+  color: var(--3b-muted-soft);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .threeb-update-panel {
+    border-radius: var(--3b-radius-card);
+    padding: var(--3b-space-4);
+  }
+
+  .threeb-update-actions {
+    flex-direction: column;
+  }
+
+  .threeb-update-secondary.gm-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .threeb-update-panel,
+  .threeb-update-glow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
