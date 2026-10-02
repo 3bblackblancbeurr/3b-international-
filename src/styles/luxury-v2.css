@@ -58,11 +58,15 @@ html[data-luxury="v2"] .world-portal h2 em { font-family:Georgia,serif;font-weig
 .luxury-universe-canvas { opacity:0;transition:opacity var(--3b-motion-screen); }
 .luxury-universe-stage[data-live="true"] .luxury-universe-canvas { opacity:1; }
 .luxury-universe-canvas canvas { display:block;width:100%;height:100%; }
-.luxury-universe-caption { position:absolute;inset:auto 24px 24px;display:grid;gap:8px;pointer-events:none;text-shadow:0 2px 10px var(--3b-obsidian); }
+.luxury-universe-stage::after { content:"";position:absolute;inset:48% 0 0;pointer-events:none;background:linear-gradient(transparent,var(--3b-obsidian));opacity:.8; }
+.luxury-universe-caption { position:absolute;z-index:1;inset:auto 24px 24px;display:grid;gap:8px;pointer-events:none;text-shadow:0 2px 10px var(--3b-obsidian); }
 .luxury-universe-caption small { color:var(--3b-champagne);letter-spacing:.15em;font-size:.55rem; }
 .luxury-universe-caption strong { font-size:1.6rem;font-family:Georgia,serif;font-weight:400; }
 .luxury-universe-caption>span { font-size:.72rem;color:var(--3b-muted); }
 .luxury-universe-reset.gm-button { position:absolute;top:12px;right:12px;font-size:.65rem;padding:0 12px;background:var(--3b-luxury-glass); }
+html[data-luxury="v2"] .app3b .luxury-universe-stage>.gm-button { position:absolute!important;z-index:2;top:12px;width:auto;font-size:.65rem;padding:0 10px;background:var(--3b-luxury-glass); }
+html[data-luxury="v2"] .app3b .luxury-universe-stage>.luxury-universe-mode { left:12px;right:auto; }
+html[data-luxury="v2"] .app3b .luxury-universe-stage>.luxury-universe-reset { right:12px;left:auto; }
 .luxury-realms { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px; }
 .luxury-realms .gm-button { display:grid;gap:4px;min-height:56px;padding:8px 4px;border-color:var(--3b-luxury-line); }
 .luxury-realms .gm-button>span { font-size:.7rem;letter-spacing:.12em;color:var(--3b-champagne); }
@@ -118,11 +122,15 @@ html[data-luxury="v2"] .shop-product-featured { border-color:var(--3b-luxury-lin
 .luxury-showroom-label { display:grid;gap:8px;padding:24px 24px 0;position:relative;z-index:1; }
 .luxury-showroom-label>span { color:var(--3b-champagne);font-size:.65rem;letter-spacing:.2em; }
 .luxury-showroom-label small { color:var(--3b-muted);font-size:.5rem;letter-spacing:.16em; }
-html[data-luxury="v2"] .luxury-showroom .shop-gallery-main { width:100%;padding:0;border:0;background:transparent;aspect-ratio:1;min-height:320px;border-radius:var(--3b-radius-card); }
+html[data-luxury="v2"] .luxury-showroom .shop-gallery-main { width:100%;height:auto;padding:0;border:0;background:transparent;grid-template-columns:minmax(0,1fr);justify-items:stretch;aspect-ratio:1;min-height:320px;border-radius:var(--3b-radius-card); }
 html[data-luxury="v2"] .luxury-showroom .shop-gallery-main img { width:100%;height:100%;object-fit:contain;transform:perspective(1000px) rotateX(var(--surface-rx,0deg)) rotateY(var(--surface-ry,0deg));transition:transform 650ms var(--3b-luxury-ease); }
 html[data-luxury="v2"] .luxury-showroom[data-detail="true"] .shop-gallery-main img { transform:scale(1.65);transform-origin:50% 36%; }
 .luxury-detail-toggle.gm-button { margin:0 20px 16px;min-height:44px;font-size:.72rem; }
 .luxury-showroom .shop-gallery-thumbs { padding:0 20px 20px; }
+.luxury-product-crop { position:relative;display:block;width:100%;overflow:hidden;transform:perspective(1000px) rotateX(var(--surface-rx,0deg)) rotateY(var(--surface-ry,0deg));transition:transform 650ms var(--3b-luxury-ease); }
+html[data-luxury="v2"] .luxury-showroom .shop-gallery-main .luxury-product-crop img { position:absolute;max-width:none;object-fit:fill;transform:none;transition:none; }
+html[data-luxury="v2"] .luxury-showroom[data-detail="true"] .luxury-product-crop { transform:scale(1.55);transform-origin:50% 36%; }
+.luxury-media-caption { margin:0 20px 18px;color:var(--3b-muted);font-size:.65rem;line-height:1.5; }
 html[data-luxury="v2"] .shop-product-details h2 { font-weight:400;font-size:2rem;line-height:1.15;letter-spacing:-.04em; }
 html[data-luxury="v2"] :is(.account-command-center,.community-hero,.loyalty-panel,.coming-soon) { border-color:var(--3b-luxury-line);background:var(--3b-luxury-surface);border-radius:var(--3b-radius-card); }
 html[data-luxury="v2"] .app-loading-state { background:var(--3b-obsidian); }

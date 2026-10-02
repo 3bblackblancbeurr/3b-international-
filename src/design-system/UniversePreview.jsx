@@ -6,9 +6,10 @@ import { REALM_PREVIEWS } from './experience-policy.js';
 export default function UniversePreview() {
   const host = useRef(null), runtime = useRef(null), selected = useRef(-1);
   const [realm, setRealm] = useState(-1), [ready, setReady] = useState(false);
+  const [atlas, setAtlas] = useState(false);
   const { policy, cue } = useLuxury();
   useEffect(() => {
-    if (!policy.preview3D) return;
+    if (!policy.preview3D || !atlas) return;
     let disposed = false, loading = false, inView = false;
     const activate = async () => {
       if (loading || runtime.current || !inView || document.hidden) return;
@@ -27,15 +28,16 @@ export default function UniversePreview() {
     observer.observe(host.current);
     document.addEventListener('visibilitychange', visibility);
     return () => { disposed = true; observer.disconnect(); document.removeEventListener('visibilitychange', visibility); runtime.current?.dispose(); runtime.current = null; setReady(false); };
-  }, [policy.preview3D]);
-  const choose = index => { selected.current = index; setRealm(index); runtime.current?.select(index); cue('portal'); };
+  }, [policy.preview3D, atlas]);
+  const choose = index => { selected.current = index; setRealm(index); setAtlas(true); runtime.current?.select(index); cue('portal'); };
   const current = REALM_PREVIEWS[realm];
   return <div className="luxury-universe-preview">
     <div className="luxury-universe-stage" data-live={ready}>
-      <img className="luxury-universe-poster" src="/nexus/cinema-v1/hall-mobile.webp" alt="Le Nexus, son Cercle Brisé et les portes des huit héritages" width="564" height="669" loading="lazy"/>
+      <img className="luxury-universe-poster" src="/art/luxury-v2/hub-cite-origine.webp" alt="Illustration de la Cité Origine et du Cercle Brisé" width="1672" height="941" loading="lazy"/>
       <div ref={host} className="luxury-universe-canvas" aria-hidden="true"/>
       <div className="luxury-universe-caption" aria-live="polite"><small>{current ? current.value.toUpperCase() : 'LA CITÉ DES HUIT HÉRITAGES'}</small><strong>{current ? current.name : 'Tout part du Nexus.'}</strong><span>{current ? `${current.guardian} · Gardien de ${current.value}` : 'Huit royaumes. Un héritage commun.'}</span></div>
       <Button className="luxury-universe-reset" variant="ghost" onClick={() => choose(-1)} disabled={realm === -1}>Vue du Nexus</Button>
+      {policy.preview3D && <Button className="luxury-universe-mode" variant="ghost" onClick={() => { setAtlas(value => !value); cue('press'); }} aria-pressed={atlas}>{atlas ? 'Voir le panorama' : 'Explorer l’atlas 3D'}</Button>}
     </div>
     <div className="luxury-realms" role="group" aria-label="Admirer les huit royaumes">
       {REALM_PREVIEWS.map((item, index) => <Button key={item.code} variant="ghost" aria-pressed={realm === index} onClick={() => choose(index)}><span>{item.code}</span><small>{item.name}</small></Button>)}

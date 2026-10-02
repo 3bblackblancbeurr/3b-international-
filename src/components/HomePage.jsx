@@ -39,7 +39,7 @@ export default function HomePage({goTo,menuItems,member}){
     <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MA VILLE</span><span>03 / MONDE DU 3B</span><span>04 / EXPLORER 3B</span></div>
    </div>
    <div className="luxury-hero-art">
-    <picture><source media="(max-width: 720px)" srcSet="/nexus/cinema-v1/hall-mobile.webp"/><img src="/nexus/cinema-v1/hall.webp" width="941" height="1116" alt="Le Cercle Brisé au cœur du Nexus, entouré des huit héritages" fetchPriority="high"/></picture>
+    <picture><img src="/art/luxury-v2/hub-cite-origine.webp" width="1672" height="941" alt="Illustration de la Cité Origine : Cercle Brisé, terrasses habitées et cascades" fetchPriority="high"/></picture>
     <div className="luxury-hero-art-caption"><span>LE CERCLE BRISÉ</span><strong>Nos différences.<br/>Notre force.</strong></div>
    </div>
   </div>

@@ -14,6 +14,16 @@ Les parcours vérifiés couvrent : aperçu WebGL et sélection France, affichage
 
 Les API distantes sont simulées et interceptées dans la recette; aucun paiement, compte réel, gain, identité vérifiée ou secret n’est créé. Les tests ne constituent pas une validation de Stripe, IDnow, des webhooks, de la production Vercel ou de toutes les performances sur Samsung réel.
 
+## Complément artistique V2.1
+
+- Recette locale art, Passeport, boutique et responsive : **69 tests réussis**, sans échec.
+- Nouvelle recette navigateur complète avec les médias HD : **20 assertions réussies**, aucune erreur JavaScript non gérée. L’inspection visuelle a ensuite détecté un conteneur de cadrage nul sur mobile, corrigé avec une colonne de grille explicite; une vérification spécifique de la taille et du décodage du vêtement complète les assertions fonctionnelles.
+- Atlas exporté en GLB : **2 511 624 octets**, huit quartiers, **72 maillages / 54 920 triangles** de géométrie statique. Géométries finies, budgets et libération des ressources vérifiés.
+- Recette artistique finale après correction : **5 assertions réussies**, aucune erreur JavaScript ou shader; **80 appels de rendu / 62 128 triangles** mesurés avec l’eau et les habitants. Noir et blanc décodés en HD; le retour au panorama détruit le canvas WebGL.
+- PR GitHub **#393** ouverte. Les sept workflows de la première version publiée (`e8c1330`) ont réussi : mobile, City, Metropolis, monde/application, sécurité, boutique et Gold Master. Les résultats du dernier commit doivent être vérifiés séparément.
+
+La recette ciblée des nouveaux médias et shaders se lance avec `LUXURY_QA_ART_ONLY=1`. Elle vérifie la présence réelle du vêtement, le décodage HD, la lumière du modèle blanc, le budget de rendu et la destruction du contexte à la fermeture de l’atlas.
+
 ## Rejouer
 
 ```sh

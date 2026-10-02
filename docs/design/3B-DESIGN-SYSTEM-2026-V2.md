@@ -22,22 +22,22 @@ Noir obsidienne `#050607`, carbone `#0B0D0F`, champagne `#D6BC82`, reflet `#F0DD
 
 | Surface | Implémentation |
 | --- | --- |
-| Accueil | Composition éditoriale, art Nexus existant, hiérarchie et matières V2, accès ville séparé |
+| Accueil | Composition éditoriale, nouvelle illustration de la Cité Origine, hiérarchie et matières V2, accès ville séparé |
 | Navigation | Navigation mobile et bureau harmonisée, menu animé, réglages Ambiance accessibles |
 | Introduction | Noir, lumière, monogramme, poussières fines, passage et préférence de retour rapide |
 | Passeport | Matrix conservée; zéro bouton; relief limité à 4°, reflet au pointeur, capteur opt-in depuis Ambiance, progression sur les vrais seuils de rang |
 | Secret | Transitions de scène, pulsation discrète du signal, célébration seulement après succès serveur |
-| Monde | Atlas architectural 3D léger : huit îlots, Cercle Brisé, eau, petites silhouettes mobiles, lumière; sélection par pays avec déplacement de caméra; arrivée courte dans le moteur existant |
-| Boutique | Produit dominant, reflets, lumière noir/blanc, détail agrandi, galerie et dialogue de zoom existant; prix et paiement inchangés |
+| Monde | Panorama illustré et atlas architectural 3D à la demande : huit architectures distinctes, Cercle Brisé, jardins, cascades, eau et 48 silhouettes; sélection par pays avec déplacement de caméra; arrivée courte dans le moteur existant |
+| Boutique | Sources HD retrouvées et intégrées, cadrage centré sur le produit, reflets, lumière noir/blanc, détail agrandi et dialogue de zoom; prix et paiement inchangés |
 | Communauté / membre | Matières communes sur les surfaces existantes; accès en préparation conservés |
 | Chargements | Signature Gold Master, lisible sans mouvement |
 
-L’atlas 3D est une présentation procédurale indépendante du monde sauvegardé. Il ne prétend pas être un nouveau Hub AAA final ni reconstruire l’art final des huit royaumes. Le jeu réel garde son moteur, ses missions, ses sauvegardes et son directeur cinématique. Les vues boutique réutilisent les médias actuellement fournis; une inspection réelle des fibres et coutures nécessite des photographies produit haute définition.
+L’atlas 3D est une présentation procédurale indépendante du monde sauvegardé. Il ne prétend pas être un nouveau Hub AAA final ni reconstruire l’art final des huit royaumes. Le jeu réel garde son moteur, ses missions, ses sauvegardes et son directeur cinématique. Les sources HD de boutique sont des rendus de présentation, pas des photographies de vêtements fabriqués. Voir `ART-PRODUCTION-V2.md` pour les fichiers livrés et leurs limites.
 
 ## Performance et accessibilité
 
-- Aucun abonnement, aucune génération payante, aucune nouvelle dépendance de production.
-- Three.js est déjà utilisé dans le dépôt. L’aperçu est importé uniquement près du viewport; 30 images/s maximum, pixel ratio ≤ 1,4, géométries et matériaux partagés, sans textures ni post-traitement supplémentaires.
+- Aucun abonnement ni nouvelle dépendance de production. Une génération d’image intégrée; les sources produit sont réutilisées.
+- Three.js est déjà utilisé dans le dépôt. L’aperçu est importé au choix de l’utilisateur, près du viewport; 30 images/s maximum, pixel ratio ≤ 1,4, géométries fusionnées par matériau et réutilisation des textures CC0 existantes.
 - Repli sur le visuel Nexus lorsque WebGL est indisponible, l’économie de données activée, le téléphone annonce ≤ 4 Go de RAM, ou les mouvements sont réduits.
 - Pause hors écran et en arrière-plan; destruction des renderers, géométries, écouteurs et timers à la sortie.
 - Le gyroscope est optionnel; sa permission est demandée depuis une action explicite. Les mesures restent en mémoire sur l’appareil.

@@ -10,16 +10,12 @@ import {checkoutAuth} from "../loyalty/client.js";
 import {discountFor} from "../../shared/loyalty.js";
 import { MyOrdersPanel, SellerOrdersPanel } from "./OrderPanels.jsx";
 import { mountNexusDialog } from "../passport/nexus-dialog.js";
+import { SHOP_MEDIA, presentationCrop } from "./presentation-media.js";
 
 const money = (amount, currency = "eur") => new Intl.NumberFormat("fr-FR", { style: "currency", currency }).format(amount / 100);
 const variantLabel = item => [item.color, item.logoCountry, item.size && item.size !== "Taille unique" ? item.size : ""].filter(Boolean).join(" · ");
 const LINK_NAMES = { shipping: "Livraison", returns: "Retours", terms: "Conditions de vente", privacy: "Confidentialité", legal: "Mentions légales" };
 const LOGO_COUNTRIES = ["Italie", "France", "Algérie", "Estonie", "Maroc", "Tunisie", "Espagne", "Turquie"];
-const SHOP_MEDIA = [
-  { src: "/shop/pull-3b-noir.webp", alt: "Pull 3B International noir, 80 euros livraison incluse, choix du logo par pays" },
-  { src: "/shop/pull-3b-logos.webp", alt: "Les huit logos brodés thermocollants 3B : Italie, France, Algérie, Estonie, Maroc, Tunisie, Espagne et Turquie" },
-  { src: "/shop/pull-3b-blanc.webp", alt: "Pull 3B International blanc, 80 euros livraison incluse, choix du logo par pays" },
-];
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, { credentials: "same-origin", ...options });
@@ -37,6 +33,8 @@ function ProductGallery() {
   const [zoomed, setZoomed] = useState(false);
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
+  const media = SHOP_MEDIA[active];
+  const crop = presentationCrop(media);
 
   useEffect(() => {
     if (!zoomed || !dialogRef.current) return undefined;
@@ -48,14 +46,15 @@ function ProductGallery() {
   }, [zoomed]);
 
   return (
-    <div ref={gallery} className="shop-gallery luxury-showroom" data-light={active === 2 ? "pearl" : "obsidian"} data-detail={detail}>
+    <div ref={gallery} className="shop-gallery luxury-showroom" data-light={media.light} data-detail={detail}>
       <div className="luxury-showroom-label"><span>LE VESTIAIRE 3B</span><small>MATIÈRE · RELIEF · HÉRITAGE</small></div>
-      <Button ref={openerRef} variant="ghost" className="shop-gallery-main" onClick={() => setZoomed(true)} aria-label="Voir la photo du produit en grand">
-        <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} loading={active ? "lazy" : "eager"} />
+      <Button ref={openerRef} variant="ghost" className="shop-gallery-main" onClick={() => setZoomed(true)} aria-label="Voir le visuel du produit en grand">
+        <span className="luxury-product-crop" style={crop.frame}><img style={crop.image} src={media.src} alt={media.alt} width={media.width} height={media.height} loading={active ? "lazy" : "eager"} decoding="async" /></span>
         <span className="shop-gallery-zoom"><Maximize2 size={16} /> Voir en grand</span>
       </Button>
       <Button variant="ghost" className="luxury-detail-toggle" aria-pressed={detail} onClick={() => setDetail(value => !value)}>{detail ? "Vue complète" : "Explorer les détails"}</Button>
-      <div className="shop-gallery-thumbs" aria-label="Photos du Pull 3B International">
+      <p className="luxury-media-caption">Visuels de présentation. Détails de fabrication à confirmer sur le produit fini.</p>
+      <div className="shop-gallery-thumbs" aria-label="Visuels du Pull 3B International">
         {SHOP_MEDIA.map((media, index) => (
           <button key={media.src} type="button" className={active === index ? "is-active" : ""}
             onClick={() => setActive(index)} aria-label={`Afficher la photo ${index + 1}`} aria-pressed={active === index}>
@@ -64,7 +63,7 @@ function ProductGallery() {
         ))}
       </div>
 
-      {zoomed && createPortal(<dialog ref={dialogRef} className="shop-image-viewer" aria-modal="true" tabIndex={-1} aria-label="Photo du Pull 3B International en grand" onClick={event => { if (event.target === event.currentTarget) setZoomed(false); }}>
+      {zoomed && createPortal(<dialog ref={dialogRef} className="shop-image-viewer" aria-modal="true" tabIndex={-1} aria-label="Visuel du Pull 3B International en grand" onClick={event => { if (event.target === event.currentTarget) setZoomed(false); }}>
         <button type="button" className="shop-image-viewer-close" onClick={() => setZoomed(false)} aria-label="Fermer la photo"><X size={22}/></button>
         <div className="shop-image-viewer-stage" onClick={event => event.stopPropagation()}>
           <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} />
