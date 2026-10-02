@@ -14,6 +14,23 @@
   },
   "headers": [
     {
+      "source": "/recovery-3b.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
       "source": "/mettre-a-jour-3b.html",
       "headers": [
         {
