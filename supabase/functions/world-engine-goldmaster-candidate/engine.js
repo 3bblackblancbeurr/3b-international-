@@ -18,6 +18,9 @@ import {HUB_DIALOGUE_INTENT_SET} from './hub/dialogue-intents.js';
 import {applyHubMissionAction} from './hub/mission-actions.js';
 import {GUARDIAN_VALUES,guardianValueStep,normalizeGuardianValueState,guardianValueDecision} from './guardian-values.js';
 import {isWorldCinematicKey} from './cinematic-events.js';
+import {TOURNAMENT_ROUNDS,TOURNAMENT_REWARD,applyTournamentRule} from './tournament.js';
+import {normalizeExplorationCheckpoint} from './exploration-checkpoint.js';
+import {worldRadiusFor} from './terrain.js';
 
 const fail=text=>{throw Error(text);};
 const requireThat=(condition,text)=>{if(!condition)fail(text);};
@@ -72,6 +75,25 @@ export function applyWorldAction(input,action){
  const activeResonance=()=>s.adventure.resonance&&s.seals.includes(s.adventure.resonance)?s.adventure.resonance:null;
  const hubSignal=(state,signal)=>{const result=applyHubMissionSignal(state.hub.missions,signal);return result.missions===state.hub.missions?state:gain(state,{hub:{...state.hub,missions:result.missions}});};
  switch(action.type){
+  case 'checkpoint':{
+   peaceful();requireThat(action.region===region,'Ce point de reprise ne correspond pas au pays exploré.');
+   const checkpoint=normalizeExplorationCheckpoint(action);
+   requireThat(checkpoint&&Math.hypot(checkpoint.x,checkpoint.z)<=worldRadiusFor(region)-2,'Point de reprise invalide.');
+   return adventure(s,{exploration:checkpoint});
+  }
+  case 'tournamentStart':case 'tournamentNext':{
+   peaceful();inCountry();requireThat(region==='france','Le Tournoi des Liens se trouve en France.');
+   const state=s.adventure.tournament,round=TOURNAMENT_ROUNDS[state.round];
+   requireThat(round&&state.status!=='completed','Le Tournoi des Liens est déjà accompli.');
+   requireThat(action.type==='tournamentNext'?state.status==='between':['available','defeat','abandoned'].includes(state.status),'Cette manche n’est pas disponible.');
+   const encounter={...makeEncounter(cardById[round.card],s,true),region:'france',tournament:true,tournamentRound:state.round,tournamentProgress:0,recoveries:2,expert:false,phase:1,pactSeed:0,intent:round.intent,enemy:round.enemyHP,enemyMax:round.enemyHP,log:round.rule};
+   encounter.field=beginField(s,encounter);requireThat(encounter.field,'La piste du tournoi n’a pas pu être préparée.');
+   return adventure(s,{tournament:{...state,status:'active',attempts:state.attempts+1},encounter});
+  }
+  case 'tournamentAbandon':{
+   const state=s.adventure.tournament;requireThat(state.status==='active'&&e?.tournament,'Aucune manche de tournoi en cours.');
+   return adventure(s,{tournament:{...state,status:'abandoned'},encounter:null});
+  }
   case 'cinematicSeen':{
    requireThat(isWorldCinematicKey(action.key),'Cinématique inconnue.');
    if(s.adventure.cinematicSeen?.includes(action.key))return s;
@@ -234,14 +256,18 @@ export function applyWorldAction(input,action){
   }
   case 'fieldStart':{requireThat(e&&!e.result,'Aucune rencontre en cours.');return adventure(s,{encounter:{...e,field:e.field||beginField(s,e)}});}
   case 'field':case 'battle':{
+   if(e?.tournament)requireThat(action.type==='field'&&s.adventure.tournament.status==='active'&&s.adventure.tournament.round===e.tournamentRound,'Cette manche se joue en temps réel.');
    requireThat(action.type==='field'||(!e?.field&&!e?.final),e?.final?'La finale se joue uniquement en temps réel.':'Ce combat se joue en temps réel.');
    let next=action.type==='field'?stepField(e,action,fieldMover(s)):advanceBattle(e,action.action);
+   if(e?.tournament)next=applyTournamentRule(e,next);
    if(next.result==='victory'&&!e.rewarded){
-    if(e.patrol){const h=frontierState(s,e.region),mastery={...s.adventure.mastery};for(const id of new Set([s.leader,...s.team]))mastery[id]=Math.min(999999,(mastery[id]||0)+30);s=reward(adventure(s,{frontier:{...s.adventure.frontier,[e.region]:{...h,expedition:h.expedition+1,harvest:[],jobs:[]}},mastery}),35,8);}
+    if(e.tournament){const state=s.adventure.tournament,round=e.tournamentRound+1,completed=round===TOURNAMENT_ROUNDS.length;s=adventure(s,{tournament:{...state,round,status:completed?'completed':'between',rewarded:state.rewarded||completed}});if(completed&&!state.rewarded)s=reward(s,TOURNAMENT_REWARD.xp,TOURNAMENT_REWARD.shards);}
+    else if(e.patrol){const h=frontierState(s,e.region),mastery={...s.adventure.mastery};for(const id of new Set([s.leader,...s.team]))mastery[id]=Math.min(999999,(mastery[id]||0)+30);s=reward(adventure(s,{frontier:{...s.adventure.frontier,[e.region]:{...h,expedition:h.expedition+1,harvest:[],jobs:[]}},mastery}),35,8);}
     else if(e.final){if(!s.adventure.finished)s=reward(adventure(s,{finished:true,cosmetic:'union'}),1000,300);}
     else {s=seal(s,e.region);if(e.expert&&!chapterState(s,e.region).challenge)s=reward(chapter(s,e.region,{challenge:true}),180,60);}
     next.rewarded=true;
    }
+   if(e?.tournament&&next.result==='defeat')s=adventure(s,{tournament:{...s.adventure.tournament,status:'defeat'}});
    return adventure(s,{encounter:next});
   }
   case 'approach':{
@@ -261,7 +287,7 @@ export function applyWorldAction(input,action){
    else if(next.mistakes===3){next.result='missed';next.log='L’écho préfère s’éloigner. Tu pourras le retrouver.';}
    return adventure(s,{encounter:next});
   }
-  case 'leave':return adventure(s,{encounter:null});
+  case 'leave':return adventure(s,{encounter:null,...(e?.tournament&&!e.result?{tournament:{...s.adventure.tournament,status:'abandoned'}}:{})});
   case 'craft':peaceful();return craft(s,action.id);
   case 'equip':peaceful();return equip(s,action.id,!!action.leader);
   case 'difficulty':peaceful();return adventure(s,{difficulty:action.value==='expert'?'expert':'adventure'});

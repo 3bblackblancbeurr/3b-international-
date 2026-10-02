@@ -4,9 +4,10 @@ import {cardById,countryById} from './catalog.js';
 import {INTENTS} from './engine.js';
 import {guardianCombatStatus} from './guardian-combat.js';
 import {finalCircleStatus} from './final-circle.js';
+import {TOURNAMENT_ROUNDS} from './tournament.js';
 
 export function FieldEncounter({save,act,onRetreat,onPause,snapshot,onFieldAction}){
- const e=save.adventure.encounter,f=e.field,windup=f.phase==='windup'?1-f.windup/(e.expert?750:1000):0,finalStatus=e.final?finalCircleStatus(e):null,mechanic=finalStatus||(e.boss?guardianCombatStatus(e):null),mechanicRegion=finalStatus?.region||e.region,signalHidden=mechanicRegion==='turquie'&&e.guardianFlag&&f.phase==='windup';
+ const e=save.adventure.encounter,f=e.field,windup=f.phase==='windup'?1-f.windup/(e.expert?750:1000):0,finalStatus=e.final?finalCircleStatus(e):null,round=e.tournament?TOURNAMENT_ROUNDS[e.tournamentRound]:null,mechanic=round?{label:'Manche '+(e.tournamentRound+1)+' · '+round.title,status:round.rule+' ('+(e.tournamentProgress||0)+'/'+round.goal+')'}:finalStatus||(e.boss?guardianCombatStatus(e):null),mechanicRegion=finalStatus?.region||e.region,signalHidden=mechanicRegion==='turquie'&&e.guardianFlag&&f.phase==='windup';
  useEffect(()=>{const key=event=>{if(event.key==='Escape'){event.preventDefault();onPause();}};window.addEventListener('keydown',key);return()=>window.removeEventListener('keydown',key);},[onPause]);
  return <section className="field-combat" aria-label="Combat en déplacement libre">
   <div className="field-status"><span>{e.final?'CERCLE FINAL':countryById[e.region]?.name.toUpperCase()} · {f.phase==='recovery'?'OUVERTURE':'RENCONTRE'}</span><h2>{cardById[e.card]?.name}</h2>

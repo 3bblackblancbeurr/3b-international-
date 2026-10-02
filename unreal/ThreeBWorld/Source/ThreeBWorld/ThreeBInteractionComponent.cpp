@@ -26,7 +26,8 @@ AActor* UThreeBInteractionComponent::FindFocusedActor() const
     Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
 
     const float SafeDistance = FMath::Clamp(InteractionDistance, 150.0f, 450.0f);
-    const FVector End = ViewLocation + ViewRotation.Vector() * SafeDistance;
+    // Include the third-person camera boom; server distance is still measured from the pawn.
+    const FVector End = ViewLocation + ViewRotation.Vector() * (SafeDistance + 450.0f);
 
     FHitResult Hit;
     FCollisionQueryParams Params(SCENE_QUERY_STAT(ThreeBInteractionFocus), true, Character);

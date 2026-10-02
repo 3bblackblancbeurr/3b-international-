@@ -4,18 +4,19 @@ import {parisWalls} from './paris-layout.js';
 import {advanceMotion} from './motion.js';
 import {findInteractionPath} from './navigation.js';
 import {startField} from './field-combat.js';
+import {tournamentItem,tournamentObstacles} from './tournament.js';
 const cache=new Map();
 export function combatObstacles(save){
  const region=save.region,key=region+':'+(save.adventure.frontier?.[region]?.camp||0);
  if(!cache.has(key)){
-  const f=createTerrainField(region,save),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z);
-  cache.set(key,[...f.buildings.map(b=>({...b,width:b.width+.4,depth:b.depth+.4})),...f.civic,...f.paris.flatMap(parisWalls),{...f.lake,r:f.lake.r-1},...heritageObstacles(region,landmark,-BIOMES[region].angle)]);
+  const f=createTerrainField(region,save),landmark=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),tournament=tournamentItem(save),tournamentCenter=toLandscape(region,tournament.x,tournament.z);
+  cache.set(key,[...f.buildings.map(b=>({...b,width:b.width+.4,depth:b.depth+.4})),...f.civic,...f.paris.flatMap(parisWalls),{...f.lake,r:f.lake.r-1},...heritageObstacles(region,landmark,-BIOMES[region].angle),...tournamentObstacles(region,tournamentCenter)]);
   if(cache.size>32)cache.delete(cache.keys().next().value);
  }
  return cache.get(key);
 }
 export function beginField(save,encounter){
- const items=landscapeItems(save.region,save),enemy=items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===encounter.card);
+ const items=landscapeItems(save.region,save),tournament=tournamentItem(save),enemy=encounter.tournament?{...tournament,...toLandscape('france',tournament.x,tournament.z)}:items.find(i=>encounter.final?i.type==='final':encounter.patrol?i.type==='patrol':i.card===encounter.card);
  if(!enemy)return null;
  if(encounter.final)return startField({x:enemy.x,z:enemy.z+11},enemy);
  const obstacles=combatObstacles(save),approach=findInteractionPath({x:0,z:5},enemy,obstacles,WORLD_RADIUS).at(-1)||{x:enemy.x,z:enemy.z+8};
