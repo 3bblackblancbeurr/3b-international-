@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isNativeApp } from "../native/runtime.js";
+import { Button } from "../design-system/index.jsx";
 import "./app-update.css";
 
 const CURRENT_BUILD_ID = typeof __THREEB_BUILD_ID__ !== "undefined" ? __THREEB_BUILD_ID__ : "dev";
@@ -198,13 +199,25 @@ export default function AppUpdateManager() {
           </p>
         )}
         <div className="threeb-update-actions">
-          <button type="button" className="threeb-update-primary" onClick={applyUpdate} disabled={applying}>
+          <Button
+            className="threeb-update-primary"
+            variant="champagne"
+            size="lg"
+            onClick={applyUpdate}
+            disabled={applying}
+          >
             {applying ? "MISE À JOUR…" : "METTRE À JOUR"}
-          </button>
+          </Button>
           {!mandatory && (
-            <button type="button" className="threeb-update-secondary" onClick={dismissUpdate} disabled={applying}>
+            <Button
+              className="threeb-update-secondary"
+              variant="ghost"
+              size="lg"
+              onClick={dismissUpdate}
+              disabled={applying}
+            >
               Plus tard
-            </button>
+            </Button>
           )}
         </div>
         <p className="threeb-update-safe">
