@@ -4,6 +4,12 @@ Le dépôt possède maintenant les deux vraies cartes Unreal et leurs acteurs ex
 
 ## Jouer
 
+Le livrable autonome `Monde-3B-Prototype-Windows.zip` contient le client Win64 Development, les deux cartes préparées pour le jeu et leurs dépendances. Extraire toute l'archive puis ouvrir `ThreeBWorld.exe` dans le dossier `Monde-3B-Prototype-Windows`. Unreal Editor et Visual Studio ne sont pas nécessaires pour lancer ce client. Le `LISEZ-MOI.txt` inclus détaille les commandes et la portée du prototype.
+
+Un redistribuable Visual C++ x64 est fourni dans `Prerequis/vc_redist.x64.exe` pour un autre PC auquel les DLL VC++ manqueraient. Sa signature Authenticode Microsoft a été vérifiée valide. Il n'a pas été exécuté ni installé pendant cette tâche et rien dans l'archive ne l'installe automatiquement.
+
+Pour reconstruire ou exécuter depuis les sources :
+
 Depuis le dossier du projet Unreal :
 
 ```powershell
@@ -23,6 +29,11 @@ Commandes : ZQSD ou WASD, souris, Maj pour courir, Espace pour sauter, E devant 
 - France `L_France_OpenWorld` : 134 acteurs, un vrai PlayerStart, une porte native.
 - Test standalone `-ThreeBExplorationSmoke` : code de sortie 0, apparition du personnage, déplacement supérieur à un mètre, interaction par la caméra, Hub → France → Hub.
 - Second test avec rendu GPU D3D12 `-RenderOffScreen -ThreeBExplorationSmoke -ThreeBExplorationCapture -ResX=1600 -ResY=900` : code de sortie 0 et deux captures PNG 1600 × 900 réellement produites et inspectées. Le HUD, le sol, le ciel, les portes et les volumes sont visibles. Les captures sont dans `Saved/Screenshots/native-nexus.png` et `native-france.png`.
+- Package autonome `RunUAT BuildCookRun`, cible `ThreeBWorld`, Win64 Development, uniquement les deux cartes Hub/France, archive Pak + IoStore : `BUILD SUCCESSFUL`, code 0.
+- L'exécutable autonome et le lanceur `ThreeBWorld.exe` à la racine passent chacun le même aller-retour, sans Unreal Editor.
+- Le ZIP final a été extrait dans un second dossier puis son propre lanceur a été testé : code 0 et rapport `PASS` pour apparition, déplacement et interaction Hub → France → Hub. Cette preuve exécute les fichiers effectivement livrés dans l'archive.
+
+Archive : **398 216 752 octets** (398,22 Mo), 44 fichiers. SHA-256 : `2CFFF5A6FF62079F42FF67DF1078870B3B010B6A2EEA7C1FF867EC715074FD9D`.
 
 Le test se relance avec `Scripts\run_native_exploration.ps1 -Mode Test`. Il produit `Saved/Validation/native-exploration-runtime.json`. Le constructeur produit `Saved/Validation/native-exploration.json`.
 
@@ -32,6 +43,6 @@ Il s'agit d'une exploration native de la géométrie de prototype. Le personnage
 
 L'option `RenderOffScreen` est décrite dans la [référence officielle des arguments Unreal Engine](https://dev.epicgames.com/documentation/en-us/unreal-engine/unreal-engine-command-line-arguments-reference).
 
-La campagne, le combat, les PNJ animés, les huit royaumes jouables, les récompenses globales et le multijoueur ne sont pas terminés. Aucun XP, Fragment ou accomplissement de Gardien n'est accordé par ces portes. Le client signé et installé reste à produire. Ce résultat ne constitue pas une sortie AAA ou Gold Master.
+La campagne, le combat, les PNJ animés, les huit royaumes jouables, les récompenses globales et le multijoueur ne sont pas terminés. Aucun XP, Fragment ou accomplissement de Gardien n'est accordé par ces portes. Le ZIP est un prototype Windows testé sur cette machine ; l'installateur commercial signé, les performances GPU et la compatibilité de tous les PC restent à valider. Ce résultat ne constitue pas une sortie AAA ou Gold Master.
 
 Le lanceur historique de la racine ouvre un constructeur dans l'éditeur ; `run_native_exploration.ps1 -Mode Play` ouvre directement le jeu d'exploration.
