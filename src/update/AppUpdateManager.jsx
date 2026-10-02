@@ -8,6 +8,35 @@ const CURRENT_VERSION = typeof __THREEB_APP_VERSION__ !== "undefined" ? __THREEB
 const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const DISMISSED_PREFIX = "3b:update:dismissed:";
 
+function registrationScriptPath(registration) {
+  const worker = registration?.active || registration?.waiting || registration?.installing;
+  if (!worker?.scriptURL) return "";
+  try {
+    return new URL(worker.scriptURL).pathname;
+  } catch {
+    return "";
+  }
+}
+
+async function healLegacyPwaRegistrations() {
+  if (!("serviceWorker" in navigator)) return false;
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  const legacy = registrations.filter((registration) => {
+    const path = registrationScriptPath(registration);
+    return path && path !== "/sw.js";
+  });
+  if (legacy.length === 0) return false;
+
+  await Promise.all(legacy.map((registration) => registration.unregister().catch(() => false)));
+
+  if ("caches" in window) {
+    const names = await caches.keys();
+    await Promise.all(names.map((name) => caches.delete(name)));
+  }
+
+  return true;
+}
+
 function normalizedRelease(value) {
   if (!value || typeof value !== "object") return null;
   const buildId = String(value.buildId || "").trim();
@@ -102,10 +131,21 @@ export default function AppUpdateManager() {
       void registrationRef.current?.update().catch(() => {});
     }, CHECK_INTERVAL_MS);
 
-    navigator.serviceWorker
-      .register("/sw.js", { scope: "/", updateViaCache: "none" })
-      .then((nextRegistration) => {
+    const setupWorker = async () => {
+      try {
+        const healedLegacy = await healLegacyPwaRegistrations();
         if (disposed) return;
+        if (healedLegacy && navigator.serviceWorker.controller) {
+          window.location.reload();
+          return;
+        }
+
+        const nextRegistration = await navigator.serviceWorker.register("/sw.js", {
+          scope: "/",
+          updateViaCache: "none",
+        });
+        if (disposed) return;
+
         registration = nextRegistration;
         registrationRef.current = nextRegistration;
         registration.addEventListener("updatefound", updateFound);
@@ -113,11 +153,12 @@ export default function AppUpdateManager() {
           publishRelease({ buildId: "service-worker", version: "nouvelle", mandatory: false });
         }
         void registration.update().catch(() => {});
-      })
-      .catch(() => {
-        // The web application remains usable if service-worker registration fails.
-      });
+      } catch {
+        // The web application remains usable if service-worker repair or registration fails.
+      }
+    };
 
+    void setupWorker();
     void checkServerRelease();
 
     return () => {
@@ -167,9 +208,11 @@ export default function AppUpdateManager() {
   if (!release || dismissed) return null;
 
   const mandatory = release.mandatory;
+  const currentBuildLabel = CURRENT_BUILD_ID === "dev" ? "dev" : CURRENT_BUILD_ID.slice(0, 7);
+  const targetBuildLabel = release.buildId === "service-worker" ? "" : release.buildId.slice(0, 7);
   const targetLabel = release.version === "nouvelle"
     ? "dernière version"
-    : `v${release.version}`;
+    : `v${release.version}${targetBuildLabel ? ` · ${targetBuildLabel}` : ""}`;
 
   return (
     <div

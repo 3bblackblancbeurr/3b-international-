@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#050607" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Réparer et mettre à jour 3B</title>
+  <style>
+    :root{
+      color-scheme:dark;
+      --bg:#050607;--panel:#0b0d0f;--text:#f3efe6;--muted:rgba(243,239,230,.68);
+      --gold:#d6bc82;--gold2:#f0ddaf;--blue:#3ba7ff;--border:rgba(214,188,130,.24);
+      --radius:24px;--shadow:0 26px 72px rgba(0,0,0,.48)
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%;margin:0;background:radial-gradient(circle at 50% 20%,rgba(59,167,255,.10),transparent 34%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{display:grid;place-items:center;padding:max(22px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+    main{width:min(620px,100%);border:1px solid var(--border);border-radius:var(--radius);padding:28px;background:linear-gradient(145deg,rgba(11,13,15,.98),rgba(5,6,7,.98));box-shadow:var(--shadow)}
+    .mark{display:inline-flex;align-items:center;gap:8px;color:var(--gold);font-size:.75rem;font-weight:900;letter-spacing:.16em}
+    h1{margin:10px 0 0;font-size:clamp(1.8rem,7vw,2.6rem);line-height:1.02}
+    p{color:var(--muted);line-height:1.6}
+    .safe{margin:18px 0;padding:14px 16px;border:1px solid rgba(59,167,255,.28);border-radius:14px;background:rgba(59,167,255,.06);color:var(--text);font-size:.92rem}
+    button{width:100%;min-height:54px;border:0;border-radius:14px;padding:0 18px;background:linear-gradient(135deg,var(--gold2),var(--blue));color:#07101b;font:inherit;font-weight:900;letter-spacing:.05em;cursor:pointer}
+    button:disabled{opacity:.7;cursor:wait}
+    #status{min-height:1.6em;margin:14px 0 0;color:var(--text);font-size:.9rem}
+    .details{margin-top:18px;color:var(--muted);font-size:.8rem}
+  </style>
+</head>
+<body>
+<main>
+  <div class="mark">3B · RECOVERY</div>
+  <h1>Réparer et mettre à jour 3B</h1>
+  <p>Utilise cette page si ton application 3B installée reste bloquée sur une ancienne version.</p>
+  <div class="safe"><strong>Tes données personnelles ne sont pas supprimées.</strong><br>Cette réparation ne vide ni le compte, ni le Passeport, ni les XP, ni les Coins, ni le stockage local, ni IndexedDB.</div>
+  <button id="repair" type="button">RÉPARER ET METTRE À JOUR</button>
+  <div id="status" role="status" aria-live="polite"></div>
+  <p class="details">La réparation retire uniquement les anciens service workers et les caches de fichiers de l’application, puis recharge la version actuelle depuis le serveur.</p>
+</main>
+<script src="/recovery-3b.js" defer></script>
+</body>
+</html>

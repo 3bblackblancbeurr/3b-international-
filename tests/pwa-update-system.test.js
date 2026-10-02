@@ -19,7 +19,8 @@ test("3B PWA update system is wired end-to-end", async () => {
   assert.match(manager, /NOUVELLE VERSION 3B DISPONIBLE/);
   assert.match(manager, /MISE À JOUR REQUISE/);
   assert.match(manager, /SKIP_WAITING/);
-  assert.doesNotMatch(manager, /localStorage\.clear|sessionStorage\.clear|caches\.delete/);
+  assert.doesNotMatch(manager, /localStorage\.clear|sessionStorage\.clear|indexedDB\.deleteDatabase/);
+  assert.match(manager, /caches\.delete/);
 
   const vercel = JSON.parse(vercelRaw);
   const serviceWorkerHeaders = vercel.headers.find((entry) => entry.source === "/sw.js");
