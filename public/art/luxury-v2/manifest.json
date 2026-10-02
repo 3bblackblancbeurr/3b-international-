@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "created": "2026-10-02",
+  "assets": [
+    {
+      "id": "hub-cite-origine",
+      "path": "/art/luxury-v2/hub-cite-origine.webp",
+      "width": 1672,
+      "height": 941,
+      "bytes": 672368,
+      "sha256": "ae60de81749ff76c42d918a89bcda29c6ba8d613229f73c359673044265e08f0",
+      "provenance": "AI environment illustration, generated 2026-10-02; not an in-game screenshot",
+      "source_filename": "exec-d25a219f-d807-450c-b7a9-9376ed2303f9.png",
+      "processing": "WebP encoding only; original dimensions retained, no upscaling or invented detail"
+    },
+    {
+      "id": "pull-noir",
+      "path": "/shop/pull-3b-noir-hd.webp",
+      "width": 1229,
+      "height": 1536,
+      "bytes": 192078,
+      "sha256": "b5bec8ccaab9478551cfa788727b485afba743f1843d10ecceca2e96d238f620",
+      "provenance": "Existing owner-provided presentation artwork; no new logo generated",
+      "source_filename": "1000016600.png",
+      "processing": "WebP encoding only; original dimensions retained, no upscaling or invented detail"
+    },
+    {
+      "id": "pull-blanc",
+      "path": "/shop/pull-3b-blanc-hd.webp",
+      "width": 1122,
+      "height": 1402,
+      "bytes": 207238,
+      "sha256": "20e7c05d29a2adb3fd6bf4d9da725fe597fffeb1e2e784c7b637ea70b6aef23e",
+      "provenance": "Existing owner presentation artwork, originally AI-generated; not a physical product photograph",
+      "source_filename": "Pull blanc 3B International sur marbre noir.png",
+      "processing": "WebP encoding only; original dimensions retained, no upscaling or invented detail"
+    }
+  ],
+  "identity_policy": "No official brand asset replaced or regenerated",
+  "image_generation_calls": 1
+}

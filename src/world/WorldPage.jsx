@@ -7,6 +7,7 @@ import './paris.css';
 import {FrontierPanel} from './FrontierPanel.jsx';
 import {combatCue} from './combat-effects.js';
 import {HERITAGE} from './heritage.js';
+import { useLuxury } from '../design-system/LuxuryExperience.jsx';
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowLeft,ArrowUpRight,BookOpen,Compass,Footprints,Map as MapIcon,Maximize,Play,Sparkles,Users,X,Download,RotateCcw,Volume2,VolumeX} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
@@ -78,6 +79,7 @@ const DEFAULT_AUDIO_MIX={master:.78,music:.34,ambience:.55,sfx:.78,voice:.9};
 export default function WorldPage({goTo}){const account=useLoyalty();return account.loading?<div className="world-loading">Ouverture du Monde 3B…</div>:<WorldSession key={account.user?.id||'guest'} uid={account.user?.id} goTo={goTo}/>;}
 
 function WorldSession({uid,goTo}){
+ const { present } = useLuxury();
  const[save,setSave]=useState(blankSave),[loaded,setLoaded]=useState(false),[snapshot,setSnapshot]=useState({region:'hub',position:{x:0,z:9}}),[panel,setPanel]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[saveMessage,setSaveMessage]=useState('Chargement de la sauvegarde…'),[gps,setGPS]=useState(false),[gpsMessage,setGPSMessage]=useState('Le GPS est désactivé.'),[walkSession,setWalkSession]=useState(0),[sound,setSound]=useState(false);
  const [worldRequested,setWorldRequested]=useState(false),[haptics,setHaptics]=useState(()=>{try{return localStorage.getItem('3b-world-haptics')!=='0';}catch{return true;}}),[soundCaptions,setSoundCaptions]=useState(()=>{try{return localStorage.getItem('3b-world-sound-captions')!=='0';}catch{return true;}}),[soundCaption,setSoundCaption]=useState(''),[controls,setControls]=useState(()=>loadControlBindings());
  const [assetsLoading,setAssetsLoading]=useState(true),[quality,setQuality]=useState(()=>{try{return ['auto','fluid','detail'].includes(localStorage.getItem('3b-world-quality'))?localStorage.getItem('3b-world-quality'):'auto';}catch{return 'auto';}});
@@ -147,7 +149,7 @@ function WorldSession({uid,goTo}){
    if(result.metres>0){activity.current=Date.now();const previous=walkRef.current;walkRef.current+=result.metres;setWalkSession(Math.floor(walkRef.current));if(Math.floor(walkRef.current/100)>Math.floor(previous/100)){announce('Tes pas ont révélé un écho. Arrête-toi pour le rencontrer.');}act({type:'walk',metres:Math.min(200,Math.max(1,Math.round(result.metres)))});}
   },e=>{if(e.code===1)stopGPS('Permission refusée. Tu peux l’autoriser dans les réglages du navigateur puis réessayer.');else setGPSMessage(e.code===3?'Signal trop lent · attends un endroit dégagé.':'GPS indisponible pour le moment.');},{enableHighAccuracy:true,maximumAge:0,timeout:15000});
  }
- function travel(id){if(!act({type:'visit',region:id}))return;scene.current?.travel(id);audio.current?.region(id);setPanel(null);chime();}
+ function travel(id){if(!act({type:'visit',region:id}))return;present('portal');scene.current?.travel(id);audio.current?.region(id);setPanel(null);chime();}
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
  function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
  function interactDefault(item){

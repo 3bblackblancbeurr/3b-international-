@@ -32,8 +32,7 @@ test('Passport keeps one original responsive card and never restores the removed
  assert.match(passport,/passport-horizontal-view/);
  assert.match(passport,/PublicIdentityBadge/);
  assert.match(passport,/PassportPortrait/);
- assert.match(passport,/passport-portal-trigger/);
- assert.match(passport,/MA VILLE/);
+ assert.doesNotMatch(passport,/<button\b|<Button\b|passport-portal-trigger/);
  assert.doesNotMatch(passport,/passport-phone-card|viewChoice|>Détails<\/button>|>Carte<\/button>|passport-card-zoom|Agrandir|data-zoomed/);
  assert.doesNotMatch(css,/passport-card-desktop\{display:none\}/);
  assert.match(css,/passport-card-viewport\{[^}]*max-width:100%;[^}]*overflow-x:auto/);
@@ -44,7 +43,7 @@ test('the single Passport card retains blue Matrix motion without a duplicate ph
  const effects=read('../src/styles/passport-effects.css');
  assert.match(passport,/passport-matrix-rain/);
  assert.doesNotMatch(passport,/passport-phone-rain|passport-phone-matrix/);
- assert.match(passport,/motionAllowed && visible && !portalOpen/);
+ assert.match(passport,/motionAllowed && visible/);
  assert.match(effects,/animation: passportMatrixFall/);
  assert.match(effects,/@keyframes passportMatrixFall \{ from \{ transform:/);
 });

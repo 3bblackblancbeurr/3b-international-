@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { Progress } from "../design-system/index.jsx";
+import { useLuxury, useSurfaceMotion } from "../design-system/LuxuryExperience.jsx";
+import { tierFor, nextTier } from "../../shared/loyalty.js";
 import { Sparkles } from "lucide-react";
-import PassportNexus from "./PassportNexus.jsx";
 import PublicIdentityBadge from "./PublicIdentityBadge.jsx";
 import { PassportPortrait } from "../passport/PassportAppearance.jsx";
 import { hasVerifiedIdentity } from "../passport/access.js";
@@ -28,9 +30,11 @@ const CIRCUITS = [
 const formatNumber = value => new Intl.NumberFormat("fr-FR").format(Number(value) || 0);
 
 export default function PassportVisual({ options, identity, goTo, syncing = false }) {
+  const { present } = useLuxury();
+  const surface = useRef(null);
+  const previousProgress = useRef(null);
   const id = useId().replaceAll(":", "");
   const visual = useRef(null);
-  const [portalOpen, setPortalOpen] = useState(false);
   const [visible, setVisible] = useState(() => !document.hidden);
   const [systemReducedMotion, setSystemReducedMotion] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   useEffect(() => {
@@ -40,7 +44,6 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
     preference.addEventListener("change", update);
     return () => preference.removeEventListener("change", update);
   }, []);
-  useEffect(() => { setPortalOpen(false); }, [identity?.userId]);
   useEffect(() => {
     let inViewport = true;
     const update = () => setVisible(inViewport && !document.hidden);
@@ -57,7 +60,15 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   }, []);
 
   const motionAllowed = options.animations && !options.reducedMotion && !systemReducedMotion;
-  const animated = motionAllowed && visible && !portalOpen;
+  const animated = motionAllowed && visible;
+  useSurfaceMotion(surface, animated);
+  const tier = tierFor(identity?.xp), next = nextTier(identity?.xp || 0);
+  const progress = next ? ((Number(identity?.xp) || 0) - tier.xp) / (next.xp - tier.xp) * 100 : 100;
+  useEffect(() => {
+    const previous = previousProgress.current;
+    if (identity?.userId && previous?.userId === identity.userId && previous.tier !== tier.id && Number(identity.xp) > previous.xp) present("milestone", `Nouveau rang · ${tier.name}`);
+    previousProgress.current = { userId: identity?.userId, tier: tier.id, xp: Number(identity?.xp) || 0 };
+  }, [identity?.userId, identity?.xp, tier.id, tier.name, present]);
   const active = Boolean(identity?.userId && identity?.passportState === "active");
   const identityVerified = hasVerifiedIdentity(identity);
   const status = syncing
@@ -67,12 +78,12 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
       : identityVerified
         ? "IDENTITÉ VÉRIFIÉE"
         : "PASSEPORT ACTIF · IDENTITÉ À VÉRIFIER";
-  const openPassport = () => active ? setPortalOpen(true) : goTo?.("member");
 
   return <div ref={visual} className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
     <div className="passport-horizontal-view">
     <div id={`${id}-card-viewport`} className="passport-card-viewport">
-    <div className="passport-card-stage passport-card-desktop">
+    <div ref={surface} className="passport-card-stage passport-card-desktop luxury-passport-surface">
+      <span className="luxury-passport-reflection" aria-hidden="true"/>
       <div className="passport-card-base" aria-hidden="true">
         <span className="passport-card-halo passport-card-halo-blue" />
         <span className="passport-card-halo passport-card-halo-gold" />
@@ -139,16 +150,14 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
 
       <div className="passport-security-edge" aria-hidden="true" />
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> {active ? "PASSEPORT VIVANT" : "IDENTITÉ PERSONNELLE"}</div>
-      <button type="button" className="passport-portal-trigger" onClick={openPassport} aria-label={active ? "Ouvrir ma Ville 3B" : "Créer mon identité 3B"}>
-        <span className="passport-portal-orbit" aria-hidden="true"><i /><i /><i /></span>
-        <b>3B</b>
-        <small>{active ? "MA VILLE" : "ACTIVER"}</small>
-      </button>
+
     </div>
     </div>
     </div>
 
 
-    {active && <PassportNexus key={identity.userId} open={portalOpen} onClose={() => setPortalOpen(false)} goTo={goTo} reducedMotion={!motionAllowed} />}
+    <div className="luxury-passport-footer">
+      <div><span className="eyebrow">{active ? tier.name : "TON HÉRITAGE COMMENCE ICI"}</span><Progress value={active ? progress : 0} tone="matrix" label="Progression vers le prochain rang"/>{active && <small>{next ? `${formatNumber(identity.xp)} / ${formatNumber(next.xp)} XP · ${next.name}` : "Rang Éternel atteint"}</small>}</div>
+    </div>
   </div>;
 }

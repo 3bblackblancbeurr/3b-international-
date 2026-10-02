@@ -1,3 +1,4 @@
+import { useLuxury } from "../design-system/LuxuryExperience.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ARCHIVE_VALUES,
@@ -54,6 +55,7 @@ function VeilleurFigure() {
 }
 
 export default function PremierSecretPage({ goTo, dailySecret }) {
+  const { present } = useLuxury();
   const dayKey = useMemo(() => parisDayKey(), []);
   const config = useMemo(() => makePremierSecretConfig(dayKey), [dayKey]);
   const saved = useMemo(() => safeRead(dayKey), [dayKey]);
@@ -183,6 +185,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
       setSecondsLeft(60);
       setDeadline(Date.now() + 60_000);
       setStage(1);
+      present("portal");
       ping(520);
     } catch (error) {
       setServerMessage(error instanceof Error ? error.message : "Impossible d’ouvrir le Nexus.");
@@ -304,6 +307,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
         return;
       }
       setStage(8);
+      present("milestone", "Le Premier Secret est révélé.");
       await dailySecret?.refresh?.();
       ping(920);
     } catch (error) {
@@ -332,6 +336,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
   return (
     <section
       className="premier-secret"
+      data-secret-stage={stage}
       aria-labelledby="premier-secret-title"
       style={{ "--ps-signal": config.signalColor.hex }}
     >
