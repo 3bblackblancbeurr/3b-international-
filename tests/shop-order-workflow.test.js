@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { PGlite } from "@electric-sql/pglite";
 import { configFrom } from "../server/shop.js";
 import { createShopOrders } from "../server/shop-orders.js";
 
@@ -243,6 +244,54 @@ test("shop hardening migration applies refunds atomically and keeps seller autho
   assert.match(migration,/for update/);
   assert.match(migration,/fulfillment_status = 'refunded'/);
   assert.match(migration,/p_amount_refunded <= v_order\.amount_refunded/);
+});
+
+test("shop hardening migration executes against the deployed shop contract", async () => {
+  const migration=readFileSync(new URL("../supabase/migrations/20261002184542_shop_checkout_hardening_v1.sql",import.meta.url),"utf8");
+  const db=new PGlite();
+  try {
+    await db.exec(`
+      create role anon;
+      create role authenticated;
+      create role service_role;
+      create schema auth;
+      create table auth.users(id uuid primary key);
+      create table public.shop_orders(
+        stripe_session_id text primary key,
+        payment_intent_id text,
+        livemode boolean not null default false,
+        payment_status text not null default 'paid',
+        fulfillment_status text not null default 'awaiting_seller',
+        amount_total bigint not null,
+        updated_at timestamptz not null default now()
+      );
+      create table public.shop_notification_log(
+        stripe_session_id text not null,
+        event text not null,
+        channel text not null,
+        state text not null,
+        attempts integer not null default 0,
+        provider_id text,
+        last_error text,
+        updated_at timestamptz not null default now(),
+        unique(stripe_session_id,event,channel)
+      );
+    `);
+    await db.exec(migration);
+    const result=await db.query(`
+      select
+        to_regclass('public.shop_staff') is not null as shop_staff_exists,
+        to_regprocedure('public.shop_apply_refund(text,boolean,bigint,bigint)') is not null as refund_rpc_exists,
+        to_regprocedure('public.shop_claim_notification(text,text,text,integer)') is not null as notification_rpc_exists
+    `);
+    assert.deepEqual(result.rows,[{
+      shop_staff_exists:true,
+      refund_rpc_exists:true,
+      notification_rpc_exists:true,
+    }]);
+  } finally {
+    await db.close();
+  }
 });
 
 test("seller UI surfaces action errors and reloads the server state after a conflict", () => {
