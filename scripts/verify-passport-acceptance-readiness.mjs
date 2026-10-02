@@ -1,10 +1,10 @@
-import {existsSync, readFileSync} from 'node:fs';
+import {existsSync, readFileSync, readdirSync} from 'node:fs';
+import {createPrivateKey, createPublicKey, sign, verify} from 'node:crypto';
+import {pathToFileURL} from 'node:url';
 
 const root=new URL('../',import.meta.url);
 const read=path=>readFileSync(new URL(path,root),'utf8');
 const exists=path=>existsSync(new URL(path,root));
-const mode=process.argv.includes('--activation')?'activation':'foundation';
-
 const checks=[];
 const check=(id,ok,detail)=>checks.push({id,ok:Boolean(ok),detail});
 
@@ -63,11 +63,21 @@ check(
 );
 check(
   'provider_secrets_server_only',
-  /PASSPORT_IDENTITY_PROVIDER_API_KEY=/.test(env)
-    && /PASSPORT_IDENTITY_PROVIDER_WEBHOOK_SECRET=/.test(env)
+  /IDNOW_CLIENT_ID=/.test(env)
+    && /IDNOW_CLIENT_SECRET=/.test(env)
+    && /IDNOW_FLOW_ID=/.test(env)
+    && /IDNOW_WEBHOOK_AUDIENCE=/.test(env)
     && /PASSPORT_IDENTITY_REFERENCE_SECRET=/.test(env)
-    && !/VITE_PASSPORT_IDENTITY_PROVIDER_API_KEY/.test(env),
-  'Provider secrets are declared only as server-side variables'
+    && !/VITE_(?:IDNOW_CLIENT_SECRET|PASSPORT_IDENTITY_REFERENCE_SECRET)/.test(env),
+  'The IDnow OAuth client/flow/audience and reference pepper are declared server-side; signed JWKS webhooks do not use a shared webhook secret'
+);
+check(
+  'recognition_secrets_server_only',
+  /PASSPORT_RECOGNITION_SIGNING_JWK=/.test(env)
+    && /PASSPORT_RECOGNITION_PAIRWISE_SECRET=/.test(env)
+    && /PASSPORT_RECOGNITION_ENABLED=false/.test(env)
+    && !/VITE_PASSPORT_RECOGNITION_(?:SIGNING_JWK|PAIRWISE_SECRET)=/.test(env),
+  'Recognition key material remains server-only and the example explicitly disables recognition'
 );
 check(
   'civil_claims_service_only',
@@ -133,45 +143,145 @@ check(
   'Provider due-diligence gates are documented'
 );
 
-const failed=checks.filter(x=>!x.ok);
+const value=(values,name)=>String(values[name]||'').trim();
+const rawValue=(values,name)=>String(values[name]||'');
+const httpsUrl=raw=>{
+  if(typeof raw!=='string'||raw.length>2048||/\s/.test(raw))return false;
+  try{
+    const url=new URL(raw);
+    return url.protocol==='https:'&&!url.username&&!url.password&&!url.search&&!url.hash;
+  }catch{return false;}
+};
+const result=(id,ok,detail)=>({id,ok:Boolean(ok),detail});
 
-if(mode==='activation'){
-  const provider=(process.env.PASSPORT_IDENTITY_PROVIDER||'').trim();
-  const apiKey=(process.env.PASSPORT_IDENTITY_PROVIDER_API_KEY||'').trim();
-  const webhook=(process.env.PASSPORT_IDENTITY_PROVIDER_WEBHOOK_SECRET||'').trim();
-  const referenceSecret=(process.env.PASSPORT_IDENTITY_REFERENCE_SECRET||'').trim();
-  const enabled=process.env.PASSPORT_IDENTITY_VERIFICATION_ENABLED==='true';
-  const captcha=process.env.MEMBER_CAPTCHA_REQUIRED==='true';
-  const leakedPasswordProtection=process.env.PASSPORT_LEAKED_PASSWORD_PROTECTION_CONFIRMED==='true';
-  const legalReview=process.env.PASSPORT_IDENTITY_LEGAL_REVIEW_APPROVED==='true';
-  const retentionPolicy=process.env.PASSPORT_IDENTITY_RETENTION_POLICY_APPROVED==='true';
-  const minorsPolicy=process.env.PASSPORT_IDENTITY_MINORS_POLICY_APPROVED==='true';
-  const sandboxE2E=process.env.PASSPORT_IDENTITY_SANDBOX_E2E_APPROVED==='true';
-
-  const activationChecks=[
-    {id:'activation_explicitly_enabled',ok:enabled,detail:'PASSPORT_IDENTITY_VERIFICATION_ENABLED=true'},
-    {id:'provider_selected',ok:provider.length>=2,detail:'A provider identifier is configured'},
-    {id:'provider_api_key_present',ok:apiKey.length>=16,detail:'Provider API key is configured server-side'},
-    {id:'provider_webhook_secret_present',ok:webhook.length>=24,detail:'Webhook verification secret is configured'},
-    {id:'reference_hash_secret_present',ok:referenceSecret.length>=32,detail:'Reference hashing secret is configured'},
-    {id:'captcha_required',ok:captcha,detail:'Anti-bot is required for production identity enrollment'},
-    {id:'leaked_password_protection_confirmed',ok:leakedPasswordProtection,detail:'Supabase leaked-password protection has been enabled and verified'},
-    {id:'legal_review_approved',ok:legalReview,detail:'Identity legal/privacy review is approved'},
-    {id:'retention_policy_approved',ok:retentionPolicy,detail:'Identity retention/deletion policy is approved'},
-    {id:'minors_policy_approved',ok:minorsPolicy,detail:'Minor/age policy is approved'},
-    {id:'sandbox_e2e_approved',ok:sandboxE2E,detail:'Provider sandbox E2E, replay, duplicate and revocation tests are approved'}
+export function evaluateIdentityActivation(values={}){
+  return [
+    result('activation_explicitly_enabled',values.PASSPORT_IDENTITY_VERIFICATION_ENABLED==='true','PASSPORT_IDENTITY_VERIFICATION_ENABLED=true'),
+    result('provider_selected',value(values,'PASSPORT_IDENTITY_PROVIDER').toLowerCase()==='idnow','The implemented provider adapter is idnow'),
+    result('idnow_physical_environment_valid',['sandbox','production'].includes((value(values,'IDNOW_PHYSICAL_ENV')||'sandbox').toLowerCase()),'IDnow physical environment is sandbox or production'),
+    result('idnow_logical_environment_valid',['staging','live'].includes((value(values,'IDNOW_LOGICAL_ENV')||'staging').toLowerCase()),'IDnow logical environment is staging or live'),
+    result('idnow_external_environment_live',value(values,'IDNOW_PHYSICAL_ENV').toLowerCase()==='production'&&value(values,'IDNOW_LOGICAL_ENV').toLowerCase()==='live','External identity activation requires production/live; sandbox/staging configuration is not a real KYC attestation'),
+    result('idnow_client_id_present',value(values,'IDNOW_CLIENT_ID').length>3,'IDNOW_CLIENT_ID is configured server-side'),
+    result('idnow_client_secret_present',value(values,'IDNOW_CLIENT_SECRET').length>10,'IDNOW_CLIENT_SECRET is configured server-side'),
+    result('idnow_flow_id_present',value(values,'IDNOW_FLOW_ID').length>8,'The approved IDnow flow identifier is configured'),
+    result('idnow_webhook_audience_valid',httpsUrl(value(values,'IDNOW_WEBHOOK_AUDIENCE')),'IDNOW_WEBHOOK_AUDIENCE is an exact HTTPS audience without credentials, query or fragment'),
+    result('idnow_flow_approved',values.IDNOW_PVID_FLOW_APPROVED==='true','The actual IDnow flow has been approved before an accepted outcome can become identity_verified'),
+    result('reference_hash_secret_present',value(values,'PASSPORT_IDENTITY_REFERENCE_SECRET').length>=32,'Reference hashing secret is configured; its value is never reported'),
+    result('captcha_required',values.MEMBER_CAPTCHA_REQUIRED==='true','Anti-bot is required for production identity enrollment'),
+    result('leaked_password_protection_confirmed',values.PASSPORT_LEAKED_PASSWORD_PROTECTION_CONFIRMED==='true','Supabase leaked-password protection has been enabled and verified'),
+    result('legal_review_approved',values.PASSPORT_IDENTITY_LEGAL_REVIEW_APPROVED==='true','Identity legal/privacy review is approved'),
+    result('retention_policy_approved',values.PASSPORT_IDENTITY_RETENTION_POLICY_APPROVED==='true','Identity retention/deletion policy is approved'),
+    result('minors_policy_approved',values.PASSPORT_IDENTITY_MINORS_POLICY_APPROVED==='true','Minor/age policy is approved'),
+    result('sandbox_e2e_approved',values.PASSPORT_IDENTITY_SANDBOX_E2E_APPROVED==='true','Provider sandbox E2E, replay, duplicate and revocation tests are approved'),
   ];
-  checks.push(...activationChecks);
-  failed.push(...activationChecks.filter(x=>!x.ok));
 }
 
-const report={
-  ok:failed.length===0,
-  mode,
-  foundationReady:checks.filter(x=>!x.id.startsWith('activation_')&&!['provider_selected','provider_api_key_present','provider_webhook_secret_present','reference_hash_secret_present','captcha_required'].includes(x.id)).every(x=>x.ok),
-  externalActivationReady:mode==='activation' && failed.length===0,
-  checks
-};
+function validSigningJwk(raw){
+  try{
+    const jwk=JSON.parse(raw);
+    if(jwk?.kty!=='EC'||jwk.crv!=='P-256'||(jwk.alg&&jwk.alg!=='ES256')||(jwk.use&&jwk.use!=='sig'))return false;
+    if(!['d','x','y'].every(name=>typeof jwk[name]==='string'&&/^[A-Za-z0-9_-]{43}$/.test(jwk[name])&&Buffer.from(jwk[name],'base64url').toString('base64url')===jwk[name]))return false;
+    const privateKey=createPrivateKey({key:jwk,format:'jwk'});
+    const publicKey=createPublicKey({key:{kty:'EC',crv:'P-256',x:jwk.x,y:jwk.y},format:'jwk'});
+    const challenge=Buffer.from('3b-recognition-readiness-key-consistency-v1');
+    return verify('sha256',challenge,{key:publicKey,dsaEncoding:'ieee-p1363'},sign('sha256',challenge,{key:privateKey,dsaEncoding:'ieee-p1363'}));
+  }catch{return false;}
+}
 
-console.log(JSON.stringify(report,null,2));
-if(failed.length)process.exit(1);
+export function evaluateRecognitionConfiguration(values={}){
+  let jwkKid='';
+  try{jwkKid=String(JSON.parse(value(values,'PASSPORT_RECOGNITION_SIGNING_JWK'))?.kid||'');}catch{}
+  return [
+    result('recognition_explicitly_enabled',values.PASSPORT_RECOGNITION_ENABLED==='true','Recognition is explicitly enabled independently of identity proofing'),
+    result('recognition_issuer_valid',httpsUrl(rawValue(values,'PASSPORT_RECOGNITION_ISSUER')||rawValue(values,'APP_URL')||'https://3b-international.vercel.app'),'The issuer environment or backend fallback is a fixed HTTPS URL without credentials, whitespace, query or fragment'),
+    result('recognition_signing_key_valid',validSigningJwk(value(values,'PASSPORT_RECOGNITION_SIGNING_JWK')),'A private EC P-256 JWK can sign and verify ES256; no key value is reported'),
+    result('recognition_signing_kid_valid',/^[A-Za-z0-9._-]{1,64}$/.test(rawValue(values,'PASSPORT_RECOGNITION_SIGNING_KID')||jwkKid),'A safe signing key identifier is configured explicitly or in the JWK'),
+    result('recognition_pairwise_secret_present',value(values,'PASSPORT_RECOGNITION_PAIRWISE_SECRET').length>=32,'A server-only pairwise pseudonym secret is configured'),
+  ];
+}
+
+function recognitionMigrationSource(){
+  const migrations=readdirSync(new URL('supabase/migrations/',root)).filter(name=>name.endsWith('.sql')&&name.includes('recognition'));
+  return migrations.map(name=>read('supabase/migrations/'+name)).join('\n');
+}
+
+function permissionStatement(source,prefix,objectName,direction,roles){
+  const pattern=new RegExp('\\b'+prefix+'\\s+([^;]*?)\\s+'+direction+'\\s+([^;]+);','gi');
+  for(const match of source.matchAll(pattern)){
+    const names=match[1];
+    const targets=match[2].split(',').map(role=>role.trim().toLowerCase());
+    if(new RegExp('\\b'+objectName.replaceAll('.','\\.')+'(?=\\s|,|\\(|$)','i').test(names)&&roles.every(role=>targets.includes(role)))return true;
+  }
+  return false;
+}
+
+function recognitionSchemaReady(){
+  const source=recognitionMigrationSource();
+  return /create\s+table\s+(?:if not exists\s+)?public\.passport_recognition_partners/i.test(source)
+    && /create\s+table\s+(?:if not exists\s+)?public\.passport_recognition_proofs/i.test(source)
+    && ['public.passport_recognition_partners','public.passport_recognition_proofs'].every(name=>
+      permissionStatement(source,'revoke\\s+all\\s+on(?:\\s+table)?',name,'from',['public','anon','authenticated'])
+      && permissionStatement(source,'grant\\s+select\\s*,\\s*insert\\s*,\\s*update\\s*,\\s*delete\\s+on(?:\\s+table)?',name,'to',['service_role'])
+      && new RegExp('alter\\s+table\\s+'+name.replaceAll('.','\\.')+'\\s+enable\\s+row\\s+level\\s+security','i').test(source));
+}
+
+function recognitionVaultFallbackImplemented(){
+  const path='supabase/functions/passport-recognition/index.ts';
+  if(!exists(path))return false;
+  const source=recognitionMigrationSource();
+  const servicePath='shared/passport-recognition-service.js';
+  const runtimeSource=read(path)+(exists(servicePath)?read(servicePath):'');
+  return runtimeSource.includes('passport_recognition_signing_material_v1')
+    && source.includes('vault.decrypted_secrets')
+    && permissionStatement(source,'grant\\s+execute\\s+on\\s+function','public.passport_recognition_signing_material_v1','to',['service_role'])
+    && permissionStatement(source,'revoke\\s+all\\s+on\\s+function','public.passport_recognition_signing_material_v1','from',['public','anon','authenticated']);
+}
+
+export function buildPassportReadinessReport(mode='foundation',values={}){
+  if(!['foundation','activation','recognition'].includes(mode))throw new Error('Unknown readiness mode');
+  const foundationReady=checks.every(item=>item.ok);
+  const activationChecks=mode==='activation'?evaluateIdentityActivation(values):[];
+  const environmentRecognitionChecks=mode==='recognition'?evaluateRecognitionConfiguration(values):[];
+  const vaultFallbackImplemented=recognitionVaultFallbackImplemented();
+  const vaultDependencies={
+    recognition_explicitly_enabled:'PASSPORT_RECOGNITION_ENABLED',
+    recognition_signing_key_valid:'PASSPORT_RECOGNITION_SIGNING_JWK',
+    recognition_signing_kid_valid:'PASSPORT_RECOGNITION_SIGNING_KID',
+    recognition_pairwise_secret_present:'PASSPORT_RECOGNITION_PAIRWISE_SECRET',
+  };
+  const recognitionChecks=environmentRecognitionChecks.map(item=>{
+    const name=vaultDependencies[item.id];
+    const suppliedJwkNeedsOwnKid=item.id==='recognition_signing_kid_valid'&&rawValue(values,'PASSPORT_RECOGNITION_SIGNING_JWK');
+    if(!item.ok&&name&&!rawValue(values,name)&&vaultFallbackImplemented&&!suppliedJwkNeedsOwnKid){
+      return {...item,ok:true,deferredToRuntime:true,detail:item.detail+'; absent environment value is deferred to the service-role-only Vault RPC. Runtime material/enabled state is not inspected.'};
+    }
+    return item;
+  });
+  const partnerRegistrySchemaReady=recognitionSchemaReady();
+  const allChecks=[...checks,...activationChecks,...recognitionChecks,...(mode==='recognition'?[result('recognition_registry_schema_service_only',partnerRegistrySchemaReady,'Partner/proof registry tables have RLS and client revocations in source; deployment and actual partners are not inspected')]:[])];
+  const recognitionConfigured=mode==='recognition'&&environmentRecognitionChecks.every(item=>item.ok);
+  return {
+    ok:allChecks.every(item=>item.ok),mode,foundationReady,
+    externalActivationReady:mode==='activation'&&foundationReady&&activationChecks.every(item=>item.ok),
+    assessmentScope:'Static repository/configuration checks and declared approval gates only; no provider network request, deployed database audit, legal certification or official recognition is performed.',
+    recognition:{
+      configurationReady:recognitionConfigured?true:recognitionChecks.some(item=>item.deferredToRuntime)&&recognitionChecks.every(item=>item.ok)?null:false,
+      signingConfigured:mode==='recognition'&&environmentRecognitionChecks.filter(item=>item.id!=='recognition_explicitly_enabled').every(item=>item.ok),
+      vaultFallbackImplemented,
+      runtimeSigningReady:null,
+      partnerRegistrySchemaReady,
+      partnersReady:null,
+      externalAcceptanceConfirmed:false,
+      status:'requires_live_partner_registry_check',
+      detail:'Static checks do not inspect the deployed partner allowlist, authenticate a real integrator or certify official recognition. Use the authenticated passport-recognition readiness endpoint for live status.',
+    },
+    checks:allChecks,
+  };
+}
+
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+  const mode=process.argv.includes('--activation')?'activation':process.argv.includes('--recognition-check')?'recognition':'foundation';
+  const report=buildPassportReadinessReport(mode,process.env);
+  console.log(JSON.stringify(report,null,2));
+  if(!report.ok)process.exitCode=1;
+}

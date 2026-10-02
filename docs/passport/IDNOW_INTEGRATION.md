@@ -2,6 +2,11 @@
 
 Statut : **préparée, désactivée par défaut**.
 
+Le serveur ne peut attribuer une identité civile vérifiée qu’en environnement
+`production` / `live`, avec le flux PVID et les validations juridique, rétention,
+mineurs et recette sandbox approuvés. Un résultat accepté en sandbox demeure un
+résultat de test et n’est jamais repris comme preuve civile dans une attestation.
+
 ## Choix fournisseur
 
 IDnow est le fournisseur principal retenu pour le pilote France/UE.

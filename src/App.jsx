@@ -22,6 +22,7 @@ import AppLoadingState from "./components/AppLoadingState.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 import PassportAppearanceSettings from "./passport/PassportAppearance.jsx";
+import PassportVerification from "./passport/PassportVerification.jsx";
 import { hasPassportAccess } from "./passport/access.js";
 import { Button } from "./design-system/index.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
@@ -569,6 +570,7 @@ function PassportPage({ identity, syncing, goTo, options }) {
       />
 
       <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
+      <PassportVerification key={identity?.userId || 'visitor'} identity={identity} syncing={syncing} goTo={goTo} />
       {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <SecretDirectorPanel />}
 
       {identity && <PassportAppearanceSettings identity={identity} />}

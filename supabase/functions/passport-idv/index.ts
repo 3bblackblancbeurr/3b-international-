@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import {productionIdentityApproved} from '../../../shared/passport-idv-policy.js';
 
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const APP_URL=(Deno.env.get('APP_URL')||'https://3b-international.vercel.app').replace(/\/$/,'');
@@ -12,6 +13,15 @@ const CLIENT_SECRET=(Deno.env.get('IDNOW_CLIENT_SECRET')||'').trim();
 const FLOW_ID=(Deno.env.get('IDNOW_FLOW_ID')||'').trim();
 const WEBHOOK_AUDIENCE=(Deno.env.get('IDNOW_WEBHOOK_AUDIENCE')||'').trim();
 const REF_SECRET=(Deno.env.get('PASSPORT_IDENTITY_REFERENCE_SECRET')||'').trim();
+const PRODUCTION_APPROVED=productionIdentityApproved({
+  physical:PHYSICAL,logical:LOGICAL,flowApproved:IDNOW_APPROVED,
+  legalApproved:Deno.env.get('PASSPORT_IDENTITY_LEGAL_REVIEW_APPROVED')==='true',
+  retentionApproved:Deno.env.get('PASSPORT_IDENTITY_RETENTION_POLICY_APPROVED')==='true',
+  minorsApproved:Deno.env.get('PASSPORT_IDENTITY_MINORS_POLICY_APPROVED')==='true',
+  sandboxApproved:Deno.env.get('PASSPORT_IDENTITY_SANDBOX_E2E_APPROVED')==='true',
+  captchaRequired:Deno.env.get('MEMBER_CAPTCHA_REQUIRED')==='true',
+  passwordProtectionConfirmed:Deno.env.get('PASSPORT_LEAKED_PASSWORD_PROTECTION_CONFIRMED')==='true'
+});
 
 function bundledKey(bundleEnv:string,legacyEnv:string){
   const raw=Deno.env.get(bundleEnv);
@@ -108,7 +118,8 @@ function configured(){
     ['sandbox','production'].includes(PHYSICAL)&&
     ['staging','live'].includes(LOGICAL)&&
     CLIENT_ID.length>3&&CLIENT_SECRET.length>10&&FLOW_ID.length>8&&
-    WEBHOOK_AUDIENCE.startsWith('https://')&&REF_SECRET.length>=32;
+    WEBHOOK_AUDIENCE.startsWith('https://')&&REF_SECRET.length>=32&&
+    (PHYSICAL==='sandbox'||PRODUCTION_APPROVED);
 }
 
 async function idnowToken(){
@@ -161,6 +172,8 @@ async function startVerification(uid:string){
   const profile=profiles?.[0];
   if(!profile?.passport_public_id||profile.passport_state!=='active')throw new Failure(403,'Passeport 3B actif requis.');
   if(profile.identity_verification_state==='verified')throw new Failure(409,'Cette identité est déjà vérifiée.');
+  if(!['unverified','rejected','expired'].includes(profile.identity_verification_state))
+    throw new Failure(409,'Le contrôle est déjà en cours ou cette identité nécessite une revue.');
 
   const claims=await api('/rest/v1/member_identity_claims?user_id=eq.'+encodeURIComponent(uid)+
     '&select=legal_given_names,legal_family_name,birth_date&limit=1');
@@ -194,7 +207,9 @@ async function startVerification(uid:string){
     provider:'idnow',
     provider_session_ref_hash:refHash,
     state:'processing',
-    assurance_requested:'identity_verified'
+    assurance_requested:'identity_verified',
+    provider_consent_at:new Date().toISOString(),
+    provider_consent_version:1
   });
   const attempt=Array.isArray(rows)?rows[0]:rows;
 
@@ -272,22 +287,18 @@ async function processWebhook(jwt:string){
     if(String(result?.flowId||'')!==FLOW_ID)throw new Failure(409,'Flux IDnow incohérent.');
 
     const outcome=String(result?.outcome||'');
-    if(outcome==='accepted'&&IDNOW_APPROVED){
-      nextState='verified';
-      await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'verified',completed_at:new Date().toISOString(),last_error_code:null
-      },'PATCH');
-      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id),{
-        identity_verification_state:'verified',
-        identity_assurance_level:'identity_verified',
-        identity_verified_at:new Date().toISOString(),
-        identity_verification_provider:'idnow',
-        identity_verification_ref_hash:refHash
-      },'PATCH');
+    if(outcome==='accepted'&&IDNOW_APPROVED&&PRODUCTION_APPROVED){
+      const confirmation=await api('/rest/v1/rpc/passport_identity_confirm_production_v1',{p_attempt:attempt.id,p_ref_hash:refHash});
+      const applied=Array.isArray(confirmation)?confirmation[0]:confirmation;
+      nextState=applied?.applied===true?'verified':String(attempt.state||'processing');
+      if(applied?.applied!==true)resultCode='state_no_longer_pending';
     }else if(outcome==='accepted'){
-      nextState='error';resultCode='flow_not_approved';
+      nextState='error';resultCode=PHYSICAL==='sandbox'?'test_flow_only':'flow_not_approved';
       await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
-        state:'error',completed_at:new Date().toISOString(),last_error_code:'flow_not_approved'
+        state:'error',completed_at:new Date().toISOString(),last_error_code:resultCode
+      },'PATCH');
+      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
+        identity_verification_state:'unverified'
       },'PATCH');
     }else{
       nextState='rejected';resultCode='rejected';
@@ -318,6 +329,9 @@ async function processWebhook(jwt:string){
     nextState='error';
     await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
       state:'error',completed_at:new Date().toISOString(),last_error_code:'provider_error'
+    },'PATCH');
+    await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
+      identity_verification_state:'unverified'
     },'PATCH');
   }
 
@@ -358,9 +372,12 @@ Deno.serve(async req=>{
       provider:PROVIDER||null,
       physicalEnvironment:PHYSICAL,
       logicalEnvironment:LOGICAL,
-      productionFlowApproved:IDNOW_APPROVED
+      productionFlowApproved:PRODUCTION_APPROVED
     });
-    if(action==='start')return reply(await startVerification(uid),201);
+    if(action==='start'){
+      if(body?.consent!==true)throw new Failure(400,'Ton accord explicite pour le contrôle IDnow est requis.');
+      return reply(await startVerification(uid),201);
+    }
     throw new Failure(404,'Action inconnue.');
   }catch(error){
     return reply(
