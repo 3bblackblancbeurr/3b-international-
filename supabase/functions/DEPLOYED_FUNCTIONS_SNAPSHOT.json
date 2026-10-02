@@ -1,10 +1,10 @@
 {
   "snapshot_date": "2026-10-02",
-  "note": "Verified production Supabase metadata after Passport recognition deployment. Private Passport RPCs and partner authentication remain enforced inside the function bodies.",
+  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions.",
   "functions": [
     {
       "slug": "ai-council-orchestrate",
-      "version": 3,
+      "version": 2,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
@@ -16,13 +16,13 @@
     },
     {
       "slug": "city-3b",
-      "version": 10,
+      "version": 8,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
       "slug": "control-center",
-      "version": 4,
+      "version": 1,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
@@ -34,13 +34,13 @@
     },
     {
       "slug": "dada3b",
-      "version": 10,
+      "version": 3,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
       "slug": "delete-account",
-      "version": 2,
+      "version": 1,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
@@ -48,13 +48,8 @@
       "slug": "ecosystem",
       "version": 9,
       "verify_jwt": false,
-      "status": "ACTIVE"
-    },
-    {
-      "slug": "ecosystem-jev-preview",
-      "version": 2,
-      "verify_jwt": false,
-      "status": "ACTIVE"
+      "status": "ACTIVE",
+      "deployment_note": "Version 9 deployed from the live version 8 five-file bundle with only https://localhost and capacitor://localhost added to the exact CORS origin allowlist. Authentication and dependency files were unchanged. This records deployment metadata, not full source parity with the local ecosystem directory."
     },
     {
       "slug": "ecosystem-private",
@@ -64,12 +59,6 @@
     },
     {
       "slug": "ecosystem-public",
-      "version": 8,
-      "verify_jwt": false,
-      "status": "ACTIVE"
-    },
-    {
-      "slug": "games-remote-loader",
       "version": 3,
       "verify_jwt": false,
       "status": "ACTIVE"
@@ -82,32 +71,20 @@
     },
     {
       "slug": "member-api",
-      "version": 10,
+      "version": 4,
       "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
       "slug": "member-auth",
-      "version": 5,
+      "version": 4,
       "verify_jwt": false,
       "status": "ACTIVE"
     },
     {
       "slug": "member-hub",
-      "version": 14,
+      "version": 10,
       "verify_jwt": false,
-      "status": "ACTIVE"
-    },
-    {
-      "slug": "nosbloc-api",
-      "version": 1,
-      "verify_jwt": true,
-      "status": "ACTIVE"
-    },
-    {
-      "slug": "owner-email-migrate-once",
-      "version": 5,
-      "verify_jwt": true,
       "status": "ACTIVE"
     },
     {
@@ -136,14 +113,8 @@
     },
     {
       "slug": "penalty-rush",
-      "version": 17,
+      "version": 10,
       "verify_jwt": true,
-      "status": "ACTIVE"
-    },
-    {
-      "slug": "penalty-rush-client",
-      "version": 1,
-      "verify_jwt": false,
       "status": "ACTIVE"
     },
     {
