@@ -20,6 +20,8 @@ function threeBReleasePlugin() {
       const serviceWorker = `const BUILD_ID = ${JSON.stringify(buildId)};\nself.addEventListener("install", () => {});\nself.addEventListener("message", (event) => {\n  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();\n});\nself.addEventListener("activate", (event) => {\n  event.waitUntil(self.clients.claim());\n});\nself.addEventListener("fetch", () => {});\n`;
       this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify(release, null, 2) });
       this.emitFile({ type: "asset", fileName: "sw.js", source: serviceWorker });
+      this.emitFile({ type: "asset", fileName: "service-worker.js", source: serviceWorker });
+      this.emitFile({ type: "asset", fileName: "pwa-sw.js", source: serviceWorker });
     },
   };
 }
