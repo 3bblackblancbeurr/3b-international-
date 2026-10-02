@@ -25,3 +25,8 @@ export const worldArtMaterials=Object.freeze({
  monumentStone:'#29353c',monumentGold:'#c9b486',monumentDark:'#121a20',monumentBlue:'#31729a',monumentEmission:'#53b9e5',
  platformGlass:'#071a27',platformEmission:'#009cff'
 });
+export const worldCrowdPalette=Object.freeze({
+ base:'#ffffff',
+ cloth:Object.freeze(['#23313d','#4b3547','#31483d','#5a4937','#263f54','#504d58','#6a4438','#2d2f35']),
+ skin:Object.freeze(['#5c3928','#795039','#9b6b4b','#bd8966','#d6a583','#e4bd9c']),
+});

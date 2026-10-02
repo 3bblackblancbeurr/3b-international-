@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {worldCrowdPalette} from '../design-system/tokens.js';
 
 const PROFILE_LIMITS=Object.freeze({
  mobileMedium:{fluid:16,auto:28,detail:34,updateHz:4,maxDistance:210},
@@ -33,11 +34,11 @@ export function createAmbientCrowd(root,items,options={}){
 
  const maximum=PROFILE_LIMITS.desktop.detail,group=new THREE.Group();group.name='3B · foule ambiante instanciée';root.add(group);
  const bodyGeometry=new THREE.CapsuleGeometry(.27,1.08,2,6),headGeometry=new THREE.SphereGeometry(.24,7,5);
- const bodyMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.92,metalness:.02,vertexColors:true}),headMaterial=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.96,metalness:0,vertexColors:true});
+ const bodyMaterial=new THREE.MeshStandardMaterial({color:worldCrowdPalette.base,roughness:.92,metalness:.02,vertexColors:true}),headMaterial=new THREE.MeshStandardMaterial({color:worldCrowdPalette.base,roughness:.96,metalness:0,vertexColors:true});
  const bodies=new THREE.InstancedMesh(bodyGeometry,bodyMaterial,maximum),heads=new THREE.InstancedMesh(headGeometry,headMaterial,maximum);
  bodies.name='Foule · silhouettes';heads.name='Foule · visages';for(const mesh of [bodies,heads]){mesh.castShadow=false;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.count=0;group.add(mesh);}
 
- const cloth=['#23313d','#4b3547','#31483d','#5a4937','#263f54','#504d58','#6a4438','#2d2f35'],skin=['#5c3928','#795039','#9b6b4b','#bd8966','#d6a583','#e4bd9c'],agents=Array.from({length:maximum},(_,index)=>{
+ const {cloth,skin}=worldCrowdPalette,agents=Array.from({length:maximum},(_,index)=>{
   const route=routes[index%routes.length],dx=route.to.x-route.from.x,dz=route.to.z-route.from.z,length=Math.hypot(dx,dz)||1,width=Math.max(2,Math.min(7,Number(route.width)||5));
   return{route,length,dx,dz,nx:-dz/length,nz:dx/length,phase:hash(index,1)*2,speed:.42+hash(index,2)*.58,offset:(hash(index,3)-.5)*width*.62,scale:.88+hash(index,4)*.22,cloth:cloth[Math.floor(hash(index,5)*cloth.length)],skin:skin[Math.floor(hash(index,6)*skin.length)]};
  });
