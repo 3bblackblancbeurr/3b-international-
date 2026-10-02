@@ -18,7 +18,7 @@ export function addBuildingContact(field,root,owned){
  for(const mesh of [shadow,damp]){mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();root.add(mesh);owned.push(mesh);}
  owned.push(texture,geometry,shadowMat,dampMat);
  const full=sites.length;
- const setWetness=value=>{const wet=Math.max(0,Math.min(1,Number(value)||0));dampMat.opacity=.025+wet*.215;dampMat.needsUpdate=true;};
+ const setWetness=value=>{const wet=Math.max(0,Math.min(1,Number(value)||0));dampMat.opacity=.025+wet*.215;};
  return{
   setWetness,
   setWeather(weather){setWetness(wetnessForWeather(weather));},

@@ -1,3 +1,4 @@
+import {worldArtMaterials} from '../design-system/tokens.js';
 import * as THREE from 'three';
 import {COUNTRIES} from './catalog.js';
 
@@ -17,7 +18,7 @@ export function addHeritagePlatform({root,shape,geo,mat,height,owned,center}){
  const obsidian=physical({color:'#070b10',roughness:.38,metalness:.28,clearcoat:.32,clearcoatRoughness:.26});
  const stone=physical({color:'#151d24',roughness:.58,metalness:.12,clearcoat:.12});
  const champagne=physical({color:'#d6b46a',roughness:.28,metalness:.82,clearcoat:.55,clearcoatRoughness:.18});
- const glass=physical({color:'#071a27',roughness:.18,metalness:.18,transmission:.12,transparent:true,opacity:.88,emissive:'#009cff',emissiveIntensity:.15,depthWrite:true});
+ const glass=physical({color:worldArtMaterials.platformGlass,roughness:.18,metalness:.18,transmission:0,transparent:true,opacity:.88,emissive:worldArtMaterials.platformEmission,emissiveIntensity:.15,depthWrite:true});
  const blue=physical({color:'#0a6fa6',roughness:.22,metalness:.45,emissive:'#00a8ff',emissiveIntensity:.82,clearcoat:.42});
  const box=geo(new THREE.BoxGeometry(1,1,1));
  const cylinder=geo(new THREE.CylinderGeometry(1,1,1,8));
@@ -62,29 +63,16 @@ export function addHeritagePlatform({root,shape,geo,mat,height,owned,center}){
   }
  }
 
- // Central "broken circle": three incomplete vertical arcs, a black-gold
- // pedestal and a restrained energy core. This becomes the skyline signature
- // of the platform while remaining light enough for mobile.
- shape(cylinder,obsidian,center.x,y+.66,center.z,5.7,1.05,5.7,staticRoot);
- shape(cylinder,champagne,center.x,y+1.22,center.z,4.55,.10,4.55,staticRoot);
- const arcMat=champagne;
- for(let i=0;i<3;i++){
-  const arc=shape(geo(new THREE.TorusGeometry(4.25+i*.26,.095,8,72,Math.PI*1.56)),arcMat,center.x,y+5.55,center.z,1,1,1,dynamicRoot);
-  arc.rotation.set(Math.PI/2,i*Math.PI/3+.15,.25+i*.22);
-  arc.userData.phase=i*2.1;
- }
- const core=shape(geo(new THREE.IcosahedronGeometry(1,2)),blue,center.x,y+5.45,center.z,1.05,1.4,1.05,dynamicRoot);
- const halo=shape(ring(2.0,.045,72),glass,center.x,y+5.45,center.z,1,1,1,dynamicRoot);halo.rotation.x=Math.PI/2;
- const crown=shape(ring(3.05,.035,72),blue,center.x,y+5.45,center.z,1,1,1,dynamicRoot);crown.rotation.y=Math.PI/2;
+ // The physical stone-and-metal circle is owned by heritage-monument.js.
+ // Retain one quiet energy seed; the full circular opening stays readable.
+ const core=shape(geo(new THREE.IcosahedronGeometry(1,2)),blue,center.x,y+12.4,center.z,.42,.64,.42,dynamicRoot);
 
  return{
   staticRoot,
   dynamicRoot,
   tick(time){
-   core.rotation.y=time*.24;core.rotation.x=.18+Math.sin(time*.32)*.05;
-   core.position.y=y+5.45+Math.sin(time*.8)*.13;
-   halo.rotation.z=time*.11;crown.rotation.x=time*.08;
-   for(const child of dynamicRoot.children)if(child.userData.phase!==undefined)child.rotation.z=.25+Math.sin(time*.22+child.userData.phase)*.055;
+   core.rotation.y=time*.14;core.position.y=y+12.4+Math.sin(time*.55)*.06;
+
   },
  };
 }
