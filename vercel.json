@@ -14,6 +14,57 @@
   },
   "headers": [
     {
+      "source": "/mettre-a-jour-3b.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/pwa-sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/service-worker.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
       "source": "/sw.js",
       "headers": [
         {
@@ -159,6 +210,21 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/repair-3b",
+      "destination": "/mettre-a-jour-3b.html",
+      "permanent": false
+    },
+    {
+      "source": "/update-3b",
+      "destination": "/mettre-a-jour-3b.html",
+      "permanent": false
+    },
+    {
+      "source": "/mise-a-jour",
+      "destination": "/mettre-a-jour-3b.html",
+      "permanent": false
+    },
     {
       "source": "/application-3b",
       "destination": "/application-3b-international.html",
