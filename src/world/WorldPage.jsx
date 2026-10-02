@@ -54,6 +54,7 @@ import {guardianHubState} from './guardian-relations.js';
 import {resonanceFor,unlockedResonances} from './guardian-resonances.js';
 import {resonanceContextMessage} from './resonance-context.js';
 import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,loadControlBindings,saveControlBindings,setPrimaryControl,controlLabel} from './control-bindings.js';
+import {worldEntryPolicy} from './entry-policy.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -268,7 +269,7 @@ function WorldSession({uid,goTo}){
   interactDefault(item);
  }
  callbacks.current={interact,combat:input=>act({type:'field',...input}),step:region=>audio.current?.step(region)};
- useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;setSave(result.data);saveRef.current=result.data;dirty.current=!!result.needsSave;setSaveMessage(result.message);setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(result.data.adventure.encounter)setPanel('encounter');else if(!result.data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
+ useEffect(()=>{let live=true;loadWorld(uid).then(result=>{if(!live)return;const entry=worldEntryPolicy(result.data);let data=result.data,entryRecorded=false;if(entry.action){try{data=recordWorldAction(uid,data,entry.action);entryRecorded=true;}catch(error){setError('Le Nexus n’a pas pu être préparé sans risquer ta sauvegarde · '+error.message);}}setSave(data);saveRef.current=data;dirty.current=!!result.needsSave||entryRecorded;setSaveMessage(result.message+(entryRecorded?' · entrée au Nexus préparée.':''));setLoaded(true);setWorldRequested(!!result.data.adventure.avatar.created||!!result.data.adventure.encounter);if(entry.resumeEncounter)setPanel('encounter');else if(!data.adventure.avatar.created)setPanel('avatar');});return()=>{live=false;};},[uid]);
  useEffect(()=>{
   if(!loaded||!worldRequested)return;
   try{scene.current=createWorldScene(canvas.current,{save:saveRef.current,onSnapshot:setSnapshot,onLoadState:setAssetsLoading,onInteract:item=>callbacks.current.interact(item),onCombatStep:input=>callbacks.current.combat(input),onActivity:()=>{activity.current=Date.now();},onStep:region=>callbacks.current.step(region),onError:setError});scene.current.setQuality(quality);scene.current.setControls?.(controls);scene.current.setPremiumCodes?.(premiumCodes);ready.current=true;}

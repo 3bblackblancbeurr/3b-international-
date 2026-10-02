@@ -11,7 +11,9 @@ const games=readFileSync(new URL('../src/games/premium.css',import.meta.url),'ut
 test('home hides technical status cards and keeps the ecosystem guide at the bottom',()=>{
  assert.doesNotMatch(home,/home-journey-status|home-status-item/);
  assert.doesNotMatch(home,/heritage-poster|background\.png/);
+ assert.doesNotMatch(home,/welcome-hero|Un héritage|Nos différences|Notre force|luxury-manifesto-line/);
  assert.match(home,/const PRIMARY_IDS = \['passport', 'world3b'\]/);
+ assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('L’essentiel'));
  const guide=home.lastIndexOf('Comprendre l’écosystème 3B');
  assert.ok(guide>home.indexOf('Explorer 3B'));
  assert.ok(home.lastIndexOf('dashboard-footer')>guide);

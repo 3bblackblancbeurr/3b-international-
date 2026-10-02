@@ -27,6 +27,12 @@ function safeUrl(value) {
   } catch { return ""; }
 }
 
+function stripeKeyMode(value) {
+  if (/^(?:sk|rk)_test_[A-Za-z0-9_]+$/.test(value || "")) return "test";
+  if (/^(?:sk|rk)_live_[A-Za-z0-9_]+$/.test(value || "")) return "live";
+  return "";
+}
+
 export function configFrom(env) {
   let origin = "";
   try {
@@ -49,22 +55,27 @@ export function configFrom(env) {
   const shippingRateId = env.STRIPE_SHIPPING_RATE_ID || "";
   const shippingConfigured = shippingIncluded || /^shr_[A-Za-z0-9]+$/.test(shippingRateId);
   const releaseApproved = env.SHOP_RELEASE_APPROVED === "true";
+  const stripeMode = stripeKeyMode(env.STRIPE_SECRET_KEY);
+  const liveApproved = env.SHOP_LIVE_APPROVED === "true";
+  const stripeApproved = stripeMode === "test" || (stripeMode === "live" && liveApproved);
   const cookieSecret = typeof env.SHOP_CHECKOUT_COOKIE_SECRET === "string" && env.SHOP_CHECKOUT_COOKIE_SECRET.length >= 32
     ? env.SHOP_CHECKOUT_COOKIE_SECRET : "";
   const automaticTaxRequested = env.SHOP_AUTOMATIC_TAX === "true";
   const taxReady = !automaticTaxRequested || env.SHOP_TAX_REGISTRATION_CONFIRMED === "true";
-  const enabled = env.SHOP_ENABLED === "true" && releaseApproved && !!cookieSecret && !!origin && !!env.STRIPE_SECRET_KEY
+  const enabled = env.SHOP_ENABLED === "true" && releaseApproved && stripeApproved && !!cookieSecret && !!origin
     && !!env.STRIPE_WEBHOOK_SECRET && !!safeUrl(env.SUPABASE_URL) && !!env.SUPABASE_SERVICE_ROLE_KEY
     && !!termsUrl && !!privacyUrl && !!shippingUrl && !!returnsUrl && !!legalUrl
     && shippingConfigured && catalogConfigured && taxReady
     && countries.length > 0 && countries.every(c => /^(FR|IT|EE|TR|DZ|TN|MA|ES)$/.test(c));
-  return { origin, priceIds, catalogMode, countries, enabled, releaseApproved, cookieSecret, termsUrl, privacyUrl, shippingUrl, returnsUrl, legalUrl,
-    shippingRateId, shippingIncluded, automaticTax: automaticTaxRequested && taxReady };
+  return { origin, priceIds, catalogMode, countries, enabled, releaseApproved, liveApproved, stripeMode, stripeApproved,
+    cookieSecret, termsUrl, privacyUrl, shippingUrl, returnsUrl, legalUrl, shippingRateId, shippingIncluded,
+    automaticTax: automaticTaxRequested && taxReady };
 }
 
-function publicPrice(price) {
+function publicPrice(price, stripeMode) {
   const product = price.product;
   if (!price.active || price.type !== "one_time" || price.currency !== "eur"
+    || typeof price.livemode !== "boolean" || price.livemode !== (stripeMode === "live")
     || !Number.isSafeInteger(price.unit_amount) || price.unit_amount <= 0
     || price.tax_behavior !== "inclusive" || price.billing_scheme !== "per_unit" || price.transform_quantity
     || !product || typeof product !== "object" || product.deleted || !product.active) return null;
@@ -137,8 +148,14 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     return client;
   }
 
+  function assertStripeMode(livemode) {
+    if (!config.stripeApproved || typeof livemode !== "boolean" || livemode !== (config.stripeMode === "live")) {
+      throw new ShopError(503, UNAVAILABLE);
+    }
+  }
+
   async function catalog() {
-    if (!env.STRIPE_SECRET_KEY) return [];
+    if (!config.stripeApproved) return [];
     if (config.catalogMode === "metadata") {
       const items = [];
       let cursor;
@@ -147,12 +164,13 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
           ...(cursor ? { starting_after: cursor } : {}) });
         for (const product of result.data) {
           if (product.metadata?.shop_visible !== "true") continue;
-          const prices = await stripe().prices.list({ product: product.id, active: true, type: "one_time", limit: 100 });
-          if (prices.has_more) throw new ShopError(503, UNAVAILABLE);
-          for (const price of prices.data) {
-            const item = publicPrice({ ...price, product });
-            if (item) items.push(item);
-          }
+          const defaultPriceId = typeof product.default_price === "string" ? product.default_price : product.default_price?.id;
+          if (!/^price_[A-Za-z0-9]+$/.test(defaultPriceId || "")) continue;
+          const price = await stripe().prices.retrieve(defaultPriceId);
+          const priceProductId = typeof price?.product === "string" ? price.product : price?.product?.id;
+          if (priceProductId !== product.id) continue;
+          const item = publicPrice({ ...price, product }, config.stripeMode);
+          if (item) items.push(item);
         }
         if (!result.has_more) return items;
         const next = result.data.at(-1)?.id;
@@ -166,14 +184,15 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
     if (config.priceIds.length > 50 || config.priceIds.some(id => !/^price_[A-Za-z0-9]+$/.test(id)))
       throw new ShopError(503, UNAVAILABLE);
     const prices = await Promise.all(config.priceIds.map(id => stripe().prices.retrieve(id, { expand: ["product"] })));
-    return prices.map(publicPrice).filter(Boolean);
+    return prices.map(price => publicPrice(price, config.stripeMode)).filter(Boolean);
   }
 
   async function shipping() {
     if (config.shippingIncluded) return { name: "Livraison France incluse", amount: 0, currency: "eur", countries: config.countries };
     if (!config.shippingRateId) return null;
     const rate = await stripe().shippingRates.retrieve(config.shippingRateId);
-    if (!rate.active || rate.type !== "fixed_amount" || rate.fixed_amount?.currency !== "eur"
+    if (!rate.active || typeof rate.livemode !== "boolean" || rate.livemode !== (config.stripeMode === "live")
+      || rate.type !== "fixed_amount" || rate.fixed_amount?.currency !== "eur"
       || !Number.isSafeInteger(rate.fixed_amount.amount) || rate.fixed_amount.amount < 0
       || (config.automaticTax && rate.tax_behavior !== "inclusive")) throw new ShopError(503, UNAVAILABLE);
     return { name: rate.display_name, amount: rate.fixed_amount.amount, currency: "eur", countries: config.countries };
@@ -195,12 +214,16 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
   async function savePaidOrder(session) {
     if (session.metadata?.integration !== INTEGRATION || session.mode !== "payment"
       || session.status !== "complete" || session.payment_status !== "paid") return false;
+    assertStripeMode(session.livemode);
+    const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+    if (!/^pi_[A-Za-z0-9]+$/.test(paymentIntentId || "") || session.currency !== "eur"
+      || !Number.isSafeInteger(session.amount_total) || session.amount_total <= 0) throw new ShopError(503, "Vérification de la commande en cours.");
     const lines = await stripe().checkout.sessions.listLineItems(session.id, { limit: 100, expand: ["data.price.product"] });
     if (lines.has_more) throw new ShopError(503, "Vérification de la commande en cours.");
     const now = new Date();
     const loyaltyUserId = /^[0-9a-f-]{36}$/i.test(session.metadata?.loyalty_user_id || "") ? session.metadata.loyalty_user_id : null;
     await ordersRequest("POST", {
-      stripe_session_id: session.id, payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
+      stripe_session_id: session.id, payment_intent_id: paymentIntentId,
       livemode: session.livemode, payment_status: "paid", fulfillment_status: "awaiting_seller",
       loyalty_user_id: loyaltyUserId, seller_due_at: new Date(now.getTime() + 5 * DAY).toISOString(), updated_at: now.toISOString(),
       amount_total: session.amount_total, currency: session.currency,
@@ -214,6 +237,33 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
         logo_country: item.price?.metadata?.logo_country || item.price?.product?.metadata?.logo_country || null })),
     });
     await loyalty.purchase(session,lines.data,stripe());
+    return true;
+  }
+
+  async function syncRefund(charge) {
+    const paymentIntentId = typeof charge?.payment_intent === "string" ? charge.payment_intent : charge?.payment_intent?.id;
+    if (!/^pi_[A-Za-z0-9]+$/.test(paymentIntentId || "")) return false;
+    const intent = await stripe().paymentIntents.retrieve(paymentIntentId);
+    if (intent?.metadata?.integration !== INTEGRATION) return false;
+    assertStripeMode(charge?.livemode);
+    assertStripeMode(intent?.livemode);
+    if (charge.paid !== true || charge.currency !== "eur" || intent.currency !== "eur"
+      || !Number.isSafeInteger(charge.amount) || charge.amount <= 0 || intent.amount !== charge.amount
+      || !Number.isSafeInteger(charge.amount_refunded) || charge.amount_refunded <= 0 || charge.amount_refunded > charge.amount) {
+      throw new ShopError(503, "Vérification du remboursement en cours.");
+    }
+    const base = safeUrl(env.SUPABASE_URL);
+    if (!base || !env.SUPABASE_SERVICE_ROLE_KEY) throw new ShopError(503, "Vérification du remboursement en cours.");
+    const response = await fetcher(new URL("/rest/v1/rpc/shop_apply_refund", base), {
+      method:"POST", signal:AbortSignal.timeout(10000),
+      headers:{ apikey:env.SUPABASE_SERVICE_ROLE_KEY, Authorization:`Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type":"application/json" },
+      body:JSON.stringify({ p_payment_intent:paymentIntentId, p_livemode:charge.livemode,
+        p_amount_total:charge.amount, p_amount_refunded:charge.amount_refunded }),
+    });
+    if (!response.ok) throw new ShopError(503, "Vérification du remboursement en cours.");
+    const result = await response.json().catch(() => null);
+    if (!result?.found) throw new ShopError(503, "Vérification du remboursement en cours.");
+    await loyalty.refund(charge);
     return true;
   }
 
@@ -298,6 +348,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       let event;
       try { event = stripe().webhooks.constructEvent(body, request.headers.get("stripe-signature"), env.STRIPE_WEBHOOK_SECRET); }
       catch { throw new ShopError(400, "Signature invalide."); }
+      assertStripeMode(event.livemode);
       if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
         const incoming = event.data.object;
         if (incoming.metadata?.integration === INTEGRATION) {
@@ -308,7 +359,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       if(event.type === "charge.refunded") {
         const incoming=event.data.object;
         const charge=await stripe().charges.retrieve(incoming.id);
-        await loyalty.refund(charge);
+        await syncRefund(charge);
       }
       return json({ received: true });
     }),

@@ -53,7 +53,7 @@ async function authUser(request, env, fetcher) {
 
 async function requireStaff(request, env, fetcher) {
   const user = await authUser(request, env, fetcher);
-  const rows = await serviceFetch(env, fetcher, `/rest/v1/community_staff?select=user_id&user_id=eq.${encodeURIComponent(user.id)}&limit=1`);
+  const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_staff?select=user_id,role&user_id=eq.${encodeURIComponent(user.id)}&limit=1`);
   if (!Array.isArray(rows) || !rows.length) throw new OrderError(403, "Accès vendeur non autorisé.");
   return user;
 }
@@ -66,6 +66,8 @@ function publicOrder(row, seller = false) {
     sessionId: row.stripe_session_id,
     reference: row.stripe_session_id?.slice(-10).toUpperCase() || "3B",
     amount: Number(row.amount_total || 0), currency: row.currency || "eur",
+    amountRefunded: Number(row.amount_refunded || 0), refundStatus: row.refund_status || "none",
+    refundedAt: row.refunded_at || null,
     fulfillmentStatus, createdAt: row.created_at,
     sellerDueAt: row.seller_due_at || plusDays(row.created_at, 5),
     acceptedAt: row.seller_accepted_at || null,
@@ -79,7 +81,7 @@ function publicOrder(row, seller = false) {
 
 async function listSellerOrders(request, env, fetcher) {
   await requireStaff(request, env, fetcher);
-  const select = "stripe_session_id,livemode,payment_status,fulfillment_status,amount_total,currency,customer_email,customer_name,shipping_details,items,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at,updated_at";
+  const select = "stripe_session_id,livemode,payment_status,fulfillment_status,amount_total,amount_refunded,refund_status,refunded_at,currency,customer_email,customer_name,shipping_details,items,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at,updated_at";
   const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?select=${encodeURIComponent(select)}&payment_status=eq.paid&order=created_at.desc&limit=100`);
   return json({ orders:(rows || []).map(row => publicOrder(row, true)) });
 }
@@ -91,7 +93,7 @@ async function updateSellerOrder(request, env, fetcher) {
   const sessionId = body?.sessionId || "";
   if (!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(sessionId)) throw new OrderError(400, "Commande invalide.");
   if (!["accept","ship"].includes(body?.action)) throw new OrderError(400, "Action invalide.");
-  const select = "stripe_session_id,fulfillment_status,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at,amount_total,currency,items";
+  const select = "stripe_session_id,fulfillment_status,refund_status,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at,amount_total,amount_refunded,currency,items";
   const rows = await serviceFetch(env, fetcher, `/rest/v1/shop_orders?select=${encodeURIComponent(select)}&stripe_session_id=eq.${encodeURIComponent(sessionId)}&payment_status=eq.paid&limit=1`);
   const order = rows?.[0]; if (!order) throw new OrderError(404, "Commande introuvable.");
   const current = normalizedStatus(order.fulfillment_status);
@@ -113,7 +115,7 @@ async function listMyOrders(request, env, fetcher) {
   const user = await authUser(request, env, fetcher);
   const rewards = await serviceFetch(env, fetcher, `/rest/v1/member_purchase_rewards?select=session_id&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc&limit=30`);
   const ids = [...new Set((rewards || []).map(row => row.session_id).filter(id => /^cs_(test_|live_)?[A-Za-z0-9]+$/.test(id)))];
-  const select = "stripe_session_id,fulfillment_status,amount_total,currency,items,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at";
+  const select = "stripe_session_id,fulfillment_status,amount_total,amount_refunded,refund_status,refunded_at,currency,items,created_at,seller_due_at,seller_accepted_at,ship_due_at,shipped_at";
   // New purchases belong to the member before loyalty settlement finishes. Keep reward-backed access for legacy orders.
   const ownerFilter = ids.length
     ? `or=${encodeURIComponent(`(loyalty_user_id.eq.${user.id},stripe_session_id.in.(${ids.join(",")}))`)}`

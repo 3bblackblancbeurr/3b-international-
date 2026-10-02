@@ -14,15 +14,16 @@ test("CompactCard composes the shared Gold Master Card", () => {
   assert.ok(compact.includes("<Card as={Tag}"));
 });
 
-test("home primary actions use the shared Gold Master Button", () => {
+test("home actions use the shared Gold Master Button", () => {
   assert.ok(home.includes("import {Button}"));
   assert.ok(home.includes("as={RouteLink}"));
-  assert.ok(home.includes('className="dashboard-cta"'));
   assert.ok(home.includes('className="home-guide-button"'));
 });
 
 test("World portal actions use the shared Gold Master Button", () => {
   assert.ok(world.includes("import {Button}"));
+  assert.ok(world.includes("as={RouteLink}"));
+  assert.ok(world.includes('className="surface-button"'));
   assert.equal(world.includes("<button"), false);
 });
 

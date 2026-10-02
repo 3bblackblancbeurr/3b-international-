@@ -29,11 +29,14 @@ function itemLabel(item) {
 }
 
 function StatusText({ order }) {
-  const [label, Icon] = STATUS[order.fulfillmentStatus] || STATUS.awaiting_seller;
+  const [baseLabel, Icon] = STATUS[order.fulfillmentStatus] || STATUS.awaiting_seller;
+  const label = order.fulfillmentStatus === "refunded" && order.refundStatus === "partial"
+    ? "Commande partiellement remboursée — expédition bloquée" : baseLabel;
   return <div className="order-status-line"><Icon size={19} aria-hidden="true" /><div><strong>{label}</strong>
     {(order.fulfillmentStatus === "new" || order.fulfillmentStatus === "awaiting_seller") && <p>Prise en charge au plus tard le {date(order.sellerDueAt)}.</p>}
     {order.fulfillmentStatus === "processing" && <p>Envoi prévu au plus tard le {date(order.shipDueAt)}.</p>}
     {order.fulfillmentStatus === "shipped" && <p>Expédiée le {date(order.shippedAt)}.</p>}
+    {order.fulfillmentStatus === "refunded" && order.amountRefunded > 0 && <p>Montant remboursé : {money(order.amountRefunded, order.currency)}.</p>}
   </div></div>;
 }
 

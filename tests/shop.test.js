@@ -44,7 +44,7 @@ function fixture(overrides = {}) {
         has_more: false,
       }),
     },
-    shippingRates: { retrieve: async () => ({ active: true, type: "fixed_amount", display_name: "Livraison test", fixed_amount: { amount: 500, currency: "eur" }, tax_behavior: "inclusive" }) },
+    shippingRates: { retrieve: async () => ({ active: true, livemode: false, type: "fixed_amount", display_name: "Livraison test", fixed_amount: { amount: 500, currency: "eur" }, tax_behavior: "inclusive" }) },
     checkout: { sessions: {
       create: async (params, options) => { calls.creates.push({ params, options }); return session; },
       retrieve: async () => { calls.retrieved++; return session; },
@@ -73,7 +73,7 @@ async function authorizedStatus(f) {
   return new Request(`${ORIGIN}/api/order-status?session_id=${f.session.id}`, { headers: { cookie } });
 }
 function webhookRequest(f, type = "checkout.session.completed", mutate = false) {
-  const payload = JSON.stringify({ id: "evt_fixture", type, data: { object: f.session } });
+  const payload = JSON.stringify({ id: "evt_fixture", type, livemode:f.session.livemode, data: { object: f.session } });
   const signature = f.signer.webhooks.generateTestHeaderString({ payload, secret: env.STRIPE_WEBHOOK_SECRET });
   return new Request(`${ORIGIN}/api/stripe-webhook`, { method: "POST",
     headers: { "stripe-signature": signature, "content-type": "application/json" }, body: mutate ? `${payload} ` : payload });
@@ -100,23 +100,39 @@ test("member checkout ignores forged identity and applies only the server discou
 });
 
 test("signed purchase and refund webhooks synchronize loyalty from authoritative Stripe state",async()=>{
-  const credits=[];
+  const credits=[],refundSync=[];let storedRefund=0;
   const f=fixture({fetcher:async(url,opts)=>{
     const path=new URL(url).pathname;
     if(path.endsWith('member_purchase_rewards'))return Response.json([{merchandise_cents:10000}]);
+    if(path.endsWith('/rpc/shop_apply_refund')){
+      const body=JSON.parse(opts.body),applied=body.p_amount_refunded>storedRefund;
+      if(applied)storedRefund=body.p_amount_refunded;
+      refundSync.push(body);
+      return Response.json({found:true,applied,duplicate:!applied});
+    }
     if(path.includes('/rpc/')){credits.push({path,body:JSON.parse(opts.body)});return Response.json(true);}
     return new Response(null,{status:201});
-  }});
+  },env:{...env,STRIPE_SECRET_KEY:'sk_live_fixture',SHOP_LIVE_APPROVED:'true'}});
   f.session.livemode=true;f.session.metadata.loyalty_user_id='7ed3fd82-e955-4e92-b944-98ea07be9f13';
   const charge={id:'ch_fixture',payment_intent:'pi_fixture',amount:10500,amount_refunded:0,livemode:true,paid:true,currency:'eur'};
-  f.stripe.paymentIntents={retrieve:async()=>({status:'succeeded',latest_charge:charge})};
+  f.stripe.paymentIntents={retrieve:async()=>({id:'pi_fixture',status:'succeeded',livemode:true,currency:'eur',amount:10500,metadata:{integration:'3b-shop-v1'},latest_charge:charge})};
   f.stripe.charges={retrieve:async()=>charge};
   assert.equal((await f.shop.webhook(webhookRequest(f))).status,200);assert.equal(credits[0].body.p_cents,10000);
-  charge.amount_refunded=10500;
-  const payload=JSON.stringify({id:'evt_refund_fixture',type:'charge.refunded',data:{object:{id:'ch_fixture',amount_refunded:1}}});
-  const signature=f.signer.webhooks.generateTestHeaderString({payload,secret:env.STRIPE_WEBHOOK_SECRET});
-  const request=new Request(`${ORIGIN}/api/stripe-webhook`,{method:'POST',headers:{'stripe-signature':signature},body:payload});
-  assert.equal((await f.shop.webhook(request)).status,200);assert.equal(credits.at(-1).body.p_refunded,10000);
+  const refund=async amount=>{
+    charge.amount_refunded=amount;
+    const payload=JSON.stringify({id:`evt_refund_${amount}`,type:'charge.refunded',livemode:true,data:{object:{id:'ch_fixture',amount_refunded:1}}});
+    const signature=f.signer.webhooks.generateTestHeaderString({payload,secret:env.STRIPE_WEBHOOK_SECRET});
+    return f.shop.webhook(new Request(`${ORIGIN}/api/stripe-webhook`,{method:'POST',headers:{'stripe-signature':signature},body:payload}));
+  };
+  assert.equal((await refund(3500)).status,200);
+  assert.equal(refundSync.at(-1).p_amount_refunded,3500);
+  assert.equal(credits.at(-1).body.p_refunded,3334);
+  assert.equal((await refund(10500)).status,200);
+  assert.equal(refundSync.at(-1).p_amount_refunded,10500);
+  assert.equal(credits.at(-1).body.p_refunded,10000);
+  assert.equal((await refund(10500)).status,200);
+  assert.equal(refundSync.length,3);
+  assert.equal(storedRefund,10500);
 });
 
 test("without credentials the store is closed and no prices are invented", async () => {
@@ -130,6 +146,14 @@ test("store stays closed without explicit release approval or an independent coo
     assert.equal(configFrom(locked).enabled, false);
     assert.equal((await createShop({ env: locked }).checkout(checkoutRequest())).status, 503);
   }
+});
+test("live Stripe credentials require a separate production approval while test credentials remain isolated", () => {
+  const live = { ...env, STRIPE_SECRET_KEY:"sk_live_fixture" };
+  assert.equal(configFrom(live).stripeMode, "live");
+  assert.equal(configFrom(live).enabled, false);
+  assert.equal(configFrom({ ...live, SHOP_LIVE_APPROVED:"true" }).enabled, true);
+  assert.equal(configFrom({ ...env, STRIPE_SECRET_KEY:"rk_test_fixture" }).enabled, true);
+  assert.equal(configFrom({ ...env, STRIPE_SECRET_KEY:"unclassified_key" }).enabled, false);
 });
 test("automatic tax is fail-closed until tax registration is explicitly confirmed", () => {
   assert.equal(configFrom({ ...env, SHOP_AUTOMATIC_TAX: "true" }).enabled, false);
@@ -242,6 +266,17 @@ test("webhook does not fulfill unpaid or unrelated checkouts", async () => {
   f.session.payment_status = "paid"; f.session.metadata.integration = "another-store";
   assert.equal((await f.shop.webhook(webhookRequest(f))).status, 200); assert.equal(f.calls.writes.length, 0);
 });
+test("refund webhooks ignore payment intents that do not belong to the physical shop", async () => {
+  const f=fixture();
+  const charge={id:"ch_other",payment_intent:"pi_other",amount:2000,amount_refunded:2000,livemode:false,paid:true,currency:"eur"};
+  f.stripe.charges={retrieve:async()=>charge};
+  f.stripe.paymentIntents={retrieve:async()=>({id:"pi_other",livemode:false,currency:"eur",amount:2000,metadata:{integration:"another-store"}})};
+  const payload=JSON.stringify({id:"evt_other_refund",type:"charge.refunded",livemode:false,data:{object:{id:"ch_other"}}});
+  const signature=f.signer.webhooks.generateTestHeaderString({payload,secret:env.STRIPE_WEBHOOK_SECRET});
+  const response=await f.shop.webhook(new Request(`${ORIGIN}/api/stripe-webhook`,{method:"POST",headers:{"stripe-signature":signature},body:payload}));
+  assert.equal(response.status,200);
+  assert.equal(f.calls.writes.length,0);
+});
 test("asynchronous success is processed and database failures ask Stripe to retry", async () => {
   const f = fixture();
   assert.equal((await f.shop.webhook(webhookRequest(f, "checkout.session.async_payment_succeeded"))).status, 200);
@@ -285,6 +320,15 @@ test("dashboard catalogue exposes only explicitly published valid default prices
     assert.equal((await invalid.shop.checkout(checkoutRequest())).status, 409);
     assert.equal(invalid.calls.creates.length, 0);
   }
+});
+test("dashboard catalogue ignores active historical prices and only accepts the current default price", async () => {
+  const f=dashboardFixture();
+  f.prices.price_Old={...f.prices.price_M,id:"price_Old",unit_amount:100};
+  const data=await (await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`))).json();
+  assert.deepEqual(data.items.filter(item=>item.productId==="testStyle").map(item=>item.id).sort(),["price_L","price_M"]);
+  assert.equal(data.items.some(item=>item.id==="price_Old"),false);
+  assert.equal((await f.shop.checkout(checkoutRequest([{priceId:"price_Old",quantity:1}]))).status,409);
+  assert.equal(f.calls.creates.length,0);
 });
 test("a new garment appears and can be checked out without updating the deployment or price allowlist", async () => {
   const f = dashboardFixture();

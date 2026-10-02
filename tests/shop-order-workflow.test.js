@@ -40,7 +40,7 @@ test("seller acceptance is server-authorized and starts the two-day shipping clo
     const u = new URL(url);
     if (u.pathname === "/auth/v1/user") return response({id:USER});
     if (u.pathname === "/rest/v1/rpc/loyalty_session_valid") return response(true);
-    if (u.pathname === "/rest/v1/community_staff") return response([{user_id:USER}]);
+    if (u.pathname === "/rest/v1/shop_staff") return response([{user_id:USER,role:"seller"}]);
     if (u.pathname === "/rest/v1/shop_orders" && options.method === "PATCH") {
       assert.equal(u.searchParams.get("fulfillment_status"), "eq.awaiting_seller");
       assert.equal(u.searchParams.get("payment_status"), "eq.paid");
@@ -67,12 +67,13 @@ test("seller acceptance is server-authorized and starts the two-day shipping clo
   assert.ok(due - accepted >= 2*86400000 - 1000 && due - accepted <= 2*86400000 + 1000);
 });
 
-test("non-staff users cannot view or change seller orders", async () => {
+test("community moderators are not implicitly authorized to view or change seller orders", async () => {
   const fetcher = async (url) => {
     const u = new URL(url);
     if (u.pathname === "/auth/v1/user") return response({id:USER});
     if (u.pathname === "/rest/v1/rpc/loyalty_session_valid") return response(true);
-    if (u.pathname === "/rest/v1/community_staff") return response([]);
+    if (u.pathname === "/rest/v1/shop_staff") return response([]);
+    if (u.pathname === "/rest/v1/community_staff") throw new Error("Community moderation must not grant seller access");
     throw new Error("Seller data must not be read for non-staff users");
   };
   const api = createShopOrders({env, fetcher});
@@ -90,6 +91,7 @@ test("customer order tracking exposes status and deadlines but not private deliv
       assert.equal(u.searchParams.get("or"), `(loyalty_user_id.eq.${USER},stripe_session_id.in.(${SESSION}))`);
       return response([{
       stripe_session_id:SESSION, fulfillment_status:"processing", amount_total:8000, currency:"eur",
+      amount_refunded:2000, refund_status:"partial", refunded_at:"2026-09-18T10:00:00Z",
       items:[{description:"Pull 3B International", color:"Noir", logo_country:"France", quantity:1}],
       created_at:"2026-09-16T10:00:00Z", seller_due_at:"2026-09-21T10:00:00Z",
       seller_accepted_at:"2026-09-17T10:00:00Z", ship_due_at:"2026-09-19T10:00:00Z", shipped_at:null,
@@ -104,6 +106,8 @@ test("customer order tracking exposes status and deadlines but not private deliv
   const data = await res.json();
   assert.equal(data.orders[0].fulfillmentStatus, "processing");
   assert.equal(data.orders[0].amount, 8000);
+  assert.equal(data.orders[0].amountRefunded, 2000);
+  assert.equal(data.orders[0].refundStatus, "partial");
   assert.equal(data.orders[0].items[0].logo_country, "France");
   assert.equal("customerEmail" in data.orders[0], false);
   assert.equal("shipping" in data.orders[0], false);
@@ -168,7 +172,7 @@ test("simultaneous seller acceptance commits exactly one transition", async () =
     const u = new URL(url);
     if (u.pathname === "/auth/v1/user") return response({id:USER});
     if (u.pathname === "/rest/v1/rpc/loyalty_session_valid") return response(true);
-    if (u.pathname === "/rest/v1/community_staff") return response([{user_id:USER}]);
+    if (u.pathname === "/rest/v1/shop_staff") return response([{user_id:USER,role:"seller"}]);
     assert.equal(u.pathname, "/rest/v1/shop_orders");
     assert.equal(u.searchParams.get("payment_status"), "eq.paid");
     if (options.method === "PATCH") {
@@ -198,7 +202,7 @@ test("a stale seller action cannot overwrite a cancelled or shipped order", asyn
       const u = new URL(url);
       if (u.pathname === "/auth/v1/user") return response({id:USER});
       if (u.pathname === "/rest/v1/rpc/loyalty_session_valid") return response(true);
-      if (u.pathname === "/rest/v1/community_staff") return response([{user_id:USER}]);
+      if (u.pathname === "/rest/v1/shop_staff") return response([{user_id:USER,role:"seller"}]);
       if (options.method === "PATCH") {
         assert.equal(u.searchParams.get("fulfillment_status"), action === "accept" ? "eq.new" : "eq.processing");
         return response([]);
@@ -210,6 +214,35 @@ test("a stale seller action cannot overwrite a cancelled or shipped order", asyn
     }));
     assert.equal(res.status, 409);
   }
+});
+
+test("refunded orders cannot be accepted or marked as shipped", async () => {
+  let writes=0;
+  const fetcher=async (url,options={})=>{
+    const u=new URL(url);
+    if(u.pathname==="/auth/v1/user")return response({id:USER});
+    if(u.pathname==="/rest/v1/rpc/loyalty_session_valid")return response(true);
+    if(u.pathname==="/rest/v1/shop_staff")return response([{user_id:USER,role:"seller"}]);
+    if(options.method==="PATCH"){writes++;return response([]);}
+    return response([{stripe_session_id:SESSION,fulfillment_status:"refunded",refund_status:"partial",amount_refunded:2000,amount_total:8000,created_at:"2026-09-16T10:00:00Z"}]);
+  };
+  for(const action of ["accept","ship"]){
+    const res=await createShopOrders({env,fetcher}).admin(authRequest(`${ORIGIN}/api/shop-admin-orders`,{
+      method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({sessionId:SESSION,action}),
+    }));
+    assert.equal(res.status,409);
+  }
+  assert.equal(writes,0);
+});
+
+test("shop hardening migration applies refunds atomically and keeps seller authorization private", () => {
+  const migration=readFileSync(new URL("../supabase/migrations/20261002190000_shop_checkout_hardening_v1.sql",import.meta.url),"utf8");
+  assert.match(migration,/create table if not exists public\.shop_staff/);
+  assert.match(migration,/revoke all on table public\.shop_staff from public, anon, authenticated/);
+  assert.match(migration,/create or replace function public\.shop_apply_refund/);
+  assert.match(migration,/for update/);
+  assert.match(migration,/fulfillment_status = 'refunded'/);
+  assert.match(migration,/p_amount_refunded <= v_order\.amount_refunded/);
 });
 
 test("seller UI surfaces action errors and reloads the server state after a conflict", () => {

@@ -21,4 +21,4 @@
 5. Le vendeur clique « Marquer comme expédiée ».
 6. Statut `shipped` visible par le client.
 
-L’accès vendeur est vérifié côté serveur via `community_staff`. Le suivi client ne renvoie ni l’e-mail ni l’adresse privée de livraison.
+L’accès vendeur est vérifié côté serveur via la table privée dédiée `shop_staff`. Le rôle de modération `community_staff` n’accorde aucun accès boutique. Le suivi client ne renvoie ni l’e-mail ni l’adresse privée de livraison.

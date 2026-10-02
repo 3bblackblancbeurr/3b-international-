@@ -28,8 +28,9 @@ const CIRCUITS = [
 ];
 
 const formatNumber = value => new Intl.NumberFormat("fr-FR").format(Number(value) || 0);
+const DEFAULT_OPTIONS = Object.freeze({ animations: true, reducedMotion: false, matrix: true });
 
-export default function PassportVisual({ options, identity, goTo, syncing = false }) {
+export default function PassportVisual({ options = DEFAULT_OPTIONS, identity, syncing = false }) {
   const { present } = useLuxury();
   const surface = useRef(null);
   const previousProgress = useRef(null);
@@ -71,6 +72,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
   }, [identity?.userId, identity?.xp, tier.id, tier.name, present]);
   const active = Boolean(identity?.userId && identity?.passportState === "active");
   const identityVerified = hasVerifiedIdentity(identity);
+  const founder = active && identity?.public_verified === true && identity?.public_badge_key === "director_founder";
   const status = syncing
     ? "SYNCHRONISATION"
     : !active
@@ -79,7 +81,7 @@ export default function PassportVisual({ options, identity, goTo, syncing = fals
         ? "IDENTITÉ VÉRIFIÉE"
         : "PASSEPORT ACTIF · IDENTITÉ À VÉRIFIER";
 
-  return <div ref={visual} className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active}>
+  return <div ref={visual} className="passport-visual" data-animated={animated} data-matrix={options.matrix} data-active={active} data-founder={founder}>
     <div className="passport-horizontal-view">
     <div id={`${id}-card-viewport`} className="passport-card-viewport">
     <div ref={surface} className="passport-card-stage passport-card-desktop luxury-passport-surface">

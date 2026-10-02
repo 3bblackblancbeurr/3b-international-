@@ -1,5 +1,11 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 1,
+  "migrations": [
+    {
+      "version": "20261002190000",
+      "name": "shop_checkout_hardening_v1",
+      "sha256": "7a87be0a83538592921053888343b147f1c3d90846d05f997dc433d21172391c"
+    }
+  ]
 }

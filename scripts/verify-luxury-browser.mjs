@@ -14,7 +14,7 @@ await mkdir(destination, { recursive: true });
 const results = [], errors = [];
 const check = (label, value) => { assert.ok(value, label); results.push(label); console.log('PASS', label); };
 const uid = '11111111-1111-4111-8111-111111111111';
-const profile = { user_id: uid, name: 'Membre Démonstration', handle: 'demo_3b', country: 'France', xp: 1800, points: 100, passport_state: 'active', passport_public_id: '22222222-2222-4222-8222-222222222222', passport_version: 1, theme: 'heir', created_at: '2026-01-01T00:00:00Z' };
+const profile = { user_id: uid, name: 'Membre Démonstration', handle: 'demo_3b', country: 'France', xp: 1800, points: 100, passport_state: 'active', passport_public_id: '22222222-2222-4222-8222-222222222222', passport_version: 1, theme: 'heir', public_verified: true, public_badge_key: 'director_founder', public_title: 'DIRECTEUR · FONDATEUR 3B', created_at: '2026-01-01T00:00:00Z' };
 async function fixture(context, authenticated = false) {
   await context.route('**/*', async route => {
     const url = new URL(route.request().url());
@@ -72,7 +72,8 @@ try {
   await fixture(context, true);
   const page = await context.newPage(); page.setDefaultTimeout(30000); page.on('pageerror', error => errors.push(error.message));
   await page.goto(origin + '/#accueil');
-  await page.locator('.luxury-hero-art img').waitFor();
+  await page.locator('.luxury-universe-poster').waitFor();
+  check('Home renders the Nexus panorama once', await page.locator('img[src="/art/luxury-v2/hub-cite-origine.webp"]').count() === 1);
   await page.getByRole('link', { name: 'Entrer dans le Monde du 3B' }).first().waitFor();
   check('Desktop has no horizontal overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await screenshot(page, 'home-desktop.png');
@@ -90,6 +91,17 @@ try {
   await page.getByRole('navigation', { name: 'Navigation mobile' }).getByRole('link', { name: 'Passeport', exact: true }).click();
   await page.getByRole('heading', { name: 'Membre Démonstration' }).waitFor();
   check('Passport contains no button or link', await page.locator('.passport-visual button,.passport-visual a').count() === 0);
+  check('Founder layout is scoped to the verified founder', await page.locator('.passport-visual').getAttribute('data-founder') === 'true');
+  for (const viewport of [{ width: 320, height: 700 }, { width: 360, height: 800 }, { width: 390, height: 844 }, { width: 720, height: 900 }]) {
+    await page.setViewportSize(viewport);
+    check(`Founder title and country do not overlap at ${viewport.width}px`, await page.locator('.passport-visual').evaluate(root => {
+      const badge = root.querySelector('.passport-official-badge')?.getBoundingClientRect();
+      const country = root.querySelector('.passport-country-block')?.getBoundingClientRect();
+      const title = root.querySelector('.passport-official-badge strong');
+      return Boolean(badge && country && title && badge.bottom + 1 <= country.top && title.scrollWidth <= title.clientWidth + 1);
+    }));
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   check('Passport retains all 58 Matrix columns', await page.locator('.passport-matrix-stream').count() === 58);
   check('Passport Matrix still animates', await page.locator('.passport-visual').getAttribute('data-animated') === 'true');
   check('Phone has no horizontal overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -124,8 +136,11 @@ try {
   await fixture(reduced);
   const reducedPage = await reduced.newPage(); reducedPage.on('pageerror', error => errors.push(error.message));
   await reducedPage.goto(origin);
+  await reducedPage.getByRole('button', { name: 'COMMENCER', exact: true }).waitFor();
+  await reducedPage.waitForTimeout(2400);
+  check('Reduced motion keeps the historical entry until consent', await reducedPage.getByRole('button', { name: 'COMMENCER', exact: true }).isVisible());
+  await reducedPage.getByRole('button', { name: 'COMMENCER', exact: true }).click();
   await reducedPage.locator('.home-dashboard').waitFor();
-  check('Reduced motion enters directly without a blocking intro', await reducedPage.locator('.luxury-boot').count() === 0);
   check('Reduced motion does not allocate a preview WebGL canvas', await reducedPage.locator('.luxury-universe-canvas canvas').count() === 0);
   check('Small phone remains within viewport', await reducedPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await reducedPage.goto(origin + '/#boutique');
@@ -136,12 +151,14 @@ try {
   await fixture(fresh);
   const freshPage = await fresh.newPage();
   await freshPage.goto(origin);
-  await freshPage.getByRole('button', { name: 'Passer l’introduction' }).click();
+  await freshPage.getByRole('button', { name: 'COMMENCER', exact: true }).waitFor();
+  await screenshot(freshPage, 'entry-mobile.png');
+  await freshPage.getByRole('button', { name: 'COMMENCER', exact: true }).click();
   await freshPage.locator('.home-dashboard').waitFor();
-  check('Skipping the intro records a cosmetic seen preference', await freshPage.evaluate(() => localStorage.getItem('3b_luxury_intro_v2') === 'seen'));
+  check('Starting records a cosmetic seen preference', await freshPage.evaluate(() => localStorage.getItem('3b_luxury_intro_v2') === 'seen'));
   await freshPage.goto(origin);
-  await freshPage.locator('.home-dashboard').waitFor({ timeout: 3000 });
-  check('Return opening reaches home without replaying the full intro', true);
+  await freshPage.getByRole('button', { name: 'COMMENCER', exact: true }).waitFor({ timeout: 3000 });
+  check('Return opening still waits for COMMENCER', await freshPage.locator('.home-dashboard').count() === 0);
   await fresh.close();
   check('No uncaught application errors', errors.length === 0);
   await writeFile(path.join(destination, 'results.json'), JSON.stringify({ results, errors }, null, 2));

@@ -15,31 +15,54 @@ const env = {
   TWILIO_FROM:"+33123456789",
 };
 
-function fixture() {
-  const claims = new Set();
+function fixture({ emailFailures=0, smsFailures=0 } = {}) {
+  const notifications = new Map();
   const calls = { email:[], sms:[], patches:[] };
+  const keyFor = (sessionId,event,channel) => `${sessionId}|${event}|${channel}`;
   const fetcher = async (input, options = {}) => {
     const url = new URL(String(input));
     if (url.hostname === "db.example.test") {
-      if (options.method === "POST") {
-        const row = JSON.parse(options.body);
-        const key = `${row.stripe_session_id}|${row.event}|${row.channel}`;
-        if (claims.has(key)) return Response.json([], { status:201 });
-        claims.add(key); return Response.json([row], { status:201 });
+      if (url.pathname === "/rest/v1/rpc/shop_claim_notification" && options.method === "POST") {
+        const body = JSON.parse(options.body);
+        const key = keyFor(body.p_session_id,body.p_event,body.p_channel);
+        const current = notifications.get(key);
+        if (!current) {
+          notifications.set(key,{state:"pending",attempts:1,updatedAt:Date.now()});
+          return Response.json(1);
+        }
+        const stale = current.state === "pending" && current.updatedAt < Date.now()-5*60*1000;
+        if ((current.state === "failed" || stale) && current.attempts < body.p_max_attempts) {
+          Object.assign(current,{state:"pending",attempts:current.attempts+1,updatedAt:Date.now(),providerId:null,lastError:null});
+          return Response.json(current.attempts);
+        }
+        return Response.json(0);
       }
-      if (options.method === "PATCH") { calls.patches.push(JSON.parse(options.body)); return new Response(null, { status:204 }); }
+      if (url.pathname === "/rest/v1/shop_notification_log" && options.method === "PATCH") {
+        const sessionId=(url.searchParams.get("stripe_session_id")||"").slice(3);
+        const event=(url.searchParams.get("event")||"").slice(3);
+        const channel=(url.searchParams.get("channel")||"").slice(3);
+        const attempt=Number((url.searchParams.get("attempts")||"").slice(3));
+        const current=notifications.get(keyFor(sessionId,event,channel));
+        const patch=JSON.parse(options.body);calls.patches.push(patch);
+        if(current?.state==="pending"&&current.attempts===attempt)Object.assign(current,{state:patch.state,providerId:patch.provider_id,lastError:patch.last_error,updatedAt:Date.now()});
+        return new Response(null,{status:204});
+      }
     }
     if (url.hostname === "api.resend.com") {
       calls.email.push({ body:JSON.parse(options.body), headers:options.headers });
+      if (emailFailures-- > 0) return Response.json({error:"temporary"},{status:503});
       return Response.json({ id:`email_${calls.email.length}` }, { status:200 });
     }
     if (url.hostname === "api.twilio.com") {
       calls.sms.push({ body:String(options.body), headers:options.headers });
+      if (smsFailures-- > 0) return Response.json({error:"temporary"},{status:503});
       return Response.json({ sid:`SM${String(calls.sms.length).padStart(32,"0")}` }, { status:201 });
     }
     throw new Error(`unexpected ${url.href}`);
   };
-  return { fetcher, calls };
+  return { fetcher, calls, notifications,
+    setNotification:(sessionId,event,channel,value)=>notifications.set(keyFor(sessionId,event,channel),value),
+    notification:(sessionId,event,channel)=>notifications.get(keyFor(sessionId,event,channel)) };
 }
 
 const order = {
@@ -80,4 +103,29 @@ test("notification providers are optional and never block the order workflow", a
   await notifySellerPurchase({ env:{ APP_URL:env.APP_URL, SUPABASE_URL:env.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_SERVICE_ROLE_KEY }, fetcher:f.fetcher, order });
   assert.equal(f.calls.email.length, 0);
   assert.equal(f.calls.sms.length, 0);
+});
+
+test("a failed provider delivery can be retried and then remains deduplicated", async () => {
+  const f=fixture({emailFailures:1});
+  const retryOrder={...order,sessionId:"cs_test_retry_notification"};
+  await notifyClientStatus({env,fetcher:f.fetcher,order:retryOrder,event:"seller_accepted"});
+  assert.equal(f.notification(retryOrder.sessionId,"seller_accepted","email").state,"failed");
+  await notifyClientStatus({env,fetcher:f.fetcher,order:retryOrder,event:"seller_accepted"});
+  await notifyClientStatus({env,fetcher:f.fetcher,order:retryOrder,event:"seller_accepted"});
+  assert.equal(f.calls.email.length,2);
+  assert.equal(f.notification(retryOrder.sessionId,"seller_accepted","email").attempts,2);
+  assert.equal(f.notification(retryOrder.sessionId,"seller_accepted","email").state,"sent");
+});
+
+test("a stale pending notification is reclaimed atomically by only one worker", async () => {
+  const f=fixture();
+  const retryOrder={...order,sessionId:"cs_test_stale_notification"};
+  f.setNotification(retryOrder.sessionId,"seller_accepted","email",{state:"pending",attempts:1,updatedAt:Date.now()-6*60*1000});
+  await Promise.all([
+    notifyClientStatus({env,fetcher:f.fetcher,order:retryOrder,event:"seller_accepted"}),
+    notifyClientStatus({env,fetcher:f.fetcher,order:retryOrder,event:"seller_accepted"}),
+  ]);
+  assert.equal(f.calls.email.length,1);
+  assert.equal(f.notification(retryOrder.sessionId,"seller_accepted","email").attempts,2);
+  assert.equal(f.notification(retryOrder.sessionId,"seller_accepted","email").state,"sent");
 });

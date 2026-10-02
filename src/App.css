@@ -151,6 +151,7 @@ img {
 .intro3b-card {
   position: relative;
   z-index: 2;
+  overflow: hidden;
   width: min(980px, 100%);
   padding: clamp(28px, 6vw, 72px);
   border: 1px solid rgba(245, 196, 74, 0.62);
@@ -161,6 +162,24 @@ img {
     0 0 48px rgba(0, 234, 255, 0.22),
     inset 0 0 48px rgba(245, 196, 74, 0.08);
   backdrop-filter: blur(14px);
+}
+
+.intro3b-start-card {
+  animation: intro3bCardArrival 720ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.intro3b-start-card > :not(.luxury-boot-beam, .luxury-boot-particles) {
+  position: relative;
+  z-index: 2;
+}
+
+.intro3b-start-card :is(.luxury-boot-beam, .luxury-boot-particles) {
+  pointer-events: none;
+}
+
+@keyframes intro3bCardArrival {
+  from { opacity: 0; transform: translateY(12px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .intro3b-card::before {

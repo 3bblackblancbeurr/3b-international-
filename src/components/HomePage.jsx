@@ -14,9 +14,6 @@ const GUIDE_ID = 'guide';
 export default function HomePage({goTo,menuItems,member}){
  const [cityOpen,setCityOpen]=useState(false);
  const { present, policy } = useLuxury();
- const registered=member?.isRegistered===true;
- const nextPage=registered?'world3b':'passport';
- const nextLabel=registered?'Entrer dans le Monde du 3B':'Activer mon Passeport 3B';
  const primary=PRIMARY_IDS.map(id=>menuItems.find(item=>item.id===id)).filter(Boolean);
  const secondaryGroups=NAV_GROUPS.map(group=>({
   ...group,
@@ -26,26 +23,7 @@ export default function HomePage({goTo,menuItems,member}){
    .filter(Boolean),
  })).filter(group=>group.items.length>0);
 
- return <section className="home-dashboard">
-  <div className="welcome-hero welcome-hero-single">
-   <div className="welcome-copy">
-    <p className="luxury-edition">3B INTERNATIONAL <span>UNIVERS DIGITAL</span></p>
-    <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
-    <h1>Un héritage.<br/><em>Ton univers.</em></h1>
-    <p className="welcome-description">Des racines. Des rencontres. Des mondes à construire. Entre dans une histoire qui porte la tienne.</p>
-    <div className="home-hero-actions">
-     <Button as={RouteLink} page={nextPage} goTo={goTo} variant="champagne" className="dashboard-cta">{nextLabel}<span aria-hidden="true">→</span></Button>
-    </div>
-    <div className="home-manifesto"><span>01 / PASSEPORT</span><span>02 / MA VILLE</span><span>03 / MONDE DU 3B</span><span>04 / EXPLORER 3B</span></div>
-   </div>
-   <div className="luxury-hero-art">
-    <picture><img src="/art/luxury-v2/hub-cite-origine.webp" width="1672" height="941" alt="Illustration de la Cité Origine : Cercle Brisé, terrasses habitées et cascades" fetchPriority="high"/></picture>
-    <div className="luxury-hero-art-caption"><span>LE CERCLE BRISÉ</span><strong>Nos différences.<br/>Notre force.</strong></div>
-   </div>
-  </div>
-
-  <div className="luxury-manifesto-line"><span>01 — IDENTITÉ</span><p>Ce n’est pas une marque. <em>C’est un héritage.</em></p><span>08 — HÉRITAGES</span></div>
-
+ return <section className="home-dashboard home-dashboard-simplified">
   <WorldPortalCard goTo={goTo}/>
 
   <section className="universe-directory home-primary-directory" aria-labelledby="journey-title">
