@@ -70,7 +70,8 @@ export function districtDestinations(region){const c=REGIONS[region];if(!c)retur
  {key:'village',x:95,z:95,name:c.rural+' · village'},
  ].map(p=>({...p,id:region+':vista:'+p.key,type:'vista',range:5,color:'#b9cea7'}));}
 export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[];if(region==='hub')return[{id:'hub:atelier',type:'atelier',name:'Atelier · Le Cercle des artisans',x:-18,z:17,color:'#efbd72',range:5}];const home=frontierState(save,region),jobTurnIn=districtJobTurnInItem(region,home);return[
- ...(region==='france'?[tournamentItem(save),{id:'france:cafe',type:'cafe',name:'Café des Liens',x:-6.84,z:-2.53,color:'#dfc18c',range:4}]:[]),
+ ...(region==='france'?[tournamentItem(save)]:[]),
+ ...(region==='france'?[{id:'france:cafe',type:'cafe',name:'Café des Liens',x:-6.84,z:-2.53,color:'#dfc18c',range:4}]:[]),
  {id:region+':landmark',type:'landmark',name:HERITAGE[region].name,...LANDMARK_APPROACH,color:'#d6bb7e',range:6},
  {id:region+':cooperation',type:'cooperation',name:'Notre refuge commun',x:-65,z:42,color:'#9be0cd',range:7},
  {id:region+':camp',type:'camp',name:'Mon refuge',x:27,z:25,color:'#edc782',range:6},
