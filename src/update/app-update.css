@@ -5,16 +5,18 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: max(18px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  padding:
+    max(var(--3b-space-4), env(safe-area-inset-top))
+    max(var(--3b-space-4), env(safe-area-inset-right))
+    max(var(--3b-space-4), env(safe-area-inset-bottom))
+    max(var(--3b-space-4), env(safe-area-inset-left));
   pointer-events: none;
 }
 
 .threeb-update-shell.is-mandatory {
   align-items: center;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(43, 121, 255, 0.16), transparent 44%),
-    rgba(1, 4, 9, 0.88);
-  backdrop-filter: blur(16px);
+  background: var(--3b-obsidian);
+  backdrop-filter: blur(var(--3b-space-4));
   pointer-events: auto;
 }
 
@@ -22,15 +24,12 @@
   position: relative;
   width: min(560px, 100%);
   overflow: hidden;
-  border: 1px solid rgba(187, 210, 255, 0.22);
-  border-radius: 24px;
-  padding: 22px;
-  background:
-    linear-gradient(145deg, rgba(16, 22, 34, 0.98), rgba(3, 6, 11, 0.98));
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.48),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  color: #f8fbff;
+  border: 1px solid var(--3b-border-matrix);
+  border-radius: var(--3b-radius-hero);
+  padding: var(--3b-space-6);
+  background: linear-gradient(145deg, var(--3b-carbon), var(--3b-obsidian));
+  box-shadow: var(--3b-shadow-deep);
+  color: var(--3b-text);
   pointer-events: auto;
 }
 
@@ -40,15 +39,16 @@
   height: 180px;
   top: -100px;
   right: -60px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(35, 135, 255, 0.28), transparent 68%);
-  filter: blur(2px);
+  border-radius: var(--3b-radius-round);
+  background: var(--3b-matrix);
+  opacity: 0.12;
+  filter: blur(var(--3b-space-2));
 }
 
 .threeb-update-kicker {
   position: relative;
-  margin: 0 0 8px;
-  color: #d8b878;
+  margin: 0 0 var(--3b-space-2);
+  color: var(--3b-champagne);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.15em;
@@ -57,6 +57,7 @@
 .threeb-update-panel h2 {
   position: relative;
   margin: 0;
+  color: var(--3b-text);
   font-size: clamp(1.35rem, 5vw, 1.8rem);
   line-height: 1.1;
 }
@@ -69,22 +70,22 @@
 }
 
 .threeb-update-copy {
-  margin: 12px 0 0;
-  color: #dce7f6;
+  margin: var(--3b-space-3) 0 0;
+  color: var(--3b-text);
   line-height: 1.55;
 }
 
 .threeb-update-version {
-  margin: 12px 0 0;
-  color: #8fa9c9;
+  margin: var(--3b-space-3) 0 0;
+  color: var(--3b-muted);
   font-size: 0.84rem;
 }
 
 .threeb-update-required {
-  margin: 14px 0 0;
-  border-left: 2px solid rgba(216, 184, 120, 0.75);
-  padding-left: 12px;
-  color: #f2eadb;
+  margin: var(--3b-space-4) 0 0;
+  border-left: 2px solid var(--3b-champagne);
+  padding-left: var(--3b-space-3);
+  color: var(--3b-text);
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -92,65 +93,36 @@
 .threeb-update-actions {
   position: relative;
   display: flex;
-  gap: 10px;
-  margin-top: 18px;
+  gap: var(--3b-space-3);
+  margin-top: var(--3b-space-6);
 }
 
-.threeb-update-primary,
-.threeb-update-secondary {
-  min-height: 48px;
-  border-radius: 14px;
-  border: 0;
-  padding: 0 18px;
-  font: inherit;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-
-.threeb-update-primary {
+.threeb-update-primary.gm-button {
   flex: 1;
-  color: #06101e;
-  background: linear-gradient(135deg, #f0d59b, #8fc8ff);
-  box-shadow: 0 10px 30px rgba(67, 145, 255, 0.2);
 }
 
-.threeb-update-secondary {
-  color: #d7e5f7;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.11);
-}
-
-.threeb-update-primary:disabled,
-.threeb-update-secondary:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.threeb-update-primary:focus-visible,
-.threeb-update-secondary:focus-visible {
-  outline: 2px solid #8fc8ff;
-  outline-offset: 3px;
+.threeb-update-secondary.gm-button {
+  min-width: 128px;
 }
 
 .threeb-update-safe {
-  margin: 14px 0 0;
-  color: #7890ad;
+  margin: var(--3b-space-4) 0 0;
+  color: var(--3b-muted-soft);
   font-size: 0.76rem;
   line-height: 1.45;
 }
 
 @media (max-width: 520px) {
   .threeb-update-panel {
-    border-radius: 20px;
-    padding: 19px;
+    border-radius: var(--3b-radius-card);
+    padding: var(--3b-space-4);
   }
 
   .threeb-update-actions {
     flex-direction: column;
   }
 
-  .threeb-update-secondary {
+  .threeb-update-secondary.gm-button {
     width: 100%;
   }
 }
