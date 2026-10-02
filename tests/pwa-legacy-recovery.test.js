@@ -5,9 +5,10 @@ import { readFile } from "node:fs/promises";
 const root = new URL("../", import.meta.url);
 
 test("legacy PWA recovery preserves user storage and refreshes app assets", async () => {
-  const [manager, recovery, vite, vercelRaw] = await Promise.all([
+  const [manager, recoveryPage, recoveryScript, vite, vercelRaw] = await Promise.all([
     readFile(new URL("src/update/AppUpdateManager.jsx", root), "utf8"),
     readFile(new URL("public/mettre-a-jour-3b.html", root), "utf8"),
+    readFile(new URL("public/recovery-3b.js", root), "utf8"),
     readFile(new URL("vite.config.js", root), "utf8"),
     readFile(new URL("vercel.json", root), "utf8"),
   ]);
@@ -18,14 +19,19 @@ test("legacy PWA recovery preserves user storage and refreshes app assets", asyn
   assert.doesNotMatch(manager, /localStorage\.clear|sessionStorage\.clear|indexedDB\.deleteDatabase/);
   assert.match(manager, /const currentBuildLabel/);
 
-  assert.match(recovery, /getRegistrations/);
-  assert.match(recovery, /registration\.unregister/);
-  assert.match(recovery, /caches\.delete/);
-  assert.match(recovery, /3b-recovered/);
-  assert.doesNotMatch(recovery, /localStorage\.clear|sessionStorage\.clear|indexedDB\.deleteDatabase/);
+  assert.match(recoveryPage, /<script src="\/recovery-3b\.js" defer><\/script>/);
+  assert.doesNotMatch(recoveryPage, /<script>(?:.|\n)*getRegistrations/);
+
+  assert.match(recoveryScript, /getRegistrations/);
+  assert.match(recoveryScript, /registration\.unregister/);
+  assert.match(recoveryScript, /caches\.delete/);
+  assert.match(recoveryScript, /3b-recovered/);
+  assert.doesNotMatch(recoveryScript, /localStorage\.clear|sessionStorage\.clear|indexedDB\.deleteDatabase/);
 
   assert.match(vite, /fileName: "service-worker\.js"/);
   assert.match(vite, /fileName: "pwa-sw\.js"/);
+  assert.match(vite, /legacyRecoveryWorker/);
+  assert.match(vite, /self\.registration\.unregister/);
 
   const vercel = JSON.parse(vercelRaw);
   for (const source of ["/service-worker.js", "/pwa-sw.js", "/mettre-a-jour-3b.html", "/recovery-3b.js"]) {
