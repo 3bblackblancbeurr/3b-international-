@@ -173,7 +173,7 @@ export default function AppUpdateManager() {
   return (
     <div
       className={`threeb-update-shell${mandatory ? " is-mandatory" : ""}`}
-      role={mandatory ? "dialog" : "status"}
+      role="dialog"
       aria-modal={mandatory ? "true" : undefined}
       aria-live={mandatory ? "assertive" : "polite"}
       aria-labelledby="threeb-update-title"
@@ -190,7 +190,7 @@ export default function AppUpdateManager() {
           Améliorations graphiques, Monde 3B, Passeport et performances.
         </p>
         <p className="threeb-update-version">
-          Version installée&nbsp;: {CURRENT_VERSION} · Disponible&nbsp;: {targetLabel}
+          Version installée&nbsp;: {CURRENT_VERSION} · {currentBuildLabel} · Disponible&nbsp;: {targetLabel}
         </p>
         {mandatory && (
           <p className="threeb-update-required">
