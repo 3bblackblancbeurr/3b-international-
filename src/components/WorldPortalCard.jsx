@@ -3,6 +3,7 @@ import {ArrowUpRight, CircleDot, Globe2, ShieldCheck} from 'lucide-react';
 import {RouteLink} from './AppNavigation.jsx';
 import {CircleArtwork} from './NexusArtwork.jsx';
 import {launchUnrealWorld,UNREAL_LAUNCH_ENABLED} from '../world/unrealLaunch.js';
+import UniversePreview from '../design-system/UniversePreview.jsx';
 import {Button} from '../design-system/index.jsx';
 
 const GATES=[
@@ -45,7 +46,8 @@ export default function WorldPortalCard({goTo}){
    {message&&<p className="world-portal-message" role="status">{message}</p>}
   </div>
 
-  <div className="world-portal-stage" aria-hidden="true">
+  <div className="world-portal-preview"><UniversePreview/></div>
+  <div className="world-portal-stage luxury-legacy-portal" aria-hidden="true">
    <div className="nexus-atmosphere"><i/><i/><i/></div>
    <div className="nexus-authentic-circle nexus-ring-scene">
     <CircleArtwork id="home-nexus-circle" large doors={GATES.map(gate=>({code:gate.code,sealed:false,restored:false}))}/>

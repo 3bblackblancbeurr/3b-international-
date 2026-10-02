@@ -1,3 +1,5 @@
+import { Button } from "../design-system/index.jsx";
+import { useSurfaceMotion } from "../design-system/LuxuryExperience.jsx";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ShoppingBag, ShieldCheck, ArrowLeft, Trash2, CheckCircle2, Truck, BadgeCheck, Maximize2, X } from "lucide-react";
@@ -29,6 +31,9 @@ async function requestJson(url, options = {}) {
 
 function ProductGallery() {
   const [active, setActive] = useState(0);
+  const [detail, setDetail] = useState(false);
+  const gallery = useRef(null);
+  useSurfaceMotion(gallery);
   const [zoomed, setZoomed] = useState(false);
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
@@ -43,11 +48,13 @@ function ProductGallery() {
   }, [zoomed]);
 
   return (
-    <div className="shop-gallery">
-      <button ref={openerRef} type="button" className="shop-gallery-main" onClick={() => setZoomed(true)} aria-label="Voir la photo du produit en grand">
+    <div ref={gallery} className="shop-gallery luxury-showroom" data-light={active === 2 ? "pearl" : "obsidian"} data-detail={detail}>
+      <div className="luxury-showroom-label"><span>LE VESTIAIRE 3B</span><small>MATIÈRE · RELIEF · HÉRITAGE</small></div>
+      <Button ref={openerRef} variant="ghost" className="shop-gallery-main" onClick={() => setZoomed(true)} aria-label="Voir la photo du produit en grand">
         <img src={SHOP_MEDIA[active].src} alt={SHOP_MEDIA[active].alt} loading={active ? "lazy" : "eager"} />
         <span className="shop-gallery-zoom"><Maximize2 size={16} /> Voir en grand</span>
-      </button>
+      </Button>
+      <Button variant="ghost" className="luxury-detail-toggle" aria-pressed={detail} onClick={() => setDetail(value => !value)}>{detail ? "Vue complète" : "Explorer les détails"}</Button>
       <div className="shop-gallery-thumbs" aria-label="Photos du Pull 3B International">
         {SHOP_MEDIA.map((media, index) => (
           <button key={media.src} type="button" className={active === index ? "is-active" : ""}

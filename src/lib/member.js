@@ -1,8 +1,9 @@
 export const STORAGE_MEMBER_KEY = "3b_member_master_clean_v2";
 export const STORAGE_OPTIONS_KEY = "3b_options_master_clean_v1";
 export const MEMBER_COUNTRIES = ["France", "Italie", "Estonie", "Turquie", "Algérie", "Tunisie", "Maroc", "Espagne"];
-export const DEFAULT_OPTIONS = { matrix: true, animations: true, premiumGlow: true, reducedMotion: false };
+export const DEFAULT_OPTIONS = { matrix: true, animations: true, premiumGlow: true, reducedMotion: false, interfaceSound: false, haptics: true, cinematicIntros: true, sensorReflections: false };
 export const OPTION_LABELS = {
+  sensorReflections: "Reflets au mouvement", interfaceSound: "Sons de l’interface", haptics: "Vibrations au toucher", cinematicIntros: "Introduction cinématique",
   matrix: "Effet Matrix bleu", animations: "Animations", premiumGlow: "Reflets lumineux", reducedMotion: "Réduire les mouvements",
 };
 

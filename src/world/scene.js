@@ -626,7 +626,14 @@ function hubNpcAvatar(item){
    items=nextItems.map(item=>{const live=liveNpcs.get(item.id);if(!live)return item;const x=live.x,z=live.z,homeX=live.homeX,homeZ=live.homeZ;Object.assign(live,item,{x,z,homeX,homeZ});return live;});
   }else items=nextItems;
   if(models)for(const item of items){if(!['echo','patrol'].includes(item.type)||previousItems.find(i=>i.id===item.id)?.card===item.card)continue;const old=actors.find(a=>a.itemId===item.id);if(old){old.controller.object.removeFromParent();old.controller.dispose();actors=actors.filter(a=>a!==old);}itemVisuals.set(item.id,[makeActor(item)]);}needsRender=true;},
-  travel(id){if(!models)return;cancelContextTraversal();clearTimeout(travelTimer);paused=true;clearInput();onLoadState?.(true);travelTimer=setTimeout(()=>{if(disposed)return;try{rebuild(countryById[id]?id:'hub');paused=false;needsRender=true;}catch(error){console.error('[3B travel]',error);avatar=null;onLoadState?.(false);onError('Ce pays n’a pas pu être chargé. Recharge le monde pour reprendre.');}},0);},
+  travel(id){if(!models)return;cancelContextTraversal();clearTimeout(travelTimer);paused=true;clearInput();onLoadState?.(true);travelTimer=setTimeout(()=>{if(disposed)return;try{rebuild(countryById[id]?id:'hub');
+    // A short camera arrival uses the existing director; major story shots retain priority.
+    const reducedPresentation=reducedMotion||document.documentElement.dataset.experienceMotion==='reduced';
+    if(!reducedPresentation&&!shot){
+     const arrival=orbitView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY),duration=1100;
+     shot={kind:'portal-arrival',x:position.x,z:position.z,angle:orbit.yaw-.25,duration,until:performance.now()+duration,radius:25,height:15,focusY:2,arc:.25,dolly:.25,endCamera:arrival.position,endTarget:arrival.target,title:countryById[id]?.name||'La Cité des Huit Héritages',detail:'Un autre horizon. Le même héritage.'};
+    }
+    paused=false;needsRender=true;}catch(error){console.error('[3B travel]',error);avatar=null;onLoadState?.(false);onError('Ce pays n’a pas pu être chargé. Recharge le monde pour reprendre.');}},0);},
   interact,
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk)startRoute(item,true);},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},

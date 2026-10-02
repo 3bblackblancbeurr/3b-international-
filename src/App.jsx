@@ -1,3 +1,4 @@
+import { LuxuryBoot, useLuxuryRuntime } from "./design-system/LuxuryExperience.jsx";
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
@@ -18,7 +19,6 @@ import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
 import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
 import AppLoadingState from "./components/AppLoadingState.jsx";
-import InstallApp from "./install/InstallApp.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
 import PassportVisual from "./components/PassportVisual.jsx";
 import PassportAppearanceSettings from "./passport/PassportAppearance.jsx";
@@ -190,6 +190,9 @@ export default function App() {
     normalizeOptions(loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS))
   );
 
+  useLuxuryRuntime(options, page);
+  const introReplay = useRef(page !== "intro");
+
   useEffect(() => {
     let active = true;
     const nativePhone = Boolean(window.Capacitor?.isNativePlatform?.());
@@ -291,6 +294,7 @@ export default function App() {
   }
 
   function goTo(nextPage) {
+    if (nextPage === "intro") introReplay.current = true;
     navigateTo(nextPage);
     setRoute(readLocation());
   }
@@ -311,41 +315,9 @@ export default function App() {
   }
 
   if (!hasStarted) {
-    return (
-      <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
-        <div className="intro3b-background" aria-hidden="true" />
-        <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
-        <CompanionLayer page="intro" secretPhase={secret.phase} memberRegistered={member.isRegistered} />
-
-        <section className="intro3b-card intro3b-portal">
-          <div className="intro3b-copy">
-            <p className="eyebrow">3B International</p>
-            <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
-            <h1><span>De zéro à</span><span>L’international</span></h1>
-            <p className="intro3b-lead">Entrez dans la Cité des Huit Héritages.</p>
-            <p className="intro3b-legacy">Ce n’est pas une marque. C’est un héritage.</p>
-
-            <button
-              type="button"
-              className="primary-button intro3b-enter"
-              onClick={() => { speakWelcome(); goTo("home"); }}
-            >
-              ENTRER DANS L’UNIVERS 3B
-            </button>
-
-            <div className="intro3b-path" aria-label="Parcours 3B">
-              <span>Passeport 3B</span><i aria-hidden="true" />
-              <span>Cité des Huit Héritages</span><i aria-hidden="true" />
-              <span>8 Portes</span><i aria-hidden="true" />
-              <span>Monde du 3B</span>
-            </div>
-          </div>
-          <div className="intro3b-install">
-            <InstallApp installation={installation} />
-          </div>
-        </section>
-      </main>
-    );
+    return <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
+      <LuxuryBoot replay={introReplay.current} onDone={manual => { if (manual && options.interfaceSound) speakWelcome(); goTo("home"); }} />
+    </main>;
   }
 
   const isPreparationRoute = PREPARATION_ROUTE_IDS.has(page) || page === "game";
@@ -357,7 +329,7 @@ export default function App() {
         <div className="app3b-background" aria-hidden="true" />
         <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
         <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
-        <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} />
+        <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
         <main id="main-content" tabIndex={-1}>
           <ComingSoon
             goTo={goTo}
@@ -389,7 +361,7 @@ export default function App() {
 
       <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
-      {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} />}
+      {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />}
       <main id="main-content" tabIndex={-1}>
       <div className="route-announcer" aria-live="polite" aria-atomic="true">{currentPageTitle}</div>
       <Suspense fallback={<AppLoadingState label={`Ouverture · ${currentPageTitle}`} />}>

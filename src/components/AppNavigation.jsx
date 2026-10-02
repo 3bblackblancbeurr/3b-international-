@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, BookOpen, Boxes, CreditCard, Gamepad2, Globe2, Home, Menu, Compass, Search, ShoppingBag, Sparkles, Trophy, UserRound, Users, LockKeyhole, X, Fingerprint } from "lucide-react";
 import { getPageHref } from "../lib/navigation.js";
 import CompactCard from './CompactCard.jsx';
+import { ExperienceControls } from "../design-system/LuxuryExperience.jsx";
+import { Button } from "../design-system/index.jsx";
+import InstallApp from "../install/InstallApp.jsx";
 import SecretClock from "../secret/SecretClock.jsx";
 
 const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
@@ -33,7 +36,7 @@ const QUICK_LINKS = [
   { id: "shop", label: "Boutique" },
 ];
 
-export default function AppNavigation({ page, title, menuItems, goTo, secret }) {
+export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -94,7 +97,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret }) 
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <div className="header-actions"><SecretClock secret={secret} goTo={goTo} compact /><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><button className="menu-trigger" type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></button></div>
+      <div className="header-actions">{options && <ExperienceControls options={options} toggleOption={toggleOption} page={page}/>}<SecretClock secret={secret} goTo={goTo} compact /><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><Button variant="ghost" className="menu-trigger" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></Button></div>
     </header>
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">
@@ -124,6 +127,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret }) 
             ? <CompactCard as="article" key={item.id} className="dialog-route is-soon" eyebrow="En préparation" action="En préparation" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>
             : <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} eyebrow={item.status === "preview" ? "Aperçu" : undefined} action={item.status === "preview" ? "Bientôt" : "Ouvrir"} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}</section>;
         })}
+        {installation && <InstallApp installation={installation}/>}
         {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « manga » ou « boutique ».</p>}
       </div>
       <div className="dialog-footer"><RouteLink page="intro" goTo={navigate}>Revoir l’introduction <ArrowUpRight size={16} aria-hidden="true" /></RouteLink><span>De zéro à l’international.</span></div>

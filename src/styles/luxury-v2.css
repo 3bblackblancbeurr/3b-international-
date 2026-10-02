@@ -1,0 +1,195 @@
+/* One presentation layer. Business rules, brand assets and the Matrix card stay intact. */
+html[data-luxury="v2"] { background:var(--3b-obsidian); }
+html[data-luxury="v2"] body { background:var(--3b-obsidian); }
+html[data-luxury="v2"] .app3b-background { opacity:.28; }
+html[data-luxury="v2"] .app3b>.matrix-layer { opacity:.045; }
+html[data-luxury="v2"] :is(button,a,summary):focus-visible { outline:2px solid var(--3b-matrix);outline-offset:4px; }
+html[data-luxury="v2"] :is(.gm-button,.primary-button,.surface-button,.shop-button,.ps-primary,.ps-secondary,.menu-trigger,.icon-button,.nexus-city-primary) {
+ position:relative;isolation:isolate;overflow:hidden;min-height:44px;
+ transition:transform var(--3b-motion-micro) var(--3b-luxury-ease),border-color var(--3b-motion-micro),box-shadow var(--3b-motion-micro),background var(--3b-motion-card);
+}
+html[data-luxury="v2"] :is(.gm-button,.primary-button,.shop-button,.ps-primary,.nexus-city-primary)::after {
+ content:"";position:absolute;inset:-90% auto -90% -55%;width:28%;background:linear-gradient(90deg,transparent,var(--3b-luxury-reflection),transparent);transform:rotate(22deg);pointer-events:none;opacity:0;
+}
+html[data-luxury="v2"] :is(.gm-button,.primary-button,.shop-button,.ps-primary,.nexus-city-primary):hover:not(:disabled)::after { animation:luxury-sheen 640ms var(--3b-luxury-ease); }
+html[data-luxury="v2"] :is(.gm-button,.primary-button,.surface-button,.shop-button,.ps-primary,.ps-secondary,.menu-trigger,.nexus-city-primary):active:not(:disabled) { transform:scale(.975);box-shadow:var(--3b-luxury-press-shadow); }
+html[data-luxury="v2"] :is(.gm-button--champagne,.shop-button,.ps-primary,.nexus-city-primary) { background:var(--3b-luxury-metal);color:var(--3b-luxury-ink);border-color:var(--3b-champagne); }
+html[data-luxury="v2"] :is(button,a)[aria-disabled="true"] { opacity:.45;cursor:not-allowed; }
+html[data-luxury="v2"] .site-header { background:var(--3b-luxury-glass);backdrop-filter:blur(16px);border-color:var(--3b-luxury-line); }
+html[data-luxury="v2"] .brand-name { letter-spacing:.24em;font-size:.64rem; }
+html[data-luxury="v2"] .desktop-navigation a { font-weight:500;font-size:.8rem; }
+html[data-luxury="v2"] .mobile-navigation { background:var(--3b-luxury-glass);backdrop-filter:blur(16px); }
+html[data-luxury="v2"] .mobile-navigation :is(a,button) { transition:background var(--3b-motion-card),color var(--3b-motion-card),transform var(--3b-motion-micro); }
+html[data-luxury="v2"] .mobile-navigation :is(a,button):active { transform:scale(.94); }
+html[data-luxury="v2"] .universe-dialog[open] { animation:luxury-surface-in var(--3b-motion-screen) var(--3b-luxury-ease); }
+html[data-luxury="v2"] .universe-dialog::backdrop { background:var(--3b-luxury-glass);backdrop-filter:blur(10px); }
+html[data-luxury="v2"] .app3b .compact-card.gm-card { border-radius:var(--3b-radius-card);background:var(--3b-luxury-surface);border-color:var(--3b-luxury-line);padding:24px;transition:transform var(--3b-motion-card) var(--3b-luxury-ease),border-color var(--3b-motion-card); }
+html[data-luxury="v2"] .app3b :is(a,button).compact-card.gm-card:hover { transform:translateY(-3px);border-color:var(--3b-border-strong); }
+html[data-luxury="v2"] .app3b .compact-card-copy>strong { font-weight:600;letter-spacing:-.02em; }
+html[data-luxury="v2"] .app3b :is(.home-dashboard,.shop3b) { width:min(1280px,calc(100% - 64px)); }
+html[data-luxury="v2"] .app3b .home-dashboard .welcome-hero-single { display:grid;grid-template-columns:1fr 1fr;gap:52px;padding:52px 0 36px;min-height:590px; }
+html[data-luxury="v2"] .app3b .welcome-copy h1 { font-size:clamp(3.1rem,5.8vw,5.8rem);font-weight:400;line-height:.99;letter-spacing:-.055em;max-width:12ch; }
+html[data-luxury="v2"] .app3b .welcome-copy h1 em { display:block;font-family:Georgia,'Times New Roman',serif;font-weight:400;color:var(--3b-champagne-highlight); }
+html[data-luxury="v2"] .app3b .welcome-description { font-size:1rem;line-height:1.85;max-width:34ch;color:var(--3b-muted);margin-top:26px; }
+html[data-luxury="v2"] .app3b .welcome-copy .brand-glow-badge { padding:0;background:transparent;border:0;box-shadow:var(--3b-shadow-none,none);color:var(--3b-champagne);text-shadow:none;font-size:.65rem;letter-spacing:.25em;margin:30px 0 24px; }
+html[data-luxury="v2"] .welcome-copy .brand-glow-badge::before { display:none; }
+.luxury-edition { display:flex;flex-wrap:wrap;gap:12px;color:var(--3b-text);font-size:.62rem;letter-spacing:.2em; }
+.luxury-edition span { color:var(--3b-muted); }
+html[data-luxury="v2"] .home-manifesto { gap:14px;opacity:.65;font-size:.57rem;letter-spacing:.08em;flex-wrap:wrap; }
+html[data-luxury="v2"] .home-hero-actions { margin:28px 0; }
+.luxury-hero-art { position:relative;isolation:isolate;height:540px;overflow:hidden;border-radius:var(--3b-radius-hero);border:1px solid var(--3b-luxury-line);background:var(--3b-carbon); }
+.luxury-hero-art::after { content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 32%,var(--3b-obsidian));pointer-events:none; }
+.luxury-hero-art picture,.luxury-hero-art img { display:block;width:100%;height:100%;object-fit:cover; }
+.luxury-hero-art img { animation:luxury-art-arrival 1200ms var(--3b-luxury-ease) both; }
+.luxury-hero-art-caption { position:absolute;z-index:1;bottom:36px;left:32px;right:24px;display:grid;gap:14px; }
+.luxury-hero-art-caption span { font-size:.6rem;letter-spacing:.3em;color:var(--3b-champagne); }
+.luxury-hero-art-caption strong { font-family:Georgia,serif;font-size:2.2rem;line-height:1.12;font-weight:400; }
+.luxury-manifesto-line { display:flex;align-items:center;justify-content:space-between;gap:16px;padding:26px 0 44px;color:var(--3b-muted); }
+.luxury-manifesto-line>span { font-size:.58rem;letter-spacing:.18em;white-space:nowrap; }
+.luxury-manifesto-line p { font-size:.9rem;text-align:center; }
+.luxury-manifesto-line em { color:var(--3b-champagne);font-family:Georgia,serif;font-size:1.08rem; }
+html[data-luxury="v2"] .app3b .world-portal { display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:36px;align-items:center;background:var(--3b-luxury-surface);padding:36px;border-color:var(--3b-luxury-line); }
+html[data-luxury="v2"] .world-portal .luxury-legacy-portal { display:none; }
+html[data-luxury="v2"] .app3b .world-portal h2 { font-weight:400;font-size:clamp(2rem,3.2vw,3.4rem);line-height:1.1;letter-spacing:-.035em; }
+html[data-luxury="v2"] .world-portal h2 em { font-family:Georgia,serif;font-weight:400; }
+.world-portal-preview { min-width:0; }
+.luxury-universe-stage { position:relative;isolation:isolate;min-height:365px;overflow:hidden;border-radius:var(--3b-radius-card);background:var(--3b-obsidian); }
+.luxury-universe-poster,.luxury-universe-canvas { position:absolute;inset:0;width:100%;height:100%;object-fit:cover; }
+.luxury-universe-canvas { opacity:0;transition:opacity var(--3b-motion-screen); }
+.luxury-universe-stage[data-live="true"] .luxury-universe-canvas { opacity:1; }
+.luxury-universe-canvas canvas { display:block;width:100%;height:100%; }
+.luxury-universe-caption { position:absolute;inset:auto 24px 24px;display:grid;gap:8px;pointer-events:none;text-shadow:0 2px 10px var(--3b-obsidian); }
+.luxury-universe-caption small { color:var(--3b-champagne);letter-spacing:.15em;font-size:.55rem; }
+.luxury-universe-caption strong { font-size:1.6rem;font-family:Georgia,serif;font-weight:400; }
+.luxury-universe-caption>span { font-size:.72rem;color:var(--3b-muted); }
+.luxury-universe-reset.gm-button { position:absolute;top:12px;right:12px;font-size:.65rem;padding:0 12px;background:var(--3b-luxury-glass); }
+.luxury-realms { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px; }
+.luxury-realms .gm-button { display:grid;gap:4px;min-height:56px;padding:8px 4px;border-color:var(--3b-luxury-line); }
+.luxury-realms .gm-button>span { font-size:.7rem;letter-spacing:.12em;color:var(--3b-champagne); }
+.luxury-realms .gm-button small { font-size:.6rem;font-weight:400; }
+.luxury-realms .gm-button[aria-pressed="true"] { border-color:var(--3b-matrix);background:color-mix(in srgb,var(--3b-matrix) 9%,var(--3b-carbon)); }
+html[data-luxury="v2"] .section-heading { border-bottom:1px solid var(--3b-luxury-line);padding-bottom:20px;margin-bottom:22px; }
+html[data-luxury="v2"] .section-heading h2 { font-size:1.35rem;font-weight:500;letter-spacing:-.03em; }
+html[data-luxury="v2"] .universe-group>h2 { font-size:.7rem;letter-spacing:.14em;color:var(--3b-muted);font-weight:500; }
+html[data-luxury="v2"] .dashboard-footer { border-top:1px solid var(--3b-luxury-line);padding-top:28px; }
+.luxury-controls { position:relative; }
+.luxury-controls>summary { list-style:none;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 12px;cursor:pointer;color:var(--3b-champagne);font-size:.7rem; }
+.luxury-controls>summary::-webkit-details-marker { display:none; }
+.luxury-controls-panel { position:absolute;z-index:1050;right:0;top:calc(100% + 16px);width:min(330px,calc(100vw - 32px));padding:22px;display:grid;gap:8px;border:1px solid var(--3b-border);border-radius:var(--3b-radius-card);background:var(--3b-obsidian);box-shadow:var(--3b-luxury-shadow); }
+.luxury-controls-panel>strong { font-family:Georgia,serif;font-size:1.6rem;font-weight:400; }
+.luxury-controls-panel p { font-size:.75rem;color:var(--3b-muted);margin:2px 0 12px;line-height:1.5; }
+.luxury-controls-panel .gm-button { justify-content:space-between;font-size:.73rem;padding:10px 12px;font-weight:500;text-align:left; }
+.luxury-controls-panel .gm-button>span { color:var(--3b-champagne); }
+.luxury-boot { position:fixed;inset:0;z-index:2000;display:grid;place-items:center;overflow:hidden;background:var(--3b-obsidian);animation:luxury-boot-out var(--luxury-boot-duration) ease both; }
+.luxury-boot-mark { position:relative;z-index:1;text-align:center;animation:luxury-mark-in 1100ms var(--3b-luxury-ease) both; }
+.luxury-boot-mark>span { font-size:clamp(6rem,25vw,12rem);letter-spacing:-.10em;font-weight:850;padding-right:.10em;background:var(--3b-luxury-metal);background-clip:text;color:transparent;line-height:1; }
+.luxury-boot-mark p { letter-spacing:.28em;font-size:.63rem;color:var(--3b-champagne);margin:22px 0; }
+.luxury-boot-mark small { color:var(--3b-muted);font:italic 1rem Georgia,serif; }
+.luxury-boot-beam { position:absolute;inset:0;background:radial-gradient(ellipse at 50% 47%,color-mix(in srgb,var(--3b-matrix) 14%,transparent),transparent 55%); }
+.luxury-boot-beam::before { content:"";position:absolute;top:50%;left:15%;width:70%;height:1px;background:linear-gradient(90deg,transparent,var(--3b-champagne),transparent);animation:luxury-beam 1700ms var(--3b-luxury-ease) both; }
+.luxury-boot-particles { position:absolute;inset:0; }
+.luxury-boot-particles i { position:absolute;left:calc(12% + var(--particle) * 6.6%);top:calc(24% + mod(var(--particle),4) * 13%);width:2px;height:2px;border-radius:var(--3b-radius-round);background:var(--3b-champagne);opacity:0;animation:luxury-dust 1900ms calc(var(--particle) * 18ms) ease-out both; }
+.luxury-boot-skip.gm-button { position:absolute;bottom:max(32px,env(safe-area-inset-bottom));right:32px;font-size:.75rem; }
+.luxury-boot[data-returning="true"] .luxury-boot-mark { animation:none; }
+.luxury-boot[data-returning="true"] :is(.luxury-boot-beam,.luxury-boot-particles) { display:none; }
+.luxury-transition { position:fixed;inset:0;z-index:950;pointer-events:none;overflow:hidden; }
+.luxury-transition--route { background:linear-gradient(110deg,transparent,color-mix(in srgb,var(--3b-champagne) 9%,transparent),transparent);animation:luxury-route-wash var(--3b-motion-screen) ease-out both; }
+.luxury-transition--portal { background:radial-gradient(ellipse,color-mix(in srgb,var(--3b-matrix) 16%,transparent),transparent 65%);animation:luxury-portal-wash var(--3b-luxury-portal) ease-out both; }
+.luxury-transition-ring { display:none; }
+.luxury-transition--portal .luxury-transition-ring { display:block;position:absolute;width:65vmin;height:65vmin;left:calc(50% - 32.5vmin);top:calc(50% - 32.5vmin);border:1px solid var(--3b-champagne);border-radius:var(--3b-radius-round);animation:luxury-portal-ring var(--3b-luxury-portal) var(--3b-luxury-ease) both; }
+.luxury-milestone { position:absolute;left:50%;bottom:calc(100px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(480px,calc(100vw - 32px));padding:28px 64px 28px 28px;background:var(--3b-luxury-glass);border:1px solid var(--3b-champagne);border-radius:var(--3b-radius-card);box-shadow:var(--3b-luxury-shadow);pointer-events:auto;animation:luxury-surface-in var(--3b-motion-screen) var(--3b-luxury-ease); }
+.luxury-milestone>strong { display:block;font:1.5rem Georgia,serif;margin-top:10px; }
+.luxury-milestone .gm-button { position:absolute;top:12px;right:12px;padding:0 12px; }
+/* Passport retains its original Matrix rain, circuits, portrait and blue scan. */
+.luxury-passport-surface { transform:perspective(1400px) rotateX(var(--surface-rx,0deg)) rotateY(var(--surface-ry,0deg));transition:transform var(--3b-motion-card) var(--3b-luxury-ease); }
+.luxury-passport-reflection { position:absolute;inset:0;z-index:7;pointer-events:none;background:radial-gradient(ellipse at var(--surface-light-x,50%) var(--surface-light-y,40%),var(--3b-luxury-reflection),transparent 55%);mix-blend-mode:screen; }
+.luxury-passport-footer { width:min(760px,100%);margin:24px auto;display:grid;gap:12px; }
+.luxury-passport-footer .gm-progress { margin:12px 0; }
+.luxury-passport-footer small { font-size:.7rem;color:var(--3b-muted); }
+html[data-luxury="v2"] .nexus-city-visual-premium { animation:luxury-city-arrival 900ms var(--3b-luxury-ease) both; }
+html[data-luxury="v2"] .premier-secret { border-color:var(--3b-luxury-line);background:var(--3b-obsidian); }
+html[data-luxury="v2"] .ps-stage { animation:luxury-surface-in 600ms var(--3b-luxury-ease); }
+html[data-luxury="v2"] .ps-coffer { animation:luxury-secret-reveal 1200ms var(--3b-luxury-ease) both;border-color:var(--3b-champagne); }
+html[data-luxury="v2"] .ps-hour-open { animation:luxury-signal-breathe 3.5s ease-in-out infinite; }
+html[data-luxury="v2"] .shop-heading h1 { font-weight:400;font-size:clamp(2.5rem,5vw,4.5rem);letter-spacing:-.05em; }
+html[data-luxury="v2"] .shop-product-featured { border-color:var(--3b-luxury-line);border-radius:var(--3b-radius-hero);background:var(--3b-luxury-surface);overflow:hidden; }
+.luxury-showroom { position:relative;overflow:hidden;border-radius:var(--3b-radius-card);background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--3b-champagne) 14%,transparent),transparent 65%),var(--3b-carbon); }
+.luxury-showroom[data-light="pearl"] { background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--3b-matrix) 16%,transparent),transparent 65%),var(--3b-carbon); }
+.luxury-showroom-label { display:grid;gap:8px;padding:24px 24px 0;position:relative;z-index:1; }
+.luxury-showroom-label>span { color:var(--3b-champagne);font-size:.65rem;letter-spacing:.2em; }
+.luxury-showroom-label small { color:var(--3b-muted);font-size:.5rem;letter-spacing:.16em; }
+html[data-luxury="v2"] .luxury-showroom .shop-gallery-main { width:100%;padding:0;border:0;background:transparent;aspect-ratio:1;min-height:320px;border-radius:var(--3b-radius-card); }
+html[data-luxury="v2"] .luxury-showroom .shop-gallery-main img { width:100%;height:100%;object-fit:contain;transform:perspective(1000px) rotateX(var(--surface-rx,0deg)) rotateY(var(--surface-ry,0deg));transition:transform 650ms var(--3b-luxury-ease); }
+html[data-luxury="v2"] .luxury-showroom[data-detail="true"] .shop-gallery-main img { transform:scale(1.65);transform-origin:50% 36%; }
+.luxury-detail-toggle.gm-button { margin:0 20px 16px;min-height:44px;font-size:.72rem; }
+.luxury-showroom .shop-gallery-thumbs { padding:0 20px 20px; }
+html[data-luxury="v2"] .shop-product-details h2 { font-weight:400;font-size:2rem;line-height:1.15;letter-spacing:-.04em; }
+html[data-luxury="v2"] :is(.account-command-center,.community-hero,.loyalty-panel,.coming-soon) { border-color:var(--3b-luxury-line);background:var(--3b-luxury-surface);border-radius:var(--3b-radius-card); }
+html[data-luxury="v2"] .app-loading-state { background:var(--3b-obsidian); }
+html[data-luxury="v2"] .app-loading-mark { color:var(--3b-champagne);border-color:var(--3b-luxury-line); }
+@keyframes luxury-sheen { 0%{left:-55%;opacity:0}20%{opacity:1}100%{left:135%;opacity:0} }
+@keyframes luxury-surface-in { from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0} }
+@keyframes luxury-art-arrival { from{opacity:.3;transform:scale(1.04)}to{opacity:1;transform:scale(1)} }
+@keyframes luxury-mark-in { from{opacity:0;filter:blur(8px);transform:scale(.95)}to{opacity:1;filter:blur(0);transform:scale(1)} }
+@keyframes luxury-boot-out { 0%,80%{opacity:1}100%{opacity:0} }
+@keyframes luxury-beam { 0%{transform:scaleX(0);opacity:0}40%{transform:scaleX(1);opacity:.9}100%{transform:scaleX(1.2);opacity:0} }
+@keyframes luxury-dust { 0%{opacity:0;transform:translateY(30px)}35%{opacity:.5}100%{opacity:0;transform:translateY(-50px)} }
+@keyframes luxury-route-wash { from{opacity:.7;transform:translateX(-20%)}to{opacity:0;transform:translateX(20%)} }
+@keyframes luxury-portal-wash { 0%{opacity:0}22%{opacity:1}100%{opacity:0} }
+@keyframes luxury-portal-ring { from{opacity:.7;transform:scale(.2) rotateX(55deg)}to{opacity:0;transform:scale(2.8) rotateX(0)} }
+@keyframes luxury-city-arrival { from{opacity:.3;transform:scale(1.07) translateY(-12px)}to{opacity:1;transform:scale(1) translateY(0)} }
+@keyframes luxury-secret-reveal { from{opacity:0;transform:scale(.97);filter:blur(3px)}to{opacity:1;transform:scale(1);filter:blur(0)} }
+@keyframes luxury-signal-breathe { 0%,100%{border-color:var(--3b-luxury-line)}50%{border-color:var(--3b-matrix)} }
+@media(max-width:1000px) {
+ html[data-luxury="v2"] .app3b .home-dashboard .welcome-hero-single { gap:28px;min-height:480px; }
+ .luxury-hero-art { height:450px; }
+ html[data-luxury="v2"] .app3b .world-portal { grid-template-columns:1fr;padding:28px; }
+ .luxury-universe-stage { min-height:390px; }
+ .luxury-controls>summary>span { display:none; }
+}
+@media(max-width:720px) {
+ html[data-luxury="v2"] .app3b :is(.home-dashboard,.shop3b) { width:calc(100% - 32px); }
+ html[data-luxury="v2"] .app3b .home-dashboard .welcome-hero-single { grid-template-columns:1fr;padding:28px 0 12px;gap:24px; }
+ html[data-luxury="v2"] .app3b .welcome-copy h1 { font-size:clamp(3.3rem,13.3vw,5rem); }
+ html[data-luxury="v2"] .app3b .welcome-copy .brand-glow-badge { margin:20px 0 22px;font-size:.58rem; }
+ html[data-luxury="v2"] .app3b .welcome-description { font-size:.88rem;margin-top:20px; }
+ .luxury-hero-art { height:340px; }
+ .luxury-hero-art-caption { bottom:26px;left:24px; }
+ .luxury-hero-art-caption strong { font-size:1.9rem; }
+ .luxury-edition { font-size:.55rem; }
+ .luxury-manifesto-line { padding:8px 0 24px;justify-content:center; }
+ .luxury-manifesto-line>span { display:none; }
+ .luxury-manifesto-line p { line-height:1.8;font-size:.72rem; }
+ .luxury-manifesto-line em { display:block;font-size:1rem; }
+ html[data-luxury="v2"] .app3b .world-portal { padding:24px 16px;gap:24px; }
+ .luxury-universe-stage { min-height:290px; }
+ .luxury-universe-caption { inset:auto 16px 20px; }
+ html[data-luxury="v2"] .app3b .compact-card.gm-card { padding:18px; }
+ html[data-luxury="v2"] .header-actions { gap:4px; }
+ html[data-luxury="v2"] .header-actions .network-status { display:none; }
+ .luxury-controls-panel { position:fixed;top:74px;right:16px;max-height:calc(100dvh - 170px);overflow:auto; }
+ .luxury-controls>summary { padding:0 8px; }
+ .luxury-boot-skip.gm-button { right:20px;bottom:max(24px,env(safe-area-inset-bottom)); }
+ html[data-luxury="v2"] .luxury-showroom .shop-gallery-main { min-height:260px; }
+}
+@media(prefers-reduced-motion:reduce) {
+ html[data-luxury="v2"] *,html[data-luxury="v2"] *::before,html[data-luxury="v2"] *::after { animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important; }
+ .luxury-passport-surface { transform:none!important; }
+ .luxury-transition--portal,.luxury-transition--route { display:none; }
+}
+html[data-experience-motion="reduced"] *,html[data-experience-motion="reduced"] *::before,html[data-experience-motion="reduced"] *::after { animation-play-state:paused!important;transition-duration:.001ms!important;scroll-behavior:auto!important; }
+html[data-experience-motion="reduced"] :is(.luxury-passport-surface,.luxury-hero-art img,.nexus-city-visual-premium,.ps-coffer,.ps-stage,.luxury-milestone,.universe-dialog) { animation:none!important;transform:none;opacity:1;filter:none; }
+html[data-experience-motion="reduced"] .luxury-transition--milestone .luxury-milestone { transform:translateX(-50%); }
+html[data-experience-quality="economical"] :is(.site-header,.mobile-navigation,.universe-dialog::backdrop) { backdrop-filter:none; }
+.luxury-boot-heading { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+html[data-luxury="v2"] .app3b-background { opacity:.10; }
+html[data-luxury="v2"] .world-portal-copy { order:1; }
+html[data-luxury="v2"] .world-portal-preview { order:2; }
+/* Existing dimension.css uses !important. These canonical materials supersede it. */
+html[data-luxury="v2"] .app3b :is(.compact-card.gm-card,.shop-product,.shop-cart,.account-command-center,.community-post) { background:var(--3b-luxury-surface)!important;border-color:var(--3b-luxury-line)!important;box-shadow:var(--3b-luxury-shadow)!important; }
+@media(max-width:720px) {
+ html[data-luxury="v2"] .app3b .shop3b { padding:24px 0 80px; }
+ html[data-luxury="v2"] .app3b .shop-product-featured { grid-template-columns:minmax(0,1fr);gap:0;padding:0; }
+ html[data-luxury="v2"] .app3b .shop-gallery { width:100%;border-right:0; }
+ html[data-luxury="v2"] .app3b .shop-product-details { padding:24px; }
+}
