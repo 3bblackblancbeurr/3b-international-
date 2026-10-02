@@ -54,6 +54,6 @@ export function createNaturalGround(region){
  function setWetness(value){uniforms.surfaceWetness.value=Math.max(0,Math.min(1,Number(value)||0));}
  function setWeather(weather){setWetness(wetnessForWeather(weather));}
  function setDaylight(value){uniforms.daylight.value=Math.max(0,Math.min(1,Number(value)||0));}
- function setQuality(mode){uniforms.detailStrength.value=mode==='fluid'?.45:mode==='detail'?1.15:.82;material.bumpScale=mode==='fluid'?.012:mode==='detail'?.032:.024;material.needsUpdate=true;}
+ function setQuality(mode){uniforms.detailStrength.value=mode==='fluid'?.45:mode==='detail'?1.15:.82;material.bumpScale=mode==='fluid'?.012:mode==='detail'?.032:.024;}
  return {material,texture,maps,setWetness,setWeather,setDaylight,setQuality};
 }

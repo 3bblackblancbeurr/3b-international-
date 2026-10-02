@@ -1,3 +1,8 @@
+import {worldArtMaterials} from '../design-system/tokens.js';
+import {artLighting,architecturalBudget} from './art-direction.js';
+import {applyFacadeDetail} from './facade-detail.js';
+import {createStaticInstances} from './static-instances.js';
+import {resolveCameraObstruction} from './camera-obstruction.js';
 import {createPartyActors} from './party-actors.js';
 import {createCombatTelegraph} from './combat-telegraph.js';
 import {createWorldPost} from './postprocessing.js';
@@ -54,6 +59,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-36,right:36,top:36,bottom:-36,near:1,far:130});sun.shadow.bias=-.0004;sun.shadow.normalBias=.025;sun.shadow.radius=3;sun.shadow.camera.updateProjectionMatrix();
  const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
+ let staticInstances=null,cameraSolids=[];
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
@@ -78,7 +84,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const register=asset=>(resources.push(asset),asset),sceneWetness={value:.06},sceneDaylight={value:1};let sceneWetnessTarget=.06;
  const material=(color,extra={})=>{const key=JSON.stringify([color,extra]);if(!materialCache.has(key)){
   const physical=['clearcoat','transmission','ior','thickness','specularIntensity'].some(key=>extra[key]!==undefined),Material=physical?THREE.MeshPhysicalMaterial:THREE.MeshStandardMaterial;const m=new Material({color,roughness:.8,metalness:.08,...extra});
-  if(!extra.transparent){const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.sceneWetness=sceneWetness;shader.uniforms.sceneDaylight=sceneDaylight;shader.vertexShader='varying vec3 sceneSurfacePos;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nsceneSurfacePos=(modelMatrix*vec4(position,1.)).xyz;');shader.fragmentShader='varying vec3 sceneSurfacePos;uniform float sceneWetness;uniform float sceneDaylight;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+  if(!extra.transparent){const previous=m.onBeforeCompile.bind(m);m.onBeforeCompile=shader=>{previous(shader);shader.uniforms.sceneWetness=sceneWetness;shader.uniforms.sceneDaylight=sceneDaylight;shader.vertexShader='varying vec3 sceneSurfacePos;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvec4 sceneLocal=vec4(position,1.);\n#ifdef USE_INSTANCING\nsceneLocal=instanceMatrix*sceneLocal;\n#endif\nsceneSurfacePos=(modelMatrix*sceneLocal).xyz;');shader.fragmentShader='varying vec3 sceneSurfacePos;uniform float sceneWetness;uniform float sceneDaylight;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
    float sNoise=fract(sin(dot(floor(sceneSurfacePos.xz*2.1),vec2(12.9898,78.233)))*43758.5453);
    float sWet=sceneWetness*(.26+.74*smoothstep(.72,.97,sNoise));
    diffuseColor.rgb*=mix(1.,.74,sWet);
@@ -90,6 +96,8 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
    // 3B emissive hierarchy: daylight keeps materials physical; night reveals Matrix / Héritage.
    totalEmissiveRadiance*=mix(1.12,.48,sceneDaylight);
   `);};m.customProgramCacheKey=()=> '3b-scene-wetness-v2';}
+  if(extra.userData?.facade)applyFacadeDetail(m,{daylight:sceneDaylight});
+  if(m.isMeshPhysicalMaterial&&m.transmission>0){m.userData.authoredTransmission=m.transmission;if(!architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission)m.transmission=0;}
   materialCache.set(key,register(m));
  }return materialCache.get(key);};
  const geometry={box:new THREE.BoxGeometry(1,1,1),cylinder:new THREE.CylinderGeometry(1,1,1,20),sphere:new THREE.IcosahedronGeometry(1,1),ring:new THREE.TorusGeometry(1,.065,6,48)};
@@ -198,13 +206,13 @@ function hubNpcAvatar(item){
  function rebuild(nextRegion){cancelContextTraversal();
   const previousRegion=region;
   onLoadState?.(true);
-  partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
+  staticInstances?.dispose();staticInstances=null;cameraSolids=[];partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];hubLodState.clear();transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;worldRadius=worldRadiusFor(region);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);items=worldRuntimeItems(region,save,{weather});sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position={x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});scene.fog=new THREE.Fog(0xbacdd6,region==='hub'?300:220,region==='hub'?1350:780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
   daylight?.dispose();daylight=createDaylight(renderer,biome);scene.environment=sky.environment||daylight.texture;scene.environmentIntensity=.55;
-  landscape=createLandscape(models,region,save,error=>{console.error(error);onError('Un élément du quartier n’a pas pu être chargé. Recharge pour reprendre.');});const currentLandscape=landscape;landscape.ready.then(()=>{if(!disposed&&landscape===currentLandscape)onLoadState?.(false);});landscape.setQuality(qualityMode,visualCapabilities(qualityMode));landscape.setWeather?.(weather);landscape.setDaylight?.(worldTime.daylight);root.add(landscape.root);obstacles.push(...landscape.collisions);landscape.setParty(partyState);partyActors=createPartyActors(models,root,groundY,onError);partyActors.setPeers(latestPeers);
+  landscape=createLandscape(models,region,save,error=>{console.error(error);onError('Un élément du quartier n’a pas pu être chargé. Recharge pour reprendre.');});const currentLandscape=landscape;landscape.ready.then(()=>{if(!disposed&&landscape===currentLandscape)onLoadState?.(false);});landscape.setQuality(qualityMode,visualCapabilities(qualityMode));landscape.setWeather?.(weather);landscape.setDaylight?.(worldTime.daylight);root.add(landscape.root);obstacles.push(...landscape.collisions);cameraSolids.push(...landscape.cameraSolids);landscape.setParty(partyState);partyActors=createPartyActors(models,root,groundY,onError);partyActors.setPeers(latestPeers);
   const stone=material(c?.stone||'#cfc7ae'),gold=material(accent,{emissive:accent,emissiveIntensity:.22,metalness:.4});
   for(const item of items){
    if(item.type==='portal'){portal(item);continue;}
@@ -220,7 +228,8 @@ function hubNpcAvatar(item){
    if(item.type==='hubBuilding'||item.type==='hubStructure'){
     const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0,construction=item.buildStatus==='construction';
     const palette=construction?'#15191c':canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
-    const body=mesh('box',material(palette,{roughness:construction?.84:canonical?.58:.76,metalness:construction?.06:canonical?.22:.08}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
+    const body=mesh('box',material(palette,{roughness:construction?.84:canonical?.58:.76,metalness:construction?.06:canonical?.22:.08,userData:{facade:!construction}}),bx,y+item.height/2,bz,item.width,item.height,item.depth);
+    cameraSolids.push({x:bx,z:bz,width:item.width,depth:item.depth,bottom:y,top:y+item.height,rotation:0});
     const visuals=[body,...decorateHubBuilding(item,{mesh,material,groundY,canonical})];
     obstacles.push({x:bx,z:bz,width:item.width+.8,depth:item.depth+.8,rotation:0});itemVisuals.set(item.id,visuals);continue;
    }
@@ -341,7 +350,17 @@ function hubNpcAvatar(item){
    shot={x:tower?.x??0,z:tower?.z??0,kind:'hub-arrival',angle:orbit.yaw-.42,duration,until:performance.now()+duration,heritage:true,radius:camera.aspect<.85?195:270,height:camera.aspect<.85?92:124,focusY:tower?42:15,arc:reducedMotion?0:.36,dolly:.12,title:'La Cité des Huit Héritages',detail:platform?.milestone?.label||platform?.evolutionLabel||'Fondations vivantes'};
    hubArrivalShown=true;
   }
-  report=0;needsRender=true;batchStatic();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
+  // Capture solid structural pieces too: bridges, civic towers and station supports
+  // can stand between the player and the camera even when they are not buildings.
+  root.updateMatrixWorld(true);const cameraBounds=new THREE.Box3();
+  for(const item of items)if(['hubDistrictLandmark','hubHeritageFacility','hubSkybridge','hubVerticalConnector','hubTransitLink','hubDistrictTerrace','hubHeritagePlatform','hubTransport'].includes(item.type)){
+   for(const visual of itemVisuals.get(item.id)||[])visual.traverse(o=>{if(!o.isMesh||!['BoxGeometry','CylinderGeometry'].includes(o.geometry?.type))return;cameraBounds.setFromObject(o);const size=new THREE.Vector3();cameraBounds.getSize(size);if(size.y<2||size.x<1.2||size.z<1.2)return;cameraSolids.push({x:(cameraBounds.min.x+cameraBounds.max.x)/2,z:(cameraBounds.min.z+cameraBounds.max.z)/2,width:size.x,depth:size.z,bottom:cameraBounds.min.y,top:cameraBounds.max.y,rotation:0});});
+  }
+  report=0;needsRender=true;batchStatic();if(region==='hub')staticInstances=createStaticInstances(root,itemVisuals,{exclude:[...hubVehicles.map(v=>v.vehicle),...hubNpcActors.map(a=>a.object),...actors.map(a=>a.controller.object),...animations.map(a=>a.mesh)]});applyArtLighting();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
+ }
+ function applyArtLighting(){
+  const light=artLighting(region,worldTime,weatherState);sun.color.set(light.sunColor).lerp(new THREE.Color(worldArtMaterials.sunWarm),light.sunWarmth);sun.intensity=light.sunIntensity;hemi.color.set(light.palette.sky);hemi.groundColor.set(light.palette.ground);hemi.intensity=light.skyIntensity;fill.intensity=light.fillIntensity;scene.environmentIntensity=light.environmentIntensity;renderer.toneMappingExposure=light.exposure;
+  portraitLight.intensity=.18+.12*light.day;if(scene.fog){scene.fog.color.set(light.palette.fog).lerp(new THREE.Color(light.palette.night),1-light.day);scene.fog.near=light.fogNear;scene.fog.far=light.fogFar;}
  }
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
@@ -391,9 +410,7 @@ function hubNpcAvatar(item){
    lastWorldTimeAt=now;worldTime=worldTimeSnapshot();sceneDaylight.value=worldTime.daylight;const nextWeather=worldWeatherForDate(region,new Date());if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);landscape?.setWeather?.(weather);refreshHubScheduleState();if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
    const biome=BIOMES[region]||BIOMES.hub,dayColor=new THREE.Color(biome.sky),nightColor=new THREE.Color('#07101a');
    scene.background.copy(dayColor).lerp(nightColor,1-worldTime.daylight);
-   sun.intensity=3.5*worldTime.sun;hemi.intensity=.55*worldTime.daylight;fill.intensity=.22*Math.max(.28,worldTime.daylight);
-   portraitLight.intensity=.22*Math.max(.45,worldTime.daylight);renderer.toneMappingExposure=.82+.22*worldTime.daylight;
-   if(scene.fog){const visibility=worldTime.fog*weatherState.visibility;scene.fog.near=220*visibility;scene.fog.far=780*visibility;}
+   applyArtLighting();
    needsRender=true;
   }
   if(!paused&&!shot){
@@ -469,6 +486,7 @@ function hubNpcAvatar(item){
      const distanceToItem=Math.hypot(item.x-position.x,item.z-position.z),previousLod=hubLodState.get(id),lod=lodForDistanceHysteresis(distanceToItem,stream,previousLod,.08);
      hubLodState.set(id,lod);visuals.forEach((visual,index)=>{visual.visible=lod<3&&(lod<2||index===0);});
     }
+    staticInstances?.update(camera);
    }
    for(const vehicle of hubVehicles){
     const pose=routePose(vehicle.stops,elapsed,vehicle.cycle);if(!pose)continue;
@@ -499,7 +517,7 @@ function hubNpcAvatar(item){
      }
     }desiredTarget.set(shot.x,baseY+focusLift,shot.z);desiredCamera.set(shot.x+Math.sin(a)*radius,baseY+cameraLift,shot.z+Math.cos(a)*radius);if(shot.endCamera&&shot.endTarget){const returnBlend=cinematicReturnBlend(age,{waterReveal});desiredCamera.lerp(shot.endCamera,returnBlend);desiredTarget.lerp(shot.endTarget,returnBlend);}if(Number.isFinite(shot.fovStart)){camera.fov=shot.fovStart+(shot.fovEnd-shot.fovStart)*ease;camera.updateProjectionMatrix();}}
 
-  const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
+  const smoothing=1-Math.exp(-dt*(reducedMotion?20:7));camera.position.lerp(desiredCamera,smoothing);cameraTarget.lerp(desiredTarget,smoothing);if(!shot||shot.cinematic&&!shot.major&&!shot.heritage){const eye=resolveCameraObstruction(cameraTarget,camera.position,cameraSolids);camera.position.copy(eye);}camera.lookAt(cameraTarget);landscape.updateCamera(camera.position,cameraTarget,!shot?.heritage);
   portraitLight.position.copy(camera.position);portraitLight.position.y+=5;portraitLight.target.position.copy(avatar.position);portraitLight.target.position.y+=1.5;
   if(shot?.cinematic&&cinematicFx){
    const p=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),fade=Math.sin(Math.PI*p),baseY=groundY(shot.x,shot.z),scale=shot.kind==='world-opening'?10:shot.heritage?8:shot.kind==='final-combat-intro'?5.2:shot.kind==='guardian-intro'?3.8:shot.kind==='memory-fragment'?1.8:2.8;
@@ -532,7 +550,7 @@ function hubNpcAvatar(item){
     restored:hubPlatforms.filter(item=>item.restored).length,
     total:hubPlatforms.length,
    }:null;
-   onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
+   onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
   }
   needsRender=false;
  }
@@ -618,7 +636,7 @@ function hubNpcAvatar(item){
   setCameraFollow(value){cameraFollow=!!value;if(!cameraFollow)orbit={...orbit,yaw:viewBearing(camera.position,cameraTarget)};rememberCamera();try{localStorage.setItem('3b-world-camera-follow',String(cameraFollow));}catch{}needsRender=true;},
   setControls(value){controls=normalizeControlBindings(value);clearInput();},
   setPremiumCodes(codes){premium=premiumEffectsFromCodes(codes);if(models&&avatar)applyPremiumVisuals();needsRender=true;},
-  setQuality(mode){qualityMode=mode;quality.setMode(mode);const capabilities=visualCapabilities(mode);landscape?.setQuality(mode,capabilities);renderer.shadowMap.enabled=mode!=='fluid';const size=capabilities.shadowMapSize;if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}resize();},
+  setQuality(mode){qualityMode=mode;quality.setMode(mode);const capabilities=visualCapabilities(mode);const allowTransmission=architecturalBudget(mode,capabilities.desktopClass).transmission;for(const m of materialCache.values())if(m.userData.authoredTransmission){m.transmission=allowTransmission?m.userData.authoredTransmission:0;m.needsUpdate=true;}landscape?.setQuality(mode,capabilities);renderer.shadowMap.enabled=mode!=='fluid';const size=capabilities.shadowMapSize;if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}resize();},
   setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),hubProgressChanged=region==='hub'&&(JSON.stringify(save.seals||[])!==JSON.stringify(value.seals||[])||JSON.stringify(Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))!==JSON.stringify(Object.entries(value.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||hubProgressChanged||countryContractChanged)&&models&&!newField){if(hubProgressChanged)hubArrivalShown=false;rebuild(region);needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}applyPremiumVisuals();
   const nextItems=worldRuntimeItems(region,save,{weather});
   if(region==='hub'&&hubNpcActors.length){
@@ -637,6 +655,6 @@ function hubNpcAvatar(item){
   interact,
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk)startRoute(item,true);},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},
-  destroy(){cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
+  destroy(){staticInstances?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };
 }

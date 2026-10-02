@@ -112,7 +112,7 @@ export function addPremiumMicroDetails({region,field,root,owned}){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(cablePoints,3));const m=new THREE.LineBasicMaterial({color:'#11171c',transparent:true,opacity:.58});cable=new THREE.LineSegments(g,m);root.add(cable);owned.push(g,m);
  }
 
- const setWetness=value=>{const wet=Math.max(0,Math.min(1,Number(value)||0));materials.puddle.opacity=.035+wet*.425;materials.puddle.roughness=Math.max(.055,.16-wet*.08);materials.puddle.needsUpdate=true;};
+ const setWetness=value=>{const wet=Math.max(0,Math.min(1,Number(value)||0));materials.puddle.opacity=.035+wet*.425;materials.puddle.roughness=Math.max(.055,.16-wet*.08);};
  return{
   setWetness,
   setWeather(weather){setWetness(wetnessForWeather(weather));},

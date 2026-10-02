@@ -1,9 +1,9 @@
 export function worldTimeSnapshot(date=new Date()){
- const hour=date.getHours()+date.getMinutes()/60;
+ const hour=date.getHours()+date.getMinutes()/60+date.getSeconds()/3600;
  const phase=hour<5?'night':hour<8?'dawn':hour<18?'day':hour<21?'sunset':'night';
- const daylight=phase==='night'?.18:phase==='dawn'?.55:phase==='sunset'?.62:1;
- const sun=phase==='night'?.15:phase==='dawn'?.75:phase==='sunset'?.85:1;
- const fog=phase==='night'?.72:phase==='dawn'?.8:phase==='sunset'?.88:1;
+ const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+ const solar=smooth((hour-5)/3)*(1-smooth((hour-18)/3));
+ const daylight=.18+.82*solar,sun=.15+.85*solar,fog=.72+.28*solar;
  const wind=.35+.35*Math.sin((hour/24)*Math.PI*2);
  return {hour,phase,daylight,sun,fog,wind,night:phase==='night'};
 }
