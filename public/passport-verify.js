@@ -20,7 +20,11 @@ async function verify(){
   signal:AbortSignal.timeout(12000)
  });
  const result=await response.json().catch(()=>({}));
- if(!response.ok||result.valid!==true)throw new Error(result.error||'Ce code ne peut pas être vérifié.');
+ if(!response.ok||result.valid!==true){
+  const error=new Error(result.error||'Ce code ne peut pas être vérifié.');
+  error.status=response.status;
+  throw error;
+ }
  const passport=result.passport||{};
  card.dataset.status='valid';
  title.textContent='Passeport 3B valide';
@@ -36,14 +40,18 @@ async function verify(){
   note.textContent='Identité civile vérifiée · '+assurance+(passport.title?' · '+passport.title:'');
   note.hidden=false;
  } else if(passport.publicBadgeVerified&&passport.title){
-  note.textContent=passport.title+' · badge public 3B';
+  note.textContent=passport.title+' · badge public 3B. Identité civile non vérifiée.';
+  note.hidden=false;
+ } else {
+  note.textContent='Passeport numérique privé 3B · identité civile non vérifiée. L’acceptation externe dépend du partenaire.';
   note.hidden=false;
  }
 }
 verify().catch(error=>{
  card.dataset.status='invalid';
- title.textContent='Passeport non vérifié';
- message.textContent=error?.message||'Le code est invalide ou expiré.';
+ const unavailable=error?.status>=500||error?.name==='TypeError'||error?.name==='TimeoutError'||error?.name==='AbortError';
+ title.textContent=unavailable?'Vérification indisponible':'Passeport non vérifié';
+ message.textContent=unavailable?'Le service ne peut pas confirmer ce passeport actuellement. Demande un nouveau code et réessaie avec une connexion Internet.':error?.message||'Le code est invalide ou expiré.';
  data.hidden=true;
  note.hidden=true;
 });

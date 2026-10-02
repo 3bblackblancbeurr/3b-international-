@@ -9,13 +9,16 @@ const identityMigration=readFileSync(new URL('../supabase/migrations/20260926145
 const ticketMigration=readFileSync(new URL('../supabase/migrations/20260926150431_passport_verification_ticket_foundation.sql',import.meta.url),'utf8');
 const hardeningMigration=readFileSync(new URL('../supabase/migrations/20260926155300_passport_identity_security_hardening_v2.sql',import.meta.url),'utf8');
 const indexMigration=readFileSync(new URL('../supabase/migrations/20260926170607_passport_verification_ticket_public_id_fk_index.sql',import.meta.url),'utf8');
+const tickets=readFileSync(new URL('../shared/passport-recognition-tickets.js',import.meta.url),'utf8');
+const atomicMigration=readFileSync(new URL('../supabase/migrations/20261002190934_passport_external_recognition_v1.sql',import.meta.url),'utf8');
 
 test('deployed Passport runtime keeps account identity private and public identity opaque',()=>{
   assert.match(identityMigration,/passport_public_id uuid/);
   assert.match(identityMigration,/unique index if not exists member_profiles_passport_public_id_uidx/);
-  assert.match(issuer,/token_hash:await hash\(token\)/);
-  assert.match(issuer,/Date\.now\(\)\+5\*60\*1000/);
-  assert.doesNotMatch(issuer,/verifyUrl=.*user_id/);
+  assert.match(issuer,/createPassportTicketIssuer/);
+  assert.match(tickets,/p_token_hash:await sha256\(token\)/);
+  assert.match(tickets,/Date\.now\(\)\+5\*60\*1000/);
+  assert.doesNotMatch(tickets,/verifyUrl=.*user_id/);
 });
 
 test('verification tickets are service-only, short-lived and indexed on their public identity FK',()=>{
@@ -27,13 +30,15 @@ test('verification tickets are service-only, short-lived and indexed on their pu
 });
 
 test('public verifier is rate-limited, single-use and enforces verification purpose and consent scope',()=>{
-  assert.match(verifier,/p_limit:30,p_window:60/);
-  assert.match(verifier,/consumed_at=is\.null/);
-  assert.match(verifier,/revoked_at=is\.null/);
-  assert.match(verifier,/expires_at=gt\./);
-  assert.match(verifier,/ticket\.purpose!=='verify'/);
-  assert.match(verifier,/ticket\.scopes\.includes\('identity\.basic'\)/);
-  assert.doesNotMatch(verifier,/wallet|coins|inventory|recovery_hash/i);
+  assert.match(verifier,/createPassportTicketVerifier/);
+  assert.match(tickets,/p_limit:30,p_window:60/);
+  assert.match(tickets,/passport_ticket_consume_v1/);
+  assert.match(atomicMigration,/ticket\.consumed_at is not null/);
+  assert.match(atomicMigration,/ticket\.revoked_at is not null/);
+  assert.match(atomicMigration,/ticket\.expires_at<=clock_timestamp\(\)/);
+  assert.match(atomicMigration,/ticket\.purpose<>'verify'/);
+  assert.match(atomicMigration,/ticket\.scopes<>array\['identity\.basic'\]/);
+  assert.doesNotMatch(tickets,/wallet|coins|inventory|recovery_hash/i);
 });
 
 test('verification page removes the secret from the address and never persists it',()=>{
