@@ -1,3 +1,4 @@
+import {franceResidentItems} from './france-life.js';
 import {DISTRICT_JOBS,districtJobActionItems,districtJobTurnInItem} from './district-jobs.js';
 import {HERITAGE,LANDMARK_APPROACH} from './heritage.js';
 import {RESOURCE_SITES,frontierState,patrolOpponent} from './frontier.js';
@@ -75,6 +76,7 @@ export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[]
  {id:region+':cooperation',type:'cooperation',name:'Notre refuge commun',x:-65,z:42,color:'#9be0cd',range:7},
  {id:region+':camp',type:'camp',name:'Mon refuge',x:27,z:25,color:'#edc782',range:6},
  {id:region+':patrol',type:'patrol',name:'Protéger les environs',x:31,z:36,color:'#dc9a7c',range:6,card:save.adventure?.encounter?.patrol&&save.adventure.encounter.region===region?save.adventure.encounter.card:patrolOpponent(region,home.expedition).id},
+ ...(region==='france'?franceResidentItems(home,new Date().getHours()):[]),
  ...districtJobActionItems(region,home),...(jobTurnIn?[jobTurnIn]:[]),
  ...RESOURCE_SITES.map(p=>({id:region+':resource:'+p.id,type:'resource',resource:p.id,name:p.name,x:p.x,z:p.z,color:'#a8c88c',range:4,done:home.harvest.includes(p.id)})),
  {id:region+':sanctuary',type:'sanctuary',name:save.adventure?.chapters?.[region]?.restored>=2?(save.adventure.chapters[region].choice==='workshop'?'Préparer le groupe à l’atelier':'Se reposer au jardin'):'Quartier à reconstruire',x:29,z:15,color:'#9ec8ac',range:6},
@@ -83,3 +85,4 @@ export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[]
  ];}
 export const DISCOVERY_IDS=Object.keys(REGIONS).filter(id=>id!=='hub').flatMap(id=>[id+':city',id+':rural']);
 export function compassHeading(yaw=0){return ((-yaw*180/Math.PI)%360+360)%360;}
+
