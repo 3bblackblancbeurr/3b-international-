@@ -236,7 +236,7 @@ test("refunded orders cannot be accepted or marked as shipped", async () => {
 });
 
 test("shop hardening migration applies refunds atomically and keeps seller authorization private", () => {
-  const migration=readFileSync(new URL("../supabase/migrations/20261002190000_shop_checkout_hardening_v1.sql",import.meta.url),"utf8");
+  const migration=readFileSync(new URL("../supabase/migrations/20261002184542_shop_checkout_hardening_v1.sql",import.meta.url),"utf8");
   assert.match(migration,/create table if not exists public\.shop_staff/);
   assert.match(migration,/revoke all on table public\.shop_staff from public, anon, authenticated/);
   assert.match(migration,/create or replace function public\.shop_apply_refund/);

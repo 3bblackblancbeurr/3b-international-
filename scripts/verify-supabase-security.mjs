@@ -64,7 +64,7 @@ export function auditSupabaseSecurity() {
     }
   }
 
-  const shop = sources.find(({file}) => file === '20261002190000_shop_checkout_hardening_v1.sql')?.sql || '';
+  const shop = sources.find(({file}) => file === '20261002184542_shop_checkout_hardening_v1.sql')?.sql || '';
   for (const [boundary, pattern] of shopBoundaries) {
     if (!pattern.test(shop)) problems.push({error: 'missing_shop_boundary', boundary});
   }

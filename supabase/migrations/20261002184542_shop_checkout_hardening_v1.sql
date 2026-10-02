@@ -91,7 +91,7 @@ begin
     'refundStatus', v_status,
     'amountRefunded', p_amount_refunded
   );
-end
+end;
 $$;
 
 revoke all on function public.shop_apply_refund(text,boolean,bigint,bigint) from public, anon, authenticated;
@@ -145,7 +145,7 @@ begin
   returning attempts into v_attempt;
 
   return coalesce(v_attempt, 0);
-end
+end;
 $$;
 
 revoke all on function public.shop_claim_notification(text,text,text,integer) from public, anon, authenticated;
