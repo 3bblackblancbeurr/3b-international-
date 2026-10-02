@@ -6,6 +6,9 @@ const message=document.getElementById('verify-message');
 const data=document.getElementById('passport-data');
 const note=document.getElementById('official-note');
 const text=(id,value)=>{document.getElementById(id).textContent=value||'—';};
+// A second scanned code can navigate only the fragment in this same tab.
+// Reload the template and verifier so the previous result cannot remain visible.
+window.addEventListener('hashchange',()=>location.reload());
 
 async function verify(){
  const ticket=new URLSearchParams(location.hash.slice(1)).get('ticket')||'';
