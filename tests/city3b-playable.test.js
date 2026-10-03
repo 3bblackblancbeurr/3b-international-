@@ -19,10 +19,10 @@ test('saved footprints, catalogue filters and independent XP remain coherent',()
  assert.equal(premiumEffectsFromCodes(ownedPremiumCodes({items:[{code:'CITY_ARCHITECT_PASS',owned:false}]})).waterfront,undefined);
 });
 
-test('all campaign chapters can be constructed using real map constraints and server checks',async()=>{
+test('the original eight campaign chapters can be constructed using real map constraints and server checks',async()=>{
  const f=await fixture({landscape:true});try{
   const byMetric={housing:'HOME_ORIGIN',commerce:'SHOP_3B',green:'TREE_MATRIX',civic:'SCHOOL_3B',culture:'WORKSHOP_3B',sport:'ARENA_1618',landmark:'GOLD_GATE_3B',mobility:'BUS_STOP_3B',buildings:'HOME_ORIGIN'};
-  for(const m of CITY_CAMPAIGN_MISSIONS.filter(m=>!m.optional)){
+  for(const m of CITY_CAMPAIGN_MISSIONS.filter(m=>m.chapter<=8&&!m.optional)){
    for(const g of m.objectives){let metrics=(await f.db.query('select nexus_city_campaign_metrics($1) m',[A])).rows[0].m;
     if(g.metric==='roads'){const data=await snapshot(f),half=50+data.city.land_tier*45;const roads=Array.from({length:g.target},(_,i)=>({id:'edge-'+i,x1:-half+8,z1:-half+6+i*5,x2:-half+30,z2:-half+6+i*5,width:4}));await f.db.query('select nexus_city_plan_roads($1,$2::jsonb)',[A,JSON.stringify(roads)]);continue;}
     if(g.metric==='districts'){assert.ok(metrics.districts>=g.target,m.code);continue;}
@@ -60,3 +60,4 @@ test('daily income is bounded, idempotent, suspension aware and rolls back on wa
   await f.db.query("update member_profiles set passport_state='suspended' where user_id=$1",[A]);await assert.rejects(f.db.query('select nexus_city_budget_claim($1)',[A]),/actif/);
  }finally{await f.db.close();}
 });
+

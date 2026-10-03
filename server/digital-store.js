@@ -40,6 +40,8 @@ export function digitalStoreConfig(env=process.env){
   const database=originOf(env.SUPABASE_URL)&&String(env.SUPABASE_SERVICE_ROLE_KEY||"").length>20;
   return{
     origin,mode,testUsers,testEnabled,liveEnabled,database,
+    expansionEnabled:env.DIGITAL_STORE_EXPANSION_ENABLED==='true',
+    creditSpendEnabled:env.DIGITAL_STORE_CREDIT_SPEND_ENABLED==='true',
     enabled:!!origin&&database&&!!secret&&!!env.STRIPE_WEBHOOK_SECRET&&(testEnabled||liveEnabled),
   };
 }
@@ -96,10 +98,10 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
 
   async function products(scope){
     const safe=["world","city","all"].includes(scope)?scope:"all";
-    let query="/rest/v1/digital_store_products?active=eq.true&release_state=in.(test,ready,live)&select=code,game_scope,item_code,name,description,product_kind,price_cents,currency,release_state,no_pay_to_win,stripe_product_id,stripe_price_id,google_product_id,apple_product_id,sort_order,metadata&order=sort_order.asc";
+    let query="/rest/v1/digital_store_products?active=eq.true&release_state=in.(test,ready,live)&select=*&order=sort_order.asc";
     if(safe!=="all")query+="&game_scope=in.("+safe+",universal)";
     const rows=await db(query);
-    return Array.isArray(rows)?rows:[];
+    return (Array.isArray(rows)?rows:[]).filter(row=>row.product_kind==='non_consumable'||config.expansionEnabled&&row.product_kind==='consumable');
   }
 
   async function entitlements(uid){
@@ -111,7 +113,7 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
     if(!PRODUCT.test(code||""))throw new DigitalStoreError(400,"Produit premium invalide.");
     const rows=await db("/rest/v1/digital_store_products?code=eq."+encodeURIComponent(code)+"&active=eq.true&select=*&limit=1");
     const row=Array.isArray(rows)?rows[0]:null;
-    if(!row||row.release_state==="retired"||row.product_kind!=="non_consumable"||row.no_pay_to_win!==true)throw new DigitalStoreError(404,"Produit premium indisponible.");
+    if(!row||row.release_state==="retired"||!(row.product_kind==='non_consumable'||config.expansionEnabled&&row.product_kind==='consumable')||row.no_pay_to_win!==true)throw new DigitalStoreError(404,"Produit premium indisponible.");
     return row;
   }
 
@@ -156,7 +158,7 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
       throw new DigitalStoreError(503,"Paiement non confirmé.");
 
     const receiptHash=createHash("sha256").update(session.id+":"+intentId+":"+row.code).digest("hex");
-    return rpc("digital_store_fulfill_nonconsumable",{
+    return rpc(config.expansionEnabled?"digital_store_fulfill_v2":"digital_store_fulfill_nonconsumable",{
       p_user:uid,p_product_code:row.code,p_provider:"stripe",p_provider_transaction_id:intentId,
       p_provider_product_ref:row.stripe_price_id,p_amount_cents:row.price_cents,p_currency:"eur",
       p_receipt_hash:receiptHash,p_metadata:{stripe_session_id:session.id,livemode:session.livemode},
@@ -189,17 +191,22 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
       const scope=new URL(request.url).searchParams.get("scope")||"all";
       const [rows,owned]=await Promise.all([products(scope),entitlements(member.id)]);
       const ownedSet=new Set(owned.map(x=>x.product_code));
+      const balances=config.expansionEnabled?await db('/rest/v1/digital_credit_accounts?user_id=eq.'+member.id+'&select=asset,balance'):[];
+      const wallet=Object.fromEntries(['credits','premium_credits'].map(asset=>{const balance=Number(balances.find(b=>b.asset===asset)?.balance||0);return [asset,{available:Math.max(0,balance),debt:Math.max(0,-balance)}];}));
       const items=rows.map(row=>({
         code:row.code,scope:row.game_scope,name:row.name,description:row.description,
         amount:row.price_cents,currency:row.currency,category:row.metadata?.category||"premium",
-        releaseState:row.release_state,noPayToWin:row.no_pay_to_win===true,owned:ownedSet.has(row.code),
+        releaseState:row.release_state,noPayToWin:row.no_pay_to_win===true,owned:row.product_kind==='non_consumable'&&ownedSet.has(row.code),
+        kind:row.product_kind,walletAsset:row.wallet_asset,walletAmount:row.wallet_amount,
+        creditAsset:row.credit_asset,creditCost:row.credit_cost,
+        creditReady:config.expansionEnabled&&config.creditSpendEnabled&&row.release_state==='live'&&!!row.credit_cost,
         provider:{
           web:allowedForUser(member.id,row)?"stripe":null,
           googlePlay:row.google_product_id||null,
           appStore:row.apple_product_id||null,
         },
       }));
-      return json({items,mode:config.mode,purchasingEnabled:config.enabled});
+      return json({items,wallet,expansionEnabled:config.expansionEnabled,mode:config.mode,purchasingEnabled:config.enabled,nativePurchasingEnabled:false});
     }),
 
     checkout:wrap("POST",async request=>{
@@ -212,7 +219,7 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
       const row=await product(body?.productCode);
       if(!allowedForUser(member.id,row))throw new DigitalStoreError(403,"Ce produit n’est pas encore ouvert à l’achat.");
       const owned=await entitlements(member.id);
-      if(owned.some(x=>x.product_code===row.code))throw new DigitalStoreError(409,"Cet objet premium est déjà acquis.");
+      if(row.product_kind==='non_consumable'&&owned.some(x=>x.product_code===row.code))throw new DigitalStoreError(409,"Cet objet premium est déjà acquis.");
       await verifiedPrice(row);
       const digest=createHash("sha256").update(member.id+":"+row.code+":"+body.attemptId).digest("hex");
       const session=await stripe().checkout.sessions.create({
@@ -235,7 +242,19 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
       const session=await stripe().checkout.sessions.retrieve(sessionId);
       if(session.metadata?.integration!==INTEGRATION||session.metadata?.user_id!==member.id)throw new DigitalStoreError(404,"Achat introuvable.");
       const entitlement=session.status==="complete"&&session.payment_status==="paid"?await fulfillSession(session):null;
-      return json({paid:!!entitlement,status:session.status,paymentStatus:session.payment_status,entitlement});
+      return json({paid:entitlement?.ok===true,status:session.status,paymentStatus:session.payment_status,entitlement});
+    }),
+
+    spend:wrap('POST',async request=>{
+      if(!config.expansionEnabled||!config.creditSpendEnabled)throw new DigitalStoreError(503,'Les achats en crédits ne sont pas encore ouverts.');
+      if(request.headers.get('origin')!==config.origin)throw new DigitalStoreError(403,'Origine invalide.');
+      if(!request.headers.get('content-type')?.startsWith('application/json'))throw new DigitalStoreError(415,'Format invalide.');
+      const member=await currentMember(request);
+      let body;try{body=JSON.parse(await readBody(request));}catch{throw new DigitalStoreError(400,'Demande invalide.');}
+      if(!UUID.test(body?.attemptId||''))throw new DigitalStoreError(400,'Identifiant d’achat invalide.');
+      const row=await product(body?.productCode);
+      if(row.release_state!=='live'||row.product_kind!=='non_consumable'||!row.credit_cost)throw new DigitalStoreError(404,'Objet indisponible en crédits.');
+      return json(await rpc('digital_store_spend_credits',{p_user:member.id,p_product_code:row.code,p_request:body.attemptId}));
     }),
 
     webhook:wrap("POST",async request=>{
@@ -254,7 +273,7 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
         }else if(event.type==="charge.refunded"){
           const charge=event.data.object;
           const intentId=typeof charge.payment_intent==="string"?charge.payment_intent:charge.payment_intent?.id;
-          if(PAYMENT_INTENT.test(intentId||"")&&charge.amount_refunded>=charge.amount){
+          if(PAYMENT_INTENT.test(intentId||"")&&charge.amount_refunded>0){
             const intent=await stripe().paymentIntents.retrieve(intentId);
             if(intent.metadata?.integration===INTEGRATION)await rpc("digital_store_revoke_purchase",{p_provider:"stripe",p_provider_transaction_id:intentId,p_reason:"refund"});
           }

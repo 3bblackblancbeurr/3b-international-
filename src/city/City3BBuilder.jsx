@@ -1,6 +1,7 @@
 import {Button} from '../design-system/index.jsx';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {Building2,House,Store,Trees,HeartPulse,TrainFront,Landmark,Coins,Users,Heart,Flag,Route,Settings2,X,Maximize2,Move,PackageOpen,RotateCw,Undo2,Redo2,Search,Check,HardHat,Gift,Waves,Eraser} from 'lucide-react';
+import City3BAdvisor from './City3BAdvisor.jsx';
 import City3DMap from './City3DMap.jsx';
 import CityBuildingPreview from './CityBuildingPreview.jsx';
 import {cityFootprint,cityPlacementCheck,citySuggestedParcel,cityCatalogue,CITY_BUILD_CATEGORIES,cityLevelProgress,cityBuildingLimit} from './city3b-construction.js';
@@ -43,7 +44,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
  const limit=cityBuildingLimit(data,activeDefinition,selectedPlacement?.id);
  const affordable=!!selectedPlacement||Number(data.wallet?.coins||0)>=Number(activeDefinition?.cost_coins||0);
  const unlocked=!!selectedPlacement||Number(city.city_level||1)>=Number(activeDefinition?.unlock_level||1);
- const progress=cityConstructionState(selectedPlacement,now),level=cityLevelProgress(city.city_xp),mission=campaignSummary(data.campaign).active;
+ const progress=cityConstructionState(selectedPlacement,now),level=cityLevelProgress(city.city_xp,city.city?.progression_curve),mission=campaignSummary(data.campaign).active;
  const roads=useMemo(()=>cityMapCustomRoads(data),[data.city]);
  const networks=useMemo(()=>cityNetworks(data),[data.city]);
  const networkTool=tool==='road'&&networkKind!=='road';
@@ -81,6 +82,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
   if(!focus)return;
   if(focus.building&&definitions.has(focus.building))chooseBuilding(definitions.get(focus.building));
   else if(focus.tool==='road'){clearSelection();setCatalog(false);setTool('road');}
+  else if(focus.tab==='build'){clearSelection();setCategory(focus.category||'all');setCatalog(true);}
  },[focus]);
  useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(''),5000);return()=>clearTimeout(timer);},[notice]);
  const commitHistory=action=>{setHistory(h=>[...h.slice(-29),action]);setFuture([]);};
@@ -152,7 +154,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
    </div>
    <div className="city-game-system">{onFullscreen&&<Button variant="ghost" aria-label="Plein écran" onClick={onFullscreen}><Maximize2 size={18}/></Button>}<Button variant="ghost" aria-label="Réglages du jeu" onClick={()=>onOpenPanel('settings')}><Settings2 size={18}/></Button>{onClose&&<Button variant="ghost" aria-label="Quitter la ville" onClick={onClose}><X size={18}/></Button>}</div>
   </header>
-  {!panelOpen&&!catalog&&!visibleSelection&&!['road','landscape','erase'].includes(tool)&&mission&&<Button variant="ghost" className="city-game-objective" disabled={busy} onClick={followMission}><Flag size={18}/><span><small>{mission.status==='ready'?'OBJECTIF ACCOMPLI':'PROCHAIN OBJECTIF'}</small><strong>{mission.title}</strong></span><b>{mission.status==='ready'?`+${mission.coins}`:'→'}</b></Button>}
+  {!panelOpen&&<City3BAdvisor campaign={data.campaign} cityId={city.city_id} compact={catalog||visibleSelection||tool!=='inspect'} onMission={followMission} onJournal={()=>onOpenPanel('missions')}/>}
   {!panelOpen&&!catalog&&!visibleSelection&&(sites.length>0||ready.length>0)&&<Button variant="ghost" className="city-game-sites" onClick={()=>{const row=ready[0]||sites[0];selectPlacement(row);setCenter({x:row.x,z:row.z});setZoom(cityMapBlueprint(data).half/21);}}>{ready.length?<Gift size={17}/>:<HardHat size={17}/>} {ready.length?`${ready.length} inauguration${ready.length>1?'s':''}`:`${sites.length} chantier${sites.length>1?'s':''}`}</Button>}
   {notice&&!panelOpen&&<div className="city-game-toast" role="status">{notice}</div>}
   {visibleSelection&&<aside className="city-game-inspector" data-placing={placing} data-details={details} aria-label="Bâtiment sélectionné">
@@ -191,4 +193,5 @@ export function City3BPrivatePreview({data,premiumCodes=EMPTY_PREMIUM_CODES}){
  const [view,setView]=useState(()=>cityMapInitialView(data));
  return <div className="city-game-visit"><City3DMap data={data} draft={{x:0,z:0,rotation:0}} zoom={view.zoom} setZoom={fn=>setView(v=>({...v,zoom:typeof fn==='function'?fn(v.zoom):fn}))} center={view.center} setCenter={center=>setView(v=>({...v,center}))} previewOnly premiumCodes={premiumCodes}/></div>;
 }
+
 

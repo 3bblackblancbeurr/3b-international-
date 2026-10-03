@@ -1,11 +1,18 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {randomUUID} from 'node:crypto';import {fixture,A,B} from './helpers/city-playable-db.js';
 const sql=f=>readFileSync(new URL('../supabase/migrations/'+f,import.meta.url),'utf8');
-async function setup(){const f=await fixture({landscape:true});for(const file of ['20261003045247_matrix_civic_services.sql','20261003045254_city_infrastructure_networks.sql','20261003045300_city_neighbor_material_exchange.sql','20261003121332_city_fixed_roads_and_player_signals.sql','20261003153128_city3b_starting_maps.sql','20261003162024_city3b_three_save_slots.sql'])await f.db.exec(sql(file));return f;}
+async function setup(){const f=await fixture({landscape:true});for(const file of ['20261003045247_matrix_civic_services.sql','20261003045254_city_infrastructure_networks.sql','20261003045300_city_neighbor_material_exchange.sql','20261003121332_city_fixed_roads_and_player_signals.sql','20261003153128_city3b_starting_maps.sql','20261003162024_city3b_three_save_slots.sql','20261003183500_city3b_mayor_campaign_v2.sql'])await f.db.exec(sql(file));return f;}
 const call=async(f,slot,id,op,args={},uid=A)=>(await f.db.query('select nexus_city_slot_call($1,$2,$3,$4,$5::jsonb) v',[uid,slot,id,op,JSON.stringify(args)])).rows[0].v;
 const city=async(f,slot,uid=A)=>(await f.db.query('select * from nexus_cities where user_id=$1 and slot_no=$2',[uid,slot])).rows[0];
 test('three server slots isolate maps, edits and progress, survive reload and share only the existing account wallet',async()=>{
  const f=await setup();try{
  const original=await city(f,1),coins=await f.coins();
+ for(let n=1;n<=100;n++){
+  const {cityLevelFloor}=await import('../src/city/city3b-progression.js');
+  const floor=cityLevelFloor(n);
+  assert.equal((await f.db.query('select city3b_level_floor($1) floor,city3b_level_for_xp($2) level',[n,floor])).rows[0].level,n);
+  assert.equal(Number((await f.db.query('select city3b_level_floor($1) floor',[n])).rows[0].floor),floor);
+ }
+
  const second=await call(f,2,null,'nexus_city_create_map',{p_name:'Rivière',p_country:'France',p_map:'river'});
  const third=await call(f,3,null,'nexus_city_create_map',{p_name:'Neige',p_country:'France',p_map:'snow'});
  assert.notEqual(second,third);assert.notEqual(second,original.city_id);assert.equal(await f.coins(),coins,'no second starter grant');
@@ -19,7 +26,7 @@ test('three server slots isolate maps, edits and progress, survive reload and sh
  const secondCity=await city(f,2),terrain=secondCity.city.terrain,remaining=terrain.filter(x=>x.id!==terrain.find(x=>x.kind==='tree').id);
  await call(f,2,second,'nexus_city_plan_terrain',{p_features:remaining,p_expected:terrain});
  assert.deepEqual((await city(f,2)).city.terrain,remaining);assert.equal((await city(f,3)).city.terrain.length,89);
- const progress=await call(f,2,second,'nexus_city_campaign_snapshot');assert.ok(progress.available);
+ const progress=await call(f,2,second,'nexus_city_campaign_snapshot');assert.ok(progress.available);assert.equal(progress.missions.length,72);assert.equal((await city(f,2)).city.progression_curve,'municipal-v2');
  const current=(await f.db.query('select city_id from nexus_city_current where user_id=$1',[A])).rows[0];assert.equal(current.city_id,original.city_id,'slot context restored after each RPC');
  await assert.rejects(call(f,2,third,'nexus_city_plan_terrain',{p_features:[],p_expected:remaining}),/partie a changé/);
  await assert.rejects(call(f,2,null,'nexus_city_plan_terrain',{p_features:[],p_expected:remaining}),/Recharge/);
@@ -37,3 +44,4 @@ test('three server slots isolate maps, edits and progress, survive reload and sh
  await f.db.exec('set role authenticated');await assert.rejects(call(f,2,second,'nexus_city_campaign_snapshot'),/permission denied/);
  }finally{await f.db.close();}
 });
+

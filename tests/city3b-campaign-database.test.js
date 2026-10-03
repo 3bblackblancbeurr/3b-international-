@@ -26,7 +26,7 @@ async function fixture(){
  end $$;`);
  for(const file of ['20260917105315_create_your_3b_city_v2.sql','20260917105501_city_3b_districts_and_collectibles.sql','20260917111213_city_3b_progression_catalog_v3.sql'])await db.exec(sql(file));
  await db.exec('alter table nexus_city_placements add column footprint_w smallint default 1,add column footprint_h smallint default 1,add column request_id uuid;');
- for(const file of ['20260917132738_city3b_wallet_store_move_v5.sql','20260928122225_separate_world_city_progression.sql','20261003003042_city3b_guided_campaign.sql'])await db.exec(sql(file));
+ for(const file of ['20260917132738_city3b_wallet_store_move_v5.sql','20260928122225_separate_world_city_progression.sql','20261003003042_city3b_guided_campaign.sql','20261003003056_city3b_living_runtime.sql','20261003003108_city3b_playable_construction.sql','20261003045247_matrix_civic_services.sql','20261003183500_city3b_mayor_campaign_v2.sql'])await db.exec(sql(file));
  await db.exec('grant usage on schema auth,public to authenticated,service_role;grant select on auth.users to authenticated;grant select on nexus_cities to authenticated;grant all on all tables in schema public to service_role;grant usage on all sequences in schema public to service_role;');
  for(const uid of [A,B]){await db.query('insert into auth.users values($1)',[uid]);await db.query("insert into member_profiles values($1,'France','active')",[uid]);await db.query("select nexus_city_create($1,'Ville test','France')",[uid]);}
  const query=async(text,args=[])=>{const r=await db.query(text,args);return r.rows[0]};
@@ -36,14 +36,14 @@ async function fixture(){
  const coins=async(uid=A)=>Number((await query('select coins from economy_accounts where user_id=$1',[uid])).coins);
  const metrics=async(uid=A)=>(await query('select nexus_city_campaign_metrics($1) as metrics',[uid])).metrics;
  let nextPlacement=0;
- const place=async(code,uid=A)=>{const n=nextPlacement++;return query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5) as id',[uid,code,-80+(n%20)*6,-80+Math.floor(n/20)*6,randomUUID()]);};
+ const place=async(code,uid=A)=>{for(let attempt=0;attempt<500;attempt++){const n=nextPlacement++%196;try{return await query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5) as id',[uid,code,-80+(n%14)*12,-80+Math.floor(n/14)*12,randomUUID()]);}catch(error){if(!/réservé|verrouillé|déjà occup|chevauch|Hors du terrain|occupée|collision/i.test(error.message))throw error;}}throw Error('No free parcel for '+code);};
  const roads=async(count,uid=A)=>{const list=Array.from({length:count},(_,i)=>({id:'road-'+i,x1:-70,z1:-60+i*8,x2:-50,z2:-60+i*8,width:4}));await db.query("update nexus_cities set city=jsonb_set(city,'{roads}',$2::jsonb) where user_id=$1",[uid,JSON.stringify(list)]);await snapshot(uid);};
  return {db,query,city,snapshot,claim,coins,metrics,place,roads};
 }
 
 test('SQL campaign rejects unmet, unknown and foreign progress; rewards and city XP survive retries and storage',async()=>{
  const f=await fixture();try{
-  assert.equal((await f.snapshot()).missions.length,32);
+  assert.equal((await f.snapshot()).missions.length,72);
   const definitions=(await f.db.query('select * from nexus_city_mission_definitions order by sort_order')).rows;
   for(const [i,m] of CITY_CAMPAIGN_MISSIONS.entries()){assert.equal(definitions[i].code,m.code);assert.deepEqual(definitions[i].objectives,m.objectives);assert.equal(definitions[i].coins,m.coins);assert.equal(definitions[i].city_xp,m.cityXp);}
   await assert.rejects(f.claim('unknown_mission'),/introuvable/);
@@ -82,7 +82,7 @@ test('SQL campaign rejects unmet, unknown and foreign progress; rewards and city
  }finally{await f.db.close();}
 });
 
-test('all 24 main missions can be funded and completed from the starter grant without optional tasks or premium',async()=>{
+test('all 54 main missions can be funded and completed from the starter grant without optional tasks or premium',async()=>{
  const f=await fixture();try{
   const byMetric={housing:'HOME_ORIGIN',commerce:'SHOP_3B',green:'TREE_MATRIX',civic:'SCHOOL_3B',culture:'WORKSHOP_3B',sport:'ARENA_1618',landmark:'GOLD_GATE_3B',mobility:'BUS_STOP_3B',buildings:'HOME_ORIGIN'};
   for(const m of CITY_CAMPAIGN_MISSIONS.filter(m=>!m.optional)){
@@ -99,7 +99,7 @@ test('all 24 main missions can be funded and completed from the starter grant wi
    await f.claim(m.code);
    assert.ok(await f.coins()>=0);
   }
-  const end=await f.snapshot();assert.equal(end.missions.filter(m=>!m.optional&&m.status==='claimed').length,24);
+  const end=await f.snapshot();assert.equal(end.missions.filter(m=>!m.optional&&m.status==='claimed').length,54);
   assert.equal(end.missions.filter(m=>m.optional&&m.status==='claimed').length,0);assert.equal(end.metrics.districts,8);
   assert.equal((await f.query('select xp from economy_accounts where user_id=$1',[A])).xp,0);
   assert.equal(end.stats.missionXp,CITY_CAMPAIGN_MISSIONS.filter(m=>!m.optional).reduce((sum,m)=>sum+m.cityXp,0));
@@ -119,3 +119,4 @@ test('metrics ignore stored buildings, reverse duplicate roads, short roads and 
   await assert.rejects(f.db.query("select nexus_city_environment($1,null,'rain','gold')",[A]),/invalide/);
  }finally{await f.db.close();}
 });
+

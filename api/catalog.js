@@ -12,6 +12,7 @@ export default {
     if (route === "digital-store-catalog") return createDigitalStore().catalog(request);
     if (route === "digital-store-checkout") return createDigitalStore().checkout(request);
     if (route === "digital-store-status") return createDigitalStore().status(request);
+    if (route === "digital-store-spend") return createDigitalStore().spend(request);
     return createShop().catalog(request);
   },
 };
