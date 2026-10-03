@@ -8,7 +8,7 @@ import {cityMapBlueprint,cityMapPlacementPolicy} from '../src/city/city3b-map.js
 import {cityEraseTargets,cityErasePlan} from '../src/city/city3b-erase.js';
 import {landscapeCheck} from '../src/city/city3b-landscape.js';
 const sql=file=>readFileSync(new URL('../supabase/migrations/'+file,import.meta.url),'utf8');
-const migration='20261003153000_city3b_starting_maps.sql';
+const migration='20261003153128_city3b_starting_maps.sql';
 
 test('four authored maps have a clear start, bounded removable trees and a connected meandering river',()=>{
  assert.equal(CITY_MAP_PRESETS.length,4);
