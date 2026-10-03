@@ -26,6 +26,9 @@ test('drawing focus frames both endpoints and never mutates the saved plan',()=>
  assert.equal(cityDrawingView(snapshot,[]),null);assert.equal(cityDrawingView(snapshot,[{...route,x1:NaN}]),null);
 });
 test('empty starter maps begin closer so the 4 metre road is visible',()=>{
- const snapshot={city:{city:{map_preset:'river',map_extent:500}}};
- assert.equal(cityMapBlueprint(snapshot).half/cityMapInitialView(snapshot).zoom,80);
+ for(const map_preset of ['plains','river','hills','snow'])for(const map_extent of [500,1000]){
+  const snapshot={city:{city:{map_preset,map_extent}}};
+  const radius=cityMapBlueprint(snapshot).half/cityMapInitialView(snapshot).zoom;
+  assert.ok(radius>=16&&radius<=34,'readable neighborhood frame independent of the entire map size');
+ }
 });
