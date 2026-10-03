@@ -27,3 +27,12 @@ test('new refuge and arena creatures are reachable without changing reward state
   const path=findPath(HUB_PLATFORM.spawn,item,hub.collisions,HUB_PLATFORM.walkRadius);assert.ok(path.length,item.id);assert.ok(Math.hypot(path.at(-1).x-item.x,path.at(-1).z-item.z)<item.range);
  }assert.equal(JSON.stringify(save),before);}finally{hub.dispose();}
 });
+
+test('coastal foundations stay below the pedestrian deck and cannot hide the character',async()=>{
+ const THREE=await import('three'),hub=createHubPlatform(blankSave());hub.root.updateMatrixWorld(true);
+ try{for(const p of [{x:0,z:40},{x:40,z:0}]){
+  const ray=new THREE.Raycaster(new THREE.Vector3(p.x*HUB_SCALE,20,p.z*HUB_SCALE),new THREE.Vector3(0,-1,0));
+  const hits=ray.intersectObject(hub.root,true).filter(h=>!h.object.material.transparent);
+  assert.ok(hits.length);assert.ok(hits[0].point.y<.15,`No foundation protrudes through the road at ${JSON.stringify(p)}`);
+ }}finally{hub.dispose();}
+});

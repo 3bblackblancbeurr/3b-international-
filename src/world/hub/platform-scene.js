@@ -33,7 +33,7 @@ export function createHubPlatform(save){
  const deckParts=[],fallMaterial=citeWaterfallMaterial();owned.push(fallMaterial);
  for(const island of CITE_ISLANDS){
   mesh(cylinder,dark,island.x,-8,island.z,island.r,16,island.r);
-  for(let k=0;k<12;k++){const a=k*Math.PI/6;const rock=mesh(sphere,dark,island.x+Math.cos(a)*(island.r-2),-10-k%3,island.z+Math.sin(a)*(island.r-2),5,12+k%4,6);rock.rotation.y=a;}
+  for(let k=0;k<12;k++){const a=k*Math.PI/6;const rock=mesh(sphere,dark,island.x+Math.cos(a)*(island.r-2),-16-k%3,island.z+Math.sin(a)*(island.r-2),5,12+k%4,6);rock.rotation.y=a;}
   const top=new THREE.CircleGeometry(island.r,64);top.rotateX(-Math.PI/2);top.translate(island.x,0,island.z);deckParts.push(top);
   const trim=mesh(geo(new THREE.TorusGeometry(island.r,.16,5,64)),gold,island.x,.08,island.z);trim.rotation.x=-Math.PI/2;
  }
