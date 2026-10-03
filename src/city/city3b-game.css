@@ -114,3 +114,19 @@
 .city-game[data-tool=road] .city-game-drawing .city-game-selection-actions button{min-height:40px}
 .city-game[data-tool=road] .city3d-gesture-guide,.city-game[data-tool=landscape] .city3d-gesture-guide{display:none}
 @media(max-width:440px){.city-game[data-tool=road] .city-game-drawing{width:calc(100% - 24px)}}
+
+
+/* Road placement: a narrow side toolbar leaves the centre of the map clear. */
+.city-game-road-summary{display:none!important}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true]{left:auto;right:max(10px,env(safe-area-inset-right));top:68px;bottom:auto;transform:none;box-sizing:border-box;width:180px;max-height:calc(100% - 138px);padding:6px;gap:5px;grid-template-columns:minmax(0,1fr);overflow:auto}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-drawing-title{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:4px}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-road-summary{display:flex!important;grid-column:1/-1;justify-content:space-between;white-space:normal;text-align:left;min-height:44px;font-size:11px;padding:4px 6px}
+.city-game-road-summary small{display:inline;margin:0;white-space:nowrap}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-drawing-title>select,.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-drawing-title>strong{display:none}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-drawing-title>button:not(.city-game-road-summary){width:100%;min-height:44px}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-selection-actions{grid-column:1;grid-row:auto;display:flex;flex-wrap:nowrap}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-selection-actions button{min-height:44px}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-road-signals,.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-road-reset span{display:none}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true] .city-game-road-reset{width:44px;padding:0}
+.city-game[data-tool=road] .city-game-drawing[data-compact=true]>p[role=status]{margin:0;font-size:10px;line-height:1.3;overflow-wrap:anywhere}
+@media(max-height:540px) and (orientation:landscape){.city-game[data-tool=road] .city-game-drawing[data-compact=true]{top:48px;width:164px;max-height:calc(100% - 98px)}}

@@ -4,7 +4,21 @@ import {matrixTree} from './city3b-architecture.js';
 import {cityBuildingKind} from './city3b-map.js';
 
 const geometries={box:new THREE.BoxGeometry(1,1,1),sphere:new THREE.IcosahedronGeometry(1,1),cylinder:new THREE.CylinderGeometry(1,1,1,10)};
-export function cityBuildingHeight(w,d,kind,code){const small=Math.min(w,d);return Math.min(18,Math.max(.9,small*(code==='HOME_ORIGIN'?.8:kind==='housing'?1.15:kind==='landmark'?2.5:.8)));}
+// Shared scale for the catalogue, placement ghost and saved buildings.
+// Increase vertical presence within the existing parcel: roads and saves stay aligned.
+export function cityBuildingHeight(w,d,kind,code=''){
+ const small=Math.max(.7,Math.min(Number(w)||1,Number(d)||1));
+ const type=String(code);
+ const ratio=/TOWER|BUSINESS|OFFICE/.test(type)?2.4
+  :/APARTMENT|RESIDENCE|HOUSING/.test(type)?1.65
+  :type==='HOME_ORIGIN'?1.10
+  :/HOSPITAL/.test(type)?1.55
+  :/CLINIC|SCHOOL|POLICE|COURT|CITY_HALL/.test(type)?1.15
+  :/FACTORY|WORKS|DEPOT|SUPERMARKET/.test(type)?1.0
+  :kind==='housing'?1.45:kind==='landmark'?2.5
+  :kind==='green'||kind==='mobility'?.8:1.10;
+ return Math.min(24,Math.max(1.1,small*ratio));
+}
 export function cityModelPrimitives(definition={},footprint=definition.footprint||{},seed) {
  const w=Math.max(.7,Number(footprint.w??footprint.width)||1),d=Math.max(.7,Number(footprint.h??footprint.height)||1),kind=cityBuildingKind(definition),height=cityBuildingHeight(w,d,kind,definition.code),result=[];
  const parent={},shape=(_,geo,color,x,y,z,w,h,d,emissive=false)=>{const row={type:geo,color,x,y,z,w,h,d,emissive,rotation:{x:0,y:0,z:0}};result.push(row);return row;};
@@ -49,3 +63,4 @@ export function cityModelThumbnail(definition,footprint,seed){
  ctx.putImageData(pixels,0,0);
  const src=canvas.toDataURL('image/png');if(cache.size>=128)cache.delete(cache.keys().next().value);cache.set(key,src);return src;
 }
+
