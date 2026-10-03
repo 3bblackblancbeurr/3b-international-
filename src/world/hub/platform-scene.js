@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {HUB_PLATFORM,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
+import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
+import {addPlatformArchitecture} from './platform-architecture.js';
+import {hubPublicPlaces,platformWorldState,HUB_VALUES} from './platform-life.js';
 import plan from './data/hub-master-plan-v2.json' with {type:'json'};
 
 /** A bounded, low-cost playable interpretation of the saved floating-city reference.
  * No raymarched clouds, reflections or asset downloads; geometry is merged by material. */
 export function createHubPlatform(save){
  const root=new THREE.Group(),owned=[],cache=new Map(),collisions=[],cameraSolids=[],roofs=[],waterfalls=[],fragments=[];
- const buildings=plan.buildings.map(platformBuilding);let interior=null,daylight=1;
+ const worldBuildings=plan.buildings.map(platformBuilding),buildings=worldBuildings.map(b=>({...b,buildingX:b.buildingX/HUB_SCALE,buildingZ:b.buildingZ/HUB_SCALE,width:b.width/HUB_SCALE,depth:b.depth/HUB_SCALE,height:b.height/1.5}));let interior=null,daylight=1;
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,64)),sphere=geo(new THREE.IcosahedronGeometry(1,1));
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
  const dark=material('#101c29'),stone=material('#b4b1a1'),gold=material('#d6b46a'),blue=material('#55c9ef',true),glass=material('#174963'),wood=material('#5f4939'),green=material('#315b4b'),water=material('#226684');
@@ -31,10 +33,18 @@ export function createHubPlatform(save){
  }
  // Eight gates on the perimeter with eight wide routes radiating from the same landmark.
  for(let i=0;i<8;i++){
-  const p=platformPortal(i),a=Math.atan2(p.x,p.z);
+  const wp=platformPortal(i),p={x:wp.x/HUB_SCALE,z:wp.z/HUB_SCALE},a=Math.atan2(p.x,p.z);
   const walk=mesh(box,dark,p.x*.56,.006,p.z*.56,9,.04,116);walk.rotation.y=a;
   for(const side of [-1,1]){const strip=mesh(box,gold,p.x*.56+Math.cos(a)*side*4.6,.04,p.z*.56-Math.sin(a)*side*4.6,.12,.05,116);strip.rotation.y=a;}
   mesh(cylinder,dark,p.x,-.015,p.z,11,.12,11);ring(20,.05,.06,gold,Math.PI*.7,i*Math.PI/4);
+  // Broad gold/black gateway surrounds the existing traversable country threshold.
+  for(const side of [-1,1]){
+   mesh(box,dark,p.x+side*8,10,p.z,2,20,3);
+   mesh(box,gold,p.x+side*8,10,p.z+1.6,.4,22,.2);
+   mesh(box,blue,p.x+side*7.4,8,p.z+1.8,.12,12,.1);
+   collisions.push({x:p.x+side*8,z:p.z,width:2,depth:3});
+  }
+  mesh(box,gold,p.x,20,p.z,18,.6,3.2);sign(HUB_VALUES[i],p.x,22,p.z,13);
  }
  // Four basins and cascades leave the radial routes and the circular promenade dry.
  for(const [x,z] of [[48,48],[-48,48],[48,-48],[-48,-48]]){
@@ -58,7 +68,7 @@ export function createHubPlatform(save){
  sign('LE CERCLE BRISÉ',0,4,4.5,12);
  // Useful buildings are open rooms. Doorways, counters and furniture have real collision.
  for(const b of buildings){
-  const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,walls=platformWalls(b);
+  const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,walls=platformWalls(worldBuildings.find(item=>item.buildingId===b.buildingId)).map(wall=>Object.fromEntries(Object.entries(wall).map(([k,v])=>[k,v/HUB_SCALE])));
   mesh(box,dark,x,.015,z,w,.05,d);mesh(box,gold,x,.06,z+d/2,w,.12,.3);
   for(const wall of walls){mesh(box,dark,wall.x,h/2,wall.z,wall.width,h,wall.depth);collisions.push(wall);cameraSolids.push({...wall,bottom:0,top:h});}
   const roof=mesh(box,dark,x,h+.2,z,w+1,.4,d+1);roofs.push({b,roof});
@@ -80,6 +90,16 @@ export function createHubPlatform(save){
    sign('DUELS • ENTRAÎNEMENT • MULTIJOUEUR',x,5,z-d/2+.4,18);
   }
  }
+ addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,collisions,sign,THREE});
+ // Physical district consoles and the eight value plaques have matching runtime interactions.
+ for(const p of hubPublicPlaces()){
+  const x=p.x/HUB_SCALE,z=p.z/HUB_SCALE;
+  mesh(cylinder,dark,x,.55,z,.65,1.1,.65);mesh(box,gold,x,1.3,z,1.1,.08,.7);
+  const screen=mesh(box,blue,x,1.65,z,.9,.55,.08);screen.rotation.x=-.2;
+  sign(p.kind==='value'?p.value:hubPublicPlaces().find(v=>v.id===p.id).name,x,2.7,z,5.2);
+ }
+ const blooms=[];for(let i=0;i<16;i++){const a=i*Math.PI/8,x=-66+Math.cos(a)*18,z=66+Math.sin(a)*18;blooms.push(mesh(sphere,gold,x,.3,z,.4,.5,.4));}
+ const communityBanner=mesh(box,blue,-111,15,8,13,1.2,.12);
  // Market, benches, lamps and compact terraces populate every route.
  for(let i=0;i<24;i++){
   const a=(i+.5)*Math.PI*2/24,r=i%2?119:80,x=Math.cos(a)*r,z=Math.sin(a)*r;
@@ -96,20 +116,23 @@ export function createHubPlatform(save){
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
- const dynamic=new Set([ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
+ const dynamic=new Set([communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
  root.updateMatrixWorld(true);const groups=new Map();
  for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.map){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
  for(const group of groups.values())if(group.length>1){
   const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
  }
- const update=next=>{save=next;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=25+(i<count?0:Math.sin(i*Math.PI/4)*.55);}};
+ const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=25+(i<count?0:Math.sin(i*Math.PI/4)*.55);}};
  update(save);
+ root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
+ for(const o of collisions)for(const key of ['x','z','r','width','depth'])if(Number.isFinite(o[key]))o[key]*=HUB_SCALE;
+ for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
  return {root,ground,collisions,cameraSolids,ready:Promise.resolve(),height:()=>0,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',rooms:buildings.length,portals:8},
+  architectureDiagnostics:{id:'reference-floating-platform',rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
   update,setParty(){},setQuality(mode){root.userData.quality=mode;},setWeather(){},setDaylight(value){daylight=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
-  updateDistrict(camera,p){interior=platformInteriorAt(p,buildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
+  updateDistrict(camera,p){interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
   updateCamera(){},renderWaterReflection(){},cinematicFocus(){return false;},
   tick(time){orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;for(const [i,fall] of waterfalls.entries())fall.scale.y=36+Math.sin(time*1.6+i)*.5;},
   dispose(){root.removeFromParent();for(const asset of owned)asset.dispose();},

@@ -1,0 +1,12 @@
+import React from 'react';
+import {hubDistrictStory,platformWorldState} from './platform-life.js';
+export function HubDistrictPanel({place,save,items,onNavigate,onMission,onService}){
+ const story=hubDistrictStory(place.district),world=platformWorldState(save),missions=items.filter(i=>i.type==='hubMission'&&(story.missions.includes(i.missionId)||i.district===place.district));
+ const state=save.hub?.missions||{},status=id=>state[id]?.claimed?'Accomplie':state[id]?.status==='completed'?'Récompense prête':state[id]?.status==='active'?'En cours':'À découvrir';
+ return <div className="hub-district-panel"><span className="world-kicker">{place.kind==='value'?'LES HUIT VALEURS':'LA CITÉ VIVANTE'}</span><h3>{place.name}</h3><p>{place.kind==='value'?place.detail:story.story}</p>
+ <div className="hub-civic-status"><span>{world.missionsFinished} missions accomplies</span><span>{world.networkRestored?'Réseau Matrix réparé':'Relais Matrix instables'}</span><span>{world.gardenRestored?'Conservatoire restauré':'Conservatoire à restaurer'}</span><span>{world.communityUnited?'Rencontre des habitants organisée':'Les habitants cherchent à se réunir'}</span></div>
+ {missions.length>0&&<><h4>Histoires et activités du quartier</h4><div className="hub-locations">{missions.map(m=><article key={m.id}><strong>{m.name}</strong><small>{status(m.missionId)}{m.locked?' · prérequis dans le journal':''}</small><p>{m.objectives?.[state[m.missionId]?.completedObjectives||0]||'Retourne voir le donneur de mission.'}</p><button onClick={()=>onNavigate(m)}>Repérer dans le monde</button>{state[m.missionId]?.status==='available'&&!m.locked&&<button onClick={()=>onMission(m)}>Lire la proposition</button>}</article>)}</div></>}
+ <h4>Lieux à rejoindre à pied</h4><div className="hub-locations">{items.filter(i=>i.type==='hubBuilding'&&story.services.includes(i.buildingId)).map(i=><button key={i.id} onClick={()=>onService(i)}>{i.name}<small>Placer un repère vers l’entrée</small></button>)}{items.filter(i=>i.type==='hubTransport'&&i.district===place.district&&i.boardable!==false).map(i=><button key={i.id} onClick={()=>onNavigate(i)}>{i.name}<small>Rejoindre la station</small></button>)}</div>
+ <h4>Rencontrer les habitants</h4><div className="hub-locations">{items.filter(i=>i.type==='hubNpc'&&i.district===place.district).map(i=><button key={i.id} onClick={()=>onNavigate(i)}>{i.name.replaceAll('_',' ')}<small>{i.role}</small></button>)}</div>
+ </div>;
+}
