@@ -37,10 +37,10 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   host.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-label','Carte 3D. Glisser pour déplacer, molette pour zoomer, clic droit pour tourner. Sur mobile : déplacer, pincer et tourner avec deux doigts. Q et E : rotation. H : recentrer.');
   renderer.domElement.tabIndex=0;
-  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,.1,3000);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,.1,10000);
   const controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.dampingFactor=.16;controls.panSpeed=.85;controls.rotateSpeed=.65;controls.zoomSpeed=.7;controls.maxPolarAngle=Math.PI*.48;controls.minPolarAngle=.12;
-  controls.minDistance=9;controls.maxDistance=2100;controls.screenSpacePanning=false;
+  controls.minDistance=9;controls.maxDistance=4200;controls.screenSpacePanning=false;
   controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.PAN,RIGHT:THREE.MOUSE.ROTATE};
   controls.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_PAN};
   const hemi=new THREE.HemisphereLight(0xc8e8ff,0x6b714b,2.5);scene.add(hemi);
@@ -58,6 +58,19 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const environment=createCityNaturalEnvironment();scene.add(environment.sky);
   function tree(parent,x,z,size=1){
     matrixTree({box,shape,sphereGeo,cylinderGeo},parent,x,z,size);
+  }
+  function nativeTree(parent,x,z,r){
+    const snow=data.city?.city?.climate==='snow',h=3+r*2;
+    shape(parent,cylinderGeo,0x65503c,x,h*.3,z,r*.14,h*.6,r*.14);
+    if(snow){
+      for(const [y,scale] of [[.46,1],[.67,.78],[.86,.5]]){
+        shape(parent,coneGeo,0x385d50,x,h*y,z,r*scale,h*.48,r*scale);
+        shape(parent,coneGeo,0xe8f0ef,x,h*y+h*.07,z,r*scale*.82,h*.36,r*scale*.82);
+      }
+    }else{
+      for(const [dx,dz,y,s,color] of [[0,0,.74,1,0x52794a],[-.4,.18,.62,.72,0x3e663e],[.36,-.2,.86,.68,0x709455]])
+        shape(parent,sphereGeo,color,x+dx*r,h*y,z+dz*r,r*s,h*.3*s,r*s);
+    }
   }
   function road(parent,x1,z1,x2,z2,width=4,roadType){
     const model=cityRoadType(roadType),color=roadType?model.color:0x555f63,path=roadType==='pedestrian'||roadType==='dirt';
@@ -105,7 +118,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
         const water=box(parent,color,x,.085,z,f.width,.08,length);water.rotation.y=angle;water.material=preview?mat(0x66caff):environment.water;
         for(const p of [[f.x1,f.z1],[f.x2,f.z2]]){shape(parent,waterGeo,0x7796a0,p[0],.025,p[1],r+.5,.08,r+.5);shape(parent,waterGeo,color,p[0],.085,p[1],r,.08,r).material=preview?mat(0x66caff):environment.water;}
       }
-    }else if(f.kind==='tree')tree(parent,x,z,r);
+    }else if(f.kind==='tree'){if(f.id?.startsWith('start-'))nativeTree(parent,x,z,r);else tree(parent,x,z,r);}
     else if(f.kind==='garden'){shape(parent,cylinderGeo,0x334e59,x,.025,z,r,.1,r);for(const side of [-1,1])tree(parent,x+side*r*.4,z,r*.38);box(parent,0xc9b07c,x,.15,z,r*.12,.1,r*1.7);}
     else if(f.kind==='bench'){box(parent,0x2d4653,x,.55,z,1.5,.12,.48);box(parent,0xc7ad79,x,.9,z-.22,1.5,.55,.08);for(const side of [-1,1])box(parent,0x61c1ee,x+side*.55,.27,z,.08,.5,.38,true);}
     else if(f.kind==='light'){box(parent,0xc7ad79,x,1.6,z,.09,3.2,.09);box(parent,0x63c6ed,x,3.2,z,.9,.09,.22,true);shape(parent,cylinderGeo,0x2b4d5b,x,.08,z,.4,.16,.4);}
@@ -163,7 +176,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     // Four ocean strips surround all edges without covering the player's land.
     for(const side of [-1,1]){box(world,0x379dbe,side*half*2,-.18,0,half*2,.1,half*6).material=environment.water;box(world,0x379dbe,0,-.18,side*half*2,half*2,.1,half*2).material=environment.water;}
     for(const side of [-1,1]){box(world,0xd5cca4,side*(half+.7),-.06,0,1.4,.1,half*2);box(world,0xd5cca4,0,-.06,side*(half+.7),half*2,.1,1.4);}
-    environment.configure(half,night);
+    environment.configure(half,night,data.city?.city?.climate==='snow');
 
     // Layered irregular ridges replace repeated pyramids, outside playable land.
     for(let layer=2;layer>=0;layer--){const geometry=cityRidgeGeometry(half,layer);mergedGeometries.push(geometry);const material=mat([0x718382,0x8b9b9b,0xa2b0b2][layer]);const ridge=new THREE.Mesh(geometry,material);ridge.material.side=THREE.DoubleSide;world.add(ridge);}

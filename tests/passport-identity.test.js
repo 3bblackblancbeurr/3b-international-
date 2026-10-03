@@ -94,7 +94,7 @@ test('both real City screens use the owned Passport country, without a France fa
    assert.match(source,/readOnly/);
   }
   assert.match(source,/passport\?\.userId===uid/);
-  assert.match(source,/'create',\{name:name\.trim\(\),country\}/);
+  assert.match(source,/'create',\{name:name\.trim\(\),country,map\}/);
   assert.doesNotMatch(source,/setCountry/);
  }
  const gateway=readFileSync(new URL('../src/components/PassportNexus.jsx',import.meta.url),'utf8');

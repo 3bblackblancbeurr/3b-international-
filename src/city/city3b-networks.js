@@ -1,5 +1,5 @@
 import {segmentDistance,segmentsDistance,cityLandscape,isWater,isRelief,footprintRadius} from './city3b-landscape.js';
-import {cityMapCustomRoads} from './city3b-map.js';
+import {cityMapBlueprint,cityMapCustomRoads} from './city3b-map.js';
 import {cityConstructionState} from './city3b-building-progress.js';
 export const CITY_NETWORK_TOOLS=[['road','Route',1],['bridge','Pont',4],['tunnel','Tunnel',5],['rail','Rails',5],['power','Électricité',2],['water','Canalisation',2],['internet','Téléphone / Internet',4]];
 export const CITY_NETWORK_COLORS={rail:0xbeb3a0,power:0xe3bf62,water:0x42aeda,internet:0x7b82df,bridge:0xc8b888,tunnel:0x455863};
@@ -8,7 +8,7 @@ export function cityNetworkCheck(data,features){
  const level=Number(data.city?.city_level)||1;
  for(const f of features){const required=CITY_NETWORK_TOOLS.find(([k])=>k===f.kind)?.[2];if(!required||level<required)return {valid:false,reason:`Disponible au niveau ${required||5}`};
   if(![f.x1,f.z1,f.x2,f.z2,f.width].every(Number.isFinite)||f.width<2||f.width>8)return {valid:false,reason:'Dimensions invalides'};
-  if([f.x1,f.z1,f.x2,f.z2].some(v=>Math.abs(v)+f.width/2>500))return {valid:false,reason:'Hors du terrain'};
+  if([f.x1,f.z1,f.x2,f.z2].some(v=>Math.abs(v)+f.width/2>cityMapBlueprint(data).half))return {valid:false,reason:'Hors du terrain'};
   if(Math.hypot(f.x2-f.x1,f.z2-f.z1)<(f.kind==='bridge'?12:6))return {valid:false,reason:'Allonge le tracé (pont : 12 m minimum)'};
   if(['rail','bridge'].includes(f.kind)&&(data.placements||[]).some(b=>b.placement_state!=='stored'&&segmentDistance({x:Number(b.x)+Number(b.footprint_w)/2,z:Number(b.z)+Number(b.footprint_h)/2},f)<f.width/2+footprintRadius(b)))return {valid:false,reason:'Ce tracé traverse un bâtiment'};
   if(f.kind==='rail'&&cityLandscape(data).some(r=>(isWater(r)||isRelief(r))&&segmentsDistance(f,r)<f.width/2+r.width/2))return {valid:false,reason:'Les rails nécessitent un terrain libre'};

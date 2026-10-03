@@ -69,7 +69,17 @@ test('landscape edits use the authenticated owner and cannot send economy or arb
  const f=endpoint(),features=[{id:'lake',kind:'lake',x1:200,z1:200,x2:200,z2:200,width:24}];
  assert.equal((await f.request({action:'plan_terrain',features,expected:[],p_user:OTHER,coins:9999,city:{xp:9999}})).status,200);
  assert.deepEqual(f.calls.find(c=>c.path.endsWith('/nexus_city_plan_terrain')).body,{p_user:UID,p_features:features,p_expected:[]});
- assert.equal((await f.request({action:'plan_terrain',features:Array(129).fill(features[0]),expected:[]})).status,400);
+ assert.equal((await f.request({action:'plan_terrain',features:Array(257).fill(features[0]),expected:[]})).status,400);
+});
+
+test('map creation forwards only an approved preset and authenticated owner, including legacy default',async()=>{
+ const f=endpoint();
+ for(const map of ['plains','hills','river','snow'])assert.equal((await f.request({action:'create',name:'Ville',country:'France',map,p_user:OTHER,terrain:[],coins:999999})).status,200);
+ const calls=f.calls.filter(c=>c.path.endsWith('/nexus_city_create_map'));
+ assert.deepEqual(calls.map(c=>c.body),['plains','hills','river','snow'].map(map=>({p_user:UID,p_name:'Ville',p_country:'France',p_map:map})));
+ assert.equal((await f.request({action:'create',name:'Ville',country:'France'})).status,200);
+ assert.equal(f.calls.filter(c=>c.path.endsWith('/nexus_city_create_map')).at(-1).body.p_map,'plains');
+ assert.equal((await f.request({action:'create',map:'unknown'})).status,400);
 });
 test('new road editor sends its previous plan for concurrent-write detection while legacy clients remain supported',async()=>{
  const f=endpoint(),roads=[{id:'first',x1:0,z1:0,x2:20,z2:0,width:4}];
