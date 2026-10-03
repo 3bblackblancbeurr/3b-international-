@@ -316,7 +316,7 @@ export default function App() {
     return <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="intro3b-background" aria-hidden="true" />
       <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
-      <LuxuryBoot onDone={() => { if (options.interfaceSound) speakWelcome(); goTo("home"); }} />
+      <LuxuryBoot installation={installation} onDone={() => { if (options.interfaceSound) speakWelcome(); goTo("home"); }} />
     </main>;
   }
 
@@ -369,7 +369,7 @@ export default function App() {
       {storageNotice && <p className="storage-notice" role="status">{storageNotice}</p>}
 
       {page === "home" && (
-        <HomePage goTo={goTo} menuItems={menuItems} member={member} secret={secret} />
+        <HomePage goTo={goTo} menuItems={menuItems} member={member} secret={secret} installation={installation} />
       )}
 
       {page === "passport" && (
