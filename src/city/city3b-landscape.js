@@ -1,6 +1,6 @@
 import {cityMapBlueprint,cityMapCustomRoads} from './city3b-map.js';
-export const LANDSCAPE_TOOLS=[['lake','Lac'],['river','Rivière'],['tree','Arbre Matrix'],['garden','Jardin'],['bench','Banc'],['light','Éclairage']];
-export const LANDSCAPE_WIDTHS={lake:[12,24,40],river:[4,8,12],tree:[2,4,6],garden:[4,8,12],bench:[2],light:[2]};
+export const LANDSCAPE_TOOLS=[['lake','Lac'],['river','Rivière'],['tree','Arbre Matrix'],['garden','Jardin'],['bench','Banc'],['light','Éclairage'],['hill','Montagne'],['basin','Creux']];
+export const LANDSCAPE_WIDTHS={lake:[12,24,40],river:[4,8,12],tree:[2,4,6],garden:[4,8,12],bench:[2],light:[2],hill:[40,80,120],basin:[24,40,80]};
 export const isWater=f=>f.kind==='lake'||f.kind==='river';
 export function segmentDistance(p,r){const dx=r.x2-r.x1,dz=r.z2-r.z1,l=dx*dx+dz*dz,t=l?Math.max(0,Math.min(1,((p.x-r.x1)*dx+(p.z-r.z1)*dz)/l)):0;return Math.hypot(p.x-r.x1-t*dx,p.z-r.z1-t*dz);}
 export function cityLandscape(data={}){return (Array.isArray(data.city?.city?.terrain)?data.city.city.terrain:[]).filter(f=>LANDSCAPE_WIDTHS[f.kind]&&[f.x1,f.z1,f.x2,f.z2,f.width].every(Number.isFinite)).slice(0,128);}
@@ -16,13 +16,14 @@ export function footprintRadius(b){return Math.max(1.2,Math.min(8,Math.hypot(Num
 export function landscapeCheck(data,features,{road=false}={}){
  const half=cityMapBlueprint(data).half,placed=(data.placements||[]).filter(b=>b.placement_state!=='stored');
  for(const f of features){
-  if(![f.x1,f.z1,f.x2,f.z2,f.width].every(Number.isFinite)||f.width<2||f.width>40)return {valid:false,reason:'Dimensions invalides'};
+  if(![f.x1,f.z1,f.x2,f.z2,f.width].every(Number.isFinite)||f.width<2||f.width>(isRelief(f)?120:40))return {valid:false,reason:'Dimensions invalides'};
   const radius=f.width/2;
   if(Math.min(f.x1,f.x2)-radius< -half||Math.max(f.x1,f.x2)+radius>half||Math.min(f.z1,f.z2)-radius< -half||Math.max(f.z1,f.z2)+radius>half)return {valid:false,reason:'Hors du terrain'};
   if((road||f.kind==='river')&&Math.hypot(f.x2-f.x1,f.z2-f.z1)<6)return {valid:false,reason:'Allonge le tracé à au moins 6 mètres'};
   if(placed.some(b=>segmentDistance({x:Number(b.x)+Number(b.footprint_w)/2,z:Number(b.z)+Number(b.footprint_h)/2},f)<radius+footprintRadius(b)))return {valid:false,reason:'Ce tracé traverse un bâtiment'};
-  const others=road?cityLandscape(data).filter(isWater):cityMapCustomRoads(data);
-  if((road||isWater(f))&&others.some(r=>segmentsDistance(f,r)<radius+r.width/2))return {valid:false,reason:road?'Une étendue d’eau bloque ce tracé':'Une route passe ici'};
+  if(!road&&cityLandscape(data).some(r=>(isRelief(f)||isRelief(r))&&segmentsDistance(f,r)<radius+r.width/2))return {valid:false,reason:'Un relief occupe cette zone'};
+  const others=road?cityLandscape(data).filter(f=>isWater(f)||isRelief(f)):cityMapCustomRoads(data);
+  if((road||isWater(f)||isRelief(f))&&others.some(r=>segmentsDistance(f,r)<radius+r.width/2))return {valid:false,reason:road?'Une étendue d’eau bloque ce tracé':'Une route passe ici'};
  }
  return {valid:features.length>0,reason:features.length?'Aperçu prêt · valide pour enregistrer':'Choisis un tracé plus long'};
 }
@@ -31,3 +32,6 @@ export function segmentsDistance(a,b){
  if(cross(p,q,r)*cross(p,q,s)<0&&cross(r,s,p)*cross(r,s,q)<0)return 0;
  return Math.min(segmentDistance(p,b),segmentDistance(q,b),segmentDistance(r,a),segmentDistance(s,a));
 }
+
+export const isRelief=f=>f.kind==='hill'||f.kind==='basin';
+export function terrainHeight(features,x,z){let height=0;for(const f of features){if(!isRelief(f))continue;const t=Math.max(0,1-Math.hypot(x-f.x1,z-f.z1)/(f.width/2));height+=(f.kind==='hill'?f.width*.22:-f.width*.08)*t*t*(3-2*t);}return height;}
