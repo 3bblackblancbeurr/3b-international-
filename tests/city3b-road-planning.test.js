@@ -12,7 +12,7 @@ test('City 3B road planning is authenticated, bounded and server persisted',()=>
   assert.match(edge,/Math\.hypot\(x2-x1,z2-z1\)<6/);
   assert.match(edge,/action==='plan_roads'/);
   assert.match(edge,/user_id=eq\.\+'\+uid|user_id=eq\.'\+uid/);
-  assert.match(edge,/rpc\('nexus_city_plan_roads'/);
+  assert.match(edge,/cityRpc\(uid,slot,saveId,'nexus_city_plan_roads'/);
   assert.match(runtime,/for update/);
   assert.match(runtime,/'road_plan'/);
   assert.doesNotMatch(edge,/action==='unlock_district'/);

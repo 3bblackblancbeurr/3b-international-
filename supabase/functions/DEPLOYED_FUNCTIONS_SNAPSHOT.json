@@ -1,6 +1,6 @@
 {
   "snapshot_date": "2026-10-03",
-  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v15 verified after Matrix municipal buildings, networks and material exchanges deployment on 2026-10-03. City 3B v16 verified after fixed road models and player-placed traffic lights deployment. City 3B v17 verified after four saved starting landscapes and expanded city terrain deployment.",
+  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v15 verified after Matrix municipal buildings, networks and material exchanges deployment on 2026-10-03. City 3B v16 verified after fixed road models and player-placed traffic lights deployment. City 3B v17 verified after four saved starting landscapes and expanded city terrain deployment. City 3B v18 verified after three independent save slots and stale-save protection deployment.",
   "functions": [
     {
       "slug": "ai-council-orchestrate",
@@ -16,7 +16,7 @@
     },
     {
       "slug": "city-3b",
-      "version": 17,
+      "version": 18,
       "verify_jwt": true,
       "status": "ACTIVE"
     },

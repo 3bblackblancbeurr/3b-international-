@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-03",
-  "count": 192,
+  "count": 193,
   "migrations": [
     {
       "version": "20260910020445",
@@ -976,6 +976,11 @@
       "version": "20261003153128",
       "name": "city3b_starting_maps",
       "sha256": "89bb633381365105a2eeb5b072e0e97483202e0c07b0abf83713a5c7fb143e27"
+    },
+    {
+      "version": "20261003162024",
+      "name": "city3b_three_save_slots",
+      "sha256": "7dfe995b7e2e9f53d006161f533be53083d006386674c1ffa30c4e9f0b5e0cad"
     }
   ],
   "reconciliation": {

@@ -12,6 +12,7 @@ function endpoint({campaignMissing=false,lifeMissing=false,sessionValid=true,aut
  let handler;const calls=[];
  const fetch=async(url,options={})=>{
   const u=new URL(url),body=options.body?JSON.parse(options.body):null;calls.push({path:u.pathname,query:u.search,body});
+  if(u.pathname==='/rest/v1/rpc/nexus_city_slot_call')return fetch('https://city.test/rest/v1/rpc/'+body.p_operation,{body:JSON.stringify({...body.p_args,p_user:body.p_user})});
   if(u.pathname==='/auth/v1/user')return authExpired?Response.json({error:'Expired'},{status:401}):Response.json({id:UID});
   if(u.pathname==='/rest/v1/rpc/loyalty_session_valid')return Response.json(sessionValid);
   if(u.pathname==='/rest/v1/rpc/loyalty_rate')return Response.json(true);
@@ -25,7 +26,7 @@ function endpoint({campaignMissing=false,lifeMissing=false,sessionValid=true,aut
   return Response.json([]);
  };
  runInNewContext(transformSync(source,{loader:'ts',format:'cjs',target:'es2022'}).code,{Deno:{env:{get:name=>name==='SUPABASE_URL'?'https://city.test':'test-key'},serve:fn=>{handler=fn}},fetch,Response,AbortSignal,TextDecoder,atob,crypto:globalThis.crypto,console});
- const request=body=>handler(new Request('https://edge.test',{method:'POST',headers:{authorization:'Bearer '+BEARER,'content-type':'application/json',origin:'https://3b-international.vercel.app'},body:JSON.stringify(body)}));
+ const request=body=>handler(new Request('https://edge.test',{method:'POST',headers:{authorization:'Bearer '+BEARER,'content-type':'application/json',origin:'https://3b-international.vercel.app'},body:JSON.stringify({...(!['access','create'].includes(body.action)?{slot:1,saveId:'00000000-0000-4000-8000-000000000003'}:{}),...body})}));
  return {request,calls};
 }
 test('mission endpoint uses the authenticated owner and ignores forged coins, XP and completion proofs',async()=>{
@@ -105,4 +106,14 @@ test('construction claim ignores client timestamps and rewards and uses only the
  assert.deepEqual(f.calls.find(c=>c.path.endsWith('/nexus_city_construction_claim')).body,{p_user:UID,p_placement:placement});
  assert.equal((await f.request({action:'construction_claim',placement:'invalid'})).status,400);
  const revoked=endpoint({sessionValid:false});assert.equal((await revoked.request({action:'construction_claim',placement})).status,401);assert.equal(revoked.calls.filter(c=>c.path.endsWith('/nexus_city_construction_claim')).length,0);
+});
+
+test('slot context uses the authenticated owner and rejects malformed or stale save references',async()=>{
+ const f=endpoint();
+ assert.equal((await f.request({action:'place',slot:3,saveId:'00000000-0000-4000-8000-000000000003',building:'HOME_ORIGIN',x:0,z:0,p_user:OTHER})).status,409);
+ const wrapped=f.calls.find(c=>c.path.endsWith('/nexus_city_slot_call')&&c.body.p_operation==='nexus_city_place_v2');
+ assert.equal(wrapped.body.p_user,UID);assert.equal(wrapped.body.p_slot,3);assert.equal(wrapped.body.p_city,'00000000-0000-4000-8000-000000000003');
+ assert.equal((await f.request({action:'snapshot',slot:4})).status,400);
+ assert.equal((await f.request({action:'snapshot',saveId:'bad'})).status,400);
+ const stale=await f.request({action:'snapshot',saveId:OTHER});assert.equal(stale.status,409);
 });

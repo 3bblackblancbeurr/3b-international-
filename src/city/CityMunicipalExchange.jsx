@@ -4,13 +4,13 @@ import {city3bRequest} from './city3b-client.js';
 const labels={timber:'Bois',steel:'Métaux',circuits:'Circuits'};
 const deals=[['timber_steel','6 bois → 4 métaux'],['steel_timber','4 métaux → 6 bois'],['steel_circuits','4 métaux → 3 circuits'],['circuits_steel','3 circuits → 4 métaux'],['timber_circuits','6 bois → 3 circuits'],['circuits_timber','3 circuits → 6 bois']];
 const projects=[['water_efficiency','Gestion de l’eau','12 métaux + 6 circuits','Capacité d’eau +20 %'],['energy_efficiency','Réseau économe','12 circuits + 6 métaux','Capacité électrique +20 %'],['housing_gardens','Habitations végétales','12 bois + 6 métaux','Capacité de logement +20 %']];
-export default function CityMunicipalExchange({uid,ownCityId,onUpdated,onAction}){
+export default function CityMunicipalExchange({uid,slot=1,ownCityId,onUpdated,onAction}){
  const [data,setData]=useState(null),[cities,setCities]=useState([]),[target,setTarget]=useState(''),[deal,setDeal]=useState(deals[0][0]),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const live=useRef(true),pending=useRef(null);
- useEffect(()=>{live.current=true;city3bRequest('materials',{command:'snapshot'},uid).then(r=>{if(live.current)setData(r.materials);}).catch(e=>{if(live.current)setNotice(e.message);});city3bRequest('discover',{},uid).then(r=>{if(live.current)setCities((r.cities||[]).filter(c=>c.city_id!==ownCityId));}).catch(()=>{});return()=>{live.current=false;};},[uid,ownCityId]);
+ useEffect(()=>{live.current=true;city3bRequest('materials',{command:'snapshot',slot,saveId:ownCityId},uid).then(r=>{if(live.current)setData(r.materials);}).catch(e=>{if(live.current)setNotice(e.message);});city3bRequest('discover',{},uid).then(r=>{if(live.current)setCities((r.cities||[]).filter(c=>c.city_id!==ownCityId));}).catch(()=>{});return()=>{live.current=false;};},[uid,slot,ownCityId]);
  const act=async(command,body={})=>{if(busy)return;setBusy(true);setNotice('');try{
   const key=JSON.stringify([command,body]);if(pending.current?.key!==key)pending.current={key,request:crypto.randomUUID()};
-  const r=await city3bRequest('materials',{command,...body,request:pending.current.request},uid);
+  const r=await city3bRequest('materials',{command,...body,slot,saveId:ownCityId,request:pending.current.request},uid);
   if(!live.current)return;setData(r.materials);pending.current=null;setNotice(command==='offer'?'Contrat proposé : tes matériaux sont réservés jusqu’à acceptation ou annulation.':command==='upgrade'?'Projet municipal réalisé · +300 XP ville':'Matériaux mis à jour.');
   if(command==='upgrade')onUpdated?.();
  }catch(e){if(live.current)setNotice(e.message);}finally{if(live.current)setBusy(false);}};
