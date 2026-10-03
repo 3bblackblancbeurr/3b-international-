@@ -35,3 +35,9 @@ export function segmentsDistance(a,b){
 
 export const isRelief=f=>f.kind==='hill'||f.kind==='basin';
 export function terrainHeight(features,x,z){let height=0;for(const f of features){if(!isRelief(f))continue;const t=Math.max(0,1-Math.hypot(x-f.x1,z-f.z1)/(f.width/2));height+=(f.kind==='hill'?f.width*.22:-f.width*.08)*t*t*(3-2*t);}return height;}
+
+// JSONB returns object keys in its own order. Compare values, not serialization order.
+export function sameCityPlan(a,b){
+ const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;
+ return JSON.stringify(stable(a))===JSON.stringify(stable(b));
+}

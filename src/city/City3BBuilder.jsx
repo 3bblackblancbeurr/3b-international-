@@ -7,7 +7,7 @@ import {cityBuildingKind,cityMapCustomRoads,cityMapInitialView} from './city3b-m
 import {cityConstructionState,cityConstructionDuration,cityBuildingBenefit} from './city3b-building-progress.js';
 import {campaignSummary} from './city3b-campaign.js';
 import useCityClock from './useCityClock.js';
-import {cityLandscape,roadDraft,landscapeDraft,landscapeCheck,LANDSCAPE_TOOLS,LANDSCAPE_WIDTHS} from './city3b-landscape.js';
+import {cityLandscape,sameCityPlan,roadDraft,landscapeDraft,landscapeCheck,LANDSCAPE_TOOLS,LANDSCAPE_WIDTHS} from './city3b-landscape.js';
 import './city3b-game.css';
 
 const EMPTY_PREMIUM_CODES=new Set();
@@ -90,7 +90,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
   const action=(reverse?history:future).at(-1);if(!action||busy)return;
   if(action.kind==='roads'||action.kind==='terrain'){
    const current=action.kind==='roads'?roads:terrain,expected=reverse?action.to:action.from,target=reverse?action.from:action.to;
-   if(JSON.stringify(current)!==JSON.stringify(expected)){setNotice('La ville a changé depuis cette action. Recharge avant de la modifier.');return;}
+   if(!sameCityPlan(current,expected)){setNotice('La ville a changé depuis cette action. Recharge avant de la modifier.');return;}
    const result=await call(action.kind==='roads'?'plan_roads':'plan_terrain',action.kind==='roads'?{roads:target,expectedRoads:roads}:{features:target,expected:terrain});if(!result)return;
    if(reverse){setHistory(h=>h.slice(0,-1));setFuture(f=>[...f,action]);}else{setFuture(f=>f.slice(0,-1));setHistory(h=>[...h,action]);}setRoadStart(null);setDrawEnd(null);setNotice(reverse?'Tracé annulé.':'Tracé rétabli.');return;
   }

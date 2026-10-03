@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {fixture,A} from './helpers/city-playable-db.js';
-import {terrainHeight,landscapeCheck,cityLandscape} from '../src/city/city3b-landscape.js';
+import {terrainHeight,landscapeCheck,cityLandscape,sameCityPlan} from '../src/city/city3b-landscape.js';
 import {cityTerrainGeometry} from '../src/city/city3b-terrain-geometry.js';
 import {cityConstructionIsNight} from '../src/city/city3b-environment.js';
 const relief=(kind='hill',x=220,z=220,width=80)=>({id:randomUUID(),kind,x1:x,z1:z,x2:x,z2:z,width});
@@ -43,4 +43,12 @@ test('the rendered heightfield stays lightweight on flat maps and deforms both d
    assert.ok(Math.abs(p.getY(0)+.05)<.00001);assert.ok(geometry.attributes.normal.array.every(Number.isFinite));
   }finally{geometry.dispose();}
  }
+});
+
+test('undo recognizes unchanged server JSONB plans regardless of object key order',()=>{
+ const original={id:'relief',kind:'hill',x1:0,z1:0,x2:0,z2:0,width:40};
+ const returned={width:40,z2:0,z1:0,x2:0,x1:0,kind:'hill',id:'relief'};
+ assert.equal(sameCityPlan([original],[returned]),true);
+ assert.equal(sameCityPlan([original],[{...returned,width:80}]),false);
+ assert.equal(sameCityPlan([original],[{...returned,id:'other-session'}]),false);
 });
