@@ -1,0 +1,11 @@
+# City visual and construction refinement
+
+Scope: scenery and construction controls only. No new economy, missions, progression, data migration, server mutation, kingdom or building model changes.
+
+The previous sphere-clouds, polygonal sun and cone mountains are removed. A single atmospheric sky shader produces soft cloud coverage and a small smooth sun. Three irregular ridges, each 1771 vertices, sit outside the playable land. Grass uses world-space colour grain and broad variation with no per-blade objects. Water uses moving wave slopes, Fresnel tint, sun glints and light shore foam, sharing time across sea, lake and river surfaces. No reflection render target, downloaded HD textures or new postprocessing is added. Pixel ratio, shadow resolution and frame-rate caps are retained; paused/background/reduced-motion behavior remains respected.
+
+The selected building is a bottom context ribbon. Additional details and move/store actions are collapsed. Road/landscape options are collapsed behind the settings icon. Camera buttons are collapsed to zoom and an options button. Buildings can be dragged before explicit confirmation; on touch, the preview is offset 44 CSS pixels above the finger. Camera mode suspends placement. Server-side collision checks, validation, request IDs, costs, construction times, saves and history remain unchanged.
+
+Reference: https://www.paradoxinteractive.com/games/cities-skylines-ii/features/road-tools (guides, snapping, clear placement cancellation). Rendering reference: https://threejs.org/docs/pages/Water.html (animated time, normals and reflection costs). This implementation uses a lightweight shared shader rather than an additional reflected scene pass.
+
+Verification: scenery geometry/material tests, existing construction/terrain tests, JSX parsing, full repository CI, and a temporary PR-only fixture for actual WebGL shader/visual review. The fixture uses synthetic city data and never loads or mutates an account. It is removed before production merge. This does not constitute testing on Zakaria’s physical Samsung or an authenticated account.

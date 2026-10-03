@@ -1,6 +1,6 @@
 import {Button} from '../design-system/index.jsx';
 import {useEffect,useRef,useState} from 'react';
-import {Plus,Minus,RotateCw,LocateFixed,Map as MapIcon} from 'lucide-react';
+import {Plus,Minus,RotateCw,LocateFixed,Map as MapIcon,MoreHorizontal} from 'lucide-react';
 import {cityMapInitialView} from './city3b-map.js';
 import {citySceneSignature} from './city3b-building-progress.js';
 import {cityConstructionIsNight} from './city3b-environment.js';
@@ -8,7 +8,7 @@ import './city3b-playable.css';
 
 export default function City3DMap(props){
  const host=useRef(null),engine=useRef(null),latest=useRef(props),signature=useRef('');latest.current=props;
- const [ready,setReady]=useState(false),[error,setError]=useState(''),[attempt,setAttempt]=useState(0);
+ const [ready,setReady]=useState(false),[error,setError]=useState(''),[attempt,setAttempt]=useState(0),[cameraOptions,setCameraOptions]=useState(false);
  const sceneKey=citySceneSignature(props.data,props.premiumCodes);
  useEffect(()=>{
   let live=true;setReady(false);setError('');
@@ -33,12 +33,13 @@ export default function City3DMap(props){
   <div className="city3d-viewport" ref={host}/>
   {!ready&&!error&&<div className="city3d-loading" role="status">Ouverture de ta ville…</div>}
   {error&&<div className="city3d-error" role="alert">{error}<Button variant="champagne" onClick={()=>setAttempt(v=>v+1)}>Relancer la 3D</Button></div>}
-  <div className="city3d-controls" aria-label="Caméra de la ville">
+  <div className="city3d-controls" data-expanded={cameraOptions} aria-label="Caméra de la ville">
    <Button variant="ghost" aria-label="Zoomer" onClick={()=>engine.current?.zoom(1/1.4)}><Plus size={18}/></Button>
    <Button variant="ghost" aria-label="Dézoomer" onClick={()=>engine.current?.zoom(1.4)}><Minus size={18}/></Button>
-   <Button variant="ghost" aria-label="Tourner la caméra" onClick={()=>engine.current?.rotate()}><RotateCw size={18}/></Button>
-   <Button variant="ghost" aria-label="Revenir à mes constructions" onClick={home}><LocateFixed size={18}/></Button>
-   <Button variant="ghost" aria-label="Voir tout le territoire en 3D" onClick={()=>{props.setCenter({x:0,z:0});props.setZoom(1);}}><MapIcon size={18}/></Button>
+   <Button variant="ghost" aria-label="Options de caméra" aria-expanded={cameraOptions} onClick={()=>setCameraOptions(!cameraOptions)}><MoreHorizontal size={18}/></Button>
+   <Button className="city3d-camera-extra" variant="ghost" aria-label="Tourner la caméra" onClick={()=>engine.current?.rotate()}><RotateCw size={18}/></Button>
+   <Button className="city3d-camera-extra" variant="ghost" aria-label="Revenir à mes constructions" onClick={home}><LocateFixed size={18}/></Button>
+   <Button className="city3d-camera-extra" variant="ghost" aria-label="Voir tout le territoire en 3D" onClick={()=>{props.setCenter({x:0,z:0});props.setZoom(1);}}><MapIcon size={18}/></Button>
   </div>
  </div>;
 }
