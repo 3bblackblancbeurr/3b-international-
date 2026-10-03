@@ -9,7 +9,7 @@ async function fixture(){
  create table inventory_items(code text primary key,name text,category text,coin_price integer,active boolean,metadata jsonb,description text,item_type text,rarity text,tradeable boolean,marketable boolean,permanent boolean,stackable boolean,max_supply bigint,minted_count bigint default 0);
  create table item_instances(id uuid primary key default gen_random_uuid(),item_code text,serial_no bigint,owner_id uuid,state text,origin text,origin_ref text,metadata jsonb);`);
  await db.exec(sql('20260928140344_digital_store_v1.sql'));
- await db.exec(sql('20261003184500_digital_store_credit_wallet.sql'));
+ await db.exec(sql('20261003185942_digital_store_credit_wallet.sql'));
  await db.query('insert into auth.users values($1),($2)',[A,B]);
  const query=async(t,args=[])=>(await db.query(t,args)).rows[0];
  const grant=async(txn,user=A,code='CITY_CREDITS_500')=>(await query("select digital_store_fulfill_v2($1,$2,'stripe',$3,'price_test',499,'eur','verified_hash','{}') v",[user,code,txn])).v;
