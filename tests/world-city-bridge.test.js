@@ -15,7 +15,9 @@ test('City API has no World synchronization action',()=>{
 
 test('City UI loads its own snapshot and progression',()=>{
  assert.match(portal,/call\('snapshot'\)/);
- assert.match(portal,/Recalculer ma progression/);
+ assert.match(portal,/call\('life'\)/);
+ assert.match(portal,/visibilitychange/);
+ assert.doesNotMatch(portal,/Recalculer ma progression/);
  assert.doesNotMatch(portal,/call\('sync_world'\)|Monde 3B synchronisé/);
 });
 

@@ -3,7 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {PGlite} from '@electric-sql/pglite';
 const sql=name=>readFileSync(new URL('../../supabase/migrations/'+name,import.meta.url),'utf8');
 export const A='00000000-0000-4000-8000-000000000001',B='00000000-0000-4000-8000-000000000002';
-export async function fixture(){
+export async function fixture({construction=false}={}){
  const db=new PGlite();
  await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;
  create schema auth;create table auth.users(id uuid primary key);
@@ -24,6 +24,7 @@ export async function fixture(){
  for(const file of ['20260917105315_create_your_3b_city_v2.sql','20260917105501_city_3b_districts_and_collectibles.sql','20260917111213_city_3b_progression_catalog_v3.sql'])await db.exec(sql(file));
  await db.exec('alter table nexus_city_placements add column footprint_w smallint default 1,add column footprint_h smallint default 1,add column request_id uuid;');
  for(const file of ['20260917132738_city3b_wallet_store_move_v5.sql','20260928122225_separate_world_city_progression.sql','20261003003042_city3b_guided_campaign.sql','20261003003056_city3b_living_runtime.sql','20261003003108_city3b_playable_construction.sql'])await db.exec(sql(file));
+ if(construction)await db.exec(sql('20261003012525_city3b_construction_sites.sql'));
  await db.exec('grant usage on schema auth,public to authenticated,service_role;grant select on auth.users to authenticated;grant select on nexus_cities to authenticated;grant all on all tables in schema public to service_role;grant usage on all sequences in schema public to service_role;');
  for(const uid of [A,B]){await db.query('insert into auth.users values($1)',[uid]);await db.query("insert into member_profiles values($1,'France','active')",[uid]);await db.query("select nexus_city_create($1,'Ville test','France')",[uid]);}
  const query=async(text,args=[])=>{const r=await db.query(text,args);return r.rows[0]};
@@ -35,7 +36,7 @@ export async function fixture(){
  let nextPlacement=0;
  const place=async(code,uid=A)=>{const n=nextPlacement++;return query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5) as id',[uid,code,-80+(n%20)*6,-80+Math.floor(n/20)*6,randomUUID()]);};
  const roads=async(count,uid=A)=>{const list=Array.from({length:count},(_,i)=>({id:'road-'+i,x1:-70,z1:-60+i*8,x2:-50,z2:-60+i*8,width:4}));await db.query("update nexus_cities set city=jsonb_set(city,'{roads}',$2::jsonb) where user_id=$1",[uid,JSON.stringify(list)]);await snapshot(uid);};
- return {db,query,city,snapshot,claim,coins,metrics,place,roads};
+ return {db,query,city,snapshot,claim,coins,metrics,place,roads,construction};
 }
 
 

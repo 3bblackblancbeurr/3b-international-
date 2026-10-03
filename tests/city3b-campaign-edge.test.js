@@ -15,6 +15,7 @@ function endpoint({campaignMissing=false,lifeMissing=false,sessionValid=true,aut
   if(u.pathname==='/auth/v1/user')return authExpired?Response.json({error:'Expired'},{status:401}):Response.json({id:UID});
   if(u.pathname==='/rest/v1/rpc/loyalty_session_valid')return Response.json(sessionValid);
   if(u.pathname==='/rest/v1/rpc/loyalty_rate')return Response.json(true);
+  if(u.pathname==='/rest/v1/rpc/nexus_city_construction_claim')return Response.json({construction:true,placement:body.p_placement,coins:5,cityXp:25,alreadyClaimed:false});
   if(u.pathname==='/rest/v1/rpc/nexus_city_mission_claim')return Response.json({mission:body.p_mission,coins:100,cityXp:200,alreadyClaimed:false});
   if(u.pathname==='/rest/v1/rpc/nexus_city_campaign_snapshot')return campaignMissing?Response.json({message:'Function not found'},{status:404}):Response.json({available:true,missions:[]});
   if(u.pathname==='/rest/v1/rpc/nexus_city_life_snapshot')return lifeMissing?Response.json({message:'Function not found'},{status:404}):Response.json({available:true,population:12,events:[]});
@@ -72,4 +73,13 @@ test('a revoked device session or expired bearer cannot reach mission rewards or
   assert.equal(f.calls.filter(c=>c.path.endsWith('/nexus_cities')).length,0);
   if(!options.authExpired){const check=f.calls.find(c=>c.path.endsWith('/loyalty_session_valid'));assert.deepEqual(check.body,{p_user:UID,p_session:SESSION});}
  }
+});
+
+test('construction claim ignores client timestamps and rewards and uses only the authenticated owner',async()=>{
+ const f=endpoint(),placement=crypto.randomUUID();
+ const response=await f.request({action:'construction_claim',placement,p_user:OTHER,coins:999999,cityXp:999999,finished:true,construction_ready_at:'2000-01-01'});
+ assert.equal(response.status,200);const result=await response.json();assert.equal(result.reward.coins,5);assert.ok(Number.isFinite(Date.parse(result.serverTime)));
+ assert.deepEqual(f.calls.find(c=>c.path.endsWith('/nexus_city_construction_claim')).body,{p_user:UID,p_placement:placement});
+ assert.equal((await f.request({action:'construction_claim',placement:'invalid'})).status,400);
+ const revoked=endpoint({sessionValid:false});assert.equal((await revoked.request({action:'construction_claim',placement})).status,401);assert.equal(revoked.calls.filter(c=>c.path.endsWith('/nexus_city_construction_claim')).length,0);
 });

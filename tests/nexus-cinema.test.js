@@ -44,7 +44,7 @@ test('Passport opens the active City 3B gateway and permanent server-backed city
   assert.match(source,/city3bRequest/);
   assert.match(source,/CRÉE TA VILLE/);
   assert.match(source,/Fonder ma ville/);
-  assert.match(builder,/call\("place"/);
+  assert.match(builder,/call\('place'/);
   assert.match(source,/Collection permanente/);
   assert.match(source,/Découvrir les villes 3B/);
   assert.doesNotMatch(source,/localStorage\.clear|sessionStorage\.clear/);

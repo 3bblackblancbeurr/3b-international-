@@ -67,7 +67,7 @@ test("both games expose the shared Premium store without sharing progression",()
   assert.match(world,/scope="world"/);
   assert.match(city,/DigitalStorePanel/);
   assert.match(city,/scope="city"/);
-  assert.match(city,/\['premium','Premium',Sparkles\]/);
+  assert.match(city,/setPanel\('premium'\)/);
 });
 
 test("shared Stripe webhook processes digital purchases separately from physical shop orders",()=>{

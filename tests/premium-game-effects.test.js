@@ -23,16 +23,14 @@ test('premium ownership maps only to cosmetic visual flags',()=>{
 test('City premium items affect rendering while keeping the server-authoritative builder',()=>{
   const builder=read('src/city/City3BBuilder.jsx');
   const portal=read('src/components/City3BPortal.jsx');
-  assert.match(builder,/data-premium-roads/);
-  assert.match(builder,/data-premium-architecture/);
-  assert.match(builder,/data-premium-waterfront/);
-  assert.match(builder,/data-premium-night/);
-  assert.match(builder,/PREM_CITY_BROKEN_MONUMENT/);
-  assert.match(builder,/cityTrafficRoutes/);
-  assert.match(portal,/loadDigitalStore\('city'\)/);
+  const scene=read('src/city/city3b-scene.js');
+  for(const effect of ['matrixRoads','champagneArchitecture','waterfront','nightLuxe','brokenCircleMonument']) assert.ok(scene.includes('premium.'+effect));
+  assert.match(scene,/cityTrafficRoutes/);
+  assert.match(portal,/readStore=loadDigitalStore/);
+  assert.match(portal,/readStore\('city'\)/);
   assert.match(portal,/ownedPremiumCodes/);
-  assert.match(builder,/call\("place"/);
-  assert.match(builder,/call\("plan_roads"/);
+  assert.match(builder,/call\('place'/);
+  assert.match(builder,/call\('plan_roads'/);
 });
 
 test('World premium items are loaded into the 3D runtime and never modify combat stats',()=>{
@@ -54,5 +52,5 @@ test('Digital Store pushes ownership changes into active games without restart',
   const city=read('src/components/City3BPortal.jsx');
   assert.match(panel,/onStoreChange/);
   assert.match(world,/onStoreChange=\{store=>setPremiumCodes/);
-  assert.match(city,/onPremiumStore/);
+  assert.match(city,/onStoreChange=\{store=>setPremiumCodes/);
 });
