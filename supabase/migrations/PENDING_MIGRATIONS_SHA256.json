@@ -1,5 +1,11 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 1,
+  "migrations": [
+    {
+      "version": "20261003153000",
+      "name": "city3b_starting_maps",
+      "sha256": "89bb633381365105a2eeb5b072e0e97483202e0c07b0abf83713a5c7fb143e27"
+    }
+  ]
 }
