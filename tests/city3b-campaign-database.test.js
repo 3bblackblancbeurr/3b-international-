@@ -26,7 +26,7 @@ async function fixture(){
  end $$;`);
  for(const file of ['20260917105315_create_your_3b_city_v2.sql','20260917105501_city_3b_districts_and_collectibles.sql','20260917111213_city_3b_progression_catalog_v3.sql'])await db.exec(sql(file));
  await db.exec('alter table nexus_city_placements add column footprint_w smallint default 1,add column footprint_h smallint default 1,add column request_id uuid;');
- for(const file of ['20260917132738_city3b_wallet_store_move_v5.sql','20260928122225_separate_world_city_progression.sql','20261003003042_city3b_guided_campaign.sql','20261003003056_city3b_living_runtime.sql','20261003003108_city3b_playable_construction.sql','20261003045247_matrix_civic_services.sql','20261003183500_city3b_mayor_campaign_v2.sql'])await db.exec(sql(file));
+ for(const file of ['20260917132738_city3b_wallet_store_move_v5.sql','20260928122225_separate_world_city_progression.sql','20261003003042_city3b_guided_campaign.sql','20261003003056_city3b_living_runtime.sql','20261003003108_city3b_playable_construction.sql','20261003045247_matrix_civic_services.sql','20261003185926_city3b_mayor_campaign_v2.sql'])await db.exec(sql(file));
  await db.exec('grant usage on schema auth,public to authenticated,service_role;grant select on auth.users to authenticated;grant select on nexus_cities to authenticated;grant all on all tables in schema public to service_role;grant usage on all sequences in schema public to service_role;');
  for(const uid of [A,B]){await db.query('insert into auth.users values($1)',[uid]);await db.query("insert into member_profiles values($1,'France','active')",[uid]);await db.query("select nexus_city_create($1,'Ville test','France')",[uid]);}
  const query=async(text,args=[])=>{const r=await db.query(text,args);return r.rows[0]};

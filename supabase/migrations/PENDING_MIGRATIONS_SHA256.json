@@ -1,16 +1,5 @@
 {
   "status": "pending-not-deployed",
-  "count": 2,
-  "migrations": [
-    {
-      "version": "20261003183500",
-      "name": "city3b_mayor_campaign_v2",
-      "sha256": "2d02a9048a35f7ab415b4ea4555f3397efc2575ee9233dfd7b7ac0fe0fd25b44"
-    },
-    {
-      "version": "20261003184500",
-      "name": "digital_store_credit_wallet",
-      "sha256": "289c6c9baae859f8b07473812edd36c64874b965b224b373050e2947eed1c86c"
-    }
-  ]
+  "count": 0,
+  "migrations": []
 }
