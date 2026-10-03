@@ -1,4 +1,5 @@
 import {applyPhysicalQuality} from './art-direction.js';
+import {createHubPlatform} from './hub/platform-scene.js';
 import {createHeritageMonument} from './heritage-monument.js';
 import {createAmbientLife} from './ambient-life.js';
 import {residentSchedule} from './resident-schedule.js';
@@ -47,6 +48,7 @@ export function architecturalUV(geometry,scale){
  return geometry;
 }
 export function createLandscape(models,region,save,onError=console.error){
+ if(region==='hub')return createHubPlatform(save);
  const root=new THREE.Group(),owned=[],materials=new Map(),collisions=[],residents=[],stages=[],decorations=[],frontierGroups=[],resourceGroups=[],surfaceWetness={value:.06},surfaceDaylight={value:1};let wetnessState=.06,wetnessTarget=.06;
  const country=countryById[region],hub=!country,field=createTerrainField(region,save),{biome,lake,height}=field;
  const rng=randomFor(biome.seed),occlusion=createSceneryOcclusion(),architecture=createArchitecture(occlusion);

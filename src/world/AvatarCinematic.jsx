@@ -1,3 +1,4 @@
+import {HubOpeningCinematic} from './hub/HubOpeningCinematic.jsx';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {ArenaStage} from '../arena/ArenaStage.jsx';
 import {characterSequence,frameAt} from './cinematic-script.js';
@@ -6,7 +7,7 @@ import {TRAVEL_GEAR} from './wardrobe.js';
 import {COUNTRIES} from './catalog.js';
 import './cinematics.css';
 
-export function AvatarCinematic({avatar,onDone,sequence:suppliedSequence}){
+function LegacyAvatarCinematic({avatar,onDone,sequence:suppliedSequence}){
  const sequence=useMemo(()=>suppliedSequence||characterSequence({avatar,power:AVATAR_PATHS[avatar.path],gear:TRAVEL_GEAR[avatar.travelGear]}),[avatar,suppliedSequence]);
  const [elapsed,setElapsed]=useState(0),[paused,setPaused]=useState(false);
  const [reduced,setReduced]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -37,3 +38,5 @@ export function AvatarCinematic({avatar,onDone,sequence:suppliedSequence}){
   <footer className="cinema-controls"><button type="button" onClick={finish}>Passer</button><button type="button" onClick={()=>setReduced(v=>!v)} aria-pressed={reduced}>{reduced?'Animation':'Lecture'}</button>{reduced?<button type="button" onClick={next}>{frame.index===frame.count-1?'Entrer dans le monde':'Suite'}</button>:<button type="button" onClick={()=>setPaused(v=>!v)} aria-pressed={paused}>{paused?'Reprendre':'Pause'}</button>}</footer>
  </section>;
 }
+
+export function AvatarCinematic(props){return props.sequence?<LegacyAvatarCinematic {...props}/>:<HubOpeningCinematic avatar={props.avatar} onDone={props.onDone}/>;}

@@ -1,3 +1,4 @@
+import {platformNextObjective} from './hub/platform-layout.js';
 import React,{memo,useEffect,useState,useMemo} from 'react';
 import {Menu,BookOpen,Map,ArrowUp,MessageCircle,DoorOpen,Sparkles,Swords,Trees,Mountain,Wheat} from 'lucide-react';
 import {CompanionPortrait} from './Companions.jsx';
@@ -12,9 +13,10 @@ import {compassHeading} from './settlements.js';
 import {contextActions} from './interaction-system.js';
 import {controlLabel} from './control-bindings.js';
 
-export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls}){
+export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls,onNavigate}){
  const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
  const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]);
+ const hubGoal=snapshot.region==='hub'?platformNextObjective(mapItems,save):null;
  const [arrival,setArrival]=useState(false),[actionMenu,setActionMenu]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
  useEffect(()=>{if(!loaded)return;const timer=setTimeout(()=>{setHint(false);try{localStorage.setItem('3b-world-intro-seen','1');}catch{}},6500);return()=>clearTimeout(timer);},[loaded]);
@@ -30,10 +32,11 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   <Compass heading={snapshot.heading} waypoint={snapshot.waypoint} position={snapshot.position}/>
   <div className="world-district">{snapshot.district||country?.name||'Cité des Huit Héritages'}{snapshot.time&&<small> · {snapshot.time.phase} · {String(Math.floor(snapshot.time.hour)).padStart(2,'0')}:{String(Math.floor((snapshot.time.hour%1)*60)).padStart(2,'0')}{snapshot.weather?' · '+(WEATHER_LABELS[snapshot.weather]||snapshot.weather):''}</small>}</div>
   {snapshot.region==='hub'&&snapshot.hubEvolution&&<div className="hub-evolution-chip" aria-label={'Évolution de la Cité : '+snapshot.hubEvolution.label+', '+snapshot.hubEvolution.restored+' héritages restaurés sur '+snapshot.hubEvolution.total+(snapshot.hubEvolution.milestone?' · '+snapshot.hubEvolution.milestone.label:'')}><small>CITÉ · ÉVOLUTION {snapshot.hubEvolution.stage}/4</small><strong>{snapshot.hubEvolution.label}</strong>{snapshot.hubEvolution.milestone&&<em>{snapshot.hubEvolution.milestone.label}</em>}<span>{snapshot.hubEvolution.restored}/{snapshot.hubEvolution.total} héritages restaurés{snapshot.hubEvolution.nextMilestone?' · prochain palier '+snapshot.hubEvolution.nextMilestone.fragments+'/8':''}</span></div>}
+  {hubGoal&&!snapshot.waypoint&&<button className="hub-objective" onClick={()=>onNavigate?.(hubGoal.item)}><small>PROCHAINE ÉTAPE · REPÉRER</small><span>{hubGoal.label}</span></button>}
   <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} onOpen={()=>onPanel('atlas')}/>
   {arrival&&loaded&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Cité des Huit Héritages'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
   <button className="play-profile" aria-label={(save.adventure.avatar.name||'Voyageur')+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" onClick={()=>onPanel('team')}><span>{(save.adventure.avatar.name||'V').slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></button>
-  <button className="play-button play-arena" aria-label="Arène en ligne" title="Arène en ligne" onClick={()=>onPanel('arena')}><Swords size={21}/></button>
+
   {snapshot.companion&&<button className="play-companion" aria-label={cardById[snapshot.companion]?.name+' · ouvrir les compagnons'} onClick={()=>onPanel('collection')}><CompanionPortrait id={snapshot.companion}/><span><small>À tes côtés</small><strong>{cardById[snapshot.companion]?.name}</strong></span></button>}
   {snapshot.waypoint&&snapshot.remaining>7&&<button className="play-bearing" aria-label={'Repère : '+snapshot.waypoint.name+', '+snapshot.remaining+' mètres. Rejoindre automatiquement.'} title="Rejoindre le repère" onClick={onGuide}><ArrowUp size={18} style={{transform:`rotate(${bearing}deg)`}}/><small>{snapshot.remaining} m</small></button>}
   {near&&<div className="play-interaction-cluster" key={near.id}><button className="play-interaction" onClick={()=>triggerAction(primary?.id)} aria-label={name||'Interagir'} title={name||'Interagir'}><Icon size={20}/><span>{name}</span><kbd>{controlLabel(controls,'interact')}</kbd></button>{extraActions>0&&<button className="play-interaction-more" aria-expanded={actionMenu} aria-label={extraActions+' autres actions'} onClick={()=>setActionMenu(value=>!value)}>•••</button>}{actionMenu&&extraActions>0&&<div className="play-context-actions" role="menu" aria-label={'Actions pour '+(near.name||'cet élément')}>{actions.slice(1).map(action=><button role="menuitem" key={action.id} onClick={()=>triggerAction(action.id)}><span>{action.label}</span><small>{action.caption}</small></button>)}</div>}</div>}
