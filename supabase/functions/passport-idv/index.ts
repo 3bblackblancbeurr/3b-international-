@@ -300,6 +300,9 @@ async function processWebhook(jwt:string){
       await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
         identity_verification_state:'unverified'
       },'PATCH');
+      await api('/rest/v1/member_profiles?user_id=eq.'+encodeURIComponent(attempt.user_id)+'&identity_verification_state=eq.pending',{
+        identity_verification_state:'unverified'
+      },'PATCH');
     }else{
       nextState='rejected';resultCode='rejected';
       await api('/rest/v1/passport_identity_verification_attempts?id=eq.'+attempt.id,{
