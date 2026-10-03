@@ -2,6 +2,8 @@ import {cityRoadType} from './city3b-road-types.js';
 import {citySignals} from './city3b-signals.js';
 import {cityMapCustomRoads} from './city3b-map.js';
 import * as THREE from 'three';
+import {attachCityTouchCamera} from './city3b-camera-touch.js';
+import {cityMapInitialView} from './city3b-map.js';
 import {createCityCameraMotion} from './city3b-camera-motion.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -33,13 +35,13 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   host.appendChild(renderer.domElement);
-  renderer.domElement.setAttribute('aria-label','Carte 3D de construction. Glisser pour déplacer la vue, pincer pour zoomer.');
+  renderer.domElement.setAttribute('aria-label','Carte 3D. Glisser pour déplacer, molette pour zoomer, clic droit pour tourner. Sur mobile : déplacer, pincer et tourner avec deux doigts. Q et E : rotation. H : recentrer.');
   renderer.domElement.tabIndex=0;
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,.1,3000);
   const controls=new OrbitControls(camera,renderer.domElement);
   controls.enableDamping=true;controls.dampingFactor=.16;controls.panSpeed=.85;controls.rotateSpeed=.65;controls.zoomSpeed=.7;controls.maxPolarAngle=Math.PI*.48;controls.minPolarAngle=.12;
   controls.minDistance=9;controls.maxDistance=2100;controls.screenSpacePanning=false;
-  controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};
+  controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.PAN,RIGHT:THREE.MOUSE.ROTATE};
   controls.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_PAN};
   const hemi=new THREE.HemisphereLight(0xc8e8ff,0x6b714b,2.5);scene.add(hemi);
   const sun=new THREE.DirectionalLight(0xffedcc,3.2);sun.position.set(-100,170,80);scene.add(sun);sun.castShadow=true;sun.shadow.mapSize.set(mobile?512:1024,mobile?512:1024);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:400});sun.shadow.bias=-.0008;sun.shadow.normalBias=.03;scene.add(sun.target);
@@ -263,7 +265,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     updateDraft(latest);dirty=true;
   }
   function updateDraft(props={}){
-    latest=props;utilityLayer.visible=props.tool==='erase'||props.tool==='road'&&['power','water','internet'].includes(props.networkKind);clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];controls.enabled=!!props.pan||(!['road','build','move'].includes(props.tool)&&!(props.tool==='landscape'&&props.landscapeKind==='river'));
+    latest=props;utilityLayer.visible=props.tool==='erase'||props.tool==='road'&&['power','water','internet'].includes(props.networkKind);clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];cameraFreePan=!!props.pan||(!['road','build','move'].includes(props.tool)&&!(props.tool==='landscape'&&props.landscapeKind==='river'));controls.mouseButtons.LEFT=cameraFreePan?THREE.MOUSE.PAN:null;
     if(props.previewOnly){dirty=true;return;}
     if(props.selectedId&&!props.activeDefinition&&!props.activePlacement){
       const selected=(data.placements||[]).find(p=>p.id===props.selectedId&&p.placement_state!=='stored');
@@ -285,7 +287,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     dirty=true;
   }
   const cameraMotion=createCityCameraMotion(camera,controls,()=>cityMapBlueprint(data).half);
-  let cameraInitialized=false,smoothUntil=0;
+  let cameraInitialized=false,smoothUntil=0,cameraFreePan=true;
   function setView({center,zoom,pitch=35.3}){
     const half=cityMapBlueprint(data).half,radius=Math.max(10,half/(zoom||1.6)),target=new THREE.Vector3(center?.x||0,0,center?.z||0);
     cameraMotion.move(target.clone().add(new THREE.Vector3(radius*.85,radius*1.553*Math.tan(Math.max(5,Math.min(75,pitch))*Math.PI/180),radius*1.3)),target,!cameraInitialized||reduced);cameraInitialized=true;dirty=true;
@@ -300,10 +302,10 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   let down=null,pointers=new Set();
   const terrainPoint=e=>{const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);const intersection=groundPick?ray.intersectObject(groundPick,false)[0]:null;const point=intersection?.point||ray.ray.intersectPlane(plane,hit);return point?{x:Math.round(point.x),z:Math.round(point.z)}:null;};
   const drawing=()=>!latest.pan&&(latest.tool==='road'||latest.tool==='landscape'&&latest.landscapeKind==='river');
-  const pointerDown=e=>{cameraMotion.cancel();renderer.domElement.focus({preventScroll:true});pointers.add(e.pointerId);if(pointers.size>1)down=null;else down={x:e.clientX,y:e.clientY,id:e.pointerId,point:terrainPoint(e)};};
+  const pointerDown=e=>{cameraMotion.cancel();renderer.domElement.focus({preventScroll:true});pointers.add(e.pointerId);if(pointers.size>1)down=null;else down={button:e.button,x:e.clientX,y:e.clientY,id:e.pointerId,point:terrainPoint(e)};};
   const placing=()=>['build','move'].includes(latest.tool)&&!latest.pan;
   const dragPoint=e=>terrainPoint({clientX:e.clientX,clientY:e.clientY-(placing()&&e.pointerType==='touch'?44:0)});
-  const pointerMove=e=>{if(latest.previewOnly||pointers.size>1||latest.pan||(!drawing()&&!placing()))return;const p=placing()&&down?dragPoint(e):terrainPoint(e);if(p)onHover?.(p,down?.point);};
+  const pointerMove=e=>{if(latest.previewOnly||pointers.size>1||down?.button>0||latest.pan||(!drawing()&&!placing()))return;const p=placing()&&down?dragPoint(e):terrainPoint(e);if(p)onHover?.(p,down?.point);};
   const pointerUp=e=>{
     const start=down;pointers.delete(e.pointerId);down=null;
     if(!start||start.id!==e.pointerId||pointers.size||latest.previewOnly||latest.pan||e.button>0)return;
@@ -316,11 +318,12 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const cancel=e=>{pointers.delete(e.pointerId);down=null;};
   const lost=e=>{e.preventDefault();onError?.('Le rendu 3D a été interrompu. Relance la vue pour continuer ; tes constructions sont sauvegardées.');};
   renderer.domElement.addEventListener('pointerdown',pointerDown);renderer.domElement.addEventListener('pointerup',pointerUp);renderer.domElement.addEventListener('pointermove',pointerMove);renderer.domElement.addEventListener('pointercancel',cancel);renderer.domElement.addEventListener('webglcontextlost',lost);
+  const disposeTouch=attachCityTouchCamera(renderer.domElement,{camera,controls,motion:cameraMotion,canPan:()=>cameraFreePan,onGesture:()=>{down=null;pointers.clear();}});
   const controlChanged=()=>{smoothUntil=performance.now()+250;const half=cityMapBlueprint(data).half,clampedX=Math.max(-half,Math.min(half,controls.target.x)),clampedZ=Math.max(-half,Math.min(half,controls.target.z));camera.position.x+=clampedX-controls.target.x;camera.position.z+=clampedZ-controls.target.z;controls.target.x=clampedX;controls.target.z=clampedZ;camera.near=Math.max(.5,camera.position.distanceTo(controls.target)/100);camera.updateProjectionMatrix();sun.position.set(clampedX-100,170,clampedZ+80);sun.target.position.set(clampedX,0,clampedZ);dirty=true;onViewChange?.();};controls.addEventListener('change',controlChanged);
   const zoomCamera=factor=>{cameraMotion.zoom(factor,reduced);dirty=true;};
-  const wheel=e=>{if(!controls.enabled)return;e.preventDefault();e.stopImmediatePropagation();const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?host.clientHeight:1);zoomCamera(Math.exp(Math.max(-200,Math.min(200,delta))*.0015));};
+  const wheel=e=>{e.preventDefault();e.stopImmediatePropagation();const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?host.clientHeight:1);zoomCamera(Math.exp(Math.max(-200,Math.min(200,delta))*.0015));};
   renderer.domElement.addEventListener('wheel',wheel,{capture:true,passive:false});
-  const key=e=>{if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','+','-','='].includes(e.key))return;e.preventDefault();if(['+','-','='].includes(e.key))zoomCamera(e.key==='-'?1.15:1/1.15);else{const step=Math.max(1,camera.position.distanceTo(controls.target)*.045),dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dz=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;cameraMotion.pan(new THREE.Vector3(dx,0,dz),reduced);}dirty=true;};renderer.domElement.addEventListener('keydown',key);
+  const key=e=>{if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','+','-','=','q','Q','e','E','h','H'].includes(e.key))return;e.preventDefault();if(['q','Q','e','E'].includes(e.key)){cameraMotion.rotate(e.key.toLowerCase()==='q'?-Math.PI/12:Math.PI/12,reduced);}else if(e.key.toLowerCase()==='h'){setView(cityMapInitialView(data));}else if(['+','-','='].includes(e.key))zoomCamera(e.key==='-'?1.15:1/1.15);else{const step=Math.max(1,camera.position.distanceTo(controls.target)*.045),dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dz=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;cameraMotion.pan(new THREE.Vector3(dx,0,dz),reduced);}dirty=true;};renderer.domElement.addEventListener('keydown',key);
   function animate(time){
     if(dead)return;frame=requestAnimationFrame(animate);
     if(document.hidden||!visible||time-last<1000/(cameraMotion.active||time<smoothUntil?60:mobile?30:45)-1)return;
@@ -345,5 +348,5 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     environment.update(time/1000,camera,reduced);renderer.render(scene,camera);dirty=false;
   }
   frame=requestAnimationFrame(animate);resize();
-  return {rebuild,syncClock,updateDraft,setView,district,zoom:zoomCamera,rotate:()=>{cameraMotion.rotate(Math.PI/4,reduced);dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);controls.dispose();renderer.domElement.removeEventListener('wheel',wheel,true);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries,...previewGeometries])geo.dispose();for(const m of materials.values())m.dispose();environment.dispose();renderer.dispose();renderer.domElement.remove();}};
+  return {rebuild,syncClock,updateDraft,setView,district,zoom:zoomCamera,rotate:()=>{cameraMotion.rotate(Math.PI/4,reduced);dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);disposeTouch();controls.dispose();renderer.domElement.removeEventListener('wheel',wheel,true);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries,...previewGeometries])geo.dispose();for(const m of materials.values())m.dispose();environment.dispose();renderer.dispose();renderer.domElement.remove();}};
 }
