@@ -8,6 +8,7 @@ import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {toLandscape} from '../src/world/terrain.js';
 import {tournamentItem} from '../src/world/tournament.js';
+import {HUB_PLATFORM} from '../src/world/hub/platform-layout.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const moduleName=process.env.WORLD_PLAYWRIGHT_MODULE||'playwright';
@@ -87,9 +88,38 @@ try{
     const retreated=await readSave(page);assert.equal(retreated.adventure.tournament.status,'abandoned');assert.equal(retreated.xp,save.xp);checks.push('retreat-without-reward');
    }else{
     await page.getByRole('button',{name:'Pause et options',exact:true}).click();
+    if(label==='hub-rotation'){
+     const brightness=page.getByRole('slider',{name:/Luminosité/});
+     await brightness.focus();await page.keyboard.press('Home');
+     for(let i=0;i<10;i++)await page.keyboard.press('ArrowRight');
+     await page.getByRole('checkbox',{name:'Mieux voir dans les ombres'}).uncheck();
+     assert.equal(await brightness.inputValue(),'1.3');
+     assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('3b-world-visual-preferences'))),{brightness:1.3,shadowAssist:false});
+     await page.screenshot({timeout:120000,path:path.join(out,label+'-visual-settings.png')});checks.push('visual-settings-live');
+    }
     const checkpoint=(await readSave(page)).adventure.exploration;assert.equal(checkpoint.region,'hub');
     await page.reload({waitUntil:'domcontentloaded'});await ready(page);
     assert.deepEqual((await readSave(page)).adventure.exploration,checkpoint);checks.push('reload-exploration');
+    if(label==='hub-rotation'){
+     await page.getByRole('button',{name:'Pause et options',exact:true}).click();
+     assert.equal(await page.getByRole('slider',{name:/Luminosité/}).inputValue(),'1.3');
+     assert.equal(await page.getByRole('checkbox',{name:'Mieux voir dans les ombres'}).isChecked(),false);checks.push('visual-settings-persist');
+     await page.getByRole('button',{name:'Fermer',exact:true}).click();
+     const canLose=await page.evaluate(()=>{const gl=document.querySelector('.world-shell canvas').getContext('webgl2');const extension=gl?.getExtension('WEBGL_lose_context');if(!extension)return false;extension.loseContext();return true;});
+     assert.equal(canLose,true,'browser must expose context-loss simulation');
+     await page.getByRole('alert').getByText('Reprendre l’exploration',{exact:true}).waitFor();
+     const beforeRecovery=(await readSave(page)).adventure.exploration;
+     await page.getByRole('button',{name:'Recharger le monde',exact:true}).click();await ready(page);
+     assert.deepEqual((await readSave(page)).adventure.exploration,beforeRecovery);checks.push('graphics-context-loss-recovery');
+     const edge={region:'hub',x:0,z:HUB_PLATFORM.walkRadius-4,heading:0};
+     await page.evaluate(edge=>{const key='3b_world_v1_guest',saved=JSON.parse(localStorage.getItem(key));saved.data.adventure.exploration=edge;localStorage.setItem(key,JSON.stringify(saved));},edge);
+     await page.reload({waitUntil:'domcontentloaded'});await ready(page);
+     await page.locator('.world-shell canvas').first().focus();await page.keyboard.down('s');await page.waitForTimeout(2000);await page.keyboard.up('s');
+     await page.getByRole('button',{name:'Pause et options',exact:true}).click();
+     const rim=(await readSave(page)).adventure.exploration;
+     assert.ok(rim.z>edge.z+.1,'the outward movement must actually run');
+     assert.ok(Math.hypot(rim.x,rim.z)<=HUB_PLATFORM.walkRadius+.02,'exploration must remain on the physical Nexus deck');checks.push('nexus-deck-boundary');
+    }
    }
    assert.deepEqual(errors,[]);report.push({label,ok:true,checks});
   }catch(error){report.push({label,ok:false,checks,error:error.message,pageErrors:errors});await page.screenshot({timeout:120000,path:path.join(out,label+'-failure.png')}).catch(()=>{});}

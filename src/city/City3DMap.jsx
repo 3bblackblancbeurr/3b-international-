@@ -16,6 +16,7 @@ export default function City3DMap(props){
    if(!live)return;
    const instance=createCityScene(host.current,{
     onPoint:point=>{const p=latest.current;if(p.tool==='road')p.onRoadPoint?.(point);else p.onPoint?.(point);},
+    onStroke:(start,end)=>latest.current.onStroke?.(start,end),onHover:(point,start)=>latest.current.onHover?.(point,start),
     onSelect:row=>latest.current.onSelect?.(row),onError:message=>{if(live)setError(message);},
    });
    engine.current=instance;signature.current=citySceneSignature(latest.current.data,latest.current.premiumCodes);
@@ -25,7 +26,7 @@ export default function City3DMap(props){
  },[attempt]);
  useEffect(()=>{if(ready&&signature.current!==sceneKey){signature.current=sceneKey;engine.current?.rebuild(props.data,props.premiumCodes);}},[ready,sceneKey]);
  useEffect(()=>{engine.current?.syncClock(props.data.serverTime);},[ready,props.data.serverTime]);
- useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.roadStart,props.previewOnly]);
+ useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.roadStart,props.drawPreview,props.landscapeKind,props.previewOnly]);
  useEffect(()=>{engine.current?.setView({center:props.center,zoom:props.zoom});},[props.center,props.zoom]);
  const home=()=>{const view=cityMapInitialView(props.data);props.setCenter(view.center);props.setZoom(view.zoom);};
  return <div className="city3d-shell" data-night={cityIsNight(props.data.city)}>

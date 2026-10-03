@@ -52,8 +52,10 @@ import {cinematicActingBeat} from './cinematic-acting.js';
 import {advancePortalCrossing,initialPortalCrossingState} from './portal-crossing.js';
 import {createAmbientCrowd} from './ambient-crowd.js';
 import {safeExplorationSpawn} from './exploration-checkpoint.js';
+import {accessibleLighting,normalizeVisualPreferences} from './visual-preferences.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
+ let visualPreferences=normalizeVisualPreferences();
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
  const quality=createQualityController();renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.localClippingEnabled=true;
@@ -68,7 +70,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
  let staticInstances=null,ambientCrowd=null,cameraSolids=[];
- let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
+ let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],region=save.region,worldRadius=save.region==='hub'?HUB_PLATFORM.walkRadius:worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let premium=premiumEffectsFromCodes([]),premiumVisuals=[];
@@ -223,7 +225,7 @@ function hubNpcAvatar(item){
   onLoadState?.(true);
    staticInstances?.dispose();staticInstances=null;ambientCrowd?.dispose();ambientCrowd=null;portalCrossing=initialPortalCrossingState();cameraSolids=[];partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];hubLodState.clear();transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
-  region=nextRegion;worldRadius=worldRadiusFor(region);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);items=worldRuntimeItems(region,save,{weather});portalItems=items.filter(item=>item.type==='portal');sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position=region==='hub'?{...HUB_PLATFORM.spawn}:{x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
+  region=nextRegion;worldRadius=region==='hub'?HUB_PLATFORM.walkRadius:worldRadiusFor(region);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);items=worldRuntimeItems(region,save,{weather});portalItems=items.filter(item=>item.type==='portal');sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position=region==='hub'?{...HUB_PLATFORM.spawn}:{x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});scene.fog=new THREE.Fog(0xbacdd6,region==='hub'?300:220,region==='hub'?1350:780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
   daylight?.dispose();daylight=createDaylight(renderer,biome);scene.environment=sky.environment||daylight.texture;scene.environmentIntensity=.55;
@@ -392,7 +394,7 @@ function hubNpcAvatar(item){
   report=0;needsRender=true;batchStatic();if(region==='hub')staticInstances=createStaticInstances(root,itemVisuals,{exclude:[...hubVehicles.map(v=>v.vehicle),...hubNpcActors.map(a=>a.object),...actors.map(a=>a.controller.object),...animations.map(a=>a.mesh)]});applyArtLighting();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
  }
  function applyArtLighting(){
-  const light=artLighting(region,worldTime,weatherState);sun.color.set(light.sunColor).lerp(new THREE.Color(worldArtMaterials.sunWarm),light.sunWarmth);sun.intensity=light.sunIntensity;hemi.color.set(light.palette.sky);hemi.groundColor.set(light.palette.ground);hemi.intensity=light.skyIntensity;fill.intensity=light.fillIntensity;scene.environmentIntensity=light.environmentIntensity;renderer.toneMappingExposure=light.exposure;
+  const light=accessibleLighting(artLighting(region,worldTime,weatherState),visualPreferences);sun.color.set(light.sunColor).lerp(new THREE.Color(worldArtMaterials.sunWarm),light.sunWarmth);sun.intensity=light.sunIntensity;hemi.color.set(light.palette.sky);hemi.groundColor.set(light.palette.ground);hemi.intensity=light.skyIntensity;fill.intensity=light.fillIntensity;scene.environmentIntensity=light.environmentIntensity;renderer.toneMappingExposure=light.exposure;
   portraitLight.intensity=.18+.12*light.day;if(scene.fog){scene.fog.color.set(light.palette.fog).lerp(new THREE.Color(light.palette.night),1-light.day);scene.fog.near=light.fogNear;scene.fog.far=light.fogFar;}
  }
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
@@ -590,6 +592,7 @@ function hubNpcAvatar(item){
  loadWorldModels().then(value=>{if(disposed){value.dispose();return;}models=value;rebuild(region);resize();last=performance.now();}).catch(error=>{if(!disposed){console.error('[3B world models]',error);paused=true;onError('Les modèles 3D n’ont pas pu être chargés. Recharge le monde pour réessayer.');}});
  resize();raf=requestAnimationFrame(tick);
  return{
+  setVisualPreferences(value){visualPreferences=normalizeVisualPreferences(value);applyArtLighting();needsRender=true;},
   explorationCheckpoint(){return models&&!transportRide&&!contextTraversal?{region,position:{...position},heading,cinematic:!!shot}:null;},
   refreshHubSchedule:refreshHubScheduleState,
   setPeers(peers){latestPeers=peers;partyActors?.setPeers(peers);needsRender=true;},

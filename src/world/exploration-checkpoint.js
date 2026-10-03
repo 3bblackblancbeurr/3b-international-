@@ -25,7 +25,9 @@ export function explorationCheckpointCommand(save,snapshot){
 // is now inside a wall; never spawn beneath water or inside a portal trigger.
 export function safeExplorationSpawn(checkpoint,region,{obstacles=[],portals=[],radius=260,groundY=()=>0}={}){
  const saved=normalizeExplorationCheckpoint(checkpoint);
- if(!saved||saved.region!==region||Math.hypot(saved.x,saved.z)>radius-2)return null;
+ // A valid pose on the rim needs a nearby inward recovery, not a reset to the
+ // region entrance. Allow the two-decimal checkpoint rounding at the boundary.
+ if(!saved||saved.region!==region||Math.hypot(saved.x,saved.z)>radius+.02)return null;
  const safe=p=>Math.hypot(p.x,p.z)<radius-2&&groundY(p.x,p.z)>-1.1&&obstacles.every(o=>obstacleDistance(p,o)>1.15)&&portals.every(o=>Math.hypot(p.x-o.x,p.z-o.z)>4.5);
  if(safe(saved))return saved;
  for(let distance=2;distance<=24;distance+=2)for(let i=0;i<16;i++){

@@ -65,6 +65,19 @@ test('road planning rejects short and out-of-bounds construction before persiste
  assert.equal((await f.request({action:'plan_roads',roads:[{x1:0,z1:0,x2:900,z2:0}]})).status,400);
  assert.equal(f.calls.filter(c=>c.path.endsWith('/nexus_city_journal')).length,0);
 });
+test('landscape edits use the authenticated owner and cannot send economy or arbitrary city fields',async()=>{
+ const f=endpoint(),features=[{id:'lake',kind:'lake',x1:200,z1:200,x2:200,z2:200,width:24}];
+ assert.equal((await f.request({action:'plan_terrain',features,expected:[],p_user:OTHER,coins:9999,city:{xp:9999}})).status,200);
+ assert.deepEqual(f.calls.find(c=>c.path.endsWith('/nexus_city_plan_terrain')).body,{p_user:UID,p_features:features,p_expected:[]});
+ assert.equal((await f.request({action:'plan_terrain',features:Array(129).fill(features[0]),expected:[]})).status,400);
+});
+test('new road editor sends its previous plan for concurrent-write detection while legacy clients remain supported',async()=>{
+ const f=endpoint(),roads=[{id:'first',x1:0,z1:0,x2:20,z2:0,width:4}];
+ assert.equal((await f.request({action:'plan_roads',roads,expectedRoads:[],p_user:OTHER})).status,200);
+ assert.deepEqual(f.calls.find(c=>c.path.endsWith('/nexus_city_plan_roads_v2')).body,{p_user:UID,p_roads:roads,p_expected:[]});
+ assert.equal((await f.request({action:'plan_roads',roads})).status,200);
+ assert.ok(f.calls.find(c=>c.path.endsWith('/nexus_city_plan_roads')));
+});
 test('a revoked device session or expired bearer cannot reach mission rewards or private city data',async()=>{
  for(const options of [{sessionValid:false},{authExpired:true}]){
   const f=endpoint(options);assert.equal((await f.request({action:'mission_claim',mission:'foundation_hall'})).status,401);

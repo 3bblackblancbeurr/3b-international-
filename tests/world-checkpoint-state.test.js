@@ -4,6 +4,7 @@ import {blankSave,normalizeSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
 import {worldEntryPolicy} from '../src/world/entry-policy.js';
 import {worldRadiusFor} from '../src/world/terrain.js';
+import {HUB_PLATFORM} from '../src/world/hub/platform-layout.js';
 import {normalizeExplorationCheckpoint,explorationCheckpointCommand,safeExplorationSpawn} from '../src/world/exploration-checkpoint.js';
 
 function traveler(){
@@ -51,4 +52,12 @@ test('changed scenery relocates an obstructed checkpoint without moving it to an
  assert.ok(safe);assert.ok(Math.hypot(safe.x-20,safe.z-20)>3.15);assert.ok(Math.hypot(safe.x-25,safe.z-20)>4.5);
  assert.equal(safeExplorationSpawn(point,'italie'),null);
  assert.equal(safeExplorationSpawn(point,'france',{groundY:()=>-3}),null);
+});
+
+test('a Nexus rim checkpoint resumes nearby on the deck instead of resetting to the entrance',()=>{
+ const edge={region:'hub',x:0,z:Math.round(HUB_PLATFORM.walkRadius*100)/100,heading:180};
+ const safe=safeExplorationSpawn(edge,'hub',{radius:HUB_PLATFORM.walkRadius});
+ assert.ok(safe);assert.ok(Math.hypot(safe.x,safe.z)<HUB_PLATFORM.walkRadius-2);
+ assert.ok(Math.hypot(safe.x-edge.x,safe.z-edge.z)<=6);assert.equal(safe.heading,180);
+ assert.equal(safeExplorationSpawn({...edge,z:edge.z+100},'hub',{radius:HUB_PLATFORM.walkRadius}),null);
 });

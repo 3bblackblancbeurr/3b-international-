@@ -93,11 +93,12 @@ Les exceptions héritées de la PR 399 restent documentées dans son audit daté
 
 ## Publication et critères restant ouverts
 
-Le contrôle automatique d'approbation a rejeté le push vers GitHub : le dépôt
-`3bblackblancbeurr/3b-international-` est public et une autorisation explicite de
-publication est requise. Aucun autre moyen de publication n'a été utilisé.
-Le travail reste dans des commits locaux pour revue. La publication GitHub
-nécessite cet accord ; elle ne vaut pas activation des paiements.
+Le contrôle automatique a d'abord rejeté la publication sur le dépôt public.
+Le propriétaire a ensuite explicitement autorisé cette publication le 3 octobre.
+La connexion GitHub a permis de publier le contenu testé dans la PR 411 ; son
+arbre Git est identique à celui vérifié localement. Le push Git direct n'avait
+pas d'identifiants dans cet environnement. Cette autorisation de publication
+ne vaut pas activation des paiements.
 
 Avant de qualifier le jeu de version commerciale complète : terminer et
 valider les actifs et cartes au niveau artistique attendu, compiler les cibles
@@ -105,3 +106,55 @@ natives retenues, tester les comptes et la coopération avec le moteur déployé
 valider les achats et leur restauration, et effectuer des sessions prolongées
 sur téléphones physiques avec mesures de mémoire, chauffe, stabilité et
 performances. Ces critères ne sont pas satisfaits par les seuls tests unitaires.
+
+## Suite après autorisation — sauvegarde et confort visuel
+
+La PR 410 de `main` a été intégrée sans conflit pour conserver le paysage et les
+constructions de Crée ma Ville, qui garde sa progression indépendante.
+
+Les réponses de sauvegarde doivent maintenant contenir un état et un numéro
+d'acquittement cohérents avant de retirer des commandes du journal. Une réponse
+HTTP 200 vide ou trop ancienne conserve les commandes et provoque un message
+de reprise, sans boucle de synchronisation sans fin. La copie locale est écrite
+avant la purge des commandes acquittées. Les lectures de compte et écritures
+utilisent la même file afin de ne pas écraser une action reçue pendant un
+rafraîchissement. Une copie de migration facultative échouée ne bloque plus
+la récupération du compte. Le retour du réseau déclenche une synchronisation.
+
+En mode invité, une action qui ne peut pas être enregistrée faute d'espace est
+refusée explicitement. Pour un compte, le journal reste la source des commandes
+à renvoyer ; la récupération distante demeure nécessaire si la copie locale
+n'a pas pu être actualisée.
+
+Le confort visuel propose une luminosité de 80 à 150 % et une aide à la lecture
+des ombres, active par défaut. Elle relève les lumières indirectes la nuit sans
+changer l'heure, la météo, les missions, la difficulté ou les récompenses.
+Les deux options sont conservées localement et appliquées immédiatement.
+Le panneau clavier utilisait une classe prévue pour des commandes positionnées
+sur le jeu ; sa classe est désormais distincte pour empêcher le recouvrement
+des autres options. Les boutons préexistants du panneau restent inchangés.
+La marche libre utilise également le rayon de la plateforme actuelle : le
+joueur ne peut plus avancer sur le vide de l'ancien terrain. Un checkpoint
+sur le bord est replacé de quelques mètres vers l'intérieur à la reprise.
+
+Validation de cette suite :
+
+- Six scénarios de sauvegarde : reçu incomplet/ancien, réponse perdue après
+  commit serveur, quota sur la copie locale, quota sur le journal, invité sans
+  stockage, rafraîchissement concurrent. Le test multi-onglets existant passe.
+- Trois tests de préférences : éclairage dans les neuf régions, bornes et
+  indépendance du gameplay, conservation et stockage indisponible.
+- `npm run verify` : 1 593 réussis, zéro échec, un test Swift ignoré ; build
+  réussi. Le sélecteur du panneau clavier est revalidé après son renommage.
+- Navigateur tactile : rotation, journal, réglage réel des contrôles,
+  conservation après rechargement, perte WebGL simulée, écran de récupération
+  et reprise du checkpoint réussis. Aucun contournement de clic n'est utilisé.
+  Un déplacement clavier réel depuis le bord confirme la limite du Nexus.
+- Le workflow `Verify World browser journeys` reproduit les parcours sur les
+  modifications du monde et conserve captures et rapport comme artefacts CI.
+- Les huit workflows GitHub de la première publication sont verts, dont les
+  builds mobiles de test ; ce constat ne certifie pas les commits suivants ni
+  des essais sur appareil physique.
+
+Les paiements, les cibles Unreal et la qualification commerciale restent ouverts
+selon les critères ci-dessus. Aucun achat réel n'a été simulé comme réussi.

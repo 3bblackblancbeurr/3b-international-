@@ -11,3 +11,6 @@
 
 .world-shell .play-guidance .play-supplies,.world-shell .play-guidance .paris-journal-link{position:static;inset:auto;transform:none;max-width:100%;min-height:44px;pointer-events:auto;white-space:normal}
 .world-shell .play-hud.has-waypoint .play-guidance{display:none}
+.world-visual-settings .world-shadow-assist{display:flex;align-items:center;gap:12px;min-height:44px;cursor:pointer}
+.world-visual-settings .world-shadow-assist input{width:22px;height:22px;flex:0 0 auto}
+.world-control-settings .world-control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
