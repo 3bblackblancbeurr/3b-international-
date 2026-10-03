@@ -22,10 +22,22 @@ jobs:
             width: 1280
             height: 720
             quality: detail
+            clock: '16:20:00'
           - view: phone
             width: 390
             height: 844
             quality: fluid
+            clock: '16:20:00'
+          - view: desktop-night
+            width: 1280
+            height: 720
+            quality: detail
+            clock: '22:00:00'
+          - view: phone-night
+            width: 390
+            height: 844
+            quality: fluid
+            clock: '22:00:00'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -44,6 +56,7 @@ jobs:
           WORLD_ART_WIDTH: ${{ matrix.width }}
           WORLD_ART_HEIGHT: ${{ matrix.height }}
           WORLD_ART_QUALITY: ${{ matrix.quality }}
+          WORLD_ART_CLOCK: ${{ matrix.clock }}
           WORLD_ART_OUT: artifacts/hub-${{ matrix.view }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
