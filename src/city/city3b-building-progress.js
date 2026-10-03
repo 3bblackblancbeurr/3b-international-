@@ -22,11 +22,14 @@ export function cityConstructionDuration(definition) {
 }
 
 export function cityBuildingBenefit(definition) {
+  if(definition?.metadata?.material)return `Production · 8 ${ {timber:'bois',steel:'métaux',circuits:'circuits'}[definition.metadata.material]||'matériaux'} / jour`;
   const service = definition?.metadata?.service;
-  if (service === 'water') return 'Eau · 60 habitants';
-  if (service === 'energy') return 'Énergie · 60 habitants';
-  if (service === 'health') return 'Soins · 40 habitants';
-  if (service === 'education') return 'École · 30 élèves';
+  const labels={safety:'Sécurité',fire:'Secours incendie',cleanliness:'Propreté',internet:'Téléphone & Internet',justice:'Justice',sport:'Sports',administration:'Services administratifs',roads:'Entretien routier · mobilité améliorée',logistics:'Livraisons',business:'Entreprises',industry:'Fabrication',trade:'Échanges entre villes',rail:'Gare · nécessite des rails',scooter:'Mobilité douce'};
+  if(labels[service])return `${labels[service]}${definition?.metadata?.service_capacity?' · '+definition.metadata.service_capacity+' places':''}`;
+  if (service === 'water') return `Eau · ${definition?.metadata?.service_capacity || 60} habitants`;
+  if (service === 'energy') return `Énergie · ${definition?.metadata?.service_capacity || 60} habitants`;
+  if (service === 'health') return `Soins · ${definition?.metadata?.service_capacity || 40} habitants`;
+  if (service === 'education') return `École · ${definition?.metadata?.service_capacity || 30} élèves`;
   const role = definition?.metadata?.city_role;
   if (role === 'mobility') return 'Transport · 6 emplois';
   if (role === 'housing' || definition?.category === 'home') return 'Logement · 18 places';
@@ -41,6 +44,6 @@ export function cityBuildingBenefit(definition) {
 export function citySceneSignature(data = {}, codes = new Set()) {
   // Passive census refreshes must not rebuild all meshes or reset the camera.
   return JSON.stringify([data.city?.city_id, data.city?.land_tier, data.city?.day_mode,
-    data.city?.city?.map_extent, data.city?.city?.core_half, data.city?.city?.roads, data.city?.city?.terrain, data.districts, data.placements, data.displays,
+    data.city?.city?.map_extent, data.city?.city?.core_half, data.city?.city?.roads, data.city?.city?.terrain, data.city?.city?.networks, data.districts, data.placements, data.displays,
     data.buildings, [...codes].sort(), data.life?.inhabitants, data.life?.population, data.life?.employed]);
 }

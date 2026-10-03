@@ -1,3 +1,4 @@
+import {cityRoadNetwork} from './city3b-networks.js';
 import {cityMapBlueprint,cityMapRoads} from './city3b-map.js';
 
 const number=(value,max=200000)=>Math.max(0,Math.min(max,Math.round(Number(value)||0)));
@@ -7,7 +8,7 @@ export const CITY_LIFE_POLICIES=[
  {code:'industry',title:'Ville active',description:'Les logements disponibles accueillent les habitants plus rapidement.'},
  {code:'culture',title:'Transmission',description:'Les lieux culturels couvrent davantage les besoins du quartier.'},
 ];
-export const CITY_LIFE_BUILD_ACTIONS={water:'WATER_3B',energy:'SOLAR_3B',food:'SHOP_3B',health:'CLINIC_3B',education:'SCHOOL_3B',green:'TREE_MATRIX',culture:'LIBRARY_3B'};
+export const CITY_LIFE_BUILD_ACTIONS={safety:'POLICE_3B',fire:'FIRE_STATION_3B',cleanliness:'WASTE_CENTER_3B',internet:'TELECOM_3B',justice:'COURTHOUSE_3B',sport:'PLAYGROUND_3B',water:'WATER_3B',energy:'SOLAR_3B',food:'SHOP_3B',health:'CLINIC_3B',education:'SCHOOL_3B',green:'TREE_MATRIX',culture:'LIBRARY_3B'};
 export const CITY_LIFE_ACTIVITY={home:'À la maison',work:'Vers son lieu de travail',shopping:'Vers un commerce',walk:'Vers un espace vert',culture:'Vers un lieu culturel'};
 
 // Only a confirmed server runtime can supply a census or event status.
@@ -41,7 +42,7 @@ export function cityResidentRoutes(snapshot={},budget=24){
  const life=cityLifeSnapshot(snapshot);if(!life.available||!life.population)return [];
  const placements=new Map((snapshot.placements||[]).filter(p=>p.placement_state!=='stored').map(p=>[p.id,p]));
  const blueprint=cityMapBlueprint(snapshot),roads=cityMapRoads(blueprint);
- const segments=[...roads.boulevards,...roads.custom,...roads.radials.filter(r=>r.unlocked),...roads.rings.flatMap(r=>Array.from({length:16},(_,i)=>({x1:Math.cos(i*Math.PI/8)*r.radius,z1:Math.sin(i*Math.PI/8)*r.radius,x2:Math.cos((i+1)*Math.PI/8)*r.radius,z2:Math.sin((i+1)*Math.PI/8)*r.radius})))];
+ const segments=[...roads.boulevards,...cityRoadNetwork(snapshot),...roads.radials.filter(r=>r.unlocked),...roads.rings.flatMap(r=>Array.from({length:16},(_,i)=>({x1:Math.cos(i*Math.PI/8)*r.radius,z1:Math.sin(i*Math.PI/8)*r.radius,x2:Math.cos((i+1)*Math.PI/8)*r.radius,z2:Math.sin((i+1)*Math.PI/8)*r.radius})))];
  const points=[],edges=[];const key=p=>`${p.x.toFixed(3)},${p.z.toFixed(3)}`;const ids=new Map();
  const node=p=>{const k=key(p);if(ids.has(k))return ids.get(k);const id=points.length;points.push(p);edges.push([]);ids.set(k,id);return id;};
  const link=(a,b)=>{if(a===b)return;const weight=distance(points[a],points[b]);edges[a].push([b,weight]);edges[b].push([a,weight]);};

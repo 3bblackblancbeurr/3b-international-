@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-03",
-  "count": 187,
+  "count": 190,
   "migrations": [
     {
       "version": "20260910020445",
@@ -951,6 +951,21 @@
       "version": "20261003030635",
       "name": "city3b_terrain_relief",
       "sha256": "80937bc8e542fa858fa3db3b77824b0ab2b4fa144061601961d4abadc7b3b7c5"
+    },
+    {
+      "version": "20261003045247",
+      "name": "matrix_civic_services",
+      "sha256": "c0e0a30ab2c160c99ef18801a4f4583907ec0903adcbac1cf93ed4c54b1ce287"
+    },
+    {
+      "version": "20261003045254",
+      "name": "city_infrastructure_networks",
+      "sha256": "06b6043d727e8f0ff77d7f0b9a96ecb817d25a4f7da5e4c148ff28a6d2fcd330"
+    },
+    {
+      "version": "20261003045300",
+      "name": "city_neighbor_material_exchange",
+      "sha256": "a1d5c6105b9da74a1708ffa25122058d03f8f16d0a1ef4c01768cd080db0b17f"
     }
   ],
   "reconciliation": {
