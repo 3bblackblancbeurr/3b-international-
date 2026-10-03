@@ -164,19 +164,28 @@
 
 .city-game .city-game-building .city-game-building-model img{width:74px;height:70px;object-fit:contain;border-radius:9px}
 
-/* Viewing tools stay available even when the player hides the HUD. */
-.city3d-view-tools{position:absolute;z-index:6;left:max(10px,env(safe-area-inset-left));bottom:64px;display:flex;flex-wrap:wrap;gap:4px;max-width:calc(100% - 220px)}
-.city3d-view-tools button{min-height:44px!important;padding:5px 9px!important;font-size:11px!important;background:#102127d9!important;border:1px solid #c7ad7940!important;border-radius:10px!important;color:#f4e7cc!important}
-.city3d-view-tools button[aria-pressed=true]{border-color:#b9dbe6!important;background:#21404ae8!important}
-.city-game:has(.city3d-shell[data-clear-view=true]) .city-game-hud,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city-game-bottom,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city3b-advisor,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city-game-sites,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city3d-gesture-guide{display:none!important}
 .city-game .city3d-gesture-guide{animation:city-guide-dismiss 7s forwards;pointer-events:none}
 @keyframes city-guide-dismiss{0%,70%{opacity:1}100%{opacity:0;visibility:hidden}}
 .city-game .city-game-catalog{background:#102127ee;box-shadow:0 8px 26px #0004}
 .city-game .city-game-building{min-height:130px;grid-template-columns:96px minmax(0,1fr)}
 .city-game .city-game-building .city-game-building-model{width:96px;height:100px!important}
 .city-game .city-game-building .city-game-building-model img{width:96px;height:100px}
-@media(max-height:540px) and (orientation:landscape){.city3d-view-tools{bottom:54px}.city-game .city-game-hud{background:linear-gradient(#0c171bea,#0c171bb3)}.city-game .city-game-bottom nav{background:#102127da}}
+@media(max-height:540px) and (orientation:landscape){.city-game .city-game-hud{background:linear-gradient(#0c171bea,#0c171bb3)}.city-game .city-game-bottom nav{background:#102127da}}
+
+/* The camera is controlled on the terrain; panels fade during navigation. */
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-inspector,
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-drawing,
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-catalog,
+.city-game:has(.city3d-shell[data-navigating=true]) .city3b-advisor,
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-sites{visibility:hidden;pointer-events:none}
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-hud{opacity:.25;pointer-events:none}
+.city-game .city-game-hud{transition:opacity 140ms ease}
+.city-game .city-game-inspector,.city-game .city-game-drawing,.city-game .city-game-catalog{border:1px solid #d7bd8055;box-shadow:0 8px 24px #06121b55;background:linear-gradient(145deg,#132c35f2,#0b1922f2);border-radius:14px}
+@media(max-width:600px) and (orientation:portrait){
+ .city-game .city-game-inspector[data-placing=true]{top:auto;bottom:76px;left:10px;right:10px;width:auto;max-height:24%;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;box-sizing:border-box}
+ .city-game .city-game-inspector[data-placing=true] .city-game-inspector-title{grid-column:1!important;grid-row:1!important}
+ .city-game .city-game-inspector[data-placing=true] .city-game-validation{grid-column:1!important;grid-row:2!important;margin:0}
+ .city-game .city-game-inspector[data-placing=true] .city-game-selection-actions{grid-column:2!important;grid-row:1/3!important;align-self:center;max-width:155px}
+ .city-game[data-tool=build] .city3b-advisor,.city-game[data-tool=move] .city3b-advisor{display:none}
+}
+@media(prefers-reduced-motion:reduce){.city-game .city-game-hud{transition:none}}

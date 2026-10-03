@@ -10,14 +10,15 @@ export function cityBuildingHeight(w,d,kind,code=''){
  const small=Math.max(.7,Math.min(Number(w)||1,Number(d)||1));
  const type=String(code);
  const ratio=/TOWER|BUSINESS|OFFICE/.test(type)?2.4
-  :/APARTMENT|RESIDENCE|HOUSING/.test(type)?1.65
-  :type==='HOME_ORIGIN'?1.10
-  :/HOSPITAL/.test(type)?1.55
-  :/CLINIC|SCHOOL|POLICE|COURT|CITY_HALL/.test(type)?1.15
+  :/APARTMENT|RESIDENCE|HOUSING/.test(type)?1.8
+  :type==='HOME_ORIGIN'?1.28
+  :/CITY_HALL/.test(type)?1.7
+  :/HOSPITAL/.test(type)?1.75
+  :/CLINIC|SCHOOL|POLICE|COURT/.test(type)?1.45
   :/FACTORY|WORKS|DEPOT|SUPERMARKET/.test(type)?1.0
   :kind==='housing'?1.45:kind==='landmark'?2.5
   :kind==='green'||kind==='mobility'?.8:1.10;
- const floor=type==='CITY_HALL_3B'?7.5:/HOSPITAL|COURT/.test(type)?6:/SCHOOL|CLINIC|POLICE/.test(type)?4.5:type==='HOME_ORIGIN'?3.4:1.1;
+ const floor=type==='CITY_HALL_3B'?11.5:/HOSPITAL|COURT/.test(type)?7:/SCHOOL|CLINIC|POLICE/.test(type)?5.5:type==='HOME_ORIGIN'?3.8:1.1;
  return Math.min(24,Math.max(floor,small*ratio));
 }
 export function cityModelPrimitives(definition={},footprint=definition.footprint||{},seed) {

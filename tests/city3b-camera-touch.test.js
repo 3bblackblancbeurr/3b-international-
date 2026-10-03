@@ -75,3 +75,28 @@ test('inspection orbit tilts toward clouds without moving the eye below ground',
   assert.ok(Math.abs(camera.position.distanceTo(controls.target)-50)<1e-7,'switching back to pan preserves zoom');
  }finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
 });
+
+test('two parallel fingers tilt to the sky during construction and return without camera buttons or accidental placement',()=>{
+ const previous=globalThis.window;globalThis.window=new EventTarget();
+ const element=new EventTarget();element.clientHeight=500;element.getBoundingClientRect=()=>({left:0,top:0,width:500,height:500});element.setPointerCapture=()=>{};
+ const camera=new PerspectiveCamera(40);camera.position.set(0,30,40);camera.lookAt(0,0,0);
+ const controls={target:new Vector3(),enableDamping:true,minDistance:9,maxDistance:200,minPolarAngle:.035,maxPolarAngle:Math.PI*.68,update(){camera.lookAt(this.target);camera.updateMatrixWorld();}};
+ const events=[],navigation=[];const dispose=attachCityTouchCamera(element,{camera,controls,motion:createCityCameraMotion(camera,controls),canPan:()=>false,onGesture(){},onNavigation:active=>navigation.push(active),onConstruction:e=>events.push(e.type)});
+ const emit=(type,id,x,y)=>{const e=new Event(type,{cancelable:true});Object.assign(e,{pointerType:'touch',pointerId:id,clientX:x,clientY:y});element.dispatchEvent(e);};
+ try{
+  emit('pointerdown',1,200,300);emit('pointerdown',2,300,300);
+  emit('pointermove',1,200,280);emit('pointermove',2,300,280);
+  emit('pointermove',1,200,50);emit('pointermove',2,300,50);
+  assert.ok(controls.target.y>camera.position.y,'vertical two-finger gesture reaches the sky without changing modes');
+  assert.ok(camera.position.y>=2);assert.ok(Math.abs(camera.position.x)<1e-7,'parallel swipe must not add unwanted yaw');
+  emit('pointerup',1,200,50);emit('pointerup',2,300,50);
+  emit('pointerdown',1,200,50);emit('pointerdown',2,300,50);
+  emit('pointermove',1,200,70);emit('pointermove',2,300,70);
+  emit('pointermove',1,200,400);emit('pointermove',2,300,400);
+  assert.ok(camera.position.y>controls.target.y,'reverse swipe returns above the city');
+  assert.ok(controls.target.y<1,'the lifted sky pivot returns to the terrain');
+  emit('pointerup',1,200,400);emit('pointerup',2,300,400);
+  assert.deepEqual(events,['pointerdown','pointerdown'],'camera gestures never finish construction');
+  assert.equal(navigation.at(-1),false,'contextual menus return after both fingers lift');
+ }finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
+});
