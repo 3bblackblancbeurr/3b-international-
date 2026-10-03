@@ -4,6 +4,16 @@ import {PerspectiveCamera,Vector3} from 'three';
 import {attachCityTouchCamera,cityTouchGesture} from '../src/city/city3b-camera-touch.js';
 import {createCityCameraMotion} from '../src/city/city3b-camera-motion.js';
 test('two fingers describe independent pan, pinch and twist',()=>{const g=cityTouchGesture([{x:0,y:0},{x:0,y:100}]);assert.deepEqual(g,{x:0,y:50,distance:100,angle:Math.PI/2});});
+test('inspection keeps tap selection while a camera drag suppresses selection',()=>{
+ const previous=globalThis.window;globalThis.window=new EventTarget();
+ const element=new EventTarget();element.clientHeight=500;element.setPointerCapture=()=>{};
+ const camera=new PerspectiveCamera(40);camera.position.set(0,30,40);camera.lookAt(0,0,0);
+ const controls={target:new Vector3(),minDistance:9,maxDistance:200,minPolarAngle:.12,maxPolarAngle:1.5,update(){}};
+ const events=[];let cancelled=0;
+ const dispose=attachCityTouchCamera(element,{camera,controls,motion:createCityCameraMotion(camera,controls),canPan:()=>true,onGesture:()=>cancelled++,onConstruction:e=>events.push(e.type)});
+ const emit=(type,x)=>{const e=new Event(type,{cancelable:true});Object.assign(e,{pointerType:'touch',pointerId:1,clientX:x,clientY:100});element.dispatchEvent(e);};
+ try{emit('pointerdown',100);emit('pointermove',102);emit('pointerup',102);assert.deepEqual(events,['pointerdown','pointerup']);events.length=0;emit('pointerdown',100);emit('pointermove',160);emit('pointerup',160);assert.deepEqual(events,['pointerdown']);assert.ok(cancelled>0);assert.ok(controls.target.length()>0);}finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
+});
 test('two-finger camera cancels construction and stays in camera mode until both fingers lift',()=>{
  const previous=globalThis.window;globalThis.window=new EventTarget();
  const element=new EventTarget();element.clientHeight=500;element.setPointerCapture=()=>{};

@@ -7,7 +7,7 @@ export function cityTouchGesture(points){
 
 // Own touch camera input separately from single-finger construction strokes.
 export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onGesture,onConstruction=()=>{}}){
- const fingers=new Map();let active=false,start=null;
+ const fingers=new Map();let active=false,start=null,moved=false;
  const snapshot=()=>{
   if(!fingers.size){start=null;return;}
   start={gesture:cityTouchGesture([...fingers.values()]),target:controls.target.clone(),offset:camera.position.clone().sub(controls.target),right:new Vector3(1,0,0).applyQuaternion(camera.quaternion),height:Math.max(1,element.clientHeight)};
@@ -17,15 +17,18 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
  const down=e=>{
   if(e.pointerType!=='touch')return;
   if(fingers.size>=2){consume(e);return;}
+  if(!fingers.size)moved=false;
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});element.setPointerCapture(e.pointerId);
   active=active||fingers.size===2||canPan();
-  consume(e);if(active){motion.cancel();onGesture();}else onConstruction(e);snapshot();
+  consume(e);if(fingers.size===2){moved=true;motion.cancel();onGesture();}else{if(active)motion.cancel();onConstruction(e);}snapshot();
  };
  const move=e=>{
   if(!fingers.has(e.pointerId))return;
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   consume(e);if(!active){onConstruction(e);return;}if(!start)return;
   const next=cityTouchGesture([...fingers.values()]),two=fingers.size===2;
+  if(!moved&&Math.hypot(next.x-start.gesture.x,next.y-start.gesture.y)<=7)return;
+  moved=true;onGesture();
   const ratio=two?start.gesture.distance/Math.max(1,next.distance):1;
   const offset=start.offset.clone().multiplyScalar(ratio);
   offset.setLength(Math.max(controls.minDistance,Math.min(controls.maxDistance,offset.length())));
@@ -37,7 +40,7 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
  };
  const up=e=>{
   if(!fingers.delete(e.pointerId))return;
-  consume(e);if(active)onGesture();else onConstruction(e);
+  consume(e);if(active&&moved)onGesture();else onConstruction(e);
   if(!fingers.size)active=false;
   snapshot();
  };
