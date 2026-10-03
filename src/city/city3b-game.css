@@ -99,3 +99,11 @@
 .city-municipal-stock{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.city-municipal-stock>span{display:grid;background:#192b30;border-radius:10px;padding:12px;min-width:90px}.city-municipal-stock strong{font-size:24px;color:#dfc992}.city-municipal-stock small{opacity:.7}
 
 .city-game-eraser{max-width:280px}.city-game-eraser select{width:100%;padding:8px;border-radius:10px;background:#13232b;color:#f0e6ce;border:1px solid #8c7e61}.city-game-eraser .city-game-drawing-title strong{display:flex;align-items:center;gap:7px}.city-game-eraser>button{width:100%;margin-top:8px}.city-game-bottom nav{overflow-x:auto;max-width:calc(100vw - 150px)}
+/* Road selection remains readable without covering the placement area. */
+.city-game[data-tool=road] .city-game-drawing,.city-game[data-tool=signal] .city-game-drawing{width:min(410px,calc(100% - 90px));grid-template-columns:minmax(0,1fr)}
+.city-game[data-tool=road] .city-game-drawing-title,.city-game[data-tool=signal] .city-game-drawing-title{grid-column:1/-1;min-width:0}
+.city-game[data-tool=road] .city-game-drawing-title select{flex:1;min-width:0;max-width:none}
+.city-game[data-tool=road] .city-game-drawing .city-game-selection-actions,.city-game[data-tool=signal] .city-game-drawing .city-game-selection-actions{grid-column:1/-1;grid-row:auto;justify-content:center;flex-wrap:wrap;gap:4px}
+.city-game[data-tool=signal] .city-game-drawing-options select{max-width:none;font-size:11px}
+.city-game-drawing-options>span{font-size:11px;color:#b4d5dd}
+@media(max-width:440px){.city-game[data-tool=road] .city-game-drawing,.city-game[data-tool=signal] .city-game-drawing{width:calc(100% - 24px)}}

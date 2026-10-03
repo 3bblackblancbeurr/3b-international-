@@ -42,7 +42,7 @@ export function cityResidentRoutes(snapshot={},budget=24){
  const life=cityLifeSnapshot(snapshot);if(!life.available||!life.population)return [];
  const placements=new Map((snapshot.placements||[]).filter(p=>p.placement_state!=='stored').map(p=>[p.id,p]));
  const blueprint=cityMapBlueprint(snapshot),roads=cityMapRoads(blueprint);
- const segments=[...roads.boulevards,...cityRoadNetwork(snapshot),...roads.radials.filter(r=>r.unlocked),...roads.rings.flatMap(r=>Array.from({length:16},(_,i)=>({x1:Math.cos(i*Math.PI/8)*r.radius,z1:Math.sin(i*Math.PI/8)*r.radius,x2:Math.cos((i+1)*Math.PI/8)*r.radius,z2:Math.sin((i+1)*Math.PI/8)*r.radius})))];
+ const segments=[...roads.boulevards,...cityRoadNetwork(snapshot).filter(r=>r.roadType!=='motorway'),...roads.radials.filter(r=>r.unlocked),...roads.rings.flatMap(r=>Array.from({length:16},(_,i)=>({x1:Math.cos(i*Math.PI/8)*r.radius,z1:Math.sin(i*Math.PI/8)*r.radius,x2:Math.cos((i+1)*Math.PI/8)*r.radius,z2:Math.sin((i+1)*Math.PI/8)*r.radius})))];
  const points=[],edges=[];const key=p=>`${p.x.toFixed(3)},${p.z.toFixed(3)}`;const ids=new Map();
  const node=p=>{const k=key(p);if(ids.has(k))return ids.get(k);const id=points.length;points.push(p);edges.push([]);ids.set(k,id);return id;};
  const link=(a,b)=>{if(a===b)return;const weight=distance(points[a],points[b]);edges[a].push([b,weight]);edges[b].push([a,weight]);};
