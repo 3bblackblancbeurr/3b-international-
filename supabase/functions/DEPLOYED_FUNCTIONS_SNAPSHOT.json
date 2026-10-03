@@ -1,6 +1,6 @@
 {
   "snapshot_date": "2026-10-03",
-  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v13 verified after player-authored routes and landscape deployment on 2026-10-03.",
+  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v14 verified after construction reward correction, compact controls and terrain relief deployment on 2026-10-03.",
   "functions": [
     {
       "slug": "ai-council-orchestrate",
@@ -16,7 +16,7 @@
     },
     {
       "slug": "city-3b",
-      "version": 13,
+      "version": 14,
       "verify_jwt": true,
       "status": "ACTIVE"
     },

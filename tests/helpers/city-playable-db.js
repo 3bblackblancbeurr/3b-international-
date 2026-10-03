@@ -26,7 +26,7 @@ export async function fixture({construction=false,landscape=false}={}){
  for(const file of ['20260917132738_city3b_wallet_store_move_v5.sql','20260928122225_separate_world_city_progression.sql','20261003003042_city3b_guided_campaign.sql','20261003003056_city3b_living_runtime.sql','20261003003108_city3b_playable_construction.sql'])await db.exec(sql(file));
  if(landscape)construction=true;
  if(construction)await db.exec(sql('20261003012525_city3b_construction_sites.sql'));
- if(landscape){await db.exec(sql('20261003022835_city3b_player_landscape.sql'));await db.exec(sql('20261003023345_city3b_authored_mobility.sql'));}
+ if(landscape){await db.exec(sql('20261003022835_city3b_player_landscape.sql'));await db.exec(sql('20261003023345_city3b_authored_mobility.sql'));await db.exec(sql('20261003030635_city3b_terrain_relief.sql'));}
  await db.exec('grant usage on schema auth,public to authenticated,service_role;grant select on auth.users to authenticated;grant select on nexus_cities to authenticated;grant all on all tables in schema public to service_role;grant usage on all sequences in schema public to service_role;');
  for(const uid of [A,B]){await db.query('insert into auth.users values($1)',[uid]);await db.query("insert into member_profiles values($1,'France','active')",[uid]);await db.query("select nexus_city_create($1,'Ville test','France')",[uid]);}
  const query=async(text,args=[])=>{const r=await db.query(text,args);return r.rows[0]};

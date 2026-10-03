@@ -1,7 +1,7 @@
 const BASE=Deno.env.get('SUPABASE_URL')!,ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
 const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174']);
 class F extends Error{constructor(public status:number,message:string){super(message)}}
-async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){const r=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)}),d=await r.json().catch(()=>null);if(!r.ok)throw new F(r.status>=500?503:400,typeof d?.message==='string'&&d.message.length<180?d.message:'Ville 3B indisponible');return d}
+async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST'){const r=await fetch(BASE+path,{method,headers:{apikey:ADMIN,Authorization:'Bearer '+ADMIN,'Content-Type':'application/json',Prefer:'return=representation'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(12000)}),d=await r.json().catch(()=>null);if(!r.ok)throw new F(r.status>=500?503:400,typeof d?.message==='string'&&/duplicate key|unique constraint/i.test(d.message)?'Cette action n’a pas été enregistrée. Recharge ta ville puis réessaie.':typeof d?.message==='string'&&d.message.length<180?d.message:'Ville 3B indisponible');return d}
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
 async function auth(req:Request){
  const h=req.headers.get('authorization')||'';

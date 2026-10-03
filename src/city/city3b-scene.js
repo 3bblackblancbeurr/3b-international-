@@ -6,9 +6,10 @@ import {cityResidentRoutes} from './city3b-life.js';
 import {cityTrafficRoutes} from './city3b-simulation.js';
 import {cityFootprint,cityPlacementCheck} from './city3b-construction.js';
 import {premiumEffectsFromCodes} from '../store/premium-effects.js';
-import {cityIsNight} from './city3b-environment.js';
+import {cityConstructionIsNight} from './city3b-environment.js';
 import {matrixTree,buildingDetails} from './city3b-architecture.js';
-import {cityLandscape,isWater} from './city3b-landscape.js';
+import {cityLandscape,isWater,isRelief} from './city3b-landscape.js';
+import {cityTerrainGeometry} from './city3b-terrain-geometry.js';
 import {cityConstructionState} from './city3b-building-progress.js';
 
 // One coordinate system for the planner, saved placements, picking and 3D.
@@ -19,14 +20,14 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.75));
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure=1.1;
+  renderer.toneMappingExposure=1.25;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   host.appendChild(renderer.domElement);
   renderer.domElement.setAttribute('aria-label','Carte 3D de construction. Glisser pour déplacer la vue, pincer pour zoomer.');
   renderer.domElement.tabIndex=0;
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,.1,3000);
   const controls=new OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.43;controls.minPolarAngle=.12;
+  controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.48;controls.minPolarAngle=.12;
   controls.minDistance=9;controls.maxDistance=2100;controls.screenSpacePanning=false;
   controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};
   controls.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};
@@ -42,6 +43,12 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   };
   function shape(parent,geo,color,x,y,z,w,h,d,emissive=false,opacity=1){const mesh=new THREE.Mesh(geo,mat(color,emissive,opacity));mesh.position.set(x,y,z);mesh.scale.set(w,h,d);mesh.castShadow=opacity===1;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
   const box=(parent,color,x,y,z,w,h,d,emissive=false,opacity=1)=>shape(parent,boxGeo,color,x,y,z,w,h,d,emissive,opacity);
+  const sky=new THREE.Group();scene.add(sky);
+  const skyGeometry=new THREE.SphereGeometry(2600,32,16);geometries.add(skyGeometry);
+  const skyMaterial=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{},vertexShader:'varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec3 direction;void main(){float h=clamp(normalize(direction).y,0.0,1.0);gl_FragColor=vec4(mix(vec3(.79,.91,1.),vec3(.16,.49,.85),pow(h,.55)),1.0);}'});materials.set('sky',skyMaterial);sky.add(new THREE.Mesh(skyGeometry,skyMaterial));
+  const cloudMaterial=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.92,depthWrite:false,fog:false}),sunMaterial=new THREE.MeshBasicMaterial({color:0xfff0b3,fog:false});materials.set('cloud',cloudMaterial);materials.set('sunDisc',sunMaterial);
+  const sunDisc=new THREE.Mesh(sphereGeo,sunMaterial);sunDisc.position.set(-650,120,-900);sunDisc.scale.setScalar(58);sky.add(sunDisc);
+  for(let i=0;i<12;i++){const cloud=new THREE.Group(),angle=i*Math.PI/6;cloud.position.set(Math.cos(angle)*1250,160+(i%3)*30,Math.sin(angle)*1250);for(let j=0;j<4;j++){const puff=new THREE.Mesh(sphereGeo,cloudMaterial);puff.position.set(j*55-80,(j%2)*16,0);puff.scale.set(75,24+(j%2)*12,45);cloud.add(puff);}sky.add(cloud);}
   function tree(parent,x,z,size=1){
     matrixTree({box,shape,sphereGeo,cylinderGeo},parent,x,z,size);
   }
@@ -57,6 +64,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   }
   function landscape(parent,f,preview=false){
     const x=(f.x1+f.x2)/2,z=(f.z1+f.z2)/2,r=f.width/2;
+    if(isRelief(f)){if(preview){const geometry=cityTerrainGeometry(r,[{...f,x1:0,z1:0}],{segments:40});previewGeometries.push(geometry);const mesh=new THREE.Mesh(geometry,mat(f.kind==='hill'?0x6ad2b1:0x6acaff,true,.55));mesh.position.set(x,.1,z);parent.add(mesh);}return;}
     if(isWater(f)){
       const color=preview?0x66caff:night?0x124d68:0x267b97;
       if(f.kind==='lake'){
@@ -74,6 +82,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     else if(f.kind==='bench'){box(parent,0x2d4653,x,.55,z,1.5,.12,.48);box(parent,0xc7ad79,x,.9,z-.22,1.5,.55,.08);for(const side of [-1,1])box(parent,0x61c1ee,x+side*.55,.27,z,.08,.5,.38,true);}
     else if(f.kind==='light'){box(parent,0xc7ad79,x,1.6,z,.09,3.2,.09);box(parent,0x63c6ed,x,3.2,z,.9,.09,.22,true);shape(parent,cylinderGeo,0x2b4d5b,x,.08,z,.4,.16,.4);}
   }
+  let groundPick=null,previewGeometries=[];
   let data={},night=false,premium={},picks=[],animated=[],latest={},dead=false,visible=true,reduced=false,frame=0,last=0,dirty=true,first=true,mergedGeometries=[],constructionSites=[];
   let clock={time:Date.now(),tick:performance.now()};
   const syncClock=value=>{const parsed=Date.parse(value);if(Number.isFinite(parsed))clock={time:parsed,tick:performance.now()};};
@@ -144,11 +153,15 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     data=snapshot;syncClock(snapshot.serverTime);premium=premiumEffectsFromCodes(codes);picks=[];animated=[];constructionSites=[];clear(world);clear(people);clear(sites);
     for(const geometry of mergedGeometries)geometry.dispose();mergedGeometries=[];
     const plan=cityMapBlueprint(data),roads=cityMapRoads(plan),half=plan.half;
-    night=cityIsNight(data.city);
-    scene.background=new THREE.Color(night?0x132636:0xbbd9df);scene.fog=new THREE.Fog(scene.background,half*3,half*10);
-    hemi.intensity=night?.8:2.5;sun.intensity=night?.45:3.2;sun.color.set(night?0x96bded:0xffedcc);
-    box(world,night?0x405547:0x97ad76,0,-.7,0,half*2,1.3,half*2);
-    box(world,night?0x173f58:0x478da1,0,-.13,half*1.7,half*4,.1,half*1.4);
+    night=cityConstructionIsNight(data.city);
+    scene.background=new THREE.Color(night?0x476585:0xa3d6ff);scene.fog=new THREE.Fog(scene.background,half*3,half*10);
+    hemi.intensity=night?1.9:3.1;sun.intensity=night?1.1:3.4;sun.color.set(night?0x96bded:0xffedcc);
+    const groundGeometry=cityTerrainGeometry(half,cityLandscape(data));
+    groundPick=new THREE.Mesh(groundGeometry,mat(night?0x678c71:0xa8bf83));groundPick.receiveShadow=true;world.add(groundPick);mergedGeometries.push(groundGeometry);groundPick.updateMatrixWorld();
+    // Four ocean strips surround all edges without covering the player's land.
+    for(const side of [-1,1]){box(world,0x379dbe,side*half*2,-.18,0,half*2,.1,half*6);box(world,0x379dbe,0,-.18,side*half*2,half*2,.1,half*2);}
+    for(const side of [-1,1]){box(world,0xd5cca4,side*(half+.7),-.06,0,1.4,.1,half*2);box(world,0xd5cca4,0,-.06,side*(half+.7),half*2,.1,1.4);}
+    sky.visible=!night;
 
     // Distant scenery is outside the playable land and never counted as player buildings.
     for(let i=0;i<13;i++){
@@ -225,7 +238,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     updateDraft(latest);dirty=true;
   }
   function updateDraft(props={}){
-    latest=props;clear(ghost);controls.enabled=props.tool!=='road'&&!(props.tool==='landscape'&&props.landscapeKind==='river');
+    latest=props;clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];controls.enabled=!!props.pan||(props.tool!=='road'&&!(props.tool==='landscape'&&props.landscapeKind==='river'));
     if(props.previewOnly){dirty=true;return;}
     if(props.selectedId&&!props.activeDefinition&&!props.activePlacement){
       const selected=(data.placements||[]).find(p=>p.id===props.selectedId&&p.placement_state!=='stored');
@@ -258,18 +271,18 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const motionObserver=new MutationObserver(motion);motionObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion']});
   const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hit=new THREE.Vector3();
   let down=null,pointers=new Set();
-  const terrainPoint=e=>{const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);return ray.ray.intersectPlane(plane,hit)?{x:Math.round(hit.x),z:Math.round(hit.z)}:null;};
-  const drawing=()=>latest.tool==='road'||latest.tool==='landscape'&&latest.landscapeKind==='river';
+  const terrainPoint=e=>{const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);const intersection=groundPick?ray.intersectObject(groundPick,false)[0]:null;const point=intersection?.point||ray.ray.intersectPlane(plane,hit);return point?{x:Math.round(point.x),z:Math.round(point.z)}:null;};
+  const drawing=()=>!latest.pan&&(latest.tool==='road'||latest.tool==='landscape'&&latest.landscapeKind==='river');
   const pointerDown=e=>{pointers.add(e.pointerId);if(pointers.size>1)down=null;else down={x:e.clientX,y:e.clientY,id:e.pointerId,point:terrainPoint(e)};};
   const pointerMove=e=>{if(latest.previewOnly||pointers.size>1||!drawing())return;const p=terrainPoint(e);if(p)onHover?.(p,down?.point);};
   const pointerUp=e=>{
     const start=down;pointers.delete(e.pointerId);down=null;
-    if(!start||start.id!==e.pointerId||pointers.size||latest.previewOnly||e.button>0)return;
+    if(!start||start.id!==e.pointerId||pointers.size||latest.previewOnly||latest.pan||e.button>0)return;
     if(Math.hypot(e.clientX-start.x,e.clientY-start.y)>7){if(drawing()){const end=terrainPoint(e);if(start.point&&end)onStroke?.(start.point,end);}return;}
     const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);
     const pick=!['road','landscape','build','move'].includes(latest.tool)?ray.intersectObjects(picks,false)[0]:null;
     if(pick?.object.userData.placement){onSelect?.(pick.object.userData.placement);return;}
-    if(ray.ray.intersectPlane(plane,hit))onPoint?.({x:Math.round(hit.x),z:Math.round(hit.z)});
+    const point=terrainPoint(e);if(point)onPoint?.(point);
   };
   const cancel=e=>{pointers.delete(e.pointerId);down=null;};
   const lost=e=>{e.preventDefault();onError?.('Le rendu 3D a été interrompu. Relance la vue pour continuer ; tes constructions sont sauvegardées.');};
@@ -290,8 +303,8 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       const total=actor.lengths.reduce((a,b)=>a+b,0);let left=((time/1000+actor.offset)%actor.duration)/actor.duration*total;
       for(let i=0;i<actor.lengths.length;i++){const length=actor.lengths[i];if(left<=length||i===actor.lengths.length-1){actor.object.position.lerpVectors(actor.path[i],actor.path[i+1],length?left/length:0);actor.object.rotation.y=Math.atan2(actor.path[i+1].x-actor.path[i].x,actor.path[i+1].z-actor.path[i].z);break;}left-=length;}
     }
-    renderer.render(scene,camera);dirty=false;
+    sky.position.copy(camera.position);renderer.render(scene,camera);dirty=false;
   }
   frame=requestAnimationFrame(animate);resize();
-  return {rebuild,syncClock,updateDraft,setView,district,zoom:factor=>{const v=camera.position.clone().sub(controls.target);v.multiplyScalar(factor);v.setLength(Math.max(controls.minDistance,Math.min(controls.maxDistance,v.length())));camera.position.copy(controls.target).add(v);controls.update();dirty=true;},rotate:()=>{const v=camera.position.clone().sub(controls.target);v.applyAxisAngle(new THREE.Vector3(0,1,0),Math.PI/4);camera.position.copy(controls.target).add(v);controls.update();dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries])geo.dispose();for(const m of materials.values())m.dispose();renderer.dispose();renderer.domElement.remove();}};
+  return {rebuild,syncClock,updateDraft,setView,district,zoom:factor=>{const v=camera.position.clone().sub(controls.target);v.multiplyScalar(factor);v.setLength(Math.max(controls.minDistance,Math.min(controls.maxDistance,v.length())));camera.position.copy(controls.target).add(v);controls.update();dirty=true;},rotate:()=>{const v=camera.position.clone().sub(controls.target);v.applyAxisAngle(new THREE.Vector3(0,1,0),Math.PI/4);camera.position.copy(controls.target).add(v);controls.update();dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);controls.dispose();renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries,...previewGeometries])geo.dispose();for(const m of materials.values())m.dispose();renderer.dispose();renderer.domElement.remove();}};
 }
