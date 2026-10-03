@@ -24,7 +24,7 @@ window.armoryQA={weapons:WEAPONS.map(w=>w.id)};
 function Studio(){const [draft,update]=React.useState({weapon:WEAPONS[0].id,weaponForm:0});window.armoryQA.select=id=>update({weapon:id,weaponForm:0});return React.createElement(Armory,{draft,change:patch=>update(d=>({...d,...patch})),xp:0});}
 createRoot(document.getElementById('armory')).render(React.createElement(Studio));
 `;
-const armoryHandler=(_req,res)=>{res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html><head><style>body{margin:0;background:#0b1320;color:#f4e5c5;padding:20px;font-family:sans-serif}main{max-width:1100px;margin:auto}</style></head><body><main id="armory"></main><script type="module" src="/__armory-entry.jsx"></script></body></html>`);};
+const armoryHandler=(_req,res)=>{res.setHeader('Content-Type','text/html');res.end(`<!doctype html><html><head><style>body{margin:0;background:#0b1320;color:#f4e5c5;padding:20px;font-family:sans-serif}main{max-width:1100px;margin:auto}</style></head><body><main id="armory"></main><script type="module">import RefreshRuntime from "/@react-refresh";RefreshRuntime.injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>type=>type;window.__vite_plugin_react_preamble_installed__=true;</script><script type="module" src="/__armory-entry.jsx"></script></body></html>`);};
 const server=await createServer({plugins:[{name:'world-art-qa',resolveId(id){if(id==='/__armory-entry.jsx')return id;},load(id){if(id==='/__armory-entry.jsx')return armoryEntry;},transform(code,id){if(id.endsWith('/src/world/scene.js'))return code.replace('return{\n  refreshHubSchedule:', 'return{renderHubOverview(){camera.position.set(340,260,340);camera.lookAt(0,35,0);renderer.render(scene,camera);},debugView(){return {camera,cameraTarget,cameraSolids,shot,avatarBounds:new THREE.Box3().setFromObject(avatar),frontMeshes:(()=>{const r=new THREE.Raycaster();r.setFromCamera(new THREE.Vector2(0,-.4),camera);return r.intersectObject(root,true).slice(0,5).map(h=>({name:h.object.name,type:h.object.geometry.type,point:h.point,scale:h.object.getWorldScale(new THREE.Vector3())}));})()};},\n  refreshHubSchedule:');},configureServer(s){s.middlewares.use('/__world-art-qa',qaHandler);s.middlewares.use('/__armory-qa',armoryHandler);}}],server:{host:'127.0.0.1',port:5197,strictPort:true}});
 await server.listen();
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
@@ -63,9 +63,9 @@ try{
  if(process.env.WORLD_ART_ARMORY==='1'){
   const context=await browser.newContext({viewport:{width:Number(process.env.WORLD_ART_WIDTH)||800,height:Number(process.env.WORLD_ART_HEIGHT)||500},deviceScaleFactor:1}),errors=[];
   await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
-  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/WebGL|THREE|shader/i.test(m.text()))errors.push(m.text());});
+  const page=await context.newPage();page.on('pageerror',e=>{errors.push(e.message);console.log('ARMORYERROR',e.message);});page.on('console',m=>{if(m.type()==='error'&&/WebGL|THREE|shader/i.test(m.text()))errors.push(m.text());});
   await page.goto('http://127.0.0.1:5197/__armory-qa',{waitUntil:'domcontentloaded'});
-  await page.waitForSelector('.weapon-showroom-stage canvas');
+  await page.waitForSelector('.weapon-showroom-stage canvas').catch(async e=>{await page.screenshot({path:out+'/armory-failure.png',fullPage:true});console.log('ARMORY STATE',JSON.stringify({errors,html:await page.locator('main').innerHTML()}));throw e;});
   const weapons=await page.evaluate(()=>armoryQA.weapons);assert.equal(weapons.length,16);
   await page.screenshot({path:out+'/armory-menu.png',fullPage:true});
   for(const id of weapons){

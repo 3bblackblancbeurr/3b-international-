@@ -18,7 +18,7 @@ Référence unique choisie par Zakaria : **Monde_3B_Hub_REFERENCE_UNIQUE.png**, 
 
 Les tests de parcours vérifient l'accès aux bâtiments, portails, PNJ, objectifs et créatures. Les tests du hub, des interactions, du mouvement, des armes et de l'interface mobile sont exécutés. Build de production vérifié.
 
-Le rendu final n'a **pas été inspecté visuellement** : le navigateur cloud refuse l'accès au serveur local et le téléchargement de Chromium local échoue. Ne pas confondre validation du code et validation artistique. Cette proposition ne doit pas être décrite comme une copie exacte de l'image ou une version AAA terminée.
+Les premières captures du moteur ont été inspectées grâce au workflow GitHub. Elles ont révélé des rochers de fondation dépassant de la chaussée et masquant le personnage. Ces rochers sont maintenant sous le sol et un test de raycast protège la correction. Les captures suivantes doivent confirmer le résultat. Ne pas confondre validation du code et validation artistique. Cette proposition ne doit pas être décrite comme une copie exacte de l'image ou une version AAA terminée.
 
 ## Reste du périmètre demandé
 
