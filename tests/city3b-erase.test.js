@@ -15,3 +15,7 @@ test('erase is one item only, carries authoritative expected plan and rejects st
 test('displayed collectibles return to inventory and carry their original placement for undo',()=>{
  const city={displays:[{item_instance_id:'gem',x:10,z:15,rotation:90}]},target=cityEraseTargets(city,{x:10,z:15})[0],plan=cityErasePlan(city,target);assert.equal(plan.action,'remove_display');assert.deepEqual(plan.body,{item:'gem'});assert.equal(plan.from.rotation,90);assert.equal(cityErasePlan({displays:[]},target),null);
 });
+test('a building and a buried utility can both be selected; removing a building preserves an undo placement',()=>{
+ const building={id:'house',building_code:'HOME_ORIGIN',x:4,z:-2,rotation:90,footprint_w:4,footprint_h:4,placement_state:'placed'},city={...data,placements:[building]},targets=cityEraseTargets(city,{x:6,z:0});assert.ok(targets.some(t=>t.kind==='building'));assert.ok(targets.some(t=>t.kind==='networks'));
+ const target=targets.find(t=>t.kind==='building'),plan=cityErasePlan(city,target);assert.equal(plan.action,'store');assert.deepEqual(plan.body,{placement:'house'});assert.deepEqual(plan.from,{x:4,z:-2,rotation:90});assert.equal(cityErasePlan({...city,placements:[{...building,x:50}]},target),null);
+});
