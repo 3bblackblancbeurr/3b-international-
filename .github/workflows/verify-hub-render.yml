@@ -40,6 +40,7 @@ jobs:
         run: node scripts/verify-world-art-browser.mjs
         env:
           WORLD_ART_REGIONS: hub
+          WORLD_ART_ARMORY: '1'
           WORLD_ART_WIDTH: ${{ matrix.width }}
           WORLD_ART_HEIGHT: ${{ matrix.height }}
           WORLD_ART_QUALITY: ${{ matrix.quality }}
