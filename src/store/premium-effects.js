@@ -1,4 +1,5 @@
 export const PREMIUM_PRODUCT_EFFECTS=Object.freeze({
+  CITY_ARCHITECT_PASS:Object.freeze({scope:'city',matrixRoads:true,champagneArchitecture:true,waterfront:true,brokenCircleMonument:true,nightLuxe:true}),
   WORLD_KAIS_ORIGIN_JACKET:Object.freeze({scope:'world',jacket:true,fabric:'#cdb46f',accent:'#151515'}),
   WORLD_MATRIX_AURA:Object.freeze({scope:'world',matrixAura:true}),
   WORLD_BROKEN_RING_EFFECT:Object.freeze({scope:'world',brokenRing:true}),

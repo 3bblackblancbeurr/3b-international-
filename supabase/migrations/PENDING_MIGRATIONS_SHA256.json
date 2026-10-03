@@ -1,5 +1,26 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 4,
+  "migrations": [
+    {
+      "version": "20261003000100",
+      "name": "city3b_guided_campaign",
+      "sha256": "a687cb09efd545b29e51e6d709df7f4516f5c487dd0d7ddde7713eb7ea459671"
+    },
+    {
+      "version": "20261003000200",
+      "name": "city3b_living_runtime",
+      "sha256": "73617d9eb1b13d5344750d4616890f5c6a2ce5d636abc2735036293bcab795b2"
+    },
+    {
+      "version": "20261003001500",
+      "name": "city3b_playable_construction",
+      "sha256": "98f14783174de40db1a8ab5c3ec3b961000e3f4720311985bdd5e5744be1b3ea"
+    },
+    {
+      "version": "20261003002000",
+      "name": "city3b_architect_pass",
+      "sha256": "2e4aa46bc664a7ab2c1a182dafab3f16d116419d2010f69a07848029d9d1bfa7"
+    }
+  ]
 }
