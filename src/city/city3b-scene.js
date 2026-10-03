@@ -9,6 +9,8 @@ import {cityFootprint,cityPlacementCheck} from './city3b-construction.js';
 import {premiumEffectsFromCodes} from '../store/premium-effects.js';
 import {cityConstructionIsNight} from './city3b-environment.js';
 import {matrixTree} from './city3b-architecture.js';
+import {citySportsFacilities,citySportPose} from './city3b-sports.js';
+import {createCityTraffic,stepCityTraffic,cityTrafficLight} from './city3b-traffic.js';
 import {buildCityArchitecture} from './city3b-building-model.js';
 import {cityBuildingHeight} from './city3b-model-preview.js';
 import {cityLandscape,isWater,isRelief} from './city3b-landscape.js';
@@ -82,7 +84,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     else if(f.kind==='light'){box(parent,0xc7ad79,x,1.6,z,.09,3.2,.09);box(parent,0x63c6ed,x,3.2,z,.9,.09,.22,true);shape(parent,cylinderGeo,0x2b4d5b,x,.08,z,.4,.16,.4);}
   }
   let groundPick=null,previewGeometries=[];
-  let data={},night=false,premium={},picks=[],animated=[],latest={},dead=false,visible=true,reduced=false,frame=0,last=0,dirty=true,first=true,mergedGeometries=[],constructionSites=[],celebrations=[];
+  let data={},night=false,premium={},picks=[],animated=[],latest={},dead=false,visible=true,reduced=false,frame=0,last=0,dirty=true,first=true,mergedGeometries=[],constructionSites=[],celebrations=[],trafficState=null,trafficLights=[],trafficTime=0,sportActors=[];
   let clock={time:Date.now(),tick:performance.now()};
   const syncClock=value=>{const parsed=Date.parse(value);if(Number.isFinite(parsed))clock={time:parsed,tick:performance.now()};};
   const serverNow=()=>clock.time+performance.now()-clock.tick;
@@ -116,8 +118,8 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     const ivory=premium.champagneArchitecture?0xdbcca1:0xdfded1,glass=night?0x69c8f4:0x2c6680;
     box(group,0x657459,0,.012,0,w*1.05,.02,d*1.05);
     box(group,0xc1bdaa,0,.04,0,w,.07,d);
-    buildCityArchitecture({box,shape,sphereGeo,cylinderGeo,tree},group,{w,d,height,kind,code,definition,ivory,glass,night});
-    if(!preview){const pick=new THREE.Mesh(boxGeo,mat(ivory));pick.position.set(group.position.x,height*.8,group.position.z);pick.scale.set(worldW,height*1.6,worldD);pick.userData.placement=row;pick.updateMatrixWorld();picks.push(pick);}
+    buildCityArchitecture({box,shape,sphereGeo,cylinderGeo,tree},group,{w,d,height,kind,code,definition,ivory,glass,night,seed:row.request_id||row.id});
+    if(!preview){const pick=new THREE.Mesh(boxGeo,mat(ivory));pick.position.set(group.position.x,height*.8,group.position.z);pick.scale.set(worldW,height*1.9,worldD);pick.userData.placement=row;pick.updateMatrixWorld();picks.push(pick);}
     return group;
   }
   function clear(group){while(group.children.length)group.remove(group.children[0]);}
@@ -193,11 +195,15 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     for(const resident of cityResidentRoutes(data,mobile?12:24)){
       const points=resident.path.match(/-?\d+(?:\.\d+)?/g)?.map(Number)||[];
       const path=[];for(let i=0;i<points.length;i+=2)path.push(new THREE.Vector3(points[i],.3,points[i+1]));
-      const person=new THREE.Group();box(person,0x324a6a,0,.32,0,.23,.55,.22);shape(person,sphereGeo,0xbb9675,0,.72,0,.15,.15,.15);people.add(person);
+      const person=new THREE.Group();box(person,0x324a6a,0,.38,0,.23,.40,.22);shape(person,sphereGeo,0xbb9675,0,.72,0,.15,.15,.15);const limbs=[];for(const side of [-1,1]){const leg=box(person,0x33434e,side*.065,.15,0,.08,.27,.09),arm=box(person,0x577a87,side*.16,.39,0,.07,.30,.09);limbs.push(leg,arm);}people.add(person);
       if(path.length)person.position.copy(path[0]);
-      if(path.length>1)animated.push({object:person,path,duration:resident.duration,offset:Math.abs(resident.delay),lengths:path.slice(1).map((p,i)=>p.distanceTo(path[i]))});
+      if(path.length>1)animated.push({object:person,path,gait:limbs,duration:resident.duration,offset:Math.abs(resident.delay),lengths:path.slice(1).map((p,i)=>p.distanceTo(path[i]))});
     }
-    for(const [index,v] of cityTrafficRoutes(data).slice(0,mobile?12:24).entries()){
+    const trafficRoutes=cityTrafficRoutes(data).slice(0,mobile?12:24);trafficState=createCityTraffic(trafficRoutes);trafficLights=[];trafficTime=0,sportActors=[];
+    for(const [i,node] of trafficState.junctions.entries()){
+      const group=new THREE.Group();group.position.set(node.x+1.8,0,node.z+1.8);box(group,0x273d47,0,.6,0,.07,1.2,.07);box(group,0x273d47,0,1.1,0,.22,.4,.18);const lamp=shape(group,sphereGeo,0x72c298,0,1.13,.11,.07,.07,.07,true),lampZ=shape(group,sphereGeo,0xe68164,.11,1.13,0,.07,.07,.07,true);people.add(group);trafficLights.push({node,lamp,lampZ});
+    }
+    for(const [index,v] of trafficRoutes.entries()){
       const vehicle=new THREE.Group(),bus=v.vehicleType==='bus',scooter=v.vehicleType==='scooter';
       box(vehicle,scooter?0xc8ae75:bus?0xdbd7be:[0x9eb5b4,0x365d77,0xbdb4a8][index%3],0,scooter?.15:.32,0,scooter?.18:bus?.7:.48,scooter?.10:bus?.65:.4,scooter?.8:bus?2.3:1);
       box(vehicle,0x294e62,0,scooter?.5:.6,scooter?.25:bus?.15:.1,scooter?.04:bus?.71:.4,scooter?.65:.19,scooter?.04:bus?1.8:.5);
@@ -205,7 +211,17 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       people.add(vehicle);
       const offset=.45,dx=v.x2-v.x1,dz=v.z2-v.z1,l=Math.hypot(dx,dz),ox=dz/l*offset,oz=-dx/l*offset;
       const path=v.kind==='bridge'?[new THREE.Vector3(v.x1+ox,.12,v.z1+oz),new THREE.Vector3(v.x1+ox+dx/l*4,1.72,v.z1+oz+dz/l*4),new THREE.Vector3(v.x2+ox-dx/l*4,1.72,v.z2+oz-dz/l*4),new THREE.Vector3(v.x2+ox,.12,v.z2+oz)]:[new THREE.Vector3(v.x1+ox,.12,v.z1+oz),new THREE.Vector3(v.x2+ox,.12,v.z2+oz)];
-      vehicle.position.copy(path[0]);animated.push({object:vehicle,path,duration:v.duration,offset:v.delay,lengths:path.slice(1).map((p,i)=>p.distanceTo(path[i])),dwell:bus?.18:0,tunnel:v.kind==='tunnel'});
+      vehicle.position.copy(path[0]);animated.push({object:vehicle,path,duration:v.duration,offset:v.delay,lengths:path.slice(1).map((p,i)=>p.distanceTo(path[i])),dwell:bus?.18:0,tunnel:v.kind==='tunnel',trafficIndex:index});
+    }
+    let sportBudget=mobile?10:18;
+    for(const facility of citySportsFacilities(data).filter(f=>f.active)){
+      const w=Number(facility.footprint_w)||1,d=Number(facility.footprint_h)||1,quarter=(Number(facility.rotation)||0)%180!==0,group=new THREE.Group();group.position.set(facility.center.x,.08,facility.center.z);group.rotation.y=-(Number(facility.rotation)||0)*Math.PI/180;people.add(group);
+      for(let i=0;i<Math.min(facility.participants,sportBudget);i++){
+        const person=new THREE.Group(),swim=facility.sport.code==='swim';box(person,i%2?0xd0b26b:0x4d93c0,0,swim?.10:.32,0,.20,swim?.13:.40,swim?.42:.17);shape(person,sphereGeo,[0xbb9675,0x89694d,0xd6b293][i%3],0,swim?.11:.64,swim?.23:0,.12,.12,.12);
+        const limbs=[];for(const side of [-1,1]){const arm=box(person,0x7a899a,side*.14,.38,0,.06,.27,.06);limbs.push(arm);}group.add(person);sportActors.push({object:person,limbs,sport:facility.sport.code,index:i,w:quarter?d:w,d:quarter?w:d});
+      }
+      if(['football','basket','tennis'].includes(facility.sport.code)&&sportBudget>0){const ball=shape(group,sphereGeo,facility.sport.code==='tennis'?0xd8de72:facility.sport.code==='basket'?0xba7f4d:0xe6e5d9,0,.28,0,.09,.09,.09);sportActors.push({object:ball,limbs:[],ball:true,sport:facility.sport.code,index:0,w:quarter?d:w,d:quarter?w:d});}
+      sportBudget-=Math.min(facility.participants,sportBudget);if(!sportBudget)break;
     }
     for(const route of cityRailRoutes(data)){
       const train=new THREE.Group();for(const z of [-1,0,1]){box(train,0xd8d7c2,0,.48,z*1.9,.85,.85,1.75);box(train,0x377084,0,.68,z*1.9,.88,.24,1.4);box(train,0xc7ab73,0,.87,z*1.9,.9,.035,1.75);}people.add(train);
@@ -224,7 +240,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     updateDraft(latest);dirty=true;
   }
   function updateDraft(props={}){
-    latest=props;utilityLayer.visible=props.tool==='road'&&['power','water','internet'].includes(props.networkKind);clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];controls.enabled=!!props.pan||(!['road','build','move'].includes(props.tool)&&!(props.tool==='landscape'&&props.landscapeKind==='river'));
+    latest=props;utilityLayer.visible=props.tool==='erase'||props.tool==='road'&&['power','water','internet'].includes(props.networkKind);clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];controls.enabled=!!props.pan||(!['road','build','move'].includes(props.tool)&&!(props.tool==='landscape'&&props.landscapeKind==='river'));
     if(props.previewOnly){dirty=true;return;}
     if(props.selectedId&&!props.activeDefinition&&!props.activePlacement){
       const selected=(data.placements||[]).find(p=>p.id===props.selectedId&&p.placement_state!=='stored');
@@ -235,13 +251,13 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       const check=cityPlacementCheck(data,props.draft,size,props.activePlacement?.id);
       const color=check.valid?0x49baff:0xef746f;
       const x=props.draft.x+size.width/2,z=props.draft.z+size.height/2;
-      const model=building({x:props.draft.x,z:props.draft.z,footprint_w:size.width,footprint_h:size.height,rotation:props.draft.rotation},props.activeDefinition||{},ghost,true);
+      const model=building({x:props.draft.x,z:props.draft.z,footprint_w:size.width,footprint_h:size.height,rotation:props.draft.rotation,request_id:props.activePlacement?.request_id||props.activePlacement?.id||props.draft.modelSeed},props.activeDefinition||{},ghost,true);
       model.traverse(child=>{if(child.isMesh)child.material=mat(child.material.color.getHex(),false,.4);});
       box(ghost,color,x,.2,z,size.width,.12,size.height,true,.45);
       for(const dx of [-1,1])box(ghost,color,x+dx*size.width/2,.45,z,.1,.5,size.height,true);
       for(const dz of [-1,1])box(ghost,color,x,.45,z+dz*size.height/2,size.width,.5,.1,true);
     }
-    for(const f of props.drawPreview||[]){if(CITY_NETWORK_COLORS[f.kind])infrastructure(ghost,f);else if(f.kind)landscape(ghost,f,true);else road(ghost,f.x1,f.z1,f.x2,f.z2,f.width);}
+    for(const f of props.drawPreview||[]){if(props.tool==='erase'){const marker=box(ghost,0xf08272,(f.x1+f.x2)/2,.27,(f.z1+f.z2)/2,f.width,.13,Math.max(f.width,Math.hypot(f.x2-f.x1,f.z2-f.z1)),true,.35);marker.rotation.y=Math.atan2(f.x2-f.x1,f.z2-f.z1);}else if(CITY_NETWORK_COLORS[f.kind])infrastructure(ghost,f);else if(f.kind)landscape(ghost,f,true);else road(ghost,f.x1,f.z1,f.x2,f.z2,f.width);}
     if(props.roadStart)shape(ghost,cylinderGeo,0x49baff,props.roadStart.x,.3,props.roadStart.z,1,.3,1,true);
     dirty=true;
   }
@@ -287,10 +303,13 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       site.final.scale.y=state.progress>=1?1:Math.max(.03,Math.min(1,(state.progress-.2)/.8));
       if(!reduced)site.crane.rotation.y=Math.sin(time*.00035)*.5;
     }
+    const trafficPos=!reduced&&trafficState?stepCityTraffic(trafficState,trafficTime?Math.min(.1,(time-trafficTime)/1000):0):[];trafficTime=time;
+    for(const light of trafficLights){const phase=cityTrafficLight(light.node,trafficState?.time||0);light.lamp.material=mat(phase==='x'?0x72c298:0xe68164,true);light.lampZ.material=mat(phase==='z'?0x72c298:0xe68164,true);}
     if(!reduced)for(const actor of animated){
-      const total=actor.lengths.reduce((a,b)=>a+b,0),raw=((time/1000+actor.offset)%actor.duration)/actor.duration,phase=Math.min(1,raw*(1+(actor.dwell||0)));actor.object.visible=!actor.tunnel||phase<.08||phase>.92;let left=phase*total;
-      for(let i=0;i<actor.lengths.length;i++){const length=actor.lengths[i];if(left<=length||i===actor.lengths.length-1){actor.object.position.lerpVectors(actor.path[i],actor.path[i+1],length?left/length:0);actor.object.rotation.y=Math.atan2(actor.path[i+1].x-actor.path[i].x,actor.path[i+1].z-actor.path[i].z);break;}left-=length;}
+      const total=actor.lengths.reduce((a,b)=>a+b,0),raw=((time/1000+actor.offset)%actor.duration)/actor.duration,phase=actor.trafficIndex!==undefined?trafficPos[actor.trafficIndex]?.phase||0:Math.min(1,raw*(1+(actor.dwell||0)));actor.object.visible=(actor.trafficIndex===undefined||trafficPos[actor.trafficIndex]?.visible)&&(!actor.tunnel||phase<.08||phase>.92);let left=phase*total;
+      for(let i=0;i<actor.lengths.length;i++){const length=actor.lengths[i];if(left<=length||i===actor.lengths.length-1){actor.object.position.lerpVectors(actor.path[i],actor.path[i+1],length?left/length:0);actor.object.rotation.y=Math.atan2(actor.path[i+1].x-actor.path[i].x,actor.path[i+1].z-actor.path[i].z);if(actor.gait)actor.gait.forEach((limb,j)=>limb.rotation.x=Math.sin(time*.006+actor.offset)*(j%2?-.42:.42)*(j<2?1:-1));break;}left-=length;}
     }
+    if(!reduced)for(const actor of sportActors){const pose=citySportPose(actor.sport,time/1000,actor.index);actor.object.position.set(pose.x*actor.w,actor.ball?(actor.sport==='basket'?.28+Math.abs(Math.sin(time*.003))*.4:.31):pose.y,pose.z*actor.d);actor.object.rotation.y=pose.rotation;actor.limbs.forEach((limb,i)=>limb.rotation.x=pose.limb*(i?1:-1));}
     celebrations=celebrations.filter(effect=>{const p=Math.max(0,(time-effect.start)/effect.duration);if(p>=1){completionLayer.remove(effect.group);return false;}if(!reduced){effect.group.scale.setScalar(1+p*.4);effect.group.position.y=.25+Math.sin(p*Math.PI)*.7;effect.group.rotation.y=p*.5;}return true;});
     environment.update(time/1000,camera,reduced);renderer.render(scene,camera);dirty=false;
   }
