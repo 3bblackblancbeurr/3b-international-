@@ -21,7 +21,7 @@ Les conditions des rendez-vous sont vérifiées aux cycles de simulation et au m
 
 ## Autorité et sécurité
 
-Migration : `20261003000200_city3b_living_runtime.sql`.
+Migration : `20261003003056_city3b_living_runtime.sql`.
 
 RPC accessibles au service uniquement : `nexus_city_life_snapshot`, `nexus_city_life_action` et `nexus_city_plan_roads`. Le client ne peut envoyer ni population, ni temps écoulé, ni accomplissement, ni montants. L’API dérive le propriétaire depuis le Bearer validé et vérifie la session d’appareil. Les tables privées ont une lecture limitée à leur propriétaire et aucune écriture client.
 

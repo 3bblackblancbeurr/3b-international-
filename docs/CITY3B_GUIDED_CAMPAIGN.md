@@ -26,7 +26,7 @@ L’XP ville = constructions placées × 250 + axes distincts × 120 + objets ex
 
 ## Déploiement et vérification
 
-Appliquer `20261003000100_city3b_guided_campaign.sql` après les migrations existantes puis déployer `supabase/functions/city-3b`. Le frontend seul ne peut pas accorder de récompense. Si la migration est absente, le guide affiche son indisponibilité et la construction existante reste accessible.
+Appliquer `20261003003042_city3b_guided_campaign.sql` après les migrations existantes puis déployer `supabase/functions/city-3b`. Le frontend seul ne peut pas accorder de récompense. Si la migration est absente, le guide affiche son indisponibilité et la construction existante reste accessible.
 
 Les tests Node/PGlite exécutent les migrations de ville et la campagne : parcours complet des 24 missions depuis les 500 Coins initiaux, absence de blocage par missions facultatives, droits et isolation des comptes, objectifs réels, crédits uniques, annulation transactionnelle, reprise après rangement et conservation de l’XP ville. Les tests d’endpoint exécutent le gestionnaire de requêtes avec un transport isolé pour vérifier l’identité serveur, les montants ignorés et les routes invalides.
 

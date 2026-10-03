@@ -26,6 +26,14 @@ Les tests PostgreSQL/PGlite exécutent les migrations City, la progression des 2
 
 Recette Chromium locale à 1440 × 1000 et 390 × 844 : construction → rangement → annulation → rechargement → plan 2D → ville 3D → nuit → jour ; aucun débordement horizontal et aucune erreur JavaScript. Les données sont une fixture SQL isolée, pas une partie réelle d'un membre. Le navigateur emploie un rendu logiciel et ne mesure pas les performances d'un téléphone physique.
 
+La suite générale exécutée avec les sous-processus autorisés : **1 518 tests réussis, zéro échec, un ignoré** (test natif Swift indisponible sur cet environnement). Les tests de migration et City ont été rejoués après raccordement des quatre versions SQL effectivement appliquées.
+
+## Serveur publié
+
+Le serveur `city-3b` version **11** est ACTIVE avec `verify_jwt=true`. Son fichier a été relu et comparé octet pour octet au fichier source local. Les quatre migrations ont été appliquées et leurs SHA-256 vérifiés dans le journal PostgreSQL : `20261003003042`, `20261003003056`, `20261003003108` et `20261003003133`. Le manifeste contient 182 migrations appliquées, zéro en attente. Le catalogue actif confirme 24 missions principales, 8 facultatives et 8 événements ; aucune des quatre RPC de mutation City contrôlées n’est directement exécutable par anon/authenticated.
+
+Retour applicatif : le fichier serveur v10 correspond exactement à `e59ee92:supabase/functions/city-3b/index.ts`. Ne pas supprimer les tables de progression lors d’un retour arrière.
+
 ## Limites de cette livraison
 
 Cette version est un city builder jouable, pas un jeu AAA terminé ou certifié. Les quatre images de référence sont des concepts et ne représentent pas exactement le rendu procédural livré. Les habitants et véhicules visibles représentent la simulation ; ce n'est pas une simulation physique individuelle complète du trafic. La 3D utilise un décor lacustre unique à huit quartiers ; elle ne fournit pas plusieurs cartes géographiques sélectionnables.
