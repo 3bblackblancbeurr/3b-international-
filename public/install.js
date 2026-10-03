@@ -4,6 +4,8 @@
   let installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const status = document.getElementById('install-status');
   const buttons = [...document.querySelectorAll('[data-install]')];
+  const detectedIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (detectedIOS) status.textContent = 'iPhone / iPad détecté · touche iPhone pour ouvrir les étapes Safari. Aucun compte n’est nécessaire pour installer 3B.';
   window.addEventListener('beforeinstallprompt', event => {
     if (typeof event.prompt !== 'function') return;
     event.preventDefault();
@@ -23,6 +25,8 @@
     const android = /Android/i.test(ua);
     const matching = platform === 'android' ? android : !ios && !android;
     if (!matching) {
+      if (ios) { window.location.assign('/iphone'); return; }
+      if (android && platform === 'pc') { window.location.assign('/android'); return; }
       status.textContent = platform === 'pc' ? 'Ouvre 3B sur ton PC pour l’installer.' : 'Ouvre 3B sur ton téléphone Android pour l’installer.';
       return;
     }

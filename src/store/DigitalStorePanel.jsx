@@ -25,7 +25,7 @@ export default function DigitalStorePanel({scope="all",onStoreChange}){
     if(status!=="success"||!sessionId)return;
     setBusy("confirm");
     confirmDigitalPurchase(sessionId).then(result=>{
-      setNotice(result.paid?"Achat vérifié · ton achat est maintenant lié à ton Passeport 3B.":"Paiement en cours de confirmation.");
+      setNotice(result.paid?"Achat vérifié · ton achat est maintenant lié à ton Passeport 3B.":result.entitlement?.status==="refund_pending"?"Cet objet était déjà acquis. Le paiement supplémentaire est en cours de remboursement.":result.entitlement?.status==="refunded"?"Ce paiement a été remboursé.":result.entitlement?.status==="revoked"?"Ce paiement est contesté auprès du prestataire. L’achat reste suspendu.":"Paiement en cours de confirmation.");
       refresh();
     }).catch(e=>setError(e.message)).finally(()=>{
       setBusy("");

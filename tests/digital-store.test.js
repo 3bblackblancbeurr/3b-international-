@@ -41,10 +41,10 @@ test("premium catalog is cosmetic, permanent and non-resellable",()=>{
 
 test("real-money item fulfillment is server authoritative and idempotent",()=>{
   const server=read("server/digital-store.js");
-  assert.match(server,/digital_store_fulfill_nonconsumable/);
+  assert.match(server,/digital_store_settle_v3/);
   assert.match(server,/provider_transaction_id/);
   assert.match(server,/paymentIntents\.retrieve/);
-  assert.match(server,/charge\.amount_refunded!==0/);
+  assert.match(server,/charge\.amount_refunded>charge\.amount/);
   assert.match(server,/digital_store_revoke_purchase/);
   assert.match(server,/3b-digital-store-v1/);
 });
@@ -81,3 +81,4 @@ test("shared Stripe webhook processes digital purchases separately from physical
   assert.match(catalog,/digital-store-checkout/);
   assert.match(catalog,/digital-store-status/);
 });
+

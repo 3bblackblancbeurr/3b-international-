@@ -154,15 +154,26 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
     const intent=await stripe().paymentIntents.retrieve(intentId,{expand:["latest_charge"]});
     const charge=intent.latest_charge;
     if(intent.status!=="succeeded"||!charge||typeof charge!=="object"||charge.paid!==true||charge.livemode!==expectedLive
-      ||charge.currency!=="eur"||charge.amount!==row.price_cents||charge.amount_refunded!==0)
+      ||charge.currency!=="eur"||charge.amount!==row.price_cents||!Number.isInteger(charge.amount_refunded)||charge.amount_refunded<0||charge.amount_refunded>charge.amount)
       throw new DigitalStoreError(503,"Paiement non confirmé.");
 
+    // A dispute can arrive before Checkout fulfillment or a later status read.
+    if(charge.disputed===true){
+      await rpc('digital_store_revoke_purchase',{p_provider:'stripe',p_provider_transaction_id:intentId,p_reason:'dispute'});
+      return {ok:false,status:'revoked'};
+    }
     const receiptHash=createHash("sha256").update(session.id+":"+intentId+":"+row.code).digest("hex");
-    return rpc(config.expansionEnabled?"digital_store_fulfill_v2":"digital_store_fulfill_nonconsumable",{
+    const result=await rpc("digital_store_settle_v3",{
       p_user:uid,p_product_code:row.code,p_provider:"stripe",p_provider_transaction_id:intentId,
       p_provider_product_ref:row.stripe_price_id,p_amount_cents:row.price_cents,p_currency:"eur",
       p_receipt_hash:receiptHash,p_metadata:{stripe_session_id:session.id,livemode:session.livemode},
+      p_refunded_cents:charge.amount_refunded,
     });
+    if(result?.refundNeeded){
+      await stripe().refunds.create({payment_intent:intentId,metadata:{integration:INTEGRATION,reason:'duplicate_permanent_item'}},{idempotencyKey:'3b-digital-duplicate:'+intentId});
+      return {...result,ok:false,status:'refund_pending'};
+    }
+    return result;
   }
 
   async function recordEvent(event,processed,errorCode=null){
@@ -275,7 +286,7 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
           const intentId=typeof charge.payment_intent==="string"?charge.payment_intent:charge.payment_intent?.id;
           if(PAYMENT_INTENT.test(intentId||"")&&charge.amount_refunded>0){
             const intent=await stripe().paymentIntents.retrieve(intentId);
-            if(intent.metadata?.integration===INTEGRATION)await rpc("digital_store_revoke_purchase",{p_provider:"stripe",p_provider_transaction_id:intentId,p_reason:"refund"});
+            if(intent.metadata?.integration===INTEGRATION){const confirmed=await stripe().charges.retrieve(charge.id);await rpc("digital_store_refund_purchase",{p_provider:"stripe",p_provider_transaction_id:intentId,p_refunded_cents:confirmed.amount_refunded});}
           }
         }else if(event.type==="charge.dispute.created"){
           const chargeId=event.data.object?.charge;

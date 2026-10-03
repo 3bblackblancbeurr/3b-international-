@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-03",
-  "count": 195,
+  "count": 198,
   "migrations": [
     {
       "version": "20260910020445",
@@ -991,6 +991,21 @@
       "version": "20261003185942",
       "name": "digital_store_credit_wallet",
       "sha256": "289c6c9baae859f8b07473812edd36c64874b965b224b373050e2947eed1c86c"
+    },
+    {
+      "version": "20261003194608",
+      "name": "digital_store_payment_hardening",
+      "sha256": "08f50ba8cf3488cae98fbffef547fdc6067642d443c0bb73d0597825dc6ad5c9"
+    },
+    {
+      "version": "20261003194615",
+      "name": "city3b_mayor_scenarios",
+      "sha256": "632cb8b99eab73b92d592c1bc9bed24771bacf7f7d73e73619a7f9f640bfb2ae"
+    },
+    {
+      "version": "20261003195511",
+      "name": "city3b_life_network_alias_fix",
+      "sha256": "dcb6047cab7225a1091293f94244f05613458890997bdc77de366db70caacec5"
     }
   ],
   "reconciliation": {

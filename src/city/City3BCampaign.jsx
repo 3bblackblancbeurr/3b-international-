@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import {ArrowRight,CheckCircle2,Coins,Flag,LockKeyhole,Sparkles} from 'lucide-react';
 import {CITY_CAMPAIGN_CHAPTERS,campaignSummary,missionProgress} from './city3b-campaign.js';
 import './city3b-campaign.css';
+import CityAdvisorPortrait from './CityAdvisorPortrait.jsx';
 
 export function City3BCampaignPreview({campaign,onOpen,onAction,busy,onRefresh}){
  const summary=campaignSummary(campaign),mission=summary.active;
@@ -45,11 +46,10 @@ function Mission({mission:m,busy,onClaim,onAction}){
  const progress=missionProgress(m),locked=m.status==='locked',claimed=m.status==='claimed';
  return <article className="city3b-campaign-mission" data-status={m.status}>
   <div className="city3b-campaign-status">{claimed?<><CheckCircle2 size={17}/> Accomplie</>:locked?<><LockKeyhole size={16}/> Chapitre à ouvrir</>:m.status==='ready'?<><Sparkles size={16}/> Objectifs remplis</>:<><Flag size={16}/> En cours</>}</div>
-  <h4>{m.title}</h4><p>{m.description}</p>
+  <div className="city3b-mission-speaker"><CityAdvisorPortrait name={CITY_CAMPAIGN_CHAPTERS.find(c=>c.id===m.chapter)?.voice.split(' · ')[0]||'Lina'}/><h4>{m.title}</h4></div><p>{m.description}</p>
   <ul>{m.objectives.map(g=><li key={g.metric}><span>{g.label}</span><strong>{Math.min(g.target,Math.max(0,g.current))}/{g.target}</strong></li>)}</ul>
   <div className="city3b-campaign-bar" role="progressbar" aria-label={`Progression de ${m.title}`} aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><i style={{width:`${progress}%`}}/></div>
   <div className="city3b-campaign-reward"><span><Coins size={15}/> {m.coins} Coins</span><span>+{m.cityXp} XP ville</span></div>
   {claimed?<p className="city3b-campaign-note">Récompense reçue{m.claimedAt?` le ${new Date(m.claimedAt).toLocaleDateString('fr-FR')}`:''}.</p>:locked?<p className="city3b-campaign-note">Accomplis les missions principales de chaque chapitre précédent pour ouvrir celui-ci. Tu peux préparer ces constructions librement.</p>:<div className="city3b-actions">{m.status==='ready'?<Button variant="champagne" type="button" className="city3b-btn primary" disabled={busy} onClick={()=>onClaim(m.code)}>{busy?'Enregistrement…':'Recevoir la récompense'}</Button>:<Button variant="matrix" type="button" className="city3b-btn blue" onClick={()=>onAction(m.action)}>Passer à l’action <ArrowRight size={15}/></Button>}</div>}
  </article>;
 }
-

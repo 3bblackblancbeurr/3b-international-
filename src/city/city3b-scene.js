@@ -1,3 +1,4 @@
+import {createCityRenderBudget} from './city3b-render-budget.js';
 import {cityRoadType} from './city3b-road-types.js';
 import {citySignals} from './city3b-signals.js';
 import {cityMapCustomRoads} from './city3b-map.js';
@@ -29,7 +30,8 @@ import {cityConstructionState} from './city3b-building-progress.js';
 export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onStroke,onHover}={}) {
   const mobile=matchMedia('(pointer: coarse), (max-height: 540px)').matches;
   const renderer=new THREE.WebGLRenderer({antialias:!mobile,alpha:false,powerPreference:'low-power'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,mobile?1.35:1.75));
+  const renderBudget=createCityRenderBudget({mobile,pixelRatio:devicePixelRatio||1});
+  renderer.setPixelRatio(renderBudget.state().pixelRatio);
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure=1.05;
@@ -345,6 +347,8 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const key=e=>{if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','+','-','=','q','Q','e','E','h','H'].includes(e.key))return;e.preventDefault();if(['q','Q','e','E'].includes(e.key)){cameraMotion.rotate(e.key.toLowerCase()==='q'?-Math.PI/12:Math.PI/12,reduced);}else if(e.key.toLowerCase()==='h'){setView(cityMapInitialView(data));}else if(['+','-','='].includes(e.key))zoomCamera(e.key==='-'?1.15:1/1.15);else{const step=Math.max(1,camera.position.distanceTo(controls.target)*.045),dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dz=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;cameraMotion.pan(new THREE.Vector3(dx,0,dz),reduced);}dirty=true;};renderer.domElement.addEventListener('keydown',key);
   function animate(time){
     if(dead)return;frame=requestAnimationFrame(animate);
+    const budget=renderBudget.sample(time,!document.hidden&&visible&&!reduced);
+    if(budget){renderer.setPixelRatio(budget.pixelRatio);renderer.shadowMap.enabled=budget.shadows;sun.castShadow=budget.shadows;resize();dirty=true;}
     if(document.hidden||!visible||time-last<1000/(cameraMotion.active||time<smoothUntil?60:mobile?30:45)-1)return;
     const dt=Math.min(.05,Math.max(0,(time-last)/1000));
     controls.dampingFactor=1-Math.exp(-12*dt);

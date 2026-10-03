@@ -154,7 +154,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
    </div>
    <div className="city-game-system">{onFullscreen&&<Button variant="ghost" aria-label="Plein écran" onClick={onFullscreen}><Maximize2 size={18}/></Button>}<Button variant="ghost" aria-label="Réglages du jeu" onClick={()=>onOpenPanel('settings')}><Settings2 size={18}/></Button>{onClose&&<Button variant="ghost" aria-label="Quitter la ville" onClick={onClose}><X size={18}/></Button>}</div>
   </header>
-  {!panelOpen&&<City3BAdvisor campaign={data.campaign} cityId={city.city_id} compact={catalog||visibleSelection||tool!=='inspect'} onMission={followMission} onJournal={()=>onOpenPanel('missions')}/>}
+  {!panelOpen&&<City3BAdvisor data={data} campaign={data.campaign} cityId={city.city_id} compact={catalog||visibleSelection||tool!=='inspect'} onMission={followMission} onJournal={()=>onOpenPanel('news')}/>}
   {!panelOpen&&!catalog&&!visibleSelection&&(sites.length>0||ready.length>0)&&<Button variant="ghost" className="city-game-sites" onClick={()=>{const row=ready[0]||sites[0];selectPlacement(row);setCenter({x:row.x,z:row.z});setZoom(cityMapBlueprint(data).half/21);}}>{ready.length?<Gift size={17}/>:<HardHat size={17}/>} {ready.length?`${ready.length} inauguration${ready.length>1?'s':''}`:`${sites.length} chantier${sites.length>1?'s':''}`}</Button>}
   {notice&&!panelOpen&&<div className="city-game-toast" role="status">{notice}</div>}
   {visibleSelection&&<aside className="city-game-inspector" data-placing={placing} data-details={details} aria-label="Bâtiment sélectionné">

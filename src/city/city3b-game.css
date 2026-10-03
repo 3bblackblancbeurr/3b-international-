@@ -35,6 +35,7 @@
 @media(max-height:540px){.city-game-drawing{left:auto;right:12px;bottom:68px;width:340px;max-height:calc(100% - 130px);padding:10px}.city-game-drawing p{margin:5px 0}}
 
 /* Compact controls keep the ghost and map visible, including landscape phones. */
+.city-game-connection{position:absolute;top:78px;right:16px;z-index:9;padding:8px 12px;border-radius:12px;background:#38281bea;color:#ffdda0;font-size:12px;max-width:280px}.city-game-recovery{position:absolute;top:80px;left:16px;z-index:12;width:min(330px,calc(100% - 32px));max-height:calc(100% - 160px);overflow:auto;padding:16px;background:#13272df5;border:1px solid #e4bd79;border-radius:16px;color:#fff}.city-game-recovery p{font-size:12px;line-height:1.5}.city-game-recovery button{min-height:44px;margin:3px;font-size:12px}
 .city-game .city-game-inspector{top:auto;bottom:76px;width:230px;max-height:45%;padding:10px;gap:5px;border-radius:14px}
 .city-game-inspector[data-placing=true] .city-game-building-benefit{display:none}
 .city-game-inspector[data-placing=true][data-details=true] .city-game-building-benefit{display:block}

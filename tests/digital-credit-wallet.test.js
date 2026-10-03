@@ -10,6 +10,7 @@ async function fixture(){
  create table item_instances(id uuid primary key default gen_random_uuid(),item_code text,serial_no bigint,owner_id uuid,state text,origin text,origin_ref text,metadata jsonb);`);
  await db.exec(sql('20260928140344_digital_store_v1.sql'));
  await db.exec(sql('20261003185942_digital_store_credit_wallet.sql'));
+ await db.exec(sql('20261003194608_digital_store_payment_hardening.sql'));
  await db.query('insert into auth.users values($1),($2)',[A,B]);
  const query=async(t,args=[])=>(await db.query(t,args)).rows[0];
  const grant=async(txn,user=A,code='CITY_CREDITS_500')=>(await query("select digital_store_fulfill_v2($1,$2,'stripe',$3,'price_test',499,'eur','verified_hash','{}') v",[user,code,txn])).v;
@@ -50,5 +51,34 @@ test('refund of an old cosmetic purchase cannot revoke a later repurchase',async
   assert.notEqual(first.v.itemInstanceId,next.v.itemInstanceId);
   await f.revoke('pi_old');
   assert.equal((await f.query('select status from digital_store_entitlements where user_id=$1',[A])).status,'active');
+ }finally{await f.db.close();}
+});
+
+test('partial refunds revoke only proportional credits, ignore older events and preserve an append-only history',async()=>{
+ const f=await fixture();try{
+  await f.grant('pi_partial');
+  const refund=async cents=>(await f.query("select digital_store_refund_purchase('stripe','pi_partial',$1) v",[cents])).v;
+  await refund(100);assert.equal(await f.balance(),400);
+  await refund(250);assert.equal(await f.balance(),250);
+  assert.equal((await refund(100)).duplicate,true);assert.equal(await f.balance(),250);
+  await refund(250);assert.equal(await f.balance(),250);
+  await refund(499);assert.equal(await f.balance(),0);
+  assert.equal((await f.grant('pi_partial')).ok,false);
+  const rows=(await f.db.query("select delta from digital_credit_ledger where kind='refund' order by refund_total_cents")).rows;
+  assert.deepEqual(rows.map(r=>Number(r.delta)),[-100,-150,-250]);
+  await assert.rejects(refund(500),/invalid_refund_amount/);
+ }finally{await f.db.close();}
+});
+test('two independent payments for one permanent object preserve its entitlement and queue only the extra payment for refund',async()=>{
+ const f=await fixture();try{
+  const buy=async txn=>(await f.query("select digital_store_settle_v3($1,'CITY_MATRIX_ROAD_THEME','stripe',$2,'price_test',199,'eur','hash','{}',0) v",[A,txn])).v;
+  const [first,second]=await Promise.all([buy('pi_concurrent1'),buy('pi_concurrent2')]);
+  assert.equal(first.ok,true);assert.equal(second.refundNeeded,true);assert.equal(second.ok,false);
+  assert.equal((await buy('pi_concurrent2')).refundNeeded,true);
+  await f.revoke('pi_concurrent2');
+  assert.equal((await f.query('select status from digital_store_entitlements where user_id=$1',[A])).status,'active');
+  assert.equal((await f.query("select count(*)::integer n from item_instances where state='owned'")).n,1);
+  assert.equal((await f.query('select count(*)::integer n from digital_store_purchases')).n,2);
+  assert.equal((await buy('pi_concurrent2')).refundNeeded,false);
  }finally{await f.db.close();}
 });
