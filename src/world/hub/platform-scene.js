@@ -1,3 +1,4 @@
+import {platformObstacles} from './platform-physics.js';
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
@@ -8,7 +9,7 @@ import plan from './data/hub-master-plan-v2.json' with {type:'json'};
 /** A bounded, low-cost playable interpretation of the saved floating-city reference.
  * No raymarched clouds, reflections or asset downloads; geometry is merged by material. */
 export function createHubPlatform(save){
- const root=new THREE.Group(),owned=[],cache=new Map(),collisions=[],cameraSolids=[],roofs=[],waterfalls=[],fragments=[];
+ const root=new THREE.Group(),owned=[],cache=new Map(),collisions=platformObstacles(),cameraSolids=[],roofs=[],waterfalls=[],fragments=[];
  const worldBuildings=plan.buildings.map(platformBuilding),buildings=worldBuildings.map(b=>({...b,buildingX:b.buildingX/HUB_SCALE,buildingZ:b.buildingZ/HUB_SCALE,width:b.width/HUB_SCALE,depth:b.depth/HUB_SCALE,height:b.height/1.5}));let interior=null,daylight=1;
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,64)),sphere=geo(new THREE.IcosahedronGeometry(1,1));
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
@@ -42,14 +43,14 @@ export function createHubPlatform(save){
    mesh(box,dark,p.x+side*8,10,p.z,2,20,3);
    mesh(box,gold,p.x+side*8,10,p.z+1.6,.4,22,.2);
    mesh(box,blue,p.x+side*7.4,8,p.z+1.8,.12,12,.1);
-   collisions.push({x:p.x+side*8,z:p.z,width:2,depth:3});
+
   }
   mesh(box,gold,p.x,20,p.z,18,.6,3.2);sign(HUB_VALUES[i],p.x,22,p.z,13);
  }
  // Four basins and cascades leave the radial routes and the circular promenade dry.
  for(const [x,z] of [[48,48],[-48,48],[48,-48],[-48,-48]]){
   mesh(cylinder,dark,x,-.14,z,16,.2,16);const pool=mesh(cylinder,water,x,-.015,z,14,.04,14);pool.castShadow=false;
-  collisions.push({x,z,r:14.8});
+
   for(let i=0;i<8;i++){const a=i*Math.PI/4;mesh(box,gold,x+Math.cos(a)*15.5,.12,z+Math.sin(a)*15.5,.5,.25,.5);}
  }
  for(let i=0;i<8;i++){
@@ -57,7 +58,7 @@ export function createHubPlatform(save){
   const fall=mesh(box,blue,x,-18,z,6,36,.25);fall.rotation.y=-a;fall.castShadow=false;waterfalls.push(fall);
  }
  // The monumental broken ring stands above its own fountain. Its eight pieces answer to progress.
- mesh(cylinder,dark,0,.4,0,19,.8,19);mesh(cylinder,water,0,.84,0,16,.06,16);collisions.push({x:0,z:0,r:19.5});
+ mesh(cylinder,dark,0,.4,0,19,.8,19);mesh(cylinder,water,0,.84,0,16,.06,16);
  for(const side of [-1,1]){mesh(box,dark,side*13,14,0,3,28,4);mesh(box,gold,side*13,14,2.1,.5,28,.2);}
  for(let i=0;i<8;i++){
   const piece=mesh(geo(new THREE.TorusGeometry(19,1.7,8,12,Math.PI/4-.085)),gold,0,25,0);
@@ -70,7 +71,7 @@ export function createHubPlatform(save){
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,walls=platformWalls(worldBuildings.find(item=>item.buildingId===b.buildingId)).map(wall=>Object.fromEntries(Object.entries(wall).map(([k,v])=>[k,v/HUB_SCALE])));
   mesh(box,dark,x,.015,z,w,.05,d);mesh(box,gold,x,.06,z+d/2,w,.12,.3);
-  for(const wall of walls){mesh(box,dark,wall.x,h/2,wall.z,wall.width,h,wall.depth);collisions.push(wall);cameraSolids.push({...wall,bottom:0,top:h});}
+  for(const wall of walls){mesh(box,dark,wall.x,h/2,wall.z,wall.width,h,wall.depth);cameraSolids.push({...wall,bottom:0,top:h});}
   const roof=mesh(box,dark,x,h+.2,z,w+1,.4,d+1);roofs.push({b,roof});
   // Architectural silhouette and framing; only solid walls block the camera.
   for(const side of [-1,1]){
@@ -79,7 +80,7 @@ export function createHubPlatform(save){
   }
   mesh(box,gold,x,h-.4,z+d/2,w,.25,.5);sign(b.name,x,3.6,z+d/2+.35,Math.min(12,w-1));
   const counter=mesh(box,b.buildingId==='arena_3b'?blue:wood,x,1.1,z-d/2+1,w*.5,2.2,1);
-  collisions.push({x,z:z-d/2+1,width:w*.5,depth:1});counter.receiveShadow=true;
+  counter.receiveShadow=true;
   // Shelves, benches, displays express the purpose without blocking the middle aisle.
   for(const side of [-1,1]){
    const fx=x+side*(w/2-2.1);mesh(box,wood,fx,.6,z,2,1.2,d*.38);
@@ -90,7 +91,7 @@ export function createHubPlatform(save){
    sign('DUELS • ENTRAÎNEMENT • MULTIJOUEUR',x,5,z-d/2+.4,18);
   }
  }
- addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,collisions,sign,THREE});
+ addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,sign,THREE});
  // Physical district consoles and the eight value plaques have matching runtime interactions.
  for(const p of hubPublicPlaces()){
   const x=p.x/HUB_SCALE,z=p.z/HUB_SCALE;
@@ -106,13 +107,13 @@ export function createHubPlatform(save){
   mesh(box,dark,x,2.4,z,.3,4.8,.3);mesh(sphere,blue,x,4.9,z,.3);
   const tx=x+2,tz=z+2;mesh(cylinder,wood,tx,.85,tz,1.2,.15,1.2);mesh(cylinder,gold,tx,.4,tz,.1,.8,.1);
   mesh(box,wood,tx+2,.6,tz,1.3,.2,1);mesh(box,wood,tx+2,.3,tz,.15,.6,.15);
-  collisions.push({x,z,r:.6},{x:tx,z:tz,r:1.3});
-  if(i%3===0){mesh(cylinder,dark,x-3,.4,z,1.5,.8,1.5);mesh(sphere,green,x-3,1.6,z,2,1.5,2);collisions.push({x:x-3,z,r:1.5});}
+
+  if(i%3===0){mesh(cylinder,dark,x-3,.4,z,1.5,.8,1.5);mesh(sphere,green,x-3,1.6,z,2,1.5,2);}
  }
  for(const side of [-1,1])for(let i=0;i<4;i++){
   const x=side*34,z=70+i*9;mesh(box,wood,x,1,z,5,2,3);mesh(box,gold,x,3,z,6,.3,4);
   for(const edge of [-1,1])mesh(box,dark,x+edge*2.5,1.5,z,.18,3,.18);
-  mesh(sphere,green,x,2.3,z,.6);collisions.push({x,z,width:5,depth:3});
+  mesh(sphere,green,x,2.3,z,.6);
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
@@ -126,7 +127,6 @@ export function createHubPlatform(save){
  const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=25+(i<count?0:Math.sin(i*Math.PI/4)*.55);}};
  update(save);
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
- for(const o of collisions)for(const key of ['x','z','r','width','depth'])if(Number.isFinite(o[key]))o[key]*=HUB_SCALE;
  for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
  return {root,ground,collisions,cameraSolids,ready:Promise.resolve(),height:()=>0,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},

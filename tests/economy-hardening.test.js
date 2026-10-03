@@ -62,6 +62,14 @@ test('guardian and finale produce stable one-time event identifiers',()=>{
  ]);
 });
 
+test('solo tournament victories and checkpoints cannot enqueue account rewards',()=>{
+ const before=base(),after=structuredClone(before);
+ before.adventure.encounter={boss:true,tournament:true,final:false,patrol:false,region:'france',result:null};
+ after.adventure.encounter={...before.adventure.encounter,result:'victory',rewarded:true};
+ assert.deepEqual(worldGlobalRewardIntents(before,after,{type:'field'}),[]);
+ assert.deepEqual(worldGlobalRewardIntents(before,after,{type:'checkpoint',region:'france',x:20,z:20,heading:90}),[]);
+});
+
 test('world-engine uses transactional outbox, not direct client reward amounts',()=>{
  const source=read('../supabase/functions/world-engine/index.ts');
  assert.match(source,/worldGlobalRewardIntents/);

@@ -1,4 +1,5 @@
 import {initialGuardianCombatState} from './guardian-combat.js';
+import {HUB_PLATFORM} from './hub/platform-layout.js';
 import {finalCirclePhase,finalCirclePhaseMastered,markFinalCirclePhaseMastered,finalCircleLockedEnemyFloor} from './final-circle.js';
 // Fixed-step combat shared by the browser and the account service. Inputs are
 // directions and buttons; a client never submits damage, HP or a winning result.
@@ -6,11 +7,11 @@ export const COMBAT_TICK = 100;
 export const ATTACK_RANGE = 7.2;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const number=(v,f=0)=>Number.isFinite(v)?v:f;
-const point=p=>({x:clamp(number(p?.x),-260,260),z:clamp(number(p?.z),-260,260)});
+const point=(p,extent)=>({x:clamp(number(p?.x),-extent,extent),z:clamp(number(p?.z),-extent,extent)});
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-export function normalizeField(f){
+export function normalizeField(f,extent=260){
  if(!f||f.version!==1)return null;
- const result={version:1,p:point(f.p),enemy:point(f.enemy),home:point(f.home),aim:point(f.aim)};
+ const result={version:1,p:point(f.p,extent),enemy:point(f.enemy,extent),home:point(f.home,extent),aim:point(f.aim,extent)};
  for(const key of ['time','cooldown','dodge','guard','recover','windup','stagger','comboUntil','event'])result[key]=clamp(number(f[key]),0,1e9);
  result.stamina=clamp(number(f.stamina,100),0,100);result.combo=clamp(Math.floor(number(f.combo)),0,3);
  result.phase=['pursuit','windup','recovery'].includes(f.phase)?f.phase:'pursuit';
@@ -52,8 +53,8 @@ export function stepField(enc,input,move){
  if(!enc?.field||enc.result)throw Error('Cette rencontre est terminée.');
  if(!input||!Number.isFinite(input.x)||!Number.isFinite(input.z)||Math.abs(input.x)>1||Math.abs(input.z)>1)throw Error('Direction de combat invalide.');
  if(input.kind&&!['strike','power','guard','dodge','trap','support','resonance'].includes(input.kind))throw Error('Action de combat inconnue.');
- const e={...enc,field:normalizeField(enc.field)},f=e.field,dt=COMBAT_TICK;
- const circlePhase=e.final?finalCirclePhase(e):null,guardianBoss=!!e.boss,mechanicRegion=circlePhase?.region||e.region;
+ const e={...enc,field:normalizeField(enc.field,enc.final?HUB_PLATFORM.walkRadius:260)},f=e.field,dt=COMBAT_TICK;
+ const circlePhase=e.final?finalCirclePhase(e):null,guardianBoss=!!e.boss&&!e.tournament,mechanicRegion=circlePhase?.region||e.region;
  if(e.final&&circlePhase&&e.finalCirclePhase!==circlePhase.index){const previousPhase=Math.max(0,Math.min(8,Math.floor(Number(e.finalCirclePhase)||0)));if(previousPhase&&circlePhase.index>previousPhase){markFinalCirclePhaseMastered(e,{index:previousPhase});e.hp=Math.min(e.maxHP,e.hp+Math.max(14,Math.round(e.maxHP*.12)));e.focus=Math.min(3,(e.focus||0)+1);f.stamina=Math.min(100,(f.stamina||0)+18);}Object.assign(e,initialGuardianCombatState(mechanicRegion));e.finalCirclePhase=circlePhase.index;e.intent=(FIELD_PATTERNS[mechanicRegion]||FIELD_PATTERNS.france)[0];e.log=`Le Lien répond · ${circlePhase.guardian} · ${circlePhase.value}. ${circlePhase.role}`;}
  else if(guardianBoss&&!e.final&&!e.guardianStep)Object.assign(e,initialGuardianCombatState(mechanicRegion));
  if(guardianBoss&&mechanicRegion==='espagne')e.guardianMeter=Math.max(0,(e.guardianMeter||0)-3);

@@ -14,6 +14,12 @@ export function worldEntryPolicy(save){
   resumeEncounter:true,
   action:null,
  };
+ if(save?.adventure?.avatar?.created&&save?.region&&save.region!=='hub')return{
+  kind:'resume-exploration',
+  region:save.region,
+  resumeEncounter:!!encounter,
+  action:null,
+ };
  const alreadyAtCleanNexus=save?.region==='hub'&&!encounter;
  return{
   kind:'nexus',
