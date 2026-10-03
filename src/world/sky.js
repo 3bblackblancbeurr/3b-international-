@@ -57,6 +57,8 @@ export function createWorldSky(renderer,onEnvironment){
    targetAtmosphere.cloudiness=({clear:.22,rain:.72,heavy_rain:.88,fog:.74,snow:.66,storm:.98})[weather]??.28;
    targetAtmosphere.storminess=weather==='storm'?1:weather==='heavy_rain'?.46:weather==='rain'?.18:0;
    targetAtmosphere.mistiness=weather==='fog'?1:weather==='heavy_rain'?.52:weather==='rain'?.25:weather==='snow'?.34:.10;
+   // Start at the current clock and weather; interpolate only subsequent changes.
+   if(lastTime==null)for(const name of ['daylight','cloudiness','storminess','mistiness'])uniforms[name].value=targetAtmosphere[name];
   },
   update(camera,time){
    const rawDt=lastTime==null?1/60:Math.max(0,time-lastTime),dt=Math.min(.12,rawDt>5?rawDt/1000:rawDt);lastTime=time;

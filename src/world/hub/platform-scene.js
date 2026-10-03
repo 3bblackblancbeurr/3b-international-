@@ -57,11 +57,18 @@ export function createHubPlatform(save){
  }
  const promenade=new THREE.RingGeometry(119,131,128);promenade.rotateX(-Math.PI/2);deckParts.push(promenade);
  deckParts.push(...addCiteTerraces({mesh,geo,box,materials:{dark,gold,blue},collisions,sign}));
- const ground=mesh(geo(mergeGeometries(deckParts)),surfaces.deck,0,0,0);deckParts.forEach(g=>g.dispose());ground.castShadow=false;
+ const deckGeometry=geo(mergeGeometries(deckParts));
+ // One world-space paving scale across coasts, bridges, promenade and raised ramps.
+ const deckPositions=deckGeometry.attributes.position,deckUV=deckGeometry.attributes.uv;
+ for(let i=0;i<deckPositions.count;i++)deckUV.setXY(i,deckPositions.getX(i)/4,deckPositions.getZ(i)/4);
+ const ground=mesh(deckGeometry,surfaces.deck,0,0,0);deckParts.forEach(g=>g.dispose());ground.castShadow=false;
  ring(119,.14,.08,gold);ring(131,.14,.08,gold);ring(125,.06,.09,blue);
  collisions.push({id:'cite-water-boundary',surfaceDistance:p=>-citeSurfaceDistance(p.x/HUB_SCALE,p.z/HUB_SCALE)*HUB_SCALE});
- const seaLake={x:0,z:0,r:245},seaWater=createPremiumWater({region:'hub',lake:seaLake,owned});
- const sea=mesh(geo(new THREE.CircleGeometry(247,128)),seaWater.material,0,-18,0);sea.rotation.x=-Math.PI/2;sea.castShadow=false;
+ const seaLake={x:0,z:0,r:245},seaWater=createPremiumWater({region:'hub',lake:seaLake,owned,ocean:true});
+ const oceanGeometry=geo(new THREE.PlaneGeometry(3200,3200,64,64)),oceanPositions=oceanGeometry.attributes.position,oceanUV=oceanGeometry.attributes.uv;
+ // Keep ripples and coastal foam at the original physical scale across the open sea.
+ for(let i=0;i<oceanPositions.count;i++)oceanUV.setXY(i,oceanPositions.getX(i)/494+.5,oceanPositions.getY(i)/494+.5);
+ const sea=mesh(oceanGeometry,seaWater.material,0,-18,0);sea.rotation.x=-Math.PI/2;sea.castShadow=false;
  const mist=mesh(geo(new THREE.CircleGeometry(252,64)),seaWater.mistMaterial,0,-17.7,0);mist.rotation.x=-Math.PI/2;mist.castShadow=false;
  seaWater.material.uniforms.shallowColor.value.set('#247f9b');seaWater.material.uniforms.deepColor.value.set('#06354a');
  seaWater.attachMeshes(sea,mist);seaWater.setQuality('medium',{allowPlanarReflection:false});
@@ -82,6 +89,11 @@ export function createHubPlatform(save){
    collisions.push({x,z,width:2,depth:3,rotation:a});cameraSolids.push({x,z,width:2,depth:3,rotation:a,bottom:0,top:22});
   }
   gateway(box,gold,0,20,0,18,.6,3.2);
+  const ceremonialArch=geo(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({length:17},(_,k)=>{const t=k*Math.PI/16;return new THREE.Vector3(Math.cos(t)*8,12+Math.sin(t)*8,-1.8);})),32,.28,6,false));
+  const arch=mesh(ceremonialArch,gold,p.x,0,p.z);arch.rotation.y=a;
+  const domed=['algerie','tunisie','maroc','turquie'].includes(COUNTRIES[i].id);
+  const crown=geo(domed?new THREE.SphereGeometry(1.3,12,6,0,Math.PI*2,0,Math.PI/2):new THREE.ConeGeometry(1.2,4,8));
+  for(const side of [-1,1])gateway(crown,gold,side*8,domed?21.1:23,0,1,1,1);
   const label=sign(COUNTRIES[i].name+' · '+REFERENCE_GATE_TITLES[COUNTRIES[i].id],p.x,22,p.z,16);if(label)label.rotation.y=a+Math.PI;
   if(typeof document!=='undefined'){
    const canvas=document.createElement('canvas');canvas.width=360;canvas.height=240;const ctx=canvas.getContext('2d');
