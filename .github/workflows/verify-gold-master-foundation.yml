@@ -4,6 +4,8 @@ on:
     paths:
       - 'brand/master/**'
       - 'src/design-system/**'
+      - 'src/city/city3b-game.css'
+      - 'src/city/city3b-model-preview.js'
       - 'src/passport/identity.js'
       - 'supabase/functions/member-api/index.ts'
       - 'tests/passport-identity.test.js'
