@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {COUNTRIES} from '../catalog.js';
+import {REFERENCE_GATE_TITLES,paintGateFlag} from './gate-identity.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
@@ -27,7 +29,7 @@ export function createHubPlatform(save){
   ctx.fillStyle='#0b1726';ctx.fillRect(0,0,768,128);ctx.strokeStyle='#d6b46a';ctx.lineWidth=4;ctx.strokeRect(4,4,760,120);
   ctx.fillStyle='#f1e1b9';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 36px sans-serif';ctx.fillText(text.toUpperCase(),384,64,730);
   const map=new THREE.CanvasTexture(cv);map.colorSpace=THREE.SRGBColorSpace;owned.push(map);const m=new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide});owned.push(m);
-  const o=mesh(geo(new THREE.PlaneGeometry(width,1.35)),m,x,y,z);o.castShadow=false;
+  const o=mesh(geo(new THREE.PlaneGeometry(width,1.35)),m,x,y,z);o.castShadow=false;return o;
  }
  // Each visible island and bridge is also part of the walkable collision surface.
  const deckParts=[],fallMaterial=citeWaterfallMaterial();owned.push(fallMaterial);
@@ -59,14 +61,21 @@ export function createHubPlatform(save){
   const walk=mesh(box,dark,p.x*.56,.006,p.z*.56,9,.04,116);walk.rotation.y=a;
   for(const side of [-1,1]){const strip=mesh(box,gold,p.x*.56+Math.cos(a)*side*4.6,.04,p.z*.56-Math.sin(a)*side*4.6,.12,.05,116);strip.rotation.y=a;}
   mesh(cylinder,dark,p.x,-.015,p.z,11,.12,11);ring(20,.05,.06,gold,Math.PI*.7,i*Math.PI/4);
-  // Broad gold/black gateway surrounds the existing traversable country threshold.
+  // Gate passage faces its radial bridge, with the country identity toward the city.
+  const gateway=(g,m,dx,y,dz,sx,sy,sz)=>{const o=mesh(g,m,p.x+Math.cos(a)*dx+Math.sin(a)*dz,y,p.z-Math.sin(a)*dx+Math.cos(a)*dz,sx,sy,sz);o.rotation.y=a;return o;};
   for(const side of [-1,1]){
-   mesh(box,dark,p.x+side*8,10,p.z,2,20,3);
-   mesh(box,gold,p.x+side*8,10,p.z+1.6,.4,22,.2);
-   mesh(box,blue,p.x+side*7.4,8,p.z+1.8,.12,12,.1);
-   collisions.push({x:p.x+side*8,z:p.z,width:2,depth:3});
+   gateway(box,dark,side*8,10,0,2,20,3);
+   gateway(box,gold,side*8,10,-1.6,.4,22,.2);
+   gateway(box,blue,side*7.4,8,-1.8,.12,12,.1);
+   const x=p.x+Math.cos(a)*side*8,z=p.z-Math.sin(a)*side*8;
+   collisions.push({x,z,width:2,depth:3,rotation:a});cameraSolids.push({x,z,width:2,depth:3,rotation:a,bottom:0,top:22});
   }
-  mesh(box,gold,p.x,20,p.z,18,.6,3.2);sign(HUB_VALUES[i],p.x,22,p.z,13);
+  gateway(box,gold,0,20,0,18,.6,3.2);
+  const label=sign(COUNTRIES[i].name+' · '+REFERENCE_GATE_TITLES[COUNTRIES[i].id],p.x,22,p.z,16);if(label)label.rotation.y=a+Math.PI;
+  if(typeof document!=='undefined'){
+   const canvas=document.createElement('canvas');canvas.width=360;canvas.height=240;const ctx=canvas.getContext('2d');
+   if(ctx){paintGateFlag(ctx,COUNTRIES[i].id);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;owned.push(texture);const banner=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});owned.push(banner);const flag=mesh(geo(new THREE.PlaneGeometry(5.4,3.6)),banner,p.x,25.2,p.z);flag.rotation.y=a+Math.PI;flag.castShadow=false;}
+  }
  }
  // Four basins and cascades leave the radial routes and the circular promenade dry.
  for(const [x,z] of [[48,48],[-48,48],[48,-48],[-48,-48]]){

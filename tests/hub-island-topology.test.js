@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {CITE_ISLANDS,CITE_BRIDGES,citeSurfaceDistance} from '../src/world/hub/platform-topology.js';
 import {createHubPlatform} from '../src/world/hub/platform-scene.js';
-import {HUB_SCALE,HUB_PLATFORM,safePlatformPosition} from '../src/world/hub/platform-layout.js';
+import {HUB_SCALE,HUB_PLATFORM,safePlatformPosition,platformPortal} from '../src/world/hub/platform-layout.js';
 import {blankSave} from '../src/world/rules.js';
 import {moveWithCollision} from '../src/world/rules.js';
 import {worldRuntimeItems} from '../src/world/runtime-items.js';
@@ -36,3 +36,8 @@ test('coastal foundations stay below the pedestrian deck and cannot hide the cha
   assert.ok(hits.length);assert.ok(hits[0].point.y<.15,`No foundation protrudes through the road at ${JSON.stringify(p)}`);
  }}finally{hub.dispose();}
 });
+
+ test('country gates follow the reference compass without changing destination identities',()=>{
+  const france=platformPortal(0),italie=platformPortal(1),estonie=platformPortal(2),turquie=platformPortal(3),algerie=platformPortal(4),tunisie=platformPortal(5),maroc=platformPortal(6),espagne=platformPortal(7);
+  assert.ok(france.x<0&&france.z<0);assert.ok(italie.x>0&&Math.abs(italie.z)<.01);assert.ok(Math.abs(estonie.x)<.01&&estonie.z<0);assert.ok(turquie.x>0&&turquie.z<0);assert.ok(Math.abs(algerie.x)<.01&&algerie.z>0);assert.ok(tunisie.x>0&&tunisie.z>0);assert.ok(maroc.x<0&&maroc.z>0);assert.ok(espagne.x<0&&Math.abs(espagne.z)<.01);
+ });

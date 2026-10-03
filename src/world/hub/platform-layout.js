@@ -1,5 +1,6 @@
 /** Physical layout of the reference hub. Coordinates are metres, on one safe deck.
  * Existing mission/NPC IDs stay unchanged: a new layout never resets a save. */
+import {REFERENCE_GATE_SECTORS} from './gate-identity.js';
 import {citeSurfaceDistance} from './platform-topology.js';
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 export const HUB_SCALE=1.7;
@@ -29,7 +30,7 @@ export function platformBuilding(building){
  entrance:{x,z:z+depth/2+2*HUB_SCALE},tier:building.tier||0,buildStatus:'active'};
 }
 export function platformPortal(index){
- const angle=-Math.PI/2+index*Math.PI/4;
+ const angle=-Math.PI/2+REFERENCE_GATE_SECTORS[index]*Math.PI/4;
  return {x:Math.cos(angle)*HUB_PLATFORM.portalRadius,z:Math.sin(angle)*HUB_PLATFORM.portalRadius};
 }
 export function platformWalls(b){

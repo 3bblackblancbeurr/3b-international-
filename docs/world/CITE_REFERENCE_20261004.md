@@ -6,7 +6,7 @@ Référence unique choisie par Zakaria : **Monde_3B_Hub_REFERENCE_UNIQUE.png**, 
 
 - 29 îlots physiques, huit ponts radiaux et une promenade circulaire ; 571 m de diamètre pour le hub.
 - Surface de marche et géométrie visibles issues du même plan. Les vides entre îlots bloquent les déplacements ; les sauvegardes dont la position est dans un vide reviennent au point d'arrivée.
-- Les 19 services, huit portails, missions, secrets et transports existants gardent leurs identifiants. Aucun nouveau royaume ni modification de récompense serveur.
+- Les huit portes suivent les directions de l’image de référence, avec noms, emblèmes de drapeaux et intitulés artistiques. Leur passage et leur signalétique sont orientés vers les ponts. Les 19 services, huit portails, missions, secrets et transports existants gardent leurs identifiants. Aucun nouveau royaume ni modification de récompense serveur.
 - Tour centrale à quatre flèches, couronnes, fondations rocheuses par îlot, éclairage bleu/or, navires de décor et détails de la place.
 - Mer avec normales animées, vagues, écume, pluie et lumière jour/nuit. Réflexion plane réservée au mode détail. Bassins et fontaine animés ; cascades avec filaments et écume animés.
 - Les habitants nommés conservent leurs routines. La foule ambiante, auparavant inactive faute de routes sur le nouveau hub, reçoit quatre parcours sur les axes piétons.
@@ -31,3 +31,7 @@ Il reste aussi à vérifier dans le navigateur les shaders, la présentation des
 ## Contrôle du rendu sur GitHub
 
 Le workflow `Verify playable Hub renderer` produit des captures du véritable moteur en format ordinateur (1280 × 720, détail) et téléphone (390 × 844, fluide), vérifie la réponse au déplacement et les erreurs JavaScript/shaders. Ce contrôle utilise un navigateur logiciel sur serveur : il ne mesure pas les performances d’un Samsung réel et ne remplace pas la validation artistique des captures.
+
+## Captures examinées et lames
+
+Le contrôle téléphone a confirmé la disparition des rochers au-dessus du sol et le bon affichage 3D des seize armes. Les lames coniques sont remplacées par une section forgée à biseaux et une pointe courte ; les prochaines captures vérifient cette modification. Les modèles demeurent procéduraux, sans prétendre à des assets artistiques AAA finaux.

@@ -1,11 +1,12 @@
 import * as T from 'three';
+import {craftedBladeGeometry} from './weapon-blade.js';
 import {getWeapon} from './arsenal.js';
 // Lightweight authored silhouettes, attached to the animated right hand.
 export function fitWeapon(model,avatar){
  const w=getWeapon(avatar.weapon),root=new T.Group(),geometries=[],materials=[],metal=new T.MeshStandardMaterial({color:'#bfaa79',metalness:.72,roughness:.32}),light=new T.MeshStandardMaterial({color:w.color,emissive:w.color,emissiveIntensity:.35,metalness:.35,roughness:.28});materials.push(metal,light);
  function mesh(g,m,x=0,y=0,z=0){geometries.push(g);const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;root.add(o);return o;}
  function rod(x,y,z,xx,yy,zz,r=.012,m=metal){const a=new T.Vector3(x,y,z),b=new T.Vector3(xx,yy,zz),d=b.clone().sub(a),o=mesh(new T.CylinderGeometry(r,r,d.length(),12),m);o.position.copy(a.add(b).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
- function blade(x=0,y=.25,length=.7){const o=mesh(new T.ConeGeometry(.075,length,4),metal,x,y+length/2);o.scale.z=.3;return o;}
+ function blade(x=0,y=.25,length=.7){const o=mesh(craftedBladeGeometry(length),metal,x,y+length/2);o.userData.weaponPart='blade';return o;}
  const tier=Math.max(0,Math.min(3,avatar.weaponForm||0)),evolved=tier>0,orbiters=[],splitBlades=[];
  if(w.kind==='Bouclier'||w.kind==='Éventail'){
   const count=w.kind==='Bouclier'?8:7;for(let i=0;i<count;i++){const a=w.kind==='Bouclier'?i*Math.PI/4:i*Math.PI/6;const o=mesh(new T.BoxGeometry(.15,.34,.035),i%2?light:metal,Math.sin(a)*(evolved?.32:.2),.3+Math.cos(a)*(evolved?.32:.2));o.rotation.z=-a;}
