@@ -4,7 +4,7 @@ Référence : l’image enregistrée « Métropole Céleste sur Plateforme Flott
 
 ## Structure livrée
 
-- Plateau circulaire borné de 336 mètres de diamètre ; déplacement limité à 163 mètres du centre.
+- Plateau circulaire borné de 571 mètres de diamètre ; déplacement limité à 277 mètres du centre.
 - Fondation flottante profonde, contreforts, cascades, quatre bassins, promenade et huit axes praticables.
 - Cercle Brisé monumental central, huit segments et réaction aux sceaux déjà obtenus.
 - Huit portes distribuées régulièrement sur le pourtour. Les royaumes existants sont conservés ; leur refonte est hors de ce changement.
@@ -34,3 +34,14 @@ La structure utilise des géométries et matériaux simples, fusionnés par mat�
 La cinématique est une mise en scène 3D avec les modèles actuels, pas un film anime dessiné ni une animation faciale professionnelle. Cette version ne produit pas de nouveaux personnages détaillés, véhicules pilotables, animaux animés, marchés à prix variables, combat libre complet ou matchmaking supplémentaire. Les services existants restent soumis à leurs prérequis de compte et de serveur.
 
 Le rendu final du jeu connecté et une session longue sur Samsung doivent être vérifiés sur un compte actif. Le navigateur de validation ne peut pas ouvrir le serveur de développement local et la production requiert un Passeport pour entrer dans le jeu. Les tests de géométrie ne remplacent pas ce contrôle visuel.
+
+
+## Extension du 3 octobre — quartiers et mécanismes
+
+La surface est multipliée par 2,89. Les 19 services et les huit portails conservent leurs identifiants et leurs portes physiques. Les bâtiments gagnent des tours arrière, vitrages, terrasses plantées, silhouettes propres à l’arène, à la manufacture, aux archives et aux transports. Seize volumes résidentiels indiquent clairement leur accès privé. Les nouvelles portes monumentales entourent les seuils existants.
+
+Dix bornes de quartier et huit plaques de valeurs ouvrent un dossier contextualisé : histoire, état civique, objectifs, services à rejoindre à pied, stations et habitants. Les circuits des trois relais et des huit fréquences demandent de résoudre un mécanisme à neuf contacts avant d’envoyer l’action de mission existante. Le serveur conserve la validation de l’ordre des objectifs et des récompenses ; il ne vérifie pas la résolution du puzzle client. Cette activité n’est pas un mode compétitif.
+
+Les missions réclamées réactivent le réseau des façades, le conservatoire fleuri et la bannière de rencontre communautaire après rechargement. Les déplacements visibles des PNJ utilisent les collisions ; un changement de routine prépare une route vers leur nouveau quartier. Le calcul des chemins utilise une grille spatiale reconstruite à chaque recherche dans le grand hub, sans cache global de murs.
+
+Ces ajouts ne créent pas une simulation complète de logements, des animations faciales, un film manga ni de nouveaux royaumes. Le jeu connecté et le téléphone réel restent à contrôler.

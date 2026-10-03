@@ -1,6 +1,7 @@
 import {landscapeItems} from './terrain.js';
 import {hubRuntime} from './hub/runtime-data.js';
 import hubPlan from './hub/data/hub-master-plan-v2.json' with {type:'json'};
+import {hubPublicPlaces} from './hub/platform-life.js';
 import {platformRuntimeItems} from './hub/platform-layout.js';
 
 export function worldRuntimeItems(region,save,context={}){
@@ -17,5 +18,5 @@ export function worldRuntimeItems(region,save,context={}){
   seals:save.seals||[],
   restoredRegions:Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id),
  }).items;
- return platformRuntimeItems(base,hub,hubPlan);
+ return [...platformRuntimeItems(base,hub,hubPlan),...hubPublicPlaces()];
 }

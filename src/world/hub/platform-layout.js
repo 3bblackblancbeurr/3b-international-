@@ -1,13 +1,15 @@
 /** Physical layout of the reference hub. Coordinates are metres, on one safe deck.
  * Existing mission/NPC IDs stay unchanged: a new layout never resets a save. */
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
-export const HUB_PLATFORM = Object.freeze({radius:168,walkRadius:163,portalRadius:146,spawn:{x:0,z:32},core:{x:0,z:0}});
-export const PLATFORM_DISTRICTS = Object.freeze({
+export const HUB_SCALE=1.7;
+export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:0,z:32*HUB_SCALE},core:{x:0,z:0}});
+const DISTRICT_SITES = {
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
  archives:{x:-66,z:-66},arena:{x:66,z:-66},commerce:{x:94,z:0},
  community:{x:-94,z:0},innovation:{x:0,z:-94},docks:{x:0,z:100},
  city3b_portal:{x:66,z:66},gardens:{x:-66,z:66},
-});
+};
+export const PLATFORM_DISTRICTS=Object.freeze(Object.fromEntries(Object.entries(DISTRICT_SITES).map(([id,p])=>[id,{x:p.x*HUB_SCALE,z:p.z*HUB_SCALE}])));
 const SITES={
  tower_circle:[0,-38,14,10,8],heritage_welcome:[-22,36,13,11,8],mission_hotel:[22,36,13,11,9],
  memory_archives:[-82,-74,18,15,16],living_cards_gallery:[-57,-89,13,11,10],
@@ -19,18 +21,18 @@ const SITES={
  city_planning_office:[59,95,14,12,10],city_gallery:[85,81,14,12,10],
 };
 export function platformBuilding(building){
- const [x,z,width,depth,height]=SITES[building.id]||[0,48,12,10,8];
+ const [x,z,width,depth,height]=(SITES[building.id]||[0,48,12,10,8]).map((v,i)=>v*(i===4?1.5:HUB_SCALE));
  return {id:'hub:building:'+building.id,type:'hubBuilding',buildingId:building.id,
  name:building.name,district:building.district,functions:building.functions||[],interior:building.interior,
- x,z:z-depth/2+3,buildingX:x,buildingZ:z,width,depth,height,range:3.5,physicalInterior:true,
- entrance:{x,z:z+depth/2+2},tier:building.tier||0,buildStatus:'active'};
+ x,z:z-depth/2+3*HUB_SCALE,buildingX:x,buildingZ:z,width,depth,height,range:4.5,physicalInterior:true,
+ entrance:{x,z:z+depth/2+2*HUB_SCALE},tier:building.tier||0,buildStatus:'active'};
 }
 export function platformPortal(index){
  const angle=-Math.PI/2+index*Math.PI/4;
  return {x:Math.cos(angle)*HUB_PLATFORM.portalRadius,z:Math.sin(angle)*HUB_PLATFORM.portalRadius};
 }
 export function platformWalls(b){
- const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,t=.55,gap=b.buildingId==='arena_3b'?8:5;
+ const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,t=.55*HUB_SCALE,gap=(b.buildingId==='arena_3b'?8:5)*HUB_SCALE;
  return [{x,z:z-d/2,width:w,depth:t},{x:x-w/2,z,width:t,depth:d},{x:x+w/2,z,width:t,depth:d},
  ...[-1,1].map(side=>({x:x+side*(w+gap)/4,z:z+d/2,width:(w-gap)/2,depth:t}))];
 }
@@ -49,15 +51,15 @@ export function platformRuntimeItems(base,runtime,plan){
  const semantic=runtime.filter(i=>SEMANTIC.has(i.type)).map(item=>{
   const old=plan.districts.find(d=>d.id===item.district),center=PLATFORM_DISTRICTS[item.district]||PLATFORM_DISTRICTS.heritage_square;
   const oldX=old?(old.center[0]-.5)*1800:0,oldZ=old?(old.center[1]-.5)*1400:0;
-  let x=center.x+Math.max(-13,Math.min(13,(item.x-oldX)*.7)),z=center.z+Math.max(-13,Math.min(13,(item.z-oldZ)*.7));
-  if(item.district==='broken_circle_tower'){const a=(hash(item.id)%628)/100;x=Math.sin(a)*29;z=Math.cos(a)*29;}
+  let x=center.x+Math.max(-13,Math.min(13,(item.x-oldX)*.7))*HUB_SCALE,z=center.z+Math.max(-13,Math.min(13,(item.z-oldZ)*.7))*HUB_SCALE;
+  if(item.district==='broken_circle_tower'){const a=(hash(item.id)%628)/100;x=Math.sin(a)*29*HUB_SCALE;z=Math.cos(a)*29*HUB_SCALE;}
   // All semantic markers remain outside furniture and rooms unless specifically hosted inside.
-  for(const b of buildings)if(Math.abs(x-b.buildingX)<b.width/2+4&&Math.abs(z-b.buildingZ)<b.depth/2+4){z=b.buildingZ+b.depth/2+5;}
-  for(const [wx,wz] of [[48,48],[-48,48],[48,-48],[-48,-48]]){const dx=x-wx,dz=z-wz,d=Math.hypot(dx,dz);if(d<19){x=wx+dx/(d||1)*19;z=wz+dz/(d||1)*19;}}
+  for(const b of buildings)if(Math.abs(x-b.buildingX)<b.width/2+4*HUB_SCALE&&Math.abs(z-b.buildingZ)<b.depth/2+4*HUB_SCALE){z=b.buildingZ+b.depth/2+5*HUB_SCALE;}
+  for(const [wx,wz] of [[48,48],[-48,48],[48,-48],[-48,-48]]){const px=wx*HUB_SCALE,pz=wz*HUB_SCALE,dx=x-px,dz=z-pz,d=Math.hypot(dx,dz);if(d<19*HUB_SCALE){x=px+dx/(d||1)*19*HUB_SCALE;z=pz+dz/(d||1)*19*HUB_SCALE;}}
   return {...item,x,z,homeX:x,homeZ:z};
  });
  const final=base.find(i=>i.type==='final');
- return [...portals,...(final?[{...final,x:0,z:23}]:[]),...buildings,...semantic];
+ return [...portals,...(final?[{...final,x:0,z:23*HUB_SCALE}]:[]),...buildings,...semantic];
 }
 export function platformNextObjective(items,save){
  const active=items.find(i=>i.type==='hubMissionAction');

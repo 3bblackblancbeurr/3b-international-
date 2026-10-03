@@ -213,7 +213,7 @@ function hubNpcAvatar(item){
    for(const actor of actors){const next=byId.get(actor.itemId);if(!next)continue;const current=items.find(item=>item.id===actor.itemId);if(current)Object.assign(current,next);actor.x=next.x;actor.z=next.z;actor.controller.object.position.set(next.x,groundY(next.x,next.z),next.z);}
    needsRender=true;return;
   }
-  if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;actor.item.homeX=next.x;actor.item.homeZ=next.z;actor.item.district=next.district;actor.item.activity=next.activity;actor.item.shelter=next.shelter;actor.item.social=next.social;}needsRender=true;}
+  if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;if(Math.hypot(actor.item.homeX-next.x,actor.item.homeZ-next.z)>10){const path=findPath({x:actor.object.position.x,z:actor.object.position.z},next,obstacles,worldRadius);actor.walkTarget=path.shift()||null;actor.walkRoute=path;}actor.item.homeX=next.x;actor.item.homeZ=next.z;actor.item.district=next.district;actor.item.activity=next.activity;actor.item.shelter=next.shelter;actor.item.social=next.social;}needsRender=true;}
  function cancelContextTraversal(){if(!contextTraversal)return;const resolve=contextTraversal.resolve;contextTraversal=null;traversalLift=0;try{resolve(false);}catch{}needsRender=true;}
  function rebuild(nextRegion){cancelContextTraversal();
   const previousRegion=region;
@@ -237,7 +237,7 @@ function hubNpcAvatar(item){
    if(item.type==='hubRoad'){
     const visuals=buildPremiumHubRoad(item,{mesh,material,groundY});itemVisuals.set(item.id,visuals);continue;
    }
-   if(item.type==='hubBuilding'&&item.physicalInterior)continue;
+   if(item.type==='hubPublicPlace'||item.type==='hubBuilding'&&item.physicalInterior)continue;
    if(item.type==='hubBuilding'||item.type==='hubStructure'){
     const bx=item.buildingX??item.x,bz=item.buildingZ??item.z,y=groundY(bx,bz),canonical=item.type==='hubBuilding',tier=item.tier||0,construction=item.buildStatus==='construction';
     const palette=construction?'#15191c':canonical?['#1d252d','#182f3d','#2c2834'][Math.min(2,tier)]:['#242a2f','#202b31','#2c3036'][Math.min(2,tier)];
@@ -366,7 +366,7 @@ function hubNpcAvatar(item){
   const view=orbitView(orbit,position,groundY(position.x,position.z),camera.aspect<.85,groundY);camera.position.copy(view.position);cameraTarget.copy(view.target);camera.lookAt(cameraTarget);
   if(region==='hub'&&!encounter&&(previousRegion!=='hub'||!hubArrivalShown)){
    const platform=items.find(item=>item.type==='hubHeritagePlatform'),tower=items.find(item=>item.type==='hubDistrictLandmark'&&item.landmarkId==='broken_circle_spire'),duration=reducedMotion?2600:6200;
-   shot={x:tower?.x??0,z:tower?.z??0,kind:'hub-arrival',angle:orbit.yaw-.42,duration,until:performance.now()+duration,heritage:true,radius:camera.aspect<.85?195:220,height:camera.aspect<.85?90:105,focusY:18,arc:reducedMotion?0:.36,dolly:.12,title:'La Cité des Huit Héritages',detail:platform?.milestone?.label||platform?.evolutionLabel||'Fondations vivantes'};
+   shot={x:tower?.x??0,z:tower?.z??0,kind:'hub-arrival',angle:orbit.yaw-.42,duration,until:performance.now()+duration,heritage:true,radius:camera.aspect<.85?340:380,height:camera.aspect<.85?150:165,focusY:27,arc:reducedMotion?0:.36,dolly:.12,title:'La Cité des Huit Héritages',detail:platform?.milestone?.label||platform?.evolutionLabel||'Fondations vivantes'};
    hubArrivalShown=true;
   }
   // Capture solid structural pieces too: bridges, civic towers and station supports
@@ -494,7 +494,8 @@ function hubNpcAvatar(item){
     actor.lod=lod;actor.object.visible=visible;if(!visible)continue;
     const beforeX=actor.object.position.x,beforeZ=actor.object.position.z,tier=actor.item.simulationTier||'full';
     const follow=tier==='full'?13:tier==='simplified'?7:3.5,blend=1-Math.exp(-dt*follow);
-    actor.object.position.x+=(actor.targetX-beforeX)*blend;actor.object.position.z+=(actor.targetZ-beforeZ)*blend;
+    const walk=advanceMotion({position:{x:beforeX,z:beforeZ},target:actor.walkTarget||{x:actor.targetX,z:actor.targetZ},route:actor.walkRoute||[]},{x:0,z:0},dt,Math.min(2.6,Math.hypot(actor.targetX-beforeX,actor.targetZ-beforeZ)*blend/Math.max(dt,.001)),obstacles,worldRadius);
+    actor.object.position.x=walk.position.x;actor.object.position.z=walk.position.z;if(actor.walkTarget){actor.walkTarget=walk.target;actor.walkRoute=walk.route;}
     actor.object.position.y=groundY(actor.object.position.x,actor.object.position.z);
     const mx=actor.object.position.x-beforeX,mz=actor.object.position.z-beforeZ,moved=Math.hypot(mx,mz);
     actor.item.x=actor.object.position.x;actor.item.z=actor.object.position.z;
@@ -604,7 +605,7 @@ function hubNpcAvatar(item){
    if(kind==='world-opening'){
     if(region==='hub'){
      const water={x:85,z:130};
-     focus={x:0,z:0};radius=camera.aspect<.85?210:240;height=82;focusY=15;arc=.32;dolly=.26;
+     focus={x:0,z:0};radius=camera.aspect<.85?350:400;height=135;focusY=23;arc=.32;dolly=.26;
      angle=Math.atan2(water.x-focus.x,water.z-focus.z);
      fovStart=68;fovEnd=60;
      context={...context,waterReveal:true};
@@ -676,4 +677,3 @@ function hubNpcAvatar(item){
   destroy(){staticInstances?.dispose();ambientCrowd?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };
 }
-

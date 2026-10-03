@@ -1,4 +1,5 @@
 import {obstacleDistance} from './collision.js';
+import {spatialObstacles} from './hub/spatial-obstacles.js';
 // Small country maps keep the battle-tested full-grid search. The metropolis
 // uses a bounded corridor search so long taps do not allocate a 650 m square grid.
 export function findInteractionPath(start,item,obstacles,radius=76){
@@ -10,8 +11,9 @@ export function findInteractionPath(start,item,obstacles,radius=76){
 
 function compactPath(start,destination,obstacles,radius){
  const gap=1.25,step=2,limit=Math.floor((radius-gap)/step),size=limit*2+1;
+ const nearby=radius>200?spatialObstacles(obstacles,{padding:gap}):()=>obstacles;
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
- const clear=p=>Math.hypot(p.x,p.z)<=radius-gap&&!obstacles.some(o=>obstacleDistance(p,o)<gap);
+ const clear=p=>Math.hypot(p.x,p.z)<=radius-gap&&!nearby(p).some(o=>obstacleDistance(p,o)<gap);
  const segment=(a,b)=>{const count=Math.ceil(distance(a,b)/.5);for(let i=1;i<=count;i++)if(!clear({x:a.x+(b.x-a.x)*i/count,z:a.z+(b.z-a.z)*i/count}))return false;return true;};
  const point=id=>({x:(id%size-limit)*step,z:(Math.floor(id/size)-limit)*step});
  const idAt=p=>(Math.round(p.z/step)+limit)*size+Math.round(p.x/step)+limit;
