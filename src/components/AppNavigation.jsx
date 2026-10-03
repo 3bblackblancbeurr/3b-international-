@@ -97,7 +97,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       <nav className="desktop-navigation" aria-label="Navigation principale">
         {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <div className="header-actions">{options && <ExperienceControls options={options} toggleOption={toggleOption} page={page}/>}<SecretClock secret={secret} goTo={goTo} compact /><span className={'network-status '+(online?'is-online':'is-offline')} aria-live="polite">{online?'En ligne':'Hors ligne'}</span><Button variant="ghost" className="menu-trigger" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></Button></div>
+      <div className="header-actions">{options && <ExperienceControls options={options} toggleOption={toggleOption} page={page}/>}<span className="network-status is-offline" role="status" hidden={online}>Hors ligne</span><Button variant="ghost" className="menu-trigger" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} aria-keyshortcuts="/"><Menu size={20} aria-hidden="true" /><span>Menu</span></Button></div>
     </header>
     {page !== "home" && <div className="page-breadcrumb"><RouteLink page="home" goTo={goTo}><ArrowLeft size={16} aria-hidden="true" /> Accueil</RouteLink><span aria-hidden="true">/</span><span>{title}</span></div>}
     <nav className="mobile-navigation" aria-label="Navigation mobile">

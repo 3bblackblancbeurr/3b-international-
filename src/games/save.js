@@ -16,6 +16,87 @@ export function validateProgress(value){
  if(value.cities){const c=value.cities;if(!plain(c)||!plain(c.world)||!Array.isArray(c.completed)||!Number.isInteger(c.countryIndex)||c.countryIndex<0||c.countryIndex>7||c.completed.some(i=>!Number.isInteger(i)||i<0||i>7))throw Error('Sauvegarde des villes invalide.');for(const [index,city]of Object.entries(c.world)){if(!/^[0-7]$/.test(index))throw Error('Pays invalide.');if(!city)continue;if(!Array.isArray(city.board)||city.board.length!==49||!Array.isArray(city.hand)||city.hand.length!==4||!Number.isFinite(city.turn)||!Number.isFinite(city.score))throw Error('Ville invalide.');for(const t of [...city.board,...city.hand])if(t&&(!['road','house','garden','monument'].includes(t.type)||!Number.isInteger(t.rot)||t.rot<0||t.rot>3||(t.type==='road'&&!['corner','straight','junction','crossroads'].includes(t.shape))))throw Error('Tuile invalide.');}result.cities=structuredClone(c);}
  return result;
 }
+
+const sameValue=(left,right)=>JSON.stringify(left)===JSON.stringify(right);
+const clone=value=>value==null?null:structuredClone(value);
+const recordDefaults=()=>({best:0,plays:0,wins:0,guardians:0,floor:0});
+const bounded=(value,max)=>Math.max(0,Math.min(max,Math.round(Number(value)||0)));
+
+function mergeBranch(base,local,remote){
+ if(sameValue(local,remote))return clone(local);
+ if(base!==null&&sameValue(local,base))return clone(remote);
+ if(base!==null&&sameValue(remote,base))return clone(local);
+ // A live checkpoint from this device wins only when both devices changed the
+ // same in-progress run. Permanent records are merged separately below.
+ return clone(local??remote);
+}
+
+function mergeCampaign(base,local,remote,kind){
+ const selected=mergeBranch(base,local,remote);
+ if((base!==null&&(sameValue(local,base)||sameValue(remote,base)))||sameValue(local,remote))return selected;
+ if(!local)return clone(remote);if(!remote)return clone(local);
+ const completedLength=Math.max(local.completed?.length||0,remote.completed?.length||0);
+ const completed=Array.from({length:completedLength},(_,index)=>index+1),best={};
+ for(const level of completed){
+  const left=local.best?.[level],right=remote.best?.[level];
+  if(!left){best[level]=clone(right);continue;}if(!right){best[level]=clone(left);continue;}
+  best[level]={stars:Math.max(left.stars,right.stars),score:Math.max(left.score,right.score),time:Math.min(left.time,right.time)};
+ }
+ const campaign={version:1,selected:Math.max(1,Math.min(100,completedLength+1,Math.max(local.selected||1,remote.selected||1))),completed,best};
+ if(kind==='tower'){
+  // Concurrent runs cannot be combined safely. Keeping the permanent campaign
+  // and dropping only the volatile room checkpoint prevents an invalid save.
+  campaign.run=null;
+  if(Object.hasOwn(local,'originsRun')||Object.hasOwn(remote,'originsRun'))campaign.originsRun=null;
+ }
+ return campaign;
+}
+
+function mergeCities(base,local,remote){
+ const selected=mergeBranch(base,local,remote);
+ if((base!==null&&(sameValue(local,base)||sameValue(remote,base)))||sameValue(local,remote))return selected;
+ if(!local)return clone(remote);if(!remote)return clone(local);
+ const world={},countries=new Set([...Object.keys(local.world||{}),...Object.keys(remote.world||{})]);
+ for(const country of countries)world[country]=mergeBranch(base?.world?.[country]??null,local.world?.[country]??null,remote.world?.[country]??null);
+ return{
+  world,
+  countryIndex:local.countryIndex,
+  completed:[...new Set([...(local.completed||[]),...(remote.completed||[])])].sort((a,b)=>a-b)
+ };
+}
+
+function mergeRecords(base,local,remote){
+ const result={},ids=new Set([...Object.keys(local||{}),...Object.keys(remote||{})]);
+ for(const id of ids){
+  const b=base?.[id]||recordDefaults(),l=local?.[id]||recordDefaults(),r=remote?.[id]||recordDefaults();
+  const additive=(key,max)=>base===null?Math.max(l[key],r[key]):Math.max(l[key],r[key],r[key]+Math.max(0,l[key]-b[key]));
+  result[id]={
+   best:bounded(Math.max(l.best,r.best),1e8),
+   plays:bounded(additive('plays',1e6),1e6),
+   wins:bounded(additive('wins',1e6),1e6),
+   guardians:bounded(Math.max(l.guardians,r.guardians),8),
+   floor:bounded(Math.max(l.floor,r.floor),100)
+  };
+ }
+ return result;
+}
+
+/**
+ * Rebase a local Jeux 3B checkpoint onto a newer server checkpoint.
+ * `base === null` means the device never observed the server version; in that
+ * case additive counters use the conservative maximum instead of double-counting.
+ */
+export function mergeGameProgress(base,local,remote){
+ const cleanBase=base===null?null:validateProgress(base),cleanLocal=validateProgress(local),cleanRemote=validateProgress(remote);
+ if(sameValue(cleanLocal,cleanRemote))return cleanLocal;
+ const result=freshProgress();
+ result.records=mergeRecords(cleanBase?.records??null,cleanLocal.records,cleanRemote.records);
+ result.tower=mergeCampaign(cleanBase?.tower??null,cleanLocal.tower,cleanRemote.tower,'tower');
+ result.maze=mergeCampaign(cleanBase?.maze??null,cleanLocal.maze,cleanRemote.maze,'maze');
+ for(const key of ['dada3b','power3b','refuge'])result[key]=mergeBranch(cleanBase?.[key]??null,cleanLocal[key],cleanRemote[key]);
+ result.cities=mergeCities(cleanBase?.cities??null,cleanLocal.cities,cleanRemote.cities);
+ return validateProgress(result);
+}
 function identity(){let token;try{token=localStorage.getItem(IDENTITY);}catch{}if(!/^[a-f0-9]{64}$/.test(token||'')){token=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');try{localStorage.setItem(IDENTITY,token);}catch{}}return token;}
 const token=identity();let playerKey,chain=Promise.resolve(),remoteKnown=false,saveRevision=0;
 const hash=async()=>playerKey??=(Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))),v=>v.toString(16).padStart(2,'0')).join(''));

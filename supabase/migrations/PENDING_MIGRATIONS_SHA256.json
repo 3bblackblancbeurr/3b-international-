@@ -1,5 +1,11 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 1,
+  "migrations": [
+    {
+      "version": "20261003233000",
+      "name": "member_game_save_cas_v1",
+      "sha256": "a15228715b1a54d384009964f5fe9cb33820610f7e902001ceef931d88df951f"
+    }
+  ]
 }

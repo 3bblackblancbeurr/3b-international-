@@ -30,7 +30,7 @@ test('home opens on the single Nexus story without the duplicated legacy hero',(
  assert.doesNotMatch(home,/home-journey-status|home-status-item/);
  assert.doesNotMatch(home,/Ouvert · 8 héritages|Web · installable/);
  assert.doesNotMatch(home,/Un héritage|Nos différences|Notre force|welcome-hero|luxury-manifesto-line/);
- assert.match(portal,/Une plateforme qui devient un [\s\S]*monde/);
+ assert.match(portal,/Ton monde[\s\S]*commence/);
  assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('L’essentiel'));
  assert.match(home,/home-guide-zone/);
  assert.ok(home.indexOf('home-guide-zone')>home.indexOf('Explorer 3B'));

@@ -116,7 +116,7 @@ test('local APEX JavaScript and Python sources are syntactically valid',()=>{
   fileURLToPath(new URL('../runtime/albert_apex_v2/server.py',import.meta.url))
  ];
  let checked=false,last='';
- for(const executable of ['python3','python']){
+ for(const executable of (process.platform==='win32'?['python','python3']:['python3','python'])){
   const result=spawnSync(executable,['-m','py_compile',...pythonFiles],{encoding:'utf8',shell:false});
   if(result.error?.code==='ENOENT'){last=String(result.error);continue;}
   checked=true;

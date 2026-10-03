@@ -23,7 +23,8 @@ test('App uses one Passport gate with no Passport 2 rule', () => {
 });
 
 test('Passport access does not depend on inventory availability', () => {
-  assert.match(memberApi, /const optionalList=.*\.catch\(\(\)=>\[\]\)/);
+  assert.match(memberApi, /const optionalList=.*readOptionalRows/);
+  assert.match(memberApi, /inventory_available:Array\.isArray\(inventory\)/);
   assert.match(memberApi, /optionalList\('\/rest\/v1\/inventory\?user_id=eq\.'/);
   assert.match(memberApi, /optionalList\('\/rest\/v1\/digital_store_entitlements\?user_id=eq\.'/);
   assert.doesNotMatch(app, /hasPassportAccess\([^)]*inventory/);

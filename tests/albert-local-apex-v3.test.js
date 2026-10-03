@@ -7,12 +7,12 @@ import {spawnSync} from 'node:child_process';
 
 function runPython(script,env={}){
  let last='';
- for(const executable of ['python3','python']){
+ for(const executable of (process.platform==='win32'?['python','python3']:['python3','python'])){
   const result=spawnSync(executable,['-c',script],{
    cwd:process.cwd(),
    encoding:'utf8',
    shell:false,
-   env:{...process.env,...env}
+   env:{...process.env,...env,PYTHONIOENCODING:'utf-8'}
   });
   if(result.error?.code==='ENOENT'){last=String(result.error);continue;}
   assert.equal(result.status,0,result.stderr||result.stdout);

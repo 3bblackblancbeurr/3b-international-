@@ -49,7 +49,8 @@ export default function GamesHub({goTo,goToGame}){
  const account=useLoyalty(),user=account.user;
  const[active,setActive]=useState(null),[selection,setSelection]=useState('arena');
  const[remoteGames,setRemoteGames]=useState([]),[remoteError,setRemoteError]=useState('');
- const[progress,setProgress]=useState(freshProgress),[loading,setLoading]=useState(true),[saveMessage,setSaveMessage]=useState('Chargement de la progression…'),dataRef=useRef(progress),fileRef=useRef();
+ const[progress,setProgress]=useState(freshProgress),[loading,setLoading]=useState(true),[saveMessage,setSaveMessage]=useState('Chargement de la progression…'),dataRef=useRef(progress),fileRef=useRef(),ownerRef=useRef(user?.id||null);
+ ownerRef.current=user?.id||null;
  useEffect(()=>{
   let live=true;
   const controller=new AbortController();
@@ -71,10 +72,10 @@ export default function GamesHub({goTo,goToGame}){
    });
   return()=>{live=false;controller.abort();};
  },[]);
- useEffect(()=>{let live=true;setLoading(true);loadGameProgress(user).then(result=>{if(!live)return;dataRef.current=result.data;setProgress(result.data);setSaveMessage(result.message);setLoading(false);if(result.online)saveGameProgress(result.data,user).then(m=>{if(live)setSaveMessage(m);});});return()=>{live=false;};},[user?.id]);
- const checkpoint=(g,id,record=false)=>{let next=dataRef.current;if(record)next=recordGame(next,id,g);else if(g.snapshot)next={...next,[id]:g.snapshot()};else return;dataRef.current=next;setProgress(next);saveGameProgress(next,user).then(setSaveMessage);};
+ useEffect(()=>{let live=true;const ownerId=user?.id||null;setLoading(true);loadGameProgress(user).then(result=>{if(!live||ownerRef.current!==ownerId)return;dataRef.current=result.data;setProgress(result.data);setSaveMessage(result.message);setLoading(false);if(result.online)saveGameProgress(result.data,user,canonical=>{if(live&&ownerRef.current===ownerId){dataRef.current=canonical;setProgress(canonical);}}).then(m=>{if(live&&ownerRef.current===ownerId)setSaveMessage(m);});});return()=>{live=false;};},[user?.id]);
+ const checkpoint=(g,id,record=false)=>{const ownerId=user?.id||null;if(ownerRef.current!==ownerId)return;let next=dataRef.current;if(record)next=recordGame(next,id,g);else if(g.snapshot)next={...next,[id]:g.snapshot()};else return;dataRef.current=next;setProgress(next);saveGameProgress(next,user,canonical=>{if(ownerRef.current===ownerId){dataRef.current=canonical;setProgress(canonical);}}).then(message=>{if(ownerRef.current===ownerId)setSaveMessage(message);});};
  const exportSave=()=>{const blob=new Blob([JSON.stringify(dataRef.current,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='3b-jeux-sauvegarde.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
- const importSave=async e=>{const file=e.target.files?.[0];if(!file)return;try{if(file.size>180000)throw Error('Fichier trop volumineux.');const next=validateProgress(JSON.parse(await file.text()));dataRef.current=next;setProgress(next);setSaveMessage(await saveGameProgress(next,user));}catch(err){setSaveMessage(err.message||'Fichier de sauvegarde illisible.');}e.target.value='';};
+ const importSave=async e=>{const file=e.target.files?.[0],ownerId=user?.id||null;if(!file)return;try{if(file.size>180000)throw Error('Fichier trop volumineux.');const next=validateProgress(JSON.parse(await file.text()));if(ownerRef.current!==ownerId)return;dataRef.current=next;setProgress(next);const message=await saveGameProgress(next,user,canonical=>{if(ownerRef.current===ownerId){dataRef.current=canonical;setProgress(canonical);}});if(ownerRef.current===ownerId)setSaveMessage(message);}catch(err){if(ownerRef.current===ownerId)setSaveMessage(err.message||'Fichier de sauvegarde illisible.');}e.target.value='';};
  return <section className="arcade" aria-labelledby="arcade-title">
   <div className="arcade-heading"><div><span className="arcade-eyebrow">LE MONDE DU 3B / JEUX</span><h1 id="arcade-title">Entre dans l’aventure.</h1></div><button className="arcade-back" onClick={()=>goTo('home')}><ArrowLeft size={18}/> Accueil</button></div>
   <div className="arcade-account-line"><span>{account.passport?`Passeport 3B · ${account.passport.name} · ${account.passport.country} · ${account.passport.xp} XP · ${account.passport.points} points`:'Joue librement. Active ton Passeport 3B pour rattacher progression et récompenses à ton compte.'}</span><button onClick={()=>goTo(account.passport?'loyalty':'member')}>{account.passport?'Mes avantages':'Mon compte'}</button></div>

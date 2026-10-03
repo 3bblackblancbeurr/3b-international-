@@ -87,10 +87,10 @@ test('migration integrity manifest tracks all current applied sources and preser
  assert.deepEqual([...versions].sort(),versions);
 });
 
-test('home portal represents all eight canonical gates and keeps native launch feature-gated',()=>{
+test('home portal presents the Nexus artwork and keeps native launch feature-gated',()=>{
  const portal=read('src/components/WorldPortalCard.jsx');
  const env=read('.env.example');
- for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE'])assert.match(portal,new RegExp("'"+code+"'"));
+ assert.match(portal,/hub-cite-origine\.webp/);
  assert.match(portal,/UNREAL_LAUNCH_ENABLED/);
  assert.match(env,/VITE_UNREAL_LAUNCH_ENABLED=false/);
 });
