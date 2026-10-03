@@ -16,7 +16,8 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('L’essentiel'));
  const guide=home.lastIndexOf('Comprendre l’écosystème 3B');
  assert.ok(guide>home.indexOf('Explorer 3B'));
- assert.ok(home.lastIndexOf('dashboard-footer')>guide);
+ assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
+ assert.match(home,/item.status!=='soon'/);
 });
 
 test('mobile navigation keeps an active destination instead of staged games',()=>{
@@ -42,13 +43,12 @@ test('community and textile AI remain explicitly staged as coming soon',()=>{
  assert.match(nav,/item\.status === "soon"/);
 });
 
-test('the home world card uses a Nexus ring and contains no Unreal client copy',()=>{
- assert.match(portal,/nexus-ring-scene/);
- assert.match(portal,/NEXUS/);
- assert.match(portal,/8 Portes reliées/);
- assert.match(portal,/nexus-authentic-circle[\s\S]*nexus-gates/);
- for(const code of ['FR','DZ','ES','MA','IT','TN','TR','EE'])assert.match(portal,new RegExp("code:'"+code+"'"));
- assert.doesNotMatch(portal,/client Unreal Engine|UE 5\.8 foundation|Le web reste le cœur/i);
+test('home presents one cinematic world entry without the legacy atlas and pylons',()=>{
+ assert.match(portal,/home-world-entry/);
+ assert.match(portal,/hub-cite-origine\.webp/);
+ assert.match(portal,/fetchPriority="high"/);
+ assert.match(portal,/page="world3b"/);
+ assert.doesNotMatch(portal,/UniversePreview|CircleArtwork|nexus-gates|nexus-portal-pylon/);
 });
 
 test('each core game has a dedicated card art direction',()=>{

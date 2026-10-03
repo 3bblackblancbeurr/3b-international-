@@ -199,7 +199,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <div className="loyalty-numbers">
       <div><span>NIVEAU GLOBAL</span><strong>{economy?.global_level??'—'} <small>/ 150</small></strong></div>
       <div><span>EXPÉRIENCE</span><strong>{economy?.xp??profile.xp} <small>XP</small></strong></div>
-      <div><span>COINS 3B</span><strong>{economy?.coins??0} <small>Coins</small></strong></div>
+      <div><span>COINS 3B</span><strong>{economy?.coins??'—'} <small>Coins</small></strong></div>
       <div><span>FIDÉLITÉ</span><strong>{profile.points} <small>points</small></strong></div>
      </div>
      {economy?.title&&<p className="account-progress-title"><strong>{economy.title}</strong>{Number(economy.prestige_level)>0?<> · Prestige {['','I','II','III'][Math.min(3,Number(economy.prestige_level))]}</>:null}</p>}
@@ -252,12 +252,13 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <p>Les quantités viennent du serveur 3B. Les achats numériques actifs sont reliés au même compte et ne sont jamais calculés depuis le navigateur.</p>
     </div>
     <div className="loyalty-numbers">
-     <div><span>OBJETS</span><strong>{inventory.reduce((sum,item)=>sum+Math.max(0,Number(item.quantity)||0),0)}</strong></div>
-     <div><span>RÉFÉRENCES</span><strong>{inventory.length}</strong></div>
-     <div><span>DROITS ACTIFS</span><strong>{entitlements.length}</strong></div>
+     <div><span>OBJETS</span><strong>{account.inventoryAvailable?inventory.reduce((sum,item)=>sum+Math.max(0,Number(item.quantity)||0),0):'—'}</strong></div>
+     <div><span>RÉFÉRENCES</span><strong>{account.inventoryAvailable?inventory.length:'—'}</strong></div>
+     <div><span>DROITS ACTIFS</span><strong>{account.entitlementsAvailable?entitlements.length:'—'}</strong></div>
      <div><span>PASSEPORT</span><strong>{profile.passport_state==='active'?'ACTIF':'—'}</strong></div>
     </div>
-    {inventory.length>0&&<p className="account-progress-next">Derniers objets : {inventory.slice(0,5).map(item=>item.item_code+' ×'+item.quantity).join(' · ')}</p>}
+    {(!account.inventoryAvailable||!account.entitlementsAvailable)&&<p role="status">Inventaire momentanément indisponible. Tes objets restent liés à ton compte. Réessaie la synchronisation.</p>}
+    {account.inventoryAvailable&&inventory.length>0&&<p className="account-progress-next">Derniers objets : {inventory.slice(0,5).map(item=>item.item_code+' ×'+item.quantity).join(' · ')}</p>}
    </section>
 
    <section className="account-command-center" aria-labelledby="member-center-title">

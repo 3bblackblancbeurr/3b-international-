@@ -1,8 +1,12 @@
 import {themeFor,GAMES,EXPLORATIONS,IDENTITY_CONSENT_VERSION,validateIdentityClaim} from './loyalty.js';
+import {readOptionalRows} from './optional-resource.js';
 const BASE=Deno.env.get('SUPABASE_URL')!;
 const ADMIN=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const PUBLIC=Deno.env.get('SUPABASE_ANON_KEY')!;
 const ORIGINS=new Set(['https://localhost','capacitor://localhost','https://3b-international.vercel.app','http://localhost:5173','http://127.0.0.1:5173','http://localhost:5174','http://127.0.0.1:5174','http://127.0.0.1:5186','http://127.0.0.1:5187']);
+const MAX_BODY_BYTES=180000;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GAME_SAVE_KEYS=new Set(['version','records','tower','maze','dada3b','power3b','refuge','cities']);
 class Failure extends Error {constructor(public status:number,message:string){super(message);}}
 const hash=async(value:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
 function clientIp(req:Request){return(req.headers.get('cf-connecting-ip')||req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown').slice(0,128);}
@@ -13,7 +17,13 @@ async function api(path:string,body?:unknown,method=body===undefined?'GET':'POST
  return data;
 }
 const rpc=(name:string,body:unknown)=>api('/rest/v1/rpc/'+name,body);
-const optionalList=(path:string)=>api(path).catch(()=>[]);
+const optionalList=(path:string)=>readOptionalRows(()=>api(path));
+function validateGameSave(value:any){
+ if(!value||typeof value!=='object'||Array.isArray(value)||value.version!==1||!value.records||typeof value.records!=='object'||Array.isArray(value.records))throw new Failure(400,'Sauvegarde Jeux 3B invalide.');
+ if(Object.keys(value).some(key=>!GAME_SAVE_KEYS.has(key))||JSON.stringify(value).length>160000)throw new Failure(400,'Sauvegarde Jeux 3B invalide.');
+ return value;
+}
+
 async function snapshot(uid:string){
  const [profiles,events,economy,claims,inventory,entitlements]=await Promise.all([
  api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=user_id,handle,name,country,xp,points,theme,created_at,public_badge_key,public_title,public_verified,passport_public_id,passport_issued_at,passport_version,passport_state,identity_verification_state,identity_assurance_level,identity_verified_at'),
@@ -31,7 +41,9 @@ async function snapshot(uid:string){
  return{
   profile,events,economy,
   inventory:Array.isArray(inventory)?inventory:[],
+  inventory_available:Array.isArray(inventory),
   entitlements:Array.isArray(entitlements)?entitlements:[],
+  entitlements_available:Array.isArray(entitlements),
   identity_claims_complete:Array.isArray(claims)&&claims.length===1
  };
 }
@@ -61,17 +73,31 @@ Deno.serve(async req=>{
  if(origin&&!ORIGINS.has(origin))return reply({error:'Origine non autorisée.'},403);
  try{
   if(!req.headers.get('content-type')?.startsWith('application/json'))throw new Failure(415,'Format invalide.');
-  if(Number(req.headers.get('content-length'))>8192)throw new Failure(413,'Demande trop volumineuse.');
+  if(Number(req.headers.get('content-length'))>MAX_BODY_BYTES)throw new Failure(413,'Demande trop volumineuse.');
   const reader=req.body?.getReader(),decoder=new TextDecoder();let text='',bytes=0;
-  if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>8192){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}text+=decoder.decode(chunk.value,{stream:true});}text+=decoder.decode();}finally{reader.releaseLock();}
+  if(reader)try{while(true){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>MAX_BODY_BYTES){await reader.cancel();throw new Failure(413,'Demande trop volumineuse.');}text+=decoder.decode(chunk.value,{stream:true});}text+=decoder.decode();}finally{reader.releaseLock();}
   let body;try{body=JSON.parse(text);}catch{throw new Failure(400,'Demande invalide.');}
   if(!body||typeof body!=='object')throw new Failure(400,'Demande invalide.');
   const action=body.action;
+  if(action!=='game-save-sync'&&bytes>8192)throw new Failure(413,'Demande trop volumineuse.');
   if(action==='register'||action==='recover')throw new Failure(404,'Utilise le service d’authentification 3B.');
   const user=await authenticate(req);
   await markAccountVerified(user);
   const uid=user.id;
   if(!await rpc('loyalty_rate',{p_key:uid+':requests',p_limit:100,p_window:60}))throw new Failure(429,'Patiente un instant puis réessaie.');
+   if(action==='game-save-load'){
+    const rows=await api('/rest/v1/member_game_saves?user_id=eq.'+uid+'&select=data,revision,updated_at&limit=1');
+    const save=rows?.[0];
+    return reply({save:save?{data:validateGameSave(save.data),revision:Number(save.revision)||0,updatedAt:save.updated_at}:null});
+   }
+   if(action==='game-save-sync'){
+    if(!Number.isSafeInteger(body.baseRevision)||body.baseRevision<0||!UUID.test(String(body.operationId||'')))throw new Failure(400,'Synchronisation de sauvegarde invalide.');
+    const data=validateGameSave(body.data);
+    const result=await rpc('member_game_save_sync_server',{
+     p_user:uid,p_base_revision:body.baseRevision,p_data:data,p_operation:body.operationId
+    });
+    return reply(result);
+   }
   if(action==='identity-claim'){
    const input=validateIdentityClaim(body);
    const rows=await api('/rest/v1/member_profiles?user_id=eq.'+uid+'&select=identity_verification_state,identity_assurance_level&limit=1');
