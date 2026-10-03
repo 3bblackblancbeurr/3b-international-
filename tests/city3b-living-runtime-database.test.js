@@ -108,7 +108,7 @@ test('services jobs policy and ownership use actual placed buildings; removing e
 test('all eight neighbourhood events are playable after the funded construction campaign and survive recalculation',async()=>{
  const f=await fixture();try{
   const byMetric={housing:'HOME_ORIGIN',commerce:'SHOP_3B',green:'TREE_MATRIX',civic:'SCHOOL_3B',culture:'WORKSHOP_3B',sport:'ARENA_1618',landmark:'GOLD_GATE_3B',mobility:'BUS_STOP_3B',buildings:'HOME_ORIGIN'};
-  for(const mission of CITY_CAMPAIGN_MISSIONS.filter(m=>!m.optional)){
+  for(const mission of CITY_CAMPAIGN_MISSIONS.filter(m=>m.chapter<=8&&!m.optional)){
    for(const goal of mission.objectives){
     let metrics=await f.metrics();
     if(goal.metric==='roads'){await f.roads(goal.target);continue;}
@@ -139,3 +139,4 @@ test('all eight neighbourhood events are playable after the funded construction 
   assert.equal((await f.city()).city.progression,'city_only');assert.equal((await f.city()).city.roads.length,10);
  }finally{await f.db.close();}
 });
+
