@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import {Plus,Minus,RotateCw,LocateFixed,Map as MapIcon} from 'lucide-react';
 import {cityMapInitialView} from './city3b-map.js';
 import {citySceneSignature} from './city3b-building-progress.js';
-import {cityIsNight} from './city3b-environment.js';
+import {cityConstructionIsNight} from './city3b-environment.js';
 import './city3b-playable.css';
 
 export default function City3DMap(props){
@@ -26,10 +26,10 @@ export default function City3DMap(props){
  },[attempt]);
  useEffect(()=>{if(ready&&signature.current!==sceneKey){signature.current=sceneKey;engine.current?.rebuild(props.data,props.premiumCodes);}},[ready,sceneKey]);
  useEffect(()=>{engine.current?.syncClock(props.data.serverTime);},[ready,props.data.serverTime]);
- useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.roadStart,props.drawPreview,props.landscapeKind,props.previewOnly]);
+ useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.pan,props.roadStart,props.drawPreview,props.landscapeKind,props.previewOnly]);
  useEffect(()=>{engine.current?.setView({center:props.center,zoom:props.zoom});},[props.center,props.zoom]);
  const home=()=>{const view=cityMapInitialView(props.data);props.setCenter(view.center);props.setZoom(view.zoom);};
- return <div className="city3d-shell" data-night={cityIsNight(props.data.city)}>
+ return <div className="city3d-shell" data-night={cityConstructionIsNight(props.data.city)}>
   <div className="city3d-viewport" ref={host}/>
   {!ready&&!error&&<div className="city3d-loading" role="status">Ouverture de ta ville…</div>}
   {error&&<div className="city3d-error" role="alert">{error}<Button variant="champagne" onClick={()=>setAttempt(v=>v+1)}>Relancer la 3D</Button></div>}
