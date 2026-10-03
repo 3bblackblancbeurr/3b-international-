@@ -157,6 +157,11 @@ export function createDigitalStore({env=process.env,stripe:suppliedStripe,fetche
       ||charge.currency!=="eur"||charge.amount!==row.price_cents||!Number.isInteger(charge.amount_refunded)||charge.amount_refunded<0||charge.amount_refunded>charge.amount)
       throw new DigitalStoreError(503,"Paiement non confirmé.");
 
+    // A dispute can arrive before Checkout fulfillment or a later status read.
+    if(charge.disputed===true){
+      await rpc('digital_store_revoke_purchase',{p_provider:'stripe',p_provider_transaction_id:intentId,p_reason:'dispute'});
+      return {ok:false,status:'revoked'};
+    }
     const receiptHash=createHash("sha256").update(session.id+":"+intentId+":"+row.code).digest("hex");
     const result=await rpc("digital_store_settle_v3",{
       p_user:uid,p_product_code:row.code,p_provider:"stripe",p_provider_transaction_id:intentId,
