@@ -19,6 +19,7 @@ export const COUNTRY_CINEMA={
 const KIND_PRESETS={
  'world-opening':{tier:'major',shot:'world-entry-dive',recipe:'world-entry',duration:7800},
  'country-first-entry':{tier:'major',shot:'country-reveal',recipe:'world-reveal',duration:7000},
+ 'kais-guidance':{tier:'narrative',shot:'character-orbit',recipe:'character-presence',duration:5400},
  'story-alliance':{tier:'narrative',shot:'intimate-orbit',recipe:'character-presence',duration:5200},
  'story-power':{tier:'micro',shot:'power-push',recipe:'matrix-pulse',duration:3900},
  'memory-fragment':{tier:'micro',shot:'fragment-macro',recipe:'fragment-reveal',duration:3200},

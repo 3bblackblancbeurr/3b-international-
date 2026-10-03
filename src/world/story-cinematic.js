@@ -16,6 +16,7 @@ export function storyCinematicPresentation(event){
  switch(event.kind){
   case 'world-opening':return {...base,countryName:'3B INTERNATIONAL',value:'Héritage',kicker:'LES HUIT PORTES',title:'LE MONDE DU 3B',detail:'Huit héritages ont été séparés. Dans le monde réel du 3B, le Cercle ne cherche pas une neuvième valeur : il faut retrouver ce qui relie les huit.',nextLabel:'Prendre le contrôle'};
   case 'country-first-entry':return {...base,kicker:(country?.name||region).toUpperCase()+' · PREMIÈRE ENTRÉE',title:country?.title||'Une nouvelle porte',detail:country?.lore||'Le pays attend que ses liens soient reconstruits.'};
+  case 'kais-guidance':return {...base,audioState:'mission',voiceCharacter:'narrator',kicker:'LE PORTEUR DU LIEN',title:'Kaïs reconnaît l’écho de Justice',detail:'Le Cercle n’attend pas une neuvième valeur. En France, écoute les versions, vérifie les preuves et reconstruis le lien avant l’épreuve de Céliane.',nextLabel:'Commencer l’enquête'};
   case 'story-alliance':return {...base,kicker:'UN LIEN SE FORME',title:chapter?.resident?.split(',')[0]||'Un habitant te fait confiance',detail:chapter?.need||'Une première alliance ouvre la suite de l’histoire.'};
   case 'memory-fragment':return {...base,kicker:'FRAGMENT DE MÉMOIRE',title:'Un souvenir répond',detail:'Un fragment de mémoire est enregistré dans ta progression.'};
   case 'story-power':return {...base,kicker:'RÉSONANCE',title:'Un pouvoir se réveille',detail:'Ce lien n’est plus seulement un souvenir : il devient une capacité utile à l’exploration et à la reconstruction.'};
