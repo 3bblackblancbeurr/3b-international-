@@ -32,15 +32,17 @@ async function ready(page){
  await page.locator('.world-shell canvas').first().waitFor({timeout:30000});
  await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});
  const skip=page.locator('.play-cinematic button');
- if(await skip.isVisible())await skip.click({force:true,timeout:2000}).catch(()=>{});
+ if(await skip.isVisible())await skip.click({timeout:2000}).catch(()=>{});
  await page.locator('.play-arrival').waitFor({state:'hidden',timeout:30000});
  assert.equal(await page.locator('.world-failure').count(),0);
 }
 const readSave=page=>page.evaluate(()=>JSON.parse(localStorage.getItem('3b_world_v1_guest')).data);
 try{
- browser=await chromium.launch({headless:true,...(process.env.WORLD_BROWSER_EXECUTABLE?{executablePath:process.env.WORLD_BROWSER_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  for(const [label,region,width,height] of [['hub-desktop','hub',1365,900],['france-tournament-touch','france',844,390],['hub-rotation','hub',390,844]]){
   if(only&&only!==label)continue;
+  // Each independent journey owns its renderer process. Software WebGL in CI
+  // otherwise retains expensive GPU work from a previous closed context.
+  browser=await chromium.launch({headless:true,...(process.env.WORLD_BROWSER_EXECUTABLE?{executablePath:process.env.WORLD_BROWSER_EXECUTABLE}:{}),args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
   let save=applyWorldAction(blankSave(),{type:'avatar',avatar:{name:'Kaïs QA'}});
   if(region!=='hub'){
    save=applyWorldAction(save,{type:'visit',region});
@@ -54,6 +56,7 @@ try{
    localStorage.setItem('3b-world-quality','fluid');localStorage.setItem('3b-world-intro-seen','1');
   },save);
   const page=await context.newPage(),errors=[],checks=[];
+  page.setDefaultNavigationTimeout(120000);
   page.on('pageerror',e=>errors.push(e.message));
   try{
    await page.goto(base+'/'+filename,{waitUntil:'domcontentloaded'});await ready(page);
@@ -123,7 +126,7 @@ try{
    }
    assert.deepEqual(errors,[]);report.push({label,ok:true,checks});
   }catch(error){report.push({label,ok:false,checks,error:error.message,pageErrors:errors});await page.screenshot({timeout:120000,path:path.join(out,label+'-failure.png')}).catch(()=>{});}
-  await context.close();console.log(JSON.stringify(report.at(-1)));
+  await context.close();await browser.close();browser=null;console.log(JSON.stringify(report.at(-1)));
  }
 }finally{
  await browser?.close();fs.rmSync(fixture,{force:true});fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));

@@ -1,6 +1,6 @@
 {
   "snapshot_date": "2026-10-03",
-  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v13 verified after player-authored routes and landscape deployment on 2026-10-03.",
+  "note": "Passport entries verified against production after recognition deployment on 2026-10-02. Other entries retain their previous recorded metadata; this file is the source-tracked deployment inventory, not a complete current inventory of legacy functions. City 3B v13 verified after player-authored routes and landscape deployment on 2026-10-03. World engine validation candidate v8 verified on 2026-10-03 (54 matching files, JWT required); production world-engine unchanged.",
   "functions": [
     {
       "slug": "ai-council-orchestrate",
@@ -143,7 +143,7 @@
     },
     {
       "slug": "world-engine-goldmaster-candidate",
-      "version": 7,
+      "version": 8,
       "verify_jwt": true,
       "status": "ACTIVE"
     },

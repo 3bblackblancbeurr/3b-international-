@@ -158,3 +158,17 @@ Validation de cette suite :
 
 Les paiements, les cibles Unreal et la qualification commerciale restent ouverts
 selon les critères ci-dessus. Aucun achat réel n'a été simulé comme réussi.
+
+Le moteur de validation `world-engine-goldmaster-candidate` a ensuite été
+déployé en version 8 avec JWT obligatoire. Ses 54 fichiers relus sur Supabase
+correspondent exactement au paquet testé. Le précontrôle OPTIONS répond 204
+avec l'origine attendue ; POST sans authentification répond 401. Le moteur
+de production `world-engine` reste en version 26. Il reste à valider un parcours
+connecté avant de remplacer ce moteur de production.
+
+Le premier workflow navigateur a validé ordinateur et rotation complète mais
+a dépassé les 30 secondes de navigation au rechargement du tournoi, sans erreur
+JavaScript. Les parcours indépendants utilisent maintenant chacun un processus
+navigateur neuf et une limite de navigation de 120 secondes cohérente avec le
+chargement WebGL logiciel. Les assertions du tournoi restent toutes actives.
+Ce délai technique ne constitue pas un objectif acceptable de performance mobile.
