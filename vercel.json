@@ -281,6 +281,16 @@
       "source": "/android",
       "destination": "/install-android.html",
       "permanent": true
+    },
+    {
+      "source": "/install-iphone",
+      "destination": "/install-iphone.html",
+      "permanent": false
+    },
+    {
+      "source": "/install",
+      "destination": "/install.html",
+      "permanent": false
     }
   ]
 }

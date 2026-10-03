@@ -39,23 +39,23 @@
   <section class="hero">
     <img class="app-icon" src="/icons/3b-icon-20260912-192.png" alt="Icône 3B International" width="74" height="74">
     <p class="brand">3B International · iPhone</p>
-    <h1>Installer 3B sur iPhone.<br><em>Sans invitation.</em></h1>
-    <p class="lead">La méthode la plus rapide fonctionne directement avec Safari : 3B s’ajoute à l’écran d’accueil et s’ouvre ensuite comme une application web dédiée.</p>
-    <p id="device-status" class="status" role="status">Vérification de ton appareil…</p>
+    <h1>Installer 3B sur iPhone.<br><em>Sans compte.</em></h1>
+    <p class="lead">Aucun compte à créer pour l’installation. Ajoute 3B à ton écran d’accueil, puis crée ton compte dans l’application pour ton Passeport et ta progression.</p>
+    <p id="device-status" class="status" role="status">Dans Safari : Partager → Sur l’écran d’accueil → Ajouter.</p>
     <div id="installed-state" class="installed" hidden>✓ Installation détectée. Tu peux lancer 3B depuis son icône sur l’écran d’accueil.</div>
     <div class="actions">
-      <a class="button" href="/">Ouvrir 3B maintenant</a>
+      <a class="button" href="#installation">Voir les gestes d’installation</a>
       <button id="share-link" class="secondary" type="button">Partager ce lien</button>
     </div>
   </section>
 
-  <section class="card">
-    <h2>3 gestes dans Safari</h2>
+  <section id="installation" class="card">
+    <h2>Ajoute 3B à ton écran d’accueil</h2>
     <div id="browser-advice" class="warning" hidden><strong>Tu es sur iPhone, mais pas dans Safari.</strong><br>Appuie sur « Copier le lien », ouvre Safari, colle l’adresse puis continue avec les étapes ci-dessous.</div>
     <div class="steps">
       <div class="step"><span class="num">1</span><div><strong>Ouvre cette page dans Safari.</strong><br><span class="hint">Utilise Safari sur l’iPhone ou l’iPad.</span></div></div>
-      <div class="step"><span class="num">2</span><div><strong>Appuie sur Partager → Sur l’écran d’accueil.</strong><br><span class="hint">Si l’option n’apparaît pas, va tout en bas → Modifier les actions → ajoute « Sur l’écran d’accueil ».</span></div></div>
-      <div class="step"><span class="num">3</span><div><strong>Active “Ouvrir comme app web” si proposé, puis Ajouter.</strong><br><span class="hint">L’icône 3B apparaît ensuite sur l’écran d’accueil.</span></div></div>
+      <div class="step"><span class="num">2</span><div><strong>Appuie sur le bouton Partager de Safari.<br><svg width="28" height="32" viewBox="0 0 28 32" aria-label="Partager : carré avec une flèche vers le haut" role="img" style="vertical-align:middle;margin:8px 0;color:#8ee8ff"><path d="M8 13H3v16h22V13h-5M14 21V2M8 8l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Puis choisis « Sur l’écran d’accueil ».</strong><br><span class="hint">Si l’option n’apparaît pas, va tout en bas → Modifier les actions → ajoute « Sur l’écran d’accueil ».</span></div></div>
+      <div class="step"><span class="num">3</span><div><strong>Active “Ouvrir comme app web” si proposé, puis Ajouter.</strong><br><span class="hint">L’icône 3B apparaît ensuite sur l’écran d’accueil. Ferme Safari et ouvre cette icône pour commencer.</span></div></div>
     </div>
     <div class="actions">
       <button id="copy-link" class="secondary" type="button">Copier le lien pour Safari</button>
@@ -76,11 +76,13 @@
     <div data-native-list></div>
   </section>
 
-  <section class="card">
-    <h2>Et TestFlight ?</h2>
+  <details class="card">
+    <summary>Autres méthodes : TestFlight et App Store</summary>
     <p>Tu n’as pas besoin de TestFlight pour installer la version web 3B. Si une bêta native iPhone est proposée, un <strong>lien TestFlight public</strong> pourra apparaître ici afin d’éviter les invitations par e-mail.</p>
     <p class="small">Une version App Store ou une distribution Apple depuis le web peut également être affichée ici lorsqu’elle est officiellement disponible.</p><p class="small"><strong>Lien court à partager :</strong> 3b-international.vercel.app/iphone</p>
-  </section>
+  </details>
+
+  <section class="card"><h2>Après l’installation</h2><p>Ouvre l’icône 3B sur ton écran d’accueil. Le compte te permettra ensuite de retrouver ton Passeport et ta progression.</p><a class="secondary" href="/">Continuer dans 3B</a></section>
 
   <div class="footer"><a href="/application-3b-international.html">Application 3B International</a> · <a href="/install.html">Toutes les méthodes d’installation</a> · <a href="/install-android.html">Android</a> · <a href="/privacy-policy.html">Confidentialité</a></div>
 </main>
