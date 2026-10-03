@@ -113,3 +113,17 @@ test('non-guardian story beats never reveal a guardian portrait early',()=>{
  const intro=storyCinematicPresentation({kind:'guardian-intro',key:'intro:france:C165:adventure',region:'france',context:{region:'france',card:'C165'}});
  assert.equal(intro.card,'C165');
 });
+
+test('country entry surfaces the territory question without revealing a Guardian early',()=>{
+ const entry=storyCinematicPresentation({kind:'country-first-entry',key:'country:france',region:'france',context:{region:'france'}});
+ assert.match(entry.detail,/Comment juger lorsque la vérité est incomplète/);
+ assert.equal(entry.card,null);
+});
+
+test('value completion uses the canonical Guardian flaw and conflict only as presentation',()=>{
+ const event={kind:'guardian-value-complete',key:'value:france',region:'france',context:{region:'france'}};
+ const card=storyCinematicPresentation(event);
+ assert.match(card.detail,/preuve parfaite/);
+ assert.match(card.detail,/Justice exige trois gestes/);
+ assert.match(card.title,/Justice/);
+});
