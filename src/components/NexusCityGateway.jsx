@@ -163,7 +163,7 @@ export default function NexusCityGateway({ open, onClose, reducedMotion = false 
         </div>
 
         <footer className="nexus-city-footer">
-          <span>1 PASSEPORT · 1 VILLE · PROGRESSION INDÉPENDANTE</span>
+          <span>1 PASSEPORT · 3 VILLES · PROGRESSION INDÉPENDANTE</span>
           <strong>Ce n’est pas une marque. C’est un héritage.</strong>
         </footer>
       </div>

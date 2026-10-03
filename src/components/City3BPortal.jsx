@@ -1,3 +1,4 @@
+import CitySaveSlots from '../city/CitySaveSlots.jsx';
 import CityMapPicker from '../city/CityMapPicker.jsx';
 import CityMunicipalExchange from '../city/CityMunicipalExchange.jsx';
 import {Button} from '../design-system/index.jsx';
@@ -23,7 +24,7 @@ export default function City3BPortal(props){
 }
 export function City3BPortalSession({open,onClose,account,requestCity=city3bRequest,readStore=loadDigitalStore}){
  const uid=account.user?.id,dialog=useRef(null),mounted=useRef(true),requests=useRef(createCityRequestGate()),fullscreenOwned=useRef(false);
- const [map,setMap]=useState('plains');
+ const [map,setMap]=useState('plains'),[screen,setScreen]=useState('saves'),[slot,setSlot]=useState(null),[slots,setSlots]=useState([]);
  const [data,setData]=useState(null),[panel,setPanel]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[name,setName]=useState('Ma ville 3B'),[premiumCodes,setPremiumCodes]=useState(()=>new Set()),[builderFocus,setBuilderFocus]=useState(null),[notice,setNotice]=useState('');
  const country=account.passport?.userId===uid?account.passport.country:'';
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
@@ -37,31 +38,34 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
   const passive=action==='life';
   try{return await requests.current.run(action,async()=>{
    if(!passive){setBusy(true);setError('');setNotice('');}
-   try{return await requestCity(action,body,uid);}finally{if(!passive&&mounted.current)setBusy(false);}
+   try{return await requestCity(action,{slot:slot||1,...(screen==='play'&&data?.city?{saveId:data.city.city_id}:{}),...body},uid);}finally{if(!passive&&mounted.current)setBusy(false);}
   },v=>{
    if(!mounted.current)return;
+   if(action==='access')setSlots(v.slots||[]);
    if(passive)setData(previous=>previous?{...previous,...v}:previous);else setData(v);
    if(v.reward)setNotice(v.reward.alreadyClaimed?'Cette récompense a déjà été reçue.':`${v.reward.construction?'Bâtiment inauguré':v.reward.income?'Recettes de la ville':v.reward.event?'Rendez-vous accompli':'Objectif accompli'} · +${v.reward.coins} Coins et +${v.reward.cityXp} XP ville.`);
    if(['construction_claim','mission_claim','life_action','budget_claim','create','place'].includes(action))account.refresh?.();
   });}catch(e){if(mounted.current&&!passive)setError(e.message);return null;}
  };
- useEffect(()=>{if(open&&uid){setPanel('');call('snapshot');readStore('city').then(store=>{if(mounted.current)setPremiumCodes(ownedPremiumCodes(store));}).catch(()=>{if(mounted.current)setPremiumCodes(new Set());});}else if(open&&!account.loading){setData(null);setPremiumCodes(new Set());setError('');}},[open,uid,account.loading]);
- useEffect(()=>{if(!open||!uid||!data?.city)return;const refresh=()=>{if(!document.hidden&&!requests.current.busy)call('life');};const timer=setInterval(refresh,15000);document.addEventListener('visibilitychange',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);};},[open,uid,!!data?.city]);
+ useEffect(()=>{if(open&&uid){setPanel('');setScreen('saves');setSlot(null);setData(null);call('access');readStore('city').then(store=>{if(mounted.current)setPremiumCodes(ownedPremiumCodes(store));}).catch(()=>{if(mounted.current)setPremiumCodes(new Set());});}else if(open&&!account.loading){setData(null);setPremiumCodes(new Set());setError('');}},[open,uid,account.loading]);
+ useEffect(()=>{if(!open||!uid||screen!=='play'||!data?.city)return;const refresh=()=>{if(!document.hidden&&!requests.current.busy)call('life');};const timer=setInterval(refresh,15000);document.addEventListener('visibilitychange',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);};},[open,uid,screen,!!data?.city]);
  useEffect(()=>{
-  if(!open||!data?.placements)return;
+  if(!open||screen!=='play'||!data?.placements)return;
   const serverNow=Date.parse(data.serverTime)||Date.now();
   const pending=data.placements.map(p=>Date.parse(p.construction_ready_at)-serverNow).filter(ms=>ms>0);
   if(!pending.length)return;
   const timer=setTimeout(()=>{if(!document.hidden&&!requests.current.busy)call('life');},Math.min(...pending)+500);
   return()=>clearTimeout(timer);
- },[open,data?.placements,data?.serverTime]);
+ },[open,screen,data?.placements,data?.serverTime]);
  useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(''),5000);return()=>clearTimeout(timer);},[notice]);
+ const chooseSave=async(number,saved)=>{if(busy)return;setSlot(number);setPanel('');setError('');if(saved){const result=await call('snapshot',{slot:number,saveId:saved.city_id});if(result?.city)setScreen('play');}else{setMap('plains');setName('Ma ville 3B');setScreen('create');}};
+ const returnToSaves=()=>{if(requests.current.busy)return;setPanel('');setScreen('saves');setSlot(null);setData(null);call('access');};
  if(!open)return null;
- const city=data?.city,needsLogin=!account.loading&&!uid;
+ const city=screen==='play'?data?.city:null,needsLogin=!account.loading&&!uid;
  const titles={missions:'Objectifs',life:'Ma ville',districts:'Quartiers',premium:'Boutique de la ville',collection:'Décorations',visit:'Visiter une ville',exchange:'Ateliers & échanges',settings:'Réglages'};
  return createPortal(<dialog ref={dialog} className="city3b-dialog" aria-modal="true" aria-label="Crée ta ville 3B" onCancel={event=>{event.preventDefault();panel?setPanel(''):onClose();}}>
   <div className="city3b-shell" data-playing={!!city}>
-   {city?<main className="city3b-main city3b-game-main"><City3BBuilder data={data} busy={busy} call={call} premiumCodes={premiumCodes} focus={builderFocus} onOpenPanel={setPanel} onClose={onClose} onFullscreen={fullscreen} panelOpen={!!panel}/></main>:<main className="city-game-entry"><Button variant="ghost" aria-label="Fermer" onClick={onClose}><X size={20}/></Button>{account.loading?<div className="city3b-loading">Vérification du Passeport…</div>:needsLogin?<LoginRequired/>:!data&&!error?<div className="city3b-loading">Ouverture de ta ville…</div>:<CreateCity name={name} setName={setName} country={country} busy={busy} map={map} setMap={setMap} create={()=>call('create',{name:name.trim(),country,map})}/>}</main>}
+   {city?<main className="city3b-main city3b-game-main"><City3BBuilder data={data} busy={busy} call={call} premiumCodes={premiumCodes} focus={builderFocus} onOpenPanel={setPanel} onClose={returnToSaves} onFullscreen={fullscreen} panelOpen={!!panel}/></main>:<main className="city-game-entry"><Button variant="ghost" aria-label="Fermer" onClick={onClose}><X size={20}/></Button>{account.loading?<div className="city3b-loading">Vérification du Passeport…</div>:needsLogin?<LoginRequired/>:!data&&!error?<div className="city3b-loading">Ouverture de ta ville…</div>:screen==='saves'?<CitySaveSlots slots={slots} busy={busy} onChoose={chooseSave}/>:<div><Button variant="ghost" className="city-save-back" disabled={busy} onClick={returnToSaves}>← Mes sauvegardes</Button><CreateCity name={name} setName={setName} country={country} busy={busy} map={map} setMap={setMap} create={async()=>{const result=await call('create',{name:name.trim(),country,map});if(result?.city)setScreen('play');}}/></div>}</main>}
    {(notice||error)&&<div className="city-game-feedback">{notice&&<div role="status">{notice}</div>}{error&&<div role="alert">{error}</div>}</div>}
    {city&&panel&&<aside className="city-game-drawer" aria-label={titles[panel]||'Ma ville'}><header><h2>{titles[panel]||'Ma ville'}</h2><Button variant="ghost" onClick={()=>setPanel('')} aria-label="Revenir à la ville"><X size={18}/></Button></header><div className="city-game-drawer-body">
     {panel==='missions'&&<City3BCampaign campaign={data.campaign} busy={busy} onClaim={mission=>call('mission_claim',{mission})} onAction={followAction} onRefresh={()=>call('snapshot')}/>}
@@ -69,7 +73,7 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
     {panel==='districts'&&<Districts data={data}/>}
     {panel==='premium'&&<DigitalStorePanel scope="city" onStoreChange={store=>setPremiumCodes(ownedPremiumCodes(store))}/>}
     {panel==='collection'&&<Collection data={data} busy={busy} call={call}/>}
-    {panel==='exchange'&&<CityMunicipalExchange uid={uid} ownCityId={city.city_id} onUpdated={()=>call('snapshot')} onAction={followAction}/>}
+    {panel==='exchange'&&<CityMunicipalExchange uid={uid} slot={slot} ownCityId={city.city_id} onUpdated={()=>call('snapshot')} onAction={followAction}/>}
     {panel==='visit'&&<Discovery uid={uid} savedFavorites={data.favorites}/>}
     {panel==='settings'&&<CitySettings city={city} busy={busy} call={call}/>}
    </div></aside>}

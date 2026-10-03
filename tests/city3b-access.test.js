@@ -8,8 +8,8 @@ const world=readFileSync(new URL('../src/world/WorldPage.jsx',import.meta.url),'
 const migration=readFileSync(new URL('../supabase/migrations/20260928122225_separate_world_city_progression.sql',import.meta.url),'utf8');
 
 test('City API exposes a lightweight authenticated access check',()=>{
- assert.match(edge,/async function access\(uid:string\)/);
- assert.match(edge,/select=city_id,name,origin_country,city_level&limit=1/);
+ assert.match(edge,/async function access\(uid:string,slot\?:number\)/);
+ assert.match(edge,/select=city_id,name,origin_country,city_level,slot_no,map_preset:city->>map_preset,updated_at/);
  assert.match(edge,/if\(action==='access'\)return reply\(await access\(uid\)\)/);
 });
 
