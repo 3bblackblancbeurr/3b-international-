@@ -23,4 +23,4 @@ Arbres géométriques bleus, anneaux Matrix, troncs sombres et branches dorées.
 
 ## Validation
 
-31 tests ciblés : navigation des habitants, campagne, économie, ancien client, compte authentifié, sauvegarde, collisions, reprise et refus d'une modification concurrente. La migration a été testée sur PostgreSQL embarqué avant application ; les fonctions de production ont été vérifiées en lecture, y compris leurs droits limités au serveur. Les tests complets et builds sont exécutés par la CI. Les gestes sur un Samsung réel et la session Passeport connectée restent à vérifier ; aucun label AAA terminé n'est revendiqué.
+32 tests ciblés : navigation des habitants, campagne, économie, ancien client, compte authentifié, sauvegarde, collisions, reprise et refus d'une modification concurrente. La migration a été testée sur PostgreSQL embarqué avant application ; les fonctions de production ont été vérifiées en lecture, y compris leurs droits limités au serveur. Les tests complets et builds sont exécutés par la CI. Les gestes sur un Samsung réel et la session Passeport connectée restent à vérifier ; aucun label AAA terminé n'est revendiqué.

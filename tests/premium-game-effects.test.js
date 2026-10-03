@@ -30,7 +30,8 @@ test('City premium items affect rendering while keeping the server-authoritative
   assert.match(portal,/readStore\('city'\)/);
   assert.match(portal,/ownedPremiumCodes/);
   assert.match(builder,/call\('place'/);
-  assert.match(builder,/call\('plan_roads'/);
+  assert.match(builder,/call\(tool==='road'\?'plan_roads':'plan_terrain'/);
+  assert.match(builder,/expectedRoads:roads/);
 });
 
 test('World premium items are loaded into the 3D runtime and never modify combat stats',()=>{

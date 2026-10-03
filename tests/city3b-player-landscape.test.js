@@ -63,6 +63,16 @@ test('road edits reject an outdated plan without removing roads saved by another
   assert.deepEqual((await f.city()).city.roads,[road]);
  }finally{await f.db.close();}
 });
+test('mobility gains require the player’s saved roads instead of the removed invisible civic network',async()=>{
+ const f=await fixture({landscape:true});try{
+  await f.query('select nexus_city_place_v2($1,$2,0,0,0::smallint,$3)',[A,'HOME_ORIGIN',randomUUID()]);
+  await f.db.exec("update nexus_city_placements set construction_started_at=now()-interval '2 minutes',construction_ready_at=now()-interval '1 second'");
+  const metrics=async()=>(await f.query("select nexus_city_life_metrics($1,8,'balanced') m",[A])).m;
+  assert.equal((await metrics()).connectedBuildings,0);assert.equal((await metrics()).mobility,0);
+  await f.query('select nexus_city_plan_roads_v2($1,$2::jsonb,$3::jsonb)',[A,JSON.stringify([{id:'first',x1:0,z1:8,x2:20,z2:8,width:4}]),'[]']);
+  assert.equal((await metrics()).connectedBuildings,1);assert.ok((await metrics()).mobility>0);
+ }finally{await f.db.close();}
+});
 test('Matrix trees and facade details share simple geometry and fit a bounded mesh budget',()=>{
  const root=new THREE.Group(),g=new THREE.BoxGeometry(),sphere=new THREE.IcosahedronGeometry(1,1),cylinder=new THREE.CylinderGeometry(1,1,1,10),m=new THREE.MeshStandardMaterial();
  const shape=(parent,geo,color,x,y,z,w,h,d)=>{const mesh=new THREE.Mesh(geo,m);mesh.position.set(x,y,z);mesh.scale.set(w,h,d);parent.add(mesh);return mesh;},box=(parent,color,x,y,z,w,h,d)=>shape(parent,g,color,x,y,z,w,h,d);

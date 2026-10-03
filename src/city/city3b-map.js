@@ -163,7 +163,7 @@ export function cityMapUrbanScore(snapshot = {}) {
   const unlocked = blueprint.districts.filter(row => row.unlocked).length;
   const residents = counts.housing * 180 + counts.mixed * 80 + Math.max(1, Number(snapshot.city?.city_level || 1)) * 50;
   const jobs = counts.commerce * 75 + counts.civic * 45 + counts.mobility * 25 + counts.mixed * 35;
-  const mobility = Math.min(100, Math.round(roads.custom.length * 8 + counts.mobility * 16 + unlocked * 5 + 18));
+  const mobility = Math.min(100, Math.round(roads.custom.length * 8 + counts.mobility * 16));
   const services = Math.min(100, Math.round(counts.civic * 18 + counts.green * 14 + counts.commerce * 7 + unlocked * 4));
   const green = Math.min(100, Math.round(counts.green * 22 + unlocked * 3));
   const balanceBase = Math.max(100, residents, jobs);
