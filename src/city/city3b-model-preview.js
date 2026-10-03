@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {cityPreviewArt} from '../design-system/tokens.js';
 import {buildCityArchitecture} from './city3b-building-model.js';
 import {matrixTree} from './city3b-architecture.js';
 import {cityBuildingKind} from './city3b-map.js';
@@ -57,8 +58,8 @@ export function cityModelThumbnail(definition,footprint,seed){
  const key=JSON.stringify([definition.code,seed,definition.category,definition.metadata?.architecture,footprint||definition.footprint]);if(cache.has(key))return cache.get(key);
  const width=480,height=360,canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');if(!ctx)return '';
  const faces=cityPreviewTriangles(definition,footprint,seed),frame=cityPreviewFrame(faces,width,height),{scale,centerX,minY,offsetY}=frame;
- const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,'#edf5f6');sky.addColorStop(.65,'#c7dbdd');sky.addColorStop(1,'#9ab6b1');ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
- ctx.fillStyle='#243e4430';ctx.beginPath();ctx.ellipse(width/2,height*.92,width*.30,height*.035,0,0,Math.PI*2);ctx.fill();
+ const sky=ctx.createLinearGradient(0,0,0,height);sky.addColorStop(0,cityPreviewArt.skyTop);sky.addColorStop(.65,cityPreviewArt.skyMiddle);sky.addColorStop(1,cityPreviewArt.skyBottom);ctx.fillStyle=sky;ctx.fillRect(0,0,width,height);
+ ctx.fillStyle=cityPreviewArt.contactShadow;ctx.beginPath();ctx.ellipse(width/2,height*.92,width*.30,height*.035,0,0,Math.PI*2);ctx.fill();
  const pixels=ctx.getImageData(0,0,width,height),depth=new Float32Array(width*height).fill(-Infinity);
  const edge=(a,b,x,y)=>(x-a.x)*(b.y-a.y)-(y-a.y)*(b.x-a.x);
  for(const face of faces){

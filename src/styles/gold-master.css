@@ -13,6 +13,8 @@
   --3b-text-on-art:#E3DED5;--3b-signature-on-art:#ECE2CB;
   --3b-line-quiet:rgba(255,255,255,.07);--3b-line-faint:rgba(255,255,255,.06);--3b-line-soft:rgba(255,255,255,.09);--3b-line-menu:rgba(255,255,255,.08);--3b-hover-surface:rgba(255,255,255,.016);
   --3b-header-surface:rgba(5,6,7,.91);
+  --3b-city-preview-surface:#bed6da;--3b-city-preview-border:#d5e7e7;
+  --3b-city-catalog-text:#f3f6f4;--3b-city-catalog-muted:#bbcfce;--3b-city-catalog-price:#f1d99e;--3b-city-catalog-locked:#d4b879;
   --black:var(--3b-obsidian);--black-2:var(--3b-carbon);--black-3:#111419;--gold:var(--3b-champagne);--gold-2:#AD9059;--gold-3:var(--3b-champagne-highlight);
   --blue:var(--3b-matrix);--blue-2:#72C2FF;--red:var(--3b-danger);--white:var(--3b-white);--muted:var(--3b-muted);--muted-2:var(--3b-muted-soft);
   --border:var(--3b-border);--border-strong:var(--3b-border-strong);--border-blue:var(--3b-border-matrix);

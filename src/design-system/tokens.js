@@ -8,6 +8,11 @@ export const goldMasterTokens=Object.freeze({
 });
 export const GOLD_MASTER_STATES=Object.freeze(["normal","hover","pressed","focus","disabled","loading","success","warning","error","offline","empty"]);
 
+// Bright catalogue backdrop keeps every building readable independently of world lighting.
+export const cityPreviewArt=Object.freeze({
+ skyTop:'#edf5f6',skyMiddle:'#c7dbdd',skyBottom:'#9ab6b1',contactShadow:'#243e4430'
+});
+
 // Physical scene palettes share the same reviewed design-system source as UI tokens.
 export const worldRealmArt=Object.freeze({
  hub:{sun:'#ffe2bb',sky:'#aecddd',ground:'#43464b',fog:'#aebbc4',night:'#101d30',stone:'#363d43',cloth:'#344e5c'},
