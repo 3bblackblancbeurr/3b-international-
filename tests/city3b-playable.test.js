@@ -20,7 +20,7 @@ test('saved footprints, catalogue filters and independent XP remain coherent',()
 });
 
 test('all campaign chapters can be constructed using real map constraints and server checks',async()=>{
- const f=await fixture({construction:true});try{
+ const f=await fixture({landscape:true});try{
   const byMetric={housing:'HOME_ORIGIN',commerce:'SHOP_3B',green:'TREE_MATRIX',civic:'SCHOOL_3B',culture:'WORKSHOP_3B',sport:'ARENA_1618',landmark:'GOLD_GATE_3B',mobility:'BUS_STOP_3B',buildings:'HOME_ORIGIN'};
   for(const m of CITY_CAMPAIGN_MISSIONS.filter(m=>!m.optional)){
    for(const g of m.objectives){let metrics=(await f.db.query('select nexus_city_campaign_metrics($1) m',[A])).rows[0].m;
@@ -37,8 +37,9 @@ test('all campaign chapters can be constructed using real map constraints and se
 });
 
 test('water, locked districts and roads cannot be bypassed; rejected roads preserve the previous plan',async()=>{
- const f=await fixture();try{
-  for(const [x,z] of [[0,90],[0,0],[45,0]])await assert.rejects(f.db.query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5)',[A,'HOME_ORIGIN',x,z,randomUUID()]));
+ const f=await fixture({landscape:true});try{
+  await f.query('select nexus_city_plan_terrain($1,$2::jsonb,$3::jsonb)',[A,JSON.stringify([{id:'lake',kind:'lake',x1:300,z1:200,x2:300,z2:200,width:24}]),'[]']);
+  for(const [x,z] of [[300,200],[501,0],[45,0]])await assert.rejects(f.db.query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5)',[A,'HOME_ORIGIN',x,z,randomUUID()]));
   await build(f,'HOME_ORIGIN');const d=await snapshot(f),p=d.placements[0];
   await assert.rejects(f.db.query('select nexus_city_plan_roads($1,$2::jsonb)',[A,JSON.stringify([{x1:p.x-10,z1:p.z,x2:p.x+10,z2:p.z,width:4}])]),/traverse/);
   assert.deepEqual((await snapshot(f)).city.city.roads||[],[]);
@@ -47,7 +48,7 @@ test('water, locked districts and roads cannot be bypassed; rejected roads prese
 });
 
 test('daily income is bounded, idempotent, suspension aware and rolls back on wallet failure',async()=>{
- const f=await fixture();try{
+ const f=await fixture({landscape:true});try{
   await assert.rejects(f.db.query('select nexus_city_budget_claim($1)',[A]),/habitants/);
   await build(f,'HOME_ORIGIN');await f.db.query('select nexus_city_life_snapshot($1)',[A]);await f.db.exec("update nexus_city_life set last_tick=now()-interval '6 minutes'");
   await f.db.exec("set test.wallet_fail='yes'");await assert.rejects(f.db.query('select nexus_city_budget_claim($1)',[A]),/wallet unavailable/);await f.db.exec("set test.wallet_fail='no'");

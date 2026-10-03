@@ -1,12 +1,13 @@
 import {Button} from '../design-system/index.jsx';
 import {useEffect,useMemo,useRef,useState} from 'react';
-import {Building2,House,Store,Trees,HeartPulse,TrainFront,Landmark,Coins,Users,Heart,Flag,Route,Settings2,X,Maximize2,Move,PackageOpen,RotateCw,Undo2,Redo2,Search,Check,HardHat,Gift} from 'lucide-react';
+import {Building2,House,Store,Trees,HeartPulse,TrainFront,Landmark,Coins,Users,Heart,Flag,Route,Settings2,X,Maximize2,Move,PackageOpen,RotateCw,Undo2,Redo2,Search,Check,HardHat,Gift,Waves} from 'lucide-react';
 import City3DMap from './City3DMap.jsx';
 import {cityFootprint,cityPlacementCheck,citySuggestedParcel,cityCatalogue,CITY_BUILD_CATEGORIES,cityLevelProgress} from './city3b-construction.js';
 import {cityBuildingKind,cityMapCustomRoads,cityMapInitialView} from './city3b-map.js';
 import {cityConstructionState,cityConstructionDuration,cityBuildingBenefit} from './city3b-building-progress.js';
 import {campaignSummary} from './city3b-campaign.js';
 import useCityClock from './useCityClock.js';
+import {cityLandscape,roadDraft,landscapeDraft,landscapeCheck,LANDSCAPE_TOOLS,LANDSCAPE_WIDTHS} from './city3b-landscape.js';
 import './city3b-game.css';
 
 const EMPTY_PREMIUM_CODES=new Set();
@@ -21,6 +22,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
  const zoom=view.zoom,center=view.center,setZoom=change=>setView(v=>({...v,zoom:typeof change==='function'?change(v.zoom):change})),setCenter=change=>setView(v=>({...v,center:typeof change==='function'?change(v.center):change}));
  const [tool,setTool]=useState('inspect'),[catalog,setCatalog]=useState(false),[selectedCode,setSelectedCode]=useState(''),[selectedId,setSelectedId]=useState(''),[draft,setDraft]=useState({x:0,z:0,rotation:0});
  const [category,setCategory]=useState('all'),[query,setQuery]=useState(''),[showStored,setShowStored]=useState(false),[roadStart,setRoadStart]=useState(null),[notice,setNotice]=useState('');
+ const [drawEnd,setDrawEnd]=useState(null),[roadWidth,setRoadWidth]=useState(4),[roadMode,setRoadMode]=useState('straight'),[landscapeKind,setLandscapeKind]=useState('lake'),[landscapeWidth,setLandscapeWidth]=useState(24);
  const storageKey=`threeb:city-editor:v1:${city.city_id||'unknown'}`;
  const [history,setHistory]=useState([]),[future,setFuture]=useState([]),pendingRequest=useRef(null);
  const selectedPlacement=(data.placements||[]).find(row=>row.id===selectedId)||null;
@@ -31,11 +33,14 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
  const unlocked=!!selectedPlacement||Number(city.city_level||1)>=Number(activeDefinition?.unlock_level||1);
  const progress=cityConstructionState(selectedPlacement,now),level=cityLevelProgress(city.city_xp),mission=campaignSummary(data.campaign).active;
  const roads=useMemo(()=>cityMapCustomRoads(data),[data.city]);
+ const terrain=useMemo(()=>cityLandscape(data),[data.city]);
+ const drawPreview=useMemo(()=>roadStart&&drawEnd?(tool==='road'?roadDraft(roadStart,drawEnd,roads,roadWidth,roadMode):tool==='landscape'?[landscapeDraft(landscapeKind,roadStart,drawEnd,landscapeWidth)]:[]):[],[roadStart,drawEnd,tool,roads,roadWidth,roadMode,landscapeKind,landscapeWidth]);
+ const drawCheck=landscapeCheck(data,drawPreview,{road:tool==='road'});
  const buildings=useMemo(()=>cityCatalogue(data,{query,category,availableOnly:false}),[data.buildings,city.city_level,query,category]);
  const stored=(data.placements||[]).filter(p=>p.placement_state==='stored');
  const sites=(data.placements||[]).filter(p=>p.placement_state!=='stored'&&cityConstructionState(p,now).progress<1);
  const ready=(data.placements||[]).filter(p=>cityConstructionState(p,now).ready);
- const clearSelection=()=>{setSelectedId('');setSelectedCode('');setTool('inspect');setRoadStart(null);};
+ const clearSelection=()=>{setSelectedId('');setSelectedCode('');setTool('inspect');setRoadStart(null);setDrawEnd(null);};
  const chooseBuilding=row=>{
   const parcel=citySuggestedParcel(data,row,center);setSelectedCode(row.code);setSelectedId('');setDraft({...parcel,rotation:0});setCenter(parcel);setZoom(z=>Math.max(data.city?.city?.map_extent===500?18:4,z));setTool('build');setCatalog(false);setNotice('Touche le terrain pour choisir la parcelle.');
  };
@@ -83,6 +88,12 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
  };
  const applyHistory=async reverse=>{
   const action=(reverse?history:future).at(-1);if(!action||busy)return;
+  if(action.kind==='roads'||action.kind==='terrain'){
+   const current=action.kind==='roads'?roads:terrain,expected=reverse?action.to:action.from,target=reverse?action.from:action.to;
+   if(JSON.stringify(current)!==JSON.stringify(expected)){setNotice('La ville a changé depuis cette action. Recharge avant de la modifier.');return;}
+   const result=await call(action.kind==='roads'?'plan_roads':'plan_terrain',action.kind==='roads'?{roads:target,expectedRoads:roads}:{features:target,expected:terrain});if(!result)return;
+   if(reverse){setHistory(h=>h.slice(0,-1));setFuture(f=>[...f,action]);}else{setFuture(f=>f.slice(0,-1));setHistory(h=>[...h,action]);}setRoadStart(null);setDrawEnd(null);setNotice(reverse?'Tracé annulé.':'Tracé rétabli.');return;
+  }
   const restore=(action.kind==='place'&&!reverse)||(action.kind==='store'&&reverse)||action.kind==='move';
   const point=action.kind==='move'?(reverse?action.from:action.to):action.kind==='place'?action.to:action.from;
   const result=restore?await call('move',{placement:action.placement,...point,request:requestId()}):await call('store',{placement:action.placement,request:requestId()});
@@ -90,16 +101,22 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
   if(reverse){setHistory(h=>h.slice(0,-1));setFuture(f=>[...f,action]);}else{setFuture(f=>f.slice(0,-1));setHistory(h=>[...h,action]);}
   setNotice(reverse?'Action annulée. Un bâtiment acheté reste dans ta réserve.':'Action rétablie.');
  };
- const roadPoint=async point=>{
-  if(busy)return;if(!roadStart){setRoadStart(point);return;}
-  if(Math.hypot(point.x-roadStart.x,point.z-roadStart.z)<6){setNotice('Choisis une arrivée un peu plus éloignée.');return;}
-  const next={id:requestId(),x1:roadStart.x,z1:roadStart.z,x2:point.x,z2:point.z,width:4};
-  if(await call('plan_roads',{roads:[...roads,next]})){setRoadStart(null);setNotice('Route construite.');}
+ const roadPoint=point=>{if(busy)return;if(!roadStart){setRoadStart(point);setDrawEnd(null);}else setDrawEnd(point);};
+ const stroke=(start,end)=>{if(busy)return;setRoadStart(start);setDrawEnd(end);};
+ const hover=(point,start)=>{if(busy)return;if(roadStart||start){if(!roadStart&&start)setRoadStart(start);setDrawEnd(point);}};
+ const saveDrawing=async()=>{
+  if(busy||!drawCheck.valid)return;
+  const additions=drawPreview.map(f=>({...f,id:requestId()})),from=tool==='road'?roads:terrain,to=[...from,...additions];
+  if(to.length>(tool==='road'?256:128)){setNotice('Limite du terrain atteinte. Retire un ancien tracé.');return;}
+  const result=await call(tool==='road'?'plan_roads':'plan_terrain',tool==='road'?{roads:to,expectedRoads:roads}:{features:to,expected:terrain});
+  if(!result)return;commitHistory({kind:tool==='road'?'roads':'terrain',from,to});
+  setRoadStart(tool==='road'||landscapeKind==='river'?drawEnd:null);setDrawEnd(null);setNotice(tool==='road'?'Route enregistrée. Continue depuis son extrémité.':'Paysage enregistré dans ta ville.');
  };
- const point=point=>{if(placing)setDraft(v=>({...v,...point}));else clearSelection();};
+ const removeLastDrawing=async()=>{const from=tool==='road'?roads:terrain,to=from.slice(0,-1);if(!from.length||busy)return;const result=await call(tool==='road'?'plan_roads':'plan_terrain',tool==='road'?{roads:to,expectedRoads:roads}:{features:to,expected:terrain});if(result){commitHistory({kind:tool==='road'?'roads':'terrain',from,to});setRoadStart(null);setDrawEnd(null);}};
+ const point=point=>{if(placing)setDraft(v=>({...v,...point}));else if(tool==='landscape'){if(landscapeKind==='river')roadPoint(point);else stroke(point,point);}else clearSelection();};
  const visibleSelection=activeDefinition&&!catalog&&!panelOpen;
  return <section className="city-game" aria-label="Jeu de construction 3D" data-tool={tool} data-catalog={catalog}>
-  <City3DMap data={data} draft={draft} activeDefinition={placing?activeDefinition:null} activePlacement={placing?selectedPlacement:null} selectedId={selectedId} onPoint={point} onSelect={selectPlacement} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} tool={tool} roadStart={roadStart} onRoadPoint={roadPoint} premiumCodes={premiumCodes} />
+  <City3DMap data={data} draft={draft} activeDefinition={placing?activeDefinition:null} activePlacement={placing?selectedPlacement:null} selectedId={selectedId} onPoint={point} onSelect={selectPlacement} zoom={zoom} setZoom={setZoom} center={center} setCenter={setCenter} tool={tool} roadStart={roadStart} onRoadPoint={roadPoint} onStroke={stroke} onHover={hover} drawPreview={drawPreview} landscapeKind={landscapeKind} premiumCodes={premiumCodes} />
   <header className="city-game-hud">
    <div className="city-game-name"><b>3B</b><div><strong>{city.name}</strong><small>{busy?'Enregistrement…':'CRÉE MA VILLE'}</small></div></div>
    <div className="city-game-resources">
@@ -109,7 +126,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
    </div>
    <div className="city-game-system">{onFullscreen&&<Button variant="ghost" aria-label="Plein écran" onClick={onFullscreen}><Maximize2 size={18}/></Button>}<Button variant="ghost" aria-label="Réglages du jeu" onClick={()=>onOpenPanel('settings')}><Settings2 size={18}/></Button>{onClose&&<Button variant="ghost" aria-label="Quitter la ville" onClick={onClose}><X size={18}/></Button>}</div>
   </header>
-  {!panelOpen&&!catalog&&!visibleSelection&&mission&&<Button variant="ghost" className="city-game-objective" disabled={busy} onClick={followMission}><Flag size={18}/><span><small>{mission.status==='ready'?'OBJECTIF ACCOMPLI':'PROCHAIN OBJECTIF'}</small><strong>{mission.title}</strong></span><b>{mission.status==='ready'?`+${mission.coins}`:'→'}</b></Button>}
+  {!panelOpen&&!catalog&&!visibleSelection&&!['road','landscape'].includes(tool)&&mission&&<Button variant="ghost" className="city-game-objective" disabled={busy} onClick={followMission}><Flag size={18}/><span><small>{mission.status==='ready'?'OBJECTIF ACCOMPLI':'PROCHAIN OBJECTIF'}</small><strong>{mission.title}</strong></span><b>{mission.status==='ready'?`+${mission.coins}`:'→'}</b></Button>}
   {!panelOpen&&!catalog&&!visibleSelection&&(sites.length>0||ready.length>0)&&<Button variant="ghost" className="city-game-sites" onClick={()=>{const row=ready[0]||sites[0];selectPlacement(row);setCenter({x:row.x,z:row.z});setZoom(data.city?.city?.map_extent===500?24:6);}}>{ready.length?<Gift size={17}/>:<HardHat size={17}/>} {ready.length?`${ready.length} inauguration${ready.length>1?'s':''}`:`${sites.length} chantier${sites.length>1?'s':''}`}</Button>}
   {notice&&!panelOpen&&<div className="city-game-toast" role="status">{notice}</div>}
   {visibleSelection&&<aside className="city-game-inspector" aria-label="Bâtiment sélectionné">
@@ -123,7 +140,15 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
     <div className="city-game-selection-actions"><Button variant="ghost" aria-label="Tourner le bâtiment" onClick={()=>setDraft(v=>({...v,rotation:normalizeRotation(v.rotation+90)}))}><RotateCw size={18}/> Tourner</Button><Button variant="champagne" disabled={busy||!validation?.valid||!affordable||!unlocked} onClick={save}><Check size={18}/>{selectedPlacement?'Installer':'Construire'}</Button></div>
    </>:<div className="city-game-selection-actions"><Button variant="ghost" disabled={busy} onClick={()=>setTool('move')}><Move size={17}/> Déplacer</Button><Button variant="ghost" disabled={busy} onClick={storePlacement}><PackageOpen size={17}/> Ranger</Button></div>}
   </aside>}
-  {tool==='road'&&!panelOpen&&<aside className="city-game-road-help"><Route size={20}/><div><strong>{roadStart?'Touche l’arrivée de la route':'Touche le départ de la route'}</strong><small>Relie tes bâtiments au réseau · construction gratuite</small></div><Button variant="ghost" aria-label="Annuler le tracé" onClick={clearSelection}><X size={18}/></Button>{roads.length>0&&<Button variant="ghost" disabled={busy} onClick={async()=>{if(await call('plan_roads',{roads:roads.slice(0,-1)}))setNotice('Dernière route retirée.');}}>Retirer la dernière</Button>}</aside>}
+  {['road','landscape'].includes(tool)&&!panelOpen&&<aside className="city-game-drawing" aria-label="Tracé et paysage">
+   <div className="city-game-drawing-title"><strong>{tool==='road'?'Dessine ton réseau':'Crée ton paysage'}</strong><Button variant="ghost" aria-label="Fermer le tracé" onClick={clearSelection}><X size={18}/></Button></div>
+   {tool==='landscape'?<nav aria-label="Objets de paysage">{LANDSCAPE_TOOLS.map(([id,label])=><Button key={id} variant={landscapeKind===id?'champagne':'ghost'} aria-pressed={landscapeKind===id} onClick={()=>{setLandscapeKind(id);setLandscapeWidth(LANDSCAPE_WIDTHS[id][1]||LANDSCAPE_WIDTHS[id][0]);setRoadStart(null);setDrawEnd(null);}}>{label}</Button>)}</nav>:<nav aria-label="Forme de la route">{[['straight','Droite'],['corner','Angle droit']].map(([id,label])=><Button key={id} variant={roadMode===id?'champagne':'ghost'} aria-pressed={roadMode===id} onClick={()=>setRoadMode(id)}>{label}</Button>)}</nav>}
+   <label>Taille <select aria-label="Largeur du tracé" value={tool==='road'?roadWidth:landscapeWidth} onChange={e=>(tool==='road'?setRoadWidth:setLandscapeWidth)(Number(e.target.value))}>{(tool==='road'?[2,4,8]:LANDSCAPE_WIDTHS[landscapeKind]).map(w=><option key={w} value={w}>{w} m</option>)}</select></label>
+   <p>{tool==='road'||landscapeKind==='river'?'Glisse du départ à l’arrivée, ou touche deux points. Puis valide. Les routes se raccordent automatiquement.':'Touche une parcelle pour voir l’aperçu, puis valide.'}</p>
+   {drawPreview.length>0&&<p role="status" data-valid={drawCheck.valid}>{drawCheck.reason}</p>}
+   <div className="city-game-selection-actions"><Button variant="champagne" disabled={busy||!drawCheck.valid} onClick={saveDrawing}><Check size={17}/>Valider</Button><Button variant="ghost" disabled={!roadStart} onClick={()=>{setRoadStart(null);setDrawEnd(null);}}>Recommencer</Button><Button variant="ghost" disabled={busy||!(tool==='road'?roads:terrain).length} onClick={removeLastDrawing}>Retirer le dernier</Button></div>
+   <small>Construction libre · sauvegarde serveur · aucun achat requis</small>
+  </aside>}
   {catalog&&!panelOpen&&<section className="city-game-catalog" aria-label="Catalogue de construction">
    <div className="city-game-catalog-head"><nav aria-label="Types de construction">{CITY_BUILD_CATEGORIES.map(([id,label])=><Button variant="ghost" key={id} aria-pressed={!showStored&&category===id} onClick={()=>{setCategory(id);setShowStored(false);}}>{label}</Button>)}<Button variant="ghost" aria-pressed={showStored} onClick={()=>setShowStored(true)}>Réserve {stored.length>0?`(${stored.length})`:''}</Button></nav><label><Search size={16}/><input aria-label="Rechercher un bâtiment" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher"/></label><Button variant="ghost" aria-label="Fermer le catalogue" onClick={()=>setCatalog(false)}><X size={18}/></Button></div>
    <div className="city-game-catalog-list">{(showStored?stored:buildings).map(row=>{
@@ -131,7 +156,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
     return <Button variant="ghost" className="city-game-building" key={row.id||row.code} disabled={locked||busy} onClick={()=>showStored?selectPlacement(row):chooseBuilding(row)}><span className="city-game-building-model" data-kind={cityBuildingKind(definition)}><i/><Icon size={24}/></span><strong>{definition.name||row.building_code}</strong><small>{cityBuildingBenefit(definition)}</small><b>{showStored?'Replacer':locked?`Niveau ${definition.unlock_level}`:`${definition.cost_coins||0} Coins`}</b></Button>;
    })}{!(showStored?stored:buildings).length&&<p>{showStored?'Tes bâtiments rangés apparaîtront ici.':'Aucun bâtiment trouvé.'}</p>}</div>
   </section>}
-  {!panelOpen&&<footer className="city-game-bottom"><div className="city-game-history"><Button variant="ghost" aria-label="Annuler la dernière action" disabled={busy||!history.length} onClick={()=>applyHistory(true)}><Undo2 size={17}/></Button><Button variant="ghost" aria-label="Rétablir la dernière action" disabled={busy||!future.length} onClick={()=>applyHistory(false)}><Redo2 size={17}/></Button></div><nav aria-label="Outils de la ville"><Button variant={catalog?'champagne':'ghost'} aria-pressed={catalog} onClick={()=>{clearSelection();setCatalog(!catalog);}}><Building2 size={20}/>Construire</Button><Button variant={tool==='road'?'champagne':'ghost'} aria-pressed={tool==='road'} onClick={()=>{clearSelection();setCatalog(false);setTool(tool==='road'?'inspect':'road');}}><Route size={20}/>Routes</Button><Button variant="ghost" onClick={()=>onOpenPanel('missions')}><Flag size={20}/>Objectifs</Button><Button variant="ghost" onClick={()=>onOpenPanel('life')}><Users size={20}/>Ma ville</Button></nav></footer>}
+  {!panelOpen&&<footer className="city-game-bottom"><div className="city-game-history"><Button variant="ghost" aria-label="Annuler la dernière action" disabled={busy||!history.length} onClick={()=>applyHistory(true)}><Undo2 size={17}/></Button><Button variant="ghost" aria-label="Rétablir la dernière action" disabled={busy||!future.length} onClick={()=>applyHistory(false)}><Redo2 size={17}/></Button></div><nav aria-label="Outils de la ville"><Button variant={catalog?'champagne':'ghost'} aria-pressed={catalog} onClick={()=>{clearSelection();setCatalog(!catalog);}}><Building2 size={20}/>Construire</Button><Button variant={tool==='road'?'champagne':'ghost'} aria-pressed={tool==='road'} onClick={()=>{clearSelection();setCatalog(false);setTool(tool==='road'?'inspect':'road');}}><Route size={20}/>Routes</Button><Button variant={tool==='landscape'?'champagne':'ghost'} aria-pressed={tool==='landscape'} onClick={()=>{clearSelection();setCatalog(false);setTool(tool==='landscape'?'inspect':'landscape');}}><Waves size={20}/>Paysage</Button><Button variant="ghost" onClick={()=>onOpenPanel('missions')}><Flag size={20}/>Objectifs</Button><Button variant="ghost" onClick={()=>onOpenPanel('life')}><Users size={20}/>Ma ville</Button></nav></footer>}
  </section>;
 }
 

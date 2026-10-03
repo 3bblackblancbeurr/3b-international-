@@ -41,6 +41,6 @@ export function cityBuildingBenefit(definition) {
 export function citySceneSignature(data = {}, codes = new Set()) {
   // Passive census refreshes must not rebuild all meshes or reset the camera.
   return JSON.stringify([data.city?.city_id, data.city?.land_tier, data.city?.day_mode,
-    data.city?.city?.map_extent, data.city?.city?.core_half, data.city?.city?.roads, data.districts, data.placements, data.displays,
+    data.city?.city?.map_extent, data.city?.city?.core_half, data.city?.city?.roads, data.city?.city?.terrain, data.districts, data.placements, data.displays,
     data.buildings, [...codes].sort(), data.life?.inhabitants, data.life?.population, data.life?.employed]);
 }
