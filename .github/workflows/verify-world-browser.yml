@@ -33,13 +33,7 @@ jobs:
           "$RUNNER_TEMP/world-browser-tools/node_modules/.bin/playwright" install --with-deps chromium
       - name: Desktop, touch, save recovery and tournament journeys
         run: |
-          npm run dev > "$RUNNER_TEMP/world-vite.log" 2>&1 &
-          WORLD_VITE_PID=$!
-          trap 'kill "$WORLD_VITE_PID" 2>/dev/null || true' EXIT
-          for attempt in $(seq 1 60); do
-            if curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then break; fi
-            sleep 1
-          done
+          WORLD_TEST_BUILD=1 \
           WORLD_PLAYWRIGHT_MODULE="$RUNNER_TEMP/world-browser-tools/node_modules/playwright/index.mjs" \
           WORLD_TEST_OUT="$RUNNER_TEMP/world-browser-report" \
           node scripts/verify-world-continuation-browser.mjs
@@ -50,4 +44,3 @@ jobs:
           name: world-browser-${{ github.sha }}
           path: |
             ${{ runner.temp }}/world-browser-report
-            ${{ runner.temp }}/world-vite.log

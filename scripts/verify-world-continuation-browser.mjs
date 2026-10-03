@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {blankSave} from '../src/world/rules.js';
 import {applyWorldAction} from '../src/world/engine.js';
@@ -13,7 +14,7 @@ import {HUB_PLATFORM} from '../src/world/hub/platform-layout.js';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const moduleName=process.env.WORLD_PLAYWRIGHT_MODULE||'playwright';
 const {chromium}=await import(path.isAbsolute(moduleName)?pathToFileURL(moduleName).href:moduleName);
-const base=process.env.WORLD_TEST_URL||'http://127.0.0.1:5173';
+let base=process.env.WORLD_TEST_URL||'http://127.0.0.1:5173';
 const only=process.env.WORLD_TEST_CASE;
 const out=process.env.WORLD_TEST_OUT||'/tmp/3b-world-continuation';
 const filename='world-continuation-qa.local.html',fixture=path.join(root,filename);
@@ -27,17 +28,28 @@ import '/src/index.css';import '/src/styles/gold-master.css';
 document.documentElement.classList.add('js-app-ready');
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(LoyaltyProvider,null,React.createElement(LuxuryProvider,null,React.createElement(WorldPage,{goTo:()=>{}}))));
 </script></body></html>`,{flag:'wx'});
-let browser;const report=[];
+let browser,previewServer,buildDir;const report=[];
 async function ready(page){
  await page.locator('.world-shell canvas').first().waitFor({timeout:30000});
  await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});
+ // Loading can finish before the scene publishes its first frame/cinematic.
+ // Wait for a real snapshot before deciding whether the arrival can be skipped.
+ await page.locator('.world-district small').waitFor({timeout:120000});
  const skip=page.locator('.play-cinematic button');
  if(await skip.isVisible())await skip.click({timeout:2000}).catch(()=>{});
+ await page.locator('.play-cinematic').waitFor({state:'hidden',timeout:30000});
  await page.locator('.play-arrival').waitFor({state:'hidden',timeout:30000});
  assert.equal(await page.locator('.world-failure').count(),0);
 }
 const readSave=page=>page.evaluate(()=>JSON.parse(localStorage.getItem('3b_world_v1_guest')).data);
 try{
+ if(process.env.WORLD_TEST_BUILD==='1'){
+  const {build,preview}=await import('vite');
+  buildDir=fs.mkdtempSync(path.join(os.tmpdir(),'3b-world-browser-'));
+  await build({root,build:{outDir:buildDir,emptyOutDir:true,rollupOptions:{input:fixture}}});
+  previewServer=await preview({root,build:{outDir:buildDir},preview:{host:'127.0.0.1',port:5174,strictPort:true}});
+  base='http://127.0.0.1:5174';
+ }
  for(const [label,region,width,height] of [['hub-desktop','hub',1365,900],['france-tournament-touch','france',844,390],['hub-rotation','hub',390,844]]){
   if(only&&only!==label)continue;
   // Each independent journey owns its renderer process. Software WebGL in CI
@@ -117,7 +129,15 @@ try{
      const edge={region:'hub',x:0,z:HUB_PLATFORM.walkRadius-4,heading:0};
      await page.evaluate(edge=>{const key='3b_world_v1_guest',saved=JSON.parse(localStorage.getItem(key));saved.data.adventure.exploration=edge;localStorage.setItem(key,JSON.stringify(saved));},edge);
      await page.reload({waitUntil:'domcontentloaded'});await ready(page);
-     await page.locator('.world-shell canvas').first().focus();await page.keyboard.down('s');await page.waitForTimeout(2000);await page.keyboard.up('s');
+     await page.locator('.world-shell canvas').first().focus();await page.keyboard.down('s');
+     try{
+      await page.waitForFunction(radius=>{
+       const transform=document.querySelector('.world-minimap .minimap-open svg > g')?.getAttribute('transform')||'';
+       const match=transform.match(/translate\(([-\d.e+]+)\s+([-\d.e+]+)\)/i);
+       return match&&Math.hypot(Number(match[1]),Number(match[2]))>=radius-.1;
+      },HUB_PLATFORM.walkRadius,{timeout:60000});
+      await page.waitForTimeout(1000);
+     }finally{await page.keyboard.up('s');}
      await page.getByRole('button',{name:'Pause et options',exact:true}).click();
      const rim=(await readSave(page)).adventure.exploration;
      assert.ok(rim.z>edge.z+.1,'the outward movement must actually run');
@@ -129,6 +149,9 @@ try{
   await context.close();await browser.close();browser=null;console.log(JSON.stringify(report.at(-1)));
  }
 }finally{
- await browser?.close();fs.rmSync(fixture,{force:true});fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));
+ await browser?.close();
+ if(previewServer)await new Promise(resolve=>{previewServer.httpServer.close(resolve);previewServer.httpServer.closeAllConnections();});
+ if(buildDir)fs.rmSync(buildDir,{recursive:true,force:true});
+ fs.rmSync(fixture,{force:true});fs.writeFileSync(path.join(out,'browser-report.json'),JSON.stringify(report,null,2));
 }
 if(report.length!==(only?1:3)||report.some(r=>!r.ok))process.exitCode=1;

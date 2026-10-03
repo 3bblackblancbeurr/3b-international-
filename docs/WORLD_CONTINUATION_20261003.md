@@ -172,3 +172,11 @@ JavaScript. Les parcours indépendants utilisent maintenant chacun un processus
 navigateur neuf et une limite de navigation de 120 secondes cohérente avec le
 chargement WebGL logiciel. Les assertions du tournoi restent toutes actives.
 Ce délai technique ne constitue pas un objectif acceptable de performance mobile.
+La deuxième exécution a validé le tournoi complet ; le contrôle du bord n'avait
+pas observé de déplacement dans sa fenêtre fixe de deux secondes. La recette
+attend maintenant le premier état publié par la scène, la fin de l'arrivée et
+un déplacement mesuré sur la mini-carte avant de vérifier la limite. Elle
+échoue toujours si le mouvement ne se produit pas ou dépasse la plateforme.
+La CI utilise désormais le module invité compilé par Vite et servi statiquement,
+avec les mêmes assets et assertions, pour couvrir le code livré plutôt que le
+chargement du graphe de modules du serveur de développement.
