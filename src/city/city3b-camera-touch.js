@@ -1,4 +1,16 @@
-import {Vector3} from 'three';
+import {Vector2,Vector3,Raycaster,Plane} from 'three';
+
+export function cityTouchRotation(startAngle,nextAngle){
+ const delta=Math.atan2(Math.sin(nextAngle-startAngle),Math.cos(nextAngle-startAngle));
+ const threshold=8*Math.PI/180;
+ return Math.sign(delta)*Math.max(0,Math.abs(delta)-threshold);
+}
+
+function groundPoint(camera,gesture,rect,height){
+ const ray=new Raycaster();ray.setFromCamera(new Vector2((gesture.x-rect.left)/rect.width*2-1,1-(gesture.y-rect.top)/rect.height*2),camera);
+ return ray.ray.intersectPlane(new Plane(new Vector3(0,1,0),-height),new Vector3());
+}
+
 
 export function cityTouchGesture(points){
  const [a,b]=points;
@@ -12,6 +24,8 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
   if(!fingers.size){start=null;return;}
   start={gesture:cityTouchGesture([...fingers.values()]),target:controls.target.clone(),offset:camera.position.clone().sub(controls.target),right:new Vector3(1,0,0).applyQuaternion(camera.quaternion),height:Math.max(1,element.clientHeight)};
   start.right.y=0;start.right.normalize();
+  start.rect=element.getBoundingClientRect();start.camera=camera.clone();start.camera.updateMatrixWorld();
+  start.anchor=groundPoint(start.camera,start.gesture,start.rect,start.target.y);
  };
  const consume=e=>{e.preventDefault();e.stopImmediatePropagation();};
  const down=e=>{
@@ -32,10 +46,15 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
   const ratio=two?start.gesture.distance/Math.max(1,next.distance):1;
   const offset=start.offset.clone().multiplyScalar(ratio);
   offset.setLength(Math.max(controls.minDistance,Math.min(controls.maxDistance,offset.length())));
-  if(two)offset.applyAxisAngle(new Vector3(0,1,0),next.angle-start.gesture.angle);
+  if(two)offset.applyAxisAngle(new Vector3(0,1,0),cityTouchRotation(start.gesture.angle,next.angle));
   const scale=2*offset.length()*Math.tan(camera.fov*Math.PI/360)/start.height;
   const forward=new Vector3(start.right.z,0,-start.right.x);
-  const target=start.target.clone().addScaledVector(start.right,-(next.x-start.gesture.x)*scale).addScaledVector(forward,-(next.y-start.gesture.y)*scale);
+  const target=start.target.clone();
+  // Keep the terrain point grabbed at gesture start underneath the fingers.
+  const candidate=start.camera;candidate.position.copy(target).add(offset);candidate.lookAt(target);candidate.updateMatrixWorld();
+  const underFinger=groundPoint(candidate,next,start.rect,target.y);
+  if(start.anchor&&underFinger)target.add(start.anchor.clone().sub(underFinger));
+  else target.addScaledVector(start.right,-(next.x-start.gesture.x)*scale).addScaledVector(forward,(next.y-start.gesture.y)*scale);
   motion.move(target.clone().add(offset),target,true);
  };
  const up=e=>{
