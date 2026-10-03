@@ -1,3 +1,4 @@
+import InstallCards from '../install/InstallCards.jsx';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
@@ -142,7 +143,7 @@ export function ExperienceControls({ options, toggleOption, page }) {
   </details>;
 }
 
-export function LuxuryBoot({ onDone }) {
+export function LuxuryBoot({ onDone, installation }) {
   const { policy } = useLuxury();
   const done = useRef(onDone); done.current = onDone;
   const finished = useRef(false);
@@ -156,6 +157,7 @@ export function LuxuryBoot({ onDone }) {
     <p className="intro3b-lead">Entrez dans la Cité des Huit Héritages.</p>
     <p className="intro3b-legacy">Ce n’est pas une marque. C’est un héritage.</p>
     <Button variant="champagne" className="primary-button intro3b-enter" onClick={finish}>COMMENCER</Button>
+    <InstallCards installation={installation}/>
   </section>;
 }
 
