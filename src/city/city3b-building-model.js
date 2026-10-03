@@ -80,7 +80,9 @@ export function buildCityArchitecture(api,group,options) {
    if(variant.form%2)volume(-w*.30,-d*.19,w*.20,d*.27,h*.62);
    for(const x of [-.32,-.19,.19,.32])box(group,ivory,x*w,h*.42,d*.32,w*.05,h*.82,d*.06);
    box(group,gold,0,h+.34,0,w*.8,.09,d*.63);
-   shape(group,variant.form%2?cylinderGeo:sphereGeo,glass,0,h+.40,-d*.04,w*.28,h*.23,d*.24);
+   if(code==='COURTHOUSE_3B'){for(const side of [-1,1]){const pediment=box(group,gold,side*w*.16,h+.47,d*.24,w*.38,.07,d*.12);pediment.rotation.z=-side*.25;}}
+   else if(code==='POLICE_3B'){volume(w*.30,-d*.18,w*.18,d*.28,h*1.15);box(group,light,w*.30,h*1.18,-d*.18,w*.22,.08,d*.32,true);}
+   else shape(group,variant.form%2?cylinderGeo:sphereGeo,glass,0,h+.40,-d*.04,w*.28,h*.23,d*.24);
   }else if(family==='heritage'){
    volume(0,-d*.06,w*.76,d*.64,h*.85);
    volume(variant.form%2?w*.12:0,-d*.02,w*.40,d*.42,h*1.15);
@@ -101,6 +103,9 @@ export function buildCityArchitecture(api,group,options) {
    if(variant.form>4)volume(w*.29,d*.19,w*.18,d*.25,h*.60);
    for(let i=1;i<4;i++){box(group,gold,w*.19,h*i/4,-d*.13,w*.34,.05,d*.43);plant(-w*.12,h*.34+i*.025,d*.13-i*d*.12,small*.14);}
   }
+  if(/FACTORY|WORKS/.test(code)){for(const side of [-1,1]){box(group,dark,side*w*.34,h*.76,-d*.30,w*.08,h*.65,d*.09);box(group,gold,side*w*.34,h*1.1,-d*.30,w*.12,.08,d*.13);}box(group,variant.accent,0,h*.14,d*.39,w*.30,h*.24,.03);}
+  if(code==='SUPERMARKET_3B'){box(group,variant.accent,0,h*.31,d*.38,w*.75,.10,d*.20);for(const side of [-1,1])box(group,dark,side*w*.26,.24,d*.38,w*.08,.30,d*.09);}
+  if(code==='RAIL_STATION_3B')box(group,gold,0,h*.25,d*.32,w*.85,.06,d*.27);
   entrance(h);
   for(const x of [-.38,.38])plant(x*w,.20,d*.33,small*.18);
   if(code==='POLICE_3B'){box(group,light,0,h*.7,d*.40,w*.35,.09,.04,true);}
@@ -143,7 +148,10 @@ export function buildCityArchitecture(api,group,options) {
       box(group,dark,-w*.07,bh*.14,d*.28,w*.13,bh*.28,.045);box(group,gold,-w*.07,bh*.29,d*.32,w*.20,.04,d*.16);
       for(const side of [-1,1]){box(group,variant.accent,side*w*.43,.20,0,.025,.28,d*.84);plant(side*w*.31,.15,d*.34,small*.11);}
       if(variant.form===2||variant.form===5)volume(w*.22,-d*.14,w*.21,d*.27,bh*1.2);
-      buildingDetails({box,shape,sphereGeo},group,{w,d,height:bh,kind});return;
+      box(group,gold,-w*.07,bh*.30,d*.34,w*.22,.025,.025);
+      box(group,dark,w*.34,.24,d*.34,w*.06,.34,.05);box(group,light,w*.34,.34,d*.37,w*.055,.06,.02,true);
+      if(variant.roof===1||variant.roof===3)plant(-w*.16,bh+.23,-d*.12,small*.13);
+      return;
     }
     if(kind==='green'){
       box(group,0x76a45d,0,.085,0,w*.91,.1,d*.91);
