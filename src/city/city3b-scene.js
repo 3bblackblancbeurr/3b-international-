@@ -276,7 +276,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       for(let i=0;i<(rare?8:4);i++){const angle=i*Math.PI*2/(rare?8:4);shape(group,sphereGeo,rare?0xf0d991:0x76cdec,Math.cos(angle)*size*.5,.30,Math.sin(angle)*size*.5,.09,.09,.09,true);}
       celebrations.push({group,start:performance.now(),duration:rare?5000:2600});
     }
-    if(first){setView({center:{x:0,z:0},zoom:1.6});first=false;}
+    if(first){setView(cityMapInitialView(data));first=false;}
     updateDraft(latest);dirty=true;
   }
   function updateDraft(props={}){

@@ -7,7 +7,7 @@ import {createPortal} from 'react-dom';
 import {CarFront,Coins,Eye,Globe2,Package,Shirt,Smartphone,Sparkles,X} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {CITY_VALUES,city3bRequest} from '../city/city3b-client.js';
-import {rememberCityCommand,pendingCityCommand,forgetCityCommand,cityCommandCommitted} from '../city/city3b-recovery.js';
+import {rememberCityCommand,pendingCityCommand,forgetCityCommand,cityCommandCommitted,cityCommandBlocked} from '../city/city3b-recovery.js';
 import {createCityRequestGate} from '../city/city3b-request-gate.js';
 import City3BBuilder,{City3BPrivatePreview} from '../city/City3BBuilder.jsx';
 import DigitalStorePanel from '../store/DigitalStorePanel.jsx';
@@ -43,7 +43,7 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
  const call=async(action,body={})=>{
   let invocation=null;
   const passive=action==='life',payload={slot:slot||1,...(screen==='play'&&data?.city?{saveId:data.city.city_id}:{}),...body};
-  if(pending?.body.saveId===payload.saveId&&!['snapshot','life','access'].includes(action)&&(action!==pending.action||JSON.stringify(payload)!==JSON.stringify(pending.body))){setError('Vérifie l’action en attente avant de modifier à nouveau cette ville.');return null;}
+  if(cityCommandBlocked(pending,action,payload)){setError('Vérifie l’action en attente avant de modifier à nouveau cette ville.');return null;}
   try{return await requests.current.run(action,async()=>{
    if(!passive){invocation=++invocations.current;setBusy(true);setError('');setNotice('');rememberCityCommand(storage(),uid,action,payload);}
    try{return await requestCity(action,payload,uid);}finally{if(!passive&&mounted.current&&invocation===invocations.current)setBusy(false);}
@@ -108,4 +108,3 @@ function CitySettings({city,busy,call}){
  const [name,setName]=useState(city.name),[visibility,setVisibility]=useState(city.visibility);
  return <section className="city3b-panel"><div className="city3b-form"><label>Nom de la ville<input aria-label="Nom de la ville" value={name} maxLength={40} onChange={e=>setName(e.target.value)}/></label><label>Visibilité<select aria-label="Visibilité de la ville" value={visibility} onChange={e=>setVisibility(e.target.value)}><option value="private">Privée</option><option value="public">Publique · les membres peuvent visiter</option></select></label><Button variant="champagne" disabled={busy||name.trim().length<2} onClick={()=>call('settings',{name:name.trim(),visibility})}>Enregistrer</Button><label>Lumière<select aria-label="Jour et nuit" value={city.day_mode||'auto'} disabled={busy} onChange={e=>call('environment',{day:e.target.value,weather:'clear',ambience:'urban'})}><option value="auto">Construction de jour (par défaut)</option><option value="day">Jour</option><option value="night">Nuit</option></select></label><p>Glisse pour déplacer la caméra. Pince avec deux doigts pour zoomer. Sélectionne un bâtiment pour le déplacer, le ranger ou suivre son chantier.</p></div></section>;
 }
-

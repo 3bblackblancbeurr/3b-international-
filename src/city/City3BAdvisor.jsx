@@ -8,12 +8,12 @@ import {cityNews} from './city3b-news.js';
 
 export default function City3BAdvisor({campaign,data,cityId,compact,onMission,onJournal}){
  const bulletin=cityAdvisorBulletin(campaign);
- const [dismissed,setDismissed]=useState(''),[journal,setJournal]=useState(false),[voice,setVoice]=useState(false);
- useEffect(()=>{setDismissed('');setJournal(false);setVoice(false);},[cityId]);
+ const [dismissed,setDismissed]=useState(null),[journal,setJournal]=useState(false),[voice,setVoice]=useState(false);
+ useEffect(()=>{setDismissed(null);setJournal(false);setVoice(false);},[cityId]);
  useEffect(()=>()=>{if(voice)globalThis.speechSynthesis?.cancel();},[voice,cityId]);
  useEffect(()=>{if(compact)setJournal(false);},[compact]);
  if(!bulletin)return null;
- const collapsed=compact||dismissed===bulletin.id;
+ const collapsed=compact||dismissed!==`open:${bulletin.id}`;
  const speak=()=>{
   if(voice){globalThis.speechSynthesis?.cancel();setVoice(false);return;}
   if(!globalThis.speechSynthesis||!globalThis.SpeechSynthesisUtterance)return;
@@ -22,7 +22,7 @@ export default function City3BAdvisor({campaign,data,cityId,compact,onMission,on
   setVoice(true);globalThis.speechSynthesis.cancel();globalThis.speechSynthesis.speak(utterance);
  };
  return <aside className="city3b-advisor" data-compact={collapsed} aria-label="Conseil au maire">
-  {collapsed?<Button variant="ghost" className="city3b-advisor-chip" aria-label="Ouvrir le conseil au maire" onClick={()=>{if(compact)onJournal();else setDismissed('');}}><MessageCircle size={18}/><span>Conseil</span></Button>:<>
+  {collapsed?<Button variant="ghost" className="city3b-advisor-chip" aria-label="Ouvrir le conseil au maire" onClick={()=>{if(compact)onJournal();else setDismissed(`open:${bulletin.id}`);}}><MessageCircle size={18}/><span>Conseil</span></Button>:<>
    <div className="city3b-advisor-top"><CityAdvisorPortrait name={bulletin.advisor.name}/><div><strong>{bulletin.advisor.name}</strong><small>{bulletin.advisor.role}</small></div><Button variant="ghost" aria-label="Réduire le conseil" onClick={()=>setDismissed(bulletin.id)}><X size={16}/></Button></div>
    <strong className="city3b-advisor-title">{bulletin.title}</strong><p>{bulletin.text}</p>
    <div className="city3b-advisor-actions"><Button variant="champagne" onClick={onMission}>{bulletin.ready?'Recevoir la récompense':'Voir les objectifs'} · {bulletin.progress}</Button><Button variant="ghost" aria-label="Journal de la ville" aria-expanded={journal} onClick={()=>setJournal(!journal)}><Newspaper size={17}/></Button>{globalThis.speechSynthesis&&<Button variant="ghost" aria-label={voice?'Arrêter la lecture':'Écouter le conseil'} aria-pressed={voice} onClick={speak}>{voice?<VolumeX size={17}/>:<Volume2 size={17}/>}</Button>}</div>

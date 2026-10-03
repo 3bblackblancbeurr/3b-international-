@@ -13,11 +13,11 @@ test('three server slots isolate maps, edits and progress, survive reload and sh
   assert.equal(Number((await f.db.query('select city3b_level_floor($1) floor',[n])).rows[0].floor),floor);
  }
 
- const second=await call(f,2,null,'nexus_city_create_map',{p_name:'Rivière',p_country:'France',p_map:'river'});
+ const second=await call(f,2,null,'nexus_city_create_map',{p_name:'Collines',p_country:'France',p_map:'hills'});
  const third=await call(f,3,null,'nexus_city_create_map',{p_name:'Neige',p_country:'France',p_map:'snow'});
  assert.notEqual(second,third);assert.notEqual(second,original.city_id);assert.equal(await f.coins(),coins,'no second starter grant');
- assert.equal((await city(f,2)).city.map_preset,'river');assert.equal((await city(f,3)).city.map_preset,'snow');
- assert.equal(await call(f,2,null,'nexus_city_create_map',{p_name:'Retry',p_country:'France',p_map:'plains'}),second);assert.equal((await city(f,2)).city.map_preset,'river');
+ assert.equal((await city(f,2)).city.map_preset,'hills');assert.equal((await city(f,3)).city.map_preset,'snow');
+ assert.equal(await call(f,2,null,'nexus_city_create_map',{p_name:'Retry',p_country:'France',p_map:'plains'}),second);assert.equal((await city(f,2)).city.map_preset,'hills');
  await assert.rejects(call(f,4,null,'nexus_city_create_map',{p_name:'Fourth',p_country:'France',p_map:'plains'}),/emplacement/);
  const placement=await call(f,2,second,'nexus_city_place_v2',{p_building:'HOME_ORIGIN',p_x:0,p_z:0,p_rotation:0,p_request:randomUUID(),p_user:B});
  assert.equal((await f.db.query('select city_id from nexus_city_placements where id=$1',[placement])).rows[0].city_id,second);

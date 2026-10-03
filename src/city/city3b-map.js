@@ -23,11 +23,11 @@ export function cityMapSnap(point, step = 2) {
 
 export function cityMapInitialView(snapshot={}){
  const placed=(snapshot.placements||[]).filter(p=>p.placement_state!=='stored'&&finite(p.x)&&finite(p.z));
- if(!placed.length)return {zoom:cityMapBlueprint(snapshot).half/(snapshot.city?.city?.map_preset?80:64),center:{x:0,z:0}};
+ if(!placed.length)return {zoom:cityMapBlueprint(snapshot).half/34,center:{x:0,z:0}};
  const xs=placed.map(p=>Number(p.x)+Number(p.footprint_w||1)/2),zs=placed.map(p=>Number(p.z)+Number(p.footprint_h||1)/2);
  const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),half=cityMapBlueprint(snapshot).half;
- const radius=Math.max(32,(Math.max(maxX-minX,maxZ-minZ)+56)/2);
- return {zoom:Math.max(1,Math.min(32,half/radius)),center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2}};
+ const radius=Math.max(22,(Math.max(maxX-minX,maxZ-minZ)+32)/2);
+ return {zoom:Math.max(1,Math.min(64,half/radius)),center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2}};
 }
 
 export function cityBuildingKind(definition = {}) {
@@ -191,3 +191,4 @@ export function cityMapStats(snapshot = {}) {
     urban,
   };
 }
+
