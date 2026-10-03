@@ -51,3 +51,9 @@ export function cityLevelProgress(xp=0) {
   const floor=1000*(level-1),next=1000*level;
   return {level,current:value,next,percent:level===50?100:Math.min(100,(value-floor)/(next-floor)*100)};
 }
+
+export function cityBuildingLimit(data={},definition,ignoreId){
+ const maximum=definition?.code==='CITY_HALL_3B'?1:Number(definition?.metadata?.max_per_city)||0;
+ const count=(data.placements||[]).filter(p=>p.building_code===definition?.code&&p.id!==ignoreId).length;
+ return maximum&&count>=maximum?{valid:false,reason:definition?.code==='CITY_HALL_3B'?'Ta ville possède déjà sa mairie. Déplace-la ou replace-la depuis la réserve.':`Limite de ${maximum} bâtiment(s) par ville`}:{valid:true};
+}

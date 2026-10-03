@@ -90,3 +90,10 @@
 @media(max-height:540px) and (orientation:landscape){.city-game .city-game-hud{min-height:40px;padding:3px 12px}.city-game .city-game-name>b{font-size:20px}.city-game .city-game-resources{gap:8px}.city-game .city3d-controls{top:54px}.city-game .city3d-controls button{width:30px;min-height:30px}.city-game .city-game-bottom{bottom:4px}.city-game .city-game-inspector,.city-game .city-game-drawing{bottom:48px}}
 
 .city-game .city-game-inspector[data-details=false] [data-secondary=true]{display:none}
+
+.city-game-building-model{height:112px!important;background:#bed6da!important;overflow:hidden;border-radius:9px;display:flex;align-items:center;justify-content:center}.city-game-building-model img{width:100%;height:100%;object-fit:contain}.city-game-building-model>i{display:none}.city-game-building{min-height:190px}.city-game-building:disabled .city-game-building-model{filter:saturate(.5)}
+@media(max-height:540px){.city-game-building-model{height:88px!important}.city-game-building{min-height:155px}}
+
+.city3b-neighbor-map{height:360px;position:relative;border-radius:12px;overflow:hidden}.city-game-drawing-title select{max-width:145px;background:#152a32;color:#ecdfc1;border:1px solid #667268;border-radius:8px;padding:6px;font-size:12px}.city-game-drawing-title:has(select)>strong{display:none}
+
+.city-municipal-stock{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}.city-municipal-stock>span{display:grid;background:#192b30;border-radius:10px;padding:12px;min-width:90px}.city-municipal-stock strong{font-size:24px;color:#dfc992}.city-municipal-stock small{opacity:.7}
