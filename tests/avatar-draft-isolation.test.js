@@ -61,8 +61,9 @@ test('World 3B passes the account uid to the avatar editor and clears drafts onl
  const world=readFileSync(new URL('../src/world/WorldPage.jsx',import.meta.url),'utf8');
  const panel=readFileSync(new URL('../src/world/AvatarPanel.jsx',import.meta.url),'utf8');
  assert.match(world,/<AvatarPanel key=\{uid\|\|'guest'\} uid=\{uid\|\|null\}/);
- assert.match(panel,/readAvatarDraft\(uid,savedAvatar\)/);
+ assert.match(panel,/readAvatarDraft\(uid,saved\)/);
  assert.match(panel,/writeAvatarDraft\(uid,draft\)/);
- assert.match(panel,/if\(result\)\{committed\.current=true;clearAvatarDraft\(uid\)/);
+ assert.match(panel,/if\(result\)complete\(result\);else setMessage/);
+ assert.match(panel,/const complete=result=>\{[^\n]*committed\.current=true;clearAvatarDraft\(uid\)/);
  assert.doesNotMatch(panel,/3b-avatar-draft-v[0-9]+(?!.*uid)/);
 });
