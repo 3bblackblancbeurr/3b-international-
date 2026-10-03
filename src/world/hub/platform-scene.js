@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
+import {addCiteTerraces,terraceWorldHeight,terraceAisle} from './terraces.js';
 import {citeWaterfallMaterial} from './waterfall-material.js';
 import {CITE_ISLANDS,CITE_BRIDGES,citeSurfaceDistance} from './platform-topology.js';
 import {createPremiumWater} from '../premium-water.js';
@@ -42,6 +43,7 @@ export function createHubPlatform(save){
   for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*5.85,dz=Math.cos(bridge.angle)*side*5.85;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
  }
  const promenade=new THREE.RingGeometry(119,131,128);promenade.rotateX(-Math.PI/2);deckParts.push(promenade);
+ deckParts.push(...addCiteTerraces({mesh,geo,box,materials:{dark,gold,blue},collisions,sign}));
  const ground=mesh(geo(mergeGeometries(deckParts)),stone,0,0,0);deckParts.forEach(g=>g.dispose());ground.castShadow=false;
  ring(119,.14,.08,gold);ring(131,.14,.08,gold);ring(125,.06,.09,blue);
  collisions.push({id:'cite-water-boundary',surfaceDistance:p=>-citeSurfaceDistance(p.x/HUB_SCALE,p.z/HUB_SCALE)*HUB_SCALE});
@@ -125,6 +127,7 @@ export function createHubPlatform(save){
  // Market, benches, lamps and compact terraces populate every route.
  for(let i=0;i<24;i++){
   const a=(i+.5)*Math.PI*2/24,r=i%2?119:80,x=Math.cos(a)*r,z=Math.sin(a)*r;
+  if(terraceAisle(x,z,5))continue;
   mesh(box,dark,x,2.4,z,.3,4.8,.3);mesh(sphere,blue,x,4.9,z,.3);
   const tx=x+2,tz=z+2;mesh(cylinder,wood,tx,.85,tz,1.2,.15,1.2);mesh(cylinder,gold,tx,.4,tz,.1,.8,.1);
   mesh(box,wood,tx+2,.6,tz,1.3,.2,1);mesh(box,wood,tx+2,.3,tz,.15,.6,.15);
@@ -150,9 +153,9 @@ export function createHubPlatform(save){
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
  for(const o of collisions)for(const key of ['x','z','r','width','depth'])if(Number.isFinite(o[key]))o[key]*=HUB_SCALE;
  for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
- return {root,ground,collisions,cameraSolids,ready:Promise.resolve(),height:()=>0,
+ return {root,ground,collisions,cameraSolids,ready:Promise.resolve(),height:terraceWorldHeight,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
   update,setParty(){},setQuality(mode){root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},

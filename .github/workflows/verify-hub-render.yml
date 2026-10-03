@@ -1,0 +1,52 @@
+name: Verify playable Hub renderer
+on:
+  pull_request:
+    paths:
+      - 'src/world/**'
+      - 'scripts/verify-world-art-browser.mjs'
+      - '.github/workflows/verify-hub-render.yml'
+permissions:
+  contents: read
+concurrency:
+  group: hub-render-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - view: desktop
+            width: 1280
+            height: 720
+            quality: detail
+          - view: phone
+            width: 390
+            height: 844
+            quality: fluid
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install isolated browser test dependency
+        run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Render actual Hub and check movement and shader errors
+        run: node scripts/verify-world-art-browser.mjs
+        env:
+          WORLD_ART_REGIONS: hub
+          WORLD_ART_WIDTH: ${{ matrix.width }}
+          WORLD_ART_HEIGHT: ${{ matrix.height }}
+          WORLD_ART_QUALITY: ${{ matrix.quality }}
+          WORLD_ART_OUT: artifacts/hub-${{ matrix.view }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: playable-hub-${{ matrix.view }}
+          path: artifacts/hub-${{ matrix.view }}
+          if-no-files-found: warn

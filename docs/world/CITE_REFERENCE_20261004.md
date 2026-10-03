@@ -22,8 +22,12 @@ Le rendu final n'a **pas été inspecté visuellement** : le navigateur cloud re
 
 ## Reste du périmètre demandé
 
-La reproduction détaillée de toutes les façades et intérieurs de l'image, ses niveaux réellement praticables, passerelles suspendues, escaliers et ascenseurs nécessite un système de sol en hauteur, de navigation verticale et de caméra correspondant. Le hub actuel garde ses îlots et ponts au même niveau de marche. Les petits navires sont du décor ; ils n'ajoutent pas un pilotage naval.
+La reproduction détaillée de toutes les façades et intérieurs de l'image, ses niveaux réellement praticables, passerelles suspendues, escaliers et ascenseurs nécessite un système de sol en hauteur, de navigation verticale et de caméra correspondant. Les îlots et ponts principaux restent au niveau de base. Huit belvédères sont maintenant accessibles par des rampes de 23,8 m qui montent de 6 m : le sol raycasté et la hauteur des personnages utilisent le même profil. Garde-corps et accès dégagés sont vérifiés par tests de parcours. La navigation complète à plusieurs étages, les escaliers et ascenseurs restent à faire. Les petits navires sont du décor ; ils n'ajoutent pas un pilotage naval.
 
 Les monstres combattables inédits, leurs comportements, leurs modèles et leurs missions ne sont pas produits dans cette proposition. Les fonctions de combat existantes restent en place. Il reste à concevoir et valider l'accès volontaire aux combats du hub avec le serveur, sans rendre hostiles les places familiales.
 
 Il reste aussi à vérifier dans le navigateur les shaders, la présentation des 16 armes, le passage entre modes graphiques, les performances et les séances longues sur le Samsung réel avant fusion/publication. Les chiffres FPS ne sont pas mesurés par les tests Node.
+
+## Contrôle du rendu sur GitHub
+
+Le workflow `Verify playable Hub renderer` produit des captures du véritable moteur en format ordinateur (1280 × 720, détail) et téléphone (390 × 844, fluide), vérifie la réponse au déplacement et les erreurs JavaScript/shaders. Ce contrôle utilise un navigateur logiciel sur serveur : il ne mesure pas les performances d’un Samsung réel et ne remplace pas la validation artistique des captures.

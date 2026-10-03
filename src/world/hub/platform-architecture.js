@@ -36,7 +36,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
  for(let i=0;i<8;i++){
   const a=(i+.5)*Math.PI/4,x=Math.cos(a)*132,z=Math.sin(a)*132,h=16+(i%3)*7;
   for(const side of [-1,1]){
-   const tx=x+Math.cos(a+Math.PI/2)*side*6,tz=z+Math.sin(a+Math.PI/2)*side*6;
+   const tx=x+Math.cos(a+Math.PI/2)*side*10,tz=z+Math.sin(a+Math.PI/2)*side*10;
    mesh(box,dark,tx,h/2,tz,8,h,9);collisions.push({x:tx,z:tz,width:8,depth:9});
    for(let f=0;f<Math.floor(h/3);f++){mesh(box,glass,tx,2+f*3,tz+4.6,6,1.7,.15);mesh(box,gold,tx,3+f*3,tz+4.8,8.4,.15,.2);}
    mesh(box,gold,tx,h+.3,tz,9,.6,10);mesh(sphere,green,tx,h+1.7,tz,2.8,1.3,3);
