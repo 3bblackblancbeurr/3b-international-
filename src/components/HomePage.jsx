@@ -1,3 +1,4 @@
+import InstallCards from '../install/InstallCards.jsx';
 import { useState } from 'react';
 import { NAV_GROUPS, RouteLink } from './AppNavigation.jsx';
 import SectionCard from './SectionCard.jsx';
@@ -11,7 +12,7 @@ import {Button} from '../design-system/index.jsx';
 const PRIMARY_IDS = ['passport', 'world3b'];
 const GUIDE_ID = 'guide';
 
-export default function HomePage({goTo,menuItems,member}){
+export default function HomePage({goTo,menuItems,member,installation}){
  const [cityOpen,setCityOpen]=useState(false);
  const { present, policy } = useLuxury();
  const primary=PRIMARY_IDS.map(id=>menuItems.find(item=>item.id===id)).filter(Boolean);
@@ -25,6 +26,7 @@ export default function HomePage({goTo,menuItems,member}){
 
  return <section className="home-dashboard home-dashboard-simplified">
   <WorldPortalCard goTo={goTo}/>
+  <InstallCards installation={installation}/>
 
   <section className="universe-directory home-primary-directory" aria-labelledby="journey-title">
    <div className="section-heading"><h2 id="journey-title">L’essentiel</h2><span>Passeport → Ma Ville → Monde du 3B</span></div>
