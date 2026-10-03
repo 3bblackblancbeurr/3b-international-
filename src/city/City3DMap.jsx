@@ -33,7 +33,7 @@ export default function City3DMap(props){
   {error&&<div className="city3d-error" role="alert">{error}<Button variant="champagne" onClick={()=>setAttempt(v=>v+1)}>Relancer la 3D</Button></div>}
   <div className="city3d-gesture-guide" aria-label="Commandes de caméra">
    <span className="city3d-guide-mouse">Glisser ou maintenir la molette · Molette : zoom · Clic droit : tourner · Q/E : rotation · H : recentrer</span>
-   <span className="city3d-guide-touch">Un doigt : déplacer ou construire · Pincer : zoom · Deux doigts : tourner · Glisser ensemble vers le haut/bas : incliner</span>
+   <span className="city3d-guide-touch">Un doigt : déplacer ou construire · Maintenir puis glisser : déplacer pendant la construction · Pincer : zoom · Deux doigts : tourner ou glisser ensemble pour incliner</span>
   </div>
  </div>;
 }

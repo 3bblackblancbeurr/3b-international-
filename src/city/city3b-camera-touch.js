@@ -19,7 +19,8 @@ export function cityTouchGesture(points){
 
 // Own touch camera input separately from single-finger construction strokes.
 export function attachCityTouchCamera(element,{camera,controls,motion,canPan,canOrbit=()=>false,groundHeight=()=>0,onGesture,onNavigation=()=>{},onConstruction=()=>{}}){
- const fingers=new Map();let active=false,start=null,moved=false,twoMode=null;
+ const fingers=new Map();let active=false,start=null,moved=false,twoMode=null,holdTimer=null;
+ const clearHold=()=>{clearTimeout(holdTimer);holdTimer=null;};
  const snapshot=()=>{
   twoMode=null;
   if(!fingers.size){start=null;return;}
@@ -32,16 +33,21 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,can
  const consume=e=>{e.preventDefault();e.stopImmediatePropagation();};
  const down=e=>{
   if(e.pointerType!=='touch')return;
+  clearHold();
   if(fingers.size>=2){consume(e);return;}
   if(!fingers.size)moved=false;
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});element.setPointerCapture(e.pointerId);
   active=active||fingers.size===2||canPan()||canOrbit();
   consume(e);if(fingers.size===2){moved=true;motion.cancel();onGesture();onNavigation(true);}else{if(active)motion.cancel();onConstruction(e);}snapshot();
+  if(!active)holdTimer=setTimeout(()=>{
+   if(fingers.size!==1)return;
+   active=true;moved=true;motion.cancel();onGesture();onNavigation(true);snapshot();
+  },350);
  };
  const move=e=>{
   if(!fingers.has(e.pointerId))return;
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  consume(e);if(!active){onConstruction(e);return;}if(!start)return;
+  consume(e);if(!active){if(start&&Math.hypot(e.clientX-start.gesture.x,e.clientY-start.gesture.y)>7)clearHold();onConstruction(e);return;}if(!start)return;
   const next=cityTouchGesture([...fingers.values()]),two=fingers.size===2;
   if(two&&!twoMode){
    const points=[...fingers.values()],deltas=points.map((p,i)=>({x:p.x-start.fingers[i].x,y:p.y-start.fingers[i].y}));
@@ -82,12 +88,13 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,can
  };
  const up=e=>{
   if(!fingers.delete(e.pointerId))return;
+  clearHold();
   consume(e);if(active&&moved)onGesture();else onConstruction(e);
   if(!fingers.size){active=false;onNavigation(false);}
   snapshot();
  };
- const reset=()=>{fingers.clear();active=false;start=null;twoMode=null;onGesture();onNavigation(false);};
+ const reset=()=>{clearHold();fingers.clear();active=false;start=null;twoMode=null;onGesture();onNavigation(false);};
  for(const [name,fn] of [['pointerdown',down],['pointermove',move],['pointerup',up],['pointercancel',up],['lostpointercapture',up]])element.addEventListener(name,fn,{capture:true,passive:false});
  window.addEventListener('blur',reset);
- return ()=>{for(const [name,fn] of [['pointerdown',down],['pointermove',move],['pointerup',up],['pointercancel',up],['lostpointercapture',up]])element.removeEventListener(name,fn,true);window.removeEventListener('blur',reset);};
+ return ()=>{clearHold();for(const [name,fn] of [['pointerdown',down],['pointermove',move],['pointerup',up],['pointercancel',up],['lostpointercapture',up]])element.removeEventListener(name,fn,true);window.removeEventListener('blur',reset);};
 }

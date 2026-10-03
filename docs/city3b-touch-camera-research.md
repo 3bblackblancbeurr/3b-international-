@@ -4,7 +4,7 @@
 
 La caméra se contrôle sur le terrain, sans boutons de vue ni joystick superposé.
 Un doigt déplace la ville en exploration et positionne les constructions dans les outils.
-Pincer zoome, tourner deux doigts pivote, faire glisser deux doigts ensemble verticalement incline la vue jusqu'au ciel.
+Pendant la construction, maintenir un doigt 350 ms puis glisser déplace la caméra sans poser de bâtiment. Pincer zoome, tourner deux doigts pivote, faire glisser deux doigts ensemble verticalement incline la vue jusqu'au ciel.
 Deux doigts prennent toujours la priorité sur la construction. Après un geste multiple, aucun placement ne se termine avant de lever tous les doigts et de commencer un nouveau geste.
 
 ## Références consultées et adaptation
@@ -35,6 +35,6 @@ Les anciennes parcelles enregistrées conservent leur largeur et leur profondeur
 
 ## Vérification
 
-139 tests du module ville passent, dont les gestes tactiles, l'absence de placement accidentel, le retour du ciel, le cadrage en portrait/paysage et les dimensions des bâtiments. La compilation de production passe.
+140 tests du module ville passent, dont les gestes tactiles, l'absence de placement accidentel, le retour du ciel, le cadrage en portrait/paysage et les dimensions des bâtiments. La compilation de production passe.
 
 Reste à mesurer sur un Samsung réel : régularité des images, reconnaissance des gestes, chauffe et confort en session prolongée. Le terme AAA exprime une ambition visuelle ; ces tests ne certifient pas une qualité AAA ni 60 images/s sur chaque appareil.

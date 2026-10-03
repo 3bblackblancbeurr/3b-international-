@@ -100,3 +100,16 @@ test('two parallel fingers tilt to the sky during construction and return withou
   assert.equal(navigation.at(-1),false,'contextual menus return after both fingers lift');
  }finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
 });
+
+test('holding one finger pans vertically during construction without committing a building',async()=>{
+ const previous=globalThis.window;globalThis.window=new EventTarget();
+ const element=new EventTarget();element.clientHeight=500;element.getBoundingClientRect=()=>({left:0,top:0,width:500,height:500});element.setPointerCapture=()=>{};
+ const camera=new PerspectiveCamera(40);camera.position.set(0,30,40);camera.lookAt(0,0,0);
+ const controls={target:new Vector3(),minDistance:9,maxDistance:200,minPolarAngle:.12,maxPolarAngle:Math.PI*.68,update(){camera.lookAt(this.target);camera.updateMatrixWorld();}};
+ const events=[];const dispose=attachCityTouchCamera(element,{camera,controls,motion:createCityCameraMotion(camera,controls),canPan:()=>false,onGesture(){},onConstruction:e=>events.push(e.type)});
+ const emit=(type,y)=>{const e=new Event(type,{cancelable:true});Object.assign(e,{pointerType:'touch',pointerId:1,clientX:250,clientY:y});element.dispatchEvent(e);};
+ try{
+  emit('pointerdown',250);await new Promise(resolve=>setTimeout(resolve,380));emit('pointermove',310);emit('pointerup',310);
+  assert.ok(controls.target.length()>1);assert.deepEqual(events,['pointerdown'],'long press navigation cannot finish a building');
+ }finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
+});
