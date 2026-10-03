@@ -1,4 +1,5 @@
 import {BufferGeometry,Mesh,ShaderMaterial,DoubleSide} from 'three';
+import {CITY_GRID_UNIT} from './city3b-grid-snap.js';
 
 export function cityConstructionGridVisible({constructionMode=false,tool,previewOnly=false}={}){
  return !previewOnly&&(constructionMode||['build','move','road','landscape','signal','erase'].includes(tool));
@@ -31,7 +32,7 @@ export function createCityConstructionGrid(){
     float medium=1.0-smoothstep(.4,1.1,footprint);
     float wide=1.0-smoothstep(1.6,4.4,footprint);
     float distant=1.0-smoothstep(8.0,22.0,footprint);
-    float ink=max(max(dottedGrid(1.0)*fine,dottedGrid(5.0)*medium*(1.0-fine)),max(dottedGrid(20.0)*wide*(1.0-medium),dottedGrid(100.0)*distant*(1.0-wide)));
+    float ink=max(max(dottedGrid(${CITY_GRID_UNIT.toFixed(1)})*fine,dottedGrid(5.0)*medium*(1.0-fine)),max(dottedGrid(20.0)*wide*(1.0-medium),dottedGrid(100.0)*distant*(1.0-wide)));
     float alpha=ink*opacity;if(alpha<.015)discard;
     gl_FragColor=vec4(vec3(1.0),alpha);
    }`,
