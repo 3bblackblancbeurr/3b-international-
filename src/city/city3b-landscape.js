@@ -1,13 +1,15 @@
 import {cityMapBlueprint,cityMapCustomRoads} from './city3b-map.js';
+import {cityGridPoint} from './city3b-grid-snap.js';
 export const LANDSCAPE_TOOLS=[['lake','Lac'],['river','Rivière'],['tree','Arbre Matrix'],['garden','Jardin'],['bench','Banc'],['light','Éclairage'],['hill','Montagne'],['basin','Creux']];
 export const LANDSCAPE_WIDTHS={lake:[12,24,40],river:[4,8,12,24,32,40],tree:[2,4,6],garden:[4,8,12],bench:[2],light:[2],hill:[40,80,120],basin:[24,40,80]};
 export const isWater=f=>f.kind==='lake'||f.kind==='river';
 export function segmentDistance(p,r){const dx=r.x2-r.x1,dz=r.z2-r.z1,l=dx*dx+dz*dz,t=l?Math.max(0,Math.min(1,((p.x-r.x1)*dx+(p.z-r.z1)*dz)/l)):0;return Math.hypot(p.x-r.x1-t*dx,p.z-r.z1-t*dz);}
 export function cityLandscape(data={}){return (Array.isArray(data.city?.city?.terrain)?data.city.city.terrain:[]).filter(f=>LANDSCAPE_WIDTHS[f.kind]&&[f.x1,f.z1,f.x2,f.z2,f.width].every(Number.isFinite)).slice(0,256);}
-export function snapRoadPoint(point,roads){let best={x:Math.round(point.x/2)*2,z:Math.round(point.z/2)*2},distance=6;for(const r of roads){const dx=r.x2-r.x1,dz=r.z2-r.z1,l=dx*dx+dz*dz,t=l?Math.max(0,Math.min(1,((point.x-r.x1)*dx+(point.z-r.z1)*dz)/l)):0,p={x:Math.round(r.x1+t*dx),z:Math.round(r.z1+t*dz)},d=Math.hypot(point.x-p.x,point.z-p.z);if(d<distance){best=p;distance=d;}}return best;}
+export function snapRoadPoint(point,roads=[]){let best=cityGridPoint(point),distance=6;for(const r of roads){const dx=r.x2-r.x1,dz=r.z2-r.z1,l=dx*dx+dz*dz,t=l?Math.max(0,Math.min(1,((point.x-r.x1)*dx+(point.z-r.z1)*dz)/l)):0,p=cityGridPoint({x:r.x1+t*dx,z:r.z1+t*dz}),d=Math.hypot(point.x-p.x,point.z-p.z);if(d<distance){best=p;distance=d;}}return best;}
 export function roadDraft(start,end,roads=[],width=4,mode='straight'){
  const a=snapRoadPoint(start,roads),b=snapRoadPoint(end,roads),corner=Math.abs(b.x-a.x)>=Math.abs(b.z-a.z)?{x:b.x,z:a.z}:{x:a.x,z:b.z};
- const points=mode==='corner'?[a,corner,b]:[a,b];
+ // Straight roads follow a grid axis; right-angle roads keep both snapped endpoints.
+ const points=mode==='corner'?[a,corner,b]:[a,corner];
  if(mode==='corner'&&points.slice(1).some((p,i)=>{const l=Math.hypot(p.x-points[i].x,p.z-points[i].z);return l>0&&l<6;}))return [];
  return points.slice(1).map((p,i)=>({x1:points[i].x,z1:points[i].z,x2:p.x,z2:p.z,width})).filter(r=>Math.hypot(r.x2-r.x1,r.z2-r.z1)>=6);
 }

@@ -1,4 +1,5 @@
 import {createCityConstructionGrid} from './city3b-construction-grid.js';
+import {cityGridPoint} from './city3b-grid-snap.js';
 import {createCityRenderBudget} from './city3b-render-budget.js';
 import {cityRoadType} from './city3b-road-types.js';
 import {citySignals} from './city3b-signals.js';
@@ -337,7 +338,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const motionObserver=new MutationObserver(motion);motionObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-motion']});
   const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hit=new THREE.Vector3();
   let down=null,pointers=new Set();
-  const terrainPoint=e=>{const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);const intersection=groundPick?ray.intersectObject(groundPick,false)[0]:null;const point=intersection?.point||ray.ray.intersectPlane(plane,hit);return point?{x:Math.round(point.x),z:Math.round(point.z)}:null;};
+  const terrainPoint=e=>{const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);const intersection=groundPick?ray.intersectObject(groundPick,false)[0]:null;const point=intersection?.point||ray.ray.intersectPlane(plane,hit);return point?cityGridPoint(point):null;};
   const drawing=()=>!latest.pan&&(latest.tool==='road'||latest.tool==='landscape'&&latest.landscapeKind==='river');
   const pointerDown=e=>{cameraMotion.cancel();renderer.domElement.focus({preventScroll:true});pointers.add(e.pointerId);if(pointers.size>1)down=null;else down={button:e.button,x:e.clientX,y:e.clientY,id:e.pointerId,point:terrainPoint(e)};};
   const placing=()=>['build','move'].includes(latest.tool)&&!latest.pan;
