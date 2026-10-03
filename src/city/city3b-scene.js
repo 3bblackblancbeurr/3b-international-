@@ -295,7 +295,13 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       for(const dx of [-1,1])box(ghost,color,x+dx*size.width/2,.45,z,.1,.5,size.height,true);
       for(const dz of [-1,1])box(ghost,color,x,.45,z+dz*size.height/2,size.width,.5,.1,true);
     }
-    for(const f of props.drawPreview||[]){if(f.kind==='signal'||props.tool==='signal'){signal(ghost,f,true);}else if(props.tool==='erase'){const marker=box(ghost,0xf08272,f.x??(f.x1+f.x2)/2,.27,f.z??(f.z1+f.z2)/2,f.width||2,.13,Math.max(f.width||2,Math.hypot((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z))),true,.35);marker.rotation.y=Math.atan2((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z));}else if(CITY_NETWORK_COLORS[f.kind])infrastructure(ghost,f);else if(f.kind)landscape(ghost,f,true);else road(ghost,f.x1,f.z1,f.x2,f.z2,f.width,f.roadType);}
+    for(const f of props.drawPreview||[]){if(f.kind==='signal'||props.tool==='signal'){signal(ghost,f,true);}else if(props.tool==='erase'){const marker=box(ghost,0xf08272,f.x??(f.x1+f.x2)/2,.27,f.z??(f.z1+f.z2)/2,f.width||2,.13,Math.max(f.width||2,Math.hypot((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z))),true,.35);marker.rotation.y=Math.atan2((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z));}else if(CITY_NETWORK_COLORS[f.kind])infrastructure(ghost,f);else if(f.kind)landscape(ghost,f,true);else {
+      const ink=props.drawValidation?.valid===false?0xef746f:0x49baff;
+      const strip=box(ghost,ink,(f.x1+f.x2)/2,.22,(f.z1+f.z2)/2,f.width,.18,Math.hypot(f.x2-f.x1,f.z2-f.z1),true,.65);strip.rotation.y=Math.atan2(f.x2-f.x1,f.z2-f.z1);
+      for(const [x,z] of [[f.x1,f.z1],[f.x2,f.z2]])shape(ghost,cylinderGeo,ink,x,.35,z,Math.max(1,f.width/2),.22,Math.max(1,f.width/2),true,.85);
+    }}
+    const obstacle=props.tool==='road'&&props.drawValidation?.obstacle;
+    if(obstacle){const marker=box(ghost,0xef746f,(obstacle.x1+obstacle.x2)/2,.24,(obstacle.z1+obstacle.z2)/2,obstacle.width,.15,Math.max(obstacle.width,Math.hypot(obstacle.x2-obstacle.x1,obstacle.z2-obstacle.z1)),true,.3);marker.rotation.y=Math.atan2(obstacle.x2-obstacle.x1,obstacle.z2-obstacle.z1);}
     if(props.roadStart)shape(ghost,cylinderGeo,0x49baff,props.roadStart.x,.3,props.roadStart.z,1,.3,1,true);
     dirty=true;
   }

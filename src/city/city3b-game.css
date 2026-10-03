@@ -107,3 +107,10 @@
 .city-game[data-tool=signal] .city-game-drawing-options select{max-width:none;font-size:11px}
 .city-game-drawing-options>span{font-size:11px;color:#b4d5dd}
 @media(max-width:440px){.city-game[data-tool=road] .city-game-drawing,.city-game[data-tool=signal] .city-game-drawing{width:calc(100% - 24px)}}
+
+/* Keep the drawing instructions legible without covering the construction area. */
+.city-game[data-tool=road] .city-game-drawing{width:min(370px,calc(100% - 90px))}
+.city-game[data-tool=road] .city-game-drawing>p[role=status]{margin:2px 0;line-height:1.35;min-height:1.35em}
+.city-game[data-tool=road] .city-game-drawing .city-game-selection-actions button{min-height:40px}
+.city-game[data-tool=road] .city3d-gesture-guide,.city-game[data-tool=landscape] .city3d-gesture-guide{display:none}
+@media(max-width:440px){.city-game[data-tool=road] .city-game-drawing{width:calc(100% - 24px)}}

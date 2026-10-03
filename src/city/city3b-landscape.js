@@ -15,7 +15,7 @@ export function landscapeDraft(kind,start,end,width){const a={x:Math.round(start
 export function footprintRadius(b){return Math.max(1.2,Math.min(8,Math.hypot(Number(b.footprint_w)||1,Number(b.footprint_h)||1)*.26));}
 export function landscapeCheck(data,features,{road=false}={}){
  const half=cityMapBlueprint(data).half,placed=(data.placements||[]).filter(b=>b.placement_state!=='stored');
- for(const f of features){
+ for(const [segmentIndex,f] of features.entries()){
   if(![f.x1,f.z1,f.x2,f.z2,f.width].every(Number.isFinite)||f.width<2||f.width>(isRelief(f)?120:40))return {valid:false,reason:'Dimensions invalides'};
   const radius=f.width/2;
   if(Math.min(f.x1,f.x2)-radius< -half||Math.max(f.x1,f.x2)+radius>half||Math.min(f.z1,f.z2)-radius< -half||Math.max(f.z1,f.z2)+radius>half)return {valid:false,reason:'Hors du terrain'};
@@ -23,7 +23,8 @@ export function landscapeCheck(data,features,{road=false}={}){
   if(placed.some(b=>segmentDistance({x:Number(b.x)+Number(b.footprint_w)/2,z:Number(b.z)+Number(b.footprint_h)/2},f)<radius+footprintRadius(b)))return {valid:false,reason:'Ce tracé traverse un bâtiment'};
   if(!road&&cityLandscape(data).some(r=>(isRelief(f)||isRelief(r))&&segmentsDistance(f,r)<radius+r.width/2))return {valid:false,reason:'Un relief occupe cette zone'};
   const others=road?cityLandscape(data).filter(f=>isWater(f)||isRelief(f)):cityMapCustomRoads(data);
-  if((road||isWater(f)||isRelief(f))&&others.some(r=>segmentsDistance(f,r)<radius+r.width/2))return {valid:false,reason:road?'Une étendue d’eau bloque ce tracé':'Une route passe ici'};
+  const obstacle=(road||isWater(f)||isRelief(f))&&others.find(r=>segmentsDistance(f,r)<radius+r.width/2);
+  if(obstacle)return {valid:false,segmentIndex,obstacle,reason:road?(isWater(obstacle)?'Eau sur le tracé : contourne-la ou choisis un pont (niveau 4).':'Relief sur le tracé : contourne-le ou choisis un tunnel (niveau 5).'):'Une route passe ici'};
  }
  return {valid:features.length>0,reason:features.length?'Aperçu prêt · valide pour enregistrer':'Choisis un tracé plus long'};
 }
@@ -40,4 +41,14 @@ export function terrainHeight(features,x,z){let height=0;for(const f of features
 export function sameCityPlan(a,b){
  const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;
  return JSON.stringify(stable(a))===JSON.stringify(stable(b));
+}
+
+// A deliberate camera action: previewing a road never moves the player's view.
+export function cityDrawingView(data,features=[]){
+ if(!features.length)return null;
+ const xs=features.flatMap(f=>[f.x1,f.x2]),zs=features.flatMap(f=>[f.z1,f.z2]);
+ if(![...xs,...zs].every(Number.isFinite))return null;
+ const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
+ const radius=Math.max(24,(Math.max(maxX-minX,maxZ-minZ)+24)/2);
+ return {center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2},zoom:cityMapBlueprint(data).half/radius};
 }
