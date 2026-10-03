@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import {useEffect,useRef,useState} from 'react';
 import {cityMapBlueprint} from './city3b-map.js';
 import {cityFootprint,cityPlacementCheck} from './city3b-construction.js';
@@ -31,14 +32,14 @@ export default function City3DMap(props){
   return <div className="city3d-shell" data-night={cityIsNight(props.data.city)}>
     <div className="city3d-viewport" ref={host}/>
     {!ready&&!error&&<div className="city3d-loading" role="status">Ouverture de ta ville…</div>}
-    {error&&<div className="city3d-error" role="alert">{error}<button type="button" onClick={props.onPlan}>Ouvrir le plan 2D</button></div>}
+    {error&&<div className="city3d-error" role="alert">{error}<Button variant="ghost" type="button" onClick={props.onPlan}>Ouvrir le plan 2D</Button></div>}
     <div className="city3d-location"><span>CRÉE MA VILLE <b>3B</b></span><strong>{props.data.city?.name}</strong><small>{props.tool==='road'?'Touche le départ puis l’arrivée':props.previewOnly?'Explore ta ville':'Choisis un bâtiment, puis touche une parcelle'}</small></div>
     <div className="city3d-controls" aria-label="Caméra de la ville">
-      <button type="button" aria-label="Zoomer" onClick={()=>props.setZoom(z=>Math.min(12,z*1.3))}>+</button>
-      <button type="button" aria-label="Dézoomer" onClick={()=>props.setZoom(z=>Math.max(.65,z/1.3))}>−</button>
-      <button type="button" aria-label="Tourner la caméra" onClick={()=>engine.current?.rotate()}>↻</button>
-      <button type="button" onClick={()=>{props.setCenter({x:0,z:0});props.setZoom(2.5);}}>Centre</button>
-      <button type="button" onClick={()=>{props.setCenter({x:0,z:plan.coastZ-8});props.setZoom(3.5);}}>Lac</button>
+      <Button variant="ghost" type="button" aria-label="Zoomer" onClick={()=>props.setZoom(z=>Math.min(12,z*1.3))}>+</Button>
+      <Button variant="ghost" type="button" aria-label="Dézoomer" onClick={()=>props.setZoom(z=>Math.max(.65,z/1.3))}>−</Button>
+      <Button variant="ghost" type="button" aria-label="Tourner la caméra" onClick={()=>engine.current?.rotate()}>↻</Button>
+      <Button variant="ghost" type="button" onClick={()=>{props.setCenter({x:0,z:0});props.setZoom(2.5);}}>Centre</Button>
+      <Button variant="ghost" type="button" onClick={()=>{props.setCenter({x:0,z:plan.coastZ-8});props.setZoom(3.5);}}>Lac</Button>
     </div>
     <div className="city3d-districts"><select aria-label="Aller dans un quartier" defaultValue="" onChange={e=>engine.current?.district(e.target.value)}><option value="">Centre-ville</option>{plan.districts.filter(d=>d.unlocked).map(d=><option key={d.code} value={d.code}>{d.country}</option>)}</select><span>Glisser · déplacer / 2 doigts · zoomer</span></div>
     {check&&!props.previewOnly&&<div className="city3d-placement" data-valid={check.valid} role="status">{check.valid?'✓':'!'} {check.reason} · {size.width} × {size.height}</div>}

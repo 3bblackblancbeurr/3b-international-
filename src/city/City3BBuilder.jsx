@@ -73,7 +73,7 @@ function collisionState({draft,size,snapshot,ignoreId}) {return cityPlacementChe
 
 function BuildingMap(props) {
   const [view,setView]=useState('3d');
-  return <div><div className="city3d-view-switch"><button type="button" aria-pressed={view==='3d'} onClick={()=>setView('3d')}>Ville 3D</button><button type="button" aria-pressed={view==='2d'} onClick={()=>setView('2d')}>Plan 2D</button><small>La même ville, les mêmes constructions sauvegardées</small></div>{view==='3d'?<City3DMap {...props} onPlan={()=>setView('2d')}/>:<PlanMap {...props}/>}</div>;
+  return <div><div className="city3d-view-switch"><Button variant="ghost" type="button" aria-pressed={view==='3d'} onClick={()=>setView('3d')}>Ville 3D</Button><Button variant="ghost" type="button" aria-pressed={view==='2d'} onClick={()=>setView('2d')}>Plan 2D</Button><small>La même ville, les mêmes constructions sauvegardées</small></div>{view==='3d'?<City3DMap {...props} onPlan={()=>setView('2d')}/>:<PlanMap {...props}/>}</div>;
 }
 
 function PlanMap({ data, draft, activeDefinition, activePlacement, onPoint, onSelect, zoom, setZoom, center, setCenter, previewOnly = false, tool = "build", roadStart = null, onRoadPoint, premiumCodes = EMPTY_PREMIUM_CODES }) {
@@ -464,7 +464,7 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = EMPTY_P
       <div className="city3b-builder-save"><Save size={18} /><span><strong>Sauvegarde permanente</strong><small>{busy ? "Validation en cours…" : "Toutes les actions confirmées sont enregistrées"}</small></span></div>
     </header>
 
-    {nextMission&&<div className="city3b-play-guide"><div><small>PROCHAINE ÉTAPE · CHAPITRE {nextMission.chapter}</small><strong>{nextMission.title}</strong></div>{nextMission.status==='ready'?<button type="button" disabled={busy} onClick={()=>call('mission_claim',{mission:nextMission.code})}>Recevoir +{nextMission.coins} Coins</button>:nextMission.action?.building&&<button type="button" onClick={()=>{const row=definitions.get(nextMission.action.building);if(row)selectBuilding(row);}}>Choisir le bâtiment</button>}</div>}
+    {nextMission&&<div className="city3b-play-guide"><div><small>PROCHAINE ÉTAPE · CHAPITRE {nextMission.chapter}</small><strong>{nextMission.title}</strong></div>{nextMission.status==='ready'?<Button variant="ghost" type="button" disabled={busy} onClick={()=>call('mission_claim',{mission:nextMission.code})}>Recevoir +{nextMission.coins} Coins</Button>:nextMission.action?.building&&<Button variant="ghost" type="button" onClick={()=>{const row=definitions.get(nextMission.action.building);if(row)selectBuilding(row);}}>Choisir le bâtiment</Button>}</div>}
     <div className="city3b-builder-commandbar">
       <Button variant="ghost" type="button" disabled={busy} onClick={()=>call('environment',{day:city.day_mode==='night'?'day':'night',weather:city.weather||'clear',ambience:city.ambience||'urban'})}>{city.day_mode==='night'?'☀ Jour':'☾ Nuit'}</Button>
       <Button variant="ghost" type="button" disabled={!history.length || busy} onClick={undo}><Undo2 size={17} /> Annuler</Button>
@@ -535,7 +535,7 @@ export default function City3BBuilder({ data, busy, call, premiumCodes = EMPTY_P
 
     <section className="city3b-builder-catalog">
       <div className="city3b-builder-catalog-head"><div><p className="city3b-kicker">CATALOGUE</p><h3>Bâtiments disponibles</h3></div><label><Search size={16} /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Rechercher…" /></label></div>
-      <nav className="city3b-category-tabs" aria-label="Types de construction">{CITY_BUILD_CATEGORIES.map(([id,label])=><button type="button" key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{label}</button>)}</nav>
+      <nav className="city3b-category-tabs" aria-label="Types de construction">{CITY_BUILD_CATEGORIES.map(([id,label])=><Button variant="ghost" type="button" key={id} aria-pressed={category===id} onClick={()=>setCategory(id)}>{label}</Button>)}</nav>
       <div className="city3b-catalog-options"><label><input type="checkbox" checked={availableOnly} onChange={e=>setAvailableOnly(e.target.checked)}/> Débloqués uniquement</label><span>{filteredBuildings.length} bâtiments</span></div>
       <div className="city3b-builder-building-list">{filteredBuildings.slice(0,catalogLimit).map(row=>{const kind=cityBuildingKind(row),Icon=({housing:House,commerce:Store,green:Trees,civic:HeartPulse,mobility:TrainFront,landmark:Landmark})[kind]||Building2,locked=Number(row.unlock_level)>Number(city.city_level||1);return <Button variant="ghost" type="button" key={row.code} aria-pressed={selectedCode===row.code} disabled={locked||busy} onClick={()=>selectBuilding(row)}><span className="city3b-building-thumb" data-kind={kind}><Icon size={24}/></span><strong>{row.name}</strong><small>{locked?'Niveau '+row.unlock_level:row.country||'3B International'}</small><b>{row.cost_coins||0} Coins</b></Button>;})}</div>
       {!filteredBuildings.length&&<p>Aucun bâtiment dans cette catégorie. Change le filtre ou la recherche.</p>}
