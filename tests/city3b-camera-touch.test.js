@@ -59,3 +59,19 @@ test('two-finger camera cancels construction and stays in camera mode until both
   emit('pointercancel',3,100,100);assert.ok(cancelled>=3);
  }finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
 });
+test('inspection orbit tilts toward clouds without moving the eye below ground',()=>{
+ const previous=globalThis.window;globalThis.window=new EventTarget();
+ const element=new EventTarget();element.clientHeight=500;element.getBoundingClientRect=()=>({left:0,top:0,width:500,height:500});element.setPointerCapture=()=>{};
+ const camera=new PerspectiveCamera(40);camera.position.set(0,30,40);camera.lookAt(0,0,0);
+ const controls={target:new Vector3(),minDistance:9,maxDistance:200,minPolarAngle:.12,maxPolarAngle:Math.PI*.68,update(){camera.lookAt(this.target);camera.updateMatrixWorld();}};
+ let orbit=true;const dispose=attachCityTouchCamera(element,{camera,controls,motion:createCityCameraMotion(camera,controls),canPan:()=>true,canOrbit:()=>orbit,onGesture(){}});
+ const emit=(type,id,x,y)=>{const e=new Event(type,{cancelable:true});Object.assign(e,{pointerType:'touch',pointerId:id,clientX:x,clientY:y});element.dispatchEvent(e);};
+ try{
+  emit('pointerdown',1,250,250);emit('pointermove',1,250,0);
+  assert.ok(controls.target.y>camera.position.y,'upward drag can look above the horizon');assert.ok(camera.position.y>=2);
+  assert.ok(Math.abs(camera.position.distanceTo(controls.target)-50)<1e-7);
+  emit('pointerup',1,250,0);orbit=false;
+  emit('pointerdown',1,250,250);emit('pointermove',1,300,250);
+  assert.ok(Math.abs(camera.position.distanceTo(controls.target)-50)<1e-7,'switching back to pan preserves zoom');
+ }finally{dispose();if(previous===undefined)delete globalThis.window;else globalThis.window=previous;}
+});

@@ -1,4 +1,4 @@
-import {Vector2,Vector3,Raycaster,Plane} from 'three';
+import {Vector2,Vector3,Raycaster,Plane,Spherical} from 'three';
 
 export function cityTouchRotation(startAngle,nextAngle){
  const delta=Math.atan2(Math.sin(nextAngle-startAngle),Math.cos(nextAngle-startAngle));
@@ -18,7 +18,7 @@ export function cityTouchGesture(points){
 }
 
 // Own touch camera input separately from single-finger construction strokes.
-export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onGesture,onConstruction=()=>{}}){
+export function attachCityTouchCamera(element,{camera,controls,motion,canPan,canOrbit=()=>false,groundHeight=()=>0,onGesture,onConstruction=()=>{}}){
  const fingers=new Map();let active=false,start=null,moved=false;
  const snapshot=()=>{
   if(!fingers.size){start=null;return;}
@@ -33,7 +33,7 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
   if(fingers.size>=2){consume(e);return;}
   if(!fingers.size)moved=false;
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});element.setPointerCapture(e.pointerId);
-  active=active||fingers.size===2||canPan();
+  active=active||fingers.size===2||canPan()||canOrbit();
   consume(e);if(fingers.size===2){moved=true;motion.cancel();onGesture();}else{if(active)motion.cancel();onConstruction(e);}snapshot();
  };
  const move=e=>{
@@ -43,6 +43,15 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
   const next=cityTouchGesture([...fingers.values()]),two=fingers.size===2;
   if(!moved&&Math.hypot(next.x-start.gesture.x,next.y-start.gesture.y)<=7)return;
   moved=true;onGesture();
+  if(!two&&canOrbit()){
+   const orbit=new Spherical().setFromVector3(start.offset);
+   orbit.theta-=(next.x-start.gesture.x)/start.height*Math.PI;
+   orbit.phi=Math.max(controls.minPolarAngle,Math.min(controls.maxPolarAngle,orbit.phi-(next.y-start.gesture.y)/start.height*Math.PI));
+   const offset=new Vector3().setFromSpherical(orbit);
+   // Lift the pivot with the eye when looking upward; never orbit underground.
+   const target=start.target.clone();target.y+=Math.max(0,groundHeight(target.x+offset.x,target.z+offset.z)+2.01-(target.y+offset.y));
+   motion.move(target.clone().add(offset),target,true);return;
+  }
   const ratio=two?start.gesture.distance/Math.max(1,next.distance):1;
   const offset=start.offset.clone().multiplyScalar(ratio);
   offset.setLength(Math.max(controls.minDistance,Math.min(controls.maxDistance,offset.length())));
