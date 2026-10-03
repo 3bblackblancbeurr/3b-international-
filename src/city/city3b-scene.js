@@ -1,3 +1,6 @@
+import {cityRoadType} from './city3b-road-types.js';
+import {citySignals} from './city3b-signals.js';
+import {cityMapCustomRoads} from './city3b-map.js';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -53,16 +56,37 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   function tree(parent,x,z,size=1){
     matrixTree({box,shape,sphereGeo,cylinderGeo},parent,x,z,size);
   }
-  function road(parent,x1,z1,x2,z2,width=4){
+  function road(parent,x1,z1,x2,z2,width=4,roadType){
+    const model=cityRoadType(roadType),color=roadType?model.color:0x555f63,path=roadType==='pedestrian'||roadType==='dirt';
     const length=Math.hypot(x2-x1,z2-z1);if(length<.01)return;
-    const strip=box(parent,0x555f63,(x1+x2)/2,.055,(z1+z2)/2,width,.1,length+.35);
+    const strip=box(parent,color,(x1+x2)/2,.055,(z1+z2)/2,width,.1,length+.35);
     strip.rotation.y=Math.atan2(x2-x1,z2-z1);
     const sidewalk=box(parent,0xb7b7a4,(x1+x2)/2,-.02,(z1+z2)/2,width+1,.11,length);sidewalk.rotation.y=strip.rotation.y;
     for(const side of [-1,1]){const dx=Math.cos(strip.rotation.y)*side*(width/2-.12),dz=-Math.sin(strip.rotation.y)*side*(width/2-.12);const edge=box(parent,0x58afce,(x1+x2)/2+dx,.12,(z1+z2)/2+dz,.055,.025,length,true);edge.rotation.y=strip.rotation.y;}
-    for(const p of [[x1,z1],[x2,z2]])shape(parent,cylinderGeo,0x555f63,p[0],.055,p[1],width/2,.1,width/2);
-    const dashCount=Math.min(70,Math.floor(length/5));
-    for(let i=1;i<dashCount;i++){const t=i/dashCount;const dash=box(parent,0xe2d8b2,x1+(x2-x1)*t,.117,z1+(z2-z1)*t,.1,.025,1.4);dash.rotation.y=strip.rotation.y;}
+    for(const p of [[x1,z1],[x2,z2]])shape(parent,cylinderGeo,color,p[0],.055,p[1],width/2,.1,width/2);
+    const dashCount=Math.min(70,Math.floor(length/5)),angle=strip.rotation.y;
+    const marking=(t,offset,ink=0xe2d8b2,w=.1,len=1.4)=>{const mark=box(parent,ink,x1+(x2-x1)*t+Math.cos(angle)*offset,.117,z1+(z2-z1)*t-Math.sin(angle)*offset,w,.025,len);mark.rotation.y=angle;return mark;};
+    if(roadType==='motorway'){
+      const median=box(parent,0x789683,(x1+x2)/2,.15,(z1+z2)/2,.45,.18,length);median.rotation.y=angle;
+      for(let i=1;i<dashCount;i++)for(const offset of [-2.4,2.4])marking(i/dashCount,offset);
+    }else if(roadType==='oneway'){
+      for(let i=1;i<dashCount;i+=2){const t=i/dashCount;marking(t,0,0xe2d8b2,.12,1.6);for(const side of [-1,1]){const arrow=marking(t+.5/length,side*.22,0xe2d8b2,.12,.8);arrow.rotation.y=angle-side*Math.PI/4;}}
+    }else if(!path){for(let i=1;i<dashCount;i++)marking(i/dashCount,0);}
+    else if(roadType==='pedestrian'){for(let i=1;i<dashCount;i++)marking(i/dashCount,0,0xb2aa98,width-.2,.06);}
   }
+  function signal(parent,node,preview=false){
+    const group=new THREE.Group(),edge=(node.width||4)/2+.5;group.position.set(node.x,0,node.z);parent.add(group);
+    for(const side of [-1,1]){
+      const pole=new THREE.Group();pole.position.set(side*edge,0,side*edge);group.add(pole);box(pole,0x273d47,0,.8,0,.09,1.6,.09);box(pole,0x273d47,0,1.5,0,.22,.58,.20);
+      const lamp=shape(pole,sphereGeo,preview?0x6acaff:0x72c298,0,1.58,.11,.07,.07,.07,true),lampZ=shape(pole,sphereGeo,0xe68164,.11,1.58,0,.07,.07,.07,true);
+      if(!preview)trafficLights.push({node,lamp,lampZ});
+    }
+    // Axis colours match the mayor's priority selector, including diagonal roads.
+    for(const [ux,uz,ink] of [[node.ux??1,node.uz??0,0x6acaff],[-(node.uz??0),node.ux??1,0xc7ab73]]){
+      const band=box(group,ink,ux*(edge+1),.16,uz*(edge+1),.16,.03,1.3,true);band.rotation.y=Math.atan2(ux,uz);
+    }
+  }
+
   function landscape(parent,f,preview=false){
     const x=(f.x1+f.x2)/2,z=(f.z1+f.z2)/2,r=f.width/2;
     if(isRelief(f)){if(preview){const geometry=cityTerrainGeometry(r,[{...f,x1:0,z1:0}],{segments:40});previewGeometries.push(geometry);const mesh=new THREE.Mesh(geometry,mat(f.kind==='hill'?0x6ad2b1:0x6acaff,true,.55));mesh.position.set(x,.1,z);parent.add(mesh);}return;}
@@ -73,7 +97,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
         shape(parent,waterGeo,color,x,.08,z,r,.07,r).material=preview?mat(0x66caff):environment.water;
 
       }else{
-        const length=Math.hypot(f.x2-f.x1,f.z2-f.z1),angle=Math.atan2(f.x2-f.x1,f.z2-f.z1);
+        const length=Math.hypot(f.x2-f.x1,f.z2-f.z1),angle=Math.atan2((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z));
         const bank=box(parent,0x7796a0,x,.025,z,f.width+1,.08,length);bank.rotation.y=angle;
         const water=box(parent,color,x,.085,z,f.width,.08,length);water.rotation.y=angle;water.material=preview?mat(0x66caff):environment.water;
         for(const p of [[f.x1,f.z1],[f.x2,f.z2]]){shape(parent,waterGeo,0x7796a0,p[0],.025,p[1],r+.5,.08,r+.5);shape(parent,waterGeo,color,p[0],.085,p[1],r,.08,r).material=preview?mat(0x66caff):environment.water;}
@@ -144,7 +168,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       const a=i*Math.PI/40,b=(i+1)*Math.PI/40;
       road(world,Math.cos(a)*ring.radius,Math.sin(a)*ring.radius,Math.cos(b)*ring.radius,Math.sin(b)*ring.radius,ring.width);
     }
-    for(const r of [...roads.boulevards,...roads.radials.filter(r=>r.unlocked),...roads.custom])road(world,r.x1,r.z1,r.x2,r.z2,r.width||4);
+    for(const r of [...roads.boulevards,...roads.radials.filter(r=>r.unlocked),...roads.custom])road(world,r.x1,r.z1,r.x2,r.z2,r.width||4,r.roadType);
     for(const feature of cityLandscape(data))landscape(world,feature);
     const definitions=new Map((data.buildings||[]).map(b=>[b.code,b]));
     for(const row of (data.placements||[]).filter(p=>p.placement_state!=='stored')){
@@ -199,17 +223,15 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       if(path.length)person.position.copy(path[0]);
       if(path.length>1)animated.push({object:person,path,gait:limbs,duration:resident.duration,offset:Math.abs(resident.delay),lengths:path.slice(1).map((p,i)=>p.distanceTo(path[i]))});
     }
-    const trafficRoutes=cityTrafficRoutes(data).slice(0,mobile?12:24);trafficState=createCityTraffic(trafficRoutes);trafficLights=[];trafficTime=0,sportActors=[];
-    for(const [i,node] of trafficState.junctions.entries()){
-      const group=new THREE.Group();group.position.set(node.x+1.8,0,node.z+1.8);box(group,0x273d47,0,.6,0,.07,1.2,.07);box(group,0x273d47,0,1.1,0,.22,.4,.18);const lamp=shape(group,sphereGeo,0x72c298,0,1.13,.11,.07,.07,.07,true),lampZ=shape(group,sphereGeo,0xe68164,.11,1.13,0,.07,.07,.07,true);people.add(group);trafficLights.push({node,lamp,lampZ});
-    }
+    const trafficRoutes=cityTrafficRoutes(data).slice(0,mobile?12:24);trafficState=createCityTraffic(trafficRoutes,citySignals(data),cityMapCustomRoads(data));trafficLights=[];trafficTime=0;sportActors=[];
+    for(const node of trafficState.junctions)signal(people,node);
     for(const [index,v] of trafficRoutes.entries()){
       const vehicle=new THREE.Group(),bus=v.vehicleType==='bus',scooter=v.vehicleType==='scooter';
       box(vehicle,scooter?0xc8ae75:bus?0xdbd7be:[0x9eb5b4,0x365d77,0xbdb4a8][index%3],0,scooter?.15:.32,0,scooter?.18:bus?.7:.48,scooter?.10:bus?.65:.4,scooter?.8:bus?2.3:1);
       box(vehicle,0x294e62,0,scooter?.5:.6,scooter?.25:bus?.15:.1,scooter?.04:bus?.71:.4,scooter?.65:.19,scooter?.04:bus?1.8:.5);
       for(const side of [-1,1])for(const zz of [-.3,.3])shape(vehicle,cylinderGeo,0x263238,side*(scooter?.1:.25),.16,zz,.11,.11,.11);
       people.add(vehicle);
-      const offset=.45,dx=v.x2-v.x1,dz=v.z2-v.z1,l=Math.hypot(dx,dz),ox=dz/l*offset,oz=-dx/l*offset;
+      const offset=v.laneOffset??.45,dx=v.x2-v.x1,dz=v.z2-v.z1,l=Math.hypot(dx,dz),ox=dz/l*offset,oz=-dx/l*offset;
       const path=v.kind==='bridge'?[new THREE.Vector3(v.x1+ox,.12,v.z1+oz),new THREE.Vector3(v.x1+ox+dx/l*4,1.72,v.z1+oz+dz/l*4),new THREE.Vector3(v.x2+ox-dx/l*4,1.72,v.z2+oz-dz/l*4),new THREE.Vector3(v.x2+ox,.12,v.z2+oz)]:[new THREE.Vector3(v.x1+ox,.12,v.z1+oz),new THREE.Vector3(v.x2+ox,.12,v.z2+oz)];
       vehicle.position.copy(path[0]);animated.push({object:vehicle,path,duration:v.duration,offset:v.delay,lengths:path.slice(1).map((p,i)=>p.distanceTo(path[i])),dwell:bus?.18:0,tunnel:v.kind==='tunnel',trafficIndex:index});
     }
@@ -257,7 +279,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       for(const dx of [-1,1])box(ghost,color,x+dx*size.width/2,.45,z,.1,.5,size.height,true);
       for(const dz of [-1,1])box(ghost,color,x,.45,z+dz*size.height/2,size.width,.5,.1,true);
     }
-    for(const f of props.drawPreview||[]){if(props.tool==='erase'){const marker=box(ghost,0xf08272,(f.x1+f.x2)/2,.27,(f.z1+f.z2)/2,f.width,.13,Math.max(f.width,Math.hypot(f.x2-f.x1,f.z2-f.z1)),true,.35);marker.rotation.y=Math.atan2(f.x2-f.x1,f.z2-f.z1);}else if(CITY_NETWORK_COLORS[f.kind])infrastructure(ghost,f);else if(f.kind)landscape(ghost,f,true);else road(ghost,f.x1,f.z1,f.x2,f.z2,f.width);}
+    for(const f of props.drawPreview||[]){if(f.kind==='signal'||props.tool==='signal'){signal(ghost,f,true);}else if(props.tool==='erase'){const marker=box(ghost,0xf08272,f.x??(f.x1+f.x2)/2,.27,f.z??(f.z1+f.z2)/2,f.width||2,.13,Math.max(f.width||2,Math.hypot((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z))),true,.35);marker.rotation.y=Math.atan2((f.x2??f.x)-(f.x1??f.x),(f.z2??f.z)-(f.z1??f.z));}else if(CITY_NETWORK_COLORS[f.kind])infrastructure(ghost,f);else if(f.kind)landscape(ghost,f,true);else road(ghost,f.x1,f.z1,f.x2,f.z2,f.width,f.roadType);}
     if(props.roadStart)shape(ghost,cylinderGeo,0x49baff,props.roadStart.x,.3,props.roadStart.z,1,.3,1,true);
     dirty=true;
   }
@@ -284,7 +306,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     if(!start||start.id!==e.pointerId||pointers.size||latest.previewOnly||latest.pan||e.button>0)return;
     if(Math.hypot(e.clientX-start.x,e.clientY-start.y)>7){if(placing()){const end=dragPoint(e);if(end)onPoint?.(end);return;}if(drawing()){const end=terrainPoint(e);if(start.point&&end)onStroke?.(start.point,end);}return;}
     const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(ndc,camera);
-    const pick=!['road','landscape','build','move'].includes(latest.tool)?ray.intersectObjects(picks,false)[0]:null;
+    const pick=!['road','signal','landscape','build','move'].includes(latest.tool)?ray.intersectObjects(picks,false)[0]:null;
     if(pick?.object.userData.placement){onSelect?.(pick.object.userData.placement);return;}
     const point=terrainPoint(e);if(point)onPoint?.(point);
   };
@@ -304,7 +326,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
       if(!reduced)site.crane.rotation.y=Math.sin(time*.00035)*.5;
     }
     const trafficPos=!reduced&&trafficState?stepCityTraffic(trafficState,trafficTime?Math.min(.1,(time-trafficTime)/1000):0):[];trafficTime=time;
-    for(const light of trafficLights){const phase=cityTrafficLight(light.node,trafficState?.time||0);light.lamp.material=mat(phase==='x'?0x72c298:0xe68164,true);light.lampZ.material=mat(phase==='z'?0x72c298:0xe68164,true);}
+    for(const light of trafficLights){const phase=cityTrafficLight(light.node,trafficState?.time||0);light.lamp.material=mat(phase==='x'?0x72c298:phase==='x-yellow'?0xe5ba61:0xe68164,true);light.lampZ.material=mat(phase==='z'?0x72c298:phase==='z-yellow'?0xe5ba61:0xe68164,true);}
     if(!reduced)for(const actor of animated){
       const total=actor.lengths.reduce((a,b)=>a+b,0),raw=((time/1000+actor.offset)%actor.duration)/actor.duration,phase=actor.trafficIndex!==undefined?trafficPos[actor.trafficIndex]?.phase||0:Math.min(1,raw*(1+(actor.dwell||0)));actor.object.visible=(actor.trafficIndex===undefined||trafficPos[actor.trafficIndex]?.visible)&&(!actor.tunnel||phase<.08||phase>.92);let left=phase*total;
       for(let i=0;i<actor.lengths.length;i++){const length=actor.lengths[i];if(left<=length||i===actor.lengths.length-1){actor.object.position.lerpVectors(actor.path[i],actor.path[i+1],length?left/length:0);actor.object.rotation.y=Math.atan2(actor.path[i+1].x-actor.path[i].x,actor.path[i+1].z-actor.path[i].z);if(actor.gait)actor.gait.forEach((limb,j)=>limb.rotation.x=Math.sin(time*.006+actor.offset)*(j%2?-.42:.42)*(j<2?1:-1));break;}left-=length;}

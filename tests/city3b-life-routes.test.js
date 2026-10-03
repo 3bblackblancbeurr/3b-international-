@@ -17,3 +17,7 @@ test('home activity stays still and unknown placements never produce autonomous 
  const value=data();value.life.inhabitants=[{id:'resident-1',homePlacementId:'home',targetPlacementId:'home',activity:'home'},{id:'resident-2',homePlacementId:'missing',targetPlacementId:'shop',activity:'work'}];
  const routes=cityResidentRoutes(value);assert.equal(routes.length,1);assert.equal(routes[0].moving,false);assert.equal(routes[0].x,-34);
 });
+test('pedestrian paths carry residents while motorways are excluded from walking routes',()=>{
+ const value=data();value.city.city.roads[0].roadType='pedestrian';value.city.city.roads[0].width=2;assert.ok(cityResidentRoutes(value).length>0);
+ value.city.city.roads[0].roadType='motorway';value.city.city.roads[0].width=10;assert.equal(cityResidentRoutes(value).length,0);
+});

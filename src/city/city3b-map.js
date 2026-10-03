@@ -57,6 +57,7 @@ export function cityMapCustomRoads(snapshot = {}) {
     x2: Number(road.x2),
     z2: Number(road.z2),
     width: Math.max(2, Math.min(10, Number(road.width) || 4)),
+    ...(road.roadType?{roadType:String(road.roadType)}:{}),
   }));
 }
 
