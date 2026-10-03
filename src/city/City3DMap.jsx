@@ -24,7 +24,7 @@ export default function City3DMap(props){
  },[attempt]);
  useEffect(()=>{if(ready&&signature.current!==sceneKey){signature.current=sceneKey;engine.current?.rebuild(props.data,props.premiumCodes);}},[ready,sceneKey]);
  useEffect(()=>{engine.current?.syncClock(props.data.serverTime);},[ready,props.data.serverTime]);
- useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.networkKind,props.pan,props.roadStart,props.drawPreview,props.drawValidation,props.landscapeKind,props.previewOnly]);
+ useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.constructionMode,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.networkKind,props.pan,props.roadStart,props.drawPreview,props.drawValidation,props.landscapeKind,props.previewOnly]);
  useEffect(()=>{engine.current?.setView({center:props.center,zoom:props.zoom});},[props.center,props.zoom]);
  useEffect(()=>{if(ready&&!props.previewOnly&&(props.activeDefinition||props.selectedId))engine.current?.focusBuilding();},[ready,props.activeDefinition?.code,props.selectedId,props.previewOnly]);
  return <div className="city3d-shell" data-navigating={navigating} data-night={cityConstructionIsNight(props.data.city)}>
