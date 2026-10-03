@@ -1,3 +1,4 @@
+import {cityLandscape,segmentDistance,isWater} from './city3b-landscape.js';
 const DISTRICTS = Object.freeze([
   { country: 'France', code: 'FR', value: 'Justice', ux: 0, uz: -0.66, accent: '#79a7ff' },
   { country: 'Algérie', code: 'DZ', value: 'Loyauté', ux: 0.48, uz: -0.47, accent: '#7ed9ae' },
@@ -91,35 +92,13 @@ export function cityMapBlueprint(snapshot = {}) {
     ringRoads: [coreHalf * 0.24, coreHalf * 0.47, coreHalf * 0.72],
     districts,
     center: { x: 0, z: 0 },
-    coastZ: half * 0.91,
+    coastZ: half + 2,
     customRoads: cityMapCustomRoads(snapshot),
   };
 }
 
 export function cityMapRoads(blueprint) {
-  const rings = blueprint.ringRoads.map((radius, index) => ({
-    id: `ring-${index}`,
-    radius,
-    width: index === 1 ? 5.2 : 3.6,
-    className: index === 1 ? 'primary' : 'secondary',
-  }));
-
-  const radials = blueprint.districts.map(district => ({
-    id: `radial-${district.code}`,
-    x1: 0,
-    z1: 0,
-    x2: district.x,
-    z2: district.z,
-    width: district.unlocked ? 4.6 : 3.2,
-    unlocked: district.unlocked,
-  }));
-
-  const boulevards = [
-    { id: 'boulevard-east-west', x1: -(blueprint.coreHalf || blueprint.half) * 0.82, z1: 0, x2: (blueprint.coreHalf || blueprint.half) * 0.82, z2: 0, width: 5.2 },
-    { id: 'boulevard-north-south', x1: 0, z1: -(blueprint.coreHalf || blueprint.half) * 0.82, x2: 0, z2: (blueprint.coreHalf || blueprint.half) * 0.82, width: 5.2 },
-  ];
-
-  return { rings, radials, boulevards, custom: blueprint.customRoads || [] };
+  return { rings: [], radials: [], boulevards: [], custom: blueprint.customRoads || [] };
 }
 
 function pointSegmentDistance(point, road) {
@@ -150,9 +129,7 @@ export function cityMapPlacementPolicy(snapshot = {}, point = {}, footprint = { 
   if (x < -blueprint.half || z < -blueprint.half || maxX > blueprint.half || maxZ > blueprint.half) {
     return { valid: false, reason: 'Hors du terrain' };
   }
-  if (maxZ >= blueprint.coastZ - 1) {
-    return { valid: false, reason: 'Zone d’eau réservée' };
-  }
+
 
   const center = { x: x + width / 2, z: z + height / 2 };
   const district = cityMapDistrictAtPoint(snapshot, center);
@@ -161,6 +138,7 @@ export function cityMapPlacementPolicy(snapshot = {}, point = {}, footprint = { 
   }
 
   const footprintRadius = Math.max(1.2, Math.min(8, Math.hypot(width, height) * 0.26));
+  if(cityLandscape(snapshot).some(f=>segmentDistance(center,f)<f.width/2+footprintRadius))return {valid:false,reason:isWater(cityLandscape(snapshot).find(f=>segmentDistance(center,f)<f.width/2+footprintRadius))?'Étendue d’eau occupée':'Décor à déplacer'};
   const roads = cityMapRoads(blueprint);
   const lineRoads = [...roads.radials.filter(road => road.unlocked), ...roads.boulevards, ...roads.custom];
   if (lineRoads.some(road => pointSegmentDistance(center, road) < (Number(road.width) || 4) / 2 + footprintRadius)) {
@@ -185,7 +163,7 @@ export function cityMapUrbanScore(snapshot = {}) {
   const unlocked = blueprint.districts.filter(row => row.unlocked).length;
   const residents = counts.housing * 180 + counts.mixed * 80 + Math.max(1, Number(snapshot.city?.city_level || 1)) * 50;
   const jobs = counts.commerce * 75 + counts.civic * 45 + counts.mobility * 25 + counts.mixed * 35;
-  const mobility = Math.min(100, Math.round(roads.custom.length * 8 + counts.mobility * 16 + unlocked * 5 + 18));
+  const mobility = Math.min(100, Math.round(roads.custom.length * 8 + counts.mobility * 16));
   const services = Math.min(100, Math.round(counts.civic * 18 + counts.green * 14 + counts.commerce * 7 + unlocked * 4));
   const green = Math.min(100, Math.round(counts.green * 22 + unlocked * 3));
   const balanceBase = Math.max(100, residents, jobs);

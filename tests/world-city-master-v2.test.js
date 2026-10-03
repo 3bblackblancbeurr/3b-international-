@@ -5,7 +5,7 @@ import { cityBuildingKind, cityMapBlueprint, cityMapCustomRoads, cityMapPlacemen
 
 const read = path => readFileSync(new URL('../'+path, import.meta.url), 'utf8');
 
-test('City 3B master map exposes eight real planning districts and road hierarchy', () => {
+test('City 3B master map exposes eight planning districts and no automatic roads', () => {
   const blueprint = cityMapBlueprint({
     city: { land_tier: 3 },
     districts: [
@@ -17,9 +17,9 @@ test('City 3B master map exposes eight real planning districts and road hierarch
   assert.equal(blueprint.districts.filter(row => row.unlocked).length, 2);
   assert.equal(blueprint.landTier, 3);
   const roads = cityMapRoads(blueprint);
-  assert.equal(roads.rings.length, 3);
-  assert.equal(roads.radials.length, 8);
-  assert.equal(roads.boulevards.length, 2);
+  assert.equal(roads.rings.length, 0);
+  assert.equal(roads.radials.length, 0);
+  assert.equal(roads.boulevards.length, 0);
   assert.equal(roads.custom.length, 0);
 });
 
@@ -43,6 +43,8 @@ test('City 3B stores custom roads and protects locked districts, water and roads
   };
   assert.equal(cityMapCustomRoads(snapshot).length, 1);
   assert.equal(cityMapPlacementPolicy(snapshot, { x: 0, z: -30 }, { width: 2, height: 2 }).valid, false);
+  assert.equal(cityMapPlacementPolicy(snapshot, { x: 0, z: 130 }, { width: 2, height: 2 }).valid, true);
+  snapshot.city.city.terrain=[{id:'lake',kind:'lake',x1:0,z1:130,x2:0,z2:130,width:12}];
   assert.equal(cityMapPlacementPolicy(snapshot, { x: 0, z: 130 }, { width: 2, height: 2 }).valid, false);
 });
 

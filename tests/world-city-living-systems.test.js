@@ -55,5 +55,7 @@ test('City simulation presents authoritative census and does not invent resident
   assert.ok(sim.congestion>=0&&sim.congestion<=100);
   assert.ok(sim.residentialDemand>=0&&sim.residentialDemand<=100);
   assert.ok(sim.serviceDemand>=0&&sim.serviceDemand<=100);
+  assert.equal(cityTrafficRoutes(snapshot,sim).length,0);
+  snapshot.city.city={roads:[{id:'player-road',x1:0,z1:0,x2:40,z2:0,width:4}]};
   assert.ok(cityTrafficRoutes(snapshot,sim).length>0);
 });
