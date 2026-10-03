@@ -49,7 +49,7 @@
 .city-game-drawing-options>select{min-width:0;flex:1}.city-game .city-game-drawing select{padding:5px;font-size:12px;max-width:140px}
 .city-game .city-game-drawing label{font-size:11px;gap:4px}.city-game .city-game-drawing p{font-size:11px;margin:4px 0}
 .city-game .city-game-drawing button{min-height:36px;padding:5px 8px;font-size:12px}
-.city-game-drawing .city-game-selection-actions button:first-child{flex:3}
+.city-game-drawing .city-game-selection-actions button:nth-child(2){flex:3}
 .city-game .city-game-bottom nav button{min-width:0;min-height:40px;padding:6px 10px;font-size:11px;gap:5px}
 .city-game .city-game-bottom nav button svg{width:17px;height:17px}
 .city-game .city3d-controls{gap:4px;bottom:76px}

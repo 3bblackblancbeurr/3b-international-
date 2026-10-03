@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {fixture,A} from './helpers/city-playable-db.js';
 import {terrainHeight,landscapeCheck,cityLandscape} from '../src/city/city3b-landscape.js';
+import {cityTerrainGeometry} from '../src/city/city3b-terrain-geometry.js';
 import {cityConstructionIsNight} from '../src/city/city3b-environment.js';
 const relief=(kind='hill',x=220,z=220,width=80)=>({id:randomUUID(),kind,x1:x,z1:z,x2:x,z2:z,width});
 test('terrain rises and falls smoothly, returns to flat ground and auto light stays readable at night',()=>{
@@ -32,4 +33,14 @@ test('terrain cannot deform existing infrastructure or overlap another landscape
   await assert.rejects(plan([relief('basin',-220,220),{...relief('lake',-220,220,24)}]),/relief/);
   assert.equal((await f.city()).city.terrain,undefined);
  }finally{await f.db.close();}
+});
+
+test('the rendered heightfield stays lightweight on flat maps and deforms both directions',()=>{
+ for(const [features,target] of [[[],0],[ [{...relief('hill',0,0,80)}],17.6],[ [{...relief('basin',0,0,40)}],-3.2]]){
+  const geometry=cityTerrainGeometry(500,features);try{
+   const p=geometry.attributes.position;assert.ok(p.count<=66049);if(!features.length)assert.equal(p.count,4);
+   if(features.length){let centre=-1;for(let i=0;i<p.count;i++)if(Math.abs(p.getX(i))<.01&&Math.abs(p.getZ(i))<.01){centre=i;break;}assert.ok(centre>=0);assert.ok(Math.abs(p.getY(centre)-(target-.05))<.00001);}
+   assert.ok(Math.abs(p.getY(0)+.05)<.00001);assert.ok(geometry.attributes.normal.array.every(Number.isFinite));
+  }finally{geometry.dispose();}
+ }
 });

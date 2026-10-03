@@ -8,7 +8,8 @@ import {cityFootprint,cityPlacementCheck} from './city3b-construction.js';
 import {premiumEffectsFromCodes} from '../store/premium-effects.js';
 import {cityConstructionIsNight} from './city3b-environment.js';
 import {matrixTree,buildingDetails} from './city3b-architecture.js';
-import {cityLandscape,isWater,isRelief,terrainHeight} from './city3b-landscape.js';
+import {cityLandscape,isWater,isRelief} from './city3b-landscape.js';
+import {cityTerrainGeometry} from './city3b-terrain-geometry.js';
 import {cityConstructionState} from './city3b-building-progress.js';
 
 // One coordinate system for the planner, saved placements, picking and 3D.
@@ -42,12 +43,6 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   };
   function shape(parent,geo,color,x,y,z,w,h,d,emissive=false,opacity=1){const mesh=new THREE.Mesh(geo,mat(color,emissive,opacity));mesh.position.set(x,y,z);mesh.scale.set(w,h,d);mesh.castShadow=opacity===1;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
   const box=(parent,color,x,y,z,w,h,d,emissive=false,opacity=1)=>shape(parent,boxGeo,color,x,y,z,w,h,d,emissive,opacity);
-  function terrainGeometry(half,features,segments=Math.min(256,Math.ceil(half/2))){
-    const geometry=new THREE.PlaneGeometry(half*2,half*2,segments,segments);geometry.rotateX(-Math.PI/2);
-    const positions=geometry.attributes.position;
-    for(let i=0;i<positions.count;i++)positions.setY(i,terrainHeight(features,positions.getX(i),positions.getZ(i))-.05);
-    geometry.computeVertexNormals();return geometry;
-  }
   const sky=new THREE.Group();scene.add(sky);
   const skyGeometry=new THREE.SphereGeometry(2600,32,16);geometries.add(skyGeometry);
   const skyMaterial=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{},vertexShader:'varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec3 direction;void main(){float h=clamp(normalize(direction).y,0.0,1.0);gl_FragColor=vec4(mix(vec3(.79,.91,1.),vec3(.16,.49,.85),pow(h,.55)),1.0);}'});materials.set('sky',skyMaterial);sky.add(new THREE.Mesh(skyGeometry,skyMaterial));
@@ -69,7 +64,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   }
   function landscape(parent,f,preview=false){
     const x=(f.x1+f.x2)/2,z=(f.z1+f.z2)/2,r=f.width/2;
-    if(isRelief(f)){if(preview){const geometry=terrainGeometry(r,[{...f,x1:0,z1:0}],40);previewGeometries.push(geometry);const mesh=new THREE.Mesh(geometry,mat(f.kind==='hill'?0x6ad2b1:0x6acaff,true,.55));mesh.position.set(x,.1,z);parent.add(mesh);}return;}
+    if(isRelief(f)){if(preview){const geometry=cityTerrainGeometry(r,[{...f,x1:0,z1:0}],{segments:40});previewGeometries.push(geometry);const mesh=new THREE.Mesh(geometry,mat(f.kind==='hill'?0x6ad2b1:0x6acaff,true,.55));mesh.position.set(x,.1,z);parent.add(mesh);}return;}
     if(isWater(f)){
       const color=preview?0x66caff:night?0x124d68:0x267b97;
       if(f.kind==='lake'){
@@ -161,7 +156,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     night=cityConstructionIsNight(data.city);
     scene.background=new THREE.Color(night?0x476585:0xa3d6ff);scene.fog=new THREE.Fog(scene.background,half*3,half*10);
     hemi.intensity=night?1.9:3.1;sun.intensity=night?1.1:3.4;sun.color.set(night?0x96bded:0xffedcc);
-    const groundGeometry=terrainGeometry(half,cityLandscape(data));
+    const groundGeometry=cityTerrainGeometry(half,cityLandscape(data));
     groundPick=new THREE.Mesh(groundGeometry,mat(night?0x678c71:0xa8bf83));groundPick.receiveShadow=true;world.add(groundPick);mergedGeometries.push(groundGeometry);groundPick.updateMatrixWorld();
     // Four ocean strips surround all edges without covering the player's land.
     for(const side of [-1,1]){box(world,0x379dbe,side*half*2,-.18,0,half*2,.1,half*6);box(world,0x379dbe,0,-.18,side*half*2,half*2,.1,half*2);}
