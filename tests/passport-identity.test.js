@@ -86,8 +86,13 @@ test('the live Passport visual contains no baked member artwork',()=>{
 test('both real City screens use the owned Passport country, without a France fallback',()=>{
  for(const path of ['../src/components/City3BPortal.jsx','../src/city/City3BPanel.jsx']){
   const source=readFileSync(new URL(path,import.meta.url),'utf8');
-  assert.match(source,/lié au Passeport 3B/);
-  assert.match(source,/readOnly/);
+  if(path.includes('City3BPortal')){
+   assert.match(source,/Ton premier quartier : \$\{country\}/);
+   assert.doesNotMatch(source,/<select[^>]*country|onChange[^\n]*setCountry/);
+  }else{
+   assert.match(source,/lié au Passeport 3B/);
+   assert.match(source,/readOnly/);
+  }
   assert.match(source,/passport\?\.userId===uid/);
   assert.match(source,/'create',\{name:name\.trim\(\),country\}/);
   assert.doesNotMatch(source,/setCountry/);

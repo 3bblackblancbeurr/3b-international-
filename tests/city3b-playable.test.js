@@ -7,7 +7,7 @@ import {CITY_CAMPAIGN_MISSIONS} from '../src/city/city3b-campaign.js';
 import {premiumEffectsFromCodes,ownedPremiumCodes} from '../src/store/premium-effects.js';
 
 async function snapshot(f){const city=await f.city();return {city,buildings:(await f.db.query('select * from nexus_city_buildings where active')).rows,placements:(await f.db.query('select * from nexus_city_placements where city_id=$1',[city.city_id])).rows,districts:(await f.db.query('select * from nexus_city_districts where city_id=$1',[city.city_id])).rows};}
-async function build(f,code){const data=await snapshot(f),definition=data.buildings.find(b=>b.code===code),p=citySuggestedParcel(data,definition);assert.equal(cityPlacementCheck(data,p,cityFootprint(definition)).valid,true,code+' has a valid parcel');await f.db.query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5)',[A,code,p.x,p.z,randomUUID()]);await f.db.query('select nexus_city_recalculate($1)',[A]);}
+async function build(f,code){const data=await snapshot(f),definition=data.buildings.find(b=>b.code===code),p=citySuggestedParcel(data,definition);assert.equal(cityPlacementCheck(data,p,cityFootprint(definition)).valid,true,code+' has a valid parcel');await f.db.query('select nexus_city_place_v2($1,$2,$3,$4,0::smallint,$5)',[A,code,p.x,p.z,randomUUID()]);if(f.construction)await f.db.exec("update nexus_city_placements set construction_started_at=now()-interval '2 minutes',construction_ready_at=now()-interval '1 second' where construction_ready_at>now()");await f.db.query('select nexus_city_recalculate($1)',[A]);}
 
 test('saved footprints, catalogue filters and independent XP remain coherent',()=>{
  assert.deepEqual(cityFootprint({footprint:{w:12,h:9}},90,{footprint_w:2,footprint_h:4,rotation:0}),{width:4,height:2});
@@ -20,7 +20,7 @@ test('saved footprints, catalogue filters and independent XP remain coherent',()
 });
 
 test('all campaign chapters can be constructed using real map constraints and server checks',async()=>{
- const f=await fixture();try{
+ const f=await fixture({construction:true});try{
   const byMetric={housing:'HOME_ORIGIN',commerce:'SHOP_3B',green:'TREE_MATRIX',civic:'SCHOOL_3B',culture:'WORKSHOP_3B',sport:'ARENA_1618',landmark:'GOLD_GATE_3B',mobility:'BUS_STOP_3B',buildings:'HOME_ORIGIN'};
   for(const m of CITY_CAMPAIGN_MISSIONS.filter(m=>!m.optional)){
    for(const g of m.objectives){let metrics=(await f.db.query('select nexus_city_campaign_metrics($1) m',[A])).rows[0].m;

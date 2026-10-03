@@ -57,13 +57,18 @@ test('City UI includes responsive mobile navigation and premium 3B styling',()=>
 });
 
 
-test('premium city editor supports visual move, recovery, history and private preview',()=>{
-  assert.match(builder,/Carte interactive de construction de la Ville 3B/);
-  assert.match(builder,/call\("move"/);
-  assert.match(builder,/call\("store"/);
+test('landscape construction keeps visual editing and recovery with a 3D-only game view',()=>{
+  const scene=readFileSync(new URL('../src/city/City3DMap.jsx',import.meta.url),'utf8');
+  const gameCss=readFileSync(new URL('../src/city/city3b-game.css',import.meta.url),'utf8');
+  assert.match(builder,/Jeu de construction 3D/);
+  assert.match(builder,/call\('move'/);
+  assert.match(builder,/call\('store'/);
   assert.match(builder,/threeb:city-editor:v1/);
-  assert.match(builder,/Annuler/);
-  assert.match(builder,/Rétablir/);
-  assert.match(builder,/APERÇU PRIVÉ/);
-  assert.match(portal,/City3BPrivatePreview/);
+  assert.match(builder,/Annuler la dernière action/);
+  assert.match(builder,/Rétablir la dernière action/);
+  assert.match(builder,/construction_claim/);
+  assert.doesNotMatch(builder+scene,/PlanMap|Plan 2D|Aperçu privé|Brouillon local|Recalculer/);
+  assert.match(portal,/Tourne ton téléphone/);
+  assert.match(gameCss,/orientation:portrait/);
+  assert.match(scene,/Relancer la 3D/);
 });

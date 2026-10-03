@@ -8,7 +8,7 @@ const runtime=readFileSync(new URL('../supabase/migrations/20261003003056_city3b
 test('City 3B road planning is authenticated, bounded and server persisted',()=>{
   assert.match(edge,/async function auth\(req:Request\)/);
   assert.match(edge,/function cleanRoads\(input:unknown,half:number\)/);
-  assert.match(edge,/input\.length>64/);
+  assert.match(edge,/input\.length>256/);
   assert.match(edge,/Math\.hypot\(x2-x1,z2-z1\)<6/);
   assert.match(edge,/action==='plan_roads'/);
   assert.match(edge,/user_id=eq\.\+'\+uid|user_id=eq\.'\+uid/);

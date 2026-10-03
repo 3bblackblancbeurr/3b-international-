@@ -22,16 +22,18 @@ export function cityMapSnap(point, step = 2) {
 
 export function cityMapInitialView(snapshot={}){
  const placed=(snapshot.placements||[]).filter(p=>p.placement_state!=='stored'&&finite(p.x)&&finite(p.z));
- if(!placed.length)return {zoom:1,center:{x:0,z:0}};
+ if(!placed.length)return {zoom:cityMapBlueprint(snapshot).half/32,center:{x:0,z:0}};
  const xs=placed.map(p=>Number(p.x)+Number(p.footprint_w||1)/2),zs=placed.map(p=>Number(p.z)+Number(p.footprint_h||1)/2);
  const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),half=cityMapBlueprint(snapshot).half;
  const radius=Math.max(32,(Math.max(maxX-minX,maxZ-minZ)+56)/2);
- return {zoom:Math.max(1,Math.min(3,half/radius)),center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2}};
+ return {zoom:Math.max(1,Math.min(32,half/radius)),center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2}};
 }
 
 export function cityBuildingKind(definition = {}) {
   const role = definition.metadata?.city_role;
   if (['green','mobility','landmark','commerce','housing','civic','mixed'].includes(role)) return role;
+  const categoryKind={home:'housing',shop:'commerce',nature:'green',community:'civic',culture:'mixed',sport:'civic',monument:'landmark',road:'mobility'}[definition.category];
+  if(categoryKind)return categoryKind;
   const source = normalize(`${definition.name || ''} ${definition.code || ''} ${definition.category || ''} ${definition.kind || ''}`);
   if (/parc|jardin|square|plaza|nature|green|garden/.test(source)) return 'green';
   if (/gare|station|metro|train|garage|mobil|transport/.test(source)) return 'mobility';
@@ -47,7 +49,7 @@ export function cityMapCustomRoads(snapshot = {}) {
   if (!Array.isArray(raw)) return [];
   return raw.filter(road =>
     road && finite(road.x1) && finite(road.z1) && finite(road.x2) && finite(road.z2)
-  ).slice(0, 64).map((road, index) => ({
+  ).slice(0, 256).map((road, index) => ({
     id: String(road.id || `custom-${index + 1}`).slice(0, 80),
     x1: Number(road.x1),
     z1: Number(road.z1),
@@ -59,12 +61,14 @@ export function cityMapCustomRoads(snapshot = {}) {
 
 export function cityMapBlueprint(snapshot = {}) {
   const city = snapshot.city || {};
-  const half = 50 + Math.max(1, Number(city.land_tier || 1)) * 45;
+  const expanded = Number(city.city?.map_extent) === 500;
+  const half = expanded ? 500 : 50 + Math.max(1, Number(city.land_tier || 1)) * 45;
+  const coreHalf = expanded ? Math.max(95,Math.min(500,Number(city.city?.core_half)||95)) : half;
   const districtRows = Array.isArray(snapshot.districts) ? snapshot.districts : [];
   const status = new Map(districtRows.map(row => [normalize(row.country), row]));
-  const scale = half * 0.72;
-  const radiusX = Math.max(18, half * 0.18);
-  const radiusZ = Math.max(15, half * 0.15);
+  const scale = coreHalf * 0.72;
+  const radiusX = Math.max(18, coreHalf * 0.18);
+  const radiusZ = Math.max(15, coreHalf * 0.15);
 
   const districts = DISTRICTS.map((entry, index) => {
     const row = status.get(normalize(entry.country));
@@ -82,8 +86,9 @@ export function cityMapBlueprint(snapshot = {}) {
 
   return {
     half,
+    coreHalf,
     landTier: Math.max(1, Number(city.land_tier || 1)),
-    ringRoads: [half * 0.24, half * 0.47, half * 0.72],
+    ringRoads: [coreHalf * 0.24, coreHalf * 0.47, coreHalf * 0.72],
     districts,
     center: { x: 0, z: 0 },
     coastZ: half * 0.91,
@@ -110,8 +115,8 @@ export function cityMapRoads(blueprint) {
   }));
 
   const boulevards = [
-    { id: 'boulevard-east-west', x1: -blueprint.half * 0.82, z1: 0, x2: blueprint.half * 0.82, z2: 0, width: 5.2 },
-    { id: 'boulevard-north-south', x1: 0, z1: -blueprint.half * 0.82, x2: 0, z2: blueprint.half * 0.82, width: 5.2 },
+    { id: 'boulevard-east-west', x1: -(blueprint.coreHalf || blueprint.half) * 0.82, z1: 0, x2: (blueprint.coreHalf || blueprint.half) * 0.82, z2: 0, width: 5.2 },
+    { id: 'boulevard-north-south', x1: 0, z1: -(blueprint.coreHalf || blueprint.half) * 0.82, x2: 0, z2: (blueprint.coreHalf || blueprint.half) * 0.82, width: 5.2 },
   ];
 
   return { rings, radials, boulevards, custom: blueprint.customRoads || [] };

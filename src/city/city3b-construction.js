@@ -2,7 +2,7 @@ import {cityMapBlueprint, cityMapPlacementPolicy, cityBuildingKind} from './city
 
 export const CITY_BUILD_CATEGORIES = [
   ['all', 'Tout'], ['housing', 'Logements'], ['commerce', 'Commerces'],
-  ['civic', 'Services'], ['mobility', 'Transports'], ['green', 'Parcs'], ['landmark', 'Culture'],
+  ['civic', 'Services'], ['mobility', 'Transports'], ['green', 'Parcs'], ['culture', 'Culture & loisirs'], ['landmark', 'Monuments'],
 ];
 export function cityFootprint(definition, rotation = 0, placement) {
   // Existing placements keep their saved footprint even when the catalogue evolves.
@@ -40,7 +40,7 @@ export function citySuggestedParcel(data, definition, near={x:0,z:0}) {
 export function cityCatalogue(data, {query='',category='all',availableOnly=true}={}) {
   const text=query.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const level=Number(data.city?.city_level)||1;
-  return (data.buildings||[]).filter(row=>(category==='all'||cityBuildingKind(row)===category)
+  return (data.buildings||[]).filter(row=>row.code!=='ROAD_MATRIX').filter(row=>(category==='all'||(category==='culture'?['culture','sport'].includes(row.category):cityBuildingKind(row)===category))
     &&(!availableOnly||Number(row.unlock_level||1)<=level)
     &&`${row.name} ${row.code}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(text))
     .sort((a,b)=>Number(!!a.metadata?.mega)-Number(!!b.metadata?.mega)||Number(a.unlock_level)-Number(b.unlock_level)||Number(a.cost_coins)-Number(b.cost_coins));
