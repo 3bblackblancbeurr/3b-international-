@@ -23,7 +23,7 @@ export function cityMapSnap(point, step = 2) {
 
 export function cityMapInitialView(snapshot={}){
  const placed=(snapshot.placements||[]).filter(p=>p.placement_state!=='stored'&&finite(p.x)&&finite(p.z));
- if(!placed.length)return {zoom:cityMapBlueprint(snapshot).half/32,center:{x:0,z:0}};
+ if(!placed.length)return {zoom:cityMapBlueprint(snapshot).half/(snapshot.city?.city?.map_preset?160:64),center:{x:0,z:0}};
  const xs=placed.map(p=>Number(p.x)+Number(p.footprint_w||1)/2),zs=placed.map(p=>Number(p.z)+Number(p.footprint_h||1)/2);
  const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),half=cityMapBlueprint(snapshot).half;
  const radius=Math.max(32,(Math.max(maxX-minX,maxZ-minZ)+56)/2);
@@ -63,8 +63,9 @@ export function cityMapCustomRoads(snapshot = {}) {
 
 export function cityMapBlueprint(snapshot = {}) {
   const city = snapshot.city || {};
-  const expanded = Number(city.city?.map_extent) === 500;
-  const half = expanded ? 500 : 50 + Math.max(1, Number(city.land_tier || 1)) * 45;
+  const extent = Number(city.city?.map_extent);
+  const expanded = extent === 500 || extent === 1000;
+  const half = expanded ? extent : 50 + Math.max(1, Number(city.land_tier || 1)) * 45;
   const coreHalf = expanded ? Math.max(95,Math.min(500,Number(city.city?.core_half)||95)) : half;
   const districtRows = Array.isArray(snapshot.districts) ? snapshot.districts : [];
   const status = new Map(districtRows.map(row => [normalize(row.country), row]));

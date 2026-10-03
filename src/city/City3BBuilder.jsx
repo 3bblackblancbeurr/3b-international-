@@ -4,7 +4,7 @@ import {Building2,House,Store,Trees,HeartPulse,TrainFront,Landmark,Coins,Users,H
 import City3DMap from './City3DMap.jsx';
 import CityBuildingPreview from './CityBuildingPreview.jsx';
 import {cityFootprint,cityPlacementCheck,citySuggestedParcel,cityCatalogue,CITY_BUILD_CATEGORIES,cityLevelProgress,cityBuildingLimit} from './city3b-construction.js';
-import {cityBuildingKind,cityMapCustomRoads,cityMapInitialView} from './city3b-map.js';
+import {cityBuildingKind,cityMapCustomRoads,cityMapInitialView,cityMapBlueprint} from './city3b-map.js';
 import {cityConstructionState,cityConstructionDuration,cityBuildingBenefit} from './city3b-building-progress.js';
 import {campaignSummary} from './city3b-campaign.js';
 import useCityClock from './useCityClock.js';
@@ -62,7 +62,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
  const ready=(data.placements||[]).filter(p=>cityConstructionState(p,now).ready);
  const clearSelection=()=>{setSignalPoint(null);setEraseTargets([]);setEraseIndex(0);setDetails(false);setPan(false);setDrawOptions(false);setSelectedId('');setSelectedCode('');setTool('inspect');setRoadStart(null);setDrawEnd(null);};
  const chooseBuilding=row=>{const allowed=cityBuildingLimit(data,row);if(!allowed.valid){setNotice(allowed.reason);return;}setPan(false);
-  const parcel=citySuggestedParcel(data,row,center);setSelectedCode(row.code);setSelectedId('');setDraft({...parcel,rotation:0,modelSeed:modelSeed(row.code)});setCenter(parcel);setZoom(z=>Math.max(data.city?.city?.map_extent===500?18:4,z));setTool('build');setCatalog(false);setNotice('Touche le terrain pour choisir la parcelle.');
+  const parcel=citySuggestedParcel(data,row,center);setSelectedCode(row.code);setSelectedId('');setDraft({...parcel,rotation:0,modelSeed:modelSeed(row.code)});setCenter(parcel);setZoom(z=>Math.max(cityMapBlueprint(data).half/28,z));setTool('build');setCatalog(false);setNotice('Touche le terrain pour choisir la parcelle.');
  };
  const selectPlacement=row=>{if(tool==='erase'){const targets=cityEraseTargets(data,{x:Number(row.x)+Number(row.footprint_w)/2,z:Number(row.z)+Number(row.footprint_h)/2});targets.sort((a,b)=>(b.kind==='building')-(a.kind==='building'));setEraseTargets(targets);setEraseIndex(0);setSelectedId('');setSelectedCode('');return;}setEraseTargets([]);setPan(false);setSelectedCode('');setSelectedId(row.id);setDraft({x:Number(row.x),z:Number(row.z),rotation:normalizeRotation(row.rotation)});setTool(row.placement_state==='stored'?'move':tool==='erase'?'erase':'inspect');setCatalog(false);};
  const followMission=()=>{
@@ -128,7 +128,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
  const saveDrawing=async()=>{
   if(busy||!drawCheck.valid)return;
   const additions=drawPreview.map(f=>({...f,id:requestId()})),from=drawingList,to=[...from,...additions];
-  if(to.length>(tool==='road'&&!networkTool?256:128)){setNotice('Limite du terrain atteinte. Retire un ancien tracé.');return;}
+  if(to.length>(tool==='landscape'||tool==='road'&&!networkTool?256:128)){setNotice('Limite du terrain atteinte. Retire un ancien tracé.');return;}
   const result=await call(drawingAction,drawingBody(to,from));
   if(!result)return;commitHistory({kind:drawingKind,from,to});
   setRoadStart(tool==='road'||landscapeKind==='river'?drawEnd:null);setDrawEnd(null);setNotice(tool==='road'?'Route enregistrée. Continue depuis son extrémité.':'Paysage enregistré dans ta ville.');
@@ -151,7 +151,7 @@ export default function City3BBuilder({data,busy,call,premiumCodes=EMPTY_PREMIUM
    <div className="city-game-system">{onFullscreen&&<Button variant="ghost" aria-label="Plein écran" onClick={onFullscreen}><Maximize2 size={18}/></Button>}<Button variant="ghost" aria-label="Réglages du jeu" onClick={()=>onOpenPanel('settings')}><Settings2 size={18}/></Button>{onClose&&<Button variant="ghost" aria-label="Quitter la ville" onClick={onClose}><X size={18}/></Button>}</div>
   </header>
   {!panelOpen&&!catalog&&!visibleSelection&&!['road','landscape','erase'].includes(tool)&&mission&&<Button variant="ghost" className="city-game-objective" disabled={busy} onClick={followMission}><Flag size={18}/><span><small>{mission.status==='ready'?'OBJECTIF ACCOMPLI':'PROCHAIN OBJECTIF'}</small><strong>{mission.title}</strong></span><b>{mission.status==='ready'?`+${mission.coins}`:'→'}</b></Button>}
-  {!panelOpen&&!catalog&&!visibleSelection&&(sites.length>0||ready.length>0)&&<Button variant="ghost" className="city-game-sites" onClick={()=>{const row=ready[0]||sites[0];selectPlacement(row);setCenter({x:row.x,z:row.z});setZoom(data.city?.city?.map_extent===500?24:6);}}>{ready.length?<Gift size={17}/>:<HardHat size={17}/>} {ready.length?`${ready.length} inauguration${ready.length>1?'s':''}`:`${sites.length} chantier${sites.length>1?'s':''}`}</Button>}
+  {!panelOpen&&!catalog&&!visibleSelection&&(sites.length>0||ready.length>0)&&<Button variant="ghost" className="city-game-sites" onClick={()=>{const row=ready[0]||sites[0];selectPlacement(row);setCenter({x:row.x,z:row.z});setZoom(cityMapBlueprint(data).half/21);}}>{ready.length?<Gift size={17}/>:<HardHat size={17}/>} {ready.length?`${ready.length} inauguration${ready.length>1?'s':''}`:`${sites.length} chantier${sites.length>1?'s':''}`}</Button>}
   {notice&&!panelOpen&&<div className="city-game-toast" role="status">{notice}</div>}
   {visibleSelection&&<aside className="city-game-inspector" data-placing={placing} data-details={details} aria-label="Bâtiment sélectionné">
    <div className="city-game-inspector-title"><span><small>{placing?'PLACEMENT':progress.label.toUpperCase()}</small><strong>{activeDefinition.name}</strong></span><Button variant="ghost" aria-label="Fermer la sélection" onClick={clearSelection}><X size={18}/></Button></div>
