@@ -134,7 +134,7 @@ export function buildCityArchitecture(api,group,options) {
  if(code==='TELECOM_3B'){volume(0,0,w*.66,d*.63,height*.65);box(group,dark,0,height*.9,0,.10,height*.65,.10);for(const y of [.7,1,1.2])box(group,light,0,height*y,0,w*.30,.05,.05,true);return;}
  if(code==='BUS_STOP_3B'||code==='SCOOTER_DOCK_3B'){box(group,dark,0,.10,0,w*.85,.16,d*.7);box(group,gold,0,small*.7,-d*.1,w*.88,.07,d*.7);box(group,glass,0,small*.4,-d*.38,w*.8,small*.5,.03);for(const x of [-.36,.36])box(group,dark,x*w,small*.4,0,.04,small*.7,.04);return;}
     if(kind==='housing'){
-      const floors=Math.max(1,Math.min(6,Math.ceil(height/1.2))),roofColor=[0x40525b,0x816655,0x5e7062,0x425d7a][variant.roof],wall=[0xdcd9cb,0xcac7bd,0xd8c9b5,0xb8c9c5,0xc5c7cf,0xd4d5be][variant.facade];
+      const floors=code==='HOME_ORIGIN'?2:Math.max(2,Math.min(12,Math.ceil(height/1.5))),roofColor=[0x40525b,0x816655,0x5e7062,0x425d7a][variant.roof],wall=[0xdcd9cb,0xcac7bd,0xd8c9b5,0xb8c9c5,0xc5c7cf,0xd4d5be][variant.facade];
       const bh=height*(variant.form===0?.72:variant.form===1?1.08:.90),bw=w*(variant.form<3?.70:.53),bd=d*.64;
       box(group,wall,-w*.09,bh/2+.08,-d*.05,bw,bh,bd);
       if(variant.form>=3){const side=variant.form%2?1:-1;box(group,wall,side*w*.27,bh*.32,d*.12,w*.29,bh*.64,d*.58);box(group,roofColor,side*w*.27,bh*.64+.10,d*.12,w*.32,.10,d*.61);}
@@ -204,3 +204,4 @@ export function buildCityArchitecture(api,group,options) {
     buildingDetails({box,shape,sphereGeo},group,{w,d,height,kind});
 
 }
+
