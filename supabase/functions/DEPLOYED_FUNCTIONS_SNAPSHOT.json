@@ -16,7 +16,7 @@
     },
     {
       "slug": "city-3b",
-      "version": 8,
+      "version": 11,
       "verify_jwt": true,
       "status": "ACTIVE"
     },

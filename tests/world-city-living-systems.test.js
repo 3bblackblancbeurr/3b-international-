@@ -24,7 +24,7 @@ test('Hub dialogue exposes the current NPC activity without changing mission aut
   assert.equal(typeof hubNpcActivityLine(npc,{hour:10}),'string');
 });
 
-test('City simulation derives residents, traffic, services and demands from actual placements',()=>{
+test('City simulation presents authoritative census and does not invent residents from placements',()=>{
   const snapshot={
     city:{city_level:4,land_tier:2},
     districts:[{country:'France',unlocked:true,level:2},{country:'Algérie',unlocked:true,level:1}],
@@ -44,7 +44,11 @@ test('City simulation derives residents, traffic, services and demands from actu
       {building_code:'CIVIC',placement_state:'placed'},
     ],
   };
+  assert.equal(citySimulationSnapshot(snapshot).available,false);
+  assert.equal(citySimulationSnapshot(snapshot).residents,0);
+  snapshot.life={available:true,population:36,housingCapacity:40,jobs:18,workingPopulation:21,employed:18,happiness:74,mobility:65,needs:[{code:'water',score:90},{code:'energy',score:75},{code:'food',score:70},{code:'health',score:60},{code:'education',score:70}]};
   const sim=citySimulationSnapshot(snapshot);
+  assert.equal(sim.residents,36);
   assert.ok(sim.residents>0);
   assert.ok(sim.jobs>0);
   assert.ok(sim.satisfaction>=0&&sim.satisfaction<=100);

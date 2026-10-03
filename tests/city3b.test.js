@@ -10,11 +10,8 @@ const visual=readFileSync(new URL('../src/components/PassportVisual.jsx',import.
 const client=readFileSync(new URL('../src/city/city3b-client.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('../src/styles/city-3b.css',import.meta.url),'utf8');
 
-test('City 3B opens from home while the Passport remains a card without buttons',()=>{
-  const home=readFileSync(new URL('../src/components/HomePage.jsx',import.meta.url),'utf8');
-  assert.match(home,/title="Créer ma ville"/);
-  assert.match(home,/<PassportNexus open=\{cityOpen\}/);
-  assert.doesNotMatch(visual,/<button\b|<Button\b|passport-portal-trigger/);
+test('City 3B keeps direct creation while the Passport remains an identity card',()=>{
+  assert.doesNotMatch(visual,/MA VILLE|PassportNexus|passport-portal-trigger/);
   assert.match(component,/CRÉE TA VILLE/);
   assert.match(component,/Fonder ma ville/);
   assert.doesNotMatch(component,/useNexusJourney|journey\.travel/);

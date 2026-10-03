@@ -1,3 +1,4 @@
+import {Button} from '../design-system/index.jsx';
 import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import {Check,LockKeyhole,RefreshCw,ShieldCheck,ShoppingBag,Sparkles} from "lucide-react";
 import {beginDigitalPurchase,confirmDigitalPurchase,digitalProviderLabel,digitalPurchasePlatform,loadDigitalStore} from "./digital-store-client.js";
@@ -55,7 +56,7 @@ export default function DigitalStorePanel({scope="all",onStoreChange}){
   return <section className="digital-store" data-scope={scope}>
     <header className="digital-store-head">
       <div><p>3B DIGITAL STORE</p><h2>{scope==="city"?"Premium · Créer ma Ville":"Premium · Monde du 3B"}</h2><span>Objets permanents · zéro pay-to-win · achats liés au Passeport 3B.</span></div>
-      <div className="digital-store-security"><ShieldCheck size={21}/><span><strong>Attribution serveur</strong><small>Le client ne peut jamais créer lui-même un objet acheté.</small></span></div>
+      <div className="digital-store-security"><ShieldCheck size={21}/><span><strong>Achats conservés</strong><small>Retrouve tes achats avec ton compte 3B.</small></span></div>
     </header>
 
     <div className="digital-store-rules">
@@ -72,20 +73,20 @@ export default function DigitalStorePanel({scope="all",onStoreChange}){
     {!data?<div className="digital-store-loading">Chargement du catalogue premium…</div>:
     <div className="digital-store-grid">{items.map(item=>{
       const nativeId=platform==="google_play"?item.provider?.googlePlay:platform==="app_store"?item.provider?.appStore:null;
-      const webReady=platform==="web"&&item.provider?.web==="stripe";
+      const webReady=data?.purchasingEnabled===true&&platform==="web"&&item.provider?.web==="stripe";
       const ready=platform==="web"?webReady:!!nativeId;
       return <article key={item.code} className="digital-store-card" data-owned={item.owned}>
         <div className="digital-store-art"><ShoppingBag size={28}/><span>{item.category}</span></div>
         <div className="digital-store-copy"><small>{item.scope==="city"?"CRÉER MA VILLE":"MONDE DU 3B"}</small><h3>{item.name}</h3><p>{item.description}</p></div>
         <div className="digital-store-price"><strong>{money(item.amount)}</strong><small>achat unique · permanent</small></div>
-        <button type="button" disabled={item.owned||busy===item.code} onClick={()=>buy(item)} data-ready={ready}>
+        <Button variant="ghost" type="button" disabled={item.owned||!!busy||!ready||!data?.purchasingEnabled} onClick={()=>buy(item)} data-ready={ready}>
           {item.owned?<><Check size={17}/> Acquis</>:busy===item.code?"Vérification…":ready?`Acheter · ${money(item.amount)}`:platform==="web"?"Paiement en préparation":`${digitalProviderLabel(platform)} à connecter`}
-        </button>
+        </Button>
       </article>;
     })}</div>}
 
     <footer className="digital-store-footer">
-      <button type="button" onClick={refresh} disabled={!!busy}><RefreshCw size={16}/> Restaurer / actualiser mes achats</button>
+      <Button variant="ghost" type="button" onClick={refresh} disabled={!!busy}><RefreshCw size={16}/> Restaurer / actualiser mes achats</Button>
       <p>Les achats mobiles numériques restent séparés du paiement des vêtements physiques : Google Play Billing sur Android, Apple In-App Purchase sur iPhone, Stripe uniquement sur le web lorsque le canal est autorisé.</p>
     </footer>
   </section>;

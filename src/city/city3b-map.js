@@ -20,7 +20,18 @@ export function cityMapSnap(point, step = 2) {
   };
 }
 
+export function cityMapInitialView(snapshot={}){
+ const placed=(snapshot.placements||[]).filter(p=>p.placement_state!=='stored'&&finite(p.x)&&finite(p.z));
+ if(!placed.length)return {zoom:1,center:{x:0,z:0}};
+ const xs=placed.map(p=>Number(p.x)+Number(p.footprint_w||1)/2),zs=placed.map(p=>Number(p.z)+Number(p.footprint_h||1)/2);
+ const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs),half=cityMapBlueprint(snapshot).half;
+ const radius=Math.max(32,(Math.max(maxX-minX,maxZ-minZ)+56)/2);
+ return {zoom:Math.max(1,Math.min(3,half/radius)),center:{x:(minX+maxX)/2,z:(minZ+maxZ)/2}};
+}
+
 export function cityBuildingKind(definition = {}) {
+  const role = definition.metadata?.city_role;
+  if (['green','mobility','landmark','commerce','housing','civic','mixed'].includes(role)) return role;
   const source = normalize(`${definition.name || ''} ${definition.code || ''} ${definition.category || ''} ${definition.kind || ''}`);
   if (/parc|jardin|square|plaza|nature|green|garden/.test(source)) return 'green';
   if (/gare|station|metro|train|garage|mobil|transport/.test(source)) return 'mobility';

@@ -1,0 +1,3 @@
+export function cityIsNight(city, hour = new Date().getHours()) {
+  return city?.day_mode === 'night' || (city?.day_mode === 'auto' && (hour >= 20 || hour < 7));
+}

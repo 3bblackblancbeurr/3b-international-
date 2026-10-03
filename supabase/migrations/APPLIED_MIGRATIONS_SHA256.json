@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-10-02",
-  "count": 178,
+  "generated_at": "2026-10-03",
+  "count": 182,
   "migrations": [
     {
       "version": "20260910020445",
@@ -906,6 +906,26 @@
       "version": "20261002190934",
       "name": "passport_external_recognition_v1",
       "sha256": "342f3958fd68624f06f6200fa591c4dd0b8d5f0acee66716564166669d21027c"
+    },
+    {
+      "version": "20261003003042",
+      "name": "city3b_guided_campaign",
+      "sha256": "a687cb09efd545b29e51e6d709df7f4516f5c487dd0d7ddde7713eb7ea459671"
+    },
+    {
+      "version": "20261003003056",
+      "name": "city3b_living_runtime",
+      "sha256": "73617d9eb1b13d5344750d4616890f5c6a2ce5d636abc2735036293bcab795b2"
+    },
+    {
+      "version": "20261003003108",
+      "name": "city3b_playable_construction",
+      "sha256": "98f14783174de40db1a8ab5c3ec3b961000e3f4720311985bdd5e5744be1b3ea"
+    },
+    {
+      "version": "20261003003133",
+      "name": "city3b_architect_pass",
+      "sha256": "2e4aa46bc664a7ab2c1a182dafab3f16d116419d2010f69a07848029d9d1bfa7"
     }
   ],
   "reconciliation": {
