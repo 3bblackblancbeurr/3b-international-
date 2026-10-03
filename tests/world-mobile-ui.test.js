@@ -18,7 +18,9 @@ test('current character editor exposes the 16-weapon armory and saves weapon cha
   const avatar = read('src/world/AvatarPanel.jsx');
   const arsenal = read('src/world/arsenal.js');
   assert.match(avatar, /import Armory from '\.\/origins\/Armory\.jsx'/);
-  assert.match(avatar, />Armurerie<\/button>/);
+  assert.match(avatar, /\['armory','Armurerie','06'\]/);
+  assert.match(avatar, /TABS\.map/);
+  assert.match(avatar, /section==='armory'&&<Armory/);
   assert.match(avatar, /<Armory draft=\{draft\} change=\{merge\} xp=\{save\.xp\}\/>/);
   assert.match(avatar, /Enregistrer personnage & arme/);
   const weapons = [...arsenal.matchAll(/weapon\('/g)];

@@ -101,7 +101,7 @@ test('hub waterfront adds promenade, wet edge, stairs, pontoons and controlled l
 test('opening cinematic starts low over water before revealing the hub skyline',()=>{
  const scene=read('src/world/scene.js'),camera=read('src/world/cinematic-camera.js');
  assert.match(scene,/waterReveal:true/);
- assert.match(scene,/focus=\{x:0,z:-145\}/);
+ assert.match(scene,/focus=\{x:0,z:0\}/);
  assert.match(scene,/cameraLift=waterReveal\?4\.2/);
  assert.match(scene,/focusLift=waterReveal\?2\.6/);
  assert.match(scene,/cinematicReturnBlend\(age,\{waterReveal\}\)/);

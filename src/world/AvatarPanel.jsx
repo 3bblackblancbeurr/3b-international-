@@ -9,7 +9,7 @@ import {clearAvatarDraft,readAvatarDraft,writeAvatarDraft} from './avatar-draft-
 import '../arena/arena.css';
 import './origins/creator.css';
 import './hub/platform.css';
-const TABS=[['identity','Identité','01'],['face','Visage','02'],['style','Style','03'],['equipment','Équipement','04'],['path','Voie','05'],['armory','Arme','06']];
+const TABS=[['identity','Identité','01'],['face','Visage','02'],['style','Style','03'],['equipment','Équipement','04'],['path','Voie','05'],['armory','Armurerie','06']];
 export function AvatarPanel({save,act,onDone,uid=null}){
  const saved=useMemo(()=>normalizeAvatar(save.adventure.avatar),[save.adventure.avatar]),recovered=useMemo(()=>readAvatarDraft(uid,saved),[uid,saved]);
  const committed=useRef(false),[draft,setDraft]=useState(()=>recovered.avatar),[section,setSection]=useState('identity'),[message,setMessage]=useState(()=>recovered.recovered?'Tes derniers réglages ont été retrouvés.':''),[reveal,setReveal]=useState(null),[initiallyCreated]=useState(()=>!!save.adventure.avatar.created);
@@ -27,5 +27,5 @@ export function AvatarPanel({save,act,onDone,uid=null}){
  {section==='equipment'&&<>{select('headwear','Couvre-chef',[['none','Aucun'],['beret','Béret'],['brim','Chapeau de voyage'],['hood','Capuche']])}{select('outer','Accessoire',[['none','Aucun'],['cape','Cape'],['scarf','Écharpe'],['apron','Tablier']])}{select('boots','Chaussures',[[0,'Voyage'],[1,'Exploration'],[2,'Garde']])}<label className="avatar-check"><input type="checkbox" checked={draft.bag} onChange={e=>set('bag',e.target.checked)}/>Sac de voyage</label>{select('travelGear','Équipement de voyage',Object.entries(TRAVEL_GEAR).map(([id,g])=>[id,g.name]))}<p>{TRAVEL_GEAR[draft.travelGear]?.description}</p></>}
  {section==='path'&&<><div className="hub-paths">{Object.entries(AVATAR_PATHS).map(([id,p])=><button type="button" key={id} aria-pressed={draft.path===id} onClick={()=>set('path',id)}><strong>{p.name}</strong><span>{p.description}</span></button>)}</div><p>La voie influence l’aventure. L’arène utilise des statistiques équilibrées pour les duels.</p></>}
  {section==='armory'&&<Armory draft={draft} change={merge} xp={save.xp}/>}
- <footer className="avatar-savebar"><button className="world-primary" type="submit">{initiallyCreated?'Enregistrer mon personnage':'Confirmer et entrer dans l’histoire'}</button><p role="status">{message}</p></footer></form></div></div>;
+ <footer className="avatar-savebar"><button className="world-primary" type="submit">{initiallyCreated?'Enregistrer personnage & arme':'Confirmer et entrer dans l’histoire'}</button><p role="status">{message}</p></footer></form></div></div>;
 }
