@@ -26,16 +26,10 @@ Les six workflows du main de référence sont verts ; Vercel indique un déploie
 L'audit en lecture seule de Supabase trouve zéro table publique sans RLS, des index uniques sur le compte et l'identifiant Passeport, et zéro identifiant Passeport dupliqué.
 La base distante ne possède pas encore la révision ou la RPC des sauvegardes Jeux et autorise encore INSERT/UPDATE au navigateur sur cette table.
 
-## Activation coordonnée requise
+## Activation et recette distante
 
-La migration `20261003233000_member_game_save_cas_v1.sql` reste dans le manifeste pending. Ce fichier n'a pas été appliqué à la production par ce travail.
+Recette HTTP réelle en staging : deux comptes authentifiés, deux appareils, conflit et fusion, réponse perdue et reçu idempotent, hors ligne/reconnexion, refus des Coins forgés, écritures directes et lectures intercomptes. Les sept contrôles réussissent. Le staging Nosbloc utilise un nom distinct pour le validateur de session afin de conserver sa fonction préexistante ; les tables de sauvegarde et fonctions de la recette reproduisent la frontière production. Le schéma complet économie/inventaire n’a pas été cloné.
 
-1. Tester la migration et la fonction member-api sur un environnement Supabase staging, puis une Preview Vercel de la branche.
-2. Rejouer deux comptes et deux appareils, réponse perdue, hors ligne/reconnexion et reprise de l'ancienne sauvegarde. Les tests locaux ne remplacent pas cette recette réelle.
-3. Programmer le basculement coordonné migration → member-api → frontend. La révocation SQL des anciens droits bloque les anciennes écritures directes ; les anciens clients doivent recevoir la mise à jour avant de retrouver la synchronisation. Leurs copies locales sont conservées.
-4. Après confirmation du déploiement, enregistrer le numéro réellement attribué par Supabase et le hash SQL dans APPLIED_MIGRATIONS_SHA256.json, puis retirer la migration du manifeste pending.
-5. Vérifier la CI du commit final et le déploiement Vercel. Ne pas annoncer le nouveau backend actif tant que la recette distante n'est pas validée.
+Production : migration réellement appliquée sous le numéro 20261003215516, puis member-api version 11, JWT obligatoire. Le manifeste applied contient le hash exact. Activation frontend par fusion GitHub puis déploiement Vercel.
 
-Les checkpoints d'une même partie modifiés simultanément sur deux appareils ne peuvent pas tous être joués en parallèle : la branche locale est retenue en cas de conflit sur cette partie, tandis que les records durables sont fusionnés. Les sauvegardes invité restent liées à l'appareil ; le protocole compte n'attribue aucun Coin ni XP économique depuis le navigateur.
-
-Le budget Vercel passe pour l'intégration Git. L'estimation d'upload CLI dépasse le plafond Hobby utilisé par le garde ; garder le déploiement via Git. Le build conserve ses avertissements de chunks JavaScript volumineux.
+Les anciennes écritures directes sont révoquées ; les clients doivent recharger la nouvelle application pour synchroniser. Leurs caches locaux sont conservés.

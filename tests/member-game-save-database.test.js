@@ -19,7 +19,7 @@ test('real save RPC rejects stale writes, replays receipts and isolates accounts
    grant select,insert,update on member_game_saves to authenticated;
    insert into member_profiles values('${A}'),('${B}');
   `);
-  await db.exec(readFileSync(new URL('../supabase/migrations/20261003233000_member_game_save_cas_v1.sql',import.meta.url),'utf8'));
+  await db.exec(readFileSync(new URL('../supabase/migrations/20261003215516_member_game_save_cas_v1.sql',import.meta.url),'utf8'));
   const write=async(user,revision,data,operation=OP)=>(await db.query('select member_game_save_sync_server($1,$2,$3::jsonb,$4) as result',[user,revision,JSON.stringify(data),operation])).rows[0].result;
   const first={version:1,records:{arena:{plays:1}}};
   assert.equal((await write(A,0,first)).revision,1);
