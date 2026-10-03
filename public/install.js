@@ -1,26 +1,50 @@
 (() => {
-  const ua = navigator.userAgent || '';
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isAndroid = /Android/i.test(ua);
-  const box = document.getElementById('device-recommendation');
-  const title = document.getElementById('device-title');
-  const copy = document.getElementById('device-copy');
-  const link = document.getElementById('device-link');
-  if (!box || !title || !copy || !link) return;
-
-  if (isIOS) {
-    box.hidden = false;
-    box.dataset.platform = 'ios';
-    title.textContent = 'iPhone / iPad détecté';
-    copy.textContent = 'Le chemin le plus simple est prêt : Safari → Sur l’écran d’accueil → Ouvrir comme app web.';
-    link.href = '/iphone';
-    link.textContent = 'Continuer sur iPhone';
-  } else if (isAndroid) {
-    box.hidden = false;
-    box.dataset.platform = 'android';
-    title.textContent = 'Android détecté';
-    copy.textContent = 'Ouvre le guide Android pour installer 3B depuis Chrome ou Samsung Internet.';
-    link.href = '/android';
-    link.textContent = 'Continuer sur Android';
-  }
+  let prompt = null;
+  let busy = false;
+  let installed = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const status = document.getElementById('install-status');
+  const buttons = [...document.querySelectorAll('[data-install]')];
+  window.addEventListener('beforeinstallprompt', event => {
+    if (typeof event.prompt !== 'function') return;
+    event.preventDefault();
+    prompt = event;
+  });
+  window.addEventListener('appinstalled', () => {
+    installed = true;
+    prompt = null;
+    status.textContent = '3B est installé. Ouvre son icône.';
+  });
+  buttons.forEach(button => button.addEventListener('click', async () => {
+    if (busy) return;
+    if (installed) { window.location.assign('/'); return; }
+    const platform = button.dataset.install;
+    const ua = navigator.userAgent || '';
+    const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const android = /Android/i.test(ua);
+    const matching = platform === 'android' ? android : !ios && !android;
+    if (!matching) {
+      status.textContent = platform === 'pc' ? 'Ouvre 3B sur ton PC pour l’installer.' : 'Ouvre 3B sur ton téléphone Android pour l’installer.';
+      return;
+    }
+    if (!prompt) {
+      status.textContent = platform === 'pc'
+        ? 'Dans Chrome ou Edge : menu ⋮ → Installer 3B (ou Installer cette page en tant qu’application).'
+        : 'Dans Chrome ou Samsung Internet : menu ⋮ → Installer l’application / Ajouter à l’écran d’accueil.';
+      return;
+    }
+    const request = prompt;
+    prompt = null;
+    busy = true;
+    buttons.forEach(item => { item.disabled = true; });
+    try {
+      await request.prompt();
+      const choice = await request.userChoice;
+      status.textContent = choice?.outcome === 'accepted' ? 'Installation demandée. Confirme dans la fenêtre du navigateur.' : 'Installation annulée. Tu peux continuer sur le site.';
+    } catch {
+      status.textContent = 'Utilise le menu de ton navigateur → Installer l’application.';
+    } finally {
+      busy = false;
+      buttons.forEach(item => { item.disabled = false; });
+    }
+  }));
 })();
