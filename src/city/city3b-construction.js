@@ -1,3 +1,4 @@
+import {municipalLevelProgress} from './city3b-progression.js';
 import {cityMapBlueprint, cityMapPlacementPolicy, cityBuildingKind} from './city3b-map.js';
 
 export const CITY_BUILD_CATEGORIES = [
@@ -45,7 +46,8 @@ export function cityCatalogue(data, {query='',category='all',availableOnly=true}
     &&`${row.name} ${row.code}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(text))
     .sort((a,b)=>Number(!!a.metadata?.mega)-Number(!!b.metadata?.mega)||Number(a.unlock_level)-Number(b.unlock_level)||Number(a.cost_coins)-Number(b.cost_coins));
 }
-export function cityLevelProgress(xp=0) {
+export function cityLevelProgress(xp=0,curve='legacy') {
+  if(curve==='municipal-v2')return municipalLevelProgress(xp);
   // Mirrors the server's independent City XP curve.
   const value=Math.max(0,Number(xp)||0),level=Math.min(50,Math.floor(value/1000)+1);
   const floor=1000*(level-1),next=1000*level;
@@ -57,3 +59,4 @@ export function cityBuildingLimit(data={},definition,ignoreId){
  const count=(data.placements||[]).filter(p=>p.building_code===definition?.code&&p.id!==ignoreId).length;
  return maximum&&count>=maximum?{valid:false,reason:definition?.code==='CITY_HALL_3B'?'Ta ville possède déjà sa mairie. Déplace-la ou replace-la depuis la réserve.':`Limite de ${maximum} bâtiment(s) par ville`}:{valid:true};
 }
+

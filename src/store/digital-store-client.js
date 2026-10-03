@@ -33,10 +33,10 @@ export async function loadDigitalStore(scope="all"){
 export async function beginDigitalPurchase(product){
   const platform=digitalPurchasePlatform();
   if(platform==="google_play"){
-    return {native:true,provider:platform,ready:!!product?.provider?.googlePlay,productId:product?.provider?.googlePlay||null};
+    return {native:true,provider:platform,ready:false,productConfigured:!!product?.provider?.googlePlay,productId:product?.provider?.googlePlay||null};
   }
   if(platform==="app_store"){
-    return {native:true,provider:platform,ready:!!product?.provider?.appStore,productId:product?.provider?.appStore||null};
+    return {native:true,provider:platform,ready:false,productConfigured:!!product?.provider?.appStore,productId:product?.provider?.appStore||null};
   }
   const attemptId=globalThis.crypto?.randomUUID?.();
   if(!attemptId)throw Error("Impossible de sécuriser cette tentative d’achat.");
@@ -45,4 +45,9 @@ export async function beginDigitalPurchase(product){
 
 export async function confirmDigitalPurchase(sessionId){
   return api("/api/catalog?__3b_route=digital-store-status&session_id="+encodeURIComponent(sessionId));
+}
+
+export async function spendDigitalCredits(product,attemptId){
+  if(!attemptId)throw Error('Identifiant d’achat manquant.');
+  return api('/api/catalog?__3b_route=digital-store-spend',{method:'POST',body:JSON.stringify({productCode:product.code,attemptId})});
 }

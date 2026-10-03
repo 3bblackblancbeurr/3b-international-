@@ -4,10 +4,10 @@ import {CITY_CAMPAIGN_CHAPTERS,CITY_CAMPAIGN_MISSIONS,campaignSummary,missionPro
 import {cityBuildingKind} from '../src/city/city3b-map.js';
 import {citySimulationSnapshot} from '../src/city/city3b-simulation.js';
 
-test('city campaign has eight complete chapters, solo main path and optional social demands',()=>{
- assert.equal(CITY_CAMPAIGN_CHAPTERS.length,8);
- assert.equal(new Set(CITY_CAMPAIGN_MISSIONS.map(m=>m.code)).size,32);
- for(let chapter=1;chapter<=8;chapter++){
+test('city campaign has eighteen complete chapters, solo main path and optional social demands',()=>{
+ assert.equal(CITY_CAMPAIGN_CHAPTERS.length,18);
+ assert.equal(new Set(CITY_CAMPAIGN_MISSIONS.map(m=>m.code)).size,72);
+ for(let chapter=1;chapter<=18;chapter++){
   assert.equal(CITY_CAMPAIGN_MISSIONS.filter(m=>m.chapter===chapter&&!m.optional).length,3);
   assert.equal(CITY_CAMPAIGN_MISSIONS.filter(m=>m.chapter===chapter&&m.optional).length,1);
  }
@@ -32,3 +32,4 @@ test('service metadata prevents water and energy stations being counted as trans
  const result=citySimulationSnapshot({buildings,placements:buildings.map((b,i)=>({id:String(i),building_code:b.code,x:i*5,z:0,placement_state:'placed'}))});
  assert.equal(result.counts.civic,2);assert.equal(result.counts.mobility,1);
 });
+
