@@ -30,7 +30,8 @@ test('City premium items affect rendering while keeping the server-authoritative
   assert.match(portal,/readStore\('city'\)/);
   assert.match(portal,/ownedPremiumCodes/);
   assert.match(builder,/call\('place'/);
-  assert.match(builder,/call\(tool==='road'\?'plan_roads':'plan_terrain'/);
+  assert.match(builder,/drawingAction=tool==='road'\?\(networkTool\?'plan_networks':'plan_roads'\):'plan_terrain'/);
+  assert.match(builder,/call\(drawingAction,drawingBody\(to,from\)\)/);
   assert.match(builder,/expectedRoads:roads/);
 });
 
