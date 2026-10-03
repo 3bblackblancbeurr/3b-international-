@@ -27,7 +27,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   renderer.domElement.tabIndex=0;
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,.1,3000);
   const controls=new OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.43;controls.minPolarAngle=.12;
+  controls.enableDamping=false;controls.maxPolarAngle=Math.PI*.48;controls.minPolarAngle=.12;
   controls.minDistance=9;controls.maxDistance=2100;controls.screenSpacePanning=false;
   controls.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};
   controls.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};
@@ -47,8 +47,8 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const skyGeometry=new THREE.SphereGeometry(2600,32,16);geometries.add(skyGeometry);
   const skyMaterial=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{},vertexShader:'varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'varying vec3 direction;void main(){float h=clamp(normalize(direction).y,0.0,1.0);gl_FragColor=vec4(mix(vec3(.79,.91,1.),vec3(.16,.49,.85),pow(h,.55)),1.0);}'});materials.set('sky',skyMaterial);sky.add(new THREE.Mesh(skyGeometry,skyMaterial));
   const cloudMaterial=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.92,depthWrite:false,fog:false}),sunMaterial=new THREE.MeshBasicMaterial({color:0xfff0b3,fog:false});materials.set('cloud',cloudMaterial);materials.set('sunDisc',sunMaterial);
-  const sunDisc=new THREE.Mesh(sphereGeo,sunMaterial);sunDisc.position.set(-650,950,-900);sunDisc.scale.setScalar(58);sky.add(sunDisc);
-  for(let i=0;i<12;i++){const cloud=new THREE.Group(),angle=i*Math.PI/6;cloud.position.set(Math.cos(angle)*1250,380+(i%3)*90,Math.sin(angle)*1250);for(let j=0;j<4;j++){const puff=new THREE.Mesh(sphereGeo,cloudMaterial);puff.position.set(j*55-80,(j%2)*16,0);puff.scale.set(75,24+(j%2)*12,45);cloud.add(puff);}sky.add(cloud);}
+  const sunDisc=new THREE.Mesh(sphereGeo,sunMaterial);sunDisc.position.set(-650,120,-900);sunDisc.scale.setScalar(58);sky.add(sunDisc);
+  for(let i=0;i<12;i++){const cloud=new THREE.Group(),angle=i*Math.PI/6;cloud.position.set(Math.cos(angle)*1250,160+(i%3)*30,Math.sin(angle)*1250);for(let j=0;j<4;j++){const puff=new THREE.Mesh(sphereGeo,cloudMaterial);puff.position.set(j*55-80,(j%2)*16,0);puff.scale.set(75,24+(j%2)*12,45);cloud.add(puff);}sky.add(cloud);}
   function tree(parent,x,z,size=1){
     matrixTree({box,shape,sphereGeo,cylinderGeo},parent,x,z,size);
   }

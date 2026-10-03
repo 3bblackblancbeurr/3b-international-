@@ -54,7 +54,7 @@
 .city-game .city-game-bottom nav button svg{width:17px;height:17px}
 .city-game .city3d-controls{gap:4px;bottom:76px}
 .city-game .city3d-controls button{width:36px;min-height:36px;padding:0}
-.city-game .city-game-feedback{max-width:min(440px,calc(100% - 100px));font-size:12px;padding:8px 12px;line-height:1.35}
+.city3b-shell[data-playing=true] .city-game-feedback{max-width:min(440px,calc(100% - 100px));line-height:1.35}.city3b-shell[data-playing=true] .city-game-feedback>div{font-size:12px;padding:8px 12px}
 @media(max-height:540px) and (orientation:landscape){
  .city-game .city-game-hud{min-height:44px}.city-game .city-game-system button{min-height:34px;width:34px;padding:0}
  .city-game .city-game-bottom{bottom:5px}.city-game .city-game-bottom nav button{min-height:36px;padding:5px 9px;font-size:10px}
