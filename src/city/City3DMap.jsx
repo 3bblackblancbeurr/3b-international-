@@ -6,7 +6,7 @@ import './city3b-playable.css';
 
 export default function City3DMap(props){
  const host=useRef(null),engine=useRef(null),latest=useRef(props),signature=useRef('');latest.current=props;
- const [ready,setReady]=useState(false),[error,setError]=useState(''),[attempt,setAttempt]=useState(0),[cameraMode,setCameraMode]=useState('pan'),[clearView,setClearView]=useState(false);
+ const [ready,setReady]=useState(false),[error,setError]=useState(''),[attempt,setAttempt]=useState(0),[navigating,setNavigating]=useState(false);
  const sceneKey=citySceneSignature(props.data,props.premiumCodes);
  useEffect(()=>{
   let live=true;setReady(false);setError('');
@@ -15,7 +15,7 @@ export default function City3DMap(props){
    const instance=createCityScene(host.current,{
     onPoint:point=>{const p=latest.current;if(p.tool==='road')p.onRoadPoint?.(point);else p.onPoint?.(point);},
     onStroke:(start,end)=>latest.current.onStroke?.(start,end),onHover:(point,start)=>latest.current.onHover?.(point,start),
-    onSelect:row=>latest.current.onSelect?.(row),onError:message=>{if(live)setError(message);},
+    onSelect:row=>latest.current.onSelect?.(row),onNavigate:value=>{if(live)setNavigating(value);},onError:message=>{if(live)setError(message);},
    });
    engine.current=instance;signature.current=citySceneSignature(latest.current.data,latest.current.premiumCodes);
    instance.rebuild(latest.current.data,latest.current.premiumCodes);instance.setView({center:latest.current.center,zoom:latest.current.zoom});instance.updateDraft(latest.current);setReady(true);
@@ -23,23 +23,17 @@ export default function City3DMap(props){
   return()=>{live=false;engine.current?.dispose();engine.current=null;};
  },[attempt]);
  useEffect(()=>{if(ready&&signature.current!==sceneKey){signature.current=sceneKey;engine.current?.rebuild(props.data,props.premiumCodes);}},[ready,sceneKey]);
- useEffect(()=>{if(ready)engine.current?.setCameraMode(cameraMode);},[ready,cameraMode]);
  useEffect(()=>{engine.current?.syncClock(props.data.serverTime);},[ready,props.data.serverTime]);
  useEffect(()=>{engine.current?.updateDraft(props);},[ready,props.draft,props.activeDefinition,props.activePlacement,props.selectedId,props.tool,props.networkKind,props.pan,props.roadStart,props.drawPreview,props.drawValidation,props.landscapeKind,props.previewOnly]);
  useEffect(()=>{engine.current?.setView({center:props.center,zoom:props.zoom});},[props.center,props.zoom]);
- return <div className="city3d-shell" data-clear-view={clearView} data-night={cityConstructionIsNight(props.data.city)}>
+ useEffect(()=>{if(ready&&!props.previewOnly&&(props.activeDefinition||props.selectedId))engine.current?.focusBuilding();},[ready,props.activeDefinition?.code,props.selectedId,props.previewOnly]);
+ return <div className="city3d-shell" data-navigating={navigating} data-night={cityConstructionIsNight(props.data.city)}>
   <div className="city3d-viewport" ref={host}/>
   {!ready&&!error&&<div className="city3d-loading" role="status">Ouverture de ta ville…</div>}
   {error&&<div className="city3d-error" role="alert">{error}<Button variant="champagne" onClick={()=>setAttempt(v=>v+1)}>Relancer la 3D</Button></div>}
-  {ready&&!props.previewOnly&&<div className="city3d-view-tools" role="group" aria-label="Vue de la ville">
-   <Button variant="ghost" disabled={['build','move','road','landscape','signal','erase'].includes(props.tool)} aria-pressed={cameraMode==='orbit'} onClick={()=>setCameraMode(v=>v==='orbit'?'pan':'orbit')}>{cameraMode==='orbit'?'Caméra libre':'Incliner'}</Button>
-   <Button variant="ghost" disabled={['build','move','road','landscape','signal','erase'].includes(props.tool)} onClick={()=>{setCameraMode('orbit');engine.current?.scenicView();}}>Ciel</Button>
-   <Button variant="ghost" onClick={()=>{setCameraMode('pan');engine.current?.home();}}>Recentrer</Button>
-   <Button variant="ghost" aria-pressed={clearView} onClick={()=>setClearView(v=>!v)}>{clearView?'Afficher menus':'Vue dégagée'}</Button>
-  </div>}
   <div className="city3d-gesture-guide" aria-label="Commandes de caméra">
    <span className="city3d-guide-mouse">Glisser ou maintenir la molette · Molette : zoom · Clic droit : tourner · Q/E : rotation · H : recentrer</span>
-   <span className="city3d-guide-touch">Deux doigts : déplacer, pincer et tourner · Incliner : glisser un doigt</span>
+   <span className="city3d-guide-touch">Un doigt : déplacer ou construire · Maintenir puis glisser : déplacer pendant la construction · Pincer : zoom · Deux doigts : tourner ou glisser ensemble pour incliner</span>
   </div>
  </div>;
 }

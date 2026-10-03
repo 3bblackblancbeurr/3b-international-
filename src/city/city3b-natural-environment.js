@@ -7,7 +7,7 @@ export function cityRidgeGeometry(half,layer=0){
 }
 // The same atmosphere lights the sky and its water reflection, without a second render pass.
 const atmosphere=`vec3 atmosphere(vec3 d,float seconds){
- float h=max(d.y,0.);vec3 color=mix(vec3(.70,.80,.87),vec3(.15,.36,.63),pow(h,.45));
+ float h=max(d.y,0.);vec3 color=mix(vec3(.70,.80,.87),vec3(.12,.38,.72),pow(h,.45));
  vec3 sun=normalize(vec3(-100.,170.,80.));float angle=max(dot(d,sun),0.);
  color+=vec3(.28,.22,.12)*pow(angle,32.);color=mix(color,vec3(1.,.96,.86),smoothstep(.9997,.99994,angle));
  vec2 uv=d.xz/max(.12,d.y)*.55+vec2(seconds*.002,0.);
@@ -44,7 +44,7 @@ export function createCityNaturalEnvironment(){
  float shore=max(abs(p.x),abs(p.y))-uExtent;
  float foam=(1.-smoothstep(0.,2.5,shore))*step(0.,shore)*smoothstep(.45,.9,noise(p*.8+uTime*.12))*detail;
  float shallows=(1.-smoothstep(0.,14.,shore))*step(0.,shore);
- vec3 body=mix(vec3(.025,.16,.22),vec3(.06,.34,.35),shallows);
+ vec3 body=mix(vec3(.025,.19,.28),vec3(.045,.40,.43),shallows);
  vec3 color=mix(body,reflection,fresnel*.85);
  color+=crest*vec3(.015,.035,.035)+sparkle*vec3(.6,.55,.42);color=mix(color,vec3(.78,.85,.83),foam*.65);
  color=mix(color,color*.36,uNight);
@@ -52,7 +52,7 @@ export function createCityNaturalEnvironment(){
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`});
- const grass=new THREE.MeshStandardMaterial({color:0x718064,roughness:1,metalness:0});
+ const grass=new THREE.MeshStandardMaterial({color:0x648955,roughness:1,metalness:0});
  grass.onBeforeCompile=shader=>{
   shader.uniforms.uSnow=snow;
   shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 grassWorld;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\ngrassWorld=(modelMatrix*vec4(transformed,1.)).xyz;');
