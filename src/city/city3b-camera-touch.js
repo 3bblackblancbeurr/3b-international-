@@ -6,7 +6,7 @@ export function cityTouchGesture(points){
 }
 
 // Own touch camera input separately from single-finger construction strokes.
-export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onGesture}){
+export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onGesture,onConstruction=()=>{}}){
  const fingers=new Map();let active=false,start=null;
  const snapshot=()=>{
   if(!fingers.size){start=null;return;}
@@ -19,13 +19,12 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
   if(fingers.size>=2){consume(e);return;}
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});element.setPointerCapture(e.pointerId);
   active=active||fingers.size===2||canPan();
-  if(active){motion.cancel();onGesture();consume(e);}snapshot();
+  consume(e);if(active){motion.cancel();onGesture();}else onConstruction(e);snapshot();
  };
  const move=e=>{
   if(!fingers.has(e.pointerId))return;
   fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(!active||!start)return;
-  consume(e);
+  consume(e);if(!active){onConstruction(e);return;}if(!start)return;
   const next=cityTouchGesture([...fingers.values()]),two=fingers.size===2;
   const ratio=two?start.gesture.distance/Math.max(1,next.distance):1;
   const offset=start.offset.clone().multiplyScalar(ratio);
@@ -38,7 +37,7 @@ export function attachCityTouchCamera(element,{camera,controls,motion,canPan,onG
  };
  const up=e=>{
   if(!fingers.delete(e.pointerId))return;
-  if(active){consume(e);onGesture();}
+  consume(e);if(active)onGesture();else onConstruction(e);
   if(!fingers.size)active=false;
   snapshot();
  };
