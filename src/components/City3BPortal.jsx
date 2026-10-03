@@ -45,7 +45,7 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
   const passive=action==='life',payload={slot:slot||1,...(screen==='play'&&data?.city?{saveId:data.city.city_id}:{}),...body};
   if(pending?.body.saveId===payload.saveId&&!['snapshot','life','access'].includes(action)&&(action!==pending.action||JSON.stringify(payload)!==JSON.stringify(pending.body))){setError('Vérifie l’action en attente avant de modifier à nouveau cette ville.');return null;}
   try{return await requests.current.run(action,async()=>{
-   if(!passive){invocation=++invocations.current;setBusy(true);setError('');setNotice('');}
+   if(!passive){invocation=++invocations.current;setBusy(true);setError('');setNotice('');rememberCityCommand(storage(),uid,action,payload);}
    try{return await requestCity(action,payload,uid);}finally{if(!passive&&mounted.current&&invocation===invocations.current)setBusy(false);}
   },v=>{
    if(!mounted.current)return;
@@ -54,7 +54,7 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
    if(passive)setData(previous=>previous?{...previous,...v}:previous);else setData(v);
    if(v.reward)setNotice(v.reward.alreadyClaimed?'Cette récompense a déjà été reçue.':`${v.reward.construction?'Bâtiment inauguré':v.reward.income?'Recettes de la ville':v.reward.event?'Rendez-vous accompli':'Objectif accompli'} · +${v.reward.coins} Coins et +${v.reward.cityXp} XP ville.`);
    if(['construction_claim','mission_claim','life_action','budget_claim','create','place'].includes(action))account.refresh?.();
-  });}catch(e){if(!passive){if(mounted.current&&invocation===invocations.current)setError(e.message);if(e.uncertain){const queued=rememberCityCommand(storage(),uid,action,payload);if(queued&&mounted.current&&invocation===invocations.current)setPending(queued);}}return null;}
+  });}catch(e){if(!passive){if(mounted.current&&invocation===invocations.current)setError(e.message);const queued=pendingCityCommand(storage(),uid,payload.saveId);const same=queued?.action===action&&JSON.stringify(queued.body)===JSON.stringify(payload);if(e.uncertain){const saved=queued||rememberCityCommand(storage(),uid,action,payload);if(saved&&mounted.current&&invocation===invocations.current)setPending(saved);}else if(same){forgetCityCommand(storage(),uid,payload.saveId);if(mounted.current&&invocation===invocations.current)setPending(null);}}return null;}
  };
  useEffect(()=>{if(open&&uid){setPanel('');setScreen('saves');setSlot(null);setData(null);call('access');readStore('city').then(store=>{if(mounted.current)setPremiumCodes(ownedPremiumCodes(store));}).catch(()=>{if(mounted.current)setPremiumCodes(new Set());});}else if(open&&!account.loading){setData(null);setPremiumCodes(new Set());setError('');}},[open,uid,account.loading]);
  useEffect(()=>{if(!open||!uid||screen!=='play'||!data?.city)return;const refresh=()=>{if(!document.hidden&&!requests.current.busy)call('life');};const timer=setInterval(refresh,15000);document.addEventListener('visibilitychange',refresh);window.addEventListener('online',refresh);window.addEventListener('pageshow',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('online',refresh);window.removeEventListener('pageshow',refresh);};},[open,uid,screen,!!data?.city]);
