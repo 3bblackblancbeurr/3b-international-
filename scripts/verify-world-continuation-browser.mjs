@@ -34,7 +34,9 @@ async function ready(page){
  await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});
  // Loading can finish before the scene publishes its first frame/cinematic.
  // Wait for a real snapshot before deciding whether the arrival can be skipped.
- await page.locator('.world-district small').waitFor({timeout:120000});
+ // Combat deliberately hides the exploration HUD. Presence still proves that
+ // a timed scene snapshot arrived; visibility is asserted on the active UI.
+ await page.locator('.world-district small').waitFor({state:'attached',timeout:120000});
  const skip=page.locator('.play-cinematic button');
  if(await skip.isVisible())await skip.click({timeout:2000}).catch(()=>{});
  await page.locator('.play-cinematic').waitFor({state:'hidden',timeout:30000});
