@@ -1,6 +1,10 @@
 const ACTIONS=new Set(['place','move','store','plan_roads','plan_terrain','plan_networks','plan_signals','mission_claim','construction_claim','life_action','budget_claim']);
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const key=(user,save)=>`3b.city.pending.v1:${user}:${save}`;
+export function cityCommandBlocked(pending,action,payload){
+ if(!pending||!payload?.saveId||pending.body?.saveId!==payload.saveId||['snapshot','life','access'].includes(action))return false;
+ return action!==pending.action||JSON.stringify(payload)!==JSON.stringify(pending.body);
+}
 export function rememberCityCommand(storage,user,action,body,now=Date.now()){
  if(!storage||!UUID.test(user||'')||!UUID.test(body?.saveId||'')||!ACTIONS.has(action))return null;
  const command={user,action,body:JSON.parse(JSON.stringify(body)),at:now};

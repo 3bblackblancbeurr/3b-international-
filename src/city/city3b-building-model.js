@@ -63,12 +63,12 @@ export function buildCityArchitecture(api,group,options) {
   box(group,ivory,0,height*.95,0,w*.84,height*.25,d*.75);box(group,gold,0,height*1.09,0,w*.9,.06,d*.8);return;
  }
  if(['matrix','civic','heritage','nexus','horizon'].includes(family)){
-  const h=family==='horizon'?height*1.35:family==='matrix'?height*1.35:height;
+  const h=family==='horizon'?height*1.35:family==='matrix'?height*1.10:height;
   if(family==='matrix'){
    // Reference 2: glass central atrium, stepped planted wings and gold floor ribbons.
    volume(0,-d*.03,w*.28,d*.62,h);
    for(const side of [-1,1])for(let tier=0;tier<3;tier++){
-    const bw=w*(.34-tier*.065),bd=d*(.69-tier*.09),th=h*(.32+tier*.22),x=side*(w*.14+bw/2);
+    const bw=w*(.34-tier*.065),bd=d*(.69-tier*.09),th=h*(.28+tier*.18),x=side*(w*.14+bw/2);
     volume(x,-d*.07-tier*d*.025,bw,bd,th);
     for(const zz of [-.25,.2])plant(x,th+.28,zz*bd,small*.14);
     box(group,light,x,th*.5,d*.31-tier*d*.045,.025,th*.86,.03,true);
@@ -204,4 +204,3 @@ export function buildCityArchitecture(api,group,options) {
     buildingDetails({box,shape,sphereGeo},group,{w,d,height,kind});
 
 }
-

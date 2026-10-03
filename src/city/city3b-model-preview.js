@@ -17,7 +17,8 @@ export function cityBuildingHeight(w,d,kind,code=''){
   :/FACTORY|WORKS|DEPOT|SUPERMARKET/.test(type)?1.0
   :kind==='housing'?1.45:kind==='landmark'?2.5
   :kind==='green'||kind==='mobility'?.8:1.10;
- return Math.min(24,Math.max(1.1,small*ratio));
+ const floor=type==='CITY_HALL_3B'?7.5:/HOSPITAL|COURT/.test(type)?6:/SCHOOL|CLINIC|POLICE/.test(type)?4.5:type==='HOME_ORIGIN'?3.4:1.1;
+ return Math.min(24,Math.max(floor,small*ratio));
 }
 export function cityModelPrimitives(definition={},footprint=definition.footprint||{},seed) {
  const w=Math.max(.7,Number(footprint.w??footprint.width)||1),d=Math.max(.7,Number(footprint.h??footprint.height)||1),kind=cityBuildingKind(definition),height=cityBuildingHeight(w,d,kind,definition.code),result=[];
@@ -48,7 +49,8 @@ export function cityModelThumbnail(definition,footprint,seed){
  const key=JSON.stringify([definition.code,seed,definition.category,definition.metadata?.architecture,footprint||definition.footprint]);if(cache.has(key))return cache.get(key);
  const canvas=document.createElement('canvas');canvas.width=320;canvas.height=240;const ctx=canvas.getContext('2d');if(!ctx)return '';
  const faces=cityPreviewTriangles(definition,footprint,seed),points=faces.flatMap(f=>f.points),minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x)),minY=Math.min(...points.map(p=>p.y)),maxY=Math.max(...points.map(p=>p.y)),scale=Math.min(286/(maxX-minX||1),210/(maxY-minY||1));
- const sky=ctx.createLinearGradient(0,0,0,240);sky.addColorStop(0,'#acd0dd');sky.addColorStop(1,'#e2e2cf');ctx.fillStyle=sky;ctx.fillRect(0,0,320,240);
+ const sky=ctx.createLinearGradient(0,0,0,240);sky.addColorStop(0,'#1d3440');sky.addColorStop(1,'#68817d');ctx.fillStyle=sky;ctx.fillRect(0,0,320,240);
+ ctx.fillStyle='#07151c55';ctx.beginPath();ctx.ellipse(160,220,100,12,0,0,Math.PI*2);ctx.fill();
  const pixels=ctx.getImageData(0,0,320,240),depth=new Float32Array(320*240).fill(-Infinity);
  const edge=(a,b,x,y)=>(x-a.x)*(b.y-a.y)-(y-a.y)*(b.x-a.x);
  for(const face of faces){
@@ -63,4 +65,3 @@ export function cityModelThumbnail(definition,footprint,seed){
  ctx.putImageData(pixels,0,0);
  const src=canvas.toDataURL('image/png');if(cache.size>=128)cache.delete(cache.keys().next().value);cache.set(key,src);return src;
 }
-

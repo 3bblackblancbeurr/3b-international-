@@ -1,8 +1,17 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {rememberCityCommand,pendingCityCommand,forgetCityCommand,cityCommandCommitted} from '../src/city/city3b-recovery.js';
+import {rememberCityCommand,pendingCityCommand,forgetCityCommand,cityCommandCommitted,cityCommandBlocked} from '../src/city/city3b-recovery.js';
 import {sendCityRequest} from '../src/city/city3b-transport.js';
 import {createCityRequestGate} from '../src/city/city3b-request-gate.js';
 const user='00000000-0000-4000-8000-000000000001',save='00000000-0000-4000-8000-000000000002';
+test('new maps in all three slots pass recovery without dereferencing a missing command',()=>{
+ for(const slot of [1,2,3])assert.equal(cityCommandBlocked(null,'create',{slot,map:'hills',name:'Collines'}),false);
+ const body={saveId:save,slot:1,building:'HOME_ORIGIN'},pending={action:'place',body};
+ assert.equal(cityCommandBlocked(pending,'create',{slot:2,map:'hills'}),false);
+ assert.equal(cityCommandBlocked(pending,'place',body),false);
+ assert.equal(cityCommandBlocked(pending,'place',{...body,building:'CITY_HALL_3B'}),true);
+ assert.equal(cityCommandBlocked(pending,'snapshot',{saveId:save,slot:1}),false);
+ assert.equal(cityCommandBlocked(pending,'place',{...body,saveId:user}),false);
+});
 test('uncertain commands survive restart, retain identity and remain isolated by account and save',()=>{
  const map=new Map(),storage={setItem:(k,v)=>map.set(k,v),getItem:k=>map.get(k),removeItem:k=>map.delete(k)};
  const body={saveId:save,slot:2,request:'request-original',building:'HOME_ORIGIN'};

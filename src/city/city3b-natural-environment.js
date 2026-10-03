@@ -19,11 +19,11 @@ export function createCityNaturalEnvironment(){
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`});
- const grass=new THREE.MeshStandardMaterial({color:0x73925b,roughness:1,metalness:0});
+ const grass=new THREE.MeshStandardMaterial({color:0x62846b,roughness:1,metalness:0});
  grass.onBeforeCompile=shader=>{
   shader.uniforms.uSnow=snow;
   shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 grassWorld;').replace('#include <worldpos_vertex>','#include <worldpos_vertex>\ngrassWorld=(modelMatrix*vec4(transformed,1.)).xyz;');
-  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uSnow;\nvarying vec3 grassWorld;\n'+noise).replace('#include <color_fragment>',`#include <color_fragment>\nfloat broad=noise(grassWorld.xz*.09),grain=noise(grassWorld.xz*3.);diffuseColor.rgb*=mix(vec3(.74,.86,.64),vec3(1.10,1.04,.81),broad)*(.89+grain*.19);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.78,.85,.89)*(.95+grain*.05),uSnow);`);
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float uSnow;\nvarying vec3 grassWorld;\n'+noise).replace('#include <color_fragment>',`#include <color_fragment>\nfloat broad=noise(grassWorld.xz*.09),grain=noise(grassWorld.xz*3.);diffuseColor.rgb*=mix(vec3(.84,.94,.83),vec3(1.04,1.03,.95),broad)*(.95+grain*.10);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.78,.85,.89)*(.95+grain*.05),uSnow);`);
  };
  grass.customProgramCacheKey=()=> 'city-grass-natural-v1';
  return {sky,grass,water,time,night,extent,update(seconds,camera,reduced=false){time.value=reduced?0:seconds;sky.position.copy(camera.position);},configure(half,isNight,isSnow=false){snow.value=isSnow?1:0;extent.value=half;night.value=isNight?1:0;},dispose(){sky.geometry.dispose();skyMaterial.dispose();grass.dispose();water.dispose();}};
