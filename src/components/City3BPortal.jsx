@@ -7,12 +7,14 @@ import {createPortal} from 'react-dom';
 import {CarFront,Coins,Eye,Globe2,Package,Shirt,Smartphone,Sparkles,X} from 'lucide-react';
 import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 import {CITY_VALUES,city3bRequest} from '../city/city3b-client.js';
+import {rememberCityCommand,pendingCityCommand,forgetCityCommand,cityCommandCommitted} from '../city/city3b-recovery.js';
 import {createCityRequestGate} from '../city/city3b-request-gate.js';
 import City3BBuilder,{City3BPrivatePreview} from '../city/City3BBuilder.jsx';
 import DigitalStorePanel from '../store/DigitalStorePanel.jsx';
 import {loadDigitalStore} from '../store/digital-store-client.js';
 import {ownedPremiumCodes} from '../store/premium-effects.js';
 import City3BCampaign from '../city/City3BCampaign.jsx';
+import CityNewsPanel from '../city/CityNewsPanel.jsx';
 import City3BLife from '../city/City3BLife.jsx';
 import {enterCityFullscreen,leaveCityFullscreen} from '../city/city3b-fullscreen.js';
 import '../styles/city-3b.css';
@@ -23,9 +25,13 @@ export default function City3BPortal(props){
  return <City3BPortalSession key={account.user?.id||'guest'} {...props} account={account}/>;
 }
 export function City3BPortalSession({open,onClose,account,requestCity=city3bRequest,readStore=loadDigitalStore}){
- const uid=account.user?.id,dialog=useRef(null),mounted=useRef(true),requests=useRef(createCityRequestGate()),fullscreenOwned=useRef(false);
+ const uid=account.user?.id,dialog=useRef(null),mounted=useRef(true),requests=useRef(createCityRequestGate()),fullscreenOwned=useRef(false),invocations=useRef(0);
  const [map,setMap]=useState('plains'),[screen,setScreen]=useState('saves'),[slot,setSlot]=useState(null),[slots,setSlots]=useState([]);
  const [data,setData]=useState(null),[panel,setPanel]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[name,setName]=useState('Ma ville 3B'),[premiumCodes,setPremiumCodes]=useState(()=>new Set()),[builderFocus,setBuilderFocus]=useState(null),[notice,setNotice]=useState('');
+ const [connected,setConnected]=useState(()=>globalThis.navigator?.onLine!==false),[pending,setPending]=useState(null);
+ const storage=()=>{try{return globalThis.localStorage;}catch{return null;}};
+ useEffect(()=>{const update=()=>setConnected(navigator.onLine!==false);window.addEventListener('online',update);window.addEventListener('offline',update);return()=>{window.removeEventListener('online',update);window.removeEventListener('offline',update);};},[]);
+ useEffect(()=>()=>{invocations.current++;requests.current.invalidate();},[open]);
  const country=account.passport?.userId===uid?account.passport.country:'';
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  useEffect(()=>{if(!open)return;const element=dialog.current,previous=document.activeElement;if(element&&!element.open)element.showModal();return()=>{element?.close();if(fullscreenOwned.current){leaveCityFullscreen(document.documentElement);fullscreenOwned.current=false;}if(previous?.isConnected)previous.focus?.();};},[open]);
@@ -35,20 +41,23 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
   else setPanel(['districts','collection','settings','life'].includes(action?.tab)?action.tab:'missions');
  };
  const call=async(action,body={})=>{
-  const passive=action==='life';
+  let invocation=null;
+  const passive=action==='life',payload={slot:slot||1,...(screen==='play'&&data?.city?{saveId:data.city.city_id}:{}),...body};
+  if(pending?.body.saveId===payload.saveId&&!['snapshot','life','access'].includes(action)&&(action!==pending.action||JSON.stringify(payload)!==JSON.stringify(pending.body))){setError('Vérifie l’action en attente avant de modifier à nouveau cette ville.');return null;}
   try{return await requests.current.run(action,async()=>{
-   if(!passive){setBusy(true);setError('');setNotice('');}
-   try{return await requestCity(action,{slot:slot||1,...(screen==='play'&&data?.city?{saveId:data.city.city_id}:{}),...body},uid);}finally{if(!passive&&mounted.current)setBusy(false);}
+   if(!passive){invocation=++invocations.current;setBusy(true);setError('');setNotice('');}
+   try{return await requestCity(action,payload,uid);}finally{if(!passive&&mounted.current&&invocation===invocations.current)setBusy(false);}
   },v=>{
    if(!mounted.current)return;
+   if(!passive&&v.city){const queued=pendingCityCommand(storage(),uid,v.city.city_id);if(queued&&(action===queued.action&&JSON.stringify(payload)===JSON.stringify(queued.body)||cityCommandCommitted(queued,v))){forgetCityCommand(storage(),uid,v.city.city_id);setPending(null);}else setPending(queued);}
    if(action==='access')setSlots(v.slots||[]);
    if(passive)setData(previous=>previous?{...previous,...v}:previous);else setData(v);
    if(v.reward)setNotice(v.reward.alreadyClaimed?'Cette récompense a déjà été reçue.':`${v.reward.construction?'Bâtiment inauguré':v.reward.income?'Recettes de la ville':v.reward.event?'Rendez-vous accompli':'Objectif accompli'} · +${v.reward.coins} Coins et +${v.reward.cityXp} XP ville.`);
    if(['construction_claim','mission_claim','life_action','budget_claim','create','place'].includes(action))account.refresh?.();
-  });}catch(e){if(mounted.current&&!passive)setError(e.message);return null;}
+  });}catch(e){if(!passive){if(mounted.current&&invocation===invocations.current)setError(e.message);if(e.uncertain){const queued=rememberCityCommand(storage(),uid,action,payload);if(queued&&mounted.current&&invocation===invocations.current)setPending(queued);}}return null;}
  };
  useEffect(()=>{if(open&&uid){setPanel('');setScreen('saves');setSlot(null);setData(null);call('access');readStore('city').then(store=>{if(mounted.current)setPremiumCodes(ownedPremiumCodes(store));}).catch(()=>{if(mounted.current)setPremiumCodes(new Set());});}else if(open&&!account.loading){setData(null);setPremiumCodes(new Set());setError('');}},[open,uid,account.loading]);
- useEffect(()=>{if(!open||!uid||screen!=='play'||!data?.city)return;const refresh=()=>{if(!document.hidden&&!requests.current.busy)call('life');};const timer=setInterval(refresh,15000);document.addEventListener('visibilitychange',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);};},[open,uid,screen,!!data?.city]);
+ useEffect(()=>{if(!open||!uid||screen!=='play'||!data?.city)return;const refresh=()=>{if(!document.hidden&&!requests.current.busy)call('life');};const timer=setInterval(refresh,15000);document.addEventListener('visibilitychange',refresh);window.addEventListener('online',refresh);window.addEventListener('pageshow',refresh);return()=>{clearInterval(timer);document.removeEventListener('visibilitychange',refresh);window.removeEventListener('online',refresh);window.removeEventListener('pageshow',refresh);};},[open,uid,screen,!!data?.city]);
  useEffect(()=>{
   if(!open||screen!=='play'||!data?.placements)return;
   const serverNow=Date.parse(data.serverTime)||Date.now();
@@ -62,12 +71,15 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
  const returnToSaves=()=>{if(requests.current.busy)return;setPanel('');setScreen('saves');setSlot(null);setData(null);call('access');};
  if(!open)return null;
  const city=screen==='play'?data?.city:null,needsLogin=!account.loading&&!uid;
- const titles={missions:'Objectifs',life:'Ma ville',districts:'Quartiers',premium:'Boutique de la ville',collection:'Décorations',visit:'Visiter une ville',exchange:'Ateliers & échanges',settings:'Réglages'};
+ const titles={news:'3B Actualités',missions:'Objectifs',life:'Ma ville',districts:'Quartiers',premium:'Boutique de la ville',collection:'Décorations',visit:'Visiter une ville',exchange:'Ateliers & échanges',settings:'Réglages'};
  return createPortal(<dialog ref={dialog} className="city3b-dialog" aria-modal="true" aria-label="Crée ta ville 3B" onCancel={event=>{event.preventDefault();panel?setPanel(''):onClose();}}>
   <div className="city3b-shell" data-playing={!!city}>
    {city?<main className="city3b-main city3b-game-main"><City3BBuilder data={data} busy={busy} call={call} premiumCodes={premiumCodes} focus={builderFocus} onOpenPanel={setPanel} onClose={returnToSaves} onFullscreen={fullscreen} panelOpen={!!panel}/></main>:<main className="city-game-entry"><Button variant="ghost" aria-label="Fermer" onClick={onClose}><X size={20}/></Button>{account.loading?<div className="city3b-loading">Vérification du Passeport…</div>:needsLogin?<LoginRequired/>:!data&&!error?<div className="city3b-loading">Ouverture de ta ville…</div>:screen==='saves'?<CitySaveSlots slots={slots} busy={busy} onChoose={chooseSave}/>:<div><Button variant="ghost" className="city-save-back" disabled={busy} onClick={returnToSaves}>← Mes sauvegardes</Button><CreateCity name={name} setName={setName} country={country} busy={busy} map={map} setMap={setMap} create={async()=>{const result=await call('create',{name:name.trim(),country,map});if(result?.city)setScreen('play');}}/></div>}</main>}
+   {!connected&&<div className="city-game-connection" role="status">Hors connexion · dernière sauvegarde reçue affichée</div>}
+   {pending&&city?.city_id===pending.body.saveId&&<aside className="city-game-recovery" role="status"><strong>Une action attend une confirmation</strong><p>Vérifie la sauvegarde avant de la relancer. La même référence sera conservée pour éviter un double achat ou une double récompense.</p><Button variant="champagne" disabled={busy||!connected} onClick={()=>call('snapshot')}>Vérifier la sauvegarde</Button><Button variant="ghost" disabled={busy||!connected} onClick={()=>call(pending.action,pending.body)}>Réessayer la même action</Button><Button variant="ghost" disabled={busy} onClick={()=>{forgetCityCommand(storage(),uid,pending.body.saveId);setPending(null);}}>Ignorer cette action</Button></aside>}
    {(notice||error)&&<div className="city-game-feedback">{notice&&<div role="status">{notice}</div>}{error&&<div role="alert">{error}</div>}</div>}
    {city&&panel&&<aside className="city-game-drawer" aria-label={titles[panel]||'Ma ville'}><header><h2>{titles[panel]||'Ma ville'}</h2><Button variant="ghost" onClick={()=>setPanel('')} aria-label="Revenir à la ville"><X size={18}/></Button></header><div className="city-game-drawer-body">
+    {panel==='news'&&<CityNewsPanel data={data} busy={busy} onAction={followAction} onRefresh={()=>call('snapshot')}/>}
     {panel==='missions'&&<City3BCampaign campaign={data.campaign} busy={busy} onClaim={mission=>call('mission_claim',{mission})} onAction={followAction} onRefresh={()=>call('snapshot')}/>}
     {panel==='life'&&<><nav className="city-game-drawer-links"><Button variant="ghost" onClick={()=>setPanel('districts')}>Quartiers</Button><Button variant="ghost" onClick={()=>setPanel('collection')}><Package size={16}/>Décorations</Button><Button variant="ghost" onClick={()=>setPanel('premium')}><Sparkles size={16}/>Boutique</Button><Button variant="ghost" onClick={()=>setPanel('visit')}><Globe2 size={16}/>Visiter</Button><Button variant="ghost" onClick={()=>setPanel('exchange')}>Ateliers & échanges</Button></nav>{data.budget?.available&&<section className="city3b-play-guide"><div><small>RECETTES QUOTIDIENNES</small><strong>{data.budget.claimed?'Recettes déjà perçues':`${data.budget.amount} Coins`}</strong></div><Button variant="champagne" disabled={busy||data.budget.claimed||!data.budget.amount} onClick={()=>call('budget_claim')}><Coins size={16}/>{data.budget.claimed?'À demain':'Percevoir'}</Button></section>}<City3BLife data={data} busy={busy} onAction={followAction} onCommand={(command,value='')=>call('life_action',{command,value,request:crypto.randomUUID()})} onRefresh={()=>call('snapshot')}/></>}
     {panel==='districts'&&<Districts data={data}/>}
@@ -96,3 +108,4 @@ function CitySettings({city,busy,call}){
  const [name,setName]=useState(city.name),[visibility,setVisibility]=useState(city.visibility);
  return <section className="city3b-panel"><div className="city3b-form"><label>Nom de la ville<input aria-label="Nom de la ville" value={name} maxLength={40} onChange={e=>setName(e.target.value)}/></label><label>Visibilité<select aria-label="Visibilité de la ville" value={visibility} onChange={e=>setVisibility(e.target.value)}><option value="private">Privée</option><option value="public">Publique · les membres peuvent visiter</option></select></label><Button variant="champagne" disabled={busy||name.trim().length<2} onClick={()=>call('settings',{name:name.trim(),visibility})}>Enregistrer</Button><label>Lumière<select aria-label="Jour et nuit" value={city.day_mode||'auto'} disabled={busy} onChange={e=>call('environment',{day:e.target.value,weather:'clear',ambience:'urban'})}><option value="auto">Construction de jour (par défaut)</option><option value="day">Jour</option><option value="night">Nuit</option></select></label><p>Glisse pour déplacer la caméra. Pince avec deux doigts pour zoomer. Sélectionne un bâtiment pour le déplacer, le ranger ou suivre son chantier.</p></div></section>;
 }
+
