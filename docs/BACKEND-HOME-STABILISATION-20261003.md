@@ -14,7 +14,7 @@ Base vérifiée : `7cc2fdd710821f73b5e04febcf8633ff8117092f`.
 
 ## Validation
 
-- Suite locale : 1 645 réussites, 0 échec, 1 test Swift ignoré faute de compilateur Windows. Le contrôle Swift reste nécessaire dans la CI macOS.
+- Suite locale : 1 646 réussites, 0 échec, 1 test Swift ignoré faute de compilateur Windows. Le contrôle Swift reste nécessaire dans la CI macOS.
 - Build de production réussi ; audit dépendances production : 0 vulnérabilité.
 - Audit SQL statique : 200 migrations, 178 tables, 129 fonctions SECURITY DEFINER, 0 problème détecté.
 - Test PostgreSQL embarqué exécutant réellement la nouvelle migration : conflit, reçu idempotent, refus d'un reçu altéré, isolation par compte, révocation des écritures et de la RPC côté authenticated.
