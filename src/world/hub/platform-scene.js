@@ -22,7 +22,7 @@ export function createHubPlatform(save){
   const o=mesh(geo(new THREE.PlaneGeometry(width,1.35)),m,x,y,z);o.castShadow=false;
  }
  // Deep cylindrical foundation, metal buttresses and a safe continuous pedestrian deck.
- mesh(cylinder,dark,0,-13,0,168,26,168);mesh(cylinder,stone,0,-.32,0,167,.6,167);
+ mesh(cylinder,dark,0,-13,0,168,26,168);const ground=mesh(cylinder,stone,0,-.32,0,167,.6,167);
  ring(167,.42,.2,gold);ring(160,.13,.035,blue);ring(125,.12,.035,gold);ring(37,.11,.035,gold);
  for(let i=0;i<48;i++){
   const a=i*Math.PI*2/48,x=Math.cos(a)*167,z=Math.sin(a)*167;
@@ -96,7 +96,7 @@ export function createHubPlatform(save){
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
- const dynamic=new Set([...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
+ const dynamic=new Set([ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
  root.updateMatrixWorld(true);const groups=new Map();
  for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.map){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
  for(const group of groups.values())if(group.length>1){
@@ -105,7 +105,7 @@ export function createHubPlatform(save){
  }
  const update=next=>{save=next;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=25+(i<count?0:Math.sin(i*Math.PI/4)*.55);}};
  update(save);
- return {root,collisions,cameraSolids,ready:Promise.resolve(),height:()=>0,
+ return {root,ground,collisions,cameraSolids,ready:Promise.resolve(),height:()=>0,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
   architectureDiagnostics:{id:'reference-floating-platform',rooms:buildings.length,portals:8},
   update,setParty(){},setQuality(mode){root.userData.quality=mode;},setWeather(){},setDaylight(value){daylight=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},

@@ -8,6 +8,7 @@ import {HUB_PLATFORM,platformNextObjective,safePlatformPosition} from '../src/wo
 import {findPath} from '../src/world/navigation.js';
 import {obstacleDistance} from '../src/world/collision.js';
 import {openingFrame,HUB_OPENING_SHOTS} from '../src/world/hub/opening-sequence.js';
+import {Raycaster,Vector3} from 'three';
 
 test('reference hub has exactly eight perimeter gates and retains existing persistent IDs',()=>{
  const save=blankSave(),items=worldRuntimeItems('hub',save,{hour:12}),portals=items.filter(i=>i.type==='portal');
@@ -27,6 +28,14 @@ test('all physical services and portals are reachable through doors, without cro
    assert.ok(path.length,'unreachable '+item.id);assert.ok(Math.hypot(path.at(-1).x-item.x,path.at(-1).z-item.z)<.01,'wrong destination '+item.id);
    let from=HUB_PLATFORM.spawn;for(const to of path){const steps=Math.ceil(Math.hypot(to.x-from.x,to.z-from.z)/.5);for(let i=1;i<=steps;i++){const p={x:from.x+(to.x-from.x)*i/steps,z:from.z+(to.z-from.z)*i/steps};assert.ok(!platform.collisions.some(o=>obstacleDistance(p,o)<1.24),'wall crossing '+item.id);}from=to;}
   }
+ }finally{platform.dispose();}
+});
+test('click-to-move retains a raycastable deck after architecture batching',()=>{
+ const platform=createHubPlatform(blankSave());
+ try{
+  assert.equal(platform.ground.parent,platform.root);platform.root.updateMatrixWorld(true);
+  const hit=new Raycaster(new Vector3(0,20,32),new Vector3(0,-1,0)).intersectObject(platform.ground,false)[0];
+  assert.ok(hit);assert.ok(Math.abs(hit.point.y)<.05);assert.ok(Math.abs(hit.point.z-32)<1e-6);
  }finally{platform.dispose();}
 });
 test('NPCs, mission objectives and reward markers stay accessible on the new platform',()=>{
