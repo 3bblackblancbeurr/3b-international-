@@ -2,7 +2,7 @@ import * as THREE from 'three';
 const noise=`float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1)),f.x),f.y);}float clouds(vec2 p){return noise(p)*.57+noise(p*2.03)*.28+noise(p*4.07)*.15;}`;
 export function cityRidgeGeometry(half,layer=0){
  const geometry=new THREE.PlaneGeometry(half*5,half*.52,160,10),p=geometry.attributes.position;
- for(let i=0;i<p.count;i++){const x=p.getX(i),v=(p.getY(i)/ (half*.52)+.5);const ridge=half*(.08+.10*Math.pow(Math.sin(x/half*3.7+layer*.8),2)+.055*Math.sin(x/half*8.4+layer)*Math.sin(x/half*5.1));p.setXYZ(i,x,Math.max(0,ridge)*v,-half*(2.6+layer*.7));}
+ for(let i=0;i<p.count;i++){const x=p.getX(i),v=(p.getY(i)/ (half*.52)+.5);const ridge=half*(.08+.10*Math.pow(Math.sin(x/half*3.7+layer*.8),2)+.055*Math.sin(x/half*8.4+layer)*Math.sin(x/half*5.1));p.setXYZ(i,x,Math.max(0,ridge)*v,-half*(2.6+layer*.7)+(1-v)*half*.35+Math.sin(x/half*2.2+layer)*half*.05*v);}
  geometry.computeVertexNormals();return geometry;
 }
 export function createCityNaturalEnvironment(){
