@@ -10,7 +10,8 @@ export const CITY_ROAD_TYPES=Object.freeze([
 export const cityRoadType=id=>CITY_ROAD_TYPES.find(t=>t.id===id)||CITY_ROAD_TYPES[2];
 export const cityRoadLaneOffset=(road,index=0)=>{
  const model=cityRoadType(road.roadType);
- if(model.id==='oneway'||model.id==='dirt')return 0;
+ if(model.id==='oneway')return 0;
+ if(model.id==='dirt')return .65;
  if(model.id==='motorway')return index%2?3.4:1.3;
  return Math.max(.45,Number(road.width||model.width)*.25);
 };

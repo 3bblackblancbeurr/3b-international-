@@ -33,14 +33,16 @@ export function stepCityTraffic(state,seconds){
   v.waiting=false;if(v.hold>0){v.hold=Math.max(0,v.hold-dt);v.waiting=true;continue;}
   const p=position(v);let limit=v.length;
   for(const n of state.junctions){const dx=n.x-v.route.x1,dz=n.z-v.route.z1,along=dx*v.ux+dz*v.uz;if(along<=v.distance||along>v.length||Math.abs(dx*v.uz-dz*v.ux)>.8)continue;
-   const orientation=Math.abs(v.ux*(n.ux??1)+v.uz*(n.uz??0))>.7?'x':'z';if(cityTrafficLight(n,state.time)!==orientation)limit=Math.min(limit,Math.max(0,along-(n.width||4)/2-.8-v.size*.5));
+   const orientation=Math.abs(v.ux*(n.ux??1)+v.uz*(n.uz??0))>.7?'x':'z',stopLine=Math.max(0,along-(n.width||4)/2-.8-v.size*.5);
+   // Once past the stop line, clear the junction even when green ends.
+   if(v.distance<=stopLine+.001&&cityTrafficLight(n,state.time)!==orientation)limit=Math.min(limit,stopLine);
   }
   for(const other of state.vehicles){
    if(other!==v&&other.hold<=0&&Math.abs(v.ux*other.ux+v.uz*other.uz)<.8){
     const q=position(other),along=(q.x-p.x)*v.ux+(q.z-p.z)*v.uz,lateral=Math.abs((q.x-p.x)*v.uz-(q.z-p.z)*v.ux);
     if(along>0&&along<3&&lateral<(v.size+other.size)*.5+.5&&(other.index<v.index||lateral<.4))limit=Math.min(limit,v.distance+Math.max(0,along-(v.size+other.size)*.5-.5));
    }
-if(other===v||other.hold>0&&other.distance===0)continue;
+   if(other===v||other.hold>0&&other.distance===0)continue;
    if(v.ux*other.ux+v.uz*other.uz<.95)continue;
    const q=position(other),dx=q.x-p.x,dz=q.z-p.z,ahead=dx*v.ux+dz*v.uz,lateral=Math.abs(dx*v.uz-dz*v.ux);
    if(ahead>0&&lateral<.8)limit=Math.min(limit,v.distance+Math.max(0,ahead-(v.size+other.size)*.5-.55));
