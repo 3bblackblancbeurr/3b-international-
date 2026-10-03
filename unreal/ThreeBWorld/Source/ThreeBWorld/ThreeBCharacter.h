@@ -25,6 +25,7 @@ public:
     virtual void OnRep_PlayerState() override;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    virtual void Tick(float DeltaSeconds) override;
 
 protected:
     virtual void BeginPlay() override;
@@ -73,6 +74,8 @@ private:
     void RequestInteraction();
     void SetSprintRequested(bool bRequested);
     void ApplySprintState();
+    void FallbackLookHorizontal(float Value);
+    void FallbackLookVertical(float Value);
 
     UFUNCTION(Server, Reliable)
     void ServerSetSprintRequested(bool bRequested);

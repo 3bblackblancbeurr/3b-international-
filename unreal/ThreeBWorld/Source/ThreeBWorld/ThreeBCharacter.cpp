@@ -9,6 +9,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "ThreeBPlayerState.h"
 #include "ThreeBInteractionComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerStart.h"
 
 AThreeBCharacter::AThreeBCharacter()
 {
@@ -29,6 +33,14 @@ AThreeBCharacter::AThreeBCharacter()
     FollowCamera->bUsePawnControlRotation = false;
 
     InteractionComponent = CreateDefaultSubobject<UThreeBInteractionComponent>(TEXT("InteractionComponent"));
+
+    // Explicit prototype silhouette until the authored skeletal character is delivered.
+    UStaticMeshComponent* Silhouette = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PrototypeSilhouette"));
+    Silhouette->SetupAttachment(GetRootComponent());
+    Silhouette->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    Silhouette->SetRelativeScale3D(FVector(0.55f, 0.55f, 1.5f));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> ProxyMesh(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+    Silhouette->SetStaticMesh(ProxyMesh.Object);
 }
 
 void AThreeBCharacter::BeginPlay()
@@ -88,6 +100,19 @@ void AThreeBCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+    // A fresh checkout is playable without missing binary Enhanced Input assets.
+    if (!DefaultMappingContext)
+    {
+        PlayerInputComponent->BindAxisKey(EKeys::MouseX, this, &AThreeBCharacter::FallbackLookHorizontal);
+        PlayerInputComponent->BindAxisKey(EKeys::MouseY, this, &AThreeBCharacter::FallbackLookVertical);
+        PlayerInputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &ACharacter::Jump);
+        PlayerInputComponent->BindKey(EKeys::SpaceBar, IE_Released, this, &ACharacter::StopJumping);
+        PlayerInputComponent->BindKey(EKeys::LeftShift, IE_Pressed, this, &AThreeBCharacter::StartSprint);
+        PlayerInputComponent->BindKey(EKeys::LeftShift, IE_Released, this, &AThreeBCharacter::StopSprint);
+        PlayerInputComponent->BindKey(EKeys::E, IE_Pressed, this, &AThreeBCharacter::RequestInteraction);
+        return;
+    }
+
     UEnhancedInputComponent* Enhanced = Cast<UEnhancedInputComponent>(PlayerInputComponent);
     if (!Enhanced)
     {
@@ -118,6 +143,31 @@ void AThreeBCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
         Enhanced->BindAction(InteractAction, ETriggerEvent::Started, this, &AThreeBCharacter::RequestInteraction);
     }
 }
+
+void AThreeBCharacter::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    APlayerController* PC = Cast<APlayerController>(Controller);
+    if (PC && PC->IsLocalController() && !DefaultMappingContext)
+    {
+        const float Forward = (PC->IsInputKeyDown(EKeys::W) || PC->IsInputKeyDown(EKeys::Z) || PC->IsInputKeyDown(EKeys::Up) ? 1.f : 0.f)
+            - (PC->IsInputKeyDown(EKeys::S) || PC->IsInputKeyDown(EKeys::Down) ? 1.f : 0.f);
+        const float Right = (PC->IsInputKeyDown(EKeys::D) || PC->IsInputKeyDown(EKeys::Right) ? 1.f : 0.f)
+            - (PC->IsInputKeyDown(EKeys::A) || PC->IsInputKeyDown(EKeys::Q) || PC->IsInputKeyDown(EKeys::Left) ? 1.f : 0.f);
+        Move(FInputActionValue(FVector2D(Right, Forward).GetClampedToMaxSize(1.f)));
+    }
+    if (HasAuthority() && GetActorLocation().Z < -10000.f)
+    {
+        if (AActor* Start = UGameplayStatics::GetActorOfClass(this, APlayerStart::StaticClass()))
+        {
+            SetActorLocation(Start->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+            GetCharacterMovement()->StopMovementImmediately();
+        }
+    }
+}
+
+void AThreeBCharacter::FallbackLookHorizontal(float Value) { AddControllerYawInput(Value); }
+void AThreeBCharacter::FallbackLookVertical(float Value) { AddControllerPitchInput(-Value); }
 
 void AThreeBCharacter::Move(const FInputActionValue& Value)
 {

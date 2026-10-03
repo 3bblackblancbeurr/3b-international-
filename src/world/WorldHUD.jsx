@@ -1,4 +1,5 @@
 import {platformNextObjective} from './hub/platform-layout.js';
+import {Button} from '../design-system/index.jsx';
 import React,{memo,useEffect,useState,useMemo} from 'react';
 import {Menu,BookOpen,Map,ArrowUp,MessageCircle,DoorOpen,Sparkles,Swords,Trees,Mountain,Wheat} from 'lucide-react';
 import {CompanionPortrait} from './Companions.jsx';
@@ -13,7 +14,7 @@ import {compassHeading} from './settlements.js';
 import {contextActions} from './interaction-system.js';
 import {controlLabel} from './control-bindings.js';
 
-export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls,onNavigate}){
+export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls,onNavigate,objective,onObjective,onLocalLife}){
  const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
  const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]);
  const hubGoal=snapshot.region==='hub'?platformNextObjective(mapItems,save):null;
@@ -28,11 +29,15 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
  const triggerAction=id=>{if(!near)return;if(onContextAction)onContextAction(near,id);else onInteract();setActionMenu(false);};
  return <div className={'play-hud'+(snapshot.waypoint&&snapshot.remaining>7?' has-waypoint':'')+(panel?' is-hidden':'')} aria-hidden={panel?true:undefined}>
   <div className="play-top"><button className="play-button" aria-label="Journal et objectif" title="Journal et objectif" onClick={()=>onPanel('journal')}><BookOpen size={20}/></button><span className="play-region">{country?.name||'Cité des Huit Héritages'}</span><div><button className="play-button" aria-label="Ouvrir la carte" title="Carte" onClick={()=>onPanel('atlas')}><Map size={20}/></button><button className="play-button" aria-label="Pause et options" title="Pause" onClick={()=>onPanel('pause')}><Menu size={23}/></button></div></div>
-  {country&&<button className="play-supplies" aria-label={home.wood+' bois, '+home.stone+' pierre, '+home.food+' provisions. Ouvrir mon refuge'} title="Provisions et refuge" onClick={()=>onPanel('camp')}><span><Trees size={15}/>{home.wood}</span><span><Mountain size={15}/>{home.stone}</span><span><Wheat size={15}/>{home.food}</span></button>}
   <Compass heading={snapshot.heading} waypoint={snapshot.waypoint} position={snapshot.position}/>
-  <div className="world-district">{snapshot.district||country?.name||'Cité des Huit Héritages'}{snapshot.time&&<small> · {snapshot.time.phase} · {String(Math.floor(snapshot.time.hour)).padStart(2,'0')}:{String(Math.floor((snapshot.time.hour%1)*60)).padStart(2,'0')}{snapshot.weather?' · '+(WEATHER_LABELS[snapshot.weather]||snapshot.weather):''}</small>}</div>
+  <div className="play-guidance">
+  {country&&<Button variant="ghost" className="play-supplies" aria-label={home.wood+' bois, '+home.stone+' pierre, '+home.food+' provisions. Ouvrir mon refuge'} title="Provisions et refuge" onClick={()=>onPanel('camp')}><span><Trees size={15}/>{home.wood}</span><span><Mountain size={15}/>{home.stone}</span><span><Wheat size={15}/>{home.food}</span></Button>}
+  {loaded&&objective&&!hubGoal&&!arrival&&!snapshot.cinematic&&<Button variant="ghost" className="play-objective" onClick={onObjective} aria-label={'Objectif : '+objective.title+'. Ouvrir le journal'}><small>TON AVENTURE</small><strong>{objective.title}</strong><span>Journal · {objective.progress?.label||'Retrouver les huit Fragments'}</span></Button>}
   {snapshot.region==='hub'&&snapshot.hubEvolution&&<div className="hub-evolution-chip" aria-label={'Évolution de la Cité : '+snapshot.hubEvolution.label+', '+snapshot.hubEvolution.restored+' héritages restaurés sur '+snapshot.hubEvolution.total+(snapshot.hubEvolution.milestone?' · '+snapshot.hubEvolution.milestone.label:'')}><small>CITÉ · ÉVOLUTION {snapshot.hubEvolution.stage}/4</small><strong>{snapshot.hubEvolution.label}</strong>{snapshot.hubEvolution.milestone&&<em>{snapshot.hubEvolution.milestone.label}</em>}<span>{snapshot.hubEvolution.restored}/{snapshot.hubEvolution.total} héritages restaurés{snapshot.hubEvolution.nextMilestone?' · prochain palier '+snapshot.hubEvolution.nextMilestone.fragments+'/8':''}</span></div>}
-  {hubGoal&&!snapshot.waypoint&&<button className="hub-objective" onClick={()=>onNavigate?.(hubGoal.item)}><small>PROCHAINE ÉTAPE · REPÉRER</small><span>{hubGoal.label}</span></button>}
+  {loaded&&hubGoal&&!snapshot.waypoint&&!arrival&&!snapshot.cinematic&&<Button variant="ghost" className="hub-objective" onClick={()=>onNavigate?.(hubGoal.item)}><small>PROCHAINE ÉTAPE · REPÉRER</small><span>{hubGoal.label}</span></Button>}
+  {country&&onLocalLife&&<Button variant="ghost" className="paris-journal-link" onClick={onLocalLife}>La vie du quartier</Button>}
+  </div>
+  <div className="world-district">{snapshot.district||country?.name||'Cité des Huit Héritages'}{snapshot.time&&<small> · {({night:'Nuit',dawn:'Aube',day:'Jour',sunset:'Crépuscule'})[snapshot.time.phase]||''} · {String(Math.floor(snapshot.time.hour)).padStart(2,'0')}:{String(Math.floor((snapshot.time.hour%1)*60)).padStart(2,'0')}{snapshot.weather?' · '+(WEATHER_LABELS[snapshot.weather]||snapshot.weather):''}</small>}</div>
   <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} onOpen={()=>onPanel('atlas')}/>
   {arrival&&loaded&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Cité des Huit Héritages'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
   <button className="play-profile" aria-label={(save.adventure.avatar.name||'Voyageur')+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" onClick={()=>onPanel('team')}><span>{(save.adventure.avatar.name||'V').slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></button>
