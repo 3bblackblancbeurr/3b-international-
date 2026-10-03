@@ -1,3 +1,4 @@
+import {createCityConstructionGrid} from './city3b-construction-grid.js';
 import {createCityRenderBudget} from './city3b-render-budget.js';
 import {cityRoadType} from './city3b-road-types.js';
 import {citySignals} from './city3b-signals.js';
@@ -49,6 +50,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const hemi=new THREE.HemisphereLight(0xc8e8ff,0x6b714b,2.5);scene.add(hemi);
   const sun=new THREE.DirectionalLight(0xffedcc,3.2);sun.position.set(-100,170,80);scene.add(sun);sun.castShadow=true;sun.shadow.mapSize.set(mobile?512:1024,mobile?512:1024);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:400});sun.shadow.bias=-.0008;sun.shadow.normalBias=.03;scene.add(sun.target);
   const world=new THREE.Group(),ghost=new THREE.Group(),people=new THREE.Group(),sites=new THREE.Group(),utilityLayer=new THREE.Group(),completionLayer=new THREE.Group();scene.add(world,ghost,people,sites,utilityLayer,completionLayer);
+  const constructionGrid=createCityConstructionGrid();scene.add(constructionGrid.mesh);
   const boxGeo=new THREE.BoxGeometry(1,1,1),sphereGeo=new THREE.IcosahedronGeometry(1,1),cylinderGeo=new THREE.CylinderGeometry(1,1,1,10),waterGeo=new THREE.CylinderGeometry(1,1,1,40),coneGeo=new THREE.ConeGeometry(1,1,4),ringGeo=new THREE.TorusGeometry(2.8,.25,8,32,Math.PI*1.7);
   const geometries=new Set([boxGeo,sphereGeo,cylinderGeo,waterGeo,coneGeo,ringGeo]),materials=new Map();
   const mat=(color,emissive=false,opacity=1)=>{
@@ -175,7 +177,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     scene.background=new THREE.Color(night?0x476585:0xa3d6ff);scene.fog=new THREE.Fog(scene.background,half*3,half*10);
     hemi.intensity=night?1.7:2.2;sun.intensity=night?1.0:2.3;sun.color.set(night?0x96bded:0xffedcc);
     const groundGeometry=cityTerrainGeometry(half,cityLandscape(data));
-    groundPick=new THREE.Mesh(groundGeometry,environment.grass);groundPick.receiveShadow=true;world.add(groundPick);mergedGeometries.push(groundGeometry);groundPick.updateMatrixWorld();
+    groundPick=new THREE.Mesh(groundGeometry,environment.grass);groundPick.receiveShadow=true;world.add(groundPick);mergedGeometries.push(groundGeometry);groundPick.updateMatrixWorld();constructionGrid.setTerrain(groundGeometry);
     // Four ocean strips surround all edges without covering the player's land.
     for(const side of [-1,1]){box(world,0x379dbe,side*half*2,-.18,0,half*2,.1,half*6).material=environment.water;box(world,0x379dbe,0,-.18,side*half*2,half*2,.1,half*2).material=environment.water;}
     for(const side of [-1,1]){box(world,0xd5cca4,side*(half+.7),-.06,0,1.4,.1,half*2);box(world,0xd5cca4,0,-.06,side*(half+.7),half*2,.1,1.4);}
@@ -281,7 +283,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     updateDraft(latest);dirty=true;
   }
   function updateDraft(props={}){
-    latest=props;utilityLayer.visible=props.tool==='erase'||props.tool==='road'&&['power','water','internet'].includes(props.networkKind);clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];cameraFreePan=!!props.pan||!['road','build','move','landscape','signal','erase'].includes(props.tool);controls.mouseButtons.LEFT=cameraFreePan?THREE.MOUSE.PAN:null;
+    latest=props;constructionGrid.setMode(props);utilityLayer.visible=props.tool==='erase'||props.tool==='road'&&['power','water','internet'].includes(props.networkKind);clear(ghost);for(const geometry of previewGeometries)geometry.dispose();previewGeometries=[];cameraFreePan=!!props.pan||!['road','build','move','landscape','signal','erase'].includes(props.tool);controls.mouseButtons.LEFT=cameraFreePan?THREE.MOUSE.PAN:null;
     if(props.previewOnly){dirty=true;return;}
     if(props.selectedId&&!props.activeDefinition&&!props.activePlacement){
       const selected=(data.placements||[]).find(p=>p.id===props.selectedId&&p.placement_state!=='stored');
@@ -387,5 +389,5 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     environment.update(time/1000,camera,reduced);renderer.render(scene,camera);dirty=false;
   }
   frame=requestAnimationFrame(animate);resize();
-  return {rebuild,syncClock,updateDraft,setView,focusBuilding,home:()=>setView(cityMapInitialView(data)),district,zoom:zoomCamera,rotate:()=>{cameraMotion.rotate(Math.PI/4,reduced);dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);disposeTouch();controls.removeEventListener('start',navigationStart);controls.removeEventListener('end',navigationEnd);controls.dispose();renderer.domElement.removeEventListener('wheel',wheel,true);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries,...previewGeometries])geo.dispose();for(const m of materials.values())m.dispose();environment.dispose();renderer.dispose();renderer.domElement.remove();}};
+  return {rebuild,syncClock,updateDraft,setView,focusBuilding,home:()=>setView(cityMapInitialView(data)),district,zoom:zoomCamera,rotate:()=>{cameraMotion.rotate(Math.PI/4,reduced);dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);disposeTouch();controls.removeEventListener('start',navigationStart);controls.removeEventListener('end',navigationEnd);controls.dispose();renderer.domElement.removeEventListener('wheel',wheel,true);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries,...previewGeometries])geo.dispose();for(const m of materials.values())m.dispose();constructionGrid.dispose();environment.dispose();renderer.dispose();renderer.domElement.remove();}};
 }
