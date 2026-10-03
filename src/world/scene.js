@@ -196,7 +196,7 @@ function hubNpcAvatar(item){
   }
  }
  function makeActor(item){
-  const card=cardById[item.card],creature=item.type==='guardian'||item.type==='hubGuardian';
+  const card=cardById[item.card],creature=item.type==='guardian'||item.type==='hubGuardian'||item.type==='hubCreature';
   const actor=createLivingActor(models.living,{card:card.id,scale:creature?2.5:2,onError});
   actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.rotation.y=(card?.number||0)*.7;root.add(actor.object);
   actors.push({controller:actor,itemId:item.id,creature,x:item.x,z:item.z});return actor.object;
@@ -321,7 +321,7 @@ function hubNpcAvatar(item){
    if(item.type==='survey'){const y=groundY(item.x,item.z);mesh('cylinder',stone,item.x,y+.5,item.z,.52,1,.52);const book=mesh('box',gold,item.x,y+1.15,item.z,.9,.1,.62);book.rotation.x=.25;obstacles.push({x:item.x,z:item.z,r:.65});continue;}
    if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C164',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
    const first=root.children.length,y=groundY(item.x,item.z);
-   if(item.type==='guardian'||item.type==='echo'||item.type==='patrol')makeActor(item);
+   if(item.type==='guardian'||item.type==='echo'||item.type==='patrol'||item.type==='hubCreature')makeActor(item);
    if(item.type==='beacon'){
     const mat=material(item.color,{emissive:item.color,emissiveIntensity:item.done?.08:.48,metalness:.5});
     mesh('cylinder',stone,item.x,y+.25,item.z,.75,.5,.75);

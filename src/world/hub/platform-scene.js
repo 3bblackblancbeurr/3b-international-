@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
+import {citeWaterfallMaterial} from './waterfall-material.js';
+import {CITE_ISLANDS,CITE_BRIDGES,citeSurfaceDistance} from './platform-topology.js';
+import {createPremiumWater} from '../premium-water.js';
+import {addReferenceCiteDetails} from './reference-details.js';
 import {hubPublicPlaces,platformWorldState,HUB_VALUES} from './platform-life.js';
 import plan from './data/hub-master-plan-v2.json' with {type:'json'};
 
@@ -12,7 +16,8 @@ export function createHubPlatform(save){
  const worldBuildings=plan.buildings.map(platformBuilding),buildings=worldBuildings.map(b=>({...b,buildingX:b.buildingX/HUB_SCALE,buildingZ:b.buildingZ/HUB_SCALE,width:b.width/HUB_SCALE,depth:b.depth/HUB_SCALE,height:b.height/1.5}));let interior=null,daylight=1;
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,64)),sphere=geo(new THREE.IcosahedronGeometry(1,1));
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
- const dark=material('#101c29'),stone=material('#b4b1a1'),gold=material('#d6b46a'),blue=material('#55c9ef',true),glass=material('#174963'),wood=material('#5f4939'),green=material('#315b4b'),water=material('#226684');
+ const poolWater=createPremiumWater({region:'hub',lake:{x:0,z:0,r:16},owned});poolWater.setQuality('medium',{allowPlanarReflection:false});
+ const dark=material('#101c29'),stone=material('#b4b1a1'),gold=material('#d6b46a'),blue=material('#55c9ef',true),glass=material('#174963'),wood=material('#5f4939'),green=material('#315b4b'),water=poolWater.material;
  function mesh(g,m,x,y,z,sx=1,sy=sx,sz=sx){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;root.add(o);return o;}
  function ring(r,tube,y,m,arc=Math.PI*2,start=0){const o=mesh(geo(new THREE.TorusGeometry(r,tube,6,96,arc)),m,0,y,0);o.rotation.set(-Math.PI/2,0,start);return o;}
  function sign(text,x,y,z,width=8){
@@ -23,14 +28,29 @@ export function createHubPlatform(save){
   const map=new THREE.CanvasTexture(cv);map.colorSpace=THREE.SRGBColorSpace;owned.push(map);const m=new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide});owned.push(m);
   const o=mesh(geo(new THREE.PlaneGeometry(width,1.35)),m,x,y,z);o.castShadow=false;
  }
- // Deep cylindrical foundation, metal buttresses and a safe continuous pedestrian deck.
- mesh(cylinder,dark,0,-13,0,168,26,168);const ground=mesh(cylinder,stone,0,-.32,0,167,.6,167);
- ring(167,.42,.2,gold);ring(160,.13,.035,blue);ring(125,.12,.035,gold);ring(37,.11,.035,gold);
- for(let i=0;i<48;i++){
-  const a=i*Math.PI*2/48,x=Math.cos(a)*167,z=Math.sin(a)*167;
-  const buttress=mesh(box,gold,x,-13,z,.8,25,2);buttress.rotation.y=-a;
-  mesh(box,dark,x,.7,z,1,1.4,1);mesh(sphere,blue,x,1.7,z,.2);
+ // Each visible island and bridge is also part of the walkable collision surface.
+ const deckParts=[],fallMaterial=citeWaterfallMaterial();owned.push(fallMaterial);
+ for(const island of CITE_ISLANDS){
+  mesh(cylinder,dark,island.x,-8,island.z,island.r,16,island.r);
+  for(let k=0;k<12;k++){const a=k*Math.PI/6;const rock=mesh(sphere,dark,island.x+Math.cos(a)*(island.r-2),-10-k%3,island.z+Math.sin(a)*(island.r-2),5,12+k%4,6);rock.rotation.y=a;}
+  const top=new THREE.CircleGeometry(island.r,64);top.rotateX(-Math.PI/2);top.translate(island.x,0,island.z);deckParts.push(top);
+  const trim=mesh(geo(new THREE.TorusGeometry(island.r,.16,5,64)),gold,island.x,.08,island.z);trim.rotation.x=-Math.PI/2;
  }
+ for(const bridge of CITE_BRIDGES){
+  const top=new THREE.PlaneGeometry(bridge.length,bridge.width);top.rotateX(-Math.PI/2);top.rotateY(-bridge.angle);top.translate(bridge.x,0,bridge.z);deckParts.push(top);
+  const deck=mesh(box,dark,bridge.x,-.4,bridge.z,bridge.length,.8,bridge.width);deck.rotation.y=-bridge.angle;
+  for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*5.85,dz=Math.cos(bridge.angle)*side*5.85;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
+ }
+ const promenade=new THREE.RingGeometry(119,131,128);promenade.rotateX(-Math.PI/2);deckParts.push(promenade);
+ const ground=mesh(geo(mergeGeometries(deckParts)),stone,0,0,0);deckParts.forEach(g=>g.dispose());ground.castShadow=false;
+ ring(119,.14,.08,gold);ring(131,.14,.08,gold);ring(125,.06,.09,blue);
+ collisions.push({id:'cite-water-boundary',surfaceDistance:p=>-citeSurfaceDistance(p.x/HUB_SCALE,p.z/HUB_SCALE)*HUB_SCALE});
+ const seaLake={x:0,z:0,r:245},seaWater=createPremiumWater({region:'hub',lake:seaLake,owned});
+ const sea=mesh(geo(new THREE.CircleGeometry(247,128)),seaWater.material,0,-18,0);sea.rotation.x=-Math.PI/2;sea.castShadow=false;
+ const mist=mesh(geo(new THREE.CircleGeometry(252,64)),seaWater.mistMaterial,0,-17.7,0);mist.rotation.x=-Math.PI/2;mist.castShadow=false;
+ seaWater.material.uniforms.shallowColor.value.set('#247f9b');seaWater.material.uniforms.deepColor.value.set('#06354a');
+ seaWater.attachMeshes(sea,mist);seaWater.setQuality('medium',{allowPlanarReflection:false});
+ seaWater.setFoamContacts(CITE_ISLANDS.flatMap(island=>Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;return{x:island.x+Math.cos(a)*island.r,z:island.z+Math.sin(a)*island.r,r:5,strength:.7};})));
  // Eight gates on the perimeter with eight wide routes radiating from the same landmark.
  for(let i=0;i<8;i++){
   const wp=platformPortal(i),p={x:wp.x/HUB_SCALE,z:wp.z/HUB_SCALE},a=Math.atan2(p.x,p.z);
@@ -48,16 +68,16 @@ export function createHubPlatform(save){
  }
  // Four basins and cascades leave the radial routes and the circular promenade dry.
  for(const [x,z] of [[48,48],[-48,48],[48,-48],[-48,-48]]){
-  mesh(cylinder,dark,x,-.14,z,16,.2,16);const pool=mesh(cylinder,water,x,-.015,z,14,.04,14);pool.castShadow=false;
+  mesh(cylinder,dark,x,-.14,z,16,.2,16);const pool=mesh(geo(new THREE.CircleGeometry(14,48)),water,x,-.015,z);pool.rotation.x=-Math.PI/2;pool.castShadow=false;
   collisions.push({x,z,r:14.8});
   for(let i=0;i<8;i++){const a=i*Math.PI/4;mesh(box,gold,x+Math.cos(a)*15.5,.12,z+Math.sin(a)*15.5,.5,.25,.5);}
  }
- for(let i=0;i<8;i++){
-  const a=(i+.5)*Math.PI/4,x=Math.cos(a)*168,z=Math.sin(a)*168;
-  const fall=mesh(box,blue,x,-18,z,6,36,.25);fall.rotation.y=-a;fall.castShadow=false;waterfalls.push(fall);
+ for(const island of CITE_ISLANDS.filter(i=>!['nexus','arrival'].includes(i.id)).slice(0,20)){
+  const a=Math.atan2(island.z,island.x),x=island.x+Math.cos(a)*island.r,z=island.z+Math.sin(a)*island.r;
+  const fall=mesh(geo(new THREE.PlaneGeometry(1,1,2,12)),fallMaterial,x,-9,z,4,18,1);fall.rotation.y=Math.PI/2-a;fall.castShadow=false;waterfalls.push(fall);
  }
  // The monumental broken ring stands above its own fountain. Its eight pieces answer to progress.
- mesh(cylinder,dark,0,.4,0,19,.8,19);mesh(cylinder,water,0,.84,0,16,.06,16);collisions.push({x:0,z:0,r:19.5});
+ mesh(cylinder,dark,0,.4,0,19,.8,19);const fountain=mesh(geo(new THREE.CircleGeometry(16,64)),water,0,.84,0);fountain.rotation.x=-Math.PI/2;fountain.castShadow=false;collisions.push({x:0,z:0,r:19.5});
  for(const side of [-1,1]){mesh(box,dark,side*13,14,0,3,28,4);mesh(box,gold,side*13,14,2.1,.5,28,.2);}
  for(let i=0;i<8;i++){
   const piece=mesh(geo(new THREE.TorusGeometry(19,1.7,8,12,Math.PI/4-.085)),gold,0,25,0);
@@ -91,6 +111,8 @@ export function createHubPlatform(save){
   }
  }
  addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,collisions,sign,THREE});
+ addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},THREE});
+ for(const side of [-1,1])for(const depth of [-1,1])cameraSolids.push({x:side*5.2,z:depth*5.2,width:3.8,depth:3.8,bottom:0,top:depth<0?100:84});
  // Physical district consoles and the eight value plaques have matching runtime interactions.
  for(const p of hubPublicPlaces()){
   const x=p.x/HUB_SCALE,z=p.z/HUB_SCALE;
@@ -116,9 +138,9 @@ export function createHubPlatform(save){
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
- const dynamic=new Set([communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
+ const dynamic=new Set([sea,mist,fountain,communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
  root.updateMatrixWorld(true);const groups=new Map();
- for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.map){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
+ for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.map&&!o.material.transparent){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
  for(const group of groups.values())if(group.length>1){
   const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
@@ -130,11 +152,11 @@ export function createHubPlatform(save){
  for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
  return {root,ground,collisions,cameraSolids,ready:Promise.resolve(),height:()=>0,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
-  update,setParty(){},setQuality(mode){root.userData.quality=mode;},setWeather(){},setDaylight(value){daylight=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
+  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  update,setParty(){},setQuality(mode){root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
-  updateCamera(){},renderWaterReflection(){},cinematicFocus(){return false;},
-  tick(time){orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;for(const [i,fall] of waterfalls.entries())fall.scale.y=36+Math.sin(time*1.6+i)*.5;},
-  dispose(){root.removeFromParent();for(const asset of owned)asset.dispose();},
+  updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
+  tick(time){seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;for(const [i,fall] of waterfalls.entries())fall.scale.y=18+Math.sin(time*1.6+i)*.12;},
+  dispose(){seaWater.disposeReflection();poolWater.disposeReflection();root.removeFromParent();for(const asset of owned)asset.dispose();},
  };
 }

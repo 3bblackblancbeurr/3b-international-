@@ -1,0 +1,29 @@
+# Cité 3B — plateformes et armurerie, 4 octobre 2026
+
+Référence unique choisie par Zakaria : **Monde_3B_Hub_REFERENCE_UNIQUE.png**, ancien nom **1000007204.png**, identifiant `libfile_5cfbda3927788191b219ddee118048c1`. Les anciens concepts ne guident plus cette refonte.
+
+## Code livré dans cette proposition
+
+- 29 îlots physiques, huit ponts radiaux et une promenade circulaire ; 571 m de diamètre pour le hub.
+- Surface de marche et géométrie visibles issues du même plan. Les vides entre îlots bloquent les déplacements ; les sauvegardes dont la position est dans un vide reviennent au point d'arrivée.
+- Les 19 services, huit portails, missions, secrets et transports existants gardent leurs identifiants. Aucun nouveau royaume ni modification de récompense serveur.
+- Tour centrale à quatre flèches, couronnes, fondations rocheuses par îlot, éclairage bleu/or, navires de décor et détails de la place.
+- Mer avec normales animées, vagues, écume, pluie et lumière jour/nuit. Réflexion plane réservée au mode détail. Bassins et fontaine animés ; cascades avec filaments et écume animés.
+- Les habitants nommés conservent leurs routines. La foule ambiante, auparavant inactive faute de routes sur le nouveau hub, reçoit quatre parcours sur les axes piétons.
+- Deux créatures observables utilisant les modèles animés existants : refuge et projection près de l'arène. Elles ne sont pas des combats inédits. La cité conserve sa zone sûre et les services d'arène existants.
+- Armurerie : grand aperçu 3D rotatif de l'équipement réel, respect de la forme débloquée, éclairage de studio, clavier et repli illustré en cas d'échec WebGL. Les 16 armes gardent leurs statistiques ; matériaux, poignées et détails sont enrichis.
+- Animation du personnage : les longues frames sont consommées en petits pas par le mélangeur pour garder l'animation en accord avec le déplacement.
+
+## Validation et limites
+
+Les tests de parcours vérifient l'accès aux bâtiments, portails, PNJ, objectifs et créatures. Les tests du hub, des interactions, du mouvement, des armes et de l'interface mobile sont exécutés. Build de production vérifié.
+
+Le rendu final n'a **pas été inspecté visuellement** : le navigateur cloud refuse l'accès au serveur local et le téléchargement de Chromium local échoue. Ne pas confondre validation du code et validation artistique. Cette proposition ne doit pas être décrite comme une copie exacte de l'image ou une version AAA terminée.
+
+## Reste du périmètre demandé
+
+La reproduction détaillée de toutes les façades et intérieurs de l'image, ses niveaux réellement praticables, passerelles suspendues, escaliers et ascenseurs nécessite un système de sol en hauteur, de navigation verticale et de caméra correspondant. Le hub actuel garde ses îlots et ponts au même niveau de marche. Les petits navires sont du décor ; ils n'ajoutent pas un pilotage naval.
+
+Les monstres combattables inédits, leurs comportements, leurs modèles et leurs missions ne sont pas produits dans cette proposition. Les fonctions de combat existantes restent en place. Il reste à concevoir et valider l'accès volontaire aux combats du hub avec le serveur, sans rendre hostiles les places familiales.
+
+Il reste aussi à vérifier dans le navigateur les shaders, la présentation des 16 armes, le passage entre modes graphiques, les performances et les séances longues sur le Samsung réel avant fusion/publication. Les chiffres FPS ne sont pas mesurés par les tests Node.

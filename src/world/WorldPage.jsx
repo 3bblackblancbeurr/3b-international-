@@ -201,7 +201,7 @@ function WorldSession({uid,goTo}){
    if(services.some(id=>['healing','restoration'].includes(id))){setPanel('team');return;}
    setPanel('journal');return;
   }
-  if(item.type==='hubPublicPlace'){act({type:'hubDistrictVisit',id:item.district});setHubPlace(item);setPanel('hubPlace');return;}
+  if(item.type==='hubPublicPlace'||item.type==='hubCreature'){act({type:'hubDistrictVisit',id:item.district});setHubPlace(item);setPanel('hubPlace');return;}
   if(item.type==='hubBuilding'){
    act({type:'hubDistrictVisit',id:item.district});const next=act({type:'hubBuildingVisit',id:item.buildingId});if(!next)return;
    const functions=item.functions||[];
@@ -262,7 +262,7 @@ function WorldSession({uid,goTo}){
    const after=next.adventure?.frontier?.[next.region],advanced=(after?.jobStage||0)>(before?.jobStage||0);
    announce(item.actionLabel+(advanced?' · étape terminée':' · action enregistrée'));if(advanced)chime();return;
   }
-  if(item.type==='hubPublicPlace'){interactDefault(item);return;}
+  if(item.type==='hubPublicPlace'||item.type==='hubCreature'){interactDefault(item);return;}
   if(['inspect','observe','scan','memoryVision'].includes(contextAction.id)){
    const descriptions={
     inspect:item.detail||item.purpose||item.effect||('Tu examines '+(item.name||'cet élément')+'.'),
