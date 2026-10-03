@@ -45,6 +45,14 @@ test('opening is timed, interruptible presentation with no gameplay reward write
  assert.equal(openingFrame(-4).id,'arrival');let time=0;for(const shot of HUB_OPENING_SHOTS){assert.equal(openingFrame(time).id,shot.id);time+=shot.duration;}assert.equal(openingFrame(time).done,true);
  const source=fs.readFileSync(new URL('../src/world/hub/HubOpeningCinematic.jsx',import.meta.url),'utf8');assert.match(source,/document.hidden/);assert.match(source,/prefers-reduced-motion/);assert.match(source,/cancelAnimationFrame/);assert.doesNotMatch(source,/recordWorldAction|hubMissionClaim|shards\s*\+/);
 });
+test('first mission guidance follows the actual welcome, train and district objectives',()=>{
+ const save=blankSave();save.hub.missions.first_steps.status='active';
+ for(const [stage,type,key,value] of [[0,'hubBuilding','buildingId','heritage_welcome'],[1,'hubTransport','transport','train'],[2,'hubDistrict','district','heritage_square']]){
+  save.hub.missions.first_steps.completedObjectives=stage;
+  const goal=platformNextObjective(worldRuntimeItems('hub',save,{hour:12}),save);
+  assert.equal(goal.item.type,type);assert.equal(goal.item[key],value);
+ }
+});
 test('world activity entry points require physical locations instead of arena shortcuts',()=>{
  const hud=fs.readFileSync(new URL('../src/world/WorldHUD.jsx',import.meta.url),'utf8'),page=fs.readFileSync(new URL('../src/world/WorldPage.jsx',import.meta.url),'utf8');
  assert.doesNotMatch(hud,/onPanel\('arena'\)/);assert.doesNotMatch(page,/<button onClick=\{\(\)=>setPanel\('arena'\)\}><Users\/>Arène/);assert.match(page,/hubContract/);assert.match(page,/Pas maintenant/);

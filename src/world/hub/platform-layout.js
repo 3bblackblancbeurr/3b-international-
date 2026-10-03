@@ -1,5 +1,6 @@
 /** Physical layout of the reference hub. Coordinates are metres, on one safe deck.
  * Existing mission/NPC IDs stay unchanged: a new layout never resets a save. */
+import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 export const HUB_PLATFORM = Object.freeze({radius:168,walkRadius:163,portalRadius:146,spawn:{x:0,z:32},core:{x:0,z:0}});
 export const PLATFORM_DISTRICTS = Object.freeze({
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
@@ -64,7 +65,16 @@ export function platformNextObjective(items,save){
  const claim=items.find(i=>i.type==='hubMission'&&save.hub?.missions?.[i.missionId]?.status==='completed'&&!save.hub.missions[i.missionId].claimed);
  if(claim)return {label:'Récupérer la récompense · '+claim.name,item:claim};
  const running=items.find(i=>i.type==='hubMission'&&save.hub?.missions?.[i.missionId]?.status==='active');
- if(running)return {label:running.objectives?.[save.hub.missions[running.missionId].completedObjectives]||running.name,item:running};
+ if(running){
+  const stage=save.hub.missions[running.missionId].completedObjectives,rule=HUB_MISSION_SIGNAL_RULES[running.missionId]?.[stage];
+  const target=rule&&items.find(i=>rule.type==='building'?i.type==='hubBuilding'&&i.buildingId===rule.id:
+   rule.type==='transport'?i.type==='hubTransport'&&i.transport===rule.id:
+   rule.type==='district'?i.type==='hubDistrict'&&i.district===rule.id:
+   rule.type==='npc'?i.type==='hubNpc'&&i.npcId===rule.id:
+   rule.type==='secretStep'?i.type==='hubSecretStep'&&i.secretId===rule.id&&i.step===rule.step:
+   rule.type==='secret'?i.type==='hubSecret'&&i.secretId===rule.id:false);
+  return {label:running.objectives?.[stage]||running.name,item:target||running};
+ }
  const available=items.find(i=>i.type==='hubMission'&&!i.locked&&save.hub?.missions?.[i.missionId]?.status==='available');
- return available?{label:'Rencontrer '+available.giver+' · '+available.name,item:available}:null;
+ return available?{label:'Rencontrer '+available.giver+' · '+available.name,item:items.find(i=>i.type==='hubNpc'&&i.missionIds?.includes(available.missionId))||available}:null;
 }
