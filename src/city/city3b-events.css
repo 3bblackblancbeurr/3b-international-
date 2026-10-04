@@ -1,0 +1,13 @@
+.city-events{max-width:680px;margin:auto;padding:clamp(24px,5vw,56px);color:var(--3b-text,#f4f1e8)}
+.city-events h2{font-size:clamp(24px,5vw,42px);letter-spacing:.08em}
+.city-events p{line-height:1.65;color:var(--3b-muted,#b5b5b5)}
+.city-events-empty{padding:24px;margin:28px 0;border:1px solid var(--3b-champagne,#d7bf87);border-radius:16px;background:rgba(215,191,135,.05)}
+.city-events-dialog{width:min(760px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--3b-champagne,#d7bf87);border-radius:24px;background:var(--3b-carbon,#111518);overflow:auto}
+.city-events-dialog::backdrop{background:rgba(0,0,0,.8)}
+.city-events-close{position:absolute;top:8px;right:8px}
+.city-essential-card{position:relative;isolation:isolate;min-height:230px;overflow:hidden;background:linear-gradient(180deg,rgba(4,11,18,.15),rgba(4,11,18,.94))!important}
+.city-essential-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;opacity:.8}
+.city-essential-card .compact-card-copy{align-self:end}
+.city-essential-card .compact-card-copy strong{font-size:clamp(19px,2.5vw,28px)}
+.city-essential-card .compact-card-action{align-self:end}
+.city-event-card{min-height:150px;background:radial-gradient(circle at 90% 10%,rgba(215,191,135,.14),transparent 65%)}

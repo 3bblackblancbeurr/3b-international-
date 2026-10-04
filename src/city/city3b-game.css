@@ -214,3 +214,9 @@
  .city-game .city-game-building .city-game-building-model{min-height:0;grid-row:1}
  .city-game .city-game-building-info{grid-row:2}
 }
+
+.city-game .city-game-bottom nav{max-width:calc(100% - 88px);margin-left:88px}
+@media(max-width:960px) and (orientation:landscape){
+ .city-game .city-game-bottom nav{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));width:calc(100% - 88px);overflow:visible}
+ .city-game .city-game-bottom nav button{min-width:0;padding:5px 2px;flex-direction:column;gap:3px;font-size:9px}
+}
