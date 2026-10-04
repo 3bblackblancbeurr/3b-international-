@@ -8,6 +8,14 @@ export function addLandmarkCraft({mesh,geo,box,cylinder,materials,buildings,THRE
   for(const side of [-1,1]){
    const points=Array.from({length:9},(_,i)=>{const t=i/8;return new THREE.Vector3(x+side*w*.34,4.8+Math.sin(t*Math.PI)*1.8,z+d/2-1+t*5);});tube(points,.09,gold);
   }
+  // Curved glazing joins the existing ribs into a usable entrance canopy.
+  const canopy=new THREE.PlaneGeometry(1,1,4,8),cp=canopy.attributes.position,cu=canopy.attributes.uv;
+  for(let i=0;i<cp.count;i++){
+   const across=cu.getX(i)*2-1,t=cu.getY(i);
+   cp.setXYZ(i,x+across*w*.34,4.8+Math.sin(t*Math.PI)*1.8,z+d/2-1+t*5);
+  }
+  for(let i=0;i<canopy.index.count;i+=3){const b=canopy.index.getX(i+1);canopy.index.setX(i+1,canopy.index.getX(i+2));canopy.index.setX(i+2,b);}
+  canopy.computeVertexNormals();mesh(geo(canopy),glass,0,0,0).castShadow=false;
   // Panelled stone soffits and metal corner mouldings break up large flat walls.
   for(let k=0;k<4;k++)for(const side of [-1,1])mesh(box,gold,x+side*(w/2+.08),1.3+k*1.5,z-d*.12,.12,.12,d*.72);
   for(const side of [-1,1]){

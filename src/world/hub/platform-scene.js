@@ -6,6 +6,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
 import {addCiteVegetation} from './cite-vegetation.js';
 import {addDistrictFabric} from './district-fabric.js';
+import {addInteriorDisplays} from './interior-displays.js';
 import {addLandmarkCraft} from './landmark-craft.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
 import {addCiteTerraces,terraceWorldHeight,terraceAisle} from './terraces.js';
@@ -182,6 +183,7 @@ export function createHubPlatform(save){
   mesh(sphere,green,x,2.3,z,.6);collisions.push({x,z,width:5,depth:3});
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
+ const displays=addInteriorDisplays({root,owned,box,buildings,materials:{dark,gold,glass}});
  const fabric=addDistrictFabric({root,owned,buildings,collisions,cameraSolids,materials:{dark,gold,glass,stone,green},box});
  const vegetation=addCiteVegetation({root,owned,buildings,collisions});
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
@@ -199,8 +201,8 @@ export function createHubPlatform(save){
  for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
  return {root,ground,collisions,cameraSolids,ready:surfaces.ready,height:terraceWorldHeight,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
-  update,setParty(){},setQuality(mode){spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
+  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,displayCounters:displays.count,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  update,setParty(){},setQuality(mode){displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){fabric.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
   tick(time){spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;},
