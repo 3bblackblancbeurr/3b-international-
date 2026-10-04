@@ -31,9 +31,9 @@ test('Passport access does not depend on inventory availability', () => {
   assert.match(loyalty, /const passport=passportFromProfile\(owned\?\.profile,session\?\.user\)/);
 });
 
-test('Premium intro and exact spoken welcome are pinned', () => {
+test('Minimal entry retains its primary action and the exact spoken welcome', () => {
   const experience = readFileSync(new URL("../src/design-system/LuxuryExperience.jsx", import.meta.url), "utf8");
-  assert.match(experience, /Entrez dans la Cité des Huit Héritages\./);
-  assert.match(experience, /Ce n’est pas une marque\. C’est un héritage\./);
+  assert.match(experience, /Ton univers\. Ton histoire\./);
+  assert.match(experience, />COMMENCER<\/Button>/);
   assert.match(app, /Bienvenue dans l'univers 3B\. L'héritage commence maintenant\. Reste attentif tout le temps partout\./);
 });

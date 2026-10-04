@@ -1,4 +1,6 @@
 import InstallCards from '../install/InstallCards.jsx';
+import CinematicLaunch, { BRAND_ICON } from './CinematicLaunch.jsx';
+import EntryAtmosphere from './EntryAtmosphere.jsx';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
@@ -19,6 +21,7 @@ export function LuxuryProvider({ children }) {
   const [scene, setScene] = useState(null);
   const audio = useRef(null), activated = useRef(false), lastCue = useRef(0), serial = useRef(0);
   const policy = useMemo(() => experiencePolicy(options, device), [options, device]);
+  const [launching, setLaunching] = useState(() => experiencePolicy(options, device).animate && options.cinematicIntros !== false);
   const current = useRef(policy); current.current = policy;
 
   const cue = useCallback((kind = 'press') => {
@@ -98,7 +101,8 @@ export function LuxuryProvider({ children }) {
 
   const value = useMemo(() => ({ policy, configure, present, cue }), [policy, present, cue]);
   return <ExperienceContext.Provider value={value}>
-    {children}
+    <div className="threeb-app-content" inert={launching} aria-hidden={launching || undefined}>{children}</div>
+    {launching && <CinematicLaunch policy={policy} enabled={options.cinematicIntros !== false} onDone={() => setLaunching(false)}/>}
     {scene && <div key={scene.id} className={`luxury-transition luxury-transition--${scene.kind}`} aria-hidden={scene.kind !== 'milestone' ? true : undefined}>
       <span className="luxury-transition-ring" />
       {scene.kind === 'milestone' && <aside className="luxury-milestone" role="status"><span className="eyebrow">HÉRITAGE 3B</span><strong>{scene.title}</strong><Button variant="ghost" onClick={() => setScene(null)} aria-label="Fermer la célébration"><X size={18}/></Button></aside>}
@@ -149,15 +153,13 @@ export function LuxuryBoot({ onDone, installation }) {
   const finished = useRef(false);
   const finish = useCallback(() => { if (finished.current) return; finished.current = true; try { markIntroSeen(window.localStorage); } catch { /* Restricted storage. */ } done.current(); }, []);
   return <section className="intro3b-card intro3b-start-card" data-motion={policy.animate ? 'full' : 'reduced'} aria-labelledby="intro3b-title">
-    <div className="luxury-boot-beam" aria-hidden="true"/>
-    <div className="luxury-boot-particles" aria-hidden="true">{Array.from({ length: 12 }, (_, index) => <i key={index} style={{ '--particle': index }}/>)}</div>
+    <EntryAtmosphere policy={policy}/>
+    <img className="intro3b-brand-icon" src={BRAND_ICON} alt="" width="512" height="512"/>
     <p className="eyebrow">3B INTERNATIONAL</p>
-    <p className="eyebrow brand-glow-badge">BLACK • BLANC • BEUR</p>
     <h1 id="intro3b-title">De zéro à l’international</h1>
-    <p className="intro3b-lead">Entrez dans la Cité des Huit Héritages.</p>
-    <p className="intro3b-legacy">Ce n’est pas une marque. C’est un héritage.</p>
+    <p className="intro3b-lead">Ton univers. Ton histoire.</p>
     <Button variant="champagne" className="primary-button intro3b-enter" onClick={finish}>COMMENCER</Button>
-    <InstallCards installation={installation}/>
+    {!installation?.installed && <details className="intro3b-install"><summary>Installer l’application</summary><InstallCards installation={installation}/></details>}
   </section>;
 }
 

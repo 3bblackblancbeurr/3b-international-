@@ -263,14 +263,13 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
 
    <section className="account-command-center" aria-labelledby="member-center-title">
     <div className="account-command-heading">
-     <div><span className="loyalty-eyebrow">MON ESPACE 3B</span><h2 id="member-center-title">Tout ce qui appartient à ton compte.</h2></div>
-     <p>Passeport, progression, Monde du 3B et fidélité restent reliés à la même identité.</p>
+     <div><span className="loyalty-eyebrow">MON ESPACE 3B</span><h2 id="member-center-title">Mon compte & mes avantages</h2></div>
     </div>
     <div className="account-command-grid">
      <button type="button" onClick={()=>goTo('passport')}><Fingerprint size={21}/><span><strong>Mon Passeport</strong><small>Identité, origine et portrait</small></span><ArrowUpRight size={16}/></button>
      <button type="button" onClick={()=>goTo('world3b')}><Globe2 size={21}/><span><strong>Monde du 3B</strong><small>Portes, missions et progression</small></span><ArrowUpRight size={16}/></button>
      <button type="button" onClick={()=>goTo('games')}><Gamepad2 size={21}/><span><strong>Mes jeux 3B</strong><small>Jouer et faire progresser le compte</small></span><ArrowUpRight size={16}/></button>
-     <button type="button" onClick={()=>goTo('loyalty')}><WalletCards size={21}/><span><strong>Cartes & avantages</strong><small>Fidélité, XP et récompenses</small></span><ArrowUpRight size={16}/></button>
+     <Button variant="ghost" onClick={()=>goTo('loyalty')}><WalletCards size={21}/><span><strong>Ma carte de fidélité</strong><small>Points, avantages et récompenses</small></span><ArrowUpRight size={16}/></Button>
     </div>
    </section>
 
