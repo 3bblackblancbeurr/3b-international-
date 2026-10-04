@@ -58,6 +58,12 @@ export function createHubPlatform(save){
    for(let k=1;k<8;k++){const t=k/8,along=(t-.5)*bridge.length,drop=8*Math.sin(t*Math.PI),x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*side*4.7,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*side*4.7;mesh(box,dark,x,-.7-drop/2,z,.3,drop,.3);}
   }
 
+  // Fine balustrades sit on the existing deck rim and leave the full aisle open.
+  for(const side of [-1,1])for(let k=0;k<=32;k++){
+   const along=(k/32-.5)*bridge.length,across=side*5.85;
+   const x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*across,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*across;
+   const post=mesh(box,gold,x,.52,z,.09,1.04,.09);post.rotation.y=-bridge.angle;
+  }
   for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*5.85,dz=Math.cos(bridge.angle)*side*5.85;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
  }
  const promenade=new THREE.RingGeometry(119,131,128);promenade.rotateX(-Math.PI/2);deckParts.push(promenade);
@@ -203,7 +209,7 @@ export function createHubPlatform(save){
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
   architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,displayCounters:displays.count,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
   update,setParty(){},setQuality(mode){displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){fabric.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
-  updateDistrict(camera,p){interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
+  updateDistrict(camera,p){fabric.updateView(camera);interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
   tick(time){spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;},
   dispose(){seaWater.disposeReflection();poolWater.disposeReflection();root.removeFromParent();for(const asset of owned)asset.dispose();},

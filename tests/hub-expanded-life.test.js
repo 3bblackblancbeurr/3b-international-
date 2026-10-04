@@ -46,7 +46,7 @@ test('claimed missions update civic state on reload and cannot grant presentatio
 });
 test('expanded skyline stays batched and uses no new external asset downloads',()=>{
  const world=createHubPlatform(blankSave());
- try{let meshes=0,triangles=0;world.root.traverse(o=>{if(o.isMesh){meshes++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});assert.ok(meshes<100);assert.ok(triangles<180000);assert.equal(world.architectureDiagnostics.residentialBlocks,16);assert.equal(world.architectureDiagnostics.publicPlaces,18);}finally{world.dispose();}
+ try{let meshes=0,triangles=0;world.root.traverse(o=>{if(o.isMesh){meshes++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});assert.ok(meshes<105);assert.ok(triangles<190000);assert.equal(world.architectureDiagnostics.residentialBlocks,16);assert.equal(world.architectureDiagnostics.publicPlaces,18);}finally{world.dispose();}
 });
 test('route broad phase preserves exact collision results for circles, rotated walls and disabled objects',()=>{
  const obstacles=[{x:-12,z:0,r:7},{x:0,z:0,width:30,depth:3,rotation:.7},{x:30,z:20,width:6,depth:40},{x:0,z:8,r:6,enabled:false}],nearby=spatialObstacles(obstacles);
