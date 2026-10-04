@@ -12,7 +12,7 @@ export function createCiteSurfaces(owned){
 
  const paving=texture('paving','/world/paris/textures/cobblestone_floor_08_Diffuse.jpg',true),normal=texture('normal','/world/paris/textures/cobblestone_floor_08_nor_gl.jpg'),rough=texture('rough','/world/paris/textures/cobblestone_floor_08_Rough.jpg');
  const dark=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.37,metalness:.58,clearcoat:.35,clearcoatRoughness:.3});
- applyFacadeDetail(dark,{daylight:day});
+ applyFacadeDetail(dark,{daylight:day,crafted:true});
  const gold=new THREE.MeshPhysicalMaterial({color:'#cba364',roughness:.25,metalness:.92,clearcoat:.24});
  const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.12,metalness:.4,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.4});
  const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.55,.55),roughnessMap:rough});

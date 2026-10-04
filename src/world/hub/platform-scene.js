@@ -9,6 +9,7 @@ import {addDistrictFabric} from './district-fabric.js';
 import {addLandmarkCraft} from './landmark-craft.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
 import {addCiteTerraces,terraceWorldHeight,terraceAisle} from './terraces.js';
+import {citeCoastalFoam} from './coastal-foam.js';
 import {citeWaterfallMaterial} from './waterfall-material.js';
 import {cascadeGeometry,cascadeMist} from './cascade-craft.js';
 import {CITE_ISLANDS,CITE_BRIDGES,citeSurfaceDistance,citeIslandRadius} from './platform-topology.js';
@@ -75,7 +76,7 @@ export function createHubPlatform(save){
  const mist=mesh(geo(new THREE.CircleGeometry(252,64)),seaWater.mistMaterial,0,-17.7,0);mist.rotation.x=-Math.PI/2;mist.castShadow=false;
  seaWater.material.uniforms.shallowColor.value.set('#247f9b');seaWater.material.uniforms.deepColor.value.set('#06354a');
  seaWater.attachMeshes(sea,mist);seaWater.setQuality('medium',{allowPlanarReflection:false});
- seaWater.setFoamContacts(CITE_ISLANDS.flatMap(island=>Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;return{x:island.x+Math.cos(a)*citeIslandRadius(island,a),z:island.z+Math.sin(a)*citeIslandRadius(island,a),r:5,strength:.7};})));
+ seaWater.setFoamMask(citeCoastalFoam);
  // Eight gates on the perimeter with eight wide routes radiating from the same landmark.
  for(let i=0;i<8;i++){
   const wp=platformPortal(i),p={x:wp.x/HUB_SCALE,z:wp.z/HUB_SCALE},a=Math.atan2(p.x,p.z);
