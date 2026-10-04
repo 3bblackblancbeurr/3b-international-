@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {COUNTRIES} from '../catalog.js';
 import {REFERENCE_GATE_TITLES,paintGateFlag} from './gate-identity.js';
-import {gateCrownGeometry} from './gate-craft.js';
+import {gateCrownGeometry,gateInlayGeometry} from './gate-craft.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_PLATFORM,HUB_SCALE,platformBuilding,platformWalls,platformInteriorAt,platformPortal} from './platform-layout.js';
 import {addCiteVegetation} from './cite-vegetation.js';
@@ -95,6 +95,11 @@ export function createHubPlatform(save){
   gateway(box,gold,0,20,0,18,.6,3.2);
   const ceremonialArch=geo(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(Array.from({length:17},(_,k)=>{const t=k*Math.PI/16;return new THREE.Vector3(Math.cos(t)*8,12+Math.sin(t)*8,-1.8);})),32,.28,6,false));
   const arch=mesh(ceremonialArch,gold,p.x,0,p.z);arch.rotation.y=a;
+  const inlay=geo(gateInlayGeometry(COUNTRIES[i].id));
+  for(const side of [-1,1]){
+   gateway(inlay,gold,side*8,0,-1.72,1,1,1);
+   for(const y of [2.5,10.5,19])gateway(box,gold,side*8,y,-1.65,1.8,.09,.12);
+  }
   const crown=geo(gateCrownGeometry(COUNTRIES[i].id));
   for(const side of [-1,1])gateway(crown,gold,side*8,21.1,0,1,1,1);
   const label=sign(COUNTRIES[i].name+' · '+REFERENCE_GATE_TITLES[COUNTRIES[i].id],p.x,22,p.z,16);if(label)label.rotation.y=a+Math.PI;
