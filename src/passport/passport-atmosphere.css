@@ -1,0 +1,51 @@
+/* Full viewport artwork, with an open and readable centre for the single passport. */
+.passport-atmosphere {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  contain: strict;
+  pointer-events: none;
+  user-select: none;
+  background: var(--3b-obsidian);
+}
+.passport-atmosphere > * { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.passport-atmosphere-art {
+  z-index: 0;
+  object-fit: cover;
+  object-position: 50% 55%;
+  opacity: 1;
+  transform: scale(1.025);
+  animation: passport-atmosphere-drift 34s ease-in-out infinite alternate;
+}
+.passport-atmosphere-light {
+  z-index: 1;
+  background:
+    radial-gradient(ellipse at 12% 48%, color-mix(in srgb, var(--3b-matrix) 30%, transparent), transparent 52%),
+    radial-gradient(ellipse at 88% 21%, color-mix(in srgb, var(--3b-matrix) 17%, transparent), transparent 43%),
+    radial-gradient(ellipse at 82% 80%, color-mix(in srgb, var(--3b-champagne) 20%, transparent), transparent 46%);
+  opacity: .64;
+  animation: passport-atmosphere-light 12s ease-in-out infinite alternate;
+}
+.passport-atmosphere-canvas { z-index: 2; opacity: .9; }
+.passport-atmosphere-scrim {
+  z-index: 3;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--3b-obsidian) 24%, transparent), transparent 20%, transparent 76%, color-mix(in srgb, var(--3b-obsidian) 44%, transparent));
+}
+@keyframes passport-atmosphere-drift {
+  from { transform: scale(1.025) translate3d(0, 0, 0); }
+  to { transform: scale(1.06) translate3d(-.5%, -.4%, 0); }
+}
+@keyframes passport-atmosphere-light { from { opacity: .48; } to { opacity: .82; } }
+.passport-atmosphere[data-running="false"] > * { animation-play-state: paused; }
+.passport-atmosphere[data-economical="true"] .passport-atmosphere-art { animation: none; }
+.passport-atmosphere[data-economical="true"] .passport-atmosphere-light { animation-duration: 18s; }
+@media (orientation: portrait) {
+  .passport-atmosphere-art { object-position: 50% 48%; }
+  .passport-atmosphere-scrim {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--3b-obsidian) 24%, transparent), transparent 20%, transparent 76%, var(--3b-scrim-medium));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .passport-atmosphere > * { animation: none; }
+}

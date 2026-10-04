@@ -31,7 +31,7 @@ html[data-luxury="v2"] .intro3b .intro3b-start-card>.entry-atmosphere{position:f
 html[data-luxury="v2"] .intro3b-start-card>.eyebrow{font-size:10px;letter-spacing:.32em;color:var(--3b-muted);margin:0 0 24px}
 html[data-luxury="v2"] .intro3b-start-card h1{max-width:580px;margin:0;font-size:clamp(38px,7vw,68px);line-height:1.05;letter-spacing:-.055em;font-weight:500;text-wrap:balance;color:var(--3b-white);text-shadow:none}
 html[data-luxury="v2"] .intro3b-start-card .intro3b-lead{margin:22px 0 36px;font-size:14px;line-height:1.6;color:var(--3b-muted);letter-spacing:.02em}
-html[data-luxury="v2"] .intro3b-start-card .intro3b-enter{min-height:54px;min-width:220px;border-radius:var(--3b-radius-field);background:var(--3b-champagne);border-color:var(--3b-champagne-highlight);box-shadow:var(--3b-shadow-contact);font-size:11px;letter-spacing:.16em;font-weight:700;margin:0}
+html[data-luxury="v2"] .intro3b-start-card .intro3b-enter{min-height:54px;min-width:220px;border-radius:var(--3b-radius-field);background:var(--3b-gold-metal);border-color:var(--3b-champagne);box-shadow:var(--3b-shadow-contact);font-size:11px;letter-spacing:.16em;font-weight:700;margin:0}
 .intro3b-install{margin:26px 0 0;width:min(380px,100%);color:var(--3b-muted);font-size:12px}
 .intro3b-install summary{cursor:pointer;padding:12px;list-style:none;text-decoration:underline;text-underline-offset:4px}
 .intro3b-install summary::-webkit-details-marker{display:none}

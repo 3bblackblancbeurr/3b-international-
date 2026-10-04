@@ -22,7 +22,7 @@
   pointer-events: none;
   background:
     radial-gradient(circle at 45% 35%, rgba(0, 213, 255, 0.12), transparent 28%),
-    radial-gradient(circle at 75% 25%, rgba(230, 189, 100, 0.1), transparent 22%);
+    radial-gradient(circle at 75% 25%, rgba(var(--3b-champagne-rgb),0.1), transparent 22%);
   mix-blend-mode: screen;
   animation: passportSafeGlow 4s ease-in-out infinite alternate;
 }

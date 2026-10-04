@@ -208,11 +208,11 @@ function drawEntrySky(ctx, state, pointer, palette, sprites, nebula, reduced) {
 }
 
 /** Bounded Canvas2D renderer. No timer, no asset fetch, no permissions and no pointer capture. */
-export function mountEntrySky(element, { reduced = false, economical = false } = {}) {
+export function mountEntrySky(element, { reduced = false, economical = false, interactionHost } = {}) {
   const document = element.ownerDocument, win = document.defaultView;
   const ctx = element.getContext('2d', { alpha:true });
   if (!ctx || !win) return () => {};
-  const host = element.closest('.intro3b') || element.parentElement;
+  const host = interactionHost || element.closest('.intro3b') || element.parentElement;
   const shell = element.closest('.threeb-app-content');
   const style = win.getComputedStyle(document.documentElement);
   const palette = {
@@ -279,9 +279,11 @@ export function mountEntrySky(element, { reduced = false, economical = false } =
   const launchObserver = shell && win.MutationObserver ? new win.MutationObserver(visibility) : null;
   observer?.observe(element);
   launchObserver?.observe(shell,{ attributes:true,attributeFilter:['inert'] });
-  host?.addEventListener('pointermove',move,{ passive:true });
-  host?.addEventListener('pointerdown',press,{ passive:true });
-  host?.addEventListener('pointerleave',leave,{ passive:true });
+  if (!reduced) {
+    host?.addEventListener('pointermove',move,{ passive:true });
+    host?.addEventListener('pointerdown',press,{ passive:true });
+    host?.addEventListener('pointerleave',leave,{ passive:true });
+  }
   document.addEventListener('visibilitychange',visibility);
   win.addEventListener('resize',resize,{ passive:true });
   win.addEventListener('pagehide',pagehide);

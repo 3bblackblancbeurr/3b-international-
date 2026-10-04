@@ -18,7 +18,7 @@
 .world-shell .play-button{
  width:38px;height:38px;min-height:38px;
  background:linear-gradient(145deg,#07141bb8,#102a33a8);
- border-color:#e5c99030;
+ border-color:rgba(var(--3b-champagne-rgb),0.18824);
  box-shadow:0 8px 24px #02080f45,inset 0 0 0 1px #58d1ff0a;
  backdrop-filter:blur(10px);
 }
@@ -46,7 +46,7 @@
 .world-shell .world-minimap:focus-within{
  opacity:1;
  transform:translateY(-1px);
- border-color:#e5c99088;
+ border-color:rgba(var(--3b-champagne-rgb),0.53333);
 }
 .world-shell .play-profile{
  width:40px;height:44px;

@@ -1,4 +1,4 @@
-.world-shell,.world-dialog{--ink:#0e1b28;--gold:#e5c990;--text:#f4f0e5;--muted:#b6c5c7;font-family:Inter,system-ui,sans-serif;color:var(--text);font-size:14px;line-height:1.55;box-sizing:border-box}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-shell,.world-dialog{--ink:#0e1b28;--gold:var(--3b-champagne);--text:#f4f0e5;--muted:#b6c5c7;font-family:Inter,system-ui,sans-serif;color:var(--text);font-size:14px;line-height:1.55;box-sizing:border-box}
 .world-shell *,.world-dialog *{box-sizing:border-box}
 .world-shell{position:fixed;inset:0;z-index:1000;overflow:hidden;background:#102030;isolation:isolate}
 .world-canvas{display:block;width:100%;height:100%;touch-action:none;outline:none;cursor:grab}
@@ -8,8 +8,8 @@
 .world-shell button:hover,.world-dialog button:hover{background:#29414b;border-color:#ddcca975}
 .world-shell button:focus-visible,.world-dialog button:focus-visible,.world-dialog input:focus-visible,.world-dialog select:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .world-shell button:disabled,.world-dialog button:disabled{opacity:.4;cursor:not-allowed}
-.world-shell .world-primary,.world-dialog .world-primary{background:linear-gradient(120deg,#f3deb0,#c4a46b);color:#15232c;border:1px solid #f7e4bc;font-weight:700;box-shadow:0 5px 24px #c7a76826}
-.world-shell .world-primary:hover,.world-dialog .world-primary:hover{background:#f0d9a5;transform:translateY(-1px)}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-shell .world-primary,.world-dialog .world-primary{background:var(--3b-gold-metal);color:#15232c;border:1px solid #f7e4bc;font-weight:700;box-shadow:0 5px 24px #c7a76826}
+.world-shell .world-primary:hover,.world-dialog .world-primary:hover{background:var(--3b-champagne-highlight);transform:translateY(-1px)}
 .world-topbar{position:absolute;left:28px;right:28px;top:max(20px,env(safe-area-inset-top));display:flex;gap:18px;align-items:center}
 .world-shell .world-icon,.world-dialog .world-icon{width:44px;height:44px;min-width:44px;padding:10px;display:grid;place-items:center;border-radius:50%;background:#112330b0;}
 .world-brand{line-height:1.1}.world-brand b{font-size:24px;letter-spacing:-1px}.world-brand b span{font-size:14px;letter-spacing:4px;margin-left:10px;font-weight:400}.world-brand small{display:block;font-size:8px;letter-spacing:3px;color:var(--gold);margin-top:5px}

@@ -16,16 +16,16 @@
 
 .passport-component-header button {
   min-height: 42px;
-  border: 1px solid rgba(230, 189, 100, 0.5);
+  border: 1px solid rgba(var(--3b-champagne-rgb),0.5);
   border-radius: 999px;
-  color: #fff0a5;
+  color: var(--3b-champagne-highlight);
   background: rgba(0, 0, 0, 0.45);
   font-weight: 900;
 }
 
 .passport-component-header p {
   margin: 0;
-  color: #fff0a5;
+  color: var(--3b-champagne-highlight);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.18em;
@@ -126,7 +126,7 @@
 }
 
 .passport-component-grid article {
-  border: 1px solid rgba(230, 189, 100, 0.3);
+  border: 1px solid rgba(var(--3b-champagne-rgb),0.3);
   border-radius: 22px;
   padding: 18px;
   background: rgba(0, 0, 0, 0.55);
@@ -134,7 +134,7 @@
 
 .passport-component-grid p {
   margin: 0 0 8px;
-  color: #fff0a5;
+  color: var(--3b-champagne-highlight);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.14em;

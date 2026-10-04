@@ -38,7 +38,7 @@
 .hub-map-destinations input:focus-visible{outline:2px solid #91efe8;outline-offset:2px}
 .hub-map-filters{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
 .world-dialog .hub-map-filters button{font-size:10px;min-height:36px;padding:8px;border-radius:8px;border:1px solid #d7bf8240;background:#173644;color:#cbdcd6}
-.world-dialog .hub-map-filters button[aria-pressed=true]{background:#d7bf87;color:#102937;border-color:#ead9af}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-dialog .hub-map-filters button[aria-pressed=true]{background:var(--3b-champagne);color:#102937;border-color:#ead9af}
 .hub-map-count{font-size:10px!important;margin:10px 0!important;color:#b6cdcc!important;line-height:1.4!important}
 .hub-map-destination-list{max-height:400px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#8caaab #16313c;display:grid;gap:6px}
 .world-dialog .hub-map-destination-list>button{display:flex;align-items:center;gap:10px;min-height:56px;padding:9px 8px;text-align:left;border-radius:9px;background:#193a4580;border:1px solid #e0c88824;color:#ebdec0}

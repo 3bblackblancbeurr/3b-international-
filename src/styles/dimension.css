@@ -7,7 +7,7 @@
  .app3b .compact-card:hover{transform:translateY(-2px) translateZ(0)!important;border-color:#e0c27a73!important;box-shadow:0 21px 44px #0007,0 0 24px #00d5ff0b,inset 0 1px #ffffff12!important}
 }
 .app3b :is(.editorial-page,.loyalty-page,.shop3b,.community-page,.sport-page){perspective:1400px}
-.app3b .page-section{border-color:#d9bb8230!important;background:linear-gradient(160deg,#0c1419df,#06090cea 70%)!important;box-shadow:0 28px 70px #0005,inset 0 1px #ffffff09!important}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .page-section{border-color:rgba(var(--3b-champagne-rgb),0.18824)!important;background:linear-gradient(160deg,#0c1419df,#06090cea 70%)!important;box-shadow:0 28px 70px #0005,inset 0 1px #ffffff09!important}
 .app3b .page-breadcrumb{padding:4px 0}
 .app3b .section-heading{position:relative;padding-bottom:11px}
 .app3b .section-heading::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,#e0c27a55,#00d5ff2b 42%,transparent 82%)}

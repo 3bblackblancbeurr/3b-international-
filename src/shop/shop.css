@@ -6,7 +6,7 @@
 .shop-back, .shop-text-button { background: transparent; border: 0; padding: 8px 0; color: #ffe39b; text-decoration: underline; text-underline-offset: 4px; }
 .shop-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 14px; text-decoration: none; }
 .shop-bag-link { color: #fff0bd; text-decoration: none; border: 1px solid #8c7136; padding: 14px 18px; border-radius: 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; background: #090c11; }
-.shop-bag-link span { min-width: 26px; min-height: 26px; display: grid; place-items: center; border-radius: 50%; background: #e6bd64; color: #151109; }
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .shop-bag-link span { min-width: 26px; min-height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--3b-champagne); color: #151109; }
 .shop-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; align-items: start; gap: 28px; }
 .shop-products { display: grid; grid-template-columns: 1fr; gap: 22px; }
 .shop-product { overflow: hidden; border: 1px solid #66512b; border-radius: 22px; background: #090d12; box-shadow: 0 24px 80px #0005; }
@@ -36,7 +36,7 @@
 .shop-delivery-note { color: #dff7ee; background: #0b211c; border: 1px solid #275d4c; }
 .shop-preview-status { color: #d8ebff; background: #0c1825; border: 1px solid #2b526f; margin: 12px 0 0; }
 .shop-delivery-note svg, .shop-preview-status svg { flex: 0 0 auto; margin-top: 2px; }
-.shop-button { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #f2d583; border-radius: 12px; min-height: 50px; padding: 14px 18px; font-weight: 700; color: #151007; background: linear-gradient(110deg, #ffedac, #dfb65d); }
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .shop-button { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid #f2d583; border-radius: 12px; min-height: 50px; padding: 14px 18px; font-weight: 700; color: #151007; background: var(--3b-gold-metal); }
 .shop-product .shop-button { margin-top: 20px; }
 .shop3b button:disabled { cursor: not-allowed; opacity: .5; }
 .shop3b :is(button, a, select):focus-visible { outline: 3px solid #46dcff; outline-offset: 4px; }

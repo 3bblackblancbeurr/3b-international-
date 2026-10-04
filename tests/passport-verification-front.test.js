@@ -97,11 +97,15 @@ test('the render rejects an old owner presentation immediately, before cleanup e
   assert.equal(presentationForOwner(value, 'account-A', false), null);
 });
 
-test('verification is an isolated sibling below the original card and keeps secrets out of browser storage', () => {
+test('verification opens outside the original card and keeps secrets out of browser storage', () => {
   const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const experience = readFileSync(new URL('../src/passport/PassportExperience.jsx', import.meta.url), 'utf8');
   const component = readFileSync(new URL('../src/passport/PassportVerification.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../src/passport/passport-verification.css', import.meta.url), 'utf8');
-  assert.match(app, /<PassportVisual[^\n]+\/>\s*<PassportVerification/);
+  assert.match(app, /<PassportExperience\s+key=\{loyalty\.passport\?\.userId \|\| 'visitor'\}/);
+  assert.equal((experience.match(/<PassportVisual\s/g) || []).length, 1);
+  assert.match(experience, /visiblePanel === 'present' && <PassportVerification/);
+  assert.match(experience, /<PassportToolDialog key=\{visiblePanel\}/);
   assert.doesNotMatch(component, /localStorage|sessionStorage|Math\.random|createTestMember|signInWithPassword|PassportVisual/);
   assert.doesNotMatch(css, /\.passport-identity-layer|\.passport-stage|\.passport-visual|\.passport-card/);
   assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b/i);
