@@ -1,8 +1,10 @@
 /** Physical layout of the reference hub. Coordinates are metres, on one safe deck.
  * Existing mission/NPC IDs stay unchanged: a new layout never resets a save. */
+import {REFERENCE_GATE_SECTORS} from './gate-identity.js';
+import {citeSurfaceDistance} from './platform-topology.js';
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 export const HUB_SCALE=1.7;
-export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:0,z:32*HUB_SCALE},core:{x:0,z:0}});
+export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
 const DISTRICT_SITES = {
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
  archives:{x:-66,z:-66},arena:{x:66,z:-66},commerce:{x:94,z:0},
@@ -28,7 +30,7 @@ export function platformBuilding(building){
  entrance:{x,z:z+depth/2+2*HUB_SCALE},tier:building.tier||0,buildStatus:'active'};
 }
 export function platformPortal(index){
- const angle=-Math.PI/2+index*Math.PI/4;
+ const angle=-Math.PI/2+REFERENCE_GATE_SECTORS[index]*Math.PI/4;
  return {x:Math.cos(angle)*HUB_PLATFORM.portalRadius,z:Math.sin(angle)*HUB_PLATFORM.portalRadius};
 }
 export function platformWalls(b){
@@ -40,7 +42,7 @@ export function platformInteriorAt(position,buildings){
  return buildings.find(b=>Math.abs(position.x-b.buildingX)<b.width/2-.7&&Math.abs(position.z-b.buildingZ)<b.depth/2-.7)||null;
 }
 export function safePlatformPosition(point){
- if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.z)||Math.hypot(point.x,point.z)>HUB_PLATFORM.walkRadius)return {...HUB_PLATFORM.spawn};
+ if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.z)||Math.hypot(point.x,point.z)>HUB_PLATFORM.walkRadius||citeSurfaceDistance(point.x/HUB_SCALE,point.z/HUB_SCALE)>-1.25/HUB_SCALE)return {...HUB_PLATFORM.spawn};
  return {x:point.x,z:point.z};
 }
 const hash=s=>{let h=0;for(const c of s)h=(Math.imul(h,31)+c.charCodeAt(0))>>>0;return h;};

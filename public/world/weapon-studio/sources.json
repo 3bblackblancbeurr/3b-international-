@@ -1,0 +1,111 @@
+{
+  "source": "Actual Three.js equipped models rendered by WeaponShowroom, not concept art",
+  "commit": "fb1543961ec2e09b0cbf01c2813b0db60d4198da",
+  "workflowRun": 37165281615,
+  "form": 0,
+  "xp": 0,
+  "viewport": [
+    390,
+    844
+  ],
+  "format": "JPEG quality 92, stage only",
+  "renderer": "One selected-item studio with RoomEnvironment PMREM",
+  "files": [
+    {
+      "weapon": "abanico",
+      "file": "abanico.jpg",
+      "bytes": 13308,
+      "sha256": "3003fb1c9f9b6431374080874bf103a273c62ae2fd746a5b31c10cd52545b0f2"
+    },
+    {
+      "weapon": "alger",
+      "file": "alger.jpg",
+      "bytes": 10715,
+      "sha256": "e3ce7736b2aea4ae16cce30a3d8246135da479cc64edbe1103b529ccc8546d87"
+    },
+    {
+      "weapon": "axe",
+      "file": "axe.jpg",
+      "bytes": 11039,
+      "sha256": "40de8db0680e4272073fdd21d23f91070f1a9ee0204e2fd807fc681437d2554a"
+    },
+    {
+      "weapon": "bosphore",
+      "file": "bosphore.jpg",
+      "bytes": 12166,
+      "sha256": "695785b9c745436cbfa60baa9199481cbccf1814fc6ad10502b7404b7017efe4"
+    },
+    {
+      "weapon": "bow",
+      "file": "bow.jpg",
+      "bytes": 12315,
+      "sha256": "73e6a55bb37e45cbbee34ad4929206f93e28306283364983b051e515d1443b97"
+    },
+    {
+      "weapon": "carthage",
+      "file": "carthage.jpg",
+      "bytes": 10312,
+      "sha256": "132c7146ab4e59445ea1ea3398ef25cec0b447f762239dd378aa3b043aba9c98"
+    },
+    {
+      "weapon": "claws",
+      "file": "claws.jpg",
+      "bytes": 12561,
+      "sha256": "972364e18431ab61ae045b98aa3a66ef0ae3b04be768cbfa64bd981a2107fe57"
+    },
+    {
+      "weapon": "heritage",
+      "file": "heritage.jpg",
+      "bytes": 11491,
+      "sha256": "eeceed3640d545e3a0bdce764947a4f2e7dfacec59c1a6c365ec2166901d9e0f"
+    },
+    {
+      "weapon": "paris",
+      "file": "paris.jpg",
+      "bytes": 10694,
+      "sha256": "c2146df9f1052f6fedbe34019b4d0bb305ec61f82a69850e4e3c8c290aa29f03"
+    },
+    {
+      "weapon": "romano",
+      "file": "romano.jpg",
+      "bytes": 11445,
+      "sha256": "cd25b325a845e166b9c31af742ee70e6664aefca4f2e345ea56380d12355ae31"
+    },
+    {
+      "weapon": "saber",
+      "file": "saber.jpg",
+      "bytes": 11443,
+      "sha256": "23c171404d0740d38d22e24c64f2b8878adce77e96a829849c57f8cc462e429f"
+    },
+    {
+      "weapon": "scissors",
+      "file": "scissors.jpg",
+      "bytes": 12343,
+      "sha256": "0ae064fcb344801693320ca34c352f6b5ed7dbb6b14f49cd522fed8d41edd2d6"
+    },
+    {
+      "weapon": "tallinn",
+      "file": "tallinn.jpg",
+      "bytes": 11440,
+      "sha256": "645080d2ad758b2a133a14c6d34fbad700f12304fd6d0f8b95049e740affe225"
+    },
+    {
+      "weapon": "thread",
+      "file": "thread.jpg",
+      "bytes": 10858,
+      "sha256": "9625eb08e29c6d3409856976d4f954b3dc190277ccd2eb01475703cd65872510"
+    },
+    {
+      "weapon": "wings",
+      "file": "wings.jpg",
+      "bytes": 12780,
+      "sha256": "f0fc13059ad6946d79761fbe0ed38154379a4513a46e3115dc55c21fb63e1332"
+    },
+    {
+      "weapon": "zellige",
+      "file": "zellige.jpg",
+      "bytes": 14258,
+      "sha256": "ad8b904035337dfa36da69a6e8a9d6f4ae96ec11f7af3bbe84fa70b095d7c7a4"
+    }
+  ]
+}

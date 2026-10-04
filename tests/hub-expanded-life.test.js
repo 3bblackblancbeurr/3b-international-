@@ -10,6 +10,18 @@ import {GUARDIAN_VALUES} from '../src/world/guardian-values.js';
 import {findPath} from '../src/world/navigation.js';
 import {spatialObstacles} from '../src/world/hub/spatial-obstacles.js';
 import {obstacleDistance} from '../src/world/collision.js';
+import {HUB_MISSION_ACTION_PLANS} from '../src/world/hub/mission-actions.js';
+
+test('district buildings stay fixed across progress and reserve future mission actions',()=>{
+ const fresh=blankSave(),progress=blankSave(),a=createHubPlatform(fresh);
+ for(const [id,stages] of Object.entries(HUB_MISSION_ACTION_PLANS))if(progress.hub.missions[id])Object.assign(progress.hub.missions[id],{status:'active',completedObjectives:stages.length-1});
+ const b=createHubPlatform(progress),fabric=w=>w.collisions.filter(o=>o.id?.startsWith('fabric-'));
+ try{
+  assert.ok(a.architectureDiagnostics.districtBuildings>=40);
+  assert.deepEqual(fabric(a),fabric(b),'mission progress must not move physical buildings');
+  for(const item of worldRuntimeItems('hub',progress).filter(i=>i.type==='hubMissionAction'))assert.ok(fabric(b).every(o=>obstacleDistance(item,o)>item.range),'future action stays clear: '+item.id);
+ }finally{a.dispose();b.dispose();}
+});
 test('expanded platform provides three times the former area and keeps eight canonical values',()=>{
  assert.ok(HUB_PLATFORM.radius>=285);assert.ok((HUB_PLATFORM.radius/168)**2>2.8);
  assert.deepEqual(HUB_VALUES,COUNTRIES.map(c=>GUARDIAN_VALUES[c.id].value));

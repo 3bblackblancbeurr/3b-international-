@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {HUB_SCALE} from './hub/platform-layout.js';
 import {worldCrowdPalette} from '../design-system/tokens.js';
 
 const PROFILE_LIMITS=Object.freeze({
@@ -18,6 +19,7 @@ const hash=(value,salt=0)=>{let n=(Math.imul(value+1,2654435761)+Math.imul(salt+
 
 function crowdRoutes(items){
  const roads=(Array.isArray(items)?items:[]).filter(item=>item?.type==='hubRoad'&&validPoint(item.from)&&validPoint(item.to)&&Math.hypot(item.to.x-item.from.x,item.to.z-item.from.z)>8);
+ if(!roads.length&&items?.some(item=>item.type==='hubBuilding'))return Array.from({length:4},(_,i)=>{const a=i*Math.PI/2;return {kind:'avenue',width:5*HUB_SCALE,from:{x:Math.cos(a)*47*HUB_SCALE,z:Math.sin(a)*47*HUB_SCALE},to:{x:Math.cos(a)*80*HUB_SCALE,z:Math.sin(a)*80*HUB_SCALE}};});
  const lanes=roads.filter(item=>item.kind==='lane'),avenues=roads.filter(item=>item.kind==='avenue').filter((_,index)=>index%2===0);
  return [...lanes,...avenues].length?[...lanes,...avenues]:roads.filter(item=>item.kind!=='express');
 }
