@@ -11,7 +11,6 @@ import {
   sameArray,
 } from "./premierSecretEngine.js";
 import { completeDailySecretAttempt, startDailySecretAttempt } from "./dailySecret.js";
-import SecretSanctuary3D from "./SecretSanctuary3D.jsx";
 import "./premier-secret.css";
 import "./secret-aaaa.css";
 import "./secret-v2.css";
