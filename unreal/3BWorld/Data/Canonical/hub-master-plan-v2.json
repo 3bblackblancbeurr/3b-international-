@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "status": "preproduction-canonical",
   "title": "La Cité des Huit Héritages",
-  "visualReference": "assets/CITE_HUIT_HERITAGES_CANON_V1.webp",
+  "visualReference": "user-master://Monde_3B_Hub_REFERENCE_UNIQUE.png",
   "palette": {
     "black": "#05070b",
     "matrixBlue": "#00a8ff",

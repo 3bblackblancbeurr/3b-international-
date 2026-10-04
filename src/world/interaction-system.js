@@ -45,6 +45,7 @@ const TYPE_ACTIONS=Object.freeze({
  portal:['travel','inspect'],
  hubNpc:['talk','ask'],
  hubGuardian:['talk','ask'],
+ hubCreature:['observe','inspect'],
  hubMission:['inspect'],
  hubTransport:['ride'],
  hubBuilding:['enter','inspect'],

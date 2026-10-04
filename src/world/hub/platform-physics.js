@@ -8,7 +8,8 @@ export function platformObstacles(){
  const local=[];
  for(let i=0;i<8;i++){
   const p=platformPortal(i);
-  for(const side of [-1,1])local.push({x:p.x/HUB_SCALE+side*8,z:p.z/HUB_SCALE,width:2,depth:3});
+  const a=Math.atan2(p.z,p.x)-Math.PI/2;
+  for(const side of [-1,1])local.push({x:p.x/HUB_SCALE+Math.cos(a)*side*8,z:p.z/HUB_SCALE-Math.sin(a)*side*8,width:2,depth:3,rotation:a});
  }
  for(const [x,z] of [[48,48],[-48,48],[48,-48],[-48,-48]])local.push({x,z,r:14.8});
  local.push({x:0,z:0,r:19.5});
@@ -25,18 +26,16 @@ export function platformObstacles(){
  }
  for(let i=0;i<8;i++){
   const a=(i+.5)*Math.PI/4,x=Math.cos(a)*132,z=Math.sin(a)*132;
-  for(const side of [-1,1])local.push({x:x+Math.cos(a+Math.PI/2)*side*6,z:z+Math.sin(a+Math.PI/2)*side*6,width:8,depth:9});
+  for(const side of [-1,1])local.push({x:x+Math.cos(a+Math.PI/2)*side*10,z:z+Math.sin(a+Math.PI/2)*side*10,width:8,depth:9});
  }
- for(let i=0;i<32;i++){
-  const a=(i+.5)*Math.PI/16,r=105+(i%2)*25;local.push({x:Math.cos(a)*r,z:Math.sin(a)*r,r:.65});
- }
+
  for(let i=0;i<24;i++){
   const a=(i+.5)*Math.PI*2/24,r=i%2?119:80,x=Math.cos(a)*r,z=Math.sin(a)*r;
   local.push({x,z,r:.6},{x:x+2,z:z+2,r:1.3});
   if(i%3===0)local.push({x:x-3,z,r:1.5});
  }
  for(const side of [-1,1])for(let i=0;i<4;i++)local.push({x:side*34,z:70+i*9,width:5,depth:3});
- return local.map(o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,v*HUB_SCALE])));
+ return local.map(o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k,k==='rotation'?v:v*HUB_SCALE])));
 }
 
 export {HUB_FINAL_POSITION};

@@ -154,7 +154,7 @@ test('Hub V4 has a structural water network and useful Cité Origine fabric',()=
 
 
 test('Hub V4 canon stores the story, laws, safe-zone and frozen 16-weapon base',()=>{
-  assert.equal(plan.visualReference,'user-master://La Cité des Huit Héritages');
+  assert.equal(plan.visualReference,'user-master://Monde_3B_Hub_REFERENCE_UNIQUE.png');
   assert.match(plan.repositorySchematic,/cite-huit-heritages-schematic-v2\.svg$/);
   assert.equal(plan.safeZone.hubIsOnlyMajorSafeZone,true);
   assert.equal(plan.safeZone.monsters,false);

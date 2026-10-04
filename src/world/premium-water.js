@@ -79,6 +79,7 @@ const fragmentShader=`
  uniform float reflectionReady;
  uniform float rain;
  uniform float daylight;
+ uniform float ocean;
  uniform vec3 deepColor;
  uniform vec3 shallowColor;
  uniform vec3 matrixBlue;
@@ -103,10 +104,11 @@ const fragmentShader=`
   float fresnel=.035+.965*pow(1.-ndv,4.2);
 
   float radial=clamp(length(vLocal)/max(radius,1.),0.,1.);
-  float deep=1.-smoothstep(.16,.93,radial);
+  float deep=mix(1.-smoothstep(.16,.93,radial),smoothstep(.16,.93,radial),ocean);
   vec3 refracted=refract(-viewDir,normal,1./1.333);
   float refractShift=(refracted.x+refracted.z)*.045;
   vec3 base=mix(shallowColor,deepColor,clamp(deep+refractShift,0.,1.));
+  base*=mix(1.,.18+.82*daylight,ocean);
 
   vec3 skyDay=vec3(.18,.27,.33);
   vec3 skyNight=vec3(.015,.038,.075);
@@ -115,14 +117,15 @@ const fragmentShader=`
 
   vec2 reflectionUv=vReflectionCoord.xy/max(vReflectionCoord.w,.0001);
   reflectionUv+=slope*vec2(.045,.032);
-  float reflectionBounds=step(0.,reflectionUv.x)*step(reflectionUv.x,1.)*step(0.,reflectionUv.y)*step(reflectionUv.y,1.);
+  vec2 reflectionEdge=min(reflectionUv,1.-reflectionUv);
+  float reflectionBounds=smoothstep(.005,.10,min(reflectionEdge.x,reflectionEdge.y));
   vec3 sceneMirror=texture2D(reflectionTexture,clamp(reflectionUv,vec2(.001),vec2(.999))).rgb;
   float mirrorWeight=fresnel*sceneReflection*reflectionAmount*reflectionReady*reflectionBounds;
   color=mix(color,sceneMirror,clamp(mirrorWeight,0.,.84));
 
   float matrixBand=pow(max(0.,sin(vWorld.x*.055+vWorld.z*.027-time*.25)),18.)*
                    (.35+.65*pow(1.-ndv,2.));
-  color+=matrixBlue*matrixBand*.18*reflectionAmount*(.35+.65*(1.-daylight));
+  color+=matrixBlue*matrixBand*.18*reflectionAmount*(.35+.65*(1.-daylight))*(1.-ocean);
 
   vec3 lightDir=normalize(vec3(.34,.82,.24));
   float spec=pow(max(dot(reflect(-lightDir,normal),viewDir),0.),62.);
@@ -131,11 +134,13 @@ const fragmentShader=`
   float rainSpark=rain*rainPulse*(.2+.8*fresnel);
   color+=mix(matrixBlue,vec3(.82,.9,1.),.72)*rainSpark*.28;
 
-  float shore=smoothstep(.82,.995,radial);
+  float shore=smoothstep(.82,.995,radial)*(1.-ocean);
   float foamNoise=.55+.45*sin(vWorld.x*.72+sin(vWorld.z*.31)+time*.9);
   float contact=texture2D(contactFoam,clamp(vUv+slope*.012,vec2(.001),vec2(.999))).r;
   float foam=max(shore*.78,contact*(.72+.28*foamNoise))*foamNoise*foamAmount;
   color=mix(color,vec3(.64,.76,.79),foam*.48);
+  float oceanHaze=ocean*smoothstep(550.,1900.,length(vWorld-cameraPosition));
+  color=mix(color,mix(vec3(.008,.015,.032),vec3(.34,.42,.47),clamp((daylight-.18)/.82,0.,1.)),oceanHaze);
 
   float alpha=mix(.84,.975,deep);
   alpha+=fresnel*.02;
@@ -162,7 +167,7 @@ const mistFragment=`
  }
 `;
 
-export function createPremiumWater({region='hub',lake,owned=[]}){
+export function createPremiumWater({region='hub',lake,owned=[],ocean=false}){
  const normalA=createNormalMap(64,13),normalB=createNormalMap(64,47),foamSize=128,foamData=new Uint8Array(foamSize*foamSize);
  const contactFoam=new THREE.DataTexture(foamData,foamSize,foamSize,THREE.RedFormat,THREE.UnsignedByteType);
  contactFoam.minFilter=contactFoam.magFilter=THREE.LinearFilter;contactFoam.wrapS=contactFoam.wrapT=THREE.ClampToEdgeWrapping;contactFoam.needsUpdate=true;
@@ -188,7 +193,7 @@ export function createPremiumWater({region='hub',lake,owned=[]}){
    normalStrength:{value:QUALITY.medium.normalStrength},
    foamAmount:{value:QUALITY.medium.foam},
    reflectionAmount:{value:QUALITY.medium.reflection},sceneReflection:{value:0},
-   rain:{value:0},daylight:{value:1},
+   rain:{value:0},daylight:{value:1},ocean:{value:ocean?1:0},
    deepColor:{value:deepColor},shallowColor:{value:shallowColor},
    matrixBlue:{value:new THREE.Color('#00a8ff')},
    champagneGold:{value:new THREE.Color('#d6b46a')},
