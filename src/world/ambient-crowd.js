@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {HUB_SCALE} from './hub/platform-layout.js';
 import {worldCrowdPalette} from '../design-system/tokens.js';
 
@@ -35,8 +36,34 @@ export function createAmbientCrowd(root,items,options={}){
  if(!root||!routes.length)return{tick(){},setQuality(){},get diagnostics(){return{...budget,count:0,visible:0,drawCalls:0};},dispose(){}};
 
  const maximum=PROFILE_LIMITS.desktop.detail,group=new THREE.Group();group.name='3B · foule ambiante instanciée';root.add(group);
- const bodyGeometry=new THREE.CapsuleGeometry(.27,1.08,2,6),headGeometry=new THREE.SphereGeometry(.24,7,5);
- const bodyMaterial=new THREE.MeshStandardMaterial({color:worldCrowdPalette.base,roughness:.92,metalness:.02,vertexColors:true}),headMaterial=new THREE.MeshStandardMaterial({color:worldCrowdPalette.base,roughness:.96,metalness:0,vertexColors:true});
+ const parts=[];
+ function limb(geometry,x,y,z,joint=0){
+  geometry.translate(x,y,z);const part=geometry.index?geometry.toNonIndexed():geometry;
+  if(part!==geometry)geometry.dispose();
+  part.setAttribute('crowdJoint',new THREE.Float32BufferAttribute(Array(part.attributes.position.count).fill(joint),1));parts.push(part);
+ }
+ limb(new THREE.CylinderGeometry(.27,.22,.72,8),0,.08,0);
+ limb(new THREE.CylinderGeometry(.065,.075,.18,6),0,.54,0);
+ for(const side of [-1,1]){
+  limb(new THREE.CapsuleGeometry(.075,.49,2,6),side*.34,-.06,0,side*2);
+  limb(new THREE.CapsuleGeometry(.085,.53,2,6),side*.14,-.61,0,side);
+  limb(new THREE.BoxGeometry(.17,.12,.28),side*.14,-.95,.06,side);
+ }
+ const bodyGeometry=mergeGeometries(parts);parts.forEach(p=>p.dispose());
+ const phases=new THREE.InstancedBufferAttribute(new Float32Array(maximum),1);bodyGeometry.setAttribute('crowdPhase',phases);
+ const headGeometry=new THREE.SphereGeometry(.19,8,6),walkTime={value:0},walkActive={value:budget.moving?1:0};
+ const bodyMaterial=new THREE.MeshStandardMaterial({color:worldCrowdPalette.base,roughness:.92,metalness:.02}),headMaterial=new THREE.MeshStandardMaterial({color:worldCrowdPalette.base,roughness:.96,metalness:0});
+ // Instance colours work independently of vertex colours; an absent colour
+ // attribute must not multiply every resident down to black.
+ bodyMaterial.onBeforeCompile=shader=>{
+  shader.uniforms.crowdWalkTime=walkTime;shader.uniforms.crowdWalkActive=walkActive;
+  shader.vertexShader='attribute float crowdJoint;attribute float crowdPhase;uniform float crowdWalkTime;uniform float crowdWalkActive;float crowdAngle(){return sin(crowdWalkTime*5.6+crowdPhase)*sign(crowdJoint)*crowdWalkActive*(abs(crowdJoint)>1.5?-.22:.3); }\n'+shader.vertexShader;
+  shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+   if(abs(crowdJoint)>.5){float a=crowdAngle();objectNormal.yz=mat2(cos(a),sin(a),-sin(a),cos(a))*objectNormal.yz;}`);
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   if(abs(crowdJoint)>.5){vec3 pivot=vec3(sign(crowdJoint)*(abs(crowdJoint)>1.5?.34:.14),abs(crowdJoint)>1.5?.32:-.25,0.);float a=crowdAngle();transformed-=pivot;transformed.yz=mat2(cos(a),sin(a),-sin(a),cos(a))*transformed.yz;transformed+=pivot;}`);
+ };
+ bodyMaterial.customProgramCacheKey=()=> '3b-crowd-articulated-v1';
  const bodies=new THREE.InstancedMesh(bodyGeometry,bodyMaterial,maximum),heads=new THREE.InstancedMesh(headGeometry,headMaterial,maximum);
  bodies.name='Foule · silhouettes';heads.name='Foule · visages';for(const mesh of [bodies,heads]){mesh.castShadow=false;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.count=0;group.add(mesh);}
 
@@ -47,7 +74,7 @@ export function createAmbientCrowd(root,items,options={}){
  const dummy=new THREE.Object3D(),clothColor=new THREE.Color(),skinColor=new THREE.Color();
 
  function update(time,player={x:0,z:0},stamp=time*1000){
-  if(disposed)return;
+  if(disposed)return;walkTime.value=time;walkActive.value=budget.moving?1:0;
   if(lastUpdate!==-Infinity){if(!budget.updateHz||stamp-lastUpdate<1000/budget.updateHz)return;}lastUpdate=stamp;visible=0;
   for(let index=0;index<budget.count;index++){
    const agent=agents[index],cycle=(agent.phase+(budget.moving?time*agent.speed/agent.length:0))%2,t=cycle<=1?cycle:2-cycle,direction=cycle<=1?1:-1;
@@ -55,9 +82,11 @@ export function createAmbientCrowd(root,items,options={}){
    if(Math.hypot(x-(player.x||0),z-(player.z||0))>budget.maxDistance)continue;
    const y=Number(groundY(x,z))||0,heading=Math.atan2(agent.dx*direction,agent.dz*direction),slot=visible++;
    dummy.position.set(x,y+1.02*agent.scale,z);dummy.rotation.set(0,heading,0);dummy.scale.set(agent.scale,agent.scale,agent.scale);dummy.updateMatrix();bodies.setMatrixAt(slot,dummy.matrix);bodies.setColorAt(slot,clothColor.set(agent.cloth));
-   dummy.position.set(x,y+2.02*agent.scale,z);dummy.scale.setScalar(agent.scale);dummy.updateMatrix();heads.setMatrixAt(slot,dummy.matrix);heads.setColorAt(slot,skinColor.set(agent.skin));
+   phases.setX(slot,hash(index,7)*Math.PI*2);
+   dummy.position.set(x,y+1.78*agent.scale,z);dummy.scale.setScalar(agent.scale);dummy.updateMatrix();heads.setMatrixAt(slot,dummy.matrix);heads.setColorAt(slot,skinColor.set(agent.skin));
   }
-  for(const mesh of [bodies,heads]){mesh.count=visible;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;if(visible)mesh.computeBoundingSphere();}
+  phases.needsUpdate=true;
+  for(const mesh of [bodies,heads]){mesh.count=visible;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;if(visible){mesh.computeBoundingSphere();mesh.boundingSphere.radius+=.25;}}
  }
  update(0,{x:0,z:0},0);
  return{
