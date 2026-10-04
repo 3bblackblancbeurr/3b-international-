@@ -1,12 +1,25 @@
-.companion3b-avatar-articulated{position:relative;display:block;flex-shrink:0;isolation:isolate;contain:layout style;pointer-events:none;user-select:none}
-.companion3b-avatar-articulated .companion3b-avatar-canvas,.companion3b-avatar-articulated .companion3b-articulated-fallback{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
-.companion3b-avatar-articulated .companion3b-avatar-canvas{z-index:2;opacity:0}
-.companion3b-avatar-articulated .companion3b-articulated-fallback{z-index:1;overflow:visible}
-.companion3b-avatar-articulated[data-renderer="webgl"] .companion3b-avatar-canvas{opacity:1}
-.companion3b-avatar-articulated[data-renderer="webgl"] .companion3b-articulated-fallback{visibility:hidden}
-.companion3b-avatar-light{position:absolute;inset:17% 5% 5%;z-index:0;background:radial-gradient(ellipse at 48% 46%,color-mix(in srgb,var(--3b-champagne) 9%,transparent),transparent 65%);opacity:.8;pointer-events:none}
-.companion3b-avatar-articulated[data-speaking="true"] .companion3b-avatar-light{background:radial-gradient(ellipse at 48% 38%,color-mix(in srgb,var(--3b-matrix) 13%,transparent),transparent 66%)}
-/* Joint transforms own the silhouette; the historical whole-image wiggle must not stack. */
-.companion3b-shell .companion3b-avatar-articulated{animation:none!important;transform:none!important}
-.companion3b-avatar-articulated[data-reduced="true"]{animation:none!important;transition:none!important}
-@media(forced-colors:active){.companion3b-avatar-light{display:none}.companion3b-articulated-fallback{forced-color-adjust:none}}
+/* Original couture artwork: no replacement geometry, canvas or WebGL context. */
+.companion3b-avatar-couture {
+  position:relative;display:grid;place-items:center;flex-shrink:0;isolation:isolate;
+  contain:layout style;pointer-events:none;user-select:none;overflow:visible;
+}
+.companion3b-couture-body {
+  position:relative;display:block;height:100%;width:auto;aspect-ratio:2 / 3;
+  transform-origin:50% 96%;will-change:transform;
+  --couture-core:.28;--couture-eye:.12;--couture-glint:0;--couture-brightness:1;
+}
+.companion3b-couture-art {position:relative;z-index:1;display:block;width:100%;height:100%;overflow:visible;filter:brightness(var(--couture-brightness))}
+.companion3b-avatar-couture[data-pose="hang"] .companion3b-couture-body {transform-origin:50% 20%}
+.companion3b-couture-ground {position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;pointer-events:none}
+.companion3b-couture-core {opacity:var(--couture-core);mix-blend-mode:screen}
+.companion3b-couture-eyes {opacity:var(--couture-eye);mix-blend-mode:screen}
+.companion3b-couture-constellation {opacity:.78;mix-blend-mode:screen}
+.companion3b-couture-glint {opacity:var(--couture-glint)}
+.companion3b-couture-voice {position:absolute;z-index:0;left:27%;top:18%;width:50%;height:35%;opacity:0;background:radial-gradient(ellipse,color-mix(in srgb,var(--3b-champagne) 16%,transparent),transparent 68%);transition:opacity 220ms ease;pointer-events:none}
+.companion3b-avatar-couture[data-speaking="true"] .companion3b-couture-voice {opacity:1}
+html .companion3b-shell .companion3b-avatar-couture {animation:none!important;transform:none!important}
+.companion3b-avatar-couture[data-active="false"] .companion3b-couture-body,
+.companion3b-avatar-couture[data-reduced="true"] .companion3b-couture-body {will-change:auto}
+.companion3b-avatar-couture[data-reduced="true"] .companion3b-couture-voice {transition:none}
+@media(prefers-reduced-motion:reduce) {.companion3b-couture-body {will-change:auto}.companion3b-couture-voice {transition:none}}
+@media(forced-colors:active) {.companion3b-couture-art {forced-color-adjust:none}.companion3b-couture-voice {display:none}}

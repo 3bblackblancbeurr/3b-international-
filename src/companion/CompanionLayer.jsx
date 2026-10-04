@@ -1,32 +1,30 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { flushSync } from 'react-dom';
 import CompanionAvatar from "./CompanionAvatar.jsx";
-import { DEFAULT_COMPANION_PREFS, companionLabel, sanitizeCompanionPrefs } from "./companion-model.js";
+import { companionLabel } from "./companion-model.js";
 import useCompanionBehavior from "./useCompanionBehavior.js";
-import useCompanionGaze from './useCompanionGaze.js';
 import { companionGuidance } from './companion-assistant.js';
 import { COMPANION_PERSONALITIES, DEFAULT_LIVING_PREFS, sanitizeLivingPrefs, companionReply, companionSceneLine, companionQuestion } from './companion-personality.js';
 import useCompanionStage from './useCompanionStage.js';
 import useCompanionVoice from './useCompanionVoice.js';
 import CompanionStudio from './CompanionStudio.jsx';
+import CompanionPresenceControl from './CompanionPresenceControl.jsx';
+import { companionPreferences } from './companion-preferences.js';
+import { companionNativePresence, useCompanionNativePresence, useCompanionPreferences } from './useCompanionPreferences.js';
 import '../styles/companion-living.css';
 import { Button } from '../design-system/index.jsx';
 import { ArrowUpRight, Sparkles, Clock3, Fingerprint, X, Volume2, VolumeX } from 'lucide-react';
 import ConstellationLink from './ConstellationLink.jsx';
 import { CONSTELLATION_KEY, readConstellation } from './constellation.js';
 import {
-  companionPlatform, endCompanionLiveActivity, getCompanionCapabilities,
-  openCompanionWallpaperPicker, requestOverlayPermission, setNativeCompanionMode,
-  startCompanionLiveActivity, startCompanionOverlay, stopCompanionOverlay,
+  companionPlatform, setNativeCompanionMode,
   syncCompanionWidget, updateCompanionLiveActivity,
 } from "../native/companion.js";
 
-const PREFS_KEY = "threeb_companion_prefs_v1";
 const LIVING_PREFS_KEY = 'threeb_companion_living_v1';
-function readPrefs() {
-  try { return sanitizeCompanionPrefs(JSON.parse(localStorage.getItem(PREFS_KEY) || "{}")); }
-  catch { return { ...DEFAULT_COMPANION_PREFS }; }
-}
+const updatePrefs = companionPreferences.update;
+const refreshCapabilities = companionNativePresence.refreshCapabilities;
+const setNativeStatus = companionNativePresence.setStatus;
 function readLivingPrefs() {
   try { return sanitizeLivingPrefs(JSON.parse(localStorage.getItem(LIVING_PREFS_KEY) || '{}')); }
   catch { return { ...DEFAULT_LIVING_PREFS }; }
@@ -35,7 +33,8 @@ const TRAVEL_ACTIONS = new Set(['walk', 'hang', 'fall']);
 const POSE_LABELS = { dance: 'Le rythme est lancé', breakdance: 'Place au mouvement', pocket: 'Une petite surprise', hologram: 'Une idée prend forme', hang: 'Accroché aux lettres', fall: 'Attention, j’arrive !', land: 'Bien réceptionné', highfive: 'Tape-là !', hello: 'Salut toi', curious: 'J’ai une question', focus: 'À ton rythme', think: 'Je réfléchis' };
 
 export default function CompanionLayer({ page, secretPhase, memberRegistered, goTo }) {
-  const [prefs, setPrefs] = useState(readPrefs);
+  const prefs = useCompanionPreferences();
+  const { capabilities, busy, status: nativeStatus } = useCompanionNativePresence();
   const [living, setLiving] = useState(readLivingPrefs);
   const [panelOpen, setPanelOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -48,12 +47,6 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [linkOpen,setLinkOpen]=useState(false);
   const [bond,setBond]=useState(()=>{try{return readConstellation(window.localStorage);}catch{return [];}});
-  const [capabilities, setCapabilities] = useState(null);
-  const [nativeStatus, setNativeStatus] = useState("");
-  const [busy, setBusy] = useState(false);
-  const busyRef = useRef(false);
-  const mounted = useRef(true);
-  const refreshId = useRef(0);
   const shellRef = useRef(null);
   const panelRef = useRef(null);
   const closeRef = useRef(null);
@@ -76,7 +69,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const profile = COMPANION_PERSONALITIES.find(item => item.id === living.personality) || COMPANION_PERSONALITIES[0];
   const guidance = companionGuidance({ page, secretPhase, memberRegistered });
   const showReply = useCallback((reply, { userGesture = false, automatic = false, silent = false } = {}) => {
-    if (!reply?.message) return;
+    if (!reply?.message || !companionPreferences.getSnapshot().enabled) return;
     const next = { ...reply, duration: reply.duration || (reply.choices?.length ? 18000 : 6500), id: ++messageId.current };
     setInteraction(next);
     setLastReply(next);
@@ -100,7 +93,17 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const pose = stage.pose || interaction?.pose || (focusMode ? 'focus' : mode);
   const label = mode === 'secret' && ['open', 'attempt'].includes(secretPhase) ? 'Le Secret est ouvert' : POSE_LABELS[pose] || companionLabel(pose);
   const motionAllowed = visible && !reducedMotion && !lowPower && !prefs.reducedPresence;
-  useCompanionGaze(shellRef, visible && prefs.enabled && !reducedMotion && !lowPower && !stage.dragging && !prefs.reducedPresence);
+  const clearPresence = useCallback(() => {
+    stopVoice();
+    stage.suspend();
+    setPanelOpen(false); setFocused(false); setFocusMode(false);
+    setInteraction(null); setLastReply(null); setPendingTravel(null);
+    setRequestedTab(null); setSettingsOpen(false); setLinkOpen(false);
+    setHistory([]); recentRef.current = [];
+  }, [stopVoice, stage.suspend]);
+  useLayoutEffect(() => {
+    if (!prefs.enabled) clearPresence();
+  }, [prefs.enabled, clearPresence]);
   useEffect(() => {
     if (!interaction) return;
     const timer = setTimeout(() => setInteraction(null), interaction.duration);
@@ -108,14 +111,14 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   }, [interaction]);
   useEffect(() => { setInteraction(null); }, [page, visible]);
   useEffect(() => {
-    if (!pendingTravel || panelOpen) return;
+    if (!prefs.enabled || !pendingTravel || panelOpen) return;
     const frame = requestAnimationFrame(() => {
       const started = stage.play(pendingTravel);
       if (!started && pendingTravel === 'hang') showReply({ pose: 'curious', message: 'Je cherche une lettre bien visible. Fais défiler jusqu’à un titre, puis réessaie.' });
       setPendingTravel(null);
     });
     return () => cancelAnimationFrame(frame);
-  }, [pendingTravel, panelOpen, stage.play, showReply]);
+  }, [prefs.enabled, pendingTravel, panelOpen, stage.play, showReply]);
   useEffect(() => {
     if (!prefs.enabled || !living.initiative || !visible || panelOpen || focusMode || reducedMotion || lowPower || prefs.reducedPresence || stage.suspended) return;
     if (['secret', 'reward', 'celebrate', 'notification', 'sleep'].includes(mode)) return;
@@ -152,6 +155,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     else updateLiving(patch);
   }
   function performAction(action, suppliedReply) {
+    if (!companionPreferences.getSnapshot().enabled) return;
     voice.unlock({ userGesture: true });
     const kind = action === 'cheer' ? 'celebrate' : action;
     if (kind === 'curious') {
@@ -168,6 +172,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     else stage.play(kind);
   }
   function submitMessage(text, destination) {
+    if (!companionPreferences.getSnapshot().enabled) return;
     const message = String(text || '').trim().slice(0, 300);
     if (!message) return;
     setHistory(current => [...current, { id: ++messageId.current, sender: 'user', message }].slice(-12));
@@ -202,38 +207,12 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const liveActive = capabilities?.liveActivityActive ?? prefs.iosLiveActivityEnabled;
   const nativeOptions = { batterySaver: prefs.batterySaver, reducedPresence: prefs.reducedPresence, reducedMotion };
 
-  const updatePrefs = useCallback((patch) => {
-    setPrefs(current => {
-      const next = sanitizeCompanionPrefs({ ...current, ...patch });
-      try { localStorage.setItem(PREFS_KEY, JSON.stringify(next)); } catch { /* In-memory mode remains usable. */ }
-      return next;
-    });
-  }, []);
-
-  const refreshCapabilities = useCallback(async () => {
-    const request = ++refreshId.current;
-    const value = await getCompanionCapabilities();
-    if (!mounted.current || request !== refreshId.current) return;
-    setCapabilities(current => ({ ...current, ...value }));
-    // Preferences describe actual external presence, never permission to restart a stopped service.
-    if (value.available !== false) updatePrefs({
-      ...(typeof value.overlayActive === "boolean" ? { androidOverlayEnabled: value.overlayActive } : {}),
-      ...(typeof value.liveActivityActive === "boolean" ? { iosLiveActivityEnabled: value.liveActivityActive } : {}),
-    });
-  }, [updatePrefs]);
-
   useEffect(() => {
-    mounted.current = true;
-    return () => { mounted.current = false; ++refreshId.current; };
-  }, []);
-
-  useEffect(() => {
-    if (visible && !busyRef.current) void refreshCapabilities();
+    if (visible && !companionNativePresence.getSnapshot().busy) void refreshCapabilities();
   }, [visible, panelOpen, refreshCapabilities]);
 
   useEffect(() => {
     const onStorage = event => {
-      if (event.key === PREFS_KEY || event.key === null) setPrefs(readPrefs());
       if (event.key === LIVING_PREFS_KEY || event.key === null) setLiving(readLivingPrefs());
       if (event.key === CONSTELLATION_KEY || event.key === null) { try { setBond(readConstellation(localStorage)); } catch { setBond([]); } }
     };
@@ -288,69 +267,18 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     return () => { current = false; };
   }, [mode, label, visible, prefs.enabled, platform, liveActive, busy, capabilities?.widgetSync, refreshCapabilities]);
 
-  async function runNative(action) {
-    if (busyRef.current) return;
-    busyRef.current = true; ++refreshId.current; setBusy(true);
-    try { await action(); }
-    catch { if (mounted.current) setNativeStatus("L’opération n’a pas abouti. Réessaie depuis l’application 3B."); }
-    finally {
-      busyRef.current = false;
-      if (mounted.current) { setBusy(false); await refreshCapabilities(); }
-    }
+  const enableOverlay = () => companionNativePresence.enableOverlay({ mode, ...nativeOptions });
+  const disableOverlay = companionNativePresence.disableOverlay;
+  const enableLive = () => companionNativePresence.enableLive({ mode, message: label });
+  const disableLive = companionNativePresence.disableLive;
+  const openWallpaper = companionNativePresence.openWallpaper;
+  function disableCompanion() {
+    clearPresence();
+    flushSync(() => updatePrefs({ enabled: false }));
+    document.querySelector('[data-companion-settings-trigger]')?.focus({ preventScroll: true });
   }
 
-  const enableOverlay = () => runNative(async () => {
-    setNativeStatus("Vérification de l’autorisation Android…");
-    const permission = await requestOverlayPermission();
-    if (!permission?.granted) {
-      setNativeStatus("Dans Android, autorise l’affichage par-dessus les applications. Reviens ensuite ici pour activer le compagnon.");
-      return;
-    }
-    const result = await startCompanionOverlay({ mode, ...nativeOptions });
-    if (!result?.started) throw new Error("overlay_not_started");
-    updatePrefs({ androidOverlayEnabled: true });
-    setNativeStatus("Compagnon activé. Pour l’arrêter, utilise le bouton ici ou maintiens le doigt sur le personnage.");
-  });
-  const disableOverlay = () => runNative(async () => {
-    const result = await stopCompanionOverlay();
-    if (!result?.stopped) throw new Error("overlay_not_stopped");
-    updatePrefs({ androidOverlayEnabled: false });
-    setNativeStatus("Compagnon hors application arrêté.");
-  });
-  const enableLive = () => runNative(async () => {
-    const result = await startCompanionLiveActivity({ mode, message: label });
-    if (!result?.started) { setNativeStatus("Les Live Activities sont indisponibles ou désactivées dans les réglages iOS."); return; }
-    updatePrefs({ iosLiveActivityEnabled: true });
-    setNativeStatus(result.reused ? "Live Activity déjà active, état actualisé." : "Live Activity 3B activée.");
-  });
-  const disableLive = () => runNative(async () => {
-    const result = await endCompanionLiveActivity();
-    if (!result?.ended) throw new Error("live_activity_not_ended");
-    updatePrefs({ iosLiveActivityEnabled: false }); setNativeStatus("Live Activity 3B arrêtée.");
-  });
-  const openWallpaper = () => runNative(async () => {
-    const result = await openCompanionWallpaperPicker();
-    setNativeStatus(result?.opened ? "Choisis Compagnon 3B dans les fonds animés Android. Les écrans disponibles dépendent de ton téléphone." : "Les fonds animés ne sont pas disponibles sur cet appareil.");
-  });
-  const disableCompanion = () => runNative(async () => {
-    let externalStopped = true;
-    try {
-      if (platform === "android" && (overlayActive || prefs.androidOverlayEnabled)) {
-        externalStopped = (await stopCompanionOverlay())?.stopped === true;
-      }
-      if (platform === "ios" && (liveActive || prefs.iosLiveActivityEnabled)) {
-        externalStopped = (await endCompanionLiveActivity())?.ended === true;
-      }
-    } catch { externalStopped = false; }
-    setNativeStatus(externalStopped ? "" : "Présence locale masquée. L’arrêt du mode externe n’a pas été confirmé : rouvre le compagnon pour réessayer, ou arrête-le depuis ton téléphone.");
-    updatePrefs({ enabled: false, ...(externalStopped ? { androidOverlayEnabled: false, iosLiveActivityEnabled: false } : {}) });
-    setPanelOpen(false);
-  });
-
-  if (!prefs.enabled) {
-    const notice = nativeStatus || (overlayActive || liveActive ? "Le mode externe est encore actif. Rouvre le compagnon pour l’arrêter." : "");
-    return <><button className="companion3b-reactivate" type="button" onClick={() => { updatePrefs({ enabled: true }); if (notice) setPanelOpen(true); }} aria-label="Réactiver le Compagnon 3B">3B</button>{notice && <p className="companion3b-stop-notice" role="status">{notice}</p>}</>;
-  }
+  if (!prefs.enabled) return null;
 
   return <>
     <Button ref={shellRef} type="button" variant="ghost" className="companion3b-shell companion3b-living-shell"
@@ -365,8 +293,8 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
       onKeyDown={event => {
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); stage.place(event.key === 'ArrowLeft' ? 'left' : 'right'); }
       }}
-      onClick={() => {
-        if (stage.consumeClick()) return;
+      onClick={event => {
+        if (stage.consumeClick(event)) return;
         voice.unlock({ userGesture: true });
         if (!panelOpen) {
           if (lastReply?.choices?.length) setRequestedTab({ tab: 'talk', id: ++messageId.current });
@@ -388,6 +316,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
           <Button variant="ghost" ref={closeRef} type="button" onClick={() => { setPanelOpen(false); shellRef.current?.focus({ preventScroll: true }); }} aria-label="Fermer le compagnon"><X size={20}/></Button>
         </div>
       </div>
+      <CompanionPresenceControl action="disable" onDisable={disableCompanion}/>
       <div className="companion3b-portrait" data-mode={pose}>
         <span className="companion3b-character-label">{profile.label}</span>
         <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={pose} bond={bond} reduced={reducedMotion||lowPower} active={visible} speaking={voice.speaking} size={200} decorative /></div>
@@ -426,7 +355,6 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
       {platform === "web" && <p className="companion3b-platform-note">Présent dans 3B, même hors ligne.</p>}
       {nativeStatus && <p className="companion3b-native-status" role="status" aria-live="polite">{nativeStatus}</p>}
       <p className="companion3b-privacy">Ta voix de compagnon est facultative. Aucun accès au micro ni à la caméra. Il repère seulement les titres visibles de 3B pour ses acrobaties. Ta discussion reste dans cette session.</p>
-      <button className="companion3b-disable" type="button" disabled={busy} onClick={disableCompanion}>{busy ? "Un instant…" : "Mettre le compagnon de côté"}</button>
       </div>
     </aside>}
   </>;
