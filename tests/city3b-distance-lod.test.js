@@ -37,8 +37,9 @@ test('frame-pressure degradation remains one-way and combines with distance',()=
  resetCityCameraDistance();
  const budget=createCityRenderBudget({mobile:false,pixelRatio:2});
  let time=0,result=null;
- // Two slow 120-frame windows are required before reducing quality.
- for(let window=0;window<2;window++)for(let frame=0;frame<120;frame++){
+ // The first callback establishes the clock; 240 measured gaps then form two
+ // complete slow 120-frame windows.
+ for(let frame=0;frame<241;frame++){
   time+=40;result=budget.sample(time,true)||result;
  }
  assert.equal(budget.state().performanceTier,1);
