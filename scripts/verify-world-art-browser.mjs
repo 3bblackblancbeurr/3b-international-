@@ -67,6 +67,7 @@ try{
   await page.goto('http://127.0.0.1:5197/__armory-qa',{waitUntil:'domcontentloaded'});
   await page.waitForSelector('.weapon-showroom-stage canvas').catch(async e=>{await page.screenshot({path:out+'/armory-failure.png',fullPage:true});console.log('ARMORY STATE',JSON.stringify({errors,html:await page.locator('main').innerHTML()}));throw e;});
   const weapons=await page.evaluate(()=>armoryQA.weapons);assert.equal(weapons.length,16);
+  await page.evaluate(()=>armoryQA.canvas=document.querySelector('.weapon-showroom-stage canvas'));
   if(await page.locator('.weapon-tile img').count()){
    await page.evaluate(()=>document.querySelectorAll('.weapon-tile img').forEach(img=>img.loading='eager'));
    await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.weapon-tile img')];return images.length===16&&images.every(img=>img.complete&&img.naturalWidth>0);},{},{timeout:30000});
@@ -79,6 +80,7 @@ try{
    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
    const stage=page.locator('.weapon-showroom-stage');assert.equal(await stage.getAttribute('data-failed'),'false',id+' real 3D renderer');
    assert.equal(await stage.locator('canvas').count(),1,'Exactly one selected-item renderer');
+   assert.equal(await page.evaluate(()=>armoryQA.canvas===document.querySelector('.weapon-showroom-stage canvas')),true,'Changing weapons reuses the same GPU context');
    const box=await stage.boundingBox();assert.ok(box.width>250&&box.height>=240,'Weapon preview stays large');
    await stage.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Home');
    await page.locator('.weapon-showroom').screenshot({path:out+'/weapon-'+id+'.png'});
