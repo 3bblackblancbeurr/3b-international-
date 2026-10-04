@@ -13,6 +13,7 @@ test('final Hub pass covers every requested AAA landmark',()=>{
  assert.match(landmarks,/hub-aaa-max-v4/);
  assert.match(landmarks,/opaqueBatchReady:true/);
  assert.match(landmarks,/preservesSaveContract:true/);
+ assert.match(landmarks,/lowPolyGoldMaster:true/);
 });
 
 test('Tower exposes the complete six-level civic programme',()=>{
@@ -25,10 +26,11 @@ test('Tower exposes the complete six-level civic programme',()=>{
  assert.match(tower,/CIVIC_TOWER_FINAL_LEVELS/);
 });
 
-test('AAA craft stays procedural and asset-download free',()=>{
+test('AAA craft stays procedural, batched and asset-download free',()=>{
  assert.doesNotMatch(landmarks,/fetch\s*\(/);
  assert.doesNotMatch(landmarks,/TextureLoader/);
- assert.match(landmarks,/TubeGeometry/);
+ assert.match(landmarks,/lowRing/);
+ assert.match(landmarks,/beam3D/);
  assert.match(landmarks,/civicShaftGeometry/);
  assert.match(landmarks,/authoredMeshes/);
 });
