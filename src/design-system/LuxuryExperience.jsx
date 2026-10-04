@@ -6,9 +6,9 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
 import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
 import { experiencePolicy, markIntroSeen, MOTION, surfaceTilt } from './experience-policy.js';
+import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';
 
 const ExperienceContext = createContext(null);
-const ACTIONS = 'button:not(:disabled), a[href], [role="button"]';
 
 function deviceState() {
   return { reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -19,35 +19,27 @@ export function LuxuryProvider({ children }) {
   const [options, configure] = useState(() => loadJsonStorage(STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS));
   const [device, setDevice] = useState(deviceState);
   const [scene, setScene] = useState(null);
-  const audio = useRef(null), activated = useRef(false), lastCue = useRef(0), serial = useRef(0);
+  const audio = useRef(null), activated = useRef(false), lastCue = useRef(0), serial = useRef(0), speaking = useRef(false);
   const policy = useMemo(() => experiencePolicy(options, device), [options, device]);
   const [launching, setLaunching] = useState(() => experiencePolicy(options, device).animate && options.cinematicIntros !== false);
   const current = useRef(policy); current.current = policy;
 
-  const cue = useCallback((kind = 'press') => {
+  const cue = useCallback((kind = 'press', details = {}) => {
     const p = current.current;
-    if (document.hidden || !activated.current) return;
+    if (details.event?.isTrusted === true) activated.current = true;
+    if (document.hidden || !activated.current) return false;
     const now = performance.now();
-    if (now - lastCue.current < 90) return;
-    lastCue.current = now;
-    if (p.haptics) { try { navigator.vibrate?.(kind === 'milestone' ? [10, 35, 16] : 7); } catch { /* Unsupported device. */ } }
-    if (!p.sound) return;
-    try {
-      const Audio = window.AudioContext || window.webkitAudioContext;
-      if (!Audio) return;
-      const ctx = audio.current || (audio.current = new Audio());
-      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-      const oscillator = ctx.createOscillator(), gain = ctx.createGain(), time = ctx.currentTime;
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(kind === 'milestone' ? 660 : kind === 'portal' ? 220 : 440, time);
-      oscillator.frequency.exponentialRampToValueAtTime(kind === 'milestone' ? 990 : 330, time + .12);
-      gain.gain.setValueAtTime(.0001, time);
-      gain.gain.exponentialRampToValueAtTime(.026, time + .008);
-      gain.gain.exponentialRampToValueAtTime(.0001, time + .16);
-      oscillator.connect(gain); gain.connect(ctx.destination);
-      oscillator.start(time); oscillator.stop(time + .18);
-      oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
-    } catch { /* Feedback must never prevent navigation. */ }
+    if (p.haptics && !details.quiet && now - lastCue.current >= 90) {
+      lastCue.current = now;
+      try { navigator.vibrate?.(kind === 'milestone' || kind === 'success' ? [10, 35, 16] : 7); } catch { /* Unsupported device. */ }
+    }
+    const engine = audio.current || (audio.current = createInterfaceSound());
+    // Only the real sound-toggle gesture may apply the next preference before
+    // React has rendered it. Other callers always respect the stored option.
+    engine.setEnabled(details.event?.isTrusted === true && typeof details.enabled === 'boolean' ? details.enabled : p.sound);
+    engine.setSpeaking(speaking.current);
+    if (details.event?.isTrusted === true) engine.unlock(details.event);
+    return engine.play(kind, details);
   }, []);
 
   const present = useCallback((kind, title = '') => {
@@ -77,20 +69,35 @@ export function LuxuryProvider({ children }) {
     root.dataset.experienceMotion = policy.animate ? 'full' : 'reduced';
     root.dataset.experienceQuality = policy.economical ? 'economical' : 'full';
     if (!policy.animate) setScene(value => value?.kind === 'milestone' ? value : null);
-    if ((!policy.sound || device.hidden) && audio.current) audio.current.suspend().catch(() => {});
+    audio.current?.setEnabled(policy.sound);
+    audio.current?.visibility(device.hidden);
     return () => { delete root.dataset.luxury; delete root.dataset.experienceMotion; delete root.dataset.experienceQuality; };
   }, [policy, device.hidden]);
 
   useEffect(() => {
     const click = event => {
       if (!event.isTrusted) return;
-      const target = event.target?.closest?.(ACTIONS);
-      if (!target || target.getAttribute('aria-disabled') === 'true' || target.closest('[data-feedback="off"], .world-play')) return;
-      activated.current = true;
-      cue('press');
+      const target = event.target?.closest?.(SOUND_ACTION_SELECTOR);
+      const intent = interfaceSoundIntent(target, event, window.innerWidth);
+      if (intent) cue(intent.kind, { ...intent, event });
     };
+    const speech = event => { speaking.current = event.detail?.speaking === true; audio.current?.setSpeaking(speaking.current); };
+    const action = event => { const kind = companionActionCue(event.detail?.action); if (kind) cue(kind, { pan: event.detail?.pan || 0, quiet: true }); };
+    const requestedSound = event => { const kind = canonicalInterfaceCue(event.detail?.kind); if (kind) cue(kind, { pan: event.detail?.pan || 0, event: event.detail?.event, quiet: true }); };
+    const visibility = () => audio.current?.visibility(document.hidden);
     document.addEventListener('click', click, true);
-    return () => { document.removeEventListener('click', click, true); audio.current?.close().catch(() => {}); audio.current = null; };
+    document.addEventListener('visibilitychange', visibility);
+    window.addEventListener(COMPANION_SPEAKING_EVENT, speech);
+    window.addEventListener(COMPANION_ACTION_EVENT, action);
+    window.addEventListener(INTERFACE_SOUND_EVENT, requestedSound);
+    return () => {
+      document.removeEventListener('click', click, true);
+      document.removeEventListener('visibilitychange', visibility);
+      window.removeEventListener(COMPANION_SPEAKING_EVENT, speech);
+      window.removeEventListener(COMPANION_ACTION_EVENT, action);
+      window.removeEventListener(INTERFACE_SOUND_EVENT, requestedSound);
+      audio.current?.close(); audio.current = null;
+    };
   }, [cue]);
 
   useEffect(() => {
@@ -140,7 +147,9 @@ export function ExperienceControls({ options, toggleOption, page }) {
     <div className="luxury-controls-panel">
       <strong>À ton rythme.</strong><p>Une même identité. Ton confort.</p>
       {[['interfaceSound', 'Sons de l’interface'], ['haptics', 'Vibrations au toucher'], ['cinematicIntros', 'Introduction cinématique'], ['reducedMotion', 'Réduire les mouvements']].map(([key, label]) =>
-        <Button key={key} variant="ghost" onClick={() => toggleOption(key)} aria-pressed={options[key]}>{label}<span>{options[key] ? 'Oui' : 'Non'}</span></Button>)}
+        <Button key={key} variant="ghost" data-sound-toggle={key === 'interfaceSound' ? key : undefined} onClick={() => toggleOption(key)} aria-pressed={options[key]}>{label}<span>{options[key] ? 'Oui' : 'Non'}</span></Button>)}
+      {options.interfaceSound && <Button variant="ghost" data-sound="entry">Écouter la signature 3B<span aria-hidden="true">♫</span></Button>}
+      <p>Des sons discrets pour tes actions. La voix se choisit dans les réglages de ton compagnon.</p>
       <Button variant="ghost" onClick={toggleSensor} aria-pressed={options.sensorReflections}>Reflets au mouvement<span>{options.sensorReflections ? "Oui" : "Non"}</span></Button>
       {sensorNotice && <p role="status">{sensorNotice}</p>}
     </div>

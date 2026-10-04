@@ -11,7 +11,8 @@ import {
 function readReducedMotion() {
   if (typeof window === "undefined") return false;
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
-    || document.documentElement.getAttribute("data-motion") === "reduced";
+    || document.documentElement.getAttribute("data-motion") === "reduced"
+    || document.documentElement.getAttribute("data-experience-motion") === "reduced";
 }
 
 export default function useCompanionBehavior({
@@ -81,7 +82,7 @@ export default function useCompanionBehavior({
     if (media?.addEventListener) media.addEventListener("change", sync);
     else media?.addListener?.(sync);
     const observer = typeof MutationObserver === "function" ? new MutationObserver(sync) : null;
-    observer?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
+    observer?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion", "data-experience-motion"] });
     return () => {
       if (media?.removeEventListener) media.removeEventListener("change", sync);
       else media?.removeListener?.(sync);
