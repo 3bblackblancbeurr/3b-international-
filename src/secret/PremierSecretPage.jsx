@@ -14,6 +14,7 @@ import { completeDailySecretAttempt, startDailySecretAttempt } from "./dailySecr
 import "./premier-secret.css";
 import "./secret-aaaa.css";
 import "./secret-v2.css";
+import "./secret-ultra.css";
 
 const SecretSanctuary3D = lazy(() => import("./SecretSanctuary3D.jsx"));
 
