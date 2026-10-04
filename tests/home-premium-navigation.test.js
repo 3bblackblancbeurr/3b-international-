@@ -12,10 +12,12 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  assert.doesNotMatch(home,/home-journey-status|home-status-item/);
  assert.doesNotMatch(home,/heritage-poster|background\.png/);
  assert.doesNotMatch(home,/welcome-hero|Un héritage|Nos différences|Notre force|luxury-manifesto-line/);
- assert.match(home,/const PRIMARY_IDS = \['passport', 'world3b'\]/);
- assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('L’essentiel'));
- const guide=home.lastIndexOf('Comprendre l’écosystème 3B');
- assert.ok(guide>home.indexOf('Explorer 3B'));
+ assert.doesNotMatch(home,/PRIMARY_IDS|L’essentiel|home-primary-directory/);
+ assert.ok(home.indexOf('<WorldPortalCard') < home.indexOf('Les espaces 3B'));
+ const guide=home.lastIndexOf('Le guide 3B');
+ assert.ok(guide>home.indexOf('secondaryGroups.map'));
+ assert.match(nav,/title: "Identité & progression", ids: \["passport", "member"\]/);
+ assert.match(nav,/title: "Univers 3B", ids: \["world3b", "secret"\]/);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
  assert.match(home,/item.status!=='soon'/);
 });

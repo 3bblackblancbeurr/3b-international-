@@ -1,5 +1,7 @@
 # City visual and construction refinement
 
+Water was subsequently upgraded on 4 October 2026. The current geometry, depth, currents, scene reflections, quality budgets and validation limits are documented in [CITY3B-PREMIUM-WATER.md](CITY3B-PREMIUM-WATER.md); the earlier water implementation described below is superseded.
+
 Scope: scenery and construction controls only. No new economy, missions, progression, data migration, server mutation, kingdom or building model changes.
 
 The previous sphere-clouds, polygonal sun and cone mountains are removed. A single atmospheric sky shader produces soft cloud coverage and a small smooth sun. Three irregular ridges, each 1771 vertices, sit outside the playable land. Grass uses world-space colour grain and broad variation with no per-blade objects. Water uses moving wave slopes, Fresnel tint, sun glints and light shore foam, sharing time across sea, lake and river surfaces. No reflection render target, downloaded HD textures or new postprocessing is added. Pixel ratio, shadow resolution and frame-rate caps are retained; paused/background/reduced-motion behavior remains respected.

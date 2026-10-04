@@ -14,7 +14,7 @@ export function SectionIcon({ page, ...props }) {
 }
 
 export const NAV_GROUPS = [
-  { title: "Identité & progression", ids: ["passport", "member", "loyalty"] },
+  { title: "Identité & progression", ids: ["passport", "member"] },
   { title: "Univers 3B", ids: ["world3b", "secret"] },
   { title: "Services & avantages", ids: ["shop", "control"] },
   { title: "En préparation", ids: ["nosbloc", "games", "manga", "religion", "sport", "community", "ia"] },

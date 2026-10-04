@@ -92,7 +92,7 @@
 
 .city-game .city-game-inspector[data-details=false] [data-secondary=true]{display:none}
 
-.city-game-building-model{height:112px!important;background:#bed6da!important;overflow:hidden;border-radius:9px;display:flex;align-items:center;justify-content:center}.city-game-building-model img{width:100%;height:100%;object-fit:contain}.city-game-building-model>i{display:none}.city-game-building{min-height:190px}.city-game-building:disabled .city-game-building-model{filter:saturate(.5)}
+.city-game-building-model{height:112px!important;background:var(--3b-city-preview-surface)!important;overflow:hidden;border-radius:var(--3b-radius-sm);display:flex;align-items:center;justify-content:center}.city-game-building-model img{width:100%;height:100%;object-fit:contain}.city-game-building-model>i{display:none}.city-game-building{min-height:190px}
 @media(max-height:540px){.city-game-building-model{height:88px!important}.city-game-building{min-height:155px}}
 
 .city3b-neighbor-map{height:360px;position:relative;border-radius:12px;overflow:hidden}.city-game-drawing-title select{max-width:145px;background:#152a32;color:#ecdfc1;border:1px solid #667268;border-radius:8px;padding:6px;font-size:12px}.city-game-drawing-title:has(select)>strong{display:none}
@@ -156,27 +156,61 @@
 .city-game .city-game-catalog-head{display:grid;grid-template-columns:minmax(0,1fr) 40px;padding:6px;gap:6px}
 .city-game .city-game-catalog-head nav{grid-column:1/-1;max-width:100%}
 .city-game .city-game-catalog-head label{width:auto}
-.city-game .city-game-catalog-list{display:grid;grid-template-columns:1fr;overflow-y:auto;overflow-x:hidden;min-height:0;scroll-snap-type:y proximity;padding:6px}
-.city-game .city-game-building{width:100%;min-width:0;box-sizing:border-box;grid-template-columns:74px minmax(0,1fr);gap:4px 8px!important}
-.city-game .city-game-building .city-game-building-model{grid-row:1/4;width:74px;height:70px}
+.city-game .city-game-catalog-list{display:grid;grid-template-columns:1fr;overflow-y:auto;overflow-x:hidden;min-height:0;scroll-snap-type:y proximity;padding:8px;align-content:start;grid-auto-rows:max-content;flex:1}
+
+
 .city-game .city-game-building small{white-space:normal}
 @media(max-height:540px) and (orientation:landscape){.city-game .city-game-inspector,.city-game .city-game-drawing,.city-game[data-tool=road] .city-game-drawing[data-compact=true]{top:48px;width:164px;max-height:calc(100% - 102px)}.city-game .city-game-catalog{top:48px;bottom:54px;width:230px}}
 
-.city-game .city-game-building .city-game-building-model img{width:74px;height:70px;object-fit:contain;border-radius:9px}
 
-/* Viewing tools stay available even when the player hides the HUD. */
-.city3d-view-tools{position:absolute;z-index:6;left:max(10px,env(safe-area-inset-left));bottom:64px;display:flex;flex-wrap:wrap;gap:4px;max-width:calc(100% - 220px)}
-.city3d-view-tools button{min-height:44px!important;padding:5px 9px!important;font-size:11px!important;background:#102127d9!important;border:1px solid #c7ad7940!important;border-radius:10px!important;color:#f4e7cc!important}
-.city3d-view-tools button[aria-pressed=true]{border-color:#b9dbe6!important;background:#21404ae8!important}
-.city-game:has(.city3d-shell[data-clear-view=true]) .city-game-hud,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city-game-bottom,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city3b-advisor,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city-game-sites,
-.city-game:has(.city3d-shell[data-clear-view=true]) .city3d-gesture-guide{display:none!important}
+
 .city-game .city3d-gesture-guide{animation:city-guide-dismiss 7s forwards;pointer-events:none}
 @keyframes city-guide-dismiss{0%,70%{opacity:1}100%{opacity:0;visibility:hidden}}
 .city-game .city-game-catalog{background:#102127ee;box-shadow:0 8px 26px #0004}
-.city-game .city-game-building{min-height:130px;grid-template-columns:96px minmax(0,1fr)}
-.city-game .city-game-building .city-game-building-model{width:96px;height:100px!important}
-.city-game .city-game-building .city-game-building-model img{width:96px;height:100px}
-@media(max-height:540px) and (orientation:landscape){.city3d-view-tools{bottom:54px}.city-game .city-game-hud{background:linear-gradient(#0c171bea,#0c171bb3)}.city-game .city-game-bottom nav{background:#102127da}}
+
+
+
+@media(max-height:540px) and (orientation:landscape){.city-game .city-game-hud{background:linear-gradient(#0c171bea,#0c171bb3)}.city-game .city-game-bottom nav{background:#102127da}}
+
+/* The camera is controlled on the terrain; panels fade during navigation. */
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-inspector,
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-drawing,
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-catalog,
+.city-game:has(.city3d-shell[data-navigating=true]) .city3b-advisor,
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-sites{visibility:hidden;pointer-events:none}
+.city-game:has(.city3d-shell[data-navigating=true]) .city-game-hud{opacity:.25;pointer-events:none}
+.city-game .city-game-hud{transition:opacity 140ms ease}
+.city-game .city-game-inspector,.city-game .city-game-drawing,.city-game .city-game-catalog{border:1px solid #d7bd8055;box-shadow:0 8px 24px #06121b55;background:linear-gradient(145deg,#132c35f2,#0b1922f2);border-radius:14px}
+@media(max-width:600px) and (orientation:portrait){
+ .city-game .city-game-inspector[data-placing=true]{top:auto;bottom:76px;left:10px;right:10px;width:auto;max-height:24%;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;box-sizing:border-box}
+ .city-game .city-game-inspector[data-placing=true] .city-game-inspector-title{grid-column:1!important;grid-row:1!important}
+ .city-game .city-game-inspector[data-placing=true] .city-game-validation{grid-column:1!important;grid-row:2!important;margin:0}
+ .city-game .city-game-inspector[data-placing=true] .city-game-selection-actions{grid-column:2!important;grid-row:1/3!important;align-self:center;max-width:155px}
+ .city-game[data-tool=build] .city3b-advisor,.city-game[data-tool=move] .city3b-advisor{display:none}
+}
+@media(prefers-reduced-motion:reduce){.city-game .city-game-hud{transition:none}}
+
+/* Stable preview cards: intrinsic rows never shrink to the catalogue viewport. */
+.city-game .city-game-catalog{width:clamp(240px,30vw,320px);max-width:calc(100% - 20px);max-height:calc(100% - 140px)}
+.city-game .city-game-catalog-head{flex-shrink:0}
+.city-game .city-game-building{width:100%;min-width:0;height:auto;min-height:144px;box-sizing:border-box;grid-template-columns:minmax(112px,45%) minmax(0,1fr);grid-template-rows:auto;align-items:center!important;align-content:center!important;gap:10px!important;padding:10px!important;overflow:visible}
+.city-game .city-game-building .city-game-building-model{grid-row:auto;grid-column:1;width:100%;height:auto!important;aspect-ratio:4/3;min-height:92px;align-self:center;background:var(--3b-city-preview-surface)!important;border:1px solid var(--3b-city-preview-border);box-sizing:border-box}
+.city-game .city-game-building .city-game-building-model img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;min-width:0;max-width:100%;border-radius:var(--3b-radius-sm)}
+.city-game .city-game-building-info{display:grid;gap:7px;min-width:0;align-content:center}
+.city-game .city-game-building strong{font-size:13px;color:var(--3b-city-catalog-text);overflow-wrap:anywhere}
+.city-game .city-game-building small{font-size:11px;color:var(--3b-city-catalog-muted);white-space:normal;line-height:1.4}
+.city-game .city-game-building b{font-size:12px;color:var(--3b-city-catalog-price);white-space:normal}
+.city-game .city-game-building:disabled{opacity:1;cursor:not-allowed}
+.city-game .city-game-building:disabled .city-game-building-model{filter:none}
+.city-game .city-game-building:disabled b{color:var(--3b-city-catalog-locked)}
+@media(max-height:540px) and (orientation:landscape){
+ .city-game .city-game-catalog{width:clamp(240px,31vw,290px);max-height:calc(100% - 102px)}
+ .city-game .city-game-building{min-height:122px;padding:8px!important;grid-template-columns:minmax(108px,46%) minmax(0,1fr);gap:8px!important}
+}
+@media(max-width:600px) and (orientation:portrait){
+ .city-game .city-game-catalog{top:auto;bottom:76px;left:10px;right:10px;width:auto;max-width:none;height:48%;max-height:48%}
+ .city-game .city-game-catalog-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .city-game .city-game-building{grid-template-columns:minmax(0,1fr);align-content:start!important;justify-items:stretch;min-height:0;padding:8px!important}
+ .city-game .city-game-building .city-game-building-model{min-height:0;grid-row:1}
+ .city-game .city-game-building-info{grid-row:2}
+}

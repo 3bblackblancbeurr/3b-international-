@@ -18,13 +18,13 @@ export default function WorldPortalCard({goTo}){
   <div className="world-portal-copy">
    <p className="eyebrow">LA CITÉ DES HUIT HÉRITAGES</p>
    <h2 id="world-portal-title">Ton monde<br/>commence <em>ici.</em></h2>
-   <p>Explore les huit Portes. Construis ta ville.<br/>Écris ton histoire avec un seul Passeport 3B.</p>
+   <p>Huit portes. Une histoire à écrire.</p>
    <div className="world-portal-actions">
-    <Button as={RouteLink} page="world3b" goTo={goTo} variant="champagne" className="surface-button">Entrer dans le Monde du 3B <ArrowUpRight size={16}/></Button>
+    <Button as={RouteLink} page="world3b" goTo={goTo} variant="champagne" className="surface-button">Explorer le Monde <ArrowUpRight size={16}/></Button>
     {UNREAL_LAUNCH_ENABLED&&<Button variant="ghost" onClick={openNativeWorld} disabled={busy} loading={busy}>{busy?'Ouverture…':'Lancer l’expérience native'}</Button>}
    </div>
    {message&&<p role="status">{message}</p>}
   </div>
-  <span className="home-world-signature" aria-hidden="true">NEXUS · 8 PORTES</span>
+  <span className="home-world-signature" aria-hidden="true">CITÉ · 8 PORTES</span>
  </section>;
 }

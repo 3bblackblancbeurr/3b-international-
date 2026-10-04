@@ -1,4 +1,5 @@
 import {municipalLevelProgress} from './city3b-progression.js';
+import {cityGridPoint} from './city3b-grid-snap.js';
 import {cityMapBlueprint, cityMapPlacementPolicy, cityBuildingKind} from './city3b-map.js';
 
 export const CITY_BUILD_CATEGORIES = [
@@ -28,11 +29,11 @@ export function citySuggestedParcel(data, definition, near={x:0,z:0}) {
   // Search a bounded spiral, independent of rendered pixel positions.
   for(let radius=4;radius<=Math.min(80,half);radius+=2) {
     for(let x=-radius;x<=radius;x+=2)for(const z of [-radius,radius]) {
-      const p={x:Math.round(near.x+x),z:Math.round(near.z+z)};
+      const p=cityGridPoint({x:near.x+x,z:near.z+z});
       if(cityPlacementCheck(data,p,size).valid)return p;
     }
     for(let z=-radius+2;z<radius;z+=2)for(const x of [-radius,radius]) {
-      const p={x:Math.round(near.x+x),z:Math.round(near.z+z)};
+      const p=cityGridPoint({x:near.x+x,z:near.z+z});
       if(cityPlacementCheck(data,p,size).valid)return p;
     }
   }
@@ -60,3 +61,7 @@ export function cityBuildingLimit(data={},definition,ignoreId){
  return maximum&&count>=maximum?{valid:false,reason:definition?.code==='CITY_HALL_3B'?'Ta ville possède déjà sa mairie. Déplace-la ou replace-la depuis la réserve.':`Limite de ${maximum} bâtiment(s) par ville`}:{valid:true};
 }
 
+// Stored buildings are owned objects: reuse them rather than buying another instance.
+export function cityStoredBuilding(data={},definition){
+ return (data.placements||[]).find(p=>p.building_code===definition?.code&&p.placement_state==='stored')||null;
+}
