@@ -12,6 +12,7 @@ test('sea foam follows the submerged cliff contour rather than the wider deck ri
  assert.ok(citeCoastalFoam(x+1,z)>0);
  assert.equal(citeCoastalFoam(island.x+citeIslandRadius(island,a)+5,z),0);
  assert.equal(citeCoastalFoam(900,900),0);
+ const impactX=island.x+citeIslandRadius(island,a)+1.65;assert.ok(citeCoastalFoam(impactX,z)>.4);
 });
 test('baked sea contact mask stays bounded and retains the existing lake contact API',()=>{
  const owned=[],water=createPremiumWater({lake:{x:0,z:0,r:245},ocean:true,owned});
