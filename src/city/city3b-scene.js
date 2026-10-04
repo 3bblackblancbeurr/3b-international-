@@ -61,7 +61,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   };
   function shape(parent,geo,color,x,y,z,w,h,d,emissive=false,opacity=1){const mesh=new THREE.Mesh(geo,mat(color,emissive,opacity));mesh.position.set(x,y,z);mesh.scale.set(w,h,d);mesh.castShadow=opacity===1;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
   const box=(parent,color,x,y,z,w,h,d,emissive=false,opacity=1)=>shape(parent,boxGeo,color,x,y,z,w,h,d,emissive,opacity);
-  const environment=createCityNaturalEnvironment();scene.add(environment.sky);
+  const environment=createCityNaturalEnvironment({mobile});scene.add(environment.sky,environment.waterSystem.group);
   function tree(parent,x,z,size=1){
     matrixTree({box,shape,sphereGeo,cylinderGeo},parent,x,z,size);
   }
@@ -112,6 +112,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   function landscape(parent,f,preview=false){
     const x=(f.x1+f.x2)/2,z=(f.z1+f.z2)/2,r=f.width/2;
     if(isRelief(f)){if(preview){const geometry=cityTerrainGeometry(r,[{...f,x1:0,z1:0}],{segments:40});previewGeometries.push(geometry);const mesh=new THREE.Mesh(geometry,mat(f.kind==='hill'?0x6ad2b1:0x6acaff,true,.55));mesh.position.set(x,.1,z);parent.add(mesh);}return;}
+    if(isWater(f)&&!preview)return;
     if(isWater(f)){
       const color=preview?0x66caff:night?0x124d68:0x267b97;
       if(f.kind==='lake'){
@@ -179,8 +180,8 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     hemi.intensity=night?1.7:2.2;sun.intensity=night?1.0:2.3;sun.color.set(night?0x96bded:0xffedcc);
     const groundGeometry=cityTerrainGeometry(half,cityLandscape(data));
     groundPick=new THREE.Mesh(groundGeometry,environment.grass);groundPick.receiveShadow=true;world.add(groundPick);mergedGeometries.push(groundGeometry);groundPick.updateMatrixWorld();constructionGrid.setTerrain(groundGeometry);
-    // Four ocean strips surround all edges without covering the player's land.
-    for(const side of [-1,1]){box(world,0x379dbe,side*half*2,-.18,0,half*2,.1,half*6).material=environment.water;box(world,0x379dbe,0,-.18,side*half*2,half*2,.1,half*2).material=environment.water;}
+    // The water system owns merged horizontal surfaces outside architecture batching.
+    environment.waterSystem.rebuild(cityLandscape(data),half,cityNetworks(data));
     for(const side of [-1,1]){box(world,0xd5cca4,side*(half+.7),-.06,0,1.4,.1,half*2);box(world,0xd5cca4,0,-.06,side*(half+.7),half*2,.1,1.4);}
     environment.configure(half,night,data.city?.city?.climate==='snow');
 
@@ -367,7 +368,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   function animate(time){
     if(dead)return;frame=requestAnimationFrame(animate);
     const budget=renderBudget.sample(time,!document.hidden&&visible&&!reduced);
-    if(budget){renderer.setPixelRatio(budget.pixelRatio);renderer.shadowMap.enabled=budget.shadows;sun.castShadow=budget.shadows;resize();dirty=true;}
+    if(budget){environment.waterSystem.setQuality(budget.tier);renderer.setPixelRatio(budget.pixelRatio);renderer.shadowMap.enabled=budget.shadows;sun.castShadow=budget.shadows;resize();dirty=true;}
     if(document.hidden||!visible||time-last<1000/(cameraMotion.active||time<smoothUntil?60:mobile?30:45)-1)return;
     const dt=Math.min(.05,Math.max(0,(time-last)/1000));
     controls.dampingFactor=1-Math.exp(-12*dt);
@@ -387,7 +388,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     }
     if(!reduced)for(const actor of sportActors){const pose=citySportPose(actor.sport,time/1000,actor.index);actor.object.position.set(pose.x*actor.w,actor.ball?(actor.sport==='basket'?.28+Math.abs(Math.sin(time*.003))*.4:.31):pose.y,pose.z*actor.d);actor.object.rotation.y=pose.rotation;actor.limbs.forEach((limb,i)=>limb.rotation.x=pose.limb*(i?1:-1));}
     celebrations=celebrations.filter(effect=>{const p=Math.max(0,(time-effect.start)/effect.duration);if(p>=1){completionLayer.remove(effect.group);return false;}if(!reduced){effect.group.scale.setScalar(1+p*.4);effect.group.position.y=.25+Math.sin(p*Math.PI)*.7;effect.group.rotation.y=p*.5;}return true;});
-    environment.update(time/1000,camera,reduced);renderer.render(scene,camera);dirty=false;
+    environment.update(time/1000,camera,reduced);environment.waterSystem.capture(renderer,scene,camera,time/1000,{exclude:[ghost,utilityLayer,constructionGrid.mesh,completionLayer],reduced});renderer.render(scene,camera);dirty=false;
   }
   frame=requestAnimationFrame(animate);resize();
   return {rebuild,syncClock,updateDraft,setView,focusBuilding,home:()=>setView(cityMapInitialView(data)),district,zoom:zoomCamera,rotate:()=>{cameraMotion.rotate(Math.PI/4,reduced);dirty=true;},dispose(){dead=true;cancelAnimationFrame(frame);observer.disconnect();intersect.disconnect();motionObserver.disconnect();media.removeEventListener('change',motion);disposeTouch();controls.removeEventListener('start',navigationStart);controls.removeEventListener('end',navigationEnd);controls.dispose();renderer.domElement.removeEventListener('wheel',wheel,true);renderer.domElement.removeEventListener('pointerdown',pointerDown);renderer.domElement.removeEventListener('pointerup',pointerUp);renderer.domElement.removeEventListener('pointermove',pointerMove);renderer.domElement.removeEventListener('pointercancel',cancel);renderer.domElement.removeEventListener('webglcontextlost',lost);renderer.domElement.removeEventListener('keydown',key);for(const geo of [...geometries,...mergedGeometries,...previewGeometries])geo.dispose();for(const m of materials.values())m.dispose();constructionGrid.dispose();environment.dispose();renderer.dispose();renderer.domElement.remove();}};
