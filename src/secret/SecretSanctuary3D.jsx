@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 function makeGlowTexture() {
   const canvas = document.createElement("canvas");
@@ -74,38 +75,47 @@ export default function SecretSanctuary3D({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.92;
     renderer.setClearColor(0x000000, 0);
     renderer.domElement.className = "ps-v2-canvas";
     renderer.domElement.setAttribute("aria-hidden", "true");
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x02050a, 0.08);
+    scene.fog = new THREE.FogExp2(0x010407, 0.065);
+
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    const roomEnvironment = new RoomEnvironment();
+    const environmentTarget = pmremGenerator.fromScene(roomEnvironment, 0.04);
+    scene.environment = environmentTarget.texture;
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 80);
     camera.position.set(0, 0.55, 8.8);
 
-    const signalColor = new THREE.Color(config?.signalColor?.hex || "#55dfff");
-    const gold = new THREE.Color("#d7b564");
-    const paleGold = new THREE.Color("#f4dfaa");
-    const cyan = new THREE.Color("#72eaff");
-    const blackMetal = new THREE.Color("#071019");
+    const signalColor = new THREE.Color(config?.signalColor?.hex || "#78ced8");
+    const gold = new THREE.Color("#c9a85e");
+    const paleGold = new THREE.Color("#ead59a");
+    const cyan = new THREE.Color("#88dbe4");
+    const blackMetal = new THREE.Color("#04090d");
 
-    const ambient = new THREE.HemisphereLight(0x53718c, 0x010204, 0.34);
+    const ambient = new THREE.HemisphereLight(0x354e58, 0x010203, 0.24);
     scene.add(ambient);
 
-    const keyLight = new THREE.PointLight(signalColor, 11, 18, 2);
-    keyLight.position.set(0, 1.25, 3.3);
+    const keyLight = new THREE.PointLight(signalColor, 8.5, 17, 2.15);
+    keyLight.position.set(0.35, 1.45, 3.15);
     scene.add(keyLight);
 
-    const goldLight = new THREE.PointLight(gold, 7, 16, 2);
-    goldLight.position.set(-4, 1.5, 1.2);
+    const goldLight = new THREE.PointLight(gold, 5.4, 15, 2.15);
+    goldLight.position.set(-4.2, 1.65, 1.15);
     scene.add(goldLight);
 
-    const rimLight = new THREE.DirectionalLight(0xa9eaff, 1.25);
-    rimLight.position.set(4, 5, -4);
+    const rimLight = new THREE.DirectionalLight(0xa7cbd1, 0.78);
+    rimLight.position.set(4.8, 5.4, -4.5);
     scene.add(rimLight);
+
+    const lowFill = new THREE.PointLight(0x24353d, 2.4, 13, 2.2);
+    lowFill.position.set(3.2, -1.4, 2.2);
+    scene.add(lowFill);
 
     const sanctuary = new THREE.Group();
     sanctuary.position.y = 0.08;
@@ -115,10 +125,13 @@ export default function SecretSanctuary3D({
     sanctuary.add(architecture);
 
     const pillarGeometry = new THREE.BoxGeometry(0.34, 1, 0.48);
-    const pillarMaterial = new THREE.MeshStandardMaterial({
-      color: 0x05080c,
-      metalness: 0.82,
-      roughness: 0.34,
+    const pillarMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0x030608,
+      metalness: 0.88,
+      roughness: 0.28,
+      clearcoat: 0.32,
+      clearcoatRoughness: 0.22,
+      envMapIntensity: 0.48,
     });
     for (let index = 0; index < 15; index += 1) {
       const angle = THREE.MathUtils.degToRad(-112 + index * 16);
@@ -134,11 +147,12 @@ export default function SecretSanctuary3D({
     const floor = new THREE.Mesh(
       new THREE.CylinderGeometry(6.8, 7.25, 0.22, 96),
       new THREE.MeshPhysicalMaterial({
-        color: 0x050a0f,
-        metalness: 0.72,
-        roughness: 0.2,
-        clearcoat: 0.9,
-        clearcoatRoughness: 0.18,
+        color: 0x03080b,
+        metalness: 0.9,
+        roughness: 0.14,
+        clearcoat: 1,
+        clearcoatRoughness: 0.075,
+        envMapIntensity: 0.72,
       }),
     );
     floor.position.set(0, -2.16, 0);
@@ -149,7 +163,7 @@ export default function SecretSanctuary3D({
       new THREE.MeshBasicMaterial({
         color: signalColor,
         transparent: true,
-        opacity: 0.08,
+        opacity: 0.055,
         side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
@@ -165,7 +179,7 @@ export default function SecretSanctuary3D({
           map: glowTexture,
           color: signalColor,
           transparent: true,
-          opacity: 0.16,
+          opacity: 0.11,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         }))
@@ -185,11 +199,14 @@ export default function SecretSanctuary3D({
       const material = new THREE.MeshPhysicalMaterial({
         color: index === 1 ? gold : blackMetal,
         emissive: index === 1 ? gold : signalColor,
-        emissiveIntensity: index === 1 ? 0.18 : 0.26,
-        metalness: 0.88,
-        roughness: 0.19,
-        clearcoat: 0.92,
-        clearcoatRoughness: 0.12,
+        emissiveIntensity: index === 1 ? 0.085 : 0.13,
+        metalness: 0.96,
+        roughness: index === 1 ? 0.13 : 0.11,
+        clearcoat: 1,
+        clearcoatRoughness: 0.065,
+        envMapIntensity: index === 1 ? 1.05 : 0.82,
+        iridescence: index === 1 ? 0.035 : 0.07,
+        iridescenceIOR: 1.32,
       });
       const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.055 + index * 0.012, 18, 144), material);
       ring.rotation.set(index === 0 ? 0.2 : -0.16, index === 2 ? 0.24 : -0.08, index * 0.36);
@@ -199,15 +216,21 @@ export default function SecretSanctuary3D({
     });
 
     const coreMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x08141d,
+      color: 0x041017,
       emissive: signalColor,
-      emissiveIntensity: 1.05,
-      metalness: 0.34,
-      roughness: 0.12,
+      emissiveIntensity: 0.72,
+      metalness: 0.52,
+      roughness: 0.085,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.94,
       clearcoat: 1,
-      clearcoatRoughness: 0.08,
+      clearcoatRoughness: 0.045,
+      envMapIntensity: 0.95,
+      iridescence: 0.12,
+      iridescenceIOR: 1.28,
+      transmission: 0.08,
+      thickness: 0.42,
+      ior: 1.34,
     });
     const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.88, 4), coreMaterial);
     sanctuary.add(core);
@@ -215,7 +238,7 @@ export default function SecretSanctuary3D({
     const coreShellMaterial = new THREE.MeshBasicMaterial({
       color: cyan,
       transparent: true,
-      opacity: 0.095,
+      opacity: 0.055,
       wireframe: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
@@ -228,7 +251,7 @@ export default function SecretSanctuary3D({
           map: glowTexture,
           color: signalColor,
           transparent: true,
-          opacity: 0.38,
+          opacity: 0.26,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         }))
@@ -241,7 +264,7 @@ export default function SecretSanctuary3D({
     const beamMaterial = new THREE.MeshBasicMaterial({
       color: signalColor,
       transparent: true,
-      opacity: 0.075,
+      opacity: 0.045,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
