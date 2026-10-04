@@ -1,9 +1,11 @@
 import {Vector3,Spherical} from 'three';
+import {reportCityCameraDistance} from './city3b-distance-lod.js';
 
 // Animate in orbit coordinates so rotation never cuts through the city.
 export function createCityCameraMotion(camera,controls,bounds=()=>Infinity){
  let goal=null;
  const orbit=()=>new Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+ const reportDistance=()=>reportCityCameraDistance(camera.position.distanceTo(controls.target),bounds());
  function move(position,target,instant=false){
   const savedPosition=camera.position.clone(),savedTarget=controls.target.clone(),damping=controls.enableDamping;
   controls.enableDamping=false;controls.update(); // Drain any old drag inertia.
@@ -16,6 +18,7 @@ export function createCityCameraMotion(camera,controls,bounds=()=>Infinity){
   if(instant)update(1,true);
  }
  function update(dt,instant=false){
+  reportDistance();
   if(!goal)return false;
   const value=orbit(),alpha=instant?1:1-Math.exp(-14*Math.max(0,dt));
   const angle=Math.atan2(Math.sin(goal.spherical.theta-value.theta),Math.cos(goal.spherical.theta-value.theta));
@@ -23,7 +26,7 @@ export function createCityCameraMotion(camera,controls,bounds=()=>Infinity){
   controls.target.lerp(goal.target,alpha);
   const done=instant||(controls.target.distanceToSquared(goal.target)<1e-6&&Math.abs(angle)<1e-5&&Math.abs(value.phi-goal.spherical.phi)<1e-5&&Math.abs(value.radius-goal.spherical.radius)<.001);
   if(done){controls.target.copy(goal.target);value.copy(goal.spherical);goal=null;}
-  camera.position.copy(controls.target).add(new Vector3().setFromSpherical(value));controls.update();return true;
+  camera.position.copy(controls.target).add(new Vector3().setFromSpherical(value));controls.update();reportDistance();return true;
  }
  const destination=()=>goal?{target:goal.target.clone(),spherical:goal.spherical.clone()}:{target:controls.target.clone(),spherical:orbit()};
  return {get active(){return !!goal;},move,update,cancel(){goal=null;},
