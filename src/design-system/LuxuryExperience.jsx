@@ -7,6 +7,7 @@ import { Button } from './index.jsx';
 import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
 import { experiencePolicy, markIntroSeen, MOTION, surfaceTilt } from './experience-policy.js';
 import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';
+import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
 
 const ExperienceContext = createContext(null);
 
@@ -143,9 +144,10 @@ export function ExperienceControls({ options, toggleOption, page }) {
   };
   useEffect(() => { if (disclosure.current) disclosure.current.open = false; }, [page]);
   return <details className="luxury-controls" ref={disclosure} onKeyDown={event => { if (event.key === 'Escape') { disclosure.current.open = false; disclosure.current.querySelector('summary')?.focus(); } }}>
-    <summary aria-label="Réglages de l’expérience"><SlidersHorizontal size={18}/><span>Ambiance</span></summary>
+    <summary aria-label="Paramètres de l’application" data-companion-settings-trigger><SlidersHorizontal size={18}/><span>Paramètres</span></summary>
     <div className="luxury-controls-panel">
       <strong>À ton rythme.</strong><p>Une même identité. Ton confort.</p>
+      <CompanionPresenceControl/>
       {[['interfaceSound', 'Sons de l’interface'], ['haptics', 'Vibrations au toucher'], ['cinematicIntros', 'Introduction cinématique'], ['reducedMotion', 'Réduire les mouvements']].map(([key, label]) =>
         <Button key={key} variant="ghost" data-sound-toggle={key === 'interfaceSound' ? key : undefined} onClick={() => toggleOption(key)} aria-pressed={options[key]}>{label}<span>{options[key] ? 'Oui' : 'Non'}</span></Button>)}
       {options.interfaceSound && <Button variant="ghost" data-sound="entry">Écouter la signature 3B<span aria-hidden="true">♫</span></Button>}

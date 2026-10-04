@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  chooseStageScene, clampStagePosition, createStageClock, findStageHome, findStageWalkTarget,
+  advanceStagePointerGesture, chooseStageScene, clampStagePosition, createStageClock,
+  createStagePointerGesture, findStageHome, findStageWalkTarget,
   findVisibleHeadingAnchors, getStageBounds, headingAnchorPosition, homeStagePosition,
-  interpolateStageTravel, isStagePathClear, isStagePositionClear, normalizeStageAction,
-  readHeadingAnchorRect, stageAutonomousDelay, stepCompanionFall,
+  interpolateStageTravel, isPointerNearStage, isStagePathClear, isStagePositionClear, normalizeStageAction,
+  readHeadingAnchorRect, restoreStagePlacement, stageAutonomousDelay, stagePlacement, stepCompanionFall,
 } from '../src/companion/companion-stage.js';
 
 const mobileBounds = () => getStageBounds({ width: 390, height: 844, safeTop: 96, safeBottom: 90 }, { width: 100, height: 116 });
@@ -32,6 +33,51 @@ test('visual viewport offsets and a small rotated viewport remain bounded', () =
   assert.ok(restored.x + bounds.width <= 345);
   assert.ok(restored.y + bounds.height <= 320);
   within(clampStagePosition({ x: NaN, y: Infinity }, bounds), bounds);
+});
+
+test('saved placement survives rotation and rejects corrupt or incompatible storage', () => {
+  const bounds = mobileBounds();
+  const saved = stagePlacement({ x: 88, y: 480 }, bounds, 'left');
+  const original = restoreStagePlacement(saved, bounds);
+  assert.deepEqual(original, { side: 'left', position: { x: 88, y: 480 } });
+  const rotated = getStageBounds({ width: 844, height: 390, safeTop: 64, safeBottom: 48 }, { width: 112, height: 155 });
+  const restored = restoreStagePlacement(saved, rotated);
+  within(restored.position, rotated);
+  assert.equal(restored.side, 'left');
+  for (const invalid of [null, [], {}, { ...saved, x: Infinity }, { ...saved, y: -0.2 }, { ...saved, version: 99 }, { ...saved, side: 'middle' }]) {
+    assert.equal(restoreStagePlacement(invalid, rotated), null);
+  }
+});
+
+test('tap detection uses pointer movement, tolerates touch jitter and ignores another finger', () => {
+  const event = { pointerId: 7, pointerType: 'touch', clientX: 210, clientY: 410 };
+  const gesture = createStagePointerGesture(event, { x: 180, y: 360 }, 100);
+  const jitter = advanceStagePointerGesture(gesture, { ...event, clientX: 217, clientY: 414 }, 130);
+  assert.equal(jitter.moved, false);
+  assert.deepEqual(jitter.origin, { x: 180, y: 360 });
+  assert.equal(advanceStagePointerGesture(gesture, { ...event, pointerId: 8, clientX: 20 }, 140), gesture);
+  const dragged = advanceStagePointerGesture(gesture, { ...event, clientX: 230 }, 180);
+  assert.equal(dragged.moved, true);
+  assert.ok(dragged.vx > 0 && dragged.vx <= 740);
+  const returned = advanceStagePointerGesture(dragged, event, 220);
+  assert.equal(returned.moved, true, 'a real drag does not become a click when the pointer returns');
+});
+
+test('mouse gestures keep a smaller threshold without using the animated target rectangle', () => {
+  const event = { pointerId: 1, pointerType: 'mouse', clientX: 500, clientY: 500 };
+  const gesture = createStagePointerGesture(event, { x: 444, y: 400 }, 0);
+  const overMovingArt = { ...event, currentTarget: { getBoundingClientRect: () => ({ left: 30, top: 10 }) } };
+  assert.equal(advanceStagePointerGesture(gesture, overMovingArt, 200).moved, false);
+  assert.equal(advanceStagePointerGesture(gesture, { ...event, clientX: 507 }, 200).moved, true);
+});
+
+test('approaching the actual footprint pauses mouse travel without treating touch as hover', () => {
+  const position = { x: 100, y: 200 };
+  const size = { width: 112, height: 155 };
+  assert.equal(isPointerNearStage({ x: 90, y: 270, pointerType: 'mouse' }, position, size), true);
+  assert.equal(isPointerNearStage({ x: 170, y: 370, pointerType: 'pen' }, position, size), true);
+  assert.equal(isPointerNearStage({ x: 50, y: 270, pointerType: 'mouse' }, position, size), false);
+  assert.equal(isPointerNearStage({ x: 150, y: 270, pointerType: 'touch' }, position, size), false);
 });
 
 test('a throw moves on both axes and always reaches a bounded, finite landing', () => {

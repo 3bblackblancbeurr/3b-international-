@@ -1,16 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  STAGE_DURATIONS, chooseStageScene, clampStagePosition, createStageClock,
+  STAGE_DURATIONS, STAGE_PLACEMENT_KEY, advanceStagePointerGesture, chooseStageScene,
+  clampStagePosition, createStageClock, createStagePointerGesture,
   findStageHome, findStageWalkTarget, findVisibleHeadingAnchors, getStageBounds,
-  headingAnchorPosition, interpolateStageTravel, isStagePathClear, isStagePositionClear,
-  normalizeStageAction, readHeadingAnchorRect, stageAutonomousDelay, stepCompanionFall,
+  headingAnchorPosition, interpolateStageTravel, isPointerNearStage, isStagePathClear, isStagePositionClear,
+  normalizeStageAction, readHeadingAnchorRect, restoreStagePlacement, stageAutonomousDelay,
+  stagePlacement, stepCompanionFall,
 } from './companion-stage.js';
 
 const OWN_UI = '.companion3b-shell,.companion3b-panel';
 const EDITABLE = 'input:not([type="button"]):not([type="submit"]):not([type="reset"]),textarea,select,[contenteditable]:not([contenteditable="false"])';
 const CONTROL = 'button,a[href],input,textarea,select,[role="button"],iframe,video,[data-companion-avoid]';
+const DIALOG = 'dialog,[role="dialog"],[role="alertdialog"]';
 const initialUI = { pose: null, facing: -1, dragging: false, moving: false, bubbleSide: 'left', suspended: false };
-const boundedVelocity = value => Math.max(-740, Math.min(740, value));
+
+function externalDialogVisible(doc) {
+  return Array.from(doc.querySelectorAll(DIALOG)).some(element => {
+    if (element.closest(OWN_UI) || element.hidden || element.getAttribute('aria-hidden') === 'true') return false;
+    if (element.matches('dialog') && !element.open) return false;
+    const rect = element.getBoundingClientRect();
+    const style = doc.defaultView?.getComputedStyle?.(element);
+    return rect.width > 0 && rect.height > 0 && style?.visibility !== 'hidden' && style?.display !== 'none';
+  });
+}
 
 function externalInputFocused(doc) {
   const active = doc.activeElement;
@@ -66,7 +78,7 @@ export default function useCompanionStage({
   const options = useRef(null);
   options.current = { enabled, visible, reducedMotion, lowPower, discreet, paused, autonomous, batterySaver, page, personality, onScene, size };
   const controller = useRef(null);
-  const suppressClick = useRef(false);
+  const suppressClick = useRef(0);
   const [ui, setUI] = useState(initialUI);
 
   useEffect(() => {
@@ -74,6 +86,8 @@ export default function useCompanionStage({
     if (!enabled || !shell || typeof window === 'undefined') return undefined;
     const win = window;
     const doc = shell.ownerDocument || document;
+    let placement = null;
+    try { placement = JSON.parse(win.localStorage.getItem(STAGE_PLACEMENT_KEY) || 'null'); } catch { /* Placement still works for this session. */ }
     const clock = createStageClock({
       requestFrame: callback => win.requestAnimationFrame(callback),
       cancelFrame: id => win.cancelAnimationFrame(id),
@@ -84,6 +98,8 @@ export default function useCompanionStage({
       alive: true, ui: { ...initialUI }, bounds: null, obstacles: [], position: null,
       home: null, side: 'right', drag: null, scene: null, source: null,
       moving: false, anchor: null, recent: [], first: true,
+      placement, pointer: null, pointerNear: false, clickUntil: 0, resumeAfter: 0,
+      manualLanding: false, manuallySuspended: false, externalDialog: externalDialogVisible(doc),
       lastOptions: { ...options.current },
     };
     const now = () => win.performance?.now?.() ?? Date.now();
@@ -95,20 +111,30 @@ export default function useCompanionStage({
       setUI(next);
     };
     const isSuspended = () => !options.current.enabled || !options.current.visible || doc.hidden
-      || !!doc.fullscreenElement || externalInputFocused(doc);
+      || state.manuallySuspended || state.externalDialog || !!doc.fullscreenElement || externalInputFocused(doc);
     const canTravel = () => !isSuspended() && !options.current.reducedMotion && !options.current.lowPower;
     const canAuto = () => canTravel() && !options.current.paused && !options.current.discreet
-      && options.current.autonomous && !state.drag && !state.scene;
+      && options.current.autonomous && !state.drag && !state.scene && !state.pointerNear;
 
     function measure() {
       const viewport = readViewport(win, doc);
       const configured = options.current.size;
       const dimensions = typeof configured === 'number' ? { width: configured, height: configured } : configured;
       const width = dimensions?.width || shell.offsetWidth || (options.current.discreet ? 76 : 112);
-      const height = dimensions?.height || shell.offsetHeight || (options.current.discreet ? 88 : 124);
+      const height = dimensions?.height || shell.offsetHeight || (options.current.discreet ? 100 : 155);
       state.bounds = getStageBounds(viewport, { width, height });
       state.obstacles = readControlRects(doc, shell, viewport);
-      state.home = findStageHome(state.bounds, state.side, state.obstacles);
+      const saved = restoreStagePlacement(state.placement, state.bounds);
+      if (saved) state.side = saved.side;
+      state.home = saved && isStagePositionClear(saved.position, state.bounds, state.obstacles)
+        ? saved.position : findStageHome(state.bounds, state.side, state.obstacles);
+    }
+
+    function rememberPlacement() {
+      state.side = state.position.x < (state.bounds.minX + state.bounds.maxX) / 2 ? 'left' : 'right';
+      state.placement = stagePlacement(state.position, state.bounds, state.side);
+      state.home = { ...state.position };
+      try { win.localStorage.setItem(STAGE_PLACEMENT_KEY, JSON.stringify(state.placement)); } catch { /* Session placement remains available. */ }
     }
 
     function write(position) {
@@ -144,7 +170,7 @@ export default function useCompanionStage({
         });
         state.first = false;
         if (!kind || !play(kind, 'auto', { walkTarget, anchors })) schedule();
-      }, delay);
+      }, Math.max(delay, state.resumeAfter - now()));
     }
 
     function finish() {
@@ -164,6 +190,7 @@ export default function useCompanionStage({
       state.scene = null;
       state.source = null;
       state.anchor = null;
+      state.manualLanding = false;
       state.moving = false;
       if (home && state.home) write(state.home);
       publish({ pose: null, moving: false });
@@ -181,7 +208,13 @@ export default function useCompanionStage({
         if (!state.alive || isSuspended()) { cancel({ reschedule: false }); return; }
         if (!canTravel()) { cancel({ home: false }); return; }
         const progress = Math.min(1, Math.max(0, (timestamp - started) / milliseconds));
-        write(interpolateStageTravel(from, to, progress, arc));
+        const next = interpolateStageTravel(from, to, progress, arc);
+        if (state.source === 'auto' && isPointerNearStage(state.pointer, next, state.bounds)) {
+          state.pointerNear = true;
+          cancel({ reschedule: false });
+          return;
+        }
+        write(next);
         if (progress >= 1) { state.moving = false; publish({ moving: false }); arrived(); }
         else clock.frame(tick);
       };
@@ -190,6 +223,10 @@ export default function useCompanionStage({
 
     function returnHome() {
       measure();
+      if (state.manualLanding && isStagePositionClear(state.position, state.bounds, state.obstacles)) {
+        rememberPlacement(); state.manualLanding = false; finish(); return;
+      }
+      state.manualLanding = false;
       const target = state.home;
       if (Math.hypot(target.x - state.position.x, target.y - state.position.y) > 16
         && canTravel() && isStagePathClear(state.position, target, state.bounds, state.obstacles)) {
@@ -211,12 +248,19 @@ export default function useCompanionStage({
       const tick = timestamp => {
         if (!state.alive || isSuspended()) { cancel({ reschedule: false }); return; }
         if (!canTravel()) { cancel({ home: false }); return; }
-        physics = stepCompanionFall(physics, (timestamp - previousTime) / 1000, state.bounds);
+        const next = stepCompanionFall(physics, (timestamp - previousTime) / 1000, state.bounds);
+        if (!isStagePathClear(state.position, next, state.bounds, state.obstacles)) {
+          // A page control can occupy the landing corridor. End the gesture safely
+          // instead of letting the character fall across an active button.
+          returnHome();
+          return;
+        }
+        physics = next;
         previousTime = timestamp;
         write(physics);
         if (physics.settled || timestamp - started > 5200) {
           state.moving = false;
-          write({ x: state.position.x, y: state.bounds.maxY });
+          if (physics.settled) write({ x: state.position.x, y: state.bounds.maxY });
           publish({ pose: 'land', moving: false });
           clock.timeout('scene', returnHome, STAGE_DURATIONS.land);
         } else clock.frame(tick);
@@ -299,31 +343,26 @@ export default function useCompanionStage({
     }
 
     function pointerDown(event) {
-      if (isSuspended() || event.isPrimary === false || (event.button !== undefined && event.button !== 0)) return;
-      suppressClick.current = false;
+      if (isSuspended() || state.drag || event.isPrimary === false || (event.button !== undefined && event.button !== 0)) return;
+      if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return;
+      suppressClick.current = 0;
+      const position = { ...state.position };
       cancel({ reschedule: false });
       measure();
-      state.drag = {
-        id: event.pointerId, target: event.currentTarget,
-        x: event.clientX, y: event.clientY, origin: { ...state.position },
-        lastX: event.clientX, lastY: event.clientY, lastTime: now(), vx: 0, vy: 0, moved: false,
-      };
+      write(position);
+      state.drag = createStagePointerGesture(event, state.position, now());
       try { event.currentTarget.setPointerCapture?.(event.pointerId); } catch { /* Synthetic/legacy pointer. */ }
     }
 
     function pointerMove(event) {
-      const drag = state.drag;
+      if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return;
+      const drag = advanceStagePointerGesture(state.drag, event, now());
       if (!drag || drag.id !== event.pointerId) return;
+      state.drag = drag;
       const dx = event.clientX - drag.x;
       const dy = event.clientY - drag.y;
-      if (!drag.moved && Math.hypot(dx, dy) < 6) return;
-      const timestamp = now();
-      const dt = Math.max(0.008, (timestamp - drag.lastTime) / 1000);
-      drag.vx = boundedVelocity((event.clientX - drag.lastX) / dt) * 0.6 + drag.vx * 0.4;
-      drag.vy = boundedVelocity((event.clientY - drag.lastY) / dt) * 0.6 + drag.vy * 0.4;
-      drag.lastX = event.clientX; drag.lastY = event.clientY; drag.lastTime = timestamp;
-      drag.moved = true;
-      suppressClick.current = true;
+      if (!drag.moved) return;
+      suppressClick.current = now() + 650;
       event.preventDefault?.();
       write({ x: drag.origin.x + dx, y: drag.origin.y + dy });
       publish({ dragging: true, pose: 'hang', facing: dx < 0 ? -1 : 1 });
@@ -331,23 +370,31 @@ export default function useCompanionStage({
 
     function pointerUp(event) {
       if (state.drag?.id !== event.pointerId) return;
+      // Some touch devices coalesce their final move into the release event.
+      if (event.clientX !== state.drag.lastX || event.clientY !== state.drag.lastY) pointerMove(event);
       const drag = releaseCapture();
+      state.clickUntil = now() + 450;
       if (!drag?.moved) { finish(); return; }
-      suppressClick.current = true;
+      suppressClick.current = now() + 650;
       if (canTravel()) {
         state.scene = 'fall'; state.source = 'user';
+        state.manualLanding = true;
         try { options.current.onScene?.({ kind: 'fall', source: 'user' }); } catch { /* Optional dialogue. */ }
         // A pause before letting go removes stale throw velocity.
         const fresh = now() - drag.lastTime < 120;
         fall(fresh ? drag.vx * 0.65 : 0, fresh ? drag.vy * 0.45 : 0);
-      } else { publish({ pose: null }); schedule(); }
+      } else {
+        measure();
+        if (!isStagePositionClear(state.position, state.bounds, state.obstacles)) write(state.home);
+        rememberPlacement(); publish({ pose: null }); schedule();
+      }
     }
 
     function pointerCancel(event) {
       if (!state.drag || (event?.pointerId !== undefined && state.drag.id !== event.pointerId)) return;
       const moved = state.drag.moved;
       releaseCapture();
-      suppressClick.current = moved;
+      suppressClick.current = moved ? now() + 650 : 0;
       // Cancellation belongs to the browser/OS; do not interpret it as an intentional throw.
       cancel({ home: moved });
     }
@@ -359,6 +406,12 @@ export default function useCompanionStage({
       if (suspended) { cancel({ reschedule: false }); return; }
       measure();
       if (state.drag) { write(state.position); return; }
+      if (now() < state.clickUntil) {
+        // Keep the same native hit target until the browser has delivered click.
+        // A resize/focus notification must not move a just-tapped character away.
+        clock.timeout('viewport', updateGeometry, state.clickUntil - now() + 1);
+        return;
+      }
       if (state.anchor) {
         const rect = readHeadingAnchorRect(state.anchor, doc);
         const position = rect && headingAnchorPosition(rect, state.bounds);
@@ -378,8 +431,10 @@ export default function useCompanionStage({
       state.lastOptions = { ...current };
       const shouldStop = current.page !== previous.page || current.reducedMotion !== previous.reducedMotion
         || current.lowPower !== previous.lowPower || current.discreet !== previous.discreet
-        || (!previous.paused && current.paused) || (!previous.autonomous && current.autonomous);
-      if (shouldStop && !state.drag) cancel({ home: true, reschedule: false });
+        || (!previous.paused && current.paused) || (previous.autonomous && !current.autonomous);
+      // Focus and the panel pause choreography in place. Returning home here can
+      // move a walking button between pointerup and the native click event.
+      if (shouldStop && !state.drag) cancel({ home: current.page !== previous.page, reschedule: false });
       publish({ suspended: isSuspended() });
       if (isSuspended()) { cancel({ reschedule: false }); return; }
       measure();
@@ -393,21 +448,46 @@ export default function useCompanionStage({
       clock.timeout('viewport', updateGeometry, 45);
     };
     const onEnvironment = () => {
+      state.externalDialog = externalDialogVisible(doc);
       if (isSuspended()) { publish({ suspended: true }); cancel({ reschedule: false }); }
       else { publish({ suspended: false }); updateGeometry(); }
     };
     const onFocusOut = () => clock.timeout('environment', onEnvironment, 0);
     const onPointerNear = event => {
-      if (event.pointerType === 'touch' || !canAuto() || options.current.paused || state.ui.pose) return;
+      if (event.pointerType === 'touch') return;
+      state.pointer = { x: event.clientX, y: event.clientY, pointerType: event.pointerType };
+      const near = isPointerNearStage(state.pointer, state.position, state.bounds);
+      if (near !== state.pointerNear) {
+        state.pointerNear = near;
+        if (near && state.source === 'auto') cancel({ reschedule: false });
+        if (near) clock.clear('auto');
+        else { state.resumeAfter = now() + 2200; schedule(); }
+      }
+      if (!canAuto() || options.current.paused || state.ui.pose) return;
       const centerX = state.position.x + state.bounds.width / 2;
       const centerY = state.position.y + state.bounds.height / 2;
       const distance = Math.hypot(event.clientX - centerX, event.clientY - centerY);
       if (distance < 170 && distance > state.bounds.width * 0.45) {
-        // Head tracking is handled by useCompanionGaze. This is a bounded, occasional glance.
+        // The avatar owns gaze tracking. The stage only chooses an occasional facing direction.
         if (now() - (state.lastGlance || 0) < 9000) return;
         state.lastGlance = now();
         publish({ facing: event.clientX < centerX ? -1 : 1 });
       }
+    };
+    const onPointerLeave = event => {
+      if (event.relatedTarget) return;
+      state.pointer = null; state.pointerNear = false;
+      state.resumeAfter = now() + 2200; schedule();
+    };
+    const onContentPointer = event => {
+      if (event.target?.closest?.(OWN_UI) || !event.target?.closest?.(CONTROL)) return;
+      state.resumeAfter = now() + 4000;
+      if (state.source === 'auto') cancel({ reschedule: false });
+      schedule();
+    };
+    const onWindowBlur = () => {
+      pointerCancel(); state.pointer = null; state.pointerNear = false;
+      cancel({ reschedule: false });
     };
 
     measure();
@@ -415,9 +495,11 @@ export default function useCompanionStage({
     publish({ suspended: isSuspended(), pose: null, dragging: false, moving: false });
     controller.current = {
       play: action => play(action), cancel: () => cancel({ home: true }),
+      suspend: () => { state.manuallySuspended = true; cancel({ reschedule: false }); publish({ suspended: true }); },
       place: side => {
         state.side = side === 'left' ? 'left' : 'right';
-        cancel({ reschedule: false }); measure(); write(state.home); schedule();
+        state.placement = null;
+        cancel({ reschedule: false }); measure(); write(state.home); rememberPlacement(); schedule();
       },
       pointerDown, pointerMove, pointerUp, pointerCancel, sync,
     };
@@ -425,13 +507,32 @@ export default function useCompanionStage({
     doc.addEventListener('fullscreenchange', onEnvironment);
     doc.addEventListener('focusin', onEnvironment);
     doc.addEventListener('focusout', onFocusOut);
+    doc.addEventListener('pointerdown', onContentPointer, { passive: true });
     doc.addEventListener('scroll', onGeometry, { passive: true, capture: true });
     win.addEventListener('resize', onGeometry, { passive: true });
     win.addEventListener('pointermove', onPointerNear, { passive: true });
+    win.addEventListener('pointerout', onPointerLeave, { passive: true });
+    win.addEventListener('pointerup', pointerUp);
+    win.addEventListener('pointercancel', pointerCancel);
+    win.addEventListener('blur', onWindowBlur);
+    win.addEventListener('focus', onEnvironment);
     win.visualViewport?.addEventListener('resize', onGeometry, { passive: true });
     win.visualViewport?.addEventListener('scroll', onGeometry, { passive: true });
     const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(onGeometry) : null;
     resizeObserver?.observe(shell);
+    const dialogObserver = typeof MutationObserver === 'function' ? new MutationObserver(records => {
+      const isDialog = element => element?.nodeType === 1 && !element.closest(OWN_UI)
+        && (element.matches(DIALOG) || element.querySelector?.(DIALOG));
+      if (records.some(record => !record.target?.closest?.(OWN_UI)
+        && (record.target?.closest?.(DIALOG) || isDialog(record.target) || record.attributeName === 'role'
+          || [...(record.addedNodes || []), ...(record.removedNodes || [])].some(isDialog)))) {
+        clock.timeout('dialogs', () => {
+          if (externalDialogVisible(doc) !== state.externalDialog) onEnvironment();
+        }, 0);
+      }
+    }) : null;
+    if (doc.body) dialogObserver?.observe(doc.body, { childList: true, subtree: true, attributes: true,
+      attributeFilter: ['open', 'hidden', 'aria-hidden', 'aria-modal', 'role', 'class', 'style'] });
     schedule();
 
     return () => {
@@ -439,13 +540,20 @@ export default function useCompanionStage({
       releaseCapture();
       clock.dispose();
       resizeObserver?.disconnect();
+      dialogObserver?.disconnect();
       doc.removeEventListener('visibilitychange', onEnvironment);
       doc.removeEventListener('fullscreenchange', onEnvironment);
       doc.removeEventListener('focusin', onEnvironment);
       doc.removeEventListener('focusout', onFocusOut);
+      doc.removeEventListener('pointerdown', onContentPointer);
       doc.removeEventListener('scroll', onGeometry, true);
       win.removeEventListener('resize', onGeometry);
       win.removeEventListener('pointermove', onPointerNear);
+      win.removeEventListener('pointerout', onPointerLeave);
+      win.removeEventListener('pointerup', pointerUp);
+      win.removeEventListener('pointercancel', pointerCancel);
+      win.removeEventListener('blur', onWindowBlur);
+      win.removeEventListener('focus', onEnvironment);
       win.visualViewport?.removeEventListener('resize', onGeometry);
       win.visualViewport?.removeEventListener('scroll', onGeometry);
       controller.current = null;
@@ -456,14 +564,15 @@ export default function useCompanionStage({
 
   const play = useCallback(action => controller.current?.play(action) || false, []);
   const cancel = useCallback(() => controller.current?.cancel(), []);
+  const suspend = useCallback(() => controller.current?.suspend(), []);
   const place = useCallback(side => controller.current?.place(side), []);
   const onPointerDown = useCallback(event => controller.current?.pointerDown(event), []);
   const onPointerMove = useCallback(event => controller.current?.pointerMove(event), []);
   const onPointerUp = useCallback(event => controller.current?.pointerUp(event), []);
   const onPointerCancel = useCallback(event => controller.current?.pointerCancel(event), []);
-  const consumeClick = useCallback(() => {
-    const consumed = suppressClick.current;
-    suppressClick.current = false;
+  const consumeClick = useCallback(event => {
+    const consumed = event?.detail !== 0 && suppressClick.current > (globalThis.performance?.now?.() ?? Date.now());
+    suppressClick.current = 0;
     return consumed;
   }, []);
   const style = useMemo(() => ({
@@ -474,5 +583,5 @@ export default function useCompanionStage({
     visibility: ui.suspended ? 'hidden' : undefined,
   }), [ui.moving, ui.dragging, ui.suspended]);
 
-  return { ...ui, style, play, cancel, place, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, consumeClick };
+  return { ...ui, style, play, cancel, suspend, place, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, consumeClick };
 }

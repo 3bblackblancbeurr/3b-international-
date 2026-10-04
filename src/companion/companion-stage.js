@@ -49,6 +49,57 @@ export function clampStagePosition(position = {}, bounds) {
   };
 }
 
+export const STAGE_PLACEMENT_KEY = 'threeb_companion_stage_v1';
+
+// Persist proportions of the available stage, never old screen pixels. A saved
+// placement remains reachable after a phone rotates or its keyboard opens.
+export function stagePlacement(position, bounds, side = 'right') {
+  const point = clampStagePosition(position, bounds);
+  const ratio = (value, minimum, maximum) => maximum > minimum ? (value - minimum) / (maximum - minimum) : 0.5;
+  return { version: 1, side: side === 'left' ? 'left' : 'right',
+    x: ratio(point.x, bounds.minX, bounds.maxX), y: ratio(point.y, bounds.minY, bounds.maxY) };
+}
+
+export function restoreStagePlacement(value, bounds) {
+  if (!value || value.version !== 1 || !['left', 'right'].includes(value.side)
+    || !Number.isFinite(value.x) || !Number.isFinite(value.y)
+    || value.x < 0 || value.x > 1 || value.y < 0 || value.y > 1) return null;
+  return { side: value.side, position: {
+    x: bounds.minX + value.x * (bounds.maxX - bounds.minX),
+    y: bounds.minY + value.y * (bounds.maxY - bounds.minY),
+  } };
+}
+
+export function createStagePointerGesture(event, position, timestamp = 0) {
+  return {
+    id: event.pointerId, target: event.currentTarget,
+    x: event.clientX, y: event.clientY, origin: { ...position },
+    threshold: event.pointerType === 'touch' ? 10 : 6,
+    lastX: event.clientX, lastY: event.clientY, lastTime: timestamp,
+    vx: 0, vy: 0, moved: false,
+  };
+}
+
+export function advanceStagePointerGesture(gesture, event, timestamp = 0) {
+  if (!gesture || gesture.id !== event.pointerId
+    || !Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return gesture;
+  // Only the pointer's viewport coordinates determine a drag. Animated artwork,
+  // a changing target rectangle, and sub-threshold touch jitter do not count.
+  const moved = gesture.moved || Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) >= gesture.threshold;
+  if (!moved) return gesture;
+  const dt = Math.max(0.008, (timestamp - gesture.lastTime) / 1000);
+  const velocity = (delta, previous) => limit(delta / dt, -740, 740) * 0.6 + previous * 0.4;
+  return { ...gesture, moved, lastX: event.clientX, lastY: event.clientY, lastTime: timestamp,
+    vx: velocity(event.clientX - gesture.lastX, gesture.vx),
+    vy: velocity(event.clientY - gesture.lastY, gesture.vy) };
+}
+
+export function isPointerNearStage(pointer, position, size, padding = 28) {
+  if (!pointer || pointer.pointerType === 'touch' || !position) return false;
+  return pointer.x >= position.x - padding && pointer.x <= position.x + size.width + padding
+    && pointer.y >= position.y - padding && pointer.y <= position.y + size.height + padding;
+}
+
 export function homeStagePosition(bounds, side = 'right') {
   return { x: side === 'left' ? bounds.minX : bounds.maxX, y: bounds.maxY };
 }
