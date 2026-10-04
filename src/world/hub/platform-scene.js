@@ -10,6 +10,7 @@ import {addLandmarkCraft} from './landmark-craft.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
 import {addCiteTerraces,terraceWorldHeight,terraceAisle} from './terraces.js';
 import {citeWaterfallMaterial} from './waterfall-material.js';
+import {cascadeGeometry,cascadeMist} from './cascade-craft.js';
 import {CITE_ISLANDS,CITE_BRIDGES,citeSurfaceDistance,citeIslandRadius} from './platform-topology.js';
 import {createCiteSurfaces} from './cite-surfaces.js';
 import {islandCliffGeometry,islandDeckGeometry} from './island-cliffs.js';
@@ -107,10 +108,11 @@ export function createHubPlatform(save){
   collisions.push({x,z,r:14.8});
   for(let i=0;i<8;i++){const a=i*Math.PI/4;mesh(box,gold,x+Math.cos(a)*15.5,.12,z+Math.sin(a)*15.5,.5,.25,.5);}
  }
- for(const island of CITE_ISLANDS.filter(i=>!['nexus','arrival'].includes(i.id)).slice(0,20)){
-  const a=Math.atan2(island.z,island.x),x=island.x+Math.cos(a)*citeIslandRadius(island,a),z=island.z+Math.sin(a)*citeIslandRadius(island,a);
-  const fall=mesh(geo(new THREE.PlaneGeometry(1,1,2,12)),fallMaterial,x,-9,z,4,18,1);fall.rotation.y=Math.PI/2-a;fall.castShadow=false;waterfalls.push(fall);
+ const cascadeIslands=CITE_ISLANDS.filter(i=>!['nexus','arrival'].includes(i.id)).slice(0,20);
+ for(const island of cascadeIslands){
+  const fall=mesh(geo(cascadeGeometry(island)),fallMaterial,island.x,0,island.z);fall.castShadow=false;fall.receiveShadow=false;waterfalls.push(fall);
  }
+ const spray=cascadeMist(cascadeIslands,owned);root.add(spray.points);
  // The monumental broken ring stands above its own fountain. Its eight pieces answer to progress.
  mesh(cylinder,dark,0,.4,0,19,.8,19);const fountain=mesh(geo(new THREE.CircleGeometry(16,64)),water,0,.84,0);fountain.rotation.x=-Math.PI/2;fountain.castShadow=false;collisions.push({x:0,z:0,r:19.5});
  for(const side of [-1,1]){mesh(box,dark,side*13,14,0,3,28,4);mesh(box,gold,side*13,14,2.1,.5,28,.2);}
@@ -191,11 +193,11 @@ export function createHubPlatform(save){
  for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
  return {root,ground,collisions,cameraSolids,ready:surfaces.ready,height:terraceWorldHeight,
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
-  update,setParty(){},setQuality(mode){surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
+  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  update,setParty(){},setQuality(mode){spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
-  tick(time){vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;for(const [i,fall] of waterfalls.entries())fall.scale.y=18+Math.sin(time*1.6+i)*.12;},
+  tick(time){spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;},
   dispose(){seaWater.disposeReflection();poolWater.disposeReflection();root.removeFromParent();for(const asset of owned)asset.dispose();},
  };
 }

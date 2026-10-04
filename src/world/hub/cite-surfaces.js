@@ -24,11 +24,15 @@ export function createCiteSurfaces(owned){
   shader.fragmentShader='varying vec3 citeP;uniform float citeDay;uniform float citeWet;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
    float grain=fract(sin(dot(floor(citeP.xz*7.),vec2(12.9898,78.233)))*43758.5453);
    diffuseColor.rgb*=.94+.06*grain;
-   ${kind==='cliff'?`float strata=.84+.16*sin(citeP.y*1.8+sin(citeP.x*.24)*.5);diffuseColor.rgb*=strata;` : ''}
+   ${kind==='cliff'?`float strata=.88+.12*sin(citeP.y*1.1+sin(citeP.x*.21)*.6+sin(citeP.z*.19)*.5);
+    vec2 cell=floor(citeP.xz*.65+sin(citeP.y*.18));float rock=fract(sin(dot(cell,vec2(41.17,289.13)))*43758.5453);
+    float seams=smoothstep(.02,.16,abs(sin(citeP.y*.78+rock*.65)));
+    diffuseColor.rgb*=strata*(.76+.3*rock)*mix(.62,1.,seams);
+    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.075,.13,.09),smoothstep(-7.,-.3,citeP.y)*smoothstep(.7,.92,rock)*.38);` : ''}
    ${kind==='deck'?`vec2 p=citeP.xz/1.7;float r=length(p);float lane=abs(r-125.);for(int i=0;i<8;i++){float a=float(i)*.785398163;lane=min(lane,abs(dot(p,vec2(-sin(a),cos(a)))));}float garden=smoothstep(8.,12.,lane)*smoothstep(48.,62.,r);vec3 turf=vec3(.035,.16,.085)*(.85+.3*grain);diffuseColor.rgb=mix(diffuseColor.rgb,turf,garden*.85);` : ''}
    diffuseColor.rgb*=1.-citeWet*.12;
   `).replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\nroughnessFactor=mix(roughnessFactor,.3,citeWet*.7);');
- };m.customProgramCacheKey=()=> '3b-cite-pbr-'+kind+'-v1';}
+ };m.customProgramCacheKey=()=> '3b-cite-pbr-'+kind+'-v2';}
  surfaceShader(stone,'stone');surfaceShader(deck,'deck');surfaceShader(cliff,'cliff');
  for(const m of [dark,gold,glass,stone,cliff,deck])owned.push(m);
  return{dark,gold,glass,stone,cliff,deck,ready:Promise.all(loads),setDaylight(value){day.value=value;},setWeather(value){wet.value=value==='rain'?.8:value==='storm'?1:0;},setQuality(mode){for(const t of Object.values(textures))t.anisotropy=mode==='fluid'?2:4;}};

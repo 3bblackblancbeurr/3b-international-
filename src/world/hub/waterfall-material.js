@@ -1,15 +1,20 @@
 import * as T from 'three';
-/** Two-sided streaming water with broken strands and foam; one shared draw material. */
+/** Flowing, broken sheets with downward advection, crest foam and impact fade. */
 export function citeWaterfallMaterial(){
  return new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,uniforms:{time:{value:0},day:{value:1}},
- vertexShader:'varying vec2 flowUv;uniform float time;void main(){flowUv=uv;vec3 p=position;p.z+=sin(uv.y*28.-time*4.+uv.x*14.)*.045;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}',
+ vertexShader:`varying vec2 flowUv;uniform float time;void main(){flowUv=uv;vec3 p=position;float fall=1.-uv.y;p.x+=sin(uv.y*19.-time*3.+uv.x*17.)*.08*fall;p.z+=cos(uv.y*23.-time*4.+uv.x*13.)*.08*fall;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
  fragmentShader:`varying vec2 flowUv;uniform float time;uniform float day;
- void main(){float strand=sin(flowUv.x*69.+sin(flowUv.y*18.-time*7.)*1.8)*.5+.5;
- float rush=sin(flowUv.y*85.+time*12.+flowUv.x*9.)*.5+.5;
- float edge=smoothstep(0.,.06,flowUv.x)*smoothstep(0.,.06,1.-flowUv.x);
- float foam=smoothstep(.62,.92,strand)*(.4+.6*rush)+(1.-smoothstep(0.,.15,flowUv.y))*.4;
- vec3 tint=mix(vec3(.08,.42,.62),vec3(.88,.97,1.),clamp(foam,0.,1.));
- gl_FragColor=vec4(tint*(.4+.6*day),edge*(.36+.4*strand));
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.)),f.x),f.y);}
+ void main(){
+ vec2 advected=vec2(flowUv.x*32.,flowUv.y*7.+time*3.2);
+ float strands=noise(advected)+noise(advected*vec2(1.8,2.3))*.35;
+ float edge=smoothstep(0.,.07,flowUv.x)*smoothstep(0.,.07,1.-flowUv.x);
+ float impact=1.-smoothstep(0.,.2,flowUv.y),crest=smoothstep(.93,1.,flowUv.y);
+ float foam=clamp(smoothstep(.62,1.1,strands)*.65+impact*.5+crest*.28,0.,1.);
+ vec3 tint=mix(vec3(.065,.32,.43),vec3(.77,.9,.94),foam);
+ float broken=smoothstep(.12,.35,strands);
+ gl_FragColor=vec4(tint*(.28+.72*day),edge*broken*(.42+foam*.3));
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`});

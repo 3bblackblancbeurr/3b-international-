@@ -1,10 +1,17 @@
 import * as THREE from 'three';
 import {citeIslandRadius} from './platform-topology.js';
+
+/** A continuous coast with broken rock ledges. The exact upper edge is shared
+ * with the deck and collision surface; all relief stays below the walking plane. */
 export function islandCliffGeometry(island){
- const g=new THREE.CylinderGeometry(1,1,1,64,8,true),p=g.attributes.position;
+ const g=new THREE.CylinderGeometry(1,1,1,64,6,true),p=g.attributes.position;
  for(let i=0;i<p.count;i++){
-  const x=p.getX(i),z=p.getZ(i),a=Math.atan2(z,x),level=p.getY(i)+.5,edge=citeIslandRadius(island,a),taper=.55+.45*level,variation=level>.99?0:(Math.sin(a*13+level*12)*.025+Math.sin(a*7-level*23)*.035)*level;
-  p.setXYZ(i,Math.cos(a)*edge*(taper+variation),-28*(1-level),Math.sin(a)*edge*(taper+variation));
+  const a=Math.atan2(p.getZ(i),p.getX(i)),level=p.getY(i)+.5,edge=citeIslandRadius(island,a);
+  const strata=Math.round(level*6),seed=island.x*.07+island.z*.11;
+  const ledge=level>.99?0:Math.sin(strata*2.3+seed)*.025;
+  const fracture=level>.99?0:(Math.sin(a*13+seed)*.035+Math.sin(a*23-seed)*.018)*(1-level*.4);
+  const taper=.66+.34*level+ledge+fracture;
+  p.setXYZ(i,Math.cos(a)*edge*taper,-28*(1-level),Math.sin(a)*edge*taper);
  }
  g.computeVertexNormals();return g;
 }
