@@ -36,13 +36,13 @@ export function createAmbientCrowd(root,items,options={}){
  if(!root||!routes.length)return{tick(){},setQuality(){},get diagnostics(){return{...budget,count:0,visible:0,drawCalls:0};},dispose(){}};
 
  const maximum=PROFILE_LIMITS.desktop.detail,group=new THREE.Group();group.name='3B · habitants humains instanciés';root.add(group);
- const walkTime={value:0},walkActive={value:budget.moving?1:0},models=[];
+ const walkTime={value:0},walkActive={value:budget.moving?1:0},lastUpdateTime={value:0},updateInterval={value:budget.updateHz?1/budget.updateHz:0},models=[];
  let lastTime=0,lastPlayer={x:0,z:0},lastStamp=0,loadError=null;
  async function addModel(asset){
   const baked=await bakeCrowdHuman(asset);if(disposed){baked.dispose();return;}
-  const material=crowdHumanMaterial(baked,walkTime,walkActive),batches=[baked.geometry,baked.low].map((geometry,lod)=>{
+  const material=crowdHumanMaterial(baked,walkTime,walkActive,{lastUpdateTime,updateInterval}),batches=[baked.geometry,baked.low].map((geometry,lod)=>{
    const mesh=new THREE.InstancedMesh(geometry,material,maximum);mesh.name='Foule · humains '+models.length+' · '+(lod?'lointains':'proches');mesh.castShadow=false;mesh.receiveShadow=true;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);mesh.count=0;
-   const attrs={phase:new THREE.InstancedBufferAttribute(new Float32Array(maximum),1),speed:new THREE.InstancedBufferAttribute(new Float32Array(maximum),1),skin:new THREE.InstancedBufferAttribute(new Float32Array(maximum*3),3),cloth:new THREE.InstancedBufferAttribute(new Float32Array(maximum*3),3),hair:new THREE.InstancedBufferAttribute(new Float32Array(maximum*3),3)};
+   const attrs={phase:new THREE.InstancedBufferAttribute(new Float32Array(maximum),1),speed:new THREE.InstancedBufferAttribute(new Float32Array(maximum),1),travel:new THREE.InstancedBufferAttribute(new Float32Array(maximum),1),skin:new THREE.InstancedBufferAttribute(new Float32Array(maximum*3),3),cloth:new THREE.InstancedBufferAttribute(new Float32Array(maximum*3),3),hair:new THREE.InstancedBufferAttribute(new Float32Array(maximum*3),3)};
    for(const [name,attribute] of Object.entries(attrs))geometry.setAttribute('crowd'+name[0].toUpperCase()+name.slice(1),attribute);
    group.add(mesh);return {mesh,attrs,count:0};
   });
@@ -56,7 +56,7 @@ export function createAmbientCrowd(root,items,options={}){
 
  function update(time,player={x:0,z:0},stamp=time*1000){
   if(disposed)return;walkTime.value=time;walkActive.value=budget.moving?1:0;lastTime=time;lastPlayer=player;lastStamp=stamp;
-  if(lastUpdate!==-Infinity){if(!budget.updateHz||stamp-lastUpdate<1000/budget.updateHz)return;}lastUpdate=stamp;visible=0;
+  if(lastUpdate!==-Infinity){if(!budget.updateHz||stamp-lastUpdate<1000/budget.updateHz)return;}lastUpdate=stamp;lastUpdateTime.value=time;updateInterval.value=budget.updateHz?1/budget.updateHz:0;visible=0;
   for(const model of models)for(const batch of model.batches)batch.count=0;
   const viewer=options.camera?.position||player;
   for(let index=0;index<budget.count;index++){
@@ -67,7 +67,7 @@ export function createAmbientCrowd(root,items,options={}){
    const model=models[index%models.length],distance=Math.hypot(x-(viewer.x||0),z-(viewer.z||0)),batch=model.batches[distance<60?0:1],slot=batch.count++;
    const y=Number(groundY(x,z))||0,heading=Math.atan2(agent.dx*direction,agent.dz*direction);visible++;
    dummy.position.set(x,y,z);dummy.rotation.set(0,heading,0);dummy.scale.set(agent.scale,agent.scale,agent.scale);dummy.updateMatrix();batch.mesh.setMatrixAt(slot,dummy.matrix);
-   batch.attrs.phase.setX(slot,hash(index,7));batch.attrs.speed.setX(slot,agent.speed/1.6);
+   batch.attrs.phase.setX(slot,hash(index,7));batch.attrs.speed.setX(slot,agent.speed/1.6);batch.attrs.travel.setX(slot,agent.speed/agent.scale);
    skinColor.set(agent.skin);clothColor.set(agent.cloth);batch.attrs.skin.setXYZ(slot,skinColor.r,skinColor.g,skinColor.b);batch.attrs.cloth.setXYZ(slot,clothColor.r,clothColor.g,clothColor.b);
    const hair=hash(index,8)>.78?'#897665':hash(index,8)>.4?'#35271e':'#17191d';skinColor.set(hair);batch.attrs.hair.setXYZ(slot,skinColor.r,skinColor.g,skinColor.b);
   }

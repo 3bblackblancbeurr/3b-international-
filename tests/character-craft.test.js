@@ -67,6 +67,16 @@ test('seated avatars meet the cushion and keep their actual shoe soles above ele
     assert.ok(localHand.z>localPelvis.z+.12,'the hand remains in front of the torso and backrest');
     assert.ok(localElbow.z>localPelvis.z+.06,'the elbow bends towards the knees');
     assert.ok(Math.abs(localElbow.x)<.45,'the elbow stays inside the chair armrest width');
+    const point=name=>actor.object.worldToLocal(actor.object.getObjectByName(name+'_'+side).getWorldPosition(new T.Vector3()));
+    const index=point('index_01'),pinky=point('pinky_01'),middle=point('middle_01'),tip=point('middle_04_leaf');
+    const fingers=middle.clone().sub(localHand).normalize(),palmNormal=fingers.clone().cross(index.clone().sub(pinky)).normalize().multiplyScalar(side==='l'?1:-1);
+    assert.ok(palmNormal.y<-.97,'the anatomical palm faces down onto the thigh');
+    assert.ok(fingers.z>.97,'the fingers point towards the knees');
+    assert.ok(tip.z>middle.z+.055,'relaxed fingers extend beyond the knuckles instead of forming an equipped fist');
+    const joint=actor.object.getObjectByName('middle_02_'+side),body=actor.object.getObjectByName('Body');let skeleton;body.traverse(o=>{if(o.isSkinnedMesh)skeleton=o.skeleton;});
+    const bind=name=>skeleton.boneInverses[skeleton.bones.findIndex(b=>b.name===name)].clone().invert();
+    const rest=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().extractRotation(bind(joint.parent.name).invert().multiply(bind(joint.name))));
+    assert.ok(joint.quaternion.angleTo(rest)<.23,'finger bend remains near the authored open bind pose');
    }
   }
   actor.setPose('Read');actor.object.position.y=floor;actor.update(.25);assert.equal(actor.poseRootOffset(),0);

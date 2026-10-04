@@ -52,6 +52,7 @@ import {advancePortalCrossing,initialPortalCrossingState} from './portal-crossin
 import {createAmbientCrowd} from './ambient-crowd.js';
 import {loadCameraSensitivity,cameraSensitivity} from './camera-preferences.js';
 import {createHubLifeInteraction} from './hub/life-interaction.js';
+import {hubPhysicalItemsForLevel,towerDestinationReturnsGround} from './hub/tower-navigation.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -78,7 +79,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const peerInteractionItems=()=>latestPeers.filter(peer=>peer.region===region&&peer.lifeState==='downed'&&Number.isFinite(peer.x)&&Number.isFinite(peer.z)).map(peer=>({
   id:'party:downed:'+peer.id,type:'downedPlayer',userId:peer.id,name:(peer.avatar?.name||'Voyageur')+' · à terre',x:peer.x,z:peer.z,range:6,color:'#ff8f7f',
  }));
- const physicalItems=()=>region==='hub'?[...(landscape?.lifeItems||[]),...(landscape?.liftItems||[]),...(landscape?.towerLifeItems||[])]:[];
+ const physicalItems=()=>region==='hub'?hubPhysicalItemsForLevel(landscape||{}):[];
  const interactionItems=()=>landscape?.towerFloor?[...(landscape?.liftItems||[]),...(landscape?.towerLifeItems||[])]:[...physicalItems(),...items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)),...peerInteractionItems()];
  let fieldRival=null,combatDistance=Infinity,combatClock=0,combatButton=null;
  const combatInput={x:0,z:0};
@@ -395,7 +396,7 @@ function hubNpcAvatar(item){
  }
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
- function startRoute(destination,interaction=false,run=false){endLifeInteraction();if(landscape?.towerFloor){const floor=landscape.towerFloor;if(Math.abs(destination.x-floor.x)>floor.width/2-1.25||Math.abs(destination.z-floor.z)>floor.depth/2-1.25)selectTowerFloor(null);}motionSmoother.reset();route=(interaction?findInteractionPath:findPath)(position,destination,obstacles,worldRadius);target=route.shift()||null;routeSprintUntil=run?performance.now()+2200:0;needsRender=true;}
+ function startRoute(destination,interaction=false,run=false){endLifeInteraction();if(towerDestinationReturnsGround(destination,landscape?.towerFloor,physicalItems())){const selectedWaypoint=destination.id&&waypoint?.id===destination.id?waypoint:null;selectTowerFloor(null);if(selectedWaypoint)waypoint=selectedWaypoint;}motionSmoother.reset();route=(interaction?findInteractionPath:findPath)(position,destination,obstacles,worldRadius);target=route.shift()||null;routeSprintUntil=run?performance.now()+2200:0;needsRender=true;}
  function clearInput(){keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
  function down(e){
   if(paused||transportRide||contextTraversal||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);

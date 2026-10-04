@@ -1,8 +1,8 @@
 {
   "source": "Actual equipped assemblies rendered by the persistent WeaponShowroom renderer; no concept imagery",
-  "commit": "5b0a52c43c0a2a240e5e8e4a3b43ae3e6d391754",
-  "workflowRun": 37217062251,
-  "artifactId": 11308803106,
+  "commit": "30479e985677a8671c6d01cb4ae01337cf02f41b",
+  "workflowRun": 37217967489,
+  "artifactId": 11309206346,
   "profile": "phone",
   "form": 0,
   "xp": 1000,
@@ -55,8 +55,8 @@
       "sourceFile": "weapon-form-bow-0.jpg",
       "width": 360,
       "height": 240,
-      "bytes": 7192,
-      "sha256": "f65e6e2cc4a0f38d07436776a35c15ec3b80febf66f972cf57722e9efbd709cf"
+      "bytes": 6941,
+      "sha256": "bdff9dc1d9cb2220c6c5cc06ad52a17df341e43c1c9fa53a485dd05e7b4ce99a"
     },
     {
       "weapon": "carthage",

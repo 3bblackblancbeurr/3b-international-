@@ -1,4 +1,4 @@
-import {AnimationClip,Quaternion,QuaternionKeyframeTrack,Euler,Vector3,Box3} from 'three';
+import {AnimationClip,Quaternion,QuaternionKeyframeTrack,Euler,Vector3,Box3,Matrix4} from 'three';
 
 const offsets={
  Read:{spine_02:[.07,0,0],upperarm_r:[-.44,.1,-.22],lowerarm_r:[-.95,0,0],upperarm_l:[-.44,-.1,.22],lowerarm_l:[-.95,0,0]},
@@ -18,6 +18,7 @@ function staticIdleTracks(idle){return idle.tracks.map(track=>{
 export function createInteractionPoses(idle,model,{scale=1,seatHeight=.9}={}){
  if(!idle||!model)return {clips:[],seatRootOffset:0};
  const transforms=[];model.traverse(o=>transforms.push([o,o.position.clone(),o.quaternion.clone(),o.scale.clone()]));
+ const bindMatrices=new Map();model.traverse(o=>{if(!o.isSkinnedMesh||bindMatrices.size)return;o.skeleton.bones.forEach((bone,i)=>bindMatrices.set(bone.name,o.skeleton.boneInverses[i].clone().invert()));});
  const clips=[];let seatRootOffset=0;
  for(const name of ['Read','Inspect','Sit']){
   const tracks=staticIdleTracks(idle),byName=new Map(tracks.map(t=>[t.name,t]));
@@ -66,11 +67,15 @@ export function createInteractionPoses(idle,model,{scale=1,seatHeight=.9}={}){
    // Place wrists over the actual thigh centres. Solving the shipped shoulder,
    // elbow and wrist chain avoids additive Idle angles sending an arm behind
    // the backrest; each elbow bends outward and towards the knees.
-   const inverseActor=actorQuaternion.clone().invert(),worldUp=up.clone().applyQuaternion(actorQuaternion);
+   const worldUp=up.clone().applyQuaternion(actorQuaternion);
+   const setRotation=(bone,q)=>{bone.quaternion.copy(q).normalize();bone.updateWorldMatrix(false,true);byName.set(bone.name+'.quaternion',new QuaternionKeyframeTrack(bone.name+'.quaternion',[0,1],[...bone.quaternion.toArray(),...bone.quaternion.toArray()]));};
    const aimAt=(boneName,target)=>{
     const bone=model.getObjectByName(boneName);if(!bone)return;
-    const direction=target.clone().sub(bone.getWorldPosition(new Vector3())).normalize().applyQuaternion(inverseActor);
-    worldRotation(boneName,direction);
+    const rotation=bone.getWorldQuaternion(new Quaternion()),currentAxis=up.clone().applyQuaternion(rotation),direction=target.clone().sub(bone.getWorldPosition(new Vector3())).normalize();
+    // Swing the authored rotation onto the target instead of rebuilding it
+    // from Y alone: retain the rig's forearm/upper-arm roll and sleeve volume.
+    const swing=new Quaternion().setFromUnitVectors(currentAxis,direction);
+    setRotation(bone,bone.parent.getWorldQuaternion(new Quaternion()).invert().multiply(swing.multiply(rotation)));
    };
    for(const side of ['l','r']){
     const shoulder=model.getObjectByName('upperarm_'+side),elbow=model.getObjectByName('lowerarm_'+side),wrist=model.getObjectByName('hand_'+side),hip=model.getObjectByName('thigh_'+side),knee=model.getObjectByName('calf_'+side);
@@ -82,7 +87,28 @@ export function createInteractionPoses(idle,model,{scale=1,seatHeight=.9}={}){
     const along=(l1*l1-l2*l2+reach*reach)/(2*reach),height=Math.sqrt(Math.max(0,l1*l1-along*along));
     const pole=new Vector3(side==='l'?.8:-.8,0,.7).applyQuaternion(actorQuaternion);pole.addScaledVector(direction,-pole.dot(direction)).normalize();
     const bend=a.clone().addScaledVector(direction,along).addScaledVector(pole,height),reachable=a.clone().addScaledVector(direction,reach);
-    aimAt('upperarm_'+side,bend);aimAt('lowerarm_'+side,reachable);worldRotation('hand_'+side,forward);
+    aimAt('upperarm_'+side,bend);aimAt('lowerarm_'+side,reachable);
+    const handBind=bindMatrices.get(wrist.name),indexBind=bindMatrices.get('index_01_'+side),pinkyBind=bindMatrices.get('pinky_01_'+side),middleBind=bindMatrices.get('middle_01_'+side);
+    if(handBind&&indexBind&&pinkyBind&&middleBind){
+     const inverseHand=handBind.clone().invert(),knuckle=matrix=>new Vector3().setFromMatrixPosition(matrix).applyMatrix4(inverseHand);
+     const fingerAxis=knuckle(middleBind).normalize(),across=knuckle(indexBind).sub(knuckle(pinkyBind));across.addScaledVector(fingerAxis,-across.dot(fingerAxis)).normalize();
+     const bindFrame=new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(across,fingerAxis,across.clone().cross(fingerAxis)));
+     // Index side faces the centre of the body. The mirrored bind frames put
+     // both anatomical palms down, fingers towards the knees, with no guess
+     // about which local X/Z axis is the dorsal side of either hand.
+     const fingerWorld=forward.clone().applyQuaternion(actorQuaternion),acrossWorld=new Vector3(side==='l'?-1:1,0,0).applyQuaternion(actorQuaternion);
+     const palmWorld=new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(acrossWorld,fingerWorld,acrossWorld.clone().cross(fingerWorld))).multiply(bindFrame.invert());
+     setRotation(wrist,wrist.parent.getWorldQuaternion(new Quaternion()).invert().multiply(palmWorld));
+    }
+    // Idle is the equipped grip (around 77° per finger joint). Use the actual
+    // open bind pose with a small fraction of that authored curl for resting
+    // fingers and thumb; this leaves the combat grip unchanged on other clips.
+    for(const [boneName,bind] of bindMatrices){
+     if(!/^(index|middle|ring|pinky|thumb)_\d+/.test(boneName)||!boneName.endsWith('_'+side))continue;
+     const bone=model.getObjectByName(boneName),parentBind=bindMatrices.get(bone?.parent.name),idleTrack=byName.get(boneName+'.quaternion');if(!bone||!parentBind||!idleTrack)continue;
+     const local=parentBind.clone().invert().multiply(bind),rest=new Quaternion().setFromRotationMatrix(new Matrix4().extractRotation(local)),grip=new Quaternion().fromArray(idleTrack.values);
+     setRotation(bone,rest.slerp(grip,.14));
+    }
    }
    tracks.splice(0,tracks.length,...byName.values());
   }

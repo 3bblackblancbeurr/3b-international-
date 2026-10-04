@@ -137,13 +137,22 @@ try{
    const crown=await page.evaluate(()=>game.setTowerFloor(2));assert.equal(crown.y,63,'Ascenseur reaches the real63metredeck');
    await page.waitForFunction(()=>qa.snapshot.towerFloor?.index===2,{},{timeout:60000});
    await page.waitForFunction(()=>Math.abs(game.debugView().avatarPosition.y-63)<.001&&qa.snapshots.slice(-3).every(s=>s.towerFloor?.index===2),{},{timeout:60000});
+   const hallIds=['hub:life:tower_circle:city-model','hub:life:tower_circle:welcome-seat'];
+   assert.equal(await page.evaluate(ids=>qa.snapshot.mapItems.some(item=>ids.includes(item.id)),hallIds),false,'Upper-floor atlas cannot offer physical objects located in the ground hall');
+   const upperExhibit=await page.evaluate(()=>game.qaLifeItems().find(item=>item.floorIndex===2));assert.ok(upperExhibit,'Active upper exhibit is a physical destination');
+   await page.evaluate(item=>game.waypoint(item,true),upperExhibit);
+   await page.waitForFunction(id=>qa.snapshot.towerFloor?.index===2&&qa.snapshot.waypoint?.id===id,upperExhibit.id,{timeout:60000});
    await captureRenderer(page,out+'/hub-tower-crown.png');
    const floorStart=await page.evaluate(()=>qa.snapshot.position);await page.keyboard.down('d');
    await page.waitForFunction(p=>Math.hypot(qa.snapshot.position.x-p.x,qa.snapshot.position.z-p.z)>.1,floorStart,{timeout:30000});await page.keyboard.up('d');
    const onFloor=await page.evaluate(()=>qa.snapshot.position);assert.ok(Math.abs(onFloor.x-crown.x)<crown.width/2&&Math.abs(onFloor.z-crown.z)<crown.depth/2,'Walking stays on the actual elevated floor');
-   await page.evaluate(()=>game.setTowerFloor(null));await page.waitForFunction(()=>qa.snapshot.towerFloor===null,{},{timeout:60000});
+   const hallBuilding=await page.evaluate(()=>game.mapQaFixture().items.find(item=>item.type==='hubBuilding'&&item.buildingId==='tower_circle'));assert.ok(hallBuilding);
+   await page.evaluate(item=>game.waypoint(item,true),hallBuilding);
+   await page.waitForFunction(id=>qa.snapshot.towerFloor===null&&qa.snapshot.waypoint?.id===id,hallBuilding.id,{timeout:60000});
+   assert.equal(await page.evaluate(ids=>ids.every(id=>qa.snapshot.mapItems.some(item=>item.id===id)),hallIds),true,'Returning to the ground restores hall map destinations');
+   assert.equal(await page.evaluate(()=>qa.snapshot.mapItems.some(item=>item.floorIndex===2)),false,'Returning to the ground removes upper exhibit destinations');
    assert.deepEqual(errors,[],'Physical interaction poses and tower floors have no script or shader errors');
-   results.at(-1).life={poses:['seat','read','examine'],movementCancels:true,towerDeckMetres:63,groundReturn:true};
+   results.at(-1).life={poses:['seat','read','examine'],movementCancels:true,towerDeckMetres:63,groundReturn:true,verticalNavigation:['hall-items-hidden-upstairs','active-exhibit-stays-upstairs','named-hall-destination-returns-ground','hall-items-restored']};
   }
   if(region==='hub'){
    const fixture=await page.evaluate(()=>{const initial=game.mapQaFixture(),gate=initial.items.find(i=>i.type==='portal'&&i.id==='france');game.waypoint(gate,true);const fixture=JSON.parse(JSON.stringify(game.mapQaFixture()));game.setPaused(true);return fixture;});

@@ -13,6 +13,12 @@ function indicesFor(mesh,targetRatio){
  return MeshoptSimplifier.simplifyWithAttributes(index,packed,3,attributes,5,[.3,.3,.3,.6,.6],null,target,.08,['LockBorder'])[0];
 }
 
+export function crowdMeshLodIndices(mesh,lod='near'){
+ const detailed=/SkinColor|EyeColor|HairColor/.test(mesh.material.name),baseline=detailed?.66:.22;
+ const near=/ClothColor_ClothColor/.test(mesh.material.name)?.40:baseline;
+ return indicesFor(mesh,lod==='far'?baseline*.32:near);
+}
+
 function diffuseAtlas(meshes){
  const entries=[],lookup=new Map(),size=512,columns=4,cell=size/columns,padding=2;
  for(const mesh of meshes){const mat=mesh.material,key=mat.map?.uuid||mat.uuid;if(!lookup.has(key)){lookup.set(key,entries.length);entries.push(mat);}}
@@ -44,9 +50,7 @@ async function bakeCrowdPrototype(asset,{frames=16,height=3.35}={}){
  if(!meshes.length)throw Error('Le modèle humain ne contient aucune silhouette visible.');
  const atlas=diffuseAtlas(meshes),indicesNear=[],indicesFar=[],records=[];let vertexCount=0;
  for(const mesh of meshes){
-  const material=mesh.material;
-  const ratio=/SkinColor|EyeColor|HairColor/.test(material.name)?.66:.22;
-  const near=indicesFor(mesh,ratio),far=indicesFor(mesh,ratio*.32),used=[...new Set([...near,...far])],remap=new Map(used.map((v,i)=>[v,vertexCount+i]));
+  const near=crowdMeshLodIndices(mesh),far=crowdMeshLodIndices(mesh,'far'),used=[...new Set([...near,...far])],remap=new Map(used.map((v,i)=>[v,vertexCount+i]));
   for(const index of near)indicesNear.push(remap.get(index));for(const index of far)indicesFar.push(remap.get(index));
   for(const index of used)records.push({mesh,index});
   vertexCount+=used.length;
@@ -97,17 +101,17 @@ export async function bakeCrowdHuman(asset,options={}){
  return {...source,geometry,low,map,bakedPositions,bakedNormals,dispose(){geometry.dispose();low.dispose();map?.dispose();bakedPositions.dispose();bakedNormals.dispose();}};
 }
 
-export function crowdHumanMaterial(baked,walkTime,walkActive){
+export function crowdHumanMaterial(baked,walkTime,walkActive,{lastUpdateTime={value:0},updateInterval={value:.25}}={}){
  const material=new THREE.MeshStandardMaterial({color:'#ffffff',map:baked.map,side:THREE.DoubleSide,roughness:.84,metalness:0,envMapIntensity:.18});
  material.onBeforeCompile=shader=>{
-  Object.assign(shader.uniforms,{crowdWalkTime:walkTime,crowdWalkActive:walkActive,crowdClipDuration:{value:baked.duration},crowdPositionAtlas:{value:baked.bakedPositions},crowdNormalAtlas:{value:baked.bakedNormals}});
-  const prelude=`attribute float crowdVertexId;attribute float crowdTintClass;attribute float crowdPhase;attribute float crowdSpeed;attribute vec3 crowdSkin;attribute vec3 crowdCloth;attribute vec3 crowdHair;uniform float crowdWalkTime;uniform float crowdWalkActive;uniform float crowdClipDuration;uniform sampler2D crowdPositionAtlas;uniform sampler2D crowdNormalAtlas;varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;
+  Object.assign(shader.uniforms,{crowdWalkTime:walkTime,crowdWalkActive:walkActive,crowdLastUpdateTime:lastUpdateTime,crowdUpdateInterval:updateInterval,crowdClipDuration:{value:baked.duration},crowdPositionAtlas:{value:baked.bakedPositions},crowdNormalAtlas:{value:baked.bakedNormals}});
+  const prelude=`attribute float crowdVertexId;attribute float crowdTintClass;attribute float crowdPhase;attribute float crowdSpeed;attribute float crowdTravel;attribute vec3 crowdSkin;attribute vec3 crowdCloth;attribute vec3 crowdHair;uniform float crowdWalkTime;uniform float crowdWalkActive;uniform float crowdLastUpdateTime;uniform float crowdUpdateInterval;uniform float crowdClipDuration;uniform sampler2D crowdPositionAtlas;uniform sampler2D crowdNormalAtlas;varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;
    vec3 crowdFetch(sampler2D atlas,float frame){float row=floor(crowdVertexId/${baked.width}.);return texture2D(atlas,vec2((mod(crowdVertexId,${baked.width}.)+.5)/${baked.width}.,(frame*${baked.rows}.+row+.5)/${baked.textureHeight}.)).xyz;}
    vec3 crowdAnimated(sampler2D atlas){float frame=fract(crowdPhase+crowdWalkTime*crowdSpeed/crowdClipDuration*crowdWalkActive)*${baked.frames}.;return mix(crowdFetch(atlas,floor(frame)),crowdFetch(atlas,mod(floor(frame)+1.,${baked.frames}.)),fract(frame));}
   `;
   shader.vertexShader=prelude+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>\nobjectNormal=normalize(crowdAnimated(crowdNormalAtlas));`);
-  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>\ntransformed=crowdAnimated(crowdPositionAtlas);crowdPreserveColor=crowdTintClass<.5?1.:0.;crowdSurfaceTint=crowdTintClass<1.5?crowdSkin:crowdTintClass<2.5?crowdCloth:crowdTintClass<3.5?crowdHair:crowdTintClass<4.5?mix(crowdCloth,vec3(.08),.38):vec3(.105,.08,.06);`);
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>\ntransformed=crowdAnimated(crowdPositionAtlas);transformed.z+=clamp(crowdWalkTime-crowdLastUpdateTime,0.,crowdUpdateInterval)*crowdTravel*crowdWalkActive;crowdPreserveColor=crowdTintClass<.5?1.:0.;crowdSurfaceTint=crowdTintClass<1.5?crowdSkin:crowdTintClass<2.5?crowdCloth:crowdTintClass<3.5?crowdHair:crowdTintClass<4.5?mix(crowdCloth,vec3(.08),.38):vec3(.105,.08,.06);`);
   shader.fragmentShader='varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;\n'+shader.fragmentShader;
   shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>\nif(crowdPreserveColor<.5){float shade=pow(max(dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)),.001),.35);diffuseColor.rgb=crowdSurfaceTint*shade;}`);
  };
