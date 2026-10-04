@@ -15,7 +15,9 @@ import "./premier-secret.css";
 import "./secret-aaaa.css";
 import "./secret-v2.css";
 
-const SecretSanctuary3D = lazy(() => import("./SecretSanctuary3D.jsx"));\n\nconst STORAGE_KEY = "3b_premier_secret_v2";
+const SecretSanctuary3D = lazy(() => import("./SecretSanctuary3D.jsx"));
+
+const STORAGE_KEY = "3b_premier_secret_v2";
 const RING_MARKS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 const SECRET_STAGES = [
   { id: 0, label: "Veille" },
