@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /** Small exhibits mounted on the existing solid counters; no floor obstacles,
- * gameplay rewards or new interiors are introduced. All rooms share three draws. */
+ * gameplay rewards or new interiors are introduced. All rooms share four draws, including their wall finishes. */
 export function addInteriorDisplays({root,owned,box,buildings,materials}){
  const layers=new Map(),dummy=new THREE.Object3D();
  const plaster=new THREE.MeshStandardMaterial({color:'#8b8780',roughness:.94,metalness:0,emissive:'#827b6a',emissiveIntensity:.025});owned.push(plaster);
@@ -13,6 +13,56 @@ export function addInteriorDisplays({root,owned,box,buildings,materials}){
   // Interior coatings are inset into the existing three closed walls.
   piece(plaster,x,b.height/2+.2,b.buildingZ-b.depth/2+.32,b.width-.65,b.height-1.2,.035);
   for(const side of [-1,1])piece(plaster,x+side*(b.width/2-.32),b.height/2+.2,b.buildingZ,.035,b.height-1.2,b.depth-.65);
+  // All joinery stays within the closed wall footprint: the middle aisle and
+  // the existing counter/service approach remain clear.
+  const rear=b.buildingZ-b.depth/2+.39,innerWidth=b.width-.9;
+  for(const yy of [.25,1.75,b.height-.75]){
+   piece(materials.gold,x,yy,rear,innerWidth,.045,.04);
+   for(const side of [-1,1])piece(materials.gold,x+side*(b.width/2-.39),yy,b.buildingZ,.04,.045,b.depth-.9);
+  }
+  for(let i=0;i<=4;i++){
+   const px=x-innerWidth/2+innerWidth*i/4;
+   piece(plaster,px,b.height/2,rear+.025,.12,b.height-1.1,.08);
+   piece(materials.gold,px,b.height/2,rear+.075,.025,b.height-1.1,.02);
+  }
+  // Recessed wall panels sit above the real counter. Their contents distinguish
+  // archives, transport halls, ateliers and civic buildings in the live scene.
+  const panelY=Math.min(5.5,b.height*.55),panelH=Math.min(3,b.height*.32);
+  const archival=['memory_archives','living_cards_gallery','mission_hotel'].includes(b.buildingId);
+  const maritime=['central_marina','shipyard_3b','mobility_center','train_station'].includes(b.buildingId);
+  const atelier=['house_3b','ai_textile_lab','mode3_studio','community_house'].includes(b.buildingId);
+  for(const side of [-1,1]){
+   const px=x+side*b.width*.27,pw=b.width*.28;
+   piece(materials.gold,px,panelY,rear+.06,pw,panelH,.06);
+   piece(plaster,px,panelY,rear+.10,pw-.12,panelH-.12,.035);
+   if(archival){
+    for(let row=0;row<3;row++){
+     const yy=panelY-panelH/2+.24+row*(panelH-.3)/3;
+     piece(materials.gold,px,yy,rear+.17,pw-.18,.055,.16);
+     const count=Math.max(3,Math.floor((pw-.4)/.22));
+     for(let j=0;j<count;j++){
+      const hh=.28+(j%4)*.08;
+      piece(j%3?materials.glass:materials.gold,px-pw/2+.23+j*(pw-.46)/(count-1),yy+hh/2+.03,rear+.16,.13,hh,.09);
+     }
+    }
+   }else if(maritime){
+    // Layered chart with paired routes, harbour markers and a gold compass.
+    for(let row=0;row<4;row++)piece(materials.glass,px,panelY-panelH*.3+row*panelH*.2,rear+.135,pw*.8,.035,.018);
+    for(let j=0;j<5;j++){
+     const xx=px-pw*.35+j*pw*.175,yy=panelY+Math.sin(j*1.9+side)*panelH*.25;
+     piece(materials.gold,xx,yy,rear+.15,.09,.09,.025);
+     if(j<4)piece(materials.gold,xx+pw*.08,yy,rear+.15,pw*.16,.025,.02);
+    }
+    piece(materials.gold,px,panelY,rear+.17,.025,panelH*.72,.025);
+   }else if(atelier){
+    for(let j=0;j<5;j++)piece(j%2?materials.gold:materials.glass,px-pw*.32+j*pw*.16,panelY,rear+.15,pw*.12,panelH*(.45+(j%3)*.16),.025);
+    for(let row=0;row<3;row++)piece(materials.gold,px,panelY-panelH*.3+row*panelH*.3,rear+.17,pw*.8,.018,.018);
+   }else{
+    // Eight bars recall the eight gates without duplicating exterior signage.
+    for(let j=0;j<8;j++)piece(j===3?materials.gold:materials.glass,px-pw*.35+j*pw*.1,panelY,rear+.14,pw*.055,panelH*(.35+(j%4)*.12),.025);
+    piece(materials.gold,px,panelY-panelH*.34,rear+.16,pw*.8,.025,.025);
+   }
+  }
   if(['memory_archives','living_cards_gallery','mission_hotel'].includes(b.buildingId)){
    // Bound volumes, gold spines and a low reading stand.
    for(let i=0;i<5;i++){
