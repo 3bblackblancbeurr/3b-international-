@@ -3,6 +3,7 @@ import { getPageHref } from "../lib/navigation.js";
 import "./daily-secret.css";
 import "./secret-aaaa.css";
 import "./secret-v2.css";
+import "./secret-ultra.css";
 
 export default function SecretClock({ secret, goTo, compact = false }) {
   const phase = secret?.phase || "loading";
