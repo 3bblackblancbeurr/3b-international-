@@ -103,7 +103,7 @@ try{
    results.at(-1).life={poses:['seat','read','examine'],movementCancels:true,towerDeckMetres:63,groundReturn:true};
   }
   if(region==='hub'){
-   const fixture=await page.evaluate(()=>{const initial=game.mapQaFixture(),gate=initial.items.find(i=>i.type==='portal'&&i.id==='france');game.waypoint(gate,true);game.setPaused(true);return JSON.parse(JSON.stringify(game.mapQaFixture()));});
+   const fixture=await page.evaluate(()=>{const initial=game.mapQaFixture(),gate=initial.items.find(i=>i.type==='portal'&&i.id==='france');game.waypoint(gate,true);const fixture=JSON.parse(JSON.stringify(game.mapQaFixture()));game.setPaused(true);return fixture;});
    assert.ok(fixture.route.length>1,'The map receives a real detour route from the playable navigator');
    await page.evaluate(()=>game.destroy());
    await page.goto('http://127.0.0.1:5197/__cartography-qa',{waitUntil:'domcontentloaded'});

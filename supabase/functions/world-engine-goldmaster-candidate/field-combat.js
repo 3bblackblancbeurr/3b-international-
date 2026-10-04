@@ -61,6 +61,7 @@ export function stepField(enc,input,move){
  f.stamina=Math.min(100,f.stamina+2.8);f.last=null;
  const length=Math.hypot(input.x,input.z),direction={x:input.x/Math.max(1,length),z:input.z/Math.max(1,length)};
  const event=kind=>{f.last=kind;f.event++;e.turn++;};
+ const clearSight=(from,to)=>typeof move.lineOfSight!=='function'||move.lineOfSight(from,to);
  const masterFinal=()=>e.final&&circlePhase?markFinalCirclePhaseMastered(e,circlePhase):false;
  const kind=f.cooldown?null:input.kind;
  if(kind==='resonance'&&useResonance(e,f,event)){}
@@ -69,12 +70,12 @@ export function stepField(enc,input,move){
   f.p=move(f.p,v,5.2);f.stamina-=32;f.dodge=420;f.cooldown=550;e.opening=true;event(kind);
  }else if(kind==='guard'&&f.stamina>=18){f.stamina-=18;f.guard=950;f.cooldown=400;event(kind);}
  else if(kind==='support'&&e.support){e.support=false;e.hp=Math.min(e.maxHP,e.hp+32);f.cooldown=700;event(kind);}
- else if(kind==='trap'&&e.traps&&distance(f.p,f.enemy)<=18){e.traps--;f.stagger=1800;f.phase='recovery';f.recover=1800;f.windup=0;f.cooldown=700;event(kind);}
+ else if(kind==='trap'&&e.traps&&distance(f.p,f.enemy)<=18&&clearSight(f.p,f.enemy)){e.traps--;f.stagger=1800;f.phase='recovery';f.recover=1800;f.windup=0;f.cooldown=700;event(kind);}
  else if((kind==='strike'||kind==='power')&&(kind!=='power'||e.focus>=2)){
-  const inRange=distance(f.p,f.enemy)<=(kind==='power'?23:ATTACK_RANGE);
+  const inRange=distance(f.p,f.enemy)<=(kind==='power'?23:ATTACK_RANGE),visible=clearSight(f.p,f.enemy);
   f.cooldown=kind==='power'?1000:520;
   if(kind==='power')e.focus-=2;
-  if(inRange){
+  if(inRange&&visible){
    f.combo=f.time<f.comboUntil?f.combo%3+1:1;f.comboUntil=f.time+1800;
    let damage=e.stats.attack+e.stats.affinity;
    damage*=kind==='power'?2.1:1+(f.combo===3?.5:0);
@@ -91,7 +92,7 @@ export function stepField(enc,input,move){
    if(e.final&&circlePhase){const floor=finalCircleLockedEnemyFloor(e,circlePhase),mastered=finalCirclePhaseMastered(e,circlePhase);e.enemy=!mastered?Math.max(floor,candidateEnemy):circlePhase.index<8?Math.max(floor-1,candidateEnemy):candidateEnemy;}else e.enemy=candidateEnemy;e.opening=false;
    if(kind==='strike')e.focus=Math.min(3,e.focus+1);
    e.log=f.combo===3?'Enchaînement : troisième frappe renforcée.':'Une ouverture dans sa défense.';
-  }else e.log='Ton attaque ne porte pas. Rapproche-toi ou utilise ton pouvoir.';
+  }else e.log=!visible?'Un obstacle arrête ton attaque. Retrouve une ligne de vue.':'Ton attaque ne porte pas. Rapproche-toi ou utilise ton pouvoir.';
   event(kind);
  }
  if(guardianBoss&&mechanicRegion==='espagne'&&['guard','dodge'].includes(f.last)){e.guardianMeter=Math.max(0,(e.guardianMeter||0)-18);if(e.final&&e.guardianFlag){masterFinal();e.guardianFlag=false;}}
@@ -102,9 +103,9 @@ export function stepField(enc,input,move){
  const d=distance(f.p,f.enemy);
  if(f.phase==='pursuit'&&!f.stagger){
   if(d>6){const x=(f.p.x-f.enemy.x)/d,z=(f.p.z-f.enemy.z)/d;f.enemy=move(f.enemy,{x,z},e.expert?.78:.65);}
-  if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&mechanicRegion==='turquie')e.guardianFlag=(e.turn+1)%3===0;}
+  if(d<=(attackShape(e.intent)==='circle'?17:8)&&!f.recover&&clearSight(f.enemy,f.p)){f.phase='windup';f.windup=e.expert?750:1000;f.aim={...f.p};if(guardianBoss&&mechanicRegion==='turquie')e.guardianFlag=(e.turn+1)%3===0;}
  }else if(f.phase==='windup'&&!f.windup){
-  const inside=attackContains(f,e.intent),blocked=!!f.guard,evaded=!!f.dodge||!inside,hiddenSignal=guardianBoss&&mechanicRegion==='turquie'&&e.guardianFlag;
+  const inside=attackContains(f,e.intent)&&clearSight(f.enemy,f.p),blocked=!!f.guard,evaded=!!f.dodge||!inside,hiddenSignal=guardianBoss&&mechanicRegion==='turquie'&&e.guardianFlag;
   const resonanceReduction=Math.max(0,Math.min(.85,Number(e.resonanceShield)||0));
   const linkPenalty=guardianBoss&&mechanicRegion==='algerie'&&distance(f.p,f.home)>14?1.35:1;
   let hit=evaded?0:Math.round(({frappe:18,percée:27,double:30,rituel:22,gel:19,vague:28,sable:24,éclipse:25,rempart:14,soin:12}[e.intent]||18)*(e.expert?1.25:1)*(blocked?(e.intent==='percée'?.5:.18):1 )*(1-resonanceReduction)*linkPenalty);

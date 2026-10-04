@@ -85,4 +85,3 @@ export function serviceItems(region,save){const c=REGIONS[region];if(!c)return[]
  ];}
 export const DISCOVERY_IDS=Object.keys(REGIONS).filter(id=>id!=='hub').flatMap(id=>[id+':city',id+':rural']);
 export function compassHeading(yaw=0){return ((-yaw*180/Math.PI)%360+360)%360;}
-
