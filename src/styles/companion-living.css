@@ -44,7 +44,7 @@ html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait {
 }
 html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait-ring {
   position:relative;isolation:isolate;display:grid;place-items:center;grid-template-rows:minmax(0,1fr);
-  width:100%;height:284px;flex:0 0 auto;border-radius:var(--3b-radius-flat);overflow:visible;
+  width:100%;height:284px;flex:0 0 auto;margin-bottom:18px;border-radius:var(--3b-radius-flat);overflow:visible;
   background:
     radial-gradient(ellipse at 48% 77%,color-mix(in srgb,var(--3b-champagne) 9%,transparent),transparent 56%),
     radial-gradient(ellipse at 58% 36%,color-mix(in srgb,var(--3b-matrix) 6%,transparent),transparent 61%);
