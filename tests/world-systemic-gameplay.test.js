@@ -460,7 +460,7 @@ test('runtime surfaces use contextual prompts multimodal feedback and remappable
  assert.doesNotMatch(hud,/<kbd>E<\/kbd>/);
  assert.match(page,/hubDialogueIntent/);
  assert.match(page,/Parler de…/);
- assert.match(page,/world-controls/);
+ assert.match(page,/world-control-settings/);
  assert.match(page,/Vibrations/);
  assert.match(page,/navigator\?\.vibrate|navigator\.vibrate/);
  assert.match(scene,/loadControlBindings/);

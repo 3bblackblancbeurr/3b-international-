@@ -36,7 +36,7 @@ export function worldGlobalRewardIntents(before,after,action){
 
  if(action.type==='battle'||action.type==='field'){
   const previous=before?.adventure?.encounter,now=after?.adventure?.encounter;
-  if(previous&&!previous.result&&now?.result==='victory'&&now?.rewarded){
+  if(previous&&!previous.tournament&&!previous.result&&now?.result==='victory'&&now?.rewarded){
    if(previous.final)push('world_final','final:union-v1');
    else if(previous.boss&&!previous.patrol&&previous.region)push('guardian','guardian:'+previous.region);
   }

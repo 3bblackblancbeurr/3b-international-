@@ -16,17 +16,26 @@ export function recordWorldAction(id,save,action){
   const entry={seq:state.next,action};state.pending.push(entry);state.next++;
   try{persist(id,state);}catch{state.next--;state.pending.pop();throw Error('Le navigateur ne peut plus conserver le journal. Télécharge ta sauvegarde.');}
  }
- writeLocal(id,next);return next;
+ const stored=writeLocal(id,next);
+ if(!id&&!stored)throw Error('Le stockage de cet appareil est plein ou indisponible. Libère de la place puis réessaie ; cette action n’a pas été enregistrée.');
+ return next;
 }
 async function request(id,state,commands){
  const {data:{session}}=await authClient.auth.getSession();if(session?.user.id!==id)throw Error('Reconnecte-toi pour synchroniser ton monde.');
  const response=await fetch(SUPABASE_URL+'/functions/v1/world-engine',{method:'POST',headers:{apikey:PUBLIC_KEY,Authorization:'Bearer '+session.access_token,'Content-Type':'application/json'},body:JSON.stringify({device:state.device,commands}),signal:AbortSignal.timeout(20000)});
- const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||'Connexion momentanément indisponible.');return result;
+ const result=await response.json().catch(()=>null);if(!response.ok)throw Error(result?.error||'Connexion momentanément indisponible.');
+ // An HTTP success is not an acknowledgement. Keep the entire journal when
+ // a proxy, interrupted response or stale service omits a valid receipt.
+ if(!result||!Number.isSafeInteger(result.sequence)||result.sequence<0||result.sequence<(commands.at(-1)?.seq||0)||!result.data||typeof result.data!=='object'||Array.isArray(result.data)||!Array.isArray(result.data.seals)||!result.data.adventure)throw Error('Réponse de sauvegarde incomplète. Ton journal est conservé ; réessaie la synchronisation.');
+ return result;
 }
 function reconcile(id,state,result){
- state.pending=state.pending.filter(e=>e.seq>result.sequence);state.next=Math.max(state.next,result.sequence+1);let data=normalizeSave(result.data);
- for(const entry of state.pending)try{data=applyWorldAction(data,entry.action);}catch{/* The server acknowledges and explains conflicting actions. */}
- persist(id,state);writeLocal(id,data,!!state.pending.length);return data;
+ const updated={...state,pending:state.pending.filter(e=>e.seq>result.sequence),next:Math.max(state.next,result.sequence+1)};let data=normalizeSave(result.data);
+ for(const entry of updated.pending)try{data=applyWorldAction(data,entry.action);}catch{/* The server acknowledges and explains conflicting actions. */}
+ // Commit the local snapshot before discarding its receipts. On quota failure
+ // the old queue remains retryable; the server deduplicates acknowledged input.
+ if(!writeLocal(id,data,!!updated.pending.length))throw Error('Le compte a répondu mais la copie locale ne peut pas être enregistrée. Le journal est conservé.');
+ persist(id,updated);state.pending=updated.pending;state.next=updated.next;return data;
 }
 async function recoverOtherJournals(id,current){
  // Each tab has its own sequence. Read abandoned journals without rewriting a
@@ -39,12 +48,13 @@ async function recoverOtherJournals(id,current){
 export async function loadWorld(id){
  const local=readLocal(id);if(!id)return{data:local?.data||blankSave(),message:local?'Partie invitée retrouvée sur cet appareil.':'Sauvegarde automatique sur cet appareil.'};
  const state=stateFor(id);
- try{
-  if(local&&!localStorage.getItem(key(id)+'_before_chapters'))localStorage.setItem(key(id)+'_before_chapters',JSON.stringify(local));
+ const operation=async()=>{try{
+  try{if(local&&!localStorage.getItem(key(id)+'_before_chapters'))localStorage.setItem(key(id)+'_before_chapters',JSON.stringify(local));}catch{/* An optional migration copy must not block account recovery. */}
   await recoverOtherJournals(id,state);
   const result=await request(id,state,state.pending.slice(0,100)),data=reconcile(id,state,result);
   return{data,needsSave:!!state.pending.length,message:result.rejected?.length?'Compte synchronisé · '+result.rejected[0].message:'Monde lié à ton compte · actions validées par le serveur.'};
- }catch(error){return{data:local?.data||blankSave(),needsSave:!!state.pending.length,message:'Copie locale · '+error.message};}
+ }catch(error){return{data:readLocal(id)?.data||local?.data||blankSave(),needsSave:!!state.pending.length,message:'Copie locale · '+error.message};}};
+ state.chain=state.chain.then(operation,operation);return state.chain;
 }
 export function saveWorld(id,data){
  if(!id)return Promise.resolve({message:writeLocal(id,data,false)?'Sauvegardé sur cet appareil.':'Télécharge une copie : le stockage local est plein.'});

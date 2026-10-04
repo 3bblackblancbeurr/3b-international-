@@ -3,6 +3,7 @@
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 export const HUB_SCALE=1.7;
 export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:0,z:32*HUB_SCALE},core:{x:0,z:0}});
+export const HUB_FINAL_POSITION=Object.freeze({x:0,z:23*HUB_SCALE});
 const DISTRICT_SITES = {
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
  archives:{x:-66,z:-66},arena:{x:66,z:-66},commerce:{x:94,z:0},
@@ -59,7 +60,7 @@ export function platformRuntimeItems(base,runtime,plan){
   return {...item,x,z,homeX:x,homeZ:z};
  });
  const final=base.find(i=>i.type==='final');
- return [...portals,...(final?[{...final,x:0,z:23*HUB_SCALE}]:[]),...buildings,...semantic];
+ return [...portals,...(final?[{...final,...HUB_FINAL_POSITION}]:[]),...buildings,...semantic];
 }
 export function platformNextObjective(items,save){
  const active=items.find(i=>i.type==='hubMissionAction');
@@ -78,5 +79,7 @@ export function platformNextObjective(items,save){
   return {label:running.objectives?.[stage]||running.name,item:target||running};
  }
  const available=items.find(i=>i.type==='hubMission'&&!i.locked&&save.hub?.missions?.[i.missionId]?.status==='available');
- return available?{label:'Rencontrer '+available.giver+' · '+available.name,item:items.find(i=>i.type==='hubNpc'&&i.missionIds?.includes(available.missionId))||available}:null;
+ if(!available)return null;
+ const giver=items.find(i=>i.type==='hubNpc'&&i.missionIds?.includes(available.missionId));
+ return {label:'Rencontrer '+(giver?.name||'l’habitant')+' · '+available.name,item:giver||available};
 }
