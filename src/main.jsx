@@ -9,6 +9,7 @@ import "./styles/platform-premium.css";
 import "./styles/gold-master.css";
 import "./styles/luxury-v2.css";
 import "./styles/home-app.css";
+import "./styles/launch-premium.css";
 import { setupNativeApp } from './native/runtime.js';
 import { captureAppOpen } from './lib/analytics.js';
 import AppUpdateManager from "./update/AppUpdateManager.jsx";

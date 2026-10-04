@@ -51,18 +51,18 @@ const ArenaExperience=lazy(()=>import('./arena/ArenaPage.jsx'));
 const NosblocPage=lazy(()=>import('./nosbloc/NosblocPremiumPage.jsx'));
 
 const BASE_MENU_ITEMS = [
-  { id: "guide", label: "Guide & XP", description: "Tous les menus, les gains et les niveaux expliqués." },
+  { id: "guide", label: "Guide & XP", description: "Les repères pour commencer." },
   {
     id: "passport",
     label: "Passeport 3B",
     icon: "▣",
-    description: "Créer son identité digitale 3B.",
+    description: "Ton identité 3B.",
   },
   {
     id: "loyalty",
     label: "Cartes de fidélité",
     icon: "💳",
-    description: "Fidélité vêtements et accessoires, remises et collection XP.",
+    description: "Points, avantages et récompenses.",
   },
   {
     id: "manga",
@@ -75,21 +75,21 @@ const BASE_MENU_ITEMS = [
     id: "world3b",
     label: "Le Monde du 3B",
     icon: "🌍",
-    description: "Huit pays vivants, des personnages et créatures à rencontrer, des lieux à reconstruire.",
+    description: "Explore les huit Portes.",
   },
   {
     id: "nosbloc",
     label: "Nosbloc du 3B",
     icon: "▦",
     status: "soon",
-    description: "Crée ton Bloc, développe ton univers et prépare tes futures expériences dans l’écosystème 3B.",
+    description: "Crée et développe ton Bloc.",
   },
   {
     id: "games",
     label: "Jeux 3B",
     icon: "🎮",
     status: "soon",
-    description: "Kaïs, les Portes, le Labyrinthe, la course des clés, DADA 3B et Power 3B réunis dans l’univers 3B.",
+    description: "Les jeux de l’univers 3B.",
   },
   {
     id: "religion",
@@ -109,7 +109,7 @@ const BASE_MENU_ITEMS = [
     id: "secret",
     label: "L’Heure du Premier Secret",
     icon: "◷",
-    description: "Le Nexus, le Veilleur et cinq épreuves liées dans un parcours qui change chaque jour.",
+    description: "Un secret à découvrir chaque jour.",
   },
   {
     id: "sport",
@@ -123,7 +123,7 @@ const BASE_MENU_ITEMS = [
     label: "Espace textile & IA",
     icon: "⚙️",
     status: "soon",
-    description: "Création textile, maroquinerie et outils IA 3B.",
+    description: "Création textile avec l’IA.",
   },
   {
     id: "shop",
@@ -139,7 +139,7 @@ const CONTROL_MENU_ITEM = {
   id: "control",
   label: "3B Command OS",
   icon: "⌁",
-  description: "Cockpit privé propriétaire, temps réel et pilotage PC depuis ton téléphone.",
+  description: "Ton centre de commande privé.",
 };
 
 const WELCOME_MESSAGE = "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout le temps partout.";
@@ -162,7 +162,7 @@ const MEMBER_MENU_ITEM = {
   id: "member",
   label: "Espace membre 3B",
   icon: "💎",
-  description: "Profil, passeport, progression et paramètres.",
+  description: "Ton compte et tes avantages.",
 };
 
 export default function App() {
