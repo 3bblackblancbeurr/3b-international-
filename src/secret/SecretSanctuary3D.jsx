@@ -564,7 +564,7 @@ export default function SecretSanctuary3D({
       });
 
       nodeMeshes.forEach((node, index) => {
-        const target = currentStage === 1 ? (index === config?.signalIndex ? 1.55 : 0.52) : currentStage > 1 ? 0.25 : 0.18;
+        const target = currentStage === 1 ? 0.68 : currentStage > 1 ? 0.25 : 0.18;
         node.material.emissiveIntensity = damp(node.material.emissiveIntensity, target, 4, delta);
         if (!reducedMotion && currentStage === 1) {
           const beat = 1 + Math.max(0, Math.sin(elapsed * (1.45 + index * 0.035) - index * 0.72)) * 0.08;
