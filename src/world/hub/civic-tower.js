@@ -3,10 +3,10 @@ import {HUB_SCALE} from './platform-layout.js';
 
 export const CIVIC_TOWER_FINAL_LEVELS=Object.freeze([
  {id:'heritage_gallery',name:'Galerie des Héritages',y:12},
- {id:'council_eight',name:'Conseil des Huit',y:22},
- {id:'living_maps',name:'Salle des Cartes Vivantes',y:32},
- {id:'city_observatory',name:'Observatoire de la Cité',y:42},
- {id:'circle_chamber',name:'Chambre du Cercle',y:52},
+ {id:'council_eight',name:'Conseil des Huit',y:27},
+ {id:'living_maps',name:'Salle des Cartes Vivantes',y:42},
+ {id:'city_observatory',name:'Observatoire de la Cité',y:48},
+ {id:'circle_chamber',name:'Chambre du Cercle',y:55},
  {id:'horizon_belvedere',name:'Belvédère des Horizons',y:62},
 ]);
 
