@@ -50,6 +50,9 @@ import {premiumEffectsFromCodes} from '../store/premium-effects.js';
 import {cinematicActingBeat} from './cinematic-acting.js';
 import {advancePortalCrossing,initialPortalCrossingState} from './portal-crossing.js';
 import {createAmbientCrowd} from './ambient-crowd.js';
+import {loadCameraSensitivity,cameraSensitivity} from './camera-preferences.js';
+import {createHubLifeInteraction} from './hub/life-interaction.js';
+import {hubPhysicalItemsForLevel,towerDestinationReturnsGround} from './hub/tower-navigation.js';
 
 export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -66,7 +69,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const cameraTarget=new THREE.Vector3(),desiredTarget=new THREE.Vector3(),desiredCamera=new THREE.Vector3(),ray=new THREE.Raycaster(),pointer=new THREE.Vector2(),screenPoint=new THREE.Vector3();
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
  let staticInstances=null,ambientCrowd=null,cameraSolids=[];
- let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
+ let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],portalFrames=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
  let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let premium=premiumEffectsFromCodes([]),premiumVisuals=[];
@@ -76,15 +79,20 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const peerInteractionItems=()=>latestPeers.filter(peer=>peer.region===region&&peer.lifeState==='downed'&&Number.isFinite(peer.x)&&Number.isFinite(peer.z)).map(peer=>({
   id:'party:downed:'+peer.id,type:'downedPlayer',userId:peer.id,name:(peer.avatar?.name||'Voyageur')+' · à terre',x:peer.x,z:peer.z,range:6,color:'#ff8f7f',
  }));
- const interactionItems=()=>[...items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)),...peerInteractionItems()];
+ const physicalItems=()=>region==='hub'?hubPhysicalItemsForLevel(landscape||{}):[];
+ const interactionItems=()=>landscape?.towerFloor?[...(landscape?.liftItems||[]),...(landscape?.towerLifeItems||[])]:[...physicalItems(),...items.filter(i=>!(cooldowns.get(i.id)>Date.now())&&!(i.type==='resource'&&i.done)),...peerInteractionItems()];
  let fieldRival=null,combatDistance=Infinity,combatClock=0,combatButton=null;
  const combatInput={x:0,z:0};
+ let cameraLookSensitivity=loadCameraSensitivity();
  let qualityMode='auto',cameraFollow=true,manualCameraAt=-Infinity,travelTimer=null,transportRide=null,contextTraversal=null,traversalLift=0,routeSprintUntil=0,lastGroundTapAt=-Infinity,lastCameraTapAt=-Infinity,lastWorldTimeAt=0,lastStreamingAt=0,lastNpcUpdateAt=0,portalCrossing=initialPortalCrossingState(),worldTime=worldTimeSnapshot(),weather=worldWeatherForDate(save.region,new Date()),weatherState=weatherProfile(weather),weatherFx=null,weatherPositions=null;
  try{cameraFollow=localStorage.getItem('3b-world-camera-follow')!=='false';}catch{}
  const movementFrame=createMovementFrame(),motionSmoother=createMotionSmoother();
  let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{orbit=restoreOrbit(JSON.parse(localStorage.getItem('3b-world-camera')));}catch{}
  const rememberCamera=()=>{try{localStorage.setItem('3b-world-camera',JSON.stringify({...orbit,version:2}));}catch{}};const touchPoints=new Map();let pinchDistance=null;
  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const lifeInteraction=createHubLifeInteraction({reducedMotion});let baseHubObstacles=null;
+ function endLifeInteraction(){const origin=lifeInteraction.finish();if(origin)position=origin;hero?.setPose?.(null);needsRender=true;}
+ function selectTowerFloor(index){if(region!=='hub'||!landscape?.setTowerFloor)return false;endLifeInteraction();clearInput();const selected=landscape.setTowerFloor(index);obstacles=selected?[...(landscape.obstaclesForTowerFloor?.()||[])]:baseHubObstacles||obstacles;const destination=selected||landscape.liftItems?.[0]?.destinations?.[0];if(!destination)return false;position={x:destination.x,z:destination.z};waypoint=null;moving=false;heading=180;shot=null;report=0;needsRender=true;return destination;}
  const visualCapabilities=(mode=qualityMode)=>worldVisualCapabilities({mode,width:canvas.clientWidth,height:canvas.clientHeight,deviceMemory:typeof navigator!=='undefined'?Number(navigator.deviceMemory)||4:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches});
  const combatFx=createCombatEffects({reducedMotion}),threat=createCombatTelegraph({reducedMotion});scene.add(combatFx.root,threat.root);let lastCombat=null;const opponentPosition=new THREE.Vector3();
  const register=asset=>(resources.push(asset),asset),sceneWetness={value:.06},sceneDaylight={value:1};let sceneWetnessTarget=.06;
@@ -178,8 +186,9 @@ function hubNpcAvatar(item){
  }
  function glowTexture(){const cv=document.createElement('canvas');cv.width=cv.height=64;const ctx=cv.getContext('2d'),gradient=ctx.createRadialGradient(32,32,0,32,32,32);gradient.addColorStop(0,'rgba(255,255,255,1)');gradient.addColorStop(.2,'rgba(255,255,255,.7)');gradient.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gradient;ctx.fillRect(0,0,64,64);return register(new THREE.CanvasTexture(cv));}
  function portal(item){
+  const before=new Set(root.children),collisionStart=obstacles.length;
   const index=Math.max(0,COUNTRIES.findIndex(c=>c.id===item.id)),y=groundY(item.x,item.z);
-  const frame=createPortalFrame(countryById[item.id]?item.id:region,item.color);register(frame);frame.group.position.set(item.x,y,item.z);root.add(frame.group);for(const side of [-1,1])obstacles.push({x:item.x+side*3.65,z:item.z,r:1.25});
+  const frame=createPortalFrame(countryById[item.id]?item.id:region,item.color,{mechanical:region==='hub'});register(frame);frame.group.position.set(item.x,y,item.z);root.add(frame.group);portalFrames.push({frame,item});for(const side of [-1,1])obstacles.push({x:item.x+side*3.65,z:item.z,r:1.25});
   const filmGeo=register(new THREE.CircleGeometry(1,40));
   const filmMat=register(new THREE.ShaderMaterial({transparent:true,side:THREE.DoubleSide,depthWrite:false,uniforms:{time:{value:0},daylight:{value:worldTime.daylight},tint:{value:new THREE.Color(item.color)},art:{value:models.atlas},tile:{value:new THREE.Vector2(index%4*.25,index<4?.5:0)}},vertexShader:'varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec2 vUv; uniform float time,daylight; uniform vec3 tint; uniform sampler2D art; uniform vec2 tile; void main(){vec2 p=vUv-.5;float r=length(p)*2.;float ripple=sin(r*24.-time*1.7)*.5+.5;vec2 uv=vUv+sin(vUv.yx*10.+time*.4)*.005;vec3 c=texture2D(art,uv*vec2(.25,.5)+tile).rgb;float pulse=mix(.075,.026,daylight);float rim=mix(.58,.42,daylight);vec3 color=mix(c,tint,pow(r,5.)*rim+ripple*pulse);float alpha=mix(.95,.87,daylight);gl_FragColor=vec4(color,alpha);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
   mesh(filmGeo,filmMat,item.x,y+4,item.z+.1,2.95,3.45,1);portalMaterials.push(filmMat);
@@ -193,11 +202,14 @@ function hubNpcAvatar(item){
     for(let stripe=0;stripe<3;stripe++){const light=mesh('box',accentMat,px,y+2.4+stripe*1.7,item.z+.58,.12,.55,.06);light.castShadow=false;}
    }
    const crown=mesh('box',champagne,item.x,y+9.55,item.z-.22,2.2,.18,.42);crown.castShadow=false;
+   const angle=Math.atan2(item.x,item.z),rotation=new THREE.Matrix4().makeTranslation(item.x,0,item.z).multiply(new THREE.Matrix4().makeRotationY(angle)).multiply(new THREE.Matrix4().makeTranslation(-item.x,0,-item.z));
+   for(const visual of root.children)if(!before.has(visual))visual.applyMatrix4(rotation);
+   for(let n=collisionStart;n<obstacles.length;n++){const o=obstacles[n],dx=o.x-item.x,dz=o.z-item.z;o.x=item.x+Math.cos(angle)*dx+Math.sin(angle)*dz;o.z=item.z-Math.sin(angle)*dx+Math.cos(angle)*dz;if(o.width)o.rotation=(o.rotation||0)+angle;}
   }
  }
  function makeActor(item){
   const card=cardById[item.card],creature=item.type==='guardian'||item.type==='hubGuardian'||item.type==='hubCreature';
-  const actor=createLivingActor(models.living,{card:card.id,scale:creature?2.5:2,onError});
+  const actor=createLivingActor(models.living,{reducedMotion,card:card.id,scale:creature?2.5:2,onError});
   actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.rotation.y=(card?.number||0)*.7;root.add(actor.object);
   actors.push({controller:actor,itemId:item.id,creature,x:item.x,z:item.z});return actor.object;
  }
@@ -206,7 +218,7 @@ function hubNpcAvatar(item){
   for(const m of root.children){if(!m.isMesh||m.isInstancedMesh||dynamic.has(m)||m.material.transparent)continue;const key=m.material.uuid;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m);}
   for(const meshes of groups.values())if(meshes.length>2){const geometries=meshes.map(m=>{m.updateMatrix();const g=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return g.applyMatrix4(m.matrix);});const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;const batch=new THREE.Mesh(register(merged),meshes[0].material);batch.castShadow=true;batch.receiveShadow=true;root.add(batch);meshes.forEach(m=>root.remove(m));}
  }
- function syncEscort(){if(!models)return;if(save.adventure.companionHidden){escort?.object.removeFromParent();escort?.dispose();escort=null;escortId=null;trail=[];return;}const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
+ function syncEscort(){if(!models)return;if(save.adventure.companionHidden){escort?.object.removeFromParent();escort?.dispose();escort=null;escortId=null;trail=[];return;}const id=save.adventure.companion||save.team[0]||save.leader;if(escortId===id&&escort)return;escort?.object.removeFromParent();escort?.dispose();escortId=id;escort=createLivingActor(models.living,{reducedMotion,card:id,scale:2,onError});escort.object.position.set(position.x+2,groundY(position.x+2,position.z+2),position.z+2);root.add(escort.object);trail=[];}
  function refreshHubScheduleState(){
   if(region==='france'){
    const latest=worldRuntimeItems(region,save,{weather}),byId=new Map(latest.filter(item=>item.type==='franceResident').map(item=>[item.id,item]));
@@ -215,22 +227,22 @@ function hubNpcAvatar(item){
   }
   if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;if(Math.hypot(actor.item.homeX-next.x,actor.item.homeZ-next.z)>10){const path=findPath({x:actor.object.position.x,z:actor.object.position.z},next,obstacles,worldRadius);actor.walkTarget=path.shift()||null;actor.walkRoute=path;}actor.item.homeX=next.x;actor.item.homeZ=next.z;actor.item.district=next.district;actor.item.activity=next.activity;actor.item.shelter=next.shelter;actor.item.social=next.social;}needsRender=true;}
  function cancelContextTraversal(){if(!contextTraversal)return;const resolve=contextTraversal.resolve;contextTraversal=null;traversalLift=0;try{resolve(false);}catch{}needsRender=true;}
- function rebuild(nextRegion){cancelContextTraversal();
+ function rebuild(nextRegion){endLifeInteraction();cancelContextTraversal();
   const previousRegion=region;
   onLoadState?.(true);
-   staticInstances?.dispose();staticInstances=null;ambientCrowd?.dispose();ambientCrowd=null;portalCrossing=initialPortalCrossingState();cameraSolids=[];partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
+   staticInstances?.dispose();staticInstances=null;ambientCrowd?.dispose();ambientCrowd=null;portalCrossing=initialPortalCrossingState();portalFrames=[];cameraSolids=[];partyActors?.dispose();partyActors=null;escort?.dispose();escort=null;escortId=null;shot=null;post.setCinematic(null);cinematicBlue.intensity=cinematicGold.intensity=0;cinematicFx=null;fieldRival=null;combatFx.clear();lastCombat=null;
   hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());actors=[];hubNpcActors=[];hubVehicles=[];hubLodState.clear();transportRide=null;weatherFx=null;weatherPositions=null;scene.remove(root);resources.forEach(r=>r.dispose());resources=[];materialCache=new Map();root=new THREE.Group();scene.add(root);animations=[];portalMaterials=[];obstacles=[];itemVisuals=new Map();battleTarget=null;
   region=nextRegion;worldRadius=worldRadiusFor(region);weather=worldWeatherForDate(region,new Date());weatherState=weatherProfile(weather);items=worldRuntimeItems(region,save,{weather});portalItems=items.filter(item=>item.type==='portal');sceneWetnessTarget=wetnessForWeather(weather);sceneWetness.value=.06;sceneDaylight.value=worldTime.daylight;position=region==='hub'?{...HUB_PLATFORM.spawn}:{x:0,z:5};heading=180;target=null;route=[];waypoint=null;clearInput();
   const c=countryById[region],biome=BIOMES[region],rng=randomFor(biome.seed),accent=c?.color||'#e4cd94';
   scene.background=new THREE.Color(biome.sky);sky.setRegion(biome);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});scene.fog=new THREE.Fog(0xbacdd6,region==='hub'?300:220,region==='hub'?1350:780);hemi.color.set(biome.sky).lerp(new THREE.Color('#ffffff'),.5);hemi.intensity=.55;sun.intensity=3.5;
   daylight?.dispose();daylight=createDaylight(renderer,biome);scene.environment=sky.environment||daylight.texture;scene.environmentIntensity=.55;
-  landscape=createLandscape(models,region,save,error=>{console.error(error);onError('Un élément du quartier n’a pas pu être chargé. Recharge pour reprendre.');});const currentLandscape=landscape;landscape.ready.then(()=>{if(!disposed&&landscape===currentLandscape)onLoadState?.(false);});landscape.setQuality(qualityMode,visualCapabilities(qualityMode));landscape.setWeather?.(weather);landscape.setDaylight?.(worldTime.daylight);root.add(landscape.root);obstacles.push(...landscape.collisions);cameraSolids.push(...landscape.cameraSolids);landscape.setParty(partyState);partyActors=createPartyActors(models,root,groundY,onError);partyActors.setPeers(latestPeers);
+  landscape=createLandscape(models,region,save,error=>{console.error(error);onError('Un élément du quartier n’a pas pu être chargé. Recharge pour reprendre.');});const currentLandscape=landscape;landscape.setQuality(qualityMode,visualCapabilities(qualityMode));landscape.setWeather?.(weather);landscape.setDaylight?.(worldTime.daylight);root.add(landscape.root);obstacles.push(...landscape.collisions);cameraSolids.push(...landscape.cameraSolids);landscape.setParty(partyState);partyActors=createPartyActors(models,root,groundY,onError);partyActors.setPeers(latestPeers);
   const stone=material(c?.stone||'#cfc7ae'),gold=material(accent,{emissive:accent,emissiveIntensity:.22,metalness:.4});
   for(const item of items){
    if(item.type==='portal'){portal(item);continue;}
    if(item.type==='hubNpc'){
     item.homeX=item.x;item.homeZ=item.z;
-    const controller=createLivingActor(models.living,{avatar:hubNpcAvatar(item),scale:1.9,onError});
+    const controller=createLivingActor(models.living,{reducedMotion,avatar:hubNpcAvatar(item),scale:1.9,onError});
     controller.object.position.set(item.x,groundY(item.x,item.z),item.z);root.add(controller.object);
     hubNpcActors.push({item,controller,object:controller.object,lastSimAt:0,targetX:item.x,targetZ:item.z,targetHeading:controller.object.rotation.y||0,simulationMoving:false,activityState:null,lod:null});itemVisuals.set(item.id,[controller.object]);continue;
    }
@@ -309,7 +321,7 @@ function hubNpcAvatar(item){
    }
    if(item.type==='hubSecret'){continue;}
    if(item.type==='franceResident'){
-    const actor=createLivingActor(models.living,{avatar:{body:item.residentId==='nora'||item.residentId==='ines'?'femme':'homme',style:'voyageur',color:2},scale:2,onError});
+    const actor=createLivingActor(models.living,{reducedMotion,avatar:{body:item.residentId==='nora'||item.residentId==='ines'?'femme':'homme',style:'voyageur',color:2},scale:2,onError});
     actor.object.position.set(item.x,groundY(item.x,item.z),item.z);root.add(actor.object);
     actors.push({controller:actor,itemId:item.id,creature:false,x:item.x,z:item.z});itemVisuals.set(item.id,[actor.object]);continue;
    }
@@ -319,7 +331,7 @@ function hubNpcAvatar(item){
     const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'trial'});itemVisuals.set(item.id,[marker]);continue;
    }
    if(item.type==='survey'){const y=groundY(item.x,item.z);mesh('cylinder',stone,item.x,y+.5,item.z,.52,1,.52);const book=mesh('box',gold,item.x,y+1.15,item.z,.9,.1,.62);book.rotation.x=.25;obstacles.push({x:item.x,z:item.z,r:.65});continue;}
-   if(item.type==='final'){const actor=createLivingActor(models.living,{card:'C164',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
+   if(item.type==='final'){const actor=createLivingActor(models.living,{reducedMotion,card:'C164',scale:3.1,onError});actor.object.position.set(item.x,groundY(item.x,item.z),item.z);actor.object.visible=false;root.add(actor.object);actors.push({controller:actor,itemId:'final',creature:true,x:item.x,z:item.z});continue;}
    const first=root.children.length,y=groundY(item.x,item.z);
    if(item.type==='guardian'||item.type==='echo'||item.type==='patrol'||item.type==='hubCreature')makeActor(item);
    if(item.type==='beacon'){
@@ -340,9 +352,10 @@ function hubNpcAvatar(item){
      hubVehicles.push({vehicle,stops,line,...spec});
     }
    }
-   ambientCrowd=createAmbientCrowd(root,items,{groundY,mode:qualityMode,deviceMemory:typeof navigator!=='undefined'?navigator.deviceMemory:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches,viewport:Math.max(canvas.clientWidth,canvas.clientHeight),reducedMotion});
+   ambientCrowd=createAmbientCrowd(root,items,{groundY,modelAsset:models.hero,modelLibrary:models.living,camera,onError,mode:qualityMode,deviceMemory:typeof navigator!=='undefined'?navigator.deviceMemory:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches,viewport:Math.max(canvas.clientWidth,canvas.clientHeight),reducedMotion});
   }
-  hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatarKey=JSON.stringify(save.adventure.avatar);avatar=hero.object;root.add(avatar);applyPremiumVisuals();
+  Promise.all([currentLandscape.ready,ambientCrowd?.ready]).then(()=>{if(!disposed&&landscape===currentLandscape)onLoadState?.(false);});
+  hero=createLivingActor(models.living,{reducedMotion,avatar:save.adventure.avatar,scale:2.2,onError});avatarKey=JSON.stringify(save.adventure.avatar);avatar=hero.object;root.add(avatar);applyPremiumVisuals();
   const shadow=mesh(register(new THREE.CircleGeometry(1,24)),register(new THREE.MeshBasicMaterial({color:'#12261c',transparent:true,opacity:.3,depthWrite:false})),0,.06,0,.85,.85,1);shadow.rotation.x=-Math.PI/2;animations.push({mesh:shadow,type:'shadow'});
   companion=new THREE.Group();root.add(companion);syncEscort();
   const ringMat=register(new THREE.MeshBasicMaterial({color:'#fae3a2',transparent:true,opacity:.55,depthWrite:false}));
@@ -375,7 +388,7 @@ function hubNpcAvatar(item){
   for(const item of items)if(['hubDistrictLandmark','hubHeritageFacility','hubSkybridge','hubVerticalConnector','hubTransitLink','hubDistrictTerrace','hubHeritagePlatform','hubTransport'].includes(item.type)){
    for(const visual of itemVisuals.get(item.id)||[])visual.traverse(o=>{if(!o.isMesh||!['BoxGeometry','CylinderGeometry'].includes(o.geometry?.type))return;cameraBounds.setFromObject(o);const size=new THREE.Vector3();cameraBounds.getSize(size);if(size.y<2||size.x<1.2||size.z<1.2)return;cameraSolids.push({x:(cameraBounds.min.x+cameraBounds.max.x)/2,z:(cameraBounds.min.z+cameraBounds.max.z)/2,width:size.x,depth:size.z,bottom:cameraBounds.min.y,top:cameraBounds.max.y,rotation:0});});
   }
-  report=0;needsRender=true;batchStatic();if(region==='hub')staticInstances=createStaticInstances(root,itemVisuals,{exclude:[...hubVehicles.map(v=>v.vehicle),...hubNpcActors.map(a=>a.object),...actors.map(a=>a.controller.object),...animations.map(a=>a.mesh)]});applyArtLighting();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
+  baseHubObstacles=region==='hub'?obstacles:null;report=0;needsRender=true;batchStatic();if(region==='hub')staticInstances=createStaticInstances(root,itemVisuals,{exclude:[...portalFrames.map(p=>p.frame.group),...hubVehicles.map(v=>v.vehicle),...hubNpcActors.map(a=>a.object),...actors.map(a=>a.controller.object),...animations.map(a=>a.mesh)]});applyArtLighting();last=performance.now();frames=0;frameTime=0;qualityWarmupUntil=last+3000;
  }
  function applyArtLighting(){
   const light=artLighting(region,worldTime,weatherState);sun.color.set(light.sunColor).lerp(new THREE.Color(worldArtMaterials.sunWarm),light.sunWarmth);sun.intensity=light.sunIntensity;hemi.color.set(light.palette.sky);hemi.groundColor.set(light.palette.ground);hemi.intensity=light.skyIntensity;fill.intensity=light.fillIntensity;scene.environmentIntensity=light.environmentIntensity;renderer.toneMappingExposure=light.exposure;
@@ -383,22 +396,22 @@ function hubNpcAvatar(item){
  }
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
- function startRoute(destination,interaction=false,run=false){motionSmoother.reset();route=(interaction?findInteractionPath:findPath)(position,destination,obstacles,worldRadius);target=route.shift()||null;routeSprintUntil=run?performance.now()+2200:0;needsRender=true;}
+ function startRoute(destination,interaction=false,run=false){endLifeInteraction();if(towerDestinationReturnsGround(destination,landscape?.towerFloor,physicalItems())){const selectedWaypoint=destination.id&&waypoint?.id===destination.id?waypoint:null;selectTowerFloor(null);if(selectedWaypoint)waypoint=selectedWaypoint;}motionSmoother.reset();route=(interaction?findInteractionPath:findPath)(position,destination,obstacles,worldRadius);target=route.shift()||null;routeSprintUntil=run?performance.now()+2200:0;needsRender=true;}
  function clearInput(){keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
  function down(e){
   if(paused||transportRide||contextTraversal||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
   const rect=canvas.getBoundingClientRect(),cameraTouch=e.pointerType==='touch'&&e.clientX-rect.left>=rect.width*.52;
   if(e.button===2||cameraTouch){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!orbitHeld)orbitHeld={id:e.pointerId,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,drag:false};if(touchPoints.size===2){const p=[...touchPoints.values()];pinchDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}return;}
-  if(held)return;held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,fullTiltAt:null,control:joystickProfile(rect.width,rect.height,e.pointerType)};target=null;route=[];
+  if(held)return;endLifeInteraction();held={id:e.pointerId,x:e.clientX,y:e.clientY,at:performance.now(),drag:false,fullTiltAt:null,control:joystickProfile(rect.width,rect.height,e.pointerType)};target=null;route=[];
  }
  function move(e){
   if(touchPoints.has(e.pointerId)){touchPoints.set(e.pointerId,{x:e.clientX,y:e.clientY});onActivity();needsRender=true;manualCameraAt=performance.now();
    if(touchPoints.size===2){const p=[...touchPoints.values()],distance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);if(pinchDistance!==null)orbit=zoomOrbit(orbit,(pinchDistance-distance)*5);pinchDistance=distance;if(orbitHeld){orbitHeld.drag=true;const q=touchPoints.get(orbitHeld.id);if(q){orbitHeld.x=q.x;orbitHeld.y=q.y;}}return;}
-   if(orbitHeld?.id===e.pointerId){const dx=e.clientX-orbitHeld.x,dy=e.clientY-orbitHeld.y;orbit=rotateOrbit(orbit,dx,dy);orbitHeld.x=e.clientX;orbitHeld.y=e.clientY;if(Math.hypot(e.clientX-orbitHeld.startX,e.clientY-orbitHeld.startY)>7)orbitHeld.drag=true;}return;
+   if(orbitHeld?.id===e.pointerId){const dx=e.clientX-orbitHeld.x,dy=e.clientY-orbitHeld.y;orbit=rotateOrbit(orbit,dx*cameraLookSensitivity,dy*cameraLookSensitivity);orbitHeld.x=e.clientX;orbitHeld.y=e.clientY;if(Math.hypot(e.clientX-orbitHeld.startX,e.clientY-orbitHeld.startY)>7)orbitHeld.drag=true;}return;
   }
   if(!held||held.id!==e.pointerId)return;const dx=e.clientX-held.x,dy=e.clientY-held.y,len=Math.hypot(dx,dy);if(len>held.control.deadZone)held.drag=true;stick=pointerStick(dx,dy,held.control);const magnitude=Math.hypot(stick.x,stick.z);if(magnitude>=held.control.sprintThreshold){if(held.fullTiltAt===null)held.fullTiltAt=performance.now();}else if(magnitude<held.control.sprintThreshold-.08)held.fullTiltAt=null;onActivity();
  }
- function pointRoute(e,run=false){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObject(landscape.ground,false)[0];if(hit){const p=hit.point,r=Math.hypot(p.x,p.z),scale=Math.min(1,(worldRadius-2)/r);startRoute({x:p.x*scale,z:p.z*scale},false,run);}}
+ function pointRoute(e,run=false){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObject(landscape.walkSurface||landscape.ground,false)[0];if(hit){const p=hit.point,r=Math.hypot(p.x,p.z),scale=Math.min(1,(worldRadius-2)/r);startRoute({x:p.x*scale,z:p.z*scale},false,run);}}
  function up(e){
   rememberCamera();
   if(touchPoints.has(e.pointerId)){
@@ -413,7 +426,7 @@ function hubNpcAvatar(item){
  function wheel(e){if(paused)return;e.preventDefault();orbit=zoomOrbit(orbit,e.deltaY);rememberCamera();needsRender=true;onActivity();}
  const context=e=>e.preventDefault();
  function toggleCamera(){cameraMode=1-cameraMode;orbit={...orbit,distance:cameraMode?36:24,pitch:cameraMode?.5:DEFAULT_ORBIT.pitch};rememberCamera();needsRender=true;}
- function keydown(e){if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle'].some(action=>controlMatches(controls,action,key));if(!handled)return;e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
+ function keydown(e){if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle'].some(action=>controlMatches(controls,action,key));if(!handled)return;e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}if(['moveForward','moveBackward','moveLeft','moveRight'].some(action=>controlMatches(controls,action,key)))endLifeInteraction();keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
  function keyup(e){keys.delete(e.key.toLowerCase());}
  function interact(){if(paused||transportRide||contextTraversal)return;const closest=nearestInteraction(position,interactionItems());if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
  const hidden=()=>{clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
@@ -424,7 +437,7 @@ function hubNpcAvatar(item){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
   const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
-  const dt=Math.min(rawDt,.25);elapsed+=dt;sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
+  const dt=Math.min(rawDt,.25);elapsed+=dt;for(const {frame,item} of portalFrames)frame.tick(Math.hypot(position.x-item.x,position.z-item.z),dt,{reducedMotion});sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
   if(now-lastWorldTimeAt>=1000){
    lastWorldTimeAt=now;worldTime=worldTimeSnapshot();sceneDaylight.value=worldTime.daylight;const nextWeather=worldWeatherForDate(region,new Date());if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);landscape?.setWeather?.(weather);refreshHubScheduleState();if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
    const biome=BIOMES[region]||BIOMES.hub,dayColor=new THREE.Color(biome.sky),nightColor=new THREE.Color('#07101a');
@@ -434,7 +447,7 @@ function hubNpcAvatar(item){
   }
   if(!paused&&!shot){
    if(now<qualityWarmupUntil){frames=0;frameTime=0;}else{frames++;frameTime+=rawDt;}if(frameTime>=1){fps=Math.round(frames/frameTime);if(quality.sample(fps,frameTime))resize();frames=0;frameTime=0;}
-   if(contextTraversal){
+   if(lifeInteraction.active){const pose=lifeInteraction.sample(elapsed);position={x:pose.x,z:pose.z};heading=pose.heading;hero?.setPose?.(pose.pose,{seatHeight:pose.seatHeight});hero?.face?.(Math.sin(pose.heading*Math.PI/180),Math.cos(pose.heading*Math.PI/180),dt);moving=false;}else if(contextTraversal){
     const current=contextTraversal,previous=position,pose=traversalPose(current.plan,now-current.started);
     position={x:pose.x,z:pose.z};traversalLift=pose.lift;dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=!pose.done;
     if(travelled>.001)heading=movementHeading(dx,dz,heading);
@@ -464,13 +477,14 @@ function hubNpcAvatar(item){
     if(moving){const nextHeading=movementHeading(dx,dz,heading);if(Math.abs(((nextHeading-heading+540)%360)-180)>2.5)report=0;heading=nextHeading;orbit=followMovement(orbit,dx,dz,dt,{enabled:cameraFollow,manual:!!orbitHeld,quietFor:(now-manualCameraAt)/1000,reducedMotion});onActivity();stepDistance+=travelled;if(stepDistance>2.1){stepDistance=0;onStep?.(region);}}
    }
    }else moving=false;
-   if(!paused&&!shot&&!transportRide&&!contextTraversal&&!save.adventure.encounter){
+   if(!paused&&!shot&&!transportRide&&!contextTraversal&&!lifeInteraction.active&&!landscape?.towerFloor&&!save.adventure.encounter){
     const crossing=advancePortalCrossing(portalCrossing,position,portalItems);portalCrossing=crossing.state;
     if(crossing.entered){clearInput();battleTarget=crossing.entered;onActivity();onInteract(crossing.entered);}
    }
   const y=groundY(position.x,position.z)+traversalLift,age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
-  avatar.position.set(position.x,y,position.z);hero.update(dt,dx,dz,travelled);
-  if(region==='hub'){
+  const lifePose=lifeInteraction.sample(elapsed),poseLift=lifePose?.pose==='Sit'?(hero.poseRootOffset?.(lifePose.seatHeight)||0)*lifePose.blend:0;
+  avatar.position.set(position.x,y+poseLift,position.z);hero.update(dt,dx,dz,travelled);
+  if(region==='hub'&&!landscape?.towerFloor){
    const stream=streamingProfile(qualityMode,typeof navigator!=='undefined'?navigator.deviceMemory:undefined,region);
    if(now-lastNpcUpdateAt>=1000/stream.npcUpdateHz){
     lastNpcUpdateAt=now;
@@ -478,7 +492,7 @@ function hubNpcAvatar(item){
      const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),sim=npcSimulationTier(d),interval=1000/Math.max(.25,sim.updateHz);
      if(actor.lastSimAt&&now-actor.lastSimAt<interval)continue;
      actor.lastSimAt=now;
-     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused});
+     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused,reducedMotion});
      actor.targetX=pose.x;actor.targetZ=pose.z;actor.targetHeading=pose.heading;actor.simulationMoving=pose.moving;
      actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
      if(actor.activityState!==pose.state){
@@ -518,6 +532,7 @@ function hubNpcAvatar(item){
     }
     ambientCrowd?.tick(elapsed,position,now);
    }
+  for(const actor of actors)if(actor.creature)actor.controller.setAttention?.(Math.hypot(actor.controller.object.position.x-position.x,actor.controller.object.position.z-position.z)<20?{x:position.x,y:y+2.9,z:position.z}:null);
   const encounter=save.adventure.encounter;
   let opponent=cinematic?(encounter?.final?items.find(i=>i.type==='final'):encounter?.patrol?items.find(i=>i.type==='patrol'):battleTarget?.card===encounter?.card?battleTarget:items.find(i=>i.card===encounter?.card)):null;
   if(fieldCombat&&opponent){
@@ -568,7 +583,7 @@ function hubNpcAvatar(item){
    const evolution=hubEvolutionState(hubPlan,{seals:save.seals,restoredRegions:Object.entries(save.adventure.chapters||{}).filter(([,c])=>c.restored===3).map(([id])=>id)});
    const hubEvolution=region==='hub'?{...evolution,restored:evolution.restoredCount,liberated:evolution.liberatedCount,total:8}:null;
    const hubDistrict=region==='hub'?hubPlan.districts.map(d=>({...d,distance:Math.hypot(position.x-PLATFORM_DISTRICTS[d.id].x,position.z-PLATFORM_DISTRICTS[d.id].z)})).sort((a,b)=>a.distance-b.distance)[0]?.name:null;
-    onSnapshot({architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:hubDistrict||districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,crowd:ambientCrowd?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
+    onSnapshot({mapItems:region==='hub'?[...items,...physicalItems()]:null,towerFloor:landscape?.towerFloor||null,lifeInteraction:lifePose?{title:lifePose.title,detail:lifePose.detail,caption:lifePose.caption}:null,cartography:landscape.cartography||null,route:target?[{...target},...route.map(p=>({...p}))]:[],architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:hubDistrict||districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,crowd:ambientCrowd?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
   }
   needsRender=false;
  }
@@ -581,7 +596,7 @@ function hubNpcAvatar(item){
   setParty(party){partyState=party;landscape?.setParty(party);},
   combatAction(kind){combatButton=kind;combatClock=.1;},
   canBattle(action){return !['strike','power','wait'].includes(action)||combatDistance<=(action==='power'?22:action==='wait'?8:7.5);},
-  setPaused(value){paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value){clearInput();cancelContextTraversal();}},
+  setPaused(value){if(value)endLifeInteraction();paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value){clearInput();cancelContextTraversal();}},
   setPresentation(value){presentation=value;if(value!=='encounter')combatFx.clear();needsRender=true;},
   performTraversal(actionId,item){
    if(paused||transportRide||contextTraversal||!isPhysicalTraversalAction(actionId)||save.adventure.encounter?.field)return Promise.resolve(false);
@@ -592,7 +607,10 @@ function hubNpcAvatar(item){
    const animation={vault:'Run',climb:'Work',zipline:'Idle',swim:'Idle',dive:'Idle'}[actionId]||'Idle';hero?.action?.(animation);
    return new Promise(resolve=>{contextTraversal={plan,started:performance.now(),resolve};});
   },
+  setTowerFloor(index){return selectTowerFloor(index);},
+  endLifeInteraction,
   contextAction(actionId,item){
+   if(item?.type==='hubLifeObject'){endLifeInteraction();clearInput();if(!lifeInteraction.start(item,position,heading,elapsed))return false;const pose=lifeInteraction.sample(elapsed);hero?.setPose?.(pose.pose,{seatHeight:pose.seatHeight});report=0;needsRender=true;return true;}
    const info=actionFeedback(actionId);if(!info)return false;
    if(item&&Number.isFinite(item.x)&&Number.isFinite(item.z)){const dx=item.x-position.x,dz=item.z-position.z;if(Math.hypot(dx,dz)>.01){heading=Math.atan2(dx,dz)*180/Math.PI;hero?.face?.(dx,dz,.18);}}
    const animation={Talk:'Talk',Inspect:'Talk',Use:'Cast',Work:'Work',Help:'Talk',Pickup:'Work',Carry:'Idle',Climb:'Idle',Vault:'Idle',Ride:'Idle',Swim:'Idle',Dive:'Idle',Sit:'Idle',Cast:'Cast',Draw:'Attack',Guard:'Idle',Point:'Cast',Walk:'Idle'}[info.animation]||'Idle';
@@ -652,10 +670,11 @@ function hubNpcAvatar(item){
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,
   setCameraFollow(value){cameraFollow=!!value;if(!cameraFollow)orbit={...orbit,yaw:viewBearing(camera.position,cameraTarget)};rememberCamera();try{localStorage.setItem('3b-world-camera-follow',String(cameraFollow));}catch{}needsRender=true;},
+  setCameraSensitivity(value){cameraLookSensitivity=cameraSensitivity(value);},
   setControls(value){controls=normalizeControlBindings(value);clearInput();},
   setPremiumCodes(codes){premium=premiumEffectsFromCodes(codes);if(models&&avatar)applyPremiumVisuals();needsRender=true;},
   setQuality(mode){qualityMode=mode;quality.setMode(mode);const capabilities=visualCapabilities(mode);const allowTransmission=architecturalBudget(mode,capabilities.desktopClass).transmission;for(const m of materialCache.values())if(m.userData.authoredTransmission){m.transmission=allowTransmission?m.userData.authoredTransmission:0;m.needsUpdate=true;}landscape?.setQuality(mode,capabilities);ambientCrowd?.setQuality(mode);renderer.shadowMap.enabled=mode!=='fluid';const size=capabilities.shadowMapSize;if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}resize();},
-  setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),hubProgressChanged=region==='hub'&&(JSON.stringify(save.seals||[])!==JSON.stringify(value.seals||[])||JSON.stringify(Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))!==JSON.stringify(Object.entries(value.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||hubProgressChanged||countryContractChanged)&&models&&!newField){if(hubProgressChanged)hubArrivalShown=false;const retainedPosition={...position},retainedHeading=heading;rebuild(region);position=region==='hub'?safePlatformPosition(retainedPosition):retainedPosition;heading=retainedHeading;needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}applyPremiumVisuals();
+  setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),hubProgressChanged=region==='hub'&&(JSON.stringify(save.seals||[])!==JSON.stringify(value.seals||[])||JSON.stringify(Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))!==JSON.stringify(Object.entries(value.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||hubProgressChanged||countryContractChanged)&&models&&!newField){if(hubProgressChanged)hubArrivalShown=false;endLifeInteraction();const retainedPosition={...position},retainedHeading=heading,retainedFloor=landscape?.towerFloor?.index??null;rebuild(region);if(retainedFloor!==null){selectTowerFloor(retainedFloor);heading=retainedHeading;needsRender=true;return;}position=region==='hub'?safePlatformPosition(retainedPosition):retainedPosition;heading=retainedHeading;needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{reducedMotion,avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}applyPremiumVisuals();
   const nextItems=worldRuntimeItems(region,save,{weather});
   if(region==='hub'&&hubNpcActors.length){
    const liveNpcs=new Map(hubNpcActors.map(actor=>[actor.item.id,actor.item]));
@@ -674,6 +693,6 @@ function hubNpcAvatar(item){
   interact,
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk)startRoute(item,true);},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},
-  destroy(){staticInstances?.dispose();ambientCrowd?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
+  destroy(){lifeInteraction.dispose();staticInstances?.dispose();ambientCrowd?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };
 }

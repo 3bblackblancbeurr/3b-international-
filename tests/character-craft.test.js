@@ -1,0 +1,151 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as T from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
+import {locomotionBlend,createLocomotionMixer,smoothActorHeading} from '../src/world/actor-locomotion.js';
+import {createLivingActor} from '../src/world/living.js';
+
+// Keep the shipped mesh, rig and compressed animation buffers. Texture decoding
+// is irrelevant to anatomy and requires a DOM, so omit material/image references.
+async function travellerRig(){
+ const bytes=fs.readFileSync(new URL('../public/world/living/traveller-0.glb',import.meta.url)),length=bytes.readUInt32LE(12),gltf=JSON.parse(bytes.subarray(20,20+length)),bin=bytes.subarray(28+length);
+ delete gltf.images;delete gltf.textures;delete gltf.materials;for(const mesh of gltf.meshes)for(const primitive of mesh.primitives)delete primitive.material;
+ const json=JSON.stringify(gltf),chunk=Buffer.from(json+' '.repeat((4-Buffer.byteLength(json)%4)%4)),head=Buffer.alloc(20),tail=Buffer.alloc(8);
+ head.writeUInt32LE(0x46546c67);head.writeUInt32LE(2,4);head.writeUInt32LE(28+chunk.length+bin.length,8);head.writeUInt32LE(chunk.length,12);head.writeUInt32LE(0x4e4f534a,16);tail.writeUInt32LE(bin.length);tail.writeUInt32LE(0x004e4942,4);
+ const result=Buffer.concat([head,chunk,tail,bin]);return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(result.buffer.slice(result.byteOffset,result.byteOffset+result.byteLength),'');
+}
+
+test('analogue speeds blend complete gaits continuously and retain the available fallback',()=>{
+ for(let speed=0;speed<8;speed+=.007){
+  const {weights}=locomotionBlend(speed),next=locomotionBlend(speed+.0001).weights;
+  assert.ok(Math.abs(Object.values(weights).reduce((a,b)=>a+b,0)-1)<1e-10);
+  assert.ok(Object.values(weights).every(v=>v>=0&&v<=1));
+  assert.ok(Object.keys(weights).every(name=>Math.abs(weights[name]-next[name])<.001));
+ }
+ assert.equal(locomotionBlend(0).weights.Idle,1);assert.equal(locomotionBlend(3.2).weights.Jog,1);
+ const fallback=locomotionBlend(3.2,['Idle','Walk','Run']).weights;assert.ok(fallback.Walk>0&&fallback.Run>0);assert.equal(fallback.Jog,0);
+});
+
+test('turns choose the short angle across north and never snap around on a reverse input',()=>{
+ const from=Math.PI-.01,next=smoothActorHeading(from,-.01,-1,1/60);
+ assert.ok(Math.abs(next-from)<.025);
+ let heading=0;for(let i=0;i<40;i++){const turned=smoothActorHeading(heading,0,-1,1/60);assert.ok(Math.abs(turned-heading)<=9/60+1e-10);heading=turned;}
+ assert.ok(Math.abs(Math.atan2(Math.sin(Math.PI-heading),Math.cos(Math.PI-heading)))<.01);
+ assert.equal(smoothActorHeading(.5,0,0,.25),.5);assert.equal(smoothActorHeading(.5,1,0,-1),.5);
+});
+
+test('shipped Walk, Jog and Run retain the same stride phase through acceleration and braking',async()=>{
+ const asset=await travellerRig(),mixer=new T.AnimationMixer(asset.scene),actions=Object.fromEntries(['Idle','Walk','Jog','Run'].map(name=>[name,mixer.clipAction(asset.animations.find(clip=>clip.name===name))])),gait=createLocomotionMixer(actions);
+ for(let i=0;i<180;i++){
+  const speed=i<90?i/90*5.2:(180-i)/90*5.2;gait.update(speed,1/60);mixer.update(1/60);
+  const phases=['Walk','Jog','Run'].map(name=>actions[name].time/actions[name].getClip().duration);
+  assert.ok(Math.max(...phases)-Math.min(...phases)<1e-5,'stride phase remains synchronized');
+ }
+ mixer.stopAllAction();mixer.uncacheRoot(asset.scene);
+});
+
+test('seated avatars meet the cushion and keep their actual shoe soles above elevated floors',async()=>{
+ const asset=await travellerRig();
+ for(const height of [.9,1,1.1]){
+  let actor;await new Promise(resolve=>{actor=createLivingActor({load:()=>Promise.resolve(asset)},{avatar:{height,boots:0,weapon:'paris'},scale:2.2,onLoad:resolve});});
+  const floor=4.8;actor.object.position.set(12,floor,-7);actor.face(1,0,.25);
+  for(const cushion of [.45,.9,1.15]){
+   actor.object.position.y=floor;actor.setPose('Sit',{seatHeight:cushion});actor.update(.25);
+   assert.equal(actor.object.getObjectByName('3B-equipped-paris').visible,false);
+   actor.object.position.y=floor+actor.poseRootOffset();actor.object.updateMatrixWorld(true);
+   const pelvis=actor.object.getObjectByName('pelvis').getWorldPosition(new T.Vector3()),boot=actor.object.getObjectByName('Boots_0'),soles=new T.Box3().setFromObject(boot,true);
+   assert.ok(Math.abs(pelvis.y-floor-cushion)<1e-5,`cushion contact for height ${height}`);
+   assert.ok(soles.min.y>=floor-.035,`shoe penetrates floor at height ${height}: ${soles.min.y-floor}`);
+   assert.ok(soles.min.y<=floor+.16,`shoe floats above floor at height ${height}: ${soles.min.y-floor}`);
+   for(const side of ['l','r']){
+    const hip=actor.object.getObjectByName('thigh_'+side).getWorldPosition(new T.Vector3()),knee=actor.object.getObjectByName('calf_'+side).getWorldPosition(new T.Vector3()),hand=actor.object.getObjectByName('hand_'+side).getWorldPosition(new T.Vector3()),elbow=actor.object.getObjectByName('lowerarm_'+side).getWorldPosition(new T.Vector3());
+    const thighContact=hip.clone().lerp(knee,.52).add(new T.Vector3(0,.12*2.2,0));
+    assert.ok(hand.distanceTo(thighContact)<.12,'the wrist rests over its own thigh');
+    const localPelvis=actor.object.worldToLocal(pelvis.clone()),localHand=actor.object.worldToLocal(hand),localElbow=actor.object.worldToLocal(elbow);
+    assert.ok(localHand.z>localPelvis.z+.12,'the hand remains in front of the torso and backrest');
+    assert.ok(localElbow.z>localPelvis.z+.06,'the elbow bends towards the knees');
+    assert.ok(Math.abs(localElbow.x)<.45,'the elbow stays inside the chair armrest width');
+    const point=name=>actor.object.worldToLocal(actor.object.getObjectByName(name+'_'+side).getWorldPosition(new T.Vector3()));
+    const index=point('index_01'),pinky=point('pinky_01'),middle=point('middle_01'),tip=point('middle_04_leaf');
+    const fingers=middle.clone().sub(localHand).normalize(),palmNormal=fingers.clone().cross(index.clone().sub(pinky)).normalize().multiplyScalar(side==='l'?1:-1);
+    assert.ok(palmNormal.y<-.97,'the anatomical palm faces down onto the thigh');
+    assert.ok(fingers.z>.97,'the fingers point towards the knees');
+    assert.ok(tip.z>middle.z+.055,'relaxed fingers extend beyond the knuckles instead of forming an equipped fist');
+    const joint=actor.object.getObjectByName('middle_02_'+side),body=actor.object.getObjectByName('Body');let skeleton;body.traverse(o=>{if(o.isSkinnedMesh)skeleton=o.skeleton;});
+    const bind=name=>skeleton.boneInverses[skeleton.bones.findIndex(b=>b.name===name)].clone().invert();
+    const rest=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().extractRotation(bind(joint.parent.name).invert().multiply(bind(joint.name))));
+    assert.ok(joint.quaternion.angleTo(rest)<.23,'finger bend remains near the authored open bind pose');
+   }
+  }
+  actor.setPose('Read');actor.object.position.y=floor;actor.update(.25);assert.equal(actor.poseRootOffset(),0);
+  actor.setPose(null);actor.update(.25,1,0,1);const foot=actor.object.getObjectByName('foot_l'),before=foot.quaternion.clone();actor.update(.1,.5,0,.5);
+  assert.equal(actor.object.getObjectByName('3B-equipped-paris').visible,true);
+  assert.ok(before.angleTo(foot.quaternion)>.005,'leaving the chair restores moving legs');
+  actor.object.traverse(o=>assert.ok(o.quaternion.toArray().every(Number.isFinite)));actor.dispose();
+ }
+});
+
+test('reading and inspection keep both hands and elbows in front of the measured chest at every facing',async()=>{
+ const asset=await travellerRig();
+ for(const height of [.9,1,1.1]){
+  let actor;await new Promise(resolve=>{actor=createLivingActor({load:()=>Promise.resolve(asset)},{avatar:{height,boots:0,weapon:'paris'},scale:2.2,onLoad:resolve});});
+  actor.object.position.set(-12,4.8,9);
+  const translations=new Map(['lowerarm_l','lowerarm_r','hand_l','hand_r'].map(name=>[name,actor.object.getObjectByName(name).position.clone()]));
+  for(const yaw of [0,Math.PI/2,Math.PI-.01]){
+   for(let i=0;i<6;i++)actor.face(Math.sin(yaw),Math.cos(yaw),.25);
+   for(const name of ['Read','Inspect']){
+    actor.setPose(name);actor.update(.25);actor.object.updateMatrixWorld(true);
+    const point=boneName=>actor.object.worldToLocal(actor.object.getObjectByName(boneName).getWorldPosition(new T.Vector3())),chest=point('spine_03'),pelvis=point('pelvis');
+    assert.equal(actor.object.getObjectByName('3B-equipped-paris').visible,false);
+    for(const side of ['l','r']){
+     const hand=point('hand_'+side),elbow=point('lowerarm_'+side),middle=point('middle_01_'+side),tip=point('middle_04_leaf_'+side),index=point('index_01_'+side),pinky=point('pinky_01_'+side);
+     assert.ok(hand.z>chest.z+.20,`${name} hand remains outside and in front of the clothing`);
+     assert.ok(elbow.z>chest.z+.08,`${name} elbow remains ahead of the torso`);
+     assert.ok(hand.y<chest.y+.08&&hand.y>pelvis.y+.12,`${name} hand is at a usable reading/display height`);
+     assert.ok(Math.abs(hand.x-chest.x)<.28,`${name} hands remain within reach of one open book/display`);
+     const fingers=middle.clone().sub(hand).normalize(),normal=fingers.clone().cross(index.clone().sub(pinky)).normalize().multiplyScalar(side==='l'?1:-1);
+     assert.ok(fingers.z>.9,`${name} fingers face the book/display`);
+     assert.ok(name==='Read'?normal.y>.9:normal.y<-.9,`${name} palms support the book or face the display`);
+     assert.ok(tip.z>middle.z+.045,`${name} hand is relaxed rather than a combat fist`);
+     for(const boneName of ['lowerarm_'+side,'hand_'+side])assert.ok(actor.object.getObjectByName(boneName).position.distanceTo(translations.get(boneName))<1e-6,'pose preserves the shipped bone lengths');
+    }
+    actor.setPose(null);actor.update(.25);assert.equal(actor.object.getObjectByName('3B-equipped-paris').visible,true);
+   }
+  }
+  actor.dispose();
+ }
+});
+
+test('the open reading book rests on measured palms and releases its own resources when the actor leaves',async()=>{
+ const asset=await travellerRig();
+ for(const height of [.9,1,1.1]){
+  let actor;await new Promise(resolve=>{actor=createLivingActor({load:()=>Promise.resolve(asset)},{avatar:{height,boots:0,weapon:'paris'},scale:2.2,onLoad:resolve});});
+  actor.object.position.set(19,4.8,-12);
+  const book=actor.object.getObjectByName('3B-reading-book'),covers=[];book.traverse(o=>{if(o.name==='3B-reading-cover')covers.push(o);});
+  assert.equal(covers.length,2);assert.equal(book.visible,false);
+  for(const yaw of [0,Math.PI/2,Math.PI-.01]){
+   for(let i=0;i<6;i++)actor.face(Math.sin(yaw),Math.cos(yaw),.25);
+   actor.setPose('Read');actor.update(.25);actor.object.updateMatrixWorld(true);assert.equal(book.visible,true);
+   for(const side of ['l','r']){
+    const wrist=actor.object.getObjectByName('hand_'+side).getWorldPosition(new T.Vector3()),knuckle=actor.object.getObjectByName('middle_01_'+side).getWorldPosition(new T.Vector3()),palm=wrist.lerp(knuckle,.65);
+    const contacts=covers.map(cover=>cover.worldToLocal(palm.clone())).filter(p=>Math.abs(p.x)<.25&&Math.abs(p.z)<.32);
+    assert.equal(contacts.length,1,'each palm supports exactly its own open cover leaf');
+    assert.ok(Math.abs(contacts[0].y+.0065)<.012,'the cover underside meets the measured palm instead of hovering or penetrating it');
+   }
+   const chest=actor.object.worldToLocal(actor.object.getObjectByName('spine_03').getWorldPosition(new T.Vector3()));
+   book.traverse(o=>{if(!o.geometry)return;const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++){
+    const vertex=actor.object.worldToLocal(o.localToWorld(new T.Vector3().fromBufferAttribute(positions,i)));
+    assert.ok(vertex.z>chest.z+.12,'book geometry stays ahead of the chest and clothing');
+   }});
+   actor.setPose('Inspect');assert.equal(book.visible,false,'switching to another interaction immediately hides the held book');actor.update(.25);assert.equal(book.visible,false);
+   actor.setPose('Read');actor.update(.25);actor.setPose(null);assert.equal(book.visible,false,'pause/exit cancellation does not require another animation tick');
+   actor.setPose('Read');actor.update(.25);actor.action('Attack',.5);assert.equal(book.visible,false,'a combat action immediately removes the book');
+   actor.setPose('Read');actor.update(.25);actor.reset();assert.equal(book.visible,false,'reset immediately removes the book');
+  }
+  const geometries=new Set(),materials=new Set();book.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material);});
+  let releasedGeometry=0,releasedMaterial=0;geometries.forEach(g=>g.addEventListener('dispose',()=>releasedGeometry++));materials.forEach(m=>m.addEventListener('dispose',()=>releasedMaterial++));
+  actor.dispose();actor.dispose();assert.equal(book.parent,null);assert.equal(releasedGeometry,geometries.size);assert.equal(releasedMaterial,materials.size);
+ }
+});

@@ -8,10 +8,20 @@ export const CITE_ISLANDS=Object.freeze([
  ...Array.from({length:8},(_,i)=>{const a=(i+.5)*Math.PI/4;return{id:'residence-'+i,x:Math.cos(a)*132,z:Math.sin(a)*132,r:17};}),
 ]);
 export const CITE_BRIDGES=Object.freeze(Array.from({length:8},(_,i)=>{const a=-Math.PI/2+i*Math.PI/4;return{x:Math.cos(a)*88,z:Math.sin(a)*88,length:132,width:12,angle:a};}));
+/** Both built pedestrian circuits, shared by ground, collision and cartography. */
+export const CITE_PROMENADES=Object.freeze([
+ Object.freeze({id:'heritage-promenade',inner:119,outer:131}),
+ Object.freeze({id:'horizon-arcade',inner:173,outer:183}),
+]);
+export const CITE_CONNECTORS=Object.freeze(Array.from({length:8},(_,i)=>{
+ const angle=-Math.PI/2+i*Math.PI/4;
+ return Object.freeze({id:'horizon-causeway-'+i,x:Math.cos(angle)*162,z:Math.sin(angle)*162,length:34,width:9,angle});
+}));
 export function citeSurfaceDistance(x,z){
- let result=Math.abs(Math.hypot(x,z)-125)-6;
+ let result=Infinity;
+ for(const ring of CITE_PROMENADES)result=Math.min(result,Math.abs(Math.hypot(x,z)-(ring.inner+ring.outer)/2)-(ring.outer-ring.inner)/2);
  for(const island of CITE_ISLANDS){const distance=Math.hypot(x-island.x,z-island.z);if(distance-island.r*1.055<result)result=Math.min(result,distance-citeIslandRadius(island,Math.atan2(z-island.z,x-island.x)));}
- for(const bridge of CITE_BRIDGES){const dx=x-bridge.x,dz=z-bridge.z,c=Math.cos(bridge.angle),s=Math.sin(bridge.angle),along=Math.abs(dx*c+dz*s)-bridge.length/2,across=Math.abs(-dx*s+dz*c)-bridge.width/2;result=Math.min(result,Math.hypot(Math.max(0,along),Math.max(0,across))+Math.min(0,Math.max(along,across)));}
+ for(const bridge of [...CITE_BRIDGES,...CITE_CONNECTORS]){const dx=x-bridge.x,dz=z-bridge.z,c=Math.cos(bridge.angle),s=Math.sin(bridge.angle),along=Math.abs(dx*c+dz*s)-bridge.length/2,across=Math.abs(-dx*s+dz*c)-bridge.width/2;result=Math.min(result,Math.hypot(Math.max(0,along),Math.max(0,across))+Math.min(0,Math.max(along,across)));}
  return result;
 }
 

@@ -1,3 +1,4 @@
+import {civicShaftGeometry,civicGlazingGeometry} from './platform-architecture.js';
 /** Additional authored architectural layers, bounded by the existing room footprints. */
 export function addLandmarkCraft({mesh,geo,box,cylinder,materials,buildings,THREE}){
  const {dark,gold,glass,stone,blue}=materials;
@@ -31,6 +32,7 @@ export function addLandmarkCraft({mesh,geo,box,cylinder,materials,buildings,THRE
    for(let i=0;i<8;i++){const a=i*Math.PI/4;mesh(cylinder,gold,x+Math.cos(a)*5.45,h+29,rear+Math.sin(a)*5.45,.11,6,.11);}
   }
   if(b.district==='innovation'){
+   mesh(geo(new THREE.CylinderGeometry(w*.36,w*.24,3,8)),dark,x,h+27.5,rear);
    // Observatory crown and a distinct gyroscopic Matrix sculpture.
    const centerY=h+29,r=w*.36;
    mesh(geo(new THREE.SphereGeometry(r,24,12,0,Math.PI*2,0,Math.PI/2)),glass,x,centerY,rear);
@@ -49,4 +51,30 @@ export function addLandmarkCraft({mesh,geo,box,cylinder,materials,buildings,THRE
    for(const side of [-1,1])mesh(box,dark,x+side*w*.55,h+4.5,rear,1,9,1.5);
   }
  }
+ // The reference's central tower reads as one inhabited architectural mass.
+ // This tapered civic body joins the four spires entirely inside the fountain.
+ const centralProfile=[[0,1],[.22,1],[.55,.84],[.84,.69],[1,.56]],towerHeight=65;
+ mesh(geo(civicShaftGeometry(22,20,towerHeight,centralProfile)),dark,0,0,0);
+ const bodyScale=y=>{
+  const t=y/towerHeight;
+  for(let i=1;i<centralProfile.length;i++)if(t<=centralProfile[i][0]){const [a,sa]=centralProfile[i-1],[b,sb]=centralProfile[i];return sa+(sb-sa)*(t-a)/(b-a);}
+  return centralProfile.at(-1)[1];
+ };
+ for(let level=7;level<65;level+=5){
+  const scale=bodyScale(level);
+  for(const side of [-1,1]){
+   mesh(geo(civicGlazingGeometry(22,20,towerHeight,centralProfile,level,side,'z',.745,2.55)),glass,0,0,0);
+   mesh(box,gold,0,level+1.36,side*(10*scale+.16),17*scale,.12,.16);
+   mesh(geo(civicGlazingGeometry(22,20,towerHeight,centralProfile,level,side,'x',.74,2.55)),glass,0,0,0);
+   mesh(box,gold,side*(11*scale+.16),level+1.36,0,.16,.12,15.3*scale);
+  }
+ }
+ for(const side of [-1,1])for(const edge of [-1,1]){
+  const points=centralProfile.map(([height,scale])=>new THREE.Vector3(side*8.58*scale,height*towerHeight,edge*10*scale));
+  tube(points,.14,gold);
+ }
+ for(const y of [3,14,36,55,65]){
+  const scale=bodyScale(y);mesh(geo(civicShaftGeometry(22*scale+.5,20*scale+.5,.4,[[0,1],[1,1]])),gold,0,y,0);
+ }
+
 }

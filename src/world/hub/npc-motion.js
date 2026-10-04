@@ -28,7 +28,7 @@ export function hubNpcNeeds(item,timeSeconds=0,{weather='clear'}={}){
     rest:clamp01((resting?.2:working?.72:.48)+wave(.13)*.18),
     food:clamp01(.28+wave(.42)*.6),
     social:clamp01((social?.16:.52)+wave(.71)*.28),
-    safety:clamp01((weather==='heavy_rain'||weather==='storm') ? .82 : .18),
+    safety:clamp01((weather==='heavy_rain'||weather==='storm') ? .82 : weather==='snow'?.72:weather==='rain'?.56:.18),
     purpose:clamp01((working?.2:.48)+wave(.04)*.26),
   };
 }
@@ -63,9 +63,9 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
     const stanceRadius=(state==='Work'?.12:state==='Talk'?.09:state==='Observe'?.055:.035)*tierScale;
     const stanceSpeed=.08+((seed>>>16)%7)/100;
     const sway=timeSeconds*stanceSpeed+phase;
-    const x=baseX+Math.cos(sway*1.13)*stanceRadius;
-    const z=baseZ+Math.sin(sway*.87)*stanceRadius;
-    const heading=phase+Math.sin(timeSeconds*.16+phase)*.22;
+    const x=baseX+(context.reducedMotion?0:Math.cos(sway*1.13)*stanceRadius);
+    const z=baseZ+(context.reducedMotion?0:Math.sin(sway*.87)*stanceRadius);
+    const heading=phase+(context.reducedMotion?0:Math.sin(timeSeconds*.16+phase)*.22);
     return {x,z,heading,state,needs,tier,updateHz,moving:false};
   }
 

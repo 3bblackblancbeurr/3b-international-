@@ -40,5 +40,5 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
  }
  for(const p of sites)collisions.push({x:p.x,z:p.z,r:.4});
  owned.push(trunkGeo,crownGeo,trunkMat,leafMat);
- return{count:sites.length,tick(time){clock.value=time;},setWeather(value){wind.value=value==='storm'?1:value==='rain'?.65:.35;},setQuality(mode){group.children.forEach(o=>{o.castShadow=mode!=='fluid';});}};
+ return{count:sites.length,mapSites:sites.map(p=>({...p,r:2.9*p.scale,kind:'tree'})),tick(time){clock.value=time;},setWeather(value){wind.value=value==='storm'?1:value==='rain'?.65:.35;},setQuality(mode){group.children.forEach(o=>{o.castShadow=mode!=='fluid';});}};
 }
