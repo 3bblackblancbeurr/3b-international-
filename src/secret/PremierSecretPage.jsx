@@ -11,6 +11,7 @@ import {
   sameArray,
 } from "./premierSecretEngine.js";
 import { completeDailySecretAttempt, startDailySecretAttempt } from "./dailySecret.js";
+import SecretSoundscape from "./SecretSoundscape.jsx";
 import "./premier-secret.css";
 import "./secret-aaaa.css";
 import "./secret-v2.css";
@@ -389,6 +390,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
       aria-labelledby="premier-secret-title"
       style={{ "--ps-signal": config.signalColor.hex }}
     >
+      <SecretSoundscape enabled={soundOn} stage={stage} />
       <Suspense fallback={<div className="ps-v2-scene ps-v2-scene-fallback" aria-hidden="true" />}>
         <SecretSanctuary3D
           stage={stage}
