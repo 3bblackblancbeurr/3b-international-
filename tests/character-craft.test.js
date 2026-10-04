@@ -117,3 +117,35 @@ test('reading and inspection keep both hands and elbows in front of the measured
   actor.dispose();
  }
 });
+
+test('the open reading book rests on measured palms and releases its own resources when the actor leaves',async()=>{
+ const asset=await travellerRig();
+ for(const height of [.9,1,1.1]){
+  let actor;await new Promise(resolve=>{actor=createLivingActor({load:()=>Promise.resolve(asset)},{avatar:{height,boots:0,weapon:'paris'},scale:2.2,onLoad:resolve});});
+  actor.object.position.set(19,4.8,-12);
+  const book=actor.object.getObjectByName('3B-reading-book'),covers=[];book.traverse(o=>{if(o.name==='3B-reading-cover')covers.push(o);});
+  assert.equal(covers.length,2);assert.equal(book.visible,false);
+  for(const yaw of [0,Math.PI/2,Math.PI-.01]){
+   for(let i=0;i<6;i++)actor.face(Math.sin(yaw),Math.cos(yaw),.25);
+   actor.setPose('Read');actor.update(.25);actor.object.updateMatrixWorld(true);assert.equal(book.visible,true);
+   for(const side of ['l','r']){
+    const wrist=actor.object.getObjectByName('hand_'+side).getWorldPosition(new T.Vector3()),knuckle=actor.object.getObjectByName('middle_01_'+side).getWorldPosition(new T.Vector3()),palm=wrist.lerp(knuckle,.65);
+    const contacts=covers.map(cover=>cover.worldToLocal(palm.clone())).filter(p=>Math.abs(p.x)<.25&&Math.abs(p.z)<.32);
+    assert.equal(contacts.length,1,'each palm supports exactly its own open cover leaf');
+    assert.ok(Math.abs(contacts[0].y+.0065)<.012,'the cover underside meets the measured palm instead of hovering or penetrating it');
+   }
+   const chest=actor.object.worldToLocal(actor.object.getObjectByName('spine_03').getWorldPosition(new T.Vector3()));
+   book.traverse(o=>{if(!o.geometry)return;const positions=o.geometry.getAttribute('position');for(let i=0;i<positions.count;i++){
+    const vertex=actor.object.worldToLocal(o.localToWorld(new T.Vector3().fromBufferAttribute(positions,i)));
+    assert.ok(vertex.z>chest.z+.12,'book geometry stays ahead of the chest and clothing');
+   }});
+   actor.setPose('Inspect');assert.equal(book.visible,false,'switching to another interaction immediately hides the held book');actor.update(.25);assert.equal(book.visible,false);
+   actor.setPose('Read');actor.update(.25);actor.setPose(null);assert.equal(book.visible,false,'pause/exit cancellation does not require another animation tick');
+   actor.setPose('Read');actor.update(.25);actor.action('Attack',.5);assert.equal(book.visible,false,'a combat action immediately removes the book');
+   actor.setPose('Read');actor.update(.25);actor.reset();assert.equal(book.visible,false,'reset immediately removes the book');
+  }
+  const geometries=new Set(),materials=new Set();book.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material);});
+  let releasedGeometry=0,releasedMaterial=0;geometries.forEach(g=>g.addEventListener('dispose',()=>releasedGeometry++));materials.forEach(m=>m.addEventListener('dispose',()=>releasedMaterial++));
+  actor.dispose();actor.dispose();assert.equal(book.parent,null);assert.equal(releasedGeometry,geometries.size);assert.equal(releasedMaterial,materials.size);
+ }
+});
