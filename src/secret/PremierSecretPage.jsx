@@ -12,9 +12,21 @@ import {
 } from "./premierSecretEngine.js";
 import { completeDailySecretAttempt, startDailySecretAttempt } from "./dailySecret.js";
 import "./premier-secret.css";
+import "./secret-aaaa.css";
 
 const STORAGE_KEY = "3b_premier_secret_v2";
 const RING_MARKS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+const SECRET_STAGES = [
+  { id: 0, label: "Veille" },
+  { id: 1, label: "Signal" },
+  { id: 2, label: "Porte" },
+  { id: 3, label: "Transmission" },
+  { id: 4, label: "Anneaux" },
+  { id: 5, label: "Archive" },
+  { id: 6, label: "Chambre" },
+  { id: 7, label: "Sceau" },
+  { id: 8, label: "Révélé" },
+];
 
 function safeRead(dayKey) {
   try {
@@ -79,6 +91,8 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
   const [serverMessage, setServerMessage] = useState("");
   const [starting, setStarting] = useState(false);
   const sequenceTimer = useRef(null);
+  const previousStageRef = useRef(stage);
+  const [cinematic, setCinematic] = useState(false);
 
   const journalEntries = useMemo(() => {
     const entries = [
@@ -112,6 +126,14 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
   useEffect(() => () => {
     if (sequenceTimer.current) window.clearTimeout(sequenceTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (previousStageRef.current === stage) return undefined;
+    previousStageRef.current = stage;
+    setCinematic(true);
+    const timer = window.setTimeout(() => setCinematic(false), 920);
+    return () => window.clearTimeout(timer);
+  }, [stage]);
 
   useEffect(() => {
     const phase = dailySecret?.phase;
@@ -151,6 +173,10 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
   }, [stage, deadline]);
 
   function ping(frequency = 440) {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      const pattern = frequency < 250 ? [18, 24, 18] : frequency > 800 ? [12, 20, 26] : 12;
+      navigator.vibrate(pattern);
+    }
     if (!soundOn || typeof window === "undefined") return;
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
@@ -346,6 +372,8 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
         <span />
       </div>
 
+      {cinematic && <div className="ps-cinematic-transition" aria-hidden="true"><span /></div>}
+
       <header className="ps-toprail">
         <button type="button" className="ps-brand" onClick={() => goTo?.("home")} aria-label="Retour à l’accueil 3B">
           <strong>3B</strong>
@@ -372,6 +400,17 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
       </header>
 
       <main className="ps-shell">
+        <nav className="ps-progress-rail" aria-label="Progression du Premier Secret">
+          {SECRET_STAGES.map((item) => {
+            const state = item.id < stage ? "done" : item.id === stage ? "current" : "next";
+            return (
+              <div className="ps-progress-step" data-state={state} key={item.id} aria-current={state === "current" ? "step" : undefined}>
+                <i>{item.id === 0 ? "◷" : item.id}</i>
+                <span>{item.label}</span>
+              </div>
+            );
+          })}
+        </nav>
         {dailySecret?.phase === "attempt" && (
           <div className="ps-global-deadline" role="status">
             <span>TEMPS TOTAL DE TA TENTATIVE</span>
@@ -386,6 +425,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
               <h1 id="premier-secret-title">L’Heure du <em>Premier Secret.</em></h1>
               <p className="ps-lead">Huit royaumes. Une heure qui se dérobe.<br />Et quelque chose qui attend, de l’autre côté.</p>
               <div className={`ps-hour-status ps-hour-${dailySecret?.phase || "loading"}`}>
+                <div className="ps-hour-beacon" aria-hidden="true"><i /><i /><i /><b>◷</b></div>
                 <span>HEURE OFFICIELLE · PARIS</span>
                 <strong>{dailySecret?.parisClock || "--:--:--"}</strong>
                 <p>{dailySecret?.status?.message || "Synchronisation avec le Nexus…"}</p>
@@ -469,7 +509,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
               <p className="ps-instruction">Recompose ensuite les fragments dans l’ordre d’apparition.</p>
               <div className="ps-token-row">
                 {TRANSMISSION_TOKENS.map((token) => (
-                  <button key={token} type="button" disabled={showSequence || transmissionPick.includes(token)} onClick={() => selectTransmission(token)}>{token}</button>
+                  <button key={token} type="button" className={transmissionPick.includes(token) ? "is-picked" : ""} disabled={showSequence || transmissionPick.includes(token)} onClick={() => selectTransmission(token)}>{token}</button>
                 ))}
               </div>
               <div className="ps-current-answer">Ton ordre : <strong>{transmissionPick.length ? transmissionPick.join(" → ") : "—"}</strong></div>
@@ -501,7 +541,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
                   <div className="ps-ring-control" key={index}>
                     <small>ANNEAU {index + 1}</small>
                     <button type="button" onClick={() => moveRing(index, -1)} aria-label={"Tourner l’anneau " + (index + 1) + " en arrière"}>−</button>
-                    <div className="ps-ring-value"><span>{RING_MARKS[value]}</span></div>
+                    <div className="ps-ring-value" style={{ "--ps-ring-turn": `${value * 45}deg` }}><span>{RING_MARKS[value]}</span></div>
                     <button type="button" onClick={() => moveRing(index, 1)} aria-label={"Tourner l’anneau " + (index + 1) + " en avant"}>+</button>
                   </div>
                 ))}
@@ -530,7 +570,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
               </div>
               <div className="ps-virtue-row">
                 {ARCHIVE_VALUES.map((value) => (
-                  <button type="button" key={value} disabled={archiveDraft.includes(value)} onClick={() => placeArchiveValue(value)}>{value}</button>
+                  <button type="button" key={value} className={archiveDraft.includes(value) ? "is-picked" : ""} disabled={archiveDraft.includes(value)} onClick={() => placeArchiveValue(value)}>{value}</button>
                 ))}
               </div>
               <button type="button" className="ps-primary" disabled={archiveDraft.some((entry) => entry === null)} onClick={validateArchive}>Sceller l’Archive</button>
@@ -548,20 +588,52 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
                 <p><strong>Valeur :</strong> utilise la trace que tu avais placée au <b>{SLOT_NAMES[config.chamberSlot]}</b> dans l’Archive.</p>
               </div>
               <div className="ps-chamber">
-                <label>
-                  <span>Aiguille du royaume</span>
-                  <select value={chamberNumber} onChange={(event) => setChamberNumber(event.target.value)}>
-                    <option value="">Choisir un nombre</option>
-                    {COUNTRIES.map((country, index) => <option key={country.id} value={index + 1}>{index + 1}</option>)}
-                  </select>
-                </label>
-                <label>
-                  <span>Valeur du cercle</span>
-                  <select value={chamberValue} onChange={(event) => setChamberValue(event.target.value)}>
-                    <option value="">Choisir une valeur</option>
-                    {ARCHIVE_VALUES.map((value) => <option key={value} value={value}>{value}</option>)}
-                  </select>
-                </label>
+                <fieldset className="ps-choice-field">
+                  <legend>Aiguille du royaume</legend>
+                  <div className="ps-choice-wheel ps-number-wheel">
+                    {COUNTRIES.map((country, index) => {
+                      const value = String(index + 1);
+                      const selected = chamberNumber === value;
+                      return (
+                        <button
+                          type="button"
+                          key={country.id}
+                          className={selected ? "is-selected" : ""}
+                          aria-pressed={selected}
+                          onClick={() => {
+                            setChamberNumber(value);
+                            ping(380 + index * 35);
+                          }}
+                        >
+                          <span>{index + 1}</span>
+                          <small>{RING_MARKS[index]}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+                <fieldset className="ps-choice-field">
+                  <legend>Valeur du cercle</legend>
+                  <div className="ps-choice-wheel ps-value-wheel">
+                    {ARCHIVE_VALUES.map((value, index) => {
+                      const selected = chamberValue === value;
+                      return (
+                        <button
+                          type="button"
+                          key={value}
+                          className={selected ? "is-selected" : ""}
+                          aria-pressed={selected}
+                          onClick={() => {
+                            setChamberValue(value);
+                            ping(560 + index * 45);
+                          }}
+                        >
+                          {value}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
               </div>
               <button type="button" className="ps-primary" onClick={validateChamber}>Confirmer le mécanisme</button>
             </div>
@@ -579,7 +651,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
               <p className="ps-instruction">Reconstruis les trois mots du sceau.</p>
               <div className="ps-virtue-row">
                 {shuffledSeal.map((word) => (
-                  <button type="button" key={word} disabled={sealPick.includes(word)} onClick={() => selectSeal(word)}>{word}</button>
+                  <button type="button" key={word} className={sealPick.includes(word) ? "is-picked" : ""} disabled={sealPick.includes(word)} onClick={() => selectSeal(word)}>{word}</button>
                 ))}
               </div>
               <div className="ps-current-answer">Ton sceau : <strong>{sealPick.length ? sealPick.join(" → ") : "—"}</strong></div>
