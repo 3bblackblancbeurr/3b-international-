@@ -13,11 +13,22 @@ export const COUNTRIES = [
 export const countryById = Object.fromEntries(COUNTRIES.map(c=>[c.id,c]));
 export const SOURCE=source;
 const slug=name=>COUNTRIES.find(c=>c.name===name)?.id||'3b';
+const CANON_GUARDIANS={
+ C165:{name:'Céliane — France',value:'Justice'},
+ C166:{name:'Alessio — Italie',value:'Espoir'},
+ C167:{name:'Eira — Estonie',value:'Sagesse'},
+ C168:{name:'Émir — Turquie',value:'Foi'},
+ C169:{name:'Yliane — Algérie',value:'Loyauté'},
+ C170:{name:'Soraya — Tunisie',value:'Courage'},
+ C171:{name:'Naël — Maroc',value:'Noblesse'},
+ C172:{name:'Diego — Espagne',value:'Passion'},
+};
 export const CARDS=source.cards.map(c=>{
- const country=slug(c.country),character=c.number<=172;
+ const country=slug(c.country),character=c.number<=172,canon=CANON_GUARDIANS[c.id];
  const role=c.subtype.includes('Gardien')?'protecteur':c.number%5===0?'soigneur':c.number%5===1?'éclaireur':c.number%5===2?'mystique':c.defense>c.attack?'protecteur':'assaillant';
- return {...c,originalAttack:c.attack,originalDefense:c.defense,country,countryName:c.country,character,role,
-  symbol:countryById[country]?.symbol||'3B',power:c.effect,attack:character?Math.round(9+c.attack*1.2):0,health:character?60+c.defense*3:0,
+ const effect=canon?`Gardien de la valeur ${canon.value}. Active la Porte de ${c.country} et compte comme un Sceau.`:c.effect;
+ return {...c,name:canon?.name||c.name,effect,originalAttack:c.attack,originalDefense:c.defense,country,countryName:c.country,character,role,
+  symbol:countryById[country]?.symbol||'3B',power:effect,attack:character?Math.round(9+c.attack*1.2):0,health:character?60+c.defense*3:0,
   trait:character?({protecteur:'Rempart : +12 de vitalité à l’équipe.',soigneur:'Renaissance : la garde rend 4 points de vitalité.',éclaireur:'Instinct : +8 % de vitesse dans le monde.',mystique:'Résonance : fenêtre de pacte élargie.',assaillant:'Impact : +4 aux frappes de l’équipe.'}[role]):explorationEffect(c),
  };
 });
