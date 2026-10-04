@@ -4,7 +4,7 @@ import {REFERENCE_GATE_SECTORS} from './gate-identity.js';
 import {citeSurfaceDistance} from './platform-topology.js';
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 export const HUB_SCALE=1.7;
-export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:0,z:32*HUB_SCALE},core:{x:0,z:0}});
+export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
 const DISTRICT_SITES = {
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
  archives:{x:-66,z:-66},arena:{x:66,z:-66},commerce:{x:94,z:0},
