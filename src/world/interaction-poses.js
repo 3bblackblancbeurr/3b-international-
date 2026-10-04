@@ -3,7 +3,7 @@ import {AnimationClip,Quaternion,QuaternionKeyframeTrack,Euler,Vector3,Box3} fro
 const offsets={
  Read:{spine_02:[.07,0,0],upperarm_r:[-.44,.1,-.22],lowerarm_r:[-.95,0,0],upperarm_l:[-.44,-.1,.22],lowerarm_l:[-.95,0,0]},
  Inspect:{spine_02:[.11,.08,0],upperarm_r:[-.4,.13,-.28],lowerarm_r:[-.6,0,0],upperarm_l:[-.18,-.1,.2],lowerarm_l:[-.5,0,0]},
- Sit:{spine_02:[.055,0,0],upperarm_r:[-.12,.05,-.15],lowerarm_r:[-.35,0,0],upperarm_l:[-.12,-.05,.15],lowerarm_l:[-.35,0,0]}
+ Sit:{spine_02:[.055,0,0]}
 };
 const up=new Vector3(0,1,0),forward=new Vector3(0,0,1),position=new Vector3();
 
@@ -62,6 +62,27 @@ export function createInteractionPoses(idle,model,{scale=1,seatHeight=.9}={}){
     for(const shoe of shoes)sole=Math.min(sole,new Box3().setFromObject(shoe,true).min.y+seatRootOffset-floor);
     const correction=.025-sole;if(Math.abs(correction)<.004)break;
     for(const leg of shins){leg.drop=Math.min(leg.shin,Math.max(.02,leg.drop-correction));worldRotation('calf_'+leg.side,new Vector3(0,-leg.drop,Math.sqrt(Math.max(0,leg.shin*leg.shin-leg.drop*leg.drop))).normalize());worldRotation('foot_'+leg.side,forward);}
+   }
+   // Place wrists over the actual thigh centres. Solving the shipped shoulder,
+   // elbow and wrist chain avoids additive Idle angles sending an arm behind
+   // the backrest; each elbow bends outward and towards the knees.
+   const inverseActor=actorQuaternion.clone().invert(),worldUp=up.clone().applyQuaternion(actorQuaternion);
+   const aimAt=(boneName,target)=>{
+    const bone=model.getObjectByName(boneName);if(!bone)return;
+    const direction=target.clone().sub(bone.getWorldPosition(new Vector3())).normalize().applyQuaternion(inverseActor);
+    worldRotation(boneName,direction);
+   };
+   for(const side of ['l','r']){
+    const shoulder=model.getObjectByName('upperarm_'+side),elbow=model.getObjectByName('lowerarm_'+side),wrist=model.getObjectByName('hand_'+side),hip=model.getObjectByName('thigh_'+side),knee=model.getObjectByName('calf_'+side);
+    if(![shoulder,elbow,wrist,hip,knee].every(Boolean))continue;
+    model.updateMatrixWorld(true);
+    const a=shoulder.getWorldPosition(new Vector3()),b=elbow.getWorldPosition(new Vector3()),c=wrist.getWorldPosition(new Vector3());
+    const l1=a.distanceTo(b),l2=b.distanceTo(c),target=hip.getWorldPosition(new Vector3()).lerp(knee.getWorldPosition(new Vector3()),.52).addScaledVector(worldUp,.12*scale);
+    const direction=target.clone().sub(a).normalize(),reach=Math.max(Math.abs(l1-l2)+.01,Math.min(l1+l2-.015*scale,a.distanceTo(target)));
+    const along=(l1*l1-l2*l2+reach*reach)/(2*reach),height=Math.sqrt(Math.max(0,l1*l1-along*along));
+    const pole=new Vector3(side==='l'?.8:-.8,0,.7).applyQuaternion(actorQuaternion);pole.addScaledVector(direction,-pole.dot(direction)).normalize();
+    const bend=a.clone().addScaledVector(direction,along).addScaledVector(pole,height),reachable=a.clone().addScaledVector(direction,reach);
+    aimAt('upperarm_'+side,bend);aimAt('lowerarm_'+side,reachable);worldRotation('hand_'+side,forward);
    }
    tracks.splice(0,tracks.length,...byName.values());
   }

@@ -59,6 +59,15 @@ test('seated avatars meet the cushion and keep their actual shoe soles above ele
    assert.ok(Math.abs(pelvis.y-floor-cushion)<1e-5,`cushion contact for height ${height}`);
    assert.ok(soles.min.y>=floor-.035,`shoe penetrates floor at height ${height}: ${soles.min.y-floor}`);
    assert.ok(soles.min.y<=floor+.16,`shoe floats above floor at height ${height}: ${soles.min.y-floor}`);
+   for(const side of ['l','r']){
+    const hip=actor.object.getObjectByName('thigh_'+side).getWorldPosition(new T.Vector3()),knee=actor.object.getObjectByName('calf_'+side).getWorldPosition(new T.Vector3()),hand=actor.object.getObjectByName('hand_'+side).getWorldPosition(new T.Vector3()),elbow=actor.object.getObjectByName('lowerarm_'+side).getWorldPosition(new T.Vector3());
+    const thighContact=hip.clone().lerp(knee,.52).add(new T.Vector3(0,.12*2.2,0));
+    assert.ok(hand.distanceTo(thighContact)<.12,'the wrist rests over its own thigh');
+    const localPelvis=actor.object.worldToLocal(pelvis.clone()),localHand=actor.object.worldToLocal(hand),localElbow=actor.object.worldToLocal(elbow);
+    assert.ok(localHand.z>localPelvis.z+.12,'the hand remains in front of the torso and backrest');
+    assert.ok(localElbow.z>localPelvis.z+.06,'the elbow bends towards the knees');
+    assert.ok(Math.abs(localElbow.x)<.45,'the elbow stays inside the chair armrest width');
+   }
   }
   actor.setPose('Read');actor.object.position.y=floor;actor.update(.25);assert.equal(actor.poseRootOffset(),0);
   actor.setPose(null);actor.update(.25,1,0,1);const foot=actor.object.getObjectByName('foot_l'),before=foot.quaternion.clone();actor.update(.1,.5,0,.5);

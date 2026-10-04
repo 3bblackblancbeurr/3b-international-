@@ -53,7 +53,49 @@ async function captureRenderer(page,path,view=null){
  await writeFile(path,Buffer.from(uri.slice(uri.indexOf(',')+1),'base64'));
 }
 try{
- for(const region of (process.env.WORLD_ART_REGIONS||'hub,france,maroc').split(',')){
+ if(process.env.WORLD_ART_ARMORY==='1'||process.env.WORLD_ART_ONLY_ARMORY==='1'){
+  const context=await browser.newContext({viewport:{width:Number(process.env.WORLD_ART_WIDTH)||800,height:Number(process.env.WORLD_ART_HEIGHT)||500},deviceScaleFactor:1}),errors=[];
+  await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
+  const page=await context.newPage();page.on('pageerror',e=>{errors.push(e.message);console.log('ARMORYERROR',e.message);});page.on('console',m=>{if(m.type()==='error'&&/WebGL|THREE|shader/i.test(m.text()))errors.push(m.text());});
+  await page.goto('http://127.0.0.1:5197/__armory-qa',{waitUntil:'domcontentloaded'});
+  await page.waitForSelector('.weapon-showroom-stage canvas').catch(async e=>{await page.screenshot({path:out+'/armory-failure.png',fullPage:true});console.log('ARMORY STATE',JSON.stringify({errors,html:await page.locator('main').innerHTML()}));throw e;});
+  const weapons=await page.evaluate(()=>armoryQA.weapons);assert.equal(weapons.length,16);
+  await page.evaluate(()=>armoryQA.canvas=document.querySelector('.weapon-showroom-stage canvas'));
+  if(await page.locator('.weapon-tile img').count()){
+   await page.evaluate(()=>document.querySelectorAll('.weapon-tile img').forEach(img=>img.loading='eager'));
+   await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.weapon-tile img')];return images.length===16&&images.every(img=>img.complete&&img.naturalWidth>0);},{},{timeout:30000});
+   assert.equal(await page.locator('.weapon-tile img').count(),16,'Every collection tile loads its actual model image');
+  }
+  await page.screenshot({path:out+'/armory-menu.png',fullPage:true});
+  for(const id of weapons){
+   await page.evaluate(id=>armoryQA.select(id),id);
+   await page.waitForFunction(id=>document.querySelector('.armory-grid button[aria-pressed="true"]')?.querySelector('strong')?.textContent===document.querySelector('.weapon-showroom figcaption strong')?.textContent&&window.armoryQA.weapons.includes(id),id);
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   const stage=page.locator('.weapon-showroom-stage');assert.equal(await stage.getAttribute('data-failed'),'false',id+' real 3D renderer');
+   assert.equal(await stage.locator('canvas').count(),1,'Exactly one selected-item renderer');
+   assert.equal(await page.evaluate(()=>armoryQA.canvas===document.querySelector('.weapon-showroom-stage canvas')),true,'Changing weapons reuses the same GPU context');
+   await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.weapon-evolution-image img')];return images.length===4&&images.every(img=>img.complete&&img.naturalWidth===360&&img.naturalHeight===240);},{},{timeout:30000});
+   const formImages=await page.evaluate(()=>[...document.querySelectorAll('.weapon-evolution-image img')].map(img=>img.src));
+   assert.equal(new Set(formImages).size,4,id+' four tier photographs use distinct equipped geometry');
+   for(let form=0;form<4;form++){assert.ok(formImages[form].startsWith('data:image/jpeg;base64,'),'Form photographs come from the live persistent renderer');await writeFile(out+'/weapon-form-'+id+'-'+form+'.jpg',Buffer.from(formImages[form].slice('data:image/jpeg;base64,'.length),'base64'));}
+   await page.evaluate(id=>armoryQA.select(id,3),id);
+   await page.waitForFunction(()=>document.querySelector('.weapon-showroom figcaption span')?.textContent.includes('FORME 4'));
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   assert.equal(await stage.getAttribute('data-failed'),'false',id+' highest-tier equipment renders');
+   assert.equal(await page.evaluate(()=>armoryQA.canvas===document.querySelector('.weapon-showroom-stage canvas')),true,'Evolution selection retains the same GPU context');
+   await page.evaluate(id=>armoryQA.select(id,0),id);
+   await page.waitForFunction(()=>document.querySelector('.weapon-showroom figcaption span')?.textContent.includes('FORME 1'));
+   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+   const box=await stage.boundingBox();assert.ok(box.width>250&&box.height>=240,'Weapon preview stays large');
+   await stage.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Home');
+   await page.locator('.weapon-showroom').screenshot({path:out+'/weapon-'+id+'.png'});
+   await stage.screenshot({path:out+'/weapon-tile-'+id+'.jpg',type:'jpeg',quality:92});
+  }
+  assert.deepEqual(errors,[],'Armory mounts and switches all 16 weapons without shader or script errors');results.push({armory:true,weapons,forms:weapons.length*4,ok:true,errors});
+  await context.close();
+ }
+ // Weapon captures finish first and remain available even if city QA later fails.
+ for(const region of (process.env.WORLD_ART_ONLY_ARMORY==='1'?[]:(process.env.WORLD_ART_REGIONS||'hub,france,maroc').split(','))){
   const errors=[],context=await browser.newContext({viewport:{width:Number(process.env.WORLD_ART_WIDTH)||800,height:Number(process.env.WORLD_ART_HEIGHT)||500},deviceScaleFactor:1});
   await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
   await context.addInitScript(({dateString})=>{const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[dateString]));}static now(){return new NativeDate(dateString).getTime();}};localStorage.setItem('3b-world-camera',JSON.stringify({version:2,yaw:.12,pitch:.21,distance:24}));},{dateString:'2026-10-02T'+(process.env.WORLD_ART_CLOCK||'16:20:00')});
@@ -61,6 +103,7 @@ try{
   console.log('LOAD',region);
   await page.goto('http://127.0.0.1:5197/__world-art-qa?region='+region+'&quality='+(process.env.WORLD_ART_QUALITY||'fluid'),{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.qa?.ready&&qa.snapshot?.drawCalls>0,{},{timeout:180000});
+  if(region==='hub')await page.waitForFunction(()=>qa.snapshot.graphics?.crowd?.ready&&qa.snapshot.graphics.crowd.models?.length===2,{},{timeout:120000});
   await page.evaluate(()=>game.skipCinematic());
   await page.waitForFunction(()=>qa.snapshots.length>4,{},{timeout:90000});
   console.log('FRAME',JSON.stringify(await page.evaluate(()=>({calls:qa.snapshot.drawCalls,triangles:qa.snapshot.triangles,graphics:qa.snapshot.graphics,camera:game.debugView().camera.position,target:game.debugView().cameraTarget,nearSolids:game.debugView().cameraSolids.filter(b=>Math.hypot(b.x,b.z)<35),shot:game.debugView().shot?.kind,avatarBounds:game.debugView().avatarBounds,frontMeshes:game.debugView().frontMeshes}))));
@@ -104,9 +147,10 @@ try{
   }
   if(region==='hub'){
    const fixture=await page.evaluate(()=>{const initial=game.mapQaFixture(),gate=initial.items.find(i=>i.type==='portal'&&i.id==='france');game.waypoint(gate,true);const fixture=JSON.parse(JSON.stringify(game.mapQaFixture()));game.setPaused(true);return fixture;});
+   await writeFile(out+'/cartography-fixture.json',JSON.stringify(fixture,null,2));
    assert.ok(fixture.route.length>1,'The map receives a real detour route from the playable navigator');
    await page.evaluate(()=>game.destroy());
-   await page.goto('http://127.0.0.1:5197/__cartography-qa',{waitUntil:'domcontentloaded'});
+   await page.goto('http://127.0.0.1:5197/__cartography-qa',{waitUntil:'domcontentloaded',timeout:120000});
    await page.waitForFunction(()=>typeof window.cartographyQA?.mount==='function',{},{timeout:60000});
    await page.evaluate(fixture=>cartographyQA.mount(fixture),fixture);
    await page.waitForSelector('.hub-map-viewport svg');
@@ -121,13 +165,17 @@ try{
    await map.focus();await page.keyboard.press('ArrowRight');
    assert.equal(await page.evaluate(()=>Number(document.querySelector('.hub-map-viewport svg>g').getAttribute('transform').match(/translate\(([-\d.]+)/)[1])<0),true,'Keyboard panning preserves north-up physical orientation');
    await page.getByRole('searchbox',{name:'Trouver un lieu'}).fill('mémoire');
-   await page.waitForFunction(()=>document.querySelector('.hub-map-count')?.textContent?.startsWith('4 ')||document.querySelector('.hub-map-destination-list')?.textContent?.includes('Archives'));
-   assert.ok((await page.locator('.hub-map-destination-list').innerText()).includes('Archives'),'Accent-aware search finds the real archive');
-   const archive=page.locator('.hub-map-destination-list button').filter({hasText:'Archives'}).first();await archive.click();
-   assert.ok((await page.evaluate(()=>cartographyQA.selections)).some(id=>id.includes('memory_archives')),'Destination uses the existing real building ID');
+   const archiveItem=fixture.items.find(i=>i.type==='hubBuilding'&&i.buildingId==='memory_archives');
+   assert.ok(archiveItem,'The real scene fixture contains the functional archive building');
+   const archive=page.locator('.hub-map-destination-list button[data-destination-id="'+archiveItem.id+'"]');
+   await archive.waitFor({state:'visible'});
+   assert.ok((await archive.innerText()).includes('Archives'),'Accent-aware search finds the real archive building');
+   await archive.click();
+   assert.equal((await page.evaluate(()=>cartographyQA.selections)).at(-1),archiveItem.id,'Destination uses the existing real building ID');
    await page.getByRole('searchbox',{name:'Trouver un lieu'}).fill('');
    await page.getByRole('button',{name:'Transports',exact:true}).click();
-   assert.equal(await page.locator('.hub-map-destination-list button').filter({hasText:'France'}).count(),1,'Country gate remains selectable in transport filter');
+   const franceGate=fixture.items.find(i=>i.type==='portal'&&i.id==='france');assert.ok(franceGate);
+   assert.equal(await page.locator('.hub-map-destination-list button[data-destination-id="'+franceGate.id+'"]').count(),1,'The real French gate remains selectable in transport filter');
    await page.evaluate(()=>cartographyQA.mode('mini'));await page.waitForSelector('.hub-minimap');
    await page.screenshot({path:out+'/hub-minimap.png',fullPage:true});
    await page.getByRole('button',{name:'Élargir la mini-carte',exact:true}).click();
@@ -141,45 +189,5 @@ try{
   }else await page.evaluate(()=>game.destroy());
   await context.close();console.log('PASS',JSON.stringify(results.at(-1)));
  }
- if(process.env.WORLD_ART_ARMORY==='1'){
-  const context=await browser.newContext({viewport:{width:Number(process.env.WORLD_ART_WIDTH)||800,height:Number(process.env.WORLD_ART_HEIGHT)||500},deviceScaleFactor:1}),errors=[];
-  await context.route('**/*',r=>new URL(r.request().url()).hostname==='127.0.0.1'?r.continue():r.abort());
-  const page=await context.newPage();page.on('pageerror',e=>{errors.push(e.message);console.log('ARMORYERROR',e.message);});page.on('console',m=>{if(m.type()==='error'&&/WebGL|THREE|shader/i.test(m.text()))errors.push(m.text());});
-  await page.goto('http://127.0.0.1:5197/__armory-qa',{waitUntil:'domcontentloaded'});
-  await page.waitForSelector('.weapon-showroom-stage canvas').catch(async e=>{await page.screenshot({path:out+'/armory-failure.png',fullPage:true});console.log('ARMORY STATE',JSON.stringify({errors,html:await page.locator('main').innerHTML()}));throw e;});
-  const weapons=await page.evaluate(()=>armoryQA.weapons);assert.equal(weapons.length,16);
-  await page.evaluate(()=>armoryQA.canvas=document.querySelector('.weapon-showroom-stage canvas'));
-  if(await page.locator('.weapon-tile img').count()){
-   await page.evaluate(()=>document.querySelectorAll('.weapon-tile img').forEach(img=>img.loading='eager'));
-   await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.weapon-tile img')];return images.length===16&&images.every(img=>img.complete&&img.naturalWidth>0);},{},{timeout:30000});
-   assert.equal(await page.locator('.weapon-tile img').count(),16,'Every collection tile loads its actual model image');
-  }
-  await page.screenshot({path:out+'/armory-menu.png',fullPage:true});
-  for(const id of weapons){
-   await page.evaluate(id=>armoryQA.select(id),id);
-   await page.waitForFunction(id=>document.querySelector('.armory-grid button[aria-pressed="true"]')?.querySelector('strong')?.textContent===document.querySelector('.weapon-showroom figcaption strong')?.textContent&&window.armoryQA.weapons.includes(id),id);
-   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-   const stage=page.locator('.weapon-showroom-stage');assert.equal(await stage.getAttribute('data-failed'),'false',id+' real 3D renderer');
-   assert.equal(await stage.locator('canvas').count(),1,'Exactly one selected-item renderer');
-   assert.equal(await page.evaluate(()=>armoryQA.canvas===document.querySelector('.weapon-showroom-stage canvas')),true,'Changing weapons reuses the same GPU context');
-   await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.weapon-evolution-image img')];return images.length===4&&images.every(img=>img.complete&&img.naturalWidth===360&&img.naturalHeight===240);},{},{timeout:30000});
-   const formImages=await page.evaluate(()=>[...document.querySelectorAll('.weapon-evolution-image img')].map(img=>img.src));
-   assert.equal(new Set(formImages).size,4,id+' four tier photographs use distinct equipped geometry');
-   for(let form=0;form<4;form++){assert.ok(formImages[form].startsWith('data:image/jpeg;base64,'),'Form photographs come from the live persistent renderer');await writeFile(out+'/weapon-form-'+id+'-'+form+'.jpg',Buffer.from(formImages[form].slice('data:image/jpeg;base64,'.length),'base64'));}
-   await page.evaluate(id=>armoryQA.select(id,3),id);
-   await page.waitForFunction(()=>document.querySelector('.weapon-showroom figcaption span')?.textContent.includes('FORME 4'));
-   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-   assert.equal(await stage.getAttribute('data-failed'),'false',id+' highest-tier equipment renders');
-   assert.equal(await page.evaluate(()=>armoryQA.canvas===document.querySelector('.weapon-showroom-stage canvas')),true,'Evolution selection retains the same GPU context');
-   await page.evaluate(id=>armoryQA.select(id,0),id);
-   await page.waitForFunction(()=>document.querySelector('.weapon-showroom figcaption span')?.textContent.includes('FORME 1'));
-   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-   const box=await stage.boundingBox();assert.ok(box.width>250&&box.height>=240,'Weapon preview stays large');
-   await stage.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Home');
-   await page.locator('.weapon-showroom').screenshot({path:out+'/weapon-'+id+'.png'});
-   await stage.screenshot({path:out+'/weapon-tile-'+id+'.jpg',type:'jpeg',quality:92});
-  }
-  assert.deepEqual(errors,[],'Armory mounts and switches all 16 weapons without shader or script errors');results.push({armory:true,weapons,forms:weapons.length*4,ok:true,errors});
-  await context.close();
- }
+
 }finally{await browser.close();await server.close();await writeFile(out+'/results.json',JSON.stringify(results,null,2));}
