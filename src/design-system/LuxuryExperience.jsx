@@ -1,5 +1,6 @@
 import InstallCards from '../install/InstallCards.jsx';
 import CinematicLaunch, { BRAND_ICON } from './CinematicLaunch.jsx';
+import EntryAtmosphere from './EntryAtmosphere.jsx';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
@@ -152,6 +153,7 @@ export function LuxuryBoot({ onDone, installation }) {
   const finished = useRef(false);
   const finish = useCallback(() => { if (finished.current) return; finished.current = true; try { markIntroSeen(window.localStorage); } catch { /* Restricted storage. */ } done.current(); }, []);
   return <section className="intro3b-card intro3b-start-card" data-motion={policy.animate ? 'full' : 'reduced'} aria-labelledby="intro3b-title">
+    <EntryAtmosphere policy={policy}/>
     <img className="intro3b-brand-icon" src={BRAND_ICON} alt="" width="512" height="512"/>
     <p className="eyebrow">3B INTERNATIONAL</p>
     <h1 id="intro3b-title">De zéro à l’international</h1>

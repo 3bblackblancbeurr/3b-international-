@@ -1,0 +1,44 @@
+/* Ceramic, obsidian, champagne. Blue is reserved for the gaze and the core. */
+html[data-luxury="v2"] .companion3b-shell{filter:drop-shadow(0 8px 12px var(--3b-scrim-medium));background:transparent;border:0}
+.companion3b-gaze{transform:translate(var(--gaze-x,0px),var(--gaze-y,0px));transition:transform 180ms ease-out}
+.companion3b-eyes{transform-box:fill-box;transform-origin:center}
+.companion3b-head{transform:translate(calc(var(--gaze-x,0px) * .35),calc(var(--gaze-y,0px) * .25));transform-origin:128px 120px;transition:transform 220ms ease-out}
+.companion3b-core{transform-origin:127px 170px}
+.companion3b-arm-right{transform-origin:160px 146px;transform-box:view-box}
+.companion3b-avatar[data-interaction="hello"] .companion3b-arm-right{transform:rotate(-100deg);animation:companion-wave 700ms ease-in-out 3}
+.companion3b-avatar[data-interaction="curious"] .companion3b-head{transform:rotate(-8deg)}
+.companion3b-avatar[data-interaction="rest"] .companion3b-head{transform:translateY(4px) rotate(5deg)}
+.companion3b-avatar[data-mode="sleep"] .companion3b-eye{transform:none}
+.companion3b-shell[data-interaction]:not([data-interaction=""]) .companion3b-bubble{opacity:1;transform:none}
+.companion3b-shell[data-mode="idle"] .companion3b-eyes{animation:companion-blink 6.8s ease-in-out infinite}
+.companion3b-shell[data-mode="walk"] .companion3b-avatar{animation:companion-glide 1.8s ease-in-out infinite}
+.companion3b-shell[data-mode="walk"] .companion3b-legs{animation:none}
+.companion3b-shell[data-mode="secret"] .companion3b-head{filter:none}
+.companion3b-shell[data-mode="celebrate"] .companion3b-core{animation:companion-core 800ms ease-in-out 5}
+@keyframes companion-wave{0%,100%{transform:rotate(-100deg)}50%{transform:rotate(-120deg)}}
+@keyframes companion-glide{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes companion-core{50%{transform:scale(1.18);opacity:.5}}
+@keyframes companion-blink{0%,44%,48%,100%{transform:scaleY(1)}46%{transform:scaleY(.12)}}
+html[data-luxury="v2"] .companion3b-panel{width:min(400px,calc(100vw - 24px));background:linear-gradient(145deg,var(--3b-carbon),var(--3b-obsidian));border-color:var(--3b-border);border-radius:var(--3b-radius-hero);box-shadow:var(--3b-shadow-deep);padding:24px}
+html[data-luxury="v2"] .companion3b-panel-head h2{font-size:21px;font-weight:500;color:var(--3b-white)}
+html[data-luxury="v2"] .companion3b-kicker{color:var(--3b-champagne);font-weight:500;letter-spacing:.2em}
+html[data-luxury="v2"] .companion3b-portrait{gap:12px;margin:16px 0;padding:0}
+html[data-luxury="v2"] .companion3b-portrait-ring{flex-basis:122px;height:145px;background:radial-gradient(ellipse,color-mix(in srgb,var(--3b-champagne) 7%,transparent),transparent 70%)}
+html[data-luxury="v2"] .companion3b-portrait p{font-size:12px;color:var(--3b-muted);line-height:1.6}
+html[data-luxury="v2"] .companion3b-portrait-ring .companion3b-avatar[data-interaction="hello"] .companion3b-arm-right{animation:companion-wave 700ms ease-in-out 3!important}
+.companion3b-touch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+html[data-luxury="v2"] .companion3b-touch .gm-button{display:flex;flex-direction:column;gap:7px;min-height:68px;padding:10px 4px;font-size:10px;font-weight:500;letter-spacing:0;border-color:var(--3b-line-soft);background:var(--3b-hover-surface);border-radius:var(--3b-radius-field);color:var(--3b-muted)}
+html[data-luxury="v2"] .companion3b-touch .gm-button[aria-pressed="true"]{border-color:var(--3b-border-strong);color:var(--3b-champagne);background:color-mix(in srgb,var(--3b-champagne) 7%,transparent)}
+.companion3b-response{min-height:40px;margin:14px 0 10px;text-align:center;line-height:1.6;font-size:12px;color:var(--3b-champagne)}
+.companion3b-shortcuts{display:grid;gap:8px}
+html[data-luxury="v2"] .companion3b-shortcuts .gm-button{justify-content:space-between;min-height:64px;padding:12px 16px;text-align:left;border-color:var(--3b-line-soft);background:var(--3b-hover-surface);font-weight:500}
+.companion3b-shortcuts strong{display:block;font-size:12px;font-weight:500;color:var(--3b-text)}
+.companion3b-shortcuts small{display:block;margin-top:5px;font-size:10px;color:var(--3b-muted);font-weight:400}
+html[data-luxury="v2"] .companion3b-settings-trigger{width:100%;justify-content:space-between;border:0;border-top:1px solid var(--3b-line-soft);border-radius:var(--3b-radius-flat);margin-top:20px;padding:16px 0 0;min-height:44px;color:var(--3b-muted);font-size:12px;font-weight:400;background:transparent}
+html[data-luxury="v2"] .companion3b-settings-trigger span{font-size:19px}
+.companion3b-panel #companion3b-settings[hidden]{display:none}
+.companion3b-panel .companion3b-placement{grid-template-columns:repeat(2,minmax(0,1fr))}
+html[data-motion="reduced"] .companion3b-portrait-ring .companion3b-avatar[data-interaction="hello"] .companion3b-arm-right{animation:none!important}
+html[data-motion="reduced"] .companion3b-gaze,html[data-motion="reduced"] .companion3b-head{transform:none;transition:none}
+@media(max-width:700px){html[data-luxury="v2"] .companion3b-panel{padding:20px}.companion3b-response{min-height:36px}.companion3b-portrait-ring{flex-basis:100px}}
+@media(prefers-reduced-motion:reduce){html[data-luxury="v2"] .companion3b-portrait-ring .companion3b-avatar[data-interaction="hello"] .companion3b-arm-right{animation:none!important}.companion3b-head,.companion3b-gaze{transform:none;transition:none}}

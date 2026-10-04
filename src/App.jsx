@@ -328,7 +328,7 @@ export default function App() {
       <div className="app3b" data-page={page} data-glow={options.premiumGlow} data-matrix={options.matrix}>
         <div className="app3b-background" aria-hidden="true" />
         <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
-        <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+        <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
         <AppNavigation page={page} title={preparationTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />
         <main id="main-content" tabIndex={-1}>
           <ComingSoon
@@ -348,7 +348,7 @@ export default function App() {
   if (needsPassport) {
     return (
       <>
-        <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+        <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
         <PassportAccessGate goTo={goTo} options={options} />
       </>
     );
@@ -359,7 +359,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      <CompanionLayer page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+      <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
 
       {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />}
       <main id="main-content" tabIndex={-1}>

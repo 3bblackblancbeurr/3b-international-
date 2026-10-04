@@ -2,6 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import CompanionAvatar from "./CompanionAvatar.jsx";
 import { DEFAULT_COMPANION_PREFS, companionLabel, sanitizeCompanionPrefs } from "./companion-model.js";
 import useCompanionBehavior from "./useCompanionBehavior.js";
+import useCompanionGaze from './useCompanionGaze.js';
+import { companionGuidance, companionTouch } from './companion-assistant.js';
+import { Button } from '../design-system/index.jsx';
+import { ArrowUpRight, Hand, Sparkles, Moon } from 'lucide-react';
 import {
   companionPlatform, endCompanionLiveActivity, getCompanionCapabilities,
   openCompanionWallpaperPicker, requestOverlayPermission, setNativeCompanionMode,
@@ -15,11 +19,13 @@ function readPrefs() {
   catch { return { ...DEFAULT_COMPANION_PREFS }; }
 }
 
-export default function CompanionLayer({ page, secretPhase, memberRegistered }) {
+export default function CompanionLayer({ page, secretPhase, memberRegistered, goTo }) {
   const [prefs, setPrefs] = useState(readPrefs);
   const [panelOpen, setPanelOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [interaction, setInteraction] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [capabilities, setCapabilities] = useState(null);
   const [nativeStatus, setNativeStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -38,7 +44,16 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered }) 
     nativeReducedMotion: capabilities?.reducedMotion === true,
   });
   const { mode, x, facing, lowPower, reducedMotion, visible, motionAllowed, online, react, setPosition } = behavior;
-  const label = companionLabel(mode);
+  const label = mode==='secret'&&['open','attempt'].includes(secretPhase) ? 'Le Secret est ouvert' : companionLabel(mode);
+  const guidance = companionGuidance({ page, secretPhase, memberRegistered });
+  useCompanionGaze(shellRef, visible && prefs.enabled && !reducedMotion && !lowPower && !dragging && !prefs.reducedPresence);
+  useEffect(() => {
+    if (!interaction) return;
+    const timer = setTimeout(() => setInteraction(null), interaction.duration);
+    return () => clearTimeout(timer);
+  }, [interaction]);
+  useEffect(() => { setInteraction(null); }, [page, visible]);
+  const touch = kind => setInteraction(companionTouch(kind));
   const overlayActive = capabilities?.overlayActive ?? prefs.androidOverlayEnabled;
   const liveActive = capabilities?.liveActivityActive ?? prefs.iosLiveActivityEnabled;
   const nativeOptions = { batterySaver: prefs.batterySaver, reducedPresence: prefs.reducedPresence, reducedMotion };
@@ -216,34 +231,44 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered }) 
       data-mode={mode} data-page={page} data-facing={facing} data-dragging={dragging}
       data-motion={motionAllowed ? "full" : "reduced"} data-low-power={lowPower}
       data-discreet={prefs.reducedPresence} data-visible={visible}
+      data-interaction={interaction?.pose || ''}
       style={{ "--companion-x": `${x}vw` }}
       onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
       onKeyDown={event => {
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); setPosition(x + (event.key === "ArrowLeft" ? -8 : 8)); }
       }}
-      onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } setPanelOpen(open => !open); }}
+      onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } if (!panelOpen) touch('hello'); setPanelOpen(open => !open); }}
       aria-label={`Compagnon 3B · ${label}`} aria-expanded={panelOpen} aria-controls={panelOpen ? "companion3b-panel" : undefined}
       aria-describedby={panelOpen ? "companion3b-position-help" : undefined} title={`${label} · ouvrir le compagnon`}>
-      <span className="companion3b-bubble" data-side={x < 45 ? "right" : "left"} aria-hidden="true">{label}</span>
-      <CompanionAvatar mode={mode} size={prefs.reducedPresence || lowPower ? 72 : 100} decorative />
+      <span className="companion3b-bubble" data-side={x < 45 ? "right" : "left"} aria-hidden="true">{interaction?.message || label}</span>
+      <CompanionAvatar mode={mode} interaction={interaction?.pose} size={prefs.reducedPresence || lowPower ? 72 : 100} decorative />
     </button>
 
     {panelOpen && <aside ref={panelRef} className="companion3b-panel" id="companion3b-panel" role="dialog" aria-labelledby="companion3b-title">
       <div className="companion3b-panel-head">
-        <div><span className="companion3b-kicker">UNE PRÉSENCE. UN LIEN.</span><h2 id="companion3b-title">Ton Compagnon 3B</h2></div>
+        <div><span className="companion3b-kicker">À TON RYTHME</span><h2 id="companion3b-title">Ton Compagnon 3B</h2></div>
         <button ref={closeRef} type="button" onClick={() => { setPanelOpen(false); shellRef.current?.focus({ preventScroll: true }); }} aria-label="Fermer le compagnon">×</button>
       </div>
       <div className="companion3b-portrait" data-mode={mode}>
-        <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={mode} size={80} decorative /></div>
-        <div><span className="companion3b-presence"><i aria-hidden="true" /> {online ? "À TES CÔTÉS" : "PRÉSENT HORS LIGNE"}</span><strong>{label}</strong><p>Même esprit. Même compagnon.<br />Partout dans ton univers 3B.</p></div>
+        <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={mode} interaction={interaction?.pose} size={106} decorative /></div>
+        <div><span className="companion3b-presence"><i aria-hidden="true" /> {online ? "À TES CÔTÉS" : "PRÉSENT HORS LIGNE"}</span><strong>{label}</strong><p>{guidance.message}</p></div>
       </div>
+      <div className="companion3b-touch" role="group" aria-label="Interagir avec le compagnon">
+        <Button variant="ghost" aria-pressed={interaction?.pose==='hello'} onClick={()=>touch('hello')}><Hand size={17}/>Bonjour</Button>
+        <Button variant="ghost" aria-pressed={interaction?.pose==='curious'} onClick={()=>touch('curious')}><Sparkles size={17}/>Curieux ?</Button>
+        <Button variant="ghost" aria-pressed={interaction?.pose==='rest'} onClick={()=>touch('rest')}><Moon size={17}/>Une pause</Button>
+      </div>
+      <p className="companion3b-response" role="status" aria-live="polite">{interaction?.message || 'Un toucher, une réaction. Je suis là.'}</p>
+      {goTo&&<div className="companion3b-shortcuts" aria-label="Suggestions du compagnon">{guidance.actions.map(action=><Button key={action.page} variant="ghost" onClick={()=>{setPanelOpen(false);goTo(action.page);}}><span><strong>{action.label}</strong><small>{action.hint}</small></span><ArrowUpRight size={18}/></Button>)}</div>}
+      <Button variant="ghost" className="companion3b-settings-trigger" aria-expanded={settingsOpen} aria-controls="companion3b-settings" onClick={()=>setSettingsOpen(open=>!open)}>Ma présence <span aria-hidden="true">{settingsOpen?'−':'+'}</span></Button>
+      <div id="companion3b-settings" hidden={!settingsOpen}>
       <div className="companion3b-energy" role="status">{reducedMotion ? "Animations réduites selon tes réglages" : lowPower ? "Batterie faible · animations au repos" : prefs.batterySaver ? "Batterie intelligente · promenades espacées" : "Promenades et pauses naturelles"}</div>
       <div className="companion3b-toggles">
         <label><span><strong>Batterie intelligente</strong><small>Plus de pauses entre les promenades</small></span><input type="checkbox" role="switch" checked={prefs.batterySaver} onChange={event => updatePrefs({ batterySaver: event.target.checked })} /></label>
         <label><span><strong>Présence discrète</strong><small>Plus petit, sans déplacement automatique</small></span><input type="checkbox" role="switch" checked={prefs.reducedPresence} onChange={event => updatePrefs({ reducedPresence: event.target.checked })} /></label>
       </div>
-      <div className="companion3b-placement" role="group" aria-label="Position du compagnon"><button type="button" onClick={() => setPosition(12)}>À gauche</button><button type="button" onClick={() => setPosition(88)}>À droite</button><button type="button" onClick={() => react("wake")}>Un petit bonjour</button></div>
+      <div className="companion3b-placement" role="group" aria-label="Position du compagnon"><Button variant="ghost" onClick={() => setPosition(12)}>À gauche</Button><Button variant="ghost" onClick={() => setPosition(88)}>À droite</Button></div>
       <p className="companion3b-hint" id="companion3b-position-help">Déplace-le avec le doigt, la souris ou les flèches du clavier.</p>
 
       {platform === "android" && <section className="companion3b-native-section" aria-label="Présence Android">
@@ -257,10 +282,11 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered }) 
         <div className="companion3b-native-actions"><button type="button" disabled={busy || (!liveActive && !capabilities?.liveActivity)} onClick={liveActive ? disableLive : enableLive}>{liveActive ? "Arrêter la Live Activity" : "Activer la Live Activity"}</button></div>
         {capabilities?.widgetSync === false && <p className="companion3b-hint">Le widget suit l’heure. La synchronisation avec l’app nécessite une version signée avec le groupe partagé 3B.</p>}
       </section>}
-      {platform === "web" && <p className="companion3b-platform-note">Il t’accompagne dans 3B, même hors ligne. La présence hors application est proposée dans les versions natives Android et iPhone.</p>}
+      {platform === "web" && <p className="companion3b-platform-note">Présent dans 3B, même hors ligne.</p>}
       {nativeStatus && <p className="companion3b-native-status" role="status" aria-live="polite">{nativeStatus}</p>}
       <p className="companion3b-privacy">Silencieux. Aucune lecture de l’écran, aucun accès au micro ou à la caméra par le compagnon.</p>
       <button className="companion3b-disable" type="button" disabled={busy} onClick={disableCompanion}>{busy ? "Un instant…" : "Mettre le compagnon de côté"}</button>
+      </div>
     </aside>}
   </>;
 }

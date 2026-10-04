@@ -22,6 +22,11 @@ html[data-luxury="v2"] .intro3b-background{background:radial-gradient(ellipse at
 html[data-luxury="v2"] .intro3b-matrix{display:none}
 html[data-luxury="v2"] .intro3b .intro3b-start-card{position:relative;display:flex;flex-direction:column;align-items:center;width:min(640px,100%);padding:32px 0;background:transparent;border:0;border-radius:var(--3b-radius-flat);box-shadow:var(--3b-shadow-flat);backdrop-filter:none;text-align:center;overflow:visible;gap:0}
 html[data-luxury="v2"] .intro3b-start-card::before,html[data-luxury="v2"] .intro3b-start-card::after{display:none}
+html[data-luxury="v2"] .intro3b-start-card{isolation:isolate}
+html[data-luxury="v2"] .intro3b .intro3b-start-card>.entry-atmosphere{position:fixed;inset:0;z-index:-1;width:100%;height:100%;pointer-events:none;overflow:hidden}
+.entry-atmosphere-aura{position:absolute;inset:0;background:radial-gradient(ellipse at 23% 25%,color-mix(in srgb,var(--3b-matrix) 9%,transparent),transparent 54%),radial-gradient(ellipse at 80% 70%,color-mix(in srgb,var(--3b-champagne) 6%,transparent),transparent 52%)}
+.entry-atmosphere-canvas{display:block;width:100%;height:100%;opacity:.9}
+.entry-atmosphere-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 25%,var(--3b-scrim-medium) 100%)}
 .intro3b-brand-icon{display:block;width:clamp(100px,25vw,150px);height:auto;margin-bottom:36px}
 html[data-luxury="v2"] .intro3b-start-card>.eyebrow{font-size:10px;letter-spacing:.32em;color:var(--3b-muted);margin:0 0 24px}
 html[data-luxury="v2"] .intro3b-start-card h1{max-width:580px;margin:0;font-size:clamp(38px,7vw,68px);line-height:1.05;letter-spacing:-.055em;font-weight:500;text-wrap:balance;color:var(--3b-white);text-shadow:none}
