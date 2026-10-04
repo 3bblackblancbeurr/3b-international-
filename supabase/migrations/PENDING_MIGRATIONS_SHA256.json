@@ -1,5 +1,12 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 1,
+  "migrations": [
+    {
+      "version": "20261004124500",
+      "name": "shop_inventory_reservations",
+      "sha256": "6fa3ca95dec21521643bda5f73e81e57e3ba4ff8b204fba9ee2817e48b23af03",
+      "note": "Pending production; validated on 3BNosblocStaging only."
+    }
+  ]
 }
