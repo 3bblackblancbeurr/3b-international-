@@ -330,9 +330,6 @@ export function createSecretArtKit({ sanctuary, ringMeshes, signalColor, gold, b
       });
     },
     dispose() {
-      sanctuary.remove(floorDetail);
-      sanctuary.remove(nexusDetail);
-      sanctuary.remove(atmosphere.group);
       bumpTexture?.dispose();
       roughnessTexture?.dispose();
     },
