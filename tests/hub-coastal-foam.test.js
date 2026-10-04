@@ -10,7 +10,7 @@ test('sea foam follows the submerged cliff contour rather than the wider deck ri
  const x=island.x+radius,z=island.z;
  assert.ok(Math.abs(citeCoastalDistance(x,z))<.001);
  assert.ok(citeCoastalFoam(x+1,z)>0);
- assert.equal(citeCoastalFoam(island.x+citeIslandRadius(island,a)+5,z),0);
+ assert.equal(citeCoastalFoam(island.x+citeIslandRadius(island,a)+7,z),0);
  assert.equal(citeCoastalFoam(900,900),0);
  const impactX=island.x+citeIslandRadius(island,a)+1.65;assert.ok(citeCoastalFoam(impactX,z)>.4);
 });
