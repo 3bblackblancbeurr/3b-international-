@@ -125,7 +125,7 @@ const fragmentShader=`
 
   float matrixBand=pow(max(0.,sin(vWorld.x*.055+vWorld.z*.027-time*.25)),18.)*
                    (.35+.65*pow(1.-ndv,2.));
-  color+=matrixBlue*matrixBand*.18*reflectionAmount*(.35+.65*(1.-daylight));
+  color+=matrixBlue*matrixBand*.18*reflectionAmount*(.35+.65*(1.-daylight))*(1.-ocean);
 
   vec3 lightDir=normalize(vec3(.34,.82,.24));
   float spec=pow(max(dot(reflect(-lightDir,normal),viewDir),0.),62.);

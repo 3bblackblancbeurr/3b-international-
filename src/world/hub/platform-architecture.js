@@ -57,9 +57,4 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
   }
   sign('RÉSIDENCES · ACCÈS PRIVÉ',x,3,z+8,12);
  }
- // Side gardens fill the walk between districts; their spacing protects the eight axes.
- for(let i=0;i<32;i++){
-  const a=(i+.5)*Math.PI/16,r=105+(i%2)*25,x=Math.cos(a)*r,z=Math.sin(a)*r;
-  mesh(cylinder,wood,x,2.3,z,.3,4.6,.3);mesh(sphere,green,x,5.4,z,2.6,3.2,2.6);collisions.push({x,z,r:.65});
- }
 }
