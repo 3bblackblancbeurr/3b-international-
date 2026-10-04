@@ -23,9 +23,9 @@ export default function WeaponShowroom({draft,xp=0}){
    try{const environment=pmrem.fromScene(room,.025,.1,100,{size:128});owned.push(environment);scene.environment=environment.texture;scene.environmentIntensity=1;}finally{room.dispose();pmrem.dispose();}
    el.appendChild(renderer.domElement);scene.add(rig);
    const size=new T.Vector3(.6,1.4,.1);let radius=.7;
-   scene.add(new T.HemisphereLight('#dcefff','#182031',.9));
-   for(const [color,intensity,x,y,z] of [['#fff1d4',3.5,3,4,4],['#83caff',2.5,-3,1,-2],['#ffffff',1.5,0,-2,3]]){const light=new T.DirectionalLight(color,intensity);light.position.set(x,y,z);scene.add(light);}
-   const floorGeo=new T.CircleGeometry(1,64),floorMat=new T.MeshStandardMaterial({color:'#102031',metalness:.75,roughness:.3});owned.push(floorGeo,floorMat);
+   scene.add(new T.HemisphereLight('#dcefff','#182031',.9)); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+   for(const [color,intensity,x,y,z] of [['#fff1d4',3.5,3,4,4],['#83caff',2.5,-3,1,-2],['#ffffff',1.5,0,-2,3]]){const light=new T.DirectionalLight(color,intensity);light.position.set(x,y,z);scene.add(light);} // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+   const floorGeo=new T.CircleGeometry(1,64),floorMat=new T.MeshStandardMaterial({color:'#102031',metalness:.75,roughness:.3});owned.push(floorGeo,floorMat); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
    const floor=new T.Mesh(floorGeo,floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=-size.y/2-.12;scene.add(floor);
    const resize=()=>{const width=Math.max(1,el.clientWidth),height=Math.max(1,el.clientHeight);renderer.setSize(width,height);camera.aspect=width/height;const distance=radius/Math.sin(camera.fov*Math.PI/360)*Math.max(1,1/camera.aspect)*1.12;camera.position.set(0,.08,distance);camera.lookAt(0,0,0);camera.updateProjectionMatrix();draw();};
    const draw=()=>{if(disposed||contextGone||!visible)return;rig.rotation.set(pitch,yaw,0);renderer.render(scene,camera);};

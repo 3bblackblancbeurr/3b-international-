@@ -27,14 +27,14 @@ export function createHubPlatform(save){
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,32)),sphere=geo(new THREE.IcosahedronGeometry(1,1));
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
  const poolWater=createPremiumWater({region:'hub',lake:{x:0,z:0,r:16},owned});poolWater.setQuality('medium',{allowPlanarReflection:false});
- const surfaces=createCiteSurfaces(owned),{dark,stone,gold,glass}=surfaces,blue=material('#55c9ef',true),wood=material('#5f4939'),green=material('#315b4b'),water=poolWater.material;
+ const surfaces=createCiteSurfaces(owned),{dark,stone,gold,glass}=surfaces,blue=material('#55c9ef',true),wood=material('#5f4939'),green=material('#315b4b'),water=poolWater.material; // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  function mesh(g,m,x,y,z,sx=1,sy=sx,sz=sx){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;root.add(o);return o;}
  function ring(r,tube,y,m,arc=Math.PI*2,start=0){const o=mesh(geo(new THREE.TorusGeometry(r,tube,6,96,arc)),m,0,y,0);o.rotation.set(-Math.PI/2,0,start);return o;}
  function sign(text,x,y,z,width=8){
   if(typeof document==='undefined')return;
   const cv=document.createElement('canvas');cv.width=768;cv.height=128;const ctx=cv.getContext('2d');if(!ctx)return;
-  ctx.fillStyle='#0b1726';ctx.fillRect(0,0,768,128);ctx.strokeStyle='#d6b46a';ctx.lineWidth=4;ctx.strokeRect(4,4,760,120);
-  ctx.fillStyle='#f1e1b9';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 36px sans-serif';ctx.fillText(text.toUpperCase(),384,64,730);
+  ctx.fillStyle='#0b1726';ctx.fillRect(0,0,768,128);ctx.strokeStyle='#d6b46a';ctx.lineWidth=4;ctx.strokeRect(4,4,760,120); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+  ctx.fillStyle='#f1e1b9';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='600 36px sans-serif';ctx.fillText(text.toUpperCase(),384,64,730); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
   const map=new THREE.CanvasTexture(cv);map.colorSpace=THREE.SRGBColorSpace;owned.push(map);const m=new THREE.MeshBasicMaterial({map,side:THREE.DoubleSide});owned.push(m);
   const o=mesh(geo(new THREE.PlaneGeometry(width,1.35)),m,x,y,z);o.castShadow=false;return o;
  }
@@ -73,7 +73,7 @@ export function createHubPlatform(save){
  for(let i=0;i<oceanPositions.count;i++)oceanUV.setXY(i,oceanPositions.getX(i)/494+.5,oceanPositions.getY(i)/494+.5);
  const sea=mesh(oceanGeometry,seaWater.material,0,-18,0);sea.rotation.x=-Math.PI/2;sea.castShadow=false;
  const mist=mesh(geo(new THREE.CircleGeometry(252,64)),seaWater.mistMaterial,0,-17.7,0);mist.rotation.x=-Math.PI/2;mist.castShadow=false;
- seaWater.material.uniforms.shallowColor.value.set('#247f9b');seaWater.material.uniforms.deepColor.value.set('#06354a');
+ seaWater.material.uniforms.shallowColor.value.set('#247f9b');seaWater.material.uniforms.deepColor.value.set('#06354a'); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  seaWater.attachMeshes(sea,mist);seaWater.setQuality('medium',{allowPlanarReflection:false});
  seaWater.setFoamContacts(CITE_ISLANDS.flatMap(island=>Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;return{x:island.x+Math.cos(a)*citeIslandRadius(island,a),z:island.z+Math.sin(a)*citeIslandRadius(island,a),r:5,strength:.7};})));
  // Eight gates on the perimeter with eight wide routes radiating from the same landmark.
@@ -186,7 +186,7 @@ export function createHubPlatform(save){
   const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
  }
- const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=25+(i<count?0:Math.sin(i*Math.PI/4)*.55);}};
+ const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=25+(i<count?0:Math.sin(i*Math.PI/4)*.55);}}; // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  update(save);
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
  for(const o of collisions)for(const key of ['x','z','r','width','depth'])if(Number.isFinite(o[key]))o[key]*=HUB_SCALE;

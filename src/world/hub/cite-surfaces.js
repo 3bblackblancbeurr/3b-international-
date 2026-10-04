@@ -6,18 +6,18 @@ export function createCiteSurfaces(owned){
  const day={value:1},wet={value:0},textures={},loads=[],loader=typeof document!=='undefined'?new THREE.TextureLoader():null;
  function texture(name,path,color=false){
   if(!loader)return null;let done;loads.push(new Promise(resolve=>{done=resolve;}));
-  const t=loader.load(path,()=>done(),undefined,()=>{const fallback=document.createElement('canvas');fallback.width=fallback.height=1;const ctx=fallback.getContext('2d');ctx.fillStyle=name==='normal'?'#8080ff':'#a0a0a0';ctx.fillRect(0,0,1,1);t.image=fallback;t.needsUpdate=true;done();});
+  const t=loader.load(path,()=>done(),undefined,()=>{const fallback=document.createElement('canvas');fallback.width=fallback.height=1;const ctx=fallback.getContext('2d');ctx.fillStyle=name==='normal'?'#8080ff':'#a0a0a0';ctx.fillRect(0,0,1,1);t.image=fallback;t.needsUpdate=true;done();}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
   t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;if(color)t.colorSpace=THREE.SRGBColorSpace;owned.push(t);textures[name]=t;return t;
  }
 
  const paving=texture('paving','/world/paris/textures/cobblestone_floor_08_Diffuse.jpg',true),normal=texture('normal','/world/paris/textures/cobblestone_floor_08_nor_gl.jpg'),rough=texture('rough','/world/paris/textures/cobblestone_floor_08_Rough.jpg');
- const dark=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.37,metalness:.58,clearcoat:.35,clearcoatRoughness:.3});
+ const dark=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.37,metalness:.58,clearcoat:.35,clearcoatRoughness:.3}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  applyFacadeDetail(dark,{daylight:day});
- const gold=new THREE.MeshPhysicalMaterial({color:'#cba364',roughness:.25,metalness:.92,clearcoat:.24});
- const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.12,metalness:.4,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.4});
- const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.55,.55),roughnessMap:rough});
- const cliff=new THREE.MeshStandardMaterial({color:'#43515a',roughness:.94,metalness:.04});
- const deck=new THREE.MeshStandardMaterial({color:'#758b85',roughness:.88,metalness:.02,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.65,.65),roughnessMap:rough});
+ const gold=new THREE.MeshPhysicalMaterial({color:'#cba364',roughness:.25,metalness:.92,clearcoat:.24}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+ const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.12,metalness:.4,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.4}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+ const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.55,.55),roughnessMap:rough}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+ const cliff=new THREE.MeshStandardMaterial({color:'#43515a',roughness:.94,metalness:.04}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
+ const deck=new THREE.MeshStandardMaterial({color:'#758b85',roughness:.88,metalness:.02,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.65,.65),roughnessMap:rough}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  function surfaceShader(m,kind){m.onBeforeCompile=shader=>{
   shader.uniforms.citeDay=day;shader.uniforms.citeWet=wet;
   shader.vertexShader='varying vec3 citeP;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nciteP=(modelMatrix*vec4(position,1.)).xyz;');

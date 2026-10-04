@@ -20,7 +20,7 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
  }
  const group=new THREE.Group();group.name='3B · jardins botaniques';root.add(group);
  const trunkGeo=new THREE.CylinderGeometry(.12,.24,4.8,8);trunkGeo.translate(0,2.4,0);
- const trunkMat=new THREE.MeshStandardMaterial({color:'#4c3e2f',roughness:1});
+ const trunkMat=new THREE.MeshStandardMaterial({color:'#4c3e2f',roughness:1}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  const parts=[];
  for(let i=0;i<9;i++){
   const a=i*2.39996,r=i===0?0:1.3+(i%2)*.35,y=5.1+(i%3)*.9;
@@ -28,9 +28,9 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
  }
  const crownGeo=mergeGeometries(parts);parts.forEach(g=>g.dispose());
  const colors=new Float32Array(crownGeo.attributes.position.count*3),color=new THREE.Color();
- for(let i=0;i<crownGeo.attributes.position.count;i++){const h=crownGeo.attributes.position.getY(i),shade=.88+random()*.23;color.set('#244e38').multiplyScalar(shade+(h-4)*.045);colors[i*3]=color.r;colors[i*3+1]=color.g;colors[i*3+2]=color.b;}
+ for(let i=0;i<crownGeo.attributes.position.count;i++){const h=crownGeo.attributes.position.getY(i),shade=.88+random()*.23;color.set('#244e38').multiplyScalar(shade+(h-4)*.045);colors[i*3]=color.r;colors[i*3+1]=color.g;colors[i*3+2]=color.b;} // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  crownGeo.setAttribute('color',new THREE.BufferAttribute(colors,3));
- const leafMat=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0,vertexColors:true});
+ const leafMat=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0,vertexColors:true}); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  leafMat.onBeforeCompile=shader=>{shader.uniforms.citeTreeTime=clock;shader.uniforms.citeTreeWind=wind;shader.vertexShader='uniform float citeTreeTime;uniform float citeTreeWind;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=sin(citeTreeTime*.9+position.y*1.1)*citeTreeWind*.055*max(0.,position.y-3.);');};leafMat.customProgramCacheKey=()=> 'cite-needle-wind-v1';
  const dummy=new THREE.Object3D();
  for(const [geo,mat,name] of [[trunkGeo,trunkMat,'Troncs'],[crownGeo,leafMat,'Cèdres et conifères']]){

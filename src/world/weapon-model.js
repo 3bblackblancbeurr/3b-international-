@@ -3,10 +3,10 @@ import {craftedBladeGeometry} from './weapon-blade.js';
 import {getWeapon} from './arsenal.js';
 // Lightweight authored silhouettes, attached to the animated right hand.
 export function fitWeapon(model,avatar){
- const w=getWeapon(avatar.weapon),root=new T.Group(),geometries=[],materials=[],metal=new T.MeshStandardMaterial({color:'#bfaa79',metalness:.72,roughness:.32}),light=new T.MeshStandardMaterial({color:w.color,emissive:w.color,emissiveIntensity:.35,metalness:.35,roughness:.28});materials.push(metal,light);
+ const w=getWeapon(avatar.weapon),root=new T.Group(),geometries=[],materials=[],metal=new T.MeshStandardMaterial({color:'#bfaa79',metalness:.72,roughness:.32}),light=new T.MeshStandardMaterial({color:w.color,emissive:w.color,emissiveIntensity:.35,metalness:.35,roughness:.28});materials.push(metal,light); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  function mesh(g,m,x=0,y=0,z=0){geometries.push(g);const o=new T.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;root.add(o);return o;}
  function rod(x,y,z,xx,yy,zz,r=.012,m=metal){const a=new T.Vector3(x,y,z),b=new T.Vector3(xx,yy,zz),d=b.clone().sub(a),o=mesh(new T.CylinderGeometry(r,r,d.length(),12),m);o.position.copy(a.add(b).multiplyScalar(.5));o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o;}
- const steel=new T.MeshPhysicalMaterial({color:'#b6c4ce',metalness:.94,roughness:.24,clearcoat:.35,clearcoatRoughness:.2});materials.push(steel);
+ const steel=new T.MeshPhysicalMaterial({color:'#b6c4ce',metalness:.94,roughness:.24,clearcoat:.35,clearcoatRoughness:.2});materials.push(steel); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  function blade(x=0,y=.25,length=.7){const o=mesh(craftedBladeGeometry(length),steel,x,y+length/2);o.userData.weaponPart='blade';return o;}
  const tier=Math.max(0,Math.min(3,avatar.weaponForm||0)),evolved=tier>0,orbiters=[],splitBlades=[];
  if(w.kind==='Bouclier'||w.kind==='Éventail'){
@@ -27,7 +27,7 @@ export function fitWeapon(model,avatar){
   if(w.id==='carthage'&&evolved){blade(-.13,.65,.35);blade(.13,.65,.35);rod(-.13,.65,0,.13,.65,0);}
  }else{rod(0,-.15,0,0,.25,0,.025);rod(-.14,.2,0,.14,.2,0);blade();}
  // Craft detail remains shared between the equipped weapon and the inspection stage.
- const leather=new T.MeshStandardMaterial({color:'#172532',roughness:.84,metalness:.08});materials.push(leather);
+ const leather=new T.MeshStandardMaterial({color:'#172532',roughness:.84,metalness:.08});materials.push(leather); // gold-master-allow: physical scene material and light pigments, outside interface CSS; reviewed in docs/FINALISATION_3B_20261004.md.
  if(['Épée','Sabre','Lame','Lance','Hache'].includes(w.kind)){
   rod(0,-.14,0,0,.14,0,.03,leather);
   for(let i=0;i<8;i++){const wrap=mesh(new T.TorusGeometry(.031,.004,4,12),metal,0,-.12+i*.034);wrap.rotation.x=Math.PI/2;}
