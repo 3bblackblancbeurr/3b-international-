@@ -4,12 +4,12 @@ import {craftedBladeGeometry} from './weapon-blade.js';
 import {getWeapon} from './arsenal.js';
 
 /** Continuous recurve branches, with the grip at the equipped hand origin. */
-export function craftedBowLimbGeometry(z=0,radius=.027,radialSegments=6){
+export function craftedBowLimbGeometry(z=0,radius=.027,radialSegments=6,surfaceOffset=0){
  const points=[[.34,-.5],[.24,-.43],[.06,-.27],[0,0],[.06,.28],[.24,.45],[.34,.5]].map(([x,y])=>new T.Vector3(x,y,z));
  const curve=new T.CatmullRomCurve3(points,false,'centripetal'),segments=36,geometry=new T.TubeGeometry(curve,segments,radius,radialSegments,false),p=geometry.attributes.position;
  // Wide load-bearing centre, flexible tapered tips. Retain a smooth profile
  // along the whole branch instead of discrete cylinders meeting at corners.
- const centre=new T.Vector3();for(let i=0;i<=segments;i++){curve.getPointAt(i/segments,centre);const taper=.56+.44*Math.sin(i/segments*Math.PI);for(let j=0;j<=radialSegments;j++){const v=i*(radialSegments+1)+j;p.setXYZ(v,centre.x+(p.getX(v)-centre.x)*taper,centre.y+(p.getY(v)-centre.y)*taper,centre.z+(p.getZ(v)-centre.z)*taper);}}
+ const centre=new T.Vector3();for(let i=0;i<=segments;i++){curve.getPointAt(i/segments,centre);const taper=.56+.44*Math.sin(i/segments*Math.PI);for(let j=0;j<=radialSegments;j++){const v=i*(radialSegments+1)+j;p.setXYZ(v,centre.x+(p.getX(v)-centre.x)*taper,centre.y+(p.getY(v)-centre.y)*taper,centre.z+(p.getZ(v)-centre.z)*taper+surfaceOffset*taper);}}
  geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.userData.bowEndpoints=[points[0].toArray(),points.at(-1).toArray()];return geometry;
 }
 
@@ -51,7 +51,7 @@ export function fitWeapon(model,avatar={}){
   const wood=material({color:'#50382b',metalness:.04,roughness:.66,clearcoat:.14});wood.name='laminated-bow-wood';
   grip(0,.24,.032);
   const limbs=(z=0)=>{
-   mesh(craftedBowLimbGeometry(z),wood);mesh(craftedBowLimbGeometry(z+.022,.005,4),gold);
+   mesh(craftedBowLimbGeometry(z),wood);mesh(craftedBowLimbGeometry(z,.005,4,.024),gold);
    rod(.34,-.5,z+.042,.34,.5,z+.042,.0028,light);
    for(const side of [-1,1]){mesh(new T.SphereGeometry(.02,8,6),gold,.34,side*.5,z);rod(.34,side*.5,z,.305,side*.48,z,.01,gold);rod(.34,side*.5,z,.34,side*.5,z+.042,.006,gold);}
   };
