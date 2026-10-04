@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { createSecretArtKit, createSecretPostFX } from "./SecretSanctuaryArtKit.js";
 
 function makeGlowTexture() {
   const canvas = document.createElement("canvas");
@@ -474,6 +475,23 @@ export default function SecretSanctuary3D({
       sealGroup.add(shard);
     }
 
+    const isMobile = window.innerWidth <= 700;
+    const artKit = createSecretArtKit({
+      sanctuary,
+      ringMeshes,
+      signalColor,
+      gold,
+      blackMetal,
+    });
+    const postFx = createSecretPostFX({
+      renderer,
+      scene,
+      camera,
+      width: Math.max(1, mount.clientWidth),
+      height: Math.max(1, mount.clientHeight),
+      isMobile,
+    });
+
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const pointerTarget = new THREE.Vector2(0, 0);
@@ -539,6 +557,7 @@ export default function SecretSanctuary3D({
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      postFx.resize(width, height);
     }
 
     const resizeObserver = new ResizeObserver(resize);
@@ -661,7 +680,9 @@ export default function SecretSanctuary3D({
         }
       });
 
-      renderer.render(scene, camera);
+      artKit.update(elapsed, currentStage, reducedMotion);
+      postFx.update(currentStage);
+      postFx.render(delta);
       raf = window.requestAnimationFrame(renderFrame);
     }
 
@@ -674,6 +695,8 @@ export default function SecretSanctuary3D({
       renderer.domElement.removeEventListener("pointermove", handlePointerMove);
       renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       renderer.domElement.removeEventListener("pointercancel", handlePointerUp);
+      artKit.dispose();
+      postFx.dispose();
       scene.traverse((object) => {
         if (object.geometry) object.geometry.dispose?.();
         if (object.material) {
