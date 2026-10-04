@@ -78,3 +78,34 @@ test("Premier Secret AAAA UI keeps cinematic progression and tactile chamber con
   assert.match(premiumCss, /prefers-reduced-motion:reduce/);
   assert.match(clock, /secret-aaaa\.css/);
 });
+
+test("Secret V2 uses a real WebGL sanctuary and removes dashboard-style chrome", () => {
+  const page = read("../src/secret/PremierSecretPage.jsx");
+  const scene = read("../src/secret/SecretSanctuary3D.jsx");
+  const css = read("../src/secret/secret-v2.css");
+  const clock = read("../src/secret/SecretClock.jsx");
+
+  assert.match(page, /SecretSanctuary3D/);
+  assert.match(page, /secret-v2\.css/);
+  assert.match(page, /ps-v2-ring-readout/);
+  assert.match(page, /onDragStart/);
+  assert.match(page, /onDrop/);
+  assert.doesNotMatch(page, /ps-promise/);
+  assert.doesNotMatch(page, /VeilleurFigure/);
+
+  assert.match(scene, /new THREE\.WebGLRenderer/);
+  assert.match(scene, /THREE\.ACESFilmicToneMapping/);
+  assert.match(scene, /new THREE\.Raycaster/);
+  assert.match(scene, /new THREE\.TorusGeometry/);
+  assert.match(scene, /new THREE\.IcosahedronGeometry/);
+  assert.match(scene, /prefers-reduced-motion/);
+  assert.match(scene, /countryHandlerRef/);
+  assert.match(scene, /ringHandlerRef/);
+
+  assert.match(css, /\.ps-v2-stage\{/);
+  assert.match(css, /border:0!important/);
+  assert.match(css, /\.secret-clock-orbit/);
+  assert.match(css, /display:none!important/);
+  assert.match(clock, /secret-v2\.css/);
+});
+

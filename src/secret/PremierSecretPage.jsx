@@ -1,5 +1,5 @@
 import { useLuxury } from "../design-system/LuxuryExperience.jsx";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   ARCHIVE_VALUES,
   COUNTRIES,
@@ -13,17 +13,20 @@ import {
 import { completeDailySecretAttempt, startDailySecretAttempt } from "./dailySecret.js";
 import "./premier-secret.css";
 import "./secret-aaaa.css";
+import "./secret-v2.css";
+
+const SecretSanctuary3D = lazy(() => import("./SecretSanctuary3D.jsx"));
 
 const STORAGE_KEY = "3b_premier_secret_v2";
 const RING_MARKS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 const SECRET_STAGES = [
   { id: 0, label: "Veille" },
   { id: 1, label: "Signal" },
-  { id: 2, label: "Porte" },
-  { id: 3, label: "Transmission" },
+  { id: 2, label: "Veilleur" },
+  { id: 3, label: "Mémoire" },
   { id: 4, label: "Anneaux" },
   { id: 5, label: "Archive" },
-  { id: 6, label: "Chambre" },
+  { id: 6, label: "Heure" },
   { id: 7, label: "Sceau" },
   { id: 8, label: "Révélé" },
 ];
@@ -33,8 +36,7 @@ function safeRead(dayKey) {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (parsed.dayKey !== dayKey) return null;
-    return parsed;
+    return parsed.dayKey === dayKey ? parsed : null;
   } catch {
     return null;
   }
@@ -48,21 +50,48 @@ function safeWrite(value) {
   }
 }
 
-function PulseMark({ count }) {
-  return <span className="ps-pulses" aria-label={count + " pulsations"}>{"•".repeat(count)}</span>;
+function RingControl({ index, value, onStep }) {
+  const startX = useRef(null);
+
+  function finishDrag(event) {
+    if (startX.current === null) return;
+    const delta = event.clientX - startX.current;
+    startX.current = null;
+    if (Math.abs(delta) > 18) onStep(index, delta > 0 ? 1 : -1);
+  }
+
+  return (
+    <div className="ps-v2-ring-control">
+      <button type="button" onClick={() => onStep(index, -1)} aria-label={"Tourner l’anneau " + (index + 1) + " en arrière"}>‹</button>
+      <div
+        className="ps-v2-ring-readout"
+        role="group"
+        aria-label={"Anneau " + (index + 1) + ", position " + RING_MARKS[value]}
+        onPointerDown={(event) => {
+          startX.current = event.clientX;
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        }}
+        onPointerUp={finishDrag}
+        onPointerCancel={() => {
+          startX.current = null;
+        }}
+      >
+        <small>ANNEAU {index + 1}</small>
+        <strong>{RING_MARKS[value]}</strong>
+        <span>glisse pour tourner</span>
+      </div>
+      <button type="button" onClick={() => onStep(index, 1)} aria-label={"Tourner l’anneau " + (index + 1) + " en avant"}>›</button>
+    </div>
+  );
 }
 
-function VeilleurFigure() {
+function SceneHeading({ country, step, title, whisper }) {
   return (
-    <div className="ps-veilleur-frame">
-      <div className="ps-veilleur-halo" aria-hidden="true" />
-      <img src="/games/forbidden-guardian.webp" alt="Le Veilleur du Nexus dans une architecture sombre éclairée de bleu" />
-      <div className="ps-veilleur-mask" aria-hidden="true" />
-      <div className="ps-veilleur-caption">
-        <span>LE VEILLEUR</span>
-        <strong>ARCHIVE NEXUS / 001</strong>
-      </div>
-    </div>
+    <header className="ps-v2-scene-heading">
+      <p>{country ? country.toUpperCase() + " · " : ""}{step ? "ÉPREUVE " + step + "/5" : "PROTOCOLE 01"}</p>
+      <h2>{title}</h2>
+      {whisper && <span>{whisper}</span>}
+    </header>
   );
 }
 
@@ -85,37 +114,32 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
   const [transmissionPick, setTransmissionPick] = useState([]);
   const [rings, setRings] = useState(config.ringStart);
   const [archiveDraft, setArchiveDraft] = useState([null, null, null, null]);
+  const [archiveSelection, setArchiveSelection] = useState(null);
   const [chamberNumber, setChamberNumber] = useState("");
   const [chamberValue, setChamberValue] = useState("");
   const [sealPick, setSealPick] = useState([]);
   const [serverMessage, setServerMessage] = useState("");
   const [starting, setStarting] = useState(false);
+  const [cinematic, setCinematic] = useState(false);
   const sequenceTimer = useRef(null);
   const previousStageRef = useRef(stage);
-  const [cinematic, setCinematic] = useState(false);
 
   const journalEntries = useMemo(() => {
-    const entries = [
-      "Jour " + dayKey + " · l’heure ne montre jamais deux fois le même chemin.",
-    ];
+    const entries = ["Jour " + dayKey + " · l’heure ne montre jamais deux fois le même chemin."];
     if (stage >= 2) {
       entries.push("Porte ouverte : " + config.country.name + " · " + config.country.value + " · glyphe " + config.country.glyph + ".");
     }
     if (stage >= 4) {
       entries.push("Fragment transmission : " + config.transmission.join(" · ") + ".");
-      entries.push("Clé des anneaux : ☽=I · △=III · ☀=V · ◇=VII ; avance ensuite chaque marque de " + config.ringShift + " cran(s).");
+      entries.push("Clé : ☽=I · △=III · ☀=V · ◇=VII. Avance chaque marque de " + config.ringShift + " cran(s).");
     }
-    if (stage >= 5) {
-      entries.push(...config.archiveClues);
-    }
+    if (stage >= 5) entries.push(...config.archiveClues);
     if (stage >= 6) {
-      entries.push("Anneaux stabilisés : " + config.ringTargets.map((value) => RING_MARKS[value]).join(" / ") + ".");
-      entries.push("Archive stabilisée : " + config.archiveOrder.map((value, index) => SLOT_NAMES[index] + "=" + value).join(" · ") + ".");
-      entries.push("Chambre : additionne les trois valeurs des anneaux puis ramène le résultat sur 8 ; lis ensuite la trace placée au " + SLOT_NAMES[config.chamberSlot] + ".");
+      entries.push("Anneaux : " + config.ringTargets.map((value) => RING_MARKS[value]).join(" / ") + ".");
+      entries.push("Archive : " + config.archiveOrder.map((value, index) => SLOT_NAMES[index] + "=" + value).join(" · ") + ".");
+      entries.push("Chambre : additionne les trois anneaux sur 8 et lis la trace au " + SLOT_NAMES[config.chamberSlot] + ".");
     }
-    if (stage >= 7) {
-      entries.push("Sceau final : ce qui relie garde ce qui fut, pour ouvrir ce qui vient.");
-    }
+    if (stage >= 7) entries.push("Sceau : ce qui relie garde ce qui fut, pour ouvrir ce qui vient.");
     return entries;
   }, [stage, dayKey, config]);
 
@@ -131,7 +155,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
     if (previousStageRef.current === stage) return undefined;
     previousStageRef.current = stage;
     setCinematic(true);
-    const timer = window.setTimeout(() => setCinematic(false), 920);
+    const timer = window.setTimeout(() => setCinematic(false), 620);
     return () => window.clearTimeout(timer);
   }, [stage]);
 
@@ -174,8 +198,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
 
   function ping(frequency = 440) {
     if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-      const pattern = frequency < 250 ? [18, 24, 18] : frequency > 800 ? [12, 20, 26] : 12;
-      navigator.vibrate(pattern);
+      navigator.vibrate(frequency < 250 ? [18, 24, 18] : frequency > 800 ? [12, 20, 26] : 12);
     }
     if (!soundOn || typeof window === "undefined") return;
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -184,14 +207,14 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
     const oscillator = ctx.createOscillator();
     const gain = ctx.createGain();
     oscillator.frequency.value = frequency;
-    oscillator.type = "sine";
+    oscillator.type = frequency > 780 ? "triangle" : "sine";
     gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.09, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+    gain.gain.exponentialRampToValueAtTime(0.075, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
     oscillator.connect(gain);
     gain.connect(ctx.destination);
     oscillator.start();
-    oscillator.stop(ctx.currentTime + 0.2);
+    oscillator.stop(ctx.currentTime + 0.22);
     oscillator.addEventListener("ended", () => ctx.close());
   }
 
@@ -202,7 +225,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
       setServerMessage("");
       const result = await startDailySecretAttempt();
       if (!result?.ok) {
-        setServerMessage(result?.reason === "expired" ? "Le temps est déjà écoulé pour aujourd’hui." : "Le signal vient de se refermer.");
+        setServerMessage(result?.reason === "expired" ? "Le signal vient de disparaître." : "Le Nexus s’est refermé.");
         await dailySecret?.refresh?.();
         return;
       }
@@ -221,6 +244,7 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
   }
 
   function chooseCountry(index) {
+    if (stage !== 1) return;
     if (index === config.signalIndex) {
       setDeadline(0);
       setStage(2);
@@ -275,26 +299,36 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
     ping(830);
   }
 
-  function placeArchiveValue(value) {
-    if (archiveDraft.includes(value)) return;
-    const openIndex = archiveDraft.findIndex((entry) => entry === null);
-    if (openIndex < 0) return;
-    const next = [...archiveDraft];
-    next[openIndex] = value;
-    setArchiveDraft(next);
-    ping(420 + openIndex * 45);
+  function selectArchiveValue(value) {
+    setArchiveSelection((current) => current === value ? null : value);
+    ping(470);
   }
 
-  function clearArchiveSlot(index) {
-    if (!archiveDraft[index]) return;
+  function placeArchiveAt(index, requestedValue = archiveSelection) {
+    if (!requestedValue || !ARCHIVE_VALUES.includes(requestedValue)) {
+      if (archiveDraft[index]) {
+        setArchiveSelection(archiveDraft[index]);
+        const next = [...archiveDraft];
+        next[index] = null;
+        setArchiveDraft(next);
+      }
+      return;
+    }
+
     const next = [...archiveDraft];
-    next[index] = null;
+    const existingIndex = next.indexOf(requestedValue);
+    if (existingIndex >= 0) next[existingIndex] = null;
+    const displaced = next[index];
+    next[index] = requestedValue;
     setArchiveDraft(next);
+    setArchiveSelection(displaced || null);
+    ping(560 + index * 45);
   }
 
   function validateArchive() {
     if (!sameArray(archiveDraft, config.archiveOrder)) {
       setArchiveDraft([null, null, null, null]);
+      setArchiveSelection(null);
       ping(170);
       return;
     }
@@ -313,9 +347,8 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
 
   function selectSeal(word) {
     if (sealPick.includes(word)) return;
-    const next = [...sealPick, word];
-    setSealPick(next);
-    ping(480 + next.length * 80);
+    setSealPick([...sealPick, word]);
+    ping(480 + sealPick.length * 80);
   }
 
   async function validateSeal() {
@@ -341,255 +374,262 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
     }
   }
 
-  function resetExperience() {
-    setStage(0);
-    setDeadline(0);
-    setAttempts(3);
-    setTransmissionPick([]);
-    setRings(config.ringStart);
-    setArchiveDraft([null, null, null, null]);
-    setChamberNumber("");
-    setChamberValue("");
-    setSealPick([]);
-    safeWrite({ dayKey, stage: 0 });
-  }
-
   const shuffledSeal = useMemo(() => {
     const base = [...config.finalSeal];
     return config.seed % 2 ? [base[2], base[0], base[1]] : [base[1], base[2], base[0]];
   }, [config]);
 
+  const isLive = dailySecret?.phase === "open" || dailySecret?.phase === "attempt";
+
   return (
     <section
-      className="premier-secret"
+      className="premier-secret ps-v2-root"
       data-secret-stage={stage}
       aria-labelledby="premier-secret-title"
       style={{ "--ps-signal": config.signalColor.hex }}
     >
-      <div className="ps-atmosphere" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
+      <Suspense fallback={<div className="ps-v2-scene ps-v2-scene-fallback" aria-hidden="true" />}>
+        <SecretSanctuary3D
+          stage={stage}
+          config={config}
+          rings={rings}
+          archiveDraft={archiveDraft}
+          chamberNumber={chamberNumber}
+          chamberValue={chamberValue}
+          showSequence={showSequence}
+          onCountrySelect={chooseCountry}
+          onRingStep={moveRing}
+        />
+      </Suspense>
 
-      {cinematic && <div className="ps-cinematic-transition" aria-hidden="true"><span /></div>}
+      {cinematic && <div className="ps-cinematic-transition ps-v2-transition" aria-hidden="true" />}
 
-      <header className="ps-toprail">
-        <button type="button" className="ps-brand" onClick={() => goTo?.("home")} aria-label="Retour à l’accueil 3B">
+      <header className="ps-toprail ps-v2-toprail">
+        <button type="button" className="ps-brand ps-v2-brand" onClick={() => goTo?.("home")} aria-label="Retour à l’accueil 3B">
           <strong>3B</strong>
-          <span>LES ARCHIVES<br />DU NEXUS</span>
+          <span>SECRET</span>
         </button>
 
-        <div className="ps-edition">ÉDITION II · EN LIGNE</div>
+        <div className="ps-v2-live-status" data-phase={dailySecret?.phase || "loading"}>
+          <i aria-hidden="true" />
+          <span>{isLive ? dailySecret?.countdown : dailySecret?.parisClock || "--:--:--"}</span>
+          <small>{isLive ? "SIGNAL ACTIF" : "PARIS"}</small>
+        </div>
 
-        <div className="ps-tools">
-          <button type="button" onClick={() => setSoundOn((value) => !value)}>
-            {soundOn ? "SON ON" : "SON OFF"}
+        <div className="ps-tools ps-v2-tools">
+          <button type="button" onClick={() => setSoundOn((value) => !value)} aria-pressed={soundOn}>
+            {soundOn ? "SON ●" : "SON ○"}
           </button>
           <button type="button" onClick={() => setJournalOpen(true)}>
-            CARNET <b>{String(journalEntries.length).padStart(2, "0")}</b>
-          </button>
-          <div className="ps-attempt-clock" data-phase={dailySecret?.phase || "loading"}>
-            <span>{dailySecret?.parisClock || "--:--:--"}</span>
-            <strong>{dailySecret?.phase === "open" || dailySecret?.phase === "attempt" ? dailySecret.countdown : "PARIS"}</strong>
-          </div>
-          <button type="button" className="ps-clock-button" aria-label="Horloge officielle du Secret" disabled>
-            ◷
+            TRACES {String(journalEntries.length).padStart(2, "0")}
           </button>
         </div>
       </header>
 
-      <main className="ps-shell">
-        <nav className="ps-progress-rail" aria-label="Progression du Premier Secret">
+      <main className="ps-shell ps-v2-shell">
+        <nav className="ps-progress-rail ps-v2-progress" aria-label="Progression du Premier Secret">
           {SECRET_STAGES.map((item) => {
             const state = item.id < stage ? "done" : item.id === stage ? "current" : "next";
             return (
               <div className="ps-progress-step" data-state={state} key={item.id} aria-current={state === "current" ? "step" : undefined}>
-                <i>{item.id === 0 ? "◷" : item.id}</i>
+                <i>{item.id === 0 ? "•" : item.id}</i>
                 <span>{item.label}</span>
               </div>
             );
           })}
         </nav>
+
         {dailySecret?.phase === "attempt" && (
-          <div className="ps-global-deadline" role="status">
-            <span>TEMPS TOTAL DE TA TENTATIVE</span>
+          <div className="ps-global-deadline ps-v2-deadline" role="status">
+            <span>TENTATIVE</span>
             <strong>{dailySecret.countdown}</strong>
-            <small>Quand ce compteur atteint 00:00, le Secret se verrouille jusqu’à demain.</small>
           </div>
         )}
-        {stage === 0 && (
-          <section className="ps-landing ps-stage">
-            <div className="ps-landing-copy">
-              <p className="ps-kicker">CHAPITRE 01 / LE VEILLEUR DU NEXUS</p>
-              <h1 id="premier-secret-title">L’Heure du <em>Premier Secret.</em></h1>
-              <p className="ps-lead">Huit royaumes. Une heure qui se dérobe.<br />Et quelque chose qui attend, de l’autre côté.</p>
-              <div className={`ps-hour-status ps-hour-${dailySecret?.phase || "loading"}`}>
-                <div className="ps-hour-beacon" aria-hidden="true"><i /><i /><i /><b>◷</b></div>
-                <span>HEURE OFFICIELLE · PARIS</span>
-                <strong>{dailySecret?.parisClock || "--:--:--"}</strong>
-                <p>{dailySecret?.status?.message || "Synchronisation avec le Nexus…"}</p>
-                {(dailySecret?.phase === "open" || dailySecret?.phase === "attempt") && <b>{dailySecret.countdown}</b>}
-              </div>
-              <div className="ps-actions">
-                {dailySecret?.phase === "open" && <button type="button" className="ps-primary ps-live-entry" onClick={startSignal} disabled={starting}>{starting ? "Ouverture…" : "Le signal est actif — Entrer maintenant"} <span>↗</span></button>}
-                {dailySecret?.phase === "attempt" && <button type="button" className="ps-primary ps-live-entry" onClick={() => setStage(Math.max(1, Number(safeRead(dayKey)?.stage || 1)))}>Reprendre ma tentative · {dailySecret.countdown} <span>↗</span></button>}
-                <button type="button" className="ps-secondary" onClick={() => setJournalOpen(true)}>Les règles du Secret</button>
-              </div>
-              {serverMessage && <p className="ps-server-message" role="status">{serverMessage}</p>}
-              <p className="ps-meta">Épisode 01 · 30 minutes d’ouverture · 15 minutes maximum par tentative<br />Une seule occasion par jour. Demain, l’heure sera différente.</p>
-              <div className="ps-oath">CE QUI EST BRISÉ PEUT ENCORE NOUS RELIER</div>
-            </div>
 
-            <div className="ps-promise">
-              <div className="ps-seal-mark">◷</div>
-              <p className="ps-kicker">LA PROMESSE DU VEILLEUR</p>
-              <blockquote>« La réponse n’est jamais dans une seule trace. »</blockquote>
-              <div className="ps-promise-grid">
-                <div><strong>Observer.</strong><span>Une couleur. Un sceau. Un rythme.</span></div>
-                <div><strong>Relier.</strong><span>Cinq épreuves interdépendantes.</span></div>
-                <div><strong>Révéler.</strong><span>Un premier secret au bout du cercle.</span></div>
+        <div className="ps-v2-sr">
+          <p>Épisode 01 · 30 minutes d’ouverture · 15 minutes maximum par tentative.</p>
+          <p>Modifier l’heure du téléphone ne change pas l’ouverture.</p>
+        </div>
+
+        {stage === 0 && (
+          <section className="ps-stage ps-landing ps-v2-stage ps-v2-landing">
+            <div className="ps-landing-copy ps-v2-hero">
+              <p className="ps-kicker">PROTOCOLE 01</p>
+              <h1 id="premier-secret-title">Le Premier <em>Secret.</em></h1>
+              <p className="ps-lead">L’heure choisit. Le Nexus répond.</p>
+
+              <div className={"ps-hour-status ps-v2-hour ps-hour-" + (dailySecret?.phase || "loading")}>
+                <span>HEURE OFFICIELLE</span>
+                <strong>{dailySecret?.parisClock || "--:--:--"}</strong>
+                <p>{dailySecret?.status?.message || "Synchronisation…"}</p>
+                {isLive && <b>{dailySecret.countdown}</b>}
               </div>
-              <p className="ps-demo-note">Horloge et durée contrôlées par le serveur 3B. Modifier l’heure du téléphone ne change pas l’ouverture.</p>
+
+              <div className="ps-actions ps-v2-actions">
+                {dailySecret?.phase === "open" && (
+                  <button type="button" className="ps-primary ps-live-entry ps-v2-primary" onClick={startSignal} disabled={starting}>
+                    {starting ? "OUVERTURE…" : "ENTRER DANS LE NEXUS"} <span>→</span>
+                  </button>
+                )}
+                {dailySecret?.phase === "attempt" && (
+                  <button type="button" className="ps-primary ps-live-entry ps-v2-primary" onClick={() => setStage(Math.max(1, Number(safeRead(dayKey)?.stage || 1)))}>
+                    REPRENDRE · {dailySecret.countdown} <span>→</span>
+                  </button>
+                )}
+                <button type="button" className="ps-secondary ps-v2-quiet" onClick={() => setJournalOpen(true)}>Voir les traces</button>
+              </div>
+              {serverMessage && <p className="ps-server-message ps-v2-message" role="status">{serverMessage}</p>}
             </div>
           </section>
         )}
 
         {stage === 1 && (
-          <section className="ps-stage ps-signal-stage">
-            <div className="ps-stage-copy">
+          <section className="ps-stage ps-v2-stage ps-v2-signal-stage">
+            <div className="ps-v2-signal-copy">
               <p className="ps-kicker">LE SIGNAL EST OUVERT</p>
-              <h2>Une minute. Une porte.</h2>
+              <h2>Choisis la porte.</h2>
               <p>
-                Le signal est <b>{config.signalColor.label}</b>. Son glyphe est <b className="ps-big-glyph">{config.country.glyph}</b>.
-                Il pulse <b>{config.country.pulses} fois</b>. Mémorise ces marques.
+                <b>{config.signalColor.label}</b> · {config.country.glyph} · {config.country.pulses} pulsation{config.country.pulses > 1 ? "s" : ""}
               </p>
-              <div className="ps-timer"><strong>{String(secondsLeft).padStart(2, "0")}</strong><span>secondes</span></div>
-              <p className="ps-attempts">{attempts} essai{attempts > 1 ? "s" : ""} restant{attempts > 1 ? "s" : ""}</p>
+              <div className="ps-v2-countdown"><strong>{String(secondsLeft).padStart(2, "0")}</strong><span>s</span></div>
+              <small>{attempts} essai{attempts > 1 ? "s" : ""}</small>
             </div>
 
-            <div className="ps-nexus" aria-label="Anneau des huit royaumes">
-              <div className="ps-nexus-core"><span>{config.country.glyph}</span><small>LE SIGNAL</small></div>
-              <div className="ps-country-grid">
-                {COUNTRIES.map((country, index) => (
-                  <button key={country.id} type="button" className="ps-country-cell" onClick={() => chooseCountry(index)}>
-                    <span className="ps-country-glyph">{country.glyph}</span>
-                    <strong>{country.name}</strong>
-                    <PulseMark count={country.pulses} />
-                  </button>
-                ))}
-              </div>
+            <div className="ps-country-grid ps-v2-country-orbit" aria-label="Huit royaumes">
+              {COUNTRIES.map((country, index) => (
+                <button key={country.id} type="button" className="ps-country-cell ps-v2-country" onClick={() => chooseCountry(index)}>
+                  <span className="ps-country-glyph">{country.glyph}</span>
+                  <strong>{country.name}</strong>
+                  <small>{"•".repeat(country.pulses)}</small>
+                </button>
+              ))}
             </div>
           </section>
         )}
 
         {stage === 2 && (
-          <section className="ps-stage ps-veilleur-stage">
-            <VeilleurFigure />
-            <div className="ps-veilleur-copy">
-              <p className="ps-kicker">LE VEILLEUR DU NEXUS</p>
+          <section className="ps-stage ps-v2-stage ps-v2-guardian-stage">
+            <div className="ps-v2-guardian-copy">
+              <p className="ps-kicker">LE VEILLEUR</p>
               <h2>« Tu as vu l’heure changer. »</h2>
-              <p>Mais ce n’était pas une couleur. C’était une direction.</p>
-              <p>Souviens-toi de ce que tu verras. Chaque fragment ouvre la suite.</p>
-              <button type="button" className="ps-primary" onClick={() => setStage(3)}>Traverser la Porte <span>↗</span></button>
+              <p>Ce n’était pas une couleur. C’était une direction.</p>
+              <button type="button" className="ps-primary ps-v2-primary" onClick={() => setStage(3)}>TRAVERSER <span>→</span></button>
             </div>
           </section>
         )}
 
         {stage === 3 && (
-          <section className="ps-stage ps-puzzle-stage">
-            <PuzzleHeader country={config.country.name} step="1" title="La Transmission perdue" />
-            <div className="ps-puzzle-panel">
-              <p>Une transmission en quatre fragments. Observe leur ordre ; tu peux la relire autant que nécessaire.</p>
-              <div className={showSequence ? "ps-transmission-display active" : "ps-transmission-display"}>
-                {showSequence ? config.transmission.map((token, index) => <span key={token + index}>{token}</span>) : <span className="ps-static">· · · ·</span>}
+          <section className="ps-stage ps-v2-stage ps-puzzle-stage ps-v2-puzzle">
+            <SceneHeading country={config.country.name} step="1" title="Mémorise." whisper="Quatre fragments. Un seul ordre." />
+            <div className="ps-puzzle-panel ps-v2-puzzle-body">
+              <div className={"ps-transmission-display ps-v2-transmission " + (showSequence ? "active" : "")}>
+                {showSequence
+                  ? config.transmission.map((token, index) => <span key={token + index}>{token}</span>)
+                  : <span className="ps-static">· · · ·</span>}
               </div>
-              <button type="button" className="ps-secondary" onClick={playTransmission}>{showSequence ? "Transmission en cours…" : "Lire la transmission"}</button>
 
-              <p className="ps-instruction">Recompose ensuite les fragments dans l’ordre d’apparition.</p>
-              <div className="ps-token-row">
+              <button type="button" className="ps-secondary ps-v2-quiet" onClick={playTransmission}>
+                {showSequence ? "TRANSMISSION…" : "LIRE LA TRANSMISSION"}
+              </button>
+
+              <div className="ps-token-row ps-v2-tokens">
                 {TRANSMISSION_TOKENS.map((token) => (
-                  <button key={token} type="button" className={transmissionPick.includes(token) ? "is-picked" : ""} disabled={showSequence || transmissionPick.includes(token)} onClick={() => selectTransmission(token)}>{token}</button>
+                  <button
+                    key={token}
+                    type="button"
+                    className={transmissionPick.includes(token) ? "is-picked" : ""}
+                    disabled={showSequence || transmissionPick.includes(token)}
+                    onClick={() => selectTransmission(token)}
+                  >
+                    {token}
+                  </button>
                 ))}
               </div>
-              <div className="ps-current-answer">Ton ordre : <strong>{transmissionPick.length ? transmissionPick.join(" → ") : "—"}</strong></div>
-              <div className="ps-actions">
-                <button type="button" className="ps-secondary" onClick={() => setTransmissionPick([])}>Effacer</button>
-                <button type="button" className="ps-primary" disabled={transmissionPick.length !== 4} onClick={validateTransmission}>Valider l’ordre</button>
+
+              <div className="ps-v2-answer">{transmissionPick.length ? transmissionPick.join("  →  ") : "Choisis l’ordre"}</div>
+
+              <div className="ps-actions ps-v2-actions">
+                <button type="button" className="ps-secondary ps-v2-quiet" onClick={() => setTransmissionPick([])}>EFFACER</button>
+                <button type="button" className="ps-primary ps-v2-primary" disabled={transmissionPick.length !== 4} onClick={validateTransmission}>VALIDER</button>
               </div>
             </div>
           </section>
         )}
 
         {stage === 4 && (
-          <section className="ps-stage ps-puzzle-stage">
-            <PuzzleHeader country={config.country.name} step="2" title="Les Anneaux couplés" />
-            <div className="ps-puzzle-panel">
-              <p>Trois anneaux sont liés. Tourner un anneau entraîne celui qui le suit. La cible doit être déduite de la transmission précédente.</p>
-              <div className="ps-ring-code">
-                <span>CLÉ DE CONVERSION</span>
-                <strong>☽ = I</strong>
-                <strong>△ = III</strong>
-                <strong>☀ = V</strong>
-                <strong>◇ = VII</strong>
+          <section className="ps-stage ps-v2-stage ps-puzzle-stage ps-v2-puzzle">
+            <SceneHeading country={config.country.name} step="2" title="Aligne les anneaux." whisper="Ils sont couplés. Un mouvement en entraîne un autre." />
+            <div className="ps-puzzle-panel ps-v2-puzzle-body">
+              <div className="ps-v2-keyline">
+                <span>☽ I</span><span>△ III</span><span>☀ V</span><span>◇ VII</span><b>+{config.ringShift}</b>
               </div>
-              <p className="ps-instruction">
-                Prends les trois premiers fragments de ta transmission, convertis-les, puis avance chaque marque de <b>{config.ringShift} cran{config.ringShift > 1 ? "s" : ""}</b> sur un cadran de huit positions.
-              </p>
-              <div className="ps-rings">
+
+              <div className="ps-rings ps-v2-rings">
                 {rings.map((value, index) => (
-                  <div className="ps-ring-control" key={index}>
-                    <small>ANNEAU {index + 1}</small>
-                    <button type="button" onClick={() => moveRing(index, -1)} aria-label={"Tourner l’anneau " + (index + 1) + " en arrière"}>−</button>
-                    <div className="ps-ring-value" style={{ "--ps-ring-turn": `${value * 45}deg` }}><span>{RING_MARKS[value]}</span></div>
-                    <button type="button" onClick={() => moveRing(index, 1)} aria-label={"Tourner l’anneau " + (index + 1) + " en avant"}>+</button>
-                  </div>
+                  <RingControl key={index} index={index} value={value} onStep={moveRing} />
                 ))}
               </div>
-              <button type="button" className="ps-primary" onClick={validateRings}>Synchroniser les anneaux</button>
+
+              <p className="ps-v2-microcopy">Glisse directement sur les anneaux 3D, ou utilise ‹ ›.</p>
+              <button type="button" className="ps-primary ps-v2-primary" onClick={validateRings}>VERROUILLER LES ANNEAUX</button>
             </div>
           </section>
         )}
 
         {stage === 5 && (
-          <section className="ps-stage ps-puzzle-stage">
-            <PuzzleHeader country={config.country.name} step="3" title="L’Archive du royaume" />
-            <div className="ps-puzzle-panel">
-              <p>Place les quatre traces autour du cercle. Les inscriptions du carnet décrivent leur relation.</p>
-              <div className="ps-archive-clues">
-                {config.archiveClues.map((clue) => <p key={clue}>◈ {clue}</p>)}
+          <section className="ps-stage ps-v2-stage ps-puzzle-stage ps-v2-puzzle">
+            <SceneHeading country={config.country.name} step="3" title="Reconstruis l’Archive." whisper="Sélectionne une trace, puis sa direction." />
+            <div className="ps-puzzle-panel ps-v2-puzzle-body">
+              <div className="ps-archive-clues ps-v2-clues">
+                {config.archiveClues.map((clue) => <p key={clue}>{clue}</p>)}
               </div>
-              <div className="ps-archive-board">
-                {SLOT_NAMES.map((slot, index) => (
-                  <button type="button" className="ps-archive-slot" key={slot} onClick={() => clearArchiveSlot(index)}>
-                    <small>{slot}</small>
-                    <strong>{archiveDraft[index] || "—"}</strong>
+
+              <div className="ps-virtue-row ps-v2-archive-tokens">
+                {ARCHIVE_VALUES.map((value) => (
+                  <button
+                    type="button"
+                    key={value}
+                    draggable
+                    className={archiveSelection === value ? "is-selected" : archiveDraft.includes(value) ? "is-used" : ""}
+                    onClick={() => selectArchiveValue(value)}
+                    onDragStart={(event) => event.dataTransfer.setData("text/plain", value)}
+                  >
+                    {value}
                   </button>
                 ))}
-                <div className="ps-archive-core">3B</div>
               </div>
-              <div className="ps-virtue-row">
-                {ARCHIVE_VALUES.map((value) => (
-                  <button type="button" key={value} className={archiveDraft.includes(value) ? "is-picked" : ""} disabled={archiveDraft.includes(value)} onClick={() => placeArchiveValue(value)}>{value}</button>
+
+              <div className="ps-archive-board ps-v2-archive-board">
+                {SLOT_NAMES.map((slot, index) => (
+                  <button
+                    type="button"
+                    className={archiveDraft[index] ? "ps-archive-slot is-filled" : "ps-archive-slot"}
+                    key={slot}
+                    onClick={() => placeArchiveAt(index)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      placeArchiveAt(index, event.dataTransfer.getData("text/plain"));
+                    }}
+                  >
+                    <small>{slot}</small>
+                    <strong>{archiveDraft[index] || "déposer"}</strong>
+                  </button>
                 ))}
               </div>
-              <button type="button" className="ps-primary" disabled={archiveDraft.some((entry) => entry === null)} onClick={validateArchive}>Sceller l’Archive</button>
+
+              <button type="button" className="ps-primary ps-v2-primary" disabled={archiveDraft.some((entry) => entry === null)} onClick={validateArchive}>SCELLER L’ARCHIVE</button>
             </div>
           </section>
         )}
 
         {stage === 6 && (
-          <section className="ps-stage ps-puzzle-stage">
-            <PuzzleHeader country={config.country.name} step="4" title="La Chambre de l’Heure" />
-            <div className="ps-puzzle-panel">
-              <p>Le mécanisme attend deux résultats issus des salles précédentes. Aucun nombre final ni aucune valeur finale ne sont donnés directement.</p>
-              <div className="ps-chamber-clues">
-                <p><strong>Aiguille :</strong> additionne les valeurs I–VIII de tes trois anneaux stabilisés, puis ramène le total sur un cadran de huit positions.</p>
-                <p><strong>Valeur :</strong> utilise la trace que tu avais placée au <b>{SLOT_NAMES[config.chamberSlot]}</b> dans l’Archive.</p>
-              </div>
-              <div className="ps-chamber">
-                <fieldset className="ps-choice-field">
-                  <legend>Aiguille du royaume</legend>
+          <section className="ps-stage ps-v2-stage ps-puzzle-stage ps-v2-puzzle">
+            <SceneHeading country={config.country.name} step="4" title="Réveille la Chambre." whisper={"L’aiguille vient des anneaux. La valeur vient du " + SLOT_NAMES[config.chamberSlot] + "."} />
+            <div className="ps-puzzle-panel ps-v2-puzzle-body">
+              <div className="ps-chamber ps-v2-chamber">
+                <fieldset className="ps-choice-field ps-v2-choice">
+                  <legend>Aiguille</legend>
                   <div className="ps-choice-wheel ps-number-wheel">
                     {COUNTRIES.map((country, index) => {
                       const value = String(index + 1);
@@ -612,8 +652,9 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
                     })}
                   </div>
                 </fieldset>
-                <fieldset className="ps-choice-field">
-                  <legend>Valeur du cercle</legend>
+
+                <fieldset className="ps-choice-field ps-v2-choice">
+                  <legend>Valeur</legend>
                   <div className="ps-choice-wheel ps-value-wheel">
                     {ARCHIVE_VALUES.map((value, index) => {
                       const selected = chamberValue === value;
@@ -635,91 +676,69 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
                   </div>
                 </fieldset>
               </div>
-              <button type="button" className="ps-primary" onClick={validateChamber}>Confirmer le mécanisme</button>
+
+              <button type="button" className="ps-primary ps-v2-primary" onClick={validateChamber}>ACTIVER LA CHAMBRE</button>
             </div>
           </section>
         )}
 
         {stage === 7 && (
-          <section className="ps-stage ps-final-stage">
-            <div className="ps-final-veilleur"><VeilleurFigure /></div>
-            <div className="ps-puzzle-panel">
-              <p className="ps-kicker">{config.country.name.toUpperCase()} / ÉPREUVE 5 SUR 5</p>
-              <h2>La question du Veilleur</h2>
-              <blockquote>« Tu as ouvert la Porte. Tu n’as toujours pas découvert le Secret. »</blockquote>
-              <p>Ce qui nous relie garde ce qui fut, pour ouvrir ce qui vient.</p>
-              <p className="ps-instruction">Reconstruis les trois mots du sceau.</p>
-              <div className="ps-virtue-row">
+          <section className="ps-stage ps-v2-stage ps-final-stage ps-v2-final">
+            <div className="ps-v2-final-copy">
+              <p className="ps-kicker">{config.country.name.toUpperCase()} · ÉPREUVE 5/5</p>
+              <h2>Le Sceau.</h2>
+              <blockquote>« Ce qui nous relie garde ce qui fut, pour ouvrir ce qui vient. »</blockquote>
+
+              <div className="ps-virtue-row ps-v2-seal-words">
                 {shuffledSeal.map((word) => (
-                  <button type="button" key={word} className={sealPick.includes(word) ? "is-picked" : ""} disabled={sealPick.includes(word)} onClick={() => selectSeal(word)}>{word}</button>
+                  <button type="button" key={word} className={sealPick.includes(word) ? "is-picked" : ""} disabled={sealPick.includes(word)} onClick={() => selectSeal(word)}>
+                    {word}
+                  </button>
                 ))}
               </div>
-              <div className="ps-current-answer">Ton sceau : <strong>{sealPick.length ? sealPick.join(" → ") : "—"}</strong></div>
-              <div className="ps-actions">
-                <button type="button" className="ps-secondary" onClick={() => setSealPick([])}>Effacer</button>
-                <button type="button" className="ps-primary" disabled={sealPick.length !== 3} onClick={validateSeal}>Révéler le Premier Secret</button>
+
+              <div className="ps-v2-answer">{sealPick.length ? sealPick.join("  →  ") : "Reconstruis le sceau"}</div>
+
+              <div className="ps-actions ps-v2-actions">
+                <button type="button" className="ps-secondary ps-v2-quiet" onClick={() => setSealPick([])}>EFFACER</button>
+                <button type="button" className="ps-primary ps-v2-primary" disabled={sealPick.length !== 3} onClick={validateSeal}>RÉVÉLER</button>
               </div>
             </div>
           </section>
         )}
 
         {stage === 8 && (
-          <section className="ps-stage ps-complete-stage">
-            <div className="ps-coffer">
-              <div className="ps-coffer-glyph">{config.country.glyph}</div>
-              <p className="ps-kicker">LE COFFRE DU PREMIER SECRET</p>
+          <section className="ps-stage ps-v2-stage ps-complete-stage ps-v2-reveal">
+            <div className="ps-coffer ps-v2-reveal-copy">
+              <p className="ps-kicker">LE PREMIER SECRET</p>
               <h2>Tu as réuni les fragments.</h2>
-              <p className="ps-final-words">Unité. Mémoire. Avenir.</p>
-              <div className="ps-validation-banner">PARCOURS TERMINÉ — VALIDATION SERVEUR 3B</div>
-              <p>Ta tentative du jour est validée. Le Nexus ne se rouvrira pour toi que lors du prochain signal quotidien.</p>
-              <div className="ps-actions">
-                <button type="button" className="ps-primary" onClick={() => goTo?.("home")}>Retour à l’accueil 3B</button>
-                <button type="button" className="ps-secondary" onClick={() => setJournalOpen(true)}>Relire mon carnet</button>
+              <p className="ps-final-words">Unité.<br />Mémoire.<br />Avenir.</p>
+              <span className="ps-v2-validation">VALIDÉ PAR LE NEXUS</span>
+              <div className="ps-actions ps-v2-actions">
+                <button type="button" className="ps-primary ps-v2-primary" onClick={() => goTo?.("home")}>REVENIR À 3B</button>
+                <button type="button" className="ps-secondary ps-v2-quiet" onClick={() => setJournalOpen(true)}>RELIRE LES TRACES</button>
               </div>
             </div>
           </section>
         )}
-
-
       </main>
 
-      <footer className="ps-footer">
-        <span>3B INTERNATIONAL / LE PROTOCOLE DE L’HEURE</span>
-        <button type="button" onClick={() => setJournalOpen(true)}>Carnet des traces</button>
-      </footer>
-
       {journalOpen && (
-        <div className="ps-journal-backdrop" role="presentation" onClick={() => setJournalOpen(false)}>
-          <aside className="ps-journal" role="dialog" aria-modal="true" aria-labelledby="ps-journal-title" onClick={(event) => event.stopPropagation()}>
+        <div className="ps-journal-backdrop ps-v2-journal-backdrop" role="presentation" onClick={() => setJournalOpen(false)}>
+          <aside className="ps-journal ps-v2-journal" role="dialog" aria-modal="true" aria-labelledby="ps-journal-title" onClick={(event) => event.stopPropagation()}>
             <div className="ps-journal-head">
               <div>
-                <p className="ps-kicker">ARCHIVE PERSONNELLE</p>
-                <h2 id="ps-journal-title">Carnet des traces</h2>
+                <p className="ps-kicker">TRACES CONSERVÉES</p>
+                <h2 id="ps-journal-title">Carnet</h2>
               </div>
-              <button type="button" onClick={() => setJournalOpen(false)}>×</button>
+              <button type="button" onClick={() => setJournalOpen(false)} aria-label="Fermer">×</button>
             </div>
             <ol>
               {journalEntries.map((entry) => <li key={entry}>{entry}</li>)}
             </ol>
-            <div className="ps-rules">
-              <strong>Règle du Veilleur</strong>
-              <p>Observe, relie, puis déduis. Les réponses utiles apparaissent dans plusieurs épreuves. Le carnet conserve les traces déjà gagnées.</p>
-            </div>
           </aside>
         </div>
       )}
     </section>
-  );
-}
-
-function PuzzleHeader({ country, step, title }) {
-  return (
-    <header className="ps-puzzle-header">
-      <div>
-        <p className="ps-kicker">{country.toUpperCase()} / ÉPREUVE {step} SUR 5</p>
-        <h2>{title}</h2>
-      </div>
-      <span className="ps-step-badge">{step}/5</span>
-    </header>
   );
 }
