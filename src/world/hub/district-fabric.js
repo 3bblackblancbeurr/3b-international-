@@ -34,8 +34,8 @@ function interactionReservations(){
 export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,materials,box}){
  const sites=[],layers=new Map(),octagon=new THREE.CylinderGeometry(1,1,1,8),cone=new THREE.ConeGeometry(1,1,8);owned.push(octagon,cone);
  // Explicit window geometry keeps floors and reveals aligned on every facade.
- const body=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.36,metalness:.58,clearcoat:.35});
- const glazing=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.16,metalness:.18,clearcoat:1,clearcoatRoughness:.08});
+ const body=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.48,metalness:.58,clearcoat:.2,envMapIntensity:.22});
+ const glazing=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.2,metalness:.18,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.35});
  const day={value:1};
  glazing.onBeforeCompile=shader=>{
   shader.uniforms.fabricDay=day;
