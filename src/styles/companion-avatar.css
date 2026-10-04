@@ -1,0 +1,12 @@
+.companion3b-avatar-articulated{position:relative;display:block;flex-shrink:0;isolation:isolate;contain:layout style;pointer-events:none;user-select:none}
+.companion3b-avatar-articulated .companion3b-avatar-canvas,.companion3b-avatar-articulated .companion3b-articulated-fallback{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+.companion3b-avatar-articulated .companion3b-avatar-canvas{z-index:2;opacity:0}
+.companion3b-avatar-articulated .companion3b-articulated-fallback{z-index:1;overflow:visible}
+.companion3b-avatar-articulated[data-renderer="webgl"] .companion3b-avatar-canvas{opacity:1}
+.companion3b-avatar-articulated[data-renderer="webgl"] .companion3b-articulated-fallback{visibility:hidden}
+.companion3b-avatar-light{position:absolute;inset:17% 5% 5%;z-index:0;background:radial-gradient(ellipse at 48% 46%,color-mix(in srgb,var(--3b-champagne) 9%,transparent),transparent 65%);opacity:.8;pointer-events:none}
+.companion3b-avatar-articulated[data-speaking="true"] .companion3b-avatar-light{background:radial-gradient(ellipse at 48% 38%,color-mix(in srgb,var(--3b-matrix) 13%,transparent),transparent 66%)}
+/* Joint transforms own the silhouette; the historical whole-image wiggle must not stack. */
+.companion3b-shell .companion3b-avatar-articulated{animation:none!important;transform:none!important}
+.companion3b-avatar-articulated[data-reduced="true"]{animation:none!important;transition:none!important}
+@media(forced-colors:active){.companion3b-avatar-light{display:none}.companion3b-articulated-fallback{forced-color-adjust:none}}

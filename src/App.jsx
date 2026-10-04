@@ -41,6 +41,8 @@ import "./styles/home-premium.css";
 import "./styles/responsive-premium.css";
 import "./styles/companion.css";
 import CompanionLayer from "./companion/CompanionLayer.jsx";
+import { sanitizeLivingPrefs } from './companion/companion-personality.js';
+import { selectCompanionVoice, companionVoiceProsody } from './companion/useCompanionVoice.js';
 import GuidePage from "./components/GuidePage.jsx";
 import ComingSoon from "./components/ComingSoon.jsx";
 import ReligionPage from "./components/ReligionPage.jsx";
@@ -145,17 +147,42 @@ const CONTROL_MENU_ITEM = {
 const WELCOME_MESSAGE = "Bienvenue dans l'univers 3B. L'héritage commence maintenant. Reste attentif tout le temps partout.";
 
 function speakWelcome() {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  const utterance = new SpeechSynthesisUtterance(WELCOME_MESSAGE);
-  utterance.lang = "fr-FR";
-  utterance.rate = 0.92;
-  utterance.pitch = 0.9;
-  const voices = window.speechSynthesis.getVoices?.() || [];
-  utterance.voice = voices.find((voice) => /^fr(?:-|_)/i.test(voice.lang) && /thomas|henri|paul|google|microsoft/i.test(voice.name))
-    || voices.find((voice) => /^fr(?:-|_)/i.test(voice.lang))
-    || null;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+  if (typeof window === 'undefined' || document.hidden || !window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+  let prefs;
+  try {
+    if (JSON.parse(localStorage.getItem('threeb_companion_prefs_v1') || '{}')?.enabled === false) return;
+    prefs = sanitizeLivingPrefs(JSON.parse(localStorage.getItem('threeb_companion_living_v1') || '{}'));
+  } catch { return; }
+  // Entry speech follows the chosen companion voice; interface effects have their own mute.
+  if (!prefs.voiceEnabled || window.speechSynthesis.speaking || window.speechSynthesis.pending) return;
+  const utterance = new window.SpeechSynthesisUtterance(WELCOME_MESSAGE);
+  utterance.lang = 'fr-FR';
+  Object.assign(utterance, companionVoiceProsody(prefs.personality, prefs.voiceStyle));
+  utterance.voice = selectCompanionVoice(window.speechSynthesis.getVoices(), prefs.voiceId);
+  let settled = false;
+  const announce = speaking => window.dispatchEvent(new CustomEvent('threeb:companion-speaking', { detail: { speaking } }));
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(expiry);
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('threeb:companion-voice-stop', stopWelcome);
+    utterance.onstart = utterance.onend = utterance.onerror = null;
+    announce(false);
+  };
+  const stopWelcome = () => {
+    if (settled) return;
+    finish();
+    try { window.speechSynthesis.cancel(); } catch { /* This welcome has already ended. */ }
+  };
+  const onVisibility = () => { if (document.hidden) stopWelcome(); };
+  const expiry = setTimeout(stopWelcome, 20000);
+  utterance.onstart = () => { if (!settled) announce(true); };
+  utterance.onend = finish;
+  utterance.onerror = finish;
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('threeb:companion-voice-stop', stopWelcome);
+  try { window.speechSynthesis.speak(utterance); } catch { finish(); }
 }
 
 const MEMBER_MENU_ITEM = {
@@ -316,7 +343,7 @@ export default function App() {
     return <main className="intro3b" data-glow={options.premiumGlow} data-matrix={options.matrix}>
       <div className="intro3b-background" aria-hidden="true" />
       <div className={options.matrix ? "intro3b-matrix active" : "intro3b-matrix"} aria-hidden="true" />
-      <LuxuryBoot installation={installation} onDone={() => { if (options.interfaceSound) speakWelcome(); goTo("home"); }} />
+      <LuxuryBoot installation={installation} onDone={() => { speakWelcome(); goTo("home"); }} />
     </main>;
   }
 

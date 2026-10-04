@@ -1,0 +1,104 @@
+/* Living companion: the stage owns its transform; the rig owns its joints. */
+html .companion3b-shell.companion3b-living-shell {
+  width:112px;height:155px;min-height:0;left:0;top:0;bottom:auto;padding:0;border:0;
+  display:grid;place-items:center;gap:0;background:transparent;color:var(--3b-champagne);
+  transition:none;touch-action:none;isolation:isolate;will-change:transform;
+}
+html .companion3b-shell.companion3b-living-shell[data-discreet="true"],
+html .companion3b-shell.companion3b-living-shell[data-low-power="true"] {width:72px;height:100px}
+html .companion3b-shell.companion3b-living-shell[data-visible="false"] {visibility:hidden;pointer-events:none}
+html .companion3b-living-shell>.companion3b-avatar {animation:none!important;transform:none!important}
+html .companion3b-living-shell:is(:hover,:active) {background:transparent;border:0}
+html .companion3b-living-shell .companion3b-bubble {
+  bottom:88%;max-width:min(210px,55vw);font-weight:450;font-size:12px;
+  border-color:var(--3b-border-strong);background:var(--3b-carbon);color:var(--3b-champagne-highlight);
+  border-radius:var(--3b-radius-field);box-shadow:var(--3b-shadow-deep);
+}
+.companion3b-living-shell .companion3b-bubble small {display:block;margin-top:6px;color:var(--3b-muted);font-size:10px}
+
+html .companion3b-panel.companion3b-living-panel,
+html[data-luxury="v2"] .companion3b-panel.companion3b-living-panel {
+  width:min(430px,calc(100vw - 28px));bottom:max(14px,env(safe-area-inset-bottom));
+  max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  padding:22px;border-radius:var(--3b-radius-hero);border:1px solid var(--3b-border-strong);
+  background:radial-gradient(ellipse at 48% 18%,color-mix(in srgb,var(--3b-matrix) 8%,transparent),transparent 42%),var(--3b-obsidian);
+  box-shadow:var(--3b-shadow-deep);scroll-padding:16px;
+}
+html .companion3b-living-panel .companion3b-panel-head {position:relative;z-index:2}
+.companion3b-head-actions {display:flex;align-items:center;gap:5px}
+html .companion3b-living-panel .companion3b-panel-head h2 {font-size:22px;line-height:1.25;font-weight:450;letter-spacing:-.03em}
+html .companion3b-living-panel .companion3b-panel-head button {min-width:40px;width:40px;flex-basis:40px;padding:0;border-radius:var(--3b-radius-round);background:transparent}
+html[data-luxury="v2"] .companion3b-living-panel .companion3b-portrait,
+html .companion3b-living-panel .companion3b-portrait {position:relative;display:flex;flex-direction:column;gap:0;margin:8px 0 0;text-align:center;padding:0}
+html[data-luxury="v2"] .companion3b-living-panel .companion3b-portrait-ring,
+html .companion3b-living-panel .companion3b-portrait-ring {
+  width:100%;height:268px;flex:0 0 auto;border-radius:var(--3b-radius-flat);overflow:visible;
+  background:radial-gradient(ellipse at 50% 70%,color-mix(in srgb,var(--3b-champagne) 7%,transparent),transparent 60%);
+}
+html .companion3b-living-panel .companion3b-character-label {
+  position:absolute;left:0;top:18px;z-index:2;padding:6px 10px;font-size:10px;letter-spacing:.05em;
+  border:1px solid var(--3b-border);border-radius:var(--3b-radius-round);color:var(--3b-champagne);background:var(--3b-carbon);
+}
+html .companion3b-living-panel .companion3b-portrait strong {margin:7px 0 0;font-size:14px;font-weight:450;color:var(--3b-text)}
+html .companion3b-living-panel .companion3b-presence {justify-content:center;color:var(--3b-champagne);font-size:8px;letter-spacing:.14em}
+html .companion3b-living-panel .companion3b-presence i {background:var(--3b-champagne)}
+html .companion3b-living-panel .companion3b-response {
+  margin:12px 0 17px;min-height:38px;font-size:12px;line-height:1.65;color:var(--3b-text);text-wrap:pretty;
+}
+.companion3b-studio [hidden] {display:none!important}
+.companion3b-studio-tabs {display:grid;grid-template-columns:repeat(3,1fr);gap:3px;border-bottom:1px solid var(--3b-border);margin:0 0 12px}
+html .companion3b-living-panel .companion3b-studio-tabs>.gm-button {
+  border:0;border-bottom:2px solid transparent;border-radius:var(--3b-radius-flat);font-size:12px;font-weight:450;
+  min-height:44px;padding:9px 5px;color:var(--3b-muted);background:transparent;
+}
+html .companion3b-living-panel .companion3b-studio-tabs>.gm-button[aria-selected="true"] {border-bottom-color:var(--3b-champagne);color:var(--3b-champagne-highlight)}
+.companion3b-studio-caption {font-size:11px;color:var(--3b-muted);line-height:1.6;margin:10px 0 13px}
+.companion3b-action-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+html .companion3b-living-panel .companion3b-action.gm-button {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:72px;padding:9px 3px;
+  font-size:10px;font-weight:450;border:1px solid var(--3b-line-soft);border-radius:var(--3b-radius-field);
+  background:color-mix(in srgb,var(--3b-champagne) 3%,transparent);color:var(--3b-muted);
+}
+html .companion3b-living-panel .companion3b-action svg {color:var(--3b-champagne)}
+html .companion3b-living-panel .companion3b-action:is(:hover,[aria-pressed="true"]) {color:var(--3b-champagne-highlight);background:color-mix(in srgb,var(--3b-champagne) 9%,transparent);border-color:var(--3b-border-strong)}
+.companion3b-personalities {display:grid;grid-template-columns:1fr 1fr;gap:8px}
+html .companion3b-living-panel .companion3b-personality.gm-button {display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:5px;padding:13px;min-height:92px;text-align:left;border-color:var(--3b-line-soft);background:transparent}
+.companion3b-personality strong {font-size:12px;font-weight:500;color:var(--3b-text)}
+.companion3b-personality small {font-size:10px;line-height:1.55;font-weight:400;color:var(--3b-muted)}
+html .companion3b-living-panel .companion3b-personality[aria-pressed="true"] {border-color:var(--3b-champagne);background:color-mix(in srgb,var(--3b-champagne) 7%,transparent)}
+.companion3b-personality[aria-pressed="true"] strong {color:var(--3b-champagne-highlight)}
+.companion3b-chat-log {display:flex;flex-direction:column;gap:11px;max-height:235px;overflow-y:auto;padding:3px 2px 12px;scrollbar-width:thin;overscroll-behavior:contain}
+.companion3b-chat-log p {margin:0;padding:12px 13px;max-width:94%;align-self:flex-start;border:1px solid var(--3b-line-soft);border-radius:var(--3b-radius-field);background:var(--3b-carbon);color:var(--3b-text);font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.companion3b-chat-log p[data-speaker="user"] {align-self:flex-end;border-color:var(--3b-border);background:color-mix(in srgb,var(--3b-matrix) 6%,var(--3b-carbon))}
+.companion3b-chat-log small {display:block;font-size:8px;letter-spacing:.1em;margin-bottom:5px;color:var(--3b-champagne)}
+.companion3b-chat-log p[data-speaker="user"] small {color:var(--3b-muted)}
+.companion3b-chat-form {display:flex;gap:7px;margin-top:13px;align-items:center}
+.companion3b-chat-form input {min-width:0;flex:1;width:100%;height:46px;padding:10px 12px;border:1px solid var(--3b-border);border-radius:var(--3b-radius-field);background:var(--3b-carbon);font:inherit;font-size:16px;color:var(--3b-text)}
+html .companion3b-living-panel .companion3b-chat-form button {flex:0 0 46px;width:46px;height:46px;padding:0}
+.companion3b-conversation-note,.companion3b-voice-status {font-size:10px;color:var(--3b-muted);line-height:1.6;margin:9px 0}
+.companion3b-reply-choices {display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}
+html .companion3b-living-panel .companion3b-reply-choices button {font-size:11px;min-height:40px;padding:8px 12px;font-weight:400;color:var(--3b-champagne);border-color:var(--3b-border)}
+.companion3b-voice-control {display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:15px;padding-top:14px;border-top:1px solid var(--3b-line-soft)}
+html .companion3b-living-panel .companion3b-voice-control button {font-size:11px;min-height:42px;padding:8px 13px;font-weight:450;color:var(--3b-champagne)}
+.companion3b-voice-control>small {font-size:10px;color:var(--3b-muted)}
+.companion3b-voice-design {margin-top:10px;padding:10px 0;color:var(--3b-muted);font-size:11px}
+.companion3b-voice-design summary {cursor:pointer;min-height:36px;line-height:1.5;padding:8px 0;color:var(--3b-champagne)}
+.companion3b-voice-fields {display:grid;gap:11px;margin:12px 0}
+.companion3b-voice-fields label {display:grid;gap:7px;color:var(--3b-muted);font-size:11px}
+.companion3b-voice-fields select {width:100%;min-width:0;min-height:44px;padding:10px;border:1px solid var(--3b-border);border-radius:var(--3b-radius-field);background:var(--3b-carbon);color:var(--3b-text);font:inherit;font-size:13px}
+html .companion3b-living-panel .companion3b-voice-design button {font-size:11px;font-weight:450;min-height:42px;padding:9px 12px;color:var(--3b-champagne)}
+.companion3b-voice-design>small {display:block;margin-top:8px;font-size:10px;line-height:1.6;color:var(--3b-muted)}
+.companion3b-focus-notice {display:flex;gap:7px;align-items:center;padding:8px 0;font-size:11px;color:var(--3b-champagne)}
+.companion3b-focus-notice>span {flex:1}
+html .companion3b-living-panel .companion3b-focus-notice button {min-height:36px;padding:6px 10px;font-size:10px;font-weight:450}
+.companion3b-sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media(max-width:700px) {
+  html[data-luxury="v2"] .companion3b-panel.companion3b-living-panel,html .companion3b-panel.companion3b-living-panel {width:calc(100vw - 16px);right:8px;bottom:max(8px,env(safe-area-inset-bottom));padding:18px;max-height:calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+  html[data-luxury="v2"] .companion3b-living-panel .companion3b-portrait-ring {height:252px}
+  html .companion3b-living-panel .companion3b-panel-head h2 {font-size:21px}
+  html .companion3b-living-panel .companion3b-action.gm-button {min-height:68px}
+}
+@media(max-height:600px) {
+  html[data-luxury="v2"] .companion3b-living-panel .companion3b-portrait-ring {height:155px}
+  html .companion3b-living-panel .companion3b-portrait-ring>.companion3b-avatar {transform:scale(.6)!important}
+}
