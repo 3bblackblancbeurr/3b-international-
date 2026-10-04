@@ -1,0 +1,13 @@
+.companion3b-presence-control { width:100%; min-width:0; }
+.companion3b-presence-choice { display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:56px; padding:12px 0; cursor:pointer; color:var(--3b-text); text-align:left; }
+.companion3b-presence-choice>span { display:grid; gap:5px; min-width:0; }
+.companion3b-presence-choice strong { font-size:.83rem; font-weight:600; line-height:1.4; }
+.companion3b-presence-choice small { color:var(--3b-muted); font-size:.72rem; line-height:1.5; }
+.companion3b-presence-choice input { appearance:auto; -webkit-appearance:checkbox; accent-color:var(--3b-champagne); flex:0 0 24px; width:24px; height:24px; margin:0; cursor:pointer; }
+.companion3b-presence-choice:focus-within { outline:2px solid var(--3b-champagne); outline-offset:4px; border-radius:var(--3b-radius-sm); }
+.companion3b-presence-control .companion3b-presence-notice { margin:4px 0 12px; color:var(--3b-champagne); font-size:.75rem; line-height:1.5; }
+.companion3b-presence-retry { width:100%; }
+.companion3b-living-panel>.companion3b-presence-control { padding:0 4px; border-bottom:1px solid var(--3b-border); }
+.luxury-controls-panel>.companion3b-presence-control { border-bottom:1px solid var(--3b-border); margin-bottom:4px; }
+.menu-companion-settings { padding-top:16px; border-top:1px solid var(--3b-border); }
+.menu-companion-settings .companion3b-presence-choice { max-width:600px; }
