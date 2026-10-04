@@ -127,7 +127,7 @@ export function createHubPlatform(save){
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,walls=platformWalls(worldBuildings.find(item=>item.buildingId===b.buildingId)).map(wall=>Object.fromEntries(Object.entries(wall).map(([k,v])=>[k,v/HUB_SCALE])));
   mesh(box,dark,x,.015,z,w,.05,d);mesh(box,gold,x,.06,z+d/2,w,.12,.3);
-  for(const wall of walls){mesh(box,dark,wall.x,h/2,wall.z,wall.width,h,wall.depth);cameraSolids.push({...wall,bottom:0,top:h});}
+  for(const wall of walls){mesh(box,dark,wall.x,h/2,wall.z,wall.width,h,wall.depth);collisions.push(wall);cameraSolids.push({...wall,bottom:0,top:h});}
   const roof=mesh(box,dark,x,h+.2,z,w+1,.4,d+1);roofs.push({b,roof});
   // Architectural silhouette and framing; only solid walls block the camera.
   for(const side of [-1,1]){
@@ -136,7 +136,7 @@ export function createHubPlatform(save){
   }
   mesh(box,gold,x,h-.4,z+d/2,w,.25,.5);sign(b.name,x,3.6,z+d/2+.35,Math.min(12,w-1));
   const counter=mesh(box,b.buildingId==='arena_3b'?blue:wood,x,1.1,z-d/2+1,w*.5,2.2,1);
-  counter.receiveShadow=true;
+  collisions.push({x,z:z-d/2+1,width:w*.5,depth:1});counter.receiveShadow=true;
   // Shelves, benches, displays express the purpose without blocking the middle aisle.
   for(const side of [-1,1]){
    const fx=x+side*(w/2-2.1);mesh(box,wood,fx,.6,z,2,1.2,d*.38);
@@ -167,13 +167,13 @@ export function createHubPlatform(save){
   mesh(box,dark,x,2.4,z,.3,4.8,.3);mesh(sphere,blue,x,4.9,z,.3);
   const tx=x+2,tz=z+2;mesh(cylinder,wood,tx,.85,tz,1.2,.15,1.2);mesh(cylinder,gold,tx,.4,tz,.1,.8,.1);
   mesh(box,wood,tx+2,.6,tz,1.3,.2,1);mesh(box,wood,tx+2,.3,tz,.15,.6,.15);
-
-  if(i%3===0){mesh(cylinder,dark,x-3,.4,z,1.5,.8,1.5);mesh(sphere,green,x-3,1.6,z,2,1.5,2);}
+  collisions.push({x,z,r:.6},{x:tx,z:tz,r:1.3});
+  if(i%3===0){mesh(cylinder,dark,x-3,.4,z,1.5,.8,1.5);mesh(sphere,green,x-3,1.6,z,2,1.5,2);collisions.push({x:x-3,z,r:1.5});}
  }
  for(const side of [-1,1])for(let i=0;i<4;i++){
   const x=side*34,z=70+i*9;mesh(box,wood,x,1,z,5,2,3);mesh(box,gold,x,3,z,6,.3,4);
   for(const edge of [-1,1])mesh(box,dark,x+edge*2.5,1.5,z,.18,3,.18);
-  mesh(sphere,green,x,2.3,z,.6);
+  mesh(sphere,green,x,2.3,z,.6);collisions.push({x,z,width:5,depth:3});
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
  const fabric=addDistrictFabric({root,owned,buildings,collisions,cameraSolids,materials:{dark,gold,glass,stone,green},box});

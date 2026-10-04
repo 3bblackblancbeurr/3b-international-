@@ -23,13 +23,13 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
   mesh(box,gold,x,h+height+.2,rear,w*(stepped?.44:.86),.4,5);
   if(['archives','innovation','broken_circle_tower'].includes(b.district))mesh(cylinder,blue,x,h+height+3,rear,.12,5,.12);
   // Foundations belong to the visible rear tower, so people cannot pass through it.
-  mesh(box,dark,x,h/2,rear,w*.74,h,4);
+  mesh(box,dark,x,h/2,rear,w*.74,h,4);collisions.push({x,z:rear,width:w*.74,depth:4});
   if(b.buildingId==='arena_3b'){
    for(let tier=0;tier<3;tier++){
     const ring=mesh(geo(new THREE.TorusGeometry(w*.62+tier,.22,5,56,Math.PI)),gold,x,5+tier*2,z);
     ring.rotation.set(-Math.PI/2,0,Math.PI);
    }
-   for(const side of [-1,1]){mesh(cylinder,dark,x+side*(w/2+3),8,z,2,16,2);mesh(cylinder,blue,x+side*(w/2+3),16.2,z,1.3,.3,1.3);}
+   for(const side of [-1,1]){mesh(cylinder,dark,x+side*(w/2+3),8,z,2,16,2);mesh(cylinder,blue,x+side*(w/2+3),16.2,z,1.3,.3,1.3);collisions.push({x:x+side*(w/2+3),z,r:2});}
   }
   if(['house_3b','ai_textile_lab','mode3_studio'].includes(b.buildingId)){
    const arch=mesh(geo(new THREE.TorusGeometry(w*.55,.2,5,40,Math.PI)),blue,x,3,z+d/2+.7);arch.rotation.z=0;

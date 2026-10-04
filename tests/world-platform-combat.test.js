@@ -63,3 +63,17 @@ test('saved finale keeps health, eight-phase mastery and gains through layout mi
  const stepped=stepField(resumedAtEdge.adventure.encounter,{x:0,z:0},fieldMover(resumedAtEdge));
  assert.deepEqual(stepped.field.p,edge,'combat ticks must not snap the player back to the old map limit');
 });
+
+
+test('authoritative obstacles match the consolidated rendered city in world metres', async()=>{
+ const {createHubPlatform}=await import('../src/world/hub/platform-scene.js');
+ const scene=createHubPlatform(blankSave());
+ try{
+  const rendered=scene.collisions.filter(o=>typeof o.surfaceDistance!=='function');
+  const authoritative=platformObstacles().filter(o=>typeof o.surfaceDistance!=='function');
+  assert.deepEqual(authoritative,rendered,'regenerate platform-obstacles.json when physical city geometry changes');
+  const boundary=scene.collisions.find(o=>o.id==='cite-water-boundary');
+  const serverBoundary=platformObstacles().find(o=>o.id==='cite-water-boundary');
+  for(const p of [{x:0,z:0},{x:140,z:110},HUB_PLATFORM.spawn])assert.equal(serverBoundary.surfaceDistance(p),boundary.surfaceDistance(p));
+ }finally{scene.dispose();}
+});

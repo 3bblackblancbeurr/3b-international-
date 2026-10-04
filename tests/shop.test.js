@@ -151,7 +151,11 @@ test("live Stripe credentials require a separate production approval while test 
   const live = { ...env, STRIPE_SECRET_KEY:"sk_live_fixture" };
   assert.equal(configFrom(live).stripeMode, "live");
   assert.equal(configFrom(live).enabled, false);
-  assert.equal(configFrom({ ...live, SHOP_LIVE_APPROVED:"true" }).enabled, true);
+  assert.equal(configFrom({ ...live, SHOP_LIVE_APPROVED:"true" }).enabled, false);
+  const approved = { ...live, SHOP_LIVE_APPROVED:"true", SHOP_E2E_APPROVED:"true", SHOP_INVENTORY_APPROVED:"true", SHOP_SELLER_APPROVED:"true" };
+  assert.equal(configFrom(approved).enabled, true);
+  for (const flag of ["SHOP_E2E_APPROVED", "SHOP_INVENTORY_APPROVED", "SHOP_SELLER_APPROVED"])
+    assert.equal(configFrom({ ...approved, [flag]: "false" }).enabled, false);
   assert.equal(configFrom({ ...env, STRIPE_SECRET_KEY:"rk_test_fixture" }).enabled, true);
   assert.equal(configFrom({ ...env, STRIPE_SECRET_KEY:"unclassified_key" }).enabled, false);
 });
@@ -378,4 +382,19 @@ test("orders keep size and colour when they are configured on the Stripe product
   assert.deepEqual(expansion, ["data.price.product"]);
   assert.equal(f.calls.writes[0].record.items[0].size, "M");
   assert.equal(f.calls.writes[0].record.items[0].color, "Noir");
+});
+
+
+test("explicitly published variants retain their country and exclude historical prices", async () => {
+  const f = dashboardFixture();
+  f.prices.price_Maroc = { ...f.prices.price_M, id: "price_Maroc", metadata: { logo_country: "Maroc" }, product: "prod_M" };
+  f.products.prod_M.metadata.shop_variant_prices = "price_M,price_Maroc";
+  const data = await (await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`))).json();
+  assert.equal(data.items.length, 3);
+  assert.equal(data.items.find(i => i.id === "price_Maroc").logoCountry, "Maroc");
+  assert.equal((await f.shop.checkout(checkoutRequest([{ priceId: "price_Maroc", quantity: 1 }]))).status, 200);
+  f.products.prod_M.metadata.shop_variant_prices = "price_M,price_L";
+  assert.equal((await f.shop.checkout(checkoutRequest())).status, 503, "foreign product variant must close checkout");
+  f.products.prod_M.metadata.shop_variant_prices = "price_Maroc";
+  assert.equal((await f.shop.catalog(new Request(`${ORIGIN}/api/catalog`))).status, 503, "default price must remain explicitly published");
 });

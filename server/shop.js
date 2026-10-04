@@ -57,6 +57,7 @@ export function configFrom(env) {
   const releaseApproved = env.SHOP_RELEASE_APPROVED === "true";
   const stripeMode = stripeKeyMode(env.STRIPE_SECRET_KEY);
   const liveApproved = env.SHOP_LIVE_APPROVED === "true";
+  const liveReadiness = env.SHOP_E2E_APPROVED === "true" && env.SHOP_INVENTORY_APPROVED === "true" && env.SHOP_SELLER_APPROVED === "true";
   const stripeApproved = stripeMode === "test" || (stripeMode === "live" && liveApproved);
   const cookieSecret = typeof env.SHOP_CHECKOUT_COOKIE_SECRET === "string" && env.SHOP_CHECKOUT_COOKIE_SECRET.length >= 32
     ? env.SHOP_CHECKOUT_COOKIE_SECRET : "";
@@ -65,7 +66,7 @@ export function configFrom(env) {
   const enabled = env.SHOP_ENABLED === "true" && releaseApproved && stripeApproved && !!cookieSecret && !!origin
     && !!env.STRIPE_WEBHOOK_SECRET && !!safeUrl(env.SUPABASE_URL) && !!env.SUPABASE_SERVICE_ROLE_KEY
     && !!termsUrl && !!privacyUrl && !!shippingUrl && !!returnsUrl && !!legalUrl
-    && shippingConfigured && catalogConfigured && taxReady
+    && shippingConfigured && catalogConfigured && taxReady && (stripeMode !== "live" || liveReadiness)
     && countries.length > 0 && countries.every(c => /^(FR|IT|EE|TR|DZ|TN|MA|ES)$/.test(c));
   return { origin, priceIds, catalogMode, countries, enabled, releaseApproved, liveApproved, stripeMode, stripeApproved,
     cookieSecret, termsUrl, privacyUrl, shippingUrl, returnsUrl, legalUrl, shippingRateId, shippingIncluded,
@@ -166,11 +167,18 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
           if (product.metadata?.shop_visible !== "true") continue;
           const defaultPriceId = typeof product.default_price === "string" ? product.default_price : product.default_price?.id;
           if (!/^price_[A-Za-z0-9]+$/.test(defaultPriceId || "")) continue;
-          const price = await stripe().prices.retrieve(defaultPriceId);
-          const priceProductId = typeof price?.product === "string" ? price.product : price?.product?.id;
-          if (priceProductId !== product.id) continue;
-          const item = publicPrice({ ...price, product }, config.stripeMode);
-          if (item) items.push(item);
+          // Only explicitly published variants are allowed; historical active prices stay hidden.
+          const declared = product.metadata?.shop_variant_prices;
+          const priceIds = declared ? [...new Set(declared.split(",").map(id => id.trim()))] : [defaultPriceId];
+          if (priceIds.length > 20 || !priceIds.includes(defaultPriceId) || priceIds.some(id => !/^price_[A-Za-z0-9]+$/.test(id)))
+            throw new ShopError(503, UNAVAILABLE);
+          for (const id of priceIds) {
+            const price = await stripe().prices.retrieve(id);
+            const priceProductId = typeof price?.product === "string" ? price.product : price?.product?.id;
+            if (priceProductId !== product.id) throw new ShopError(503, UNAVAILABLE);
+            const item = publicPrice({ ...price, product }, config.stripeMode);
+            if (item) items.push(item);
+          }
         }
         if (!result.has_more) return items;
         const next = result.data.at(-1)?.id;
