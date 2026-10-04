@@ -9,6 +9,8 @@ on:
       - 'public/shop/**'
       - 'public/shipping.html'
       - 'tests/shop*.test.js'
+      - 'supabase/migrations/*shop*.sql'
+      - '.github/workflows/verify-shop.yml'
       - '.env.example'
       - 'package*.json'
   workflow_dispatch:
@@ -32,4 +34,4 @@ jobs:
       - name: Test checkout security and Stripe boundaries
         run: npm run test:shop
       - name: Test seller, customer and notification workflow
-        run: node --test tests/shop-order-workflow.test.js tests/shop-notifications.test.js
+        run: node --test tests/shop-order-workflow.test.js tests/shop-notifications.test.js tests/shop-inventory.test.js

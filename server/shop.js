@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import {createInventory, InventoryError} from "./shop-inventory.js";
 import {createMemberCommerce,loyaltyCoupon} from "./member-commerce.js";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
@@ -139,6 +140,7 @@ function validCookie(request, id, key) {
 
 export function createShop({ env = process.env, stripe: suppliedStripe, fetcher = fetch } = {}) {
   const config = configFrom(env);
+  const inventory = createInventory({env, fetcher});
   const loyalty = createMemberCommerce({env,fetcher});
   let client = suppliedStripe;
   function stripe() {
@@ -228,6 +230,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       || !Number.isSafeInteger(session.amount_total) || session.amount_total <= 0) throw new ShopError(503, "Vérification de la commande en cours.");
     const lines = await stripe().checkout.sessions.listLineItems(session.id, { limit: 100, expand: ["data.price.product"] });
     if (lines.has_more) throw new ShopError(503, "Vérification de la commande en cours.");
+    await inventory.commit(session);
     const now = new Date();
     const loyaltyUserId = /^[0-9a-f-]{36}$/i.test(session.metadata?.loyalty_user_id || "") ? session.metadata.loyalty_user_id : null;
     await ordersRequest("POST", {
@@ -280,8 +283,8 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       if (request.method !== method) return json({ error: "Méthode non autorisée." }, 405, { Allow: method });
       try { return await fn(request); }
       catch (error) {
-        return json({ error: error instanceof ShopError ? error.message : "Le service est momentanément indisponible. Réessaie dans un instant." },
-          error instanceof ShopError ? error.status : 503);
+        return json({ error: error instanceof ShopError || error instanceof InventoryError ? error.message : "Le service est momentanément indisponible. Réessaie dans un instant." },
+          error instanceof ShopError || error instanceof InventoryError ? error.status : 503);
       }
     };
   }
@@ -314,6 +317,9 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
       await ordersRequest("GET");
       const shippingKey = config.shippingIncluded ? "included" : config.shippingRateId;
       const digest = createHash("sha256").update(JSON.stringify({ lines, origin: config.origin, shipping: shippingKey, member: member?.id || null, discount: member?.discount || 0 })).digest("hex");
+      const inventoryToken = createHash("sha256").update(`3b:${body.attemptId}:${digest}`).digest("hex");
+      await inventory.reserve(inventoryToken, config.stripeMode === "live", lines);
+      const inventoryMetadata = inventory.enforced ? {inventory_token:inventoryToken} : {};
       const coupon = member?.discount ? await loyaltyCoupon(stripe(),member.discount) : null;
       const loyaltyMetadata = member ? {loyalty_user_id:member.id,loyalty_discount:String(member.discount)} : {};
       const shippingOptions = config.shippingIncluded
@@ -327,7 +333,7 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
         shipping_options: shippingOptions,
         automatic_tax: { enabled: config.automaticTax },
         consent_collection: { terms_of_service: "required" },
-        metadata: { integration: INTEGRATION, ...loyaltyMetadata }, payment_intent_data: { metadata: { integration: INTEGRATION, ...loyaltyMetadata } },
+        metadata: { integration: INTEGRATION, ...loyaltyMetadata, ...inventoryMetadata }, payment_intent_data: { metadata: { integration: INTEGRATION, ...loyaltyMetadata, ...inventoryMetadata } },
         success_url: `${config.origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}#boutique`,
         cancel_url: `${config.origin}/?checkout=cancel#boutique`,
       }, { idempotencyKey: `3b:${body.attemptId}:${digest}` });
@@ -363,6 +369,11 @@ export function createShop({ env = process.env, stripe: suppliedStripe, fetcher 
           const session = await stripe().checkout.sessions.retrieve(incoming.id);
           await savePaidOrder(session);
         }
+      }
+      if(event.type === "checkout.session.expired" && event.data.object.metadata?.integration === INTEGRATION) {
+        const session = await stripe().checkout.sessions.retrieve(event.data.object.id);
+        assertStripeMode(session.livemode);
+        await inventory.release(session);
       }
       if(event.type === "charge.refunded") {
         const incoming=event.data.object;
