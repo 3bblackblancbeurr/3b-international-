@@ -25,6 +25,6 @@ export default function WorldPortalCard({goTo}){
    </div>
    {message&&<p role="status">{message}</p>}
   </div>
-  <span className="home-world-signature" aria-hidden="true">NEXUS · 8 PORTES</span>
+  <span className="home-world-signature" aria-hidden="true">CITÉ · 8 PORTES</span>
  </section>;
 }
