@@ -53,8 +53,9 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    totalEmissiveRadiance+=vec3(.72,.43,.19)*fabricLit*pow(1.-fabricDay,1.5)*.20*reveal*interior*furnishing*curtain;`);
  };
  glazing.customProgramCacheKey=()=> '3b-fabric-glazing-v1';owned.push(body,glazing);
+ const fineNames=new Set(['Baies vitrées','Encadrements de baies','Linteaux de baies','Tableaux de baies','Meneaux verticaux','Garde-corps de balcon','Montants de balcon','Poignées des portes','Chapiteaux de socle','Descentes et nervures','Frises civiques','Reliefs civiques']);
  function layer(geometry,material,name,x,y,z,sx,sy,sz,yaw=0){
-  const key=geometry.uuid+material.uuid;if(!layers.has(key))layers.set(key,{geometry,material,name,transforms:[]});
+  const fine=fineNames.has(name),key=geometry.uuid+material.uuid+(fine?'detail':'structure');if(!layers.has(key))layers.set(key,{geometry,material,name,fine,transforms:[]});
   layers.get(key).transforms.push({x,y,z,sx,sy,sz,yaw});
  }
  const reserved=interactionReservations();
@@ -167,11 +168,26 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    cameraSolids.push({x:p.x,z:p.z,width:6,depth:6,bottom:0,top:h+6});
   }
  }
- const group=new THREE.Group();group.name='3B · tissu urbain des quartiers';root.add(group);const dummy=new THREE.Object3D();
+ const group=new THREE.Group();group.name='3B · tissu urbain des quartiers';root.add(group);const dummy=new THREE.Object3D(),detailBatches=[];
  for(const l of layers.values()){
   const mesh=new THREE.InstancedMesh(l.geometry,l.material,l.transforms.length);mesh.name=l.name;mesh.castShadow=mesh.receiveShadow=true;
   for(const [i,p] of l.transforms.entries()){dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
-  mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh);owned.push(mesh);
+  mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh);owned.push(mesh);if(l.fine){mesh.userData.distanceDetail=true;detailBatches.push({mesh,poses:l.transforms});}
  }
- return{sites,count:sites.length,setDaylight(value){day.value=value;},setQuality(mode){group.children.forEach(m=>m.castShadow=mode!=='fluid');}};
+ let quality='detail',lastView=null;const viewPoint=new THREE.Vector3();
+ function updateView(camera){
+  camera.getWorldPosition(viewPoint);group.worldToLocal(viewPoint);
+  if(lastView&&lastView.distanceToSquared(viewPoint)<9)return;
+  lastView=viewPoint.clone();const radius=quality==='fluid'?100:180,radius2=radius*radius;
+  for(const {mesh,poses} of detailBatches){
+   let count=0;
+   for(const p of poses){
+    if((p.x-viewPoint.x)**2+(p.y-viewPoint.y)**2+(p.z-viewPoint.z)**2>radius2)continue;
+    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(count++,dummy.matrix);
+   }
+   mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
+   // The original full bounding sphere remains conservative after compaction.
+  }
+ }
+ return{sites,count:sites.length,updateView,setDaylight(value){day.value=value;},setQuality(mode){quality=mode;lastView=null;group.children.forEach(m=>m.castShadow=mode!=='fluid');}};
 }
