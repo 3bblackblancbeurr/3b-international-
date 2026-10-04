@@ -4,11 +4,15 @@ import * as THREE from 'three';
  * gameplay rewards or new interiors are introduced. All rooms share three draws. */
 export function addInteriorDisplays({root,owned,box,buildings,materials}){
  const layers=new Map(),dummy=new THREE.Object3D();
+ const plaster=new THREE.MeshStandardMaterial({color:'#8b8780',roughness:.94,metalness:0,emissive:'#827b6a',emissiveIntensity:.025});owned.push(plaster);
  function piece(material,x,y,z,sx,sy,sz,yaw=0){
   if(!layers.has(material))layers.set(material,[]);layers.get(material).push({x,y,z,sx,sy,sz,yaw});
  }
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ-b.depth/2+1,table=2.2,space=b.width*.19;
+  // Interior coatings are inset into the existing three closed walls.
+  piece(plaster,x,b.height/2+.2,b.buildingZ-b.depth/2+.32,b.width-.65,b.height-1.2,.035);
+  for(const side of [-1,1])piece(plaster,x+side*(b.width/2-.32),b.height/2+.2,b.buildingZ,.035,b.height-1.2,b.depth-.65);
   if(['memory_archives','living_cards_gallery','mission_hotel'].includes(b.buildingId)){
    // Bound volumes, gold spines and a low reading stand.
    for(let i=0;i<5;i++){

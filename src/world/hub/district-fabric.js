@@ -39,14 +39,18 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
  const day={value:1};
  glazing.onBeforeCompile=shader=>{
   shader.uniforms.fabricDay=day;
-  shader.vertexShader='varying float fabricLit;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
-   vec3 centre=vec3(0.);
+  shader.vertexShader='varying float fabricLit;varying vec2 fabricUv;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   fabricUv=uv;vec3 centre=vec3(0.);
    #ifdef USE_INSTANCING
    centre=(instanceMatrix*vec4(0.,0.,0.,1.)).xyz;
    #endif
    fabricLit=step(.66,fract(sin(dot(centre,vec3(127.1,311.7,74.7)))*43758.5453));`);
-  shader.fragmentShader='varying float fabricLit;uniform float fabricDay;\n'+shader.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
-   totalEmissiveRadiance+=vec3(.72,.43,.19)*fabricLit*pow(1.-fabricDay,1.5)*.32;`);
+  shader.fragmentShader='varying float fabricLit;varying vec2 fabricUv;uniform float fabricDay;\n'+shader.fragmentShader.replace('#include <emissivemap_fragment>',`#include <emissivemap_fragment>
+   vec2 edge=min(fabricUv,1.-fabricUv);float reveal=smoothstep(.025,.12,min(edge.x,edge.y));
+   float interior=smoothstep(.14,.32,fabricUv.y);
+   float furnishing=1.-step(.56,fabricUv.x)*step(fabricUv.y,.38)*.75;
+   float curtain=.72+.28*smoothstep(.18,.28,abs(fabricUv.x-.5));
+   totalEmissiveRadiance+=vec3(.72,.43,.19)*fabricLit*pow(1.-fabricDay,1.5)*.20*reveal*interior*furnishing*curtain;`);
  };
  glazing.customProgramCacheKey=()=> '3b-fabric-glazing-v1';owned.push(body,glazing);
  function layer(geometry,material,name,x,y,z,sx,sy,sz,yaw=0){
@@ -97,6 +101,11 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
       const across=side*(round?.47:1.02),wx=p.x+Math.cos(angle)*across+Math.sin(angle)*front,wz=p.z-Math.sin(angle)*across+Math.cos(angle)*front;
       layer(box,glazing,'Baies vitrées',wx,floor,wz,round?.72:1.5,1.65,.12,angle);
       layer(box,materials.gold,'Encadrements de baies',wx,floor-.9,wz,round?.82:1.65,.10,.20,angle);
+      layer(box,materials.gold,'Linteaux de baies',wx,floor+.9,wz,round?.82:1.65,.07,.17,angle);
+      for(const edge of [-1,1]){
+       const offset=edge*(round?.4:.81);
+       layer(box,materials.gold,'Tableaux de baies',wx+Math.cos(angle)*offset,floor,wz-Math.sin(angle)*offset,.045,1.85,.16,angle);
+      }
      }
      const bx=p.x+Math.sin(angle)*front,bz=p.z+Math.cos(angle)*front;
      layer(box,materials.gold,'Meneaux verticaux',bx,floor,bz,.075,1.8,.18,angle);
