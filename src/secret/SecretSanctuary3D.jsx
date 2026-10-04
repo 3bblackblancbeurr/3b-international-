@@ -279,12 +279,14 @@ export default function SecretSanctuary3D({
       const angle = (index / 8) * Math.PI * 2 + Math.PI / 8;
       const radius = 4.24;
       const material = new THREE.MeshPhysicalMaterial({
-        color: 0x0a141c,
+        color: 0x071116,
         emissive: index % 2 ? gold : signalColor,
-        emissiveIntensity: 0.42,
-        metalness: 0.62,
-        roughness: 0.18,
-        clearcoat: 0.85,
+        emissiveIntensity: 0.24,
+        metalness: 0.86,
+        roughness: 0.12,
+        clearcoat: 1,
+        clearcoatRoughness: 0.07,
+        envMapIntensity: 0.78,
       });
       const node = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 2), material);
       node.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.58, 0.05 + Math.sin(angle) * 0.3);
@@ -298,7 +300,7 @@ export default function SecretSanctuary3D({
         new THREE.MeshBasicMaterial({
           color: index % 2 ? gold : signalColor,
           transparent: true,
-          opacity: 0.18,
+          opacity: 0.11,
           blending: THREE.AdditiveBlending,
         }),
       );
@@ -323,10 +325,10 @@ export default function SecretSanctuary3D({
     const particles = new THREE.Points(
       particleGeometry,
       new THREE.PointsMaterial({
-        color: 0xa9eaff,
-        size: 0.027,
+        color: 0xb8d8da,
+        size: 0.021,
         transparent: true,
-        opacity: 0.42,
+        opacity: 0.28,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
       }),
@@ -336,9 +338,10 @@ export default function SecretSanctuary3D({
     const guardianMaterial = new THREE.MeshBasicMaterial({
       transparent: true,
       opacity: 0,
-      color: 0xb9d9e9,
+      color: 0xc0ccca,
       depthWrite: false,
       toneMapped: false,
+      blending: THREE.NormalBlending,
     });
     const guardian = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 6.8), guardianMaterial);
     guardian.position.set(-0.25, 0.35, -3.45);
@@ -366,9 +369,12 @@ export default function SecretSanctuary3D({
       const material = new THREE.MeshPhysicalMaterial({
         color: index % 2 ? paleGold : signalColor,
         emissive: index % 2 ? gold : signalColor,
-        emissiveIntensity: 0.7,
-        metalness: 0.28,
-        roughness: 0.12,
+        emissiveIntensity: 0.42,
+        metalness: 0.68,
+        roughness: 0.08,
+        clearcoat: 1,
+        clearcoatRoughness: 0.055,
+        envMapIntensity: 0.78,
         transparent: true,
         opacity: 0,
       });
@@ -390,11 +396,14 @@ export default function SecretSanctuary3D({
       [2.25, -1.05],
     ].forEach(([x, y], index) => {
       const material = new THREE.MeshPhysicalMaterial({
-        color: 0x09131b,
+        color: 0x061016,
         emissive: index % 2 ? gold : signalColor,
-        emissiveIntensity: 0.2,
-        metalness: 0.74,
-        roughness: 0.18,
+        emissiveIntensity: 0.12,
+        metalness: 0.9,
+        roughness: 0.11,
+        clearcoat: 1,
+        clearcoatRoughness: 0.065,
+        envMapIntensity: 0.72,
         transparent: true,
         opacity: 0,
       });
@@ -409,11 +418,14 @@ export default function SecretSanctuary3D({
     chamberGroup.visible = false;
     sanctuary.add(chamberGroup);
     const chamberDialMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x071019,
+      color: 0x050d12,
       emissive: signalColor,
-      emissiveIntensity: 0.22,
-      metalness: 0.86,
-      roughness: 0.16,
+      emissiveIntensity: 0.13,
+      metalness: 0.94,
+      roughness: 0.105,
+      clearcoat: 1,
+      clearcoatRoughness: 0.06,
+      envMapIntensity: 0.82,
       transparent: true,
       opacity: 0,
     });
@@ -425,9 +437,12 @@ export default function SecretSanctuary3D({
       new THREE.MeshPhysicalMaterial({
         color: paleGold,
         emissive: gold,
-        emissiveIntensity: 0.7,
-        metalness: 0.7,
-        roughness: 0.15,
+        emissiveIntensity: 0.38,
+        metalness: 0.94,
+        roughness: 0.085,
+        clearcoat: 1,
+        clearcoatRoughness: 0.055,
+        envMapIntensity: 0.9,
       }),
     );
     needle.position.y = 0.95;
@@ -442,9 +457,14 @@ export default function SecretSanctuary3D({
       const material = new THREE.MeshPhysicalMaterial({
         color: index === 1 ? paleGold : signalColor,
         emissive: index === 1 ? gold : signalColor,
-        emissiveIntensity: 0.45,
-        metalness: 0.6,
-        roughness: 0.12,
+        emissiveIntensity: 0.28,
+        metalness: 0.82,
+        roughness: 0.075,
+        clearcoat: 1,
+        clearcoatRoughness: 0.05,
+        envMapIntensity: 0.82,
+        iridescence: 0.05,
+        iridescenceIOR: 1.3,
         transparent: true,
         opacity: 0,
       });
@@ -563,13 +583,13 @@ export default function SecretSanctuary3D({
 
       const liveStage = currentStage >= 1 && currentStage <= 7;
       const reveal = currentStage === 8;
-      coreMaterial.emissiveIntensity = damp(coreMaterial.emissiveIntensity, reveal ? 2.4 : liveStage ? 1.25 : 0.66, 3.5, delta);
-      beamMaterial.opacity = damp(beamMaterial.opacity, reveal ? 0.24 : liveStage ? 0.095 : 0.038, 3.3, delta);
-      keyLight.intensity = damp(keyLight.intensity, reveal ? 20 : liveStage ? 12 : 6, 3.2, delta);
-      goldLight.intensity = damp(goldLight.intensity, reveal ? 12 : currentStage >= 5 ? 8 : 4.5, 3.2, delta);
-      floorInlay.material.opacity = damp(floorInlay.material.opacity, reveal ? 0.19 : currentStage >= 1 ? 0.09 : 0.045, 3, delta);
+      coreMaterial.emissiveIntensity = damp(coreMaterial.emissiveIntensity, reveal ? 1.65 : liveStage ? 0.92 : 0.46, 3.5, delta);
+      beamMaterial.opacity = damp(beamMaterial.opacity, reveal ? 0.14 : liveStage ? 0.058 : 0.024, 3.3, delta);
+      keyLight.intensity = damp(keyLight.intensity, reveal ? 14 : liveStage ? 8.8 : 4.4, 3.2, delta);
+      goldLight.intensity = damp(goldLight.intensity, reveal ? 8.2 : currentStage >= 5 ? 5.8 : 3.2, 3.2, delta);
+      floorInlay.material.opacity = damp(floorInlay.material.opacity, reveal ? 0.12 : currentStage >= 1 ? 0.062 : 0.032, 3, delta);
       if (coreGlow) {
-        coreGlow.material.opacity = damp(coreGlow.material.opacity, reveal ? 0.72 : liveStage ? 0.38 : 0.18, 3.5, delta);
+        coreGlow.material.opacity = damp(coreGlow.material.opacity, reveal ? 0.48 : liveStage ? 0.26 : 0.12, 3.5, delta);
         const pulse = reducedMotion ? 1 : 1 + Math.sin(elapsed * 1.2) * 0.035;
         coreGlow.scale.set(4.2 * pulse, 4.2 * pulse, 1);
       }
@@ -581,14 +601,14 @@ export default function SecretSanctuary3D({
         ring.rotation.z = damp(ring.rotation.z, puzzleRotation, currentStage === 4 ? 7 : 2, delta);
         ring.material.emissiveIntensity = damp(
           ring.material.emissiveIntensity,
-          currentStage === 4 ? 0.72 : reveal ? 1.1 : 0.2,
+          currentStage === 4 ? 0.48 : reveal ? 0.72 : 0.12,
           3.5,
           delta,
         );
       });
 
       nodeMeshes.forEach((node, index) => {
-        const target = currentStage === 1 ? 0.68 : currentStage > 1 ? 0.25 : 0.18;
+        const target = currentStage === 1 ? 0.42 : currentStage > 1 ? 0.16 : 0.11;
         node.material.emissiveIntensity = damp(node.material.emissiveIntensity, target, 4, delta);
         if (!reducedMotion && currentStage === 1) {
           const beat = 1 + Math.max(0, Math.sin(elapsed * (1.45 + index * 0.035) - index * 0.72)) * 0.08;
@@ -598,7 +618,7 @@ export default function SecretSanctuary3D({
         }
       });
 
-      const guardianTarget = currentStage === 2 ? 0.58 : currentStage === 7 ? 0.32 : 0;
+      const guardianTarget = currentStage === 2 ? 0.52 : currentStage === 7 ? 0.28 : 0;
       guardianMaterial.opacity = damp(guardianMaterial.opacity, guardianTarget, 3.6, delta);
       guardian.visible = guardianMaterial.opacity > 0.005;
       if (!reducedMotion && guardian.visible) {
@@ -609,7 +629,7 @@ export default function SecretSanctuary3D({
       transmissionGroup.visible = currentStage === 3;
       transmissionMaterials.forEach((material, index) => {
         material.opacity = damp(material.opacity, currentStage === 3 ? 0.88 : 0, 5, delta);
-        material.emissiveIntensity = damp(material.emissiveIntensity, current.showSequence ? 1.8 : 0.72, 5, delta);
+        material.emissiveIntensity = damp(material.emissiveIntensity, current.showSequence ? 1.12 : 0.42, 5, delta);
         const shard = transmissionGroup.children[index];
         if (shard && !reducedMotion) {
           shard.position.y += Math.sin(elapsed * 1.1 + index) * 0.0008;
@@ -621,19 +641,19 @@ export default function SecretSanctuary3D({
       archivePads.forEach((pad, index) => {
         const occupied = Boolean(current.archiveDraft?.[index]);
         pad.material.opacity = damp(pad.material.opacity, currentStage === 5 ? (occupied ? 0.92 : 0.38) : 0, 5, delta);
-        pad.material.emissiveIntensity = damp(pad.material.emissiveIntensity, occupied ? 1.15 : 0.24, 5, delta);
+        pad.material.emissiveIntensity = damp(pad.material.emissiveIntensity, occupied ? 0.68 : 0.14, 5, delta);
       });
 
       chamberGroup.visible = currentStage === 6;
       chamberDialMaterial.opacity = damp(chamberDialMaterial.opacity, currentStage === 6 ? 0.88 : 0, 5, delta);
-      chamberDialMaterial.emissiveIntensity = damp(chamberDialMaterial.emissiveIntensity, current.chamberValue ? 0.72 : 0.24, 5, delta);
+      chamberDialMaterial.emissiveIntensity = damp(chamberDialMaterial.emissiveIntensity, current.chamberValue ? 0.46 : 0.14, 5, delta);
       const chamberValueNumber = Math.max(1, Math.min(8, Number(current.chamberNumber) || 1));
       needleGroup.rotation.z = damp(needleGroup.rotation.z, -(chamberValueNumber - 1) * Math.PI / 4, 6, delta);
 
       sealGroup.visible = currentStage === 7 || reveal;
       sealMaterials.forEach((material, index) => {
         material.opacity = damp(material.opacity, sealGroup.visible ? (reveal ? 1 : 0.72) : 0, 5, delta);
-        material.emissiveIntensity = damp(material.emissiveIntensity, reveal ? 1.8 : 0.55, 4, delta);
+        material.emissiveIntensity = damp(material.emissiveIntensity, reveal ? 1.12 : 0.34, 4, delta);
         const shard = sealGroup.children[index];
         if (shard && !reducedMotion) {
           shard.rotation.x += delta * (0.08 + index * 0.02);
@@ -664,6 +684,9 @@ export default function SecretSanctuary3D({
           });
         }
       });
+      environmentTarget.dispose();
+      roomEnvironment.dispose();
+      pmremGenerator.dispose();
       glowTexture?.dispose?.();
       renderer.dispose();
       renderer.forceContextLoss?.();
