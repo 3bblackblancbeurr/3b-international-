@@ -78,8 +78,22 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    sites.push({...p,height:h,district:island.id});count++;
    layer(box,materials.stone,'Socles et façades',p.x,.3,p.z,6,.6,6);
    const round=profile.style==='lantern',shape=round?octagon:box;
-   layer(shape,body,'Bâtiments des quartiers',p.x,h/2+.6,p.z,round?w/2:w,h,round?d/2:d,yaw);
-   layer(shape,materials.gold,'Corniches',p.x,h+.75,p.z,round?2.8:5.6,.25,round?2.8:5.6,yaw);
+   // Stepped silhouettes: each district has its own upper-storey proportions.
+   // All tiers remain within the original solid six-metre footprint.
+   const stepped=h>=10&&profile.style!=='shed'&&profile.style!=='pergola';
+   // Setback ledges fall between window rows, rather than cutting through glazing.
+   const first=stepped?(Math.round((h*.55-1.25)/3.5)*3.5+1.25-.6)/h:1;
+   const second=stepped?Math.min((Math.round((h*.82-1.25)/3.5)*3.5+1.25-.6)/h,1):1;
+   const setbacks=stepped?[[0,first,1],[first,second,.84],[second,1,.68]].filter(([a,b])=>b>a+.001):[[0,1,1]];
+   const facadeScale=y=>stepped?(y>=second*h+.6?.68:y>=first*h+.6?.84:1):1;
+   for(const [bottom,top,scale] of setbacks){
+    layer(shape,body,'Bâtiments des quartiers',p.x,(bottom+top)*h/2+.6,p.z,(round?w/2:w)*scale,(top-bottom)*h,(round?d/2:d)*scale,yaw);
+    if(bottom>0){
+     layer(shape,round?materials.gold:materials.stone,'Terrasses en retrait',p.x,bottom*h+.56,p.z,(round?w/2:w)*scale+.12,.14,(round?d/2:d)*scale+.12,yaw);
+     layer(shape,materials.gold,'Bandeaux des retraits',p.x,bottom*h+.66,p.z,(round?w/2:w)*scale+.14,.07,(round?d/2:d)*scale+.14,yaw);
+    }
+   }
+   layer(shape,materials.gold,'Corniches',p.x,h+.75,p.z,(round?2.8:5.6)*facadeScale(h+.6),.25,(round?2.8:5.6)*facadeScale(h+.6),yaw);
    if(profile.style==='spire'){
     layer(box,materials.glass,'Attiques',p.x,h+2.2,p.z,3.5,3,3.5,yaw);
     layer(cone,materials.gold,'Flèches',p.x,h+5.2,p.z,2,3.2,2,yaw);
@@ -96,14 +110,14 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    // Four finished facades: paired glazing, mullions and recessed horizontal reveals.
    for(let floor=3;floor<h-.3;floor+=3.5){
     for(let face=0;face<4;face++){
-     const angle=face*Math.PI/2,front=round?2.31:2.51;
+     const angle=face*Math.PI/2,scale=facadeScale(floor),front=(round?2.31:2.51)*scale;
      for(const side of [-1,1]){
-      const across=side*(round?.47:1.02),wx=p.x+Math.cos(angle)*across+Math.sin(angle)*front,wz=p.z-Math.sin(angle)*across+Math.cos(angle)*front;
-      layer(box,glazing,'Baies vitrées',wx,floor,wz,round?.72:1.5,1.65,.12,angle);
-      layer(box,materials.gold,'Encadrements de baies',wx,floor-.9,wz,round?.82:1.65,.10,.20,angle);
-      layer(box,materials.gold,'Linteaux de baies',wx,floor+.9,wz,round?.82:1.65,.07,.17,angle);
+      const across=side*(round?.47:1.02)*scale,wx=p.x+Math.cos(angle)*across+Math.sin(angle)*front,wz=p.z-Math.sin(angle)*across+Math.cos(angle)*front;
+      layer(box,glazing,'Baies vitrées',wx,floor,wz,(round?.72:1.5)*scale,1.65,.12,angle);
+      layer(box,materials.gold,'Encadrements de baies',wx,floor-.9,wz,(round?.82:1.65)*scale,.10,.20,angle);
+      layer(box,materials.gold,'Linteaux de baies',wx,floor+.9,wz,(round?.82:1.65)*scale,.07,.17,angle);
       for(const edge of [-1,1]){
-       const offset=edge*(round?.4:.81);
+       const offset=edge*(round?.4:.81)*scale;
        layer(box,materials.gold,'Tableaux de baies',wx+Math.cos(angle)*offset,floor,wz-Math.sin(angle)*offset,.045,1.85,.16,angle);
       }
      }
@@ -111,9 +125,9 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
      layer(box,materials.gold,'Meneaux verticaux',bx,floor,bz,.075,1.8,.18,angle);
      // Balconies remain inside the existing protected six-metre footprint.
      if(!round&&profile.style!=='shed'){
-      layer(box,materials.stone,'Dalles de balcon',bx+Math.sin(angle)*.22,floor-1,bz+Math.cos(angle)*.22,4.25,.14,.52,angle);
-      layer(box,materials.gold,'Garde-corps de balcon',bx+Math.sin(angle)*.45,floor-.35,bz+Math.cos(angle)*.45,4.2,.065,.06,angle);
-      for(const side of [-1,0,1])layer(box,materials.gold,'Montants de balcon',bx+Math.cos(angle)*side*1.9+Math.sin(angle)*.45,floor-.65,bz-Math.sin(angle)*side*1.9+Math.cos(angle)*.45,.055,.65,.055,angle);
+      layer(box,materials.stone,'Dalles de balcon',bx+Math.sin(angle)*.22,floor-1,bz+Math.cos(angle)*.22,4.25*scale,.14,.52,angle);
+      layer(box,materials.gold,'Garde-corps de balcon',bx+Math.sin(angle)*.45,floor-.35,bz+Math.cos(angle)*.45,4.2*scale,.065,.06,angle);
+      for(const side of [-1,0,1])layer(box,materials.gold,'Montants de balcon',bx+Math.cos(angle)*side*1.9*scale+Math.sin(angle)*.45,floor-.65,bz-Math.sin(angle)*side*1.9*scale+Math.cos(angle)*.45,.055,.65,.055,angle);
      }
     }
    }
@@ -121,6 +135,34 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    for(const side of [-1,1])layer(box,materials.stone,'Portails de rez-de-chaussée',p.x+side*.85,1.45,p.z+(round?2.32:2.55),.16,2.7,.2);
    layer(box,materials.gold,'Linteaux des entrées',p.x,2.85,p.z+(round?2.33:2.56),1.9,.13,.24);
    layer(box,glazing,'Portes vitrées',p.x,1.4,p.z+(round?2.34:2.57),1.5,2.5,.1);
+   // Detailed ground-level joinery and district-specific structural rhythms.
+   for(const side of [-1,1]){
+    layer(box,materials.gold,'Poignées des portes',p.x+side*.18,1.45,p.z+(round?2.43:2.66),.035,.34,.04);
+    for(const edge of [-1,1]){
+     const xx=p.x+side*(round?1.45:2.36),zz=p.z+edge*(round?1.45:2.36);
+     layer(box,materials.stone,'Pilastres de socle',xx,1.55,zz,.19,2.5,.19);
+     layer(box,materials.gold,'Chapiteaux de socle',xx,2.82,zz,.32,.12,.32);
+    }
+   }
+   for(let face=0;face<4;face++){
+    const a=face*Math.PI/2;
+    for(const side of [-1,1]){
+     const across=side*(round?1.25:2.25),front=round?1.92:2.57;
+     const xx=p.x+Math.cos(a)*across+Math.sin(a)*front,zz=p.z-Math.sin(a)*across+Math.cos(a)*front;
+     // Bronze rain pipes and vertical fins frame the lower street frontage.
+     layer(box,materials.gold,'Descentes et nervures',xx,h*.27+.6,zz,.065,h*.54,.07,a);
+    }
+    if(island.id==='builders'||island.id==='commerce')for(let j=0;j<3;j++){
+     const yy=3+j*2.4,xx=p.x+Math.sin(a)*2.6,zz=p.z+Math.cos(a)*2.6;
+     layer(box,materials.gold,'Frises civiques',xx,yy,zz,4.6,.08,.09,a);
+     for(const side of [-1,1])layer(box,materials.gold,'Reliefs civiques',xx+Math.cos(a)*side*1.8,yy+.23,zz-Math.sin(a)*side*1.8,.25,.38,.12,a);
+    }
+    if(island.id==='community'||island.id==='gardens'){
+     const xx=p.x+Math.sin(a)*2.7,zz=p.z+Math.cos(a)*2.7;
+     layer(box,materials.stone,'Jardinières de façade',xx,3.25,zz,3.8,.28,.36,a);
+     layer(box,materials.green,'Végétation des jardinières',xx,3.47,zz,3.6,.22,.3,a);
+    }
+   }
    collisions.push({id:`fabric-${island.id}-${count}`,x:p.x,z:p.z,width:6,depth:6});
    cameraSolids.push({x:p.x,z:p.z,width:6,depth:6,bottom:0,top:h+6});
   }

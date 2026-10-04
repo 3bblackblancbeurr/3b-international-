@@ -58,6 +58,12 @@ export function createHubPlatform(save){
    for(let k=1;k<8;k++){const t=k/8,along=(t-.5)*bridge.length,drop=8*Math.sin(t*Math.PI),x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*side*4.7,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*side*4.7;mesh(box,dark,x,-.7-drop/2,z,.3,drop,.3);}
   }
 
+  // Fine balustrades sit on the existing deck rim and leave the full aisle open.
+  for(const side of [-1,1])for(let k=0;k<=32;k++){
+   const along=(k/32-.5)*bridge.length,across=side*5.85;
+   const x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*across,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*across;
+   const post=mesh(box,gold,x,.52,z,.09,1.04,.09);post.rotation.y=-bridge.angle;
+  }
   for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*5.85,dz=Math.cos(bridge.angle)*side*5.85;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
  }
  const promenade=new THREE.RingGeometry(119,131,128);promenade.rotateX(-Math.PI/2);deckParts.push(promenade);
