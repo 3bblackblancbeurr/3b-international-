@@ -20,7 +20,7 @@ export function createWorldSky(renderer,onEnvironment){
   float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
   float cloud(vec2 p){return noise(p)*.50+noise(p*2.07)*.27+noise(p*4.13)*.15+noise(p*8.31)*.08;}
   void main(){
-   vec4 view=inverseProjection*vec4(skyUV*2.-1.,1.,1.);vec3 ray=normalize((cameraWorld*vec4(view.xyz,0.)).xyz);float up=max(0.,ray.y),day=clamp(daylight,0.,1.);
+   vec4 view=inverseProjection*vec4(skyUV*2.-1.,1.,1.);vec3 ray=normalize((cameraWorld*vec4(view.xyz,0.)).xyz);float up=max(0.,ray.y),day=clamp((daylight-.18)/.82,0.,1.);
    vec3 dayBase=mix(horizon,zenith,pow(up,.48));
    vec3 nightBase=mix(vec3(.018,.028,.052),vec3(.008,.015,.032),pow(up,.42));
    vec3 color=mix(nightBase,dayBase,day);

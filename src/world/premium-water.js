@@ -108,6 +108,7 @@ const fragmentShader=`
   vec3 refracted=refract(-viewDir,normal,1./1.333);
   float refractShift=(refracted.x+refracted.z)*.045;
   vec3 base=mix(shallowColor,deepColor,clamp(deep+refractShift,0.,1.));
+  base*=mix(1.,.18+.82*daylight,ocean);
 
   vec3 skyDay=vec3(.18,.27,.33);
   vec3 skyNight=vec3(.015,.038,.075);
@@ -116,7 +117,8 @@ const fragmentShader=`
 
   vec2 reflectionUv=vReflectionCoord.xy/max(vReflectionCoord.w,.0001);
   reflectionUv+=slope*vec2(.045,.032);
-  float reflectionBounds=step(0.,reflectionUv.x)*step(reflectionUv.x,1.)*step(0.,reflectionUv.y)*step(reflectionUv.y,1.);
+  vec2 reflectionEdge=min(reflectionUv,1.-reflectionUv);
+  float reflectionBounds=smoothstep(.005,.10,min(reflectionEdge.x,reflectionEdge.y));
   vec3 sceneMirror=texture2D(reflectionTexture,clamp(reflectionUv,vec2(.001),vec2(.999))).rgb;
   float mirrorWeight=fresnel*sceneReflection*reflectionAmount*reflectionReady*reflectionBounds;
   color=mix(color,sceneMirror,clamp(mirrorWeight,0.,.84));
@@ -137,6 +139,8 @@ const fragmentShader=`
   float contact=texture2D(contactFoam,clamp(vUv+slope*.012,vec2(.001),vec2(.999))).r;
   float foam=max(shore*.78,contact*(.72+.28*foamNoise))*foamNoise*foamAmount;
   color=mix(color,vec3(.64,.76,.79),foam*.48);
+  float oceanHaze=ocean*smoothstep(550.,1900.,length(vWorld-cameraPosition));
+  color=mix(color,mix(vec3(.008,.015,.032),vec3(.34,.42,.47),clamp((daylight-.18)/.82,0.,1.)),oceanHaze);
 
   float alpha=mix(.84,.975,deep);
   alpha+=fresnel*.02;
