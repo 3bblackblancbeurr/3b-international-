@@ -9,7 +9,9 @@ import {addDistrictFabric} from './district-fabric.js';
 import {addInteriorDisplays} from './interior-displays.js';
 import {addLandmarkCraft} from './landmark-craft.js';
 import {addCivicStructure} from './civic-structure.js';
+import {bridgeRailSpans,bridgeRailPoint} from './bridge-rail-spans.js';
 import {addCivicTower} from './civic-tower.js';
+import {addCivicBasins,configureCivicPoolWater} from './civic-basins.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
 import {addCiteTerraces,terraceWorldHeight,terraceAisle} from './terraces.js';
 import {citeCoastalFoam} from './coastal-foam.js';
@@ -30,7 +32,7 @@ export function createHubPlatform(save){
  const worldBuildings=plan.buildings.map(platformBuilding),buildings=worldBuildings.map(b=>({...b,buildingX:b.buildingX/HUB_SCALE,buildingZ:b.buildingZ/HUB_SCALE,width:b.width/HUB_SCALE,depth:b.depth/HUB_SCALE,height:b.height/1.5}));let interior=null,daylight=1;
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,32)),sphere=geo(new THREE.IcosahedronGeometry(1,1));
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
- const poolWater=createPremiumWater({region:'hub',lake:{x:0,z:0,r:16},owned});poolWater.setQuality('medium',{allowPlanarReflection:false});
+ const poolWater=createPremiumWater({region:'hub',lake:{x:0,z:0,r:16},owned});poolWater.setQuality('medium',{allowPlanarReflection:false});configureCivicPoolWater(poolWater);
  const surfaces=createCiteSurfaces(owned),{dark,stone,gold,glass}=surfaces,blue=material('#55c9ef',true),wood=material('#5f4939'),green=material('#315b4b'),water=poolWater.material;
  function mesh(g,m,x,y,z,sx=1,sy=sx,sz=sx){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);o.castShadow=o.receiveShadow=true;root.add(o);return o;}
  function ring(r,tube,y,m,arc=Math.PI*2,start=0){const o=mesh(geo(new THREE.TorusGeometry(r,tube,6,96,arc)),m,0,y,0);o.rotation.set(-Math.PI/2,0,start);return o;}
@@ -54,14 +56,15 @@ export function createHubPlatform(save){
  for(const bridge of [...CITE_BRIDGES,...CITE_CONNECTORS]){
   const top=new THREE.PlaneGeometry(bridge.length,bridge.width);top.rotateX(-Math.PI/2);top.rotateY(-bridge.angle);top.translate(bridge.x,0,bridge.z);deckParts.push(top);
   const deck=mesh(box,dark,bridge.x,-.4,bridge.z,bridge.length,.8,bridge.width);deck.rotation.y=-bridge.angle;
-  // Fine balustrades sit on the existing deck rim and leave the full aisle open.
-  const postCount=bridge.length>60?32:10,railAcross=bridge.width/2-.15;
-  for(const side of [-1,1])for(let k=0;k<=postCount;k++){
-   const along=(k/postCount-.5)*bridge.length,across=side*railAcross;
-   const x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*across,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*across;
-   const post=mesh(box,gold,x,.52,z,.09,1.04,.09);post.rotation.y=-bridge.angle;
+  // Balustrades belong to exposed spans above water. They stop at actual
+  // island shores and both promenade crossings, leaving civic rooms unobstructed.
+  for(const side of [-1,1])for(const span of bridgeRailSpans(bridge,side)){
+   const length=span.end-span.start,count=Math.max(1,Math.ceil(length/4.125));
+   for(let k=0;k<=count;k++){
+    const p=bridgeRailPoint(bridge,side,span.start+length*k/count),post=mesh(box,gold,p.x,.52,p.z,.09,1.04,.09);post.rotation.y=-bridge.angle;
+   }
+   const p=bridgeRailPoint(bridge,side,(span.start+span.end)/2),rail=mesh(box,gold,p.x,1,p.z,length,.1,.12);rail.rotation.y=-bridge.angle;
   }
-  for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*railAcross,dz=Math.cos(bridge.angle)*side*railAcross;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
  }
  for(const promenade of CITE_PROMENADES){const deck=new THREE.RingGeometry(promenade.inner,promenade.outer,192);deck.rotateX(-Math.PI/2);deckParts.push(deck);}
  const structure=addCivicStructure({mesh,geo,box,materials:{dark,gold,stone},bridges:CITE_BRIDGES,promenades:CITE_PROMENADES,connectors:CITE_CONNECTORS});
@@ -122,19 +125,19 @@ export function createHubPlatform(save){
    if(ctx){paintGateFlag(ctx,COUNTRIES[i].id);const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;owned.push(texture);const banner=new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});owned.push(banner);const flag=mesh(geo(new THREE.PlaneGeometry(5.4,3.6)),banner,p.x,25.2,p.z);flag.rotation.y=a+Math.PI;flag.castShadow=false;}
   }
  }
- // Four basins and cascades leave the radial routes and the circular promenade dry.
- for(const [x,z] of [[48,48],[-48,48],[48,-48],[-48,-48]]){
-  mesh(cylinder,dark,x,-.14,z,16,.2,16);const pool=mesh(geo(new THREE.CircleGeometry(14,48)),water,x,-.015,z);pool.rotation.x=-Math.PI/2;pool.castShadow=false;
-  collisions.push({x,z,r:14.8});
-  for(let i=0;i<8;i++){const a=i*Math.PI/4;mesh(box,gold,x+Math.cos(a)*15.5,.12,z+Math.sin(a)*15.5,.5,.25,.5);}
- }
+ // Four raised, opaque-bottomed basins preserve the existing reserved footprints.
+ const basins=addCivicBasins({mesh,geo,cylinder,materials:{stone,gold,water},collisions,owned});
  const cascadeIslands=CITE_ISLANDS.filter(i=>!['nexus','arrival'].includes(i.id)).slice(0,20);
  for(const island of cascadeIslands){
   const fall=mesh(geo(cascadeGeometry(island)),fallMaterial,island.x,0,island.z);fall.castShadow=false;fall.receiveShadow=false;waterfalls.push(fall);
  }
  const spray=cascadeMist(cascadeIslands,owned);root.add(spray.points);
  // The monumental broken ring stands above its own fountain. Its eight pieces answer to progress.
- mesh(cylinder,dark,0,.4,0,19,.8,19);const fountain=mesh(geo(new THREE.CircleGeometry(16,64)),water,0,.84,0);fountain.rotation.x=-Math.PI/2;fountain.castShadow=false;collisions.push({x:0,z:0,r:19.5});
+ mesh(cylinder,dark,0,.4,0,19,.8,19);
+ const fountainBed=mesh(geo(new THREE.CircleGeometry(16,64)),basins.floorSurfaces[0].material,0,.815,0);fountainBed.rotation.x=-Math.PI/2;fountainBed.castShadow=false;
+ const fountainBank=geo(new THREE.LatheGeometry([[16.05,.8],[16.05,1.16],[16.2,1.3],[18.6,1.3],[18.9,1.12],[18.9,.8]].map(([r,y])=>new THREE.Vector2(r,y)).reverse(),64));
+ mesh(fountainBank,stone,0,0,0);ring(17.4,.055,1.305,gold);
+ const fountain=mesh(geo(new THREE.CircleGeometry(16,64)),water,0,1.04,0);fountain.rotation.x=-Math.PI/2;fountain.castShadow=false;collisions.push({x:0,z:0,r:19.5});
  for(const side of [-1,1]){mesh(box,dark,side*13,14,0,3,28,4);mesh(box,gold,side*13,14,2.1,.5,28,.2);}
  for(let i=0;i<8;i++){
   const piece=mesh(geo(new THREE.TorusGeometry(19,1.7,8,12,Math.PI/4-.085)),gold,0,25,11.6);
@@ -214,7 +217,7 @@ export function createHubPlatform(save){
  const lifeItems=(displays.anchors||[]).map(anchor=>({...anchor,x:anchor.x*HUB_SCALE,z:anchor.z*HUB_SCALE,...(Number.isFinite(anchor.heading)?{heading:anchor.heading*180/Math.PI}:{}),...(Number.isFinite(anchor.seatX)?{seatX:anchor.seatX*HUB_SCALE,seatZ:anchor.seatZ*HUB_SCALE,seatHeight:anchor.seatHeight*1.5}:{} )}));
  return {root,ground,get walkSurface(){return tower?.selected!==null&&tower?.selected!==undefined?tower.decks[tower.selected]:ground;},collisions,cameraSolids,cartography,lifeItems,ready:surfaces.ready,height:(x,z)=>tower?.height(x,z)??terraceWorldHeight(x,z),liftFloors:tower?.floors||[],liftItems:tower?.liftItems||[],get towerFloor(){return tower?.selected===null?null:tower?.floors[tower.selected]||null;},setTowerFloor(index){return tower?.setFloor(index)||null;},obstaclesForTowerFloor(){return tower?.collisions()||[];},get towerLifeItems(){return tower?.lifeItems()||[];},
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,connectors:CITE_CONNECTORS.length,promenades:CITE_PROMENADES.length,structuralArches:structure.arches,bridgePiers:structure.bridgePiers,promenadeBays:structure.promenadeBays,towerFloors:tower?.floors.length||0,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,displayCounters:displays.count,interiorFurniture:displays.furnishings?.length||0,lifeInteractions:lifeItems.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,connectors:CITE_CONNECTORS.length,promenades:CITE_PROMENADES.length,structuralArches:structure.arches,bridgePiers:structure.bridgePiers,promenadeBays:structure.promenadeBays,towerFloors:tower?.floors.length||0,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,basins:basins.count,rooms:buildings.length,displayCounters:displays.count,interiorFurniture:displays.furnishings?.length||0,lifeInteractions:lifeItems.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
   update,setParty(){},setQuality(mode){displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){fabric.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){displays.updateView?.(camera);fabric.updateView(camera);interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId&&!(b.buildingId==='tower_circle'&&tower?.selected!==null);},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
