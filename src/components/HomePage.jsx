@@ -16,7 +16,7 @@ export default function HomePage({goTo,menuItems,member,installation}){
  const secondaryGroups=NAV_GROUPS.map(group=>({
   ...group,
   items:group.ids
-   .filter(id=>id!==GUIDE_ID)
+   .filter(id=>id!==GUIDE_ID&&id!=='world3b')
    .map(id=>menuItems.find(item=>item.id===id))
    .filter(item=>item&&item.status!=='soon'),
  })).filter(group=>group.items.length>0);
