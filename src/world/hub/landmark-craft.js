@@ -15,7 +15,8 @@ export const HUB_AAA_LANDMARKS=Object.freeze([
  * renderer, save IDs, missions or navigation contracts.
  */
 export function addLandmarkCraft({mesh,geo,box,cylinder,materials,buildings,THREE}){
- const {dark,gold,glass,stone,blue,green}=materials;
+ const {dark,gold,glass,stone,blue}=materials;
+ const green=materials.green||stone;
  let authoredMeshes=0;
  const part=(...args)=>{authoredMeshes++;return mesh(...args);};
  const building=id=>buildings.find(item=>item.buildingId===id);
