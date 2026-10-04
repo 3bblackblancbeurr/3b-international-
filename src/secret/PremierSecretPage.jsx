@@ -1,5 +1,5 @@
 import { useLuxury } from "../design-system/LuxuryExperience.jsx";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   ARCHIVE_VALUES,
   COUNTRIES,
@@ -16,7 +16,7 @@ import "./premier-secret.css";
 import "./secret-aaaa.css";
 import "./secret-v2.css";
 
-const STORAGE_KEY = "3b_premier_secret_v2";
+const SecretSanctuary3D = lazy(() => import("./SecretSanctuary3D.jsx"));\n\nconst STORAGE_KEY = "3b_premier_secret_v2";
 const RING_MARKS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
 const SECRET_STAGES = [
   { id: 0, label: "Veille" },
@@ -387,17 +387,19 @@ export default function PremierSecretPage({ goTo, dailySecret }) {
       aria-labelledby="premier-secret-title"
       style={{ "--ps-signal": config.signalColor.hex }}
     >
-      <SecretSanctuary3D
-        stage={stage}
-        config={config}
-        rings={rings}
-        archiveDraft={archiveDraft}
-        chamberNumber={chamberNumber}
-        chamberValue={chamberValue}
-        showSequence={showSequence}
-        onCountrySelect={chooseCountry}
-        onRingStep={moveRing}
-      />
+      <Suspense fallback={<div className="ps-v2-scene ps-v2-scene-fallback" aria-hidden="true" />}>
+        <SecretSanctuary3D
+          stage={stage}
+          config={config}
+          rings={rings}
+          archiveDraft={archiveDraft}
+          chamberNumber={chamberNumber}
+          chamberValue={chamberValue}
+          showSequence={showSequence}
+          onCountrySelect={chooseCountry}
+          onRingStep={moveRing}
+        />
+      </Suspense>
 
       {cinematic && <div className="ps-cinematic-transition ps-v2-transition" aria-hidden="true" />}
 
