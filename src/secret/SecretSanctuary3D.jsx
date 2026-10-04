@@ -70,7 +70,8 @@ export default function SecretSanctuary3D({
     }
 
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
-    const pixelRatioCap = window.innerWidth <= 700 ? 1.35 : 1.75;\n    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
+    const pixelRatioCap = window.innerWidth <= 700 ? 1.35 : 1.75;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
