@@ -53,10 +53,16 @@ jobs:
           if ($process.ExitCode -ne 0) { throw "Packaged EXE smoke test failed with exit code $($process.ExitCode)" }
           python -c "import json; from pathlib import Path; from PIL import Image; p=Path('smoke/output'); r=json.loads((p/'creator_batch_report.json').read_text(encoding='utf-8')); assert r['created_outputs']==2 and r['failed_files']==0, r; sizes=sorted(Image.open(x['output']).size for x in r['outputs']); assert sizes==[(1080,1080),(1280,720)], sizes"
 
+      - name: Collect third-party license notices
+        shell: pwsh
+        run: |
+          python -c "from importlib.metadata import distribution; from pathlib import Path; d=distribution('Pillow'); f=next(x for x in d.files if Path(str(x)).name.upper() == 'LICENSE'); src=Path(d.locate_file(f)); Path('dist/Pillow-LICENSE.txt').write_bytes(src.read_bytes())"
+          if (-not (Test-Path "dist/Pillow-LICENSE.txt")) { throw "Pillow license notice was not collected" }
+
       - name: Package distribution and SHA-256
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/CreatorBatchStudio.exe,tools/creator_batch_studio/README.md,tools/creator_batch_studio/QUICK_START.md,tools/creator_batch_studio/FAQ.md,tools/creator_batch_studio/LICENSE.txt -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
+          Compress-Archive -Path dist/CreatorBatchStudio.exe,tools/creator_batch_studio/README.md,tools/creator_batch_studio/QUICK_START.md,tools/creator_batch_studio/FAQ.md,tools/creator_batch_studio/LICENSE.txt,dist/Pillow-LICENSE.txt -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
           $hash = (Get-FileHash dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Algorithm SHA256).Hash.ToLower()
           "$hash  CreatorBatchStudio-Windows-x64-v1.0.0.zip" | Set-Content -Encoding ascii dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
 
