@@ -67,6 +67,11 @@ try{
   await page.goto('http://127.0.0.1:5197/__armory-qa',{waitUntil:'domcontentloaded'});
   await page.waitForSelector('.weapon-showroom-stage canvas').catch(async e=>{await page.screenshot({path:out+'/armory-failure.png',fullPage:true});console.log('ARMORY STATE',JSON.stringify({errors,html:await page.locator('main').innerHTML()}));throw e;});
   const weapons=await page.evaluate(()=>armoryQA.weapons);assert.equal(weapons.length,16);
+  if(await page.locator('.weapon-tile img').count()){
+   await page.evaluate(()=>document.querySelectorAll('.weapon-tile img').forEach(img=>img.loading='eager'));
+   await page.waitForFunction(()=>{const images=[...document.querySelectorAll('.weapon-tile img')];return images.length===16&&images.every(img=>img.complete&&img.naturalWidth>0);},{},{timeout:30000});
+   assert.equal(await page.locator('.weapon-tile img').count(),16,'Every collection tile loads its actual model image');
+  }
   await page.screenshot({path:out+'/armory-menu.png',fullPage:true});
   for(const id of weapons){
    await page.evaluate(id=>armoryQA.select(id),id);

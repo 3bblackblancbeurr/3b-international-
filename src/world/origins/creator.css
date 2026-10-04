@@ -16,3 +16,5 @@
 @media(max-width:600px){.weapon-showroom-stage{height:250px}.weapon-showroom figcaption>strong{font-size:19px}.world-dialog-avatar .armory .weapon-emblem{height:84px}}
 
 .weapon-showroom-stage[data-failed=true] canvas{display:none}
+
+.weapon-tile{display:block;width:100%;overflow:hidden;border-radius:9px;background:#101e2a;aspect-ratio:1.4}.weapon-tile img{display:block;width:100%;height:100%;object-fit:contain}.armory-grid .weapon-tile>.weapon-emblem{height:100%;width:100%}
