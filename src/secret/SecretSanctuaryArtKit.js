@@ -3,6 +3,7 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
 function hashNoise(x, y, seed = 1) {
@@ -353,6 +354,18 @@ export function createSecretPostFX({ renderer, scene, camera, width, height, isM
     composer.addPass(ssaoPass);
   }
 
+  let bokehPass = null;
+  if (!isMobile) {
+    bokehPass = new BokehPass(scene, camera, {
+      focus: 8.4,
+      aperture: 0.00011,
+      maxblur: 0.0045,
+      width,
+      height,
+    });
+    composer.addPass(bokehPass);
+  }
+
   const bloomPass = new UnrealBloomPass(
     new THREE.Vector2(width, height),
     isMobile ? 0.08 : 0.14,
@@ -368,6 +381,7 @@ export function createSecretPostFX({ renderer, scene, camera, width, height, isM
     resize(nextWidth, nextHeight) {
       composer.setSize(nextWidth, nextHeight);
       ssaoPass?.setSize?.(nextWidth, nextHeight);
+      bokehPass?.setSize?.(nextWidth, nextHeight);
     },
     update(stage) {
       const reveal = stage === 8;
@@ -378,12 +392,17 @@ export function createSecretPostFX({ renderer, scene, camera, width, height, isM
       if (ssaoPass) {
         ssaoPass.kernelRadius = reveal ? 9 : 11;
       }
+      const focusTargets = [9.2, 8.1, 7.75, 7.1, 6.55, 7.1, 6.8, 6.9, 6.25];
+      const focus = focusTargets[stage] ?? 8.4;
+      const focusUniform = bokehPass?.materialBokeh?.uniforms?.focus;
+      if (focusUniform) focusUniform.value = focus;
     },
     render(delta) {
       composer.render(delta);
     },
     dispose() {
       ssaoPass?.dispose?.();
+      bokehPass?.dispose?.();
       bloomPass.dispose?.();
       outputPass.dispose?.();
       renderPass.dispose?.();
