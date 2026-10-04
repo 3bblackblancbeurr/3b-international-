@@ -109,3 +109,31 @@ test("Secret V2 uses a real WebGL sanctuary and removes dashboard-style chrome",
   assert.match(clock, /secret-v2\.css/);
 });
 
+test("Secret AAA art pass keeps cinematic rendering layers and soundscape", () => {
+  const page = read("../src/secret/PremierSecretPage.jsx");
+  const scene = read("../src/secret/SecretSanctuary3D.jsx");
+  const art = read("../src/secret/SecretSanctuaryArtKit.js");
+  const sound = read("../src/secret/SecretSoundscape.jsx");
+
+  assert.match(scene, /createSecretArtKit/);
+  assert.match(scene, /createSecretPostFX/);
+  assert.match(scene, /postFx\.render/);
+  assert.match(scene, /artKit\.update/);
+
+  assert.match(art, /SSAOPass/);
+  assert.match(art, /UnrealBloomPass/);
+  assert.match(art, /BokehPass/);
+  assert.match(art, /makeMicroTexture/);
+  assert.match(art, /LatheGeometry/);
+  assert.match(art, /InstancedMesh/);
+  assert.match(art, /aaa-ring-detail/);
+  assert.match(art, /aaa-floor-engraving/);
+  assert.match(art, /aaa-nexus-sculpture/);
+  assert.match(art, /aaa-volumetric-atmosphere/);
+
+  assert.match(page, /SecretSoundscape enabled=\{soundOn\} stage=\{stage\}/);
+  assert.match(sound, /AudioContext/);
+  assert.match(sound, /createOscillator/);
+  assert.match(sound, /makeNoiseBuffer/);
+});
+
