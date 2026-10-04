@@ -40,15 +40,15 @@ function identity(b){
 
 /** Authored civic silhouettes. Room doors, paths and foundation bounds retain
  * their canonical navigation footprints; repeated facade detail is concentrated
- * into three strong storey bands so the complete city remains mobile-safe. */
+ * into strong storey bands so the complete city remains mobile-safe. */
 export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,buildings,collisions,cameraSolids=[],sign}){
  const {dark,gold,blue,glass,stone,green}=materials,mapSites=[];
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,rear=z-d/2-4;
   const {height,profile,style}=identity(b),shaftW=w*.72,shaftD=4;
   mesh(geo(civicShaftGeometry(shaftW,shaftD,height,profile)),dark,x,h,rear);
-  // Three deliberate luminous storey bands read more clearly than dozens of
-  // repeated strips and cut the merged gold-master triangle load substantially.
+  // Three luminous glazing bands keep the inhabited reading; one structural
+  // belt carries the silhouette and removes repeated hidden geometry.
   const floorCount=Math.max(2,Math.min(3,Math.round(height/10)));
   for(let floor=0;floor<floorCount;floor++){
    const level=floorCount===1?height*.5:2+floor*Math.max(1,height-4)/(floorCount-1),s=scaleAt(profile,level/height),span=shaftW*s,depth=shaftD*s;
@@ -56,7 +56,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
     const front=civicGlazingGeometry(shaftW,shaftD,height,profile,level,side,'z',.72,1.8);
     if(front)mesh(geo(front),glass,x,h,rear);
    }
-   mesh(geo(civicShaftGeometry(span+.24,depth+.24,.12,[[0,1],[1,1]])),gold,x,h+level+.88,rear);
+   if(floor===Math.floor(floorCount/2))mesh(geo(civicShaftGeometry(span+.24,depth+.24,.12,[[0,1],[1,1]])),gold,x,h+level+.88,rear);
   }
   for(let tier=1;tier<profile.length;tier++){
    const [fraction,span]=profile[tier],previous=profile[tier-1];
@@ -70,12 +70,12 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
   if(['archives','innovation','broken_circle_tower'].includes(b.district))mesh(cylinder,blue,x,h+height+3,rear,.1,5,.1);
   if(b.buildingId==='arena_3b'){
    for(let tier=0;tier<3;tier++){
-    const ring=mesh(geo(new THREE.TorusGeometry(w*.62+tier,.22,3,24,Math.PI)),gold,x,5+tier*2,z);ring.rotation.set(-Math.PI/2,0,Math.PI);
+    const ring=mesh(geo(new THREE.TorusGeometry(w*.62+tier,.22,3,10,Math.PI)),gold,x,5+tier*2,z);ring.rotation.set(-Math.PI/2,0,Math.PI);
    }
    for(const side of [-1,1]){mesh(cylinder,dark,x+side*(w/2+3),8,z,2,16,2);mesh(cylinder,blue,x+side*(w/2+3),16.2,z,1.3,.3,1.3);collisions.push({x:x+side*(w/2+3),z,r:2});}
   }
   if(['house_3b','ai_textile_lab','mode3_studio'].includes(b.buildingId)){
-   const arch=mesh(geo(new THREE.TorusGeometry(w*.55,.2,3,20,Math.PI)),blue,x,3,z+d/2+.7);arch.rotation.z=0;
+   const arch=mesh(geo(new THREE.TorusGeometry(w*.55,.2,3,8,Math.PI)),blue,x,3,z+d/2+.7);arch.rotation.z=0;
    mesh(box,stone,x,h-1,z+d/2+2,w+4,.35,4);
   }
   if(['central_marina','train_station','community_house'].includes(b.buildingId)){
@@ -94,7 +94,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
    for(let f=0;f<floorCount;f++){
     const y=2+f*Math.max(1,h-4)/(floorCount-1),s=scaleAt(profile,y/h);
     for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.72,1.8);if(glazing)mesh(geo(glazing),glass,tx,0,tz);}
-    mesh(geo(civicShaftGeometry(8*s+.22,9*s+.22,.12,[[0,1],[1,1]])),gold,tx,y+.9,tz);
+    if(f===1)mesh(geo(civicShaftGeometry(8*s+.22,9*s+.22,.12,[[0,1],[1,1]])),gold,tx,y+.9,tz);
    }
    const top=profile.at(-1)[1];mesh(geo(civicShaftGeometry(8*top+.5,9*top+.5,.32,[[0,1],[1,1]])),gold,tx,h,tz);
    const crownH=2.5+(i%3)*1.5;
