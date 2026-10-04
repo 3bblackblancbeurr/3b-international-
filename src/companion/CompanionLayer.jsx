@@ -5,7 +5,9 @@ import useCompanionBehavior from "./useCompanionBehavior.js";
 import useCompanionGaze from './useCompanionGaze.js';
 import { companionGuidance, companionTouch } from './companion-assistant.js';
 import { Button } from '../design-system/index.jsx';
-import { ArrowUpRight, Hand, Sparkles, Moon } from 'lucide-react';
+import { ArrowUpRight, Hand, Sparkles, Moon, Clock3, Fingerprint } from 'lucide-react';
+import ConstellationLink from './ConstellationLink.jsx';
+import { CONSTELLATION_KEY, readConstellation } from './constellation.js';
 import {
   companionPlatform, endCompanionLiveActivity, getCompanionCapabilities,
   openCompanionWallpaperPicker, requestOverlayPermission, setNativeCompanionMode,
@@ -26,6 +28,8 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const [dragging, setDragging] = useState(false);
   const [interaction, setInteraction] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [linkOpen,setLinkOpen]=useState(false);
+  const [bond,setBond]=useState(()=>{try{return readConstellation(window.localStorage);}catch{return [];}});
   const [capabilities, setCapabilities] = useState(null);
   const [nativeStatus, setNativeStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,6 +58,10 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   }, [interaction]);
   useEffect(() => { setInteraction(null); }, [page, visible]);
   const touch = kind => setInteraction(companionTouch(kind));
+  const saveBond = next => {
+    setBond(next);
+    try{localStorage.setItem(CONSTELLATION_KEY,JSON.stringify(next));return true;}catch{return false;}
+  };
   const overlayActive = capabilities?.overlayActive ?? prefs.androidOverlayEnabled;
   const liveActive = capabilities?.liveActivityActive ?? prefs.iosLiveActivityEnabled;
   const nativeOptions = { batterySaver: prefs.batterySaver, reducedPresence: prefs.reducedPresence, reducedMotion };
@@ -88,7 +96,10 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   }, [visible, panelOpen, refreshCapabilities]);
 
   useEffect(() => {
-    const onStorage = event => { if (event.key === PREFS_KEY || event.key === null) setPrefs(readPrefs()); };
+    const onStorage = event => {
+      if (event.key === PREFS_KEY || event.key === null) setPrefs(readPrefs());
+      if (event.key === CONSTELLATION_KEY || event.key === null) { try { setBond(readConstellation(localStorage)); } catch { setBond([]); } }
+    };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
@@ -242,24 +253,30 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
       aria-label={`Compagnon 3B · ${label}`} aria-expanded={panelOpen} aria-controls={panelOpen ? "companion3b-panel" : undefined}
       aria-describedby={panelOpen ? "companion3b-position-help" : undefined} title={`${label} · ouvrir le compagnon`}>
       <span className="companion3b-bubble" data-side={x < 45 ? "right" : "left"} aria-hidden="true">{interaction?.message || label}</span>
-      <CompanionAvatar mode={mode} interaction={interaction?.pose} size={prefs.reducedPresence || lowPower ? 72 : 100} decorative />
+      <CompanionAvatar mode={mode} interaction={interaction?.pose} bond={bond} reduced={reducedMotion||lowPower||!visible||panelOpen||prefs.reducedPresence} size={prefs.reducedPresence || lowPower ? 72 : 112} decorative />
     </button>
 
     {panelOpen && <aside ref={panelRef} className="companion3b-panel" id="companion3b-panel" role="dialog" aria-labelledby="companion3b-title">
       <div className="companion3b-panel-head">
-        <div><span className="companion3b-kicker">À TON RYTHME</span><h2 id="companion3b-title">Ton Compagnon 3B</h2></div>
+        <div><span className="companion3b-kicker">COMPAGNON 3B</span><h2 id="companion3b-title">L’esprit 3B</h2></div>
         <button ref={closeRef} type="button" onClick={() => { setPanelOpen(false); shellRef.current?.focus({ preventScroll: true }); }} aria-label="Fermer le compagnon">×</button>
       </div>
       <div className="companion3b-portrait" data-mode={mode}>
-        <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={mode} interaction={interaction?.pose} size={106} decorative /></div>
+        <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={mode} interaction={interaction?.pose} bond={bond} reduced={reducedMotion||lowPower||!visible} size={220} decorative /></div>
         <div><span className="companion3b-presence"><i aria-hidden="true" /> {online ? "À TES CÔTÉS" : "PRÉSENT HORS LIGNE"}</span><strong>{label}</strong><p>{guidance.message}</p></div>
       </div>
+      {goTo&&<div className="companion3b-equipment" role="group" aria-label="Objets du compagnon">
+        <Button variant="ghost" onClick={()=>{setPanelOpen(false);goTo('passport');}}><Fingerprint size={18}/><span>Passeport<small>Sa carte à la ceinture</small></span></Button>
+        <Button variant="ghost" onClick={()=>{setPanelOpen(false);goTo('secret');}}><Clock3 size={18}/><span>Premier Secret<small>Son coffre & son horloge</small></span></Button>
+      </div>}
       <div className="companion3b-touch" role="group" aria-label="Interagir avec le compagnon">
         <Button variant="ghost" aria-pressed={interaction?.pose==='hello'} onClick={()=>touch('hello')}><Hand size={17}/>Bonjour</Button>
         <Button variant="ghost" aria-pressed={interaction?.pose==='curious'} onClick={()=>touch('curious')}><Sparkles size={17}/>Curieux ?</Button>
         <Button variant="ghost" aria-pressed={interaction?.pose==='rest'} onClick={()=>touch('rest')}><Moon size={17}/>Une pause</Button>
       </div>
       <p className="companion3b-response" role="status" aria-live="polite">{interaction?.message || 'Un toucher, une réaction. Je suis là.'}</p>
+      <Button variant="ghost" className="companion3b-link-trigger" aria-expanded={linkOpen} aria-controls="companion3b-link-zone" onClick={()=>setLinkOpen(open=>!open)}><Sparkles size={18}/><span><strong>{bond.length===8?'Votre constellation':'Tisser un lien'}</strong><small>Huit étoiles. Votre signature.</small></span><span aria-hidden="true">{linkOpen?'−':'+'}</span></Button>
+      <div id="companion3b-link-zone" hidden={!linkOpen}>{linkOpen&&<ConstellationLink bond={bond} onChange={saveBond} onComplete={()=>setInteraction({pose:'hello',message:'Votre constellation est née.',duration:4000})}/>}</div>
       {goTo&&<div className="companion3b-shortcuts" aria-label="Suggestions du compagnon">{guidance.actions.map(action=><Button key={action.page} variant="ghost" onClick={()=>{setPanelOpen(false);goTo(action.page);}}><span><strong>{action.label}</strong><small>{action.hint}</small></span><ArrowUpRight size={18}/></Button>)}</div>}
       <Button variant="ghost" className="companion3b-settings-trigger" aria-expanded={settingsOpen} aria-controls="companion3b-settings" onClick={()=>setSettingsOpen(open=>!open)}>Ma présence <span aria-hidden="true">{settingsOpen?'−':'+'}</span></Button>
       <div id="companion3b-settings" hidden={!settingsOpen}>
