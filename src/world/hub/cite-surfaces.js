@@ -14,7 +14,7 @@ export function createCiteSurfaces(owned){
  const dark=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.37,metalness:.58,clearcoat:.35,clearcoatRoughness:.3});
  applyFacadeDetail(dark,{daylight:day,crafted:true});
  const gold=new THREE.MeshPhysicalMaterial({color:'#cba364',roughness:.25,metalness:.92,clearcoat:.24});
- const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.12,metalness:.4,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:1.4});
+ const glass=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.2,metalness:.18,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.4});
  const stone=new THREE.MeshStandardMaterial({color:'#8c989b',roughness:.85,metalness:.03,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.55,.55),roughnessMap:rough});
  const cliff=new THREE.MeshStandardMaterial({color:'#43515a',roughness:.94,metalness:.04});
  const deck=new THREE.MeshStandardMaterial({color:'#758b85',roughness:.88,metalness:.02,map:paving,normalMap:normal,normalScale:new THREE.Vector2(.65,.65),roughnessMap:rough});
