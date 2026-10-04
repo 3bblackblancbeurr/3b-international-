@@ -3,6 +3,16 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {craftedBladeGeometry} from './weapon-blade.js';
 import {getWeapon} from './arsenal.js';
 
+/** Continuous recurve branches, with the grip at the equipped hand origin. */
+export function craftedBowLimbGeometry(z=0,radius=.027,radialSegments=6){
+ const points=[[.34,-.5],[.24,-.43],[.06,-.27],[0,0],[.06,.28],[.24,.45],[.34,.5]].map(([x,y])=>new T.Vector3(x,y,z));
+ const curve=new T.CatmullRomCurve3(points,false,'centripetal'),segments=36,geometry=new T.TubeGeometry(curve,segments,radius,radialSegments,false),p=geometry.attributes.position;
+ // Wide load-bearing centre, flexible tapered tips. Retain a smooth profile
+ // along the whole branch instead of discrete cylinders meeting at corners.
+ const centre=new T.Vector3();for(let i=0;i<=segments;i++){curve.getPointAt(i/segments,centre);const taper=.56+.44*Math.sin(i/segments*Math.PI);for(let j=0;j<=radialSegments;j++){const v=i*(radialSegments+1)+j;p.setXYZ(v,centre.x+(p.getX(v)-centre.x)*taper,centre.y+(p.getY(v)-centre.y)*taper,centre.z+(p.getZ(v)-centre.z)*taper);}}
+ geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.userData.bowEndpoints=[points[0].toArray(),points.at(-1).toArray()];return geometry;
+}
+
 /** The same physical assembly is used in the traveller's hand and the armory.
  * Static fittings are merged by material; only articulated parts stay separate. */
 export function fitWeapon(model,avatar={}){
@@ -38,12 +48,18 @@ export function fitWeapon(model,avatar={}){
   const o=panel(points,steel,x,y,0,.023,.004);o.rotation.z=rotation;return o;
  }
  function bow(double=false){
-  grip(.3,.24,.03);
-  const points=[[0,-.2],[-.1,-.13],[-.28,.03],[-.34,.3],[-.28,.58],[-.1,.75],[0,.8]];
-  const limbs=(z=0)=>{for(let i=1;i<points.length;i++)rod(...points[i-1],z,...points[i],z,.022,i%2?gold:dark);rod(0,-.2,z,0,.8,z,.0028,light);};
+  const wood=material({color:'#50382b',metalness:.04,roughness:.66,clearcoat:.14});wood.name='laminated-bow-wood';
+  grip(0,.24,.032);
+  const limbs=(z=0)=>{
+   mesh(craftedBowLimbGeometry(z),wood);mesh(craftedBowLimbGeometry(z+.022,.005,4),gold);
+   rod(.34,-.5,z+.042,.34,.5,z+.042,.0028,light);
+   for(const side of [-1,1]){mesh(new T.SphereGeometry(.02,8,6),gold,.34,side*.5,z);rod(.34,side*.5,z,.305,side*.48,z,.01,gold);rod(.34,side*.5,z,.34,side*.5,z+.042,.006,gold);}
+  };
   limbs();if(double)limbs(-.075);
-  rod(-.35,.3,.015,.4,.3,.015,.006,steel);panel([[.0,-.019],[.095,0],[.0,.019],[.018,0]],steel,.38,.3,.015,.012,.002);
-  for(const side of [-1,1])panel([[-.055,0],[0,.08],[.055,0],[0,-.03]],gold,-.27,.3+side*.26,.03,.012,.003);
+  // The nock crosses the string at mid-height; the shaft passes over the grip.
+  rod(-.01,0,.042,.74,0,.042,.006,steel);panel([[.0,-.019],[.095,0],[.0,.019],[.018,0]],steel,.72,0,.042,.012,.002);
+  for(const side of [-1,1])panel([[-.055,0],[0,.06],[.055,0],[0,-.025]],gold,.035,side*.26,.031,.012,.003);
+  if(double)for(const y of [-.09,.09])rod(0,y,0,0,y,-.075,.013,gold);
  }
  // Signature transformations change the physical silhouette, not only the tint.
  if(w.kind==='Bouclier'){
@@ -99,7 +115,7 @@ export function fitWeapon(model,avatar={}){
  if(tier===3){for(let i=0;i<6;i++){const a=i*Math.PI/3;panel([[-.013,0],[0,.075],[.013,0],[0,-.025]],gold,Math.sin(a)*.31,.36+Math.cos(a)*.31,.02,.012,.002);}}
  // One mesh per static material replaces the original dozens of fitting draws.
  const batches=new Map();for(const o of staticPieces){o.updateMatrix();const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrix);if(!batches.has(o.material))batches.set(o.material,[]);batches.get(o.material).push(g);o.removeFromParent();}
- for(const [m,parts] of batches){const geometry=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());if(!geometry)continue;ownedGeo.add(geometry);const o=new T.Mesh(geometry,m);o.castShadow=o.receiveShadow=true;o.name='weapon-assembly-'+(['steel','bronze','dark','leather','inlay'][[steel,gold,dark,leather,light].indexOf(m)]);root.add(o);}
+ for(const [m,parts] of batches){const geometry=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());if(!geometry)continue;ownedGeo.add(geometry);const o=new T.Mesh(geometry,m);o.castShadow=o.receiveShadow=true;o.name='weapon-assembly-'+(['steel','bronze','dark','leather','inlay'][[steel,gold,dark,leather,light].indexOf(m)]||m.name||'fitting');root.add(o);}
  // Source fittings no longer need their temporary geometry after the merge.
  for(const o of staticPieces){ownedGeo.delete(o.geometry);o.geometry.dispose();}
  model.updateMatrixWorld(true);const hand=model.getObjectByName('hand_r');

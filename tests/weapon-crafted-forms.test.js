@@ -25,3 +25,15 @@ test('assembly disposal releases each owned GPU resource once and retains the ch
 test('physical detail does not mutate immutable arsenal data or alter combat reach',()=>{
  for(const w of WEAPONS){const before=JSON.stringify(w),attack=weaponAction(ACTIONS.light,{weapon:w.id,weaponForm:3},1000),{model}=holder(),weapon=fitWeapon(model,{weapon:w.id,weaponForm:3});weapon.update(3,{detached:1});weapon.dispose();assert.equal(JSON.stringify(w),before);assert.deepEqual(weaponAction(ACTIONS.light,{weapon:w.id,weaponForm:3},1000),attack);}
 });
+
+test('recurved bow uses a continuous tapered limb with smooth tangents and supported string tips',async()=>{
+ const {craftedBowLimbGeometry}=await import('../src/world/weapon-model.js'),g=craftedBowLimbGeometry();
+ try{
+  const p=g.attributes.position,rows=37,radials=6,centres=[];
+  for(let row=0;row<rows;row++){const centre=new T.Vector3();for(let j=0;j<radials;j++)centre.add(new T.Vector3().fromBufferAttribute(p,row*(radials+1)+j));centre.divideScalar(radials);centres.push(centre);}
+  assert.ok(centres[0].distanceTo(new T.Vector3(.34,-.5,0))<1e-6);assert.ok(centres.at(-1).distanceTo(new T.Vector3(.34,.5,0))<1e-6);
+  assert.ok(centres[18].x<.002,'The actual leather grip meets the centre of the branch');
+  const directions=centres.slice(1).map((c,i)=>c.clone().sub(centres[i]).normalize());for(let i=1;i<directions.length;i++)assert.ok(directions[i].angleTo(directions[i-1])<.25,'The recurve has no angular cylinder junctions');
+  const radius=row=>new T.Vector3().fromBufferAttribute(p,row*(radials+1)).distanceTo(centres[row]);assert.ok(radius(0)<radius(18)*.6,'Tips taper while the grip remains load-bearing');assert.ok(g.index.count/3<=432);
+ }finally{g.dispose();}
+});

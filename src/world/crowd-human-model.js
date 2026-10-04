@@ -100,10 +100,10 @@ export async function bakeCrowdHuman(asset,options={}){
 export function crowdHumanMaterial(baked,walkTime,walkActive){
  const material=new THREE.MeshStandardMaterial({color:'#ffffff',map:baked.map,side:THREE.DoubleSide,roughness:.84,metalness:0,envMapIntensity:.18});
  material.onBeforeCompile=shader=>{
-  Object.assign(shader.uniforms,{crowdWalkTime:walkTime,crowdWalkActive:walkActive,crowdPositionAtlas:{value:baked.bakedPositions},crowdNormalAtlas:{value:baked.bakedNormals}});
-  const prelude=`attribute float crowdVertexId;attribute float crowdTintClass;attribute float crowdPhase;attribute float crowdSpeed;attribute vec3 crowdSkin;attribute vec3 crowdCloth;attribute vec3 crowdHair;uniform float crowdWalkTime;uniform float crowdWalkActive;uniform sampler2D crowdPositionAtlas;uniform sampler2D crowdNormalAtlas;varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;
+  Object.assign(shader.uniforms,{crowdWalkTime:walkTime,crowdWalkActive:walkActive,crowdClipDuration:{value:baked.duration},crowdPositionAtlas:{value:baked.bakedPositions},crowdNormalAtlas:{value:baked.bakedNormals}});
+  const prelude=`attribute float crowdVertexId;attribute float crowdTintClass;attribute float crowdPhase;attribute float crowdSpeed;attribute vec3 crowdSkin;attribute vec3 crowdCloth;attribute vec3 crowdHair;uniform float crowdWalkTime;uniform float crowdWalkActive;uniform float crowdClipDuration;uniform sampler2D crowdPositionAtlas;uniform sampler2D crowdNormalAtlas;varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;
    vec3 crowdFetch(sampler2D atlas,float frame){float row=floor(crowdVertexId/${baked.width}.);return texture2D(atlas,vec2((mod(crowdVertexId,${baked.width}.)+.5)/${baked.width}.,(frame*${baked.rows}.+row+.5)/${baked.textureHeight}.)).xyz;}
-   vec3 crowdAnimated(sampler2D atlas){float frame=fract(crowdPhase+crowdWalkTime*crowdSpeed/${baked.duration}.*crowdWalkActive)*${baked.frames}.;return mix(crowdFetch(atlas,floor(frame)),crowdFetch(atlas,mod(floor(frame)+1.,${baked.frames}.)),fract(frame));}
+   vec3 crowdAnimated(sampler2D atlas){float frame=fract(crowdPhase+crowdWalkTime*crowdSpeed/crowdClipDuration*crowdWalkActive)*${baked.frames}.;return mix(crowdFetch(atlas,floor(frame)),crowdFetch(atlas,mod(floor(frame)+1.,${baked.frames}.)),fract(frame));}
   `;
   shader.vertexShader=prelude+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>\nobjectNormal=normalize(crowdAnimated(crowdNormalAtlas));`);

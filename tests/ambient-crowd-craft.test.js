@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
 import {createAmbientCrowd} from '../src/world/ambient-crowd.js';
-import {bakeCrowdHuman} from '../src/world/crowd-human-model.js';
+import {bakeCrowdHuman,crowdHumanMaterial} from '../src/world/crowd-human-model.js';
 import {loadShippedCrowdFixture} from './crowd-glb-fixture.js';
 const items=[{type:'hubBuilding'}],options={mode:'detail',viewport:1280,deviceMemory:8,groundY:()=>7},assetPromise=loadShippedCrowdFixture();
 
@@ -39,4 +39,14 @@ test('both shipped body models retain bounded mobile population and actual camer
   const near=crowd.diagnostics.triangles;camera.position={x:3000,z:3000};crowd.tick(1,{x:0,z:0},1000);assert.ok(crowd.diagnostics.triangles<near);
   assert.ok(crowd.diagnostics.models.every(model=>model.animationBytes<1600000));
  }finally{crowd.dispose();}
+});
+
+test('the shipped fractional clip duration is a shader uniform with no invalid numeric literal',async()=>{
+ const baked=await bakeCrowdHuman(await assetPromise),material=crowdHumanMaterial(baked,{value:0},{value:1});
+ try{
+  assert.ok(baked.duration>0&&!Number.isInteger(baked.duration));
+  const shader={uniforms:{},vertexShader:'#include <beginnormal_vertex>\n#include <begin_vertex>',fragmentShader:'#include <map_fragment>'};material.onBeforeCompile(shader);
+  assert.equal(shader.uniforms.crowdClipDuration.value,baked.duration);assert.match(shader.vertexShader,/uniform float crowdClipDuration/);assert.match(shader.vertexShader,/crowdSpeed\/crowdClipDuration/);
+  assert.doesNotMatch(shader.vertexShader,/\d+\.\d+\./,'fractional JavaScript durations cannot form invalid GLSL literals');
+ }finally{material.dispose();baked.dispose();}
 });

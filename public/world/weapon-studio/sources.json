@@ -1,111 +1,161 @@
 {
-  "source": "Actual Three.js equipped models rendered by WeaponShowroom, not concept art",
-  "commit": "fb1543961ec2e09b0cbf01c2813b0db60d4198da",
-  "workflowRun": 37165281615,
+  "source": "Actual equipped assemblies rendered by the persistent WeaponShowroom renderer; no concept imagery",
+  "commit": "5b0a52c43c0a2a240e5e8e4a3b43ae3e6d391754",
+  "workflowRun": 37217062251,
+  "artifactId": 11308803106,
+  "profile": "phone",
   "form": 0,
-  "xp": 0,
-  "viewport": [
-    390,
-    844
+  "xp": 1000,
+  "drawingBuffer": [
+    360,
+    240
   ],
-  "format": "JPEG quality 92, stage only",
-  "renderer": "One selected-item studio with RoomEnvironment PMREM",
+  "format": "JPEG quality88 exported immediately from the renderer, copied without resampling",
+  "renderer": "One selected-item Three.js studio with RoomEnvironment PMREM; all64form photos validated",
   "files": [
     {
       "weapon": "abanico",
       "file": "abanico.jpg",
-      "bytes": 13308,
-      "sha256": "3003fb1c9f9b6431374080874bf103a273c62ae2fd746a5b31c10cd52545b0f2"
+      "sourceFile": "weapon-form-abanico-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6394,
+      "sha256": "5755cd79951b245643cb2bdedff06e492c482a9b6d9091bdde8e577a835e2ba9"
     },
     {
       "weapon": "alger",
       "file": "alger.jpg",
-      "bytes": 10715,
-      "sha256": "e3ce7736b2aea4ae16cce30a3d8246135da479cc64edbe1103b529ccc8546d87"
+      "sourceFile": "weapon-form-alger-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 8144,
+      "sha256": "6adec4115008c19261e9275b89d15831575c65c7eb2bed2bde1617fe15458178"
     },
     {
       "weapon": "axe",
       "file": "axe.jpg",
-      "bytes": 11039,
-      "sha256": "40de8db0680e4272073fdd21d23f91070f1a9ee0204e2fd807fc681437d2554a"
+      "sourceFile": "weapon-form-axe-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6558,
+      "sha256": "53abeada73a724ada50b446cd3f3c3af94e99f975d10cb782fd009cb4fa62f4b"
     },
     {
       "weapon": "bosphore",
       "file": "bosphore.jpg",
-      "bytes": 12166,
-      "sha256": "695785b9c745436cbfa60baa9199481cbccf1814fc6ad10502b7404b7017efe4"
+      "sourceFile": "weapon-form-bosphore-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 7536,
+      "sha256": "3b287512e4c98950f7c3e67a489f9c1655d05e61044aab4c4f00e24717004b57"
     },
     {
       "weapon": "bow",
       "file": "bow.jpg",
-      "bytes": 12315,
-      "sha256": "73e6a55bb37e45cbbee34ad4929206f93e28306283364983b051e515d1443b97"
+      "sourceFile": "weapon-form-bow-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 7192,
+      "sha256": "f65e6e2cc4a0f38d07436776a35c15ec3b80febf66f972cf57722e9efbd709cf"
     },
     {
       "weapon": "carthage",
       "file": "carthage.jpg",
-      "bytes": 10312,
-      "sha256": "132c7146ab4e59445ea1ea3398ef25cec0b447f762239dd378aa3b043aba9c98"
+      "sourceFile": "weapon-form-carthage-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 5609,
+      "sha256": "93e50d6378333eeadaa7e9619f62c669f6b88ac825e431e9c802f4525e8acb5c"
     },
     {
       "weapon": "claws",
       "file": "claws.jpg",
-      "bytes": 12561,
-      "sha256": "972364e18431ab61ae045b98aa3a66ef0ae3b04be768cbfa64bd981a2107fe57"
+      "sourceFile": "weapon-form-claws-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 9003,
+      "sha256": "568b5f134920084dbd398848d931c22ad0c6e0bd78bd74104ddab5272895f0e7"
     },
     {
       "weapon": "heritage",
       "file": "heritage.jpg",
-      "bytes": 11491,
-      "sha256": "eeceed3640d545e3a0bdce764947a4f2e7dfacec59c1a6c365ec2166901d9e0f"
+      "sourceFile": "weapon-form-heritage-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6536,
+      "sha256": "cf3cfaf3fd5c49bb6800cb9d0409d4c5c3afd71bdece28d4f8d225744c4cad75"
     },
     {
       "weapon": "paris",
       "file": "paris.jpg",
-      "bytes": 10694,
-      "sha256": "c2146df9f1052f6fedbe34019b4d0bb305ec61f82a69850e4e3c8c290aa29f03"
+      "sourceFile": "weapon-form-paris-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6094,
+      "sha256": "864949ae58422443b69a432ecb72e69ff3192d85ca910dd742a5e5ea32f75f5d"
     },
     {
       "weapon": "romano",
       "file": "romano.jpg",
-      "bytes": 11445,
-      "sha256": "cd25b325a845e166b9c31af742ee70e6664aefca4f2e345ea56380d12355ae31"
+      "sourceFile": "weapon-form-romano-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6593,
+      "sha256": "ab694d60d5c805defba67d2c88405a8e657a30a36ebbf71ca5503e7a44d4be74"
     },
     {
       "weapon": "saber",
       "file": "saber.jpg",
-      "bytes": 11443,
-      "sha256": "23c171404d0740d38d22e24c64f2b8878adce77e96a829849c57f8cc462e429f"
+      "sourceFile": "weapon-form-saber-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6756,
+      "sha256": "8943d40380fc12b65e26c2b14f69b5594b42426d49594cdbea39b7a307ccbfb3"
     },
     {
       "weapon": "scissors",
       "file": "scissors.jpg",
-      "bytes": 12343,
-      "sha256": "0ae064fcb344801693320ca34c352f6b5ed7dbb6b14f49cd522fed8d41edd2d6"
+      "sourceFile": "weapon-form-scissors-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 7870,
+      "sha256": "7da92a497dcc01459e51d366c517a39a845af40ff79933e1b6ba6985555d6ce1"
     },
     {
       "weapon": "tallinn",
       "file": "tallinn.jpg",
-      "bytes": 11440,
-      "sha256": "645080d2ad758b2a133a14c6d34fbad700f12304fd6d0f8b95049e740affe225"
+      "sourceFile": "weapon-form-tallinn-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 6731,
+      "sha256": "d7001e580025d19269f49193b2116e2ac2de90b50f253a5ac6421c2815145499"
     },
     {
       "weapon": "thread",
       "file": "thread.jpg",
-      "bytes": 10858,
-      "sha256": "9625eb08e29c6d3409856976d4f954b3dc190277ccd2eb01475703cd65872510"
+      "sourceFile": "weapon-form-thread-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 7925,
+      "sha256": "1aebeb643f39b89dd16a78556f22dd4fe6fa911c40a26bbeffe8760764f53f0b"
     },
     {
       "weapon": "wings",
       "file": "wings.jpg",
-      "bytes": 12780,
-      "sha256": "f0fc13059ad6946d79761fbe0ed38154379a4513a46e3115dc55c21fb63e1332"
+      "sourceFile": "weapon-form-wings-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 8096,
+      "sha256": "f606ed9d397b670d03b77f04714942dd757e5220a00b33466bd155645978afb5"
     },
     {
       "weapon": "zellige",
       "file": "zellige.jpg",
-      "bytes": 14258,
-      "sha256": "ad8b904035337dfa36da69a6e8a9d6f4ae96ec11f7af3bbe84fa70b095d7c7a4"
+      "sourceFile": "weapon-form-zellige-0.jpg",
+      "width": 360,
+      "height": 240,
+      "bytes": 7720,
+      "sha256": "ea8a0be09772baf8652a6b58cb08beba6cdd85e4490728e4006aa3337622dbb1"
     }
   ]
 }
