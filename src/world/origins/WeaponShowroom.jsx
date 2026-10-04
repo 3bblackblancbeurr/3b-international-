@@ -7,8 +7,8 @@ import {unlockedForm} from '../arsenal-progression.js';
 import WeaponEmblem from './WeaponEmblem.jsx';
 
 /** One persistent selected-item renderer; collection cards use still renders. */
-export default function WeaponShowroom({draft,xp=0}){
- const host=useRef(null),engine=useRef(null),[failed,setFailed]=useState(false),w=getWeapon(draft.weapon),tier=unlockedForm(draft.weaponForm,xp);
+export default function WeaponShowroom({draft,xp=0,onFormImages}){
+ const host=useRef(null),engine=useRef(null),imagesCallback=useRef(onFormImages),[failed,setFailed]=useState(false),w=getWeapon(draft.weapon),tier=unlockedForm(draft.weaponForm,xp);imagesCallback.current=onFormImages;
  useEffect(()=>{
   const el=host.current;if(!el)return;setFailed(false);
   let renderer,weapon,holder,observer,raf=0,disposed=false,contextGone=false,visible=!document.hidden;
@@ -48,10 +48,35 @@ export default function WeaponShowroom({draft,xp=0}){
    const contextLost=e=>{e.preventDefault();contextGone=true;setFailed(true);};renderer.domElement.addEventListener('webglcontextlost',contextLost);
    observer=new ResizeObserver(resize);observer.observe(el);resize();
    let previous=0;const tick=now=>{if(disposed)return;raf=requestAnimationFrame(tick);if(now-previous<50||!visible||contextGone)return;previous=now;if(!reduced&&!dragging)weapon?.update(now/1000);draw();};raf=requestAnimationFrame(tick);
-   engine.current={replace};
+   // Photograph the four actual assemblies using this renderer. Gallery
+   // cards never allocate a second WebGL context or approximate the 3D model.
+   const photographs=new Map();
+   const formImages=(next,selectedTier)=>{
+    const id=getWeapon(next.weapon).id;
+    if(photographs.has(id))return photographs.get(id);
+    const still=document.createElement('canvas');still.width=360;still.height=240;
+    const ctx=still.getContext('2d');if(!ctx||contextGone||disposed||!visible)return null;
+    const images=[],previousRatio=renderer.getPixelRatio();
+    try{
+     renderer.setPixelRatio(1);
+     for(let form=0;form<4;form++){
+      replace(next,form);renderer.setSize(360,240,false);camera.aspect=1.5;camera.position.set(0,.08,radius/Math.sin(camera.fov*Math.PI/360)*1.12);camera.lookAt(0,0,0);camera.updateProjectionMatrix();draw();
+      const background=ctx.createRadialGradient(180,85,8,180,90,230);background.addColorStop(0,'#294256');background.addColorStop(1,'#08121e');ctx.fillStyle=background;ctx.fillRect(0,0,360,240);
+      // Copy immediately after render, before default WebGL buffer discard.
+      ctx.drawImage(renderer.domElement,0,0,360,240);images.push(still.toDataURL('image/jpeg',.88));
+     }
+     photographs.set(id,images);if(photographs.size>4)photographs.delete(photographs.keys().next().value);
+     return images;
+    }finally{renderer.setPixelRatio(previousRatio);replace(next,selectedTier);resize();}
+   };
+   engine.current={replace,formImages};
    return()=>{engine.current=null;disposed=true;cancelAnimationFrame(raf);observer.disconnect();document.removeEventListener('visibilitychange',visibility);for(const [type,fn] of [['pointerdown',down],['pointermove',move],['pointerup',up],['pointercancel',up],['lostpointercapture',up],['keydown',key]])el.removeEventListener(type,fn);renderer.domElement.removeEventListener('webglcontextlost',contextLost);weapon?.dispose();owned.forEach(a=>a.dispose());renderer.dispose();renderer.forceContextLoss();renderer.domElement.remove();};
   }catch{setFailed(true);disposed=true;cancelAnimationFrame(raf);observer?.disconnect();weapon?.dispose();owned.forEach(a=>a.dispose());renderer?.dispose();renderer?.forceContextLoss();renderer?.domElement.remove();}
  },[]);
- useEffect(()=>{try{engine.current?.replace(draft,tier);}catch{setFailed(true);}},[w.id,tier]);
+ useEffect(()=>{
+  try{engine.current?.replace(draft,tier);}catch{setFailed(true);return;}
+  const frame=requestAnimationFrame(()=>{try{const images=engine.current?.formImages(draft,tier);if(images)imagesCallback.current?.({weapon:w.id,images});}catch{/* Keep the live stage and illustrated fallback if a still cannot be read. */}});
+  return()=>cancelAnimationFrame(frame);
+ },[w.id,tier]);
  return <figure className="weapon-showroom" style={{'--weapon-color':w.color}}><div className="weapon-showroom-stage" data-failed={failed} ref={host} tabIndex={0} role="img" aria-label={w.name+' en trois dimensions. Glisser ou utiliser les flèches pour tourner.'}>{failed&&<WeaponEmblem weapon={w}/>}</div><figcaption><span>{w.country.toUpperCase()} · FORME {tier+1}</span><strong>{w.name}</strong><small>{failed?'Illustration de l’arme':'Glisse pour inspecter · flèches au clavier · Home pour recentrer'}</small></figcaption></figure>;
 }

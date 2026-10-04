@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {facadeArchGeometry,mansardRoofGeometry,northlightRoofGeometry} from './facade-craft.js';
 import {CITE_ISLANDS,citeSurfaceDistance} from './platform-topology.js';
 import {HUB_SCALE,platformRuntimeItems} from './platform-layout.js';
 import {terraceAisle} from './terraces.js';
@@ -10,10 +11,10 @@ import {blankSave} from '../rules.js';
 import {HUB_MISSION_ACTION_PLANS} from './mission-actions.js';
 
 const PROFILES=Object.freeze({
- archives:{height:12,style:'lantern'},arena:{height:7,style:'terrace'},
- commerce:{height:16,style:'spire'},community:{height:10,style:'terrace'},
- innovation:{height:22,style:'lantern'},docks:{height:7,style:'shed'},
- builders:{height:15,style:'spire'},gardens:{height:6,style:'pergola'},
+ archives:{height:12,style:'lantern',tint:'#829294'},arena:{height:7,style:'terrace',tint:'#80674e'},
+ commerce:{height:16,style:'spire',tint:'#304e61'},community:{height:10,style:'terrace',tint:'#858e80'},
+ innovation:{height:22,style:'lantern',tint:'#284d60'},docks:{height:7,style:'shed',tint:'#8e9993'},
+ builders:{height:15,style:'spire',tint:'#667985'},gardens:{height:6,style:'pergola',tint:'#898e73'},
 });
 let permanentReservations;
 function interactionReservations(){
@@ -32,9 +33,23 @@ function interactionReservations(){
 
 /** Secondary city fabric, outside transport corridors and interaction clearances. */
 export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,materials,box}){
- const sites=[],layers=new Map(),octagon=new THREE.CylinderGeometry(1,1,1,8),cone=new THREE.ConeGeometry(1,1,8);owned.push(octagon,cone);
+ const sites=[],layers=new Map(),octagon=new THREE.CylinderGeometry(1,1,1,8),cone=new THREE.ConeGeometry(1,1,8),arch=facadeArchGeometry(),mansard=mansardRoofGeometry(),northlight=northlightRoofGeometry();owned.push(octagon,cone,arch,mansard,northlight);
  // Explicit window geometry keeps floors and reveals aligned on every facade.
- const body=new THREE.MeshPhysicalMaterial({color:'#101d2b',roughness:.48,metalness:.58,clearcoat:.2,envMapIntensity:.22});
+ const body=new THREE.MeshPhysicalMaterial({color:'#ffffff',roughness:.68,metalness:.12,clearcoat:.08,envMapIntensity:.14});
+ body.onBeforeCompile=shader=>{
+  shader.vertexShader='varying vec3 masonryP;varying vec3 masonryN;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   masonryP=position;masonryN=normal;
+   #ifdef USE_INSTANCING
+   masonryP=(instanceMatrix*vec4(position,1.)).xyz;
+   masonryN=normalize(mat3(instanceMatrix)*normal);
+   #endif`);
+  shader.fragmentShader='varying vec3 masonryP;varying vec3 masonryN;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+   float across=mix(masonryP.x,masonryP.z,step(.5,abs(masonryN.x)));
+   float course=floor(masonryP.y/.52);vec2 joint=abs(fract(vec2(across/1.16+mod(course,2.)*.5,masonryP.y/.52))-.5);
+   float seam=smoothstep(.464,.495,max(joint.x,joint.y));
+   float stone=fract(sin(dot(floor(vec2(across/1.16,course)),vec2(41.7,289.1)))*43758.5);
+   diffuseColor.rgb*=mix(.93+stone*.11,.69,seam*.62);`);
+ };body.customProgramCacheKey=()=> '3b-district-masonry-v1';
  const glazing=new THREE.MeshPhysicalMaterial({color:'#173c52',roughness:.2,metalness:.18,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.35});
  const day={value:1};
  glazing.onBeforeCompile=shader=>{
@@ -53,10 +68,10 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    totalEmissiveRadiance+=vec3(.72,.43,.19)*fabricLit*pow(1.-fabricDay,1.5)*.20*reveal*interior*furnishing*curtain;`);
  };
  glazing.customProgramCacheKey=()=> '3b-fabric-glazing-v1';owned.push(body,glazing);
- const fineNames=new Set(['Baies vitrées','Encadrements de baies','Linteaux de baies','Tableaux de baies','Meneaux verticaux','Garde-corps de balcon','Montants de balcon','Poignées des portes','Chapiteaux de socle','Descentes et nervures','Frises civiques','Reliefs civiques']);
- function layer(geometry,material,name,x,y,z,sx,sy,sz,yaw=0){
+ const fineNames=new Set(['Baies vitrées','Encadrements de baies','Linteaux de baies','Tableaux de baies','Meneaux verticaux','Garde-corps de balcon','Montants de balcon','Poignées des portes','Chapiteaux de socle','Descentes et nervures','Frises civiques','Reliefs civiques','Lucarnes de toiture','Frontons des lucarnes','Clés des arcades']);
+ function layer(geometry,material,name,x,y,z,sx,sy,sz,yaw=0,color){
   const fine=fineNames.has(name),key=geometry.uuid+material.uuid+(fine?'detail':'structure');if(!layers.has(key))layers.set(key,{geometry,material,name,fine,transforms:[]});
-  layers.get(key).transforms.push({x,y,z,sx,sy,sz,yaw});
+  layers.get(key).transforms.push({x,y,z,sx,sy,sz,yaw,color});
  }
  const reserved=interactionReservations();
  for(const island of CITE_ISLANDS.filter(i=>PROFILES[i.id])){
@@ -76,7 +91,7 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
   for(const p of candidates){
    if(count>=7||sites.some(s=>Math.hypot(p.x-s.x,p.z-s.z)<9))continue;
    const h=profile.height*(.72+((Math.abs(p.ix*7+p.iz*3)%5)/10)),w=5,d=5,yaw=profile.style==='lantern'?Math.PI/8:0;
-   sites.push({...p,height:h,district:island.id});count++;
+   sites.push({...p,height:h,district:island.id,style:profile.style,yaw,width:6,depth:6});count++;
    layer(box,materials.stone,'Socles et façades',p.x,.3,p.z,6,.6,6);
    const round=profile.style==='lantern',shape=round?octagon:box;
    // Stepped silhouettes: each district has its own upper-storey proportions.
@@ -88,25 +103,71 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    const setbacks=stepped?[[0,first,1],[first,second,.84],[second,1,.68]].filter(([a,b])=>b>a+.001):[[0,1,1]];
    const facadeScale=y=>stepped?(y>=second*h+.6?.68:y>=first*h+.6?.84:1):1;
    for(const [bottom,top,scale] of setbacks){
-    layer(shape,body,'Bâtiments des quartiers',p.x,(bottom+top)*h/2+.6,p.z,(round?w/2:w)*scale,(top-bottom)*h,(round?d/2:d)*scale,yaw);
+    layer(shape,body,'Bâtiments des quartiers',p.x,(bottom+top)*h/2+.6,p.z,(round?w/2:w)*scale,(top-bottom)*h,(round?d/2:d)*scale,yaw,profile.tint);
     if(bottom>0){
      layer(shape,round?materials.gold:materials.stone,'Terrasses en retrait',p.x,bottom*h+.56,p.z,(round?w/2:w)*scale+.12,.14,(round?d/2:d)*scale+.12,yaw);
      layer(shape,materials.gold,'Bandeaux des retraits',p.x,bottom*h+.66,p.z,(round?w/2:w)*scale+.14,.07,(round?d/2:d)*scale+.14,yaw);
     }
    }
    layer(shape,materials.gold,'Corniches',p.x,h+.75,p.z,(round?2.8:5.6)*facadeScale(h+.6),.25,(round?2.8:5.6)*facadeScale(h+.6),yaw);
+   const roofScale=facadeScale(h+.6);
    if(profile.style==='spire'){
-    layer(box,materials.glass,'Attiques',p.x,h+2.2,p.z,3.5,3,3.5,yaw);
-    layer(cone,materials.gold,'Flèches',p.x,h+5.2,p.z,2,3.2,2,yaw);
+    if(island.id==='commerce'){
+     // Mansard stone roof, glazed dormers and a high lantern distinguish the bazaar skyline.
+     layer(mansard,body,'Mansardes du commerce',p.x,h+.87,p.z,5.8*roofScale,2.2,5.8*roofScale,0,'#354a55');
+     for(let face=0;face<4;face++){
+      const angle=face*Math.PI/2,front=2.71*roofScale,xx=p.x+Math.sin(angle)*front,zz=p.z+Math.cos(angle)*front;
+      layer(box,body,'Joues des lucarnes',xx-Math.sin(angle)*.2,h+1.64,zz-Math.cos(angle)*.2,1.25*roofScale,1.05,.62,angle,'#354a55');
+      layer(box,glazing,'Lucarnes de toiture',xx+Math.sin(angle)*.13,h+1.72,zz+Math.cos(angle)*.13,1.04*roofScale,.77,.08,angle);
+      layer(box,materials.gold,'Frontons des lucarnes',xx,h+2.22,zz,1.37*roofScale,.10,.77,angle);
+     }
+     layer(octagon,glazing,'Belvédères du commerce',p.x,h+3.0,p.z,.86,1.15,.86,Math.PI/8);
+     layer(cone,materials.gold,'Flèches du commerce',p.x,h+4.17,p.z,1.14,1.4,1.14);
+    }else{
+     // City builders: open framed upper pavilion instead of a duplicate bazaar spire.
+     layer(box,glazing,'Pavillons des bâtisseurs',p.x,h+1.95,p.z,2.7,2.25,2.7);
+     for(const dx of [-1,1])for(const dz of [-1,1])layer(box,materials.gold,'Contreforts des pavillons',p.x+dx*1.5,h+2.05,p.z+dz*1.5,.2,2.8,.2);
+     layer(mansard,body,'Couvertures des bâtisseurs',p.x,h+3.32,p.z,3.65,1.5,3.65,0,'#536572');
+     layer(box,materials.gold,'Couronnes des bâtisseurs',p.x,h+4.86,p.z,2.4,.17,2.4);
+     layer(box,materials.gold,'Aiguilles des bâtisseurs',p.x,h+5.74,p.z,.095,1.76,.095);
+    }
    }else if(round){
-    layer(octagon,materials.glass,'Lanternes',p.x,h+2.3,p.z,2,3.2,2);
-    layer(cone,materials.gold,'Couvertures des lanternes',p.x,h+4.4,p.z,2.4,1.2,2.4);
+    const radius=island.id==='innovation'?1.66:1.88;
+    layer(octagon,glazing,'Lanternes',p.x,h+2.12,p.z,radius,2.72,radius,Math.PI/8);
+    for(let k=0;k<8;k++){
+     const a=k*Math.PI/4,rr=radius*.93;
+     layer(box,materials.gold,'Nervures des lanternes',p.x+Math.cos(a)*rr,h+2.12,p.z+Math.sin(a)*rr,.085,2.88,.085,a);
+    }
+    layer(octagon,materials.gold,'Ceintures des lanternes',p.x,h+3.58,p.z,radius+.10,.16,radius+.10,Math.PI/8);
+    layer(cone,body,'Couvertures des lanternes',p.x,h+4.15,p.z,radius+.18,1.12,radius+.18,Math.PI/8,island.id==='innovation'?'#253e53':'#647581');
+    if(island.id==='innovation'){
+     // A segmented antenna crown reads as an observatory at medium distance.
+     for(let k=0;k<4;k++){
+      const a=k*Math.PI/2;
+      layer(box,materials.gold,'Ailettes des observatoires',p.x+Math.cos(a)*.95,h+4.99,p.z+Math.sin(a)*.95,.09,1.72,.09,a);
+     }
+     layer(octagon,glazing,'Capsules des observatoires',p.x,h+4.96,p.z,.62,1.03,.62,Math.PI/8);
+    }else layer(cone,materials.gold,'Épis des archives',p.x,h+5.01,p.z,.36,.72,.36);
    }else if(profile.style==='shed'){
-    layer(box,materials.gold,'Toitures des docks',p.x,h+1,p.z,6,.25,6);
+    // Three sawtooth roof bays cast real alternating slopes, with north-facing glass.
+    for(let k=0;k<3;k++){
+     const xx=p.x-1.96+k*1.96;
+     layer(northlight,body,'Toitures en sheds',xx,h+.91,p.z,1.96,.94,5.65,0,'#607884');
+     layer(box,glazing,'Vitrages des sheds',xx+.99,h+1.45,p.z,.06,.8,5.30);
+     layer(box,materials.gold,'Faîtages des sheds',xx+.99,h+1.87,p.z,.095,.08,5.8);
+    }
+    for(const side of [-1,1])layer(box,materials.gold,'Gouttières des docks',p.x+side*2.97,h+.86,p.z,.12,.14,5.9);
    }else{
-    for(const side of [-1,1])layer(box,materials.green,'Jardins suspendus',p.x+side*1.8,h+1.2,p.z,.7,.8,4);
-    for(const dx of [-1.7,1.7])for(const dz of [-1.7,1.7])layer(box,materials.gold,'Pavillons de toiture',p.x+dx,h+2,p.z+dz,.12,2.4,.12);
-    layer(box,materials.dark,'Ombrières',p.x,h+3.3,p.z,4.4,.15,4.4);
+    // Actual corner parapets, planted terraces and slatted pergolas replace a solid roof plate.
+    for(const side of [-1,1]){
+     layer(box,materials.stone,'Acrotères des terrasses',p.x+side*2.35*roofScale,h+1.03,p.z,.16,.55,4.65*roofScale);
+     layer(box,materials.stone,'Jardinières des toits',p.x+side*1.73*roofScale,h+1.1,p.z,.8,.5,3.55*roofScale);
+     layer(box,materials.green,'Jardins suspendus',p.x+side*1.73*roofScale,h+1.52,p.z,.72,.4,3.48*roofScale);
+    }
+    const pavilionH=island.id==='gardens'?1.96:2.32;
+    for(const dx of [-1.55,1.55])for(const dz of [-1.55,1.55])layer(box,materials.gold,'Pavillons de toiture',p.x+dx*roofScale,h+.98+pavilionH/2,p.z+dz*roofScale,.13,pavilionH,.13);
+    for(let k=0;k<7;k++)layer(box,materials.dark,'Lames des pergolas',p.x+(k-3)*.54*roofScale,h+1+pavilionH,p.z,.20,.15,4.0*roofScale);
+    if(island.id==='arena')for(const side of [-1,1])layer(box,materials.gold,'Bannières des terrasses',p.x+side*1.3,h+2.04,p.z-1.58,.57,1.06,.065);
    }
    // Four finished facades: paired glazing, mullions and recessed horizontal reveals.
    for(let floor=3;floor<h-.3;floor+=3.5){
@@ -136,6 +197,10 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    for(const side of [-1,1])layer(box,materials.stone,'Portails de rez-de-chaussée',p.x+side*.85,1.45,p.z+(round?2.32:2.55),.16,2.7,.2);
    layer(box,materials.gold,'Linteaux des entrées',p.x,2.85,p.z+(round?2.33:2.56),1.9,.13,.24);
    layer(box,glazing,'Portes vitrées',p.x,1.4,p.z+(round?2.34:2.57),1.5,2.5,.1);
+   if(['archives','commerce','community','gardens'].includes(island.id)){
+    layer(arch,body,'Arcades des entrées',p.x,.08,p.z+(round?2.33:2.58),1,1,1,0,profile.tint);
+    layer(box,materials.gold,'Clés des arcades',p.x,2.86,p.z+(round?2.48:2.73),.23,.29,.18);
+   }
    // Detailed ground-level joinery and district-specific structural rhythms.
    for(const side of [-1,1]){
     layer(box,materials.gold,'Poignées des portes',p.x+side*.18,1.45,p.z+(round?2.43:2.66),.035,.34,.04);
@@ -171,7 +236,7 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
  const group=new THREE.Group();group.name='3B · tissu urbain des quartiers';root.add(group);const dummy=new THREE.Object3D(),detailBatches=[];
  for(const l of layers.values()){
   const mesh=new THREE.InstancedMesh(l.geometry,l.material,l.transforms.length);mesh.name=l.name;mesh.castShadow=mesh.receiveShadow=true;
-  for(const [i,p] of l.transforms.entries()){dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
+  for(const [i,p] of l.transforms.entries()){dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);if(l.material===body)mesh.setColorAt(i,new THREE.Color(p.color||'#ffffff'));}
   mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh);owned.push(mesh);if(l.fine){mesh.userData.distanceDetail=true;detailBatches.push({mesh,poses:l.transforms});}
  }
  let quality='detail',lastView=null;const viewPoint=new THREE.Vector3();
@@ -183,11 +248,11 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
    let count=0;
    for(const p of poses){
     if((p.x-viewPoint.x)**2+(p.y-viewPoint.y)**2+(p.z-viewPoint.z)**2>radius2)continue;
-    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(count++,dummy.matrix);
+    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);if(mesh.instanceColor)mesh.setColorAt(count,new THREE.Color(p.color||'#ffffff'));count++;
    }
    mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
    // The original full bounding sphere remains conservative after compaction.
   }
  }
- return{sites,count:sites.length,updateView,setDaylight(value){day.value=value;},setQuality(mode){quality=mode;lastView=null;group.children.forEach(m=>m.castShadow=mode!=='fluid');}};
+ return{sites,mapSites:sites.map(({x,z,width,depth,height,district,style,yaw})=>({x,z,width,depth,height,district,style,yaw})),count:sites.length,updateView,setDaylight(value){day.value=value;},setQuality(mode){quality=mode;lastView=null;group.children.forEach(m=>m.castShadow=mode!=='fluid');}};
 }

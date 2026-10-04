@@ -1,4 +1,4 @@
-const WEATHER_INDOOR=new Set(['heavy_rain','storm','snow']);
+const WEATHER_INDOOR=new Set(['rain','heavy_rain','storm','snow']);
 const EVENING_DISTRICTS=new Set(['commerce','community','arena','docks']);
 const NIGHT_DISTRICTS=new Set(['docks','archives','broken_circle_tower','innovation']);
 
@@ -9,7 +9,7 @@ export function hubNpcActivity(npc,{hour=12,weather='clear',missionState={}}={})
   const district=npc?.district||'heritage_square';
   const activeMission=(npc?.missionIds||[]).find(id=>missionState[id]?.status==='active');
   if(activeMission)return {id:'mission',label:'En mission',detail:'Suit les événements liés à ta mission active.',pace:'focused',indoor:false};
-  if(WEATHER_INDOOR.has(weather)&&!['docks','gardens'].includes(district)){
+  if(WEATHER_INDOOR.has(weather)||npc?.shelter){
     return {id:'weather-shelter',label:'À couvert',detail:'La météo a déplacé son activité vers un intérieur proche.',pace:'calm',indoor:true};
   }
   if(h>=0&&h<6){
@@ -35,6 +35,7 @@ export function hubNpcActivityLine(npc,context={}){
   if(activity.id==='midday')return 'Je ralentis quelques minutes. C’est souvent là qu’on remarque ce qu’on avait raté.';
   if(activity.id==='evening')return 'Le soir change les usages de la place. Les gens restent plus longtemps et parlent autrement.';
   if(activity.id==='night-watch')return 'La nuit n’arrête pas tout ici. Certains services deviennent même plus importants.';
+  if(npc?.activityLabel&&activity.id==='work')return 'Aujourd’hui, je '+npc.activityLabel+'. Reviens me parler si tu as besoin de mon aide.';
   if(/mécan|technicien|ingénieur/.test(role))return 'Je vérifie les équipements avant qu’une petite panne devienne un vrai problème.';
   if(/journal|médiatrice|guide/.test(role))return 'Je passe d’un groupe à l’autre pour comprendre ce qui change vraiment dans le quartier.';
   if(/archiv|restauratrice/.test(role))return 'Je classe, compare et restaure ce qui pourrait disparaître si personne ne s’en occupe.';

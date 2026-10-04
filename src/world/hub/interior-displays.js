@@ -1,14 +1,35 @@
 import * as THREE from 'three';
+import {roomFurniturePlan} from './interior-furnishings.js';
 
-/** Small exhibits mounted on the existing solid counters; no floor obstacles,
- * gameplay rewards or new interiors are introduced. All rooms share four draws, including their wall finishes. */
-export function addInteriorDisplays({root,owned,box,buildings,materials}){
- const layers=new Map(),dummy=new THREE.Object3D();
+/** Inhabited rooms: coherent wall joinery, counter exhibits and authored floor furniture.
+ * All nineteen rooms batch their fittings globally; the service aisle stays clear. */
+export function addInteriorDisplays({root,owned,box,buildings,materials,collisions=[]}){
+ const layers=new Map(),dummy=new THREE.Object3D(),anchors=[],furnishings=[],roomPlans=[],batches=[];
+ const timber=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.64,metalness:.02,envMapIntensity:.2});
+ const cloth=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.98,metalness:0,envMapIntensity:.08});
+ const paper=new THREE.MeshStandardMaterial({color:'#d9d1b6',roughness:.97,metalness:0,envMapIntensity:.12});
+ const light=new THREE.MeshStandardMaterial({color:'#efdeb6',roughness:.6,emissive:'#e0bc78',emissiveIntensity:.8});
+ const furnishingMaterials={wood:timber,cloth,paper,light,metal:materials.gold,ink:materials.dark,glass:materials.glass};
+ owned.push(timber,cloth,paper,light);
+ timber.onBeforeCompile=shader=>{
+  shader.vertexShader='varying vec3 joineryP;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   joineryP=position;
+   #ifdef USE_INSTANCING
+   joineryP=(instanceMatrix*vec4(position,1.)).xyz;
+   #endif`);
+  shader.fragmentShader='varying vec3 joineryP;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
+   float grain=sin(joineryP.z*52.+sin(joineryP.x*3.)*2.+sin(joineryP.z*7.)*.8);
+   diffuseColor.rgb*=.94+.06*grain;`);
+ };
+ timber.customProgramCacheKey=()=> '3b-interior-walnut-v1';
  const plaster=new THREE.MeshStandardMaterial({color:'#8b8780',roughness:.94,metalness:0,emissive:'#827b6a',emissiveIntensity:.025});owned.push(plaster);
- function piece(material,x,y,z,sx,sy,sz,yaw=0){
-  if(!layers.has(material))layers.set(material,[]);layers.get(material).push({x,y,z,sx,sy,sz,yaw});
+ function piece(material,x,y,z,sx,sy,sz,yaw=0,pitch=0,roll=0,color){
+  if(!layers.has(material))layers.set(material,[]);layers.get(material).push({x,y,z,sx,sy,sz,yaw,pitch,roll,color});
  }
  for(const b of buildings){
+  const plan=roomFurniturePlan(b);roomPlans.push(plan);anchors.push(...plan.anchors);furnishings.push(...plan.furnishings);
+  for(const p of plan.pieces)piece(furnishingMaterials[p.material],p.x,p.y,p.z,p.sx,p.sy,p.sz,p.yaw,p.pitch,p.roll,p.color||(p.material==='wood'?'#665142':p.material==='cloth'?plan.program.accent:undefined));
+  collisions.push(...plan.furnishings.map(f=>({...f})));
   const x=b.buildingX,z=b.buildingZ-b.depth/2+1,table=2.2,space=b.width*.19;
   // Interior coatings are inset into the existing three closed walls.
   piece(plaster,x,b.height/2+.2,b.buildingZ-b.depth/2+.32,b.width-.65,b.height-1.2,.035);
@@ -94,11 +115,27 @@ export function addInteriorDisplays({root,owned,box,buildings,materials}){
    for(const side of [-1,1])piece(materials.dark,x+side*.9,table+.15,z,.4,.3,.4);
   }
  }
- const group=new THREE.Group();group.name='3B · objets des comptoirs';root.add(group);
+ const group=new THREE.Group();group.name='3B · objets des comptoirs';group.userData.roomPrograms=roomPlans.map(p=>({buildingId:p.buildingId,theme:p.program.theme,accent:p.program.accent}));root.add(group);
  for(const [material,poses] of layers){
   const batch=new THREE.InstancedMesh(box,material,poses.length);batch.castShadow=batch.receiveShadow=true;
-  for(const [i,p] of poses.entries()){dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();batch.setMatrixAt(i,dummy.matrix);}
-  batch.instanceMatrix.needsUpdate=true;batch.computeBoundingSphere();group.add(batch);owned.push(batch);
+  for(const [i,p] of poses.entries()){dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(p.pitch,p.yaw,p.roll);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();batch.setMatrixAt(i,dummy.matrix);if(p.color||material===timber||material===cloth)batch.setColorAt(i,new THREE.Color(p.color||'#ffffff'));}
+  batch.instanceMatrix.needsUpdate=true;batch.computeBoundingSphere();group.add(batch);owned.push(batch);batches.push({batch,poses});
  }
- return{count:buildings.length,setQuality(mode){group.children.forEach(o=>o.castShadow=mode!=='fluid');}};
+ let quality='detail',lastView=null;const viewpoint=new THREE.Vector3(),color=new THREE.Color();
+ function updateView(camera){
+  camera.getWorldPosition(viewpoint);group.worldToLocal(viewpoint);
+  if(lastView&&lastView.distanceToSquared(viewpoint)<9)return;
+  lastView=viewpoint.clone();const radius=quality==='fluid'?78:145,radius2=radius*radius;
+  for(const {batch,poses} of batches){
+   let count=0;
+   for(const p of poses){
+    if((p.x-viewpoint.x)**2+(p.y-viewpoint.y)**2+(p.z-viewpoint.z)**2>radius2)continue;
+    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(p.pitch,p.yaw,p.roll);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();batch.setMatrixAt(count,dummy.matrix);
+    if(batch.instanceColor)batch.setColorAt(count,color.set(p.color||'#ffffff'));
+    count++;
+   }
+   batch.count=count;batch.instanceMatrix.needsUpdate=true;if(batch.instanceColor)batch.instanceColor.needsUpdate=true;
+  }
+ }
+ return{count:buildings.length,anchors,furnishings,roomPlans,floorSurfaces:roomPlans.flatMap(p=>p.floorSurfaces),updateView,setQuality(mode){quality=mode;lastView=null;group.children.forEach(o=>o.castShadow=mode!=='fluid');}};
 }

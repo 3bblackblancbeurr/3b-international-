@@ -9,6 +9,7 @@ export const ACTIONS=Object.freeze({
  ask:{label:'Poser une question',category:'social',animation:'Talk',audio:'talk_soft',caption:'Question',haptic:'light',input:'press'},
  showEvidence:{label:'Montrer une preuve',category:'investigation',animation:'Inspect',audio:'evidence',caption:'Preuve présentée',haptic:'medium',input:'press'},
  inspect:{label:'Examiner',category:'investigation',animation:'Inspect',audio:'inspect',caption:'Élément examiné',haptic:'light',input:'press'},
+ read:{label:'Lire',category:'investigation',animation:'Read',audio:'pages',caption:'Lecture',haptic:'light',input:'press'},
  scan:{label:'Scanner',category:'investigation',animation:'Cast',audio:'scan',caption:'Analyse en cours',haptic:'light',input:'press'},
  memoryVision:{label:'Vision de Mémoire',category:'investigation',animation:'Cast',audio:'memory',caption:'Écho de mémoire',haptic:'medium',input:'press'},
  collect:{label:'Recueillir',category:'world',animation:'Pickup',audio:'collect',caption:'Objet recueilli',haptic:'medium',input:'press'},
@@ -48,6 +49,7 @@ const TYPE_ACTIONS=Object.freeze({
  hubCreature:['observe','inspect'],
  hubMission:['inspect'],
  hubTransport:['ride'],
+ hubLift:['use'],
  hubBuilding:['enter','inspect'],
  hubHeritageFacility:['enter','inspect'],
  hubMilestone:['inspect'],
@@ -92,6 +94,7 @@ function cloneAction(id,overrides={}){
 export function contextActions(item,context={}){
  if(!item)return[];
  let ids=[...(TYPE_ACTIONS[item.type]||item.actions||['inspect'])];const save=context.save||{},region=context.region||item.region,actions=[];
+ if(item.type==='hubLifeObject')ids=item.kind==='seat'?['sit']:item.kind==='read'?['read']:['inspect'];
  if(item.type==='echo'&&!save.adventure?.chapters?.[region]?.helped)ids=ids.filter(id=>id!=='calm');
  for(const id of ids){
   if(id==='collect'&&item.done)continue;

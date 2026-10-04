@@ -1,6 +1,6 @@
 /** Reference-led skyline and coastal detail. All decoration stays out of the walkable aisles. */
 export function addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials,THREE}){
- const {dark,gold,blue,glass,stone,green,wood}=materials;
+ const {dark,gold,blue,glass,stone,green,wood}=materials,mapSites=[];
  // Four tapered spires make the central Nexus legible from every district.
  // Their footprint is entirely inside the existing non-walkable central fountain.
  for(const side of [-1,1])for(const depth of [-1,1]){
@@ -38,6 +38,7 @@ export function addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials,
  // Boats are scenery below the protected deck, with hulls, cabins and navigation lights.
  for(let i=0;i<5;i++){
   const x=-38+i*19,z=186+(i%2)*12;
+  mapSites.push({id:'heritage-vessel-'+i,kind:'vessel',name:'Navette maritime',x,z,width:8,depth:28,rotation:Math.PI/6});
   const hull=mesh(geo(new THREE.CylinderGeometry(1,1,1,6)),dark,x,-17,z,4,2,14);hull.rotation.y=Math.PI/6;
   mesh(box,stone,x,-15.7,z,5,1.2,13);mesh(box,dark,x,-14,z-2,4,2,6);
   mesh(box,glass,x,-13,z-2,3.7,.7,5.7);mesh(box,gold,x,-15,z+4,5,.15,5);
@@ -45,4 +46,5 @@ export function addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials,
  }
  // Low-profile light lines frame the arrival plaza without adding barriers.
  for(const radius of [8,13,18]){const ring=mesh(geo(new THREE.TorusGeometry(radius,.045,4,64)),radius===13?blue:gold,0,.08,35);ring.rotation.x=-Math.PI/2;}
+ return{mapSites};
 }

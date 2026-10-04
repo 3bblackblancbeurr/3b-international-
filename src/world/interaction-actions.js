@@ -22,6 +22,8 @@ export function contextualActions(item,{save={},snapshot={}}={}){
  const waypoint=()=>action('waypoint','Placer un repère','navigation');
 
  switch(item.type){
+  case 'hubLift':return [primary('Choisir un étage')];
+  case 'hubLifeObject':return unique([primary(item.kind==='seat'?'S’asseoir':item.kind==='read'?'Lire':'Examiner'),map()]);
   case 'portal':return unique([primary(item.id==='hub'?'Retourner à la Cité':'Traverser la porte'),map()]);
   case 'hubNpc':{
    const missionIds=item.missionIds||[],hasMission=missionIds.length>0;

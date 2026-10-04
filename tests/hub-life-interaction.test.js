@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createHubLifeInteraction,hubLifeAction} from '../src/world/hub/life-interaction.js';
+import {contextActions} from '../src/world/interaction-system.js';
+import {hubNpcSchedule} from '../src/world/hub/npc-schedule.js';
+import {hubNpcSimulation} from '../src/world/hub/npc-motion.js';
+
+const seat={id:'room:seat',type:'hubLifeObject',kind:'seat',x:4,z:6,seatX:4,seatZ:7,seatHeight:.81,heading:180,name:'Fauteuil',range:3.2};
+
+test('sitting is physical and restores its reachable approach without mutating a save',()=>{
+ const interaction=createHubLifeInteraction(),origin={x:4,z:5},save={position:{...origin},xp:10},before=JSON.stringify(save);
+ assert.equal(interaction.start(seat,origin,0,10),true);
+ const first=interaction.sample(10),end=interaction.sample(11);
+ assert.equal(first.z,origin.z);assert.equal(end.z,seat.seatZ);assert.equal(end.pose,'Sit');assert.equal(end.seatHeight,.81);
+ assert.deepEqual(interaction.finish(),origin);assert.equal(interaction.sample(12),null);assert.equal(JSON.stringify(save),before);
+});
+
+test('invalid and distant furniture never teleports the character and reduced motion removes the transition',()=>{
+ const interaction=createHubLifeInteraction({reducedMotion:true});
+ assert.equal(interaction.start(seat,{x:40,z:50}),false);
+ assert.equal(interaction.start({...seat,seatHeight:undefined},{x:4,z:5}),false);
+ assert.equal(interaction.start(seat,{x:4,z:5},0,2),true);
+ assert.equal(interaction.sample(2).z,seat.seatZ);
+ interaction.dispose();assert.equal(interaction.active,false);
+});
+
+test('reading and examining are standing poses with meaningful contextual verbs',()=>{
+ const interaction=createHubLifeInteraction();
+ for(const [kind,action,pose] of [['read','read','Read'],['examine','inspect','Inspect']]){
+  const item={...seat,kind};assert.equal(hubLifeAction(item),action);assert.equal(contextActions(item)[0].id,action);
+  assert.ok(interaction.start(item,{x:4,z:5}));assert.equal(interaction.sample(1).pose,pose);assert.equal(interaction.sample(1).seatHeight,0);interaction.finish();
+ }
+});
+
+test('residents work at their own real service and take shelter in rain snow and storms',()=>{
+ for(const weather of ['rain','heavy_rain','storm','snow']){
+  const routine=hubNpcSchedule('lyna_amrane',{hour:13,weather});
+  assert.equal(routine.activity,'abri météo');assert.equal(routine.activityBuildingId,'shipyard_3b');assert.equal(routine.shelter,true);assert.equal(routine.indoor,true);
+ }
+ assert.equal(hubNpcSchedule('ines_varga',{hour:10}).activityBuildingId,'memory_archives');
+ assert.match(hubNpcSchedule('ines_varga',{hour:10}).activityLabel,/enregistrements/);
+ const routine=hubNpcSchedule('the_conductor',{hour:23,weather:'rain'});assert.equal(routine.rare,false);assert.equal(routine.activityBuildingId,'train_station');
+});
+
+test('reduced motion preserves the resident work anchor and removes idle root sway',()=>{
+ const npc={id:'ines_varga',activity:'travail',homeX:12,homeZ:-8};
+ const a=hubNpcSimulation(npc,1,{distance:12,reducedMotion:true}),b=hubNpcSimulation(npc,20,{distance:12,reducedMotion:true});
+ assert.equal(a.x,12);assert.equal(a.z,-8);assert.equal(a.heading,b.heading);assert.equal(a.state,'Work');
+});

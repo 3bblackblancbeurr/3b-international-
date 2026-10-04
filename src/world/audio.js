@@ -1,6 +1,7 @@
 import {spatialAudio} from './audio-spatial.js';
 import {AUDIO_STATES,audioStateProfile} from './audio-director.js';
 import {actionFeedback} from './interaction-system.js';
+import {hubAmbientFrame,hubFootstepSurface} from './hub/civic-soundscape.js';
 const NOTES={hub:174.61,france:196,italie:220,estonie:164.81,turquie:146.83,algerie:174.61,tunisie:196,maroc:146.83,espagne:164.81};
 const SCALES={
  hub:[1,1.2,1.5,2],france:[1,1.125,1.5,1.75],italie:[1,1.25,1.5,1.875],estonie:[1,1.2,1.6,2],
@@ -12,7 +13,8 @@ const hash=s=>{let h=0;for(const c of String(s||''))h=(Math.imul(h,31)+c.charCod
 export function createWorldAudio(){
  let ctx,master,musicBus,ambienceBus,sfxBus,voiceBus,pad=[],enabled=false,hidden=false,noiseBuffer;
  let musicTimer,ambienceTimer,currentRegion='hub',inside=false,currentWeather='clear',currentPhase='day',audioState='exploration',stepFlip=false,lastSpeech='',voiceDucking=false,speaking=false,speechQueue=[];
- let listenerPose={x:0,z:0,heading:0};
+ let listenerPose={x:0,z:0,heading:0},interiorInfo=null,closed=false;
+ const ambientLoops=new Map();
  const mix={master:.78,music:.34,ambience:.55,sfx:.78,voice:.9};
 
  function gainNode(value){const g=ctx.createGain();g.gain.value=value;return g;}
@@ -34,6 +36,7 @@ export function createWorldAudio(){
    const o=ctx.createOscillator(),g=gainNode(.018);o.type=ratio===.5?'triangle':'sine';o.frequency.value=NOTES.hub*ratio;o.connect(g).connect(musicBus);o.start();pad.push({o,g,ratio});
   }
   noiseBuffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+  updateHubAmbience();
   startSchedulers();
  }
  function startSchedulers(){
@@ -45,7 +48,7 @@ export function createWorldAudio(){
    else if(['algerie','maroc','tunisie'].includes(currentRegion)&&Math.random()>.45)noise(.5,.018,650,ambienceBus);
   },4200);
  }
- function region(id){currentRegion=id;if(!ctx)return;const base=NOTES[id]||174.61;for(const {o,ratio} of pad)o.frequency.setTargetAtTime(base*ratio,ctx.currentTime,.8);}
+ function region(id){currentRegion=id;updateHubAmbience();if(!ctx)return;const base=NOTES[id]||174.61;for(const {o,ratio} of pad)o.frequency.setTargetAtTime(base*ratio,ctx.currentTime,.8);}
  function baseTone(frequency,duration,gain,type='sine',bus=sfxBus){
   if(!ctx||!enabled||hidden)return;ctx.resume().catch(()=>{});
   const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;o.type=type;o.frequency.setValueAtTime(Math.max(20,frequency),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,frequency*.72),t+duration);
@@ -57,7 +60,7 @@ export function createWorldAudio(){
   const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime,p=ctx.createStereoPanner?.();
   o.type=type;o.frequency.setValueAtTime(Math.max(20,frequency),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,frequency*.76),t+duration);
   g.gain.setValueAtTime(Math.max(.0001,gain),t);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);
-  if(p){p.pan.value=clamp(pan);g.connect(p).connect(sfxBus);}else g.connect(sfxBus);
+  if(p){p.pan.value=Math.max(-1,Math.min(1,pan));g.connect(p).connect(sfxBus);}else g.connect(sfxBus);
   o.start(t);o.stop(t+duration+.03);o.onended=()=>{o.disconnect();g.disconnect();p?.disconnect();};return true;
  }
  function noise(duration,gain,frequency,bus=sfxBus){
@@ -80,7 +83,7 @@ export function createWorldAudio(){
  function interaction(actionId){
   const feedback=actionFeedback(actionId);if(!feedback)return false;
   const cfg={
-   talk:[410,.10,.035,'sine'],talk_soft:[360,.10,.028,'sine'],evidence:[690,.18,.055,'triangle'],inspect:[520,.12,.032,'sine'],
+   talk:[410,.10,.035,'sine'],talk_soft:[360,.10,.028,'sine'],evidence:[690,.18,.055,'triangle'],inspect:[520,.12,.032,'sine'],pages:[520,.13,.014,'sine'],
    scan:[760,.22,.045,'sine'],memory:[280,.34,.065,'triangle'],collect:[620,.16,.052,'triangle'],use:[460,.12,.042,'triangle'],
    door:[190,.16,.05,'triangle'],repair:[145,.22,.055,'triangle'],assemble:[240,.2,.05,'triangle'],help:[330,.18,.045,'sine'],
    carry:[120,.16,.04,'triangle'],revive:[392,.34,.07,'sine'],climb:[155,.1,.032,'triangle'],vault:[250,.09,.04,'triangle'],
@@ -89,7 +92,7 @@ export function createWorldAudio(){
    focus:[520,.14,.03,'sine'],calm:[349,.28,.05,'sine'],combat_ready:[98,.22,.075,'triangle'],guard:[220,.12,.06,'sine'],
    companion:[440,.16,.04,'sine'],portal:[300,.32,.065,'triangle']
   }[feedback.audio]||[380,.14,.035,'sine'];
-  if(['repair','assemble','carry','climb','vault','water','dive','engine'].includes(feedback.audio))noise(cfg[1],cfg[2]*.55,feedback.audio==='water'||feedback.audio==='dive'?900:520,sfxBus);
+  if(['pages','cloth','repair','assemble','carry','climb','vault','water','dive','engine'].includes(feedback.audio))noise(cfg[1],cfg[2]*.55,feedback.audio==='water'||feedback.audio==='dive'?900:feedback.audio==='pages'?2200:520,sfxBus);
   tone(cfg[0],cfg[1],cfg[2],cfg[3]);return true;
  }
  function playSpeechQueue(){
@@ -105,23 +108,49 @@ export function createWorldAudio(){
   const clean=String(text).replace(/\s+/g,' ').slice(0,420);if(clean===lastSpeech)return false;lastSpeech=clean;
   speechQueue.push({text:clean,character,lang});if(speechQueue.length>5)speechQueue=speechQueue.slice(-5);playSpeechQueue();return true;
  }
- function setListener(position={},heading=0){listenerPose={x:Number(position.x)||0,z:Number(position.z)||0,heading:Number(heading)||0};}
+ function stopAmbientLoop(id){
+  const loop=ambientLoops.get(id);if(!loop)return;
+  ambientLoops.delete(id);try{loop.source.stop();}catch{}
+  loop.source.disconnect();loop.filter.disconnect();loop.volume.disconnect();loop.pan?.disconnect();
+ }
+ function clearAmbientLoops(){for(const id of [...ambientLoops.keys()])stopAmbientLoop(id);}
+ function environment(){return currentRegion==='hub'?hubAmbientFrame(listenerPose,{interior:interiorInfo,phase:currentPhase,weather:currentWeather}):{sources:[],caption:null};}
+ function updateHubAmbience(){
+  if(!ctx||!noiseBuffer||!enabled||hidden||closed||currentRegion!=='hub'){clearAmbientLoops();return;}
+  const frame=environment(),active=new Set(frame.sources.map(source=>source.id));
+  for(const id of ambientLoops.keys())if(!active.has(id))stopAmbientLoop(id);
+  for(const sound of frame.sources){
+   let loop=ambientLoops.get(sound.id);
+   if(!loop){
+    const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),volume=gainNode(0),pan=ctx.createStereoPanner?.();
+    source.buffer=noiseBuffer;source.loop=true;filter.type=sound.kind==='water'?'lowpass':'bandpass';filter.frequency.value=sound.frequency;filter.Q.value=sound.kind==='water'?.5:1.4;
+    source.connect(filter).connect(volume);if(pan)volume.connect(pan).connect(ambienceBus);else volume.connect(ambienceBus);
+    // Offset each shared noise loop so neighboring sources never phase-lock.
+    source.start(0,(hash(sound.id)%1700)/1000);loop={source,filter,volume,pan};ambientLoops.set(sound.id,loop);
+   }
+   const swell=.9+.1*Math.sin(ctx.currentTime*.45+(hash(sound.id)%100)/10);
+   loop.volume.gain.setTargetAtTime(sound.gain*swell,ctx.currentTime,.22);
+   if(loop.pan)loop.pan.pan.setTargetAtTime(sound.pan,ctx.currentTime,.14);
+  }
+ }
+ function setListener(position={},heading=0){listenerPose={x:Number(position.x)||0,z:Number(position.z)||0,heading:Number(heading)||0};updateHubAmbience();}
  function spatialEvent(kind,source={}){
   const spatial=spatialAudio(listenerPose,source,kind==='hubTransport'?70:46);if(spatial.gain<.002)return false;
   const cfg={hubNpc:[420,.16,.055,'sine'],hubMission:[520,.2,.07,'triangle'],hubSecret:[690,.28,.08,'sine'],hubSecretStep:[610,.18,.065,'triangle'],hubGuardian:[260,.34,.085,'triangle'],valueTrial:[330,.3,.08,'sine'],hubTransport:[150,.26,.07,'triangle']}[kind]||[380,.16,.045,'sine'];
   return spatialTone(cfg[0],cfg[1],cfg[2]*spatial.gain,cfg[3],spatial.pan);
  }
  return{
-  enable(value,id){enabled=value;try{if(value){init();region(id);ctx?.resume().catch(()=>{});playSpeechQueue();}else{speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();applyMix();ctx?.suspend().catch(()=>{});}}catch{}},
+  enable(value,id){if(closed)return;enabled=!!value;try{if(value){init();region(id||currentRegion);ctx?.resume().catch(()=>{});playSpeechQueue();updateHubAmbience();}else{clearAmbientLoops();speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();applyMix();ctx?.suspend().catch(()=>{});}}catch{}},
   region,
-  ambience(id,interior){currentRegion=id;inside=!!interior;},
-  weather(value){currentWeather=value||'clear';},
-  phase(value){currentPhase=value||'day';applyMix();},
+  ambience(id,interior){currentRegion=id;inside=!!interior;interiorInfo=interior||null;updateHubAmbience();},
+  weather(value){currentWeather=value||'clear';updateHubAmbience();},
+  phase(value){currentPhase=value||'day';applyMix();updateHubAmbience();},
   state(value){audioState=Object.hasOwn(AUDIO_STATES,value)?value:'exploration';applyMix();},
   listener:setListener,
+  environment,
   spatialEvent,
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);applyMix();},
-  step(id){stepFlip=!stepFlip;noise(.06,inside?.06:.035,inside?520:1450);tone((inside?100:id==='estonie'?175:132)*(stepFlip?1:1.04),.055,.025,'triangle');},
+  step(id,position=listenerPose){stepFlip=!stepFlip;const surface=id==='hub'?hubFootstepSurface(position,interiorInfo):{duration:.06,volume:inside?.06:.035,frequency:inside?520:1450,pitch:inside?100:id==='estonie'?175:132};noise(surface.duration,surface.volume,surface.frequency);tone(surface.pitch*(stepFlip?1:1.04),.055,.025,'triangle');},
   event,interaction,speak,transport,
  cinematic(kind='micro'){
   if(!ctx||!enabled||hidden)return;
@@ -133,7 +162,7 @@ export function createWorldAudio(){
   if(kind==='story-restoration')setTimeout(()=>{tone(329.63,.7,.055);tone(493.88,.9,.035);},260);
  },
 
-  visibility(value){hidden=value;if(!ctx)return;if(value){globalThis.speechSynthesis?.pause?.();ctx.suspend().catch(()=>{});}else if(enabled){globalThis.speechSynthesis?.resume?.();ctx.resume().catch(()=>{});}},
-  close(){clearInterval(musicTimer);clearInterval(ambienceTimer);speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();enabled=false;pad.forEach(p=>p.o.stop());ctx?.close();}
+  visibility(value){hidden=!!value;updateHubAmbience();if(!ctx)return;if(value){globalThis.speechSynthesis?.pause?.();ctx.suspend().catch(()=>{});}else if(enabled){globalThis.speechSynthesis?.resume?.();ctx.resume().catch(()=>{});}},
+  close(){if(closed)return;closed=true;clearAmbientLoops();clearInterval(musicTimer);clearInterval(ambienceTimer);speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();enabled=false;pad.forEach(p=>{try{p.o.stop();}catch{}p.o.disconnect();p.g.disconnect();});pad=[];ctx?.close().catch(()=>{});}
  };
 }

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {addGateMechanism} from './hub/gate-mechanism.js';
 // Eight crafted thresholds. Shared silhouettes stay inexpensive after batching.
-export function createPortalFrame(region,accent){
+export function createPortalFrame(region,accent,{mechanical=false}={}){
  const group=new THREE.Group(),geometries=[],materials=new Map(),g=x=>(geometries.push(x),x),box=g(new THREE.BoxGeometry(1,1,1)),cylinder=g(new THREE.CylinderGeometry(1,1,1,16)),sphere=g(new THREE.IcosahedronGeometry(1,1));
  const palette={france:['#c9c5b5','#536d70'],italie:['#d7c8a7','#8e705a'],estonie:['#bac4b6','#566e68'],turquie:['#cfb78d','#508c8b'],algerie:['#e0d9bd','#678f83'],tunisie:['#f0e8cd','#407999'],maroc:['#c08e70','#6b9687'],espagne:['#d4b490','#648993']};
  const [stone,inlay]=palette[region]||['#c8bd9a','#8d9f99'];const mat=(color,metal=0)=>{const key=color+metal;if(!materials.has(key))materials.set(key,new THREE.MeshStandardMaterial({color,roughness:metal?.4:.84,metalness:metal}));return materials.get(key);};
@@ -25,5 +26,6 @@ export function createPortalFrame(region,accent){
  for(let x=-2;x<=2;x++)for(let z=-1;z<=1;z++){const tile=b((x+z)%2?inlay:'#d4c6a0',x,.055,z,.94,.09,.94);}
  group.updateMatrixWorld(true);const groups=new Map();for(const o of [...group.children]){if(!groups.has(o.material.uuid))groups.set(o.material.uuid,[]);groups.get(o.material.uuid).push(o);}
  for(const meshes of groups.values()){const list=meshes.map(m=>{m.updateMatrix();const v=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return v.applyMatrix4(m.matrix);});const merged=mergeGeometries(list);list.forEach(g=>g.dispose());if(merged){geometries.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.castShadow=m.receiveShadow=true;group.add(m);meshes.forEach(m=>m.removeFromParent());}}
- return{group,dispose(){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ const mechanism=mechanical?addGateMechanism(group,{accent}):null;
+ return{group,mechanism,tick(distance,dt,options){mechanism?.tick(distance,dt,options);},dispose(){mechanism?.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }

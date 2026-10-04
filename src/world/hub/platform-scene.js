@@ -8,12 +8,14 @@ import {addCiteVegetation} from './cite-vegetation.js';
 import {addDistrictFabric} from './district-fabric.js';
 import {addInteriorDisplays} from './interior-displays.js';
 import {addLandmarkCraft} from './landmark-craft.js';
+import {addCivicStructure} from './civic-structure.js';
+import {addCivicTower} from './civic-tower.js';
 import {addPlatformArchitecture} from './platform-architecture.js';
 import {addCiteTerraces,terraceWorldHeight,terraceAisle} from './terraces.js';
 import {citeCoastalFoam} from './coastal-foam.js';
 import {citeWaterfallMaterial} from './waterfall-material.js';
 import {cascadeGeometry,cascadeMist} from './cascade-craft.js';
-import {CITE_ISLANDS,CITE_BRIDGES,citeSurfaceDistance,citeIslandRadius} from './platform-topology.js';
+import {CITE_ISLANDS,CITE_BRIDGES,CITE_PROMENADES,CITE_CONNECTORS,citeSurfaceDistance,citeIslandRadius} from './platform-topology.js';
 import {createCiteSurfaces} from './cite-surfaces.js';
 import {islandCliffGeometry,islandDeckGeometry} from './island-cliffs.js';
 import {createPremiumWater} from '../premium-water.js';
@@ -49,31 +51,36 @@ export function createHubPlatform(save){
   mesh(geo(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(edge,true),96,.13,5,true)),gold,0,0,0);
 
  }
- for(const bridge of CITE_BRIDGES){
+ for(const bridge of [...CITE_BRIDGES,...CITE_CONNECTORS]){
   const top=new THREE.PlaneGeometry(bridge.length,bridge.width);top.rotateX(-Math.PI/2);top.rotateY(-bridge.angle);top.translate(bridge.x,0,bridge.z);deckParts.push(top);
   const deck=mesh(box,dark,bridge.x,-.4,bridge.z,bridge.length,.8,bridge.width);deck.rotation.y=-bridge.angle;
-  for(const side of [-1,1]){
-   const points=Array.from({length:25},(_,i)=>{const t=i/24,along=(t-.5)*bridge.length,across=side*4.7;return new THREE.Vector3(bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*across,-.7-8*Math.sin(t*Math.PI),bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*across);});
-   mesh(geo(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),48,.38,8,false)),gold,0,0,0);
-   for(let k=1;k<8;k++){const t=k/8,along=(t-.5)*bridge.length,drop=8*Math.sin(t*Math.PI),x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*side*4.7,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*side*4.7;mesh(box,dark,x,-.7-drop/2,z,.3,drop,.3);}
-  }
-
   // Fine balustrades sit on the existing deck rim and leave the full aisle open.
-  for(const side of [-1,1])for(let k=0;k<=32;k++){
-   const along=(k/32-.5)*bridge.length,across=side*5.85;
+  const postCount=bridge.length>60?32:10,railAcross=bridge.width/2-.15;
+  for(const side of [-1,1])for(let k=0;k<=postCount;k++){
+   const along=(k/postCount-.5)*bridge.length,across=side*railAcross;
    const x=bridge.x+Math.cos(bridge.angle)*along-Math.sin(bridge.angle)*across,z=bridge.z+Math.sin(bridge.angle)*along+Math.cos(bridge.angle)*across;
    const post=mesh(box,gold,x,.52,z,.09,1.04,.09);post.rotation.y=-bridge.angle;
   }
-  for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*5.85,dz=Math.cos(bridge.angle)*side*5.85;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
+  for(const side of [-1,1]){const dx=-Math.sin(bridge.angle)*side*railAcross,dz=Math.cos(bridge.angle)*side*railAcross;const rail=mesh(box,gold,bridge.x+dx,1,bridge.z+dz,bridge.length,.1,.12);rail.rotation.y=-bridge.angle;}
  }
- const promenade=new THREE.RingGeometry(119,131,128);promenade.rotateX(-Math.PI/2);deckParts.push(promenade);
+ for(const promenade of CITE_PROMENADES){const deck=new THREE.RingGeometry(promenade.inner,promenade.outer,192);deck.rotateX(-Math.PI/2);deckParts.push(deck);}
+ const structure=addCivicStructure({mesh,geo,box,materials:{dark,gold,stone},bridges:CITE_BRIDGES,promenades:CITE_PROMENADES,connectors:CITE_CONNECTORS});
  deckParts.push(...addCiteTerraces({mesh,geo,box,materials:{dark,gold,blue},collisions,sign}));
  const deckGeometry=geo(mergeGeometries(deckParts));
  // One world-space paving scale across coasts, bridges, promenade and raised ramps.
  const deckPositions=deckGeometry.attributes.position,deckUV=deckGeometry.attributes.uv;
- for(let i=0;i<deckPositions.count;i++)deckUV.setXY(i,deckPositions.getX(i)/4,deckPositions.getZ(i)/4);
+ for(let i=0;i<deckPositions.count;i++)deckUV.setXY(i,deckPositions.getX(i)/2.4,deckPositions.getZ(i)/2.4);
  const ground=mesh(deckGeometry,surfaces.deck,0,0,0);deckParts.forEach(g=>g.dispose());ground.castShadow=false;
- ring(119,.14,.08,gold);ring(131,.14,.08,gold);ring(125,.06,.09,blue);
+ for(const promenade of CITE_PROMENADES){
+  ring(promenade.inner,.14,.08,gold);ring(promenade.outer,.14,.08,gold);ring((promenade.inner+promenade.outer)/2,.06,.09,blue);
+ }
+ // The horizon circuit is a real supported public arcade. Lighting and seaward
+ // seating face its eight outward views and leave a continuous centre aisle.
+ for(let i=0;i<48;i++){
+  const a=(i+.5)*Math.PI*2/48,r=182.85,x=Math.cos(a)*r,z=Math.sin(a)*r;
+  mesh(cylinder,dark,x,1.6,z,.095,3.2,.095);mesh(sphere,blue,x,3.3,z,.2);
+  if(i%6===2){const bench=mesh(box,wood,Math.cos(a)*181.4,.6,Math.sin(a)*181.4,3.2,.2,.9);bench.rotation.y=-a+Math.PI/2;const back=mesh(box,wood,Math.cos(a)*181.75,.95,Math.sin(a)*181.75,3.2,.8,.12);back.rotation.y=-a+Math.PI/2;for(const side of [-1,1])mesh(box,gold,Math.cos(a)*181.4-Math.sin(a)*side*1.1,.28,Math.sin(a)*181.4+Math.cos(a)*side*1.1,.12,.56,.65);collisions.push({id:'horizon-bench-'+i,x:Math.cos(a)*181.4,z:Math.sin(a)*181.4,width:3.2,depth:1.3,rotation:-a+Math.PI/2});}
+ }
  collisions.push({id:'cite-water-boundary',surfaceDistance:p=>-citeSurfaceDistance(p.x/HUB_SCALE,p.z/HUB_SCALE)*HUB_SCALE});
  const seaLake={x:0,z:0,r:245},seaWater=createPremiumWater({region:'hub',lake:seaLake,owned,ocean:true});
  const oceanGeometry=geo(new THREE.PlaneGeometry(3200,3200,64,64)),oceanPositions=oceanGeometry.attributes.position,oceanUV=oceanGeometry.attributes.uv;
@@ -130,11 +137,11 @@ export function createHubPlatform(save){
  mesh(cylinder,dark,0,.4,0,19,.8,19);const fountain=mesh(geo(new THREE.CircleGeometry(16,64)),water,0,.84,0);fountain.rotation.x=-Math.PI/2;fountain.castShadow=false;collisions.push({x:0,z:0,r:19.5});
  for(const side of [-1,1]){mesh(box,dark,side*13,14,0,3,28,4);mesh(box,gold,side*13,14,2.1,.5,28,.2);}
  for(let i=0;i<8;i++){
-  const piece=mesh(geo(new THREE.TorusGeometry(19,1.7,8,12,Math.PI/4-.085)),gold,0,25,0);
+  const piece=mesh(geo(new THREE.TorusGeometry(19,1.7,8,12,Math.PI/4-.085)),gold,0,25,11.6);
   piece.rotation.z=i*Math.PI/4;fragments.push(piece);
-  const trim=mesh(geo(new THREE.TorusGeometry(19,.18,5,12,Math.PI/4-.085)),blue,0,25,1.8);trim.rotation.z=i*Math.PI/4;
+  const trim=mesh(geo(new THREE.TorusGeometry(19,.18,5,12,Math.PI/4-.085)),blue,0,25,13.4);trim.rotation.z=i*Math.PI/4;
  }
- const orb=mesh(sphere,blue,0,25,0,3.1),beam=mesh(cylinder,blue,0,22,0,.18,44,.18);beam.castShadow=false;
+ const orb=mesh(sphere,blue,0,25,12.1,3.1),beam=mesh(cylinder,blue,0,22,12.1,.18,44,.18);beam.castShadow=false;
  sign('LE CERCLE BRISÉ',0,4,4.5,12);
  // Useful buildings are open rooms. Doorways, counters and furniture have real collision.
  for(const b of buildings){
@@ -150,19 +157,16 @@ export function createHubPlatform(save){
   mesh(box,gold,x,h-.4,z+d/2,w,.25,.5);sign(b.name,x,3.6,z+d/2+.35,Math.min(12,w-1));
   const counter=mesh(box,b.buildingId==='arena_3b'?blue:wood,x,1.1,z-d/2+1,w*.5,2.2,1);
   collisions.push({x,z:z-d/2+1,width:w*.5,depth:1});counter.receiveShadow=true;
-  // Shelves, benches, displays express the purpose without blocking the middle aisle.
-  for(const side of [-1,1]){
-   const fx=x+side*(w/2-2.1);mesh(box,wood,fx,.6,z,2,1.2,d*.38);
-   for(let k=0;k<3;k++)mesh(box,k%2?gold:glass,fx,1.4+k*.45,z-1+k,1,.3,.6);
-  }
   if(b.buildingId==='arena_3b'){
    const arena=mesh(geo(new THREE.TorusGeometry(7,.08,5,48)),blue,x,.08,z+2);arena.rotation.x=-Math.PI/2;
    sign('DUELS • ENTRAÎNEMENT • MULTIJOUEUR',x,5,z-d/2+.4,18);
   }
  }
- addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,collisions,sign,THREE});
+ const architecture=addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},buildings,collisions,cameraSolids,sign,THREE});
  addLandmarkCraft({mesh,geo,box,cylinder,materials:{dark,gold,blue,glass,stone},buildings,THREE});
- addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},THREE});
+ const tower=addCivicTower({mesh,geo,box,materials:{dark,gold,blue,glass,stone},buildings,collisions,cameraSolids,sign});
+ cameraSolids.push({id:'central-tower-body',x:0,z:0,width:22,depth:20,bottom:0,top:65});
+ const referenceDetails=addReferenceCiteDetails({mesh,geo,box,cylinder,sphere,materials:{dark,gold,blue,glass,stone,green,wood},THREE});
  for(const side of [-1,1])for(const depth of [-1,1])cameraSolids.push({x:side*5.2,z:depth*5.2,width:3.8,depth:3.8,bottom:0,top:depth<0?100:84});
  // Physical district consoles and the eight value plaques have matching runtime interactions.
  for(const p of hubPublicPlaces()){
@@ -189,11 +193,11 @@ export function createHubPlatform(save){
   mesh(sphere,green,x,2.3,z,.6);collisions.push({x,z,width:5,depth:3});
  }
  sign('MARCHÉ DES HÉRITAGES',0,3.5,68,16);
- const displays=addInteriorDisplays({root,owned,box,buildings,materials:{dark,gold,glass}});
+ const displays=addInteriorDisplays({root,owned,box,buildings,collisions,materials:{dark,gold,glass}});
  const fabric=addDistrictFabric({root,owned,buildings,collisions,cameraSolids,materials:{dark,gold,glass,stone,green},box});
  const vegetation=addCiteVegetation({root,owned,buildings,collisions});
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
- const dynamic=new Set([sea,mist,fountain,communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls]);
+ const dynamic=new Set([sea,mist,fountain,communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls,...(tower?.decks||[])]);
  root.updateMatrixWorld(true);const groups=new Map();
  for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.transparent){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
  for(const group of groups.values())if(group.length>1){
@@ -205,13 +209,16 @@ export function createHubPlatform(save){
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
  for(const o of collisions)for(const key of ['x','z','r','width','depth'])if(Number.isFinite(o[key]))o[key]*=HUB_SCALE;
  for(const o of cameraSolids){for(const key of ['x','z','width','depth'])o[key]*=HUB_SCALE;o.top*=1.5;}
- return {root,ground,collisions,cameraSolids,ready:surfaces.ready,height:terraceWorldHeight,
+ const mapSite=site=>({...site,units:'world',x:site.x*HUB_SCALE,z:site.z*HUB_SCALE,...Object.fromEntries(['width','depth','r'].filter(key=>Number.isFinite(site[key])).map(key=>[key,site[key]*HUB_SCALE])),...(Number.isFinite(site.height)?{height:site.height*1.5}:{})});
+ const cartography={units:'world',fabric:(fabric.mapSites||[]).map(mapSite),vegetation:(vegetation.mapSites||[]).map(mapSite),structures:[...architecture.mapSites.map(mapSite),...referenceDetails.mapSites.map(mapSite),{id:'circle-monument',kind:'monument',name:'Tour du Cercle Brisé',x:0,z:0,r:19.5*HUB_SCALE,height:150,units:'world'}],obstacles:collisions};
+ const lifeItems=(displays.anchors||[]).map(anchor=>({...anchor,x:anchor.x*HUB_SCALE,z:anchor.z*HUB_SCALE,...(Number.isFinite(anchor.heading)?{heading:anchor.heading*180/Math.PI}:{}),...(Number.isFinite(anchor.seatX)?{seatX:anchor.seatX*HUB_SCALE,seatZ:anchor.seatZ*HUB_SCALE,seatHeight:anchor.seatHeight*1.5}:{} )}));
+ return {root,ground,get walkSurface(){return tower?.selected!==null&&tower?.selected!==undefined?tower.decks[tower.selected]:ground;},collisions,cameraSolids,cartography,lifeItems,ready:surfaces.ready,height:(x,z)=>tower?.height(x,z)??terraceWorldHeight(x,z),liftFloors:tower?.floors||[],liftItems:tower?.liftItems||[],get towerFloor(){return tower?.selected===null?null:tower?.floors[tower.selected]||null;},setTowerFloor(index){return tower?.setFloor(index)||null;},obstaclesForTowerFloor(){return tower?.collisions()||[];},get towerLifeItems(){return tower?.lifeItems()||[];},
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,displayCounters:displays.count,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,connectors:CITE_CONNECTORS.length,promenades:CITE_PROMENADES.length,structuralArches:structure.arches,bridgePiers:structure.bridgePiers,promenadeBays:structure.promenadeBays,towerFloors:tower?.floors.length||0,terraces:8,districtBuildings:fabric.count,botanicalTrees:vegetation.count,cascades:cascadeIslands.length,rooms:buildings.length,displayCounters:displays.count,interiorFurniture:displays.furnishings?.length||0,lifeInteractions:lifeItems.length,portals:8,publicPlaces:18,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
   update,setParty(){},setQuality(mode){displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);vegetation.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){fabric.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
-  updateDistrict(camera,p){fabric.updateView(camera);interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId;},
+  updateDistrict(camera,p){displays.updateView?.(camera);fabric.updateView(camera);interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId&&!(b.buildingId==='tower_circle'&&tower?.selected!==null);},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
-  tick(time){spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;},
+  tick(time){surfaces.tick?.(time);spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=25+Math.sin(time*.8)*.3;},
   dispose(){seaWater.disposeReflection();poolWater.disposeReflection();root.removeFromParent();for(const asset of owned)asset.dispose();},
  };
 }

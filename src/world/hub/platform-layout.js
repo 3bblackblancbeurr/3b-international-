@@ -4,7 +4,7 @@ import {REFERENCE_GATE_SECTORS} from './gate-identity.js';
 import {citeSurfaceDistance} from './platform-topology.js';
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 export const HUB_SCALE=1.7;
-export const HUB_PLATFORM = Object.freeze({radius:168*HUB_SCALE,walkRadius:163*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
+export const HUB_PLATFORM = Object.freeze({radius:190*HUB_SCALE,walkRadius:185*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
 const DISTRICT_SITES = {
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
  archives:{x:-66,z:-66},arena:{x:66,z:-66},commerce:{x:94,z:0},
@@ -58,6 +58,12 @@ export function platformRuntimeItems(base,runtime,plan){
   // All semantic markers remain outside furniture and rooms unless specifically hosted inside.
   for(const b of buildings)if(Math.abs(x-b.buildingX)<b.width/2+4*HUB_SCALE&&Math.abs(z-b.buildingZ)<b.depth/2+4*HUB_SCALE){z=b.buildingZ+b.depth/2+5*HUB_SCALE;}
   for(const [wx,wz] of [[48,48],[-48,48],[48,-48],[-48,-48]]){const px=wx*HUB_SCALE,pz=wz*HUB_SCALE,dx=x-px,dz=z-pz,d=Math.hypot(dx,dz);if(d<19*HUB_SCALE){x=px+dx/(d||1)*19*HUB_SCALE;z=pz+dz/(d||1)*19*HUB_SCALE;}}
+  // Sheltered residents stand in their actual service room, in the clear
+  // front-centre aisle shared with the physical furniture specification.
+  if(item.type==='hubNpc'&&(item.shelter||item.indoor)){
+   const room=buildings.find(b=>b.buildingId===item.activityBuildingId);
+   if(room){const identity=hash(item.npcId||item.id);x=room.buildingX+((identity%5)-2)*.9*HUB_SCALE;z=room.buildingZ+room.depth*(.12+(identity%4)*.06);}
+  }
   return {...item,x,z,homeX:x,homeZ:z};
  });
  const final=base.find(i=>i.type==='final');

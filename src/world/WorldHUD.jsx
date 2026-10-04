@@ -15,7 +15,7 @@ import {controlLabel} from './control-bindings.js';
 
 export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,loaded,controls,onNavigate}){
  const country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
- const mapItems=useMemo(()=>worldRuntimeItems(snapshot.region,save),[snapshot.region,save]);
+ const mapItems=useMemo(()=>snapshot.region==='hub'&&snapshot.mapItems?snapshot.mapItems:worldRuntimeItems(snapshot.region,save),[snapshot.region,snapshot.mapItems,save]);
  const hubGoal=snapshot.region==='hub'?platformNextObjective(mapItems,save):null;
  const [arrival,setArrival]=useState(false),[actionMenu,setActionMenu]=useState(false),[hint,setHint]=useState(()=>{try{return !localStorage.getItem('3b-world-intro-seen');}catch{return true;}});
  useEffect(()=>{if(!loaded)return;setArrival(true);const timer=setTimeout(()=>setArrival(false),3800);return()=>clearTimeout(timer);},[snapshot.region,loaded]);
@@ -33,7 +33,7 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   <div className="world-district">{snapshot.district||country?.name||'Cité des Huit Héritages'}{snapshot.time&&<small> · {snapshot.time.phase} · {String(Math.floor(snapshot.time.hour)).padStart(2,'0')}:{String(Math.floor((snapshot.time.hour%1)*60)).padStart(2,'0')}{snapshot.weather?' · '+(WEATHER_LABELS[snapshot.weather]||snapshot.weather):''}</small>}</div>
   {snapshot.region==='hub'&&snapshot.hubEvolution&&<div className="hub-evolution-chip" aria-label={'Évolution de la Cité : '+snapshot.hubEvolution.label+', '+snapshot.hubEvolution.restored+' héritages restaurés sur '+snapshot.hubEvolution.total+(snapshot.hubEvolution.milestone?' · '+snapshot.hubEvolution.milestone.label:'')}><small>CITÉ · ÉVOLUTION {snapshot.hubEvolution.stage}/4</small><strong>{snapshot.hubEvolution.label}</strong>{snapshot.hubEvolution.milestone&&<em>{snapshot.hubEvolution.milestone.label}</em>}<span>{snapshot.hubEvolution.restored}/{snapshot.hubEvolution.total} héritages restaurés{snapshot.hubEvolution.nextMilestone?' · prochain palier '+snapshot.hubEvolution.nextMilestone.fragments+'/8':''}</span></div>}
   {hubGoal&&!snapshot.waypoint&&<button className="hub-objective" onClick={()=>onNavigate?.(hubGoal.item)}><small>PROCHAINE ÉTAPE · REPÉRER</small><span>{hubGoal.label}</span></button>}
-  <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} onOpen={()=>onPanel('atlas')}/>
+  <MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} cartography={snapshot.cartography} route={snapshot.route} level={snapshot.towerFloor} onOpen={()=>onPanel('atlas')}/>
   {arrival&&loaded&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Cité des Huit Héritages'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
   <button className="play-profile" aria-label={(save.adventure.avatar.name||'Voyageur')+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" onClick={()=>onPanel('team')}><span>{(save.adventure.avatar.name||'V').slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></button>
 
