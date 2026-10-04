@@ -57,3 +57,24 @@ test("phone layout preserves the cinematic Secret identity", () => {
   assert.match(dailyCss, /\.secret-universe-card\.is-secret-live/);
   assert.match(dailyCss, /@media\(max-width:720px\)/);
 });
+
+test("Premier Secret AAAA UI keeps cinematic progression and tactile chamber controls", () => {
+  const page = read("../src/secret/PremierSecretPage.jsx");
+  const premiumCss = read("../src/secret/secret-aaaa.css");
+  const clock = read("../src/secret/SecretClock.jsx");
+
+  assert.match(page, /ps-progress-rail/);
+  assert.match(page, /ps-cinematic-transition/);
+  assert.match(page, /navigator\.vibrate/);
+  assert.match(page, /ps-choice-wheel ps-number-wheel/);
+  assert.match(page, /ps-choice-wheel ps-value-wheel/);
+  assert.doesNotMatch(page, /<select value=\{chamberNumber\}/);
+  assert.doesNotMatch(page, /<select value=\{chamberValue\}/);
+
+  assert.match(premiumCss, /ps-hour-beacon/);
+  assert.match(premiumCss, /ps-country-cell:nth-child\(8\)/);
+  assert.match(premiumCss, /ps-ring-value::before/);
+  assert.match(premiumCss, /ps-archive-board::before/);
+  assert.match(premiumCss, /prefers-reduced-motion:reduce/);
+  assert.match(clock, /secret-aaaa\.css/);
+});
