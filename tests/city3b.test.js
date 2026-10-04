@@ -52,7 +52,7 @@ test('signed-out members get an explicit Passport requirement instead of an endl
 test('City UI includes responsive mobile navigation and premium 3B styling',()=>{
   assert.match(css,/city3b-nav/);
   assert.match(css,/@media\(max-width:620px\)/);
-  assert.match(css,/#d7bc78|#e4c879/);
+  assert.match(css,/var\(--3b-champagne\)/);
   assert.match(css,/#63d9ff|#35cdfa/);
 });
 

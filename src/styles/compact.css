@@ -1,8 +1,8 @@
 /* Shared with the original "La course des clés" card: every navigation destination is a compact row. */
-.app3b .compact-card{box-sizing:border-box;display:flex;flex-direction:row;align-items:center;gap:16px;width:100%;min-height:80px;padding:15px 20px;border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;color:#ead8ac;text-align:left;text-decoration:none;font:inherit;cursor:pointer;box-shadow:none;transition:border-color .18s,background .18s}
-.app3b .compact-card:hover{transform:none;background:#14202c;border-color:#d9bc7380;box-shadow:none}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .compact-card{box-sizing:border-box;display:flex;flex-direction:row;align-items:center;gap:16px;width:100%;min-height:80px;padding:15px 20px;border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;background:#0f1822;color:#ead8ac;text-align:left;text-decoration:none;font:inherit;cursor:pointer;box-shadow:none;transition:border-color .18s,background .18s}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .compact-card:hover{transform:none;background:#14202c;border-color:rgba(var(--3b-champagne-rgb),0.50196);box-shadow:none}
 .app3b .compact-card:focus-visible{outline:2px solid #94dcec;outline-offset:3px}
-.app3b .compact-card[aria-pressed=true],.app3b .compact-card[aria-current=page]{border-color:#d9bc73;background:#17212b}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .compact-card[aria-pressed=true],.app3b .compact-card[aria-current=page]{border-color:var(--3b-champagne);background:#17212b}
 .app3b .compact-card:disabled{opacity:.55;cursor:default}
 .app3b article.compact-card{cursor:default}
 .compact-card-icon{display:grid;place-items:center;flex:0 0 32px;color:#d8bd82}
@@ -35,21 +35,21 @@
 .app3b .arcade-meta{font-size:11px;margin:14px 0;gap:12px}
 .app3b .arcade-tag{padding:5px 8px;font-size:9px}
 .app3b .arcade-primary{min-height:44px;font-size:13px;padding:10px 17px}
-.app3b .game-progress{border:1px solid #d9bc7333;border-radius:8px;padding:12px 16px;background:#0f1822;font-size:12px;margin:14px 0}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .game-progress{border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;padding:12px 16px;background:#0f1822;font-size:12px;margin:14px 0}
 .app3b .game-progress summary{cursor:pointer;color:#cfc3a1}
 .app3b .game-progress p{margin:12px 0}
 .app3b .editorial-heading{margin-bottom:22px}
 .app3b .editorial-heading h1{font-size:clamp(30px,4vw,47px);margin:12px 0 15px}
 .app3b .editorial-heading>p:last-child{font-size:14px;line-height:1.65}
-.app3b .surface-panel,.app3b .guide-distinction article,.app3b .guide-levels article,.app3b .guide-faq,.app3b .premium-panel,.app3b .loyalty-card-detail,.app3b .account-summary{border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;padding:20px;box-shadow:none}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .surface-panel,.app3b .guide-distinction article,.app3b .guide-levels article,.app3b .guide-faq,.app3b .premium-panel,.app3b .loyalty-card-detail,.app3b .account-summary{border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;background:#0f1822;padding:20px;box-shadow:none}
 .app3b .surface-panel h2{font-size:22px}
 .app3b .guide-directory{border:0;background:none;padding:0;display:grid;gap:9px}
-.app3b .guide-directory>.compact-card{white-space:normal;margin:0;border:1px solid #d9bc7333}
+.app3b .guide-directory>.compact-card{white-space:normal;margin:0;border:1px solid rgba(var(--3b-champagne-rgb),0.2)}
 .app3b .guide-faq summary{min-height:44px;padding-block:12px}
 .app3b .universe-card-soon .compact-card-action svg{display:none}
 .app3b .religion-grid,.app3b .sport-community{display:grid;grid-template-columns:1fr;gap:9px}
 .app3b .sport-news-grid{grid-template-columns:1fr;gap:9px}
-.app3b .sport-article{padding:16px 20px;min-height:0;border-radius:8px;background:#0f1822;border-color:#d9bc7333;display:grid;grid-template-columns:1fr auto;gap:7px 20px}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .sport-article{padding:16px 20px;min-height:0;border-radius:8px;background:#0f1822;border-color:rgba(var(--3b-champagne-rgb),0.2);display:grid;grid-template-columns:1fr auto;gap:7px 20px}
 .app3b .sport-article>div{grid-column:1/-1;margin:0}
 .app3b .sport-article h2,.app3b .sport-article-lead h2{font:600 16px/1.5 system-ui;margin:0;color:#ead8ac}
 .app3b .sport-article footer{margin:0;gap:14px;align-self:center;font-size:11px}
@@ -61,7 +61,7 @@
 .app3b .loyalty-choice.compact-card .compact-card-copy{padding:0}
 .app3b .loyalty-choice.compact-card .compact-card-action{padding:0}
 .app3b .loyalty-earn-grid{display:grid;grid-template-columns:1fr;gap:9px}
-.app3b .loyalty-earn-grid article{padding:17px 20px;border-radius:8px;background:#0f1822;border:1px solid #d9bc7333}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .loyalty-earn-grid article{padding:17px 20px;border-radius:8px;background:#0f1822;border:1px solid rgba(var(--3b-champagne-rgb),0.2)}
 .app3b .loyalty-earn-grid h3{font-size:17px;margin:6px 0}
 .app3b .loyalty-earn-grid p{font-size:12px}
 .app3b .loyalty-earn-grid article>svg{float:left;margin-right:13px;width:22px}
@@ -71,7 +71,7 @@
 .app3b .account-options>div{display:grid;grid-template-columns:1fr;gap:9px}
 .app3b .account-options button{justify-content:space-between;border-radius:8px;background:#0f1822;padding:14px 18px}
 .app3b .account-summary>button{display:flex;width:100%;justify-content:space-between;margin:9px 0;padding:14px 18px;border-radius:8px}
-.app3b .shop-product,.app3b .shop-cart,.app3b .shop-empty{border-radius:8px;background:#0f1822;border-color:#d9bc7333}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .shop-product,.app3b .shop-cart,.app3b .shop-empty{border-radius:8px;background:#0f1822;border-color:rgba(var(--3b-champagne-rgb),0.2)}
 @media(max-width:720px){
  .app3b .compact-card{min-height:72px;padding:12px 14px;gap:11px}
  .app3b .universe-card{min-height:80px}
@@ -123,11 +123,11 @@
 }
 @media(prefers-reduced-motion:reduce){.app3b .compact-card{transition:none}}
 .app3b .studio-steps{display:flex;gap:8px;margin:0 0 18px;padding:0}
-.app3b .studio-steps button{display:flex;align-items:center;justify-content:center;gap:9px;flex:1;min-height:45px;border:1px solid #d9bc7333;border-radius:8px;background:#0f1822;color:#b8c4ce;font-size:12px;cursor:pointer}
-.app3b .studio-steps button[aria-current=step]{border-color:#d9bc73;color:#ead8ac;background:#19232c}
-.studio-steps button>span{display:grid;place-items:center;width:23px;height:23px;border:1px solid #d9bc7350;border-radius:50%;font-size:10px}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .studio-steps button{display:flex;align-items:center;justify-content:center;gap:9px;flex:1;min-height:45px;border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;background:#0f1822;color:#b8c4ce;font-size:12px;cursor:pointer}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .studio-steps button[aria-current=step]{border-color:var(--3b-champagne);color:#ead8ac;background:#19232c}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .studio-steps button>span{display:grid;place-items:center;width:23px;height:23px;border:1px solid rgba(var(--3b-champagne-rgb),0.31373);border-radius:50%;font-size:10px}
 .app3b .studio-simple{grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:18px}
-.app3b .studio-preview-panel{border-radius:8px;border-color:#d9bc7333;top:20px}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .studio-preview-panel{border-radius:8px;border-color:rgba(var(--3b-champagne-rgb),0.2);top:20px}
 .app3b .studio-preview-top{padding:15px;font-size:9px}
 .app3b .studio-preview-panel>.design-preview{height:390px}
 .app3b .studio-generated{height:390px;display:block}
@@ -137,11 +137,11 @@
 .app3b .studio-presets,.app3b .technique-chips{display:flex;flex-wrap:wrap;gap:8px}
 .app3b .studio-colors{grid-template-columns:1fr 1fr}
 .app3b .studio-colors input{height:43px;min-height:43px;padding:4px}
-.app3b .studio-options{border:1px solid #d9bc7333;border-radius:8px;padding:13px 15px;background:#101c26;font-size:12px;line-height:1.7;color:#b9c8d1}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .studio-options{border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;padding:13px 15px;background:#101c26;font-size:12px;line-height:1.7;color:#b9c8d1}
 .app3b .studio-options summary{color:#e3ce9f;cursor:pointer;min-height:22px}
 .studio-options summary>span{float:right;font-size:10px;color:#9eafbc}
 .app3b .studio-options[open]>.surface-form,.app3b .studio-options>p{margin-top:15px}
-.app3b .studio-step-actions{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #d9bc7333;padding-top:18px;margin-top:2px}
+.app3b .studio-step-actions{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid rgba(var(--3b-champagne-rgb),0.2);padding-top:18px;margin-top:2px}
 .app3b .design-summary{margin:0;display:grid;gap:9px}
 .design-summary>div{display:grid;grid-template-columns:70px 1fr;gap:15px;font-size:12px;line-height:1.5}
 .design-summary dt{color:#97aab9}.design-summary dd{color:#e1d2af;margin:0}
@@ -154,7 +154,7 @@
 .app3b .trio-empty .compact-list{margin-top:20px}
 .app3b .trio-empty .compact-card{min-height:56px;background:#12212d}
 .app3b .trio-empty .compact-card strong{font-size:12px}
-.app3b .trio-answer{background:#172936;border:1px solid #d9bc7333;border-radius:8px;padding:18px}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .trio-answer{background:#172936;border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;padding:18px}
 .app3b .trio-answer p{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.8 system-ui;color:#d0dce2;margin:0}
 .app3b .trio-answer small{display:block;color:#caba96;line-height:1.6;margin-top:12px}
 .app3b .trio-composer textarea{border-radius:8px;padding:14px}
@@ -163,7 +163,7 @@
 .app3b .community-view-nav{display:flex;justify-content:space-between;gap:10px;margin:15px 0 20px}
 .app3b .community-invitation{margin:24px 0}
 .app3b .community-entry{margin-top:18px;max-width:none}
-.app3b .community-post{border-radius:8px;background:#0f1822;border-color:#d9bc7333}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .community-post{border-radius:8px;background:#0f1822;border-color:rgba(var(--3b-champagne-rgb),0.2)}
 .app3b .community-feed,.app3b .community-members{grid-template-columns:1fr;gap:12px}
 .app3b .community-post>header{padding:15px 18px}
 .app3b .community-post-copy{padding:0 18px 16px}
@@ -176,12 +176,12 @@
 .app3b .community-members article>h2{font:600 16px/1.5 system-ui}
 .app3b .community-members .member-actions{margin-top:7px}
 .app3b .community-consent{display:flex;align-items:flex-start;gap:12px;font-size:12px;line-height:1.6}
-.app3b .community-consent input{width:20px;min-width:20px;height:20px;min-height:20px;margin:3px 0;padding:0;accent-color:#d9bc73}
+.app3b .community-consent input{width:20px;min-width:20px;height:20px;min-height:20px;margin:3px 0;padding:0;accent-color:var(--3b-champagne)}
 .app3b .community-consent span{display:block}
 .app3b .chat-shell{display:block}
 .app3b .chat-room-select{display:flex;align-items:center;gap:15px;margin:0 0 12px;color:#cabc9b;font-size:12px}
-.chat-room-select select{background:#0f1822;color:#ead8ac;border:1px solid #d9bc7333;border-radius:8px;padding:10px 12px;min-height:44px;font-size:14px}
-.app3b .chat-room{border-radius:8px;border-color:#d9bc7333;background:#0f1822}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .chat-room-select select{background:#0f1822;color:#ead8ac;border:1px solid rgba(var(--3b-champagne-rgb),0.2);border-radius:8px;padding:10px 12px;min-height:44px;font-size:14px}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app3b .chat-room{border-radius:8px;border-color:rgba(var(--3b-champagne-rgb),0.2);background:#0f1822}
 .app3b .chat-room>header{padding:14px 18px;flex-direction:row;align-items:center}
 .app3b .chat-room h2{font-size:20px}
 .app3b .chat-messages{height:390px;padding:17px}

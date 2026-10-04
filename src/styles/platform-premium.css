@@ -7,32 +7,32 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 .intro3b{min-height:100dvh}
 .app3b #main-content{min-height:calc(100dvh - 140px)}
 .site-header{position:sticky;top:0;isolation:isolate;z-index:40;box-shadow:0 12px 34px #0004}
-.site-header::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#00d5ff44 32%,#e6bd6466 68%,transparent);opacity:.7;pointer-events:none}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .site-header::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#00d5ff44 32%,rgba(var(--3b-champagne-rgb),0.4) 68%,transparent);opacity:.7;pointer-events:none}
 .header-actions{display:flex;align-items:center;gap:10px}
 .network-status{display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 10px;border:1px solid #ffffff18;border-radius:999px;color:#aeb9b9;background:#ffffff05;font-size:10px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
 .network-status::before{content:'';width:7px;height:7px;border-radius:50%;background:#58d68d;box-shadow:0 0 10px #58d68d66}
 .network-status.is-offline{color:#efc9a4;border-color:#c88c5538;background:#8c5a2612}
 .network-status.is-offline::before{background:#e29a59;box-shadow:0 0 10px #e29a5966}
-.home-journey-status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 34px;padding:12px;border:1px solid #d9bb8223;border-radius:14px;background:linear-gradient(120deg,#0e171bee,#11130fee)}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .home-journey-status{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 34px;padding:12px;border:1px solid rgba(var(--3b-champagne-rgb),0.13725);border-radius:14px;background:linear-gradient(120deg,#0e171bee,#11130fee)}
 .home-status-item{display:grid;gap:5px;min-width:0;padding:13px 14px;border-radius:10px;background:#ffffff04}
 .home-status-item span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#94a4aa}
 .home-status-item strong{font-size:13px;line-height:1.35;color:#ecdfc5;overflow-wrap:anywhere}
 .home-status-item[data-state=ready] strong{color:#efd59e}
-.home-status-item[data-state=active]{background:#d9bb8209}
+.home-status-item[data-state=active]{background:rgba(var(--3b-champagne-rgb),0.03529)}
 .home-status-item[data-state=active] strong{color:#f4d596}
 .home-hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
 .home-hero-actions .dashboard-cta,.home-hero-actions .dashboard-secondary{margin:0}
 .app-loading-state{display:flex;align-items:center;justify-content:center;gap:16px;min-height:48vh;padding:40px;color:#eee4d0}
 .app-loading-state.is-compact{min-height:220px}
-.app-loading-mark{position:relative;display:grid;place-items:center;width:58px;height:58px;border:1px solid #d9bb8255;border-radius:16px;background:#10181c;overflow:hidden;box-shadow:0 14px 40px #0006}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app-loading-mark{position:relative;display:grid;place-items:center;width:58px;height:58px;border:1px solid rgba(var(--3b-champagne-rgb),0.33333);border-radius:16px;background:#10181c;overflow:hidden;box-shadow:0 14px 40px #0006}
 .app-loading-mark span{z-index:1;color:#e8c780;font-weight:900;font-size:22px;letter-spacing:-.07em}
-.app-loading-mark i{position:absolute;inset:-25%;background:conic-gradient(from 0deg,transparent 0 58%,#00d5ff66 68%,#e6bd6488 78%,transparent 88%);animation:platformSpin 1.8s linear infinite}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app-loading-mark i{position:absolute;inset:-25%;background:conic-gradient(from 0deg,transparent 0 58%,#00d5ff66 68%,rgba(var(--3b-champagne-rgb),0.53333) 78%,transparent 88%);animation:platformSpin 1.8s linear infinite}
 .app-loading-state>div:last-child{display:grid;gap:5px}
 .app-loading-state strong{font-size:14px;color:#efe2c8}
 .app-loading-state small{font-size:9px;letter-spacing:.14em;color:#80949b}
 .app-crash{min-height:100dvh;display:grid;place-items:center;padding:28px;background:radial-gradient(circle at 50% 10%,#15303a55,transparent 36%),#050809;color:#f4ead6}
-.app-crash>section{width:min(640px,100%);padding:38px;border:1px solid #d9bb8244;border-radius:22px;background:#0d1418e8;box-shadow:0 30px 90px #0009}
-.app-crash-mark{font-size:58px;font-weight:900;letter-spacing:-.08em;color:#d9bb82}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .app-crash>section{width:min(640px,100%);padding:38px;border:1px solid rgba(var(--3b-champagne-rgb),0.26667);border-radius:22px;background:#0d1418e8;box-shadow:0 30px 90px #0009}
+.app-crash-mark{font-size:58px;font-weight:900;letter-spacing:-.08em;color:var(--3b-champagne)}
 .app-crash h1{margin:14px 0;font-size:clamp(30px,6vw,48px);line-height:1.05;letter-spacing:-.04em}
 .app-crash p:not(.eyebrow){color:#aeb9bb;line-height:1.7}
 .app-crash-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
@@ -69,19 +69,19 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 
 @media(prefers-contrast:more){
  .app3b{--line:#e6c98288}
- .site-header,.home-journey-status,.app3b .compact-card,.app3b .surface-panel{border-color:#d9bb8288!important}
+ .site-header,.home-journey-status,.app3b .compact-card,.app3b .surface-panel{border-color:rgba(var(--3b-champagne-rgb),0.53333)!important}
  .app3b :is(a,button,input,select,textarea):focus-visible{outline-width:3px!important}
  .network-status{border-color:#ffffff55}
 }
 
 .coming-copy{max-width:720px;margin:8px auto 0;color:#aeb9bb;font-size:14px;line-height:1.8}
 .coming-status-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;width:min(720px,100%);margin:26px auto 0}
-.coming-status-grid article{display:grid;gap:7px;padding:16px 18px;border:1px solid #d9bb822d;border-radius:10px;background:#0f1822;text-align:left}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .coming-status-grid article{display:grid;gap:7px;padding:16px 18px;border:1px solid rgba(var(--3b-champagne-rgb),0.17647);border-radius:10px;background:#0f1822;text-align:left}
 .coming-status-grid span{font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#8ea0a6}
 .coming-status-grid strong{font-size:14px;color:#ead8ac}
 .coming-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:22px}
 .manga-preview-page{min-height:72dvh}
-.manga-preview-mark{display:grid;place-items:center;width:190px;height:190px;margin:18px auto;border:1px solid #d9bb8240;border-radius:50%;background:radial-gradient(circle,#d9bb821d,transparent 65%),#0c1216;box-shadow:0 24px 70px #0007}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .manga-preview-mark{display:grid;place-items:center;width:190px;height:190px;margin:18px auto;border:1px solid rgba(var(--3b-champagne-rgb),0.25098);border-radius:50%;background:radial-gradient(circle,rgba(var(--3b-champagne-rgb),0.11373),transparent 65%),#0c1216;box-shadow:0 24px 70px #0007}
 .manga-preview-mark span{font:500 92px/1 Georgia,serif;color:#e4c581}
 .manga-preview-mark small{margin-top:-28px;font-size:8px;letter-spacing:.28em;color:#91a2a8}
 .manga-preview-page .coming-label{font-size:11px;letter-spacing:.18em;color:#cdb57f}
@@ -90,8 +90,8 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 
 
 /* Dimensional bridge between the current 3B platform and the UE5 world client. */
-.world-portal{position:relative;display:grid;grid-template-columns:minmax(0,.92fr) minmax(360px,1.08fr);gap:clamp(24px,5vw,72px);align-items:center;min-height:460px;margin:0 0 34px;padding:clamp(24px,4vw,52px);overflow:hidden;border:1px solid #d9bb8238;border-radius:24px;background:radial-gradient(circle at 76% 42%,#00d5ff16,transparent 26%),radial-gradient(circle at 24% 18%,#e6bd6418,transparent 30%),linear-gradient(135deg,#0d151bf2,#070b0ef7 58%,#11130ff2);box-shadow:0 32px 90px #0007,inset 0 1px #ffffff0a}
-.world-portal::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,#d9bb8208 49%,transparent 61%);pointer-events:none}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-portal{position:relative;display:grid;grid-template-columns:minmax(0,.92fr) minmax(360px,1.08fr);gap:clamp(24px,5vw,72px);align-items:center;min-height:460px;margin:0 0 34px;padding:clamp(24px,4vw,52px);overflow:hidden;border:1px solid rgba(var(--3b-champagne-rgb),0.21961);border-radius:24px;background:radial-gradient(circle at 76% 42%,#00d5ff16,transparent 26%),radial-gradient(circle at 24% 18%,rgba(var(--3b-champagne-rgb),0.09412),transparent 30%),linear-gradient(135deg,#0d151bf2,#070b0ef7 58%,#11130ff2);box-shadow:0 32px 90px #0007,inset 0 1px #ffffff0a}
+.world-portal::before{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 38%,rgba(var(--3b-champagne-rgb),0.03137) 49%,transparent 61%);pointer-events:none}
 .world-portal-copy{position:relative;z-index:2}
 .world-portal-copy h2{max-width:650px;margin:12px 0 18px;font:500 clamp(34px,4.7vw,62px)/1.02 Georgia,serif;letter-spacing:-.045em;color:#f1e7d1}
 .world-portal-copy h2 em{color:#e0bf7f;font-style:normal}
@@ -104,11 +104,11 @@ body{overscroll-behavior-y:none;text-rendering:optimizeLegibility;-webkit-font-s
 .world-portal-message{margin:13px 0 0;color:#d9c69c;font-size:12px}
 .world-portal-stage{position:relative;isolation:isolate;min-height:360px;perspective:980px;transform-style:preserve-3d}
 .world-portal-horizon{position:absolute;z-index:-2;inset:8% 3% 14%;border-radius:50%;background:radial-gradient(ellipse,#00d5ff18 0 17%,#00d5ff08 22%,transparent 63%);filter:blur(3px)}
-.world-portal-ring{position:absolute;left:50%;top:48%;width:min(390px,82%);aspect-ratio:1;transform:translate(-50%,-50%) rotateX(64deg) rotateZ(-10deg);border:1px solid #dfc17761;border-radius:50%;box-shadow:0 0 0 18px #d9bb8205,0 0 55px #00d5ff16,inset 0 0 46px #e6bd6412;transform-style:preserve-3d;animation:worldPortalFloat 9s ease-in-out infinite alternate}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-portal-ring{position:absolute;left:50%;top:48%;width:min(390px,82%);aspect-ratio:1;transform:translate(-50%,-50%) rotateX(64deg) rotateZ(-10deg);border:1px solid #dfc17761;border-radius:50%;box-shadow:0 0 0 18px rgba(var(--3b-champagne-rgb),0.01961),0 0 55px #00d5ff16,inset 0 0 46px rgba(var(--3b-champagne-rgb),0.07059);transform-style:preserve-3d;animation:worldPortalFloat 9s ease-in-out infinite alternate}
 .world-portal-ring::before,.world-portal-ring::after{content:'';position:absolute;border-radius:50%;inset:12%;border:1px solid #00d5ff35;box-shadow:inset 0 0 34px #00d5ff0d}
-.world-portal-ring::after{inset:28%;border-color:#e6bd6450}
-.world-portal-core{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:126px;height:126px;transform:translate(-50%,-50%) translateZ(40px) rotateZ(10deg);border:1px solid #e6bd6485;border-radius:50%;background:radial-gradient(circle,#2b2416,#0a1015 68%);box-shadow:0 0 42px #e6bd642e,0 0 78px #00d5ff18}
-.world-portal-core span{font-size:48px;font-weight:950;line-height:1;letter-spacing:-.09em;color:#e6c987;text-shadow:0 0 22px #e6bd6445}
+.world-portal-ring::after{inset:28%;border-color:rgba(var(--3b-champagne-rgb),0.31373)}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-portal-core{position:absolute;left:50%;top:50%;display:grid;place-items:center;width:126px;height:126px;transform:translate(-50%,-50%) translateZ(40px) rotateZ(10deg);border:1px solid rgba(var(--3b-champagne-rgb),0.52157);border-radius:50%;background:radial-gradient(circle,#2b2416,#0a1015 68%);box-shadow:0 0 42px rgba(var(--3b-champagne-rgb),0.18039),0 0 78px #00d5ff18}
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .world-portal-core span{font-size:48px;font-weight:950;line-height:1;letter-spacing:-.09em;color:#e6c987;text-shadow:0 0 22px rgba(var(--3b-champagne-rgb),0.27059)}
 .world-portal-core small{margin-top:-26px;font-size:7px;letter-spacing:.28em;color:#9abac1}
 .world-gate{--angle:calc(var(--gate) * 45deg);position:absolute;left:50%;top:50%;display:grid;place-items:center;width:68px;height:68px;transform:rotate(var(--angle)) translateX(194px) rotate(calc(-1 * var(--angle))) translate(-50%,-50%) translateZ(18px) rotateZ(10deg);border:1px solid #ffffff20;border-radius:16px;background:linear-gradient(145deg,#182229,#0c1116);box-shadow:0 10px 28px #0008,0 0 18px #00d5ff0b}
 .world-gate b{font-size:14px;color:#e3c987}

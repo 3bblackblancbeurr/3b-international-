@@ -137,10 +137,28 @@ test('a reduced-motion sky paints stars once, does not schedule frames, and igno
   assert.equal(env.ctx.count,1);
   assert.ok(env.ctx.draws.length > 0,'reduced motion keeps its star artwork');
   assert.equal(env.raf.size,0);
+  for (const name of ['pointermove','pointerdown','pointerleave']) assert.equal(env.host.listeners.get(name)?.size || 0,0,'a still sky installs no movement listeners');
   env.host.dispatchEvent({ type:'pointerdown',isTrusted:true,clientX:10,clientY:10 });
   env.tick(10000);
   assert.equal(env.ctx.count,1);
   dispose();
+});
+
+test('a decorative canvas can receive gestures from its real page and removes those listeners on exit', () => {
+  const env = environment();
+  const page = eventHub();
+  const dispose = mountEntrySky(env.element,{ interactionHost:page });
+  let sounds = 0;
+  env.win.addEventListener('threeb:interface-sound',() => { sounds++; });
+  const touch = { type:'pointerdown',isTrusted:true,clientX:90,clientY:105,target:{ closest:() => null } };
+  env.host.dispatchEvent(touch);
+  assert.equal(sounds,0,'the decorative parent never owns gestures');
+  page.dispatchEvent(touch);
+  assert.equal(sounds,1,'the real page activates the celestial response');
+  assert.equal(page.listeners.get('pointermove')?.size,1);
+  dispose();
+  assert.ok([...page.listeners.values()].every(set => set.size === 0));
+  assert.equal(env.raf.size,0);
 });
 
 test('initial cinematic, hidden tab and page lifecycle pause the sky without a lost first meteor', () => {

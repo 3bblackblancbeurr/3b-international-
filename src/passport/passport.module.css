@@ -1,5 +1,5 @@
 .passportUi {
-  border: 1px solid rgba(230, 189, 100, 0.35);
+  border: 1px solid rgba(var(--3b-champagne-rgb),0.35);
   border-radius: 28px;
   padding: 22px;
   color: #fff8e8;
@@ -10,7 +10,7 @@
 
 .header p {
   margin: 0 0 6px;
-  color: #fff0a5;
+  color: var(--3b-champagne-highlight);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -33,7 +33,7 @@
   display: grid;
   gap: 6px;
   min-height: 110px;
-  border: 1px solid rgba(230, 189, 100, 0.25);
+  border: 1px solid rgba(var(--3b-champagne-rgb),0.25);
   border-radius: 18px;
   padding: 14px;
   color: #fff8e8;
@@ -46,7 +46,7 @@
 }
 
 .countryCard strong {
-  color: #fff0a5;
+  color: var(--3b-champagne-highlight);
 }
 
 .countryCard small {

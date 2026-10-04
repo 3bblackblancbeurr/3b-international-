@@ -1,0 +1,136 @@
+/* A single passport in open space. Tools appear only when their action is chosen. */
+.app3b[data-page="passport"]::before,
+.app3b[data-page="passport"]::after,
+.app3b[data-page="passport"] .page-breadcrumb { display: none; }
+.app3b[data-page="passport"] { isolation: isolate; background: var(--3b-obsidian); }
+.app3b[data-page="passport"] #main-content { position: relative; }
+.app3b[data-page="passport"] .passport-experience {
+  position: relative; width: min(1120px, calc(100% - 56px)); margin: 0 auto;
+  padding: clamp(24px, 4vh, 46px) 0 42px; min-height: calc(100svh - 108px);
+  color: var(--3b-text); border: 0; background: none; box-shadow: var(--3b-shadow-flat);
+}
+.passport-experience-content {
+  position: relative; z-index: 1; display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  grid-template-areas: "heading heading" "card city" "actions city" "director director";
+  column-gap: clamp(24px, 4vw, 60px); align-items: center;
+}
+.passport-experience-heading {
+  grid-area: heading; display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; margin: 0 0 30px;
+}
+.passport-experience-heading h1 {
+  margin: 0; font-size: clamp(28px, 3.8vw, 46px); font-weight: 650;
+  line-height: 1.15; letter-spacing: -.055em; color: var(--3b-text);
+}
+.passport-experience-heading h1 span { color: var(--3b-champagne); }
+.passport-experience .passport-motion-toggle {
+  flex: 0 0 auto; min-height: 44px; padding: 8px 10px;
+  border: 0; background: transparent; color: var(--3b-muted); font-size: 12px; font-weight: 500;
+}
+.passport-experience .passport-motion-toggle:hover { color: var(--3b-champagne-highlight); }
+.passport-experience-card { grid-area: card; min-width: 0; }
+.passport-experience .passport-visual { width: 100%; margin: 0; }
+.passport-experience .passport-card-viewport { overflow: visible; border-radius: var(--3b-radius-flat); }
+.passport-experience .passport-card-stage { box-shadow: var(--3b-shadow-passport); }
+.passport-experience .luxury-passport-footer {
+  width: min(100%, 580px); margin: 20px auto 24px; background: transparent; border: 0; box-shadow: var(--3b-shadow-flat);
+}
+.passport-experience .luxury-passport-footer > div { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; }
+.passport-experience .luxury-passport-footer .eyebrow { font-size: 10px; letter-spacing: .1em; margin: 0; }
+.passport-experience .luxury-passport-footer .gm-progress { height: 3px; border: 0; margin: 0; }
+.passport-experience .luxury-passport-footer small { font-size: 10px; white-space: nowrap; }
+.passport-experience .passport-visual[data-active="false"] .luxury-passport-footer { display: none; }
+.passport-experience-actions { grid-area: actions; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.passport-experience .passport-present-action { min-height: 50px; padding-inline: 25px; border-radius: var(--3b-radius-pill); font-size: 14px; }
+.passport-experience .passport-quiet-action {
+  min-height: 48px; padding: 10px 14px; border: 0; border-radius: var(--3b-radius-field);
+  background: transparent; color: var(--3b-text); font-size: 13px; font-weight: 550;
+  box-shadow: var(--3b-shadow-flat); text-shadow: none;
+}
+.passport-experience .passport-quiet-action svg { color: var(--3b-champagne); }
+.passport-experience .passport-quiet-action:hover { color: var(--3b-champagne-highlight); background: var(--3b-hover-surface); }
+.passport-experience-card:has(.passport-visual[data-active="false"]) + .passport-experience-actions { margin-top: 24px; }
+.passport-experience-city { grid-area: city; display: grid; justify-items: center; align-self: center; padding-bottom: 36px; }
+.passport-experience .passport-city-entry {
+  position: relative; display: flex; flex-direction: column; gap: 6px; justify-content: center;
+  width: 132px; height: 132px; min-height: 132px; padding: 0; border-radius: var(--3b-radius-circle);
+  border: 1px solid color-mix(in srgb, var(--3b-champagne) 68%, transparent);
+  background: radial-gradient(circle at 38% 20%, color-mix(in srgb, var(--3b-matrix) 30%, var(--3b-carbon)), var(--3b-carbon) 72%);
+  color: var(--3b-champagne); box-shadow: var(--3b-shadow-city-entry);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+.passport-city-wordmark { font-size: 43px; letter-spacing: -.1em; line-height: 1; padding-right: .1em; font-weight: 850; }
+.passport-city-label { font-size: 10px; letter-spacing: .17em; line-height: 1.4; font-weight: 700; }
+.passport-city-arrow { position: absolute; right: 9px; top: 9px; color: var(--3b-champagne-highlight); }
+.passport-experience .passport-city-entry:hover:not(:disabled) { transform: translateY(-4px); box-shadow: var(--3b-shadow-city-entry-hover); }
+.passport-experience .passport-city-entry:active:not(:disabled) { transform: scale(.96); }
+.passport-experience-director { grid-area: director; margin-top: 28px; text-align: center; }
+.passport-experience .passport-experience-director .passport-quiet-action { color: var(--3b-muted); font-size: 12px; }
+.passport-experience :is(button, a):focus-visible { outline: 2px solid var(--3b-champagne-highlight); outline-offset: 5px; }
+
+.passport-tool-dialog {
+  width: min(940px, calc(100vw - 48px)); max-width: none; max-height: min(88dvh, 1000px);
+  margin: auto; padding: 0; overflow: auto; overscroll-behavior: contain;
+  color: var(--3b-text); background: var(--3b-carbon); border: 1px solid var(--3b-border);
+  border-radius: var(--3b-radius-hero); box-shadow: var(--3b-shadow-deep);
+}
+.passport-tool-dialog::backdrop { background: color-mix(in srgb, var(--3b-obsidian) 78%, transparent); backdrop-filter: blur(8px); }
+.passport-tool-heading {
+  position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 18px 24px; background: var(--3b-carbon); border-bottom: 1px solid var(--3b-line-quiet);
+}
+.passport-tool-heading > h2 { margin: 0; font-size: clamp(18px, 3vw, 24px); line-height: 1.3; font-weight: 600; letter-spacing: -.035em; }
+.passport-tool-heading .passport-tool-close { flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; color: var(--3b-champagne); }
+.passport-tool-content { padding: 12px 28px 30px; }
+.passport-tool-loading { padding: 24px 0; color: var(--3b-muted); }
+.passport-tool-unavailable { padding: 24px; color: var(--3b-text); background: var(--3b-carbon); }
+.passport-tool-unavailable p { max-width: 52ch; line-height: 1.7; }
+.passport-tool-unavailable .gm-button { margin: 8px 10px 0 0; }
+/* Retain consent, identity boundaries and controls; remove nested decorative boxes. */
+.passport-tool-dialog :is(.passport-verification, .passport-appearance-settings, .passport-appearance, .secret-director) {
+  width: 100%; max-width: none; margin: 0; padding: 16px 0; border: 0; border-radius: var(--3b-radius-flat);
+  background: transparent; box-shadow: var(--3b-shadow-flat);
+}
+.passport-tool-dialog .passport-verification .pv-heading > div > .pv-eyebrow,
+.passport-tool-dialog .passport-verification .pv-heading h2 { display: none; }
+.passport-tool-dialog .passport-verification .pv-panel {
+  border: 0; border-radius: var(--3b-radius-flat); padding: 22px 0; background: transparent; box-shadow: var(--3b-shadow-flat);
+}
+.passport-tool-dialog .passport-verification .pv-grid { column-gap: 28px; }
+.passport-tool-dialog .passport-verification :is(.pv-empty, .pv-locked) { padding: 16px 0; border: 0; background: transparent; }
+.passport-tool-dialog .passport-verification .pv-boundary { border: 0; padding: 0; background: transparent; }
+.passport-tool-dialog .secret-director-grid article { border: 0; border-radius: var(--3b-radius-flat); border-bottom: 1px solid var(--3b-line-quiet); background: transparent; box-shadow: var(--3b-shadow-flat); }
+.passport-experience[data-motion="still"] .passport-city-entry { transition: none; }
+
+@media (max-width: 1000px) {
+  .passport-experience-content { grid-template-columns: minmax(0, 1fr); grid-template-areas: "heading" "card" "actions" "city" "director"; }
+  .app3b[data-page="passport"] .passport-experience { width: min(800px, calc(100% - 40px)); }
+  .passport-experience-city { padding: 0; margin-top: 32px; }
+  .passport-experience .passport-city-entry { width: 112px; height: 112px; min-height: 112px; }
+  .passport-city-wordmark { font-size: 37px; }
+  .passport-city-label { font-size: 9px; }
+}
+@media (max-width: 600px) {
+  .app3b[data-page="passport"] .passport-experience { width: calc(100% - 28px); padding: 22px 0 calc(34px + env(safe-area-inset-bottom)); min-height: calc(100svh - 136px); }
+  .passport-experience-heading { margin-bottom: 25px; padding-inline: 4px; gap: 10px; }
+  .passport-experience-heading h1 { font-size: clamp(26px, 8vw, 34px); }
+  .passport-experience .passport-motion-toggle { padding-inline: 6px; }
+  .passport-experience .luxury-passport-footer { margin-top: 17px; margin-bottom: 22px; padding-inline: 4px; }
+  .passport-experience .luxury-passport-footer > div { grid-template-columns: auto 1fr; gap: 10px; }
+  .passport-experience .luxury-passport-footer small { grid-column: 1 / -1; text-align: right; font-size: 10px; }
+  .passport-experience-actions { column-gap: 8px; row-gap: 2px; }
+  .passport-experience .passport-present-action { min-height: 48px; padding-inline: 22px; font-size: 13px; }
+  .passport-experience .passport-quiet-action { padding-inline: 9px; font-size: 12px; }
+  .passport-experience-city { margin-top: 30px; }
+  .passport-experience-director { margin-top: 20px; }
+  .passport-tool-dialog { width: 100%; max-height: 92dvh; margin: auto 0 0; border-radius: var(--3b-radius-sheet); border-inline: 0; border-bottom: 0; }
+  .passport-tool-heading { padding: 14px 16px; }
+  .passport-tool-content { padding: 8px 20px calc(28px + env(safe-area-inset-bottom)); }
+  .passport-tool-dialog .passport-verification .pv-grid { display: block; }
+  .passport-tool-dialog .passport-verification .pv-panel + .pv-panel { border-top: 1px solid var(--3b-line-quiet); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .passport-experience .passport-city-entry { transition: none; }
+  .passport-experience .passport-city-entry:hover:not(:disabled) { transform: none; }
+}

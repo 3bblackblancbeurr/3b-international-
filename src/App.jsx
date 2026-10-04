@@ -12,7 +12,6 @@ import useViewportProfile from "./lib/useViewportProfile.js";
 import { useTraffic } from "./lib/useTraffic.js";
 import { captureRouteView } from "./lib/analytics.js";
 import { useDailySecret } from "./secret/dailySecret.js";
-import SecretDirectorPanel from "./secret/SecretDirectorPanel.jsx";
 import { STORAGE_MEMBER_KEY, STORAGE_OPTIONS_KEY, DEFAULT_OPTIONS,
   createTestMember, normalizeMember, normalizeOptions,
   loadJsonStorage, saveJsonStorage } from "./lib/member.js";
@@ -20,9 +19,7 @@ import AppNavigation from "./components/AppNavigation.jsx";
 import HomePage from "./components/HomePage.jsx";
 import AppLoadingState from "./components/AppLoadingState.jsx";
 import { useAppInstallation } from "./install/useAppInstallation.js";
-import PassportVisual from "./components/PassportVisual.jsx";
-import PassportAppearanceSettings from "./passport/PassportAppearance.jsx";
-import PassportVerification from "./passport/PassportVerification.jsx";
+import PassportExperience from "./passport/PassportExperience.jsx";
 import { hasPassportAccess } from "./passport/access.js";
 import { Button } from "./design-system/index.jsx";
 const GamesHub = lazy(() => import("./games/GamesHub.jsx"));
@@ -400,7 +397,8 @@ export default function App() {
       )}
 
       {page === "passport" && (
-        <PassportPage
+        <PassportExperience
+          key={loyalty.passport?.userId || 'visitor'}
           identity={loyalty.passport}
           syncing={loyalty.loading || (!!loyalty.user && !loyalty.profile)}
           options={options}
@@ -568,40 +566,5 @@ function PassportAccessGate({ goTo, options }) {
         <Button variant="ghost" className="ghost-button" onClick={() => goTo("home")}>Retour à l’accueil</Button>
       </section>
     </main>
-  );
-}
-
-function PageHeader({ title, subtitle, goTo }) {
-  return (
-    <section className="page-header">
-      <Button variant="ghost" className="ghost-button" onClick={() => goTo("home")}>
-        ← Retour
-      </Button>
-
-      <div>
-        <p className="eyebrow">3B International</p>
-        <h1>{title}</h1>
-        {subtitle && <p>{subtitle}</p>}
-      </div>
-    </section>
-  );
-}
-
-function PassportPage({ identity, syncing, goTo, options }) {
-  return (
-    <section className="page-section">
-      <PageHeader
-        title="Passeport 3B"
-        subtitle={syncing ? "Synchronisation…" : undefined}
-        goTo={goTo}
-      />
-
-      <PassportVisual options={options} identity={identity} syncing={syncing} goTo={goTo} />
-      <PassportVerification key={identity?.userId || 'visitor'} identity={identity} syncing={syncing} goTo={goTo} />
-      {identity?.public_verified && identity?.public_badge_key === 'director_founder' && <SecretDirectorPanel />}
-
-      {identity && <PassportAppearanceSettings identity={identity} />}
-
-    </section>
   );
 }

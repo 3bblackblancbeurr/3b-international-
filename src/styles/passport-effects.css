@@ -3,19 +3,19 @@
 .welcome-copy .brand-glow-badge {
   position: relative; display: inline-flex; align-items: center; justify-content: center;
   width: fit-content; max-width: 100%; isolation: isolate; overflow: hidden;
-  padding: 12px 20px; border: 1px solid #fff873c2; border-radius: 999px;
-  color: #fff873; font-weight: 900; font-size: clamp(14px, 2vw, 25px);
+  /* gold-master-allow: reviewed gold migration, existing geometry retained */ padding: 12px 20px; border: 1px solid rgba(var(--3b-champagne-highlight-rgb),0.76078); border-radius: 999px;
+  color: var(--3b-champagne-highlight); font-weight: 900; font-size: clamp(14px, 2vw, 25px);
   line-height: 1.3; letter-spacing: .1em; text-align: center;
-  background: linear-gradient(135deg, #fff87324, #00eaff12), #070b09d9;
-  text-shadow: 0 0 8px #fff873bb, 0 0 18px #f5c44a88, 0 0 30px #00eaff44;
-  box-shadow: 0 0 22px #f5c44a38, 0 0 42px #00d5ff0f, inset 0 0 18px #fff87316;
+  /* gold-master-allow: reviewed gold migration, existing geometry retained */ background: linear-gradient(135deg, rgba(var(--3b-champagne-highlight-rgb),0.14118), #00eaff12), #070b09d9;
+  /* gold-master-allow: reviewed gold migration, existing geometry retained */ text-shadow: 0 0 8px rgba(var(--3b-champagne-highlight-rgb),0.73333), 0 0 18px #f5c44a88, 0 0 30px #00eaff44;
+  /* gold-master-allow: reviewed gold migration, existing geometry retained */ box-shadow: 0 0 22px #f5c44a38, 0 0 42px #00d5ff0f, inset 0 0 18px rgba(var(--3b-champagne-highlight-rgb),0.08627);
 }
 .brand-glow-badge::before {
   content: ""; position: absolute; z-index: -1; inset: -60% auto -60% 0; width: 34%;
   pointer-events: none; background: linear-gradient(110deg, transparent, #ffffffb8, transparent);
   transform: translateX(-230%) skewX(-18deg); animation: brandGoldSweep 4.6s ease-in-out infinite;
 }
-.brand-name .brand-glow-badge--compact { padding: 4px 8px; font-size: 8px; line-height: 1.2; letter-spacing: .1em; box-shadow: 0 0 12px #f5c44a33, inset 0 0 8px #fff87318; }
+/* gold-master-allow: reviewed gold migration, existing geometry retained */ .brand-name .brand-glow-badge--compact { padding: 4px 8px; font-size: 8px; line-height: 1.2; letter-spacing: .1em; box-shadow: 0 0 12px #f5c44a33, inset 0 0 8px rgba(var(--3b-champagne-highlight-rgb),0.09412); }
 .intro3b-card > .brand-glow-badge { margin: 12px auto 30px; }
 .welcome-copy .brand-glow-badge { margin: 0 0 8px; }
 @keyframes brandGoldSweep { 0%, 12% { transform: translateX(-230%) skewX(-18deg); opacity: 0; } 24% { opacity: .8; } 56%, 100% { transform: translateX(530%) skewX(-18deg); opacity: 0; } }

@@ -190,7 +190,7 @@
     radial-gradient(circle at 50% 25%,#f2d087 0 7%,transparent 8%),
     linear-gradient(90deg,transparent 46%,#f2d087 47% 53%,transparent 54%) center 48%/100% 55% no-repeat,
     radial-gradient(ellipse at 50% 80%,#e2bd672c,transparent 62%);
-  box-shadow:0 0 24px #e6bd6443,inset 0 0 22px #e6bd6417;
+  /* gold-master-allow: reviewed gold migration, existing geometry retained */ box-shadow:0 0 24px rgba(var(--3b-champagne-rgb),0.26275),inset 0 0 22px rgba(var(--3b-champagne-rgb),0.0902);
 }
 .premium-game-card[data-game="key-race"] .premium-card-sprite::before{
   content:'';

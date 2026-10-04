@@ -39,7 +39,7 @@ test("shell overrides consume canonical tokens", () => {
 });
 
 
-test("Passport access and page header use the shared Gold Master Button", () => {
+test("Passport access uses the shared Gold Master Button", () => {
   assert.ok(app.includes('import { Button } from "./design-system/index.jsx";'));
   assert.ok(app.includes('<Button variant="champagne" className="primary-button"'));
   assert.ok(app.includes('<Button variant="ghost" className="ghost-button"'));
