@@ -77,6 +77,7 @@ try{
    const box=await stage.boundingBox();assert.ok(box.width>250&&box.height>=240,'Weapon preview stays large');
    await stage.focus();await page.keyboard.press('ArrowRight');await page.keyboard.press('Home');
    await page.locator('.weapon-showroom').screenshot({path:out+'/weapon-'+id+'.png'});
+   await stage.screenshot({path:out+'/weapon-tile-'+id+'.jpg',type:'jpeg',quality:92});
   }
   assert.deepEqual(errors,[],'Armory mounts and switches all 16 weapons without shader or script errors');results.push({armory:true,weapons,ok:true,errors});
   await context.close();
