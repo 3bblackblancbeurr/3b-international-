@@ -1,8 +1,8 @@
 import {AnimationClip,Quaternion,QuaternionKeyframeTrack,Euler,Vector3,Box3,Matrix4} from 'three';
 
 const offsets={
- Read:{spine_02:[.07,0,0],upperarm_r:[-.44,.1,-.22],lowerarm_r:[-.95,0,0],upperarm_l:[-.44,-.1,.22],lowerarm_l:[-.95,0,0]},
- Inspect:{spine_02:[.11,.08,0],upperarm_r:[-.4,.13,-.28],lowerarm_r:[-.6,0,0],upperarm_l:[-.18,-.1,.2],lowerarm_l:[-.5,0,0]},
+ Read:{spine_02:[.07,0,0]},
+ Inspect:{spine_02:[.11,.08,0]},
  Sit:{spine_02:[.055,0,0]}
 };
 const up=new Vector3(0,1,0),forward=new Vector3(0,0,1),position=new Vector3();
@@ -11,6 +11,47 @@ function staticIdleTracks(idle){return idle.tracks.map(track=>{
  const values=Array.from(track.createInterpolant().evaluate(0)),result=track.clone();
  result.times=new Float32Array([0,1]);result.values=new Float32Array([...values,...values]);return result;
 });}
+
+function standingArms(name,model,tracks,bindMatrices,scale){
+ const byName=new Map(tracks.map(track=>[track.name,track]));
+ for(const track of tracks){const dot=track.name.lastIndexOf('.'),bone=model.getObjectByName(track.name.slice(0,dot)),property=track.name.slice(dot+1);if(bone?.[property]?.fromArray)bone[property].fromArray(track.values);}
+ model.updateWorldMatrix(true,true);model.updateMatrixWorld(true);
+ const actorQuaternion=model.parent?.getWorldQuaternion(new Quaternion())||new Quaternion(),right=new Vector3(1,0,0).applyQuaternion(actorQuaternion),worldUp=up.clone().applyQuaternion(actorQuaternion),worldForward=forward.clone().applyQuaternion(actorQuaternion),chest=model.getObjectByName('spine_03')||model.getObjectByName('spine_02');
+ if(!chest)return;
+ const centre=chest.getWorldPosition(new Vector3());
+ const setRotation=(bone,q)=>{bone.quaternion.copy(q).normalize();bone.updateWorldMatrix(false,true);byName.set(bone.name+'.quaternion',new QuaternionKeyframeTrack(bone.name+'.quaternion',[0,1],[...bone.quaternion.toArray(),...bone.quaternion.toArray()]));};
+ const aimAt=(bone,target)=>{
+  const rotation=bone.getWorldQuaternion(new Quaternion()),axis=up.clone().applyQuaternion(rotation),direction=target.clone().sub(bone.getWorldPosition(new Vector3())).normalize(),swing=new Quaternion().setFromUnitVectors(axis,direction);
+  setRotation(bone,bone.parent.getWorldQuaternion(new Quaternion()).invert().multiply(swing.multiply(rotation)));
+ };
+ for(const side of ['l','r']){
+  const shoulder=model.getObjectByName('upperarm_'+side),elbow=model.getObjectByName('lowerarm_'+side),wrist=model.getObjectByName('hand_'+side);if(!shoulder||!elbow||!wrist)continue;
+  model.updateMatrixWorld(true);
+  const a=shoulder.getWorldPosition(new Vector3()),b=elbow.getWorldPosition(new Vector3()),c=wrist.getWorldPosition(new Vector3()),l1=a.distanceTo(b),l2=b.distanceTo(c),sign=side==='l'?1:-1;
+  // Targets share the measured lower chest height, sit outside the clothing
+  // envelope and in front of the torso. Inspection reaches slightly farther
+  // with the right hand; both chains keep their original bone lengths.
+  const target=centre.clone().addScaledVector(worldUp,-.16*scale).addScaledVector(right,sign*.14*scale).addScaledVector(worldForward,(name==='Inspect'&&side==='r'?.34:.29)*scale);
+  const direction=target.clone().sub(a).normalize(),reach=Math.max(Math.abs(l1-l2)+.01,Math.min(l1+l2-.015*scale,a.distanceTo(target))),along=(l1*l1-l2*l2+reach*reach)/(2*reach),height=Math.sqrt(Math.max(0,l1*l1-along*along));
+  const pole=right.clone().multiplyScalar(sign*.8).addScaledVector(worldForward,.75);pole.addScaledVector(direction,-pole.dot(direction)).normalize();
+  aimAt(shoulder,a.clone().addScaledVector(direction,along).addScaledVector(pole,height));aimAt(elbow,a.clone().addScaledVector(direction,reach));
+  const handBind=bindMatrices.get(wrist.name),indexBind=bindMatrices.get('index_01_'+side),pinkyBind=bindMatrices.get('pinky_01_'+side),middleBind=bindMatrices.get('middle_01_'+side);
+  if(handBind&&indexBind&&pinkyBind&&middleBind){
+   const inverseHand=handBind.clone().invert(),knuckle=matrix=>new Vector3().setFromMatrixPosition(matrix).applyMatrix4(inverseHand),fingerAxis=knuckle(middleBind).normalize(),across=knuckle(indexBind).sub(knuckle(pinkyBind));across.addScaledVector(fingerAxis,-across.dot(fingerAxis)).normalize();
+   const bindFrame=new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(across,fingerAxis,across.clone().cross(fingerAxis))),fingerWorld=worldForward.clone().addScaledVector(worldUp,name==='Read'?.25:0).normalize(),acrossWorld=right.clone().multiplyScalar(name==='Read'?sign:-sign);
+   // Reading palms support an open book; inspection palms face the display.
+   const palmWorld=new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(acrossWorld,fingerWorld,acrossWorld.clone().cross(fingerWorld))).multiply(bindFrame.invert());
+   setRotation(wrist,wrist.parent.getWorldQuaternion(new Quaternion()).invert().multiply(palmWorld));
+  }
+  for(const [boneName,bind] of bindMatrices){
+   if(!/^(index|middle|ring|pinky|thumb)_\d+/.test(boneName)||!boneName.endsWith('_'+side))continue;
+   const bone=model.getObjectByName(boneName),parentBind=bindMatrices.get(bone?.parent.name),idleTrack=byName.get(boneName+'.quaternion');if(!bone||!parentBind||!idleTrack)continue;
+   const rest=new Quaternion().setFromRotationMatrix(new Matrix4().extractRotation(parentBind.clone().invert().multiply(bind))),grip=new Quaternion().fromArray(idleTrack.values);
+   setRotation(bone,rest.slerp(grip,name==='Read'?.2:.14));
+  }
+ }
+ tracks.splice(0,tracks.length,...byName.values());
+}
 
 // Uses the shipped skeleton rather than a guessed hip height. The seat is an
 // explicit cushion height measured from the walkable floor. Low benches tilt
@@ -27,6 +68,7 @@ export function createInteractionPoses(idle,model,{scale=1,seatHeight=.9}={}){
    const q=new Quaternion().fromArray(track.values).multiply(new Quaternion().setFromEuler(new Euler(...angles))).normalize();
    track.values=new Float32Array([...q.toArray(),...q.toArray()]);
   }
+  if(name==='Read'||name==='Inspect')standingArms(name,model,tracks,bindMatrices,scale);
   if(name==='Sit'){
    // Calibrate in the current Idle frame, then restore it after authoring.
    for(const track of tracks){const dot=track.name.lastIndexOf('.'),bone=model.getObjectByName(track.name.slice(0,dot)),property=track.name.slice(dot+1);if(bone?.[property]?.fromArray)bone[property].fromArray(track.values);}

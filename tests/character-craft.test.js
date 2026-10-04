@@ -86,3 +86,34 @@ test('seated avatars meet the cushion and keep their actual shoe soles above ele
   actor.object.traverse(o=>assert.ok(o.quaternion.toArray().every(Number.isFinite)));actor.dispose();
  }
 });
+
+test('reading and inspection keep both hands and elbows in front of the measured chest at every facing',async()=>{
+ const asset=await travellerRig();
+ for(const height of [.9,1,1.1]){
+  let actor;await new Promise(resolve=>{actor=createLivingActor({load:()=>Promise.resolve(asset)},{avatar:{height,boots:0,weapon:'paris'},scale:2.2,onLoad:resolve});});
+  actor.object.position.set(-12,4.8,9);
+  const translations=new Map(['lowerarm_l','lowerarm_r','hand_l','hand_r'].map(name=>[name,actor.object.getObjectByName(name).position.clone()]));
+  for(const yaw of [0,Math.PI/2,Math.PI-.01]){
+   for(let i=0;i<6;i++)actor.face(Math.sin(yaw),Math.cos(yaw),.25);
+   for(const name of ['Read','Inspect']){
+    actor.setPose(name);actor.update(.25);actor.object.updateMatrixWorld(true);
+    const point=boneName=>actor.object.worldToLocal(actor.object.getObjectByName(boneName).getWorldPosition(new T.Vector3())),chest=point('spine_03'),pelvis=point('pelvis');
+    assert.equal(actor.object.getObjectByName('3B-equipped-paris').visible,false);
+    for(const side of ['l','r']){
+     const hand=point('hand_'+side),elbow=point('lowerarm_'+side),middle=point('middle_01_'+side),tip=point('middle_04_leaf_'+side),index=point('index_01_'+side),pinky=point('pinky_01_'+side);
+     assert.ok(hand.z>chest.z+.20,`${name} hand remains outside and in front of the clothing`);
+     assert.ok(elbow.z>chest.z+.08,`${name} elbow remains ahead of the torso`);
+     assert.ok(hand.y<chest.y+.08&&hand.y>pelvis.y+.12,`${name} hand is at a usable reading/display height`);
+     assert.ok(Math.abs(hand.x-chest.x)<.28,`${name} hands remain within reach of one open book/display`);
+     const fingers=middle.clone().sub(hand).normalize(),normal=fingers.clone().cross(index.clone().sub(pinky)).normalize().multiplyScalar(side==='l'?1:-1);
+     assert.ok(fingers.z>.9,`${name} fingers face the book/display`);
+     assert.ok(name==='Read'?normal.y>.9:normal.y<-.9,`${name} palms support the book or face the display`);
+     assert.ok(tip.z>middle.z+.045,`${name} hand is relaxed rather than a combat fist`);
+     for(const boneName of ['lowerarm_'+side,'hand_'+side])assert.ok(actor.object.getObjectByName(boneName).position.distanceTo(translations.get(boneName))<1e-6,'pose preserves the shipped bone lengths');
+    }
+    actor.setPose(null);actor.update(.25);assert.equal(actor.object.getObjectByName('3B-equipped-paris').visible,true);
+   }
+  }
+  actor.dispose();
+ }
+});
