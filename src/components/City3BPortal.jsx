@@ -33,7 +33,7 @@ export function City3BPortalSession({open,onClose,account,requestCity=city3bRequ
  const storage=()=>{try{return globalThis.localStorage;}catch{return null;}};
  useEffect(()=>{const update=()=>setConnected(navigator.onLine!==false);window.addEventListener('online',update);window.addEventListener('offline',update);return()=>{window.removeEventListener('online',update);window.removeEventListener('offline',update);};},[]);
  useEffect(()=>()=>{invocations.current++;requests.current.invalidate();},[open]);
- const country=account.passport?.userId===uid?account.passport.country:'';
+ const country=uid&&account.passport?.userId===uid?(account.passport.country||''):'';
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  useEffect(()=>{if(!open)return;const element=dialog.current,previous=document.activeElement;if(element&&!element.open)element.showModal();return()=>{element?.close();if(fullscreenOwned.current){leaveCityFullscreen(document.documentElement);fullscreenOwned.current=false;}if(previous?.isConnected)previous.focus?.();};},[open]);
  const fullscreen=async()=>{const wasFullscreen=Boolean(document.fullscreenElement);const entered=await enterCityFullscreen(document.documentElement);if(entered&&!wasFullscreen)fullscreenOwned.current=true;};

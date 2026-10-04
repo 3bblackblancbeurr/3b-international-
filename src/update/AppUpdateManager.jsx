@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isNativeApp } from "../native/runtime.js";
 import { Button } from "../design-system/index.jsx";
+import { serverReleaseDecision } from "./release-policy.js";
 import "./app-update.css";
 
 const CURRENT_BUILD_ID = typeof __THREEB_BUILD_ID__ !== "undefined" ? __THREEB_BUILD_ID__ : "dev";
@@ -37,17 +38,6 @@ async function healLegacyPwaRegistrations() {
   return true;
 }
 
-function normalizedRelease(value) {
-  if (!value || typeof value !== "object") return null;
-  const buildId = String(value.buildId || "").trim();
-  if (!buildId || buildId === CURRENT_BUILD_ID) return null;
-  return {
-    buildId,
-    version: String(value.version || "").trim() || "nouvelle",
-    mandatory: value.mandatory === true,
-  };
-}
-
 export default function AppUpdateManager() {
   const registrationRef = useRef(null);
   const reloadRequestedRef = useRef(false);
@@ -56,8 +46,14 @@ export default function AppUpdateManager() {
   const [dismissed, setDismissed] = useState(false);
 
   const publishRelease = useCallback((next) => {
-    const normalized = normalizedRelease(next);
-    if (!normalized) return;
+    const decision = serverReleaseDecision(next, CURRENT_BUILD_ID);
+    if (decision.status === "current") {
+      setRelease(null);
+      setDismissed(false);
+      return;
+    }
+    if (decision.status !== "available") return;
+    const normalized = decision.release;
     let wasDismissed = false;
     try {
       wasDismissed = sessionStorage.getItem(DISMISSED_PREFIX + normalized.buildId) === "1";
@@ -80,11 +76,6 @@ export default function AppUpdateManager() {
       });
       if (!response.ok) return;
       const next = await response.json();
-      if (next?.buildId === CURRENT_BUILD_ID) {
-        setRelease((current) => (current?.buildId === "service-worker" ? current : null));
-        setDismissed(false);
-        return;
-      }
       publishRelease(next);
     } catch {
       // A failed version check must never block the application.
@@ -101,7 +92,9 @@ export default function AppUpdateManager() {
       if (!worker) return;
       const stateChanged = () => {
         if (disposed || worker.state !== "installed" || !navigator.serviceWorker.controller) return;
-        publishRelease({ buildId: "service-worker", version: "nouvelle", mandatory: false });
+        // A worker can catch up after the page already loaded the latest build.
+        // Its installation is a reason to check, never proof of a new release.
+        void checkServerRelease();
       };
       worker.addEventListener("statechange", stateChanged);
     };
@@ -150,7 +143,7 @@ export default function AppUpdateManager() {
         registrationRef.current = nextRegistration;
         registration.addEventListener("updatefound", updateFound);
         if (registration.waiting && navigator.serviceWorker.controller) {
-          publishRelease({ buildId: "service-worker", version: "nouvelle", mandatory: false });
+          void checkServerRelease();
         }
         void registration.update().catch(() => {});
       } catch {
