@@ -69,9 +69,12 @@ export function createMemberSaveStore({
   return remote;
  };
  const flushPending=async(id,state,desired)=>{
+  const ticket=state.sequence;
   for(let attempt=0;attempt<4&&state.pending;attempt++){
-    const pending=state.pending;
-   persist(id,desired,true,state);
+   const pending=state.pending;
+   // save() records checkpoints synchronously, even while this request is in
+   // flight. A conflict retry must not put its older desired value back on disk.
+   persist(id,state.latest?.ticket>ticket?state.latest.data:desired,true,state);
    const result=syncState(await request('game-save-sync',{
     baseRevision:pending.baseRevision,
     operationId:pending.operationId,
@@ -88,36 +91,52 @@ export function createMemberSaveStore({
 
  async function load(user){
   if(!user?.id)return guestLoad();
-  const id=user.id,state=stateFor(id),local=readCache(id);
-  if(local?.pending)state.pending=local.pending;
-  try{
-   let remote,pendingBase=null;
-   if(state.pending){
-    pendingBase=state.pending.localData||state.pending.data;
-    const recovered=await flushPending(id,state,local?.data||state.pending.data);
-    remote={exists:state.exists,data:recovered?.data||state.base,revision:state.serverRevision,updatedAt:recovered?.updatedAt||null};
-   }else remote=await hydrate(id,state);
+  const id=user.id,state=stateFor(id);
+  const operation=async()=>{
+   // Read when the queued load starts, after any earlier save has settled.
+   let local=readCache(id);
+   const ticket=state.sequence;
+   if(local?.pending)state.pending=local.pending;
+   try{
+    let remote,pendingBase=null,guest=null;
+    if(state.pending){
+     pendingBase=state.pending.localData||state.pending.data;
+     const recovered=await flushPending(id,state,local?.data||state.pending.data);
+     remote={exists:state.exists,data:recovered?.data||state.base,revision:state.serverRevision,updatedAt:recovered?.updatedAt||null};
+    }else remote=await hydrate(id,state);
 
-   let data=remote.data,dirty=false;
-   if(local?.dirty){
-    const base=pendingBase||(local.baseKnown?local.base:null);
-    data=mergeGameProgress(base,local.data,remote.data);
-    dirty=!same(data,remote.data);
-   }else if(!remote.exists){
-    const guest=local?.data||(await guestLoad()).data;
-    data=validateProgress(guest);dirty=!same(data,remote.data);
+    local=readCache(id)||local;
+    if(!remote.exists&&!local?.data&&!(state.latest?.ticket>ticket))guest=(await guestLoad()).data;
+    // The queue orders network work, but save() may have already written a
+    // newer local checkpoint during either await above. Rebase that checkpoint,
+    // never replace it with the snapshot captured before the request.
+    const latest=state.latest?.ticket>ticket?state.latest:null;
+    local=latest?{
+     data:latest.data,dirty:true,
+     baseKnown:latest.baseKnown||local?.baseKnown,
+     base:latest.baseKnown?latest.base:local?.base
+    }:readCache(id)||local;
+    let data=remote.data,dirty=false;
+    if(local?.dirty){
+     const base=pendingBase||(local.baseKnown?local.base:null);
+     data=mergeGameProgress(base,local.data,remote.data);
+     dirty=!same(data,remote.data);
+    }else if(!remote.exists){
+     data=validateProgress(local?.data||guest||freshProgress());dirty=!same(data,remote.data);
+    }
+    state.latest={ticket:state.sequence,data,base:remote.data,baseKnown:true};
+    persist(id,data,dirty,state);
+    return{
+     data,
+     message:dirty?'Progression récupérée · synchronisation sécurisée en cours.':'Progression liée à ton compte 3B.',
+     online:true
+    };
+   }catch(error){
+    const data=(state.latest?.ticket>ticket?state.latest.data:null)||(readCache(id)||local)?.data||freshProgress();
+    return{data,message:'Hors ligne : sauvegarde de ce compte conservée sur cet appareil.',online:false,error:error?.message||''};
    }
-   state.latest={ticket:state.sequence,data,base:remote.data,baseKnown:true};
-   persist(id,data,dirty,state);
-   return{
-    data,
-    message:dirty?'Progression récupérée · synchronisation sécurisée en cours.':'Progression liée à ton compte 3B.',
-    online:true
-   };
-  }catch(error){
-   const data=local?.data||freshProgress();
-   return{data,message:'Hors ligne : sauvegarde de ce compte conservée sur cet appareil.',online:false,error:error?.message||''};
-  }
+  };
+  state.chain=state.chain.then(operation,operation);return state.chain;
  }
 
  function save(data,user,onReconcile){

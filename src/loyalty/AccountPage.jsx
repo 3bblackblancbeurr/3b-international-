@@ -1,4 +1,4 @@
-import React,{useMemo,useReducer,useState} from 'react';
+import React,{useEffect,useMemo,useReducer,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeBirthDate,normalizeCivilName,normalizeEmail,passwordRequirements,
@@ -15,31 +15,28 @@ import {OPTION_LABELS} from '../lib/member.js';
 import TurnstileField from './TurnstileField.jsx';
 import {Button} from '../design-system/index.jsx';
 import {captchaChallengeReducer} from './captcha-state.js';
+import {readInitialAuthState,rememberAuthMode,registrationCompletedState} from './auth-mode.js';
 import './loyalty.css';
-
-function initialMode(){
- try{
-  if(new URLSearchParams(window.location.search).get('reset')==='1')return'reset-password';
-  return sessionStorage.getItem('3b-auth-intent')==='register'?'register':'login';
- }catch{return'login';}
-}
 
 export default function AccountPage({legacy,options,toggleOption,goTo}){
  const account=useLoyalty(),{profile}=account,economy=account.economy,inventory=account.inventory||[],entitlements=account.entitlements||[];
- const[mode,setMode]=useState(initialMode);
+ const[initialAuth]=useState(readInitialAuthState);
+ const[mode,setMode]=useState(initialAuth.mode);
  const[fields,setFields]=useState({
   identifier:'',handle:'',email:'',emailConfirm:'',password:'',passwordConfirm:'',
   name:legacy?.name||'',country:legacy?.originCountry||'France',recovery:'',
   legalGivenNames:'',legalFamilyName:'',birthDate:'',
   termsAccepted:false,privacyAccepted:false,identityConsent:false,marketingOptIn:false,website:''
  });
- const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ const[error,setError]=useState(initialAuth.error||''),[notice,setNotice]=useState(initialAuth.notice),[busy,setBusy]=useState(false);
  const[prestigeBusy,setPrestigeBusy]=useState(false),[identityBusy,setIdentityBusy]=useState(false),[recovery,setRecovery]=useState('');
  const[pendingEmail,setPendingEmail]=useState('');
  const[{attempt:captchaAttempt,token:captchaToken},dispatchCaptcha]=useReducer(captchaChallengeReducer,{attempt:0,token:''});
  const setCaptchaToken=token=>dispatchCaptcha({type:'token',attempt:captchaAttempt,token});
  const resetCaptcha=()=>dispatchCaptcha({type:'reset'});
  const[showPassword,setShowPassword]=useState(false);
+
+ useEffect(()=>{rememberAuthMode(mode);},[mode]);
 
  const field=(key,value)=>{setFields(f=>({...f,[key]:value}));setError('');setNotice('');};
  const passwordRules=useMemo(()=>passwordRequirements(fields.password),[fields.password]);
@@ -62,15 +59,13 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    }else if(mode==='register'){
     validateRegistration(fields);
     const result=await memberRequest('register-v2',{...fields,captchaToken});
+    const next=registrationCompletedState(fields.email,!!result.session);
     setRecovery(result.recovery||'');
-    setPendingEmail(fields.email.trim().toLowerCase());
-    if(result.session){
-     await setSession(result.session);
-     setNotice('Compte créé et connecté.');
-    }else{
-     setNotice('Compte créé. Vérifie maintenant ta boîte e-mail pour activer la connexion.');
-    }
-    setFields(f=>({...f,password:'',passwordConfirm:''}));
+    setPendingEmail(next.fields.identifier);
+    if(result.session)await setSession(result.session);
+    setMode(next.mode);
+    setNotice(next.notice);
+    setFields(f=>({...f,...next.fields}));
    }else if(mode==='recover'){
     validateStrongPassword(fields.password);
     if(fields.password!==fields.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
@@ -214,6 +209,10 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
      <button onClick={()=>goTo('games')}>Jouer et gagner de l’XP</button>
      <button onClick={()=>goTo('passport')}>Voir mon passeport</button>
      <button className="account-logout" onClick={logout}><LogOut size={16}/> Se déconnecter</button>
+     <nav className="account-management-links" aria-label="Gestion du compte">
+      <a href="/privacy-policy.html">Confidentialité</a>
+      <a href="/delete-account.html">Supprimer mon compte</a>
+     </nav>
     </article>
    </div>
 
@@ -397,12 +396,10 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    <div className="account-promise">
     <BoutiqueCard/>
     <h2>Ton compte, ton identité 3B.</h2>
-    <p><strong>Vrai e-mail + identité déclarée privée.</strong> Ton e-mail confirme le compte ; tes prénom(s), nom et date de naissance restent privés et serviront ensuite au contrôle d’identité.</p>
-    <p><strong>Déclaré ne veut pas dire vérifié.</strong> Le Passeport n’affichera “identité vérifiée” qu’après une vraie preuve externe acceptée.</p>
-    <p><strong>Deux voies de récupération.</strong> E-mail pour les nouveaux comptes et clé de secours indépendante à conserver hors ligne.</p>
-    <p><strong>Protection anti-abus.</strong> Limites de tentatives côté serveur, CAPTCHA activable, journal sécurité minimal et sessions Supabase.</p>
+    <p><strong>Retrouve ton 3B.</strong> Connecte-toi au même compte pour retrouver ton Passeport, tes récompenses et ta progression synchronisée.</p>
+    <p><strong>Tes informations civiles restent privées.</strong> Les déclarer ne suffit pas à obtenir le statut “identité vérifiée” : celui-ci nécessite un contrôle externe accepté.</p>
+    <p><strong>Garde un moyen de revenir.</strong> Confirme ton e-mail et conserve ta clé de secours hors ligne pour récupérer ton compte.</p>
     {legacy?.isRegistered&&<p>Ton ancien profil local reste sur cet appareil et pourra être repris sans effacer tes sauvegardes.</p>}
-    <p>Un Passeport actif donne accès aux jeux et au Monde du 3B. Ton compte garde ta progression et tes récompenses au même endroit.</p>
     <button onClick={()=>goTo('passport')}>Découvrir mon Passeport</button>
    </div>
   </div>}

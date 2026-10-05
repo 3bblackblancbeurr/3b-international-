@@ -51,15 +51,21 @@ function configFrom(env) {
   const publicUrl = safeHttpsUrl(env.PWA_QUICKKIT_PUBLIC_URL || "https://3b-international.vercel.app/pwa-quickkit/");
   const page = publicUrl ? new URL(publicUrl) : null;
   const origin = page?.origin || "";
-  const testEnabled = env.PWA_QUICKKIT_ENABLE_TEST_CHECKOUT === "1";
+  const key = String(env.STRIPE_SECRET_KEY || "");
+  const stripeMode = /^(?:sk|rk)_test_[A-Za-z0-9_]+$/.test(key) ? "test"
+    : /^(?:sk|rk)_live_[A-Za-z0-9_]+$/.test(key) ? "live" : "";
+  const testEnabled = stripeMode === "test" && env.PWA_QUICKKIT_ENABLE_TEST_CHECKOUT === "1";
   const priceId = env.PWA_QUICKKIT_PRO_PRICE_ID || (testEnabled ? TEST_PRICE_ID : "");
+  const stripeApproved = stripeMode === "test"
+    || (stripeMode === "live" && env.PWA_QUICKKIT_LIVE_APPROVED === "true");
   const checkoutEnabled = env.PWA_QUICKKIT_CHECKOUT_ENABLED === "true"
+    && stripeApproved
     && !!origin
     && /^price_[A-Za-z0-9]+$/.test(priceId)
-    && !!env.STRIPE_SECRET_KEY
+    && !!env.PWA_QUICKKIT_STRIPE_WEBHOOK_SECRET
     && !!env.SUPABASE_URL
     && !!env.SUPABASE_SERVICE_ROLE_KEY;
-  return { publicUrl, origin, priceId, checkoutEnabled };
+  return { publicUrl, origin, priceId, checkoutEnabled, stripeMode };
 }
 
 function dbBase(env) {
@@ -121,6 +127,12 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
     }
   }
 
+  function assertStripeMode(livemode) {
+    if (!config.stripeMode || typeof livemode !== "boolean" || livemode !== (config.stripeMode === "live")) {
+      throw new QuickKitCommerceError(503, "Mode de paiement Pro incohérent.");
+    }
+  }
+
   async function parseJson(request) {
     if (!request.headers.get("content-type")?.startsWith("application/json")) {
       throw new QuickKitCommerceError(415, "Format de demande invalide.");
@@ -134,6 +146,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
 
   async function validatedPrice() {
     const price = await stripe().prices.retrieve(config.priceId, { expand: ["product"] });
+    assertStripeMode(price.livemode);
     const product = price.product;
     const valid = price.active
       && price.currency === "eur"
@@ -171,6 +184,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
 
   async function syncSubscription(subscription, emailHint = "") {
     if (!subscription?.id || subscription.metadata?.integration !== INTEGRATION) return false;
+    assertStripeMode(subscription.livemode);
     const email = await customerEmail(subscription.customer, emailHint);
     if (!email || email.length > 320) throw new QuickKitCommerceError(503, "Adresse client manquante.");
 
@@ -254,6 +268,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
         subscription_data: { metadata: { integration: INTEGRATION } },
       }, { idempotencyKey: `pwaq:${body.attemptId}` });
 
+      assertStripeMode(session.livemode);
       const checkoutUrl = new URL(session.url);
       if (checkoutUrl.origin !== "https://checkout.stripe.com") {
         throw new QuickKitCommerceError(503, "Le paiement n’a pas pu être ouvert.");
@@ -267,6 +282,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
       const id = body?.sessionId || "";
       if (!validSessionId(id)) throw new QuickKitCommerceError(400, "Session de paiement invalide.");
       const session = await stripe().checkout.sessions.retrieve(id, { expand: ["subscription"] });
+      assertStripeMode(session.livemode);
       if (session.metadata?.integration !== INTEGRATION || session.mode !== "subscription" || session.status !== "complete") {
         throw new QuickKitCommerceError(403, "Session Pro non reconnue.");
       }
@@ -302,15 +318,18 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
       const auth = request.headers.get("authorization") || "";
       const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
       if (!/^[A-Za-z0-9_-]{40,100}$/.test(token)) return json({ active: false });
+      if (!config.stripeMode) return json({ active: false });
       const hash = tokenHash(token);
+      const livemode = config.stripeMode === "live";
       const rows = await dbRequest(env, fetcher, "pwa_quickkit_entitlements", {
         params: {
-          select: "status,current_period_end,cancel_at_period_end",
+          select: "status,current_period_end,cancel_at_period_end,livemode",
           access_token_hash: `eq.${hash}`,
+          livemode: `eq.${livemode}`,
           limit: 1,
         },
       });
-      const row = rows?.[0];
+      const row = rows?.[0]?.livemode === livemode ? rows[0] : null;
       const notExpired = !row?.current_period_end || new Date(row.current_period_end).getTime() > Date.now();
       return json({
         active: Boolean(row && ACTIVE.has(row.status) && notExpired),
@@ -335,6 +354,7 @@ export function createPwaQuickKitCommerce({ env = process.env, stripe: suppliedS
       } catch {
         throw new QuickKitCommerceError(400, "Signature invalide.");
       }
+      assertStripeMode(event.livemode);
 
       if (await eventAlreadyProcessed(event.id)) return json({ received: true, duplicate: true });
 

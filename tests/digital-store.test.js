@@ -26,6 +26,22 @@ test("digital store never enables live payments without the explicit live gate",
   assert.equal(cfg.mode,"live");
 });
 
+test("restricted Stripe keys preserve the same test allowlist and live approval gates",()=>{
+  const testEnv={...base,STRIPE_SECRET_KEY:"rk_test_demo",DIGITAL_STORE_TEST_ENABLED:"true"};
+  assert.equal(digitalStoreConfig(testEnv).enabled,false);
+  const testConfig=digitalStoreConfig({...testEnv,DIGITAL_STORE_TEST_USER_IDS:"11111111-1111-4111-8111-111111111111"});
+  assert.equal(testConfig.mode,"test");
+  assert.equal(testConfig.enabled,true);
+  const liveEnv={...base,STRIPE_SECRET_KEY:"rk_live_demo"};
+  assert.equal(digitalStoreConfig(liveEnv).enabled,false);
+  const liveConfig=digitalStoreConfig({...liveEnv,DIGITAL_STORE_LIVE_APPROVED:"true"});
+  assert.equal(liveConfig.mode,"live");
+  assert.equal(liveConfig.enabled,true);
+  for(const key of ["sk_test_","rk_live_","invalid_key"]){
+    assert.equal(digitalStoreConfig({...testEnv,STRIPE_SECRET_KEY:key,DIGITAL_STORE_LIVE_APPROVED:"true"}).mode,"off");
+  }
+});
+
 test("premium catalog is cosmetic, permanent and non-resellable",()=>{
   const sql=read("supabase/migrations/20260928140344_digital_store_v1.sql");
   assert.match(sql,/no_pay_to_win boolean not null default true check\(no_pay_to_win=true\)/);
@@ -81,4 +97,3 @@ test("shared Stripe webhook processes digital purchases separately from physical
   assert.match(catalog,/digital-store-checkout/);
   assert.match(catalog,/digital-store-status/);
 });
-

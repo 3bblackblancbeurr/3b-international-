@@ -17,8 +17,10 @@ The signed workflow:
 2. materializes the keystore only in the ephemeral runner temp directory;
 3. verifies the key alias before building;
 4. builds the production AAB with Gradle's injected signing properties;
-5. verifies the resulting AAB signature with `jarsigner -strict`;
+5. requires a certificate in the resulting AAB, compares it with the expected upload certificate, and verifies signature integrity with `jarsigner -strict` against the expected keystore and alias;
 6. publishes the signed AAB, readiness report and SHA-256 checksum as a short-lived artifact;
 7. deletes the temporary keystore even when the job fails.
 
 Never commit a JKS/keystore, password or base64 key to the repository.
+
+An unsigned archive can make `jarsigner -verify -strict` exit successfully, so the explicit certificate extraction and comparison must run first. Supplying the expected keystore also allows a valid self-signed Android upload certificate to be trusted without weakening checks for altered or unsigned entries.
