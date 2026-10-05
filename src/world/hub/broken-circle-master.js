@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TAU=Math.PI*2;
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
@@ -37,6 +38,19 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
  add(energy,new THREE.TorusGeometry(11.15,.04,5,96),blue,[0,0,-.45]);
  const cyan=new THREE.PointLight('#55dfff',1.15,46,2),amber=new THREE.PointLight('#d6b46a',.38,34,2);
  cyan.position.set(0,0,3);amber.position.set(-5,-6,2);cyan.castShadow=amber.castShadow=false;energy.add(cyan,amber);
+
+ const compact=(group,keep=new Set())=>{
+  const byMaterial=new Map();
+  for(const child of [...group.children])if(child.isMesh&&!keep.has(child)){
+   const key=child.material.uuid;if(!byMaterial.has(key))byMaterial.set(key,[]);byMaterial.get(key).push(child);
+  }
+  for(const list of byMaterial.values())if(list.length>1){
+   const parts=list.map(mesh=>{mesh.updateMatrix();const g=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();return g.applyMatrix4(mesh.matrix);});
+   const merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());if(!merged)continue;owned.push(merged);
+   const mesh=new THREE.Mesh(merged,list[0].material);mesh.castShadow=list[0].material!==blue;mesh.receiveShadow=true;group.add(mesh);list.forEach(old=>old.removeFromParent());
+  }
+ };
+ compact(fixed,new Set(heritage.map(h=>h.mesh)));compact(rotorOuter);compact(rotorInner);compact(energy);
 
  const particleCount=32,positions=new Float32Array(particleCount*3);
  for(let i=0;i<particleCount;i++){const t=i/(particleCount-1);positions[i*3]=11.7+(i%5)*.38;positions[i*3+1]=.4+t*5.3;positions[i*3+2]=((i%7)-3)*.16;}
