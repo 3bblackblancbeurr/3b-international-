@@ -23,6 +23,8 @@ const KIND_PRESETS={
  'story-power':{tier:'micro',shot:'power-push',recipe:'matrix-pulse',duration:3900},
  'memory-fragment':{tier:'micro',shot:'fragment-macro',recipe:'fragment-reveal',duration:3200},
  'story-restoration':{tier:'narrative',shot:'heritage-rise',recipe:'restoration',duration:5700},
+ 'guardian-value-complete':{tier:'narrative',shot:'guardian-accord',recipe:'value-recognition',duration:5400},
+ 'guardian-homecoming':{tier:'major',shot:'city-homecoming',recipe:'guardian-homecoming',duration:6600},
  'guardian-intro':{tier:'major',shot:'guardian-low',recipe:'guardian-arrival',duration:6500},
  'final-combat-intro':{tier:'major',shot:'boss-reveal',recipe:'boss-arrival',duration:7400},
  'important-combat-result':{tier:'narrative',shot:'victory-or-retreat',recipe:'combat-result',duration:5200},
