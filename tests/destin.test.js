@@ -28,6 +28,13 @@ test('destin: lock reasons come from authoritative level and unlock list',()=>{c
 test('destin: HTTPS media and owned storage references are accepted',()=>{assert.ok(safeMedia('https://media.example.org/a.mp4'));const s='storage:11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.mp4';assert.ok(safeMedia(s));assert.ok(mediaPath(s));});
 test('destin: script, local file, data, insecure and credential URLs are rejected',()=>{for(const url of ['javascript:alert(1)','file:///tmp/a.mp4','data:video/mp4,evil','http://media.example.org/a.mp4','https://user:password@example.org/a.mp4','storage:../../secret',''])assert.equal(safeMedia(url),false,url);});
 test('destin: media collection is deduplicated',()=>{const m=valid();m.nodes[1].src=m.nodes[0].src;assert.equal(collectMedia(m).length,2);});
+test('destin: cinematic master media is included for signing and preflight',()=>{
+ const m=valid();
+ m.nodes[0].cinema={video:'https://media.example.org/intro-visual.mp4',voice:'https://media.example.org/intro-voice.mp3'};
+ m.nodes[1].cinema={rap:{video:'https://media.example.org/rap.mp4',audio:'https://media.example.org/rap.mp3'},witness:{video:'https://media.example.org/witness.mp4',audio:'https://media.example.org/witness.mp3'},unity:{video:'https://media.example.org/unity.mp4',audio:['https://media.example.org/a.mp3','https://media.example.org/b.mp3']}};
+ const media=collectMedia(m);
+ for(const source of ['https://media.example.org/intro-visual.mp4','https://media.example.org/intro-voice.mp3','https://media.example.org/rap.mp4','https://media.example.org/rap.mp3','https://media.example.org/witness.mp4','https://media.example.org/witness.mp3','https://media.example.org/unity.mp4','https://media.example.org/a.mp3','https://media.example.org/b.mp3'])assert.ok(media.includes(source),source);
+});
 test('destin: storage uses the actual 50 MiB bucket limit',()=>assert.equal(MAX_MEDIA_BYTES,52428800));
 test('destin: demo never validates for publication',()=>{assert.deepEqual(validateManifest(demoManifest(),{preview:true}),[]);assert.ok(validateManifest(demoManifest()).length);assert.ok(demoManifest().nodes.every(n=>!n.ending?.reward));});
 test('destin: poll options must be complete and unique',()=>{const p={question:'Quel chemin ?',options:[{id:'a',label:'Gauche'},{id:'b',label:'Droite'}],closesAt:'2026-10-06T15:00:00Z'};assert.equal(validatePoll(p),'');assert.ok(validatePoll({...p,options:[p.options[0],p.options[0]]}));assert.ok(validatePoll({...p,closesAt:'bad'}));});

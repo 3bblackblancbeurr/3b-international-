@@ -5,3 +5,15 @@ export function musicMasterResumeState(snapshot){
   if(node?.cinema?.path) return {mode:'branch',node};
   return {mode:'intro',node};
 }
+
+export function shouldLoopVisual(videoDuration,audioDuration,delayMs=0){
+  const video=Number(videoDuration),audio=Number(audioDuration),delay=Math.max(0,Number(delayMs)||0)/1000;
+  if(!Number.isFinite(video) || !Number.isFinite(audio) || video<=0 || audio<=0)return false;
+  return video+0.25<audio+delay;
+}
+
+export function visualTargetTime(audioTime,delayMs=0,videoDuration=0,loop=false){
+  const raw=Math.max(0,Number(audioTime)||0)+Math.max(0,Number(delayMs)||0)/1000;
+  const duration=Number(videoDuration);
+  return loop && Number.isFinite(duration) && duration>0 ? raw%duration : raw;
+}

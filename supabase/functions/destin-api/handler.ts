@@ -27,7 +27,7 @@ export async function handleDestin(db:SupabaseClient,userId:string,body:any,send
   const directorAccess=directorCapabilities(owner);
   // Director privileges authorize the Studio, never a second viewer identity.
   if (DESTIN_IDENTITY_ACTIONS.has(action) && !passportAccess?.allowed) return send({error:passportAccess?.message,code:passportAccess?.code,next:'passport',passportAccess},403);
-  if (action==='status') return send({owner,directorAccess,version:'1.2.0',maxMediaBytes:MAX_MEDIA_BYTES,passportAccess});
+  if (action==='status') return send({owner,directorAccess,version:'1.3.0',maxMediaBytes:MAX_MEDIA_BYTES,passportAccess});
   async function sign(sources:string[],ownOnly=false) {
     const unique=[...new Set(sources.filter(Boolean))];
     if (unique.length>256) throw Error('Too many media references');

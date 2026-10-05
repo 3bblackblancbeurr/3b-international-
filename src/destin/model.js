@@ -92,7 +92,19 @@ export function formatTime(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2,'0')}`;
 }
 export function collectMedia(manifest) {
-  return [...new Set([manifest?.cover,...(manifest?.nodes || []).flatMap(n => [n.src,n.caption])].filter(Boolean))];
+  const values=[manifest?.cover];
+  for(const node of manifest?.nodes || []){
+    const cinema=node?.cinema || {};
+    values.push(
+      node?.src,node?.caption,
+      cinema?.video,cinema?.voice,
+      cinema?.rap?.video,cinema?.rap?.audio,
+      cinema?.witness?.video,cinema?.witness?.audio,
+      cinema?.unity?.video
+    );
+    if(Array.isArray(cinema?.unity?.audio))values.push(...cinema.unity.audio);
+  }
+  return [...new Set(values.filter(Boolean))];
 }
 export function validatePoll(p) {
   if (!p || typeof p.question !== 'string' || !p.question.trim() || p.question.length > 240) return 'Écris une question de 240 caractères maximum.';
