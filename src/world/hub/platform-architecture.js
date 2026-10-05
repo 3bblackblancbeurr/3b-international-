@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 
-/** Bevelled, profiled civic shaft. Stations, archives and observatories no longer
- * share a rectangular stamped tower. The entire body stays on its old plinth. */
+/** Bevelled, profiled civic shaft. Stations, archives and observatories keep
+ * their authored silhouette while hidden underside caps are omitted. */
 export function civicShaftGeometry(width,depth,height,profile){
  const vertices=[],indices=[],corners=[[-.78,-1],[.78,-1],[1,-.78],[1,.78],[.78,1],[-.78,1],[-1,.78],[-1,-.78]];
  for(const [y,scale] of profile)for(const [x,z] of corners)vertices.push(x*width/2*scale,y*height,z*depth/2*scale);
  for(let row=0;row<profile.length-1;row++)for(let i=0;i<8;i++){const a=row*8+i,b=row*8+(i+1)%8,c=a+8,d=b+8;indices.push(a,c,b,b,c,d);}
- for(let i=1;i<7;i++){indices.push(0,i,i+1);const end=(profile.length-1)*8;indices.push(end,end+i+1,end+i);}
+ // All shafts sit on a plinth or roof: only the visible upper cap is required.
+ const end=(profile.length-1)*8;
+ for(let i=1;i<7;i++)indices.push(end,end+i+1,end+i);
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(vertices.flatMap((_,i)=>i%3===0?[vertices[i]/2.4,vertices[i+1]/2.4]:[]),2));geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
 }
 function scaleAt(profile,t){
@@ -37,28 +39,29 @@ function identity(b){
 }
 
 /** Authored civic silhouettes. Room doors, paths and foundation bounds retain
- * their canonical navigation footprints; upper massing is inside those bounds. */
+ * their canonical navigation footprints; repeated facade detail is concentrated
+ * into strong storey bands so the complete city remains mobile-safe. */
 export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,buildings,collisions,cameraSolids=[],sign}){
  const {dark,gold,blue,glass,stone,green}=materials,mapSites=[];
  for(const b of buildings){
   const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,h=b.height,rear=z-d/2-4;
   const {height,profile,style}=identity(b),shaftW=w*.72,shaftD=4;
   mesh(geo(civicShaftGeometry(shaftW,shaftD,height,profile)),dark,x,h,rear);
-  // Matching physical glazing on every side follows each taper and setback.
-  for(let floor=0;floor<Math.floor(height/3);floor++){
-   const level=2+floor*3,s=scaleAt(profile,level/height),span=shaftW*s*.78,depth=shaftD*s;
+  // Three luminous glazing bands keep the inhabited reading; one structural
+  // belt carries the silhouette and removes repeated hidden geometry.
+  const floorCount=Math.max(2,Math.min(3,Math.round(height/10)));
+  for(let floor=0;floor<floorCount;floor++){
+   const level=floorCount===1?height*.5:2+floor*Math.max(1,height-4)/(floorCount-1),s=scaleAt(profile,level/height),span=shaftW*s,depth=shaftD*s;
    for(const side of [-1,1]){
-    const front=civicGlazingGeometry(shaftW,shaftD,height,profile,level,side),flank=civicGlazingGeometry(shaftW,shaftD,height,profile,level,side,'x',.55);
-    if(front)mesh(geo(front),glass,x,h,rear);if(flank)mesh(geo(flank),glass,x,h,rear);
-    mesh(box,gold,x,h+level+.88,rear+side*(depth/2+.16),span+.3,.1,.15);
-    mesh(box,gold,x+side*(shaftW*s/2+.16),h+level+.88,rear,.15,.1,depth*.65);
+    const front=civicGlazingGeometry(shaftW,shaftD,height,profile,level,side,'z',.72,1.8);
+    if(front)mesh(geo(front),glass,x,h,rear);
    }
+   if(floor===Math.floor(floorCount/2))mesh(geo(civicShaftGeometry(span+.24,depth+.24,.12,[[0,1],[1,1]])),gold,x,h+level+.88,rear);
   }
   for(let tier=1;tier<profile.length;tier++){
    const [fraction,span]=profile[tier],previous=profile[tier-1];
    if(fraction!==previous[0]&&tier<profile.length-1)continue;
-   const y=h+height*fraction;
-   mesh(geo(civicShaftGeometry(shaftW*span+.3,shaftD*span+.3,.24,[[0,1],[1,1]])),gold,x,y,rear);
+   mesh(geo(civicShaftGeometry(shaftW*span+.3,shaftD*span+.3,.2,[[0,1],[1,1]])),gold,x,h+height*fraction,rear);
   }
   // The solid base meets its tower, with bevelled stone corners and full footing.
   mesh(geo(civicShaftGeometry(w*.74,4,h,[[0,1],[1,1]])),dark,x,0,rear);collisions.push({x,z:rear,width:w*.74,depth:4});cameraSolids.push({id:'civic-shaft-'+b.buildingId,x,z:rear,width:w*.74,depth:4,bottom:0,top:h+height+4});
@@ -67,19 +70,19 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
   if(['archives','innovation','broken_circle_tower'].includes(b.district))mesh(cylinder,blue,x,h+height+3,rear,.1,5,.1);
   if(b.buildingId==='arena_3b'){
    for(let tier=0;tier<3;tier++){
-    const ring=mesh(geo(new THREE.TorusGeometry(w*.62+tier,.22,5,56,Math.PI)),gold,x,5+tier*2,z);ring.rotation.set(-Math.PI/2,0,Math.PI);
+    const ring=mesh(geo(new THREE.TorusGeometry(w*.62+tier,.22,3,10,Math.PI)),gold,x,5+tier*2,z);ring.rotation.set(-Math.PI/2,0,Math.PI);
    }
    for(const side of [-1,1]){mesh(cylinder,dark,x+side*(w/2+3),8,z,2,16,2);mesh(cylinder,blue,x+side*(w/2+3),16.2,z,1.3,.3,1.3);collisions.push({x:x+side*(w/2+3),z,r:2});}
   }
   if(['house_3b','ai_textile_lab','mode3_studio'].includes(b.buildingId)){
-   const arch=mesh(geo(new THREE.TorusGeometry(w*.55,.2,5,40,Math.PI)),blue,x,3,z+d/2+.7);arch.rotation.z=0;
+   const arch=mesh(geo(new THREE.TorusGeometry(w*.55,.2,3,8,Math.PI)),blue,x,3,z+d/2+.7);arch.rotation.z=0;
    mesh(box,stone,x,h-1,z+d/2+2,w+4,.35,4);
   }
   if(['central_marina','train_station','community_house'].includes(b.buildingId)){
-   for(let i=0;i<4;i++)mesh(box,gold,x-w*.4+i*w*.27,h+1+i*.35,z,w*.2,.25,d+5);
+   for(let i=0;i<3;i++)mesh(box,gold,x-w*.34+i*w*.34,h+1+i*.4,z,w*.22,.25,d+5);
   }
-  // Shallow roof planters remain on the real roof rather than large floating balls.
-  for(const side of [-1,1]){mesh(box,stone,x+side*w*.3,h+.5,z,w*.22,.6,d*.6);mesh(box,green,x+side*w*.3,h+1.02,z,w*.19,.48,d*.55);}
+  // One broad garden roof reads from the cable cars without four tiny layers.
+  mesh(box,stone,x,h+.5,z,w*.5,.6,d*.6);mesh(box,green,x,h+1.02,z,w*.43,.42,d*.52);
  }
  // Residential footprints keep their addresses and clear the public lookout aisles.
  for(let i=0;i<8;i++){
@@ -87,15 +90,17 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
   for(const side of [-1,1]){
    const tx=x+Math.cos(a+Math.PI/2)*side*10,tz=z+Math.sin(a+Math.PI/2)*side*10,profile=i%2?[[0,1],[.56,1],[.78,.88],[1,.71]]:[[0,1],[.68,1],[.68,.82],[1,.82]];
    mesh(geo(civicShaftGeometry(8,9,h,profile)),dark,tx,0,tz);collisions.push({x:tx,z:tz,width:8,depth:9});cameraSolids.push({id:`residence-solid-${i}-${side}`,x:tx,z:tz,width:8,depth:9,bottom:0,top:h+7});
-   for(let f=0;f<Math.floor(h/3);f++){
-    const y=2+f*3,s=scaleAt(profile,y/h);
-    for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.75,1.7);if(glazing)mesh(geo(glazing),glass,tx,0,tz);mesh(box,gold,tx,y+.9,tz+face*(4.5*s+.18),7.6*s,.12,.2);}
+   const floorCount=3;
+   for(let f=0;f<floorCount;f++){
+    const y=2+f*Math.max(1,h-4)/(floorCount-1),s=scaleAt(profile,y/h);
+    for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.72,1.8);if(glazing)mesh(geo(glazing),glass,tx,0,tz);}
+    if(f===1)mesh(geo(civicShaftGeometry(8*s+.22,9*s+.22,.12,[[0,1],[1,1]])),gold,tx,y+.9,tz);
    }
-   const top=profile.at(-1)[1];mesh(geo(civicShaftGeometry(8*top+.5,9*top+.5,.4,[[0,1],[1,1]])),gold,tx,h,tz);
+   const top=profile.at(-1)[1];mesh(geo(civicShaftGeometry(8*top+.5,9*top+.5,.32,[[0,1],[1,1]])),gold,tx,h,tz);
    const crownH=2.5+(i%3)*1.5;
-   mesh(geo(civicShaftGeometry(5*top,6*top,crownH,[[0,1],[.72,.92],[1,.75]])),glass,tx,h+.4,tz);
-   mesh(box,dark,tx,h+.65+crownH,tz,5*top,.25,6*top);
-   for(const edge of [-1,1]){mesh(box,stone,tx+edge*2.5*top,h+.85,tz,.65,.6,5.5*top);mesh(box,green,tx+edge*2.5*top,h+1.28,tz,.54,.3,5.1*top);}
+   mesh(geo(civicShaftGeometry(5*top,6*top,crownH,[[0,1],[.72,.92],[1,.75]])),glass,tx,h+.32,tz);
+   mesh(box,dark,tx,h+.55+crownH,tz,5*top,.22,6*top);
+   mesh(box,stone,tx,h+.75,tz,2.7*top,.5,5.4*top);mesh(box,green,tx,h+1.12,tz,2.35*top,.24,4.9*top);
    mapSites.push({id:`residence-${i}-${side}`,x:tx,z:tz,width:8,depth:9,height:h+crownH,kind:'residence',name:'Résidence des Héritages'});
   }
   sign('RÉSIDENCES · ACCÈS PRIVÉ',x,3,z+8,12);

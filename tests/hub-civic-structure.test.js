@@ -34,10 +34,11 @@ test('civic solid faces point outward and vaults stay below pedestrians',()=>{
  }finally{arch.dispose();shaft.dispose();material.dispose();}
 });
 
-test('tower lift selects actual raycastable floor and bounded movement, then returns ground control',()=>{
+test('tower lift selects all six actual raycastable floors with bounded movement, then returns ground control',()=>{
  const hub=createHubPlatform(blankSave());hub.root.updateMatrixWorld(true);
  try{
-  assert.equal(hub.liftFloors.length,3);assert.equal(hub.liftItems[0].destinations.length,4);
+  assert.equal(hub.liftFloors.length,6);assert.equal(hub.liftItems[0].destinations.length,7);
+  assert.deepEqual(hub.liftFloors.map(floor=>floor.id),['heritage_gallery','council_eight','living_maps','city_observatory','circle_chamber','horizon_belvedere']);
   const lift=hub.liftItems[0];assert.ok(hub.collisions.every(c=>obstacleDistance(lift,c)>1.25),'ground lift approach clears real shelf and wall');
   const route=findPath(HUB_PLATFORM.spawn,lift,hub.collisions,HUB_PLATFORM.walkRadius);assert.ok(route.length);assert.ok(Math.hypot(route.at(-1).x-lift.x,route.at(-1).z-lift.z)<.01,'lift reached through ground hall door');
   for(const floor of hub.liftFloors){
