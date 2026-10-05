@@ -52,10 +52,11 @@ export function buildHubRuntimeItems({
     ...hubDistrictPosition(plan, district.id),
   }));
 
+  const activeEvents=activeHubEvents(events,eventContext);
   const maxNpcs = selectNpcBudget(plan, profile),memorySave={hub:hubState||{},seals:[...seals]};
   const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
     const memory=hubNpcMemory({...npc,npcId:npc.id},memorySave,{hour:eventContext.hour,weather:eventContext.weather});
-    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather});
+    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather,activeEvents});
     if(schedule.rare)return [];
     const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
     const d = offset(npc.id, schedule.shelter?3.5:schedule.social?5.2:8);
@@ -73,6 +74,9 @@ export function buildHubRuntimeItems({
       activityLabel:schedule.activityLabel,
       activityPlaceId:schedule.activityPlaceId,
       socialPartnerId:schedule.socialPartnerId,
+      eventId:schedule.eventId||null,
+      eventEffect:schedule.eventEffect||null,
+      movementIntent:schedule.movementIntent||null,
       name: npc.name,
       role: npc.role,
       rarity: npc.rarity,
@@ -175,7 +179,7 @@ export function buildHubRuntimeItems({
     return {id:`hub:guardian:${guardian.region}`,type:'hubGuardian',region:guardian.region,card:guardian.card,name:guardian.name,value:guardian.value,district:guardian.district,x:center.x+d.x,z:center.z+d.z,range:6,index};
   });
 
-  const eventItems = activeHubEvents(events,eventContext).map((event)=>{
+  const eventItems = activeEvents.map((event)=>{
     const center=hubDistrictPosition(plan,event.district),d=offset(`event:${event.id}`,7);
     return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:event.id.replaceAll('_',' '),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
   });
