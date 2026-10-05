@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {musicMasterResumeState,shouldLoopVisual} from '../src/destin/musicMasterState.js';
+import {musicMasterResumeState,shouldLoopVisual,visualTargetTime} from '../src/destin/musicMasterState.js';
 
 const manifest={nodes:[
   {id:'intro',cinema:{language:'fr'}},
@@ -26,4 +26,9 @@ test('short visual beds loop when the audio master runs longer',()=>{
   assert.equal(shouldLoopVisual(12,8,0),false);
   assert.equal(shouldLoopVisual(10,9,1500),true);
   assert.equal(shouldLoopVisual(NaN,9,0),false);
+});
+
+test('looping visual target wraps instead of freezing at the last frame',()=>{
+  assert.equal(visualTargetTime(11,1000,5,true),2);
+  assert.equal(visualTargetTime(2,1000,5,false),3);
 });
