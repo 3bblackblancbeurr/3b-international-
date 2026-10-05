@@ -16,8 +16,10 @@ export default function WorldPortalCard({goTo}){
  return <section className="world-portal home-world-entry" aria-labelledby="world-portal-title">
   <img className="home-world-art" src="/art/luxury-v2/hub-cite-origine.webp" alt="La Cité Origine et son Cercle Brisé" width="1672" height="941" fetchPriority="high"/>
   <div className="home-world-ring-motion" aria-hidden="true">
-   <img className="home-world-ring-layer" src="/art/luxury-v2/hub-cite-origine.webp" alt="" width="1672" height="941"/>
    <span className="home-world-ring-energy"/>
+   <span className="home-world-ring-depth"/>
+   <span className="home-world-ring-contact"/>
+   <span className="home-world-ring-particles"><i/><i/><i/><i/><i/><i/></span>
   </div>
   <div className="world-portal-copy">
    <p className="eyebrow">LA CITÉ DES HUIT HÉRITAGES</p>
