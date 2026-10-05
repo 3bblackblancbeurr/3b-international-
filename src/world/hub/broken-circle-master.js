@@ -47,13 +47,13 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
  let progress=0,daylight=1,reduced=typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
  function setProgress(count){
   progress=clamp(Number(count)||0,0,8);
-  for(const h of heritage){const on=h.index<progress;h.material.emissiveIntensity=on?.92:.08;h.mesh.scale.setScalar(on?1.08:.92);}
+  for(const h of heritage){const on=h.index<progress;h.material.emissiveIntensity=on ? .92 : .08;h.mesh.scale.setScalar(on ? 1.08 : .92);}
  }
  function setDaylight(value){daylight=clamp(Number(value)||0);}
 
  function tick(time,playerDistance=Infinity){
   const near=clamp(1-playerDistance/125);
-  const motion=reduced?.06:1;
+  const motion=reduced ? .06 : 1;
   rotorOuter.rotation.z=time*.035*motion*(1+near*.18);
   rotorInner.rotation.z=-time*.052*motion*(1+near*.24);
   energy.rotation.z=time*.11*motion;
