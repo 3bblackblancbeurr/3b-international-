@@ -23,37 +23,43 @@ export function addCivicStructure({mesh,geo,box,materials,bridges,promenades,con
   const c=Math.cos(bridge.angle),s=Math.sin(bridge.angle),o=mesh(g,m,bridge.x+c*along-s*across,y,bridge.z+s*along+c*across,sx,sy,sz);o.rotation.y=-bridge.angle;return o;
  };
  for(const bridge of [...bridges,...connectors]){
-  const spans=bridge.length>60?3:1,span=bridge.length/spans;
+  const spans=Math.max(1,Math.ceil(bridge.length/38)),span=bridge.length/spans,slope=((bridge.endHeight||0)-(bridge.startHeight||0))/bridge.length;
+  const deckAt=along=>(bridge.startHeight||0)+(along/bridge.length+.5)*((bridge.endHeight||0)-(bridge.startHeight||0));
   const arch=geo(civicArchGeometry({length:span-.9,crown:-1.5,spring:-12.7,depth:.9,thickness:.85,spandrelTop:-.78}));
+  for(let v=0;v<arch.attributes.position.count;v++)arch.attributes.position.setY(v,arch.attributes.position.getY(v)+arch.attributes.position.getX(v)*slope);arch.computeVertexNormals();
   for(let j=0;j<spans;j++)for(const side of [-1,1]){
    const along=(j+.5)*span-bridge.length/2;
-   place(bridge,along,side*(bridge.width/2-.95),0,arch,stone);arches.push({x:bridge.x,z:bridge.z,angle:bridge.angle,along});
+   place(bridge,along,side*(bridge.width/2-.95),deckAt(along),arch,stone);arches.push({x:bridge.x,z:bridge.z,angle:bridge.angle,along});
    // Bronze string course follows the load-bearing stone crown.
    const trim=geo(civicArchGeometry({length:span-.9,crown:-1.47,spring:-12.67,depth:.035,thickness:.09}));
-   place(bridge,along,side*(bridge.width/2-.45),0,trim,gold);
+   for(let v=0;v<trim.attributes.position.count;v++)trim.attributes.position.setY(v,trim.attributes.position.getY(v)+trim.attributes.position.getX(v)*slope);trim.computeVertexNormals();
+   place(bridge,along,side*(bridge.width/2-.45),deckAt(along),trim,gold);
   }
   for(let j=0;j<=spans;j++){
    const along=j*span-bridge.length/2;
+   const deckY=deckAt(along),columnHeight=deckY+23;
    for(const side of [-1,1]){
-    place(bridge,along,side*(bridge.width/2-.95),-8.45,box,dark,1.25,15.1,1.9);
-    place(bridge,along,side*(bridge.width/2-.95),-13.55,box,stone,2.3,1.5,2.9);
-    place(bridge,along,side*(bridge.width/2-.95),-1.55,box,gold,2,.18,2.5);
+    const pier=geo(new THREE.CylinderGeometry(.83,1.4,columnHeight,6));
+    place(bridge,along,side*(bridge.width/2-.95),(deckY-23)/2,pier,stone);
+    place(bridge,along,side*(bridge.width/2-.95),-22.5,box,stone,2.8,1.8,3.2);
+    place(bridge,along,side*(bridge.width/2-.95),deckY-1.55,box,gold,2,.18,2.5);
    }
-   place(bridge,along,0,-1.4,box,dark,1.3,1.4,bridge.width);piers.push({x:bridge.x,z:bridge.z,angle:bridge.angle,along});
+   place(bridge,along,0,deckY-1.4,box,dark,1.3,1.4,bridge.width);piers.push({x:bridge.x,z:bridge.z,angle:bridge.angle,along});
   }
   // Longitudinal fascia follows the same edge as its real pedestrian deck.
-  for(const side of [-1,1])place(bridge,0,side*(bridge.width/2-.2),-.5,box,stone,bridge.length,.72,.4);
+  for(const side of [-1,1]){const fascia=place(bridge,0,side*(bridge.width/2-.2),deckAt(0)-.5,box,stone,Math.hypot(bridge.length,(bridge.endHeight||0)-(bridge.startHeight||0)),.72,.4);fascia.rotateZ(Math.atan(slope));}
  }
  for(const promenade of promenades){
   const bays=promenade.outer>150?40:28,r=(promenade.inner+promenade.outer)/2,span=Math.PI*2*r/bays;
-  const arch=geo(civicArchGeometry({length:span-1,crown:-1.1,spring:-11.2,depth:.85,thickness:.8,segments:12,spandrelTop:-.12}));
+  const arch=geo(civicArchGeometry({length:span-1,crown:-1.1,spring:-11.2,depth:.85,thickness:.8,segments:12}));
   for(let i=0;i<bays;i++){
    const a=i*Math.PI*2/bays,b=(i+.5)*Math.PI*2/bays;
    for(const radius of [promenade.inner+.65,promenade.outer-.65]){
-    const support=mesh(box,dark,Math.cos(a)*radius,-7.8,Math.sin(a)*radius,1.35,14.9,1.7);support.rotation.y=-a;
-    const foot=mesh(box,stone,Math.cos(a)*radius,-14.4,Math.sin(a)*radius,2.2,1.2,2.6);foot.rotation.y=-a;
+    const support=mesh(box,stone,Math.cos(a)*radius,-11.9,Math.sin(a)*radius,1.15,23.4,1.4);support.rotation.y=-a;
+    const foot=mesh(box,stone,Math.cos(a)*radius,-23,Math.sin(a)*radius,2.2,1.6,2.6);foot.rotation.y=-a;
     const vault=mesh(arch,stone,Math.cos(b)*radius,0,Math.sin(b)*radius);vault.rotation.y=-b-Math.PI/2;
    }
+   const tie=mesh(box,dark,Math.cos(b)*r,-.6,Math.sin(b)*r,promenade.outer-promenade.inner,.8,1.4);tie.rotation.y=-b;
   }
   for(const radius of [promenade.inner+.12,promenade.outer-.12]){
    const rim=mesh(geo(new THREE.TorusGeometry(radius,.24,4,bays*3)),stone,0,-.35,0);rim.rotation.x=-Math.PI/2;

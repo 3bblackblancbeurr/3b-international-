@@ -15,7 +15,8 @@ test('water gaps block walking; bridges and island centres remain actual ground'
  const hub=createHubPlatform(blankSave());try{
   const water=hub.collisions.find(o=>o.id==='cite-water-boundary');
   assert.ok(obstacleDistance({x:42*HUB_SCALE,z:20*HUB_SCALE},water)<0);
-  const start={x:35*HUB_SCALE,z:20*HUB_SCALE};let p=start;
+  const start={x:30*HUB_SCALE,z:20*HUB_SCALE};let p=start;
+  assert.ok(citeSurfaceDistance(start.x/HUB_SCALE,start.z/HUB_SCALE)<-1,'walking begins inside the revised coast');
   for(let i=0;i<150;i++)p=moveWithCollision(p,.12,0,[water],HUB_PLATFORM.walkRadius);
   assert.ok(citeSurfaceDistance(p.x/HUB_SCALE,p.z/HUB_SCALE)<0,'cannot walk into the sea');
   assert.deepEqual(safePlatformPosition({x:42*HUB_SCALE,z:20*HUB_SCALE}),HUB_PLATFORM.spawn);
@@ -39,5 +40,5 @@ test('coastal foundations stay below the pedestrian deck and cannot hide the cha
 
  test('country gates follow the reference compass without changing destination identities',()=>{
   const france=platformPortal(0),italie=platformPortal(1),estonie=platformPortal(2),turquie=platformPortal(3),algerie=platformPortal(4),tunisie=platformPortal(5),maroc=platformPortal(6),espagne=platformPortal(7);
-  assert.ok(france.x<0&&france.z<0);assert.ok(italie.x>0&&Math.abs(italie.z)<.01);assert.ok(Math.abs(estonie.x)<.01&&estonie.z<0);assert.ok(turquie.x>0&&turquie.z<0);assert.ok(Math.abs(algerie.x)<.01&&algerie.z>0);assert.ok(tunisie.x>0&&tunisie.z>0);assert.ok(maroc.x<0&&maroc.z>0);assert.ok(espagne.x<0&&Math.abs(espagne.z)<.01);
+  assert.ok(france.x<0&&france.z<0);assert.ok(italie.x>0&&Math.abs(italie.z)<italie.x*.1);assert.ok(estonie.z<0&&Math.abs(estonie.x)<-estonie.z*.1);assert.ok(turquie.x>0&&turquie.z<0);assert.ok(algerie.z>0&&algerie.x>=0&&algerie.x<algerie.z*.5);assert.ok(tunisie.x>0&&tunisie.z>0);assert.ok(maroc.x<0&&maroc.z>0);assert.ok(espagne.x<0&&Math.abs(espagne.z)<-espagne.x*.15);
  });

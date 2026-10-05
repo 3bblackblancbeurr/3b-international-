@@ -13,7 +13,8 @@ import {Raycaster,Vector3} from 'three';
 test('reference hub has exactly eight perimeter gates and retains existing persistent IDs',()=>{
  const save=blankSave(),items=worldRuntimeItems('hub',save,{hour:12}),portals=items.filter(i=>i.type==='portal');
  assert.equal(portals.length,8);assert.equal(new Set(portals.map(i=>i.id)).size,8);
- for(const gate of portals)assert.ok(Math.abs(Math.hypot(gate.x,gate.z)-HUB_PLATFORM.portalRadius)<.01);
+ for(const gate of portals){const radius=Math.hypot(gate.x,gate.z);assert.ok(radius>HUB_PLATFORM.radius*.7&&radius<HUB_PLATFORM.walkRadius,'country stays on the outer archipelago');}
+ assert.ok(new Set(portals.map(gate=>Math.round(Math.hypot(gate.x,gate.z)))).size>3,'country sites follow an irregular shoreline');
  assert.equal(items.filter(i=>i.type==='hubBuilding').length,19);
  assert.ok(!items.some(i=>['hubStructure','hubRoad','hubHeritageFacility'].includes(i.type)));
  for(const item of items){assert.ok(Number.isFinite(item.x)&&Number.isFinite(item.z));assert.ok(Math.hypot(item.x,item.z)<HUB_PLATFORM.walkRadius,item.id);}

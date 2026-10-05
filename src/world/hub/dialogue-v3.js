@@ -1,4 +1,5 @@
 import {hubNpcActivity,hubNpcActivityLine} from './npc-activity.js';
+import {referenceResidentStory} from './reference-city-life.js';
 export const HUB_DIALOGUE_CHOICES={
  justice:[
   {id:'ecouter',label:'Écouter avant de juger',value:'Justice'},
@@ -21,6 +22,6 @@ export function hubDialogueScene(npc,{hour=12,weather='clear',missionState={},ta
  if(active)return {id:'mission-active',text:`Ta mission ${active} avance. Raconte-moi ce que tu as réellement vu, pas ce que tu espérais voir.`,choices:talks%3===0?HUB_DIALOGUE_CHOICES.justice:null};
  if(completed)return {id:'mission-complete',text:'Tu as terminé ce que tu avais commencé. La Cité gardera une trace de ce choix.',choices:null};
  if(activity.id==='night-watch'||activity.id==='rest')return {id:'night',text:hubNpcActivityLine(npc,{hour,weather,missionState}),choices:null,activity};
- if(talks>=3)return {id:'familiar',text:hubNpcActivityLine(npc,{hour,weather,missionState}),choices:HUB_DIALOGUE_CHOICES.memory,activity};
+ if(talks>=3)return {id:'familiar',text:talks%2===0?referenceResidentStory(npc,'neighbors',{hour,weather})||hubNpcActivityLine(npc,{hour,weather,missionState}):hubNpcActivityLine(npc,{hour,weather,missionState}),choices:HUB_DIALOGUE_CHOICES.memory,activity};
  return {id:'first',text:npc.name+' · '+npc.role+'. '+hubNpcActivityLine(npc,{hour,weather,missionState}),choices:null,activity};
 }

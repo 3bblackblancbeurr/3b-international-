@@ -83,12 +83,13 @@ export function createCityPremiumWater({noise,atmosphere,time,night,extent,mobil
  const stoneMaterial=new THREE.MeshStandardMaterial({name:'City 3B · wet shoreline stones',color:0x737e73,roughness:.55,metalness:0});
  const reedMaterial=new THREE.MeshStandardMaterial({name:'City 3B · shoreline reeds',color:0x566e3c,roughness:.92,metalness:0});
  const group=new THREE.Group();group.name='City 3B · continuous premium water';
- let geometries=[],quality=cityWaterQuality(mobile),reflector=null,lastCapture=-Infinity,capturing=false,surfaceMeshes=[];
+ let geometries=[],quality=cityWaterQuality(mobile),reflector=null,lastCapture=-Infinity,capturing=false,reflectionFailed=false,surfaceMeshes=[];
  const frustum=new THREE.Frustum(),viewProjection=new THREE.Matrix4(),worldSphere=new THREE.Sphere(),reflectorInverse=new THREE.Matrix4();
  const lastCamera=new THREE.Matrix4(),lastProjection=new THREE.Matrix4();
  function resetCapture(){uniforms.uReflectionReady.value=0;lastCapture=-Infinity;}
  function disposeReflection(){if(reflector){reflector.getRenderTarget().dispose();reflector.geometry.dispose();reflector.material.dispose();reflector=null;}resetCapture();uniforms.uReflection.value=normalA;}
  function setQuality(tier=0){quality=cityWaterQuality(mobile,tier);uniforms.uDetail.value=quality.detail;
+  if(reflectionFailed)quality={...quality,reflectionSize:0,reflectionHz:0};
   if(!quality.reflectionSize){disposeReflection();return;}
   if(reflector&&reflector.getRenderTarget().width!==quality.reflectionSize)disposeReflection();
  }
@@ -151,7 +152,8 @@ export function createCityPremiumWater({noise,atmosphere,time,night,extent,mobil
    uniforms.uReflectionReady.value=1;lastCapture=seconds;lastCamera.copy(camera.matrixWorld);lastProjection.copy(camera.projectionMatrix);return true;
   }catch{
    // A failed offscreen pass must never interrupt construction or city input.
-   disposeReflection();quality={...quality,reflectionSize:0,reflectionHz:0};return false;
+   // Keep that fallback across LOD changes until this renderer is remounted.
+   reflectionFailed=true;disposeReflection();quality={...quality,reflectionSize:0,reflectionHz:0};return false;
   }finally{
    renderer.setRenderTarget(target);renderer.xr.enabled=xr;renderer.shadowMap.autoUpdate=shadowAuto;renderer.setViewport(viewport);renderer.setScissor(scissor);renderer.setScissorTest(scissorTest);
    for(const [object,visible] of hidden)object.visible=visible;capturing=false;

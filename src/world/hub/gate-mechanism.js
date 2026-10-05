@@ -39,18 +39,19 @@ export function addGateMechanism(group,{accent='#5abce5'}={}){
   piece(box,light,side*.22,3.35,.53,.05,4.2,.04);
   for(const [material,list] of parts){const merged=g(mergeGeometries(list));list.forEach(p=>p.dispose());const mesh=new THREE.Mesh(merged,material);mesh.castShadow=mesh.receiveShadow=true;leaf.add(mesh);}
  }
- // Rails and the exposed rack make the movement understandable at close range.
- const railGeo=g(new THREE.BoxGeometry(12.2,.12,.22)),rail=new THREE.Mesh(railGeo,bronze);rail.position.set(0,4.4,.66);group.add(rail);
+ // Rails and the exposed rack share one fixed draw; paired wheels share one instance draw.
+ const railGeo=g(new THREE.BoxGeometry(12.2,.12,.22));railGeo.translate(0,4.4,.66);
  const teeth=[];
  for(let i=0;i<58;i++){const p=box.clone();p.scale(.08,.17,.12);p.translate((i-28.5)*.2,4.3,.72);teeth.push(p);}
- const rackGeo=g(mergeGeometries(teeth));teeth.forEach(p=>p.dispose());group.add(new THREE.Mesh(rackGeo,bronze));
- const wheels=[];
- for(const side of [-1,1]){
-  const wheel=new THREE.Mesh(g(new THREE.TorusGeometry(.35,.09,6,16)),bronze);wheel.position.set(side*3.65,4.3,.81);group.add(wheel);wheels.push(wheel);
- }
+ const rackGeo=g(mergeGeometries(teeth));teeth.forEach(p=>p.dispose());
+ const frameGeo=g(mergeGeometries([railGeo,rackGeo])),rail=new THREE.Mesh(frameGeo,bronze);rail.name='Rails et crémaillère';rail.castShadow=rail.receiveShadow=true;group.add(rail);
+ const wheelGeo=g(new THREE.TorusGeometry(.35,.09,6,16)),wheelBatch=new THREE.InstancedMesh(wheelGeo,bronze,2),wheelDummy=new THREE.Object3D();wheelBatch.name='Roues du mécanisme';wheelBatch.castShadow=wheelBatch.receiveShadow=true;group.add(wheelBatch);owned.push(wheelBatch);
+ const wheels=[{side:-1,rotation:{z:0}},{side:1,rotation:{z:0}}];
+ function poseWheels(eased){for(const [i,wheel] of wheels.entries()){wheel.rotation.z=wheel.side*eased*5;wheelDummy.position.set(wheel.side*3.65,4.3,.81);wheelDummy.rotation.set(0,0,wheel.rotation.z);wheelDummy.updateMatrix();wheelBatch.setMatrixAt(i,wheelDummy.matrix);}wheelBatch.instanceMatrix.needsUpdate=true;}
+ poseWheels(0);wheelBatch.computeBoundingSphere();
  let openness=0,disposed=false;
  return {leaves,wheels,get openness(){return openness;},
-  tick(distance,dt,options){openness=gateOpening(openness,distance,dt,options);const eased=openness*openness*(3-2*openness);leaves.forEach((leaf,i)=>{leaf.position.x=(i?1:-1)*3.05*eased;});wheels.forEach((wheel,i)=>{wheel.rotation.z=(i?1:-1)*eased*5;});},
-  dispose(){if(disposed)return;disposed=true;leaves.forEach(leaf=>leaf.removeFromParent());rail.removeFromParent();wheels.forEach(w=>w.removeFromParent());owned.forEach(asset=>asset.dispose());},
+  tick(distance,dt,options){openness=gateOpening(openness,distance,dt,options);const eased=openness*openness*(3-2*openness);leaves.forEach((leaf,i)=>{leaf.position.x=(i?1:-1)*3.05*eased;});poseWheels(eased);},
+  dispose(){if(disposed)return;disposed=true;leaves.forEach(leaf=>leaf.removeFromParent());rail.removeFromParent();wheelBatch.removeFromParent();owned.forEach(asset=>asset.dispose());},
  };
 }

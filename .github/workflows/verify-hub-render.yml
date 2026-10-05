@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/world/**'
       - 'scripts/verify-world-art-browser.mjs'
+      - 'scripts/verify-hub-services-browser.mjs'
       - '.github/workflows/verify-hub-render.yml'
 permissions:
   contents: read
@@ -58,6 +59,11 @@ jobs:
           WORLD_ART_QUALITY: ${{ matrix.quality }}
           WORLD_ART_CLOCK: ${{ matrix.clock }}
           WORLD_ART_OUT: artifacts/hub-${{ matrix.view }}
+      - name: Check six civic services on desktop and both phone orientations
+        if: matrix.view == 'desktop'
+        run: node scripts/verify-hub-services-browser.mjs
+        env:
+          HUB_SERVICES_OUT: artifacts/hub-${{ matrix.view }}/services
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

@@ -19,3 +19,11 @@ test('reduced motion opens immediately and existing country frames stay static',
  assert.equal(gateOpening(0,12,.01,{reducedMotion:true}),1);
  const frame=createPortalFrame('maroc','#bb5f65');assert.equal(frame.mechanism,null);frame.dispose();
 });
+
+test('fixed rails and paired moving wheels are batched and released on disposal',()=>{
+ const frame=createPortalFrame('france','#83bee2',{mechanical:true});
+ const rail=frame.group.getObjectByName('Rails et crémaillère'),wheels=frame.group.getObjectByName('Roues du mécanisme');
+ assert.ok(rail?.isMesh);assert.ok(wheels?.isInstancedMesh);assert.equal(wheels.count,2);
+ let released=false;wheels.addEventListener('dispose',()=>{released=true;});
+ frame.mechanism.dispose();assert.equal(wheels.parent,null);assert.equal(rail.parent,null);assert.equal(released,true);frame.dispose();
+});

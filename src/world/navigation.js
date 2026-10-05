@@ -13,7 +13,12 @@ function compactPath(start,destination,obstacles,radius){
  const gap=1.25,step=2,limit=Math.floor((radius-gap)/step),size=limit*2+1;
  const nearby=radius>200?spatialObstacles(obstacles,{padding:gap}):()=>obstacles;
  const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
- const clear=(p,clearance=gap)=>Math.hypot(p.x,p.z)<=radius-clearance&&!nearby(p).some(o=>obstacleDistance(p,o)<clearance);
+ const clearanceCache=new Map();
+ const clear=(p,clearance=gap)=>{
+  const key=p.x+':'+p.z+':'+clearance;
+  if(!clearanceCache.has(key))clearanceCache.set(key,Math.hypot(p.x,p.z)<=radius-clearance&&!nearby(p).some(o=>obstacleDistance(p,o)<clearance));
+  return clearanceCache.get(key);
+ };
  const segment=(a,b,clearance=gap)=>{const count=Math.ceil(distance(a,b)/.5);for(let i=1;i<=count;i++)if(!clear({x:a.x+(b.x-a.x)*i/count,z:a.z+(b.z-a.z)*i/count},clearance))return false;return true;};
  const point=id=>({x:(id%size-limit)*step,z:(Math.floor(id/size)-limit)*step});
  const idAt=p=>(Math.round(p.z/step)+limit)*size+Math.round(p.x/step)+limit;
@@ -68,5 +73,7 @@ function metropolisPath(start,destination,obstacles,radius){
 }
 
 export function findPath(start,destination,obstacles,radius=76){
- return radius>400?metropolisPath(start,destination,obstacles,radius):compactPath(start,destination,obstacles,radius);
+ // The expanded archipelago still has narrow doors, switchbacks and water.
+ // Its precise, spatially indexed search must survive a larger world radius.
+ return radius>400&&!obstacles.some(o=>o.id==='cite-water-boundary')?metropolisPath(start,destination,obstacles,radius):compactPath(start,destination,obstacles,radius);
 }

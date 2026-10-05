@@ -33,7 +33,7 @@ export default function UniversePreview() {
   const current = REALM_PREVIEWS[realm];
   return <div className="luxury-universe-preview">
     <div className="luxury-universe-stage" data-live={ready}>
-      <img className="luxury-universe-poster" src="/art/luxury-v2/hub-cite-origine.webp" alt="Illustration de la Cité Origine et du Cercle Brisé" width="1672" height="941" loading="lazy"/>
+      <img className="luxury-universe-poster" src="/art/monde-3b/reference-cite-huit-heritages.webp" alt="La Cité des Huit Héritages — image de référence 3B" width="1536" height="1152" loading="lazy"/>
       <div ref={host} className="luxury-universe-canvas" aria-hidden="true"/>
       <div className="luxury-universe-caption" aria-live="polite"><small>{current ? current.value.toUpperCase() : 'LA CITÉ DES HUIT HÉRITAGES'}</small><strong>{current ? current.name : 'Tout part du Nexus.'}</strong><span>{current ? `${current.guardian} · Gardien de ${current.value}` : 'Huit royaumes. Un héritage commun.'}</span></div>
       <Button className="luxury-universe-reset" variant="ghost" onClick={() => choose(-1)} disabled={realm === -1}>Vue du Nexus</Button>

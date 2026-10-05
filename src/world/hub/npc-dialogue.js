@@ -1,3 +1,4 @@
+import {referenceResidentStory,referenceMissionClue} from './reference-city-life.js';
 const LINES={
  ines_varga:['Les Archives n’oublient rien. Elles attendent seulement qu’on sache écouter.','Un souvenir brisé n’est pas perdu : il faut retrouver son ordre.','Quand tu entendras l’Écho, ne cours pas. Observe ce qu’il essaie de protéger.'],
  mael_rivière:['Bienvenue dans la Cité. Commence par regarder autour de toi avant de choisir une porte.','Le 3B Express relie tous les quartiers. Apprends la ville, elle te servira plus tard.','Les premiers pas paraissent simples, mais ils ouvrent tout le reste.'],
@@ -27,8 +28,10 @@ const LINES={
 
 export function hubNpcDialogue(item,missionState,turn=0){
  const base=LINES[item.npcId]||[`${item.name} observe le quartier.`,item.role||'Le monde continue autour de toi.','Reviens après avoir avancé dans la Cité.'];
- const missionId=item.missionIds?.[0],state=missionId?missionState?.[missionId]:null;
+ const missionId=item.missionIds?.find(id=>missionState?.[id]?.status==='active')||item.missionIds?.[0],state=missionId?missionState?.[missionId]:null;
  const contextual=state?.claimed?'Tu as tenu ta parole. La Cité s’en souviendra.':state?.status==='completed'?'Tu as terminé. Récupère ta récompense avant de repartir.':state?.status==='active'?`Continue la mission : objectif ${Math.min(state.completedObjectives+1,state.totalObjectives)} sur ${state.totalObjectives}.`:missionId?'J’ai une mission pour toi quand tu seras prêt.':null;
- const lines=contextual?[base[0],contextual,...base.slice(1)]:base;
+ const local=referenceResidentStory(item,turn%2?'work':'district');
+ const clue=referenceMissionClue(missionId,state);
+ const lines=contextual?[base[0],clue||contextual,...base.slice(1),...(local?[local]:[])]:[...base,...(local?[local]:[])];
  return lines[Math.abs(turn)%lines.length];
 }

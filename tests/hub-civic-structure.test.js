@@ -13,7 +13,8 @@ import {obstacleDistance} from '../src/world/collision.js';
 test('built outer arcade has reachable dry decks and preserves the real water gap',()=>{
  const hub=createHubPlatform(blankSave());hub.root.updateMatrixWorld(true);
  try{
-  assert.equal(CITE_PROMENADES.length,2);assert.equal(CITE_CONNECTORS.length,8);
+  assert.equal(CITE_PROMENADES.length,2);assert.equal(CITE_CONNECTORS.filter(span=>span.id.startsWith('horizon-causeway-')).length,8);
+  assert.equal(CITE_CONNECTORS.filter(span=>span.id.startsWith('country-causeway-')).length,8);assert.equal(CITE_CONNECTORS.filter(span=>span.id.startsWith('dock-')).length,5);
   assert.ok(citeSurfaceDistance(160*Math.cos(Math.PI/8),160*Math.sin(Math.PI/8))>0,'water between districts and outer arcade stays water');
   for(let i=0;i<8;i++){
    const a=(i+.35)*Math.PI/4,p={x:Math.cos(a)*177.4*HUB_SCALE,z:Math.sin(a)*177.4*HUB_SCALE};

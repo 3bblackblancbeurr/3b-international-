@@ -11,12 +11,12 @@ test('cascade lips match the coast and fall to the ocean without changing the de
   for(let i=0;i<13;i++){
    const x=p.getX(i),z=p.getZ(i),a=Math.atan2(z,x);
    assert.ok(Math.abs(Math.hypot(x,z)-citeIslandRadius(island,a)-.15)<.0001);
-   assert.ok(Math.abs(p.getY(i))<.000001);
+   assert.ok(Math.abs(p.getY(i)-(island.baseY||0))<.000001);
   }
   for(let i=p.count-13;i<p.count;i++)assert.equal(p.getY(i),-18);
   const cliff=islandCliffGeometry(island),c=cliff.attributes.position;
   for(let i=0;i<c.count;i++){
-   assert.ok(c.getY(i)<=0&&c.getY(i)>=-28);
+   assert.ok(c.getY(i)<=0&&c.getY(i)>=-(island.cliffDepth||28));
    if(c.getY(i)===0)assert.ok(Math.abs(Math.hypot(c.getX(i),c.getZ(i))-citeIslandRadius(island,Math.atan2(c.getZ(i),c.getX(i))))<.0001);
   }
   g.dispose();cliff.dispose();

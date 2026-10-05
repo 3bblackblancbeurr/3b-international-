@@ -46,9 +46,13 @@ test('claimed missions update civic state on reload and cannot grant presentatio
 });
 test('expanded skyline stays batched and uses no new external asset downloads',()=>{
  const world=createHubPlatform(blankSave());
- try{let meshes=0,triangles=0;world.root.traverse(o=>{if(o.isMesh){meshes++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});// Two supported promenades, solid arches and three real tower decks use a
- // measured 111 meshes / 236,168 base triangles before runtime instances.
- assert.ok(meshes<120,`static meshes ${meshes}`);assert.ok(triangles<260000,`base triangles ${triangles}`);assert.equal(world.architectureDiagnostics.residentialBlocks,16);assert.equal(world.architectureDiagnostics.publicPlaces,18);}finally{world.dispose();}
+ try{let meshes=0,triangles=0;world.root.traverse(o=>{if(o.isMesh){meshes++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});
+ // Expanded archipelago: 96 additional houses, 25 additional causeway/dock
+ // spans, ten reliefs with two LODs, nine vessels and six Tower floors.
+ // Measured: 242 meshes / 354,230 base triangles before runtime instances.
+ // Per-view mobile submission is independently gated in hub-reference-render-budget.
+ assert.ok(meshes<260,`static meshes ${meshes}`);assert.ok(triangles<380000,`base triangles ${triangles}`);
+ assert.equal(world.architectureDiagnostics.residentialBlocks,16);assert.equal(world.architectureDiagnostics.publicPlaces,30);assert.equal(world.architectureDiagnostics.towerFloors,6);assert.equal(world.architectureDiagnostics.gatePavilions,96);}finally{world.dispose();}
 });
 test('route broad phase preserves exact collision results for circles, rotated walls and disabled objects',()=>{
  const obstacles=[{x:-12,z:0,r:7},{x:0,z:0,width:30,depth:3,rotation:.7},{x:30,z:20,width:6,depth:40},{x:0,z:8,r:6,enabled:false}],nearby=spatialObstacles(obstacles);

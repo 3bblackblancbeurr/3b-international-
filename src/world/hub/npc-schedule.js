@@ -1,3 +1,4 @@
+import {referenceResidentMoment} from './reference-city-life.js';
 const HOME={
  ines_varga:'archives',mael_rivière:'heritage_square',celine_moreau:'archives',samir_benyahia:'docks',lyna_amrane:'docks',
  nora_khelifi:'commerce',hugo_martel:'arena',sofia_vega:'arena',leyla_demir:'innovation',maarja_saar:'gardens',
@@ -27,7 +28,8 @@ export function hubNpcSchedule(npcId,{hour=12,day=1,storyProgress=false,weather=
  hour=((Number(hour)||0)%24+24)%24;day=Math.max(0,Math.floor(Number(day)||0));
  const home=HOME[npcId]||'heritage_square',part=hubDayPart(hour),seed=seedOf(npcId);
  const [activityBuildingId,job]=WORKPLACES[npcId]||['heritage_welcome','accueille les habitants'];
- const routine=(data,label=job)=>({...data,activityBuildingId,activityLabel:label});
+ const moment=referenceResidentMoment(npcId,{hour,day,weather});
+ const routine=(data,label=job)=>({...data,activityBuildingId,activityLabel:data.social?moment?.activityLabel||label:label,activityPlaceId:moment?.placeId||null,socialPartnerId:data.social?moment?.partnerId||null:null});
  if(npcId==='the_conductor')return routine({district:part==='night'?'docks':'archives',activity:part==='night'?'dernier train':'archives du réseau',rare:part!=='night',shelter:SHELTER_WEATHER.has(weather)},'veille sur le dernier départ');
  if(npcId==='noah_leroux')return routine({district:storyProgress||SHELTER_WEATHER.has(weather)?'broken_circle_tower':part==='evening'?'heritage_square':'broken_circle_tower',activity:storyProgress?'veille des fragments':'observation',rare:false,shelter:SHELTER_WEATHER.has(weather),indoor:SHELTER_WEATHER.has(weather)},'observe les fréquences du Cercle');
  if(part==='night')return routine({district:home,activity:'repos',rare:false,indoor:true},'termine sa journée');

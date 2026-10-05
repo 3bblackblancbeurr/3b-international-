@@ -8,8 +8,8 @@ export function cascadeGeometry(island){
  const a=Math.atan2(island.z,island.x),positions=[],uv=[],indices=[];
  for(let row=0;row<=rows;row++)for(let col=0;col<=segments;col++){
   const u=col/segments,v=row/rows,angle=a+(u-.5)*halfWidth*2/island.r;
-  const drop=18*v,spread=.15+v*v*1.5,r=citeIslandRadius(island,angle)+spread;
-  positions.push(Math.cos(angle)*r,-drop,Math.sin(angle)*r);uv.push(u,1-v);
+  const base=island.baseY||0,drop=(18+base)*v,spread=.15+v*v*1.5,r=citeIslandRadius(island,angle)+spread;
+  positions.push(Math.cos(angle)*r,base-drop,Math.sin(angle)*r);uv.push(u,1-v);
  }
  for(let row=0;row<rows;row++)for(let col=0;col<segments;col++){
   const n=row*(segments+1)+col;indices.push(n,n+segments+1,n+1,n+1,n+segments+1,n+segments+2);

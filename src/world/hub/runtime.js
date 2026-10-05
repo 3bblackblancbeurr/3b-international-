@@ -71,6 +71,8 @@ export function buildHubRuntimeItems({
       indoor:!!schedule.indoor,
       activityBuildingId:schedule.activityBuildingId,
       activityLabel:schedule.activityLabel,
+      activityPlaceId:schedule.activityPlaceId,
+      socialPartnerId:schedule.socialPartnerId,
       name: npc.name,
       role: npc.role,
       rarity: npc.rarity,
