@@ -38,7 +38,7 @@ test('destin: browser never contains an administrative key',()=>{for(const name 
 
 
 test('destin: Mémoire and Avenir grants are permanent, idempotent and server guarded',()=>{
- const migration=fs.readFileSync('supabase/migrations/20261005170000_destin_le_combat_commence_rewards_v1.sql','utf8');
+ const migration=fs.readFileSync('supabase/migrations/20261005151327_destin_le_combat_commence_rewards_v1.sql','utf8');
  assert.ok(migration.includes("'DESTIN_MEMORY_KEY'"));
  assert.ok(migration.includes("'DESTIN_FUTURE_COMPASS'"));
  assert.ok(migration.includes("'DESTIN_MEMORY_PAVILION'"));
