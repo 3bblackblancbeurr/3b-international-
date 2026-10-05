@@ -131,6 +131,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     else if(f.kind==='light'){box(parent,0xc7ad79,x,1.6,z,.09,3.2,.09);box(parent,0x63c6ed,x,3.2,z,.9,.09,.22,true);shape(parent,cylinderGeo,0x2b4d5b,x,.08,z,.4,.16,.4);}
   }
   let groundPick=null,previewGeometries=[];
+  let renderMapHalf=cityMapBlueprint().half,renderMapId;
   let reliefFeatures=[],data={},night=false,premium={},picks=[],animated=[],latest={},dead=false,visible=true,reduced=false,frame=0,last=0,dirty=true,first=true,mergedGeometries=[],constructionSites=[],celebrations=[],trafficState=null,trafficLights=[],trafficTime=0,sportActors=[];
   let clock={time:Date.now(),tick:performance.now()};
   const syncClock=value=>{const parsed=Date.parse(value);if(Number.isFinite(parsed))clock={time:parsed,tick:performance.now()};};
@@ -174,6 +175,7 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
     const previous=data;data=snapshot;reliefFeatures=cityLandscape(data).filter(isRelief);syncClock(snapshot.serverTime);premium=premiumEffectsFromCodes(codes);picks=[];animated=[];constructionSites=[];clear(world);clear(people);clear(sites);clear(utilityLayer);
     for(const geometry of mergedGeometries)geometry.dispose();mergedGeometries=[];
     const plan=cityMapBlueprint(data),roads=cityMapRoads(plan),half=plan.half;
+    renderMapHalf=half;renderMapId=data.city?.city_id;
     for(const f of cityNetworks(data))infrastructure(['power','water','internet'].includes(f.kind)?utilityLayer:world,f);
     night=cityConstructionIsNight(data.city);
     scene.background=new THREE.Color(night?0x476585:0xa3d6ff);scene.fog=new THREE.Fog(scene.background,half*3,half*10);
@@ -367,12 +369,15 @@ export function createCityScene(host,{onPoint,onSelect,onError,onViewChange,onSt
   const key=e=>{if(!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','+','-','=','q','Q','e','E','h','H'].includes(e.key))return;e.preventDefault();if(['q','Q','e','E'].includes(e.key)){cameraMotion.rotate(e.key.toLowerCase()==='q'?-Math.PI/12:Math.PI/12,reduced);}else if(e.key.toLowerCase()==='h'){setView(cityMapInitialView(data));}else if(['+','-','='].includes(e.key))zoomCamera(e.key==='-'?1.15:1/1.15);else{const step=Math.max(1,camera.position.distanceTo(controls.target)*.045),dx=e.key==='ArrowLeft'?-step:e.key==='ArrowRight'?step:0,dz=e.key==='ArrowUp'?-step:e.key==='ArrowDown'?step:0;cameraMotion.pan(new THREE.Vector3(dx,0,dz),reduced);}dirty=true;};renderer.domElement.addEventListener('keydown',key);
   function animate(time){
     if(dead)return;frame=requestAnimationFrame(animate);
-    const budget=renderBudget.sample(time,!document.hidden&&visible&&!reduced);
+    const active=!document.hidden&&visible,renderDue=active&&time-last>=1000/(cameraMotion.active||time<smoothUntil?60:mobile?30:45)-1;
+    if(renderDue){
+      const dt=Math.min(.05,Math.max(0,(time-last)/1000));
+      controls.dampingFactor=1-Math.exp(-12*dt);
+      cameraMotion.update(dt,reduced);controls.update();
+    }
+    const budget=renderBudget.sample(time,active&&!reduced,{distance:camera.position.distanceTo(controls.target),half:renderMapHalf,mapId:renderMapId});
     if(budget){environment.waterSystem.setQuality(budget.tier);renderer.setPixelRatio(budget.pixelRatio);renderer.shadowMap.enabled=budget.shadows;sun.castShadow=budget.shadows;resize();dirty=true;}
-    if(document.hidden||!visible||time-last<1000/(cameraMotion.active||time<smoothUntil?60:mobile?30:45)-1)return;
-    const dt=Math.min(.05,Math.max(0,(time-last)/1000));
-    controls.dampingFactor=1-Math.exp(-12*dt);
-    cameraMotion.update(dt,reduced);controls.update();
+    if(!renderDue)return;
     if(!dirty&&reduced&&!constructionSites.length&&!celebrations.length)return;last=time;
     for(const site of constructionSites){
       const state=cityConstructionState(site.row,serverNow());

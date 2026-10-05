@@ -1,10 +1,11 @@
 /** Physical layout of the reference hub. Coordinates are metres, on one safe deck.
  * Existing mission/NPC IDs stay unchanged: a new layout never resets a save. */
 import {REFERENCE_GATE_SECTORS} from './gate-identity.js';
-import {citeSurfaceDistance} from './platform-topology.js';
+import {citeSurfaceDistance,CITE_GATE_SITES} from './platform-topology.js';
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
+import {referenceTransportSite} from './transport-motion.js';
 export const HUB_SCALE=1.7;
-export const HUB_PLATFORM = Object.freeze({radius:190*HUB_SCALE,walkRadius:185*HUB_SCALE,portalRadius:146*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
+export const HUB_PLATFORM = Object.freeze({radius:288*HUB_SCALE,walkRadius:286*HUB_SCALE,portalRadius:238*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
 const DISTRICT_SITES = {
  heritage_square:{x:0,z:35},broken_circle_tower:{x:0,z:0},
  archives:{x:-66,z:-66},arena:{x:66,z:-66},commerce:{x:94,z:0},
@@ -30,8 +31,8 @@ export function platformBuilding(building){
  entrance:{x,z:z+depth/2+2*HUB_SCALE},tier:building.tier||0,buildStatus:'active'};
 }
 export function platformPortal(index){
- const angle=-Math.PI/2+REFERENCE_GATE_SECTORS[index]*Math.PI/4;
- return {x:Math.cos(angle)*HUB_PLATFORM.portalRadius,z:Math.sin(angle)*HUB_PLATFORM.portalRadius};
+ const site=CITE_GATE_SITES[REFERENCE_GATE_SECTORS[index]];
+ return {x:site.x*HUB_SCALE,z:site.z*HUB_SCALE};
 }
 export function platformWalls(b){
  const x=b.buildingX,z=b.buildingZ,w=b.width,d=b.depth,t=.55*HUB_SCALE,gap=(b.buildingId==='arena_3b'?8:5)*HUB_SCALE;
@@ -51,6 +52,12 @@ const SEMANTIC=new Set(['hubNpc','hubGuardian','hubDistrict','hubMission','hubMi
 export function platformRuntimeItems(base,runtime,plan){
  const buildings=plan.buildings.map(platformBuilding),portals=base.filter(i=>i.type==='portal').map((item,index)=>({...item,...platformPortal(index)}));
  const semantic=runtime.filter(i=>SEMANTIC.has(i.type)).map(item=>{
+  // Boarding signs, map destinations and ride endpoints share one authored site.
+  // Do not apply the old district-centre offsets to the physical transit network.
+  if(item.type==='hubTransport'){
+   const site=referenceTransportSite(item);
+   if(site)return {...item,...site,homeX:site.x,homeZ:site.z};
+  }
   const old=plan.districts.find(d=>d.id===item.district),center=PLATFORM_DISTRICTS[item.district]||PLATFORM_DISTRICTS.heritage_square;
   const oldX=old?(old.center[0]-.5)*1800:0,oldZ=old?(old.center[1]-.5)*1400:0;
   let x=center.x+Math.max(-13,Math.min(13,(item.x-oldX)*.7))*HUB_SCALE,z=center.z+Math.max(-13,Math.min(13,(item.z-oldZ)*.7))*HUB_SCALE;

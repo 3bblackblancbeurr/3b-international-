@@ -34,8 +34,8 @@ import {worldRuntimeItems} from './runtime-items.js';
 import {COSMETICS} from './chapters.js';
 import {findPath,findInteractionPath} from './navigation.js';
 import {distance,nearestInteraction,teamStats} from './rules.js';
-import {hubNpcPose,npcSimulationTier} from './hub/npc-motion.js';
-import {routePose} from './hub/transport-motion.js';
+import {hubNpcPose,hubNpcSocialContext,npcSimulationTier} from './hub/npc-motion.js';
+import {routePose,referenceTransportRoutes,referenceTransportRoute,referenceTransportNextStop,referenceWaterClear,sampleTransportRide} from './hub/transport-motion.js';
 import {worldTimeSnapshot} from './world-time.js';
 import {streamingProfile,lodForDistance,lodForDistanceHysteresis} from './streaming.js';
 import {worldWeatherForDate,weatherProfile} from './world-weather.js';
@@ -225,7 +225,7 @@ function hubNpcAvatar(item){
    for(const actor of actors){const next=byId.get(actor.itemId);if(!next)continue;const current=items.find(item=>item.id===actor.itemId);if(current)Object.assign(current,next);actor.x=next.x;actor.z=next.z;actor.controller.object.position.set(next.x,groundY(next.x,next.z),next.z);}
    needsRender=true;return;
   }
-  if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;if(Math.hypot(actor.item.homeX-next.x,actor.item.homeZ-next.z)>10){const path=findPath({x:actor.object.position.x,z:actor.object.position.z},next,obstacles,worldRadius);actor.walkTarget=path.shift()||null;actor.walkRoute=path;}actor.item.homeX=next.x;actor.item.homeZ=next.z;actor.item.district=next.district;actor.item.activity=next.activity;actor.item.shelter=next.shelter;actor.item.social=next.social;}needsRender=true;}
+  if(region!=='hub')return;const latest=worldRuntimeItems('hub',save,{weather}),byId=new Map(latest.filter(item=>item.type==='hubNpc').map(item=>[item.id,item]));for(const actor of hubNpcActors){const next=byId.get(actor.item.id);if(!next)continue;if(Math.hypot(actor.item.homeX-next.x,actor.item.homeZ-next.z)>10){const path=findPath({x:actor.object.position.x,z:actor.object.position.z},next,obstacles,worldRadius);actor.walkTarget=path.shift()||null;actor.walkRoute=path;}actor.item.homeX=next.x;actor.item.homeZ=next.z;actor.item.district=next.district;actor.item.activity=next.activity;actor.item.shelter=next.shelter;actor.item.social=next.social;actor.item.socialPartnerId=next.socialPartnerId;actor.item.activityPlaceId=next.activityPlaceId;actor.item.activityBuildingId=next.activityBuildingId;}needsRender=true;}
  function cancelContextTraversal(){if(!contextTraversal)return;const resolve=contextTraversal.resolve;contextTraversal=null;traversalLift=0;try{resolve(false);}catch{}needsRender=true;}
  function rebuild(nextRegion){endLifeInteraction();cancelContextTraversal();
   const previousRegion=region;
@@ -308,7 +308,7 @@ function hubNpcAvatar(item){
     const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'mission'});itemVisuals.set(item.id,[marker]);continue;
    }
    if(item.type==='hubTransport'){
-    const station=createPremiumTransportVisual(item,{root,geometry,material,groundY});itemVisuals.set(item.id,[station]);continue;
+    const station=createPremiumTransportVisual(item,{root,geometry,material,groundY});station.rotation.y=item.transportHeading||0;itemVisuals.set(item.id,[station]);continue;
    }
    if(item.type==='hubDistrict'){
     const marker=createPremiumHubMarker(item,{root,geometry,material,groundY,kind:'district'});itemVisuals.set(item.id,[marker]);continue;
@@ -343,13 +343,31 @@ function hubNpcAvatar(item){
    itemVisuals.set(item.id,root.children.slice(first));
   }
    if(region==='hub'){
+   // Build the rails and suspension lines from the same metre-space points used
+   // by vehicles, passenger rides and the atlas. They are owned by this scene.
+   for(const transit of referenceTransportRoutes()){
+    if(transit.transport==='boat')continue;
+    const trackMaterial=material(transit.transport==='telepheric'?'#567889':'#d6b46a',{roughness:.38,metalness:.7}); // gold-master-allow: reviewed physical cable/rail metal albedos; docs/hub-reference-art-exceptions.md#transport-paths.
+    for(const side of transit.transport==='train'?[-1,1]:[0]){
+     const points=transit.points.map(p=>{const radius=Math.hypot(p.x,p.z),scale=side?1+side*.82/radius:1;return new THREE.Vector3(p.x*scale,transit.transport==='train'?.12:p.y+(transit.transport==='telepheric'?1.22:2.5),p.z*scale);});
+     const path=new THREE.CurvePath();for(let i=1;i<points.length;i++)path.add(new THREE.LineCurve3(points[i-1],points[i]));if(transit.closed)path.add(new THREE.LineCurve3(points.at(-1),points[0]));
+     const track=mesh(register(new THREE.TubeGeometry(path,Math.max(2,points.length),.055,5,transit.closed)),trackMaterial,0,0,0);track.name='3B-Track-'+transit.id;
+    }
+    if(transit.transport!=='train')for(const stop of transit.stops){
+     const next=transit.points[(stop.pointIndex+1)%transit.points.length],angle=Math.atan2(next.x-stop.x,next.z-stop.z),top=stop.y+(transit.transport==='telepheric'?1.22:2.5);
+     for(const side of [-1,1]){const x=stop.x+Math.cos(angle)*side*2.3,z=stop.z-Math.sin(angle)*side*2.3,floor=groundY(x,z),height=top-floor;mesh('cylinder',trackMaterial,x,floor+height/2,z,.16,height,.16);}
+     const support=mesh('box',trackMaterial,stop.x,top,stop.z,5,.16,.16);support.rotation.y=angle;
+    }
+   }
    for(const spec of [{transport:'train',cycle:38,color:'#d6b46a',height:.62},{transport:'boat',cycle:52,color:'#00a8ff',height:.28},{transport:'telepheric',cycle:18,color:'#b9d7ff',height:4.2}]){
     const candidates=items.filter(i=>i.type==='hubTransport'&&i.transport===spec.transport),lines=[...new Set(candidates.map(i=>i.line||spec.transport))];
     for(const line of lines){
      const stops=candidates.filter(i=>(i.line||spec.transport)===line).sort((a,b)=>a.stopIndex-b.stopIndex);
      if(stops.length<2)continue;
-     const vehicle=createPremiumTransitVehicle(spec,stops[0],{root,geometry,material,groundY});
-     hubVehicles.push({vehicle,stops,line,...spec});
+     const route=referenceTransportRoute(stops[0]);if(!route)continue;
+     const vehicle=createPremiumTransitVehicle(spec,stops[0],{root,geometry,material,groundY}),pose=routePose(route,elapsed);
+     if(pose){vehicle.position.set(pose.x,pose.y,pose.z);vehicle.rotation.y=pose.heading;}
+     hubVehicles.push({vehicle,route,line,timeOffset:0,...spec});
     }
    }
    ambientCrowd=createAmbientCrowd(root,items,{groundY,modelAsset:models.hero,modelLibrary:models.living,camera,onError,mode:qualityMode,deviceMemory:typeof navigator!=='undefined'?navigator.deviceMemory:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches,viewport:Math.max(canvas.clientWidth,canvas.clientHeight),reducedMotion});
@@ -453,11 +471,14 @@ function hubNpcAvatar(item){
     if(travelled>.001)heading=movementHeading(dx,dz,heading);
     if(pose.done){position={...current.plan.to};traversalLift=0;contextTraversal=null;moving=false;onActivity();hero?.action?.('Idle');try{current.resolve(true);}catch{}}
    }else if(transportRide){
-    const previous=position,progress=Math.min(1,(now-transportRide.started)/transportRide.duration),smooth=progress*progress*(3-2*progress);
-    position={x:transportRide.from.x+(transportRide.to.x-transportRide.from.x)*smooth,z:transportRide.from.z+(transportRide.to.z-transportRide.from.z)*smooth};
+    const current=transportRide,previous=position;
+    current.elapsed=Math.min(current.duration,current.elapsed+dt*1000);
+    const progress=current.elapsed/current.duration,pose=sampleTransportRide(current.route,current.fromId,current.toId,progress);current.pose=pose;
+    position={x:pose.x,z:pose.z};
+    const vehicle=hubVehicles.find(entry=>entry.route?.id===current.route.id);if(vehicle)vehicle.timeOffset=pose.routeTime-elapsed;
     dx=position.x-previous.x;dz=position.z-previous.z;travelled=Math.hypot(dx,dz);moving=progress<1;
     if(travelled>.001)heading=movementHeading(dx,dz,heading);
-    if(progress>=1){position={...transportRide.to};transportRide=null;moving=false;onActivity();}
+    if(progress>=1){position={...current.to};transportRide=null;moving=false;traversalLift=0;trail=[];onActivity();}
    }else{
     dx=stick.x+(actionHeld(controls,'moveRight',keys)?1:0)-(actionHeld(controls,'moveLeft',keys)?1:0);
     dz=stick.z+(actionHeld(controls,'moveBackward',keys)?1:0)-(actionHeld(controls,'moveForward',keys)?1:0);
@@ -479,11 +500,12 @@ function hubNpcAvatar(item){
    }else moving=false;
    if(!paused&&!shot&&!transportRide&&!contextTraversal&&!lifeInteraction.active&&!landscape?.towerFloor&&!save.adventure.encounter){
     const crossing=advancePortalCrossing(portalCrossing,position,portalItems);portalCrossing=crossing.state;
-    if(crossing.entered){clearInput();battleTarget=crossing.entered;onActivity();onInteract(crossing.entered);}
+    const guidedHubRoute=region==='hub'&&waypoint&&waypoint.type!=='portal'&&(target||route.length);
+    if(crossing.entered&&!guidedHubRoute){clearInput();battleTarget=crossing.entered;onActivity();onInteract(crossing.entered);}
    }
-  const y=groundY(position.x,position.z)+traversalLift,age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
+  const y=transportRide?.pose?.y??groundY(position.x,position.z)+traversalLift,age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   const lifePose=lifeInteraction.sample(elapsed),poseLift=lifePose?.pose==='Sit'?(hero.poseRootOffset?.(lifePose.seatHeight)||0)*lifePose.blend:0;
-  avatar.position.set(position.x,y+poseLift,position.z);hero.update(dt,dx,dz,travelled);
+  avatar.position.set(position.x,y+poseLift,position.z);hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
   if(region==='hub'&&!landscape?.towerFloor){
    const stream=streamingProfile(qualityMode,typeof navigator!=='undefined'?navigator.deviceMemory:undefined,region);
    if(now-lastNpcUpdateAt>=1000/stream.npcUpdateHz){
@@ -492,7 +514,7 @@ function hubNpcAvatar(item){
      const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),sim=npcSimulationTier(d),interval=1000/Math.max(.25,sim.updateHz);
      if(actor.lastSimAt&&now-actor.lastSimAt<interval)continue;
      actor.lastSimAt=now;
-     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused,reducedMotion});
+     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused,reducedMotion,...hubNpcSocialContext(actor.item,items)});
      actor.targetX=pose.x;actor.targetZ=pose.z;actor.targetHeading=pose.heading;actor.simulationMoving=pose.moving;
      actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
      if(actor.activityState!==pose.state){
@@ -527,8 +549,8 @@ function hubNpcAvatar(item){
     staticInstances?.update(camera);
    }
     for(const vehicle of hubVehicles){
-    const pose=routePose(vehicle.stops,elapsed,vehicle.cycle);if(!pose)continue;
-     vehicle.vehicle.position.set(pose.x,groundY(pose.x,pose.z)+vehicle.height,pose.z);vehicle.vehicle.rotation.y=pose.heading;
+    const pose=vehicle.route&&transportRide?.route.id===vehicle.route.id?transportRide.pose:routePose(vehicle.route||vehicle.stops,elapsed+(vehicle.timeOffset||0),vehicle.cycle);if(!pose)continue;
+     vehicle.vehicle.position.set(pose.x,Number.isFinite(pose.y)?pose.y:groundY(pose.x,pose.z)+vehicle.height,pose.z);vehicle.vehicle.rotation.y=pose.heading;
     }
     ambientCrowd?.tick(elapsed,position,now);
    }
@@ -542,10 +564,10 @@ function hubNpcAvatar(item){
   combatDistance=opponent?Math.hypot(opponent.x-position.x,opponent.z-position.z):Infinity;
   if(opponent&&!retaliationPlayed&&age>=.32){retaliationPlayed=true;if(lastCombat?.counter){actors.find(a=>a.itemId===opponent.id)?.controller.action('Attack');if(lastCombat.incoming>0&&!lastCombat.defended)hero.action('Hit');}}
   if(opponent&&!fieldCombat){let ox=opponent.x-position.x,oz=opponent.z-position.z,d=Math.hypot(ox,oz);if(d<.01){ox=0;oz=-1;d=1;}const spacing=Math.max(0,4.5-d),approach=feedbackAction==='guard'||feedbackAction==='dodge'?0:impact*.75;avatar.position.x+=ox/d*(approach-spacing);avatar.position.z+=oz/d*(approach-spacing);if(feedbackAction==='dodge'&&!fieldCombat){avatar.position.x+=oz/d*impact*2.4;avatar.position.z-=ox/d*impact*2.4;}avatar.position.y=groundY(avatar.position.x,avatar.position.z);avatar.rotation.y=Math.atan2(ox,oz);}
-  if(escort){escort.object.visible=!cinematic;const p=escort.object.position;if(travelled>.05&&(!trail.length||Math.hypot(trail.at(-1).x-position.x,trail.at(-1).z-position.z)>1))trail.push({...position});while(trail.length>65)trail.shift();while(trail.length>3&&Math.hypot(trail[0].x-p.x,trail[0].z-p.z)<1.3)trail.shift();const goal=trail.length>3?trail[0]:null,old={x:p.x,z:p.z};if(goal&&!paused&&!shot){const result=advanceMotion({position:old,target:goal,route:[]},{x:0,z:0},dt,Math.max(11,10.5*stats.speed*1.6),obstacles,worldRadius);p.set(result.position.x,groundY(result.position.x,result.position.z),result.position.z);}escort.update(dt,p.x-old.x,p.z-old.z,Math.hypot(p.x-old.x,p.z-old.z));if(Math.hypot(p.x-position.x,p.z-position.z)>40){p.set(position.x,y,position.z);trail=[];}}
+  if(escort){escort.object.visible=!cinematic&&!transportRide;const p=escort.object.position;if(transportRide){p.set(position.x,y,position.z);trail=[];}if(!transportRide&&travelled>.05&&(!trail.length||Math.hypot(trail.at(-1).x-position.x,trail.at(-1).z-position.z)>1))trail.push({...position});while(trail.length>65)trail.shift();while(trail.length>3&&Math.hypot(trail[0].x-p.x,trail[0].z-p.z)<1.3)trail.shift();const goal=trail.length>3?trail[0]:null,old={x:p.x,z:p.z};if(goal&&!paused&&!shot){const result=advanceMotion({position:old,target:goal,route:[]},{x:0,z:0},dt,Math.max(11,10.5*stats.speed*1.6),obstacles,worldRadius);p.set(result.position.x,groundY(result.position.x,result.position.z),result.position.z);}escort.update(dt,p.x-old.x,p.z-old.z,Math.hypot(p.x-old.x,p.z-old.z));if(Math.hypot(p.x-position.x,p.z-position.z)>40){p.set(position.x,y,position.z);trail=[];}}
   const wide=cameraMode===1,portrait=camera.aspect<.85;
   if(opponent&&!fieldCombat){const mx=(avatar.position.x+opponent.x)/2,mz=(avatar.position.z+opponent.z)/2,my=(avatar.position.y+groundY(opponent.x,opponent.z))/2;desiredTarget.set(mx,my+1.8,mz);desiredCamera.set(mx+(portrait?12:15),my+(portrait?14:11),mz+(portrait?20:18));}
-  else{const view=orbitView(orbit,position,y,portrait,groundY);desiredTarget.copy(view.target);desiredCamera.copy(view.position);}
+  else{const cameraGround=transportRide?.transport==='boat'?(x,z)=>referenceWaterClear({x,z},0)?-27:groundY(x,z):groundY,view=orbitView(orbit,position,y,portrait,cameraGround);desiredTarget.copy(view.target);desiredCamera.copy(view.position);}
   if(shot&&(!reducedMotion||shot.heritage||shot.cinematic)){const age=Math.max(0,Math.min(1,1-(shot.until-now)/shot.duration)),ease=cinematicEase(age),waterReveal=shot.kind==='world-opening'&&region==='hub',rise=cinematicRiseProgress(age,{waterReveal}),dolly=cinematicDollyProgress(age,{waterReveal}),arc=reducedMotion?0:(shot.arc??.28),a=shot.angle+ease*arc,baseY=groundY(shot.x,shot.z),baseRadius=shot.radius??(shot.heritage?(portrait?118:106):23),radius=Math.max(3,baseRadius*(1-(shot.dolly||0)*dolly)),focusLift=waterReveal?2.6+(shot.focusY-2.6)*rise:(shot.focusY??(shot.heritage?28:2)),cameraLift=waterReveal?4.2+((shot.height??18)-4.2)*rise:(shot.height??(shot.heritage?36:14));
     if(shot.cinematic){
      const acting=cinematicActingBeat(shot.kind,age);
@@ -659,13 +681,14 @@ function hubNpcAvatar(item){
   inspectLandmark(){if(region==='hub')return;const p=toLandscape(region,LANDMARK_SITE.x,LANDMARK_SITE.z),duration=6500,profile=cinemaProfile(region),accent=profile.accent,secondary=profile.secondary;post.setCinematic({active:true,intensity:.82,accent,secondary});shot={...p,kind:'heritage-inspection',major:false,accent,secondary,angle:-BIOMES[region].angle+.35,duration,until:performance.now()+duration,heritage:true,cinematic:true,title:'Le patrimoine du pays',detail:'Vue du monument · reprendre quand tu veux'};clearInput();needsRender=true;},
   skipCinematic(){if(shot?.cinematic)post.setCinematic(null);if(Number.isFinite(shot?.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;needsRender=true;},
   rideHubTransport(item){
-   if(region!=='hub'||transportRide||item?.type!=='hubTransport'||item.boardable===false)return null;
-   const line=item.line||item.transport,stops=items.filter(i=>i.type==='hubTransport'&&i.transport===item.transport&&(i.line||i.transport)===line).sort((a,b)=>a.stopIndex-b.stopIndex),index=stops.findIndex(stop=>stop.id===item.id);
-   if(index<0||stops.length<2)return null;
-   const next=item.transport==='zipline'?stops[index+1]:stops[(index+1)%stops.length];if(!next)return null;
-   const durations={train:3600,boat:5200,telepheric:4300,zipline:2300};clearInput();waypoint=null;position={x:item.x,z:item.z};
-   transportRide={transport:item.transport,line,from:{x:item.x,z:item.z},to:{x:next.x,z:next.z},fromDistrict:item.district,toDistrict:next.district,started:performance.now(),duration:durations[item.transport]||4200};
-   needsRender=true;return {transport:item.transport,line,from:item.district,to:next.district,duration:transportRide.duration};
+   if(region!=='hub'||paused||transportRide||contextTraversal||landscape?.towerFloor||item?.type!=='hubTransport')return null;
+   const station=items.find(entry=>entry.id===item.id&&entry.type==='hubTransport');if(!station||station.boardable===false)return null;
+   const route=referenceTransportRoute(station),nextStop=route&&referenceTransportNextStop(route,station.id),next=nextStop&&items.find(entry=>entry.id===nextStop.id);
+   const pose=next&&sampleTransportRide(route,station.id,next.id,0);if(!pose)return null;
+   const line=station.line||station.transport;endLifeInteraction();clearInput();waypoint=null;traversalLift=0;trail=[];position={x:pose.x,z:pose.z};
+   transportRide={transport:station.transport,line,route,fromId:station.id,toId:next.id,to:{x:next.x,z:next.z},fromDistrict:station.district,toDistrict:next.district,elapsed:0,duration:pose.duration,pose};
+   const vehicle=hubVehicles.find(entry=>entry.route?.id===route.id);if(vehicle)vehicle.timeOffset=pose.routeTime-elapsed;
+   needsRender=true;return {transport:station.transport,line,from:station.district,to:next.district,duration:pose.duration,correspondence:next.correspondence,boardingDistrict:next.boardingDistrict};
   },
   retreat(encounter){const rival=battleTarget||items.find(i=>i.card===encounter.card||encounter.patrol&&i.type==='patrol');if(!rival)return;let x=position.x-rival.x,z=position.z-rival.z,len=Math.hypot(x,z);if(len<.01){x=0;z=1;len=1;}startRoute({x:position.x+x/len*9,z:position.z+z/len*9});},
   toggleCamera,
@@ -674,7 +697,7 @@ function hubNpcAvatar(item){
   setControls(value){controls=normalizeControlBindings(value);clearInput();},
   setPremiumCodes(codes){premium=premiumEffectsFromCodes(codes);if(models&&avatar)applyPremiumVisuals();needsRender=true;},
   setQuality(mode){qualityMode=mode;quality.setMode(mode);const capabilities=visualCapabilities(mode);const allowTransmission=architecturalBudget(mode,capabilities.desktopClass).transmission;for(const m of materialCache.values())if(m.userData.authoredTransmission){m.transmission=allowTransmission?m.userData.authoredTransmission:0;m.needsUpdate=true;}landscape?.setQuality(mode,capabilities);ambientCrowd?.setQuality(mode);renderer.shadowMap.enabled=mode!=='fluid';const size=capabilities.shadowMapSize;if(sun.shadow.mapSize.x!==size){sun.shadow.mapSize.set(size,size);sun.shadow.map?.dispose();sun.shadow.map=null;}resize();},
-  setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),hubProgressChanged=region==='hub'&&(JSON.stringify(save.seals||[])!==JSON.stringify(value.seals||[])||JSON.stringify(Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))!==JSON.stringify(Object.entries(value.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||hubProgressChanged||countryContractChanged)&&models&&!newField){if(hubProgressChanged)hubArrivalShown=false;endLifeInteraction();const retainedPosition={...position},retainedHeading=heading,retainedFloor=landscape?.towerFloor?.index??null;rebuild(region);if(retainedFloor!==null){selectTowerFloor(retainedFloor);heading=retainedHeading;needsRender=true;return;}position=region==='hub'?safePlatformPosition(retainedPosition):retainedPosition;heading=retainedHeading;needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{reducedMotion,avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}applyPremiumVisuals();
+  setSave(value){if(value===save)return;const hubMissionChanged=region==='hub'&&(JSON.stringify(save.hub?.missions||{})!==JSON.stringify(value.hub?.missions||{})||JSON.stringify(save.hub?.stats?.missionActions||{})!==JSON.stringify(value.hub?.stats?.missionActions||{})),hubProgressChanged=region==='hub'&&(JSON.stringify(save.seals||[])!==JSON.stringify(value.seals||[])||JSON.stringify(Object.entries(save.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))!==JSON.stringify(Object.entries(value.adventure?.chapters||{}).filter(([,chapter])=>chapter?.restored===3).map(([id])=>id))),oldContract=save.adventure?.frontier?.[region]||{},newContract=value.adventure?.frontier?.[region]||{},countryContractChanged=region!=='hub'&&JSON.stringify([oldContract.activeJob,oldContract.jobStage,oldContract.jobProgress,oldContract.jobs])!==JSON.stringify([newContract.activeJob,newContract.jobStage,newContract.jobProgress,newContract.jobs]),oldField=save.adventure.encounter?.field,newField=value.adventure.encounter?.field;if(newField&&!oldField){position={...newField.p};combatClock=0;combatButton=null;}if(oldField&&newField&&!value.adventure.encounter.result&&value.region===region){save=value;needsRender=true;return;}const previousItems=items,oldStage=save.adventure.chapters[region]?.restored||0;save=value;if((hubMissionChanged||hubProgressChanged||countryContractChanged)&&models&&!newField){if(hubProgressChanged)hubArrivalShown=false;endLifeInteraction();const retainedPosition={...position},retainedHeading=heading,retainedFloor=landscape?.towerFloor?.index??null,retainedRide=transportRide;rebuild(region);if(retainedFloor!==null){selectTowerFloor(retainedFloor);heading=retainedHeading;needsRender=true;return;}transportRide=retainedRide;position=region==='hub'&&!transportRide?safePlatformPosition(retainedPosition):retainedPosition;heading=retainedHeading;needsRender=true;return;}const newStage=save.adventure.chapters[region]?.restored||0;if(newStage>oldStage&&models&&!reducedMotion){const p=toLandscape(region,...(newStage===3?[LANDMARK_SITE.x,LANDMARK_SITE.z]:newStage===2?[29,15]:[11,-4]));shot={...p,angle:orbit.yaw,duration:4200,until:performance.now()+4200,heritage:newStage===3,title:newStage===3?'Le pays retrouve sa lumière':newStage===2?'Un quartier reprend vie':'Le lieu se souvient',detail:newStage===2?'Ton groupe peut maintenant se préparer ici.':'Les habitants retrouvent leur histoire.'};clearInput();}syncEscort();stats=teamStats(save);landscape?.update(save);if(models&&JSON.stringify(save.adventure.avatar)!==avatarKey){hero?.dispose();avatar?.removeFromParent();hero=createLivingActor(models.living,{reducedMotion,avatar:save.adventure.avatar,scale:2.2,onError});avatar=hero.object;root.add(avatar);avatarKey=JSON.stringify(save.adventure.avatar);}applyPremiumVisuals();
   const nextItems=worldRuntimeItems(region,save,{weather});
   if(region==='hub'&&hubNpcActors.length){
    const liveNpcs=new Map(hubNpcActors.map(actor=>[actor.item.id,actor.item]));

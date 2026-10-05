@@ -6,6 +6,15 @@ function hash(input){
 
 const clamp01=value=>Math.max(0,Math.min(1,value));
 
+/** Face an actual nearby colleague; schedules never create invisible partners. */
+export function hubNpcSocialContext(item,items=[]){
+ const partner=item?.socialPartnerId&&items.find(other=>other.npcId===item.socialPartnerId&&other.district===item.district);
+ if(!partner)return {};
+ const x=partner.homeX??partner.x,z=partner.homeZ??partner.z,bx=item.homeX??item.x,bz=item.homeZ??item.z;
+ if(![x,z,bx,bz].every(Number.isFinite)||Math.hypot(x-bx,z-bz)>18)return {};
+ return {socialTarget:{x,z,npcId:partner.npcId}};
+}
+
 export const NPC_SIMULATION_STATES=Object.freeze([
   'Idle','Walk','Work','Talk','Observe','React','Flee','Investigate','Help','Follow','Combat','ReturnToRoutine',
 ]);
@@ -65,7 +74,8 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
     const sway=timeSeconds*stanceSpeed+phase;
     const x=baseX+(context.reducedMotion?0:Math.cos(sway*1.13)*stanceRadius);
     const z=baseZ+(context.reducedMotion?0:Math.sin(sway*.87)*stanceRadius);
-    const heading=phase+(context.reducedMotion?0:Math.sin(timeSeconds*.16+phase)*.22);
+    const target=state==='Talk'?context.socialTarget:null;
+    const heading=target&&Number.isFinite(target.x)&&Number.isFinite(target.z)?Math.atan2(target.x-x,target.z-z):phase+(context.reducedMotion?0:Math.sin(timeSeconds*.16+phase)*.22);
     return {x,z,heading,state,needs,tier,updateHz,moving:false};
   }
 

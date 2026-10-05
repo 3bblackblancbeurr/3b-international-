@@ -47,7 +47,7 @@ test('community and textile AI remain explicitly staged as coming soon',()=>{
 
 test('home presents one cinematic world entry without the legacy atlas and pylons',()=>{
  assert.match(portal,/home-world-entry/);
- assert.match(portal,/hub-cite-origine\.webp/);
+ assert.match(portal,/reference-cite-huit-heritages\.webp/);
  assert.match(portal,/fetchPriority="high"/);
  assert.match(portal,/page="world3b"/);
  assert.doesNotMatch(portal,/UniversePreview|CircleArtwork|nexus-gates|nexus-portal-pylon/);

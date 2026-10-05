@@ -79,12 +79,31 @@ function captureFixture(){
 }
 test('reflections restore hidden overlays, render target, XR and shadow settings even when rendering fails',()=>{
  const f=captureFixture();try{
-  f.renderer.render=()=>{assert.equal(f.overlay.visible,false);throw new Error('lost offscreen framebuffer');};
+  let calls=0;f.renderer.render=()=>{calls++;assert.equal(f.overlay.visible,false);throw new Error('lost offscreen framebuffer');};
   assert.equal(f.environment.waterSystem.capture(f.renderer,f.scene,f.camera,1,{exclude:[f.overlay]}),false);
   assert.equal(f.renderer.getRenderTarget(),f.target);assert.equal(f.overlay.visible,true);assert.equal(f.environment.waterSystem.group.visible,true);
   assert.equal(f.renderer.xr.enabled,true);assert.equal(f.renderer.shadowMap.autoUpdate,true);assert.deepEqual(f.viewport.toArray(),[3,4,512,512]);assert.deepEqual(f.scissor.toArray(),[1,2,100,200]);
   assert.equal(f.environment.water.uniforms.uReflectionReady.value,0);
   assert.equal(f.environment.waterSystem.capture(f.renderer,f.scene,f.camera,2),false,'failed reflection stays in atmosphere-only mode');
+  f.environment.waterSystem.setQuality(2);f.environment.waterSystem.setQuality(0);
+  assert.equal(f.environment.water.uniforms.uDetail.value,1,'close-up water detail can recover independently of a failed GPU pass');
+  assert.equal(f.environment.waterSystem.capture(f.renderer,f.scene,f.camera,3),false,'distance LOD must not revive a failed reflection pass');
+  assert.equal(calls,1);
+ }finally{f.environment.dispose();}
+});
+
+test('distance quality changes release reflection targets and restore near detail and reflection size',()=>{
+ const f=captureFixture();try{
+  const system=f.environment.waterSystem,uniforms=f.environment.water.uniforms,targets=[];let disposed=0;
+  f.renderer.render=()=>{const target=f.renderer.getRenderTarget();targets.push(target);target.addEventListener('dispose',()=>disposed++);};
+  assert.equal(system.capture(f.renderer,f.scene,f.camera,1),true);assert.equal(targets.at(-1).width,256);
+  system.setQuality(1);assert.equal(disposed,1);assert.equal(uniforms.uDetail.value,.65);
+  assert.equal(system.capture(f.renderer,f.scene,f.camera,2),true);assert.equal(targets.at(-1).width,128);
+  system.setQuality(2);assert.equal(disposed,2);assert.equal(uniforms.uDetail.value,.3);
+  assert.equal(system.capture(f.renderer,f.scene,f.camera,3),false);
+  system.setQuality(0);assert.equal(uniforms.uDetail.value,1);
+  assert.equal(system.capture(f.renderer,f.scene,f.camera,4),true);assert.equal(targets.at(-1).width,256);
+  assert.notEqual(targets.at(-1),targets[0]);
  }finally{f.environment.dispose();}
 });
 test('world-space reflection projection is correct, cadence is capped and reduced motion captures only view changes',()=>{

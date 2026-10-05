@@ -4,6 +4,7 @@ on:
     paths:
       - 'src/world/**'
       - 'scripts/verify-world-art-browser.mjs'
+      - 'scripts/verify-hub-services-browser.mjs'
       - '.github/workflows/verify-hub-render.yml'
 permissions:
   contents: read
@@ -48,6 +49,18 @@ jobs:
       - name: Install isolated browser test dependency
         run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx --no-install playwright install --with-deps chromium
+      - name: Check six civic services on desktop and both phone orientations
+        if: matrix.view == 'desktop'
+        run: node scripts/verify-hub-services-browser.mjs
+        env:
+          HUB_SERVICES_OUT: artifacts/hub-${{ matrix.view }}/services
+      - name: Upload service previews for early visual review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && matrix.view == 'desktop'
+        with:
+          name: civic-services-preview
+          path: artifacts/hub-${{ matrix.view }}/services
+          if-no-files-found: warn
       - name: Render actual Hub and check movement and shader errors
         run: node scripts/verify-world-art-browser.mjs
         env:

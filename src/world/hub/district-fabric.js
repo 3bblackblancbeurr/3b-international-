@@ -89,7 +89,7 @@ export function addDistrictFabric({root,owned,buildings,collisions,cameraSolids,
   candidates.sort((a,b)=>Math.hypot(b.x-island.x,b.z-island.z)-Math.hypot(a.x-island.x,a.z-island.z));
   let count=0;
   for(const p of candidates){
-   if(count>=7||sites.some(s=>Math.hypot(p.x-s.x,p.z-s.z)<9))continue;
+   if(count>=12||sites.some(s=>Math.hypot(p.x-s.x,p.z-s.z)<9))continue;
    const h=profile.height*(.72+((Math.abs(p.ix*7+p.iz*3)%5)/10)),w=5,d=5,yaw=profile.style==='lantern'?Math.PI/8:0;
    sites.push({...p,height:h,district:island.id,style:profile.style,yaw,width:6,depth:6});count++;
    layer(box,materials.stone,'Socles et façades',p.x,.3,p.z,6,.6,6);

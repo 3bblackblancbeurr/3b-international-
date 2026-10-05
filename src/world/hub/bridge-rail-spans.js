@@ -1,4 +1,4 @@
-import {CITE_ISLANDS,CITE_PROMENADES,citeIslandRadius} from './platform-topology.js';
+import {CITE_ISLANDS,CITE_PROMENADES,CITE_BRIDGES,CITE_CONNECTORS,citeIslandRadius,citeSpanHeight} from './platform-topology.js';
 
 /** Classify against the actual triangulated deck edge, rather than its nominal
  * radius. This matches islandDeckGeometry's 64 coastal vertices. */
@@ -17,6 +17,13 @@ export function railOverOpenWater(bridge,side,along){
  const p=bridgeRailPoint(bridge,side,along),r=Math.hypot(p.x,p.z);
  // A small seam allowance keeps the rail ends clear of the stone junction.
  if(CITE_PROMENADES.some(deck=>r>=deck.inner-.2&&r<=deck.outer+.2))return false;
+ // Connecting ramps and harbour crossings are open junctions as well. A rail
+ // must never slice across the next walkable span at the same elevation.
+ if([...CITE_BRIDGES,...CITE_CONNECTORS].some(span=>{
+  if(span===bridge)return false;
+  const x=p.x-span.x,z=p.z-span.z,c=Math.cos(span.angle),s=Math.sin(span.angle);
+  return Math.abs(x*c+z*s)<=span.length/2+.2&&Math.abs(-x*s+z*c)<=span.width/2+.2&&Math.abs(citeSpanHeight(span,p.x,p.z)-citeSpanHeight(bridge,p.x,p.z))<.6;
+ }))return false;
  return !CITE_ISLANDS.some(island=>islandDeckDistance(island,p.x,p.z)<=.2);
 }
 const cache=new WeakMap();

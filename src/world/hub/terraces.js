@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {HUB_SCALE} from './platform-layout.js';
+import {citeTerrainHeight} from './platform-topology.js';
 
 // Public lookout aisles between the two residential towers. Heights use the
 // same triangulated ramp profile for rendering, people and camera targeting.
@@ -13,7 +14,7 @@ export function terraceHeight(x,z){
  for(const t of CITE_TERRACES){const p=local({x,z},t);if(Math.abs(p.across)<=t.width/2&&p.along>=-10&&p.along<=10)return Math.min(t.rise,Math.max(0,(p.along+10)*t.rise/14));}
  return 0;
 }
-export function terraceWorldHeight(x,z){return terraceHeight(x/HUB_SCALE,z/HUB_SCALE)*1.5;}
+export function terraceWorldHeight(x,z){return Math.max(terraceHeight(x/HUB_SCALE,z/HUB_SCALE),citeTerrainHeight(x/HUB_SCALE,z/HUB_SCALE))*1.5;}
 function rectangleDistance(p,t,along,across,length,width){const q=local({x:p.x/HUB_SCALE,z:p.z/HUB_SCALE},t),a=Math.abs(q.along-along)-length/2,b=Math.abs(q.across-across)-width/2;return (Math.hypot(Math.max(a,0),Math.max(b,0))+Math.min(0,Math.max(a,b)))*HUB_SCALE;}
 export function addCiteTerraces({mesh,geo,box,materials,collisions,sign}){
  const surfaces=[];

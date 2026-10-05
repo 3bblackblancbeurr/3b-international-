@@ -36,3 +36,19 @@ export const worldCrowdPalette=Object.freeze({
  cloth:Object.freeze(['#23313d','#4b3547','#31483d','#5a4937','#263f54','#504d58','#6a4438','#2d2f35']),
  skin:Object.freeze(['#5c3928','#795039','#9b6b4b','#bd8966','#d6a583','#e4bd9c']),
 });
+
+// Cartographic pigments preserve the authored terrain, landmark and route contrast.
+// They are illustration tokens; interactive chrome uses the --3b-* CSS tokens.
+export const worldCartographyArt=Object.freeze({
+ water:'#267f98',reef:'#29444e',relief:'#385960',waterEdge:'#75c6d4',reliefEdge:'#829d94',featureEdge:'#729a9f',
+ raisedPlatform:'#aba88a',raisedPlatformEdge:'#f2d599',platformEdge:'#d0b883',platformFallback:'#8f9990',rampEdge:'#f0dca0',
+ networkUnderlay:'#071e30',train:'#ffd367',boat:'#60d4f8',telepheric:'#f29ecb',zipline:'#9ee97f',shuttle:'#77b5fc',
+ landmarkMarker:'#3b3b32',marker:'#102c40',markerDone:'#8aac8f',markerEdge:'#e9cca0',markerText:'#fff0cd',
+ cameraCone:'#c6ebf72e',destinationAccent:'#d5bb8b',landmarkAccent:'#dac596',landmarkGarden:'#64855c',landmarkSite:'#a79b76',
+});
+
+// Shared by the service swatches, saved presets and their physical 3D preview.
+export const hubServiceArt=Object.freeze({
+ heritageBase:'#101a26',matrixBase:'#14354a',matrixAccent:'#00a8ff',solarBase:'#e6ded0',solarAccent:'#d2a451',gardenBase:'#264b3e',gardenAccent:'#d9c78a',cabin:'#ce88b5',
+ studio:'#0b1420',skyLight:'#d9edff',groundLight:'#132033',keyLight:'#fff1d6',rimLight:'#74c9ff',sample:'#ffffff',floor:'#172533',
+});

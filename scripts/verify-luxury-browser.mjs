@@ -73,7 +73,7 @@ try {
   const page = await context.newPage(); page.setDefaultTimeout(30000); page.on('pageerror', error => errors.push(error.message));
   await page.goto(origin + '/#accueil');
   await page.locator('.luxury-universe-poster').waitFor();
-  check('Home renders the Nexus panorama once', await page.locator('img[src="/art/luxury-v2/hub-cite-origine.webp"]').count() === 1);
+  check('Home renders the supplied city reference panorama once', await page.locator('img[src="/art/monde-3b/reference-cite-huit-heritages.webp"]').count() === 1);
   await page.getByRole('link', { name: 'Entrer dans le Monde du 3B' }).first().waitFor();
   check('Desktop has no horizontal overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await screenshot(page, 'home-desktop.png');

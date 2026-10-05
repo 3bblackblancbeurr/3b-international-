@@ -90,7 +90,7 @@ test('migration integrity manifest tracks all current applied sources and preser
 test('home portal presents the Nexus artwork and keeps native launch feature-gated',()=>{
  const portal=read('src/components/WorldPortalCard.jsx');
  const env=read('.env.example');
- assert.match(portal,/hub-cite-origine\.webp/);
+ assert.match(portal,/reference-cite-huit-heritages\.webp/);
  assert.match(portal,/UNREAL_LAUNCH_ENABLED/);
  assert.match(env,/VITE_UNREAL_LAUNCH_ENABLED=false/);
 });

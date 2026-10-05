@@ -16,7 +16,7 @@ test('rail coast classification matches the rendered irregular coastal triangles
    const angle=(i+.31)*Math.PI*2/97;
    for(const factor of [.985,1.015]){
     const x=island.x+Math.cos(angle)*island.r*factor,z=island.z+Math.sin(angle)*island.r*factor;
-    const hit=new THREE.Raycaster(new THREE.Vector3(x,1,z),new THREE.Vector3(0,-1,0)).intersectObject(deck).length>0;
+    const hit=new THREE.Raycaster(new THREE.Vector3(x,(island.baseY||0)+1,z),new THREE.Vector3(0,-1,0)).intersectObject(deck).length>0;
     assert.equal(islandDeckDistance(island,x,z)<=0,hit,island.id+' matches its actual mesh');
    }
   }}finally{geometry.dispose();}

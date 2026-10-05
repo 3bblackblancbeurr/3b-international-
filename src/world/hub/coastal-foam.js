@@ -1,5 +1,5 @@
 import {CITE_ISLANDS,citeIslandRadius} from './platform-topology.js';
-import {cliffRadiusAtLevel} from './island-cliffs.js';
+import {cliffWaterlineRadius} from './island-cliffs.js';
 
 const impacts=CITE_ISLANDS.filter(i=>!['nexus','arrival'].includes(i.id)).slice(0,20).map(island=>{
  const a=Math.atan2(island.z,island.x),r=citeIslandRadius(island,a)+1.65;
@@ -12,9 +12,7 @@ export function citeCoastalDistance(x,z){
  for(const island of CITE_ISLANDS){
   const dx=x-island.x,dz=z-island.z,d=Math.hypot(dx,dz);
   if(d-island.r*1.1>nearest)continue;
-  const a=Math.atan2(dz,dx),level=1-18/28,scaled=level*6,lo=Math.floor(scaled),mix=scaled-lo;
-  const r0=cliffRadiusAtLevel(island,a,lo/6),r1=cliffRadiusAtLevel(island,a,(lo+1)/6);
-  nearest=Math.min(nearest,d-(r0+(r1-r0)*mix));
+  nearest=Math.min(nearest,d-cliffWaterlineRadius(island,Math.atan2(dz,dx)));
  }
  return nearest;
 }
