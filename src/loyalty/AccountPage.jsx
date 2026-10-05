@@ -182,13 +182,14 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   finally{setPrestigeBusy(false);}
  };
 
- const switchMode=next=>{
-  setMode(next);setError('');setNotice('');resetCaptcha();
+ useEffect(()=>{
   try{
-   if(next==='register')sessionStorage.setItem('3b-auth-intent','register');
+   if(mode==='register')sessionStorage.setItem('3b-auth-intent','register');
    else sessionStorage.removeItem('3b-auth-intent');
   }catch{}
- };
+ },[mode]);
+
+ const switchMode=next=>{setMode(next);setError('');setNotice('');resetCaptcha();};
 
  return <section className="loyalty-page account-page">
   <header className="loyalty-intro">
