@@ -19,13 +19,13 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
       - name: Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: "3.12"
           cache: "pip"
@@ -59,20 +59,59 @@ jobs:
           python -c "from importlib.metadata import distribution; from pathlib import Path; d=distribution('Pillow'); f=next(x for x in d.files if Path(str(x)).name.upper() == 'LICENSE'); src=Path(d.locate_file(f)); Path('dist/Pillow-LICENSE.txt').write_bytes(src.read_bytes())"
           if (-not (Test-Path "dist/Pillow-LICENSE.txt")) { throw "Pillow license notice was not collected" }
 
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} "Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler was not found" }
+          & $iscc "tools\creator_batch_studio\installer\CreatorBatchStudio.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+          if (-not (Test-Path "dist\CreatorBatchStudio-Setup-v1.0.0.exe")) { throw "Installer was not produced" }
+
+      - name: Install, process an image, and uninstall
+        shell: pwsh
+        run: |
+          $installer = (Resolve-Path "dist\CreatorBatchStudio-Setup-v1.0.0.exe").Path
+          $installDir = Join-Path $env:RUNNER_TEMP "CreatorBatchStudioInstall"
+          $testInput = Join-Path $env:RUNNER_TEMP "cbs-installed-input"
+          $testOutput = Join-Path $env:RUNNER_TEMP "cbs-installed-output"
+          New-Item -ItemType Directory -Force $testInput,$testOutput | Out-Null
+          python -c "from PIL import Image; import sys; Image.new('RGB',(800,600),'white').save(sys.argv[1])" (Join-Path $testInput "installed.jpg")
+
+          $install = Start-Process -FilePath $installer -ArgumentList @("/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART",("/DIR=" + $installDir)) -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Silent installer failed with exit code $($install.ExitCode)" }
+
+          $installedExe = Join-Path $installDir "CreatorBatchStudio.exe"
+          if (-not (Test-Path $installedExe)) { throw "Installed EXE missing" }
+          $run = Start-Process -FilePath $installedExe -ArgumentList @("--input",$testInput,"--output",$testOutput,"--format","webp","--quality","80","--prefix","INSTALL","--preset","web_large") -Wait -PassThru -NoNewWindow
+          if ($run.ExitCode -ne 0) { throw "Installed EXE smoke test failed with exit code $($run.ExitCode)" }
+          python -c "import json,sys; from pathlib import Path; p=Path(sys.argv[1]); r=json.loads((p/'creator_batch_report.json').read_text(encoding='utf-8')); assert r['created_outputs']==1 and r['failed_files']==0, r" $testOutput
+
+          $uninstaller = Join-Path $installDir "unins000.exe"
+          if (-not (Test-Path $uninstaller)) { throw "Uninstaller missing" }
+          $uninstall = Start-Process -FilePath $uninstaller -ArgumentList @("/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART") -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "Silent uninstall failed with exit code $($uninstall.ExitCode)" }
+          if (Test-Path $installedExe) { throw "Installed executable remained after uninstall" }
+
       - name: Package distribution and SHA-256
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/CreatorBatchStudio.exe,tools/creator_batch_studio/README.md,tools/creator_batch_studio/QUICK_START.md,tools/creator_batch_studio/FAQ.md,tools/creator_batch_studio/LICENSE.txt,dist/Pillow-LICENSE.txt -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
-          $hash = (Get-FileHash dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Algorithm SHA256).Hash.ToLower()
-          "$hash  CreatorBatchStudio-Windows-x64-v1.0.0.zip" | Set-Content -Encoding ascii dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
+          Compress-Archive -Path dist/CreatorBatchStudio.exe,dist/CreatorBatchStudio-Setup-v1.0.0.exe,tools/creator_batch_studio/README.md,tools/creator_batch_studio/QUICK_START.md,tools/creator_batch_studio/FAQ.md,tools/creator_batch_studio/LICENSE.txt,dist/Pillow-LICENSE.txt -DestinationPath dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Force
+          Get-FileHash dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  CreatorBatchStudio-Windows-x64-v1.0.0.zip" } | Set-Content -Encoding ascii dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
+          Get-FileHash dist/CreatorBatchStudio-Setup-v1.0.0.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  CreatorBatchStudio-Setup-v1.0.0.exe" } | Set-Content -Encoding ascii dist/CreatorBatchStudio-Setup-v1.0.0.sha256
 
       - name: Upload Windows package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: CreatorBatchStudio-Windows-x64-v1.0.0
           path: |
             dist/CreatorBatchStudio.exe
+            dist/CreatorBatchStudio-Setup-v1.0.0.exe
             dist/CreatorBatchStudio-Windows-x64-v1.0.0.zip
             dist/CreatorBatchStudio-Windows-x64-v1.0.0.sha256
+            dist/CreatorBatchStudio-Setup-v1.0.0.sha256
           if-no-files-found: error
           retention-days: 30
