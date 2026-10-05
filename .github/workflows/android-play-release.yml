@@ -1,0 +1,89 @@
+name: Build signed Android Play release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-play-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  signed-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Require Play upload signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in ANDROID_UPLOAD_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+
+      - name: Materialize upload keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/3b-play-upload.jks"
+          keytool -list -keystore "$RUNNER_TEMP/3b-play-upload.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx --no-install cap sync android
+
+      - name: Verify Android API 36 / Play metadata
+        run: node scripts/verify-android-play-readiness.mjs
+
+      - name: Build signed Android App Bundle
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon bundleRelease             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/3b-play-upload.jks"             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD"             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS"             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+
+      - name: Verify AAB signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify -strict "$AAB"
+          sha256sum "$AAB" > artifacts/mobile/android-play-release-sha256.txt
+
+      - name: Remove temporary signing material
+        if: always()
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/3b-play-upload.jks"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: 3b-android-play-signed-${{ github.sha }}
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            artifacts/mobile/play-readiness.json
+            artifacts/mobile/android-play-release-sha256.txt
+          if-no-files-found: error
+          retention-days: 14
