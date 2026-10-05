@@ -81,6 +81,7 @@ html[data-luxury="v2"] .app3b .home-world-entry{
   --threeb-ring-y:24.5%;
   --threeb-ring-inner:12.5%;
   --threeb-ring-outer:37.5%;
+  --threeb-ring-diameter:75%;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-motion{
   position:absolute;
@@ -120,7 +121,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-energy{
   position:absolute;
   left:var(--threeb-ring-x);
   top:var(--threeb-ring-y);
-  width:calc(var(--threeb-ring-outer) * 2);
+  width:var(--threeb-ring-diameter);
   aspect-ratio:1;
   transform:translate(-50%,-50%);
   border-radius:50%;
@@ -159,6 +160,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-energy{
     --threeb-ring-y:23.5%;
     --threeb-ring-inner:12%;
     --threeb-ring-outer:39%;
+    --threeb-ring-diameter:78%;
   }
   html[data-luxury="v2"] .app3b .home-world-ring-layer{object-position:62% center;opacity:.43}
 }
