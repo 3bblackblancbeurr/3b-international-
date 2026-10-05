@@ -54,3 +54,9 @@ test('IDnow documentation records the retry lease and external activation gates'
   assert.match(docs,/DPA/);
   assert.match(docs,/rétention/i);
 });
+
+test('terminal IDnow errors clear pending profile state so verification can be retried',()=>{
+  assert.match(edge,/flow_not_approved'[\s\S]*identity_verification_state:'unverified'/);
+  assert.match(edge,/eventName==='session\.error'[\s\S]*identity_verification_state:'unverified'/);
+  assert.match(edge,/eventName==='session\.aborted'[\s\S]*identity_verification_state:'unverified'/);
+});
