@@ -1,7 +1,7 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowLeft,LockKeyhole,Volume2,VolumeX} from 'lucide-react';
 import {destinRequest,sourceUrl} from './client.js';
-import {musicMasterResumeState,shouldLoopVisual} from './musicMasterState.js';
+import {musicMasterResumeState,shouldLoopVisual,visualTargetTime} from './musicMasterState.js';
 import './music-master.css';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
@@ -137,8 +137,7 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
       await a.play();
       const sync=()=>{
         if(token!==runToken.current || a.paused || a.ended)return;
-        const rawTarget=a.currentTime+delaySec;
-        const target=v.loop && Number.isFinite(v.duration) && v.duration>0 ? rawTarget%v.duration : rawTarget;
+        const target=visualTargetTime(a.currentTime,delayMs,v.duration,v.loop);
         const drift=target-v.currentTime;
         if(Math.abs(drift)>.16 && Number.isFinite(v.duration))v.currentTime=clamp(target,0,Math.max(0,v.duration-.05));
         else v.playbackRate=clamp(1+drift*.08,.985,1.015);
