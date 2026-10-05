@@ -1,5 +1,5 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ArrowLeft,Check,LockKeyhole,Volume2,VolumeX} from 'lucide-react';
+import {ArrowLeft,LockKeyhole,Volume2,VolumeX} from 'lucide-react';
 import {destinRequest,sourceUrl} from './client.js';
 import './music-master.css';
 
@@ -21,7 +21,6 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
 
   const node=useMemo(()=>snapshot.manifest.nodes.find(item=>item.id===snapshot.run.node_id) || snapshot.manifest.nodes[0],[snapshot]);
   const cinema=node?.cinema || {};
-  const isEnding=Boolean(node?.ending);
   const fallbackReward=cinema.reward || {};
   const reward=claimedReward || fallbackReward;
 
@@ -154,6 +153,7 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
   }
   async function finishAndClaim(s){
     const n=branchNode(s);
+    retryRef.current=()=>finishAndClaim(s);
     setBusy(true);setError('');
     try{
       const complete=await destinRequest('finish',{
