@@ -110,8 +110,8 @@ export default function PassportExperience({ identity, syncing = false, goTo, op
       </nav>
 
       <div className="passport-experience-city">
-        <Button variant="ghost" className="passport-city-entry" aria-label="Ouvrir 3B MA VILLE" aria-haspopup="dialog" disabled={syncing}
-          onClick={() => { setPanel(null); setCityOpen(true); }}>
+        <Button variant="ghost" className="passport-city-entry" aria-label={active ? 'Ouvrir 3B MA VILLE' : 'Se connecter pour ouvrir 3B MA VILLE'} aria-haspopup={active ? 'dialog' : undefined} disabled={syncing}
+          onClick={() => { if (!active) { navigate('member'); return; } setPanel(null); setCityOpen(true); }}>
           <span className="passport-city-wordmark" aria-hidden="true">3B</span>
           <span className="passport-city-label" aria-hidden="true">MA VILLE</span>
           <ArrowUpRight className="passport-city-arrow" size={18} aria-hidden="true" />

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {PASSPORT_COUNTRIES,passportFromProfile,passportInitials} from '../src/passport/identity.js';
 
 const UID='123e4567-e89b-12d3-a456-426614174000';
@@ -106,6 +107,22 @@ test('legacy on-device identity is migration input only, never the active app id
  const source=readFileSync(new URL('../src/App.jsx',import.meta.url),'utf8');
  assert.match(source,/const member = loyalty\.profile \? remoteMember\(loyalty\.profile\) : createTestMember\(\);/);
  assert.match(source,/legacy=\{localMember\}/);
+});
+
+test('City country resolution tolerates guests and never borrows another account passport',()=>{
+ for(const path of ['../src/components/City3BPortal.jsx','../src/city/City3BPanel.jsx']){
+  const source=readFileSync(new URL(path,import.meta.url),'utf8');
+  const expression=source.match(/\bcountry=([^;]+);/)?.[1];
+  assert.ok(expression,`Country initializer exists in ${path}`);
+  const resolve=(uid,passport)=>runInNewContext(expression,{uid,account:{passport}});
+  assert.equal(resolve(undefined,null),'');
+  assert.equal(resolve(undefined,undefined),'');
+  assert.equal(resolve(null,{userId:null,country:'France'}),'');
+  assert.equal(resolve(UID,null),'');
+  assert.equal(resolve(UID,{userId:'another-member',country:'France'}),'');
+  assert.equal(resolve(UID,{userId:UID}),'');
+  assert.equal(resolve(UID,{userId:UID,country:'Maroc'}),'Maroc');
+ }
 });
 
 test('registration and account switching cannot reuse another member passport',()=> {

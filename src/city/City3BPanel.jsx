@@ -9,7 +9,7 @@ import {useLoyalty} from '../loyalty/LoyaltyContext.jsx';
 
 export function City3BPanel({uid,onLogin,onNotice}){
  const[data,setData]=useState(null),[loading,setLoading]=useState(!!uid),[busy,setBusy]=useState(''),[error,setError]=useState('');
- const account=useLoyalty(),country=account.passport?.userId===uid?account.passport.country:'';
+ const account=useLoyalty(),country=uid&&account.passport?.userId===uid?(account.passport.country||''):'';
  const scope=useRef(uid);scope.current=uid;const mounted=useRef(true);useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  const[name,setName]=useState('Ma Ville 3B'),[map,setMap]=useState('plains');
  const refresh=useCallback(async()=>{if(!uid)return;setLoading(true);setError('');try{const next=await city3bRequest('snapshot',{},uid);if(mounted.current&&scope.current===uid){setData(next);}}catch(e){if(mounted.current&&scope.current===uid)setError(e.message);}finally{if(mounted.current&&scope.current===uid)setLoading(false);}},[uid]);
