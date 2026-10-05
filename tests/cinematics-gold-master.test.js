@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {characterSequence,frameAt} from '../src/world/cinematic-script.js';
 import {COUNTRY_CINEMA,cinematicSpec} from '../src/world/cinematic-director.js';
+import {AUDIO_STATES} from '../src/world/audio-director.js';
 import {worldCinematicEvents} from '../src/world/cinematic-events.js';
 import {storyCinematicPresentation} from '../src/world/story-cinematic.js';
 
@@ -71,4 +72,18 @@ test('first creation ends inside the real world and stays under 50 seconds',()=>
  assert.ok(characterMs+opening.duration<=50000,'combined opening is '+(characterMs+opening.duration)+'ms');
  assert.equal(presentation.title,'LE MONDE DU 3B');
  assert.match(presentation.detail,/monde réel du 3B/i);
+});
+
+
+test('guardian value and homecoming use authored cinematic tiers and audio mixes',()=>{
+ assert.equal(cinematicSpec('guardian-value-complete','france').tier,'narrative');
+ assert.equal(cinematicSpec('guardian-homecoming','france').tier,'major');
+ assert.equal(cinematicSpec('guardian-homecoming','france').recipe,'guardian-homecoming');
+ assert.ok(AUDIO_STATES.cinematic.music>AUDIO_STATES.exploration.music);
+ assert.ok(AUDIO_STATES.homecoming.music>AUDIO_STATES.mission.music);
+ const homecoming=storyCinematicPresentation({kind:'guardian-homecoming',key:'homecoming:france',region:'hub',context:{region:'france'}});
+ assert.equal(homecoming.audioState,'homecoming');
+ assert.match(homecoming.title,/Céliane/);
+ const finale=storyCinematicPresentation({kind:'story-finale',key:'story:circle-restored',region:'france',context:{region:'france'}});
+ assert.equal(finale.audioState,'homecoming');
 });

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHubLifeInteraction,hubLifeAction} from '../src/world/hub/life-interaction.js';
 import {contextActions} from '../src/world/interaction-system.js';
 import {hubNpcSchedule} from '../src/world/hub/npc-schedule.js';
+import {hubNpcActivity} from '../src/world/hub/npc-activity.js';
 import {hubNpcSimulation} from '../src/world/hub/npc-motion.js';
 
 const seat={id:'room:seat',type:'hubLifeObject',kind:'seat',x:4,z:6,seatX:4,seatZ:7,seatHeight:.81,heading:180,name:'Fauteuil',range:3.2};
@@ -46,4 +47,23 @@ test('reduced motion preserves the resident work anchor and removes idle root sw
  const npc={id:'ines_varga',activity:'travail',homeX:12,homeZ:-8};
  const a=hubNpcSimulation(npc,1,{distance:12,reducedMotion:true}),b=hubNpcSimulation(npc,20,{distance:12,reducedMotion:true});
  assert.equal(a.x,12);assert.equal(a.z,-8);assert.equal(a.heading,b.heading);assert.equal(a.state,'Work');
+});
+
+
+test('active civic events interrupt resident routines without changing persistent saves',()=>{
+ const breakdown={id:'train_breakdown',district:'docks',effect:'mission de réparation et navettes de remplacement'};
+ const emergency=hubNpcSchedule('lyna_amrane',{hour:16,activeEvents:[breakdown]});
+ assert.equal(emergency.activity,'événement');
+ assert.equal(emergency.eventId,'train_breakdown');
+ assert.equal(emergency.district,'docks');
+ assert.equal(emergency.movementIntent,'respond');
+ assert.equal(emergency.activityBuildingId,null);
+ const activity=hubNpcActivity({...emergency,id:'lyna_amrane'},{hour:16});
+ assert.equal(activity.id,'event');
+ assert.equal(activity.pace,'focused');
+ assert.match(activity.detail,/réparation/);
+ const market=hubNpcSchedule('nora_khelifi',{hour:20,activeEvents:[{id:'market_night',district:'commerce',effect:'vendeurs et personnages rares'}]});
+ assert.equal(market.activity,'événement');
+ assert.equal(market.movementIntent,'gather');
+ assert.equal(market.social,true);
 });

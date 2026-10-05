@@ -20,16 +20,38 @@ const WORKPLACES=Object.freeze({
  kadra_zerrouki:['central_marina','compare les cartes marines'],adrian_sol:['arena_3b','prépare les défis'],soraya_najem:['community_house','recueille les témoignages'],
 });
 const SHELTER_WEATHER=new Set(['rain','heavy_rain','storm','snow']);
+const EVENT_RESPONDERS=Object.freeze({
+ train_breakdown:new Set(['the_conductor','samir_benyahia','lyna_amrane','youssef_ben_salem']),
+ guardian_projection:new Set(['noah_leroux','ines_varga','celine_moreau','maarja_saar']),
+ arena_public_challenge:new Set(['hugo_martel','sofia_vega','adrian_sol']),
+ memory_walk:new Set(['ines_varga','celine_moreau','maarja_saar','giulia_ferri','evelin_tamm']),
+ city_showcase:new Set(['elio_romano','mael_rivière']),
+ workers_ceremony:new Set(['maarja_saar','amira_mansouri','lucia_navaro','noah_leroux']),
+ market_night:new Set(['nora_khelifi','omar_el_fassi','meryem_alaoui','mael_rivière']),
+});
+const EVENT_LABELS=Object.freeze({
+ train_breakdown:'intervient sur la panne du réseau',guardian_projection:'rejoint la projection du Gardien',arena_public_challenge:'encadre le défi public',
+ memory_walk:'partage un récit pendant la marche mémoire',city_showcase:'présente les projets de la Cité',workers_ceremony:'participe à la cérémonie des travailleurs',market_night:'anime le marché du soir',
+});
+function residentEvent(npcId,activeEvents=[]){
+ if(!Array.isArray(activeEvents))return null;
+ return activeEvents.find(event=>EVENT_RESPONDERS[event?.id]?.has(npcId))||null;
+}
 export function hubDayPart(hour){
  hour=((Number(hour)||0)%24+24)%24;
  if(hour<6)return 'night';if(hour<9)return 'morning';if(hour<18)return 'day';if(hour<22)return 'evening';return 'night';
 }
-export function hubNpcSchedule(npcId,{hour=12,day=1,storyProgress=false,weather='clear'}={}){
+export function hubNpcSchedule(npcId,{hour=12,day=1,storyProgress=false,weather='clear',activeEvents=[]}={}){
  hour=((Number(hour)||0)%24+24)%24;day=Math.max(0,Math.floor(Number(day)||0));
  const home=HOME[npcId]||'heritage_square',part=hubDayPart(hour),seed=seedOf(npcId);
  const [activityBuildingId,job]=WORKPLACES[npcId]||['heritage_welcome','accueille les habitants'];
  const moment=referenceResidentMoment(npcId,{hour,day,weather});
- const routine=(data,label=job)=>({...data,activityBuildingId,activityLabel:data.social?moment?.activityLabel||label:label,activityPlaceId:moment?.placeId||null,socialPartnerId:data.social?moment?.partnerId||null:null});
+ const routine=(data,label=job)=>({...data,activityBuildingId:data.activityBuildingId===undefined?activityBuildingId:data.activityBuildingId,activityLabel:data.activityLabel|| (data.social?moment?.activityLabel||label:label),activityPlaceId:moment?.placeId||null,socialPartnerId:data.social?moment?.partnerId||null:null});
+ const event=residentEvent(npcId,activeEvents);
+ if(event){
+  const emergency=event.id==='train_breakdown',label=EVENT_LABELS[event.id]||'participe à un événement de la Cité';
+  return routine({district:event.district||home,activity:'événement',eventId:event.id,eventEffect:event.effect||'',movementIntent:emergency?'respond':'gather',social:!emergency,rare:false,indoor:false,shelter:false,activityBuildingId:null,activityLabel:label},label);
+ }
  if(npcId==='the_conductor')return routine({district:part==='night'?'docks':'archives',activity:part==='night'?'dernier train':'archives du réseau',rare:part!=='night',shelter:SHELTER_WEATHER.has(weather)},'veille sur le dernier départ');
  if(npcId==='noah_leroux')return routine({district:storyProgress||SHELTER_WEATHER.has(weather)?'broken_circle_tower':part==='evening'?'heritage_square':'broken_circle_tower',activity:storyProgress?'veille des fragments':'observation',rare:false,shelter:SHELTER_WEATHER.has(weather),indoor:SHELTER_WEATHER.has(weather)},'observe les fréquences du Cercle');
  if(part==='night')return routine({district:home,activity:'repos',rare:false,indoor:true},'termine sa journée');
