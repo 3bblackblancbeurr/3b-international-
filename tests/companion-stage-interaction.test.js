@@ -37,7 +37,7 @@ function stageFixture(initial = {}, storage = new Map()) {
     nodeType: 1, hidden: false, open: true,
     getAttribute: () => null,
     getBoundingClientRect: () => ({ ...rect, width: rect.right - rect.left, height: rect.bottom - rect.top }),
-    matches(selector) { return selector === 'dialog' ? native : selector.includes('dialog') ? dialog : editable; },
+    matches(selector) { return selector === 'dialog' ? native : selector.includes('dialog') ? dialog : selector.startsWith('button,a[href]') ? control : editable; },
     closest(selector) {
       if (selector.startsWith('.companion3b')) return null;
       if (selector.includes('dialog')) return dialog ? this : null;
@@ -123,7 +123,7 @@ function stageFixture(initial = {}, storage = new Map()) {
     get stage() { return result; },
     get position() { return { x: parseFloat(properties.get('--companion-stage-x')), y: parseFloat(properties.get('--companion-stage-y')) }; },
     event(patch = {}) { return { pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, clientX: 850, clientY: 680, currentTarget: shell, preventDefault() {}, ...patch }; },
-    invoke(name, argument) { const value = result[name](argument); flush(); return value; },
+    invoke(name, ...arguments_) { const value = result[name](...arguments_); flush(); return value; },
     render(patch) { Object.assign(props, patch); dirty = true; flush(); },
     emit(target, type, event) { target.emit(type, event); flush(); },
     mutate(records) { dialogObserver?.(records); advance(0); },
@@ -142,7 +142,8 @@ function stageFixture(initial = {}, storage = new Map()) {
 test('a click on a walking companion keeps the hit target through late focus and opens normally', () => {
   const fixture = stageFixture();
   const home = fixture.position;
-  fixture.nextTimer(); fixture.frame(1000);
+  fixture.nextTimer();
+  for (let index = 0; index < 60; index += 1) fixture.frame(1000 / 60);
   assert.equal(fixture.stage.moving, true);
   assert.notDeepEqual(fixture.position, home);
   const pausedAt = fixture.position;
@@ -200,6 +201,8 @@ test('a geometry notification cannot steal a just-released tap and later clears 
   assert.deepEqual(fixture.position, before);
   assert.equal(fixture.invoke('consumeClick', { detail: 1 }), false);
   fixture.advance(450);
+  assert.equal(fixture.stage.moving, true, 'the deferred safety correction walks out smoothly');
+  for (let index = 0; index < 90; index += 1) fixture.frame(1000 / 60);
   assert.notDeepEqual(fixture.position, before, 'the deferred safety check still runs');
   fixture.unmount();
 });
@@ -259,4 +262,137 @@ test('explicit sleep expires and immediate disable releases an active drag with 
   assert.equal(fixture.stage.suspended, true, 'focus must not undo an explicit disable');
   fixture.unmount();
   assert.equal(fixture.win.listeners + fixture.doc.listeners, 0);
+});
+
+test('scroll and a harmless viewport measurement preserve a stroll in progress', () => {
+  const fixture = stageFixture();
+  fixture.nextTimer();
+  for (let index = 0; index < 50; index += 1) fixture.frame(1000 / 60);
+  const before = fixture.position;
+  fixture.emit(fixture.doc, 'scroll'); fixture.advance(50);
+  assert.deepEqual(fixture.position, before, 'geometry must not send a walker back to its corner');
+  assert.equal(fixture.stage.moving, true);
+  fixture.frame(16);
+  const distance = Math.hypot(fixture.position.x - before.x, fixture.position.y - before.y);
+  assert.ok(distance > 0 && distance < 10);
+  fixture.unmount();
+});
+
+test('page changes, focus and initiative preferences keep the actual resting position', () => {
+  const fixture = stageFixture();
+  fixture.nextTimer();
+  for (let index = 0; index < 55; index += 1) fixture.frame(1000 / 60);
+  const before = fixture.position;
+  fixture.render({ page: 'passport' });
+  assert.deepEqual(fixture.position, before);
+  assert.equal(fixture.stage.moving, false);
+  fixture.render({ autonomous: false });
+  fixture.emit(fixture.win, 'focus');
+  assert.deepEqual(fixture.position, before);
+  assert.equal(fixture.frames.size + fixture.timers.size, 0);
+  fixture.unmount();
+});
+
+test('the locomotion ref reports real travel and a stalled frame never jumps to the destination', () => {
+  const fixture = stageFixture();
+  const reference = fixture.stage.locomotion;
+  fixture.nextTimer();
+  for (let index = 0; index < 75; index += 1) fixture.frame(1000 / 60);
+  const before = fixture.position;
+  const distanceBefore = reference.current.distance;
+  assert.equal(fixture.stage.locomotion, reference, 'the animation reads a stable ref without frame renders');
+  assert.ok(reference.current.speed > 0 && reference.current.speed < 200);
+  assert.ok(distanceBefore > 10);
+  fixture.frame(10000);
+  const moved = Math.hypot(fixture.position.x - before.x, fixture.position.y - before.y);
+  assert.ok(moved > 0 && moved < 8, 'a ten-second stall may advance at most one bounded step');
+  assert.ok(Math.abs(reference.current.distance - distanceBefore - moved) < 0.025);
+  fixture.render({ paused: true });
+  assert.equal(reference.current.speed, 0);
+  assert.equal(reference.current.moving, false);
+  fixture.unmount();
+});
+
+test('a cancelled drag retains safe manual placement and drag reversal follows the last movement', () => {
+  const fixture = stageFixture({ reducedMotion: true });
+  const event = fixture.event({ pointerType: 'touch' });
+  fixture.invoke('onPointerDown', event);
+  fixture.invoke('onPointerMove', { ...event, clientX: event.clientX - 180 });
+  assert.equal(fixture.stage.facing, -1);
+  fixture.invoke('onPointerMove', { ...event, clientX: event.clientX - 160 });
+  assert.equal(fixture.stage.facing, 1, 'turn right even before crossing the original grab point');
+  const before = fixture.position;
+  fixture.invoke('onPointerCancel', event);
+  assert.deepEqual(fixture.position, before, 'OS cancellation must not teleport a valid placement');
+  assert.equal(fixture.stage.locomotion.current.distance, 0, 'dragging does not advance the walking gait');
+  assert.equal(fixture.stage.locomotion.current.dragging, false);
+  assert.equal(fixture.frames.size + fixture.captures.size, 0);
+  assert.ok(fixture.storage.has(stageFunctions.STAGE_PLACEMENT_KEY));
+  fixture.unmount();
+});
+
+test('automatic conversation cannot steal a drag, explicit scene or a paused panel', () => {
+  const fixture = stageFixture();
+  const event = fixture.event();
+  fixture.invoke('onPointerDown', event);
+  assert.equal(fixture.invoke('play', 'curious', { automatic: true }), false);
+  assert.equal(fixture.invoke('play', 'walk'), false, 'the held pointer always has priority');
+  assert.equal(fixture.captures.size, 1);
+  fixture.invoke('onPointerCancel', event);
+  assert.equal(fixture.invoke('play', 'dance'), true);
+  assert.equal(fixture.invoke('play', 'curious', { automatic: true }), false);
+  assert.equal(fixture.stage.pose, 'dance');
+  fixture.render({ paused: true });
+  assert.equal(fixture.invoke('play', 'curious', { automatic: true }), false);
+  fixture.unmount();
+});
+
+test('backgrounding cancels frame work and returns to the same safe point without replaying a walk', () => {
+  const fixture = stageFixture();
+  fixture.nextTimer();
+  for (let index = 0; index < 45; index += 1) fixture.frame(1000 / 60);
+  const before = fixture.position;
+  fixture.doc.hidden = true;
+  fixture.emit(fixture.doc, 'visibilitychange');
+  assert.equal(fixture.stage.suspended, true);
+  assert.equal(fixture.frames.size + fixture.timers.size, 0);
+  fixture.advance(60000);
+  fixture.doc.hidden = false;
+  fixture.emit(fixture.doc, 'visibilitychange');
+  assert.equal(fixture.stage.suspended, false);
+  assert.deepEqual(fixture.position, before);
+  assert.equal(fixture.stage.moving, false);
+  fixture.unmount();
+});
+
+test('a control inserted ahead of a walking companion interrupts the route in place', () => {
+  const fixture = stageFixture();
+  fixture.nextTimer();
+  for (let index = 0; index < 65; index += 1) fixture.frame(1000 / 60);
+  const before = fixture.position;
+  const barrier = fixture.element({ left: 0, right: 960, top: before.y - 40, bottom: before.y - 30 }, { control: true });
+  fixture.controls.push(barrier);
+  fixture.mutate([{ target: fixture.doc.body, addedNodes: [barrier], removedNodes: [] }]);
+  fixture.advance(50);
+  assert.equal(fixture.stage.moving, false);
+  assert.deepEqual(fixture.position, before, 'a new control does not trigger a corner reset');
+  assert.equal(fixture.frames.size, 0);
+  fixture.unmount();
+});
+
+test('a released mouse drag resumes initiatives after falling away from a stationary pointer', () => {
+  const fixture = stageFixture();
+  const start = fixture.position;
+  const down = fixture.event({ clientX: start.x + 50, clientY: start.y + 70 });
+  const lifted = { ...down, clientX: down.clientX - 80, clientY: down.clientY - 260 };
+  fixture.invoke('onPointerDown', down);
+  fixture.invoke('onPointerMove', lifted);
+  fixture.emit(fixture.win, 'pointermove', lifted);
+  fixture.invoke('onPointerUp', lifted);
+  for (let index = 0; index < 360 && fixture.stage.pose; index += 1) fixture.frame(1000 / 60);
+  assert.equal(fixture.stage.pose, null);
+  assert.ok(fixture.position.y > lifted.clientY + 100, 'the landed avatar is far from the unchanged pointer');
+  assert.equal(fixture.frames.size, 0);
+  assert.ok(fixture.timers.size > 0, 'the next initiative does not require another pointermove');
+  fixture.unmount();
 });

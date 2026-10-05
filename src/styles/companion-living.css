@@ -3,7 +3,22 @@ html .companion3b-shell.companion3b-living-shell {
   width:112px;height:155px;min-height:0;left:0;top:0;bottom:auto;padding:0;border:0;
   display:grid;place-items:center;gap:0;background:transparent;color:var(--3b-champagne);
   transition:none;touch-action:none;isolation:isolate;will-change:transform;
+  overflow:visible;appearance:none;-webkit-appearance:none;-webkit-touch-callout:none;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
 }
+/* A draggable character has no button plate, reflected sweep or pressed shadow. */
+html:root[data-luxury="v2"] .companion3b-shell.companion3b-living-shell,
+html:root[data-luxury="v2"] .companion3b-shell.companion3b-living-shell:is(:hover,:active,:focus) {
+  overflow:visible;background:transparent;border:0;box-shadow:var(--3b-shadow-flat);filter:none;
+}
+html:root[data-luxury="v2"] .companion3b-shell.companion3b-living-shell::before,
+html:root[data-luxury="v2"] .companion3b-shell.companion3b-living-shell::after,
+html:root[data-luxury="v2"] .companion3b-shell.companion3b-living-shell:is(:hover,:active,:focus)::after {
+  content:none;display:none;animation:none;
+}
+html .companion3b-shell.companion3b-living-shell:focus:not(:focus-visible) {outline:none}
+html .companion3b-shell.companion3b-living-shell[data-dragging="true"] .companion3b-bubble {visibility:hidden}
+html .companion3b-shell.companion3b-living-shell[data-travelling="true"] .companion3b-bubble {visibility:hidden}
 html .companion3b-shell.companion3b-living-shell[data-discreet="true"],
 html .companion3b-shell.companion3b-living-shell[data-low-power="true"] {width:72px;height:100px}
 html .companion3b-shell.companion3b-living-shell[data-visible="false"] {visibility:hidden;pointer-events:none}
@@ -18,7 +33,7 @@ html .companion3b-living-shell .companion3b-bubble {
 
 /* This specificity keeps older companion themes from resizing the portrait. */
 html:root .companion3b-panel.companion3b-living-panel {
-  width:min(446px,calc(100vw - 28px));bottom:max(14px,env(safe-area-inset-bottom));
+  width:min(390px,calc(100vw - 28px));bottom:max(14px,env(safe-area-inset-bottom));
   max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   padding:22px;border-radius:var(--3b-radius-hero);border:1px solid var(--3b-border);
   background:
@@ -44,7 +59,7 @@ html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait {
 }
 html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait-ring {
   position:relative;isolation:isolate;display:grid;place-items:center;grid-template-rows:minmax(0,1fr);
-  width:100%;height:284px;flex:0 0 auto;margin-bottom:18px;border-radius:var(--3b-radius-flat);overflow:visible;
+  width:100%;height:211px;flex:0 0 auto;margin-bottom:8px;border-radius:var(--3b-radius-flat);overflow:visible;
   background:
     radial-gradient(ellipse at 48% 77%,color-mix(in srgb,var(--3b-champagne) 9%,transparent),transparent 56%),
     radial-gradient(ellipse at 58% 36%,color-mix(in srgb,var(--3b-matrix) 6%,transparent),transparent 61%);
@@ -71,7 +86,7 @@ html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait stro
 html:root .companion3b-living-panel .companion3b-presence {justify-content:center;color:var(--3b-champagne);font-size:8px;letter-spacing:.13em;font-weight:500}
 html:root .companion3b-living-panel .companion3b-presence i {background:var(--3b-champagne)}
 html:root .companion3b-living-panel .companion3b-response {
-  max-width:35ch;margin:11px auto 19px;min-height:0;font-size:12px;font-weight:400;line-height:1.65;color:var(--3b-muted);text-wrap:pretty;
+  max-width:35ch;margin:10px auto 14px;min-height:0;font-size:12px;font-weight:400;line-height:1.65;color:var(--3b-muted);text-wrap:pretty;
 }
 
 /* Three destinations; the selected tab and active action carry the accent. */
@@ -101,18 +116,29 @@ html:root .companion3b-living-panel .companion3b-action:is(:hover,[aria-pressed=
 .companion3b-action[aria-pressed="true"] .companion3b-action-signal {opacity:1}
 .companion3b-more-actions {margin-top:5px}
 .companion3b-more-actions>summary,
+.companion3b-world-links>summary,
+.companion3b-character-options>summary,
 .companion3b-voice-design>summary {
   display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;cursor:pointer;
   list-style:none;font-size:11px;line-height:1.5;font-weight:450;color:var(--3b-muted);
 }
-.companion3b-more-actions>summary {padding:10px 7px}
+.companion3b-more-actions>summary,.companion3b-world-links>summary,.companion3b-character-options>summary {padding:10px 7px}
+.companion3b-character-options>summary>span:last-child {display:flex;align-items:center;gap:8px;color:var(--3b-champagne)}
 .companion3b-more-actions>summary::-webkit-details-marker,
+.companion3b-world-links>summary::-webkit-details-marker,
+.companion3b-character-options>summary::-webkit-details-marker,
 .companion3b-voice-design>summary::-webkit-details-marker {display:none}
 .companion3b-more-actions>summary svg,
+.companion3b-world-links>summary svg,
+.companion3b-character-options>summary svg,
 .companion3b-voice-design>summary svg {flex-shrink:0;transition:transform var(--3b-motion-micro) var(--3b-ease-standard)}
 .companion3b-more-actions[open]>summary svg,
+.companion3b-world-links[open]>summary svg,
+.companion3b-character-options[open]>summary svg,
 .companion3b-voice-design[open]>summary svg {transform:rotate(180deg)}
 .companion3b-more-actions[open]>summary,
+.companion3b-world-links[open]>summary,
+.companion3b-character-options[open]>summary,
 .companion3b-voice-design[open]>summary {color:var(--3b-champagne)}
 
 /* Character descriptions appear once, beside a clear selected state. */
@@ -214,6 +240,8 @@ html:root .companion3b-living-panel .companion3b-shortcuts {gap:0}
 html:root .companion3b-living-panel .companion3b-settings-trigger {
   min-height:48px;margin-top:7px;padding:12px 0;border-top:0;color:var(--3b-muted);
 }
+.companion3b-living-panel>.companion3b-presence-control {margin-top:10px;border-top:1px solid var(--3b-line-soft);border-bottom:0;padding:0}
+.companion3b-living-panel>.companion3b-presence-control .companion3b-presence-choice {min-height:52px;padding:10px 0}
 
 /* Visible keyboard focus, clear disabled state and native high-contrast controls. */
 html:root .companion3b-living-panel :is(button,input,select,summary):focus-visible {
@@ -230,12 +258,12 @@ html:root .companion3b-living-panel button:disabled {opacity:.42;cursor:not-allo
   html:root .companion3b-living-panel .companion3b-panel-head h2 {font-size:21px}
 }
 @media(max-height:790px) {
-  html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait-ring {height:235px}
-  html:root .companion3b-living-panel .companion3b-portrait-ring>.companion3b-avatar {transform:scale(.85)!important}
+  html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait-ring {height:174px}
+  html:root .companion3b-living-panel .companion3b-portrait-ring>.companion3b-avatar {transform:scale(.82)!important}
   html:root .companion3b-living-panel .companion3b-response {margin:9px auto 13px}
 }
 @media(max-height:600px) {
-  html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait-ring {height:155px}
+  html:root .companion3b-panel.companion3b-living-panel .companion3b-portrait-ring {height:118px}
   html:root .companion3b-living-panel .companion3b-portrait-ring>.companion3b-avatar {transform:scale(.56)!important}
   html:root .companion3b-living-panel .companion3b-panel-head h2 {font-size:19px}
 }

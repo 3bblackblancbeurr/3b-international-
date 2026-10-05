@@ -1,7 +1,7 @@
 import InstallCards from '../install/InstallCards.jsx';
 import CinematicLaunch, { BRAND_ICON } from './CinematicLaunch.jsx';
 import EntryAtmosphere from './EntryAtmosphere.jsx';
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
 import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
@@ -23,7 +23,8 @@ export function LuxuryProvider({ children }) {
   const [scene, setScene] = useState(null);
   const audio = useRef(null), activated = useRef(false), lastCue = useRef(0), serial = useRef(0), speaking = useRef(false);
   const policy = useMemo(() => experiencePolicy(options, device), [options, device]);
-  const [launching, setLaunching] = useState(() => experiencePolicy(options, device).animate);
+  const [launching, setLaunching] = useState(() => !experiencePolicy(options, device).reduced);
+  const [revealing, setRevealing] = useState(false);
   const current = useRef(policy); current.current = policy;
 
   const cue = useCallback((kind = 'press', details = {}) => {
@@ -65,7 +66,7 @@ export function LuxuryProvider({ children }) {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.dataset.luxury = 'v2';
     root.dataset.experienceMotion = policy.animate ? 'full' : 'reduced';
@@ -110,8 +111,8 @@ export function LuxuryProvider({ children }) {
 
   const value = useMemo(() => ({ policy, configure, present, cue }), [policy, present, cue]);
   return <ExperienceContext.Provider value={value}>
-    <div className="threeb-app-content" inert={launching} aria-hidden={launching || undefined}>{children}</div>
-    {launching && <CinematicLaunch policy={policy} enabled onDone={() => setLaunching(false)}/>}
+    <div className="threeb-app-content" data-launch-hidden={launching && !revealing || undefined} inert={launching} aria-hidden={launching || undefined}>{children}</div>
+    {launching && <CinematicLaunch policy={policy} enabled onReveal={() => setRevealing(true)} onDone={() => setLaunching(false)}/>}
     {scene && <div key={scene.id} className={`luxury-transition luxury-transition--${scene.kind}`} aria-hidden={scene.kind !== 'milestone' ? true : undefined}>
       <span className="luxury-transition-ring" />
       {scene.kind === 'milestone' && <aside className="luxury-milestone" role="status"><span className="eyebrow">HÉRITAGE 3B</span><strong>{scene.title}</strong><Button variant="ghost" onClick={() => setScene(null)} aria-label="Fermer la célébration"><X size={18}/></Button></aside>}

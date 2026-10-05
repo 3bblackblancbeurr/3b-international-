@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  STAGE_DURATIONS, STAGE_PLACEMENT_KEY, advanceStagePointerGesture, chooseStageScene,
+  STAGE_DURATIONS, STAGE_PLACEMENT_KEY, advanceStagePointerGesture, advanceStageTravel, chooseStageScene,
   clampStagePosition, createStageClock, createStagePointerGesture,
-  findStageHome, findStageWalkTarget, findVisibleHeadingAnchors, getStageBounds,
+  findStageHome, findStageRestPosition, findStageWalkTarget, findVisibleHeadingAnchors, getStageBounds,
   headingAnchorPosition, interpolateStageTravel, isPointerNearStage, isStagePathClear, isStagePositionClear,
   normalizeStageAction, readHeadingAnchorRect, restoreStagePlacement, stageAutonomousDelay,
   stagePlacement, stepCompanionFall,
@@ -33,6 +33,9 @@ function readControlRects(doc, shell, viewport) {
   const result = [];
   for (const element of Array.from(doc.querySelectorAll(CONTROL)).slice(0, 320)) {
     if (shell?.contains(element) || element.closest(OWN_UI) || element.hidden) continue;
+    const style = doc.defaultView?.getComputedStyle?.(element);
+    if (style?.visibility === 'hidden' || style?.display === 'none' || style?.pointerEvents === 'none'
+      || style?.opacity === '0' || element.getAttribute?.('aria-hidden') === 'true') continue;
     const rect = element.getBoundingClientRect();
     if (rect.width < 4 || rect.height < 4 || rect.bottom < viewport.offsetTop
       || rect.top > viewport.offsetTop + viewport.height || rect.right < viewport.offsetLeft
@@ -79,6 +82,7 @@ export default function useCompanionStage({
   options.current = { enabled, visible, reducedMotion, lowPower, discreet, paused, autonomous, batterySaver, page, personality, onScene, size };
   const controller = useRef(null);
   const suppressClick = useRef(0);
+  const locomotion = useRef({ speed: 0, distance: 0, moving: false, dragging: false });
   const [ui, setUI] = useState(initialUI);
 
   useEffect(() => {
@@ -97,7 +101,7 @@ export default function useCompanionStage({
     const state = {
       alive: true, ui: { ...initialUI }, bounds: null, obstacles: [], position: null,
       home: null, side: 'right', drag: null, scene: null, source: null,
-      moving: false, anchor: null, recent: [], first: true,
+      moving: false, travel: null, anchor: null, recent: [], visited: [], scenesSinceWalk: 0, first: true,
       placement, pointer: null, pointerNear: false, clickUntil: 0, resumeAfter: 0,
       manualLanding: false, manuallySuspended: false, externalDialog: externalDialogVisible(doc),
       lastOptions: { ...options.current },
@@ -106,6 +110,9 @@ export default function useCompanionStage({
     const publish = patch => {
       if (!state.alive) return;
       const next = { ...state.ui, ...patch };
+      locomotion.current.moving = next.moving;
+      locomotion.current.dragging = next.dragging;
+      if (!next.moving || next.pose !== 'walk') locomotion.current.speed = 0;
       if (Object.keys(patch).every(key => state.ui[key] === next[key])) return;
       state.ui = next;
       setUI(next);
@@ -137,10 +144,17 @@ export default function useCompanionStage({
       try { win.localStorage.setItem(STAGE_PLACEMENT_KEY, JSON.stringify(state.placement)); } catch { /* Session placement remains available. */ }
     }
 
-    function write(position) {
+    function write(position, seconds = 0) {
+      const previous = state.position;
       state.position = clampStagePosition(position, state.bounds);
+      if (seconds > 0 && previous && state.moving && state.ui.pose === 'walk') {
+        const distance = Math.hypot(state.position.x - previous.x, state.position.y - previous.y);
+        locomotion.current.distance += distance;
+        locomotion.current.speed = distance / seconds;
+      }
       shell.style.setProperty('--companion-stage-x', `${state.position.x.toFixed(2)}px`);
       shell.style.setProperty('--companion-stage-y', `${state.position.y.toFixed(2)}px`);
+      state.pointerNear = isPointerNearStage(state.pointer, state.position, state.bounds);
       const bubbleSide = state.position.x + state.bounds.width / 2 < state.bounds.offsetX + state.bounds.viewportWidth / 2 ? 'right' : 'left';
       if (bubbleSide !== state.ui.bubbleSide) publish({ bubbleSide });
     }
@@ -163,9 +177,9 @@ export default function useCompanionStage({
       clock.timeout('auto', () => {
         if (!canAuto()) return;
         measure();
-        const walkTarget = findStageWalkTarget(state.position, state.bounds, state.obstacles);
+        const walkTarget = nextWalkTarget();
         const anchors = availableAnchors();
-        const kind = state.first && walkTarget ? 'walk' : chooseStageScene({
+        const kind = (state.first || state.scenesSinceWalk >= 2) && walkTarget ? 'walk' : chooseStageScene({
           ...options.current, recent: state.recent, hasAnchor: anchors.length > 0, canWalk: !!walkTarget,
         });
         state.first = false;
@@ -179,6 +193,7 @@ export default function useCompanionStage({
       state.scene = null;
       state.source = null;
       state.moving = false;
+      state.travel = null;
       state.anchor = null;
       publish({ pose: null, moving: false });
       schedule();
@@ -192,6 +207,7 @@ export default function useCompanionStage({
       state.anchor = null;
       state.manualLanding = false;
       state.moving = false;
+      state.travel = null;
       if (home && state.home) write(state.home);
       publish({ pose: null, moving: false });
       if (reschedule) schedule();
@@ -200,22 +216,32 @@ export default function useCompanionStage({
     function travel(to, { pose = 'walk', duration, arc = 0, arrived = finish } = {}) {
       const from = { ...state.position };
       const distance = Math.hypot(to.x - from.x, to.y - from.y);
-      const milliseconds = duration || Math.max(850, Math.min(4100, distance / 76 * 1000));
-      const started = now();
+      const milliseconds = duration || Math.max(850, Math.min(4900, distance / 76 * 1000));
+      const journey = { to, elapsed: 0, previous: now() };
+      state.travel = journey;
       state.moving = true;
       publish({ pose, moving: true, facing: to.x < from.x ? -1 : 1 });
       const tick = timestamp => {
         if (!state.alive || isSuspended()) { cancel({ reschedule: false }); return; }
         if (!canTravel()) { cancel({ home: false }); return; }
-        const progress = Math.min(1, Math.max(0, (timestamp - started) / milliseconds));
+        const elapsed = advanceStageTravel(journey.elapsed, (timestamp - journey.previous) / 1000, milliseconds);
+        const delta = (elapsed - journey.elapsed) / 1000;
+        journey.elapsed = elapsed;
+        journey.previous = timestamp;
+        const progress = elapsed / milliseconds;
         const next = interpolateStageTravel(from, to, progress, arc);
         if (state.source === 'auto' && isPointerNearStage(state.pointer, next, state.bounds)) {
           state.pointerNear = true;
           cancel({ reschedule: false });
           return;
         }
-        write(next);
-        if (progress >= 1) { state.moving = false; publish({ moving: false }); arrived(); }
+        write(next, delta);
+        if (progress >= 1) {
+          state.travel = null;
+          state.moving = false;
+          if (pose === 'walk') state.visited = [...state.visited, { ...state.position }].slice(-7);
+          publish({ moving: false }); arrived();
+        }
         else clock.frame(tick);
       };
       clock.frame(tick);
@@ -223,18 +249,23 @@ export default function useCompanionStage({
 
     function returnHome() {
       measure();
-      if (state.manualLanding && isStagePositionClear(state.position, state.bounds, state.obstacles)) {
-        rememberPlacement(); state.manualLanding = false; finish(); return;
+      if (isStagePositionClear(state.position, state.bounds, state.obstacles)) {
+        // A completed stroll or landing belongs where it ended. Repeatedly
+        // resetting to a home corner made exploration look like a broken loop.
+        if (state.manualLanding) rememberPlacement();
+        state.manualLanding = false; finish(); return;
       }
+      const remember = state.manualLanding;
       state.manualLanding = false;
-      const target = state.home;
+      const target = findStageRestPosition(state.position, state.bounds, state.obstacles) || state.home;
+      const settle = () => { if (remember) rememberPlacement(); finish(); };
       if (Math.hypot(target.x - state.position.x, target.y - state.position.y) > 16
         && canTravel() && isStagePathClear(state.position, target, state.bounds, state.obstacles)) {
-        travel(target, { pose: 'walk', arrived: finish });
+        travel(target, { pose: 'walk', arrived: settle });
       } else {
         // A control may now occupy the path home: keep the landing safe instead of crossing it.
         if (!isStagePositionClear(state.position, state.bounds, state.obstacles)) write(target);
-        finish();
+        settle();
       }
     }
 
@@ -244,11 +275,13 @@ export default function useCompanionStage({
       publish({ pose: 'fall', moving: true });
       let physics = { ...state.position, vx, vy, bounces: 0 };
       let previousTime = now();
-      const started = previousTime;
+      let elapsed = 0;
       const tick = timestamp => {
         if (!state.alive || isSuspended()) { cancel({ reschedule: false }); return; }
         if (!canTravel()) { cancel({ home: false }); return; }
-        const next = stepCompanionFall(physics, (timestamp - previousTime) / 1000, state.bounds);
+        const seconds = Math.max(0, Math.min(0.034, (timestamp - previousTime) / 1000));
+        elapsed += seconds;
+        const next = stepCompanionFall(physics, seconds, state.bounds);
         if (!isStagePathClear(state.position, next, state.bounds, state.obstacles)) {
           // A page control can occupy the landing corridor. End the gesture safely
           // instead of letting the character fall across an active button.
@@ -258,7 +291,7 @@ export default function useCompanionStage({
         physics = next;
         previousTime = timestamp;
         write(physics);
-        if (physics.settled || timestamp - started > 5200) {
+        if (physics.settled || elapsed > 5.2) {
           state.moving = false;
           if (physics.settled) write({ x: state.position.x, y: state.bounds.maxY });
           publish({ pose: 'land', moving: false });
@@ -276,14 +309,18 @@ export default function useCompanionStage({
       });
     }
 
+    function nextWalkTarget() {
+      return findStageWalkTarget(state.position, state.bounds, state.obstacles, Math.random, { recent: state.visited });
+    }
+
     function play(action, source = 'user', prepared = {}) {
       const kind = normalizeStageAction(action);
-      if (!kind || isSuspended() || (source === 'auto' && !canAuto())) return false;
+      if (!kind || isSuspended() || state.drag || (source === 'auto' && !canAuto())) return false;
       measure();
       let target;
       let anchor;
       if (kind === 'walk' && canTravel()) {
-        target = prepared.walkTarget || findStageWalkTarget(state.position, state.bounds, state.obstacles);
+        target = prepared.walkTarget || nextWalkTarget();
         if (!target) {
           if (source === 'auto') return false;
           // A tight screen can still show a step in place without covering its controls.
@@ -307,6 +344,8 @@ export default function useCompanionStage({
       cancel({ reschedule: false });
       state.scene = kind;
       state.source = source;
+      state.scenesSinceWalk = kind === 'walk' ? 0 : state.scenesSinceWalk + 1;
+      if (kind === 'walk' && state.visited.length === 0) state.visited.push({ ...state.position });
       state.recent = [...state.recent, kind].slice(-4);
       publish({ pose: kind });
       try { options.current.onScene?.({ kind, source, ...(anchor ? { anchor: anchor.letter } : {}) }); } catch { /* Choreography survives an optional reply handler. */ }
@@ -356,6 +395,7 @@ export default function useCompanionStage({
 
     function pointerMove(event) {
       if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) return;
+      const previousX = state.drag?.lastX;
       const drag = advanceStagePointerGesture(state.drag, event, now());
       if (!drag || drag.id !== event.pointerId) return;
       state.drag = drag;
@@ -365,7 +405,8 @@ export default function useCompanionStage({
       suppressClick.current = now() + 650;
       event.preventDefault?.();
       write({ x: drag.origin.x + dx, y: drag.origin.y + dy });
-      publish({ dragging: true, pose: 'hang', facing: dx < 0 ? -1 : 1 });
+      const turn = event.clientX - previousX;
+      publish({ dragging: true, pose: 'hang', facing: Math.abs(turn) > 2 ? (turn < 0 ? -1 : 1) : state.ui.facing });
     }
 
     function pointerUp(event) {
@@ -385,7 +426,9 @@ export default function useCompanionStage({
         fall(fresh ? drag.vx * 0.65 : 0, fresh ? drag.vy * 0.45 : 0);
       } else {
         measure();
-        if (!isStagePositionClear(state.position, state.bounds, state.obstacles)) write(state.home);
+        if (!isStagePositionClear(state.position, state.bounds, state.obstacles)) {
+          write(findStageRestPosition(state.position, state.bounds, state.obstacles) || state.home);
+        }
         rememberPlacement(); publish({ pose: null }); schedule();
       }
     }
@@ -396,7 +439,13 @@ export default function useCompanionStage({
       releaseCapture();
       suppressClick.current = moved ? now() + 650 : 0;
       // Cancellation belongs to the browser/OS; do not interpret it as an intentional throw.
-      cancel({ home: moved });
+      cancel({ reschedule: false });
+      if (moved) {
+        measure();
+        const safe = findStageRestPosition(state.position, state.bounds, state.obstacles);
+        if (safe) { write(safe); rememberPlacement(); }
+      }
+      schedule();
     }
 
     function updateGeometry() {
@@ -415,14 +464,31 @@ export default function useCompanionStage({
       if (state.anchor) {
         const rect = readHeadingAnchorRect(state.anchor, doc);
         const position = rect && headingAnchorPosition(rect, state.bounds);
-        if (position && isStagePositionClear(position, state.bounds, state.obstacles)) { write(position); return; }
-        cancel({ home: true });
-      } else if (state.moving) cancel({ home: true });
-      else {
-        const position = clampStagePosition(state.position, state.bounds);
-        write(isStagePositionClear(position, state.bounds, state.obstacles) ? position : state.home);
-        schedule();
+        if (position && Math.hypot(position.x - state.position.x, position.y - state.position.y) < 8
+          && isStagePositionClear(position, state.bounds, state.obstacles)) { write(position); return; }
+        // Scrolling a title off screen releases the anchor in place; the robot
+        // must never be dragged across the viewport by a moving DOM rectangle.
+        cancel({ reschedule: false });
+      } else if (state.moving) {
+        const clamped = clampStagePosition(state.position, state.bounds);
+        const stillInside = clamped.x === state.position.x && clamped.y === state.position.y;
+        if (stillInside && (!state.travel || isStagePathClear(state.position, state.travel.to, state.bounds, state.obstacles))) return;
+        cancel({ reschedule: false });
       }
+      keepPositionSafe();
+      schedule();
+    }
+
+    function keepPositionSafe() {
+      const position = clampStagePosition(state.position || state.home, state.bounds);
+      write(position);
+      if (isStagePositionClear(position, state.bounds, state.obstacles) || options.current.paused) return;
+      const target = findStageRestPosition(position, state.bounds, state.obstacles) || state.home;
+      if (canTravel() && Math.hypot(target.x - position.x, target.y - position.y) > 8
+        && isStagePathClear(position, target, state.bounds, state.obstacles)) {
+        state.scene = 'walk'; state.source = 'safety';
+        travel(target);
+      } else write(target);
     }
 
     function sync() {
@@ -434,11 +500,16 @@ export default function useCompanionStage({
         || (!previous.paused && current.paused) || (previous.autonomous && !current.autonomous);
       // Focus and the panel pause choreography in place. Returning home here can
       // move a walking button between pointerup and the native click event.
-      if (shouldStop && !state.drag) cancel({ home: current.page !== previous.page, reschedule: false });
+      if (shouldStop && !state.drag) cancel({ reschedule: false });
       publish({ suspended: isSuspended() });
       if (isSuspended()) { cancel({ reschedule: false }); return; }
       measure();
-      write(state.position || state.home);
+      if (current.page !== previous.page) {
+        state.visited = [];
+        state.resumeAfter = now() + 2400;
+      }
+      if (state.drag || now() < state.clickUntil) write(state.position || state.home);
+      else if (!state.moving) keepPositionSafe();
       if (!current.autonomous) clock.clear('auto');
       schedule();
     }
@@ -494,7 +565,8 @@ export default function useCompanionStage({
     write(state.home);
     publish({ suspended: isSuspended(), pose: null, dragging: false, moving: false });
     controller.current = {
-      play: action => play(action), cancel: () => cancel({ home: true }),
+      play: (action, { automatic = false } = {}) => play(action, automatic ? 'auto' : 'user'),
+      cancel: () => cancel(),
       suspend: () => { state.manuallySuspended = true; cancel({ reschedule: false }); publish({ suspended: true }); },
       place: side => {
         state.side = side === 'left' ? 'left' : 'right';
@@ -523,6 +595,8 @@ export default function useCompanionStage({
     const dialogObserver = typeof MutationObserver === 'function' ? new MutationObserver(records => {
       const isDialog = element => element?.nodeType === 1 && !element.closest(OWN_UI)
         && (element.matches(DIALOG) || element.querySelector?.(DIALOG));
+      const isControl = element => element?.nodeType === 1 && !element.closest(OWN_UI)
+        && (element.matches(CONTROL) || element.querySelector?.(CONTROL));
       if (records.some(record => !record.target?.closest?.(OWN_UI)
         && (record.target?.closest?.(DIALOG) || isDialog(record.target) || record.attributeName === 'role'
           || [...(record.addedNodes || []), ...(record.removedNodes || [])].some(isDialog)))) {
@@ -530,6 +604,9 @@ export default function useCompanionStage({
           if (externalDialogVisible(doc) !== state.externalDialog) onEnvironment();
         }, 0);
       }
+      if (records.some(record => !record.target?.closest?.(OWN_UI)
+        && (record.target?.closest?.(CONTROL)
+          || [...(record.addedNodes || []), ...(record.removedNodes || [])].some(isControl)))) onGeometry();
     }) : null;
     if (doc.body) dialogObserver?.observe(doc.body, { childList: true, subtree: true, attributes: true,
       attributeFilter: ['open', 'hidden', 'aria-hidden', 'aria-modal', 'role', 'class', 'style'] });
@@ -537,6 +614,7 @@ export default function useCompanionStage({
 
     return () => {
       state.alive = false;
+      Object.assign(locomotion.current, { speed: 0, moving: false, dragging: false });
       releaseCapture();
       clock.dispose();
       resizeObserver?.disconnect();
@@ -562,7 +640,7 @@ export default function useCompanionStage({
 
   useEffect(() => { controller.current?.sync(); }, [enabled, visible, reducedMotion, lowPower, discreet, paused, autonomous, batterySaver, page, personality, size]);
 
-  const play = useCallback(action => controller.current?.play(action) || false, []);
+  const play = useCallback((action, metadata) => controller.current?.play(action, metadata) || false, []);
   const cancel = useCallback(() => controller.current?.cancel(), []);
   const suspend = useCallback(() => controller.current?.suspend(), []);
   const place = useCallback(side => controller.current?.place(side), []);
@@ -583,5 +661,5 @@ export default function useCompanionStage({
     visibility: ui.suspended ? 'hidden' : undefined,
   }), [ui.moving, ui.dragging, ui.suspended]);
 
-  return { ...ui, style, play, cancel, suspend, place, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, consumeClick };
+  return { ...ui, style, locomotion, play, cancel, suspend, place, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, consumeClick };
 }

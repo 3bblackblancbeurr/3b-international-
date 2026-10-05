@@ -17,11 +17,11 @@ const ACTIONS = [
   { id: 'focus', label: 'Concentration', hint: 'Une présence tranquille', icon: Focus },
   { id: 'rest', label: 'Une pause', hint: 'Souffler un peu', icon: Moon },
 ];
-const FEATURED_ACTIONS = ['dance', 'highfive', 'hologram', 'walk'];
-const TABS = [['play', 'Jouer'], ['talk', 'Discuter'], ['character', 'Caractère']];
+const FEATURED_ACTIONS = ['walk', 'highfive', 'dance', 'hologram'];
+const TABS = [['play', 'Jouer'], ['talk', 'Discuter'], ['character', 'Réglages']];
 
 /** The console contains choices; animation and speech remain owned by the layer. */
-export default function CompanionStudio({ living, onLivingChange, onAction, onSubmit, reply, history, voice, onVoiceToggle, onVoiceSample, onVoiceStop, focused, onResume, requestedTab }) {
+export default function CompanionStudio({ living, onLivingChange, onAction, onSubmit, reply, history, voice, onVoiceToggle, onVoiceSample, onVoiceStop, focused, onResume, requestedTab, shortcuts, presenceSettings }) {
   const [tab, setTab] = useState('play');
   const [draft, setDraft] = useState('');
   const logRef = useRef(null);
@@ -80,6 +80,7 @@ export default function CompanionStudio({ living, onLivingChange, onAction, onSu
         </div>
         <p className="companion3b-studio-caption">Attrape-le dans l’application, puis relâche-le pour le voir retrouver son équilibre.</p>
       </details>
+      {shortcuts}
     </div>
 
     <div id="companion-content-talk" role="tabpanel" aria-labelledby="companion-tab-talk" hidden={tab !== 'talk'}>
@@ -95,6 +96,8 @@ export default function CompanionStudio({ living, onLivingChange, onAction, onSu
     </div>
 
     <div id="companion-content-character" role="tabpanel" aria-labelledby="companion-tab-character" hidden={tab !== 'character'}>
+      <details className="companion3b-character-options">
+      <summary><span>Sa personnalité</span><span>{personality.label}<ChevronDown size={16} aria-hidden="true" /></span></summary>
       <div className="companion3b-personalities" role="group" aria-label="Choisir le caractère">{COMPANION_PERSONALITIES.map(item => <Button
         key={item.id} type="button" variant="ghost" className="companion3b-personality" aria-pressed={living.personality === item.id}
         aria-label={`${item.label} · ${item.description}`} title={item.description}
@@ -102,10 +105,10 @@ export default function CompanionStudio({ living, onLivingChange, onAction, onSu
         <strong>{item.label}</strong><Check size={15} aria-hidden="true" />
       </Button>)}</div>
       <p className="companion3b-personality-description">{personality.description}</p>
+      </details>
       <div className="companion3b-toggles">
-        <label><span><strong>Prendre des initiatives</strong><small>Promenades, petites scènes et questions spontanées</small></span><input type="checkbox" role="switch" checked={living.initiative} onChange={event => onLivingChange({ initiative: event.target.checked })} /></label>
+        <label><span><strong>Se promener librement</strong><small>Il explore l’écran et prend des pauses</small></span><input type="checkbox" role="switch" checked={living.initiative} onChange={event => onLivingChange({ initiative: event.target.checked })} /></label>
       </div>
-    </div>
 
     <div className="companion3b-voice-tools">
     <div className="companion3b-voice-control">
@@ -129,6 +132,8 @@ export default function CompanionStudio({ living, onLivingChange, onAction, onSu
       <small>Les voix proposées dépendent de ton téléphone ou de ton navigateur.</small>
     </details>}
     {living.voiceEnabled && voice.statusLabel && <p className="companion3b-voice-status" role="status">{voice.statusLabel}</p>}
+    </div>
+    {presenceSettings}
     </div>
   </section>;
 }

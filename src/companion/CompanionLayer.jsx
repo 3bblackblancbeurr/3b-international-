@@ -13,7 +13,7 @@ import { companionPreferences } from './companion-preferences.js';
 import { companionNativePresence, useCompanionNativePresence, useCompanionPreferences } from './useCompanionPreferences.js';
 import '../styles/companion-living.css';
 import { Button } from '../design-system/index.jsx';
-import { ArrowUpRight, Sparkles, Clock3, Fingerprint, X, Volume2, VolumeX } from 'lucide-react';
+import { ArrowUpRight, Sparkles, Clock3, Fingerprint, X, Volume2, VolumeX, ChevronDown } from 'lucide-react';
 import ConstellationLink from './ConstellationLink.jsx';
 import { CONSTELLATION_KEY, readConstellation } from './constellation.js';
 import {
@@ -44,7 +44,6 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   const [history, setHistory] = useState([]);
   const [requestedTab, setRequestedTab] = useState(null);
   const [pendingTravel, setPendingTravel] = useState(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [linkOpen,setLinkOpen]=useState(false);
   const [bond,setBond]=useState(()=>{try{return readConstellation(window.localStorage);}catch{return [];}});
   const shellRef = useRef(null);
@@ -83,6 +82,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
   }, [voice.speak]);
   const onStageScene = useCallback(scene => {
     if (scene.source !== 'auto') return;
+    if (['walk', 'rest', 'idle', 'sit', 'sleep', 'curious'].includes(scene.kind)) return;
     showReply({ pose: scene.kind, message: companionSceneLine(scene.kind, living.personality, turnRef.current++, recentRef.current) }, { automatic: true });
   }, [living.personality, showReply]);
   const stage = useCompanionStage({
@@ -90,7 +90,8 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     paused: panelOpen || focused || focusMode || ['secret', 'reward', 'celebrate', 'notification', 'sleep'].includes(mode),
     autonomous: living.initiative, batterySaver: prefs.batterySaver, page, personality: living.personality, onScene: onStageScene,
   });
-  const pose = stage.pose || interaction?.pose || (focusMode ? 'focus' : mode);
+  const replyPose = TRAVEL_ACTIONS.has(interaction?.pose) ? null : interaction?.pose;
+  const pose = stage.pose || replyPose || (focusMode ? 'focus' : mode);
   const label = mode === 'secret' && ['open', 'attempt'].includes(secretPhase) ? 'Le Secret est ouvert' : POSE_LABELS[pose] || companionLabel(pose);
   const motionAllowed = visible && !reducedMotion && !lowPower && !prefs.reducedPresence;
   const clearPresence = useCallback(() => {
@@ -98,7 +99,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     stage.suspend();
     setPanelOpen(false); setFocused(false); setFocusMode(false);
     setInteraction(null); setLastReply(null); setPendingTravel(null);
-    setRequestedTab(null); setSettingsOpen(false); setLinkOpen(false);
+    setRequestedTab(null); setLinkOpen(false);
     setHistory([]); recentRef.current = [];
   }, [stopVoice, stage.suspend]);
   useLayoutEffect(() => {
@@ -125,7 +126,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     const delay = living.personality === 'calme' ? 72000 : living.personality === 'energique' ? 38000 : 51000;
     const timer = setTimeout(() => {
       if (document.activeElement?.matches('input,textarea,select,[contenteditable="true"]')) return;
-      stage.play('curious');
+      if (!stage.play('curious', { automatic: true })) return;
       showReply(companionQuestion(living.personality, turnRef.current++), { automatic: true });
     }, delay);
     return () => clearTimeout(timer);
@@ -282,13 +283,14 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
 
   return <>
     <Button ref={shellRef} type="button" variant="ghost" className="companion3b-shell companion3b-living-shell"
-      data-mode={pose} data-page={page} data-facing={stage.facing} data-dragging={stage.dragging}
+      data-mode={pose} data-page={page} data-facing={stage.facing} data-dragging={stage.dragging} data-travelling={stage.moving}
       data-motion={motionAllowed ? "full" : "reduced"} data-low-power={lowPower}
       data-discreet={prefs.reducedPresence} data-visible={visible && !stage.suspended} data-personality={living.personality}
       data-interaction={interaction?.pose || ''}
       style={stage.style}
       onPointerDown={stage.onPointerDown} onPointerMove={stage.onPointerMove} onPointerUp={stage.onPointerUp} onPointerCancel={stage.onPointerCancel}
       onLostPointerCapture={stage.onPointerCancel}
+      onDragStart={event => event.preventDefault()} onContextMenu={event => event.preventDefault()}
       onFocus={event => setFocused(event.currentTarget.matches(':focus-visible'))} onBlur={() => setFocused(false)}
       onKeyDown={event => {
         if (event.key === "ArrowLeft" || event.key === "ArrowRight") { event.preventDefault(); stage.place(event.key === 'ArrowLeft' ? 'left' : 'right'); }
@@ -303,27 +305,28 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
         setPanelOpen(open => !open);
       }}
       aria-label={`Compagnon 3B · ${label}`} aria-expanded={panelOpen} aria-controls={panelOpen ? "companion3b-panel" : undefined}
-      aria-describedby={panelOpen ? "companion3b-position-help" : undefined} title={`${label} · ouvrir le compagnon`}>
+      aria-describedby={panelOpen ? "companion3b-position-help" : undefined}>
       <span className="companion3b-bubble" data-side={stage.bubbleSide} aria-hidden="true">{interaction?.message || label}{interaction?.choices?.length > 0 && <small>Touche-moi pour répondre</small>}</span>
-      <CompanionAvatar mode={pose} bond={bond} reduced={reducedMotion||lowPower||prefs.reducedPresence} active={visible&&!panelOpen&&!stage.suspended} speaking={voice.speaking} facing={stage.facing} size={prefs.reducedPresence || lowPower ? 72 : 112} decorative />
+      <CompanionAvatar mode={pose} bond={bond} reduced={reducedMotion||lowPower||prefs.reducedPresence} active={visible&&!panelOpen&&!stage.suspended} speaking={voice.speaking} facing={stage.facing} locomotion={stage.locomotion} size={prefs.reducedPresence || lowPower ? 72 : 112} decorative />
     </Button>
 
     {panelOpen && <aside ref={panelRef} className="companion3b-panel companion3b-living-panel" data-personality={living.personality} id="companion3b-panel" role="dialog" aria-labelledby="companion3b-title">
       <div className="companion3b-panel-head">
-        <div><span className="companion3b-kicker">COMPAGNON 3B</span><h2 id="companion3b-title">L’esprit prend vie.</h2></div>
+        <div><h2 id="companion3b-title">Ton compagnon</h2></div>
         <div className="companion3b-head-actions">
           <Button variant="ghost" type="button" disabled={!voice.available} onClick={toggleVoice} aria-pressed={living.voiceEnabled} aria-label={living.voiceEnabled ? 'Couper la voix du compagnon' : 'Activer la voix du compagnon'}>{living.voiceEnabled ? <Volume2 size={18}/> : <VolumeX size={18}/>}</Button>
           <Button variant="ghost" ref={closeRef} type="button" onClick={() => { setPanelOpen(false); shellRef.current?.focus({ preventScroll: true }); }} aria-label="Fermer le compagnon"><X size={20}/></Button>
         </div>
       </div>
-      <CompanionPresenceControl action="disable" onDisable={disableCompanion}/>
       <div className="companion3b-portrait" data-mode={pose}>
         <span className="companion3b-character-label">{profile.label}</span>
-        <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={pose} bond={bond} reduced={reducedMotion||lowPower} active={visible} speaking={voice.speaking} size={200} decorative /></div>
+        <div className="companion3b-portrait-ring" aria-hidden="true"><CompanionAvatar mode={pose} bond={bond} reduced={reducedMotion||lowPower} active={visible} speaking={voice.speaking} size={148} decorative /></div>
         <div><span className="companion3b-presence"><i aria-hidden="true" /> {voice.speaking ? 'IL TE PARLE' : online ? 'À TES CÔTÉS' : 'PRÉSENT HORS LIGNE'}</span><strong>{label}</strong></div>
       </div>
       <p className="companion3b-response" role="status" aria-live="polite">{interaction?.message || lastReply?.message || guidance.message}</p>
-      <CompanionStudio living={living} onLivingChange={chooseLiving} onAction={performAction} onSubmit={submitMessage} reply={lastReply} history={history} voice={voice} onVoiceToggle={toggleVoice} onVoiceSample={sampleVoice} onVoiceStop={stopVoice} focused={focusMode} onResume={() => { setFocusMode(false); performAction('hello'); }} requestedTab={requestedTab}/>
+      <CompanionStudio living={living} onLivingChange={chooseLiving} onAction={performAction} onSubmit={submitMessage} reply={lastReply} history={history} voice={voice} onVoiceToggle={toggleVoice} onVoiceSample={sampleVoice} onVoiceStop={stopVoice} focused={focusMode} onResume={() => { setFocusMode(false); performAction('hello'); }} requestedTab={requestedTab}
+      shortcuts={<details className="companion3b-world-links">
+      <summary><span>Avec toi dans 3B</span><ChevronDown size={16} aria-hidden="true" /></summary>
       {goTo&&<div className="companion3b-equipment" role="group" aria-label="Objets du compagnon">
         <Button variant="ghost" onClick={()=>{setPanelOpen(false);goTo('passport');}}><Fingerprint size={18}/><span>Passeport<small>Sa carte à la ceinture</small></span></Button>
         <Button variant="ghost" onClick={()=>{setPanelOpen(false);goTo('secret');}}><Clock3 size={18}/><span>Premier Secret<small>Son coffre & son horloge</small></span></Button>
@@ -331,8 +334,8 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
       <Button variant="ghost" className="companion3b-link-trigger" aria-expanded={linkOpen} aria-controls="companion3b-link-zone" onClick={()=>setLinkOpen(open=>!open)}><Sparkles size={18}/><span><strong>{bond.length===8?'Votre constellation':'Tisser un lien'}</strong><small>Huit étoiles. Votre signature.</small></span><span aria-hidden="true">{linkOpen?'−':'+'}</span></Button>
       <div id="companion3b-link-zone" hidden={!linkOpen}>{linkOpen&&<ConstellationLink bond={bond} onChange={saveBond} onComplete={()=>performAction('hologram',{pose:'hologram',message:'Votre constellation est née. Huit étoiles, votre signature.'})}/>}</div>
       {goTo&&<div className="companion3b-shortcuts" aria-label="Suggestions du compagnon">{guidance.actions.map(action=><Button key={action.page} variant="ghost" onClick={()=>{setPanelOpen(false);goTo(action.page);}}><span><strong>{action.label}</strong><small>{action.hint}</small></span><ArrowUpRight size={18}/></Button>)}</div>}
-      <Button variant="ghost" className="companion3b-settings-trigger" aria-expanded={settingsOpen} aria-controls="companion3b-settings" onClick={()=>setSettingsOpen(open=>!open)}>Ma présence <span aria-hidden="true">{settingsOpen?'−':'+'}</span></Button>
-      <div id="companion3b-settings" hidden={!settingsOpen}>
+      </details>}
+      presenceSettings={<div id="companion3b-settings">
       <div className="companion3b-energy" role="status">{reducedMotion ? "Animations réduites selon tes réglages" : lowPower ? "Batterie faible · animations au repos" : prefs.batterySaver ? "Batterie intelligente · promenades espacées" : "Promenades et pauses naturelles"}</div>
       <div className="companion3b-toggles">
         <label><span><strong>Batterie intelligente</strong><small>Plus de pauses entre les promenades</small></span><input type="checkbox" role="switch" checked={prefs.batterySaver} onChange={event => updatePrefs({ batterySaver: event.target.checked })} /></label>
@@ -355,7 +358,8 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
       {platform === "web" && <p className="companion3b-platform-note">Présent dans 3B, même hors ligne.</p>}
       {nativeStatus && <p className="companion3b-native-status" role="status" aria-live="polite">{nativeStatus}</p>}
       <p className="companion3b-privacy">Ta voix de compagnon est facultative. Aucun accès au micro ni à la caméra. Il repère seulement les titres visibles de 3B pour ses acrobaties. Ta discussion reste dans cette session.</p>
-      </div>
+      </div>}/>
+      <CompanionPresenceControl action="disable" onDisable={disableCompanion}/>
     </aside>}
   </>;
 }

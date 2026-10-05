@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "*": false,
-      "main": true
+      "main": true,
+      "fix/direct-intro-living-companion-20261005": true
     }
   },
   "functions": {

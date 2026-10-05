@@ -88,7 +88,9 @@ export function advanceStagePointerGesture(gesture, event, timestamp = 0) {
   const moved = gesture.moved || Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) >= gesture.threshold;
   if (!moved) return gesture;
   const dt = Math.max(0.008, (timestamp - gesture.lastTime) / 1000);
-  const velocity = (delta, previous) => limit(delta / dt, -740, 740) * 0.6 + previous * 0.4;
+  const blend = 1 - Math.exp(-18 * dt);
+  const velocity = (delta, previous) => limit(delta / dt, -740, 740) * blend
+    + (dt < 0.12 ? previous : 0) * (1 - blend);
   return { ...gesture, moved, lastX: event.clientX, lastY: event.clientY, lastTime: timestamp,
     vx: velocity(event.clientX - gesture.lastX, gesture.vx),
     vy: velocity(event.clientY - gesture.lastY, gesture.vy) };
@@ -121,7 +123,9 @@ export function isStagePositionClear(position, bounds, obstacles = [], gap = 5) 
 
 export function interpolateStageTravel(from, to, progress, arcHeight = 0) {
   const t = limit(finite(progress), 0, 1);
-  const smooth = t * t * (3 - 2 * t);
+  // Zero speed AND zero acceleration at both ends: a stroll settles into its
+  // idle pose without a last-frame jerk. The path itself remains a straight line.
+  const smooth = t * t * t * (10 + t * (-15 + t * 6));
   return {
     x: from.x + (to.x - from.x) * smooth,
     y: from.y + (to.y - from.y) * smooth - 4 * Math.max(0, arcHeight) * t * (1 - t),
@@ -129,6 +133,34 @@ export function interpolateStageTravel(from, to, progress, arcHeight = 0) {
 }
 
 export function isStagePathClear(from, to, bounds, obstacles = [], arcHeight = 0) {
+  const origin = clampStagePosition(from, bounds);
+  if (origin.x !== from.x || origin.y !== from.y) return false;
+  if (!arcHeight) {
+    if (!isStagePositionClear(to, bounds, obstacles)) return false;
+    // Sweep the complete footprint against expanded controls. Unlike sparse
+    // samples, this cannot miss a thin button and its cost does not grow with
+    // travel distance. A pre-existing overlap may only be exited, never entered.
+    return obstacles.every(rect => {
+      if (rectsOverlap(stageRect(from, bounds), rect, 5)) return true;
+      let enter = 0;
+      let leave = 1;
+      for (const [origin, delta, minimum, maximum] of [
+        [from.x, to.x - from.x, rect.left - bounds.width - 5, rect.right + 5],
+        [from.y, to.y - from.y, rect.top - bounds.height - 5, rect.bottom + 5],
+      ]) {
+        if (Math.abs(delta) < 1e-9) {
+          if (origin <= minimum || origin >= maximum) return true;
+        } else {
+          const a = (minimum - origin) / delta;
+          const b = (maximum - origin) / delta;
+          enter = Math.max(enter, Math.min(a, b));
+          leave = Math.min(leave, Math.max(a, b));
+          if (enter >= leave) return true;
+        }
+      }
+      return enter >= leave;
+    });
+  }
   // The distance-based sampling spacing is smaller than the avatar footprint, so a
   // narrow control cannot be skipped between samples. Only the initial overlap is ignored.
   const distance = Math.hypot(to.x - from.x, to.y - from.y) + arcHeight * 2;
@@ -145,28 +177,78 @@ export function isStagePathClear(from, to, bounds, obstacles = [], arcHeight = 0
   return isStagePositionClear(to, bounds, obstacles);
 }
 
-export function findStageWalkTarget(from, bounds, obstacles = [], random = Math.random) {
-  const direction = from.x > (bounds.minX + bounds.maxX) / 2 ? -1 : 1;
-  const maximum = Math.min(370, Math.max(60, (bounds.maxX - bounds.minX) * 0.68));
-  const preferred = maximum * (0.72 + sample(random) * 0.28);
-  // Try a full stroll, then a shorter stroll on the same safe ledge.
-  for (const sign of [direction, -direction]) {
-    for (const distance of [preferred, preferred * 0.7, 80, 48, 34]) {
-      const target = clampStagePosition({ x: from.x + sign * distance, y: from.y }, bounds);
-      if (Math.abs(target.x - from.x) < 30) continue;
-      if (isStagePathClear(from, target, bounds, obstacles)) return target;
+function stageCandidates(from, bounds, obstacles = []) {
+  const candidates = [];
+  const keys = new Set();
+  const add = candidate => {
+    const point = clampStagePosition(candidate, bounds);
+    const key = `${Math.round(point.x)}:${Math.round(point.y)}`;
+    if (!keys.has(key)) { keys.add(key); candidates.push(point); }
+  };
+  const spanX = bounds.maxX - bounds.minX;
+  const spanY = bounds.maxY - bounds.minY;
+  for (const x of [0, 0.25, 0.5, 0.75, 1]) {
+    for (const y of [0, 0.25, 0.5, 0.75, 1]) add({ x: bounds.minX + spanX * x, y: bounds.minY + spanY * y });
+  }
+  for (const distance of [42, 84, 160, 260, 370]) {
+    for (let angle = 0; angle < 8; angle += 1) {
+      add({ x: from.x + Math.cos(angle * Math.PI / 4) * distance,
+        y: from.y + Math.sin(angle * Math.PI / 4) * distance });
     }
   }
-  // Compact layouts often have a free vertical edge but no horizontal aisle.
-  // Walking within the screen plane keeps the same safety checks on both axes.
-  for (const lift of [-120, 120, -72, 72, -40, 40]) {
-    for (const shift of [direction * 42, 0, -direction * 42]) {
-      const target = clampStagePosition({ x: from.x + shift, y: from.y + lift }, bounds);
-      if (Math.hypot(target.x - from.x, target.y - from.y) < 30) continue;
-      if (isStagePathClear(from, target, bounds, obstacles)) return target;
+  // Control corners supply local detours that a regular grid alone can miss.
+  // Limit this work: there is no DOM or path search in the animation frame.
+  const near = [...obstacles].sort((a, b) =>
+    Math.hypot((a.left + a.right) / 2 - from.x, (a.top + a.bottom) / 2 - from.y)
+    - Math.hypot((b.left + b.right) / 2 - from.x, (b.top + b.bottom) / 2 - from.y)).slice(0, 16);
+  for (const rect of near) {
+    for (const x of [rect.left - bounds.width - 6, rect.right + 6]) {
+      for (const y of [rect.top - bounds.height - 6, rect.bottom + 6]) add({ x, y });
+      add({ x, y: from.y });
     }
+    for (const y of [rect.top - bounds.height - 6, rect.bottom + 6]) add({ x: from.x, y });
   }
-  return null;
+  return candidates;
+}
+
+export function findStageWalkTarget(from, bounds, obstacles = [], random = Math.random, { recent = [] } = {}) {
+  const spanX = bounds.maxX - bounds.minX;
+  const spanY = bounds.maxY - bounds.minY;
+  const preferred = Math.min(340, Math.max(90, Math.hypot(spanX, spanY) * 0.47));
+  const visitRadius = Math.max(50, Math.min(150, preferred * 0.55));
+  const history = recent.slice(-7);
+  const choices = [];
+  for (const target of stageCandidates(from, bounds, obstacles)) {
+    const distance = Math.hypot(target.x - from.x, target.y - from.y);
+    if (distance < 30 || distance > Math.max(370, preferred * 1.35)
+      || !isStagePathClear(from, target, bounds, obstacles)) continue;
+    const repetition = history.reduce((sum, point, index) => {
+      const away = Math.hypot(target.x - point.x, target.y - point.y) / visitRadius;
+      return sum + Math.exp(-away * away) * (index + 1) / history.length;
+    }, 0);
+    const pace = 1 - Math.abs(distance - preferred) / Math.max(preferred, distance);
+    const vertical = Math.min(1, Math.abs(target.y - from.y) / Math.max(100, preferred));
+    // A remembered visit costs more than a tiny random tie break. This lets the
+    // companion explore free lanes across both axes instead of pacing one edge.
+    choices.push({ target, score: pace * 1.6 + vertical * 0.35 - repetition * 1.8 + sample(random) * 0.22 });
+  }
+  choices.sort((a, b) => b.score - a.score);
+  return choices[0]?.target || null;
+}
+
+export function findStageRestPosition(from, bounds, obstacles = []) {
+  const position = clampStagePosition(from, bounds);
+  if (isStagePositionClear(position, bounds, obstacles)) return position;
+  const choices = stageCandidates(position, bounds, obstacles)
+    .filter(candidate => isStagePositionClear(candidate, bounds, obstacles))
+    .sort((a, b) => Math.hypot(a.x - position.x, a.y - position.y) - Math.hypot(b.x - position.x, b.y - position.y));
+  return choices.find(candidate => isStagePathClear(position, candidate, bounds, obstacles)) || choices[0] || null;
+}
+
+export function advanceStageTravel(elapsed, seconds, duration) {
+  const milliseconds = Math.max(1, finite(duration, 1000));
+  const delta = limit(finite(seconds), 0, 0.034) * 1000;
+  return Math.min(milliseconds, Math.max(0, finite(elapsed)) + delta);
 }
 
 export function findStageHome(bounds, side = 'right', obstacles = []) {
@@ -238,7 +320,7 @@ export function stageAutonomousDelay({ first = false, batterySaver = true, perso
   if (!autonomous || reducedMotion || lowPower || discreet) return null;
   if (first) return 3200 + sample(random) * 1600;
   const calmer = personality === 'calme' ? 1.4 : 1;
-  return Math.round((batterySaver ? 23000 + sample(random) * 14000 : 14000 + sample(random) * 11000) * calmer);
+  return Math.round((batterySaver ? 12000 + sample(random) * 8000 : 8000 + sample(random) * 7000) * calmer);
 }
 
 const PRIVATE_OR_INTERACTIVE = 'button,a,input,textarea,select,label,form,[contenteditable]:not([contenteditable="false"]),[role="dialog"],dialog,[data-private],[data-sensitive],[data-personal],[data-companion-avoid],.companion3b-panel,.companion3b-shell';

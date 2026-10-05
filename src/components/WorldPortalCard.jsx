@@ -14,7 +14,7 @@ export default function WorldPortalCard({goTo}){
   finally{setBusy(false);}
  };
  return <section className="world-portal home-world-entry" aria-labelledby="world-portal-title">
-  <img className="home-world-art" src="/art/monde-3b/reference-cite-huit-heritages.webp" alt="La Cité des Huit Héritages — image de référence 3B" width="1536" height="1152" fetchPriority="high"/>
+  <img className="home-world-art" src="/art/luxury-v2/hub-cite-origine.webp" alt="La Cité Origine et son Cercle Brisé" width="1672" height="941" fetchPriority="high"/>
   <div className="world-portal-copy">
    <p className="eyebrow">LA CITÉ DES HUIT HÉRITAGES</p>
    <h2 id="world-portal-title">Ton monde<br/>commence <em>ici.</em></h2>

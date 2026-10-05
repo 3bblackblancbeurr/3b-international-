@@ -6,7 +6,18 @@
     <meta name="theme-color" content="#050607" />
     <meta name="color-scheme" content="dark" />
     <meta name="format-detection" content="telephone=no" />
-    <link rel="preload" as="image" href="/background.png" fetchpriority="high" />
+    <style id="threeb-launch-critical">
+      html,body{margin:0;min-height:100%;background:#050607;color-scheme:dark}
+      .seo-discovery{display:none}
+      .threeb-launch{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:var(--3b-obsidian,#050607);isolation:isolate;contain:layout paint style}
+      .threeb-launch[data-phase="loading"] .threeb-launch-depth{position:absolute;inset:-18%;pointer-events:none;background:radial-gradient(circle at 50% 48%,rgba(59,167,255,.075),transparent 31%),radial-gradient(circle at 52% 55%,rgba(232,184,77,.045),transparent 20%);opacity:.72}
+      .threeb-launch[data-phase="loading"] .threeb-launch-energy{position:absolute;inset:0;pointer-events:none;opacity:1}
+      .threeb-launch[data-phase="loading"] .threeb-launch-energy span{position:absolute;left:50%;top:50%;width:min(58vw,440px);height:1px;transform-origin:0 50%;background:linear-gradient(90deg,transparent,rgba(59,167,255,.15) 24%,rgba(255,230,163,.72) 52%,rgba(59,167,255,.12) 78%,transparent);filter:blur(.15px);opacity:0;animation:launch-energy-trace 1250ms ease-out calc(var(--energy-index) * 92ms) infinite both}
+      @keyframes launch-energy-trace{0%{opacity:0;transform:rotate(calc((var(--energy-index) * 27deg) - 81deg)) scaleX(.06)}24%{opacity:.72}100%{opacity:0;transform:rotate(calc((var(--energy-index) * 27deg) - 81deg)) scaleX(1)}}
+      @media(prefers-reduced-motion:reduce){.threeb-launch[data-phase="loading"] .threeb-launch-energy{display:none}}
+    </style>
+    <noscript><style>.seo-discovery{display:block}#root{display:none}</style></noscript>
+    <link rel="preload" as="image" href="/icons/3b-icon-20260912-512.png" fetchpriority="high" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -40,7 +51,19 @@
     <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://3b-international.vercel.app/#organization","name":"3B International","alternateName":["3B","3B Black Blanc Beur","Black Blanc Beur"],"url":"https://3b-international.vercel.app/","logo":{"@type":"ImageObject","url":"https://3b-international.vercel.app/icons/3b-icon-20260912-512.png","width":512,"height":512},"identifier":{"@type":"PropertyValue","propertyID":"INPI marque française","value":"5258267"},"slogan":"Ce n’est pas une marque, c’est un héritage.","sameAs":["https://www.instagram.com/3b.blackblancbeurr/","https://www.tiktok.com/@zakaria42adsr","https://www.youtube.com/channel/UCDvOKA7Hl54DOxtY_SPXrpg","https://github.com/3bblackblancbeurr/3b-international-"]},{"@type":"WebSite","@id":"https://3b-international.vercel.app/#website","name":"3B International","alternateName":["3B","Black Blanc Beur"],"url":"https://3b-international.vercel.app/","inLanguage":"fr","publisher":{"@id":"https://3b-international.vercel.app/#organization"}},{"@type":["SoftwareApplication","WebApplication"],"@id":"https://3b-international.vercel.app/#app","name":"3B International","alternateName":["Application 3B","3B Black Blanc Beur"],"url":"https://3b-international.vercel.app/","installUrl":"https://3b-international.vercel.app/installer","downloadUrl":"https://3b-international.vercel.app/installer","description":"Application officielle 3B International : Passeport 3B, Monde du 3B, manga Le Cercle Brisé, jeux, communauté, espace IA et boutique.","applicationCategory":"LifestyleApplication","operatingSystem":"Web, iOS, iPadOS, Android","browserRequirements":"JavaScript activé et navigateur moderne","inLanguage":"fr","isAccessibleForFree":true,"offers":{"@type":"Offer","price":0,"priceCurrency":"EUR"},"image":"https://3b-international.vercel.app/icons/3b-icon-20260912-512.png","publisher":{"@id":"https://3b-international.vercel.app/#organization"}}]}</script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- The first HTML frame uses the opening's own energy traces. React
+           replaces it with the same effect once its artwork can be drawn. -->
+      <div class="threeb-launch" data-phase="loading" data-boot="html" aria-hidden="true">
+        <div class="threeb-launch-depth"></div>
+        <div class="threeb-launch-energy">
+          <span style="--energy-index:0"></span><span style="--energy-index:1"></span>
+          <span style="--energy-index:2"></span><span style="--energy-index:3"></span>
+          <span style="--energy-index:4"></span><span style="--energy-index:5"></span>
+          <span style="--energy-index:6"></span>
+        </div>
+      </div>
+    </div>
     <section class="seo-discovery" aria-label="Présentation officielle de 3B International">
       <h1>3B International — Black • Blanc • Beur</h1>
       <p><strong>3B International</strong> est le site officiel de l’application et de l’univers <strong>Black • Blanc • Beur</strong>. <strong>3B International est une marque française enregistrée auprès de l’INPI sous le n° 5258267 pour les produits et services couverts par son enregistrement.</strong>  Le projet réunit une identité de marque, un espace membre, un passeport numérique, une progression par XP, des cartes de fidélité, un manga, des jeux et un monde interactif autour d’une même idée : <strong>« Ce n’est pas une marque, c’est un héritage. »</strong></p>

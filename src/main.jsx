@@ -21,7 +21,7 @@ if (import.meta.hot) import.meta.hot.dispose(() => { nativeSetup.then(dispose =>
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <AppErrorBoundary><AppUpdateManager /><LoyaltyProvider><LuxuryProvider><App /></LuxuryProvider></LoyaltyProvider></AppErrorBoundary>
+    <AppErrorBoundary><LoyaltyProvider><LuxuryProvider><AppUpdateManager /><App /></LuxuryProvider></LoyaltyProvider></AppErrorBoundary>
   </React.StrictMode>
 );
 
