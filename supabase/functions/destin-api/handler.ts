@@ -15,7 +15,7 @@ export async function handleDestin(db:SupabaseClient,userId:string,body:any,send
   if (profileError || settingsError) throw Error('Service configuration unavailable');
   const owner=settings?.owner_user_id===userId;
   if (ownerActions.has(action) && !owner) return send({error:'Le Studio DESTIN est réservé au propriétaire 3B.'},403);
-  if (profile?.passport_state!=='active' && action!=='status') return send({error:'Active ton Passeport 3B pour ouvrir cette expérience.',next:'passport'},403);
+  if (profile?.passport_state!=='active' && !['status','catalog'].includes(action)) return send({error:'Active ton Passeport 3B pour ouvrir cette expérience.',next:'passport'},403);
   let passportAccess=null;
   if(DESTIN_IDENTITY_ACTIONS.has(action) || action==='status' || action==='catalog'){
     try{passportAccess=await getDestinPassportAccess(db,userId);}
