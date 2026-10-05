@@ -73,3 +73,96 @@ html[data-luxury="v2"] .app3b .universe-dialog .dialog-route.gm-card{background:
 html[data-luxury="v2"] .app3b .home-app-hub .home-guide-zone{background:transparent!important;box-shadow:var(--3b-shadow-flat)!important}
 html[data-luxury="v2"] .app3b :is(.home-app-hub .compact-card,.universe-dialog .dialog-route)::after{content:none}
 html[data-luxury="v2"] .app3b .home-app-hub .compact-card:hover{transform:none!important;box-shadow:var(--3b-shadow-flat)!important}
+
+
+/* Broken Circle motion — keeps the original hero artwork untouched underneath. */
+html[data-luxury="v2"] .app3b .home-world-entry{
+  --threeb-ring-x:28.5%;
+  --threeb-ring-y:24.5%;
+  --threeb-ring-inner:12.5%;
+  --threeb-ring-outer:37.5%;
+}
+html[data-luxury="v2"] .app3b .home-world-ring-motion{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  border-radius:inherit;
+}
+html[data-luxury="v2"] .app3b .home-world-ring-layer{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:66% center;
+  transform-origin:var(--threeb-ring-x) var(--threeb-ring-y);
+  opacity:.46;
+  filter:saturate(1.08) contrast(1.045) brightness(1.035);
+  mix-blend-mode:screen;
+  will-change:transform;
+  -webkit-mask-image:radial-gradient(
+    circle at var(--threeb-ring-x) var(--threeb-ring-y),
+    transparent 0 var(--threeb-ring-inner),
+    #000 calc(var(--threeb-ring-inner) + 1.6%) calc(var(--threeb-ring-outer) - 1.8%),
+    transparent var(--threeb-ring-outer)
+  );
+  mask-image:radial-gradient(
+    circle at var(--threeb-ring-x) var(--threeb-ring-y),
+    transparent 0 var(--threeb-ring-inner),
+    #000 calc(var(--threeb-ring-inner) + 1.6%) calc(var(--threeb-ring-outer) - 1.8%),
+    transparent var(--threeb-ring-outer)
+  );
+  animation:threebBrokenCircleClockwise 54s linear infinite;
+}
+html[data-luxury="v2"] .app3b .home-world-ring-energy{
+  position:absolute;
+  left:var(--threeb-ring-x);
+  top:var(--threeb-ring-y);
+  width:calc(var(--threeb-ring-outer) * 2);
+  aspect-ratio:1;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  opacity:.54;
+  background:conic-gradient(
+    from 0deg,
+    transparent 0deg 42deg,
+    rgba(0,213,255,.03) 48deg,
+    rgba(0,213,255,.42) 54deg,
+    rgba(var(--3b-champagne-highlight-rgb),.34) 57deg,
+    transparent 64deg 178deg,
+    rgba(0,213,255,.26) 184deg,
+    transparent 192deg 360deg
+  );
+  -webkit-mask-image:radial-gradient(circle,transparent 0 69%,#000 72% 76%,transparent 80%);
+  mask-image:radial-gradient(circle,transparent 0 69%,#000 72% 76%,transparent 80%);
+  filter:blur(.25px) drop-shadow(0 0 10px rgba(0,213,255,.3));
+  animation:threebBrokenCircleEnergy 18s linear infinite;
+  will-change:transform;
+}
+@keyframes threebBrokenCircleClockwise{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+@keyframes threebBrokenCircleEnergy{
+  from{transform:translate(-50%,-50%) rotate(0deg)}
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+@media (hover:hover) and (pointer:fine){
+  html[data-luxury="v2"] .app3b .home-world-entry:hover .home-world-ring-layer{animation-duration:38s}
+  html[data-luxury="v2"] .app3b .home-world-entry:hover .home-world-ring-energy{animation-duration:11s}
+}
+@media(max-width:720px){
+  html[data-luxury="v2"] .app3b .home-world-entry{
+    --threeb-ring-x:28%;
+    --threeb-ring-y:23.5%;
+    --threeb-ring-inner:12%;
+    --threeb-ring-outer:39%;
+  }
+  html[data-luxury="v2"] .app3b .home-world-ring-layer{object-position:62% center;opacity:.43}
+}
+@media(prefers-reduced-motion:reduce){
+  html[data-luxury="v2"] .app3b .home-world-ring-layer,
+  html[data-luxury="v2"] .app3b .home-world-ring-energy{animation-duration:160s}
+}
