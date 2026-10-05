@@ -6,7 +6,8 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
 import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
 import { experiencePolicy, markIntroSeen, MOTION, surfaceTilt } from './experience-policy.js';
-import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';\nimport { enterIntroImmersive, exitIntroImmersive } from '../native/immersive.js';
+import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';
+import { enterIntroImmersive, exitIntroImmersive } from '../native/immersive.js';
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
 
 const ExperienceContext = createContext(null);
@@ -110,7 +111,7 @@ export function LuxuryProvider({ children }) {
   const value = useMemo(() => ({ policy, configure, present, cue }), [policy, present, cue]);
   return <ExperienceContext.Provider value={value}>
     <div className="threeb-app-content" inert={launching} aria-hidden={launching || undefined}>{children}</div>
-    {launching && <CinematicLaunch policy={policy} enabled={options.cinematicIntros !== false} onDone={() => setLaunching(false)}/>}
+    {launching && <CinematicLaunch policy={policy} enabled onDone={() => setLaunching(false)}/>}
     {scene && <div key={scene.id} className={`luxury-transition luxury-transition--${scene.kind}`} aria-hidden={scene.kind !== 'milestone' ? true : undefined}>
       <span className="luxury-transition-ring" />
       {scene.kind === 'milestone' && <aside className="luxury-milestone" role="status"><span className="eyebrow">HÉRITAGE 3B</span><strong>{scene.title}</strong><Button variant="ghost" onClick={() => setScene(null)} aria-label="Fermer la célébration"><X size={18}/></Button></aside>}
@@ -124,6 +125,11 @@ export function useLuxuryRuntime(options, page) {
   const { configure, present } = useLuxury();
   const previous = useRef(page);
   useEffect(() => { configure(options); }, [options, configure]);
+  useEffect(() => {
+    if (page === 'intro') enterIntroImmersive();
+    else exitIntroImmersive();
+    return () => { if (page === 'intro') exitIntroImmersive(); };
+  }, [page]);
   useEffect(() => {
     if (previous.current !== page && page !== 'intro') present(['world3b', 'secret'].includes(page) ? 'portal' : 'route');
     previous.current = page;
