@@ -6,7 +6,7 @@ const migration=fs.readFileSync('supabase/migrations/20261005225825_destin_passp
 
 test('DESTIN database access matches the active-Passport cinema policy',()=>{
   assert.ok(migration.includes("'passportActive',true,'allowed',true,'code','ready'"));
-  assert.ok(migration.includes("identity proof remains optional metadata"));
+  assert.ok(migration.includes("Identity proof remains optional metadata"));
   assert.ok(migration.includes("p_action<>''catalog''"));
   assert.ok(migration.includes("Unexpected DESTIN passport gate version"));
 });
