@@ -9,5 +9,5 @@ export function musicMasterResumeState(snapshot){
 export function shouldLoopVisual(videoDuration,audioDuration,delayMs=0){
   const video=Number(videoDuration),audio=Number(audioDuration),delay=Math.max(0,Number(delayMs)||0)/1000;
   if(!Number.isFinite(video) || !Number.isFinite(audio) || video<=0 || audio<=0)return false;
-  return video+0.5<audio+delay;
+  return video+0.25<audio+delay;
 }
