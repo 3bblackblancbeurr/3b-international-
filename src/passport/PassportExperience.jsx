@@ -6,6 +6,7 @@ import { useLuxury } from '../design-system/LuxuryExperience.jsx';
 import PassportVisual from '../components/PassportVisual.jsx';
 import PassportAppearanceSettings from './PassportAppearance.jsx';
 import PassportAtmosphere from './PassportAtmosphere.jsx';
+import { destinRequest } from '../destin/client.js';
 import './passport-experience.css';
 
 const PassportVerification = lazy(() => import('./PassportVerification.jsx'));
@@ -72,6 +73,7 @@ export default function PassportExperience({ identity, syncing = false, goTo, op
   const [panel, setPanel] = useState(null);
   const [cityOpen, setCityOpen] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [destinMark, setDestinMark] = useState(null);
   const hasOwner = Boolean(identity?.userId);
   const active = hasOwner && identity?.passportState === 'active';
   const founder = active && identity?.public_verified === true && identity?.public_badge_key === 'director_founder';
@@ -83,6 +85,23 @@ export default function PassportExperience({ identity, syncing = false, goTo, op
   const closePanel = useCallback(() => setPanel(null), []);
   const closeCity = useCallback(() => setCityOpen(false), []);
   const navigate = page => { setPanel(null); setCityOpen(false); goTo(page); };
+  useEffect(() => {
+    let live = true;
+    if (!active || !identity?.userId) { setDestinMark(null); return () => { live = false; }; }
+    destinRequest('history', {}, identity.userId).then(result => {
+      if (!live) return;
+      const unlocks = Array.isArray(result?.unlocks) ? result.unlocks : [];
+      const memory = unlocks.find(item => item.ending_id === 'combat-memoire');
+      const future = unlocks.find(item => item.ending_id === 'combat-avenir');
+      const selected = memory || future;
+      if (!selected) { setDestinMark(null); return; }
+      const pathReward = selected?.reward?.pathReward || {};
+      setDestinMark(selected.ending_id === 'combat-memoire'
+        ? { path:'memoire', title:pathReward.passportTitle || 'Héritier des voix', symbol:'◈' }
+        : { path:'avenir', title:pathReward.passportTitle || 'Éclaireur de l’Aube', symbol:'✦' });
+    }).catch(() => { if (live) setDestinMark(null); });
+    return () => { live = false; };
+  }, [active, identity?.userId]);
 
   return <section ref={host} className="passport-experience" aria-labelledby="passport-experience-title" data-motion={running ? 'living' : 'still'}>
     <PassportAtmosphere hostRef={host} running={running} economical={policy.economical} />
@@ -96,7 +115,7 @@ export default function PassportExperience({ identity, syncing = false, goTo, op
       </header>
 
       <div className="passport-experience-card">
-        <PassportVisual options={visualOptions} identity={identity} syncing={syncing} />
+        <PassportVisual options={visualOptions} identity={identity} syncing={syncing} destinMark={destinMark} />
       </div>
 
       <nav className="passport-experience-actions" aria-label="Actions du Passeport">

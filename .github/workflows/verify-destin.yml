@@ -1,0 +1,52 @@
+name: Verify 3B DESTIN
+on:
+  push:
+    branches: ['feat/3b-destin-interactive-cinema-20261005']
+    paths: ['src/destin/**', 'supabase/functions/destin-api/**', 'supabase/migrations/*destin*', 'tests/destin*.test.js', 'scripts/*destin*', '.github/workflows/verify-destin.yml']
+  pull_request:
+    paths: ['src/destin/**', 'supabase/functions/destin-api/**', 'supabase/migrations/*destin*', 'tests/destin*.test.js', 'scripts/*destin*', '.github/workflows/verify-destin.yml', 'src/App.jsx', 'src/components/AppNavigation.jsx', 'src/lib/navigation.js']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: destin-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  cinema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Preserve exact reviewed source
+        run: git archive --format=tar.gz --output=/tmp/destin-source.tgz HEAD src scripts tests supabase .github package.json package-lock.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: destin-reviewed-source
+          path: /tmp/destin-source.tgz
+          retention-days: 1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: npm
+      - run: node scripts/integrate-destin-v1.mjs
+      - name: Integration must already be committed
+        run: git diff --exit-code -- src/App.jsx src/components/AppNavigation.jsx src/lib/navigation.js
+      - run: npm ci
+      - name: Validate story graph, Passport identity and Director boundaries
+        run: node --test tests/destin*.test.js
+      - name: Build the complete application
+        run: npm run build
+      - name: Install isolated browser dependency
+        run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Check real video, irreversible choices and Director studio
+        run: node scripts/verify-destin-browser-v2.mjs
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: destin-validation
+          path: artifacts/destin-browser
+          if-no-files-found: warn

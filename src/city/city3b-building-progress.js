@@ -22,6 +22,10 @@ export function cityConstructionDuration(definition) {
 }
 
 export function cityBuildingBenefit(definition) {
+  if(definition?.metadata?.destin_reward){
+    if(definition.metadata.destin_path==='memoire')return 'Culture · 30 habitants · 8 emplois';
+    if(definition.metadata.destin_path==='avenir')return 'Éducation · 30 élèves · 6 emplois';
+  }
   if(definition?.metadata?.material)return `Production · 8 ${ {timber:'bois',steel:'métaux',circuits:'circuits'}[definition.metadata.material]||'matériaux'} / jour`;
   const service = definition?.metadata?.service;
   const labels={safety:'Sécurité',fire:'Secours incendie',cleanliness:'Propreté',internet:'Téléphone & Internet',justice:'Justice',sport:'Sports',administration:'Services administratifs',roads:'Entretien routier · mobilité améliorée',logistics:'Livraisons',business:'Entreprises',industry:'Fabrication',trade:'Échanges entre villes',rail:'Gare · nécessite des rails',scooter:'Mobilité douce'};

@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-05",
-  "count": 203,
+  "count": 208,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1023,6 +1023,26 @@
       "sha256": "3a31e35a2f181c579c6877fb051949cc6a82ee3623d419f910414f10161179df"
     },
     {
+      "version": "20261005091758",
+      "name": "destin_interactive_cinema_v1",
+      "sha256": "5ca889198cb245e0702e16569dc53a31b5a5f3ed0416a3d5e2c86dea276e96eb"
+    },
+    {
+      "version": "20261005102702",
+      "name": "destin_shared_passport_identity_bridge_v1",
+      "sha256": "59490dcd5193a47c4c95c8583f5ea26515cc5a7dafc749b07aef4a461c2da977"
+    },
+    {
+      "version": "20261005102754",
+      "name": "destin_identity_minimal_auth_reader_v1",
+      "sha256": "6c6ceba42297f42f0f8f44a7ba500e5fa5a85bf422e59b726822dd453321b99b"
+    },
+    {
+      "version": "20261005103242",
+      "name": "destin_single_path_private_snapshot_v1",
+      "sha256": "0625f199bf8e91696454d95ba69a7fc5dcc6d6e81c968a6ff49175778dbfc85e"
+    },
+    {
       "version": "20261005130821",
       "name": "threeb_reward_outbox_retry_accounting_v1",
       "sha256": "7da68b00e8e2798a49d2254ab967ac3c78b195e0e5c36c1b742a49b445ee3f20"
@@ -1031,6 +1051,11 @@
       "version": "20261005131925",
       "name": "loyalty_refund_ledger_reversal_v1",
       "sha256": "4bdb7402005f2c1d2882498c561484370609b99f9d7d03d46f9895caaf729cbb"
+    },
+    {
+      "version": "20261005151327",
+      "name": "destin_le_combat_commence_rewards_v1",
+      "sha256": "5c813c1c142be5e7420346808a0d135f4e5b2b0b51e9373a51cb6901e6169e3c"
     }
   ],
   "reconciliation": {
@@ -1055,5 +1080,18 @@
   "reconciliation_20261004": {
     "version": "20261004132248",
     "reason": "Confirmed in production migration history. Executable body matches the repository except one blank line; hash locks the existing repository bytes including explanatory comments. No database migration replayed."
+  },
+  "reconciliation_20261005_destin": {
+    "reason": "Production migration history confirms the four DESTIN migrations are already applied. Registry corrected to match Supabase; no migration replayed.",
+    "versions": [
+      "20261005091758",
+      "20261005102702",
+      "20261005102754",
+      "20261005103242"
+    ]
+  },
+  "reconciliation_20261005_destin_rewards": {
+    "reason": "Applied to production via Supabase migration API; Git filename aligned to the server-assigned migration version.",
+    "version": "20261005151327"
   }
 }

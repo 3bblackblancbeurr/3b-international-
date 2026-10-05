@@ -2,6 +2,7 @@ import { LuxuryBoot, useLuxuryRuntime } from "./design-system/LuxuryExperience.j
 import React, { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 const ShopPage = lazy(() => import("./shop/ShopPage.jsx"));
+const DestinPage = lazy(() => import("./destin/DestinPage.jsx"));
 const AiPage = lazy(() => import("./ai/AiPage.jsx"));
 const PremierSecretPage = lazy(() => import("./secret/PremierSecretPage.jsx"));
 const ControlCenterPage = lazy(() => import("./control/ControlCenterPage.jsx"));
@@ -62,6 +63,12 @@ const BASE_MENU_ITEMS = [
     label: "Cartes de fidélité",
     icon: "💳",
     description: "Points, avantages et récompenses.",
+  },
+  {
+    id: "destin",
+    label: "3B DESTIN",
+    icon: "◇",
+    description: "Tu ne regardes pas l’histoire. Tu la décides.",
   },
   {
     id: "manga",
@@ -383,7 +390,7 @@ export default function App() {
       <div className="app3b-background" aria-hidden="true" />
       <div className={options.matrix ? "matrix-layer active" : "matrix-layer"} aria-hidden="true" />
 
-      <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />
+      {page !== "destin" && <CompanionLayer goTo={goTo} page={page} secretPhase={secret.phase} memberRegistered={member.isRegistered} />}
 
       {!['world3b','arena','game','control'].includes(page) && <AppNavigation page={page} title={currentPageTitle} menuItems={menuItems} goTo={goTo} secret={secret} options={options} toggleOption={toggleOption} installation={installation} />}
       <main id="main-content" tabIndex={-1}>
@@ -407,6 +414,7 @@ export default function App() {
         />
       )}
 
+      {page === "destin" && <DestinPage key={loyalty.user?.id || "guest"} goTo={goTo} />}
       {page === "loyalty" && <LoyaltyPage goTo={goTo} member={member} />}
       {page === "nosbloc" && <NosblocPage goTo={goTo} />}
       {page === "games" && <GamesHub key={loyalty.user?.id || "guest"} goTo={goTo} goToGame={goToGame} />}
