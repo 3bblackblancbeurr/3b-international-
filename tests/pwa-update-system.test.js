@@ -69,16 +69,21 @@ test("worker lifecycle checks the server and a confirmed current build clears ev
 });
 
 
-test("home portal keeps the original artwork and adds a continuous Broken Circle motion layer", async () => {
+test("home portal renders the artwork once and animates Broken Circle light without a ghost duplicate", async () => {
   const [portal, homeCss] = await Promise.all([
     readFile(new URL("src/components/WorldPortalCard.jsx", root), "utf8"),
     readFile(new URL("src/styles/home-app.css", root), "utf8"),
   ]);
 
-  assert.match(portal, /hub-cite-origine\.webp/);
+  assert.equal(portal.match(/hub-cite-origine\.webp/g)?.length, 1, "the hero artwork must only be rendered once");
   assert.match(portal, /home-world-ring-motion/);
-  assert.match(portal, /home-world-ring-layer/);
-  assert.match(homeCss, /threebBrokenCircleClockwise/);
-  assert.match(homeCss, /animation:threebBrokenCircleClockwise 54s linear infinite/);
-  assert.match(homeCss, /home-world-ring-energy/);
+  assert.doesNotMatch(portal, /home-world-ring-layer/);
+  assert.match(portal, /home-world-ring-energy/);
+  assert.match(portal, /home-world-ring-depth/);
+  assert.match(portal, /home-world-ring-contact/);
+  assert.match(portal, /home-world-ring-particles/);
+  assert.match(homeCss, /threebBrokenCircleEnergy/);
+  assert.match(homeCss, /threebBrokenCircleContact/);
+  assert.match(homeCss, /threebBrokenCircleParticle/);
+  assert.doesNotMatch(homeCss, /mix-blend-mode:screen/);
 });
