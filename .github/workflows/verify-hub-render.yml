@@ -49,6 +49,11 @@ jobs:
       - name: Install isolated browser test dependency
         run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx --no-install playwright install --with-deps chromium
+      - name: Check six civic services on desktop and both phone orientations
+        if: matrix.view == 'desktop'
+        run: node scripts/verify-hub-services-browser.mjs
+        env:
+          HUB_SERVICES_OUT: artifacts/hub-${{ matrix.view }}/services
       - name: Render actual Hub and check movement and shader errors
         run: node scripts/verify-world-art-browser.mjs
         env:
@@ -59,11 +64,6 @@ jobs:
           WORLD_ART_QUALITY: ${{ matrix.quality }}
           WORLD_ART_CLOCK: ${{ matrix.clock }}
           WORLD_ART_OUT: artifacts/hub-${{ matrix.view }}
-      - name: Check six civic services on desktop and both phone orientations
-        if: matrix.view == 'desktop'
-        run: node scripts/verify-hub-services-browser.mjs
-        env:
-          HUB_SERVICES_OUT: artifacts/hub-${{ matrix.view }}/services
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
