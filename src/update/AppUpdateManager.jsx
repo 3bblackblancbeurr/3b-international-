@@ -8,6 +8,7 @@ const CURRENT_BUILD_ID = typeof __THREEB_BUILD_ID__ !== "undefined" ? __THREEB_B
 const CURRENT_VERSION = typeof __THREEB_APP_VERSION__ !== "undefined" ? __THREEB_APP_VERSION__ : "dev";
 const CHECK_INTERVAL_MS = 30 * 60 * 1000;
 const DISMISSED_PREFIX = "3b:update:dismissed:";
+const APPLIED_NOTICE_KEY = "3b:update:applied";
 
 function registrationScriptPath(registration) {
   const worker = registration?.active || registration?.waiting || registration?.installing;
@@ -17,6 +18,10 @@ function registrationScriptPath(registration) {
   } catch {
     return "";
   }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 async function healLegacyPwaRegistrations() {
@@ -38,12 +43,140 @@ async function healLegacyPwaRegistrations() {
   return true;
 }
 
+function releaseAssetUrls(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const raw = [
+    ...[...doc.querySelectorAll("script[src]")].map((node) => node.getAttribute("src")),
+    ...[...doc.querySelectorAll("link[href]")]
+      .filter((node) => ["stylesheet", "modulepreload", "preload"].includes(node.rel))
+      .map((node) => node.getAttribute("href")),
+  ];
+
+  return [...new Set(raw
+    .filter(Boolean)
+    .map((value) => {
+      try {
+        return new URL(value, window.location.href);
+      } catch {
+        return null;
+      }
+    })
+    .filter((url) => url && url.origin === window.location.origin)
+    .map((url) => url.href))];
+}
+
+async function probeAssetSize(url) {
+  try {
+    const response = await fetch(url, { method: "HEAD", cache: "no-store" });
+    if (!response.ok) return 0;
+    return Number(response.headers.get("content-length")) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+async function prefetchLatestBuild(onProgress) {
+  const indexResponse = await fetch(`/?__3b_update=${Date.now()}`, {
+    cache: "no-store",
+    headers: { Accept: "text/html" },
+  });
+  if (!indexResponse.ok) throw new Error("latest-build-unavailable");
+
+  const html = await indexResponse.text();
+  const assets = releaseAssetUrls(html);
+  if (assets.length === 0) {
+    onProgress(84);
+    return;
+  }
+
+  const measured = await Promise.all(assets.map(probeAssetSize));
+  const fallbackWeight = 256 * 1024;
+  const weights = measured.map((size) => size > 0 ? size : fallbackWeight);
+  const totalWeight = weights.reduce((sum, size) => sum + size, 0) || assets.length;
+  let completedWeight = 0;
+
+  for (let index = 0; index < assets.length; index += 1) {
+    const url = assets[index];
+    const weight = weights[index];
+
+    try {
+      const response = await fetch(url, { cache: "reload" });
+      if (!response.ok) throw new Error("asset-download-failed");
+
+      const contentLength = Number(response.headers.get("content-length")) || measured[index] || 0;
+      if (!response.body?.getReader) {
+        await response.arrayBuffer();
+      } else {
+        const reader = response.body.getReader();
+        let fileBytes = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          fileBytes += value?.byteLength || 0;
+          const fileRatio = contentLength > 0
+            ? Math.min(fileBytes / contentLength, 0.985)
+            : 0.45;
+          const ratio = Math.min((completedWeight + (weight * fileRatio)) / totalWeight, 0.985);
+          onProgress(Math.round(8 + (ratio * 76)));
+        }
+      }
+    } catch {
+      // A single asset must never prevent the release from being applied.
+    }
+
+    completedWeight += weight;
+    const ratio = Math.min(completedWeight / totalWeight, 1);
+    onProgress(Math.round(8 + (ratio * 76)));
+  }
+
+  onProgress(84);
+}
+
+function waitForInstalledWorker(registration, timeoutMs = 5500) {
+  if (!registration) return Promise.resolve(null);
+  if (registration.waiting) return Promise.resolve(registration.waiting);
+  const worker = registration.installing;
+  if (!worker) return Promise.resolve(null);
+  if (worker.state === "installed") return Promise.resolve(registration.waiting || worker);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      worker.removeEventListener("statechange", changed);
+      window.clearTimeout(timeout);
+      resolve(value);
+    };
+    const changed = () => {
+      if (worker.state === "installed") finish(registration.waiting || worker);
+      if (worker.state === "redundant") finish(null);
+    };
+    const timeout = window.setTimeout(() => finish(registration.waiting || null), timeoutMs);
+    worker.addEventListener("statechange", changed);
+  });
+}
+
+function readInstalledNotice() {
+  try {
+    const value = sessionStorage.getItem(APPLIED_NOTICE_KEY);
+    if (!value) return null;
+    sessionStorage.removeItem(APPLIED_NOTICE_KEY);
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
 export default function AppUpdateManager() {
   const registrationRef = useRef(null);
   const reloadRequestedRef = useRef(false);
   const [release, setRelease] = useState(null);
   const [applying, setApplying] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState("Prête à être installée");
+  const [installedNotice, setInstalledNotice] = useState(readInstalledNotice);
 
   const publishRelease = useCallback((next) => {
     const decision = serverReleaseDecision(next, CURRENT_BUILD_ID);
@@ -81,6 +214,12 @@ export default function AppUpdateManager() {
       // A failed version check must never block the application.
     }
   }, [publishRelease]);
+
+  useEffect(() => {
+    if (!installedNotice) return undefined;
+    const timer = window.setTimeout(() => setInstalledNotice(null), 4600);
+    return () => window.clearTimeout(timer);
+  }, [installedNotice]);
 
   useEffect(() => {
     if (!import.meta.env.PROD || isNativeApp() || !("serviceWorker" in navigator)) return undefined;
@@ -165,24 +304,53 @@ export default function AppUpdateManager() {
   }, [checkServerRelease, publishRelease]);
 
   async function applyUpdate() {
-    if (applying) return;
+    if (applying || !release) return;
     setApplying(true);
-    reloadRequestedRef.current = true;
+    setProgress(3);
+    setPhase("Préparation de la nouvelle version…");
 
     try {
-      const registration = registrationRef.current || await navigator.serviceWorker.getRegistration("/");
-      if (registration?.waiting) {
-        registration.waiting.postMessage({ type: "SKIP_WAITING" });
-        return;
-      }
+      setProgress(8);
+      setPhase("Téléchargement sécurisé…");
+      await prefetchLatestBuild(setProgress);
+    } catch {
+      setProgress((value) => Math.max(value, 78));
+    }
 
+    setPhase("Installation sur ton appareil…");
+    setProgress((value) => Math.max(value, 88));
+    reloadRequestedRef.current = true;
+
+    let waitingWorker = null;
+    try {
+      const registration = registrationRef.current || await navigator.serviceWorker.getRegistration("/");
       await registration?.update();
-      if (registration?.waiting) {
-        registration.waiting.postMessage({ type: "SKIP_WAITING" });
-        return;
-      }
+      waitingWorker = await waitForInstalledWorker(registration);
     } catch {
       // Reload below still revalidates index.html and Vite's hashed assets.
+    }
+
+    setProgress(97);
+    setPhase("Finalisation…");
+
+    try {
+      sessionStorage.setItem(APPLIED_NOTICE_KEY, JSON.stringify({
+        buildId: release.buildId,
+        version: release.version,
+      }));
+    } catch {
+      // Confirmation is cosmetic and must not block the update.
+    }
+
+    await sleep(260);
+    setProgress(100);
+    setPhase("Mise à jour installée · redémarrage…");
+    await sleep(220);
+
+    if (waitingWorker) {
+      waitingWorker.postMessage({ type: "SKIP_WAITING" });
+      window.setTimeout(() => window.location.reload(), 1200);
+      return;
     }
 
     window.location.reload();
@@ -198,6 +366,18 @@ export default function AppUpdateManager() {
     setDismissed(true);
   }
 
+  if ((!release || dismissed) && installedNotice) {
+    return (
+      <div className="threeb-update-installed" role="status" aria-live="polite">
+        <span className="threeb-update-installed-mark" aria-hidden="true">3B</span>
+        <span>
+          <strong>Mise à jour installée</strong>
+          <small>3B est maintenant à jour.</small>
+        </span>
+      </div>
+    );
+  }
+
   if (!release || dismissed) return null;
 
   const mandatory = release.mandatory;
@@ -209,25 +389,40 @@ export default function AppUpdateManager() {
 
   return (
     <div
-      className={`threeb-update-shell${mandatory ? " is-mandatory" : ""}`}
+      className={`threeb-update-shell${mandatory ? " is-mandatory" : ""}${applying ? " is-applying" : ""}`}
       role="dialog"
       aria-modal={mandatory ? "true" : undefined}
       aria-live={mandatory ? "assertive" : "polite"}
       aria-labelledby="threeb-update-title"
     >
       <section className="threeb-update-panel">
+        <div className="threeb-update-grid" aria-hidden="true" />
         <div className="threeb-update-glow" aria-hidden="true" />
+
+        <div className="threeb-update-visual" style={{ "--update-progress": `${progress}%` }}>
+          <div className="threeb-update-mark" aria-label={applying ? `Progression ${progress}%` : "3B"}>
+            <span className="threeb-update-mark-outline" aria-hidden="true">3B</span>
+            <span className="threeb-update-mark-fill" aria-hidden="true">3B</span>
+            {applying && <i className="threeb-update-frontier" aria-hidden="true" />}
+          </div>
+          <div className="threeb-update-progress-copy">
+            <strong>{applying ? `${progress}%` : "NOUVEAU"}</strong>
+            <span>{applying ? phase : "Une nouvelle version t’attend"}</span>
+          </div>
+        </div>
+
         <p className="threeb-update-kicker">
           {mandatory ? "MISE À JOUR REQUISE" : "NOUVELLE VERSION 3B DISPONIBLE"}
         </p>
         <h2 id="threeb-update-title">
-          {mandatory ? "Mise à jour 3B obligatoire" : "Nouvelle version 3B disponible"}
+          {mandatory ? "Mise à jour 3B obligatoire" : "Une nouvelle version de 3B est prête"}
         </h2>
         <p className="threeb-update-copy">
-          Améliorations graphiques, Monde 3B, Passeport et performances.
+          Téléchargement, installation et redémarrage contrôlés depuis l’application.
         </p>
         <p className="threeb-update-version">
-          Version installée&nbsp;: {CURRENT_VERSION} · {currentBuildLabel} · Disponible&nbsp;: {targetLabel}
+          Installée&nbsp;: {CURRENT_VERSION} · {currentBuildLabel}<br />
+          Nouvelle&nbsp;: {targetLabel}
         </p>
         {mandatory && (
           <p className="threeb-update-required">
@@ -242,22 +437,21 @@ export default function AppUpdateManager() {
             onClick={applyUpdate}
             disabled={applying}
           >
-            {applying ? "MISE À JOUR…" : "METTRE À JOUR"}
+            {applying ? "INSTALLATION EN COURS…" : "INSTALLER LA MISE À JOUR"}
           </Button>
-          {!mandatory && (
+          {!mandatory && !applying && (
             <Button
               className="threeb-update-secondary"
               variant="ghost"
               size="lg"
               onClick={dismissUpdate}
-              disabled={applying}
             >
               Plus tard
             </Button>
           )}
         </div>
         <p className="threeb-update-safe">
-          Ton compte, ton Passeport, tes XP, tes Coins et tes données ne sont pas supprimés par cette mise à jour.
+          Ton Passeport, tes XP, tes Coins et tes données sont conservés.
         </p>
       </section>
     </div>
