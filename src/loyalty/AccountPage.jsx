@@ -1,4 +1,4 @@
-import React,{useMemo,useReducer,useState} from 'react';
+import React,{useEffect,useMemo,useReducer,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Download,Eye,EyeOff,Fingerprint,Gamepad2,Globe2,KeyRound,LogOut,Mail,ShieldCheck,WalletCards} from 'lucide-react';
 import {
  ACCOUNT_TERMS_VERSION,COUNTRIES,normalizeBirthDate,normalizeCivilName,normalizeEmail,passwordRequirements,
@@ -19,9 +19,19 @@ import './loyalty.css';
 
 function initialMode(){
  try{
-  if(new URLSearchParams(window.location.search).get('reset')==='1')return'reset-password';
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('reset')==='1')return'reset-password';
+  if(params.get('auth')==='confirmed')return'login';
   return sessionStorage.getItem('3b-auth-intent')==='register'?'register':'login';
  }catch{return'login';}
+}
+
+function initialNotice(){
+ try{
+  return new URLSearchParams(window.location.search).get('auth')==='confirmed'
+   ?'Adresse e-mail confirmée. Connecte-toi avec ton e-mail et ton mot de passe.'
+   :'';
+ }catch{return'';}
 }
 
 export default function AccountPage({legacy,options,toggleOption,goTo}){
@@ -33,13 +43,24 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   legalGivenNames:'',legalFamilyName:'',birthDate:'',
   termsAccepted:false,privacyAccepted:false,identityConsent:false,marketingOptIn:false,website:''
  });
- const[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ const[error,setError]=useState(''),[notice,setNotice]=useState(initialNotice),[busy,setBusy]=useState(false);
  const[prestigeBusy,setPrestigeBusy]=useState(false),[identityBusy,setIdentityBusy]=useState(false),[recovery,setRecovery]=useState('');
  const[pendingEmail,setPendingEmail]=useState('');
  const[{attempt:captchaAttempt,token:captchaToken},dispatchCaptcha]=useReducer(captchaChallengeReducer,{attempt:0,token:''});
  const setCaptchaToken=token=>dispatchCaptcha({type:'token',attempt:captchaAttempt,token});
  const resetCaptcha=()=>dispatchCaptcha({type:'reset'});
  const[showPassword,setShowPassword]=useState(false);
+
+ useEffect(()=>{
+  try{
+   const params=new URLSearchParams(window.location.search);
+   if(params.get('auth')==='confirmed'){
+    sessionStorage.removeItem('3b-auth-intent');
+    setMode('login');
+    setNotice('Adresse e-mail confirmée. Connecte-toi avec ton e-mail et ton mot de passe.');
+   }
+  }catch{}
+ },[]);
 
  const field=(key,value)=>{setFields(f=>({...f,[key]:value}));setError('');setNotice('');};
  const passwordRules=useMemo(()=>passwordRequirements(fields.password),[fields.password]);
@@ -58,6 +79,7 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
    if(mode==='login'){
     const result=await memberRequest('login',{identifier:fields.identifier,password:fields.password,captchaToken});
     await setSession(result.session);
+    try{sessionStorage.removeItem('3b-auth-intent');}catch{}
     setFields(f=>({...f,password:''}));
    }else if(mode==='register'){
     validateRegistration(fields);
@@ -66,11 +88,16 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
     setPendingEmail(fields.email.trim().toLowerCase());
     if(result.session){
      await setSession(result.session);
+     try{sessionStorage.removeItem('3b-auth-intent');}catch{}
      setNotice('Compte créé et connecté.');
+     setFields(f=>({...f,password:'',passwordConfirm:''}));
     }else{
-     setNotice('Compte créé. Vérifie maintenant ta boîte e-mail pour activer la connexion.');
+     const email=fields.email.trim().toLowerCase();
+     try{sessionStorage.setItem('3b-auth-intent','login');}catch{}
+     setMode('login');
+     setNotice('Compte créé. Vérifie ton e-mail, puis connecte-toi ici.');
+     setFields(f=>({...f,identifier:email,password:'',passwordConfirm:''}));
     }
-    setFields(f=>({...f,password:'',passwordConfirm:''}));
    }else if(mode==='recover'){
     validateStrongPassword(fields.password);
     if(fields.password!==fields.passwordConfirm)throw Error('Les deux mots de passe ne correspondent pas.');
@@ -155,7 +182,13 @@ export default function AccountPage({legacy,options,toggleOption,goTo}){
   finally{setPrestigeBusy(false);}
  };
 
- const switchMode=next=>{setMode(next);setError('');setNotice('');resetCaptcha();};
+ const switchMode=next=>{
+  setMode(next);setError('');setNotice('');resetCaptcha();
+  try{
+   if(next==='register')sessionStorage.setItem('3b-auth-intent','register');
+   else sessionStorage.removeItem('3b-auth-intent');
+  }catch{}
+ };
 
  return <section className="loyalty-page account-page">
   <header className="loyalty-intro">
