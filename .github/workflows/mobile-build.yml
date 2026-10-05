@@ -9,8 +9,10 @@ on:
       - 'public/**'
       - 'package*.json'
       - 'capacitor.config.json'
+      - 'scripts/verify-android-play-readiness.mjs'
       - 'tests/companion-ios*'
       - '.github/workflows/mobile-build.yml'
+      - '.github/workflows/android-play-release.yml'
   push:
     branches: [main, codex/3b-store-preparation-20260912]
   workflow_dispatch:
