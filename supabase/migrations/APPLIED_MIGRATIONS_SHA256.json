@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-05",
-  "count": 207,
+  "count": 208,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1051,6 +1051,11 @@
       "version": "20261005131925",
       "name": "loyalty_refund_ledger_reversal_v1",
       "sha256": "4bdb7402005f2c1d2882498c561484370609b99f9d7d03d46f9895caaf729cbb"
+    },
+    {
+      "version": "20261005151327",
+      "name": "destin_le_combat_commence_rewards_v1",
+      "sha256": "5c813c1c142be5e7420346808a0d135f4e5b2b0b51e9373a51cb6901e6169e3c"
     }
   ],
   "reconciliation": {
@@ -1084,5 +1089,9 @@
       "20261005102754",
       "20261005103242"
     ]
+  },
+  "reconciliation_20261005_destin_rewards": {
+    "reason": "Applied to production via Supabase migration API; Git filename aligned to the server-assigned migration version.",
+    "version": "20261005151327"
   }
 }
