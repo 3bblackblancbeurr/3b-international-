@@ -249,7 +249,8 @@ export default function CompanionAvatar({ mode = 'idle', interaction = '', bond 
         </defs>
         {[0,1].map(layer => <g key={layer} ref={node => { layersRef.current[layer].root = node; }} className="companion3b-couture-pose" opacity={layer === 0 ? 1 : 0}>
           <defs>
-            <svg id={`${id}-pose-${layer}`} ref={node => { layersRef.current[layer].crop = node; }} x="0" y="0" width="1024" height="1536" viewBox="0 0 1024 1536" overflow="hidden">
+            <g id={`${id}-pose-${layer}`}>
+            <svg ref={node => { layersRef.current[layer].crop = node; }} x="0" y="0" width="1024" height="1536" viewBox="0 0 1024 1536" overflow="hidden">
               <image ref={node => { layersRef.current[layer].image = node; }} href={COMPANION_ORIGINAL_ART} x="0" y="0" width="1024" height="1536" preserveAspectRatio="none"/>
               <g ref={node => { layersRef.current[layer].detail = node; }}>
                 <ellipse className="companion3b-couture-core" cx="460" cy="422" rx="46" ry="62" fill={`url(#${id}-core)`}/>
@@ -264,6 +265,7 @@ export default function CompanionAvatar({ mode = 'idle', interaction = '', bond 
                 <path className="companion3b-couture-glint" d="M679 613v20m-10-10h20" fill="none" stroke="var(--3b-champagne-highlight)" strokeWidth="2" strokeLinecap="round"/>
               </g>
             </svg>
+            </g>
           </defs>
           {COUTURE_JOINT_BANDS.slice(0,-1).map((_,band) => <g key={band} ref={node => { layersRef.current[layer].bands[band] = node; }} className="companion3b-couture-joint"><use href={`#${id}-pose-${layer}`} clipPath={`url(#${id}-band-${band})`}/></g>)}
         </g>)}

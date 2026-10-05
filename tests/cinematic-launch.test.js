@@ -125,6 +125,67 @@ test('backgrounding pauses both the visible clock and the CSS motion; revealing 
   assert.equal(run.pauses.at(-1), false);
 });
 
+test('long frames preserve every CSS phase and reveal before finishing instead of skipping the hold and exit', async () => {
+  const run = playback();
+  await Promise.resolve();
+  run.tick(); // 0 ms: assemble
+  run.tick(2400);
+  run.tick(700); // 3100 ms: the late frame starts hold, not dissolve
+  assert.deepEqual(run.phases, ['assemble', 'hold']);
+  assert.equal(run.reveals, 0);
+  run.tick(1220); // 4320 ms: dissolve starts now, with its full CSS duration
+  assert.deepEqual(run.phases, ['assemble', 'hold', 'dissolve']);
+  assert.equal(run.reveals, 0);
+  assert.equal(run.finishes, 0);
+  run.tick(LAUNCH_TIMING.dissolve - 1);
+  assert.equal(run.phases.at(-1), 'dissolve');
+  run.tick(1);
+  assert.deepEqual(run.phases, ['assemble', 'hold', 'dissolve', 'exit']);
+  assert.equal(run.reveals, 1);
+  assert.equal(run.finishes, 0);
+  run.tick(LAUNCH_TIMING.exit - 1);
+  assert.equal(run.finishes, 0);
+  run.tick(1);
+  assert.equal(run.finishes, 1);
+  assert.equal(run.pending, 0);
+});
+
+test('normal 60 Hz playback adds no fixed wait and finishes within the next-frame rounding of its four phases', async () => {
+  const run = playback();
+  await Promise.resolve();
+  run.tick();
+  const frameDuration = 1000 / 60;
+  const expectedDuration = Object.values(LAUNCH_TIMING).reduce((sum, duration) => sum + duration, 0);
+  let elapsed = 0;
+  while (!run.finishes && elapsed < expectedDuration + 1000) {
+    run.tick(frameDuration);
+    elapsed += frameDuration;
+  }
+  assert.deepEqual(run.phases, ['assemble', 'hold', 'dissolve', 'exit']);
+  assert.equal(run.reveals, 1);
+  assert.equal(run.finishes, 1);
+  assert.ok(elapsed >= expectedDuration);
+  assert.ok(elapsed < expectedDuration + Object.keys(LAUNCH_TIMING).length * frameDuration);
+  assert.equal(run.pending, 0);
+});
+
+test('repeated multi-second stalls still finish after visiting every phase exactly once', async () => {
+  const run = playback();
+  await Promise.resolve();
+  run.tick();
+  run.tick(10000);
+  run.tick(10000);
+  run.tick(10000);
+  assert.deepEqual(run.phases, ['assemble', 'hold', 'dissolve', 'exit']);
+  assert.equal(run.reveals, 1);
+  assert.equal(run.finishes, 0);
+  run.tick(10000);
+  run.tick(10000);
+  assert.equal(run.reveals, 1);
+  assert.equal(run.finishes, 1);
+  assert.equal(run.pending, 0);
+});
+
 test('a failed or stalled icon cannot freeze startup or pop in partway through the effect', async () => {
   const run = playback({ complete: false });
   run.tick(4000);
@@ -134,7 +195,7 @@ test('a failed or stalled icon cannot freeze startup or pop in partway through t
   run.artwork.dispatchEvent(new Event('load'));
   await Promise.resolve();
   assert.deepEqual(run.availability, [false]);
-  run.tick(Object.values(LAUNCH_TIMING).reduce((sum, duration) => sum + duration, 0));
+  for (const duration of Object.values(LAUNCH_TIMING)) run.tick(duration);
   assert.equal(run.finishes, 1);
   assert.equal(run.pending, 0);
 });

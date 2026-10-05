@@ -5,6 +5,8 @@ export const LAUNCH_TIMING = Object.freeze({
   exit: 360,
 });
 
+const LAUNCH_PHASES = Object.freeze(Object.keys(LAUNCH_TIMING));
+
 export function launchPhaseAt(elapsed) {
   let boundary = 0;
   for (const [phase, duration] of Object.entries(LAUNCH_TIMING)) {
@@ -35,8 +37,8 @@ export function startLaunchPlayback({
   let ready = false;
   let frame = null;
   let previous = null;
-  let elapsed = 0;
-  let phase = 'loading';
+  let phaseElapsed = 0;
+  let phaseIndex = -1;
   let deadline = null;
 
   const removeArtworkListeners = () => {
@@ -55,16 +57,21 @@ export function startLaunchPlayback({
   const draw = timestamp => {
     frame = null;
     if (!active || page.hidden) return;
-    if (previous !== null) elapsed += Math.max(0, timestamp - previous);
+    if (previous !== null) phaseElapsed += Math.max(0, timestamp - previous);
     previous = timestamp;
-    const next = launchPhaseAt(elapsed);
-    if (next === 'done') {
-      dispose();
-      onFinish();
-      return;
-    }
-    if (next !== phase) {
-      phase = next;
+
+    if (phaseIndex < 0 || phaseElapsed >= LAUNCH_TIMING[LAUNCH_PHASES[phaseIndex]]) {
+      // A delayed frame may finish the current phase, never skip an unseen
+      // one. Its excess time predates the next CSS animation, so that next
+      // phase starts at zero instead of inheriting an already-expired clock.
+      phaseIndex += 1;
+      phaseElapsed = 0;
+      const next = LAUNCH_PHASES[phaseIndex];
+      if (!next) {
+        dispose();
+        onFinish();
+        return;
+      }
       onPhase(next);
       if (next === 'exit') onReveal();
     }
@@ -74,7 +81,7 @@ export function startLaunchPlayback({
   const visibility = () => {
     onPaused(page.hidden);
     if (page.hidden) {
-      if (previous !== null) elapsed += Math.max(0, now() - previous);
+      if (previous !== null) phaseElapsed += Math.max(0, now() - previous);
       previous = null;
       if (frame !== null) cancelFrame(frame);
       frame = null;
