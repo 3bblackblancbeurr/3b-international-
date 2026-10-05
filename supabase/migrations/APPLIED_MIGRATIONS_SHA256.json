@@ -2,7 +2,7 @@
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
   "generated_at": "2026-10-05",
-  "count": 208,
+  "count": 209,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1056,6 +1056,11 @@
       "version": "20261005151327",
       "name": "destin_le_combat_commence_rewards_v1",
       "sha256": "5c813c1c142be5e7420346808a0d135f4e5b2b0b51e9373a51cb6901e6169e3c"
+    },
+    {
+      "version": "20261005225825",
+      "name": "destin_passport_policy_alignment_v2",
+      "sha256": "2c2ad16c4f5eaeb555cc497dac5e80c2623cb21803ab0f2c66c190d2aa8d0264"
     }
   ],
   "reconciliation": {
@@ -1093,5 +1098,9 @@
   "reconciliation_20261005_destin_rewards": {
     "reason": "Applied to production via Supabase migration API; Git filename aligned to the server-assigned migration version.",
     "version": "20261005151327"
+  },
+  "reconciliation_20261005_destin_policy": {
+    "reason": "Applied to production via Supabase migration API after rollback QA of start → choice → finish; Git filename aligned to the server-assigned migration version.",
+    "version": "20261005225825"
   }
 }
