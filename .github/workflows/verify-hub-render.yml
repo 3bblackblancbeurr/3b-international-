@@ -54,6 +54,13 @@ jobs:
         run: node scripts/verify-hub-services-browser.mjs
         env:
           HUB_SERVICES_OUT: artifacts/hub-${{ matrix.view }}/services
+      - name: Upload service previews for early visual review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always() && matrix.view == 'desktop'
+        with:
+          name: civic-services-preview
+          path: artifacts/hub-${{ matrix.view }}/services
+          if-no-files-found: warn
       - name: Render actual Hub and check movement and shader errors
         run: node scripts/verify-world-art-browser.mjs
         env:

@@ -271,17 +271,23 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
  if(spec.transport==='train'){
   child(group,geometry.box,dark,{y:0,sx:1.65,sy:.72,sz:4.9});
   child(group,geometry.box,glass,{y:.50,z:-.25,sx:1.34,sy:.42,sz:3.55});
-  for(const z of [-4.25,-2.2,0,2.2,4.25])child(group,geometry.box,accent,{y:.08,z,sx:1.45,sy:.08,sz:.05,cast:false});
-  for(const x of [-1.34,1.34])for(const z of [-3.25,3.25])child(group,geometry.cylinder,dark,{x,y:-.52,z,sx:.24,sy:.20,sz:.24,rz:Math.PI/2});
+  // Unit boxes use full dimensions: trim stays on the 4.9 m body, wheels on
+  // the existing 1.64 m track gauge. At route height .62, tyres meet rail top .175.
+  for(const z of [-2.4,-1.2,0,1.2,2.4])child(group,geometry.box,accent,{y:.37,z,sx:1.45,sy:.08,sz:.05,cast:false});
+  for(const x of [-.82,.82])for(const z of [-1.75,1.75])child(group,geometry.cylinder,dark,{x,y:-.205,z,sx:.24,sy:.20,sz:.24,rz:Math.PI/2});
  }else if(spec.transport==='boat'){
   child(group,geometry.box,dark,{y:-.05,sx:1.65,sy:.35,sz:3.3});
-  child(group,geometry.box,glass,{y:.48,z:-.35,sx:1.18,sy:.50,sz:1.65});
-  child(group,geometry.box,accent,{y:.05,z:2.55,sx:1.15,sy:.08,sz:.55,cast:false});
+  child(group,geometry.box,glass,{y:.37,z:-.35,sx:1.18,sy:.50,sz:1.65});
+  child(group,geometry.box,accent,{y:.145,z:1.35,sx:1.15,sy:.08,sz:.55,cast:false});
  }else{
-  child(group,geometry.box,dark,{y:0,sx:1.32,sy:.82,sz:1.62});
+  // Keep the cabin envelope while exposing its glazing between sill and roof.
+  child(group,geometry.box,dark,{y:-.26,sx:1.32,sy:.30,sz:1.62});
   child(group,geometry.box,glass,{y:.05,z:.10,sx:1.06,sy:.62,sz:1.25});
-  child(group,geometry.box,accent,{y:.98,sx:1.14,sy:.10,sz:.16,cast:false});
-  for(const x of [-.9,.9])child(group,geometry.cylinder,dark,{x,y:1.22,sx:.16,sy:.18,sz:.16,rz:Math.PI/2});
+  child(group,geometry.box,dark,{y:.36,sx:1.32,sy:.10,sz:1.62});
+  child(group,geometry.box,dark,{y:.68,sx:.12,sy:.64,sz:.12});
+  child(group,geometry.box,accent,{y:.98,sx:.16,sy:.10,sz:1.14,cast:false});
+  // The tandem pulleys follow the same central cable at route height +1.22.
+  for(const z of [-.38,.38])child(group,geometry.cylinder,dark,{y:1.08,z,sx:.16,sy:.18,sz:.16,rz:Math.PI/2});
  }
  group.position.set(start.x,groundY(start.x,start.z)+spec.height,start.z);return group;
 }

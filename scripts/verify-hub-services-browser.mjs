@@ -54,7 +54,11 @@ try{
    await page.getByRole('button',{name:'Ouvrir Créer ma Ville',exact:true}).click();assert.equal(await page.evaluate(()=>serviceProbe.cityOpen),1,'urbanism launches actual callback');
    await select.selectOption('memory_archives');await page.getByRole('button',{name:'Garder cette chronique',exact:true}).click();await page.getByRole('button',{name:'Mes favoris',exact:true}).click();assert.equal(await page.locator('.hub-service-archive nav button').count(),1);
    await select.selectOption('ai_textile_lab');await page.getByLabel('Couleur principale',{exact:true}).fill('#2b4055');await page.getByLabel('Couleur des détails',{exact:true}).fill('#f1cb80');await page.getByLabel('Motif',{exact:true}).selectOption('damier');await page.getByRole('button',{name:'Appliquer à ma tenue',exact:true}).click();assert.deepEqual(await page.evaluate(()=>serviceProbe.palettes.at(-1)),{fabricColor:'#2b4055',accentColor:'#f1cb80',pattern:'damier'});
-   await select.selectOption('garage_3b');await page.getByLabel('Véhicule à examiner',{exact:true}).selectOption('express');await page.getByLabel('Carrosserie et roues',{exact:true}).check();
+   await select.selectOption('garage_3b');
+   await page.getByLabel('Véhicule à examiner',{exact:true}).selectOption('cabine');
+   await page.getByLabel('Modèle du Cabine des Civilisations utilisé dans la cité',{exact:true}).waitFor();
+   await page.screenshot({path:out+'/'+name+'-garage-cabine.png',fullPage:true});
+   await page.getByLabel('Véhicule à examiner',{exact:true}).selectOption('express');await page.getByLabel('Carrosserie et roues',{exact:true}).check();
    const before=await page.evaluate(()=>({...serviceProbe.disposed}));
    for(let i=0;i<24;i++){await page.getByRole('button',{name:i%2?'Héritage':'Matrix',exact:true}).click();await page.waitForFunction(()=>!!document.querySelector('canvas')?.getContext('webgl2'));}
    const after=await page.evaluate(()=>({...serviceProbe.disposed}));assert.ok(after.geometries>=before.geometries+48&&after.materials>=before.materials+72,'old preview geometry and materials are disposed');
