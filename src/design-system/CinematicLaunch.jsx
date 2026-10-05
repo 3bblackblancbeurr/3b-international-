@@ -103,6 +103,9 @@ export default function CinematicLaunch({ policy, enabled = true, onDone }) {
           '--fragment-rotate': `${rotate}deg`,
           '--assemble-delay': `${delay}ms`,
           '--dissolve-delay': `${(index % 5) * 34}ms`,
+          '--dissolve-x': `${x * .58}px`,
+          '--dissolve-y': `${y * .58}px`,
+          '--dissolve-rotate': `${rotate * .7}deg`,
         }}
       >
         <img src={BRAND_ICON} alt="" width="512" height="512" draggable="false" />
@@ -114,6 +117,7 @@ export default function CinematicLaunch({ policy, enabled = true, onDone }) {
           '--spark-distance': `${spark.distance}px`,
           '--spark-delay': `${spark.delay}ms`,
           '--spark-size': `${spark.size}px`,
+          '--spark-out-distance': `${spark.distance * 1.45}px`,
         }} />)}
       </div>
     </div>
