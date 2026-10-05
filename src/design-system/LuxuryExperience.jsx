@@ -6,7 +6,7 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from './index.jsx';
 import { DEFAULT_OPTIONS, loadJsonStorage, STORAGE_OPTIONS_KEY } from '../lib/member.js';
 import { experiencePolicy, markIntroSeen, MOTION, surfaceTilt } from './experience-policy.js';
-import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';
+import { createInterfaceSound, interfaceSoundIntent, companionActionCue, canonicalInterfaceCue, SOUND_ACTION_SELECTOR, COMPANION_SPEAKING_EVENT, COMPANION_ACTION_EVENT, INTERFACE_SOUND_EVENT } from '../audio/interface-sound.js';\nimport { enterIntroImmersive, exitIntroImmersive } from '../native/immersive.js';
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
 
 const ExperienceContext = createContext(null);
@@ -22,7 +22,7 @@ export function LuxuryProvider({ children }) {
   const [scene, setScene] = useState(null);
   const audio = useRef(null), activated = useRef(false), lastCue = useRef(0), serial = useRef(0), speaking = useRef(false);
   const policy = useMemo(() => experiencePolicy(options, device), [options, device]);
-  const [launching, setLaunching] = useState(() => experiencePolicy(options, device).animate && options.cinematicIntros !== false);
+  const [launching, setLaunching] = useState(() => experiencePolicy(options, device).animate);
   const current = useRef(policy); current.current = policy;
 
   const cue = useCallback((kind = 'press', details = {}) => {
@@ -148,7 +148,7 @@ export function ExperienceControls({ options, toggleOption, page }) {
     <div className="luxury-controls-panel">
       <strong>À ton rythme.</strong><p>Une même identité. Ton confort.</p>
       <CompanionPresenceControl/>
-      {[['interfaceSound', 'Sons de l’interface'], ['haptics', 'Vibrations au toucher'], ['cinematicIntros', 'Introduction cinématique'], ['reducedMotion', 'Réduire les mouvements']].map(([key, label]) =>
+      {[['interfaceSound', 'Sons de l’interface'], ['haptics', 'Vibrations au toucher'], ['reducedMotion', 'Réduire les mouvements']].map(([key, label]) =>
         <Button key={key} variant="ghost" data-sound-toggle={key === 'interfaceSound' ? key : undefined} onClick={() => toggleOption(key)} aria-pressed={options[key]}>{label}<span>{options[key] ? 'Oui' : 'Non'}</span></Button>)}
       {options.interfaceSound && <Button variant="ghost" data-sound="entry">Écouter la signature 3B<span aria-hidden="true">♫</span></Button>}
       <p>Des sons discrets pour tes actions. La voix se choisit dans les réglages de ton compagnon.</p>
