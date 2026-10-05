@@ -8,11 +8,15 @@ const shortGuardian=(region,cardId)=>{
  const rule=GUARDIAN_VALUES[region],card=cardById[cardId||rule?.card];
  return {rule,card,name:(card?.name||rule?.name||'Gardien').split(' — ')[0]};
 };
+const AUDIO_STATE_BY_KIND=Object.freeze({
+ 'world-opening':'cinematic','country-first-entry':'cinematic','story-restoration':'cinematic',
+ 'guardian-value-complete':'guardian','guardian-homecoming':'homecoming','important-combat-result':'guardian','story-finale':'homecoming',
+});
 
 export function storyCinematicPresentation(event){
  if(!event?.kind||!event?.key)return null;
  const region=event.context?.region||event.region, country=countryById[region], chapter=CHAPTERS[region],guardian=shortGuardian(region,event.context?.card);
- const base={...cinematicSpec(event.kind,region),context:event.context||{},countryName:country?.name||'3B',value:guardian.rule?.value||'Héritage',key:event.key,kind:event.kind,region,card:event.context?.card||null,audioState:'mission',voiceCharacter:'narrator',nextLabel:'Continuer'};
+ const base={...cinematicSpec(event.kind,region),context:event.context||{},countryName:country?.name||'3B',value:guardian.rule?.value||'Héritage',key:event.key,kind:event.kind,region,card:event.context?.card||null,audioState:AUDIO_STATE_BY_KIND[event.kind]||'mission',voiceCharacter:'narrator',nextLabel:'Continuer'};
  switch(event.kind){
   case 'world-opening':return {...base,countryName:'3B INTERNATIONAL',value:'Héritage',kicker:'LES HUIT PORTES',title:'LE MONDE DU 3B',detail:'Huit héritages ont été séparés. Dans le monde réel du 3B, le Cercle ne cherche pas une neuvième valeur : il faut retrouver ce qui relie les huit.',nextLabel:'Prendre le contrôle'};
   case 'country-first-entry':return {...base,kicker:(country?.name||region).toUpperCase()+' · PREMIÈRE ENTRÉE',title:country?.title||'Une nouvelle porte',detail:country?.lore||'Le pays attend que ses liens soient reconstruits.'};
