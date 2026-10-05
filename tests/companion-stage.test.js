@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  advanceStagePointerGesture, chooseStageScene, clampStagePosition, createStageClock,
-  createStagePointerGesture, findStageHome, findStageWalkTarget,
+  advanceStagePointerGesture, advanceStageTravel, chooseStageScene, clampStagePosition, createStageClock,
+  createStagePointerGesture, findStageHome, findStageRestPosition, findStageWalkTarget,
   findVisibleHeadingAnchors, getStageBounds, headingAnchorPosition, homeStagePosition,
   interpolateStageTravel, isPointerNearStage, isStagePathClear, isStagePositionClear, normalizeStageAction,
   readHeadingAnchorRect, restoreStagePlacement, stageAutonomousDelay, stagePlacement, stepCompanionFall,
@@ -155,6 +155,56 @@ test('a fully occupied stage yields stationary choices instead of crossing contr
   const from = homeStagePosition(bounds);
   assert.equal(findStageWalkTarget(from, bounds, controls, () => 0), null);
   assert.notEqual(chooseStageScene({ canWalk: false, hasAnchor: false, random: () => 0 }), 'walk');
+});
+
+test('successive strolls explore both axes and remember recently visited locations', () => {
+  const bounds = getStageBounds({ width: 960, height: 800, safeTop: 64, safeBottom: 24 }, { width: 112, height: 155 });
+  let position = homeStagePosition(bounds);
+  const recent = [position];
+  for (let index = 0; index < 10; index += 1) {
+    const target = findStageWalkTarget(position, bounds, [], () => 0.5, { recent });
+    assert.ok(target);
+    assert.ok(isStagePathClear(position, target, bounds));
+    assert.ok(Math.hypot(target.x - position.x, target.y - position.y) >= 30);
+    if (index > 1) assert.ok(Math.hypot(target.x - recent.at(-2).x, target.y - recent.at(-2).y) > 50, 'avoid pacing between the same two spots');
+    position = target; recent.push(position);
+  }
+  assert.ok(new Set(recent.map(point => Math.floor(point.x / 180))).size >= 4);
+  assert.ok(new Set(recent.map(point => Math.floor(point.y / 160))).size >= 4);
+});
+
+test('a control appearing beneath the companion has a nearby safe exit', () => {
+  const bounds = mobileBounds();
+  const from = { x: 160, y: 380 };
+  const controls = [{ left: 165, right: 275, top: 390, bottom: 500 }];
+  const safe = findStageRestPosition(from, bounds, controls);
+  assert.ok(safe);
+  assert.ok(isStagePositionClear(safe, bounds, controls));
+  assert.ok(isStagePathClear(from, safe, bounds, controls));
+  assert.ok(Math.hypot(safe.x - from.x, safe.y - from.y) < 150, 'prefer the nearest exit over a home corner');
+  assert.equal(findStageRestPosition(from, bounds, [{ left: 0, right: 390, top: 0, bottom: 844 }]), null);
+});
+
+test('continuous path safety handles grazing, diagonal thin controls and initial overlap', () => {
+  const bounds = mobileBounds();
+  const control = { left: 172, right: 172.5, top: 440, bottom: 440.5 };
+  assert.equal(isStagePathClear({ x: 12, y: 300 }, { x: 278, y: 540 }, bounds, [control]), false);
+  assert.equal(isStagePathClear({ x: 12, y: 100 }, { x: 278, y: 100 }, bounds, [control]), true);
+  assert.equal(isStagePathClear({ x: 120, y: 380 }, { x: 12, y: 300 }, bounds, [control]), true, 'an existing overlap can be exited');
+  assert.equal(isStagePathClear({ x: -80, y: 300 }, { x: 12, y: 300 }, bounds), false);
+});
+
+test('travel uses active frame time, stays frame-rate independent and caps stalled frames', () => {
+  let at60 = 0;
+  let at120 = 0;
+  for (let index = 0; index < 60; index += 1) at60 = advanceStageTravel(at60, 1 / 60, 3000);
+  for (let index = 0; index < 120; index += 1) at120 = advanceStageTravel(at120, 1 / 120, 3000);
+  assert.ok(Math.abs(at60 - 1000) < 0.0001);
+  assert.ok(Math.abs(at60 - at120) < 0.0001);
+  assert.equal(advanceStageTravel(1000, 9, 3000), 1034);
+  assert.equal(advanceStageTravel(1000, -1, 3000), 1000);
+  assert.equal(advanceStageTravel(2990, 0.034, 3000), 3000);
+  assert.equal(advanceStageTravel(NaN, Infinity, 3000), 0);
 });
 
 test('travel easing arrives exactly at the target with an optional bounded arc', () => {

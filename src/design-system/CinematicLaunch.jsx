@@ -1,12 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { startLaunchPlayback } from './launch-playback.js';
 
-export const LAUNCH_TIMING = Object.freeze({
-  prelude: 260,
-  assemble: 2450,
-  hold: 620,
-  dissolve: 880,
-  exit: 360,
-});
+export { LAUNCH_TIMING } from './launch-playback.js';
 export const BRAND_ICON = '/icons/3b-icon-20260912-512.png';
 
 const SHARDS = Object.freeze([
@@ -35,53 +30,44 @@ const SPARKS = Object.freeze(Array.from({ length: 22 }, (_, index) => ({
   size: 1 + (index % 3) * .65,
 })));
 
-export default function CinematicLaunch({ policy, enabled = true, onDone }) {
-  const [phase, setPhase] = useState('prelude');
+export default function CinematicLaunch({ policy, enabled = true, onReveal, onDone }) {
+  const [phase, setPhase] = useState('loading');
+  const [paused, setPaused] = useState(false);
+  const [artworkAvailable, setArtworkAvailable] = useState(null);
+  const artwork = useRef(null);
   const done = useRef(onDone);
   done.current = onDone;
+  const reveal = useRef(onReveal);
+  reveal.current = onReveal;
+  const currentPolicy = useRef(policy);
+  currentPolicy.current = policy;
 
-  useEffect(() => {
-    if (!enabled) {
+  useLayoutEffect(() => {
+    if (!enabled || policy.reduced) {
       done.current();
       return undefined;
     }
 
-    if (!policy.animate) {
-      setPhase('hold');
-      const reducedFinish = setTimeout(() => done.current(), 850);
-      return () => clearTimeout(reducedFinish);
-    }
-
-    const assembleAt = LAUNCH_TIMING.prelude;
-    const holdAt = assembleAt + LAUNCH_TIMING.assemble;
-    const dissolveAt = holdAt + LAUNCH_TIMING.hold;
-    const exitAt = dissolveAt + LAUNCH_TIMING.dissolve;
-    const finishAt = exitAt + LAUNCH_TIMING.exit;
-
-    const assemble = setTimeout(() => setPhase('assemble'), assembleAt);
-    const hold = setTimeout(() => {
-      setPhase('hold');
-      if (policy.haptics) {
-        try { navigator.vibrate?.([8, 28, 12]); } catch { /* Haptics are enhancement only. */ }
-      }
-    }, holdAt);
-    const dissolve = setTimeout(() => setPhase('dissolve'), dissolveAt);
-    const exit = setTimeout(() => setPhase('exit'), exitAt);
-    const finish = setTimeout(() => done.current(), finishAt);
-
-    return () => {
-      clearTimeout(assemble);
-      clearTimeout(hold);
-      clearTimeout(dissolve);
-      clearTimeout(exit);
-      clearTimeout(finish);
-    };
-  }, [policy.animate, policy.haptics, enabled]);
+    return startLaunchPlayback({
+      artwork: artwork.current,
+      onArtwork: setArtworkAvailable,
+      onPhase(next) {
+        setPhase(next);
+        if (next === 'hold' && currentPolicy.current.haptics) {
+          try { navigator.vibrate?.([8, 28, 12]); } catch { /* Haptics are enhancement only. */ }
+        }
+      },
+      onPaused: setPaused,
+      onReveal: () => reveal.current?.(),
+      onFinish: () => done.current(),
+    });
+  }, [policy.reduced, enabled]);
 
   return <section
     className="threeb-launch"
     data-phase={phase}
-    data-reduced={!policy.animate || undefined}
+    data-paused={paused || undefined}
+    data-artwork={artworkAvailable === false ? 'unavailable' : undefined}
     aria-label="Ouverture cinématique de 3B International"
     aria-live="polite"
   >
@@ -92,7 +78,7 @@ export default function CinematicLaunch({ policy, enabled = true, onDone }) {
     </div>
 
     <div className="threeb-launch-logo" aria-hidden="true">
-      <img className="threeb-launch-core" src={BRAND_ICON} alt="" width="512" height="512" draggable="false" />
+      <img ref={artwork} className="threeb-launch-core" src={BRAND_ICON} alt="" width="512" height="512" fetchPriority="high" decoding="async" draggable="false" />
       {SHARDS.map(([clip, x, y, rotate, delay], index) => <div
         key={index}
         className="threeb-launch-fragment"
