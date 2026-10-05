@@ -20,6 +20,10 @@ test("3B PWA update system is wired end-to-end", async () => {
   assert.match(manager, /NOUVELLE VERSION 3B DISPONIBLE/);
   assert.match(manager, /MISE À JOUR REQUISE/);
   assert.match(manager, /SKIP_WAITING/);
+  assert.match(manager, /INSTALLER LA MISE À JOUR/);
+  assert.match(manager, /prefetchLatestBuild/);
+  assert.match(manager, /response\.body\.getReader/);
+  assert.match(manager, /Mise à jour installée/);
   assert.doesNotMatch(manager, /localStorage\.clear|sessionStorage\.clear|indexedDB\.deleteDatabase/);
   assert.match(manager, /caches\.delete/);
 
@@ -62,4 +66,19 @@ test("worker lifecycle checks the server and a confirmed current build clears ev
   assert.doesNotMatch(manager, /current\?\.buildId === "service-worker" \? current : null/);
   assert.match(manager, /worker\.state !== "installed"[\s\S]*?void checkServerRelease\(\)/);
   assert.match(manager, /registration\.waiting && navigator\.serviceWorker\.controller[\s\S]*?void checkServerRelease\(\)/);
+});
+
+
+test("home portal keeps the original artwork and adds a continuous Broken Circle motion layer", async () => {
+  const [portal, homeCss] = await Promise.all([
+    readFile(new URL("src/components/WorldPortalCard.jsx", root), "utf8"),
+    readFile(new URL("src/styles/home-app.css", root), "utf8"),
+  ]);
+
+  assert.match(portal, /hub-cite-origine\.webp/);
+  assert.match(portal, /home-world-ring-motion/);
+  assert.match(portal, /home-world-ring-layer/);
+  assert.match(homeCss, /threebBrokenCircleClockwise/);
+  assert.match(homeCss, /animation:threebBrokenCircleClockwise 54s linear infinite/);
+  assert.match(homeCss, /home-world-ring-energy/);
 });
