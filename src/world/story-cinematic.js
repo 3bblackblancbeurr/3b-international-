@@ -33,11 +33,11 @@ export function storyCinematicPresentation(event){
    const victory=event.context?.result==='victory';
    return {...base,card:event.context?.card||guardian.rule?.card||null,audioState:'guardian',voiceCharacter:event.context?.card||guardian.rule?.card||'narrator',kicker:victory?'LIBÉRATION':'REPLI',title:victory?`${guardian.name} rejoint tes alliés`:'Le Gardien tient encore',detail:victory?`Le sceau de ${country?.name||region} répond. ${guardian.name} rejoint durablement ta collection et la dernière restauration du pays peut commencer.`:'La défaite ne détruit pas ta progression. Prépare ton groupe, relis les indices et reviens.',nextLabel:victory?'Poursuivre la reconstruction':'Revenir dans le monde'};
   }
-  case 'guardian-homecoming':return {...base,card:guardian.rule?.card||null,audioState:'guardian',voiceCharacter:guardian.rule?.card||'narrator',kicker:'RETOUR À LA CITÉ',title:guardian.name+' rejoint la Cité',detail:`Le pays de ${country?.name||region} est reconstruit. ${guardian.name} est maintenant visible dans la Cité des Huit Héritages et reste lié à tes prochaines expéditions.`,nextLabel:'Entrer dans la Cité'};
+  case 'guardian-homecoming':return {...base,card:guardian.rule?.card||null,audioState:'homecoming',voiceCharacter:guardian.rule?.card||'narrator',kicker:'RETOUR À LA CITÉ',title:guardian.name+' rejoint la Cité',detail:`Le pays de ${country?.name||region} est reconstruit. ${guardian.name} est maintenant visible dans la Cité des Huit Héritages et reste lié à tes prochaines expéditions.`,nextLabel:'Entrer dans la Cité'};
   case 'companion-first-bond':return {...base,kicker:'NOUVEAU LIEN',title:(cardById[event.context?.card]?.name||'Un compagnon')+' te fait confiance',detail:'Ce personnage peut désormais voyager avec toi et renforcer ton groupe.'};
   case 'discovery':return {...base,kicker:'DÉCOUVERTE',title:'Un lieu rejoint ton carnet',detail:'Cette découverte est enregistrée dans ta progression d’exploration.'};
   case 'final-combat-intro':return {...base,audioState:'guardian',kicker:'LE LIEN MANQUANT',title:'L’Oubli rassemble les huit échos',detail:STORY_CANON.finale.revelation+' '+STORY_CANON.oubli.monster,nextLabel:'Affronter la manifestation de l’Oubli'};
-  case 'story-finale':return {...base,audioState:'guardian',kicker:'L’UNION RETROUVÉE',title:'Le Cercle répond',detail:STORY_CANON.finale.aftermath+' '+STORY_CANON.finale.signature};
+  case 'story-finale':return {...base,audioState:'homecoming',kicker:'L’UNION RETROUVÉE',title:'Le Cercle répond',detail:STORY_CANON.finale.aftermath+' '+STORY_CANON.finale.signature};
   default:return null;
  }
 }
