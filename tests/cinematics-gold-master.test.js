@@ -84,4 +84,6 @@ test('guardian value and homecoming use authored cinematic tiers and audio mixes
  const homecoming=storyCinematicPresentation({kind:'guardian-homecoming',key:'homecoming:france',region:'hub',context:{region:'france'}});
  assert.equal(homecoming.audioState,'homecoming');
  assert.match(homecoming.title,/Céliane/);
+ const finale=storyCinematicPresentation({kind:'story-finale',key:'story:circle-restored',region:'france',context:{region:'france'}});
+ assert.equal(finale.audioState,'homecoming');
 });
