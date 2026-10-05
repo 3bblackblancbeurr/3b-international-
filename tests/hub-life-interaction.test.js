@@ -4,7 +4,8 @@ import {createHubLifeInteraction,hubLifeAction} from '../src/world/hub/life-inte
 import {contextActions} from '../src/world/interaction-system.js';
 import {hubNpcSchedule} from '../src/world/hub/npc-schedule.js';
 import {hubNpcActivity} from '../src/world/hub/npc-activity.js';
-import {hubNpcSimulation} from '../src/world/hub/npc-motion.js';
+import {hubNpcSimulation,hubNpcNeeds} from '../src/world/hub/npc-motion.js';
+import fs from 'node:fs';
 
 const seat={id:'room:seat',type:'hubLifeObject',kind:'seat',x:4,z:6,seatX:4,seatZ:7,seatHeight:.81,heading:180,name:'Fauteuil',range:3.2};
 
@@ -66,4 +67,24 @@ test('active civic events interrupt resident routines without changing persisten
  assert.equal(market.activity,'événement');
  assert.equal(market.movementIntent,'gather');
  assert.equal(market.social,true);
+});
+
+
+test('civic responders visibly leave routine while gatherings become social activity',()=>{
+ const emergency={id:'lyna_amrane',npcId:'lyna_amrane',activity:'événement',movementIntent:'respond',homeX:4,homeZ:7};
+ const response=hubNpcSimulation(emergency,32,{distance:8,playerVisible:true});
+ assert.equal(response.state,'Investigate');assert.equal(response.moving,true);
+ assert.ok(hubNpcNeeds(emergency,32).purpose<hubNpcNeeds({...emergency,activity:'repos',movementIntent:null},32).purpose);
+ const gathering={id:'nora_khelifi',npcId:'nora_khelifi',activity:'événement',movementIntent:'gather',homeX:-4,homeZ:2};
+ const social=hubNpcSimulation(gathering,32,{distance:8,playerVisible:true});
+ assert.equal(social.state,'Talk');assert.equal(social.moving,false);
+ assert.ok(hubNpcNeeds(gathering,32).social<hubNpcNeeds({...gathering,activity:'promenade',movementIntent:null},32).social);
+});
+
+test('live scene refresh keeps moving residents in place while copying the full schedule and event state',()=>{
+ const source=fs.readFileSync(new URL('../src/world/scene.js',import.meta.url),'utf8');
+ assert.match(source,/Object\.assign\(actor\.item,scheduleState,\{homeX:nextX,homeZ:nextZ\}\)/);
+ assert.match(source,/lastHubScheduleKey/);
+ assert.match(source,/hubScheduleClockKey/);
+ assert.match(source,/refreshHubScheduleState\(\)/);
 });
