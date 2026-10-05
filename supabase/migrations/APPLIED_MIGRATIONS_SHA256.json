@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-10-04",
-  "count": 201,
+  "generated_at": "2026-10-05",
+  "count": 203,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1021,6 +1021,16 @@
       "version": "20261004132248",
       "name": "document_service_only_rls_tables",
       "sha256": "3a31e35a2f181c579c6877fb051949cc6a82ee3623d419f910414f10161179df"
+    },
+    {
+      "version": "20261005130821",
+      "name": "threeb_reward_outbox_retry_accounting_v1",
+      "sha256": "7da68b00e8e2798a49d2254ab967ac3c78b195e0e5c36c1b742a49b445ee3f20"
+    },
+    {
+      "version": "20261005131925",
+      "name": "loyalty_refund_ledger_reversal_v1",
+      "sha256": "4bdb7402005f2c1d2882498c561484370609b99f9d7d03d46f9895caaf729cbb"
     }
   ],
   "reconciliation": {
