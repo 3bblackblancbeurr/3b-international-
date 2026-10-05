@@ -347,7 +347,7 @@ function hubNpcAvatar(item){
    // by vehicles, passenger rides and the atlas. They are owned by this scene.
    for(const transit of referenceTransportRoutes()){
     if(transit.transport==='boat')continue;
-    const trackMaterial=material(transit.transport==='telepheric'?'#567889':'#d6b46a',{roughness:.38,metalness:.7});
+    const trackMaterial=material(transit.transport==='telepheric'?'#567889':'#d6b46a',{roughness:.38,metalness:.7}); // gold-master-allow: reviewed physical cable/rail metal albedos; docs/hub-reference-art-exceptions.md#transport-paths.
     for(const side of transit.transport==='train'?[-1,1]:[0]){
      const points=transit.points.map(p=>{const radius=Math.hypot(p.x,p.z),scale=side?1+side*.82/radius:1;return new THREE.Vector3(p.x*scale,transit.transport==='train'?.12:p.y+(transit.transport==='telepheric'?1.22:2.5),p.z*scale);});
      const path=new THREE.CurvePath();for(let i=1;i<points.length;i++)path.add(new THREE.LineCurve3(points[i-1],points[i]));if(transit.closed)path.add(new THREE.LineCurve3(points.at(-1),points[0]));

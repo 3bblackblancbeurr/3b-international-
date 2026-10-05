@@ -1,4 +1,4 @@
-import {goldMasterTokens} from '../../design-system/tokens.js';
+import {goldMasterTokens,hubServiceArt} from '../../design-system/tokens.js';
 import {hubMissionJournal} from './mission-journal.js';
 const SERVICE_GOLD=goldMasterTokens.colors.champagne.toLowerCase();
 
@@ -13,8 +13,8 @@ export function resolveHubCityService(item){return item?.type==='hubBuilding'?SE
 
 export const HUB_SERVICE_VEHICLES=Object.freeze([
  Object.freeze({id:'express',name:'3B Express',transport:'train',color:SERVICE_GOLD,role:'Relier les dix quartiers de la cité.',checks:['Carrosserie et roues','Accès aux voitures','Éclairage de bord','Correspondances']}),
- Object.freeze({id:'navette',name:'Navette des Horizons',transport:'boat',color:'#00a8ff',role:'Relier les embarcadères et les jardins par la mer.',checks:['Coque et pont','Accès au débarcadère','Éclairage de navigation','Destination et retour']}),
- Object.freeze({id:'cabine',name:'Cabine des Civilisations',transport:'telepheric',color:'#ce88b5',role:'Rejoindre les stations hautes par câble.',checks:['Cabine et suspension','Ouverture des portes','Éclairage de cabine','Station d’arrivée']}),
+ Object.freeze({id:'navette',name:'Navette des Horizons',transport:'boat',color:hubServiceArt.matrixAccent,role:'Relier les embarcadères et les jardins par la mer.',checks:['Coque et pont','Accès au débarcadère','Éclairage de navigation','Destination et retour']}),
+ Object.freeze({id:'cabine',name:'Cabine des Civilisations',transport:'telepheric',color:hubServiceArt.cabin,role:'Rejoindre les stations hautes par câble.',checks:['Cabine et suspension','Ouverture des portes','Éclairage de cabine','Station d’arrivée']}),
 ]);
 export const HUB_ATELIER_MATERIALS=Object.freeze([
  Object.freeze({id:'textile',name:'Tissu mat',roughness:.92,metalness:0,detail:'Trame serrée, lumière douce et coutures contrastées.'}),
@@ -23,10 +23,10 @@ export const HUB_ATELIER_MATERIALS=Object.freeze([
 ]);
 export const HUB_ATELIER_PATTERNS=Object.freeze([['uni','Uni'],['bandes','Bandes'],['damier','Damier'],['insigne','Signature 3B'],['broderie','Broderie']].map(([id,name])=>Object.freeze({id,name})));
 export const HUB_SERVICE_PALETTES=Object.freeze([
- Object.freeze({id:'heritage',name:'Héritage',base:'#101a26',accent:SERVICE_GOLD}),
- Object.freeze({id:'matrix',name:'Matrix',base:'#14354a',accent:'#00a8ff'}),
- Object.freeze({id:'solar',name:'Rives du Soleil',base:'#e6ded0',accent:'#d2a451'}),
- Object.freeze({id:'garden',name:'Unité',base:'#264b3e',accent:'#d9c78a'}),
+ Object.freeze({id:'heritage',name:'Héritage',base:hubServiceArt.heritageBase,accent:SERVICE_GOLD}),
+ Object.freeze({id:'matrix',name:'Matrix',base:hubServiceArt.matrixBase,accent:hubServiceArt.matrixAccent}),
+ Object.freeze({id:'solar',name:'Rives du Soleil',base:hubServiceArt.solarBase,accent:hubServiceArt.solarAccent}),
+ Object.freeze({id:'garden',name:'Unité',base:hubServiceArt.gardenBase,accent:hubServiceArt.gardenAccent}),
 ]);
 export const HUB_ARCHIVE_RECORDS=Object.freeze([
  Object.freeze({id:'arrival',title:'Une cité pour se rencontrer',topic:'Fondation',missionIds:['first_steps','voices_square'],text:'La Place de l’Héritage accueille les voyageurs avant les portes. Les quartiers relient ceux qui apprennent, fabriquent, transmettent et prennent soin des autres. La cité est leur lieu commun.',placeId:'heritage_welcome'}),
@@ -39,7 +39,7 @@ export const HUB_ARCHIVE_RECORDS=Object.freeze([
 
 const has=(rows,id)=>rows.some(row=>row.id===id);
 const color=value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value.toLowerCase():null;
-export function blankHubServicePreferences(){return {version:1,favorites:[],vehicle:{id:'navette',finish:'heritage',purpose:'inspection',checks:[]},atelier:{material:'textile',base:'#101a26',accent:SERVICE_GOLD,pattern:'broderie'}};}
+export function blankHubServicePreferences(){return {version:1,favorites:[],vehicle:{id:'navette',finish:'heritage',purpose:'inspection',checks:[]},atelier:{material:'textile',base:hubServiceArt.heritageBase,accent:SERVICE_GOLD,pattern:'broderie'}};}
 export function normalizeHubServicePreferences(input){
  const result=blankHubServicePreferences(),source=input&&typeof input==='object'&&!Array.isArray(input)?input:{};
  if(source.version!==1)return result;

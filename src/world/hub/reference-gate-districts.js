@@ -7,14 +7,14 @@ import {facadeArchGeometry,mansardRoofGeometry} from './facade-craft.js';
 import {gateCrownGeometry} from './gate-craft.js';
 
 export const REFERENCE_GATE_DISTRICT_STYLES=Object.freeze({
- france:{name:'Mont des Savoirs',style:'spire',wall:'#8d9898',roof:'#334c61',trim:'#cbb47c',accent:'#36516f',height:14},
- espagne:{name:'Place del Sol',style:'plaza',wall:'#a48968',roof:'#7b5543',trim:'#cdb786',accent:'#795449',height:10},
- maroc:{name:'Souks du Monde',style:'souk',wall:'#947c62',roof:'#5b716c',trim:'#bfb087',accent:'#47717a',height:10},
- italie:{name:'Jardins de la Dolce Vita',style:'loggia',wall:'#aca98d',roof:'#7a6650',trim:'#c9bd94',accent:'#597766',height:11},
- turquie:{name:'Falaises d’Orient',style:'dome',wall:'#8b8d91',roof:'#38576b',trim:'#d1b681',accent:'#485b76',height:12},
- tunisie:{name:'Rives du Soleil',style:'coast',wall:'#bebaa0',roof:'#416f82',trim:'#c5ae7c',accent:'#577da2',height:9},
- algerie:{name:'Terrasses de l’Oasis',style:'terrace',wall:'#aca188',roof:'#6e7f6a',trim:'#c6b48a',accent:'#496b62',height:10},
- estonie:{name:'Porte de l’Innovation',style:'forest',wall:'#526b71',roof:'#243f52',trim:'#aab4a0',accent:'#41616f',height:15},
+ france:{name:'Mont des Savoirs',style:'spire',wall:'#8d9898',roof:'#334c61',trim:'#cbb47c',accent:'#36516f',height:14}, // gold-master-allow: reviewed France pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ espagne:{name:'Place del Sol',style:'plaza',wall:'#a48968',roof:'#7b5543',trim:'#cdb786',accent:'#795449',height:10}, // gold-master-allow: reviewed Spain pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ maroc:{name:'Souks du Monde',style:'souk',wall:'#947c62',roof:'#5b716c',trim:'#bfb087',accent:'#47717a',height:10}, // gold-master-allow: reviewed Morocco pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ italie:{name:'Jardins de la Dolce Vita',style:'loggia',wall:'#aca98d',roof:'#7a6650',trim:'#c9bd94',accent:'#597766',height:11}, // gold-master-allow: reviewed Italy pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ turquie:{name:'Falaises d’Orient',style:'dome',wall:'#8b8d91',roof:'#38576b',trim:'#d1b681',accent:'#485b76',height:12}, // gold-master-allow: reviewed Turkey pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ tunisie:{name:'Rives du Soleil',style:'coast',wall:'#bebaa0',roof:'#416f82',trim:'#c5ae7c',accent:'#577da2',height:9}, // gold-master-allow: reviewed Tunisia pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ algerie:{name:'Terrasses de l’Oasis',style:'terrace',wall:'#aca188',roof:'#6e7f6a',trim:'#c6b48a',accent:'#496b62',height:10}, // gold-master-allow: reviewed Algeria pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
+ estonie:{name:'Porte de l’Innovation',style:'forest',wall:'#526b71',roof:'#243f52',trim:'#aab4a0',accent:'#41616f',height:15}, // gold-master-allow: reviewed Estonia pavilion wall/roof/trim/accent palette; docs/hub-reference-art-exceptions.md#gate-palettes.
 });
 
 /** Pure construction layout. Every rendered footprint is also emitted for collision/cartography.
@@ -41,12 +41,12 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
  const layout=referenceGateDistrictLayout(gates),layers=new Map(),mapSites=[],anchors=[],obstacles=[],dummy=new THREE.Object3D(),paint=new THREE.Color();
  const g=geometry=>(owned.push(geometry),geometry);
  const geo={box:box||g(new THREE.BoxGeometry(1,1,1)),body:g(new RoundedBoxGeometry(1,1,1,2,.035)),cylinder:g(new THREE.CylinderGeometry(1,1,1,16)),cone:g(new THREE.ConeGeometry(1,1,16)),dome:g(new THREE.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI/2)),arch:g(facadeArchGeometry()),mansard:g(mansardRoofGeometry())};
- const stone=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.81,metalness:.04,envMapIntensity:.13});
- const roof=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.66,metalness:.18,envMapIntensity:.13});
- const gold=materials.gold||new THREE.MeshStandardMaterial({color:'#c5a56a',roughness:.34,metalness:.82});
- const glass=new THREE.MeshPhysicalMaterial({color:'#254a5b',roughness:.28,metalness:.09,clearcoat:.8,envMapIntensity:.18});
- const wood=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.8,metalness:.01,envMapIntensity:.12});
- const leaves=new THREE.MeshStandardMaterial({color:'#355a42',roughness:.98,metalness:0});
+ const stone=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.81,metalness:.04,envMapIntensity:.13}); // gold-master-allow: neutral base preserves per-instance stone colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
+ const roof=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.66,metalness:.18,envMapIntensity:.13}); // gold-master-allow: neutral base preserves per-instance roof colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
+ const gold=materials.gold||new THREE.MeshStandardMaterial({color:'#c5a56a',roughness:.34,metalness:.82}); // gold-master-allow: reviewed pavilion metal albedo fallback; docs/hub-reference-art-exceptions.md#gate-materials.
+ const glass=new THREE.MeshPhysicalMaterial({color:'#254a5b',roughness:.28,metalness:.09,clearcoat:.8,envMapIntensity:.18}); // gold-master-allow: reviewed blue pavilion glazing albedo; docs/hub-reference-art-exceptions.md#gate-materials.
+ const wood=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.8,metalness:.01,envMapIntensity:.12}); // gold-master-allow: neutral base preserves per-instance timber colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
+ const leaves=new THREE.MeshStandardMaterial({color:'#355a42',roughness:.98,metalness:0}); // gold-master-allow: reviewed pavilion garden foliage albedo; docs/hub-reference-art-exceptions.md#gate-materials.
  owned.push(stone,roof,glass,wood,leaves);if(!materials.gold)owned.push(gold);
  const day={value:1};
  glass.onBeforeCompile=shader=>{
@@ -168,7 +168,7 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
    }else if(profile.style==='forest'){
     place(geo.mansard,roof,'Toits de la pinède',0,h+.75,0,w+.9,3.8,d+.9,profile.roof);
     for(const side of [-1,1]){
-     place(geo.box,wood,'Nervures de la pinède',side*(w/2+.08),h/2+.51,0,.18,h+.15,d+.20,'#445c5c');
+     place(geo.box,wood,'Nervures de la pinède',side*(w/2+.08),h/2+.51,0,.18,h+.15,d+.20,'#445c5c'); // gold-master-allow: reviewed Estonian pavilion timber inlays; docs/hub-reference-art-exceptions.md#gate-materials.
      place(geo.box,gold,'Traits d’innovation',side*(w/2+.20),h/2+.51,0,.05,h+.6,.09);
     }
     place(geo.cylinder,glass,'Balises de l’innovation',0,h+4.9,0,.43,1.25,.43);
@@ -198,7 +198,7 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
   const mesh=new THREE.InstancedMesh(layer.geometry,layer.material,layer.poses.length);mesh.name=layer.name;mesh.castShadow=mesh.receiveShadow=true;
   for(const [i,p] of layer.poses.entries()){
    dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);
-   if(layer.material===stone||layer.material===roof||layer.material===wood)mesh.setColorAt(i,paint.set(p.color||'#ffffff'));
+   if(layer.material===stone||layer.material===roof||layer.material===wood)mesh.setColorAt(i,paint.set(p.color||'#ffffff')); // gold-master-allow: neutral fallback preserves unpainted instance colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
   }
   mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh);owned.push(mesh);if(layer.detail)detailBatches.push({mesh,poses:layer.poses});
  }
@@ -208,7 +208,7 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
   const radius=quality==='fluid'?100:195,r2=radius*radius;
   for(const {mesh,poses} of detailBatches){let count=0;for(const p of poses){
    if((p.x-view.x)**2+(p.y-view.y)**2+(p.z-view.z)**2>r2)continue;
-   dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);if(mesh.instanceColor)mesh.setColorAt(count,paint.set(p.color||'#ffffff'));count++;
+   dummy.position.set(p.x,p.y,p.z);dummy.rotation.set(0,p.yaw,0);dummy.scale.set(p.sx,p.sy,p.sz);dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);if(mesh.instanceColor)mesh.setColorAt(count,paint.set(p.color||'#ffffff'));count++; // gold-master-allow: neutral fallback preserves distance-compacted instance colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
   }mesh.count=count;mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
  }
  // A colonnade contributes collision solids, not additional houses on the atlas.

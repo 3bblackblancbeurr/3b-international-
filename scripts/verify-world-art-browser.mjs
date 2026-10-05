@@ -32,6 +32,14 @@ import {MiniMap,DetailedMap} from '/src/world/Cartography.jsx';
 import '/src/world/world.css';
 import '/src/world/exploration.css';
 import '/src/world/audit.css';
+// Match main.jsx: the shared Button and active filters depend on these tokens.
+import '/src/index.css';
+import '/src/styles/platform-premium.css';
+import '/src/styles/gold-master.css';
+import '/src/styles/luxury-v2.css';
+import '/src/styles/home-app.css';
+import '/src/styles/launch-premium.css';
+import '/src/styles/companion-premium.css';
 window.cartographyQA={ready:false,selections:[]};
 function Atlas(){const [fixture,setFixture]=React.useState(null),[mode,setMode]=React.useState('atlas');window.cartographyQA.mount=setFixture;window.cartographyQA.mode=setMode;React.useEffect(()=>{cartographyQA.ready=!!fixture;},[fixture]);if(!fixture)return null;const props={region:'hub',...fixture,onSelect:item=>cartographyQA.selections.push(item.id),onOpen:()=>setMode('atlas')};return mode==='atlas'?React.createElement('main',{className:'world-dialog cartography-qa-dialog'},React.createElement(DetailedMap,props)):React.createElement('main',{className:'world-shell cartography-qa-shell'},React.createElement(MiniMap,props));}
 createRoot(document.getElementById('cartography')).render(React.createElement(Atlas));
@@ -173,6 +181,14 @@ try{
    assert.equal(await page.locator('[data-building-id]').count(),19,'Atlas shows every functional room footprint');
    assert.equal(await page.locator('.hub-map-route polyline').count(),2,'Atlas renders the navigated route rather than a direct line');
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Atlas does not overflow phone or desktop width');
+   const activeFilter=await page.locator('.hub-map-filters button[aria-pressed="true"]').evaluate(button=>{
+    const style=getComputedStyle(button),rgba=value=>value.match(/[\d.]+/g)?.map(Number)||[],foreground=rgba(style.webkitTextFillColor||style.color),background=rgba(style.backgroundColor);
+    const luminance=rgb=>rgb.slice(0,3).map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+    const a=luminance(foreground),b=luminance(background),rect=button.getBoundingClientRect();
+    return {label:button.textContent.trim(),contrast:(Math.max(a,b)+.05)/(Math.min(a,b)+.05),textAlpha:foreground[3]??1,backgroundAlpha:background[3]??1,opacity:Number(style.opacity),visible:rect.width>0&&rect.height>0&&style.visibility==='visible',color:style.color,textFillColor:style.webkitTextFillColor,background:style.backgroundColor};
+   });
+   assert.equal(activeFilter.label,'Tous','The initial active filter retains its text label');
+   assert.ok(activeFilter.visible&&activeFilter.opacity===1&&activeFilter.textAlpha===1&&activeFilter.backgroundAlpha===1&&activeFilter.contrast>=4.5,'Active atlas filter is readable with production CSS: '+JSON.stringify(activeFilter));
    await page.screenshot({path:out+'/hub-atlas.png',fullPage:true});
    const map=page.locator('.hub-map-viewport svg'),before=await map.getAttribute('viewBox');
    await page.getByRole('button',{name:'Rapprocher la carte',exact:true}).click();
@@ -200,7 +216,7 @@ try{
    await page.getByRole('button',{name:'Afficher la mini-carte',exact:true}).click();assert.equal(await page.locator('.hub-minimap .minimap-open').count(),1);
    const open=page.getByRole('button',{name:'Ouvrir et explorer la grande carte de la cité',exact:true});await open.focus();await page.keyboard.press('Enter');await page.waitForSelector('.hub-map-viewport svg');
    assert.deepEqual(errors,[],'Atlas and mini-map mount, zoom, search, pan and navigate without script errors');
-   results.at(-1).cartography={ok:true,islands:29,rooms:19,routeVertices:fixture.route.length,scenery:{fabric:fixture.cartography.fabric.length,vegetation:fixture.cartography.vegetation.length},interactions:['zoom','pan-keyboard','accent-search','destination-ID','transport-filter','mini-city','collapse-expand','keyboard-open']};
+   results.at(-1).cartography={ok:true,islands:29,rooms:19,routeVertices:fixture.route.length,scenery:{fabric:fixture.cartography.fabric.length,vegetation:fixture.cartography.vegetation.length},activeFilter,interactions:['active-filter-contrast','zoom','pan-keyboard','accent-search','destination-ID','transport-filter','mini-city','collapse-expand','keyboard-open']};
   }else await page.evaluate(()=>game.destroy());
   await context.close();console.log('PASS',JSON.stringify(results.at(-1)));
  }

@@ -21,6 +21,15 @@
   --3b-header-surface:rgba(5,6,7,.91);
   --3b-city-preview-surface:#bed6da;--3b-city-preview-border:#d5e7e7;
   --3b-city-catalog-text:#f3f6f4;--3b-city-catalog-muted:#bbcfce;--3b-city-catalog-price:var(--3b-champagne-highlight);--3b-city-catalog-locked:var(--3b-champagne);
+  /* Maritime surfaces keep the Hub's studio and atlas legible over world art. */
+  --3b-hub-surface:#162331;--3b-hub-surface-hover:#253648;--3b-hub-inset:#0c1722;--3b-hub-raised:#0e1d2b;--3b-hub-muted:#bdcbd3;
+  --3b-hub-preview:#0b1420;--3b-hub-preview-fallback:#102133;
+  --3b-hub-reading:linear-gradient(140deg,#192b39,#0d1926);
+  --3b-hub-urbanism:radial-gradient(ellipse at 100% 100%,#16426955,transparent 70%),linear-gradient(120deg,#182732,#0a1420);
+  --3b-shadow-preview-inset:inset 0 0 60px #0006;--3b-shadow-swatch:inset 0 0 0 1px #fff3;
+  --3b-map-landmark:#a79b76;--3b-map-landmark-label:#ffdf9e;--3b-map-landmark-border:#ffdda3;--3b-map-landmark-ring:#ffe0a3;--3b-map-ink:#092737;
+  --3b-map-surface:#0d2b38a6;--3b-map-text:#d6e0d8;--3b-map-muted:#a8c5c7;--3b-map-line:#b2c1ad30;--3b-map-divider:#b2c1ad25;
+  --3b-map-control:#1a414e;--3b-map-control-idle:#162e3b;--3b-map-control-border:#cadcc140;--3b-map-focus:#91efe8;--3b-map-label:#eddfb5;
   --black:var(--3b-obsidian);--black-2:var(--3b-carbon);--black-3:#111419;--gold:var(--3b-champagne);--gold-2:var(--3b-champagne-deep);--gold-3:var(--3b-champagne-highlight);
   --blue:var(--3b-matrix);--blue-2:#72C2FF;--red:var(--3b-danger);--white:var(--3b-white);--muted:var(--3b-muted);--muted-2:var(--3b-muted-soft);
   --border:var(--3b-border);--border-strong:var(--3b-border-strong);--border-blue:var(--3b-border-matrix);

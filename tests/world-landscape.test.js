@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
-import {BufferGeometry,BufferAttribute,Matrix4,Box3,Vector3} from 'three';
+import {BufferGeometry,BufferAttribute,Matrix4,Box3,Vector3,Raycaster} from 'three';
 import {createLandscape,bakeGeometry} from '../src/world/landscape.js';
 import {blankSave} from '../src/world/rules.js';
 import {COUNTRIES} from '../src/world/catalog.js';
@@ -27,7 +27,11 @@ test('all eight authored country layouts preserve routes to every objective and 
   const obstacles=[...world.collisions,...objectives.filter(i=>i.type==='portal').flatMap(i=>[-1,1].map(side=>({x:i.x+side*3.65,z:i.z,r:1.25}))),...objectives.filter(i=>i.type==='survey').map(i=>({x:i.x,z:i.z,r:.65}))];
   for(const item of objectives){
    const label=country.id+' '+item.id;
-   assert.ok(Math.abs(world.height(item.x,item.z))<.05,'Dry level interaction: '+label);
+   if(hub){
+    const ground=new Raycaster(new Vector3(item.x,bounds.max.y+1,item.z),new Vector3(0,-1,0)).intersectObject(world.ground)[0];
+    assert.ok(ground&&ground.point.y>=-.05,'Dry rendered interaction surface: '+label);
+    assert.ok(Math.abs(world.height(item.x,item.z)-ground.point.y)<.05,'Interaction height matches the rendered deck: '+label);
+   }else assert.ok(Math.abs(world.height(item.x,item.z))<.05,'Dry level interaction: '+label);
    const path=findInteractionPath(start,item,obstacles,radius);assert.ok(path.length,label);
    let state={position:{...start},target:path.shift(),route:path};
    for(let i=0;i<2400&&state.target;i++)state=advanceMotion(state,{x:0,z:0},1/30,10.5,obstacles,radius);

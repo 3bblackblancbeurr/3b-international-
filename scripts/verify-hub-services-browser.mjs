@@ -14,6 +14,14 @@ import {HubCityServices} from '/src/world/hub/HubCityServices.jsx';
 import {blankSave} from '/src/world/rules.js';
 import {worldRuntimeItems} from '/src/world/runtime-items.js';
 import '/src/world/world.css';
+// Match main.jsx so previews and controls use the production design system.
+import '/src/index.css';
+import '/src/styles/platform-premium.css';
+import '/src/styles/gold-master.css';
+import '/src/styles/luxury-v2.css';
+import '/src/styles/home-app.css';
+import '/src/styles/launch-premium.css';
+import '/src/styles/companion-premium.css';
 window.serviceProbe={ready:false,palettes:[],navigations:[],panels:[],cityOpen:0,disposed:{geometries:0,materials:0,textures:0}};
 for(const [Type,key] of [[THREE.BufferGeometry,'geometries'],[THREE.Material,'materials'],[THREE.Texture,'textures']]){const original=Type.prototype.dispose;Type.prototype.dispose=function(){serviceProbe.disposed[key]++;return original.call(this);};}
 const save=blankSave(),items=worldRuntimeItems('hub',save,{hour:12,weather:'clear'});

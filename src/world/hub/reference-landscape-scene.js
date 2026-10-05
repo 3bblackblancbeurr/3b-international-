@@ -45,7 +45,7 @@ export function referenceTerrainHeight(site,x,z,seaLevel=-18){
 
 /** The mountain shell and the tree roots use exactly the same height field. */
 export function referenceTerrainGeometry(site,{segments=64,rings=12,seaLevel=-18}={}){
- const positions=[],colors=[],indices=[],color=new THREE.Color(),base=new THREE.Color('#334955'),green=new THREE.Color('#2b4c39'),pale=new THREE.Color('#8b9d9c');
+ const positions=[],colors=[],indices=[],color=new THREE.Color(),base=new THREE.Color('#334955'),green=new THREE.Color('#2b4c39'),pale=new THREE.Color('#8b9d9c'); // gold-master-allow: reviewed mineral/vegetation/high-altitude vertex palette; docs/hub-reference-art-exceptions.md#landscape-materials.
  positions.push(0,referenceTerrainHeight(site,0,0,seaLevel),0);
  for(let ring=1;ring<=rings;ring++)for(let segment=0;segment<segments;segment++){
   const angle=segment/segments*TAU,radius=referenceTerrainRadius(site,angle)*ring/rings,x=Math.cos(angle)*radius,z=Math.sin(angle)*radius;
@@ -110,16 +110,16 @@ export function addReferenceLandscape({root,owned=[],materials={},layoutRadius=2
  const register=value=>(owned.push(value),value),localMesh=(geometry,material,x,y,z,sx=1,sy=sx,sz=sx,parent=group)=>{
   const mesh=new THREE.Mesh(geometry,material);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;
  };
- const rock=register(new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.91,metalness:.02}));
- const wetRock=register(new THREE.MeshStandardMaterial({color:'#263f49',roughness:.32,metalness:.09,envMapIntensity:.55}));
- const needles=register(new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0}));
- const bark=register(new THREE.MeshStandardMaterial({color:'#4e4433',roughness:1}));
- const dark=materials.dark||register(new THREE.MeshStandardMaterial({color:'#142b3a',roughness:.54,metalness:.35}));
- const stone=materials.stone||register(new THREE.MeshStandardMaterial({color:'#657d7b',roughness:.84}));
- const gold=materials.gold||register(new THREE.MeshStandardMaterial({color:'#c6a66b',roughness:.30,metalness:.74}));
- const window=register(new THREE.MeshStandardMaterial({color:'#224657',roughness:.23,metalness:.51,emissive:'#8b6741',emissiveIntensity:.15}));
- const wood=register(new THREE.MeshStandardMaterial({color:'#5b5345',roughness:.84}));
- const signal=register(new THREE.MeshStandardMaterial({color:'#80dcec',emissive:'#44a3c4',emissiveIntensity:.42,roughness:.25}));
+ const rock=register(new THREE.MeshStandardMaterial({color:'#ffffff',vertexColors:true,roughness:.91,metalness:.02})); // gold-master-allow: neutral base preserves rock vertex colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
+ const wetRock=register(new THREE.MeshStandardMaterial({color:'#263f49',roughness:.32,metalness:.09,envMapIntensity:.55})); // gold-master-allow: reviewed wet coastal rock albedo; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const needles=register(new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0})); // gold-master-allow: neutral base preserves per-instance pine colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
+ const bark=register(new THREE.MeshStandardMaterial({color:'#4e4433',roughness:1})); // gold-master-allow: reviewed pine bark albedo; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const dark=materials.dark||register(new THREE.MeshStandardMaterial({color:'#142b3a',roughness:.54,metalness:.35})); // gold-master-allow: reviewed harbour hull/metal albedo fallback; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const stone=materials.stone||register(new THREE.MeshStandardMaterial({color:'#657d7b',roughness:.84})); // gold-master-allow: reviewed harbour stone albedo fallback; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const gold=materials.gold||register(new THREE.MeshStandardMaterial({color:'#c6a66b',roughness:.30,metalness:.74})); // gold-master-allow: reviewed harbour metal albedo fallback; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const window=register(new THREE.MeshStandardMaterial({color:'#224657',roughness:.23,metalness:.51,emissive:'#8b6741',emissiveIntensity:.15})); // gold-master-allow: reviewed vessel glazing and warm cabin emission; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const wood=register(new THREE.MeshStandardMaterial({color:'#5b5345',roughness:.84})); // gold-master-allow: reviewed harbour timber albedo; docs/hub-reference-art-exceptions.md#landscape-materials.
+ const signal=register(new THREE.MeshStandardMaterial({color:'#80dcec',emissive:'#44a3c4',emissiveIntensity:.42,roughness:.25})); // gold-master-allow: reviewed maritime beacon surface/emission colors; docs/hub-reference-art-exceptions.md#landscape-materials.
  const box=register(new THREE.BoxGeometry(1,1,1)),cylinder=register(new THREE.CylinderGeometry(1,1,1,10));
  const rockGeometry=register(new THREE.IcosahedronGeometry(1,1));
  const rockPositions=rockGeometry.attributes.position;
@@ -213,7 +213,7 @@ export function addReferenceLandscape({root,owned=[],materials={},layoutRadius=2
  // The named lake sits in the real water pocket between the city and Estonia.
  // Its surface is cut away wherever the shared city topology has solid ground.
  const lake={...REFERENCE_LANDMARKS.find(landmark=>landmark.id==='lac_reflets').feature},lakeWater=createPremiumWater({region:'hub',lake,owned});lakeWater.setQuality('medium',{allowPlanarReflection:false});
- lakeWater.material.uniforms.waveAmp.value=.24;lakeWater.material.uniforms.normalStrength.value=.12;lakeWater.material.uniforms.deepColor.value.set('#12516b');lakeWater.material.uniforms.shallowColor.value.set('#4b9199');
+ lakeWater.material.uniforms.waveAmp.value=.24;lakeWater.material.uniforms.normalStrength.value=.12;lakeWater.material.uniforms.deepColor.value.set('#12516b');lakeWater.material.uniforms.shallowColor.value.set('#4b9199'); // gold-master-allow: reviewed lake depth/shallow-water shader colors; docs/hub-reference-art-exceptions.md#lake.
  const lakeSurfaceGeometry=new THREE.CircleGeometry(lake.r,64);lakeSurfaceGeometry.rotateX(-Math.PI/2);
  const lakePosition=lakeSurfaceGeometry.attributes.position;
  // A true hole must not leave triangles drawing water through a bridge.

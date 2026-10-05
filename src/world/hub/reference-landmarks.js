@@ -1,3 +1,4 @@
+import {worldCartographyArt as mapArt} from '../../design-system/tokens.js';
 /** One catalogue for reference geography, rendered equipment and usable anchors.
  * Sites/pieces are layout units. Public interactions and map sites are world metres.
  * Distant viewTarget coordinates describe scenery, never walk destinations. */
@@ -28,7 +29,7 @@ export const REFERENCE_LANDMARKS=Object.freeze([
  entry('vallee_cascades','Vallée des Cascades','gardens',gateCourt(5,-24),'listening','Écouter et lire les cascades','La station d’écoute suit l’eau depuis les rochers jusqu’au pied des falaises. Regarde la brume, compare les sons proches et lointains, puis retrouve les graines des Jardins de l’Unité sans quitter les chemins protégés.',{x:-192,z:107},{kind:'waterfall',x:-192,z:107,r:24}),
 ]);
 
-export function hubReferenceLandmarkItems(){return REFERENCE_LANDMARKS.map(site=>({id:'hub:reference:'+site.id,type:'hubPublicPlace',kind:'landmark',landmarkId:site.id,surfaceId:site.surfaceId,district:site.district,name:site.name,detail:site.detail,activity:site.activity,actions:['use','inspect'],x:site.x*HUB_SCALE,z:site.z*HUB_SCALE,elevation:(site.baseY||0)*1.5,range:4.5,color:'#dac596'}));}
+export function hubReferenceLandmarkItems(){return REFERENCE_LANDMARKS.map(site=>({id:'hub:reference:'+site.id,type:'hubPublicPlace',kind:'landmark',landmarkId:site.id,surfaceId:site.surfaceId,district:site.district,name:site.name,detail:site.detail,activity:site.activity,actions:['use','inspect'],x:site.x*HUB_SCALE,z:site.z*HUB_SCALE,elevation:(site.baseY||0)*1.5,range:4.5,color:mapArt.landmarkAccent}));}
 
 export function referenceLandmarkPlan(site){
  const pieces=[],solids=[],anchors=[],c=Math.cos(site.rotation),s=Math.sin(site.rotation);
@@ -97,5 +98,5 @@ export function addReferenceLandmarks({mesh,box,cylinder,sphere,materials,sign,c
   const label=sign(plan.site.name,plan.sign.x,plan.sign.y,plan.sign.z,plan.sign.width);if(label)label.rotation.y=plan.sign.rotation;
   collisions.push(...plan.solids.map(solid=>({...solid})));cameraSolids?.push(...plan.solids.map(solid=>({...solid})));
  }
- return {count:plans.length,places:hubReferenceLandmarkItems(),lifeItems:referenceLandmarkLifeItems(),mapSites:plans.map(({site})=>({id:'reference-site:'+site.id,kind:'landmark',landmarkId:site.id,name:site.name,x:site.x*HUB_SCALE,z:site.z*HUB_SCALE,width:site.width*HUB_SCALE,depth:site.depth*HUB_SCALE,rotation:site.rotation,height:4.8,elevation:(site.baseY||0)*1.5,units:'world',color:site.kind==='garden'?'#64855c':'#a79b76'}))};
+ return {count:plans.length,places:hubReferenceLandmarkItems(),lifeItems:referenceLandmarkLifeItems(),mapSites:plans.map(({site})=>({id:'reference-site:'+site.id,kind:'landmark',landmarkId:site.id,name:site.name,x:site.x*HUB_SCALE,z:site.z*HUB_SCALE,width:site.width*HUB_SCALE,depth:site.depth*HUB_SCALE,rotation:site.rotation,height:4.8,elevation:(site.baseY||0)*1.5,units:'world',color:site.kind==='garden'?mapArt.landmarkGarden:mapArt.landmarkSite}))};
 }

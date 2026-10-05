@@ -46,7 +46,7 @@ import './audit.css';
 import {AvatarPanel} from './AvatarPanel.jsx';
 import {hubNpcDialogue} from './hub/npc-dialogue.js';
 import {hubDialogueScene} from './hub/dialogue-v3.js';
-import {hubDialogueIntents,hubDialogueIntentResponse} from './hub/dialogue-intents.js';
+import {hubDialogueIntents,hubDialogueIntentResponse} from './hub/dialogue-presentation.js';
 import {CANON_WORLDS} from './story-canon.js';
 import {GUARDIAN_VALUES,guardianValueStep,guardianValueOptions,guardianValueOutcome} from './guardian-values.js';
 import {isAutoHubMission} from './hub/mission-signals.js';

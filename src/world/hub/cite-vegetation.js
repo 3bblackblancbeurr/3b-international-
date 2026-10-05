@@ -79,12 +79,12 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
   const colors=new Float32Array(geometry.attributes.position.count*3);
   for(let i=0;i<geometry.attributes.position.count;i++){
    const h=geometry.attributes.position.getY(i),shade=.86+random()*.22;
-   color.set(species==='palm'?'#4b6e42':species==='cypress'?'#284c39':species==='pine'?'#2e5142':'#355c3e').multiplyScalar(shade+(h-4)*.035);
+   color.set(species==='palm'?'#4b6e42':species==='cypress'?'#284c39':species==='pine'?'#2e5142':'#355c3e').multiplyScalar(shade+(h-4)*.035); // gold-master-allow: reviewed species-specific foliage albedo; docs/hub-reference-art-exceptions.md#botany.
    colors[i*3]=color.r;colors[i*3+1]=color.g;colors[i*3+2]=color.b;
   }
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
  }
- const leafMat=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0,vertexColors:true,side:THREE.DoubleSide});
+ const leafMat=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0,vertexColors:true,side:THREE.DoubleSide}); // gold-master-allow: neutral base preserves baked foliage vertex colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
  leafMat.onBeforeCompile=shader=>{shader.uniforms.citeTreeTime=clock;shader.uniforms.citeTreeWind=wind;shader.vertexShader='uniform float citeTreeTime;uniform float citeTreeWind;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=sin(citeTreeTime*.9+position.y*1.1)*citeTreeWind*.055*max(0.,position.y-3.);');};leafMat.customProgramCacheKey=()=> 'cite-needle-wind-v1';
  const dummy=new THREE.Object3D();
  function batch(geometry,material,name,selection){

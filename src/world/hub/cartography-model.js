@@ -1,6 +1,7 @@
 /** Cartography uses the same physical topology as the playable Cité.
  * All values returned here are world metres; SVG x/y correspond to world x/z.
  * Runtime decoration is supplied by the city builder, never generated twice. */
+import {worldCartographyArt as mapArt} from '../../design-system/tokens.js';
 import * as topology from './platform-topology.js';
 import {HUB_SCALE,HUB_PLATFORM,PLATFORM_DISTRICTS,platformBuilding,platformWalls,platformPortal} from './platform-layout.js';
 import {CITE_TERRACES} from './terraces.js';
@@ -13,11 +14,11 @@ export const HUB_MAP_PALETTE=Object.freeze({
  nexus:'#c3b587',arrival:'#b7a680',archives:'#7e98a1',arena:'#ad896d',commerce:'#b69a70',community:'#91a792',innovation:'#7da8b5',docks:'#8899a0',builders:'#aa9a7d',gardens:'#799a7b',refuge:'#84a58c',station:'#9da4a4','builders-annex':'#a99c83',
 });
 export const HUB_TRANSPORT_MAP_STYLES=Object.freeze({
- train:Object.freeze({name:'3B Express',color:'#ffd367',width:1.6}),
- boat:Object.freeze({name:'Navette maritime',color:'#60d4f8',width:1.1,dash:'4 2'}),
- telepheric:Object.freeze({name:'Téléphérique',color:'#f29ecb',width:1.15}),
- zipline:Object.freeze({name:'Tyrolienne',color:'#9ee97f',width:1,dash:'3 1.6'}),
- shuttle:Object.freeze({name:'Navette de la cité',color:'#77b5fc',width:1.3}),
+ train:Object.freeze({name:'3B Express',color:mapArt.train,width:1.6}),
+ boat:Object.freeze({name:'Navette maritime',color:mapArt.boat,width:1.1,dash:'4 2'}),
+ telepheric:Object.freeze({name:'Téléphérique',color:mapArt.telepheric,width:1.15}),
+ zipline:Object.freeze({name:'Tyrolienne',color:mapArt.zipline,width:1,dash:'3 1.6'}),
+ shuttle:Object.freeze({name:'Navette de la cité',color:mapArt.shuttle,width:1.3}),
 });
 const metres=p=>({...p,x:p.x*HUB_SCALE,z:p.z*HUB_SCALE});
 export function mapFootprint({x,z,width,depth,rotation=0}){
@@ -34,7 +35,7 @@ export function mapIslandOutline(island){
 }
 const normalizeRuntimeSite=p=>p.units==='world'?p:{...p,x:p.x*HUB_SCALE,z:p.z*HUB_SCALE,width:(p.width??6)*HUB_SCALE,depth:(p.depth??6)*HUB_SCALE,r:p.r===undefined?undefined:p.r*HUB_SCALE,height:(p.height??0)*1.5};
 export function createHubCartography(items=[],runtime=null){
- const islands=topology.CITE_ISLANDS.map(island=>({...metres(island),elevation:(island.baseY||0)*1.5,r:island.r*HUB_SCALE,outline:mapIslandOutline(island),color:HUB_MAP_PALETTE[island.id]||'#8f9990'}));
+ const islands=topology.CITE_ISLANDS.map(island=>({...metres(island),elevation:(island.baseY||0)*1.5,r:island.r*HUB_SCALE,outline:mapIslandOutline(island),color:HUB_MAP_PALETTE[island.id]||mapArt.platformFallback}));
  const bridges=topology.CITE_BRIDGES.map((b,i)=>({...metres(b),id:'bridge-'+i,width:b.length*HUB_SCALE,depth:b.width*HUB_SCALE,rotation:-b.angle}));
  const promenades=(topology.CITE_PROMENADES||[{id:'heritage-promenade',inner:119,outer:131}]).map(p=>({...p,inner:p.inner*HUB_SCALE,outer:p.outer*HUB_SCALE}));
  const connectors=(topology.CITE_CONNECTORS||[]).map((p,i)=>({...metres(p),id:p.id||'connector-'+i,width:p.length*HUB_SCALE,depth:p.width*HUB_SCALE,rotation:-p.angle,startHeight:(p.startHeight||0)*1.5,endHeight:(p.endHeight||0)*1.5}));
