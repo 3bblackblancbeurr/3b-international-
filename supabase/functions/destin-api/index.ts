@@ -9,7 +9,7 @@ Deno.serve(async request => {
   const send = (data,status=200) => new Response(JSON.stringify(data),{status,headers});
   if (origin && !allowed.has(origin)) return send({error:'Origine non autorisée.'},403);
   if (request.method==='OPTIONS') return new Response(null,{status:204,headers:{...headers,'Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, GET, OPTIONS','Access-Control-Max-Age':'600'}});
-  if (request.method==='GET') return send({service:'3B DESTIN',version:'1.2.0'});
+  if (request.method==='GET') return send({service:'3B DESTIN',version:'1.3.0'});
   if (request.method!=='POST') return send({error:'Méthode non autorisée.'},405);
   const token = request.headers.get('authorization');
   if (!token?.startsWith('Bearer ') || token.length>12000) return send({error:'Connecte-toi à ton compte 3B.'},401);
