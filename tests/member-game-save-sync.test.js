@@ -7,6 +7,9 @@ import {freshProgress,mergeGameProgress,recordGame} from '../src/games/save.js';
 const user={id:'123e4567-e89b-42d3-a456-426614174000'};
 const memoryStorage=()=>{const values=new Map();return{getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value),values};};
 const ids=(seed=0)=>{let value=seed;return()=>`00000000-0000-4000-8000-${String(++value).padStart(12,'0')}`;};
+const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return{promise,resolve,reject};};
+const cityCheckpoint=(progress,turn)=>({...structuredClone(progress),cities:{world:{0:{board:Array(49).fill(null),hand:Array.from({length:4},()=>({type:'house',rot:0})),turn,score:turn}},countryIndex:0,completed:[]}});
+const cachedProgress=storage=>JSON.parse(storage.getItem('3b_arcade_account_'+user.id));
 
 function casServer(){
  let revision=0,data=null,dropAfterCommit=false;
@@ -124,6 +127,126 @@ test('a newer checkpoint after a lost response only adds the unconfirmed run',as
  assert.equal(server.data.records.arena.plays,2);
  assert.equal(server.data.records.arena.wins,2);
  assert.equal(server.revision,2);
+});
+
+test('a delayed reload preserves a newer offline city checkpoint through reopening and autosave',async()=>{
+ const server=casServer(),storage=memoryStorage(),seed=store(server,storage);
+ await seed.loadGameProgress(user);await seed.saveGameProgress(freshProgress(),user);
+ const request=server.request.bind(server),entered=deferred(),release=deferred();let delayLoad=false,offline=false;
+ server.request=async(...args)=>{
+  if(args[0]==='game-save-load'&&delayLoad){const result=await request(...args);entered.resolve();await release.promise;return result;}
+  if(args[0]==='game-save-sync'&&offline)throw Error('offline');
+  return request(...args);
+ };
+ const client=store(server,storage,ids(100));await client.loadGameProgress(user);
+ delayLoad=true;const reload=client.loadGameProgress(user);await entered.promise;
+ const checkpoint=cityCheckpoint(recordGame(freshProgress(),'arena',{score:70,won:true}),7);
+ offline=true;const saved=client.saveGameProgress(checkpoint,user);
+ assert.equal(cachedProgress(storage).data.cities.world[0].turn,7,'checkpoint is local before the network can finish');
+ assert.equal(cachedProgress(storage).dirty,true);
+ release.resolve();const [loaded]=await Promise.all([reload,saved]);
+ assert.equal(loaded.data.cities?.world[0]?.turn,7,'the reload must return the newer point of resumption');
+ assert.equal(cachedProgress(storage).data.cities?.world[0]?.turn,7);
+ assert.equal(cachedProgress(storage).dirty,true,'an offline checkpoint remains pending');
+
+ delayLoad=false;offline=false;
+ const reopened=store(server,storage,ids(200)),recovered=await reopened.loadGameProgress(user);
+ await reopened.saveGameProgress(recovered.data,user);
+ assert.equal(recovered.data.cities.world[0].turn,7);
+ assert.equal(server.data.cities.world[0].turn,7);
+ assert.equal(server.data.records.arena.plays,1);
+ assert.equal(cachedProgress(storage).dirty,false);
+});
+
+test('a remount load waits for the in-flight save before reconciling its receipt',async()=>{
+ const server=casServer(),storage=memoryStorage(),seed=store(server,storage);
+ await seed.loadGameProgress(user);await seed.saveGameProgress(freshProgress(),user);
+ const request=server.request.bind(server),entered=deferred(),release=deferred();let writes=0;
+ server.request=async(...args)=>{
+  if(args[0]!=='game-save-sync')return request(...args);
+  const write=++writes,result=await request(...args);
+  if(write===1){entered.resolve();await release.promise;}
+  return result;
+ };
+ const client=store(server,storage,ids(100));await client.loadGameProgress(user);
+ const checkpoint=cityCheckpoint(recordGame(freshProgress(),'arena',{score:70,won:true}),7);
+ const saved=client.saveGameProgress(checkpoint,user);await entered.promise;
+ const reload=client.loadGameProgress(user);
+ await new Promise(resolve=>setImmediate(resolve));
+ const writesBeforeCompletion=writes;release.resolve();
+ const [,loaded]=await Promise.all([saved,reload]);
+ assert.equal(writesBeforeCompletion,1,'a remount must not replay a receipt concurrently with its original request');
+ assert.equal(loaded.data.cities.world[0].turn,7);
+ assert.equal(loaded.data.records.arena.plays,1);
+ assert.equal(cachedProgress(storage).dirty,false);
+ assert.equal(cachedProgress(storage).pending,null);
+});
+
+test('a conflict retry never replaces a newer local city checkpoint while offline',async()=>{
+ const server=casServer(),storage=memoryStorage(),other=store(server,memoryStorage());
+ await other.loadGameProgress(user);await other.saveGameProgress(freshProgress(),user);
+ const request=server.request.bind(server),entered=deferred(),release=deferred(),retryTurns=[];let writes=0,offline=true;
+ server.request=async(...args)=>{
+  if(args[0]!=='game-save-sync')return request(...args);
+  if(++writes===1){entered.resolve();await release.promise;return request(...args);}
+  if(offline){retryTurns.push(cachedProgress(storage).data.cities?.world[0]?.turn);throw Error('offline');}
+  return request(...args);
+ };
+ const client=store(server,storage,ids(100)),loaded=await client.loadGameProgress(user);
+ await other.saveGameProgress(recordGame(freshProgress(),'arena',{score:100,won:true}),user);
+ const first=cityCheckpoint(recordGame(loaded.data,'arena',{score:70,won:true}),7);
+ const saved=client.saveGameProgress(first,user);await entered.promise;
+ const next=cityCheckpoint(recordGame(first,'arena',{score:90,won:true}),9);
+ const latest=client.saveGameProgress(next,user);
+ assert.equal(cachedProgress(storage).data.cities.world[0].turn,9);
+ release.resolve();await Promise.all([saved,latest]);
+ assert.ok(retryTurns.length>0,'the first write must encounter the other device revision');
+ assert.ok(retryTurns.every(turn=>turn===9),'even a failed retry must leave the newest checkpoint on disk');
+ assert.equal(cachedProgress(storage).data.cities.world[0].turn,9);
+ assert.equal(cachedProgress(storage).dirty,true);
+
+ offline=false;
+ const reopened=store(server,storage,ids(200)),recovered=await reopened.loadGameProgress(user);
+ await reopened.saveGameProgress(recovered.data,user);
+ assert.equal(server.data.cities.world[0].turn,9);
+ assert.equal(server.data.records.arena.plays,3,'both local runs and the other device run survive once');
+});
+
+test('an offline reload returns a checkpoint that arrived before its network error',async()=>{
+ const server=casServer(),storage=memoryStorage(),seed=store(server,storage);
+ await seed.loadGameProgress(user);await seed.saveGameProgress(freshProgress(),user);
+ const request=server.request.bind(server),entered=deferred(),release=deferred();let offline=false;
+ server.request=async(...args)=>{
+  if(offline){if(args[0]==='game-save-load'){entered.resolve();await release.promise;}throw Error('offline');}
+  return request(...args);
+ };
+ const client=store(server,storage,ids(100));await client.loadGameProgress(user);
+ offline=true;const reload=client.loadGameProgress(user);await entered.promise;
+ const saved=client.saveGameProgress(cityCheckpoint(freshProgress(),7),user);
+ release.resolve();const [loaded]=await Promise.all([reload,saved]);
+ assert.equal(loaded.online,false);
+ assert.equal(loaded.data.cities?.world[0]?.turn,7);
+ assert.equal(cachedProgress(storage).data.cities.world[0].turn,7);
+ assert.equal(cachedProgress(storage).dirty,true);
+});
+
+test('overlapping remount loads retain checkpoints written before their queued network work',async()=>{
+ const server=casServer(),storage=memoryStorage(),seed=store(server,storage);
+ await seed.loadGameProgress(user);await seed.saveGameProgress(freshProgress(),user);
+ const request=server.request.bind(server),entered=deferred(),release=deferred();let delayed=false,loads=0;
+ server.request=async(...args)=>{
+  if(args[0]==='game-save-load'&&delayed&&++loads===1){const result=await request(...args);entered.resolve();await release.promise;return result;}
+  if(args[0]==='game-save-sync'&&delayed)throw Error('offline');
+  return request(...args);
+ };
+ const client=store(server,storage,ids(100));await client.loadGameProgress(user);
+ delayed=true;const first=client.loadGameProgress(user);await entered.promise;
+ const second=client.loadGameProgress(user),saved=client.saveGameProgress(cityCheckpoint(freshProgress(),7),user);
+ release.resolve();const [one,two]=await Promise.all([first,second,saved]);
+ assert.equal(one.data.cities?.world[0]?.turn,7);
+ assert.equal(two.data.cities?.world[0]?.turn,7);
+ assert.equal(cachedProgress(storage).data.cities?.world[0]?.turn,7);
+ assert.equal(cachedProgress(storage).dirty,true);
 });
 
 test('an account without an id stays on the isolated guest save path',async()=>{

@@ -33,7 +33,7 @@ function ids(value){
 export function digitalStoreConfig(env=process.env){
   const origin=originOf(env.APP_URL);
   const secret=String(env.STRIPE_SECRET_KEY||"");
-  const mode=secret.startsWith("sk_test_")?"test":secret.startsWith("sk_live_")?"live":"off";
+  const mode=/^(?:sk|rk)_test_[A-Za-z0-9_]+$/.test(secret)?"test":/^(?:sk|rk)_live_[A-Za-z0-9_]+$/.test(secret)?"live":"off";
   const testUsers=ids(env.DIGITAL_STORE_TEST_USER_IDS);
   const testEnabled=mode==="test"&&env.DIGITAL_STORE_TEST_ENABLED==="true"&&testUsers.size>0;
   const liveEnabled=mode==="live"&&env.DIGITAL_STORE_LIVE_APPROVED==="true";
