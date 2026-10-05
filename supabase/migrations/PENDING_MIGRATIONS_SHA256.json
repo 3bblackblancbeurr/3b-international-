@@ -1,5 +1,11 @@
 {
   "status": "pending-not-deployed",
-  "count": 0,
-  "migrations": []
+  "count": 1,
+  "migrations": [
+    {
+      "version": "20261005170000",
+      "name": "destin_le_combat_commence_rewards_v1",
+      "sha256": "5c813c1c142be5e7420346808a0d135f4e5b2b0b51e9373a51cb6901e6169e3c"
+    }
+  ]
 }

@@ -1,0 +1,50 @@
+name: Reconcile recorded DESTIN migration ledger once
+on:
+  push:
+    branches: ['feat/3b-destin-interactive-cinema-20261005']
+    paths: ['.github/workflows/reconcile-destin-ledger-once.yml']
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    if: github.repository == '3bblackblancbeurr/3b-international-' && github.ref == 'refs/heads/feat/3b-destin-interactive-cinema-20261005'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: feat/3b-destin-interactive-cinema-20261005
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Append only four production-confirmed records without touching SQL
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
+          const sha=s=>createHash('sha256').update(s).digest('hex');
+          const file='supabase/migrations/APPLIED_MIGRATIONS_SHA256.json',bytes=fs.readFileSync(file),m=JSON.parse(bytes);
+          assert.equal(sha(bytes),'1ae359ca977cc445891da59f90db9eea1b52815eb29ad579869fcc1d203f0938','The reviewed base ledger changed; stop without overwriting it.');
+          assert.equal(m.count,201);assert.equal(m.migrations.length,201);
+          const rows=[
+            ['20261005091758','destin_interactive_cinema_v1','5ca889198cb245e0702e16569dc53a31b5a5f3ed0416a3d5e2c86dea276e96eb'],
+            ['20261005102702','destin_shared_passport_identity_bridge_v1','a78bf9e98fb730837eb90f4d8d7e0c3b688d6c5644a853e01344934949802e60'],
+            ['20261005102754','destin_identity_minimal_auth_reader_v1','a67fff97669bc983977b509bfe7c2b630f8fdeaa8adce00320ba153d3830f764'],
+            ['20261005103242','destin_single_path_private_snapshot_v1','6e78c7147099e8659dab3715656b17cfe4de1760ac5c00a413edf3322d393432']
+          ];
+          for(const [version,name,sha256] of rows){assert.equal(sha(fs.readFileSync(`supabase/migrations/${version}_${name}.sql`,'utf8').trim()),sha256);assert.ok(!m.migrations.some(r=>r.version===version));m.migrations.push({version,name,sha256});}
+          m.count=m.migrations.length;m.generated_at='2026-10-05';m.reconciliation_20261005={reason:'Four DESTIN records verified against production migration history; foundational SQL restored byte-for-byte. No SQL replay and no account changes.',versions:rows.map(r=>r[0])};
+          fs.writeFileSync(file,JSON.stringify(m,null,2)+'\n');
+          NODE
+      - name: Validate ledger and security contracts before recording
+        run: |
+          node scripts/verify-applied-migration-integrity.mjs
+          node scripts/verify-supabase-security.mjs
+          node --test tests/supabase-migration-integrity.test.js tests/supabase-security.test.js tests/supabase-service-only-rls.test.js
+      - name: Record the reviewed ledger and remove this one-off writer
+        run: |
+          git config user.name '3B migration reconciliation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add supabase/migrations/APPLIED_MIGRATIONS_SHA256.json
+          git rm .github/workflows/reconcile-destin-ledger-once.yml
+          git commit -m 'fix(destin): reconcile four production migrations without replaying SQL'
+          git push origin HEAD:feat/3b-destin-interactive-cinema-20261005
