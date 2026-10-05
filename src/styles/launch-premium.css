@@ -101,7 +101,7 @@ html[data-luxury="v2"] .intro3b-start-card .intro3b-lead{margin:22px 0 36px;font
 html[data-luxury="v2"] .intro3b-start-card .intro3b-enter{position:relative;isolation:isolate;overflow:hidden;min-height:56px;min-width:224px;border-radius:16px;
   background:linear-gradient(135deg,#f1d79a 0%,#cfa75d 44%,#a77b36 100%);color:#0c0b09;border:1px solid rgba(255,230,171,.72);
   box-shadow:0 14px 36px rgba(0,0,0,.34),0 0 0 1px rgba(255,230,171,.08) inset,0 1px 0 rgba(255,255,255,.44) inset;
-  font-size:11px;letter-spacing:.17em;font-weight:800;margin:0;transition:transform 160ms var(--launch-ease),box-shadow 220ms ease,filter 220ms ease}
+  font-size:11px;letter-spacing:.17em;font-weight:800;margin:0;transition:transform 160ms cubic-bezier(.16,1,.3,1),box-shadow 220ms ease,filter 220ms ease}
 html[data-luxury="v2"] .intro3b-start-card .intro3b-enter::after{content:"";position:absolute;inset:-30% auto -30% -48%;width:38%;z-index:-1;
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.42),transparent);transform:skewX(-18deg);animation:intro-button-sheen 5.8s ease-in-out infinite}
 html[data-luxury="v2"] .intro3b-start-card .intro3b-enter:hover{filter:saturate(1.04) brightness(1.035);box-shadow:0 16px 42px rgba(0,0,0,.38),0 0 22px rgba(215,181,105,.10)}
@@ -121,14 +121,14 @@ html[data-luxury="v2"] .intro3b-start-card .intro3b-enter:focus-visible{outline:
 @keyframes launch-shard-dissolve{
   0%{opacity:.94;filter:blur(0);transform:none}
   38%{opacity:.72}
-  100%{opacity:0;filter:blur(2.8px);transform:translate3d(calc(var(--fragment-x) * .58),calc(var(--fragment-y) * .58),130px) rotate(calc(var(--fragment-rotate) * .7)) scale(.86)}
+  100%{opacity:0;filter:blur(2.8px);transform:translate3d(var(--dissolve-x),var(--dissolve-y),130px) rotate(var(--dissolve-rotate)) scale(.86)}
 }
 @keyframes launch-core-seal{0%{opacity:0;transform:scale(.985)}35%{opacity:1;filter:contrast(1.18) brightness(1.12) saturate(1.08) drop-shadow(0 0 30px rgba(81,143,255,.22))}100%{opacity:1;transform:scale(1);filter:contrast(1.1) saturate(1.04) drop-shadow(0 0 18px rgba(64,127,255,.12))}}
 @keyframes launch-core-dissolve{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.025);filter:blur(1.4px) brightness(1.16)}}
 @keyframes launch-seal-flash{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}22%{opacity:.95}100%{opacity:0;transform:translate(-50%,-50%) scale(12)}}
 @keyframes launch-energy-trace{0%{opacity:0;transform:rotate(calc((var(--energy-index) * 27deg) - 81deg)) scaleX(.06)}24%{opacity:.72}100%{opacity:0;transform:rotate(calc((var(--energy-index) * 27deg) - 81deg)) scaleX(1)}}
 @keyframes launch-spark-in{0%{opacity:0}30%{opacity:.78}100%{opacity:0;filter:blur(.5px)}}
-@keyframes launch-spark-out{0%{opacity:.78}100%{opacity:0;transform:rotate(var(--spark-angle)) translateX(calc(var(--spark-distance) * 1.45)) scale(.5)}}
+@keyframes launch-spark-out{0%{opacity:.78}100%{opacity:0;transform:rotate(var(--spark-angle)) translateX(var(--spark-out-distance)) scale(.5)}}
 @keyframes launch-halo-in{0%{opacity:0;transform:scale(.72)}65%{opacity:.9;transform:scale(1)}100%{opacity:.8;transform:scale(1.02)}}
 @keyframes launch-halo-out{from{opacity:.8;transform:scale(1.02)}to{opacity:0;transform:scale(1.18)}}
 @keyframes launch-copy-in{to{opacity:1;transform:none}}
