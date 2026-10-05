@@ -45,6 +45,17 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
   useEffect(()=>()=>{live.current=false;clearTimers();stopMedia();},[clearTimers,stopMedia]);
   useEffect(()=>{for(const el of [audioRef.current,auxRef.current])if(el)el.muted=muted;},[muted]);
   useEffect(()=>{
+    if(stage!=='gate')return;
+    const resume=musicMasterResumeState(snapshot);
+    const preloadCinema=resume.mode==='branch'?branchCinema(snapshot):cinema;
+    const videoSource=resume.mode==='branch'?(preloadCinema.rap?.video || branchNode(snapshot)?.src):(preloadCinema.video || node?.src);
+    const audioSource=resume.mode==='branch'?preloadCinema.rap?.audio:preloadCinema.voice;
+    const v=videoRef.current,a=audioRef.current;
+    const videoUrl=media(videoSource),audioUrl=media(audioSource);
+    if(v && videoUrl && v.src!==videoUrl){v.src=videoUrl;v.load();}
+    if(a && audioUrl && a.src!==audioUrl){a.src=audioUrl;a.load();}
+  },[stage,snapshot,cinema,node,media]);
+  useEffect(()=>{
     const onVisibility=()=>{if(document.hidden){stopMedia();setBuffering(false);setError('Lecture en pause. Appuie pour reprendre la scène.');}};
     document.addEventListener('visibilitychange',onVisibility);
     return()=>document.removeEventListener('visibilitychange',onVisibility);
@@ -90,8 +101,12 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
     stopMedia(true);clearTimers();setError('');setBuffering(true);
     const v=videoRef.current,a=audioRef.current;
     if(!v || !a)return;
-    v.src=media(video);v.loop=loop;v.muted=true;v.playsInline=true;
-    a.src=media(audio);a.muted=muted;a.volume=1;
+    const videoUrl=media(video),audioUrl=media(audio);
+    if(!videoUrl || !audioUrl){setBuffering(false);setError(label?label+' — média manquant.':'Média manquant.');return;}
+    if(v.src!==videoUrl)v.src=videoUrl;
+    v.loop=loop;v.muted=true;v.playsInline=true;
+    if(a.src!==audioUrl)a.src=audioUrl;
+    a.muted=muted;a.volume=1;
     retryRef.current=()=>playPair({video,audio,delayMs,loop,next,label,onReady});
     try{
       await Promise.all([waitReady(v),waitReady(a)]);
@@ -122,7 +137,9 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
       await a.play();
       const sync=()=>{
         if(token!==runToken.current || a.paused || a.ended)return;
-        const target=a.currentTime+delaySec,drift=target-v.currentTime;
+        const rawTarget=a.currentTime+delaySec;
+        const target=v.loop && Number.isFinite(v.duration) && v.duration>0 ? rawTarget%v.duration : rawTarget;
+        const drift=target-v.currentTime;
         if(Math.abs(drift)>.16 && Number.isFinite(v.duration))v.currentTime=clamp(target,0,Math.max(0,v.duration-.05));
         else v.playbackRate=clamp(1+drift*.08,.985,1.015);
         raf.current=requestAnimationFrame(sync);
