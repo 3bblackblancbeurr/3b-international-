@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const migration=fs.readFileSync('supabase/migrations/20261006005000_destin_passport_policy_alignment_v2.sql','utf8');
+const migration=fs.readFileSync('supabase/migrations/20261005225825_destin_passport_policy_alignment_v2.sql','utf8');
 
 test('DESTIN database access matches the active-Passport cinema policy',()=>{
   assert.ok(migration.includes("'passportActive',true,'allowed',true,'code','ready'"));
