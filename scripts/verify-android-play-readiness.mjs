@@ -26,6 +26,14 @@ const namespace=quoted(gradle,/namespace\s*=\s*["']([^"']+)["']/,'namespace');
 const versionCode=Number(quoted(gradle,/versionCode\s+(\d+)/,'versionCode'));
 const versionName=quoted(gradle,/versionName\s+["']([^"']+)["']/,'versionName');
 
+const signingEnv=[
+  'ANDROID_UPLOAD_KEYSTORE_BASE64',
+  'ANDROID_KEYSTORE_PASSWORD',
+  'ANDROID_KEY_ALIAS',
+  'ANDROID_KEY_PASSWORD'
+];
+const signingSecretsPresent=signingEnv.every(name=>typeof process.env[name]==='string'&&process.env[name].length>0);
+
 const errors=[];
 if(compileSdk!==36)errors.push('compileSdk attendu 36, trouvé '+compileSdk);
 if(targetSdk!==36)errors.push('targetSdk attendu 36, trouvé '+targetSdk);
@@ -36,11 +44,17 @@ if(!Number.isInteger(versionCode)||versionCode<1)errors.push('versionCode doit �
 if(!versionName.trim())errors.push('versionName vide.');
 if(!/buildTypes\s*\{[\s\S]*release\s*\{/.test(gradle))errors.push('buildType release absent.');
 
+const remainingExternalGates=[];
+if(!signingSecretsPresent)remainingExternalGates.push('Play App Signing / clé d’upload de distribution');
+remainingExternalGates.push('upload Play Console sur piste interne ou fermée');
+remainingExternalGates.push('test fermé avec les testeurs requis');
+
 const report={
   checkedAt:new Date().toISOString(),
   readyForUnsignedCiBuild:errors.length===0,
-  distributionSigningConfigured:false,
-  playUploadConfigured:false,
+  readyForSignedCiBuild:errors.length===0&&signingSecretsPresent,
+  distributionSigningConfigured:signingSecretsPresent,
+  playUploadConfigured:signingSecretsPresent,
   applicationId,
   namespace,
   compileSdk,
@@ -48,11 +62,7 @@ const report={
   minSdk,
   versionCode,
   versionName,
-  remainingExternalGates:[
-    'Play App Signing / clé d’upload de distribution',
-    'upload Play Console sur piste interne',
-    'test fermé avec les testeurs requis'
-  ],
+  remainingExternalGates,
   errors
 };
 
