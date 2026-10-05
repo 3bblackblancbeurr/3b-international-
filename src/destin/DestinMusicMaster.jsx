@@ -1,6 +1,7 @@
 import React,{useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import {ArrowLeft,LockKeyhole,Volume2,VolumeX} from 'lucide-react';
 import {destinRequest,sourceUrl} from './client.js';
+import {musicMasterResumeState} from './musicMasterState.js';
 import './music-master.css';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
@@ -8,8 +9,9 @@ const sleep=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
 function vibrate(pattern){try{navigator.vibrate?.(pattern);}catch{}}
 
 export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComplete,goTo}) {
+  const initialMode=musicMasterResumeState(initialSnapshot).mode;
   const [snapshot,setSnapshot]=useState(initialSnapshot);
-  const [stage,setStage]=useState(initialSnapshot.run.state==='complete'?'complete':'gate');
+  const [stage,setStage]=useState(initialMode==='complete'?'complete':'gate');
   const [selected,setSelected]=useState(null);
   const [busy,setBusy]=useState(false);
   const [muted,setMuted]=useState(false);
@@ -85,6 +87,12 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
       stopMedia();
       setError(label?label+' — appuie pour reprendre le son.':'Appuie pour reprendre la lecture.');
     }
+  }
+
+  async function launchMaster(){
+    const resume=musicMasterResumeState(snapshot);
+    if(resume.mode==='branch'){runRap(snapshot);return;}
+    await runIntro();
   }
 
   async function runIntro(){
@@ -187,7 +195,7 @@ export default function DestinMusicMaster({initialSnapshot,userId,onClose,onComp
       <div className="destin-master-kicker">EXPÉRIENCE MUSICALE INTERACTIVE</div>
       <h1>LE COMBAT <em>COMMENCE</em></h1>
       <p>Une voix parle. Puis le beat prend la place. Ton choix change le morceau et ce que ton Passeport débloque.</p>
-      <button className="destin-master-launch" onClick={runIntro}>ENTRER DANS LE CLIP</button>
+      <button className="destin-master-launch" onClick={launchMaster}>{musicMasterResumeState(snapshot).mode==='branch'?'REPRENDRE MON CLIP':'ENTRER DANS LE CLIP'}</button>
       <small>Son recommandé · français intégral · choix définitif</small>
     </div>}
 
