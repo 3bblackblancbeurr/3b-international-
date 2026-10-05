@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           find android/app/build/outputs/apk/debug android/app/build/outputs/bundle/release -type f \( -name '*.apk' -o -name '*.aab' \) -print0 | sort -z | xargs -0 sha256sum > artifacts/mobile/android-sha256.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: 3b-android-test-${{ github.sha }}
           path: |
@@ -85,7 +85,7 @@ jobs:
           xcodebuild -project ios/App/App.xcodeproj -scheme App
           -configuration Debug -destination 'generic/platform=iOS Simulator'
           -derivedDataPath artifacts/mobile/ios CODE_SIGNING_ALLOWED=NO build
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: 3b-ios-simulator-${{ github.sha }}
           path: artifacts/mobile/ios/Build/Products/Debug-iphonesimulator/App.app
