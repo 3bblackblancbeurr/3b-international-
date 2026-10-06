@@ -33,19 +33,6 @@
 .passport-experience .passport-visual { width: 100%; margin: 0; }
 .passport-experience .passport-card-viewport { overflow: visible; border-radius: var(--3b-radius-flat); }
 .passport-experience .passport-card-stage { box-shadow: var(--3b-shadow-passport); }
-.passport-experience .passport-destin-mark {
-  position: absolute; z-index: 8; right: 22px; bottom: 22px; display: grid;
-  grid-template-columns: 22px auto; grid-template-areas: "symbol eyebrow" "symbol title";
-  align-items: center; column-gap: 8px; max-width: 220px; padding: 8px 11px 8px 9px;
-  border: 1px solid color-mix(in srgb, var(--3b-champagne) 45%, transparent);
-  border-radius: 999px; background: color-mix(in srgb, var(--3b-carbon) 82%, transparent);
-  box-shadow: 0 8px 32px rgba(0,0,0,.28), inset 0 0 22px color-mix(in srgb, var(--3b-matrix) 8%, transparent);
-  backdrop-filter: blur(12px); pointer-events: none;
-}
-.passport-experience .passport-destin-mark > span { grid-area: symbol; color: var(--3b-champagne-highlight); font-size: 18px; text-shadow: 0 0 12px currentColor; }
-.passport-experience .passport-destin-mark > small { grid-area: eyebrow; color: var(--3b-muted); font-size: 7px; letter-spacing: .18em; line-height: 1.1; }
-.passport-experience .passport-destin-mark > strong { grid-area: title; color: var(--3b-champagne-highlight); font-size: 10px; line-height: 1.15; font-weight: 650; letter-spacing: .02em; white-space: nowrap; }
-.passport-experience .passport-destin-mark[data-path="avenir"] { border-color: color-mix(in srgb, var(--3b-matrix) 54%, var(--3b-champagne)); }
 .passport-experience .luxury-passport-footer {
   width: min(100%, 580px); margin: 20px auto 24px; background: transparent; border: 0; box-shadow: var(--3b-shadow-flat);
 }
