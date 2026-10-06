@@ -65,7 +65,6 @@ import {resonanceContextMessage} from './resonance-context.js';
 import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,loadControlBindings,saveControlBindings,setPrimaryControl,controlLabel} from './control-bindings.js';
 import {worldEntryPolicy} from './entry-policy.js';
 import {loadCameraSensitivity,saveCameraSensitivity} from './camera-preferences.js';
-import {destinRequest} from '../destin/client.js';
 
 function Modal({title,onClose,children,wide=false,kind}){
  const ref=useRef(null);
@@ -101,7 +100,6 @@ function WorldSession({uid,goTo}){
  const [cameraLookSensitivity,setCameraLookSensitivity]=useState(loadCameraSensitivity);
  const [cityOpen,setCityOpen]=useState(false);
  const [premiumCodes,setPremiumCodes]=useState(()=>new Set());
- const [destinLegacy,setDestinLegacy]=useState(null);
  const fieldCombat=panel==='encounter'&&!!save.adventure.encounter?.field&&!save.adventure.encounter.result&&!save.adventure.encounter.pact;
  const [partyState,setPartyState]=useState(null),[connection,setConnection]=useState('solo'),partyLink=useRef(null),peersRef=useRef([]);
  const [towerLift,setTowerLift]=useState(null),[combatImpact,setCombatImpact]=useState(null),[npcDialogue,setNpcDialogue]=useState(null),[hubGuardianInfo,setHubGuardianInfo]=useState(null),[hubOffer,setHubOffer]=useState(null),[hubPlace,setHubPlace]=useState(null),[hubMechanism,setHubMechanism]=useState(null),[storyCinematic,setStoryCinematic]=useState(null),[cinematicQueue,setCinematicQueue]=useState([]);
@@ -137,23 +135,6 @@ function WorldSession({uid,goTo}){
  },[uid]);
  useEffect(()=>{scene.current?.setPremiumCodes?.(premiumCodes);},[premiumCodes]);
  useEffect(()=>{
-  let live=true;
-  if(!uid){setDestinLegacy(null);return()=>{live=false;};}
-  destinRequest('history',{},uid).then(result=>{
-   if(!live)return;
-   const unlocks=Array.isArray(result?.unlocks)?result.unlocks:[];
-   const memory=unlocks.find(row=>row.ending_id==='combat-memoire');
-   const future=unlocks.find(row=>row.ending_id==='combat-avenir');
-   const selected=memory||future;
-   if(!selected){setDestinLegacy(null);return;}
-   const reward=selected?.reward?.pathReward||{};
-   setDestinLegacy(selected.ending_id==='combat-memoire'
-    ? {path:'memoire',title:'Écho des Origines',passportTitle:reward.passportTitle||'Héritier des voix',worldPlace:reward.worldPlace||'memory_archives',detail:'Aux Archives de la Mémoire, certaines traces du passé répondent désormais à ton passage.'}
-    : {path:'avenir',title:'Tracé de l’Aube',passportTitle:reward.passportTitle||'Éclaireur de l’Aube',worldPlace:reward.worldPlace||'central_marina',detail:'Aux Docks, la Boussole révèle un itinéraire qui n’apparaît qu’à ceux qui ont choisi de construire la suite.'});
-  }).catch(()=>{if(live)setDestinLegacy(null);});
-  return()=>{live=false;};
- },[uid]);
- useEffect(()=>{
   if(storyCinematic||!cinematicQueue.length||assetsLoading||!scene.current)return;
   const event=cinematicQueue[0],presentation=storyCinematicPresentation(event);setCinematicQueue(queue=>queue.slice(1));
   if(!presentation){cinematicKeys.current.delete(event.key);return;}
@@ -188,7 +169,6 @@ function WorldSession({uid,goTo}){
  function finishEncounter(){const e=saveRef.current.adventure.encounter;if(e){if(!act({type:'leave'}))return;if(!e.result){scene.current?.retreat(e);announce('Repli · aucune récompense, ton groupe est conservé');}}setPanel(null);}
  function closePanel(){setWorldRequested(true);const e=saveRef.current.adventure.encounter;if(e){if(['victory','recruited','missed','defeat'].includes(e.result)){finishEncounter();return;}setPanel(panel==='encounterPause'?'encounter':'encounterPause');return;}setNpcDialogue(null);setPanel(null);}
  function interactDefault(item){
-  if(destinLegacy&&item?.buildingId===destinLegacy.worldPlace){setPanel('destinLegacy');announce(destinLegacy.title+' · ton choix du Destin réagit à ce lieu.');chime();return;}
   if(Number.isFinite(item?.x)&&Number.isFinite(item?.z))audio.current?.spatialEvent(item.type,item);
   if(item.type==='portal'){travel(item.id);return;}
   if(item.type==='franceResident'){setFranceResident(item.residentId);setPanel('paris');return;}
@@ -362,7 +342,7 @@ function WorldSession({uid,goTo}){
   {storyCinematic&&<CinematicOverlay key={storyCinematic.key} presentation={storyCinematic} onDone={finishStoryCinematic} onSkip={finishStoryCinematic}/>} 
   {panel==='encounter'&&snapshot.combat&&combatImpact&&<div className="combat-impact-layer" aria-hidden="true" key={combatImpact.key}>{combatImpact.outgoing>0&&<b className="impact-enemy" style={{left:snapshot.combat.enemy.x+'%',top:snapshot.combat.enemy.y+'%'}}>−{combatImpact.outgoing}</b>}{(combatImpact.incoming>0||combatImpact.healing>0)&&<b className={combatImpact.healing?'impact-heal':'impact-hero'} style={{left:snapshot.combat.hero.x+'%',top:snapshot.combat.hero.y+'%'}}>{combatImpact.healing?'+'+combatImpact.healing:'−'+combatImpact.incoming}</b>}</div>}
   <WorldHUD onNavigate={navigate} snapshot={snapshot} save={save} panel={panel} onPanel={setPanel} onInteract={()=>scene.current?.interact()} onContextAction={(item,id)=>interact(item,id)} onGuide={()=>scene.current?.waypoint(snapshot.waypoint,true)} loaded={loaded&&!assetsLoading} controls={controls}/>
-  {!panel&&<><button className="play-button play-party" aria-label="Rejoindre la Maison de la Communauté" title="Maison de la Communauté" onClick={()=>{const place=regionItems.find(i=>i.buildingId==='community_house');if(place)navigate(place);else setPanel('party');}}><Users size={21}/></button>{partyState?.party&&<span className={'party-online '+connection}>{connection==='connected'?'● Groupe '+partyState.members.length+'/4':'Reconnexion…'}</span>}{destinLegacy&&<button className="play-button play-destin" aria-label={destinLegacy.title} title={destinLegacy.title} onClick={()=>{const target=regionItems.find(item=>item.buildingId===destinLegacy.worldPlace);if(snapshot.region==='hub'&&target){navigate(target);announce(destinLegacy.path==='memoire'?'Les Archives reconnaissent ta Clé.':'Les Docks répondent à ta Boussole.');}else setPanel('destinLegacy');}}><Sparkles size={20}/></button>}</>}
+  {!panel&&<><button className="play-button play-party" aria-label="Rejoindre la Maison de la Communauté" title="Maison de la Communauté" onClick={()=>{const place=regionItems.find(i=>i.buildingId==='community_house');if(place)navigate(place);else setPanel('party');}}><Users size={21}/></button>{partyState?.party&&<span className={'party-online '+connection}>{connection==='connected'?'● Groupe '+partyState.members.length+'/4':'Reconnexion…'}</span>}</>}
   {snapshot.cinematic&&!panel&&!storyCinematic&&<div className="play-cinematic"><div><h2>{snapshot.cinematic.title}</h2><p>{snapshot.cinematic.detail}</p></div><button onClick={()=>scene.current?.skipCinematic()}>Passer</button></div>}
   {gps&&!panel&&<button className="play-gps" onClick={()=>setPanel('gps')} aria-label="Sortie GPS"> <Footprints size={16}/> {walkSession} m</button>}
   {snapshot.joystick&&<div className="world-joystick" style={{left:snapshot.joystick.x,top:snapshot.joystick.y}}><i style={{transform:`translate(${snapshot.joystick.dx}px,${snapshot.joystick.dy}px)`}}/></div>}
@@ -374,9 +354,8 @@ function WorldSession({uid,goTo}){
   {!panel&&snapshot.lifeInteraction&&<div className="hub-life-reading" role="status"><strong>{snapshot.lifeInteraction.title}</strong><p>{snapshot.lifeInteraction.detail}</p><span>{snapshot.lifeInteraction.caption}</span><button onClick={()=>scene.current?.endLifeInteraction?.()}>Reprendre la marche</button></div>}
   {!panel&&snapshot.region==='hub'&&snapshot.interior&&<div className="hub-place">{snapshot.towerFloor?.name||regionItems.find(i=>i.buildingId===snapshot.interior)?.name||'Lieu de la cité'}</div>}
   {!panel&&snapshot.region!=='hub'&&<>{!(snapshot.waypoint&&snapshot.remaining>7)&&<button className="paris-journal-link" onClick={()=>{setFranceResident(null);setPanel('paris');}}>La vie du quartier</button>}{snapshot.interior&&<div className="paris-place">{snapshot.interior==='atelier'?'Atelier des Verrières':'Refuge des Liens'}</div>}</>}
-  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation',valueTrial:valueRule?'Épreuve · '+valueRule.value:'Épreuve du Gardien',guardianHub:hubGuardianInfo?.name||'Gardien',hubMechanism:'Rétablir les connexions',hubContract:'Une mission pour la cité',hubCityService:hubPlace?.name||'Service de la cité',hubPlace:hubPlace?.name||'Lieu de la cité',hubOpening:'Le Cercle Brisé',hubLift:'Ascenseur de la Tour',premium:'Boutique Premium 3B',destinLegacy:'Héritage du Destin'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena','premium','hubOpening','hubCityService'].includes(panel)}>
+  {panel&&!fieldCombat&&<Modal kind={panel} title={({party:'Explorer ensemble',cafe:'Café des Liens',paris:'La vie du quartier',heritage:'Patrimoine et monde 3B',camp:'Mon refuge',collection:'Les compagnons du monde',sanctuary:'Un lieu pour ton groupe',team:'Ton équipe',atlas:'L’Atlas des huit portes',journal:'Journal d’exploration',gps:'Les échos du dehors',pause:'Une pause dans le voyage',encounterPause:'Rencontre suspendue',encounter:'Un écho te rencontre',final:'Le monde continue',story:'Un pays à reconstruire',wardrobe:'Ton style',avatar:'Ton personnage',arena:'L’Arène 3B',hubDialogue:npcDialogue?.item?.name||'Conversation',valueTrial:valueRule?'Épreuve · '+valueRule.value:'Épreuve du Gardien',guardianHub:hubGuardianInfo?.name||'Gardien',hubMechanism:'Rétablir les connexions',hubContract:'Une mission pour la cité',hubCityService:hubPlace?.name||'Service de la cité',hubPlace:hubPlace?.name||'Lieu de la cité',hubOpening:'Le Cercle Brisé',hubLift:'Ascenseur de la Tour',premium:'Boutique Premium 3B'})[panel]} onClose={closePanel} wide={['collection','atlas','journal','avatar','arena','premium','hubOpening','hubCityService'].includes(panel)}>
    {panel==='hubOpening'&&<HubOpeningCinematic avatar={save.adventure.avatar} onDone={closePanel}/> }
-   {panel==='destinLegacy'&&destinLegacy&&<div className="world-destin-legacy" data-path={destinLegacy.path}><span className="world-kicker">3B DESTIN · CHOIX DÉFINITIF</span><h3>{destinLegacy.title}</h3><p>{destinLegacy.detail}</p><p><strong>{destinLegacy.passportTitle}</strong> · cette marque reste liée à ton Passeport.</p><div className="world-actions"><button className="world-primary" onClick={()=>{setPanel(null);announce(destinLegacy.path==='memoire'?'La Clé des Origines résonne dans les Archives.':'La Boussole de l’Aube dessine une route depuis les Docks.');}}>Activer {destinLegacy.path==='memoire'?'la Clé':'la Boussole'}</button><button onClick={()=>setPanel(null)}>Continuer l’exploration</button></div></div>}
    {panel==='hubContract'&&hubOffer&&<div className="hub-contract"><span className="world-kicker">{hubOffer.category} · {hubOffer.district}</span><h3>{hubOffer.name}</h3><p>{hubOffer.objectives?.[0]}</p><ol>{hubOffer.objectives?.map((objective,i)=><li key={i}>{objective}</li>)}</ol><p>Récompense : {hubOffer.rewards?.join(' · ')||'progression de la cité'}</p><div className="world-actions"><button className="world-primary" onClick={()=>{const next=act({type:'hubMissionStart',id:hubOffer.missionId});if(next){setHubOffer(null);setPanel(null);announce(hubOffer.name+' · mission acceptée');}}}>Accepter la mission</button><button onClick={()=>{setHubOffer(null);closePanel();}}>Pas maintenant</button></div></div>}
    {panel==='hubMechanism'&&hubMechanism&&<HubMechanismPanel key={hubMechanism.id} item={hubMechanism} onCancel={()=>{setHubMechanism(null);closePanel();}} onSolved={item=>{const next=act({type:'hubMissionAction',missionId:item.missionId,actionId:item.actionId});setHubMechanism(null);closePanel();if(next){announce(item.actionLabel+' · circuit validé');chime();}}}/>}
    {panel==='hubCityService'&&hubPlace&&<HubCityServices key={hubPlace.id} item={hubPlace} save={save} items={regionItems} accountId={uid} onNavigate={navigate} onPanel={setPanel} onOpenCity={()=>{setPanel(null);setCityOpen(true);}} onApplyPalette={patch=>!!act({type:'avatar',avatar:{...saveRef.current.adventure.avatar,...patch}})}/> }
