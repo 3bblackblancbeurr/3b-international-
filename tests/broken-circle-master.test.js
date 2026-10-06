@@ -15,7 +15,10 @@ test('Broken Circle master is articulated, physical and reactive',()=>{
  const countries=Array.from({length:8},(_,i)=>({color:['#5dc8ff','#73d393','#d8b56a','#e18870','#ed6f72','#9aa5ff','#d8c787','#82cbd1'][i]}));
  const circle=createBrokenCircleMaster({root,owned,materials,countries});
  assert.deepEqual(circle.diagnostics,{rings:3,heritages:8,looseFragments:5,physical:true,articulated:true});
- assert.equal(circle.groups.fixed.children.length>=16,true);
+ const fixedMeshes=circle.groups.fixed.children.filter(child=>child.isMesh).length;
+ assert.equal(fixedMeshes>=10&&fixedMeshes<=12,true);
+ let totalMeshes=0;root.traverse(child=>{if(child.isMesh)totalMeshes++;});
+ assert.equal(totalMeshes<28,true);
  circle.setProgress(4);circle.setDaylight(.2);circle.tick(10,12);
  assert.notEqual(circle.groups.rotorOuter.rotation.z,0);
  assert.notEqual(circle.groups.rotorInner.rotation.z,0);
