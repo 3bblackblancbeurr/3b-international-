@@ -95,7 +95,6 @@ html[data-luxury="v2"] .app3b .home-world-stone-decor{
   z-index:1;
   overflow:hidden;
   pointer-events:none;
-  border-radius:inherit;
 }
 html[data-luxury="v2"] .app3b .home-world-stone-pillar{
   position:absolute;
@@ -106,7 +105,7 @@ html[data-luxury="v2"] .app3b .home-world-stone-pillar{
   border:1px solid rgba(168,170,165,.22);
   background:
     linear-gradient(90deg,rgba(255,255,255,.08),transparent 18% 72%,rgba(0,0,0,.35)),
-    repeating-linear-gradient(180deg,#555956 0 26px,#383d3b 26px 29px,#66665f 29px 54px,#2c302f 54px 57px);
+    repeating-linear-gradient(180deg,var(--3b-stone-base) 0 26px,var(--3b-stone-dark) 26px 29px,var(--3b-stone-light) 29px 54px,var(--3b-stone-dark) 54px 57px);
   box-shadow:var(--3b-shadow-contact);
   opacity:.72;
 }
@@ -116,7 +115,7 @@ html[data-luxury="v2"] .app3b .home-world-stone-pillar::after{
   top:8%;
   bottom:8%;
   width:3px;
-  background:linear-gradient(180deg,transparent,#51ddff 18% 82%,transparent);
+  background:linear-gradient(180deg,transparent,var(--3b-energy-cyan) 18% 82%,transparent);
   filter:drop-shadow(0 0 6px rgba(48,209,255,.72));
   opacity:.62;
 }
@@ -135,7 +134,7 @@ html[data-luxury="v2"] .app3b .home-world-stone-platform{
   border:1px solid rgba(158,161,156,.28);
   border-radius:var(--3b-radius-circle);
   background:
-    repeating-radial-gradient(ellipse at center,#666862 0 10px,#3c403e 11px 18px,#222726 19px 23px);
+    repeating-radial-gradient(ellipse at center,var(--3b-stone-platform) 0 10px,var(--3b-stone-mid) 11px 18px,var(--3b-stone-deep) 19px 23px);
   box-shadow:var(--3b-shadow-contact);
   opacity:.58;
 }
@@ -184,7 +183,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-blue{
   stroke-dashoffset:21;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-shadow{
-  stroke:#05080b;
+  stroke:var(--3b-stone-shadow);
   stroke-width:56;
   opacity:.92;
 }
@@ -194,7 +193,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-body{
   stroke-linecap:butt;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-masonry{
-  stroke:#1e2221;
+  stroke:var(--3b-stone-deep);
   stroke-width:4;
   stroke-dasharray:3 31;
   stroke-dashoffset:5;
@@ -215,7 +214,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-blue{
 }
 html[data-luxury="v2"] .app3b .home-world-ring-blue-inner{
   fill:none;
-  stroke:#4cddff;
+  stroke:var(--3b-energy-cyan-soft);
   stroke-width:3;
   stroke-dasharray:112 46 88 55 132 42 96 58;
   opacity:.78;
@@ -223,7 +222,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-blue-inner{
 }
 html[data-luxury="v2"] .app3b .home-world-ring-fragments rect{
   fill:url(#home-world-ring-stone);
-  stroke:#2a2f2e;
+  stroke:var(--3b-stone-dark);
   stroke-width:3;
   vector-effect:non-scaling-stroke;
   filter:drop-shadow(0 0 5px rgba(0,0,0,.75)) drop-shadow(0 0 5px rgba(79,218,255,.35));
@@ -237,13 +236,13 @@ html[data-luxury="v2"] .app3b .home-world-ring-cracks path{
 }
 html[data-luxury="v2"] .app3b .home-world-ring-plinth path{
   fill:url(#home-world-ring-stone);
-  stroke:#2d302f;
+  stroke:var(--3b-stone-dark);
   stroke-width:4;
   opacity:.96;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-plinth .home-world-ring-plinth-blue{
   fill:none;
-  stroke:#57ddff;
+  stroke:var(--3b-energy-cyan);
   stroke-width:4;
   opacity:.68;
   filter:drop-shadow(0 0 7px rgba(73,216,255,.55));
