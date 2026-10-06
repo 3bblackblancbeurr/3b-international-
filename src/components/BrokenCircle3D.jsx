@@ -154,7 +154,7 @@ export default function BrokenCircle3D(){
     let lastTime=performance.now();
 
     const onMotionChange=(event)=>{reducedMotion=event.matches;};
-    const onVisibility=()=>{visible=!document.hidden && (intersectionObserver?visible:true);};
+    const onVisibility=()=>{if(document.hidden)stop();else start();};
 
     const stop=()=>{
       running=false;
@@ -341,9 +341,7 @@ export default function BrokenCircle3D(){
       intersectionObserver.observe(mount);
 
       motionQuery.addEventListener?.('change',onMotionChange);
-      document.addEventListener('visibilitychange',()=>{
-        if(document.hidden)stop(); else start();
-      });
+      document.addEventListener('visibilitychange',onVisibility);
 
       resize();
       start();
@@ -353,6 +351,7 @@ export default function BrokenCircle3D(){
       disposed=true;
       stop();
       motionQuery.removeEventListener?.('change',onMotionChange);
+      document.removeEventListener('visibilitychange',onVisibility);
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
       if(renderer){
