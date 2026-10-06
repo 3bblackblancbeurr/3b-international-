@@ -10,7 +10,8 @@
       "bytes": 464082,
       "provenance": "Existing 3B Origins city reference promoted as the clean static home plate; no baked central circle in the hero composition",
       "source_filename": "docs/origins/references/france.webp",
-      "processing": "Existing WebP reused without upscaling; promoted into the home hero path to eliminate the baked circle and preserve Vercel public budget"
+      "processing": "Existing WebP reused without upscaling; promoted into the home hero path to eliminate the baked circle and preserve Vercel public budget",
+      "sha256": "d6175a93e04808cbfeed0ed034a4d20d78f6cad4689fff343a668b5dfc5ce8cd"
     },
     {
       "id": "pull-noir",
