@@ -1,8 +1,8 @@
 {
   "generated_from": "supabase_migrations.schema_migrations",
   "normalization": "trim UTF-8 SQL whitespace (space, tab, CR, LF) then SHA-256",
-  "generated_at": "2026-10-05",
-  "count": 209,
+  "generated_at": "2026-10-06",
+  "count": 210,
   "migrations": [
     {
       "version": "20260910020445",
@@ -1061,6 +1061,11 @@
       "version": "20261005225825",
       "name": "destin_passport_policy_alignment_v2",
       "sha256": "2c2ad16c4f5eaeb555cc497dac5e80c2623cb21803ab0f2c66c190d2aa8d0264"
+    },
+    {
+      "version": "20261006083511",
+      "name": "remove_destin_3b_v1",
+      "sha256": "b65afe576d6b96d6cd3461f5878054d4fb656bc37e79d72a2d27d62f89789f5f"
     }
   ],
   "reconciliation": {
@@ -1102,5 +1107,9 @@
   "reconciliation_20261005_destin_policy": {
     "reason": "Applied to production via Supabase migration API after rollback QA of start → choice → finish; Git filename aligned to the server-assigned migration version.",
     "version": "20261005225825"
+  },
+  "reconciliation_20261006_remove_destin": {
+    "reason": "DESTIN 3B retiré du produit. Migration destructive appliquée à la production pour supprimer uniquement les tables, fonctions et récompenses DESTIN tout en conservant l’identité Passeport partagée.",
+    "version": "20261006083511"
   }
 }

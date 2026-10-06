@@ -17,7 +17,7 @@ test('home hides technical status cards and keeps the ecosystem guide at the bot
  const guide=home.lastIndexOf('Le guide 3B');
  assert.ok(guide>home.indexOf('secondaryGroups.map'));
  assert.match(nav,/title: "Identité & progression", ids: \["passport", "member"\]/);
- assert.match(nav,/title: "Univers 3B", ids: \["world3b", "destin", "secret"\]/);
+ assert.match(nav,/title: "Univers 3B", ids: \["world3b", "secret"\]/);
  assert.doesNotMatch(home,/<InstallCards|dashboard-footer/);
  assert.match(home,/item.status!=='soon'/);
 });

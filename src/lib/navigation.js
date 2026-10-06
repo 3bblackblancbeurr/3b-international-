@@ -1,6 +1,6 @@
 export const PAGE_HASHES = {
   intro: "", home: "accueil", passport: "passeport", loyalty: "cartes", member: "membre",
-  destin: "destin", manga: "manga", world3b: "monde-3b", nosbloc: "nosbloc", arena: "arene", games: "jeux", religion: "religion", guide: "guide", community: "communaute",
+  manga: "manga", world3b: "monde-3b", nosbloc: "nosbloc", arena: "arene", games: "jeux", religion: "religion", guide: "guide", community: "communaute",
   secret: "secret", sport: "sport", ia: "ia", "ia-textile": "ia-textile", "ia-trio": "mode-3-ia", control: "commande", shop: "boutique",
 };
 
