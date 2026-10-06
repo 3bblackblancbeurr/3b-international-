@@ -26,17 +26,20 @@ function annularSectorGeometry(THREE,{innerRadius,outerRadius,startDeg,lengthDeg
   return geometry;
 }
 
-function makeStoneMaterials(THREE,texture){
-  const tones=[0xc5c2b7,0xaaa9a2,0x8d918e,0xb5b0a4];
-  return tones.map((color)=>new THREE.MeshPhysicalMaterial({
+function makeStoneMaterials(THREE,texture,variant='stone'){
+  const menu=variant==='menu';
+  const tones=menu
+    ? [0xd2a94f,0x6f5934,0x9c9588,0x3d4342]
+    : [0xc5c2b7,0xaaa9a2,0x8d918e,0xb5b0a4];
+  return tones.map((color,index)=>new THREE.MeshPhysicalMaterial({
     color,
     map:texture,
     bumpMap:texture,
-    bumpScale:.045,
-    roughness:.94,
-    metalness:.015,
-    clearcoat:.025,
-    clearcoatRoughness:.96,
+    bumpScale:menu?.032:.045,
+    roughness:menu?(index===0?.48:.67):.94,
+    metalness:menu?(index===0?.34:.16):.015,
+    clearcoat:menu?.22:.025,
+    clearcoatRoughness:menu?.48:.96,
   }));
 }
 
@@ -176,10 +179,11 @@ function addArchitecturalDetails(THREE,rotor,materials){
   });
 }
 
-export default function BrokenCircle3D(){
+export default function BrokenCircle3D({variant='stone'}){
   const mountRef=useRef(null);
 
   useEffect(()=>{
+    const menuMode=variant==='menu';
     const mount=mountRef.current;
     if(!mount)return undefined;
 
@@ -217,7 +221,14 @@ export default function BrokenCircle3D(){
       if(disposed||!renderer||!scene||!camera||!rotor){stop();return;}
       const dt=Math.min((now-lastTime)/1000,.05);
       lastTime=now;
-      if(!reducedMotion)rotor.rotation.z-=dt*(TAU/24);
+      if(!reducedMotion){
+        rotor.rotation.z-=dt*(TAU/24);
+        if(menuMode){
+          const t=now/1000;
+          rotor.rotation.x=-.06+Math.sin(t*.42)*.012;
+          rotor.rotation.y=.16+Math.cos(t*.34)*.026;
+        }
+      }
       renderer.render(scene,camera);
       if(running)frame=requestAnimationFrame(renderLoop);
     };
@@ -240,7 +251,7 @@ export default function BrokenCircle3D(){
       renderer.setClearColor(0x000000,0);
       renderer.outputColorSpace=THREE.SRGBColorSpace;
       renderer.toneMapping=THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure=1.08;
+      renderer.toneMappingExposure=menuMode?1.18:1.08;
       renderer.shadowMap.enabled=true;
       renderer.shadowMap.type=THREE.PCFSoftShadowMap;
       renderer.domElement.className='home-world-webgl-canvas';
@@ -260,21 +271,21 @@ export default function BrokenCircle3D(){
       stoneTexture.repeat.set(2.8,2.2);
       stoneTexture.anisotropy=maxAnisotropy;
 
-      const stoneMaterials=makeStoneMaterials(THREE,stoneTexture);
+      const stoneMaterials=makeStoneMaterials(THREE,stoneTexture,variant);
       const energyMaterial=new THREE.MeshStandardMaterial({
         color:0x2b9bc8,
         emissive:0x35d5ff,
-        emissiveIntensity:4.0,
+        emissiveIntensity:menuMode?5.2:4.0,
         roughness:.22,
         metalness:.02,
         transparent:true,
-        opacity:.90,
+        opacity:menuMode?.96:.90,
       });
 
       rotor=new THREE.Group();
       rotor.position.set(0,.08,0);
-      rotor.rotation.x=-.045;
-      rotor.rotation.y=.13;
+      rotor.rotation.x=menuMode?-.06:-.045;
+      rotor.rotation.y=menuMode?.16:.13;
       scene.add(rotor);
 
       addBrokenRing(THREE,rotor,stoneMaterials,energyMaterial);
@@ -381,7 +392,7 @@ export default function BrokenCircle3D(){
         else node.material?.dispose?.();
       });
     };
-  },[]);
+  },[variant]);
 
-  return <div ref={mountRef} className="home-world-webgl-shell" aria-hidden="true"/>;
+  return <div ref={mountRef} className={`home-world-webgl-shell broken-circle-3d broken-circle-3d--${variant}`} aria-hidden="true"/>;
 }
