@@ -30,7 +30,7 @@ const CIRCUITS = [
 const formatNumber = value => new Intl.NumberFormat("fr-FR").format(Number(value) || 0);
 const DEFAULT_OPTIONS = Object.freeze({ animations: true, reducedMotion: false, matrix: true });
 
-export default function PassportVisual({ options = DEFAULT_OPTIONS, identity, syncing = false, destinMark = null }) {
+export default function PassportVisual({ options = DEFAULT_OPTIONS, identity, syncing = false }) {
   const { present } = useLuxury();
   const surface = useRef(null);
   const previousProgress = useRef(null);
@@ -151,7 +151,6 @@ export default function PassportVisual({ options = DEFAULT_OPTIONS, identity, sy
       </section>
 
       <div className="passport-security-edge" aria-hidden="true" />
-      {active && destinMark && <div className="passport-destin-mark" data-path={destinMark.path} aria-label={`Destin 3B · ${destinMark.title}`}><span>{destinMark.symbol}</span><small>DESTIN 3B</small><strong>{destinMark.title}</strong></div>}
       <div className="passport-live-badge" aria-hidden="true"><Sparkles size={12} /> {active ? "PASSEPORT VIVANT" : "IDENTITÉ PERSONNELLE"}</div>
 
     </div>
