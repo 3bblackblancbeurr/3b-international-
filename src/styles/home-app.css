@@ -155,9 +155,10 @@ html[data-luxury="v2"] .app3b .home-world-ring-svg{
 }
 html[data-luxury="v2"] .app3b .home-world-ring-veil{
   fill:none;
-  stroke:rgba(3,8,12,.48);
-  stroke-width:58;
-  opacity:.58;
+  stroke:rgba(4,9,12,.94);
+  stroke-width:72;
+  opacity:.96;
+  filter:drop-shadow(0 0 8px rgba(4,9,12,.9));
 }
 html[data-luxury="v2"] .app3b .home-world-ring-contact{
   fill:rgba(0,0,0,.34);
