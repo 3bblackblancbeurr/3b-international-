@@ -3,7 +3,7 @@ html[data-luxury="v2"] .app3b .home-app-hub{width:min(1180px,calc(100% - 48px));
 html[data-luxury="v2"] .app3b .home-world-entry{display:flex;flex-direction:row;justify-content:flex-start;align-items:flex-end;min-height:560px;padding:0;gap:0;margin:0 0 40px;border:0;border-radius:var(--3b-radius-hero);background:var(--3b-carbon);box-shadow:var(--3b-shadow-flat)}
 html[data-luxury="v2"] .app3b .home-world-entry::before{display:none}
 html[data-luxury="v2"] .app3b .home-world-entry::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(90deg,var(--3b-scrim-heavy) 0%,var(--3b-scrim-medium) 32%,var(--3b-scrim-clear) 72%),linear-gradient(0deg,var(--3b-scrim-soft),transparent 65%)}
-html[data-luxury="v2"] .app3b .home-world-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:66% center}
+html[data-luxury="v2"] .app3b .home-world-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% center}
 html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{position:relative;z-index:1;max-width:570px;padding:54px}
 html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{font-size:10px;letter-spacing:.22em;color:var(--3b-champagne-highlight);margin:0 0 24px}
 html[data-luxury="v2"] .app3b .home-world-entry h2{font-family:inherit;font-size:clamp(40px,4.8vw,64px);font-weight:500;line-height:1.05;letter-spacing:-.045em;margin:0 0 22px;color:var(--3b-white)}
@@ -48,7 +48,7 @@ html[data-luxury="v2"] .app3b .universe-dialog .is-soon .compact-card-copy>span{
 @media(max-width:720px){
  html[data-luxury="v2"] .app3b .home-app-hub{width:100%;padding-top:12px}
  html[data-luxury="v2"] .app3b .home-world-entry{min-height:510px;margin-bottom:28px;border-radius:var(--3b-radius-card)}
- html[data-luxury="v2"] .app3b .home-world-art{object-position:62% center}
+ html[data-luxury="v2"] .app3b .home-world-art{object-position:50% center}
  html[data-luxury="v2"] .app3b .home-world-entry::after{background:linear-gradient(0deg,var(--3b-scrim-dense) 0%,var(--3b-scrim-mobile) 34%,var(--3b-scrim-clear) 80%)}
  html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{padding:26px 22px 36px;max-width:100%;width:100%}
  html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{font-size:8px;margin-bottom:16px}
@@ -75,14 +75,9 @@ html[data-luxury="v2"] .app3b :is(.home-app-hub .compact-card,.universe-dialog .
 html[data-luxury="v2"] .app3b .home-app-hub .compact-card:hover{transform:none!important;box-shadow:var(--3b-shadow-flat)!important}
 
 
-/* Broken Circle AAA pass — the artwork is rendered once.
-   Motion is limited to light, depth and fracture particles so the monument
-   never becomes a translucent duplicate of itself. */
+/* Broken Circle — the city artwork stays completely still.
+   Only the separate vector monument rotates on its own axis. */
 html[data-luxury="v2"] .app3b .home-world-entry{
-  --threeb-ring-x:28.5%;
-  --threeb-ring-y:24.5%;
-  --threeb-ring-diameter:75%;
-  --threeb-ring-contact-y:54%;
   isolation:isolate;
   overflow:hidden;
 }
@@ -102,133 +97,80 @@ html[data-luxury="v2"] .app3b .home-world-ring-motion{
   pointer-events:none;
   border-radius:inherit;
 }
-html[data-luxury="v2"] .app3b .home-world-ring-energy,
-html[data-luxury="v2"] .app3b .home-world-ring-depth{
-  position:absolute;
-  left:var(--threeb-ring-x);
-  top:var(--threeb-ring-y);
-  width:var(--threeb-ring-diameter);
-  aspect-ratio:1;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
-  will-change:transform,opacity;
+html[data-luxury="v2"] .app3b .home-world-ring-svg{
+  display:block;
+  width:100%;
+  height:100%;
+  overflow:visible;
 }
-html[data-luxury="v2"] .app3b .home-world-ring-energy{
-  opacity:.62;
-  background:conic-gradient(
-    from -18deg,
-    transparent 0deg 24deg,
-    rgba(75,225,255,.08) 29deg,
-    rgba(112,235,255,.72) 33deg,
-    rgba(var(--3b-champagne-highlight-rgb),.38) 36deg,
-    transparent 41deg 111deg,
-    rgba(0,213,255,.1) 116deg,
-    rgba(0,213,255,.5) 120deg,
-    transparent 126deg 214deg,
-    rgba(var(--3b-champagne-highlight-rgb),.16) 219deg,
-    rgba(88,226,255,.58) 223deg,
-    transparent 230deg 360deg
-  );
-  -webkit-mask-image:radial-gradient(circle,transparent 0 69%,#000 71.5% 75.5%,transparent 78.5%);
-  mask-image:radial-gradient(circle,transparent 0 69%,#000 71.5% 75.5%,transparent 78.5%);
-  filter:drop-shadow(0 0 7px rgba(52,211,255,.34)) drop-shadow(0 0 15px rgba(0,155,255,.16));
-  animation:threebBrokenCircleEnergy 22s linear infinite,threebBrokenCirclePulse 4.8s ease-in-out infinite;
-}
-html[data-luxury="v2"] .app3b .home-world-ring-depth{
-  opacity:.28;
-  background:conic-gradient(
-    from 5deg,
-    transparent 0deg 42deg,
-    rgba(0,0,0,.7) 46deg 50deg,
-    transparent 54deg 132deg,
-    rgba(0,0,0,.62) 136deg 141deg,
-    transparent 145deg 238deg,
-    rgba(255,236,185,.22) 242deg 245deg,
-    transparent 250deg 360deg
-  );
-  -webkit-mask-image:radial-gradient(circle,transparent 0 67.5%,#000 69.5% 78%,transparent 80%);
-  mask-image:radial-gradient(circle,transparent 0 67.5%,#000 69.5% 78%,transparent 80%);
-  filter:blur(.2px);
-  animation:threebBrokenCircleDepth 8s ease-in-out infinite;
+html[data-luxury="v2"] .app3b .home-world-ring-veil{
+  fill:none;
+  stroke:rgba(3,8,12,.48);
+  stroke-width:58;
+  opacity:.58;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-contact{
-  position:absolute;
-  left:var(--threeb-ring-x);
-  top:var(--threeb-ring-contact-y);
-  width:42%;
-  height:9%;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
+  fill:rgba(0,0,0,.34);
+  stroke:rgba(72,216,255,.22);
+  stroke-width:5;
+  filter:blur(4px);
   opacity:.72;
-  background:
-    radial-gradient(ellipse at center,rgba(0,0,0,.68) 0 31%,rgba(0,0,0,.26) 45%,transparent 72%),
-    radial-gradient(ellipse at 50% 38%,rgba(0,213,255,.22),transparent 48%),
-    radial-gradient(ellipse at 58% 54%,rgba(var(--3b-champagne-highlight-rgb),.12),transparent 57%);
-  filter:blur(5px);
-  animation:threebBrokenCircleContact 5.6s ease-in-out infinite;
 }
-html[data-luxury="v2"] .app3b .home-world-ring-particles{
-  position:absolute;
-  left:var(--threeb-ring-x);
-  top:var(--threeb-ring-y);
-  width:var(--threeb-ring-diameter);
-  aspect-ratio:1;
-  transform:translate(-50%,-50%);
+html[data-luxury="v2"] .app3b .home-world-ring-rotor{
+  transform-box:view-box;
+  transform-origin:836px 228px;
+  will-change:transform;
+  animation:threebBrokenCircleSpin 18s linear infinite;
+  filter:drop-shadow(0 10px 11px rgba(0,0,0,.58)) drop-shadow(0 0 9px rgba(68,211,255,.34));
 }
-html[data-luxury="v2"] .app3b .home-world-ring-particles i{
-  position:absolute;
-  width:3px;
-  height:3px;
-  border-radius:50%;
-  background:#c9f7ff;
-  box-shadow:0 0 7px #73e8ff,0 0 13px rgba(0,174,255,.54);
-  opacity:.34;
-  animation:threebBrokenCircleParticle 6.5s ease-in-out infinite;
+html[data-luxury="v2"] .app3b .home-world-ring-shadow,
+html[data-luxury="v2"] .app3b .home-world-ring-body,
+html[data-luxury="v2"] .app3b .home-world-ring-trim,
+html[data-luxury="v2"] .app3b .home-world-ring-blue{
+  fill:none;
+  stroke-dasharray:315 58 210 70 270 80 180 73;
+  stroke-dashoffset:21;
 }
-html[data-luxury="v2"] .app3b .home-world-ring-particles i:nth-child(1){left:74%;top:23%;animation-delay:-.7s}
-html[data-luxury="v2"] .app3b .home-world-ring-particles i:nth-child(2){left:81%;top:31%;width:2px;height:2px;animation-delay:-2.2s}
-html[data-luxury="v2"] .app3b .home-world-ring-particles i:nth-child(3){left:84%;top:42%;animation-delay:-4.1s}
-html[data-luxury="v2"] .app3b .home-world-ring-particles i:nth-child(4){left:77%;top:52%;width:2px;height:2px;animation-delay:-1.5s}
-html[data-luxury="v2"] .app3b .home-world-ring-particles i:nth-child(5){left:70%;top:58%;animation-delay:-3.3s}
-html[data-luxury="v2"] .app3b .home-world-ring-particles i:nth-child(6){left:88%;top:37%;width:2px;height:2px;animation-delay:-5s}
-@keyframes threebBrokenCircleEnergy{
-  from{transform:translate(-50%,-50%) rotate(0deg)}
-  to{transform:translate(-50%,-50%) rotate(360deg)}
+html[data-luxury="v2"] .app3b .home-world-ring-shadow{
+  stroke:#05080b;
+  stroke-width:56;
+  opacity:.92;
 }
-@keyframes threebBrokenCirclePulse{
-  0%,100%{opacity:.48}
-  50%{opacity:.7}
+html[data-luxury="v2"] .app3b .home-world-ring-body{
+  stroke:url(#home-world-ring-metal);
+  stroke-width:42;
+  stroke-linecap:butt;
 }
-@keyframes threebBrokenCircleDepth{
-  0%,100%{opacity:.2}
-  50%{opacity:.34}
+html[data-luxury="v2"] .app3b .home-world-ring-trim{
+  stroke:rgba(235,210,153,.76);
+  stroke-width:5;
+  stroke-dashoffset:29;
+  opacity:.82;
 }
-@keyframes threebBrokenCircleContact{
-  0%,100%{opacity:.56;transform:translate(-50%,-50%) scaleX(.96)}
-  50%{opacity:.76;transform:translate(-50%,-50%) scaleX(1.035)}
+html[data-luxury="v2"] .app3b .home-world-ring-blue{
+  stroke:url(#home-world-ring-blue);
+  stroke-width:8;
+  stroke-dashoffset:15;
+  opacity:.98;
 }
-@keyframes threebBrokenCircleParticle{
-  0%,100%{transform:translate3d(0,8px,0) scale(.7);opacity:.08}
-  45%{opacity:.55}
-  65%{transform:translate3d(5px,-9px,0) scale(1.15);opacity:.28}
+html[data-luxury="v2"] .app3b .home-world-ring-fragments rect{
+  fill:url(#home-world-ring-metal);
+  stroke:#74ddff;
+  stroke-width:3;
+  vector-effect:non-scaling-stroke;
+  filter:drop-shadow(0 0 7px rgba(79,218,255,.65));
 }
-@media(hover:hover) and (pointer:fine){
-  html[data-luxury="v2"] .app3b .home-world-entry:hover .home-world-ring-energy{animation-duration:16s,3.8s}
+@keyframes threebBrokenCircleSpin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
 }
 @media(max-width:720px){
-  html[data-luxury="v2"] .app3b .home-world-entry{
-    --threeb-ring-x:28%;
-    --threeb-ring-y:23.5%;
-    --threeb-ring-diameter:78%;
-    --threeb-ring-contact-y:52.5%;
+  html[data-luxury="v2"] .app3b .home-world-art{
+    object-position:50% center;
+    filter:saturate(1.04) contrast(1.03) brightness(.985);
   }
-  html[data-luxury="v2"] .app3b .home-world-art{filter:saturate(1.04) contrast(1.03) brightness(.985)}
-  html[data-luxury="v2"] .app3b .home-world-ring-contact{width:48%;height:8%}
+  html[data-luxury="v2"] .app3b .home-world-ring-rotor{animation-duration:15s}
 }
 @media(prefers-reduced-motion:reduce){
-  html[data-luxury="v2"] .app3b .home-world-ring-energy,
-  html[data-luxury="v2"] .app3b .home-world-ring-depth,
-  html[data-luxury="v2"] .app3b .home-world-ring-contact,
-  html[data-luxury="v2"] .app3b .home-world-ring-particles i{animation:none!important}
+  html[data-luxury="v2"] .app3b .home-world-ring-rotor{animation:none!important}
 }
-
