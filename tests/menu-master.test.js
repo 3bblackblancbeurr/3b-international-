@@ -15,7 +15,9 @@ test("general menu master uses the real rotating Broken Circle and keeps live na
   assert.match(navigation, /menu-master-dialog/);
   assert.match(navigation, /<BrokenCircle3D variant="menu"\/>/);
   assert.match(navigation, /BLACK · BLANC · BEUR/);
-  assert.match(navigation, /Ce n’est pas une marque\. C’est un héritage\./);
+  assert.match(navigation, /Ton univers\. Un seul centre\./);
+  assert.match(navigation, /L’héritage/);
+  assert.match(navigation, /compact \/>/);
   assert.match(navigation, /NAV_GROUPS\.map/);
   assert.match(navigation, /RouteLink/);
   assert.doesNotMatch(navigation, /Destin 3B|destin/i);
@@ -26,7 +28,12 @@ test("general menu master uses the real rotating Broken Circle and keeps live na
   assert.match(circle, /broken-circle-3d--\$\{variant\}/);
   assert.match(circle, /prefers-reduced-motion/);
   assert.match(circle, /IntersectionObserver/);
+  assert.match(circle, /ambientRig/);
+  assert.match(circle, /TorusGeometry\(2\.92/);
+  assert.match(circle, /PointsMaterial/);
 
+  assert.match(css, /menu-master-main/);
+  assert.match(css, /grid-template-columns:minmax\(390px/);
   assert.match(css, /menu-master-circle-stage \.home-world-webgl-shell/);
   assert.match(css, /menu-master-grid/);
   assert.match(css, /@media\(max-width:720px\)/);
