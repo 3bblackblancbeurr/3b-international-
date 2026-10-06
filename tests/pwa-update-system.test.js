@@ -69,21 +69,28 @@ test("worker lifecycle checks the server and a confirmed current build clears ev
 });
 
 
-test("home portal keeps the city still and rotates the Broken Circle geometry itself", async () => {
-  const [portal, homeCss] = await Promise.all([
+test("home portal keeps the city still and renders the Broken Circle as real-time 3D stone", async () => {
+  const [portal, circle3d, homeCss] = await Promise.all([
     readFile(new URL("src/components/WorldPortalCard.jsx", root), "utf8"),
+    readFile(new URL("src/components/BrokenCircle3D.jsx", root), "utf8"),
     readFile(new URL("src/styles/home-app.css", root), "utf8"),
   ]);
 
-  assert.equal(portal.match(/hub-cite-origine\.webp/g)?.length, 1, "the hero artwork must only be rendered once");
-  assert.match(portal, /home-world-ring-motion/);
-  assert.match(portal, /home-world-ring-svg/);
-  assert.match(portal, /home-world-ring-rotor/);
-  assert.match(portal, /home-world-ring-body/);
-  assert.match(portal, /home-world-ring-fragments/);
-  assert.doesNotMatch(portal, /home-world-ring-layer|home-world-ring-energy|home-world-ring-particles/);
-  assert.match(homeCss, /animation:threebBrokenCircleSpin 18s linear infinite/);
-  assert.match(homeCss, /@keyframes threebBrokenCircleSpin/);
-  assert.match(homeCss, /home-world-ring-rotor/);
-  assert.doesNotMatch(homeCss, /threebBrokenCircleEnergy|threebBrokenCircleParticle/);
+  assert.equal(portal.match(/hub-cite-origine\.webp/g)?.length, 1, "the city plate must only be rendered once");
+  assert.match(portal, /BrokenCircle3D/);
+  assert.doesNotMatch(portal, /home-world-ring-svg|home-world-ring-rotor|home-world-ring-fragments/);
+
+  assert.match(circle3d, /await import\('three'\)/);
+  assert.match(circle3d, /limestone-color\.webp/);
+  assert.match(circle3d, /MeshPhysicalMaterial/);
+  assert.match(circle3d, /ExtrudeGeometry/);
+  assert.match(circle3d, /rotor\.rotation\.z/);
+  assert.match(circle3d, /TAU\/18/);
+  assert.match(circle3d, /IntersectionObserver/);
+  assert.match(circle3d, /prefers-reduced-motion/);
+  assert.match(circle3d, /powerPreference:'high-performance'/);
+
+  assert.match(homeCss, /home-world-webgl-shell/);
+  assert.match(homeCss, /home-world-webgl-canvas/);
+  assert.doesNotMatch(homeCss, /threebBrokenCircleSpin|home-world-ring-rotor|home-world-ring-svg/);
 });
