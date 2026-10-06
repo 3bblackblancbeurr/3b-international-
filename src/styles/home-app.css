@@ -171,7 +171,7 @@ html[data-luxury="v2"] .app3b .home-world-ring-rotor{
   transform-box:view-box;
   transform-origin:836px 228px;
   will-change:transform;
-  animation:threebBrokenCircleSpin 22s linear infinite;
+  animation:threebBrokenCircleSpin 18s linear infinite;
   filter:drop-shadow(0 13px 14px rgba(0,0,0,.72)) drop-shadow(0 0 11px rgba(68,211,255,.32));
 }
 html[data-luxury="v2"] .app3b .home-world-ring-shadow,
