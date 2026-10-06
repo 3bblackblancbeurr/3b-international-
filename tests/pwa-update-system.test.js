@@ -76,7 +76,7 @@ test("home portal keeps the city still and renders the Broken Circle as real-tim
     readFile(new URL("src/styles/home-app.css", root), "utf8"),
   ]);
 
-  assert.equal(portal.match(/home-master-city\.webp/g)?.length, 1, "the clean city plate must only be rendered once");
+  assert.equal(portal.match(/hub-cite-origine\.webp/g)?.length, 1, "the clean city plate must only be rendered once");
   assert.match(portal, /BrokenCircle3D/);
   assert.doesNotMatch(portal, /home-world-ring-svg|home-world-ring-rotor|home-world-ring-fragments/);
 
