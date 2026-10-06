@@ -943,3 +943,391 @@ html[data-luxury="v2"] .app3b .menu-master-footer>span{
     transition:none!important;
   }
 }
+
+
+/* =========================================================
+   PHONE MASTER — 3B
+   Deliberately different from desktop: one cinematic monument,
+   then one-thumb navigation. No mini-dashboard on a phone.
+========================================================= */
+@media(max-width:720px){
+  html[data-luxury="v2"] .app3b .menu-master-dialog{
+    background:
+      radial-gradient(circle at 50% 18%,rgba(40,181,255,.13),transparent 28%),
+      radial-gradient(circle at 50% 27%,rgba(232,184,77,.07),transparent 38%),
+      linear-gradient(180deg,#030506 0%,#06090b 48%,#030405 100%);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog::before{
+    opacity:.18;
+    background-size:34px 34px;
+    -webkit-mask-image:linear-gradient(to bottom,black 0 43%,transparent 66%);
+    mask-image:linear-gradient(to bottom,black 0 43%,transparent 66%);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-heading{
+    min-height:64px;
+    padding:10px 13px 8px;
+    border-bottom:0;
+    background:linear-gradient(180deg,rgba(3,5,7,.92),rgba(3,5,7,.36),transparent);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-monogram{
+    width:40px;
+    height:40px;
+    flex-basis:40px;
+    border-radius:13px;
+    font-size:17px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-heading .eyebrow{
+    margin-bottom:3px;
+    font-size:5.8px;
+    letter-spacing:.16em;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-heading h2{
+    max-width:245px;
+    font-size:18px;
+    line-height:1.02;
+    letter-spacing:-.035em;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-close{
+    width:38px;
+    height:38px;
+    flex-basis:38px;
+    border-color:rgba(255,255,255,.11);
+    background:rgba(6,9,11,.72);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-main{
+    overflow:hidden;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-visual{
+    position:relative;
+    flex:0 0 354px;
+    min-height:354px;
+    display:block;
+    padding:0;
+    overflow:hidden;
+    border-bottom:1px solid rgba(255,255,255,.055);
+    background:
+      radial-gradient(circle at 50% 51%,rgba(53,207,255,.13),transparent 31%),
+      radial-gradient(circle at 50% 55%,rgba(232,184,77,.055),transparent 48%);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-visual::before{
+    width:410px;
+    max-width:112vw;
+    top:50%;
+    opacity:.42;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-visual::after{
+    bottom:3%;
+    width:82%;
+    height:46px;
+    opacity:.72;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-visual-copy{
+    z-index:12;
+    left:50%;
+    top:8px;
+    width:100%;
+    max-width:none;
+    transform:translateX(-50%);
+    padding:0 14px;
+    text-align:center;
+    pointer-events:none;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-visual-copy .eyebrow{
+    margin:0;
+    color:rgba(157,224,255,.72);
+    font-size:5.5px;
+    letter-spacing:.2em;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-visual-copy h3,
+  html[data-luxury="v2"] .app3b .menu-master-visual-copy>p:not(.eyebrow){
+    display:none;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-circle-stage{
+    position:absolute;
+    left:50%;
+    top:46%;
+    width:336px;
+    height:336px;
+    max-width:94vw;
+    margin:0;
+    transform:translate(-50%,-50%);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-circle-stage .home-world-webgl-shell{
+    inset:-8%;
+    width:116%;
+    height:116%;
+    filter:
+      drop-shadow(0 28px 30px rgba(0,0,0,.74))
+      drop-shadow(0 0 28px rgba(61,203,255,.30))
+      drop-shadow(0 0 20px rgba(232,184,77,.12));
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-core{
+    width:96px;
+    height:96px;
+    padding:11px;
+    border-color:rgba(255,230,163,.62);
+    box-shadow:
+      0 0 0 6px rgba(3,5,6,.68),
+      0 0 48px rgba(53,207,255,.23),
+      0 0 34px rgba(232,184,77,.13),
+      inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-core strong{
+    font-size:36px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-core span{
+    width:65px;
+    font-size:4.6px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-axis{
+    color:rgba(232,239,242,.34);
+    font-size:4.5px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-heritage-band{
+    left:12px;
+    right:12px;
+    bottom:7px;
+    border-color:rgba(255,255,255,.055);
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.018),transparent);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-heritage-band span{
+    min-height:27px;
+    font-size:5.2px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-panel{
+    position:relative;
+    flex:1 1 auto;
+    min-height:0;
+    margin-top:-1px;
+    padding:12px 12px 0;
+    border-radius:22px 22px 0 0;
+    background:
+      linear-gradient(180deg,rgba(15,19,22,.98),rgba(5,7,9,.98) 74px),
+      #050709;
+    box-shadow:
+      0 -18px 48px rgba(0,0,0,.40),
+      inset 0 1px 0 rgba(255,255,255,.04);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-panel::before{
+    content:"";
+    position:absolute;
+    top:5px;
+    left:50%;
+    width:38px;
+    height:3px;
+    transform:translateX(-50%);
+    border-radius:999px;
+    background:rgba(255,255,255,.16);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-status{
+    min-height:26px;
+    margin:0 0 8px;
+    padding:0 10px;
+    border:0;
+    color:rgba(229,234,236,.46);
+    background:transparent;
+    font-size:5.8px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-live-dot{
+    width:6px;
+    height:6px;
+    flex-basis:6px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-search{
+    min-height:46px;
+    margin-bottom:8px;
+    padding-inline:14px;
+    border-color:rgba(232,184,77,.17);
+    border-radius:15px;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.03),transparent),
+      rgba(0,2,4,.72);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.035),
+      0 8px 20px rgba(0,0,0,.16);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-search input{
+    min-height:44px;
+    font-size:12px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-secret{
+    margin-bottom:9px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-secret .secret-clock{
+    min-height:38px;
+    border-radius:13px;
+    opacity:.88;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-scroll{
+    padding:0 0 22px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-directory{
+    gap:10px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-group{
+    padding:0;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-group[aria-label="En préparation"]{
+    display:none;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-group-heading{
+    min-height:28px;
+    margin:0 4px 5px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-group .menu-master-group-heading h3{
+    color:rgba(255,230,163,.72);
+    font-size:6.7px;
+    letter-spacing:.18em;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-group-heading>span{
+    color:rgba(231,236,239,.28);
+    font-size:6.6px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-grid{
+    grid-template-columns:1fr;
+    gap:7px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card.gm-card{
+    min-height:72px;
+    padding:10px 11px;
+    gap:11px;
+    border-color:rgba(232,184,77,.13)!important;
+    border-radius:16px;
+    background:
+      radial-gradient(circle at 100% 0,rgba(59,167,255,.07),transparent 42%),
+      linear-gradient(115deg,rgba(255,255,255,.026),transparent 42%),
+      rgba(7,10,12,.91)!important;
+    box-shadow:
+      0 8px 20px rgba(0,0,0,.18)!important,
+      inset 0 1px 0 rgba(255,255,255,.025)!important;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card.gm-card::after{
+    left:54px;
+    right:11px;
+    opacity:.20;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-icon{
+    width:42px;
+    height:42px;
+    flex-basis:42px;
+    border-radius:13px;
+    border-color:rgba(232,184,77,.22);
+    background:
+      radial-gradient(circle at 35% 20%,rgba(255,230,163,.12),transparent 48%),
+      linear-gradient(145deg,rgba(232,184,77,.08),rgba(59,167,255,.045));
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-icon svg{
+    width:20px;
+    height:20px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-copy>small{
+    margin-bottom:2px;
+    font-size:5.7px;
+    letter-spacing:.13em;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-copy>strong{
+    font-size:12.5px;
+    line-height:1.18;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-copy>span{
+    display:none;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-action{
+    margin-left:auto;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card .compact-card-action svg{
+    width:16px;
+    height:16px;
+    opacity:.74;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-dialog .menu-master-card[aria-current="page"]{
+    border-color:rgba(255,230,163,.34)!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(59,167,255,.10),transparent 48%),
+      linear-gradient(110deg,rgba(232,184,77,.065),rgba(5,8,10,.94))!important;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-settings{
+    margin-top:14px;
+    padding:12px;
+    border:1px solid rgba(255,255,255,.055);
+    border-radius:16px;
+    background:rgba(255,255,255,.015);
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-install{
+    margin-top:10px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-footer{
+    display:none;
+  }
+}
+
+@media(max-width:390px){
+  html[data-luxury="v2"] .app3b .menu-master-visual{
+    flex-basis:326px;
+    min-height:326px;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-circle-stage{
+    width:306px;
+    height:306px;
+    max-width:94vw;
+  }
+
+  html[data-luxury="v2"] .app3b .menu-master-panel{
+    padding-inline:10px;
+  }
+}
