@@ -38,6 +38,8 @@ const QUICK_LINKS = [
   { id: "shop", label: "Boutique" },
 ];
 
+const MOBILE_MENU_ORDER = ["passport", "world3b", "shop", "member", "control", "secret", "guide"];
+
 export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation }) {
   const dialog = useRef(null), searchInput = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -48,6 +50,9 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
 
   const normalize = value => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr");
   const matching = allItems.filter(item => normalize(`${item.label} ${item.description}`).includes(normalize(query.trim())));
+  const mobileMenuItems = MOBILE_MENU_ORDER
+    .map(id => matching.find(item => item.id === id))
+    .filter(item => item && item.status !== "soon");
 
   useEffect(() => { dialog.current?.close(); }, [page]);
   useEffect(() => {
@@ -160,6 +165,50 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
               <span><b>02</b> UNITÉ</span>
               <span><b>03</b> CRÉATION</span>
             </div>
+          </section>
+
+          <section className="menu-mobile-master" aria-label="Menu général mobile 3B">
+            <div className="menu-mobile-kicker">
+              <span>MENU GÉNÉRAL</span>
+              <small>{online ? "LIVE" : "LOCAL"}</small>
+            </div>
+
+            <div className="menu-mobile-grid">
+              {mobileMenuItems.map(item => (
+                <RouteLink
+                  key={item.id}
+                  page={item.id}
+                  goTo={navigate}
+                  className="menu-mobile-tile"
+                  aria-current={activePage === item.id ? "page" : undefined}
+                >
+                  <span className="menu-mobile-tile-icon"><SectionIcon page={item.id}/></span>
+                  <span className="menu-mobile-tile-copy">
+                    <strong>{item.label}</strong>
+                    <small>{item.id === "passport" ? "TON IDENTITÉ 3B"
+                      : item.id === "world3b" ? "ENTRER DANS LE MONDE"
+                      : item.id === "shop" ? "COLLECTIONS 3B"
+                      : item.id === "member" ? "TON ESPACE"
+                      : item.id === "control" ? "CENTRE PRIVÉ"
+                      : item.id === "secret" ? "SIGNAL DU JOUR"
+                      : "COMPRENDRE 3B"}</small>
+                  </span>
+                  <ArrowUpRight size={16} aria-hidden="true"/>
+                </RouteLink>
+              ))}
+            </div>
+
+            <div className="menu-mobile-secret">
+              <SecretClock secret={secret} goTo={navigate} compact />
+            </div>
+
+            <nav className="menu-mobile-dock" aria-label="Accès rapides 3B">
+              <RouteLink page="home" goTo={navigate} aria-label="Accueil"><Home size={19}/><span>Accueil</span></RouteLink>
+              <RouteLink page="passport" goTo={navigate} aria-label="Passeport"><Fingerprint size={19}/><span>Passeport</span></RouteLink>
+              <button type="button" className="menu-mobile-dock-core" onClick={() => dialog.current.close()} aria-label="Fermer le menu 3B"><strong>3B</strong></button>
+              <RouteLink page="world3b" goTo={navigate} aria-label="Monde 3B"><Globe2 size={19}/><span>Monde</span></RouteLink>
+              <RouteLink page="member" goTo={navigate} aria-label="Profil"><UserRound size={19}/><span>Profil</span></RouteLink>
+            </nav>
           </section>
 
           <section className="menu-master-panel" aria-label="Navigation générale 3B">
