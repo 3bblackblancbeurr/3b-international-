@@ -245,6 +245,11 @@ export default function BrokenCircle3D(){
       renderer.shadowMap.type=THREE.PCFSoftShadowMap;
       renderer.domElement.className='home-world-webgl-canvas';
       renderer.domElement.setAttribute('aria-hidden','true');
+      renderer.domElement.addEventListener('webglcontextlost',(event)=>{
+        event.preventDefault();
+        stop();
+        mount.dataset.state='fallback';
+      },{passive:false});
       mount.appendChild(renderer.domElement);
 
       const maxAnisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
@@ -350,9 +355,13 @@ export default function BrokenCircle3D(){
       motionQuery.addEventListener?.('change',onMotionChange);
       document.addEventListener('visibilitychange',onVisibility);
 
+      mount.dataset.state='ready';
       resize();
       start();
-    })();
+    })().catch(()=>{
+      mount.dataset.state='fallback';
+      stop();
+    });
 
     return()=>{
       disposed=true;
@@ -361,6 +370,7 @@ export default function BrokenCircle3D(){
       document.removeEventListener('visibilitychange',onVisibility);
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
+      delete mount.dataset.state;
       if(renderer){
         renderer.dispose();
         renderer.domElement?.remove();
