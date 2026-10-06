@@ -76,7 +76,7 @@ test("home portal keeps the city still and renders the Broken Circle as real-tim
     readFile(new URL("src/styles/home-app.css", root), "utf8"),
   ]);
 
-  assert.equal(portal.match(/hub-cite-origine\.webp/g)?.length, 1, "the city plate must only be rendered once");
+  assert.equal(portal.match(/home-master-city\.webp/g)?.length, 1, "the clean city plate must only be rendered once");
   assert.match(portal, /BrokenCircle3D/);
   assert.doesNotMatch(portal, /home-world-ring-svg|home-world-ring-rotor|home-world-ring-fragments/);
 
@@ -85,12 +85,16 @@ test("home portal keeps the city still and renders the Broken Circle as real-tim
   assert.match(circle3d, /MeshPhysicalMaterial/);
   assert.match(circle3d, /ExtrudeGeometry/);
   assert.match(circle3d, /rotor\.rotation\.z/);
-  assert.match(circle3d, /TAU\/18/);
+  assert.match(circle3d, /TAU\/24/);
   assert.match(circle3d, /IntersectionObserver/);
   assert.match(circle3d, /prefers-reduced-motion/);
   assert.match(circle3d, /powerPreference:'high-performance'/);
+  assert.match(circle3d, /annularSectorGeometry/);
+  assert.match(circle3d, /webglcontextlost/);
+  assert.match(circle3d, /dataset\.state='fallback'/);
 
   assert.match(homeCss, /home-world-webgl-shell/);
   assert.match(homeCss, /home-world-webgl-canvas/);
+  assert.match(homeCss, /data-state="fallback"/);
   assert.doesNotMatch(homeCss, /threebBrokenCircleSpin|home-world-ring-rotor|home-world-ring-svg/);
 });
