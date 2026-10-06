@@ -193,6 +193,7 @@ export default function BrokenCircle3D({variant='stone'}){
     let scene=null;
     let camera=null;
     let rotor=null;
+    let ambientRig=null;
     let resizeObserver=null;
     let intersectionObserver=null;
     let visible=true;
@@ -227,6 +228,13 @@ export default function BrokenCircle3D({variant='stone'}){
           const t=now/1000;
           rotor.rotation.x=-.06+Math.sin(t*.42)*.012;
           rotor.rotation.y=.16+Math.cos(t*.34)*.026;
+          if(ambientRig){
+            ambientRig.rotation.z+=dt*.018;
+            ambientRig.rotation.x=Math.sin(t*.21)*.018;
+            ambientRig.children.forEach((child,index)=>{
+              if(child.userData?.orbit) child.rotation.z+=(index%2===0?1:-1)*dt*(.028+index*.004);
+            });
+          }
         }
       }
       renderer.render(scene,camera);
@@ -317,6 +325,69 @@ export default function BrokenCircle3D({variant='stone'}){
       outerHalo.position.z=-.28;
       rotor.add(outerHalo);
 
+      if(menuMode){
+        ambientRig=new THREE.Group();
+        ambientRig.position.z=-.45;
+        scene.add(ambientRig);
+
+        const goldOrbit=new THREE.Mesh(
+          new THREE.TorusGeometry(2.92,.014,6,160),
+          new THREE.MeshBasicMaterial({
+            color:0xe8b84d,
+            transparent:true,
+            opacity:.34,
+            blending:THREE.AdditiveBlending,
+            depthWrite:false,
+          })
+        );
+        goldOrbit.rotation.x=1.08;
+        goldOrbit.rotation.y=.34;
+        goldOrbit.userData.orbit=true;
+        ambientRig.add(goldOrbit);
+
+        const cyanOrbit=new THREE.Mesh(
+          new THREE.TorusGeometry(3.12,.010,6,160),
+          new THREE.MeshBasicMaterial({
+            color:0x51ddff,
+            transparent:true,
+            opacity:.27,
+            blending:THREE.AdditiveBlending,
+            depthWrite:false,
+          })
+        );
+        cyanOrbit.rotation.x=.72;
+        cyanOrbit.rotation.y=-.44;
+        cyanOrbit.userData.orbit=true;
+        ambientRig.add(cyanOrbit);
+
+        const count=84;
+        const positions=new Float32Array(count*3);
+        for(let i=0;i<count;i+=1){
+          const angle=i*2.399963229728653;
+          const radius=2.72+(i%9)*.085;
+          const wave=Math.sin(i*1.73)*.24;
+          positions[i*3]=Math.cos(angle)*radius;
+          positions[i*3+1]=Math.sin(angle)*radius;
+          positions[i*3+2]=wave+(i%5)*.035;
+        }
+        const particleGeometry=new THREE.BufferGeometry();
+        particleGeometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+        const particles=new THREE.Points(
+          particleGeometry,
+          new THREE.PointsMaterial({
+            color:0x8be8ff,
+            size:.032,
+            sizeAttenuation:true,
+            transparent:true,
+            opacity:.54,
+            blending:THREE.AdditiveBlending,
+            depthWrite:false,
+          })
+        );
+        particles.userData.orbit=true;
+        ambientRig.add(particles);
+      }
+
       const hemi=new THREE.HemisphereLight(0xbadfff,0x27231e,1.12);
       scene.add(hemi);
 
@@ -349,7 +420,7 @@ export default function BrokenCircle3D({variant='stone'}){
         renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.28:1.7));
         renderer.setSize(width,height,false);
         camera.aspect=width/height;
-        camera.position.z=mobile?8.85:8.45;
+        camera.position.z=menuMode?(mobile?8.72:8.28):(mobile?8.85:8.45);
         camera.updateProjectionMatrix();
         renderer.render(scene,camera);
       };
