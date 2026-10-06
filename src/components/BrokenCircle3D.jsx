@@ -1,26 +1,24 @@
 import {useEffect,useRef} from 'react';
 
 const TAU=Math.PI*2;
+const DEG=Math.PI/180;
 
-function roundedStoneBlock(THREE,width,height,depth){
+function annularSectorGeometry(THREE,{innerRadius,outerRadius,startDeg,lengthDeg,depth,bevel=.045,curveSegments=14}){
+  const start=startDeg*DEG;
+  const end=(startDeg+lengthDeg)*DEG;
   const shape=new THREE.Shape();
-  const x=-width/2,y=-height/2,r=Math.min(.065,width*.12,height*.18);
-  shape.moveTo(x+r,y);
-  shape.lineTo(x+width-r,y);
-  shape.quadraticCurveTo(x+width,y,x+width,y+r);
-  shape.lineTo(x+width,y+height-r);
-  shape.quadraticCurveTo(x+width,y+height,x+width-r,y+height);
-  shape.lineTo(x+r,y+height);
-  shape.quadraticCurveTo(x,y+height,x,y+height-r);
-  shape.lineTo(x,y+r);
-  shape.quadraticCurveTo(x,y,x+r,y);
+  shape.moveTo(Math.cos(start)*outerRadius,Math.sin(start)*outerRadius);
+  shape.absarc(0,0,outerRadius,start,end,false);
+  shape.lineTo(Math.cos(end)*innerRadius,Math.sin(end)*innerRadius);
+  shape.absarc(0,0,innerRadius,end,start,true);
+  shape.closePath();
   const geometry=new THREE.ExtrudeGeometry(shape,{
     depth,
-    bevelEnabled:true,
-    bevelThickness:.035,
-    bevelSize:.028,
+    bevelEnabled:bevel>0,
+    bevelThickness:bevel,
+    bevelSize:bevel*.82,
     bevelSegments:2,
-    curveSegments:2,
+    curveSegments,
     steps:1,
   });
   geometry.translate(0,0,-depth/2);
@@ -28,108 +26,154 @@ function roundedStoneBlock(THREE,width,height,depth){
   return geometry;
 }
 
-function makeStoneMaterial(THREE,map){
-  return new THREE.MeshPhysicalMaterial({
-    color:0xb9b8b0,
-    map,
-    roughness:.92,
-    metalness:.02,
-    clearcoat:.04,
-    clearcoatRoughness:.9,
-  });
+function makeStoneMaterials(THREE,texture){
+  const tones=[0xc5c2b7,0xaaa9a2,0x8d918e,0xb5b0a4];
+  return tones.map((color)=>new THREE.MeshPhysicalMaterial({
+    color,
+    map:texture,
+    bumpMap:texture,
+    bumpScale:.045,
+    roughness:.94,
+    metalness:.015,
+    clearcoat:.025,
+    clearcoatRoughness:.96,
+  }));
 }
 
-function addRingLayer(THREE,group,{radius,count,blockHeight,depth,gapIndexes,stoneMaterial,energyMaterial,energyRadiusOffset=0}){
-  const step=TAU/count;
-  const width=radius*step*.78;
-  const blockGeometry=roundedStoneBlock(THREE,width,blockHeight,depth);
-  const energyGeometry=roundedStoneBlock(THREE,width*.82,.055,depth*.82);
+function segmentGroup(THREE,spec,materials,energyMaterial,index){
+  const group=new THREE.Group();
+  const stone=new THREE.Mesh(
+    annularSectorGeometry(THREE,{
+      innerRadius:spec.innerRadius,
+      outerRadius:spec.outerRadius,
+      startDeg:spec.start,
+      lengthDeg:spec.length,
+      depth:spec.depth,
+      bevel:spec.bevel??.05,
+      curveSegments:spec.curveSegments??16,
+    }),
+    materials[index%materials.length]
+  );
+  stone.castShadow=true;
+  stone.receiveShadow=true;
+  group.add(stone);
 
-  for(let i=0;i<count;i+=1){
-    if(gapIndexes.has(i))continue;
-    const angle=i*step;
-    const wobble=Math.sin(i*12.9898)*.035;
-    const radial=radius+wobble;
-    const stone=new THREE.Mesh(blockGeometry,stoneMaterial);
-    stone.position.set(Math.cos(angle)*radial,Math.sin(angle)*radial,Math.sin(i*2.17)*.035);
-    stone.rotation.z=angle+Math.PI/2;
-    stone.rotation.x=Math.sin(i*.91)*.018;
-    stone.castShadow=true;
-    stone.receiveShadow=true;
-    group.add(stone);
+  const inset=.018;
+  const railInner=spec.energyRadius-inset;
+  const railOuter=spec.energyRadius+inset;
+  const railLength=Math.max(4,spec.length-4);
+  const rail=new THREE.Mesh(
+    annularSectorGeometry(THREE,{
+      innerRadius:railInner,
+      outerRadius:railOuter,
+      startDeg:spec.start+2,
+      lengthDeg:railLength,
+      depth:.075,
+      bevel:.008,
+      curveSegments:14,
+    }),
+    energyMaterial
+  );
+  rail.position.z=spec.depth*.51;
+  group.add(rail);
 
-    const glowRadius=radius+energyRadiusOffset;
-    const glow=new THREE.Mesh(energyGeometry,energyMaterial);
-    glow.position.set(Math.cos(angle)*glowRadius,Math.sin(angle)*glowRadius,-depth*.12);
-    glow.rotation.z=angle+Math.PI/2;
-    group.add(glow);
-  }
+  const mid=(spec.start+spec.length/2)*DEG;
+  const offset=spec.offset??0;
+  group.position.x=Math.cos(mid)*offset;
+  group.position.y=Math.sin(mid)*offset;
+  group.position.z=spec.z??0;
+  group.rotation.z=(spec.twist??0)*DEG;
+  group.rotation.x=(spec.tiltX??0)*DEG;
+  group.rotation.y=(spec.tiltY??0)*DEG;
+  return group;
 }
 
-function addKeystones(THREE,group,stoneMaterial,energyMaterial){
-  const geometry=roundedStoneBlock(THREE,.62,.78,.52);
-  const lightGeometry=roundedStoneBlock(THREE,.34,.09,.53);
-  const angles=[.18,1.66,3.34,4.83];
-  for(const [index,angle] of angles.entries()){
-    const radius=2.18;
-    const stone=new THREE.Mesh(geometry,stoneMaterial);
-    stone.position.set(Math.cos(angle)*radius,Math.sin(angle)*radius,.07);
-    stone.rotation.z=angle+Math.PI/2;
-    stone.rotation.y=(index%2?1:-1)*.035;
-    stone.castShadow=true;
-    group.add(stone);
-
-    const glow=new THREE.Mesh(lightGeometry,energyMaterial);
-    glow.position.set(Math.cos(angle)*radius,Math.sin(angle)*radius,.34);
-    glow.rotation.z=angle+Math.PI/2;
-    group.add(glow);
-  }
-}
-
-function addFractureShards(THREE,group,stoneMaterial){
-  const geometry=roundedStoneBlock(THREE,.34,.5,.38);
-  const specs=[
-    {a:.98,r:2.48,z:.16,s:.92},
-    {a:1.12,r:2.67,z:-.04,s:.68},
-    {a:4.08,r:2.52,z:.1,s:.78},
-    {a:5.58,r:2.55,z:-.08,s:.82},
+function addBrokenRing(THREE,rotor,materials,energyMaterial){
+  const outer=[
+    {start:10,length:42,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.03,twist:-.5,z:.02},
+    {start:63,length:34,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.08,twist:.8,z:.08,tiltY:1.6},
+    {start:111,length:43,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.02,twist:-.3,z:-.01},
+    {start:168,length:37,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.10,twist:1.1,z:.05,tiltX:-1.1},
+    {start:219,length:44,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.04,twist:-.7,z:-.03},
+    {start:277,length:33,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.12,twist:.9,z:.09,tiltY:-1.7},
+    {start:322,length:25,innerRadius:1.96,outerRadius:2.48,energyRadius:2.06,depth:.56,offset:.06,twist:-.9,z:.02},
   ];
-  for(const [index,spec] of specs.entries()){
-    const shard=new THREE.Mesh(geometry,stoneMaterial);
-    shard.position.set(Math.cos(spec.a)*spec.r,Math.sin(spec.a)*spec.r,spec.z);
-    shard.rotation.set(.12*index,.18*(index-1),spec.a+.45);
-    shard.scale.setScalar(spec.s);
+
+  const inner=[
+    {start:26,length:46,innerRadius:1.50,outerRadius:1.84,energyRadius:1.58,depth:.42,offset:.02,twist:.6,z:.08},
+    {start:84,length:28,innerRadius:1.50,outerRadius:1.84,energyRadius:1.58,depth:.42,offset:.08,twist:-1.0,z:.02,tiltY:1.4},
+    {start:132,length:39,innerRadius:1.50,outerRadius:1.84,energyRadius:1.58,depth:.42,offset:.03,twist:.4,z:-.04},
+    {start:190,length:49,innerRadius:1.50,outerRadius:1.84,energyRadius:1.58,depth:.42,offset:.07,twist:-.5,z:.05},
+    {start:255,length:36,innerRadius:1.50,outerRadius:1.84,energyRadius:1.58,depth:.42,offset:.04,twist:.8,z:-.02},
+    {start:309,length:31,innerRadius:1.50,outerRadius:1.84,energyRadius:1.58,depth:.42,offset:.11,twist:-.9,z:.07,tiltX:1.1},
+  ];
+
+  outer.forEach((spec,index)=>rotor.add(segmentGroup(THREE,spec,materials,energyMaterial,index)));
+  inner.forEach((spec,index)=>rotor.add(segmentGroup(THREE,spec,materials,energyMaterial,index+2)));
+
+  const keystones=[
+    {start:42,length:9,innerRadius:2.30,outerRadius:2.63,energyRadius:2.36,depth:.64,offset:.10,twist:-1.4,z:.12},
+    {start:119,length:10,innerRadius:2.30,outerRadius:2.63,energyRadius:2.36,depth:.64,offset:.07,twist:1.2,z:.08},
+    {start:234,length:10,innerRadius:2.30,outerRadius:2.63,energyRadius:2.36,depth:.64,offset:.11,twist:-.9,z:.10},
+    {start:325,length:9,innerRadius:2.30,outerRadius:2.63,energyRadius:2.36,depth:.64,offset:.08,twist:1.5,z:.15},
+  ];
+  keystones.forEach((spec,index)=>rotor.add(segmentGroup(THREE,spec,materials,energyMaterial,index+1)));
+
+  const shardMaterial=materials[2];
+  const shards=[
+    {start:100,length:7,innerRadius:2.02,outerRadius:2.39,depth:.38,x:-.09,y:.14,z:.30,rz:-7,rx:10,ry:-8},
+    {start:155,length:6,innerRadius:1.64,outerRadius:1.97,depth:.34,x:-.14,y:-.02,z:.22,rz:9,rx:-6,ry:12},
+    {start:267,length:7,innerRadius:2.07,outerRadius:2.43,depth:.38,x:.11,y:-.12,z:.26,rz:-9,rx:8,ry:6},
+    {start:350,length:6,innerRadius:1.62,outerRadius:1.96,depth:.34,x:.13,y:.10,z:.21,rz:11,rx:-7,ry:-10},
+  ];
+  shards.forEach((spec)=>{
+    const shard=new THREE.Mesh(
+      annularSectorGeometry(THREE,{
+        innerRadius:spec.innerRadius,
+        outerRadius:spec.outerRadius,
+        startDeg:spec.start,
+        lengthDeg:spec.length,
+        depth:spec.depth,
+        bevel:.055,
+        curveSegments:10,
+      }),
+      shardMaterial
+    );
+    shard.position.set(spec.x,spec.y,spec.z);
+    shard.rotation.set(spec.rx*DEG,spec.ry*DEG,spec.rz*DEG);
     shard.castShadow=true;
-    group.add(shard);
-  }
+    rotor.add(shard);
+  });
 }
 
-function addPedestal(THREE,scene,stoneMaterial){
-  const pedestal=new THREE.Group();
-  pedestal.position.set(0,-2.55,-.28);
-
-  const lower=new THREE.Mesh(roundedStoneBlock(THREE,4.7,.48,.95),stoneMaterial);
-  lower.position.y=-.16;
-  lower.receiveShadow=true;
-  pedestal.add(lower);
-
-  const upper=new THREE.Mesh(roundedStoneBlock(THREE,3.55,.34,.78),stoneMaterial);
-  upper.position.set(0,.22,.06);
-  upper.receiveShadow=true;
-  pedestal.add(upper);
-
-  const inlayMaterial=new THREE.MeshStandardMaterial({
-    color:0x1b789f,
-    emissive:0x2ecbff,
-    emissiveIntensity:2.8,
-    roughness:.42,
-    metalness:.08,
+function addArchitecturalDetails(THREE,rotor,materials){
+  const detailMaterial=materials[2];
+  const specs=[
+    {start:18,length:15,r0:2.17,r1:2.31,z:.33},
+    {start:72,length:12,r0:2.17,r1:2.31,z:.33},
+    {start:126,length:14,r0:2.17,r1:2.31,z:.33},
+    {start:181,length:13,r0:2.17,r1:2.31,z:.33},
+    {start:230,length:15,r0:2.17,r1:2.31,z:.33},
+    {start:287,length:12,r0:2.17,r1:2.31,z:.33},
+    {start:328,length:12,r0:2.17,r1:2.31,z:.33},
+  ];
+  specs.forEach((spec)=>{
+    const detail=new THREE.Mesh(
+      annularSectorGeometry(THREE,{
+        innerRadius:spec.r0,
+        outerRadius:spec.r1,
+        startDeg:spec.start,
+        lengthDeg:spec.length,
+        depth:.10,
+        bevel:.012,
+        curveSegments:10,
+      }),
+      detailMaterial
+    );
+    detail.position.z=spec.z;
+    detail.castShadow=true;
+    rotor.add(detail);
   });
-  const inlay=new THREE.Mesh(new THREE.BoxGeometry(2.55,.035,.82),inlayMaterial);
-  inlay.position.set(0,.42,.08);
-  pedestal.add(inlay);
-
-  scene.add(pedestal);
 }
 
 export default function BrokenCircle3D(){
@@ -153,22 +197,10 @@ export default function BrokenCircle3D(){
     const motionQuery=window.matchMedia('(prefers-reduced-motion: reduce)');
     let lastTime=performance.now();
 
-    const onMotionChange=(event)=>{reducedMotion=event.matches;};
-    const onVisibility=()=>{if(document.hidden)stop();else start();};
-
     const stop=()=>{
       running=false;
       if(frame)cancelAnimationFrame(frame);
       frame=0;
-    };
-
-    const renderLoop=(now)=>{
-      if(disposed||!renderer||!scene||!camera||!rotor){stop();return;}
-      const dt=Math.min((now-lastTime)/1000,.05);
-      lastTime=now;
-      if(!reducedMotion)rotor.rotation.z-=dt*(TAU/18);
-      renderer.render(scene,camera);
-      if(running)frame=requestAnimationFrame(renderLoop);
     };
 
     const start=()=>{
@@ -178,14 +210,26 @@ export default function BrokenCircle3D(){
       frame=requestAnimationFrame(renderLoop);
     };
 
+    const onMotionChange=(event)=>{reducedMotion=event.matches;};
+    const onVisibility=()=>{if(document.hidden)stop();else start();};
+
+    const renderLoop=(now)=>{
+      if(disposed||!renderer||!scene||!camera||!rotor){stop();return;}
+      const dt=Math.min((now-lastTime)/1000,.05);
+      lastTime=now;
+      if(!reducedMotion)rotor.rotation.z-=dt*(TAU/24);
+      renderer.render(scene,camera);
+      if(running)frame=requestAnimationFrame(renderLoop);
+    };
+
     (async()=>{
       const THREE=await import('three');
       if(disposed)return;
 
       scene=new THREE.Scene();
-      camera=new THREE.PerspectiveCamera(31,1,.1,100);
-      camera.position.set(0,.04,8.35);
-      camera.lookAt(0,.05,0);
+      camera=new THREE.PerspectiveCamera(29,1,.1,100);
+      camera.position.set(0,.02,8.55);
+      camera.lookAt(0,.06,0);
 
       renderer=new THREE.WebGLRenderer({
         alpha:true,
@@ -196,126 +240,89 @@ export default function BrokenCircle3D(){
       renderer.setClearColor(0x000000,0);
       renderer.outputColorSpace=THREE.SRGBColorSpace;
       renderer.toneMapping=THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure=1.12;
+      renderer.toneMappingExposure=1.08;
       renderer.shadowMap.enabled=true;
       renderer.shadowMap.type=THREE.PCFSoftShadowMap;
       renderer.domElement.className='home-world-webgl-canvas';
       renderer.domElement.setAttribute('aria-hidden','true');
       mount.appendChild(renderer.domElement);
 
-      const maxAnisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+      const maxAnisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
       const textureLoader=new THREE.TextureLoader();
-      const stoneTexture=textureLoader.load('/world/origins/limestone-color.webp',()=>{
-        if(disposed)return;
-        stoneTexture.colorSpace=THREE.SRGBColorSpace;
-        stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
-        stoneTexture.repeat.set(2.2,2.2);
-        stoneTexture.anisotropy=maxAnisotropy;
-        stoneTexture.needsUpdate=true;
-      });
+      const stoneTexture=textureLoader.load('/world/origins/limestone-color.webp');
       stoneTexture.colorSpace=THREE.SRGBColorSpace;
       stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
-      stoneTexture.repeat.set(2.2,2.2);
+      stoneTexture.repeat.set(2.8,2.2);
       stoneTexture.anisotropy=maxAnisotropy;
 
-      const stoneMaterial=makeStoneMaterial(THREE,stoneTexture);
-      const darkerStone=stoneMaterial.clone();
-      darkerStone.color.setHex(0x858781);
-
+      const stoneMaterials=makeStoneMaterials(THREE,stoneTexture);
       const energyMaterial=new THREE.MeshStandardMaterial({
-        color:0x2f9dcb,
-        emissive:0x34cfff,
-        emissiveIntensity:4.4,
-        roughness:.28,
-        metalness:.06,
+        color:0x2b9bc8,
+        emissive:0x35d5ff,
+        emissiveIntensity:4.0,
+        roughness:.22,
+        metalness:.02,
         transparent:true,
-        opacity:.96,
+        opacity:.90,
       });
-
-      const veilMaterial=new THREE.MeshBasicMaterial({
-        color:0x02070b,
-        transparent:true,
-        opacity:.86,
-        depthWrite:false,
-      });
-      const veil=new THREE.Mesh(new THREE.CircleGeometry(2.62,96),veilMaterial);
-      veil.position.z=-.72;
-      scene.add(veil);
-
-      const haloMaterial=new THREE.MeshBasicMaterial({
-        color:0x30c9ff,
-        transparent:true,
-        opacity:.2,
-        blending:THREE.AdditiveBlending,
-        depthWrite:false,
-      });
-      const halo=new THREE.Mesh(new THREE.TorusGeometry(2.33,.045,12,128),haloMaterial);
-      halo.position.z=-.52;
-      scene.add(halo);
-
-      addPedestal(THREE,scene,darkerStone);
 
       rotor=new THREE.Group();
-      rotor.position.set(0,.17,0);
-      rotor.rotation.x=-.055;
-      rotor.rotation.y=.095;
+      rotor.position.set(0,.08,0);
+      rotor.rotation.x=-.045;
+      rotor.rotation.y=.13;
       scene.add(rotor);
 
-      addRingLayer(THREE,rotor,{
-        radius:2.08,
-        count:34,
-        blockHeight:.62,
-        depth:.52,
-        gapIndexes:new Set([0,1,6,7,15,16,25,26]),
-        stoneMaterial,
-        energyMaterial,
-        energyRadiusOffset:-.03,
-      });
-      addRingLayer(THREE,rotor,{
-        radius:1.56,
-        count:30,
-        blockHeight:.38,
-        depth:.46,
-        gapIndexes:new Set([0,5,6,13,20,21,27]),
-        stoneMaterial:darkerStone,
-        energyMaterial,
-        energyRadiusOffset:.04,
-      });
-      addKeystones(THREE,rotor,stoneMaterial,energyMaterial);
-      addFractureShards(THREE,rotor,stoneMaterial);
+      addBrokenRing(THREE,rotor,stoneMaterials,energyMaterial);
+      addArchitecturalDetails(THREE,rotor,stoneMaterials);
 
-      const innerEnergy=new THREE.Mesh(
-        new THREE.TorusGeometry(1.34,.028,10,128),
-        new THREE.MeshStandardMaterial({
-          color:0x2698c8,
-          emissive:0x31d5ff,
-          emissiveIntensity:3.5,
-          roughness:.25,
+      const innerGlow=new THREE.Mesh(
+        new THREE.TorusGeometry(1.39,.022,8,112),
+        new THREE.MeshBasicMaterial({
+          color:0x48dbff,
           transparent:true,
-          opacity:.82,
+          opacity:.32,
+          blending:THREE.AdditiveBlending,
+          depthWrite:false,
         })
       );
-      innerEnergy.position.z=-.03;
-      rotor.add(innerEnergy);
+      innerGlow.position.z=-.20;
+      rotor.add(innerGlow);
 
-      const hemi=new THREE.HemisphereLight(0x9bcfff,0x171511,.82);
+      const outerHalo=new THREE.Mesh(
+        new THREE.TorusGeometry(2.53,.035,8,128),
+        new THREE.MeshBasicMaterial({
+          color:0x39cfff,
+          transparent:true,
+          opacity:.15,
+          blending:THREE.AdditiveBlending,
+          depthWrite:false,
+        })
+      );
+      outerHalo.position.z=-.28;
+      rotor.add(outerHalo);
+
+      const hemi=new THREE.HemisphereLight(0xbadfff,0x27231e,1.12);
       scene.add(hemi);
 
-      const key=new THREE.DirectionalLight(0xffd9a6,2.7);
-      key.position.set(4.2,5.5,6.5);
+      const key=new THREE.DirectionalLight(0xffd9a8,3.25);
+      key.position.set(4.8,5.8,7.6);
       key.castShadow=true;
       key.shadow.mapSize.set(512,512);
       key.shadow.camera.near=.5;
       key.shadow.camera.far=20;
       scene.add(key);
 
-      const rim=new THREE.DirectionalLight(0x55cfff,3.15);
-      rim.position.set(-5.5,1.8,4);
+      const fill=new THREE.DirectionalLight(0x91a4b8,1.2);
+      fill.position.set(-2.5,-1.0,5);
+      scene.add(fill);
+
+      const rim=new THREE.DirectionalLight(0x4ad7ff,3.7);
+      rim.position.set(-5.2,2.4,4.5);
       scene.add(rim);
 
-      const bottomGlow=new THREE.PointLight(0x35cfff,10,7.2,2);
-      bottomGlow.position.set(0,-2.05,1.25);
-      scene.add(bottomGlow);
+      const blueCore=new THREE.PointLight(0x35cfff,12,8,2);
+      blueCore.position.set(0,.1,2.1);
+      scene.add(blueCore);
 
       const resize=()=>{
         if(disposed||!renderer||!camera)return;
@@ -323,10 +330,10 @@ export default function BrokenCircle3D(){
         const width=Math.max(1,Math.floor(rect.width));
         const height=Math.max(1,Math.floor(rect.height));
         const mobile=window.matchMedia('(max-width: 720px)').matches;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.35:1.65));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.28:1.7));
         renderer.setSize(width,height,false);
         camera.aspect=width/height;
-        camera.position.z=mobile?8.75:8.25;
+        camera.position.z=mobile?8.85:8.45;
         camera.updateProjectionMatrix();
         renderer.render(scene,camera);
       };
@@ -336,7 +343,7 @@ export default function BrokenCircle3D(){
 
       intersectionObserver=new IntersectionObserver(([entry])=>{
         visible=Boolean(entry?.isIntersecting);
-        if(visible)start(); else stop();
+        if(visible)start();else stop();
       },{threshold:.05});
       intersectionObserver.observe(mount);
 
