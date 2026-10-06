@@ -35,11 +35,11 @@ function makeStoneMaterials(THREE,texture,variant='stone'){
     color,
     map:texture,
     bumpMap:texture,
-    bumpScale:menu?.032:.045,
-    roughness:menu?(index===0?.48:.67):.94,
-    metalness:menu?(index===0?.34:.16):.015,
-    clearcoat:menu?.22:.025,
-    clearcoatRoughness:menu?.48:.96,
+    bumpScale:menu ? .032 : .045,
+    roughness:menu ? (index===0 ? .48 : .67) : .94,
+    metalness:menu ? (index===0 ? .34 : .16) : .015,
+    clearcoat:menu ? .22 : .025,
+    clearcoatRoughness:menu ? .48 : .96,
   }));
 }
 
@@ -251,7 +251,7 @@ export default function BrokenCircle3D({variant='stone'}){
       renderer.setClearColor(0x000000,0);
       renderer.outputColorSpace=THREE.SRGBColorSpace;
       renderer.toneMapping=THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure=menuMode?1.18:1.08;
+      renderer.toneMappingExposure=menuMode ? 1.18 : 1.08;
       renderer.shadowMap.enabled=true;
       renderer.shadowMap.type=THREE.PCFSoftShadowMap;
       renderer.domElement.className='home-world-webgl-canvas';
@@ -275,17 +275,17 @@ export default function BrokenCircle3D({variant='stone'}){
       const energyMaterial=new THREE.MeshStandardMaterial({
         color:0x2b9bc8,
         emissive:0x35d5ff,
-        emissiveIntensity:menuMode?5.2:4.0,
+        emissiveIntensity:menuMode ? 5.2 : 4.0,
         roughness:.22,
         metalness:.02,
         transparent:true,
-        opacity:menuMode?.96:.90,
+        opacity:menuMode ? .96 : .90,
       });
 
       rotor=new THREE.Group();
       rotor.position.set(0,.08,0);
-      rotor.rotation.x=menuMode?-.06:-.045;
-      rotor.rotation.y=menuMode?.16:.13;
+      rotor.rotation.x=menuMode ? -.06 : -.045;
+      rotor.rotation.y=menuMode ? .16 : .13;
       scene.add(rotor);
 
       addBrokenRing(THREE,rotor,stoneMaterials,energyMaterial);
