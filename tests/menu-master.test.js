@@ -43,11 +43,24 @@ test("general menu master uses the real rotating Broken Circle and keeps live na
 });
 
 
-test("one-thumb mobile master prioritizes the monument and live routes", async () => {
-  const css = await readFile(new URL("src/styles/menu-master.css", root), "utf8");
-  assert.match(css, /PHONE MASTER — 3B/);
-  assert.match(css, /menu-master-group\[aria-label="En préparation"\][\s\S]*?display:none/);
-  assert.match(css, /menu-master-grid\{[\s\S]*?grid-template-columns:1fr/);
-  assert.match(css, /menu-master-footer\{[\s\S]*?display:none/);
-  assert.match(css, /menu-master-circle-stage\{[\s\S]*?width:336px/);
+test("mobile visual master is a dedicated phone surface, not the desktop panel squeezed down", async () => {
+  const [navigation, css] = await Promise.all([
+    readFile(new URL("src/components/AppNavigation.jsx", root), "utf8"),
+    readFile(new URL("src/styles/menu-master.css", root), "utf8"),
+  ]);
+
+  assert.match(navigation, /MOBILE_MENU_ORDER/);
+  assert.match(navigation, /menu-mobile-master/);
+  assert.match(navigation, /menu-mobile-grid/);
+  assert.match(navigation, /menu-mobile-dock/);
+  assert.match(navigation, /menu-mobile-dock-core/);
+  assert.match(navigation, /BLACK · BLANC · BEUR/);
+  assert.doesNotMatch(navigation, /Destin 3B|destin/i);
+
+  assert.match(css, /MOBILE VISUAL MASTER V2/);
+  assert.match(css, /menu-master-panel,[\s\S]*?menu-master-footer[\s\S]*?display:none!important/);
+  assert.match(css, /menu-mobile-master[\s\S]*?display:flex/);
+  assert.match(css, /menu-mobile-grid[\s\S]*?grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(css, /menu-mobile-dock[\s\S]*?grid-template-columns:1fr 1fr 68px 1fr 1fr/);
+  assert.match(css, /menu-master-circle-stage[\s\S]*?width:308px/);
 });
