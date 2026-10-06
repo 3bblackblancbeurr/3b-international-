@@ -15,9 +15,12 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
  const segmentArc=Math.PI/4-.11,heritage=[];
  for(let i=0;i<8;i++){
   const a=i*Math.PI/4;
-  // Heavy architectural shell: fixed to the city and visibly broken between sectors.
-  add(fixed,new THREE.TorusGeometry(12,.82,10,28,segmentArc),i%2?dark:gold,[0,0,0],[0,0,a]);
-  add(fixed,new THREE.TorusGeometry(12,.12,6,28,segmentArc),gold,[0,0,.88],[0,0,a]);
+  // Heavy architectural shell: sector 0 is deliberately absent to form
+  // one unmistakable physical fracture instead of eight equal decorative gaps.
+  if(i!==0){
+   add(fixed,new THREE.TorusGeometry(12,.82,10,28,segmentArc),i%2?dark:gold,[0,0,0],[0,0,a]);
+   add(fixed,new THREE.TorusGeometry(12,.12,6,28,segmentArc),gold,[0,0,.88],[0,0,a]);
+  }
   // Mechanical collars rotate independently inside the fixed shell.
   add(rotorOuter,new THREE.TorusGeometry(10.45,.34,8,24,segmentArc-.035),i%2?stone:gold,[0,0,0],[0,0,a+.018]);
   add(rotorInner,new THREE.TorusGeometry(8.85,.16,6,24,segmentArc-.06),blue,[0,0,.05],[0,0,a+.03]);
@@ -26,6 +29,11 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
   const seal=add(fixed,new THREE.BoxGeometry(.28,1.35,.18),mat,[Math.cos(a+.17)*11.7,Math.sin(a+.17)*11.7,1.02],[0,0,a+.17-Math.PI/2]);
   heritage.push({mesh:seal,material:mat,index:i});
  }
+ // Exposed fracture edges carry energy into the structure.
+ for(const a of [-.045,Math.PI/4+.045]){
+  add(fixed,new THREE.BoxGeometry(.18,1.9,.24),blue,[Math.cos(a)*11.92,Math.sin(a)*11.92,.94],[0,0,a-Math.PI/2]);
+ }
+
  // Controlled fracture fragments stay near the right break and float independently.
  const pieces=[
   [12.45,1.25,.35,.9,.55,.8,.14],[13.15,2.05,-.15,.66,.44,.62,-.2],[13.35,3.05,.2,.55,.38,.52,.27],
@@ -36,7 +44,7 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
  // Energy rails and efficient local lights illuminate nearby architecture.
  add(energy,new THREE.TorusGeometry(9.55,.055,5,96),blue,[0,0,.45]);
  add(energy,new THREE.TorusGeometry(11.15,.04,5,96),blue,[0,0,-.45]);
- const cyan=new THREE.PointLight('#55dfff',1.15,46,2),amber=new THREE.PointLight('#d6b46a',.38,34,2);
+ const cyan=new THREE.PointLight('#55dfff',1.65,52,2),amber=new THREE.PointLight('#d6b46a',.48,38,2);
  cyan.position.set(0,0,3);amber.position.set(-5,-6,2);cyan.castShadow=amber.castShadow=false;energy.add(cyan,amber);
 
  const compact=(group,keep=new Set())=>{
@@ -73,8 +81,8 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
   energy.rotation.z=time*.11*motion;
   energy.scale.setScalar(1+Math.sin(time*.9)*.006*(1+near));
   const pulse=.72+.28*Math.sin(time*1.25);
-  cyan.intensity=(.65+.72*(1-daylight)+near*.9)*pulse;
-  amber.intensity=.18+.28*(1-daylight)+near*.2;
+  cyan.intensity=(.82+1.02*(1-daylight)+near*1.08)*pulse;
+  amber.intensity=.24+.38*(1-daylight)+near*.24;
   pm.opacity=.28+.28*pulse+near*.16;
   loose.forEach((f,i)=>{const amp=(.06+.035*near)*motion;f.mesh.position.y=f.base.y+Math.sin(time*.72+f.phase)*amp;f.mesh.position.x=f.base.x+Math.cos(time*.48+f.phase)*amp*.45;f.mesh.rotation.z+=((i%2?-.006:.008)*motion)*(1+near*.3);});
   particles.rotation.z=Math.sin(time*.16)*.035;particles.position.y=Math.sin(time*.65)*.08*motion;
