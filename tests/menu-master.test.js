@@ -64,3 +64,26 @@ test("mobile visual master is a dedicated phone surface, not the desktop panel s
   assert.match(css, /menu-mobile-dock[\s\S]*?grid-template-columns:1fr 1fr 68px 1fr 1fr/);
   assert.match(css, /menu-master-circle-stage[\s\S]*?width:308px/);
 });
+
+
+test("mobile sanctuary master keeps only six signature destinations and a dedicated visual layer", async () => {
+  const [navigation, mobileCss, app] = await Promise.all([
+    readFile(new URL("src/components/AppNavigation.jsx", root), "utf8"),
+    readFile(new URL("src/styles/menu-mobile-sanctuary.css", root), "utf8"),
+    readFile(new URL("src/App.jsx", root), "utf8"),
+  ]);
+
+  assert.match(navigation, /MOBILE_MENU_ORDER = \["passport", "world3b", "shop", "member", "control", "secret"\]/);
+  assert.match(navigation, /MOBILE_MENU_LABELS/);
+  assert.match(navigation, /menu-mobile-hero-label/);
+  assert.match(navigation, /data-menu-id=\{item\.id\}/);
+  assert.doesNotMatch(navigation, /MOBILE_MENU_ORDER[\s\S]*?"guide"/);
+  assert.doesNotMatch(navigation, /Destin 3B|destin/i);
+
+  assert.match(mobileCss, /3B MOBILE SANCTUARY/);
+  assert.match(mobileCss, /menu-master-brandline[\s\S]*?display:none/);
+  assert.match(mobileCss, /menu-mobile-grid[\s\S]*?repeat\(2,minmax\(0,1fr\)\)/);
+  assert.match(mobileCss, /menu-master-panel,[\s\S]*?menu-master-footer[\s\S]*?display:none!important/);
+  assert.match(mobileCss, /menu-mobile-dock[\s\S]*?grid-template-columns:1fr 1fr 70px 1fr 1fr/);
+  assert.match(app, /styles\/menu-mobile-sanctuary\.css/);
+});

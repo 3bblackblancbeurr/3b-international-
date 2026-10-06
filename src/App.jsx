@@ -38,6 +38,7 @@ import "./styles/home-premium.css";
 import "./styles/responsive-premium.css";
 import "./styles/companion.css";
 import "./styles/menu-master.css";
+import "./styles/menu-mobile-sanctuary.css";
 import CompanionLayer from "./companion/CompanionLayer.jsx";
 import { sanitizeLivingPrefs } from './companion/companion-personality.js';
 import { selectCompanionVoice, companionVoiceProsody } from './companion/useCompanionVoice.js';
