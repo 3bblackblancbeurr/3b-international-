@@ -86,13 +86,62 @@ html[data-luxury="v2"] .app3b .home-world-art{
   filter:saturate(1.055) contrast(1.035) brightness(.99);
   transform:translateZ(0);
 }
-html[data-luxury="v2"] .app3b .home-world-entry::after{z-index:2}
+html[data-luxury="v2"] .app3b .home-world-entry::after{z-index:3}
 html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy,
-html[data-luxury="v2"] .app3b .home-world-signature{z-index:3}
-html[data-luxury="v2"] .app3b .home-world-ring-motion{
+html[data-luxury="v2"] .app3b .home-world-signature{z-index:4}
+html[data-luxury="v2"] .app3b .home-world-stone-decor{
   position:absolute;
   inset:0;
   z-index:1;
+  overflow:hidden;
+  pointer-events:none;
+}
+html[data-luxury="v2"] .app3b .home-world-stone-pillar{
+  position:absolute;
+  top:6%;
+  bottom:28%;
+  width:8.5%;
+  min-width:58px;
+  border:1px solid rgba(168,170,165,.22);
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.08),transparent 18% 72%,rgba(0,0,0,.35)),
+    repeating-linear-gradient(180deg,var(--3b-stone-base) 0 26px,var(--3b-stone-dark) 26px 29px,var(--3b-stone-light) 29px 54px,var(--3b-stone-dark) 54px 57px);
+  box-shadow:var(--3b-shadow-contact);
+  opacity:.72;
+}
+html[data-luxury="v2"] .app3b .home-world-stone-pillar::after{
+  content:"";
+  position:absolute;
+  top:8%;
+  bottom:8%;
+  width:3px;
+  background:linear-gradient(180deg,transparent,var(--3b-energy-cyan) 18% 82%,transparent);
+  filter:drop-shadow(0 0 6px rgba(48,209,255,.72));
+  opacity:.62;
+}
+html[data-luxury="v2"] .app3b .home-world-stone-pillar-left{left:-2%;transform:perspective(500px) rotateY(8deg)}
+html[data-luxury="v2"] .app3b .home-world-stone-pillar-left::after{right:15%}
+html[data-luxury="v2"] .app3b .home-world-stone-pillar-right{right:-2%;transform:perspective(500px) rotateY(-8deg)}
+html[data-luxury="v2"] .app3b .home-world-stone-pillar-right::after{left:15%}
+html[data-luxury="v2"] .app3b .home-world-stone-platform{
+  position:absolute;
+  left:50%;
+  top:43%;
+  width:47%;
+  height:13%;
+  transform:translateX(-50%) perspective(520px) rotateX(63deg);
+  transform-origin:50% 100%;
+  border:1px solid rgba(158,161,156,.28);
+  border-radius:var(--3b-radius-circle);
+  background:
+    repeating-radial-gradient(ellipse at center,var(--3b-stone-platform) 0 10px,var(--3b-stone-mid) 11px 18px,var(--3b-stone-deep) 19px 23px);
+  box-shadow:var(--3b-shadow-contact);
+  opacity:.58;
+}
+html[data-luxury="v2"] .app3b .home-world-ring-motion{
+  position:absolute;
+  inset:0;
+  z-index:2;
   overflow:hidden;
   pointer-events:none;
   border-radius:inherit;
@@ -105,9 +154,10 @@ html[data-luxury="v2"] .app3b .home-world-ring-svg{
 }
 html[data-luxury="v2"] .app3b .home-world-ring-veil{
   fill:none;
-  stroke:rgba(3,8,12,.48);
-  stroke-width:58;
-  opacity:.58;
+  stroke:rgba(4,9,12,.94);
+  stroke-width:72;
+  opacity:.96;
+  filter:drop-shadow(0 0 8px rgba(4,9,12,.9));
 }
 html[data-luxury="v2"] .app3b .home-world-ring-contact{
   fill:rgba(0,0,0,.34);
@@ -121,10 +171,11 @@ html[data-luxury="v2"] .app3b .home-world-ring-rotor{
   transform-origin:836px 228px;
   will-change:transform;
   animation:threebBrokenCircleSpin 18s linear infinite;
-  filter:drop-shadow(0 10px 11px rgba(0,0,0,.58)) drop-shadow(0 0 9px rgba(68,211,255,.34));
+  filter:drop-shadow(0 13px 14px rgba(0,0,0,.72)) drop-shadow(0 0 11px rgba(68,211,255,.32));
 }
 html[data-luxury="v2"] .app3b .home-world-ring-shadow,
 html[data-luxury="v2"] .app3b .home-world-ring-body,
+html[data-luxury="v2"] .app3b .home-world-ring-masonry,
 html[data-luxury="v2"] .app3b .home-world-ring-trim,
 html[data-luxury="v2"] .app3b .home-world-ring-blue{
   fill:none;
@@ -132,33 +183,69 @@ html[data-luxury="v2"] .app3b .home-world-ring-blue{
   stroke-dashoffset:21;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-shadow{
-  stroke:#05080b;
+  stroke:var(--3b-stone-shadow);
   stroke-width:56;
   opacity:.92;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-body{
-  stroke:url(#home-world-ring-metal);
-  stroke-width:42;
+  stroke:url(#home-world-ring-stone);
+  stroke-width:48;
   stroke-linecap:butt;
 }
+html[data-luxury="v2"] .app3b .home-world-ring-masonry{
+  stroke:var(--3b-stone-deep);
+  stroke-width:4;
+  stroke-dasharray:3 31;
+  stroke-dashoffset:5;
+  opacity:.94;
+}
 html[data-luxury="v2"] .app3b .home-world-ring-trim{
-  stroke:rgba(235,210,153,.76);
-  stroke-width:5;
+  stroke:rgba(194,196,190,.72);
+  stroke-width:4;
+  stroke-dasharray:168 32 121 47 144 38 98 41;
   stroke-dashoffset:29;
-  opacity:.82;
+  opacity:.74;
 }
 html[data-luxury="v2"] .app3b .home-world-ring-blue{
   stroke:url(#home-world-ring-blue);
-  stroke-width:8;
+  stroke-width:7;
   stroke-dashoffset:15;
   opacity:.98;
 }
+html[data-luxury="v2"] .app3b .home-world-ring-blue-inner{
+  fill:none;
+  stroke:var(--3b-energy-cyan-soft);
+  stroke-width:3;
+  stroke-dasharray:112 46 88 55 132 42 96 58;
+  opacity:.78;
+  filter:drop-shadow(0 0 8px rgba(69,220,255,.68));
+}
 html[data-luxury="v2"] .app3b .home-world-ring-fragments rect{
-  fill:url(#home-world-ring-metal);
-  stroke:#74ddff;
+  fill:url(#home-world-ring-stone);
+  stroke:var(--3b-stone-dark);
   stroke-width:3;
   vector-effect:non-scaling-stroke;
-  filter:drop-shadow(0 0 7px rgba(79,218,255,.65));
+  filter:drop-shadow(0 0 5px rgba(0,0,0,.75)) drop-shadow(0 0 5px rgba(79,218,255,.35));
+}
+html[data-luxury="v2"] .app3b .home-world-ring-cracks path{
+  fill:none;
+  stroke:rgba(30,32,31,.95);
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+html[data-luxury="v2"] .app3b .home-world-ring-plinth path{
+  fill:url(#home-world-ring-stone);
+  stroke:var(--3b-stone-dark);
+  stroke-width:4;
+  opacity:.96;
+}
+html[data-luxury="v2"] .app3b .home-world-ring-plinth .home-world-ring-plinth-blue{
+  fill:none;
+  stroke:var(--3b-energy-cyan);
+  stroke-width:4;
+  opacity:.68;
+  filter:drop-shadow(0 0 7px rgba(73,216,255,.55));
 }
 @keyframes threebBrokenCircleSpin{
   from{transform:rotate(0deg)}
@@ -169,7 +256,9 @@ html[data-luxury="v2"] .app3b .home-world-ring-fragments rect{
     object-position:50% center;
     filter:saturate(1.04) contrast(1.03) brightness(.985);
   }
-  html[data-luxury="v2"] .app3b .home-world-ring-rotor{animation-duration:15s}
+  html[data-luxury="v2"] .app3b .home-world-ring-rotor{animation-duration:18s}
+  html[data-luxury="v2"] .app3b .home-world-stone-pillar{width:11%;min-width:42px;top:4%;bottom:31%;opacity:.55}
+  html[data-luxury="v2"] .app3b .home-world-stone-platform{top:39%;width:66%;height:11%;opacity:.46}
 }
 @media(prefers-reduced-motion:reduce){
   html[data-luxury="v2"] .app3b .home-world-ring-rotor{animation:none!important}
