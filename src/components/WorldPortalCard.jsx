@@ -24,17 +24,17 @@ export default function WorldPortalCard({goTo}){
    <svg className="home-world-ring-svg" viewBox="0 0 1672 941" preserveAspectRatio="xMidYMid slice" focusable="false">
     <defs>
      <pattern id="home-world-ring-stone" patternUnits="userSpaceOnUse" width="64" height="46">
-      <rect width="64" height="46" fill="#5b5b58"/>
-      <path d="M0 7L64 2V21L0 27Z" fill="#77756f" opacity=".72"/>
-      <path d="M0 33L64 24V46H0Z" fill="#444746" opacity=".92"/>
-      <path d="M8 0L14 46M39 0L34 46M0 15L64 12M0 38L64 34" stroke="#252827" strokeWidth="2" opacity=".7"/>
-      <path d="M18 4L25 14L21 24L31 35M50 6L44 17L52 29L47 42" fill="none" stroke="#aaa69c" strokeWidth="1.4" opacity=".48"/>
+      <rect width="64" height="46" fill="var(--3b-stone-base)"/>
+      <path d="M0 7L64 2V21L0 27Z" fill="var(--3b-stone-light)" opacity=".72"/>
+      <path d="M0 33L64 24V46H0Z" fill="var(--3b-stone-mid)" opacity=".92"/>
+      <path d="M8 0L14 46M39 0L34 46M0 15L64 12M0 38L64 34" stroke="var(--3b-stone-dark)" strokeWidth="2" opacity=".7"/>
+      <path d="M18 4L25 14L21 24L31 35M50 6L44 17L52 29L47 42" fill="none" stroke="var(--3b-stone-edge)" strokeWidth="1.4" opacity=".48"/>
      </pattern>
      <linearGradient id="home-world-ring-blue" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stopColor="#126ca1"/>
-      <stop offset=".45" stopColor="#79e7ff"/>
-      <stop offset=".7" stopColor="#1ba8e9"/>
-      <stop offset="1" stopColor="#0b5d96"/>
+      <stop offset="0" stopColor="var(--3b-energy-blue-deep)"/>
+      <stop offset=".45" stopColor="var(--3b-energy-blue-highlight)"/>
+      <stop offset=".7" stopColor="var(--3b-energy-blue)"/>
+      <stop offset="1" stopColor="var(--3b-energy-blue-shadow)"/>
      </linearGradient>
     </defs>
     <g className="home-world-ring-plinth">
