@@ -41,3 +41,13 @@ test("general menu master uses the real rotating Broken Circle and keeps live na
   assert.match(css, /menuMasterOrbit/);
   assert.match(app, /styles\/menu-master\.css/);
 });
+
+
+test("one-thumb mobile master prioritizes the monument and live routes", async () => {
+  const css = await readFile(new URL("src/styles/menu-master.css", root), "utf8");
+  assert.match(css, /PHONE MASTER — 3B/);
+  assert.match(css, /menu-master-group\[aria-label="En préparation"\][\s\S]*?display:none/);
+  assert.match(css, /menu-master-grid\{[\s\S]*?grid-template-columns:1fr/);
+  assert.match(css, /menu-master-footer\{[\s\S]*?display:none/);
+  assert.match(css, /menu-master-circle-stage\{[\s\S]*?width:336px/);
+});
