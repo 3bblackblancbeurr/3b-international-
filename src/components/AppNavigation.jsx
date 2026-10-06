@@ -7,6 +7,7 @@ import { Button } from "../design-system/index.jsx";
 import InstallApp from "../install/InstallApp.jsx";
 import SecretClock from "../secret/SecretClock.jsx";
 import CompanionPresenceControl from '../companion/CompanionPresenceControl.jsx';
+import BrokenCircle3D from './BrokenCircle3D.jsx';
 
 const ICONS = { home: Home, passport: Fingerprint, loyalty: CreditCard, manga: BookOpen, world3b: Globe2, nosbloc: Boxes, games: Gamepad2, religion: BookOpen, guide: Compass, community: Users, secret: LockKeyhole, sport: Trophy, ia: Sparkles, shop: ShoppingBag, member: UserRound };
 export function SectionIcon({ page, ...props }) {
@@ -105,7 +106,7 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       {QUICK_LINKS.map(item => <RouteLink key={item.id} page={item.id} goTo={goTo} aria-current={page === item.id ? "page" : undefined}><SectionIcon page={item.id} /><span>{item.label}</span></RouteLink>)}
       <button type="button" onClick={openMenu} aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-controls="universe-menu" aria-expanded={isOpen} className={!QUICK_LINKS.some(item => item.id === page) ? "section-active" : undefined}><Menu size={22} strokeWidth={1.65} aria-hidden="true" /><span>Menu</span></button>
     </nav>
-    <dialog id="universe-menu" ref={dialog} className="universe-dialog" aria-labelledby="menu-title" onClose={() => setIsOpen(false)} onKeyDown={event => {
+    <dialog id="universe-menu" ref={dialog} className="universe-dialog menu-master-dialog" aria-labelledby="menu-title" onClose={() => setIsOpen(false)} onKeyDown={event => {
       if (event.key === "Escape") { event.preventDefault(); dialog.current.close(); }
       if (event.key === "Tab") {
         const targets = [...dialog.current.querySelectorAll('button:not([disabled]), a[href], input:not([disabled])')].filter(element => element.getClientRects().length);
@@ -118,21 +119,72 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
       const bounds = dialog.current.getBoundingClientRect();
       if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.current.close();
     }}>
-      <div className="dialog-heading"><div><p className="eyebrow">Tout commence ici</p><h2 id="menu-title">L’univers 3B</h2></div><button className="icon-button" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={23} aria-hidden="true" /></button></div>
-      <div className="menu-search"><Search size={19} aria-hidden="true" /><input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher une rubrique…  /" value={query} onChange={event => setQuery(event.target.value)} /></div>
-      <div className="menu-secret-clock"><SecretClock secret={secret} goTo={navigate} /></div>
-      <div className="dialog-scroll">
-        {NAV_GROUPS.map(group => {
-          const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
-          return items.length > 0 && <section key={group.title} className="menu-group" aria-label={group.title}><h3>{group.title}</h3>{items.map(item => item.status === "soon"
-            ? <CompactCard as="article" key={item.id} className="dialog-route is-soon" eyebrow="En préparation" action="En préparation" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>
-            : <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route" aria-current={activePage === item.id ? "page" : undefined} eyebrow={item.status === "preview" ? "Aperçu" : undefined} action={item.status === "preview" ? "Bientôt" : "Ouvrir"} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}</section>;
-        })}
-        <section className="menu-group menu-companion-settings" aria-label="Paramètres"><h3>Paramètres</h3><CompanionPresenceControl/></section>
-        {installation && <InstallApp installation={installation}/>}
-        {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « manga » ou « boutique ».</p>}
+      <div className="menu-master-shell">
+        <div className="dialog-heading menu-master-heading">
+          <div className="menu-master-brandline">
+            <span className="menu-master-monogram" aria-hidden="true">3B</span>
+            <div>
+              <p className="eyebrow">MENU GÉNÉRAL · 3B INTERNATIONAL</p>
+              <h2 id="menu-title">Bienvenue dans l’univers 3B</h2>
+              <p className="menu-master-legacy">Ce n’est pas une marque. C’est un héritage.</p>
+            </div>
+          </div>
+          <button className="icon-button menu-master-close" type="button" autoFocus aria-label="Fermer le menu" onClick={() => dialog.current.close()}><X size={23} aria-hidden="true" /></button>
+        </div>
+
+        <div className="menu-master-hero" aria-hidden="true">
+          <div className="menu-master-side-copy menu-master-side-copy-left"><span>BRISER</span><span>BÂTIR</span><span>DEVENIR</span></div>
+          <div className="menu-master-circle-stage">
+            <span className="menu-master-orbit menu-master-orbit-a" />
+            <span className="menu-master-orbit menu-master-orbit-b" />
+            <BrokenCircle3D variant="menu"/>
+            <div className="menu-master-core">
+              <strong>3B</strong>
+              <span>BLACK · BLANC · BEUR</span>
+            </div>
+          </div>
+          <div className="menu-master-side-copy menu-master-side-copy-right"><span>HÉRITAGE</span><span>UNITÉ</span><span>LIBERTÉ</span></div>
+        </div>
+
+        <div className="menu-master-status" role="status">
+          <span className={online ? "menu-master-live-dot is-online" : "menu-master-live-dot"} aria-hidden="true" />
+          <span>{online ? "ÉCOSYSTÈME 3B · CONNECTÉ" : "MODE HORS LIGNE · ACCÈS LOCAL"}</span>
+          <span className="menu-master-status-signature">HÉRITAGE · UNITÉ · AVENIR</span>
+        </div>
+
+        <div className="menu-search menu-master-search"><Search size={19} aria-hidden="true" /><input ref={searchInput} type="search" aria-label="Rechercher une rubrique" placeholder="Rechercher dans l’univers 3B…" value={query} onChange={event => setQuery(event.target.value)} /></div>
+        <div className="menu-secret-clock menu-master-secret"><SecretClock secret={secret} goTo={navigate} /></div>
+
+        <div className="dialog-scroll menu-master-scroll">
+          <div className="menu-master-directory">
+            {NAV_GROUPS.map(group => {
+              const items = group.ids.map(id => matching.find(item => item.id === id)).filter(Boolean);
+              return items.length > 0 && <section key={group.title} className="menu-group menu-master-group" aria-label={group.title}>
+                <div className="menu-master-group-heading"><h3>{group.title}</h3><span>{items.length} {items.length > 1 ? "espaces" : "espace"}</span></div>
+                <div className="menu-master-grid">
+                  {items.map(item => item.status === "soon"
+                    ? <CompactCard as="article" key={item.id} className="dialog-route menu-master-card is-soon" eyebrow="En préparation" action="En préparation" title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>
+                    : <CompactCard as={RouteLink} key={item.id} page={item.id} goTo={navigate} className="dialog-route menu-master-card" aria-current={activePage === item.id ? "page" : undefined} eyebrow={item.status === "preview" ? "Aperçu" : "Accès 3B"} action={item.status === "preview" ? "Bientôt" : "Ouvrir"} title={item.label} description={item.description} icon={<SectionIcon page={item.id}/>}/>)}
+                </div>
+              </section>;
+            })}
+          </div>
+
+          <section className="menu-group menu-companion-settings menu-master-settings" aria-label="Paramètres">
+            <div className="menu-master-group-heading"><h3>Paramètres</h3><span>Expérience</span></div>
+            <CompanionPresenceControl/>
+          </section>
+
+          {installation && <div className="menu-master-install"><InstallApp installation={installation}/></div>}
+          {matching.length === 0 && <p className="menu-empty" role="status">Aucune rubrique trouvée. Essaie « passeport », « monde », « boutique » ou « secret ».</p>}
+        </div>
+
+        <div className="dialog-footer menu-master-footer">
+          <RouteLink page="intro" goTo={navigate}>Revoir l’introduction <ArrowUpRight size={16} aria-hidden="true" /></RouteLink>
+          <div className="menu-master-footer-mark"><strong>3B</strong><span>BLACK · BLANC · BEUR</span></div>
+          <span>Not a brand. A legacy.</span>
+        </div>
       </div>
-      <div className="dialog-footer"><RouteLink page="intro" goTo={navigate}>Revoir l’introduction <ArrowUpRight size={16} aria-hidden="true" /></RouteLink><span>De zéro à l’international.</span></div>
     </dialog>
   </>;
 }
