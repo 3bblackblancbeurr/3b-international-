@@ -420,7 +420,7 @@ export default function BrokenCircle3D({variant='stone'}){
         renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,mobile?1.28:1.7));
         renderer.setSize(width,height,false);
         camera.aspect=width/height;
-        camera.position.z=menuMode?(mobile?8.72:8.28):(mobile?8.85:8.45);
+        camera.position.z=menuMode?(mobile?8.02:8.28):(mobile?8.85:8.45);
         camera.updateProjectionMatrix();
         renderer.render(scene,camera);
       };
