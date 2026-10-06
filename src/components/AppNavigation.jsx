@@ -38,7 +38,16 @@ const QUICK_LINKS = [
   { id: "shop", label: "Boutique" },
 ];
 
-const MOBILE_MENU_ORDER = ["passport", "world3b", "shop", "member", "control", "secret", "guide"];
+const MOBILE_MENU_ORDER = ["passport", "world3b", "shop", "member", "control", "secret"];
+
+const MOBILE_MENU_LABELS = {
+  passport: ["Passeport 3B", "TON IDENTITÉ"],
+  world3b: ["Monde 3B", "ENTRER DANS L’UNIVERS"],
+  shop: ["Boutique", "COLLECTIONS 3B"],
+  member: ["Espace membre", "TON ESPACE"],
+  control: ["Command OS", "CENTRE PRIVÉ"],
+  secret: ["Secret 3B", "SIGNAL DU JOUR"],
+};
 
 export default function AppNavigation({ page, title, menuItems, goTo, secret, options, toggleOption, installation }) {
   const dialog = useRef(null), searchInput = useRef(null);
@@ -144,6 +153,11 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
               <h3>L’héritage<br/><em>en mouvement.</em></h3>
               <p>Le Cercle Brisé tourne réellement en 3D. Le cœur 3B reste fixe.</p>
             </div>
+            <div className="menu-mobile-hero-label" aria-hidden="true">
+              <span>3B INTERNATIONAL</span>
+              <strong>MENU GÉNÉRAL</strong>
+              <small>Ce n’est pas une marque. C’est un héritage.</small>
+            </div>
 
             <div className="menu-master-circle-stage" aria-hidden="true">
               <span className="menu-master-orbit menu-master-orbit-a" />
@@ -169,37 +183,34 @@ export default function AppNavigation({ page, title, menuItems, goTo, secret, op
 
           <section className="menu-mobile-master" aria-label="Menu général mobile 3B">
             <div className="menu-mobile-kicker">
-              <span>MENU GÉNÉRAL</span>
+              <span>ACCÈS 3B</span>
               <small>{online ? "LIVE" : "LOCAL"}</small>
             </div>
 
             <div className="menu-mobile-grid">
-              {mobileMenuItems.map(item => (
-                <RouteLink
-                  key={item.id}
-                  page={item.id}
-                  goTo={navigate}
-                  className="menu-mobile-tile"
-                  aria-current={activePage === item.id ? "page" : undefined}
-                >
-                  <span className="menu-mobile-tile-icon"><SectionIcon page={item.id}/></span>
-                  <span className="menu-mobile-tile-copy">
-                    <strong>{item.label}</strong>
-                    <small>{item.id === "passport" ? "TON IDENTITÉ 3B"
-                      : item.id === "world3b" ? "ENTRER DANS LE MONDE"
-                      : item.id === "shop" ? "COLLECTIONS 3B"
-                      : item.id === "member" ? "TON ESPACE"
-                      : item.id === "control" ? "CENTRE PRIVÉ"
-                      : item.id === "secret" ? "SIGNAL DU JOUR"
-                      : "COMPRENDRE 3B"}</small>
-                  </span>
-                  <ArrowUpRight size={16} aria-hidden="true"/>
-                </RouteLink>
-              ))}
-            </div>
-
-            <div className="menu-mobile-secret">
-              <SecretClock secret={secret} goTo={navigate} compact />
+              {mobileMenuItems.map(item => {
+                const [displayLabel, displayMeta] = MOBILE_MENU_LABELS[item.id] || [item.label, "ACCÈS 3B"];
+                return (
+                  <RouteLink
+                    key={item.id}
+                    page={item.id}
+                    goTo={navigate}
+                    className="menu-mobile-tile"
+                    data-menu-id={item.id}
+                    aria-current={activePage === item.id ? "page" : undefined}
+                  >
+                    <span className="menu-mobile-tile-top">
+                      <span className="menu-mobile-tile-icon"><SectionIcon page={item.id}/></span>
+                      <span className="menu-mobile-tile-index">{String(MOBILE_MENU_ORDER.indexOf(item.id)+1).padStart(2,"0")}</span>
+                    </span>
+                    <span className="menu-mobile-tile-copy">
+                      <strong>{displayLabel}</strong>
+                      <small>{item.id === "secret" && secret?.phase === "open" ? "SIGNAL ACTIF" : displayMeta}</small>
+                    </span>
+                    <ArrowUpRight size={16} aria-hidden="true"/>
+                  </RouteLink>
+                );
+              })}
             </div>
 
             <nav className="menu-mobile-dock" aria-label="Accès rapides 3B">
