@@ -148,8 +148,10 @@ try{
     await writeFile(out+'/hub-resident-failure.json',JSON.stringify(diagnostic,null,2));console.log('QA NPC FAILURE',JSON.stringify(diagnostic));throw error;
    });
    const facing=await page.evaluate(()=>({npc:game.qaNpcFixture(qa.npcId),p:qa.snapshot.position}));
+   // Approach QA can cross the city instantly. Let the real follow camera settle
+   // before exporting, so the night capture shows the people, not their old street.
+   await page.waitForFunction(()=>{const npc=game.qaNpcFixture(qa.npcId),target=game.debugView().cameraTarget,p=qa.snapshot.position;return npc.elapsed-qa.npcAnchor.elapsed>=.6&&Math.hypot(target.x-p.x,target.z-p.z)<.1;},{},{timeout:90000});
    await captureRenderer(page,out+'/hub-resident-conversation.png');
-   await page.waitForFunction(()=>game.qaNpcFixture(qa.npcId).elapsed-qa.npcAnchor.elapsed>=.6,{},{timeout:90000});
    const held=await page.evaluate(()=>game.qaNpcFixture(qa.npcId));
    assert.ok(Math.hypot(held.x-resident.x,held.z-resident.z)<.01,'The talking resident stays at its live position');
    await page.evaluate(()=>{qa.npcDecisionAt=game.qaNpcFixture(qa.npcId).decisionAt;game.setNpcConversation(null);game.setPaused(false);});
