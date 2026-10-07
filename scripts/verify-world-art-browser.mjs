@@ -9,7 +9,7 @@ await mkdir(out,{recursive:true});
 // Private fixture: exercise the actual loaded residents without exposing test
 // navigation in the production scene API or changing any save/reward state.
 function injectNpcQa(code){return code.replace('  refreshHubSchedule:',`  qaNpcFixture(id){
-   const sample=actor=>({id:actor.item.id,ready:actor.controller.ready,x:actor.object.position.x,z:actor.object.position.z,heading:actor.object.rotation.y,state:actor.item.simulationState,conversation:actor.item.id===npcConversationId,elapsed});
+   const sample=actor=>({id:actor.item.id,ready:actor.controller.ready,x:actor.object.position.x,z:actor.object.position.z,heading:actor.object.rotation.y,state:actor.item.simulationState,conversation:actor.item.id===npcConversationId,decisionAt:actor.lastSimAt,elapsed});
    return id?hubNpcActors.filter(actor=>actor.item.id===id).map(sample)[0]:hubNpcActors.map(sample);
   },
   qaApproachNpc(id){
@@ -143,14 +143,17 @@ try{
     game.setPaused(true);game.setNpcConversation(npc.id);qa.npcId=npc.id;qa.npcAnchor=game.qaNpcFixture(npc.id);return qa.npcAnchor;
    });
    assert.ok(resident,'A physically reachable loaded resident can be approached');
-   await page.waitForFunction(()=>{const npc=game.qaNpcFixture(qa.npcId),p=qa.snapshot.position,want=Math.atan2(p.x-npc.x,p.z-npc.z);return npc.conversation&&npc.state==='Talk'&&Math.abs(Math.atan2(Math.sin(npc.heading-want),Math.cos(npc.heading-want)))<.05;},{},{timeout:90000});
+   await page.waitForFunction(()=>{const npc=game.qaNpcFixture(qa.npcId),p=qa.snapshot.position,want=Math.atan2(p.x-npc.x,p.z-npc.z);return npc.conversation&&npc.state==='Talk'&&Math.hypot(p.x-npc.x,p.z-npc.z)>.5&&Math.abs(Math.atan2(Math.sin(npc.heading-want),Math.cos(npc.heading-want)))<.05;},{},{timeout:90000}).catch(async error=>{
+    const diagnostic=await page.evaluate(()=>({npc:game.qaNpcFixture(qa.npcId),player:qa.snapshot.position,anchor:qa.npcAnchor}));
+    await writeFile(out+'/hub-resident-failure.json',JSON.stringify(diagnostic,null,2));console.log('QA NPC FAILURE',JSON.stringify(diagnostic));throw error;
+   });
    const facing=await page.evaluate(()=>({npc:game.qaNpcFixture(qa.npcId),p:qa.snapshot.position}));
    await captureRenderer(page,out+'/hub-resident-conversation.png');
    await page.waitForFunction(()=>game.qaNpcFixture(qa.npcId).elapsed-qa.npcAnchor.elapsed>=.6,{},{timeout:90000});
    const held=await page.evaluate(()=>game.qaNpcFixture(qa.npcId));
    assert.ok(Math.hypot(held.x-resident.x,held.z-resident.z)<.01,'The talking resident stays at its live position');
-   await page.evaluate(()=>{game.setNpcConversation(null);game.setPaused(false);});
-   await page.waitForFunction(()=>!game.qaNpcFixture(qa.npcId).conversation&&game.qaNpcFixture(qa.npcId).state!=='Talk',{},{timeout:90000});
+   await page.evaluate(()=>{qa.npcDecisionAt=game.qaNpcFixture(qa.npcId).decisionAt;game.setNpcConversation(null);game.setPaused(false);});
+   await page.waitForFunction(()=>{const npc=game.qaNpcFixture(qa.npcId);return !npc.conversation&&npc.decisionAt>qa.npcDecisionAt;},{},{timeout:90000});
    assert.deepEqual(errors,[],'Conversation and return to routine have no script or shader errors');
    results.at(-1).resident={id:resident.id,heldPosition:true,facingPlayer:true,dialogueAnimation:true,returnedToRoutine:true,heading:facing.npc.heading};
   }
