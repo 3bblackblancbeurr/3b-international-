@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 const original=await fs.readFile(new URL('./verify-hub-master-browser.mjs',import.meta.url),'utf8');
 let fixture=original.slice(0,original.indexOf('const report=[];'));
 fixture=fixture.replaceAll('5199','5201').replace("const out=process.env.HUB_MASTER_OUT||'artifacts/hub-master-ui';","const out=process.env.GAMEPLAY_OUT||'artifacts/gameplay-ui';");
-fixture=fixture.replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);", "return code.replace(marker,'window.qa.scene=scene.current;window.qa.audioStatus=()=>audio.current?.status?.();'+marker).replace('onGameplay:kind=>callbacks.current.gameplay(kind)','onGameplay:kind=>{(window.qa.played??=[]).push(kind);callbacks.current.gameplay(kind);}');");
+fixture=fixture.replace("return code.replace(marker,'window.qa.scene=scene.current;'+marker);", "return code.replace(marker,'window.qa.scene=scene.current;window.qa.audioStatus=()=>audio.current?.status?.();'+marker);");
+fixture=fixture.replace(" const marker='return{\\n  refreshHubSchedule:';", " const qaAction=\"onGameplay?.(kind==='strike'?'attack':kind);\";assert.ok(code.includes(qaAction),'Real scene action callback is captured');code=code.replace(qaAction,\"(window.qa.played??=[]).push(kind==='strike'?'attack':kind);\"+qaAction);const marker='return{\\n  refreshHubSchedule:';");
 fixture=fixture.replace("args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']", "args:process.env.GAMEPLAY_GPU==='1'?['--no-sandbox']:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']");
 fixture=fixture.replace('  qaFreezeCapture(){','  qaPlayState(){return {paused,shot:shot?.kind,presentation,ready:hero?.ready,position,playFrame,keys:[...keys],stick,elapsed,controls,life:lifeInteraction.active,smoother:motionSmoother.value(),speed:stats.speed,hidden:document.hidden};},\n  qaFreezeCapture(){');
 fixture=fixture.replace('return code.replace(marker,`let qaCaptureFrozen=false;',"code=code.replace('onSnapshot({','onSnapshot(window.qa.snapshot={').replace('  avatar.position.set(position.x,','  if(playFrame.airborne){window.qa.jumpSeen=true;window.qa.jumpPeak=Math.max(window.qa.jumpPeak||0,playFrame.lift);} avatar.position.set(position.x,');return code.replace(marker,`let qaCaptureFrozen=false;");
@@ -48,7 +49,7 @@ try{
   const stopped={...after};await page.waitForTimeout(450);const still=await page.evaluate(()=>({...qa.snapshot.position}));assert.ok(Math.hypot(still.x-stopped.x,still.z-stopped.z)<.3,'release stops movement');
   await page.waitForFunction(()=>!qa.scene.qaPlayState().playFrame.airborne);
   for(const [name,kind] of [['Frapper','attack'],['Défendre','guard'],['Esquiver','dodge'],['Pouvoir','power']]){
-   const started=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);
+   console.log(device.id+': action '+kind+' '+JSON.stringify(await page.evaluate(()=>({played:qa.played,state:qa.scene.qaPlayState()}))));const started=await page.evaluate(()=>qa.scene.qaPlayState().elapsed);
    await page.getByRole('button',{name,exact:true}).click();await page.waitForFunction(action=>qa.played?.includes(action),kind);
    await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>=at+.8,started);
   }
