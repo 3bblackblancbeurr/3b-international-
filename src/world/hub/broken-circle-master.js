@@ -4,7 +4,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 const TAU=Math.PI*2;
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 
-export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
+export function createBrokenCircleMaster({root,owned,materials,countries=[],reducedMotion}){
  const {dark,gold,blue,stone}=materials;
  const fixed=new THREE.Group(),rotorOuter=new THREE.Group(),rotorInner=new THREE.Group(),fracture=new THREE.Group(),energy=new THREE.Group();
  fixed.name='Cercle Brisé · coque fixe';rotorOuter.name='Cercle Brisé · rotor externe';rotorInner.name='Cercle Brisé · rotor interne';fracture.name='Cercle Brisé · fracture';energy.name='Cercle Brisé · énergie';
@@ -40,7 +40,7 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
   [12.75,4.0,-.1,.48,.34,.46,-.31],[12.25,4.75,.16,.4,.3,.38,.35]
  ];
  const loose=[];
- pieces.forEach((p,i)=>{const m=add(fracture,new THREE.BoxGeometry(p[3],p[4],p[5]),i%2?stone:gold,[p[0],p[1],p[2]],[0,0,p[6]]);loose.push({mesh:m,base:m.position.clone(),phase:i*1.37});});
+ pieces.forEach((p,i)=>{const m=add(fracture,new THREE.BoxGeometry(p[3],p[4],p[5]),i%2?stone:gold,[p[0],p[1],p[2]],[0,0,p[6]]);loose.push({mesh:m,base:m.position.clone(),angle:p[6],phase:i*1.37});});
  // Energy rails and efficient local lights illuminate nearby architecture.
  add(energy,new THREE.TorusGeometry(9.55,.055,5,96),blue,[0,0,.45]);
  add(energy,new THREE.TorusGeometry(11.15,.04,5,96),blue,[0,0,-.45]);
@@ -66,30 +66,47 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[]}){
  const pm=new THREE.PointsMaterial({color:'#b9f6ff',size:.11,transparent:true,opacity:.62,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(pm);
  const particles=new THREE.Points(pg,pm);fracture.add(particles);
 
- let progress=0,daylight=1,reduced=typeof window!=='undefined'&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+ const motionQuery=typeof window!=='undefined'?window.matchMedia?.('(prefers-reduced-motion: reduce)'):null;
+ let progress=0,daylight=1,lastTime=null,animationTime=0,outerPhase=0,innerPhase=0,quality='medium';
+ const reduced=()=>reducedMotion??(motionQuery?.matches||typeof document!=='undefined'&&document.documentElement.dataset.experienceMotion==='reduced');
  function setProgress(count){
   progress=clamp(Number(count)||0,0,8);
   for(const h of heritage){const on=h.index<progress;h.material.emissiveIntensity=on ? .92 : .08;h.mesh.scale.setScalar(on ? 1.08 : .92);}
  }
  function setDaylight(value){daylight=clamp(Number(value)||0);}
+ function setQuality(mode){
+  quality=mode;
+  pg.setDrawRange(0,mode==='fluid'||mode==='low'?12:particleCount);
+ }
 
  function tick(time,playerDistance=Infinity){
-  const near=clamp(1-playerDistance/125);
-  const motion=reduced ? .06 : 1;
-  rotorOuter.rotation.z=time*.035*motion*(1+near*.18);
-  rotorInner.rotation.z=-time*.052*motion*(1+near*.24);
-  energy.rotation.z=time*.11*motion;
-  energy.scale.setScalar(1+Math.sin(time*.9)*.006*(1+near));
-  const pulse=.72+.28*Math.sin(time*1.25);
+  if(!Number.isFinite(time))return;
+  time=Math.max(0,time);
+  const near=Number.isFinite(playerDistance)?clamp(1-Math.max(0,playerDistance)/125):0;
+  const dt=lastTime===null?Math.min(time,.25):clamp(time-lastTime,0,.25);lastTime=time;
+  const motion=reduced()?0:1;
+  // Integrate speed rather than multiplying the entire elapsed time by
+  // proximity: approaching the monument must never jump its mechanical phase.
+  animationTime+=dt*motion;
+  outerPhase=(outerPhase+dt*.035*motion*(1+near*.18))%TAU;
+  innerPhase=(innerPhase-dt*.052*motion*(1+near*.24))%TAU;
+  rotorOuter.rotation.z=outerPhase;
+  rotorInner.rotation.z=innerPhase;
+  energy.rotation.z=(animationTime*.11)%TAU;
+  energy.scale.setScalar(1+Math.sin(animationTime*.9)*.006*(1+near)*motion);
+  const pulse=motion?.72+.28*Math.sin(animationTime*1.25):1;
   cyan.intensity=(.82+1.02*(1-daylight)+near*1.08)*pulse;
   amber.intensity=.24+.38*(1-daylight)+near*.24;
   pm.opacity=.28+.28*pulse+near*.16;
-  loose.forEach((f,i)=>{const amp=(.06+.035*near)*motion;f.mesh.position.y=f.base.y+Math.sin(time*.72+f.phase)*amp;f.mesh.position.x=f.base.x+Math.cos(time*.48+f.phase)*amp*.45;f.mesh.rotation.z+=((i%2?-.006:.008)*motion)*(1+near*.3);});
-  particles.rotation.z=Math.sin(time*.16)*.035;particles.position.y=Math.sin(time*.65)*.08*motion;
-  fixed.rotation.z=Math.sin(time*.09)*.0015*motion;
+  loose.forEach(f=>{const amp=(.06+.035*near)*motion;f.mesh.position.y=f.base.y+Math.sin(animationTime*.72+f.phase)*amp;f.mesh.position.x=f.base.x+Math.cos(animationTime*.48+f.phase)*amp*.45;f.mesh.rotation.z=f.angle+Math.sin(animationTime*.48+f.phase)*.16*motion;});
+  particles.rotation.z=Math.sin(animationTime*.16)*.035*motion;particles.position.y=Math.sin(animationTime*.65)*.08*motion;
+  // The architectural shell is anchored; only the internal machinery moves.
+  fixed.rotation.z=0;
+  cyan.visible=playerDistance<180;
+  amber.visible=playerDistance<125&&quality!=='fluid'&&quality!=='low';
   root.userData.brokenCircle={progress,near,outerRotation:rotorOuter.rotation.z,innerRotation:rotorInner.rotation.z};
  }
 
  setProgress(0);
- return {root:fixed,groups:{fixed,rotorOuter,rotorInner,fracture,energy},setProgress,setDaylight,tick,diagnostics:{rings:3,heritages:8,looseFragments:loose.length,physical:true,articulated:true}};
+ return {root:fixed,groups:{fixed,rotorOuter,rotorInner,fracture,energy},setProgress,setDaylight,setQuality,tick,diagnostics:{rings:3,heritages:8,looseFragments:loose.length,physical:true,articulated:true}};
 }

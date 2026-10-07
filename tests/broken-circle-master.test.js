@@ -35,3 +35,55 @@ test('Hub soundscape contains the physical Broken Circle resonance',()=>{
  assert.equal(source.x,0);assert.equal(source.z,0);
  assert.equal(source.radius>=90,true);
 });
+
+function fixture(options={}){
+ const root=new THREE.Group(),owned=[],materials=Object.fromEntries(['dark','gold','blue','stone'].map(k=>[k,new THREE.MeshStandardMaterial()]));
+ const circle=createBrokenCircleMaster({root,owned,materials,...options});
+ return {circle,dispose(){owned.forEach(a=>a.dispose());Object.values(materials).forEach(a=>a.dispose());}};
+}
+
+test('mechanical motion and bounded fracture match at 30, 60 and 120 fps',()=>{
+ const frames=[30,60,120].map(fps=>{
+  const f=fixture();try{
+   f.circle.tick(0,10);for(let i=1;i<=fps*20;i++)f.circle.tick(i/fps,10);
+   const {rotorOuter,rotorInner,fracture,fixed}=f.circle.groups;
+   assert.equal(fixed.rotation.z,0);
+   return [rotorOuter.rotation.z,rotorInner.rotation.z,...fracture.children.filter(m=>m.isMesh).flatMap(m=>[m.rotation.z,m.position.x,m.position.y])];
+  }finally{f.dispose();}
+ });
+ for(const frame of frames.slice(1))for(let i=0;i<frame.length;i++)assert.ok(Math.abs(frame[i]-frames[0][i])<1e-9);
+});
+
+test('approaching after a long session does not jump the rotors; resume is bounded',()=>{
+ const f=fixture();try{
+  const c=f.circle;c.tick(0,150);for(let i=1;i<=3600;i++)c.tick(i/10,150);
+  const before=c.groups.rotorOuter.rotation.z;c.tick(360.1,0);
+  assert.ok(Math.abs(c.groups.rotorOuter.rotation.z-before)<.005);
+  const near=c.groups.rotorOuter.rotation.z;c.tick(7200,0);
+  assert.ok(Math.abs(c.groups.rotorOuter.rotation.z-near)<.011);
+  const poses=c.groups.fracture.children.filter(m=>m.isMesh).map(m=>m.rotation.z);
+  c.tick(7200,0);assert.deepEqual(c.groups.fracture.children.filter(m=>m.isMesh).map(m=>m.rotation.z),poses);
+  c.tick(NaN,NaN);assert.ok(Number.isFinite(c.groups.rotorOuter.rotation.z));
+ }finally{f.dispose();}
+});
+
+test('reduced motion keeps machinery, fragments and lighting still',()=>{
+ const f=fixture({reducedMotion:true});try{
+  const c=f.circle;c.tick(0,10);
+  const light=c.groups.energy.children.find(m=>m.isPointLight),intensity=light.intensity;
+  for(let i=1;i<=120;i++)c.tick(i/10,10);
+  assert.equal(c.groups.rotorOuter.rotation.z,0);assert.equal(c.groups.rotorInner.rotation.z,0);
+  assert.equal(c.groups.energy.scale.x,1);assert.equal(light.intensity,intensity);
+  assert.equal(c.groups.fracture.children.find(m=>m.isPoints).rotation.z,0);
+ }finally{f.dispose();}
+});
+
+test('fluid mode limits particles and local lights without removing the monument',()=>{
+ const f=fixture();try{
+  const c=f.circle,particles=c.groups.fracture.children.find(m=>m.isPoints),lights=c.groups.energy.children.filter(m=>m.isPointLight);
+  c.setQuality('fluid');c.tick(0,10);assert.equal(particles.geometry.drawRange.count,12);
+  assert.deepEqual(lights.map(l=>l.visible),[true,false]);assert.equal(c.groups.fixed.visible,true);
+  c.setQuality('detail');c.tick(.1,10);assert.equal(particles.geometry.drawRange.count,32);assert.ok(lights.every(l=>l.visible));
+  c.tick(.2,250);assert.ok(lights.every(l=>!l.visible));
+ }finally{f.dispose();}
+});
