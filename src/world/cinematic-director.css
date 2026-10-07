@@ -91,3 +91,25 @@
  .cinema-world-orb::before,.cinema-world-orb::after{animation:none;opacity:.2;transform:scale(.92)}
  .world-cinematic-director.phase-ignite .cinema-world-haze{filter:none}
 }
+
+.cinema-world-guardian-identity{
+ margin-top:clamp(12px,2.2vh,24px);display:flex;flex-wrap:wrap;gap:10px 24px;
+ padding:12px 0;border-top:1px solid color-mix(in srgb,var(--cinema-secondary) 48%,transparent);
+ max-width:670px;
+}
+.cinema-world-guardian-identity span{display:flex;flex-direction:column;gap:3px}
+.cinema-world-guardian-identity small{
+ font:700 9px/1.2 system-ui,sans-serif;color:var(--cinema-secondary);
+ text-transform:uppercase;letter-spacing:.18em;
+}
+.cinema-world-guardian-identity strong{
+ font:500 clamp(12px,1.2vw,16px)/1.4 Georgia,serif;color:#f8f5ec;
+}
+@media(max-width:720px){
+ .cinema-world-guardian-identity{gap:6px 14px;padding:7px 0;margin-top:8px}
+ .cinema-world-guardian-identity strong{font-size:12px}
+}
+@media(max-height:520px) and (orientation:landscape){
+ .cinema-world-guardian-identity{gap:8px;padding:5px 0;margin-top:8px}
+ .cinema-world-guardian-identity small{font-size:8px}
+}
