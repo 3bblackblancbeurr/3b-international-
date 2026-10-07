@@ -10,7 +10,7 @@ const clamp01=value=>Math.max(0,Math.min(1,value));
 export function hubNpcSocialContext(item,items=[]){
  const partner=item?.socialPartnerId&&items.find(other=>other.npcId===item.socialPartnerId&&other.district===item.district);
  if(!partner)return {};
- const x=partner.homeX??partner.x,z=partner.homeZ??partner.z,bx=item.homeX??item.x,bz=item.homeZ??item.z;
+ const x=partner.x??partner.homeX,z=partner.z??partner.homeZ,bx=item.x??item.homeX,bz=item.z??item.homeZ;
  if(![x,z,bx,bz].every(Number.isFinite)||Math.hypot(x-bx,z-bz)>18)return {};
  return {socialTarget:{x,z,npcId:partner.npcId}};
 }
@@ -50,7 +50,6 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
   const {tier,updateHz}=npcSimulationTier(distance);
   const needs=hubNpcNeeds(item,timeSeconds,context);
   const phase=(seed%628)/100;
-  const baseX=item.homeX??item.x??0,baseZ=item.homeZ??item.z??0;
 
   let state='Walk';
   if(context.threat===true)state=distance<18?'Flee':'Investigate';
@@ -67,26 +66,29 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
 
   if(context.returnToRoutine===true)state='ReturnToRoutine';
   const moving=['Walk','ReturnToRoutine','Investigate','Help','Flee'].includes(state);
+  const attentive=state==='Observe'||state==='Talk'&&context.inConversation===true;
+  const anchor=attentive&&Number.isFinite(context.anchorPosition?.x)&&Number.isFinite(context.anchorPosition?.z)?context.anchorPosition:null;
+  const baseX=anchor?.x??item.homeX??item.x??0,baseZ=anchor?.z??item.homeZ??item.z??0;
   if(tier==='abstract')return {x:baseX,z:baseZ,heading:phase,state,needs,tier,updateHz,moving:false};
 
-  const tierScale=tier==='full'?1:.62;
   if(!moving){
     // Work, Talk, Observe and Idle should read as intentional activities, not people
     // orbiting their home point. Keep only a few centimetres of root drift.
-    const stanceRadius=(state==='Work'?.12:state==='Talk'?.09:state==='Observe'?.055:.035)*tierScale;
+    const stanceRadius=attentive?0:state==='Work'?.12:state==='Talk'?.09:.035;
     const stanceSpeed=.08+((seed>>>16)%7)/100;
     const sway=timeSeconds*stanceSpeed+phase;
     const x=baseX+(context.reducedMotion?0:Math.cos(sway*1.13)*stanceRadius);
     const z=baseZ+(context.reducedMotion?0:Math.sin(sway*.87)*stanceRadius);
-    const target=state==='Talk'?context.socialTarget:null;
-    const heading=target&&Number.isFinite(target.x)&&Number.isFinite(target.z)?Math.atan2(target.x-x,target.z-z):phase+(context.reducedMotion?0:Math.sin(timeSeconds*.16+phase)*.22);
+    const target=attentive?context.playerTarget:state==='Talk'?context.socialTarget:null;
+    const heading=target&&Number.isFinite(target.x)&&Number.isFinite(target.z)&&Math.hypot(target.x-x,target.z-z)>1e-5?Math.atan2(target.x-x,target.z-z):phase+(context.reducedMotion?0:Math.sin(timeSeconds*.16+phase)*.22);
     return {x,z,heading,state,needs,tier,updateHz,moving:false};
   }
 
   // A pair of incommensurate harmonics produces a compact, deterministic
   // pedestrian loop without the obvious circular "NPC orbit" pattern.
   const urgency=state==='Flee'?1.55:state==='Help'?1.18:state==='Investigate'?.92:1;
-  const radius=(1.65+((seed>>>8)%125)/100)*tierScale*urgency;
+  // Simulation frequency changes with distance; the authored route does not.
+  const radius=(1.65+((seed>>>8)%125)/100)*urgency;
   const speed=(.11+((seed>>>16)%15)/1000)*urgency;
   const t=timeSeconds*speed+phase;
   const skew=.72+((seed>>>24)%20)/100;
