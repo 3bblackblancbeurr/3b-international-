@@ -59,7 +59,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const quality=createQualityController();renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.localClippingEnabled=true;
  renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=1.04;
- renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;
+ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.shadowMap.autoUpdate=false;
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.3,1800),sky=createWorldSky(renderer,texture=>{scene.environment=texture;});scene.add(sky.root);const post=createWorldPost(renderer,scene,camera);renderer.info.autoReset=false;
  const hemi=new THREE.HemisphereLight(0xdcefff,0x61736b,1.1);scene.add(hemi);const fill=new THREE.DirectionalLight('#d9edff',.22);fill.position.set(-30,25,-40);scene.add(fill);
  const sun=new THREE.DirectionalLight(0xffe5bd,2.4);scene.add(sun,sun.target);sun.castShadow=true;
@@ -722,6 +722,7 @@ function hubNpcAvatar(item){
     paused=false;needsRender=true;}catch(error){console.error('[3B travel]',error);avatar=null;onLoadState?.(false);onError('Ce pays n’a pas pu être chargé. Recharge le monde pour reprendre.');}},0);},
   interact,
   waypoint(item,walk=false){if(!item)return;waypoint=item;needsRender=true;if(walk)startRoute(item,true);},
+  cancelWaypoint(){waypoint=null;clearInput();needsRender=true;},
   cooldown(id){cooldowns.set(id,Date.now()+90000);},
   destroy(){lifeInteraction.dispose();staticInstances?.dispose();ambientCrowd?.dispose();cancelContextTraversal();clearTimeout(travelTimer);partyActors?.dispose();disposed=true;post.dispose();sky.dispose();combatFx.dispose();threat.dispose();daylight?.dispose();escort?.dispose();hero?.dispose();landscape?.dispose();actors.forEach(a=>a.controller.dispose());hubNpcActors.forEach(a=>a.controller?.dispose());models?.dispose();cancelAnimationFrame(raf);observer.disconnect();resources.forEach(r=>r.dispose());Object.values(geometry).forEach(g=>g.dispose());renderer.dispose();canvas.removeEventListener('wheel',wheel);canvas.removeEventListener('contextmenu',context);canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);canvas.removeEventListener('lostpointercapture',up);canvas.removeEventListener('webglcontextlost',lost);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',clearInput);document.removeEventListener('visibilitychange',hidden);},
  };

@@ -1,5 +1,7 @@
 import {hubDialogueIntentResponse as canonicalResponse} from './dialogue-intents.js';
+import {hubDialogueScene as canonicalScene} from './dialogue-v3.js';
 import {referenceResidentStory,referenceMissionClue} from './reference-city-life.js';
+import {hubDialogueTextLabel} from './presentation.js';
 
 export {hubDialogueIntents} from './dialogue-intents.js';
 
@@ -13,5 +15,11 @@ export function hubDialogueIntentResponse(item,intentId,save,context={}){
   const missionId=(item.missionIds||[]).find(id=>save?.hub?.missions?.[id]?.status==='active');
   if(missionId)text=referenceMissionClue(missionId,save.hub.missions[missionId],save.hub.stats?.missionActions?.[missionId]||[]);
  }
- return text?{...response,text}:response;
+ return {...response,text:hubDialogueTextLabel(text||response.text)};
+}
+
+/** The server keeps scene IDs and choices; only the displayed copy is translated. */
+export function hubDialogueScene(item,context={}){
+ const scene=canonicalScene(item,context);
+ return {...scene,text:hubDialogueTextLabel(scene.text)};
 }

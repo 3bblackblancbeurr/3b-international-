@@ -261,7 +261,7 @@ export default function BrokenCircle3D({variant='stone'}){
       renderer.toneMapping=THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure=menuMode ? 1.18 : 1.08;
       renderer.shadowMap.enabled=true;
-      renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type=THREE.PCFShadowMap;
       renderer.domElement.className='home-world-webgl-canvas';
       renderer.domElement.setAttribute('aria-hidden','true');
       renderer.domElement.addEventListener('webglcontextlost',(event)=>{

@@ -38,7 +38,7 @@ export function referenceGateDistrictLayout(gates=COUNTRIES.map((country,index)=
 }
 
 export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSolids=[],gates,materials={}}){
- const layout=referenceGateDistrictLayout(gates),layers=new Map(),mapSites=[],anchors=[],obstacles=[],dummy=new THREE.Object3D(),paint=new THREE.Color();
+ const layout=referenceGateDistrictLayout(gates),layers=new Map(),mapSites=[],anchors=[],obstacles=[],craftSites=[],dummy=new THREE.Object3D(),paint=new THREE.Color();
  const g=geometry=>(owned.push(geometry),geometry);
  const geo={box:box||g(new THREE.BoxGeometry(1,1,1)),body:g(new RoundedBoxGeometry(1,1,1,2,.035)),cylinder:g(new THREE.CylinderGeometry(1,1,1,16)),cone:g(new THREE.ConeGeometry(1,1,16)),dome:g(new THREE.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI/2)),arch:g(facadeArchGeometry()),mansard:g(mansardRoofGeometry())};
  const stone=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.81,metalness:.04,envMapIntensity:.13}); // gold-master-allow: neutral base preserves per-instance stone colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
@@ -47,7 +47,10 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
  const glass=new THREE.MeshPhysicalMaterial({color:'#254a5b',roughness:.28,metalness:.09,clearcoat:.8,envMapIntensity:.18}); // gold-master-allow: reviewed blue pavilion glazing albedo; docs/hub-reference-art-exceptions.md#gate-materials.
  const wood=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.8,metalness:.01,envMapIntensity:.12}); // gold-master-allow: neutral base preserves per-instance timber colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
  const leaves=new THREE.MeshStandardMaterial({color:'#355a42',roughness:.98,metalness:0}); // gold-master-allow: reviewed pavilion garden foliage albedo; docs/hub-reference-art-exceptions.md#gate-materials.
- owned.push(stone,roof,glass,wood,leaves);if(!materials.gold)owned.push(gold);
+ // The existing metal albedo supplies a restrained warm lamp; no point lights
+ // or transparent glow planes are submitted for these 192 façade lanterns.
+ const lantern=new THREE.MeshStandardMaterial({color:gold.color,emissive:gold.color,emissiveIntensity:0,roughness:.45,metalness:.18});
+ owned.push(stone,roof,glass,wood,leaves,lantern);if(!materials.gold)owned.push(gold);
  const day={value:1};
  glass.onBeforeCompile=shader=>{
   shader.uniforms.gateDistrictDay=day;
@@ -67,13 +70,18 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
   shader.vertexShader='varying vec3 gateStoneP;varying vec3 gateStoneN;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
    gateStoneP=position;gateStoneN=normal;
    #ifdef USE_INSTANCING
-   gateStoneP=(instanceMatrix*vec4(position,1.)).xyz;gateStoneN=normalize(mat3(instanceMatrix)*normal);
+   // Masonry remains horizontal on a rotated pavilion. Column lengths recover
+   // its physical local dimensions without the district's yaw/translation.
+   gateStoneP=position*vec3(length(instanceMatrix[0].xyz),length(instanceMatrix[1].xyz),length(instanceMatrix[2].xyz));
    #endif`);
   shader.fragmentShader='varying vec3 gateStoneP;varying vec3 gateStoneN;\n'+shader.fragmentShader.replace('#include <color_fragment>',`#include <color_fragment>
    float across=mix(gateStoneP.x,gateStoneP.z,step(.5,abs(gateStoneN.x)));float row=floor(gateStoneP.y/.55);
    vec2 joint=abs(fract(vec2(across/1.18+mod(row,2.)*.5,gateStoneP.y/.55))-.5);
-   float seam=smoothstep(.464,.495,max(joint.x,joint.y));diffuseColor.rgb*=1.-seam*.17;`);
- };stone.customProgramCacheKey=()=> '3b-gate-mineral-mortar-v1';
+   float edge=max(joint.x,joint.y),pixel=max(fwidth(edge),.003);
+   float seam=smoothstep(.468-pixel,.488+pixel,edge);
+   float mineral=fract(sin(dot(floor(vec2(across/1.18,row)),vec2(41.7,289.1)))*43758.5);
+   diffuseColor.rgb*=mix(.97+mineral*.06,.82,seam);`);
+ };stone.customProgramCacheKey=()=> '3b-gate-mineral-mortar-local-v2';
  function piece(geometry,material,name,x,y,z,sx,sy,sz,yaw=0,color,detail=false){
   const key=geometry.uuid+material.uuid+(detail?'detail':'mass');if(!layers.has(key))layers.set(key,{geometry,material,name,detail,poses:[]});
   layers.get(key).poses.push({x,y,z,sx,sy,sz,yaw,color});
@@ -116,6 +124,45 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
    place(geo.box,glass,'Entrées des héritages',0,1.94,d/2+.06,1.72,2.85,.1,undefined,true);
    place(geo.arch,stone,'Arcades des huit héritages',0,.50,d/2+.17,1.08,1.19,1.0,profile.trim,true);
    for(const side of [-1,1])place(geo.box,gold,'Poignées des huit héritages',side*.29,1.95,d/2+.16,.04,.39,.04,undefined,true);
+   // Every frontage has a flush threshold, a two-leaf door, a numbered civic
+   // plaque and paired lanterns. All stay within the existing solid envelope.
+   place(geo.box,stone,'Seuils des maisons',0,.045,d/2+.18,1.82,.09,.31,profile.trim,true);
+   place(geo.box,gold,'Battements des portes',0,1.94,d/2+.12,.045,2.8,.075,undefined,true);
+   place(geo.box,wood,'Plaques des pavillons',1.24,2.50,d/2+.10,.56,.52,.09,profile.accent,true);
+   place(geo.box,gold,'Filets des plaques',1.24,2.79,d/2+.15,.61,.045,.04,undefined,true);
+   // A physical house number uses a small, readable rhythm of metal studs;
+   // the country title remains the authored gate sign above the public axis.
+   for(let stud=0;stud<1+i%4;stud++)place(geo.box,gold,'Repères des adresses',1.09+stud*.10,2.50,d/2+.16,.035,.21,.025,undefined,true);
+   for(const side of [-1,1]){
+    const lampX=side*1.26;
+    place(geo.box,gold,'Consoles des lanternes',lampX,3.04,d/2+.17,.09,.48,.16,undefined,true);
+    place(geo.box,lantern,'Lanternes des façades',lampX,3.07,d/2+.30,.20,.31,.14,undefined,true);
+    for(const yy of [2.87,3.28])place(geo.box,gold,'Chapeaux des lanternes',lampX,yy,d/2+.30,.29,.065,.19,undefined,true);
+   }
+   // Drainpipes meet a real shoe at the base; upper vents and rain caps keep
+   // the roofs inhabited when seen from the cable cars or the observatory.
+   for(const side of [-1,1]){
+    const pipeX=side*(w/2-.25),pipeZ=-d/2-.13;
+    place(geo.box,wood,'Descentes des pavillons',pipeX,h/2+.46,pipeZ,.13,h-.1,.13,profile.roof,true);
+    for(const yy of [.83,3.38,h-.15])place(geo.box,gold,'Colliers des descentes',pipeX,yy,pipeZ,.20,.07,.15,undefined,true);
+    place(geo.box,wood,'Sabots des descentes',pipeX,.25,pipeZ,.15,.50,.19,profile.roof,true);
+   }
+   const ventX=w*.25,ventZ=-d*.24,ventY=h+1.62;
+   place(geo.box,stone,'Souches de ventilation',ventX,ventY,ventZ,.74,2.08,.67,profile.wall,true);
+   place(geo.box,wood,'Chaperons de ventilation',ventX,ventY+1.12,ventZ,.91,.17,.81,profile.roof,true);
+   for(const side of [-1,1])place(geo.box,glass,'Ouïes de ventilation',ventX+side*.38,ventY+.59,ventZ,.035,.28,.43,undefined,true);
+   // Ground-level shutters deliberately vary with the address, while high
+   // masonry, roofs, entrances and collision footprints retain their identity.
+   for(const side of [-1,1]){
+    const xx=side*w*.30;
+    place(geo.box,glass,'Baies des rez-de-chaussée',xx,2.1,d/2+.03,1.10,1.57,.08,undefined,true);
+    place(geo.box,stone,'Appuis des commerces',xx,1.27,d/2+.12,1.33,.13,.25,profile.trim,true);
+    if((i+side+1)%3===0)for(const edge of [-1,1]){
+     place(geo.box,wood,'Volets des pavillons',xx+edge*.64,2.1,d/2+.11,.18,1.67,.09,profile.accent,true);
+     for(let slat=0;slat<6;slat++)place(geo.box,gold,'Lames des volets',xx+edge*.64,1.46+slat*.25,d/2+.17,.13,.025,.025,undefined,true);
+    }
+   }
+   craftSites.push({id:b.id,threshold:{x:x+Math.sin(a)*(d/2+.18),z:z+Math.cos(a)*(d/2+.18),y:y+.045},lanterns:2,downpipes:2,ventilation:1,groundFloorWindows:2});
    // Different construction families produce actual distinct skyline silhouettes.
    if(profile.style==='spire'){
     place(geo.mansard,roof,'Mansardes françaises',0,h+.72,0,w+1.1,2.5,d+1.1,profile.roof);
@@ -213,5 +260,7 @@ export function addReferenceGateDistricts({root,owned,box,collisions=[],cameraSo
  }
  // A colonnade contributes collision solids, not additional houses on the atlas.
  const worldMapSites=mapSites.map(p=>({...p,x:p.x*HUB_SCALE,z:p.z*HUB_SCALE,width:p.width*HUB_SCALE,depth:p.depth*HUB_SCALE,height:p.height*1.5,bottom:p.bottom*1.5,top:p.top*1.5,units:'world'}));
- return{count:layout.reduce((n,r)=>n+r.buildings.length,0),districts:layout.length,layout,mapSites,worldMapSites,anchors,obstacles,group,updateView,setDaylight(value){day.value=value;},setQuality(mode){quality=mode;lastView=null;group.children.forEach(o=>o.castShadow=mode!=='fluid');}};
+ return{count:layout.reduce((n,r)=>n+r.buildings.length,0),districts:layout.length,layout,mapSites,worldMapSites,anchors,obstacles,craftSites,group,
+  diagnostics:{drawBatches:group.children.length,authoredInstances:group.children.reduce((sum,mesh)=>sum+mesh.count,0),authoredTriangles:group.children.reduce((sum,mesh)=>sum+(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3*mesh.count,0),lanterns:craftSites.length*2,downpipes:craftSites.length*2,ventilationStacks:craftSites.length,accessibleThresholds:craftSites.length},
+  updateView,setDaylight(value){day.value=Math.max(0,Math.min(1,Number.isFinite(value)?value:1));lantern.emissiveIntensity=Math.pow(1-day.value,1.4)*.75;},setQuality(mode){quality=mode;lastView=null;group.children.forEach(o=>o.castShadow=mode!=='fluid');}};
 }

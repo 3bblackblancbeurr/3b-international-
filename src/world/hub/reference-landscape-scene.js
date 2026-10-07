@@ -91,6 +91,21 @@ export function referenceBoatHullGeometry(){
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(positions.length/3*2),2));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
 }
 
+/** Low-poly seabird: curved swept wings, a tapered body and divided tail.
+ * The flock is a single opaque batch, rather than transparent sprite sheets. */
+export function referenceSeabirdGeometry(){
+ const positions=[
+  -.09,0,.30,-.22,.07,-.08,-1.12,.15,-.21,
+  -.09,0,.30,-1.12,.15,-.21,-.45,.03,.28,
+  .09,0,.30,1.12,.15,-.21,.22,.07,-.08,
+  .09,0,.30,.45,.03,.28,1.12,.15,-.21,
+  -.10,0,-.36,.10,0,-.36,0,.035,.42,
+  -.05,0,-.27,-.18,.02,-.52,0,0,-.41,
+  .05,0,-.27,0,0,-.41,.18,.02,-.52,
+ ];
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
+}
+
 function flowingRibbonGeometry(points,width){
  const curve=new THREE.CatmullRomCurve3(points),positions=[],uv=[],indices=[],segments=48;
  for(let step=0;step<=segments;step++){
@@ -209,6 +224,28 @@ export function addReferenceLandscape({root,owned=[],materials={},layoutRadius=2
   structures.push({...mapFeature({id:'sea-stack-'+index,name:'Récif rocheux',kind:'reef',x,z,r:Math.max(site.sx,site.sz),height:site.sy,walkable:false}),outline:hull});
  }
  const rocks=instanced(rockGeometry,wetRock,rockSites,'Rochers et récifs humides',(site,object)=>object.scale.set(site.sx,site.sy,site.sz));
+
+ // A small local flock gives the bay a readable living scale, and yields a
+ // single 196-triangle draw. It stays clear of decks, doors and transit paths.
+ const seabirdGeometry=register(referenceSeabirdGeometry()),birdColors=[],birdColor=new THREE.Color();
+ for(let index=0;index<seabirdGeometry.attributes.position.count;index++){
+  const x=Math.abs(seabirdGeometry.attributes.position.getX(index));birdColor.copy(stone.color).lerp(dark.color,clamp((x-.63)*2.5,0,.82));birdColors.push(birdColor.r,birdColor.g,birdColor.b);
+ }
+ seabirdGeometry.setAttribute('color',new THREE.Float32BufferAttribute(birdColors,3));
+ const seabirdMaterial=register(new THREE.MeshStandardMaterial({color:rock.color,vertexColors:true,roughness:.91,metalness:0,side:THREE.DoubleSide}));
+ seabirdMaterial.onBeforeCompile=shader=>{shader.uniforms.bayBirdTime=clock;shader.vertexShader='uniform float bayBirdTime;attribute float bayBirdPhase;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.y+=sin(bayBirdTime*2.7+bayBirdPhase)*abs(position.x)*.22;');};seabirdMaterial.customProgramCacheKey=()=> '3b-bay-seabirds-v1';
+ const birdSites=Array.from({length:28},(_,index)=>({phase:index*2.39996,radius:45+index%5*6,height:23+index%4*2.2,speed:.025+(index%3)*.004,scale:.48+(index%5)*.075}));
+ seabirdGeometry.setAttribute('bayBirdPhase',new THREE.InstancedBufferAttribute(new Float32Array(birdSites.map(site=>site.phase)),1));
+ const birds=new THREE.InstancedMesh(seabirdGeometry,seabirdMaterial,birdSites.length);birds.name='Oiseaux de la Baie des Horizons';birds.castShadow=birds.receiveShadow=false;register(birds);group.add(birds);
+ // The whole orbit lies within this local conservative bound, even while wing
+ // tips flap. Do not recompute a per-frame sphere for a fixed-size flock.
+ birds.boundingSphere=new THREE.Sphere(new THREE.Vector3(0,27,230),95);
+ let birdDay=1,birdWeather='clear';
+ const updateBirdCount=()=>{birds.count=birdDay<.25||birdWeather==='storm'?0:quality==='fluid'?10:birdSites.length;};
+ const moveBirds=time=>{for(const [index,site] of birdSites.entries()){
+  const a=time*site.speed+site.phase;dummy.position.set(Math.cos(a)*site.radius,site.height+Math.sin(time*.18+site.phase)*.7,230+Math.sin(a)*site.radius*.56);dummy.rotation.set(0,Math.atan2(-Math.sin(a),Math.cos(a)*.56),Math.sin(a)*.045);dummy.scale.setScalar(site.scale);dummy.updateMatrix();birds.setMatrixAt(index,dummy.matrix);
+ }birds.instanceMatrix.needsUpdate=true;};
+ moveBirds(0);
 
  // The named lake sits in the real water pocket between the city and Estonia.
  // Its surface is cut away wherever the shared city topology has solid ground.
@@ -330,12 +367,12 @@ export function addReferenceLandscape({root,owned=[],materials={},layoutRadius=2
  };
  return {
   group,structures,mapFeatures:structures,vegetation:mapVegetation,localCollisions,terrainSites,ships,harbourParts,lake,foamAt,
-  diagnostics:{mountainMasses:terrainSites.length,pines:treeSites.length,reefs:structures.filter(site=>site.kind==='reef').length,ships:ships.length,quays:structures.filter(site=>site.kind==='quay').length,lakeTriangles:kept.length/3,sourceStreams:valleyFalls.length},
+  diagnostics:{mountainMasses:terrainSites.length,pines:treeSites.length,reefs:structures.filter(site=>site.kind==='reef').length,ships:ships.length,quays:structures.filter(site=>site.kind==='quay').length,lakeTriangles:kept.length/3,sourceStreams:valleyFalls.length,seabirds:birdSites.length,seabirdDraws:1},
   updateView(camera){if(!camera)return;for(const lod of terrainLODs)lod.update(camera);},
-  setQuality(mode){quality=mode;for(const mesh of qualityObjects)mesh.castShadow=mode==='detail'||mode==='high';for(const forest of forests)forest.crowns.count=forest.trunks.count=mode==='fluid'?forest.fluidCount:forest.count;lakeWater.setQuality(mode,{allowPlanarReflection:false});lakeWater.material.uniforms.waveAmp.value=.24;lakeWater.material.uniforms.normalStrength.value=.12;for(const lod of terrainLODs)lod.levels[0].object.castShadow=mode==='detail'||mode==='high';},
-  setWeather(weather){wind.value=weather==='storm'?1:weather==='rain'?.65:.35;wetRock.roughness=weather==='storm'||weather==='rain'?.19:.32;lakeWater.setWeather(weather);},
-  setDaylight(day){falling.uniforms.day.value=clamp(day,0,1);lakeWater.setDaylight(day);signal.emissiveIntensity=.42+(1-day)*.60;window.emissiveIntensity=.15+(1-day)*.5;},
-  tick(time){clock.value=time;falling.uniforms.time.value=time;lakeWater.update(time);for(const ship of ships){ship.group.position.y=ship.y+Math.sin(time*.75+ship.phase)*.10;ship.group.rotation.z=Math.sin(time*.48+ship.phase)*.006;}},
+  setQuality(mode){quality=mode;updateBirdCount();for(const mesh of qualityObjects)mesh.castShadow=mode==='detail'||mode==='high';for(const forest of forests)forest.crowns.count=forest.trunks.count=mode==='fluid'?forest.fluidCount:forest.count;lakeWater.setQuality(mode,{allowPlanarReflection:false});lakeWater.material.uniforms.waveAmp.value=.24;lakeWater.material.uniforms.normalStrength.value=.12;for(const lod of terrainLODs)lod.levels[0].object.castShadow=mode==='detail'||mode==='high';},
+  setWeather(weather){birdWeather=weather;updateBirdCount();wind.value=weather==='storm'?1:weather==='rain'?.65:.35;wetRock.roughness=weather==='storm'||weather==='rain'?.19:.32;lakeWater.setWeather(weather);},
+  setDaylight(day){day=clamp(Number.isFinite(day)?day:1,0,1);birdDay=day;updateBirdCount();falling.uniforms.day.value=day;lakeWater.setDaylight(day);signal.emissiveIntensity=.42+(1-day)*.60;window.emissiveIntensity=.15+(1-day)*.5;},
+  tick(time){time=Number.isFinite(time)?time:0;clock.value=time;falling.uniforms.time.value=time;lakeWater.update(time);if(birds.count)moveBirds(time);for(const ship of ships){ship.group.position.y=ship.y+Math.sin(time*.75+ship.phase)*.10;ship.group.rotation.z=Math.sin(time*.48+ship.phase)*.006;}},
   disposeReflection(){lakeWater.disposeReflection();},
   get quality(){return quality;},
  };

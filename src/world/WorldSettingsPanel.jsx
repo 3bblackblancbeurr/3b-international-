@@ -1,0 +1,36 @@
+import React from 'react';
+import {Button} from '../design-system/index.jsx';
+import {Play,Map,Users,Maximize,Compass,ArrowLeft,Download,RotateCcw,Sparkles,Volume2,Footprints,BookOpen} from 'lucide-react';
+import WorldSaveStatus from './WorldSaveStatus.jsx';
+import {CONTROL_ACTIONS,CONTROL_KEY_CHOICES,controlLabel} from './control-bindings.js';
+const keyName=key=>({shift:'Maj',' ':'Espace',arrowup:'↑',arrowdown:'↓',arrowleft:'←',arrowright:'→'}[key]||key.toUpperCase());
+export default function WorldSettingsPanel({uid,save,saveStatus,saveMessage,rewardMessage,snapshot,onPanel,onResume,onFullscreen,onCamera,onExit,onAccount,onSync,onExport,onImport,sound,onSound,haptics,onHaptics,soundCaptions,onSoundCaptions,difficulty,onDifficulty,quality,onQuality,sensitivity,onSensitivity,onFollow,audioMix,onAudio,controls,onControl,onControlProfile,companionVisible,onCompanion}){
+ return <div className="hub-settings">
+  <div className="hub-settings-intro"><span className="world-kicker">CITÉ DES HUIT HÉRITAGES</span><h3>À ton rythme.</h3><p>Reprends ton exploration ou ajuste ton confort de jeu.</p></div>
+  <div className="hub-settings-primary"><Button className="world-primary" onClick={onResume}><Play size={18}/>Reprendre l’exploration</Button><Button variant="neutral" onClick={onFullscreen}><Maximize size={18}/>Plein écran</Button></div>
+  <nav className="hub-settings-shortcuts" aria-label="Carnet du voyageur">{[['atlas',Map,'Atlas'],['journal',BookOpen,'Missions'],['collection',Users,'Compagnons'],['team',Users,'Équipe'],['avatar',Sparkles,'Personnage et armes'],['party',Users,'Groupe'],['gps',Footprints,'Sortie GPS'],...(uid?[['premium',Sparkles,'Premium']]:[])].map(([id,Icon,label])=><Button key={id} variant="neutral" onClick={()=>onPanel(id)}><Icon size={18}/>{label}</Button>)}</nav>
+  <WorldSaveStatus status={saveStatus} message={saveMessage} onSync={onSync} onExport={onExport} onAccount={onAccount}/>
+  <details className="hub-settings-section"><summary>Confort et accessibilité</summary>
+   <div className="hub-settings-toggles">{[['Sons',sound,onSound],['Vibrations',haptics,onHaptics],['Sous-titres des sons',soundCaptions,onSoundCaptions],['Compagnon de l’application',companionVisible,onCompanion]].map(([label,enabled,handler])=><Button key={label} variant="neutral" aria-pressed={enabled} onClick={handler}>{label}<span>{enabled?'Activés':'Désactivés'}</span></Button>)}</div>
+   <div className="world-quality"><label htmlFor="world-camera-follow">Caméra d’exploration</label><select id="world-camera-follow" value={snapshot.camera?.follow===false?'free':'follow'} onChange={e=>onFollow(e.target.value==='follow')}><option value="follow">Suivre mes déplacements</option><option value="free">Angle libre</option></select><p>Le regard manuel garde la priorité. Tu peux conserver ton angle et ton zoom.</p><Button variant="neutral" onClick={onCamera}><Compass size={18}/>Changer de vue</Button></div>
+   <div className="world-quality"><label htmlFor="world-camera-sensitivity">Sensibilité du regard · {Math.round(sensitivity*100)}%</label><input id="world-camera-sensitivity" type="range" min="0.5" max="2" step="0.05" value={sensitivity} onChange={e=>onSensitivity(e.target.value)}/></div>
+  </details>
+  <details className="hub-settings-section"><summary>Graphismes et audio</summary>
+   <div className="world-quality"><label htmlFor="world-quality">Qualité graphique</label><select id="world-quality" value={quality} onChange={e=>onQuality(e.target.value)}><option value="fluid">Fluide · appareils modestes</option><option value="auto">Adaptative · recommandée</option><option value="detail">Détaillée · appareils puissants</option></select><p>Le mode adaptatif ajuste la résolution pendant l’exploration.</p></div>
+   <div className="world-quality world-audio-mixer"><h4>Mixage audio</h4>{[['master','Général'],['music','Musique'],['ambience','Ambiance'],['sfx','Effets'],['voice','Voix']].map(([id,label])=><label key={id} className="world-audio-slider"><span>{label} <b>{Math.round(audioMix[id]*100)}%</b></span><input aria-label={'Volume '+label} type="range" min="0" max="1" step="0.01" value={audioMix[id]} onChange={e=>onAudio(id,e.target.value)}/></label>)}</div>
+  </details>
+  <details className="hub-settings-section"><summary>Commandes clavier et tactile</summary>
+   <p>Glisse à gauche pour avancer, à droite pour regarder. Un toucher court choisit une destination. Clic droit pour le regard ; molette pour zoomer.</p>
+   <div className="world-actions"><Button variant="neutral" onClick={()=>onControlProfile('azerty')}>AZERTY</Button><Button variant="neutral" onClick={()=>onControlProfile('qwerty')}>QWERTY</Button><Button variant="neutral" onClick={()=>onControlProfile('default')}><RotateCcw size={16}/>Réinitialiser</Button></div>
+   <div className="world-control-grid">{Object.entries(CONTROL_ACTIONS).map(([id,rule])=><label key={id}><span>{rule.label}</span><select aria-label={'Touche pour '+rule.label.toLowerCase()} value={controls[id]?.[0]||rule.default[0]} onChange={e=>onControl(id,e.target.value)}>{CONTROL_KEY_CHOICES.map(key=><option key={key} value={key}>{keyName(key)}</option>)}</select></label>)}</div><p>Une touche ne peut pas servir à deux actions. Interagir : {controlLabel(controls,'interact')} · courir : {controlLabel(controls,'sprint')}.</p>
+  </details>
+  <details className="hub-settings-section"><summary>Progression et copies de sauvegarde</summary>
+   {!uid&&<p>La partie invitée et celle de ton compte ont chacune leur progression. Reviens en mode invité pour retrouver cette partie sur cet appareil.</p>}
+   <p>Les XP monde renforcent ton aventure ; les éclats servent aux activités du monde. Les XP compte et points de fidélité suivent les règles et plafonds du compte.</p><p>{rewardMessage}</p>
+   <div className="world-actions"><Button variant="neutral" onClick={onExport}><Download size={18}/>Télécharger ma sauvegarde</Button>{!uid&&<label className="world-import">Restaurer une copie invitée<input type="file" accept=".json,application/json" onChange={onImport}/></label>}<Button variant="neutral" onClick={onAccount}><Users size={18}/>{uid?'Mon compte 3B':'Jouer avec mon compte 3B'}</Button><Button variant="neutral" onClick={()=>onPanel('hubOpening')}><Play size={18}/>Revoir l’ouverture</Button></div>
+   <div className="world-quality"><label htmlFor="world-difficulty">Défis des rencontres</label><select id="world-difficulty" value={difficulty} onChange={e=>onDifficulty(e.target.value)}><option value="adventure">Aventure</option><option value="expert">Expert</option></select><p>Ce réglage s’applique aux prochaines rencontres.</p></div>
+  </details>
+  <details className="hub-settings-section"><summary>État du rendu</summary><p>{snapshot.fps||'—'} images/s · {snapshot.drawCalls||'—'} appels de rendu · résolution {snapshot.resolution||100} %. Les performances dépendent de ton appareil.</p></details>
+  <footer><Button variant="ghost" onClick={onExit}><ArrowLeft size={18}/>Retour à l’application</Button></footer>
+ </div>;
+}

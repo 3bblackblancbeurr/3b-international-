@@ -49,6 +49,7 @@ export function remoteMember(profile){
 }
 export function ExplorationRewards({page}){
  const account=useLoyalty();const[notice,setNotice]=useState('');
+ useEffect(()=>{if(!notice)return;const expiry=setTimeout(()=>setNotice(''),5000);return()=>clearTimeout(expiry);},[notice]);
  useEffect(()=>{setNotice('');if(!account.user||!Object.hasOwn(EXPLORATIONS,page))return;const uid=account.user.id;let live=true;const timer=setTimeout(()=>{if(document.hidden)return;memberRequest('explore',{page},uid).then(result=>{if(live){account.accept(result);if(result.awarded){setNotice('Découverte récompensée : +20 XP · +2 points');companionReward({source:'exploration',page,xp:20,points:2});}}}).catch(()=>{});},12000);return()=>{live=false;clearTimeout(timer);};},[page,account.user?.id]);
- return notice?<div className="member-toast" role="status">{notice}</div>:null;
+ return notice?<div className={'member-toast'+(page==='world3b'?' member-toast-world':'')} role="status" aria-atomic="true">{notice.replace('+20 XP · +2 points','+20 XP compte · +2 points de fidélité')}</div>:null;
 }

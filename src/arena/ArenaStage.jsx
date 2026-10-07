@@ -10,7 +10,7 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
   const canvas=ref.current;let lowPower=false;try{lowPower=localStorage.getItem('3b-world-quality')==='fluid';}catch{}
   let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:!lowPower,alpha:true,powerPreference:lowPower?'low-power':'high-performance'});}catch{setError('La 3D est indisponible sur ce navigateur. Les textes et les commandes restent accessibles.');return;}
   const library=createLivingLibrary(),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(38,1,.05,110),geometry=[],materials=[];
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,lowPower?1:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;renderer.shadowMap.enabled=!lowPower;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,lowPower?1:1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.24;renderer.shadowMap.enabled=!lowPower;renderer.shadowMap.type=THREE.PCFShadowMap;
   const backdrop=new THREE.Color('#07111d');scene.background=avatar&&!cinematic?null:backdrop;scene.fog=new THREE.FogExp2('#07111d',.026);
   scene.add(new THREE.HemisphereLight('#dceeff','#07101b',2.15));
   const light=new THREE.DirectionalLight('#ffe1a6',4.4);light.position.set(-4,7,6);light.castShadow=true;light.shadow.mapSize.set(1024,1024);Object.assign(light.shadow.camera,{left:-6,right:6,top:5,bottom:-5});light.shadow.normalBias=.035;scene.add(light);

@@ -34,6 +34,9 @@ const POSE_LABELS = { dance: 'Le rythme est lancé', breakdance: 'Place au mouve
 
 export default function CompanionLayer({ page, secretPhase, memberRegistered, goTo }) {
   const prefs = useCompanionPreferences();
+  const [worldPresence,setWorldPresence]=useState(()=>{try{return localStorage.getItem('3b-world-app-companion')==='1';}catch{return false;}});
+  useEffect(()=>{const change=event=>setWorldPresence(event.detail?.visible===true);window.addEventListener('threeb:world-companion',change);return()=>window.removeEventListener('threeb:world-companion',change);},[]);
+  const worldFocusMode=page==='world3b'&&!worldPresence;
   const { capabilities, busy, status: nativeStatus } = useCompanionNativePresence();
   const [living, setLiving] = useState(readLivingPrefs);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -59,7 +62,8 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     nativeLowPower: capabilities?.lowPower === true,
     nativeReducedMotion: capabilities?.reducedMotion === true,
   });
-  const { mode, lowPower, reducedMotion, visible, online } = behavior;
+  const { mode, lowPower, reducedMotion, visible:behaviorVisible, online } = behavior;
+  const visible=behaviorVisible&&!worldFocusMode;
   const voice = useCompanionVoice({ enabled: prefs.enabled && living.voiceEnabled, visible, personality: living.personality, voiceId: living.voiceId, voiceStyle: living.voiceStyle });
   const stopVoice = useCallback(() => {
     window.dispatchEvent(new CustomEvent('threeb:companion-voice-stop'));
@@ -86,7 +90,7 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     showReply({ pose: scene.kind, message: companionSceneLine(scene.kind, living.personality, turnRef.current++, recentRef.current) }, { automatic: true });
   }, [living.personality, showReply]);
   const stage = useCompanionStage({
-    shellRef, enabled: prefs.enabled, visible, reducedMotion, lowPower, discreet: prefs.reducedPresence,
+    shellRef, enabled: prefs.enabled&&!worldFocusMode, visible, reducedMotion, lowPower, discreet: prefs.reducedPresence,
     paused: panelOpen || focused || focusMode || ['secret', 'reward', 'celebrate', 'notification', 'sleep'].includes(mode),
     autonomous: living.initiative, batterySaver: prefs.batterySaver, page, personality: living.personality, onScene: onStageScene,
   });
@@ -279,11 +283,12 @@ export default function CompanionLayer({ page, secretPhase, memberRegistered, go
     document.querySelector('[data-companion-settings-trigger]')?.focus({ preventScroll: true });
   }
 
-  if (!prefs.enabled) return null;
+  if (!prefs.enabled||worldFocusMode) return null;
 
   return <>
     <Button ref={shellRef} type="button" variant="ghost" className="companion3b-shell companion3b-living-shell"
       data-mode={pose} data-page={page} data-facing={stage.facing} data-dragging={stage.dragging} data-travelling={stage.moving}
+      data-world-presence={worldPresence}
       data-motion={motionAllowed ? "full" : "reduced"} data-low-power={lowPower}
       data-discreet={prefs.reducedPresence} data-visible={visible && !stage.suspended} data-personality={living.personality}
       data-interaction={interaction?.pose || ''}

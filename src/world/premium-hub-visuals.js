@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {worldArtMaterials} from '../design-system/tokens.js';
 
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const hash=input=>{let h=2166136261;for(let i=0;i<input.length;i++){h^=input.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;};
@@ -263,33 +266,89 @@ export function createPremiumHubMarker(item,{root,geometry,material,groundY,kind
 }
 
 
+/** Geometry belongs to the supplied scene cache, which its owner disposes.
+ * Tiny trim, seats and railings share one batch; a boat still needs 3 draws. */
+function transitGeometry(geometry,key,parts){
+ if(geometry[key])return geometry[key];
+ const transform=new THREE.Object3D(),pieces=parts.map(([source,options])=>{
+  const {x=0,y=0,z=0,sx=1,sy=sx,sz=sx,rx=0,ry=0,rz=0}=options;
+  transform.position.set(x,y,z);transform.scale.set(sx,sy,sz);transform.rotation.set(rx,ry,rz);transform.updateMatrix();
+  const copy=source.index?source.toNonIndexed():source.clone();copy.applyMatrix4(transform.matrix);return copy;
+ });
+ geometry[key]=mergeGeometries(pieces);pieces.forEach(piece=>piece.dispose());return geometry[key];
+}
+
+function transitHullGeometry(geometry){
+ if(geometry.hubTransitBoatHull)return geometry.hubTransitBoatHull;
+ const shape=new THREE.Shape();shape.moveTo(-.60,-1.65);
+ for(const [x,z] of [[.60,-1.65],[.78,-1.5],[.825,-.95],[.78,.95],[.53,1.4],[0,1.65],[-.53,1.4],[-.78,.95],[-.825,-.95],[-.78,-1.5]])shape.lineTo(x,z);
+ shape.closePath();
+ const hull=new THREE.ExtrudeGeometry(shape,{depth:.35,bevelEnabled:true,bevelThickness:.035,bevelSize:.065,bevelSegments:1,steps:1,curveSegments:4});
+ hull.rotateX(Math.PI/2);hull.center();hull.computeBoundingBox();const size=hull.boundingBox.getSize(new THREE.Vector3());hull.scale(1.65/size.x,.35/size.y,3.3/size.z);hull.translate(0,-.05,0);
+ geometry.hubTransitBoatHull=hull;return hull;
+}
+
 export function createPremiumTransitVehicle(spec,start,{root,geometry,material,groundY}){
  const group=new THREE.Group();group.name='3B-Moving-'+spec.transport;root.add(group);
- const dark=material('#11171c',{roughness:.42,metalness:.52});
- const accent=material(spec.color,{emissive:spec.color,emissiveIntensity:.22,metalness:.68,roughness:.24});
- const glass=material('#113f58',{emissive:'#00a8ff',emissiveIntensity:.12,metalness:.35,roughness:.15});
+ const dark=material(worldArtMaterials.monumentDark,{roughness:.4,metalness:.48});
+ const accent=material(spec.color,{emissive:spec.color,emissiveIntensity:.10,metalness:.62,roughness:.3});
+ const glass=material(worldArtMaterials.monumentBlue,{emissive:worldArtMaterials.monumentEmission,emissiveIntensity:.045,metalness:.18,roughness:.2,transparent:true,opacity:.78,depthWrite:false});
+ geometry.hubTransitRounded??=new RoundedBoxGeometry(1,1,1,1,.075);
+ const box=geometry.box,rounded=geometry.hubTransitRounded,parts=[],add=(options,source=box)=>parts.push([source,options]);
  if(spec.transport==='train'){
-  child(group,geometry.box,dark,{y:0,sx:1.65,sy:.72,sz:4.9});
-  child(group,geometry.box,glass,{y:.50,z:-.25,sx:1.34,sy:.42,sz:3.55});
-  // Unit boxes use full dimensions: trim stays on the 4.9 m body, wheels on
-  // the existing 1.64 m track gauge. At route height .62, tyres meet rail top .175.
-  for(const z of [-2.4,-1.2,0,1.2,2.4])child(group,geometry.box,accent,{y:.37,z,sx:1.45,sy:.08,sz:.05,cast:false});
-  for(const x of [-.82,.82])for(const z of [-1.75,1.75])child(group,geometry.cylinder,dark,{x,y:-.205,z,sx:.24,sy:.20,sz:.24,rz:Math.PI/2});
+  child(group,rounded,dark,{y:0,sx:1.65,sy:.72,sz:4.9}).name='3B Express · carrosserie';
+  child(group,rounded,glass,{y:.50,z:-.25,sx:1.34,sy:.42,sz:3.55}).name='3B Express · vitrage panoramique';
+  add({y:.688,z:-.25,sx:1.48,sy:.044,sz:3.76},rounded);
+  for(const side of [-1,1]){
+   add({x:side*.802,y:.30,z:-.1,sx:.022,sy:.045,sz:4.2});
+   for(const z of [-1.72,-1.02,-.30,.42,1.17])add({x:side*.665,y:.53,z,sx:.033,sy:.30,sz:.045});
+   for(const z of [-1.11,-.66])add({x:side*.831,y:.035,z,sx:.012,sy:.49,sz:.026});
+   add({x:side*.831,y:.275,z:-.885,sx:.012,sy:.028,sz:.45});
+   add({x:side*.84,y:.06,z:-.73,sx:.02,sy:.095,sz:.028});
+   for(const end of [-1,1])add({x:side*.57,y:.025,z:end*2.443,sx:.22,sy:.075,sz:.012});
+  }
+  add({y:-.05,z:2.443,sx:.56,sy:.016,sz:.012});
+  child(group,transitGeometry(geometry,'hubTransitTrainTrim',parts),accent,{cast:false}).name='3B Express · encadrements, portes et feux';
+  // The wheel gauge and rail contact stay identical to the authored route.
+  for(const x of [-.82,.82])for(const z of [-1.75,1.75])child(group,geometry.cylinder,dark,{x,y:-.205,z,sx:.24,sy:.20,sz:.24,rz:Math.PI/2}).name='3B Express · roue';
  }else if(spec.transport==='boat'){
-  child(group,geometry.box,dark,{y:-.05,sx:1.65,sy:.35,sz:3.3});
-  child(group,geometry.box,glass,{y:.37,z:-.35,sx:1.18,sy:.50,sz:1.65});
-  child(group,geometry.box,accent,{y:.145,z:1.35,sx:1.15,sy:.08,sz:.55,cast:false});
+  child(group,transitHullGeometry(geometry),dark).name='Navette · coque profilée';
+  child(group,rounded,glass,{y:.37,z:-.35,sx:1.14,sy:.50,sz:1.65}).name='Navette · timonerie vitrée';
+  add({y:.145,z:1.14,sx:.60,sy:.04,sz:.71});
+  add({y:.145,z:-1.29,sx:1.18,sy:.04,sz:.56});
+  add({y:.645,z:-.35,sx:1.25,sy:.07,sz:1.83},rounded);
+  add({y:.70,z:-.54,sx:.28,sy:.045,sz:.35},rounded);
+  for(const side of [-1,1]){
+   for(const z of [-1.13,-.45,.42])add({x:side*.558,y:.37,z,sx:.035,sy:.49,sz:.042});
+   add({x:side*.577,y:.16,z:-.35,sx:.035,sy:.05,sz:1.66});
+   add({x:side*.814,y:-.005,z:-.08,sx:.012,sy:.042,sz:2.21});
+   for(const z of [.70,1.00])add({x:side*.58,y:.24,z,sx:.028,sy:.23,sz:.028});
+   add({x:side*.58,y:.342,z:.85,sx:.028,sy:.024,sz:.33});
+   add({x:side*.32,y:.19,z:1.25,sx:.03,sy:.13,sz:.03});
+   add({x:side*.32,y:.24,z:1.25,sx:.11,sy:.025,sz:.035});
+   add({x:side*.54,y:.26,z:-1.43,sx:.03,sy:.26,sz:.03});
+  }
+  add({y:.205,z:-1.36,sx:.92,sy:.12,sz:.27},rounded);
+  add({y:.335,z:-1.48,sx:.92,sy:.20,sz:.055},rounded);
+  for(const x of [-.2,0,.2])add({x,y:.167,z:1.13,sx:.008,sy:.007,sz:.62});
+  child(group,transitGeometry(geometry,'hubTransitBoatDeck',parts),accent,{cast:false}).name='Navette · pont, banc, mains courantes et accastillage';
  }else{
-  // Keep the cabin envelope while exposing its glazing between sill and roof.
-  child(group,geometry.box,dark,{y:-.26,sx:1.32,sy:.30,sz:1.62});
-  child(group,geometry.box,glass,{y:.05,z:.10,sx:1.06,sy:.62,sz:1.25});
-  child(group,geometry.box,dark,{y:.36,sx:1.32,sy:.10,sz:1.62});
-  child(group,geometry.box,dark,{y:.68,sx:.12,sy:.64,sz:.12});
-  child(group,geometry.box,accent,{y:.98,sx:.16,sy:.10,sz:1.14,cast:false});
-  // The tandem pulleys follow the same central cable at route height +1.22.
-  for(const z of [-.38,.38])child(group,geometry.cylinder,dark,{y:1.08,z,sx:.16,sy:.18,sz:.16,rz:Math.PI/2});
+  const frame=[[rounded,{y:-.26,sx:1.32,sy:.30,sz:1.62}],[rounded,{y:.36,sx:1.32,sy:.10,sz:1.62}],[box,{y:.68,sx:.12,sy:.64,sz:.12}]];
+  for(const x of [-.59,.59])for(const z of [-.70,.70])frame.push([box,{x,y:.04,z,sx:.055,sy:.74,sz:.055}]);
+  child(group,transitGeometry(geometry,'hubTransitCabinFrame',frame),dark).name='Cabine · châssis et suspension';
+  child(group,rounded,glass,{y:.05,z:.10,sx:1.06,sy:.62,sz:1.25}).name='Cabine · vitrage panoramique';
+  add({y:.98,sx:.16,sy:.10,sz:1.14});
+  for(const side of [-1,1]){
+   add({x:side*.641,y:-.11,sx:.022,sy:.045,sz:1.45});
+   add({x:side*.641,y:.31,sx:.022,sy:.025,sz:1.45});
+   add({x:side*.25,y:-.075,z:.10,sx:.42,sy:.07,sz:.79},rounded);
+   add({x:side*.641,y:.085,z:.13,sx:.022,sy:.35,sz:.023});
+  }
+  child(group,transitGeometry(geometry,'hubTransitCabinTrim',parts),accent,{cast:false}).name='Cabine · banquettes et encadrements';
+  for(const z of [-.38,.38])child(group,geometry.cylinder,dark,{y:1.08,z,sx:.16,sy:.18,sz:.16,rz:Math.PI/2}).name='Cabine · poulie sur câble';
  }
- group.position.set(start.x,groundY(start.x,start.z)+spec.height,start.z);return group;
+ group.userData.transitCraft={version:1,transport:spec.transport,drawCalls:group.children.length,sharedGeometry:true};
+ group.position.set(start.x,groundY(start.x,start.z)+(spec.height||0),start.z);return group;
 }
 
 

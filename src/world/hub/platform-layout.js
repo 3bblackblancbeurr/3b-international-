@@ -4,6 +4,7 @@ import {REFERENCE_GATE_SECTORS} from './gate-identity.js';
 import {citeSurfaceDistance,CITE_GATE_SITES} from './platform-topology.js';
 import {HUB_MISSION_SIGNAL_RULES} from './mission-signals.js';
 import {referenceTransportSite} from './transport-motion.js';
+import {hubNpcLabel,hubObjectiveLabel} from './presentation.js';
 export const HUB_SCALE=1.7;
 export const HUB_PLATFORM = Object.freeze({radius:288*HUB_SCALE,walkRadius:286*HUB_SCALE,portalRadius:238*HUB_SCALE,spawn:{x:8*HUB_SCALE,z:38*HUB_SCALE},core:{x:0,z:0}});
 const DISTRICT_SITES = {
@@ -78,7 +79,7 @@ export function platformRuntimeItems(base,runtime,plan){
 }
 export function platformNextObjective(items,save){
  const active=items.find(i=>i.type==='hubMissionAction');
- if(active)return {label:active.name,item:active};
+ if(active)return {label:hubObjectiveLabel(active.name),item:active};
  const claim=items.find(i=>i.type==='hubMission'&&save.hub?.missions?.[i.missionId]?.status==='completed'&&!save.hub.missions[i.missionId].claimed);
  if(claim)return {label:'Récupérer la récompense · '+claim.name,item:claim};
  const running=items.find(i=>i.type==='hubMission'&&save.hub?.missions?.[i.missionId]?.status==='active');
@@ -90,8 +91,8 @@ export function platformNextObjective(items,save){
    rule.type==='npc'?i.type==='hubNpc'&&i.npcId===rule.id:
    rule.type==='secretStep'?i.type==='hubSecretStep'&&i.secretId===rule.id&&i.step===rule.step:
    rule.type==='secret'?i.type==='hubSecret'&&i.secretId===rule.id:false);
-  return {label:running.objectives?.[stage]||running.name,item:target||running};
+  return {label:hubObjectiveLabel(running.objectives?.[stage]||running.name),item:target||running};
  }
  const available=items.find(i=>i.type==='hubMission'&&!i.locked&&save.hub?.missions?.[i.missionId]?.status==='available');
- return available?{label:'Rencontrer '+available.giver+' · '+available.name,item:items.find(i=>i.type==='hubNpc'&&i.missionIds?.includes(available.missionId))||available}:null;
+ return available?{label:'Rencontrer '+hubNpcLabel(available.giver)+' · '+available.name,item:items.find(i=>i.type==='hubNpc'&&i.missionIds?.includes(available.missionId))||available}:null;
 }
