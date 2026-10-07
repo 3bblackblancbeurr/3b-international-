@@ -6,6 +6,7 @@ on:
       - 'scripts/verify-world-art-browser.mjs'
       - 'scripts/verify-hub-services-browser.mjs'
       - 'scripts/verify-hub-master-browser.mjs'
+      - 'scripts/verify-world-gameplay-browser.mjs'
       - '.github/workflows/verify-hub-render.yml'
 permissions:
   contents: read
@@ -34,6 +35,10 @@ jobs:
         run: node scripts/verify-hub-master-browser.mjs
         env:
           HUB_MASTER_OUT: artifacts/hub-interface/master-ui
+      - name: Check audio, gestures, movement and dismissible HUD
+        run: node scripts/verify-world-gameplay-browser.mjs
+        env:
+          GAMEPLAY_OUT: artifacts/hub-interface/gameplay
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:

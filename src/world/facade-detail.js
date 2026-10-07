@@ -19,8 +19,12 @@ export function applyFacadeDetail(material,{daylight,crafted=false}){
    float vertical=1.-smoothstep(.25,.7,fn.y),above=smoothstep(3.3,4.1,facadeP.y);
    float wx=smoothstep(.17-aa.x,.17+aa.x,f.x)*(1.-smoothstep(.80-aa.x,.80+aa.x,f.x));
    float wy=smoothstep(.20-aa.y,.20+aa.y,f.y)*(1.-smoothstep(.77-aa.y,.77+aa.y,f.y));
-   float pane=wx*wy*vertical*above;
-   float mineral=.95+.05*facadeHash(floor(wall*8.));
+   // Unresolved bays and mineral grains fade to their mean rather than
+   // aliasing into bright/dark pixels as the camera travels across the city.
+   float bayDetail=1.-smoothstep(.12,.42,max(aa.x,aa.y));
+   float pane=wx*wy*vertical*above*bayDetail;
+   float grainDetail=1.-smoothstep(.35,1.2,max(fwidth(wall.x*8.),fwidth(wall.y*8.)));
+   float mineral=.975+(.05*facadeHash(floor(wall*8.))-.025)*grainDetail;
    diffuseColor.rgb*=mineral;
    float room=facadeHash(cell+floor(facadeP.xz*.002)),occupied=step(.60,room);
    float blind=step(.82,room)*step(.48,f.y);
@@ -40,7 +44,7 @@ export function applyFacadeDetail(material,{daylight,crafted=false}){
    diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.29,.205,.105),surround*.78);
    `:''}
    diffuseColor.rgb=mix(diffuseColor.rgb,glassColor,pane);
-   float joint=(1.-smoothstep(.012,.028,min(f.x,1.-f.x)))*vertical;
+   float joint=(1.-smoothstep(.012-aa.x,.028+aa.x,min(f.x,1.-f.x)))*vertical*bayDetail;
    diffuseColor.rgb*=1.-joint*.13;
    `).replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
    roughnessFactor=mix(roughnessFactor,${crafted?'.16':'.27'},pane);`)
@@ -51,6 +55,6 @@ export function applyFacadeDetail(material,{daylight,crafted=false}){
     float furniture=1.-step(.6,f.x)*step(f.y,.33)*.65;
     totalEmissiveRadiance+=interior*pane*occupied*furniture*(${crafted?'.018+pow(1.-facadeDay,1.5)*.30':'.035+pow(1.-facadeDay,1.5)*.68'});`);
  };
- material.customProgramCacheKey=()=>baseKey+'-inhabited-facade-v2-'+crafted;
+ material.customProgramCacheKey=()=>baseKey+'-inhabited-facade-v3-'+crafted;
  return material;
 }

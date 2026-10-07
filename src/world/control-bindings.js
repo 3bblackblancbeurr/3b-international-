@@ -6,10 +6,15 @@ export const CONTROL_ACTIONS=Object.freeze({
  interact:{label:'Interagir',default:['e']},
  sprint:{label:'Courir',default:['shift']},
  cameraToggle:{label:'Changer de vue',default:['c']},
+ jump:{label:'Sauter',default:[' ']},
+ strike:{label:'Frapper',default:['j']},
+ guard:{label:'Défendre',default:['k']},
+ dodge:{label:'Esquiver',default:['x']},
+ power:{label:'Pouvoir',default:['l']},
 });
 
 export const CONTROL_KEY_CHOICES=Object.freeze([
- 'z','q','s','d','w','a','e','f','r','c','x','v','g','shift',' ','arrowup','arrowdown','arrowleft','arrowright',
+ 'z','q','s','d','w','a','e','f','r','c','x','v','g','j','k','l','shift',' ','arrowup','arrowdown','arrowleft','arrowright',
 ]);
 
 const cleanKey=key=>typeof key==='string'?key.toLowerCase():null;
