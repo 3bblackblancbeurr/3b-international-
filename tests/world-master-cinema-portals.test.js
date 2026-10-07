@@ -1,18 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {createPortalEnergy} from '../src/world/portal-energy.js';
+import {createPortalEnergy,PORTAL_SIGNATURES} from '../src/world/portal-energy.js';
 import {cinematicFraming} from '../src/world/cinematic-framing.js';
 import {COUNTRIES} from '../src/world/catalog.js';
 
 test('all eight portals have bounded, distinct, disposable living energy without altering traversal',()=>{
  const ids=COUNTRIES.map(country=>country.id);
  assert.equal(ids.length,8);
+ assert.equal(new Set(Object.values(PORTAL_SIGNATURES).map(x=>x.spokes)).size,8,'eight original portal geometries');
  for(const country of COUNTRIES){
   const energy=createPortalEnergy({accent:country.color,region:country.id});
   assert.match(energy.group.name,/3B-Portal-Resonance/);
   assert.equal(energy.group.children.length,5);
   assert.equal(energy.state.particleCount,42);
+  assert.equal(energy.state.signature,PORTAL_SIGNATURES[country.id]);
   const initial=energy.state.time;
   energy.tick(2,.032);
   assert.ok(energy.state.time>initial,country.id+' clock runs');
