@@ -3,8 +3,9 @@ import {spatialObstacles} from './hub/spatial-obstacles.js';
 // Small country maps keep the battle-tested full-grid search. The metropolis
 // uses a bounded corridor search so long taps do not allocate a 650 m square grid.
 export function findInteractionPath(start,item,obstacles,radius=76){
- const d=Math.hypot(start.x-item.x,start.z-item.z),gap=['guardian','patrol'].includes(item.type)?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
- const approach=gap&&d>gap?{x:item.x+(start.x-item.x)*gap/d,z:item.z+(start.z-item.z)*gap/d}:item;
+ const d=Math.hypot(start.x-item.x,start.z-item.z),gap=item.type==='hubNpc'?3:['guardian','patrol'].includes(item.type)?4:item.type==='atelier'?3.3:['echo','survey','beacon'].includes(item.type)?2:0;
+ // Conversation guidance stops within speaking distance, outside the person.
+ const approach=gap&&d>gap?{x:item.x+(start.x-item.x)*gap/d,z:item.z+(start.z-item.z)*gap/d}:item.type==='hubNpc'?start:item;
  const path=findPath(start,approach,obstacles,radius);
  return path.length?path:findPath(start,item,obstacles,radius);
 }
