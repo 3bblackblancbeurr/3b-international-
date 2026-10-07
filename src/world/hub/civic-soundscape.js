@@ -21,6 +21,7 @@ export const HUB_AMBIENT_SOURCES=Object.freeze([
   return Object.freeze({id:'cascade:'+island.id,kind:'water',name:'Cascade',x:(island.x+Math.cos(angle)*r)*HUB_SCALE,z:(island.z+Math.sin(angle)*r)*HUB_SCALE,radius:74,frequency:1050,volume:.085});
  }),
  Object.freeze({id:'fountain:nexus',kind:'water',name:'Fontaine du Cercle',x:0,z:0,radius:60,frequency:1550,volume:.045}),
+ Object.freeze({id:'machine:broken-circle',kind:'machine',name:'Résonance du Cercle Brisé',x:0,z:0,radius:96,frequency:78,volume:.032}),
  ...Object.entries(DISTRICT_SOUNDS).map(([id,[name,frequency,volume,buildingId]])=>{
   const room=buildings.find(b=>b.buildingId===buildingId),position=room?{x:room.buildingX,z:room.buildingZ}:PLATFORM_DISTRICTS[id];
   return Object.freeze({id:'district:'+id,kind:id==='innovation'||id==='docks'?'machine':'activity',name,...position,buildingId,radius:48,frequency,volume});
