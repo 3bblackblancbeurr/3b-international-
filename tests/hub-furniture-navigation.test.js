@@ -6,6 +6,15 @@ import {HUB_PLATFORM} from '../src/world/hub/platform-layout.js';
 import {findInteractionPath} from '../src/world/navigation.js';
 import {obstacleDistance} from '../src/world/collision.js';
 
+test('conversation guidance approaches a resident without overlapping them or moving an already close player',()=>{
+ const resident={type:'hubNpc',x:12,z:8,range:7};
+ const far={x:2,z:8},near={x:10,z:8};
+ const end=findInteractionPath(far,resident,[],600).at(-1);
+ assert.ok(Math.hypot(end.x-resident.x,end.z-resident.z)>2.5);
+ assert.ok(Math.hypot(end.x-resident.x,end.z-resident.z)<resident.range);
+ assert.deepEqual(findInteractionPath(near,resident,[],600).at(-1),near);
+});
+
 test('guidance can leave a reading table after physically valid manual steps towards its edge',()=>{
  const hub=createHubPlatform(blankSave());
  try{

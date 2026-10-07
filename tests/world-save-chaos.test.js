@@ -98,3 +98,23 @@ test('a refresh waits for an ongoing sync and retains new actions submitted duri
  assert.equal((await syncing).data.xp,local.xp);
  const latest=await refresh;assert.equal(latest.data.xp,local.xp);assert.equal(latest.needsSave,false);assert.equal(h.pending().length,0);
 });
+
+test('save status distinguishes server acknowledgement, queued actions and loss of network',async t=>{
+ const h=await harness(t,'status');let local=(await h.api.loadWorld(h.uid)).data;
+ const initial=h.api.worldSaveStatus(h.uid);assert.equal(initial.scope,'account');assert.equal(initial.hasLocalCopy,true);assert.ok(initial.lastSyncedAt>0);
+ local=h.api.recordWorldAction(h.uid,local,{type:'visit',region:'france'});
+ assert.equal(h.api.worldSaveStatus(h.uid).pendingCount,1);
+ h.intercept=()=>{throw TypeError('Failed to fetch');};
+ const lost=await h.api.saveWorld(h.uid,local);assert.equal(lost.status.outcome,'offline');assert.equal(lost.status.pendingCount,1);assert.equal(lost.status.hasLocalCopy,true);assert.doesNotMatch(lost.message,/Failed to fetch/);
+ h.intercept=null;const retry=await h.api.saveWorld(h.uid,local);assert.equal(retry.status.outcome,'synced');assert.equal(retry.status.pendingCount,0);assert.ok(retry.status.lastSyncedAt>=initial.lastSyncedAt);
+});
+
+test('missing authentication with no local snapshot never claims there is a saved copy',async t=>{
+ const h=await harness(t,'auth-status');t.mock.method(authClient.auth,'getSession',async()=>({data:{session:null}}));
+ const result=await h.api.loadWorld(h.uid);assert.equal(result.status.outcome,'auth');assert.equal(result.status.hasLocalCopy,false);assert.equal(result.status.lastSyncedAt,null);
+});
+
+test('guest sync failure remains pending and clearly identifies device storage',async t=>{
+ const h=await harness(t,'guest-status');t.mock.method(localStorage,'setItem',()=>{throw Error('Quota exceeded');});
+ const result=await h.api.saveWorld(null,blankSave());assert.equal(result.pending,true);assert.equal(result.status.scope,'device');assert.equal(result.status.outcome,'storage');assert.equal(result.status.hasLocalCopy,false);
+});

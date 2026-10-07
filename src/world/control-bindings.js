@@ -29,7 +29,7 @@ export function normalizeControlBindings(input={}){
 }
 
 export function loadControlBindings(storage=globalThis.localStorage){
- try{return normalizeControlBindings(JSON.parse(storage?.getItem?.('3b-world-controls')||'{}'));}catch{return defaultControlBindings();}
+ try{const normalized=normalizeControlBindings(JSON.parse(storage?.getItem?.('3b-world-controls')||'{}'));return controlBindingConflicts(normalized).length?defaultControlBindings():normalized;}catch{return defaultControlBindings();}
 }
 
 export function saveControlBindings(bindings,storage=globalThis.localStorage){
@@ -39,6 +39,25 @@ export function saveControlBindings(bindings,storage=globalThis.localStorage){
 export function setPrimaryControl(bindings,action,key){
  if(!CONTROL_ACTIONS[action]||!CONTROL_KEY_CHOICES.includes(cleanKey(key)))return normalizeControlBindings(bindings);
  return normalizeControlBindings({...bindings,[action]:[cleanKey(key)]});
+}
+
+export function controlBindingConflicts(bindings){
+ const seen=new Map(),conflicts=[];
+ for(const [action,keys] of Object.entries(normalizeControlBindings(bindings)))for(const key of keys){if(seen.has(key))conflicts.push({key,first:seen.get(key),second:action});else seen.set(key,action);}
+ return conflicts;
+}
+
+export function assignControlKey(bindings,action,key){
+ const current=normalizeControlBindings(bindings),normalized=cleanKey(key);
+ if(!CONTROL_ACTIONS[action]||!CONTROL_KEY_CHOICES.includes(normalized))return {bindings:current,invalid:true};
+ const conflict=Object.keys(current).find(id=>id!==action&&current[id].includes(normalized));
+ return conflict?{bindings:current,conflict}:{bindings:setPrimaryControl(current,action,normalized)};
+}
+
+export function controlProfile(profile='default'){
+ const bindings=defaultControlBindings();
+ if(profile==='azerty'||profile==='qwerty'){bindings.moveForward=[profile==='azerty'?'z':'w','arrowup'];bindings.moveLeft=[profile==='azerty'?'q':'a','arrowleft'];}
+ return bindings;
 }
 
 export function controlMatches(bindings,action,key){

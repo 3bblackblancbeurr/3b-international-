@@ -32,7 +32,15 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
   }
  }
  const group=new THREE.Group();group.name='3B · jardins botaniques';root.add(group);
- const trunkGeo=new THREE.CylinderGeometry(.12,.24,5.4,8);trunkGeo.translate(0,2.7,0);
+ const trunkGeo=new THREE.CylinderGeometry(.12,.24,5.4,8,8);trunkGeo.translate(0,2.7,0);
+ // Root flare and shallow bark ridges remain actual silhouette geometry. All
+ // roots fit inside the canonical .4-unit trunk collision, including scaling.
+ const trunkPosition=trunkGeo.attributes.position;
+ for(let i=0;i<trunkPosition.count;i++){
+  const yy=trunkPosition.getY(i),xx=trunkPosition.getX(i),zz=trunkPosition.getZ(i),angle=Math.atan2(zz,xx),flare=1+.20*Math.exp(-yy*3),grain=1+.035*Math.sin(angle*5+yy*.55);
+  trunkPosition.setX(i,xx*flare*grain);trunkPosition.setZ(i,zz*flare*grain);
+ }
+ trunkGeo.computeVertexNormals();
  const palmTrunkGeo=new THREE.CylinderGeometry(.13,.23,6.74,8,24);palmTrunkGeo.translate(0,3.37,0);
  const bark=palmTrunkGeo.attributes.position;
  for(let i=0;i<bark.count;i++){const yy=bark.getY(i),ring=1+.08*Math.sin(yy*22.5);bark.setX(i,bark.getX(i)*ring);bark.setZ(i,bark.getZ(i)*ring);}palmTrunkGeo.computeVertexNormals();
@@ -85,10 +93,26 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
  }
  const leafMat=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.93,metalness:0,vertexColors:true,side:THREE.DoubleSide}); // gold-master-allow: neutral base preserves baked foliage vertex colors; docs/hub-reference-art-exceptions.md#neutral-multipliers.
- leafMat.onBeforeCompile=shader=>{shader.uniforms.citeTreeTime=clock;shader.uniforms.citeTreeWind=wind;shader.vertexShader='uniform float citeTreeTime;uniform float citeTreeWind;\n'+shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x+=sin(citeTreeTime*.9+position.y*1.1)*citeTreeWind*.055*max(0.,position.y-3.);');};leafMat.customProgramCacheKey=()=> 'cite-needle-wind-v1';
+ const windShader=shader=>{
+  shader.uniforms.citeTreeTime=clock;shader.uniforms.citeTreeWind=wind;
+  shader.vertexShader='uniform float citeTreeTime;uniform float citeTreeWind;\n'+shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+   float plantPhase=0.;
+   #ifdef USE_INSTANCING
+   plantPhase=instanceMatrix[3].x*.23+instanceMatrix[3].z*.17;
+   #endif
+   float flexibility=pow(max(0.,position.y-3.)*.2,1.35);
+   transformed.x+=(sin(citeTreeTime*.9+plantPhase)+sin(citeTreeTime*1.73+position.z*2.1+plantPhase)*.20)*citeTreeWind*.12*flexibility;
+   transformed.z+=cos(citeTreeTime*.72+plantPhase+position.x*.6)*citeTreeWind*.06*flexibility;`);
+ };
+ leafMat.onBeforeCompile=windShader;leafMat.customProgramCacheKey=()=> 'cite-botanical-wind-v2';
+ // Moving leaves and their shadows use the same anchored deformation; a
+ // close-up storm never leaves a static shadow detached from the canopy.
+ const leafDepth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,side:THREE.DoubleSide}),leafDistance=new THREE.MeshDistanceMaterial({side:THREE.DoubleSide});
+ for(const material of [leafDepth,leafDistance]){material.onBeforeCompile=windShader;material.customProgramCacheKey=()=> 'cite-botanical-shadow-wind-v2';}
  const dummy=new THREE.Object3D();
  function batch(geometry,material,name,selection){
   const mesh=new THREE.InstancedMesh(geometry,material,selection.length);mesh.name=name;mesh.castShadow=mesh.receiveShadow=true;
+  if(material===leafMat){mesh.customDepthMaterial=leafDepth;mesh.customDistanceMaterial=leafDistance;}
   for(let i=0;i<selection.length;i++){const p=selection[i];dummy.position.set(p.x,p.baseY||0,p.z);dummy.rotation.y=p.yaw;dummy.scale.setScalar(p.scale);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);}
   mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();group.add(mesh);owned.push(mesh);
  }
@@ -99,6 +123,6 @@ export function addCiteVegetation({root,owned,buildings,collisions}){
   batch(geometry,leafMat,species==='broadleaf'?'Canopées ramifiées':species==='pine'?'Pinède des héritages':species==='cypress'?'Cyprès des jardins':'Palmiers des rivages',selection);
  }
  for(const p of sites)collisions.push({x:p.x,z:p.z,r:.4});
- owned.push(trunkGeo,palmTrunkGeo,...Object.values(crownGeometries),trunkMat,leafMat);
- return{count:sites.length,mapSites:sites.map(p=>({...p,r:(p.species==='palm'?4:p.species==='cypress'?1.35:2.9)*p.scale,kind:'tree'})),tick(time){clock.value=time;},setWeather(value){wind.value=value==='storm'?1:value==='rain'?.65:.35;},setQuality(mode){group.children.forEach(o=>{o.castShadow=mode!=='fluid';});}};
+ owned.push(trunkGeo,palmTrunkGeo,...Object.values(crownGeometries),trunkMat,leafMat,leafDepth,leafDistance);
+ return{count:sites.length,mapSites:sites.map(p=>({...p,r:(p.species==='palm'?4:p.species==='cypress'?1.35:2.9)*p.scale,kind:'tree'})),diagnostics:{species:Object.keys(crownGeometries).length,drawBatches:group.children.length,animatedShadows:true},tick(time){clock.value=Number.isFinite(time)?time:0;},setWeather(value){wind.value=value==='storm'?1:value==='rain'?.65:.35;},setQuality(mode){group.children.forEach(o=>{o.castShadow=mode!=='fluid';});}};
 }

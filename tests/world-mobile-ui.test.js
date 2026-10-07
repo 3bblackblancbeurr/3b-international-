@@ -38,7 +38,10 @@ test('phone landscape receives dedicated compact menu and character/armory layou
 
 test('pause menu exposes character and weapons together', () => {
   const page = read('src/world/WorldPage.jsx');
-  assert.match(page, /Personnage & armes/);
+  const settings = read('src/world/WorldSettingsPanel.jsx');
+  assert.match(page, /panel==='pause'&&<WorldSettingsPanel/);
+  assert.match(settings, /\['avatar',Sparkles,'Personnage et armes'\]/);
+  assert.match(settings, /onClick=\{\(\)=>onPanel\(id\)\}/);
 });
 
 

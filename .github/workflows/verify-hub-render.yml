@@ -5,6 +5,7 @@ on:
       - 'src/world/**'
       - 'scripts/verify-world-art-browser.mjs'
       - 'scripts/verify-hub-services-browser.mjs'
+      - 'scripts/verify-hub-master-browser.mjs'
       - '.github/workflows/verify-hub-render.yml'
 permissions:
   contents: read
@@ -12,6 +13,33 @@ concurrency:
   group: hub-render-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  interface:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install isolated browser test dependency
+        run: npm install --no-save --package-lock=false playwright@1.62.1
+      - run: npx --no-install playwright install --with-deps chromium
+      - name: Check six civic services on desktop and both phone orientations
+        run: node scripts/verify-hub-services-browser.mjs
+        env:
+          HUB_SERVICES_OUT: artifacts/hub-interface/services
+      - name: Check real Hub interface, guidance and save recovery
+        run: node scripts/verify-hub-master-browser.mjs
+        env:
+          HUB_MASTER_OUT: artifacts/hub-interface/master-ui
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: playable-hub-interface
+          path: artifacts/hub-interface
+          if-no-files-found: warn
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -49,23 +77,13 @@ jobs:
       - name: Install isolated browser test dependency
         run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx --no-install playwright install --with-deps chromium
-      - name: Check six civic services on desktop and both phone orientations
-        if: matrix.view == 'desktop'
-        run: node scripts/verify-hub-services-browser.mjs
-        env:
-          HUB_SERVICES_OUT: artifacts/hub-${{ matrix.view }}/services
-      - name: Upload service previews for early visual review
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        if: always() && matrix.view == 'desktop'
-        with:
-          name: civic-services-preview
-          path: artifacts/hub-${{ matrix.view }}/services
-          if-no-files-found: warn
       - name: Render actual Hub and check movement and shader errors
         run: node scripts/verify-world-art-browser.mjs
         env:
           WORLD_ART_REGIONS: hub
-          WORLD_ART_ARMORY: '1'
+          # The armory fixture ignores the world clock. Test each distinct
+          # viewport once; all four rows still render and exercise the Hub.
+          WORLD_ART_ARMORY: ${{ (matrix.view == 'desktop' || matrix.view == 'phone') && '1' || '0' }}
           WORLD_ART_WIDTH: ${{ matrix.width }}
           WORLD_ART_HEIGHT: ${{ matrix.height }}
           WORLD_ART_QUALITY: ${{ matrix.quality }}

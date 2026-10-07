@@ -455,13 +455,15 @@ test('co-op pose validation covers the real metropolis radius instead of the old
 
 test('runtime surfaces use contextual prompts multimodal feedback and remappable controls',()=>{
  const hud=read('src/world/WorldHUD.jsx'),page=read('src/world/WorldPage.jsx'),scene=read('src/world/scene.js'),audio=read('src/world/audio.js'),controls=read('src/world/CombatControls.jsx'),field=read('src/world/FieldEncounter.jsx');
+ const settings=read('src/world/WorldSettingsPanel.jsx');
  assert.match(hud,/contextActions/);
  assert.match(hud,/controlLabel\(controls,'interact'\)/);
  assert.doesNotMatch(hud,/<kbd>E<\/kbd>/);
  assert.match(page,/hubDialogueIntent/);
  assert.match(page,/Parler de…/);
- assert.match(page,/world-controls/);
- assert.match(page,/Vibrations/);
+ assert.match(page,/onControl=\{updateControl\}/);
+ assert.match(settings,/Commandes clavier et tactile/);
+ assert.match(settings,/Vibrations/);
  assert.match(page,/navigator\?\.vibrate|navigator\.vibrate/);
  assert.match(scene,/loadControlBindings/);
  assert.match(scene,/controlMatches\(controls,'interact'/);

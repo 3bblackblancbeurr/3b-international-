@@ -1,4 +1,5 @@
 import {activeHubEvents} from './event-runtime.js';
+import {hubEventLabel} from './presentation.js';
 import {hubSecretReady,HUB_SECRET_ORDER} from './secret-runtime.js';
 import {HUB_SECRET_STEP_COUNTS} from './activity-catalog.js';
 import {hubMissionPrerequisitesMet,hubMissionLockReason} from './mission-graph.js';
@@ -181,7 +182,7 @@ export function buildHubRuntimeItems({
 
   const eventItems = activeEvents.map((event)=>{
     const center=hubDistrictPosition(plan,event.district),d=offset(`event:${event.id}`,7);
-    return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:event.id.replaceAll('_',' '),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
+    return {id:`hub:event:${event.id}`,type:'hubEvent',eventId:event.id,district:event.district,name:hubEventLabel(event.id),effect:event.effect,range:5,x:center.x+d.x,z:center.z+d.z};
   });
   const evidence={weather:eventContext.weather,night:eventContext.hour>=20||eventContext.hour<6};
   const stepLabels={

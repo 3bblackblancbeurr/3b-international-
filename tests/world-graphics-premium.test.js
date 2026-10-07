@@ -108,11 +108,13 @@ test('opening cinematic starts low over water before revealing the hub skyline',
  assert.match(camera,/waterReveal\?\.80:\.72/);
 });
 
-test('quality selector exposes LOW MEDIUM HIGH while preserving legacy technical values',()=>{
+test('quality selector exposes clear performance tiers while preserving legacy technical values',()=>{
  const page=read('src/world/WorldPage.jsx');
- assert.match(page,/value="fluid">LOW/);
- assert.match(page,/value="auto">MEDIUM/);
- assert.match(page,/value="detail">HIGH/);
+ const settings=read('src/world/WorldSettingsPanel.jsx');
+ assert.match(page,/onQuality=\{changeQuality\}/);
+ assert.match(settings,/value="fluid">Fluide/);
+ assert.match(settings,/value="auto">Adaptative/);
+ assert.match(settings,/value="detail">Détaillée/);
 });
 
 
