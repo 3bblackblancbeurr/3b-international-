@@ -38,7 +38,7 @@ test("dark button text stays legible across every gold material stop",()=>{
  }
 });
 test("local gold aliases cannot replace the shared application palette",()=>{
- for(const path of readdirSync("src",{recursive:true}).filter(path=>path.endsWith(".css")&&path!=="styles/gold-master.css")){
+ for(const path of readdirSync("src",{recursive:true}).map(path=>path.replaceAll("\\","/")).filter(path=>path.endsWith(".css")&&path!=="styles/gold-master.css")){
   const source=readFileSync(`src/${path}`,"utf8");
   for(const definition of source.matchAll(/--(?:gold[\w-]*|3b-champagne[\w-]*)\s*:\s*([^;}]+)/g)){
    assert.match(definition[1],/^var\(--3b-/,`${path}: ${definition[0]}`);

@@ -4,11 +4,30 @@ import * as THREE from 'three';
 import {addReferenceGateDistricts} from '../src/world/hub/reference-gate-districts.js';
 import {addReferenceLandscape} from '../src/world/hub/reference-landscape-scene.js';
 import {HUB_PLATFORM,HUB_SCALE} from '../src/world/hub/platform-layout.js';
+import {createHubPlatform} from '../src/world/hub/platform-scene.js';
+import {blankSave} from '../src/world/rules.js';
+import {worldVisualCapabilities} from '../src/world/device-capabilities.js';
+import {CIVIC_BASIN_PROFILE} from '../src/world/hub/civic-basins.js';
 
 const cameraAt=(position,target)=>{
  const camera=new THREE.PerspectiveCamera(60,390/844,.3,1800);camera.position.set(...position);camera.lookAt(...target);camera.updateMatrixWorld();return camera;
 };
 const triangles=mesh=>(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3*mesh.count;
+
+test('Hub respects phone reflection capabilities even in detail mode and restores desktop reflections',()=>{
+ const platform=createHubPlatform(blankSave());
+ try{
+  const sea=platform.root.children.find(m=>m.geometry?.parameters?.width===3200),basin=platform.root.getObjectByName('Eau du bassin civique');
+  assert.ok(sea?.material.uniforms.sceneReflection);assert.ok(basin);
+  const phones=[{width:390,height:844,deviceMemory:8,coarsePointer:true},{width:844,height:390,deviceMemory:8,coarsePointer:true}];
+  for(const phone of phones){platform.setQuality('detail',worldVisualCapabilities({mode:'detail',...phone}));assert.equal(sea.material.uniforms.sceneReflection.value,0);}
+  platform.setQuality('detail',worldVisualCapabilities({mode:'detail',width:1280,height:720,deviceMemory:8,coarsePointer:false}));
+  assert.ok(sea.material.uniforms.sceneReflection.value>0);
+  platform.setQuality('fluid');assert.equal(sea.material.uniforms.sceneReflection.value,0);
+  assert.equal(basin.material.uniforms.sceneReflection.value,0);
+  assert.equal(basin.material.uniforms.waveAmp.value,CIVIC_BASIN_PROFILE.waveAmp,'quality switches retain calm authored basin water');
+ }finally{platform.dispose();}
+});
 
 test('gate doorway carving remains complete nearby and leaves the distant mobile draw budget',()=>{
  const root=new THREE.Group(),owned=[];

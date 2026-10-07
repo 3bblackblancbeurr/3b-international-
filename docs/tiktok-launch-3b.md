@@ -1,64 +1,60 @@
 # TikTok lancement 3B — master 20 secondes
 
-## Format d’export
-- Vertical 9:16 — 1080 × 1920
-- 30 fps — H.264 — débit élevé
-- Durée cible : 20 s (tolérance 18–22 s)
-- Zone de sécurité : garder titres, logo et QR loin des bords et de l’interface TikTok
-- Musique : instrumental original ou piste dont les droits sont autorisés
+Version du 7 octobre 2026, alignée sur la Cité des Huit Héritages.
+Capturer le gameplay de la version publiée après validation de la release.
+L'image officielle /art/monde-3b/reference-cite-huit-heritages.webp reste la référence artistique ; les plans jouables viennent du rendu réel.
 
-## Hook et voix off
-**0:00–0:03** — « J’ai créé un univers Black Blanc Beur avec 8 pays, 8 portes et un passeport secret. »
+## Format d'export
 
-**0:03–0:07** — « Ton Passeport ouvre le Nexus. Chaque porte mène à un monde, un gardien et une valeur. »
+- Vertical 9:16 — 1080 × 1920, 30 fps, H.264.
+- Durée cible : 20 secondes ; titres et QR dans la zone de sécurité TikTok.
+- Instrumental original ou musique dont les droits sont autorisés.
+- Sous-titres incrustés : chaque plan reste compréhensible sans le son.
 
-**0:07–0:14** — « Explore, combats, utilise tes pouvoirs, accomplis les quêtes et rassemble ce que l’Oubli a séparé. »
+## Voix off
 
-**0:14–0:20** — « 3B International. Ce n’est pas une marque. C’est un héritage. Entre dans l’univers. »
+**0:00–0:04** — « Bienvenue dans 3B International. Huit pays, un même héritage. »
+
+**0:04–0:08** — « Ton Passeport porte ton identité. Entre dans la Cité des Huit Héritages. »
+
+**0:08–0:14** — « Choisis ta porte, rencontre les gardiens, explore et reconstruis le monde. »
+
+**0:14–0:20** — « Un monde, une famille. Découvre 3B International. »
 
 ## Storyboard
-| Temps | Image / capture | Texte écran | Son / transition |
-|---|---|---|---|
-| 0:00–0:02.5 | Passeport 3B en plein écran, détail premium | `8 PAYS · 8 PORTES` | Impact grave + souffle digital |
-| 0:02.5–0:05 | Appui Passeport → scan → tunnel Matrix | `TON PASSEPORT OUVRE LE NEXUS` | Scan + accélération |
-| 0:05–0:08 | Nexus, Cercle Brisé tournant, huit portes visibles | `CHOISIS TA PORTE` | Rotation / basse montante |
-| 0:08–0:11 | Cuts France / Algérie / Maroc / Italie | `JUSTICE · LOYAUTÉ · NOBLESSE · ESPOIR` | 4 cuts synchronisés |
-| 0:11–0:14 | Cuts Espagne / Tunisie / Turquie / Estonie + gardiens | `PASSION · COURAGE · FOI · SAGESSE` | 4 cuts synchronisés |
-| 0:14–0:17 | Monde 3B : déplacement, arme/pouvoir, quête, ambiance | `EXPLORE · COMBATS · RECONSTRUIS` | VFX + montée finale |
-| 0:17–0:20 | Logo 3B + QR + URL Découvrir 3B | `ENTRE DANS L’UNIVERS` | Signature sonore 3B |
 
-## Capture obligatoire avant montage
-1. Écran Passeport 3B propre, sans notification système.
-2. Transition Passeport → Nexus complète.
-3. Cercle Brisé en rotation et huit portes visibles.
-4. Un plan court de chaque pays, en privilégiant ce qui les différencie visuellement.
-5. Au moins deux gardiens clairement reconnaissables dans ce premier teaser ; les huit peuvent apparaître en rafale si les assets sont prêts.
-6. Un plan de gameplay montrant déplacement + caméra mobile.
-7. Un plan arme et un plan pouvoir.
-8. Une interaction de quête.
-9. Carton final avec `/qr-decouvrir-3b.svg` et `3b-international.vercel.app/decouvrir-3b.html`.
+| Temps | Capture réelle | Texte écran | Son |
+| --- | --- | --- | --- |
+| 0:00–0:02 | Entrée et menu 3B ; destination Monde visible | 8 PAYS · 1 MÊME HÉRITAGE | Signature 3B |
+| 0:02–0:04 | Passeport présenté comme identité, puis retour au menu | TON IDENTITÉ 3B | Souffle doux |
+| 0:04–0:07 | Entrée dans la Cité, panorama et Cercle Brisé articulé | LA CITÉ DES HUIT HÉRITAGES | Résonance du Cercle |
+| 0:07–0:10 | Déplacement vers une porte ; gardien reconnaissable | CHOISIS TA PORTE | Pas et ambiance locale |
+| 0:10–0:13 | Arme, pouvoir et action de quête réellement disponibles | EXPLORE · COMBATS · RECONSTRUIS | Action synchronisée |
+| 0:13–0:15 | Habitants en activité, transport et quartier vivant | UN MONDE, UNE FAMILLE | Ambiance de la Cité |
+| 0:15–0:17 | Boutique, avec son état réel de disponibilité | DÉCOUVRE L'UNIVERS 3B | Montée finale |
+| 0:17–0:20 | Logo, URL et QR Découvrir 3B fixes | ENTRE DANS L'UNIVERS | Signature sonore |
 
-## Règles de montage
-- Aucun écran statique plus de 2,5 s sauf le carton final.
-- Ne pas surcharger : une seule idée lisible par plan.
-- Bleu Matrix pour les données/secret, or champagne pour les éléments premium, noir profond pour la base.
-- Garder le logo 3B net ; éviter les zooms qui le déforment.
-- Faire coïncider les cuts pays avec les impacts de la bande-son.
-- Sous-titres incrustés systématiques : la vidéo doit fonctionner sans le son.
+Le Passeport n'est pas un bouton d'entrée du Monde : ne pas monter une séquence d'appui, scan ou tunnel qui ne correspond pas au parcours actuel. Ne pas présenter un paiement comme disponible tant que la Boutique ne l'est pas.
 
-## Carton final
-**3B INTERNATIONAL**  
-**Ce n’est pas une marque. C’est un héritage.**  
-`3b-international.vercel.app/decouvrir-3b.html`  
-QR : `/qr-decouvrir-3b.svg`
+## Captures à réaliser
 
-## Légende TikTok
-3B International : 8 pays, 8 portes, un Passeport et un monde à reconstruire. Entre dans l’univers. #3BInternational #BlackBlancBeur #Gaming #JeuInde #MadeInFrance
+1. Entrée/menu, Passeport et retour vers la destination Monde.
+2. Arrivée dans la Cité, Cercle Brisé, panorama des huit portes, jour et nuit.
+3. Trajet jouable vers une porte, rencontre avec un gardien et quête.
+4. Arme et pouvoir dans le gameplay, avec déplacement et caméra tactile.
+5. Habitants et transport ; Boutique dans son état réel.
+6. Carton final : /qr-decouvrir-3b.svg et 3b-international.vercel.app/decouvrir-3b.html.
 
-## Critères de validation
-- Le hook est compréhensible dans les 2 premières secondes.
-- Le Passeport et le Nexus sont identifiables avant 6 s.
-- Le Monde du 3B apparaît comme du gameplay et non comme une succession de menus.
-- Le QR reste visible au minimum 2,5 s et est scannable depuis un second téléphone.
-- Aucun texte n’est masqué par l’interface TikTok.
-- L’export final est vérifié sur téléphone avant publication.
+Les valeurs des portes visibles sur la référence sont : France — Culture, Espagne — Passion, Maroc — Créativité, Italie — Élégance, Turquie — Résilience, Tunisie — Ambition, Algérie — Loyauté, Estonie — Innovation.
+
+## Validation avant publication
+
+- Plans issus du commit effectivement déployé, sans notification ni donnée privée.
+- Hook lisible en deux secondes, Cité reconnaissable avant sept secondes.
+- Logo net et textes lisibles sur téléphone ; aucune interface TikTok par-dessus.
+- QR fixe pendant trois secondes, scanné sur un second téléphone et ouvrant Découvrir 3B.
+- Export final regardé en entier sur téléphone, avec et sans son.
+
+## Légende
+
+3B International : huit pays, huit portes et un même héritage. Entre dans la Cité des Huit Héritages. #3BInternational #BlackBlancBeur #Gaming #JeuInde
