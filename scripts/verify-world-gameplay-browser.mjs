@@ -10,6 +10,13 @@ fixture=fixture.replace('  qaFreezeCapture(){','  qaPlayState(){return {paused,s
 fixture=fixture.replace('return code.replace(marker,`let qaCaptureFrozen=false;',"code=code.replace('onSnapshot({','onSnapshot(window.qa.snapshot={').replace('  avatar.position.set(position.x,','  if(playFrame.airborne){window.qa.jumpSeen=true;window.qa.jumpPeak=Math.max(window.qa.jumpPeak||0,playFrame.lift);} avatar.position.set(position.x,');return code.replace(marker,`let qaCaptureFrozen=false;");
 const cases=String.raw`
 const report=[];
+// Stop only the private fixture's 3D submissions during static HUD checks.
+// SwiftShader can otherwise starve Playwright's two DOM stability frames.
+// Native clicks still verify visibility, enabled state and hit targets.
+async function staticHud(page,check){
+ await page.evaluate(()=>qa.scene.qaFreezeCapture());
+ try{return await check();}finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+}
 try{
  for(const device of [{id:'desktop',viewport:{width:1280,height:800}},{id:'touch-landscape',viewport:{width:844,height:390},isMobile:true,hasTouch:true}]){
   const context=await browser.newContext({...device,deviceScaleFactor:1}),page=await context.newPage(),errors=[];
@@ -18,9 +25,11 @@ try{
   console.log(device.id+': load gameplay');await page.goto('http://127.0.0.1:5201/__hub-master-qa',{waitUntil:'domcontentloaded',timeout:120000});
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});
   await page.waitForFunction(()=>window.qa?.scene,{timeout:120000});await page.evaluate(()=>qa.scene.skipCinematic());await page.waitForTimeout(900);
-  await page.getByRole('button',{name:'Affichage du jeu',exact:true}).click();
-  await page.waitForFunction(()=>qa.audioStatus()?.context==='running');assert.equal(await page.evaluate(()=>qa.audioStatus().closed),false);
-  await page.getByRole('button',{name:'Tout masquer',exact:true}).click();
+  await staticHud(page,async()=>{
+   await page.getByRole('button',{name:'Affichage du jeu',exact:true}).click();
+   await page.waitForFunction(()=>qa.audioStatus()?.context==='running');assert.equal(await page.evaluate(()=>qa.audioStatus().closed),false);
+   await page.getByRole('button',{name:'Tout masquer',exact:true}).click();
+  });
   assert.equal(await page.locator('.world-minimap').count(),0);assert.equal(await page.locator('.hub-mission-rail').count(),0);
   for(const name of ['Sauter','Frapper','Défendre','Esquiver','Pouvoir'])assert.equal(await page.getByRole('button',{name,exact:true}).count(),1);
   await page.getByRole('button',{name:'Sauter',exact:true}).click();
@@ -53,9 +62,11 @@ try{
    await page.getByRole('button',{name,exact:true}).click();await page.waitForFunction(action=>qa.played?.includes(action),kind);
    await page.waitForFunction(at=>qa.scene.qaPlayState().elapsed>=at+.8,started);
   }
-  await page.getByRole('button',{name:'Affichage du jeu',exact:true}).focus();await page.keyboard.press('Space');assert.equal(await page.locator('.hud-layout-menu').count(),1,'Space activates the focused UI');
-  await page.getByRole('button',{name:'Tout afficher',exact:true}).click();assert.equal(await page.locator('.world-minimap').count(),1);assert.equal(await page.locator('.hub-mission-rail').count(),1);
-  await page.getByRole('button',{name:'Fermer la mini-carte',exact:true}).click();await page.getByRole('button',{name:'Masquer les missions',exact:true}).click();
+  await staticHud(page,async()=>{
+   await page.getByRole('button',{name:'Affichage du jeu',exact:true}).focus();await page.keyboard.press('Space');assert.equal(await page.locator('.hud-layout-menu').count(),1,'Space activates the focused UI');
+   await page.getByRole('button',{name:'Tout afficher',exact:true}).click();assert.equal(await page.locator('.world-minimap').count(),1);assert.equal(await page.locator('.hub-mission-rail').count(),1);
+   await page.getByRole('button',{name:'Fermer la mini-carte',exact:true}).click();await page.getByRole('button',{name:'Masquer les missions',exact:true}).click();
+  });
   await capture(page,out+'/'+device.id+'-gameplay.png');
   const metrics=await page.evaluate(()=>({audio:qa.audioStatus(),fps:qa.snapshot.fps,drawCalls:qa.snapshot.drawCalls,crowd:qa.snapshot.graphics?.crowd}));
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.evaluate(()=>qa.scene.skipCinematic());await page.waitForTimeout(500);
