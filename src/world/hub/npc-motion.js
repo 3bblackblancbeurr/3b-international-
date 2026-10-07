@@ -31,8 +31,10 @@ export function hubNpcNeeds(item,timeSeconds=0,{weather='clear'}={}){
   const cycle=(timeSeconds+(seed%900))/900;
   const wave=offset=>Math.sin((cycle+offset)*Math.PI*2)*.5+.5;
   const resting=item.activity==='repos';
-  const working=item.activity==='travail'||item.activity==='préparation';
-  const social=item.activity==='rencontre publique';
+  const responding=item.activity==='événement'&&item.movementIntent==='respond';
+  const gathering=item.activity==='événement'&&item.movementIntent==='gather';
+  const working=item.activity==='travail'||item.activity==='préparation'||responding;
+  const social=item.activity==='rencontre publique'||gathering;
   return {
     rest:clamp01((resting?.2:working?.72:.48)+wave(.13)*.18),
     food:clamp01(.28+wave(.42)*.6),
@@ -54,6 +56,8 @@ export function hubNpcSimulation(item,timeSeconds=0,context={}){
   if(context.threat===true)state=distance<18?'Flee':'Investigate';
   else if(context.helpRequested===true&&distance<26)state='Help';
   else if(context.inConversation===true)state='Talk';
+  else if(item.activity==='événement'&&item.movementIntent==='respond')state='Investigate';
+  else if(item.activity==='événement'&&item.movementIntent==='gather')state='Talk';
   else if(context.playerVisible===true&&distance<9)state='Observe';
   else if(item.activity==='repos')state='Idle';
   else if(item.activity==='travail'||item.activity==='préparation')state='Work';
