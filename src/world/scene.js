@@ -50,11 +50,12 @@ import {premiumEffectsFromCodes} from '../store/premium-effects.js';
 import {cinematicActingBeat} from './cinematic-acting.js';
 import {advancePortalCrossing,initialPortalCrossingState} from './portal-crossing.js';
 import {createAmbientCrowd} from './ambient-crowd.js';
+import {createGameplayMotion,PLAY_ACTIONS,battleAnimation} from './gameplay-motion.js';
 import {loadCameraSensitivity,cameraSensitivity} from './camera-preferences.js';
 import {createHubLifeInteraction} from './hub/life-interaction.js';
 import {hubPhysicalItemsForLevel,towerDestinationReturnsGround} from './hub/tower-navigation.js';
 
-export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep}){
+export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,onError,onLoadState,onStep,onCombatStep,onGameplay}){
  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:'high-performance'});
  const quality=createQualityController();renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.localClippingEnabled=true;
@@ -86,7 +87,8 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  let cameraLookSensitivity=loadCameraSensitivity();
  let qualityMode='auto',cameraFollow=true,manualCameraAt=-Infinity,travelTimer=null,transportRide=null,contextTraversal=null,traversalLift=0,routeSprintUntil=0,lastGroundTapAt=-Infinity,lastCameraTapAt=-Infinity,lastWorldTimeAt=0,lastStreamingAt=0,lastNpcUpdateAt=0,lastHubScheduleKey='',portalCrossing=initialPortalCrossingState(),worldTime=worldTimeSnapshot(),weather=worldWeatherForDate(save.region,new Date()),weatherState=weatherProfile(weather),weatherFx=null,weatherPositions=null;
  try{cameraFollow=localStorage.getItem('3b-world-camera-follow')!=='false';}catch{}
- const movementFrame=createMovementFrame(),motionSmoother=createMotionSmoother();
+ const movementFrame=createMovementFrame(),motionSmoother=createMotionSmoother(),gameplay=createGameplayMotion();
+ let playFrame={lift:0,guard:0},freeEffectUntil=0;const freeEffectTarget=new THREE.Vector3();
  let orbit={...DEFAULT_ORBIT},orbitHeld=null,avatarKey='';try{orbit=restoreOrbit(JSON.parse(localStorage.getItem('3b-world-camera')));}catch{}
  const rememberCamera=()=>{try{localStorage.setItem('3b-world-camera',JSON.stringify({...orbit,version:2}));}catch{}};const touchPoints=new Map();let pinchDistance=null;
  const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -371,7 +373,7 @@ function hubNpcAvatar(item){
      hubVehicles.push({vehicle,route,line,timeOffset:0,...spec});
     }
    }
-   ambientCrowd=createAmbientCrowd(root,items,{groundY,modelAsset:models.hero,modelLibrary:models.living,camera,onError,mode:qualityMode,deviceMemory:typeof navigator!=='undefined'?navigator.deviceMemory:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches,viewport:Math.max(canvas.clientWidth,canvas.clientHeight),reducedMotion});
+   ambientCrowd=createAmbientCrowd(root,items,{groundY,modelAsset:models.hero,modelLibrary:models.living,camera,onError,mode:qualityMode,deviceMemory:typeof navigator!=='undefined'?navigator.deviceMemory:4,coarsePointer:window.matchMedia('(pointer: coarse)').matches,viewport:Math.max(canvas.clientWidth,canvas.clientHeight),reducedMotion,obstacles:landscape.collisions});
   }
   Promise.all([currentLandscape.ready,ambientCrowd?.ready]).then(()=>{if(!disposed&&landscape===currentLandscape)onLoadState?.(false);});
   hero=createLivingActor(models.living,{reducedMotion,avatar:save.adventure.avatar,scale:2.2,onError});avatarKey=JSON.stringify(save.adventure.avatar);avatar=hero.object;root.add(avatar);applyPremiumVisuals();
@@ -416,7 +418,7 @@ function hubNpcAvatar(item){
  function resize(){const {width,height}=canvas.getBoundingClientRect();if(width&&height){renderer.setPixelRatio(quality.ratio(width,height,devicePixelRatio||1));renderer.setSize(width,height,false);needsRender=true;camera.aspect=width/height;camera.updateProjectionMatrix();post.resize(width,height,renderer.getPixelRatio(),qualityMode);landscape?.setQuality(qualityMode,visualCapabilities(qualityMode));}}
  const observer=new ResizeObserver(resize);observer.observe(canvas);
  function startRoute(destination,interaction=false,run=false){endLifeInteraction();if(towerDestinationReturnsGround(destination,landscape?.towerFloor,physicalItems())){const selectedWaypoint=destination.id&&waypoint?.id===destination.id?waypoint:null;selectTowerFloor(null);if(selectedWaypoint)waypoint=selectedWaypoint;}motionSmoother.reset();route=(interaction?findInteractionPath:findPath)(position,destination,obstacles,worldRadius);target=route.shift()||null;routeSprintUntil=run?performance.now()+2200:0;needsRender=true;}
- function clearInput(){keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
+ function clearInput(){if(gameplay.airborne)hero?.action?.('Idle',.18);combatButton=null;combatClock=0;combatInput.x=combatInput.z=0;gameplay.reset();playFrame={lift:0,guard:0};hero?.setCombat?.({});keys.clear();stick={x:0,z:0};held=null;orbitHeld=null;touchPoints.clear();pinchDistance=null;target=null;route=[];routeSprintUntil=0;movementFrame.reset();motionSmoother.reset();}
  function down(e){
   if(paused||transportRide||contextTraversal||!landscape||e.button>2)return;e.preventDefault();onActivity();canvas.focus({preventScroll:true});canvas.setPointerCapture(e.pointerId);
   const rect=canvas.getBoundingClientRect(),cameraTouch=e.pointerType==='touch'&&e.clientX-rect.left>=rect.width*.52;
@@ -445,7 +447,22 @@ function hubNpcAvatar(item){
  function wheel(e){if(paused)return;e.preventDefault();orbit=zoomOrbit(orbit,e.deltaY);rememberCamera();needsRender=true;onActivity();}
  const context=e=>e.preventDefault();
  function toggleCamera(){cameraMode=1-cameraMode;orbit={...orbit,distance:cameraMode?36:24,pitch:cameraMode?.5:DEFAULT_ORBIT.pitch};rememberCamera();needsRender=true;}
- function keydown(e){if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle'].some(action=>controlMatches(controls,action,key));if(!handled)return;e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}if(['moveForward','moveBackward','moveLeft','moveRight'].some(action=>controlMatches(controls,action,key)))endLifeInteraction();keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
+ function combatAction(kind){if(paused||shot||transportRide||contextTraversal||gameplay.airborne)return false;combatButton=kind;combatClock=.1;return true;}
+ function gameplayAction(kind){
+  if(paused||shot||transportRide||contextTraversal||!hero?.ready||!PLAY_ACTIONS[kind])return false;
+  const inField=presentation==='encounter'&&!!save.adventure.encounter?.field;
+  if(inField&&kind!=='jump')return combatAction(kind);
+  endLifeInteraction();
+  if(!gameplay.start(kind,heading*Math.PI/180))return false;
+  if(kind==='jump')combatButton=null;
+  hero.action(kind==='strike'?'Attack':kind==='power'?'Cast':kind==='guard'?'Guard':kind==='jump'?'Jump':'Idle',PLAY_ACTIONS[kind].duration);
+  if(kind!=='jump'){
+   const a=heading*Math.PI/180;freeEffectTarget.set(position.x+Math.sin(a)*(kind==='power'?12:4),groundY(position.x,position.z),position.z-Math.cos(a)*(kind==='power'?12:4));
+   combatFx.start({action:kind,path:save.adventure.avatar.path||'lumiere',color:'#e8d2a2',enemyColor:'#e8d2a2',outgoing:0,incoming:0,counter:false},elapsed);freeEffectUntil=elapsed+.88;
+  }
+  onGameplay?.(kind==='strike'?'attack':kind);onActivity();needsRender=true;report=0;return true;
+ }
+ function keydown(e){if(e.defaultPrevented||e.target.isContentEditable||(([' ','Enter'].includes(e.key))&&e.target.closest?.('button,a,[role=button]')))return;if(paused||transportRide||contextTraversal||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key.toLowerCase(),handled=['moveForward','moveBackward','moveLeft','moveRight','interact','sprint','cameraToggle',...Object.keys(PLAY_ACTIONS)].some(action=>controlMatches(controls,action,key));if(!handled)return;const playKind=Object.keys(PLAY_ACTIONS).find(action=>controlMatches(controls,action,key));if(playKind){if(presentation==='encounter'&&playKind!=='jump')return;e.preventDefault();if(!e.repeat)gameplayAction(playKind);return;}e.preventDefault();if(controlMatches(controls,'cameraToggle',key)){if(!e.repeat)toggleCamera();return;}if(['moveForward','moveBackward','moveLeft','moveRight'].some(action=>controlMatches(controls,action,key)))endLifeInteraction();keys.add(key);target=null;route=[];onActivity();if(controlMatches(controls,'interact',key)&&!e.repeat)interact();}
  function keyup(e){keys.delete(e.key.toLowerCase());}
  function interact(){if(paused||transportRide||contextTraversal)return;const closest=nearestInteraction(position,interactionItems());if(closest){clearInput();battleTarget=closest;onActivity();onInteract(closest);}}
  const hidden=()=>{clearInput();last=performance.now();frameTime=frames=0;needsRender=true;};
@@ -456,7 +473,7 @@ function hubNpcAvatar(item){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
   const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender&&!npcConversationId))return;
-  const dt=Math.min(rawDt,.25);elapsed+=dt;for(const {frame,item} of portalFrames)frame.tick(Math.hypot(position.x-item.x,position.z-item.z),dt,{reducedMotion});sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
+  const dt=Math.min(rawDt,.25);elapsed+=dt;if(!paused&&!shot){playFrame=gameplay.update(dt);if(playFrame.landed)onGameplay?.('land');}else playFrame={lift:0,guard:0};for(const {frame,item} of portalFrames)frame.tick(Math.hypot(position.x-item.x,position.z-item.z),dt,{reducedMotion});sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
   if(now-lastWorldTimeAt>=1000){
    lastWorldTimeAt=now;const clockNow=new Date();worldTime=worldTimeSnapshot(clockNow);sceneDaylight.value=worldTime.daylight;const nextScheduleKey=region==='hub'?hubScheduleClockKey(clockNow):'';if(nextScheduleKey&&nextScheduleKey!==lastHubScheduleKey){lastHubScheduleKey=nextScheduleKey;refreshHubScheduleState();}const nextWeather=worldWeatherForDate(region,clockNow);if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);landscape?.setWeather?.(weather);refreshHubScheduleState();if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
    const biome=BIOMES[region]||BIOMES.hub,dayColor=new THREE.Color(biome.sky),nightColor=new THREE.Color('#07101a');
@@ -485,7 +502,7 @@ function hubNpcAvatar(item){
     dz=stick.z+(actionHeld(controls,'moveBackward',keys)?1:0)-(actionHeld(controls,'moveForward',keys)?1:0);
     const rawInput=movementFrame.resolve(dx,dz,viewBearing(camera.position,cameraTarget));
     ({x:dx,z:dz}=motionSmoother.update(rawInput,dt));
-    const sprinting=actionHeld(controls,'sprint',keys)||!!held&&sprintIntent(stick,held.fullTiltAt,now,held.control)||target&&routeSprintUntil>now;
+    const sprinting=actionHeld(controls,'sprint',keys)||(!held&&Math.hypot(stick.x,stick.z)>.94)||!!held&&sprintIntent(stick,held.fullTiltAt,now,held.control)||target&&routeSprintUntil>now;
     const previous=position,next=advanceMotion({position,target,route},{x:dx,z:dz},dt,10.5*stats.speed*(sprinting?1.4:1),obstacles,worldRadius);
     if(fieldCombat){
      const inputLength=Math.max(1,Math.hypot(dx,dz));combatInput.x=Math.round(dx/inputLength*1000)/1000;combatInput.z=Math.round(dz/inputLength*1000)/1000;
@@ -495,6 +512,7 @@ function hubNpcAvatar(item){
      const p=save.adventure.encounter.field.p,blend=1-Math.exp(-dt*22);position={x:position.x+(p.x-position.x)*blend,z:position.z+(p.z-position.z)*blend};
      travelled=Math.hypot(position.x-previous.x,position.z-previous.z);moving=travelled>.001;
     }else{combatClock=0;({position,target,route,travelled,moving}=next);}
+    if(playFrame.dodge&&!fieldCombat){const evasion=advanceMotion({position,target:null,route:[]},playFrame.dodge,dt,playFrame.dodge.speed,obstacles,worldRadius);position=evasion.position;target=null;route=[];travelled+=evasion.travelled;moving=travelled>.001;}
     dx=position.x-previous.x;dz=position.z-previous.z;
     if(moving){const nextHeading=movementHeading(dx,dz,heading);if(Math.abs(((nextHeading-heading+540)%360)-180)>2.5)report=0;heading=nextHeading;orbit=followMovement(orbit,dx,dz,dt,{enabled:cameraFollow,manual:!!orbitHeld,quietFor:(now-manualCameraAt)/1000,reducedMotion});onActivity();stepDistance+=travelled;if(stepDistance>2.1){stepDistance=0;onStep?.(region);}}
    }
@@ -506,7 +524,7 @@ function hubNpcAvatar(item){
    }
   const y=transportRide?.pose?.y??groundY(position.x,position.z)+traversalLift,age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   const lifePose=lifeInteraction.sample(elapsed),poseLift=lifePose?.pose==='Sit'?(hero.poseRootOffset?.(lifePose.seatHeight)||0)*lifePose.blend:0;
-  avatar.position.set(position.x,y+poseLift,position.z);hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
+  avatar.position.set(position.x,y+poseLift+(playFrame.lift||0),position.z);hero.setCombat(fieldCombat?{}:{guard:playFrame.guard||0});hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
   if(region==='hub'&&!landscape?.towerFloor){
    const stream=streamingProfile(qualityMode,typeof navigator!=='undefined'?navigator.deviceMemory:undefined,region);
    if(now-lastNpcUpdateAt>=1000/stream.npcUpdateHz){
@@ -564,7 +582,7 @@ function hubNpcAvatar(item){
    opponent={...opponent,x:fieldRival.x,z:fieldRival.z};
   }else if(!cinematic)fieldRival=null;
   combatDistance=opponent?Math.hypot(opponent.x-position.x,opponent.z-position.z):Infinity;
-  if(opponent&&!retaliationPlayed&&age>=.32){retaliationPlayed=true;if(lastCombat?.counter){actors.find(a=>a.itemId===opponent.id)?.controller.action('Attack');if(lastCombat.incoming>0&&!lastCombat.defended)hero.action('Hit');}}
+  if(opponent&&!retaliationPlayed&&age>=.32){retaliationPlayed=true;if(lastCombat?.counter){actors.find(a=>a.itemId===opponent.id)?.controller.action('Attack');if(lastCombat.incoming>0&&!lastCombat.defended&&!gameplay.airborne)hero.action('Hit');}}
   if(opponent&&!fieldCombat){let ox=opponent.x-position.x,oz=opponent.z-position.z,d=Math.hypot(ox,oz);if(d<.01){ox=0;oz=-1;d=1;}const spacing=Math.max(0,4.5-d),approach=feedbackAction==='guard'||feedbackAction==='dodge'?0:impact*.75;avatar.position.x+=ox/d*(approach-spacing);avatar.position.z+=oz/d*(approach-spacing);if(feedbackAction==='dodge'&&!fieldCombat){avatar.position.x+=oz/d*impact*2.4;avatar.position.z-=ox/d*impact*2.4;}avatar.position.y=groundY(avatar.position.x,avatar.position.z);avatar.rotation.y=Math.atan2(ox,oz);}
   if(escort){escort.object.visible=!cinematic&&!transportRide;const p=escort.object.position;if(transportRide){p.set(position.x,y,position.z);trail=[];}if(!transportRide&&travelled>.05&&(!trail.length||Math.hypot(trail.at(-1).x-position.x,trail.at(-1).z-position.z)>1))trail.push({...position});while(trail.length>65)trail.shift();while(trail.length>3&&Math.hypot(trail[0].x-p.x,trail[0].z-p.z)<1.3)trail.shift();const goal=trail.length>3?trail[0]:null,old={x:p.x,z:p.z};if(goal&&!paused&&!shot){const result=advanceMotion({position:old,target:goal,route:[]},{x:0,z:0},dt,Math.max(11,10.5*stats.speed*1.6),obstacles,worldRadius);p.set(result.position.x,groundY(result.position.x,result.position.z),result.position.z);}escort.update(dt,p.x-old.x,p.z-old.z,Math.hypot(p.x-old.x,p.z-old.z));if(Math.hypot(p.x-position.x,p.z-position.z)>40){p.set(position.x,y,position.z);trail=[];}}
   const wide=cameraMode===1,portrait=camera.aspect<.85;
@@ -594,7 +612,7 @@ function hubNpcAvatar(item){
   if(weatherFx?.visible&&weatherPositions){weatherFx.position.set(position.x,groundY(position.x,position.z)+1,position.z);for(let i=0;i<weatherPositions.length;i+=3){weatherPositions[i]+=weatherState.wind*dt*2;weatherPositions[i+1]-=weatherState.speed*dt;if(weatherPositions[i+1]<0){weatherPositions[i+1]=32;weatherPositions[i]=(Math.random()-.5)*72;weatherPositions[i+2]=(Math.random()-.5)*72;}}weatherFx.geometry.attributes.position.needsUpdate=true;}
   partyActors?.tick(dt,region);landscape.tick(elapsed,dt,position);landscape.updateDistrict(camera,position);
   for(const a of actors){const object=a.controller.object,combatActive=cinematic&&opponent?.id===a.itemId,shotActive=!!shot?.cinematic&&shot.focusItemId===a.itemId,active=combatActive||shotActive,focusActor=combatActive?opponent:shotActive?{x:a.x,z:a.z}:null;object.visible=a.itemId==='final'?active:active||!(cooldowns.get(a.itemId)>Date.now());if(!object.visible)continue;const previous=object.position.clone(),wander=!active&&!paused?Math.sin(elapsed*.28+a.x)*.6:0;const ax=focusActor?focusActor.x:a.x+wander,az=focusActor?focusActor.z:a.z;object.position.set(ax,groundY(ax,az),az);const movement=object.position.distanceTo(previous);a.controller.update(dt,object.position.x-previous.x,object.position.z-previous.z,movement);if(active){if(combatActive){const d=Math.hypot(position.x-ax,position.z-az)||1,response=lastCombat?.counter?retaliation:0;object.position.x+=(position.x-ax)/d*response*.9;object.position.z+=(position.z-az)/d*response*.9;object.rotation.y=Math.atan2(position.x-ax,position.z-az);object.rotation.z=lastCombat?.outgoing?impact*.06:0;}else{object.rotation.y=Math.atan2(camera.position.x-ax,camera.position.z-az);object.rotation.z=0;}}else object.rotation.z=0;}
-  if(opponent){opponentPosition.set(opponent.x,groundY(opponent.x,opponent.z),opponent.z);combatFx.update(elapsed,avatar.position,opponentPosition);}else combatFx.clear();
+  if(opponent){opponentPosition.set(opponent.x,groundY(opponent.x,opponent.z),opponent.z);combatFx.update(elapsed,avatar.position,opponentPosition);}else if(elapsed<freeEffectUntil)combatFx.update(elapsed,avatar.position,freeEffectTarget);else combatFx.clear();
   threat.update(opponent?encounter:null,elapsed,avatar.position,opponentPosition,combatFx.state.active);
   const closest=nearestInteraction(position,interactionItems());
   focusRing.visible=!!closest&&!paused;if(closest)focusRing.position.set(closest.x,groundY(closest.x,closest.z)+.09,closest.z);
@@ -607,7 +625,7 @@ function hubNpcAvatar(item){
    const evolution=hubEvolutionState(hubPlan,{seals:save.seals,restoredRegions:Object.entries(save.adventure.chapters||{}).filter(([,c])=>c.restored===3).map(([id])=>id)});
    const hubEvolution=region==='hub'?{...evolution,restored:evolution.restoredCount,liberated:evolution.liberatedCount,total:8}:null;
    const hubDistrict=region==='hub'?hubPlan.districts.map(d=>({...d,distance:Math.hypot(position.x-PLATFORM_DISTRICTS[d.id].x,position.z-PLATFORM_DISTRICTS[d.id].z)})).sort((a,b)=>a.distance-b.distance)[0]?.name:null;
-    onSnapshot({mapItems:region==='hub'?[...items,...physicalItems()]:null,towerFloor:landscape?.towerFloor||null,lifeInteraction:lifePose?{title:lifePose.title,detail:lifePose.detail,caption:lifePose.caption}:null,cartography:landscape.cartography||null,route:target?[{...target},...route.map(p=>({...p}))]:[],architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:hubDistrict||districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,crowd:ambientCrowd?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
+    onSnapshot({mapItems:region==='hub'?[...items,...physicalItems()]:null,towerFloor:landscape?.towerFloor||null,lifeInteraction:lifePose?{title:lifePose.title,detail:lifePose.detail,caption:lifePose.caption}:null,cartography:landscape.cartography||null,route:target?[{...target},...route.map(p=>({...p}))]:[],architecture:landscape.architectureDiagnostics,interior:landscape.interior?.id||null,time:worldTime,weather,combat:opponent?{distance:combatDistance,hero:screenAnchor(avatar.position),enemy:screenAnchor(opponentPosition)}:null,cinematic:shot?{title:shot.title,detail:shot.detail}:null,companion:escortId,region,district:hubDistrict||districtAt(region,position,(x,z)=>toLandscape(region,x,z)),hubEvolution,position:{...position},gameplay:{airborne:!!playFrame.airborne,lift:playFrame.lift||0,action:playFrame.action||null},heading,camera:{...orbit,yaw:viewBearing(camera.position,cameraTarget),follow:cameraFollow,actualDistance:camera.position.distanceTo(cameraTarget)},near:closest,moving,fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,graphics:{instancing:staticInstances?.diagnostics||null,crowd:ambientCrowd?.diagnostics||null,fogFar:scene.fog?.far,transmission:architecturalBudget(qualityMode,visualCapabilities().desktopClass).transmission},ambientOcclusion:post.enabled,resolution:Math.round(renderer.getPixelRatio()*100),waypoint,remaining:waypoint?Math.round(distance(position,waypoint)):null,joystick:held?.drag?{x:held.x,y:held.y,dx:stick.x*26,dy:stick.z*26}:null});
   }
   needsRender=false;
  }
@@ -623,7 +641,9 @@ function hubNpcAvatar(item){
   },
   setPeers(peers){latestPeers=peers;partyActors?.setPeers(peers);needsRender=true;},
   setParty(party){partyState=party;landscape?.setParty(party);},
-  combatAction(kind){combatButton=kind;combatClock=.1;},
+  gameplayAction,
+  setMoveInput(value){if(paused||transportRide||contextTraversal)return;endLifeInteraction();stick={x:Number(value?.x)||0,z:Number(value?.z)||0};target=null;route=[];onActivity();needsRender=true;},
+  combatAction,
   canBattle(action){return !['strike','power','wait'].includes(action)||combatDistance<=(action==='power'?22:action==='wait'?8:7.5);},
   setPaused(value){if(value)endLifeInteraction();paused=value;needsRender=true;last=performance.now();frames=frameTime=0;if(value){clearInput();cancelContextTraversal();}},
   setPresentation(value){presentation=value;if(value!=='encounter')combatFx.clear();needsRender=true;},
@@ -645,7 +665,21 @@ function hubNpcAvatar(item){
    const animation={Talk:'Talk',Inspect:'Talk',Use:'Cast',Work:'Work',Help:'Talk',Pickup:'Work',Carry:'Idle',Climb:'Idle',Vault:'Idle',Ride:'Idle',Swim:'Idle',Dive:'Idle',Sit:'Idle',Cast:'Cast',Draw:'Attack',Guard:'Idle',Point:'Cast',Walk:'Idle'}[info.animation]||'Idle';
    hero?.action?.(animation);feedbackAt=elapsed;feedbackAction='context:'+actionId;needsRender=true;return true;
   },
-  feedback(type,action,previous,next){if(type==='field'){const f=next?.adventure.encounter?.field;if(!f?.last)return;action=f.last;type='battle';}if(['battle','beacon','pact','restore','power','help'].includes(type)){feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,worldRadius);position=dodge.position;}if(type==='battle'){lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;hero?.action(action==='enemy'?'Hit':action==='guard'||action==='dodge'||action==='wait'||action==='miss'?'Idle':action==='power'||action==='support'||action==='trap'?'Cast':'Attack');const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');}else if(type==='power')hero?.action('Cast');needsRender=true;}},
+  feedback(type,action,previous,next){
+   if(type==='field'){const f=next?.adventure.encounter?.field;if(!f?.last)return;action=f.last;type='battle';}
+   if(!['battle','beacon','pact','restore','power','help'].includes(type))return;
+   feedbackAt=elapsed;feedbackAction=action||type;lastCombat=null;
+   if(!next?.adventure.encounter?.field&&type==='battle'&&action==='dodge'&&fieldRival){const x=position.x-fieldRival.x,z=position.z-fieldRival.z,len=Math.hypot(x,z)||1;const dodge=advanceMotion({position,target:null,route:[]},{x:z/len,z:-x/len},.2,20,obstacles,worldRadius);position=dodge.position;}
+   if(type==='battle'){
+    lastCombat=combatCue(previous?.adventure.encounter,next?.adventure.encounter,action,next?.adventure.avatar);combatFx.start(lastCombat,elapsed);retaliationPlayed=false;
+    // Impacts, damage and the rival still react while airborne; the authored
+    // jump keeps ownership of the hero's complete body until landing.
+    const animation=battleAnimation(action,gameplay.airborne),field=next?.adventure.encounter?.field;
+    if(animation)hero?.action(animation,animation==='Guard'&&field?field.guard/1000:undefined);
+    const e=next?.adventure.encounter,rival=actors.find(a=>a.itemId===battleTarget?.id||(!battleTarget&&a.itemId===items.find(i=>e?.patrol?i.type==='patrol':i.card===e?.card)?.id));if(lastCombat?.outgoing)rival?.controller.action(e?.result==='victory'?'Death':'Hit');
+   }else if(type==='power'&&!gameplay.airborne)hero?.action('Cast');
+   needsRender=true;
+  },
   playCinematicShot(kind,context={},duration=5200){
    const encounter=save.adventure.encounter||{},now=performance.now(),major=['world-opening','country-first-entry','guardian-intro','final-combat-intro','story-finale'].includes(kind);
    let focus={...position},heritage=false,radius=major?17:13,height=major?10:8,focusY=2.1,arc=major?.42:.24,dolly=major?.14:.08,angle=orbit.yaw-.16,focusItemId=null,endCamera=null,endTarget=null,fovStart=null,fovEnd=null;

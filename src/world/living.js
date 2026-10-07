@@ -51,8 +51,10 @@ export function createLivingActor(library,{card,avatar,scale=1,reducedMotion=fal
   if(!card){const width=recipe.shape==='solide'?1.1:recipe.shape==='elance'?.92:1;model.scale.set(width*recipe.build,(recipe.shape==='elance'?1.055:1)*recipe.height,width*recipe.build);}
   if(!card){garments=fitGarments(model,recipe);if(avatar?.weapon)weaponModel=fitWeapon(model,avatar);}creaturePresence=createCreaturePresence(model,{card,reducedMotion});mixer=new THREE.AnimationMixer(model);
   const layered=!!model.getObjectByName('thigh_l'),lower=t=>/^(root|pelvis|thigh_|calf_|foot_|ball_)/.test(t.name);
-  for(const clip of asset.animations){const name=['Idle','Walk','Jog','Run','Attack','Hit','Death','Cast','Talk','Work'].find(n=>clip.name===n||clip.name.startsWith(n+'_')||clip.name.endsWith('_'+n));if(!name)continue;
-   const body=layered&&name!=='Death'?new THREE.AnimationClip(name+'-upper',clip.duration,clip.tracks.filter(t=>!lower(t))):clip;actions[name]=mixer.clipAction(body);
+  for(const clip of asset.animations){const name=['Idle','Walk','Jog','Run','Jump','Attack','Hit','Death','Cast','Talk','Work'].find(n=>clip.name===n||clip.name.startsWith(n+'_')||clip.name.endsWith('_'+n));if(!name)continue;
+   // Airborne knees, ankles and pelvis belong to the authored jump. Walking
+   // remains layered for attacks, but must not overwrite those airborne poses.
+   const body=layered&&name!=='Death'&&name!=='Jump'?new THREE.AnimationClip(name+'-upper',clip.duration,clip.tracks.filter(t=>!lower(t))):clip;actions[name]=mixer.clipAction(body);
    if(layered&&['Idle','Walk','Jog','Run'].includes(name))legActions[name]=mixer.clipAction(new THREE.AnimationClip(name+'-legs',clip.duration,clip.tracks.filter(lower)));
   }
   if(!card){
@@ -85,14 +87,16 @@ export function createLivingActor(library,{card,avatar,scale=1,reducedMotion=fal
   update(dt,dx=0,dz=0,travelled=0){
    if(dead)return;dt=Math.max(0,Math.min(Number.isFinite(dt)?dt:0,.25));clock+=dt;garments?.update(clock);if(!mixer)return;
    const speed=dt>0?Math.max(0,travelled)/dt:0,localSpeed=speed/Math.max(.01,scale);
-   if(combatPose.guard>0&&actions.Guard){if(current!=='Guard')transition('Guard',true);actionEnd=clock+.1;}else if(current==='Guard'&&clock<actionEnd)actionEnd=clock;
+   // Exploration supplies a guard envelope every frame. A field-combat guard
+   // is a timed action instead, and an absent envelope must not cancel it.
+   if(combatPose.guard>0&&actions.Guard){if(current!=='Guard')transition('Guard',true);actionEnd=clock+.1;}else if(Object.hasOwn(combatPose,'guard')&&current==='Guard'&&clock<actionEnd)actionEnd=clock;
    if(interactionPose&&clock>=actionEnd){if(current!=='Pose'+interactionPose)transition('Pose'+interactionPose);}
    else if(clock>=actionEnd){
     if(speed<=.08&&ambientActivity&&actions[ambientActivity])transition(ambientActivity);
     else{if(current!=='Locomotion'){actions[current]?.fadeOut(.18);current='Locomotion';}upperGait?.update(localSpeed,dt);}
    }
    if(speed>.08&&!interactionPose)this.face(dx,dz,dt);
-   if((current==='Death'&&clock<actionEnd)||interactionPose)lowerGait?.stop();else lowerGait?.update(localSpeed,dt);
+   if(((current==='Death'||current==='Jump')&&clock<actionEnd)||interactionPose)lowerGait?.stop();else lowerGait?.update(localSpeed,dt);
    creaturePresence?.beforeMixer();
    for(let remaining=dt;remaining>1e-7;){const step=Math.min(.05,remaining);mixer.update(step);remaining-=step;}
    creaturePresence?.update(dt,clock,{viewer:attention,active:clock<actionEnd,speed});

@@ -28,6 +28,22 @@ export function civicGlazingGeometry(width,depth,height,profile,level,side,axis=
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute([0,0,1,0,1,1,0,1],2));
  const reverse=axis==='z'?side<0:side>0;geometry.setIndex(reverse?[0,2,1,0,3,2]:[0,1,2,0,2,3]);geometry.computeVertexNormals();return geometry;
 }
+
+/** A continuous bronze reveal and central mullion follow the actual tapered
+ * glass corners. They merge into the city's existing gold batch, including a
+ * real thickness; no new material, transparent overlay or independent draw. */
+export function civicGlazingFrameGeometry(pane,{width=.065,depth=.075,mullion=true}={}){
+ const position=pane.attributes.position,points=Array.from({length:4},(_,i)=>new THREE.Vector3().fromBufferAttribute(position,i)),normal=new THREE.Vector3().fromBufferAttribute(pane.attributes.normal,0).normalize();
+ const vertices=[],indices=[],unit=new THREE.BoxGeometry(1,1,1),direction=new THREE.Vector3(),cross=new THREE.Vector3(),centre=new THREE.Vector3(),basis=new THREE.Matrix4(),matrix=new THREE.Matrix4();
+ const beam=(a,b)=>{
+  direction.subVectors(b,a);const length=direction.length();direction.normalize();cross.crossVectors(normal,direction).normalize();centre.addVectors(a,b).multiplyScalar(.5).addScaledVector(normal,depth*.5+.008);
+  basis.makeBasis(direction,cross,normal);matrix.copy(basis).scale(new THREE.Vector3(length,width,depth)).setPosition(centre);
+  const part=unit.clone().applyMatrix4(matrix),offset=vertices.length/3;for(const n of part.attributes.position.array)vertices.push(n);for(const n of part.index.array)indices.push(n+offset);part.dispose();
+ };
+ for(let i=0;i<4;i++)beam(points[i],points[(i+1)%4]);
+ if(mullion)beam(points[0].clone().lerp(points[1],.5),points[3].clone().lerp(points[2],.5));
+ unit.dispose();const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(vertices.flatMap((_,i)=>i%3===0?[vertices[i],vertices[i+1]]:[]),2));geometry.setIndex(indices);geometry.computeVertexNormals();return geometry;
+}
 function identity(b){
  if(b.buildingId==='memory_archives')return {height:30,profile:[[0,1],[.56,1],[.56,.88],[.79,.88],[.79,.73],[1,.73]],style:'archive-lantern'};
  if(b.buildingId==='tower_circle')return {height:34,profile:[[0,1],[.5,.94],[.82,.79],[1,.66]],style:'tower-hall'};
@@ -54,7 +70,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
    const level=floorCount===1?height*.5:2+floor*Math.max(1,height-4)/(floorCount-1),s=scaleAt(profile,level/height),span=shaftW*s,depth=shaftD*s;
    for(const side of [-1,1]){
     const front=civicGlazingGeometry(shaftW,shaftD,height,profile,level,side,'z',.72,1.8);
-    if(front)mesh(geo(front),glass,x,h,rear);
+    if(front){mesh(geo(front),glass,x,h,rear);mesh(geo(civicGlazingFrameGeometry(front)),gold,x,h,rear);}
    }
    if(floor===Math.floor(floorCount/2))mesh(geo(civicShaftGeometry(span+.24,depth+.24,.12,[[0,1],[1,1]])),gold,x,h+level+.88,rear);
   }
@@ -93,7 +109,7 @@ export function addPlatformArchitecture({mesh,geo,box,cylinder,sphere,materials,
    const floorCount=3;
    for(let f=0;f<floorCount;f++){
     const y=2+f*Math.max(1,h-4)/(floorCount-1),s=scaleAt(profile,y/h);
-    for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.72,1.8);if(glazing)mesh(geo(glazing),glass,tx,0,tz);}
+    for(const face of [-1,1]){const glazing=civicGlazingGeometry(8,9,h,profile,y,face,'z',.72,1.8);if(glazing){mesh(geo(glazing),glass,tx,0,tz);mesh(geo(civicGlazingFrameGeometry(glazing)),gold,tx,0,tz);}}
     if(f===1)mesh(geo(civicShaftGeometry(8*s+.22,9*s+.22,.12,[[0,1],[1,1]])),gold,tx,y+.9,tz);
    }
    const top=profile.at(-1)[1];mesh(geo(civicShaftGeometry(8*top+.5,9*top+.5,.32,[[0,1],[1,1]])),gold,tx,h,tz);

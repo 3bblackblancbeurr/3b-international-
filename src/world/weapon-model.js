@@ -13,6 +13,41 @@ export function craftedBowLimbGeometry(z=0,radius=.027,radialSegments=6,surfaceO
  geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.userData.bowEndpoints=[points[0].toArray(),points.at(-1).toArray()];return geometry;
 }
 
+// The traveller's hand origin is the wrist, not the centre of its closed palm.
+// Measure the metacarpal roots in hand space so equipping during any animation
+// produces the same socket. In particular, Object3D.attach would preserve the
+// model-space orientation and undo the wrist rotation that the weapon needs.
+function mountWeapon(root,model,weapon,tier){
+ const hand=model.getObjectByName('hand_r');
+ if(!hand){root.position.set(.4,.85,0);model.add(root);return;}
+ model.updateWorldMatrix(true,true);
+ const localBone=(name,fallback)=>{const bone=model.getObjectByName(name);return bone?hand.worldToLocal(bone.getWorldPosition(new T.Vector3())):new T.Vector3(...fallback);};
+ const middle=localBone('middle_01_r',[0,.115,.015]),index=localBone('index_01_r',[0,.117,.04]),pinky=localBone('pinky_01_r',[0,.099,-.035]);
+ const fingers=middle.clone().normalize(),thumbSide=index.sub(pinky);thumbSide.addScaledVector(fingers,-thumbSide.dot(fingers)).normalize();
+ if(fingers.lengthSq()<.5)fingers.set(0,1,0);if(thumbSide.lengthSq()<.5)thumbSide.set(0,0,1);
+ const dorsal=new T.Vector3().crossVectors(fingers,thumbSide).normalize(),wrist=['Griffes','Gantelet','Ailes'].includes(weapon.kind)||weapon.id==='tallinn';
+ const basis=new T.Matrix4().makeBasis(wrist?thumbSide.clone().negate():fingers,wrist?fingers:thumbSide,dorsal);
+ root.quaternion.setFromRotationMatrix(basis);
+ let grip=[0,-.015,0];
+ if(weapon.kind==='Bouclier')grip=[0,.26,-.085];
+ else if(weapon.kind==='Arc'||weapon.id==='romano'&&tier>0)grip=[0,0,0];
+ else if(weapon.kind==='Griffes'||weapon.kind==='Gantelet')grip=[0,.07,0];
+ else if(weapon.kind==='Ailes')grip=[0,.04,0];
+ else if(weapon.id==='tallinn')grip=[0,.025,0];
+ else if(weapon.kind==='Éventail')grip=[0,-.005,0];
+ else if(weapon.kind==='Fil')grip=[0,.04,0];
+ else if(weapon.kind==='Doubles lames'||weapon.kind==='Ciseaux')grip=[0,.035,0];
+ else if(weapon.kind==='Hache')grip=[0,-.06,0];
+ else if(weapon.id==='paris'&&tier>0)grip=[0,-.28,0];
+ else if(weapon.kind==='Lance')grip=[0,-.02,0];
+ // The closed fingers sit on the palmar side of the metacarpals. Scale the
+ // contact depth to the actual hand, including the smaller female skeleton.
+ const socket=wrist?new T.Vector3():middle.clone().multiplyScalar(.7).addScaledVector(dorsal,-.025*T.MathUtils.clamp(middle.length()/.116,.7,1.3));
+ root.position.copy(socket).sub(new T.Vector3(...grip).applyQuaternion(root.quaternion));
+ root.userData.weaponMount=wrist?'wrist':'palm';root.userData.weaponGrip=grip;
+ hand.add(root);
+}
+
 /** The same physical assembly is used in the traveller's hand and the armory.
  * Static fittings are merged by material; only articulated parts stay separate. */
 export function fitWeapon(model,avatar={}){
@@ -42,7 +77,7 @@ export function fitWeapon(model,avatar={}){
   rod(x,y,z,x,y+length,z,.0028,gold);
   for(let i=0;i<4+tier;i++){const at=y+.045+i*length/(5+tier);rod(x-.024,at+.02,z,x,at,z,.0024,gold);rod(x,at,z,x+.024,at+.02,z,.0024,gold);}
  }
- function cuff(y=.07,r=.1,length=.22){const o=mesh(new T.CylinderGeometry(r,r*.84,length,12,1,true),dark,0,y);o.rotation.x=Math.PI/2;for(const zz of [-length/2,length/2])ring(r,.009,gold,0,y,zz);for(const side of [-1,1])panel([[-.025,-.06],[.025,-.06],[.035,.06],[-.035,.06]],gold,side*r*.92,y,.06,.025);}
+ function cuff(y=.07,r=.062,length=.16){mesh(new T.CylinderGeometry(r,r*.84,length,12,1,true),dark,0,y);for(const end of [-1,1])ring(r,.009,gold,0,y+end*length/2,0,'grip');for(const side of [-1,1])panel([[-.025,-.06],[.025,-.06],[.035,.06],[-.035,.06]],gold,side*r*.92,y,r*.9,.025);}
  function crescent(radius=.28,x=0,y=.34,rotation=0){
   const points=[];for(let i=0;i<=24;i++){const a=-.3+i/24*Math.PI*1.62;points.push([Math.cos(a)*radius,Math.sin(a)*radius]);}for(let i=24;i>=0;i--){const a=-.3+i/24*Math.PI*1.62;const r=radius-.035-.025*Math.sin(i/24*Math.PI);points.push([Math.cos(a)*r,Math.sin(a)*r]);}
   const o=panel(points,steel,x,y,0,.023,.004);o.rotation.z=rotation;return o;
@@ -77,7 +112,7 @@ export function fitWeapon(model,avatar={}){
   for(let i=0;i<count;i++)blade((i-(count-1)/2)*.073,.13,tier===0?.37:.47,.43,-(i-(count-1)/2)*.1);
   for(let i=0;i<3;i++)panel([[-.019,-.025],[.019,-.025],[.023,.025],[-.023,.025]],gold,(i-1)*.067,.13,.1,.025,.005);
  }else if(w.kind==='Ailes'){
-  cuff(.04,.07,.15);for(let i=0;i<6+tier;i++){const a=-(i/(5+tier))*.95,o=panel([[-.013,0],[-.034,.32],[.025,.52],[.046,.28],[.02,.08]],i%2?steel:light,i*.016,.03+i*.01,0,.017,.004);o.rotation.z=a;}
+  cuff(.04,.05,.12);for(let i=0;i<6+tier;i++){const a=-(i/(5+tier))*.95,o=panel([[-.013,0],[-.034,.32],[.025,.52],[.046,.28],[.02,.08]],i%2?steel:light,i*.016,.03+i*.01,0,.017,.004);o.rotation.z=a;}
  }else if(w.kind==='Fil'){
   grip(.04,.22,.026);ring(.073,.018,gold,0,.23);for(let i=0;i<3+tier;i++){const o=ring(.25+i*.028,.0035,light,0,.44+i*.025);o.scale.x=1+i*.07;o.rotation.z=i*.31;}
  }else if(w.kind==='Doubles lames'){
@@ -105,7 +140,7 @@ export function fitWeapon(model,avatar={}){
    panel([[-.042,0],[-.044,.4],[-.018,.58],[.065,.74],[.095,.76],[.053,.54],[.052,.32],[.042,0]],steel,0,.25,0,.027,.004);
    rod(.15,.2,0,.15,-.09,0,.009,gold);rod(.15,-.09,0,.025,-.16,0,.009,gold);engraving(.33,.29,0,.021);
   }else if(w.id==='tallinn'){
-   cuff(.025,.068,.12);panel([[-.04,0],[-.04,.48],[.0,.7],[.05,.53],[.055,.15],[.03,0]],steel,0,.25,0,.027,.004);engraving(.34,.4,0,.021);if(tier>=2)blade(-.125,.27,.57,.55,-.08);
+   cuff(.025,.052,.12);panel([[-.04,0],[-.04,.48],[.0,.7],[.05,.53],[.055,.15],[.03,0]],steel,0,.25,0,.027,.004);engraving(.34,.4,0,.021);if(tier>=2)blade(-.125,.27,.57,.55,-.08);
   }else{blade(0,.25,.7);engraving();}
  }
  // Tier fittings provide visible progression on all sixteen weapons without
@@ -118,9 +153,7 @@ export function fitWeapon(model,avatar={}){
  for(const [m,parts] of batches){const geometry=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());if(!geometry)continue;ownedGeo.add(geometry);const o=new T.Mesh(geometry,m);o.castShadow=o.receiveShadow=true;o.name='weapon-assembly-'+(['steel','bronze','dark','leather','inlay'][[steel,gold,dark,leather,light].indexOf(m)]||m.name||'fitting');root.add(o);}
  // Source fittings no longer need their temporary geometry after the merge.
  for(const o of staticPieces){ownedGeo.delete(o.geometry);o.geometry.dispose();}
- model.updateMatrixWorld(true);const hand=model.getObjectByName('hand_r');
- if(hand){const p=hand.getWorldPosition(new T.Vector3());model.worldToLocal(p);root.position.copy(p);model.add(root);hand.attach(root);}else{root.position.set(.4,.85,0);model.add(root);}
- root.rotateZ(-Math.PI/2);root.name='3B-equipped-'+w.id;root.userData.weaponForm=tier;root.userData.weaponId=w.id;
+ mountWeapon(root,model,w,tier);root.name='3B-equipped-'+w.id;root.userData.weaponForm=tier;root.userData.weaponId=w.id;
  const destination=new T.Vector3();let separation=0,lastTime=0,disposed=false;
  return {object:root,update(time,combat={},options={}){if(disposed)return;const dt=Math.max(0,Math.min(.1,time-lastTime));lastTime=time;separation+=(Number(combat.detached>0)-separation)*(1-Math.exp(-dt*14));model.updateWorldMatrix(true,true);for(const b of splitBlades){destination.set(b.side*.55,1.15,1.6+(options.reducedMotion?0:Math.sin(time*7+b.side)*.3));model.localToWorld(destination);root.worldToLocal(destination);b.object.position.copy(b.base).lerp(destination,separation);b.object.rotation.copy(b.rotation);if(!options.reducedMotion)b.object.rotation.y+=separation*time*9;}for(const o of orbiters){if(o.ring){o.object.rotation.y=options.reducedMotion?0:time*.5;continue;}if(options.reducedMotion){o.object.position.copy(o.base);continue;}o.object.position.x=o.base.x+Math.cos(time+o.phase)*.045;o.object.position.z=o.base.z+Math.sin(time+o.phase)*.06;}},dispose(){if(disposed)return;disposed=true;root.removeFromParent();ownedGeo.forEach(g=>g.dispose());ownedMat.forEach(m=>m.dispose());root.clear();}};
 }

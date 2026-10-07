@@ -40,7 +40,7 @@ test('ambient crowd budgets stay inside mobile targets and stop motion when requ
  assert.deepEqual([medium.profile,high.profile,desktop.profile],['mobileMedium','mobileHigh','desktop']);
  assert.ok(medium.count<=35);assert.ok(high.count<=60);assert.ok(desktop.count<=100);
  assert.ok(ambientCrowdBudget({mode:'fluid',deviceMemory:4,coarsePointer:true}).count<medium.count);
- assert.deepEqual(ambientCrowdBudget({reducedMotion:true}),{profile:'mobileMedium',count:24,updateHz:0,maxDistance:210,moving:false});
+ assert.deepEqual(ambientCrowdBudget({reducedMotion:true}),{profile:'mobileMedium',count:32,updateHz:0,maxDistance:210,moving:false});
 });
 
 test('entry, physical crossing and instanced crowd policies are wired into the live world',()=>{

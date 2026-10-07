@@ -37,7 +37,7 @@ test('both shipped body models retain bounded mobile population and actual camer
  const male=await assetPromise,female=await loadShippedCrowdFixture(3),camera={position:{x:90,z:4}},root=new THREE.Group();
  const crowd=createAmbientCrowd(root,items,{...options,viewport:844,coarsePointer:true,modelAsset:male,modelLibrary:{load:async()=>female},camera});await crowd.ready;
  try{
-  assert.equal(crowd.diagnostics.models.length,2);assert.equal(crowd.diagnostics.count,24);assert.ok(crowd.diagnostics.drawCalls<=4);assert.ok(crowd.diagnostics.triangles<24*8000);
+  assert.equal(crowd.diagnostics.models.length,2);assert.equal(crowd.diagnostics.count,32);assert.ok(crowd.diagnostics.drawCalls<=4);assert.ok(crowd.diagnostics.triangles<32*8000);
   const near=crowd.diagnostics.triangles;camera.position={x:3000,z:3000};crowd.tick(1,{x:0,z:0},1000);assert.ok(crowd.diagnostics.triangles<near);
   assert.ok(crowd.diagnostics.models.every(model=>model.animationBytes<=2*1024*1024));
  }finally{crowd.dispose();}

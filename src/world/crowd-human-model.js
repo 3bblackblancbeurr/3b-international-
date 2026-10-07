@@ -60,11 +60,15 @@ async function bakeCrowdPrototype(asset,{frames=16,height=3.35}={}){
   const uv=mesh.geometry.attributes.uv;uvs.set(atlas.uv(mesh,uv?.getX(index)||0,uv?.getY(index)||0),i*2);tints[i]=tintClass(mesh.material.name);vertexIds[i]=i;
  }
  const clip=asset.animations?.find(c=>c.name==='Walk'),idle=asset.animations?.find(c=>c.name==='Idle'),mixer=new THREE.AnimationMixer(model);
- if(clip)mixer.clipAction(clip).play();else if(idle)mixer.clipAction(idle).play();
- const width=256,rows=Math.ceil(vertexCount/width),textureHeight=rows*frames,positionData=new Uint16Array(width*textureHeight*4),normalData=new Uint16Array(positionData.length);
+ const walkAction=clip?mixer.clipAction(clip):null,idleAction=idle?mixer.clipAction(idle):null;
+ if(walkAction)walkAction.play();else if(idleAction)idleAction.play();
+ // Two breathing poses share the existing atlas. Civilian stops remain human
+ // while the female atlas stays below the previous two-megabyte mobile limit.
+ const idleFrames=idle?2:0,width=256,rows=Math.ceil(vertexCount/width),textureHeight=rows*(frames+idleFrames),positionData=new Uint16Array(width*textureHeight*4),normalData=new Uint16Array(positionData.length);
  const point=new THREE.Vector3(),normal=new THREE.Vector4(),bound=new THREE.Box3(),framePoints=new Float32Array(vertexCount*3),frameNormals=new Float32Array(vertexCount*3);let normalizeScale=1,baseX=0,baseZ=0;
- for(let frame=0;frame<frames;frame++){
-  mixer.setTime(clip?frame/frames*clip.duration:0);model.updateMatrixWorld(true);let minimumY=Infinity;
+ for(let frame=0;frame<frames+idleFrames;frame++){
+  if(frame===frames&&idleAction){mixer.stopAllAction();idleAction.reset().play();}
+  mixer.setTime(frame<frames?(clip?frame/frames*clip.duration:0):(frame-frames)/idleFrames*idle.duration);model.updateMatrixWorld(true);let minimumY=Infinity;
   bound.makeEmpty();
   for(const [i,{mesh,index}] of records.entries()){
    point.fromBufferAttribute(mesh.geometry.attributes.position,index);if(mesh.isSkinnedMesh)mesh.applyBoneTransform(index,point);point.applyMatrix4(mesh.matrixWorld);framePoints.set(point.toArray(),i*3);minimumY=Math.min(minimumY,point.y);bound.expandByPoint(point);
@@ -84,8 +88,8 @@ async function bakeCrowdPrototype(asset,{frames=16,height=3.35}={}){
  const bakedPositions=texture(positionData),bakedNormals=texture(normalData),geometry=new THREE.BufferGeometry();
  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));geometry.setAttribute('uv',new THREE.BufferAttribute(uvs,2));geometry.setAttribute('crowdTintClass',new THREE.BufferAttribute(tints,1));geometry.setAttribute('crowdVertexId',new THREE.BufferAttribute(vertexIds,1));geometry.setIndex(indicesNear);geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.boundingSphere.radius+=.35;
  const low=geometry.clone();low.setIndex(indicesFar);
- return {geometry,low,map:atlas.texture,bakedPositions,bakedNormals,frames,rows,width,textureHeight,duration:clip?.duration||1,
-  diagnostics:{vertices:vertexCount,nearTriangles:indicesNear.length/3,farTriangles:indicesFar.length/3,animationBytes:positionData.byteLength+normalData.byteLength,frames,source:'shipped-traveller-glb'},
+ return {geometry,low,map:atlas.texture,bakedPositions,bakedNormals,frames,idleFrames,rows,width,textureHeight,duration:clip?.duration||1,idleDuration:idle?.duration||1,
+  diagnostics:{vertices:vertexCount,nearTriangles:indicesNear.length/3,farTriangles:indicesFar.length/3,animationBytes:positionData.byteLength+normalData.byteLength,frames,idleFrames,source:'shipped-traveller-glb'},
   dispose(){geometry.dispose();low.dispose();atlas.texture?.dispose();bakedPositions.dispose();bakedNormals.dispose();}};
 }
 
@@ -104,10 +108,12 @@ export async function bakeCrowdHuman(asset,options={}){
 export function crowdHumanMaterial(baked,walkTime,walkActive,{lastUpdateTime={value:0},updateInterval={value:.25}}={}){
  const material=new THREE.MeshStandardMaterial({color:'#ffffff',map:baked.map,side:THREE.DoubleSide,roughness:.84,metalness:0,envMapIntensity:.18});
  material.onBeforeCompile=shader=>{
-  Object.assign(shader.uniforms,{crowdWalkTime:walkTime,crowdWalkActive:walkActive,crowdLastUpdateTime:lastUpdateTime,crowdUpdateInterval:updateInterval,crowdClipDuration:{value:baked.duration},crowdPositionAtlas:{value:baked.bakedPositions},crowdNormalAtlas:{value:baked.bakedNormals}});
-  const prelude=`attribute float crowdVertexId;attribute float crowdTintClass;attribute float crowdPhase;attribute float crowdSpeed;attribute float crowdTravel;attribute vec3 crowdSkin;attribute vec3 crowdCloth;attribute vec3 crowdHair;uniform float crowdWalkTime;uniform float crowdWalkActive;uniform float crowdLastUpdateTime;uniform float crowdUpdateInterval;uniform float crowdClipDuration;uniform sampler2D crowdPositionAtlas;uniform sampler2D crowdNormalAtlas;varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;
+  Object.assign(shader.uniforms,{crowdWalkTime:walkTime,crowdWalkActive:walkActive,crowdLastUpdateTime:lastUpdateTime,crowdUpdateInterval:updateInterval,crowdClipDuration:{value:baked.duration},crowdIdleDuration:{value:baked.idleDuration||1},crowdPositionAtlas:{value:baked.bakedPositions},crowdNormalAtlas:{value:baked.bakedNormals}});
+  const prelude=`attribute float crowdVertexId;attribute float crowdTintClass;attribute float crowdPhase;attribute float crowdSpeed;attribute float crowdTravel;attribute float crowdGait;attribute vec3 crowdSkin;attribute vec3 crowdCloth;attribute vec3 crowdHair;uniform float crowdWalkTime;uniform float crowdWalkActive;uniform float crowdLastUpdateTime;uniform float crowdUpdateInterval;uniform float crowdClipDuration;uniform float crowdIdleDuration;uniform sampler2D crowdPositionAtlas;uniform sampler2D crowdNormalAtlas;varying vec3 crowdSurfaceTint;varying float crowdPreserveColor;
    vec3 crowdFetch(sampler2D atlas,float frame){float row=floor(crowdVertexId/${baked.width}.);return texture2D(atlas,vec2((mod(crowdVertexId,${baked.width}.)+.5)/${baked.width}.,(frame*${baked.rows}.+row+.5)/${baked.textureHeight}.)).xyz;}
-   vec3 crowdAnimated(sampler2D atlas){float frame=fract(crowdPhase+crowdWalkTime*crowdSpeed/crowdClipDuration*crowdWalkActive)*${baked.frames}.;return mix(crowdFetch(atlas,floor(frame)),crowdFetch(atlas,mod(floor(frame)+1.,${baked.frames}.)),fract(frame));}
+   vec3 crowdAnimated(sampler2D atlas){float frame=fract(crowdPhase+crowdWalkTime*crowdSpeed/crowdClipDuration*crowdWalkActive)*${baked.frames}.;vec3 walk=mix(crowdFetch(atlas,floor(frame)),crowdFetch(atlas,mod(floor(frame)+1.,${baked.frames}.)),fract(frame));
+    ${baked.idleFrames?`float idleFrame=fract(crowdPhase+crowdWalkTime/crowdIdleDuration*crowdWalkActive)*${baked.idleFrames}.;vec3 idle=mix(crowdFetch(atlas,${baked.frames}.+floor(idleFrame)),crowdFetch(atlas,${baked.frames}.+mod(floor(idleFrame)+1.,${baked.idleFrames}.)),fract(idleFrame));return mix(idle,walk,smoothstep(0.,1.,crowdGait*crowdWalkActive));`:'return walk;'}
+   }
   `;
   shader.vertexShader=prelude+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>\nobjectNormal=normalize(crowdAnimated(crowdNormalAtlas));`);
