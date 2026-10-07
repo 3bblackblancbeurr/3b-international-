@@ -38,6 +38,11 @@ export function CinematicOverlay({presentation,onDone,onSkip}){
     <span className="cinema-world-kicker">{presentation.kicker}</span>
     <h2>{presentation.title}</h2>
     <p>{presentation.detail}</p>
+    {presentation.guardianTeaser&&<div className="cinema-world-guardian-identity" aria-label="Identité du Gardien">
+     <span><small>Arme</small><strong>{presentation.guardianTeaser.weapon}</strong></span>
+     <span><small>Résonance</small><strong>{presentation.guardianTeaser.resonance}</strong></span>
+     <span><small>Totem</small><strong>{presentation.guardianTeaser.totem}</strong></span>
+    </div>}
    </div>
    <div className="cinema-world-signature"><span>Ce n’est pas une marque.</span><strong>C’est un héritage.</strong></div>
   </div>
