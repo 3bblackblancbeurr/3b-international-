@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {hubNpcNeeds,hubNpcSimulation,npcSimulationTier,NPC_SIMULATION_STATES} from '../src/world/hub/npc-motion.js';
+import * as THREE from 'three';
+import {createLivingActor} from '../src/world/living.js';
+import {hubNpcNeeds,hubNpcSimulation,hubNpcSocialContext,npcSimulationTier,NPC_SIMULATION_STATES} from '../src/world/hub/npc-motion.js';
 
 const npc={id:'hub:npc:mael_rivière',npcId:'mael_rivière',x:10,z:-5,homeX:10,homeZ:-5,activity:'travail'};
 
@@ -50,6 +52,59 @@ test('walking NPC path is deterministic but not a perfect home orbit',()=>{
   assert.ok(samples.every(p=>p.moving));
   const radii=samples.map(p=>Math.hypot(p.x-walker.homeX,p.z-walker.homeZ));
   assert.ok(Math.max(...radii)-Math.min(...radii)>.05);
+});
+
+test('approaching a resident stops them at their actual location and faces the player',()=>{
+  const walker={...npc,activity:'promenade'},anchorPosition={x:11.6,z:-3.8},playerTarget={x:15,z:-4};
+  for(const reducedMotion of [false,true]){
+    const pose=hubNpcSimulation(walker,200,{distance:4,playerVisible:true,anchorPosition,playerTarget,reducedMotion});
+    assert.equal(pose.state,'Observe');assert.equal(pose.moving,false);
+    assert.equal(pose.x,anchorPosition.x);assert.equal(pose.z,anchorPosition.z);
+    assert.ok(Math.abs(pose.heading-Math.atan2(playerTarget.x-pose.x,playerTarget.z-pose.z))<1e-10);
+  }
+});
+
+test('a conversation holds the resident in place and overrides a social partner until it closes',()=>{
+  const walker={...npc,activity:'promenade'},anchorPosition={x:11,z:-3},playerTarget={x:8,z:-2},socialTarget={x:13,z:-8};
+  for(const time of [1,20,200]){
+    const pose=hubNpcSimulation(walker,time,{distance:4,inConversation:true,anchorPosition,playerTarget,socialTarget});
+    assert.equal(pose.state,'Talk');assert.equal(pose.moving,false);
+    assert.equal(pose.x,anchorPosition.x);assert.equal(pose.z,anchorPosition.z);
+    assert.equal(pose.heading,Math.atan2(playerTarget.x-pose.x,playerTarget.z-pose.z));
+  }
+  assert.equal(hubNpcSimulation(walker,200,{distance:12,playerTarget,socialTarget}).state,'Walk');
+});
+
+test('switching between full and simplified simulation changes cadence without moving the path',()=>{
+  const walker={...npc,activity:'promenade'};
+  for(const time of [0,20,200,3600]){
+    const near=hubNpcSimulation(walker,time,{distance:23.99}),far=hubNpcSimulation(walker,time,{distance:24.01});
+    assert.notEqual(near.updateHz,far.updateHz);
+    assert.equal(near.x,far.x);assert.equal(near.z,far.z);assert.equal(near.heading,far.heading);
+  }
+});
+
+test('social residents face a physically nearby partner at the live position',()=>{
+  const actor={...npc,district:'gardens',socialPartnerId:'friend'},partner={npcId:'friend',district:'gardens',x:12,z:1,homeX:200,homeZ:200};
+  assert.deepEqual(hubNpcSocialContext(actor,[actor,partner]),{socialTarget:{x:12,z:1,npcId:'friend'}});
+  assert.deepEqual(hubNpcSocialContext(actor,[actor,{...partner,x:100}]),{});
+});
+
+test('resident activity requested before the model loads is applied to its animation',async()=>{
+  for(const activity of ['Work','Talk']){
+    let finishLoad,markReady;
+    const loaded=new Promise(resolve=>{markReady=resolve;}),source=new THREE.Group(),body=new THREE.Object3D();body.name='body';source.add(body);
+    const clip=(name,x)=>new THREE.AnimationClip(name,1,[new THREE.VectorKeyframeTrack('body.position',[0,1],[x,0,0,x,0,0])]);
+    const actor=createLivingActor({load:()=>new Promise(resolve=>{finishLoad=resolve;})},{card:'C164',onLoad:markReady});
+    try{
+      actor.setActivity(activity);
+      finishLoad({scene:source,animations:[clip('Idle',0),clip('Work',2),clip('Talk',4)]});
+      await loaded;actor.update(.25);
+      assert.equal(actor.object.getObjectByName('body').position.x,activity==='Work'?2:4);
+      actor.setActivity(null);actor.update(.25);
+      assert.equal(actor.object.getObjectByName('body').position.x,0);
+    }finally{actor.dispose();}
+  }
 });
 
 test('visible NPC animation is rendered every frame while AI decisions stay throttled',()=>{

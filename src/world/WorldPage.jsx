@@ -300,6 +300,7 @@ function WorldSession({uid,goTo}){
  },[loaded,worldRequested]);
  useEffect(()=>{if(panel!=='encounter')setCombatImpact(null);else if(!storyCinematic&&!cinematicQueue.length&&saveRef.current.adventure.encounter&&!saveRef.current.adventure.encounter.result&&!saveRef.current.adventure.encounter.field)act({type:'fieldStart'});},[panel,loaded,storyCinematic,cinematicQueue.length]);
  useEffect(()=>{paused.current=cityOpen||!!storyCinematic||(!!panel&&!['encounter','gps'].includes(panel))||!!error;scene.current?.setPaused(cityOpen||!!storyCinematic||(!!panel&&!fieldCombat)||!!error);scene.current?.setPresentation(storyCinematic?'storyCinematic':panel);},[panel,error,loaded,worldRequested,fieldCombat,storyCinematic,cityOpen]);
+ useEffect(()=>{scene.current?.setNpcConversation?.(panel==='hubDialogue'&&!cityOpen&&!storyCinematic&&!error?npcDialogue?.item.id:null);},[panel,npcDialogue?.item.id,cityOpen,storyCinematic,error,loaded,worldRequested]);
  useEffect(()=>{if(!uid||!loaded)return;partyLink.current=createPartyConnection({uid,onState:setPartyState,onPeers:peers=>{peersRef.current=peers;scene.current?.setPeers(peers);},onConnection:setConnection,onError:announce,onRuntimeState:handlePartyRuntimeState});return()=>{partyLink.current?.dispose();partyLink.current=null;partyRuntimeSelf.current=null;};},[uid,loaded]);
  useEffect(()=>{partyLink.current?.pose({region:snapshot.region,x:snapshot.position.x,z:snapshot.position.z,heading:snapshot.heading||0});},[snapshot]);
  useEffect(()=>{
