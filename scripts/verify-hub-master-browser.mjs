@@ -53,7 +53,11 @@ try{
   try{
    await page.goto('http://127.0.0.1:5199/__hub-master-qa',{waitUntil:'domcontentloaded'});
    await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-objective-card').waitFor({timeout:120000});
-   const skip=page.getByRole('button',{name:'Passer',exact:true});if(await skip.count())await skip.first().click();
+   const skip=page.getByRole('button',{name:'Passer',exact:true});
+   if(await skip.count())await skip.first().click({timeout:8000}).catch(async error=>{if(await skip.first().isVisible())throw error;});
+   // The short arrival shot can end while SwiftShader waits for two stable
+   // compositor frames. Both a successful skip and natural completion are valid.
+   await page.locator('.play-cinematic').waitFor({state:'hidden',timeout:120000});
    await page.waitForTimeout(4200);
    assert.equal(await page.locator('.hub-recovery').count(),0);
    await page.getByRole('button',{name:'Explorer librement',exact:true}).click();
