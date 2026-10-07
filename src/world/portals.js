@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {addGateMechanism} from './hub/gate-mechanism.js';
+import {createPortalEnergy} from './portal-energy.js';
 // Eight crafted thresholds. Shared silhouettes stay inexpensive after batching.
 export function createPortalFrame(region,accent,{mechanical=false}={}){
  const group=new THREE.Group(),geometries=[],materials=new Map(),g=x=>(geometries.push(x),x),box=g(new THREE.BoxGeometry(1,1,1)),cylinder=g(new THREE.CylinderGeometry(1,1,1,16)),sphere=g(new THREE.IcosahedronGeometry(1,1));
@@ -27,5 +28,6 @@ export function createPortalFrame(region,accent,{mechanical=false}={}){
  group.updateMatrixWorld(true);const groups=new Map();for(const o of [...group.children]){if(!groups.has(o.material.uuid))groups.set(o.material.uuid,[]);groups.get(o.material.uuid).push(o);}
  for(const meshes of groups.values()){const list=meshes.map(m=>{m.updateMatrix();const v=m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone();return v.applyMatrix4(m.matrix);});const merged=mergeGeometries(list);list.forEach(g=>g.dispose());if(merged){geometries.push(merged);const m=new THREE.Mesh(merged,meshes[0].material);m.castShadow=m.receiveShadow=true;group.add(m);meshes.forEach(m=>m.removeFromParent());}}
  const mechanism=mechanical?addGateMechanism(group,{accent}):null;
- return{group,mechanism,tick(distance,dt,options){mechanism?.tick(distance,dt,options);},dispose(){mechanism?.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
+ const energy=createPortalEnergy({accent,region});group.add(energy.group);
+ return{group,mechanism,tick(distance,dt,options){mechanism?.tick(distance,dt,options);energy.tick(distance,dt,options);},dispose(){mechanism?.dispose();energy.dispose();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};
 }
