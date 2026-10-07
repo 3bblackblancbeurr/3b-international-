@@ -75,8 +75,10 @@ const report=[];
 try{
  for(const device of [{id:'desktop',viewport:{width:1280,height:800}},{id:'touch-landscape',viewport:{width:844,height:390},isMobile:true,hasTouch:true}]){
   const context=await browser.newContext({...device,deviceScaleFactor:1});const page=await context.newPage(),errors=[];
+  page.setDefaultNavigationTimeout(120000);
   page.on('pageerror',error=>errors.push(error.message));await page.addInitScript(()=>localStorage.setItem('3b-world-quality','fluid'));
   try{
+   console.log(device.id+': loading real WorldPage');
    await page.goto('http://127.0.0.1:5199/__hub-master-qa',{waitUntil:'domcontentloaded'});
    await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-objective-card').waitFor({timeout:120000});
    const skip=page.getByRole('button',{name:'Passer',exact:true});
@@ -100,15 +102,19 @@ try{
    await dialog.getByRole('button',{name:'Fermer',exact:true}).click();await page.waitForTimeout(2500);await capture(page,out+'/'+device.id+'-hub.png');
    await page.getByRole('button',{name:'Ouvrir la carte',exact:true}).click();const atlas=page.getByRole('dialog',{name:'L’Atlas des huit portes',exact:true});await atlas.waitFor();assert.doesNotMatch(await atlas.innerText(),/talk:|weather:|mael_rivière|Terrasses de l’Onis/);await capture(page,out+'/'+device.id+'-atlas.png');await atlas.getByRole('button',{name:'Fermer',exact:true}).click();
    await page.getByRole('button',{name:'Journal et objectif',exact:true}).click();const journal=page.getByRole('dialog',{name:'Journal d’exploration',exact:true});await journal.waitFor();assert.doesNotMatch(await journal.innerText(),/talk:|weather:|mael_rivière/);await journal.getByRole('button',{name:'Fermer',exact:true}).click();
+   console.log(device.id+': interface, guidance and captures passed; checking reload');
    await page.reload({waitUntil:'domcontentloaded'});await page.locator('.hub-objective-card').waitFor({timeout:120000});await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});assert.equal(await page.getByRole('dialog',{name:'Ton personnage',exact:true}).count(),0);assert.equal(await page.locator('.hub-orientation-guide').count(),0);
    if(!device.hasTouch){await page.setViewportSize({width:550,height:735});await page.locator('.world-rotate-device').waitFor({state:'hidden'});await page.locator('.hub-objective-card').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Compact desktop stays playable without horizontal page overflow');await capture(page,out+'/desktop-compact.png');}
    else{await page.setViewportSize({width:390,height:844});await page.locator('.world-rotate-device').waitFor({state:'visible'});await page.setViewportSize(device.viewport);await page.locator('.world-rotate-device').waitFor({state:'hidden'});}
    assert.deepEqual(errors,[],'No runtime exception');report.push({device:device.id,ok:true,checks:['real-scene','guidance-cancel','settings','key-conflict','graphics-switch','atlas-labels','journal-labels','reload','orientation-persistence','no-horizontal-overflow']});
-  }catch(error){await capture(page,out+'/'+device.id+'-failure.png').catch(()=>{});await writeFile(out+'/'+device.id+'-failure.txt',await page.locator('body').innerText().catch(()=>''));report.push({device:device.id,ok:false,error:error.message,errors});}
+   console.log(device.id+': PASS');
+  }catch(error){console.error(device.id+': FAILED',error.message);await capture(page,out+'/'+device.id+'-failure.png').catch(()=>{});await writeFile(out+'/'+device.id+'-failure.txt',await page.locator('body').innerText().catch(()=>''));report.push({device:device.id,ok:false,error:error.message,errors});}
   await context.close();
  }
  const context=await browser.newContext({viewport:{width:1280,height:800}});const page=await context.newPage();
+ page.setDefaultNavigationTimeout(120000);
  try{
+  console.log('account-simulation: checking recovery and progress protection');
   await page.addInitScript(()=>localStorage.setItem('3b-world-quality','fluid'));await page.goto('http://127.0.0.1:5199/__hub-master-qa?account&mode=offline');
   await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});await page.locator('.hub-save-card-compact').waitFor({timeout:120000});assert.match(await page.locator('.hub-save-card-compact').innerText(),/copie locale reste/);
   await page.evaluate(()=>{qa.mode='ready';window.dispatchEvent(new Event('online'));});await page.locator('.hub-save-card-compact').waitFor({state:'hidden',timeout:30000});
