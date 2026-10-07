@@ -79,7 +79,7 @@ export function createLivingActor(library,{card,avatar,scale=1,reducedMotion=fal
    if(ready&&next){lowerGait?.fadeOut(.18);transition('Pose'+next);}
   },
   poseRootOffset(height=seatHeight){return interactionPose==='Sit'?seatRootOffset+height-seatHeight:0;},
-  setActivity(name){ambientActivity=['Work','Talk'].includes(name)&&actions[name]?name:null;if(ready&&clock>=actionEnd&&ambientActivity)transition(ambientActivity);},
+  setActivity(name){ambientActivity=['Work','Talk'].includes(name)?name:null;if(ready&&clock>=actionEnd&&actions[ambientActivity])transition(ambientActivity);},
   action(name,duration){if(!ready)return;interactionPose=null;readingProp?.hide();if(weaponModel?.object)weaponModel.object.visible=true;const timed=Number.isFinite(duration)&&duration>0;const length=timed?Math.max(.18,Math.min(3.5,duration)):(name==='Death'?2.5:name==='Hit'?.35:Math.min(3.5,Math.max(.5,actions[name]?.getClip().duration||.75)));actionEnd=clock+length;transition(name,true);if(timed&&actions[name])actions[name].setEffectiveTimeScale(actions[name].getClip().duration/length);},
   face(dx,dz,dt){heading=smoothActorHeading(heading,dx,dz,dt);object.rotation.y=heading;},
   update(dt,dx=0,dz=0,travelled=0){

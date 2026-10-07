@@ -70,7 +70,7 @@ export function createWorldScene(canvas,{save,onSnapshot,onInteract,onActivity,o
  const screenAnchor=p=>{screenPoint.copy(p);screenPoint.y+=4.5;screenPoint.project(camera);return{x:(screenPoint.x+1)*50,y:(1-screenPoint.y)*50};};
  let staticInstances=null,ambientCrowd=null,cameraSolids=[];
  let root=new THREE.Group(),resources=[],animations=[],obstacles=[],items=[],portalItems=[],portalFrames=[],region=save.region,worldRadius=worldRadiusFor(save.region),position={x:0,z:5},heading=180,target=null,waypoint=null,route=[];
- let paused=false,presentation=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
+ let paused=false,presentation=null,npcConversationId=null,disposed=false,held=null,stick={x:0,z:0},keys=new Set(),controls=loadControlBindings(),moving=false,elapsed=0,last=performance.now(),report=0,raf,frames=0,frameTime=0,qualityWarmupUntil=0,fps=60,shadowAt=0;
  let avatar,companion,focusRing,waypointRing,effect,cinematicFx=null,portalMaterials=[],cooldowns=new Map(),itemVisuals=new Map(),cameraMode=0,feedbackAt=-100,feedbackAction='';
  let premium=premiumEffectsFromCodes([]),premiumVisuals=[];
  let stats=teamStats(save),models=null,hero=null,landscape=null,actors=[],hubNpcActors=[],hubVehicles=[],stepDistance=0,needsRender=true,materialCache=new Map(),battleTarget=null,hubLodState=new Map();
@@ -455,7 +455,7 @@ function hubNpcAvatar(item){
  function tick(now){
   now=performance.now();
   if(disposed)return;raf=requestAnimationFrame(tick);const rawDt=Math.max(0,(now-last)/1000);last=now;
-  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender))return;
+  const cinematic=presentation==='encounter',fieldCombat=cinematic&&!!save.adventure.encounter?.field&&!save.adventure.encounter?.result;if(shot&&now>=shot.until){if(shot.cinematic)post.setCinematic(null);if(Number.isFinite(shot.fovEnd)){camera.fov=shot.fovEnd;camera.updateProjectionMatrix();}shot=null;}if(document.hidden||!models||!avatar||(paused&&!cinematic&&!shot&&!needsRender&&!npcConversationId))return;
   const dt=Math.min(rawDt,.25);elapsed+=dt;for(const {frame,item} of portalFrames)frame.tick(Math.hypot(position.x-item.x,position.z-item.z),dt,{reducedMotion});sceneWetness.value=advanceWetness(sceneWetness.value,sceneWetnessTarget,dt);let travelled=0,dx=0,dz=0;
   if(now-lastWorldTimeAt>=1000){
    lastWorldTimeAt=now;const clockNow=new Date();worldTime=worldTimeSnapshot(clockNow);sceneDaylight.value=worldTime.daylight;const nextScheduleKey=region==='hub'?hubScheduleClockKey(clockNow):'';if(nextScheduleKey&&nextScheduleKey!==lastHubScheduleKey){lastHubScheduleKey=nextScheduleKey;refreshHubScheduleState();}const nextWeather=worldWeatherForDate(region,clockNow);if(nextWeather!==weather){weather=nextWeather;weatherState=weatherProfile(weather);sceneWetnessTarget=wetnessForWeather(weather);landscape?.setWeather?.(weather);refreshHubScheduleState();if(weatherFx){weatherFx.visible=weatherState.precipitation;weatherFx.material.opacity=weatherState.opacity;weatherFx.material.size=weather==='snow'?.26:.08;weatherFx.material.color.set(weather==='snow'?'#ffffff':'#b9dcff');}}landscape?.setDaylight?.(worldTime.daylight);sky.setAtmosphere?.({daylight:worldTime.daylight,weather});
@@ -515,7 +515,7 @@ function hubNpcAvatar(item){
      const d=Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z),sim=npcSimulationTier(d),interval=1000/Math.max(.25,sim.updateHz);
      if(actor.lastSimAt&&now-actor.lastSimAt<interval)continue;
      actor.lastSimAt=now;
-     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,paused,reducedMotion,...hubNpcSocialContext(actor.item,items)});
+     const pose=hubNpcPose(actor.item,elapsed,{distance:d,weather,playerVisible:d<18,inConversation:actor.item.id===npcConversationId,playerTarget:position,anchorPosition:actor.object.position,paused,reducedMotion,...hubNpcSocialContext(actor.item,items)});
      actor.targetX=pose.x;actor.targetZ=pose.z;actor.targetHeading=pose.heading;actor.simulationMoving=pose.moving;
      actor.item.simulationState=pose.state;actor.item.simulationTier=pose.tier;actor.item.needs=pose.needs;
      if(actor.activityState!==pose.state){
@@ -531,8 +531,9 @@ function hubNpcAvatar(item){
     actor.lod=lod;actor.object.visible=visible;if(!visible)continue;
     const beforeX=actor.object.position.x,beforeZ=actor.object.position.z,tier=actor.item.simulationTier||'full';
     const follow=tier==='full'?13:tier==='simplified'?7:3.5,blend=1-Math.exp(-dt*follow);
-    const walk=advanceMotion({position:{x:beforeX,z:beforeZ},target:actor.walkTarget||{x:actor.targetX,z:actor.targetZ},route:actor.walkRoute||[]},{x:0,z:0},dt,Math.min(2.6,Math.hypot(actor.targetX-beforeX,actor.targetZ-beforeZ)*blend/Math.max(dt,.001)),obstacles,worldRadius);
-    actor.object.position.x=walk.position.x;actor.object.position.z=walk.position.z;if(actor.walkTarget){actor.walkTarget=walk.target;actor.walkRoute=walk.route;}
+    const attentive=actor.item.id===npcConversationId||actor.item.simulationState==='Observe';
+    const walk=attentive?{position:{x:beforeX,z:beforeZ}}:advanceMotion({position:{x:beforeX,z:beforeZ},target:actor.walkTarget||{x:actor.targetX,z:actor.targetZ},route:actor.walkRoute||[]},{x:0,z:0},dt,Math.min(2.6,Math.hypot(actor.targetX-beforeX,actor.targetZ-beforeZ)*blend/Math.max(dt,.001)),obstacles,worldRadius);
+    actor.object.position.x=walk.position.x;actor.object.position.z=walk.position.z;if(actor.walkTarget&&!attentive){actor.walkTarget=walk.target;actor.walkRoute=walk.route;}
     actor.object.position.y=groundY(actor.object.position.x,actor.object.position.z);
     const mx=actor.object.position.x-beforeX,mz=actor.object.position.z-beforeZ,moved=Math.hypot(mx,mz);
     actor.item.x=actor.object.position.x;actor.item.z=actor.object.position.z;
@@ -615,6 +616,11 @@ function hubNpcAvatar(item){
  resize();raf=requestAnimationFrame(tick);
  return{
   refreshHubSchedule:refreshHubScheduleState,
+  setNpcConversation(id){
+   const actor=region==='hub'&&hubNpcActors.find(actor=>actor.item.id===id);
+   npcConversationId=actor&&Math.hypot(actor.object.position.x-position.x,actor.object.position.z-position.z)<=Math.max(9,actor.item.range||0)?actor.item.id:null;
+   lastNpcUpdateAt=-Infinity;for(const npc of hubNpcActors)npc.lastSimAt=0;needsRender=true;
+  },
   setPeers(peers){latestPeers=peers;partyActors?.setPeers(peers);needsRender=true;},
   setParty(party){partyState=party;landscape?.setParty(party);},
   combatAction(kind){combatButton=kind;combatClock=.1;},
