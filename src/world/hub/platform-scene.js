@@ -26,12 +26,13 @@ import {islandCliffGeometry,islandDeckGeometry} from './island-cliffs.js';
 import {createPremiumWater} from '../premium-water.js';
 import {addReferenceCiteDetails} from './reference-details.js';
 import {hubPublicPlaces,platformWorldState,HUB_VALUES} from './platform-life.js';
+import {createBrokenCircleMaster} from './broken-circle-master.js';
 import plan from './data/hub-master-plan-v2.json' with {type:'json'};
 
 /** Playable reference city. Terrain, services and the atlas share physical data;
  * static architecture is batched while vehicles, water and cutaway roofs stay dynamic. */
 export function createHubPlatform(save){
- const root=new THREE.Group(),owned=[],cache=new Map(),collisions=[],cameraSolids=[],roofs=[],waterfalls=[],fragments=[];
+ const root=new THREE.Group(),owned=[],cache=new Map(),collisions=[],cameraSolids=[],roofs=[],waterfalls=[];
  const worldBuildings=plan.buildings.map(platformBuilding),buildings=worldBuildings.map(b=>({...b,buildingX:b.buildingX/HUB_SCALE,buildingZ:b.buildingZ/HUB_SCALE,width:b.width/HUB_SCALE,depth:b.depth/HUB_SCALE,height:b.height/1.5}));let interior=null,daylight=1;
  const geo=g=>(owned.push(g),g),box=geo(new THREE.BoxGeometry(1,1,1)),cylinder=geo(new THREE.CylinderGeometry(1,1,1,32)),sphere=geo(new THREE.IcosahedronGeometry(1,1));
  const material=(color,emissive=false)=>{const k=color+emissive;if(!cache.has(k)){const m=new THREE.MeshStandardMaterial({color,roughness:.65,metalness:.32,...(emissive?{emissive:color,emissiveIntensity:.45}:{})});cache.set(k,m);owned.push(m);}return cache.get(k);};
@@ -140,19 +141,15 @@ export function createHubPlatform(save){
   const fall=mesh(geo(cascadeGeometry(island)),fallMaterial,island.x,0,island.z);fall.castShadow=false;fall.receiveShadow=false;waterfalls.push(fall);
  }
  const spray=cascadeMist(cascadeIslands,owned);root.add(spray.points);
- // The monumental broken ring stands above its own fountain. Its eight pieces answer to progress.
+ // Master AAA Cercle Brisé: anchored shell + independent mechanical rotors,
+ // controlled fracture fragments, eight heritage seals and local reactive light.
  mesh(cylinder,dark,0,.4,0,19,.8,19);
  const fountainBed=mesh(geo(new THREE.CircleGeometry(16,64)),basins.floorSurfaces[0].material,0,.815,0);fountainBed.rotation.x=-Math.PI/2;fountainBed.castShadow=false;
  const fountainBank=geo(new THREE.LatheGeometry([[16.05,.8],[16.05,1.16],[16.2,1.3],[18.6,1.3],[18.9,1.12],[18.9,.8]].map(([r,y])=>new THREE.Vector2(r,y)).reverse(),64));
  mesh(fountainBank,stone,0,0,0);ring(17.4,.055,1.305,gold);
  const fountain=mesh(geo(new THREE.CircleGeometry(16,64)),water,0,1.04,0);fountain.rotation.x=-Math.PI/2;fountain.castShadow=false;collisions.push({x:0,z:0,r:19.5});
  for(const side of [-1,1]){mesh(box,dark,side*13,14,0,3,28,4);mesh(box,gold,side*13,14,2.1,.5,28,.2);}
- for(let i=0;i<8;i++){
-  const piece=mesh(geo(new THREE.TorusGeometry(12,.8,8,20,Math.PI/4-.085)),gold,0,38,12);
-  piece.rotation.z=i*Math.PI/4;fragments.push(piece);
-  const trim=mesh(geo(new THREE.TorusGeometry(12,.12,5,20,Math.PI/4-.085)),blue,0,38,12.85);trim.rotation.z=i*Math.PI/4;
- }
- const orb=mesh(sphere,blue,0,38,12.2,1.9),beam=mesh(cylinder,blue,0,30,12.2,.11,60,.11);beam.castShadow=false;
+ const circleMaster=createBrokenCircleMaster({root,owned,materials:{dark,gold,blue,stone},countries:COUNTRIES});
  sign('LE CERCLE BRISÉ',0,4,4.5,12);
  // Useful buildings are open rooms. Doorways, counters and furniture have real collision.
  for(const b of buildings){
@@ -213,14 +210,14 @@ export function createHubPlatform(save){
  seaWater.setFoamMask((x,z)=>Math.max(citeCoastalFoam(x,z),environment.foamAt(x,z)));
  const vegetation=addCiteVegetation({root,owned,buildings,collisions});
  // Batch static architecture by material while keeping cutaway roofs and moving effects separate.
- const dynamic=new Set([sea,mist,fountain,communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...fragments,orb,beam,...waterfalls,...(tower?.decks||[])]);
+ const dynamic=new Set([sea,mist,fountain,communityBanner,...blooms,ground,...roofs.map(r=>r.roof),...waterfalls,...(tower?.decks||[])]);
  root.updateMatrixWorld(true);const groups=new Map();
  for(const o of root.children)if(o.isMesh&&!dynamic.has(o)&&!o.material.transparent){const k=o.material.uuid;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(o);}
  for(const group of groups.values())if(group.length>1){
   const parts=group.map(o=>{const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();return g.applyMatrix4(o.matrix);}),merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());
   if(merged){const batch=mesh(geo(merged),group[0].material,0,0,0);batch.castShadow=true;group.forEach(o=>o.removeFromParent());}
  }
- const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;for(let i=0;i<8;i++){fragments[i].position.x=i<count?0:Math.cos(i*Math.PI/4)*.55;fragments[i].position.y=38+(i<count?0:Math.sin(i*Math.PI/4)*.55);}}; // gold-master-allow: retain reviewed network-restoration glass emission; docs/hub-reference-art-exceptions.md#network-glass.
+ const update=next=>{save=next;const state=platformWorldState(save);communityBanner.visible=state.communityUnited;blooms.forEach(b=>b.visible=state.gardenRestored);glass.emissive.set(state.networkRestored?'#174963':'#000000');glass.emissiveIntensity=state.networkRestored?.4:0;root.userData.worldState=state;const count=new Set(save.seals||[]).size;circleMaster.setProgress(count);}; // gold-master-allow: retain reviewed network-restoration glass emission; docs/hub-reference-art-exceptions.md#network-glass.
  update(save);
  root.scale.set(HUB_SCALE,1.5,HUB_SCALE);
  for(const o of collisions)for(const key of ['x','z','r','width','depth'])if(Number.isFinite(o[key]))o[key]*=HUB_SCALE;
@@ -230,11 +227,11 @@ export function createHubPlatform(save){
  const lifeItems=[...referencePlaces.lifeItems,...[...(displays.anchors||[]),...gateDistricts.anchors].map(anchor=>({...anchor,x:anchor.x*HUB_SCALE,z:anchor.z*HUB_SCALE,...(Number.isFinite(anchor.heading)?{heading:anchor.heading*180/Math.PI}:{}),...(Number.isFinite(anchor.seatX)?{seatX:anchor.seatX*HUB_SCALE,seatZ:anchor.seatZ*HUB_SCALE,seatHeight:anchor.seatHeight*1.5}:{} )}))];
  return {root,ground,get walkSurface(){return tower?.selected!==null&&tower?.selected!==undefined?tower.decks[tower.selected]:ground;},collisions,cameraSolids,cartography,lifeItems,ready:surfaces.ready,height:(x,z)=>tower?.height(x,z)??terraceWorldHeight(x,z),liftFloors:tower?.floors||[],liftItems:tower?.liftItems||[],get towerFloor(){return tower?.selected===null?null:tower?.floors[tower.selected]||null;},setTowerFloor(index){return tower?.setFloor(index)||null;},obstaclesForTowerFloor(){return tower?.collisions()||[];},get towerLifeItems(){return tower?.lifeItems()||[];},
   get interior(){return interior?{id:interior.buildingId,name:interior.name}:null;},
-  architectureDiagnostics:{id:'reference-floating-platform',islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,connectors:CITE_CONNECTORS.length,promenades:CITE_PROMENADES.length,structuralArches:structure.arches,bridgePiers:structure.bridgePiers,promenadeBays:structure.promenadeBays,towerFloors:tower?.floors.length||0,terraces:8,districtBuildings:fabric.count+gateDistricts.count,gateDistricts:gateDistricts.districts,gatePavilions:gateDistricts.count,botanicalTrees:vegetation.count+environment.diagnostics.pines,landscape:environment.diagnostics,referencePlaces:referencePlaces.count,cascades:cascadeIslands.length,basins:basins.count,rooms:buildings.length,displayCounters:displays.count,interiorFurniture:displays.furnishings?.length||0,lifeInteractions:lifeItems.length,portals:8,publicPlaces:hubPublicPlaces().length+referencePlaces.count,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
-  update,setParty(){},setQuality(mode){displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);gateDistricts.setQuality(mode);vegetation.setQuality(mode);environment.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){environment.setWeather(weather);surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){environment.setDaylight(value);fabric.setDaylight(value);gateDistricts.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
+  architectureDiagnostics:{id:'reference-floating-platform',brokenCircle:circleMaster.diagnostics,islands:CITE_ISLANDS.length,bridges:CITE_BRIDGES.length,connectors:CITE_CONNECTORS.length,promenades:CITE_PROMENADES.length,structuralArches:structure.arches,bridgePiers:structure.bridgePiers,promenadeBays:structure.promenadeBays,towerFloors:tower?.floors.length||0,terraces:8,districtBuildings:fabric.count+gateDistricts.count,gateDistricts:gateDistricts.districts,gatePavilions:gateDistricts.count,botanicalTrees:vegetation.count+environment.diagnostics.pines,landscape:environment.diagnostics,referencePlaces:referencePlaces.count,cascades:cascadeIslands.length,basins:basins.count,rooms:buildings.length,displayCounters:displays.count,interiorFurniture:displays.furnishings?.length||0,lifeInteractions:lifeItems.length,portals:8,publicPlaces:hubPublicPlaces().length+referencePlaces.count,residentialBlocks:16,diameter:HUB_PLATFORM.radius*2},
+  update,setParty(){},setQuality(mode){displays.setQuality(mode);spray.setQuality(mode);surfaces.setQuality(mode);fabric.setQuality(mode);gateDistricts.setQuality(mode);vegetation.setQuality(mode);environment.setQuality(mode);root.userData.quality=mode;seaWater.setQuality(mode,{allowPlanarReflection:mode==='detail'||mode==='high'});},setWeather(weather){environment.setWeather(weather);surfaces.setWeather(weather);vegetation.setWeather(weather);seaWater.setWeather(weather);poolWater.setWeather(weather);},setDaylight(value){environment.setDaylight(value);fabric.setDaylight(value);gateDistricts.setDaylight(value);spray.setDaylight(value);surfaces.setDaylight(value);daylight=value;seaWater.setDaylight(value);poolWater.setDaylight(value);circleMaster.setDaylight(value);fallMaterial.uniforms.day.value=value;blue.emissiveIntensity=.3+(1-daylight)*.3;},
   updateDistrict(camera,p){environment.updateView(camera);displays.updateView?.(camera);fabric.updateView(camera);gateDistricts.updateView(camera);interior=platformInteriorAt(p,worldBuildings);for(const {b,roof} of roofs)roof.visible=interior?.buildingId!==b.buildingId&&!(b.buildingId==='tower_circle'&&tower?.selected!==null);},
   updateCamera(){},renderWaterReflection(renderer,scene,camera,time){return seaWater.renderReflection(renderer,scene,camera,time);},cinematicFocus(){return false;},
-  tick(time){environment.tick(time);surfaces.tick?.(time);spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;orb.rotation.y=time*.18;orb.position.y=38+Math.sin(time*.8)*.3;},
+  tick(time,dt,position){environment.tick(time);surfaces.tick?.(time);spray.tick(time);vegetation.tick(time);seaWater.update(time);poolWater.update(time);fallMaterial.uniforms.time.value=time;circleMaster.tick(time,Math.hypot(position?.x||0,position?.z||0));},
   dispose(){environment.disposeReflection();seaWater.disposeReflection();poolWater.disposeReflection();root.removeFromParent();for(const asset of owned)asset.dispose();},
  };
 }
