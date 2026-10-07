@@ -1,4 +1,12 @@
 import * as THREE from 'three';
+// Every gate emits its own recognizable geometric resonance; 8 values, 8 signatures.
+export const PORTAL_SIGNATURES=Object.freeze({
+ france:{spokes:7,speed:1.4},algerie:{spokes:9,speed:1.16},
+ maroc:{spokes:12,speed:1.05},tunisie:{spokes:8,speed:1.85},
+ espagne:{spokes:5,speed:2.1},italie:{spokes:6,speed:1.32},
+ turquie:{spokes:11,speed:.91},estonie:{spokes:13,speed:.76},
+});
+
 
 /**
  * The eight thresholds share one restrained, GPU-driven resonance effect.
@@ -9,10 +17,10 @@ export function createPortalEnergy({accent='#74cfff',region='hub'}={}){
  const group=new THREE.Group();
  group.name='3B-Portal-Resonance-'+region;
  const geometry=[],materials=[],keepGeometry=value=>(geometry.push(value),value),keepMaterial=value=>(materials.push(value),value);
- const tint=new THREE.Color(accent);
+ const tint=new THREE.Color(accent),signature=PORTAL_SIGNATURES[region]||{spokes:8,speed:1.2};
  const veil=keepMaterial(new THREE.ShaderMaterial({
   transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
-  uniforms:{uTime:{value:0},uStrength:{value:.25},uTint:{value:tint}},
+  uniforms:{uTime:{value:0},uStrength:{value:.25},uTint:{value:tint},uSpokes:{value:signature.spokes},uSpeed:{value:signature.speed}},
   vertexShader:`
    varying vec2 vUv;
    void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
@@ -22,14 +30,16 @@ export function createPortalEnergy({accent='#74cfff',region='hub'}={}){
    uniform float uTime;
    uniform float uStrength;
    uniform vec3 uTint;
+   uniform float uSpokes;
+   uniform float uSpeed;
    void main(){
     vec2 p=(vUv-.5)*2.0;
     float r=length(p);
     float angular=atan(p.y,p.x);
     float mask=1.0-smoothstep(.74,.99,r);
-    float spiral=sin(angular*7.0-r*27.0+uTime*1.65)*.5+.5;
-    float wave=pow(.5+.5*sin(r*41.0-uTime*2.8),4.0);
-    float lightning=pow(max(0.0,sin(angular*13.0+uTime*.85+r*8.0)),14.0);
+    float spiral=sin(angular*uSpokes-r*27.0+uTime*uSpeed)*.5+.5;
+    float wave=pow(.5+.5*sin(r*41.0-uTime*uSpeed*2.1),4.0);
+    float lightning=pow(max(0.0,sin(angular*uSpokes*1.7+uTime*uSpeed*.65+r*8.0)),14.0);
     float inner=(1.0-smoothstep(0.0,.68,r))*(.018+.038*spiral);
     float rim=exp(-pow((r-.78)*18.0,2.0))*(.18+.22*wave);
     float rays=(.025+.075*lightning)*smoothstep(.12,.78,r);
@@ -88,7 +98,7 @@ export function createPortalEnergy({accent='#74cfff',region='hub'}={}){
  }
  return{
   group,tick,
-  get state(){return{time,strength:veil.uniforms.uStrength.value,particleCount:count};},
+  get state(){return{time,strength:veil.uniforms.uStrength.value,particleCount:count,signature};},
   dispose(){if(disposed)return;disposed=true;group.clear();geometry.forEach(value=>value.dispose());materials.forEach(value=>value.dispose());}
  };
 }
