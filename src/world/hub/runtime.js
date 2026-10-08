@@ -31,6 +31,26 @@ export function selectNpcBudget(plan, profile = 'mobileMedium') {
   return Math.max(1, budget?.activeNpcNear?.[1] || 18);
 }
 
+/** Mobile 3B must never permanently hide the same six canonical residents.
+ * Rotate regular appearances by civil day while pinning active mission-givers
+ * and responders. The rendered actor budget stays exactly unchanged. */
+export function selectHubNpcRoster(npcs=[],budget=18,{eventContext={},hubState=null,activeEvents=[]}={}){
+ const count=Math.max(0,Math.floor(budget));if(!count||!npcs.length)return [];
+ const parsed=Date.parse(String(eventContext.dateKey||'')+'T00:00:00Z');
+ const day=Number.isFinite(parsed)?Math.floor(parsed/86400000):Math.floor(Number(eventContext.day)||0);
+ const turn=((day%npcs.length)+npcs.length)%npcs.length;
+ return npcs.map((npc,index)=>{
+  const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather,activeEvents});
+  const states=(npc.missionIds||[]).map(id=>hubState?.missions?.[id]).filter(Boolean);
+  const urgent=states.some(row=>row.status==='active'||row.status==='completed'&&!row.claimed);
+  const available=states.some(row=>row.status==='available');
+  const event=!!schedule.eventId;
+  if(schedule.rare&&!urgent&&!event)return null;
+  return {npc,schedule,index,priority:urgent?3:event?2:available?1:0,order:(index-turn+npcs.length)%npcs.length};
+ }).filter(Boolean).sort((a,b)=>b.priority-a.priority||a.order-b.order)
+  .slice(0,count).sort((a,b)=>a.index-b.index);
+}
+
 export function buildHubRuntimeItems({
   plan,
   npcs = [],
@@ -55,10 +75,9 @@ export function buildHubRuntimeItems({
 
   const activeEvents=activeHubEvents(events,eventContext);
   const maxNpcs = selectNpcBudget(plan, profile),memorySave={hub:hubState||{},seals:[...seals]};
-  const npcItems = npcs.slice(0, maxNpcs).flatMap((npc) => {
+  const roster=selectHubNpcRoster(npcs,maxNpcs,{eventContext,hubState,activeEvents});
+  const npcItems = roster.map(({npc,schedule}) => {
     const memory=hubNpcMemory({...npc,npcId:npc.id},memorySave,{hour:eventContext.hour,weather:eventContext.weather});
-    const schedule=hubNpcSchedule(npc.id,{hour:eventContext.hour,day:eventContext.day,storyProgress:eventContext.storyProgress,weather:eventContext.weather,activeEvents});
-    if(schedule.rare)return [];
     const district=schedule.district||npc.district,center = hubDistrictPosition(plan, district);
     const d = offset(npc.id, schedule.shelter?3.5:schedule.social?5.2:8);
     return {
