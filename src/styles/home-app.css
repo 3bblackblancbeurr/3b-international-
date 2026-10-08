@@ -193,3 +193,35 @@ html[data-luxury="v2"] .app3b .home-world-webgl-shell[data-state="fallback"]::af
     padding-top:222px;
   }
 }
+
+
+/* LE MONDE DU 3B — standalone cinematic portal, no pasted city photograph. */
+html[data-luxury="v2"] .app3b .home-world-entry{position:relative;min-height:550px;background:#02070d;border:1px solid #bfa66c5e;border-radius:24px;overflow:hidden;box-shadow:0 34px 100px #0009,inset 0 1px #fbe7bc34}
+html[data-luxury="v2"] .app3b .home-world-entry::before{content:"";position:absolute;inset:-4%;pointer-events:none;background:radial-gradient(ellipse at 69% 44%,#1677a433,transparent 37%),radial-gradient(ellipse at 71% 59%,#d9b06924,transparent 36%);z-index:1}
+html[data-luxury="v2"] .app3b .home-world-entry::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#01060df7 0%,#030b16e9 27%,#081c278a 54%,transparent 79%),linear-gradient(0deg,#02070de8 0%,transparent 47%);z-index:3}
+html[data-luxury="v2"] .app3b .home-world-atmosphere{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 75% 49%,#267cae35 0%,transparent 38%),linear-gradient(160deg,#020610,#0a2234 54%,#04070b)}
+html[data-luxury="v2"] .app3b .home-world-horizon{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 34px,#d6b46a17 35px 36px,transparent 37px 83px),linear-gradient(180deg,transparent 48%,#164f6455 55%,transparent 67%);mask-image:linear-gradient(to bottom,transparent 18%,black 58%,transparent 96%)}
+html[data-luxury="v2"] .app3b .home-world-skyline{position:absolute;inset:35% -8% 5% 37%;background:linear-gradient(0deg,#0a1a27,transparent 32%),repeating-linear-gradient(90deg,transparent 0 24px,#c5aa6733 25px 26px,transparent 27px 48px);clip-path:polygon(0 100%,0 55%,9% 55%,9% 36%,13% 36%,13% 66%,19% 66%,19% 25%,23% 25%,23% 9%,26% 9%,26% 37%,32% 37%,32% 58%,40% 58%,40% 25%,45% 25%,45% 45%,52% 45%,52% 16%,55% 16%,55% 6%,58% 6%,58% 42%,64% 42%,64% 57%,71% 57%,71% 31%,76% 31%,76% 51%,83% 51%,83% 21%,88% 21%,88% 59%,100% 59%,100% 100%);opacity:.58}
+html[data-luxury="v2"] .app3b .home-world-ray{position:absolute;bottom:-35%;width:2px;height:110%;background:linear-gradient(0deg,transparent,#d2ae7a71,transparent);filter:blur(2px);transform-origin:bottom;opacity:.42}
+html[data-luxury="v2"] .app3b .home-world-ray.ray-1{left:65%;transform:rotate(23deg)}html[data-luxury="v2"] .app3b .home-world-ray.ray-2{left:78%;transform:rotate(-16deg);background:linear-gradient(0deg,transparent,#5bd7fa91,transparent)}html[data-luxury="v2"] .app3b .home-world-ray.ray-3{left:83%;transform:rotate(40deg)}
+html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{left:73%;top:7%;width:min(47%,550px);filter:drop-shadow(0 0 27px #42c8f749) drop-shadow(0 24px 35px #0008)}
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{position:relative;z-index:4;max-width:610px;padding:64px 50px;align-self:center;text-shadow:0 3px 20px #0008}
+html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{color:#f2d69c;letter-spacing:.23em}
+html[data-luxury="v2"] .app3b .home-world-entry h2{font-weight:600;line-height:1.05;letter-spacing:-.047em;text-wrap:balance;font-size:clamp(41px,5.5vw,78px)}
+html[data-luxury="v2"] .app3b .home-world-entry h2 em{font-style:normal;background:linear-gradient(110deg,#f9e8bf,#cbaa68 68%,#79d3f3);background-clip:text;-webkit-background-clip:text;color:transparent}
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy>p:not(.eyebrow){max-width:355px;font-size:14px;line-height:1.6;color:#dae6e7}
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-actions{margin-top:25px}
+html[data-luxury="v2"] .app3b .home-world-entry .home-world-signature{display:flex;align-items:center;gap:14px;bottom:22px;right:27px;color:#e2c994;letter-spacing:.12em;font-size:9px}
+.home-world-signature i{width:4px;height:4px;background:#7ad6f3;border-radius:50%}
+@media(max-width:720px){
+ html[data-luxury="v2"] .app3b .home-world-entry{min-height:480px;border-radius:20px;display:flex;align-items:flex-end}
+ html[data-luxury="v2"] .app3b .home-world-entry::after{background:linear-gradient(0deg,#02070d 0%,#02070de8 31%,#02070d44 64%,transparent 91%)}
+ html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{left:50%;top:-5%;width:min(85%,380px)}
+ html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{padding:205px 24px 54px;max-width:100%;align-self:flex-end}
+ html[data-luxury="v2"] .app3b .home-world-entry h2{font-size:clamp(36px,10vw,52px);margin-bottom:12px}
+ html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{font-size:8px;margin-bottom:12px}
+ html[data-luxury="v2"] .app3b .home-world-entry .home-world-live{display:none}
+ html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy>p:not(.eyebrow){font-size:12px;line-height:1.6;max-width:340px}
+ html[data-luxury="v2"] .app3b .home-world-entry .home-world-signature{bottom:11px;right:15px;gap:8px;font-size:7px}
+}
+@media(prefers-reduced-motion:reduce){html[data-luxury="v2"] .app3b .home-world-ray{animation:none}}
