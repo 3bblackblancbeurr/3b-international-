@@ -26,3 +26,8 @@
 .world-shell>.hub-save-card-compact{position:absolute;padding-right:43px;pointer-events:auto}
 .world-shell .hub-save-card-compact .hub-save-dismiss{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:32px;height:32px;min-height:32px!important;padding:0;border-radius:50%;border:1px solid #d8c18966;background:#11252ef0;color:#f7e4c8;font-size:20px!important;line-height:1;z-index:3;touch-action:manipulation}
 .world-shell .hub-save-card-compact .hub-save-dismiss:focus-visible{outline:2px solid #f1d58b;outline-offset:2px}
+
+.world-dialog .world-audio-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 18px}
+.world-dialog .world-audio-presets button{min-height:44px;padding:9px;border-radius:10px;font-weight:600;font-size:12px;background:#123242;color:#dce9eb;border:1px solid #97aeb34a}
+.world-dialog .world-audio-presets button[aria-pressed="true"]{background:linear-gradient(135deg,#c4a971,#e1cd9d);color:#09222c;border-color:#f6e5b7}
+@media(max-height:560px) and (orientation:landscape){.world-dialog .world-audio-presets{margin:8px 0 12px}.world-dialog .world-audio-presets button{font-size:11px}}
