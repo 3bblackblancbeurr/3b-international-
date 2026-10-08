@@ -7,7 +7,7 @@ export function rankWorldVoice(voice,lang='fr-FR'){
  const language=languageTag(voice?.lang),wanted=languageTag(lang),family=wanted.split('-')[0];
  if(!language||!language.startsWith(family))return -Infinity;
  const name=String(voice?.name||'').toLowerCase();
- return (language===wanted?4:1)+(voice?.localService?1:0)+(voice?.default?.5:0)
+ return (language===wanted?4:1)+(voice?.localService?1:0)+(voice?.default?0.5:0)
   +(/natural|neural|enhanced|premium|wavenet|studio/.test(name)?5:0)
   +(/google|microsoft|samsung|apple/.test(name)?1:0)
   -(/espeak|compact|basic|legacy/.test(name)?3:0);
