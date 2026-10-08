@@ -63,8 +63,13 @@ export function ArenaStage({state,side=0,cardId,avatar,focus='body',pose='idle',
    if(film&&film.id!==lastFilm){lastFilm=film.id;if(!reduced)actors[0]?.action(film.action||'Idle');}
    if(s.angle!==lastAngle){if(s.angle!==null)rot=s.angle;lastAngle=s.angle;}
    for(const [i,a] of actors.entries()){a.update(reduced&&film?0:dt,0,1,solo&&s.pose==='walk'&&!film?dt*1.6:0);a.object.rotation.y=solo?(film?0:rot):i===s.side?.7:-.7;if(!solo){const x=i===s.side?-1.45:1.45;a.object.position.x=x+(i===who&&!reduced?Math.sin(Math.min(1,impact/.65)*Math.PI)*.5*(x<0?1:-1):0);}}
-   const intro=!solo&&!reduced&&!s.state?.last?Math.max(0,1-introAge/3.5):0,zoom=solo?(s.focus==='face'?1.35:3.4):5.2+intro*2,orbit=solo?0:rot*.2;
-   desired.set(Math.sin(orbit)*zoom,solo?(s.focus==='face'?1.68:1.8):2.15+intro*.7,Math.cos(orbit)*zoom);target.set(0,solo&&s.focus==='face'?1.57:.95,0);
+   const intro=!solo&&!reduced&&!s.state?.last?Math.max(0,1-introAge/3.5):0;
+   // Previous face framing at 1.35 m cut the forehead off on narrow
+   // landscape editor columns; fit the whole head plus its shoulders.
+   const faceView=solo&&s.focus==='face',aspect=Math.max(.45,camera.aspect);
+   const zoom=solo?(faceView?Math.max(2.45,2.55/Math.min(1,aspect)):Math.max(4.2,4.35/Math.min(1,aspect))):5.2+intro*2,orbit=solo?0:rot*.2;
+   desired.set(Math.sin(orbit)*zoom,solo?(faceView?1.88:2.05):2.15+intro*.7,Math.cos(orbit)*zoom);
+   target.set(0,solo?(faceView?1.68:1.2):.95,0);
    if(!film){portal.visible=false;particles.visible=false;bluePulse.intensity=0;goldPulse.intensity=0;renderer.toneMappingExposure=1.32;camera.fov=38;camera.updateProjectionMatrix();}
    if(film){
     // Different framings of the saved avatar, not pre-rendered stock characters.
