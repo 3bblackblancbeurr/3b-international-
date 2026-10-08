@@ -75,16 +75,13 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  };
  for(let index=0;index<3;index++){waves.setColorAt(index,new THREE.Color(index===1?'#d6bc82':'#54d9f5'));positionWave(index);}
  waves.instanceMatrix.needsUpdate=true;if(waves.instanceColor)waves.instanceColor.needsUpdate=true;
- // Deterministic lights create sparkle without new shadows, textures or network downloads.
- const starCount=96,starPositions=new Float32Array(starCount*3);
- for(let i=0;i<starCount;i++){const a=i*2.399963229728653,radial=12.7+(i%9)*.19;starPositions[i*3]=Math.cos(a)*radial;starPositions[i*3+1]=Math.sin(a)*radial;starPositions[i*3+2]=.8+((i*7)%6)*.08;}
- const starsGeometry=new THREE.BufferGeometry();starsGeometry.setAttribute('position',new THREE.BufferAttribute(starPositions,3));owned.push(starsGeometry);
- const starsMaterial=new THREE.PointsMaterial({color:'#f7d99a',size:.17,transparent:true,opacity:.4,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(starsMaterial);
- const stars=new THREE.Points(starsGeometry,starsMaterial);energy.add(stars);
- const particleCount=32,positions=new Float32Array(particleCount*3);
- for(let i=0;i<particleCount;i++){const t=i/(particleCount-1);positions[i*3]=11.7+(i%5)*.38;positions[i*3+1]=.4+t*5.3;positions[i*3+2]=((i%7)-3)*.16;}
- const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(positions,3));owned.push(pg);
- const pm=new THREE.PointsMaterial({color:'#b9f6ff',size:.11,transparent:true,opacity:.62,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(pm);
+ // Champagne/cyan sparks share one existing particle draw; no extra point cloud mesh.
+ const particleCount=32,starCount=96,totalParticles=particleCount+starCount;
+ const positions=new Float32Array(totalParticles*3),particleColors=new Float32Array(totalParticles*3);
+ for(let i=0;i<particleCount;i++){const t=i/(particleCount-1);positions[i*3]=11.7+(i%5)*.38;positions[i*3+1]=.4+t*5.3;positions[i*3+2]=((i%7)-3)*.16;particleColors.set([.55,.93,1],i*3);}
+ for(let i=0;i<starCount;i++){const j=i+particleCount,a=i*2.399963229728653,radial=12.7+(i%9)*.19;positions[j*3]=Math.cos(a)*radial;positions[j*3+1]=Math.sin(a)*radial;positions[j*3+2]=.8+((i*7)%6)*.08;particleColors.set([1,.79,.52],j*3);}
+ const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(positions,3));pg.setAttribute('color',new THREE.BufferAttribute(particleColors,3));owned.push(pg);
+ const pm=new THREE.PointsMaterial({vertexColors:true,size:.14,transparent:true,opacity:.58,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(pm);
  const particles=new THREE.Points(pg,pm);fracture.add(particles);
 
  const motionQuery=typeof window!=='undefined'?window.matchMedia?.('(prefers-reduced-motion: reduce)'):null;
@@ -97,8 +94,7 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  function setDaylight(value){daylight=clamp(Number(value)||0);}
  function setQuality(mode){
   quality=mode;
-  pg.setDrawRange(0,mode==='fluid'||mode==='low'?12:particleCount);
-  starsGeometry.setDrawRange(0,mode==='fluid'||mode==='low'?20:starCount);
+  pg.setDrawRange(0,mode==='fluid'||mode==='low'?52:totalParticles);
   waves.count=mode==='fluid'||mode==='low'?1:3;
  }
 
@@ -123,8 +119,6 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
   pm.opacity=.28+.28*pulse+near*.16;
   for(let index=0;index<waves.count;index++)positionWave(index,animationTime,motion);
   waves.instanceMatrix.needsUpdate=true;waveMaterial.opacity=.055+.045*(.5+.5*Math.sin(animationTime*.82))+near*.05;
-  starsMaterial.opacity=.19+.16*(.5+.5*Math.sin(animationTime*2.1))+near*.18;
-  stars.rotation.z=-animationTime*.045*motion;
   loose.forEach(f=>{const amp=(.06+.035*near)*motion;f.mesh.position.y=f.base.y+Math.sin(animationTime*.72+f.phase)*amp;f.mesh.position.x=f.base.x+Math.cos(animationTime*.48+f.phase)*amp*.45;f.mesh.rotation.z=f.angle+Math.sin(animationTime*.48+f.phase)*.16*motion;});
   particles.rotation.z=Math.sin(animationTime*.16)*.035*motion;particles.position.y=Math.sin(animationTime*.65)*.08*motion;
   // The architectural shell is anchored; only the internal machinery moves.
