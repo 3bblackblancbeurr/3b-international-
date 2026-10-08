@@ -71,6 +71,7 @@ test('mobile Hub exposes the full 24-person canon over a week instead of hiding 
   const eventContext={dateKey,hour:12,day:4,weather:'clear'};
   const roster=selectHubNpcRoster(npcs,18,{eventContext});
   assert.equal(roster.length,18,'stable 18-person mobile actor budget');
+  assert.ok(roster.some(row=>row.npc.id==='mael_rivière'),'the first guide must always welcome new and returning players');
   assert.equal(new Set(roster.map(row=>row.npc.id)).size,18);
   current.push(roster.map(row=>row.npc.id).join(','));
   for(const row of roster)seen.add(row.npc.id);
