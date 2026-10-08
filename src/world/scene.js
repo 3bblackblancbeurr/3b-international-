@@ -566,7 +566,7 @@ function hubNpcAvatar(item){
    }
   const y=transportRide?.pose?.y??groundY(position.x,position.z)+traversalLift,age=elapsed-feedbackAt,impact=age<.28&&!reducedMotion?Math.sin(age/.28*Math.PI):0,retaliation=age>.3&&age<.62&&!reducedMotion?Math.sin((age-.3)/.32*Math.PI):0;
   const lifePose=lifeInteraction.sample(elapsed),poseLift=lifePose?.pose==='Sit'?(hero.poseRootOffset?.(lifePose.seatHeight)||0)*lifePose.blend:0;
-  avatar.position.set(position.x,y+poseLift+(playFrame.lift||0),position.z);hero.setCombat(fieldCombat?{}:{guard:playFrame.guard||0});hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
+  avatar.position.set(position.x,y+poseLift+(playFrame.lift||0)+(transportRide?.transport==='boat'?.46:0),position.z);hero.setCombat(fieldCombat?{}:{guard:playFrame.guard||0});hero.update(dt,transportRide?0:dx,transportRide?0:dz,transportRide?0:travelled);
   if(region==='hub'&&!landscape?.towerFloor){
    const stream=streamingProfile(qualityMode,typeof navigator!=='undefined'?navigator.deviceMemory:undefined,region);
    if(now-lastNpcUpdateAt>=1000/stream.npcUpdateHz){
