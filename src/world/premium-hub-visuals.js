@@ -323,6 +323,10 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
   add({y:.145,z:1.14,sx:.60,sy:.04,sz:.71});
   add({y:.145,z:-1.29,sx:1.18,sy:.04,sz:.56});
   add({y:.645,z:-.35,sx:1.25,sy:.07,sz:1.83},rounded);
+  // Elevated open passenger canopy: the avatar can stand under it instead
+  // of protruding through a tiny low cab; all parts remain in one shared draw.
+  add({y:1.42,z:.18,sx:1.40,sy:.055,sz:2.25},rounded);
+  for(const side of [-1,1])for(const z of [-.68,1.04])add({x:side*.64,y:.86,z,sx:.058,sy:1.08,sz:.058});
   add({y:.70,z:-.54,sx:.28,sy:.045,sz:.35},rounded);
   for(const side of [-1,1]){
    for(const z of [-1.13,-.45,.42])add({x:side*.558,y:.37,z,sx:.035,sy:.49,sz:.042});
@@ -354,7 +358,7 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
   for(const z of [-.38,.38])child(group,geometry.cylinder,dark,{y:1.08,z,sx:.16,sy:.18,sz:.16,rz:Math.PI/2}).name='Cabine · poulie sur câble';
  }
  // Art scale only: route positions, dock collisions and boarding gameplay remain unchanged.
- if(spec.transport==='boat')group.scale.setScalar(1.55);
+ if(spec.transport==='boat')group.scale.setScalar(3.0);
  else if(spec.transport==='telepheric')group.scale.setScalar(1.35);
  group.userData.transitCraft={version:2,transport:spec.transport,drawCalls:group.children.length,sharedGeometry:true};
  group.position.set(start.x,groundY(start.x,start.z)+(spec.height||0),start.z);return group;
