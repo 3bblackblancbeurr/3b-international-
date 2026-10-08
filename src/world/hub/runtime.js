@@ -46,7 +46,7 @@ export function selectHubNpcRoster(npcs=[],budget=18,{eventContext={},hubState=n
   const available=states.some(row=>row.status==='available');
   const event=!!schedule.eventId;
   if(schedule.rare&&!urgent&&!event)return null;
-  return {npc,schedule,index,priority:urgent?3:event?2:available?1:0,order:(index-turn+npcs.length)%npcs.length};
+  return {npc,schedule,index,priority:npc.id==='mael_rivière'?4:urgent?3:event?2:available?1:0,order:(index-turn+npcs.length)%npcs.length};
  }).filter(Boolean).sort((a,b)=>b.priority-a.priority||a.order-b.order)
   .slice(0,count).sort((a,b)=>a.index-b.index);
 }
