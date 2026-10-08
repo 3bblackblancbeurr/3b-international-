@@ -106,21 +106,42 @@ function HubMiniMap({items,position,heading=180,camera,waypoint,onOpen,cartograp
  </aside>;
 }
 function HubDetailedMap({items,position,onSelect,cartography,route,waypoint,heading=0,level}){
- const model=useMemo(()=>createHubCartography([],cartography),[cartography]),id=useId().replace(/:/g,''),[zoom,setZoom]=useState(0),[center,setCenter]=useState({x:0,z:0}),[category,setCategory]=useState('all'),[query,setQuery]=useState(''),[networks,setNetworks]=useState(true),drag=useRef(null);
+ const model=useMemo(()=>createHubCartography([],cartography),[cartography]),id=useId().replace(/:/g,''),[zoom,setZoom]=useState(0),[center,setCenter]=useState({x:0,z:0}),[category,setCategory]=useState('all'),[query,setQuery]=useState(''),[networks,setNetworks]=useState(true),drag=useRef(null),fingers=useRef(new Map()),pinch=useRef(null);
  const halfSpan=model.extent/Math.pow(1.7,zoom),scale=halfSpan/250,destinations=useMemo(()=>hubMapDestinations(items,{category}).filter(item=>hubSearchMatches(item,query)),[items,category,query]);
  const atlasMarkers=hubAtlasMapMarkers(destinations,halfSpan);
  const sorted=[...destinations].sort((a,b)=>Math.hypot(a.x-position.x,a.z-position.z)-Math.hypot(b.x-position.x,b.z-position.z));
- const startDrag=e=>{if(e.target.closest('[role="button"]'))return;drag.current={x:e.clientX,y:e.clientY,center};e.currentTarget.setPointerCapture?.(e.pointerId);};
- const moveDrag=e=>{const d=drag.current;if(!d)return;const rect=e.currentTarget.getBoundingClientRect(),unit=halfSpan*2/Math.min(rect.width,rect.height);setCenter({x:d.center.x-(e.clientX-d.x)*unit,z:d.center.z-(e.clientY-d.y)*unit});};
- const stopDrag=()=>{drag.current=null;};
+ const startDrag=e=>{
+  if(e.target.closest('[role="button"]'))return;
+  fingers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  e.currentTarget.setPointerCapture?.(e.pointerId);
+  if(fingers.current.size===2){
+   const [a,b]=[...fingers.current.values()];
+   pinch.current={distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),zoom};
+   drag.current=null;
+  }else if(fingers.current.size===1)drag.current={x:e.clientX,y:e.clientY,center};
+ };
+ const moveDrag=e=>{
+  if(!fingers.current.has(e.pointerId))return;
+  fingers.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(fingers.current.size>=2&&pinch.current){
+   const [a,b]=[...fingers.current.values()];
+   const distance=Math.max(1,Math.hypot(a.x-b.x,a.y-b.y));
+   setZoom(Math.max(0,Math.min(4,pinch.current.zoom+Math.log(distance/pinch.current.distance)/Math.log(1.7))));
+   return;
+  }
+  const d=drag.current;if(!d)return;
+  const rect=e.currentTarget.getBoundingClientRect(),unit=halfSpan*2/Math.min(rect.width,rect.height);
+  setCenter({x:d.center.x-(e.clientX-d.x)*unit,z:d.center.z-(e.clientY-d.y)*unit});
+ };
+ const stopDrag=e=>{fingers.current.delete(e.pointerId);if(fingers.current.size<2)pinch.current=null;drag.current=null;};
  const changeZoom=delta=>setZoom(z=>Math.max(0,Math.min(4,z+delta)));
  const reset=()=>{setZoom(0);setCenter({x:0,z:0});};
  const moveKeyboard=e=>{const shifts={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]},d=shifts[e.key];if(d){e.preventDefault();setCenter(p=>({x:p.x+d[0]*halfSpan*.2,z:p.z+d[1]*halfSpan*.2}));}else if(e.key==='+'||e.key==='='){e.preventDefault();changeZoom(1);}else if(e.key==='-'){e.preventDefault();changeZoom(-1);}else if(e.key==='Home'){e.preventDefault();reset();}};
  return <section className="play-map cartography-map hub-cartography" aria-label="Atlas de la cité">
-  <header className="hub-map-toolbar"><div><small>LA CITÉ DES HUIT HÉRITAGES</small><h3>Repérer un lieu dans la Cité</h3></div><div className="hub-map-zoom"><Button variant="ghost" onClick={()=>changeZoom(-1)} disabled={zoom===0} aria-label="Élargir la carte">−</Button><Button variant="ghost" onClick={()=>changeZoom(1)} disabled={zoom===4} aria-label="Rapprocher la carte">+</Button><Button variant="ghost" onClick={()=>{setCenter({...position});setZoom(z=>Math.max(z,2));}} aria-label="Centrer sur mon personnage">◎</Button><Button variant="ghost" onClick={reset}>Vue d’ensemble</Button></div></header>
+  <header className="hub-map-toolbar"><div><small>LA CITÉ DES HUIT HÉRITAGES</small><h3>Repérer un lieu dans la Cité</h3></div><div className="hub-map-zoom"><Button variant="ghost" onClick={()=>changeZoom(-1)} disabled={zoom===0} aria-label="Élargir la carte">−</Button><Button variant="ghost" onClick={()=>changeZoom(1)} disabled={zoom===4} aria-label="Rapprocher la carte">+</Button><Button variant="ghost" onClick={()=>{setCenter({...position});setZoom(z=>Math.max(z,2));}} aria-label="Centrer sur mon personnage">◎</Button><Button variant="ghost" onClick={reset}>Vue d’ensemble</Button><label className="hub-map-zoom-slider">Zoom <input aria-label="Zoom de l’Atlas" type="range" min="0" max="4" step=".05" value={zoom} onChange={e=>setZoom(Number(e.target.value))}/></label></div></header>
   <div className="hub-map-layout"><div className="hub-map-viewport">{level&&<p className="hub-map-level">{level.name} · {hubElevationLabel(level.y)}</p>}<svg viewBox={`${-halfSpan} ${-halfSpan} ${halfSpan*2} ${halfSpan*2}`} role="group" tabIndex={0} aria-label="Carte de la cité : flèches pour déplacer la vue, plus et moins pour zoomer, Début pour la vue d’ensemble" onKeyDown={moveKeyboard} onPointerDown={startDrag} onPointerMove={moveDrag} onPointerUp={stopDrag} onPointerCancel={stopDrag}>
    <g transform={`translate(${-center.x} ${-center.z})`}><HubMapGround model={model} id={id} close={zoom>=2} level={level}/>{!level&&<HubTransportNetworks model={model} scale={scale} visible={networks}/>} {model.districts.map(d=><MapLabel key={d.id} x={d.x} z={d.z+19} name={districtShort[d.id]} scale={Math.max(.8,scale)}/>)}{!level&&zoom<3&&model.landmarks.map(site=><MapLabel key={site.id} x={site.x} z={site.z+12*scale} name={hubPlaceLabel(site.name)+(site.elevation?' · '+hubElevationLabel(site.elevation):'')} scale={scale} className="hub-map-landmark-label"/>)}{atlasMarkers.map(item=><MapMarker key={item.id} item={item} onSelect={onSelect} scale={scale} label={zoom>=3}/>)}<MapRoute position={position} route={route} waypoint={waypoint} scale={scale}/><PlayerMarker position={position} heading={heading} scale={scale}/></g><MapScale halfSpan={halfSpan}/>
-  </svg><HubMapLegend model={model} networks={networks} onNetworks={()=>setNetworks(value=>!value)}/><small>Glisse pour explorer · + / − pour zoomer. Choisir un lieu place un repère ; active ensuite le guidage depuis le monde. Les distances sont à vol d’oiseau ; le trajet suit les chemins à pied.</small></div>
+  </svg><HubMapLegend model={model} networks={networks} onNetworks={()=>setNetworks(value=>!value)}/><small>Un doigt pour déplacer · pince à deux doigts ou utilise le curseur Zoom. Glisse en dehors de la carte pour défiler le menu. Choisir un lieu place un repère ; active ensuite le guidage depuis le monde. Les distances sont à vol d’oiseau ; le trajet suit les chemins à pied.</small></div>
   <aside className="hub-map-destinations"><label htmlFor={id+'search'}>Trouver un lieu</label><input id={id+'search'} type="search" placeholder="Archives, lac, souks, train…" value={query} onChange={e=>setQuery(e.target.value)}/><div className="hub-map-filters" aria-label="Types de destinations">{[['all','Tous'],['places','Lieux'],['services','Services'],['travel','Transports'],['story','Missions'],['life','Habitants']].map(([key,label])=><Button variant="ghost" key={key} aria-pressed={category===key} onClick={()=>setCategory(key)}>{label}</Button>)}</div><p className="hub-map-count" role="status">{destinations.length} {destinations.length===1?'repère':'repères'}{waypoint?' · Repère : '+markerName(waypoint):''}</p>{waypoint&&<Button variant="ghost" aria-label={'Localiser sur la carte : '+markerName(waypoint)} onClick={()=>{setCenter({x:waypoint.x,z:waypoint.z});setZoom(z=>Math.max(z,2));}}>Localiser mon repère</Button>}<div className="hub-map-destination-list">{sorted.map(item=><Button variant="ghost" key={item.id} data-destination-id={item.id} aria-label={'Placer un repère : '+markerName(item)+' · '+hubDistanceLabel(item,position)+' à vol d’oiseau'} onClick={()=>onSelect(item)}><i style={{'--map-accent':item.color||mapArt.destinationAccent}}>{item.kind==='landmark'?'◆':icon(item)}</i><span><strong>{markerName(item)}</strong><small>{item.activity||districtShort[item.district]|| (item.type==='portal'?'PORTE DES HÉRITAGES':'CITÉ 3B')}</small></span><em title="Distance à vol d’oiseau">{hubDistanceLabel(item,position)}</em></Button>)}{!sorted.length&&<div><p>Aucun repère ne correspond à cette recherche et à ce filtre.</p><Button variant="ghost" onClick={()=>{setQuery('');setCategory('all');}}>Afficher tous les repères</Button></div>}</div></aside></div>
  </section>;
 }

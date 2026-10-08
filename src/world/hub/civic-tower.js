@@ -16,6 +16,8 @@ export function addCivicTower({mesh,geo,box,materials,buildings,collisions,camer
  if(!hall)return null;
  const x=hall.buildingX,z=hall.buildingZ,w=hall.width-.8,d=hall.depth-.8;
  const levels=CIVIC_TOWER_FINAL_LEVELS;
+ // A visible, accessible entrance must lead to the real lift interaction.
+ const entranceZ=z+d/2+.36;
  const decks=[],upperFurniture=[],floorDetails=[],{dark,gold,stone,glass,blue}=materials;
  const add=(...args)=>{const object=mesh(...args);floorDetails.push(object);return object;};
 
@@ -124,6 +126,15 @@ export function addCivicTower({mesh,geo,box,materials,buildings,collisions,camer
   const ring=add(geo(new THREE.TorusGeometry(2.6,.1,6,48)),gold,x,68,z);ring.rotation.set(Math.PI/2,tilt,tilt*.5);
  }
 
+ // Double-height vestibule framed by glowing pillars; its central passage stays free of obstructions.
+ for(const side of [-1,1]){
+  add(box,stone,x+side*2.7,2.55,entranceZ,.65,5.1,.75);
+  add(box,gold,x+side*2.18,2.45,entranceZ+.42,.16,4.6,.12).castShadow=false;
+  add(box,blue,x+side*1.55,.19,entranceZ+.54,.17,.12,1.75).castShadow=false;
+ }
+ add(box,gold,x,5.05,entranceZ,6.0,.22,.7);
+ add(box,blue,x,4.75,entranceZ+.43,4.4,.11,.12).castShadow=false;
+ sign('ENTRÉE · ASCENSEUR',x,5.7,entranceZ+.55,7.8);
  const bound={id:'tower-upper-floor-boundary',enabled:false,surfaceDistance:p=>{
   const a=Math.abs(p.x/HUB_SCALE-x)-(w/2-.2),b=Math.abs(p.z/HUB_SCALE-z)-(d/2-.2);
   return-(Math.hypot(Math.max(a,0),Math.max(b,0))+Math.min(0,Math.max(a,b)))*HUB_SCALE;
@@ -137,7 +148,7 @@ export function addCivicTower({mesh,geo,box,materials,buildings,collisions,camer
   id:'hub:tower-exhibit:'+index,type:'hubLifeObject',kind:'examine',floorIndex:index,buildingId:hall.buildingId,
   name:'Examiner · '+floor.name,detail:exhibitDescriptions[index],x:(x+1.05)*HUB_SCALE,z:(z-d/2+1.1)*HUB_SCALE,heading:90,range:3.2,
  }));
- const liftItems=[{id:'hub:tower-lift',type:'hubLift',buildingId:hall.buildingId,name:'Ascenseur panoramique de la Tour',x:(x-w/2+1.9)*HUB_SCALE,z:(z-d/2+1.3)*HUB_SCALE,range:3.5,destinations}];
+ const liftItems=[{id:'hub:tower-lift',type:'hubLift',buildingId:hall.buildingId,name:'Entrée · Ascenseur panoramique de la Tour',x:x*HUB_SCALE,z:(z+d/2+2.3)*HUB_SCALE,range:5.5,destinations}];
  return{
   decks,floors,liftItems,ground,details:floorDetails,
   lifeItems(){return selected===null?[]:[exhibits[selected]];},

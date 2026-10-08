@@ -87,10 +87,12 @@ test('migration integrity manifest tracks all current applied sources and preser
  assert.deepEqual([...versions].sort(),versions);
 });
 
-test('home portal presents the Nexus artwork and keeps native launch feature-gated',()=>{
+test('home portal presents the redesigned 3D gateway and keeps native launch feature-gated',()=>{
  const portal=read('src/components/WorldPortalCard.jsx');
  const env=read('.env.example');
- assert.match(portal,/hub-cite-origine\.webp/);
+ assert.match(portal,/home-world-atmosphere/);
+ assert.match(portal,/BrokenCircle3D variant="menu"/);
+ assert.doesNotMatch(portal,/hub-cite-origine\.webp/);
  assert.match(portal,/UNREAL_LAUNCH_ENABLED/);
  assert.match(env,/VITE_UNREAL_LAUNCH_ENABLED=false/);
 });

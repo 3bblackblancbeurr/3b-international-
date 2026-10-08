@@ -53,7 +53,7 @@ function injectCaptureHooks(code){
  const marker='return{\n  refreshHubSchedule:';assert.ok(code.includes(marker),'Scene capture fixture matches the real API');
  return code.replace(marker,`let qaCaptureFrozen=false;return{
   qaHoldRender(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}return elapsed;},
-  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
+  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,paused,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
   qaFreezeCapture(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}post.render(0);return canvas.toDataURL('image/png');},
   qaResumeCapture(){if(!qaCaptureFrozen)return;qaCaptureFrozen=false;last=performance.now();raf=requestAnimationFrame(tick);},
   refreshHubSchedule:`);
@@ -109,11 +109,36 @@ try{
    await dialog.getByText('Graphismes et audio',{exact:true}).click();await dialog.getByLabel('Qualité graphique',{exact:true}).selectOption('auto');await dialog.getByLabel('Qualité graphique',{exact:true}).selectOption('fluid');
    const bounds=await dialog.evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,viewport:innerWidth}));assert.ok(bounds.scroll<=bounds.width+2,'Settings have no horizontal overflow');assert.ok(bounds.left>=0&&bounds.right<=bounds.viewport,'Dialog remains in viewport');
    await capture(page,out+'/'+device.id+'-settings.png');
+   if(device.hasTouch){
+    // Exercise the real phone HUD editor in the rendered WorldPage.
+    // The 3D scene must be paused while editing; actions may only reposition.
+    await dialog.getByRole('button',{name:'Personnaliser la position des touches'}).click();
+    const editor=page.locator('.world-play-controls.editing');await editor.waitFor({state:'visible',timeout:30000});
+    assert.equal(await dialog.count(),0,'the settings dialog closes while editing touch positions');
+    assert.equal(await page.evaluate(()=>qa.scene.qaGuidanceState().paused),true,'the 3D simulation pauses while editing touch controls');
+    const action=page.getByRole('button',{name:'Sauter',exact:true});
+    const old=await action.boundingBox();assert.ok(old?.width>30&&old?.height>30);
+    const start={x:old.x+old.width/2,y:old.y+old.height/2};
+    await page.mouse.move(start.x,start.y);await page.mouse.down();
+    await page.mouse.move(start.x-66,start.y-33,{steps:6});await page.mouse.up();
+    const moved=await action.boundingBox();assert.ok(moved.x<old.x-35&&moved.y<old.y-16,'jump control moves freely on mobile');
+    await editor.getByRole('button',{name:'Enregistrer et jouer'}).click();
+    await editor.waitFor({state:'hidden'});
+    await page.waitForFunction(()=>qa.scene.qaGuidanceState().paused===false,null,{timeout:25000});
+    const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('3b-world-touch-layout-v1')));
+    assert.ok(saved.jump.x<90&&saved.jump.y<65,'touch customization is saved on this device');
+    await page.getByRole('button',{name:'Pause et options',exact:true}).click();await dialog.waitFor();
+   }
    await dialog.getByRole('button',{name:'Fermer',exact:true}).click();await page.waitForTimeout(2500);await capture(page,out+'/'+device.id+'-hub.png');
    await page.getByRole('button',{name:'Ouvrir la carte',exact:true}).click();const atlas=page.getByRole('dialog',{name:'L’Atlas des huit portes',exact:true});await atlas.waitFor();assert.doesNotMatch(await atlas.innerText(),/talk:|weather:|mael_rivière|Terrasses de l’Onis/);await capture(page,out+'/'+device.id+'-atlas.png');await atlas.getByRole('button',{name:'Fermer',exact:true}).click();
    await page.getByRole('button',{name:'Journal et objectif',exact:true}).click();const journal=page.getByRole('dialog',{name:'Journal d’exploration',exact:true});await journal.waitFor();assert.doesNotMatch(await journal.innerText(),/talk:|weather:|mael_rivière/);await journal.getByRole('button',{name:'Fermer',exact:true}).click();
    console.log(device.id+': interface, guidance and captures passed; checking reload');
    await page.reload({waitUntil:'domcontentloaded'});await page.locator('.hub-objective-card').waitFor({timeout:120000});await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});assert.equal(await page.getByRole('dialog',{name:'Ton personnage',exact:true}).count(),0);assert.equal(await page.locator('.hub-orientation-guide').count(),0);
+   if(device.hasTouch){
+    const jumpSaved=await page.evaluate(()=>JSON.parse(localStorage.getItem('3b-world-touch-layout-v1')));
+    const rendered=await page.locator('.world-control-slot:has(.action-jump)').evaluate(el=>parseFloat(el.style.left));
+    assert.ok(Math.abs(rendered-jumpSaved.jump.x)<.1,'touch controls retain their saved position after a reload');
+   }
    if(!device.hasTouch){await page.setViewportSize({width:550,height:735});await page.locator('.world-rotate-device').waitFor({state:'hidden'});await page.locator('.hub-objective-card').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Compact desktop stays playable without horizontal page overflow');await capture(page,out+'/desktop-compact.png');}
    else{await page.setViewportSize({width:390,height:844});await page.locator('.world-rotate-device').waitFor({state:'visible'});await page.setViewportSize(device.viewport);await page.locator('.world-rotate-device').waitFor({state:'hidden'});}
    assert.deepEqual(errors,[],'No runtime exception');report.push({device:device.id,ok:true,checks:['real-scene','guidance-cancel-with-render-held','guidance-scene-state-cleared','settings','key-conflict','graphics-switch','atlas-labels','journal-labels','reload','orientation-persistence','no-horizontal-overflow']});

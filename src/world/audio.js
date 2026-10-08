@@ -17,7 +17,7 @@ export function createWorldAudio(){
  let listenerPose={x:0,z:0,heading:0},interiorInfo=null,closed=false,unlockTarget=null;
  const ambientLoops=new Map();
  const delayedSounds=new Set(),transientSounds=new Set(),scoreSounds=new Set();let scoreNextTime=0,scoreStep=0,currentWeapon=null;
- const mix={master:.78,music:.34,ambience:.55,sfx:.78,voice:.9};
+ const mix={master:.82,music:.52,ambience:.58,sfx:.60,voice:.9};
 
  function gainNode(value){const g=ctx.createGain();g.gain.value=value;return g;}
  function applyMix(){
@@ -239,7 +239,7 @@ export function createWorldAudio(){
   environment,
   spatialEvent,
   setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);if(mix.music<=0)resetScore();applyMix();},
-  step(id,position=listenerPose){stepFlip=!stepFlip;const surface=id==='hub'?hubFootstepSurface(position,interiorInfo):{duration:.06,volume:inside?.06:.035,frequency:inside?520:1450,pitch:inside?100:id==='estonie'?175:132};noise(surface.duration,surface.volume,surface.frequency);tone(surface.pitch*(stepFlip?1:1.04),.055,.025,'triangle');},
+  step(id,position=listenerPose){stepFlip=!stepFlip;const surface=id==='hub'?hubFootstepSurface(position,interiorInfo):{duration:.06,volume:inside?.06:.035,frequency:inside?520:1450,pitch:inside?100:id==='estonie'?175:132};const variation=stepFlip?.88:1.08;noise(surface.duration*.82,surface.volume*.56,surface.frequency*variation);if(inside&&surface.id!=='woven-runner')baseTone(surface.pitch*.62,.046,.006,'sine',sfxBus);},
   event,gameplay,interaction,speak,transport,weaponImpact,weapon(value){currentWeapon=typeof value==='string'?value:null;},
  cinematic(kind='micro'){
   if(!playable())return;

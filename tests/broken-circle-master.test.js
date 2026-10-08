@@ -83,7 +83,7 @@ test('fluid mode limits particles and local lights without removing the monument
   const c=f.circle,particles=c.groups.fracture.children.find(m=>m.isPoints),lights=c.groups.energy.children.filter(m=>m.isPointLight);
   c.setQuality('fluid');c.tick(0,10);assert.equal(particles.geometry.drawRange.count,12);
   assert.deepEqual(lights.map(l=>l.visible),[true,false]);assert.equal(c.groups.fixed.visible,true);
-  c.setQuality('detail');c.tick(.1,10);assert.equal(particles.geometry.drawRange.count,32);assert.ok(lights.every(l=>l.visible));
+  c.setQuality('detail');c.tick(.1,10);assert.equal(particles.geometry.drawRange.count,128,'32 fracture motes plus 96 golden resonance sparks share one GPU batch');assert.ok(lights.every(l=>l.visible));
   c.tick(.2,250);assert.ok(lights.every(l=>!l.visible));
  }finally{f.dispose();}
 });

@@ -205,16 +205,22 @@ export function decorateHubBuilding(item,{mesh,material,groundY,canonical=true})
 }
 
 export function createPremiumTrafficVehicle(item,{root,geometry,material,groundY}){
- const group=new THREE.Group();group.name='3B-Traffic-Vehicle';root.add(group);
- const bodyMat=material('#162631',{metalness:.58,roughness:.26});
- const glass=material('#19516d',{emissive:'#00a8ff',emissiveIntensity:.16,metalness:.38,roughness:.16});
- const gold=material('#d6b46a',{emissive:'#6f531d',emissiveIntensity:.16,metalness:.82,roughness:.24});
- const tire=material('#090b0d',{roughness:.92,metalness:.02});
- child(group,geometry.box,bodyMat,{y:.58,sx:1.82,sy:.48,sz:3.65});
- child(group,geometry.box,glass,{y:1.10,z:-.15,sx:1.38,sy:.46,sz:1.82});
- child(group,geometry.box,gold,{y:.62,z:1.86,sx:1.22,sy:.09,sz:.05,cast:false});
- child(group,geometry.box,glass,{y:.63,z:-1.88,sx:1.15,sy:.07,sz:.05,cast:false});
- for(const x of [-1.52,1.52])for(const z of [-1.15,1.15])child(group,geometry.cylinder,tire,{x,y:.28,z,sx:.28,sy:.20,sz:.28,rz:Math.PI/2});
+ // City transport is a wheel-free levitating 3B capsule, not a real-world car.
+ const group=new THREE.Group();group.name='3B-Navette-Aerienne';root.add(group);
+ const shell=material('#152b37',{metalness:.64,roughness:.29});
+ const glass=material('#27617b',{emissive:'#16a9d4',emissiveIntensity:.22,metalness:.24,roughness:.18});
+ const gold=material('#d6b46a',{emissive:'#b58a4f',emissiveIntensity:.38,metalness:.78,roughness:.25});
+ const halo=material('#47c9ed',{emissive:'#47c9ed',emissiveIntensity:.78,roughness:.24});
+ geometry.hubTrafficPod??=new RoundedBoxGeometry(1,1,1,2,.16);
+ const pod=geometry.hubTrafficPod;
+ child(group,pod,shell,{y:.94,sx:2.35,sy:.58,sz:3.92}).name='Coque flottante';
+ child(group,pod,glass,{y:1.29,z:-.18,sx:1.82,sy:.51,sz:2.55}).name='Verrière panoramique';
+ child(group,geometry.box,gold,{y:.61,z:1.85,sx:1.45,sy:.06,sz:.07,cast:false});
+ for(const side of [-1,1]){
+  child(group,geometry.box,gold,{x:side*1.10,y:.88,sx:.055,sy:.045,sz:3.32,cast:false});
+  child(group,geometry.box,halo,{x:side*.69,y:.53,sx:.23,sy:.075,sz:2.62,cast:false}).name='Champ de lévitation';
+ }
+ child(group,pod,shell,{y:.45,sx:1.62,sy:.13,sz:2.65});
  group.position.set(item.x,groundY(item.x,item.z),item.z);return group;
 }
 
@@ -347,7 +353,10 @@ export function createPremiumTransitVehicle(spec,start,{root,geometry,material,g
   child(group,transitGeometry(geometry,'hubTransitCabinTrim',parts),accent,{cast:false}).name='Cabine · banquettes et encadrements';
   for(const z of [-.38,.38])child(group,geometry.cylinder,dark,{y:1.08,z,sx:.16,sy:.18,sz:.16,rz:Math.PI/2}).name='Cabine · poulie sur câble';
  }
- group.userData.transitCraft={version:1,transport:spec.transport,drawCalls:group.children.length,sharedGeometry:true};
+ // Art scale only: route positions, dock collisions and boarding gameplay remain unchanged.
+ if(spec.transport==='boat')group.scale.setScalar(1.55);
+ else if(spec.transport==='telepheric')group.scale.setScalar(1.35);
+ group.userData.transitCraft={version:2,transport:spec.transport,drawCalls:group.children.length,sharedGeometry:true};
  group.position.set(start.x,groundY(start.x,start.z)+(spec.height||0),start.z);return group;
 }
 

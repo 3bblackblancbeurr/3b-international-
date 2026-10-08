@@ -16,7 +16,7 @@ export function CinematicOverlay({presentation,onDone,onSkip}){
   media.addEventListener('change',change);return()=>media.removeEventListener('change',change);
  },[]);
  useEffect(()=>{
-  if(!presentation||reduced||finished.current)return;
+  if(!presentation||finished.current)return;
   let raf,last=performance.now(),bucket=0;
   const tick=now=>{const delta=Math.min(100,Math.max(0,now-last));last=now;if(!document.hidden)bucket+=delta;if(bucket>=50){const d=bucket;bucket=0;setElapsed(v=>v+d);}if(!finished.current)raf=requestAnimationFrame(tick);};
   raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);
@@ -49,7 +49,6 @@ export function CinematicOverlay({presentation,onDone,onSkip}){
   <div className="cinema-world-progress" aria-hidden="true"><i style={{transform:`scaleX(${progress})`}}/></div>
   <div className="cinema-world-actions">
    <button type="button" onClick={()=>complete(true)}>Passer</button>
-   {reduced&&<button type="button" className="cinema-world-primary" onClick={()=>complete(false)}>{presentation.nextLabel||'Continuer'}</button>}
   </div>
  </section>;
 }

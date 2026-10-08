@@ -42,8 +42,7 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  const loose=[];
  pieces.forEach((p,i)=>{const m=add(fracture,new THREE.BoxGeometry(p[3],p[4],p[5]),i%2?stone:gold,[p[0],p[1],p[2]],[0,0,p[6]]);loose.push({mesh:m,base:m.position.clone(),angle:p[6],phase:i*1.37});});
  // Energy rails and efficient local lights illuminate nearby architecture.
- add(energy,new THREE.TorusGeometry(9.55,.055,5,96),blue,[0,0,.45]);
- add(energy,new THREE.TorusGeometry(11.15,.04,5,96),blue,[0,0,-.45]);
+ // Inner light guides now share the animated instanced-ring draw instead of adding static meshes.
  const cyan=new THREE.PointLight('#55dfff',1.65,52,2),amber=new THREE.PointLight('#d6b46a',.48,38,2);
  cyan.position.set(0,0,3);amber.position.set(-5,-6,2);cyan.castShadow=amber.castShadow=false;energy.add(cyan,amber);
 
@@ -60,10 +59,29 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  };
  compact(fixed,new Set(heritage.map(h=>h.mesh)));compact(rotorOuter);compact(rotorInner);compact(energy);
 
- const particleCount=32,positions=new Float32Array(particleCount*3);
- for(let i=0;i<particleCount;i++){const t=i/(particleCount-1);positions[i*3]=11.7+(i%5)*.38;positions[i*3+1]=.4+t*5.3;positions[i*3+2]=((i%7)-3)*.16;}
- const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(positions,3));owned.push(pg);
- const pm=new THREE.PointsMaterial({color:'#b9f6ff',size:.11,transparent:true,opacity:.62,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(pm);
+ // Three differently coloured moving resonance bands share one GPU draw call.
+ const waveGeometry=new THREE.TorusGeometry(13,.052,5,96);
+ const waveMaterial=new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.10,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});
+ owned.push(waveGeometry,waveMaterial);
+ const waves=new THREE.InstancedMesh(waveGeometry,waveMaterial,5);
+ waves.name='Cercle Brisé · 3 résonances instanciées';waves.castShadow=waves.receiveShadow=false;waves.frustumCulled=false;energy.add(waves);
+ const waveMatrix=new THREE.Object3D();
+ const positionWave=(index,time=0,motion=0)=>{
+  const phase=Math.sin(time*(1.05+index*.13)-index*1.9);
+  const inner=index>=3;const radius=inner?(index===3?9.55:11.15):(13+index*.67);
+  waveMatrix.position.set(0,0,inner?(index===3?.45:-.45):(.47-index*.09));
+  waveMatrix.scale.setScalar(radius/13*(1+(inner?.005:.018)*phase*motion));
+  waveMatrix.updateMatrix();waves.setMatrixAt(index,waveMatrix.matrix);
+ };
+ for(let index=0;index<5;index++){waves.setColorAt(index,new THREE.Color(index===1?'#d6bc82':'#54d9f5'));positionWave(index);}
+ waves.instanceMatrix.needsUpdate=true;if(waves.instanceColor)waves.instanceColor.needsUpdate=true;
+ // Champagne/cyan sparks share one existing particle draw; no extra point cloud mesh.
+ const particleCount=32,starCount=96,totalParticles=particleCount+starCount;
+ const positions=new Float32Array(totalParticles*3),particleColors=new Float32Array(totalParticles*3);
+ for(let i=0;i<particleCount;i++){const t=i/(particleCount-1);positions[i*3]=11.7+(i%5)*.38;positions[i*3+1]=.4+t*5.3;positions[i*3+2]=((i%7)-3)*.16;particleColors.set([.55,.93,1],i*3);}
+ for(let i=0;i<starCount;i++){const j=i+particleCount,a=i*2.399963229728653,radial=12.7+(i%9)*.19;positions[j*3]=Math.cos(a)*radial;positions[j*3+1]=Math.sin(a)*radial;positions[j*3+2]=.8+((i*7)%6)*.08;particleColors.set([1,.79,.52],j*3);}
+ const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(positions,3));pg.setAttribute('color',new THREE.BufferAttribute(particleColors,3));owned.push(pg);
+ const pm=new THREE.PointsMaterial({vertexColors:true,size:.14,transparent:true,opacity:.58,depthWrite:false,blending:THREE.AdditiveBlending});owned.push(pm);
  const particles=new THREE.Points(pg,pm);fracture.add(particles);
 
  const motionQuery=typeof window!=='undefined'?window.matchMedia?.('(prefers-reduced-motion: reduce)'):null;
@@ -76,7 +94,8 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
  function setDaylight(value){daylight=clamp(Number(value)||0);}
  function setQuality(mode){
   quality=mode;
-  pg.setDrawRange(0,mode==='fluid'||mode==='low'?12:particleCount);
+  pg.setDrawRange(0,mode==='fluid'||mode==='low'?12:totalParticles);
+  waves.count=mode==='fluid'||mode==='low'?2:5;
  }
 
  function tick(time,playerDistance=Infinity){
@@ -98,6 +117,8 @@ export function createBrokenCircleMaster({root,owned,materials,countries=[],redu
   cyan.intensity=(.82+1.02*(1-daylight)+near*1.08)*pulse;
   amber.intensity=.24+.38*(1-daylight)+near*.24;
   pm.opacity=.28+.28*pulse+near*.16;
+  for(let index=0;index<waves.count;index++)positionWave(index,animationTime,motion);
+  waves.instanceMatrix.needsUpdate=true;waveMaterial.opacity=.055+.045*(.5+.5*Math.sin(animationTime*.82))+near*.05;
   loose.forEach(f=>{const amp=(.06+.035*near)*motion;f.mesh.position.y=f.base.y+Math.sin(animationTime*.72+f.phase)*amp;f.mesh.position.x=f.base.x+Math.cos(animationTime*.48+f.phase)*amp*.45;f.mesh.rotation.z=f.angle+Math.sin(animationTime*.48+f.phase)*.16*motion;});
   particles.rotation.z=Math.sin(animationTime*.16)*.035*motion;particles.position.y=Math.sin(animationTime*.65)*.08*motion;
   // The architectural shell is anchored; only the internal machinery moves.

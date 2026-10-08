@@ -47,6 +47,10 @@ jobs:
   realm-gameplay:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [gestures, journey, routes, audio]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -57,30 +61,46 @@ jobs:
       - run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx --no-install playwright install --with-deps chromium
       - name: Check audio, gestures, movement and dismissible HUD
+        if: matrix.suite == 'gestures'
         run: node scripts/verify-world-gameplay-browser.mjs
         env:
-          GAMEPLAY_OUT: artifacts/realm-gameplay/gameplay
+          GAMEPLAY_OUT: artifacts/realm-gameplay/gestures
       - name: Check realm travel, choices, journal and atlas on desktop and touch
+        if: matrix.suite == 'journey'
         run: node scripts/verify-realm-journey-browser.mjs
         env:
-          REALM_UI_OUT: artifacts/realm-gameplay/realm-journey
+          REALM_UI_OUT: artifacts/realm-gameplay/journey
       - name: Check background route parity and cancellation in a native worker
+        if: matrix.suite == 'routes'
         run: node scripts/verify-route-planner-browser.mjs
         env:
           ROUTE_PLANNER_OUT: artifacts/realm-gameplay/routes
       - name: Check real WebAudio touch unlock, silence and resume
+        if: matrix.suite == 'audio'
         run: node scripts/verify-world-audio-browser.mjs
         env:
           AUDIO_OUT: artifacts/realm-gameplay/audio
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
-          name: playable-realm-gameplay
-          path: artifacts/realm-gameplay
+          name: playable-realm-gameplay-${{ matrix.suite }}
+          path: artifacts/realm-gameplay/${{ matrix.suite }}
           if-no-files-found: warn
   eight-realms:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: western
+            regions: france,espagne
+          - group: mediterranean
+            regions: italie,tunisie
+          - group: maghreb
+            regions: algerie,maroc
+          - group: north-east
+            regions: turquie,estonie
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -90,15 +110,16 @@ jobs:
       - run: npm ci
       - run: npm install --no-save --package-lock=false playwright@1.62.1
       - run: npx --no-install playwright install --with-deps chromium
-      - name: Traverse outer provinces and villages of all eight realms
+      - name: Traverse outer provinces and villages of both realms, including guardian courts
         run: node scripts/verify-eight-realms-browser.mjs
         env:
-          EIGHT_REALMS_OUT: artifacts/eight-realms
+          EIGHT_REALMS_REGIONS: ${{ matrix.regions }}
+          EIGHT_REALMS_OUT: artifacts/eight-realms/${{ matrix.group }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
-          name: eight-realms-terrain
-          path: artifacts/eight-realms
+          name: eight-realms-terrain-${{ matrix.group }}
+          path: artifacts/eight-realms/${{ matrix.group }}
           if-no-files-found: warn
   render:
     runs-on: ubuntu-latest
