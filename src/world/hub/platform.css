@@ -2,3 +2,46 @@
 .hub-district-panel>p{max-width:780px;line-height:1.8;color:#c4d3e0}.hub-civic-status{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.hub-civic-status span{padding:9px 12px;background:#0c2635;border:1px solid #d6b46a55;border-radius:7px;font-size:12px;color:#cbe5ee}.hub-district-panel h4{color:#d6b46a;letter-spacing:.04em;margin:25px 0 12px}.hub-locations article{padding:16px;background:#101e2d;border:1px solid #586d7355;border-radius:9px}.hub-locations article p{font-size:13px;line-height:1.6;color:#c2d0db}.hub-locations article button{margin:3px;padding:9px 12px;border:1px solid #bc9f6766;border-radius:7px}.hub-locations article small{display:block;margin:8px 0;color:#83c8de}
 .hub-mechanism{max-width:600px;margin:auto}.hub-mechanism>p{line-height:1.7;color:#bdd0df}.hub-relay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:330px;margin:24px auto}.hub-relay-grid button{display:grid;gap:5px;min-height:70px;border:2px solid #405767;border-radius:12px;background:#15202b;color:#79828a}.hub-relay-grid button span{font-size:26px}.hub-relay-grid button[aria-pressed=true]{border-color:#64cbea;background:#133a4a;color:#9fefff;box-shadow:inset 0 0 18px #47ccf233}.hub-relay-grid button:focus-visible{outline:3px solid #d6b46a;outline-offset:3px}.hub-mechanism .world-primary:disabled{opacity:.45;cursor:not-allowed}@media(max-height:550px) and (orientation:landscape){.hub-relay-grid{gap:7px;max-width:240px;margin:14px auto}.hub-relay-grid button{min-height:48px}.hub-relay-grid button span{font-size:20px}}
 .hub-life-reading{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(520px,calc(100% - 36px));padding:15px 18px;color:#f4e5c5;background:rgba(8,21,32,.94);border:1px solid #b99e68;border-radius:14px;box-shadow:0 8px 30px #0006;z-index:5}.hub-life-reading strong{font-size:1.05rem}.hub-life-reading p{margin:.5rem 0;line-height:1.5}.hub-life-reading span{display:block;font-size:.85rem;color:#c4d4df}.hub-life-reading button{margin-top:10px;min-height:44px;padding:8px 14px;border:1px solid #b99e68;border-radius:8px;background:#183447;color:#f4e5c5}.hub-lift-panel small{display:block;margin-top:6px}.hub-lift-panel .world-actions button{min-height:68px}.world-quality input[type=range]{min-height:44px;accent-color:#c9aa70;width:100%}
+
+
+/* Monde 3B AAA mobile pass: face must fit even in 844×390 landscape, and
+   scrolling must work from preview and equipment surfaces. */
+.world-dialog-avatar{overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.world-dialog-avatar .hub-creator{min-width:0}
+.world-dialog-avatar .hub-creator .avatar-workbench,
+.world-dialog-avatar .hub-creator .avatar-fields,
+.world-dialog-avatar .hub-creator .avatar-looks,
+.world-dialog-avatar .hub-creator .hub-paths{touch-action:pan-y;min-width:0}
+.world-dialog-avatar .hub-creator .arena-stage{touch-action:pan-y!important}
+.world-dialog-avatar .weapon-showroom-stage,
+.world-dialog-avatar .weapon-showroom-stage canvas{touch-action:pan-y!important}
+.hub-creator .avatar-preview .avatar-view-switch{display:flex;justify-content:center;gap:8px;padding:0 10px 8px}
+.hub-creator .avatar-view-switch button{padding:6px 12px;min-height:36px;border:1px solid #d8bd7959;border-radius:999px;background:#0b1d2ac9;color:#f3e6c7;font-size:11px}
+.hub-creator .avatar-view-switch button[aria-pressed="true"]{background:#d6bd80;color:#101b25;border-color:#f2dea8}
+.hub-creator .avatar-swatches button{touch-action:manipulation}
+.world-dialog:has(.hub-opening){overflow:auto;scroll-padding:0}
+.world-dialog .hub-opening>footer{z-index:10;bottom:0;padding-bottom:max(9px,env(safe-area-inset-bottom))}
+.world-dialog .hub-opening>footer>button{min-height:44px;min-width:96px;background:#dfc88d;color:#091421;border-color:#f5dfaa;font-weight:800}
+@media(max-height:570px) and (orientation:landscape){
+ .world-dialog-avatar{max-height:calc(100svh - 6px)!important;overflow-y:auto}
+ .world-dialog-avatar .hub-creator{grid-template-columns:minmax(200px,36%) minmax(0,1fr);gap:12px;padding:8px}
+ .world-dialog-avatar .hub-creator .avatar-preview{position:sticky;top:0;max-height:calc(100svh - 74px)}
+ .world-dialog-avatar .hub-creator-brand{padding:6px 12px 0}
+ .world-dialog-avatar .hub-creator-brand h3{font-size:18px;margin:2px 0}
+ .world-dialog-avatar .hub-creator-brand span{font-size:10px}
+ .world-dialog-avatar .hub-creator .arena-stage{height:clamp(145px,43svh,190px)!important}
+ .world-dialog-avatar .hub-creator .avatar-savebar{bottom:0;z-index:3}
+ .world-dialog-avatar .hub-creator-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .world-dialog-avatar .hub-creator-tabs button{min-height:35px;padding:5px;font-size:10px}
+ .world-dialog-avatar .hub-creator .avatar-fields{padding:5px 0}
+ .world-dialog-avatar .hub-creator-summary{display:none}
+ .world-dialog .hub-opening{height:calc(100svh - 89px);min-height:190px;max-height:calc(100svh - 89px)}
+ .world-dialog .hub-opening-caption{bottom:48px;padding:12px 15px 5px}
+ .world-dialog .hub-opening-caption h2{font-size:17px;margin:3px 0}
+ .world-dialog .hub-opening-caption p{font-size:10px;margin:3px 0;line-height:1.4}
+ .world-dialog .hub-opening>header{padding:6px 10px;font-size:8px}
+}
+@media(max-width:520px) and (orientation:portrait){
+ .world-dialog-avatar .hub-creator .avatar-preview{position:relative}
+ .world-dialog-avatar .hub-creator .arena-stage{height:min(47svh,320px)}
+}
