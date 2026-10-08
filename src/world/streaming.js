@@ -19,6 +19,16 @@ export function lodForDistance(distance,profile=STREAMING_PROFILES.auto){
 }
 export function shouldRenderAtDistance(distance,profile){return lodForDistance(distance,profile)<3;}
 
+/** The territory radius controls exploration, never allocation. Mobile keeps
+ * at most 49 ground tiles and a bounded shared natural/architecture pool. */
+export function realmStreamingProfile(mode='auto',capabilities={}){
+ const desktop=!!capabilities.desktopClass,fluid=mode==='fluid',detail=mode==='detail'&&desktop;
+ return {tileRadius:fluid?3:detail?5:desktop?4:3,maxTiles:fluid?37:detail?113:desktop?81:49,
+  near:fluid?275:360,mid:fluid?560:720,segments:fluid?[24,12,6]:[32,16,8],
+  naturalInstances:fluid?160:desktop?720:320,rockInstances:fluid?48:desktop?160:80,
+  buildingInstances:fluid?32:desktop?96:48,siteDistance:fluid?520:desktop?960:680,maxSites:fluid?2:desktop?4:2,workPerFrame:fluid?1:2};
+}
+
 
 export function lodForDistanceHysteresis(distance,profile=STREAMING_PROFILES.auto,previous=null,margin=.08){
  const base=previous==null?lodForDistance(distance,profile):Math.max(0,Math.min(3,Math.round(previous)));

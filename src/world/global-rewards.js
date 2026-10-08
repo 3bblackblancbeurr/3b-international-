@@ -28,6 +28,7 @@ export function worldGlobalRewardIntents(before,after,action){
  if(action.type==='beacon'&&action.id&&!has(before.beacons,action.id)&&has(after.beacons,action.id)){
   push('world_memory','memory:'+action.id);
  }
+ if(action.type==='campaignAction')for(const id of after.beacons||[])if(!has(before.beacons,id))push('world_memory','memory:'+id);
 
  if(action.type==='survey'&&action.id){
   const key=before.region+':'+action.id;

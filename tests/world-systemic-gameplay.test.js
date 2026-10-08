@@ -71,7 +71,8 @@ test('central mission index distinguishes all eight guardian campaigns and indep
  for(const mission of guardians){
   assert.ok(mission.phases.length>=8,mission.region);
   assert.ok(mission.gameplay.length>=4,mission.region);
-  assert.equal(mission.implementation,mission.region==='france'?'runtime':'hybrid',mission.region);
+  assert.equal(mission.implementation,'runtime',mission.region);
+  assert.ok(mission.phases.every(phase=>phase.runtimeObjectives.length>0),'every campaign phase has physical runtime objectives');
  }
  assert.equal(INDEPENDENT_MISSION_ARCHETYPES.length,16);
  assert.equal(new Set(INDEPENDENT_MISSION_ARCHETYPES.map(m=>m.id)).size,16);
@@ -415,7 +416,7 @@ test('authoritative coop runtime uses its own RPC and merges state without repla
  assert.equal(call.name,'world_party_runtime_command');
  assert.deepEqual(call.args,{p_action:'heartbeat',p_payload:{region:'france',x:4,z:5,heading:90}});
  assert.equal(validRuntimeMember({id:'u2',region:'france',x:2,z:3,heading:0,state:'downed'}),true);
- assert.equal(validRuntimeMember({id:'u2',region:'france',x:999,z:3,heading:0,state:'downed'}),false);
+ assert.equal(validRuntimeMember({id:'u2',region:'france',x:worldRadiusFor('france')+2,z:3,heading:0,state:'downed'}),false);
  const realtime=[{id:'u2',region:'france',x:9,z:10,heading:45,seq:8,received:900,signal:null}];
  const runtime=[{id:'u2',region:'france',x:2,z:3,heading:0,state:'downed',revision:4,updated_at:'2026-09-21T01:00:00Z'},{id:'u3',region:'france',x:6,z:7,heading:15,state:'active',revision:2}];
  const members=[{id:'u2',avatar:{name:'A'}},{id:'u3',avatar:{name:'B'}}];
@@ -449,8 +450,10 @@ test('co-op pose validation covers the real metropolis radius instead of the old
  assert.ok(hubRadius>300,'Hub must be materially larger than country maps for this regression test');
  assert.equal(validPose({seq:1,region:'hub',x:300,z:0,heading:90}),true);
  assert.equal(validPose({seq:2,region:'hub',x:hubRadius+2,z:0,heading:0}),false);
- assert.equal(validPose({seq:3,region:'france',x:WORLD_RADIUS+2,z:0,heading:0}),false);
- assert.equal(validPose({seq:4,region:'france',x:WORLD_RADIUS-2,z:0,heading:0}),true);
+ const realmRadius=worldRadiusFor('france');assert.ok(realmRadius>hubRadius);
+ assert.equal(validPose({seq:3,region:'france',x:realmRadius+2,z:0,heading:0}),false);
+ assert.equal(validPose({seq:4,region:'france',x:realmRadius-2,z:0,heading:0}),true);
+ assert.equal(validPose({seq:5,region:'france',x:realmRadius*.8,z:realmRadius*.8,heading:0}),false,'diagonal points beyond the radial edge stay invalid');
 });
 
 test('runtime surfaces use contextual prompts multimodal feedback and remappable controls',()=>{

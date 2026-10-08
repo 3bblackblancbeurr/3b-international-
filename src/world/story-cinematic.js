@@ -4,6 +4,7 @@ import {GUARDIAN_VALUES} from './guardian-values.js';
 import {cinematicSpec} from './cinematic-director.js';
 import {STORY_CANON,GUARDIAN_STORIES} from './story-canon.js';
 import {campaignMetaFor} from './country-campaigns.js';
+import {guardianMasterFor} from './realm-master-spec.js';
 
 const shortGuardian=(region,cardId)=>{
  const rule=GUARDIAN_VALUES[region],card=cardById[cardId||rule?.card];
@@ -29,7 +30,7 @@ export function storyCinematicPresentation(event){
    return {...base,kicker:'RECONSTRUCTION · ÉTAPE '+stage,title:name+' reprend vie',detail:stage===3?(chapter?.ending||'Le pays rejoint pleinement la Cité des Huit Héritages.'):'Tes actions modifient maintenant réellement le quartier.'};
   }
   case 'guardian-value-complete':return {...base,card:guardian.rule?.card||null,audioState:'guardian',voiceCharacter:guardian.rule?.card||'narrator',kicker:(guardian.rule?.value||'VALEUR').toUpperCase(),title:(guardian.rule?.value||'La valeur')+' est reconnue',detail:guardianStory?`${guardian.name} peut désormais se présenter. ${guardianStory.flaw} ${guardianStory.conflict}`:`${guardian.name} peut désormais se présenter. Tu n’affrontes pas seulement sa force : tu as compris la valeur qu’il protège.`};
-  case 'guardian-intro':return {...base,card:event.context?.card||guardian.rule?.card||null,audioState:'guardian',voiceCharacter:event.context?.card||guardian.rule?.card||'narrator',kicker:(guardian.rule?.value||'GARDIEN').toUpperCase()+' · GARDIEN',title:guardian.name+' se tient devant toi',detail:`${guardian.rule?.value?guardian.rule.value+' · ':''}${chapter?.guardian||'Observe son rythme, protège ton groupe et attends l’ouverture.'}`,nextLabel:'Commencer le combat'};
+  case 'guardian-intro':return {...base,guardianTeaser:(()=>{const profile=guardianMasterFor(region);return profile?{weapon:profile.weapon,resonance:profile.resonance,totem:profile.totem}:null;})(),card:event.context?.card||guardian.rule?.card||null,audioState:'guardian',voiceCharacter:event.context?.card||guardian.rule?.card||'narrator',kicker:(guardian.rule?.value||'GARDIEN').toUpperCase()+' · GARDIEN',title:guardian.name+' se tient devant toi',detail:`${guardian.rule?.value?guardian.rule.value+' · ':''}${chapter?.guardian||'Observe son rythme, protège ton groupe et attends l’ouverture.'}`,nextLabel:'Commencer le combat'};
   case 'important-combat-result':{
    const victory=event.context?.result==='victory';
    return {...base,card:event.context?.card||guardian.rule?.card||null,audioState:'guardian',voiceCharacter:event.context?.card||guardian.rule?.card||'narrator',kicker:victory?'LIBÉRATION':'REPLI',title:victory?`${guardian.name} rejoint tes alliés`:'Le Gardien tient encore',detail:victory?`Le sceau de ${country?.name||region} répond. ${guardian.name} rejoint durablement ta collection et la dernière restauration du pays peut commencer.`:'La défaite ne détruit pas ta progression. Prépare ton groupe, relis les indices et reviens.',nextLabel:victory?'Poursuivre la reconstruction':'Revenir dans le monde'};

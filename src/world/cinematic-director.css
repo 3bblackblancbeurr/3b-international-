@@ -46,3 +46,82 @@
 .recipe-world-entry .cinema-world-kicker{letter-spacing:.34em}
 .recipe-world-entry.phase-handoff .cinema-world-copy,.recipe-world-entry.phase-handoff .cinema-world-meta,.recipe-world-entry.phase-handoff .cinema-world-signature{opacity:0;transform:translateY(-8px);transition:opacity .75s ease,transform .75s ease}
 @media(max-width:720px){.recipe-world-entry .cinema-world-copy{margin-bottom:16vh}.recipe-world-entry .cinema-world-copy h2{font-size:clamp(34px,12vw,58px)!important}.recipe-world-entry .cinema-world-rain{opacity:.26}}
+
+/* 3B CINEMA MASTER V1: diegetic shimmering waves, lens glow and a softer film vignette.
+   GPU-friendly transforms/opacity; no captured video or fake animated backdrop. */
+.world-cinematic-director::after{
+ content:'';position:absolute;inset:0;z-index:4;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 48%,transparent 18%,#02060a3a 76%,#010306ac 120%),
+  linear-gradient(90deg,#01050b65,transparent 45%,#01050b1c 100%);
+}
+.cinema-world-orb::before,.cinema-world-orb::after{
+ content:'';position:absolute;inset:7%;border-radius:50%;
+ border:1px solid color-mix(in srgb,var(--cinema-secondary) 62%,transparent);
+ box-shadow:0 0 35px color-mix(in srgb,var(--cinema-accent) 23%,transparent),
+  inset 0 0 55px color-mix(in srgb,var(--cinema-secondary) 15%,transparent);
+ transform:scale(.74);opacity:0;
+ animation:cinemaResonance 4.8s cubic-bezier(.2,.6,.18,1) infinite;
+}
+.cinema-world-orb::after{
+ inset:14%;border-color:color-mix(in srgb,var(--cinema-accent) 75%,transparent);
+ animation-delay:-2.4s;
+}
+.recipe-guardian-arrival .cinema-world-orb::before,
+.recipe-boss-arrival .cinema-world-orb::before{
+ border-width:2px;animation-duration:3.6s;
+}
+.recipe-guardian-arrival .cinema-world-gold,
+.recipe-boss-arrival .cinema-world-gold{mix-blend-mode:screen;opacity:.9}
+.recipe-world-reveal .cinema-world-orb::after,
+.recipe-guardian-homecoming .cinema-world-orb::after{animation-duration:6.5s}
+.world-cinematic-director.phase-ignite .cinema-world-haze{filter:brightness(.58) blur(2px)}
+.world-cinematic-director.phase-reveal .cinema-world-haze{filter:brightness(1.07)}
+.cinema-world-actions button:focus-visible{outline:2px solid var(--cinema-secondary);outline-offset:3px}
+@keyframes cinemaResonance{
+ 0%{transform:scale(.52) rotate(-9deg);opacity:0}
+ 19%{opacity:.67}
+ 62%{opacity:.45}
+ 100%{transform:scale(1.36) rotate(13deg);opacity:0}
+}
+@media(max-width:720px){
+ .world-cinematic-director::after{background:radial-gradient(ellipse at 52% 40%,transparent 22%,#02060aa0 110%)}
+ .cinema-world-orb::before,.cinema-world-orb::after{box-shadow:0 0 22px color-mix(in srgb,var(--cinema-accent) 22%,transparent)}
+}
+@media(prefers-reduced-motion:reduce){
+ .cinema-world-orb::before,.cinema-world-orb::after{animation:none;opacity:.2;transform:scale(.92)}
+ .world-cinematic-director.phase-ignite .cinema-world-haze{filter:none}
+}
+
+.cinema-world-guardian-identity{
+ margin-top:clamp(12px,2.2vh,24px);display:flex;flex-wrap:wrap;gap:10px 24px;
+ padding:12px 0;border-top:1px solid color-mix(in srgb,var(--cinema-secondary) 48%,transparent);
+ max-width:670px;
+}
+.cinema-world-guardian-identity span{display:flex;flex-direction:column;gap:3px}
+.cinema-world-guardian-identity small{
+ font:700 9px/1.2 system-ui,sans-serif;color:var(--cinema-secondary);
+ text-transform:uppercase;letter-spacing:.18em;
+}
+.cinema-world-guardian-identity strong{
+ font:500 clamp(12px,1.2vw,16px)/1.4 Georgia,serif;color:#f8f5ec;
+}
+
+/* The camera shows the playable cast and scenery. Titles settle into a
+   subtitle band after the short opening beat. */
+.world-cinematic-director{background:linear-gradient(180deg,#02070c38,transparent 22% 52%,#02070c9c)}
+.cinema-world-haze{opacity:.24}.cinema-world-rain,.cinema-world-scan{display:none}.cinema-world-orb{opacity:.16!important}.cinema-world-signature{display:none}
+.phase-reveal .cinema-world-copy{margin:0 0 3vh;max-width:min(680px,68vw);align-self:flex-start}
+.phase-reveal .cinema-world-copy h2{font-size:clamp(25px,3.2vw,44px)!important;line-height:1.08!important}
+.phase-reveal .cinema-world-copy p{font-size:clamp(12px,1.15vw,16px)!important;margin-top:10px!important}
+.recipe-guardian-arrival .cinema-world-copy{max-width:48vw}.recipe-guardian-arrival .cinema-world-guardian-identity{gap:12px;margin-top:10px}
+.world-dialog-campaign{width:min(600px,54vw);max-height:70svh;margin:auto auto 24px 24px;background:linear-gradient(140deg,#091923f0,#08131de8);border:1px solid #d8c18b45}
+.world-dialog-campaign::backdrop{background:linear-gradient(0deg,#0006,transparent 70%);backdrop-filter:none}
+@media(max-height:520px){.phase-reveal .cinema-world-copy{margin-bottom:1vh;max-width:62vw}.phase-reveal .cinema-world-kicker{margin-bottom:5px;font-size:8px}.phase-reveal .cinema-world-copy h2{font-size:25px!important}.phase-reveal .cinema-world-copy p{font-size:11px!important}.recipe-guardian-arrival .cinema-world-guardian-identity small{font-size:7px}.world-dialog-campaign{width:54vw;max-height:82svh;margin:auto auto 10px 14px}}
+@media(max-width:720px){
+ .cinema-world-guardian-identity{gap:6px 14px;padding:7px 0;margin-top:8px}
+ .cinema-world-guardian-identity strong{font-size:12px}
+}
+@media(max-height:520px) and (orientation:landscape){
+ .cinema-world-guardian-identity{gap:8px;padding:5px 0;margin-top:8px}
+ .cinema-world-guardian-identity small{font-size:8px}
+}

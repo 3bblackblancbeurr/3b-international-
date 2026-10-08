@@ -52,6 +52,8 @@ const handler=(_req,res)=>{res.setHeader('Content-Type','text/html');res.end(`<!
 function injectCaptureHooks(code){
  const marker='return{\n  refreshHubSchedule:';assert.ok(code.includes(marker),'Scene capture fixture matches the real API');
  return code.replace(marker,`let qaCaptureFrozen=false;return{
+  qaHoldRender(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}return elapsed;},
+  qaGuidanceState(){return {renderHeld:qaCaptureFrozen,elapsed,waypoint:waypoint?.id||null,routeLength:target?route.length+1:0,planning:routePlanner.status().pending};},
   qaFreezeCapture(){if(!qaCaptureFrozen){cancelAnimationFrame(raf);qaCaptureFrozen=true;}post.render(0);return canvas.toDataURL('image/png');},
   qaResumeCapture(){if(!qaCaptureFrozen)return;qaCaptureFrozen=false;last=performance.now();raf=requestAnimationFrame(tick);},
   refreshHubSchedule:`);
@@ -90,8 +92,16 @@ try{
    assert.equal(await page.locator('.hub-recovery').count(),0);
    await page.getByRole('button',{name:'Explorer librement',exact:true}).click();
    await page.locator('.hub-guide-primary').click();
-   await page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true}).waitFor({timeout:30000});await page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true}).click();
-   await page.locator('.hub-guidance-running').waitFor({state:'hidden',timeout:10000});
+   const stopGuidance=page.getByRole('button',{name:'Arrêter le guidage et retirer le repère',exact:true});await stopGuidance.waitFor({timeout:30000});
+   await page.locator('.hub-guidance-running').waitFor({state:'visible',timeout:30000});
+   const heldElapsed=await page.evaluate(()=>qa.scene.qaHoldRender());
+   try{
+    assert.ok(await page.evaluate(()=>qa.scene.qaGuidanceState().waypoint),'Guidance has an actual scene waypoint before cancellation');
+    await stopGuidance.click();await page.locator('.hub-guidance-running').waitFor({state:'hidden',timeout:10000});
+    const state=await page.evaluate(()=>qa.scene.qaGuidanceState());assert.equal(state.renderHeld,true);assert.equal(state.elapsed,heldElapsed,'Cancellation updates the DOM without another rendered frame');assert.equal(state.waypoint,null,'Cancellation removes the actual scene waypoint');assert.equal(state.routeLength,0,'Cancellation clears the actual route');assert.equal(state.planning,false,'Cancellation leaves no route worker pending');
+    assert.equal(await page.locator('.hub-guide-cancel').count(),0,'The cancelled waypoint has no stale cancel action');
+   }finally{await page.evaluate(()=>qa.scene.qaResumeCapture());}
+   console.log(device.id+': guidance cancels with rendering suspended');
    await page.getByRole('button',{name:'Pause et options',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Une pause dans le voyage',exact:true});await dialog.waitFor();
    await dialog.getByText('Commandes clavier et tactile',{exact:true}).click();await dialog.getByRole('button',{name:'QWERTY',exact:true}).click();
    await dialog.getByLabel('Touche pour interagir',{exact:true}).selectOption('w');assert.equal(await dialog.getByLabel('Touche pour interagir',{exact:true}).inputValue(),'e');
@@ -106,7 +116,7 @@ try{
    await page.reload({waitUntil:'domcontentloaded'});await page.locator('.hub-objective-card').waitFor({timeout:120000});await page.locator('.world-loading').waitFor({state:'hidden',timeout:120000});assert.equal(await page.getByRole('dialog',{name:'Ton personnage',exact:true}).count(),0);assert.equal(await page.locator('.hub-orientation-guide').count(),0);
    if(!device.hasTouch){await page.setViewportSize({width:550,height:735});await page.locator('.world-rotate-device').waitFor({state:'hidden'});await page.locator('.hub-objective-card').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),true,'Compact desktop stays playable without horizontal page overflow');await capture(page,out+'/desktop-compact.png');}
    else{await page.setViewportSize({width:390,height:844});await page.locator('.world-rotate-device').waitFor({state:'visible'});await page.setViewportSize(device.viewport);await page.locator('.world-rotate-device').waitFor({state:'hidden'});}
-   assert.deepEqual(errors,[],'No runtime exception');report.push({device:device.id,ok:true,checks:['real-scene','guidance-cancel','settings','key-conflict','graphics-switch','atlas-labels','journal-labels','reload','orientation-persistence','no-horizontal-overflow']});
+   assert.deepEqual(errors,[],'No runtime exception');report.push({device:device.id,ok:true,checks:['real-scene','guidance-cancel-with-render-held','guidance-scene-state-cleared','settings','key-conflict','graphics-switch','atlas-labels','journal-labels','reload','orientation-persistence','no-horizontal-overflow']});
    console.log(device.id+': PASS');
   }catch(error){console.error(device.id+': FAILED',error.message);await capture(page,out+'/'+device.id+'-failure.png').catch(()=>{});await writeFile(out+'/'+device.id+'-failure.txt',await page.locator('body').innerText().catch(()=>''));report.push({device:device.id,ok:false,error:error.message,errors});}
   await context.close();

@@ -19,9 +19,9 @@ export function createGameplayMotion(){
   get airborne(){return clock<jumpUntil;},
   start(kind,direction=0){
    const rule=PLAY_ACTIONS[kind];if(!rule||clock<(cooldowns[kind]||0))return false;
-   // The authored jump owns the complete pose until landing. Starting another
-   // action here would replace its animation while the physical lift continued.
-   if(kind!=='jump'&&clock<jumpUntil)return false;
+   // Voluntary upper-body actions have their own animation mask and cooldown.
+   // The jump clock still owns the pelvis/legs; a ground dodge cannot move it.
+   if(kind==='dodge'&&clock<jumpUntil)return false;
    if(kind!=='jump'&&clock<actionUntil&&action!=='guard')return false;
    if(kind==='jump'&&clock<jumpUntil)return false;
    cooldowns[kind]=clock+rule.cooldown;

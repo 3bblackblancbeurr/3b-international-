@@ -17,7 +17,7 @@ export const isWorldCinematicKey=key=>typeof key==='string'&&key.length<=96&&KEY
 export function worldCinematicEvents(previous,next,action){
  if(!previous||!next||!action?.type)return[];
  const before=previous.adventure||{},after=next.adventure||{},seen=new Set(after.cinematicSeen||[]);
- const oldFight=before.encounter,fight=after.encounter,region=next.region||'hub',events=[];
+ const oldFight=before.encounter,fight=after.encounter,region=action.type==='campaignAction'?action.region||next.region:next.region||'hub',events=[];
  const add=(kind,key,context,priority=20)=>{if(typeof key==='string'&&key.length<=96&&!seen.has(key))events.push({kind,key,region,context,priority});};
  const important=encounter=>!!encounter&&(encounter.final||(encounter.boss&&!encounter.patrol));
 
@@ -26,22 +26,22 @@ export function worldCinematicEvents(previous,next,action){
  }
 
  const oldChapter=before.chapters?.[region]||{},chapter=after.chapters?.[region]||{};
- if(action.type==='help'&&!oldChapter.helped&&chapter.helped)add('story-alliance',`alliance:${region}`,{region},30);
+ if(['help','campaignAction'].includes(action.type)&&!oldChapter.helped&&chapter.helped)add('story-alliance',`alliance:${region}`,{region},30);
 
- if(action.type==='power'&&(chapter.powers?.length||0)>(oldChapter.powers?.length||0)){
+ if(['power','campaignAction'].includes(action.type)&&(chapter.powers?.length||0)>(oldChapter.powers?.length||0)){
   const power=chapter.powers.at(-1);
   add('story-power',`power:${region}:${power}`,{region,power},25);
  }
 
- if(['solve','restore'].includes(action.type)&&(chapter.restored||0)>(oldChapter.restored||0)){
+ if(['solve','restore','campaignAction'].includes(action.type)&&(chapter.restored||0)>(oldChapter.restored||0)){
   add('story-restoration',`restore:${region}:${chapter.restored}`,{region,stage:chapter.restored,choice:chapter.choice||null},40);
  }
 
- if(action.type==='guardianValueChoice'&&!before.values?.[region]?.completed&&after.values?.[region]?.completed){
+ if(['guardianValueChoice','campaignAction'].includes(action.type)&&!before.values?.[region]?.completed&&after.values?.[region]?.completed){
   add('guardian-value-complete',`value:${region}`,{region},80);
  }
 
- if(['encounter','final'].includes(action.type)&&important(fight)&&(!oldFight||oldFight.result)&&!fight.result){
+ if(['encounter','final','campaignAction'].includes(action.type)&&important(fight)&&(!oldFight||oldFight.result)&&!fight.result){
   add(fight.final?'final-combat-intro':'guardian-intro',`intro:${fight.region||region}:${fight.card}:${fight.expert?'expert':'adventure'}`,{region:fight.region||region,card:fight.card,final:!!fight.final,expert:!!fight.expert},100);
  }
 
@@ -57,6 +57,10 @@ export function worldCinematicEvents(previous,next,action){
 
  if(action.type==='beacon'&&action.id&&!(previous.beacons||[]).includes(action.id)&&(next.beacons||[]).includes(action.id)){
   add('memory-fragment',`memory:${action.id}`,{region,id:action.id},30);
+ }
+ if(action.type==='campaignAction'){
+  for(const id of next.beacons||[])if(!(previous.beacons||[]).includes(id))add('memory-fragment',`memory:${id}`,{region,id},30);
+  if(next.region==='hub'&&oldChapter.restored!==3&&chapter.restored===3)add('guardian-homecoming',`homecoming:${region}`,{region},70);
  }
 
  if(action.type==='survey'){

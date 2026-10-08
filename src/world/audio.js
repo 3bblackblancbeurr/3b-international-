@@ -1,12 +1,11 @@
 import {spatialAudio} from './audio-spatial.js';
-import {AUDIO_STATES,audioStateProfile} from './audio-director.js';
+import {AUDIO_STATES,audioStateProfile,scoreLayerProfile} from './audio-director.js';
+import {realmScoreTheme,realmScoreStep,scoreFrequency,weaponMetalTimbre} from './realm-score.js';
+import {createScoreVoice} from './realm-score-synth.js';
 import {actionFeedback} from './interaction-system.js';
 import {hubAmbientFrame,hubFootstepSurface} from './hub/civic-soundscape.js';
-const NOTES={hub:174.61,france:196,italie:220,estonie:164.81,turquie:146.83,algerie:174.61,tunisie:196,maroc:146.83,espagne:164.81};
-const SCALES={
- hub:[1,1.2,1.5,2],france:[1,1.125,1.5,1.75],italie:[1,1.25,1.5,1.875],estonie:[1,1.2,1.6,2],
- turquie:[1,1.125,1.5,1.8],algerie:[1,1.2,1.4,1.8],tunisie:[1,1.25,1.5,2],maroc:[1,1.125,1.4,1.75],espagne:[1,1.25,1.6,2],
-};
+const NOTES=Object.fromEntries(['hub','france','italie','estonie','turquie','algerie','tunisie','maroc','espagne'].map(region=>[region,scoreFrequency(realmScoreTheme(region).root)]));
+const REGION_WEAPONS={france:'rapier',italie:'escrime',estonie:'baltiques',turquie:'kilij',algerie:'flyssa',tunisie:'lance',maroc:'dagues',espagne:'tolede'};
 const ATMOSPHERES={hub:[520,.040],france:[720,.034],italie:[620,.033],estonie:[980,.028],turquie:[480,.035],algerie:[430,.030],tunisie:[600,.035],maroc:[440,.032],espagne:[680,.034]};
 const UNLOCK_EVENTS=['pointerdown','touchstart','keydown'];
 const clamp=v=>Math.max(0,Math.min(1,v));
@@ -17,7 +16,7 @@ export function createWorldAudio(){
  let musicTimer,ambienceTimer,currentRegion='hub',inside=false,currentWeather='clear',currentPhase='day',audioState='exploration',stepFlip=false,lastSpeech='',voiceDucking=false,speaking=false,speechQueue=[];
  let listenerPose={x:0,z:0,heading:0},interiorInfo=null,closed=false,unlockTarget=null;
  const ambientLoops=new Map();
- const delayedSounds=new Set(),transientSounds=new Set();
+ const delayedSounds=new Set(),transientSounds=new Set(),scoreSounds=new Set();let scoreNextTime=0,scoreStep=0,currentWeapon=null;
  const mix={master:.78,music:.34,ambience:.55,sfx:.78,voice:.9};
 
  function gainNode(value){const g=ctx.createGain();g.gain.value=value;return g;}
@@ -66,9 +65,11 @@ export function createWorldAudio(){
   for(const timer of delayedSounds)clearTimeout(timer);delayedSounds.clear();
   for(const sound of [...transientSounds])sound();
  }
- function trackSound(source,nodes){
-  const dispose=()=>{transientSounds.delete(dispose);try{source.stop();}catch{}for(const node of nodes)node.disconnect();};
-  transientSounds.add(dispose);source.onended=()=>{transientSounds.delete(dispose);for(const node of nodes)node.disconnect();};
+ function trackSound(source,nodes,{music=false,fadeGain=null}={}){
+  let released=false;const release=()=>{if(released)return;released=true;transientSounds.delete(dispose);scoreSounds.delete(dispose);for(const node of nodes)node.disconnect();};
+  const dispose=()=>{try{source.stop();}catch{}release();};
+  if(fadeGain)dispose.fade=()=>{scoreSounds.delete(dispose);if(!playable())return dispose();const gain=fadeGain.gain,time=ctx.currentTime;if(gain.cancelAndHoldAtTime)gain.cancelAndHoldAtTime(time);else{const current=gain.value;gain.cancelScheduledValues?.(time);gain.setValueAtTime(current,time);}gain.setTargetAtTime(.0001,time,.04);try{source.stop(time+.18);}catch{dispose();}};
+  transientSounds.add(dispose);if(music)scoreSounds.add(dispose);source.onended=release;
  }
  function init(){
   if(ctx||closed)return;
@@ -79,14 +80,14 @@ export function createWorldAudio(){
   if(compressor){compressor.threshold.value=-18;compressor.knee.value=12;compressor.ratio.value=4;compressor.attack.value=.006;compressor.release.value=.15;master.connect(compressor).connect(ctx.destination);}else master.connect(ctx.destination);
   ctx.addEventListener?.('statechange',contextChanged);applyMix();
   for(const ratio of [1,.5,1.5]){
-   const o=ctx.createOscillator(),g=gainNode(.025);o.type=ratio===.5?'triangle':'sine';o.frequency.value=NOTES.hub*ratio;o.connect(g).connect(musicBus);o.start();pad.push({o,g,ratio});
+   const o=ctx.createOscillator(),g=gainNode(.012);o.type=ratio===.5?'triangle':'sine';o.frequency.value=NOTES.hub*ratio;o.connect(g).connect(musicBus);o.start();pad.push({o,g,ratio});
   }
   noiseBuffer=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);const data=noiseBuffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
   updateHubAmbience();
   startSchedulers();
  }
  function startSchedulers(){
-  if(!musicTimer)musicTimer=setInterval(()=>{if(!playable())return;const scale=SCALES[currentRegion]||SCALES.hub,index=Math.floor(Date.now()/2200)%scale.length;baseTone((NOTES[currentRegion]||174.61)*scale[index],.36,.036,'sine',musicBus);},2200);
+  if(!musicTimer)musicTimer=setInterval(scheduleScore,125);
   if(!ambienceTimer)ambienceTimer=setInterval(()=>{if(!playable()||inside)return;
    if(currentWeather==='rain'||currentWeather==='heavy_rain'||currentWeather==='storm')noise(.9,currentWeather==='storm'?.09:currentWeather==='heavy_rain'?.06:.035,1200,ambienceBus);
    else if(currentWeather==='snow')noise(.65,.018,2400,ambienceBus);
@@ -94,17 +95,32 @@ export function createWorldAudio(){
    else if(['algerie','maroc','tunisie'].includes(currentRegion)&&Math.random()>.45)noise(.5,.018,650,ambienceBus);
   },4200);
  }
- function region(id){currentRegion=id||'hub';updateHubAmbience();if(!ctx||closed)return;const base=NOTES[currentRegion]||174.61;for(const {o,ratio} of pad)o.frequency.setTargetAtTime(base*ratio,ctx.currentTime,.8);}
+ function region(id){const next=id||'hub';if(next!==currentRegion){resetScore({fade:true});currentRegion=next;}updateHubAmbience();if(!ctx||closed)return;const base=NOTES[currentRegion]||174.61;for(const {o,ratio} of pad)o.frequency.setTargetAtTime(base*ratio,ctx.currentTime,.8);}
+ function resetScore({fade=false}={}){for(const stop of [...scoreSounds])if(fade&&stop.fade)stop.fade();else stop();scoreNextTime=0;scoreStep=0;}
+ function scheduleScore(){
+  if(!playable()||mix.music<=0)return;
+  const now=ctx.currentTime;if(!scoreNextTime||scoreNextTime<now-.15)scoreNextTime=now+.035;
+  let scheduled=0;while(scoreNextTime<now+.2&&scheduled++<3){
+   const frame=realmScoreStep(currentRegion,inside?'interior':audioState,scoreStep++),layers=scoreLayerProfile(inside?'interior':audioState);
+   for(const note of frame.notes){if(scoreSounds.size>=32)break;const weight=layers[note.role]??1;if(weight<=0)continue;const voice=createScoreVoice(ctx,musicBus,{...note,gain:note.gain*weight},{start:scoreNextTime,duration:note.duration*frame.seconds});trackSound(voice.source,voice.nodes,{music:true,fadeGain:voice.volume});}
+   if(frame.percussion&&mix.music>0)noise(frame.percussion.duration,frame.percussion.gain,frame.percussion.frequency,musicBus);
+   scoreNextTime+=frame.seconds;
+  }
+ }
+ function weaponImpact({weapon=currentWeapon||REGION_WEAPONS[currentRegion]||'blade',guard=false,strength=1,pan=0}={}){
+  if(!playable())return false;const metal=weaponMetalTimbre(weapon,guard),force=Math.max(.15,Math.min(1,Number.isFinite(strength)?strength:1));
+  metal.partials.forEach((partial,index)=>spatialTone(metal.fundamental*partial,metal.duration/(1+index*.25),metal.gain*force/(1+index*1.6),'sine',pan,{fall:1}));noise(.075,metal.gain*force*.35,guard?1900:2700);return true;
+ }
  function baseTone(frequency,duration,gain,type='sine',bus=sfxBus){
   if(!playable())return;
   const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime;o.type=type;o.frequency.setValueAtTime(Math.max(20,frequency),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,frequency*.72),t+duration);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0001,gain),t+Math.min(.012,duration*.15));g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g).connect(bus);o.start(t);o.stop(t+duration+.03);trackSound(o,[o,g]);
  }
  function tone(f,d,g,t='sine'){baseTone(f,d,g,t,sfxBus);}
- function spatialTone(frequency,duration,gain,type='sine',pan=0){
+ function spatialTone(frequency,duration,gain,type='sine',pan=0,{fall=.76}={}){
   if(!playable())return false;
   const o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime,p=ctx.createStereoPanner?.();
-  o.type=type;o.frequency.setValueAtTime(Math.max(20,frequency),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,frequency*.76),t+duration);
+  o.type=type;o.frequency.setValueAtTime(Math.max(20,frequency),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,frequency*fall),t+duration);
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0001,gain),t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);
   if(p){p.pan.value=Math.max(-1,Math.min(1,pan));g.connect(p).connect(sfxBus);}else g.connect(sfxBus);
   o.start(t);o.stop(t+duration+.03);trackSound(o,[o,g,...(p?[p]:[])]);return true;
@@ -129,7 +145,7 @@ export function createWorldAudio(){
  }
  function event(type,action){
   if(!playable())return;
-  if(type==='battle'){if(!gameplay(action==='strike'?'attack':action==='resonance'?'power':action)){noise(.13,.16,650);tone(95,.14,.11,'triangle');}}
+  if(type==='battle'){const kind=typeof action==='string'?action:action?.kind||action?.action||action?.type;if(!gameplay(kind==='strike'?'attack':kind==='resonance'?'power':kind)){noise(.13,.16,650);tone(95,.14,.11,'triangle');}if(kind==='strike')weaponImpact();else if(kind==='guard')weaponImpact({guard:true,strength:.55});}
   else if(['jump','land','attack','guard','dodge','power'].includes(type))gameplay(type);
   else if(type==='gather'){noise(.12,.07,1200);tone(380,.14,.07,'triangle');}
   else if(type==='build'||type==='restore'){tone(330,.6,.1);later(()=>tone(495,.6,.08),140);later(()=>tone(660,.7,.06),280);}
@@ -210,21 +226,21 @@ export function createWorldAudio(){
   enable(value,id){
    if(closed)return Promise.resolve(false);enabled=!!value;
    if(enabled){try{init();region(id||currentRegion);applyMix();if(hidden)ctx?.suspend().catch(()=>{});}catch{}return unlock();}
-   clearUnlockListeners();clearAmbientLoops();clearTransientSounds();speechQueue=[];speaking=false;voiceDucking=false;lastSpeech='';globalThis.speechSynthesis?.cancel?.();applyMix();ctx?.suspend().catch(()=>{});return Promise.resolve(false);
+   clearUnlockListeners();clearAmbientLoops();clearTransientSounds();resetScore();speechQueue=[];speaking=false;voiceDucking=false;lastSpeech='';globalThis.speechSynthesis?.cancel?.();applyMix();ctx?.suspend().catch(()=>{});return Promise.resolve(false);
   },
   unlock,
-  status(){return {enabled,hidden,context:ctx?.state||(ctx?'running':'uninitialized'),needsGesture:!!unlockTarget,ambientLoops:ambientLoops.size,closed};},
+  status(){return {enabled,hidden,context:ctx?.state||(ctx?'running':'uninitialized'),needsGesture:!!unlockTarget,ambientLoops:ambientLoops.size,closed,score:{theme:realmScoreTheme(currentRegion).title,region:currentRegion,state:audioState,step:scoreStep,voices:scoreSounds.size},weapon:currentWeapon};},
   region,
-  ambience(id,interior){currentRegion=id;inside=!!interior;interiorInfo=interior||null;updateHubAmbience();},
+  ambience(id,interior){inside=!!interior;interiorInfo=interior||null;region(id);},
   weather(value){currentWeather=value||'clear';updateHubAmbience();},
   phase(value){currentPhase=value||'day';applyMix();updateHubAmbience();},
-  state(value){audioState=Object.hasOwn(AUDIO_STATES,value)?value:'exploration';applyMix();},
+  state(value){const next=Object.hasOwn(AUDIO_STATES,value)?value:'exploration';if(next!==audioState){audioState=next;resetScore({fade:true});}applyMix();},
   listener:setListener,
   environment,
   spatialEvent,
-  setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);applyMix();},
+  setMix(next={}){for(const key of Object.keys(mix))if(Number.isFinite(next[key]))mix[key]=clamp(next[key]);if(mix.music<=0)resetScore();applyMix();},
   step(id,position=listenerPose){stepFlip=!stepFlip;const surface=id==='hub'?hubFootstepSurface(position,interiorInfo):{duration:.06,volume:inside?.06:.035,frequency:inside?520:1450,pitch:inside?100:id==='estonie'?175:132};noise(surface.duration,surface.volume,surface.frequency);tone(surface.pitch*(stepFlip?1:1.04),.055,.025,'triangle');},
-  event,gameplay,interaction,speak,transport,
+  event,gameplay,interaction,speak,transport,weaponImpact,weapon(value){currentWeapon=typeof value==='string'?value:null;},
  cinematic(kind='micro'){
   if(!playable())return;
   const major=['world-opening','country-first-entry','guardian-homecoming','guardian-intro','final-combat-intro','story-finale'].includes(kind),guardian=['guardian-value-complete','guardian-homecoming','guardian-intro','final-combat-intro','important-combat-result'].includes(kind);
@@ -237,9 +253,9 @@ export function createWorldAudio(){
 
   visibility(value){
    if(closed)return Promise.resolve(false);hidden=!!value;applyMix();updateHubAmbience();
-   if(hidden){clearUnlockListeners();clearTransientSounds();globalThis.speechSynthesis?.pause?.();ctx?.suspend().catch(()=>{});return Promise.resolve(false);}
+   if(hidden){clearUnlockListeners();clearTransientSounds();resetScore();globalThis.speechSynthesis?.pause?.();ctx?.suspend().catch(()=>{});return Promise.resolve(false);}
    if(enabled){globalThis.speechSynthesis?.resume?.();return unlock();}return Promise.resolve(false);
   },
-  close(){if(closed)return;closed=true;enabled=false;clearUnlockListeners();clearAmbientLoops();clearTransientSounds();clearInterval(musicTimer);clearInterval(ambienceTimer);speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();pad.forEach(p=>{try{p.o.stop();}catch{}p.o.disconnect();p.g.disconnect();});pad=[];ctx?.removeEventListener?.('statechange',contextChanged);ctx?.close().catch(()=>{});}
+  close(){if(closed)return;closed=true;enabled=false;clearUnlockListeners();clearAmbientLoops();clearTransientSounds();resetScore();clearInterval(musicTimer);clearInterval(ambienceTimer);speechQueue=[];speaking=false;voiceDucking=false;globalThis.speechSynthesis?.cancel?.();pad.forEach(p=>{try{p.o.stop();}catch{}p.o.disconnect();p.g.disconnect();});pad=[];ctx?.removeEventListener?.('statechange',contextChanged);ctx?.close().catch(()=>{});}
  };
 }

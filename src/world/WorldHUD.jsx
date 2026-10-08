@@ -17,14 +17,17 @@ import {hubDistrictLabel,hubItemLabel} from './hub/presentation.js';
 import HubOrientationGuide,{HubObjectiveCard,createHubObjectiveModel,humanHubText,readHubOrientation,writeHubOrientation,updateHubOrientation} from './hub/HubOrientationGuide.jsx';
 import './hub/hub-hud.css';
 import {readHudPreferences,writeHudPreferences} from './hud-preferences.js';
+import {activeCampaignSnapshot} from './campaign-runtime.js';
+import {CampaignChallenge} from './RealmJourney.jsx';
 
 const phaseLabels={dawn:'Aube',morning:'Matin',day:'Jour',afternoon:'Après-midi',dusk:'Crépuscule',evening:'Soir',night:'Nuit'};
 
-export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,onGuideTo,onCancelGuide,loaded,controls,onNavigate,notificationVisible=false,inputMode}){
+export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInteract,onContextAction,onGuide,onGuideTo,onCancelGuide,loaded,controls,onNavigate,onCampaignAction,onPlay,onCompanionGuard,notificationVisible=false,inputMode}){
  const isHub=snapshot.region==='hub',country=countryById[snapshot.region],near=snapshot.near,home=frontierState(save,snapshot.region);
  const mapItems=useMemo(()=>isHub&&snapshot.mapItems?snapshot.mapItems:worldRuntimeItems(snapshot.region,save),[isHub,snapshot.region,snapshot.mapItems,save]);
  const hubGoal=isHub?platformNextObjective(mapItems,save):null;
  const hubObjective=isHub?createHubObjectiveModel(snapshot,hubGoal,mapItems):null;
+ const campaign=activeCampaignSnapshot(save),campaignItem=mapItems.find(item=>item.type==='campaignObjective'&&item.id===campaign?.objective);
  const [arrival,setArrival]=useState(false),[actionMenu,setActionMenu]=useState(false),[layoutOpen,setLayoutOpen]=useState(false),[hud,setHud]=useState(readHudPreferences),[dismissedNear,setDismissedNear]=useState(null);
  const showWidget=id=>setHud(current=>writeHudPreferences({...current,[id]:!current[id]}));
  const closeWidget=id=>setHud(current=>writeHudPreferences({...current,[id]:false}));
@@ -85,13 +88,15 @@ export const WorldHUD=memo(function WorldHUD({snapshot,save,panel,onPanel,onInte
   </>}
   {hud.map&&(!isHub||loaded)&&<><button className="hud-widget-close hud-minimap-close" aria-label="Fermer la mini-carte" onClick={()=>closeWidget('map')}><X size={15}/></button><MiniMap region={snapshot.region} items={mapItems} position={snapshot.position} heading={snapshot.heading} camera={snapshot.camera} waypoint={snapshot.waypoint} cartography={snapshot.cartography} route={snapshot.route} level={snapshot.towerFloor} onOpen={openMap}/>
   </>}
-  {isHub&&hud.missions&&<aside className="hub-mission-rail" aria-label="Repères du voyage"><button className="hud-widget-close" aria-label="Masquer les missions" onClick={()=>closeWidget('missions')}><X size={15}/></button>
+  {isHub&&hud.missions&&!campaignItem&&<aside className="hub-mission-rail" aria-label="Repères du voyage"><button className="hud-widget-close" aria-label="Masquer les missions" onClick={()=>closeWidget('missions')}><X size={15}/></button>
    {!loaded?<div className="hub-loading-card" role="status"><LoaderCircle size={20} aria-hidden="true"/><div><strong>La cité se prépare</strong><span>Chargement du décor et des points de repère…</span></div></div>:<>
     <HubObjectiveCard model={hubObjective} onNavigate={onNavigate} onGuide={onGuide} onGuideTo={onGuideTo} onCancelGuide={onCancelGuide} onOpenMap={openMap} bearing={bearing}/>
     {guideOpen&&!arrival&&!notificationVisible&&<HubOrientationGuide progress={orientation.progress} controls={controls} inputMode={input} onDismiss={dismissGuide} onOpenMap={openMap}/>}
     {!guideOpen&&!notificationVisible&&snapshot.hubEvolution&&<div className="hub-evolution-chip" aria-label={'Évolution de la Cité : '+snapshot.hubEvolution.label+', '+snapshot.hubEvolution.restored+' héritages restaurés sur '+snapshot.hubEvolution.total+(snapshot.hubEvolution.milestone?' · '+snapshot.hubEvolution.milestone.label:'')}><small>CITÉ · ÉVOLUTION {snapshot.hubEvolution.stage}/4</small><strong>{snapshot.hubEvolution.label}</strong>{snapshot.hubEvolution.milestone&&<em>{snapshot.hubEvolution.milestone.label}</em>}<span>{snapshot.hubEvolution.restored}/{snapshot.hubEvolution.total} héritages restaurés{snapshot.hubEvolution.nextMilestone?' · prochain palier '+snapshot.hubEvolution.nextMilestone.fragments+'/8':''}</span></div>}
    </>}
   </aside>}
+  {loaded&&hud.missions&&!panel&&campaign?.started&&<CampaignChallenge current={campaign} onAction={onCampaignAction} onPlay={onPlay} onCompanionGuard={onCompanionGuard} onJournal={()=>onPanel('campaign')} onNavigate={point=>onNavigate({id:'campaign:guide',name:'Étape en cours',...point})}/>}
+  {loaded&&hud.missions&&!panel&&!campaign?.started&&campaignItem&&<aside className="realm-challenge"><header><button onClick={()=>onPanel('journal')}>{campaign.title}</button><button aria-label="Masquer les missions" onClick={()=>closeWidget('missions')}>×</button></header><p>{campaign.name}</p><div className="realm-challenge-actions"><Button variant="ghost" onClick={()=>onNavigate(campaignItem)}>Repérer l’étape</Button>{!isHub&&<Button variant="ghost" onClick={()=>onNavigate(mapItems.filter(item=>item.type==='realmTravel').sort((a,b)=>Math.hypot(a.x-snapshot.position.x,a.z-snapshot.position.z)-Math.hypot(b.x-snapshot.position.x,b.z-snapshot.position.z))[0])}>Rejoindre un relais</Button>}</div></aside>}
   {arrival&&hud.details&&loaded&&!notificationVisible&&<div className="play-arrival" key={snapshot.region}><span>LES HUIT PORTES</span><h1>{country?.title||'Cité des Huit Héritages'}</h1><i/>{country&&<p className="arrival-landmark">{HERITAGE[country.id]?.name}</p>}</div>}
   {hud.details&&<Button variant="ghost" className="play-profile" aria-label={playerName+', niveau '+levelFor(save.xp)+'. Ouvrir l’équipe'} title="Équipe et progression" disabled={isHub&&!loaded} onClick={()=>onPanel('team')}><span>{playerName.slice(0,1).toUpperCase()}</span><small>{levelFor(save.xp)}</small></Button>}
   {hud.companion&&snapshot.companion&&<Button variant="ghost" className="play-companion" aria-label={companionName+' · ouvrir les compagnons'} disabled={isHub&&!loaded} onClick={()=>onPanel('collection')}><CompanionPortrait id={snapshot.companion}/><span><small>À tes côtés</small><strong>{companionName}</strong></span></Button>}
