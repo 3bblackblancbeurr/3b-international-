@@ -69,14 +69,16 @@ test("worker lifecycle checks the server and a confirmed current build clears ev
 });
 
 
-test("home portal keeps the city still and renders the Broken Circle as real-time 3D stone", async () => {
+test("home portal renders an architectural atmospheric scene and the real 3D Broken Circle", async () => {
   const [portal, circle3d, homeCss] = await Promise.all([
     readFile(new URL("src/components/WorldPortalCard.jsx", root), "utf8"),
     readFile(new URL("src/components/BrokenCircle3D.jsx", root), "utf8"),
     readFile(new URL("src/styles/home-app.css", root), "utf8"),
   ]);
 
-  assert.equal(portal.match(/hub-cite-origine\.webp/g)?.length, 1, "the clean city plate must only be rendered once");
+  assert.doesNotMatch(portal,/hub-cite-origine\.webp/,"the rejected photo plate must not return");
+  assert.match(portal,/home-world-atmosphere/);
+  assert.match(portal,/<BrokenCircle3D variant="menu"\/>/);
   assert.match(portal, /BrokenCircle3D/);
   assert.doesNotMatch(portal, /home-world-ring-svg|home-world-ring-rotor|home-world-ring-fragments/);
 
