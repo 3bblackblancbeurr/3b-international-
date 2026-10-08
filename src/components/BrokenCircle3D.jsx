@@ -489,7 +489,7 @@ export default function BrokenCircle3D({variant='stone'}){
         scene.add(ambientRig);
 
         const goldOrbit=new THREE.Mesh(
-          new THREE.TorusGeometry(2.93,.013,6,144),
+          new THREE.TorusGeometry(2.92,.013,6,144),
           new THREE.MeshBasicMaterial({
             color:0xe8b84d,
             transparent:true,
