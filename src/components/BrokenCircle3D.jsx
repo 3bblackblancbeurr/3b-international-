@@ -225,140 +225,173 @@ export default function BrokenCircle3D({variant='stone'}){
       if(!reducedMotion){
         rotor.rotation.z-=dt*(TAU/24);
         if(menuMode){
-          const t=now/1000;
-          rotor.rotation.x=-.06+Math.sin(t*.42)*.012;
-          rotor.rotation.y=.16+Math.cos(t*.34)*.026;
-          if(ambientRig){
-            ambientRig.rotation.z+=dt*.018;
-            ambientRig.rotation.x=Math.sin(t*.21)*.018;
-            ambientRig.children.forEach((child,index)=>{
-              if(child.userData?.orbit) child.rotation.z+=(index%2===0?1:-1)*dt*(.028+index*.004);
-            });
-          }
-        }
-      }
-      renderer.render(scene,camera);
-      if(running)frame=requestAnimationFrame(renderLoop);
-    };
+        // One persistent 3D scene: the Broken Circle stays the hero, while a
+        // real miniature city, floor and lighting live behind it. Everything
+        // is batched so the phone gets depth without turning the home screen
+        // into a second game renderer.
+        const cityRig=new THREE.Group();
+        cityRig.name='Cité des Huit Héritages · maquette 3D';
+        cityRig.position.set(0,0,-2.65);
+        scene.add(cityRig);
 
-    (async()=>{
-      const THREE=await import('three');
-      if(disposed)return;
+        const groundMaterial=new THREE.MeshStandardMaterial({
+          color:0x071016,
+          roughness:.96,
+          metalness:.02,
+        });
+        const ground=new THREE.Mesh(new THREE.PlaneGeometry(12.5,8.5),groundMaterial);
+        ground.rotation.x=-Math.PI/2;
+        ground.position.set(0,-2.62,-1.15);
+        ground.receiveShadow=true;
+        cityRig.add(ground);
 
-      scene=new THREE.Scene();
-      camera=new THREE.PerspectiveCamera(menuMode?37:29,1,.1,100);
-      camera.position.set(0,.02,8.55);
-      camera.lookAt(0,.06,0);
-
-      renderer=new THREE.WebGLRenderer({
-        alpha:true,
-        antialias:true,
-        powerPreference:'high-performance',
-        premultipliedAlpha:true,
-      });
-      renderer.setClearColor(0x000000,0);
-      renderer.outputColorSpace=THREE.SRGBColorSpace;
-      renderer.toneMapping=THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure=menuMode ? 1.18 : 1.08;
-      renderer.shadowMap.enabled=true;
-      renderer.shadowMap.type=THREE.PCFShadowMap;
-      renderer.domElement.className='home-world-webgl-canvas';
-      renderer.domElement.setAttribute('aria-hidden','true');
-      renderer.domElement.addEventListener('webglcontextlost',(event)=>{
-        event.preventDefault();
-        stop();
-        mount.dataset.state='fallback';
-      },{passive:false});
-      mount.appendChild(renderer.domElement);
-
-      const maxAnisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
-      const textureLoader=new THREE.TextureLoader();
-      const stoneTexture=textureLoader.load('/world/origins/limestone-color.webp');
-      stoneTexture.colorSpace=THREE.SRGBColorSpace;
-      stoneTexture.wrapS=stoneTexture.wrapT=THREE.RepeatWrapping;
-      stoneTexture.repeat.set(2.8,2.2);
-      stoneTexture.anisotropy=maxAnisotropy;
-
-      const stoneMaterials=makeStoneMaterials(THREE,stoneTexture,variant);
-      const energyMaterial=new THREE.MeshStandardMaterial({
-        color:0x2b9bc8,
-        emissive:0x35d5ff,
-        emissiveIntensity:menuMode ? 5.2 : 4.0,
-        roughness:.22,
-        metalness:.02,
-        transparent:true,
-        opacity:menuMode ? .96 : .90,
-      });
-
-      rotor=new THREE.Group();
-      rotor.position.set(0,.08,0);
-      rotor.rotation.x=menuMode ? -.06 : -.045;
-      rotor.rotation.y=menuMode ? .16 : .13;
-      scene.add(rotor);
-
-      addBrokenRing(THREE,rotor,stoneMaterials,energyMaterial);
-      addArchitecturalDetails(THREE,rotor,stoneMaterials);
-
-      const innerGlow=new THREE.Mesh(
-        new THREE.TorusGeometry(1.39,.022,8,112),
-        new THREE.MeshBasicMaterial({
-          color:0x48dbff,
-          transparent:true,
-          opacity:.32,
-          blending:THREE.AdditiveBlending,
-          depthWrite:false,
-        })
-      );
-      innerGlow.position.z=-.20;
-      rotor.add(innerGlow);
-
-      const outerHalo=new THREE.Mesh(
-        new THREE.TorusGeometry(2.53,.035,8,128),
-        new THREE.MeshBasicMaterial({
-          color:0x39cfff,
-          transparent:true,
-          opacity:.15,
-          blending:THREE.AdditiveBlending,
-          depthWrite:false,
-        })
-      );
-      outerHalo.position.z=-.28;
-      rotor.add(outerHalo);
-
-      if(menuMode){
-        // A quiet miniature stone city is visible through and behind the
-        // monument; one instanced draw, no additional downloads or animation
-        // loop, so the welcome screen stays light on Android.
         const districtGeometry=new THREE.BoxGeometry(1,1,1);
-        const districtMaterial=new THREE.MeshStandardMaterial({color:0x8a8172,roughness:.92,metalness:0});
-        const skyline=new THREE.InstancedMesh(districtGeometry,districtMaterial,26);
-        skyline.name='Cité des Huit Héritages · panorama lointain';
-        skyline.castShadow=false;skyline.receiveShadow=false;
+        const districtMaterial=new THREE.MeshStandardMaterial({
+          color:0x8c877a,
+          roughness:.86,
+          metalness:.035,
+          vertexColors:true,
+        });
+        const districtCount=44;
+        const skyline=new THREE.InstancedMesh(districtGeometry,districtMaterial,districtCount);
+        skyline.name='Quartiers de la Cité · volume architectural';
+        skyline.castShadow=false;
+        skyline.receiveShadow=true;
         const tower=new THREE.Object3D();
-        const palette=[0x8a8172,0x77776b,0xa39a85,0x53646a,0x9d907b].map(color=>new THREE.Color(color));
-        for(let i=0;i<26;i++){
-          const lane=i<13?-1:1,index=i%13;
-          const x=lane*(1.2+index*.27),height=.44+((index*7+3)%9)*.22;
-          tower.position.set(x,-3.18+height/2,-3.2-index*.105);
-          tower.scale.set(.24+(index%3)*.13,height,.48+(index%4)*.12);
-          tower.rotation.set(0,lane*.09,0);tower.updateMatrix();
-          skyline.setMatrixAt(i,tower.matrix);skyline.setColorAt(i,palette[(index+lane+6)%palette.length]);
+        const palette=[
+          0x8d887a,0x777d79,0xa1957f,0x586a70,0x9a8d76,0x66747b,
+        ].map(color=>new THREE.Color(color));
+        const cityBuildings=[];
+        for(let i=0;i<districtCount;i+=1){
+          const row=Math.floor(i/11);
+          const col=i%11;
+          let x=(col-5)*.73+(row%2?.18:-.18);
+          if(Math.abs(x)<1.35&&row<2)x+=(x<0?-1:1)*1.18;
+          const width=.34+((i*5)%5)*.085;
+          const height=.58+((i*7+row*3)%10)*.19+(row===3?.35:0);
+          const depth=.48+((i*3)%5)*.12;
+          const z=-.52-row*.87-((col%3)*.07);
+          tower.position.set(x,-2.62+height/2,z);
+          tower.scale.set(width,height,depth);
+          tower.rotation.set(0,((col+row)%5-2)*.014,0);
+          tower.updateMatrix();
+          skyline.setMatrixAt(i,tower.matrix);
+          skyline.setColorAt(i,palette[(i+row)%palette.length]);
+          cityBuildings.push({x,y:-2.62+height/2,z,width,height,depth});
         }
         skyline.instanceMatrix.needsUpdate=true;
         skyline.instanceColor.needsUpdate=true;
         skyline.computeBoundingSphere();
-        scene.add(skyline);
+        cityRig.add(skyline);
+
+        const crownGeometry=new THREE.CylinderGeometry(.5,.62,1,6,1,false);
+        const crownMaterial=new THREE.MeshStandardMaterial({
+          color:0xa49473,
+          roughness:.78,
+          metalness:.07,
+          vertexColors:true,
+        });
+        const crownCount=8;
+        const crowns=new THREE.InstancedMesh(crownGeometry,crownMaterial,crownCount);
+        crowns.name='Huit tours-signatures';
+        const crownPalette=[0x87969d,0x8aa181,0xb29d75,0xb27f6f,0xb17878,0x8f92aa,0xa49b76,0x7fa0a0].map(color=>new THREE.Color(color));
+        for(let i=0;i<crownCount;i+=1){
+          const side=i<4?-1:1;
+          const lane=i%4;
+          const height=1.25+lane*.28+(i%2)*.18;
+          const x=side*(2.05+lane*.72);
+          const z=-1.6-(lane%2)*.72-(i%3)*.14;
+          tower.position.set(x,-2.62+height/2,z);
+          tower.scale.set(.52+lane*.035,height,.52+lane*.035);
+          tower.rotation.set(0,(side*.08)+(lane-.5)*.025,0);
+          tower.updateMatrix();
+          crowns.setMatrixAt(i,tower.matrix);
+          crowns.setColorAt(i,crownPalette[i]);
+        }
+        crowns.instanceMatrix.needsUpdate=true;
+        crowns.instanceColor.needsUpdate=true;
+        crowns.computeBoundingSphere();
+        cityRig.add(crowns);
+
+        const roadPositions=[];
+        const roadColors=[];
+        const gold=new THREE.Color(0xe5bd6f);
+        const cyan=new THREE.Color(0x55d9f5);
+        const pushRoad=(a,b,color)=>{
+          roadPositions.push(...a,...b);
+          roadColors.push(color.r,color.g,color.b,color.r,color.g,color.b);
+        };
+        [-2.8,-1.4,0,1.4,2.8].forEach((x,index)=>{
+          const farX=x*.22;
+          pushRoad([x,-2.605,.9],[farX,-2.605,-6.6],index===2?gold:cyan);
+        });
+        [-.5,-1.7,-3.1,-4.7,-6.0].forEach((z,index)=>{
+          const width=3.6-Math.min(2.1,index*.38);
+          pushRoad([-width,-2.604,z],[width,-2.604,z],index%2?gold:cyan);
+        });
+        const roadGeometry=new THREE.BufferGeometry();
+        roadGeometry.setAttribute('position',new THREE.Float32BufferAttribute(roadPositions,3));
+        roadGeometry.setAttribute('color',new THREE.Float32BufferAttribute(roadColors,3));
+        const roads=new THREE.LineSegments(
+          roadGeometry,
+          new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.34,blending:THREE.AdditiveBlending})
+        );
+        roads.name='Avenues lumineuses de la Cité';
+        cityRig.add(roads);
+
+        const lightPositions=[];
+        const lightColors=[];
+        cityBuildings.forEach((building,index)=>{
+          const rows=Math.max(1,Math.min(4,Math.floor(building.height/.45)));
+          for(let row=0;row<rows;row+=1){
+            const side=index%2===0?-1:1;
+            const y=building.y-building.height*.34+(row/(Math.max(1,rows-1)))*building.height*.62;
+            const x=building.x+side*building.width*.23;
+            lightPositions.push(x,y,building.z+building.depth*.52+.018);
+            const c=(index+row)%3===0?gold:cyan;
+            lightColors.push(c.r,c.g,c.b);
+          }
+        });
+        const cityLightGeometry=new THREE.BufferGeometry();
+        cityLightGeometry.setAttribute('position',new THREE.Float32BufferAttribute(lightPositions,3));
+        cityLightGeometry.setAttribute('color',new THREE.Float32BufferAttribute(lightColors,3));
+        const cityLights=new THREE.Points(
+          cityLightGeometry,
+          new THREE.PointsMaterial({
+            size:.045,
+            sizeAttenuation:true,
+            vertexColors:true,
+            transparent:true,
+            opacity:.72,
+            blending:THREE.AdditiveBlending,
+            depthWrite:false,
+          })
+        );
+        cityLights.name='Fenêtres habitées · batch lumineux';
+        cityRig.add(cityLights);
+
+        const plazaMaterial=new THREE.MeshBasicMaterial({
+          color:0x2b8eb7,
+          transparent:true,
+          opacity:.10,
+          blending:THREE.AdditiveBlending,
+          depthWrite:false,
+        });
+        const plaza=new THREE.Mesh(new THREE.RingGeometry(2.75,3.15,64),plazaMaterial);
+        plaza.rotation.x=-Math.PI/2;
+        plaza.position.set(0,-2.585,-.55);
+        cityRig.add(plaza);
 
         ambientRig=new THREE.Group();
-        ambientRig.position.z=-.45;
+        ambientRig.position.z=-.42;
         scene.add(ambientRig);
 
         const goldOrbit=new THREE.Mesh(
-          new THREE.TorusGeometry(2.92,.014,6,160),
+          new THREE.TorusGeometry(2.93,.013,6,144),
           new THREE.MeshBasicMaterial({
             color:0xe8b84d,
             transparent:true,
-            opacity:.34,
+            opacity:.30,
             blending:THREE.AdditiveBlending,
             depthWrite:false,
           })
@@ -369,11 +402,11 @@ export default function BrokenCircle3D({variant='stone'}){
         ambientRig.add(goldOrbit);
 
         const cyanOrbit=new THREE.Mesh(
-          new THREE.TorusGeometry(3.12,.010,6,160),
+          new THREE.TorusGeometry(3.13,.010,6,144),
           new THREE.MeshBasicMaterial({
             color:0x51ddff,
             transparent:true,
-            opacity:.27,
+            opacity:.24,
             blending:THREE.AdditiveBlending,
             depthWrite:false,
           })
@@ -383,7 +416,7 @@ export default function BrokenCircle3D({variant='stone'}){
         cyanOrbit.userData.orbit=true;
         ambientRig.add(cyanOrbit);
 
-        const count=84;
+        const count=72;
         const positions=new Float32Array(count*3);
         for(let i=0;i<count;i+=1){
           const angle=i*2.399963229728653;
@@ -399,10 +432,10 @@ export default function BrokenCircle3D({variant='stone'}){
           particleGeometry,
           new THREE.PointsMaterial({
             color:0x8be8ff,
-            size:.032,
+            size:.03,
             sizeAttenuation:true,
             transparent:true,
-            opacity:.54,
+            opacity:.48,
             blending:THREE.AdditiveBlending,
             depthWrite:false,
           })
