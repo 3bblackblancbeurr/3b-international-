@@ -73,50 +73,133 @@ html[data-luxury="v2"] .app3b .universe-dialog .dialog-route.gm-card{background:
 html[data-luxury="v2"] .app3b .home-app-hub .home-guide-zone{background:transparent!important;box-shadow:var(--3b-shadow-flat)!important}
 html[data-luxury="v2"] .app3b :is(.home-app-hub .compact-card,.universe-dialog .dialog-route)::after{content:none}
 html[data-luxury="v2"] .app3b .home-app-hub .compact-card:hover{transform:none!important;box-shadow:var(--3b-shadow-flat)!important}
-/* Monde 3B — Master scene.
-   A clean static city plate sits behind a real-time curved stone monument.
-   The city/UI never move; only the 3D Broken Circle rotates. */
+/* Monde 3B — AAA final pass.
+   The card keeps the validated information architecture. The visual is now
+   one real-time WebGL monument + batched 3D city, with only quiet CSS
+   atmosphere behind it. No pasted skyline and no second competing layout. */
 html[data-luxury="v2"] .app3b .home-world-entry{
+  position:relative;
   isolation:isolate;
+  min-height:610px;
+  margin-bottom:42px;
   overflow:hidden;
+  border:1px solid rgba(214,180,106,.42);
+  border-radius:26px;
+  background:#02070d;
+  box-shadow:
+    0 34px 110px rgba(0,0,0,.68),
+    0 0 54px rgba(53,207,255,.055),
+    inset 0 1px rgba(255,238,201,.16);
 }
-html[data-luxury="v2"] .app3b .home-world-art{
-  z-index:0;
-  object-position:52% center;
-  filter:saturate(1.02) contrast(1.035) brightness(.91);
-  transform:translateZ(0) scale(1.012);
+html[data-luxury="v2"] .app3b .home-world-entry::before{
+  content:"";
+  position:absolute;
+  inset:-7%;
+  z-index:1;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 73% 38%,rgba(53,207,255,.17),transparent 34%),
+    radial-gradient(ellipse at 72% 64%,rgba(232,184,77,.10),transparent 37%),
+    radial-gradient(ellipse at 50% 112%,rgba(53,207,255,.10),transparent 48%);
+  filter:blur(8px);
 }
 html[data-luxury="v2"] .app3b .home-world-entry::after{
+  content:"";
+  position:absolute;
+  inset:0;
   z-index:3;
+  pointer-events:none;
   background:
-    linear-gradient(0deg,rgba(5,6,7,.94) 0%,rgba(5,6,7,.73) 30%,rgba(5,6,7,.18) 58%,rgba(5,6,7,.03) 80%),
-    linear-gradient(90deg,rgba(5,6,7,.58),transparent 44%);
+    linear-gradient(90deg,rgba(1,5,10,.985) 0%,rgba(2,8,14,.91) 28%,rgba(3,13,20,.54) 52%,rgba(2,7,11,.08) 82%),
+    linear-gradient(0deg,rgba(1,5,9,.93) 0%,rgba(1,5,9,.46) 25%,transparent 58%),
+    radial-gradient(circle at 69% 42%,transparent 0 32%,rgba(0,0,0,.14) 58%,rgba(0,0,0,.40) 100%);
 }
-html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy,
-html[data-luxury="v2"] .app3b .home-world-signature{z-index:4}
+html[data-luxury="v2"] .app3b .home-world-atmosphere{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+  background:
+    radial-gradient(ellipse at 72% 45%,rgba(47,136,183,.24) 0%,transparent 36%),
+    radial-gradient(ellipse at 70% 71%,rgba(206,166,93,.11) 0%,transparent 33%),
+    linear-gradient(155deg,#01050b 0%,#071827 49%,#020509 100%);
+}
+html[data-luxury="v2"] .app3b .home-world-atmosphere::before{
+  content:"";
+  position:absolute;
+  left:30%;
+  right:-8%;
+  bottom:-10%;
+  height:56%;
+  background:
+    repeating-linear-gradient(90deg,transparent 0 55px,rgba(81,221,255,.065) 56px 57px,transparent 58px 112px),
+    repeating-linear-gradient(0deg,transparent 0 43px,rgba(232,184,77,.045) 44px 45px,transparent 46px 88px);
+  transform:perspective(560px) rotateX(65deg);
+  transform-origin:bottom;
+  opacity:.42;
+  -webkit-mask-image:linear-gradient(to top,black,transparent 78%);
+  mask-image:linear-gradient(to top,black,transparent 78%);
+}
+html[data-luxury="v2"] .app3b .home-world-atmosphere::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(255,255,255,.05) 0 1px,transparent 1.5px),
+    radial-gradient(circle at 83% 12%,rgba(125,220,255,.09) 0 1px,transparent 1.6px),
+    radial-gradient(circle at 64% 28%,rgba(255,222,154,.07) 0 1px,transparent 1.5px);
+  background-size:84px 84px,128px 128px,116px 116px;
+  opacity:.42;
+}
+html[data-luxury="v2"] .app3b .home-world-horizon{
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 71% 77%,rgba(61,194,234,.15) 0%,transparent 40%),
+    linear-gradient(180deg,transparent 53%,rgba(20,83,106,.14) 62%,transparent 74%);
+  -webkit-mask-image:linear-gradient(to bottom,transparent 14%,black 56%,transparent 98%);
+  mask-image:linear-gradient(to bottom,transparent 14%,black 56%,transparent 98%);
+}
+html[data-luxury="v2"] .app3b .home-world-skyline{display:none!important}
+html[data-luxury="v2"] .app3b .home-world-ray{
+  position:absolute;
+  bottom:-42%;
+  width:1px;
+  height:122%;
+  opacity:.30;
+  transform-origin:bottom;
+  filter:blur(1px);
+  background:linear-gradient(0deg,transparent,rgba(219,185,119,.54),transparent);
+}
+html[data-luxury="v2"] .app3b .home-world-ray.ray-1{left:63%;transform:rotate(20deg)}
+html[data-luxury="v2"] .app3b .home-world-ray.ray-2{left:77%;transform:rotate(-14deg);background:linear-gradient(0deg,transparent,rgba(88,218,250,.58),transparent)}
+html[data-luxury="v2"] .app3b .home-world-ray.ray-3{left:87%;transform:rotate(38deg);opacity:.22}
 
-html[data-luxury="v2"] .app3b .home-world-webgl-shell{
+html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{
   position:absolute;
   z-index:2;
-  left:50%;
-  top:-8%;
-  width:min(39%,390px);
+  left:70%;
+  top:-1.5%;
+  width:min(61%,690px);
   aspect-ratio:1;
   transform:translateX(-50%);
   pointer-events:none;
   contain:layout paint style;
   filter:
-    drop-shadow(0 22px 26px rgba(0,0,0,.56))
-    drop-shadow(0 0 12px rgba(59,167,255,.16));
+    drop-shadow(0 34px 34px rgba(0,0,0,.68))
+    drop-shadow(0 0 31px rgba(66,200,247,.24))
+    drop-shadow(0 0 22px rgba(224,185,100,.09));
 }
 html[data-luxury="v2"] .app3b .home-world-webgl-shell::before{
   content:"";
   position:absolute;
-  inset:5%;
-  border-radius:var(--3b-radius-circle);
+  inset:2%;
+  border-radius:50%;
   background:
-    radial-gradient(circle at 50% 52%,rgba(59,167,255,.08) 0 34%,rgba(59,167,255,.045) 47%,transparent 69%);
-  filter:blur(2px);
+    radial-gradient(circle at 50% 49%,rgba(74,214,255,.095) 0 31%,rgba(74,214,255,.035) 45%,transparent 70%),
+    conic-gradient(from 20deg,transparent,rgba(232,184,77,.045),transparent 28%,rgba(53,207,255,.035),transparent 58%);
+  filter:blur(4px);
 }
 html[data-luxury="v2"] .app3b .home-world-webgl-canvas{
   position:absolute;
@@ -130,98 +213,223 @@ html[data-luxury="v2"] .app3b .home-world-webgl-shell::after{
   content:"";
   position:absolute;
   z-index:0;
-  left:18%;
-  right:18%;
-  bottom:3%;
-  height:7%;
-  border-radius:var(--3b-radius-circle);
-  background:radial-gradient(ellipse,rgba(0,0,0,.62),rgba(59,167,255,.10) 44%,transparent 74%);
-  filter:blur(5px);
-  opacity:.78;
+  left:12%;
+  right:12%;
+  bottom:1%;
+  height:10%;
+  border-radius:50%;
+  background:radial-gradient(ellipse,rgba(0,0,0,.74),rgba(59,167,255,.11) 44%,transparent 76%);
+  filter:blur(8px);
+  opacity:.92;
+}
+html[data-luxury="v2"] .app3b .home-world-webgl-shell[data-state="ready"]{
+  animation:homeWorldMonumentReveal .72s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes homeWorldMonumentReveal{
+  from{opacity:0;transform:translateX(-50%) translateY(10px) scale(.975);filter:blur(4px) drop-shadow(0 18px 28px rgba(0,0,0,.6))}
+  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 }
 
-/* Safe visual fallback if WebGL is unavailable or the GPU context is lost. */
+/* Safe fallback keeps the same composition if WebGL is unavailable. */
 html[data-luxury="v2"] .app3b .home-world-webgl-shell[data-state="fallback"]::before{
-  inset:14%;
+  inset:12%;
   background:
     repeating-conic-gradient(
       from 7deg,
-      rgba(181,176,164,.92) 0 34deg,
-      transparent 34deg 43deg,
-      rgba(121,123,120,.94) 43deg 72deg,
-      transparent 72deg 86deg
+      rgba(205,194,166,.94) 0 33deg,
+      transparent 33deg 42deg,
+      rgba(124,126,120,.95) 42deg 72deg,
+      transparent 72deg 87deg
     );
-  -webkit-mask:radial-gradient(circle,transparent 0 54%,rgba(0,0,0,1) 55% 75%,transparent 76%);
-  mask:radial-gradient(circle,transparent 0 54%,rgba(0,0,0,1) 55% 75%,transparent 76%);
+  -webkit-mask:radial-gradient(circle,transparent 0 53%,#000 54% 76%,transparent 77%);
+  mask:radial-gradient(circle,transparent 0 53%,#000 54% 76%,transparent 77%);
   filter:
-    drop-shadow(0 12px 18px rgba(0,0,0,.58))
-    drop-shadow(0 0 8px rgba(59,167,255,.28));
+    drop-shadow(0 18px 22px rgba(0,0,0,.62))
+    drop-shadow(0 0 13px rgba(59,167,255,.31));
 }
 html[data-luxury="v2"] .app3b .home-world-webgl-shell[data-state="fallback"]::after{
-  left:28%;
-  right:28%;
-  bottom:12%;
-  height:5%;
+  left:26%;
+  right:26%;
+  bottom:10%;
+  height:6%;
+}
+
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{
+  position:relative;
+  z-index:4;
+  align-self:center;
+  max-width:615px;
+  padding:70px 56px 72px;
+  text-shadow:0 3px 22px rgba(0,0,0,.78);
+}
+html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{
+  margin:0 0 17px;
+  color:#f1d69f;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.23em;
+}
+html[data-luxury="v2"] .app3b .home-world-entry .home-world-live{
+  color:rgba(126,222,250,.75);
+}
+html[data-luxury="v2"] .app3b .home-world-entry h2{
+  margin:0 0 17px;
+  color:#f7f5ef;
+  font-size:clamp(44px,5.8vw,80px);
+  font-weight:610;
+  line-height:1.01;
+  letter-spacing:-.052em;
+  text-wrap:balance;
+}
+html[data-luxury="v2"] .app3b .home-world-entry h2 em{
+  font-style:normal;
+  background:linear-gradient(112deg,#fff1ca 0%,#d0ad68 66%,#78d5f2 100%);
+  background-clip:text;
+  -webkit-background-clip:text;
+  color:transparent;
+}
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy>p:not(.eyebrow){
+  max-width:390px;
+  margin:0;
+  color:#d7e3e7;
+  font-size:14px;
+  line-height:1.72;
+}
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-actions{
+  margin-top:27px;
+}
+html[data-luxury="v2"] .app3b .home-world-entry .world-portal-actions .surface-button{
+  min-height:50px;
+  padding-inline:23px;
+  border-radius:12px;
+  box-shadow:
+    0 13px 32px rgba(0,0,0,.34),
+    0 0 26px rgba(232,184,77,.09),
+    inset 0 1px rgba(255,255,255,.38);
+}
+html[data-luxury="v2"] .app3b .home-world-entry .home-world-signature{
+  position:absolute;
+  z-index:4;
+  right:28px;
+  bottom:24px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  color:#dfc68f;
+  font-size:8px;
+  font-weight:760;
+  letter-spacing:.15em;
+}
+html[data-luxury="v2"] .app3b .home-world-signature i{
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#79d8f4;
+  box-shadow:0 0 9px rgba(121,216,244,.54);
+}
+
+@media(max-width:900px){
+  html[data-luxury="v2"] .app3b .home-world-entry{
+    min-height:590px;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{
+    left:68%;
+    width:min(68%,610px);
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{
+    max-width:540px;
+    padding-inline:40px;
+  }
 }
 
 @media(max-width:720px){
-  html[data-luxury="v2"] .app3b .home-world-entry{min-height:560px}
-  html[data-luxury="v2"] .app3b .home-world-art{
-    object-position:54% center;
-    filter:saturate(1.015) contrast(1.03) brightness(.90);
-    transform:translateZ(0) scale(1.025);
+  html[data-luxury="v2"] .app3b .home-world-entry{
+    min-height:610px;
+    margin-bottom:30px;
+    border-radius:21px;
+    display:flex;
+    align-items:flex-end;
+    box-shadow:
+      0 24px 70px rgba(0,0,0,.62),
+      0 0 36px rgba(53,207,255,.045),
+      inset 0 1px rgba(255,238,201,.15);
   }
   html[data-luxury="v2"] .app3b .home-world-entry::after{
     background:
-      linear-gradient(0deg,rgba(5,6,7,.97) 0%,rgba(5,6,7,.82) 31%,rgba(5,6,7,.20) 61%,rgba(5,6,7,.02) 82%);
+      linear-gradient(0deg,rgba(1,5,9,.99) 0%,rgba(1,5,9,.91) 33%,rgba(2,9,14,.30) 61%,rgba(2,6,10,.02) 88%),
+      radial-gradient(circle at 50% 26%,transparent 0 35%,rgba(0,0,0,.10) 60%,rgba(0,0,0,.38) 100%);
   }
-  html[data-luxury="v2"] .app3b .home-world-webgl-shell{
-    top:1%;
-    width:min(76%,300px);
+  html[data-luxury="v2"] .app3b .home-world-atmosphere::before{
+    left:-10%;
+    right:-10%;
+    bottom:-6%;
+    height:49%;
+    opacity:.30;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{
+    left:50%;
+    top:-2%;
+    width:min(106%,430px);
+    filter:
+      drop-shadow(0 28px 30px rgba(0,0,0,.72))
+      drop-shadow(0 0 28px rgba(66,200,247,.27))
+      drop-shadow(0 0 19px rgba(224,185,100,.09));
   }
   html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{
-    padding-top:228px;
+    align-self:flex-end;
+    width:100%;
+    max-width:none;
+    padding:268px 20px 58px;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{
+    margin-bottom:11px;
+    font-size:7px;
+    letter-spacing:.20em;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .home-world-live{
+    display:none;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry h2{
+    max-width:335px;
+    margin-bottom:12px;
+    font-size:clamp(36px,10.3vw,47px);
+    line-height:1.01;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy>p:not(.eyebrow){
+    max-width:340px;
+    font-size:12px;
+    line-height:1.62;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .world-portal-actions{
+    margin-top:18px;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .world-portal-actions .surface-button{
+    width:100%;
+    min-height:50px;
+    font-size:12px;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .home-world-signature{
+    right:15px;
+    bottom:11px;
+    gap:8px;
+    font-size:6.5px;
+    letter-spacing:.12em;
   }
 }
+
 @media(max-width:420px){
-  html[data-luxury="v2"] .app3b .home-world-entry{min-height:575px}
-  html[data-luxury="v2"] .app3b .home-world-webgl-shell{
-    top:2%;
-    width:min(78%,286px);
+  html[data-luxury="v2"] .app3b .home-world-entry{
+    min-height:600px;
+  }
+  html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{
+    top:-1%;
+    width:min(108%,408px);
   }
   html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{
-    padding-top:222px;
+    padding-top:255px;
   }
 }
 
-
-/* LE MONDE DU 3B — standalone cinematic portal, no pasted city photograph. */
-html[data-luxury="v2"] .app3b .home-world-entry{position:relative;min-height:550px;background:#02070d;border:1px solid #bfa66c5e;border-radius:24px;overflow:hidden;box-shadow:0 34px 100px #0009,inset 0 1px #fbe7bc34}
-html[data-luxury="v2"] .app3b .home-world-entry::before{content:"";position:absolute;inset:-4%;pointer-events:none;background:radial-gradient(ellipse at 69% 44%,#1677a433,transparent 37%),radial-gradient(ellipse at 71% 59%,#d9b06924,transparent 36%);z-index:1}
-html[data-luxury="v2"] .app3b .home-world-entry::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,#01060df7 0%,#030b16e9 27%,#081c278a 54%,transparent 79%),linear-gradient(0deg,#02070de8 0%,transparent 47%);z-index:3}
-html[data-luxury="v2"] .app3b .home-world-atmosphere{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at 75% 49%,#267cae35 0%,transparent 38%),linear-gradient(160deg,#020610,#0a2234 54%,#04070b)}
-html[data-luxury="v2"] .app3b .home-world-horizon{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 34px,#d6b46a17 35px 36px,transparent 37px 83px),linear-gradient(180deg,transparent 48%,#164f6455 55%,transparent 67%);mask-image:linear-gradient(to bottom,transparent 18%,black 58%,transparent 96%)}
-html[data-luxury="v2"] .app3b .home-world-skyline{position:absolute;inset:35% -8% 5% 37%;background:linear-gradient(0deg,#0a1a27,transparent 32%),repeating-linear-gradient(90deg,transparent 0 24px,#c5aa6733 25px 26px,transparent 27px 48px);clip-path:polygon(0 100%,0 55%,9% 55%,9% 36%,13% 36%,13% 66%,19% 66%,19% 25%,23% 25%,23% 9%,26% 9%,26% 37%,32% 37%,32% 58%,40% 58%,40% 25%,45% 25%,45% 45%,52% 45%,52% 16%,55% 16%,55% 6%,58% 6%,58% 42%,64% 42%,64% 57%,71% 57%,71% 31%,76% 31%,76% 51%,83% 51%,83% 21%,88% 21%,88% 59%,100% 59%,100% 100%);opacity:.58}
-html[data-luxury="v2"] .app3b .home-world-ray{position:absolute;bottom:-35%;width:2px;height:110%;background:linear-gradient(0deg,transparent,#d2ae7a71,transparent);filter:blur(2px);transform-origin:bottom;opacity:.42}
-html[data-luxury="v2"] .app3b .home-world-ray.ray-1{left:65%;transform:rotate(23deg)}html[data-luxury="v2"] .app3b .home-world-ray.ray-2{left:78%;transform:rotate(-16deg);background:linear-gradient(0deg,transparent,#5bd7fa91,transparent)}html[data-luxury="v2"] .app3b .home-world-ray.ray-3{left:83%;transform:rotate(40deg)}
-html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{left:73%;top:7%;width:min(47%,550px);filter:drop-shadow(0 0 27px #42c8f749) drop-shadow(0 24px 35px #0008)}
-html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{position:relative;z-index:4;max-width:610px;padding:64px 50px;align-self:center;text-shadow:0 3px 20px #0008}
-html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{color:#f2d69c;letter-spacing:.23em}
-html[data-luxury="v2"] .app3b .home-world-entry h2{font-weight:600;line-height:1.05;letter-spacing:-.047em;text-wrap:balance;font-size:clamp(41px,5.5vw,78px)}
-html[data-luxury="v2"] .app3b .home-world-entry h2 em{font-style:normal;background:linear-gradient(110deg,#f9e8bf,#cbaa68 68%,#79d3f3);background-clip:text;-webkit-background-clip:text;color:transparent}
-html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy>p:not(.eyebrow){max-width:355px;font-size:14px;line-height:1.6;color:#dae6e7}
-html[data-luxury="v2"] .app3b .home-world-entry .world-portal-actions{margin-top:25px}
-html[data-luxury="v2"] .app3b .home-world-entry .home-world-signature{display:flex;align-items:center;gap:14px;bottom:22px;right:27px;color:#e2c994;letter-spacing:.12em;font-size:9px}
-.home-world-signature i{width:4px;height:4px;background:#7ad6f3;border-radius:50%}
-@media(max-width:720px){
- html[data-luxury="v2"] .app3b .home-world-entry{min-height:480px;border-radius:20px;display:flex;align-items:flex-end}
- html[data-luxury="v2"] .app3b .home-world-entry::after{background:linear-gradient(0deg,#02070d 0%,#02070de8 31%,#02070d44 64%,transparent 91%)}
- html[data-luxury="v2"] .app3b .home-world-entry .home-world-webgl-shell{left:50%;top:-5%;width:min(85%,380px)}
- html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy{padding:205px 24px 54px;max-width:100%;align-self:flex-end}
- html[data-luxury="v2"] .app3b .home-world-entry h2{font-size:clamp(36px,10vw,52px);margin-bottom:12px}
- html[data-luxury="v2"] .app3b .home-world-entry .eyebrow{font-size:8px;margin-bottom:12px}
- html[data-luxury="v2"] .app3b .home-world-entry .home-world-live{display:none}
- html[data-luxury="v2"] .app3b .home-world-entry .world-portal-copy>p:not(.eyebrow){font-size:12px;line-height:1.6;max-width:340px}
- html[data-luxury="v2"] .app3b .home-world-entry .home-world-signature{bottom:11px;right:15px;gap:8px;font-size:7px}
+@media(prefers-reduced-motion:reduce){
+  html[data-luxury="v2"] .app3b .home-world-webgl-shell[data-state="ready"]{animation:none}
 }
-@media(prefers-reduced-motion:reduce){html[data-luxury="v2"] .app3b .home-world-ray{animation:none}}
